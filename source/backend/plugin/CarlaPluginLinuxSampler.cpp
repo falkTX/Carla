@@ -1,6 +1,6 @@
 /*
  * Carla LinuxSampler Plugin
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -488,7 +488,10 @@ public:
                     const int index(it->getIntValue());
 
                     if (index >= 0)
-                        setProgramInternal(static_cast<uint>(index), channel, true, false);
+                    {
+                        const ScopedSingleProcessLocker spl(this, true);
+                        setProgramInternal(static_cast<uint>(index), channel);
+                    }
 
                     if (++channel >= MAX_MIDI_CHANNELS)
                         break;
@@ -502,57 +505,72 @@ public:
 
     void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,); // never call this from RT
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->prog.count),);
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,);
 
         const int8_t channel(kIsGIG ? pData->ctrlChannel : int8_t(0));
 
         if (index >= 0 && channel >= 0)
-            setProgramInternal(static_cast<uint>(index), static_cast<uint8_t>(channel), sendCallback, false);
+        {
+            const uint32_t uindex = static_cast<uint32_t>(index);
+
+            bool internalSetOk;
+
+            {
+                const ScopedSingleProcessLocker spl(this, sendGui || sendOsc || sendCallback);
+                internalSetOk = setProgramInternal(uindex, static_cast<uint8_t>(channel));
+            }
+
+            if (internalSetOk && sendCallback)
+                pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
+        }
 
         CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
     }
 
-    void setProgramInternal(const uint32_t index, const uint8_t channel, const bool sendCallback, const bool inRtContent) noexcept
+    void setProgramRT(const uint32_t uindex) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(index < pData->prog.count,);
-        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
+        CARLA_SAFE_ASSERT_RETURN(uindex < pData->prog.count,);
 
-        if (fCurProgs[channel] == index)
+        const int8_t channel(kIsGIG ? pData->ctrlChannel : int8_t(0));
+
+        if (channel < 0)
+            return;
+        if (! setProgramInternal(uindex, static_cast<uint8_t>(channel)))
             return;
 
+        CarlaPlugin::setProgramRT(uindex);
+    }
+
+    bool setProgramInternal(const uint32_t uindex, const uint8_t channel) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, false);
+
+        if (fCurProgs[channel] == uindex)
+            return false;
+
         LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[kIsGIG ? channel : 0]);
-        CARLA_SAFE_ASSERT_RETURN(engineChannel != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(engineChannel != nullptr, false);
 
-        const ScopedSingleProcessLocker spl(this, !inRtContent);
-
+#ifndef STOAT_TEST_BUILD
         if (pData->engine->isOffline())
         {
             try {
-                engineChannel->PrepareLoadInstrument(pData->filename, index);
+                engineChannel->PrepareLoadInstrument(pData->filename, uindex);
                 engineChannel->LoadInstrument();
             } CARLA_SAFE_EXCEPTION("LoadInstrument");
         }
         else
+#endif
         {
             try {
-                LinuxSampler::InstrumentManager::LoadInstrumentInBackground(fInstrumentIds[index], engineChannel);
+                LinuxSampler::InstrumentManager::LoadInstrumentInBackground(fInstrumentIds[uindex], engineChannel);
             } CARLA_SAFE_EXCEPTION("LoadInstrumentInBackground");
         }
 
-        fCurProgs[channel] = index;
+        fCurProgs[channel] = uindex;
 
-        if (pData->ctrlChannel == channel)
-        {
-            const int32_t iindex(static_cast<int32_t>(index));
-
-            pData->prog.current = iindex;
-
-            if (inRtContent)
-                pData->postponeRtEvent(kPluginPostRtEventProgramChange, iindex, 0, 0.0f);
-            else if (sendCallback)
-                pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED, pData->id, iindex, 0, 0.0f, nullptr);
-        }
+        return (pData->ctrlChannel == channel);
     }
 
     // -------------------------------------------------------------------
@@ -1005,9 +1023,7 @@ public:
 
                     case kEngineControlEventTypeMidiProgram:
                         if (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
-                        {
-                            setProgramInternal(ctrlEvent.param, event.channel, false, true);
-                        }
+                            setProgramInternal(ctrlEvent.param, event.channel);
                         break;
 
                     case kEngineControlEventTypeAllSoundOff:
@@ -1103,11 +1119,14 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Try lock, silence otherwise
 
+#ifndef STOAT_TEST_BUILD
         if (pData->engine->isOffline())
         {
             pData->singleMutex.lock();
         }
-        else if (! pData->singleMutex.tryLock())
+        else
+#endif
+        if (! pData->singleMutex.tryLock())
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {

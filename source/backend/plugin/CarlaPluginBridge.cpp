@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Bridge
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -659,7 +659,7 @@ public:
 
     void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
+        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,);
 
         {
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
@@ -677,8 +677,8 @@ public:
 
     void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,); // never call this from RT
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,);
 
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
         fParams[parameterId].value = fixedValue;
@@ -698,9 +698,9 @@ public:
 
     void setParameterMidiChannel(const uint32_t parameterId, const uint8_t channel, const bool sendOsc, const bool sendCallback) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
+        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,);
 
         {
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
@@ -716,9 +716,9 @@ public:
 
     void setParameterMidiCC(const uint32_t parameterId, const int16_t cc, const bool sendOsc, const bool sendCallback) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
         CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc < MAX_MIDI_CONTROL,);
+        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,);
 
         {
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
@@ -734,8 +734,8 @@ public:
 
     void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,); // never call this from RT
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->prog.count),);
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,);
 
         {
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
@@ -750,8 +750,8 @@ public:
 
     void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,); // never call this from RT
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,);
 
         {
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
@@ -762,6 +762,21 @@ public:
         }
 
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
+    }
+
+    void setMidiProgramRT(const uint32_t uindex) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(uindex < pData->midiprog.count,);
+
+        {
+            const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
+
+            fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientSetMidiProgram);
+            fShmNonRtClientControl.writeInt(static_cast<int32_t>(uindex));
+            fShmNonRtClientControl.commitWrite();
+        }
+
+        CarlaPlugin::setMidiProgramRT(uindex);
     }
 
     void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui) override
@@ -1420,11 +1435,14 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Try lock, silence otherwise
 
+#ifndef STOAT_TEST_BUILD
         if (pData->engine->isOffline())
         {
             pData->singleMutex.lock();
         }
-        else if (! pData->singleMutex.tryLock())
+        else
+#endif
+        if (! pData->singleMutex.tryLock())
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
                 carla_zeroFloats(audioOut[i], frames);

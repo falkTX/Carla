@@ -370,6 +370,7 @@ struct CarlaPlugin::ProtectedData {
     void tryTransient() noexcept;
 #endif
     void updateParameterValues(CarlaPlugin* const plugin, const bool sendOsc, const bool sendCallback, const bool useDefault) noexcept;
+    void updateDefaultParameterValues(CarlaPlugin* const plugin) noexcept;
 
     // -------------------------------------------------------------------
 

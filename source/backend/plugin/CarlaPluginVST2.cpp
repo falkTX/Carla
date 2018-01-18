@@ -1,6 +1,6 @@
 /*
  * Carla VST Plugin
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -409,6 +409,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->prog.count),);
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,);
 
         if (index >= 0)
         {
@@ -430,6 +431,26 @@ public:
         }
 
         CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
+    }
+
+    void setProgramRT(const uint32_t uindex) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(uindex < pData->prog.count,);
+
+        try {
+            dispatcher(effBeginSetProgram, 0, 0, nullptr, 0.0f);
+        } CARLA_SAFE_EXCEPTION_RETURN("effBeginSetProgram",);
+
+        try {
+            dispatcher(effSetProgram, 0, static_cast<intptr_t>(uindex), nullptr, 0.0f);
+        } CARLA_SAFE_EXCEPTION("effSetProgram");
+
+        try {
+            dispatcher(effEndSetProgram, 0, 0, nullptr, 0.0f);
+        } CARLA_SAFE_EXCEPTION("effEndSetProgram");
+
+        CarlaPlugin::setProgramRT(uindex);
     }
 
     // -------------------------------------------------------------------
@@ -1352,8 +1373,7 @@ public:
                         {
                             if (ctrlEvent.param < pData->prog.count)
                             {
-                                setProgram(ctrlEvent.param, false, false, false);
-                                pData->postponeRtEvent(kPluginPostRtEventProgramChange, ctrlEvent.param, 0, 0.0f);
+                                setProgramRT(ctrlEvent.param);
                                 break;
                             }
                         }
@@ -1523,11 +1543,14 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Try lock, silence otherwise
 
+#ifndef STOAT_TEST_BUILD
         if (pData->engine->isOffline())
         {
             pData->singleMutex.lock();
         }
-        else if (! pData->singleMutex.tryLock())
+        else
+#endif
+        if (! pData->singleMutex.tryLock())
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {

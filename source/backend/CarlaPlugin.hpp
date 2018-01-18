@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -631,6 +631,12 @@ public:
      * It changes the current MIDI program using @a bank and @a program values instead of index.
      */
     void setMidiProgramById(const uint32_t bank, const uint32_t program, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept;
+
+    /*!
+     * Overloaded functions, to be called from within RT context only.
+     */
+    virtual void setProgramRT(const uint32_t index) noexcept;
+    virtual void setMidiProgramRT(const uint32_t index) noexcept;
 
     // -------------------------------------------------------------------
     // Plugin state

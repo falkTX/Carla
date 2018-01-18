@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugin
- * Copyright (C) 2012-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -716,6 +716,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,);
 
         // TODO, put into check below
         if ((pData->hints & PLUGIN_IS_SYNTH) != 0 && (pData->ctrlChannel < 0 || pData->ctrlChannel >= MAX_MIDI_CHANNELS))
@@ -744,6 +745,36 @@ public:
         }
 
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
+    }
+
+    void setMidiProgramRT(const uint32_t index) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count,);
+
+        // TODO, put into check below
+        if ((pData->hints & PLUGIN_IS_SYNTH) != 0 && (pData->ctrlChannel < 0 || pData->ctrlChannel >= MAX_MIDI_CHANNELS))
+           return CarlaPlugin::setMidiProgramRT(index);
+
+        const uint8_t  channel = uint8_t((pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS) ? pData->ctrlChannel : 0);
+        const uint32_t bank    = pData->midiprog.data[index].bank;
+        const uint32_t program = pData->midiprog.data[index].program;
+
+        try {
+            fDescriptor->set_midi_program(fHandle, channel, bank, program);
+        } catch(...) {}
+
+        if (fHandle2 != nullptr)
+        {
+            try {
+                fDescriptor->set_midi_program(fHandle2, channel, bank, program);
+            } catch(...) {}
+        }
+
+        fCurMidiProgs[channel] = index;
+
+        CarlaPlugin::setMidiProgramRT(index);
     }
 
     // -------------------------------------------------------------------

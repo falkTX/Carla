@@ -819,6 +819,12 @@ void CarlaPlugin::ProtectedData::updateParameterValues(CarlaPlugin* const plugin
     return; (void)sendOsc;
 }
 
+void CarlaPlugin::ProtectedData::updateDefaultParameterValues(CarlaPlugin* const plugin) noexcept
+{
+    for (uint32_t i=0; i < param.count; ++i)
+        param.ranges[i].def = param.ranges[i].getFixedValue(plugin->getParameterValue(i));
+}
+
 // -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE

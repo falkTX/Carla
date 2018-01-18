@@ -1,6 +1,6 @@
 /*
  * Carla LV2 Plugin
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -1227,6 +1227,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->prog.count),);
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,);
 
         if (index >= 0 && index < static_cast<int32_t>(fRdfDescriptor->PresetCount))
         {
@@ -1263,6 +1264,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,);
 
         if (index >= 0 && fExt.programs != nullptr && fExt.programs->select_program != nullptr)
         {
@@ -1284,6 +1286,31 @@ public:
         }
 
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
+    }
+
+    void setMidiProgramRT(const uint32_t uindex) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(uindex < pData->midiprog.count,);
+
+        if (fExt.programs != nullptr && fExt.programs->select_program != nullptr)
+        {
+            const uint32_t bank(pData->midiprog.data[uindex].bank);
+            const uint32_t program(pData->midiprog.data[uindex].program);
+
+            try {
+                fExt.programs->select_program(fHandle, bank, program);
+            } catch(...) {}
+
+            if (fHandle2 != nullptr)
+            {
+                try {
+                    fExt.programs->select_program(fHandle2, bank, program);
+                } catch(...) {}
+            }
+        }
+
+        CarlaPlugin::setMidiProgramRT(uindex);
     }
 
     // -------------------------------------------------------------------
@@ -2997,7 +3024,7 @@ public:
                         }
                         else if (! lv2_atom_buffer_write(&evInAtomIters[j], 0, 0, atom->type, atom->size, LV2_ATOM_BODY_CONST(atom)))
                         {
-                            carla_stdout("Event input buffer full, at least 1 message lost");
+                            carla_stderr2("Event input buffer full, at least 1 message lost");
                             continue;
                         }
                     }
@@ -3279,9 +3306,7 @@ public:
                                 {
                                     if (pData->midiprog.data[k].bank == nextBankId && pData->midiprog.data[k].program == nextProgramId)
                                     {
-                                        const int32_t index(static_cast<int32_t>(k));
-                                        setMidiProgram(index, false, false, false);
-                                        pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, index, 0, 0.0f);
+                                        setMidiProgramRT(k);
                                         break;
                                     }
                                 }
@@ -3597,11 +3622,14 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Try lock, silence otherwise
 
+#ifndef STOAT_TEST_BUILD
         if (pData->engine->isOffline())
         {
             pData->singleMutex.lock();
         }
-        else if (! pData->singleMutex.tryLock())
+        else
+#endif
+        if (! pData->singleMutex.tryLock())
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {

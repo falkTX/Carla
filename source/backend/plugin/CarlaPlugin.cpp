@@ -1690,10 +1690,17 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
         if (sendGui && (pData->hints & PLUGIN_HAS_CUSTOM_UI) != 0)
             uiProgramChange(static_cast<uint32_t>(index));
 
-        if (getType() == PLUGIN_GIG || getType() == PLUGIN_SF2 || getType() == PLUGIN_SFZ)
-            return;
+        switch (getType())
+        {
+        case PLUGIN_GIG:
+        case PLUGIN_SF2:
+        case PLUGIN_SFZ:
+            break;
 
-        pData->updateParameterValues(this, reallySendOsc, sendCallback, true);
+        default:
+            pData->updateParameterValues(this, reallySendOsc, sendCallback, true);
+            break;
+        }
     }
 
     // may be unused
@@ -1718,15 +1725,23 @@ void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
 
+    // Change default parameter values
     if (index >= 0)
     {
         if (sendGui && (pData->hints & PLUGIN_HAS_CUSTOM_UI) != 0)
             uiMidiProgramChange(static_cast<uint32_t>(index));
 
-        if (getType() == PLUGIN_GIG || getType() == PLUGIN_SF2 || getType() == PLUGIN_SFZ)
-            return;
+        switch (getType())
+        {
+        case PLUGIN_GIG:
+        case PLUGIN_SF2:
+        case PLUGIN_SFZ:
+            break;
 
-        pData->updateParameterValues(this, reallySendOsc, sendCallback, true);
+        default:
+            pData->updateParameterValues(this, reallySendOsc, sendCallback, true);
+            break;
+        }
     }
 
     // may be unused
@@ -1740,6 +1755,52 @@ void CarlaPlugin::setMidiProgramById(const uint32_t bank, const uint32_t program
         if (pData->midiprog.data[i].bank == bank && pData->midiprog.data[i].program == program)
             return setMidiProgram(static_cast<int32_t>(i), sendGui, sendOsc, sendCallback);
     }
+}
+
+void CarlaPlugin::setProgramRT(const uint32_t uindex) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(uindex < pData->prog.count,);
+
+    const int32_t index = static_cast<int32_t>(uindex);
+    pData->prog.current = index;
+
+    // Change default parameter values
+    switch (getType())
+    {
+    case PLUGIN_GIG:
+    case PLUGIN_SF2:
+    case PLUGIN_SFZ:
+        break;
+
+    default:
+        pData->updateDefaultParameterValues(this);
+        break;
+    }
+
+    pData->postponeRtEvent(kPluginPostRtEventProgramChange, index, 0, 0.0f);
+}
+
+void CarlaPlugin::setMidiProgramRT(const uint32_t uindex) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(uindex < pData->midiprog.count,);
+
+    const int32_t index = static_cast<int32_t>(uindex);
+    pData->midiprog.current = index;
+
+    // Change default parameter values
+    switch (getType())
+    {
+    case PLUGIN_GIG:
+    case PLUGIN_SF2:
+    case PLUGIN_SFZ:
+        break;
+
+    default:
+        pData->updateDefaultParameterValues(this);
+        break;
+    }
+
+    pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, index, 0, 0.0f);
 }
 
 // -------------------------------------------------------------------

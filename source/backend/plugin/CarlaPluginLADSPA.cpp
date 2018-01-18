@@ -1120,11 +1120,14 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Try lock, silence otherwise
 
+#ifndef STOAT_TEST_BUILD
         if (pData->engine->isOffline())
         {
             pData->singleMutex.lock();
         }
-        else if (! pData->singleMutex.tryLock())
+        else
+#endif
+        if (! pData->singleMutex.tryLock())
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {

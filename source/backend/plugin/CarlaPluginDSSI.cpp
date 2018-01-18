@@ -1,6 +1,6 @@
 /*
  * Carla Plugin, DSSI implementation
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -645,26 +645,43 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor->select_program != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,);
 
         if (index >= 0 && fHandles.count() > 0)
         {
-            const uint32_t bank(pData->midiprog.data[index].bank);
-            const uint32_t program(pData->midiprog.data[index].program);
-
             const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
-            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin2(); it.valid(); it.next())
-            {
-                LADSPA_Handle const handle(it.getValue(nullptr));
-                CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
-
-                try {
-                    fDssiDescriptor->select_program(handle, bank, program);
-                } CARLA_SAFE_EXCEPTION("DSSI setMidiProgram")
-            }
+            setMidiProgramInDSSI(static_cast<uint32_t>(index));
         }
 
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
+    }
+
+    void setMidiProgramRT(const uint32_t uindex) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor->select_program != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(uindex < pData->midiprog.count,);
+
+        setMidiProgramInDSSI(uindex);
+
+        CarlaPlugin::setMidiProgramRT(uindex);
+    }
+
+    void setMidiProgramInDSSI(const uint32_t uindex) noexcept
+    {
+        const uint32_t bank(pData->midiprog.data[uindex].bank);
+        const uint32_t program(pData->midiprog.data[uindex].program);
+
+        for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin2(); it.valid(); it.next())
+        {
+            LADSPA_Handle const handle(it.getValue(nullptr));
+            CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
+
+            try {
+                fDssiDescriptor->select_program(handle, bank, program);
+            } CARLA_SAFE_EXCEPTION("DSSI setMidiProgram")
+        }
     }
 
 #ifdef HAVE_LIBLO
@@ -1542,9 +1559,7 @@ public:
                             {
                                 if (pData->midiprog.data[k].bank == nextBankId && pData->midiprog.data[k].program == nextProgramId)
                                 {
-                                    const int32_t index(static_cast<int32_t>(k));
-                                    setMidiProgram(index, false, false, false);
-                                    pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, index, 0, 0.0f);
+                                    setMidiProgramRT(k);
                                     break;
                                 }
                             }
@@ -1756,11 +1771,14 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Try lock, silence otherwise
 
+#ifndef STOAT_TEST_BUILD
         if (pData->engine->isOffline())
         {
             pData->singleMutex.lock();
         }
-        else if (! pData->singleMutex.tryLock())
+        else
+#endif
+        if (! pData->singleMutex.tryLock())
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {

@@ -1,6 +1,6 @@
 ﻿/*
  * Carla FluidSynth Plugin
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -387,6 +387,7 @@ public:
     void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,);
 
         float fixedValue;
 
@@ -530,22 +531,43 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fSynth != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,);
 
         if (index >= 0 && pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
         {
             const uint32_t bank    = pData->midiprog.data[index].bank;
             const uint32_t program = pData->midiprog.data[index].program;
 
-            //const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
+            const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
             try {
                 fluid_synth_program_select(fSynth, pData->ctrlChannel, fSynthId, bank, program);
-            } catch(...) {}
+            } CARLA_SAFE_EXCEPTION("fluid_synth_program_select")
 
             fCurMidiProgs[pData->ctrlChannel] = index;
         }
 
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
+    }
+
+    void setMidiProgramRT(const uint32_t uindex) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fSynth != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(uindex < pData->midiprog.count,);
+
+        if (pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
+        {
+            const uint32_t bank    = pData->midiprog.data[uindex].bank;
+            const uint32_t program = pData->midiprog.data[uindex].program;
+
+            try {
+                fluid_synth_program_select(fSynth, pData->ctrlChannel, fSynthId, bank, program);
+            } CARLA_SAFE_EXCEPTION("fluid_synth_program_select")
+
+            fCurMidiProgs[pData->ctrlChannel] = static_cast<int32_t>(uindex);
+        }
+
+        CarlaPlugin::setMidiProgramRT(uindex);
     }
 
     // -------------------------------------------------------------------
@@ -1403,11 +1425,14 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Try lock, silence otherwise
 
+#ifndef STOAT_TEST_BUILD
         if (pData->engine->isOffline())
         {
             pData->singleMutex.lock();
         }
-        else if (! pData->singleMutex.tryLock())
+        else
+#endif
+        if (! pData->singleMutex.tryLock())
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {
