@@ -1483,10 +1483,9 @@ public:
 #ifndef LV2_UIS_ONLY_BRIDGES
             if (fUI.type == UI::TYPE_EMBED)
             {
-                fUI.window->setChildWindow(fUI.widget);
-
                 if (fUI.window != nullptr)
                 {
+                    fUI.window->setChildWindow(fUI.widget);
                     fUI.window->show();
                 }
                 else if (fExt.uishow != nullptr)
