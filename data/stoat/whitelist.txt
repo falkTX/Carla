@@ -216,3 +216,4 @@ LinuxSampler::InstrumentManager::LoadInstrumentInBackground
 llround
 llabs
 clock_gettime
+RtLinkedList$vtable3

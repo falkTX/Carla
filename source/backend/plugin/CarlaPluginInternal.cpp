@@ -501,40 +501,49 @@ void CarlaPlugin::ProtectedData::Latency::recreateBuffers(const uint32_t newChan
 // ProtectedData::PostRtEvents
 
 CarlaPlugin::ProtectedData::PostRtEvents::PostRtEvents() noexcept
-    : mutex(),
-      dataPool(128, 128),
+    : dataPool(128, 128),
+      dataPendingRT(dataPool),
       data(dataPool),
-      dataPendingRT(dataPool) {}
+      dataMutex(),
+      dataPendingMutex() {}
 
 CarlaPlugin::ProtectedData::PostRtEvents::~PostRtEvents() noexcept
 {
-    clear();
+    dataMutex.lock();
+    data.clear();
+    dataMutex.unlock();
+
+    dataPendingMutex.lock();
+    dataPendingRT.clear();
+    dataPendingMutex.unlock();
 }
 
 void CarlaPlugin::ProtectedData::PostRtEvents::appendRT(const PluginPostRtEvent& e) noexcept
 {
-    // FIXME
-    mutex.lock();
+    CARLA_SAFE_ASSERT_RETURN(dataPendingMutex.tryLock(),);
+
     dataPendingRT.append(e);
-    mutex.unlock();
+    dataPendingMutex.unlock();
 }
 
 void CarlaPlugin::ProtectedData::PostRtEvents::trySplice() noexcept
 {
-    if (mutex.tryLock())
+    if (dataMutex.tryLock())
     {
         if (dataPendingRT.count() > 0)
             dataPendingRT.moveTo(data, true);
-        mutex.unlock();
+        dataMutex.unlock();
     }
 }
 
-void CarlaPlugin::ProtectedData::PostRtEvents::clear() noexcept
+void CarlaPlugin::ProtectedData::PostRtEvents::clearData() noexcept
 {
-    mutex.lock();
+    const bool tryLockOk(dataMutex.tryLock());
+    CARLA_SAFE_ASSERT(! tryLockOk);
     data.clear();
-    dataPendingRT.clear();
-    mutex.unlock();
+
+    if (tryLockOk)
+        dataMutex.unlock();
 }
 
 // -----------------------------------------------------------------------

@@ -1,6 +1,6 @@
 /*
  * High-level, real-time safe, templated, C++ doubly-linked list
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -106,6 +106,69 @@ public:
 
     RtLinkedList(Pool& memPool) noexcept
         : fMemPool(memPool) {}
+
+#ifdef STOAT_TEST_BUILD
+    // overridden for stoat
+    bool append(const T& value) noexcept
+    {
+        if (typename AbstractLinkedList<T>::Data* const data = _allocate())
+            return this->_add_internal(data, value, true, &this->fQueue);
+        return false;
+    }
+
+    void clear() noexcept
+    {
+        if (this->fCount == 0)
+            return;
+
+        for (typename AbstractLinkedList<T>::ListHead *entry = this->fQueue.next, *entry2 = entry->next;
+             entry != &this->fQueue; entry = entry2, entry2 = entry->next)
+        {
+            typename AbstractLinkedList<T>::Data* const data = list_entry(entry, typename AbstractLinkedList<T>::Data, siblings);
+            CARLA_SAFE_ASSERT_CONTINUE(data != nullptr);
+
+            this->_deallocate(data);
+        }
+
+        this->_init();
+    }
+
+    T getFirst(T& fallback, const bool removeObj) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(this->fCount > 0, fallback);
+
+        typename AbstractLinkedList<T>::ListHead* const entry = this->fQueue.next;
+
+        typename AbstractLinkedList<T>::Data* const data = list_entry(entry, typename AbstractLinkedList<T>::Data, siblings);
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr, fallback);
+
+        if (! removeObj)
+            return data->value;
+
+        const T value(data->value);
+
+        _deleteRT(entry, data);
+
+        return value;
+    }
+
+    void _deleteRT(typename AbstractLinkedList<T>::ListHead* const entry, typename AbstractLinkedList<T>::Data* const data) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(entry       != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(entry->prev != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(entry->next != nullptr,);
+
+        --this->fCount;
+
+        entry->next->prev = entry->prev;
+        entry->prev->next = entry->next;
+
+        entry->next = nullptr;
+        entry->prev = nullptr;
+
+        _deallocate(data);
+    }
+#endif
 
     bool append_sleepy(const T& value) noexcept
     {

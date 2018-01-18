@@ -1864,9 +1864,9 @@ void CarlaPlugin::idle()
 #endif
     }
 
-    const CarlaMutexLocker sl(pData->postRtEvents.mutex);
+    const CarlaMutexLocker sl(pData->postRtEvents.getDataMutex());
 
-    for (RtLinkedList<PluginPostRtEvent>::Itenerator it = pData->postRtEvents.data.begin2(); it.valid(); it.next())
+    for (RtLinkedList<PluginPostRtEvent>::Itenerator it = pData->postRtEvents.getDataIterator(); it.valid(); it.next())
     {
         const PluginPostRtEvent& event(it.getValue(kPluginPostRtEventFallback));
         CARLA_SAFE_ASSERT_CONTINUE(event.type != kPluginPostRtEventNull);
@@ -2032,7 +2032,7 @@ void CarlaPlugin::idle()
         }
     }
 
-    pData->postRtEvents.data.clear();
+    pData->postRtEvents.clearData();
 }
 
 bool CarlaPlugin::tryLock(const bool forcedOffline) noexcept
