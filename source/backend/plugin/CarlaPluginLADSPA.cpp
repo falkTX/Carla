@@ -401,6 +401,17 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
+    void setParameterValueRT(const uint32_t parameterId, const float value) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fParamBuffers != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+
+        const float fixedValue(pData->param.getFixedValue(parameterId, value));
+        fParamBuffers[parameterId] = fixedValue;
+
+        CarlaPlugin::setParameterValueRT(parameterId, fixedValue);
+    }
+
     // -------------------------------------------------------------------
     // Misc
 
@@ -965,15 +976,13 @@ public:
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) != 0)
                             {
                                 value = ctrlEvent.value;
-                                setDryWet(value, false, false);
-                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
+                                setDryWetRT(value);
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
-                                setVolume(value, false, false);
-                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
+                                setVolumeRT(value);
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
@@ -997,10 +1006,8 @@ public:
                                     right = 1.0f;
                                 }
 
-                                setBalanceLeft(left, false, false);
-                                setBalanceRight(right, false, false);
-                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
-                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
+                                setBalanceLeftRT(left);
+                                setBalanceRightRT(right);
                             }
                         }
 #endif
@@ -1033,8 +1040,7 @@ public:
                                     value = std::rint(value);
                             }
 
-                            setParameterValue(k, value, false, false, false);
-                            pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
+                            setParameterValueRT(k, value);
                         }
 
                         break;

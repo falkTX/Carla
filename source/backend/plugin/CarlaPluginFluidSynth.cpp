@@ -388,69 +388,93 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
-        const float fixedValue(pData->param.getFixedValue(parameterId, value));
-        fParamBuffers[parameterId] = fixedValue;
+        float fixedValue;
 
         {
             const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
+            fixedValue = setParameterValueInFluidSynth(parameterId, value);
 
-            switch (parameterId)
-            {
-            case FluidSynthReverbOnOff:
-                try {
-                    fluid_synth_set_reverb_on(fSynth, (fixedValue > 0.5f) ? 1 : 0);
-                } catch(...) {}
-                break;
-
-            case FluidSynthReverbRoomSize:
-            case FluidSynthReverbDamp:
-            case FluidSynthReverbLevel:
-            case FluidSynthReverbWidth:
-                try {
-                    fluid_synth_set_reverb(fSynth, fParamBuffers[FluidSynthReverbRoomSize], fParamBuffers[FluidSynthReverbDamp], fParamBuffers[FluidSynthReverbWidth], fParamBuffers[FluidSynthReverbLevel]);
-                } catch(...) {}
-                break;
-
-            case FluidSynthChorusOnOff:
-                try {
-                    fluid_synth_set_chorus_on(fSynth, (value > 0.5f) ? 1 : 0);
-                } catch(...) {}
-                break;
-
-            case FluidSynthChorusNr:
-            case FluidSynthChorusLevel:
-            case FluidSynthChorusSpeedHz:
-            case FluidSynthChorusDepthMs:
-            case FluidSynthChorusType:
-                try {
-                    fluid_synth_set_chorus(fSynth, (int)fParamBuffers[FluidSynthChorusNr], fParamBuffers[FluidSynthChorusLevel], fParamBuffers[FluidSynthChorusSpeedHz], fParamBuffers[FluidSynthChorusDepthMs], (int)fParamBuffers[FluidSynthChorusType]);
-                } catch(...) {}
-                break;
-
-            case FluidSynthPolyphony:
-                try {
-                    fluid_synth_set_polyphony(fSynth, (int)value);
-                } catch(...) {}
-                break;
-
-            case FluidSynthInterpolation:
-                for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
-                {
-                    try {
-                        fluid_synth_set_interp_method(fSynth, i, (int)value);
-                    }
-                    catch(...) {
-                        break;
-                    }
-                }
-                break;
-
-            default:
-                break;
-            }
         }
 
-        CarlaPlugin::setParameterValue(parameterId, value, sendGui, sendOsc, sendCallback);
+        CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
+    }
+
+    void setParameterValueRT(const uint32_t parameterId, const float value) noexcept override
+    {
+        const float fixedValue = setParameterValueInFluidSynth(parameterId, value);
+
+        CarlaPlugin::setParameterValueRT(parameterId, fixedValue);
+    }
+
+    float setParameterValueInFluidSynth(const uint32_t parameterId, const float value) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, value);
+
+        const float fixedValue(pData->param.getFixedValue(parameterId, value));
+        fParamBuffers[parameterId] = fixedValue;
+
+        switch (parameterId)
+        {
+        case FluidSynthReverbOnOff:
+            try {
+                fluid_synth_set_reverb_on(fSynth, (fixedValue > 0.5f) ? 1 : 0);
+            } CARLA_SAFE_EXCEPTION("fluid_synth_set_reverb_on")
+            break;
+
+        case FluidSynthReverbRoomSize:
+        case FluidSynthReverbDamp:
+        case FluidSynthReverbLevel:
+        case FluidSynthReverbWidth:
+            try {
+                fluid_synth_set_reverb(fSynth,
+                                       fParamBuffers[FluidSynthReverbRoomSize],
+                                       fParamBuffers[FluidSynthReverbDamp],
+                                       fParamBuffers[FluidSynthReverbWidth],
+                                       fParamBuffers[FluidSynthReverbLevel]);
+            } CARLA_SAFE_EXCEPTION("fluid_synth_set_reverb")
+            break;
+
+        case FluidSynthChorusOnOff:
+            try {
+                fluid_synth_set_chorus_on(fSynth, (value > 0.5f) ? 1 : 0);
+            } CARLA_SAFE_EXCEPTION("fluid_synth_set_chorus_on")
+            break;
+
+        case FluidSynthChorusNr:
+        case FluidSynthChorusLevel:
+        case FluidSynthChorusSpeedHz:
+        case FluidSynthChorusDepthMs:
+        case FluidSynthChorusType:
+            try {
+                fluid_synth_set_chorus(fSynth,
+                                       (int)fParamBuffers[FluidSynthChorusNr],
+                                       fParamBuffers[FluidSynthChorusLevel],
+                                       fParamBuffers[FluidSynthChorusSpeedHz],
+                                       fParamBuffers[FluidSynthChorusDepthMs],
+                                       (int)fParamBuffers[FluidSynthChorusType]);
+            } CARLA_SAFE_EXCEPTION("fluid_synth_set_chorus")
+            break;
+
+        case FluidSynthPolyphony:
+            try {
+                fluid_synth_set_polyphony(fSynth, (int)value);
+            } CARLA_SAFE_EXCEPTION("fluid_synth_set_polyphony")
+            break;
+
+        case FluidSynthInterpolation:
+            for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
+            {
+                try {
+                    fluid_synth_set_interp_method(fSynth, i, (int)value);
+                } CARLA_SAFE_EXCEPTION_BREAK("fluid_synth_set_interp_method")
+            }
+            break;
+
+        default:
+            break;
+        }
+
+        return fixedValue;
     }
 
     void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui) override
@@ -1128,15 +1152,13 @@ public:
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) != 0)
                             {
                                 value = ctrlEvent.value;
-                                setDryWet(value, false, false);
-                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
+                                setDryWetRT(value);
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
-                                setVolume(value, false, false);
-                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
+                                setVolumeRT(value);
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
@@ -1160,10 +1182,8 @@ public:
                                     right = 1.0f;
                                 }
 
-                                setBalanceLeft(left, false, false);
-                                setBalanceRight(right, false, false);
-                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
-                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
+                                setBalanceLeftRT(left);
+                                setBalanceRightRT(right);
                             }
                         }
 #endif
@@ -1196,8 +1216,7 @@ public:
                                     value = std::rint(value);
                             }
 
-                            setParameterValue(k, value, false, false, false);
-                            pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
+                            setParameterValueRT(k, value);
                         }
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_CONTROL)

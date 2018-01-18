@@ -11,4 +11,5 @@ export CXXFLAGS=${CFLAGS}
 export LDFLAGS="-ljack"
 
 make -j 8 EXTERNAL_PLUGINS=false backend
-stoat --recursive build/ -G stoat-output.png -b data/stoat/blacklist.txt -w  data/stoat/whitelist.txt
+stoat --recursive build/ -b data/stoat/blacklist.txt -w  data/stoat/whitelist.txt
+#  -G stoat-output.png

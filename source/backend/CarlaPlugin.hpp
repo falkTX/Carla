@@ -513,6 +513,15 @@ public:
      * @note Force-Stereo plugins only!
      */
     void setPanning(const float value, const bool sendOsc, const bool sendCallback) noexcept;
+
+    /*!
+     * Overloaded functions, to be called from within RT context only.
+     */
+    void setDryWetRT(const float value) noexcept;
+    void setVolumeRT(const float value) noexcept;
+    void setBalanceLeftRT(const float value) noexcept;
+    void setBalanceRightRT(const float value) noexcept;
+    void setPanningRT(const float value) noexcept;
 #endif
 
     /*!
@@ -538,6 +547,11 @@ public:
      * @see getParameterValue()
      */
     virtual void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept;
+
+    /*!
+     * Overloaded function, to be called from within RT context only.
+     */
+    virtual void setParameterValueRT(const uint32_t parameterId, const float value) noexcept;
 
     /*!
      * Set a plugin's parameter value, including internal parameters.

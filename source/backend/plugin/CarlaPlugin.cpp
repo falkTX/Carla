@@ -1417,6 +1417,70 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
     // may be unused
     return; (void)sendOsc;
 }
+
+void CarlaPlugin::setDryWetRT(const float value) noexcept
+{
+    CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.0f);
+
+    const float fixedValue(carla_fixedValue<float>(0.0f, 1.0f, value));
+
+    if (carla_isEqual(pData->postProc.dryWet, fixedValue))
+        return;
+
+    pData->postProc.dryWet = fixedValue;
+    pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, fixedValue);
+}
+
+void CarlaPlugin::setVolumeRT(const float value) noexcept
+{
+    CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.27f);
+
+    const float fixedValue(carla_fixedValue<float>(0.0f, 1.27f, value));
+
+    if (carla_isEqual(pData->postProc.volume, fixedValue))
+        return;
+
+    pData->postProc.volume = fixedValue;
+    pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, fixedValue);
+}
+
+void CarlaPlugin::setBalanceLeftRT(const float value) noexcept
+{
+    CARLA_SAFE_ASSERT(value >= -1.0f && value <= 1.0f);
+
+    const float fixedValue(carla_fixedValue<float>(-1.0f, 1.0f, value));
+
+    if (carla_isEqual(pData->postProc.balanceLeft, fixedValue))
+        return;
+
+    pData->postProc.balanceLeft = fixedValue;
+    pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, fixedValue);
+}
+
+void CarlaPlugin::setBalanceRightRT(const float value) noexcept
+{
+    CARLA_SAFE_ASSERT(value >= -1.0f && value <= 1.0f);
+
+    const float fixedValue(carla_fixedValue<float>(-1.0f, 1.0f, value));
+
+    if (carla_isEqual(pData->postProc.balanceRight, fixedValue))
+        return;
+
+    pData->postProc.balanceRight = fixedValue;
+    pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, fixedValue);
+}
+
+void CarlaPlugin::setPanningRT(const float value) noexcept
+{
+    CARLA_SAFE_ASSERT(value >= -1.0f && value <= 1.0f);
+
+    const float fixedValue(carla_fixedValue<float>(-1.0f, 1.0f, value));
+
+    if (carla_isEqual(pData->postProc.panning, fixedValue))
+        return;
+
+    pData->postProc.panning = fixedValue;
+}
 #endif // ! BUILD_BRIDGE
 
 void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept
@@ -1467,6 +1531,11 @@ void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float valu
 
     // may be unused
     return; (void)sendOsc;
+}
+
+void CarlaPlugin::setParameterValueRT(const uint32_t parameterId, const float value) noexcept
+{
+    pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(parameterId), 0, value);
 }
 
 void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept

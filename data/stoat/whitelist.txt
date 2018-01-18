@@ -210,6 +210,7 @@ fluid_synth_set_chorus_on
 fluid_synth_set_chorus
 fluid_synth_set_polyphony
 fluid_synth_set_interp_method
+LinuxSampler::InstrumentManager::LoadInstrumentInBackground
 
 # Report upstream
 llround
