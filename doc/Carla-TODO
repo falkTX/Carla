@@ -35,12 +35,9 @@ GENERAL:
  - implement midi-learn (new dialog)
  - implement favorite plugins, add in new tab near file-browser
  - blender style canvas theme
- - make it possible to use backend as fake standalone app (using pipes) instead of a shared library
- - artwork about tab
  - NSM rework
 
 FRONTEND:
- - options for UIs on top of carla (managed)
  - make always-on-top depend on it^
  - complete zynfx, knob values on top
  - synth skin
@@ -49,13 +46,10 @@ FRONTEND:
 ENGINE:
  - allow to change position of plugins (up/down)
  - allow to add plugins when engine is stopped
- - complete RtAudio+RtMidi support (only MIDI out missing)
- - complete Juce engine driver support
  - implement Haiku Media support (based from JACK?, LATER)
  - implement latency in continuous-rack mode
- - handle sample-rate changes in JACK (made possible by switch-master)
  - add MIDI-bank change type (GM, GS, XG and MMA). See fluidsynth and los docs
- - allow to use static OSC ports
+ ~ allow to use static OSC ports
  - switch engine modes when opening project
  - don't pass audio buffers to plugin process, make them request via ports
 
@@ -66,10 +60,6 @@ PLUGINS:
  - implement LSCP file support (new native plugin?)
  - implement Csound file support
 
-Native:
- - Cleanup API
- - Document API from daz
- - update zynaddsubfx
 
 LADSPA:
 
@@ -103,8 +93,6 @@ misc
 -allow in-line edit window (i.e. right of rack/canvas) -> shows as soon as plugin/instr. is selected
 -indicate engine at work top right
 -if engine is jack, show load top right (percent and/or gauge)
--don't show jack transport on start
--allow to re-open jack transport, i.e. settings/show ... and/or via toolbar
 -warn on quit if unsaved
 
 patchbay
