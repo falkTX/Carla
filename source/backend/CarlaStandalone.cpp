@@ -1,6 +1,6 @@
-﻿/*
+/*
  * Carla Standalone
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -28,7 +28,7 @@
 #include "CarlaBase64Utils.hpp"
 
 #ifdef BUILD_BRIDGE
-# include "water/water.h"
+# include "water/files/File.h"
 #else
 # include "CarlaLogThread.hpp"
 #endif
@@ -36,7 +36,7 @@
 namespace CB = CarlaBackend;
 using CB::EngineOptions;
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // Single, standalone engine
 
 struct CarlaBackendStandalone {
@@ -78,13 +78,13 @@ struct CarlaBackendStandalone {
 
 CarlaBackendStandalone gStandalone;
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // API
 
 #define CARLA_COMMON_NEED_CHECKSTRINGPTR
 #include "CarlaHostCommon.cpp"
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 uint carla_get_engine_driver_count()
 {
@@ -114,20 +114,20 @@ const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(uint index, co
 
     if (const EngineDriverDeviceInfo* const ret = CarlaEngine::getDriverDeviceInfo(index, name))
     {
-        static EngineDriverDeviceInfo devInfo;
+        static EngineDriverDeviceInfo retDevInfo;
         static const uint32_t nullBufferSizes[] = { 0   };
         static const double   nullSampleRates[] = { 0.0 };
 
-        devInfo.hints       = ret->hints;
-        devInfo.bufferSizes = (ret->bufferSizes != nullptr) ? ret->bufferSizes : nullBufferSizes;
-        devInfo.sampleRates = (ret->sampleRates != nullptr) ? ret->sampleRates : nullSampleRates;
-        return &devInfo;
+        retDevInfo.hints       = ret->hints;
+        retDevInfo.bufferSizes = (ret->bufferSizes != nullptr) ? ret->bufferSizes : nullBufferSizes;
+        retDevInfo.sampleRates = (ret->sampleRates != nullptr) ? ret->sampleRates : nullSampleRates;
+        return &retDevInfo;
     }
 
     return nullptr;
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 CarlaEngine* carla_get_engine()
 {
@@ -136,7 +136,7 @@ CarlaEngine* carla_get_engine()
     return gStandalone.engine;
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 static void carla_engine_init_common()
 {
@@ -386,7 +386,7 @@ bool carla_engine_close()
 
     if (gStandalone.engine == nullptr)
     {
-        carla_stderr2("Engine is not running");
+        carla_stderr2("carla_engine_close() failed, engine is not running");
         gStandalone.lastError = "Engine is not running";
         return false;
     }
@@ -659,7 +659,7 @@ void carla_set_file_callback(FileCallbackFunc func, void* ptr)
         gStandalone.engine->setFileCallback(func, ptr);
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 bool carla_load_file(const char* filename)
 {
@@ -669,7 +669,7 @@ bool carla_load_file(const char* filename)
     if (gStandalone.engine != nullptr)
         return gStandalone.engine->loadFile(filename);
 
-    carla_stderr2("Engine is not running");
+    carla_stderr2("carla_load_file() failed, engine is not running");
     gStandalone.lastError = "Engine is not running";
     return false;
 }
@@ -682,7 +682,7 @@ bool carla_load_project(const char* filename)
     if (gStandalone.engine != nullptr)
         return gStandalone.engine->loadProject(filename);
 
-    carla_stderr2("Engine is not running");
+    carla_stderr2("carla_load_project() failed, engine is not running");
     gStandalone.lastError = "Engine is not running";
     return false;
 }
@@ -695,13 +695,13 @@ bool carla_save_project(const char* filename)
     if (gStandalone.engine != nullptr)
         return gStandalone.engine->saveProject(filename);
 
-    carla_stderr2("Engine was never initiated");
-    gStandalone.lastError = "Engine was never initiated";
+    carla_stderr2("carla_save_project() failed, engine is not initialized");
+    gStandalone.lastError = "Engine is not initialized";
     return false;
 }
 
 #ifndef BUILD_BRIDGE
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 bool carla_patchbay_connect(uint groupIdA, uint portIdA, uint groupIdB, uint portIdB)
 {
@@ -710,7 +710,7 @@ bool carla_patchbay_connect(uint groupIdA, uint portIdA, uint groupIdB, uint por
     if (gStandalone.engine != nullptr)
         return gStandalone.engine->patchbayConnect(groupIdA, portIdA, groupIdB, portIdB);
 
-    carla_stderr2("Engine is not running");
+    carla_stderr2("carla_patchbay_connect() failed, engine is not running");
     gStandalone.lastError = "Engine is not running";
     return false;
 }
@@ -722,7 +722,7 @@ bool carla_patchbay_disconnect(uint connectionId)
     if (gStandalone.engine != nullptr)
         return gStandalone.engine->patchbayDisconnect(connectionId);
 
-    carla_stderr2("Engine is not running");
+    carla_stderr2("carla_patchbay_disconnect() failed, engine is not running");
     gStandalone.lastError = "Engine is not running";
     return false;
 }
@@ -734,12 +734,12 @@ bool carla_patchbay_refresh(bool external)
     if (gStandalone.engine != nullptr)
         return gStandalone.engine->patchbayRefresh(external);
 
-    carla_stderr2("Engine is not running");
+    carla_stderr2("carla_patchbay_refresh() failed, engine is not running");
     gStandalone.lastError = "Engine is not running";
     return false;
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 void carla_transport_play()
 {
@@ -805,7 +805,7 @@ const CarlaTransportInfo* carla_get_transport_info()
 }
 #endif
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 uint32_t carla_get_current_plugin_count()
 {
@@ -823,16 +823,21 @@ uint32_t carla_get_max_plugin_number()
     return 0;
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
-bool carla_add_plugin(BinaryType btype, PluginType ptype, const char* filename, const char* name, const char* label, int64_t uniqueId, const void* extraPtr, uint options)
+bool carla_add_plugin(BinaryType btype, PluginType ptype,
+                      const char* filename, const char* name, const char* label, int64_t uniqueId,
+                      const void* extraPtr, uint options)
 {
-    carla_debug("carla_add_plugin(%i:%s, %i:%s, \"%s\", \"%s\", \"%s\", " P_INT64 ", %p, %u)", btype, CB::BinaryType2Str(btype), ptype, CB::PluginType2Str(ptype), filename, name, label, uniqueId, extraPtr, options);
+    carla_debug("carla_add_plugin(%i:%s, %i:%s, \"%s\", \"%s\", \"%s\", " P_INT64 ", %p, %u)",
+                btype, CB::BinaryType2Str(btype),
+                ptype, CB::PluginType2Str(ptype),
+                filename, name, label, uniqueId, extraPtr, options);
 
     if (gStandalone.engine != nullptr)
         return gStandalone.engine->addPlugin(btype, ptype, filename, name, label, uniqueId, extraPtr, options);
 
-    carla_stderr2("Engine is not running");
+    carla_stderr2("carla_add_plugin() failed, engine is not running");
     gStandalone.lastError = "Engine is not running";
     return false;
 }
@@ -844,7 +849,7 @@ bool carla_remove_plugin(uint pluginId)
     if (gStandalone.engine != nullptr)
         return gStandalone.engine->removePlugin(pluginId);
 
-    carla_stderr2("Engine is not running");
+    carla_stderr2("carla_remove_plugin() failed, engine is not running");
     gStandalone.lastError = "Engine is not running";
     return false;
 }
@@ -856,7 +861,7 @@ bool carla_remove_all_plugins()
     if (gStandalone.engine != nullptr)
         return gStandalone.engine->removeAllPlugins();
 
-    carla_stderr2("Engine is not running");
+    carla_stderr2("carla_remove_all_plugins() failed, engine is not running");
     gStandalone.lastError = "Engine is not running";
     return false;
 }
@@ -870,7 +875,7 @@ const char* carla_rename_plugin(uint pluginId, const char* newName)
     if (gStandalone.engine != nullptr)
         return gStandalone.engine->renamePlugin(pluginId, newName);
 
-    carla_stderr2("Engine is not running");
+    carla_stderr2("carla_rename_plugin() failed, engine is not running");
     gStandalone.lastError = "Engine is not running";
     return nullptr;
 }
@@ -882,7 +887,7 @@ bool carla_clone_plugin(uint pluginId)
     if (gStandalone.engine != nullptr)
         return gStandalone.engine->clonePlugin(pluginId);
 
-    carla_stderr2("Engine is not running");
+    carla_stderr2("carla_clone_plugin() failed, engine is not running");
     gStandalone.lastError = "Engine is not running";
     return false;
 }
@@ -894,7 +899,7 @@ bool carla_replace_plugin(uint pluginId)
     if (gStandalone.engine != nullptr)
         return gStandalone.engine->replacePlugin(pluginId);
 
-    carla_stderr2("Engine is not running");
+    carla_stderr2("carla_replace_plugin() failed, engine is not running");
     gStandalone.lastError = "Engine is not running";
     return false;
 }
@@ -907,13 +912,13 @@ bool carla_switch_plugins(uint pluginIdA, uint pluginIdB)
     if (gStandalone.engine != nullptr)
         return gStandalone.engine->switchPlugins(pluginIdA, pluginIdB);
 
-    carla_stderr2("Engine is not running");
+    carla_stderr2("carla_switch_plugins() failed, engine is not running");
     gStandalone.lastError = "Engine is not running";
     return false;
 }
 #endif
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 bool carla_load_plugin_state(uint pluginId, const char* filename)
 {
@@ -922,7 +927,7 @@ bool carla_load_plugin_state(uint pluginId, const char* filename)
 
     if (gStandalone.engine == nullptr || ! gStandalone.engine->isRunning())
     {
-        carla_stderr2("Engine is not running");
+        carla_stderr2("carla_load_plugin_state() failed, engine is not running");
         gStandalone.lastError = "Engine is not running";
         return false;
     }
@@ -930,7 +935,7 @@ bool carla_load_plugin_state(uint pluginId, const char* filename)
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
         return plugin->loadStateFromFile(filename);
 
-    carla_stderr2("carla_load_plugin_state(%i, \"%s\") - could not find plugin", pluginId, filename);
+    carla_stderr2("carla_load_plugin_state(%i, \"%s\") failed, could not find plugin", pluginId, filename);
     return false;
 }
 
@@ -941,8 +946,8 @@ bool carla_save_plugin_state(uint pluginId, const char* filename)
 
     if (gStandalone.engine == nullptr)
     {
-        carla_stderr2("Engine is not running");
-        gStandalone.lastError = "Engine is not running";
+        carla_stderr2("carla_save_plugin_state() failed, engine is not initialized");
+        gStandalone.lastError = "Engine is not initialized";
         return false;
     }
 
@@ -951,7 +956,7 @@ bool carla_save_plugin_state(uint pluginId, const char* filename)
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
         return plugin->saveStateToFile(filename);
 
-    carla_stderr2("carla_save_plugin_state(%i, \"%s\") - could not find plugin", pluginId, filename);
+    carla_stderr2("carla_save_plugin_state(%i, \"%s\") failed, could not find plugin", pluginId, filename);
     return false;
 }
 
@@ -962,199 +967,198 @@ bool carla_export_plugin_lv2(uint pluginId, const char* lv2path)
 
     if (gStandalone.engine == nullptr)
     {
-        carla_stderr2("Engine is not running");
-        gStandalone.lastError = "Engine is not running";
+        carla_stderr2("carla_export_plugin_lv2() failed, engine is not initialized");
+        gStandalone.lastError = "Engine is not initialized";
         return false;
     }
+
+    // allow to export even if engine isn't running
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
         return plugin->exportAsLV2(lv2path);
 
-    carla_stderr2("carla_export_plugin_lv2(%i, \"%s\") - could not find plugin", pluginId, lv2path);
+    carla_stderr2("carla_export_plugin_lv2(%i, \"%s\") failed, could not find plugin", pluginId, lv2path);
     return false;
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 const CarlaPluginInfo* carla_get_plugin_info(uint pluginId)
 {
     carla_debug("carla_get_plugin_info(%i)", pluginId);
 
-    static CarlaPluginInfo info;
+    static CarlaPluginInfo retInfo;
 
     // reset
-    info.type             = CB::PLUGIN_NONE;
-    info.category         = CB::PLUGIN_CATEGORY_NONE;
-    info.hints            = 0x0;
-    info.optionsAvailable = 0x0;
-    info.optionsEnabled   = 0x0;
-    info.filename         = gNullCharPtr;
-    info.name             = gNullCharPtr;
-    info.iconName         = gNullCharPtr;
-    info.uniqueId         = 0;
+    retInfo.type             = CB::PLUGIN_NONE;
+    retInfo.category         = CB::PLUGIN_CATEGORY_NONE;
+    retInfo.hints            = 0x0;
+    retInfo.optionsAvailable = 0x0;
+    retInfo.optionsEnabled   = 0x0;
+    retInfo.filename         = gNullCharPtr;
+    retInfo.name             = gNullCharPtr;
+    retInfo.iconName         = gNullCharPtr;
+    retInfo.uniqueId         = 0;
 
     // cleanup
-    if (info.label != gNullCharPtr)
+    if (retInfo.label != gNullCharPtr)
     {
-        delete[] info.label;
-        info.label = gNullCharPtr;
+        delete[] retInfo.label;
+        retInfo.label = gNullCharPtr;
     }
 
-    if (info.maker != gNullCharPtr)
+    if (retInfo.maker != gNullCharPtr)
     {
-        delete[] info.maker;
-        info.maker = gNullCharPtr;
+        delete[] retInfo.maker;
+        retInfo.maker = gNullCharPtr;
     }
 
-    if (info.copyright != gNullCharPtr)
+    if (retInfo.copyright != gNullCharPtr)
     {
-        delete[] info.copyright;
-        info.copyright = gNullCharPtr;
+        delete[] retInfo.copyright;
+        retInfo.copyright = gNullCharPtr;
     }
 
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &info);
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &retInfo);
 
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-    {
-        char strBufLabel[STR_MAX+1];
-        char strBufMaker[STR_MAX+1];
-        char strBufCopyright[STR_MAX+1];
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retInfo);
 
-        carla_zeroChars(strBufLabel, STR_MAX+1);
-        carla_zeroChars(strBufMaker, STR_MAX+1);
-        carla_zeroChars(strBufCopyright, STR_MAX+1);
+    char strBuf[STR_MAX+1];
 
-        info.type     = plugin->getType();
-        info.category = plugin->getCategory();
-        info.hints    = plugin->getHints();
-        info.filename = plugin->getFilename();
-        info.name     = plugin->getName();
-        info.iconName = plugin->getIconName();
-        info.uniqueId = plugin->getUniqueId();
+    retInfo.type     = plugin->getType();
+    retInfo.category = plugin->getCategory();
+    retInfo.hints    = plugin->getHints();
+    retInfo.filename = plugin->getFilename();
+    retInfo.name     = plugin->getName();
+    retInfo.iconName = plugin->getIconName();
+    retInfo.uniqueId = plugin->getUniqueId();
 
-        info.optionsAvailable = plugin->getOptionsAvailable();
-        info.optionsEnabled   = plugin->getOptionsEnabled();
+    retInfo.optionsAvailable = plugin->getOptionsAvailable();
+    retInfo.optionsEnabled   = plugin->getOptionsEnabled();
 
-        plugin->getLabel(strBufLabel);
-        info.label = carla_strdup_safe(strBufLabel);
+    carla_zeroChars(strBuf, STR_MAX+1);
+    plugin->getLabel(strBuf);
+    retInfo.label = carla_strdup_safe(strBuf);
 
-        plugin->getMaker(strBufMaker);
-        info.maker = carla_strdup_safe(strBufMaker);
+    carla_zeroChars(strBuf, STR_MAX+1);
+    plugin->getMaker(strBuf);
+    retInfo.maker = carla_strdup_safe(strBuf);
 
-        plugin->getCopyright(strBufCopyright);
-        info.copyright = carla_strdup_safe(strBufCopyright);
+    carla_zeroChars(strBuf, STR_MAX+1);
+    plugin->getCopyright(strBuf);
+    retInfo.copyright = carla_strdup_safe(strBuf);
 
-        checkStringPtr(info.filename);
-        checkStringPtr(info.name);
-        checkStringPtr(info.iconName);
-        checkStringPtr(info.label);
-        checkStringPtr(info.maker);
-        checkStringPtr(info.copyright);
+    checkStringPtr(retInfo.filename);
+    checkStringPtr(retInfo.name);
+    checkStringPtr(retInfo.iconName);
+    checkStringPtr(retInfo.label);
+    checkStringPtr(retInfo.maker);
+    checkStringPtr(retInfo.copyright);
 
-        return &info;
-    }
-
-    carla_stderr2("carla_get_plugin_info(%i) - could not find plugin", pluginId);
-    return &info;
+    return &retInfo;
 }
 
 const CarlaPortCountInfo* carla_get_audio_port_count_info(uint pluginId)
 {
     carla_debug("carla_get_audio_port_count_info(%i)", pluginId);
 
-    static CarlaPortCountInfo info;
+    static CarlaPortCountInfo retInfo;
+    carla_zeroStruct(retInfo);
 
-    // reset
-    info.ins   = 0;
-    info.outs  = 0;
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &retInfo);
 
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &info);
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retInfo);
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
     {
-        info.ins   = plugin->getAudioInCount();
-        info.outs  = plugin->getAudioOutCount();
-        return &info;
+        retInfo.ins   = plugin->getAudioInCount();
+        retInfo.outs  = plugin->getAudioOutCount();
+        return &retInfo;
     }
 
     carla_stderr2("carla_get_audio_port_count_info(%i) - could not find plugin", pluginId);
-    return &info;
+    return &retInfo;
 }
 
 const CarlaPortCountInfo* carla_get_midi_port_count_info(uint pluginId)
 {
     carla_debug("carla_get_midi_port_count_info(%i)", pluginId);
 
-    static CarlaPortCountInfo info;
+    static CarlaPortCountInfo retInfo;
+    carla_zeroStruct(retInfo);
 
-    // reset
-    info.ins   = 0;
-    info.outs  = 0;
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &retInfo);
 
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &info);
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retInfo);
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
     {
-        info.ins   = plugin->getMidiInCount();
-        info.outs  = plugin->getMidiOutCount();
-        return &info;
+        retInfo.ins   = plugin->getMidiInCount();
+        retInfo.outs  = plugin->getMidiOutCount();
+        return &retInfo;
     }
 
     carla_stderr2("carla_get_midi_port_count_info(%i) - could not find plugin", pluginId);
-    return &info;
+    return &retInfo;
 }
 
 const CarlaPortCountInfo* carla_get_parameter_count_info(uint pluginId)
 {
     carla_debug("carla_get_parameter_count_info(%i)", pluginId);
 
-    static CarlaPortCountInfo info;
+    static CarlaPortCountInfo retInfo;
+    carla_zeroStruct(retInfo);
 
-    // reset
-    info.ins   = 0;
-    info.outs  = 0;
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &retInfo);
 
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &info);
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retInfo);
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
     {
-        plugin->getParameterCountInfo(info.ins, info.outs);
-        return &info;
+        plugin->getParameterCountInfo(retInfo.ins, retInfo.outs);
+        return &retInfo;
     }
 
     carla_stderr2("carla_get_parameter_count_info(%i) - could not find plugin", pluginId);
-    return &info;
+    return &retInfo;
 }
 
 const CarlaParameterInfo* carla_get_parameter_info(uint pluginId, uint32_t parameterId)
 {
     carla_debug("carla_get_parameter_info(%i, %i)", pluginId, parameterId);
 
-    static CarlaParameterInfo info;
+    static CarlaParameterInfo retInfo;
 
     // reset
-    info.scalePointCount = 0;
+    retInfo.scalePointCount = 0;
 
     // cleanup
-    if (info.name != gNullCharPtr)
+    if (retInfo.name != gNullCharPtr)
     {
-        delete[] info.name;
-        info.name = gNullCharPtr;
+        delete[] retInfo.name;
+        retInfo.name = gNullCharPtr;
     }
 
-    if (info.symbol != gNullCharPtr)
+    if (retInfo.symbol != gNullCharPtr)
     {
-        delete[] info.symbol;
-        info.symbol = gNullCharPtr;
+        delete[] retInfo.symbol;
+        retInfo.symbol = gNullCharPtr;
     }
 
-    if (info.unit != gNullCharPtr)
+    if (retInfo.unit != gNullCharPtr)
     {
-        delete[] info.unit;
-        info.unit = gNullCharPtr;
+        delete[] retInfo.unit;
+        retInfo.unit = gNullCharPtr;
     }
 
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &info);
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &retInfo);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retInfo);
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
     {
@@ -1168,29 +1172,29 @@ const CarlaParameterInfo* carla_get_parameter_info(uint pluginId, uint32_t param
             carla_zeroChars(strBufSymbol, STR_MAX+1);
             carla_zeroChars(strBufUnit, STR_MAX+1);
 
-            info.scalePointCount = plugin->getParameterScalePointCount(parameterId);
+            retInfo.scalePointCount = plugin->getParameterScalePointCount(parameterId);
 
             plugin->getParameterName(parameterId, strBufName);
-            info.name = carla_strdup_safe(strBufName);
+            retInfo.name = carla_strdup_safe(strBufName);
 
             plugin->getParameterSymbol(parameterId, strBufSymbol);
-            info.symbol = carla_strdup_safe(strBufSymbol);
+            retInfo.symbol = carla_strdup_safe(strBufSymbol);
 
             plugin->getParameterUnit(parameterId, strBufUnit);
-            info.unit = carla_strdup_safe(strBufUnit);
+            retInfo.unit = carla_strdup_safe(strBufUnit);
 
-            checkStringPtr(info.name);
-            checkStringPtr(info.symbol);
-            checkStringPtr(info.unit);
+            checkStringPtr(retInfo.name);
+            checkStringPtr(retInfo.symbol);
+            checkStringPtr(retInfo.unit);
         }
         else
             carla_stderr2("carla_get_parameter_info(%i, %i) - parameterId out of bounds", pluginId, parameterId);
 
-        return &info;
+        return &retInfo;
     }
 
     carla_stderr2("carla_get_parameter_info(%i, %i) - could not find plugin", pluginId, parameterId);
-    return &info;
+    return &retInfo;
 }
 
 const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(uint pluginId, uint32_t parameterId, uint32_t scalePointId)
@@ -1198,19 +1202,22 @@ const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(uint pluginId, ui
     carla_debug("carla_get_parameter_scalepoint_info(%i, %i, %i)", pluginId, parameterId, scalePointId);
     CARLA_ASSERT(gStandalone.engine != nullptr);
 
-    static CarlaScalePointInfo info;
+    static CarlaScalePointInfo retInfo;
 
     // reset
-    info.value = 0.0f;
+    retInfo.value = 0.0f;
 
     // cleanup
-    if (info.label != gNullCharPtr)
+    if (retInfo.label != gNullCharPtr)
     {
-        delete[] info.label;
-        info.label = gNullCharPtr;
+        delete[] retInfo.label;
+        retInfo.label = gNullCharPtr;
     }
 
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &info);
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &retInfo);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retInfo);
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
     {
@@ -1221,11 +1228,11 @@ const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(uint pluginId, ui
                 char strBufLabel[STR_MAX+1];
                 carla_zeroChars(strBufLabel, STR_MAX+1);
 
-                info.value = plugin->getParameterScalePointValue(parameterId, scalePointId);
+                retInfo.value = plugin->getParameterScalePointValue(parameterId, scalePointId);
 
                 plugin->getParameterScalePointLabel(parameterId, scalePointId, strBufLabel);
-                info.label = carla_strdup_safe(strBufLabel);
-                checkStringPtr(info.label);
+                retInfo.label = carla_strdup_safe(strBufLabel);
+                checkStringPtr(retInfo.label);
             }
             else
                 carla_stderr2("carla_get_parameter_scalepoint_info(%i, %i, %i) - scalePointId out of bounds", pluginId, parameterId, scalePointId);
@@ -1233,360 +1240,330 @@ const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(uint pluginId, ui
         else
             carla_stderr2("carla_get_parameter_scalepoint_info(%i, %i, %i) - parameterId out of bounds", pluginId, parameterId, scalePointId);
 
-        return &info;
+        return &retInfo;
     }
 
     carla_stderr2("carla_get_parameter_scalepoint_info(%i, %i, %i) - could not find plugin", pluginId, parameterId, scalePointId);
-    return &info;
+    return &retInfo;
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 const ParameterData* carla_get_parameter_data(uint pluginId, uint32_t parameterId)
 {
+    static ParameterData retParamData;
+
+    // reset
+    retParamData.type        = CB::PARAMETER_UNKNOWN;
+    retParamData.hints       = 0x0;
+    retParamData.index       = CB::PARAMETER_NULL;
+    retParamData.rindex      = -1;
+    retParamData.midiCC      = -1;
+    retParamData.midiChannel = 0;
+
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &retParamData);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retParamData);
+
     carla_debug("carla_get_parameter_data(%i, %i)", pluginId, parameterId);
+    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(), &retParamData);
 
-    static const ParameterData fallbackParameterData = { CB::PARAMETER_UNKNOWN, 0x0, CB::PARAMETER_NULL, -1, -1, 0 };
-
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &fallbackParameterData);
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-    {
-        if (parameterId < plugin->getParameterCount())
-            return &plugin->getParameterData(parameterId);
-
-        carla_stderr2("carla_get_parameter_data(%i, %i) - parameterId out of bounds", pluginId, parameterId);
-        return &fallbackParameterData;
-    }
-
-    carla_stderr2("carla_get_parameter_data(%i, %i) - could not find plugin", pluginId, parameterId);
-    return &fallbackParameterData;
+    const ParameterData& pluginParamData(plugin->getParameterData(parameterId));
+    retParamData.type        = pluginParamData.type;
+    retParamData.hints       = pluginParamData.hints;
+    retParamData.index       = pluginParamData.index;
+    retParamData.rindex      = pluginParamData.rindex;
+    retParamData.midiCC      = pluginParamData.midiCC;
+    retParamData.midiChannel = pluginParamData.midiChannel;
+    return &plugin->getParameterData(parameterId);
 }
 
 const ParameterRanges* carla_get_parameter_ranges(uint pluginId, uint32_t parameterId)
 {
+    static ParameterRanges retParamRanges;
+
+    // reset
+    retParamRanges.def       = 0.0f;
+    retParamRanges.min       = 0.0f;
+    retParamRanges.max       = 1.0f;
+    retParamRanges.step      = 0.01f;
+    retParamRanges.stepSmall = 0.0001f;
+    retParamRanges.stepLarge = 0.1f;
+
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &retParamRanges);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retParamRanges);
+
     carla_debug("carla_get_parameter_ranges(%i, %i)", pluginId, parameterId);
+    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(), &retParamRanges);
 
-    static const ParameterRanges fallbackParamRanges = { 0.0f, 0.0f, 1.0f, 0.01f, 0.0001f, 0.1f };
-
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &fallbackParamRanges);
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-    {
-        if (parameterId < plugin->getParameterCount())
-            return &plugin->getParameterRanges(parameterId);
-
-        carla_stderr2("carla_get_parameter_ranges(%i, %i) - parameterId out of bounds", pluginId, parameterId);
-        return &fallbackParamRanges;
-    }
-
-    carla_stderr2("carla_get_parameter_ranges(%i, %i) - could not find plugin", pluginId, parameterId);
-    return &fallbackParamRanges;
+    const ParameterRanges& pluginParamRanges(plugin->getParameterRanges(parameterId));
+    retParamRanges.def       = pluginParamRanges.def;
+    retParamRanges.min       = pluginParamRanges.min;
+    retParamRanges.max       = pluginParamRanges.max;
+    retParamRanges.step      = pluginParamRanges.step;
+    retParamRanges.stepSmall = pluginParamRanges.stepSmall;
+    retParamRanges.stepLarge = pluginParamRanges.stepLarge;
+    return &pluginParamRanges;
 }
 
 const MidiProgramData* carla_get_midi_program_data(uint pluginId, uint32_t midiProgramId)
 {
-    carla_debug("carla_get_midi_program_data(%i, %i)", pluginId, midiProgramId);
-
-    static MidiProgramData midiProgData;
+    static MidiProgramData retMidiProgData = { 0, 0, gNullCharPtr };
 
     // reset
-    midiProgData.bank    = 0;
-    midiProgData.program = 0;
-    midiProgData.name    = gNullCharPtr;
+    retMidiProgData.bank    = 0;
+    retMidiProgData.program = 0;
 
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &midiProgData);
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
+    if (retMidiProgData.name != nullptr)
     {
-        if (midiProgramId < plugin->getMidiProgramCount())
-        {
-            const MidiProgramData& ret(plugin->getMidiProgramData(midiProgramId));
-            carla_copyStruct(midiProgData, ret);
-            checkStringPtr(midiProgData.name);
-            return &midiProgData;
-        }
-
-        carla_stderr2("carla_get_midi_program_data(%i, %i) - midiProgramId out of bounds", pluginId, midiProgramId);
-        return &midiProgData;
+        delete[] retMidiProgData.name;
+        retMidiProgData.name = gNullCharPtr;
     }
 
-    carla_stderr2("carla_get_midi_program_data(%i, %i) - could not find plugin", pluginId, midiProgramId);
-    return &midiProgData;
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &retMidiProgData);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retMidiProgData);
+
+    carla_debug("carla_get_midi_program_data(%i, %i)", pluginId, midiProgramId);
+    CARLA_SAFE_ASSERT_RETURN(midiProgramId < plugin->getMidiProgramCount(),);
+
+    const MidiProgramData& pluginMidiProgData(plugin->getMidiProgramData(midiProgramId));
+    retMidiProgData.bank    = pluginMidiProgData.bank;
+    retMidiProgData.program = pluginMidiProgData.program;
+    retMidiProgData.name    = carla_strdup_safe(pluginMidiProgData.name);
+    checkStringPtr(retMidiProgData.name);
+    return &retMidiProgData;
 }
 
 const CustomData* carla_get_custom_data(uint pluginId, uint32_t customDataId)
 {
-    carla_debug("carla_get_custom_data(%i, %i)", pluginId, customDataId);
-
-    static CustomData customData;
+    static CustomData retCustomData = { gNullCharPtr, gNullCharPtr, gNullCharPtr };
 
     // reset
-    customData.type  = gNullCharPtr;
-    customData.key   = gNullCharPtr;
-    customData.value = gNullCharPtr;
-
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &customData);
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
+    if (retCustomData.type != gNullCharPtr)
     {
-        if (customDataId < plugin->getCustomDataCount())
-        {
-            const CustomData& ret(plugin->getCustomData(customDataId));
-            carla_copyStruct(customData, ret);
-            checkStringPtr(customData.type);
-            checkStringPtr(customData.key);
-            checkStringPtr(customData.value);
-            return &customData;
-        }
-
-        carla_stderr2("carla_get_custom_data(%i, %i) - customDataId out of bounds", pluginId, customDataId);
-        return &customData;
+        delete[] retCustomData.type;
+        retCustomData.type = gNullCharPtr;
     }
 
-    carla_stderr2("carla_get_custom_data(%i, %i) - could not find plugin", pluginId, customDataId);
-    return &customData;
+    if (retCustomData.key != gNullCharPtr)
+    {
+        delete[] retCustomData.key;
+        retCustomData.key = gNullCharPtr;
+    }
+
+    if (retCustomData.value != gNullCharPtr)
+    {
+        delete[] retCustomData.value;
+        retCustomData.value = gNullCharPtr;
+    }
+
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &retCustomData);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retCustomData);
+
+    carla_debug("carla_get_custom_data(%i, %i)", pluginId, customDataId);
+    CARLA_SAFE_ASSERT_RETURN(customDataId < plugin->getCustomDataCount(), &retCustomData)
+
+    const CustomData& pluginCustomData(plugin->getCustomData(customDataId));
+    retCustomData.type  = carla_strdup_safe(pluginCustomData.type);
+    retCustomData.key   = carla_strdup_safe(pluginCustomData.key);
+    retCustomData.value = carla_strdup_safe(pluginCustomData.value);
+    checkStringPtr(retCustomData.type);
+    checkStringPtr(retCustomData.key);
+    checkStringPtr(retCustomData.value);
+    return &retCustomData;
 }
 
 const char* carla_get_chunk_data(uint pluginId)
 {
-    carla_debug("carla_get_chunk_data(%i)", pluginId);
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, gNullCharPtr);
 
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, nullptr);
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, gNullCharPtr);
+
+    carla_debug("carla_get_chunk_data(%i)", pluginId);
+    CARLA_SAFE_ASSERT_RETURN(plugin->getOptionsEnabled() & CB::PLUGIN_OPTION_USE_CHUNKS, gNullCharPtr);
+
+    void* data = nullptr;
+    const std::size_t dataSize(plugin->getChunkData(&data));
+    CARLA_SAFE_ASSERT_RETURN(data != nullptr && dataSize > 0, gNullCharPtr);
 
     static CarlaString chunkData;
 
-    // cleanup
-    chunkData.clear();
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-    {
-        if (plugin->getOptionsEnabled() & CB::PLUGIN_OPTION_USE_CHUNKS)
-        {
-            void* data = nullptr;
-            const std::size_t dataSize(plugin->getChunkData(&data));
-
-            if (data != nullptr && dataSize > 0)
-            {
-                chunkData = CarlaString::asBase64(data, static_cast<std::size_t>(dataSize));
-                return chunkData;
-            }
-            else
-                carla_stderr2("carla_get_chunk_data(%i) - got invalid chunk data", pluginId);
-        }
-        else
-            carla_stderr2("carla_get_chunk_data(%i) - plugin does not use chunks", pluginId);
-
-        return nullptr;
-    }
-
-    carla_stderr2("carla_get_chunk_data(%i) - could not find plugin", pluginId);
-    return nullptr;
+    chunkData = CarlaString::asBase64(data, static_cast<std::size_t>(dataSize));
+    return chunkData.buffer();
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 uint32_t carla_get_parameter_count(uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, 0);
+
     carla_debug("carla_get_parameter_count(%i)", pluginId);
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->getParameterCount();
-
-    carla_stderr2("carla_get_parameter_count(%i) - could not find plugin", pluginId);
-    return 0;
+    return plugin->getParameterCount();
 }
 
 uint32_t carla_get_program_count(uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, 0);
+
     carla_debug("carla_get_program_count(%i)", pluginId);
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->getProgramCount();
-
-    carla_stderr2("carla_get_program_count(%i) - could not find plugin", pluginId);
-    return 0;
+    return plugin->getProgramCount();
 }
 
 uint32_t carla_get_midi_program_count(uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, 0);
+
     carla_debug("carla_get_midi_program_count(%i)", pluginId);
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->getMidiProgramCount();
-
-    carla_stderr2("carla_get_midi_program_count(%i) - could not find plugin", pluginId);
-    return 0;
+    return plugin->getMidiProgramCount();
 }
 
 uint32_t carla_get_custom_data_count(uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, 0);
+
     carla_debug("carla_get_custom_data_count(%i)", pluginId);
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->getCustomDataCount();
-
-    carla_stderr2("carla_get_custom_data_count(%i) - could not find plugin", pluginId);
-    return 0;
+    return plugin->getCustomDataCount();
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 const char* carla_get_parameter_text(uint pluginId, uint32_t parameterId)
 {
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, gNullCharPtr);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, gNullCharPtr);
+
     carla_debug("carla_get_parameter_text(%i, %i)", pluginId, parameterId);
+    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
 
     static char textBuf[STR_MAX+1];
+    carla_zeroChars(textBuf, STR_MAX+1);
 
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-    {
-        if (parameterId < plugin->getParameterCount())
-        {
-            carla_zeroChars(textBuf, STR_MAX+1);
-            plugin->getParameterText(parameterId, textBuf);
-            return textBuf;
-        }
-
-        carla_stderr2("carla_get_parameter_text(%i, %i) - parameterId out of bounds", pluginId, parameterId);
-        return nullptr;
-    }
-
-    carla_stderr2("carla_get_parameter_text(%i, %i) - could not find plugin", pluginId, parameterId);
-    return nullptr;
+    plugin->getParameterText(parameterId, textBuf);
+    return textBuf;
 }
 
 const char* carla_get_program_name(uint pluginId, uint32_t programId)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, nullptr);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, gNullCharPtr);
+
     carla_debug("carla_get_program_name(%i, %i)", pluginId, programId);
+    CARLA_SAFE_ASSERT_RETURN(programId < plugin->getProgramCount(),);
 
     static char programName[STR_MAX+1];
+    carla_zeroChars(programName, STR_MAX+1);
 
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-    {
-        if (programId < plugin->getProgramCount())
-        {
-            carla_zeroChars(programName, STR_MAX+1);
-            plugin->getProgramName(programId, programName);
-            return programName;
-        }
-
-        carla_stderr2("carla_get_program_name(%i, %i) - programId out of bounds", pluginId, programId);
-        return nullptr;
-    }
-
-    carla_stderr2("carla_get_program_name(%i, %i) - could not find plugin", pluginId, programId);
-    return nullptr;
+    plugin->getProgramName(programId, programName);
+    return programName;
 }
 
 const char* carla_get_midi_program_name(uint pluginId, uint32_t midiProgramId)
 {
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, gNullCharPtr);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, gNullCharPtr);
+
     carla_debug("carla_get_midi_program_name(%i, %i)", pluginId, midiProgramId);
+    CARLA_SAFE_ASSERT_RETURN(midiProgramId < plugin->getMidiProgramCount(),);
 
     static char midiProgramName[STR_MAX+1];
+    carla_zeroChars(midiProgramName, STR_MAX+1);
 
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-    {
-        if (midiProgramId < plugin->getMidiProgramCount())
-        {
-            carla_zeroChars(midiProgramName, STR_MAX+1);
-            plugin->getMidiProgramName(midiProgramId, midiProgramName);
-            return midiProgramName;
-        }
-
-        carla_stderr2("carla_get_midi_program_name(%i, %i) - midiProgramId out of bounds", pluginId, midiProgramId);
-        return nullptr;
-    }
-
-    carla_stderr2("carla_get_midi_program_name(%i, %i) - could not find plugin", pluginId, midiProgramId);
-    return nullptr;
+    plugin->getMidiProgramName(midiProgramId, midiProgramName);
+    return midiProgramName;
 }
 
 const char* carla_get_real_plugin_name(uint pluginId)
 {
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, gNullCharPtr);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, gNullCharPtr);
+
     carla_debug("carla_get_real_plugin_name(%i)", pluginId);
-
     static char realPluginName[STR_MAX+1];
+    carla_zeroChars(realPluginName, STR_MAX+1);
 
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-    {
-        carla_zeroChars(realPluginName, STR_MAX+1);
-        plugin->getRealName(realPluginName);
-        return realPluginName;
-    }
-
-    carla_stderr2("carla_get_real_plugin_name(%i) - could not find plugin", pluginId);
-    return nullptr;
+    plugin->getRealName(realPluginName);
+    return realPluginName;
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 int32_t carla_get_current_program_index(uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, -1);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, -1);
+
     carla_debug("carla_get_current_program_index(%i)", pluginId);
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->getCurrentProgram();
-
-    carla_stderr2("carla_get_current_program_index(%i) - could not find plugin", pluginId);
-    return -1;
+    return plugin->getCurrentProgram();
 }
 
 int32_t carla_get_current_midi_program_index(uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, -1);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, -1);
+
     carla_debug("carla_get_current_midi_program_index(%i)", pluginId);
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->getCurrentMidiProgram();
-
-    carla_stderr2("carla_get_current_midi_program_index(%i) - could not find plugin", pluginId);
-    return -1;
+    return plugin->getCurrentMidiProgram();
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 float carla_get_default_parameter_value(uint pluginId, uint32_t parameterId)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0.0f);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, 0.0f);
+
     carla_debug("carla_get_default_parameter_value(%i, %i)", pluginId, parameterId);
+    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(), 0.0f);
 
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-    {
-        if (parameterId < plugin->getParameterCount())
-            return plugin->getParameterRanges(parameterId).def;
-
-        carla_stderr2("carla_get_default_parameter_value(%i, %i) - parameterId out of bounds", pluginId, parameterId);
-        return 0.0f;
-    }
-
-    carla_stderr2("carla_get_default_parameter_value(%i, %i) - could not find plugin", pluginId, parameterId);
-    return 0.0f;
+    return plugin->getParameterRanges(parameterId).def;
 }
 
 float carla_get_current_parameter_value(uint pluginId, uint32_t parameterId)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0.0f);
 
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-    {
-        if (parameterId < plugin->getParameterCount())
-            return plugin->getParameterValue(parameterId);
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, 0.0f);
 
-        carla_stderr2("carla_get_current_parameter_value(%i, %i) - parameterId out of bounds", pluginId, parameterId);
-        return 0.0f;
-    }
+    carla_debug("carla_get_current_parameter_value(%i, %i)", pluginId, parameterId);
+    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(), 0.0f);
 
-    carla_stderr2("carla_get_current_parameter_value(%i, %i) - could not find plugin", pluginId, parameterId);
-    return 0.0f;
+    return plugin->getParameterValue(parameterId);
 }
 
 float carla_get_internal_parameter_value(uint pluginId, int32_t parameterId)
@@ -1598,14 +1575,14 @@ float carla_get_internal_parameter_value(uint pluginId, int32_t parameterId)
 #endif
     CARLA_SAFE_ASSERT_RETURN(parameterId != CB::PARAMETER_NULL && parameterId > CB::PARAMETER_MAX, 0.0f);
 
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->getInternalParameterValue(parameterId);
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, 0.0f);
 
-    carla_stderr2("carla_get_internal_parameter_value(%i, %i) - could not find plugin", pluginId, parameterId);
-    return 0.0f;
+    carla_debug("carla_get_internal_parameter_value(%i, %i)", pluginId, parameterId);
+    return plugin->getInternalParameterValue(parameterId);
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 float carla_get_input_peak_value(uint pluginId, bool isLeft)
 {
@@ -1621,7 +1598,7 @@ float carla_get_output_peak_value(uint pluginId, bool isLeft)
     return gStandalone.engine->getOutputPeak(pluginId, isLeft);
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -1634,126 +1611,121 @@ CarlaInlineDisplayImageSurface* carla_render_inline_display(uint pluginId, int w
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, nullptr);
 
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-    {
-        CARLA_SAFE_ASSERT_RETURN(plugin->getType() == CB::PLUGIN_LV2, nullptr);
-        return (CarlaInlineDisplayImageSurface*)CB::carla_render_inline_display_lv2(plugin, width, height);
-    }
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, nullptr);
 
-    carla_stderr2("carla_render_inline_display(%i, %i, %i) - could not find plugin", pluginId, width, height);
-    return nullptr;
+    carla_debug("carla_render_inline_display(%i, %i, %i)", pluginId, width, height);
+    CARLA_SAFE_ASSERT_RETURN(plugin->getType() == CB::PLUGIN_LV2, nullptr);
+
+    return (CarlaInlineDisplayImageSurface*)CB::carla_render_inline_display_lv2(plugin, width, height);
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 void carla_set_active(uint pluginId, bool onOff)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
     carla_debug("carla_set_active(%i, %s)", pluginId, bool2str(onOff));
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->setActive(onOff, true, false);
-
-    carla_stderr2("carla_set_active(%i, %s) - could not find plugin", pluginId, bool2str(onOff));
+    return plugin->setActive(onOff, true, false);
 }
 
 #ifndef BUILD_BRIDGE
 void carla_set_drywet(uint pluginId, float value)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
     carla_debug("carla_set_drywet(%i, %f)", pluginId, value);
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->setDryWet(value, true, false);
-
-    carla_stderr2("carla_set_drywet(%i, %f) - could not find plugin", pluginId, value);
+    return plugin->setDryWet(value, true, false);
 }
 
 void carla_set_volume(uint pluginId, float value)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
     carla_debug("carla_set_volume(%i, %f)", pluginId, value);
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->setVolume(value, true, false);
-
-    carla_stderr2("carla_set_volume(%i, %f) - could not find plugin", pluginId, value);
+    return plugin->setVolume(value, true, false);
 }
 
 void carla_set_balance_left(uint pluginId, float value)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
     carla_debug("carla_set_balance_left(%i, %f)", pluginId, value);
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->setBalanceLeft(value, true, false);
-
-    carla_stderr2("carla_set_balance_left(%i, %f) - could not find plugin", pluginId, value);
+    return plugin->setBalanceLeft(value, true, false);
 }
 
 void carla_set_balance_right(uint pluginId, float value)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
     carla_debug("carla_set_balance_right(%i, %f)", pluginId, value);
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->setBalanceRight(value, true, false);
-
-    carla_stderr2("carla_set_balance_right(%i, %f) - could not find plugin", pluginId, value);
+    return plugin->setBalanceRight(value, true, false);
 }
 
 void carla_set_panning(uint pluginId, float value)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
     carla_debug("carla_set_panning(%i, %f)", pluginId, value);
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->setPanning(value, true, false);
-
-    carla_stderr2("carla_set_panning(%i, %f) - could not find plugin", pluginId, value);
+    return plugin->setPanning(value, true, false);
 }
 
 void carla_set_ctrl_channel(uint pluginId, int8_t channel)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(channel >= -1 && channel < MAX_MIDI_CHANNELS,);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
     carla_debug("carla_set_ctrl_channel(%i, %i)", pluginId, channel);
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->setCtrlChannel(channel, true, false);
-
-    carla_stderr2("carla_set_ctrl_channel(%i, %i) - could not find plugin", pluginId, channel);
+    return plugin->setCtrlChannel(channel, true, false);
 }
 
 void carla_set_option(uint pluginId, uint option, bool yesNo)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
     carla_debug("carla_set_option(%i, %i, %s)", pluginId, option, bool2str(yesNo));
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->setOption(option, yesNo, false);
-
-    carla_stderr2("carla_set_option(%i, %i, %s) - could not find plugin", pluginId, option, bool2str(yesNo));
+    return plugin->setOption(option, yesNo, false);
 }
 #endif
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 void carla_set_parameter_value(uint pluginId, uint32_t parameterId, float value)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
     carla_debug("carla_set_parameter_value(%i, %i, %f)", pluginId, parameterId, value);
+    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
 
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-    {
-        if (parameterId < plugin->getParameterCount())
-            return plugin->setParameterValue(parameterId, value, true, true, false);
-
-        carla_stderr2("carla_set_parameter_value(%i, %i, %f) - parameterId out of bounds", pluginId, parameterId, value);
-        return;
-    }
-
-    carla_stderr2("carla_set_parameter_value(%i, %i, %f) - could not find plugin", pluginId, parameterId, value);
+    return plugin->setParameterValue(parameterId, value, true, true, false);
 }
 
 #ifndef BUILD_BRIDGE
@@ -1761,76 +1733,60 @@ void carla_set_parameter_midi_channel(uint pluginId, uint32_t parameterId, uint8
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
     carla_debug("carla_set_parameter_midi_channel(%i, %i, %i)", pluginId, parameterId, channel);
+    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
 
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-    {
-        if (parameterId < plugin->getParameterCount())
-            return plugin->setParameterMidiChannel(parameterId, channel, true, false);
-
-        carla_stderr2("carla_set_parameter_midi_channel(%i, %i, %i) - parameterId out of bounds", pluginId, parameterId, channel);
-        return;
-    }
-
-    carla_stderr2("carla_set_parameter_midi_channel(%i, %i, %i) - could not find plugin", pluginId, parameterId, channel);
+    return plugin->setParameterMidiChannel(parameterId, channel, true, false);
 }
 
 void carla_set_parameter_midi_cc(uint pluginId, uint32_t parameterId, int16_t cc)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc < MAX_MIDI_CONTROL,);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
     carla_debug("carla_set_parameter_midi_cc(%i, %i, %i)", pluginId, parameterId, cc);
+    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
 
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-    {
-        if (parameterId < plugin->getParameterCount())
-            return plugin->setParameterMidiCC(parameterId, cc, true, false);
-
-        carla_stderr2("carla_set_parameter_midi_cc(%i, %i, %i) - parameterId out of bounds", pluginId, parameterId, cc);
-        return;
-    }
-
-    carla_stderr2("carla_set_parameter_midi_cc(%i, %i, %i) - could not find plugin", pluginId, parameterId, cc);
+    return plugin->setParameterMidiCC(parameterId, cc, true, false);
 }
 #endif
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 void carla_set_program(uint pluginId, uint32_t programId)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
     carla_debug("carla_set_program(%i, %i)", pluginId, programId);
+    CARLA_SAFE_ASSERT_RETURN(programId < plugin->getProgramCount(),);
 
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-    {
-        if (programId < plugin->getProgramCount())
-            return plugin->setProgram(static_cast<int32_t>(programId), true, true, false);
-
-        carla_stderr2("carla_set_program(%i, %i) - programId out of bounds", pluginId, programId);
-        return;
-    }
-
-    carla_stderr2("carla_set_program(%i, %i) - could not find plugin", pluginId, programId);
+    return plugin->setProgram(static_cast<int32_t>(programId), true, true, false);
 }
 
 void carla_set_midi_program(uint pluginId, uint32_t midiProgramId)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
     carla_debug("carla_set_midi_program(%i, %i)", pluginId, midiProgramId);
+    CARLA_SAFE_ASSERT_RETURN(midiProgramId < plugin->getMidiProgramCount(),);
 
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-    {
-        if (midiProgramId < plugin->getMidiProgramCount())
-            return plugin->setMidiProgram(static_cast<int32_t>(midiProgramId), true, true, false);
-
-        carla_stderr2("carla_set_midi_program(%i, %i) - midiProgramId out of bounds", pluginId, midiProgramId);
-        return;
-    }
-
-    carla_stderr2("carla_set_midi_program(%i, %i) - could not find plugin", pluginId, midiProgramId);
+    return plugin->setMidiProgram(static_cast<int32_t>(midiProgramId), true, true, false);
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 void carla_set_custom_data(uint pluginId, const char* type, const char* key, const char* value)
 {
@@ -1838,117 +1794,111 @@ void carla_set_custom_data(uint pluginId, const char* type, const char* key, con
     CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
     carla_debug("carla_set_custom_data(%i, \"%s\", \"%s\", \"%s\")", pluginId, type, key, value);
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->setCustomData(type, key, value, true);
-
-    carla_stderr2("carla_set_custom_data(%i, \"%s\", \"%s\", \"%s\") - could not find plugin", pluginId, type, key, value);
+    return plugin->setCustomData(type, key, value, true);
 }
 
 void carla_set_chunk_data(uint pluginId, const char* chunkData)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(chunkData != nullptr && chunkData[0] != '\0',);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
     carla_debug("carla_set_chunk_data(%i, \"%s\")", pluginId, chunkData);
+    CARLA_SAFE_ASSERT_RETURN(plugin->getOptionsEnabled() & CB::PLUGIN_OPTION_USE_CHUNKS,);
 
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-    {
-        if (plugin->getOptionsEnabled() & CB::PLUGIN_OPTION_USE_CHUNKS)
-        {
-            std::vector<uint8_t> chunk(carla_getChunkFromBase64String(chunkData));
+    std::vector<uint8_t> chunk(carla_getChunkFromBase64String(chunkData));
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-            return plugin->setChunkData(chunk.data(), chunk.size());
+    return plugin->setChunkData(chunk.data(), chunk.size());
 #else
-            return plugin->setChunkData(&chunk.front(), chunk.size());
+    return plugin->setChunkData(&chunk.front(), chunk.size());
 #endif
-        }
-
-        carla_stderr2("carla_set_chunk_data(%i, \"%s\") - plugin does not use chunks", pluginId, chunkData);
-        return;
-    }
-
-    carla_stderr2("carla_set_chunk_data(%i, \"%s\") - could not find plugin", pluginId, chunkData);
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 void carla_prepare_for_save(uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
     carla_debug("carla_prepare_for_save(%i)", pluginId);
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->prepareForSave();
-
-    carla_stderr2("carla_prepare_for_save(%i) - could not find plugin", pluginId);
+    return plugin->prepareForSave();
 }
 
 void carla_reset_parameters(uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
     carla_debug("carla_reset_parameters(%i)", pluginId);
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->resetParameters();
-
-    carla_stderr2("carla_reset_parameters(%i) - could not find plugin", pluginId);
+    return plugin->resetParameters();
 }
 
 void carla_randomize_parameters(uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
     carla_debug("carla_randomize_parameters(%i)", pluginId);
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->randomizeParameters();
-
-    carla_stderr2("carla_randomize_parameters(%i) - could not find plugin", pluginId);
+    return plugin->randomizeParameters();
 }
 
 #ifndef BUILD_BRIDGE
 void carla_send_midi_note(uint pluginId, uint8_t channel, uint8_t note, uint8_t velocity)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr && gStandalone.engine->isRunning(),);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
     carla_debug("carla_send_midi_note(%i, %i, %i, %i)", pluginId, channel, note, velocity);
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->sendMidiSingleNote(channel, note, velocity, true, true, false);
-
-    carla_stderr2("carla_send_midi_note(%i, %i, %i, %i) - could not find plugin", pluginId, channel, note, velocity);
+    return plugin->sendMidiSingleNote(channel, note, velocity, true, true, false);
 }
 #endif
 
 void carla_show_custom_ui(uint pluginId, bool yesNo)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
     carla_debug("carla_show_custom_ui(%i, %s)", pluginId, bool2str(yesNo));
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->showCustomUI(yesNo);
-
-    carla_stderr2("carla_show_custom_ui(%i, %s) - could not find plugin", pluginId, bool2str(yesNo));
+    return plugin->showCustomUI(yesNo);
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 uint32_t carla_get_buffer_size()
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0);
-    carla_debug("carla_get_buffer_size()");
 
+    carla_debug("carla_get_buffer_size()");
     return gStandalone.engine->getBufferSize();
 }
 
 double carla_get_sample_rate()
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0.0);
-    carla_debug("carla_get_sample_rate()");
 
+    carla_debug("carla_get_sample_rate()");
     return gStandalone.engine->getSampleRate();
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 const char* carla_get_last_error()
 {
@@ -1967,14 +1917,14 @@ const char* carla_get_host_osc_url_tcp()
 #ifdef HAVE_LIBLO
     if (gStandalone.engine == nullptr)
     {
-        carla_stderr2("Engine is not running");
+        carla_stderr2("carla_get_host_osc_url_tcp() failed, engine is not running");
         gStandalone.lastError = "Engine is not running";
-        return nullptr;
+        return gNullCharPtr;
     }
 
     return gStandalone.engine->getOscServerPathTCP();
 #else
-    return nullptr;
+    return gNullCharPtr;
 #endif
 }
 
@@ -1985,18 +1935,18 @@ const char* carla_get_host_osc_url_udp()
 #ifdef HAVE_LIBLO
     if (gStandalone.engine == nullptr)
     {
-        carla_stderr2("Engine is not running");
+        carla_stderr2("carla_get_host_osc_url_udp() failed, engine is not running");
         gStandalone.lastError = "Engine is not running";
-        return nullptr;
+        return gNullCharPtr;
     }
 
     return gStandalone.engine->getOscServerPathUDP();
 #else
-    return nullptr;
+    return gNullCharPtr;
 #endif
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 #include "CarlaPluginUI.cpp"
 #include "CarlaDssiUtils.cpp"
@@ -2004,4 +1954,4 @@ const char* carla_get_host_osc_url_udp()
 #include "CarlaPipeUtils.cpp"
 #include "CarlaStateUtils.cpp"
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
