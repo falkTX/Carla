@@ -20,7 +20,10 @@ source data/macos/common.env
 MAKE_ARGS="${MAKE_ARGS} EXTERNAL_PLUGINS=false"
 
 export MACOS="true"
-export MACOS_OLD="true"
+
+if [ $(clang -v  2>&1 | sed -n 's/.*version \([0-9]\).*/\1/p') -lt 9 ]; then
+  export MACOS_OLD="true"
+fi
 
 export CC=clang
 export CXX=clang++
