@@ -405,7 +405,7 @@ if [ ! -f qtbase-opensource-src-${QT5_VERSION}/build-done ]; then
                 -no-directfb -no-eglfs -no-kms -no-linuxfb -no-mtdev -no-xcb -no-xcb-xlib \
                 -no-sse3 -no-ssse3 -no-sse4.1 -no-sse4.2 -no-avx -no-avx2 -no-mips_dsp -no-mips_dspr2 \
                 -no-cups -no-dbus -no-evdev -no-fontconfig -no-harfbuzz -no-gif -no-glib -no-nis -no-openssl -no-pch -no-sql-ibase -no-sql-odbc \
-                -no-audio-backend -no-qml-debug -no-separate-debug-info \
+                -no-audio-backend -no-qml-debug -no-separate-debug-info -no-use-gold-linker \
                 -no-compile-examples -nomake examples -nomake tests -make libs -make tools
     touch configured
   fi
