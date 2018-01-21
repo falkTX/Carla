@@ -124,6 +124,23 @@ if [ x"${ARCH}" = x"32" ]; then
 fi
 
 # ---------------------------------------------------------------------------------------------------------------------
+# zlib
+
+if [ ! -d zlib-${ZLIB_VERSION} ]; then
+  curl -L https://github.com/madler/zlib/archive/v${ZLIB_VERSION}.tar.gz -o zlib-${ZLIB_VERSION}.tar.gz
+  tar -xf zlib-${ZLIB_VERSION}.tar.gz
+fi
+
+if [ ! -f zlib-${ZLIB_VERSION}/build-done ]; then
+  cd zlib-${ZLIB_VERSION}
+  ./configure --static --prefix=${PREFIX}
+  make
+  make install
+  touch build-done
+  cd ..
+fi
+
+# ---------------------------------------------------------------------------------------------------------------------
 # file/magic
 
 if [ ! -d file-${FILE_VERSION} ]; then
@@ -280,7 +297,7 @@ fi
 
 if [ ! -f libffi-${LIBFFI_VERSION}/build-done ]; then
   cd libffi-${LIBFFI_VERSION}
-  ./configure --enable-static --disable-shared --prefix=$PREFIX
+  ./configure --enable-static --disable-shared --prefix=${PREFIX}
   make ${MAKE_ARGS}
   make install
   touch build-done
@@ -321,7 +338,7 @@ if [ ! -f glib-${GLIB_VERSION}/build-done ]; then
   env PATH=/opt/local/bin:$PATH make ${MAKE_ARGS} || true
   touch gio/gio-querymodules gio/glib-compile-resources gio/gsettings gio/gdbus gio/gresource gio/gapplication
   env PATH=/opt/local/bin:$PATH make ${MAKE_ARGS}
-  touch $PREFIX/bin/gtester-report
+  touch ${PREFIX}/bin/gtester-report
   env PATH=/opt/local/bin:$PATH make install
   touch build-done
   cd ..
@@ -351,25 +368,7 @@ if [ ! -f fluidsynth-${FLUIDSYNTH_VERSION}/build-done ]; then
   cd ..
 fi
 
-
-# ------------------------------------------------------------------------------------
-# zlib
-
-if [ ! -d zlib-${ZLIB_VERSION} ]; then
-  curl -L https://github.com/madler/zlib/archive/v${ZLIB_VERSION}.tar.gz -o zlib-${ZLIB_VERSION}.tar.gz
-  tar -xf zlib-${ZLIB_VERSION}.tar.gz
-fi
-
-if [ ! -f zlib-${ZLIB_VERSION}/build-done ]; then
-  cd zlib-${ZLIB_VERSION}
-  ./configure --static --prefix=$PREFIX
-  make
-  make install
-  touch build-done
-  cd ..
-fi
-
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # mxml
 
 if [ ! -d mxml-${MXML_VERSION} ]; then
@@ -382,11 +381,11 @@ fi
 
 if [ ! -f mxml-${MXML_VERSION}/build-done ]; then
   cd mxml-${MXML_VERSION}
-  ./configure --disable-shared --prefix=$PREFIX
+  ./configure --disable-shared --prefix=${PREFIX}
   make libmxml.a
-  cp *.a    $PREFIX/lib/
-  cp *.pc   $PREFIX/lib/pkgconfig/
-  cp mxml.h $PREFIX/include/
+  cp *.a    ${PREFIX}/lib/
+  cp *.pc   ${PREFIX}/lib/pkgconfig/
+  cp mxml.h ${PREFIX}/include/
   touch build-done
   cd ..
 fi
@@ -403,11 +402,11 @@ if [ ! -f fftw-${FFTW3_VERSION}/build-done ]; then
   export CFLAGS="${CFLAGS} -ffast-math"
   export CXXFLAGS="${CXXFLAGS} -ffast-math"
   cd fftw-${FFTW3_VERSION}
-  ./configure --enable-static --enable-sse2 --disable-shared --disable-debug --prefix=$PREFIX
+  ./configure --enable-static --enable-sse2 --disable-shared --disable-debug --prefix=${PREFIX}
   make
   make install
   make clean
-  ./configure --enable-static --enable-sse --enable-sse2 --enable-single --disable-shared --disable-debug --prefix=$PREFIX
+  ./configure --enable-static --enable-sse --enable-sse2 --enable-single --disable-shared --disable-debug --prefix=${PREFIX}
   make
   make install
   make clean
@@ -466,7 +465,7 @@ if [ ! -f qtbase-opensource-src-${QT5_VERSION}/build-done ]; then
     chmod +x configure
     chmod -R 777 config.tests/unix/
     ./configure -release -shared -opensource -confirm-license -force-pkg-config -platform macx-clang -framework \
-                -prefix $PREFIX -plugindir $PREFIX/lib/qt5/plugins -headerdir $PREFIX/include/qt5 \
+                -prefix ${PREFIX} -plugindir ${PREFIX}/lib/qt5/plugins -headerdir ${PREFIX}/include/qt5 \
                 -qt-freetype -qt-libjpeg -qt-libpng -qt-pcre -opengl desktop -qpa cocoa \
                 -no-directfb -no-eglfs -no-kms -no-linuxfb -no-mtdev -no-xcb -no-xcb-xlib \
                 -no-sse3 -no-ssse3 -no-sse4.1 -no-sse4.2 -no-avx -no-avx2 -no-mips_dsp -no-mips_dspr2 \
@@ -481,12 +480,12 @@ if [ ! -f qtbase-opensource-src-${QT5_VERSION}/build-done ]; then
   ln -s ${PREFIX}/lib/QtGui.framework/Headers     ${PREFIX}/include/qt5/QtGui
   ln -s ${PREFIX}/lib/QtWidgets.framework/Headers ${PREFIX}/include/qt5/QtWidgets
   sed -i -e "s/ -lqtpcre/ /" ${PREFIX}/lib/pkgconfig/Qt5Core.pc
-  sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/Qt5Core.pc
-  sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/Qt5Core.pc
-  sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/Qt5Gui.pc
-  sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/Qt5Gui.pc
-  sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/Qt5Widgets.pc
-  sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/Qt5Widgets.pc
+  sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Core.pc
+  sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Core.pc
+  sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Gui.pc
+  sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Gui.pc
+  sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Widgets.pc
+  sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Widgets.pc
   touch build-done
   cd ..
 fi
@@ -574,7 +573,7 @@ fi
 
 if [ ! -f Python-${PYTHON_VERSION}/build-done ]; then
   cd Python-${PYTHON_VERSION}
-  ./configure --prefix=$PREFIX
+  ./configure --prefix=${PREFIX}
   make
   make install
   touch build-done
@@ -627,7 +626,7 @@ if [ ! -f pyliblo-${PYLIBLO_VERSION}/build-done ]; then
   cd pyliblo-${PYLIBLO_VERSION}
   env CFLAGS="${CFLAGS} -I${TARGETDIR}/carla64/include" LDFLAGS="${LDFLAGS} -L${TARGETDIR}/carla64/lib" \
   python3 setup.py build
-  python3 setup.py install --prefix=$PREFIX
+  python3 setup.py install --prefix=${PREFIX}
   touch build-done
   cd ..
 fi
@@ -644,7 +643,7 @@ if [ ! -f cx_Freeze-${CXFREEZE_VERSION}/build-done ]; then
   cd cx_Freeze-${CXFREEZE_VERSION}
   sed -i -e 's/"python%s.%s"/"python%s.%sm"/' setup.py
   python3 setup.py build
-  python3 setup.py install --prefix=$PREFIX
+  python3 setup.py install --prefix=${PREFIX}
   touch build-done
   cd ..
 fi
