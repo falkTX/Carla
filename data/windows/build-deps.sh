@@ -412,11 +412,11 @@ fi
 # ---------------------------------------------------------------------------------------------------------------------
 # build base libs
 
-# cleanup_prefix
+cleanup_prefix
 
-# export ARCH=32
-# build_base
-# cleanup_pkgs
+export ARCH=32
+build_base
+cleanup_pkgs
 
 export ARCH=64
 build_base
