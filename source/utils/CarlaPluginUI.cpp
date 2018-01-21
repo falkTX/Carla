@@ -555,10 +555,11 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
 
-        NSWindow* window = [NSApp windowWithWindowNumber:winId];
-        CARLA_SAFE_ASSERT_RETURN(window != nullptr,);
+        NSWindow* const parentWindow = [NSApp windowWithWindowNumber:winId];
+        CARLA_SAFE_ASSERT_RETURN(parentWindow != nullptr,);
 
-        [fWindow orderWindow:NSWindowBelow relativeTo:window];
+        [parentWindow addChildWindow:fWindow
+                             ordered:NSWindowAbove];
     }
 
     void setChildWindow(void* const winId) override

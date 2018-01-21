@@ -137,7 +137,8 @@ struct Window::PrivateData {
         hwndParent = parentImpl->hwnd;
         SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, (LONG_PTR)hwndParent);
 #elif defined(DISTRHO_OS_MAC)
-        [mWindow orderWindow:NSWindowBelow relativeTo:parentImpl->window];
+        [parentImpl->window addChildWindow:mWindow
+                                   ordered:NSWindowAbove];
 #else
         XSetTransientForHint(xDisplay, xWindow, parentImpl->win);
 #endif
@@ -640,9 +641,11 @@ struct Window::PrivateData {
         hwndParent = (HWND)winId;
         SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, (LONG_PTR)winId);
 #elif defined(DISTRHO_OS_MAC)
-        NSWindow* const window = [NSApp windowWithWindowNumber:winId];
-        DISTRHO_SAFE_ASSERT_RETURN(window != nullptr,);
-        [mWindow orderWindow:NSWindowBelow relativeTo:window];
+        NSWindow* const parentWindow = [NSApp windowWithWindowNumber:winId];
+        DISTRHO_SAFE_ASSERT_RETURN(parentWindow != nullptr,);
+
+        [parentWindow addChildWindow:mWindow
+                             ordered:NSWindowAbove];
 #else
         XSetTransientForHint(xDisplay, xWindow, static_cast< ::Window>(winId));
 #endif
