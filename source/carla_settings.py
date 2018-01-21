@@ -347,6 +347,8 @@ class CarlaSettingsW(QDialog):
 
         self.ui.lw_page.setCurrentCell(0, 0)
 
+        self.adjustSize()
+
     # --------------------------------------------------------------------------------------------------------
 
     def loadSettings(self):
