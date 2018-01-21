@@ -458,6 +458,7 @@ if [ ! -f qtbase-opensource-src-${QT5_VERSION}/build-done ]; then
   cd qtbase-opensource-src-${QT5_VERSION}
   if [ ! -f configured ]; then
     if [ ! -f carla-patched ]; then
+      sed -i -e "s|PNG_WARNINGS_SUPPORTED|PNG_WARNINGS_NOT_SUPPORTED|" src/3rdparty/libpng/pnglibconf.h
       sed -i -e "s|AWK=.*|AWK=/opt/local/bin/gawk|" configure
       patch -p1 -i ../patches/qt55-newosx-fix.patch
       touch carla-patched
