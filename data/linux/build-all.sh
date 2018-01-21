@@ -95,6 +95,7 @@ if [ ! -f /tmp/setup-repo-packages ]; then
   apt-get install -y build-essential libglib2.0-dev uuid-dev git-core
   apt-get install -y autoconf libtool
   apt-get install -y bison flex libxml-libxml-perl libxml-parser-perl
+  apt-get install -y libgl1-mesa-dev libglu1-mesa-dev
   apt-get clean
   rm /usr/lib/libuuid.so
   touch /tmp/setup-repo-packages
@@ -192,7 +193,7 @@ export RCC_QT4=/usr/bin/rcc
 export LINUX="true"
 
 cd ${CHROOT_CARLA_DIR}
-make EXTERNAL_PLUGINS=false ${MAKE_ARGS}
+make ${MAKE_ARGS}
 
 if [ x"${ARCH}" != x"32" ]; then
   export CFLAGS="-I${TARGETDIR}/carla32/include -m32"
