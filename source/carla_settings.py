@@ -326,8 +326,10 @@ class CarlaSettingsW(QDialog):
 
         self.ui.ch_main_experimental.toggled.connect(self.slot_enableExperimental)
         self.ui.ch_exp_wine_bridges.toggled.connect(self.slot_enableWineBridges)
+        self.ui.cb_exp_plugin_bridges.toggled.connect(self.slot_pluginBridgesToggled)
         self.ui.cb_canvas_eyecandy.toggled.connect(self.slot_canvasEyeCandyToggled)
         self.ui.cb_canvas_fancy_eyecandy.toggled.connect(self.slot_canvasFancyEyeCandyToggled)
+        self.ui.cb_canvas_use_opengl.toggled.connect(self.slot_canvasOpenGLToggled)
 
         # ----------------------------------------------------------------------------------------------------
         # Post-connect setup
@@ -861,6 +863,13 @@ class CarlaSettingsW(QDialog):
             self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
 
     @pyqtSlot(bool)
+    def slot_pluginBridgesToggled(self, toggled):
+        if not toggled:
+            self.ui.ch_exp_wine_bridges.setChecked(False)
+            self.ui.ch_engine_prefer_plugin_bridges.setChecked(False)
+            self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
+
+    @pyqtSlot(bool)
     def slot_canvasEyeCandyToggled(self, toggled):
         if not toggled:
             self.ui.cb_canvas_fancy_eyecandy.setChecked(False)
@@ -869,6 +878,11 @@ class CarlaSettingsW(QDialog):
     def slot_canvasFancyEyeCandyToggled(self, toggled):
         if toggled:
             self.ui.cb_canvas_eyecandy.setChecked(True)
+
+    @pyqtSlot(bool)
+    def slot_canvasOpenGLToggled(self, toggled):
+        if not toggled:
+            self.ui.cb_canvas_render_hq_aa.setChecked(False)
 
     # --------------------------------------------------------------------------------------------------------
 

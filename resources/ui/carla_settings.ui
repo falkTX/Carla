@@ -924,7 +924,7 @@
            </property>
            <layout class="QGridLayout" name="gridLayout_8">
             <item row="5" column="0">
-             <widget class="QLabel" name="label_12">
+             <widget class="QLabel" name="label_engine_ui_bridges_timeout">
               <property name="toolTip">
                <string>How much time to wait for OSC GUIs to ping back the host</string>
               </property>
@@ -1893,6 +1893,9 @@ This mode is not available for VST plugins.</string>
             </item>
             <item>
              <widget class="QCheckBox" name="ch_engine_prefer_plugin_bridges">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="toolTip">
                <string>Whenever possible, run the plugins in bridge mode.</string>
               </property>
@@ -2082,6 +2085,22 @@ This mode is not available for VST plugins.</string>
     <hint type="destinationlabel">
      <x>402</x>
      <y>145</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cb_exp_plugin_bridges</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>ch_engine_prefer_plugin_bridges</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>402</x>
+     <y>145</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>402</x>
+     <y>433</y>
     </hint>
    </hints>
   </connection>
