@@ -283,6 +283,9 @@ class CarlaSettingsW(QDialog):
             self.ui.ch_exp_prevent_bad_behaviour.setVisible(False)
             self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
 
+        if not MACOS:
+            self.ui.label_engine_ui_bridges_mac_note.setVisible(False)
+
         # FIXME, pipes on win32 not working, and mis-behaving on macOS
         if MACOS or WINDOWS:
             self.ui.ch_engine_prefer_ui_bridges.setChecked(False)
