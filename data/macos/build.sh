@@ -17,8 +17,6 @@ fi
 
 source data/macos/common.env
 
-MAKE_ARGS="${MAKE_ARGS} EXTERNAL_PLUGINS=false"
-
 export MACOS="true"
 export MACOS_OLD="true"
 
