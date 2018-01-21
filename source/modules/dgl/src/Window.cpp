@@ -92,7 +92,8 @@ struct Window::PrivateData {
 #elif defined(DISTRHO_OS_MAC)
           fNeedsIdle(true),
           mView(nullptr),
-          mWindow(nullptr)
+          mWindow(nullptr),
+          mParentWindow(nullptr)
 #else
           xDisplay(nullptr),
           xWindow(0)
@@ -121,7 +122,8 @@ struct Window::PrivateData {
 #elif defined(DISTRHO_OS_MAC)
           fNeedsIdle(false),
           mView(nullptr),
-          mWindow(nullptr)
+          mWindow(nullptr),
+          mParentWindow(nullptr)
 #else
           xDisplay(nullptr),
           xWindow(0)
@@ -137,8 +139,7 @@ struct Window::PrivateData {
         hwndParent = parentImpl->hwnd;
         SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, (LONG_PTR)hwndParent);
 #elif defined(DISTRHO_OS_MAC)
-        [parentImpl->window addChildWindow:mWindow
-                                   ordered:NSWindowAbove];
+        mParentWindow = parentImpl->window;
 #else
         XSetTransientForHint(xDisplay, xWindow, parentImpl->win);
 #endif
@@ -163,7 +164,8 @@ struct Window::PrivateData {
 #elif defined(DISTRHO_OS_MAC)
           fNeedsIdle(parentId == 0),
           mView(nullptr),
-          mWindow(nullptr)
+          mWindow(nullptr),
+          mParentWindow(nullptr)
 #else
           xDisplay(nullptr),
           xWindow(0)
@@ -457,16 +459,31 @@ struct Window::PrivateData {
         if (yesNo)
         {
             if (mWindow != nullptr)
+            {
+                if (mParentWindow != nullptr)
+                    [mParentWindow addChildWindow:mWindow
+                                          ordered:NSWindowAbove];
+
                 [mWindow setIsVisible:YES];
+            }
             else
+            {
                 [mView setHidden:NO];
+            }
         }
         else
         {
             if (mWindow != nullptr)
+            {
+                if (mParentWindow != nullptr)
+                    [mParentWindow removeChildWindow:mWindow];
+
                 [mWindow setIsVisible:NO];
+            }
             else
+            {
                 [mView setHidden:YES];
+            }
         }
 #else
         if (yesNo)
@@ -1002,6 +1019,7 @@ struct Window::PrivateData {
     bool            fNeedsIdle;
     PuglOpenGLView* mView;
     id              mWindow;
+    id              mParentWindow;
 #else
     Display* xDisplay;
     ::Window xWindow;
