@@ -98,7 +98,9 @@ endif
 DPF_FLAGS  = -I$(CWDE)/modules/distrho
 
 ifeq ($(HAVE_DGL),true)
+ifneq ($(MACOS_OR_WIN32),true)
 DPF_FLAGS += $(shell pkg-config --cflags gl)
+endif
 DPF_FLAGS += -I$(CWDE)/modules/dgl -DDGL_NAMESPACE=CarlaDGL -DDGL_FILE_BROWSER_DISABLED -DDGL_NO_SHARED_RESOURCES
 endif
 
