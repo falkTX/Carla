@@ -443,8 +443,7 @@ public:
     CocoaPluginUI(Callback* const cb, const uintptr_t parentId, const bool isResizable) noexcept
         : CarlaPluginUI(cb, isResizable),
           fView(nullptr),
-          fWindow(0),
-          fParentId(parentId)
+          fWindow(0)
     {
         [NSAutoreleasePool new];
         [NSApplication sharedApplication];
@@ -495,9 +494,6 @@ public:
 
         [fView setHidden:NO];
         [fWindow setIsVisible:YES];
-
-        if (fParentId != 0)
-            setTransientWinId(fParentId);
     }
 
     void hide() override
@@ -562,9 +558,7 @@ public:
         NSWindow* window = [NSApp windowWithWindowNumber:winId];
         CARLA_SAFE_ASSERT_RETURN(window != nullptr,);
 
-        [window addChildWindow:fWindow
-                       ordered:NSWindowAbove];
-        [fWindow makeKeyWindow];
+        [fWindow orderWindow:NSWindowBelow relativeTo:window];
     }
 
     void setChildWindow(void* const winId) override
@@ -585,7 +579,6 @@ public:
 private:
     NSView* fView;
     id      fWindow;
-    uintptr_t fParentId;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CocoaPluginUI)
 };
@@ -769,7 +762,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
 
-        // TODO
+        SetWindowLongPtr(fWindow, GWLP_HWNDPARENT, (LONG_PTR)winId);
     }
 
     void setChildWindow(void* const winId) override

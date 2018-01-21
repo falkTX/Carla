@@ -129,17 +129,15 @@ struct Window::PrivateData {
         init();
 
         const PuglInternals* const parentImpl(parent.pData->fView->impl);
+
+        // NOTE: almost a 1:1 copy of setTransientWinId()
 #if defined(DISTRHO_OS_WINDOWS)
-        // TODO
+        SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, (LONG_PTR)parentImpl->hwnd);
 #elif defined(DISTRHO_OS_MAC)
-        [parentImpl->window orderWindow:NSWindowBelow relativeTo:[[mView window] windowNumber]];
+        [mWindow orderWindow:NSWindowBelow relativeTo:parentImpl->window];
 #else
         XSetTransientForHint(xDisplay, xWindow, parentImpl->win);
 #endif
-        return;
-
-        // maybe unused
-        (void)parentImpl;
     }
 
     PrivateData(Application& app, Window* const self, const intptr_t parentId)
@@ -626,14 +624,11 @@ struct Window::PrivateData {
         DISTRHO_SAFE_ASSERT_RETURN(winId != 0,);
 
 #if defined(DISTRHO_OS_WINDOWS)
-        // TODO
+        SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, (LONG_PTR)winId);
 #elif defined(DISTRHO_OS_MAC)
         NSWindow* const window = [NSApp windowWithWindowNumber:winId];
         DISTRHO_SAFE_ASSERT_RETURN(window != nullptr,);
-
-        [window addChildWindow:mWindow
-                       ordered:NSWindowAbove];
-        [mWindow makeKeyWindow];
+        [mWindow orderWindow:NSWindowBelow relativeTo:window];
 #else
         XSetTransientForHint(xDisplay, xWindow, static_cast< ::Window>(winId));
 #endif
