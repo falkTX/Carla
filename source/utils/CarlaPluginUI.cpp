@@ -853,6 +853,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 // -----------------------------------------------------
 
+#ifndef BUILD_BRIDGE
 bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* const uiTitle, const uintptr_t winId, const bool centerUI)
 {
     CARLA_SAFE_ASSERT_RETURN(uiTitle != nullptr && uiTitle[0] != '\0', true);
@@ -1140,6 +1141,7 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
     return true;
     (void)pid; (void)centerUI;
 }
+#endif // BUILD_BRIDGE
 
 // -----------------------------------------------------
 

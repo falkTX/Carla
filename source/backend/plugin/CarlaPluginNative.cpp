@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugin
- * Copyright (C) 2012-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -229,7 +229,9 @@ public:
             if (fIsUiVisible && fDescriptor != nullptr && fDescriptor->ui_show != nullptr && fHandle != nullptr)
                 fDescriptor->ui_show(fHandle, false);
 
+#ifndef BUILD_BRIDGE
             pData->transientTryCounter = 0;
+#endif
         }
 
         pData->singleMutex.lock();
@@ -751,7 +753,9 @@ public:
 
         if (! yesNo)
         {
+#ifndef BUILD_BRIDGE
             pData->transientTryCounter = 0;
+#endif
             return;
         }
 
