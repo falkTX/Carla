@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -2323,6 +2323,7 @@ const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const uint, cons
 
 CARLA_BACKEND_END_NAMESPACE
 
+#define CARLA_PLUGIN_UI_CLASS_PREFIX EngineNative
 #include "CarlaHostCommon.cpp"
 #include "CarlaPluginUI.cpp"
 #include "CarlaDssiUtils.cpp"

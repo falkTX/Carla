@@ -1,6 +1,6 @@
 /*
  * Carla Plugin UI
- * Copyright (C) 2014-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -31,6 +31,10 @@
 
 #ifdef CARLA_OS_WIN
 # include <ctime>
+#endif
+
+#ifndef CARLA_PLUGIN_UI_CLASS_PREFIX
+# error CARLA_PLUGIN_UI_CLASS_PREFIX undefined
 #endif
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -358,6 +362,12 @@ private:
 // MacOS / Cocoa
 
 #ifdef CARLA_OS_MAC
+
+#ifdef BUILD_BRIDGE
+# define CarlaPluginWindow CarlaPluginWindowBridged ## CARLA_PLUGIN_UI_CLASS_PREFIX ## CARLA_VERSION_HEX
+#else
+# define CarlaPluginWindow CarlaPluginWindow ## CARLA_PLUGIN_UI_CLASS_PREFIX ## CARLA_VERSION_HEX
+#endif
 
 @interface CarlaPluginWindow : NSWindow
 {
