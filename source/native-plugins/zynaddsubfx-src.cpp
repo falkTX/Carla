@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -26,15 +26,31 @@
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Winconsistent-missing-override"
 # pragma clang diagnostic ignored "-Wunused-private-field"
-#elif defined(__GNUC__) && (__GNUC__ >= 6)
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 # pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wshift-negative-value"
-# pragma GCC diagnostic ignored "-Wmisleading-indentation"
+# pragma GCC diagnostic ignored "-Wliteral-suffix"
+# if __GNUC__ >= 6
+#  pragma GCC diagnostic ignored "-Wshift-negative-value"
+#  pragma GCC diagnostic ignored "-Wmisleading-indentation"
+# endif
 #endif
 
 // base c-style headers
 #include "zynaddsubfx/tlsf/tlsf.h"
 #include "zynaddsubfx/rtosc/rtosc.h"
+
+#ifdef CARLA_OS_WIN
+# define PRId64 P_INT64
+# define PRIi64 P_INT64
+# define PRIx64 P_UINT64
+# define PRId32 "%d"
+# define PRIi32 "%i"
+# define PRIx32 "%x"
+#endif
+
+#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+# define CARLA_ZYN_FULL
+#endif
 
 // C-code includes
 extern "C" {
@@ -52,6 +68,7 @@ extern "C" {
 #undef tlsf_insist
 
 #include "zynaddsubfx/rtosc/dispatch.c"
+#include "zynaddsubfx/rtosc/pretty-format.c"
 #include "zynaddsubfx/rtosc/rtosc.c"
 }
 
@@ -71,6 +88,7 @@ extern "C" {
 // zynaddsubfx includes
 #include "zynaddsubfx/version.cpp"
 
+#ifdef CARLA_ZYN_FULL
 #include "zynaddsubfx/Containers/MultiPseudoStack.cpp"
 #undef rBegin
 #undef rObject
@@ -94,6 +112,249 @@ extern "C" {
 #undef rStdStringCb
 #undef rChangeCb
 #define rChangeCb
+
+#include "zynaddsubfx/Misc/Bank.cpp"
+#undef INSTRUMENT_EXTENSION
+#undef FORCE_BANK_DIR_FILE
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#define INSTRUMENT_EXTENSION INSTRUMENT_EXTENSION_DB
+#include "zynaddsubfx/Misc/BankDb.cpp"
+#undef INSTRUMENT_EXTENSION
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Misc/CallbackRepeater.cpp"
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Misc/Config.cpp"
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Misc/Master.cpp"
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Misc/Microtonal.cpp"
+#undef MAX_LINE_SIZE
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Misc/MiddleWare.cpp"
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Misc/Part.cpp"
+#undef CLONE
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Misc/PresetExtractor.cpp"
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Misc/Recorder.cpp"
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Misc/WavFile.cpp"
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Params/ADnoteParameters.cpp"
+#undef EXPAND
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Params/Controller.cpp"
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Params/EnvelopeParams.cpp"
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Params/LFOParams.cpp"
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Params/PADnoteParameters.cpp"
+#undef PC
+#undef P_C
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Params/SUBnoteParameters.cpp"
+#undef doPaste
+#undef doPPaste
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Synth/ADnote.cpp"
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Synth/Envelope.cpp"
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Synth/LFO.cpp"
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Synth/ModFilter.cpp"
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Synth/OscilGen.cpp"
+#undef PC
+#undef DIFF
+#undef PRESERVE
+#undef RESTORE
+#undef FUNC
+#undef FILTER
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Synth/PADnote.cpp"
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Synth/Resonance.cpp"
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Synth/SUBnote.cpp"
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Synth/SynthNote.cpp"
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Synth/WatchPoint.cpp"
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/UI/ConnectionDummy.cpp"
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/globals.cpp"
+#endif // CARLA_ZYN_FULL
 
 #include "zynaddsubfx/DSP/AnalogFilter.cpp"
 #undef rBegin
@@ -243,100 +504,7 @@ extern "C" {
 #undef rChangeCb
 #define rChangeCb
 
-#include "zynaddsubfx/Misc/Bank.cpp"
-#undef INSTRUMENT_EXTENSION
-#undef FORCE_BANK_DIR_FILE
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#define INSTRUMENT_EXTENSION INSTRUMENT_EXTENSION_DB
-#include "zynaddsubfx/Misc/BankDb.cpp"
-#undef INSTRUMENT_EXTENSION
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Misc/CallbackRepeater.cpp"
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Misc/Config.cpp"
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Misc/Master.cpp"
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Misc/Microtonal.cpp"
-#undef MAX_LINE_SIZE
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Misc/MiddleWare.cpp"
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Misc/Part.cpp"
-#undef CLONE
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Misc/PresetExtractor.cpp"
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Misc/Recorder.cpp"
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
 #include "zynaddsubfx/Misc/Util.cpp"
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Misc/WavFile.cpp"
 #undef rBegin
 #undef rObject
 #undef rStdString
@@ -360,50 +528,7 @@ extern "C" {
 #undef rChangeCb
 #define rChangeCb
 
-#include "zynaddsubfx/Params/ADnoteParameters.cpp"
-#undef EXPAND
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Params/Controller.cpp"
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Params/EnvelopeParams.cpp"
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
 #include "zynaddsubfx/Params/FilterParams.cpp"
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Params/LFOParams.cpp"
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Params/PADnoteParameters.cpp"
-#undef PC
-#undef P_C
 #undef rBegin
 #undef rObject
 #undef rStdString
@@ -435,118 +560,13 @@ extern "C" {
 #undef rChangeCb
 #define rChangeCb
 
-#include "zynaddsubfx/Params/SUBnoteParameters.cpp"
-#undef doPaste
-#undef doPPaste
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Synth/ADnote.cpp"
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Synth/Envelope.cpp"
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Synth/LFO.cpp"
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Synth/ModFilter.cpp"
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Synth/OscilGen.cpp"
-#undef PC
-#undef DIFF
-#undef PRESERVE
-#undef RESTORE
-#undef FUNC
-#undef FILTER
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Synth/PADnote.cpp"
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Synth/Resonance.cpp"
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Synth/SUBnote.cpp"
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Synth/SynthNote.cpp"
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/Synth/WatchPoint.cpp"
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/UI/ConnectionDummy.cpp"
-#undef rBegin
-#undef rObject
-#undef rStdString
-#undef rStdStringCb
-#undef rChangeCb
-#define rChangeCb
-
-#include "zynaddsubfx/globals.cpp"
-
 #if defined(__clang__)
 # pragma clang diagnostic pop
 #elif defined(__GNUC__) && (__GNUC__ >= 6)
 # pragma GCC diagnostic pop
 #endif
 
+#ifdef CARLA_ZYN_FULL
 // Dummy variables and functions for linking purposes
 namespace zyncarla {
 class WavFile;
@@ -562,4 +582,17 @@ namespace Nio {
    void waveStart(){}
    void waveStop(){}
 }
+}
+#endif // CARLA_ZYN_FULL
+
+rtosc_version rtosc_current_version()
+{
+    return ((rtosc_version) { 0, 0, 0 } );
+}
+
+void rtosc_version_print_to_12byte_str(const rtosc_version* v,
+                                       char* _12bytes)
+{
+    snprintf(_12bytes, 12, "%u.%u.%u",
+             (unsigned)v->major, (unsigned)v->minor, (unsigned)v->revision);
 }

@@ -30,9 +30,6 @@ source data/windows/common.env
 MAKE_ARGS="${MAKE_ARGS} HAVE_QT4=false HAVE_QT5=false HAVE_PYQT5=true HAVE_FFMPEG=false HAVE_PROJECTM=false"
 MAKE_ARGS="${MAKE_ARGS} BUILDING_FOR_WINDOWS=true"
 
-# FIXME
-MAKE_ARGS="${MAKE_ARGS} HAVE_ZYN_DEPS=false"
-
 if [ x"${ARCH}" != x"32" ]; then
   CPUARCH="x86_64"
 else

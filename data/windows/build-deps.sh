@@ -352,14 +352,71 @@ if [ ! -f fluidsynth-${FLUIDSYNTH_VERSION}/build-done ]; then
   cd ..
 fi
 
+# ---------------------------------------------------------------------------------------------------------------------
+# mxml
+
+if [ ! -d mxml-${MXML_VERSION} ]; then
+  wget -c https://github.com/michaelrsweet/mxml/releases/download/v${MXML_VERSION}/mxml-${MXML_VERSION}.tar.gz -O mxml-${MXML_VERSION}.tar.gz
+  mkdir mxml-${MXML_VERSION}
+  cd mxml-${MXML_VERSION}
+  tar -xf ../mxml-${MXML_VERSION}.tar.gz
+  cd ..
+fi
+
+if [ ! -f mxml-${MXML_VERSION}/build-done ]; then
+  cd mxml-${MXML_VERSION}
+  ./configure --disable-shared --prefix=${PREFIX} \
+    --target=${MINGW_PREFIX} --host=${MINGW_PREFIX} --build=${HOST_ARCH}
+  make libmxml.a
+  cp *.a    ${PREFIX}/lib/
+  cp *.pc   ${PREFIX}/lib/pkgconfig/
+  cp mxml.h ${PREFIX}/include/
+  touch build-done
+  cd ..
+fi
+
+# ---------------------------------------------------------------------------------------------------------------------
+# fftw3 (needs to be last as it modifies C[XX]FLAGS)
+
+if [ ! -d fftw-${FFTW3_VERSION} ]; then
+  curl -O http://www.fftw.org/fftw-${FFTW3_VERSION}.tar.gz
+  tar -xf fftw-${FFTW3_VERSION}.tar.gz
+fi
+
+if [ ! -f fftw-${FFTW3_VERSION}/build-done ]; then
+  export CFLAGS="${CFLAGS} -ffast-math"
+  export CXXFLAGS="${CXXFLAGS} -ffast-math"
+  cd fftw-${FFTW3_VERSION}
+  ./configure --enable-static --disable-shared --prefix=${PREFIX} \
+    --target=${MINGW_PREFIX} --host=${MINGW_PREFIX} --build=${HOST_ARCH} \
+    --enable-sse2 \
+    --disable-debug --disable-alloca --disable-fortran \
+    --with-our-malloc
+  make
+  make install
+  make clean
+  ./configure --enable-static --disable-shared --prefix=${PREFIX} \
+    --target=${MINGW_PREFIX} --host=${MINGW_PREFIX} --build=${HOST_ARCH} \
+    --enable-sse2 --enable-sse --enable-single \
+    --disable-debug --disable-alloca --disable-fortran \
+    --with-our-malloc
+  make
+  make install
+  make clean
+  touch build-done
+  cd ..
+fi
+
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
 # build base libs
 
-export ARCH=32
-build_base
-cleanup_pkgs
+# cleanup_prefix
+
+# export ARCH=32
+# build_base
+# cleanup_pkgs
 
 export ARCH=64
 build_base

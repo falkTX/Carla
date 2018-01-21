@@ -335,11 +335,17 @@ if [ ! -f fftw-${FFTW3_VERSION}/build-done ]; then
   export CFLAGS="${CFLAGS} -ffast-math"
   export CXXFLAGS="${CXXFLAGS} -ffast-math"
   cd fftw-${FFTW3_VERSION}
-  ./configure --enable-static --enable-sse2 --disable-shared --disable-debug --prefix=$PREFIX
+  ./configure --enable-static --disable-shared --prefix=${PREFIX} \
+    --enable-sse2 \
+    --disable-debug --disable-alloca --disable-fortran \
+    --with-our-malloc
   make
   make install
   make clean
-  ./configure --enable-static --enable-sse --enable-sse2 --enable-single --disable-shared --disable-debug --prefix=$PREFIX
+  ./configure --enable-static --disable-shared --prefix=${PREFIX} \
+    --enable-sse2 --enable-sse --enable-single \
+    --disable-debug --disable-alloca --disable-fortran \
+    --with-our-malloc
   make
   make install
   make clean

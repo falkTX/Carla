@@ -35,8 +35,12 @@ OBJS_all += \
 ifeq ($(HAVE_ZYN_DEPS),true)
 OBJS_all += \
 	$(OBJDIR)/zynaddsubfx-fx.cpp.o \
-	$(OBJDIR)/zynaddsubfx-src.cpp.o \
+	$(OBJDIR)/zynaddsubfx-src.cpp.o
+
+ifneq ($(MACOS_OR_WIN32),true)
+OBJS_all += \
 	$(OBJDIR)/zynaddsubfx-synth.cpp.o
+endif
 
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 TARGETS += resources/zynaddsubfx-ui$(APP_EXT)
