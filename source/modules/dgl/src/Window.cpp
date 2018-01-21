@@ -346,22 +346,6 @@ struct Window::PrivateData {
         fModal.enabled = true;
         fModal.parent->fModal.childFocus = this;
 
-#ifdef DISTRHO_OS_WINDOWS
-        // Center this window
-        PuglInternals* const parentImpl = fModal.parent->fView->impl;
-
-        RECT curRect;
-        RECT parentRect;
-        GetWindowRect(hwnd, &curRect);
-        GetWindowRect(parentImpl->hwnd, &parentRect);
-
-        int x = parentRect.left+(parentRect.right-curRect.right)/2;
-        int y = parentRect.top +(parentRect.bottom-curRect.bottom)/2;
-
-        SetWindowPos(hwnd, 0, x, y, 0, 0, SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOSIZE|SWP_NOZORDER);
-        UpdateWindow(hwnd);
-#endif
-
         fModal.parent->setVisible(true);
         setVisible(true);
 

@@ -68,8 +68,7 @@ public:
 
         fHostUI->setTitle(options.windowTitle.buffer());
 
-#ifdef HAVE_X11
-        // Out-of-process reparenting only possible on X11
+#if (defined(CARLA_OS_WIN) && defined(BRIDGE_HWND)) || (defined(HAVE_X11) && defined(BRIDGE_X11))
         if (options.transientWindowId != 0)
         {
             fHostUI->setTransientWinId(options.transientWindowId);

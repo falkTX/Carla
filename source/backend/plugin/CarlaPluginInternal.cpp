@@ -592,6 +592,7 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
       ctrlChannel(0),
       extraHints(0x0),
       transientTryCounter(0),
+      transientFirstTry(true),
       name(nullptr),
       filename(nullptr),
       iconName(nullptr),

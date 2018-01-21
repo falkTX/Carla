@@ -2210,8 +2210,12 @@ void CarlaPlugin::uiIdle()
     CarlaString uiTitle(pData->name);
     uiTitle += " (GUI)";
 
-    if (CarlaPluginUI::tryTransientWinIdMatch(getUiBridgeProcessId(), uiTitle, pData->engine->getOptions().frontendWinId, true))
+    if (CarlaPluginUI::tryTransientWinIdMatch(getUiBridgeProcessId(), uiTitle,
+                                              pData->engine->getOptions().frontendWinId, pData->transientFirstTry))
+    {
         pData->transientTryCounter = 0;
+        pData->transientFirstTry = false;
+    }
 }
 
 void CarlaPlugin::uiParameterChange(const uint32_t index, const float value) noexcept

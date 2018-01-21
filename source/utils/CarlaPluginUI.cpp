@@ -1046,10 +1046,41 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 
     XFlush(sd.display);
     return true;
-#else
+#endif
+
+#ifdef CARLA_OS_MAC
+    // TODO
+#endif
+
+#ifdef CARLA_OS_WIN
+    if (HWND const childWindow = FindWindowA(nullptr, uiTitle))
+    {
+        HWND const parentWindow = (HWND)winId;
+        SetWindowLongPtr(childWindow, GWLP_HWNDPARENT, (LONG_PTR)parentWindow);
+
+        if (centerUI)
+        {
+            RECT rectChild, rectParent;
+
+            if (GetWindowRect(childWindow, &rectChild) && GetWindowRect(parentWindow, &rectParent))
+            {
+                SetWindowPos(childWindow, parentWindow,
+                             rectParent.left + (rectChild.right-rectChild.left)/2,
+                             rectParent.top + (rectChild.bottom-rectChild.top)/2,
+                             0, 0, SWP_NOSIZE);
+            }
+        }
+
+        carla_stdout("Match found using window name");
+        return true;
+    }
+
+    return false;
+#endif
+
+    // fallback, may be unused
     return true;
     (void)pid; (void)centerUI;
-#endif
 }
 
 // -----------------------------------------------------

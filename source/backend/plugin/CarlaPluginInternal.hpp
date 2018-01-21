@@ -228,6 +228,7 @@ struct CarlaPlugin::ProtectedData {
     int8_t ctrlChannel;
     uint   extraHints;
     uint   transientTryCounter;
+    bool   transientFirstTry;
 
     // data 1
     const char* name;
