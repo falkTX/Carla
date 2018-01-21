@@ -478,6 +478,7 @@ public:
         }
 
         // MIDI In
+        try
         {
             RtMidiIn midiIn(getMatchedAudioMidiAPI(fAudio.getCurrentApi()), "carla-discovery-in");
 
@@ -488,9 +489,10 @@ public:
 
                 extGraph.midiPorts.ins.append(portNameToId);
             }
-        }
+        } CARLA_SAFE_EXCEPTION("RtMidiIn discovery");
 
         // MIDI Out
+        try
         {
             RtMidiOut midiOut(getMatchedAudioMidiAPI(fAudio.getCurrentApi()), "carla-discovery-out");
 
@@ -501,7 +503,7 @@ public:
 
                 extGraph.midiPorts.outs.append(portNameToId);
             }
-        }
+        } CARLA_SAFE_EXCEPTION("RtMidiOut discovery");
 
         // ---------------------------------------------------------------
         // now refresh
