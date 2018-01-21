@@ -364,9 +364,9 @@ private:
 #ifdef CARLA_OS_MAC
 
 #ifdef BUILD_BRIDGE
-# define CarlaPluginWindow CarlaPluginWindowBridged ## CARLA_PLUGIN_UI_CLASS_PREFIX ## CARLA_VERSION_HEX
+# define CarlaPluginWindow CARLA_JOIN_MACRO(CarlaPluginWindowBridged, CARLA_PLUGIN_UI_CLASS_PREFIX)
 #else
-# define CarlaPluginWindow CarlaPluginWindow ## CARLA_PLUGIN_UI_CLASS_PREFIX ## CARLA_VERSION_HEX
+# define CarlaPluginWindow CARLA_JOIN_MACRO(CarlaPluginWindow, CARLA_PLUGIN_UI_CLASS_PREFIX)
 #endif
 
 @interface CarlaPluginWindow : NSWindow
