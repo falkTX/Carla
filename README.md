@@ -14,9 +14,9 @@ Features
 * GIG, SF2 and SFZ sound banks
 * Internal audio and midi file player
 * Automation of plugin parameters via MIDI CC
-* Full OSC control
-* Rack and Patchbay engine modes, plus Single and Multi-Client if using JACK
-* Native audio drivers (ALSA, DirectSound, CoreAudio) and low-latency (ASIO and JACK)
+* Remote control over OSC
+* Rack and Patchbay processing modes, plus Single and Multi-Client if using JACK
+* Native audio drivers (ALSA, DirectSound, CoreAudio, etc) and JACK
 
 In experimental phase / work in progress:
 * Export any Carla loadable plugin or sound bank as an LV2 plugin
