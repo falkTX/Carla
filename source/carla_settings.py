@@ -243,10 +243,6 @@ class CarlaSettingsW(QDialog):
             self.ui.ch_main_show_logs.setEnabled(False)
             self.ui.ch_main_show_logs.setVisible(False)
 
-        if WINDOWS:
-            self.ui.ch_engine_manage_uis.setEnabled(False)
-            self.ui.ch_engine_manage_uis.setVisible(False)
-
         if host.isControl:
             self.ui.lw_page.hideRow(self.TAB_INDEX_CANVAS)
             self.ui.lw_page.hideRow(self.TAB_INDEX_ENGINE)
@@ -292,6 +288,8 @@ class CarlaSettingsW(QDialog):
             self.ui.ch_engine_prefer_ui_bridges.setChecked(False)
             self.ui.ch_engine_prefer_ui_bridges.setEnabled(False)
             self.ui.ch_engine_prefer_ui_bridges.setVisible(False)
+            self.ui.label_engine_ui_bridges_timeout.setEnabled(False)
+            self.ui.label_engine_ui_bridges_timeout.setVisible(False)
             self.ui.sb_engine_ui_bridges_timeout.setEnabled(False)
             self.ui.sb_engine_ui_bridges_timeout.setVisible(False)
 
