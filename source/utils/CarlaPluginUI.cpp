@@ -599,7 +599,8 @@ class WindowsPluginUI : public CarlaPluginUI
 public:
     WindowsPluginUI(Callback* const cb, const uintptr_t parentId, const bool isResizable) noexcept
         : CarlaPluginUI(cb, isResizable),
-          fWindow(0),
+          fWindow(nullptr),
+          fParentWindow(nullptr),
           fIsVisible(false),
           fFirstShow(true)
      {
@@ -668,9 +669,31 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
 
-        ShowWindow(fWindow, fFirstShow ? SW_SHOWNORMAL : SW_RESTORE);
+        if (fFirstShow)
+        {
+            fFirstShow = false;
+            RECT rectChild, rectParent;
+
+            if (fParentWindow != nullptr &&
+                GetWindowRect(fWindow, &rectChild) &&
+                GetWindowRect(fParentWindow, &rectParent))
+            {
+                SetWindowPos(fWindow, fParentWindow,
+                             rectParent.left + (rectChild.right-rectChild.left)/2,
+                             rectParent.top + (rectChild.bottom-rectChild.top)/2,
+                             0, 0, SWP_SHOWWINDOW|SWP_NOSIZE);
+            }
+            else
+            {
+                ShowWindow(fWindow, SW_SHOWNORMAL);
+            }
+        }
+        else
+        {
+            ShowWindow(fWindow, SW_RESTORE);
+        }
+
         fIsVisible = true;
-        fFirstShow = false;
         UpdateWindow(fWindow);
     }
 
@@ -762,6 +785,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
 
+        fParentWindow = (HWND)winId;
         SetWindowLongPtr(fWindow, GWLP_HWNDPARENT, (LONG_PTR)winId);
     }
 
@@ -782,6 +806,7 @@ public:
 
 private:
     HWND     fWindow;
+    HWND     fParentWindow;
     WNDCLASS fWindowClass;
 
     bool fIsVisible;

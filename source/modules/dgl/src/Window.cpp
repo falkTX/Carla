@@ -87,7 +87,8 @@ struct Window::PrivateData {
           fWidgets(),
           fModal(),
 #if defined(DISTRHO_OS_WINDOWS)
-          hwnd(0)
+          hwnd(nullptr),
+          hwndParent(nullptr)
 #elif defined(DISTRHO_OS_MAC)
           fNeedsIdle(true),
           mView(nullptr),
@@ -115,7 +116,8 @@ struct Window::PrivateData {
           fWidgets(),
           fModal(parent.pData),
 #if defined(DISTRHO_OS_WINDOWS)
-          hwnd(0)
+          hwnd(nullptr),
+          hwndParent(nullptr)
 #elif defined(DISTRHO_OS_MAC)
           fNeedsIdle(false),
           mView(nullptr),
@@ -132,7 +134,8 @@ struct Window::PrivateData {
 
         // NOTE: almost a 1:1 copy of setTransientWinId()
 #if defined(DISTRHO_OS_WINDOWS)
-        SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, (LONG_PTR)parentImpl->hwnd);
+        hwndParent = parentImpl->hwnd;
+        SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, (LONG_PTR)hwndParent);
 #elif defined(DISTRHO_OS_MAC)
         [mWindow orderWindow:NSWindowBelow relativeTo:parentImpl->window];
 #else
@@ -154,7 +157,8 @@ struct Window::PrivateData {
           fWidgets(),
           fModal(),
 #if defined(DISTRHO_OS_WINDOWS)
-          hwnd(0)
+          hwnd(nullptr),
+          hwndParent(nullptr)
 #elif defined(DISTRHO_OS_MAC)
           fNeedsIdle(parentId == 0),
           mView(nullptr),
@@ -434,9 +438,34 @@ struct Window::PrivateData {
 
 #if defined(DISTRHO_OS_WINDOWS)
         if (yesNo)
-            ShowWindow(hwnd, fFirstInit ? SW_SHOWNORMAL : SW_RESTORE);
+        {
+            if (fFirstInit)
+            {
+                RECT rectChild, rectParent;
+
+                if (hwndParent != nullptr &&
+                    GetWindowRect(hwnd, &rectChild) &&
+                    GetWindowRect(hwndParent, &rectParent))
+                {
+                    SetWindowPos(hwnd, hwndParent,
+                                 rectParent.left + (rectChild.right-rectChild.left)/2,
+                                 rectParent.top + (rectChild.bottom-rectChild.top)/2,
+                                 0, 0, SWP_SHOWWINDOW|SWP_NOSIZE);
+                }
+                else
+                {
+                    ShowWindow(hwnd, SW_SHOWNORMAL);
+                }
+            }
+            else
+            {
+                ShowWindow(hwnd, SW_RESTORE);
+            }
+        }
         else
+        {
             ShowWindow(hwnd, SW_HIDE);
+        }
 
         UpdateWindow(hwnd);
 #elif defined(DISTRHO_OS_MAC)
@@ -624,6 +653,7 @@ struct Window::PrivateData {
         DISTRHO_SAFE_ASSERT_RETURN(winId != 0,);
 
 #if defined(DISTRHO_OS_WINDOWS)
+        hwndParent = (HWND)winId;
         SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, (LONG_PTR)winId);
 #elif defined(DISTRHO_OS_MAC)
         NSWindow* const window = [NSApp windowWithWindowNumber:winId];
@@ -979,7 +1009,8 @@ struct Window::PrivateData {
     } fModal;
 
 #if defined(DISTRHO_OS_WINDOWS)
-    HWND     hwnd;
+    HWND hwnd;
+    HWND hwndParent;
 #elif defined(DISTRHO_OS_MAC)
     bool            fNeedsIdle;
     PuglOpenGLView* mView;
