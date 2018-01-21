@@ -1050,7 +1050,54 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 #endif
 
 #ifdef CARLA_OS_MAC
-    // TODO
+    uint const hints = kCGWindowListOptionOnScreenOnly|kCGWindowListExcludeDesktopElements;
+
+    CFArrayRef const windowListRef = CGWindowListCopyWindowInfo(hints, kCGNullWindowID);
+    const NSArray* const windowList = (const NSArray*)windowListRef;
+
+    int windowToMap, windowWithPID = 0, windowWithNameAndPID = 0;
+
+    for (NSDictionary* const entry in windowList)
+    {
+        if ([entry[(id)kCGWindowSharingState] intValue] == kCGWindowSharingNone)
+            continue;
+
+        NSString* const windowName   =  entry[(id)kCGWindowName];
+        int       const windowNumber = [entry[(id)kCGWindowNumber] intValue];
+        uintptr_t const windowPID    = [entry[(id)kCGWindowOwnerPID] intValue];
+
+        if (windowPID != pid)
+            continue;
+
+        windowWithPID = windowNumber;
+
+        if (windowName != nullptr && std::strcmp([windowName UTF8String], uiTitle) == 0)
+            windowWithNameAndPID = windowNumber;
+    }
+
+    CFRelease(windowListRef);
+
+    if (windowWithNameAndPID != 0)
+    {
+        carla_stdout("Match found using pid and name");
+        windowToMap = windowWithNameAndPID;
+    }
+    else if (windowWithPID != 0)
+    {
+        carla_stdout("Match found using pid");
+        windowToMap = windowWithPID;
+    }
+    else
+    {
+        return false;
+    }
+
+    NSWindow* const parentWindow = [NSApp windowWithWindowNumber:winId];
+    CARLA_SAFE_ASSERT_RETURN(parentWindow != nullptr, false);
+
+    [parentWindow orderWindow:NSWindowBelow
+                   relativeTo:windowToMap];
+    return true;
 #endif
 
 #ifdef CARLA_OS_WIN
