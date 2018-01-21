@@ -789,7 +789,12 @@ protected:
             newRtMidiPortName += ":";
             newRtMidiPortName += portName;
 
-            RtMidiIn* const rtMidiIn(new RtMidiIn(getMatchedAudioMidiAPI(fAudio.getCurrentApi()), newRtMidiPortName.buffer(), 512));
+            RtMidiIn* rtMidiIn;
+
+            try {
+                rtMidiIn = new RtMidiIn(getMatchedAudioMidiAPI(fAudio.getCurrentApi()), newRtMidiPortName.buffer(), 512);
+            } CARLA_SAFE_EXCEPTION_RETURN("new RtMidiIn", false);
+
             rtMidiIn->ignoreTypes();
             rtMidiIn->setCallback(carla_rtmidi_callback, this);
 
@@ -836,7 +841,11 @@ protected:
             newRtMidiPortName += ":";
             newRtMidiPortName += portName;
 
-            RtMidiOut* const rtMidiOut(new RtMidiOut(getMatchedAudioMidiAPI(fAudio.getCurrentApi()), newRtMidiPortName.buffer()));
+            RtMidiOut* rtMidiOut;
+
+            try {
+                rtMidiOut = new RtMidiOut(getMatchedAudioMidiAPI(fAudio.getCurrentApi()), newRtMidiPortName.buffer());
+            } CARLA_SAFE_EXCEPTION_RETURN("new RtMidiOut", false);
 
             bool found = false;
             uint rtMidiPortIndex;
