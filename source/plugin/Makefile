@@ -81,6 +81,12 @@ LINK_FLAGS += $(LINUXSAMPLER_LIBS)
 LINK_FLAGS += $(MAGIC_LIBS)
 LINK_FLAGS += $(X11_LIBS)
 
+ifeq ($(MACOS),true)
+# NOTE: this assumes only LV2 version will be built
+SHARED += -Wl,-exported_symbol,_lv2_descriptor
+SHARED += -Wl,-exported_symbol,_lv2ui_descriptor
+endif
+
 # ----------------------------------------------------------------------------------------------------------------------------
 
 TARGETS = \
