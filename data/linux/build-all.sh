@@ -176,6 +176,7 @@ chroot_build_carla()
 {
 
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
+CHROOT_TARGET_DIR=/root/builds
 
 cat <<EOF | sudo chroot ${CHROOT_DIR}
 export HOME=/root
@@ -185,10 +186,10 @@ unset LC_TIME
 
 set -e
 
-export CFLAGS="-I${TARGETDIR}/carla${ARCH}/include"
+export CFLAGS="-I${CHROOT_TARGET_DIR}/carla${ARCH}/include"
 export CXXFLAGS=${CFLAGS}
-export LDFLAGS="-L${TARGETDIR}/carla${ARCH}/lib"
-export PKG_CONFIG_PATH=${TARGETDIR}/carla${ARCH}/lib/pkgconfig
+export LDFLAGS="-L${CHROOT_TARGET_DIR}/carla${ARCH}/lib"
+export PKG_CONFIG_PATH=${CHROOT_TARGET_DIR}/carla${ARCH}/lib/pkgconfig
 export RCC_QT4=/usr/bin/rcc
 export LINUX="true"
 
@@ -196,10 +197,10 @@ cd ${CHROOT_CARLA_DIR}
 make ${MAKE_ARGS}
 
 if [ x"${ARCH}" != x"32" ]; then
-  export CFLAGS="-I${TARGETDIR}/carla32/include -m32"
+  export CFLAGS="-I${CHROOT_TARGET_DIR}/carla32/include -m32"
   export CXXFLAGS=${CFLAGS}
-  export LDFLAGS="-L${TARGETDIR}/carla32/lib -m32"
-  export PKG_CONFIG_PATH=${TARGETDIR}/carla32/lib/pkgconfig
+  export LDFLAGS="-L${CHROOT_TARGET_DIR}/carla32/lib -m32"
+  export PKG_CONFIG_PATH=${CHROOT_TARGET_DIR}/carla32/lib/pkgconfig
   make posix32 ${MAKE_ARGS}
 fi
 
@@ -293,7 +294,7 @@ unset LC_TIME
 
 set -e
 
-export PKG_CONFIG_PATH=${TARGETDIR}/carla${ARCH}/lib/pkgconfig
+export PKG_CONFIG_PATH=${CHROOT_TARGET_DIR}/carla${ARCH}/lib/pkgconfig
 export RCC_QT4=/usr/bin/rcc
 export LINUX="true"
 
