@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,7 +19,6 @@
 #include "CarlaNative.h"
 
 #ifdef CARLA_OS_WIN
-# define DISABLE_PLUGINS_FOR_WINDOWS_BUILD
 # undef HAVE_PYQT
 #endif
 

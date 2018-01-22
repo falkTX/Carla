@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -62,7 +62,7 @@ void carla_register_all_native_external_plugins(void)
 #ifdef HAVE_ZYN_DEPS
     // ZynAddSubFX
     carla_register_native_plugin_zynaddsubfx_fx();
-# ifndef DISABLE_PLUGINS_FOR_WINDOWS_BUILD
+# ifndef SKIP_ZYN_SYNTH
     carla_register_native_plugin_zynaddsubfx_synth();
 # endif
 #endif

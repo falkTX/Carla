@@ -25,6 +25,7 @@ source common.env
 
 CHROOT_CARLA_DIR="/tmp/carla-src"
 PKG_FOLDER="Carla_2.0-beta6-linux"
+export MAKE_ARGS="${MAKE_ARGS} SKIP_ZYN_SYNTH=true"
 
 # ---------------------------------------------------------------------------------------------------------------------
 # function to remove old stuff

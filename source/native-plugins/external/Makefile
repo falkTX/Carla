@@ -37,7 +37,7 @@ OBJS_all += \
 	$(OBJDIR)/zynaddsubfx-fx.cpp.o \
 	$(OBJDIR)/zynaddsubfx-src.cpp.o
 
-ifneq ($(MACOS_OR_WIN32),true)
+ifneq ($(SKIP_ZYN_SYNTH),true)
 OBJS_all += \
 	$(OBJDIR)/zynaddsubfx-synth.cpp.o
 endif
