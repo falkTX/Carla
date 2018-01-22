@@ -64,8 +64,10 @@ extern "C" {
 #undef tlsf_insist
 
 #include "zynaddsubfx/rtosc/dispatch.c"
-#include "zynaddsubfx/rtosc/pretty-format.c"
 #include "zynaddsubfx/rtosc/rtosc.c"
+#ifdef CARLA_OS_WIN
+# include "zynaddsubfx/rtosc/pretty-format.c"
+#endif
 }
 
 // rtosc includes
@@ -581,6 +583,7 @@ namespace Nio {
 }
 #endif // ! SKIP_ZYN_SYNTH
 
+#ifdef CARLA_OS_WIN
 rtosc_version rtosc_current_version()
 {
     return ((rtosc_version) { 0, 0, 0 } );
@@ -592,3 +595,4 @@ void rtosc_version_print_to_12byte_str(const rtosc_version* v,
     snprintf(_12bytes, 12, "%u.%u.%u",
              (unsigned)v->major, (unsigned)v->minor, (unsigned)v->revision);
 }
+#endif
