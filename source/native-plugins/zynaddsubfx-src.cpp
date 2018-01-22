@@ -48,10 +48,6 @@
 # define PRIx32 "%x"
 #endif
 
-#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-# define CARLA_ZYN_FULL
-#endif
-
 // C-code includes
 extern "C" {
 #include "zynaddsubfx/tlsf/tlsf.c"
@@ -88,7 +84,7 @@ extern "C" {
 // zynaddsubfx includes
 #include "zynaddsubfx/version.cpp"
 
-#ifdef CARLA_ZYN_FULL
+#ifndef SKIP_ZYN_SYNTH
 #include "zynaddsubfx/Containers/MultiPseudoStack.cpp"
 #undef rBegin
 #undef rObject
@@ -354,7 +350,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/globals.cpp"
-#endif // CARLA_ZYN_FULL
+#endif // ! SKIP_ZYN_SYNTH
 
 #include "zynaddsubfx/DSP/AnalogFilter.cpp"
 #undef rBegin
@@ -566,7 +562,7 @@ extern "C" {
 # pragma GCC diagnostic pop
 #endif
 
-#ifdef CARLA_ZYN_FULL
+#ifndef SKIP_ZYN_SYNTH
 // Dummy variables and functions for linking purposes
 namespace zyncarla {
 class WavFile;
@@ -583,7 +579,7 @@ namespace Nio {
    void waveStop(){}
 }
 }
-#endif // CARLA_ZYN_FULL
+#endif // ! SKIP_ZYN_SYNTH
 
 rtosc_version rtosc_current_version()
 {
