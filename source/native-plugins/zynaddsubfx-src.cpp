@@ -39,7 +39,7 @@
 #include "zynaddsubfx/tlsf/tlsf.h"
 #include "zynaddsubfx/rtosc/rtosc.h"
 
-#ifdef CARLA_OS_WIN
+#ifdef SKIP_ZYN_SYNTH
 # define PRId64 P_INT64
 # define PRIi64 P_INT64
 # define PRIx64 P_UINT64
