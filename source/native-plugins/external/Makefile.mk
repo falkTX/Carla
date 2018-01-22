@@ -127,7 +127,7 @@ ZYN_DSP_LIBS   = $(ZYN_BASE_LIBS)
 ZYN_DSP_LIBS  += $(shell pkg-config --libs fftw3 zlib)
 
 ifeq ($(SKIP_ZYN_SYNTH),true)
-ZYN_DSP_LIBS  += -DSKIP_ZYN_SYNTH
+BASE_FLAGS    += -DSKIP_ZYN_SYNTH
 else
 # UI flags
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
