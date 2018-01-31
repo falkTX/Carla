@@ -74,7 +74,7 @@ unset CXXFLAGS
 unset LDFLAGS
 
 export PREFIX=${TARGETDIR}/carla-w${ARCH}
-export PATH=${PREFIX}/bin/usr/sbin:/usr/bin:/sbin:/bin
+export PATH=${PREFIX}/bin:/usr/sbin:/usr/bin:/sbin:/bin
 export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 
 # ---------------------------------------------------------------------------------------------------------------------
