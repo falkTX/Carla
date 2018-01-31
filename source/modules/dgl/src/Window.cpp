@@ -87,11 +87,13 @@ struct Window::PrivateData {
           fWidgets(),
           fModal(),
 #if defined(DISTRHO_OS_WINDOWS)
-          hwnd(0)
+          hwnd(nullptr),
+          hwndParent(nullptr)
 #elif defined(DISTRHO_OS_MAC)
           fNeedsIdle(true),
           mView(nullptr),
-          mWindow(nullptr)
+          mWindow(nullptr),
+          mParentWindow(nullptr)
 #else
           xDisplay(nullptr),
           xWindow(0)
@@ -115,11 +117,13 @@ struct Window::PrivateData {
           fWidgets(),
           fModal(parent.pData),
 #if defined(DISTRHO_OS_WINDOWS)
-          hwnd(0)
+          hwnd(nullptr),
+          hwndParent(nullptr)
 #elif defined(DISTRHO_OS_MAC)
           fNeedsIdle(false),
           mView(nullptr),
-          mWindow(nullptr)
+          mWindow(nullptr),
+          mParentWindow(nullptr)
 #else
           xDisplay(nullptr),
           xWindow(0)
@@ -129,17 +133,16 @@ struct Window::PrivateData {
         init();
 
         const PuglInternals* const parentImpl(parent.pData->fView->impl);
+
+        // NOTE: almost a 1:1 copy of setTransientWinId()
 #if defined(DISTRHO_OS_WINDOWS)
-        // TODO
+        hwndParent = parentImpl->hwnd;
+        SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, (LONG_PTR)hwndParent);
 #elif defined(DISTRHO_OS_MAC)
-        [parentImpl->window orderWindow:NSWindowBelow relativeTo:[[mView window] windowNumber]];
+        mParentWindow = parentImpl->window;
 #else
         XSetTransientForHint(xDisplay, xWindow, parentImpl->win);
 #endif
-        return;
-
-        // maybe unused
-        (void)parentImpl;
     }
 
     PrivateData(Application& app, Window* const self, const intptr_t parentId)
@@ -156,11 +159,13 @@ struct Window::PrivateData {
           fWidgets(),
           fModal(),
 #if defined(DISTRHO_OS_WINDOWS)
-          hwnd(0)
+          hwnd(nullptr),
+          hwndParent(nullptr)
 #elif defined(DISTRHO_OS_MAC)
           fNeedsIdle(parentId == 0),
           mView(nullptr),
-          mWindow(nullptr)
+          mWindow(nullptr),
+          mParentWindow(nullptr)
 #else
           xDisplay(nullptr),
           xWindow(0)
@@ -344,22 +349,6 @@ struct Window::PrivateData {
         fModal.enabled = true;
         fModal.parent->fModal.childFocus = this;
 
-#ifdef DISTRHO_OS_WINDOWS
-        // Center this window
-        PuglInternals* const parentImpl = fModal.parent->fView->impl;
-
-        RECT curRect;
-        RECT parentRect;
-        GetWindowRect(hwnd, &curRect);
-        GetWindowRect(parentImpl->hwnd, &parentRect);
-
-        int x = parentRect.left+(parentRect.right-curRect.right)/2;
-        int y = parentRect.top +(parentRect.bottom-curRect.bottom)/2;
-
-        SetWindowPos(hwnd, 0, x, y, 0, 0, SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOSIZE|SWP_NOZORDER);
-        UpdateWindow(hwnd);
-#endif
-
         fModal.parent->setVisible(true);
         setVisible(true);
 
@@ -436,25 +425,65 @@ struct Window::PrivateData {
 
 #if defined(DISTRHO_OS_WINDOWS)
         if (yesNo)
-            ShowWindow(hwnd, fFirstInit ? SW_SHOWNORMAL : SW_RESTORE);
+        {
+            if (fFirstInit)
+            {
+                RECT rectChild, rectParent;
+
+                if (hwndParent != nullptr &&
+                    GetWindowRect(hwnd, &rectChild) &&
+                    GetWindowRect(hwndParent, &rectParent))
+                {
+                    SetWindowPos(hwnd, hwndParent,
+                                 rectParent.left + (rectChild.right-rectChild.left)/2,
+                                 rectParent.top + (rectChild.bottom-rectChild.top)/2,
+                                 0, 0, SWP_SHOWWINDOW|SWP_NOSIZE);
+                }
+                else
+                {
+                    ShowWindow(hwnd, SW_SHOWNORMAL);
+                }
+            }
+            else
+            {
+                ShowWindow(hwnd, SW_RESTORE);
+            }
+        }
         else
+        {
             ShowWindow(hwnd, SW_HIDE);
+        }
 
         UpdateWindow(hwnd);
 #elif defined(DISTRHO_OS_MAC)
         if (yesNo)
         {
             if (mWindow != nullptr)
+            {
+                if (mParentWindow != nullptr)
+                    [mParentWindow addChildWindow:mWindow
+                                          ordered:NSWindowAbove];
+
                 [mWindow setIsVisible:YES];
+            }
             else
+            {
                 [mView setHidden:NO];
+            }
         }
         else
         {
             if (mWindow != nullptr)
+            {
+                if (mParentWindow != nullptr)
+                    [mParentWindow removeChildWindow:mWindow];
+
                 [mWindow setIsVisible:NO];
+            }
             else
+            {
                 [mView setHidden:YES];
+            }
         }
 #else
         if (yesNo)
@@ -626,14 +655,14 @@ struct Window::PrivateData {
         DISTRHO_SAFE_ASSERT_RETURN(winId != 0,);
 
 #if defined(DISTRHO_OS_WINDOWS)
-        // TODO
+        hwndParent = (HWND)winId;
+        SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, (LONG_PTR)winId);
 #elif defined(DISTRHO_OS_MAC)
-        NSWindow* const window = [NSApp windowWithWindowNumber:winId];
-        DISTRHO_SAFE_ASSERT_RETURN(window != nullptr,);
+        NSWindow* const parentWindow = [NSApp windowWithWindowNumber:winId];
+        DISTRHO_SAFE_ASSERT_RETURN(parentWindow != nullptr,);
 
-        [window addChildWindow:mWindow
-                       ordered:NSWindowAbove];
-        [mWindow makeKeyWindow];
+        [parentWindow addChildWindow:mWindow
+                             ordered:NSWindowAbove];
 #else
         XSetTransientForHint(xDisplay, xWindow, static_cast< ::Window>(winId));
 #endif
@@ -984,11 +1013,13 @@ struct Window::PrivateData {
     } fModal;
 
 #if defined(DISTRHO_OS_WINDOWS)
-    HWND     hwnd;
+    HWND hwnd;
+    HWND hwndParent;
 #elif defined(DISTRHO_OS_MAC)
     bool            fNeedsIdle;
     PuglOpenGLView* mView;
     id              mWindow;
+    id              mParentWindow;
 #else
     Display* xDisplay;
     ::Window xWindow;

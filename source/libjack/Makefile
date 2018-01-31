@@ -27,11 +27,8 @@ LINK_FLAGS      += -lpthread -lrt
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-OBJS    =
-TARGETS =
-
 ifeq ($(LINUX),true)
-OBJS    = \
+OBJS = \
 	$(OBJDIR)/libjack.cpp.o \
 	$(OBJDIR)/libjack_base.cpp.o \
 	$(OBJDIR)/libjack_callbacks.cpp.o \
@@ -49,6 +46,8 @@ OBJS    = \
 	$(OBJDIR)/libjack_transport.cpp.o \
 	$(OBJDIR)/ringbuffer.c.o
 TARGET = $(BINDIR)/jack/libjack.so.0
+else
+OBJS =
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -58,7 +57,7 @@ all: $(TARGET)
 # ----------------------------------------------------------------------------------------------------------------------
 
 clean:
-	rm -f $(OBJDIR)/*.o $(TARGETS)
+	rm -f $(OBJDIR)/*.o $(TARGET)
 
 debug:
 	$(MAKE) DEBUG=true

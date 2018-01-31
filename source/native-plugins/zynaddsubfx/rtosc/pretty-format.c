@@ -23,8 +23,8 @@ static int asnprintf(char* str, size_t size, const char* format, ...)
     return written;
 }
 
-static const rtosc_print_options* default_print_options
- = &((rtosc_print_options) { true, 2, " ", 80});
+static const rtosc_print_options default_print_options
+ = ((rtosc_print_options) { true, 2, " ", 80});
 
 /**
  * Return the char that represents the escape sequence
@@ -73,7 +73,7 @@ size_t rtosc_print_arg_val(const rtosc_arg_val_t *arg,
 {
     size_t wrt = 0;
     if(!opt)
-        opt = default_print_options;
+        opt = &default_print_options;
     assert(arg);
     const rtosc_arg_t* val = &arg->val;
 
@@ -301,7 +301,7 @@ size_t rtosc_print_arg_vals(const rtosc_arg_val_t *args, size_t n,
     size_t wrt=0;
     int args_written_this_line = (cols_used) ? 1 : 0;
     if(!opt)
-        opt = default_print_options;
+        opt = &default_print_options;
     size_t sep_len = strlen(opt->sep);
     char* last_sep = buffer - 1;
     for(size_t i = 0; i < n; ++i)

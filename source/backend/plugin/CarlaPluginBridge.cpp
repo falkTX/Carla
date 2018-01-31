@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Bridge
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -391,9 +391,11 @@ public:
     {
         carla_debug("CarlaPluginBridge::~CarlaPluginBridge()");
 
+#ifndef BUILD_BRIDGE
         // close UI
         if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
             pData->transientTryCounter = 0;
+#endif
 
         pData->singleMutex.lock();
         pData->masterMutex.lock();
@@ -2175,7 +2177,9 @@ public:
                 break;
 
             case kPluginBridgeNonRtServerUiClosed:
+#ifndef BUILD_BRIDGE
                 pData->transientTryCounter = 0;
+#endif
                 pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
                 break;
 

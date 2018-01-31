@@ -12,6 +12,7 @@ endif
 
 ifeq ($(MACOS_OR_WIN32),true)
 HAVE_DGL = true
+SKIP_ZYN_SYNTH = true
 else
 HAVE_DGL = $(shell pkg-config --exists gl x11 && echo true)
 endif
@@ -98,7 +99,9 @@ endif
 DPF_FLAGS  = -I$(CWDE)/modules/distrho
 
 ifeq ($(HAVE_DGL),true)
+ifneq ($(MACOS_OR_WIN32),true)
 DPF_FLAGS += $(shell pkg-config --cflags gl)
+endif
 DPF_FLAGS += -I$(CWDE)/modules/dgl -DDGL_NAMESPACE=CarlaDGL -DDGL_FILE_BROWSER_DISABLED -DDGL_NO_SHARED_RESOURCES
 endif
 
@@ -123,6 +126,9 @@ ZYN_DSP_FLAGS += $(shell pkg-config --cflags fftw3 zlib)
 ZYN_DSP_LIBS   = $(ZYN_BASE_LIBS)
 ZYN_DSP_LIBS  += $(shell pkg-config --libs fftw3 zlib)
 
+ifeq ($(SKIP_ZYN_SYNTH),true)
+BASE_FLAGS    += -DSKIP_ZYN_SYNTH
+else
 # UI flags
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 
@@ -154,6 +160,7 @@ else  # HAVE_ZYN_UI_DEPS
 
 ZYN_DSP_FLAGS += -DNO_UI
 
+endif # SKIP_ZYN_SYNTH
 endif # HAVE_ZYN_UI_DEPS
 endif # HAVE_ZYN_DEPS
 

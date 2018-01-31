@@ -1,6 +1,6 @@
 /*
  * Carla Plugin
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -591,7 +591,10 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
       uiLib(nullptr),
       ctrlChannel(0),
       extraHints(0x0),
+#ifndef BUILD_BRIDGE
       transientTryCounter(0),
+      transientFirstTry(true),
+#endif
       name(nullptr),
       filename(nullptr),
       iconName(nullptr),
@@ -619,7 +622,9 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
 CarlaPlugin::ProtectedData::~ProtectedData() noexcept
 {
     CARLA_SAFE_ASSERT(! (active && needsReset));
+#ifndef BUILD_BRIDGE
     CARLA_SAFE_ASSERT(transientTryCounter == 0);
+#endif
 
     {
         // mutex MUST have been locked before
