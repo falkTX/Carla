@@ -1,6 +1,6 @@
 /*
  * Carla Plugin UI
- * Copyright (C) 2014-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -31,6 +31,10 @@
 
 #ifdef CARLA_OS_WIN
 # include <ctime>
+#endif
+
+#ifndef CARLA_PLUGIN_UI_CLASS_PREFIX
+# error CARLA_PLUGIN_UI_CLASS_PREFIX undefined
 #endif
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -359,6 +363,12 @@ private:
 
 #ifdef CARLA_OS_MAC
 
+#ifdef BUILD_BRIDGE
+# define CarlaPluginWindow CARLA_JOIN_MACRO(CarlaPluginWindowBridged, CARLA_PLUGIN_UI_CLASS_PREFIX)
+#else
+# define CarlaPluginWindow CARLA_JOIN_MACRO(CarlaPluginWindow, CARLA_PLUGIN_UI_CLASS_PREFIX)
+#endif
+
 @interface CarlaPluginWindow : NSWindow
 {
 @public
@@ -443,8 +453,7 @@ public:
     CocoaPluginUI(Callback* const cb, const uintptr_t parentId, const bool isResizable) noexcept
         : CarlaPluginUI(cb, isResizable),
           fView(nullptr),
-          fWindow(0),
-          fParentId(parentId)
+          fWindow(0)
     {
         [NSAutoreleasePool new];
         [NSApplication sharedApplication];
@@ -495,9 +504,6 @@ public:
 
         [fView setHidden:NO];
         [fWindow setIsVisible:YES];
-
-        if (fParentId != 0)
-            setTransientWinId(fParentId);
     }
 
     void hide() override
@@ -559,12 +565,11 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
 
-        NSWindow* window = [NSApp windowWithWindowNumber:winId];
-        CARLA_SAFE_ASSERT_RETURN(window != nullptr,);
+        NSWindow* const parentWindow = [NSApp windowWithWindowNumber:winId];
+        CARLA_SAFE_ASSERT_RETURN(parentWindow != nullptr,);
 
-        [window addChildWindow:fWindow
-                       ordered:NSWindowAbove];
-        [fWindow makeKeyWindow];
+        [parentWindow addChildWindow:fWindow
+                             ordered:NSWindowAbove];
     }
 
     void setChildWindow(void* const winId) override
@@ -585,7 +590,6 @@ public:
 private:
     NSView* fView;
     id      fWindow;
-    uintptr_t fParentId;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CocoaPluginUI)
 };
@@ -606,7 +610,8 @@ class WindowsPluginUI : public CarlaPluginUI
 public:
     WindowsPluginUI(Callback* const cb, const uintptr_t parentId, const bool isResizable) noexcept
         : CarlaPluginUI(cb, isResizable),
-          fWindow(0),
+          fWindow(nullptr),
+          fParentWindow(nullptr),
           fIsVisible(false),
           fFirstShow(true)
      {
@@ -675,9 +680,31 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
 
-        ShowWindow(fWindow, fFirstShow ? SW_SHOWNORMAL : SW_RESTORE);
+        if (fFirstShow)
+        {
+            fFirstShow = false;
+            RECT rectChild, rectParent;
+
+            if (fParentWindow != nullptr &&
+                GetWindowRect(fWindow, &rectChild) &&
+                GetWindowRect(fParentWindow, &rectParent))
+            {
+                SetWindowPos(fWindow, fParentWindow,
+                             rectParent.left + (rectChild.right-rectChild.left)/2,
+                             rectParent.top + (rectChild.bottom-rectChild.top)/2,
+                             0, 0, SWP_SHOWWINDOW|SWP_NOSIZE);
+            }
+            else
+            {
+                ShowWindow(fWindow, SW_SHOWNORMAL);
+            }
+        }
+        else
+        {
+            ShowWindow(fWindow, SW_RESTORE);
+        }
+
         fIsVisible = true;
-        fFirstShow = false;
         UpdateWindow(fWindow);
     }
 
@@ -769,7 +796,8 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
 
-        // TODO
+        fParentWindow = (HWND)winId;
+        SetWindowLongPtr(fWindow, GWLP_HWNDPARENT, (LONG_PTR)winId);
     }
 
     void setChildWindow(void* const winId) override
@@ -789,6 +817,7 @@ public:
 
 private:
     HWND     fWindow;
+    HWND     fParentWindow;
     WNDCLASS fWindowClass;
 
     bool fIsVisible;
@@ -824,6 +853,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 // -----------------------------------------------------
 
+#ifndef BUILD_BRIDGE
 bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* const uiTitle, const uintptr_t winId, const bool centerUI)
 {
     CARLA_SAFE_ASSERT_RETURN(uiTitle != nullptr && uiTitle[0] != '\0', true);
@@ -1028,11 +1058,90 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 
     XFlush(sd.display);
     return true;
-#else
+#endif
+
+#ifdef CARLA_OS_MAC
+    uint const hints = kCGWindowListOptionOnScreenOnly|kCGWindowListExcludeDesktopElements;
+
+    CFArrayRef const windowListRef = CGWindowListCopyWindowInfo(hints, kCGNullWindowID);
+    const NSArray* const windowList = (const NSArray*)windowListRef;
+
+    int windowToMap, windowWithPID = 0, windowWithNameAndPID = 0;
+
+    for (NSDictionary* const entry in windowList)
+    {
+        if ([entry[(id)kCGWindowSharingState] intValue] == kCGWindowSharingNone)
+            continue;
+
+        NSString* const windowName   =  entry[(id)kCGWindowName];
+        int       const windowNumber = [entry[(id)kCGWindowNumber] intValue];
+        uintptr_t const windowPID    = [entry[(id)kCGWindowOwnerPID] intValue];
+
+        if (windowPID != pid)
+            continue;
+
+        windowWithPID = windowNumber;
+
+        if (windowName != nullptr && std::strcmp([windowName UTF8String], uiTitle) == 0)
+            windowWithNameAndPID = windowNumber;
+    }
+
+    CFRelease(windowListRef);
+
+    if (windowWithNameAndPID != 0)
+    {
+        carla_stdout("Match found using pid and name");
+        windowToMap = windowWithNameAndPID;
+    }
+    else if (windowWithPID != 0)
+    {
+        carla_stdout("Match found using pid");
+        windowToMap = windowWithPID;
+    }
+    else
+    {
+        return false;
+    }
+
+    NSWindow* const parentWindow = [NSApp windowWithWindowNumber:winId];
+    CARLA_SAFE_ASSERT_RETURN(parentWindow != nullptr, false);
+
+    [parentWindow orderWindow:NSWindowBelow
+                   relativeTo:windowToMap];
+    return true;
+#endif
+
+#ifdef CARLA_OS_WIN
+    if (HWND const childWindow = FindWindowA(nullptr, uiTitle))
+    {
+        HWND const parentWindow = (HWND)winId;
+        SetWindowLongPtr(childWindow, GWLP_HWNDPARENT, (LONG_PTR)parentWindow);
+
+        if (centerUI)
+        {
+            RECT rectChild, rectParent;
+
+            if (GetWindowRect(childWindow, &rectChild) && GetWindowRect(parentWindow, &rectParent))
+            {
+                SetWindowPos(childWindow, parentWindow,
+                             rectParent.left + (rectChild.right-rectChild.left)/2,
+                             rectParent.top + (rectChild.bottom-rectChild.top)/2,
+                             0, 0, SWP_NOSIZE);
+            }
+        }
+
+        carla_stdout("Match found using window name");
+        return true;
+    }
+
+    return false;
+#endif
+
+    // fallback, may be unused
     return true;
     (void)pid; (void)centerUI;
-#endif
 }
+#endif // BUILD_BRIDGE
 
 // -----------------------------------------------------
 

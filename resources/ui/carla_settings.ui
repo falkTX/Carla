@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>612</width>
-    <height>587</height>
+    <height>507</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -708,7 +708,7 @@
         </layout>
        </widget>
        <widget class="QWidget" name="page_engine">
-        <layout class="QVBoxLayout" name="verticalLayout_18">
+        <layout class="QVBoxLayout" name="verticalLayout_6">
          <property name="margin">
           <number>2</number>
          </property>
@@ -924,7 +924,7 @@
            </property>
            <layout class="QGridLayout" name="gridLayout_8">
             <item row="5" column="0">
-             <widget class="QLabel" name="label_12">
+             <widget class="QLabel" name="label_engine_ui_bridges_timeout">
               <property name="toolTip">
                <string>How much time to wait for OSC GUIs to ping back the host</string>
               </property>
@@ -989,6 +989,13 @@
               </property>
              </widget>
             </item>
+            <item row="6" column="0" colspan="3">
+             <widget class="QLabel" name="label_engine_ui_bridges_mac_note">
+              <property name="text">
+               <string>NOTE: Plugin-bridge UIs cannot be managed by Carla on macOS</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </item>
@@ -1006,9 +1013,9 @@
           </widget>
          </item>
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_8">
+          <layout class="QHBoxLayout" name="horizontalLayout_13">
            <item>
-            <spacer name="horizontalSpacer_10">
+            <spacer name="horizontalSpacer_20">
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
              </property>
@@ -1021,7 +1028,7 @@
             </spacer>
            </item>
            <item>
-            <widget class="QLabel" name="label_13">
+            <widget class="QLabel" name="label_22">
              <property name="maximumSize">
               <size>
                <width>22</width>
@@ -1040,14 +1047,14 @@
             </widget>
            </item>
            <item>
-            <widget class="QLabel" name="label_14">
+            <widget class="QLabel" name="label_23">
              <property name="text">
               <string>Restart the engine to load the new settings</string>
              </property>
             </widget>
            </item>
            <item>
-            <spacer name="horizontalSpacer_13">
+            <spacer name="horizontalSpacer_21">
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
              </property>
@@ -1069,7 +1076,7 @@
            <property name="sizeHint" stdset="0">
             <size>
              <width>20</width>
-             <height>225</height>
+             <height>300</height>
             </size>
            </property>
           </spacer>
@@ -1893,6 +1900,9 @@ This mode is not available for VST plugins.</string>
             </item>
             <item>
              <widget class="QCheckBox" name="ch_engine_prefer_plugin_bridges">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="toolTip">
                <string>Whenever possible, run the plugins in bridge mode.</string>
               </property>
@@ -2082,6 +2092,22 @@ This mode is not available for VST plugins.</string>
     <hint type="destinationlabel">
      <x>402</x>
      <y>145</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cb_exp_plugin_bridges</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>ch_engine_prefer_plugin_bridges</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>402</x>
+     <y>145</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>402</x>
+     <y>433</y>
     </hint>
    </hints>
   </connection>

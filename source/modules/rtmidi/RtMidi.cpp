@@ -931,7 +931,7 @@ void MidiOutCore :: initialize( const std::string& clientName )
   OSStatus result = MIDIClientCreate(name, NULL, NULL, &client );
   if ( result != noErr ) {
     std::ostringstream ost;
-    ost << "MidiInCore::initialize: error creating OS-X MIDI client object (" << result << ").";
+    ost << "MidiOutCore::initialize: error creating OS-X MIDI client object (" << result << ").";
     errorString_ = ost.str();
     error( RtMidiError::DRIVER_ERROR, errorString_ );
     return;

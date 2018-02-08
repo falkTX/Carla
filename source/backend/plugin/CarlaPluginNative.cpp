@@ -229,7 +229,9 @@ public:
             if (fIsUiVisible && fDescriptor != nullptr && fDescriptor->ui_show != nullptr && fHandle != nullptr)
                 fDescriptor->ui_show(fHandle, false);
 
+#ifndef BUILD_BRIDGE
             pData->transientTryCounter = 0;
+#endif
         }
 
         pData->singleMutex.lock();
@@ -800,7 +802,9 @@ public:
 
         if (! yesNo)
         {
+#ifndef BUILD_BRIDGE
             pData->transientTryCounter = 0;
+#endif
             return;
         }
 

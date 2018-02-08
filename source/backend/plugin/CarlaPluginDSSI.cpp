@@ -697,7 +697,9 @@ public:
         }
         else
         {
+#ifndef BUILD_BRIDGE
             pData->transientTryCounter = 0;
+#endif
 
             if (fOscData.target != nullptr)
             {
@@ -2357,8 +2359,10 @@ public:
         for (uint32_t i=0; i < pData->param.count; ++i)
             osc_send_control(fOscData, pData->param.data[i].rindex, getParameterValue(i));
 
+#ifndef BUILD_BRIDGE
         if (pData->engine->getOptions().frontendWinId != 0)
             pData->transientTryCounter = 1;
+#endif
 
         carla_stdout("CarlaPluginDSSI::updateOscData() - done");
     }

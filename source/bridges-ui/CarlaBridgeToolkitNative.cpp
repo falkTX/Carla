@@ -1,6 +1,6 @@
 /*
  * Carla Bridge UI
- * Copyright (C) 2014-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -68,8 +68,7 @@ public:
 
         fHostUI->setTitle(options.windowTitle.buffer());
 
-#ifdef HAVE_X11
-        // Out-of-process reparenting only possible on X11
+#if (defined(CARLA_OS_WIN) && defined(BRIDGE_HWND)) || (defined(HAVE_X11) && defined(BRIDGE_X11))
         if (options.transientWindowId != 0)
         {
             fHostUI->setTransientWinId(options.transientWindowId);
@@ -225,6 +224,7 @@ CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeFormat* const forma
 
 CARLA_BRIDGE_UI_END_NAMESPACE
 
+#define CARLA_PLUGIN_UI_CLASS_PREFIX ToolkitNative
 #include "CarlaPluginUI.cpp"
 
 // -------------------------------------------------------------------------

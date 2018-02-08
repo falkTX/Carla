@@ -1322,8 +1322,10 @@ public:
 
         const uintptr_t frontendWinId(pData->engine->getOptions().frontendWinId);
 
+#ifndef BUILD_BRIDGE
         if (! yesNo)
             pData->transientTryCounter = 0;
+#endif
 
         if (fUI.type == UI::TYPE_BRIDGE)
         {
@@ -1613,7 +1615,9 @@ public:
                 fPipeServer.stopPipeServer(2000);
                 // fall through
             case CarlaPipeServerLV2::UiCrashed:
+#ifndef BUILD_BRIDGE
                 pData->transientTryCounter = 0;
+#endif
                 pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
                 break;
             }

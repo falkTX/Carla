@@ -2328,6 +2328,7 @@ void CarlaPlugin::uiIdle()
         pData->postUiEvents.data.clear();
     }
 
+#ifndef BUILD_BRIDGE
     if (pData->transientTryCounter == 0)
         return;
     if (++pData->transientTryCounter % 10 != 0)
@@ -2340,8 +2341,13 @@ void CarlaPlugin::uiIdle()
     CarlaString uiTitle(pData->name);
     uiTitle += " (GUI)";
 
-    if (CarlaPluginUI::tryTransientWinIdMatch(getUiBridgeProcessId(), uiTitle, pData->engine->getOptions().frontendWinId, true))
+    if (CarlaPluginUI::tryTransientWinIdMatch(getUiBridgeProcessId(), uiTitle,
+                                              pData->engine->getOptions().frontendWinId, pData->transientFirstTry))
+    {
         pData->transientTryCounter = 0;
+        pData->transientFirstTry = false;
+    }
+#endif
 }
 
 void CarlaPlugin::uiParameterChange(const uint32_t index, const float value) noexcept

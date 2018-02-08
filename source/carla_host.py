@@ -309,6 +309,9 @@ class HostWindow(QMainWindow):
             self.ui.cb_transport_link.setEnabled(False)
             self.ui.dsb_transport_bpm.setEnabled(False)
 
+        if MACOS:
+            self.ui.cb_transport_link.setEnabled(False)
+
         self.ui.w_transport.setEnabled(False)
 
         # ----------------------------------------------------------------------------------------------------

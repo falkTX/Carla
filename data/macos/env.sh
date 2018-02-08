@@ -5,13 +5,14 @@
 
 source data/macos/common.env
 
-export MACOS="true"
-export MACOS_OLD="true"
 export CC=clang
 export CXX=clang++
 
 export MACOS="true"
-export MACOS_OLD="true"
+
+if [ $(clang -v  2>&1 | sed -n 's/.*version \([0-9]\).*/\1/p') -lt 9 ]; then
+  export MACOS_OLD="true"
+fi
 
 export CC=clang
 export CXX=clang++

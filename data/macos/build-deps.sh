@@ -4,12 +4,12 @@
 # automake, autoconf, bison, flex, libtool
 # p5-libxml-perl, p5-xml-libxml, p7zip, pkgconfig
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # stop on error
 
 set -e
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # cd to correct path
 
 if [ -f Makefile ]; then
@@ -21,7 +21,7 @@ fi
 
 source common.env
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # function to remove old stuff
 
 cleanup()
@@ -59,7 +59,7 @@ exit 0
 
 }
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # function to build base libs
 
 build_base()
@@ -79,7 +79,7 @@ export CXXFLAGS="${CFLAGS} -fvisibility-inlines-hidden"
 export LDFLAGS="-fdata-sections -ffunction-sections -Wl,-dead_strip -Wl,-dead_strip_dylibs"
 export LDFLAGS="${LDFLAGS} -L${PREFIX}/lib -m${ARCH}"
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # pkgconfig
 
 if [ ! -d pkg-config-${PKG_CONFIG_VERSION} ]; then
@@ -97,7 +97,7 @@ if [ ! -f pkg-config-${PKG_CONFIG_VERSION}_$ARCH/build-done ]; then
   cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # liblo
 
 if [ ! -d liblo-${LIBLO_VERSION} ]; then
@@ -117,13 +117,30 @@ if [ ! -f liblo-${LIBLO_VERSION}_$ARCH/build-done ]; then
   cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 
 if [ x"${ARCH}" = x"32" ]; then
   return
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
+# zlib
+
+if [ ! -d zlib-${ZLIB_VERSION} ]; then
+  curl -L https://github.com/madler/zlib/archive/v${ZLIB_VERSION}.tar.gz -o zlib-${ZLIB_VERSION}.tar.gz
+  tar -xf zlib-${ZLIB_VERSION}.tar.gz
+fi
+
+if [ ! -f zlib-${ZLIB_VERSION}/build-done ]; then
+  cd zlib-${ZLIB_VERSION}
+  ./configure --static --prefix=${PREFIX}
+  make
+  make install
+  touch build-done
+  cd ..
+fi
+
+# ---------------------------------------------------------------------------------------------------------------------
 # file/magic
 
 if [ ! -d file-${FILE_VERSION} ]; then
@@ -140,7 +157,7 @@ if [ ! -f file-${FILE_VERSION}/build-done ]; then
   cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # libogg
 
 if [ ! -d libogg-${LIBOGG_VERSION} ]; then
@@ -157,7 +174,7 @@ if [ ! -f libogg-${LIBOGG_VERSION}/build-done ]; then
   cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # libvorbis
 
 if [ ! -d libvorbis-${LIBVORBIS_VERSION} ]; then
@@ -174,7 +191,7 @@ if [ ! -f libvorbis-${LIBVORBIS_VERSION}/build-done ]; then
   cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # flac
 
 if [ ! -d flac-${FLAC_VERSION} ]; then
@@ -194,7 +211,7 @@ if [ ! -f flac-${FLAC_VERSION}/build-done ]; then
   cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # libsndfile
 
 if [ ! -d libsndfile-${LIBSNDFILE_VERSION} ]; then
@@ -212,7 +229,7 @@ if [ ! -f libsndfile-${LIBSNDFILE_VERSION}/build-done ]; then
   cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # libgig
 
 if [ ! -d libgig-${LIBGIG_VERSION} ]; then
@@ -233,7 +250,7 @@ if [ ! -f libgig-${LIBGIG_VERSION}/build-done ]; then
   cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # linuxsampler
 
 if [ ! -d linuxsampler-${LINUXSAMPLER_VERSION} ]; then
@@ -249,8 +266,6 @@ if [ ! -f linuxsampler-${LINUXSAMPLER_VERSION}/build-done ]; then
     sed -i -e "s|HAVE_AU|HAVE_VST|" src/hostplugins/Makefile.am
     touch patched
   fi
-  #rm -f configure
-  #env PATH=/opt/local/bin:$PATH make -f Makefile.svn configure
   env PATH=/opt/local/bin:$PATH /opt/local/bin/aclocal -I /opt/local/share/aclocal
   env PATH=/opt/local/bin:$PATH /opt/local/bin/glibtoolize --force --copy
   env PATH=/opt/local/bin:$PATH /opt/local/bin/autoheader
@@ -272,7 +287,7 @@ if [ ! -f linuxsampler-${LINUXSAMPLER_VERSION}/build-done ]; then
   cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # libffi
 
 if [ ! -d libffi-${LIBFFI_VERSION} ]; then
@@ -282,14 +297,14 @@ fi
 
 if [ ! -f libffi-${LIBFFI_VERSION}/build-done ]; then
   cd libffi-${LIBFFI_VERSION}
-  ./configure --enable-static --disable-shared --prefix=$PREFIX
+  ./configure --enable-static --disable-shared --prefix=${PREFIX}
   make ${MAKE_ARGS}
   make install
   touch build-done
   cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # gettext
 
 if [ ! -d gettext-${GETTEXT_VERSION} ]; then
@@ -306,7 +321,7 @@ if [ ! -f gettext-${GETTEXT_VERSION}/build-done ]; then
   cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # glib
 
 if [ ! -d glib-${GLIB_VERSION} ]; then
@@ -323,13 +338,13 @@ if [ ! -f glib-${GLIB_VERSION}/build-done ]; then
   env PATH=/opt/local/bin:$PATH make ${MAKE_ARGS} || true
   touch gio/gio-querymodules gio/glib-compile-resources gio/gsettings gio/gdbus gio/gresource gio/gapplication
   env PATH=/opt/local/bin:$PATH make ${MAKE_ARGS}
-  touch $PREFIX/bin/gtester-report
+  touch ${PREFIX}/bin/gtester-report
   env PATH=/opt/local/bin:$PATH make install
   touch build-done
   cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # fluidsynth
 
 if [ ! -d fluidsynth-${FLUIDSYNTH_VERSION} ]; then
@@ -353,9 +368,55 @@ if [ ! -f fluidsynth-${FLUIDSYNTH_VERSION}/build-done ]; then
   cd ..
 fi
 
+# ---------------------------------------------------------------------------------------------------------------------
+# mxml
+
+if [ ! -d mxml-${MXML_VERSION} ]; then
+  curl -L https://github.com/michaelrsweet/mxml/releases/download/v${MXML_VERSION}/mxml-${MXML_VERSION}.tar.gz -o mxml-${MXML_VERSION}.tar.gz
+  mkdir mxml-${MXML_VERSION}
+  cd mxml-${MXML_VERSION}
+  tar -xf ../mxml-${MXML_VERSION}.tar.gz
+  cd ..
+fi
+
+if [ ! -f mxml-${MXML_VERSION}/build-done ]; then
+  cd mxml-${MXML_VERSION}
+  ./configure --disable-shared --prefix=${PREFIX}
+  make libmxml.a
+  cp *.a    ${PREFIX}/lib/
+  cp *.pc   ${PREFIX}/lib/pkgconfig/
+  cp mxml.h ${PREFIX}/include/
+  touch build-done
+  cd ..
+fi
+
+# ---------------------------------------------------------------------------------------------------------------------
+# fftw3 (needs to be last as it modifies C[XX]FLAGS)
+
+if [ ! -d fftw-${FFTW3_VERSION} ]; then
+  curl -O http://www.fftw.org/fftw-${FFTW3_VERSION}.tar.gz
+  tar -xf fftw-${FFTW3_VERSION}.tar.gz
+fi
+
+if [ ! -f fftw-${FFTW3_VERSION}/build-done ]; then
+  export CFLAGS="${CFLAGS} -ffast-math"
+  export CXXFLAGS="${CXXFLAGS} -ffast-math"
+  cd fftw-${FFTW3_VERSION}
+  ./configure --enable-static --enable-sse2 --disable-shared --disable-debug --prefix=${PREFIX}
+  make
+  make install
+  make clean
+  ./configure --enable-static --enable-sse --enable-sse2 --enable-single --disable-shared --disable-debug --prefix=${PREFIX}
+  make
+  make install
+  make clean
+  touch build-done
+  cd ..
+fi
+
 }
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # build base libs
 
 export ARCH=32
@@ -364,7 +425,7 @@ build_base
 export ARCH=64
 build_base
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # set flags for qt stuff
 
 export PREFIX=${TARGETDIR}/carla
@@ -381,7 +442,7 @@ export MAKE=/usr/bin/make
 export CFG_ARCH=x86_64
 export QMAKESPEC=macx-clang
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # qt5-base download
 
 if [ ! -d qtbase-opensource-src-${QT5_VERSION} ]; then
@@ -390,22 +451,27 @@ if [ ! -d qtbase-opensource-src-${QT5_VERSION} ]; then
   /opt/local/bin/7z x qtbase-opensource-src-${QT5_VERSION}.tar
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # qt5-base (64bit, shared, framework)
 
 if [ ! -f qtbase-opensource-src-${QT5_VERSION}/build-done ]; then
   cd qtbase-opensource-src-${QT5_VERSION}
   if [ ! -f configured ]; then
-    sed -i -e "s|AWK=.*|AWK=/opt/local/bin/gawk|" configure
+    if [ ! -f carla-patched ]; then
+      sed -i -e "s|PNG_WARNINGS_SUPPORTED|PNG_WARNINGS_NOT_SUPPORTED|" src/3rdparty/libpng/pnglibconf.h
+      sed -i -e "s|AWK=.*|AWK=/opt/local/bin/gawk|" configure
+      patch -p1 -i ../patches/qt55-newosx-fix.patch
+      touch carla-patched
+    fi
     chmod +x configure
     chmod -R 777 config.tests/unix/
     ./configure -release -shared -opensource -confirm-license -force-pkg-config -platform macx-clang -framework \
-                -prefix $PREFIX -plugindir $PREFIX/lib/qt5/plugins -headerdir $PREFIX/include/qt5 \
+                -prefix ${PREFIX} -plugindir ${PREFIX}/lib/qt5/plugins -headerdir ${PREFIX}/include/qt5 \
                 -qt-freetype -qt-libjpeg -qt-libpng -qt-pcre -opengl desktop -qpa cocoa \
                 -no-directfb -no-eglfs -no-kms -no-linuxfb -no-mtdev -no-xcb -no-xcb-xlib \
                 -no-sse3 -no-ssse3 -no-sse4.1 -no-sse4.2 -no-avx -no-avx2 -no-mips_dsp -no-mips_dspr2 \
                 -no-cups -no-dbus -no-evdev -no-fontconfig -no-harfbuzz -no-gif -no-glib -no-nis -no-openssl -no-pch -no-sql-ibase -no-sql-odbc \
-                -no-audio-backend -no-qml-debug -no-separate-debug-info \
+                -no-audio-backend -no-qml-debug -no-separate-debug-info -no-use-gold-linker \
                 -no-compile-examples -nomake examples -nomake tests -make libs -make tools
     touch configured
   fi
@@ -415,12 +481,12 @@ if [ ! -f qtbase-opensource-src-${QT5_VERSION}/build-done ]; then
   ln -s ${PREFIX}/lib/QtGui.framework/Headers     ${PREFIX}/include/qt5/QtGui
   ln -s ${PREFIX}/lib/QtWidgets.framework/Headers ${PREFIX}/include/qt5/QtWidgets
   sed -i -e "s/ -lqtpcre/ /" ${PREFIX}/lib/pkgconfig/Qt5Core.pc
-  sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/Qt5Core.pc
-  sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/Qt5Core.pc
-  sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/Qt5Gui.pc
-  sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/Qt5Gui.pc
-  sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/Qt5Widgets.pc
-  sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/Qt5Widgets.pc
+  sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Core.pc
+  sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Core.pc
+  sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Gui.pc
+  sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Gui.pc
+  sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Widgets.pc
+  sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Widgets.pc
   touch build-done
   cd ..
 fi
@@ -462,7 +528,7 @@ QT59_ARGS="./configure -prefix ${PREFIX} -plugindir ${PREFIX}/lib/qt5/plugins -h
                 -qt-sqlite
 "
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # qt5-mac-extras
 
 if [ ! -d qtmacextras-opensource-src-${QT5_VERSION} ]; then
@@ -480,7 +546,7 @@ if [ ! -f qtmacextras-opensource-src-${QT5_VERSION}/build-done ]; then
   cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # qt5-svg
 
 if [ ! -d qtsvg-opensource-src-${QT5_VERSION} ]; then
@@ -498,7 +564,7 @@ if [ ! -f qtsvg-opensource-src-${QT5_VERSION}/build-done ]; then
   cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # python
 
 if [ ! -d Python-${PYTHON_VERSION} ]; then
@@ -508,14 +574,14 @@ fi
 
 if [ ! -f Python-${PYTHON_VERSION}/build-done ]; then
   cd Python-${PYTHON_VERSION}
-  ./configure --prefix=$PREFIX
+  ./configure --prefix=${PREFIX}
   make
   make install
   touch build-done
   cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # sip
 
 if [ ! -d sip-${SIP_VERSION} ]; then
@@ -532,7 +598,7 @@ if [ ! -f sip-${SIP_VERSION}/build-done ]; then
   cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # pyqt5
 
 if [ ! -d PyQt-gpl-${PYQT5_VERSION} ]; then
@@ -549,7 +615,7 @@ if [ ! -f PyQt-gpl-${PYQT5_VERSION}/build-done ]; then
   cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # pyliblo
 
 if [ ! -d pyliblo-${PYLIBLO_VERSION} ]; then
@@ -561,12 +627,12 @@ if [ ! -f pyliblo-${PYLIBLO_VERSION}/build-done ]; then
   cd pyliblo-${PYLIBLO_VERSION}
   env CFLAGS="${CFLAGS} -I${TARGETDIR}/carla64/include" LDFLAGS="${LDFLAGS} -L${TARGETDIR}/carla64/lib" \
   python3 setup.py build
-  python3 setup.py install --prefix=$PREFIX
+  python3 setup.py install --prefix=${PREFIX}
   touch build-done
   cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # cxfreeze
 
 if [ ! -d cx_Freeze-${CXFREEZE_VERSION} ]; then
@@ -578,9 +644,9 @@ if [ ! -f cx_Freeze-${CXFREEZE_VERSION}/build-done ]; then
   cd cx_Freeze-${CXFREEZE_VERSION}
   sed -i -e 's/"python%s.%s"/"python%s.%sm"/' setup.py
   python3 setup.py build
-  python3 setup.py install --prefix=$PREFIX
+  python3 setup.py install --prefix=${PREFIX}
   touch build-done
   cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------

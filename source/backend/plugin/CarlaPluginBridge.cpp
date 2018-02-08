@@ -391,9 +391,11 @@ public:
     {
         carla_debug("CarlaPluginBridge::~CarlaPluginBridge()");
 
+#ifndef BUILD_BRIDGE
         // close UI
         if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
             pData->transientTryCounter = 0;
+#endif
 
         pData->singleMutex.lock();
         pData->masterMutex.lock();
@@ -2189,7 +2191,9 @@ public:
                 break;
 
             case kPluginBridgeNonRtServerUiClosed:
+#ifndef BUILD_BRIDGE
                 pData->transientTryCounter = 0;
+#endif
                 pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
                 break;
 
