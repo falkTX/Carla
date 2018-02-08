@@ -649,10 +649,12 @@ public:
 
     void handleNonRtData()
     {
+        CarlaPlugin* const plugin(pData->plugins[0].plugin);
+        CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
         for (; fShmNonRtClientControl.isDataAvailableForReading();)
         {
             const PluginBridgeNonRtClientOpcode opcode(fShmNonRtClientControl.readOpcode());
-            CarlaPlugin* const plugin(pData->plugins[0].plugin);
 
 #ifdef DEBUG
             if (opcode != kPluginBridgeNonRtClientPing) {
