@@ -1329,7 +1329,7 @@ const MidiProgramData* carla_get_midi_program_data(uint pluginId, uint32_t midiP
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retMidiProgData);
 
     carla_debug("carla_get_midi_program_data(%i, %i)", pluginId, midiProgramId);
-    CARLA_SAFE_ASSERT_RETURN(midiProgramId < plugin->getMidiProgramCount(),);
+    CARLA_SAFE_ASSERT_RETURN(midiProgramId < plugin->getMidiProgramCount(), &retMidiProgData);
 
     const MidiProgramData& pluginMidiProgData(plugin->getMidiProgramData(midiProgramId));
     retMidiProgData.bank    = pluginMidiProgData.bank;
@@ -1456,7 +1456,7 @@ const char* carla_get_parameter_text(uint pluginId, uint32_t parameterId)
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, gNullCharPtr);
 
     carla_debug("carla_get_parameter_text(%i, %i)", pluginId, parameterId);
-    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
+    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(), gNullCharPtr);
 
     static char textBuf[STR_MAX+1];
     carla_zeroChars(textBuf, STR_MAX+1);
@@ -1473,7 +1473,7 @@ const char* carla_get_program_name(uint pluginId, uint32_t programId)
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, gNullCharPtr);
 
     carla_debug("carla_get_program_name(%i, %i)", pluginId, programId);
-    CARLA_SAFE_ASSERT_RETURN(programId < plugin->getProgramCount(),);
+    CARLA_SAFE_ASSERT_RETURN(programId < plugin->getProgramCount(), gNullCharPtr);
 
     static char programName[STR_MAX+1];
     carla_zeroChars(programName, STR_MAX+1);
@@ -1490,7 +1490,7 @@ const char* carla_get_midi_program_name(uint pluginId, uint32_t midiProgramId)
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, gNullCharPtr);
 
     carla_debug("carla_get_midi_program_name(%i, %i)", pluginId, midiProgramId);
-    CARLA_SAFE_ASSERT_RETURN(midiProgramId < plugin->getMidiProgramCount(),);
+    CARLA_SAFE_ASSERT_RETURN(midiProgramId < plugin->getMidiProgramCount(), gNullCharPtr);
 
     static char midiProgramName[STR_MAX+1];
     carla_zeroChars(midiProgramName, STR_MAX+1);
