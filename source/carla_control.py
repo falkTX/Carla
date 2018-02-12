@@ -344,7 +344,7 @@ class CarlaControlServer(Server):
         self.fReceivedMsgs = True
         pluginId, current = args
         self.host._set_currentProgram(pluginId, current)
-        self.host.ProgramChangedCallback.emit(current)
+        self.host.ProgramChangedCallback.emit(pluginId, current)
 
     @make_method('/carla-control/set_current_midi_program', 'ii')
     def set_current_midi_program_callback(self, path, args):
@@ -352,7 +352,7 @@ class CarlaControlServer(Server):
         self.fReceivedMsgs = True
         pluginId, current = args
         self.host._set_currentMidiProgram(pluginId, current)
-        #self.host.MidiProgramChangedCallback.emit() # FIXME
+        self.host.MidiProgramChangedCallback.emit(pluginId, current)
 
     @make_method('/carla-control/set_program_name', 'iis')
     def set_program_name_callback(self, path, args):

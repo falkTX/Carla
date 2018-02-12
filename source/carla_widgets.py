@@ -534,8 +534,6 @@ class PluginEdit(QDialog):
         self.ui.b_save_state.clicked.connect(self.slot_stateSave)
         self.ui.b_load_state.clicked.connect(self.slot_stateLoad)
 
-        #host.ProgramChangedCallback.connect(self.slot_handleProgramChangedCallback)
-        #host.MidiProgramChangedCallback.connect(self.slot_handleMidiProgramChangedCallback)
         host.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
         host.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
         host.UpdateCallback.connect(self.slot_handleUpdateCallback)
