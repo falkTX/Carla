@@ -166,26 +166,6 @@ resources/zynaddsubfx-ui$(APP_EXT): $(OBJDIR)/zynaddsubfx-ui.cpp.o
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-$(OBJDIR)/zita-%-ui.cpp.o: zita-%-ui.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(ZITA_UI_FLAGS) -c -o $@
-
-$(OBJDIR)/zita-%.cpp.o: zita-%.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(ZITA_DSP_FLAGS) -c -o $@
-
-resources/zita-%-ui$(APP_EXT): $(OBJDIR)/zita-%-ui.cpp.o
-	-@mkdir -p ../resources
-	@echo "Linking $<"
-	@$(CXX) $^ $(LINK_FLAGS) $(ZITA_UI_LIBS) -o $@
-
-# ---------------------------------------------------------------------------------------------------------------------
-
--include $(OBJDIR)/zita-at1-ui.cpp.d
--include $(OBJDIR)/zita-bls1-ui.cpp.d
--include $(OBJDIR)/zita-rev1-ui.cpp.d
 -include $(OBJDIR)/zynaddsubfx-ui.cpp.d
 
 # ---------------------------------------------------------------------------------------------------------------------

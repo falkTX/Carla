@@ -36,11 +36,6 @@ extern void carla_register_native_plugin_distrho_wobblejuice(void);
 extern void carla_register_native_plugin_zynaddsubfx_fx(void);
 extern void carla_register_native_plugin_zynaddsubfx_synth(void);
 
-// Experimental plugins
-extern void carla_register_native_plugin_zita_at1(void);
-extern void carla_register_native_plugin_zita_bls1(void);
-extern void carla_register_native_plugin_zita_rev1(void);
-
 // --------------------------------------------------------------------------------------------------------------------
 
 void carla_register_all_native_external_plugins(void)
@@ -65,13 +60,6 @@ void carla_register_all_native_external_plugins(void)
 # ifndef SKIP_ZYN_SYNTH
     carla_register_native_plugin_zynaddsubfx_synth();
 # endif
-#endif
-
-#ifdef HAVE_EXPERIMENTAL_PLUGINS
-    // Experimental plugins
-    carla_register_native_plugin_zita_at1();
-    carla_register_native_plugin_zita_bls1();
-    carla_register_native_plugin_zita_rev1();
 #endif
 }
 
