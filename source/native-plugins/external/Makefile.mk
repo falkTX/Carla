@@ -112,7 +112,7 @@ ifeq ($(HAVE_ZYN_DEPS),true)
 
 # Common flags
 ZYN_BASE_FLAGS  = $(shell pkg-config --cflags liblo mxml)
-ZYN_BASE_FLAGS += -Izynaddsubfx -Izynaddsubfx/rtosc
+ZYN_BASE_FLAGS += -Iexternal/zynaddsubfx -Iexternal/zynaddsubfx/rtosc
 ifneq ($(WIN32),true)
 ZYN_BASE_FLAGS += -DHAVE_ASYNC
 endif

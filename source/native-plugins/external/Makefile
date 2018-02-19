@@ -46,52 +46,52 @@ ifeq ($(HAVE_ZYN_UI_DEPS),true)
 TARGETS += resources/zynaddsubfx-ui$(APP_EXT)
 
 ZYN_UI_FILES_CPP = \
-	zynaddsubfx/UI/ADnoteUI.cpp \
-	zynaddsubfx/UI/BankUI.cpp \
-	zynaddsubfx/UI/ConfigUI.cpp \
-	zynaddsubfx/UI/EffUI.cpp \
-	zynaddsubfx/UI/EnvelopeUI.cpp \
-	zynaddsubfx/UI/FilterUI.cpp \
-	zynaddsubfx/UI/LFOUI.cpp \
-	zynaddsubfx/UI/MasterUI.cpp \
-	zynaddsubfx/UI/MicrotonalUI.cpp \
-	zynaddsubfx/UI/OscilGenUI.cpp \
-	zynaddsubfx/UI/PADnoteUI.cpp \
-	zynaddsubfx/UI/PartUI.cpp \
-	zynaddsubfx/UI/PresetsUI.cpp \
-	zynaddsubfx/UI/ResonanceUI.cpp \
-	zynaddsubfx/UI/SUBnoteUI.cpp \
-	zynaddsubfx/UI/VirKeyboard.cpp
+	external/zynaddsubfx/UI/ADnoteUI.cpp \
+	external/zynaddsubfx/UI/BankUI.cpp \
+	external/zynaddsubfx/UI/ConfigUI.cpp \
+	external/zynaddsubfx/UI/EffUI.cpp \
+	external/zynaddsubfx/UI/EnvelopeUI.cpp \
+	external/zynaddsubfx/UI/FilterUI.cpp \
+	external/zynaddsubfx/UI/LFOUI.cpp \
+	external/zynaddsubfx/UI/MasterUI.cpp \
+	external/zynaddsubfx/UI/MicrotonalUI.cpp \
+	external/zynaddsubfx/UI/OscilGenUI.cpp \
+	external/zynaddsubfx/UI/PADnoteUI.cpp \
+	external/zynaddsubfx/UI/PartUI.cpp \
+	external/zynaddsubfx/UI/PresetsUI.cpp \
+	external/zynaddsubfx/UI/ResonanceUI.cpp \
+	external/zynaddsubfx/UI/SUBnoteUI.cpp \
+	external/zynaddsubfx/UI/VirKeyboard.cpp
 
 ZYN_UI_FILES_H = \
-	zynaddsubfx/UI/ADnoteUI.h \
-	zynaddsubfx/UI/BankUI.h \
-	zynaddsubfx/UI/ConfigUI.h \
-	zynaddsubfx/UI/EffUI.h \
-	zynaddsubfx/UI/EnvelopeUI.h \
-	zynaddsubfx/UI/FilterUI.h \
-	zynaddsubfx/UI/LFOUI.h \
-	zynaddsubfx/UI/MasterUI.h \
-	zynaddsubfx/UI/MicrotonalUI.h \
-	zynaddsubfx/UI/OscilGenUI.h \
-	zynaddsubfx/UI/PADnoteUI.h \
-	zynaddsubfx/UI/PartUI.h \
-	zynaddsubfx/UI/PresetsUI.h \
-	zynaddsubfx/UI/ResonanceUI.h \
-	zynaddsubfx/UI/SUBnoteUI.h \
-	zynaddsubfx/UI/VirKeyboard.h
+	external/zynaddsubfx/UI/ADnoteUI.h \
+	external/zynaddsubfx/UI/BankUI.h \
+	external/zynaddsubfx/UI/ConfigUI.h \
+	external/zynaddsubfx/UI/EffUI.h \
+	external/zynaddsubfx/UI/EnvelopeUI.h \
+	external/zynaddsubfx/UI/FilterUI.h \
+	external/zynaddsubfx/UI/LFOUI.h \
+	external/zynaddsubfx/UI/MasterUI.h \
+	external/zynaddsubfx/UI/MicrotonalUI.h \
+	external/zynaddsubfx/UI/OscilGenUI.h \
+	external/zynaddsubfx/UI/PADnoteUI.h \
+	external/zynaddsubfx/UI/PartUI.h \
+	external/zynaddsubfx/UI/PresetsUI.h \
+	external/zynaddsubfx/UI/ResonanceUI.h \
+	external/zynaddsubfx/UI/SUBnoteUI.h \
+	external/zynaddsubfx/UI/VirKeyboard.h
 endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-zynaddsubfx/UI/%.cpp: zynaddsubfx/UI/%.fl
+external/zynaddsubfx/UI/%.cpp: external/zynaddsubfx/UI/%.fl
 	@echo "Generating $@|h"
-	@$(FLUID) -c -o zynaddsubfx/UI/$*.cpp -h zynaddsubfx/UI/$*.h $<
+	@$(FLUID) -c -o external/zynaddsubfx/UI/$*.cpp -h external/zynaddsubfx/UI/$*.h $<
 
-zynaddsubfx/UI/%.h: zynaddsubfx/UI/%.fl
+external/zynaddsubfx/UI/%.h: external/zynaddsubfx/UI/%.fl
 	@echo "Generating $@|cpp"
-	@$(FLUID) -c -o zynaddsubfx/UI/$*.cpp -h zynaddsubfx/UI/$*.h $<
+	@$(FLUID) -c -o external/zynaddsubfx/UI/$*.cpp -h external/zynaddsubfx/UI/$*.h $<
 
 # ---------------------------------------------------------------------------------------------------------------------
 
