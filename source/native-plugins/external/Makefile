@@ -95,66 +95,66 @@ zynaddsubfx/UI/%.h: zynaddsubfx/UI/%.fl
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-$(OBJDIR)/distrho-3bandeq.cpp.o: $(EXTERNAL_DIR)distrho-3bandeq.cpp
+$(OBJDIR)/distrho-3bandeq.cpp.o: external/distrho-3bandeq.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) -DDISTRHO_NAMESPACE=d3BandEQ -Idistrho-3bandeq -c -o $@
 
-$(OBJDIR)/distrho-3bandsplitter.cpp.o: distrho-3bandsplitter.cpp
+$(OBJDIR)/distrho-3bandsplitter.cpp.o: external/distrho-3bandsplitter.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) -DDISTRHO_NAMESPACE=d3BandSplitter -Idistrho-3bandsplitter -c -o $@
 
-$(OBJDIR)/distrho-kars.cpp.o: distrho-kars.cpp
+$(OBJDIR)/distrho-kars.cpp.o: external/distrho-kars.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) -DDISTRHO_NAMESPACE=dKars -Idistrho-kars -c -o $@
 
-$(OBJDIR)/distrho-nekobi.cpp.o: distrho-nekobi.cpp
+$(OBJDIR)/distrho-nekobi.cpp.o: external/distrho-nekobi.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) -DDISTRHO_NAMESPACE=dNekobi -Idistrho-nekobi -w -c -o $@
 
-$(OBJDIR)/distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp
+$(OBJDIR)/distrho-pingpongpan.cpp.o: external/distrho-pingpongpan.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) -DDISTRHO_NAMESPACE=dPingPongPan -Idistrho-pingpongpan -c -o $@
 
-$(OBJDIR)/distrho-prom.cpp.o: distrho-prom.cpp
+$(OBJDIR)/distrho-prom.cpp.o: external/distrho-prom.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) $(PROJECTM_FLAGS) -DDISTRHO_NAMESPACE=dProM -Idistrho-prom -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-$(OBJDIR)/distrho-vectorjuice.cpp.o: distrho-vectorjuice.cpp
+$(OBJDIR)/distrho-vectorjuice.cpp.o: external/distrho-vectorjuice.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) -DDISTRHO_NAMESPACE=dVectorJuice -Idistrho-vectorjuice -c -o $@
 
-$(OBJDIR)/distrho-wobblejuice.cpp.o: distrho-wobblejuice.cpp
+$(OBJDIR)/distrho-wobblejuice.cpp.o: external/distrho-wobblejuice.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) -DDISTRHO_NAMESPACE=dWobbleJuice -Idistrho-wobblejuice -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-$(OBJDIR)/zynaddsubfx-fx.cpp.o: zynaddsubfx-fx.cpp
+$(OBJDIR)/zynaddsubfx-fx.cpp.o: external/zynaddsubfx-fx.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(ZYN_DSP_FLAGS) -c -o $@
 
-$(OBJDIR)/zynaddsubfx-synth.cpp.o: zynaddsubfx-synth.cpp
+$(OBJDIR)/zynaddsubfx-synth.cpp.o: external/zynaddsubfx-synth.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(ZYN_DSP_FLAGS) -Wno-unused-parameter -c -o $@
 
-$(OBJDIR)/zynaddsubfx-src.cpp.o: zynaddsubfx-src.cpp
+$(OBJDIR)/zynaddsubfx-src.cpp.o: external/zynaddsubfx-src.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(ZYN_DSP_FLAGS) -Wno-unused-parameter -Wno-unused-variable -c -o $@
 
-$(OBJDIR)/zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
+$(OBJDIR)/zynaddsubfx-ui.cpp.o: external/zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(ZYN_UI_FLAGS) -Wno-unused-parameter -Wno-unused-variable -c -o $@
