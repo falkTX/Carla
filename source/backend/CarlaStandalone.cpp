@@ -985,8 +985,6 @@ bool carla_export_plugin_lv2(uint pluginId, const char* lv2path)
 
 const CarlaPluginInfo* carla_get_plugin_info(uint pluginId)
 {
-    carla_debug("carla_get_plugin_info(%i)", pluginId);
-
     static CarlaPluginInfo retInfo;
 
     // reset
@@ -1023,6 +1021,8 @@ const CarlaPluginInfo* carla_get_plugin_info(uint pluginId)
 
     CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retInfo);
+
+    carla_debug("carla_get_plugin_info(%i)", pluginId);
 
     char strBuf[STR_MAX+1];
 
@@ -1061,8 +1061,6 @@ const CarlaPluginInfo* carla_get_plugin_info(uint pluginId)
 
 const CarlaPortCountInfo* carla_get_audio_port_count_info(uint pluginId)
 {
-    carla_debug("carla_get_audio_port_count_info(%i)", pluginId);
-
     static CarlaPortCountInfo retInfo;
     carla_zeroStruct(retInfo);
 
@@ -1071,21 +1069,15 @@ const CarlaPortCountInfo* carla_get_audio_port_count_info(uint pluginId)
     CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retInfo);
 
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-    {
-        retInfo.ins   = plugin->getAudioInCount();
-        retInfo.outs  = plugin->getAudioOutCount();
-        return &retInfo;
-    }
+    carla_debug("carla_get_audio_port_count_info(%i)", pluginId);
 
-    carla_stderr2("carla_get_audio_port_count_info(%i) - could not find plugin", pluginId);
+    retInfo.ins   = plugin->getAudioInCount();
+    retInfo.outs  = plugin->getAudioOutCount();
     return &retInfo;
 }
 
 const CarlaPortCountInfo* carla_get_midi_port_count_info(uint pluginId)
 {
-    carla_debug("carla_get_midi_port_count_info(%i)", pluginId);
-
     static CarlaPortCountInfo retInfo;
     carla_zeroStruct(retInfo);
 
@@ -1094,21 +1086,15 @@ const CarlaPortCountInfo* carla_get_midi_port_count_info(uint pluginId)
     CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retInfo);
 
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-    {
-        retInfo.ins   = plugin->getMidiInCount();
-        retInfo.outs  = plugin->getMidiOutCount();
-        return &retInfo;
-    }
+    carla_debug("carla_get_midi_port_count_info(%i)", pluginId);
 
-    carla_stderr2("carla_get_midi_port_count_info(%i) - could not find plugin", pluginId);
+    retInfo.ins   = plugin->getMidiInCount();
+    retInfo.outs  = plugin->getMidiOutCount();
     return &retInfo;
 }
 
 const CarlaPortCountInfo* carla_get_parameter_count_info(uint pluginId)
 {
-    carla_debug("carla_get_parameter_count_info(%i)", pluginId);
-
     static CarlaPortCountInfo retInfo;
     carla_zeroStruct(retInfo);
 
@@ -1117,20 +1103,14 @@ const CarlaPortCountInfo* carla_get_parameter_count_info(uint pluginId)
     CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retInfo);
 
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-    {
-        plugin->getParameterCountInfo(retInfo.ins, retInfo.outs);
-        return &retInfo;
-    }
+    carla_debug("carla_get_parameter_count_info(%i)", pluginId);
 
-    carla_stderr2("carla_get_parameter_count_info(%i) - could not find plugin", pluginId);
+    plugin->getParameterCountInfo(retInfo.ins, retInfo.outs);
     return &retInfo;
 }
 
 const CarlaParameterInfo* carla_get_parameter_info(uint pluginId, uint32_t parameterId)
 {
-    carla_debug("carla_get_parameter_info(%i, %i)", pluginId, parameterId);
-
     static CarlaParameterInfo retInfo;
 
     // reset
@@ -1160,46 +1140,39 @@ const CarlaParameterInfo* carla_get_parameter_info(uint pluginId, uint32_t param
     CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retInfo);
 
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-    {
-        if (parameterId < plugin->getParameterCount())
-        {
-            char strBufName[STR_MAX+1];
-            char strBufSymbol[STR_MAX+1];
-            char strBufUnit[STR_MAX+1];
+    carla_debug("carla_get_parameter_info(%i, %i)", pluginId, parameterId);
+    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(), &retInfo);
 
-            carla_zeroChars(strBufName, STR_MAX+1);
-            carla_zeroChars(strBufSymbol, STR_MAX+1);
-            carla_zeroChars(strBufUnit, STR_MAX+1);
+    // TODO
 
-            retInfo.scalePointCount = plugin->getParameterScalePointCount(parameterId);
+    char strBufName[STR_MAX+1];
+    char strBufSymbol[STR_MAX+1];
+    char strBufUnit[STR_MAX+1];
 
-            plugin->getParameterName(parameterId, strBufName);
-            retInfo.name = carla_strdup_safe(strBufName);
+    carla_zeroChars(strBufName, STR_MAX+1);
+    carla_zeroChars(strBufSymbol, STR_MAX+1);
+    carla_zeroChars(strBufUnit, STR_MAX+1);
 
-            plugin->getParameterSymbol(parameterId, strBufSymbol);
-            retInfo.symbol = carla_strdup_safe(strBufSymbol);
+    retInfo.scalePointCount = plugin->getParameterScalePointCount(parameterId);
 
-            plugin->getParameterUnit(parameterId, strBufUnit);
-            retInfo.unit = carla_strdup_safe(strBufUnit);
+    plugin->getParameterName(parameterId, strBufName);
+    retInfo.name = carla_strdup_safe(strBufName);
 
-            checkStringPtr(retInfo.name);
-            checkStringPtr(retInfo.symbol);
-            checkStringPtr(retInfo.unit);
-        }
-        else
-            carla_stderr2("carla_get_parameter_info(%i, %i) - parameterId out of bounds", pluginId, parameterId);
+    plugin->getParameterSymbol(parameterId, strBufSymbol);
+    retInfo.symbol = carla_strdup_safe(strBufSymbol);
 
-        return &retInfo;
-    }
+    plugin->getParameterUnit(parameterId, strBufUnit);
+    retInfo.unit = carla_strdup_safe(strBufUnit);
 
-    carla_stderr2("carla_get_parameter_info(%i, %i) - could not find plugin", pluginId, parameterId);
+    checkStringPtr(retInfo.name);
+    checkStringPtr(retInfo.symbol);
+    checkStringPtr(retInfo.unit);
+
     return &retInfo;
 }
 
 const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(uint pluginId, uint32_t parameterId, uint32_t scalePointId)
 {
-    carla_debug("carla_get_parameter_scalepoint_info(%i, %i, %i)", pluginId, parameterId, scalePointId);
     CARLA_ASSERT(gStandalone.engine != nullptr);
 
     static CarlaScalePointInfo retInfo;
@@ -1219,31 +1192,21 @@ const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(uint pluginId, ui
     CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retInfo);
 
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-    {
-        if (parameterId < plugin->getParameterCount())
-        {
-            if (scalePointId < plugin->getParameterScalePointCount(parameterId))
-            {
-                char strBufLabel[STR_MAX+1];
-                carla_zeroChars(strBufLabel, STR_MAX+1);
+    carla_debug("carla_get_parameter_scalepoint_info(%i, %i, %i)", pluginId, parameterId, scalePointId);
+    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(), &retInfo);
+    CARLA_SAFE_ASSERT_RETURN(scalePointId < plugin->getParameterScalePointCount(parameterId), &retInfo);
 
-                retInfo.value = plugin->getParameterScalePointValue(parameterId, scalePointId);
+    // TODO
 
-                plugin->getParameterScalePointLabel(parameterId, scalePointId, strBufLabel);
-                retInfo.label = carla_strdup_safe(strBufLabel);
-                checkStringPtr(retInfo.label);
-            }
-            else
-                carla_stderr2("carla_get_parameter_scalepoint_info(%i, %i, %i) - scalePointId out of bounds", pluginId, parameterId, scalePointId);
-        }
-        else
-            carla_stderr2("carla_get_parameter_scalepoint_info(%i, %i, %i) - parameterId out of bounds", pluginId, parameterId, scalePointId);
+    char strBufLabel[STR_MAX+1];
+    carla_zeroChars(strBufLabel, STR_MAX+1);
 
-        return &retInfo;
-    }
+    retInfo.value = plugin->getParameterScalePointValue(parameterId, scalePointId);
 
-    carla_stderr2("carla_get_parameter_scalepoint_info(%i, %i, %i) - could not find plugin", pluginId, parameterId, scalePointId);
+    plugin->getParameterScalePointLabel(parameterId, scalePointId, strBufLabel);
+    retInfo.label = carla_strdup_safe(strBufLabel);
+    checkStringPtr(retInfo.label);
+
     return &retInfo;
 }
 
@@ -1317,7 +1280,7 @@ const MidiProgramData* carla_get_midi_program_data(uint pluginId, uint32_t midiP
     retMidiProgData.bank    = 0;
     retMidiProgData.program = 0;
 
-    if (retMidiProgData.name != nullptr)
+    if (retMidiProgData.name != gNullCharPtr)
     {
         delete[] retMidiProgData.name;
         retMidiProgData.name = gNullCharPtr;
@@ -1334,8 +1297,17 @@ const MidiProgramData* carla_get_midi_program_data(uint pluginId, uint32_t midiP
     const MidiProgramData& pluginMidiProgData(plugin->getMidiProgramData(midiProgramId));
     retMidiProgData.bank    = pluginMidiProgData.bank;
     retMidiProgData.program = pluginMidiProgData.program;
-    retMidiProgData.name    = carla_strdup_safe(pluginMidiProgData.name);
-    checkStringPtr(retMidiProgData.name);
+
+    if (pluginMidiProgData.name != nullptr)
+    {
+        retMidiProgData.name = carla_strdup_safe(pluginMidiProgData.name);
+        checkStringPtr(retMidiProgData.name);
+    }
+    else
+    {
+        retMidiProgData.name = gNullCharPtr;
+    }
+
     return &retMidiProgData;
 }
 

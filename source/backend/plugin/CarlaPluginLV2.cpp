@@ -1223,7 +1223,7 @@ public:
         CarlaPlugin::setCustomData(type, key, value, sendGui);
     }
 
-    void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
+    void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool doingInit) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->prog.count),);
@@ -1238,7 +1238,7 @@ public:
             CARLA_SAFE_ASSERT_RETURN(state != nullptr,);
 
             // invalidate midi-program selection
-            CarlaPlugin::setMidiProgram(-1, false, false, sendCallback);
+            CarlaPlugin::setMidiProgram(-1, false, false, sendCallback, false);
 
             if (fExt.state != nullptr)
             {
@@ -1257,14 +1257,14 @@ public:
             lilv_state_free(state);
         }
 
-        CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
+        CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback, doingInit);
     }
 
-    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
+    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool doingInit) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
-        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,);
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback || doingInit,);
 
         if (index >= 0 && fExt.programs != nullptr && fExt.programs->select_program != nullptr)
         {
@@ -1285,7 +1285,7 @@ public:
             }
         }
 
-        CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
+        CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback, doingInit);
     }
 
     void setMidiProgramRT(const uint32_t uindex) noexcept override
@@ -2610,7 +2610,7 @@ public:
         {
             if (newCount > 0)
             {
-                setMidiProgram(0, false, false, false);
+                setMidiProgram(0, false, false, false, true);
             }
             else
             {
@@ -2662,7 +2662,7 @@ public:
             }
 
             if (programChanged)
-                setMidiProgram(pData->midiprog.current, true, true, true);
+                setMidiProgram(pData->midiprog.current, true, true, true, false);
 
             pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0.0f, nullptr);
         }
@@ -6358,7 +6358,7 @@ bool CarlaPipeServerLV2::msgReceived(const char* const msg) noexcept
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(index), true);
 
         try {
-            kPlugin->setMidiProgram(static_cast<int32_t>(index), false, true, true);
+            kPlugin->setMidiProgram(static_cast<int32_t>(index), false, true, true, false);
         } CARLA_SAFE_EXCEPTION("msgReceived program");
 
         return true;

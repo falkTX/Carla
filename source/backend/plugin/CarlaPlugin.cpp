@@ -1666,7 +1666,7 @@ void CarlaPlugin::setChunkData(const void* const data, const std::size_t dataSiz
     CARLA_SAFE_ASSERT(false); // this should never happen
 }
 
-void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
+void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->prog.count),);
 
@@ -1707,7 +1707,7 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
     return; (void)sendOsc;
 }
 
-void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
+void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
 

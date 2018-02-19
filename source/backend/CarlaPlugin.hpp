@@ -611,7 +611,7 @@ public:
      * @param sendOsc Send message change over OSC
      * @param sendCallback Send message change to registered callback
      */
-    virtual void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept;
+    virtual void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool doingInit = false) noexcept;
 
     /*!
      * Change the current MIDI plugin program to @a index.
@@ -624,7 +624,7 @@ public:
      * @param sendOsc Send message change over OSC
      * @param sendCallback Send message change to registered callback
      */
-    virtual void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept;
+    virtual void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool doingInit = false) noexcept;
 
     /*!
      * This is an overloaded call to setMidiProgram().

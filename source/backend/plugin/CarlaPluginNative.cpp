@@ -713,16 +713,16 @@ public:
         CarlaPlugin::setCustomData(type, key, value, sendGui);
     }
 
-    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
+    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool doingInit) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
-        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,);
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback || doingInit,);
 
         // TODO, put into check below
         if ((pData->hints & PLUGIN_IS_SYNTH) != 0 && (pData->ctrlChannel < 0 || pData->ctrlChannel >= MAX_MIDI_CHANNELS))
-           return CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
+           return CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback, doingInit);
 
         if (index >= 0)
         {
@@ -746,7 +746,7 @@ public:
             fCurMidiProgs[channel] = index;
         }
 
-        CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
+        CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback, doingInit);
     }
 
     void setMidiProgramRT(const uint32_t index) noexcept override
@@ -1284,7 +1284,7 @@ public:
         if (doInit)
         {
             if (count > 0)
-                setMidiProgram(0, false, false, false);
+                setMidiProgram(0, false, false, false, true);
         }
         else
         {
@@ -1322,7 +1322,7 @@ public:
             }
 
             if (programChanged)
-                setMidiProgram(pData->midiprog.current, true, true, true);
+                setMidiProgram(pData->midiprog.current, true, true, true, false);
 
             pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0.0f, nullptr);
         }

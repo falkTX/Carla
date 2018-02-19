@@ -734,10 +734,10 @@ public:
         CarlaPlugin::setParameterMidiCC(parameterId, cc, sendOsc, sendCallback);
     }
 
-    void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
+    void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool doingInit) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->prog.count),);
-        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,);
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback || doingInit,);
 
         {
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
@@ -747,13 +747,13 @@ public:
             fShmNonRtClientControl.commitWrite();
         }
 
-        CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
+        CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback, doingInit);
     }
 
-    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
+    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool doingInit) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
-        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,);
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback || doingInit,);
 
         {
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
@@ -763,7 +763,7 @@ public:
             fShmNonRtClientControl.commitWrite();
         }
 
-        CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
+        CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback, doingInit);
     }
 
     void setMidiProgramRT(const uint32_t uindex) noexcept override

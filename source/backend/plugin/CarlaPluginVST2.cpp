@@ -405,11 +405,11 @@ public:
         pData->updateParameterValues(this, sendOsc, true, false);
     }
 
-    void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
+    void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool doingInit) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->prog.count),);
-        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,);
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback || doingInit,);
 
         if (index >= 0)
         {
@@ -430,7 +430,7 @@ public:
             } CARLA_SAFE_EXCEPTION("effEndSetProgram");
         }
 
-        CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
+        CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback, doingInit);
     }
 
     void setProgramRT(const uint32_t uindex) noexcept override
@@ -963,7 +963,7 @@ public:
         if (doInit)
         {
             if (newCount > 0)
-                setProgram(0, false, false, false);
+                setProgram(0, false, false, false, true);
             else
                 dispatcher(effSetProgram, 0, 0, nullptr, 0.0f);
         }
@@ -1004,7 +1004,7 @@ public:
 
             if (programChanged)
             {
-                setProgram(pData->prog.current, true, true, true);
+                setProgram(pData->prog.current, true, true, true, false);
             }
             else
             {

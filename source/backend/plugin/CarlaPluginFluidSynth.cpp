@@ -527,11 +527,11 @@ public:
         CarlaPlugin::setCustomData(type, key, value, sendGui);
     }
 
-    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
+    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool doingInit) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fSynth != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
-        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,);
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback || doingInit,);
 
         if (index >= 0 && pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
         {
@@ -547,7 +547,7 @@ public:
             fCurMidiProgs[pData->ctrlChannel] = index;
         }
 
-        CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
+        CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback, doingInit);
     }
 
     void setMidiProgramRT(const uint32_t uindex) noexcept override

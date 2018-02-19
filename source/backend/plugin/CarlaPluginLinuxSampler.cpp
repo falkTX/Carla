@@ -503,10 +503,10 @@ public:
         CarlaPlugin::setCustomData(type, key, value, sendGui);
     }
 
-    void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
+    void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool doingInit) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->prog.count),);
-        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,);
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback || doingInit,);
 
         const int8_t channel(kIsGIG ? pData->ctrlChannel : int8_t(0));
 
@@ -525,7 +525,7 @@ public:
                 pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
         }
 
-        CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
+        CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback, doingInit);
     }
 
     void setProgramRT(const uint32_t uindex) noexcept override

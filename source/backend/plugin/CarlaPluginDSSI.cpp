@@ -640,12 +640,12 @@ public:
         pData->updateParameterValues(this, sendOsc, true, false);
     }
 
-    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
+    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool doingInit) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor->select_program != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
-        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,);
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback || doingInit,);
 
         if (index >= 0 && fHandles.count() > 0)
         {
@@ -654,7 +654,7 @@ public:
             setMidiProgramInDSSI(static_cast<uint32_t>(index));
         }
 
-        CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
+        CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback, doingInit);
     }
 
     void setMidiProgramRT(const uint32_t uindex) noexcept override
@@ -1233,7 +1233,7 @@ public:
         if (doInit)
         {
             if (newCount > 0)
-                setMidiProgram(0, false, false, false);
+                setMidiProgram(0, false, false, false, true);
         }
         else
         {
@@ -1271,7 +1271,7 @@ public:
             }
 
             if (programChanged)
-                setMidiProgram(pData->midiprog.current, true, true, true);
+                setMidiProgram(pData->midiprog.current, true, true, true, false);
 
             pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0.0f, nullptr);
         }
