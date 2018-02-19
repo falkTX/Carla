@@ -98,44 +98,44 @@ external/zynaddsubfx/UI/%.h: external/zynaddsubfx/UI/%.fl
 $(OBJDIR)/distrho-3bandeq.cpp.o: external/distrho-3bandeq.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) -DDISTRHO_NAMESPACE=d3BandEQ -Idistrho-3bandeq -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) -DDISTRHO_NAMESPACE=d3BandEQ -Iexternal/distrho-3bandeq -c -o $@
 
 $(OBJDIR)/distrho-3bandsplitter.cpp.o: external/distrho-3bandsplitter.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) -DDISTRHO_NAMESPACE=d3BandSplitter -Idistrho-3bandsplitter -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) -DDISTRHO_NAMESPACE=d3BandSplitter -Iexternal/distrho-3bandsplitter -c -o $@
 
 $(OBJDIR)/distrho-kars.cpp.o: external/distrho-kars.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) -DDISTRHO_NAMESPACE=dKars -Idistrho-kars -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) -DDISTRHO_NAMESPACE=dKars -Iexternal/distrho-kars -c -o $@
 
 $(OBJDIR)/distrho-nekobi.cpp.o: external/distrho-nekobi.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) -DDISTRHO_NAMESPACE=dNekobi -Idistrho-nekobi -w -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) -DDISTRHO_NAMESPACE=dNekobi -Iexternal/distrho-nekobi -w -c -o $@
 
 $(OBJDIR)/distrho-pingpongpan.cpp.o: external/distrho-pingpongpan.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) -DDISTRHO_NAMESPACE=dPingPongPan -Idistrho-pingpongpan -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) -DDISTRHO_NAMESPACE=dPingPongPan -Iexternal/distrho-pingpongpan -c -o $@
 
 $(OBJDIR)/distrho-prom.cpp.o: external/distrho-prom.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) $(PROJECTM_FLAGS) -DDISTRHO_NAMESPACE=dProM -Idistrho-prom -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) $(PROJECTM_FLAGS) -DDISTRHO_NAMESPACE=dProM -Iexternal/distrho-prom -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/distrho-vectorjuice.cpp.o: external/distrho-vectorjuice.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) -DDISTRHO_NAMESPACE=dVectorJuice -Idistrho-vectorjuice -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) -DDISTRHO_NAMESPACE=dVectorJuice -Iexternal/distrho-vectorjuice -c -o $@
 
 $(OBJDIR)/distrho-wobblejuice.cpp.o: external/distrho-wobblejuice.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) -DDISTRHO_NAMESPACE=dWobbleJuice -Idistrho-wobblejuice -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(DPF_FLAGS) -DDISTRHO_NAMESPACE=dWobbleJuice -Iexternal/distrho-wobblejuice -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
