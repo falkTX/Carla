@@ -5,15 +5,7 @@
 #
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Modify to enable/disable specific features
-
-# Build external plugins (if debug is disabled)
-ifneq ($(DEBUG),true)
-EXTERNAL_PLUGINS = true
-endif
-
-# ---------------------------------------------------------------------------------------------------------------------
-# DO NOT MODIFY PAST THIS POINT!
+# Base environment vars
 
 AR  ?= ar
 CC  ?= gcc
