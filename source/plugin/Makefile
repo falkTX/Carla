@@ -101,6 +101,7 @@ TARGETS += \
 	$(BINDIR)/CarlaRackFX$(LIB_EXT) \
 	$(BINDIR)/CarlaPatchbay$(LIB_EXT) \
 	$(BINDIR)/CarlaPatchbay16$(LIB_EXT) \
+	$(BINDIR)/CarlaPatchbay32$(LIB_EXT) \
 	$(BINDIR)/CarlaPatchbayFX$(LIB_EXT)
 endif
 endif
@@ -147,6 +148,11 @@ $(BINDIR)/CarlaPatchbay16$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.patchbay-syn16.o $(
 	@echo "Linking CarlaPatchbay16$(LIB_EXT)"
 	@$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
 
+$(BINDIR)/CarlaPatchbay32$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.patchbay-syn32.o $(LIBS)
+	-@mkdir -p $(BINDIR)
+	@echo "Linking CarlaPatchbay32$(LIB_EXT)"
+	@$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
+
 $(BINDIR)/CarlaPatchbayFX$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.patchbay-fx.o $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking CarlaPatchbayFX$(LIB_EXT)"
@@ -183,6 +189,11 @@ $(OBJDIR)/carla-vst.cpp.patchbay-syn16.o: carla-vst.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (PatchbaySynth 16ch)"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_PATCHBAY=1 -DCARLA_PLUGIN_SYNTH=1 -DCARLA_PLUGIN_16CH -c -o $@
+
+$(OBJDIR)/carla-vst.cpp.patchbay-syn32.o: carla-vst.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (PatchbaySynth 32ch)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_PATCHBAY=1 -DCARLA_PLUGIN_SYNTH=1 -DCARLA_PLUGIN_32CH -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
