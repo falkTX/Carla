@@ -4,10 +4,15 @@
 # check input
 
 ARCH="${1}"
+ARCH_PREFIX="${1}"
 
-if [ x"${ARCH}" != x"32" ] && [ x"${ARCH}" != x"64" ]; then
+if [ x"${ARCH}" != x"32" ] && [ x"${ARCH}" != x"32nosse" ] && [ x"${ARCH}" != x"64" ]; then
   echo "usage: $0 32|64"
   exit 1
+fi
+
+if [ x"${ARCH}" = x"32nosse" ]; then
+  ARCH="32"
 fi
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -38,7 +43,7 @@ fi
 
 MINGW_PREFIX="${CPUARCH}-w64-mingw32"
 
-export PREFIX=${TARGETDIR}/carla-w${ARCH}
+export PREFIX=${TARGETDIR}/carla-w${ARCH_PREFIX}
 export PATH=/opt/mingw${ARCH}/bin:${PREFIX}/bin/usr/sbin:/usr/bin:/sbin:/bin
 export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 

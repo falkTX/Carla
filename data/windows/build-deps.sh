@@ -21,7 +21,7 @@ source common.env
 cleanup_prefix()
 {
 
-rm -rf $TARGETDIR/carla-w32/ $TARGETDIR/carla-w64/
+rm -rf ${TARGETDIR}/carla-w32nosse ${TARGETDIR}/carla-w32/ ${TARGETDIR}/carla-w64/
 
 }
 
