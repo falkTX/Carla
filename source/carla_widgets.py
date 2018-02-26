@@ -1409,7 +1409,7 @@ class PluginEdit(QDialog):
         else:
             return
 
-        self.sender().setValue(value)
+        sender.setValue(value, True)
 
     #------------------------------------------------------------------
 

@@ -1227,7 +1227,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         else:
             return
 
-        self.sender().setValue(value)
+        sender.setValue(value, True)
 
     #------------------------------------------------------------------
 

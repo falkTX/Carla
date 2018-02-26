@@ -160,6 +160,9 @@ class ParamProgressBar(QProgressBar):
         else:
             vper = float(value - self.fMinimum) / div
 
+        if self.fValueCall is not None:
+            self.fValueCall(value)
+
         QProgressBar.setValue(self, int(vper * 10000))
 
     def setLabel(self, label):
@@ -192,10 +195,7 @@ class ParamProgressBar(QProgressBar):
         elif value > self.fMaximum:
             value = self.fMaximum
 
-        if self.fValueCall is not None:
-            self.fValueCall(value)
-
-        self.valueChanged.emit(value)
+        self.setValue(value)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
