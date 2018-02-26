@@ -21,7 +21,7 @@ source common.env
 cleanup_prefix()
 {
 
-rm -rf $TARGETDIR/carla-w32/ $TARGETDIR/carla-w64/
+rm -rf ${TARGETDIR}/carla-w32nosse ${TARGETDIR}/carla-w32/ ${TARGETDIR}/carla-w64/
 
 }
 
@@ -73,7 +73,7 @@ unset CPPFLAGS
 unset CXXFLAGS
 unset LDFLAGS
 
-export PREFIX=${TARGETDIR}/carla-w${ARCH}
+export PREFIX=${TARGETDIR}/carla-w${ARCH_PREFIX}
 export PATH=${PREFIX}/bin:/usr/sbin:/usr/bin:/sbin:/bin
 export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 
@@ -88,7 +88,7 @@ fi
 if [ ! -f pkg-config-${PKG_CONFIG_VERSION}/build-done ]; then
   cd pkg-config-${PKG_CONFIG_VERSION}
   env AR="ar" CC="gcc" STRIP="strip" CFLAGS="" LDFLAGS="" PATH="/usr/sbin:/usr/bin:/sbin:/bin" \
-    ./configure --enable-indirect-deps --with-internal-glib --with-pc-path=$PKG_CONFIG_PATH --prefix=${PREFIX}
+    ./configure --enable-indirect-deps --with-internal-glib --with-pc-path=${PKG_CONFIG_PATH} --prefix=${PREFIX}
   make ${MAKE_ARGS}
   make install
   touch build-done
@@ -119,7 +119,12 @@ export PATH=/opt/mingw${ARCH}/${MINGW_PREFIX}/bin:/opt/mingw${ARCH}/bin:${PATH}
 # export RCC=${MINGW_PREFIX}-rcc
 # export PKGCONFIG=${MINGW_PREFIX}-pkg-config
 
+if [ -z "${NOSSE}" ]; then
 export CFLAGS="-O3 -mtune=generic -msse -msse2 -mfpmath=sse -fvisibility=hidden -fdata-sections -ffunction-sections"
+else
+export CFLAGS="-O3 -mtune=generic -fvisibility=hidden -fdata-sections -ffunction-sections"
+fi
+
 export CFLAGS="${CFLAGS} -DNDEBUG -DPTW32_STATIC_LIB -DFLUIDSYNTH_NOT_A_DLL -I${PREFIX}/include -I/opt/mingw${ARCH}/include"
 export CXXFLAGS="${CFLAGS} -fvisibility-inlines-hidden"
 export CPPFLAGS="-DPIC -DNDEBUG -DPTW32_STATIC_LIB -I${PREFIX}/include -I/opt/mingw${ARCH}/include"
@@ -127,14 +132,11 @@ export CPPFLAGS="-DPIC -DNDEBUG -DPTW32_STATIC_LIB -I${PREFIX}/include -I/opt/mi
 export LDFLAGS="-fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-O1 -Wl,--as-needed -Wl,--strip-all"
 export LDFLAGS="${LDFLAGS} -L${PREFIX}/lib -L/opt/mingw${ARCH}/lib"
 
-# FIXME: the following flags are not supported by my current mingw build
-#
-
 # ---------------------------------------------------------------------------------------------------------------------
 # liblo
 
 if [ ! -d liblo-${LIBLO_VERSION} ]; then
-  wget -c https://download.sourceforge.net/liblo/liblo-${LIBLO_VERSION}.tar.gz
+  wget -c https://github.com/radarsat1/liblo/releases/download/${LIBLO_VERSION}/liblo-${LIBLO_VERSION}.tar.gz
   tar -xf liblo-${LIBLO_VERSION}.tar.gz
 fi
 
@@ -386,23 +388,33 @@ fi
 if [ ! -f fftw-${FFTW3_VERSION}/build-done ]; then
   export CFLAGS="${CFLAGS} -ffast-math"
   export CXXFLAGS="${CXXFLAGS} -ffast-math"
+  EXTRA_ARGS=""
   cd fftw-${FFTW3_VERSION}
+
+  if [ -z "${NOSSE}" ]; then
+    EXTRA_ARGS="--enable-sse2"
+  fi
   ./configure --enable-static --disable-shared --prefix=${PREFIX} \
     --target=${MINGW_PREFIX} --host=${MINGW_PREFIX} --build=${HOST_ARCH} \
-    --enable-sse2 \
+    ${EXTRA_ARGS} \
     --disable-debug --disable-alloca --disable-fortran \
     --with-our-malloc
   make
   make install
   make clean
+
+  if [ -z "${NOSSE}" ]; then
+    EXTRA_ARGS="--enable-sse2 --enable-sse"
+  fi
   ./configure --enable-static --disable-shared --prefix=${PREFIX} \
     --target=${MINGW_PREFIX} --host=${MINGW_PREFIX} --build=${HOST_ARCH} \
-    --enable-sse2 --enable-sse --enable-single \
+    ${EXTRA_ARGS} --enable-single \
     --disable-debug --disable-alloca --disable-fortran \
     --with-our-malloc
   make
   make install
   make clean
+
   touch build-done
   cd ..
 fi
@@ -415,10 +427,20 @@ fi
 cleanup_prefix
 
 export ARCH=32
+export ARCH_PREFIX=32nosse
+export NOSSE=1
+build_base
+cleanup_pkgs
+
+unset NOSSE
+
+export ARCH=32
+export ARCH_PREFIX=32
 build_base
 cleanup_pkgs
 
 export ARCH=64
+export ARCH_PREFIX=64
 build_base
 cleanup_pkgs
 
