@@ -27,11 +27,11 @@ struct carla_shm_t { HANDLE map; bool isServer; const char* filename; };
 # ifndef __WINE__
 #  include <cerrno>
 # endif
-# ifndef CARLA_OS_LINUX
-#  define MAP_LOCKED 0x0
-# endif
 # include <fcntl.h>
 # include <sys/mman.h>
+# ifndef MAP_LOCKED
+#  define MAP_LOCKED 0x0
+# endif
 struct carla_shm_t { int fd; const char* filename; std::size_t size; };
 # define carla_shm_t_INIT { -1, nullptr, 0 }
 #endif
@@ -198,10 +198,11 @@ void* carla_shm_map(carla_shm_t& shm, const std::size_t size) noexcept
         }
 
         void* const ptr(::mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_LOCKED, shm.fd, 0));
+        CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, nullptr);
 
-        if (ptr == nullptr)
+        if (ptr == MAP_FAILED)
         {
-            carla_safe_assert("ptr != nullptr", __FILE__, __LINE__);
+            carla_stderr2("carla_shm_map() - mmap failed: %s", std::strerror(errno));
             return nullptr;
         }
 
