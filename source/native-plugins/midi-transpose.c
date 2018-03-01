@@ -112,17 +112,17 @@ static float miditranspose_get_parameter_value(NativePluginHandle handle, uint32
 
 static void miditranspose_set_parameter_value(NativePluginHandle handle, uint32_t index, float value)
 {
-  switch (index)
-  {
-      case 0:
-          handlePtr->octaves = (int)value;
-          break;
-      case 1:
-          handlePtr->semitones = (int)value;
-          break;
-      default:
-          return;
-  }
+    switch (index)
+    {
+        case 0:
+            handlePtr->octaves = (int)value;
+            break;
+        case 1:
+            handlePtr->semitones = (int)value;
+            break;
+        default:
+            return;
+    }
 
 }
 
