@@ -131,7 +131,7 @@ static void miditranspose_process(NativePluginHandle handle, float** inBuffer, f
     const NativeHostDescriptor* const host = handlePtr->host;
     const int octaves = handlePtr->octaves;
     const int semitones = handlePtr->semitones;
-        NativeMidiEvent tmpEvent;
+    NativeMidiEvent tmpEvent;
 
     for (uint32_t i=0; i < midiEventCount; ++i)
     {
