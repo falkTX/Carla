@@ -199,7 +199,11 @@ void* carla_shm_map(carla_shm_t& shm, const std::size_t size) noexcept
 
         void* const ptr(::mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_LOCKED, shm.fd, 0));
 
-        if (ptr == nullptr)
+        if (ptr == MAP_FAILED) {
+            carla_stderr("mmap failed: %s", std::strerror(errno));
+            return nullptr;
+        }
+        else if (ptr == nullptr)
         {
             carla_safe_assert("ptr != nullptr", __FILE__, __LINE__);
             return nullptr;
