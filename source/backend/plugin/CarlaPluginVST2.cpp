@@ -731,6 +731,7 @@ public:
             }
             else if (dispatcher(effGetParameterProperties, static_cast<int32_t>(j), 0, &prop, 0) == 1)
             {
+#if 0
                 if (prop.flags & kVstParameterUsesIntegerMinMax)
                 {
                     min = static_cast<float>(prop.minInteger);
@@ -748,6 +749,7 @@ public:
                     }
                 }
                 else
+#endif
                 {
                     min = 0.0f;
                     max = 1.0f;
