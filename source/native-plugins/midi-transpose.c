@@ -60,7 +60,7 @@ static uint32_t miditranspose_get_parameter_count(NativePluginHandle handle)
 
 static const NativeParameter* miditranspose_get_parameter_info(NativePluginHandle handle, uint32_t index)
 {
-    if (index >= miditranspose_get_parameter_count(handle))
+    if (index >= 2)
         return NULL;
 
     static NativeParameter param[] =
