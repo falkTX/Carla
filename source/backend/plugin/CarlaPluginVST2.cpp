@@ -675,9 +675,10 @@ public:
 
         for (uint32_t j=0; j < params; ++j)
         {
+            const int32_t ij = static_cast<int32_t>(j);
             pData->param.data[j].type   = PARAMETER_INPUT;
-            pData->param.data[j].index  = static_cast<int32_t>(j);
-            pData->param.data[j].rindex = static_cast<int32_t>(j);
+            pData->param.data[j].index  = ij;
+            pData->param.data[j].rindex = ij;
 
             float min, max, def, step, stepSmall, stepLarge;
 
@@ -689,7 +690,7 @@ public:
                 double vrange[2] = { 0.0, 1.0 };
                 bool   isInteger = false;
 
-                if (static_cast<uintptr_t>(dispatcher(effVendorSpecific, static_cast<int32_t>(0xdeadbef0), static_cast<int32_t>(j), vrange, 0.0f)) >= 0xbeef)
+                if (static_cast<uintptr_t>(dispatcher(effVendorSpecific, static_cast<int32_t>(0xdeadbef0), ij, vrange, 0.0f)) >= 0xbeef)
                 {
                     min = static_cast<float>(vrange[0]);
                     max = static_cast<float>(vrange[1]);
@@ -707,7 +708,7 @@ public:
 
                     // only use values as integer if we have a proper range
                     if (max - min >= 1.0f)
-                        isInteger = dispatcher(effVendorSpecific, kVstParameterUsesIntStep, static_cast<int32_t>(j), nullptr, 0.0f) >= 0xbeef;
+                        isInteger = dispatcher(effVendorSpecific, kVstParameterUsesIntStep, ij, nullptr, 0.0f) >= 0xbeef;
                 }
                 else
                 {
@@ -729,7 +730,7 @@ public:
                     stepLarge = range/10.0f;
                 }
             }
-            else if (dispatcher(effGetParameterProperties, static_cast<int32_t>(j), 0, &prop, 0) == 1)
+            else if (dispatcher(effGetParameterProperties, ij, 0, &prop, 0) == 1)
             {
 #if 0
                 if (prop.flags & kVstParameterUsesIntegerMinMax)
@@ -798,11 +799,11 @@ public:
             pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
             pData->param.data[j].hints |= PARAMETER_USES_CUSTOM_TEXT;
 
-            if ((pData->hints & PLUGIN_USES_OLD_VSTSDK) != 0 || dispatcher(effCanBeAutomated, static_cast<int32_t>(j), 0, nullptr, 0.0f) == 1)
+            if ((pData->hints & PLUGIN_USES_OLD_VSTSDK) != 0 || dispatcher(effCanBeAutomated, ij, 0, nullptr, 0.0f) == 1)
                 pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
 
             // no such thing as VST default parameters
-            def = fEffect->getParameter(fEffect, static_cast<int32_t>(j));
+            def = fEffect->getParameter(fEffect, ij);
 
             if (def < min)
                 def = min;
