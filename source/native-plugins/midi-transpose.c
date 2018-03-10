@@ -114,8 +114,10 @@ static void miditranspose_set_parameter_value(NativePluginHandle handle, uint32_
     {
         case 0:
             handlePtr->octaves = (int)value;
+            break;
         case 1:
             handlePtr->semitones = (int)value;
+            break;
         default:
             return;
     }
