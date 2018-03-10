@@ -101,10 +101,8 @@ static float miditranspose_get_parameter_value(NativePluginHandle handle, uint32
     {
         case 0:
             return (float)handlePtr->octaves;
-            break;
         case 1:
             return (float)handlePtr->semitones;
-            break;
         default:
             return 0.0f;
     }
@@ -116,10 +114,8 @@ static void miditranspose_set_parameter_value(NativePluginHandle handle, uint32_
     {
         case 0:
             handlePtr->octaves = (int)value;
-            break;
         case 1:
             handlePtr->semitones = (int)value;
-            break;
         default:
             return;
     }
