@@ -25,6 +25,7 @@
 typedef struct {
     const NativeHostDescriptor* host;
     int octaves;
+    int semitones;
 } MidiTransposeHandle;
 
 // -----------------------------------------------------------------------
@@ -38,6 +39,7 @@ static NativePluginHandle miditranspose_instantiate(const NativeHostDescriptor* 
 
     handle->host    = host;
     handle->octaves = 0;
+    handle->semitones = 0;
     return handle;
 }
 
@@ -50,7 +52,7 @@ static void miditranspose_cleanup(NativePluginHandle handle)
 
 static uint32_t miditranspose_get_parameter_count(NativePluginHandle handle)
 {
-    return 1;
+    return 2;
 
     // unused
     (void)handle;
@@ -58,49 +60,75 @@ static uint32_t miditranspose_get_parameter_count(NativePluginHandle handle)
 
 static const NativeParameter* miditranspose_get_parameter_info(NativePluginHandle handle, uint32_t index)
 {
-    if (index != 0)
+    if (index >= 2)
         return NULL;
 
-    static NativeParameter param;
-
-    param.name  = "Octaves";
-    param.unit  = NULL;
-    param.hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_INTEGER;
-    param.ranges.def = 0.0f;
-    param.ranges.min = -8.0f;
-    param.ranges.max = 8.0f;
-    param.ranges.step = 1.0f;
-    param.ranges.stepSmall = 1.0f;
-    param.ranges.stepLarge = 1.0f;
-    param.scalePointCount = 0;
-    param.scalePoints     = NULL;
-
-    return &param;
-
-    // unused
-    (void)handle;
+    static NativeParameter param[] =
+    {
+        {
+          .name  = "Octaves",
+          .unit  = NULL,
+          .hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_INTEGER,
+          .ranges.def = 0.0f,
+          .ranges.min = -8.0f,
+          .ranges.max = 8.0f,
+          .ranges.step = 1.0f,
+          .ranges.stepSmall = 1.0f,
+          .ranges.stepLarge = 1.0f,
+          .scalePointCount = 0,
+          .scalePoints     = NULL,
+        },
+        {
+          .name  = "Semitones",
+          .unit  = NULL,
+          .hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_INTEGER,
+          .ranges.def = 0.0f,
+          .ranges.min = -12.0f,
+          .ranges.max = 12.0f,
+          .ranges.step = 1.0f,
+          .ranges.stepSmall = 1.0f,
+          .ranges.stepLarge = 1.0f,
+          .scalePointCount = 0,
+          .scalePoints     = NULL,
+        },
+    };
+    return &param[index];
 }
 
 static float miditranspose_get_parameter_value(NativePluginHandle handle, uint32_t index)
 {
-    if (index != 0)
-        return 0.0f;
-
-    return (float)handlePtr->octaves;
+    switch (index)
+    {
+        case 0:
+            return (float)handlePtr->octaves;
+        case 1:
+            return (float)handlePtr->semitones;
+        default:
+            return 0.0f;
+    }
 }
 
 static void miditranspose_set_parameter_value(NativePluginHandle handle, uint32_t index, float value)
 {
-    if (index != 0)
-        return;
+    switch (index)
+    {
+        case 0:
+            handlePtr->octaves = (int)value;
+            break;
+        case 1:
+            handlePtr->semitones = (int)value;
+            break;
+        default:
+            return;
+    }
 
-    handlePtr->octaves = (int)value;
 }
 
 static void miditranspose_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
 {
     const NativeHostDescriptor* const host = handlePtr->host;
     const int octaves = handlePtr->octaves;
+    const int semitones = handlePtr->semitones;
     NativeMidiEvent tmpEvent;
 
     for (uint32_t i=0; i < midiEventCount; ++i)
@@ -112,7 +140,7 @@ static void miditranspose_process(NativePluginHandle handle, float** inBuffer, f
         if (status == MIDI_STATUS_NOTE_OFF || status == MIDI_STATUS_NOTE_ON)
         {
             int oldnote = midiEvent->data[1];
-            int newnote = oldnote + octaves*12;
+            int newnote = oldnote + octaves*12 + semitones;
 
             if (newnote < 0 || newnote >= MAX_MIDI_NOTE)
                 continue;
@@ -151,7 +179,7 @@ static const NativePluginDescriptor miditransposeDesc = {
     .audioOuts = 0,
     .midiIns   = 1,
     .midiOuts  = 1,
-    .paramIns  = 1,
+    .paramIns  = 2,
     .paramOuts = 0,
     .name      = "MIDI Transpose",
     .label     = "miditranspose",

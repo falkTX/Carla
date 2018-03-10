@@ -139,7 +139,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* audioOuts */ 0,
     /* midiIns   */ 1,
     /* midiOuts  */ 1,
-    /* paramIns  */ 1,
+    /* paramIns  */ 2,
     /* paramOuts */ 0,
     /* name      */ "MIDI Transpose",
     /* label     */ "miditranspose",
