@@ -1,0 +1,130 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{lac2018}
+\sloppy
+\newenvironment{contentsmall}{\small}
+
+\title{Paper Template for LAC2018, c-base Berlin}
+
+%see lac2018.sty for how to format multiple authors!
+\author
+{Firstname LASTNAME
+\\ Group, Lab, Organisation 
+\\ Address 
+\\ ZIP Town,
+\\ Country, 
+\\ Firstname.Lastname@here.edu 
+}
+
+
+
+\begin{document}
+\maketitle
+
+
+\begin{abstract}
+\begin{contentsmall}
+This is a \LaTeX\ sample for your paper. The abstract should comprise
+50-100 words.
+\end{contentsmall}
+\end{abstract}
+
+\keywords{
+\begin{contentsmall}
+One, two, three (max. 5)
+\end{contentsmall}
+}
+
+\section{Introduction}
+
+This is a model document. Don't use fonts smaller than this
+one (Times 11), and don't forget to leave it in A4 (21 x 29.7~cm).
+
+\section{Section}
+
+Text\footnote{Text of note.}, note at end of page.
+
+
+\subsection{Subsection}
+
+Text of the subsection with citations such as 
+\cite{Spa72}, \cite{Kay86} and \longcite{MosWal64}.
+
+ 
+\subsubsection{Subsubsection}
+
+Text of the subsubsection.
+Text of the subsubsection.
+Text of the subsubsection.
+Text of the subsubsection.
+Text of the subsubsection.
+Text of the subsubsection.
+Text of the subsubsection.
+Text of the subsubsection (see Table~\ref{table1}).
+
+Text of the subsubsection.
+Text of the subsubsection.
+Text of the subsubsection.
+Text of the subsubsection.
+Text of the subsubsection.
+Text of the subsubsection.
+
+
+\begin{table}[h]
+ \begin{center}
+\begin{tabular}{|l|l|}
+
+      \hline
+      Software & Features\\
+      \hline\hline
+      AA & Harddisk-Recording\\
+      BB & MIDI Sequencing\\
+      CC & Score Notation\\
+      \hline
+
+\end{tabular}
+\caption{Example}\label{table1}
+ \end{center}
+\end{table}
+
+
+Text of the subsubsection.
+Text of the subsubsection.
+Text of the subsubsection.
+Text of the subsubsection.
+
+
+\section{Section}
+
+Text. Text. Text. Text. Text.
+Text. Text. Text. Text. Text.
+
+Text. Text. Text. Text. Text.
+Text. Text. Text. Text. Text.
+Text. Text. Text. Text. Text.
+Text. Text. Text. Text. Text.
+Text. Text. More text. Text. Text.
+
+\section{Section}
+
+Text. Text. Text. Text. Text.
+Text. Text. Text. Text. Text.
+Text. Text. Text. Text. Text.
+Text. Text. Text. Text. Text.
+Text. Text. More text. Text. Text.
+Text. Text. Text. Text. Text.
+
+Text. Text. Text. Text. Text.
+Text. Text. Text. Text. Text.
+
+\section{Conclusions}
+
+Concluding text.
+
+\section{Acknowledgements}
+
+Our thanks go to \ldots .
+
+\bibliographystyle{acl}
+\bibliography{sample}
+
+\end{document}

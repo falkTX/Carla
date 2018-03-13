@@ -1,0 +1,638 @@
+%
+% lac2018.sty
+%
+\typeout{}
+\typeout{LAC2018 Proceedings style -- January 2018}
+%\typeout{only slightly different from}
+%\typeout{Coling 2004 Proceedings style -- February 2004}
+%\typeout{only slightly different from}
+%\typeout{ACL-COLING 1998 Proceedings style -- March 31st 1998}
+\typeout{}
+%
+% ----------------------------------------------------------------------
+%
+% This is the LaTeX style file for the Linux Audio Conference
+% It is an almost unmodified copy of colacl.sty, the style file
+% of Coling (International Conference on Computational Linguistics).
+% Many thanks to Coling for their permission to use it!
+% The original may be found here:
+% http://www.issco.unige.ch/coling2004/coling2004downloads.html
+%
+% ----------------------------------------------------------------------
+%
+% This is the LaTeX style file for ACL-COLING 1998.  It is based on
+% a series of similar files prepared for previous conferences by
+% Fernando Pereira, Paul Jacobs, Stuart Shieber, Peter F. 
+% Patel-Schneider and others.  Various changes have been made, chiefly
+% to save space in the final output or remove redundant definitions. 
+%
+% colacl.sty is designed for use as a package or option with the
+% standard LaTeX article class, and the BibTeX style acl.bst.
+%
+% Author/title and citation formatting differs slightly from standard
+% LaTeX; see AUTHOR FORMATS and CITATION FORMATS below for more
+% information.
+% 
+% This file is supplied as a hopefully convenient implementation of 
+% some of the "instructions for authors" repeated below.  It is not
+% guaranteed to work in any given LaTeX installation or in conjunction
+% with any given class, package or style, and it is not intended as
+% a LaTeX tutorial.
+%
+% ----------------------------------------------------------------------
+% Instructions for authors
+% 
+%   (i) Maximum length of full papers: 8 pages.
+%
+%  (ii) Paper size: A4.
+%
+% (iii) Margins: set so that text lies within a rectangle 9in (23cm)
+%       high and 6.5in (16.5cm) wide.
+%
+%  (iv) Body of text to be set in two columns.  Full-width figures
+%       (i.e. using \begin{figure*}) and tables may be used if
+%       necessary. 
+%
+%   (v) Use standard fonts, e.g. Computer Modern Roman, Times Roman, no
+%       smaller than 10pt.
+%
+%  (vi) No page numbering.
+% 
+% Items (iii), (iv) and (vi) are handled by this file, and should
+% therefore not be overridden by resetting \textwidth, \textheight,
+% \pagestyle etc. in your document, or by using styles or packages
+% which have the same effect.
+%
+% ----------------------------------------------------------------------
+% To convert papers prepared with colaclsub.sty to the final format
+% for use with colacl.sty:  
+%
+% (1) Remove commands specific to the original submission format 
+%     (\type, \subject, \contact, \conference, \makeidpage).
+% 
+% (2) Replace \summary{...} with an abstract, using the normal
+%     abstract environment, placed after \maketitle.
+%
+% A simple document template:
+%
+%   \documentclass[11pt,letterpaper]{article}
+%   \usepackage{lac2012}
+%   \title{...}
+%   \author{...}             % see below for possible formats
+%   \begin{document}
+%   \maketitle
+%   \begin{abstract}
+%   ...                      % contents of abstract
+%   \end{abstract}
+%   ...                      % contents of article
+%   \bibliographystyle{acl}  % use acl.bst
+%   \bibliography{...}
+%   \end{document}
+%
+% Users of obsolete LaTeX versions can try:
+%
+%   \documentstyle[lac2012]{article}	% or [11pt,lac2012]
+%   \title{...}
+%   ...
+%
+%
+% ----------------------------------------------------------------------
+% AUTHOR FORMATS
+%
+% Author information can be set in various styles.
+%
+% For several authors from the same institution:
+% \author{Author 1 \and ... \and Author n \\
+%	  Address line \\ ... \\ Address line}
+% if the names do not fit well on one line use
+%         Author 1 \\ {\bf Author 2} \\ ... \\ {\bf Author n} \\
+%
+% For authors from different institutions:
+% \author{Author 1 \\ Address line \\  ... \\ Address line
+%	  \And  ... \And
+%	  Author n \\ Address line \\ ... \\ Address line}
+%
+% To start a separate "row" of authors use \AND, as in
+% \author{Author 1 \\ Address line \\  ... \\ Address line
+%	  \AND
+%	  Author 2 \\ Address line \\ ... \\ Address line \And
+%	  Author 3 \\ Address line \\ ... \\ Address line}
+%
+% If the title and author information does not fit in the area allocated,
+% place \setlength\titlebox{<new height>} after \usepackage{colacl},
+% where <new height> can be something larger than 2.0in
+%
+% ----------------------------------------------------------------------
+% CITATION FORMATS
+% 
+% Three possible citation formats:
+% "\cite{...}"      produces a citation like "(Author, 1999)"
+% "\shortcite{...}" produces a citation like "(1999)"
+% "\newcite{...}"   produces a citation like "Author (1999)"
+%
+% All three take an optional argument which can be used to add page
+% references, etc.:
+% "\newcite[1--6]{...}" produces a citation like "Author (1999, 1--6)"
+%
+% ----------------------------------------------------------------------
+% IF IT DOESN'T WORK
+%
+% The error message "File `colacl.sty' not found." indicates that this
+% file has not been installed in a location which is visible to your 
+% LaTeX.  Try putting it in the same directory as your paper, and
+% running LaTeX there.  Consult your `Local Guide' documentation or
+% your system administrator to find out how LaTeX searches for input
+% files.
+%
+% "\documentclass..." is a LaTeX2e declaration.  An error message
+% "Undefined control sequence." followed by a line ending in
+% "\documentclass" indicates that you have used this with an obsolete
+% LaTeX installation.  Use the "\documentstyle" variant shown above.
+%
+% As a last resort, forget about colacl.sty and simply copy the
+% following lines (uncommented, obviously) into your document before
+% the "\begin{document}":
+%
+% \setlength\topmargin{0.0in}
+% \setlength\oddsidemargin{-0.0in}
+% \setlength\textheight{9.0in}
+% \setlength\textwidth{6.5in}
+% \setlength\columnsep{0.25in}
+% \setlength\headheight{0pt}
+% \setlength\headsep{0pt}
+% \thispagestyle{empty}
+% \pagestyle{empty}
+% \flushbottom
+% \twocolumn
+% \sloppy
+%
+% Some interactions with other packages may still occur.  In order to
+% remove the page number from the first page, you may have to place the
+% "\thispagestyle{empty}" command immediately after "\maketitle".
+%
+% ----------------------------------------------------------------------
+% NOTE:  Some laser printers have a serious problem printing TeX output.
+% These printing devices, commonly known as "write-white" laser
+% printers, tend to make characters too light.  To get around this
+% problem, a darker set of fonts must be created for these devices.
+%
+% ----------------------------------------------------------------------
+% Physical page layout - slightly modified from IJCAI by pj
+% Physical page layout - slightly modified by rg for LAC
+\newlength\myavierh
+\setlength\myavierh{297mm}
+%\message{The page height is \the\paperheight} 
+\ifdim \paperheight = \myavierh
+\message{ !! Using ISO-A4 paper}
+%% A4paper
+\setlength\topmargin{0.0in}
+\setlength\oddsidemargin{-0.0in}
+\setlength\textheight{9.5in}   %%sm was 9.0in
+\setlength\textwidth{6.5in} 
+\setlength\columnsep{0.25in}
+\newlength\titlebox
+\setlength\titlebox{2.0in}		% was 2.25in
+\setlength\headheight{0pt}
+\setlength\headsep{0pt}
+\setlength\footskip{0pt}                % irrelevant when no footers.
+
+\else
+%% US-Letter
+\message{ !! Using US-Letter paper}
+\setlength{\pdfpagewidth}{8.5in}
+\setlength{\pdfpageheight}{11in}
+\setlength\topmargin{0.0in}
+\setlength\oddsidemargin{-0.2in}
+\setlength\textheight{8.8in}  
+\setlength\textwidth{6.9in}
+\setlength\columnsep{0.4in}
+\newlength\titlebox
+\setlength\titlebox{2.1in}   
+\setlength\headheight{0pt}
+\setlength\headsep{0pt}
+\setlength\footskip{0pt}      % irrelevant when no footers.
+\fi
+
+\pagestyle{empty}			% no page numbers
+\thispagestyle{empty}			% no page numbers
+\flushbottom
+\twocolumn
+\sloppy
+
+% We're never going to need a table of contents, so just flush it to
+% save space --- suggested by drstrip@sandia-2
+\def\addcontentsline#1#2#3{}
+
+% ----------------------------------------------------------------------
+% Title stuff, taken from deproc.
+
+\def\maketitle{%
+  \par%
+  \begingroup%
+     \def\thefootnote{\fnsymbol{footnote}}%
+     \def\@makefnmark{\rlap{$^{\@thefnmark}$\hss}}%
+     % no paragraph breaks in \thanks
+     \long\def\@makefntext##1{%
+                  \parindent 1em\noindent%
+                  \hbox to 1em{$^{\@thefnmark}$}##1}
+     \twocolumn[\@maketitle] \@thanks%
+  \endgroup%
+  \setcounter{footnote}{0}%
+  \let\maketitle\relax\let\@maketitle\relax%
+  \gdef\@thanks{}\gdef\@author{}\gdef\@title{}%
+  \let\thanks\relax}
+
+% some vertical space removed here: skip above and below title
+%
+\def\@maketitle{%
+  \vbox to \titlebox{%
+    \hsize\textwidth\linewidth\hsize%
+    \vskip 0.125in minus 0.05in%
+    \centering{\Large\bf \@title \par}%
+    \vskip 0.2in plus 0.1fil minus 0.1in
+    {\def\and{\unskip\enspace{\rm and}\enspace}%
+     \def\And{\end{tabular}\hss \egroup \hskip 1in plus 2fil 
+              \hbox to 0pt\bgroup\hss \begin{tabular}[t]{c}\bf}%
+     \def\AND{\end{tabular}\hss\egroup \hfil\hfil\egroup
+	      \vskip 0.25in plus 1fil minus 0.125in
+	      \hbox to \linewidth\bgroup\large \hfil\hfil
+   	      \hbox to 0pt\bgroup\hss \begin{tabular}[t]{c}\bf}
+    \hbox to \linewidth \bgroup\large \hfil\hfil
+    \hbox to 0pt\bgroup\hss \begin{tabular}[t]{c}\bf\@author 
+			    \end{tabular}\hss\egroup
+    \hfil\hfil\egroup}
+  \vskip 0.3in plus 2fil minus 0.1in
+}}
+
+% ----------------------------------------------------------------------
+% abstract, changed for LAC2005
+
+% \renewenvironment{abstract}{\section*{\centerline{Abstract}}}{}
+\renewenvironment{abstract}{\section*{Abstract}}{}
+
+% ----------------------------------------------------------------------
+% keywords, added for LAC2005
+
+\def\keywords{\section*{Keywords}}
+
+% ----------------------------------------------------------------------
+% bibliography and citations
+
+% most of cite format is from aclsub.sty by SMS
+
+% don't box citations, separate with ; and a space
+% Replaced for multiple citations (pj) 
+% don't box citations and also add space, semicolon between multiple
+% citations
+%
+\def\@citex[#1]#2{\if@filesw\immediate\write\@auxout{\string\citation{#2}}\fi
+  \def\@citea{}\@cite{\@for\@citeb:=#2\do
+     {\@citea\def\@citea{; }\@ifundefined
+       {b@\@citeb}{{\bf ?}\@warning
+        {Citation `\@citeb' on page \thepage \space undefined}}%
+ {\csname b@\@citeb\endcsname}}}{#1}}
+
+% Allow short (name-less) citations, when used in
+% conjunction with a bibliography style that creates labels like
+%	\citename{<names>, }<year>
+% 
+\let\@internalcite\cite
+\def\cite{\def\citename##1{##1, }\@internalcite}
+\def\longcite{\def\citename##1{##1, }\@internalcite}
+
+\def\shortcite{\def\citename##1{}\@internalcite}
+\def\newcite{\def\citename##1{{##1}\ (}\@internalciteb}
+
+% Macros for \newcite, which leaves name in running text, and is
+% otherwise like \shortcite.
+%
+\def\@citexb[#1]#2{\if@filesw\immediate\write\@auxout{\string\citation{#2}}\fi
+  \def\@citea{}\@newcite{\@for\@citeb:=#2\do
+    {\@citea\def\@citea{;\penalty\@m\ }\@ifundefined
+       {b@\@citeb}{{\bf ?}\@warning
+       {Citation `\@citeb' on page \thepage \space undefined}}%
+% gjr: hbox causes too many bad linebreaks
+%\hbox{\csname b@\@citeb\endcsname}}}{#1}}
+     {\csname b@\@citeb\endcsname}}}{#1}}
+
+\def\@internalciteb{%
+  \@ifnextchar [{\@tempswatrue\@citexb}{\@tempswafalse\@citexb[]}}
+
+\def\@newcite#1#2{{#1\if@tempswa, #2\fi)}}
+
+% gjr: no labels in this bibliography style
+% \def\@biblabel#1{\def\citename##1{##1}[#1]\hfill}
+\def\@biblabel#1{}
+
+% use square brackets after all
+%%% More changes made by SMS (originals in latex.tex)
+% Use parentheses instead of square brackets in the text.
+% \def\@cite#1#2{({#1\if@tempswa , #2\fi})}
+
+% Don't put a label in the bibliography at all.  Just use the unlabeled format
+% instead.
+% gjr: removed \@mkboth -- no headers here.
+% gjr: reduced vertical space between entries (plus was .33em)
+%
+
+\def\thebibliography#1{\section*{References}\list
+ {[\arabic{enumi}]}{\settowidth\labelwidth{[#1]}\leftmargin\labelwidth
+ \advance\leftmargin\labelsep
+ \usecounter{enumi}}
+ \def\newblock{\hskip .11em plus .11em minus .07em}
+ \sloppy\clubpenalty4000\widowpenalty4000
+ \sfcode`\.=1000\relax}
+\let\endthebibliography=\endlist
+
+% \def\thebibliography#1{%
+%   \section*{References}
+%   \list{}{\setlength{\labelwidth}{0pt}
+%           \setlength{\leftmargin}{\parindent}
+%           \setlength{\itemsep}{0.11ex plus 0.11ex}
+%           \setlength{\parsep}{0ex}
+%           \setlength{\itemindent}{-\parindent}}
+%   \def\newblock{\hskip .11em plus .11em minus -.07em}
+%   \sloppy\clubpenalty4000\widowpenalty4000
+%   \sfcode`\.=1000\relax}
+% \let\endthebibliography=\endlist
+
+% Allow for a bibliography of sources of attested examples
+\def\thesourcebibliography#1{%
+  \section*{Sources of Attested Examples}
+  \list{}{\setlength{\labelwidth}{0pt}
+          \setlength{\leftmargin}{\parindent}
+          \setlength{\itemsep}{0.11ex plus 0.11ex}
+          \setlength{\parsep}{0ex}
+          \setlength{\itemindent}{-\parindent}}
+  \def\newblock{\hskip .11em plus .11em minus -.07em}
+  \sloppy\clubpenalty4000\widowpenalty4000
+  \sfcode`\.=1000\relax}
+\let\endthesourcebibliography=\endlist
+
+\def\@lbibitem[#1]#2{\item[]\if@filesw 
+      { \def\protect##1{\string ##1\space}\immediate
+        \write\@auxout{\string\bibcite{#2}{#1}}\fi\ignorespaces}}
+
+\def\@bibitem#1{\item\if@filesw \immediate\write\@auxout
+       {\string\bibcite{#1}{\the\c@enumi}}\fi\ignorespaces}
+
+% ----------------------------------------------------------------------
+% Section headings with less space
+
+\def\section{%
+    \@startsection{section}{1}{\z@}%
+                  {-2.0ex plus -0.5ex minus -0.3ex}%
+                  {0.8ex plus 0.3ex minus 0.2ex}%
+                  {\large\bf\raggedright}}
+\def\subsection{%
+    \@startsection{subsection}{2}{\z@}%
+                  {-1.4ex plus -0.4ex minus -0.2ex}%
+                  {0.6ex plus 0.2ex minus 0.1ex}%
+                  {\normalsize\bf\raggedright}}
+\def\subsubsection{%
+    \@startsection{subsubsection}{3}{\z@}%
+                  {-0.8ex plus -0.3ex minus -0.1ex}%
+                  {0.4ex plus 0.1ex minus 0.1ex}%
+                  {\normalsize\bf\raggedright}}
+\def\paragraph{%
+    \@startsection{paragraph}{4}{\z@}%
+                  {-0.8ex plus -0.3ex minus -0.1ex}%
+                  {-1em}%
+                  {\normalsize\bf}}
+\def\subparagraph{%
+    \@startsection{subparagraph}{5}{\parindent}%
+                  {0.4ex plus 0.3ex minus 0.1ex}%
+                  {-1em}%
+                  {\normalsize\bf}}
+
+
+% ----------------------------------------------------------------------
+% Footnotes
+
+%\footnotesep 6.65pt %
+%\skip\footins 9pt plus 4pt minus 2pt
+%\def\footnoterule{\kern-3pt \hrule width 5pc \kern 2.6pt }
+%\setcounter{footnote}{0}
+
+% ----------------------------------------------------------------------
+% Lists and paragraphs
+
+\setlength\parindent{1em}
+
+\leftmargin 2em \leftmargini\leftmargin \leftmarginii 2em
+\leftmarginiii 1.5em \leftmarginiv 1.0em \leftmarginv .5em \leftmarginvi .5em
+\labelwidth\leftmargini\advance\labelwidth-\labelsep \labelsep 5pt
+
+% ----------------------------------------------------------------------
+% Floats (figures, tables etc.)
+%
+% Allow a larger proportion of the column/page to be taken up with
+% floats than the standard classes.  Also discourage the creation of
+% columns/pages containing only floats.
+
+% Maximum fraction of the page that can be occupied by floats:
+%
+\renewcommand\topfraction{.9}
+\renewcommand\bottomfraction{.5}
+\renewcommand\dbltopfraction{.9}	% 2-column floats
+
+% Minimum fraction of page that can be occupied by text:
+%
+\renewcommand\textfraction{.1}
+
+% Maximum fraction of a page that can be occupied by floats before a
+% separate float page is produced:
+%
+\renewcommand\floatpagefraction{0.9}
+\renewcommand\dblfloatpagefraction{.9}	% 2-column floats
+
+% ----------------------------------------------------------------------
+%
+% Since we're using two columns, lines are short and we can get away
+% with less vertical space between lines, within lists and around
+% various kinds of display.
+%
+% Normally, these parameters are set in the size option to the class
+% file (standard definitions are in classes.dtx).  Here we want to
+% accommodate 10pt, 11pt and 12pt, so we wrap the definitions in
+% \ifcase. 
+%
+
+%  \normalsize
+%
+\ifcase\@ptsize%
+    \renewcommand{\normalsize}{% 				10pt
+        \@setsize\normalsize{11.3pt}\xpt\@xpt%
+        \abovedisplayskip 10\p@\@plus2\p@\@minus5\p@%
+        \abovedisplayshortskip\z@\@plus3\p@%
+        \belowdisplayshortskip 4\p@\@plus3\p@\@minus3\p@%
+        \belowdisplayskip\abovedisplayskip%
+        \let\@listi\@listI}%
+ \or%
+    \renewcommand{\normalsize}{% 				11pt
+        \@setsize\normalsize{12.6pt}\xipt\@xipt%
+        \abovedisplayskip11\p@\@plus2\p@\@minus4\p@%
+        \abovedisplayshortskip\z@\@plus3\p@%
+        \belowdisplayshortskip5\p@\@plus3\p@\@minus2\p@%
+        \belowdisplayskip\abovedisplayskip%
+        \let\@listi\@listI}%
+ \or%
+    \renewcommand{\normalsize}{%				12pt
+        \@setsize\normalsize{13pt}\xiipt\@xiipt%
+        \abovedisplayskip 11\p@ \@plus3\p@ \@minus5\p@%
+        \abovedisplayshortskip \z@ \@plus3\p@%
+        \belowdisplayshortskip 5\p@ \@plus3\p@ \@minus2\p@%
+        \belowdisplayskip\abovedisplayskip%
+        \let\@listi\@listI}%
+ \fi    
+
+% \small
+%
+\ifcase\@ptsize%
+    \renewcommand{\small}{%					10pt
+        \@setsize\small{10.5pt}\ixpt\@ixpt%
+        \abovedisplayskip 8\p@ \@plus3\p@ \@minus3\p@%
+        \abovedisplayshortskip \z@ \@plus2\p@%
+        \belowdisplayshortskip 3\p@ \@plus2\p@ \@minus2\p@%
+        \belowdisplayskip\abovedisplayskip%
+        \def\@listi{\leftmargin\leftmargini%
+                    \topsep 3.5\p@ \@plus1.5\p@ \@minus1.5\p@%
+                    \parsep 1.5\p@ \@plus\p@ \@minus\p@%
+                    \itemsep \parsep}}%
+ \or%
+    \renewcommand{\small}{%					11pt
+        \@setsize\small{11.3pt}\xpt\@xpt%
+        \abovedisplayskip 9\p@ \@plus2\p@ \@minus4\p@%
+        \abovedisplayshortskip \z@ \@plus3\p@%
+        \belowdisplayshortskip 5\p@ \@plus2.5\p@ \@minus2.5\p@%
+        \belowdisplayskip\abovedisplayskip%
+        \def\@listi{\leftmargin\leftmargini%
+                    \topsep 5\p@ \@plus2\p@ \@minus2\p@%
+                    \parsep 2\p@ \@plus2\p@ \@minus\p@%
+                    \itemsep \parsep}}%
+ \or%
+    \renewcommand{\small}{%					12pt
+        \@setsize\small{12pt}\xipt\@xipt%
+        \abovedisplayskip 9\p@ \@plus3\p@ \@minus4\p@%
+        \abovedisplayshortskip \z@ \@plus3\p@%
+        \belowdisplayshortskip 5\p@ \@plus2.5\p@ \@minus2\p@%
+        \belowdisplayskip\abovedisplayskip%
+        \def\@listi{\leftmargin\leftmargini%
+                    \topsep 5.5\p@ \@plus2.5\p@ \@minus2.5\p@%
+                    \parsep 4\p@ \@plus1.5\p@ \@minus\p@%
+                    \itemsep \parsep}}%
+ \fi
+
+
+% \footnotesize
+%
+\ifcase\@ptsize
+    \renewcommand{\footnotesize}{%				10pt
+        \@setsize\footnotesize{9.3pt}\viiipt\@viiipt%
+        \abovedisplayskip 5\p@ \@plus2\p@ \@minus3\p@%
+        \abovedisplayshortskip \z@ \@plus\p@%
+        \belowdisplayshortskip 2.5\p@\@plus\p@\@minus2\p@%
+        \belowdisplayskip\abovedisplayskip%
+        \def\@listi{\leftmargin\leftmargini%
+                    \topsep 2.5\p@ \@plus\p@ \@minus\p@%
+                    \parsep 1.5\p@ \@plus\p@ \@minus\p@%
+                    \itemsep \parsep}}%
+ \or%
+    \renewcommand{\footnotesize}{%				11pt
+        \@setsize\footnotesize{10.3pt}\ixpt\@ixpt%
+        \abovedisplayskip 7\p@ \@plus2\p@ \@minus4\p@%
+        \abovedisplayshortskip \z@ \@plus\p@%
+        \belowdisplayshortskip 3\p@ \@plus2\p@ \@minus2\p@%
+        \belowdisplayskip\abovedisplayskip%
+        \def\@listi{\leftmargin\leftmargini%
+                    \topsep 3\p@ \@plus2\p@ \@minus2\p@%
+                    \parsep 2\p@ \@plus\p@ \@minus\p@%
+                    \itemsep \parsep}}%
+ \or%
+    \renewcommand{\footnotesize}{%				12pt
+        \@setsize\footnotesize{11pt}\xpt\@xpt%
+        \abovedisplayskip 9\p@ \@plus2\p@ \@minus4\p@%
+        \abovedisplayshortskip \z@ \@plus3\p@%
+        \belowdisplayshortskip 5\p@ \@plus3\p@ \@minus3\p@%
+        \belowdisplayskip\abovedisplayskip%
+        \def\@listi{\leftmargin\leftmargini%
+                    \topsep 4.5\p@ \@plus2\p@ \@minus2\p@%
+                    \parsep 3\p@ \@plus\p@ \@minus\p@%
+                    \itemsep \parsep}}%
+ \fi 
+
+
+% \large
+%
+\ifcase\@ptsize%
+    \renewcommand{\large}{\@setsize\large{13pt}\xiipt\@xiipt}%	10pt
+ \or%
+    \renewcommand{\large}{\@setsize\large{13pt}\xiipt\@xiipt}%	11pt
+ \or%
+    \renewcommand{\large}{\@setsize\large{16pt}\xivpt\@xivpt}%	12pt
+ \fi
+
+% \Large
+%
+\ifcase\@ptsize%
+    \renewcommand{\Large}{\@setsize\Large{16pt}\xivpt\@xivpt}%	10pt
+ \or%
+    \renewcommand{\Large}{\@setsize\Large{16pt}\xivpt\@xivpt}%	11pt
+ \or%
+    \renewcommand{\Large}{\@setsize\Large{16pt}\xivpt\@xivpt}%	12pt
+ \fi
+
+% Leave \scriptsize, \tiny, \huge, \Huge unchanged?
+
+%
+% Float separations, single and double-column
+%
+\ifcase\@ptsize%
+    \setlength\floatsep{10\p@ \@plus 2\p@ \@minus 2\p@}%	10pt
+    \setlength\textfloatsep{16\p@ \@plus 2\p@ \@minus 4\p@}%
+    \setlength\intextsep{10\p@ \@plus 2\p@ \@minus 2\p@}%
+    \setlength\dblfloatsep{10\p@ \@plus 2\p@ \@minus 2\p@}%
+    \setlength\dbltextfloatsep{16\p@ \@plus 2\p@ \@minus 4\p@}%
+ \or%
+    \setlength\floatsep{10\p@ \@plus 2\p@ \@minus 2\p@}%	11pt
+    \setlength\textfloatsep{16\p@ \@plus 2\p@ \@minus 4\p@}%
+    \setlength\intextsep{10\p@ \@plus 2\p@ \@minus 2\p@}%
+    \setlength\dblfloatsep{10\p@ \@plus 2\p@ \@minus 2\p@}%
+    \setlength\dbltextfloatsep{16\p@ \@plus 2\p@ \@minus 4\p@}%
+ \or%
+    \setlength\floatsep{12\p@ \@plus 3\p@ \@minus 3\p@}%	12pt
+    \setlength\textfloatsep{18\p@ \@plus 2\p@ \@minus 4\p@}%
+    \setlength\intextsep{12\p@ \@plus 3\p@ \@minus 3\p@}%
+    \setlength\dblfloatsep{12\p@ \@plus 2\p@ \@minus 4\p@}%
+    \setlength\dbltextfloatsep{18\p@ \@plus 2\p@ \@minus 4\p@}%
+ \fi
+
+%
+% Top-level list in \normalsize text
+%
+\ifcase\@ptsize%
+    \def\@listi{\leftmargin\leftmargini%			10pt
+                \topsep  6\p@ \@plus2\p@ \@minus2\p@%
+                \parsep  2\p@ \@plus0.5\p@ \@minus\p@%
+                \itemsep 2.5\p@ \@plus\p@ \@minus0.5\p@}%
+ \or%
+    \def\@listi{\leftmargin\leftmargini%			11pt
+                \topsep  8\p@ \@plus2\p@ \@minus2\p@%
+                \parsep  3\p@ \@plus1.5\p@ \@minus\p@%
+                \itemsep 3\p@ \@plus1.5\p@ \@minus\p@}%
+ \or%
+    \def\@listi{\leftmargin\leftmargini%			12pt
+                \topsep  9\p@ \@plus3\p@   \@minus4\p@%
+                \parsep  4\p@  \@plus2\p@ \@minus\p@%
+                \itemsep 4\p@  \@plus2\p@ \@minus\p@}%
+ \fi
+\let\@listI\@listi
+
+%
+% Embedded lists unchanged.
+%
+
+
+% ----------------------------------------------------------------------
+% End of colacl.sty
+% ----------------------------------------------------------------------
