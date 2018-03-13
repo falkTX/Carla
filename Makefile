@@ -103,16 +103,32 @@ $(MODULEDIR)/theme.qt5.a: .FORCE
 	@$(MAKE) -C source/theme qt5
 
 $(MODULEDIR)/%.posix32.a: .FORCE
+ifneq ($(WIN32),true)
 	@$(MAKE) -C source/modules/$* posix32
+else
+	$(error Trying to build POSIX binaries with a Windows toolchain, this cannot work)
+endif
 
 $(MODULEDIR)/%.posix64.a: .FORCE
+ifneq ($(WIN32),true)
 	@$(MAKE) -C source/modules/$* posix64
+else
+	$(error Trying to build POSIX binaries with a Windows toolchain, this cannot work)
+endif
 
 $(MODULEDIR)/%.win32.a: .FORCE
+ifeq ($(WIN32),true)
 	@$(MAKE) -C source/modules/$* win32
+else
+	$(error Trying to build Windows binaries with a regular toolchain, this cannot work)
+endif
 
 $(MODULEDIR)/%.win64.a: .FORCE
+ifeq ($(WIN32),true)
 	@$(MAKE) -C source/modules/$* win64
+else
+	$(error Trying to build Windows binaries with a regular toolchain, this cannot work)
+endif
 
 $(MODULEDIR)/%.a: .FORCE
 	@$(MAKE) -C source/modules/$*

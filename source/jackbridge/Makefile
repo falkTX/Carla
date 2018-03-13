@@ -42,17 +42,31 @@ OBJS_win32e   = $(OBJDIR)/JackBridgeExport.cpp.win32e.o
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-all:      $(MODULEDIR)/$(MODULENAME).a
-posix32:  $(MODULEDIR)/$(MODULENAME).posix32.a
-posix64:  $(MODULEDIR)/$(MODULENAME).posix64.a
-posix32e: $(MODULEDIR)/$(MODULENAME).posix32e.a
-posix64e: $(MODULEDIR)/$(MODULENAME).posix64e.a
+all: $(MODULEDIR)/$(MODULENAME).a
+
+ifeq ($(WIN32),true)
+posix32:
+posix64:
+posix32e:
+posix64e:
 win32:    $(MODULEDIR)/$(MODULENAME).win32.a
 win64:    $(MODULEDIR)/$(MODULENAME).win64.a
 win32e:   $(MODULEDIR)/$(MODULENAME).win32e.a
 win64e:   $(MODULEDIR)/$(MODULENAME).win64e.a
+wine32:
+wine64:
+else
+posix32:  $(MODULEDIR)/$(MODULENAME).posix32.a
+posix64:  $(MODULEDIR)/$(MODULENAME).posix64.a
+posix32e: $(MODULEDIR)/$(MODULENAME).posix32e.a
+posix64e: $(MODULEDIR)/$(MODULENAME).posix64e.a
+win32:
+win64:
+win32e:
+win64e:
 wine32:   $(MODULEDIR)/$(MODULENAME)-wine32.dll$(LIB_EXT)
 wine64:   $(MODULEDIR)/$(MODULENAME)-wine64.dll$(LIB_EXT)
+endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
