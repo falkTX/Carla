@@ -3,16 +3,14 @@
 \sloppy
 \newenvironment{contentsmall}{\small}
 
-\title{Paper Template for LAC2018, c-base Berlin}
+\title{Carla Plugin Host - Feature overview and workflows, c-base Berlin}
 
 %see lac2018.sty for how to format multiple authors!
 \author
-{Firstname LASTNAME
-\\ Group, Lab, Organisation 
-\\ Address 
-\\ ZIP Town,
-\\ Country, 
-\\ Firstname.Lastname@here.edu 
+{Filipe Coelho
+\\ falkTX, Linux Audio Developer
+\\ Berlin, Germany,
+\\ falktx@falktx.com
 }
 
 
@@ -23,108 +21,90 @@
 
 \begin{abstract}
 \begin{contentsmall}
-This is a \LaTeX\ sample for your paper. The abstract should comprise
-50-100 words.
+Carla is a fully-featured audio plugin host with support for many plugin formats,
+featuring automation of plugin parameters via MIDI CC, remote control over OSC, among others.
+This workshop plans to give a quick overview of Carla and go through some workflows together with the audience.
 \end{contentsmall}
 \end{abstract}
 
 \keywords{
 \begin{contentsmall}
-One, two, three (max. 5)
+Plugin, Host, Modular, MIDI, OSC, Rack, Patchbay
 \end{contentsmall}
 }
 
 \section{Introduction}
 
-This is a model document. Don't use fonts smaller than this
-one (Times 11), and don't forget to leave it in A4 (21 x 29.7~cm).
+The first part of the workshop is a quick personal introduction, followed by a small musical demo.
 
-\section{Section}
+The demo features a MIDI sequencer to generate events, but the entire output sound comes from Carla.
+It serves as a demonstration of what we can with it.
 
-Text\footnote{Text of note.}, note at end of page.
+\section{Overview}
 
+After showing a demo song, the workshop continues by a quick overview of Carla's features and its graphical interface.
 
-\subsection{Subsection}
+This will allow for those that don't know Carla yet to easily catch up on its current status.
 
-Text of the subsection with citations such as 
-\cite{Spa72}, \cite{Kay86} and \longcite{MosWal64}.
+\subsection{Features}
 
- 
-\subsubsection{Subsubsection}
+First, we describe the main Carla features, to inform those that don't know the application yet.
 
-Text of the subsubsection.
-Text of the subsubsection.
-Text of the subsubsection.
-Text of the subsubsection.
-Text of the subsubsection.
-Text of the subsubsection.
-Text of the subsubsection.
-Text of the subsubsection (see Table~\ref{table1}).
+\subsection{Interface}
 
-Text of the subsubsection.
-Text of the subsubsection.
-Text of the subsubsection.
-Text of the subsubsection.
-Text of the subsubsection.
-Text of the subsubsection.
+Next, we go through the most important elements of Carla's UI and explain what they do, and what they mean.
 
+We also describe the possible settings, and do a local scan for plugins (so we can actually use them).
 
-\begin{table}[h]
- \begin{center}
-\begin{tabular}{|l|l|}
+\section{Workflows}
 
-      \hline
-      Software & Features\\
-      \hline\hline
-      AA & Harddisk-Recording\\
-      BB & MIDI Sequencing\\
-      CC & Score Notation\\
-      \hline
+This is the main content of the workshop.
 
-\end{tabular}
-\caption{Example}\label{table1}
- \end{center}
-\end{table}
+We will go through a few Carla setups to cover as many use-cases as possible.
 
+\subsection{The First Sound}
 
-Text of the subsubsection.
-Text of the subsubsection.
-Text of the subsubsection.
-Text of the subsubsection.
+To get the audience acquainted with Carla, we will first load a few plugins and have them make some sound.
+We introduce managing plugins and connections here.
+If possible, we demonstrate the use of a MIDI keyboard together with Carla.
 
+\subsection{Rack Mode}
 
-\section{Section}
+One of the main features of Carla is the Rack mode.
 
-Text. Text. Text. Text. Text.
-Text. Text. Text. Text. Text.
+We will describe how it works, and how we can use it in creative ways to produce sounds using multiple plugins.
 
-Text. Text. Text. Text. Text.
-Text. Text. Text. Text. Text.
-Text. Text. Text. Text. Text.
-Text. Text. Text. Text. Text.
-Text. Text. More text. Text. Text.
+\subsection{Sequencing MIDI}
 
-\section{Section}
+In a modular host, we can create sound without user input by using MIDI generator plugins.
 
-Text. Text. Text. Text. Text.
-Text. Text. Text. Text. Text.
-Text. Text. Text. Text. Text.
-Text. Text. Text. Text. Text.
-Text. Text. More text. Text. Text.
-Text. Text. Text. Text. Text.
+We will demonstrate two of such plugins. and use them to drive a basic drum kit and synth.
 
-Text. Text. Text. Text. Text.
-Text. Text. Text. Text. Text.
+\subsection{Modular Side-chain}
+
+Modular setups make it easy to setup side-chains.
+
+We will quickly go through one of these, using what we learned so far.
+
+\subsection{Carla as a plugin}
+
+Carla works as a plugin, not just a standalone application.
+
+We will show some possible use-cases for this feature, showing Carla running inside Carla and in regular DAWs.
+
+\subsection{Remote OSC Control}
+
+OSC is a common protocol used to control audio applications remotely.
+Carla-Control can be used to control a remote Carla instance over the network.
+
+We will connect two Carla instances together, running on different systems.
+
+\section{Questions}
+
+We reserve a space at the end of the workshop for questions from the audience.
 
 \section{Conclusions}
 
-Concluding text.
-
-\section{Acknowledgements}
-
-Our thanks go to \ldots .
-
-\bibliographystyle{acl}
-\bibliography{sample}
+We conclude the workshop with a thank you to the audience.
 
 \end{document}

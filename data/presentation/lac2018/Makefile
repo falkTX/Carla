@@ -11,10 +11,7 @@ cleantmp:
 	rm -f *.blg
 	rm -f *.log
 
-%.pdf: %.tex # %.bib
-	pdflatex "$<"
-	bibtex `basename "$<" .tex`
-	pdflatex "$<"
+%.pdf: %.tex
 	pdflatex "$<"
 
 .PHONY:all clean
