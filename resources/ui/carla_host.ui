@@ -1133,7 +1133,7 @@
      <normaloff>:/16x16/list-add.png</normaloff>:/16x16/list-add.png</iconset>
    </property>
    <property name="text">
-    <string>Add &amp;Jack Aplication</string>
+    <string>Add &amp;Jack Application</string>
    </property>
   </action>
  </widget>
