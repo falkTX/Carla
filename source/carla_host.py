@@ -65,8 +65,8 @@ except:
 # ------------------------------------------------------------------------------------------------------------
 # Safe exception hook, needed for PyQt5
 
-def sys_excepthook(type, value, tback):
-    return sys.__excepthook__(type, value, tback)
+def sys_excepthook(typ, value, tback):
+    return sys.__excepthook__(typ, value, tback)
 
 # ------------------------------------------------------------------------------------------------------------
 # Session Management support
