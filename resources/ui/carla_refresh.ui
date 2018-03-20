@@ -462,7 +462,7 @@ You can disable these checks to get a faster scanning time (at your own risk).</
         <number>0</number>
        </property>
        <property name="format">
-        <string>Press 'Start' to begin the search</string>
+        <string>Press 'Scan' to begin the search</string>
        </property>
       </widget>
      </item>
