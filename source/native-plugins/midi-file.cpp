@@ -94,7 +94,7 @@ protected:
         if (! show)
             return;
 
-        if (const char* const filename = uiOpenFile(false, "Open Audio File", "MIDI Files *.mid;*.midi;;"))
+        if (const char* const filename = uiOpenFile(false, "Open MIDI File", "MIDI Files *.mid;*.midi;;"))
             uiCustomDataChanged("file", filename);
 
         uiClosed();
