@@ -294,9 +294,9 @@ bool BridgeRtClientControl::waitForClient(const uint msecs) noexcept
     return false;
 }
 
-void BridgeRtClientControl::writeOpcode(const PluginBridgeRtClientOpcode opcode) noexcept
+bool BridgeRtClientControl::writeOpcode(const PluginBridgeRtClientOpcode opcode) noexcept
 {
-    writeUInt(static_cast<uint32_t>(opcode));
+    return writeUInt(static_cast<uint32_t>(opcode));
 }
 
 PluginBridgeRtClientOpcode BridgeRtClientControl::readOpcode() noexcept
@@ -442,11 +442,11 @@ void BridgeNonRtClientControl::waitIfDataIsReachingLimit() noexcept
     carla_stderr("Server waitIfDataIsReachingLimit() reached and failed");
 }
 
-void BridgeNonRtClientControl::writeOpcode(const PluginBridgeNonRtClientOpcode opcode) noexcept
+bool BridgeNonRtClientControl::writeOpcode(const PluginBridgeNonRtClientOpcode opcode) noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(isServer,);
+    CARLA_SAFE_ASSERT_RETURN(isServer, false);
 
-    writeUInt(static_cast<uint32_t>(opcode));
+    return writeUInt(static_cast<uint32_t>(opcode));
 }
 
 PluginBridgeNonRtClientOpcode BridgeNonRtClientControl::readOpcode() noexcept
@@ -587,11 +587,11 @@ void BridgeNonRtServerControl::waitIfDataIsReachingLimit() noexcept
     carla_stderr("Client waitIfDataIsReachingLimit() reached and failed");
 }
 
-void BridgeNonRtServerControl::writeOpcode(const PluginBridgeNonRtServerOpcode opcode) noexcept
+bool BridgeNonRtServerControl::writeOpcode(const PluginBridgeNonRtServerOpcode opcode) noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(! isServer,);
+    CARLA_SAFE_ASSERT_RETURN(! isServer, false);
 
-    writeUInt(static_cast<uint32_t>(opcode));
+    return writeUInt(static_cast<uint32_t>(opcode));
 }
 
 // -------------------------------------------------------------------------------------------------------------------

@@ -247,7 +247,7 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
 
     // non-bridge, server
     bool waitForClient(const uint msecs) noexcept;
-    void writeOpcode(const PluginBridgeRtClientOpcode opcode) noexcept;
+    bool writeOpcode(const PluginBridgeRtClientOpcode opcode) noexcept;
 
     // bridge, client
     PluginBridgeRtClientOpcode readOpcode() noexcept;
@@ -287,7 +287,7 @@ struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> 
 
     // non-bridge, server
     void waitIfDataIsReachingLimit() noexcept;
-    void writeOpcode(const PluginBridgeNonRtClientOpcode opcode) noexcept;
+    bool writeOpcode(const PluginBridgeNonRtClientOpcode opcode) noexcept;
 
     // bridge, client
     PluginBridgeNonRtClientOpcode readOpcode() noexcept;
@@ -319,7 +319,7 @@ struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer>
 
     // bridge, client
     void waitIfDataIsReachingLimit() noexcept;
-    void writeOpcode(const PluginBridgeNonRtServerOpcode opcode) noexcept;
+    bool writeOpcode(const PluginBridgeNonRtServerOpcode opcode) noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(BridgeNonRtServerControl)
 };

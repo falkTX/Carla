@@ -4266,7 +4266,7 @@ public:
         if (! File(bridgeBinary.buffer()).existsAsFile())
             return nullptr;
 
-        return bridgeBinary.dup();
+        return bridgeBinary.dupSafe();
     }
 
     // -------------------------------------------------------------------

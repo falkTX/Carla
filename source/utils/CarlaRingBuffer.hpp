@@ -238,68 +238,68 @@ public:
 
     // -------------------------------------------------------------------
 
-    void writeBool(const bool value) noexcept
+    bool writeBool(const bool value) noexcept
     {
-        tryWrite(&value, sizeof(bool));
+        return tryWrite(&value, sizeof(bool));
     }
 
-    void writeByte(const uint8_t value) noexcept
+    bool writeByte(const uint8_t value) noexcept
     {
-        tryWrite(&value, sizeof(uint8_t));
+        return tryWrite(&value, sizeof(uint8_t));
     }
 
-    void writeShort(const int16_t value) noexcept
+    bool writeShort(const int16_t value) noexcept
     {
-        tryWrite(&value, sizeof(int16_t));
+        return tryWrite(&value, sizeof(int16_t));
     }
 
-    void writeUShort(const uint16_t value) noexcept
+    bool writeUShort(const uint16_t value) noexcept
     {
-        tryWrite(&value, sizeof(uint16_t));
+        return tryWrite(&value, sizeof(uint16_t));
     }
 
-    void writeInt(const int32_t value) noexcept
+    bool writeInt(const int32_t value) noexcept
     {
-        tryWrite(&value, sizeof(int32_t));
+        return tryWrite(&value, sizeof(int32_t));
     }
 
-    void writeUInt(const uint32_t value) noexcept
+    bool writeUInt(const uint32_t value) noexcept
     {
-        tryWrite(&value, sizeof(uint32_t));
+        return tryWrite(&value, sizeof(uint32_t));
     }
 
-    void writeLong(const int64_t value) noexcept
+    bool writeLong(const int64_t value) noexcept
     {
-        tryWrite(&value, sizeof(int64_t));
+        return tryWrite(&value, sizeof(int64_t));
     }
 
-    void writeULong(const uint64_t value) noexcept
+    bool writeULong(const uint64_t value) noexcept
     {
-        tryWrite(&value, sizeof(uint64_t));
+        return tryWrite(&value, sizeof(uint64_t));
     }
 
-    void writeFloat(const float value) noexcept
+    bool writeFloat(const float value) noexcept
     {
-        tryWrite(&value, sizeof(float));
+        return tryWrite(&value, sizeof(float));
     }
 
-    void writeDouble(const double value) noexcept
+    bool writeDouble(const double value) noexcept
     {
-        tryWrite(&value, sizeof(double));
+        return tryWrite(&value, sizeof(double));
     }
 
-    void writeCustomData(const void* const data, const uint32_t size) noexcept
+    bool writeCustomData(const void* const data, const uint32_t size) noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(size > 0,);
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(size > 0, false);
 
-        tryWrite(data, size);
+        return tryWrite(data, size);
     }
 
     template <typename T>
-    void writeCustomType(const T& type) noexcept
+    bool writeCustomType(const T& type) noexcept
     {
-        tryWrite(&type, sizeof(T));
+        return tryWrite(&type, sizeof(T));
     }
 
     // -------------------------------------------------------------------
