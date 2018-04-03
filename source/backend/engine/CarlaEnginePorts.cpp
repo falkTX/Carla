@@ -221,12 +221,13 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
 
         if (status == MIDI_STATUS_CONTROL_CHANGE)
         {
-            CARLA_SAFE_ASSERT_RETURN(size >= 3, true);
+            CARLA_SAFE_ASSERT_RETURN(size >= 2, true);
 
             switch (data[1])
             {
             case MIDI_CONTROL_BANK_SELECT:
             case MIDI_CONTROL_BANK_SELECT__LSB:
+                CARLA_SAFE_ASSERT_RETURN(size >= 3, true);
                 event.type       = kEngineEventTypeControl;
                 event.ctrl.type  = kEngineControlEventTypeMidiBank;
                 event.ctrl.param = data[2];
