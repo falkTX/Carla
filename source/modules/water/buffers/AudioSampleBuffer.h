@@ -61,7 +61,7 @@ public:
         throw a std::bad_alloc exception.
     */
     AudioSampleBuffer (int numChannelsToAllocate,
-                 int numSamplesToAllocate) noexcept
+                       int numSamplesToAllocate) noexcept
        : numChannels (numChannelsToAllocate),
          size (numSamplesToAllocate)
     {
@@ -87,8 +87,8 @@ public:
                                 size of the arrays passed in
     */
     AudioSampleBuffer (float* const* dataToReferTo,
-                 int numChannelsToUse,
-                 int numSamples) noexcept
+                       int numChannelsToUse,
+                       int numSamples) noexcept
         : numChannels (numChannelsToUse),
           size (numSamples),
           allocatedBytes (0)
@@ -116,9 +116,9 @@ public:
                                 size of the arrays passed in
     */
     AudioSampleBuffer (float* const* dataToReferTo,
-                 int numChannelsToUse,
-                 int startSample,
-                 int numSamples) noexcept
+                       int numChannelsToUse,
+                       int startSample,
+                       int numSamples) noexcept
         : numChannels (numChannelsToUse),
           size (numSamples),
           allocatedBytes (0),

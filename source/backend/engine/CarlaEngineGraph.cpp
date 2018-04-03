@@ -1812,12 +1812,15 @@ void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float*
         fillWaterMidiBufferFromEngineEvents(midiBuffer, data->events.in);
     }
 
+    // set audio size, needed for water internals
+    audioBuffer.setSize(audioBuffer.getNumChannels(), frames, false, false, true);
+
     // put carla audio in water buffer
     {
         int i=0;
 
         for (; i < static_cast<int>(inputs); ++i)
-            carla_copyFloats(audioBuffer.getWritePointer(i), inBuf[i], frames);
+            audioBuffer.copyFrom(i, 0, inBuf[i], frames);
 
         // clear remaining channels
         for (const int count=audioBuffer.getNumChannels(); i<count; ++i)

@@ -346,7 +346,7 @@ public:
         uint options = 0x0;
 
         // can't disable fixed buffers if using MIDI output
-        if (fMidiOut.count == 0 && (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS) == 0)
+        if (fDescriptor->midiOuts == 0 && (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS) == 0)
             options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
         // can't disable forced stereo if enabled in the engine
@@ -2453,7 +2453,7 @@ public:
 
         pData->options = 0x0;
 
-        if (fMidiOut.count != 0 || (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS) != 0)
+        if (fDescriptor->midiOuts != 0 || (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS) != 0)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
          else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;

@@ -920,9 +920,7 @@ void AudioProcessorGraph::Node::setParentGraph (AudioProcessorGraph* const graph
 struct AudioProcessorGraph::AudioProcessorGraphBufferHelpers
 {
     AudioProcessorGraphBufferHelpers()
-    {
-        currentAudioInputBuffer = nullptr;
-    }
+        : currentAudioInputBuffer (nullptr) {}
 
     void setRenderingBufferSize (int newNumChannels, int newNumSamples)
     {
@@ -1345,7 +1343,7 @@ void AudioProcessorGraph::processAudio (AudioSampleBuffer& buffer, MidiBuffer& m
     const int numSamples = buffer.getNumSamples();
 
     currentAudioInputBuffer = &buffer;
-    currentAudioOutputBuffer.setSize (jmax (1, buffer.getNumChannels()), numSamples);
+    currentAudioOutputBuffer.setSize (jmax (1, buffer.getNumChannels()), numSamples, false, false, true);
     currentAudioOutputBuffer.clear();
     currentMidiInputBuffer = &midiMessages;
     currentMidiOutputBuffer.clear();
@@ -1418,13 +1416,13 @@ void AudioProcessorGraph::AudioGraphIOProcessor::releaseResources()
 void AudioProcessorGraph::AudioGraphIOProcessor::processAudio (AudioSampleBuffer& buffer,
                                                                MidiBuffer& midiMessages)
 {
+    CARLA_SAFE_ASSERT_RETURN(graph != nullptr,);
+
     AudioSampleBuffer*& currentAudioInputBuffer =
         graph->audioBuffers->currentAudioInputBuffer;
 
     AudioSampleBuffer&  currentAudioOutputBuffer =
         graph->audioBuffers->currentAudioOutputBuffer;
-
-    jassert (graph != nullptr);
 
     switch (type)
     {
