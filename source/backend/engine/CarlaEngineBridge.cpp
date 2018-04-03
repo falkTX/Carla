@@ -877,7 +877,9 @@ public:
                         fShmNonRtServerControl.writeCustomData(cdata.key, keyLen);
 
                         fShmNonRtServerControl.writeUInt(valueLen);
-                        fShmNonRtServerControl.writeCustomData(cdata.value, valueLen);
+
+                        if (valueLen > 0)
+                            fShmNonRtServerControl.writeCustomData(cdata.value, valueLen);
 
                         fShmNonRtServerControl.commitWrite();
                         fShmNonRtServerControl.waitIfDataIsReachingLimit();

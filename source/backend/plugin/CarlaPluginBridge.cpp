@@ -2115,7 +2115,9 @@ public:
                 const uint32_t valueSize(fShmNonRtServerControl.readUInt());
                 char value[valueSize+1];
                 carla_zeroChars(value, valueSize+1);
-                fShmNonRtServerControl.readCustomData(value, valueSize);
+
+                if (valueSize > 0)
+                    fShmNonRtServerControl.readCustomData(value, valueSize);
 
                 CarlaPlugin::setCustomData(type, key, value, false);
             }   break;
