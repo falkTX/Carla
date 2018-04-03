@@ -2646,6 +2646,9 @@ def loadHostSettings(host):
         print("LADISH detected but using multiple clients (not allowed), forcing single client now")
         host.nextProcessMode = host.processMode = ENGINE_PROCESS_MODE_SINGLE_CLIENT
 
+    if gCarla.nogui:
+        host.showLogs = False
+
     # --------------------------------------------------------------------------------------------------------
     # run headless host now if nogui option enabled
 
