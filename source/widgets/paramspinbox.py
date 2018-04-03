@@ -151,6 +151,9 @@ class ParamProgressBar(QProgressBar):
         self.fMaximum = value
 
     def setValue(self, value):
+        if self.fRealValue == value:
+            return False
+
         self.fRealValue = value
         div = float(self.fMaximum - self.fMinimum)
 
@@ -164,6 +167,7 @@ class ParamProgressBar(QProgressBar):
             self.fValueCall(value)
 
         QProgressBar.setValue(self, int(vper * 10000))
+        return True
 
     def setLabel(self, label):
         self.fLabel = label.strip()
@@ -190,12 +194,16 @@ class ParamProgressBar(QProgressBar):
         xper  = float(pos.x()) / float(self.width())
         value = xper * (self.fMaximum - self.fMinimum) + self.fMinimum
 
+        if self.fIsInteger:
+            value = round(value)
+
         if value < self.fMinimum:
             value = self.fMinimum
         elif value > self.fMaximum:
             value = self.fMaximum
 
-        self.setValue(value)
+        if self.setValue(value):
+            self.valueChanged.emit(value)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -281,6 +289,9 @@ class ParamSpinBox(QAbstractSpinBox):
 
     def setValue(self, value):
         value = geFixedValue(self.fName, value, self.fMinimum, self.fMaximum)
+
+        if self.fBar.fIsInteger:
+            value = round(value)
 
         if self.fValue == value:
             return False
