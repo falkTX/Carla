@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -161,31 +161,6 @@ public:
         }
     }
 
-    /** Copies another buffer onto this one.
-        This buffer's size will be changed to that of the other buffer.
-    */
-    AudioSampleBuffer& operator= (const AudioSampleBuffer& other) noexcept
-    {
-        if (this != &other)
-        {
-            setSize (other.getNumChannels(), other.getNumSamples(), false, false, false);
-
-            if (other.isClear)
-            {
-                clear();
-            }
-            else
-            {
-                isClear = false;
-
-                for (int i = 0; i < numChannels; ++i)
-                    carla_copyFloats (channels[i], other.channels[i], size);
-            }
-        }
-
-        return *this;
-    }
-
     /** Destructor.
         This will free any memory allocated by the buffer.
     */
@@ -306,28 +281,9 @@ public:
     //==============================================================================
     /** Changes the buffer's size or number of channels.
 
-        This can expand or contract the buffer's length, and add or remove channels.
-
-        If keepExistingContent is true, it will try to preserve as much of the
-        old data as it can in the new buffer.
-
-        If clearExtraSpace is true, then any extra channels or space that is
-        allocated will be also be cleared. If false, then this space is left
-        uninitialised.
-
-        If avoidReallocating is true, then changing the buffer's size won't reduce the
-        amount of memory that is currently allocated (but it will still increase it if
-        the new size is bigger than the amount it currently has). If this is false, then
-        a new allocation will be done so that the buffer uses takes up the minimum amount
-        of memory that it needs.
-
-        If the required memory can't be allocated, this will throw a std::bad_alloc exception.
+        This can expand the buffer's length, and add or remove channels.
     */
-    bool setSize (int newNumChannels,
-                  int newNumSamples,
-                  bool keepExistingContent = false,
-                  bool clearExtraSpace = false,
-                  bool avoidReallocating = false) noexcept
+    bool setSize (int newNumChannels, int newNumSamples) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN (newNumChannels >= 0, false);
         CARLA_SAFE_ASSERT_RETURN (newNumSamples >= 0, false);
@@ -339,58 +295,60 @@ public:
             const size_t newTotalBytes = ((size_t) newNumChannels * (size_t) allocatedSamplesPerChannel * sizeof (float))
                                             + channelListSize + 32;
 
-            if (keepExistingContent)
+            if (allocatedBytes >= newTotalBytes)
             {
-                HeapBlock<char> newData;
-                newData.allocate (newTotalBytes, clearExtraSpace || isClear);
-
-                const size_t numSamplesToCopy = (size_t) jmin (newNumSamples, size);
-
-                float** const newChannels = reinterpret_cast<float**> (newData.getData());
-                float* newChan = reinterpret_cast<float*> (newData + channelListSize);
-
-                for (int j = 0; j < newNumChannels; ++j)
-                {
-                    newChannels[j] = newChan;
-                    newChan += allocatedSamplesPerChannel;
-                }
-
-                if (! isClear)
-                {
-                    const int numChansToCopy = jmin (numChannels, newNumChannels);
-                    for (int i = 0; i < numChansToCopy; ++i)
-                        carla_copyFloats (newChannels[i], channels[i], (int) numSamplesToCopy);
-                }
-
-                allocatedData.swapWith (newData);
-                allocatedBytes = newTotalBytes;
-                channels = newChannels;
+                if (isClear)
+                    allocatedData.clear (newTotalBytes);
             }
             else
             {
-                if (avoidReallocating && allocatedBytes >= newTotalBytes)
-                {
-                    if (clearExtraSpace || isClear)
-                        allocatedData.clear (newTotalBytes);
-                }
-                else
-                {
-                    CARLA_SAFE_ASSERT_RETURN (allocatedData.allocate (newTotalBytes, clearExtraSpace || isClear), false);
-                    allocatedBytes = newTotalBytes;
-                    channels = reinterpret_cast<float**> (allocatedData.getData());
-                }
+                CARLA_SAFE_ASSERT_RETURN (allocatedData.allocate (newTotalBytes, isClear), false);
+                allocatedBytes = newTotalBytes;
+                channels = reinterpret_cast<float**> (allocatedData.getData());
+            }
 
-                float* chan = reinterpret_cast<float*> (allocatedData + channelListSize);
-                for (int i = 0; i < newNumChannels; ++i)
-                {
-                    channels[i] = chan;
-                    chan += allocatedSamplesPerChannel;
-                }
+            float* chan = reinterpret_cast<float*> (allocatedData + channelListSize);
+            for (int i = 0; i < newNumChannels; ++i)
+            {
+                channels[i] = chan;
+                chan += allocatedSamplesPerChannel;
             }
 
             channels [newNumChannels] = 0;
             size = newNumSamples;
             numChannels = newNumChannels;
+        }
+
+        return true;
+    }
+
+    //==============================================================================
+    /** Changes the buffer's size in a real-time safe manner.
+
+        Returns true if the required memory is available.
+    */
+    bool setSizeRT (int newNumSamples) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN (newNumSamples >= 0, false);
+        CARLA_SAFE_ASSERT_RETURN (numChannels >= 0, false);
+
+        if (newNumSamples != size)
+        {
+            const size_t allocatedSamplesPerChannel = ((size_t) newNumSamples + 3) & ~3u;
+            const size_t channelListSize = ((sizeof (float*) * (size_t) (numChannels + 1)) + 15) & ~15u;
+            const size_t newTotalBytes = ((size_t) numChannels * (size_t) allocatedSamplesPerChannel * sizeof (float))
+                                            + channelListSize + 32;
+
+            CARLA_SAFE_ASSERT_RETURN(allocatedBytes >= newTotalBytes, false);
+
+            float* chan = reinterpret_cast<float*> (allocatedData + channelListSize);
+            for (int i = 0; i < numChannels; ++i)
+            {
+                channels[i] = chan;
+                chan += allocatedSamplesPerChannel;
+            }
+
+            size = newNumSamples;
         }
 
         return true;
@@ -431,31 +389,6 @@ public:
         size = newNumSamples;
 
         return allocateChannels (dataToReferTo, 0);
-    }
-
-    /** Resizes this buffer to match the given one, and copies all of its content across.
-        The source buffer can contain a different floating point type, so this can be used to
-        convert between 32 and 64 bit float buffer types.
-    */
-    void makeCopyOf (const AudioSampleBuffer& other, bool avoidReallocating = false)
-    {
-        setSize (other.getNumChannels(), other.getNumSamples(), false, false, avoidReallocating);
-
-        if (other.hasBeenCleared())
-        {
-            clear();
-        }
-        else
-        {
-            for (int chan = 0; chan < numChannels; ++chan)
-            {
-                float* const dest = channels[chan];
-                const float* const src = other.getReadPointer (chan);
-
-                for (int i = 0; i < size; ++i)
-                    dest[i] = static_cast<float> (src[i]);
-            }
-        }
     }
 
     //==============================================================================

@@ -1812,8 +1812,8 @@ void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float*
         fillWaterMidiBufferFromEngineEvents(midiBuffer, data->events.in);
     }
 
-    // set audio size, needed for water internals
-    audioBuffer.setSize(audioBuffer.getNumChannels(), frames, false, false, true);
+    // set audio buffer size, needed for water internals
+    audioBuffer.setSizeRT(frames);
 
     // put carla audio in water buffer
     {
@@ -1827,6 +1827,7 @@ void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float*
             audioBuffer.clear(i, 0, frames);
     }
 
+    // ready to go!
     graph.processBlock(audioBuffer, midiBuffer);
 
     // put water audio in carla buffer

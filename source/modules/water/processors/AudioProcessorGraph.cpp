@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2015 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the GNU
    General Public License as published by the Free Software Foundation;
@@ -919,23 +919,23 @@ void AudioProcessorGraph::Node::setParentGraph (AudioProcessorGraph* const graph
 //==============================================================================
 struct AudioProcessorGraph::AudioProcessorGraphBufferHelpers
 {
-    AudioProcessorGraphBufferHelpers()
+    AudioProcessorGraphBufferHelpers() noexcept
         : currentAudioInputBuffer (nullptr) {}
 
-    void setRenderingBufferSize (int newNumChannels, int newNumSamples)
+    void setRenderingBufferSize (int newNumChannels, int newNumSamples) noexcept
     {
         renderingBuffers.setSize (newNumChannels, newNumSamples);
         renderingBuffers.clear();
     }
 
-    void release()
+    void release() noexcept
     {
         renderingBuffers.setSize (1, 1);
         currentAudioInputBuffer = nullptr;
         currentAudioOutputBuffer.setSize (1, 1);
     }
 
-    void prepareInOutBuffers(int newNumChannels, int newNumSamples)
+    void prepareInOutBuffers(int newNumChannels, int newNumSamples) noexcept
     {
         currentAudioInputBuffer = nullptr;
         currentAudioOutputBuffer.setSize (newNumChannels, newNumSamples);
@@ -1343,7 +1343,7 @@ void AudioProcessorGraph::processAudio (AudioSampleBuffer& buffer, MidiBuffer& m
     const int numSamples = buffer.getNumSamples();
 
     currentAudioInputBuffer = &buffer;
-    currentAudioOutputBuffer.setSize (jmax (1, buffer.getNumChannels()), numSamples, false, false, true);
+    currentAudioOutputBuffer.setSizeRT (numSamples);
     currentAudioOutputBuffer.clear();
     currentMidiInputBuffer = &midiMessages;
     currentMidiOutputBuffer.clear();
