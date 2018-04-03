@@ -1521,29 +1521,38 @@ class HostWindow(QMainWindow):
                                                 settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, "Black", type=str).lower() == "black"),
         }
 
-        self.ui.act_add_jack.setVisible(settings.value(CARLA_KEY_EXPERIMENTAL_JACK_APPS,
-                                                       CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS, type=bool))
+        settings = QSettings("falkTX", "Carla2")
+
+        if self.host.experimental:
+            self.ui.act_add_jack.setVisible(settings.value(CARLA_KEY_EXPERIMENTAL_JACK_APPS,
+                                                           CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS, type=bool))
+        else:
+            self.ui.act_add_jack.setVisible(False)
 
         if not (self.host.isControl or self.host.isPlugin):
-            if settings.value(CARLA_KEY_EXPERIMENTAL_TRANSPORT, CARLA_DEFAULT_EXPERIMENTAL_TRANSPORT, type=bool):
-                if self.ui.cb_transport_jack.isChecked():
-                    transportMode = ENGINE_TRANSPORT_MODE_JACK
+            if self.host.experimental:
+                if settings.value(CARLA_KEY_EXPERIMENTAL_TRANSPORT, CARLA_DEFAULT_EXPERIMENTAL_TRANSPORT, type=bool):
+                    if self.ui.cb_transport_jack.isChecked():
+                        transportMode = ENGINE_TRANSPORT_MODE_JACK
+                    else:
+                        transportMode = ENGINE_TRANSPORT_MODE_INTERNAL
+                    transportExtra = ":link:" if self.ui.cb_transport_link.isChecked() else ""
                 else:
-                    transportMode = ENGINE_TRANSPORT_MODE_INTERNAL
-                transportExtra = ":link:" if self.ui.cb_transport_link.isChecked() else ""
+                    # Stop transport if becoming disabled
+                    if self.ui.w_transport.isEnabled() and self.host.is_engine_running():
+                        self.host.transport_pause()
+                        self.host.transport_relocate(0)
+                        self.host.transport_pause()
+
+                    transportMode  = ENGINE_TRANSPORT_MODE_DISABLED
+                    transportExtra = ""
+
+                self.ui.w_transport.setEnabled(transportMode != ENGINE_TRANSPORT_MODE_DISABLED)
+                self.host.transportMode = transportMode
+                self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, transportMode, transportExtra)
+
             else:
-                # Stop transport if becoming disabled
-                if self.ui.w_transport.isEnabled() and self.host.is_engine_running():
-                    self.host.transport_pause()
-                    self.host.transport_relocate(0)
-                    self.host.transport_pause()
-
-                transportMode  = ENGINE_TRANSPORT_MODE_DISABLED
-                transportExtra = ""
-
-            self.ui.w_transport.setEnabled(transportMode != ENGINE_TRANSPORT_MODE_DISABLED)
-            self.host.transportMode = transportMode
-            self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, transportMode, transportExtra)
+                self.ui.w_transport.setEnabled(False)
 
         self.fMiniCanvasUpdateTimeout = 1000 if self.fSavedSettings[CARLA_KEY_CANVAS_FANCY_EYE_CANDY] else 0
 
