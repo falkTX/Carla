@@ -477,7 +477,10 @@ public:
     // -------------------------------------------------------------------
     // Information (current data)
 
-    // TODO - missing getCustomData
+    void updateCustomData() noexcept override
+    {
+        waitForSaved();
+    }
 
     std::size_t getChunkData(void** const dataPtr) noexcept override
     {
@@ -816,7 +819,9 @@ public:
             fShmNonRtClientControl.writeCustomData(key, keyLen);
 
             fShmNonRtClientControl.writeUInt(valueLen);
-            fShmNonRtClientControl.writeCustomData(value, valueLen);
+
+            if (valueLen > 0)
+                fShmNonRtClientControl.writeCustomData(value, valueLen);
 
             fShmNonRtClientControl.commitWrite();
         }

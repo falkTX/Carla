@@ -764,7 +764,9 @@ public:
                 const uint32_t valueSize(fShmNonRtClientControl.readUInt());
                 char valueStr[valueSize+1];
                 carla_zeroChars(valueStr, valueSize+1);
-                fShmNonRtClientControl.readCustomData(valueStr, valueSize);
+
+                if (valueSize > 0)
+                    fShmNonRtClientControl.readCustomData(valueStr, valueSize);
 
                 if (plugin != nullptr && plugin->isEnabled())
                     plugin->setCustomData(typeStr, keyStr, valueStr, true);

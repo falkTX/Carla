@@ -263,6 +263,13 @@ public:
     const CustomData& getCustomData(const uint32_t index) const noexcept;
 
     /*!
+     * Give the plugin a change to update its custom data sets.
+     *
+     * @see getCustomDataCount() and getCustomData()
+     */
+    virtual void updateCustomData() noexcept;
+
+    /*!
      * Get the complete plugin chunk data into @a dataPtr.
      *
      * @note Make sure to verify the plugin supports chunks before calling this function!

@@ -269,6 +269,10 @@ const CustomData& CarlaPlugin::getCustomData(const uint32_t index) const noexcep
     return pData->custom.getAt(index, kCustomDataFallback);
 }
 
+void CarlaPlugin::updateCustomData() noexcept
+{
+}
+
 std::size_t CarlaPlugin::getChunkData(void** const dataPtr) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr, 0);
@@ -602,6 +606,8 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
 
     // ---------------------------------------------------------------
     // Custom Data
+
+    updateCustomData();
 
     for (LinkedList<CustomData>::Itenerator it = pData->custom.begin2(); it.valid(); it.next())
     {
