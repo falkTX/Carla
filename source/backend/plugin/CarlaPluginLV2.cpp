@@ -4109,6 +4109,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
         CARLA_SAFE_ASSERT_RETURN(velo > 0 && velo < MAX_MIDI_VALUE,);
 
+#if 0
         if (fUI.type == UI::TYPE_BRIDGE)
         {
             if (fPipeServer.isPipeRunning())
@@ -4128,6 +4129,7 @@ public:
                 fUI.descriptor->port_event(fUI.handle, fEventsIn.ctrl->rindex, lv2_atom_total_size(midiEv), kUridAtomTransferEvent, &midiEv);
             }
         }
+#endif
     }
 
     void uiNoteOff(const uint8_t channel, const uint8_t note) noexcept override
@@ -4136,6 +4138,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
         CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
 
+#if 0
         if (fUI.type == UI::TYPE_BRIDGE)
         {
             if (fPipeServer.isPipeRunning())
@@ -4155,6 +4158,7 @@ public:
                 fUI.descriptor->port_event(fUI.handle, fEventsIn.ctrl->rindex, lv2_atom_total_size(midiEv), kUridAtomTransferEvent, &midiEv);
             }
         }
+#endif
     }
 
     // -------------------------------------------------------------------
