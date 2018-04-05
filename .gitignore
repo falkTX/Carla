@@ -145,43 +145,6 @@ source/dist/
 bin/resources/*.py
 source/native-plugins/resources/*.py
 
-# zynaddsubfx
-source/native-plugins/external/zynaddsubfx/rtosc/version.c.in
-source/native-plugins/external/zynaddsubfx/Output/
-source/native-plugins/external/zynaddsubfx/Tests/
-source/native-plugins/external/zynaddsubfx/UI/ADnoteUI.cpp
-source/native-plugins/external/zynaddsubfx/UI/ADnoteUI.h
-source/native-plugins/external/zynaddsubfx/UI/BankUI.cpp
-source/native-plugins/external/zynaddsubfx/UI/BankUI.h
-source/native-plugins/external/zynaddsubfx/UI/ConfigUI.cpp
-source/native-plugins/external/zynaddsubfx/UI/ConfigUI.h
-source/native-plugins/external/zynaddsubfx/UI/EffUI.cpp
-source/native-plugins/external/zynaddsubfx/UI/EffUI.h
-source/native-plugins/external/zynaddsubfx/UI/EnvelopeUI.cpp
-source/native-plugins/external/zynaddsubfx/UI/EnvelopeUI.h
-source/native-plugins/external/zynaddsubfx/UI/FilterUI.cpp
-source/native-plugins/external/zynaddsubfx/UI/FilterUI.h
-source/native-plugins/external/zynaddsubfx/UI/LFOUI.cpp
-source/native-plugins/external/zynaddsubfx/UI/LFOUI.h
-source/native-plugins/external/zynaddsubfx/UI/MasterUI.cpp
-source/native-plugins/external/zynaddsubfx/UI/MasterUI.h
-source/native-plugins/external/zynaddsubfx/UI/MicrotonalUI.cpp
-source/native-plugins/external/zynaddsubfx/UI/MicrotonalUI.h
-source/native-plugins/external/zynaddsubfx/UI/OscilGenUI.cpp
-source/native-plugins/external/zynaddsubfx/UI/OscilGenUI.h
-source/native-plugins/external/zynaddsubfx/UI/PADnoteUI.cpp
-source/native-plugins/external/zynaddsubfx/UI/PADnoteUI.h
-source/native-plugins/external/zynaddsubfx/UI/PartUI.cpp
-source/native-plugins/external/zynaddsubfx/UI/PartUI.h
-source/native-plugins/external/zynaddsubfx/UI/PresetsUI.cpp
-source/native-plugins/external/zynaddsubfx/UI/PresetsUI.h
-source/native-plugins/external/zynaddsubfx/UI/ResonanceUI.cpp
-source/native-plugins/external/zynaddsubfx/UI/ResonanceUI.h
-source/native-plugins/external/zynaddsubfx/UI/SUBnoteUI.cpp
-source/native-plugins/external/zynaddsubfx/UI/SUBnoteUI.h
-source/native-plugins/external/zynaddsubfx/UI/VirKeyboard.cpp
-source/native-plugins/external/zynaddsubfx/UI/VirKeyboard.h
-
 # Other
 source/includes/asio/
 source/includes/rewire/
@@ -200,6 +163,3 @@ data/macos/*.*/
 data/macos/Carla/
 
 data/windows/python/
-
-source/modules/juce_audio_graph/test
-source/modules/juce_audio_graph/test.d
