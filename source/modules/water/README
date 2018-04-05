@@ -5,4 +5,4 @@ Using Juce version 4 means we can use its GPL v2+ license.
 Starting from version 5, Juce uses GPLv3.
 
 Do not use this library in your own code!
-There are no plans to make it generic library or any support for its use outside of Carla.
+There are no plans to make it a generic library or give any support for its use outside of Carla.

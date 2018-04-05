@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -120,15 +120,6 @@ public:
     typedef CharPointer_UTF8 CharPointerType;
 
     //==============================================================================
-    /** Generates a probably-unique 32-bit hashcode from this string. */
-    int hashCode() const noexcept;
-
-    /** Generates a probably-unique 64-bit hashcode from this string. */
-    int64 hashCode64() const noexcept;
-
-    /** Generates a probably-unique hashcode from this string. */
-    size_t hash() const noexcept;
-
     /** Returns the number of characters in the string. */
     int length() const noexcept;
 

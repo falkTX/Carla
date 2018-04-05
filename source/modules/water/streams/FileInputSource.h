@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -26,7 +26,6 @@
 #ifndef WATER_FILEINPUTSOURCE_H_INCLUDED
 #define WATER_FILEINPUTSOURCE_H_INCLUDED
 
-#include "InputSource.h"
 #include "../files/File.h"
 
 namespace water {
@@ -37,28 +36,22 @@ namespace water {
 
     @see InputSource
 */
-class FileInputSource     : public InputSource
+class FileInputSource
 {
 public:
     //==============================================================================
-    /** Creates a FileInputSource for a file.
-        If the useFileTimeInHashGeneration parameter is true, then this object's
-        hashCode() method will incorporate the file time into its hash code; if
-        false, only the file name will be used for the hash.
-    */
-    FileInputSource (const File& file, bool useFileTimeInHashGeneration = false);
+    /** Creates a FileInputSource for a file. */
+    FileInputSource (const File& file);
 
     /** Destructor. */
     ~FileInputSource();
 
     InputStream* createInputStream();
     InputStream* createInputStreamFor (const String& relatedItemPath);
-    int64 hashCode() const;
 
 private:
     //==============================================================================
     const File file;
-    bool useFileTimeInHashGeneration;
 
     CARLA_DECLARE_NON_COPY_CLASS (FileInputSource)
 };

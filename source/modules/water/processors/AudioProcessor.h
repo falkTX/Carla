@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2015 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the GNU
    General Public License as published by the Free Software Foundation;
@@ -164,26 +164,6 @@ public:
     virtual void processBlockBypassed (AudioSampleBuffer& buffer,
                                        MidiBuffer& midiMessages);
 
-#if 0
-    //==============================================================================
-    /** Returns the current AudioPlayHead object that should be used to find
-        out the state and position of the playhead.
-
-        You can ONLY call this from your processBlock() method! Calling it at other
-        times will produce undefined behaviour, as the host may not have any context
-        in which a time would make sense, and some hosts will almost certainly have
-        multithreading issues if it's not called on the audio thread.
-
-        The AudioPlayHead object that is returned can be used to get the details about
-        the time of the start of the block currently being processed. But do not
-        store this pointer or use it outside of the current audio callback, because
-        the host may delete or re-use it.
-
-        If the host can't or won't provide any time info, this will return nullptr.
-    */
-    AudioPlayHead* getPlayHead() const noexcept                 { return playHead; }
-#endif
-
     //==============================================================================
     /** Returns the total number of input channels.
 
@@ -338,15 +318,6 @@ public:
     */
     virtual void setNonRealtime (bool isNonRealtime) noexcept;
 
-#if 0
-    //==============================================================================
-    /** Tells the processor to use this playhead object.
-        The processor will not take ownership of the object, so the caller must delete it when
-        it is no longer being used.
-    */
-    virtual void setPlayHead (AudioPlayHead* newPlayHead);
-#endif
-
     //==============================================================================
     /** This is called by the processor to specify its details before being played. Use this
         version of the function if you are not interested in any sidechain and/or aux buses
@@ -362,12 +333,6 @@ public:
     void setRateAndBufferSizeDetails (double sampleRate, int blockSize) noexcept;
 
 private:
-#if 0
-    //==============================================================================
-    /** @internal */
-    AudioPlayHead* playHead;
-#endif
-
     //==============================================================================
     double currentSampleRate;
     int blockSize, latencySamples;
@@ -378,8 +343,6 @@ private:
     String cachedOutputSpeakerArrString;
 
     int cachedTotalIns, cachedTotalOuts;
-
-    void processBypassed (AudioSampleBuffer&, MidiBuffer&);
 
     CARLA_DECLARE_NON_COPY_CLASS (AudioProcessor)
 };

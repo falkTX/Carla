@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -24,14 +24,11 @@
 */
 
 #include "FileInputSource.h"
-#include "../files/FileInputStream.h"
 
 namespace water {
 
-FileInputSource::FileInputSource (const File& f, bool useFileTimeInHash)
-    : file (f), useFileTimeInHashGeneration (useFileTimeInHash)
-{
-}
+FileInputSource::FileInputSource (const File& f)
+    : file (f) {}
 
 FileInputSource::~FileInputSource()
 {
@@ -46,17 +43,5 @@ InputStream* FileInputSource::createInputStreamFor (const String& relatedItemPat
 {
     return file.getSiblingFile (relatedItemPath).createInputStream();
 }
-
-#if 0
-int64 FileInputSource::hashCode() const
-{
-    int64 h = file.hashCode();
-
-    if (useFileTimeInHashGeneration)
-        h ^= file.getLastModificationTime().toMilliseconds();
-
-    return h;
-}
-#endif
 
 }

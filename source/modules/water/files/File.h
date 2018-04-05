@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -220,21 +220,6 @@ public:
         @see getFileName, getFileExtension, hasFileExtension, withFileExtension
     */
     String getFileNameWithoutExtension() const;
-
-    //==============================================================================
-    /** Returns a 32-bit hash-code that identifies this file.
-
-        This is based on the filename. Obviously it's possible, although unlikely, that
-        two files will have the same hash-code.
-    */
-    int hashCode() const;
-
-    /** Returns a 64-bit hash-code that identifies this file.
-
-        This is based on the filename. Obviously it's possible, although unlikely, that
-        two files will have the same hash-code.
-    */
-    int64 hashCode64() const;
 
     //==============================================================================
     /** Returns a file that represents a relative (or absolute) sub-path of the current one.

@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -122,9 +122,9 @@ public:
 
         The object that is passed-in will be deleted automatically when no longer needed.
 
-        @see InputSource
+        @see FileInputSource
     */
-    void setInputSource (InputSource* newSource) noexcept;
+    void setInputSource (FileInputSource* newSource) noexcept;
 
     /** Sets a flag to change the treatment of empty text elements.
 
@@ -158,7 +158,7 @@ private:
     String lastError, dtdText;
     StringArray tokenisedDTD;
     bool needToLoadDTD, ignoreEmptyTextElements;
-    ScopedPointer<InputSource> inputSource;
+    ScopedPointer<FileInputSource> inputSource;
 
     XmlElement* parseDocumentElement (String::CharPointerType, bool outer);
     void setLastError (const String&, bool carryOn);

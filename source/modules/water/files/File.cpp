@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -397,11 +397,6 @@ bool File::isAChildOf (const File& potentialParent) const
 
     return getParentDirectory().isAChildOf (potentialParent);
 }
-
-#if 0
-int   File::hashCode() const    { return fullPath.hashCode(); }
-int64 File::hashCode64() const  { return fullPath.hashCode64(); }
-#endif
 
 //==============================================================================
 bool File::isAbsolutePath (StringRef path)

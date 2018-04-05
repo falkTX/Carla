@@ -1,7 +1,7 @@
 /*
  * Cross-platform C++ library for Carla, based on Juce v4
  * Copyright (C) 2015 ROLI Ltd.
- * Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -69,9 +69,9 @@ namespace water
 class AudioProcessor;
 class File;
 class FileInputStream;
+class FileInputSource;
 class FileOutputStream;
 class Identifier;
-class InputSource;
 class InputStream;
 class MidiBuffer;
 class MidiMessage;
