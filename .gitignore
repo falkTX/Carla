@@ -51,6 +51,7 @@ ui_*.py
 # Misc files
 *.aria2
 *.deb
+*.gz
 *.meta4
 *.tar
 *.ttl
