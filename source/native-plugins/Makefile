@@ -6,7 +6,6 @@
 
 CWD=..
 CWDE=..
-EXTERNAL=external/
 MODULENAME=native-plugins
 include ../modules/Makefile.mk
 
@@ -53,7 +52,7 @@ OBJS_all = \
 # ---------------------------------------------------------------------------------------------------------------------
 # Include external plugins, if present
 
-ifeq ($(EXTERNAL_PLUGINS),true)
+ifneq (,$(wildcard external/Makefile))
 include external/Makefile
 endif
 
