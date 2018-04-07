@@ -142,8 +142,6 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
     default:
         return BINARY_NATIVE;
     }
-
-    return BINARY_NATIVE;
 }
 
 // --------------------------------------------------------------------------------------------------------------------

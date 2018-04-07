@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -1251,9 +1251,8 @@ protected:
 
                             if (event.type == kEngineEventTypeControl)
                             {
-                                uint8_t size;
                                 uint8_t data[3];
-                                event.ctrl.convertToMidiData(event.channel, size, data);
+                                const uint8_t size = event.ctrl.convertToMidiData(event.channel, data);
                                 CARLA_SAFE_ASSERT_CONTINUE(size > 0 && size <= 3);
 
                                 if (curMidiDataPos + kBridgeBaseMidiOutHeaderSize + size >= kBridgeRtClientDataMidiOutSize)
@@ -1262,18 +1261,21 @@ protected:
                                 // set time
                                 *(uint32_t*)midiData = event.time;
                                 midiData = midiData + 4;
+                                curMidiDataPos += 4;
 
                                 // set port
                                 *midiData++ = 0;
+                                ++curMidiDataPos;
 
                                 // set size
                                 *midiData++ = size;
+                                ++curMidiDataPos;
 
                                 // set data
                                 for (uint8_t j=0; j<size; ++j)
                                     *midiData++ = data[j];
 
-                                curMidiDataPos += kBridgeBaseMidiOutHeaderSize + size;
+                                curMidiDataPos += size;
                             }
                             else if (event.type == kEngineEventTypeMidi)
                             {
@@ -1287,12 +1289,15 @@ protected:
                                 // set time
                                 *(uint32_t*)midiData = event.time;
                                 midiData += 4;
+                                curMidiDataPos += 4;
 
                                 // set port
                                 *midiData++ = _midiEvent.port;
+                                ++curMidiDataPos;
 
                                 // set size
                                 *midiData++ = _midiEvent.size;
+                                ++curMidiDataPos;
 
                                 // set data
                                 *midiData++ = uint8_t(_midiData[0] | (event.channel & MIDI_CHANNEL_BIT));
@@ -1300,7 +1305,7 @@ protected:
                                 for (uint8_t j=1; j<_midiEvent.size; ++j)
                                     *midiData++ = _midiData[j];
 
-                                curMidiDataPos += kBridgeBaseMidiOutHeaderSize + _midiEvent.size;
+                                curMidiDataPos += _midiEvent.size;
                             }
                         }
 

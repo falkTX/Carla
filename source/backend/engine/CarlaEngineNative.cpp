@@ -1571,33 +1571,34 @@ protected:
                 if (engineEvent.type == kEngineEventTypeNull)
                     break;
 
+                carla_zeroStruct(midiEvent);
                 midiEvent.time = engineEvent.time;
 
-                if (engineEvent.type == CarlaBackend::kEngineEventTypeControl)
+                /**/ if (engineEvent.type == kEngineEventTypeControl)
                 {
                     midiEvent.port = 0;
-                    engineEvent.ctrl.convertToMidiData(engineEvent.channel, midiEvent.size, midiEvent.data);
+                    midiEvent.size = engineEvent.ctrl.convertToMidiData(engineEvent.channel, midiEvent.data);
                 }
                 else if (engineEvent.type == kEngineEventTypeMidi)
                 {
-                    if (engineEvent.midi.size > 4 || engineEvent.midi.dataExt != nullptr)
+                    if (engineEvent.midi.size > 4)
                         continue;
 
                     midiEvent.port = engineEvent.midi.port;
                     midiEvent.size = engineEvent.midi.size;
 
-                    midiEvent.data[0] = static_cast<uint8_t>(engineEvent.midi.data[0] + engineEvent.channel);
+                    midiEvent.data[0] = static_cast<uint8_t>(engineEvent.midi.data[0] | (engineEvent.channel & MIDI_CHANNEL_BIT));
 
                     for (uint8_t j=1; j < midiEvent.size; ++j)
                         midiEvent.data[j] = engineEvent.midi.data[j];
                 }
                 else
                 {
-                    carla_stderr("Unknown event type...");
                     continue;
                 }
 
-                pHost->write_midi_event(pHost->handle, &midiEvent);
+                if (midiEvent.size > 0)
+                    pHost->write_midi_event(pHost->handle, &midiEvent);
             }
         }
     }

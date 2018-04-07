@@ -1,6 +1,6 @@
 /*
  * Carla Engine utils
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -160,7 +160,7 @@ void fillWaterMidiBufferFromEngineEvents(water::MidiBuffer& midiBuffer, const En
     {
         const EngineEvent& engineEvent(engineEvents[i]);
 
-        if (engineEvent.type == kEngineEventTypeNull)
+        /**/ if (engineEvent.type == kEngineEventTypeNull)
         {
             break;
         }
@@ -168,7 +168,7 @@ void fillWaterMidiBufferFromEngineEvents(water::MidiBuffer& midiBuffer, const En
         {
             const EngineControlEvent& ctrlEvent(engineEvent.ctrl);
 
-            ctrlEvent.convertToMidiData(engineEvent.channel, size, mdata);
+            size = ctrlEvent.convertToMidiData(engineEvent.channel, mdata);
             mdataPtr = mdata;
         }
         else if (engineEvent.type == kEngineEventTypeMidi)
@@ -177,8 +177,9 @@ void fillWaterMidiBufferFromEngineEvents(water::MidiBuffer& midiBuffer, const En
 
             size = midiEvent.size;
 
-            if (size > EngineMidiEvent::kDataSize && midiEvent.dataExt != nullptr)
+            if (size > EngineMidiEvent::kDataSize)
             {
+                CARLA_SAFE_ASSERT_CONTINUE(midiEvent.dataExt != nullptr);
                 mdataPtr = midiEvent.dataExt;
             }
             else

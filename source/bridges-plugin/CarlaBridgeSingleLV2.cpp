@@ -1,6 +1,6 @@
 /*
  * Carla LV2 Single Plugin
- * Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -197,43 +197,51 @@ public:
 
             if (fPorts.numMidiOuts > 0)
             {
-                uint8_t        port    = 0;
-                uint8_t        size    = 0;
-                uint8_t        data[3] = { 0, 0, 0 };
-                const uint8_t* dataPtr = data;
+                uint8_t        port     = 0;
+                uint8_t        size     = 0;
+                uint8_t        mdata[3] = { 0, 0, 0 };
+                const uint8_t* mdataPtr = mdata;
+                uint8_t        mdataTmp[EngineMidiEvent::kDataSize];
 
                 for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
                 {
                     const EngineEvent& engineEvent(pData->events.out[i]);
 
-                    switch (engineEvent.type)
+                    /**/ if (engineEvent.type == kEngineEventTypeNull)
                     {
-                    case kEngineEventTypeNull:
-                        break;
-
-                    case kEngineEventTypeControl: {
-                        const EngineControlEvent& ctrlEvent(engineEvent.ctrl);
-                        ctrlEvent.convertToMidiData(engineEvent.channel, size, data);
-                        dataPtr = data;
                         break;
                     }
+                    else if (engineEvent.type == kEngineEventTypeControl)
+                    {
+                        const EngineControlEvent& ctrlEvent(engineEvent.ctrl);
 
-                    case kEngineEventTypeMidi: {
+                        size = ctrlEvent.convertToMidiData(engineEvent.channel, mdata);
+                        mdataPtr = mdata;
+                    }
+                    else if (engineEvent.type == kEngineEventTypeMidi)
+                    {
                         const EngineMidiEvent& midiEvent(engineEvent.midi);
 
                         port = midiEvent.port;
                         size = midiEvent.size;
 
-                        if (size > EngineMidiEvent::kDataSize && midiEvent.dataExt != nullptr)
-                            dataPtr = midiEvent.dataExt;
+                        if (size > EngineMidiEvent::kDataSize)
+                        {
+                            CARLA_SAFE_ASSERT_CONTINUE(midiEvent.dataExt != nullptr);
+                            mdataPtr = midiEvent.dataExt;
+                        }
                         else
-                            dataPtr = midiEvent.data;
-
-                        break;
+                        {
+                            // copy
+                            carla_copy<uint8_t>(mdataTmp, midiEvent.data, size);
+                            // add channel
+                            mdataTmp[0] = static_cast<uint8_t>(mdataTmp[0] | (engineEvent.channel & MIDI_CHANNEL_BIT));
+                            // done
+                            mdataPtr = mdataTmp;
+                        }
                     }
-                    }
 
-                    if (size > 0 && ! writeMidiEvent(port, engineEvent.time, size, dataPtr))
+                    if (size > 0 && ! writeMidiEvent(port, engineEvent.time, size, mdataPtr))
                         break;
                 }
             }

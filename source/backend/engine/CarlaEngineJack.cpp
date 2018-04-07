@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -380,11 +380,10 @@ public:
             CARLA_SAFE_ASSERT(! MIDI_IS_CONTROL_BANK_SELECT(param));
         }
 
-        uint8_t size    = 0;
         uint8_t data[3] = { 0, 0, 0 };
 
         EngineControlEvent ctrlEvent = { type, param, value };
-        ctrlEvent.convertToMidiData(channel, size, data);
+        const uint8_t size = ctrlEvent.convertToMidiData(channel, data);
 
         if (size == 0)
             return false;
@@ -1725,22 +1724,25 @@ protected:
             {
                 jackbridge_midi_clear_buffer(eventOut);
 
-                uint8_t        size    = 0;
-                uint8_t        data[3] = { 0, 0, 0 };
-                const uint8_t* dataPtr = data;
+                uint8_t        size     = 0;
+                uint8_t        mdata[3] = { 0, 0, 0 };
+                const uint8_t* mdataPtr = mdata;
+                uint8_t        mdataTmp[EngineMidiEvent::kDataSize];
 
                 for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
                 {
                     const EngineEvent& engineEvent(pData->events.out[i]);
 
-                    if (engineEvent.type == kEngineEventTypeNull)
+                    /**/ if (engineEvent.type == kEngineEventTypeNull)
+                    {
                         break;
-
+                    }
                     else if (engineEvent.type == kEngineEventTypeControl)
                     {
                         const EngineControlEvent& ctrlEvent(engineEvent.ctrl);
-                        ctrlEvent.convertToMidiData(engineEvent.channel, size, data);
-                        dataPtr = data;
+
+                        size = ctrlEvent.convertToMidiData(engineEvent.channel, mdata);
+                        mdataPtr = mdata;
                     }
                     else if (engineEvent.type == kEngineEventTypeMidi)
                     {
@@ -1748,10 +1750,20 @@ protected:
 
                         size = midiEvent.size;
 
-                        if (size > EngineMidiEvent::kDataSize && midiEvent.dataExt != nullptr)
-                            dataPtr = midiEvent.dataExt;
+                        if (size > EngineMidiEvent::kDataSize)
+                        {
+                            CARLA_SAFE_ASSERT_CONTINUE(midiEvent.dataExt != nullptr);
+                            mdataPtr = midiEvent.dataExt;
+                        }
                         else
-                            dataPtr = midiEvent.data;
+                        {
+                            // copy
+                            carla_copy<uint8_t>(mdataTmp, midiEvent.data, size);
+                            // add channel
+                            mdataTmp[0] = static_cast<uint8_t>(mdataTmp[0] | (engineEvent.channel & MIDI_CHANNEL_BIT));
+                            // done
+                            mdataPtr = mdataTmp;
+                        }
                     }
                     else
                     {
@@ -1759,7 +1771,7 @@ protected:
                     }
 
                     if (size > 0)
-                        jackbridge_midi_event_write(eventOut, engineEvent.time, dataPtr, size);
+                        jackbridge_midi_event_write(eventOut, engineEvent.time, mdataPtr, size);
                 }
             }
         }
