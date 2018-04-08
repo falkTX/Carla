@@ -2157,9 +2157,9 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
             }
 
             if (flip) {
-#if 0
                 QRect tmp = rect;
                 rect = QRect(tmp.y(), tmp.x(), tmp.height(), tmp.width());
+#if 0
                 int temp = x1;
                 x1 = y1;
                 y1 = temp;
