@@ -468,15 +468,19 @@ const char* carla_get_complete_license_text()
         "<li>RtAudio v" RTAUDIO_VERSION " and RtMidi v" RTMIDI_VERSION " for native Audio and MIDI support</li>"
 
         // Internal plugins
-#ifdef HAVE_EXPERIMENTAL_PLUGINS
-        "<li>AT1, BLS1 and REV1 plugin code by Fons Adriaensen</li>"
-#endif
         "<li>MIDI Sequencer UI code by Perry Nguyen</li>"
+
+        // External plugins
+#ifdef HAVE_EXTERNAL_PLUGINS
+# ifdef HAVE_EXPERIMENTAL_PLUGINS
+        "<li>AT1, BLS1 and REV1 plugin code by Fons Adriaensen</li>"
+# endif
         "<li>Nekobi plugin code based on nekobee by Sean Bolton and others</li>"
         "<li>VectorJuice and WobbleJuice plugin code by Andre Sklenar</li>"
-#ifdef HAVE_ZYN_DEPS
+# ifdef HAVE_ZYN_DEPS
         "<li>ZynAddSubFX plugin code by Mark McCurry and Nasca Octavian Paul</li>"
-#endif
+# endif
+#endif // HAVE_EXTERNAL_PLUGINS
 
         // end
         "</ul>"
@@ -751,6 +755,9 @@ void carla_x11_move_window(uintptr_t winId, int x, int y)
         XMoveWindow(disp, winId, x, y);
         XCloseDisplay(disp);
     }
+#else
+    // unused
+    return; (void)x; (void)y;
 #endif
 }
 
