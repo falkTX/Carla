@@ -219,7 +219,7 @@ public:
     */
     const float* getReadPointer (int channelNumber) const noexcept
     {
-        jassert (isPositiveAndBelow (channelNumber, numChannels));
+        CARLA_SAFE_ASSERT_RETURN (isPositiveAndBelow (channelNumber, numChannels), nullptr);
         return channels [channelNumber];
     }
 
@@ -232,8 +232,8 @@ public:
     */
     const float* getReadPointer (int channelNumber, int sampleIndex) const noexcept
     {
-        jassert (isPositiveAndBelow (channelNumber, numChannels));
-        jassert (isPositiveAndBelow (sampleIndex, size));
+        CARLA_SAFE_ASSERT_RETURN (isPositiveAndBelow (channelNumber, numChannels), nullptr);
+        CARLA_SAFE_ASSERT_RETURN (isPositiveAndBelow (sampleIndex, size), nullptr);
         return channels [channelNumber] + sampleIndex;
     }
 
@@ -245,7 +245,7 @@ public:
     */
     float* getWritePointer (int channelNumber) noexcept
     {
-        jassert (isPositiveAndBelow (channelNumber, numChannels));
+        CARLA_SAFE_ASSERT_RETURN (isPositiveAndBelow (channelNumber, numChannels), nullptr);
         isClear = false;
         return channels [channelNumber];
     }
@@ -258,8 +258,8 @@ public:
     */
     float* getWritePointer (int channelNumber, int sampleIndex) noexcept
     {
-        jassert (isPositiveAndBelow (channelNumber, numChannels));
-        jassert (isPositiveAndBelow (sampleIndex, size));
+        CARLA_SAFE_ASSERT_RETURN (isPositiveAndBelow (channelNumber, numChannels), nullptr);
+        CARLA_SAFE_ASSERT_RETURN (isPositiveAndBelow (sampleIndex, size), nullptr);
         isClear = false;
         return channels [channelNumber] + sampleIndex;
     }
@@ -449,143 +449,6 @@ public:
     bool hasBeenCleared() const noexcept                            { return isClear; }
 
     //==============================================================================
-    /** Returns a sample from the buffer.
-        The channel and index are not checked - they are expected to be in-range. If not,
-        an assertion will be thrown, but in a release build, you're into 'undefined behaviour'
-        territory.
-    */
-    float getSample (int channel, int sampleIndex) const noexcept
-    {
-        jassert (isPositiveAndBelow (channel, numChannels));
-        jassert (isPositiveAndBelow (sampleIndex, size));
-        return *(channels [channel] + sampleIndex);
-    }
-
-    /** Sets a sample in the buffer.
-        The channel and index are not checked - they are expected to be in-range. If not,
-        an assertion will be thrown, but in a release build, you're into 'undefined behaviour'
-        territory.
-    */
-    void setSample (int destChannel, int destSample, float newValue) noexcept
-    {
-        jassert (isPositiveAndBelow (destChannel, numChannels));
-        jassert (isPositiveAndBelow (destSample, size));
-        *(channels [destChannel] + destSample) = newValue;
-        isClear = false;
-    }
-
-    /** Adds a value to a sample in the buffer.
-        The channel and index are not checked - they are expected to be in-range. If not,
-        an assertion will be thrown, but in a release build, you're into 'undefined behaviour'
-        territory.
-    */
-    void addSample (int destChannel, int destSample, float valueToAdd) noexcept
-    {
-        jassert (isPositiveAndBelow (destChannel, numChannels));
-        jassert (isPositiveAndBelow (destSample, size));
-        *(channels [destChannel] + destSample) += valueToAdd;
-        isClear = false;
-    }
-
-    /** Applies a gain multiple to a region of one channel.
-
-        For speed, this doesn't check whether the channel and sample number
-        are in-range, so be careful!
-    */
-    void applyGain (int channel,
-                    int startSample,
-                    int numSamples,
-                    float gain) noexcept
-    {
-        jassert (isPositiveAndBelow (channel, numChannels));
-        jassert (startSample >= 0 && startSample + numSamples <= size);
-
-        if (gain != 1.0f && ! isClear)
-        {
-            float* const d = channels [channel] + startSample;
-
-            if (carla_isZero (gain))
-                carla_zeroFloats (d, numSamples);
-            else
-                carla_multiply (d, gain, numSamples);
-        }
-    }
-
-    /** Applies a gain multiple to a region of all the channels.
-
-        For speed, this doesn't check whether the sample numbers
-        are in-range, so be careful!
-    */
-    void applyGain (int startSample,
-                    int numSamples,
-                    float gain) noexcept
-    {
-        for (int i = 0; i < numChannels; ++i)
-            applyGain (i, startSample, numSamples, gain);
-    }
-
-    /** Applies a gain multiple to all the audio data. */
-    void applyGain (float gain) noexcept
-    {
-        applyGain (0, size, gain);
-    }
-
-    /** Applies a range of gains to a region of a channel.
-
-        The gain that is applied to each sample will vary from
-        startGain on the first sample to endGain on the last Sample,
-        so it can be used to do basic fades.
-
-        For speed, this doesn't check whether the sample numbers
-        are in-range, so be careful!
-    */
-    void applyGainRamp (int channel,
-                        int startSample,
-                        int numSamples,
-                        float startGain,
-                        float endGain) noexcept
-    {
-        if (! isClear)
-        {
-            if (startGain == endGain)
-            {
-                applyGain (channel, startSample, numSamples, startGain);
-            }
-            else
-            {
-                jassert (isPositiveAndBelow (channel, numChannels));
-                jassert (startSample >= 0 && startSample + numSamples <= size);
-
-                const float increment = (endGain - startGain) / numSamples;
-                float* d = channels [channel] + startSample;
-
-                while (--numSamples >= 0)
-                {
-                    *d++ *= startGain;
-                    startGain += increment;
-                }
-            }
-        }
-    }
-
-    /** Applies a range of gains to a region of all channels.
-
-        The gain that is applied to each sample will vary from
-        startGain on the first sample to endGain on the last Sample,
-        so it can be used to do basic fades.
-
-        For speed, this doesn't check whether the sample numbers
-        are in-range, so be careful!
-    */
-    void applyGainRamp (int startSample,
-                        int numSamples,
-                        float startGain,
-                        float endGain) noexcept
-    {
-        for (int i = 0; i < numChannels; ++i)
-            applyGainRamp (i, startSample, numSamples, startGain, endGain);
-    }
-
     /** Adds samples from another buffer to this one.
 
         @param destChannel          the channel within this buffer to add the samples to
@@ -678,50 +541,6 @@ public:
                     carla_addWithMultiply (d, source, gainToApplyToSource, numSamples);
                 else
                     carla_add (d, source, numSamples);
-            }
-        }
-    }
-
-
-    /** Adds samples from an array of floats, applying a gain ramp to them.
-
-        @param destChannel          the channel within this buffer to add the samples to
-        @param destStartSample      the start sample within this buffer's channel
-        @param source               the source data to use
-        @param numSamples           the number of samples to process
-        @param startGain            the gain to apply to the first sample (this is multiplied with
-                                    the source samples before they are added to this buffer)
-        @param endGain              the gain to apply to the final sample. The gain is linearly
-                                    interpolated between the first and last samples.
-    */
-    void addFromWithRamp (int destChannel,
-                          int destStartSample,
-                          const float* source,
-                          int numSamples,
-                          float startGain,
-                          float endGain) noexcept
-    {
-        jassert (isPositiveAndBelow (destChannel, numChannels));
-        jassert (destStartSample >= 0 && destStartSample + numSamples <= size);
-        jassert (source != nullptr);
-
-        if (startGain == endGain)
-        {
-            addFrom (destChannel, destStartSample, source, numSamples, startGain);
-        }
-        else
-        {
-            if (numSamples > 0 && (startGain != 0.0f || endGain != 0.0f))
-            {
-                isClear = false;
-                const float increment = (endGain - startGain) / numSamples;
-                float* d = channels [destChannel] + destStartSample;
-
-                while (--numSamples >= 0)
-                {
-                    *d++ += startGain * *source++;
-                    startGain += increment;
-                }
             }
         }
     }
@@ -833,51 +652,6 @@ public:
             {
                 isClear = false;
                 carla_copyFloats (d, source, numSamples);
-            }
-        }
-    }
-
-    /** Copies samples from an array of floats into one of the channels, applying a gain ramp.
-
-        @param destChannel          the channel within this buffer to copy the samples to
-        @param destStartSample      the start sample within this buffer's channel
-        @param source               the source buffer to read from
-        @param numSamples           the number of samples to process
-        @param startGain            the gain to apply to the first sample (this is multiplied with
-                                    the source samples before they are copied to this buffer)
-        @param endGain              the gain to apply to the final sample. The gain is linearly
-                                    interpolated between the first and last samples.
-
-        @see addFrom
-    */
-    void copyFromWithRamp (int destChannel,
-                           int destStartSample,
-                           const float* source,
-                           int numSamples,
-                           float startGain,
-                           float endGain) noexcept
-    {
-        jassert (isPositiveAndBelow (destChannel, numChannels));
-        jassert (destStartSample >= 0 && destStartSample + numSamples <= size);
-        jassert (source != nullptr);
-
-        if (startGain == endGain)
-        {
-            copyFrom (destChannel, destStartSample, source, numSamples, startGain);
-        }
-        else
-        {
-            if (numSamples > 0 && (startGain != 0.0f || endGain != 0.0f))
-            {
-                isClear = false;
-                const float increment = (endGain - startGain) / numSamples;
-                float* d = channels [destChannel] + destStartSample;
-
-                while (--numSamples >= 0)
-                {
-                    *d++ = startGain * *source++;
-                    startGain += increment;
-                }
             }
         }
     }

@@ -197,11 +197,11 @@ public:
 
             if (fPorts.numMidiOuts > 0)
             {
-                uint8_t        port     = 0;
-                uint8_t        size     = 0;
-                uint8_t        mdata[3] = { 0, 0, 0 };
-                const uint8_t* mdataPtr = mdata;
-                uint8_t        mdataTmp[EngineMidiEvent::kDataSize];
+                uint8_t port     = 0;
+                uint8_t size     = 0;
+                uint8_t mdata[3] = { 0, 0, 0 };
+                uint8_t mdataTmp[EngineMidiEvent::kDataSize];
+                const uint8_t* mdataPtr;
 
                 for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
                 {
@@ -224,6 +224,7 @@ public:
 
                         port = midiEvent.port;
                         size = midiEvent.size;
+                        CARLA_SAFE_ASSERT_CONTINUE(size > 0);
 
                         if (size > EngineMidiEvent::kDataSize)
                         {
@@ -232,13 +233,19 @@ public:
                         }
                         else
                         {
-                            // copy
-                            carla_copy<uint8_t>(mdataTmp, midiEvent.data, size);
-                            // add channel
-                            mdataTmp[0] = static_cast<uint8_t>(mdataTmp[0] | (engineEvent.channel & MIDI_CHANNEL_BIT));
+                            // set first byte
+                            mdataTmp[0] = static_cast<uint8_t>(midiEvent.data[0] | (engineEvent.channel & MIDI_CHANNEL_BIT));
+
+                            // copy rest
+                            carla_copy<uint8_t>(mdataTmp+1, midiEvent.data+1, size-1);
+
                             // done
                             mdataPtr = mdataTmp;
                         }
+                    }
+                    else
+                    {
+                        continue;
                     }
 
                     if (size > 0 && ! writeMidiEvent(port, engineEvent.time, size, mdataPtr))

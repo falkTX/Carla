@@ -1724,10 +1724,10 @@ protected:
             {
                 jackbridge_midi_clear_buffer(eventOut);
 
-                uint8_t        size     = 0;
-                uint8_t        mdata[3] = { 0, 0, 0 };
-                const uint8_t* mdataPtr = mdata;
-                uint8_t        mdataTmp[EngineMidiEvent::kDataSize];
+                uint8_t  size     = 0;
+                uint8_t  mdata[3] = { 0, 0, 0 };
+                uint8_t  mdataTmp[EngineMidiEvent::kDataSize];
+                const uint8_t* mdataPtr;
 
                 for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
                 {
@@ -1749,6 +1749,7 @@ protected:
                         const EngineMidiEvent& midiEvent(engineEvent.midi);
 
                         size = midiEvent.size;
+                        CARLA_SAFE_ASSERT_CONTINUE(size > 0);
 
                         if (size > EngineMidiEvent::kDataSize)
                         {
@@ -1757,10 +1758,12 @@ protected:
                         }
                         else
                         {
-                            // copy
-                            carla_copy<uint8_t>(mdataTmp, midiEvent.data, size);
-                            // add channel
-                            mdataTmp[0] = static_cast<uint8_t>(mdataTmp[0] | (engineEvent.channel & MIDI_CHANNEL_BIT));
+                            // set first byte
+                            mdataTmp[0] = static_cast<uint8_t>(midiEvent.data[0] | (engineEvent.channel & MIDI_CHANNEL_BIT));
+
+                            // copy rest
+                            carla_copy<uint8_t>(mdataTmp+1, midiEvent.data+1, size-1);
+
                             // done
                             mdataPtr = mdataTmp;
                         }
@@ -2236,7 +2239,10 @@ private:
             char* value = nullptr;
             char* type  = nullptr;
 
-            if (jackbridge_get_property(uuid, JACKEY_SIGNAL_TYPE, &value, &type) && value != nullptr && type != nullptr && std::strcmp(type, "text/plain") == 0)
+            if (jackbridge_get_property(uuid, JACKEY_SIGNAL_TYPE, &value, &type)
+                && value != nullptr
+                && type != nullptr
+                && std::strcmp(type, "text/plain") == 0)
             {
                 portIsCV  = (std::strcmp(value, "CV") == 0);
                 portIsOSC = (std::strcmp(value, "OSC") == 0);
@@ -2246,8 +2252,10 @@ private:
         uint canvasPortFlags = 0x0;
         canvasPortFlags |= portIsInput ? PATCHBAY_PORT_IS_INPUT : 0x0;
 
-        if (portIsCV)
+        /**/ if (portIsCV)
             canvasPortFlags |= PATCHBAY_PORT_TYPE_CV;
+        else if (portIsOSC)
+            canvasPortFlags |= PATCHBAY_PORT_TYPE_OSC;
         else if (portIsAudio)
             canvasPortFlags |= PATCHBAY_PORT_TYPE_AUDIO;
         else if (portIsMIDI)
@@ -2258,9 +2266,6 @@ private:
 
         callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, portNameToId.group, static_cast<int>(portNameToId.port), static_cast<int>(canvasPortFlags), 0.0f, portNameToId.name);
         fUsedPorts.list.append(portNameToId);
-
-        return; // unused
-        (void)portIsOSC;
     }
 #endif
 

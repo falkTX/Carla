@@ -1,7 +1,7 @@
 /*
  * Carla Style, based on Qt5 fusion style
  * Copyright (C) 2012 Digia Plc and/or its subsidiary(-ies)
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -2115,11 +2115,13 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
             int tabOverlap = pixelMetric(PM_TabBarTabOverlap, option, widget);
             rect = option->rect.adjusted(0, 0, (onlyOne || lastTab) ? 0 : tabOverlap, 0);
 
+#if 0
             QRect r2(rect);
             int x1 = r2.left();
             int x2 = r2.right();
             int y1 = r2.top();
             int y2 = r2.bottom();
+#endif
 
             painter->setPen(d->innerContrastLine());
 
@@ -2155,6 +2157,7 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
             }
 
             if (flip) {
+#if 0
                 QRect tmp = rect;
                 rect = QRect(tmp.y(), tmp.x(), tmp.height(), tmp.width());
                 int temp = x1;
@@ -2163,6 +2166,7 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                 temp = x2;
                 x2 = y2;
                 y2 = temp;
+#endif
             }
 
             painter->setRenderHint(QPainter::Antialiasing, true);

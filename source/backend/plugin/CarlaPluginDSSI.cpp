@@ -2027,7 +2027,7 @@ public:
 
         const std::size_t instanceCount(fHandles.count());
 
-        if (fDescriptor->cleanup == nullptr)
+        if (fDescriptor->cleanup != nullptr)
         {
             for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin2(); it.valid(); it.next())
             {

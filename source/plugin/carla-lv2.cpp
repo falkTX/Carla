@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -191,7 +191,10 @@ public:
 
             for (uint32_t i=0; i < fPorts.numMidiIns; ++i)
             {
-                LV2_ATOM_SEQUENCE_FOREACH(fPorts.eventsIn[i], event)
+                const LV2_Atom_Sequence* const eventsIn(fPorts.eventsIn[i]);
+                CARLA_SAFE_ASSERT_CONTINUE(eventsIn != nullptr);
+
+                LV2_ATOM_SEQUENCE_FOREACH(eventsIn, event)
                 {
                     if (event == nullptr)
                         continue;
@@ -410,20 +413,24 @@ public:
 
         for (int i=0; features[i] != nullptr; ++i)
         {
-            if (std::strcmp(features[i]->URI, LV2_OPTIONS__options) == 0)
-            {
-                const LV2_Options_Option* const options((const LV2_Options_Option*)features[i]->data);
+            if (std::strcmp(features[i]->URI, LV2_OPTIONS__options) != 0)
+                continue;
 
-                for (int j=0; options[j].key != 0; ++j)
-                {
-                    if (options[j].key == fUridMap->map(fUridMap->handle, LV2_UI__windowTitle))
-                    {
-                        fHost.uiName = carla_strdup((const char*)options[j].value);
-                        break;
-                    }
-                }
+            const LV2_Options_Option* const options((const LV2_Options_Option*)features[i]->data);
+            CARLA_SAFE_ASSERT_BREAK(options != nullptr);
+
+            for (int j=0; options[j].key != 0; ++j)
+            {
+                if (options[j].key != fUridMap->map(fUridMap->handle, LV2_UI__windowTitle))
+                    continue;
+
+                const char* const title((const char*)options[j].value);
+                CARLA_SAFE_ASSERT_BREAK(title != nullptr && title[0] != '\0');
+
+                fHost.uiName = carla_strdup(title);
                 break;
             }
+            break;
         }
 
         if (fHost.uiName == nullptr)

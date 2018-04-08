@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -100,7 +100,6 @@ const char* CarlaEngine::getDriverName(const uint index2)
     {
         if (index < count)
             return getRtAudioApiName(index);
-        index -= count;
     }
 #endif
 
@@ -125,7 +124,6 @@ const char* const* CarlaEngine::getDriverDeviceNames(const uint index2)
     {
         if (index < count)
             return getRtAudioApiDeviceNames(index);
-        index -= count;
     }
 #endif
 
@@ -154,7 +152,6 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index2
     {
         if (index < count)
             return getRtAudioDeviceInfo(index, deviceName);
-        index -= count;
     }
 #endif
 

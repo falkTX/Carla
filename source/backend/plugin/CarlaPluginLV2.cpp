@@ -5252,8 +5252,8 @@ public:
         // ---------------------------------------------------------------
         // find the most appropriate ui
 
-        int eQt4, eQt5, eGtk2, eGtk3, eCocoa, eWindows, eX11, eExt, iCocoa, iWindows, iX11, iExt, iFinal;
-        eQt4 = eQt5 = eGtk2 = eGtk3 = eCocoa = eWindows = eX11 = eExt = iCocoa = iWindows = iX11 = iExt = iFinal = -1;
+        int eQt4, eQt5, eGtk2, eGtk3, eCocoa, eWindows, eX11, iCocoa, iWindows, iX11, iExt, iFinal;
+        eQt4 = eQt5 = eGtk2 = eGtk3 = eCocoa = eWindows = eX11 = iCocoa = iWindows = iX11 = iExt = iFinal = -1;
 
 #if defined(BUILD_BRIDGE) || defined(LV2_UIS_ONLY_BRIDGES)
         const bool preferUiBridges(true);
@@ -5286,16 +5286,20 @@ public:
                 if (isUiBridgeable(i))
                     eGtk3 = ii;
                 break;
+#ifdef CARLA_OS_MAC
             case LV2_UI_COCOA:
                 if (isUiBridgeable(i) && preferUiBridges)
                     eCocoa = ii;
                 iCocoa = ii;
                 break;
+#endif
+#ifdef CARLA_OS_WIN
             case LV2_UI_WINDOWS:
                 if (isUiBridgeable(i) && preferUiBridges)
                     eWindows = ii;
                 iWindows = ii;
                 break;
+#endif
             case LV2_UI_X11:
                 if (isUiBridgeable(i) && preferUiBridges)
                     eX11 = ii;
@@ -5303,8 +5307,6 @@ public:
                 break;
             case LV2_UI_EXTERNAL:
             case LV2_UI_OLD_EXTERNAL:
-                if (isUiBridgeable(i))
-                    eExt = ii;
                 iExt = ii;
                 break;
             default:
@@ -5332,8 +5334,6 @@ public:
         else if (eX11 >= 0)
             iFinal = eX11;
 #endif
-        //else if (eExt >= 0) // TODO
-        //    iFinal = eExt;
 #ifndef LV2_UIS_ONLY_BRIDGES
 # ifdef CARLA_OS_MAC
         else if (iCocoa >= 0)
@@ -5421,7 +5421,7 @@ public:
 
         if (
             (iFinal == eQt4 || iFinal == eQt5 || iFinal == eGtk2 || iFinal == eGtk3 ||
-             iFinal == eCocoa || iFinal == eWindows || iFinal == eX11 || iFinal == eExt)
+             iFinal == eCocoa || iFinal == eWindows || iFinal == eX11)
 #ifdef BUILD_BRIDGE
             && preferUiBridges && ! hasShowInterface
 #endif

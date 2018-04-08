@@ -1,6 +1,6 @@
 /*
  * Carla Ring Buffer
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -320,6 +320,7 @@ protected:
     bool tryRead(void* const buf, const uint32_t size) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fBuffer->buf != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(buf != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(size > 0, false);
         CARLA_SAFE_ASSERT_RETURN(size < fBuffer->size, false);

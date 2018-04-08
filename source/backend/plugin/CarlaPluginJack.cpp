@@ -1150,12 +1150,14 @@ public:
             case kPluginBridgeNonRtServerSetCustomData:
                 break;
 
-            case kPluginBridgeNonRtServerSetChunkDataFile: {
+            case kPluginBridgeNonRtServerSetChunkDataFile:
                 // uint/size, str[] (filename)
-                const uint32_t chunkFilePathSize(fShmNonRtServerControl.readUInt());
-                char chunkFilePath[chunkFilePathSize];
-                fShmNonRtServerControl.readCustomData(chunkFilePath, chunkFilePathSize);
-            }   break;
+                if (const uint32_t chunkFilePathSize = fShmNonRtServerControl.readUInt())
+                {
+                    char chunkFilePath[chunkFilePathSize];
+                    fShmNonRtServerControl.readCustomData(chunkFilePath, chunkFilePathSize);
+                }
+                break;
 
             case kPluginBridgeNonRtServerSetLatency:
             case kPluginBridgeNonRtServerSetParameterText:

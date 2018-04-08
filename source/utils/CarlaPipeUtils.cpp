@@ -1,6 +1,6 @@
 /*
  * Carla Pipe Utilities
- * Copyright (C) 2013-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -1123,7 +1123,7 @@ uintptr_t CarlaPipeServer::getPID() const noexcept
 #endif
 }
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 bool CarlaPipeServer::startPipeServer(const char* const filename,
                                       const char* const arg1,
@@ -1155,7 +1155,7 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
 
     const CarlaMutexLocker cml(pData->writeLock);
 
-    //----------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------------
     // create pipes
 
 #ifdef CARLA_OS_WIN
@@ -1220,7 +1220,7 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     std::snprintf(pipeRecvClientStr, 100, "%i", pipeRecvClient);
     std::snprintf(pipeSendClientStr, 100, "%i", pipeSendClient);
 
-    //----------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------------
     // set size, non-fatal
 
 #ifdef CARLA_OS_LINUX
@@ -1233,7 +1233,7 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     } CARLA_SAFE_EXCEPTION("Set pipe size");
 #endif
 
-    //----------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------------
     // set non-block
 
     int ret;
@@ -1265,23 +1265,23 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     }
 #endif
 
-    //----------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------------
     // set arguments
 
     const char* argv[8];
 
-    //----------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------------
     // argv[0] => filename
 
     argv[0] = filename;
 
-    //----------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------------
     // argv[1-2] => args
 
     argv[1] = arg1;
     argv[2] = arg2;
 
-    //----------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------------
     // argv[3-6] => pipes
 
     argv[3] = pipeRecvServerStr;
@@ -1289,12 +1289,12 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     argv[5] = pipeRecvClientStr;
     argv[6] = pipeSendClientStr;
 
-    //----------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------------
     // argv[7] => null
 
     argv[7] = nullptr;
 
-    //----------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------------
     // start process
 
 #ifdef CARLA_OS_WIN
@@ -1324,15 +1324,14 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
         return false;
     }
 
-    //----------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------------
     // close duplicated handles used by the client
 
     try { ::close(pipeRecvServer); } CARLA_SAFE_EXCEPTION("close(pipeRecvServer)");
     try { ::close(pipeSendServer); } CARLA_SAFE_EXCEPTION("close(pipeSendServer)");
-    pipeRecvServer = pipeSendServer = INVALID_PIPE_VALUE;
 #endif
 
-    //----------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------------
     // wait for client to say something
 
     if (waitForClientFirstMessage(pipeRecvClient, 10*1000 /* 10 secs */))
@@ -1347,7 +1346,7 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
         return true;
     }
 
-    //----------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------------
     // failed to set non-block or get first child message, cannot continue
 
 #ifdef CARLA_OS_WIN
@@ -1372,7 +1371,7 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     pData->pid = -1;
 #endif
 
-    //----------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------------
     // close pipes
 
 #ifdef CARLA_OS_WIN
@@ -1544,7 +1543,6 @@ bool CarlaPipeClient::initPipeClient(const char* argv[]) noexcept
 
     try { ::close(pipeRecvClient); } CARLA_SAFE_EXCEPTION("close(pipeRecvClient)");
     try { ::close(pipeSendClient); } CARLA_SAFE_EXCEPTION("close(pipeSendClient)");
-    pipeRecvClient = pipeSendClient = INVALID_PIPE_VALUE;
 
     //----------------------------------------------------------------
     // kill ourselves if parent dies

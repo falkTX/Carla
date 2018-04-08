@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,6 +21,12 @@
 #include <stdlib.h>
 
 // -----------------------------------------------------------------------
+
+typedef enum {
+    PARAM_OCTAVES = 0,
+    PARAM_SEMITONES,
+    PARAM_COUNT
+} MidiTransposeParams;
 
 typedef struct {
     const NativeHostDescriptor* host;
@@ -52,7 +58,7 @@ static void miditranspose_cleanup(NativePluginHandle handle)
 
 static uint32_t miditranspose_get_parameter_count(NativePluginHandle handle)
 {
-    return 2;
+    return PARAM_COUNT;
 
     // unused
     (void)handle;
@@ -60,51 +66,54 @@ static uint32_t miditranspose_get_parameter_count(NativePluginHandle handle)
 
 static const NativeParameter* miditranspose_get_parameter_info(NativePluginHandle handle, uint32_t index)
 {
-    if (index >= 2)
+    if (index > PARAM_COUNT)
         return NULL;
 
-    static NativeParameter param[] =
+    static NativeParameter param;
+
+    param.hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_INTEGER;
+    param.unit  = NULL;
+    param.scalePointCount = 0;
+    param.scalePoints     = NULL;
+
+    switch (index)
     {
-        {
-          .name  = "Octaves",
-          .unit  = NULL,
-          .hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_INTEGER,
-          .ranges.def = 0.0f,
-          .ranges.min = -8.0f,
-          .ranges.max = 8.0f,
-          .ranges.step = 1.0f,
-          .ranges.stepSmall = 1.0f,
-          .ranges.stepLarge = 1.0f,
-          .scalePointCount = 0,
-          .scalePoints     = NULL,
-        },
-        {
-          .name  = "Semitones",
-          .unit  = NULL,
-          .hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_INTEGER,
-          .ranges.def = 0.0f,
-          .ranges.min = -12.0f,
-          .ranges.max = 12.0f,
-          .ranges.step = 1.0f,
-          .ranges.stepSmall = 1.0f,
-          .ranges.stepLarge = 1.0f,
-          .scalePointCount = 0,
-          .scalePoints     = NULL,
-        },
-    };
-    return &param[index];
+    case PARAM_OCTAVES:
+        param.name = "Octaves";
+        param.ranges.def = 0.0f,
+        param.ranges.min = -8.0f,
+        param.ranges.max = 8.0f,
+        param.ranges.step = 1.0f;
+        param.ranges.stepSmall = 1.0f;
+        param.ranges.stepLarge = 4.0f;
+        break;
+    case PARAM_SEMITONES:
+        param.name = "Semitones";
+        param.ranges.def = 0.0f,
+        param.ranges.min = -12.0f,
+        param.ranges.max = 12.0f,
+        param.ranges.step = 1.0f;
+        param.ranges.stepSmall = 1.0f;
+        param.ranges.stepLarge = 4.0f;
+        break;
+    }
+
+    return &param;
+
+    // unused
+    (void)handle;
 }
 
 static float miditranspose_get_parameter_value(NativePluginHandle handle, uint32_t index)
 {
     switch (index)
     {
-        case 0:
-            return (float)handlePtr->octaves;
-        case 1:
-            return (float)handlePtr->semitones;
-        default:
-            return 0.0f;
+    case PARAM_OCTAVES:
+        return (float)handlePtr->octaves;
+    case PARAM_SEMITONES:
+        return (float)handlePtr->semitones;
+    default:
+        return 0.0f;
     }
 }
 
@@ -112,16 +121,13 @@ static void miditranspose_set_parameter_value(NativePluginHandle handle, uint32_
 {
     switch (index)
     {
-        case 0:
-            handlePtr->octaves = (int)value;
-            break;
-        case 1:
-            handlePtr->semitones = (int)value;
-            break;
-        default:
-            return;
+    case PARAM_OCTAVES:
+        handlePtr->octaves = (int)value;
+        break;
+    case PARAM_SEMITONES:
+        handlePtr->semitones = (int)value;
+        break;
     }
-
 }
 
 static void miditranspose_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)

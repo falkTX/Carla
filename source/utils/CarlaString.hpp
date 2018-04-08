@@ -1,6 +1,6 @@
 /*
  * Carla String
- * Copyright (C) 2013-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -37,14 +37,16 @@ public:
      */
     explicit CarlaString() noexcept
         : fBuffer(_null()),
-          fBufferLen(0) {}
+          fBufferLen(0),
+          fBufferAlloc(false) {}
 
     /*
      * Simple character.
      */
     explicit CarlaString(const char c) noexcept
         : fBuffer(_null()),
-          fBufferLen(0)
+          fBufferLen(0),
+          fBufferAlloc(false)
     {
         char ch[2];
         ch[0] = c;
@@ -58,7 +60,8 @@ public:
      */
     explicit CarlaString(char* const strBuf) noexcept
         : fBuffer(_null()),
-          fBufferLen(0)
+          fBufferLen(0),
+          fBufferAlloc(false)
     {
         _dup(strBuf);
     }
@@ -68,7 +71,8 @@ public:
      */
     explicit CarlaString(const char* const strBuf) noexcept
         : fBuffer(_null()),
-          fBufferLen(0)
+          fBufferLen(0),
+          fBufferAlloc(false)
     {
         _dup(strBuf);
     }
@@ -78,7 +82,8 @@ public:
      */
     explicit CarlaString(const int value) noexcept
         : fBuffer(_null()),
-          fBufferLen(0)
+          fBufferLen(0),
+          fBufferAlloc(false)
     {
         char strBuf[0xff+1];
         std::snprintf(strBuf, 0xff, "%d", value);
@@ -92,7 +97,8 @@ public:
      */
     explicit CarlaString(const unsigned int value, const bool hexadecimal = false) noexcept
         : fBuffer(_null()),
-          fBufferLen(0)
+          fBufferLen(0),
+          fBufferAlloc(false)
     {
         char strBuf[0xff+1];
         std::snprintf(strBuf, 0xff, hexadecimal ? "0x%x" : "%u", value);
@@ -106,7 +112,8 @@ public:
      */
     explicit CarlaString(const long value) noexcept
         : fBuffer(_null()),
-          fBufferLen(0)
+          fBufferLen(0),
+          fBufferAlloc(false)
     {
         char strBuf[0xff+1];
         std::snprintf(strBuf, 0xff, "%ld", value);
@@ -120,7 +127,8 @@ public:
      */
     explicit CarlaString(const unsigned long value, const bool hexadecimal = false) noexcept
         : fBuffer(_null()),
-          fBufferLen(0)
+          fBufferLen(0),
+          fBufferAlloc(false)
     {
         char strBuf[0xff+1];
         std::snprintf(strBuf, 0xff, hexadecimal ? "0x%lx" : "%lu", value);
@@ -134,7 +142,8 @@ public:
      */
     explicit CarlaString(const long long value) noexcept
         : fBuffer(_null()),
-          fBufferLen(0)
+          fBufferLen(0),
+          fBufferAlloc(false)
     {
         char strBuf[0xff+1];
         std::snprintf(strBuf, 0xff, "%lld", value);
@@ -148,7 +157,8 @@ public:
      */
     explicit CarlaString(const unsigned long long value, const bool hexadecimal = false) noexcept
         : fBuffer(_null()),
-          fBufferLen(0)
+          fBufferLen(0),
+          fBufferAlloc(false)
     {
         char strBuf[0xff+1];
         std::snprintf(strBuf, 0xff, hexadecimal ? "0x%llx" : "%llu", value);
@@ -162,7 +172,8 @@ public:
      */
     explicit CarlaString(const float value) noexcept
         : fBuffer(_null()),
-          fBufferLen(0)
+          fBufferLen(0),
+          fBufferAlloc(false)
     {
         char strBuf[0xff+1];
         std::snprintf(strBuf, 0xff, "%f", value);
@@ -176,7 +187,8 @@ public:
      */
     explicit CarlaString(const double value) noexcept
         : fBuffer(_null()),
-          fBufferLen(0)
+          fBufferLen(0),
+          fBufferAlloc(false)
     {
         char strBuf[0xff+1];
         std::snprintf(strBuf, 0xff, "%g", value);
@@ -193,7 +205,8 @@ public:
      */
     CarlaString(const CarlaString& str) noexcept
         : fBuffer(_null()),
-          fBufferLen(0)
+          fBufferLen(0),
+          fBufferAlloc(false)
     {
         _dup(str.fBuffer);
     }
@@ -208,13 +221,12 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
 
-        if (fBuffer == _null())
-            return;
+        if (fBufferAlloc)
+            std::free(fBuffer);
 
-        std::free(fBuffer);
-
-        fBuffer    = nullptr;
-        fBufferLen = 0;
+        fBuffer      = nullptr;
+        fBufferLen   = 0;
+        fBufferAlloc = false;
     }
 
     // -------------------------------------------------------------------
@@ -757,8 +769,9 @@ public:
     // -------------------------------------------------------------------
 
 private:
-    char*       fBuffer;    // the actual string buffer
-    std::size_t fBufferLen; // string length
+    char*       fBuffer;      // the actual string buffer
+    std::size_t fBufferLen;   // string length
+    bool        fBufferAlloc; // wherever the buffer is allocated, not using _null()
 
     /*
      * Static null string.
@@ -786,7 +799,7 @@ private:
             if (std::strcmp(fBuffer, strBuf) == 0)
                 return;
 
-            if (fBuffer != _null())
+            if (fBufferAlloc)
                 std::free(fBuffer);
 
             fBufferLen = (size > 0) ? size : std::strlen(strBuf);
@@ -794,28 +807,31 @@ private:
 
             if (fBuffer == nullptr)
             {
-                fBuffer    = _null();
-                fBufferLen = 0;
+                fBuffer      = _null();
+                fBufferLen   = 0;
+                fBufferAlloc = false;
                 return;
             }
 
-            std::strcpy(fBuffer, strBuf);
+            fBufferAlloc = true;
 
+            std::strcpy(fBuffer, strBuf);
             fBuffer[fBufferLen] = '\0';
         }
         else
         {
-            CARLA_SAFE_ASSERT(size == 0);
+            CARLA_SAFE_ASSERT_UINT(size == 0, static_cast<uint>(size));
 
             // don't recreate null string
-            if (fBuffer == _null())
+            if (! fBufferAlloc)
                 return;
 
             CARLA_SAFE_ASSERT(fBuffer != nullptr);
             std::free(fBuffer);
 
-            fBuffer    = _null();
-            fBufferLen = 0;
+            fBuffer      = _null();
+            fBufferLen   = 0;
+            fBufferAlloc = false;
         }
     }
 

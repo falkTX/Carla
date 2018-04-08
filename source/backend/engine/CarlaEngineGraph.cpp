@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -1179,6 +1179,8 @@ public:
 
         if (const int numChan = audio.getNumChannels())
         {
+            const uint numChanu = static_cast<uint>(jmin(numChan, 2));
+
             if (fPlugin->getAudioInCount() == 0)
                 audio.clear();
 
@@ -1190,12 +1192,12 @@ public:
             float inPeaks[2] = { 0.0f };
             float outPeaks[2] = { 0.0f };
 
-            for (uint32_t i=0, count=jmin(fPlugin->getAudioInCount(), 2U); i<count; ++i)
+            for (uint32_t i=0, count=jmin(fPlugin->getAudioInCount(), numChanu); i<count; ++i)
                 inPeaks[i] = carla_findMaxNormalizedFloat(audioBuffers[i], numSamples);
 
             fPlugin->process(const_cast<const float**>(audioBuffers), audioBuffers, nullptr, nullptr, numSamples);
 
-            for (uint32_t i=0, count=jmin(fPlugin->getAudioOutCount(), 2U); i<count; ++i)
+            for (uint32_t i=0, count=jmin(fPlugin->getAudioOutCount(), numChanu); i<count; ++i)
                 outPeaks[i] = carla_findMaxNormalizedFloat(audioBuffers[i], numSamples);
 
             kEngine->setPluginPeaks(fPlugin->getId(), inPeaks, outPeaks);

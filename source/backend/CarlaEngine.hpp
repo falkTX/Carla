@@ -1181,11 +1181,14 @@ public:
     // Engine initializers
 
     // JACK
-    static CarlaEngine*       newJack();
+    static CarlaEngine* newJack();
 
 #ifdef BUILD_BRIDGE
     // Bridge
-    static CarlaEngine*       newBridge(const char* const audioPoolBaseName, const char* const rtClientBaseName, const char* const nonRtClientBaseName, const char* const nonRtServerBaseName);
+    static CarlaEngine* newBridge(const char* const audioPoolBaseName,
+                                  const char* const rtClientBaseName,
+                                  const char* const nonRtClientBaseName,
+                                  const char* const nonRtServerBaseName);
 #else
     // RtAudio
     static CarlaEngine*       newRtAudio(const AudioApi api);

@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -329,22 +329,27 @@ static const uint PARAMETER_USES_CUSTOM_TEXT = 0x400;
  * Patchbay port is input.
  * When this hint is not set, port is assumed to be output.
  */
-static const uint PATCHBAY_PORT_IS_INPUT = 0x1;
+static const uint PATCHBAY_PORT_IS_INPUT = 0x01;
 
 /*!
  * Patchbay port is of Audio type.
  */
-static const uint PATCHBAY_PORT_TYPE_AUDIO = 0x2;
+static const uint PATCHBAY_PORT_TYPE_AUDIO = 0x02;
 
 /*!
  * Patchbay port is of CV type (Control Voltage).
  */
-static const uint PATCHBAY_PORT_TYPE_CV = 0x4;
+static const uint PATCHBAY_PORT_TYPE_CV = 0x04;
 
 /*!
  * Patchbay port is of MIDI type.
  */
-static const uint PATCHBAY_PORT_TYPE_MIDI = 0x8;
+static const uint PATCHBAY_PORT_TYPE_MIDI = 0x08;
+
+/*!
+ * Patchbay port is of OSC type.
+ */
+static const uint PATCHBAY_PORT_TYPE_OSC = 0x10;
 
 /** @} */
 

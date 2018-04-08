@@ -610,6 +610,9 @@ void carla_nsm_ready(int action)
 {
 #ifdef HAVE_LIBLO
     CarlaNSM::getInstance().ready(action);
+#else
+    // unused
+    return; (void)action;
 #endif
 }
 

@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -672,7 +672,7 @@ bool CarlaJackAppClient::handleRtData()
                             if (i < fServer.numAudioIns)
                             {
                                 const std::size_t remainingBufferSize = fServer.bufferSize * (fServer.numAudioIns - i);
-                                fdataReal += remainingBufferSize;
+                                //fdataReal += remainingBufferSize;
                                 fdataCopy += remainingBufferSize;
                             }
 
@@ -701,7 +701,7 @@ bool CarlaJackAppClient::handleRtData()
                             {
                                 const std::size_t remainingBufferSize = fServer.bufferSize * (fServer.numAudioOuts - i);
                                 carla_zeroFloats(fdataCopy, remainingBufferSize);
-                                fdataCopy += remainingBufferSize;
+                                //fdataCopy += remainingBufferSize;
                             }
 
                             // set midi inputs
