@@ -334,6 +334,8 @@ bool EngineTimeInfo::operator==(const EngineTimeInfo& timeInfo) const noexcept
         return false;
     if (! bbt.valid)
         return true;
+    if (carla_isNotEqual(timeInfo.bbt.beatsPerBar, bbt.beatsPerBar))
+        return false;
     if (carla_isNotEqual(timeInfo.bbt.beatsPerMinute, bbt.beatsPerMinute))
         return false;
     return true;

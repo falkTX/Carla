@@ -2846,6 +2846,9 @@ public:
             bool doPostRt;
             int32_t rindex;
 
+            const double barBeat = static_cast<double>(timeInfo.bbt.beat - 1)
+                                 + (static_cast<double>(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat);
+
             // update input ports
             for (uint32_t k=0; k < pData->param.count; ++k)
             {
@@ -2894,8 +2897,7 @@ public:
                     if (timeInfo.bbt.valid && (fLastTimeInfo.bbt.tick != timeInfo.bbt.tick ||
                                                fLastTimeInfo.bbt.beat != timeInfo.bbt.beat))
                     {
-                        fParamBuffers[k] = static_cast<float>(static_cast<double>(timeInfo.bbt.beat) - 1.0
-                                         + (static_cast<double>(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat));
+                        fParamBuffers[k] = static_cast<float>(barBeat);
                         doPostRt = true;
                     }
                     break;
@@ -2967,7 +2969,7 @@ public:
                     lv2_atom_forge_long(&fAtomForge, timeInfo.bbt.bar - 1);
 
                     lv2_atom_forge_key(&fAtomForge, kUridTimeBarBeat);
-                    lv2_atom_forge_float(&fAtomForge, static_cast<float>(static_cast<double>(timeInfo.bbt.beat) - 1.0 + (static_cast<double>(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat)));
+                    lv2_atom_forge_float(&fAtomForge, static_cast<float>(barBeat));
 
                     lv2_atom_forge_key(&fAtomForge, kUridTimeBeat);
                     lv2_atom_forge_double(&fAtomForge, timeInfo.bbt.beat - 1);

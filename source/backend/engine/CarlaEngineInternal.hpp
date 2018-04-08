@@ -124,6 +124,7 @@ public:
     void enableLink(const bool enable);
     void setBPM(const double bpm);
     void setNeedsReset() noexcept;
+    void pause() noexcept;
     void relocate(const uint64_t frame) noexcept;
 
 private:

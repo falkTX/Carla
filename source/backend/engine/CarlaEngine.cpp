@@ -1308,8 +1308,10 @@ void CarlaEngine::transportPlay() noexcept
 
 void CarlaEngine::transportPause() noexcept
 {
-    pData->timeInfo.playing = false;
-    pData->time.setNeedsReset();
+    if (pData->timeInfo.playing)
+        pData->time.pause();
+    else
+        pData->time.setNeedsReset();
 }
 
 void CarlaEngine::transportBPM(const double bpm) noexcept
