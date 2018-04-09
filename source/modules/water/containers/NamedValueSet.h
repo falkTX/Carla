@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -169,15 +169,6 @@ public:
 
     /** Removes all values. */
     void clear();
-
-    //==============================================================================
-    /** Sets properties to the values of all of an XML element's attributes. */
-    void setFromXmlAttributes (const XmlElement& xml);
-
-    /** Sets attributes in an XML element corresponding to each of this object's
-        properties.
-    */
-    void copyToXmlAttributes (XmlElement& xml) const;
 
 private:
     //==============================================================================

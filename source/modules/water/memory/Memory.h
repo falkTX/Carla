@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -34,11 +34,11 @@ namespace water {
 
 //==============================================================================
 /** Fills a block of memory with zeros. */
-inline void zeromem (void* memory, size_t numBytes) noexcept        { memset (memory, 0, numBytes); }
+inline void zeromem (void* memory, size_t numBytes) noexcept        { std::memset (memory, 0, numBytes); }
 
 /** Overwrites a structure or object with zeros. */
 template <typename Type>
-inline void zerostruct (Type& structure) noexcept                   { memset (&structure, 0, sizeof (structure)); }
+inline void zerostruct (Type& structure) noexcept                   { std::memset (&structure, 0, sizeof (structure)); }
 
 /** Delete an object pointer, and sets the pointer to null.
 
@@ -73,7 +73,7 @@ template <typename Type>
 inline Type readUnaligned (const void* srcPtr) noexcept
 {
     Type value;
-    memcpy (&value, srcPtr, sizeof (Type));
+    std::memcpy (&value, srcPtr, sizeof (Type));
 
     return value;
 }
@@ -82,7 +82,7 @@ inline Type readUnaligned (const void* srcPtr) noexcept
 template <typename Type>
 inline void writeUnaligned (void* dstPtr, Type value) noexcept
 {
-    memcpy (dstPtr, &value, sizeof(Type));
+    std::memcpy (dstPtr, &value, sizeof(Type));
 }
 
 }
