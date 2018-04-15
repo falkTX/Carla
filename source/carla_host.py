@@ -267,9 +267,11 @@ class HostWindow(QMainWindow):
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (disk)
 
+        exts = gCarla.utils.get_supported_file_extensions()
+
         self.fDirModel = QFileSystemModel(self)
         self.fDirModel.setRootPath(HOME)
-        self.fDirModel.setNameFilters(gCarla.utils.get_supported_file_extensions().split(";"))
+        self.fDirModel.setNameFilters(tuple(("*." + i) for i in exts))
 
         self.ui.fileTreeView.setModel(self.fDirModel)
         self.ui.fileTreeView.setRootIndex(self.fDirModel.index(HOME))
