@@ -536,6 +536,13 @@ const char* carla_get_supported_file_extensions()
     return retText;
 }
 
+const char* const* carla_get_supported_features()
+{
+    carla_debug("carla_get_supported_features()");
+
+    return nullptr;
+}
+
 // -------------------------------------------------------------------------------------------------------------------
 
 void carla_fflush(bool err)
