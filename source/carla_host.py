@@ -519,15 +519,22 @@ class HostWindow(QMainWindow):
         self.ui.text_logs.clear()
         self.setProperWindowTitle()
 
+        # Disable non-supported features
+        features = gCarla.utils.get_supported_features()
+
+        if "link" not in features:
+            self.ui.cb_transport_link.setEnabled(False)
+            self.ui.cb_transport_link.setVisible(False)
+
+        # Plugin needs to have timers always running so it receives messages
+        if self.host.isPlugin:
+            self.startTimers()
+
         # Qt needs this so it properly creates & resizes the canvas
         self.ui.tabWidget.blockSignals(True)
         self.ui.tabWidget.setCurrentIndex(1)
         self.ui.tabWidget.setCurrentIndex(0)
         self.ui.tabWidget.blockSignals(False)
-
-        # Plugin needs to have timers always running so it receives messages
-        if self.host.isPlugin:
-            self.startTimers()
 
         # Start in patchbay tab if using forced patchbay mode
         if host.processModeForced and host.processMode == ENGINE_PROCESS_MODE_PATCHBAY and not host.isControl:

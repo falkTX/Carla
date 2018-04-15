@@ -830,7 +830,7 @@ class SearchPluginsThread(QThread):
     def _pluginLook(self, percent, plugin):
         self.pluginLook.emit(percent, plugin)
 
-# ----------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Plugin Refresh Dialog
 
 class PluginRefreshW(QDialog):
@@ -844,7 +844,7 @@ class PluginRefreshW(QDialog):
             # kdevelop likes this :)
             self.host = host = CarlaHostNull()
 
-        # --------------------------------------------------------------------------------------------------------------
+        # -------------------------------------------------------------------------------------------------------------
         # Internal stuff
 
         hasNative  = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-native"))
@@ -857,7 +857,7 @@ class PluginRefreshW(QDialog):
         self.fIconYes = getIcon("dialog-ok-apply").pixmap(16, 16)
         self.fIconNo  = getIcon("dialog-error").pixmap(16, 16)
 
-        # --------------------------------------------------------------------------------------------------------------
+        # -------------------------------------------------------------------------------------------------------------
         # Set-up GUI
 
         self.ui.b_skip.setVisible(False)
@@ -949,12 +949,12 @@ class PluginRefreshW(QDialog):
                 self.ui.ch_dssi.setEnabled(False)
                 self.ui.ch_vst.setEnabled(False)
 
-        # --------------------------------------------------------------------------------------------------------------
+        # -------------------------------------------------------------------------------------------------------------
         # Load settings
 
         self.loadSettings()
 
-        # ----------------------------------------------------------------------------------------------------
+        # -------------------------------------------------------------------------------------------------------------
         # Hide bridges if disabled
 
         if not host.showPluginBridges:
@@ -995,12 +995,27 @@ class PluginRefreshW(QDialog):
             self.ui.label_win32.hide()
             self.ui.label_win64.hide()
 
-        # ----------------------------------------------------------------------------------------------------
+        # Disable non-supported features
+        features = gCarla.utils.get_supported_features()
+
+        if "gig" not in features:
+            self.ui.ch_gig.setChecked(False)
+            self.ui.ch_gig.setEnabled(False)
+
+        if "sf2" not in features:
+            self.ui.ch_sf2.setChecked(False)
+            self.ui.ch_sf2.setEnabled(False)
+
+        if "sfz" not in features:
+            self.ui.ch_sfz.setChecked(False)
+            self.ui.ch_sfz.setEnabled(False)
+
+        # -------------------------------------------------------------------------------------------------------------
         # Resize to minimum size, as it's very likely UI stuff was hidden
 
         self.resize(self.minimumSize())
 
-        # --------------------------------------------------------------------------------------------------------------
+        # -------------------------------------------------------------------------------------------------------------
         # Set-up connections
 
         self.finished.connect(self.slot_saveSettings)
@@ -1021,12 +1036,12 @@ class PluginRefreshW(QDialog):
         self.fThread.pluginLook.connect(self.slot_handlePluginLook)
         self.fThread.finished.connect(self.slot_handlePluginThreadFinished)
 
-        # --------------------------------------------------------------------------------------------------------------
+        # -------------------------------------------------------------------------------------------------------------
         # Post-connect setup
 
         self.slot_checkTools()
 
-    # ------------------------------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------------------------
 
     def loadSettings(self):
         settings = QSettings("falkTX", "CarlaRefresh2")
