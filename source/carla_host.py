@@ -306,10 +306,16 @@ class HostWindow(QMainWindow):
             self.ui.b_transport_stop.setEnabled(False)
             self.ui.b_transport_backwards.setEnabled(False)
             self.ui.b_transport_forwards.setEnabled(False)
+            self.ui.group_transport_controls.setEnabled(False)
+            self.ui.group_transport_controls.setVisible(False)
             self.ui.cb_transport_link.setEnabled(False)
+            self.ui.cb_transport_link.setVisible(False)
+            self.ui.cb_transport_jack.setEnabled(False)
+            self.ui.cb_transport_jack.setVisible(False)
             self.ui.dsb_transport_bpm.setEnabled(False)
+            self.ui.dsb_transport_bpm.setReadOnly(True)
 
-        if MACOS:
+        if MACOS: # FIXME
             self.ui.cb_transport_link.setEnabled(False)
 
         self.ui.w_transport.setEnabled(False)
@@ -771,6 +777,7 @@ class HostWindow(QMainWindow):
 
         self.ui.menu_PluginMacros.setEnabled(True)
         self.ui.menu_Canvas.setEnabled(True)
+        self.ui.w_transport.setEnabled(True)
 
         self.ui.act_canvas_show_internal.blockSignals(True)
         self.ui.act_canvas_show_external.blockSignals(True)
@@ -794,7 +801,7 @@ class HostWindow(QMainWindow):
             self.ui.act_file_save.setEnabled(canSave)
             self.ui.act_engine_start.setEnabled(False)
             self.ui.act_engine_stop.setEnabled(True)
-            self.ui.w_transport.setEnabled(transportMode != ENGINE_TRANSPORT_MODE_DISABLED)
+            self.enableTransport(transportMode != ENGINE_TRANSPORT_MODE_DISABLED)
 
         if self.host.isPlugin or not self.fSessionManagerName:
             self.ui.act_file_open.setEnabled(True)
@@ -817,12 +824,12 @@ class HostWindow(QMainWindow):
 
         self.ui.menu_PluginMacros.setEnabled(False)
         self.ui.menu_Canvas.setEnabled(False)
+        self.ui.w_transport.setEnabled(False)
 
         if not (self.host.isControl or self.host.isPlugin):
             self.ui.act_file_save.setEnabled(False)
             self.ui.act_engine_start.setEnabled(True)
             self.ui.act_engine_stop.setEnabled(False)
-            self.ui.w_transport.setEnabled(False)
 
         if self.host.isPlugin or not self.fSessionManagerName:
             self.ui.act_file_open.setEnabled(False)
@@ -1536,7 +1543,7 @@ class HostWindow(QMainWindow):
                 transportMode = ENGINE_TRANSPORT_MODE_INTERNAL
             transportExtra = ":link:" if self.ui.cb_transport_link.isChecked() else ""
 
-            self.ui.w_transport.setEnabled(transportMode != ENGINE_TRANSPORT_MODE_DISABLED)
+            self.enableTransport(transportMode != ENGINE_TRANSPORT_MODE_DISABLED)
             self.host.transportMode = transportMode
             self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, transportMode, transportExtra)
 
@@ -1547,6 +1554,10 @@ class HostWindow(QMainWindow):
 
     # --------------------------------------------------------------------------------------------------------
     # Settings (helpers)
+
+    def enableTransport(self, enabled):
+        self.ui.group_transport_controls.setEnabled(enabled)
+        self.ui.group_transport_settings.setEnabled(enabled)
 
     @pyqtSlot()
     def slot_restoreCanvasScrollbarValues(self):
