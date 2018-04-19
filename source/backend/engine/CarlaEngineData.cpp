@@ -32,7 +32,7 @@ uint8_t EngineControlEvent::convertToMidiData(const uint8_t channel, uint8_t dat
         break;
 
     case kEngineControlEventTypeParameter:
-        CARLA_SAFE_ASSERT_RETURN(param >= MAX_MIDI_VALUE, 0);
+        CARLA_SAFE_ASSERT_RETURN(param < MAX_MIDI_VALUE, 0);
 
         data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE | (channel & MIDI_CHANNEL_BIT));
 
