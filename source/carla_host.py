@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla host code
-# Copyright (C) 2011-2016 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -765,9 +765,9 @@ class HostWindow(QMainWindow):
     # --------------------------------------------------------------------------------------------------------
     # Engine (host callbacks)
 
-    @pyqtSlot(int, int, str)
-    def slot_handleEngineStartedCallback(self, processMode, transportMode, driverName):
-        self.fSampleRate = self.host.get_sample_rate()
+    @pyqtSlot(int, int, float, str)
+    def slot_handleEngineStartedCallback(self, processMode, transportMode, sampleRate, driverName):
+        self.fSampleRate = sampleRate
 
         self.ui.menu_PluginMacros.setEnabled(True)
         self.ui.menu_Canvas.setEnabled(True)
@@ -2416,7 +2416,7 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
     elif action == ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED:
         host.PatchbayConnectionRemovedCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_ENGINE_STARTED:
-        host.EngineStartedCallback.emit(value1, value2, valueStr)
+        host.EngineStartedCallback.emit(value1, value2, value3, valueStr)
     elif action == ENGINE_CALLBACK_ENGINE_STOPPED:
         host.EngineStoppedCallback.emit()
     elif action == ENGINE_CALLBACK_PROCESS_MODE_CHANGED:

@@ -1637,7 +1637,9 @@ protected:
 
             uiServerInfo();
             uiServerOptions();
-            uiServerCallback(ENGINE_CALLBACK_ENGINE_STARTED, 0, pData->options.processMode, pData->options.transportMode, 0.0f, "Plugin");
+            uiServerCallback(ENGINE_CALLBACK_ENGINE_STARTED, 0,
+                             pData->options.processMode, pData->options.transportMode,
+                             pData->sampleRate, "Plugin");
 
             fUiServer.writeShowMessage();
 

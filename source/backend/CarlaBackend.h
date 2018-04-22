@@ -177,7 +177,7 @@ static const uint PLUGIN_NEEDS_UI_MAIN_THREAD = 0x200;
 
 /*!
  * Plugin uses 1 program per MIDI channel.
- * @note: Only used in some internal plugins and gig+sf2 files.
+ * @note: Only used in some internal plugins, gig and sf2 files.
  */
 static const uint PLUGIN_USES_MULTI_PROGS = 0x400;
 
@@ -893,6 +893,7 @@ typedef enum {
      * Engine started.
      * @a value1   Process mode
      * @a value2   Transport mode
+     * @a value3   Sample rate
      * @a valuestr Engine driver
      * @see EngineProcessMode
      * @see EngineTransportMode

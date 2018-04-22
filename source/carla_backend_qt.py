@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla Backend code (Qt stuff)
-# Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -68,7 +68,7 @@ class CarlaHostSignals(QObject):
     PatchbayPortRenamedCallback = pyqtSignal(int, int, str)
     PatchbayConnectionAddedCallback = pyqtSignal(int, int, int, int, int)
     PatchbayConnectionRemovedCallback = pyqtSignal(int, int, int)
-    EngineStartedCallback = pyqtSignal(int, int, str)
+    EngineStartedCallback = pyqtSignal(int, int, float, str)
     EngineStoppedCallback = pyqtSignal()
     ProcessModeChangedCallback = pyqtSignal(int)
     TransportModeChangedCallback = pyqtSignal(int)

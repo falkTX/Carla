@@ -331,7 +331,9 @@ public:
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
             refreshExternalGraphPorts<PatchbayGraph>(pData->graph.getPatchbayGraph(), false);
 
-        callback(ENGINE_CALLBACK_ENGINE_STARTED, 0, pData->options.processMode, pData->options.transportMode, 0.0f, getCurrentDriverName());
+        callback(ENGINE_CALLBACK_ENGINE_STARTED, 0,
+                 pData->options.processMode, pData->options.transportMode,
+                 pData->sampleRate, getCurrentDriverName());
         return true;
     }
 

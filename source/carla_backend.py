@@ -216,7 +216,7 @@ PLUGIN_NEEDS_FIXED_BUFFERS = 0x100
 PLUGIN_NEEDS_UI_MAIN_THREAD = 0x200
 
 # Plugin uses 1 program per MIDI channel.
-# @note: Only used in some internal plugins and gig+sf2 files.
+# @note: Only used in some internal plugins, gig and sf2 files.
 PLUGIN_USES_MULTI_PROGS = 0x400
 
 # Plugin can make use of inline display API.
@@ -658,6 +658,7 @@ ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED = 28
 # Engine started.
 # @a value1   Process mode
 # @a value2   Transport mode
+# @a value3   Sample rate
 # @a valuestr Engine driver
 # @see EngineProcessMode
 # @see EngineTransportMode

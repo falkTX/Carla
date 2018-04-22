@@ -926,7 +926,7 @@ public:
             return false;
         }
 
-        const char* const jackClientName(jackbridge_get_client_name(fClient));
+        const char* const jackClientName = jackbridge_get_client_name(fClient);
 
         if (! pData->init(jackClientName))
         {
@@ -936,9 +936,11 @@ public:
             return false;
         }
 
+        const EngineOptions& opts(pData->options);
+
         pData->bufferSize = jackbridge_get_buffer_size(fClient);
         pData->sampleRate = jackbridge_get_sample_rate(fClient);
-        pData->initTime(pData->options.transportExtra);
+        pData->initTime(opts.transportExtra);
 
         jackbridge_set_thread_init_callback(fClient, carla_jack_thread_init_callback, nullptr);
         jackbridge_set_buffer_size_callback(fClient, carla_jack_bufsize_callback, this);
@@ -948,10 +950,10 @@ public:
         jackbridge_set_process_callback(fClient, carla_jack_process_callback, this);
         jackbridge_on_shutdown(fClient, carla_jack_shutdown_callback, this);
 
-        if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_JACK)
+        if (opts.transportMode == ENGINE_TRANSPORT_MODE_JACK)
             fTimebaseMaster = jackbridge_set_timebase_callback(fClient, true, carla_jack_timebase_callback, this);
 
-        if (pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
+        if (opts.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
             initJackPatchbay(jackClientName);
 
         jackbridge_set_client_registration_callback(fClient, carla_jack_client_registration_callback, this);
@@ -959,8 +961,7 @@ public:
         jackbridge_set_port_connect_callback(fClient, carla_jack_port_connect_callback, this);
         jackbridge_set_port_rename_callback(fClient, carla_jack_port_rename_callback, this);
 
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
-            pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        if (opts.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || opts.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         {
             fRackPorts[kRackPortAudioIn1]  = jackbridge_port_register(fClient, "audio-in1",  JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
             fRackPorts[kRackPortAudioIn2]  = jackbridge_port_register(fClient, "audio-in2",  JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
@@ -969,7 +970,7 @@ public:
             fRackPorts[kRackPortEventIn]   = jackbridge_port_register(fClient, "events-in",  JACK_DEFAULT_MIDI_TYPE,  JackPortIsInput, 0);
             fRackPorts[kRackPortEventOut]  = jackbridge_port_register(fClient, "events-out", JACK_DEFAULT_MIDI_TYPE,  JackPortIsOutput, 0);
 
-            if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+            if (opts.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
             {
                 // FIXME?
                 pData->graph.create(0, 0);
@@ -984,12 +985,14 @@ public:
         if (jackbridge_activate(fClient))
         {
             startThread();
-            callback(ENGINE_CALLBACK_ENGINE_STARTED, 0, pData->options.processMode, pData->options.transportMode, 0.0f, getCurrentDriverName());
+            callback(ENGINE_CALLBACK_ENGINE_STARTED, 0,
+                     opts.processMode, opts.transportMode,
+                     pData->sampleRate,
+                     getCurrentDriverName());
             return true;
         }
 
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
-            pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        if (opts.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || opts.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         {
             pData->graph.destroy();
         }
