@@ -1794,13 +1794,6 @@
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_17">
             <item>
-             <widget class="QCheckBox" name="ch_exp_transport">
-              <property name="text">
-               <string>Enable transport controls</string>
-              </property>
-             </widget>
-            </item>
-            <item>
              <widget class="QCheckBox" name="cb_exp_plugin_bridges">
               <property name="text">
                <string>Enable plugin bridges</string>

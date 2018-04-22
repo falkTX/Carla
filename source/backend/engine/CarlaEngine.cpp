@@ -1028,6 +1028,7 @@ bool CarlaEngine::loadFile(const char* const filename)
     const uint curPluginId(pData->nextPluginId < pData->curPluginCount ? pData->nextPluginId : pData->curPluginCount);
 
     // -------------------------------------------------------------------
+    // NOTE: please keep in sync with carla_get_supported_file_extensions!!
 
     if (extension == "carxp" || extension == "carxs")
         return loadProject(filename);
@@ -1045,7 +1046,31 @@ bool CarlaEngine::loadFile(const char* const filename)
 
     // -------------------------------------------------------------------
 
-    if (extension == "aif" || extension == "aiff" || extension == "bwf" || extension == "flac" || extension == "ogg" || extension == "wav")
+    if (
+#ifdef HAVE_SNDFILE
+        extension == "aif"  ||
+        extension == "aiff" ||
+        extension == "bwf"  ||
+        extension == "flac" ||
+        extension == "oga"  ||
+        extension == "ogg"  ||
+        extension == "w64"  ||
+        extension == "wav"  ||
+#endif
+#ifdef HAVE_FFMPEG
+        extension == "3g2" ||
+        extension == "3gp" ||
+        extension == "aac" ||
+        extension == "ac3" ||
+        extension == "amr" ||
+        extension == "ape" ||
+        extension == "mp2" ||
+        extension == "mp3" ||
+        extension == "mpc" ||
+        extension == "wma" ||
+#endif
+        false
+       )
     {
         if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "audiofile", 0, nullptr))
         {

@@ -267,9 +267,11 @@ class HostWindow(QMainWindow):
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (disk)
 
+        exts = gCarla.utils.get_supported_file_extensions()
+
         self.fDirModel = QFileSystemModel(self)
         self.fDirModel.setRootPath(HOME)
-        self.fDirModel.setNameFilters(gCarla.utils.get_supported_file_extensions().split(";"))
+        self.fDirModel.setNameFilters(tuple(("*." + i) for i in exts))
 
         self.ui.fileTreeView.setModel(self.fDirModel)
         self.ui.fileTreeView.setRootIndex(self.fDirModel.index(HOME))
@@ -306,10 +308,16 @@ class HostWindow(QMainWindow):
             self.ui.b_transport_stop.setEnabled(False)
             self.ui.b_transport_backwards.setEnabled(False)
             self.ui.b_transport_forwards.setEnabled(False)
+            self.ui.group_transport_controls.setEnabled(False)
+            self.ui.group_transport_controls.setVisible(False)
             self.ui.cb_transport_link.setEnabled(False)
+            self.ui.cb_transport_link.setVisible(False)
+            self.ui.cb_transport_jack.setEnabled(False)
+            self.ui.cb_transport_jack.setVisible(False)
             self.ui.dsb_transport_bpm.setEnabled(False)
+            self.ui.dsb_transport_bpm.setReadOnly(True)
 
-        if MACOS:
+        if MACOS: # FIXME
             self.ui.cb_transport_link.setEnabled(False)
 
         self.ui.w_transport.setEnabled(False)
@@ -511,15 +519,22 @@ class HostWindow(QMainWindow):
         self.ui.text_logs.clear()
         self.setProperWindowTitle()
 
+        # Disable non-supported features
+        features = gCarla.utils.get_supported_features()
+
+        if "link" not in features:
+            self.ui.cb_transport_link.setEnabled(False)
+            self.ui.cb_transport_link.setVisible(False)
+
+        # Plugin needs to have timers always running so it receives messages
+        if self.host.isPlugin:
+            self.startTimers()
+
         # Qt needs this so it properly creates & resizes the canvas
         self.ui.tabWidget.blockSignals(True)
         self.ui.tabWidget.setCurrentIndex(1)
         self.ui.tabWidget.setCurrentIndex(0)
         self.ui.tabWidget.blockSignals(False)
-
-        # Plugin needs to have timers always running so it receives messages
-        if self.host.isPlugin:
-            self.startTimers()
 
         # Start in patchbay tab if using forced patchbay mode
         if host.processModeForced and host.processMode == ENGINE_PROCESS_MODE_PATCHBAY and not host.isControl:
@@ -771,6 +786,7 @@ class HostWindow(QMainWindow):
 
         self.ui.menu_PluginMacros.setEnabled(True)
         self.ui.menu_Canvas.setEnabled(True)
+        self.ui.w_transport.setEnabled(True)
 
         self.ui.act_canvas_show_internal.blockSignals(True)
         self.ui.act_canvas_show_external.blockSignals(True)
@@ -794,7 +810,7 @@ class HostWindow(QMainWindow):
             self.ui.act_file_save.setEnabled(canSave)
             self.ui.act_engine_start.setEnabled(False)
             self.ui.act_engine_stop.setEnabled(True)
-            self.ui.w_transport.setEnabled(transportMode != ENGINE_TRANSPORT_MODE_DISABLED)
+            self.enableTransport(transportMode != ENGINE_TRANSPORT_MODE_DISABLED)
 
         if self.host.isPlugin or not self.fSessionManagerName:
             self.ui.act_file_open.setEnabled(True)
@@ -817,12 +833,12 @@ class HostWindow(QMainWindow):
 
         self.ui.menu_PluginMacros.setEnabled(False)
         self.ui.menu_Canvas.setEnabled(False)
+        self.ui.w_transport.setEnabled(False)
 
         if not (self.host.isControl or self.host.isPlugin):
             self.ui.act_file_save.setEnabled(False)
             self.ui.act_engine_start.setEnabled(True)
             self.ui.act_engine_stop.setEnabled(False)
-            self.ui.w_transport.setEnabled(False)
 
         if self.host.isPlugin or not self.fSessionManagerName:
             self.ui.act_file_open.setEnabled(False)
@@ -1530,29 +1546,15 @@ class HostWindow(QMainWindow):
             self.ui.act_add_jack.setVisible(False)
 
         if not (self.host.isControl or self.host.isPlugin):
-            if self.host.experimental:
-                if settings.value(CARLA_KEY_EXPERIMENTAL_TRANSPORT, CARLA_DEFAULT_EXPERIMENTAL_TRANSPORT, type=bool):
-                    if self.ui.cb_transport_jack.isChecked():
-                        transportMode = ENGINE_TRANSPORT_MODE_JACK
-                    else:
-                        transportMode = ENGINE_TRANSPORT_MODE_INTERNAL
-                    transportExtra = ":link:" if self.ui.cb_transport_link.isChecked() else ""
-                else:
-                    # Stop transport if becoming disabled
-                    if self.ui.w_transport.isEnabled() and self.host.is_engine_running():
-                        self.host.transport_pause()
-                        self.host.transport_relocate(0)
-                        self.host.transport_pause()
-
-                    transportMode  = ENGINE_TRANSPORT_MODE_DISABLED
-                    transportExtra = ""
-
-                self.ui.w_transport.setEnabled(transportMode != ENGINE_TRANSPORT_MODE_DISABLED)
-                self.host.transportMode = transportMode
-                self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, transportMode, transportExtra)
-
+            if self.ui.cb_transport_jack.isChecked():
+                transportMode = ENGINE_TRANSPORT_MODE_JACK
             else:
-                self.ui.w_transport.setEnabled(False)
+                transportMode = ENGINE_TRANSPORT_MODE_INTERNAL
+            transportExtra = ":link:" if self.ui.cb_transport_link.isChecked() else ""
+
+            self.enableTransport(transportMode != ENGINE_TRANSPORT_MODE_DISABLED)
+            self.host.transportMode = transportMode
+            self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, transportMode, transportExtra)
 
         self.fMiniCanvasUpdateTimeout = 1000 if self.fSavedSettings[CARLA_KEY_CANVAS_FANCY_EYE_CANDY] else 0
 
@@ -1561,6 +1563,10 @@ class HostWindow(QMainWindow):
 
     # --------------------------------------------------------------------------------------------------------
     # Settings (helpers)
+
+    def enableTransport(self, enabled):
+        self.ui.group_transport_controls.setEnabled(enabled)
+        self.ui.group_transport_settings.setEnabled(enabled)
 
     @pyqtSlot()
     def slot_restoreCanvasScrollbarValues(self):

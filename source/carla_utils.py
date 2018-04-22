@@ -165,7 +165,10 @@ class CarlaUtils(object):
         self.lib.carla_get_complete_license_text.restype = c_char_p
 
         self.lib.carla_get_supported_file_extensions.argtypes = None
-        self.lib.carla_get_supported_file_extensions.restype = c_char_p
+        self.lib.carla_get_supported_file_extensions.restype = POINTER(c_char_p)
+
+        self.lib.carla_get_supported_features.argtypes = None
+        self.lib.carla_get_supported_features.restype = POINTER(c_char_p)
 
         self.lib.carla_get_cached_plugin_count.argtypes = [c_enum, c_char_p]
         self.lib.carla_get_cached_plugin_count.restype = c_uint
@@ -262,13 +265,13 @@ class CarlaUtils(object):
     def get_complete_license_text(self):
         return charPtrToString(self.lib.carla_get_complete_license_text())
 
-    # Get all the supported file extensions in carla_load_file().
-    # Returned string uses this syntax:
-    # @code
-    # "*.ext1;*.ext2;*.ext3"
-    # @endcode
+    # Get the list of supported file extensions in carla_load_file().
     def get_supported_file_extensions(self):
-        return charPtrToString(self.lib.carla_get_supported_file_extensions())
+        return charPtrPtrToStringList(self.lib.carla_get_supported_file_extensions())
+
+    # Get the list of supported features in the current Carla build.
+    def get_supported_features(self):
+        return charPtrPtrToStringList(self.lib.carla_get_supported_features())
 
     # Get how many internal plugins are available.
     def get_cached_plugin_count(self, ptype, pluginPath):

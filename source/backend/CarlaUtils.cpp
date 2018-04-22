@@ -497,43 +497,77 @@ const char* carla_get_complete_license_text()
     return retText;
 }
 
-const char* carla_get_supported_file_extensions()
+const char* const* carla_get_supported_file_extensions()
 {
     carla_debug("carla_get_supported_file_extensions()");
 
-    static CarlaString retText;
-
-    if (retText.isEmpty())
-    {
-        retText =
+    // NOTE: please keep in sync with CarlaEngine::loadFile!!
+    static const char* const extensions[] = {
         // Base types
-        "*.carxp;*.carxs"
-        // MIDI files
-        ";*.mid;*.midi"
+        "carxp", "carxs",
+
+        // plugin files and resources
 #ifdef HAVE_FLUIDSYNTH
-        // fluidsynth (sf2)
-        ";*.sf2"
+        "sf2",
 #endif
 #ifdef HAVE_LINUXSAMPLER
-        // linuxsampler (gig and sfz)
-        ";*.gig;*.sfz"
+        "gig", "sfz",
 #endif
 #ifdef HAVE_ZYN_DEPS
-        // zynaddsubfx presets
-        ";*.xmz;*.xiz"
+        "xmz", "xiz",
 #endif
-        ;
+#if defined(CARLA_OS_MAC)
+        "vst",
+#else
+        "dll",
+        "so",
+#endif
 
         // Audio files
 #ifdef HAVE_SNDFILE
-        retText += ";*.aiff;*.flac;*.oga;*.ogg;*.w64;*.wav";
+        "aif", "aiff", "bwf", "flac", "oga", "ogg", "w64", "wav",
 #endif
 #ifdef HAVE_FFMPEG
-        retText += ";*.3g2;*.3gp;*.aac;*.ac3;*.amr;*.ape;*.mp2;*.mp3;*.mpc;*.wma";
+        "3g2", "3gp", "aac", "ac3", "amr", "ape", "mp2", "mp3", "mpc", "wma",
 #endif
-    }
 
-    return retText;
+        // MIDI files
+        "mid", "midi",
+
+        // terminator
+        nullptr
+    };
+
+    return extensions;
+}
+
+const char* const* carla_get_supported_features()
+{
+    carla_debug("carla_get_supported_features()");
+
+    static const char* const features[] = {
+#ifdef HAVE_FLUIDSYNTH
+        "sf2",
+#endif
+#ifdef HAVE_HYLIA
+        "link",
+#endif
+#ifdef HAVE_LIBLO
+        "osc",
+#endif
+#if defined(HAVE_LIBMAGIC) || defined(CARLA_OS_WIN)
+        "bridges",
+#endif
+#ifdef HAVE_LINUXSAMPLER
+        "gig", "sfz",
+#endif
+#ifdef HAVE_PYQT
+        "gui",
+#endif
+        nullptr
+    };
+
+    return features;
 }
 
 // -------------------------------------------------------------------------------------------------------------------

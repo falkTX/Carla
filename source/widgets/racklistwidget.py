@@ -194,16 +194,9 @@ class RackListWidget(QListWidget):
             host = CarlaHostNull()
             self.host = host
 
-        exts = gCarla.utils.get_supported_file_extensions().split(";")
+        exts = gCarla.utils.get_supported_file_extensions()
 
-        if WINDOWS or (LINUX and not MACOS):
-            # FIXME not for disabled bridges
-            exts.append(".dll")
-
-        if not (MACOS or WINDOWS):
-            exts.append(".so")
-
-        self.fSupportedExtensions = tuple(i.replace("*","").lower() for i in exts)
+        self.fSupportedExtensions = tuple(("." + i) for i in exts)
         self.fLastSelectedItem    = None
         self.fWasLastDragValid    = False
 
