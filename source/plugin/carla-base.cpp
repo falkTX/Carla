@@ -63,6 +63,7 @@ struct PluginListManager {
 
             if (std::strcmp(desc->label, "lfo"             ) == 0 ||
                 std::strcmp(desc->label, "midichanfilter"  ) == 0 ||
+                std::strcmp(desc->label, "midichanab"      ) == 0 ||
                 std::strcmp(desc->label, "midigain"        ) == 0 ||
                 std::strcmp(desc->label, "midijoin"        ) == 0 ||
                 std::strcmp(desc->label, "midisplit"       ) == 0 ||
