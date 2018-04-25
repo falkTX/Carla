@@ -95,7 +95,7 @@ static float midichanab_get_parameter_value(NativePluginHandle handle, uint32_t 
     if (index > MAX_MIDI_CHANNELS)
         return 0.0f;
 
-    return handlePtr->channels[index] ? 0.0f : 1.0f;
+    return handlePtr->channels[index] ? 1.0f : 0.0f;
 }
 
 static void midichanab_set_parameter_value(NativePluginHandle handle, uint32_t index, float value)
@@ -127,10 +127,6 @@ static void midichanab_process(NativePluginHandle handle, float** inBuffer, floa
 
             if (channels[channel])
             {
-                host->write_midi_event(host->handle, midiEvent);
-            }
-            else
-            {
                 tmpEvent.port    = midiEvent->port+1;
                 tmpEvent.time    = midiEvent->time;
                 tmpEvent.data[0] = midiEvent->data[0];
@@ -140,6 +136,10 @@ static void midichanab_process(NativePluginHandle handle, float** inBuffer, floa
                 tmpEvent.size    = midiEvent->size;
 
                 host->write_midi_event(host->handle, &tmpEvent);
+            }
+            else
+            {
+                host->write_midi_event(host->handle, midiEvent);
             }
         }
         else
