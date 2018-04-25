@@ -95,7 +95,7 @@ static float midichanab_get_parameter_value(NativePluginHandle handle, uint32_t 
     if (index > MAX_MIDI_CHANNELS)
         return 0.0f;
 
-    return handlePtr->channels[index] ? 1.0f : 0.0f;
+    return handlePtr->channels[index] ? 0.0f : 1.0f;
 }
 
 static void midichanab_set_parameter_value(NativePluginHandle handle, uint32_t index, float value)
