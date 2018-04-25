@@ -28,6 +28,7 @@
 extern void carla_register_native_plugin_bypass(void);
 extern void carla_register_native_plugin_lfo(void);
 extern void carla_register_native_plugin_midichanfilter(void);
+extern void carla_register_native_plugin_midichanab(void);
 extern void carla_register_native_plugin_midigain(void);
 extern void carla_register_native_plugin_midijoin(void);
 extern void carla_register_native_plugin_midisplit(void);
@@ -52,6 +53,7 @@ void carla_register_all_native_plugins(void)
     carla_register_native_plugin_bypass();
     carla_register_native_plugin_lfo();
     carla_register_native_plugin_midichanfilter();
+    carla_register_native_plugin_midichanab();
     carla_register_native_plugin_midigain();
     carla_register_native_plugin_midijoin();
     carla_register_native_plugin_midisplit();
