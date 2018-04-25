@@ -41,7 +41,7 @@ static NativePluginHandle midichanab_instantiate(const NativeHostDescriptor* hos
     handle->host = host;
 
     for (int i=MAX_MIDI_CHANNELS; --i>=0;)
-        handle->channels[i] = 1.0f;
+        handle->channels[i] = 0.0f;
 
     return handle;
 }
@@ -67,7 +67,7 @@ static const NativeParameter* midichanab_get_parameter_info(NativePluginHandle h
         return NULL;
 
     static NativeParameter param;
-    static const NativeParameterScalePoint scalePoints[2] = { { "Off", 0.0f }, { "On", 1.0f } };
+    static const NativeParameterScalePoint scalePoints[2] = { { "Output A", 0.0f }, { "Output B", 1.0f } };
     static char paramName[24];
 
     param.hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_BOOLEAN|NATIVE_PARAMETER_USES_SCALEPOINTS;
