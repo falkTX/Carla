@@ -134,7 +134,7 @@ static void midichanab_process(NativePluginHandle handle, float** inBuffer, floa
                 tmpEvent.port    = midiEvent->port+1;
                 tmpEvent.time    = midiEvent->time;
                 tmpEvent.data[0] = midiEvent->data[0];
-                tmpEvent.data[1] = (uint8_t)newnote;
+                tmpEvent.data[1] = midiEvent->data[1];
                 tmpEvent.data[2] = midiEvent->data[2];
                 tmpEvent.data[3] = midiEvent->data[3];
                 tmpEvent.size    = midiEvent->size;
