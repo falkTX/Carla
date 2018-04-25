@@ -73,7 +73,7 @@ static const NativeParameter* midichanab_get_parameter_info(NativePluginHandle h
     param.hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_BOOLEAN|NATIVE_PARAMETER_USES_SCALEPOINTS;
     param.name  = paramName;
     param.unit  = NULL;
-    param.ranges.def       = 1.0f;
+    param.ranges.def       = 0.0f;
     param.ranges.min       = 0.0f;
     param.ranges.max       = 1.0f;
     param.ranges.step      = 1.0f;
