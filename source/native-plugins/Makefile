@@ -28,6 +28,7 @@ OBJS = \
 	$(OBJDIR)/bypass.c.o \
 	$(OBJDIR)/lfo.c.o \
 	$(OBJDIR)/midi-channel-filter.c.o \
+	$(OBJDIR)/midi-channel-ab.c.o \
 	$(OBJDIR)/midi-gain.c.o \
 	$(OBJDIR)/midi-join.c.o \
 	$(OBJDIR)/midi-split.c.o \
