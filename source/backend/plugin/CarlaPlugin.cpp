@@ -273,6 +273,10 @@ void CarlaPlugin::updateCustomData() noexcept
 {
 }
 
+void CarlaPlugin::restoreLV2State() noexcept
+{
+}
+
 std::size_t CarlaPlugin::getChunkData(void** const dataPtr) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr, 0);
@@ -837,7 +841,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     // Part 5x - set lv2 state
 
     if (pluginType == PLUGIN_LV2 && pData->custom.count() > 0)
-        setCustomData(CUSTOM_DATA_TYPE_STRING, "CarlaLoadLv2StateNow", "true", true);
+        restoreLV2State();
 
     // ---------------------------------------------------------------
     // Part 6 - set chunk
@@ -1637,7 +1641,11 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
     // Ignore some keys
     if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) == 0)
     {
-        if (std::strncmp(key, "OSC:", 4) == 0 || std::strncmp(key, "CarlaAlternateFile", 18) == 0 || std::strcmp(key, "guiVisible") == 0)
+        const PluginType ptype = getType();
+
+        if ((ptype == PLUGIN_INTERNAL && std::strncmp(key, "CarlaAlternateFile", 18) == 0) ||
+            (ptype == PLUGIN_DSSI     && std::strcmp (key, "guiVisible") == 0) ||
+            (ptype == PLUGIN_LV2      && std::strncmp(key, "OSC:", 4) == 0))
             return;
     }
 

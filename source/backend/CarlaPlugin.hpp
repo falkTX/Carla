@@ -270,6 +270,11 @@ public:
     virtual void updateCustomData() noexcept;
 
     /*!
+     * Helper function for LV2 plugins, internal use only!
+     */
+    virtual void restoreLV2State() noexcept;
+
+    /*!
      * Get the complete plugin chunk data into @a dataPtr.
      *
      * @note Make sure to verify the plugin supports chunks before calling this function!

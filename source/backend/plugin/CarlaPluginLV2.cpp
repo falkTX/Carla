@@ -823,7 +823,53 @@ public:
     // -------------------------------------------------------------------
     // Information (current data)
 
-    // nothing
+    void restoreLV2State() noexcept override
+    {
+        if (fExt.state == nullptr)
+            return;
+
+        LV2_State_Status status = LV2_STATE_ERR_UNKNOWN;
+
+        {
+            const ScopedSingleProcessLocker spl(this, true);
+
+            try {
+                status = fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, 0, fFeatures);
+            } catch(...) {}
+
+            if (fHandle2 != nullptr)
+            {
+                try {
+                    fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, 0, fFeatures);
+                } catch(...) {}
+            }
+        }
+
+        switch (status)
+        {
+        case LV2_STATE_SUCCESS:
+            carla_debug("CarlaPluginLV2::updateLV2State() - success");
+            break;
+        case LV2_STATE_ERR_UNKNOWN:
+            carla_stderr("CarlaPluginLV2::updateLV2State() - unknown error");
+            break;
+        case LV2_STATE_ERR_BAD_TYPE:
+            carla_stderr("CarlaPluginLV2::updateLV2State() - error, bad type");
+            break;
+        case LV2_STATE_ERR_BAD_FLAGS:
+            carla_stderr("CarlaPluginLV2::updateLV2State() - error, bad flags");
+            break;
+        case LV2_STATE_ERR_NO_FEATURE:
+            carla_stderr("CarlaPluginLV2::updateLV2State() - error, missing feature");
+            break;
+        case LV2_STATE_ERR_NO_PROPERTY:
+            carla_stderr("CarlaPluginLV2::updateLV2State() - error, missing property");
+            break;
+        case LV2_STATE_ERR_NO_SPACE:
+            carla_stderr("CarlaPluginLV2::updateLV2State() - error, insufficient space");
+            break;
+        }
+    }
 
     // -------------------------------------------------------------------
     // Information (per-plugin data)
@@ -1168,57 +1214,6 @@ public:
 
         if (std::strcmp(type, CUSTOM_DATA_TYPE_PROPERTY) == 0)
             return CarlaPlugin::setCustomData(type, key, value, sendGui);
-
-        // we should only call state restore once
-        // so inject this in CarlaPlugin::loadSaveState
-        if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) == 0 && std::strcmp(key, "CarlaLoadLv2StateNow") == 0 && std::strcmp(value, "true") == 0)
-        {
-            if (fExt.state == nullptr)
-                return;
-
-            LV2_State_Status status = LV2_STATE_ERR_UNKNOWN;
-
-            {
-                const ScopedSingleProcessLocker spl(this, true);
-
-                try {
-                    status = fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, 0, fFeatures);
-                } catch(...) {}
-
-                if (fHandle2 != nullptr)
-                {
-                    try {
-                        fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, 0, fFeatures);
-                    } catch(...) {}
-                }
-            }
-
-            switch (status)
-            {
-            case LV2_STATE_SUCCESS:
-                carla_debug("CarlaPluginLV2::setCustomData(\"%s\", \"%s\", <value>, %s) - success", type, key, bool2str(sendGui));
-                break;
-            case LV2_STATE_ERR_UNKNOWN:
-                carla_stderr("CarlaPluginLV2::setCustomData(\"%s\", \"%s\", <value>, %s) - unknown error", type, key, bool2str(sendGui));
-                break;
-            case LV2_STATE_ERR_BAD_TYPE:
-                carla_stderr("CarlaPluginLV2::setCustomData(\"%s\", \"%s\", <value>, %s) - error, bad type", type, key, bool2str(sendGui));
-                break;
-            case LV2_STATE_ERR_BAD_FLAGS:
-                carla_stderr("CarlaPluginLV2::setCustomData(\"%s\", \"%s\", <value>, %s) - error, bad flags", type, key, bool2str(sendGui));
-                break;
-            case LV2_STATE_ERR_NO_FEATURE:
-                carla_stderr("CarlaPluginLV2::setCustomData(\"%s\", \"%s\", <value>, %s) - error, missing feature", type, key, bool2str(sendGui));
-                break;
-            case LV2_STATE_ERR_NO_PROPERTY:
-                carla_stderr("CarlaPluginLV2::setCustomData(\"%s\", \"%s\", <value>, %s) - error, missing property", type, key, bool2str(sendGui));
-                break;
-            case LV2_STATE_ERR_NO_SPACE:
-                carla_stderr("CarlaPluginLV2::setCustomData(\"%s\", \"%s\", <value>, %s) - error, insufficient space", type, key, bool2str(sendGui));
-                break;
-            }
-            return;
-        }
 
         CarlaPlugin::setCustomData(type, key, value, sendGui);
     }
@@ -4541,7 +4536,6 @@ public:
         carla_debug("CarlaPluginLV2::handleStateRetrieve(%i, %p, %p, %p)", key, size, type, flags);
 
         const char* const skey(carla_lv2_urid_unmap(this, key));
-
         CARLA_SAFE_ASSERT_RETURN(skey != nullptr, nullptr);
 
         const char* stype = nullptr;

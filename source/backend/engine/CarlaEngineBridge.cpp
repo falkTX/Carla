@@ -860,7 +860,7 @@ public:
                 {
                     const CustomData& cdata(plugin->getCustomData(i));
 
-                    if (std::strcmp(cdata.type, CUSTOM_DATA_TYPE_STRING) == 0 && std::strcmp(cdata.key, "CarlaLoadLv2StateNow") == 0 && std::strcmp(cdata.value, "true") == 0)
+                    if (std::strcmp(cdata.type, CUSTOM_DATA_TYPE_PROPERTY) == 0)
                         continue;
 
                     const uint32_t typeLen(static_cast<uint32_t>(std::strlen(cdata.type)));
