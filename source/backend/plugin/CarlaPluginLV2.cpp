@@ -54,6 +54,7 @@ CARLA_BACKEND_START_NAMESPACE
 static const CustomData       kCustomDataFallback       = { nullptr, nullptr, nullptr };
 static /* */ CustomData       kCustomDataFallbackNC     = { nullptr, nullptr, nullptr };
 static const ExternalMidiNote kExternalMidiNoteFallback = { -1, 0, 0 };
+static const char* const      kUnmapFallback            = "urn:null";
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -4432,9 +4433,8 @@ public:
 
     const char* getCustomURIDString(const LV2_URID urid) const noexcept
     {
-        static const char* const sFallback = "urn:null";
-        CARLA_SAFE_ASSERT_RETURN(urid != kUridNull, sFallback);
-        CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.size(), sFallback);
+        CARLA_SAFE_ASSERT_RETURN(urid != kUridNull, kUnmapFallback);
+        CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.size(), kUnmapFallback);
         carla_debug("CarlaPluginLV2::getCustomURIString(%i)", urid);
 
         return fCustomURIDs[urid].c_str();
@@ -4493,13 +4493,14 @@ public:
         CARLA_SAFE_ASSERT_RETURN(size > 0, LV2_STATE_ERR_NO_PROPERTY);
         CARLA_SAFE_ASSERT_RETURN(type != kUridNull, LV2_STATE_ERR_BAD_TYPE);
         CARLA_SAFE_ASSERT_RETURN(flags & LV2_STATE_IS_POD, LV2_STATE_ERR_BAD_FLAGS);
-        carla_debug("CarlaPluginLV2::handleStateStore(%i:\"%s\", %p, " P_SIZE ", %i:\"%s\", %i)", key, carla_lv2_urid_unmap(this, key), value, size, type, carla_lv2_urid_unmap(this, type), flags);
+        carla_debug("CarlaPluginLV2::handleStateStore(%i:\"%s\", %p, " P_SIZE ", %i:\"%s\", %i)",
+                    key, carla_lv2_urid_unmap(this, key), value, size, type, carla_lv2_urid_unmap(this, type), flags);
 
         const char* const skey(carla_lv2_urid_unmap(this, key));
         const char* const stype(carla_lv2_urid_unmap(this, type));
 
-        CARLA_SAFE_ASSERT_RETURN(skey != nullptr, LV2_STATE_ERR_BAD_TYPE);
-        CARLA_SAFE_ASSERT_RETURN(stype != nullptr, LV2_STATE_ERR_BAD_TYPE);
+        CARLA_SAFE_ASSERT_RETURN(skey != nullptr && skey != kUnmapFallback, LV2_STATE_ERR_BAD_TYPE);
+        CARLA_SAFE_ASSERT_RETURN(stype != nullptr && stype != kUnmapFallback, LV2_STATE_ERR_BAD_TYPE);
 
         // Check if we already have this key
         for (LinkedList<CustomData>::Itenerator it = pData->custom.begin2(); it.valid(); it.next())
@@ -4545,7 +4546,7 @@ public:
         carla_debug("CarlaPluginLV2::handleStateRetrieve(%i, %p, %p, %p)", key, size, type, flags);
 
         const char* const skey(carla_lv2_urid_unmap(this, key));
-        CARLA_SAFE_ASSERT_RETURN(skey != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(skey != nullptr && skey != kUnmapFallback, nullptr);
 
         const char* stype = nullptr;
         const char* stringData = nullptr;
@@ -4563,8 +4564,12 @@ public:
             }
         }
 
-        CARLA_SAFE_ASSERT_RETURN(stype != nullptr, nullptr);
-        CARLA_SAFE_ASSERT_RETURN(stringData != nullptr, nullptr);
+        if (stype == nullptr || stringData == nullptr)
+        {
+            carla_stderr("Plugin requested value for '%s' which is not available", skey);
+            *size = *type = *flags = 0;
+            return nullptr;
+        }
 
         *type  = carla_lv2_urid_map(this, stype);
         *flags = LV2_STATE_IS_POD;
@@ -4574,29 +4579,27 @@ public:
             *size = std::strlen(stringData);
             return stringData;
         }
-        else
+
+        if (fLastStateChunk != nullptr)
         {
-            if (fLastStateChunk != nullptr)
-            {
-                std::free(fLastStateChunk);
-                fLastStateChunk = nullptr;
-            }
+            std::free(fLastStateChunk);
+            fLastStateChunk = nullptr;
+        }
 
-            std::vector<uint8_t> chunk(carla_getChunkFromBase64String(stringData));
-            CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0, nullptr);
+        std::vector<uint8_t> chunk(carla_getChunkFromBase64String(stringData));
+        CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0, nullptr);
 
-            fLastStateChunk = std::malloc(chunk.size());
-            CARLA_SAFE_ASSERT_RETURN(fLastStateChunk != nullptr, nullptr);
+        fLastStateChunk = std::malloc(chunk.size());
+        CARLA_SAFE_ASSERT_RETURN(fLastStateChunk != nullptr, nullptr);
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-            std::memcpy(fLastStateChunk, chunk.data(), chunk.size());
+        std::memcpy(fLastStateChunk, chunk.data(), chunk.size());
 #else
-            std::memcpy(fLastStateChunk, &chunk.front(), chunk.size());
+        std::memcpy(fLastStateChunk, &chunk.front(), chunk.size());
 #endif
 
-            *size = chunk.size();
-            return fLastStateChunk;
-        }
+        *size = chunk.size();
+        return fLastStateChunk;
     }
 
     // -------------------------------------------------------------------
@@ -4761,7 +4764,8 @@ public:
         } break;
 
         default:
-            carla_stdout("CarlaPluginLV2::handleUIWrite(%i, %i, %i:\"%s\", %p) - unknown format", rindex, bufferSize, format, carla_lv2_urid_unmap(this, format), buffer);
+            carla_stdout("CarlaPluginLV2::handleUIWrite(%i, %i, %i:\"%s\", %p) - unknown format",
+                         rindex, bufferSize, format, carla_lv2_urid_unmap(this, format), buffer);
             break;
         }
     }
@@ -4814,7 +4818,8 @@ public:
             paramValue = static_cast<float>((*(const int64_t*)value));
             break;
         default:
-            carla_stdout("CarlaPluginLV2::handleLilvSetPortValue(\"%s\", %p, %i, %i:\"%s\") - unknown type", portSymbol, value, size, type, carla_lv2_urid_unmap(this, type));
+            carla_stdout("CarlaPluginLV2::handleLilvSetPortValue(\"%s\", %p, %i, %i:\"%s\") - unknown type",
+                         portSymbol, value, size, type, carla_lv2_urid_unmap(this, type));
             return;
         }
 
@@ -5689,7 +5694,7 @@ public:
         if (urid < uriCount)
         {
             const char* const ourURI(carla_lv2_urid_unmap(this, urid));
-            CARLA_SAFE_ASSERT_RETURN(ourURI != nullptr,);
+            CARLA_SAFE_ASSERT_RETURN(ourURI != nullptr && ourURI != kUnmapFallback,);
 
             if (std::strcmp(ourURI, uri) != 0)
             {

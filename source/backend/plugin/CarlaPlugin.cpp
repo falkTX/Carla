@@ -833,8 +833,20 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     // ---------------------------------------------------------------
     // Part 5x - set lv2 state
 
-    if (pluginType == PLUGIN_LV2 && pData->custom.count() > 0)
-        restoreLV2State();
+    if (pluginType == PLUGIN_LV2)
+    {
+        for (LinkedList<CustomData>::Itenerator it = pData->custom.begin2(); it.valid(); it.next())
+        {
+            const CustomData& customData(it.getValue(kCustomDataFallback));
+            CARLA_SAFE_ASSERT_CONTINUE(customData.isValid());
+
+            if (std::strcmp(customData.type, CUSTOM_DATA_TYPE_PROPERTY) == 0)
+                continue;
+
+            restoreLV2State();
+            break;
+        }
+    }
 
     // ---------------------------------------------------------------
     // Part 6 - set chunk
