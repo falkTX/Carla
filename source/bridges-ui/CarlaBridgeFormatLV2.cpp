@@ -441,7 +441,8 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, false);
 
 #if defined(BRIDGE_COCOA) || defined(BRIDGE_HWND) || defined(BRIDGE_X11)
-        fToolkit->setChildWindow(fWidget);
+        if (fWidget != nullptr)
+            fToolkit->setChildWindow(fWidget);
 #endif
 
         // ------------------------------------------------------------------------------------------------------------

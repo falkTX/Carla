@@ -1443,12 +1443,16 @@ public:
                         fFeatures[kFeatureIdUiParent]->data = fUI.window->getPtr();
                 }
 #endif
-                if (fUI.window != nullptr)
-                    fUI.window->setTitle(fLv2Options.windowTitle);
-
                 fUI.widget = nullptr;
                 fUI.handle = fUI.descriptor->instantiate(fUI.descriptor, fRdfDescriptor->URI, fUI.rdfDescriptor->Bundle,
                                                          carla_lv2_ui_write_function, this, &fUI.widget, fFeatures);
+
+                if (fUI.window != nullptr)
+                {
+                    fUI.window->setChildWindow(fUI.widget);
+                    fUI.window->setTitle(fLv2Options.windowTitle);
+                }
+
             }
 
             CARLA_SAFE_ASSERT(fUI.handle != nullptr);
@@ -1474,7 +1478,6 @@ public:
             {
                 if (fUI.window != nullptr)
                 {
-                    fUI.window->setChildWindow(fUI.widget);
                     fUI.window->show();
                 }
                 else if (fExt.uishow != nullptr)
