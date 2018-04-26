@@ -1449,7 +1449,8 @@ public:
 
                 if (fUI.window != nullptr)
                 {
-                    fUI.window->setChildWindow(fUI.widget);
+                    if (fUI.widget != nullptr)
+                        fUI.window->setChildWindow(fUI.widget);
                     fUI.window->setTitle(fLv2Options.windowTitle);
                 }
 
@@ -5259,10 +5260,12 @@ public:
         int eQt4, eQt5, eGtk2, eGtk3, eCocoa, eWindows, eX11, iCocoa, iWindows, iX11, iExt, iFinal;
         eQt4 = eQt5 = eGtk2 = eGtk3 = eCocoa = eWindows = eX11 = iCocoa = iWindows = iX11 = iExt = iFinal = -1;
 
-#if defined(BUILD_BRIDGE) || defined(LV2_UIS_ONLY_BRIDGES)
-        const bool preferUiBridges(true);
+#if defined(LV2_UIS_ONLY_BRIDGES)
+        const bool preferUiBridges = true;
+#elif defined(BUILD_BRIDGE)
+        const bool preferUiBridges = false;
 #else
-        const bool preferUiBridges(pData->engine->getOptions().preferUiBridges && (pData->hints & PLUGIN_IS_BRIDGE) == 0);
+        const bool preferUiBridges = pData->engine->getOptions().preferUiBridges;
 #endif
         bool hasShowInterface = false;
 
