@@ -709,7 +709,7 @@ public:
                 const float    value(fShmNonRtClientControl.readFloat());
 
                 if (plugin != nullptr && plugin->isEnabled())
-                    plugin->setParameterValue(index, value, false, false, false);
+                    plugin->setParameterValue(index, value, true, false, false);
                 break;
             }
 
@@ -735,7 +735,7 @@ public:
                 const int32_t index(fShmNonRtClientControl.readInt());
 
                 if (plugin != nullptr && plugin->isEnabled())
-                    plugin->setProgram(index, false, false, false);
+                    plugin->setProgram(index, true, false, false);
                 break;
             }
 
@@ -743,7 +743,7 @@ public:
                 const int32_t index(fShmNonRtClientControl.readInt());
 
                 if (plugin != nullptr && plugin->isEnabled())
-                    plugin->setMidiProgram(index, false, false, false);
+                    plugin->setMidiProgram(index, true, false, false);
                 break;
             }
 

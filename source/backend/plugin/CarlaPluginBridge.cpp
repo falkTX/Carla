@@ -1684,7 +1684,7 @@ public:
 
     void uiProgramChange(const uint32_t index) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count,);
+        CARLA_SAFE_ASSERT_RETURN(index < pData->prog.count,);
 
         const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
 
