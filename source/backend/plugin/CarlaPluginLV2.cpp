@@ -823,53 +823,7 @@ public:
     // -------------------------------------------------------------------
     // Information (current data)
 
-    void restoreLV2State() noexcept override
-    {
-        if (fExt.state == nullptr)
-            return;
-
-        LV2_State_Status status = LV2_STATE_ERR_UNKNOWN;
-
-        {
-            const ScopedSingleProcessLocker spl(this, true);
-
-            try {
-                status = fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, 0, fFeatures);
-            } catch(...) {}
-
-            if (fHandle2 != nullptr)
-            {
-                try {
-                    fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, 0, fFeatures);
-                } catch(...) {}
-            }
-        }
-
-        switch (status)
-        {
-        case LV2_STATE_SUCCESS:
-            carla_debug("CarlaPluginLV2::updateLV2State() - success");
-            break;
-        case LV2_STATE_ERR_UNKNOWN:
-            carla_stderr("CarlaPluginLV2::updateLV2State() - unknown error");
-            break;
-        case LV2_STATE_ERR_BAD_TYPE:
-            carla_stderr("CarlaPluginLV2::updateLV2State() - error, bad type");
-            break;
-        case LV2_STATE_ERR_BAD_FLAGS:
-            carla_stderr("CarlaPluginLV2::updateLV2State() - error, bad flags");
-            break;
-        case LV2_STATE_ERR_NO_FEATURE:
-            carla_stderr("CarlaPluginLV2::updateLV2State() - error, missing feature");
-            break;
-        case LV2_STATE_ERR_NO_PROPERTY:
-            carla_stderr("CarlaPluginLV2::updateLV2State() - error, missing property");
-            break;
-        case LV2_STATE_ERR_NO_SPACE:
-            carla_stderr("CarlaPluginLV2::updateLV2State() - error, insufficient space");
-            break;
-        }
-    }
+    // nothing
 
     // -------------------------------------------------------------------
     // Information (per-plugin data)
@@ -4156,6 +4110,57 @@ public:
             }
         }
 #endif
+    }
+
+    // -------------------------------------------------------------------
+    // Internal helper functions
+
+    void restoreLV2State() noexcept override
+    {
+        if (fExt.state == nullptr)
+            return;
+
+        LV2_State_Status status = LV2_STATE_ERR_UNKNOWN;
+
+        {
+            const ScopedSingleProcessLocker spl(this, true);
+
+            try {
+                status = fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, 0, fFeatures);
+            } catch(...) {}
+
+            if (fHandle2 != nullptr)
+            {
+                try {
+                    fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, 0, fFeatures);
+                } catch(...) {}
+            }
+        }
+
+        switch (status)
+        {
+        case LV2_STATE_SUCCESS:
+            carla_debug("CarlaPluginLV2::updateLV2State() - success");
+            break;
+        case LV2_STATE_ERR_UNKNOWN:
+            carla_stderr("CarlaPluginLV2::updateLV2State() - unknown error");
+            break;
+        case LV2_STATE_ERR_BAD_TYPE:
+            carla_stderr("CarlaPluginLV2::updateLV2State() - error, bad type");
+            break;
+        case LV2_STATE_ERR_BAD_FLAGS:
+            carla_stderr("CarlaPluginLV2::updateLV2State() - error, bad flags");
+            break;
+        case LV2_STATE_ERR_NO_FEATURE:
+            carla_stderr("CarlaPluginLV2::updateLV2State() - error, missing feature");
+            break;
+        case LV2_STATE_ERR_NO_PROPERTY:
+            carla_stderr("CarlaPluginLV2::updateLV2State() - error, missing property");
+            break;
+        case LV2_STATE_ERR_NO_SPACE:
+            carla_stderr("CarlaPluginLV2::updateLV2State() - error, insufficient space");
+            break;
+        }
     }
 
     // -------------------------------------------------------------------

@@ -269,14 +269,6 @@ const CustomData& CarlaPlugin::getCustomData(const uint32_t index) const noexcep
     return pData->custom.getAt(index, kCustomDataFallback);
 }
 
-void CarlaPlugin::updateCustomData() noexcept
-{
-}
-
-void CarlaPlugin::restoreLV2State() noexcept
-{
-}
-
 std::size_t CarlaPlugin::getChunkData(void** const dataPtr) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr, 0);
@@ -502,7 +494,7 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
 
     getLabel(strBuf);
 
-    pData->stateSave.type     = carla_strdup(getPluginTypeAsString(getType()));
+    pData->stateSave.type     = carla_strdup(getPluginTypeAsString(pluginType));
     pData->stateSave.name     = carla_strdup(pData->name);
     pData->stateSave.label    = carla_strdup(strBuf);
     pData->stateSave.uniqueId = getUniqueId();
@@ -611,7 +603,8 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
     // ---------------------------------------------------------------
     // Custom Data
 
-    updateCustomData();
+    if (pData->hints & PLUGIN_IS_BRIDGE)
+        waitForBridgeSaveSignal();
 
     for (LinkedList<CustomData>::Itenerator it = pData->custom.begin2(); it.valid(); it.next())
     {
@@ -2466,6 +2459,16 @@ uint32_t CarlaPlugin::getPatchbayNodeId() const noexcept
 void CarlaPlugin::setPatchbayNodeId(const uint32_t nodeId) noexcept
 {
     pData->nodeId = nodeId;
+}
+
+// -------------------------------------------------------------------
+
+void CarlaPlugin::restoreLV2State() noexcept
+{
+}
+
+void CarlaPlugin::waitForBridgeSaveSignal() noexcept
+{
 }
 
 // -------------------------------------------------------------------
