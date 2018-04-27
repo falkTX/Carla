@@ -1454,7 +1454,6 @@ public:
                         fUI.window->setChildWindow(fUI.widget);
                     fUI.window->setTitle(fLv2Options.windowTitle);
                 }
-
             }
 
             CARLA_SAFE_ASSERT(fUI.handle != nullptr);
@@ -5432,10 +5431,15 @@ public:
         const LV2_Property uiType(fUI.rdfDescriptor->Type);
 
         if (
-            (iFinal == eQt4 || iFinal == eQt5 || iFinal == eGtk2 || iFinal == eGtk3 ||
-             iFinal == eCocoa || iFinal == eWindows || iFinal == eX11)
+            (iFinal == eQt4     ||
+             iFinal == eQt5     ||
+             iFinal == eGtk2    ||
+             iFinal == eGtk3    ||
+             iFinal == eCocoa   ||
+             iFinal == eWindows ||
+             iFinal == eX11)
 #ifdef BUILD_BRIDGE
-            && preferUiBridges && ! hasShowInterface
+            && ! hasShowInterface
 #endif
             )
         {
