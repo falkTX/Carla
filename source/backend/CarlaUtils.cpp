@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -140,8 +140,6 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
 
         Lilv::Plugin lilvPlugin(cPlugin);
         CARLA_SAFE_ASSERT_BREAK(lilvPlugin.get_uri().is_uri());
-
-        carla_stdout("Filling info for LV2 with URI '%s'", lilvPlugin.get_uri().as_uri());
 
         // features
         info.hints = 0x0;
