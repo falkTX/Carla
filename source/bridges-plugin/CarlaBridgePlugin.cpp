@@ -169,8 +169,18 @@ public:
             if (! File::isAbsolutePath(gProjectFilename))
                 gProjectFilename = File::getCurrentWorkingDirectory().getChildFile(gProjectFilename).getFullPathName();
 
-            if (File(gProjectFilename).existsAsFile() && ! carla_load_plugin_state(0, gProjectFilename.toRawUTF8()))
-                carla_stderr("Plugin preset load failed, error was:\n%s", carla_get_last_error());
+            if (File(gProjectFilename).existsAsFile())
+            {
+                if (carla_load_plugin_state(0, gProjectFilename.toRawUTF8()))
+                    carla_stdout("Plugin state loaded sucessfully");
+                else
+                    carla_stderr("Plugin state load failed, error was:\n%s", carla_get_last_error());
+            }
+            else
+            {
+                carla_stdout("Previous plugin state in '%s' is non-existent, will start from default state",
+                             gProjectFilename.toRawUTF8());
+            }
         }
 
         gIsInitiated = true;
