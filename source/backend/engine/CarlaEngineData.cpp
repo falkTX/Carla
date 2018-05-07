@@ -125,7 +125,7 @@ void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data
         {
             CARLA_SAFE_ASSERT_RETURN(size >= 3,);
 
-            const uint8_t midiValue(carla_fixedValue<uint8_t>(0, 127, data[2])); // ensures 0.0<->1.0 value range
+            const uint8_t midiValue = carla_fixedValue<uint8_t>(0, 127, data[2]); // ensures 0.0<->1.0 value range
 
             ctrl.type  = kEngineControlEventTypeParameter;
             ctrl.param = midiControl;
