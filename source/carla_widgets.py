@@ -312,7 +312,7 @@ class PluginParameter(QWidget):
             self.ui.sb_control.setValue(-1)
         else:
             selControlStr = actSel.text()
-            selControl    = int(selControlStr.split(" ", 1)[0], 16)
+            selControl    = int(selControlStr.split(" ", 1)[0].replace("&",""), 16)
             self.ui.sb_control.setValue(selControl)
 
     @pyqtSlot()
