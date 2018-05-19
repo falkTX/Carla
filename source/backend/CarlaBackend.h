@@ -34,6 +34,7 @@
 # define CARLA_BACKEND_USE_NAMESPACE using namespace CarlaBackend;
 # include <algorithm>
 # include <cmath>
+# include <limits>
 /* Start namespace */
 CARLA_BACKEND_START_NAMESPACE
 #endif
