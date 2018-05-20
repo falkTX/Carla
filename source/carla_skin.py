@@ -225,6 +225,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
     def __init__(self, parent, host, pluginId, skinStyle):
         QFrame.__init__(self, parent)
         self.host = host
+        self.fParent = parent
 
         if False:
             # kdevelop likes this :)
@@ -297,6 +298,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         # -------------------------------------------------------------
         # Set-up connections
 
+        self.customContextMenuRequested.connect(self.slot_showCustomMenu)
         host.PluginRenamedCallback.connect(self.slot_handlePluginRenamedCallback)
         host.PluginUnavailableCallback.connect(self.slot_handlePluginUnavailableCallback)
         host.ParameterValueChangedCallback.connect(self.slot_handleParameterValueChangedCallback)
@@ -987,7 +989,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         self.setActive(yesNo, False, True)
 
     @pyqtSlot()
-    def slot_showDefaultCustomMenu(self):
+    def slot_showCustomMenu(self):
         menu = QMenu(self)
 
         # -------------------------------------------------------------
@@ -995,6 +997,17 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         actCompact = menu.addAction(self.tr("Expand") if isinstance(self, PluginSlot_Compact) else self.tr("Minimize"))
         menu.addSeparator()
+
+        # -------------------------------------------------------------
+        # Move up and down
+
+        actMoveUp   = menu.addAction(self.tr("Move Up"))
+        actMoveDown = menu.addAction(self.tr("Move Down"))
+
+        if self.fPluginId == 0:
+            actMoveUp.setEnabled(False)
+        if self.fPluginId >= self.fParent.getPluginCount():
+            actMoveDown.setEnabled(False)
 
         # -------------------------------------------------------------
         # Bypass and Enable/Disable
@@ -1068,6 +1081,15 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         elif actSel == actCompact:
             # FIXME
             gCarla.gui.compactPlugin(self.fPluginId)
+
+        # -------------------------------------------------------------
+        # Move up and down
+
+        elif actSel == actMoveUp:
+            gCarla.gui.switchPlugins(self.fPluginId, self.fPluginId-1)
+
+        elif actSel == actMoveDown:
+            gCarla.gui.switchPlugins(self.fPluginId, self.fPluginId+1)
 
         # -------------------------------------------------------------
         # Bypass and Enable/Disable
@@ -1369,8 +1391,6 @@ class PluginSlot_Calf(AbstractPluginSlot):
 
         self.ui.led_midi.setColor(self.ui.led_midi.CALF)
 
-        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
-
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
@@ -1433,8 +1453,6 @@ class PluginSlot_Classic(AbstractPluginSlot):
         self.peak_out = self.ui.peak_out
 
         self.ready()
-
-        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
 
     #------------------------------------------------------------------
 
@@ -1516,8 +1534,6 @@ class PluginSlot_Compact(AbstractPluginSlot):
 
         self.ready()
 
-        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
-
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
@@ -1553,8 +1569,6 @@ class PluginSlot_Default(AbstractPluginSlot):
         self.w_knobs_right = self.ui.w_knobs_right
 
         self.ready()
-
-        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
 
     #------------------------------------------------------------------
 
@@ -1644,8 +1658,6 @@ class PluginSlot_Presets(AbstractPluginSlot):
             self.w_knobs_right = self.ui.w_knobs_right
 
         self.ready()
-
-        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
 
         if usingMidiPrograms:
             self.ui.cb_presets.currentIndexChanged.connect(self.slot_midiProgramChanged)

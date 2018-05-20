@@ -633,17 +633,18 @@ void CarlaEngine::ProtectedData::doPluginsSwitch(const uint idA, const uint idB)
 
     CARLA_SAFE_ASSERT_RETURN(idA < curPluginCount,);
     CARLA_SAFE_ASSERT_RETURN(idB < curPluginCount,);
-    CARLA_SAFE_ASSERT_RETURN(plugins[idA].plugin != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(plugins[idB].plugin != nullptr,);
 
-#if 0
-    std::swap(plugins[idA].plugin, plugins[idB].plugin);
-#else
-    CarlaPlugin* const tmp(plugins[idA].plugin);
+    CarlaPlugin* const pluginA(plugins[idA].plugin);
+    CARLA_SAFE_ASSERT_RETURN(pluginA != nullptr,);
 
-    plugins[idA].plugin = plugins[idB].plugin;
-    plugins[idB].plugin = tmp;
-#endif
+    CarlaPlugin* const pluginB(plugins[idB].plugin);
+    CARLA_SAFE_ASSERT_RETURN(pluginB != nullptr,);
+
+    pluginA->setId(idB);
+    plugins[idA].plugin = pluginB;
+
+    pluginB->setId(idA);
+    plugins[idB].plugin = pluginA;
 }
 #endif
 
