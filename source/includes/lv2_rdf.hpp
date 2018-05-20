@@ -206,6 +206,13 @@ typedef uint32_t LV2_Property;
 #define LV2_IS_PORT_DESIGNATION_TIME_TICKS_PER_BEAT(x)    ((x) == LV2_PORT_DESIGNATION_TIME_TICKS_PER_BEAT)
 #define LV2_IS_PORT_DESIGNATION_TIME(x)                   ((x) >= LV2_PORT_DESIGNATION_TIME_BAR && (x) <= LV2_PORT_DESIGNATION_TIME_TICKS_PER_BEAT)
 
+// UI Port Protocol
+#define LV2_UI_PORT_PROTOCOL_FLOAT 1
+#define LV2_UI_PORT_PROTOCOL_PEAK  2
+
+#define LV2_IS_UI_PORT_PROTOCOL_FLOAT(x) ((x) == LV2_UI_PORT_PROTOCOL_FLOAT)
+#define LV2_IS_UI_PORT_PROTOCOL_PEAK(x)  ((x) == LV2_UI_PORT_PROTOCOL_PEAK)
+
 // UI Types
 #define LV2_UI_GTK2                      1
 #define LV2_UI_GTK3                      2
@@ -475,6 +482,27 @@ struct LV2_RDF_Feature {
     CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_Feature)
 };
 
+// Port Notification
+struct LV2_RDF_UI_PortNotification {
+    const char* Symbol;
+    LV2_Property Protocol;
+
+    LV2_RDF_UI_PortNotification() noexcept
+        : Symbol(nullptr),
+          Protocol(0) {}
+
+    ~LV2_RDF_UI_PortNotification() noexcept
+    {
+        if (Symbol != nullptr)
+        {
+            delete[] Symbol;
+            Symbol = nullptr;
+        }
+    }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_UI_PortNotification)
+};
+
 // UI
 struct LV2_RDF_UI {
     LV2_Property Type;
@@ -488,6 +516,9 @@ struct LV2_RDF_UI {
     uint32_t ExtensionCount;
     LV2_URI* Extensions;
 
+    uint32_t PortNotificationCount;
+    LV2_RDF_UI_PortNotification* PortNotifications;
+
     LV2_RDF_UI() noexcept
         : Type(0),
           URI(nullptr),
@@ -496,7 +527,9 @@ struct LV2_RDF_UI {
           FeatureCount(0),
           Features(nullptr),
           ExtensionCount(0),
-          Extensions(nullptr) {}
+          Extensions(nullptr),
+          PortNotificationCount(0),
+          PortNotifications(nullptr) {}
 
     ~LV2_RDF_UI() noexcept
     {
@@ -532,6 +565,11 @@ struct LV2_RDF_UI {
             }
             delete[] Extensions;
             Extensions = nullptr;
+        }
+        if (PortNotifications != nullptr)
+        {
+            delete[] PortNotifications;
+            PortNotifications = nullptr;
         }
     }
 
