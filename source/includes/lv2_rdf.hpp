@@ -1,6 +1,6 @@
 /*
  * Custom types to store LV2 information
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -29,6 +29,7 @@
 // Base Types
 typedef const char* LV2_URI;
 typedef uint32_t LV2_Property;
+#define LV2UI_INVALID_PORT_INDEX ((uint32_t)-1)
 
 // Port Midi Map Types
 #define LV2_PORT_MIDI_MAP_CC             1
@@ -485,10 +486,12 @@ struct LV2_RDF_Feature {
 // Port Notification
 struct LV2_RDF_UI_PortNotification {
     const char* Symbol;
+    uint32_t Index;
     LV2_Property Protocol;
 
     LV2_RDF_UI_PortNotification() noexcept
         : Symbol(nullptr),
+          Index(LV2UI_INVALID_PORT_INDEX),
           Protocol(0) {}
 
     ~LV2_RDF_UI_PortNotification() noexcept

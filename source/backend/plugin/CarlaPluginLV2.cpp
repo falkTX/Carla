@@ -4716,6 +4716,7 @@ public:
         switch (format)
         {
         case kUridNull: {
+            CARLA_SAFE_ASSERT_RETURN(rindex < fRdfDescriptor->PortCount,);
             CARLA_SAFE_ASSERT_RETURN(bufferSize == sizeof(float),);
 
             for (uint32_t i=0; i < pData->param.count; ++i)
@@ -4730,8 +4731,36 @@ public:
 
             const float value(*(const float*)buffer);
 
-            //if (carla_isNotEqual(fParamBuffers[index], value))
-            setParameterValue(index, value, false, true, true);
+            // check if we should feedback message back to UI
+            bool sendGui = false;
+
+            if (const uint32_t notifCount = fUI.rdfDescriptor->PortNotificationCount)
+            {
+                const char* const portSymbol = fRdfDescriptor->Ports[rindex].Symbol;
+
+                for (uint32_t i=0; i < notifCount; ++i)
+                {
+                    const LV2_RDF_UI_PortNotification& portNotif(fUI.rdfDescriptor->PortNotifications[i]);
+
+                    if (portNotif.Protocol != LV2_UI_PORT_PROTOCOL_FLOAT)
+                        continue;
+
+                    if (portNotif.Symbol != nullptr)
+                    {
+                        if (std::strcmp(portNotif.Symbol, portSymbol) != 0)
+                            continue;
+                    }
+                    else if (portNotif.Index != rindex)
+                    {
+                        continue;
+                    }
+
+                    sendGui = true;
+                    break;
+                }
+            }
+
+            setParameterValue(index, value, sendGui, true, true);
 
         } break;
 
@@ -5800,11 +5829,11 @@ private:
 
         ~UI()
         {
-            CARLA_ASSERT(handle == nullptr);
-            CARLA_ASSERT(widget == nullptr);
-            CARLA_ASSERT(descriptor == nullptr);
-            CARLA_ASSERT(rdfDescriptor == nullptr);
-            CARLA_ASSERT(window == nullptr);
+            CARLA_SAFE_ASSERT(handle == nullptr);
+            CARLA_SAFE_ASSERT(widget == nullptr);
+            CARLA_SAFE_ASSERT(descriptor == nullptr);
+            CARLA_SAFE_ASSERT(rdfDescriptor == nullptr);
+            CARLA_SAFE_ASSERT(window == nullptr);
         }
 
         CARLA_DECLARE_NON_COPY_STRUCT(UI);
