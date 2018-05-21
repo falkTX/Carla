@@ -712,8 +712,7 @@ PendingRtEventsRunner::~PendingRtEventsRunner() noexcept
 ScopedActionLock::ScopedActionLock(CarlaEngine* const engine,
                                    const EnginePostAction action,
                                    const uint pluginId,
-                                   const uint value,
-                                   const bool lockWait) noexcept
+                                   const uint value) noexcept
     : pData(engine->pData)
 {
     CARLA_SAFE_ASSERT_RETURN(action != kEnginePostActionNull,);
@@ -726,24 +725,41 @@ ScopedActionLock::ScopedActionLock(CarlaEngine* const engine,
         pData->nextAction.opcode    = action;
         pData->nextAction.pluginId  = pluginId;
         pData->nextAction.value     = value;
-        pData->nextAction.needsPost = lockWait;
+        pData->nextAction.needsPost = engine->isRunning();
         pData->nextAction.postDone  = false;
     }
 
-    if (lockWait)
+   #ifdef BUILD_BRIDGE
+    #define ACTION_MSG_PREFIX "Bridge: "
+   #else
+    #define ACTION_MSG_PREFIX ""
+   #endif
+
+    if (pData->nextAction.needsPost)
     {
         // block wait for unlock on processing side
-        carla_stdout("ScopedPluginAction(%i) - blocking START", pluginId);
+        carla_stdout(ACTION_MSG_PREFIX "ScopedPluginAction(%i) - blocking START", pluginId);
+
+        bool engineStoppedWhileWaiting = false;
 
         if (! pData->nextAction.postDone)
         {
-            if (pData->nextAction.sem != nullptr)
-                carla_sem_timedwait(*pData->nextAction.sem, 2000);
-            else
-                carla_sleep(2);
+            for (int i = 10; --i >= 0;)
+            {
+                if (pData->nextAction.sem != nullptr)
+                    carla_sem_timedwait(*pData->nextAction.sem, 200);
+                else
+                    carla_msleep(200);
+
+                if (! engine->isRunning())
+                {
+                    engineStoppedWhileWaiting = true;
+                    break;
+                }
+            }
         }
 
-        carla_stdout("ScopedPluginAction(%i) - blocking DONE", pluginId);
+        carla_stdout(ACTION_MSG_PREFIX "ScopedPluginAction(%i) - blocking DONE", pluginId);
 
         // check if anything went wrong...
         if (! pData->nextAction.postDone)
@@ -763,7 +779,9 @@ ScopedActionLock::ScopedActionLock(CarlaEngine* const engine,
             if (needsCorrection)
             {
                 pData->doNextPluginAction();
-                carla_stderr2("Failed to wait for engine, is audio not running?");
+
+                if (! engineStoppedWhileWaiting)
+                    carla_stderr2(ACTION_MSG_PREFIX "Failed to wait for engine, is audio not running?");
             }
         }
     }

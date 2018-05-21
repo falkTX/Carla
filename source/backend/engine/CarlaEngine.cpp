@@ -698,8 +698,7 @@ bool CarlaEngine::removePlugin(const uint id)
     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         pData->graph.removePlugin(plugin);
 
-    const bool lockWait(isRunning() /*&& pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS*/);
-    const ScopedActionLock sal(this, kEnginePostActionRemovePlugin, id, 0, lockWait);
+    const ScopedActionLock sal(this, kEnginePostActionRemovePlugin, id, 0);
 
     /*
     for (uint i=id; i < pData->curPluginCount; ++i)
@@ -755,8 +754,7 @@ bool CarlaEngine::removeAllPlugins()
 # endif
 #endif
 
-    const bool lockWait(isRunning());
-    const ScopedActionLock sal(this, kEnginePostActionZeroCount, 0, 0, lockWait);
+    const ScopedActionLock sal(this, kEnginePostActionZeroCount, 0, 0);
 
     callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
 
@@ -892,8 +890,7 @@ bool CarlaEngine::switchPlugins(const uint idA, const uint idB) noexcept
     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         pData->graph.replacePlugin(pluginA, pluginB);
 
-    const bool lockWait(isRunning() /*&& pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS*/);
-    const ScopedActionLock sal(this, kEnginePostActionSwitchPlugins, idA, idB, lockWait);
+    const ScopedActionLock sal(this, kEnginePostActionSwitchPlugins, idA, idB);
 
     // TODO
     /*

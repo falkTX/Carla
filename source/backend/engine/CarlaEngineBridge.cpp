@@ -93,6 +93,7 @@ public:
           fBaseNameRtClientControl(rtClientBaseName),
           fBaseNameNonRtClientControl(nonRtClientBaseName),
           fBaseNameNonRtServerControl(nonRtServerBaseName),
+          fClosingDown(false),
           fIsOffline(false),
           fFirstIdle(true),
           fLastPingTime(-1)
@@ -234,6 +235,9 @@ public:
 
     bool isRunning() const noexcept override
     {
+        if (fClosingDown)
+            return false;
+
         return isThreadRunning() || ! fFirstIdle;
     }
 
@@ -981,6 +985,7 @@ public:
             }
 
             case kPluginBridgeNonRtClientQuit:
+                fClosingDown = true;
                 signalThreadShouldExit();
                 callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0f, nullptr);
                 break;
@@ -1320,6 +1325,7 @@ protected:
 
                 case kPluginBridgeRtClientQuit: {
                     quitReceived = true;
+                    fClosingDown = true;
                     signalThreadShouldExit();
                 }   break;
                 }
@@ -1376,6 +1382,7 @@ private:
     CarlaString fBaseNameNonRtClientControl;
     CarlaString fBaseNameNonRtServerControl;
 
+    bool fClosingDown;
     bool fIsOffline;
     bool fFirstIdle;
     int64_t fLastPingTime;
