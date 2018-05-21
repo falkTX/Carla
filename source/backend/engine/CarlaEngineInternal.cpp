@@ -747,9 +747,14 @@ ScopedActionLock::ScopedActionLock(CarlaEngine* const engine,
             for (int i = 10; --i >= 0;)
             {
                 if (pData->nextAction.sem != nullptr)
-                    carla_sem_timedwait(*pData->nextAction.sem, 200);
+                {
+                    if (carla_sem_timedwait(*pData->nextAction.sem, 200))
+                        break;
+                }
                 else
+                {
                     carla_msleep(200);
+                }
 
                 if (! engine->isRunning())
                 {
