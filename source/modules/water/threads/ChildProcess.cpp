@@ -208,9 +208,9 @@ public:
     {
         if (childPID != 0)
         {
-            int childState;
-            const int pid = waitpid (childPID, &childState, WNOHANG);
-            return pid == 0 || ! (WIFEXITED (childState) || WIFSIGNALED (childState));
+            int childState = 0;
+            const int pid = waitpid (childPID, &childState, WNOHANG|WUNTRACED);
+            return pid == 0 || ! (WIFEXITED (childState) || WIFSIGNALED (childState) || WIFSTOPPED (childState));
         }
 
         return false;
