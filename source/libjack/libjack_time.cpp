@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -65,10 +65,17 @@ jack_time_t jack_frames_to_time(const jack_client_t* client, jack_nframes_t fram
     const JackClientState* const jclient = (const JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
 
-    return frames / jclient->server.sampleRate;
+    return static_cast<double>(frames) / jclient->server.sampleRate * 1000000.0;
 }
 
-// jack_nframes_t jack_time_to_frames(const jack_client_t *client, jack_time_t) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+jack_nframes_t jack_time_to_frames(const jack_client_t* client, jack_time_t time)
+{
+    const JackClientState* const jclient = (const JackClientState*)client;
+    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
+
+    return static_cast<double>(time) / 1000000.0 * jclient->server.sampleRate;
+}
 
 CARLA_EXPORT
 jack_time_t jack_get_time(void)

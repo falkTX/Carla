@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -24,6 +24,8 @@ CARLA_BACKEND_USE_NAMESPACE
 CARLA_EXPORT
 int jack_client_name_size(void)
 {
+    carla_debug("%s()", __FUNCTION__);
+
     return STR_MAX;
 }
 

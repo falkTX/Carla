@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -277,7 +277,7 @@ int jack_port_connected_to(const jack_port_t* port, const char* port_name)
 // --------------------------------------------------------------------------------------------------------------------
 
 CARLA_EXPORT
-const char** jack_port_get_connections (const jack_port_t* port)
+const char** jack_port_get_connections(const jack_port_t* port)
 {
     carla_stderr2("%s(%p)", __FUNCTION__, port);
     return nullptr;
@@ -299,7 +299,8 @@ int jack_port_tie(jack_port_t* src, jack_port_t* dst)
     return ENOSYS;
 
     // unused
-    (void)src; (void)dst;
+    (void)src;
+    (void)dst;
 }
 
 CARLA_EXPORT
@@ -343,9 +344,10 @@ int jack_port_unset_alias(jack_port_t* port, const char* alias)
 }
 
 CARLA_EXPORT
-int jack_port_get_aliases(const jack_port_t*, char* aliases[2])
+int jack_port_get_aliases(const jack_port_t*, const char* aliases[2])
 {
-    aliases[0] = aliases[1] = nullptr;
+    static const char nullChar = '\0';
+    aliases[0] = aliases[1] = &nullChar;
     return 0;
 }
 
