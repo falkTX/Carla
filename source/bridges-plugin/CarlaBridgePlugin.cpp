@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Bridge Plugin
- * Copyright (C) 2012-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -124,7 +124,8 @@ public:
     CarlaBridgePlugin(const bool useBridge, const char* const clientName, const char* const audioPoolBaseName,
                       const char* const rtClientBaseName, const char* const nonRtClientBaseName, const char* const nonRtServerBaseName)
         : fEngine(nullptr),
-          fUsingBridge(false)
+          fUsingBridge(false),
+          fUsingExec(false)
     {
         CARLA_ASSERT(clientName != nullptr && clientName[0] != '\0');
         carla_debug("CarlaBridgePlugin::CarlaBridgePlugin(%s, \"%s\", %s, %s, %s, %s)",
@@ -144,7 +145,8 @@ public:
     {
         carla_debug("CarlaBridgePlugin::~CarlaBridgePlugin()");
 
-        carla_engine_close();
+        if (! fUsingExec)
+            carla_engine_close();
     }
 
     bool isOk() const noexcept
@@ -154,9 +156,10 @@ public:
 
     // ---------------------------------------------------------------------
 
-    void exec(const bool useBridge, int argc, char* argv[])
+    void exec(const bool useBridge)
     {
         fUsingBridge = useBridge;
+        fUsingExec   = true;
 
         if (! useBridge)
         {
@@ -196,11 +199,7 @@ public:
 #endif
         }
 
-        carla_set_engine_about_to_close();
-        carla_remove_plugin(0);
-
-        // may be unused
-        return; (void)argc; (void)argv;
+        carla_engine_close();
     }
 
     // ---------------------------------------------------------------------
@@ -231,6 +230,7 @@ protected:
 private:
     const CarlaEngine* fEngine;
     bool               fUsingBridge;
+    bool               fUsingExec;
 
     static void callback(void* ptr, EngineCallbackOpcode action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr)
     {
@@ -488,7 +488,7 @@ int main(int argc, char* argv[])
             }
         }
 
-        bridge.exec(useBridge, argc, argv);
+        bridge.exec(useBridge);
     }
     else
     {
