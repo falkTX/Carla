@@ -32,7 +32,9 @@
 # define CARLA_BACKEND_START_NAMESPACE namespace CarlaBackend {
 # define CARLA_BACKEND_END_NAMESPACE }
 # define CARLA_BACKEND_USE_NAMESPACE using namespace CarlaBackend;
+# include <algorithm>
 # include <cmath>
+# include <limits>
 /* Start namespace */
 CARLA_BACKEND_START_NAMESPACE
 #endif
@@ -1453,7 +1455,12 @@ typedef struct {
         if (value >= 1.0f)
             return max;
 
-        return min * std::pow(max/min, value);
+        float rmin = min;
+
+        if (std::abs(min) < std::numeric_limits<float>::epsilon())
+            rmin = 0.00001f;
+
+        return rmin * std::pow(max/rmin, value);
     }
 #endif /* __cplusplus */
 

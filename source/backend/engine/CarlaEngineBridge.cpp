@@ -93,6 +93,7 @@ public:
           fBaseNameRtClientControl(rtClientBaseName),
           fBaseNameNonRtClientControl(nonRtClientBaseName),
           fBaseNameNonRtServerControl(nonRtServerBaseName),
+          fClosingDown(false),
           fIsOffline(false),
           fFirstIdle(true),
           fLastPingTime(-1)
@@ -234,6 +235,9 @@ public:
 
     bool isRunning() const noexcept override
     {
+        if (fClosingDown)
+            return false;
+
         return isThreadRunning() || ! fFirstIdle;
     }
 
@@ -709,7 +713,7 @@ public:
                 const float    value(fShmNonRtClientControl.readFloat());
 
                 if (plugin != nullptr && plugin->isEnabled())
-                    plugin->setParameterValue(index, value, false, false, false);
+                    plugin->setParameterValue(index, value, true, false, false);
                 break;
             }
 
@@ -735,7 +739,7 @@ public:
                 const int32_t index(fShmNonRtClientControl.readInt());
 
                 if (plugin != nullptr && plugin->isEnabled())
-                    plugin->setProgram(index, false, false, false);
+                    plugin->setProgram(index, true, false, false);
                 break;
             }
 
@@ -743,7 +747,7 @@ public:
                 const int32_t index(fShmNonRtClientControl.readInt());
 
                 if (plugin != nullptr && plugin->isEnabled())
-                    plugin->setMidiProgram(index, false, false, false);
+                    plugin->setMidiProgram(index, true, false, false);
                 break;
             }
 
@@ -860,7 +864,7 @@ public:
                 {
                     const CustomData& cdata(plugin->getCustomData(i));
 
-                    if (std::strcmp(cdata.type, CUSTOM_DATA_TYPE_STRING) == 0 && std::strcmp(cdata.key, "CarlaLoadLv2StateNow") == 0 && std::strcmp(cdata.value, "true") == 0)
+                    if (std::strcmp(cdata.type, CUSTOM_DATA_TYPE_PROPERTY) == 0)
                         continue;
 
                     const uint32_t typeLen(static_cast<uint32_t>(std::strlen(cdata.type)));
@@ -981,6 +985,7 @@ public:
             }
 
             case kPluginBridgeNonRtClientQuit:
+                fClosingDown = true;
                 signalThreadShouldExit();
                 callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0f, nullptr);
                 break;
@@ -1320,6 +1325,7 @@ protected:
 
                 case kPluginBridgeRtClientQuit: {
                     quitReceived = true;
+                    fClosingDown = true;
                     signalThreadShouldExit();
                 }   break;
                 }
@@ -1376,6 +1382,7 @@ private:
     CarlaString fBaseNameNonRtClientControl;
     CarlaString fBaseNameNonRtServerControl;
 
+    bool fClosingDown;
     bool fIsOffline;
     bool fFirstIdle;
     int64_t fLastPingTime;

@@ -303,7 +303,7 @@ private:
 class ScopedActionLock
 {
 public:
-    ScopedActionLock(CarlaEngine* const engine, const EnginePostAction action, const uint pluginId, const uint value, const bool lockWait) noexcept;
+    ScopedActionLock(CarlaEngine* const engine, const EnginePostAction action, const uint pluginId, const uint value) noexcept;
     ~ScopedActionLock() noexcept;
 
 private:

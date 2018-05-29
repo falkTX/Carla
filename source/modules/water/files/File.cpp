@@ -1327,11 +1327,12 @@ File File::getCurrentWorkingDirectory()
 
     char localBuffer [1024];
     char* cwd = getcwd (localBuffer, sizeof (localBuffer) - 1);
-    size_t bufferSize = 4096;
 
+    size_t bufferSize = 4096;
     while (cwd == nullptr && errno == ERANGE)
     {
-        heapBuffer.malloc (bufferSize);
+        CARLA_SAFE_ASSERT_RETURN(heapBuffer.malloc (bufferSize), File());
+
         cwd = getcwd (heapBuffer, bufferSize - 1);
         bufferSize += 1024;
     }

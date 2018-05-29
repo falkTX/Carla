@@ -121,6 +121,11 @@ class RackListItem(QListWidgetItem):
     def isUsingSkins(self):
         return self.fOptions['useSkins']
 
+    def isGuiShown(self):
+        if self.fWidget is None or self.fWidget.b_gui is not None:
+            return None
+        return self.fWidget.b_gui.isChecked()
+
     # --------------------------------------------------------------------------------------------------------
 
     def setPluginId(self, pluginId):
@@ -169,7 +174,7 @@ class RackListItem(QListWidgetItem):
         self.fWidget = createPluginSlot(self.fParent, self.host, self.fPluginId, self.fOptions)
         self.fWidget.setFixedHeight(self.fWidget.getFixedHeight())
 
-        if wasGuiShown == True and self.fWidget.b_gui is not None:
+        if wasGuiShown and self.fWidget.b_gui is not None:
             self.fWidget.b_gui.setChecked(True)
 
         self.setSizeHint(QSize(self.kMinimumWidth, self.fWidget.getFixedHeight()))
@@ -180,6 +185,24 @@ class RackListItem(QListWidgetItem):
             self.host.set_custom_data(self.fPluginId, CUSTOM_DATA_TYPE_PROPERTY,
                                       "CarlaSkinIsCompacted", "true" if self.fOptions['compact'] else "false")
 
+    def recreateWidget2(self, wasCompacted, wasGuiShown):
+        self.fOptions['compact'] = wasCompacted
+
+        self.close()
+
+        self.fWidget = createPluginSlot(self.fParent, self.host, self.fPluginId, self.fOptions)
+        self.fWidget.setFixedHeight(self.fWidget.getFixedHeight())
+
+        if wasGuiShown and self.fWidget.b_gui is not None:
+            self.fWidget.b_gui.setChecked(True)
+
+        self.setSizeHint(QSize(self.kMinimumWidth, self.fWidget.getFixedHeight()))
+
+        self.fParent.setItemWidget(self, self.fWidget)
+
+        self.host.set_custom_data(self.fPluginId, CUSTOM_DATA_TYPE_PROPERTY,
+                                  "CarlaSkinIsCompacted", "true" if wasCompacted else "false")
+
 # ------------------------------------------------------------------------------------------------------------
 # Rack Widget
 
@@ -187,12 +210,12 @@ class RackListWidget(QListWidget):
     def __init__(self, parent):
         QListWidget.__init__(self, parent)
         self.host = None
+        self.fParent = None
 
         if False:
             # kdevelop likes this :)
             from carla_backend import CarlaHostMeta
-            host = CarlaHostNull()
-            self.host = host
+            self.host = host = CarlaHostNull()
 
         exts = gCarla.utils.get_supported_file_extensions()
 
@@ -221,8 +244,12 @@ class RackListWidget(QListWidget):
     def createItem(self, pluginId, useSkins):
         return RackListItem(self, pluginId, useSkins)
 
-    def setHost(self, host):
+    def getPluginCount(self):
+        return self.fParent.getPluginCount()
+
+    def setHostAndParent(self, host, parent):
         self.host = host
+        self.fParent = parent
 
     # --------------------------------------------------------------------------------------------------------
 

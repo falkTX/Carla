@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla plugin/slot skin code
-# Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -189,15 +189,11 @@ def getModColorFromCategory(category):
 #
 
 def setPixmapDialStyle(widget, parameterId, parameterCount, skinStyle):
-    if "calf" in skinStyle:
+    if skinStyle.startswith("calf"):
         widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
         widget.setPixmap(7)
 
-    elif skinStyle == "mod":
-        widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-        widget.setPixmap(14)
-
-    elif skinStyle == "openav":
+    elif skinStyle.startswith("openav"):
         widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
         if parameterId == PARAMETER_DRYWET:
             widget.setPixmap(13)
@@ -229,6 +225,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
     def __init__(self, parent, host, pluginId, skinStyle):
         QFrame.__init__(self, parent)
         self.host = host
+        self.fParent = parent
 
         if False:
             # kdevelop likes this :)
@@ -301,6 +298,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         # -------------------------------------------------------------
         # Set-up connections
 
+        self.customContextMenuRequested.connect(self.slot_showCustomMenu)
         host.PluginRenamedCallback.connect(self.slot_handlePluginRenamedCallback)
         host.PluginUnavailableCallback.connect(self.slot_handlePluginUnavailableCallback)
         host.ParameterValueChangedCallback.connect(self.slot_handleParameterValueChangedCallback)
@@ -369,11 +367,13 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
     def ready(self):
         self.fIsActive = bool(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_ACTIVE) >= 0.5)
 
+        isCalfSkin = self.fSkinStyle.startswith("calf") and not isinstance(self, PluginSlot_Compact)
+
         if self.b_enable is not None:
             self.b_enable.setChecked(self.fIsActive)
             self.b_enable.clicked.connect(self.slot_enableClicked)
 
-            if "calf" in self.fSkinStyle and not isinstance(self, PluginSlot_Compact):
+            if isCalfSkin:
                 self.b_enable.setPixmaps(":/bitmaps/button_calf3.png", ":/bitmaps/button_calf3_down.png", ":/bitmaps/button_calf3.png")
             else:
                 self.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
@@ -382,7 +382,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             self.b_gui.clicked.connect(self.slot_showCustomUi)
             self.b_gui.setEnabled(bool(self.fPluginInfo['hints'] & PLUGIN_HAS_CUSTOM_UI))
 
-            if "calf" in self.fSkinStyle and not isinstance(self, PluginSlot_Compact):
+            if isCalfSkin:
                 self.b_gui.setPixmaps(":/bitmaps/button_calf2.png", ":/bitmaps/button_calf2_down.png", ":/bitmaps/button_calf2_hover.png")
             elif self.fPluginInfo['iconName'] == "distrho" or self.fSkinStyle in ("3bandeq","3bandsplitter","pingpongpan"):
                 self.b_gui.setPixmaps(":/bitmaps/button_distrho.png", ":/bitmaps/button_distrho_down.png", ":/bitmaps/button_distrho_hover.png")
@@ -394,7 +394,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         if self.b_edit is not None:
             self.b_edit.clicked.connect(self.slot_showEditDialog)
 
-            if "calf" in self.fSkinStyle and not isinstance(self, PluginSlot_Compact):
+            if isCalfSkin:
                 self.b_edit.setPixmaps(":/bitmaps/button_calf2.png", ":/bitmaps/button_calf2_down.png", ":/bitmaps/button_calf2_hover.png")
             else:
                 self.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
@@ -414,15 +414,15 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
             nameFont = self.label_name.font()
 
-            if self.fSkinStyle == "openav":
+            if self.fSkinStyle.startswith("calf"):
+                nameFont.setBold(True)
+                nameFont.setPixelSize(12)
+
+            elif self.fSkinStyle.startswith("openav"):
                 QFontDatabase.addApplicationFont(":/fonts/uranium.ttf")
                 nameFont.setFamily("Uranium")
                 nameFont.setPixelSize(15)
                 nameFont.setCapitalization(QFont.AllUppercase)
-
-            elif "calf" in self.fSkinStyle:
-                nameFont.setBold(True)
-                nameFont.setPixelSize(12)
 
             else:
                 nameFont.setBold(True)
@@ -460,11 +460,11 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             self.peak_in.setMeterColor(DigitalPeakMeter.COLOR_GREEN)
             self.peak_in.setMeterOrientation(DigitalPeakMeter.HORIZONTAL)
 
-            if "calf" in self.fSkinStyle:
+            if self.fSkinStyle.startswith("calf"):
                 self.peak_in.setMeterStyle(DigitalPeakMeter.STYLE_CALF)
             elif self.fSkinStyle == "rncbc":
                 self.peak_in.setMeterStyle(DigitalPeakMeter.STYLE_RNCBC)
-            elif self.fSkinStyle in ("mod", "openav", "zynfx"):
+            elif self.fSkinStyle.startswith("openav") or self.fSkinStyle == "zynfx":
                 self.peak_in.setMeterStyle(DigitalPeakMeter.STYLE_OPENAV)
 
             if self.fPeaksInputCount == 0 and not isinstance(self, PluginSlot_Classic):
@@ -475,11 +475,11 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             self.peak_out.setMeterColor(DigitalPeakMeter.COLOR_BLUE)
             self.peak_out.setMeterOrientation(DigitalPeakMeter.HORIZONTAL)
 
-            if "calf" in self.fSkinStyle:
+            if self.fSkinStyle.startswith("calf"):
                 self.peak_out.setMeterStyle(DigitalPeakMeter.STYLE_CALF)
             elif self.fSkinStyle == "rncbc":
                 self.peak_out.setMeterStyle(DigitalPeakMeter.STYLE_RNCBC)
-            elif self.fSkinStyle in ("mod", "openav", "zynfx"):
+            elif self.fSkinStyle.startswith("openav") or self.fSkinStyle == "zynfx":
                 self.peak_out.setMeterStyle(DigitalPeakMeter.STYLE_OPENAV)
 
             if self.fPeaksOutputCount == 0 and not isinstance(self, PluginSlot_Classic):
@@ -487,16 +487,17 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         # -------------------------------------------------------------
 
-        if self.fSkinStyle == "mod":
+        if self.fSkinStyle == "openav":
             styleSheet = """
                 QFrame#PluginWidget {
-                    background-color: rgb(%i, %i, %i);
+                    background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                                      stop: 0 #383838, stop: %f #111111, stop: 1.0 #111111);
                 }
                 QLabel#label_name          { color: #FFFFFF; }
                 QLabel#label_name:disabled { color: #505050; }
-            """ % getModColorFromCategory(self.fPluginInfo['category'])
+            """ % (0.95 if isinstance(self, PluginSlot_Compact) else 0.35)
 
-        elif self.fSkinStyle == "openav":
+        elif self.fSkinStyle == "openav-old":
             styleSheet = """
                 QFrame#PluginWidget {
                     background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
@@ -988,7 +989,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         self.setActive(yesNo, False, True)
 
     @pyqtSlot()
-    def slot_showDefaultCustomMenu(self):
+    def slot_showCustomMenu(self):
         menu = QMenu(self)
 
         # -------------------------------------------------------------
@@ -996,6 +997,17 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         actCompact = menu.addAction(self.tr("Expand") if isinstance(self, PluginSlot_Compact) else self.tr("Minimize"))
         menu.addSeparator()
+
+        # -------------------------------------------------------------
+        # Move up and down
+
+        actMoveUp   = menu.addAction(self.tr("Move Up"))
+        actMoveDown = menu.addAction(self.tr("Move Down"))
+
+        if self.fPluginId == 0:
+            actMoveUp.setEnabled(False)
+        if self.fPluginId >= self.fParent.getPluginCount():
+            actMoveDown.setEnabled(False)
 
         # -------------------------------------------------------------
         # Bypass and Enable/Disable
@@ -1069,6 +1081,15 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         elif actSel == actCompact:
             # FIXME
             gCarla.gui.compactPlugin(self.fPluginId)
+
+        # -------------------------------------------------------------
+        # Move up and down
+
+        elif actSel == actMoveUp:
+            gCarla.gui.switchPlugins(self.fPluginId, self.fPluginId-1)
+
+        elif actSel == actMoveDown:
+            gCarla.gui.switchPlugins(self.fPluginId, self.fPluginId+1)
 
         # -------------------------------------------------------------
         # Bypass and Enable/Disable
@@ -1370,8 +1391,6 @@ class PluginSlot_Calf(AbstractPluginSlot):
 
         self.ui.led_midi.setColor(self.ui.led_midi.CALF)
 
-        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
-
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
@@ -1434,8 +1453,6 @@ class PluginSlot_Classic(AbstractPluginSlot):
         self.peak_out = self.ui.peak_out
 
         self.ready()
-
-        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
 
     #------------------------------------------------------------------
 
@@ -1517,8 +1534,6 @@ class PluginSlot_Compact(AbstractPluginSlot):
 
         self.ready()
 
-        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
-
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
@@ -1555,14 +1570,9 @@ class PluginSlot_Default(AbstractPluginSlot):
 
         self.ready()
 
-        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
-
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
-        if self.fSkinStyle == "mod":
-            return 86
-
         return 80
 
     #------------------------------------------------------------------
@@ -1648,8 +1658,6 @@ class PluginSlot_Presets(AbstractPluginSlot):
             self.w_knobs_right = self.ui.w_knobs_right
 
         self.ready()
-
-        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
 
         if usingMidiPrograms:
             self.ui.cb_presets.currentIndexChanged.connect(self.slot_midiProgramChanged)
@@ -1838,12 +1846,10 @@ def getSkinStyle(host, pluginId):
     if pluginName.split(" ", 1)[0].lower() == "calf":
         return "calf_black" if "mono" in pluginLabel else "calf_blue"
 
-    # MOD
-    #if pluginLabel.startswith("http://moddevices.com/") or pluginLabel.startswith("http://plugin.org.uk/swh-plugins/"):
-        #return "mod"
-
     # OpenAV
     if pluginMaker == "OpenAV Productions":
+        return "openav-old"
+    if pluginMaker == "OpenAV":
         return "openav"
 
     # ZynFX
@@ -1880,7 +1886,7 @@ def createPluginSlot(parent, host, pluginId, options):
     if "compact" in skinStyle or options['compact']:
         return PluginSlot_Compact(parent, host, pluginId, skinStyle)
 
-    if "calf" in skinStyle:
+    if skinStyle.startswith("calf"):
         return PluginSlot_Calf(parent, host, pluginId, skinStyle)
 
     if skinStyle in ("mpresets", "presets", "zynfx"):

@@ -127,8 +127,13 @@ else:
 # Set label (optional)
 
 if len(sys.argv) > arg:
-    if FORMAT in ("internal", "lv2"):
+    if FORMAT == "internal":
         print("label/uri already set, ignoring 2nd label")
+    elif FORMAT == "lv2":
+        newpwd = sys.argv[arg]
+        if os.path.exists(newpwd):
+            print("using path hack for lv2 plugin")
+            os.chdir(newpwd)
     else:
         LABEL = sys.argv[arg]
     arg += 1

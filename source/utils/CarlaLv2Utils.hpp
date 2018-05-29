@@ -1,6 +1,6 @@
 /*
  * Carla LV2 utils
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -247,6 +247,10 @@ public:
 
     Lilv::Node state_state;
 
+    Lilv::Node ui_portIndex;
+    Lilv::Node ui_portNotif;
+    Lilv::Node ui_protocol;
+
     Lilv::Node value_default;
     Lilv::Node value_minimum;
     Lilv::Node value_maximum;
@@ -372,6 +376,10 @@ public:
           preset_preset      (new_uri(LV2_PRESETS__Preset)),
 
           state_state        (new_uri(LV2_STATE__state)),
+
+          ui_portIndex       (new_uri(LV2_UI__portIndex)),
+          ui_portNotif       (new_uri(LV2_UI__portNotification)),
+          ui_protocol        (new_uri(LV2_UI__protocol)),
 
           value_default      (new_uri(LV2_CORE__default)),
           value_minimum      (new_uri(LV2_CORE__minimum)),
@@ -2477,6 +2485,69 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                     }
 
                     lilv_nodes_free(const_cast<LilvNodes*>(lilvExtensionDataNodes.me));
+                }
+
+                // ----------------------------------------------------------------------------------------------------
+                // Set UI Port Notifications
+                {
+                    Lilv::Nodes portNotifNodes(lv2World.find_nodes(lilvUI.get_uri(), lv2World.ui_portNotif.me, nullptr));
+
+                    if (portNotifNodes.size() > 0)
+                    {
+                        rdfUI->PortNotificationCount = portNotifNodes.size();
+                        rdfUI->PortNotifications = new LV2_RDF_UI_PortNotification[rdfUI->PortNotificationCount];
+
+                        uint32_t h2 = 0;
+                        LILV_FOREACH(nodes, it2, portNotifNodes)
+                        {
+                            CARLA_SAFE_ASSERT_BREAK(h2 < rdfUI->PortNotificationCount);
+
+                            Lilv::Node portNotifNode(portNotifNodes.get(it2));
+                            LV2_RDF_UI_PortNotification* const rdfPortNotif(&rdfUI->PortNotifications[h2++]);
+
+                            LilvNode* const protocolNode = lilv_world_get(lv2World.me, portNotifNode,
+                                                                          lv2World.ui_protocol.me, nullptr);
+                            CARLA_SAFE_ASSERT_CONTINUE(protocolNode != nullptr);
+                            CARLA_SAFE_ASSERT_CONTINUE(lilv_node_is_uri(protocolNode));
+
+                            const char* const protocol = lilv_node_as_uri(protocolNode);
+                            CARLA_SAFE_ASSERT_CONTINUE(protocol != nullptr && protocol[0] != '\0');
+
+                            /**/ if (std::strcmp(protocol, LV2_UI__floatProtocol) == 0)
+                                rdfPortNotif->Protocol = LV2_UI_PORT_PROTOCOL_FLOAT;
+                            else if (std::strcmp(protocol, LV2_UI__peakProtocol) == 0)
+                                rdfPortNotif->Protocol = LV2_UI_PORT_PROTOCOL_PEAK;
+
+                            /**/ if (LilvNode* const symbolNode = lilv_world_get(lv2World.me, portNotifNode,
+                                                                                 lv2World.symbol.me, nullptr))
+                            {
+                                CARLA_SAFE_ASSERT_CONTINUE(lilv_node_is_string(symbolNode));
+
+                                const char* const symbol = lilv_node_as_string(symbolNode);
+                                CARLA_SAFE_ASSERT_CONTINUE(symbol != nullptr && symbol[0] != '\0');
+
+                                rdfPortNotif->Symbol = carla_strdup(symbol);
+
+                                lilv_node_free(symbolNode);
+                            }
+                            else if (LilvNode* const indexNode = lilv_world_get(lv2World.me, portNotifNode,
+                                                                                 lv2World.ui_portIndex.me, nullptr))
+                            {
+                                CARLA_SAFE_ASSERT_CONTINUE(lilv_node_is_int(indexNode));
+
+                                const int index = lilv_node_as_int(indexNode);
+                                CARLA_SAFE_ASSERT_CONTINUE(index >= 0);
+
+                                rdfPortNotif->Index = static_cast<uint32_t>(index);
+
+                                lilv_node_free(indexNode);
+                            }
+
+                            lilv_node_free(protocolNode);
+                        }
+                    }
+
+                    lilv_nodes_free(const_cast<LilvNodes*>(portNotifNodes.me));
                 }
             }
         }

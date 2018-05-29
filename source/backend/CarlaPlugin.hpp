@@ -263,13 +263,6 @@ public:
     const CustomData& getCustomData(const uint32_t index) const noexcept;
 
     /*!
-     * Give the plugin a change to update its custom data sets.
-     *
-     * @see getCustomDataCount() and getCustomData()
-     */
-    virtual void updateCustomData() noexcept;
-
-    /*!
      * Get the complete plugin chunk data into @a dataPtr.
      *
      * @note Make sure to verify the plugin supports chunks before calling this function!
@@ -946,6 +939,19 @@ protected:
      */
     struct ProtectedData;
     ProtectedData* const pData;
+
+    // -------------------------------------------------------------------
+    // Internal helper functions
+
+    /*!
+     * Call LV2 restore.
+     */
+    virtual void restoreLV2State() noexcept;
+
+    /*!
+     * Give plugin bridges a change to update their custom data sets.
+     */
+    virtual void waitForBridgeSaveSignal() noexcept;
 
     // -------------------------------------------------------------------
     // Helper classes

@@ -477,11 +477,6 @@ public:
     // -------------------------------------------------------------------
     // Information (current data)
 
-    void updateCustomData() noexcept override
-    {
-        waitForSaved();
-    }
-
     std::size_t getChunkData(void** const dataPtr) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS, 0);
@@ -1689,7 +1684,7 @@ public:
 
     void uiProgramChange(const uint32_t index) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count,);
+        CARLA_SAFE_ASSERT_RETURN(index < pData->prog.count,);
 
         const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
 
@@ -1735,6 +1730,14 @@ public:
         fShmNonRtClientControl.writeByte(channel);
         fShmNonRtClientControl.writeByte(note);
         fShmNonRtClientControl.commitWrite();
+    }
+
+    // -------------------------------------------------------------------
+    // Internal helper functions
+
+    void waitForBridgeSaveSignal() noexcept override
+    {
+        waitForSaved();
     }
 
     // -------------------------------------------------------------------

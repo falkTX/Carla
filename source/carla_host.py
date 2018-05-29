@@ -325,7 +325,7 @@ class HostWindow(QMainWindow):
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (rack)
 
-        self.ui.listWidget.setHost(self.host)
+        self.ui.listWidget.setHostAndParent(self.host, self)
 
         sb = self.ui.listWidget.verticalScrollBar()
         self.ui.rackScrollBar.setMinimum(sb.minimum())
@@ -567,6 +567,34 @@ class HostWindow(QMainWindow):
             return
 
         pitem.recreateWidget(True)
+
+    def switchPlugins(self, pluginIdA, pluginIdB):
+        if pluginIdA == pluginIdB:
+            return
+        if pluginIdA < 0 or pluginIdB < 0:
+            return
+        if pluginIdA >= self.fPluginCount or pluginIdB >= self.fPluginCount:
+            return
+
+        useCustomSkins = self.fSavedSettings[CARLA_KEY_MAIN_USE_CUSTOM_SKINS]
+
+        self.host.switch_plugins(pluginIdA, pluginIdB)
+
+        itemA = self.fPluginList[pluginIdA]
+        compactA = itemA.isCompacted()
+        guiShownA = itemA.isGuiShown()
+
+        itemB = self.fPluginList[pluginIdB]
+        compactB = itemB.isCompacted()
+        guiShownB = itemB.isGuiShown()
+
+        itemA.setPluginId(pluginIdA)
+        itemA.recreateWidget2(compactB, guiShownB)
+
+        itemB.setPluginId(pluginIdB)
+        itemB.recreateWidget2(compactA, guiShownA)
+
+        self.slot_canvasRefresh()
 
     def setLoadRDFsNeeded(self):
         self.fLadspaRdfNeedsUpdate = True
@@ -2096,6 +2124,9 @@ class HostWindow(QMainWindow):
             frLadspa.close()
 
     # --------------------------------------------------------------------------------------------------------
+
+    def getPluginCount(self):
+        return self.fPluginCount
 
     def getPluginItem(self, pluginId):
         if pluginId >= self.fPluginCount:

@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -22,23 +22,32 @@ CARLA_BACKEND_USE_NAMESPACE
 // --------------------------------------------------------------------------------------------------------------------
 
 CARLA_EXPORT
-int jack_set_freewheel(jack_client_t*, int)
+int jack_set_freewheel(jack_client_t* client, int freewheel)
 {
+    carla_debug("%s(%p, %i)", __FUNCTION__, client, freewheel);
     return ENOSYS;
+
+    // unused
+    (void)client;
+    (void)freewheel;
 }
 
 CARLA_EXPORT
-int jack_set_buffer_size(jack_client_t* client, jack_nframes_t bufferSize)
+int jack_set_buffer_size(jack_client_t* client, jack_nframes_t nframes)
 {
+    carla_debug("%s(%p, %u)", __FUNCTION__, client, nframes);
+
     JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
 
-    return (jclient->server.bufferSize == bufferSize) ? 0 : 1;
+    return (jclient->server.bufferSize == nframes) ? 0 : 1;
 }
 
 CARLA_EXPORT
 jack_nframes_t jack_get_sample_rate(jack_client_t* client)
 {
+    carla_debug("%s(%p)", __FUNCTION__, client);
+
     JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
 
@@ -48,6 +57,8 @@ jack_nframes_t jack_get_sample_rate(jack_client_t* client)
 CARLA_EXPORT
 jack_nframes_t jack_get_buffer_size(jack_client_t* client)
 {
+    carla_debug("%s(%p)", __FUNCTION__, client);
+
     JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
 

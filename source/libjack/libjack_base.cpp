@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -24,6 +24,8 @@ CARLA_BACKEND_USE_NAMESPACE
 CARLA_EXPORT
 void jack_get_version(int* major_ptr, int* minor_ptr, int* micro_ptr, int* proto_ptr)
 {
+    carla_debug("%s(%p, %p, %p, %p)", __FUNCTION__, major_ptr, minor_ptr, micro_ptr, proto_ptr);
+
     *major_ptr = 1;
     *minor_ptr = 9;
     *micro_ptr = 12;
@@ -33,6 +35,8 @@ void jack_get_version(int* major_ptr, int* minor_ptr, int* micro_ptr, int* proto
 CARLA_EXPORT
 const char* jack_get_version_string(void)
 {
+    carla_debug("%s()", __FUNCTION__);
+
     static const char* const kVersionStr = "1.9.12";
     return kVersionStr;
 }
@@ -55,6 +59,7 @@ CARLA_EXPORT
 void jack_free(void* ptr)
 {
     carla_debug("%s(%p)", __FUNCTION__, ptr);
+
     free(ptr);
 }
 

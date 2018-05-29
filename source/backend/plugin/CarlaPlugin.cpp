@@ -269,10 +269,6 @@ const CustomData& CarlaPlugin::getCustomData(const uint32_t index) const noexcep
     return pData->custom.getAt(index, kCustomDataFallback);
 }
 
-void CarlaPlugin::updateCustomData() noexcept
-{
-}
-
 std::size_t CarlaPlugin::getChunkData(void** const dataPtr) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr, 0);
@@ -498,7 +494,7 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
 
     getLabel(strBuf);
 
-    pData->stateSave.type     = carla_strdup(getPluginTypeAsString(getType()));
+    pData->stateSave.type     = carla_strdup(getPluginTypeAsString(pluginType));
     pData->stateSave.name     = carla_strdup(pData->name);
     pData->stateSave.label    = carla_strdup(strBuf);
     pData->stateSave.uniqueId = getUniqueId();
@@ -607,7 +603,8 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
     // ---------------------------------------------------------------
     // Custom Data
 
-    updateCustomData();
+    if (pData->hints & PLUGIN_IS_BRIDGE)
+        waitForBridgeSaveSignal();
 
     for (LinkedList<CustomData>::Itenerator it = pData->custom.begin2(); it.valid(); it.next())
     {
@@ -836,8 +833,20 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     // ---------------------------------------------------------------
     // Part 5x - set lv2 state
 
-    if (pluginType == PLUGIN_LV2 && pData->custom.count() > 0)
-        setCustomData(CUSTOM_DATA_TYPE_STRING, "CarlaLoadLv2StateNow", "true", true);
+    if (pluginType == PLUGIN_LV2)
+    {
+        for (LinkedList<CustomData>::Itenerator it = pData->custom.begin2(); it.valid(); it.next())
+        {
+            const CustomData& customData(it.getValue(kCustomDataFallback));
+            CARLA_SAFE_ASSERT_CONTINUE(customData.isValid());
+
+            if (std::strcmp(customData.type, CUSTOM_DATA_TYPE_PROPERTY) == 0)
+                continue;
+
+            restoreLV2State();
+            break;
+        }
+    }
 
     // ---------------------------------------------------------------
     // Part 6 - set chunk
@@ -1637,7 +1646,11 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
     // Ignore some keys
     if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) == 0)
     {
-        if (std::strncmp(key, "OSC:", 4) == 0 || std::strncmp(key, "CarlaAlternateFile", 18) == 0 || std::strcmp(key, "guiVisible") == 0)
+        const PluginType ptype = getType();
+
+        if ((ptype == PLUGIN_INTERNAL && std::strncmp(key, "CarlaAlternateFile", 18) == 0) ||
+            (ptype == PLUGIN_DSSI     && std::strcmp (key, "guiVisible") == 0) ||
+            (ptype == PLUGIN_LV2      && std::strncmp(key, "OSC:", 4) == 0))
             return;
     }
 
@@ -2458,6 +2471,16 @@ uint32_t CarlaPlugin::getPatchbayNodeId() const noexcept
 void CarlaPlugin::setPatchbayNodeId(const uint32_t nodeId) noexcept
 {
     pData->nodeId = nodeId;
+}
+
+// -------------------------------------------------------------------
+
+void CarlaPlugin::restoreLV2State() noexcept
+{
+}
+
+void CarlaPlugin::waitForBridgeSaveSignal() noexcept
+{
 }
 
 // -------------------------------------------------------------------

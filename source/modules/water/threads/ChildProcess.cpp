@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -208,9 +208,9 @@ public:
     {
         if (childPID != 0)
         {
-            int childState;
-            const int pid = waitpid (childPID, &childState, WNOHANG);
-            return pid == 0 || ! (WIFEXITED (childState) || WIFSIGNALED (childState));
+            int childState = 0;
+            const int pid = waitpid (childPID, &childState, WNOHANG|WUNTRACED);
+            return pid == 0 || ! (WIFEXITED (childState) || WIFSIGNALED (childState) || WIFSTOPPED (childState));
         }
 
         return false;

@@ -1537,7 +1537,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newJackApp(const Initializer& init)
 {
-    carla_debug("CarlaPlugin::newJackApp({%p, \"%s\", \"%s\", \"%s\"}, %s, %s, \"%s\")", init.engine, init.filename, init.name, init.label);
+    carla_debug("CarlaPlugin::newJackApp({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
 
 #ifdef CARLA_OS_LINUX
     CarlaPluginJack* const plugin(new CarlaPluginJack(init.engine, init.id));

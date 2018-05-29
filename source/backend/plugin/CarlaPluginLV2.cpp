@@ -54,6 +54,7 @@ CARLA_BACKEND_START_NAMESPACE
 static const CustomData       kCustomDataFallback       = { nullptr, nullptr, nullptr };
 static /* */ CustomData       kCustomDataFallbackNC     = { nullptr, nullptr, nullptr };
 static const ExternalMidiNote kExternalMidiNoteFallback = { -1, 0, 0 };
+static const char* const      kUnmapFallback            = "urn:null";
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -1169,57 +1170,6 @@ public:
         if (std::strcmp(type, CUSTOM_DATA_TYPE_PROPERTY) == 0)
             return CarlaPlugin::setCustomData(type, key, value, sendGui);
 
-        // we should only call state restore once
-        // so inject this in CarlaPlugin::loadSaveState
-        if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) == 0 && std::strcmp(key, "CarlaLoadLv2StateNow") == 0 && std::strcmp(value, "true") == 0)
-        {
-            if (fExt.state == nullptr)
-                return;
-
-            LV2_State_Status status = LV2_STATE_ERR_UNKNOWN;
-
-            {
-                const ScopedSingleProcessLocker spl(this, true);
-
-                try {
-                    status = fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, 0, fFeatures);
-                } catch(...) {}
-
-                if (fHandle2 != nullptr)
-                {
-                    try {
-                        fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, 0, fFeatures);
-                    } catch(...) {}
-                }
-            }
-
-            switch (status)
-            {
-            case LV2_STATE_SUCCESS:
-                carla_debug("CarlaPluginLV2::setCustomData(\"%s\", \"%s\", <value>, %s) - success", type, key, bool2str(sendGui));
-                break;
-            case LV2_STATE_ERR_UNKNOWN:
-                carla_stderr("CarlaPluginLV2::setCustomData(\"%s\", \"%s\", <value>, %s) - unknown error", type, key, bool2str(sendGui));
-                break;
-            case LV2_STATE_ERR_BAD_TYPE:
-                carla_stderr("CarlaPluginLV2::setCustomData(\"%s\", \"%s\", <value>, %s) - error, bad type", type, key, bool2str(sendGui));
-                break;
-            case LV2_STATE_ERR_BAD_FLAGS:
-                carla_stderr("CarlaPluginLV2::setCustomData(\"%s\", \"%s\", <value>, %s) - error, bad flags", type, key, bool2str(sendGui));
-                break;
-            case LV2_STATE_ERR_NO_FEATURE:
-                carla_stderr("CarlaPluginLV2::setCustomData(\"%s\", \"%s\", <value>, %s) - error, missing feature", type, key, bool2str(sendGui));
-                break;
-            case LV2_STATE_ERR_NO_PROPERTY:
-                carla_stderr("CarlaPluginLV2::setCustomData(\"%s\", \"%s\", <value>, %s) - error, missing property", type, key, bool2str(sendGui));
-                break;
-            case LV2_STATE_ERR_NO_SPACE:
-                carla_stderr("CarlaPluginLV2::setCustomData(\"%s\", \"%s\", <value>, %s) - error, insufficient space", type, key, bool2str(sendGui));
-                break;
-            }
-            return;
-        }
-
         CarlaPlugin::setCustomData(type, key, value, sendGui);
     }
 
@@ -1494,12 +1444,16 @@ public:
                         fFeatures[kFeatureIdUiParent]->data = fUI.window->getPtr();
                 }
 #endif
-                if (fUI.window != nullptr)
-                    fUI.window->setTitle(fLv2Options.windowTitle);
-
                 fUI.widget = nullptr;
                 fUI.handle = fUI.descriptor->instantiate(fUI.descriptor, fRdfDescriptor->URI, fUI.rdfDescriptor->Bundle,
                                                          carla_lv2_ui_write_function, this, &fUI.widget, fFeatures);
+
+                if (fUI.window != nullptr)
+                {
+                    if (fUI.widget != nullptr)
+                        fUI.window->setChildWindow(fUI.widget);
+                    fUI.window->setTitle(fLv2Options.windowTitle);
+                }
             }
 
             CARLA_SAFE_ASSERT(fUI.handle != nullptr);
@@ -1525,7 +1479,6 @@ public:
             {
                 if (fUI.window != nullptr)
                 {
-                    fUI.window->setChildWindow(fUI.widget);
                     fUI.window->show();
                 }
                 else if (fExt.uishow != nullptr)
@@ -4164,6 +4117,57 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // Internal helper functions
+
+    void restoreLV2State() noexcept override
+    {
+        if (fExt.state == nullptr)
+            return;
+
+        LV2_State_Status status = LV2_STATE_ERR_UNKNOWN;
+
+        {
+            const ScopedSingleProcessLocker spl(this, true);
+
+            try {
+                status = fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, 0, fFeatures);
+            } catch(...) {}
+
+            if (fHandle2 != nullptr)
+            {
+                try {
+                    fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, 0, fFeatures);
+                } catch(...) {}
+            }
+        }
+
+        switch (status)
+        {
+        case LV2_STATE_SUCCESS:
+            carla_debug("CarlaPluginLV2::updateLV2State() - success");
+            break;
+        case LV2_STATE_ERR_UNKNOWN:
+            carla_stderr("CarlaPluginLV2::updateLV2State() - unknown error");
+            break;
+        case LV2_STATE_ERR_BAD_TYPE:
+            carla_stderr("CarlaPluginLV2::updateLV2State() - error, bad type");
+            break;
+        case LV2_STATE_ERR_BAD_FLAGS:
+            carla_stderr("CarlaPluginLV2::updateLV2State() - error, bad flags");
+            break;
+        case LV2_STATE_ERR_NO_FEATURE:
+            carla_stderr("CarlaPluginLV2::updateLV2State() - error, missing feature");
+            break;
+        case LV2_STATE_ERR_NO_PROPERTY:
+            carla_stderr("CarlaPluginLV2::updateLV2State() - error, missing property");
+            break;
+        case LV2_STATE_ERR_NO_SPACE:
+            carla_stderr("CarlaPluginLV2::updateLV2State() - error, insufficient space");
+            break;
+        }
+    }
+
+    // -------------------------------------------------------------------
 
     bool isRealtimeSafe() const noexcept
     {
@@ -4428,9 +4432,8 @@ public:
 
     const char* getCustomURIDString(const LV2_URID urid) const noexcept
     {
-        static const char* const sFallback = "urn:null";
-        CARLA_SAFE_ASSERT_RETURN(urid != kUridNull, sFallback);
-        CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.size(), sFallback);
+        CARLA_SAFE_ASSERT_RETURN(urid != kUridNull, kUnmapFallback);
+        CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.size(), kUnmapFallback);
         carla_debug("CarlaPluginLV2::getCustomURIString(%i)", urid);
 
         return fCustomURIDs[urid].c_str();
@@ -4489,13 +4492,14 @@ public:
         CARLA_SAFE_ASSERT_RETURN(size > 0, LV2_STATE_ERR_NO_PROPERTY);
         CARLA_SAFE_ASSERT_RETURN(type != kUridNull, LV2_STATE_ERR_BAD_TYPE);
         CARLA_SAFE_ASSERT_RETURN(flags & LV2_STATE_IS_POD, LV2_STATE_ERR_BAD_FLAGS);
-        carla_debug("CarlaPluginLV2::handleStateStore(%i:\"%s\", %p, " P_SIZE ", %i:\"%s\", %i)", key, carla_lv2_urid_unmap(this, key), value, size, type, carla_lv2_urid_unmap(this, type), flags);
+        carla_debug("CarlaPluginLV2::handleStateStore(%i:\"%s\", %p, " P_SIZE ", %i:\"%s\", %i)",
+                    key, carla_lv2_urid_unmap(this, key), value, size, type, carla_lv2_urid_unmap(this, type), flags);
 
         const char* const skey(carla_lv2_urid_unmap(this, key));
         const char* const stype(carla_lv2_urid_unmap(this, type));
 
-        CARLA_SAFE_ASSERT_RETURN(skey != nullptr, LV2_STATE_ERR_BAD_TYPE);
-        CARLA_SAFE_ASSERT_RETURN(stype != nullptr, LV2_STATE_ERR_BAD_TYPE);
+        CARLA_SAFE_ASSERT_RETURN(skey != nullptr && skey != kUnmapFallback, LV2_STATE_ERR_BAD_TYPE);
+        CARLA_SAFE_ASSERT_RETURN(stype != nullptr && stype != kUnmapFallback, LV2_STATE_ERR_BAD_TYPE);
 
         // Check if we already have this key
         for (LinkedList<CustomData>::Itenerator it = pData->custom.begin2(); it.valid(); it.next())
@@ -4541,8 +4545,7 @@ public:
         carla_debug("CarlaPluginLV2::handleStateRetrieve(%i, %p, %p, %p)", key, size, type, flags);
 
         const char* const skey(carla_lv2_urid_unmap(this, key));
-
-        CARLA_SAFE_ASSERT_RETURN(skey != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(skey != nullptr && skey != kUnmapFallback, nullptr);
 
         const char* stype = nullptr;
         const char* stringData = nullptr;
@@ -4560,8 +4563,12 @@ public:
             }
         }
 
-        CARLA_SAFE_ASSERT_RETURN(stype != nullptr, nullptr);
-        CARLA_SAFE_ASSERT_RETURN(stringData != nullptr, nullptr);
+        if (stype == nullptr || stringData == nullptr)
+        {
+            carla_stderr("Plugin requested value for '%s' which is not available", skey);
+            *size = *type = *flags = 0;
+            return nullptr;
+        }
 
         *type  = carla_lv2_urid_map(this, stype);
         *flags = LV2_STATE_IS_POD;
@@ -4571,29 +4578,27 @@ public:
             *size = std::strlen(stringData);
             return stringData;
         }
-        else
+
+        if (fLastStateChunk != nullptr)
         {
-            if (fLastStateChunk != nullptr)
-            {
-                std::free(fLastStateChunk);
-                fLastStateChunk = nullptr;
-            }
+            std::free(fLastStateChunk);
+            fLastStateChunk = nullptr;
+        }
 
-            std::vector<uint8_t> chunk(carla_getChunkFromBase64String(stringData));
-            CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0, nullptr);
+        std::vector<uint8_t> chunk(carla_getChunkFromBase64String(stringData));
+        CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0, nullptr);
 
-            fLastStateChunk = std::malloc(chunk.size());
-            CARLA_SAFE_ASSERT_RETURN(fLastStateChunk != nullptr, nullptr);
+        fLastStateChunk = std::malloc(chunk.size());
+        CARLA_SAFE_ASSERT_RETURN(fLastStateChunk != nullptr, nullptr);
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-            std::memcpy(fLastStateChunk, chunk.data(), chunk.size());
+        std::memcpy(fLastStateChunk, chunk.data(), chunk.size());
 #else
-            std::memcpy(fLastStateChunk, &chunk.front(), chunk.size());
+        std::memcpy(fLastStateChunk, &chunk.front(), chunk.size());
 #endif
 
-            *size = chunk.size();
-            return fLastStateChunk;
-        }
+        *size = chunk.size();
+        return fLastStateChunk;
     }
 
     // -------------------------------------------------------------------
@@ -4711,6 +4716,7 @@ public:
         switch (format)
         {
         case kUridNull: {
+            CARLA_SAFE_ASSERT_RETURN(rindex < fRdfDescriptor->PortCount,);
             CARLA_SAFE_ASSERT_RETURN(bufferSize == sizeof(float),);
 
             for (uint32_t i=0; i < pData->param.count; ++i)
@@ -4725,8 +4731,36 @@ public:
 
             const float value(*(const float*)buffer);
 
-            //if (carla_isNotEqual(fParamBuffers[index], value))
-            setParameterValue(index, value, false, true, true);
+            // check if we should feedback message back to UI
+            bool sendGui = false;
+
+            if (const uint32_t notifCount = fUI.rdfDescriptor->PortNotificationCount)
+            {
+                const char* const portSymbol = fRdfDescriptor->Ports[rindex].Symbol;
+
+                for (uint32_t i=0; i < notifCount; ++i)
+                {
+                    const LV2_RDF_UI_PortNotification& portNotif(fUI.rdfDescriptor->PortNotifications[i]);
+
+                    if (portNotif.Protocol != LV2_UI_PORT_PROTOCOL_FLOAT)
+                        continue;
+
+                    if (portNotif.Symbol != nullptr)
+                    {
+                        if (std::strcmp(portNotif.Symbol, portSymbol) != 0)
+                            continue;
+                    }
+                    else if (portNotif.Index != rindex)
+                    {
+                        continue;
+                    }
+
+                    sendGui = true;
+                    break;
+                }
+            }
+
+            setParameterValue(index, value, sendGui, true, true);
 
         } break;
 
@@ -4758,7 +4792,8 @@ public:
         } break;
 
         default:
-            carla_stdout("CarlaPluginLV2::handleUIWrite(%i, %i, %i:\"%s\", %p) - unknown format", rindex, bufferSize, format, carla_lv2_urid_unmap(this, format), buffer);
+            carla_stdout("CarlaPluginLV2::handleUIWrite(%i, %i, %i:\"%s\", %p) - unknown format",
+                         rindex, bufferSize, format, carla_lv2_urid_unmap(this, format), buffer);
             break;
         }
     }
@@ -4811,7 +4846,8 @@ public:
             paramValue = static_cast<float>((*(const int64_t*)value));
             break;
         default:
-            carla_stdout("CarlaPluginLV2::handleLilvSetPortValue(\"%s\", %p, %i, %i:\"%s\") - unknown type", portSymbol, value, size, type, carla_lv2_urid_unmap(this, type));
+            carla_stdout("CarlaPluginLV2::handleLilvSetPortValue(\"%s\", %p, %i, %i:\"%s\") - unknown type",
+                         portSymbol, value, size, type, carla_lv2_urid_unmap(this, type));
             return;
         }
 
@@ -5257,10 +5293,12 @@ public:
         int eQt4, eQt5, eGtk2, eGtk3, eCocoa, eWindows, eX11, iCocoa, iWindows, iX11, iExt, iFinal;
         eQt4 = eQt5 = eGtk2 = eGtk3 = eCocoa = eWindows = eX11 = iCocoa = iWindows = iX11 = iExt = iFinal = -1;
 
-#if defined(BUILD_BRIDGE) || defined(LV2_UIS_ONLY_BRIDGES)
-        const bool preferUiBridges(true);
+#if defined(LV2_UIS_ONLY_BRIDGES)
+        const bool preferUiBridges = true;
+#elif defined(BUILD_BRIDGE)
+        const bool preferUiBridges = false;
 #else
-        const bool preferUiBridges(pData->engine->getOptions().preferUiBridges && (pData->hints & PLUGIN_IS_BRIDGE) == 0);
+        const bool preferUiBridges = pData->engine->getOptions().preferUiBridges;
 #endif
         bool hasShowInterface = false;
 
@@ -5422,10 +5460,15 @@ public:
         const LV2_Property uiType(fUI.rdfDescriptor->Type);
 
         if (
-            (iFinal == eQt4 || iFinal == eQt5 || iFinal == eGtk2 || iFinal == eGtk3 ||
-             iFinal == eCocoa || iFinal == eWindows || iFinal == eX11)
+            (iFinal == eQt4     ||
+             iFinal == eQt5     ||
+             iFinal == eGtk2    ||
+             iFinal == eGtk3    ||
+             iFinal == eCocoa   ||
+             iFinal == eWindows ||
+             iFinal == eX11)
 #ifdef BUILD_BRIDGE
-            && preferUiBridges && ! hasShowInterface
+            && ! hasShowInterface
 #endif
             )
         {
@@ -5684,7 +5727,7 @@ public:
         if (urid < uriCount)
         {
             const char* const ourURI(carla_lv2_urid_unmap(this, urid));
-            CARLA_SAFE_ASSERT_RETURN(ourURI != nullptr,);
+            CARLA_SAFE_ASSERT_RETURN(ourURI != nullptr && ourURI != kUnmapFallback,);
 
             if (std::strcmp(ourURI, uri) != 0)
             {
@@ -5786,11 +5829,11 @@ private:
 
         ~UI()
         {
-            CARLA_ASSERT(handle == nullptr);
-            CARLA_ASSERT(widget == nullptr);
-            CARLA_ASSERT(descriptor == nullptr);
-            CARLA_ASSERT(rdfDescriptor == nullptr);
-            CARLA_ASSERT(window == nullptr);
+            CARLA_SAFE_ASSERT(handle == nullptr);
+            CARLA_SAFE_ASSERT(widget == nullptr);
+            CARLA_SAFE_ASSERT(descriptor == nullptr);
+            CARLA_SAFE_ASSERT(rdfDescriptor == nullptr);
+            CARLA_SAFE_ASSERT(window == nullptr);
         }
 
         CARLA_DECLARE_NON_COPY_STRUCT(UI);
