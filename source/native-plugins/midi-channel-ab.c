@@ -40,8 +40,7 @@ static NativePluginHandle midichanab_instantiate(const NativeHostDescriptor* hos
 
     handle->host = host;
 
-    for (int i=MAX_MIDI_CHANNELS; --i>=0;)
-        handle->channels[i] = 0.0f;
+    memset(handle->channels, 0, MAX_MIDI_CHANNELS);
 
     return handle;
 }
@@ -63,22 +62,22 @@ static uint32_t midichanab_get_parameter_count(NativePluginHandle handle)
 
 static const NativeParameter* midichanab_get_parameter_info(NativePluginHandle handle, uint32_t index)
 {
-    if (index > MAX_MIDI_CHANNELS)
+    if (index >= MAX_MIDI_CHANNELS)
         return NULL;
 
     static NativeParameter param;
-    static const NativeParameterScalePoint scalePoints[2] = { { "Output A", 0.0f }, { "Output B", 1.0f } };
+    static const NativeParameterScalePoint scalePoints[2] = { { "Output A", 0 }, { "Output B", 1 } };
     static char paramName[24];
 
     param.hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_BOOLEAN|NATIVE_PARAMETER_USES_SCALEPOINTS;
     param.name  = paramName;
     param.unit  = NULL;
-    param.ranges.def       = 0.0f;
-    param.ranges.min       = 0.0f;
-    param.ranges.max       = 1.0f;
-    param.ranges.step      = 1.0f;
-    param.ranges.stepSmall = 1.0f;
-    param.ranges.stepLarge = 1.0f;
+    param.ranges.def       = 0;
+    param.ranges.min       = 0;
+    param.ranges.max       = 1;
+    param.ranges.step      = 1;
+    param.ranges.stepSmall = 1;
+    param.ranges.stepLarge = 1;
     param.scalePointCount  = 2;
     param.scalePoints      = scalePoints;
 
@@ -92,18 +91,18 @@ static const NativeParameter* midichanab_get_parameter_info(NativePluginHandle h
 
 static float midichanab_get_parameter_value(NativePluginHandle handle, uint32_t index)
 {
-    if (index > MAX_MIDI_CHANNELS)
-        return 0.0f;
+    if (index >= MAX_MIDI_CHANNELS)
+        return 0;
 
-    return handlePtr->channels[index] ? 1.0f : 0.0f;
+    return handlePtr->channels[index] ? 1 : 0;
 }
 
 static void midichanab_set_parameter_value(NativePluginHandle handle, uint32_t index, float value)
 {
-    if (index > MAX_MIDI_CHANNELS)
+    if (index >= MAX_MIDI_CHANNELS)
         return;
 
-    handlePtr->channels[index] = (value >= 0.5f);
+    handlePtr->channels[index] = (value >= 1);
 }
 
 static void midichanab_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
@@ -127,14 +126,8 @@ static void midichanab_process(NativePluginHandle handle, float** inBuffer, floa
 
             if (channels[channel])
             {
-                tmpEvent.port    = midiEvent->port+1;
-                tmpEvent.time    = midiEvent->time;
-                tmpEvent.data[0] = midiEvent->data[0];
-                tmpEvent.data[1] = midiEvent->data[1];
-                tmpEvent.data[2] = midiEvent->data[2];
-                tmpEvent.data[3] = midiEvent->data[3];
-                tmpEvent.size    = midiEvent->size;
-
+                memcpy(&tmpEvent, midiEvent, sizeof(NativeMidiEvent));
+                ++tmpEvent.port;
                 host->write_midi_event(host->handle, &tmpEvent);
             }
             else
@@ -171,7 +164,7 @@ static const NativePluginDescriptor midichanabDesc = {
     .paramOuts = 0,
     .name      = "MIDI Channel A/B",
     .label     = "midichanab",
-    .maker     = "falkTX",
+    .maker     = "milkmiruku",
     .copyright = "GNU GPL v2+",
 
     .instantiate = midichanab_instantiate,
