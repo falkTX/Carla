@@ -1375,7 +1375,7 @@ class PatchScene(QGraphicsScene):
             items = self.items(self.pointer_border)
             for item in items:
                 if item and item.type() in [CanvasLineType, CanvasBezierLineType]:
-                    item.delete()
+                    item.triggerDisconnect()
         QGraphicsScene.mousePressEvent(self, event)
 
     def mouseMoveEvent(self, event):
@@ -1409,7 +1409,7 @@ class PatchScene(QGraphicsScene):
             items = self.items(trail)
             for item in items:
                 if item and item.type() in [CanvasLineType, CanvasBezierLineType]:
-                    item.delete()
+                    item.triggerDisconnect()
 
         QGraphicsScene.mouseMoveEvent(self, event)
 
@@ -1560,7 +1560,7 @@ class CanvasLine(QGraphicsLineItem):
         self.m_lineSelected = yesno
         self.updateLineGradient()
 
-    def delete(self):
+    def triggerDisconnect(self):
         for connection in canvas.connection_list:
             if (connection.port_out_id == self.item1.getPortId() and connection.port_in_id == self.item2.getPortId()):
                 canvas.callback(ACTION_PORTS_DISCONNECT, connection.connection_id, 0, "")
@@ -1659,7 +1659,7 @@ class CanvasBezierLine(QGraphicsPathItem):
         self.m_lineSelected = yesno
         self.updateLineGradient()
 
-    def delete(self):
+    def triggerDisconnect(self):
         for connection in canvas.connection_list:
             if (connection.port_out_id == self.item1.getPortId() and connection.port_in_id == self.item2.getPortId()):
                 canvas.callback(ACTION_PORTS_DISCONNECT, connection.connection_id, 0, "")
