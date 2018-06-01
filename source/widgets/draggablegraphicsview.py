@@ -67,10 +67,10 @@ class DraggableGraphicsView(QGraphicsView):
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Control:
-            self.m_ctrl_down = True
+            self.fCtrlDown = True
         QGraphicsView.keyPressEvent(self, event)
 
     def keyReleaseEvent(self, event):
         if event.key() == Qt.Key_Control:
-            self.m_ctrl_down = False
+            self.fCtrlDown = False
         QGraphicsView.keyReleaseEvent(self, event)
