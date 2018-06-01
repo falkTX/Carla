@@ -1214,7 +1214,7 @@ class PatchScene(QGraphicsScene):
         self.m_ctrl_down = False
         self.m_mouse_down_init = False
         self.m_mouse_rubberband = False
-        self.m_mouse2_down = False
+        self.m_mid_button_down = False
         self.pointer_border = QRectF(0.0, 0.0, 1.0, 1.0)
 
         self.addRubberBand()
@@ -1368,7 +1368,7 @@ class PatchScene(QGraphicsScene):
         self.m_mouse_down_init  = bool(event.button() == Qt.LeftButton)
         self.m_mouse_rubberband = False
         if event.button() == Qt.MidButton and self.m_ctrl_down:
-            self.m_mouse2_down = True
+            self.m_mid_button_down = True
             pos = event.scenePos()
             self.pointer_border.moveTo(floor(pos.x()), floor(pos.y()))
 
@@ -1404,7 +1404,7 @@ class PatchScene(QGraphicsScene):
             self.m_rubberband.setRect(x, y, abs(pos.x() - self.m_rubberband_orig_point.x()), abs(pos.y() - self.m_rubberband_orig_point.y()))
             return event.accept()
 
-        if self.m_mouse2_down and self.m_ctrl_down:
+        if self.m_mid_button_down and self.m_ctrl_down:
             trail = QPolygonF([event.scenePos(), event.lastScenePos(), event.scenePos()])
             items = self.items(trail)
             for item in items:
@@ -1415,7 +1415,7 @@ class PatchScene(QGraphicsScene):
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.MidButton:
-            self.m_mouse2_down = False
+            self.m_mid_button_down = False
             return event.accept()
 
         if self.m_rubberband_selection:
