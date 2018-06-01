@@ -40,6 +40,7 @@ class DraggableGraphicsView(QGraphicsView):
         QGraphicsView.__init__(self, parent)
 
         self.fPanning = False
+        self.m_ctrl_down = False
 
         try:
             self.fMiddleButton = Qt.MiddleButton
@@ -47,7 +48,7 @@ class DraggableGraphicsView(QGraphicsView):
             self.fMiddleButton = Qt.MidButton
 
     def mousePressEvent(self, event):
-        if event.button() == self.fMiddleButton:
+        if event.button() == self.fMiddleButton and not self.m_ctrl_down:
             self.fPanning = True
             self.setDragMode(QGraphicsView.ScrollHandDrag)
             event = QMouseEvent(event.type(), event.pos(), Qt.LeftButton, Qt.LeftButton, event.modifiers())
@@ -63,3 +64,13 @@ class DraggableGraphicsView(QGraphicsView):
         self.fPanning = False
         self.setDragMode(QGraphicsView.NoDrag)
         self.setCursor(QCursor(Qt.ArrowCursor))
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Control:
+            self.m_ctrl_down = True
+        QGraphicsView.keyPressEvent(self, event)
+
+    def keyReleaseEvent(self, event):
+        if event.key() == Qt.Key_Control:
+            self.m_ctrl_down = False
+        QGraphicsView.keyReleaseEvent(self, event)
