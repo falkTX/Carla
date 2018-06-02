@@ -2782,6 +2782,8 @@ class CanvasBox(QGraphicsItem):
     def mouseReleaseEvent(self, event):
         if self.m_cursor_moving:
             self.setCursor(QCursor(Qt.ArrowCursor))
+            self.setX(round(self.x()))
+            self.setY(round(self.y()))
         self.m_mouse_down = False
         self.m_cursor_moving = False
         QGraphicsItem.mouseReleaseEvent(self, event)
