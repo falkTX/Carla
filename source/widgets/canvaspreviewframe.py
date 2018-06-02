@@ -24,6 +24,8 @@ from carla_config import *
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
+from math import floor
+
 if config_UseQt5:
     from PyQt5.QtCore import pyqtSignal, Qt, QRectF, QTimer
     from PyQt5.QtGui import QBrush, QColor, QCursor, QPainter, QPen
@@ -31,6 +33,11 @@ if config_UseQt5:
 else:
     from PyQt4.QtCore import pyqtSignal, Qt, QRectF, QTimer
     from PyQt4.QtGui import QBrush, QColor, QCursor, QFrame, QPainter, QPen
+
+# ------------------------------------------------------------------------------------------------------------
+# Antialiasing settings
+
+from patchcanvas import options, ANTIALIASING_FULL
 
 # ------------------------------------------------------------------------------------------------------------
 # Static Variables
@@ -162,6 +169,7 @@ class CanvasPreviewFrame(QFrame):
 
     def paintEvent(self, event):
         painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing == ANTIALIASING_FULL))
 
         if self.fUseCustomPaint:
             painter.setBrush(QColor(36, 36, 36))
@@ -187,9 +195,13 @@ class CanvasPreviewFrame(QFrame):
             height = self.kInternalHeight
 
         # cursor
+        lineHinting = painter.pen().widthF() / 2
         painter.setBrush(self.fViewBrush)
         painter.setPen(self.fViewPen)
-        painter.drawRect(self.fViewRect[iX]+self.fInitialX, self.fViewRect[iY]+3, width, height)
+        painter.drawRect(QRectF(
+            floor(self.fViewRect[iX]+self.fInitialX)+lineHinting,
+            floor(self.fViewRect[iY]+3)+lineHinting,
+            round(width)-1, round(height)-1))
 
         if self.fUseCustomPaint:
             event.accept()
