@@ -1401,7 +1401,8 @@ class PatchScene(QGraphicsScene):
             else:
                 y = pos.y()
 
-            self.m_rubberband.setRect(x, y, abs(pos.x() - self.m_rubberband_orig_point.x()), abs(pos.y() - self.m_rubberband_orig_point.y()))
+            lineHinting = canvas.theme.rubberband_pen.widthF() / 2
+            self.m_rubberband.setRect(x+lineHinting, y+lineHinting, abs(pos.x() - self.m_rubberband_orig_point.x()), abs(pos.y() - self.m_rubberband_orig_point.y()))
             return event.accept()
 
         if self.m_mid_button_down and self.m_ctrl_down:
