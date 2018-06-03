@@ -1215,7 +1215,7 @@ class PatchScene(QGraphicsScene):
         self.m_mouse_down_init = False
         self.m_mouse_rubberband = False
         self.m_mid_button_down = False
-        self.pointer_border = QRectF(0.0, 0.0, 1.0, 1.0)
+        self.m_pointer_border = QRectF(0.0, 0.0, 1.0, 1.0)
 
         self.addRubberBand()
 
@@ -1370,9 +1370,9 @@ class PatchScene(QGraphicsScene):
         if event.button() == Qt.MidButton and self.m_ctrl_down:
             self.m_mid_button_down = True
             pos = event.scenePos()
-            self.pointer_border.moveTo(floor(pos.x()), floor(pos.y()))
+            self.m_pointer_border.moveTo(floor(pos.x()), floor(pos.y()))
 
-            items = self.items(self.pointer_border)
+            items = self.items(self.m_pointer_border)
             for item in items:
                 if item and item.type() in [CanvasLineType, CanvasBezierLineType]:
                     item.triggerDisconnect()
