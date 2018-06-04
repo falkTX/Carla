@@ -2090,9 +2090,10 @@ class CanvasPort(QGraphicsItem):
     def paint(self, painter, option, widget):
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing == ANTIALIASING_FULL))
-        lineHinting = canvas.theme.port_audio_jack_pen.widthF() / 2
+
         # FIXME: would be more correct is to take line width from Pen, loaded to painter,
         # but this needs some code rearrangement
+        lineHinting = canvas.theme.port_audio_jack_pen.widthF() / 2
 
         poly_locx = [0, 0, 0, 0, 0]
 
