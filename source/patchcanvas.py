@@ -24,6 +24,8 @@ from carla_config import *
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
+from math import floor
+
 if config_UseQt5:
     from PyQt5.QtCore import pyqtSignal, pyqtSlot, qCritical, qFatal, qWarning, Qt, QObject
     from PyQt5.QtCore import QAbstractAnimation, QLineF, QPointF, QRectF, QSizeF, QSettings, QTimer
@@ -1212,6 +1214,8 @@ class PatchScene(QGraphicsScene):
         self.m_ctrl_down = False
         self.m_mouse_down_init = False
         self.m_mouse_rubberband = False
+        self.m_mid_button_down = False
+        self.pointer_border = QRectF(0.0, 0.0, 1.0, 1.0)
 
         self.addRubberBand()
 
@@ -1363,6 +1367,15 @@ class PatchScene(QGraphicsScene):
     def mousePressEvent(self, event):
         self.m_mouse_down_init  = bool(event.button() == Qt.LeftButton)
         self.m_mouse_rubberband = False
+        if event.button() == Qt.MidButton and self.m_ctrl_down:
+            self.m_mid_button_down = True
+            pos = event.scenePos()
+            self.pointer_border.moveTo(floor(pos.x()), floor(pos.y()))
+
+            items = self.items(self.pointer_border)
+            for item in items:
+                if item and item.type() in [CanvasLineType, CanvasBezierLineType]:
+                    item.triggerDisconnect()
         QGraphicsScene.mousePressEvent(self, event)
 
     def mouseMoveEvent(self, event):
@@ -1391,9 +1404,20 @@ class PatchScene(QGraphicsScene):
             self.m_rubberband.setRect(x, y, abs(pos.x() - self.m_rubberband_orig_point.x()), abs(pos.y() - self.m_rubberband_orig_point.y()))
             return event.accept()
 
+        if self.m_mid_button_down and self.m_ctrl_down:
+            trail = QPolygonF([event.scenePos(), event.lastScenePos(), event.scenePos()])
+            items = self.items(trail)
+            for item in items:
+                if item and item.type() in [CanvasLineType, CanvasBezierLineType]:
+                    item.triggerDisconnect()
+
         QGraphicsScene.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MidButton:
+            self.m_mid_button_down = False
+            return event.accept()
+
         if self.m_rubberband_selection:
             items_list = self.items()
             if len(items_list) > 0:
@@ -1536,6 +1560,12 @@ class CanvasLine(QGraphicsLineItem):
         self.m_lineSelected = yesno
         self.updateLineGradient()
 
+    def triggerDisconnect(self):
+        for connection in canvas.connection_list:
+            if (connection.port_out_id == self.item1.getPortId() and connection.port_in_id == self.item2.getPortId()):
+                canvas.callback(ACTION_PORTS_DISCONNECT, connection.connection_id, 0, "")
+                break
+
     def updateLinePos(self):
         if self.item1.getPortMode() == PORT_MODE_OUTPUT:
             line = QLineF(self.item1.scenePos().x() + self.item1.getPortWidth() + 12,
@@ -1628,6 +1658,12 @@ class CanvasBezierLine(QGraphicsPathItem):
 
         self.m_lineSelected = yesno
         self.updateLineGradient()
+
+    def triggerDisconnect(self):
+        for connection in canvas.connection_list:
+            if (connection.port_out_id == self.item1.getPortId() and connection.port_in_id == self.item2.getPortId()):
+                canvas.callback(ACTION_PORTS_DISCONNECT, connection.connection_id, 0, "")
+                break
 
     def updateLinePos(self):
         if self.item1.getPortMode() == PORT_MODE_OUTPUT:
