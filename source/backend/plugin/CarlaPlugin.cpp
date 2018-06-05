@@ -2293,9 +2293,11 @@ void CarlaPlugin::sendMidiAllNotesOffToCallback()
 // -------------------------------------------------------------------
 // UI Stuff
 
-void CarlaPlugin::showCustomUI(const bool)
+void CarlaPlugin::showCustomUI(const bool yesNo)
 {
-    CARLA_SAFE_ASSERT(false);
+    if (yesNo) {
+        CARLA_SAFE_ASSERT(false);
+    }
 }
 
 void CarlaPlugin::uiIdle()
