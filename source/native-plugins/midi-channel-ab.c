@@ -102,7 +102,7 @@ static void midichanab_set_parameter_value(NativePluginHandle handle, uint32_t i
     if (index >= MAX_MIDI_CHANNELS)
         return;
 
-    handlePtr->channels[index] = (value >= 1);
+    handlePtr->channels[index] = (value >= 0.5f);
 }
 
 static void midichanab_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
@@ -164,7 +164,7 @@ static const NativePluginDescriptor midichanabDesc = {
     .paramOuts = 0,
     .name      = "MIDI Channel A/B",
     .label     = "midichanab",
-    .maker     = "milkmiruku",
+    .maker     = "Milk Brewster",
     .copyright = "GNU GPL v2+",
 
     .instantiate = midichanab_instantiate,
