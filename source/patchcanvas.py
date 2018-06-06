@@ -2092,7 +2092,7 @@ class CanvasPort(QGraphicsItem):
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing == ANTIALIASING_FULL))
 
-        # FIXME: would be more correct is to take line width from Pen, loaded to painter,
+        # FIXME: would be more correct to take line width from Pen, loaded to painter,
         # but this needs some code rearrangement
         lineHinting = canvas.theme.port_audio_jack_pen.widthF() / 2
 
