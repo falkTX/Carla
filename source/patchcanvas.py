@@ -2599,6 +2599,7 @@ class CanvasBox(QGraphicsItem):
 
                 last_out_pos += port_spacing
                 last_out_type = port.port_type
+            self.p_height += canvas.theme.box_pen.widthF()
 
         self.repaintLines(True)
         self.update()
