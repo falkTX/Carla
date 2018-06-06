@@ -760,15 +760,7 @@ def getGroupPos(group_id, port_mode=PORT_MODE_OUTPUT):
 
     for group in canvas.group_list:
         if group.group_id == group_id:
-            if group.split:
-                if port_mode == PORT_MODE_OUTPUT:
-                    return group.widgets[0].pos()
-                elif port_mode == PORT_MODE_INPUT:
-                    return group.widgets[1].pos()
-                else:
-                    return QPointF(0, 0)
-            else:
-                return group.widgets[0].pos()
+            return group.widgets[1 if (group.split and port_mode == PORT_MODE_INPUT) else 0].pos()
 
     qCritical("PatchCanvas::getGroupPos(%i, %s) - unable to find group" % (group_id, port_mode2str(port_mode)))
     return QPointF(0, 0)
@@ -1267,23 +1259,14 @@ class PatchScene(QGraphicsScene):
 
                     if first_value:
                         min_x = pos.x()
-                    elif pos.x() < min_x:
-                        min_x = pos.x()
-
-                    if first_value:
                         min_y = pos.y()
-                    elif pos.y() < min_y:
-                        min_y = pos.y()
-
-                    if first_value:
                         max_x = pos.x() + rect.width()
-                    elif pos.x() + rect.width() > max_x:
-                        max_x = pos.x() + rect.width()
-
-                    if first_value:
                         max_y = pos.y() + rect.height()
-                    elif pos.y() + rect.height() > max_y:
-                        max_y = pos.y() + rect.height()
+                    else:
+                        min_x = min( min_x, pos.x() )
+                        min_y = min( min_y, pos.y() )
+                        max_x = max( max_x, pos.x() + rect.width() )
+                        max_y = max( max_y, pos.y() + rect.height() )
 
                     first_value = False
 
@@ -1390,16 +1373,8 @@ class PatchScene(QGraphicsScene):
                 self.m_rubberband_orig_point = event.scenePos()
 
             pos = event.scenePos()
-
-            if pos.x() > self.m_rubberband_orig_point.x():
-                x = self.m_rubberband_orig_point.x()
-            else:
-                x = pos.x()
-
-            if pos.y() > self.m_rubberband_orig_point.y():
-                y = self.m_rubberband_orig_point.y()
-            else:
-                y = pos.y()
+            x = min( pos.x(), self.m_rubberband_orig_point.x() )
+            y = min( pos.y(), self.m_rubberband_orig_point.y() )
 
             lineHinting = canvas.theme.rubberband_pen.widthF() / 2
             self.m_rubberband.setRect(x+lineHinting,
