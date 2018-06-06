@@ -2781,12 +2781,12 @@ class CanvasBox(QGraphicsItem):
     def paint(self, painter, option, widget):
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing == ANTIALIASING_FULL))
+        rect = QRectF(0, 0, self.p_width, self.p_height)
 
         # Draw rectangle
-        if self.isSelected():
-            painter.setPen(canvas.theme.box_pen_sel)
-        else:
-            painter.setPen(canvas.theme.box_pen)
+        pen = canvas.theme.box_pen_sel if self.isSelected() else canvas.theme.box_pen
+        painter.setPen(pen)
+        lineHinting = pen.widthF() / 2
 
         if canvas.theme.box_bg_type == Theme.THEME_BG_GRADIENT:
             box_gradient = QLinearGradient(0, 0, 0, self.p_height)
@@ -2796,18 +2796,21 @@ class CanvasBox(QGraphicsItem):
         else:
             painter.setBrush(canvas.theme.box_bg_1)
 
-        lineHinting = painter.pen().widthF() / 2
-        painter.drawRect(QRectF(lineHinting, lineHinting, self.p_width - lineHinting*2, self.p_height - lineHinting*2))
+        rect.adjust(lineHinting, lineHinting, -lineHinting, -lineHinting)
+        painter.drawRect(rect)
 
         # Draw pixmap header
+        rect.setHeight(canvas.theme.box_header_height)
         if canvas.theme.box_header_pixmap:
             painter.setPen(Qt.NoPen)
             painter.setBrush(canvas.theme.box_bg_2)
-            painter.drawRect(1, 1, self.p_width-2, canvas.theme.box_header_height)
 
-            headerPos  = QPointF(1, 1)
-            headerRect = QRectF(2, 2, self.p_width-4, canvas.theme.box_header_height-3)
-            painter.drawTiledPixmap(headerRect, canvas.theme.box_header_pixmap, headerPos)
+            # outline
+            rect.adjust(lineHinting, lineHinting, -lineHinting, -lineHinting)
+            painter.drawRect(rect)
+
+            rect.adjust(1, 1, -1, 0)
+            painter.drawTiledPixmap(rect, canvas.theme.box_header_pixmap, rect.topLeft())
 
         # Draw text
         painter.setFont(self.m_font_name)
