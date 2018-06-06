@@ -1548,10 +1548,12 @@ class CanvasLine(QGraphicsLineItem):
 
     def updateLinePos(self):
         if self.item1.getPortMode() == PORT_MODE_OUTPUT:
-            line = QLineF(self.item1.scenePos().x() + self.item1.getPortWidth() + 12,
-                          self.item1.scenePos().y() + float(canvas.theme.port_height)/2,
-                          self.item2.scenePos().x(),
-                          self.item2.scenePos().y() + float(canvas.theme.port_height)/2)
+            rect1 = self.item1.sceneBoundingRect()
+            rect2 = self.item2.sceneBoundingRect()
+            line = QLineF(rect1.right(),
+                          rect1.top() + float(canvas.theme.port_height)/2,
+                          rect2.left(),
+                          rect2.top() + float(canvas.theme.port_height)/2)
             self.setLine(line)
 
             self.m_lineSelected = False
@@ -1647,17 +1649,15 @@ class CanvasBezierLine(QGraphicsPathItem):
 
     def updateLinePos(self):
         if self.item1.getPortMode() == PORT_MODE_OUTPUT:
-            item1_x = self.item1.scenePos().x() + self.item1.getPortWidth() + 12
-            item1_y = self.item1.scenePos().y() + float(canvas.theme.port_height)/2
+            rect1 = self.item1.sceneBoundingRect()
+            rect2 = self.item2.sceneBoundingRect()
 
-            item2_x = self.item2.scenePos().x()
-            item2_y = self.item2.scenePos().y() + float(canvas.theme.port_height)/2
-
-            item1_mid_x = abs(item1_x - item2_x) / 2
-            item1_new_x = item1_x + item1_mid_x
-
-            item2_mid_x = abs(item1_x - item2_x) / 2
-            item2_new_x = item2_x - item2_mid_x
+            item1_x = rect1.right()
+            item2_x = rect2.left()
+            item1_y = rect1.top() + float(canvas.theme.port_height)/2
+            item2_y = rect2.top() + float(canvas.theme.port_height)/2
+            item1_new_x = item1_x + abs(item1_x - item2_x) / 2
+            item2_new_x = item2_x - abs(item1_x - item2_x) / 2
 
             path = QPainterPath(QPointF(item1_x, item1_y))
             path.cubicTo(item1_new_x, item1_y, item2_new_x, item2_y, item2_x, item2_y)
