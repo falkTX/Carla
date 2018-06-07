@@ -3056,17 +3056,22 @@ public:
             {
                 const EngineEvent& event(fEventsIn.ctrl->port->getEvent(i));
 
-                if (event.time >= frames)
-                    continue;
+                uint32_t eventTime = event.time;
+                CARLA_SAFE_ASSERT_CONTINUE(eventTime < frames);
 
-                CARLA_ASSERT_INT2(event.time >= timeOffset, event.time, timeOffset);
-
-                if (isSampleAccurate && event.time > timeOffset)
+                if (eventTime < timeOffset)
                 {
-                    if (processSingle(audioIn, audioOut, cvIn, cvOut, event.time - timeOffset, timeOffset))
+                    carla_stderr2("Timing error, eventTime_%u < timeOffset:%u for '%s'",
+                                  eventTime, timeOffset, pData->name);
+                    eventTime = timeOffset;
+                }
+
+                if (isSampleAccurate && eventTime > timeOffset)
+                {
+                    if (processSingle(audioIn, audioOut, cvIn, cvOut, eventTime - timeOffset, timeOffset))
                     {
                         startTime  = 0;
-                        timeOffset = event.time;
+                        timeOffset = eventTime;
 
                         if (pData->midiprog.current >= 0 && pData->midiprog.count > 0)
                             nextBankId = pData->midiprog.data[pData->midiprog.current].bank;
@@ -3089,7 +3094,7 @@ public:
                             {
                                 fEventsIn.data[j].midi.event_count = 0;
                                 fEventsIn.data[j].midi.size        = 0;
-                                evInMidiStates[j].position         = event.time;
+                                evInMidiStates[j].position         = eventTime;
                             }
                         }
 
@@ -3213,7 +3218,7 @@ public:
                             midiData[1] = uint8_t(ctrlEvent.param);
                             midiData[2] = uint8_t(ctrlEvent.value*127.0f);
 
-                            const uint32_t mtime(isSampleAccurate ? startTime : event.time);
+                            const uint32_t mtime(isSampleAccurate ? startTime : eventTime);
 
                             if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
                                 lv2_atom_buffer_write(&evInAtomIters[fEventsIn.ctrlIndex], mtime, 0, kUridMidiEvent, 3, midiData);
@@ -3241,7 +3246,7 @@ public:
                             midiData[1] = MIDI_CONTROL_BANK_SELECT;
                             midiData[2] = uint8_t(ctrlEvent.param);
 
-                            const uint32_t mtime(isSampleAccurate ? startTime : event.time);
+                            const uint32_t mtime(isSampleAccurate ? startTime : eventTime);
 
                             if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
                                 lv2_atom_buffer_write(&evInAtomIters[fEventsIn.ctrlIndex], mtime, 0, kUridMidiEvent, 3, midiData);
@@ -3277,7 +3282,7 @@ public:
                             midiData[0] = uint8_t(MIDI_STATUS_PROGRAM_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             midiData[1] = uint8_t(ctrlEvent.param);
 
-                            const uint32_t mtime(isSampleAccurate ? startTime : event.time);
+                            const uint32_t mtime(isSampleAccurate ? startTime : eventTime);
 
                             if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
                                 lv2_atom_buffer_write(&evInAtomIters[fEventsIn.ctrlIndex], mtime, 0, kUridMidiEvent, 2, midiData);
@@ -3293,7 +3298,7 @@ public:
                     case kEngineControlEventTypeAllSoundOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-                            const uint32_t mtime(isSampleAccurate ? startTime : event.time);
+                            const uint32_t mtime(isSampleAccurate ? startTime : eventTime);
 
                             uint8_t midiData[3];
                             midiData[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
@@ -3322,7 +3327,7 @@ public:
                             }
 #endif
 
-                            const uint32_t mtime(isSampleAccurate ? startTime : event.time);
+                            const uint32_t mtime(isSampleAccurate ? startTime : eventTime);
 
                             uint8_t midiData[3];
                             midiData[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
@@ -3364,7 +3369,7 @@ public:
                         status = MIDI_STATUS_NOTE_OFF;
 
                     const uint32_t j     = fEventsIn.ctrlIndex;
-                    const uint32_t mtime = isSampleAccurate ? startTime : event.time;
+                    const uint32_t mtime = isSampleAccurate ? startTime : eventTime;
 
                     // put back channel in data
                     uint8_t midiData2[midiEvent.size];

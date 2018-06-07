@@ -906,15 +906,21 @@ public:
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
 
-                CARLA_SAFE_ASSERT_CONTINUE(event.time < frames);
-                CARLA_SAFE_ASSERT_BREAK(event.time >= timeOffset);
+                uint32_t eventTime = event.time;
+                CARLA_SAFE_ASSERT_CONTINUE(eventTime < frames);
 
-                if (event.time > timeOffset)
+                if (eventTime < timeOffset)
                 {
-                    if (processSingle(audioOut, event.time - timeOffset, timeOffset))
+                    carla_stderr2("Timing error, eventTime_%u < timeOffset:%u for '%s'",
+                                  eventTime, timeOffset, pData->name);
+                    eventTime = timeOffset;
+                }
+                else if (eventTime > timeOffset)
+                {
+                    if (processSingle(audioOut, eventTime - timeOffset, timeOffset))
                     {
                         startTime  = 0;
-                        timeOffset = event.time;
+                        timeOffset = eventTime;
                     }
                     else
                         startTime += timeOffset;
