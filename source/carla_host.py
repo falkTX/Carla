@@ -200,6 +200,7 @@ class HostWindow(QMainWindow):
                 self.ui.act_plugin_add.setVisible(False)
                 self.ui.act_plugin_add2.setVisible(False)
                 self.ui.act_plugin_remove_all.setVisible(False)
+                self.ui.act_add_jack.setVisible(False)
                 self.ui.menu_Plugin.setEnabled(False)
                 self.ui.menu_Plugin.setVisible(False)
                 self.ui.menu_Plugin.menuAction().setVisible(False)
@@ -1567,7 +1568,7 @@ class HostWindow(QMainWindow):
 
         settings = QSettings("falkTX", "Carla2")
 
-        if self.host.experimental:
+        if self.host.experimental and not self.host.isControl:
             self.ui.act_add_jack.setVisible(settings.value(CARLA_KEY_EXPERIMENTAL_JACK_APPS,
                                                            CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS, type=bool))
         else:
