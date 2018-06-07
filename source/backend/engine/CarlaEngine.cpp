@@ -285,6 +285,8 @@ void CarlaEngine::idle() noexcept
 #ifdef HAVE_LIBLO
     pData->osc.idle();
 #endif
+
+    ctlra_idle_iter(pData->ctlra);
 }
 
 CarlaEngineClient* CarlaEngine::addClient(CarlaPlugin* const)

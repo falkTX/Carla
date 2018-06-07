@@ -392,6 +392,9 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Set libs stuff (part 2)
 
+CTLRA_FLAGS      = $(shell pkg-config --cflags openav_ctlra)
+CTLRA_LIBS       = $(shell pkg-config --libs openav_ctlra)
+
 RTAUDIO_FLAGS    = -DHAVE_GETTIMEOFDAY -D__RTAUDIO_DUMMY__
 RTMIDI_FLAGS     = -D__RTMIDI_DUMMY__
 

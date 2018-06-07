@@ -875,6 +875,55 @@ public:
     // -------------------------------------------------------------------
     // Virtual, per-engine type calls
 
+static void carla_feedback_func(struct ctlra_dev_t *dev,
+                                uint32_t num_events,
+                                struct ctlra_event_t** events,
+                                void *userdata)
+{
+    for (uint32_t i=0; i<num_events; ++i)
+    {
+        struct ctlra_event_t* ev = events[i];
+
+        switch (ev->type)
+        {
+        case CTLRA_EVENT_ENCODER:
+            if (ev->encoder.flags & CTLRA_EVENT_ENCODER_FLAG_FLOAT)
+            {
+                CarlaEngineJack* engine = (CarlaEngineJack*)userdata;
+
+                if (engine->getCurrentPluginCount() == 0)
+                    return;
+
+                CarlaPlugin* plugin = engine->getPlugin(0);
+
+                if (plugin == nullptr)
+                    return;
+
+                const ParameterRanges& ranges = plugin->getParameterRanges(ev->encoder.id);
+
+                float currentValue = plugin->getParameterValue(ev->encoder.id);
+                currentValue += ev->encoder.delta_float * (ranges.max - ranges.min);
+                plugin->setParameterValue(ev->encoder.id, currentValue, true, true, true);
+            }
+            break;
+        }
+    }
+}
+
+static int carla_accept_dev_func(struct ctlra_t *ctlra,
+                                 const struct ctlra_dev_info_t *info,
+                                 struct ctlra_dev_t *dev,
+                                 void *userdata)
+{
+    //CarlaEngine* engine = (CarlaEngine*)userdata;
+
+    ctlra_dev_set_event_func(dev, carla_feedback_func);
+    ctlra_dev_set_callback_userdata(dev, userdata);
+
+    carla_stdout("Got dev %p %p", dev, userdata);
+    return 1;
+}
+
     bool init(const char* const clientName) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient == nullptr, false);
@@ -984,6 +1033,9 @@ public:
 
         if (jackbridge_activate(fClient))
         {
+            ctlra_probe(pData->ctlra, carla_accept_dev_func, this);
+            //ctlra_dev_set_callback_userdata(pData->ctlra, this);
+
             startThread();
             callback(ENGINE_CALLBACK_ENGINE_STARTED, 0,
                      opts.processMode, opts.transportMode,

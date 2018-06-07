@@ -24,6 +24,8 @@
 
 #include "hylia/hylia.h"
 
+#include <ctlra/ctlra.h>
+
 // FIXME only use CARLA_PREVENT_HEAP_ALLOCATION for structs
 // maybe separate macro
 
@@ -253,6 +255,7 @@ struct CarlaEngine::ProtectedData {
     EngineInternalEvents events;
 #ifndef BUILD_BRIDGE
     EngineInternalGraph  graph;
+    struct ctlra_t*      ctlra;
 #endif
     EngineInternalTime   time;
     EngineNextAction     nextAction;

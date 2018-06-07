@@ -449,6 +449,7 @@ CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
       events(),
 #ifndef BUILD_BRIDGE
       graph(engine),
+      ctlra(ctlra_create(nullptr)),
 #endif
       time(timeInfo, options.transportMode),
       nextAction()
@@ -466,6 +467,7 @@ CarlaEngine::ProtectedData::~ProtectedData() noexcept
     CARLA_SAFE_ASSERT(isIdling == 0);
 #ifndef BUILD_BRIDGE
     CARLA_SAFE_ASSERT(plugins == nullptr);
+    ctlra_exit(ctlra);
 #endif
 }
 
