@@ -589,6 +589,7 @@ def handleInitialCommandLineArguments(file):
             print(" and OPTION can be one or more of the following:")
             print("")
             print("    --gdb    \t Run Carla inside gdb.")
+            print("    --profile \t Run Carla inside cProfile.")
             print(" -n,--no-gui \t Run Carla headless, don't show UI.")
             print("")
             print(" -h,--help   \t Print this help text and exit.")

@@ -10,6 +10,10 @@ if [ "$1" = "--gdb" ]; then
   PYTHON="gdb --args $PYTHON"
 fi
 
+if [ "$1" = "--profile" ]; then
+  PYTHON="$PYTHON -m cProfile"
+fi
+
 INSTALL_PREFIX="X-PREFIX-X"
 export PATH="$INSTALL_PREFIX"/lib/carla:$PATH
 exec $PYTHON "$INSTALL_PREFIX"/share/carla/carla-jack-single --with-appname="$0" --with-libprefix="$INSTALL_PREFIX" "$@"
