@@ -745,7 +745,9 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
                     index = stateParameter->index;
             }
             else
+            {
                 index = stateParameter->index;
+            }
         }
         else if (pluginType == PLUGIN_LV2)
         {
@@ -765,10 +767,13 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
                     }
                 }
                 if (index == -1)
-                    carla_stderr("Failed to find LV2 parameter symbol '%s')", stateParameter->symbol);
+                    carla_stderr("Failed to find LV2 parameter symbol '%s' for '%s'",
+                                 stateParameter->symbol, pData->name);
             }
             else
+            {
                 carla_stderr("LV2 Plugin parameter '%s' has no symbol", stateParameter->name);
+            }
         }
         else
         {
@@ -795,7 +800,8 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 #endif
         }
         else
-            carla_stderr("Could not set parameter data for '%s'", stateParameter->name);
+            carla_stderr("Could not set parameter '%s' value for '%s'",
+                         stateParameter->name, pData->name);
     }
 
     // ---------------------------------------------------------------
