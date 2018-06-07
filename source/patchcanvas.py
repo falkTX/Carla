@@ -2391,9 +2391,6 @@ class CanvasBox(QGraphicsItem):
         max_out_height = canvas.theme.box_header_height + canvas.theme.box_header_spacing
         port_spacing   = canvas.theme.port_height + canvas.theme.port_spacing
 
-        # reset box size
-        self.p_height = canvas.theme.box_header_height + canvas.theme.box_header_spacing + 1
-
         # Check Text Name size
         app_name_size = QFontMetrics(self.m_font_name).width(self.m_group_name) + 30
         self.p_width = max( 50, app_name_size )
@@ -2409,7 +2406,6 @@ class CanvasBox(QGraphicsItem):
         last_in_type  = last_out_type = PORT_TYPE_NULL
         for port_type in port_types:
             for port in port_list:
-
                 if port.port_type != port_type:
                         continue
 
@@ -2432,126 +2428,45 @@ class CanvasBox(QGraphicsItem):
                             max_out_height += canvas.theme.port_spacingT
                         last_out_type = port.port_type
 
-        if canvas.theme.port_spacingT == 0:
-            max_in_height  += 2
-            max_out_height += 2
-
         self.p_width = max(self.p_width, 30 + max_in_width + max_out_width)
-        self.p_height = max(self.p_height, last_in_pos, last_out_pos)
+        self.p_height = max(max_in_height, max_out_height)
+        self.p_height += max(canvas.theme.port_spacing, canvas.theme.port_spacingT) - canvas.theme.port_spacing
+        self.p_height += canvas.theme.box_pen.widthF()
 
-        if canvas.theme.box_header_spacing > 0:
-            if len(port_list) == 0:
-                self.p_height -= canvas.theme.box_header_spacing
-            else:
-                self.p_height -= canvas.theme.box_header_spacing/2
+        if len(port_list) == 0:
+            self.p_height = canvas.theme.box_header_height
 
+        # Ports re-positioning
         last_in_pos  = canvas.theme.box_header_height + canvas.theme.box_header_spacing
         last_out_pos = canvas.theme.box_header_height + canvas.theme.box_header_spacing
-        last_in_type  = last_out_type = PORT_TYPE_NULL
+        last_in_type = last_out_type = PORT_TYPE_NULL
 
-        # Re-position ports, AUDIO_JACK
-        for port in port_list:
-            if port.port_type != PORT_TYPE_AUDIO_JACK:
-                continue
+        for port_type in port_types:
+            for port in port_list:
+                if port.port_type != port_type:
+                    continue
 
-            if port.port_mode == PORT_MODE_INPUT:
+                if port.port_mode == PORT_MODE_INPUT:
 
-                if port.port_type != last_in_type:
-                    if last_in_type != PORT_TYPE_NULL:
-                        last_in_pos += canvas.theme.port_spacingT
-                    last_in_type = port.port_type
+                    if port.port_type != last_in_type:
+                        if last_in_type != PORT_TYPE_NULL:
+                            last_in_pos += canvas.theme.port_spacingT
+                        last_in_type = port.port_type
 
-                port.widget.setPos(QPointF(1 + canvas.theme.port_offset, last_in_pos))
-                port.widget.setPortWidth(max_in_width)
-                last_in_pos += port_spacing
+                    port.widget.setPos(QPointF(1 + canvas.theme.port_offset, last_in_pos))
+                    port.widget.setPortWidth(max_in_width)
+                    last_in_pos += port_spacing
 
-            elif port.port_mode == PORT_MODE_OUTPUT:
+                elif port.port_mode == PORT_MODE_OUTPUT:
 
-                if port.port_type != last_out_type:
-                    if last_out_type != PORT_TYPE_NULL:
-                        last_out_pos += canvas.theme.port_spacingT
-                    last_out_type = port.port_type
+                    if port.port_type != last_out_type:
+                        if last_out_type != PORT_TYPE_NULL:
+                            last_out_pos += canvas.theme.port_spacingT
+                        last_out_type = port.port_type
 
-                port.widget.setPos(QPointF(self.p_width - max_out_width - canvas.theme.port_offset - 13, last_out_pos))
-                port.widget.setPortWidth(max_out_width)
-                last_out_pos += port_spacing
-
-        # Re-position ports, MIDI_JACK
-        for port in port_list:
-            if port.port_type != PORT_TYPE_MIDI_JACK:
-                continue
-
-            if port.port_mode == PORT_MODE_INPUT:
-                if port.port_type != last_in_type:
-                    if last_in_type != PORT_TYPE_NULL:
-                        last_in_pos += canvas.theme.port_spacingT
-                    last_in_type = port.port_type
-
-                port.widget.setPos(QPointF(1 + canvas.theme.port_offset, last_in_pos))
-                port.widget.setPortWidth(max_in_width)
-                last_in_pos += port_spacing
-
-            elif port.port_mode == PORT_MODE_OUTPUT:
-                if port.port_type != last_out_type:
-                    if last_out_type != PORT_TYPE_NULL:
-                        last_out_pos += canvas.theme.port_spacingT
-                    last_out_type = port.port_type
-
-                port.widget.setPos(QPointF(self.p_width - max_out_width - canvas.theme.port_offset - 13, last_out_pos))
-                port.widget.setPortWidth(max_out_width)
-                last_out_pos += port_spacing
-
-        # Re-position ports, MIDI_ALSA
-        for port in port_list:
-            if port.port_type != PORT_TYPE_MIDI_ALSA:
-                continue
-
-            if port.port_mode == PORT_MODE_INPUT:
-                if port.port_type != last_in_type:
-                    if last_in_type != PORT_TYPE_NULL:
-                        last_in_pos += canvas.theme.port_spacingT
-                    last_in_type = port.port_type
-
-                port.widget.setPos(QPointF(1 + canvas.theme.port_offset, last_in_pos))
-                port.widget.setPortWidth(max_in_width)
-                last_in_pos += port_spacing
-
-            elif port.port_mode == PORT_MODE_OUTPUT:
-                if port.port_type != last_out_type:
-                    if last_out_type != PORT_TYPE_NULL:
-                        last_out_pos += canvas.theme.port_spacingT
-                    last_out_type = port.port_type
-
-                port.widget.setPos(QPointF(self.p_width - max_out_width - canvas.theme.port_offset - 13, last_out_pos))
-                port.widget.setPortWidth(max_out_width)
-                last_out_pos += port_spacing
-
-        # Re-position ports, PARAMETER
-        for port in port_list:
-            if port.port_type != PORT_TYPE_PARAMETER:
-                continue
-
-            if port.port_mode == PORT_MODE_INPUT:
-                if port.port_type != last_in_type:
-                    if last_in_type != PORT_TYPE_NULL:
-                        last_in_pos += canvas.theme.port_spacingT
-                    last_in_type = port.port_type
-
-                port.widget.setPos(QPointF(1 + canvas.theme.port_offset, last_in_pos))
-                port.widget.setPortWidth(max_in_width)
-                last_in_pos += port_spacing
-
-            elif port.port_mode == PORT_MODE_OUTPUT:
-                if port.port_type != last_out_type:
-                    if last_out_type != PORT_TYPE_NULL:
-                        last_out_pos += canvas.theme.port_spacingT
-                    last_out_type = port.port_type
-
-                port.widget.setPos(QPointF(self.p_width - max_out_width - canvas.theme.port_offset - 13, last_out_pos))
-                port.widget.setPortWidth(max_out_width)
-                last_out_pos += port_spacing
-
-        self.p_height += canvas.theme.box_pen.widthF()
+                    port.widget.setPos(QPointF(self.p_width - max_out_width - canvas.theme.port_offset - 13, last_out_pos))
+                    port.widget.setPortWidth(max_out_width)
+                    last_out_pos += port_spacing
 
         self.repaintLines(True)
         self.update()
