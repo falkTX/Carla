@@ -2431,17 +2431,21 @@ class CanvasBox(QGraphicsItem):
                         port.widget.setY(last_out_pos)
                         last_out_pos += port_spacing
 
-            # Horizontal ports re-positioning
-            for port in port_list:
-                if port.port_mode == PORT_MODE_INPUT:
-                    port.widget.setX(1 + canvas.theme.port_offset)
-                    port.widget.setPortWidth(max_in_width)
-
-                elif port.port_mode == PORT_MODE_OUTPUT:
-                    port.widget.setX(self.p_width - max_out_width - canvas.theme.port_offset - 13)
-                    port.widget.setPortWidth(max_out_width)
 
             self.p_width = max(self.p_width, 30 + max_in_width + max_out_width)
+
+            # Horizontal ports re-positioning
+            inX = 1 + canvas.theme.port_offset
+            outX = self.p_width - max_out_width - canvas.theme.port_offset - 13
+            for port_type in port_types:
+                for port in port_type[1]:
+                    if port.port_mode == PORT_MODE_INPUT:
+                        port.widget.setX(inX)
+                        port.widget.setPortWidth(max_in_width)
+
+                    elif port.port_mode == PORT_MODE_OUTPUT:
+                        port.widget.setX(outX)
+                        port.widget.setPortWidth(max_out_width)
             self.p_height = max(last_in_pos, last_out_pos)
 
             self.p_height += max(canvas.theme.port_spacing, canvas.theme.port_spacingT) - canvas.theme.port_spacing
