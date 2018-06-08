@@ -2484,12 +2484,13 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
 def fileCallback(ptr, action, isDir, title, filter):
     ret = ("", "") if config_UseQt5 else ""
 
-    if action == FILE_CALLBACK_DEBUG:
-        pass
-    elif action == FILE_CALLBACK_OPEN:
-        ret = QFileDialog.getOpenFileName(gCarla.gui, charPtrToString(title), "", charPtrToString(filter) ) #, QFileDialog.ShowDirsOnly if isDir else 0x0)
+    title  = charPtrToString(title)
+    filter = charPtrToString(filter)
+
+    if action == FILE_CALLBACK_OPEN:
+        ret = QFileDialog.getOpenFileName(gCarla.gui, title, "", filter) #, QFileDialog.ShowDirsOnly if isDir else 0x0)
     elif action == FILE_CALLBACK_SAVE:
-        ret = QFileDialog.getSaveFileName(gCarla.gui, charPtrToString(title), "", charPtrToString(filter), QFileDialog.ShowDirsOnly if isDir else 0x0)
+        ret = QFileDialog.getSaveFileName(gCarla.gui, title, "", filter, QFileDialog.ShowDirsOnly if isDir else 0x0)
 
     if config_UseQt5:
         ret = ret[0]
