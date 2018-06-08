@@ -94,25 +94,38 @@ CARLA_BACKEND_START_NAMESPACE
 // -------------------------------------------------------------------
 // Fallback data
 
-static const CustomData kCustomDataFallback = { nullptr, nullptr, nullptr };
+static const CustomData  kCustomDataFallback = { nullptr, nullptr, nullptr };
+static const EngineEvent kNullEngineEvent    = { kEngineEventTypeNull, 0, 0, {} };
 
 // -----------------------------------------------------------------------
 
 struct NativePluginMidiData {
+    struct MultiPortData {
+        uint32_t cachedEventCount;
+        uint32_t usedIndex;
+
+        MultiPortData()
+            : cachedEventCount(0),
+              usedIndex(0) {}
+    };
+
     uint32_t  count;
     uint32_t* indexes;
     CarlaEngineEventPort** ports;
+    MultiPortData* multiportData;
 
     NativePluginMidiData() noexcept
         : count(0),
           indexes(nullptr),
-          ports(nullptr) {}
+          ports(nullptr),
+          multiportData(nullptr) {}
 
     ~NativePluginMidiData() noexcept
     {
         CARLA_SAFE_ASSERT_INT(count == 0, count);
         CARLA_SAFE_ASSERT(indexes == nullptr);
         CARLA_SAFE_ASSERT(ports == nullptr);
+        CARLA_SAFE_ASSERT(multiportData == nullptr);
     }
 
     void createNew(const uint32_t newCount)
@@ -122,19 +135,23 @@ struct NativePluginMidiData {
         CARLA_SAFE_ASSERT_RETURN(ports == nullptr,);
         CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
 
-        indexes = new uint32_t[newCount];
-        ports   = new CarlaEngineEventPort*[newCount];
-        count   = newCount;
+        indexes       = new uint32_t[newCount];
+        ports         = new CarlaEngineEventPort*[newCount];
+        multiportData = new MultiPortData[newCount];
+        count         = newCount;
 
-        for (uint32_t i=0; i < newCount; ++i)
-            indexes[i] = 0;
-
-        for (uint32_t i=0; i < newCount; ++i)
-            ports[i] = nullptr;
+        carla_zeroStructs(indexes, newCount);
+        carla_zeroStructs(ports, newCount);
     }
 
     void clear() noexcept
     {
+        if (multiportData != nullptr)
+        {
+            delete[] multiportData;
+            multiportData = nullptr;
+        }
+
         if (ports != nullptr)
         {
             for (uint32_t i=0; i < count; ++i)
@@ -163,8 +180,13 @@ struct NativePluginMidiData {
     {
         for (uint32_t i=0; i < count; ++i)
         {
+            carla_zeroStruct(multiportData[i]);
+
             if (ports[i] != nullptr)
+            {
                 ports[i]->initBuffer();
+                multiportData[i].cachedEventCount = ports[i]->getEventCount();
+            }
         }
     }
 
@@ -1371,6 +1393,50 @@ public:
         }
     }
 
+    const EngineEvent& findNextEvent(const uint32_t index)
+    {
+        if (fMidiIn.count == 1)
+        {
+            if (index >= fMidiIn.multiportData[0].cachedEventCount)
+                return kNullEngineEvent;
+
+            return fMidiIn.ports[0]->getEvent(index);
+        }
+
+        uint32_t lowestSampleTime = 9999999;
+        uint32_t portMatching = 0;
+        bool found = false;
+
+        // process events in order for multiple ports
+        for (uint32_t m=0; m < fMidiIn.count; ++m)
+        {
+            CarlaEngineEventPort* const eventPort(fMidiIn.ports[m]);
+            NativePluginMidiData::MultiPortData& multiportData(fMidiIn.multiportData[m]);
+
+            if (multiportData.usedIndex == multiportData.cachedEventCount)
+                continue;
+
+            const EngineEvent& event(eventPort->getEventUnchecked(multiportData.usedIndex));
+
+            if (event.time < lowestSampleTime)
+            {
+                lowestSampleTime = event.time;
+                portMatching = m;
+                found = true;
+            }
+        }
+
+        if (found)
+        {
+            CarlaEngineEventPort* const eventPort(fMidiIn.ports[portMatching]);
+            NativePluginMidiData::MultiPortData& multiportData(fMidiIn.multiportData[portMatching]);
+
+            return eventPort->getEvent(multiportData.usedIndex++);
+        }
+
+        return kNullEngineEvent;
+    }
+
     void process(const float** const audioIn, float** const audioOut, const float** const cvIn, float** const cvOut, const uint32_t frames) override
     {
         // --------------------------------------------------------------------------------------------------------
@@ -1503,13 +1569,12 @@ public:
             else
                 nextBankId = 0;
 
-            for (uint32_t m=0, max=jmax(1U, fMidiIn.count); m < max; ++m)
+            for (uint32_t i=0;; ++i)
             {
-                CarlaEngineEventPort* const eventPort(m == 0 ? pData->event.portIn : fMidiIn.ports[m]);
+                const EngineEvent& event(findNextEvent(i));
 
-            for (uint32_t i=0, numEvents=eventPort->getEventCount(); i < numEvents; ++i)
-            {
-                const EngineEvent& event(eventPort->getEvent(i));
+                if (event.type == kEngineEventTypeNull)
+                    break;
 
                 uint32_t eventTime = event.time;
                 CARLA_SAFE_ASSERT_CONTINUE(eventTime < frames);
@@ -1811,8 +1876,6 @@ public:
 
             if (frames > timeOffset)
                 processSingle(audioIn, audioOut, cvIn, cvOut, frames - timeOffset, timeOffset);
-
-            } // eventPort
 
         } // End of Event Input and Processing
 
