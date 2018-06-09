@@ -1335,7 +1335,7 @@ typedef struct {
 /*!
  * Parameter ranges.
  */
-typedef struct {
+typedef struct _ParameterRanges {
     /*!
      * Default value.
      */
