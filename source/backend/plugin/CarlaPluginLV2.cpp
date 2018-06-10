@@ -1268,7 +1268,11 @@ public:
 
     void showCustomUI(const bool yesNo) override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL,);
+        if (fUI.type == UI::TYPE_NULL)
+        {
+            CARLA_SAFE_ASSERT(!yesNo);
+            return;
+        }
 
         const uintptr_t frontendWinId(pData->engine->getOptions().frontendWinId);
 
