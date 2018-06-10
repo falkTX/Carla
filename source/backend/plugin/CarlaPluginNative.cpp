@@ -99,59 +99,42 @@ static const EngineEvent kNullEngineEvent    = { kEngineEventTypeNull, 0, 0, {} 
 
 // -----------------------------------------------------------------------
 
-struct NativePluginMidiData {
-    struct MultiPortData {
-        uint32_t cachedEventCount;
-        uint32_t usedIndex;
-
-        MultiPortData()
-            : cachedEventCount(0),
-              usedIndex(0) {}
-    };
-
+struct NativePluginMidiOutData {
     uint32_t  count;
     uint32_t* indexes;
     CarlaEngineEventPort** ports;
-    MultiPortData* multiportData;
 
-    NativePluginMidiData() noexcept
+    NativePluginMidiOutData() noexcept
         : count(0),
           indexes(nullptr),
-          ports(nullptr),
-          multiportData(nullptr) {}
+          ports(nullptr) {}
 
-    ~NativePluginMidiData() noexcept
+    ~NativePluginMidiOutData() noexcept
     {
         CARLA_SAFE_ASSERT_INT(count == 0, count);
         CARLA_SAFE_ASSERT(indexes == nullptr);
         CARLA_SAFE_ASSERT(ports == nullptr);
-        CARLA_SAFE_ASSERT(multiportData == nullptr);
     }
 
-    void createNew(const uint32_t newCount)
+    bool createNew(const uint32_t newCount)
     {
         CARLA_SAFE_ASSERT_INT(count == 0, count);
-        CARLA_SAFE_ASSERT_RETURN(indexes == nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(ports == nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
+        CARLA_SAFE_ASSERT_RETURN(indexes == nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(ports == nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(newCount > 0, false);
 
         indexes       = new uint32_t[newCount];
         ports         = new CarlaEngineEventPort*[newCount];
-        multiportData = new MultiPortData[newCount];
         count         = newCount;
 
         carla_zeroStructs(indexes, newCount);
         carla_zeroStructs(ports, newCount);
+
+        return true;
     }
 
     void clear() noexcept
     {
-        if (multiportData != nullptr)
-        {
-            delete[] multiportData;
-            multiportData = nullptr;
-        }
-
         if (ports != nullptr)
         {
             for (uint32_t i=0; i < count; ++i)
@@ -180,6 +163,57 @@ struct NativePluginMidiData {
     {
         for (uint32_t i=0; i < count; ++i)
         {
+            if (ports[i] != nullptr)
+                ports[i]->initBuffer();
+        }
+    }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(NativePluginMidiOutData)
+};
+
+struct NativePluginMidiInData : NativePluginMidiOutData {
+    struct MultiPortData {
+        uint32_t cachedEventCount;
+        uint32_t usedIndex;
+    };
+
+    MultiPortData* multiportData;
+
+    NativePluginMidiInData() noexcept
+        : NativePluginMidiOutData(),
+          multiportData(nullptr) {}
+
+    ~NativePluginMidiInData() noexcept
+    {
+        CARLA_SAFE_ASSERT(multiportData == nullptr);
+    }
+
+    bool createNew(const uint32_t newCount)
+    {
+        if (! NativePluginMidiOutData::createNew(newCount))
+            return false;
+
+        multiportData = new MultiPortData[newCount];
+        carla_zeroStructs(multiportData, newCount);
+
+        return true;
+    }
+
+    void clear() noexcept
+    {
+        if (multiportData != nullptr)
+        {
+            delete[] multiportData;
+            multiportData = nullptr;
+        }
+
+        NativePluginMidiOutData::clear();
+    }
+
+    void initBuffers() const noexcept
+    {
+        for (uint32_t i=0; i < count; ++i)
+        {
             carla_zeroStruct(multiportData[i]);
 
             if (ports[i] != nullptr)
@@ -190,7 +224,7 @@ struct NativePluginMidiData {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(NativePluginMidiData)
+    CARLA_DECLARE_NON_COPY_STRUCT(NativePluginMidiInData)
 };
 
 // -----------------------------------------------------
@@ -1411,7 +1445,7 @@ public:
         for (uint32_t m=0; m < fMidiIn.count; ++m)
         {
             CarlaEngineEventPort* const eventPort(fMidiIn.ports[m]);
-            NativePluginMidiData::MultiPortData& multiportData(fMidiIn.multiportData[m]);
+            NativePluginMidiInData::MultiPortData& multiportData(fMidiIn.multiportData[m]);
 
             if (multiportData.usedIndex == multiportData.cachedEventCount)
                 continue;
@@ -1429,7 +1463,7 @@ public:
         if (found)
         {
             CarlaEngineEventPort* const eventPort(fMidiIn.ports[portMatching]);
-            NativePluginMidiData::MultiPortData& multiportData(fMidiIn.multiportData[portMatching]);
+            NativePluginMidiInData::MultiPortData& multiportData(fMidiIn.multiportData[portMatching]);
 
             return eventPort->getEvent(multiportData.usedIndex++);
         }
@@ -2578,8 +2612,8 @@ private:
     uint32_t fCurBufferSize;
     double   fCurSampleRate;
 
-    NativePluginMidiData fMidiIn;
-    NativePluginMidiData fMidiOut;
+    NativePluginMidiInData  fMidiIn;
+    NativePluginMidiOutData fMidiOut;
 
     NativeTimeInfo fTimeInfo;
 
