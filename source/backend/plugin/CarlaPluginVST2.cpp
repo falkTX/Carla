@@ -1226,7 +1226,7 @@ public:
 
                 if (eventTime < timeOffset)
                 {
-                    carla_stderr2("Timing error, eventTime_%u < timeOffset:%u for '%s'",
+                    carla_stderr2("Timing error, eventTime:%u < timeOffset:%u for '%s'",
                                   eventTime, timeOffset, pData->name);
                     eventTime = timeOffset;
                 }
