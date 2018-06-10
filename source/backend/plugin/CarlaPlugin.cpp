@@ -1020,6 +1020,7 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
 
         mainStream << "@prefix atom: <http://lv2plug.in/ns/ext/atom#> .\n";
         mainStream << "@prefix doap: <http://usefulinc.com/ns/doap#> .\n";
+        mainStream << "@prefix foaf: <http://xmlns.com/foaf/0.1/> .\n";
         mainStream << "@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .\n";
         mainStream << "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n";
         mainStream << "@prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .\n";
@@ -1201,8 +1202,13 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
             mainStream << "    ] ;\n";
         }
 
+        char strBuf[STR_MAX];
+        getMaker(strBuf);
+        strBuf[STR_MAX-1] = '\0';
+
         mainStream << "    rdfs:comment \"Plugin generated using Carla LV2 export.\" ;\n";
-        mainStream << "    doap:name \"\"\"" << getName() << "\"\"\" .\n";
+        mainStream << "    doap:name \"\"\"" << getName() << "\"\"\" ;\n";
+        mainStream << "    doap:maintainer [ foaf:name \"\"\"" << strBuf << "\"\"\" ] .\n";
         mainStream << "\n";
 
         const CarlaString mainFilename(bundlepath + CARLA_OS_SEP_STR + symbol + ".ttl");
