@@ -210,8 +210,17 @@ struct NativePluginMidiInData : NativePluginMidiOutData {
         NativePluginMidiOutData::clear();
     }
 
-    void initBuffers() const noexcept
+    void initBuffers(CarlaEngineEventPort* const port) const noexcept
     {
+        if (count == 1)
+        {
+            CARLA_SAFE_ASSERT_RETURN(port != nullptr,);
+
+            carla_zeroStruct(multiportData[0]);
+            multiportData[0].cachedEventCount = port->getEventCount();
+            return;
+        }
+
         for (uint32_t i=0; i < count; ++i)
         {
             carla_zeroStruct(multiportData[i]);
@@ -1218,7 +1227,7 @@ public:
             pData->param.ranges[j].stepLarge = stepLarge;
         }
 
-        if (needsCtrlIn && mIns <= 1)
+        if (needsCtrlIn || mIns == 1)
         {
             portName.clear();
 
@@ -1234,7 +1243,7 @@ public:
             pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
         }
 
-        if (needsCtrlOut && mOuts <= 1)
+        if (needsCtrlOut || mOuts == 1)
         {
             portName.clear();
 
@@ -1434,7 +1443,7 @@ public:
             if (index >= fMidiIn.multiportData[0].cachedEventCount)
                 return kNullEngineEvent;
 
-            return fMidiIn.ports[0]->getEvent(index);
+            return pData->event.portIn->getEvent(index);
         }
 
         uint32_t lowestSampleTime = 9999999;
@@ -2210,10 +2219,10 @@ public:
 
     void initBuffers() const noexcept override
     {
-        fMidiIn.initBuffers();
-        fMidiOut.initBuffers();
-
         CarlaPlugin::initBuffers();
+
+        fMidiIn.initBuffers(pData->event.portIn);
+        fMidiOut.initBuffers();
     }
 
     void clearBuffers() noexcept override
