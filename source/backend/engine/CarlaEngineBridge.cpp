@@ -584,7 +584,7 @@ public:
     {
         CarlaEngine::callback(action, pluginId, value1, value2, value3, valueStr);
 
-        if (fLastPingTime < 0)
+        if (fClosingDown)
             return;
 
         switch (action)
