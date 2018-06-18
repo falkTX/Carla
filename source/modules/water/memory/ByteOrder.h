@@ -153,7 +153,7 @@ inline uint32 ByteOrder::swap (uint32 n) noexcept
 {
    #ifdef CARLA_OS_MAC
     return OSSwapInt32 (n);
-   #elif defined(CARLA_OS_WIN) || ! (defined (__arm__) || defined (__arm64__))
+   #elif defined(CARLA_OS_WIN) || ! (defined (__arm__) || defined (__arm64__) || defined (__aarch64__))
     asm("bswap %%eax" : "=a"(n) : "a"(n));
     return n;
    #else
