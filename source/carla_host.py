@@ -2881,7 +2881,7 @@ def runHostWithoutUI(host):
 
     while host.is_engine_running() and not gCarla.term:
         host.engine_idle()
-        sleep(0.5)
+        sleep(0.0333) # 30 Hz
 
     # --------------------------------------------------------------------------------------------------------
     # Stop
