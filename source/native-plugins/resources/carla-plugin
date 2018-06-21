@@ -60,8 +60,7 @@ class PluginHost(CarlaHostQtPlugin):
         if self.fExternalUI is None:
             return False
 
-        self.fExternalUI.send(lines)
-        return True
+        return self.fExternalUI.send(lines)
 
     # -------------------------------------------------------------------
 
