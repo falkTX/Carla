@@ -2491,6 +2491,7 @@ void CarlaPlugin::setPatchbayNodeId(const uint32_t nodeId) noexcept
 
 void CarlaPlugin::restoreLV2State() noexcept
 {
+    carla_stderr2("Warning: restoreLV2State() called for non-implemented type");
 }
 
 void CarlaPlugin::waitForBridgeSaveSignal() noexcept

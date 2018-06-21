@@ -1,6 +1,6 @@
 /*
  * Carla Bridge definitions
- * Copyright (C) 2013-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -61,6 +61,7 @@ enum PluginBridgeNonRtClientOpcode {
     kPluginBridgeNonRtClientSetOption,               // uint/option, bool
     kPluginBridgeNonRtClientGetParameterText,        // uint
     kPluginBridgeNonRtClientPrepareForSave,
+    kPluginBridgeNonRtClientRestoreLV2State,
     kPluginBridgeNonRtClientShowUI,
     kPluginBridgeNonRtClientHideUI,
     kPluginBridgeNonRtClientUiParameterChange,       // uint, float
