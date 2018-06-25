@@ -2281,7 +2281,7 @@ class HostWindow(QMainWindow):
     # close event
 
     def closeEvent(self, event):
-        if not self.fCustomStopAction == 1:
+        if not self.fCustomStopAction == 1 and self.host.confirmExit:
             ask = QMessageBox.question(self, self.tr("Quit"), self.tr("Are you sure you want to quit Carla?"), QMessageBox.Yes|QMessageBox.No)
 
             if ask == QMessageBox.No:
@@ -2655,6 +2655,11 @@ def loadHostSettings(host):
         host.showLogs = settings.value(CARLA_KEY_MAIN_SHOW_LOGS, CARLA_DEFAULT_MAIN_SHOW_LOGS, type=bool)
     except:
         host.showLogs = CARLA_DEFAULT_MAIN_SHOW_LOGS
+
+    try:
+        host.confirmExit = settings.value(CARLA_KEY_MAIN_CONFIRM_EXIT, CARLA_DEFAULT_MAIN_CONFIRM_EXIT, type=bool)
+    except:
+        host.confirmExit = CARLA_DEFAULT_MAIN_CONFIRM_EXIT
 
     try:
         host.showPluginBridges = settings.value(CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES, CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES, type=bool)
