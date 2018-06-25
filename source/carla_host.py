@@ -2658,11 +2658,6 @@ def loadHostSettings(host):
         host.showLogs = CARLA_DEFAULT_MAIN_SHOW_LOGS
 
     try:
-        host.confirmExit = settings.value(CARLA_KEY_MAIN_CONFIRM_EXIT, CARLA_DEFAULT_MAIN_CONFIRM_EXIT, type=bool)
-    except:
-        host.confirmExit = CARLA_DEFAULT_MAIN_CONFIRM_EXIT
-
-    try:
         host.showPluginBridges = settings.value(CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES, CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES, type=bool)
     except:
         host.showPluginBridges = CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES
