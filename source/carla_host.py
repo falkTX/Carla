@@ -2281,6 +2281,13 @@ class HostWindow(QMainWindow):
     # close event
 
     def closeEvent(self, event):
+        if not self.fCustomStopAction == 1:
+            ask = QMessageBox.question(self, self.tr("Quit"), self.tr("Are you sure you want to quit Carla?"), QMessageBox.Yes|QMessageBox.No)
+
+            if ask == QMessageBox.No:
+                event.ignore()
+                return
+
         self.killTimers()
         self.saveSettings()
 
