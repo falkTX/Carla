@@ -1008,6 +1008,11 @@ class HostWindow(QMainWindow):
         if self.fPluginCount == 0:
             return
 
+        ask = QMessageBox.question(self, self.tr("Remove All"), self.tr("Are you sure you want to remove all plugins?"), QMessageBox.Yes|QMessageBox.No)
+
+        if ask == QMessageBox.No:
+            return
+
         # FIXME - this is not working
         # removing a plugin causes flicker, the rack-list becomes empty for some time
         # this breaks the remove-all animation, so don't bother using it
