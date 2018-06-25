@@ -2282,7 +2282,7 @@ class HostWindow(QMainWindow):
     # close event
 
     def closeEvent(self, event):
-        if not self.fCustomStopAction == 1 and self.fSavedSettings[CARLA_KEY_MAIN_CONFIRM_EXIT]:
+        if self.fCustomStopAction != 1 and self.fSavedSettings[CARLA_KEY_MAIN_CONFIRM_EXIT]:
             ask = QMessageBox.question(self, self.tr("Quit"),
                                              self.tr("Are you sure you want to quit Carla?"),
                                              QMessageBox.Yes|QMessageBox.No)
