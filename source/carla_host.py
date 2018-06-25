@@ -1549,6 +1549,7 @@ class HostWindow(QMainWindow):
 
         self.fSavedSettings = {
             CARLA_KEY_MAIN_PROJECT_FOLDER:      settings.value(CARLA_KEY_MAIN_PROJECT_FOLDER,      CARLA_DEFAULT_MAIN_PROJECT_FOLDER,      type=str),
+            CARLA_KEY_MAIN_CONFIRM_EXIT:        settings.value(CARLA_KEY_MAIN_CONFIRM_EXIT,        CARLA_DEFAULT_MAIN_CONFIRM_EXIT,        type=bool),
             CARLA_KEY_MAIN_REFRESH_INTERVAL:    settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL,    CARLA_DEFAULT_MAIN_REFRESH_INTERVAL,    type=int),
             CARLA_KEY_MAIN_USE_CUSTOM_SKINS:    settings.value(CARLA_KEY_MAIN_USE_CUSTOM_SKINS,    CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS,    type=bool),
             CARLA_KEY_MAIN_EXPERIMENTAL:        settings.value(CARLA_KEY_MAIN_EXPERIMENTAL,        CARLA_DEFAULT_MAIN_EXPERIMENTAL,        type=bool),
@@ -2281,7 +2282,7 @@ class HostWindow(QMainWindow):
     # close event
 
     def closeEvent(self, event):
-        if not self.fCustomStopAction == 1 and self.host.confirmExit:
+        if not self.fCustomStopAction == 1 and self.fSavedSettings[CARLA_KEY_MAIN_CONFIRM_EXIT]:
             ask = QMessageBox.question(self, self.tr("Quit"), self.tr("Are you sure you want to quit Carla?"), QMessageBox.Yes|QMessageBox.No)
 
             if ask == QMessageBox.No:

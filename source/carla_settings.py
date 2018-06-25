@@ -549,10 +549,10 @@ class CarlaSettingsW(QDialog):
         # Main
 
         settings.setValue(CARLA_KEY_MAIN_PROJECT_FOLDER,   self.ui.le_main_proj_folder.text())
+        settings.setValue(CARLA_KEY_MAIN_CONFIRM_EXIT,     self.ui.ch_main_confirm_exit.isChecked())
         settings.setValue(CARLA_KEY_MAIN_USE_PRO_THEME,    self.ui.ch_main_theme_pro.isChecked())
         settings.setValue(CARLA_KEY_MAIN_PRO_THEME_COLOR,  self.ui.cb_main_theme_color.currentText())
         settings.setValue(CARLA_KEY_MAIN_REFRESH_INTERVAL, self.ui.sb_main_refresh_interval.value())
-        settings.setValue(CARLA_KEY_MAIN_CONFIRM_EXIT,     self.ui.ch_main_confirm_exit.isChecked())
         settings.setValue(CARLA_KEY_MAIN_USE_CUSTOM_SKINS, self.ui.ch_main_use_custom_skins.isChecked())
 
         # ----------------------------------------------------------------------------------------------------
@@ -601,7 +601,6 @@ class CarlaSettingsW(QDialog):
         self.host.preferPluginBridges = self.ui.ch_engine_prefer_plugin_bridges.isChecked()
         self.host.preferUIBridges     = self.ui.ch_engine_prefer_ui_bridges.isChecked()
         self.host.showLogs            = self.ui.ch_main_show_logs.isChecked()
-        self.host.confirmExit         = self.ui.ch_main_confirm_exit.isChecked()
         self.host.showPluginBridges   = self.ui.cb_exp_plugin_bridges.isChecked()
         self.host.showWineBridges     = self.ui.ch_exp_wine_bridges.isChecked()
         self.host.uiBridgesTimeout    = self.ui.sb_engine_ui_bridges_timeout.value()
@@ -620,7 +619,6 @@ class CarlaSettingsW(QDialog):
             settings.setValue(CARLA_KEY_ENGINE_FORCE_STEREO,      self.host.forceStereo)
 
         settings.setValue(CARLA_KEY_MAIN_SHOW_LOGS,               self.host.showLogs)
-        settings.setValue(CARLA_KEY_MAIN_CONFIRM_EXIT,            self.host.confirmExit)
         settings.setValue(CARLA_KEY_ENGINE_MAX_PARAMETERS,        self.host.maxParameters)
         settings.setValue(CARLA_KEY_ENGINE_MANAGE_UIS,            self.host.manageUIs)
         settings.setValue(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, self.host.preferPluginBridges)
