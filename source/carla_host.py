@@ -670,9 +670,17 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_fileNew(self):
-        self.slot_pluginRemoveAll()
-        self.fProjectFilename = ""
-        self.setProperWindowTitle()
+        newFile = True
+
+        if self.fPluginCount > 0:
+            newFile = QMessageBox.question(self, self.tr("New File"),
+                                                 self.tr("Plugins that are currently loaded will be removed. Are you sure?"),
+                                                 QMessageBox.Yes|QMessageBox.No) == QMessageBox.Yes
+
+        if newFile:
+            self.slot_pluginRemoveAll()
+            self.fProjectFilename = ""
+            self.setProperWindowTitle()
 
     @pyqtSlot()
     def slot_fileOpen(self):
