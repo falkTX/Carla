@@ -1215,7 +1215,7 @@ class PatchScene(QGraphicsScene):
         self.m_mouse_down_init = False
         self.m_mouse_rubberband = False
         self.m_mid_button_down = False
-        self.pointer_border = QRectF(0.0, 0.0, 1.0, 1.0)
+        self.m_pointer_border = QRectF(0.0, 0.0, 1.0, 1.0)
 
         self.addRubberBand()
 
@@ -1370,9 +1370,9 @@ class PatchScene(QGraphicsScene):
         if event.button() == Qt.MidButton and self.m_ctrl_down:
             self.m_mid_button_down = True
             pos = event.scenePos()
-            self.pointer_border.moveTo(floor(pos.x()), floor(pos.y()))
+            self.m_pointer_border.moveTo(floor(pos.x()), floor(pos.y()))
 
-            items = self.items(self.pointer_border)
+            items = self.items(self.m_pointer_border)
             for item in items:
                 if item and item.type() in [CanvasLineType, CanvasBezierLineType]:
                     item.triggerDisconnect()
@@ -1401,7 +1401,8 @@ class PatchScene(QGraphicsScene):
             else:
                 y = pos.y()
 
-            self.m_rubberband.setRect(x, y, abs(pos.x() - self.m_rubberband_orig_point.x()), abs(pos.y() - self.m_rubberband_orig_point.y()))
+            lineHinting = canvas.theme.rubberband_pen.widthF() / 2
+            self.m_rubberband.setRect(x+lineHinting, y+lineHinting, abs(pos.x() - self.m_rubberband_orig_point.x()), abs(pos.y() - self.m_rubberband_orig_point.y()))
             return event.accept()
 
         if self.m_mid_button_down and self.m_ctrl_down:
@@ -2090,23 +2091,27 @@ class CanvasPort(QGraphicsItem):
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing == ANTIALIASING_FULL))
 
+        # FIXME: would be more correct is to take line width from Pen, loaded to painter,
+        # but this needs some code rearrangement
+        lineHinting = canvas.theme.port_audio_jack_pen.widthF() / 2
+
         poly_locx = [0, 0, 0, 0, 0]
 
         if self.m_port_mode == PORT_MODE_INPUT:
             text_pos = QPointF(3, canvas.theme.port_text_ypos)
 
             if canvas.theme.port_mode == Theme.THEME_PORT_POLYGON:
-                poly_locx[0] = 0
-                poly_locx[1] = self.m_port_width + 5
-                poly_locx[2] = self.m_port_width + 12
-                poly_locx[3] = self.m_port_width + 5
-                poly_locx[4] = 0
+                poly_locx[0] = lineHinting
+                poly_locx[1] = self.m_port_width + 5 - lineHinting
+                poly_locx[2] = self.m_port_width + 12 - lineHinting
+                poly_locx[3] = self.m_port_width + 5 - lineHinting
+                poly_locx[4] = lineHinting
             elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE:
-                poly_locx[0] = 0
-                poly_locx[1] = self.m_port_width + 5
-                poly_locx[2] = self.m_port_width + 5
-                poly_locx[3] = self.m_port_width + 5
-                poly_locx[4] = 0
+                poly_locx[0] = lineHinting
+                poly_locx[1] = self.m_port_width + 5 - lineHinting
+                poly_locx[2] = self.m_port_width + 5 - lineHinting
+                poly_locx[3] = self.m_port_width + 5 - lineHinting
+                poly_locx[4] = lineHinting
             else:
                 qCritical("PatchCanvas::CanvasPort.paint() - invalid theme port mode '%s'" % canvas.theme.port_mode)
                 return
@@ -2115,17 +2120,17 @@ class CanvasPort(QGraphicsItem):
             text_pos = QPointF(9, canvas.theme.port_text_ypos)
 
             if canvas.theme.port_mode == Theme.THEME_PORT_POLYGON:
-                poly_locx[0] = self.m_port_width + 12
-                poly_locx[1] = 7
-                poly_locx[2] = 0
-                poly_locx[3] = 7
-                poly_locx[4] = self.m_port_width + 12
+                poly_locx[0] = self.m_port_width + 12 - lineHinting
+                poly_locx[1] = 7 + lineHinting
+                poly_locx[2] = 0 + lineHinting
+                poly_locx[3] = 7 + lineHinting
+                poly_locx[4] = self.m_port_width + 12 - lineHinting
             elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE:
-                poly_locx[0] = self.m_port_width + 12
-                poly_locx[1] = 5
-                poly_locx[2] = 5
-                poly_locx[3] = 5
-                poly_locx[4] = self.m_port_width + 12
+                poly_locx[0] = self.m_port_width + 12 - lineHinting
+                poly_locx[1] = 5 + lineHinting
+                poly_locx[2] = 5 + lineHinting
+                poly_locx[3] = 5 + lineHinting
+                poly_locx[4] = self.m_port_width + 12 - lineHinting
             else:
                 qCritical("PatchCanvas::CanvasPort.paint() - invalid theme port mode '%s'" % canvas.theme.port_mode)
                 return
@@ -2165,11 +2170,12 @@ class CanvasPort(QGraphicsItem):
             #conn_pen.setColor(conn_pen.color()) #.darker(150))
 
         polygon  = QPolygonF()
-        polygon += QPointF(poly_locx[0], 0)
-        polygon += QPointF(poly_locx[1], 0)
+        polygon += QPointF(poly_locx[0], lineHinting)
+        polygon += QPointF(poly_locx[1], lineHinting)
         polygon += QPointF(poly_locx[2], float(canvas.theme.port_height)/2)
-        polygon += QPointF(poly_locx[3], canvas.theme.port_height)
-        polygon += QPointF(poly_locx[4], canvas.theme.port_height)
+        polygon += QPointF(poly_locx[3], canvas.theme.port_height - lineHinting)
+        polygon += QPointF(poly_locx[4], canvas.theme.port_height - lineHinting)
+        polygon += QPointF(poly_locx[0], lineHinting)
 
         if canvas.theme.port_bg_pixmap:
             portRect = polygon.boundingRect()
@@ -2782,6 +2788,8 @@ class CanvasBox(QGraphicsItem):
     def mouseReleaseEvent(self, event):
         if self.m_cursor_moving:
             self.setCursor(QCursor(Qt.ArrowCursor))
+            self.setX(round(self.x()))
+            self.setY(round(self.y()))
         self.m_mouse_down = False
         self.m_cursor_moving = False
         QGraphicsItem.mouseReleaseEvent(self, event)
@@ -2791,7 +2799,7 @@ class CanvasBox(QGraphicsItem):
 
     def paint(self, painter, option, widget):
         painter.save()
-        painter.setRenderHint(QPainter.Antialiasing, False)
+        painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing == ANTIALIASING_FULL))
 
         # Draw rectangle
         if self.isSelected():
@@ -2807,7 +2815,8 @@ class CanvasBox(QGraphicsItem):
         else:
             painter.setBrush(canvas.theme.box_bg_1)
 
-        painter.drawRect(0, 0, self.p_width, self.p_height)
+        lineHinting = painter.pen().widthF() / 2
+        painter.drawRect(QRectF(lineHinting, lineHinting, self.p_width - lineHinting*2, self.p_height - lineHinting*2))
 
         # Draw pixmap header
         if canvas.theme.box_header_pixmap:

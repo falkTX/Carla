@@ -745,7 +745,9 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
                     index = stateParameter->index;
             }
             else
+            {
                 index = stateParameter->index;
+            }
         }
         else if (pluginType == PLUGIN_LV2)
         {
@@ -765,10 +767,13 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
                     }
                 }
                 if (index == -1)
-                    carla_stderr("Failed to find LV2 parameter symbol '%s')", stateParameter->symbol);
+                    carla_stderr("Failed to find LV2 parameter symbol '%s' for '%s'",
+                                 stateParameter->symbol, pData->name);
             }
             else
+            {
                 carla_stderr("LV2 Plugin parameter '%s' has no symbol", stateParameter->name);
+            }
         }
         else
         {
@@ -795,7 +800,8 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 #endif
         }
         else
-            carla_stderr("Could not set parameter data for '%s'", stateParameter->name);
+            carla_stderr("Could not set parameter '%s' value for '%s'",
+                         stateParameter->name, pData->name);
     }
 
     // ---------------------------------------------------------------
@@ -1014,6 +1020,7 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
 
         mainStream << "@prefix atom: <http://lv2plug.in/ns/ext/atom#> .\n";
         mainStream << "@prefix doap: <http://usefulinc.com/ns/doap#> .\n";
+        mainStream << "@prefix foaf: <http://xmlns.com/foaf/0.1/> .\n";
         mainStream << "@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .\n";
         mainStream << "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n";
         mainStream << "@prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .\n";
@@ -1195,8 +1202,13 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
             mainStream << "    ] ;\n";
         }
 
+        char strBuf[STR_MAX];
+        getMaker(strBuf);
+        strBuf[STR_MAX-1] = '\0';
+
         mainStream << "    rdfs:comment \"Plugin generated using Carla LV2 export.\" ;\n";
-        mainStream << "    doap:name \"\"\"" << getName() << "\"\"\" .\n";
+        mainStream << "    doap:name \"\"\"" << getName() << "\"\"\" ;\n";
+        mainStream << "    doap:maintainer [ foaf:name \"\"\"" << strBuf << "\"\"\" ] .\n";
         mainStream << "\n";
 
         const CarlaString mainFilename(bundlepath + CARLA_OS_SEP_STR + symbol + ".ttl");
@@ -2293,9 +2305,11 @@ void CarlaPlugin::sendMidiAllNotesOffToCallback()
 // -------------------------------------------------------------------
 // UI Stuff
 
-void CarlaPlugin::showCustomUI(const bool)
+void CarlaPlugin::showCustomUI(const bool yesNo)
 {
-    CARLA_SAFE_ASSERT(false);
+    if (yesNo) {
+        CARLA_SAFE_ASSERT(false);
+    }
 }
 
 void CarlaPlugin::uiIdle()
@@ -2477,6 +2491,7 @@ void CarlaPlugin::setPatchbayNodeId(const uint32_t nodeId) noexcept
 
 void CarlaPlugin::restoreLV2State() noexcept
 {
+    carla_stderr2("Warning: restoreLV2State() called for non-implemented type");
 }
 
 void CarlaPlugin::waitForBridgeSaveSignal() noexcept

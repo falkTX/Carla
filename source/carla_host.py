@@ -200,6 +200,7 @@ class HostWindow(QMainWindow):
                 self.ui.act_plugin_add.setVisible(False)
                 self.ui.act_plugin_add2.setVisible(False)
                 self.ui.act_plugin_remove_all.setVisible(False)
+                self.ui.act_add_jack.setVisible(False)
                 self.ui.menu_Plugin.setEnabled(False)
                 self.ui.menu_Plugin.setVisible(False)
                 self.ui.menu_Plugin.menuAction().setVisible(False)
@@ -1548,6 +1549,7 @@ class HostWindow(QMainWindow):
 
         self.fSavedSettings = {
             CARLA_KEY_MAIN_PROJECT_FOLDER:      settings.value(CARLA_KEY_MAIN_PROJECT_FOLDER,      CARLA_DEFAULT_MAIN_PROJECT_FOLDER,      type=str),
+            CARLA_KEY_MAIN_CONFIRM_EXIT:        settings.value(CARLA_KEY_MAIN_CONFIRM_EXIT,        CARLA_DEFAULT_MAIN_CONFIRM_EXIT,        type=bool),
             CARLA_KEY_MAIN_REFRESH_INTERVAL:    settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL,    CARLA_DEFAULT_MAIN_REFRESH_INTERVAL,    type=int),
             CARLA_KEY_MAIN_USE_CUSTOM_SKINS:    settings.value(CARLA_KEY_MAIN_USE_CUSTOM_SKINS,    CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS,    type=bool),
             CARLA_KEY_MAIN_EXPERIMENTAL:        settings.value(CARLA_KEY_MAIN_EXPERIMENTAL,        CARLA_DEFAULT_MAIN_EXPERIMENTAL,        type=bool),
@@ -1567,7 +1569,7 @@ class HostWindow(QMainWindow):
 
         settings = QSettings("falkTX", "Carla2")
 
-        if self.host.experimental:
+        if self.host.experimental and not self.host.isControl:
             self.ui.act_add_jack.setVisible(settings.value(CARLA_KEY_EXPERIMENTAL_JACK_APPS,
                                                            CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS, type=bool))
         else:
@@ -2280,6 +2282,15 @@ class HostWindow(QMainWindow):
     # close event
 
     def closeEvent(self, event):
+        if self.fCustomStopAction != 1 and self.fSavedSettings[CARLA_KEY_MAIN_CONFIRM_EXIT]:
+            ask = QMessageBox.question(self, self.tr("Quit"),
+                                             self.tr("Are you sure you want to quit Carla?"),
+                                             QMessageBox.Yes|QMessageBox.No)
+
+            if ask == QMessageBox.No:
+                event.ignore()
+                return
+
         self.killTimers()
         self.saveSettings()
 
@@ -2483,12 +2494,13 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
 def fileCallback(ptr, action, isDir, title, filter):
     ret = ("", "") if config_UseQt5 else ""
 
-    if action == FILE_CALLBACK_DEBUG:
-        pass
-    elif action == FILE_CALLBACK_OPEN:
-        ret = QFileDialog.getOpenFileName(gCarla.gui, charPtrToString(title), "", charPtrToString(filter) ) #, QFileDialog.ShowDirsOnly if isDir else 0x0)
+    title  = charPtrToString(title)
+    filter = charPtrToString(filter)
+
+    if action == FILE_CALLBACK_OPEN:
+        ret = QFileDialog.getOpenFileName(gCarla.gui, title, "", filter) #, QFileDialog.ShowDirsOnly if isDir else 0x0)
     elif action == FILE_CALLBACK_SAVE:
-        ret = QFileDialog.getSaveFileName(gCarla.gui, charPtrToString(title), "", charPtrToString(filter), QFileDialog.ShowDirsOnly if isDir else 0x0)
+        ret = QFileDialog.getSaveFileName(gCarla.gui, title, "", filter, QFileDialog.ShowDirsOnly if isDir else 0x0)
 
     if config_UseQt5:
         ret = ret[0]
@@ -2879,7 +2891,7 @@ def runHostWithoutUI(host):
 
     while host.is_engine_running() and not gCarla.term:
         host.engine_idle()
-        sleep(0.5)
+        sleep(0.0333) # 30 Hz
 
     # --------------------------------------------------------------------------------------------------------
     # Stop

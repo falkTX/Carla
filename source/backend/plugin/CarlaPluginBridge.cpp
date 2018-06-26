@@ -1735,6 +1735,14 @@ public:
     // -------------------------------------------------------------------
     // Internal helper functions
 
+    void restoreLV2State() noexcept override
+    {
+        const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
+
+        fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientRestoreLV2State);
+        fShmNonRtClientControl.commitWrite();
+    }
+
     void waitForBridgeSaveSignal() noexcept override
     {
         waitForSaved();

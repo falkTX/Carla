@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -94,7 +94,7 @@ protected:
         if (! show)
             return;
 
-        if (const char* const filename = uiOpenFile(false, "Open MIDI File", "MIDI Files *.mid;*.midi;;"))
+        if (const char* const filename = uiOpenFile(false, "Open MIDI File", "MIDI Files (*.mid *.midi);;"))
             uiCustomDataChanged("file", filename);
 
         uiClosed();

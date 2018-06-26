@@ -822,6 +822,7 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
                 if (data->events.out[0].type != kEngineEventTypeNull)
                 {
                     // TODO: carefully add to input, sorted events
+                    //carla_stderr("TODO midi event mixing here %s", plugin->getName());
                 }
                 // else nothing needed
             }

@@ -232,7 +232,7 @@ LADISH_APP_NAME   = os.getenv("LADISH_APP_NAME")
 
 if CARLA_CLIENT_NAME is not None:
     os.environ["CARLA_CLIENT_NAME"] = CARLA_CLIENT_NAME
-elif CARLA_CLIENT_NAME is not None:
+elif LADISH_APP_NAME is not None:
     os.environ["CARLA_CLIENT_NAME"] = LADISH_APP_NAME
 else:
     os.environ["CARLA_CLIENT_NAME"] = "(none)"

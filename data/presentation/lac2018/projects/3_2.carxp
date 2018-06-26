@@ -1,0 +1,2997 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE CARLA-PROJECT>
+<CARLA-PROJECT VERSION='2.0'>
+ <EngineSettings>
+  <ForceStereo>false</ForceStereo>
+  <PreferPluginBridges>false</PreferPluginBridges>
+  <PreferUiBridges>true</PreferUiBridges>
+  <UIsAlwaysOnTop>false</UIsAlwaysOnTop>
+  <MaxParameters>200</MaxParameters>
+  <UIBridgesTimeout>4000</UIBridgesTimeout>
+ </EngineSettings>
+
+ <!-- Carla-Rack -->
+ <Plugin>
+  <Info>
+   <Type>INTERNAL</Type>
+   <Name>Carla-Rack</Name>
+   <Label>carlarack</Label>
+  </Info>
+
+  <Data>
+   <Active>Yes</Active>
+   <ControlChannel>1</ControlChannel>
+   <Options>0x3e0</Options>
+
+   <CustomData>
+    <Type>http://kxstudio.sf.net/ns/carla/property</Type>
+    <Key>CarlaSkinIsCompacted</Key>
+    <Value>false</Value>
+   </CustomData>
+
+   <CustomData>
+    <Type>http://kxstudio.sf.net/ns/carla/chunk</Type>
+    <Key>State</Key>
+    <Value>
+&lt;?xml version=&apos;1.0&apos; encoding=&apos;UTF-8&apos;?&gt;
+&lt;!DOCTYPE CARLA-PROJECT&gt;
+&lt;CARLA-PROJECT VERSION=&apos;2.0&apos;&gt;
+ &lt;EngineSettings&gt;
+  &lt;ForceStereo&gt;false&lt;/ForceStereo&gt;
+  &lt;PreferPluginBridges&gt;false&lt;/PreferPluginBridges&gt;
+  &lt;PreferUiBridges&gt;true&lt;/PreferUiBridges&gt;
+  &lt;UIsAlwaysOnTop&gt;false&lt;/UIsAlwaysOnTop&gt;
+  &lt;MaxParameters&gt;200&lt;/MaxParameters&gt;
+  &lt;UIBridgesTimeout&gt;4000&lt;/UIBridgesTimeout&gt;
+  &lt;LADSPA_PATH&gt;/home/falktx/.ladspa:/usr/lib/ladspa:/usr/local/lib/ladspa&lt;/LADSPA_PATH&gt;
+  &lt;DSSI_PATH&gt;/home/falktx/.dssi:/usr/lib/dssi:/usr/local/lib/dssi&lt;/DSSI_PATH&gt;
+  &lt;LV2_PATH&gt;/home/falktx/.lv2:/usr/lib/lv2:/usr/local/lib/lv2&lt;/LV2_PATH&gt;
+  &lt;VST2_PATH&gt;/home/falktx/.vst:/home/falktx/.wineflstudio/drive_c/Program Files (x86)/VstPlugins/:/usr/lib/vst:/usr/local/lib/vst&lt;/VST2_PATH&gt;
+  &lt;GIG_PATH&gt;/home/falktx/.sounds/gig:/usr/share/sounds/gig&lt;/GIG_PATH&gt;
+  &lt;SF2_PATH&gt;/home/falktx/.sounds/sf2:/home/falktx/Personal/Muzyks/Kits/SoundFonts:/usr/share/sounds/sf2&lt;/SF2_PATH&gt;
+  &lt;SFZ_PATH&gt;/home/falktx/.sounds/sfz:/home/falktx/Personal/Muzyks/Kits/SFZ:/usr/share/sounds/sfz&lt;/SFZ_PATH&gt;
+ &lt;/EngineSettings&gt;
+
+ &lt;!-- MIDI Step Sequencer8x8 --&gt;
+ &lt;Plugin&gt;
+  &lt;Info&gt;
+   &lt;Type&gt;LV2&lt;/Type&gt;
+   &lt;Name&gt;MIDI Step Sequencer8x8&lt;/Name&gt;
+   &lt;URI&gt;http://gareus.org/oss/lv2/stepseq#s8n8&lt;/URI&gt;
+  &lt;/Info&gt;
+
+  &lt;Data&gt;
+   &lt;Active&gt;Yes&lt;/Active&gt;
+   &lt;ControlChannel&gt;1&lt;/ControlChannel&gt;
+   &lt;Options&gt;0x1&lt;/Options&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;0&lt;/Index&gt;
+    &lt;Name&gt;Sync&lt;/Name&gt;
+    &lt;Symbol&gt;sync&lt;/Symbol&gt;
+    &lt;Value&gt;1&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;1&lt;/Index&gt;
+    &lt;Name&gt;BPM&lt;/Name&gt;
+    &lt;Symbol&gt;bpm&lt;/Symbol&gt;
+    &lt;Value&gt;120&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;2&lt;/Index&gt;
+    &lt;Name&gt;Step Duration (4/4)&lt;/Name&gt;
+    &lt;Symbol&gt;div&lt;/Symbol&gt;
+    &lt;Value&gt;7&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;3&lt;/Index&gt;
+    &lt;Name&gt;Swing&lt;/Name&gt;
+    &lt;Symbol&gt;swing&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;4&lt;/Index&gt;
+    &lt;Name&gt;Drum Mode&lt;/Name&gt;
+    &lt;Symbol&gt;drummode&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;5&lt;/Index&gt;
+    &lt;Name&gt;Midi Channel&lt;/Name&gt;
+    &lt;Symbol&gt;chn&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;6&lt;/Index&gt;
+    &lt;Name&gt;MIDI Panic&lt;/Name&gt;
+    &lt;Symbol&gt;panic&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;9&lt;/Index&gt;
+    &lt;Name&gt;Note 1&lt;/Name&gt;
+    &lt;Symbol&gt;note1&lt;/Symbol&gt;
+    &lt;Value&gt;69&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;10&lt;/Index&gt;
+    &lt;Name&gt;Note 2&lt;/Name&gt;
+    &lt;Symbol&gt;note2&lt;/Symbol&gt;
+    &lt;Value&gt;67&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;11&lt;/Index&gt;
+    &lt;Name&gt;Note 3&lt;/Name&gt;
+    &lt;Symbol&gt;note3&lt;/Symbol&gt;
+    &lt;Value&gt;65&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;12&lt;/Index&gt;
+    &lt;Name&gt;Note 4&lt;/Name&gt;
+    &lt;Symbol&gt;note4&lt;/Symbol&gt;
+    &lt;Value&gt;64&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;13&lt;/Index&gt;
+    &lt;Name&gt;Note 5&lt;/Name&gt;
+    &lt;Symbol&gt;note5&lt;/Symbol&gt;
+    &lt;Value&gt;62&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;14&lt;/Index&gt;
+    &lt;Name&gt;Note 6&lt;/Name&gt;
+    &lt;Symbol&gt;note6&lt;/Symbol&gt;
+    &lt;Value&gt;60&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;15&lt;/Index&gt;
+    &lt;Name&gt;Note 7&lt;/Name&gt;
+    &lt;Symbol&gt;note7&lt;/Symbol&gt;
+    &lt;Value&gt;59&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;16&lt;/Index&gt;
+    &lt;Name&gt;Note 8&lt;/Name&gt;
+    &lt;Symbol&gt;note8&lt;/Symbol&gt;
+    &lt;Value&gt;57&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;17&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 1 N: 1&lt;/Name&gt;
+    &lt;Symbol&gt;grid_1_1&lt;/Symbol&gt;
+    &lt;Value&gt;127&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;18&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 2 N: 1&lt;/Name&gt;
+    &lt;Symbol&gt;grid_2_1&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;19&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 3 N: 1&lt;/Name&gt;
+    &lt;Symbol&gt;grid_3_1&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;20&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 4 N: 1&lt;/Name&gt;
+    &lt;Symbol&gt;grid_4_1&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;21&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 5 N: 1&lt;/Name&gt;
+    &lt;Symbol&gt;grid_5_1&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;22&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 6 N: 1&lt;/Name&gt;
+    &lt;Symbol&gt;grid_6_1&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;23&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 7 N: 1&lt;/Name&gt;
+    &lt;Symbol&gt;grid_7_1&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;24&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 8 N: 1&lt;/Name&gt;
+    &lt;Symbol&gt;grid_8_1&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;25&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 1 N: 2&lt;/Name&gt;
+    &lt;Symbol&gt;grid_1_2&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;26&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 2 N: 2&lt;/Name&gt;
+    &lt;Symbol&gt;grid_2_2&lt;/Symbol&gt;
+    &lt;Value&gt;127&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;27&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 3 N: 2&lt;/Name&gt;
+    &lt;Symbol&gt;grid_3_2&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;28&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 4 N: 2&lt;/Name&gt;
+    &lt;Symbol&gt;grid_4_2&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;29&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 5 N: 2&lt;/Name&gt;
+    &lt;Symbol&gt;grid_5_2&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;30&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 6 N: 2&lt;/Name&gt;
+    &lt;Symbol&gt;grid_6_2&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;31&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 7 N: 2&lt;/Name&gt;
+    &lt;Symbol&gt;grid_7_2&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;32&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 8 N: 2&lt;/Name&gt;
+    &lt;Symbol&gt;grid_8_2&lt;/Symbol&gt;
+    &lt;Value&gt;127&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;33&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 1 N: 3&lt;/Name&gt;
+    &lt;Symbol&gt;grid_1_3&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;34&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 2 N: 3&lt;/Name&gt;
+    &lt;Symbol&gt;grid_2_3&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;35&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 3 N: 3&lt;/Name&gt;
+    &lt;Symbol&gt;grid_3_3&lt;/Symbol&gt;
+    &lt;Value&gt;127&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;36&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 4 N: 3&lt;/Name&gt;
+    &lt;Symbol&gt;grid_4_3&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;37&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 5 N: 3&lt;/Name&gt;
+    &lt;Symbol&gt;grid_5_3&lt;/Symbol&gt;
+    &lt;Value&gt;127&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;38&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 6 N: 3&lt;/Name&gt;
+    &lt;Symbol&gt;grid_6_3&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;39&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 7 N: 3&lt;/Name&gt;
+    &lt;Symbol&gt;grid_7_3&lt;/Symbol&gt;
+    &lt;Value&gt;127&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;40&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 8 N: 3&lt;/Name&gt;
+    &lt;Symbol&gt;grid_8_3&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;41&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 1 N: 4&lt;/Name&gt;
+    &lt;Symbol&gt;grid_1_4&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;42&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 2 N: 4&lt;/Name&gt;
+    &lt;Symbol&gt;grid_2_4&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;43&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 3 N: 4&lt;/Name&gt;
+    &lt;Symbol&gt;grid_3_4&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;44&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 4 N: 4&lt;/Name&gt;
+    &lt;Symbol&gt;grid_4_4&lt;/Symbol&gt;
+    &lt;Value&gt;127&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;45&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 5 N: 4&lt;/Name&gt;
+    &lt;Symbol&gt;grid_5_4&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;46&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 6 N: 4&lt;/Name&gt;
+    &lt;Symbol&gt;grid_6_4&lt;/Symbol&gt;
+    &lt;Value&gt;127&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;47&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 7 N: 4&lt;/Name&gt;
+    &lt;Symbol&gt;grid_7_4&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;48&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 8 N: 4&lt;/Name&gt;
+    &lt;Symbol&gt;grid_8_4&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;49&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 1 N: 5&lt;/Name&gt;
+    &lt;Symbol&gt;grid_1_5&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;50&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 2 N: 5&lt;/Name&gt;
+    &lt;Symbol&gt;grid_2_5&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;51&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 3 N: 5&lt;/Name&gt;
+    &lt;Symbol&gt;grid_3_5&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;52&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 4 N: 5&lt;/Name&gt;
+    &lt;Symbol&gt;grid_4_5&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;53&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 5 N: 5&lt;/Name&gt;
+    &lt;Symbol&gt;grid_5_5&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;54&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 6 N: 5&lt;/Name&gt;
+    &lt;Symbol&gt;grid_6_5&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;55&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 7 N: 5&lt;/Name&gt;
+    &lt;Symbol&gt;grid_7_5&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;56&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 8 N: 5&lt;/Name&gt;
+    &lt;Symbol&gt;grid_8_5&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;57&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 1 N: 6&lt;/Name&gt;
+    &lt;Symbol&gt;grid_1_6&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;58&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 2 N: 6&lt;/Name&gt;
+    &lt;Symbol&gt;grid_2_6&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;59&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 3 N: 6&lt;/Name&gt;
+    &lt;Symbol&gt;grid_3_6&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;60&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 4 N: 6&lt;/Name&gt;
+    &lt;Symbol&gt;grid_4_6&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;61&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 5 N: 6&lt;/Name&gt;
+    &lt;Symbol&gt;grid_5_6&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;62&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 6 N: 6&lt;/Name&gt;
+    &lt;Symbol&gt;grid_6_6&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;63&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 7 N: 6&lt;/Name&gt;
+    &lt;Symbol&gt;grid_7_6&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;64&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 8 N: 6&lt;/Name&gt;
+    &lt;Symbol&gt;grid_8_6&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;65&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 1 N: 7&lt;/Name&gt;
+    &lt;Symbol&gt;grid_1_7&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;66&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 2 N: 7&lt;/Name&gt;
+    &lt;Symbol&gt;grid_2_7&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;67&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 3 N: 7&lt;/Name&gt;
+    &lt;Symbol&gt;grid_3_7&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;68&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 4 N: 7&lt;/Name&gt;
+    &lt;Symbol&gt;grid_4_7&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;69&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 5 N: 7&lt;/Name&gt;
+    &lt;Symbol&gt;grid_5_7&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;70&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 6 N: 7&lt;/Name&gt;
+    &lt;Symbol&gt;grid_6_7&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;71&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 7 N: 7&lt;/Name&gt;
+    &lt;Symbol&gt;grid_7_7&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;72&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 8 N: 7&lt;/Name&gt;
+    &lt;Symbol&gt;grid_8_7&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;73&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 1 N: 8&lt;/Name&gt;
+    &lt;Symbol&gt;grid_1_8&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;74&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 2 N: 8&lt;/Name&gt;
+    &lt;Symbol&gt;grid_2_8&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;75&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 3 N: 8&lt;/Name&gt;
+    &lt;Symbol&gt;grid_3_8&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;76&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 4 N: 8&lt;/Name&gt;
+    &lt;Symbol&gt;grid_4_8&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;77&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 5 N: 8&lt;/Name&gt;
+    &lt;Symbol&gt;grid_5_8&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;78&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 6 N: 8&lt;/Name&gt;
+    &lt;Symbol&gt;grid_6_8&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;79&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 7 N: 8&lt;/Name&gt;
+    &lt;Symbol&gt;grid_7_8&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;80&lt;/Index&gt;
+    &lt;Name&gt;Grid S: 8 N: 8&lt;/Name&gt;
+    &lt;Symbol&gt;grid_8_8&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+  &lt;/Data&gt;
+ &lt;/Plugin&gt;
+
+ &lt;!-- Pianoteq 5 --&gt;
+ &lt;Plugin&gt;
+  &lt;Info&gt;
+   &lt;Type&gt;LV2&lt;/Type&gt;
+   &lt;Name&gt;Pianoteq 5&lt;/Name&gt;
+   &lt;URI&gt;http://pianoteq.com/lv2/Pianoteq5&lt;/URI&gt;
+  &lt;/Info&gt;
+
+  &lt;Data&gt;
+   &lt;Active&gt;Yes&lt;/Active&gt;
+   &lt;ControlChannel&gt;1&lt;/ControlChannel&gt;
+   &lt;Options&gt;0x1e5&lt;/Options&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;0&lt;/Index&gt;
+    &lt;Name&gt;Sustain Pedal&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_1&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;1&lt;/Index&gt;
+    &lt;Name&gt;Soft Pedal&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_2&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;2&lt;/Index&gt;
+    &lt;Name&gt;Sostenuto Pedal&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_3&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;3&lt;/Index&gt;
+    &lt;Name&gt;Harmonic Pedal&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_4&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;4&lt;/Index&gt;
+    &lt;Name&gt;Pitch Bend&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_5&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;5&lt;/Index&gt;
+    &lt;Name&gt;Volume&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_6&lt;/Symbol&gt;
+    &lt;Value&gt;0.727272748947144&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;6&lt;/Index&gt;
+    &lt;Name&gt;Dynamics&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_7&lt;/Symbol&gt;
+    &lt;Value&gt;0.393939405679703&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;7&lt;/Index&gt;
+    &lt;Name&gt;Diapason&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_8&lt;/Symbol&gt;
+    &lt;Value&gt;0.333333343267441&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;8&lt;/Index&gt;
+    &lt;Name&gt;Temperament&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_9&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;9&lt;/Index&gt;
+    &lt;Name&gt;Microtonal&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_10&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;10&lt;/Index&gt;
+    &lt;Name&gt;Octave Stretch.&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_11&lt;/Symbol&gt;
+    &lt;Value&gt;0.231088206171989&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;11&lt;/Index&gt;
+    &lt;Name&gt;Unison Width&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_12&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;12&lt;/Index&gt;
+    &lt;Name&gt;Direct Sound Duration&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_13&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;13&lt;/Index&gt;
+    &lt;Name&gt;Hard. Piano&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_14&lt;/Symbol&gt;
+    &lt;Value&gt;0.150000005960464&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;14&lt;/Index&gt;
+    &lt;Name&gt;Hard. Mezzo&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_15&lt;/Symbol&gt;
+    &lt;Value&gt;0.400000005960464&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;15&lt;/Index&gt;
+    &lt;Name&gt;Hard. Forte&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_16&lt;/Symbol&gt;
+    &lt;Value&gt;0.800000011920929&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;16&lt;/Index&gt;
+    &lt;Name&gt;Profile 1&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_17&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;17&lt;/Index&gt;
+    &lt;Name&gt;Profile 2&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_18&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;18&lt;/Index&gt;
+    &lt;Name&gt;Profile 3&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_19&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;19&lt;/Index&gt;
+    &lt;Name&gt;Profile 4&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_20&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;20&lt;/Index&gt;
+    &lt;Name&gt;Profile 5&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_21&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;21&lt;/Index&gt;
+    &lt;Name&gt;Profile 6&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_22&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;22&lt;/Index&gt;
+    &lt;Name&gt;Profile 7&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_23&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;23&lt;/Index&gt;
+    &lt;Name&gt;Profile 8&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_24&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;24&lt;/Index&gt;
+    &lt;Name&gt;Hammer Noise&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_25&lt;/Symbol&gt;
+    &lt;Value&gt;0.28571429848671&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;25&lt;/Index&gt;
+    &lt;Name&gt;Strike Point&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_26&lt;/Symbol&gt;
+    &lt;Value&gt;0.551161646842957&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;26&lt;/Index&gt;
+    &lt;Name&gt;Character&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_27&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;27&lt;/Index&gt;
+    &lt;Name&gt;Pickup Symmetry&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_28&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;28&lt;/Index&gt;
+    &lt;Name&gt;Pickup Distance&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_29&lt;/Symbol&gt;
+    &lt;Value&gt;0.444444477558136&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;29&lt;/Index&gt;
+    &lt;Name&gt;Soft Level&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_30&lt;/Symbol&gt;
+    &lt;Value&gt;0.300000011920929&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;30&lt;/Index&gt;
+    &lt;Name&gt;Impedance&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_31&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;31&lt;/Index&gt;
+    &lt;Name&gt;Cutoff&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_32&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;32&lt;/Index&gt;
+    &lt;Name&gt;Q Factor&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_33&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;33&lt;/Index&gt;
+    &lt;Name&gt;String Length&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_34&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;34&lt;/Index&gt;
+    &lt;Name&gt;Sympa&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_35&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;35&lt;/Index&gt;
+    &lt;Name&gt;Duplex&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_36&lt;/Symbol&gt;
+    &lt;Value&gt;0.499999970197678&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;36&lt;/Index&gt;
+    &lt;Name&gt;Quadratic Effect&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_37&lt;/Symbol&gt;
+    &lt;Value&gt;0.569824278354645&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;37&lt;/Index&gt;
+    &lt;Name&gt;Bounce Switch&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_38&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;38&lt;/Index&gt;
+    &lt;Name&gt;Bounce Delay&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_39&lt;/Symbol&gt;
+    &lt;Value&gt;0.458333343267441&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;39&lt;/Index&gt;
+    &lt;Name&gt;Bounce Sync&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_40&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;40&lt;/Index&gt;
+    &lt;Name&gt;MBSyncS&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_41&lt;/Symbol&gt;
+    &lt;Value&gt;0.56521737575531&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;41&lt;/Index&gt;
+    &lt;Name&gt;MBVelS&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_42&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;42&lt;/Index&gt;
+    &lt;Name&gt;MBAccel&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_43&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;43&lt;/Index&gt;
+    &lt;Name&gt;MBVelL&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_44&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;44&lt;/Index&gt;
+    &lt;Name&gt;MBHuma&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_45&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;45&lt;/Index&gt;
+    &lt;Name&gt;Eff 1 Switch&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_46&lt;/Symbol&gt;
+    &lt;Value&gt;1&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;46&lt;/Index&gt;
+    &lt;Name&gt;Eff 1 Param 1&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_47&lt;/Symbol&gt;
+    &lt;Value&gt;0.100000001490116&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;47&lt;/Index&gt;
+    &lt;Name&gt;Eff 1 Param 2&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_48&lt;/Symbol&gt;
+    &lt;Value&gt;0.22833614051342&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;48&lt;/Index&gt;
+    &lt;Name&gt;Eff 1 Param 3&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_49&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;49&lt;/Index&gt;
+    &lt;Name&gt;Eff 1 Param 4&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_50&lt;/Symbol&gt;
+    &lt;Value&gt;0.25&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;50&lt;/Index&gt;
+    &lt;Name&gt;Eff 1 Param 5&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_51&lt;/Symbol&gt;
+    &lt;Value&gt;1&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;51&lt;/Index&gt;
+    &lt;Name&gt;Eff 1 Param 6&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_52&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;52&lt;/Index&gt;
+    &lt;Name&gt;Eff 1 Param 7&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_53&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;53&lt;/Index&gt;
+    &lt;Name&gt;Eff 1 Param 8&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_54&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;54&lt;/Index&gt;
+    &lt;Name&gt;Eff 2 Switch&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_55&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;55&lt;/Index&gt;
+    &lt;Name&gt;Eff 2 Param 1&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_56&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;56&lt;/Index&gt;
+    &lt;Name&gt;Eff 2 Param 2&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_57&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;57&lt;/Index&gt;
+    &lt;Name&gt;Eff 2 Param 3&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_58&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;58&lt;/Index&gt;
+    &lt;Name&gt;Eff 2 Param 4&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_59&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;59&lt;/Index&gt;
+    &lt;Name&gt;Eff 2 Param 5&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_60&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;60&lt;/Index&gt;
+    &lt;Name&gt;Eff 2 Param 6&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_61&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;61&lt;/Index&gt;
+    &lt;Name&gt;Eff 2 Param 7&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_62&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;62&lt;/Index&gt;
+    &lt;Name&gt;Eff 2 Param 8&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_63&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;63&lt;/Index&gt;
+    &lt;Name&gt;Eff 3 Switch&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_64&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;64&lt;/Index&gt;
+    &lt;Name&gt;Eff 3 Param 1&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_65&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;65&lt;/Index&gt;
+    &lt;Name&gt;Eff 3 Param 2&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_66&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;66&lt;/Index&gt;
+    &lt;Name&gt;Eff 3 Param 3&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_67&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;67&lt;/Index&gt;
+    &lt;Name&gt;Eff 3 Param 4&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_68&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;68&lt;/Index&gt;
+    &lt;Name&gt;Eff 3 Param 5&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_69&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;69&lt;/Index&gt;
+    &lt;Name&gt;Eff 3 Param 6&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_70&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;70&lt;/Index&gt;
+    &lt;Name&gt;Eff 3 Param 7&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_71&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;71&lt;/Index&gt;
+    &lt;Name&gt;Eff 3 Param 8&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_72&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;72&lt;/Index&gt;
+    &lt;Name&gt;Reverb Switch&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_73&lt;/Symbol&gt;
+    &lt;Value&gt;1&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;73&lt;/Index&gt;
+    &lt;Name&gt;Reverb Duration&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_74&lt;/Symbol&gt;
+    &lt;Value&gt;0.273276418447495&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;74&lt;/Index&gt;
+    &lt;Name&gt;Reverb Mix&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_75&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;75&lt;/Index&gt;
+    &lt;Name&gt;Room Dimensions&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_76&lt;/Symbol&gt;
+    &lt;Value&gt;0.333333343267441&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;76&lt;/Index&gt;
+    &lt;Name&gt;Reverb Pre-delay&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_77&lt;/Symbol&gt;
+    &lt;Value&gt;0.52955836057663&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;77&lt;/Index&gt;
+    &lt;Name&gt;RevEarl&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_78&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;78&lt;/Index&gt;
+    &lt;Name&gt;Reverb Tone&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_79&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;79&lt;/Index&gt;
+    &lt;Name&gt;Reverb Envelope&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_80&lt;/Symbol&gt;
+    &lt;Value&gt;1&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;80&lt;/Index&gt;
+    &lt;Name&gt;RevRes&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_81&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;81&lt;/Index&gt;
+    &lt;Name&gt;Limiter Switch&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_82&lt;/Symbol&gt;
+    &lt;Value&gt;1&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;82&lt;/Index&gt;
+    &lt;Name&gt;Limiter Sharp.&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_83&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;83&lt;/Index&gt;
+    &lt;Name&gt;Limiter Thresh.&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_84&lt;/Symbol&gt;
+    &lt;Value&gt;0.519999980926514&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;84&lt;/Index&gt;
+    &lt;Name&gt;Limiter Gain&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_85&lt;/Symbol&gt;
+    &lt;Value&gt;0.833333313465118&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;85&lt;/Index&gt;
+    &lt;Name&gt;Damper Noise&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_86&lt;/Symbol&gt;
+    &lt;Value&gt;0.499999970197678&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;86&lt;/Index&gt;
+    &lt;Name&gt;Damper Position&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_87&lt;/Symbol&gt;
+    &lt;Value&gt;0.668858230113983&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;87&lt;/Index&gt;
+    &lt;Name&gt;Last Damper&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_88&lt;/Symbol&gt;
+    &lt;Value&gt;0.7109375&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;88&lt;/Index&gt;
+    &lt;Name&gt;Pedal Noise&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_89&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;89&lt;/Index&gt;
+    &lt;Name&gt;Key Rel. Noise&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_90&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;90&lt;/Index&gt;
+    &lt;Name&gt;Damping Duration&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_91&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;91&lt;/Index&gt;
+    &lt;Name&gt;Lid Position&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_92&lt;/Symbol&gt;
+    &lt;Value&gt;1&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;92&lt;/Index&gt;
+    &lt;Name&gt;Output Mode&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_93&lt;/Symbol&gt;
+    &lt;Value&gt;0.666666686534882&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;93&lt;/Index&gt;
+    &lt;Name&gt;Mic Level Comp.&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_94&lt;/Symbol&gt;
+    &lt;Value&gt;1&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;94&lt;/Index&gt;
+    &lt;Name&gt;Mic Delay Comp.&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_95&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;95&lt;/Index&gt;
+    &lt;Name&gt;Head X position&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_96&lt;/Symbol&gt;
+    &lt;Value&gt;0.534999966621399&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;96&lt;/Index&gt;
+    &lt;Name&gt;Head Y position&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_97&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;97&lt;/Index&gt;
+    &lt;Name&gt;Head Z position&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_98&lt;/Symbol&gt;
+    &lt;Value&gt;0.371428549289703&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;98&lt;/Index&gt;
+    &lt;Name&gt;Head Diameter&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_99&lt;/Symbol&gt;
+    &lt;Value&gt;0.200000002980232&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;99&lt;/Index&gt;
+    &lt;Name&gt;Head Angle&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_100&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;100&lt;/Index&gt;
+    &lt;Name&gt;Mic 1 Mic Switch&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_101&lt;/Symbol&gt;
+    &lt;Value&gt;1&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;101&lt;/Index&gt;
+    &lt;Name&gt;Mic 1 X position&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_102&lt;/Symbol&gt;
+    &lt;Value&gt;0.574999988079071&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;102&lt;/Index&gt;
+    &lt;Name&gt;Mic 1 Y position&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_103&lt;/Symbol&gt;
+    &lt;Value&gt;0.604166686534882&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;103&lt;/Index&gt;
+    &lt;Name&gt;Mic 1 Z position&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_104&lt;/Symbol&gt;
+    &lt;Value&gt;0.428571432828903&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;104&lt;/Index&gt;
+    &lt;Name&gt;Mic 1 Azimuth&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_105&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;105&lt;/Index&gt;
+    &lt;Name&gt;Mic 1 Elevation&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_106&lt;/Symbol&gt;
+    &lt;Value&gt;0.488764733076096&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;106&lt;/Index&gt;
+    &lt;Name&gt;Mic 1 Level 1&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_107&lt;/Symbol&gt;
+    &lt;Value&gt;0.837499976158142&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;107&lt;/Index&gt;
+    &lt;Name&gt;Mic 1 Delay 1&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_108&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;108&lt;/Index&gt;
+    &lt;Name&gt;Mic 1 Level 2&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_109&lt;/Symbol&gt;
+    &lt;Value&gt;0.59375&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;109&lt;/Index&gt;
+    &lt;Name&gt;Mic 1 Delay 2&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_110&lt;/Symbol&gt;
+    &lt;Value&gt;0.6875&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;110&lt;/Index&gt;
+    &lt;Name&gt;Mic 1 Level 3&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_111&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;111&lt;/Index&gt;
+    &lt;Name&gt;Mic 1 Delay 3&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_112&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;112&lt;/Index&gt;
+    &lt;Name&gt;Mic 1 Level 4&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_113&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;113&lt;/Index&gt;
+    &lt;Name&gt;Mic 1 Delay 4&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_114&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;114&lt;/Index&gt;
+    &lt;Name&gt;Mic 1 Level 5&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_115&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;115&lt;/Index&gt;
+    &lt;Name&gt;Mic 1 Delay 5&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_116&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;116&lt;/Index&gt;
+    &lt;Name&gt;Mic 2 Mic Switch&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_117&lt;/Symbol&gt;
+    &lt;Value&gt;1&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;117&lt;/Index&gt;
+    &lt;Name&gt;Mic 2 X position&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_118&lt;/Symbol&gt;
+    &lt;Value&gt;0.574999988079071&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;118&lt;/Index&gt;
+    &lt;Name&gt;Mic 2 Y position&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_119&lt;/Symbol&gt;
+    &lt;Value&gt;0.5625&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;119&lt;/Index&gt;
+    &lt;Name&gt;Mic 2 Z position&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_120&lt;/Symbol&gt;
+    &lt;Value&gt;0.428571432828903&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;120&lt;/Index&gt;
+    &lt;Name&gt;Mic 2 Azimuth&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_121&lt;/Symbol&gt;
+    &lt;Value&gt;0.625&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;121&lt;/Index&gt;
+    &lt;Name&gt;Mic 2 Elevation&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_122&lt;/Symbol&gt;
+    &lt;Value&gt;0.488764733076096&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;122&lt;/Index&gt;
+    &lt;Name&gt;Mic 2 Level 1&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_123&lt;/Symbol&gt;
+    &lt;Value&gt;0.59375&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;123&lt;/Index&gt;
+    &lt;Name&gt;Mic 2 Delay 1&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_124&lt;/Symbol&gt;
+    &lt;Value&gt;0.75&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;124&lt;/Index&gt;
+    &lt;Name&gt;Mic 2 Level 2&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_125&lt;/Symbol&gt;
+    &lt;Value&gt;0.837499976158142&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;125&lt;/Index&gt;
+    &lt;Name&gt;Mic 2 Delay 2&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_126&lt;/Symbol&gt;
+    &lt;Value&gt;0.509375035762787&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;126&lt;/Index&gt;
+    &lt;Name&gt;Mic 2 Level 3&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_127&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;127&lt;/Index&gt;
+    &lt;Name&gt;Mic 2 Delay 3&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_128&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;128&lt;/Index&gt;
+    &lt;Name&gt;Mic 2 Level 4&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_129&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;129&lt;/Index&gt;
+    &lt;Name&gt;Mic 2 Delay 4&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_130&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;130&lt;/Index&gt;
+    &lt;Name&gt;Mic 2 Level 5&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_131&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;131&lt;/Index&gt;
+    &lt;Name&gt;Mic 2 Delay 5&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_132&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;132&lt;/Index&gt;
+    &lt;Name&gt;Mic 3 Mic Switch&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_133&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;133&lt;/Index&gt;
+    &lt;Name&gt;Mic 3 X position&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_134&lt;/Symbol&gt;
+    &lt;Value&gt;0.596000015735626&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;134&lt;/Index&gt;
+    &lt;Name&gt;Mic 3 Y position&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_135&lt;/Symbol&gt;
+    &lt;Value&gt;0.429999977350235&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;135&lt;/Index&gt;
+    &lt;Name&gt;Mic 3 Z position&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_136&lt;/Symbol&gt;
+    &lt;Value&gt;0.262857139110565&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;136&lt;/Index&gt;
+    &lt;Name&gt;Mic 3 Azimuth&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_137&lt;/Symbol&gt;
+    &lt;Value&gt;0.75&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;137&lt;/Index&gt;
+    &lt;Name&gt;Mic 3 Elevation&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_138&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;138&lt;/Index&gt;
+    &lt;Name&gt;Mic 3 Level 1&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_139&lt;/Symbol&gt;
+    &lt;Value&gt;0.512499988079071&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;139&lt;/Index&gt;
+    &lt;Name&gt;Mic 3 Delay 1&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_140&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;140&lt;/Index&gt;
+    &lt;Name&gt;Mic 3 Level 2&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_141&lt;/Symbol&gt;
+    &lt;Value&gt;0.512499988079071&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;141&lt;/Index&gt;
+    &lt;Name&gt;Mic 3 Delay 2&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_142&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;142&lt;/Index&gt;
+    &lt;Name&gt;Mic 3 Level 3&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_143&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;143&lt;/Index&gt;
+    &lt;Name&gt;Mic 3 Delay 3&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_144&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;144&lt;/Index&gt;
+    &lt;Name&gt;Mic 3 Level 4&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_145&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;145&lt;/Index&gt;
+    &lt;Name&gt;Mic 3 Delay 4&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_146&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;146&lt;/Index&gt;
+    &lt;Name&gt;Mic 3 Level 5&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_147&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;147&lt;/Index&gt;
+    &lt;Name&gt;Mic 3 Delay 5&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_148&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;148&lt;/Index&gt;
+    &lt;Name&gt;Mic 4 Mic Switch&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_149&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;149&lt;/Index&gt;
+    &lt;Name&gt;Mic 4 X position&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_150&lt;/Symbol&gt;
+    &lt;Value&gt;0.465000003576279&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;150&lt;/Index&gt;
+    &lt;Name&gt;Mic 4 Y position&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_151&lt;/Symbol&gt;
+    &lt;Value&gt;0.531666696071625&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;151&lt;/Index&gt;
+    &lt;Name&gt;Mic 4 Z position&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_152&lt;/Symbol&gt;
+    &lt;Value&gt;0.251428574323654&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;152&lt;/Index&gt;
+    &lt;Name&gt;Mic 4 Azimuth&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_153&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;153&lt;/Index&gt;
+    &lt;Name&gt;Mic 4 Elevation&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_154&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;154&lt;/Index&gt;
+    &lt;Name&gt;Mic 4 Level 1&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_155&lt;/Symbol&gt;
+    &lt;Value&gt;0.512499988079071&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;155&lt;/Index&gt;
+    &lt;Name&gt;Mic 4 Delay 1&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_156&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;156&lt;/Index&gt;
+    &lt;Name&gt;Mic 4 Level 2&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_157&lt;/Symbol&gt;
+    &lt;Value&gt;0.512499988079071&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;157&lt;/Index&gt;
+    &lt;Name&gt;Mic 4 Delay 2&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_158&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;158&lt;/Index&gt;
+    &lt;Name&gt;Mic 4 Level 3&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_159&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;159&lt;/Index&gt;
+    &lt;Name&gt;Mic 4 Delay 3&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_160&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;160&lt;/Index&gt;
+    &lt;Name&gt;Mic 4 Level 4&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_161&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;161&lt;/Index&gt;
+    &lt;Name&gt;Mic 4 Delay 4&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_162&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;162&lt;/Index&gt;
+    &lt;Name&gt;Mic 4 Level 5&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_163&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;163&lt;/Index&gt;
+    &lt;Name&gt;Mic 4 Delay 5&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_164&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;164&lt;/Index&gt;
+    &lt;Name&gt;Mic 5 Mic Switch&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_165&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;165&lt;/Index&gt;
+    &lt;Name&gt;Mic 5 X position&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_166&lt;/Symbol&gt;
+    &lt;Value&gt;0.577000021934509&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;166&lt;/Index&gt;
+    &lt;Name&gt;Mic 5 Y position&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_167&lt;/Symbol&gt;
+    &lt;Value&gt;0.569999992847443&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;167&lt;/Index&gt;
+    &lt;Name&gt;Mic 5 Z position&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_168&lt;/Symbol&gt;
+    &lt;Value&gt;0.502857148647308&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;168&lt;/Index&gt;
+    &lt;Name&gt;Mic 5 Azimuth&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_169&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;169&lt;/Index&gt;
+    &lt;Name&gt;Mic 5 Elevation&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_170&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;170&lt;/Index&gt;
+    &lt;Name&gt;Mic 5 Level 1&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_171&lt;/Symbol&gt;
+    &lt;Value&gt;0.512499988079071&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;171&lt;/Index&gt;
+    &lt;Name&gt;Mic 5 Delay 1&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_172&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;172&lt;/Index&gt;
+    &lt;Name&gt;Mic 5 Level 2&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_173&lt;/Symbol&gt;
+    &lt;Value&gt;0.512499988079071&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;173&lt;/Index&gt;
+    &lt;Name&gt;Mic 5 Delay 2&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_174&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;174&lt;/Index&gt;
+    &lt;Name&gt;Mic 5 Level 3&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_175&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;175&lt;/Index&gt;
+    &lt;Name&gt;Mic 5 Delay 3&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_176&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;176&lt;/Index&gt;
+    &lt;Name&gt;Mic 5 Level 4&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_177&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;177&lt;/Index&gt;
+    &lt;Name&gt;Mic 5 Delay 4&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_178&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;178&lt;/Index&gt;
+    &lt;Name&gt;Mic 5 Level 5&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_179&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;179&lt;/Index&gt;
+    &lt;Name&gt;Mic 5 Delay 5&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_180&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;180&lt;/Index&gt;
+    &lt;Name&gt;Stereo Width&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_181&lt;/Symbol&gt;
+    &lt;Value&gt;0.674031317234039&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;181&lt;/Index&gt;
+    &lt;Name&gt;Sound Speed&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_182&lt;/Symbol&gt;
+    &lt;Value&gt;0.500000059604645&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;182&lt;/Index&gt;
+    &lt;Name&gt;Mute&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_183&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;183&lt;/Index&gt;
+    &lt;Name&gt;Clavinet Low Mic&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_184&lt;/Symbol&gt;
+    &lt;Value&gt;1&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;184&lt;/Index&gt;
+    &lt;Name&gt;ClvMicH&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_185&lt;/Symbol&gt;
+    &lt;Value&gt;1&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;185&lt;/Index&gt;
+    &lt;Name&gt;Equalizer Switch&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_186&lt;/Symbol&gt;
+    &lt;Value&gt;1&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;186&lt;/Index&gt;
+    &lt;Name&gt;HTinNois&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_187&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;187&lt;/Index&gt;
+    &lt;Name&gt;Blooming Energy&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_188&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;188&lt;/Index&gt;
+    &lt;Name&gt;Blooming Inertia&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_189&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;189&lt;/Index&gt;
+    &lt;Name&gt;Aftertouch&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_190&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;190&lt;/Index&gt;
+    &lt;Name&gt;Wall distance&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_191&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;191&lt;/Index&gt;
+    &lt;Name&gt;Unison Balance&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_192&lt;/Symbol&gt;
+    &lt;Value&gt;0.5&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;192&lt;/Index&gt;
+    &lt;Name&gt;Condition&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_193&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;193&lt;/Index&gt;
+    &lt;Name&gt;Condition Seed&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_194&lt;/Symbol&gt;
+    &lt;Value&gt;0.12341234087944&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;194&lt;/Index&gt;
+    &lt;Name&gt;Rattle Pedal&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_195&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;195&lt;/Index&gt;
+    &lt;Name&gt;Lute Stop Pedal&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_196&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;196&lt;/Index&gt;
+    &lt;Name&gt;Celeste Pedal&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_197&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;197&lt;/Index&gt;
+    &lt;Name&gt;Super Sostenuto&lt;/Name&gt;
+    &lt;Symbol&gt;lv2_port_198&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;CustomData&gt;
+    &lt;Type&gt;http://lv2plug.in/ns/ext/atom#Chunk&lt;/Type&gt;
+    &lt;Key&gt;urn:juce:stateBinary&lt;/Key&gt;
+    &lt;Value&gt;
+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
+    &lt;/Value&gt;
+   &lt;/CustomData&gt;
+  &lt;/Data&gt;
+ &lt;/Plugin&gt;
+
+ &lt;!-- MIDI Chord --&gt;
+ &lt;Plugin&gt;
+  &lt;Info&gt;
+   &lt;Type&gt;LV2&lt;/Type&gt;
+   &lt;Name&gt;MIDI Chord&lt;/Name&gt;
+   &lt;URI&gt;http://gareus.org/oss/lv2/midifilter#midichord&lt;/URI&gt;
+  &lt;/Info&gt;
+
+  &lt;Data&gt;
+   &lt;Active&gt;Yes&lt;/Active&gt;
+   &lt;ControlChannel&gt;1&lt;/ControlChannel&gt;
+   &lt;Options&gt;0x1e1&lt;/Options&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;1&lt;/Index&gt;
+    &lt;Name&gt;Filter Channel&lt;/Name&gt;
+    &lt;Symbol&gt;channelf&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;2&lt;/Index&gt;
+    &lt;Name&gt;Scale&lt;/Name&gt;
+    &lt;Symbol&gt;scale&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;3&lt;/Index&gt;
+    &lt;Name&gt;prime&lt;/Name&gt;
+    &lt;Symbol&gt;c1&lt;/Symbol&gt;
+    &lt;Value&gt;1&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;4&lt;/Index&gt;
+    &lt;Name&gt;3rd&lt;/Name&gt;
+    &lt;Symbol&gt;c3&lt;/Symbol&gt;
+    &lt;Value&gt;1&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;5&lt;/Index&gt;
+    &lt;Name&gt;5th&lt;/Name&gt;
+    &lt;Symbol&gt;c5&lt;/Symbol&gt;
+    &lt;Value&gt;1&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;6&lt;/Index&gt;
+    &lt;Name&gt;6th&lt;/Name&gt;
+    &lt;Symbol&gt;c6&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;7&lt;/Index&gt;
+    &lt;Name&gt;7th&lt;/Name&gt;
+    &lt;Symbol&gt;c7&lt;/Symbol&gt;
+    &lt;Value&gt;1&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;8&lt;/Index&gt;
+    &lt;Name&gt;octave&lt;/Name&gt;
+    &lt;Symbol&gt;c8&lt;/Symbol&gt;
+    &lt;Value&gt;1&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;9&lt;/Index&gt;
+    &lt;Name&gt;9th&lt;/Name&gt;
+    &lt;Symbol&gt;c9&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;10&lt;/Index&gt;
+    &lt;Name&gt;11th&lt;/Name&gt;
+    &lt;Symbol&gt;c11&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;11&lt;/Index&gt;
+    &lt;Name&gt;13th&lt;/Name&gt;
+    &lt;Symbol&gt;c13&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;12&lt;/Index&gt;
+    &lt;Name&gt;bass&lt;/Name&gt;
+    &lt;Symbol&gt;_8&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;CustomData&gt;
+    &lt;Type&gt;http://kxstudio.sf.net/ns/carla/property&lt;/Type&gt;
+    &lt;Key&gt;CarlaSkinIsCompacted&lt;/Key&gt;
+    &lt;Value&gt;true&lt;/Value&gt;
+   &lt;/CustomData&gt;
+  &lt;/Data&gt;
+ &lt;/Plugin&gt;
+
+ &lt;!-- Carla-Rack (no midi out) --&gt;
+ &lt;Plugin&gt;
+  &lt;Info&gt;
+   &lt;Type&gt;INTERNAL&lt;/Type&gt;
+   &lt;Name&gt;Carla-Rack (no midi out)&lt;/Name&gt;
+   &lt;Label&gt;carlarack-nomidiout&lt;/Label&gt;
+  &lt;/Info&gt;
+
+  &lt;Data&gt;
+   &lt;Active&gt;Yes&lt;/Active&gt;
+   &lt;ControlChannel&gt;1&lt;/ControlChannel&gt;
+   &lt;Options&gt;0x3e0&lt;/Options&gt;
+
+   &lt;CustomData&gt;
+    &lt;Type&gt;http://kxstudio.sf.net/ns/carla/chunk&lt;/Type&gt;
+    &lt;Key&gt;State&lt;/Key&gt;
+    &lt;Value&gt;
+&amp;lt;?xml version=&amp;apos;1.0&amp;apos; encoding=&amp;apos;UTF-8&amp;apos;?&amp;gt;
+&amp;lt;!DOCTYPE CARLA-PROJECT&amp;gt;
+&amp;lt;CARLA-PROJECT VERSION=&amp;apos;2.0&amp;apos;&amp;gt;
+ &amp;lt;EngineSettings&amp;gt;
+  &amp;lt;ForceStereo&amp;gt;false&amp;lt;/ForceStereo&amp;gt;
+  &amp;lt;PreferPluginBridges&amp;gt;false&amp;lt;/PreferPluginBridges&amp;gt;
+  &amp;lt;PreferUiBridges&amp;gt;true&amp;lt;/PreferUiBridges&amp;gt;
+  &amp;lt;UIsAlwaysOnTop&amp;gt;false&amp;lt;/UIsAlwaysOnTop&amp;gt;
+  &amp;lt;MaxParameters&amp;gt;200&amp;lt;/MaxParameters&amp;gt;
+  &amp;lt;UIBridgesTimeout&amp;gt;4000&amp;lt;/UIBridgesTimeout&amp;gt;
+  &amp;lt;LADSPA_PATH&amp;gt;/home/falktx/.ladspa:/usr/lib/ladspa:/usr/local/lib/ladspa&amp;lt;/LADSPA_PATH&amp;gt;
+  &amp;lt;DSSI_PATH&amp;gt;/home/falktx/.dssi:/usr/lib/dssi:/usr/local/lib/dssi&amp;lt;/DSSI_PATH&amp;gt;
+  &amp;lt;LV2_PATH&amp;gt;/home/falktx/.lv2:/usr/lib/lv2:/usr/local/lib/lv2&amp;lt;/LV2_PATH&amp;gt;
+  &amp;lt;VST2_PATH&amp;gt;/home/falktx/.vst:/home/falktx/.wineflstudio/drive_c/Program Files (x86)/VstPlugins/:/usr/lib/vst:/usr/local/lib/vst&amp;lt;/VST2_PATH&amp;gt;
+  &amp;lt;GIG_PATH&amp;gt;/home/falktx/.sounds/gig:/usr/share/sounds/gig&amp;lt;/GIG_PATH&amp;gt;
+  &amp;lt;SF2_PATH&amp;gt;/home/falktx/.sounds/sf2:/home/falktx/Personal/Muzyks/Kits/SoundFonts:/usr/share/sounds/sf2&amp;lt;/SF2_PATH&amp;gt;
+  &amp;lt;SFZ_PATH&amp;gt;/home/falktx/.sounds/sfz:/home/falktx/Personal/Muzyks/Kits/SFZ:/usr/share/sounds/sfz&amp;lt;/SFZ_PATH&amp;gt;
+ &amp;lt;/EngineSettings&amp;gt;
+
+ &amp;lt;!-- QMidiArp Arp --&amp;gt;
+ &amp;lt;Plugin&amp;gt;
+  &amp;lt;Info&amp;gt;
+   &amp;lt;Type&amp;gt;LV2&amp;lt;/Type&amp;gt;
+   &amp;lt;Name&amp;gt;QMidiArp Arp&amp;lt;/Name&amp;gt;
+   &amp;lt;URI&amp;gt;https://git.code.sf.net/p/qmidiarp/arp&amp;lt;/URI&amp;gt;
+  &amp;lt;/Info&amp;gt;
+
+  &amp;lt;Data&amp;gt;
+   &amp;lt;Active&amp;gt;Yes&amp;lt;/Active&amp;gt;
+   &amp;lt;ControlChannel&amp;gt;1&amp;lt;/ControlChannel&amp;gt;
+   &amp;lt;Options&amp;gt;0x1e1&amp;lt;/Options&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;0&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Attack&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;ATTACK&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;1&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Release&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;RELEASE&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;2&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Random Tick&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;RANDOM_TICK&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;3&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Random Length&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;RANDOM_LEN&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;4&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Random Velocity&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;RANDOM_VEL&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;5&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Output Channel&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;CH_OUT&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;6&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Input Channel&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;CH_IN&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;8&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Restart&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;ENABLE_RESTARTBYKBD&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;9&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Trigger&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;ENABLE_TRIGBYKBD&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;10&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Mute Output&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;MUTE&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;11&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Latch mode&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;LATCH_MODE&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;12&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Octave Mode&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;OCTAVE_MODE&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;13&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Low octave limit&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;OCTAVE_LOW&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;14&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;High octave limit&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;OCTAVE_HIGH&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;15&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Index In 1&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;INDEX_IN1&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;16&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Index In 2&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;INDEX_IN2&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;127&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;17&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Range In 1&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;RANGE_IN1&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;18&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Range In 2&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;RANGE_IN2&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;127&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;19&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Trigger Legato&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;ENABLE_TRIGLEGATO&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;20&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Repeat Mode&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;REPEAT_MODE&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;1&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;22&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Defer mute&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;DEFER&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;23&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Pattern Preset&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;PATTERN_PRESET&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;24&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Transport Mode&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;TRANSPORT_MODE&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;1&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;25&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Internal Tempo&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;TEMPO&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;120&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;CustomData&amp;gt;
+    &amp;lt;Type&amp;gt;http://lv2plug.in/ns/ext/atom#String&amp;lt;/Type&amp;gt;
+    &amp;lt;Key&amp;gt;https://git.code.sf.net/p/qmidiarp#ARPPATTERN&amp;lt;/Key&amp;gt;
+    &amp;lt;Value&amp;gt;&amp;amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/CustomData&amp;gt;
+  &amp;lt;/Data&amp;gt;
+ &amp;lt;/Plugin&amp;gt;
+
+ &amp;lt;Plugin&amp;gt;
+  &amp;lt;Info&amp;gt;
+   &amp;lt;Type&amp;gt;SFZ&amp;lt;/Type&amp;gt;
+   &amp;lt;Name&amp;gt;concert_harp&amp;lt;/Name&amp;gt;
+   &amp;lt;Filename&amp;gt;/home/falktx/Personal/Muzyks/Kits/SFZ/Sonatina Symphonic Orchestra/concert_harp.sfz&amp;lt;/Filename&amp;gt;
+  &amp;lt;/Info&amp;gt;
+
+  &amp;lt;Data&amp;gt;
+   &amp;lt;Active&amp;gt;Yes&amp;lt;/Active&amp;gt;
+   &amp;lt;ControlChannel&amp;gt;1&amp;lt;/ControlChannel&amp;gt;
+   &amp;lt;Options&amp;gt;0x1f0&amp;lt;/Options&amp;gt;
+
+   &amp;lt;CurrentProgramIndex&amp;gt;1&amp;lt;/CurrentProgramIndex&amp;gt;
+   &amp;lt;CurrentProgramName&amp;gt;concert_harp&amp;lt;/CurrentProgramName&amp;gt;
+  &amp;lt;/Data&amp;gt;
+ &amp;lt;/Plugin&amp;gt;
+&amp;lt;/CARLA-PROJECT&amp;gt;
+
+    &lt;/Value&gt;
+   &lt;/CustomData&gt;
+
+   &lt;CustomData&gt;
+    &lt;Type&gt;http://kxstudio.sf.net/ns/carla/property&lt;/Type&gt;
+    &lt;Key&gt;CarlaSkinIsCompacted&lt;/Key&gt;
+    &lt;Value&gt;true&lt;/Value&gt;
+   &lt;/CustomData&gt;
+  &lt;/Data&gt;
+ &lt;/Plugin&gt;
+
+ &lt;!-- Carla-Rack (no midi out) --&gt;
+ &lt;Plugin&gt;
+  &lt;Info&gt;
+   &lt;Type&gt;INTERNAL&lt;/Type&gt;
+   &lt;Name&gt;arp xylo + 3d delay&lt;/Name&gt;
+   &lt;Label&gt;carlarack-nomidiout&lt;/Label&gt;
+  &lt;/Info&gt;
+
+  &lt;Data&gt;
+   &lt;Active&gt;Yes&lt;/Active&gt;
+   &lt;ControlChannel&gt;1&lt;/ControlChannel&gt;
+   &lt;Options&gt;0x3e0&lt;/Options&gt;
+
+   &lt;CustomData&gt;
+    &lt;Type&gt;http://kxstudio.sf.net/ns/carla/chunk&lt;/Type&gt;
+    &lt;Key&gt;State&lt;/Key&gt;
+    &lt;Value&gt;
+&amp;lt;?xml version=&amp;apos;1.0&amp;apos; encoding=&amp;apos;UTF-8&amp;apos;?&amp;gt;
+&amp;lt;!DOCTYPE CARLA-PROJECT&amp;gt;
+&amp;lt;CARLA-PROJECT VERSION=&amp;apos;2.0&amp;apos;&amp;gt;
+ &amp;lt;EngineSettings&amp;gt;
+  &amp;lt;ForceStereo&amp;gt;false&amp;lt;/ForceStereo&amp;gt;
+  &amp;lt;PreferPluginBridges&amp;gt;false&amp;lt;/PreferPluginBridges&amp;gt;
+  &amp;lt;PreferUiBridges&amp;gt;true&amp;lt;/PreferUiBridges&amp;gt;
+  &amp;lt;UIsAlwaysOnTop&amp;gt;false&amp;lt;/UIsAlwaysOnTop&amp;gt;
+  &amp;lt;MaxParameters&amp;gt;200&amp;lt;/MaxParameters&amp;gt;
+  &amp;lt;UIBridgesTimeout&amp;gt;4000&amp;lt;/UIBridgesTimeout&amp;gt;
+  &amp;lt;LADSPA_PATH&amp;gt;/home/falktx/.ladspa:/usr/lib/ladspa:/usr/local/lib/ladspa&amp;lt;/LADSPA_PATH&amp;gt;
+  &amp;lt;DSSI_PATH&amp;gt;/home/falktx/.dssi:/usr/lib/dssi:/usr/local/lib/dssi&amp;lt;/DSSI_PATH&amp;gt;
+  &amp;lt;LV2_PATH&amp;gt;/home/falktx/.lv2:/usr/lib/lv2:/usr/local/lib/lv2&amp;lt;/LV2_PATH&amp;gt;
+  &amp;lt;VST2_PATH&amp;gt;/home/falktx/.vst:/home/falktx/.wineflstudio/drive_c/Program Files (x86)/VstPlugins/:/usr/lib/vst:/usr/local/lib/vst&amp;lt;/VST2_PATH&amp;gt;
+  &amp;lt;GIG_PATH&amp;gt;/home/falktx/.sounds/gig:/usr/share/sounds/gig&amp;lt;/GIG_PATH&amp;gt;
+  &amp;lt;SF2_PATH&amp;gt;/home/falktx/.sounds/sf2:/home/falktx/Personal/Muzyks/Kits/SoundFonts:/usr/share/sounds/sf2&amp;lt;/SF2_PATH&amp;gt;
+  &amp;lt;SFZ_PATH&amp;gt;/home/falktx/.sounds/sfz:/home/falktx/Personal/Muzyks/Kits/SFZ:/usr/share/sounds/sfz&amp;lt;/SFZ_PATH&amp;gt;
+ &amp;lt;/EngineSettings&amp;gt;
+
+ &amp;lt;!-- QMidiArp Arp --&amp;gt;
+ &amp;lt;Plugin&amp;gt;
+  &amp;lt;Info&amp;gt;
+   &amp;lt;Type&amp;gt;LV2&amp;lt;/Type&amp;gt;
+   &amp;lt;Name&amp;gt;QMidiArp Arp&amp;lt;/Name&amp;gt;
+   &amp;lt;URI&amp;gt;https://git.code.sf.net/p/qmidiarp/arp&amp;lt;/URI&amp;gt;
+  &amp;lt;/Info&amp;gt;
+
+  &amp;lt;Data&amp;gt;
+   &amp;lt;Active&amp;gt;Yes&amp;lt;/Active&amp;gt;
+   &amp;lt;ControlChannel&amp;gt;1&amp;lt;/ControlChannel&amp;gt;
+   &amp;lt;Options&amp;gt;0x1e1&amp;lt;/Options&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;0&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Attack&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;ATTACK&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;1&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Release&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;RELEASE&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;2&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Random Tick&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;RANDOM_TICK&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;3&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Random Length&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;RANDOM_LEN&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;4&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Random Velocity&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;RANDOM_VEL&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;5&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Output Channel&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;CH_OUT&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;6&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Input Channel&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;CH_IN&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;8&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Restart&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;ENABLE_RESTARTBYKBD&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;9&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Trigger&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;ENABLE_TRIGBYKBD&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;10&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Mute Output&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;MUTE&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;11&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Latch mode&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;LATCH_MODE&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;12&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Octave Mode&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;OCTAVE_MODE&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;13&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Low octave limit&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;OCTAVE_LOW&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;14&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;High octave limit&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;OCTAVE_HIGH&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;15&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Index In 1&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;INDEX_IN1&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;16&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Index In 2&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;INDEX_IN2&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;127&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;17&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Range In 1&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;RANGE_IN1&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;18&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Range In 2&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;RANGE_IN2&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;127&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;19&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Trigger Legato&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;ENABLE_TRIGLEGATO&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;20&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Repeat Mode&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;REPEAT_MODE&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;1&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;22&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Defer mute&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;DEFER&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;23&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Pattern Preset&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;PATTERN_PRESET&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;24&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Transport Mode&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;TRANSPORT_MODE&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;1&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;25&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Internal Tempo&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;TEMPO&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;120&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;CustomData&amp;gt;
+    &amp;lt;Type&amp;gt;http://lv2plug.in/ns/ext/atom#String&amp;lt;/Type&amp;gt;
+    &amp;lt;Key&amp;gt;https://git.code.sf.net/p/qmidiarp#ARPPATTERN&amp;lt;/Key&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/CustomData&amp;gt;
+  &amp;lt;/Data&amp;gt;
+ &amp;lt;/Plugin&amp;gt;
+
+ &amp;lt;Plugin&amp;gt;
+  &amp;lt;Info&amp;gt;
+   &amp;lt;Type&amp;gt;SFZ&amp;lt;/Type&amp;gt;
+   &amp;lt;Name&amp;gt;percussion_-_xylophone (2)&amp;lt;/Name&amp;gt;
+   &amp;lt;Filename&amp;gt;/home/falktx/Personal/Muzyks/Kits/SFZ/Sonatina Symphonic Orchestra/percussion_-_xylophone.sfz&amp;lt;/Filename&amp;gt;
+  &amp;lt;/Info&amp;gt;
+
+  &amp;lt;Data&amp;gt;
+   &amp;lt;Active&amp;gt;Yes&amp;lt;/Active&amp;gt;
+   &amp;lt;ControlChannel&amp;gt;1&amp;lt;/ControlChannel&amp;gt;
+   &amp;lt;Options&amp;gt;0x1f0&amp;lt;/Options&amp;gt;
+
+   &amp;lt;CurrentProgramIndex&amp;gt;1&amp;lt;/CurrentProgramIndex&amp;gt;
+   &amp;lt;CurrentProgramName&amp;gt;percussion_-_xylophone&amp;lt;/CurrentProgramName&amp;gt;
+
+   &amp;lt;CustomData&amp;gt;
+    &amp;lt;Type&amp;gt;http://kxstudio.sf.net/ns/carla/property&amp;lt;/Type&amp;gt;
+    &amp;lt;Key&amp;gt;CarlaSkinIsCompacted&amp;lt;/Key&amp;gt;
+    &amp;lt;Value&amp;gt;false&amp;lt;/Value&amp;gt;
+   &amp;lt;/CustomData&amp;gt;
+  &amp;lt;/Data&amp;gt;
+ &amp;lt;/Plugin&amp;gt;
+
+ &amp;lt;!-- 3D Triple Delay (Stereo) --&amp;gt;
+ &amp;lt;Plugin&amp;gt;
+  &amp;lt;Info&amp;gt;
+   &amp;lt;Type&amp;gt;LV2&amp;lt;/Type&amp;gt;
+   &amp;lt;Name&amp;gt;3D Triple Delay (Stereo)&amp;lt;/Name&amp;gt;
+   &amp;lt;URI&amp;gt;http://harrisonconsoles.com/lv2/har_delay/stereo&amp;lt;/URI&amp;gt;
+  &amp;lt;/Info&amp;gt;
+
+  &amp;lt;Data&amp;gt;
+   &amp;lt;Active&amp;gt;Yes&amp;lt;/Active&amp;gt;
+   &amp;lt;ControlChannel&amp;gt;1&amp;lt;/ControlChannel&amp;gt;
+   &amp;lt;Options&amp;gt;0x0&amp;lt;/Options&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;0&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Wet Mix&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;mix&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;100&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;1&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Output Trim&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;out_trim&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;2&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Input High Cut&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;hicut&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;18000&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;3&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Input Low Cut&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;locut&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;100&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;4&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Left Input&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;inputlev_l&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;-2.79999995231628&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;5&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Left Output&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;level_l&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;6&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Left Pan&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;pan_l&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;-90&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;7&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Left Delay (16ths)&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;delay_16_l&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;2&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;8&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Left Delay (fine)&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;delay_fine_l&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;11&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;9&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Center Input&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;inputlev_c&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;-70&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;10&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Center Output&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;level_c&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;11&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Center Pan&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;pan_c&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;12&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Center Delay (16ths)&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;delay_16_c&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;13&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Center Delay (fine)&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;delay_fine_c&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;14&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Right Input&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;inputlev_r&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;-70&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;15&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Right Output&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;level_r&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;16&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Right Pan&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;pan_r&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;90&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;17&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Right Delay (16ths)&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;delay_16_r&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;2&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;18&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Right Delay (fine)&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;delay_fine_r&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;7&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;19&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Linear Feedback&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;linear_feedback&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;-17.2999992370605&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;20&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Linear Damping&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;linear_damping&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;21&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Feedback: LR-C-LR&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;feedback_lrc&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;-0.0399999991059303&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;22&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Feedback: L-R&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;feedback_lr&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;5&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;23&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Feedback Override&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;feedback_all&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0.899999976158142&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;24&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Modulation&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;modulation&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;0&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;25&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;BPM (User)&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;bpm&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;59.4000015258789&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;26&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;BPM Sync&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;bpm_sync&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;1&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;27&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Snap&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;snap&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;1&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+
+   &amp;lt;Parameter&amp;gt;
+    &amp;lt;Index&amp;gt;31&amp;lt;/Index&amp;gt;
+    &amp;lt;Name&amp;gt;Oversample&amp;lt;/Name&amp;gt;
+    &amp;lt;Symbol&amp;gt;oversample&amp;lt;/Symbol&amp;gt;
+    &amp;lt;Value&amp;gt;1&amp;lt;/Value&amp;gt;
+   &amp;lt;/Parameter&amp;gt;
+  &amp;lt;/Data&amp;gt;
+ &amp;lt;/Plugin&amp;gt;
+&amp;lt;/CARLA-PROJECT&amp;gt;
+
+    &lt;/Value&gt;
+   &lt;/CustomData&gt;
+
+   &lt;CustomData&gt;
+    &lt;Type&gt;http://kxstudio.sf.net/ns/carla/property&lt;/Type&gt;
+    &lt;Key&gt;CarlaSkinIsCompacted&lt;/Key&gt;
+    &lt;Value&gt;true&lt;/Value&gt;
+   &lt;/CustomData&gt;
+  &lt;/Data&gt;
+ &lt;/Plugin&gt;
+
+ &lt;!-- MIDI Strum --&gt;
+ &lt;Plugin&gt;
+  &lt;Info&gt;
+   &lt;Type&gt;LV2&lt;/Type&gt;
+   &lt;Name&gt;MIDI Strum&lt;/Name&gt;
+   &lt;URI&gt;http://gareus.org/oss/lv2/midifilter#midistrum&lt;/URI&gt;
+  &lt;/Info&gt;
+
+  &lt;Data&gt;
+   &lt;Active&gt;Yes&lt;/Active&gt;
+   &lt;ControlChannel&gt;1&lt;/ControlChannel&gt;
+   &lt;Options&gt;0x1e1&lt;/Options&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;1&lt;/Index&gt;
+    &lt;Name&gt;BPM source&lt;/Name&gt;
+    &lt;Symbol&gt;bpmsrc&lt;/Symbol&gt;
+    &lt;Value&gt;1&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;2&lt;/Index&gt;
+    &lt;Name&gt;BPM&lt;/Name&gt;
+    &lt;Symbol&gt;bpm&lt;/Symbol&gt;
+    &lt;Value&gt;120&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;3&lt;/Index&gt;
+    &lt;Name&gt;Strum Direction&lt;/Name&gt;
+    &lt;Symbol&gt;mode&lt;/Symbol&gt;
+    &lt;Value&gt;2&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;4&lt;/Index&gt;
+    &lt;Name&gt;Note Collect Timeout [ms]&lt;/Name&gt;
+    &lt;Symbol&gt;collect&lt;/Symbol&gt;
+    &lt;Value&gt;15&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;5&lt;/Index&gt;
+    &lt;Name&gt;Strum Duration in Beats&lt;/Name&gt;
+    &lt;Symbol&gt;duration&lt;/Symbol&gt;
+    &lt;Value&gt;1.39999997615814&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;6&lt;/Index&gt;
+    &lt;Name&gt;Strum Acceleration&lt;/Name&gt;
+    &lt;Symbol&gt;adjspeed&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;7&lt;/Index&gt;
+    &lt;Name&gt;Velocity Change&lt;/Name&gt;
+    &lt;Symbol&gt;adjvelocity&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;8&lt;/Index&gt;
+    &lt;Name&gt;Randomize Acceleration&lt;/Name&gt;
+    &lt;Symbol&gt;randspeed&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+
+   &lt;Parameter&gt;
+    &lt;Index&gt;9&lt;/Index&gt;
+    &lt;Name&gt;Randomize Velocity&lt;/Name&gt;
+    &lt;Symbol&gt;randvelocity&lt;/Symbol&gt;
+    &lt;Value&gt;0&lt;/Value&gt;
+   &lt;/Parameter&gt;
+  &lt;/Data&gt;
+ &lt;/Plugin&gt;
+
+ &lt;Plugin&gt;
+  &lt;Info&gt;
+   &lt;Type&gt;SFZ&lt;/Type&gt;
+   &lt;Name&gt;AcousticGuitar&lt;/Name&gt;
+   &lt;Filename&gt;/home/falktx/Personal/Muzyks/Kits/SFZ/AcousticGuitarFREE Samples/AcousticGuitar.sfz&lt;/Filename&gt;
+  &lt;/Info&gt;
+
+  &lt;Data&gt;
+   &lt;Active&gt;Yes&lt;/Active&gt;
+   &lt;Volume&gt;0.3500588&lt;/Volume&gt;
+   &lt;ControlChannel&gt;1&lt;/ControlChannel&gt;
+   &lt;Options&gt;0x1f0&lt;/Options&gt;
+
+   &lt;CurrentProgramIndex&gt;1&lt;/CurrentProgramIndex&gt;
+   &lt;CurrentProgramName&gt;AcousticGuitar&lt;/CurrentProgramName&gt;
+  &lt;/Data&gt;
+ &lt;/Plugin&gt;
+&lt;/CARLA-PROJECT&gt;
+
+    </Value>
+   </CustomData>
+  </Data>
+ </Plugin>
+
+ <ExternalPatchbay>
+  <Connection>
+   <Source>system:capture_1</Source>
+   <Target>PulseAudio JACK Source:front-left</Target>
+  </Connection>
+  <Connection>
+   <Source>system:capture_2</Source>
+   <Target>PulseAudio JACK Source:front-right</Target>
+  </Connection>
+  <Connection>
+   <Source>PulseAudio JACK Sink:front-left</Source>
+   <Target>system:playback_1</Target>
+  </Connection>
+  <Connection>
+   <Source>PulseAudio JACK Sink:front-right</Source>
+   <Target>system:playback_2</Target>
+  </Connection>
+  <Connection>
+   <Source>Carla-Rack:output_1</Source>
+   <Target>system:playback_1</Target>
+  </Connection>
+  <Connection>
+   <Source>Carla-Rack:output_2</Source>
+   <Target>system:playback_2</Target>
+  </Connection>
+ </ExternalPatchbay>
+</CARLA-PROJECT>
