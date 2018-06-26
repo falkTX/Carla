@@ -1132,16 +1132,20 @@ public:
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
 
-                if (event.time >= frames)
-                    continue;
+                uint32_t eventTime = event.time;
+                CARLA_SAFE_ASSERT_CONTINUE(eventTime < frames);
 
-                CARLA_ASSERT_INT2(event.time >= timeOffset, event.time, timeOffset);
-
-                if (event.time > timeOffset)
+                if (eventTime < timeOffset)
                 {
-                    if (processSingle(audioOut, event.time - timeOffset, timeOffset))
+                    carla_stderr2("Timing error, eventTime:%u < timeOffset:%u for '%s'",
+                                  eventTime, timeOffset, pData->name);
+                    eventTime = timeOffset;
+                }
+                else if (eventTime > timeOffset)
+                {
+                    if (processSingle(audioOut, eventTime - timeOffset, timeOffset))
                     {
-                        timeOffset = event.time;
+                        timeOffset = eventTime;
 
                         if (pData->midiprog.current >= 0 && pData->midiprog.count > 0 && pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
                             nextBankIds[pData->ctrlChannel] = pData->midiprog.data[pData->midiprog.current].bank;

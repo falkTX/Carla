@@ -1,0 +1,1697 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE CARLA-PROJECT>
+<CARLA-PROJECT VERSION='2.0'>
+ <EngineSettings>
+  <ForceStereo>false</ForceStereo>
+  <PreferPluginBridges>false</PreferPluginBridges>
+  <PreferUiBridges>true</PreferUiBridges>
+  <UIsAlwaysOnTop>false</UIsAlwaysOnTop>
+  <MaxParameters>200</MaxParameters>
+  <UIBridgesTimeout>4000</UIBridgesTimeout>
+ </EngineSettings>
+
+ <!-- ZynReverb -->
+ <Plugin>
+  <Info>
+   <Type>INTERNAL</Type>
+   <Name>ZynReverb</Name>
+   <Label>zynreverb</Label>
+  </Info>
+
+  <Data>
+   <Active>Yes</Active>
+   <DryWet>0</DryWet>
+   <ControlChannel>1</ControlChannel>
+   <Options>0x5</Options>
+
+   <Parameter>
+    <Index>0</Index>
+    <Name>Time</Name>
+    <Value>93</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>1</Index>
+    <Name>Delay</Name>
+    <Value>15</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>2</Index>
+    <Name>Feedback</Name>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>5</Index>
+    <Name>Low-Pass Filter</Name>
+    <Value>114</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>6</Index>
+    <Name>High-Pass Filter</Name>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>7</Index>
+    <Name>Damp</Name>
+    <Value>77</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>8</Index>
+    <Name>Type</Name>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>9</Index>
+    <Name>Room size</Name>
+    <Value>95</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>10</Index>
+    <Name>Bandwidth</Name>
+    <Value>20</Value>
+   </Parameter>
+
+   <CurrentMidiBank>1</CurrentMidiBank>
+   <CurrentMidiProgram>12</CurrentMidiProgram>
+  </Data>
+ </Plugin>
+
+ <Plugin>
+  <Info>
+   <Type>SFZ</Type>
+   <Name>AcousticGuitar</Name>
+   <Filename>/home/falktx/Personal/Muzyks/Kits/SFZ/AcousticGuitarFREE Samples/AcousticGuitar.sfz</Filename>
+  </Info>
+
+  <Data>
+   <Active>Yes</Active>
+   <ControlChannel>1</ControlChannel>
+   <Options>0x1f0</Options>
+
+   <CurrentProgramIndex>1</CurrentProgramIndex>
+   <CurrentProgramName>AcousticGuitar</CurrentProgramName>
+
+   <CustomData>
+    <Type>http://kxstudio.sf.net/ns/carla/property</Type>
+    <Key>CarlaSkinIsCompacted</Key>
+    <Value>true</Value>
+   </CustomData>
+  </Data>
+ </Plugin>
+
+ <!-- MIDI Step Sequencer8x8 -->
+ <Plugin>
+  <Info>
+   <Type>LV2</Type>
+   <Name>MIDI Seq Guitar</Name>
+   <URI>http://gareus.org/oss/lv2/stepseq#s8n8</URI>
+  </Info>
+
+  <Data>
+   <Active>Yes</Active>
+   <ControlChannel>1</ControlChannel>
+   <Options>0x1</Options>
+
+   <Parameter>
+    <Index>0</Index>
+    <Name>Sync</Name>
+    <Symbol>sync</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>1</Index>
+    <Name>BPM</Name>
+    <Symbol>bpm</Symbol>
+    <Value>120</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>2</Index>
+    <Name>Step Duration (4/4)</Name>
+    <Symbol>div</Symbol>
+    <Value>2</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>3</Index>
+    <Name>Swing</Name>
+    <Symbol>swing</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>4</Index>
+    <Name>Drum Mode</Name>
+    <Symbol>drummode</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>5</Index>
+    <Name>Midi Channel</Name>
+    <Symbol>chn</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>6</Index>
+    <Name>MIDI Panic</Name>
+    <Symbol>panic</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>9</Index>
+    <Name>Note 1</Name>
+    <Symbol>note1</Symbol>
+    <Value>69</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>10</Index>
+    <Name>Note 2</Name>
+    <Symbol>note2</Symbol>
+    <Value>67</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>11</Index>
+    <Name>Note 3</Name>
+    <Symbol>note3</Symbol>
+    <Value>65</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>12</Index>
+    <Name>Note 4</Name>
+    <Symbol>note4</Symbol>
+    <Value>64</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>13</Index>
+    <Name>Note 5</Name>
+    <Symbol>note5</Symbol>
+    <Value>62</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>14</Index>
+    <Name>Note 6</Name>
+    <Symbol>note6</Symbol>
+    <Value>60</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>15</Index>
+    <Name>Note 7</Name>
+    <Symbol>note7</Symbol>
+    <Value>59</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>16</Index>
+    <Name>Note 8</Name>
+    <Symbol>note8</Symbol>
+    <Value>57</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>17</Index>
+    <Name>Grid S: 1 N: 1</Name>
+    <Symbol>grid_1_1</Symbol>
+    <Value>127</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>18</Index>
+    <Name>Grid S: 2 N: 1</Name>
+    <Symbol>grid_2_1</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>19</Index>
+    <Name>Grid S: 3 N: 1</Name>
+    <Symbol>grid_3_1</Symbol>
+    <Value>127</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>20</Index>
+    <Name>Grid S: 4 N: 1</Name>
+    <Symbol>grid_4_1</Symbol>
+    <Value>127</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>21</Index>
+    <Name>Grid S: 5 N: 1</Name>
+    <Symbol>grid_5_1</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>22</Index>
+    <Name>Grid S: 6 N: 1</Name>
+    <Symbol>grid_6_1</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>23</Index>
+    <Name>Grid S: 7 N: 1</Name>
+    <Symbol>grid_7_1</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>24</Index>
+    <Name>Grid S: 8 N: 1</Name>
+    <Symbol>grid_8_1</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>25</Index>
+    <Name>Grid S: 1 N: 2</Name>
+    <Symbol>grid_1_2</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>26</Index>
+    <Name>Grid S: 2 N: 2</Name>
+    <Symbol>grid_2_2</Symbol>
+    <Value>127</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>27</Index>
+    <Name>Grid S: 3 N: 2</Name>
+    <Symbol>grid_3_2</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>28</Index>
+    <Name>Grid S: 4 N: 2</Name>
+    <Symbol>grid_4_2</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>29</Index>
+    <Name>Grid S: 5 N: 2</Name>
+    <Symbol>grid_5_2</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>30</Index>
+    <Name>Grid S: 6 N: 2</Name>
+    <Symbol>grid_6_2</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>31</Index>
+    <Name>Grid S: 7 N: 2</Name>
+    <Symbol>grid_7_2</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>32</Index>
+    <Name>Grid S: 8 N: 2</Name>
+    <Symbol>grid_8_2</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>33</Index>
+    <Name>Grid S: 1 N: 3</Name>
+    <Symbol>grid_1_3</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>34</Index>
+    <Name>Grid S: 2 N: 3</Name>
+    <Symbol>grid_2_3</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>35</Index>
+    <Name>Grid S: 3 N: 3</Name>
+    <Symbol>grid_3_3</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>36</Index>
+    <Name>Grid S: 4 N: 3</Name>
+    <Symbol>grid_4_3</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>37</Index>
+    <Name>Grid S: 5 N: 3</Name>
+    <Symbol>grid_5_3</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>38</Index>
+    <Name>Grid S: 6 N: 3</Name>
+    <Symbol>grid_6_3</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>39</Index>
+    <Name>Grid S: 7 N: 3</Name>
+    <Symbol>grid_7_3</Symbol>
+    <Value>127</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>40</Index>
+    <Name>Grid S: 8 N: 3</Name>
+    <Symbol>grid_8_3</Symbol>
+    <Value>127</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>41</Index>
+    <Name>Grid S: 1 N: 4</Name>
+    <Symbol>grid_1_4</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>42</Index>
+    <Name>Grid S: 2 N: 4</Name>
+    <Symbol>grid_2_4</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>43</Index>
+    <Name>Grid S: 3 N: 4</Name>
+    <Symbol>grid_3_4</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>44</Index>
+    <Name>Grid S: 4 N: 4</Name>
+    <Symbol>grid_4_4</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>45</Index>
+    <Name>Grid S: 5 N: 4</Name>
+    <Symbol>grid_5_4</Symbol>
+    <Value>127</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>46</Index>
+    <Name>Grid S: 6 N: 4</Name>
+    <Symbol>grid_6_4</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>47</Index>
+    <Name>Grid S: 7 N: 4</Name>
+    <Symbol>grid_7_4</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>48</Index>
+    <Name>Grid S: 8 N: 4</Name>
+    <Symbol>grid_8_4</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>49</Index>
+    <Name>Grid S: 1 N: 5</Name>
+    <Symbol>grid_1_5</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>50</Index>
+    <Name>Grid S: 2 N: 5</Name>
+    <Symbol>grid_2_5</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>51</Index>
+    <Name>Grid S: 3 N: 5</Name>
+    <Symbol>grid_3_5</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>52</Index>
+    <Name>Grid S: 4 N: 5</Name>
+    <Symbol>grid_4_5</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>53</Index>
+    <Name>Grid S: 5 N: 5</Name>
+    <Symbol>grid_5_5</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>54</Index>
+    <Name>Grid S: 6 N: 5</Name>
+    <Symbol>grid_6_5</Symbol>
+    <Value>127</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>55</Index>
+    <Name>Grid S: 7 N: 5</Name>
+    <Symbol>grid_7_5</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>56</Index>
+    <Name>Grid S: 8 N: 5</Name>
+    <Symbol>grid_8_5</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>57</Index>
+    <Name>Grid S: 1 N: 6</Name>
+    <Symbol>grid_1_6</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>58</Index>
+    <Name>Grid S: 2 N: 6</Name>
+    <Symbol>grid_2_6</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>59</Index>
+    <Name>Grid S: 3 N: 6</Name>
+    <Symbol>grid_3_6</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>60</Index>
+    <Name>Grid S: 4 N: 6</Name>
+    <Symbol>grid_4_6</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>61</Index>
+    <Name>Grid S: 5 N: 6</Name>
+    <Symbol>grid_5_6</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>62</Index>
+    <Name>Grid S: 6 N: 6</Name>
+    <Symbol>grid_6_6</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>63</Index>
+    <Name>Grid S: 7 N: 6</Name>
+    <Symbol>grid_7_6</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>64</Index>
+    <Name>Grid S: 8 N: 6</Name>
+    <Symbol>grid_8_6</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>65</Index>
+    <Name>Grid S: 1 N: 7</Name>
+    <Symbol>grid_1_7</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>66</Index>
+    <Name>Grid S: 2 N: 7</Name>
+    <Symbol>grid_2_7</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>67</Index>
+    <Name>Grid S: 3 N: 7</Name>
+    <Symbol>grid_3_7</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>68</Index>
+    <Name>Grid S: 4 N: 7</Name>
+    <Symbol>grid_4_7</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>69</Index>
+    <Name>Grid S: 5 N: 7</Name>
+    <Symbol>grid_5_7</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>70</Index>
+    <Name>Grid S: 6 N: 7</Name>
+    <Symbol>grid_6_7</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>71</Index>
+    <Name>Grid S: 7 N: 7</Name>
+    <Symbol>grid_7_7</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>72</Index>
+    <Name>Grid S: 8 N: 7</Name>
+    <Symbol>grid_8_7</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>73</Index>
+    <Name>Grid S: 1 N: 8</Name>
+    <Symbol>grid_1_8</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>74</Index>
+    <Name>Grid S: 2 N: 8</Name>
+    <Symbol>grid_2_8</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>75</Index>
+    <Name>Grid S: 3 N: 8</Name>
+    <Symbol>grid_3_8</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>76</Index>
+    <Name>Grid S: 4 N: 8</Name>
+    <Symbol>grid_4_8</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>77</Index>
+    <Name>Grid S: 5 N: 8</Name>
+    <Symbol>grid_5_8</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>78</Index>
+    <Name>Grid S: 6 N: 8</Name>
+    <Symbol>grid_6_8</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>79</Index>
+    <Name>Grid S: 7 N: 8</Name>
+    <Symbol>grid_7_8</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>80</Index>
+    <Name>Grid S: 8 N: 8</Name>
+    <Symbol>grid_8_8</Symbol>
+    <Value>0</Value>
+   </Parameter>
+  </Data>
+ </Plugin>
+
+ <!-- x42-eq - Parametric Equalizer Stereo -->
+ <Plugin>
+  <Info>
+   <Type>LV2</Type>
+   <Name>x42-eq - Parametric Equalizer Stereo</Name>
+   <URI>http://gareus.org/oss/lv2/fil4#stereo</URI>
+  </Info>
+
+  <Data>
+   <Active>No</Active>
+   <ControlChannel>1</ControlChannel>
+   <Options>0x0</Options>
+
+   <Parameter>
+    <Index>0</Index>
+    <Name>Enable</Name>
+    <Symbol>enable</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>1</Index>
+    <Name>Gain</Name>
+    <Symbol>gain</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>3</Index>
+    <Name>Reset Peak Hold</Name>
+    <Symbol>peakreset</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>4</Index>
+    <Name>Highpass</Name>
+    <Symbol>HighPass</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>5</Index>
+    <Name>Highpass Frequency</Name>
+    <Symbol>HPfreq</Symbol>
+    <Value>20</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>6</Index>
+    <Name>HighPass Resonance</Name>
+    <Symbol>HPQ</Symbol>
+    <Value>0.699999988079071</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>7</Index>
+    <Name>Lowpass</Name>
+    <Symbol>LowPass</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>8</Index>
+    <Name>Lowpass Frequency</Name>
+    <Symbol>LPfreq</Symbol>
+    <Value>3006.10034179688</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>9</Index>
+    <Name>LowPass Resonance</Name>
+    <Symbol>LPQ</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>10</Index>
+    <Name>Lowshelf</Name>
+    <Symbol>LSsec</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>11</Index>
+    <Name>Lowshelf Frequency</Name>
+    <Symbol>LSfreq</Symbol>
+    <Value>80</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>12</Index>
+    <Name>Lowshelf Bandwidth</Name>
+    <Symbol>LSq</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>13</Index>
+    <Name>Lowshelf Gain</Name>
+    <Symbol>LSgain</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>14</Index>
+    <Name>Section 1</Name>
+    <Symbol>sec1</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>15</Index>
+    <Name>Frequency 1</Name>
+    <Symbol>freq1</Symbol>
+    <Value>159.999984741211</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>16</Index>
+    <Name>Bandwidth 1</Name>
+    <Symbol>q1</Symbol>
+    <Value>0.600000023841858</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>17</Index>
+    <Name>Gain 1</Name>
+    <Symbol>gain1</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>18</Index>
+    <Name>Section 2</Name>
+    <Symbol>sec2</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>19</Index>
+    <Name>Frequency 2</Name>
+    <Symbol>freq2</Symbol>
+    <Value>397.000030517578</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>20</Index>
+    <Name>Bandwidth 2</Name>
+    <Symbol>q2</Symbol>
+    <Value>0.600000023841858</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>21</Index>
+    <Name>Gain 2</Name>
+    <Symbol>gain2</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>22</Index>
+    <Name>Section 3</Name>
+    <Symbol>sec3</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>23</Index>
+    <Name>Frequency 3</Name>
+    <Symbol>freq3</Symbol>
+    <Value>1250.00012207031</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>24</Index>
+    <Name>Bandwidth 3</Name>
+    <Symbol>q3</Symbol>
+    <Value>0.600000023841858</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>25</Index>
+    <Name>Gain 3</Name>
+    <Symbol>gain3</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>26</Index>
+    <Name>Section 4</Name>
+    <Symbol>sec4</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>27</Index>
+    <Name>Frequency 4</Name>
+    <Symbol>freq4</Symbol>
+    <Value>2500.00024414062</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>28</Index>
+    <Name>Bandwidth 4</Name>
+    <Symbol>q4</Symbol>
+    <Value>0.600000023841858</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>29</Index>
+    <Name>Gain 4</Name>
+    <Symbol>gain4</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>30</Index>
+    <Name>Highshelf</Name>
+    <Symbol>HSsec</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>31</Index>
+    <Name>Highshelf Frequency</Name>
+    <Symbol>HSfreq</Symbol>
+    <Value>3131.60424804688</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>32</Index>
+    <Name>Highshelf Bandwidth</Name>
+    <Symbol>HSq</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>33</Index>
+    <Name>Highshelf Gain</Name>
+    <Symbol>HSgain</Symbol>
+    <Value>-18</Value>
+   </Parameter>
+
+   <CustomData>
+    <Type>http://lv2plug.in/ns/ext/atom#Float</Type>
+    <Key>http://gareus.org/oss/lv2/fil4#dbscale</Key>
+    <Value>AADwQQ==</Value>
+   </CustomData>
+
+   <CustomData>
+    <Type>http://lv2plug.in/ns/ext/atom#Float</Type>
+    <Key>http://gareus.org/oss/lv2/fil4#fftgain</Key>
+    <Value>AAAAAA==</Value>
+   </CustomData>
+
+   <CustomData>
+    <Type>http://lv2plug.in/ns/ext/atom#Float</Type>
+    <Key>http://gareus.org/oss/lv2/fil4#uiscale</Key>
+    <Value>AACAPw==</Value>
+   </CustomData>
+
+   <CustomData>
+    <Type>http://lv2plug.in/ns/ext/atom#Int</Type>
+    <Key>http://gareus.org/oss/lv2/fil4#fftmode</Key>
+    <Value>ARIAAA==</Value>
+   </CustomData>
+
+   <CustomData>
+    <Type>http://lv2plug.in/ns/ext/atom#Int</Type>
+    <Key>http://gareus.org/oss/lv2/fil4#fftchannel</Key>
+    <Value>/////w==</Value>
+   </CustomData>
+  </Data>
+ </Plugin>
+
+ <!-- MIDI Step Sequencer8x8 -->
+ <Plugin>
+  <Info>
+   <Type>LV2</Type>
+   <Name>MIDI Seq Drums</Name>
+   <URI>http://gareus.org/oss/lv2/stepseq#s8n8</URI>
+  </Info>
+
+  <Data>
+   <Active>No</Active>
+   <ControlChannel>1</ControlChannel>
+   <Options>0x1</Options>
+
+   <Parameter>
+    <Index>0</Index>
+    <Name>Sync</Name>
+    <Symbol>sync</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>1</Index>
+    <Name>BPM</Name>
+    <Symbol>bpm</Symbol>
+    <Value>120</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>2</Index>
+    <Name>Step Duration (4/4)</Name>
+    <Symbol>div</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>3</Index>
+    <Name>Swing</Name>
+    <Symbol>swing</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>4</Index>
+    <Name>Drum Mode</Name>
+    <Symbol>drummode</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>5</Index>
+    <Name>Midi Channel</Name>
+    <Symbol>chn</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>6</Index>
+    <Name>MIDI Panic</Name>
+    <Symbol>panic</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>9</Index>
+    <Name>Note 1</Name>
+    <Symbol>note1</Symbol>
+    <Value>36</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>10</Index>
+    <Name>Note 2</Name>
+    <Symbol>note2</Symbol>
+    <Value>56</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>11</Index>
+    <Name>Note 3</Name>
+    <Symbol>note3</Symbol>
+    <Value>61</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>12</Index>
+    <Name>Note 4</Name>
+    <Symbol>note4</Symbol>
+    <Value>51</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>13</Index>
+    <Name>Note 5</Name>
+    <Symbol>note5</Symbol>
+    <Value>47</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>14</Index>
+    <Name>Note 6</Name>
+    <Symbol>note6</Symbol>
+    <Value>60</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>15</Index>
+    <Name>Note 7</Name>
+    <Symbol>note7</Symbol>
+    <Value>59</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>16</Index>
+    <Name>Note 8</Name>
+    <Symbol>note8</Symbol>
+    <Value>57</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>17</Index>
+    <Name>Grid S: 1 N: 1</Name>
+    <Symbol>grid_1_1</Symbol>
+    <Value>127</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>18</Index>
+    <Name>Grid S: 2 N: 1</Name>
+    <Symbol>grid_2_1</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>19</Index>
+    <Name>Grid S: 3 N: 1</Name>
+    <Symbol>grid_3_1</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>20</Index>
+    <Name>Grid S: 4 N: 1</Name>
+    <Symbol>grid_4_1</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>21</Index>
+    <Name>Grid S: 5 N: 1</Name>
+    <Symbol>grid_5_1</Symbol>
+    <Value>127</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>22</Index>
+    <Name>Grid S: 6 N: 1</Name>
+    <Symbol>grid_6_1</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>23</Index>
+    <Name>Grid S: 7 N: 1</Name>
+    <Symbol>grid_7_1</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>24</Index>
+    <Name>Grid S: 8 N: 1</Name>
+    <Symbol>grid_8_1</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>25</Index>
+    <Name>Grid S: 1 N: 2</Name>
+    <Symbol>grid_1_2</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>26</Index>
+    <Name>Grid S: 2 N: 2</Name>
+    <Symbol>grid_2_2</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>27</Index>
+    <Name>Grid S: 3 N: 2</Name>
+    <Symbol>grid_3_2</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>28</Index>
+    <Name>Grid S: 4 N: 2</Name>
+    <Symbol>grid_4_2</Symbol>
+    <Value>38</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>29</Index>
+    <Name>Grid S: 5 N: 2</Name>
+    <Symbol>grid_5_2</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>30</Index>
+    <Name>Grid S: 6 N: 2</Name>
+    <Symbol>grid_6_2</Symbol>
+    <Value>39</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>31</Index>
+    <Name>Grid S: 7 N: 2</Name>
+    <Symbol>grid_7_2</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>32</Index>
+    <Name>Grid S: 8 N: 2</Name>
+    <Symbol>grid_8_2</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>33</Index>
+    <Name>Grid S: 1 N: 3</Name>
+    <Symbol>grid_1_3</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>34</Index>
+    <Name>Grid S: 2 N: 3</Name>
+    <Symbol>grid_2_3</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>35</Index>
+    <Name>Grid S: 3 N: 3</Name>
+    <Symbol>grid_3_3</Symbol>
+    <Value>127</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>36</Index>
+    <Name>Grid S: 4 N: 3</Name>
+    <Symbol>grid_4_3</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>37</Index>
+    <Name>Grid S: 5 N: 3</Name>
+    <Symbol>grid_5_3</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>38</Index>
+    <Name>Grid S: 6 N: 3</Name>
+    <Symbol>grid_6_3</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>39</Index>
+    <Name>Grid S: 7 N: 3</Name>
+    <Symbol>grid_7_3</Symbol>
+    <Value>127</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>40</Index>
+    <Name>Grid S: 8 N: 3</Name>
+    <Symbol>grid_8_3</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>41</Index>
+    <Name>Grid S: 1 N: 4</Name>
+    <Symbol>grid_1_4</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>42</Index>
+    <Name>Grid S: 2 N: 4</Name>
+    <Symbol>grid_2_4</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>43</Index>
+    <Name>Grid S: 3 N: 4</Name>
+    <Symbol>grid_3_4</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>44</Index>
+    <Name>Grid S: 4 N: 4</Name>
+    <Symbol>grid_4_4</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>45</Index>
+    <Name>Grid S: 5 N: 4</Name>
+    <Symbol>grid_5_4</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>46</Index>
+    <Name>Grid S: 6 N: 4</Name>
+    <Symbol>grid_6_4</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>47</Index>
+    <Name>Grid S: 7 N: 4</Name>
+    <Symbol>grid_7_4</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>48</Index>
+    <Name>Grid S: 8 N: 4</Name>
+    <Symbol>grid_8_4</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>49</Index>
+    <Name>Grid S: 1 N: 5</Name>
+    <Symbol>grid_1_5</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>50</Index>
+    <Name>Grid S: 2 N: 5</Name>
+    <Symbol>grid_2_5</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>51</Index>
+    <Name>Grid S: 3 N: 5</Name>
+    <Symbol>grid_3_5</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>52</Index>
+    <Name>Grid S: 4 N: 5</Name>
+    <Symbol>grid_4_5</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>53</Index>
+    <Name>Grid S: 5 N: 5</Name>
+    <Symbol>grid_5_5</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>54</Index>
+    <Name>Grid S: 6 N: 5</Name>
+    <Symbol>grid_6_5</Symbol>
+    <Value>60</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>55</Index>
+    <Name>Grid S: 7 N: 5</Name>
+    <Symbol>grid_7_5</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>56</Index>
+    <Name>Grid S: 8 N: 5</Name>
+    <Symbol>grid_8_5</Symbol>
+    <Value>57</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>57</Index>
+    <Name>Grid S: 1 N: 6</Name>
+    <Symbol>grid_1_6</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>58</Index>
+    <Name>Grid S: 2 N: 6</Name>
+    <Symbol>grid_2_6</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>59</Index>
+    <Name>Grid S: 3 N: 6</Name>
+    <Symbol>grid_3_6</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>60</Index>
+    <Name>Grid S: 4 N: 6</Name>
+    <Symbol>grid_4_6</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>61</Index>
+    <Name>Grid S: 5 N: 6</Name>
+    <Symbol>grid_5_6</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>62</Index>
+    <Name>Grid S: 6 N: 6</Name>
+    <Symbol>grid_6_6</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>63</Index>
+    <Name>Grid S: 7 N: 6</Name>
+    <Symbol>grid_7_6</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>64</Index>
+    <Name>Grid S: 8 N: 6</Name>
+    <Symbol>grid_8_6</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>65</Index>
+    <Name>Grid S: 1 N: 7</Name>
+    <Symbol>grid_1_7</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>66</Index>
+    <Name>Grid S: 2 N: 7</Name>
+    <Symbol>grid_2_7</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>67</Index>
+    <Name>Grid S: 3 N: 7</Name>
+    <Symbol>grid_3_7</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>68</Index>
+    <Name>Grid S: 4 N: 7</Name>
+    <Symbol>grid_4_7</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>69</Index>
+    <Name>Grid S: 5 N: 7</Name>
+    <Symbol>grid_5_7</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>70</Index>
+    <Name>Grid S: 6 N: 7</Name>
+    <Symbol>grid_6_7</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>71</Index>
+    <Name>Grid S: 7 N: 7</Name>
+    <Symbol>grid_7_7</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>72</Index>
+    <Name>Grid S: 8 N: 7</Name>
+    <Symbol>grid_8_7</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>73</Index>
+    <Name>Grid S: 1 N: 8</Name>
+    <Symbol>grid_1_8</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>74</Index>
+    <Name>Grid S: 2 N: 8</Name>
+    <Symbol>grid_2_8</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>75</Index>
+    <Name>Grid S: 3 N: 8</Name>
+    <Symbol>grid_3_8</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>76</Index>
+    <Name>Grid S: 4 N: 8</Name>
+    <Symbol>grid_4_8</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>77</Index>
+    <Name>Grid S: 5 N: 8</Name>
+    <Symbol>grid_5_8</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>78</Index>
+    <Name>Grid S: 6 N: 8</Name>
+    <Symbol>grid_6_8</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>79</Index>
+    <Name>Grid S: 7 N: 8</Name>
+    <Symbol>grid_7_8</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>80</Index>
+    <Name>Grid S: 8 N: 8</Name>
+    <Symbol>grid_8_8</Symbol>
+    <Value>0</Value>
+   </Parameter>
+  </Data>
+ </Plugin>
+
+ <!-- ZamCompX2 -->
+ <Plugin>
+  <Info>
+   <Type>LV2</Type>
+   <Name>ZamCompX2</Name>
+   <URI>urn:zamaudio:ZamCompX2</URI>
+  </Info>
+
+  <Data>
+   <Active>Yes</Active>
+   <Volume>0.1987794</Volume>
+   <ControlChannel>1</ControlChannel>
+   <Options>0x4</Options>
+
+   <Parameter>
+    <Index>0</Index>
+    <Name>Attack</Name>
+    <Symbol>att</Symbol>
+    <Value>10</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>1</Index>
+    <Name>Release</Name>
+    <Symbol>rel</Symbol>
+    <Value>10</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>2</Index>
+    <Name>Knee</Name>
+    <Symbol>kn</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>3</Index>
+    <Name>Ratio</Name>
+    <Symbol>rat</Symbol>
+    <Value>5</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>4</Index>
+    <Name>Threshold</Name>
+    <Symbol>thr</Symbol>
+    <Value>-18</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>5</Index>
+    <Name>Makeup</Name>
+    <Symbol>mak</Symbol>
+    <Value>6</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>6</Index>
+    <Name>Slew</Name>
+    <Symbol>slew</Symbol>
+    <Value>20</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>7</Index>
+    <Name>Stereo Detection</Name>
+    <Symbol>stereodet</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>8</Index>
+    <Name>Sidechain</Name>
+    <Symbol>sidechain</Symbol>
+    <Value>1</Value>
+   </Parameter>
+  </Data>
+ </Plugin>
+
+ <!-- Black Pearl Drumkit -->
+ <Plugin>
+  <Info>
+   <Type>LV2</Type>
+   <Name>Black Pearl Drumkit</Name>
+   <URI>http://gareus.org/oss/lv2/avldrums#BlackPearl</URI>
+  </Info>
+
+  <Data>
+   <Active>Yes</Active>
+   <ControlChannel>1</ControlChannel>
+   <Options>0x1e0</Options>
+  </Data>
+ </Plugin>
+
+ <ExternalPatchbay>
+  <Connection>
+   <Source>system:capture_1</Source>
+   <Target>PulseAudio JACK Source:front-left</Target>
+  </Connection>
+  <Connection>
+   <Source>system:capture_2</Source>
+   <Target>PulseAudio JACK Source:front-right</Target>
+  </Connection>
+  <Connection>
+   <Source>PulseAudio JACK Sink:front-left</Source>
+   <Target>system:playback_1</Target>
+  </Connection>
+  <Connection>
+   <Source>PulseAudio JACK Sink:front-right</Source>
+   <Target>system:playback_2</Target>
+  </Connection>
+  <Connection>
+   <Source>ZynReverb:output_1</Source>
+   <Target>ZamCompX2:Audio Input 1</Target>
+  </Connection>
+  <Connection>
+   <Source>ZynReverb:output_2</Source>
+   <Target>ZamCompX2:Audio Input 2</Target>
+  </Connection>
+  <Connection>
+   <Source>x42-eq - Parametric Equalizer Stereo:Out Left</Source>
+   <Target>ZamCompX2:Audio Input 1</Target>
+  </Connection>
+  <Connection>
+   <Source>MIDI Seq Guitar:events-out</Source>
+   <Target>AcousticGuitar:events-in</Target>
+  </Connection>
+  <Connection>
+   <Source>MIDI Seq Drums:events-out</Source>
+   <Target>Black Pearl Drumkit:events-in</Target>
+  </Connection>
+  <Connection>
+   <Source>AcousticGuitar:out-left</Source>
+   <Target>x42-eq - Parametric Equalizer Stereo:In Left</Target>
+  </Connection>
+  <Connection>
+   <Source>AcousticGuitar:out-left</Source>
+   <Target>ZynReverb:input_1</Target>
+  </Connection>
+  <Connection>
+   <Source>AcousticGuitar:out-right</Source>
+   <Target>x42-eq - Parametric Equalizer Stereo:In Right</Target>
+  </Connection>
+  <Connection>
+   <Source>AcousticGuitar:out-right</Source>
+   <Target>ZynReverb:input_2</Target>
+  </Connection>
+  <Connection>
+   <Source>x42-eq - Parametric Equalizer Stereo:Out Right</Source>
+   <Target>ZamCompX2:Audio Input 2</Target>
+  </Connection>
+  <Connection>
+   <Source>ZamCompX2:Audio Output 1</Source>
+   <Target>system:playback_1</Target>
+  </Connection>
+  <Connection>
+   <Source>ZamCompX2:Audio Output 2</Source>
+   <Target>system:playback_2</Target>
+  </Connection>
+  <Connection>
+   <Source>Black Pearl Drumkit:Output Left</Source>
+   <Target>ZamCompX2:Sidechain Input</Target>
+  </Connection>
+  <Connection>
+   <Source>Black Pearl Drumkit:Output Left</Source>
+   <Target>system:playback_1</Target>
+  </Connection>
+  <Connection>
+   <Source>Black Pearl Drumkit:Output Right</Source>
+   <Target>system:playback_2</Target>
+  </Connection>
+  <Connection>
+   <Source>Black Pearl Drumkit:Output Right</Source>
+   <Target>ZamCompX2:Sidechain Input</Target>
+  </Connection>
+ </ExternalPatchbay>
+</CARLA-PROJECT>

@@ -584,7 +584,7 @@ public:
     {
         CarlaEngine::callback(action, pluginId, value1, value2, value3, valueStr);
 
-        if (fLastPingTime < 0)
+        if (fClosingDown)
             return;
 
         switch (action)
@@ -856,7 +856,8 @@ public:
             }
 
             case kPluginBridgeNonRtClientPrepareForSave: {
-                if (plugin == nullptr || ! plugin->isEnabled()) break;
+                if (plugin == nullptr || ! plugin->isEnabled())
+                    break;
 
                 plugin->prepareForSave();
 
@@ -929,6 +930,11 @@ public:
                 }
                 break;
             }
+
+            case kPluginBridgeNonRtClientRestoreLV2State:
+                if (plugin != nullptr && plugin->isEnabled())
+                    plugin->restoreLV2State();
+                break;
 
             case kPluginBridgeNonRtClientShowUI:
                 if (plugin != nullptr && plugin->isEnabled())

@@ -2492,31 +2492,38 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 {
                     Lilv::Nodes portNotifNodes(lv2World.find_nodes(lilvUI.get_uri(), lv2World.ui_portNotif.me, nullptr));
 
-                    if (portNotifNodes.size() > 0)
+                    if (const uint portNotifCount = portNotifNodes.size())
                     {
-                        rdfUI->PortNotificationCount = portNotifNodes.size();
-                        rdfUI->PortNotifications = new LV2_RDF_UI_PortNotification[rdfUI->PortNotificationCount];
+                        rdfUI->PortNotificationCount = portNotifCount;
+                        rdfUI->PortNotifications = new LV2_RDF_UI_PortNotification[portNotifCount];
 
                         uint32_t h2 = 0;
                         LILV_FOREACH(nodes, it2, portNotifNodes)
                         {
-                            CARLA_SAFE_ASSERT_BREAK(h2 < rdfUI->PortNotificationCount);
+                            CARLA_SAFE_ASSERT_BREAK(h2 < portNotifCount);
 
                             Lilv::Node portNotifNode(portNotifNodes.get(it2));
                             LV2_RDF_UI_PortNotification* const rdfPortNotif(&rdfUI->PortNotifications[h2++]);
 
                             LilvNode* const protocolNode = lilv_world_get(lv2World.me, portNotifNode,
                                                                           lv2World.ui_protocol.me, nullptr);
-                            CARLA_SAFE_ASSERT_CONTINUE(protocolNode != nullptr);
-                            CARLA_SAFE_ASSERT_CONTINUE(lilv_node_is_uri(protocolNode));
 
-                            const char* const protocol = lilv_node_as_uri(protocolNode);
-                            CARLA_SAFE_ASSERT_CONTINUE(protocol != nullptr && protocol[0] != '\0');
+                            if (protocolNode != nullptr)
+                            {
+                                CARLA_SAFE_ASSERT_CONTINUE(lilv_node_is_uri(protocolNode));
 
-                            /**/ if (std::strcmp(protocol, LV2_UI__floatProtocol) == 0)
+                                const char* const protocol = lilv_node_as_uri(protocolNode);
+                                CARLA_SAFE_ASSERT_CONTINUE(protocol != nullptr && protocol[0] != '\0');
+
+                                /**/ if (std::strcmp(protocol, LV2_UI__floatProtocol) == 0)
+                                    rdfPortNotif->Protocol = LV2_UI_PORT_PROTOCOL_FLOAT;
+                                else if (std::strcmp(protocol, LV2_UI__peakProtocol) == 0)
+                                    rdfPortNotif->Protocol = LV2_UI_PORT_PROTOCOL_PEAK;
+                            }
+                            else
+                            {
                                 rdfPortNotif->Protocol = LV2_UI_PORT_PROTOCOL_FLOAT;
-                            else if (std::strcmp(protocol, LV2_UI__peakProtocol) == 0)
-                                rdfPortNotif->Protocol = LV2_UI_PORT_PROTOCOL_PEAK;
+                            }
 
                             /**/ if (LilvNode* const symbolNode = lilv_world_get(lv2World.me, portNotifNode,
                                                                                  lv2World.symbol.me, nullptr))
@@ -2531,7 +2538,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                                 lilv_node_free(symbolNode);
                             }
                             else if (LilvNode* const indexNode = lilv_world_get(lv2World.me, portNotifNode,
-                                                                                 lv2World.ui_portIndex.me, nullptr))
+                                                                                lv2World.ui_portIndex.me, nullptr))
                             {
                                 CARLA_SAFE_ASSERT_CONTINUE(lilv_node_is_int(indexNode));
 

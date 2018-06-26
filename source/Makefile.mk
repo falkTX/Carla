@@ -233,6 +233,7 @@ endif
 ifeq ($(HAVE_QT4),true)
 MOC_QT4 ?= $(shell pkg-config --variable=moc_location QtCore)
 RCC_QT4 ?= $(shell pkg-config --variable=rcc_location QtCore)
+UIC_QT4 ?= $(shell pkg-config --variable=uic_location QtCore)
 ifeq (,$(wildcard $(MOC_QT4)))
 HAVE_QT4=false
 endif
@@ -245,6 +246,7 @@ ifeq ($(HAVE_QT5),true)
 QT5_HOSTBINS = $(shell pkg-config --variable=host_bins Qt5Core)
 MOC_QT5 ?= $(QT5_HOSTBINS)/moc
 RCC_QT5 ?= $(QT5_HOSTBINS)/rcc
+UIC_QT5 ?= $(QT5_HOSTBINS)/uic
 ifeq (,$(wildcard $(MOC_QT5)))
 HAVE_QT5=false
 endif

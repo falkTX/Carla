@@ -60,7 +60,7 @@
 # define CARLA_OS_UNIX
 #endif
 
-#if defined (__LP64__) || defined (_LP64) || defined (__arm64__) || defined(CARLA_OS_WIN64)
+#if defined (__LP64__) || defined (_LP64) || defined (__arm64__) || defined (__aarch64__) || defined(CARLA_OS_WIN64)
 # define CARLA_OS_64BIT
 #endif
 

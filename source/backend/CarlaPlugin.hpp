@@ -47,6 +47,7 @@ CARLA_BACKEND_START_NAMESPACE
 class CarlaEngineAudioPort;
 class CarlaEngineCVPort;
 class CarlaEngineEventPort;
+class CarlaEngineBridge;
 struct CarlaStateSave;
 
 // -----------------------------------------------------------------------
@@ -993,6 +994,7 @@ protected:
         CARLA_DECLARE_NON_COPY_CLASS(ScopedSingleProcessLocker)
     };
 
+    friend class CarlaEngineBridge;
     CARLA_DECLARE_NON_COPY_CLASS(CarlaPlugin)
 };
 
