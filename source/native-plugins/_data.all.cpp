@@ -90,7 +90,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* audioIns  */ 0,
     /* audioOuts */ 0,
     /* midiIns   */ 1,
-    /* midiOuts  */ 1,
+    /* midiOuts  */ 2,
     /* paramIns  */ 0,
     /* paramOuts */ 0,
     /* name      */ "MIDI Channel A/B",
