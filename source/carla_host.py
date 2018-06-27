@@ -1016,7 +1016,7 @@ class HostWindow(QMainWindow):
         if QMessageBox.question(self, self.tr("Remove All"),
                                       self.tr("Are you sure you want to remove all plugins?"),
                                       QMessageBox.Yes|QMessageBox.No) == QMessageBox.No:
-                                        return
+            return
 
         self.slot_pluginRemoveAll()
 
