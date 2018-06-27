@@ -79,7 +79,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* paramOuts */ 0,
     /* name      */ "MIDI Channel A/B",
     /* label     */ "midichanab",
-    /* maker     */ "falkTX",
+    /* maker     */ "Milk Brewster",
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
