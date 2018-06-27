@@ -675,7 +675,7 @@ class HostWindow(QMainWindow):
                                                                 QMessageBox.Yes|QMessageBox.No) == QMessageBox.No:
             return
 
-        self.slot_pluginRemoveAll()
+        self.pluginRemoveAll()
         self.fProjectFilename = ""
         self.setProperWindowTitle()
 
@@ -697,7 +697,7 @@ class HostWindow(QMainWindow):
             newFile = (ask == QMessageBox.Yes)
 
         if newFile:
-            self.slot_pluginRemoveAll()
+            self.pluginRemoveAll()
             self.fProjectFilename = filename
             self.setProperWindowTitle()
             self.loadProjectNow()
@@ -1018,10 +1018,9 @@ class HostWindow(QMainWindow):
                                       QMessageBox.Yes|QMessageBox.No) == QMessageBox.No:
             return
 
-        self.slot_pluginRemoveAll()
+        self.pluginRemoveAll()
 
-    @pyqtSlot()
-    def slot_pluginRemoveAll(self):
+    def pluginRemoveAll(self):
         if self.fPluginCount == 0:
             return
 
