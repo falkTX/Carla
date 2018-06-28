@@ -416,7 +416,7 @@ class HostWindow(QMainWindow):
 
         self.ui.act_plugin_add.triggered.connect(self.slot_pluginAdd)
         self.ui.act_plugin_add2.triggered.connect(self.slot_pluginAdd)
-        self.ui.act_plugin_remove_all.triggered.connect(self.slot_pluginRemoveAll)
+        self.ui.act_plugin_remove_all.triggered.connect(self.slot_confirmRemoveAll)
 
         self.ui.act_add_jack.triggered.connect(self.slot_jackAppAdd)
 
@@ -670,7 +670,12 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_fileNew(self):
-        self.slot_pluginRemoveAll()
+        if self.fPluginCount > 0 and QMessageBox.question(self, self.tr("New File"),
+                                                                self.tr("Plugins that are currently loaded will be removed. Are you sure?"),
+                                                                QMessageBox.Yes|QMessageBox.No) == QMessageBox.No:
+            return
+
+        self.pluginRemoveAll()
         self.fProjectFilename = ""
         self.setProperWindowTitle()
 
@@ -692,7 +697,7 @@ class HostWindow(QMainWindow):
             newFile = (ask == QMessageBox.Yes)
 
         if newFile:
-            self.slot_pluginRemoveAll()
+            self.pluginRemoveAll()
             self.fProjectFilename = filename
             self.setProperWindowTitle()
             self.loadProjectNow()
@@ -1004,7 +1009,18 @@ class HostWindow(QMainWindow):
             CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"), self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
     @pyqtSlot()
-    def slot_pluginRemoveAll(self):
+    def slot_confirmRemoveAll(self):
+        if self.fPluginCount == 0:
+            return
+
+        if QMessageBox.question(self, self.tr("Remove All"),
+                                      self.tr("Are you sure you want to remove all plugins?"),
+                                      QMessageBox.Yes|QMessageBox.No) == QMessageBox.No:
+            return
+
+        self.pluginRemoveAll()
+
+    def pluginRemoveAll(self):
         if self.fPluginCount == 0:
             return
 
