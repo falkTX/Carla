@@ -122,7 +122,7 @@ export PATH=/opt/mingw${ARCH}/${MINGW_PREFIX}/bin:/opt/mingw${ARCH}/bin:${PATH}
 if [ -z "${NOSSE}" ]; then
 export CFLAGS="-O3 -mtune=generic -msse -msse2 -mfpmath=sse -fvisibility=hidden -fdata-sections -ffunction-sections"
 else
-export CFLAGS="-O3 -mtune=generic -fvisibility=hidden -fdata-sections -ffunction-sections"
+export CFLAGS="-O2 -fvisibility=hidden -fdata-sections -ffunction-sections"
 fi
 
 export CFLAGS="${CFLAGS} -DNDEBUG -DPTW32_STATIC_LIB -DFLUIDSYNTH_NOT_A_DLL -I${PREFIX}/include -I/opt/mingw${ARCH}/include"

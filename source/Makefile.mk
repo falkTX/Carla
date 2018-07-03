@@ -108,7 +108,7 @@ endif
 
 ifeq ($(NOOPT),true)
 # No CPU-specific optimization flags
-BASE_OPTS  = -O3 -ffast-math -fdata-sections -ffunction-sections
+BASE_OPTS  = -O2 -ffast-math -fdata-sections -ffunction-sections
 endif
 
 ifneq ($(WIN32),true)
