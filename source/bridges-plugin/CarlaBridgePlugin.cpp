@@ -27,8 +27,10 @@
 #include "CarlaMIDI.h"
 
 #ifdef CARLA_OS_LINUX
+# include <sched.h>
 # include <signal.h>
 # include <sys/prctl.h>
+# define SCHED_RESET_ON_FORK 0x40000000
 #endif
 
 #ifdef CARLA_OS_WIN
