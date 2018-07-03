@@ -97,6 +97,11 @@ class HostWindow(QMainWindow):
     SIGTERM = pyqtSignal()
     SIGUSR1 = pyqtSignal()
 
+    # CustomActions
+    CUSTOM_ACTION_NONE         = 0
+    CUSTOM_ACTION_APP_CLOSE    = 1
+    CUSTOM_ACTION_PROJECT_LOAD = 2
+
     # --------------------------------------------------------------------------------------------------------
 
     def __init__(self, host, withCanvas, parent=None):
@@ -137,8 +142,7 @@ class HostWindow(QMainWindow):
         self.fSampleRate         = 0.0
 
         # run a custom action after engine is properly closed
-        # 1 for close carla, 2 for load project
-        self.fCustomStopAction = 0
+        self.fCustomStopAction = self.CUSTOM_ACTION_NONE
 
         # first attempt of auto-start engine doesn't show an error
         self.fFirstEngineInit = True
@@ -802,14 +806,14 @@ class HostWindow(QMainWindow):
                 self.ui.text_logs.appendPlainText("Failed to stop engine, error was:")
                 self.ui.text_logs.appendPlainText(self.host.get_last_error())
 
-        if self.fCustomStopAction == 1:
+        if self.fCustomStopAction == self.CUSTOM_ACTION_APP_CLOSE:
             self.close()
-        elif self.fCustomStopAction == 2:
+        elif self.fCustomStopAction == self.CUSTOM_ACTION_PROJECT_LOAD:
             self.slot_engineStart()
             self.loadProjectNow()
             self.host.nsm_ready(2) # open
 
-        self.fCustomStopAction = 0
+        self.fCustomStopAction = self.CUSTOM_ACTION_NONE
 
     # --------------------------------------------------------------------------------------------------------
     # Engine (host callbacks)
@@ -2041,7 +2045,7 @@ class HostWindow(QMainWindow):
             self.fProjectFilename = QFileInfo(valueStr+".carxp").absoluteFilePath()
             self.setProperWindowTitle()
 
-            self.fCustomStopAction = 2
+            self.fCustomStopAction = self.CUSTOM_ACTION_PROJECT_LOAD
             self.slot_engineStop(True)
             return
 
@@ -2094,7 +2098,7 @@ class HostWindow(QMainWindow):
     @pyqtSlot()
     def slot_handleSIGTERM(self):
         print("Got SIGTERM -> Closing now")
-        self.fCustomStopAction = 1
+        self.fCustomStopAction = self.CUSTOM_ACTION_APP_CLOSE
         self.slot_engineStop(True)
 
     # --------------------------------------------------------------------------------------------------------
@@ -2298,7 +2302,7 @@ class HostWindow(QMainWindow):
     # close event
 
     def closeEvent(self, event):
-        if self.fCustomStopAction != 1 and self.fSavedSettings[CARLA_KEY_MAIN_CONFIRM_EXIT]:
+        if self.fCustomStopAction != self.CUSTOM_ACTION_APP_CLOSE and self.fSavedSettings[CARLA_KEY_MAIN_CONFIRM_EXIT]:
             ask = QMessageBox.question(self, self.tr("Quit"),
                                              self.tr("Are you sure you want to quit Carla?"),
                                              QMessageBox.Yes|QMessageBox.No)
@@ -2312,7 +2316,7 @@ class HostWindow(QMainWindow):
 
         if self.host.is_engine_running() and not (self.host.isControl or self.host.isPlugin):
             if not self.slot_engineStop(True):
-                self.fCustomStopAction = 1
+                self.fCustomStopAction = self.CUSTOM_ACTION_APP_CLOSE
                 event.ignore()
                 return
 
