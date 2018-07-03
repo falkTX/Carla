@@ -222,7 +222,7 @@ download_carla_extras()
 {
 
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
-PKGS_NUM="20180116"
+PKGS_NUM="20180625"
 PKGS_VER="1.9.8+git${PKGS_NUM}"
 WINE64_VER="1.9.8+git20180625"
 
