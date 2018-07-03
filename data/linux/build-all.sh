@@ -25,13 +25,24 @@ source common.env
 
 CHROOT_CARLA_DIR="/tmp/carla-src"
 PKG_FOLDER="Carla_2.0-beta6-linux"
-export MAKE_ARGS="${MAKE_ARGS} SKIP_ZYN_SYNTH=true"
 
 # ---------------------------------------------------------------------------------------------------------------------
 # function to remove old stuff
 
 cleanup()
 {
+
+if [ -d ${TARGETDIR}/chroot32 ]; then
+    umount ${TARGETDIR}/chroot32/dev/pts || true
+    umount ${TARGETDIR}/chroot32/sys
+    umount ${TARGETDIR}/chroot32/proc
+fi
+
+if [ -d ${TARGETDIR}/chroot64 ]; then
+    umount ${TARGETDIR}/chroot64/dev/pts || true
+    umount ${TARGETDIR}/chroot64/sys
+    umount ${TARGETDIR}/chroot64/proc
+fi
 
 rm -rf ${TARGETDIR}/chroot32/
 rm -rf ${TARGETDIR}/chroot64/
@@ -103,7 +114,7 @@ if [ ! -f /tmp/setup-repo-packages ]; then
 fi
 
 if [ ! -d ${CHROOT_CARLA_DIR} ]; then
-  git clone git://github.com/falkTX/Carla --depth=1 ${CHROOT_CARLA_DIR}
+  git clone git://github.com/falkTX/Carla --depth=1 --recursive ${CHROOT_CARLA_DIR}
   chmod -R 777 ${CHROOT_CARLA_DIR}/data/linux/
 fi
 
