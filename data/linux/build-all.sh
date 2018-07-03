@@ -99,6 +99,8 @@ deb http://old-releases.ubuntu.com/ubuntu/ lucid-backports main restricted unive
 fi
 
 if [ ! -f /tmp/setup-repo-upgrade ]; then
+  dpkg-divert --local --rename --add /sbin/initctl
+  ln -s /bin/true /sbin/initctl
   apt-get dist-upgrade
   touch /tmp/setup-repo-upgrade
 fi
