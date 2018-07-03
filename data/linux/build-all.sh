@@ -33,19 +33,26 @@ cleanup()
 {
 
 if [ -d ${TARGETDIR}/chroot32 ]; then
-    umount ${TARGETDIR}/chroot32/dev/pts || true
-    umount ${TARGETDIR}/chroot32/sys
-    umount ${TARGETDIR}/chroot32/proc
+    sudo umount -lf ${TARGETDIR}/chroot32/dev/pts || true
+    sudo umount -lf ${TARGETDIR}/chroot32/sys || true
+    sudo umount -lf ${TARGETDIR}/chroot32/proc || true
 fi
 
 if [ -d ${TARGETDIR}/chroot64 ]; then
-    umount ${TARGETDIR}/chroot64/dev/pts || true
-    umount ${TARGETDIR}/chroot64/sys
-    umount ${TARGETDIR}/chroot64/proc
+    sudo umount -lf ${TARGETDIR}/chroot64/dev/pts || true
+    sudo umount -lf ${TARGETDIR}/chroot64/sys || true
+    sudo umount -lf ${TARGETDIR}/chroot64/proc || true
 fi
 
-rm -rf ${TARGETDIR}/chroot32/
-rm -rf ${TARGETDIR}/chroot64/
+if [ -d ${TARGETDIR}/chroot32 ]; then
+    sudo mv ${TARGETDIR}/chroot32 ${TARGETDIR}/chroot32-deleteme
+    sudo rm -rf ${TARGETDIR}/chroot32-deleteme || true
+fi
+
+if [ -d ${TARGETDIR}/chroot64 ]; then
+    sudo mv ${TARGETDIR}/chroot64 ${TARGETDIR}/chroot64-deleteme
+    sudo rm -rf ${TARGETDIR}/chroot64-deleteme || true
+fi
 
 }
 
@@ -53,11 +60,11 @@ rm -rf ${TARGETDIR}/chroot64/
 # create chroots
 
 if [ ! -d ${TARGETDIR}/chroot32 ]; then
-sudo debootstrap --arch=i386 lucid ${TARGETDIR}/chroot32 http://old-releases.ubuntu.com/ubuntu/
+    sudo debootstrap --arch=i386 lucid ${TARGETDIR}/chroot32 http://old-releases.ubuntu.com/ubuntu/
 fi
 
 if [ ! -d ${TARGETDIR}/chroot64 ]; then
-sudo debootstrap --arch=amd64 lucid ${TARGETDIR}/chroot64 http://old-releases.ubuntu.com/ubuntu/
+    sudo debootstrap --arch=amd64 lucid ${TARGETDIR}/chroot64 http://old-releases.ubuntu.com/ubuntu/
 fi
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -116,8 +123,11 @@ if [ ! -f /tmp/setup-repo-packages ]; then
 fi
 
 if [ ! -d ${CHROOT_CARLA_DIR} ]; then
-  git clone git://github.com/falkTX/Carla --depth=1 --recursive ${CHROOT_CARLA_DIR}
-  chmod -R 777 ${CHROOT_CARLA_DIR}/data/linux/
+  git clone --depth=1 git://github.com/falkTX/Carla ${CHROOT_CARLA_DIR}
+fi
+
+if [ ! -d ${CHROOT_CARLA_DIR}/source/native-plugins/external ]; then
+  git clone --depth=1 git://github.com/falkTX/Carla-Plugins ${CHROOT_CARLA_DIR}/source/native-plugins/external
 fi
 
 cd ${CHROOT_CARLA_DIR}
@@ -127,6 +137,8 @@ git pull
 # might be updated by git pull
 chmod 777 data/linux/*.sh
 chmod 777 data/linux/common.env
+
+sync
 
 EOF
 
@@ -237,7 +249,7 @@ download_carla_extras()
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
 PKGS_NUM="20180625"
 PKGS_VER="1.9.8+git${PKGS_NUM}"
-WINE64_VER="1.9.8+git20180625"
+WINE64_VER="1.9.8.git20180625"
 
 cat <<EOF | sudo chroot ${CHROOT_DIR}
 set -e
@@ -245,8 +257,7 @@ set -e
 cd ${CHROOT_CARLA_DIR}
 
 if [ ! -d carla-pkgs${PKGS_NUM} ]; then
-  rm -rf tmp-carla-pkgs
-  mkdir tmp-carla-pkgs
+  mkdir -p tmp-carla-pkgs
   cd tmp-carla-pkgs
   wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win32_${PKGS_VER}_i386.deb
   wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-wine32_${PKGS_VER}_i386.deb
