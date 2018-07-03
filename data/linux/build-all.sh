@@ -223,6 +223,8 @@ download_carla_extras()
 
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
 PKGS_NUM="20180116"
+PKGS_VER="1.9.8+git${PKGS_NUM}"
+WINE64_VER="1.9.8+git20180625"
 
 cat <<EOF | sudo chroot ${CHROOT_DIR}
 set -e
@@ -233,14 +235,14 @@ if [ ! -d carla-pkgs${PKGS_NUM} ]; then
   rm -rf tmp-carla-pkgs
   mkdir tmp-carla-pkgs
   cd tmp-carla-pkgs
-  wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win32_1.9.8+git20180116_i386.deb
-  wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-wine32_1.9.8+git20180116_i386.deb
+  wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win32_${PKGS_VER}_i386.deb
+  wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-wine32_${PKGS_VER}_i386.deb
   if [ x"${ARCH}" != x"32" ]; then
-    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win64_1.9.8+git20180116_amd64.deb
-    wget -c https://github.com/KXStudio/Repository/releases/download/initial/carla-bridge-wine64_1.9.5.git20160114_amd64.deb
-    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-git_1.9.8+git20180116_amd64.deb
+    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win64_${PKGS_VER}_amd64.deb
+    wget -c https://github.com/KXStudio/Repository/releases/download/initial/carla-bridge-wine64_${WINE64_VER}_amd64.deb
+    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-git_${PKGS_VER}_amd64.deb
   else
-    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-git_1.9.8+git20180116_i386.deb
+    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-git_${PKGS_VER}_i386.deb
   fi
   cd ..
   mv tmp-carla-pkgs carla-pkgs${PKGS_NUM}
@@ -248,14 +250,14 @@ fi
 
 if [ ! -f carla-pkgs${PKGS_NUM}/extrated ]; then
   cd carla-pkgs${PKGS_NUM}
-  dpkg -x carla-bridge-win32_1.9.8+git20180116_i386.deb .
-  dpkg -x carla-bridge-wine32_1.9.8+git20180116_i386.deb .
+  dpkg -x carla-bridge-win32_${PKGS_VER}_i386.deb .
+  dpkg -x carla-bridge-wine32_${PKGS_VER}_i386.deb .
   if [ x"${ARCH}" != x"32" ]; then
-    dpkg -x carla-bridge-win64_1.9.8+git20180116_amd64.deb .
-    dpkg -x carla-bridge-wine64_1.9.5.git20160114_amd64.deb .
-    dpkg -x carla-git_1.9.8+git20180116_amd64.deb .
+    dpkg -x carla-bridge-win64_${PKGS_VER}_amd64.deb .
+    dpkg -x carla-bridge-wine64_${WINE64_VER}_amd64.deb .
+    dpkg -x carla-git_${PKGS_VER}_amd64.deb .
   else
-    dpkg -x carla-git_1.9.8+git20180116_i386.deb .
+    dpkg -x carla-git_${PKGS_VER}_i386.deb .
   fi
   touch extrated
   cd ..
