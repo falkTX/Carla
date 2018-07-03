@@ -1415,10 +1415,6 @@ class PatchScene(QGraphicsScene):
         QGraphicsScene.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
-        if event.button() == Qt.MidButton:
-            self.m_mid_button_down = False
-            return event.accept()
-
         if self.m_rubberband_selection:
             items_list = self.items()
             if len(items_list) > 0:
@@ -1447,6 +1443,11 @@ class PatchScene(QGraphicsScene):
 
         self.m_mouse_down_init  = False
         self.m_mouse_rubberband = False
+
+        if event.button() == Qt.MidButton:
+            self.m_mid_button_down = False
+            return event.accept()
+
         QGraphicsScene.mouseReleaseEvent(self, event)
 
     def wheelEvent(self, event):
