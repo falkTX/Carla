@@ -27,7 +27,7 @@ fi
 
 source data/windows/common.env
 
-PKG_FOLDER="Carla_2.0-beta6-win${ARCH}"
+PKG_FOLDER="Carla_2.0-beta7-win${ARCH}"
 
 if [ x"${ARCH}" != x"32" ]; then
   CPUARCH="x86_64"
