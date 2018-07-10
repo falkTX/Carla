@@ -322,7 +322,9 @@ public:
     */
     ~ReferenceCountedObjectPtr()
     {
-        decIfNotNull (referencedObject);
+        ReferencedType* const oldObject = referencedObject; // need to null the pointer before deleting the object
+        referencedObject = nullptr;                         // in case this ptr is itself deleted as a side-effect
+        decIfNotNull (oldObject);                           // of the destructor
     }
 
     //==============================================================================
