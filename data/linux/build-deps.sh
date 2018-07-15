@@ -63,7 +63,7 @@ export LDFLAGS="${LDFLAGS} -L${PREFIX}/lib -m${ARCH}"
 # pkgconfig
 
 if [ ! -d pkg-config-${PKG_CONFIG_VERSION} ]; then
-  wget --no-check-certificate https://pkg-config.freedesktop.org/releases/pkg-config-${PKG_CONFIG_VERSION}.tar.gz
+  aria2c https://pkg-config.freedesktop.org/releases/pkg-config-${PKG_CONFIG_VERSION}.tar.gz
   tar -xf pkg-config-${PKG_CONFIG_VERSION}.tar.gz
 fi
 
@@ -81,7 +81,7 @@ fi
 # liblo
 
 if [ ! -d liblo-${LIBLO_VERSION} ]; then
-  wget --no-check-certificate https://download.sourceforge.net/liblo/liblo-${LIBLO_VERSION}.tar.gz
+  aria2c https://download.sourceforge.net/liblo/liblo-${LIBLO_VERSION}.tar.gz
   tar -xf liblo-${LIBLO_VERSION}.tar.gz
 fi
 
@@ -107,7 +107,7 @@ fi
 # zlib
 
 if [ ! -d zlib-${ZLIB_VERSION} ]; then
-  wget --no-check-certificate https://github.com/madler/zlib/archive/v${ZLIB_VERSION}.tar.gz -O zlib-${ZLIB_VERSION}.tar.gz
+  aria2c https://github.com/madler/zlib/archive/v${ZLIB_VERSION}.tar.gz
   tar -xf zlib-${ZLIB_VERSION}.tar.gz
 fi
 
@@ -141,7 +141,7 @@ fi
 # libogg
 
 if [ ! -d libogg-${LIBOGG_VERSION} ]; then
-  wget --no-check-certificate https://ftp.osuosl.org/pub/xiph/releases/ogg/libogg-${LIBOGG_VERSION}.tar.gz
+  aria2c https://ftp.osuosl.org/pub/xiph/releases/ogg/libogg-${LIBOGG_VERSION}.tar.gz
   tar -xf libogg-${LIBOGG_VERSION}.tar.gz
 fi
 
@@ -158,7 +158,7 @@ fi
 # libvorbis
 
 if [ ! -d libvorbis-${LIBVORBIS_VERSION} ]; then
-  wget --no-check-certificate https://ftp.osuosl.org/pub/xiph/releases/vorbis/libvorbis-${LIBVORBIS_VERSION}.tar.gz
+  aria2c https://ftp.osuosl.org/pub/xiph/releases/vorbis/libvorbis-${LIBVORBIS_VERSION}.tar.gz
   tar -xf libvorbis-${LIBVORBIS_VERSION}.tar.gz
 fi
 
@@ -175,7 +175,7 @@ fi
 # flac
 
 if [ ! -d flac-${FLAC_VERSION} ]; then
-  wget --no-check-certificate https://svn.xiph.org/releases/flac/flac-${FLAC_VERSION}.tar.xz
+  aria2c https://svn.xiph.org/releases/flac/flac-${FLAC_VERSION}.tar.xz
   tar -xf flac-${FLAC_VERSION}.tar.xz
 fi
 
@@ -282,7 +282,7 @@ fi
 # fluidsynth
 
 if [ ! -d fluidsynth-${FLUIDSYNTH_VERSION} ]; then
-  wget --no-check-certificate https://download.sourceforge.net/fluidsynth/fluidsynth-${FLUIDSYNTH_VERSION}.tar.gz
+  aria2c https://download.sourceforge.net/fluidsynth/fluidsynth-${FLUIDSYNTH_VERSION}.tar.gz
   tar -xf fluidsynth-${FLUIDSYNTH_VERSION}.tar.gz
 fi
 
@@ -305,7 +305,7 @@ fi
 # mxml
 
 if [ ! -d mxml-${MXML_VERSION} ]; then
-  wget --no-check-certificate https://github.com/michaelrsweet/mxml/releases/download/v${MXML_VERSION}/mxml-${MXML_VERSION}.tar.gz -O mxml-${MXML_VERSION}.tar.gz
+  aria2c https://github.com/michaelrsweet/mxml/releases/download/v${MXML_VERSION}/mxml-${MXML_VERSION}.tar.gz
   mkdir mxml-${MXML_VERSION}
   cd mxml-${MXML_VERSION}
   tar -xf ../mxml-${MXML_VERSION}.tar.gz
@@ -327,7 +327,7 @@ fi
 # fftw3 (needs to be last as it modifies C[XX]FLAGS)
 
 if [ ! -d fftw-${FFTW3_VERSION} ]; then
-  wget --no-check-certificate http://www.fftw.org/fftw-${FFTW3_VERSION}.tar.gz
+  aria2c http://www.fftw.org/fftw-${FFTW3_VERSION}.tar.gz
   tar -xf fftw-${FFTW3_VERSION}.tar.gz
 fi
 

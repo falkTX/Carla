@@ -75,6 +75,17 @@ chroot_setup()
 
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
 
+if [ ! -f ${CHROOT_DIR}/tmp/setup-aria2 ]; then
+  pushd ${CHROOT_DIR}/tmp
+  if [ x"${ARCH}" = x"32" ]; then
+    wget -c https://github.com/q3aql/aria2-static-builds/releases/download/v1.34.0/aria2-1.34.0-linux-gnu-32bit-build1.tar.bz2
+  else
+    wget -c https://github.com/q3aql/aria2-static-builds/releases/download/v1.34.0/aria2-1.34.0-linux-gnu-64bit-build1.tar.bz2
+  fi
+  tar xf aria2-*.tar.bz2
+  popd
+fi
+
 cat <<EOF | sudo chroot ${CHROOT_DIR}
 mount -t proc none /proc/
 mount -t sysfs none /sys/
@@ -122,6 +133,14 @@ if [ ! -f /tmp/setup-repo-packages ]; then
   touch /tmp/setup-repo-packages
 fi
 
+if [ ! -f /tmp/setup-aria2 ]; then
+  pushd /tmp/aria2-*
+  make install
+  popd
+  rm -r /tmp/aria2-*
+  touch /tmp/setup-aria2
+fi
+
 if [ ! -d ${CHROOT_CARLA_DIR} ]; then
   git clone --depth=1 git://github.com/falkTX/Carla ${CHROOT_CARLA_DIR}
 fi
@@ -158,6 +177,8 @@ chroot_build_deps()
 
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
 cp build-deps.sh common.env ${CHROOT_DIR}${CHROOT_CARLA_DIR}/data/linux/
+sudo cp /etc/ca-certificates.conf ${CHROOT_DIR}/etc/
+sudo cp -r /usr/share/ca-certificates/* ${CHROOT_DIR}/usr/share/ca-certificates/
 
 cat <<EOF | sudo chroot ${CHROOT_DIR}
 export HOME=/root
@@ -174,6 +195,8 @@ if [ ! -f /tmp/setup-repo-packages-extra1 ]; then
   fi
   touch /tmp/setup-repo-packages-extra1
 fi
+
+update-ca-certificates
 
 ${CHROOT_CARLA_DIR}/data/linux/build-deps.sh ${ARCH}
 
