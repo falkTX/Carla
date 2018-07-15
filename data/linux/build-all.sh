@@ -272,6 +272,7 @@ download_carla_extras()
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
 PKGS_NUM="20180625"
 PKGS_VER="1.9.8+git${PKGS_NUM}"
+CARLA_VER="1.9.8+git20180628"
 WINE64_VER="1.9.8.git20180625"
 
 cat <<EOF | sudo chroot ${CHROOT_DIR}
@@ -285,11 +286,11 @@ if [ ! -d carla-pkgs${PKGS_NUM} ]; then
   wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win32_${PKGS_VER}_i386.deb
   wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-wine32_${PKGS_VER}_i386.deb
   if [ x"${ARCH}" != x"32" ]; then
+    aria2c https://github.com/KXStudio/Repository/releases/download/initial/carla-bridge-wine64_${WINE64_VER}_amd64.deb
     wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win64_${PKGS_VER}_amd64.deb
-    wget -c https://github.com/KXStudio/Repository/releases/download/initial/carla-bridge-wine64_${WINE64_VER}_amd64.deb
-    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-git_${PKGS_VER}_amd64.deb
+    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-git_${CARLA_VER}_amd64.deb
   else
-    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-git_${PKGS_VER}_i386.deb
+    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-git_${CARLA_VER}_i386.deb
   fi
   cd ..
   mv tmp-carla-pkgs carla-pkgs${PKGS_NUM}
@@ -302,9 +303,9 @@ if [ ! -f carla-pkgs${PKGS_NUM}/extrated ]; then
   if [ x"${ARCH}" != x"32" ]; then
     dpkg -x carla-bridge-win64_${PKGS_VER}_amd64.deb .
     dpkg -x carla-bridge-wine64_${WINE64_VER}_amd64.deb .
-    dpkg -x carla-git_${PKGS_VER}_amd64.deb .
+    dpkg -x carla-git_${CARLA_VER}_amd64.deb .
   else
-    dpkg -x carla-git_${PKGS_VER}_i386.deb .
+    dpkg -x carla-git_${CARLA_VER}_i386.deb .
   fi
   touch extrated
   cd ..
