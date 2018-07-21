@@ -934,6 +934,9 @@ bool CarlaJackAppClient::handleNonRtData()
             }
             break;
 
+        case kPluginBridgeNonRtClientRestoreLV2State:
+            break;
+
         case kPluginBridgeNonRtClientShowUI:
             if (jack_carla_interposed_action(3, 1, nullptr) == 1337)
             {
