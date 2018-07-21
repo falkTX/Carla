@@ -274,6 +274,7 @@ class CarlaSettingsW(QDialog):
                 self.ui.ch_engine_force_stereo.setEnabled(False)
 
         if host.isControl or host.isPlugin:
+            self.ui.ch_main_confirm_exit.hide()
             self.ui.ch_exp_load_lib_global.hide()
             self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
 
