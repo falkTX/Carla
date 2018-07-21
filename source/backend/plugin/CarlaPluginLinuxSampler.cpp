@@ -32,6 +32,7 @@
 #include "CarlaMathUtils.hpp"
 
 #include "water/files/File.h"
+#include "water/memory/SharedResourcePointer.h"
 #include "water/text/StringArray.h"
 
 // -----------------------------------------------------------------------
@@ -200,6 +201,7 @@ public:
 // -----------------------------------------------------------------------
 
 using water::File;
+using water::SharedResourcePointer;
 using water::StringArray;
 
 CARLA_BACKEND_START_NAMESPACE
@@ -224,16 +226,20 @@ public:
           fRealName(nullptr),
           sSampler(),
           fAudioOutputDevice(engine, this, kUses16Outs),
-          fMidiInputDevice(&sSampler),
+          fMidiInputDevice(sSampler.getPointer()),
           fMidiInputPort(nullptr),
           fInstrumentIds(),
           fInstrumentInfo()
     {
         carla_debug("CarlaPluginLinuxSampler::CarlaPluginLinuxSampler(%p, %i, %s, %s)", engine, id, bool2str(isGIG), bool2str(use16Outs));
 
-        // TODO - option for this
-        sSampler.SetGlobalMaxStreams(LinuxSampler::kMaxStreams);
-        sSampler.SetGlobalMaxVoices(LinuxSampler::kMaxVoices);
+        {
+            const CarlaRecursiveMutexLocker crml(sSamplerMutex.getObject());
+
+            // TODO - option for this
+            sSampler->SetGlobalMaxStreams(LinuxSampler::kMaxStreams);
+            sSampler->SetGlobalMaxVoices(LinuxSampler::kMaxVoices);
+        }
 
         carla_zeroStructs(fCurProgs,        MAX_MIDI_CHANNELS);
         carla_zeroStructs(fSamplerChannels, MAX_MIDI_CHANNELS);
@@ -261,6 +267,8 @@ public:
             pData->active = false;
         }
 
+        const CarlaRecursiveMutexLocker crml(sSamplerMutex.getObject());
+
         fMidiInputPort = nullptr;
 
         for (uint i=0; i<kMaxChannels; ++i)
@@ -274,7 +282,7 @@ public:
                     fEngineChannels[i] = nullptr;
                 }
 
-                sSampler.RemoveSamplerChannel(fSamplerChannels[i]);
+                sSampler->RemoveSamplerChannel(fSamplerChannels[i]);
                 fSamplerChannels[i] = nullptr;
             }
         }
@@ -549,6 +557,8 @@ public:
         if (fCurProgs[channel] == uindex)
             return false;
 
+        const CarlaRecursiveMutexLocker crml(sSamplerMutex.getObject());
+
         LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[kIsGIG ? channel : 0]);
         CARLA_SAFE_ASSERT_RETURN(engineChannel != nullptr, false);
 
@@ -787,6 +797,8 @@ public:
 
         if (doInit)
         {
+            const CarlaRecursiveMutexLocker crml(sSamplerMutex.getObject());
+
             for (uint i=0; i<kMaxChannels; ++i)
             {
                 LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[i]);
@@ -1104,13 +1116,17 @@ public:
 
         uint diskStreamCount=0, voiceCount=0;
 
-        for (uint i=0; i<kMaxChannels; ++i)
         {
-            LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[i]);
-            CARLA_SAFE_ASSERT_CONTINUE(engineChannel != nullptr);
+            const CarlaRecursiveMutexLocker crml(sSamplerMutex.getObject());
 
-            diskStreamCount += engineChannel->GetDiskStreamCount();
-            /**/ voiceCount += engineChannel->GetVoiceCount();
+            for (uint i=0; i<kMaxChannels; ++i)
+            {
+                LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[i]);
+                CARLA_SAFE_ASSERT_CONTINUE(engineChannel != nullptr);
+
+                diskStreamCount += engineChannel->GetDiskStreamCount();
+                /**/ voiceCount += engineChannel->GetVoiceCount();
+            }
         }
 
         fParamBuffers[LinuxSamplerDiskStreamCount] = static_cast<float>(diskStreamCount);
@@ -1209,7 +1225,6 @@ public:
         return true;
     }
 
-#ifndef CARLA_OS_WIN // FIXME, need to update linuxsampler win32 build
     void bufferSizeChanged(const uint32_t) override
     {
         fAudioOutputDevice.ReconnectAll();
@@ -1219,7 +1234,6 @@ public:
     {
         fAudioOutputDevice.ReconnectAll();
     }
-#endif
 
     // -------------------------------------------------------------------
     // Plugin buffers
@@ -1257,6 +1271,8 @@ public:
         // ---------------------------------------------------------------
         // Init LinuxSampler stuff
 
+        const CarlaRecursiveMutexLocker crml(sSamplerMutex.getObject());
+
         fMidiInputPort = fMidiInputDevice.GetPort(0);
 
         if (fMidiInputPort == nullptr)
@@ -1267,7 +1283,7 @@ public:
 
         for (uint i=0; i<kMaxChannels; ++i)
         {
-            LinuxSampler::SamplerChannel* const samplerChannel(sSampler.AddSamplerChannel());
+            LinuxSampler::SamplerChannel* const samplerChannel(sSampler->AddSamplerChannel());
             CARLA_SAFE_ASSERT_CONTINUE(samplerChannel != nullptr);
 
             samplerChannel->SetEngineType(kIsGIG ? "GIG" : "SFZ");
@@ -1428,7 +1444,8 @@ private:
     uint32_t fCurProgs[MAX_MIDI_CHANNELS];
     float    fParamBuffers[LinuxSamplerParametersMax];
 
-    LinuxSampler::Sampler sSampler;
+    SharedResourcePointer<LinuxSampler::Sampler> sSampler;
+    SharedResourcePointer<CarlaRecursiveMutex>   sSamplerMutex;
 
     LinuxSampler::AudioOutputDevicePlugin fAudioOutputDevice;
     LinuxSampler::MidiInputDevicePlugin   fMidiInputDevice;

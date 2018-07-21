@@ -223,8 +223,6 @@ struct CarlaEngine::ProtectedData {
     void*            fileCallbackPtr;
 
 #ifndef BUILD_BRIDGE
-    // special hack for linuxsampler
-    bool firstLinuxSamplerInstance;
     bool loadingProject;
 #endif
 
