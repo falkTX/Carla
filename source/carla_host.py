@@ -2301,15 +2301,21 @@ class HostWindow(QMainWindow):
     # --------------------------------------------------------------------------------------------------------
     # close event
 
-    def closeEvent(self, event):
-        if self.fCustomStopAction != self.CUSTOM_ACTION_APP_CLOSE and self.fSavedSettings[CARLA_KEY_MAIN_CONFIRM_EXIT]:
-            ask = QMessageBox.question(self, self.tr("Quit"),
-                                             self.tr("Are you sure you want to quit Carla?"),
-                                             QMessageBox.Yes|QMessageBox.No)
+    def shouldIgnoreClose(self):
+        if self.host.isControl or self.host.isPlugin:
+            return False
+        if self.fCustomStopAction == self.CUSTOM_ACTION_APP_CLOSE:
+            return False
+        if self.fSavedSettings[CARLA_KEY_MAIN_CONFIRM_EXIT]:
+            return QMessageBox.question(self, self.tr("Quit"),
+                                              self.tr("Are you sure you want to quit Carla?"),
+                                              QMessageBox.Yes|QMessageBox.No) == QMessageBox.No
+        return False
 
-            if ask == QMessageBox.No:
-                event.ignore()
-                return
+    def closeEvent(self, event):
+        if self.shouldIgnoreClose():
+            event.ignore()
+            return
 
         self.killTimers()
         self.saveSettings()
