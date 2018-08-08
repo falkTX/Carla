@@ -79,12 +79,6 @@ class DriverSettingsW(QDialog):
         for name in self.fDeviceNames:
             self.ui.cb_device.addItem(name)
 
-        if driverName != "ALSA":
-            self.ui.label_numperiods.setEnabled(False)
-            self.ui.label_numperiods.setVisible(False)
-            self.ui.sb_numperiods.setEnabled(False)
-            self.ui.sb_numperiods.setVisible(False)
-
         # ----------------------------------------------------------------------------------------------------
         # Load settings
 
@@ -101,10 +95,10 @@ class DriverSettingsW(QDialog):
     def loadSettings(self):
         settings = QSettings("falkTX", "Carla2")
 
-        audioDevice     = settings.value("%s%s/Device"     % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), "",                              type=str)
-        audioNumPeriods = settings.value("%s%s/NumPeriods" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), CARLA_DEFAULT_AUDIO_NUM_PERIODS, type=int)
-        audioBufferSize = settings.value("%s%s/BufferSize" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), CARLA_DEFAULT_AUDIO_BUFFER_SIZE, type=int)
-        audioSampleRate = settings.value("%s%s/SampleRate" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), CARLA_DEFAULT_AUDIO_SAMPLE_RATE, type=int)
+        audioDevice       = settings.value("%s%s/Device"       % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), "",                                type=str)
+        audioBufferSize   = settings.value("%s%s/BufferSize"   % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), CARLA_DEFAULT_AUDIO_BUFFER_SIZE,   type=int)
+        audioSampleRate   = settings.value("%s%s/SampleRate"   % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), CARLA_DEFAULT_AUDIO_SAMPLE_RATE,   type=int)
+        audioTripleBuffer = settings.value("%s%s/TripleBuffer" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), CARLA_DEFAULT_AUDIO_TRIPLE_BUFFER, type=bool)
 
         if audioDevice and audioDevice in self.fDeviceNames:
             self.ui.cb_device.setCurrentIndex(self.fDeviceNames.index(audioDevice))
@@ -113,11 +107,6 @@ class DriverSettingsW(QDialog):
 
         # fill combo-boxes first
         self.slot_updateDeviceInfo()
-
-        if audioNumPeriods in (2, 3):
-            self.ui.sb_numperiods.setValue(audioNumPeriods)
-        else:
-            self.ui.sb_numperiods.setValue(CARLA_DEFAULT_AUDIO_NUM_PERIODS)
 
         if audioBufferSize and audioBufferSize in self.fBufferSizes:
             self.ui.cb_buffersize.setCurrentIndex(self.fBufferSizes.index(audioBufferSize))
@@ -133,16 +122,18 @@ class DriverSettingsW(QDialog):
         else:
             self.ui.cb_samplerate.setCurrentIndex(len(self.fSampleRates)/2)
 
+        self.ui.cb_triple_buffer.setChecked(audioTripleBuffer and self.ui.cb_triple_buffer.isEnabled())
+
     # --------------------------------------------------------------------------------------------------------
 
     @pyqtSlot()
     def slot_saveSettings(self):
         settings = QSettings("falkTX", "Carla2")
 
-        settings.setValue("%s%s/Device"     % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.cb_device.currentText())
-        settings.setValue("%s%s/NumPeriods" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.sb_numperiods.value())
-        settings.setValue("%s%s/BufferSize" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.cb_buffersize.currentText())
-        settings.setValue("%s%s/SampleRate" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.cb_samplerate.currentText())
+        settings.setValue("%s%s/Device"       % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.cb_device.currentText())
+        settings.setValue("%s%s/BufferSize"   % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.cb_buffersize.currentText())
+        settings.setValue("%s%s/SampleRate"   % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.cb_samplerate.currentText())
+        settings.setValue("%s%s/TripleBuffer" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.cb_triple_buffer.isChecked())
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -158,11 +149,20 @@ class DriverSettingsW(QDialog):
 
         if deviceName:
             driverDeviceInfo  = self.host.get_engine_driver_device_info(self.fDriverIndex, deviceName)
+            driverDeviceHints = driverDeviceInfo['hints']
             self.fBufferSizes = driverDeviceInfo['bufferSizes']
             self.fSampleRates = driverDeviceInfo['sampleRates']
         else:
+            driverDeviceHints = 0x0
             self.fBufferSizes = BUFFER_SIZE_LIST
             self.fSampleRates = SAMPLE_RATE_LIST
+
+        if driverDeviceHints & ENGINE_DRIVER_DEVICE_CAN_TRIPLE_BUFFER:
+            self.ui.cb_triple_buffer.setEnabled(False)
+            self.ui.cb_triple_buffer.setVisible(False)
+        else:
+            self.ui.cb_triple_buffer.setEnabled(True)
+            self.ui.cb_triple_buffer.setVisible(True)
 
         for bsize in self.fBufferSizes:
             sbsize = str(bsize)
@@ -589,7 +589,10 @@ class CarlaSettingsW(QDialog):
 
         if not self.host.processModeForced:
             # engine sends callback if processMode really changes
-            self.host.nextProcessMode = self.ui.cb_engine_process_mode_jack.currentIndex() if audioDriver == "JACK" else self.ui.cb_engine_process_mode_other.currentIndex()+self.PROCESS_MODE_NON_JACK_PADDING
+            if audioDriver == "JACK":
+                self.host.nextProcessMode = self.ui.cb_engine_process_mode_jack.currentIndex()
+            else:
+                self.host.nextProcessMode = self.ui.cb_engine_process_mode_other.currentIndex() + self.PROCESS_MODE_NON_JACK_PADDING
 
             self.host.set_engine_option(ENGINE_OPTION_PROCESS_MODE, self.host.nextProcessMode, "")
 

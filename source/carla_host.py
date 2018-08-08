@@ -2809,6 +2809,23 @@ def setEngineSettings(host):
         return "Plugin"
 
     # --------------------------------------------------------------------------------------------------------
+    # wine settings
+
+    optWineExecutable = settings.value(CARLA_KEY_WINE_EXECUTABLE, CARLA_DEFAULT_WINE_EXECUTABLE, type=str)
+    optWineAutoPrefix = settings.value(CARLA_KEY_WINE_AUTO_PREFIX, CARLA_DEFAULT_WINE_AUTO_PREFIX, type=bool)
+    optWineFallbackPrefix = settings.value(CARLA_KEY_WINE_FALLBACK_PREFIX, CARLA_DEFAULT_WINE_FALLBACK_PREFIX, type=str)
+    optWineRtPrioEnabled = settings.value(CARLA_KEY_WINE_RT_PRIO_ENABLED, CARLA_DEFAULT_WINE_RT_PRIO_ENABLED, type=bool)
+    optWineBaseRtPrio = settings.value(CARLA_KEY_WINE_BASE_RT_PRIO,   CARLA_DEFAULT_WINE_BASE_RT_PRIO, type=int)
+    optWineServerRtPrio = settings.value(CARLA_KEY_WINE_SERVER_RT_PRIO, CARLA_DEFAULT_WINE_SERVER_RT_PRIO, type=int)
+
+    host.set_engine_option(ENGINE_OPTION_WINE_EXECUTABLE, 0, optWineExecutable)
+    host.set_engine_option(ENGINE_OPTION_WINE_AUTO_PREFIX, 1 if optWineAutoPrefix else 0, "")
+    host.set_engine_option(ENGINE_OPTION_WINE_FALLBACK_PREFIX, 0, os.path.expanduser(optWineFallbackPrefix))
+    host.set_engine_option(ENGINE_OPTION_WINE_RT_PRIO_ENABLED, 1 if optWineRtPrioEnabled else 0, "")
+    host.set_engine_option(ENGINE_OPTION_WINE_BASE_RT_PRIO, optWineBaseRtPrio, "")
+    host.set_engine_option(ENGINE_OPTION_WINE_SERVER_RT_PRIO, optWineServerRtPrio, "")
+
+    # --------------------------------------------------------------------------------------------------------
     # driver and device settings
 
     # driver name
@@ -2827,11 +2844,6 @@ def setEngineSettings(host):
         audioDevice = ""
 
     try:
-        audioNumPeriods = settings.value("%s%s/NumPeriods" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_NUM_PERIODS, type=int)
-    except:
-        audioNumPeriods = CARLA_DEFAULT_AUDIO_NUM_PERIODS
-
-    try:
         audioBufferSize = settings.value("%s%s/BufferSize" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_BUFFER_SIZE, type=int)
     except:
         audioBufferSize = CARLA_DEFAULT_AUDIO_BUFFER_SIZE
@@ -2841,10 +2853,17 @@ def setEngineSettings(host):
     except:
         audioSampleRate = CARLA_DEFAULT_AUDIO_SAMPLE_RATE
 
-    host.set_engine_option(ENGINE_OPTION_AUDIO_DEVICE,      0,               audioDevice)
-    host.set_engine_option(ENGINE_OPTION_AUDIO_NUM_PERIODS, audioNumPeriods, "")
-    host.set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, audioBufferSize, "")
-    host.set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, audioSampleRate, "")
+    try:
+        audioTripleBuffer = settings.value("%s%s/TripleBuffer" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_TRIPLE_BUFFER, type=int)
+    except:
+        audioTripleBuffer = CARLA_DEFAULT_AUDIO_TRIPLE_BUFFER
+
+    # Only setup audio things if engine is not running
+    if not host.is_engine_running():
+        host.set_engine_option(ENGINE_OPTION_AUDIO_DEVICE, 0, audioDevice)
+        host.set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, audioBufferSize, "")
+        host.set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, audioSampleRate, "")
+        host.set_engine_option(ENGINE_OPTION_AUDIO_TRIPLE_BUFFER, audioTripleBuffer, "")
 
     # --------------------------------------------------------------------------------------------------------
     # fix things if needed
@@ -2852,23 +2871,6 @@ def setEngineSettings(host):
     if audioDriver != "JACK" and host.transportMode == ENGINE_TRANSPORT_MODE_JACK:
         host.transportMode = ENGINE_TRANSPORT_MODE_INTERNAL
         host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, ENGINE_TRANSPORT_MODE_INTERNAL, "")
-
-    # --------------------------------------------------------------------------------------------------------
-    # wine settings
-
-    optWineExecutable = settings.value(CARLA_KEY_WINE_EXECUTABLE, CARLA_DEFAULT_WINE_EXECUTABLE, type=str)
-    optWineAutoPrefix = settings.value(CARLA_KEY_WINE_AUTO_PREFIX, CARLA_DEFAULT_WINE_AUTO_PREFIX, type=bool)
-    optWineFallbackPrefix = settings.value(CARLA_KEY_WINE_FALLBACK_PREFIX, CARLA_DEFAULT_WINE_FALLBACK_PREFIX, type=str)
-    optWineRtPrioEnabled = settings.value(CARLA_KEY_WINE_RT_PRIO_ENABLED, CARLA_DEFAULT_WINE_RT_PRIO_ENABLED, type=bool)
-    optWineBaseRtPrio = settings.value(CARLA_KEY_WINE_BASE_RT_PRIO,   CARLA_DEFAULT_WINE_BASE_RT_PRIO, type=int)
-    optWineServerRtPrio = settings.value(CARLA_KEY_WINE_SERVER_RT_PRIO, CARLA_DEFAULT_WINE_SERVER_RT_PRIO, type=int)
-
-    host.set_engine_option(ENGINE_OPTION_WINE_EXECUTABLE, 0, optWineExecutable)
-    host.set_engine_option(ENGINE_OPTION_WINE_AUTO_PREFIX, 1 if optWineAutoPrefix else 0, "")
-    host.set_engine_option(ENGINE_OPTION_WINE_FALLBACK_PREFIX, 0, os.path.expanduser(optWineFallbackPrefix))
-    host.set_engine_option(ENGINE_OPTION_WINE_RT_PRIO_ENABLED, 1 if optWineRtPrioEnabled else 0, "")
-    host.set_engine_option(ENGINE_OPTION_WINE_BASE_RT_PRIO, optWineBaseRtPrio, "")
-    host.set_engine_option(ENGINE_OPTION_WINE_SERVER_RT_PRIO, optWineServerRtPrio, "")
 
     # --------------------------------------------------------------------------------------------------------
     # return selected driver name

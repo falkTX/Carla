@@ -224,11 +224,9 @@ static void carla_engine_init_common(CarlaEngine* const engine)
     engine->setOption(CB::ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     gStandalone.engineOptions.uisAlwaysOnTop      ? 1 : 0,        nullptr);
     engine->setOption(CB::ENGINE_OPTION_MAX_PARAMETERS,        static_cast<int>(gStandalone.engineOptions.maxParameters),    nullptr);
     engine->setOption(CB::ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    static_cast<int>(gStandalone.engineOptions.uiBridgesTimeout), nullptr);
-    engine->setOption(CB::ENGINE_OPTION_AUDIO_NUM_PERIODS,     static_cast<int>(gStandalone.engineOptions.audioNumPeriods),  nullptr);
     engine->setOption(CB::ENGINE_OPTION_AUDIO_BUFFER_SIZE,     static_cast<int>(gStandalone.engineOptions.audioBufferSize),  nullptr);
     engine->setOption(CB::ENGINE_OPTION_AUDIO_SAMPLE_RATE,     static_cast<int>(gStandalone.engineOptions.audioSampleRate),  nullptr);
-
-    engine->setOption(CB::ENGINE_OPTION_AUDIO_SAMPLE_RATE,     static_cast<int>(gStandalone.engineOptions.audioSampleRate),  nullptr);
+    engine->setOption(CB::ENGINE_OPTION_AUDIO_TRIPLE_BUFFER,   gStandalone.engineOptions.audioTripleBuffer   ? 1 : 0,        nullptr);
 
     if (gStandalone.engineOptions.audioDevice != nullptr)
         engine->setOption(CB::ENGINE_OPTION_AUDIO_DEVICE,      0, gStandalone.engineOptions.audioDevice);
@@ -489,11 +487,6 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
         gStandalone.engineOptions.uiBridgesTimeout = static_cast<uint>(value);
         break;
 
-    case CB::ENGINE_OPTION_AUDIO_NUM_PERIODS:
-        CARLA_SAFE_ASSERT_RETURN(value >= 2 && value <= 3,);
-        gStandalone.engineOptions.audioNumPeriods = static_cast<uint>(value);
-        break;
-
     case CB::ENGINE_OPTION_AUDIO_BUFFER_SIZE:
         CARLA_SAFE_ASSERT_RETURN(value >= 8,);
         gStandalone.engineOptions.audioBufferSize = static_cast<uint>(value);
@@ -502,6 +495,11 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
     case CB::ENGINE_OPTION_AUDIO_SAMPLE_RATE:
         CARLA_SAFE_ASSERT_RETURN(value >= 22050,);
         gStandalone.engineOptions.audioSampleRate = static_cast<uint>(value);
+        break;
+
+    case CB::ENGINE_OPTION_AUDIO_TRIPLE_BUFFER:
+        CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
+        gStandalone.engineOptions.audioTripleBuffer = (value != 0);
         break;
 
     case CB::ENGINE_OPTION_AUDIO_DEVICE:

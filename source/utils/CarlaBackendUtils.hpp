@@ -1,6 +1,6 @@
 /*
  * Carla Backend utils
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -309,12 +309,12 @@ const char* EngineOption2Str(const EngineOption option) noexcept
         return "ENGINE_OPTION_MAX_PARAMETERS";
     case ENGINE_OPTION_UI_BRIDGES_TIMEOUT:
         return "ENGINE_OPTION_UI_BRIDGES_TIMEOUT";
-    case ENGINE_OPTION_AUDIO_NUM_PERIODS:
-        return "ENGINE_OPTION_AUDIO_NUM_PERIODS";
     case ENGINE_OPTION_AUDIO_BUFFER_SIZE:
         return "ENGINE_OPTION_AUDIO_BUFFER_SIZE";
     case ENGINE_OPTION_AUDIO_SAMPLE_RATE:
         return "ENGINE_OPTION_AUDIO_SAMPLE_RATE";
+    case ENGINE_OPTION_AUDIO_TRIPLE_BUFFER:
+        return "ENGINE_OPTION_AUDIO_TRIPLE_BUFFER";
     case ENGINE_OPTION_AUDIO_DEVICE:
         return "ENGINE_OPTION_AUDIO_DEVICE";
     case ENGINE_OPTION_PLUGIN_PATH:

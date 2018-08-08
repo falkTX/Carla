@@ -753,17 +753,17 @@ ENGINE_OPTION_MAX_PARAMETERS = 7
 # Default is 4000 (4 seconds).
 ENGINE_OPTION_UI_BRIDGES_TIMEOUT = 8
 
-# Number of audio periods.
-# Default is 2.
-ENGINE_OPTION_AUDIO_NUM_PERIODS = 9
-
 # Audio buffer size.
 # Default is 512.
-ENGINE_OPTION_AUDIO_BUFFER_SIZE = 10
+ENGINE_OPTION_AUDIO_BUFFER_SIZE = 9
 
 # Audio sample rate.
 # Default is 44100.
-ENGINE_OPTION_AUDIO_SAMPLE_RATE = 11
+ENGINE_OPTION_AUDIO_SAMPLE_RATE = 10
+
+# Wherever to use 3 audio periods instead of the default 2.
+# Default is false.
+ENGINE_OPTION_AUDIO_TRIPLE_BUFFER = 11
 
 # Audio device (within a driver).
 # Default unset.
@@ -1252,7 +1252,6 @@ class CarlaHostMeta(object):
         self.nextProcessMode   = self.processMode
         self.processModeForced = False
         self.audioDriverForced = None
-
 
         # settings
         self.experimental        = False

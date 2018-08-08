@@ -271,7 +271,7 @@ public:
 
         RtAudio::StreamOptions rtOptions;
         rtOptions.flags = RTAUDIO_MINIMIZE_LATENCY | RTAUDIO_HOG_DEVICE | RTAUDIO_SCHEDULE_REALTIME;
-        rtOptions.numberOfBuffers = pData->options.audioNumPeriods;
+        rtOptions.numberOfBuffers = pData->options.audioTripleBuffer ? 3 : 2;
         rtOptions.streamName = clientName;
         rtOptions.priority = 85;
 
@@ -1132,23 +1132,25 @@ const char* const* CarlaEngine::getRtAudioApiDeviceNames(const uint index)
         return nullptr;
 
     const RtAudio::Api& api(gRtAudioApis[index]);
-
-    RtAudio rtAudio(api);
-
-    const uint devCount(rtAudio.getDeviceCount());
-
-    if (devCount == 0)
-        return nullptr;
-
     CarlaStringList devNames;
 
-    for (uint i=0; i < devCount; ++i)
-    {
-        RtAudio::DeviceInfo devInfo(rtAudio.getDeviceInfo(i));
+    try {
+        RtAudio rtAudio(api);
 
-        if (devInfo.probed && devInfo.outputChannels > 0 /*&& (devInfo.nativeFormats & RTAUDIO_FLOAT32) != 0*/)
-            devNames.append(devInfo.name.c_str());
-    }
+        const uint devCount(rtAudio.getDeviceCount());
+
+        if (devCount == 0)
+            return nullptr;
+
+        for (uint i=0; i < devCount; ++i)
+        {
+            RtAudio::DeviceInfo devInfo(rtAudio.getDeviceInfo(i));
+
+            if (devInfo.probed && devInfo.outputChannels > 0 /*&& (devInfo.nativeFormats & RTAUDIO_FLOAT32) != 0*/)
+                devNames.append(devInfo.name.c_str());
+        }
+
+    } CARLA_SAFE_EXCEPTION_RETURN("RtAudio device names", nullptr);
 
     gDeviceNames = devNames.toCharStringListPtr();
 
@@ -1163,27 +1165,29 @@ const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const uint index
         return nullptr;
 
     const RtAudio::Api& api(gRtAudioApis[index]);
-
-    RtAudio rtAudio(api);
-
-    const uint devCount(rtAudio.getDeviceCount());
-
-    if (devCount == 0)
-        return nullptr;
-
-    uint i;
     RtAudio::DeviceInfo rtAudioDevInfo;
 
-    for (i=0; i < devCount; ++i)
-    {
-        rtAudioDevInfo = rtAudio.getDeviceInfo(i);
+    try {
+        RtAudio rtAudio(api);
 
-        if (rtAudioDevInfo.name == deviceName)
-            break;
-    }
+        const uint devCount(rtAudio.getDeviceCount());
 
-    if (i == devCount)
-        return nullptr;
+        if (devCount == 0)
+            return nullptr;
+
+        uint i;
+        for (i=0; i < devCount; ++i)
+        {
+            rtAudioDevInfo = rtAudio.getDeviceInfo(i);
+
+            if (rtAudioDevInfo.name == deviceName)
+                break;
+        }
+
+        if (i == devCount)
+            return nullptr;
+
+    } CARLA_SAFE_EXCEPTION_RETURN("RtAudio device discovery", nullptr);
 
     static EngineDriverDeviceInfo devInfo = { 0x0, nullptr, nullptr };
     static uint32_t dummyBufferSizes[]    = { 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 0 };
@@ -1200,7 +1204,20 @@ const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const uint index
         devInfo.sampleRates = nullptr;
     }
 
-    if (size_t sampleRatesCount = rtAudioDevInfo.sampleRates.size())
+    // a few APIs can do triple buffer
+    switch (api)
+    {
+    case RtAudio::LINUX_ALSA:
+    case RtAudio::LINUX_OSS:
+    case RtAudio::WINDOWS_DS:
+        devInfo.hints |= ENGINE_DRIVER_DEVICE_CAN_TRIPLE_BUFFER;
+        break;
+    default:
+        break;
+    }
+
+    // valid sample rates
+    if (const size_t sampleRatesCount = rtAudioDevInfo.sampleRates.size())
     {
         double* const sampleRates(new double[sampleRatesCount+1]);
 

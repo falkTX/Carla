@@ -230,9 +230,9 @@ struct CARLA_API EngineOptions {
 
     uint maxParameters;
     uint uiBridgesTimeout;
-    uint audioNumPeriods;
     uint audioBufferSize;
     uint audioSampleRate;
+    bool audioTripleBuffer;
     const char* audioDevice;
 
     const char* pathLADSPA;

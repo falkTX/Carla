@@ -1387,8 +1387,19 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
 {
     carla_debug("CarlaEngine::setOption(%i:%s, %i, \"%s\")", option, EngineOption2Str(option), value, valueStr);
 
-    if (isRunning() && (option == ENGINE_OPTION_PROCESS_MODE || option == ENGINE_OPTION_AUDIO_NUM_PERIODS || option == ENGINE_OPTION_AUDIO_DEVICE))
-        return carla_stderr("CarlaEngine::setOption(%i:%s, %i, \"%s\") - Cannot set this option while engine is running!", option, EngineOption2Str(option), value, valueStr);
+    if (isRunning())
+    {
+        switch (option)
+        {
+        case ENGINE_OPTION_PROCESS_MODE:
+        case ENGINE_OPTION_AUDIO_TRIPLE_BUFFER:
+        case ENGINE_OPTION_AUDIO_DEVICE:
+            return carla_stderr("CarlaEngine::setOption(%i:%s, %i, \"%s\") - Cannot set this option while engine is running!",
+                                option, EngineOption2Str(option), value, valueStr);
+        default:
+            break;
+        }
+    }
 
     // do not un-force stereo for rack mode
     if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && option == ENGINE_OPTION_FORCE_STEREO && value != 0)
@@ -1459,11 +1470,6 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         pData->options.uiBridgesTimeout = static_cast<uint>(value);
         break;
 
-    case ENGINE_OPTION_AUDIO_NUM_PERIODS:
-        CARLA_SAFE_ASSERT_RETURN(value >= 2 && value <= 3,);
-        pData->options.audioNumPeriods = static_cast<uint>(value);
-        break;
-
     case ENGINE_OPTION_AUDIO_BUFFER_SIZE:
         CARLA_SAFE_ASSERT_RETURN(value >= 8,);
         pData->options.audioBufferSize = static_cast<uint>(value);
@@ -1472,6 +1478,11 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
     case ENGINE_OPTION_AUDIO_SAMPLE_RATE:
         CARLA_SAFE_ASSERT_RETURN(value >= 22050,);
         pData->options.audioSampleRate = static_cast<uint>(value);
+        break;
+
+    case ENGINE_OPTION_AUDIO_TRIPLE_BUFFER:
+        CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
+        pData->options.audioTripleBuffer = (value != 0);
         break;
 
     case ENGINE_OPTION_AUDIO_DEVICE:
