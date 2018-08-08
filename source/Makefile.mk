@@ -392,8 +392,8 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Set libs stuff (part 2)
 
-RTAUDIO_FLAGS    = -DHAVE_GETTIMEOFDAY -D__RTAUDIO_DUMMY__
-RTMIDI_FLAGS     = -D__RTMIDI_DUMMY__
+RTAUDIO_FLAGS    = -DHAVE_GETTIMEOFDAY
+RTMIDI_FLAGS     =
 
 ifeq ($(DEBUG),true)
 RTAUDIO_FLAGS   += -D__RTAUDIO_DEBUG__
@@ -420,6 +420,8 @@ JACKBRIDGE_LIBS  = -lpthread
 LILV_LIBS        = -lm
 RTMEMPOOL_LIBS   = -lpthread
 WATER_LIBS       = -lpthread
+RTAUDIO_FLAGS   += -D__RTAUDIO_DUMMY__
+RTMIDI_FLAGS    += -D__RTMIDI_DUMMY__
 endif
 
 ifeq ($(HURD),true)
