@@ -76,6 +76,22 @@ LADISH_APP_NAME   = os.getenv("LADISH_APP_NAME")
 NSM_URL           = os.getenv("NSM_URL")
 
 # ------------------------------------------------------------------------------------------------------------
+# Small print helper
+
+def processMode2Str(processMode):
+    if processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT:
+        return "Single client"
+    if processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
+        return "Multi client"
+    if processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
+        return "Continuous Rack"
+    if processMode == ENGINE_PROCESS_MODE_PATCHBAY:
+        return "Patchbay"
+    if processMode == ENGINE_PROCESS_MODE_BRIDGE:
+        return "Bridge"
+    return "Unknown"
+
+# ------------------------------------------------------------------------------------------------------------
 # Carla Print class
 
 class CarlaPrint:
@@ -753,7 +769,6 @@ class HostWindow(QMainWindow):
         self.ui.text_logs.appendPlainText("======= Starting engine =======")
 
         if self.host.engine_init(audioDriver, self.fClientName):
-            self.ui.text_logs.appendPlainText("======= Engine started ========")
             return
 
         elif firstInit:
@@ -800,9 +815,7 @@ class HostWindow(QMainWindow):
         if self.host.is_engine_running():
             self.host.remove_all_plugins()
 
-            if self.host.engine_close():
-                self.ui.text_logs.appendPlainText("======= Engine stopped ========")
-            else:
+            if not self.host.engine_close():
                 self.ui.text_logs.appendPlainText("Failed to stop engine, error was:")
                 self.ui.text_logs.appendPlainText(self.host.get_last_error())
 
@@ -861,14 +874,16 @@ class HostWindow(QMainWindow):
 
         self.startTimers()
 
-        print("Carla engine started, details:")
-        print("  Driver name:", driverName)
-        print("  Sample rate:", sampleRate)
-        print("  Process mode:", processMode)
-        print("  Transport mode:", transportMode)
+        self.ui.text_logs.appendPlainText("======= Engine started ========")
+        self.ui.text_logs.appendPlainText("Carla engine started, details:")
+        self.ui.text_logs.appendPlainText("  Driver name:  %s" % driverName)
+        self.ui.text_logs.appendPlainText("  Sample rate:  %.1f" % sampleRate)
+        self.ui.text_logs.appendPlainText("  Process mode: %s" % processMode2Str(processMode))
 
     @pyqtSlot()
     def slot_handleEngineStoppedCallback(self):
+        self.ui.text_logs.appendPlainText("======= Engine stopped ========")
+
         patchcanvas.clear()
         self.killTimers()
 
