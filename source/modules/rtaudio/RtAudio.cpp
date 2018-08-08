@@ -2209,10 +2209,7 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
   // Check the jack server sample rate.
   unsigned int jackRate = jackbridge_get_sample_rate( client );
   if ( sampleRate != jackRate ) {
-    jackbridge_client_close( client );
-    errorStream_ << "RtApiJack::probeDeviceOpen: the requested sample rate (" << sampleRate << ") is different than the JACK server rate (" << jackRate << ").";
-    errorText_ = errorStream_.str();
-    return FAILURE;
+    std::cerr << "RtApiJack::probeDeviceOpen: the requested sample rate (" << sampleRate << ") is different than the JACK server rate (" << jackRate << ")." << std::endl;
   }
   stream_.sampleRate = jackRate;
 

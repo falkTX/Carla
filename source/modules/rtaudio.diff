@@ -1,5 +1,5 @@
 diff --git a/RtAudio.cpp b/RtAudio.cpp
-index 2ac2179..18b238d 100644
+index 2ac2179..f846b43 100644
 --- a/RtAudio.cpp
 +++ b/RtAudio.cpp
 @@ -76,7 +76,7 @@ const unsigned int RtApi::SAMPLE_RATES[] = {
@@ -246,7 +246,7 @@ index 2ac2179..18b238d 100644
    }
  
    // Compare the jack ports for specified client to the requested number of channels.
-@@ -2211,9 +2207,9 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
+@@ -2211,29 +2207,26 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
    }
  
    // Check the jack server sample rate.
@@ -254,11 +254,11 @@ index 2ac2179..18b238d 100644
 +  unsigned int jackRate = jackbridge_get_sample_rate( client );
    if ( sampleRate != jackRate ) {
 -    jack_client_close( client );
-+    jackbridge_client_close( client );
-     errorStream_ << "RtApiJack::probeDeviceOpen: the requested sample rate (" << sampleRate << ") is different than the JACK server rate (" << jackRate << ").";
-     errorText_ = errorStream_.str();
-     return FAILURE;
-@@ -2221,19 +2217,19 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
+-    errorStream_ << "RtApiJack::probeDeviceOpen: the requested sample rate (" << sampleRate << ") is different than the JACK server rate (" << jackRate << ").";
+-    errorText_ = errorStream_.str();
+-    return FAILURE;
++    std::cerr << "RtApiJack::probeDeviceOpen: the requested sample rate (" << sampleRate << ") is different than the JACK server rate (" << jackRate << ")." << std::endl;
+   }
    stream_.sampleRate = jackRate;
  
    // Get the latency of the JACK port.
@@ -282,7 +282,7 @@ index 2ac2179..18b238d 100644
  
    // The jack server always uses 32-bit floating-point data.
    stream_.deviceFormat[mode] = RTAUDIO_FLOAT32;
-@@ -2250,7 +2246,7 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
+@@ -2250,7 +2243,7 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
  
    // Get the buffer size.  The buffer size and number of buffers
    // (periods) is set when the jack server is started.
@@ -291,7 +291,7 @@ index 2ac2179..18b238d 100644
    *bufferSize = stream_.bufferSize;
  
    stream_.nDeviceChannels[mode] = channels;
-@@ -2333,24 +2329,24 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
+@@ -2333,24 +2326,24 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
      stream_.mode = DUPLEX;
    else {
      stream_.mode = mode;
@@ -323,7 +323,7 @@ index 2ac2179..18b238d 100644
                                                  JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0 );
      }
    }
-@@ -2367,7 +2363,7 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
+@@ -2367,7 +2360,7 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
   error:
    if ( handle ) {
      pthread_cond_destroy( &handle->condition );
@@ -332,7 +332,7 @@ index 2ac2179..18b238d 100644
  
      if ( handle->ports[0] ) free( handle->ports[0] );
      if ( handle->ports[1] ) free( handle->ports[1] );
-@@ -2403,9 +2399,9 @@ void RtApiJack :: closeStream( void )
+@@ -2403,9 +2396,9 @@ void RtApiJack :: closeStream( void )
    if ( handle ) {
  
      if ( stream_.state == STREAM_RUNNING )
@@ -344,7 +344,7 @@ index 2ac2179..18b238d 100644
    }
  
    if ( handle ) {
-@@ -2442,8 +2438,8 @@ void RtApiJack :: startStream( void )
+@@ -2442,8 +2435,8 @@ void RtApiJack :: startStream( void )
    }
  
    JackHandle *handle = (JackHandle *) stream_.apiHandle;
@@ -355,7 +355,7 @@ index 2ac2179..18b238d 100644
      errorText_ = "RtApiJack::startStream(): unable to activate JACK client!";
      goto unlock;
    }
-@@ -2452,8 +2448,8 @@ void RtApiJack :: startStream( void )
+@@ -2452,8 +2445,8 @@ void RtApiJack :: startStream( void )
  
    // Get the list of available ports.
    if ( shouldAutoconnect_ && (stream_.mode == OUTPUT || stream_.mode == DUPLEX) ) {
@@ -366,7 +366,7 @@ index 2ac2179..18b238d 100644
      if ( ports == NULL) {
        errorText_ = "RtApiJack::startStream(): error determining available JACK input ports!";
        goto unlock;
-@@ -2463,21 +2459,21 @@ void RtApiJack :: startStream( void )
+@@ -2463,21 +2456,21 @@ void RtApiJack :: startStream( void )
      // allow the user to select particular channels of a device, we'll
      // just open the first "nChannels" ports with offset.
      for ( unsigned int i=0; i<stream_.nUserChannels[0]; i++ ) {
@@ -395,7 +395,7 @@ index 2ac2179..18b238d 100644
      if ( ports == NULL) {
        errorText_ = "RtApiJack::startStream(): error determining available JACK output ports!";
        goto unlock;
-@@ -2485,16 +2481,16 @@ void RtApiJack :: startStream( void )
+@@ -2485,16 +2478,16 @@ void RtApiJack :: startStream( void )
  
      // Now make the port connections.  See note above.
      for ( unsigned int i=0; i<stream_.nUserChannels[1]; i++ ) {
@@ -417,7 +417,7 @@ index 2ac2179..18b238d 100644
    }
  
    handle->drainCounter = 0;
-@@ -2502,7 +2498,7 @@ void RtApiJack :: startStream( void )
+@@ -2502,7 +2495,7 @@ void RtApiJack :: startStream( void )
    stream_.state = STREAM_RUNNING;
  
   unlock:
@@ -426,7 +426,7 @@ index 2ac2179..18b238d 100644
    error( RtAudioError::SYSTEM_ERROR );
  }
  
-@@ -2524,7 +2520,7 @@ void RtApiJack :: stopStream( void )
+@@ -2524,7 +2517,7 @@ void RtApiJack :: stopStream( void )
      }
    }
  
@@ -435,7 +435,7 @@ index 2ac2179..18b238d 100644
    stream_.state = STREAM_STOPPED;
  }
  
-@@ -2546,7 +2542,7 @@ void RtApiJack :: abortStream( void )
+@@ -2546,7 +2539,7 @@ void RtApiJack :: abortStream( void )
  // This function will be called by a spawned thread when the user
  // callback function signals that the stream should be stopped or
  // aborted.  It is necessary to handle it this way because the
@@ -444,7 +444,7 @@ index 2ac2179..18b238d 100644
  // function will return.
  static void *jackStopStream( void *ptr )
  {
-@@ -2555,6 +2551,8 @@ static void *jackStopStream( void *ptr )
+@@ -2555,6 +2548,8 @@ static void *jackStopStream( void *ptr )
  
    object->stopStream();
    pthread_exit( NULL );
@@ -453,7 +453,7 @@ index 2ac2179..18b238d 100644
  }
  
  bool RtApiJack :: callbackEvent( unsigned long nframes )
-@@ -2621,7 +2619,7 @@ bool RtApiJack :: callbackEvent( unsigned long nframes )
+@@ -2621,7 +2616,7 @@ bool RtApiJack :: callbackEvent( unsigned long nframes )
      if ( handle->drainCounter > 1 ) { // write zeros to the output stream
  
        for ( unsigned int i=0; i<stream_.nDeviceChannels[0]; i++ ) {
@@ -462,7 +462,7 @@ index 2ac2179..18b238d 100644
          memset( jackbuffer, 0, bufferBytes );
        }
  
-@@ -2631,13 +2629,13 @@ bool RtApiJack :: callbackEvent( unsigned long nframes )
+@@ -2631,13 +2626,13 @@ bool RtApiJack :: callbackEvent( unsigned long nframes )
        convertBuffer( stream_.deviceBuffer, stream_.userBuffer[0], stream_.convertInfo[0] );
  
        for ( unsigned int i=0; i<stream_.nDeviceChannels[0]; i++ ) {
@@ -478,7 +478,7 @@ index 2ac2179..18b238d 100644
          memcpy( jackbuffer, &stream_.userBuffer[0][i*bufferBytes], bufferBytes );
        }
      }
-@@ -2653,14 +2651,14 @@ bool RtApiJack :: callbackEvent( unsigned long nframes )
+@@ -2653,14 +2648,14 @@ bool RtApiJack :: callbackEvent( unsigned long nframes )
  
      if ( stream_.doConvertBuffer[1] ) {
        for ( unsigned int i=0; i<stream_.nDeviceChannels[1]; i++ ) {
@@ -495,7 +495,7 @@ index 2ac2179..18b238d 100644
          memcpy( &stream_.userBuffer[1][i*bufferBytes], jackbuffer, bufferBytes );
        }
      }
-@@ -2691,10 +2689,10 @@ bool RtApiJack :: callbackEvent( unsigned long nframes )
+@@ -2691,10 +2686,10 @@ bool RtApiJack :: callbackEvent( unsigned long nframes )
  // on information found in
  // http://www.cs.wustl.edu/~schmidt/win32-cv-1.html.
  
@@ -510,7 +510,7 @@ index 2ac2179..18b238d 100644
  #include <cmath>
  
  static AsioDrivers drivers;
-@@ -5487,8 +5485,8 @@ bool RtApiDs :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigned
+@@ -5487,8 +5482,8 @@ bool RtApiDs :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigned
    // two.  This is a judgement call and a value of two is probably too
    // low for capture, but it should work for playback.
    int nBuffers = 0;
@@ -520,7 +520,7 @@ index 2ac2179..18b238d 100644
    if ( nBuffers < 2 ) nBuffers = 3;
  
    // Check the lower range of the user-specified buffer size and set
-@@ -8012,12 +8010,14 @@ static void *alsaCallbackHandler( void *ptr )
+@@ -8012,12 +8007,14 @@ static void *alsaCallbackHandler( void *ptr )
    }
  
    pthread_exit( NULL );
@@ -536,7 +536,7 @@ index 2ac2179..18b238d 100644
  
  // Code written by Peter Meerwald, pmeerw@pmeerw.net
  // and Tristan Matthews.
-@@ -8092,6 +8092,8 @@ static void *pulseaudio_callback( void * user )
+@@ -8092,6 +8089,8 @@ static void *pulseaudio_callback( void * user )
    }
  
    pthread_exit( NULL );
@@ -545,7 +545,7 @@ index 2ac2179..18b238d 100644
  }
  
  void RtApiPulse::closeStream( void )
-@@ -8502,7 +8504,7 @@ bool RtApiPulse::probeDeviceOpen( unsigned int device, StreamMode mode,
+@@ -8502,7 +8501,7 @@ bool RtApiPulse::probeDeviceOpen( unsigned int device, StreamMode mode,
    return FAILURE;
  }
  
@@ -554,7 +554,7 @@ index 2ac2179..18b238d 100644
  #endif
  
  #if defined(__LINUX_OSS__)
-@@ -9446,6 +9448,8 @@ static void *ossCallbackHandler( void *ptr )
+@@ -9446,6 +9445,8 @@ static void *ossCallbackHandler( void *ptr )
    }
  
    pthread_exit( NULL );

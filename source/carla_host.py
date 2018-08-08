@@ -861,6 +861,12 @@ class HostWindow(QMainWindow):
 
         self.startTimers()
 
+        print("Carla engine started, details:")
+        print("  Driver name:", driverName)
+        print("  Sample rate:", sampleRate)
+        print("  Process mode:", processMode)
+        print("  Transport mode:", transportMode)
+
     @pyqtSlot()
     def slot_handleEngineStoppedCallback(self):
         patchcanvas.clear()
