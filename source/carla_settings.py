@@ -158,11 +158,9 @@ class DriverSettingsW(QDialog):
             self.fSampleRates = SAMPLE_RATE_LIST
 
         if driverDeviceHints & ENGINE_DRIVER_DEVICE_CAN_TRIPLE_BUFFER:
-            self.ui.cb_triple_buffer.setEnabled(False)
-            self.ui.cb_triple_buffer.setVisible(False)
-        else:
             self.ui.cb_triple_buffer.setEnabled(True)
-            self.ui.cb_triple_buffer.setVisible(True)
+        else:
+            self.ui.cb_triple_buffer.setEnabled(False)
 
         for bsize in self.fBufferSizes:
             sbsize = str(bsize)
