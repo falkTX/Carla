@@ -391,7 +391,6 @@ install_main:
 	install -d $(DESTDIR)$(BINDIR)
 ifeq ($(LINUX),true)
 	install -d $(DESTDIR)$(LIBDIR)/carla/jack
-	install -d $(DESTDIR)$(LIBDIR)/python3/dist-packages
 else
 	install -d $(DESTDIR)$(LIBDIR)/carla
 endif
@@ -457,14 +456,6 @@ endif
 	sed $(SED_ARGS) 's?X-INCLUDEDIR-X?$(INCLUDEDIR)?' \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
-
-ifeq ($(LINUX),true)
-	# Install python code (dist-packages)
-	install -m 644 \
-		source/carla_backend.py \
-		source/carla_utils.py \
-		$(DESTDIR)$(LIBDIR)/python3/dist-packages
-endif
 
 	# Install headers
 	install -m 644 \
