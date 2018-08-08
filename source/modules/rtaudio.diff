@@ -1,7 +1,38 @@
 diff --git a/RtAudio.cpp b/RtAudio.cpp
-index 2ac2179..c658295 100644
+index 2ac2179..2a4c918 100644
 --- a/RtAudio.cpp
 +++ b/RtAudio.cpp
+@@ -76,7 +76,7 @@ const unsigned int RtApi::SAMPLE_RATES[] = {
+     return s;
+   }
+ 
+-#elif defined(__LINUX_ALSA__) || defined(__LINUX_PULSE__) || defined(__UNIX_JACK__) || defined(__LINUX_OSS__) || defined(__MACOSX_CORE__)
++#elif defined(__LINUX_ALSA__) || defined(__UNIX_PULSE__) || defined(__UNIX_JACK__) || defined(__LINUX_OSS__) || defined(__MACOSX_CORE__)
+   // pthread API
+   #define MUTEX_INITIALIZE(A) pthread_mutex_init(A, NULL)
+   #define MUTEX_DESTROY(A)    pthread_mutex_destroy(A)
+@@ -110,8 +110,8 @@ void RtAudio :: getCompiledApi( std::vector<RtAudio::Api> &apis )
+ #if defined(__LINUX_ALSA__)
+   apis.push_back( LINUX_ALSA );
+ #endif
+-#if defined(__LINUX_PULSE__)
+-  apis.push_back( LINUX_PULSE );
++#if defined(__UNIX_PULSE__)
++  apis.push_back( UNIX_PULSE );
+ #endif
+ #if defined(__LINUX_OSS__)
+   apis.push_back( LINUX_OSS );
+@@ -147,8 +147,8 @@ void RtAudio :: openRtApi( RtAudio::Api api )
+   if ( api == LINUX_ALSA )
+     rtapi_ = new RtApiAlsa();
+ #endif
+-#if defined(__LINUX_PULSE__)
+-  if ( api == LINUX_PULSE )
++#if defined(__UNIX_PULSE__)
++  if ( api == UNIX_PULSE )
+     rtapi_ = new RtApiPulse();
+ #endif
+ #if defined(__LINUX_OSS__)
 @@ -282,7 +282,7 @@ void RtApi :: openStream( RtAudio::StreamParameters *oParams,
      return;
    }
@@ -479,7 +510,7 @@ index 2ac2179..c658295 100644
  #include <cmath>
  
  static AsioDrivers drivers;
-@@ -8012,6 +8010,8 @@ static void *alsaCallbackHandler( void *ptr )
+@@ -8012,12 +8010,14 @@ static void *alsaCallbackHandler( void *ptr )
    }
  
    pthread_exit( NULL );
@@ -488,6 +519,13 @@ index 2ac2179..c658295 100644
  }
  
  //******************** End of __LINUX_ALSA__ *********************//
+ #endif
+ 
+-#if defined(__LINUX_PULSE__)
++#if defined(__UNIX_PULSE__)
+ 
+ // Code written by Peter Meerwald, pmeerw@pmeerw.net
+ // and Tristan Matthews.
 @@ -8092,6 +8092,8 @@ static void *pulseaudio_callback( void * user )
    }
  
@@ -497,6 +535,15 @@ index 2ac2179..c658295 100644
  }
  
  void RtApiPulse::closeStream( void )
+@@ -8502,7 +8504,7 @@ bool RtApiPulse::probeDeviceOpen( unsigned int device, StreamMode mode,
+   return FAILURE;
+ }
+ 
+-//******************** End of __LINUX_PULSE__ *********************//
++//******************** End of __UNIX_PULSE__ *********************//
+ #endif
+ 
+ #if defined(__LINUX_OSS__)
 @@ -9446,6 +9448,8 @@ static void *ossCallbackHandler( void *ptr )
    }
  
@@ -507,7 +554,7 @@ index 2ac2179..c658295 100644
  
  //******************** End of __LINUX_OSS__ *********************//
 diff --git a/RtAudio.h b/RtAudio.h
-index 34a2534..4c32cab 100644
+index 34a2534..c28fefc 100644
 --- a/RtAudio.h
 +++ b/RtAudio.h
 @@ -46,16 +46,7 @@
@@ -528,6 +575,16 @@ index 34a2534..4c32cab 100644
  
  #include <string>
  #include <vector>
+@@ -278,8 +269,8 @@ class RTAUDIO_DLL_PUBLIC RtAudio
+   enum Api {
+     UNSPECIFIED,    /*!< Search for a working compiled API. */
+     LINUX_ALSA,     /*!< The Advanced Linux Sound Architecture API. */
+-    LINUX_PULSE,    /*!< The Linux PulseAudio API. */
+     LINUX_OSS,      /*!< The Linux Open Sound System API. */
++    UNIX_PULSE,     /*!< The PulseAudio API. */
+     UNIX_JACK,      /*!< The Jack Low-Latency Audio Server API. */
+     MACOSX_CORE,    /*!< Macintosh OS-X Core Audio API. */
+     WINDOWS_WASAPI, /*!< The Microsoft WASAPI API. */
 @@ -416,7 +407,7 @@ class RTAUDIO_DLL_PUBLIC RtAudio
    ~RtAudio();
  
@@ -537,6 +594,15 @@ index 34a2534..4c32cab 100644
  
    //! A public function that queries for the number of audio devices available.
    /*!
+@@ -597,7 +588,7 @@ class RTAUDIO_DLL_PUBLIC RtAudio
+   typedef uintptr_t ThreadHandle;
+   typedef CRITICAL_SECTION StreamMutex;
+ 
+-#elif defined(__LINUX_ALSA__) || defined(__LINUX_PULSE__) || defined(__UNIX_JACK__) || defined(__LINUX_OSS__) || defined(__MACOSX_CORE__)
++#elif defined(__LINUX_ALSA__) || defined(__UNIX_PULSE__) || defined(__UNIX_JACK__) || defined(__LINUX_OSS__) || defined(__MACOSX_CORE__)
+   // Using pthread library for various flavors of unix.
+   #include <pthread.h>
+ 
 @@ -687,7 +678,7 @@ public:
  
    RtApi();
@@ -609,12 +675,19 @@ index 34a2534..4c32cab 100644
    unsigned int getDeviceCount( void );
    RtAudio::DeviceInfo getDeviceInfo( unsigned int device );
    void closeStream( void );
-@@ -1082,7 +1073,7 @@ class RtApiPulse: public RtApi
+@@ -1076,13 +1067,13 @@ public:
+ 
+ #endif
+ 
+-#if defined(__LINUX_PULSE__)
++#if defined(__UNIX_PULSE__)
+ 
+ class RtApiPulse: public RtApi
  {
  public:
    ~RtApiPulse();
 -  RtAudio::Api getCurrentApi() { return RtAudio::LINUX_PULSE; }
-+  RtAudio::Api getCurrentApi() const { return RtAudio::LINUX_PULSE; }
++  RtAudio::Api getCurrentApi() const { return RtAudio::UNIX_PULSE; }
    unsigned int getDeviceCount( void );
    RtAudio::DeviceInfo getDeviceInfo( unsigned int device );
    void closeStream( void );
