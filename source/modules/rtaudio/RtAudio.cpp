@@ -5485,8 +5485,8 @@ bool RtApiDs :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigned 
   // two.  This is a judgement call and a value of two is probably too
   // low for capture, but it should work for playback.
   int nBuffers = 0;
-  if ( options ) nBuffers = options->numberOfBuffers;
   if ( options && options->flags & RTAUDIO_MINIMIZE_LATENCY ) nBuffers = 2;
+  if ( options && options->numberOfBuffers > 0 ) nBuffers = options->numberOfBuffers;
   if ( nBuffers < 2 ) nBuffers = 3;
 
   // Check the lower range of the user-specified buffer size and set

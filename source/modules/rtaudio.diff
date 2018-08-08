@@ -1,5 +1,5 @@
 diff --git a/RtAudio.cpp b/RtAudio.cpp
-index 2ac2179..2a4c918 100644
+index 2ac2179..18b238d 100644
 --- a/RtAudio.cpp
 +++ b/RtAudio.cpp
 @@ -76,7 +76,7 @@ const unsigned int RtApi::SAMPLE_RATES[] = {
@@ -510,6 +510,16 @@ index 2ac2179..2a4c918 100644
  #include <cmath>
  
  static AsioDrivers drivers;
+@@ -5487,8 +5485,8 @@ bool RtApiDs :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigned
+   // two.  This is a judgement call and a value of two is probably too
+   // low for capture, but it should work for playback.
+   int nBuffers = 0;
+-  if ( options ) nBuffers = options->numberOfBuffers;
+   if ( options && options->flags & RTAUDIO_MINIMIZE_LATENCY ) nBuffers = 2;
++  if ( options && options->numberOfBuffers > 0 ) nBuffers = options->numberOfBuffers;
+   if ( nBuffers < 2 ) nBuffers = 3;
+ 
+   // Check the lower range of the user-specified buffer size and set
 @@ -8012,12 +8010,14 @@ static void *alsaCallbackHandler( void *ptr )
    }
  
