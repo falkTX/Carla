@@ -594,8 +594,6 @@ class CarlaSettingsW(QDialog):
             else:
                 self.host.nextProcessMode = self.ui.cb_engine_process_mode_other.currentIndex() + self.PROCESS_MODE_NON_JACK_PADDING
 
-            self.host.set_engine_option(ENGINE_OPTION_PROCESS_MODE, self.host.nextProcessMode, "")
-
             settings.setValue(CARLA_KEY_ENGINE_PROCESS_MODE, self.host.nextProcessMode)
 
         self.host.exportLV2           = self.ui.ch_exp_export_lv2.isChecked()
@@ -609,15 +607,6 @@ class CarlaSettingsW(QDialog):
         self.host.showWineBridges     = self.ui.ch_exp_wine_bridges.isChecked()
         self.host.uiBridgesTimeout    = self.ui.sb_engine_ui_bridges_timeout.value()
         self.host.uisAlwaysOnTop      = self.ui.ch_engine_uis_always_on_top.isChecked()
-
-        if self.ui.ch_engine_force_stereo.isEnabled():
-            self.host.set_engine_option(ENGINE_OPTION_FORCE_STEREO,      self.host.forceStereo,         "")
-
-        self.host.set_engine_option(ENGINE_OPTION_MAX_PARAMETERS,        self.host.maxParameters,       "")
-        self.host.set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, self.host.preferPluginBridges, "")
-        self.host.set_engine_option(ENGINE_OPTION_PREFER_UI_BRIDGES,     self.host.preferUIBridges,     "")
-        self.host.set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    self.host.uiBridgesTimeout,    "")
-        self.host.set_engine_option(ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     self.host.uisAlwaysOnTop,      "")
 
         if self.ui.ch_engine_force_stereo.isEnabled():
             settings.setValue(CARLA_KEY_ENGINE_FORCE_STEREO,      self.host.forceStereo)

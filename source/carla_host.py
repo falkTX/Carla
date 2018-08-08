@@ -2755,7 +2755,7 @@ def setHostSettings(host):
     host.set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    host.uiBridgesTimeout,    "")
     host.set_engine_option(ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     host.uisAlwaysOnTop,      "")
 
-    if host.isPlugin:
+    if host.isPlugin or host.is_engine_running():
         return
 
     host.set_engine_option(ENGINE_OPTION_PROCESS_MODE,          host.nextProcessMode,     "")
