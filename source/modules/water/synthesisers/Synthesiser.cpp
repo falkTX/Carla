@@ -101,44 +101,37 @@ Synthesiser::~Synthesiser()
 //==============================================================================
 SynthesiserVoice* Synthesiser::getVoice (const int index) const
 {
-    const CarlaMutexLocker sl (lock);
     return voices [index];
 }
 
 void Synthesiser::clearVoices()
 {
-    const CarlaMutexLocker sl (lock);
     voices.clear();
 }
 
 SynthesiserVoice* Synthesiser::addVoice (SynthesiserVoice* const newVoice)
 {
-    const CarlaMutexLocker sl (lock);
     newVoice->setCurrentPlaybackSampleRate (sampleRate);
     return voices.add (newVoice);
 }
 
 void Synthesiser::removeVoice (const int index)
 {
-    const CarlaMutexLocker sl (lock);
     voices.remove (index);
 }
 
 void Synthesiser::clearSounds()
 {
-    const CarlaMutexLocker sl (lock);
     sounds.clear();
 }
 
 SynthesiserSound* Synthesiser::addSound (const SynthesiserSound::Ptr& newSound)
 {
-    const CarlaMutexLocker sl (lock);
     return sounds.add (newSound);
 }
 
 void Synthesiser::removeSound (const int index)
 {
-    const CarlaMutexLocker sl (lock);
     sounds.remove (index);
 }
 
@@ -159,8 +152,6 @@ void Synthesiser::setCurrentPlaybackSampleRate (const double newRate)
 {
     if (sampleRate != newRate)
     {
-        const CarlaMutexLocker sl (lock);
-
         allNotesOff (0, false);
 
         sampleRate = newRate;
@@ -186,7 +177,6 @@ void Synthesiser::processNextBlock (AudioSampleBuffer& outputAudio,
     int midiEventPos;
     MidiMessage m;
 
-    const CarlaMutexLocker sl (lock);
 
     while (numSamples > 0)
     {
@@ -280,7 +270,6 @@ void Synthesiser::noteOn (const int midiChannel,
                           const int midiNoteNumber,
                           const float velocity)
 {
-    const CarlaMutexLocker sl (lock);
 
     for (int i = sounds.size(); --i >= 0;)
     {
@@ -345,7 +334,6 @@ void Synthesiser::noteOff (const int midiChannel,
                            const float velocity,
                            const bool allowTailOff)
 {
-    const CarlaMutexLocker sl (lock);
 
     for (int i = voices.size(); --i >= 0;)
     {
@@ -373,7 +361,6 @@ void Synthesiser::noteOff (const int midiChannel,
 
 void Synthesiser::allNotesOff (const int midiChannel, const bool allowTailOff)
 {
-    const CarlaMutexLocker sl (lock);
 
     for (int i = voices.size(); --i >= 0;)
     {
@@ -388,7 +375,6 @@ void Synthesiser::allNotesOff (const int midiChannel, const bool allowTailOff)
 
 void Synthesiser::handlePitchWheel (const int midiChannel, const int wheelValue)
 {
-    const CarlaMutexLocker sl (lock);
 
     for (int i = voices.size(); --i >= 0;)
     {
@@ -411,7 +397,6 @@ void Synthesiser::handleController (const int midiChannel,
         default:    break;
     }
 
-    const CarlaMutexLocker sl (lock);
 
     for (int i = voices.size(); --i >= 0;)
     {
@@ -424,7 +409,6 @@ void Synthesiser::handleController (const int midiChannel,
 
 void Synthesiser::handleAftertouch (int midiChannel, int midiNoteNumber, int aftertouchValue)
 {
-    const CarlaMutexLocker sl (lock);
 
     for (int i = voices.size(); --i >= 0;)
     {
@@ -438,7 +422,6 @@ void Synthesiser::handleAftertouch (int midiChannel, int midiNoteNumber, int aft
 
 void Synthesiser::handleChannelPressure (int midiChannel, int channelPressureValue)
 {
-    const CarlaMutexLocker sl (lock);
 
     for (int i = voices.size(); --i >= 0;)
     {
@@ -452,7 +435,6 @@ void Synthesiser::handleChannelPressure (int midiChannel, int channelPressureVal
 void Synthesiser::handleSustainPedal (int midiChannel, bool isDown)
 {
     jassert (midiChannel > 0 && midiChannel <= 16);
-    const CarlaMutexLocker sl (lock);
 
     if (isDown)
     {
@@ -488,7 +470,6 @@ void Synthesiser::handleSustainPedal (int midiChannel, bool isDown)
 void Synthesiser::handleSostenutoPedal (int midiChannel, bool isDown)
 {
     jassert (midiChannel > 0 && midiChannel <= 16);
-    const CarlaMutexLocker sl (lock);
 
     for (int i = voices.size(); --i >= 0;)
     {
@@ -521,7 +502,6 @@ SynthesiserVoice* Synthesiser::findFreeVoice (SynthesiserSound* soundToPlay,
                                               int midiChannel, int midiNoteNumber,
                                               const bool stealIfNoneAvailable) const
 {
-    const CarlaMutexLocker sl (lock);
 
     for (int i = 0; i < voices.size(); ++i)
     {

@@ -509,7 +509,7 @@ const char* const* carla_get_supported_file_extensions()
         "sf2",
 #endif
 #ifdef HAVE_LINUXSAMPLER
-        "gig", "sfz",
+        "gig",
 #endif
 #ifdef HAVE_ZYN_DEPS
         "xmz", "xiz",
@@ -531,6 +531,9 @@ const char* const* carla_get_supported_file_extensions()
 
         // MIDI files
         "mid", "midi",
+
+        // SFZ
+        "sfz",
 
         // terminator
         nullptr

@@ -9,7 +9,6 @@
 
 #include "SFZRegion.h"
 
-
 #include "water/containers/HashMap.h"
 #include "water/synthesisers/Synthesiser.h"
 #include "water/text/StringArray.h"
@@ -47,11 +46,6 @@ public:
 
   const water::StringArray &getErrors() { return errors_; }
   const water::StringArray &getWarnings() { return warnings_; }
-
-  virtual int numSubsounds();
-  virtual water::String subsoundName(int whichSubsound);
-  virtual void useSubsound(int whichSubsound);
-  virtual int selectedSubsound();
 
   water::String dump();
   water::Array<Region *> &getRegions() { return regions_; }

@@ -544,23 +544,23 @@ public:
     */
     void setMinimumRenderingSubdivisionSize (int numSamples, bool shouldBeStrict = false) noexcept;
 
-protected:
-    //==============================================================================
-    /** This is used to control access to the rendering callback and the note trigger methods. */
-    CarlaMutex lock;
-
-    OwnedArray<SynthesiserVoice> voices;
-    ReferenceCountedArray<SynthesiserSound> sounds;
-
-    /** The last pitch-wheel values for each midi channel. */
-    int lastPitchWheelValues [16];
-
     /** Renders the voices for the given range.
         By default this just calls renderNextBlock() on each voice, but you may need
         to override it to handle custom cases.
     */
     virtual void renderVoices (AudioSampleBuffer& outputAudio,
                                int startSample, int numSamples);
+
+    /** Can be overridden to do custom handling of incoming midi events. */
+    virtual void handleMidiEvent (const MidiMessage&);
+
+protected:
+    //==============================================================================
+    OwnedArray<SynthesiserVoice> voices;
+    ReferenceCountedArray<SynthesiserSound> sounds;
+
+    /** The last pitch-wheel values for each midi channel. */
+    int lastPitchWheelValues [16];
 
     /** Searches through the voices to find one that's not currently playing, and
         which can play the given sound.
@@ -600,9 +600,6 @@ protected:
         SynthesiserVoice::stopNote(), and has some assertions to sanity-check a few things.
     */
     void stopVoice (SynthesiserVoice*, float velocity, bool allowTailOff);
-
-    /** Can be overridden to do custom handling of incoming midi events. */
-    virtual void handleMidiEvent (const MidiMessage&);
 
 private:
     //==============================================================================

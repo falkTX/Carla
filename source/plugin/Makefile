@@ -57,6 +57,7 @@ LIBS += $(MODULEDIR)/water.a
 
 LIBS += $(MODULEDIR)/audio_decoder.a
 LIBS += $(MODULEDIR)/native-plugins.all.a
+LIBS += $(MODULEDIR)/sfzero.a
 
 ifeq ($(HAVE_DGL),true)
 LIBS += $(MODULEDIR)/dgl.a

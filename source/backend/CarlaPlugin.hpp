@@ -924,6 +924,7 @@ public:
 
     static CarlaPlugin* newFluidSynth(const Initializer& init, const bool use16Outs);
     static CarlaPlugin* newLinuxSampler(const Initializer& init, const char* const format, const bool use16Outs);
+    static CarlaPlugin* newSFZero(const Initializer& init);
 
     static CarlaPlugin* newFileGIG(const Initializer& init, const bool use16Outs);
     static CarlaPlugin* newFileSF2(const Initializer& init, const bool use16Outs);

@@ -36,6 +36,14 @@ HINSTANCE water_getCurrentModuleInstanceHandle() noexcept
 
 }
 
+#include "audiocodecs/WavAudioFormat.cpp"
+
+#include "audioformat/AudioFormat.cpp"
+#include "audioformat/AudioFormatManager.cpp"
+#include "audioformat/AudioFormatReader.cpp"
+
+#include "buffers/AudioDataConverters.cpp"
+
 #include "containers/NamedValueSet.cpp"
 #include "containers/Variant.cpp"
 
@@ -72,6 +80,7 @@ HINSTANCE water_getCurrentModuleInstanceHandle() noexcept
 #include "text/CharacterFunctions.cpp"
 #include "text/Identifier.cpp"
 #include "text/StringArray.cpp"
+#include "text/StringPairArray.cpp"
 #include "text/StringPool.cpp"
 #include "text/String.cpp"
 

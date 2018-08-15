@@ -59,6 +59,7 @@ ALL_LIBS += $(MODULEDIR)/native-plugins.a
 ALL_LIBS += $(MODULEDIR)/audio_decoder.a
 ALL_LIBS += $(MODULEDIR)/lilv.a
 ALL_LIBS += $(MODULEDIR)/rtmempool.a
+ALL_LIBS += $(MODULEDIR)/sfzero.a
 ALL_LIBS += $(MODULEDIR)/water.a
 
 ifeq ($(HAVE_HYLIA),true)

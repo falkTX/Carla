@@ -8,11 +8,14 @@
 #include "SFZSample.h"
 #include "SFZDebug.h"
 
+#include "water/audioformat/AudioFormatManager.h"
+#include "water/audioformat/AudioFormatReader.h"
+#include "water/text/StringPairArray.h"
+
 namespace sfzero
 {
 
-#if 0
-bool Sample::load(water::AudioFormatManager *formatManager)
+bool Sample::load(water::AudioFormatManager* formatManager)
 {
   water::AudioFormatReader *reader = formatManager->createReaderFor(file_);
 
@@ -36,10 +39,10 @@ bool Sample::load(water::AudioFormatManager *formatManager)
     loopStart_ = metadata->getValue("Loop0Start", "0").getLargeIntValue();
     loopEnd_ = metadata->getValue("Loop0End", "0").getLargeIntValue();
   }
+
   delete reader;
   return true;
 }
-#endif
 
 Sample::~Sample() { delete buffer_; }
 

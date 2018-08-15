@@ -18,8 +18,6 @@ void Synth::noteOn(int midiChannel, int midiNoteNumber, float velocity)
 {
   int i;
 
-  const CarlaMutexLocker locker(lock);
-
   int midiVelocity = static_cast<int>(velocity * 127);
 
   // First, stop any currently-playing sounds in the group.
@@ -106,8 +104,6 @@ void Synth::noteOn(int midiChannel, int midiNoteNumber, float velocity)
 
 void Synth::noteOff(int midiChannel, int midiNoteNumber, float velocity, bool allowTailOff)
 {
-  const CarlaMutexLocker locker(lock);
-
   Synthesiser::noteOff(midiChannel, midiNoteNumber, velocity, allowTailOff);
 
   // Start release region.

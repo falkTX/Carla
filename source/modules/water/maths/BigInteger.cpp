@@ -160,7 +160,8 @@ uint32* BigInteger::ensureSize (const size_t numVals) noexcept
 //==============================================================================
 bool BigInteger::operator[] (const int bit) const noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(bit <= highestBit && bit >= 0, false);
+    if (bit > highestBit || bit < 0)
+        return false;
 
     if (const uint32* const values = getValues())
         return (values [bitToIndex (bit)] & bitToMask (bit)) != 0;

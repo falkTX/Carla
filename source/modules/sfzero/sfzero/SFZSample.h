@@ -24,9 +24,7 @@ public:
   explicit Sample(double sampleRateIn) : buffer_(nullptr), sampleRate_(sampleRateIn), sampleLength_(0), loopStart_(0), loopEnd_(0) {}
   virtual ~Sample();
 
-#if 0
-  bool load(water::AudioFormatManager *formatManager);
-#endif
+  bool load(water::AudioFormatManager* formatManager);
 
   water::File getFile() { return (file_); }
   water::AudioSampleBuffer *getBuffer() { return (buffer_); }

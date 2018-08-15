@@ -31,7 +31,6 @@
 #include "../text/String.h"
 
 #include "CarlaJuceUtils.hpp"
-#include "CarlaMutex.hpp"
 
 namespace water {
 
@@ -139,8 +138,6 @@ public:
     */
     void clear()
     {
-        const CarlaMutexLocker sl (getLock());
-
         for (int i = hashSlots.size(); --i >= 0;)
         {
             HashEntry* h = hashSlots.getUnchecked(i);
@@ -170,8 +167,6 @@ public:
     */
     inline ValueType operator[] (KeyTypeParameter keyToLookFor) const
     {
-        const CarlaMutexLocker sl (getLock());
-
         for (const HashEntry* entry = hashSlots.getUnchecked (generateHashFor (keyToLookFor)); entry != nullptr; entry = entry->nextEntry)
             if (entry->key == keyToLookFor)
                 return entry->value;
@@ -183,8 +178,6 @@ public:
     /** Returns true if the map contains an item with the specied key. */
     bool contains (KeyTypeParameter keyToLookFor) const
     {
-        const CarlaMutexLocker sl (getLock());
-
         for (const HashEntry* entry = hashSlots.getUnchecked (generateHashFor (keyToLookFor)); entry != nullptr; entry = entry->nextEntry)
             if (entry->key == keyToLookFor)
                 return true;
@@ -195,8 +188,6 @@ public:
     /** Returns true if the hash contains at least one occurrence of a given value. */
     bool containsValue (ValueTypeParameter valueToLookFor) const
     {
-        const CarlaMutexLocker sl (getLock());
-
         for (int i = getNumSlots(); --i >= 0;)
             for (const HashEntry* entry = hashSlots.getUnchecked(i); entry != nullptr; entry = entry->nextEntry)
                 if (entry->value == valueToLookFor)
@@ -212,7 +203,6 @@ public:
     */
     void set (KeyTypeParameter newKey, ValueTypeParameter newValue)
     {
-        const CarlaMutexLocker sl (getLock());
         const int hashIndex = generateHashFor (newKey);
 
         HashEntry* const firstEntry = hashSlots.getUnchecked (hashIndex);
@@ -236,7 +226,6 @@ public:
     /** Removes an item with the given key. */
     void remove (KeyTypeParameter keyToRemove)
     {
-        const CarlaMutexLocker sl (getLock());
         const int hashIndex = generateHashFor (keyToRemove);
         HashEntry* entry = hashSlots.getUnchecked (hashIndex);
         HashEntry* previous = nullptr;
@@ -267,8 +256,6 @@ public:
     /** Removes all items with the given value. */
     void removeValue (ValueTypeParameter valueToRemove)
     {
-        const CarlaMutexLocker sl (getLock());
-
         for (int i = getNumSlots(); --i >= 0;)
         {
             HashEntry* entry = hashSlots.getUnchecked(i);
@@ -327,19 +314,9 @@ public:
     template <class OtherHashMapType>
     void swapWith (OtherHashMapType& otherHashMap) noexcept
     {
-        const CarlaMutexLocker lock1 (getLock());
-        const CarlaMutexLocker lock2 (otherHashMap.getLock());
-
         hashSlots.swapWith (otherHashMap.hashSlots);
         std::swap (totalNumItems, otherHashMap.totalNumItems);
     }
-
-    //==============================================================================
-    /** Returns the CriticalSection that locks this structure.
-        To lock, you can call getLock().enter() and getLock().exit(), or preferably use
-        an object of ScopedLockType as an RAII lock for it.
-    */
-    inline const CarlaMutex& getLock() const noexcept      { return lock; }
 
 private:
     //==============================================================================
@@ -462,7 +439,6 @@ private:
     HashFunctionType hashFunctionToUse;
     Array<HashEntry*> hashSlots;
     int totalNumItems;
-    CarlaMutex lock;
 
     int generateHashFor (KeyTypeParameter key) const
     {

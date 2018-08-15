@@ -84,38 +84,30 @@ void Sound::loadRegions()
 
 void Sound::loadSamples(water::AudioFormatManager* formatManager, double* progressVar, CarlaThread* thread)
 {
-  if (progressVar)
-  {
-    *progressVar = 0.0;
-  }
+    if (progressVar)
+        *progressVar = 0.0;
 
-  double numSamplesLoaded = 1.0, numSamples = samples_.size();
-  for (water::HashMap<water::String, Sample *>::Iterator i(samples_); i.next();)
-  {
-    Sample *sample = i.getValue();
-#if 0
-    bool ok = sample->load(formatManager);
-    if (!ok)
-    {
-      addError("Couldn't load sample \"" + sample->getShortName() + "\"");
-    }
-#endif
+    double numSamplesLoaded = 1.0, numSamples = samples_.size();
 
-    numSamplesLoaded += 1.0;
-    if (progressVar != nullptr)
+    for (water::HashMap<water::String, Sample *>::Iterator i(samples_); i.next();)
     {
-      *progressVar = numSamplesLoaded / numSamples;
-    }
-    if (thread != nullptr && thread->shouldThreadExit())
-    {
-      return;
-    }
-  }
+        Sample* const sample = i.getValue();
+        bool ok = sample->load(formatManager);
+        if (!ok)
+            addError("Couldn't load sample \"" + sample->getShortName() + "\"");
+        else
+            carla_stdout("Loaded sample '%s'", sample->getShortName().toRawUTF8());
 
-  if (progressVar)
-  {
-    *progressVar = 1.0;
-  }
+        numSamplesLoaded += 1.0;
+        if (progressVar != nullptr)
+            *progressVar = numSamplesLoaded / numSamples;
+
+        if (thread != nullptr && thread->shouldThreadExit())
+            return;
+    }
+
+    if (progressVar)
+        *progressVar = 1.0;
 }
 
 Region *Sound::getRegionFor(int note, int velocity, Region::Trigger trigger)
@@ -137,14 +129,6 @@ Region *Sound::getRegionFor(int note, int velocity, Region::Trigger trigger)
 int Sound::getNumRegions() { return regions_.size(); }
 
 Region *Sound::regionAt(int index) { return regions_[index]; }
-
-int Sound::numSubsounds() { return 1; }
-
-water::String Sound::subsoundName(int /*whichSubsound*/) { return water::String(); }
-
-void Sound::useSubsound(int /*whichSubsound*/) {}
-
-int Sound::selectedSubsound() { return 0; }
 
 water::String Sound::dump()
 {

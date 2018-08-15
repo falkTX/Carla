@@ -473,23 +473,6 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
                 preferBridges = true;
         }
 # endif
-        // FIXME: linuxsampler inside carla-rack/patchbay plugin has some issues (only last kit makes noise)
-        else if (getType() == kEngineTypePlugin && (ptype == PLUGIN_GIG || ptype == PLUGIN_SFZ))
-        {
-            static bool firstLinuxSamplerInstance = true;
-
-            // if we're not loading a project consider all is ok
-            if (! pData->loadingProject)
-                firstLinuxSamplerInstance = true;
-
-            // loading a project, revert first status if set
-            else if (firstLinuxSamplerInstance)
-                firstLinuxSamplerInstance = false;
-
-            // now check if bridge is needed
-            if (! firstLinuxSamplerInstance)
-                preferBridges = true;
-        }
     }
 #endif // ! BUILD_BRIDGE
 

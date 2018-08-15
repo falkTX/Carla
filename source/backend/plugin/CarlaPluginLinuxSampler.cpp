@@ -1531,17 +1531,6 @@ CarlaPlugin* CarlaPlugin::newFileGIG(const Initializer& init, const bool use16Ou
 #endif
 }
 
-CarlaPlugin* CarlaPlugin::newFileSFZ(const Initializer& init)
-{
-    carla_debug("CarlaPlugin::newFileSFZ({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
-#ifdef HAVE_LINUXSAMPLER
-    return newLinuxSampler(init, "SFZ", false);
-#else
-    init.engine->setLastError("SFZ support not available");
-    return nullptr;
-#endif
-}
-
 // -------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
