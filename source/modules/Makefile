@@ -15,6 +15,7 @@ clean:
 	$(MAKE) clean -C rtaudio
 	$(MAKE) clean -C rtmempool
 	$(MAKE) clean -C rtmidi
+	$(MAKE) clean -C sfzero
 	$(MAKE) clean -C water
 
 # ----------------------------------------------------------------------------------------------------------------------------

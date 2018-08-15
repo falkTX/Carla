@@ -524,6 +524,7 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifneq (,$(wildcard $(CWD)/native-plugins/external/Makefile.mk))
+EXTERNAL_PLUGINS = true
 BASE_FLAGS += -DHAVE_EXTERNAL_PLUGINS
 include $(CWD)/native-plugins/external/Makefile.mk
 endif
