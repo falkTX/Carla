@@ -20,12 +20,10 @@ sfzero::Sound::~Sound()
     regions_.set(i, nullptr);
   }
 
-#if 0
   for (water::HashMap<water::String, sfzero::Sample *>::Iterator i(samples_); i.next();)
   {
     delete i.getValue();
   }
-#endif
 }
 
 bool sfzero::Sound::appliesToNote(int /*midiNoteNumber*/)
@@ -36,7 +34,6 @@ bool sfzero::Sound::appliesToNote(int /*midiNoteNumber*/)
 
 bool sfzero::Sound::appliesToChannel(int /*midiChannel*/) { return true; }
 void sfzero::Sound::addRegion(sfzero::Region *region) { regions_.add(region); }
-#if 0
 sfzero::Sample *sfzero::Sound::addSample(water::String path, water::String defaultPath)
 {
   path = path.replaceCharacter('\\', '/');
@@ -60,11 +57,9 @@ sfzero::Sample *sfzero::Sound::addSample(water::String path, water::String defau
   }
   return sample;
 }
-#endif
 
 void sfzero::Sound::addError(const water::String &message) { errors_.add(message); }
 
-#if 0
 void sfzero::Sound::addUnsupportedOpcode(const water::String &opcode)
 {
   if (!unsupportedOpcodes_.contains(opcode))
@@ -75,7 +70,6 @@ void sfzero::Sound::addUnsupportedOpcode(const water::String &opcode)
     warnings_.add(warning);
   }
 }
-#endif
 
 void sfzero::Sound::loadRegions()
 {
@@ -84,8 +78,7 @@ void sfzero::Sound::loadRegions()
   reader.read(file_);
 }
 
-#if 0
-void sfzero::Sound::loadSamples(water::AudioFormatManager *formatManager, double *progressVar, water::Thread *thread)
+void sfzero::Sound::loadSamples(water::AudioFormatManager* formatManager, double* progressVar, CarlaThread* thread)
 {
   if (progressVar)
   {
@@ -96,18 +89,20 @@ void sfzero::Sound::loadSamples(water::AudioFormatManager *formatManager, double
   for (water::HashMap<water::String, sfzero::Sample *>::Iterator i(samples_); i.next();)
   {
     sfzero::Sample *sample = i.getValue();
+#if 0
     bool ok = sample->load(formatManager);
     if (!ok)
     {
       addError("Couldn't load sample \"" + sample->getShortName() + "\"");
     }
+#endif
 
     numSamplesLoaded += 1.0;
-    if (progressVar)
+    if (progressVar != nullptr)
     {
       *progressVar = numSamplesLoaded / numSamples;
     }
-    if (thread && thread->threadShouldExit())
+    if (thread != nullptr && thread->shouldThreadExit())
     {
       return;
     }
@@ -118,7 +113,6 @@ void sfzero::Sound::loadSamples(water::AudioFormatManager *formatManager, double
     *progressVar = 1.0;
   }
 }
-#endif
 
 sfzero::Region *sfzero::Sound::getRegionFor(int note, int velocity, sfzero::Region::Trigger trigger)
 {
@@ -187,7 +181,6 @@ water::String sfzero::Sound::dump()
     info << "no regions.\n";
   }
 
-#if 0
   if (samples_.size() > 0)
   {
     info << samples_.size() << " samples: \n";
@@ -197,7 +190,6 @@ water::String sfzero::Sound::dump()
     }
   }
   else
-#endif
   {
     info << "no samples.\n";
   }

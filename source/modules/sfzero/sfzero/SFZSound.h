@@ -9,10 +9,12 @@
 
 #include "SFZRegion.h"
 
+#include "water/containers/HashMap.h"
 #include "water/memory/ReferenceCountedObject.h"
 #include "water/text/StringArray.h"
 
 #include "CarlaJuceUtils.hpp"
+#include "CarlaThread.hpp"
 
 #if 1
 namespace water {
@@ -46,10 +48,8 @@ public:
   void addUnsupportedOpcode(const water::String &opcode);
 
   virtual void loadRegions();
-#if 0
-  virtual void loadSamples(water::AudioFormatManager *formatManager, double *progressVar = nullptr,
-                           water::Thread *thread = nullptr);
-#endif
+  virtual void loadSamples(water::AudioFormatManager* formatManager, double* progressVar = nullptr,
+                           CarlaThread* thread = nullptr);
 
   Region *getRegionFor(int note, int velocity, Region::Trigger trigger = Region::attack);
   int getNumRegions();
@@ -70,14 +70,10 @@ public:
 private:
   water::File file_;
   water::Array<Region *> regions_;
-#if 0
   water::HashMap<water::String, Sample *> samples_;
-#endif
   water::StringArray errors_;
   water::StringArray warnings_;
-#if 0
   water::HashMap<water::String, water::String> unsupportedOpcodes_;
-#endif
 
   CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Sound)
 };
