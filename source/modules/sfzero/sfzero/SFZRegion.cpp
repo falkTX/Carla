@@ -95,9 +95,7 @@ void sfzero::Region::sf2ToSFZ()
   {
     ampeg.sustain = 0.0f;
   }
-#if 0
-  ampeg.sustain = 100.0f * water::Decibels::decibelsToGain(-ampeg.sustain / 10.0f);
-#endif
+  ampeg.sustain = 100.0f * decibelsToGain(-ampeg.sustain / 10.0f);
   ampeg.release = timecents2Secs(static_cast<int>(ampeg.release));
 
   // Pin very short EG segments.  Timecents don't get to zero, and our EG is

@@ -7,6 +7,6 @@
 #include "sfzero/SFZReader.cpp" 
 #include "sfzero/SFZRegion.cpp" 
 #include "sfzero/SFZSample.cpp" 
-// #include "sfzero/SFZSound.cpp" 
+#include "sfzero/SFZSound.cpp"
 // #include "sfzero/SFZSynth.cpp" 
 // #include "sfzero/SFZVoice.cpp" 
