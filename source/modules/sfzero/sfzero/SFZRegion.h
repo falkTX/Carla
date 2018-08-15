@@ -90,6 +90,7 @@ struct Region
 
   static float timecents2Secs(int timecents);
 };
+
 }
 
 #endif // SFZREGION_H_INCLUDED

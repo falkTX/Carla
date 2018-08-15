@@ -10,11 +10,14 @@
 
 #include "water/memory/MemoryBlock.h"
 
-sfzero::Reader::Reader(sfzero::Sound *soundIn) : sound_(soundIn), line_(1) {}
+namespace sfzero
+{
 
-sfzero::Reader::~Reader() {}
+Reader::Reader(Sound *soundIn) : sound_(soundIn), line_(1) {}
 
-void sfzero::Reader::read(const water::File &file)
+Reader::~Reader() {}
+
+void Reader::read(const water::File &file)
 {
   water::MemoryBlock contents;
   bool ok = file.loadFileAsData(contents);
@@ -28,15 +31,15 @@ void sfzero::Reader::read(const water::File &file)
   read(static_cast<const char *>(contents.getData()), static_cast<int>(contents.getSize()));
 }
 
-void sfzero::Reader::read(const char *text, unsigned int length)
+void Reader::read(const char *text, unsigned int length)
 {
   const char *p = text;
   const char *end = text + length;
   char c = 0;
 
-  sfzero::Region curGroup;
-  sfzero::Region curRegion;
-  sfzero::Region *buildingRegion = nullptr;
+  Region curGroup;
+  Region curRegion;
+  Region *buildingRegion = nullptr;
   bool inControl = false;
   water::String defaultPath;
 
@@ -108,7 +111,7 @@ void sfzero::Reader::read(const char *text, unsigned int length)
           error("Unterminated tag");
           goto fatalError;
         }
-        sfzero::StringSlice tag(tagStart, p - 1);
+        StringSlice tag(tagStart, p - 1);
         if (tag == "region")
         {
           if (buildingRegion && (buildingRegion == &curRegion))
@@ -176,7 +179,7 @@ void sfzero::Reader::read(const char *text, unsigned int length)
           error("Malformed parameter");
           goto nextElement;
         }
-        sfzero::StringSlice opcode(parameterStart, p - 1);
+        StringSlice opcode(parameterStart, p - 1);
         if (inControl)
         {
           if (opcode == "default_path")
@@ -259,7 +262,7 @@ void sfzero::Reader::read(const char *text, unsigned int length)
           }
           else if (opcode == "trigger")
           {
-            buildingRegion->trigger = static_cast<sfzero::Region::Trigger>(triggerValue(value));
+            buildingRegion->trigger = static_cast<Region::Trigger>(triggerValue(value));
           }
           else if (opcode == "group")
           {
@@ -290,7 +293,7 @@ void sfzero::Reader::read(const char *text, unsigned int length)
             bool modeIsSupported = value == "no_loop" || value == "one_shot" || value == "loop_continuous";
             if (modeIsSupported)
             {
-              buildingRegion->loop_mode = static_cast<sfzero::Region::LoopMode>(loopModeValue(value));
+              buildingRegion->loop_mode = static_cast<Region::LoopMode>(loopModeValue(value));
             }
             else
             {
@@ -432,7 +435,7 @@ fatalError:
   }
 }
 
-const char *sfzero::Reader::handleLineEnd(const char *p)
+const char *Reader::handleLineEnd(const char *p)
 {
   // Check for DOS-style line ending.
   char lineEndChar = *p++;
@@ -445,7 +448,7 @@ const char *sfzero::Reader::handleLineEnd(const char *p)
   return p;
 }
 
-const char *sfzero::Reader::readPathInto(water::String *pathOut, const char *pIn, const char *endIn)
+const char *Reader::readPathInto(water::String *pathOut, const char *pIn, const char *endIn)
 {
   // Paths are kind of funny to parse because they can contain whitespace.
   const char *p = pIn;
@@ -497,7 +500,7 @@ const char *sfzero::Reader::readPathInto(water::String *pathOut, const char *pIn
   return p;
 }
 
-int sfzero::Reader::keyValue(const water::String &str)
+int Reader::keyValue(const water::String &str)
 {
   auto chars = str.toRawUTF8();
 
@@ -542,56 +545,58 @@ int sfzero::Reader::keyValue(const water::String &str)
   return result;
 }
 
-int sfzero::Reader::triggerValue(const water::String &str)
+int Reader::triggerValue(const water::String &str)
 {
   if (str == "release")
   {
-    return sfzero::Region::release;
+    return Region::release;
   }
   if (str == "first")
   {
-    return sfzero::Region::first;
+    return Region::first;
   }
   if (str == "legato")
   {
-    return sfzero::Region::legato;
+    return Region::legato;
   }
-  return sfzero::Region::attack;
+  return Region::attack;
 }
 
-int sfzero::Reader::loopModeValue(const water::String &str)
+int Reader::loopModeValue(const water::String &str)
 {
   if (str == "no_loop")
   {
-    return sfzero::Region::no_loop;
+    return Region::no_loop;
   }
   if (str == "one_shot")
   {
-    return sfzero::Region::one_shot;
+    return Region::one_shot;
   }
   if (str == "loop_continuous")
   {
-    return sfzero::Region::loop_continuous;
+    return Region::loop_continuous;
   }
   if (str == "loop_sustain")
   {
-    return sfzero::Region::loop_sustain;
+    return Region::loop_sustain;
   }
-  return sfzero::Region::sample_loop;
+  return Region::sample_loop;
 }
 
-void sfzero::Reader::finishRegion(sfzero::Region *region)
+void Reader::finishRegion(Region *region)
 {
-  sfzero::Region *newRegion = new sfzero::Region();
+  Region *newRegion = new Region();
 
   *newRegion = *region;
   sound_->addRegion(newRegion);
 }
 
-void sfzero::Reader::error(const water::String &message)
+void Reader::error(const water::String &message)
 {
   water::String fullMessage = message;
 
   fullMessage += " (line " + water::String(line_) + ").";
   sound_->addError(fullMessage);
+}
+
 }

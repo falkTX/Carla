@@ -9,22 +9,12 @@
 
 #include "SFZRegion.h"
 
+
 #include "water/containers/HashMap.h"
-#include "water/memory/ReferenceCountedObject.h"
+#include "water/synthesisers/Synthesiser.h"
 #include "water/text/StringArray.h"
 
-#include "CarlaJuceUtils.hpp"
 #include "CarlaThread.hpp"
-
-#if 1
-namespace water {
-class SynthesiserSound {
-public:
-  virtual bool appliesToNote(int midiNoteNumber) = 0;
-  virtual bool appliesToChannel(int midiChannel) = 0;
-};
-}
-#endif
 
 namespace sfzero
 {

@@ -4,13 +4,17 @@
  * Forked from https://github.com/stevefolta/SFZero
  * For license info please see the LICENSE file distributed with this source code
  *************************************************************************************/
+
 #include "SFZSound.h"
 #include "SFZReader.h"
 #include "SFZRegion.h"
 #include "SFZSample.h"
 
-sfzero::Sound::Sound(const water::File &fileIn) : file_(fileIn) {}
-sfzero::Sound::~Sound()
+namespace sfzero
+{
+
+Sound::Sound(const water::File &fileIn) : file_(fileIn) {}
+Sound::~Sound()
 {
   int numRegions = regions_.size();
 
@@ -20,21 +24,21 @@ sfzero::Sound::~Sound()
     regions_.set(i, nullptr);
   }
 
-  for (water::HashMap<water::String, sfzero::Sample *>::Iterator i(samples_); i.next();)
+  for (water::HashMap<water::String, Sample *>::Iterator i(samples_); i.next();)
   {
     delete i.getValue();
   }
 }
 
-bool sfzero::Sound::appliesToNote(int /*midiNoteNumber*/)
+bool Sound::appliesToNote(int /*midiNoteNumber*/)
 {
   // Just say yes; we can't truly know unless we're told the velocity as well.
   return true;
 }
 
-bool sfzero::Sound::appliesToChannel(int /*midiChannel*/) { return true; }
-void sfzero::Sound::addRegion(sfzero::Region *region) { regions_.add(region); }
-sfzero::Sample *sfzero::Sound::addSample(water::String path, water::String defaultPath)
+bool Sound::appliesToChannel(int /*midiChannel*/) { return true; }
+void Sound::addRegion(Region *region) { regions_.add(region); }
+Sample *Sound::addSample(water::String path, water::String defaultPath)
 {
   path = path.replaceCharacter('\\', '/');
   defaultPath = defaultPath.replaceCharacter('\\', '/');
@@ -49,18 +53,18 @@ sfzero::Sample *sfzero::Sound::addSample(water::String path, water::String defau
     sampleFile = defaultDir.getChildFile(path);
   }
   water::String samplePath = sampleFile.getFullPathName();
-  sfzero::Sample *sample = samples_[samplePath];
+  Sample *sample = samples_[samplePath];
   if (sample == nullptr)
   {
-    sample = new sfzero::Sample(sampleFile);
+    sample = new Sample(sampleFile);
     samples_.set(samplePath, sample);
   }
   return sample;
 }
 
-void sfzero::Sound::addError(const water::String &message) { errors_.add(message); }
+void Sound::addError(const water::String &message) { errors_.add(message); }
 
-void sfzero::Sound::addUnsupportedOpcode(const water::String &opcode)
+void Sound::addUnsupportedOpcode(const water::String &opcode)
 {
   if (!unsupportedOpcodes_.contains(opcode))
   {
@@ -71,14 +75,14 @@ void sfzero::Sound::addUnsupportedOpcode(const water::String &opcode)
   }
 }
 
-void sfzero::Sound::loadRegions()
+void Sound::loadRegions()
 {
-  sfzero::Reader reader(this);
+  Reader reader(this);
 
   reader.read(file_);
 }
 
-void sfzero::Sound::loadSamples(water::AudioFormatManager* formatManager, double* progressVar, CarlaThread* thread)
+void Sound::loadSamples(water::AudioFormatManager* formatManager, double* progressVar, CarlaThread* thread)
 {
   if (progressVar)
   {
@@ -86,9 +90,9 @@ void sfzero::Sound::loadSamples(water::AudioFormatManager* formatManager, double
   }
 
   double numSamplesLoaded = 1.0, numSamples = samples_.size();
-  for (water::HashMap<water::String, sfzero::Sample *>::Iterator i(samples_); i.next();)
+  for (water::HashMap<water::String, Sample *>::Iterator i(samples_); i.next();)
   {
-    sfzero::Sample *sample = i.getValue();
+    Sample *sample = i.getValue();
 #if 0
     bool ok = sample->load(formatManager);
     if (!ok)
@@ -114,13 +118,13 @@ void sfzero::Sound::loadSamples(water::AudioFormatManager* formatManager, double
   }
 }
 
-sfzero::Region *sfzero::Sound::getRegionFor(int note, int velocity, sfzero::Region::Trigger trigger)
+Region *Sound::getRegionFor(int note, int velocity, Region::Trigger trigger)
 {
   int numRegions = regions_.size();
 
   for (int i = 0; i < numRegions; ++i)
   {
-    sfzero::Region *region = regions_[i];
+    Region *region = regions_[i];
     if (region->matches(note, velocity, trigger))
     {
       return region;
@@ -130,19 +134,19 @@ sfzero::Region *sfzero::Sound::getRegionFor(int note, int velocity, sfzero::Regi
   return nullptr;
 }
 
-int sfzero::Sound::getNumRegions() { return regions_.size(); }
+int Sound::getNumRegions() { return regions_.size(); }
 
-sfzero::Region *sfzero::Sound::regionAt(int index) { return regions_[index]; }
+Region *Sound::regionAt(int index) { return regions_[index]; }
 
-int sfzero::Sound::numSubsounds() { return 1; }
+int Sound::numSubsounds() { return 1; }
 
-water::String sfzero::Sound::subsoundName(int /*whichSubsound*/) { return water::String(); }
+water::String Sound::subsoundName(int /*whichSubsound*/) { return water::String(); }
 
-void sfzero::Sound::useSubsound(int /*whichSubsound*/) {}
+void Sound::useSubsound(int /*whichSubsound*/) {}
 
-int sfzero::Sound::selectedSubsound() { return 0; }
+int Sound::selectedSubsound() { return 0; }
 
-water::String sfzero::Sound::dump()
+water::String Sound::dump()
 {
   water::String info;
   auto &errors = getErrors();
@@ -184,7 +188,7 @@ water::String sfzero::Sound::dump()
   if (samples_.size() > 0)
   {
     info << samples_.size() << " samples: \n";
-    for (water::HashMap<water::String, sfzero::Sample *>::Iterator i(samples_); i.next();)
+    for (water::HashMap<water::String, Sample *>::Iterator i(samples_); i.next();)
     {
       info << i.getValue()->dump();
     }
@@ -194,4 +198,6 @@ water::String sfzero::Sound::dump()
     info << "no samples.\n";
   }
   return info;
+}
+
 }

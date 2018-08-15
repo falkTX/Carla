@@ -4,29 +4,32 @@
  * Forked from https://github.com/stevefolta/SFZero
  * For license info please see the LICENSE file distributed with this source code
  *************************************************************************************/
+
 #include "SFZSynth.h"
 #include "SFZSound.h"
 #include "SFZVoice.h"
 
-sfzero::Synth::Synth() : Synthesiser() {}
+namespace sfzero
+{
 
-#if 0
-void sfzero::Synth::noteOn(int midiChannel, int midiNoteNumber, float velocity)
+Synth::Synth() : Synthesiser() {}
+
+void Synth::noteOn(int midiChannel, int midiNoteNumber, float velocity)
 {
   int i;
 
-  const water::ScopedLock locker(lock);
+  const CarlaMutexLocker locker(lock);
 
   int midiVelocity = static_cast<int>(velocity * 127);
 
   // First, stop any currently-playing sounds in the group.
   //*** Currently, this only pays attention to the first matching region.
   int group = 0;
-  sfzero::Sound *sound = dynamic_cast<sfzero::Sound *>(getSound(0));
+  Sound *sound = dynamic_cast<Sound *>(getSound(0));
 
   if (sound)
   {
-    sfzero::Region *region = sound->getRegionFor(midiNoteNumber, midiVelocity);
+    Region *region = sound->getRegionFor(midiNoteNumber, midiVelocity);
     if (region)
     {
       group = region->group;
@@ -36,7 +39,7 @@ void sfzero::Synth::noteOn(int midiChannel, int midiNoteNumber, float velocity)
   {
     for (i = voices.size(); --i >= 0;)
     {
-      sfzero::Voice *voice = dynamic_cast<sfzero::Voice *>(voices.getUnchecked(i));
+      Voice *voice = dynamic_cast<Voice *>(voices.getUnchecked(i));
       if (voice == nullptr)
       {
         continue;
@@ -53,7 +56,7 @@ void sfzero::Synth::noteOn(int midiChannel, int midiNoteNumber, float velocity)
   bool anyNotesPlaying = false;
   for (i = voices.size(); --i >= 0;)
   {
-    sfzero::Voice *voice = dynamic_cast<sfzero::Voice *>(voices.getUnchecked(i));
+    Voice *voice = dynamic_cast<Voice *>(voices.getUnchecked(i));
     if (voice == nullptr)
     {
       continue;
@@ -78,17 +81,17 @@ void sfzero::Synth::noteOn(int midiChannel, int midiNoteNumber, float velocity)
   }
 
   // Play *all* matching regions.
-  sfzero::Region::Trigger trigger = (anyNotesPlaying ? sfzero::Region::legato : sfzero::Region::first);
+  Region::Trigger trigger = (anyNotesPlaying ? Region::legato : Region::first);
   if (sound)
   {
     int numRegions = sound->getNumRegions();
     for (i = 0; i < numRegions; ++i)
     {
-      sfzero::Region *region = sound->regionAt(i);
+      Region *region = sound->regionAt(i);
       if (region->matches(midiNoteNumber, midiVelocity, trigger))
       {
-        sfzero::Voice *voice =
-            dynamic_cast<sfzero::Voice *>(findFreeVoice(sound, midiNoteNumber, midiChannel, isNoteStealingEnabled()));
+        Voice *voice =
+            dynamic_cast<Voice *>(findFreeVoice(sound, midiNoteNumber, midiChannel, isNoteStealingEnabled()));
         if (voice)
         {
           voice->setRegion(region);
@@ -100,23 +103,21 @@ void sfzero::Synth::noteOn(int midiChannel, int midiNoteNumber, float velocity)
 
   noteVelocities_[midiNoteNumber] = midiVelocity;
 }
-#endif
 
-#if 0
-void sfzero::Synth::noteOff(int midiChannel, int midiNoteNumber, float velocity, bool allowTailOff)
+void Synth::noteOff(int midiChannel, int midiNoteNumber, float velocity, bool allowTailOff)
 {
-  const water::ScopedLock locker(lock);
+  const CarlaMutexLocker locker(lock);
 
   Synthesiser::noteOff(midiChannel, midiNoteNumber, velocity, allowTailOff);
 
   // Start release region.
-  sfzero::Sound *sound = dynamic_cast<sfzero::Sound *>(getSound(0));
+  Sound *sound = dynamic_cast<Sound *>(getSound(0));
   if (sound)
   {
-    sfzero::Region *region = sound->getRegionFor(midiNoteNumber, noteVelocities_[midiNoteNumber], sfzero::Region::release);
+    Region *region = sound->getRegionFor(midiNoteNumber, noteVelocities_[midiNoteNumber], Region::release);
     if (region)
     {
-      sfzero::Voice *voice = dynamic_cast<sfzero::Voice *>(findFreeVoice(sound, midiNoteNumber, midiChannel, false));
+      Voice *voice = dynamic_cast<Voice *>(findFreeVoice(sound, midiNoteNumber, midiChannel, false));
       if (voice)
       {
         // Synthesiser is too locked-down (ivars are private rt protected), so
@@ -127,13 +128,11 @@ void sfzero::Synth::noteOff(int midiChannel, int midiNoteNumber, float velocity,
     }
   }
 }
-#endif
 
-int sfzero::Synth::numVoicesUsed()
+int Synth::numVoicesUsed()
 {
   int numUsed = 0;
 
-#if 0
   for (int i = voices.size(); --i >= 0;)
   {
     if (voices.getUnchecked(i)->getCurrentlyPlayingNote() >= 0)
@@ -141,11 +140,11 @@ int sfzero::Synth::numVoicesUsed()
       numUsed += 1;
     }
   }
-#endif
+
   return numUsed;
 }
 
-water::String sfzero::Synth::voiceInfoString()
+water::String Synth::voiceInfoString()
 {
   enum
   {
@@ -154,10 +153,10 @@ water::String sfzero::Synth::voiceInfoString()
 
   water::StringArray lines;
   int numUsed = 0, numShown = 0;
-#if 0
+
   for (int i = voices.size(); --i >= 0;)
   {
-    sfzero::Voice *voice = dynamic_cast<sfzero::Voice *>(voices.getUnchecked(i));
+    Voice *voice = dynamic_cast<Voice *>(voices.getUnchecked(i));
     if (voice->getCurrentlyPlayingNote() < 0)
     {
       continue;
@@ -169,7 +168,9 @@ water::String sfzero::Synth::voiceInfoString()
     }
     lines.add(voice->infoString());
   }
-#endif
+
   lines.insert(0, "voices used: " + water::String(numUsed));
   return lines.joinIntoString("\n");
+}
+
 }

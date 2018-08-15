@@ -4,29 +4,17 @@
  * Forked from https://github.com/stevefolta/SFZero
  * For license info please see the LICENSE file distributed with this source code
  *************************************************************************************/
+
 #ifndef SFZVOICE_H_INCLUDED
 #define SFZVOICE_H_INCLUDED
 
 #include "SFZEG.h"
 
-#include "CarlaJuceUtils.hpp"
-
-#if 1
-namespace water {
-class SynthesiserVoice {
-public:
-  virtual bool canPlaySound(water::SynthesiserSound *sound) = 0;
-  virtual void startNote(int midiNoteNumber, float velocity, water::SynthesiserSound *sound, int currentPitchWheelPosition) = 0;
-  virtual void stopNote(float velocity, bool allowTailOff) = 0;
-  virtual void pitchWheelMoved(int newValue) = 0;
-  virtual void controllerMoved(int controllerNumber, int newValue) = 0;
-  virtual void renderNextBlock(water::AudioSampleBuffer &outputBuffer, int startSample, int numSamples) = 0;
-};
-}
-#endif
+#include "water/synthesisers/Synthesiser.h"
 
 namespace sfzero
 {
+
 struct Region;
 
 class Voice : public water::SynthesiserVoice
@@ -47,7 +35,7 @@ public:
   bool isPlayingOneShot();
 
   int getGroup();
-  water::uint64 getOffBy();
+  water::int64 getOffBy();
 
   // Set the region to be used by the next startNote().
   void setRegion(Region *nextRegion);

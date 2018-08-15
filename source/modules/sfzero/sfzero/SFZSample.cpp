@@ -4,11 +4,15 @@
  * Forked from https://github.com/stevefolta/SFZero
  * For license info please see the LICENSE file distributed with this source code
  *************************************************************************************/
+
 #include "SFZSample.h"
 #include "SFZDebug.h"
 
+namespace sfzero
+{
+
 #if 0
-bool sfzero::Sample::load(water::AudioFormatManager *formatManager)
+bool Sample::load(water::AudioFormatManager *formatManager)
 {
   water::AudioFormatReader *reader = formatManager->createReaderFor(file_);
 
@@ -37,31 +41,31 @@ bool sfzero::Sample::load(water::AudioFormatManager *formatManager)
 }
 #endif
 
-sfzero::Sample::~Sample() { delete buffer_; }
+Sample::~Sample() { delete buffer_; }
 
-water::String sfzero::Sample::getShortName() { return (file_.getFileName()); }
+water::String Sample::getShortName() { return (file_.getFileName()); }
 
-void sfzero::Sample::setBuffer(water::AudioSampleBuffer *newBuffer)
+void Sample::setBuffer(water::AudioSampleBuffer *newBuffer)
 {
   buffer_ = newBuffer;
   sampleLength_ = buffer_->getNumSamples();
 }
 
-water::AudioSampleBuffer *sfzero::Sample::detachBuffer()
+water::AudioSampleBuffer *Sample::detachBuffer()
 {
   water::AudioSampleBuffer *result = buffer_;
   buffer_ = nullptr;
   return result;
 }
 
-water::String sfzero::Sample::dump() { return file_.getFullPathName() + "\n"; }
+water::String Sample::dump() { return file_.getFullPathName() + "\n"; }
 
 #ifdef DEBUG
-void sfzero::Sample::checkIfZeroed(const char *where)
+void Sample::checkIfZeroed(const char *where)
 {
   if (buffer_ == nullptr)
   {
-    sfzero::dbgprintf("SFZSample::checkIfZeroed(%s): no buffer!", where);
+    dbgprintf("SFZSample::checkIfZeroed(%s): no buffer!", where);
     return;
   }
 
@@ -81,12 +85,13 @@ void sfzero::Sample::checkIfZeroed(const char *where)
   }
   if (nonzero > 0)
   {
-    sfzero::dbgprintf("Buffer not zeroed at %s (%lu vs. %lu).", where, nonzero, zero);
+    dbgprintf("Buffer not zeroed at %s (%lu vs. %lu).", where, nonzero, zero);
   }
   else
   {
-    sfzero::dbgprintf("Buffer zeroed at %s!  (%lu zeros)", where, zero);
+    dbgprintf("Buffer zeroed at %s!  (%lu zeros)", where, zero);
   }
 }
-
 #endif // JUCE_DEBUG
+
+}

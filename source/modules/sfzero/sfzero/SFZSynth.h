@@ -4,22 +4,13 @@
  * Forked from https://github.com/stevefolta/SFZero
  * For license info please see the LICENSE file distributed with this source code
  *************************************************************************************/
+
 #ifndef SFZSYNTH_H_INCLUDED
 #define SFZSYNTH_H_INCLUDED
 
 #include "SFZCommon.h"
 
-#include "CarlaJuceUtils.hpp"
-
-#if 1
-namespace water {
-class Synthesiser {
-public:
-  virtual void noteOn(int midiChannel, int midiNoteNumber, float velocity) = 0;
-  virtual void noteOff(int midiChannel, int midiNoteNumber, float velocity, bool allowTailOff) = 0;
-};
-}
-#endif
+#include "water/synthesisers/Synthesiser.h"
 
 namespace sfzero
 {

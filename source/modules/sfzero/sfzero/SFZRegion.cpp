@@ -4,10 +4,14 @@
  * Forked from https://github.com/stevefolta/SFZero
  * For license info please see the LICENSE file distributed with this source code
  *************************************************************************************/
+
 #include "SFZRegion.h"
 #include "SFZSample.h"
 
-void sfzero::EGParameters::clear()
+namespace sfzero
+{
+
+void EGParameters::clear()
 {
   delay = 0.0;
   start = 0.0;
@@ -18,15 +22,15 @@ void sfzero::EGParameters::clear()
   release = 0.0;
 }
 
-void sfzero::EGParameters::clearMod()
+void EGParameters::clearMod()
 {
   // Clear for velocity or other modification.
   delay = start = attack = hold = decay = sustain = release = 0.0;
 }
 
-sfzero::Region::Region() { clear(); }
+Region::Region() { clear(); }
 
-void sfzero::Region::clear()
+void Region::clear()
 {
   memset(this, 0, sizeof(*this));
   hikey = 127;
@@ -41,7 +45,7 @@ void sfzero::Region::clear()
   ampeg_veltrack.clearMod();
 }
 
-void sfzero::Region::clearForSF2()
+void Region::clearForSF2()
 {
   clear();
   pitch_keycenter = -1;
@@ -56,7 +60,7 @@ void sfzero::Region::clearForSF2()
   ampeg.release = -12000.0;
 }
 
-void sfzero::Region::clearForRelativeSF2()
+void Region::clearForRelativeSF2()
 {
   clear();
   pitch_keytrack = 0;
@@ -64,7 +68,7 @@ void sfzero::Region::clearForRelativeSF2()
   ampeg.sustain = 0.0;
 }
 
-void sfzero::Region::addForSF2(sfzero::Region *other)
+void Region::addForSF2(Region *other)
 {
   offset += other->offset;
   end += other->end;
@@ -84,7 +88,7 @@ void sfzero::Region::addForSF2(sfzero::Region *other)
   ampeg.release += other->ampeg.release;
 }
 
-void sfzero::Region::sf2ToSFZ()
+void Region::sf2ToSFZ()
 {
   // EG times need to be converted from timecents to seconds.
   ampeg.delay = timecents2Secs(static_cast<int>(ampeg.delay));
@@ -132,7 +136,7 @@ void sfzero::Region::sf2ToSFZ()
   }
 }
 
-water::String sfzero::Region::dump()
+water::String Region::dump()
 {
   water::String info = water::String::formatted("%d - %d, vel %d - %d", lokey, hikey, lovel, hivel);
   if (sample)
@@ -143,4 +147,6 @@ water::String sfzero::Region::dump()
   return info;
 }
 
-float sfzero::Region::timecents2Secs(int timecents) { return static_cast<float>(pow(2.0, timecents / 1200.0)); }
+float Region::timecents2Secs(int timecents) { return static_cast<float>(pow(2.0, timecents / 1200.0)); }
+
+}

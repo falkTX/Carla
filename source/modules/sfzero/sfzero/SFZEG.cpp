@@ -6,16 +6,19 @@
  *************************************************************************************/
 #include "SFZEG.h"
 
+namespace sfzero
+{
+
 static const float fastReleaseTime = 0.01f;
 
-sfzero::EG::EG()
+EG::EG()
     : segment_(), sampleRate_(0), exponentialDecay_(false), level_(0), slope_(0), samplesUntilNextSegment_(0), segmentIsExponential_(false)
 {
 }
 
-void sfzero::EG::setExponentialDecay(bool newExponentialDecay) { exponentialDecay_ = newExponentialDecay; }
+void EG::setExponentialDecay(bool newExponentialDecay) { exponentialDecay_ = newExponentialDecay; }
 
-void sfzero::EG::startNote(const EGParameters *newParameters, float floatVelocity, double newSampleRate,
+void EG::startNote(const EGParameters *newParameters, float floatVelocity, double newSampleRate,
                            const EGParameters *velMod)
 {
   parameters_ = *newParameters;
@@ -41,7 +44,7 @@ void sfzero::EG::startNote(const EGParameters *newParameters, float floatVelocit
   startDelay();
 }
 
-void sfzero::EG::nextSegment()
+void EG::nextSegment()
 {
   switch (segment_)
   {
@@ -72,9 +75,9 @@ void sfzero::EG::nextSegment()
   }
 }
 
-void sfzero::EG::noteOff() { startRelease(); }
+void EG::noteOff() { startRelease(); }
 
-void sfzero::EG::fastRelease()
+void EG::fastRelease()
 {
   segment_ = Release;
   samplesUntilNextSegment_ = static_cast<int>(fastReleaseTime * sampleRate_);
@@ -82,7 +85,7 @@ void sfzero::EG::fastRelease()
   segmentIsExponential_ = false;
 }
 
-void sfzero::EG::startDelay()
+void EG::startDelay()
 {
   if (parameters_.delay <= 0)
   {
@@ -98,7 +101,7 @@ void sfzero::EG::startDelay()
   }
 }
 
-void sfzero::EG::startAttack()
+void EG::startAttack()
 {
   if (parameters_.attack <= 0)
   {
@@ -114,7 +117,7 @@ void sfzero::EG::startAttack()
   }
 }
 
-void sfzero::EG::startHold()
+void EG::startHold()
 {
   if (parameters_.hold <= 0)
   {
@@ -131,7 +134,7 @@ void sfzero::EG::startHold()
   }
 }
 
-void sfzero::EG::startDecay()
+void EG::startDecay()
 {
   if (parameters_.decay <= 0)
   {
@@ -170,7 +173,7 @@ void sfzero::EG::startDecay()
   }
 }
 
-void sfzero::EG::startSustain()
+void EG::startSustain()
 {
   if (parameters_.sustain <= 0)
   {
@@ -186,7 +189,7 @@ void sfzero::EG::startSustain()
   }
 }
 
-void sfzero::EG::startRelease()
+void EG::startRelease()
 {
   float release = parameters_.release;
 
@@ -212,4 +215,6 @@ void sfzero::EG::startRelease()
   }
 }
 
-const float sfzero::EG::BottomLevel = 0.001f;
+const float EG::BottomLevel = 0.001f;
+
+}

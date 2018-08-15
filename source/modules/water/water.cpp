@@ -1,7 +1,7 @@
 /*
  * Cross-platform C++ library for Carla, based on Juce v4
- * Copyright (C) 2015 ROLI Ltd.
- * Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2015-2016 ROLI Ltd.
+ * Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -45,6 +45,8 @@ HINSTANCE water_getCurrentModuleInstanceHandle() noexcept
 #include "files/FileOutputStream.cpp"
 #include "files/TemporaryFile.cpp"
 
+#include "maths/BigInteger.cpp"
+
 #include "maths/Random.cpp"
 
 #include "memory/MemoryBlock.cpp"
@@ -64,6 +66,8 @@ HINSTANCE water_getCurrentModuleInstanceHandle() noexcept
 #include "streams/InputStream.cpp"
 #include "streams/MemoryOutputStream.cpp"
 #include "streams/OutputStream.cpp"
+
+#include "synthesisers/Synthesiser.cpp"
 
 #include "text/CharacterFunctions.cpp"
 #include "text/Identifier.cpp"

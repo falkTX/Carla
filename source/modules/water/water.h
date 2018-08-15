@@ -1,6 +1,6 @@
 /*
  * Cross-platform C++ library for Carla, based on Juce v4
- * Copyright (C) 2015 ROLI Ltd.
+ * Copyright (C) 2015-2016 ROLI Ltd.
  * Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or

@@ -4,6 +4,7 @@
  * Forked from https://github.com/stevefolta/SFZero
  * For license info please see the LICENSE file distributed with this source code
  *************************************************************************************/
+
 #include "SFZDebug.h"
 #include "SFZRegion.h"
 #include "SFZSample.h"
@@ -14,23 +15,26 @@
 
 #include <cmath>
 
+namespace sfzero
+{
+
 static const float globalGain = -1.0;
 
-sfzero::Voice::Voice()
+Voice::Voice()
     : region_(nullptr), trigger_(0), curMidiNote_(0), curPitchWheel_(0), pitchRatio_(0), noteGainLeft_(0), noteGainRight_(0),
       sourceSamplePosition_(0), sampleEnd_(0), loopStart_(0), loopEnd_(0), numLoops_(0), curVelocity_(0)
 {
   ampeg_.setExponentialDecay(true);
 }
 
-sfzero::Voice::~Voice() {}
+Voice::~Voice() {}
 
-bool sfzero::Voice::canPlaySound(water::SynthesiserSound *sound) { return dynamic_cast<sfzero::Sound *>(sound) != nullptr; }
+bool Voice::canPlaySound(water::SynthesiserSound *sound) { return dynamic_cast<Sound *>(sound) != nullptr; }
 
-void sfzero::Voice::startNote(int midiNoteNumber, float floatVelocity, water::SynthesiserSound *soundIn,
+void Voice::startNote(int midiNoteNumber, float floatVelocity, water::SynthesiserSound *soundIn,
                               int currentPitchWheelPosition)
 {
-  sfzero::Sound *sound = dynamic_cast<sfzero::Sound *>(soundIn);
+  Sound *sound = dynamic_cast<Sound *>(soundIn);
 
   if (sound == nullptr)
   {
@@ -75,9 +79,7 @@ void sfzero::Voice::startNote(int midiNoteNumber, float floatVelocity, water::Sy
   double adjustedPan = (region_->pan + 100.0) / 200.0;
   noteGainLeft_ *= static_cast<float>(sqrt(1.0 - adjustedPan));
   noteGainRight_ *= static_cast<float>(sqrt(adjustedPan));
-#if 0
   ampeg_.startNote(&region_->ampeg, floatVelocity, getSampleRate(), &region_->ampeg_veltrack);
-#endif
 
   // Offset/end.
   sourceSamplePosition_ = static_cast<double>(region_->offset);
@@ -89,19 +91,19 @@ void sfzero::Voice::startNote(int midiNoteNumber, float floatVelocity, water::Sy
 
   // Loop.
   loopStart_ = loopEnd_ = 0;
-  sfzero::Region::LoopMode loopMode = region_->loop_mode;
-  if (loopMode == sfzero::Region::sample_loop)
+  Region::LoopMode loopMode = region_->loop_mode;
+  if (loopMode == Region::sample_loop)
   {
     if (region_->sample->getLoopStart() < region_->sample->getLoopEnd())
     {
-      loopMode = sfzero::Region::loop_continuous;
+      loopMode = Region::loop_continuous;
     }
     else
     {
-      loopMode = sfzero::Region::no_loop;
+      loopMode = Region::no_loop;
     }
   }
-  if ((loopMode != sfzero::Region::no_loop) && (loopMode != sfzero::Region::one_shot))
+  if ((loopMode != Region::no_loop) && (loopMode != Region::one_shot))
   {
     if (region_->loop_start < region_->loop_end)
     {
@@ -117,7 +119,7 @@ void sfzero::Voice::startNote(int midiNoteNumber, float floatVelocity, water::Sy
   numLoops_ = 0;
 }
 
-void sfzero::Voice::stopNote(float /*velocity*/, bool allowTailOff)
+void Voice::stopNote(float /*velocity*/, bool allowTailOff)
 {
   if (!allowTailOff || (region_ == nullptr))
   {
@@ -125,20 +127,20 @@ void sfzero::Voice::stopNote(float /*velocity*/, bool allowTailOff)
     return;
   }
 
-  if (region_->loop_mode != sfzero::Region::one_shot)
+  if (region_->loop_mode != Region::one_shot)
   {
     ampeg_.noteOff();
   }
-  if (region_->loop_mode == sfzero::Region::loop_sustain)
+  if (region_->loop_mode == Region::loop_sustain)
   {
     // Continue playing, but stop looping.
     loopEnd_ = loopStart_;
   }
 }
 
-void sfzero::Voice::stopNoteForGroup()
+void Voice::stopNoteForGroup()
 {
-  if (region_->off_mode == sfzero::Region::fast)
+  if (region_->off_mode == Region::fast)
   {
     ampeg_.fastRelease();
   }
@@ -148,8 +150,8 @@ void sfzero::Voice::stopNoteForGroup()
   }
 }
 
-void sfzero::Voice::stopNoteQuick() { ampeg_.fastRelease(); }
-void sfzero::Voice::pitchWheelMoved(int newValue)
+void Voice::stopNoteQuick() { ampeg_.fastRelease(); }
+void Voice::pitchWheelMoved(int newValue)
 {
   if (region_ == nullptr)
   {
@@ -160,8 +162,8 @@ void sfzero::Voice::pitchWheelMoved(int newValue)
   calcPitchRatio();
 }
 
-void sfzero::Voice::controllerMoved(int /*controllerNumber*/, int /*newValue*/) { /***/}
-void sfzero::Voice::renderNextBlock(water::AudioSampleBuffer &outputBuffer, int startSample, int numSamples)
+void Voice::controllerMoved(int /*controllerNumber*/, int /*newValue*/) { /***/}
+void Voice::renderNextBlock(water::AudioSampleBuffer &outputBuffer, int startSample, int numSamples)
 {
   if (region_ == nullptr)
   {
@@ -265,17 +267,17 @@ void sfzero::Voice::renderNextBlock(water::AudioSampleBuffer &outputBuffer, int 
   ampeg_.setSamplesUntilNextSegment(samplesUntilNextAmpSegment);
 }
 
-bool sfzero::Voice::isPlayingNoteDown() { return region_ && region_->trigger != sfzero::Region::release; }
+bool Voice::isPlayingNoteDown() { return region_ && region_->trigger != Region::release; }
 
-bool sfzero::Voice::isPlayingOneShot() { return region_ && region_->loop_mode == sfzero::Region::one_shot; }
+bool Voice::isPlayingOneShot() { return region_ && region_->loop_mode == Region::one_shot; }
 
-int sfzero::Voice::getGroup() { return region_ ? region_->group : 0; }
+int Voice::getGroup() { return region_ ? region_->group : 0; }
 
-water::uint64 sfzero::Voice::getOffBy() { return region_ ? region_->off_by : 0; }
+water::int64 Voice::getOffBy() { return region_ ? region_->off_by : 0; }
 
-void sfzero::Voice::setRegion(sfzero::Region *nextRegion) { region_ = nextRegion; }
+void Voice::setRegion(Region *nextRegion) { region_ = nextRegion; }
 
-water::String sfzero::Voice::infoString()
+water::String Voice::infoString()
 {
   const char *egSegmentNames[] = {"delay", "attack", "hold", "decay", "sustain", "release", "done"};
 
@@ -294,7 +296,7 @@ water::String sfzero::Voice::infoString()
   return info;
 }
 
-void sfzero::Voice::calcPitchRatio()
+void Voice::calcPitchRatio()
 {
   double note = curMidiNote_;
 
@@ -316,23 +318,21 @@ void sfzero::Voice::calcPitchRatio()
   }
   double targetFreq = fractionalMidiNoteInHz(adjustedPitch);
   double naturalFreq = water::MidiMessage::getMidiNoteInHertz(region_->pitch_keycenter);
-#if 0
   pitchRatio_ = (targetFreq * region_->sample->getSampleRate()) / (naturalFreq * getSampleRate());
-#endif
 }
 
-void sfzero::Voice::killNote()
+void Voice::killNote()
 {
   region_ = nullptr;
-#if 0
   clearCurrentNote();
-#endif
 }
 
-double sfzero::Voice::fractionalMidiNoteInHz(double note, double freqOfA)
+double Voice::fractionalMidiNoteInHz(double note, double freqOfA)
 {
   // Like MidiMessage::getMidiNoteInHertz(), but with a float note.
   note -= 69;
   // Now 0 = A
   return freqOfA * pow(2.0, note / 12.0);
+}
+
 }

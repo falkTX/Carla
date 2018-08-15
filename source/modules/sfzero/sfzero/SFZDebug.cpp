@@ -7,9 +7,12 @@
 #include "SFZDebug.h"
 #include <stdarg.h>
 
+namespace sfzero
+{
+
 #ifdef DEBUG
 
-void sfzero::dbgprintf(const char *msg, ...)
+void dbgprintf(const char *msg, ...)
 {
   va_list args;
 
@@ -22,3 +25,5 @@ void sfzero::dbgprintf(const char *msg, ...)
 }
 
 #endif // JUCE_DEBUG
+
+}
