@@ -10,6 +10,7 @@
 
 sfzero::Synth::Synth() : Synthesiser() {}
 
+#if 0
 void sfzero::Synth::noteOn(int midiChannel, int midiNoteNumber, float velocity)
 {
   int i;
@@ -99,7 +100,9 @@ void sfzero::Synth::noteOn(int midiChannel, int midiNoteNumber, float velocity)
 
   noteVelocities_[midiNoteNumber] = midiVelocity;
 }
+#endif
 
+#if 0
 void sfzero::Synth::noteOff(int midiChannel, int midiNoteNumber, float velocity, bool allowTailOff)
 {
   const water::ScopedLock locker(lock);
@@ -124,11 +127,13 @@ void sfzero::Synth::noteOff(int midiChannel, int midiNoteNumber, float velocity,
     }
   }
 }
+#endif
 
 int sfzero::Synth::numVoicesUsed()
 {
   int numUsed = 0;
 
+#if 0
   for (int i = voices.size(); --i >= 0;)
   {
     if (voices.getUnchecked(i)->getCurrentlyPlayingNote() >= 0)
@@ -136,6 +141,7 @@ int sfzero::Synth::numVoicesUsed()
       numUsed += 1;
     }
   }
+#endif
   return numUsed;
 }
 
@@ -148,6 +154,7 @@ water::String sfzero::Synth::voiceInfoString()
 
   water::StringArray lines;
   int numUsed = 0, numShown = 0;
+#if 0
   for (int i = voices.size(); --i >= 0;)
   {
     sfzero::Voice *voice = dynamic_cast<sfzero::Voice *>(voices.getUnchecked(i));
@@ -162,6 +169,7 @@ water::String sfzero::Synth::voiceInfoString()
     }
     lines.add(voice->infoString());
   }
+#endif
   lines.insert(0, "voices used: " + water::String(numUsed));
   return lines.joinIntoString("\n");
 }

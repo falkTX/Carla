@@ -9,7 +9,10 @@
 #include "SFZSample.h"
 #include "SFZSound.h"
 #include "SFZVoice.h"
-#include <math.h>
+
+#include "water/midi/MidiMessage.h"
+
+#include <cmath>
 
 static const float globalGain = -1.0;
 
@@ -65,14 +68,16 @@ void sfzero::Voice::startNote(int midiNoteNumber, float floatVelocity, water::Sy
   double velocityGainDB = -20.0 * log10((127.0 * 127.0) / (velocity * velocity));
   velocityGainDB *= region_->amp_veltrack / 100.0;
   noteGainDB += velocityGainDB;
-  noteGainLeft_ = noteGainRight_ = static_cast<float>(water::Decibels::decibelsToGain(noteGainDB));
+  noteGainLeft_ = noteGainRight_ = decibelsToGain(noteGainDB);
   // The SFZ spec is silent about the pan curve, but a 3dB pan law seems
   // common.  This sqrt() curve matches what Dimension LE does; Alchemy Free
   // seems closer to sin(adjustedPan * pi/2).
   double adjustedPan = (region_->pan + 100.0) / 200.0;
   noteGainLeft_ *= static_cast<float>(sqrt(1.0 - adjustedPan));
   noteGainRight_ *= static_cast<float>(sqrt(adjustedPan));
+#if 0
   ampeg_.startNote(&region_->ampeg, floatVelocity, getSampleRate(), &region_->ampeg_veltrack);
+#endif
 
   // Offset/end.
   sourceSamplePosition_ = static_cast<double>(region_->offset);
@@ -311,13 +316,17 @@ void sfzero::Voice::calcPitchRatio()
   }
   double targetFreq = fractionalMidiNoteInHz(adjustedPitch);
   double naturalFreq = water::MidiMessage::getMidiNoteInHertz(region_->pitch_keycenter);
+#if 0
   pitchRatio_ = (targetFreq * region_->sample->getSampleRate()) / (naturalFreq * getSampleRate());
+#endif
 }
 
 void sfzero::Voice::killNote()
 {
   region_ = nullptr;
+#if 0
   clearCurrentNote();
+#endif
 }
 
 double sfzero::Voice::fractionalMidiNoteInHz(double note, double freqOfA)

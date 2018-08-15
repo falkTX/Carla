@@ -73,7 +73,8 @@
     A gain of 1.0 = 0 dB, and lower gains map onto negative decibel values. Any
     decibel value lower than minusInfinityDb will return a gain of 0.
 */
-static float decibelsToGain (const float decibels, const float minusInfinityDb = -100.0f)
+static inline
+float decibelsToGain (const float decibels, const float minusInfinityDb = -100.0f)
 {
     return decibels > minusInfinityDb ? std::pow (10.0f, decibels * 0.05f) : 0.0f;
 }
