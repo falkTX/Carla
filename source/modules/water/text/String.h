@@ -120,6 +120,15 @@ public:
     typedef CharPointer_UTF8 CharPointerType;
 
     //==============================================================================
+    /** Generates a probably-unique 32-bit hashcode from this string. */
+    int hashCode() const noexcept;
+
+    /** Generates a probably-unique 64-bit hashcode from this string. */
+    int64 hashCode64() const noexcept;
+
+    /** Generates a probably-unique hashcode from this string. */
+    size_t hash() const noexcept;
+
     /** Returns the number of characters in the string. */
     int length() const noexcept;
 

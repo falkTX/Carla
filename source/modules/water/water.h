@@ -66,6 +66,7 @@
 namespace water
 {
 
+class AudioFormatManager;
 class AudioProcessor;
 class File;
 class FileInputStream;

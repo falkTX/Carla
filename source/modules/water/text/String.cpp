@@ -486,6 +486,27 @@ water_uchar String::operator[] (int index) const noexcept
     return text [index];
 }
 
+template <typename Type>
+struct HashGenerator
+{
+    template <typename CharPointer>
+    static Type calculate (CharPointer t) noexcept
+    {
+        Type result = Type();
+
+        while (! t.isEmpty())
+            result = ((Type) multiplier) * result + (Type) t.getAndAdvance();
+
+        return result;
+    }
+
+    enum { multiplier = sizeof (Type) > 4 ? 101 : 31 };
+};
+
+int String::hashCode() const noexcept       { return HashGenerator<int>    ::calculate (text); }
+int64 String::hashCode64() const noexcept   { return HashGenerator<int64>  ::calculate (text); }
+size_t String::hash() const noexcept        { return HashGenerator<size_t> ::calculate (text); }
+
 //==============================================================================
 bool operator== (const String& s1, const String& s2) noexcept            { return s1.compare (s2) == 0; }
 bool operator!= (const String& s1, const String& s2) noexcept            { return s1.compare (s2) != 0; }
