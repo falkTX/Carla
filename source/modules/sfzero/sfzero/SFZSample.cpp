@@ -8,43 +8,67 @@
 #include "SFZSample.h"
 #include "SFZDebug.h"
 
-#include "water/audioformat/AudioFormatManager.h"
-#include "water/audioformat/AudioFormatReader.h"
-#include "water/text/StringPairArray.h"
+extern "C" {
+#include "audio_decoder/ad.h"
+}
 
 namespace sfzero
 {
 
-bool Sample::load(water::AudioFormatManager* formatManager)
+bool Sample::load()
 {
-  water::AudioFormatReader *reader = formatManager->createReaderFor(file_);
+    const water::String filename(file_.getFullPathName());
 
-  if (reader == nullptr)
-  {
-    return false;
-  }
-  sampleRate_ = reader->sampleRate;
-  sampleLength_ = reader->lengthInSamples;
-  // Read some extra samples, which will be filled with zeros, so interpolation
-  // can be done without having to check for the edge all the time.
-  jassert(sampleLength_ < std::numeric_limits<int>::max());
+    struct adinfo info;
+    carla_zeroStruct(info);
 
-  buffer_ = new water::AudioSampleBuffer(reader->numChannels, static_cast<int>(sampleLength_ + 4));
-  reader->read(buffer_, 0, static_cast<int>(sampleLength_ + 4), 0, true, true);
+    void* const handle = ad_open(filename.toRawUTF8(), &info);
+    CARLA_SAFE_ASSERT_RETURN(handle != nullptr, false);
 
-  water::StringPairArray *metadata = &reader->metadataValues;
-  int numLoops = metadata->getValue("NumSampleLoops", "0").getIntValue();
-  if (numLoops > 0)
-  {
-    loopStart_ = metadata->getValue("Loop0Start", "0").getLargeIntValue();
-    loopEnd_ = metadata->getValue("Loop0End", "0").getLargeIntValue();
-  }
+    if (info.frames >= std::numeric_limits<int>::max())
+    {
+        carla_stderr2("sfzero::Sample::load() - file is too big!");
+        ad_close(handle);
+        return false;
+    }
 
-  delete reader;
-  return true;
+    sampleRate_ = info.sample_rate;
+    sampleLength_ = info.frames/info.channels;
+    // TODO loopStart_, loopEnd_
+
+    // read interleaved buffer
+    float* const rbuffer = (float*)std::calloc(1, sizeof(float)*info.frames);
+
+    if (rbuffer == nullptr)
+    {
+        carla_stderr2("sfzero::Sample::load() - out of memory");
+        ad_close(handle);
+        return false;
+    }
+
+    const ssize_t r = ad_read(handle, rbuffer, info.frames);
+    if (r+1 < info.frames)
+    {
+        carla_stderr2("sfzero::Sample::load() - failed to read complete file: " P_SSIZE " vs " P_INT64, r, info.frames);
+        ad_close(handle);
+        return false;
+    }
+
+    // NOTE: We add some extra samples, which will be filled with zeros,
+    // so interpolation can be done without having to check for the edge all the time.
+
+    buffer_ = new water::AudioSampleBuffer(info.channels, sampleLength_ + 4, true);
+
+    for (int i=info.channels; --i >= 0;)
+        buffer_->copyFromInterleavedSource(i, rbuffer, r);
+
+    std::free(rbuffer);
+    ad_close(handle);
+
+    return true;
 }
 
-Sample::~Sample() { delete buffer_; }
+Sample::~Sample() { }
 
 water::String Sample::getShortName() { return (file_.getFileName()); }
 
@@ -56,9 +80,7 @@ void Sample::setBuffer(water::AudioSampleBuffer *newBuffer)
 
 water::AudioSampleBuffer *Sample::detachBuffer()
 {
-  water::AudioSampleBuffer *result = buffer_;
-  buffer_ = nullptr;
-  return result;
+  return buffer_.release();
 }
 
 water::String Sample::dump() { return file_.getFullPathName() + "\n"; }

@@ -23,6 +23,11 @@ class Sample;
 class Sound : public water::SynthesiserSound
 {
 public:
+  struct LoadingIdleCallback {
+      void (*callback)(void*);
+      void* callbackPtr;
+  };
+
   explicit Sound(const water::File &file);
   virtual ~Sound();
 
@@ -37,8 +42,7 @@ public:
   void addUnsupportedOpcode(const water::String &opcode);
 
   virtual void loadRegions();
-  virtual void loadSamples(water::AudioFormatManager* formatManager, double* progressVar = nullptr,
-                           CarlaThread* thread = nullptr);
+  virtual void loadSamples(const LoadingIdleCallback& cb);
 
   Region *getRegionFor(int note, int velocity, Region::Trigger trigger = Region::attack);
   int getNumRegions();

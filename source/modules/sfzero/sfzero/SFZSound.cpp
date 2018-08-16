@@ -82,32 +82,22 @@ void Sound::loadRegions()
   reader.read(file_);
 }
 
-void Sound::loadSamples(water::AudioFormatManager* formatManager, double* progressVar, CarlaThread* thread)
+void Sound::loadSamples(const LoadingIdleCallback& cb)
 {
-    if (progressVar)
-        *progressVar = 0.0;
-
-    double numSamplesLoaded = 1.0, numSamples = samples_.size();
-
     for (water::HashMap<water::String, Sample *>::Iterator i(samples_); i.next();)
     {
         Sample* const sample = i.getValue();
-        bool ok = sample->load(formatManager);
-        if (!ok)
-            addError("Couldn't load sample \"" + sample->getShortName() + "\"");
+
+        if (sample->load())
+        {
+            carla_debug("Loaded sample '%s'", sample->getShortName().toRawUTF8());
+            cb.callback(cb.callbackPtr);
+        }
         else
-            carla_stdout("Loaded sample '%s'", sample->getShortName().toRawUTF8());
-
-        numSamplesLoaded += 1.0;
-        if (progressVar != nullptr)
-            *progressVar = numSamplesLoaded / numSamples;
-
-        if (thread != nullptr && thread->shouldThreadExit())
-            return;
+        {
+            addError("Couldn't load sample \"" + sample->getShortName() + "\"");
+        }
     }
-
-    if (progressVar)
-        *progressVar = 1.0;
 }
 
 Region *Sound::getRegionFor(int note, int velocity, Region::Trigger trigger)

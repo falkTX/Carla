@@ -21,10 +21,10 @@ class Sample
 {
 public:
   explicit Sample(const water::File &fileIn) : file_(fileIn), buffer_(nullptr), sampleRate_(0), sampleLength_(0), loopStart_(0), loopEnd_(0) {}
-  explicit Sample(double sampleRateIn) : buffer_(nullptr), sampleRate_(sampleRateIn), sampleLength_(0), loopStart_(0), loopEnd_(0) {}
+  //explicit Sample(double sampleRateIn) : buffer_(nullptr), sampleRate_(sampleRateIn), sampleLength_(0), loopStart_(0), loopEnd_(0) {}
   virtual ~Sample();
 
-  bool load(water::AudioFormatManager* formatManager);
+  bool load();
 
   water::File getFile() { return (file_); }
   water::AudioSampleBuffer *getBuffer() { return (buffer_); }
@@ -43,7 +43,7 @@ public:
 
 private:
   water::File file_;
-  water::AudioSampleBuffer *buffer_;
+  ScopedPointer<water::AudioSampleBuffer> buffer_;
   double sampleRate_;
   water::uint64 sampleLength_, loopStart_, loopEnd_;
 

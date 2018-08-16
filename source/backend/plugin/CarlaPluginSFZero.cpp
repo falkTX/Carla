@@ -20,17 +20,13 @@
 
 #include "sfzero/SFZero.h"
 
-#include "water/audioformat/AudioFormatManager.h"
 #include "water/buffers/AudioSampleBuffer.h"
 #include "water/files/File.h"
-#include "water/memory/SharedResourcePointer.h"
 #include "water/midi/MidiMessage.h"
 
-using water::AudioFormatManager;
 using water::AudioSampleBuffer;
 using water::File;
 using water::MidiMessage;
-using water::SharedResourcePointer;
 using water::String;
 
 // -----------------------------------------------------------------------
@@ -42,17 +38,11 @@ CARLA_BACKEND_START_NAMESPACE
 
 static const ExternalMidiNote kExternalMidiNoteFallback = { -1, 0, 0 };
 
-// -------------------------------------------------------------------------------------------------------------------
 
-class AutoAudioFormatManager : public AudioFormatManager
+static void loadingIdleCallbackFunction(void* ptr)
 {
-public:
-    AutoAudioFormatManager()
-        : AudioFormatManager()
-    {
-        registerBasicFormats();
-    }
-};
+    ((CarlaEngine*)ptr)->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+}
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -697,8 +687,13 @@ public:
         File file(filename);
         sfzero::Sound* const sound = new sfzero::Sound(file);
 
+        sfzero::Sound::LoadingIdleCallback cb = {
+            loadingIdleCallbackFunction,
+            pData->engine,
+        };
+
         sound->loadRegions();
-        sound->loadSamples(sAudioFormatManager.getPointer(), nullptr, nullptr);
+        sound->loadSamples(cb);
 
         if (fSynth.addSound(sound) == nullptr)
         {
@@ -758,8 +753,6 @@ private:
 
     const char* fLabel;
     const char* fRealName;
-
-    SharedResourcePointer<AutoAudioFormatManager> sAudioFormatManager;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginSFZero)
 };

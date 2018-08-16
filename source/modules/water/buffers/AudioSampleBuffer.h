@@ -61,14 +61,17 @@ public:
         throw a std::bad_alloc exception.
     */
     AudioSampleBuffer (int numChannelsToAllocate,
-                       int numSamplesToAllocate) noexcept
+                       int numSamplesToAllocate,
+                       bool clearData = false) noexcept
        : numChannels (numChannelsToAllocate),
-         size (numSamplesToAllocate)
+         size (numSamplesToAllocate),
+         allocatedBytes (0),
+         isClear (false)
     {
         CARLA_SAFE_ASSERT_RETURN (size >= 0,);
         CARLA_SAFE_ASSERT_RETURN (numChannels >= 0,);
 
-        allocateData();
+        allocateData (clearData);
     }
 
     /** Creates a buffer using a pre-allocated block of memory.
@@ -91,7 +94,8 @@ public:
                        int numSamples) noexcept
         : numChannels (numChannelsToUse),
           size (numSamples),
-          allocatedBytes (0)
+          allocatedBytes (0),
+          isClear (false)
     {
         CARLA_SAFE_ASSERT_RETURN (dataToReferTo != nullptr,);
         CARLA_SAFE_ASSERT_RETURN (numChannelsToUse >= 0 && numSamples >= 0,);
@@ -656,6 +660,34 @@ public:
         }
     }
 
+    /** Copies samples from an array of floats into one of the channels.
+
+        @param destChannel          the channel within this buffer to copy the samples to
+        @param destStartSample      the start sample within this buffer's channel
+        @param source               the source buffer to read from
+        @param numSamples           the number of samples to process
+
+        @see addFrom
+    */
+    void copyFromInterleavedSource (int destChannel,
+                                    const float* source,
+                                    int totalNumSamples) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(isPositiveAndBelow(destChannel, numChannels),);
+        CARLA_SAFE_ASSERT_RETURN(source != nullptr,);
+
+        if (const int numSamples = totalNumSamples / numChannels)
+        {
+            CARLA_SAFE_ASSERT_RETURN(numSamples <= size,);
+
+            isClear = false;
+            float* d = channels [destChannel];
+
+            for (int i=numSamples; --i >= 0;)
+                d[i] = source[i * numChannels + destChannel];
+        }
+    }
+
 private:
     //==============================================================================
     int numChannels, size;
@@ -665,11 +697,11 @@ private:
     float* preallocatedChannelSpace [32];
     bool isClear;
 
-    bool allocateData()
+    bool allocateData (bool clearData = false)
     {
         const size_t channelListSize = sizeof (float*) * (size_t) (numChannels + 1);
         const size_t nextAllocatedBytes = (size_t) numChannels * (size_t) size * sizeof (float) + channelListSize + 32;
-        CARLA_SAFE_ASSERT_RETURN (allocatedData.malloc (nextAllocatedBytes), false);
+        CARLA_SAFE_ASSERT_RETURN (allocatedData.allocate (nextAllocatedBytes, clearData), false);
 
         allocatedBytes = nextAllocatedBytes;
         channels = reinterpret_cast<float**> (allocatedData.getData());
@@ -682,7 +714,7 @@ private:
         }
 
         channels [numChannels] = nullptr;
-        isClear = false;
+        isClear = clearData;
         return true;
     }
 
