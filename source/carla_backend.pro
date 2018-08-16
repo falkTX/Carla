@@ -53,7 +53,6 @@ SOURCES = \
     backend/plugin/CarlaPluginInternal.cpp \
     backend/plugin/CarlaPluginJuce.cpp \
     backend/plugin/CarlaPluginLADSPA.cpp \
-    backend/plugin/CarlaPluginLinuxSampler.cpp \
     backend/plugin/CarlaPluginLV2.cpp \
     backend/plugin/CarlaPluginNative.cpp \
     backend/plugin/CarlaPluginVST2.cpp

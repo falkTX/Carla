@@ -452,10 +452,7 @@ const char* carla_get_complete_license_text()
 
         // Sample kit libraries
 #ifdef HAVE_FLUIDSYNTH
-        "<li>FluidSynth library for SF2 support</li>"
-#endif
-#ifdef HAVE_LINUXSAMPLER
-        "<li>LinuxSampler library for GIG and SFZ support [1]</li>"
+        "<li>FluidSynth library for SF2/3 support</li>"
 #endif
 
         // misc libs
@@ -481,15 +478,7 @@ const char* carla_get_complete_license_text()
 #endif // HAVE_EXTERNAL_PLUGINS
 
         // end
-        "</ul>"
-
-        "<p>"
-#ifdef HAVE_LINUXSAMPLER
-        // LinuxSampler GPL exception
-        "&nbsp;[1] Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors."
-#endif
-        "</p>"
-        ;
+        "</ul>";
     }
 
     return retText;
@@ -504,12 +493,9 @@ const char* const* carla_get_supported_file_extensions()
         // Base types
         "carxp", "carxs",
 
-        // Compatibility mode with older carla, loads linuxsampler as plugin
-        "gig",
-
         // plugin files and resources
 #ifdef HAVE_FLUIDSYNTH
-        "sf2",
+        "sf2", "sf3",
 #endif
 #ifdef HAVE_ZYN_DEPS
         "xmz", "xiz",
@@ -563,9 +549,6 @@ const char* const* carla_get_supported_features()
 #endif
 #if defined(HAVE_LIBMAGIC) || defined(CARLA_OS_WIN)
         "bridges",
-#endif
-#ifdef HAVE_LINUXSAMPLER
-        "gig", "sfz",
 #endif
 #ifdef HAVE_PYQT
         "gui",

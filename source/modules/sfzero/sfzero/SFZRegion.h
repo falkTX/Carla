@@ -53,10 +53,6 @@ struct Region
 
   Region();
   void clear();
-  void clearForSF2();
-  void clearForRelativeSF2();
-  void addForSF2(Region *other);
-  void sf2ToSFZ();
   water::String dump();
 
   bool matches(int note, int velocity, Trigger trig)

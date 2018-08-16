@@ -1766,20 +1766,6 @@ CarlaPlugin* CarlaPlugin::newFluidSynth(const Initializer& init, const bool use1
 #endif
 }
 
-CarlaPlugin* CarlaPlugin::newFileSF2(const Initializer& init, const bool use16Outs)
-{
-    carla_debug("CarlaPlugin::newFileSF2({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
-#ifdef HAVE_FLUIDSYNTH
-    return newFluidSynth(init, use16Outs);
-#else
-    init.engine->setLastError("SF2 support not available");
-    return nullptr;
-
-    // unused
-    (void)use16Outs;
-#endif
-}
-
 // -------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE

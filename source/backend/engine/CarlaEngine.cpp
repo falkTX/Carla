@@ -520,11 +520,11 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
 
         case PLUGIN_SF2:
             use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
-            plugin = CarlaPlugin::newFileSF2(initializer, use16Outs);
+            plugin = CarlaPlugin::newFluidSynth(initializer, use16Outs);
             break;
 
         case PLUGIN_SFZ:
-            plugin = CarlaPlugin::newFileSFZ(initializer);
+            plugin = CarlaPlugin::newSFZero(initializer);
             break;
 
         case PLUGIN_JACK:
@@ -992,7 +992,7 @@ bool CarlaEngine::loadFile(const char* const filename)
 
     // -------------------------------------------------------------------
 
-    if (extension == "sf2")
+    if (extension == "sf2" || extension == "sf3")
         return addPlugin(PLUGIN_SF2, filename, baseName, baseName, 0, nullptr);
 
     if (extension == "sfz")

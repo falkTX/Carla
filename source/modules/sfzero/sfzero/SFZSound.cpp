@@ -146,6 +146,7 @@ water::String Sound::dump()
     info << "no warnings.\n";
   }
 
+#ifdef DEBUG
   if (regions_.size() > 0)
   {
     info << regions_.size() << " regions: \n";
@@ -171,6 +172,8 @@ water::String Sound::dump()
   {
     info << "no samples.\n";
   }
+#endif
+
   return info;
 }
 

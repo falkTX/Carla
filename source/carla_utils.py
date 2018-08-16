@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla Backend utils
-# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -42,8 +42,6 @@ def getPluginTypeAsString(ptype):
         return "LV2"
     if ptype == PLUGIN_VST2:
         return "VST2"
-    if ptype == PLUGIN_GIG:
-        return "GIG"
     if ptype == PLUGIN_SF2:
         return "SF2"
     if ptype == PLUGIN_SFZ:
@@ -72,8 +70,6 @@ def getPluginTypeFromString(stype):
         return PLUGIN_LV2
     if stype in ("vst2", "vst"):
         return PLUGIN_VST2
-    if stype == "gig":
-        return PLUGIN_GIG
     if stype == "sf2":
         return PLUGIN_SF2
     if stype == "sfz":

@@ -1,6 +1,6 @@
 /*
  * Carla Plugin discovery
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,19 +23,12 @@
 
 #ifdef BUILD_BRIDGE
 # undef HAVE_FLUIDSYNTH
-# undef HAVE_LINUXSAMPLER
 #endif
 
 #include "CarlaLadspaUtils.hpp"
 #include "CarlaDssiUtils.cpp"
 #include "CarlaLv2Utils.hpp"
 #include "CarlaVstUtils.hpp"
-
-#ifndef BUILD_BRIDGE
-// need to include this before linuxsampler
-# define CARLA_UTILS_CACHED_PLUGINS_ONLY
-# include "CarlaUtils.cpp"
-#endif
 
 #ifdef CARLA_OS_MAC
 # import <Foundation/Foundation.h>
@@ -45,14 +38,15 @@
 # include <fluidsynth.h>
 #endif
 
-#ifdef HAVE_LINUXSAMPLER
-# include "linuxsampler/EngineFactory.h"
-#endif
-
 #include <iostream>
 
 #include "water/files/File.h"
 #include "water/text/StringArray.h"
+
+#ifndef BUILD_BRIDGE
+# define CARLA_UTILS_CACHED_PLUGINS_ONLY
+# include "CarlaUtils.cpp"
+#endif
 
 #define DISCOVERY_OUT(x, y) std::cout << "\ncarla-discovery::" << x << "::" << y << std::endl;
 
@@ -272,138 +266,6 @@ static intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t
 
     return ret;
 }
-
-#ifdef HAVE_LINUXSAMPLER
-// --------------------------------------------------------------------------
-// LinuxSampler stuff
-
-class LinuxSamplerScopedEngine
-{
-public:
-    LinuxSamplerScopedEngine(const char* const filename, const char* const stype)
-        : fEngine(nullptr)
-    {
-        using namespace LinuxSampler;
-
-        try {
-            fEngine = EngineFactory::Create(stype);
-        }
-        catch (const Exception& e)
-        {
-            DISCOVERY_OUT("error", e.what());
-            return;
-        }
-
-        if (fEngine == nullptr)
-            return;
-
-        InstrumentManager* const insMan(fEngine->GetInstrumentManager());
-
-        if (insMan == nullptr)
-        {
-            DISCOVERY_OUT("error", "Failed to get LinuxSampler instrument manager");
-            return;
-        }
-
-        std::vector<InstrumentManager::instrument_id_t> ids;
-
-        try {
-            ids = insMan->GetInstrumentFileContent(filename);
-        }
-        catch (const InstrumentManagerException& e)
-        {
-            DISCOVERY_OUT("error", e.what());
-            return;
-        }
-
-        if (ids.size() == 0)
-        {
-            DISCOVERY_OUT("error", "Failed to find any instruments");
-            return;
-        }
-
-        InstrumentManager::instrument_info_t info;
-
-        try {
-            info = insMan->GetInstrumentInfo(ids[0]);
-        }
-        catch (const InstrumentManagerException& e)
-        {
-            DISCOVERY_OUT("error", e.what());
-            return;
-        }
-
-        outputInfo(&info, nullptr, ids.size() > 1);
-    }
-
-    ~LinuxSamplerScopedEngine()
-    {
-        if (fEngine != nullptr)
-        {
-            LinuxSampler::EngineFactory::Destroy(fEngine);
-            fEngine = nullptr;
-        }
-    }
-
-    static void outputInfo(const LinuxSampler::InstrumentManager::instrument_info_t* const info, const char* const basename, const bool has16Outs)
-    {
-        CarlaString name;
-        const char* label;
-
-        if (info != nullptr)
-        {
-            name  = info->InstrumentName.c_str();
-            label = info->Product.c_str();
-        }
-        else
-        {
-            name  = basename;
-            label = basename;
-        }
-
-        // 2 channels
-        DISCOVERY_OUT("init", "-----------");
-        DISCOVERY_OUT("build", BINARY_NATIVE);
-        DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
-
-        DISCOVERY_OUT("name", name.buffer());
-        DISCOVERY_OUT("label", label);
-
-        if (info != nullptr)
-            DISCOVERY_OUT("maker", info->Artists);
-
-        DISCOVERY_OUT("audio.outs", 2);
-        DISCOVERY_OUT("midi.ins", 1);
-        DISCOVERY_OUT("end", "------------");
-
-        // 16 channels
-        if (name.isEmpty() || ! has16Outs)
-            return;
-
-        name += " (16 outputs)";
-
-        DISCOVERY_OUT("init", "-----------");
-        DISCOVERY_OUT("build", BINARY_NATIVE);
-        DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
-
-        DISCOVERY_OUT("name", name.buffer());
-        DISCOVERY_OUT("label", label);
-
-        if (info != nullptr)
-            DISCOVERY_OUT("maker", info->Artists);
-
-        DISCOVERY_OUT("audio.outs", 32);
-        DISCOVERY_OUT("midi.ins", 1);
-        DISCOVERY_OUT("end", "------------");
-    }
-
-private:
-    LinuxSampler::Engine* fEngine;
-
-    CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(LinuxSamplerScopedEngine)
-};
-#endif // HAVE_LINUXSAMPLER
 
 // ------------------------------ Plugin Checks -----------------------------
 
@@ -1619,11 +1481,6 @@ int main(int argc, char* argv[])
         if (filenameCheck.contains("fluidsynth", true))
         {
             DISCOVERY_OUT("info", "skipping fluidsynth based plugin");
-            return 0;
-        }
-        if (filenameCheck.contains("linuxsampler", true) || filenameCheck.endsWith("ls16.so"))
-        {
-            DISCOVERY_OUT("info", "skipping linuxsampler based plugin");
             return 0;
         }
 #ifdef CARLA_OS_MAC

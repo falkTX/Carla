@@ -1848,8 +1848,6 @@ def getSkinStyle(host, pluginId):
         progCount = host.get_midi_program_count(pluginId)
 
     # Samplers
-    if pluginInfo['type'] == PLUGIN_GIG:
-        return "gig"
     if pluginInfo['type'] == PLUGIN_SF2:
         return "sf2"
     if pluginInfo['type'] == PLUGIN_SFZ:

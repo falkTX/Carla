@@ -85,16 +85,9 @@
            </widget>
           </item>
           <item>
-           <widget class="QCheckBox" name="ch_gig">
-            <property name="text">
-             <string>GIG</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QCheckBox" name="ch_sf2">
             <property name="text">
-             <string>SF2</string>
+             <string>SF2/3</string>
             </property>
            </widget>
           </item>

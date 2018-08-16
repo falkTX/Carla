@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>612</width>
-    <height>507</height>
+    <height>520</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -1167,12 +1167,7 @@
              </item>
              <item>
               <property name="text">
-               <string>GIG</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>SF2</string>
+               <string>SF2/3</string>
               </property>
              </item>
              <item>

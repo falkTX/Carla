@@ -268,7 +268,7 @@ void Reader::read(const char *text, unsigned int length)
           {
             buildingRegion->group = static_cast<int>(value.getLargeIntValue());
           }
-          else if (opcode == "off_by")
+          else if (opcode == "off_by" || opcode == "offby")
           {
             buildingRegion->off_by = value.getLargeIntValue();
           }
@@ -288,7 +288,7 @@ void Reader::read(const char *text, unsigned int length)
               buildingRegion->end = end2;
             }
           }
-          else if (opcode == "loop_mode")
+          else if (opcode == "loop_mode" || opcode == "loopmode")
           {
             bool modeIsSupported = value == "no_loop" || value == "one_shot" || value == "loop_continuous";
             if (modeIsSupported)
@@ -301,11 +301,11 @@ void Reader::read(const char *text, unsigned int length)
               sound_->addUnsupportedOpcode(fauxOpcode);
             }
           }
-          else if (opcode == "loop_start")
+          else if (opcode == "loop_start" || opcode == "loopstart")
           {
             buildingRegion->loop_start = value.getLargeIntValue();
           }
-          else if (opcode == "loop_end")
+          else if (opcode == "loop_end" || opcode == "loopend")
           {
             buildingRegion->loop_end = value.getLargeIntValue();
           }
@@ -325,11 +325,11 @@ void Reader::read(const char *text, unsigned int length)
           {
             buildingRegion->pitch_keytrack = value.getIntValue();
           }
-          else if (opcode == "bend_up")
+          else if (opcode == "bend_up" || opcode == "bendup")
           {
             buildingRegion->bend_up = value.getIntValue();
           }
-          else if (opcode == "bend_down")
+          else if (opcode == "bend_down" || opcode == "benddown")
           {
             buildingRegion->bend_down = value.getIntValue();
           }

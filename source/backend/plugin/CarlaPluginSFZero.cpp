@@ -703,6 +703,10 @@ public:
             return false;
         }
 
+        const String dump = sound->dump();
+        carla_stdout("SFZero sound information:");
+        std::puts(dump.toRawUTF8());
+
         // ---------------------------------------------------------------
 
         const String basename(File(filename).getFileNameWithoutExtension());
@@ -763,7 +767,7 @@ private:
 
 CarlaPlugin* CarlaPlugin::newSFZero(const Initializer& init)
 {
-    carla_debug("CarlaPluginSFZero::newLinuxSampler({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "})",
+    carla_debug("CarlaPluginSFZero::newSFZero({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "})",
                 init.engine, init.filename, init.name, init.label, init.uniqueId);
 
     // -------------------------------------------------------------------
@@ -784,11 +788,6 @@ CarlaPlugin* CarlaPlugin::newSFZero(const Initializer& init)
     }
 
     return plugin;
-}
-
-CarlaPlugin* CarlaPlugin::newFileSFZ(const Initializer& init)
-{
-    return newSFZero(init);
 }
 
 // -------------------------------------------------------------------------------------------------------------------

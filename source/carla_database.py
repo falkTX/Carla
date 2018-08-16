@@ -112,10 +112,8 @@ def findMacVSTBundles(bundlePath):
 def findFilenames(filePath, stype):
     filenames = []
 
-    if stype == "gig":
-        extensions = (".gig",)
-    elif stype == "sf2":
-        extensions = (".sf2",)
+    if stype == "sf2":
+        extensions = (".sf2",".sf3",)
     elif stype == "sfz":
         extensions = (".sfz",)
     else:
@@ -345,9 +343,6 @@ def checkPluginLV2(filename, tool, wineSettings=None):
 def checkPluginVST2(filename, tool, wineSettings=None):
     return runCarlaDiscovery(PLUGIN_VST2, "VST2", filename, tool, wineSettings)
 
-def checkFileGIG(filename, tool):
-    return runCarlaDiscovery(PLUGIN_GIG, "GIG", filename, tool)
-
 def checkFileSF2(filename, tool):
     return runCarlaDiscovery(PLUGIN_SF2, "SF2", filename, tool)
 
@@ -376,8 +371,6 @@ class SearchPluginsThread(QThread):
         self.fCheckDSSI   = False
         self.fCheckLV2    = False
         self.fCheckVST2   = False
-        self.fCheckAU     = False
-        self.fCheckGIG    = False
         self.fCheckSF2    = False
         self.fCheckSFZ    = False
 
@@ -425,12 +418,11 @@ class SearchPluginsThread(QThread):
         self.fCheckWin32   = win32
         self.fCheckWin64   = win64
 
-    def setSearchPluginTypes(self, ladspa, dssi, lv2, vst2, gig, sf2, sfz):
+    def setSearchPluginTypes(self, ladspa, dssi, lv2, vst2, sf2, sfz):
         self.fCheckLADSPA = ladspa
         self.fCheckDSSI   = dssi
         self.fCheckLV2    = lv2
         self.fCheckVST2   = vst2
-        self.fCheckGIG    = gig
         self.fCheckSF2    = sf2
         self.fCheckSFZ    = sfz
 
@@ -483,11 +475,9 @@ class SearchPluginsThread(QThread):
 
         # Special case for Sound Kits, only search native
         if self.fCheckNative and self.fToolNative:
-            if self.fCheckGIG: self.fCurCount += 1
             if self.fCheckSF2: self.fCurCount += 1
             if self.fCheckSFZ: self.fCurCount += 1
         else:
-            self.fCheckGIG = False
             self.fCheckSF2 = False
             self.fCheckSFZ = False
 
@@ -628,15 +618,6 @@ class SearchPluginsThread(QThread):
                 settingsDB.setValue("Plugins/VST2_win64", self.fVstPlugins)
 
             settingsDB.sync()
-            if not self.fContinueChecking: return
-
-        if self.fCheckGIG:
-            settings = QSettings("falkTX", "Carla2")
-            GIG_PATH = toList(settings.value(CARLA_KEY_PATHS_GIG, CARLA_DEFAULT_GIG_PATH))
-            del settings
-
-            self._checkKIT(GIG_PATH, "gig")
-            settingsDB.setValue("Plugins/GIG", self.fKitPlugins)
             if not self.fContinueChecking: return
 
         if self.fCheckSF2:
@@ -782,9 +763,7 @@ class SearchPluginsThread(QThread):
             percent = ( float(i) / len(kitFiles) ) * self.fCurPercentValue
             self._pluginLook(self.fLastCheckValue + percent, kit)
 
-            if kitExtension == "gig":
-                plugins = checkFileGIG(kit, self.fToolNative)
-            elif kitExtension == "sf2":
+            if kitExtension == "sf2":
                 plugins = checkFileSF2(kit, self.fToolNative)
             elif kitExtension == "sfz":
                 plugins = checkFileSFZ(kit, self.fToolNative)
@@ -941,7 +920,6 @@ class PluginRefreshW(QDialog):
         else:
             self.ui.ico_native.setPixmap(self.fIconNo)
             self.ui.ch_native.setEnabled(False)
-            self.ui.ch_gig.setEnabled(False)
             self.ui.ch_sf2.setEnabled(False)
             self.ui.ch_sfz.setEnabled(False)
             if not hasNonNative:
@@ -998,17 +976,9 @@ class PluginRefreshW(QDialog):
         # Disable non-supported features
         features = gCarla.utils.get_supported_features()
 
-        if "gig" not in features:
-            self.ui.ch_gig.setChecked(False)
-            self.ui.ch_gig.setEnabled(False)
-
         if "sf2" not in features:
             self.ui.ch_sf2.setChecked(False)
             self.ui.ch_sf2.setEnabled(False)
-
-        if "sfz" not in features:
-            self.ui.ch_sfz.setChecked(False)
-            self.ui.ch_sfz.setEnabled(False)
 
         # -------------------------------------------------------------------------------------------------------------
         # Resize to minimum size, as it's very likely UI stuff was hidden
@@ -1030,7 +1000,6 @@ class PluginRefreshW(QDialog):
         self.ui.ch_dssi.clicked.connect(self.slot_checkTools)
         self.ui.ch_lv2.clicked.connect(self.slot_checkTools)
         self.ui.ch_vst.clicked.connect(self.slot_checkTools)
-        self.ui.ch_gig.clicked.connect(self.slot_checkTools)
         self.ui.ch_sf2.clicked.connect(self.slot_checkTools)
         self.ui.ch_sfz.clicked.connect(self.slot_checkTools)
         self.fThread.pluginLook.connect(self.slot_handlePluginLook)
@@ -1057,9 +1026,6 @@ class PluginRefreshW(QDialog):
 
         check = settings.value("PluginDatabase/SearchVST2", True, type=bool) and self.ui.ch_vst.isEnabled()
         self.ui.ch_vst.setChecked(check)
-
-        check = settings.value("PluginDatabase/SearchGIG", False, type=bool) and self.ui.ch_gig.isEnabled()
-        self.ui.ch_gig.setChecked(check)
 
         check = settings.value("PluginDatabase/SearchSF2", False, type=bool) and self.ui.ch_sf2.isEnabled()
         self.ui.ch_sf2.setChecked(check)
@@ -1093,7 +1059,6 @@ class PluginRefreshW(QDialog):
         settings.setValue("PluginDatabase/SearchDSSI", self.ui.ch_dssi.isChecked())
         settings.setValue("PluginDatabase/SearchLV2", self.ui.ch_lv2.isChecked())
         settings.setValue("PluginDatabase/SearchVST2", self.ui.ch_vst.isChecked())
-        settings.setValue("PluginDatabase/SearchGIG", self.ui.ch_gig.isChecked())
         settings.setValue("PluginDatabase/SearchSF2", self.ui.ch_sf2.isChecked())
         settings.setValue("PluginDatabase/SearchSFZ", self.ui.ch_sfz.isChecked())
         settings.setValue("PluginDatabase/SearchNative", self.ui.ch_native.isChecked())
@@ -1125,13 +1090,12 @@ class PluginRefreshW(QDialog):
                                                   self.ui.ch_posix32.isChecked(), self.ui.ch_posix64.isChecked(),
                                                   self.ui.ch_win32.isChecked(), self.ui.ch_win64.isChecked())
 
-        ladspa, dssi, lv2, vst, gig, sf2, sfz = (self.ui.ch_ladspa.isChecked(), self.ui.ch_dssi.isChecked(),
-                                                 self.ui.ch_lv2.isChecked(), self.ui.ch_vst.isChecked(),
-                                                 self.ui.ch_gig.isChecked(), self.ui.ch_sf2.isChecked(),
-                                                 self.ui.ch_sfz.isChecked())
+        ladspa, dssi, lv2, vst, sf2, sfz = (self.ui.ch_ladspa.isChecked(), self.ui.ch_dssi.isChecked(),
+                                            self.ui.ch_lv2.isChecked(), self.ui.ch_vst.isChecked(),
+                                            self.ui.ch_sf2.isChecked(), self.ui.ch_sfz.isChecked())
 
         self.fThread.setSearchBinaryTypes(native, posix32, posix64, win32, win64)
-        self.fThread.setSearchPluginTypes(ladspa, dssi, lv2, vst, gig, sf2, sfz)
+        self.fThread.setSearchPluginTypes(ladspa, dssi, lv2, vst, sf2, sfz)
         self.fThread.start()
 
     # ------------------------------------------------------------------------------------------------------------------
@@ -1150,7 +1114,7 @@ class PluginRefreshW(QDialog):
 
         enabled2 = bool(self.ui.ch_ladspa.isChecked() or self.ui.ch_dssi.isChecked() or
                         self.ui.ch_lv2.isChecked() or self.ui.ch_vst.isChecked() or
-                        self.ui.ch_gig.isChecked() or self.ui.ch_sf2.isChecked() or self.ui.ch_sfz.isChecked())
+                        self.ui.ch_sf2.isChecked() or self.ui.ch_sfz.isChecked())
 
         self.ui.b_start.setEnabled(enabled1 and enabled2)
 
@@ -1428,7 +1392,7 @@ class PluginDatabaseW(QDialog):
             isSynth  = bool(plugin['hints'] & PLUGIN_IS_SYNTH)
             isEffect = bool(aIns > 0 < aOuts and not isSynth)
             isMidi   = bool(aIns == 0 and aOuts == 0 and mIns > 0 < mOuts)
-            isKit    = bool(ptype in ("GIG", "SF2", "SFZ"))
+            isKit    = bool(ptype in ("SF2", "SFZ"))
             isOther  = bool(not (isEffect or isSynth or isMidi or isKit))
             isNative = bool(plugin['build'] == BINARY_NATIVE)
             isRtSafe = bool(plugin['hints'] & PLUGIN_IS_RTSAFE)
@@ -1490,7 +1454,7 @@ class PluginDatabaseW(QDialog):
         if plugin['API'] != PLUGIN_QUERY_API_VERSION and ptype == self.tr("Internal"):
             return
 
-        if ptype in (self.tr("Internal"), "LV2", "GIG", "SF2", "SFZ"):
+        if ptype in (self.tr("Internal"), "LV2", "SF2", "SFZ"):
             plugin['build'] = BINARY_NATIVE
 
         index = self.fLastTableIndex
@@ -1677,17 +1641,6 @@ class PluginDatabaseW(QDialog):
 
         # ----------------------------------------------------------------------------------------------------
         # Kits
-
-        gigs = toList(settingsDB.value("Plugins/GIG", []))
-
-        for gig in gigs:
-            for gig_i in gig:
-                self._addPluginToTable(gig_i, "GIG")
-                kitCount += 1
-
-        del gigs
-
-        # ----------------------------------------------------------------------------------------------------
 
         sf2s = toList(settingsDB.value("Plugins/SF2", []))
 
