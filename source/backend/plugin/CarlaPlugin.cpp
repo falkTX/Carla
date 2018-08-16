@@ -540,7 +540,7 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
     // ---------------------------------------------------------------
     // Current Program
 
-    if (pData->prog.current >= 0 && pluginType != PLUGIN_LV2 && pluginType != PLUGIN_GIG)
+    if (pData->prog.current >= 0 && pluginType != PLUGIN_LV2)
     {
         pData->stateSave.currentProgramIndex = pData->prog.current;
         pData->stateSave.currentProgramName  = carla_strdup(pData->prog.names[pData->prog.current]);
@@ -1723,7 +1723,6 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
 
         switch (getType())
         {
-        case PLUGIN_GIG:
         case PLUGIN_SF2:
         case PLUGIN_SFZ:
             break;
@@ -1764,7 +1763,6 @@ void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const 
 
         switch (getType())
         {
-        case PLUGIN_GIG:
         case PLUGIN_SF2:
         case PLUGIN_SFZ:
             break;
@@ -1798,7 +1796,6 @@ void CarlaPlugin::setProgramRT(const uint32_t uindex) noexcept
     // Change default parameter values
     switch (getType())
     {
-    case PLUGIN_GIG:
     case PLUGIN_SF2:
     case PLUGIN_SFZ:
         break;
@@ -1821,7 +1818,6 @@ void CarlaPlugin::setMidiProgramRT(const uint32_t uindex) noexcept
     // Change default parameter values
     switch (getType())
     {
-    case PLUGIN_GIG:
     case PLUGIN_SF2:
     case PLUGIN_SFZ:
         break;

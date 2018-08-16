@@ -201,7 +201,6 @@ EngineOptions::EngineOptions() noexcept
       pathDSSI(nullptr),
       pathLV2(nullptr),
       pathVST2(nullptr),
-      pathGIG(nullptr),
       pathSF2(nullptr),
       pathSFZ(nullptr),
       binaryDir(nullptr),
@@ -239,12 +238,6 @@ EngineOptions::~EngineOptions() noexcept
     {
         delete[] pathVST2;
         pathVST2 = nullptr;
-    }
-
-    if (pathGIG != nullptr)
-    {
-        delete[] pathGIG;
-        pathGIG = nullptr;
     }
 
     if (pathSF2 != nullptr)

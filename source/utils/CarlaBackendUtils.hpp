@@ -96,8 +96,6 @@ const char* PluginType2Str(const PluginType type) noexcept
         return "PLUGIN_LV2";
     case PLUGIN_VST2:
         return "PLUGIN_VST2";
-    case PLUGIN_GIG:
-        return "PLUGIN_GIG";
     case PLUGIN_SF2:
         return "PLUGIN_SF2";
     case PLUGIN_SFZ:
@@ -484,8 +482,6 @@ const char* getPluginTypeAsString(const PluginType type) noexcept
         return "LV2";
     case PLUGIN_VST2:
         return "VST2";
-    case PLUGIN_GIG:
-        return "GIG";
     case PLUGIN_SF2:
         return "SF2";
     case PLUGIN_SFZ:
@@ -523,8 +519,6 @@ PluginType getPluginTypeFromString(const char* const ctype) noexcept
         return PLUGIN_LV2;
     if (stype == "vst2" || stype == "vst")
         return PLUGIN_VST2;
-    if (stype == "gig")
-        return PLUGIN_GIG;
     if (stype == "sf2")
         return PLUGIN_SF2;
     if (stype == "sfz")

@@ -584,13 +584,13 @@ public:
 
         fSynth.renderVoices(audioOutBuffer, timeOffset, frames);
 
-#if 0 // ndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
 
         {
             const bool doVolume  = carla_isNotEqual(pData->postProc.volume, 1.0f);
-            // const bool doBalance = carla_isNotEqual(pData->postProc.balanceLeft, -1.0f) || carla_isNotEqual(pData->postProc.balanceRight, 1.0f);
+            const bool doBalance = carla_isNotEqual(pData->postProc.balanceLeft, -1.0f) || carla_isNotEqual(pData->postProc.balanceRight, 1.0f);
 
             float* outBufferL = audioOutBuffer.getWritePointer(0, timeOffset);
             float* outBufferR = audioOutBuffer.getWritePointer(1, timeOffset);
@@ -629,10 +629,12 @@ public:
 
             if (doVolume)
             {
+                const float volume = pData->postProc.volume;
+
                 for (uint32_t k=0; k < frames; ++k)
                 {
-                    *outBufferL++ *= pData->postProc.volume;
-                    *outBufferR++ *= pData->postProc.volume;
+                    *outBufferL++ *= volume;
+                    *outBufferR++ *= volume;
                 }
             }
 

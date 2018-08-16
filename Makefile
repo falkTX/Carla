@@ -883,21 +883,22 @@ endif
 	@printf -- "\n"
 
 	@printf -- "$(tS)---> File formats: $(tE)\n"
-ifeq ($(HAVE_LINUXSAMPLER),true)
-	@printf -- "GIG: $(ANS_YES)\n"
+ifeq ($(HAVE_SNDFILE),true)
+	@printf -- "Basic: $(ANS_YES)\n"
 else
-	@printf -- "GIG: $(ANS_NO)    $(mS)LinuxSampler missing or too old$(mE)\n"
+	@printf -- "Basic: $(ANS_NO) $(mS)libsndfile missing$(mE)\n"
+endif
+ifeq ($(HAVE_FFMPEG),true)
+	@printf -- "Extra: $(ANS_YES)\n"
+else
+	@printf -- "Extra: $(ANS_NO) $(mS)FFmpeg missing or too new$(mE)\n"
 endif
 ifeq ($(HAVE_FLUIDSYNTH),true)
-	@printf -- "SF2: $(ANS_YES)\n"
+	@printf -- "SF2/3: $(ANS_YES)\n"
 else
-	@printf -- "SF2: $(ANS_NO)    $(mS)FluidSynth missing$(mE)\n"
+	@printf -- "SF2/3: $(ANS_NO)    $(mS)FluidSynth missing$(mE)\n"
 endif
-ifeq ($(HAVE_LINUXSAMPLER),true)
-	@printf -- "SFZ: $(ANS_YES)\n"
-else
-	@printf -- "SFZ: $(ANS_NO)    $(mS)LinuxSampler missing or too old$(mE)\n"
-endif
+	@printf -- "SFZ:   $(ANS_YES)\n"
 	@printf -- "\n"
 
 	@printf -- "$(tS)---> Internal plugins: $(tE)\n"

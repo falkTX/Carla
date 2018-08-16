@@ -2137,7 +2137,7 @@ class HostWindow(QMainWindow):
                 if rdfItem.UniqueID == uniqueId:
                     return pointer(rdfItem)
 
-        elif ptype in (PLUGIN_GIG, PLUGIN_SF2):
+        elif ptype == PLUGIN_SF2:
             if plugin['name'].lower().endswith(" (16 outputs)"):
                 return self._true
 
@@ -2811,7 +2811,6 @@ def setEngineSettings(host):
     DSSI_PATH   = toList(settings.value(CARLA_KEY_PATHS_DSSI,   CARLA_DEFAULT_DSSI_PATH))
     LV2_PATH    = toList(settings.value(CARLA_KEY_PATHS_LV2,    CARLA_DEFAULT_LV2_PATH))
     VST2_PATH   = toList(settings.value(CARLA_KEY_PATHS_VST2,   CARLA_DEFAULT_VST2_PATH))
-    GIG_PATH    = toList(settings.value(CARLA_KEY_PATHS_GIG,    CARLA_DEFAULT_GIG_PATH))
     SF2_PATH    = toList(settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH))
     SFZ_PATH    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH))
 
@@ -2819,7 +2818,6 @@ def setEngineSettings(host):
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_DSSI,   splitter.join(DSSI_PATH))
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2,    splitter.join(LV2_PATH))
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST2,   splitter.join(VST2_PATH))
-    host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_GIG,    splitter.join(GIG_PATH))
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(SF2_PATH))
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(SFZ_PATH))
 

@@ -440,7 +440,7 @@ int main(int argc, char* argv[])
 
     const void* extraStuff = nullptr;
 
-    if (itype == CarlaBackend::PLUGIN_GIG || itype == CarlaBackend::PLUGIN_SF2)
+    if (itype == CarlaBackend::PLUGIN_SF2)
     {
         if (label == nullptr)
             label = clientName;

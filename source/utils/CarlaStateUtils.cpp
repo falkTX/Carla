@@ -1,6 +1,6 @@
 /*
  * Carla State utils
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -525,7 +525,6 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
             infoXml << "   <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
             infoXml << "   <UniqueID>" << water::int64(uniqueId)       << "</UniqueID>\n";
             break;
-        case PLUGIN_GIG:
         case PLUGIN_SF2:
             infoXml << "   <Filename>"   << xmlSafeString(binary, true) << "</Filename>\n";
             infoXml << "   <Label>"      << xmlSafeString(label, true)  << "</Label>\n";

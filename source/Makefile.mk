@@ -205,17 +205,16 @@ endif
 
 ifeq ($(UNIX),true)
 ifneq ($(MACOS),true)
-HAVE_PULSEAUDIO   = $(shell pkg-config --exists libpulse-simple && echo true)
+HAVE_PULSEAUDIO = $(shell pkg-config --exists libpulse-simple && echo true)
 endif
 endif
 
-HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
-HAVE_FLUIDSYNTH   = $(shell pkg-config --exists fluidsynth && echo true)
-HAVE_LIBLO        = $(shell pkg-config --exists liblo && echo true)
-HAVE_LINUXSAMPLER = $(shell pkg-config --atleast-version=1.0.0.svn41 linuxsampler && echo true)
-HAVE_QT4          = $(shell pkg-config --exists QtCore QtGui && echo true)
-HAVE_QT5          = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
-HAVE_SNDFILE      = $(shell pkg-config --exists sndfile && echo true)
+HAVE_FFMPEG     = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
+HAVE_FLUIDSYNTH = $(shell pkg-config --exists fluidsynth && echo true)
+HAVE_LIBLO      = $(shell pkg-config --exists liblo && echo true)
+HAVE_QT4        = $(shell pkg-config --exists QtCore QtGui && echo true)
+HAVE_QT5        = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
+HAVE_SNDFILE    = $(shell pkg-config --exists sndfile && echo true)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Check for optional libs (special non-pkgconfig tests)
@@ -327,10 +326,6 @@ ifeq ($(HAVE_LIBMAGIC),true)
 BASE_FLAGS += -DHAVE_LIBMAGIC
 endif
 
-ifeq ($(HAVE_LINUXSAMPLER),true)
-BASE_FLAGS += -DHAVE_LINUXSAMPLER
-endif
-
 ifeq ($(HAVE_SNDFILE),true)
 BASE_FLAGS += -DHAVE_SNDFILE
 endif
@@ -359,17 +354,6 @@ endif
 ifeq ($(HAVE_FLUIDSYNTH),true)
 FLUIDSYNTH_FLAGS = $(shell pkg-config --cflags fluidsynth)
 FLUIDSYNTH_LIBS  = $(shell pkg-config --libs fluidsynth)
-endif
-
-ifeq ($(HAVE_LINUXSAMPLER),true)
-LINUXSAMPLER_FLAGS = $(shell pkg-config --cflags linuxsampler) -DIS_CPP11=1 -Wno-non-virtual-dtor -Wno-shadow -Wno-unused-parameter
-ifeq ($(LINUX),true)
-LINUXSAMPLER_LIBS  = -Wl,-rpath=$(shell pkg-config --variable=libdir gig):$(shell pkg-config --variable=libdir linuxsampler)
-endif
-LINUXSAMPLER_LIBS += $(shell pkg-config --libs linuxsampler)
-ifeq ($(WIN32),true)
-LINUXSAMPLER_LIBS += -lws2_32
-endif
 endif
 
 ifeq ($(HAVE_SNDFILE),true)

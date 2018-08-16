@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Common Carla code
-# Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -223,7 +223,6 @@ CARLA_KEY_PATHS_LADSPA = "Paths/LADSPA"
 CARLA_KEY_PATHS_DSSI   = "Paths/DSSI"
 CARLA_KEY_PATHS_LV2    = "Paths/LV2"
 CARLA_KEY_PATHS_VST2   = "Paths/VST2"
-CARLA_KEY_PATHS_GIG    = "Paths/GIG"
 CARLA_KEY_PATHS_SF2    = "Paths/SF2"
 CARLA_KEY_PATHS_SFZ    = "Paths/SFZ"
 
@@ -321,7 +320,6 @@ DEFAULT_LADSPA_PATH = ""
 DEFAULT_DSSI_PATH   = ""
 DEFAULT_LV2_PATH    = ""
 DEFAULT_VST2_PATH   = ""
-DEFAULT_GIG_PATH    = ""
 DEFAULT_SF2_PATH    = ""
 DEFAULT_SFZ_PATH    = ""
 
@@ -362,7 +360,6 @@ if WINDOWS:
     if kIs64bit:
         DEFAULT_VST2_PATH  += ";" + COMMONPROGRAMFILES + "\\VST2"
 
-    DEFAULT_GIG_PATH     = APPDATA + "\\GIG"
     DEFAULT_SF2_PATH     = APPDATA + "\\SF2"
     DEFAULT_SFZ_PATH     = APPDATA + "\\SFZ"
 
@@ -421,9 +418,6 @@ else:
     DEFAULT_VST2_PATH   += ":/usr/lib/vst"
     DEFAULT_VST2_PATH   += ":/usr/local/lib/vst"
 
-    DEFAULT_GIG_PATH     = HOME + "/.sounds/gig"
-    DEFAULT_GIG_PATH    += ":/usr/share/sounds/gig"
-
     DEFAULT_SF2_PATH     = HOME + "/.sounds/sf2"
     DEFAULT_SF2_PATH    += ":/usr/share/sounds/sf2"
 
@@ -470,7 +464,6 @@ if readEnvVars:
     CARLA_DEFAULT_DSSI_PATH   = os.getenv("DSSI_PATH",   DEFAULT_DSSI_PATH).split(splitter)
     CARLA_DEFAULT_LV2_PATH    = os.getenv("LV2_PATH",    DEFAULT_LV2_PATH).split(splitter)
     CARLA_DEFAULT_VST2_PATH   = os.getenv("VST_PATH",    DEFAULT_VST2_PATH).split(splitter)
-    CARLA_DEFAULT_GIG_PATH    = os.getenv("GIG_PATH",    DEFAULT_GIG_PATH).split(splitter)
     CARLA_DEFAULT_SF2_PATH    = os.getenv("SF2_PATH",    DEFAULT_SF2_PATH).split(splitter)
     CARLA_DEFAULT_SFZ_PATH    = os.getenv("SFZ_PATH",    DEFAULT_SFZ_PATH).split(splitter)
 
@@ -479,7 +472,6 @@ else:
     CARLA_DEFAULT_DSSI_PATH   = DEFAULT_DSSI_PATH.split(splitter)
     CARLA_DEFAULT_LV2_PATH    = DEFAULT_LV2_PATH.split(splitter)
     CARLA_DEFAULT_VST2_PATH   = DEFAULT_VST2_PATH.split(splitter)
-    CARLA_DEFAULT_GIG_PATH    = DEFAULT_GIG_PATH.split(splitter)
     CARLA_DEFAULT_SF2_PATH    = DEFAULT_SF2_PATH.split(splitter)
     CARLA_DEFAULT_SFZ_PATH    = DEFAULT_SFZ_PATH.split(splitter)
 
@@ -490,7 +482,6 @@ del DEFAULT_LADSPA_PATH
 del DEFAULT_DSSI_PATH
 del DEFAULT_LV2_PATH
 del DEFAULT_VST2_PATH
-del DEFAULT_GIG_PATH
 del DEFAULT_SF2_PATH
 del DEFAULT_SFZ_PATH
 

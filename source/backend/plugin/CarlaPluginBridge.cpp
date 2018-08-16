@@ -224,11 +224,6 @@ protected:
             else
                 carla_setenv("ENGINE_OPTION_PLUGIN_PATH_VST2", "");
 
-            if (options.pathGIG != nullptr)
-                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_GIG", options.pathGIG);
-            else
-                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_GIG", "");
-
             if (options.pathSF2 != nullptr)
                 carla_setenv("ENGINE_OPTION_PLUGIN_PATH_SF2", options.pathSF2);
             else

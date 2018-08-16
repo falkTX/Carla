@@ -499,26 +499,6 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
             break;
 
         case PLUGIN_INTERNAL:
-            /*if (std::strcmp(label, "FluidSynth") == 0)
-            {
-                use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
-                plugin = CarlaPlugin::newFluidSynth(initializer, use16Outs);
-            }
-            else if (std::strcmp(label, "LinuxSampler (GIG)") == 0)
-            {
-                use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
-                plugin = CarlaPlugin::newLinuxSampler(initializer, "GIG", use16Outs);
-            }
-            else if (std::strcmp(label, "LinuxSampler (SF2)") == 0)
-            {
-                use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
-                plugin = CarlaPlugin::newLinuxSampler(initializer, "SF2", use16Outs);
-            }
-            else if (std::strcmp(label, "LinuxSampler (SFZ)") == 0)
-            {
-                use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
-                plugin = CarlaPlugin::newLinuxSampler(initializer, "SFZ", use16Outs);
-            }*/
             plugin = CarlaPlugin::newNative(initializer);
             break;
 
@@ -536,11 +516,6 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
 
         case PLUGIN_VST2:
             plugin = CarlaPlugin::newVST2(initializer);
-            break;
-
-        case PLUGIN_GIG:
-            use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
-            plugin = CarlaPlugin::newFileGIG(initializer, use16Outs);
             break;
 
         case PLUGIN_SF2:
@@ -1017,9 +992,6 @@ bool CarlaEngine::loadFile(const char* const filename)
 
     // -------------------------------------------------------------------
 
-    if (extension == "gig")
-        return addPlugin(PLUGIN_GIG, filename, baseName, baseName, 0, nullptr);
-
     if (extension == "sf2")
         return addPlugin(PLUGIN_SF2, filename, baseName, baseName, 0, nullptr);
 
@@ -1031,13 +1003,28 @@ bool CarlaEngine::loadFile(const char* const filename)
     if (
 #ifdef HAVE_SNDFILE
         extension == "aif"  ||
+        extension == "aifc" ||
         extension == "aiff" ||
+        extension == "au"   ||
         extension == "bwf"  ||
         extension == "flac" ||
+        extension == "htk"  ||
+        extension == "iff"  ||
+        extension == "mat4" ||
+        extension == "mat5" ||
         extension == "oga"  ||
         extension == "ogg"  ||
+        extension == "paf"  ||
+        extension == "pvf"  ||
+        extension == "pvf5" ||
+        extension == "sd2"  ||
+        extension == "sf"   ||
+        extension == "snd"  ||
+        extension == "svx"  ||
+        extension == "vcc"  ||
         extension == "w64"  ||
         extension == "wav"  ||
+        extension == "xi"   ||
 #endif
 #ifdef HAVE_FFMPEG
         extension == "3g2" ||
@@ -1050,6 +1037,14 @@ bool CarlaEngine::loadFile(const char* const filename)
         extension == "mp3" ||
         extension == "mpc" ||
         extension == "wma" ||
+# ifdef HAVE_SNDFILE
+        // FFmpeg without sndfile
+        extension == "flac" ||
+        extension == "oga"  ||
+        extension == "ogg"  ||
+        extension == "w64"  ||
+        extension == "wav"  ||
+# endif
 #endif
         false
        )
@@ -1515,14 +1510,6 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
             else
                 pData->options.pathVST2 = nullptr;
             break;
-        case PLUGIN_GIG:
-            if (pData->options.pathGIG != nullptr)
-                delete[] pData->options.pathGIG;
-            if (valueStr != nullptr)
-                pData->options.pathGIG = carla_strdup_safe(valueStr);
-            else
-                pData->options.pathGIG = nullptr;
-            break;
         case PLUGIN_SF2:
             if (pData->options.pathSF2 != nullptr)
                 delete[] pData->options.pathSF2;
@@ -1799,7 +1786,6 @@ void CarlaEngine::saveProjectInternal(water::MemoryOutputStream& outStream) cons
         outSettings << "  <DSSI_PATH>"   << xmlSafeString(options.pathDSSI,   true) << "</DSSI_PATH>\n";
         outSettings << "  <LV2_PATH>"    << xmlSafeString(options.pathLV2,    true) << "</LV2_PATH>\n";
         outSettings << "  <VST2_PATH>"   << xmlSafeString(options.pathVST2,   true) << "</VST2_PATH>\n";
-        outSettings << "  <GIG_PATH>"    << xmlSafeString(options.pathGIG,    true) << "</GIG_PATH>\n";
         outSettings << "  <SF2_PATH>"    << xmlSafeString(options.pathSF2,    true) << "</SF2_PATH>\n";
         outSettings << "  <SFZ_PATH>"    << xmlSafeString(options.pathSFZ,    true) << "</SFZ_PATH>\n";
     }
@@ -2086,12 +2072,6 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                     value    = PLUGIN_VST2;
                     valueStr = text.toRawUTF8();
                 }
-                else if (tag.equalsIgnoreCase("GIG_PATH"))
-                {
-                    option   = ENGINE_OPTION_PLUGIN_PATH;
-                    value    = PLUGIN_GIG;
-                    valueStr = text.toRawUTF8();
-                }
                 else if (tag.equalsIgnoreCase("SF2_PATH"))
                 {
                     option   = ENGINE_OPTION_PLUGIN_PATH;
@@ -2141,7 +2121,6 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
 
             switch (ptype)
             {
-            case PLUGIN_GIG:
             case PLUGIN_SF2:
                 if (CarlaString(stateSave.label).endsWith(" (16 outs)"))
                     extraStuff = kTrue;
@@ -2160,7 +2139,6 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                     case PLUGIN_LADSPA: searchPath = pData->options.pathLADSPA; break;
                     case PLUGIN_DSSI:   searchPath = pData->options.pathDSSI;   break;
                     case PLUGIN_VST2:   searchPath = pData->options.pathVST2;   break;
-                    case PLUGIN_GIG:    searchPath = pData->options.pathGIG;    break;
                     case PLUGIN_SF2:    searchPath = pData->options.pathSF2;    break;
                     case PLUGIN_SFZ:    searchPath = pData->options.pathSFZ;    break;
                     default:            searchPath = nullptr;                   break;
@@ -2180,7 +2158,6 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                             case PLUGIN_LADSPA: searchPath = std::getenv("LADSPA_PATH"); break;
                             case PLUGIN_DSSI:   searchPath = std::getenv("DSSI_PATH");   break;
                             case PLUGIN_VST2:   searchPath = std::getenv("VST_PATH");    break;
-                            case PLUGIN_GIG:    searchPath = std::getenv("GIG_PATH");    break;
                             case PLUGIN_SF2:    searchPath = std::getenv("SF2_PATH");    break;
                             case PLUGIN_SFZ:    searchPath = std::getenv("SFZ_PATH");    break;
                             default:            searchPath = nullptr;                    break;

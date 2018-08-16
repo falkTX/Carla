@@ -382,7 +382,7 @@ CARLA_EXPORT void carla_set_file_callback(FileCallbackFunc func, void* ptr);
 /*!
  * Load a file of any type.
  * This will try to load a generic file as a plugin,
- * either by direct handling (GIG, SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
+ * either by direct handling (SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
  * @see carla_get_supported_file_extensions()
  */
 CARLA_EXPORT bool carla_load_file(const char* filename);

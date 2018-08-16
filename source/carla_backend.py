@@ -216,7 +216,7 @@ PLUGIN_NEEDS_FIXED_BUFFERS = 0x100
 PLUGIN_NEEDS_UI_MAIN_THREAD = 0x200
 
 # Plugin uses 1 program per MIDI channel.
-# @note: Only used in some internal plugins, gig and sf2 files.
+# @note: Only used in some internal plugins and sf2 files.
 PLUGIN_USES_MULTI_PROGS = 0x400
 
 # Plugin can make use of inline display API.
@@ -394,17 +394,14 @@ PLUGIN_LV2 = 4
 # VST2 plugin.
 PLUGIN_VST2 = 5
 
-# GIG file.
-PLUGIN_GIG = 6
-
 # SF2 file (SoundFont).
-PLUGIN_SF2 = 7
+PLUGIN_SF2 = 6
 
 # SFZ file.
-PLUGIN_SFZ = 8
+PLUGIN_SFZ = 7
 
 # JACK application.
-PLUGIN_JACK = 9
+PLUGIN_JACK = 8
 
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Category
@@ -897,7 +894,7 @@ PATCHBAY_ICON_CARLA = 3
 PATCHBAY_ICON_DISTRHO = 4
 
 # File icon.
-# Used for file type plugins (like GIG and SF2).
+# Used for file type plugins (like SF2 and SFZ).
 PATCHBAY_ICON_FILE = 5
 
 # ------------------------------------------------------------------------------------------------------------
@@ -1351,7 +1348,7 @@ class CarlaHostMeta(object):
 
     # Load a file of any type.
     # This will try to load a generic file as a plugin,
-    # either by direct handling (GIG, SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
+    # either by direct handling (SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
     # @see carla_get_supported_file_extensions()
     @abstractmethod
     def load_file(self, filename):

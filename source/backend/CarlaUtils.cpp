@@ -504,12 +504,12 @@ const char* const* carla_get_supported_file_extensions()
         // Base types
         "carxp", "carxs",
 
+        // Compatibility mode with older carla, loads linuxsampler as plugin
+        "gig",
+
         // plugin files and resources
 #ifdef HAVE_FLUIDSYNTH
         "sf2",
-#endif
-#ifdef HAVE_LINUXSAMPLER
-        "gig",
 #endif
 #ifdef HAVE_ZYN_DEPS
         "xmz", "xiz",
@@ -523,10 +523,15 @@ const char* const* carla_get_supported_file_extensions()
 
         // Audio files
 #ifdef HAVE_SNDFILE
-        "aif", "aiff", "bwf", "flac", "oga", "ogg", "w64", "wav",
+        "aif", "aifc", "aiff", "au", "bwf", "flac", "htk", "iff", "mat4", "mat5", "oga", "ogg",
+        "paf", "pvf", "pvf5", "sd2", "sf", "snd", "svx", "vcc", "w64", "wav", "xi",
 #endif
 #ifdef HAVE_FFMPEG
         "3g2", "3gp", "aac", "ac3", "amr", "ape", "mp2", "mp3", "mpc", "wma",
+# ifdef HAVE_SNDFILE
+        // FFmpeg without sndfile
+        "flac", "oga", "ogg", "w64", "wav",
+# endif
 #endif
 
         // MIDI files

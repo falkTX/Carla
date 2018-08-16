@@ -114,7 +114,6 @@ OBJS_native = \
 	$(OBJDIR)/CarlaPluginLV2.cpp.o \
 	$(OBJDIR)/CarlaPluginVST2.cpp.o \
 	$(OBJDIR)/CarlaPluginFluidSynth.cpp.o \
-	$(OBJDIR)/CarlaPluginLinuxSampler.cpp.o \
 	$(OBJDIR)/CarlaPluginSFZero.cpp.o \
 	$(OBJDIR)/CarlaStandalone.cpp.o
 

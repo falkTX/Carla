@@ -1584,32 +1584,6 @@ static void do_fluidsynth_check(const char* const filename, const bool doInit)
 #endif
 }
 
-static void do_linuxsampler_check(const char* const filename, const char* const stype, const bool doInit)
-{
-#ifdef HAVE_LINUXSAMPLER
-    const water::String jfilename = water::String(CharPointer_UTF8(filename));
-    const File file(jfilename);
-
-    if (! file.existsAsFile())
-    {
-        DISCOVERY_OUT("error", "Requested file is not valid or does not exist");
-        return;
-    }
-
-    if (doInit)
-        const LinuxSamplerScopedEngine engine(filename, stype);
-    else
-        LinuxSamplerScopedEngine::outputInfo(nullptr, file.getFileNameWithoutExtension().toRawUTF8(), std::strcmp(stype, "gig") == 0);
-#else // HAVE_LINUXSAMPLER
-    DISCOVERY_OUT("error", stype << " support not available");
-    return;
-
-    // unused
-    (void)filename;
-    (void)doInit;
-#endif
-}
-
 // ------------------------------ main entry point ------------------------------
 
 int main(int argc, char* argv[])
@@ -1640,7 +1614,7 @@ int main(int argc, char* argv[])
         break;
     }
 
-    if (type != PLUGIN_GIG && type != PLUGIN_SF2 && type != PLUGIN_SFZ)
+    if (type != PLUGIN_SF2 && type != PLUGIN_SFZ)
     {
         if (filenameCheck.contains("fluidsynth", true))
         {
@@ -1715,14 +1689,8 @@ int main(int argc, char* argv[])
     case PLUGIN_VST2:
         do_vst_check(handle, filename, doInit);
         break;
-    case PLUGIN_GIG:
-        do_linuxsampler_check(filename, "gig", doInit);
-        break;
     case PLUGIN_SF2:
         do_fluidsynth_check(filename, doInit);
-        break;
-    case PLUGIN_SFZ:
-        do_linuxsampler_check(filename, "sfz", doInit);
         break;
     default:
         break;

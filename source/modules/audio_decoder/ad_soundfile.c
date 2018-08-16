@@ -101,7 +101,7 @@ static int64_t ad_seek_sndfile(void *sf, int64_t pos) {
 static ssize_t ad_read_sndfile(void *sf, float* d, size_t len) {
 	sndfile_audio_decoder *priv = (sndfile_audio_decoder*) sf;
 	if (!priv) return -1;
-	return sf_read_float (priv->sffile, d, len);
+	return sf_read_float (priv->sffile, d, len) < 0 ? -1 : (ssize_t)len;
 }
 
 static int ad_eval_sndfile(const char *f) { 

@@ -239,7 +239,6 @@ struct CARLA_API EngineOptions {
     const char* pathDSSI;
     const char* pathLV2;
     const char* pathVST2;
-    const char* pathGIG;
     const char* pathSF2;
     const char* pathSFZ;
 
@@ -871,7 +870,7 @@ public:
     /*!
      * Load a file of any type.
      * This will try to load a generic file as a plugin,
-     * either by direct handling (GIG, SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
+     * either by direct handling (SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
      */
     bool loadFile(const char* const filename);
 

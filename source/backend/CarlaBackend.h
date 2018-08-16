@@ -179,7 +179,7 @@ static const uint PLUGIN_NEEDS_UI_MAIN_THREAD = 0x200;
 
 /*!
  * Plugin uses 1 program per MIDI channel.
- * @note: Only used in some internal plugins, gig and sf2 files.
+ * @note: Only used in some internal plugins and sf2 files.
  */
 static const uint PLUGIN_USES_MULTI_PROGS = 0x400;
 
@@ -495,24 +495,19 @@ typedef enum {
     PLUGIN_VST2 = 5,
 
     /*!
-     * GIG file.
-     */
-    PLUGIN_GIG = 6,
-
-    /*!
      * SF2 file (SoundFont).
      */
-    PLUGIN_SF2 = 7,
+    PLUGIN_SF2 = 6,
 
     /*!
      * SFZ file.
      */
-    PLUGIN_SFZ = 8,
+    PLUGIN_SFZ = 7,
 
     /*!
      * JACK application.
      */
-    PLUGIN_JACK = 9
+    PLUGIN_JACK = 8
 
 } PluginType;
 
@@ -1271,7 +1266,7 @@ enum PatchbayIcon {
 
     /*!
      * File icon.
-     * Used for file type plugins (like GIG and SF2).
+     * Used for file type plugins (like SF2 snd SFZ).
      */
     PATCHBAY_ICON_FILE = 5
 };
