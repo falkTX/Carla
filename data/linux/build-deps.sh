@@ -28,12 +28,10 @@ rm -rf file-*
 rm -rf flac-*
 rm -rf fltk-*
 rm -rf fluidsynth-*
-rm -rf libgig-*
 rm -rf liblo-*
 rm -rf libogg-*
 rm -rf libsndfile-*
 rm -rf libvorbis-*
-rm -rf linuxsampler-*
 rm -rf pkg-config-*
 rm -rf zlib-*
 
@@ -204,58 +202,6 @@ if [ ! -f libsndfile-${LIBSNDFILE_VERSION}/build-done ]; then
     --disable-full-suite --disable-alsa --disable-sqlite
   make ${MAKE_ARGS}
   make install
-  touch build-done
-  cd ..
-fi
-
-# ---------------------------------------------------------------------------------------------------------------------
-# libgig
-
-if [ ! -d libgig-${LIBGIG_VERSION} ]; then
-  wget http://download.linuxsampler.org/packages/libgig-${LIBGIG_VERSION}.tar.bz2
-  tar -xf libgig-${LIBGIG_VERSION}.tar.bz2
-fi
-
-if [ ! -f libgig-${LIBGIG_VERSION}/build-done ]; then
-  cd libgig-${LIBGIG_VERSION}
-  if [ ! -f patched ]; then
-    patch -p1 -i ../patches/libgig_fix-build.patch
-    touch patched
-  fi
-  ./configure --enable-static --disable-shared --prefix=${PREFIX}
-  make ${MAKE_ARGS}
-  make install
-  touch build-done
-  cd ..
-fi
-
-# ---------------------------------------------------------------------------------------------------------------------
-# linuxsampler
-
-if [ ! -d linuxsampler-${LINUXSAMPLER_VERSION} ]; then
-  wget http://download.linuxsampler.org/packages/linuxsampler-${LINUXSAMPLER_VERSION}.tar.bz2
-  tar -xf linuxsampler-${LINUXSAMPLER_VERSION}.tar.bz2
-fi
-
-if [ ! -f linuxsampler-${LINUXSAMPLER_VERSION}/build-done ]; then
-  cd linuxsampler-${LINUXSAMPLER_VERSION}
-  if [ ! -f patched ]; then
-    patch -p1 -i ../patches/linuxsampler_allow-no-drivers-build.patch
-    patch -p1 -i ../patches/linuxsampler_disable-ladspa-fx.patch
-    touch patched
-  fi
-  rm -f configure
-  make -f Makefile.svn configure
-  ./configure \
-    --enable-static --disable-shared --prefix=${PREFIX} \
-    --enable-signed-triang-algo=diharmonic --enable-unsigned-triang-algo=diharmonic --enable-subfragment-size=8 \
-    --disable-alsa-driver --disable-arts-driver --disable-jack-driver \
-    --disable-asio-driver --disable-midishare-driver --disable-mmemidi-driver \
-    --disable-coreaudio-driver --disable-coremidi-driver \
-    --disable-instruments-db --disable-sf2-engine
-  make ${MAKE_ARGS}
-  make install
-  sed -i -e "s|-llinuxsampler|-llinuxsampler -L${PREFIX}/lib/libgig -lgig -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -lpthread -lm|" ${PREFIX}/lib/pkgconfig/linuxsampler.pc
   touch build-done
   cd ..
 fi

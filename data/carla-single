@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Script to start carla plugin bridges
-# Copyright (C) 2015 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2015-2018 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -210,7 +210,6 @@ LADSPA_PATH = os.getenv("LADSPA_PATH")
 DSSI_PATH   = os.getenv("DSSI_PATH")
 LV2_PATH    = os.getenv("LV2_PATH")
 VST2_PATH   = os.getenv("VST_PATH")
-GIG_PATH    = os.getenv("GIG_PATH")
 SF2_PATH    = os.getenv("SF2_PATH")
 SFZ_PATH    = os.getenv("SFZ_PATH")
 
@@ -218,7 +217,6 @@ if LADSPA_PATH is not None: os.environ["ENGINE_OPTION_PLUGIN_PATH_LADSPA"] = LAD
 if DSSI_PATH   is not None: os.environ["ENGINE_OPTION_PLUGIN_PATH_DSSI"]   = DSSI_PATH
 if LV2_PATH    is not None: os.environ["ENGINE_OPTION_PLUGIN_PATH_LV2"]    = LV2_PATH
 if VST2_PATH   is not None: os.environ["ENGINE_OPTION_PLUGIN_PATH_VST2"]   = VST2_PATH
-if GIG_PATH    is not None: os.environ["ENGINE_OPTION_PLUGIN_PATH_GIG"]    = GIG_PATH
 if SF2_PATH    is not None: os.environ["ENGINE_OPTION_PLUGIN_PATH_SF2"]    = SF2_PATH
 if SFZ_PATH    is not None: os.environ["ENGINE_OPTION_PLUGIN_PATH_SFZ"]    = SFZ_PATH
 
