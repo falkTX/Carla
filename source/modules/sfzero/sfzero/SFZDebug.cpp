@@ -24,6 +24,6 @@ void dbgprintf(const char *msg, ...)
   va_end(args);
 }
 
-#endif // JUCE_DEBUG
+#endif // DEBUG
 
 }

@@ -117,6 +117,6 @@ void Sample::checkIfZeroed(const char *where)
     dbgprintf("Buffer zeroed at %s!  (%lu zeros)", where, zero);
   }
 }
-#endif // JUCE_DEBUG
+#endif // DEBUG
 
 }

@@ -74,9 +74,11 @@
     decibel value lower than minusInfinityDb will return a gain of 0.
 */
 static inline
-float decibelsToGain (const float decibels, const float minusInfinityDb = -100.0f)
+float decibelsToGain (const double decibels, const double minusInfinityDb = -100.0)
 {
-    return decibels > minusInfinityDb ? std::pow (10.0f, decibels * 0.05f) : 0.0f;
+    return decibels > minusInfinityDb
+            ? static_cast<float>(std::pow(10.0, decibels * 0.05))
+            : 0.0f;
 }
 
 //=====================================================================================================================
