@@ -350,7 +350,8 @@ public:
             carla_zeroStruct(midiEvent);
 
             tmpSize = needle - dataRead;
-            CARLA_SAFE_ASSERT_RETURN(tmpSize > 0 && tmpSize < 24,);
+            CARLA_SAFE_ASSERT_RETURN(tmpSize > 0,);
+            CARLA_SAFE_ASSERT_RETURN(tmpSize < 24,);
 
             std::strncpy(tmpBuf, dataRead, static_cast<size_t>(tmpSize));
             tmpBuf[tmpSize] = '\0';

@@ -84,10 +84,15 @@ bool Sample::load()
         return false;
     }
 
+    // Fix for misinformation using libsndfile
+    if (info.frames % info.channels)
+        --info.frames;
+
     const ssize_t r = ad_read(handle, rbuffer, info.frames);
-    if (r+1 < info.frames)
+    if (r != info.frames)
     {
-        carla_stderr2("sfzero::Sample::load() - failed to read complete file: " P_SSIZE " vs " P_INT64, r, info.frames);
+        if (r != 0)
+            carla_stderr2("sfzero::Sample::load() - failed to read complete file: " P_SSIZE " vs " P_INT64, r, info.frames);
         ad_close(handle);
         return false;
     }

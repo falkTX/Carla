@@ -199,6 +199,10 @@ public:
         if (fFileNfo.frames == 0)
             carla_stderr("L: filename \"%s\" has 0 frames", filename);
 
+        // Fix for misinformation using libsndfile
+        if (fFileNfo.frames % fFileNfo.channels)
+            --fFileNfo.frames;
+
         if ((fFileNfo.channels == 1 || fFileNfo.channels == 2) && fFileNfo.frames > 0)
         {
             // valid
