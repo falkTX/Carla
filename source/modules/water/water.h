@@ -84,6 +84,8 @@
 namespace water
 {
 
+class AudioFormatManager;
+class AudioFormatReader;
 class AudioProcessor;
 class AudioSampleBuffer;
 class File;
