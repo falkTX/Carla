@@ -160,7 +160,7 @@ uint32* BigInteger::ensureSize (const size_t numVals) noexcept
 //==============================================================================
 bool BigInteger::operator[] (const int bit) const noexcept
 {
-    if (bit > highestBit || bit < 0)
+    if (bit < 0 || bit > highestBit)
         return false;
 
     if (const uint32* const values = getValues())
@@ -182,6 +182,9 @@ void BigInteger::clear() noexcept
 
 bool BigInteger::setBit (const int bit) noexcept
 {
+    if (bit < 0)
+        return false;
+
     CARLA_SAFE_ASSERT_RETURN(bit >= 0, false);
 
     if (bit > highestBit)
@@ -213,7 +216,8 @@ bool BigInteger::setBit (const int bit, const bool shouldBeSet) noexcept
 
 bool BigInteger::clearBit (const int bit) noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(bit <= highestBit && bit >= 0, false);
+    if (bit < 0 || bit > highestBit)
+        return false;
 
     uint32* const values = getValues();
     CARLA_SAFE_ASSERT_RETURN(values != nullptr, false);
