@@ -164,6 +164,11 @@ class ParamProgressBar(QProgressBar):
         else:
             vper = float(value - self.fMinimum) / div
 
+            if vper < 0.0:
+                vper = 0.0
+            elif vper > 1.0:
+                vper = 1.0
+
         if self.fValueCall is not None:
             self.fValueCall(value)
 
@@ -306,7 +311,8 @@ class ParamSpinBox(QAbstractSpinBox):
         self.fBar.setMaximum(value)
 
     def setValue(self, value):
-        value = geFixedValue(self.fName, value, self.fMinimum, self.fMaximum)
+        if not self.fIsReadOnly:
+            value = geFixedValue(self.fName, value, self.fMinimum, self.fMaximum)
 
         if self.fBar.fIsInteger:
             value = round(value)

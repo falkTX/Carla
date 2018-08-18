@@ -202,11 +202,9 @@ class PluginParameter(QWidget):
 
         self.ui.label.setText(pInfo['name'])
         self.ui.widget.setName(pInfo['name'])
-
         self.ui.widget.setMinimum(pInfo['minimum'])
         self.ui.widget.setMaximum(pInfo['maximum'])
         self.ui.widget.setDefault(pInfo['default'])
-        self.ui.widget.setValue(pInfo['current'])
         self.ui.widget.setLabel(pInfo['unit'])
         self.ui.widget.setStep(pInfo['step'])
         self.ui.widget.setStepSmall(pInfo['stepSmall'])
@@ -235,6 +233,9 @@ class PluginParameter(QWidget):
             self.ui.widget.setVisible(False)
             self.ui.sb_control.setVisible(False)
             self.ui.sb_channel.setVisible(False)
+
+        # Only set value after all hints are handled
+        self.ui.widget.setValue(pInfo['current'])
 
         if pHints & PARAMETER_USES_CUSTOM_TEXT and not host.isPlugin:
             self.ui.widget.setTextCallback(self._textCallBack)
