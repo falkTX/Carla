@@ -1444,8 +1444,6 @@ float carla_get_current_parameter_value(uint pluginId, uint32_t parameterId)
 
     CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, 0.0f);
-
-    carla_debug("carla_get_current_parameter_value(%i, %i)", pluginId, parameterId);
     CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(), 0.0f);
 
     return plugin->getParameterValue(parameterId);

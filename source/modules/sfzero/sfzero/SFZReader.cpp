@@ -37,10 +37,12 @@ void Reader::read(const char *text, unsigned int length)
   const char *end = text + length;
   char c = 0;
 
+  Region curGlobal;
   Region curGroup;
   Region curRegion;
   Region *buildingRegion = nullptr;
   bool inControl = false;
+  bool inGroup = false;
   water::String defaultPath;
 
   while (p < end)
@@ -112,7 +114,14 @@ void Reader::read(const char *text, unsigned int length)
           goto fatalError;
         }
         StringSlice tag(tagStart, p - 1);
-        if (tag == "region")
+        if (tag == "global")
+        {
+            curGlobal.clear();
+            buildingRegion = &curGlobal;
+            inControl = false;
+            inGroup = false;
+        }
+        else if (tag == "region")
         {
           if (buildingRegion && (buildingRegion == &curRegion))
           {
@@ -121,6 +130,7 @@ void Reader::read(const char *text, unsigned int length)
           curRegion = curGroup;
           buildingRegion = &curRegion;
           inControl = false;
+          inGroup = false;
         }
         else if (tag == "group")
         {
@@ -128,9 +138,13 @@ void Reader::read(const char *text, unsigned int length)
           {
             finishRegion(&curRegion);
           }
-          curGroup.clear();
-          buildingRegion = &curGroup;
-          inControl = false;
+          if (! inGroup)
+          {
+            curGroup = curGlobal;
+            buildingRegion = &curGroup;
+            inControl = false;
+            inGroup = true;
+          }
         }
         else if (tag == "control")
         {
@@ -198,7 +212,7 @@ void Reader::read(const char *text, unsigned int length)
               }
               p++;
             }
-            water::String value(valueStart, p - valueStart);
+            water::String value(valueStart, (water::uint64)(p - valueStart));
             water::String fauxOpcode = water::String(opcode.getStart(), opcode.length()) + " (in <control>)";
             sound_->addUnsupportedOpcode(fauxOpcode);
           }
@@ -235,7 +249,7 @@ void Reader::read(const char *text, unsigned int length)
             }
             p++;
           }
-          water::String value(valueStart, p - valueStart);
+          water::String value(valueStart, (water::uint64)(p - valueStart));
           if (buildingRegion == nullptr)
           {
             error("Setting a parameter outside a region or group");

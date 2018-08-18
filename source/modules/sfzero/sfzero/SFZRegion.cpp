@@ -32,17 +32,37 @@ Region::Region() { clear(); }
 
 void Region::clear()
 {
-  memset(this, 0, sizeof(*this));
-  hikey = 127;
-  hivel = 127;
-  pitch_keycenter = 60; // C4
-  pitch_keytrack = 100;
-  bend_up = 200;
-  bend_down = -200;
-  volume = pan = 0.0;
-  amp_veltrack = 100.0;
-  ampeg.clear();
-  ampeg_veltrack.clearMod();
+#if 1
+    sample = nullptr;
+    lokey = 0;
+    lovel = 0;
+    trigger = attack;
+    group = 0;
+    off_by = 0;
+    off_mode = fast;
+
+    offset = 0;
+    end = 0;
+    negative_end = false;
+    loop_mode = no_loop;
+    loop_start = 0;
+    loop_end = 0;
+    transpose = 0;
+    tune = 0;
+#else
+    memset(this, 0, sizeof(*this));
+#endif
+
+    hikey = 127;
+    hivel = 127;
+    pitch_keycenter = 60; // C4
+    pitch_keytrack = 100;
+    bend_up = 200;
+    bend_down = -200;
+    volume = pan = 0.0f;
+    amp_veltrack = 100.0f;
+    ampeg.clear();
+    ampeg_veltrack.clearMod();
 }
 
 water::String Region::dump()

@@ -42,7 +42,7 @@ void Synth::noteOn(int midiChannel, int midiNoteNumber, float velocity)
       {
         continue;
       }
-      if (voice->getOffBy() == group)
+      if (voice->getGroup() == group)
       {
         voice->stopNoteForGroup();
       }
