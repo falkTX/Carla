@@ -123,6 +123,7 @@ class ParamProgressBar(QProgressBar):
 
         self.fLeftClickDown = False
         self.fIsInteger     = False
+        self.fIsReadOnly    = False
 
         self.fMinimum   = 0.0
         self.fMaximum   = 1.0
@@ -184,6 +185,9 @@ class ParamProgressBar(QProgressBar):
     def setName(self, name):
         self.fName = name
 
+    def setReadOnly(self, yesNo):
+        self.fIsReadOnly = yesNo
+
     def setTextCall(self, textCall):
         self.fTextCall = textCall
 
@@ -191,6 +195,9 @@ class ParamProgressBar(QProgressBar):
         self.fValueCall = valueCall
 
     def handleMouseEventPos(self, pos):
+        if self.fIsReadOnly:
+            return
+
         xper  = float(pos.x()) / float(self.width())
         value = xper * (self.fMaximum - self.fMinimum) + self.fMinimum
 
@@ -206,19 +213,30 @@ class ParamProgressBar(QProgressBar):
             self.valueChanged.emit(value)
 
     def mousePressEvent(self, event):
+        if self.fIsReadOnly:
+            return
+
         if event.button() == Qt.LeftButton:
             self.handleMouseEventPos(event.pos())
             self.fLeftClickDown = True
         else:
             self.fLeftClickDown = False
+
         QProgressBar.mousePressEvent(self, event)
 
     def mouseMoveEvent(self, event):
+        if self.fIsReadOnly:
+            return
+
         if self.fLeftClickDown:
             self.handleMouseEventPos(event.pos())
+
         QProgressBar.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
+        if self.fIsReadOnly:
+            return
+
         self.fLeftClickDown = False
         QProgressBar.mouseReleaseEvent(self, event)
 
@@ -353,6 +371,7 @@ class ParamSpinBox(QAbstractSpinBox):
 
     def setReadOnly(self, yesNo):
         self.fIsReadOnly = yesNo
+        self.fBar.setReadOnly(yesNo)
         self.setButtonSymbols(QAbstractSpinBox.UpDownArrows if yesNo else QAbstractSpinBox.NoButtons)
         QAbstractSpinBox.setReadOnly(self, yesNo)
 
