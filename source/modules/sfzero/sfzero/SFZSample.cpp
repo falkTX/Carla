@@ -8,15 +8,53 @@
 #include "SFZSample.h"
 #include "SFZDebug.h"
 
+#if 0
+#include "water/audioformat/AudioFormatManager.h"
+#include "water/audioformat/AudioFormatReader.h"
+#include "water/text/StringPairArray.h"
+#else
 extern "C" {
 #include "audio_decoder/ad.h"
 }
+#endif
 
 namespace sfzero
 {
 
 bool Sample::load()
 {
+#if 0
+    static water::AudioFormatManager afm;
+    static bool needsInit = true;
+    if (needsInit)
+    {
+        needsInit = false;
+        afm.registerBasicFormats();
+    }
+
+    water::AudioFormatReader* reader = afm.createReaderFor(file_);
+    CARLA_SAFE_ASSERT_RETURN(reader != nullptr, false);
+
+    sampleRate_ = reader->sampleRate;
+    sampleLength_ = (water::uint64) reader->lengthInSamples;
+
+    // Read some extra samples, which will be filled with zeros, so interpolation
+    // can be done without having to check for the edge all the time.
+    CARLA_SAFE_ASSERT_RETURN(sampleLength_ < std::numeric_limits<int>::max(), false);
+
+    water::AudioSampleBuffer* buf = new water::AudioSampleBuffer((int) reader->numChannels, static_cast<int>(sampleLength_ + 4), true);
+    reader->read(buf, 0, static_cast<int>(sampleLength_ + 4), 0, true, true);
+    buffer_ = buf;
+
+    water::StringPairArray *metadata = &reader->metadataValues;
+    int numLoops = metadata->getValue("NumSampleLoops", "0").getIntValue();
+    if (numLoops > 0)
+    {
+        loopStart_ = (water::uint64) metadata->getValue("Loop0Start", "0").getLargeIntValue();
+        loopEnd_ = (water::uint64) metadata->getValue("Loop0End", "0").getLargeIntValue();
+    }
+    delete reader;
+#else
     const water::String filename(file_.getFullPathName());
 
     struct adinfo info;
@@ -64,6 +102,7 @@ bool Sample::load()
 
     std::free(rbuffer);
     ad_close(handle);
+#endif
 
     return true;
 }
