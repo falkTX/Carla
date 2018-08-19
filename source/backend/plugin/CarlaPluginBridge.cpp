@@ -161,10 +161,17 @@ protected:
         // start with "wine" if needed
         if (fBinary.endsWithIgnoreCase(".exe"))
         {
+            String wineCMD;
+
             if (options.wine.executable != nullptr && options.wine.executable[0] != '\0')
-                arguments.add(options.wine.executable);
+                wineCMD = options.wine.executable;
             else
-                arguments.add("wine");
+                wineCMD = "wine";
+
+            if (fBinary.endsWithIgnoreCase("64.exe"))
+                wineCMD += "64";
+
+            arguments.add(wineCMD);
         }
 #endif
 
