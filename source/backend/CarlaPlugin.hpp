@@ -935,11 +935,14 @@ protected:
     // -------------------------------------------------------------------
     // Internal helper functions
 
+public:
+    // FIXME: remove public exception on 2.1 release
     /*!
      * Call LV2 restore.
      */
     virtual void restoreLV2State() noexcept;
 
+protected:
     /*!
      * Give plugin bridges a change to update their custom data sets.
      */

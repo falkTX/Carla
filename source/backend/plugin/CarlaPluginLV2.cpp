@@ -4483,7 +4483,10 @@ public:
         CARLA_SAFE_ASSERT_RETURN(value != nullptr, LV2_STATE_ERR_NO_PROPERTY);
         CARLA_SAFE_ASSERT_RETURN(size > 0, LV2_STATE_ERR_NO_PROPERTY);
         CARLA_SAFE_ASSERT_RETURN(type != kUridNull, LV2_STATE_ERR_BAD_TYPE);
-        CARLA_SAFE_ASSERT_RETURN(flags & LV2_STATE_IS_POD, LV2_STATE_ERR_BAD_FLAGS);
+
+        // FIXME linuxsampler does not set POD flag
+        // CARLA_SAFE_ASSERT_RETURN(flags & LV2_STATE_IS_POD, LV2_STATE_ERR_BAD_FLAGS);
+
         carla_debug("CarlaPluginLV2::handleStateStore(%i:\"%s\", %p, " P_SIZE ", %i:\"%s\", %i)",
                     key, carla_lv2_urid_unmap(this, key), value, size, type, carla_lv2_urid_unmap(this, type), flags);
 
@@ -4526,6 +4529,9 @@ public:
         pData->custom.append(newData);
 
         return LV2_STATE_SUCCESS;
+
+        // unused
+        (void)flags;
     }
 
     const void* handleStateRetrieve(const uint32_t key, size_t* const size, uint32_t* const type, uint32_t* const flags)

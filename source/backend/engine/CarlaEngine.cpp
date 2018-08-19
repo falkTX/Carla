@@ -40,6 +40,9 @@
 #include "water/xml/XmlDocument.h"
 #include "water/xml/XmlElement.h"
 
+// FIXME Remove on 2.1 release
+#include "lv2/atom.h"
+
 using water::Array;
 using water::CharPointer_UTF8;
 using water::File;
@@ -2119,6 +2122,63 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                 return true;
 
             CARLA_SAFE_ASSERT_CONTINUE(stateSave.type != nullptr);
+
+#ifndef BUILD_BRIDGE
+            // compatibility code to load projects with GIG files
+            // FIXME Remove on 2.1 release
+            if (std::strcmp(stateSave.type, "GIG") == 0)
+            {
+                if (addPlugin(PLUGIN_LV2, "", stateSave.name, "http://linuxsampler.org/plugins/linuxsampler", 0, nullptr))
+                {
+                    const uint pluginId = pData->curPluginCount;
+
+                    if (CarlaPlugin* const plugin = pData->plugins[pluginId].plugin)
+                    {
+                        callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
+                        if (pData->aboutToClose)
+                            return true;
+
+                        String lsState;
+                        lsState << "0.35\n";
+                        lsState << "18 0 Chromatic\n";
+                        lsState << "18 1 Drum Kits\n";
+                        lsState << "20 0\n";
+                        lsState << "0 1 " << stateSave.binary << "\n";
+                        lsState << "0 0 0 0 1 0 GIG\n";
+
+                        plugin->setCustomData(LV2_ATOM__String, "http://linuxsampler.org/schema#state-string", lsState.toRawUTF8(), true);
+                        plugin->restoreLV2State();
+
+                        plugin->setDryWet(stateSave.dryWet, true, true);
+                        plugin->setVolume(stateSave.volume, true, true);
+                        plugin->setBalanceLeft(stateSave.balanceLeft, true, true);
+                        plugin->setBalanceRight(stateSave.balanceRight, true, true);
+                        plugin->setPanning(stateSave.panning, true, true);
+                        plugin->setCtrlChannel(stateSave.ctrlChannel, true, true);
+                        plugin->setActive(stateSave.active, true, true);
+
+                        ++pData->curPluginCount;
+
+                        plugin->setEnabled(true);
+                        callback(ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, 0, 0, 0.0f, plugin->getName());
+
+                        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+                            pData->graph.addPlugin(plugin);
+                    }
+                    else
+                    {
+                        carla_stderr2("Failed to get new plugin, state will not be restored correctly\n");
+                    }
+                }
+                else
+                {
+                    carla_stderr2("Failed to load a linuxsampler LV2 plugin, GIG file won't be loaded");
+                }
+
+                continue;
+            }
+#endif
 
             const void* extraStuff    = nullptr;
             static const char kTrue[] = "true";
