@@ -1140,7 +1140,7 @@ public:
 
             const double ppqBar  = double(timeInfo.bbt.bar - 1) * timeInfo.bbt.beatsPerBar;
             const double ppqBeat = double(timeInfo.bbt.beat - 1);
-            const double ppqTick = double(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat;
+            const double ppqTick = timeInfo.bbt.tick / timeInfo.bbt.ticksPerBeat;
 
             // PPQ Pos
             fTimeInfo.ppqPos = ppqBar + ppqBeat + ppqTick;

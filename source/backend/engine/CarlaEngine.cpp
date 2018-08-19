@@ -282,7 +282,7 @@ void CarlaEngine::idle() noexcept
         }
     }
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
     pData->osc.idle();
 #endif
 }
@@ -490,16 +490,14 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
     }
     else
     {
+#ifndef BUILD_BRIDGE
         bool use16Outs;
+#endif
         setLastError("Invalid or unsupported plugin type");
 
         switch (ptype)
         {
         case PLUGIN_NONE:
-            break;
-
-        case PLUGIN_INTERNAL:
-            plugin = CarlaPlugin::newNative(initializer);
             break;
 
         case PLUGIN_LADSPA:
@@ -518,6 +516,11 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
             plugin = CarlaPlugin::newVST2(initializer);
             break;
 
+#ifndef BUILD_BRIDGE
+        case PLUGIN_INTERNAL:
+            plugin = CarlaPlugin::newNative(initializer);
+            break;
+
         case PLUGIN_SF2:
             use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
             plugin = CarlaPlugin::newFluidSynth(initializer, use16Outs);
@@ -530,6 +533,14 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
         case PLUGIN_JACK:
             plugin = CarlaPlugin::newJackApp(initializer);
             break;
+#else
+        case PLUGIN_INTERNAL:
+        case PLUGIN_SF2:
+        case PLUGIN_SFZ:
+        case PLUGIN_JACK:
+            setLastError("Plugin bridges cannot handle this binary");
+            break;
+#endif
         }
     }
 
@@ -1620,7 +1631,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
     }
 }
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
 // -----------------------------------------------------------------------
 // OSC Stuff
 

@@ -1751,7 +1751,8 @@ protected:
 
         if (timeInfo.bbt.valid)
         {
-            std::sprintf(tmpBuf, P_UINT64 ":%i:%i:%i\n", timeInfo.frame, timeInfo.bbt.bar, timeInfo.bbt.beat, timeInfo.bbt.tick);
+            std::sprintf(tmpBuf, P_UINT64 ":%i:%i:%i\n",
+                         timeInfo.frame, timeInfo.bbt.bar, timeInfo.bbt.beat, static_cast<int>(timeInfo.bbt.tick + 0.5));
             if (! fUiServer.writeMessage(tmpBuf))
                 return;
 

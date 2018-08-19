@@ -18,11 +18,13 @@
 #ifndef CARLA_ENGINE_INTERNAL_HPP_INCLUDED
 #define CARLA_ENGINE_INTERNAL_HPP_INCLUDED
 
-#include "CarlaEngineOsc.hpp"
 #include "CarlaEngineThread.hpp"
 #include "CarlaEngineUtils.hpp"
 
-#include "hylia/hylia.h"
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+# include "CarlaEngineOsc.hpp"
+# include "hylia/hylia.h"
+#endif
 
 // FIXME only use CARLA_PREVENT_HEAP_ALLOCATION for structs
 // maybe separate macro
@@ -207,7 +209,7 @@ struct EnginePluginData {
 struct CarlaEngine::ProtectedData {
     CarlaEngineThread thread;
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
     CarlaEngineOsc osc;
 # ifdef BUILD_BRIDGE
     CarlaOscData* oscData;

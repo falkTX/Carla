@@ -245,7 +245,7 @@ void EngineInternalTime::fillEngineTimeInfo(const uint32_t newFrames) noexcept
 
     timeInfo.bbt.beatsPerBar = static_cast<float>(beatsPerBar);
     timeInfo.bbt.beatsPerMinute = beatsPerMinute;
-    timeInfo.bbt.tick = static_cast<int32_t>(ticktmp);
+    timeInfo.bbt.tick = ticktmp;
     tick = ticktmp;
 
     if (transportMode == ENGINE_TRANSPORT_MODE_INTERNAL && timeInfo.playing)
@@ -322,7 +322,7 @@ void EngineInternalTime::fillJackTimeInfo(jack_position_t* const pos, const uint
 
     pos->beats_per_bar = static_cast<float>(beatsPerBar);
     pos->beats_per_minute = beatsPerMinute;
-    pos->tick = static_cast<int32_t>(ticktmp);
+    pos->tick = ticktmp;
     tick = ticktmp;
 }
 
@@ -418,7 +418,7 @@ void EngineNextAction::clearAndReset() noexcept
 
 CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
     : thread(engine),
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
       osc(engine),
       oscData(nullptr),
 #endif
@@ -473,7 +473,7 @@ CarlaEngine::ProtectedData::~ProtectedData() noexcept
 bool CarlaEngine::ProtectedData::init(const char* const clientName)
 {
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(name.isEmpty(), "Invalid engine internal data (err #1)");
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(oscData == nullptr, "Invalid engine internal data (err #2)");
 #endif
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(events.in  == nullptr, "Invalid engine internal data (err #4)");
@@ -523,7 +523,7 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
 
     timeInfo.clear();
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
     osc.init(clientName);
 # ifndef BUILD_BRIDGE
     oscData = osc.getControlData();
@@ -554,7 +554,7 @@ void CarlaEngine::ProtectedData::close()
     thread.stopThread(500);
     nextAction.clearAndReset();
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
     osc.close();
     oscData = nullptr;
 #endif

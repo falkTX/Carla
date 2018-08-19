@@ -157,8 +157,8 @@ typedef struct {
 
     int32_t bar;  /** current bar              */
     int32_t beat; /** current beat-within-bar  */
-    int32_t tick; /** current tick-within-beat */
-    double barStartTick;
+    double  tick; /** current tick-within-beat */
+    double  barStartTick;
 
     float beatsPerBar; /** time signature "numerator"  */
     float beatType;    /** time signature "denominator" */

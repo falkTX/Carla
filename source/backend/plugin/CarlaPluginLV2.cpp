@@ -30,7 +30,6 @@
 #include "CarlaPluginUI.hpp"
 #include "Lv2AtomRingBuffer.hpp"
 
-#include "../engine/CarlaEngineOsc.hpp"
 #include "../modules/lilv/config/lilv_config.h"
 
 extern "C" {
@@ -2804,7 +2803,7 @@ public:
             int32_t rindex;
 
             const double barBeat = static_cast<double>(timeInfo.bbt.beat - 1)
-                                 + (static_cast<double>(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat);
+                                 + (timeInfo.bbt.tick / timeInfo.bbt.ticksPerBeat);
 
             // update input ports
             for (uint32_t k=0; k < pData->param.count; ++k)

@@ -297,7 +297,7 @@ EngineTimeInfoBBT::EngineTimeInfoBBT() noexcept
     : valid(false),
       bar(0),
       beat(0),
-      tick(0),
+      tick(0.0),
       barStartTick(0.0),
       beatsPerBar(0.0f),
       beatType(0.0f),
