@@ -61,3 +61,34 @@ sudo apt install python3-pyqt5.qtsvg python3-rdflib pyqt5-dev-tools \
   libmagic-dev liblo-dev libasound2-dev libpulse-dev libx11-dev \
   libgtk2.0-dev libgtk-3-dev libqt4-dev qtbase5-dev libfluidsynth-dev
 ```
+
+## BUILD BRIDGES
+
+Carla can make use of plugin bridges to load additional plugin types.
+
+### 32bit plugins on 64bit systems
+
+Simply run `make posix32` after a regular Carla build, and install or run Carla locally.<br/>
+This feature requires a compiler capable of building 32bit binaries.
+
+### JACK Applications inside Carla
+
+This is built by default on Linux systems.<br/>
+Requires LD_PRELOAD support by the OS and the GCC compiler.<br/>
+Does not work with clang. (if you discover why, please let me know!)
+
+### Windows plugins (via Wine)
+
+Requires a mingw compiler, and winegcc.
+
+First, we build the Windows bridges using mingw, like this: (adjust as needed)
+```
+make win32 CC=i686-w64-mingw32-gcc CXX=i686-w64-mingw32-g++
+make win64 CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++
+```
+
+To finalize, we build the wine<->native bridges using winegcc:
+```
+make wine32
+make wine64
+```
