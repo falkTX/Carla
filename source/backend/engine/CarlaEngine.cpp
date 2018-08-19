@@ -554,12 +554,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
 
     /**/ if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
     {
-        /**/ if (! plugin->canRunInRack())
-        {
-            setLastError("Carla's rack mode can only work with Mono or Stereo plugins, sorry!");
-            canRun = false;
-        }
-        else if (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0)
+        if (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0)
         {
             setLastError("Carla's rack mode cannot work with plugins that have CV ports, sorry!");
             canRun = false;

@@ -47,9 +47,8 @@ const ushort kPluginMaxMidiEvents = 512;
 // -----------------------------------------------------------------------
 // Extra plugin hints, hidden from backend
 
-const uint PLUGIN_EXTRA_HINT_HAS_MIDI_IN      = 0x01;
-const uint PLUGIN_EXTRA_HINT_HAS_MIDI_OUT     = 0x02;
-const uint PLUGIN_EXTRA_HINT_CAN_RUN_RACK     = 0x04;
+const uint PLUGIN_EXTRA_HINT_HAS_MIDI_IN  = 0x01;
+const uint PLUGIN_EXTRA_HINT_HAS_MIDI_OUT = 0x02;
 
 // -----------------------------------------------------------------------
 // Special parameters

@@ -1293,9 +1293,6 @@ public:
         // extra plugin hints
         pData->extraHints = 0x0;
 
-        if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0) && mIns <= 1 && mOuts <= 1)
-            pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
-
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
 

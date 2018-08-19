@@ -808,11 +808,6 @@ public:
     // Helper functions
 
     /*!
-     * Check if the plugin can run in rack mode.
-     */
-    bool canRunInRack() const noexcept;
-
-    /*!
      * Get the plugin's engine, as passed in the constructor.
      */
     CarlaEngine* getEngine() const noexcept;

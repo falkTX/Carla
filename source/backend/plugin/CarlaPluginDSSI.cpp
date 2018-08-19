@@ -1100,8 +1100,7 @@ public:
 #endif
 
         // extra plugin hints
-        pData->extraHints  = 0x0;
-        pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
+        pData->extraHints = 0x0;
 
         if (mIns > 0)
             pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_IN;

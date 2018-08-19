@@ -1071,9 +1071,6 @@ public:
         if (fInfo.mOuts > 0)
             pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_OUT;
 
-        if (fInfo.aIns <= 2 && fInfo.aOuts <= 2 && (fInfo.aIns == fInfo.aOuts || fInfo.aIns == 0 || fInfo.aOuts == 0))
-            pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
-
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
 

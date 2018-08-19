@@ -2411,11 +2411,6 @@ void CarlaPlugin::uiNoteOff(const uint8_t channel, const uint8_t note) noexcept
     CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
 }
 
-bool CarlaPlugin::canRunInRack() const noexcept
-{
-    return (pData->extraHints & PLUGIN_EXTRA_HINT_CAN_RUN_RACK) != 0;
-}
-
 CarlaEngine* CarlaPlugin::getEngine() const noexcept
 {
     return pData->engine;
