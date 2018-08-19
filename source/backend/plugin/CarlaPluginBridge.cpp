@@ -267,10 +267,12 @@ protected:
                 if (options.wine.rtPrio)
                 {
                     carla_setenv("STAGING_SHARED_MEMORY", "1");
+                    carla_setenv("WINE_RT_POLICY", "FF");
 
                     std::snprintf(strBuf, STR_MAX, "%i", options.wine.baseRtPrio);
                     carla_setenv("STAGING_RT_PRIORITY_BASE", strBuf);
                     carla_setenv("WINE_RT", strBuf);
+                    carla_setenv("WINE_RT_PRIO", strBuf);
 
                     std::snprintf(strBuf, STR_MAX, "%i", options.wine.serverRtPrio);
                     carla_setenv("STAGING_RT_PRIORITY_SERVER", strBuf);
@@ -279,9 +281,11 @@ protected:
                 else
                 {
                     carla_unsetenv("STAGING_SHARED_MEMORY");
+                    carla_unsetenv("WINE_RT_POLICY");
                     carla_unsetenv("STAGING_RT_PRIORITY_BASE");
                     carla_unsetenv("STAGING_RT_PRIORITY_SERVER");
                     carla_unsetenv("WINE_RT");
+                    carla_unsetenv("WINE_RT_PRIO");
                     carla_unsetenv("WINE_SVR_RT");
                 }
 
