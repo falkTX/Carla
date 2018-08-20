@@ -222,11 +222,12 @@ void RtAudio :: openStream( RtAudio::StreamParameters *outputParameters,
                             unsigned int *bufferFrames,
                             RtAudioCallback callback, void *userData,
                             RtAudio::StreamOptions *options,
+                            RtAudioBufferSizeCallback bufSizeCallback,
                             RtAudioErrorCallback errorCallback )
 {
   return rtapi_->openStream( outputParameters, inputParameters, format,
                              sampleRate, bufferFrames, callback,
-                             userData, options, errorCallback );
+                             userData, options, bufSizeCallback, errorCallback );
 }
 
 // *************************************************** //
@@ -259,6 +260,7 @@ void RtApi :: openStream( RtAudio::StreamParameters *oParams,
                           unsigned int *bufferFrames,
                           RtAudioCallback callback, void *userData,
                           RtAudio::StreamOptions *options,
+                          RtAudioBufferSizeCallback bufSizeCallback,
                           RtAudioErrorCallback errorCallback )
 {
   if ( stream_.state != STREAM_CLOSED ) {
@@ -340,6 +342,7 @@ void RtApi :: openStream( RtAudio::StreamParameters *oParams,
 
   stream_.callbackInfo.callback = (void *) callback;
   stream_.callbackInfo.userData = userData;
+  stream_.callbackInfo.bufSizeCallback = (void *) bufSizeCallback;
   stream_.callbackInfo.errorCallback = (void *) errorCallback;
 
   if ( options ) options->numberOfBuffers = stream_.nBuffers;
@@ -1983,6 +1986,16 @@ RtAudio::DeviceInfo RtApiJack :: getDeviceInfo( unsigned int device )
   return devInfo[device];
 }
 
+static int jackBufferSizeHandler( jack_nframes_t nframes, void *infoPointer )
+{
+  CallbackInfo *info = (CallbackInfo *) infoPointer;
+
+  RtApiJack *object = (RtApiJack *) info->object;
+  if ( object->bufferSizeEvent( (unsigned long) nframes ) == false ) return 1;
+
+  return 0;
+}
+
 static int jackCallbackHandler( jack_nframes_t nframes, void *infoPointer )
 {
   CallbackInfo *info = (CallbackInfo *) infoPointer;
@@ -2134,7 +2147,7 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
 
   // Allocate necessary internal buffers.
   unsigned long bufferBytes;
-  bufferBytes = stream_.nUserChannels[mode] * *bufferSize * formatBytes( stream_.userFormat );
+  bufferBytes = stream_.nUserChannels[mode] * 8192 * formatBytes( stream_.userFormat );
   stream_.userBuffer[mode] = (char *) calloc( bufferBytes, 1 );
   if ( stream_.userBuffer[mode] == NULL ) {
     errorText_ = "RtApiJack::probeDeviceOpen: error allocating user buffer memory.";
@@ -2155,7 +2168,7 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
     }
 
     if ( makeBuffer ) {
-      bufferBytes *= *bufferSize;
+      bufferBytes *= 8192;
       if ( stream_.deviceBuffer ) free( stream_.deviceBuffer );
       stream_.deviceBuffer = (char *) calloc( bufferBytes, 1 );
       if ( stream_.deviceBuffer == NULL ) {
@@ -2182,6 +2195,7 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
     stream_.mode = DUPLEX;
   else {
     stream_.mode = mode;
+    jackbridge_set_buffer_size_callback( handle->client, jackBufferSizeHandler, (void *) &stream_.callbackInfo );
     jackbridge_set_process_callback( handle->client, jackCallbackHandler, (void *) &stream_.callbackInfo );
     jackbridge_set_xrun_callback( handle->client, jackXrun, (void *) &stream_.apiHandle );
     jackbridge_on_shutdown( handle->client, jackShutdown, (void *) &stream_.callbackInfo );
@@ -2419,8 +2433,8 @@ bool RtApiJack :: callbackEvent( unsigned long nframes )
     error( RtAudioError::WARNING );
     return FAILURE;
   }
-  if ( stream_.bufferSize != nframes ) {
-    errorText_ = "RtApiCore::callbackEvent(): the JACK buffer size has changed ... cannot process!";
+  if ( nframes > 8192 ) {
+    errorText_ = "RtApiCore::callbackEvent(): the JACK buffer size is too big ... cannot process!";
     error( RtAudioError::WARNING );
     return FAILURE;
   }
@@ -2454,7 +2468,7 @@ bool RtApiJack :: callbackEvent( unsigned long nframes )
       handle->xrun[1] = false;
     }
     int cbReturnValue = callback( stream_.userBuffer[0], stream_.userBuffer[1],
-                                  stream_.bufferSize, streamTime, status, info->userData );
+                                  nframes, streamTime, status, info->userData );
     if ( cbReturnValue == 2 ) {
       stream_.state = STREAM_STOPPING;
       handle->drainCounter = 2;
@@ -2523,6 +2537,26 @@ bool RtApiJack :: callbackEvent( unsigned long nframes )
  unlock:
   RtApi::tickStreamTime();
   return SUCCESS;
+}
+
+bool RtApiJack :: bufferSizeEvent( unsigned long nframes )
+{
+  if ( stream_.state == STREAM_STOPPED || stream_.state == STREAM_STOPPING ) return SUCCESS;
+  if ( stream_.state == STREAM_CLOSED ) {
+    errorText_ = "RtApiCore::callbackEvent(): the stream is closed ... this shouldn't happen!";
+    error( RtAudioError::WARNING );
+    return FAILURE;
+  }
+  if ( nframes > 8192 ) {
+    errorText_ = "RtApiCore::callbackEvent(): the JACK buffer size is too big ... cannot process!";
+    error( RtAudioError::WARNING );
+    return FAILURE;
+  }
+
+  CallbackInfo *info = (CallbackInfo *) &stream_.callbackInfo;
+
+  RtAudioBufferSizeCallback callback = (RtAudioBufferSizeCallback) info->bufSizeCallback;
+  return callback( nframes, info->userData );
 }
   //******************** End of __UNIX_JACK__ *********************//
 #endif
