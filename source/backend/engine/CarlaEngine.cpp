@@ -479,7 +479,12 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
     }
 #endif // ! BUILD_BRIDGE
 
-    if (ptype != PLUGIN_INTERNAL && (btype != BINARY_NATIVE || (preferBridges && bridgeBinary.isNotEmpty())))
+    const bool canBeBridged = ptype != PLUGIN_INTERNAL
+                           && ptype != PLUGIN_SF2
+                           && ptype != PLUGIN_SFZ
+                           && ptype != PLUGIN_JACK;
+
+    if (canBeBridged && (btype != BINARY_NATIVE || (preferBridges && bridgeBinary.isNotEmpty())))
     {
         if (bridgeBinary.isNotEmpty())
         {
