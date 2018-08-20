@@ -29,17 +29,20 @@ typedef struct adinfo ADInfo;
 
 struct AudioFilePool {
     float*   buffer[2];
+    uint32_t sampleRate;
     uint32_t startFrame;
     uint32_t size;
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     AudioFilePool()
         : buffer{nullptr},
+          sampleRate(0),
           startFrame(0),
           size(0) {}
 #else
     AudioFilePool()
         : startFrame(0),
+          sampleRate(0),
           size(0)
     {
         buffer[0] = buffer[1] = nullptr;
@@ -54,14 +57,15 @@ struct AudioFilePool {
         CARLA_ASSERT(size == 0);
     }
 
-    void create(const uint32_t sampleRate)
+    void create(const uint32_t srate)
     {
         CARLA_ASSERT(buffer[0] == nullptr);
         CARLA_ASSERT(buffer[1] == nullptr);
         CARLA_ASSERT(startFrame == 0);
         CARLA_ASSERT(size == 0);
 
-        size = sampleRate * 2;
+        size = srate * 5;
+        sampleRate = srate;
 
         buffer[0] = new float[size];
         buffer[1] = new float[size];
@@ -221,10 +225,8 @@ public:
 
     void tryPutData(AudioFilePool& pool)
     {
-        CARLA_ASSERT(pool.size == fPool.size);
+        CARLA_SAFE_ASSERT_RETURN(pool.size == fPool.size,);
 
-        if (pool.size != fPool.size)
-            return;
         if (! fMutex.tryLock())
             return;
 
@@ -285,7 +287,7 @@ public:
         carla_zeroFloats(tmpData, tmpSize);
 
         {
-            carla_stderr("R: poll data - reading at %li:%02li", readFrame/44100/60, (readFrame/44100) % 60);
+            carla_debug("R: poll data - reading at %li:%02li", readFrame/fPool.sampleRate/60, (readFrame/fPool.sampleRate) % 60);
 
             ad_seek(fFilePtr, readFrame);
             size_t i = 0;
