@@ -253,7 +253,8 @@ public:
           fIsUiVisible(false),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
-          fMidiEventCount(0),
+          fMidiEventInCount(0),
+          fMidiEventOutCount(0),
           fCurBufferSize(engine->getBufferSize()),
           fCurSampleRate(engine->getSampleRate()),
           fMidiIn(),
@@ -263,7 +264,8 @@ public:
         carla_debug("CarlaPluginNative::CarlaPluginNative(%p, %i)", engine, id);
 
         carla_fill(fCurMidiProgs, 0, MAX_MIDI_CHANNELS);
-        carla_zeroStructs(fMidiEvents, kPluginMaxMidiEvents*2);
+        carla_zeroStructs(fMidiInEvents, kPluginMaxMidiEvents);
+        carla_zeroStructs(fMidiOutEvents, kPluginMaxMidiEvents);
         carla_zeroStruct(fTimeInfo);
 
         fHost.handle      = this;
@@ -410,8 +412,8 @@ public:
 
         uint options = 0x0;
 
-        // can't disable fixed buffers if using MIDI output
-        if (fDescriptor->midiOuts == 0 && (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS) == 0)
+        // can't disable fixed buffers if required by the plugin
+        if ((fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS) == 0x0)
             options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
         // can't disable forced stereo if enabled in the engine
@@ -1492,8 +1494,9 @@ public:
             return;
         }
 
-        fMidiEventCount = 0;
-        carla_zeroStructs(fMidiEvents, kPluginMaxMidiEvents*2);
+        fMidiEventInCount = fMidiEventOutCount = 0;
+        carla_zeroStructs(fMidiInEvents, kPluginMaxMidiEvents);
+        carla_zeroStructs(fMidiOutEvents, kPluginMaxMidiEvents);
 
         // --------------------------------------------------------------------------------------------------------
         // Check if needs reset
@@ -1502,31 +1505,31 @@ public:
         {
             if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
-                fMidiEventCount = MAX_MIDI_CHANNELS*2;
+                fMidiEventInCount = MAX_MIDI_CHANNELS*2;
 
                 for (uint8_t k=0, i=MAX_MIDI_CHANNELS; k < MAX_MIDI_CHANNELS; ++k)
                 {
-                    fMidiEvents[k].data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (k & MIDI_CHANNEL_BIT));
-                    fMidiEvents[k].data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
-                    fMidiEvents[k].data[2] = 0;
-                    fMidiEvents[k].size    = 3;
+                    fMidiInEvents[k].data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (k & MIDI_CHANNEL_BIT));
+                    fMidiInEvents[k].data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
+                    fMidiInEvents[k].data[2] = 0;
+                    fMidiInEvents[k].size    = 3;
 
-                    fMidiEvents[k+i].data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (k & MIDI_CHANNEL_BIT));
-                    fMidiEvents[k+i].data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
-                    fMidiEvents[k+i].data[2] = 0;
-                    fMidiEvents[k+i].size    = 3;
+                    fMidiInEvents[k+i].data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (k & MIDI_CHANNEL_BIT));
+                    fMidiInEvents[k+i].data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
+                    fMidiInEvents[k+i].data[2] = 0;
+                    fMidiInEvents[k+i].size    = 3;
                 }
             }
             else if (pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
             {
-                fMidiEventCount = MAX_MIDI_NOTE;
+                fMidiEventInCount = MAX_MIDI_NOTE;
 
                 for (uint8_t k=0; k < MAX_MIDI_NOTE; ++k)
                 {
-                    fMidiEvents[k].data[0] = uint8_t(MIDI_STATUS_NOTE_OFF | (pData->ctrlChannel & MIDI_CHANNEL_BIT));
-                    fMidiEvents[k].data[1] = k;
-                    fMidiEvents[k].data[2] = 0;
-                    fMidiEvents[k].size    = 3;
+                    fMidiInEvents[k].data[0] = uint8_t(MIDI_STATUS_NOTE_OFF | (pData->ctrlChannel & MIDI_CHANNEL_BIT));
+                    fMidiInEvents[k].data[1] = k;
+                    fMidiInEvents[k].data[2] = 0;
+                    fMidiInEvents[k].size    = 3;
                 }
             }
 
@@ -1574,13 +1577,13 @@ public:
             {
                 ExternalMidiNote note = { 0, 0, 0 };
 
-                for (; fMidiEventCount < kPluginMaxMidiEvents*2 && ! pData->extNotes.data.isEmpty();)
+                for (; fMidiEventInCount < kPluginMaxMidiEvents && ! pData->extNotes.data.isEmpty();)
                 {
                     note = pData->extNotes.data.getFirst(note, true);
 
                     CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
-                    NativeMidiEvent& nativeEvent(fMidiEvents[fMidiEventCount++]);
+                    NativeMidiEvent& nativeEvent(fMidiInEvents[fMidiEventInCount++]);
 
                     nativeEvent.data[0] = uint8_t((note.velo > 0 ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF) | (note.channel & MIDI_CHANNEL_BIT));
                     nativeEvent.data[1] = note.note;
@@ -1638,10 +1641,16 @@ public:
                         else
                             nextBankId = 0;
 
-                        if (fMidiEventCount > 0)
+                        if (fMidiEventInCount > 0)
                         {
-                            carla_zeroStructs(fMidiEvents, fMidiEventCount);
-                            fMidiEventCount = 0;
+                            carla_zeroStructs(fMidiInEvents, fMidiEventInCount);
+                            fMidiEventInCount = 0;
+                        }
+
+                        if (fMidiEventOutCount > 0)
+                        {
+                            carla_zeroStructs(fMidiOutEvents, fMidiEventOutCount);
+                            fMidiEventOutCount = 0;
                         }
                     }
                     else
@@ -1741,10 +1750,10 @@ public:
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_CONTROL)
                         {
-                            if (fMidiEventCount >= kPluginMaxMidiEvents*2)
+                            if (fMidiEventInCount >= kPluginMaxMidiEvents)
                                 continue;
 
-                            NativeMidiEvent& nativeEvent(fMidiEvents[fMidiEventCount++]);
+                            NativeMidiEvent& nativeEvent(fMidiInEvents[fMidiEventInCount++]);
                             carla_zeroStruct(nativeEvent);
 
                             nativeEvent.time    = sampleAccurate ? startTime : eventTime;
@@ -1765,10 +1774,10 @@ public:
                         }
                         else if (pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
                         {
-                            if (fMidiEventCount >= kPluginMaxMidiEvents*2)
+                            if (fMidiEventInCount >= kPluginMaxMidiEvents)
                                 continue;
 
-                            NativeMidiEvent& nativeEvent(fMidiEvents[fMidiEventCount++]);
+                            NativeMidiEvent& nativeEvent(fMidiInEvents[fMidiEventInCount++]);
                             carla_zeroStruct(nativeEvent);
 
                             nativeEvent.time    = sampleAccurate ? startTime : eventTime;
@@ -1807,10 +1816,10 @@ public:
                         }
                         else if (pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
                         {
-                            if (fMidiEventCount >= kPluginMaxMidiEvents*2)
+                            if (fMidiEventInCount >= kPluginMaxMidiEvents)
                                 continue;
 
-                            NativeMidiEvent& nativeEvent(fMidiEvents[fMidiEventCount++]);
+                            NativeMidiEvent& nativeEvent(fMidiInEvents[fMidiEventInCount++]);
                             carla_zeroStruct(nativeEvent);
 
                             nativeEvent.time    = sampleAccurate ? startTime : eventTime;
@@ -1823,10 +1832,10 @@ public:
                     case kEngineControlEventTypeAllSoundOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-                            if (fMidiEventCount >= kPluginMaxMidiEvents*2)
+                            if (fMidiEventInCount >= kPluginMaxMidiEvents)
                                 continue;
 
-                            NativeMidiEvent& nativeEvent(fMidiEvents[fMidiEventCount++]);
+                            NativeMidiEvent& nativeEvent(fMidiInEvents[fMidiEventInCount++]);
                             carla_zeroStruct(nativeEvent);
 
                             nativeEvent.time    = sampleAccurate ? startTime : eventTime;
@@ -1848,10 +1857,10 @@ public:
                             }
 #endif
 
-                            if (fMidiEventCount >= kPluginMaxMidiEvents*2)
+                            if (fMidiEventInCount >= kPluginMaxMidiEvents)
                                 continue;
 
-                            NativeMidiEvent& nativeEvent(fMidiEvents[fMidiEventCount++]);
+                            NativeMidiEvent& nativeEvent(fMidiInEvents[fMidiEventInCount++]);
                             carla_zeroStruct(nativeEvent);
 
                             nativeEvent.time    = sampleAccurate ? startTime : eventTime;
@@ -1866,7 +1875,7 @@ public:
                 }
 
                 case kEngineEventTypeMidi: {
-                    if (fMidiEventCount >= kPluginMaxMidiEvents*2)
+                    if (fMidiEventInCount >= kPluginMaxMidiEvents)
                         continue;
 
                     const EngineMidiEvent& midiEvent(event.midi);
@@ -1892,7 +1901,7 @@ public:
                     if (status == MIDI_STATUS_NOTE_ON && midiEvent.data[2] == 0)
                         status = MIDI_STATUS_NOTE_OFF;
 
-                    NativeMidiEvent& nativeEvent(fMidiEvents[fMidiEventCount++]);
+                    NativeMidiEvent& nativeEvent(fMidiInEvents[fMidiEventInCount++]);
                     carla_zeroStruct(nativeEvent);
 
                     nativeEvent.port = midiEvent.port;
@@ -1928,12 +1937,12 @@ public:
 
         } // End of Plugin processing (no events)
 
+#ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
-        // Control and MIDI Output
+        // Control Output
 
         if (pData->event.portOut != nullptr)
         {
-#ifndef BUILD_BRIDGE
             float value, curValue;
 
             for (uint32_t k=0; k < pData->param.count; ++k)
@@ -1950,24 +1959,8 @@ public:
                     pData->event.portOut->writeControlEvent(0, pData->param.data[k].midiChannel, kEngineControlEventTypeParameter, static_cast<uint16_t>(pData->param.data[k].midiCC), value);
                 }
             }
+        } // End of Control Output
 #endif
-
-            // reverse lookup MIDI events
-            for (uint32_t k = (kPluginMaxMidiEvents*2)-1; k >= fMidiEventCount; --k)
-            {
-                if (fMidiEvents[k].data[0] == 0)
-                    break;
-
-                const uint8_t channel = uint8_t(MIDI_GET_CHANNEL_FROM_DATA(fMidiEvents[k].data));
-                const uint8_t port    = fMidiEvents[k].port;
-
-                if (fMidiOut.count > 1 && port < fMidiOut.count)
-                    fMidiOut.ports[port]->writeMidiEvent(fMidiEvents[k].time, channel, fMidiEvents[k].size, fMidiEvents[k].data);
-                else
-                    pData->event.portOut->writeMidiEvent(fMidiEvents[k].time, channel, fMidiEvents[k].size, fMidiEvents[k].data);
-            }
-
-        } // End of Control and MIDI Output
     }
 
     bool processSingle(const float** const audioIn, float** const audioOut, const float** const cvIn, float** const cvOut, const uint32_t frames, const uint32_t timeOffset)
@@ -2041,19 +2034,19 @@ public:
 
         if (fHandle2 == nullptr)
         {
-            fDescriptor->process(fHandle, fAudioInBuffers, fAudioOutBuffers, frames, fMidiEvents, fMidiEventCount);
+            fDescriptor->process(fHandle, fAudioInBuffers, fAudioOutBuffers, frames, fMidiInEvents, fMidiEventInCount);
         }
         else
         {
             fDescriptor->process(fHandle,
                                  (pData->audioIn.count > 0) ? &fAudioInBuffers[0] : nullptr,
                                  (pData->audioOut.count > 0) ? &fAudioOutBuffers[0] : nullptr,
-                                 frames, fMidiEvents, fMidiEventCount);
+                                 frames, fMidiInEvents, fMidiEventInCount);
 
             fDescriptor->process(fHandle2,
                                  (pData->audioIn.count > 0) ? &fAudioInBuffers[1] : nullptr,
                                  (pData->audioOut.count > 0) ? &fAudioOutBuffers[1] : nullptr,
-                                 frames, fMidiEvents, fMidiEventCount);
+                                 frames, fMidiInEvents, fMidiEventInCount);
         }
 
         fIsProcessing = false;
@@ -2136,6 +2129,23 @@ public:
                 cvOut[i][k+timeOffset] = fCvOutBuffers[i][k];
         }
 #endif
+
+        // --------------------------------------------------------------------------------------------------------
+        // MIDI Output
+
+        if (pData->event.portOut != nullptr)
+        {
+            for (uint32_t k = 0; k < fMidiEventOutCount; --k)
+            {
+                const uint8_t channel = uint8_t(MIDI_GET_CHANNEL_FROM_DATA(fMidiOutEvents[k].data));
+                const uint8_t port    = fMidiOutEvents[k].port;
+
+                if (fMidiOut.count > 1 && port < fMidiOut.count)
+                    fMidiOut.ports[port]->writeMidiEvent(fMidiOutEvents[k].time+timeOffset, channel, fMidiOutEvents[k].size, fMidiOutEvents[k].data);
+                else
+                    pData->event.portOut->writeMidiEvent(fMidiOutEvents[k].time+timeOffset, channel, fMidiOutEvents[k].size, fMidiOutEvents[k].data);
+            }
+        }
 
         // --------------------------------------------------------------------------------------------------------
 
@@ -2348,18 +2358,14 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(event != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(event->data[0] != 0, false);
 
-        // reverse-find first free event, and put it there
-        for (uint32_t i=(kPluginMaxMidiEvents*2)-1; i >= fMidiEventCount; --i)
+        if (fMidiEventOutCount == kPluginMaxMidiEvents)
         {
-            if (fMidiEvents[i].data[0] != 0)
-                continue;
-
-            std::memcpy(&fMidiEvents[i], event, sizeof(NativeMidiEvent));
-            return true;
+            carla_stdout("CarlaPluginNative::handleWriteMidiEvent(%p) - buffer full", event);
+            return false;
         }
 
-        carla_stdout("CarlaPluginNative::handleWriteMidiEvent(%p) - buffer full", event);
-        return false;
+        std::memcpy(&fMidiOutEvents[fMidiEventOutCount++], event, sizeof(NativeMidiEvent));
+        return true;
     }
 
     void handleUiParameterChanged(const uint32_t index, const float value)
@@ -2561,7 +2567,7 @@ public:
 
         pData->options = 0x0;
 
-        if (fDescriptor->midiOuts != 0 || (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS) != 0)
+        if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
          else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
@@ -2611,8 +2617,10 @@ private:
 
     float**         fAudioInBuffers;
     float**         fAudioOutBuffers;
-    uint32_t        fMidiEventCount;
-    NativeMidiEvent fMidiEvents[kPluginMaxMidiEvents*2];
+    uint32_t        fMidiEventInCount;
+    uint32_t        fMidiEventOutCount;
+    NativeMidiEvent fMidiInEvents[kPluginMaxMidiEvents];
+    NativeMidiEvent fMidiOutEvents[kPluginMaxMidiEvents];
 
     int32_t  fCurMidiProgs[MAX_MIDI_CHANNELS];
     uint32_t fCurBufferSize;
