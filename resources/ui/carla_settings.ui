@@ -1283,19 +1283,6 @@
                </item>
               </layout>
              </widget>
-             <widget class="QWidget" name="tw_paths_gig">
-              <layout class="QVBoxLayout" name="verticalLayout_15">
-               <property name="spacing">
-                <number>0</number>
-               </property>
-               <property name="margin">
-                <number>0</number>
-               </property>
-               <item>
-                <widget class="QListWidget" name="lw_gig"/>
-               </item>
-              </layout>
-             </widget>
              <widget class="QWidget" name="tw_paths_sf2">
               <layout class="QVBoxLayout" name="verticalLayout_4">
                <property name="spacing">
