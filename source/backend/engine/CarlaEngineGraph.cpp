@@ -788,9 +788,6 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
     float* const inBuf0   = audioBuffers.inBufTmp[0];
     float* const inBuf1   = audioBuffers.inBufTmp[1];
 
-    // initialize dummy
-    carla_zeroFloats(dummyBuf, frames);
-
     // initialize audio inputs
     carla_copyFloats(inBuf0, inBufReal[0], frames);
     carla_copyFloats(inBuf1, inBufReal[1], frames);
@@ -860,11 +857,16 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
         outBuf[0] = outBufReal[0];
         outBuf[1] = outBufReal[1];
 
-        for (uint32_t i=2; i<numInBufs; ++i)
-            inBuf[i] = dummyBuf;
+        if (numInBufs > 2 || numOutBufs > 2)
+        {
+            carla_zeroFloats(dummyBuf, frames);
 
-        for (uint32_t i=2; i<numOutBufs; ++i)
-            outBuf[i] = dummyBuf;
+            for (uint32_t i=2; i<numInBufs; ++i)
+                inBuf[i] = dummyBuf;
+
+            for (uint32_t i=2; i<numOutBufs; ++i)
+                outBuf[i] = dummyBuf;
+        }
 
         // process
         plugin->initBuffers();
