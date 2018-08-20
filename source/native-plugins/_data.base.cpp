@@ -165,6 +165,29 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
 },
 
 // --------------------------------------------------------------------------------------------------------------------
+// Audio file
+
+{
+    /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE
+                                                  |NATIVE_PLUGIN_USES_TIME),
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
+    /* audioIns  */ 0,
+    /* audioOuts */ 2,
+    /* midiIns   */ 0,
+    /* midiOuts  */ 0,
+    /* paramIns  */ 1,
+    /* paramOuts */ 0,
+    /* name      */ "Audio File",
+    /* label     */ "audiofile",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    DESCFUNCS
+},
+
+// --------------------------------------------------------------------------------------------------------------------
 // MIDI sequencer
 
 #ifdef HAVE_PYQT
