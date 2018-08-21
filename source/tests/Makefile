@@ -10,20 +10,31 @@ CLANG   ?= clang
 CXXLANG ?= clang++
 
 MODULEDIR=../../build/modules/Debug
+MODULEDIR=../../build/modules/Release
 
 WINECXX ?= wineg++
 
 # --------------------------------------------------------------
 
-BASE_FLAGS  = -Wall -Wextra -Werror -pipe -DBUILDING_CARLA -DREAL_BUILD -DDEBUG -O0 -g
+BASE_FLAGS  = -Wall -Wextra -Werror -pipe -DBUILDING_CARLA -DREAL_BUILD
 BASE_FLAGS += -I. -I../backend -I../includes -I../modules -I../utils
 BASE_FLAGS += -Wcast-align -Wmissing-declarations
 # BASE_FLAGS += -Wcast-qual -Wconversion -Wsign-conversion -Wundef
 BASE_FLAGS += -Wformat -Wformat-security -Wredundant-decls -Wshadow -Wstrict-overflow -fstrict-overflow -Wwrite-strings
 BASE_FLAGS += -Wpointer-arith -Wabi -Winit-self -Wuninitialized -Wunused-parameter
 # -Wfloat-equal
+
+LINK_FLAGS =
+
 ifneq ($(CC),clang-3.4)
 BASE_FLAGS += -Wlogical-op -Wunsafe-loop-optimizations
+endif
+
+ifeq ($(DEBUG),true)
+BASE_FLAGS += -DDEBUG -O0 -g
+else
+BASE_FLAGS += -O3 -ffast-math -mtune=generic -msse -msse2 -mfpmath=sse -fdata-sections -ffunction-sections
+LINK_FLAGS += -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-O1 -Wl,--as-needed -Wl,--strip-all
 endif
 
 # --------------------------------------------------------------
@@ -136,7 +147,7 @@ ifneq ($(WIN32),true)
 endif
 
 CarlaPipeUtils.exe: CarlaPipeUtils.cpp ../utils/CarlaPipeUtils.cpp
-	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ $(MODULEDIR)/juce_core.a -lole32 -lshlwapi -lversion -lwsock32 -lwininet -lwinmm -lws2_32 -lpthread
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ $(MODULEDIR)/water.a -lole32 -lshlwapi -lversion -lwsock32 -lwininet -lwinmm -lws2_32 -lpthread -static
 
 CarlaUtils1: CarlaUtils1.cpp ../utils/*.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
