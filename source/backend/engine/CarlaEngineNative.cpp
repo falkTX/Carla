@@ -647,6 +647,7 @@ public:
         pData->options.binaryDir   = carla_strdup(carla_get_library_folder());
 
         setCallback(_ui_server_callback, this);
+        setFileCallback(_ui_file_callback, this);
     }
 
     ~CarlaEngineNative() override
@@ -708,6 +709,7 @@ protected:
 
     bool usesConstantBufferSize() const noexcept override
     {
+        // FIXME at least LV2 hosts can report this
         return false;
     }
 
@@ -1134,6 +1136,23 @@ protected:
             return;
 
         fUiServer.flushMessages();
+    }
+
+    const char* uiFileCallback(FileCallbackOpcode action, bool isDir, const char* title, const char* filter)
+    {
+        switch (action)
+        {
+        case FILE_CALLBACK_DEBUG:
+            return nullptr;
+
+        case FILE_CALLBACK_OPEN:
+            return pHost->ui_open_file(pHost->handle, isDir, title, filter);
+
+        case FILE_CALLBACK_SAVE:
+            return pHost->ui_save_file(pHost->handle, isDir, title, filter);
+        }
+
+        return nullptr;
     }
 
     void uiServerInfo()
@@ -1986,6 +2005,11 @@ public:
     static void _ui_server_callback(void* handle, EngineCallbackOpcode action, uint pluginId, int value1, int value2, float value3, const char* valueStr)
     {
         handlePtr->uiServerCallback(action, pluginId, value1, value2, value3, valueStr);
+    }
+
+    static const char* _ui_file_callback(void* handle, FileCallbackOpcode action, bool isDir, const char* title, const char* filter)
+    {
+        return handlePtr->uiFileCallback(action, isDir, title, filter);
     }
 
     // -------------------------------------------------------------------
