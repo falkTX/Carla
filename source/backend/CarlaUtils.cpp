@@ -468,9 +468,6 @@ const char* carla_get_complete_license_text()
 
         // External plugins
 #ifdef HAVE_EXTERNAL_PLUGINS
-# ifdef HAVE_EXPERIMENTAL_PLUGINS
-        "<li>AT1, BLS1 and REV1 plugin code by Fons Adriaensen</li>"
-# endif
         "<li>Nekobi plugin code based on nekobee by Sean Bolton and others</li>"
         "<li>VectorJuice and WobbleJuice plugin code by Andre Sklenar</li>"
 # ifdef HAVE_ZYN_DEPS
