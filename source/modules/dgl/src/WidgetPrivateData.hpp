@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -63,9 +63,9 @@ struct Widget::PrivateData {
         subWidgets.clear();
     }
 
-    void display(const uint width, const uint height)
+    void display(const uint width, const uint height, const bool renderingSubWidget)
     {
-        if (skipDisplay || ! visible)
+        if ((skipDisplay && ! renderingSubWidget) || size.isInvalid() || ! visible)
             return;
 
         bool needsDisableScissor = false;
@@ -123,7 +123,7 @@ struct Widget::PrivateData {
             Widget* const widget(*it);
             DISTRHO_SAFE_ASSERT_CONTINUE(widget->pData != this);
 
-            widget->pData->display(width, height);
+            widget->pData->display(width, height, true);
         }
     }
 
