@@ -193,6 +193,11 @@ public:
     void writeProgramMessage(const uint32_t index) const noexcept;
 
     /*!
+     * Write a "program" message (using channel, bank and program).
+     */
+    void writeProgramMessage(const uint8_t channel, const uint32_t bank, const uint32_t program) const noexcept;
+
+    /*!
      * Write a "midiprogram" message (using bank and program).
      */
     void writeMidiProgramMessage(const uint32_t bank, const uint32_t program) const noexcept;

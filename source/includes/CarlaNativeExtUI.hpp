@@ -33,13 +33,13 @@ class NativePluginAndUiClass : public NativePluginClass,
                                public CarlaExternalUI
 {
 public:
-    NativePluginAndUiClass(const NativeHostDescriptor* const host, const char* const extUiPath)
+    NativePluginAndUiClass(const NativeHostDescriptor* const host, const char* const pathToExternalUI)
         : NativePluginClass(host),
           CarlaExternalUI(),
           fExtUiPath(getResourceDir())
     {
         fExtUiPath += CARLA_OS_SEP_STR;
-        fExtUiPath += extUiPath;
+        fExtUiPath += pathToExternalUI;
 #ifdef CARLA_OS_WIN
         fExtUiPath += ".exe";
 #endif
@@ -104,53 +104,14 @@ protected:
     {
         CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(),);
 
-        // TODO writeControlMessage and others
-
-        char tmpBuf[0xff+1];
-        tmpBuf[0xff] = '\0';
-
-        const CarlaMutexLocker cml(getPipeLock());
-        const ScopedLocale csl;
-
-        if (! writeMessage("control\n", 8))
-            return;
-
-        std::snprintf(tmpBuf, 0xff, "%i\n", index);
-        if (! writeMessage(tmpBuf))
-            return;
-
-        std::snprintf(tmpBuf, 0xff, "%f\n", value);
-        if (! writeMessage(tmpBuf))
-            return;
-
-        flushMessages();
+        writeControlMessage(index, value);
     }
 
     void uiSetMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
 
-        char tmpBuf[0xff+1];
-        tmpBuf[0xff] = '\0';
-
-        const CarlaMutexLocker cml(getPipeLock());
-
-        if (! writeMessage("program\n", 8))
-            return;
-
-        std::snprintf(tmpBuf, 0xff, "%i\n", channel);
-        if (! writeMessage(tmpBuf))
-            return;
-
-        std::snprintf(tmpBuf, 0xff, "%i\n", bank);
-        if (! writeMessage(tmpBuf))
-            return;
-
-        std::snprintf(tmpBuf, 0xff, "%i\n", program);
-        if (! writeMessage(tmpBuf))
-            return;
-
-        flushMessages();
+        writeProgramMessage(channel, bank, program);
     }
 
     void uiSetCustomData(const char* const key, const char* const value) noexcept override
@@ -158,16 +119,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
 
-        const CarlaMutexLocker cml(getPipeLock());
-
-        if (! writeMessage("configure\n", 10))
-            return;
-        if (! writeAndFixMessage(key))
-            return;
-        if (! writeAndFixMessage(value))
-            return;
-
-        flushMessages();
+        writeConfigureMessage(key, value);
     }
 
     void uiNameChanged(const char* const uiName) override

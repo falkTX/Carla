@@ -855,6 +855,31 @@ void CarlaPipeCommon::writeProgramMessage(const uint32_t index) const noexcept
     flushMessages();
 }
 
+void CarlaPipeCommon::writeProgramMessage(const uint8_t channel, const uint32_t bank, const uint32_t program) const noexcept
+{
+    char tmpBuf[0xff+1];
+    tmpBuf[0xff] = '\0';
+
+    const CarlaMutexLocker cml(pData->writeLock);
+
+    if (! _writeMsgBuffer("program\n", 8))
+        return;
+
+    std::snprintf(tmpBuf, 0xff, "%i\n", channel);
+    if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
+        return;
+
+    std::snprintf(tmpBuf, 0xff, "%i\n", bank);
+    if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
+        return;
+
+    std::snprintf(tmpBuf, 0xff, "%i\n", program);
+    if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
+        return;
+
+    flushMessages();
+}
+
 void CarlaPipeCommon::writeMidiProgramMessage(const uint32_t bank, const uint32_t program) const noexcept
 {
     char tmpBuf[0xff+1];
