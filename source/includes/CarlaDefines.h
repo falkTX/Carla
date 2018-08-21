@@ -56,7 +56,7 @@
 
 #if defined(CARLA_OS_WIN32) || defined(CARLA_OS_WIN64)
 # define CARLA_OS_WIN
-#elif defined(CARLA_OS_BSD) || defined(CARLA_OS_LINUX) || defined(CARLA_OS_MAC)
+#elif defined(CARLA_OS_BSD) || defined(CARLA_OS_GNU_HURD) || defined(CARLA_OS_LINUX) || defined(CARLA_OS_MAC)
 # define CARLA_OS_UNIX
 #endif
 
