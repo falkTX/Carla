@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -46,7 +46,7 @@ void CarlaEngineThread::run() noexcept
 #endif
     carla_debug("CarlaEngineThread::run()");
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
     const bool isPlugin(kEngine->getType() == kEngineTypePlugin);
 #endif
     float value;
@@ -63,7 +63,7 @@ void CarlaEngineThread::run() noexcept
         const bool oscRegisted = false;
 #endif
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
         if (isPlugin)
             kEngine->idleOsc();
 #endif

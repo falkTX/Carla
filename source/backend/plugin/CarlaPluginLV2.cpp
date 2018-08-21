@@ -30,7 +30,6 @@
 #include "CarlaPluginUI.hpp"
 #include "Lv2AtomRingBuffer.hpp"
 
-#include "../engine/CarlaEngineOsc.hpp"
 #include "../modules/lilv/config/lilv_config.h"
 
 extern "C" {
@@ -519,7 +518,6 @@ public:
           fCvInBuffers(nullptr),
           fCvOutBuffers(nullptr),
           fParamBuffers(nullptr),
-          fCanInit2(true),
           fNeedsFixedBuffers(false),
           fNeedsUiClose(false),
           fLatencyIndex(-1),
@@ -841,7 +839,7 @@ public:
         if (pData->engine->getOptions().forceStereo)
             pass();
         // if inputs or outputs are just 1, then yes we can force stereo
-        else if (((pData->audioIn.count == 1 || pData->audioOut.count == 1) && fCanInit2) || fHandle2 != nullptr)
+        else if ((pData->audioIn.count == 1 || pData->audioOut.count == 1) || fHandle2 != nullptr)
             options |= PLUGIN_OPTION_FORCE_STEREO;
 
         if (fExt.programs != nullptr)
@@ -2381,7 +2379,7 @@ public:
         if (fEventsOut.ctrl != nullptr && fEventsOut.ctrl->port == nullptr)
             fEventsOut.ctrl->port = pData->event.portOut;
 
-        if (fCanInit2 && (forcedStereoIn || forcedStereoOut))
+        if (forcedStereoIn || forcedStereoOut)
             pData->options |= PLUGIN_OPTION_FORCE_STEREO;
         else
             pData->options &= ~PLUGIN_OPTION_FORCE_STEREO;
@@ -2414,21 +2412,6 @@ public:
 
         // extra plugin hints
         pData->extraHints = 0x0;
-
-        if (! fCanInit2)
-        {
-            // can't run in rack
-        }
-        else if (fExt.state != nullptr || fExt.worker != nullptr)
-        {
-            if ((aIns == 0 || aIns == 2) && (aOuts == 0 || aOuts == 2) && evIns.count() <= 1 && evOuts.count() <= 1)
-                pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
-        }
-        else
-        {
-            if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0) && evIns.count() <= 1 && evOuts.count() <= 1)
-                pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
-        }
 
         // check initial latency
         findInitialLatencyValue(aIns, aOuts);
@@ -2804,7 +2787,7 @@ public:
             int32_t rindex;
 
             const double barBeat = static_cast<double>(timeInfo.bbt.beat - 1)
-                                 + (static_cast<double>(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat);
+                                 + (timeInfo.bbt.tick / timeInfo.bbt.ticksPerBeat);
 
             // update input ports
             for (uint32_t k=0; k < pData->param.count; ++k)
@@ -4500,7 +4483,10 @@ public:
         CARLA_SAFE_ASSERT_RETURN(value != nullptr, LV2_STATE_ERR_NO_PROPERTY);
         CARLA_SAFE_ASSERT_RETURN(size > 0, LV2_STATE_ERR_NO_PROPERTY);
         CARLA_SAFE_ASSERT_RETURN(type != kUridNull, LV2_STATE_ERR_BAD_TYPE);
-        CARLA_SAFE_ASSERT_RETURN(flags & LV2_STATE_IS_POD, LV2_STATE_ERR_BAD_FLAGS);
+
+        // FIXME linuxsampler does not set POD flag
+        // CARLA_SAFE_ASSERT_RETURN(flags & LV2_STATE_IS_POD, LV2_STATE_ERR_BAD_FLAGS);
+
         carla_debug("CarlaPluginLV2::handleStateStore(%i:\"%s\", %p, " P_SIZE ", %i:\"%s\", %i)",
                     key, carla_lv2_urid_unmap(this, key), value, size, type, carla_lv2_urid_unmap(this, type), flags);
 
@@ -4543,6 +4529,9 @@ public:
         pData->custom.append(newData);
 
         return LV2_STATE_SUCCESS;
+
+        // unused
+        (void)flags;
     }
 
     const void* handleStateRetrieve(const uint32_t key, size_t* const size, uint32_t* const type, uint32_t* const flags)
@@ -5244,9 +5233,6 @@ public:
             return false;
         }
 
-        if (std::strcmp(uri, "http://hyperglitch.com/dev/VocProc") == 0)
-            fCanInit2 = false;
-
         recheckExtensions();
 
         // ---------------------------------------------------------------
@@ -5259,13 +5245,10 @@ public:
         else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-        if (fCanInit2)
-        {
-            if (pData->engine->getOptions().forceStereo)
-                pData->options |= PLUGIN_OPTION_FORCE_STEREO;
-            else if (options & PLUGIN_OPTION_FORCE_STEREO)
-                pData->options |= PLUGIN_OPTION_FORCE_STEREO;
-        }
+        if (pData->engine->getOptions().forceStereo)
+            pData->options |= PLUGIN_OPTION_FORCE_STEREO;
+        else if (options & PLUGIN_OPTION_FORCE_STEREO)
+            pData->options |= PLUGIN_OPTION_FORCE_STEREO;
 
         if (getMidiInCount() != 0)
         {
@@ -5765,7 +5748,6 @@ private:
     float** fCvOutBuffers;
     float*  fParamBuffers;
 
-    bool    fCanInit2; // some plugins don't like 2 instances
     bool    fNeedsFixedBuffers;
     bool    fNeedsUiClose;
     int32_t fLatencyIndex; // -1 if invalid

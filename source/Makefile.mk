@@ -148,6 +148,11 @@ ifeq ($(MACOS_OLD),true)
 BUILD_CXX_FLAGS = $(BASE_FLAGS) $(CXXFLAGS) -DHAVE_CPP11_SUPPORT=0
 endif
 
+ifeq ($(WIN32),true)
+# Always build statically on windows
+LINK_FLAGS     += -static
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Strict test build
 

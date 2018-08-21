@@ -90,7 +90,7 @@ static const char* getRtAudioApiName(const RtAudio::Api api) noexcept
     case RtAudio::UNIX_PULSE:
         return "PulseAudio";
     case RtAudio::UNIX_JACK:
-#if defined(CARLA_OS_LINUX)
+#if defined(CARLA_OS_LINUX) && defined(HAVE_ALSA)
         return "JACK with ALSA-MIDI";
 #elif defined(CARLA_OS_MAC)
         return "JACK with CoreMidi";
@@ -128,7 +128,7 @@ static RtMidi::Api getMatchedAudioMidiAPI(const RtAudio::Api rtApi) noexcept
 
     case RtAudio::UNIX_PULSE:
     case RtAudio::UNIX_JACK:
-#if defined(CARLA_OS_LINUX)
+#if defined(CARLA_OS_LINUX) && defined(HAVE_ALSA)
         return RtMidi::LINUX_ALSA;
 #elif defined(CARLA_OS_MAC)
         return RtMidi::MACOSX_CORE;
@@ -286,7 +286,8 @@ public:
             fAudio.openStream(oParams.nChannels > 0 ? &oParams : nullptr,
                               iParams.nChannels > 0 ? &iParams : nullptr,
                               RTAUDIO_FLOAT32, pData->options.audioSampleRate, &bufferFrames,
-                              carla_rtaudio_process_callback, this, &rtOptions);
+                              carla_rtaudio_process_callback, this, &rtOptions,
+                              carla_rtaudio_buffer_size_callback);
         }
         catch (const RtAudioError& e) {
             setLastError(e.what());
@@ -592,8 +593,7 @@ protected:
         /* */ float* const outsPtr =       (float*)outputBuffer;
 
         // assert rtaudio buffers
-        CARLA_SAFE_ASSERT_RETURN(outputBuffer      != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(pData->bufferSize == nframes,);
+        CARLA_SAFE_ASSERT_RETURN(outputBuffer != nullptr,);
 
         // set rtaudio buffers as non-interleaved
         const float* inBuf[fAudioInCount];
@@ -601,6 +601,7 @@ protected:
 
         if (fAudioInterleaved)
         {
+            // FIXME - this looks completely wrong!
             float* inBuf2[fAudioInCount];
 
             for (uint i=0, count=fAudioInCount; i<count; ++i)
@@ -753,6 +754,28 @@ protected:
 
         return; // unused
         (void)streamTime; (void)status;
+    }
+
+    void handleBufferSizeCallback(const uint newBufferSize)
+    {
+        carla_stdout("bufferSize callback %u %u", pData->bufferSize, newBufferSize);
+        if (pData->bufferSize == newBufferSize)
+            return;
+
+        if (fAudioInCount > 0)
+        {
+            delete[] fAudioIntBufIn;
+            fAudioIntBufIn = new float[fAudioInCount*newBufferSize];
+        }
+
+        if (fAudioOutCount > 0)
+        {
+            delete[] fAudioIntBufOut;
+            fAudioIntBufOut = new float[fAudioOutCount*newBufferSize];
+        }
+
+        pData->bufferSize = newBufferSize;
+        bufferSizeChanged(newBufferSize);
     }
 
     void handleMidiCallback(double timeStamp, std::vector<uchar>* const message)
@@ -1054,6 +1077,12 @@ private:
     {
         handlePtr->handleAudioProcessCallback(outputBuffer, inputBuffer, nframes, streamTime, status);
         return 0;
+    }
+
+    static bool carla_rtaudio_buffer_size_callback(unsigned int bufferSize, void* userData)
+    {
+        handlePtr->handleBufferSizeCallback(bufferSize);
+        return true;
     }
 
     static void carla_rtmidi_callback(double timeStamp, std::vector<uchar>* message, void* userData)

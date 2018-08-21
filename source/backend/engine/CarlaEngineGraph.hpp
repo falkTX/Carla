@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -114,6 +114,7 @@ struct RackGraph {
         float* inBuf[2];
         float* inBufTmp[2];
         float* outBuf[2];
+        float* unusedBuf;
         Buffers() noexcept;
         ~Buffers() noexcept;
         void setBufferSize(const uint32_t bufferSize, const bool createBuffers) noexcept;
@@ -135,7 +136,7 @@ struct RackGraph {
     bool getGroupAndPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const noexcept;
 
     // the base, where plugins run
-    void process(CarlaEngine::ProtectedData* const data, const float* inBufReal[2], float* outBuf[2], const uint32_t frames);
+    void process(CarlaEngine::ProtectedData* const data, const float* inBuf[2], float* outBuf[2], const uint32_t frames);
 
     // extended, will call process() in the middle
     void processHelper(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const uint32_t frames);

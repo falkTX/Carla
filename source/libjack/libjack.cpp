@@ -602,7 +602,7 @@ bool CarlaJackAppClient::handleRtData()
 
                         fServer.position.bar  = bridgeTimeInfo.bar;
                         fServer.position.beat = bridgeTimeInfo.beat;
-                        fServer.position.tick = bridgeTimeInfo.tick;
+                        fServer.position.tick = static_cast<int32_t>(bridgeTimeInfo.tick + 0.5);
 
                         fServer.position.beats_per_bar = bridgeTimeInfo.beatsPerBar;
                         fServer.position.beat_type     = bridgeTimeInfo.beatType;

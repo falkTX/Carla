@@ -10,7 +10,7 @@ Features
 ---------
 
 * LADSPA, DSSI, LV2 and VST plugin formats
-* GIG, SF2 and SFZ sound banks
+* SF2/3 and SFZ sound banks
 * Internal audio and midi file player
 * Automation of plugin parameters via MIDI CC
 * Remote control over OSC

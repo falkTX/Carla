@@ -1797,7 +1797,7 @@ const char* carla_get_host_osc_url_tcp()
 {
     carla_debug("carla_get_host_osc_url_tcp()");
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
     if (gStandalone.engine == nullptr)
     {
         carla_stderr2("carla_get_host_osc_url_tcp() failed, engine is not running");
@@ -1815,7 +1815,7 @@ const char* carla_get_host_osc_url_udp()
 {
     carla_debug("carla_get_host_osc_url_udp()");
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
     if (gStandalone.engine == nullptr)
     {
         carla_stderr2("carla_get_host_osc_url_udp() failed, engine is not running");

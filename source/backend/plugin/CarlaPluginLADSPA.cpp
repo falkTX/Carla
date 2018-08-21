@@ -788,8 +788,7 @@ public:
 #endif
 
         // extra plugin hints
-        pData->extraHints  = 0x0;
-        pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
+        pData->extraHints = 0x0;
 
         // check initial latency
         findInitialLatencyValue(aIns, aOuts);

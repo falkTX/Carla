@@ -215,7 +215,7 @@ Engine: Engine.cpp
 	../backend/carla_engine.a ../backend/carla_plugin.a $(MODULEDIR)/native-plugins.a \
 	$(MODULEDIR)/dgl.a $(MODULEDIR)/jackbridge.a $(MODULEDIR)/lilv.a $(MODULEDIR)/rtmempool.a \
 	-Wl,--end-group \
-	$(PEDANTIC_CXX_FLAGS) $(shell pkg-config --libs alsa libpulse-simple liblo QtCore QtXml fluidsynth linuxsampler x11 gl smf fftw3 mxml zlib ntk_images ntk) -o $@
+	$(PEDANTIC_CXX_FLAGS) $(shell pkg-config --libs alsa libpulse-simple liblo QtCore QtXml fluidsynth x11 gl smf fftw3 mxml zlib ntk_images ntk) -o $@
 	env LD_LIBRARY_PATH=../backend valgrind --leak-check=full ./$@
 # 	$(MODULEDIR)/juce_audio_basics.a $(MODULEDIR)/juce_core.a \
 

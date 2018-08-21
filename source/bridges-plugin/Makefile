@@ -24,7 +24,6 @@ endif
 
 BUILD_CXX_FLAGS += -DBUILD_BRIDGE -I. -I$(CWD) -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils
 BUILD_CXX_FLAGS += -I$(CWD)/backend/engine -I$(CWD)/backend/plugin
-BUILD_CXX_FLAGS += $(LIBLO_FLAGS)
 
 32BIT_FLAGS += -DBUILD_BRIDGE_ALTERNATIVE_ARCH
 64BIT_FLAGS += -DBUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -64,13 +63,12 @@ LIBS_win32   += $(MODULEDIR)/water.win32.a
 LIBS_win64   += $(MODULEDIR)/water.win64.a
 LINK_FLAGS   += $(WATER_LIBS)
 
-LINK_FLAGS += $(LIBLO_LIBS)
 LINK_FLAGS += $(X11_LIBS)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-NATIVE_BUILD_FLAGS  = $(NATIVE_PLUGINS_FLAGS)
-NATIVE_LINK_FLAGS   =
+NATIVE_BUILD_FLAGS  = $(NATIVE_PLUGINS_FLAGS) $(LIBLO_FLAGS)
+NATIVE_LINK_FLAGS   = $(LIBLO_LIBS)
 
 NATIVE_BUILD_FLAGS += $(FLUIDSYNTH_FLAGS)
 NATIVE_LINK_FLAGS  += $(FLUIDSYNTH_LIBS)
@@ -126,8 +124,6 @@ OBJS_arch = \
 	$(OBJDIR)/CarlaEngineClient.cpp.arch.o \
 	$(OBJDIR)/CarlaEngineData.cpp.arch.o \
 	$(OBJDIR)/CarlaEngineInternal.cpp.arch.o \
-	$(OBJDIR)/CarlaEngineOsc.cpp.arch.o \
-	$(OBJDIR)/CarlaEngineOscSend.cpp.arch.o \
 	$(OBJDIR)/CarlaEnginePorts.cpp.arch.o \
 	$(OBJDIR)/CarlaEngineThread.cpp.arch.o \
 	$(OBJDIR)/CarlaEngineJack.cpp.arch.o \
@@ -135,7 +131,6 @@ OBJS_arch = \
 	$(OBJDIR)/CarlaPlugin.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginBridge.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginInternal.cpp.arch.o \
-	$(OBJDIR)/CarlaPluginJack.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginLADSPA.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginDSSI.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginLV2.cpp.arch.o \

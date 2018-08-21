@@ -566,18 +566,20 @@ RackGraph::Buffers::Buffers() noexcept
       connectedIn1(),
       connectedIn2(),
       connectedOut1(),
-      connectedOut2()
+      connectedOut2(),
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-    , inBuf{nullptr, nullptr},
+      inBuf{nullptr, nullptr},
       inBufTmp{nullptr, nullptr},
-      outBuf{nullptr, nullptr} {}
-#else
+      outBuf{nullptr, nullptr},
+#endif
+      unusedBuf(nullptr)
     {
+#ifndef CARLA_PROPER_CPP11_SUPPORT
         inBuf[0]    = inBuf[1]    = nullptr;
         inBufTmp[0] = inBufTmp[1] = nullptr;
         outBuf[0]   = outBuf[1]   = nullptr;
-    }
 #endif
+    }
 
 RackGraph::Buffers::~Buffers() noexcept
 {
@@ -589,6 +591,7 @@ RackGraph::Buffers::~Buffers() noexcept
     if (inBufTmp[1] != nullptr) { delete[] inBufTmp[1]; inBufTmp[1] = nullptr; }
     if (outBuf[0]   != nullptr) { delete[] outBuf[0];   outBuf[0]   = nullptr; }
     if (outBuf[1]   != nullptr) { delete[] outBuf[1];   outBuf[1]   = nullptr; }
+    if (unusedBuf   != nullptr) { delete[] unusedBuf;   unusedBuf   = nullptr; }
 
     connectedIn1.clear();
     connectedIn2.clear();
@@ -606,12 +609,14 @@ void RackGraph::Buffers::setBufferSize(const uint32_t bufferSize, const bool cre
     if (inBufTmp[1] != nullptr) { delete[] inBufTmp[1]; inBufTmp[1] = nullptr; }
     if (outBuf[0]   != nullptr) { delete[] outBuf[0];   outBuf[0]   = nullptr; }
     if (outBuf[1]   != nullptr) { delete[] outBuf[1];   outBuf[1]   = nullptr; }
+    if (unusedBuf   != nullptr) { delete[] unusedBuf;   unusedBuf   = nullptr; }
 
     CARLA_SAFE_ASSERT_RETURN(bufferSize > 0,);
 
     try {
         inBufTmp[0] = new float[bufferSize];
         inBufTmp[1] = new float[bufferSize];
+        unusedBuf   = new float[bufferSize];
 
         if (createBuffers)
         {
@@ -624,6 +629,7 @@ void RackGraph::Buffers::setBufferSize(const uint32_t bufferSize, const bool cre
     catch(...) {
         if (inBufTmp[0] != nullptr) { delete[] inBufTmp[0]; inBufTmp[0] = nullptr; }
         if (inBufTmp[1] != nullptr) { delete[] inBufTmp[1]; inBufTmp[1] = nullptr; }
+        if (unusedBuf   != nullptr) { delete[] unusedBuf;   unusedBuf   = nullptr; }
 
         if (createBuffers)
         {
@@ -771,24 +777,24 @@ bool RackGraph::getGroupAndPortIdFromFullName(const char* const fullPortName, ui
     return extGraph.getGroupAndPortIdFromFullName(fullPortName, groupId, portId);
 }
 
-void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inBufReal[2], float* outBuf[2], const uint32_t frames)
+void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inBufReal[2], float* outBufReal[2], const uint32_t frames)
 {
     CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(data->events.in != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(data->events.out != nullptr,);
 
     // safe copy
-    float inBuf0[frames];
-    float inBuf1[frames];
-    const float* inBuf[2] = { inBuf0, inBuf1 };
+    float* const dummyBuf = audioBuffers.unusedBuf;
+    float* const inBuf0   = audioBuffers.inBufTmp[0];
+    float* const inBuf1   = audioBuffers.inBufTmp[1];
 
     // initialize audio inputs
     carla_copyFloats(inBuf0, inBufReal[0], frames);
     carla_copyFloats(inBuf1, inBufReal[1], frames);
 
     // initialize audio outputs (zero)
-    carla_zeroFloats(outBuf[0], frames);
-    carla_zeroFloats(outBuf[1], frames);
+    carla_zeroFloats(outBufReal[0], frames);
+    carla_zeroFloats(outBufReal[1], frames);
 
     // initialize event outputs (zero)
     carla_zeroStructs(data->events.out, kMaxEngineEventInternalCount);
@@ -809,12 +815,12 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
         if (processed)
         {
             // initialize audio inputs (from previous outputs)
-            carla_copyFloats(inBuf0, outBuf[0], frames);
-            carla_copyFloats(inBuf1, outBuf[1], frames);
+            carla_copyFloats(inBuf0, outBufReal[0], frames);
+            carla_copyFloats(inBuf1, outBufReal[1], frames);
 
             // initialize audio outputs (zero)
-            carla_zeroFloats(outBuf[0], frames);
-            carla_zeroFloats(outBuf[1], frames);
+            carla_zeroFloats(outBufReal[0], frames);
+            carla_zeroFloats(outBufReal[1], frames);
 
             // if plugin has no midi out, add previous events
             if (oldMidiOutCount == 0 && data->events.in[0].type != kEngineEventTypeNull)
@@ -840,6 +846,28 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
         oldAudioOutCount = plugin->getAudioOutCount();
         oldMidiOutCount  = plugin->getMidiOutCount();
 
+        const uint32_t numInBufs  = std::max(oldAudioInCount,  2U);
+        const uint32_t numOutBufs = std::max(oldAudioOutCount, 2U);
+
+        const float* inBuf[numInBufs];
+        inBuf[0] = inBuf0;
+        inBuf[1] = inBuf1;
+
+        float* outBuf[numOutBufs];
+        outBuf[0] = outBufReal[0];
+        outBuf[1] = outBufReal[1];
+
+        if (numInBufs > 2 || numOutBufs > 2)
+        {
+            carla_zeroFloats(dummyBuf, frames);
+
+            for (uint32_t i=2; i<numInBufs; ++i)
+                inBuf[i] = dummyBuf;
+
+            for (uint32_t i=2; i<numOutBufs; ++i)
+                outBuf[i] = dummyBuf;
+        }
+
         // process
         plugin->initBuffers();
         plugin->process(inBuf, outBuf, nullptr, nullptr, frames);
@@ -848,14 +876,14 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
         // if plugin has no audio inputs, add input buffer
         if (oldAudioInCount == 0)
         {
-            carla_addFloats(outBuf[0], inBuf0, frames);
-            carla_addFloats(outBuf[1], inBuf1, frames);
+            carla_addFloats(outBufReal[0], inBuf0, frames);
+            carla_addFloats(outBufReal[1], inBuf1, frames);
         }
 
         // if plugin only has 1 output, copy it to the 2nd
         if (oldAudioOutCount == 1)
         {
-            carla_copyFloats(outBuf[1], outBuf[0], frames);
+            carla_copyFloats(outBufReal[1], outBufReal[0], frames);
         }
 
         // set peaks
@@ -875,8 +903,8 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
 
             if (oldAudioOutCount > 0)
             {
-                pluginData.outsPeak[0] = carla_findMaxNormalizedFloat(outBuf[0], frames);
-                pluginData.outsPeak[1] = carla_findMaxNormalizedFloat(outBuf[1], frames);
+                pluginData.outsPeak[0] = carla_findMaxNormalizedFloat(outBufReal[0], frames);
+                pluginData.outsPeak[1] = carla_findMaxNormalizedFloat(outBufReal[1], frames);
             }
             else
             {

@@ -191,8 +191,13 @@ def runCarlaDiscovery(itype, stype, filename, tool, wineSettings=None):
                 else:
                     winePrefix = os.path.expanduser("~/.wine")
 
+            wineCMD = wineSettings['executable'] if wineSettings['executable'] else "wine"
+
+            if tool.endswith("64.exe"):
+                wineCMD += "64"
+
             command.append("WINEPREFIX=" + winePrefix)
-            command.append(wineSettings['executable'] if wineSettings['executable'] else "wine")
+            command.append(wineCMD)
 
     command.append(tool)
     command.append(stype)
@@ -464,14 +469,6 @@ class SearchPluginsThread(QThread):
                 self.fCurCount += 1
             else:
                 self.fCheckLV2 = False
-
-        # Special case for AU, only search native and posix32
-        if self.fCheckAU:
-            if self.fCheckNative or self.fCheckPosix32:
-                if self.fCheckNative:  self.fCurCount += 1
-                if self.fCheckPosix32: self.fCurCount += 1
-            else:
-                self.fCheckAU = False
 
         # Special case for Sound Kits, only search native
         if self.fCheckNative and self.fToolNative:

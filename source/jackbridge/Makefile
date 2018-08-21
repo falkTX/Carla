@@ -10,14 +10,14 @@ include ../modules/Makefile.mk
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-WINECXX ?= wineg++
+WINECC ?= winegcc
 
 BUILD_CXX_FLAGS += $(JACKBRIDGE_FLAGS)
 LINK_FLAGS      += $(JACKBRIDGE_LIBS)
 
 WINE_32BIT_FLAGS = $(32BIT_FLAGS)
 WINE_64BIT_FLAGS = $(64BIT_FLAGS)
-WINE_LINK_FLAGS  = $(LINK_FLAGS) $(LIBDL_LIBS) -lpthread
+WINE_LINK_FLAGS  = $(LINK_FLAGS) $(LIBDL_LIBS) -lpthread -lstdc++
 
 ifneq ($(MACOS),true)
 WINE_32BIT_FLAGS += -I/usr/include/wine/wine/windows
@@ -151,12 +151,12 @@ $(MODULEDIR)/$(MODULENAME).win64e.a: $(OBJS_win64e)
 $(MODULEDIR)/$(MODULENAME)-wine32.dll$(LIB_EXT): $(OBJS_wine32) JackBridgeExport.def
 	-@mkdir -p $(MODULEDIR)
 	@echo "Linking $(MODULENAME)-wine32.dll$(LIB_EXT)"
-	@$(WINECXX) $^ $(WINE_32BIT_FLAGS) $(WINE_LINK_FLAGS) $(SHARED) -o $@
+	@$(WINECC) $^ $(WINE_32BIT_FLAGS) $(WINE_LINK_FLAGS) $(SHARED) -o $@
 
 $(MODULEDIR)/$(MODULENAME)-wine64.dll$(LIB_EXT): $(OBJS_wine64) JackBridgeExport.def
 	-@mkdir -p $(MODULEDIR)
 	@echo "Linking $(MODULENAME)-wine64.dll$(LIB_EXT)"
-	@$(WINECXX) $^ $(WINE_64BIT_FLAGS) $(WINE_LINK_FLAGS) $(SHARED) -o $@
+	@$(WINECC) $^ $(WINE_64BIT_FLAGS) $(WINE_LINK_FLAGS) $(SHARED) -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -207,12 +207,12 @@ $(OBJDIR)/%.cpp.win64.o: %.cpp
 $(OBJDIR)/%.cpp.wine32.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (wine32)"
-	@$(WINECXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+	@$(WINECC) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/%.cpp.wine64.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (wine64)"
-	@$(WINECXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+	@$(WINECC) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

@@ -808,11 +808,6 @@ public:
     // Helper functions
 
     /*!
-     * Check if the plugin can run in rack mode.
-     */
-    bool canRunInRack() const noexcept;
-
-    /*!
      * Get the plugin's engine, as passed in the constructor.
      */
     CarlaEngine* getEngine() const noexcept;
@@ -940,11 +935,14 @@ protected:
     // -------------------------------------------------------------------
     // Internal helper functions
 
+public:
+    // FIXME: remove public exception on 2.1 release
     /*!
      * Call LV2 restore.
      */
     virtual void restoreLV2State() noexcept;
 
+protected:
     /*!
      * Give plugin bridges a change to update their custom data sets.
      */

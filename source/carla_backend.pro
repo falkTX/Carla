@@ -24,7 +24,6 @@ DEFINES += HAVE_ZYN_UI_DEPS
 PKGCONFIG += liblo
 PKGCONFIG += fftw3
 PKGCONFIG += fluidsynth
-PKGCONFIG += linuxsampler
 PKGCONFIG += mxml
 PKGCONFIG += zlib
 

@@ -40,6 +40,9 @@
 #include "water/xml/XmlDocument.h"
 #include "water/xml/XmlElement.h"
 
+// FIXME Remove on 2.1 release
+#include "lv2/atom.h"
+
 using water::Array;
 using water::CharPointer_UTF8;
 using water::File;
@@ -282,7 +285,7 @@ void CarlaEngine::idle() noexcept
         }
     }
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
     pData->osc.idle();
 #endif
 }
@@ -402,81 +405,15 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
                 preferBridges = true;
             }
         }
-# if 0
-        else if (ptype == PLUGIN_VST2)
-        {
-            /*
-            char uniqueIdChars[5] = {
-                static_cast<char>((uniqueId & 0xFF000000) >> 24),
-                static_cast<char>((uniqueId & 0x00FF0000) >> 16),
-                static_cast<char>((uniqueId & 0x0000FF00) >>  8),
-                static_cast<char>((uniqueId & 0x000000FF) >>  1),
-                0
-            };
-            */
-
-            /**/ if (uniqueId == 1633895765 && std::strstr(filename, "/ACE.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1433421876 && std::strstr(filename, "/Bazille.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1147754081 && std::strstr(filename, "/Diva.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1095583057 && std::strstr(filename, "/Filterscape.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1179866689 && std::strstr(filename, "/Filterscape.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1179865398 && std::strstr(filename, "/Filterscape.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1749636677 && std::strstr(filename, "/Hive.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1296452914 && std::strstr(filename, "/MFM2.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1349477487 && std::strstr(filename, "/Podolski.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1886548821 && std::strstr(filename, "/Presswerk.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1969770582 && std::strstr(filename, "/Protoverb.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1969771348 && std::strstr(filename, "/Satin.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1667388281 && std::strstr(filename, "/TripleCheese.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1952017974 && std::strstr(filename, "/TyrellN6.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1432568113 && std::strstr(filename, "/Uhbik.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1432568881 && std::strstr(filename, "/Uhbik.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1432572209 && std::strstr(filename, "/Uhbik.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1432569393 && std::strstr(filename, "/Uhbik.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1432569649 && std::strstr(filename, "/Uhbik.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1432571953 && std::strstr(filename, "/Uhbik.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1382232375 && std::strstr(filename, "/Uhbik.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1432572721 && std::strstr(filename, "/Uhbik.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1432572977 && std::strstr(filename, "/Uhbik.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1397572658 && std::strstr(filename, "/Zebra2.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1397572659 && std::strstr(filename, "/Zebra2.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1919243824 && std::strstr(filename, "/Zebra2.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1397578034 && std::strstr(filename, "/Zebra2.") != nullptr)
-                preferBridges = true;
-            else if (uniqueId == 1397573722 && std::strstr(filename, "/ZebraHZ.") != nullptr)
-                preferBridges = true;
-        }
-# endif
     }
 #endif // ! BUILD_BRIDGE
 
-    if (ptype != PLUGIN_INTERNAL && (btype != BINARY_NATIVE || (preferBridges && bridgeBinary.isNotEmpty())))
+    const bool canBeBridged = ptype != PLUGIN_INTERNAL
+                           && ptype != PLUGIN_SF2
+                           && ptype != PLUGIN_SFZ
+                           && ptype != PLUGIN_JACK;
+
+    if (canBeBridged && (btype != BINARY_NATIVE || (preferBridges && bridgeBinary.isNotEmpty())))
     {
         if (bridgeBinary.isNotEmpty())
         {
@@ -490,16 +427,14 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
     }
     else
     {
+#ifndef BUILD_BRIDGE
         bool use16Outs;
+#endif
         setLastError("Invalid or unsupported plugin type");
 
         switch (ptype)
         {
         case PLUGIN_NONE:
-            break;
-
-        case PLUGIN_INTERNAL:
-            plugin = CarlaPlugin::newNative(initializer);
             break;
 
         case PLUGIN_LADSPA:
@@ -518,6 +453,11 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
             plugin = CarlaPlugin::newVST2(initializer);
             break;
 
+#ifndef BUILD_BRIDGE
+        case PLUGIN_INTERNAL:
+            plugin = CarlaPlugin::newNative(initializer);
+            break;
+
         case PLUGIN_SF2:
             use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
             plugin = CarlaPlugin::newFluidSynth(initializer, use16Outs);
@@ -530,6 +470,14 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
         case PLUGIN_JACK:
             plugin = CarlaPlugin::newJackApp(initializer);
             break;
+#else
+        case PLUGIN_INTERNAL:
+        case PLUGIN_SF2:
+        case PLUGIN_SFZ:
+        case PLUGIN_JACK:
+            setLastError("Plugin bridges cannot handle this binary");
+            break;
+#endif
         }
     }
 
@@ -543,12 +491,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
 
     /**/ if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
     {
-        /**/ if (! plugin->canRunInRack())
-        {
-            setLastError("Carla's rack mode can only work with Mono or Stereo plugins, sorry!");
-            canRun = false;
-        }
-        else if (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0)
+        if (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0)
         {
             setLastError("Carla's rack mode cannot work with plugins that have CV ports, sorry!");
             canRun = false;
@@ -1620,7 +1563,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
     }
 }
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
 // -----------------------------------------------------------------------
 // OSC Stuff
 
@@ -2113,6 +2056,63 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                 return true;
 
             CARLA_SAFE_ASSERT_CONTINUE(stateSave.type != nullptr);
+
+#ifndef BUILD_BRIDGE
+            // compatibility code to load projects with GIG files
+            // FIXME Remove on 2.1 release
+            if (std::strcmp(stateSave.type, "GIG") == 0)
+            {
+                if (addPlugin(PLUGIN_LV2, "", stateSave.name, "http://linuxsampler.org/plugins/linuxsampler", 0, nullptr))
+                {
+                    const uint pluginId = pData->curPluginCount;
+
+                    if (CarlaPlugin* const plugin = pData->plugins[pluginId].plugin)
+                    {
+                        callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
+                        if (pData->aboutToClose)
+                            return true;
+
+                        String lsState;
+                        lsState << "0.35\n";
+                        lsState << "18 0 Chromatic\n";
+                        lsState << "18 1 Drum Kits\n";
+                        lsState << "20 0\n";
+                        lsState << "0 1 " << stateSave.binary << "\n";
+                        lsState << "0 0 0 0 1 0 GIG\n";
+
+                        plugin->setCustomData(LV2_ATOM__String, "http://linuxsampler.org/schema#state-string", lsState.toRawUTF8(), true);
+                        plugin->restoreLV2State();
+
+                        plugin->setDryWet(stateSave.dryWet, true, true);
+                        plugin->setVolume(stateSave.volume, true, true);
+                        plugin->setBalanceLeft(stateSave.balanceLeft, true, true);
+                        plugin->setBalanceRight(stateSave.balanceRight, true, true);
+                        plugin->setPanning(stateSave.panning, true, true);
+                        plugin->setCtrlChannel(stateSave.ctrlChannel, true, true);
+                        plugin->setActive(stateSave.active, true, true);
+
+                        ++pData->curPluginCount;
+
+                        plugin->setEnabled(true);
+                        callback(ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, 0, 0, 0.0f, plugin->getName());
+
+                        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+                            pData->graph.addPlugin(plugin);
+                    }
+                    else
+                    {
+                        carla_stderr2("Failed to get new plugin, state will not be restored correctly\n");
+                    }
+                }
+                else
+                {
+                    carla_stderr2("Failed to load a linuxsampler LV2 plugin, GIG file won't be loaded");
+                }
+
+                continue;
+            }
+#endif
 
             const void* extraStuff    = nullptr;
             static const char kTrue[] = "true";

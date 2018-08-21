@@ -161,10 +161,17 @@ protected:
         // start with "wine" if needed
         if (fBinary.endsWithIgnoreCase(".exe"))
         {
+            String wineCMD;
+
             if (options.wine.executable != nullptr && options.wine.executable[0] != '\0')
-                arguments.add(options.wine.executable);
+                wineCMD = options.wine.executable;
             else
-                arguments.add("wine");
+                wineCMD = "wine";
+
+            if (fBinary.endsWithIgnoreCase("64.exe"))
+                wineCMD += "64";
+
+            arguments.add(wineCMD);
         }
 #endif
 
@@ -260,10 +267,12 @@ protected:
                 if (options.wine.rtPrio)
                 {
                     carla_setenv("STAGING_SHARED_MEMORY", "1");
+                    carla_setenv("WINE_RT_POLICY", "FF");
 
                     std::snprintf(strBuf, STR_MAX, "%i", options.wine.baseRtPrio);
                     carla_setenv("STAGING_RT_PRIORITY_BASE", strBuf);
                     carla_setenv("WINE_RT", strBuf);
+                    carla_setenv("WINE_RT_PRIO", strBuf);
 
                     std::snprintf(strBuf, STR_MAX, "%i", options.wine.serverRtPrio);
                     carla_setenv("STAGING_RT_PRIORITY_SERVER", strBuf);
@@ -272,9 +281,11 @@ protected:
                 else
                 {
                     carla_unsetenv("STAGING_SHARED_MEMORY");
+                    carla_unsetenv("WINE_RT_POLICY");
                     carla_unsetenv("STAGING_RT_PRIORITY_BASE");
                     carla_unsetenv("STAGING_RT_PRIORITY_SERVER");
                     carla_unsetenv("WINE_RT");
+                    carla_unsetenv("WINE_RT_PRIO");
                     carla_unsetenv("WINE_SVR_RT");
                 }
 
@@ -901,8 +912,7 @@ public:
             fTimedOut   = true;
             fTimedError = true;
             fInitiated  = false;
-            pData->engine->callback(ENGINE_CALLBACK_PLUGIN_UNAVAILABLE, pData->id, 0, 0, 0.0f,
-                                    "Plugin bridge has been stopped or crashed");
+            handleProcessStopped();
         }
 
         CarlaPlugin::idle();
@@ -1064,9 +1074,6 @@ public:
         if (fInfo.mOuts > 0)
             pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_OUT;
 
-        if (fInfo.aIns <= 2 && fInfo.aOuts <= 2 && (fInfo.aIns == fInfo.aOuts || fInfo.aIns == 0 || fInfo.aOuts == 0))
-            pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
-
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
 
@@ -1078,7 +1085,10 @@ public:
 
     void activate() noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(! fTimedError,);
+        if (! fBridgeThread.isThreadRunning())
+        {
+            CARLA_SAFE_ASSERT_RETURN(restartBridgeThread(),);
+        }
 
         {
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
@@ -1824,8 +1834,17 @@ public:
                 fInfo.aIns  = fShmNonRtServerControl.readUInt();
                 fInfo.aOuts = fShmNonRtServerControl.readUInt();
 
-                CARLA_SAFE_ASSERT(fInfo.aInNames  == nullptr);
-                CARLA_SAFE_ASSERT(fInfo.aOutNames == nullptr);
+                if (fInfo.aInNames != nullptr)
+                {
+                    delete[] fInfo.aInNames;
+                    fInfo.aInNames = nullptr;
+                }
+
+                if (fInfo.aOutNames != nullptr)
+                {
+                    delete[] fInfo.aOutNames;
+                    fInfo.aOutNames = nullptr;
+                }
 
                 if (fInfo.aIns > 0)
                 {
@@ -2318,26 +2337,6 @@ public:
             return false;
         }
 
-        // ---------------------------------------------------------------
-        // initial values
-
-        fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientVersion);
-        fShmNonRtClientControl.writeUInt(CARLA_PLUGIN_BRIDGE_API_VERSION);
-
-        fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeRtClientData)));
-        fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeNonRtClientData)));
-        fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeNonRtServerData)));
-
-        fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientInitialSetup);
-        fShmNonRtClientControl.writeUInt(pData->engine->getBufferSize());
-        fShmNonRtClientControl.writeDouble(pData->engine->getSampleRate());
-
-        fShmNonRtClientControl.commitWrite();
-
-        // testing dummy message
-        fShmRtClientControl.writeOpcode(kPluginBridgeRtClientNull);
-        fShmRtClientControl.commitWrite();
-
 #ifndef CARLA_OS_WIN
         // ---------------------------------------------------------------
         // set wine prefix
@@ -2380,58 +2379,10 @@ public:
                                   fWinePrefix.toRawUTF8(),
 #endif
                                   bridgeBinary, label, shmIdsStr);
-            fBridgeThread.startThread();
         }
 
-        // ---------------------------------------------------------------
-        // wait for bridge to start
-
-        fInitiated = false;
-        fLastPongTime = Time::currentTimeMillis();
-        CARLA_SAFE_ASSERT(fLastPongTime > 0);
-
-        static bool sFirstInit = true;
-
-        int64_t timeoutEnd = 5000;
-
-        if (sFirstInit)
-            timeoutEnd *= 2;
-#ifndef CARLA_OS_WIN
-         if (fBinaryType == BINARY_WIN32 || fBinaryType == BINARY_WIN64)
-            timeoutEnd *= 2;
-#endif
-        sFirstInit = false;
-
-        const bool needsEngineIdle = pData->engine->getType() != kEngineTypePlugin;
-
-        for (; Time::currentTimeMillis() < fLastPongTime + timeoutEnd && fBridgeThread.isThreadRunning();)
-        {
-            pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
-
-            if (needsEngineIdle)
-                pData->engine->idle();
-
-            idle();
-
-            if (fInitiated)
-                break;
-            if (pData->engine->isAboutToClose())
-                break;
-
-            carla_msleep(20);
-        }
-
-        fLastPongTime = -1;
-
-        if (fInitError || ! fInitiated)
-        {
-            fBridgeThread.stopThread(6000);
-
-            if (! fInitError)
-                pData->engine->setLastError("Timeout while waiting for a response from plugin-bridge\n(or the plugin crashed on initialization?)");
-
+        if (! restartBridgeThread())
             return false;
-        }
 
         // ---------------------------------------------------------------
         // register client
@@ -2578,6 +2529,24 @@ private:
 
     BridgeParamInfo* fParams;
 
+    void handleProcessStopped() noexcept
+    {
+        const bool wasActive = pData->active;
+        pData->active = false;
+
+        if (wasActive)
+        {
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
+            if (pData->engine->isOscControlRegistered())
+                pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_ACTIVE, 0.0f);
+            pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_ACTIVE, 0, 0.0f, nullptr);
+#endif
+        }
+
+        if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
+            pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+    }
+
     void resizeAudioPool(const uint32_t bufferSize)
     {
         fShmAudioPool.resize(bufferSize, fInfo.aIns+fInfo.aOuts, fInfo.cvIns+fInfo.cvOuts);
@@ -2599,6 +2568,127 @@ private:
 
         fTimedOut = true;
         carla_stderr2("waitForClient(%s) timed out", action);
+    }
+
+    bool restartBridgeThread()
+    {
+        fInitiated  = false;
+        fInitError  = false;
+        fTimedError = false;
+
+        // reset memory
+        fShmRtClientControl.data->procFlags = 0;
+        carla_zeroStruct(fShmRtClientControl.data->timeInfo);
+        carla_zeroBytes(fShmRtClientControl.data->midiOut, kBridgeRtClientDataMidiOutSize);
+
+        fShmRtClientControl.clearData();
+        fShmNonRtClientControl.clearData();
+        fShmNonRtServerControl.clearData();
+
+        fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientVersion);
+        fShmNonRtClientControl.writeUInt(CARLA_PLUGIN_BRIDGE_API_VERSION);
+
+        fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeRtClientData)));
+        fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeNonRtClientData)));
+        fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeNonRtServerData)));
+
+        fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientInitialSetup);
+        fShmNonRtClientControl.writeUInt(pData->engine->getBufferSize());
+        fShmNonRtClientControl.writeDouble(pData->engine->getSampleRate());
+
+        fShmNonRtClientControl.commitWrite();
+
+        if (fShmAudioPool.dataSize != 0)
+        {
+            fShmRtClientControl.writeOpcode(kPluginBridgeRtClientSetAudioPool);
+            fShmRtClientControl.writeULong(static_cast<uint64_t>(fShmAudioPool.dataSize));
+            fShmRtClientControl.commitWrite();
+        }
+        else
+        {
+            // testing dummy message
+            fShmRtClientControl.writeOpcode(kPluginBridgeRtClientNull);
+            fShmRtClientControl.commitWrite();
+        }
+
+        fBridgeThread.startThread();
+
+        fLastPongTime = Time::currentTimeMillis();
+        CARLA_SAFE_ASSERT(fLastPongTime > 0);
+
+        static bool sFirstInit = true;
+
+        int64_t timeoutEnd = 5000;
+
+        if (sFirstInit)
+            timeoutEnd *= 2;
+#ifndef CARLA_OS_WIN
+         if (fBinaryType == BINARY_WIN32 || fBinaryType == BINARY_WIN64)
+            timeoutEnd *= 2;
+#endif
+        sFirstInit = false;
+
+        const bool needsEngineIdle = pData->engine->getType() != kEngineTypePlugin;
+
+        for (; Time::currentTimeMillis() < fLastPongTime + timeoutEnd && fBridgeThread.isThreadRunning();)
+        {
+            pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
+            if (needsEngineIdle)
+                pData->engine->idle();
+
+            idle();
+
+            if (fInitiated)
+                break;
+            if (pData->engine->isAboutToClose())
+                break;
+
+            carla_msleep(20);
+        }
+
+        fLastPongTime = -1;
+
+        if (fInitError || ! fInitiated)
+        {
+            fBridgeThread.stopThread(6000);
+
+            if (! fInitError)
+                pData->engine->setLastError("Timeout while waiting for a response from plugin-bridge\n"
+                                            "(or the plugin crashed on initialization?)");
+
+            return false;
+        }
+
+        if (const size_t dataSize = fInfo.chunk.size())
+        {
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+            void* data = fInfo.chunk.data();
+#else
+            void* data = &fInfo.chunk.front();
+#endif
+            CarlaString dataBase64(CarlaString::asBase64(data, dataSize));
+            CARLA_SAFE_ASSERT_RETURN(dataBase64.length() > 0, true);
+
+            String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
+
+            filePath += CARLA_OS_SEP_STR ".CarlaChunk_";
+            filePath += fShmAudioPool.getFilenameSuffix();
+
+            if (File(filePath).replaceWithText(dataBase64.buffer()))
+            {
+                const uint32_t ulength(static_cast<uint32_t>(filePath.length()));
+
+                const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
+
+                fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientSetChunkDataFile);
+                fShmNonRtClientControl.writeUInt(ulength);
+                fShmNonRtClientControl.writeCustomData(filePath.toRawUTF8(), ulength);
+                fShmNonRtClientControl.commitWrite();
+            }
+        }
+
+        return true;
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginBridge)

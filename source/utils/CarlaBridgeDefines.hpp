@@ -20,7 +20,7 @@
 
 #include "CarlaRingBuffer.hpp"
 
-#define CARLA_PLUGIN_BRIDGE_API_VERSION 3
+#define CARLA_PLUGIN_BRIDGE_API_VERSION 4
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -141,9 +141,9 @@ struct BridgeTimeInfo {
     uint64_t usecs;
     uint32_t validFlags;
     // bbt
-    int32_t bar, beat, tick;
+    int32_t bar, beat;
     float beatsPerBar, beatType;
-    double barStartTick, ticksPerBeat, beatsPerMinute;
+    double tick, barStartTick, ticksPerBeat, beatsPerMinute;
 };
 
 // -------------------------------------------------------------------------------------------------------------------
