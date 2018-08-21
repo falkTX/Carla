@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -31,6 +31,11 @@ static const uint32_t kMaxMidiEvents = 512;
 
 extern uint32_t d_lastBufferSize;
 extern double   d_lastSampleRate;
+
+// -----------------------------------------------------------------------
+// DSP callbacks
+
+typedef bool (*writeMidiFunc) (void* ptr, const MidiEvent& midiEvent);
 
 // -----------------------------------------------------------------------
 // Plugin private data
@@ -65,6 +70,10 @@ struct Plugin::PrivateData {
     TimePosition timePosition;
 #endif
 
+    // Callbacks
+    void*         callbacksPtr;
+    writeMidiFunc writeMidiCallbackFunc;
+
     uint32_t bufferSize;
     double   sampleRate;
 
@@ -88,6 +97,8 @@ struct Plugin::PrivateData {
 #if DISTRHO_PLUGIN_WANT_LATENCY
           latency(0),
 #endif
+          callbacksPtr(nullptr),
+          writeMidiCallbackFunc(nullptr),
           bufferSize(d_lastBufferSize),
           sampleRate(d_lastSampleRate)
     {
@@ -149,6 +160,16 @@ struct Plugin::PrivateData {
         }
 #endif
     }
+
+#if DISTRHO_PLUGIN_WANT_MIDI_OUTPUT
+    bool writeMidiCallback(const MidiEvent& midiEvent)
+    {
+        if (writeMidiCallbackFunc != nullptr)
+            return writeMidiCallbackFunc(callbacksPtr, midiEvent);
+
+        return false;
+    }
+#endif
 };
 
 // -----------------------------------------------------------------------
@@ -157,7 +178,7 @@ struct Plugin::PrivateData {
 class PluginExporter
 {
 public:
-    PluginExporter()
+    PluginExporter(void* const callbacksPtr, const writeMidiFunc writeMidiCall)
         : fPlugin(createPlugin()),
           fData((fPlugin != nullptr) ? fPlugin->pData : nullptr),
           fIsActive(false)
@@ -191,6 +212,9 @@ public:
         for (uint32_t i=0, count=fData->stateCount; i < count; ++i)
             fPlugin->initState(i, fData->stateKeys[i], fData->stateDefValues[i]);
 #endif
+
+        fData->callbacksPtr          = callbacksPtr;
+        fData->writeMidiCallbackFunc = writeMidiCall;
     }
 
     ~PluginExporter()
@@ -322,9 +346,26 @@ public:
         return fData->parameters[index].designation;
     }
 
+    bool isParameterInput(const uint32_t index) const noexcept
+    {
+        return (getParameterHints(index) & kParameterIsOutput) == 0x0;
+    }
+
     bool isParameterOutput(const uint32_t index) const noexcept
     {
-        return (getParameterHints(index) & kParameterIsOutput);
+        return (getParameterHints(index) & kParameterIsOutput) != 0x0;
+    }
+
+    bool isParameterOutputOrTrigger(const uint32_t index) const noexcept
+    {
+        const uint32_t hints = getParameterHints(index);
+
+        if (hints & kParameterIsOutput)
+            return true;
+        if ((hints & kParameterIsTrigger) == kParameterIsTrigger)
+            return true;
+
+        return false;
     }
 
     const String& getParameterName(const uint32_t index) const noexcept
@@ -346,6 +387,13 @@ public:
         DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr && index < fData->parameterCount, sFallbackString);
 
         return fData->parameters[index].unit;
+    }
+
+    const ParameterEnumerationValues& getParameterEnumValues(const uint32_t index) const noexcept
+    {
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr && index < fData->parameterCount, sFallbackEnumValues);
+
+        return fData->parameters[index].enumValues;
     }
 
     const ParameterRanges& getParameterRanges(const uint32_t index) const noexcept
@@ -503,7 +551,7 @@ public:
         }
     }
 
-#if DISTRHO_PLUGIN_IS_SYNTH
+#if DISTRHO_PLUGIN_WANT_MIDI_INPUT
     void run(const float** const inputs, float** const outputs, const uint32_t frames,
              const MidiEvent* const midiEvents, const uint32_t midiEventCount)
     {
@@ -601,9 +649,10 @@ private:
     // -------------------------------------------------------------------
     // Static fallback data, see DistrhoPlugin.cpp
 
-    static const String          sFallbackString;
-    static const AudioPort       sFallbackAudioPort;
-    static const ParameterRanges sFallbackRanges;
+    static const String                     sFallbackString;
+    static const AudioPort                  sFallbackAudioPort;
+    static const ParameterRanges            sFallbackRanges;
+    static const ParameterEnumerationValues sFallbackEnumValues;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginExporter)
     DISTRHO_PREVENT_HEAP_ALLOCATION

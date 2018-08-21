@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -61,12 +61,12 @@ struct UI::PrivateData {
 #endif
 
     // Callbacks
+    void*         callbacksPtr;
     editParamFunc editParamCallbackFunc;
     setParamFunc  setParamCallbackFunc;
     setStateFunc  setStateCallbackFunc;
     sendNoteFunc  sendNoteCallbackFunc;
     setSizeFunc   setSizeCallbackFunc;
-    void*         ptr;
 
     PrivateData() noexcept
         : sampleRate(d_lastUiSampleRate),
@@ -74,12 +74,12 @@ struct UI::PrivateData {
 #if DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
           dspPtr(d_lastUiDspPtr),
 #endif
+          callbacksPtr(nullptr),
           editParamCallbackFunc(nullptr),
           setParamCallbackFunc(nullptr),
           setStateCallbackFunc(nullptr),
           sendNoteCallbackFunc(nullptr),
-          setSizeCallbackFunc(nullptr),
-          ptr(nullptr)
+          setSizeCallbackFunc(nullptr)
     {
         DISTRHO_SAFE_ASSERT(d_isNotZero(sampleRate));
 
@@ -103,31 +103,31 @@ struct UI::PrivateData {
     void editParamCallback(const uint32_t rindex, const bool started)
     {
         if (editParamCallbackFunc != nullptr)
-            editParamCallbackFunc(ptr, rindex, started);
+            editParamCallbackFunc(callbacksPtr, rindex, started);
     }
 
     void setParamCallback(const uint32_t rindex, const float value)
     {
         if (setParamCallbackFunc != nullptr)
-            setParamCallbackFunc(ptr, rindex, value);
+            setParamCallbackFunc(callbacksPtr, rindex, value);
     }
 
     void setStateCallback(const char* const key, const char* const value)
     {
         if (setStateCallbackFunc != nullptr)
-            setStateCallbackFunc(ptr, key, value);
+            setStateCallbackFunc(callbacksPtr, key, value);
     }
 
     void sendNoteCallback(const uint8_t channel, const uint8_t note, const uint8_t velocity)
     {
         if (sendNoteCallbackFunc != nullptr)
-            sendNoteCallbackFunc(ptr, channel, note, velocity);
+            sendNoteCallbackFunc(callbacksPtr, channel, note, velocity);
     }
 
     void setSizeCallback(const uint width, const uint height)
     {
         if (setSizeCallbackFunc != nullptr)
-            setSizeCallbackFunc(ptr, width, height);
+            setSizeCallbackFunc(callbacksPtr, width, height);
     }
 };
 
@@ -221,8 +221,13 @@ UI* createUiWrapper(void* const dspPtr, const uintptr_t winId, const char* const
 class UIExporter
 {
 public:
-    UIExporter(void* const ptr, const intptr_t winId,
-               const editParamFunc editParamCall, const setParamFunc setParamCall, const setStateFunc setStateCall, const sendNoteFunc sendNoteCall, const setSizeFunc setSizeCall,
+    UIExporter(void* const callbacksPtr,
+               const intptr_t winId,
+               const editParamFunc editParamCall,
+               const setParamFunc setParamCall,
+               const setStateFunc setStateCall,
+               const sendNoteFunc sendNoteCall,
+               const setSizeFunc setSizeCall,
                void* const dspPtr = nullptr,
                const char* const bundlePath = nullptr)
 #ifdef HAVE_DGL
@@ -238,7 +243,7 @@ public:
         DISTRHO_SAFE_ASSERT_RETURN(fUI != nullptr,);
         DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr,);
 
-        fData->ptr = ptr;
+        fData->callbacksPtr          = callbacksPtr;
         fData->editParamCallbackFunc = editParamCall;
         fData->setParamCallbackFunc  = setParamCall;
         fData->setStateCallbackFunc  = setStateCall;
