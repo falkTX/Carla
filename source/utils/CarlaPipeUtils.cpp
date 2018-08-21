@@ -105,12 +105,10 @@ bool startProcess(const char* const argv[], PROCESS_INFORMATION* const processIn
     {
         String arg(argv[i]);
 
-#if 0 // FIXME
         // If there are spaces, surround it with quotes. If there are quotes,
         // replace them with \" so that CommandLineToArgv will correctly parse them.
         if (arg.containsAnyOf("\" "))
             arg = arg.replace("\"", "\\\"").quoted();
-#endif
 
         command << arg << ' ';
     }
@@ -122,7 +120,7 @@ bool startProcess(const char* const argv[], PROCESS_INFORMATION* const processIn
     startupInfo.cb = sizeof(startupInfo);
 
     return CreateProcess(nullptr, const_cast<LPSTR>(command.toRawUTF8()),
-                         nullptr, nullptr, FALSE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
+                         nullptr, nullptr, TRUE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
                          nullptr, nullptr, &startupInfo, processInfo) != FALSE;
 }
 
@@ -268,7 +266,7 @@ bool waitForClientFirstMessage(const P& pipe, const uint32_t timeOutMilliseconds
 
 #ifdef CARLA_OS_WIN
 static inline
-bool waitForProcessToStop(const PROCESS_INFORMATION& processInfo, const uint32_t timeOutMilliseconds) noexcept
+bool waitForProcessToStop(const PROCESS_INFORMATION& processInfo, const uint32_t timeOutMilliseconds, bool sendTerminate) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(processInfo.hProcess != INVALID_HANDLE_VALUE, false);
     CARLA_SAFE_ASSERT_RETURN(timeOutMilliseconds > 0, false);
@@ -282,6 +280,12 @@ bool waitForProcessToStop(const PROCESS_INFORMATION& processInfo, const uint32_t
         case WAIT_OBJECT_0:
         case -1:
             return true;
+        }
+
+        if (sendTerminate)
+        {
+            sendTerminate = false;
+            ::TerminateProcess(processInfo.hProcess, 15);
         }
 
         if (water::Time::getMillisecondCounter() >= timeoutEnd)
@@ -299,14 +303,14 @@ void waitForProcessToStopOrKillIt(const PROCESS_INFORMATION& processInfo, const 
     CARLA_SAFE_ASSERT_RETURN(processInfo.hProcess != INVALID_HANDLE_VALUE,);
     CARLA_SAFE_ASSERT_RETURN(timeOutMilliseconds > 0,);
 
-    if (! waitForProcessToStop(processInfo, timeOutMilliseconds))
+    if (! waitForProcessToStop(processInfo, timeOutMilliseconds, true))
     {
         carla_stderr("waitForProcessToStopOrKillIt() - process didn't stop, force termination");
 
-        if (TerminateProcess(processInfo.hProcess, 9) != FALSE)
+        if (::TerminateProcess(processInfo.hProcess, 9) != FALSE)
         {
             // wait for process to stop
-            waitForProcessToStop(processInfo, timeOutMilliseconds);
+            waitForProcessToStop(processInfo, timeOutMilliseconds, false);
         }
     }
 }
@@ -1248,7 +1252,7 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     //-----------------------------------------------------------------------------------------------------------------
     // set size, non-fatal
 
-#ifdef CARLA_OS_LINUX
+# ifdef CARLA_OS_LINUX
     try {
         ::fcntl(pipeRecvClient, F_SETPIPE_SZ, size);
     } CARLA_SAFE_EXCEPTION("Set pipe size");
@@ -1256,7 +1260,7 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     try {
         ::fcntl(pipeRecvServer, F_SETPIPE_SZ, size);
     } CARLA_SAFE_EXCEPTION("Set pipe size");
-#endif
+# endif
 
     //-----------------------------------------------------------------------------------------------------------------
     // set non-block
@@ -1378,7 +1382,7 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     if (TerminateProcess(pData->processInfo.hProcess, 9) != FALSE)
     {
         // wait for process to stop
-        waitForProcessToStop(pData->processInfo, 2*1000);
+        waitForProcessToStop(pData->processInfo, 2*1000, false);
     }
 
     // clear pData->processInfo
