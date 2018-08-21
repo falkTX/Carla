@@ -897,6 +897,10 @@ class PluginRefreshW(QDialog):
             self.ui.ch_posix32.setVisible(False)
             self.ui.ch_posix64.setEnabled(False)
             self.ui.ch_posix64.setVisible(False)
+            self.ui.ico_posix32.hide()
+            self.ui.ico_posix64.hide()
+            self.ui.label_posix32.hide()
+            self.ui.label_posix64.hide()
 
         else:
             if kIs64bit:
