@@ -183,7 +183,8 @@ class PluginCarla : public NativePluginClass
 public:
     PluginCarla(const NativeHostDescriptor* const host)
         : NativePluginClass(host),
-          fPlugin(this, writeMidiCallback)
+          fPlugin(this, writeMidiCallback),
+          fScalePointsCache(nullptr)
     {
 #if DISTRHO_PLUGIN_HAS_UI
         fUiPtr = nullptr;
@@ -199,6 +200,12 @@ public:
             fUiPtr = nullptr;
         }
 #endif
+
+        if (fScalePointsCache != nullptr)
+        {
+            delete[] fScalePointsCache;
+            fScalePointsCache = nullptr;
+        }
     }
 
 protected:
@@ -246,6 +253,32 @@ protected:
             param.ranges.def = ranges.def;
             param.ranges.min = ranges.min;
             param.ranges.max = ranges.max;
+        }
+
+        {
+            const ParameterEnumerationValues& enumValues(fPlugin.getParameterEnumValues(index));
+
+            if (const uint32_t scalePointCount = enumValues.count)
+            {
+                NativeParameterScalePoint* const scalePoints = new NativeParameterScalePoint[scalePointCount];
+
+                for (uint32_t i=0; i<scalePointCount; ++i)
+                {
+                    scalePoints[i].label = enumValues.values[i].label.buffer();
+                    scalePoints[i].value = enumValues.values[i].value;
+                }
+
+                param.scalePoints     = scalePoints;
+                param.scalePointCount = scalePointCount;
+
+                if (enumValues.restrictedMode)
+                    param.hints = static_cast<NativeParameterHints>(param.hints|::NATIVE_PARAMETER_USES_SCALEPOINTS);
+            }
+            else if (fScalePointsCache != nullptr)
+            {
+                delete[] fScalePointsCache;
+                fScalePointsCache = nullptr;
+            }
         }
 
         return &param;
@@ -448,6 +481,7 @@ protected:
 
 private:
     PluginExporter fPlugin;
+    mutable NativeParameterScalePoint* fScalePointsCache;
 
 #if DISTRHO_PLUGIN_HAS_UI
     // UI
