@@ -27,6 +27,10 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBase64Utils.hpp"
 
+#ifdef CARLA_OS_UNIX
+# include "CarlaLibUtils.hpp"
+#endif
+
 #ifdef BUILD_BRIDGE
 # include "water/files/File.h"
 #else
@@ -84,6 +88,58 @@ struct CarlaBackendStandalone {
 };
 
 CarlaBackendStandalone gStandalone;
+
+#ifdef CARLA_OS_UNIX
+// --------------------------------------------------------------------------------------------------------------------
+// Thread-safe fftw
+
+typedef void (*void_func)(void);
+
+class ThreadSafeFFTW
+{
+public:
+    ThreadSafeFFTW()
+        : libfftw3(lib_open("libfftw3_threads.so.3")),
+          libfftw3f(lib_open("libfftw3f_threads.so.3")),
+          libfftw3l(lib_open("libfftw3l_threads.so.3")),
+          libfftw3q(lib_open("libfftw3q_threads.so.3"))
+    {
+        if (libfftw3 != nullptr)
+            if (const void_func func = lib_symbol<void_func>(libfftw3, "fftw_make_planner_thread_safe"))
+                func();
+
+        if (libfftw3f != nullptr)
+            if (const void_func func = lib_symbol<void_func>(libfftw3f, "fftwf_make_planner_thread_safe"))
+                func();
+
+        if (libfftw3l != nullptr)
+            if (const void_func func = lib_symbol<void_func>(libfftw3l, "fftwl_make_planner_thread_safe"))
+                func();
+
+        if (libfftw3q != nullptr)
+            if (const void_func func = lib_symbol<void_func>(libfftw3q, "fftwq_make_planner_thread_safe"))
+                func();
+    }
+
+    ~ThreadSafeFFTW()
+    {
+        if (libfftw3 != nullptr)
+            lib_close(libfftw3);
+        if (libfftw3f != nullptr)
+            lib_close(libfftw3f);
+        if (libfftw3l != nullptr)
+            lib_close(libfftw3l);
+        if (libfftw3q != nullptr)
+            lib_close(libfftw3q);
+    }
+
+private:
+    lib_t libfftw3;
+    lib_t libfftw3f;
+    lib_t libfftw3l;
+    lib_t libfftw3q;
+};
+#endif
 
 // --------------------------------------------------------------------------------------------------------------------
 // API
@@ -292,6 +348,9 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 
 #ifdef CARLA_OS_WIN
     carla_setenv("WINEASIO_CLIENT_NAME", clientName);
+#endif
+#ifdef CARLA_OS_UNIX
+    static const ThreadSafeFFTW tsfftw;
 #endif
 
     ScopedPointer<CarlaEngine> engine(CarlaEngine::newDriverByName(driverName));
