@@ -708,8 +708,7 @@ protected:
 
     bool usesConstantBufferSize() const noexcept override
     {
-        // TODO
-        return true;
+        return false;
     }
 
     EngineType getType() const noexcept override
