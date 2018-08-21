@@ -1479,7 +1479,7 @@ public:
         return kNullEngineEvent;
     }
 
-    void process(const float** const audioIn, float** const audioOut, const float** const cvIn, float** const cvOut, const uint32_t frames) override
+    void process(const float** const audioIn, float** const audioOut, const float** const, float** const, const uint32_t frames) override
     {
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -1489,8 +1489,6 @@ public:
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
                 carla_zeroFloats(audioOut[i], frames);
-            for (uint32_t i=0; i < pData->cvOut.count; ++i)
-                carla_zeroFloats(cvOut[i], frames);
             return;
         }
 
@@ -1631,7 +1629,7 @@ public:
 
                 if (sampleAccurate && eventTime > timeOffset)
                 {
-                    if (processSingle(audioIn, audioOut, cvIn, cvOut, eventTime - timeOffset, timeOffset))
+                    if (processSingle(audioIn, audioOut, eventTime - timeOffset, timeOffset))
                     {
                         startTime  = 0;
                         timeOffset = eventTime;
@@ -1924,7 +1922,7 @@ public:
             pData->postRtEvents.trySplice();
 
             if (frames > timeOffset)
-                processSingle(audioIn, audioOut, cvIn, cvOut, frames - timeOffset, timeOffset);
+                processSingle(audioIn, audioOut, frames - timeOffset, timeOffset);
 
         } // End of Event Input and Processing
 
@@ -1933,7 +1931,7 @@ public:
 
         else
         {
-            processSingle(audioIn, audioOut, cvIn, cvOut, frames, 0);
+            processSingle(audioIn, audioOut, frames, 0);
 
         } // End of Plugin processing (no events)
 
@@ -1963,7 +1961,7 @@ public:
 #endif
     }
 
-    bool processSingle(const float** const audioIn, float** const audioOut, const float** const cvIn, float** const cvOut, const uint32_t frames, const uint32_t timeOffset)
+    bool processSingle(const float** const audioIn, float** const audioOut, const uint32_t frames, const uint32_t timeOffset)
     {
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
 
@@ -1974,14 +1972,6 @@ public:
         if (pData->audioOut.count > 0)
         {
             CARLA_SAFE_ASSERT_RETURN(audioOut != nullptr, false);
-        }
-        if (pData->cvIn.count > 0)
-        {
-            CARLA_SAFE_ASSERT_RETURN(cvIn != nullptr, false);
-        }
-        if (pData->cvOut.count > 0)
-        {
-            CARLA_SAFE_ASSERT_RETURN(cvOut != nullptr, false);
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -1998,11 +1988,6 @@ public:
                 for (uint32_t k=0; k < frames; ++k)
                     audioOut[i][k+timeOffset] = 0.0f;
             }
-            for (uint32_t i=0; i < pData->cvOut.count; ++i)
-            {
-                for (uint32_t k=0; k < frames; ++k)
-                    cvOut[i][k+timeOffset] = 0.0f;
-            }
 
             return false;
         }
@@ -2015,17 +2000,6 @@ public:
 
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
             carla_zeroFloats(fAudioOutBuffers[i], frames);
-
-#if 0
-        // --------------------------------------------------------------------------------------------------------
-        // Set CV buffers
-
-        for (uint32_t i=0; i < pData->cvIn.count; ++i)
-            carla_copyFloats(fCvInBuffers[i], cvIn[i]+timeOffset, frames);
-
-        for (uint32_t i=0; i < pData->cvOut.count; ++i)
-            carla_zeroFloats(fCvOutBuffers[i], frames);
-#endif
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
@@ -2119,14 +2093,6 @@ public:
         {
             for (uint32_t k=0; k < frames; ++k)
                 audioOut[i][k+timeOffset] = fAudioOutBuffers[i][k];
-        }
-#endif
-
-#if 0
-        for (uint32_t i=0; i < pData->cvOut.count; ++i)
-        {
-            for (uint32_t k=0; k < frames; ++k)
-                cvOut[i][k+timeOffset] = fCvOutBuffers[i][k];
         }
 #endif
 
