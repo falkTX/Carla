@@ -901,9 +901,7 @@ public:
         }
 
         // check initial latency
-        char* const empty3Ptr = &fEffect->empty3[0];
-        int32_t initialDelay = *(int32_t*)empty3Ptr;
-        const uint32_t latency = (initialDelay > 0) ? static_cast<uint32_t>(initialDelay) : 0;
+        const uint32_t latency = (fEffect->initialDelay > 0) ? static_cast<uint32_t>(fEffect->initialDelay) : 0;
 
         if (latency != 0)
         {

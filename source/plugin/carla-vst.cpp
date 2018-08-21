@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -29,19 +29,7 @@
 #include "water/files/File.h"
 
 #include "CarlaMathUtils.hpp"
-
-#include "vestige/aeffectx.h"
-#define effFlagsProgramChunks (1 << 5)
-#define effGetParamLabel 6
-#define effGetChunk 23
-#define effSetChunk 24
-#define effGetPlugCategory 35
-#define kPlugCategEffect 1
-#define kPlugCategSynth 2
-#define kVstVersion 2400
-struct ERect {
-    int16_t top, left, bottom, right;
-};
+#include "CarlaVstUtils.hpp"
 
 static uint32_t d_lastBufferSize = 0;
 static double   d_lastSampleRate = 0.0;
@@ -702,9 +690,9 @@ struct VstObject {
     NativePlugin* plugin;
 };
 
-#define validObject  effect != nullptr && effect->ptr3 != nullptr
-#define validPlugin  effect != nullptr && effect->ptr3 != nullptr && ((VstObject*)effect->ptr3)->plugin != nullptr
-#define vstObjectPtr (VstObject*)effect->ptr3
+#define validObject  effect != nullptr && effect->object != nullptr
+#define validPlugin  effect != nullptr && effect->object != nullptr && ((VstObject*)effect->object)->plugin != nullptr
+#define vstObjectPtr (VstObject*)effect->object
 #define pluginPtr    (vstObjectPtr)->plugin
 
 static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt)
@@ -781,7 +769,7 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
             /* This code invalidates the object created in VSTPluginMain
              * Probably not safe against all hosts */
             obj->audioMaster = nullptr;
-            effect->ptr3 = nullptr;
+            effect->object = nullptr;
             delete obj;
 #endif
 
@@ -921,9 +909,8 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
     std::memset(effect, 0, sizeof(AEffect));
 
     // vst fields
-    effect->magic = kEffectMagic;
-    int32_t* const version = (int32_t*)&effect->unknown1;
-    *version = CARLA_VERSION_HEX;
+    effect->magic   = kEffectMagic;
+    effect->version = CARLA_VERSION_HEX;
 
     static const int32_t uniqueId = CCONST('C', 'r', 'l', 'a');
 #if CARLA_PLUGIN_SYNTH
@@ -980,7 +967,8 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
     obj->audioMaster = audioMaster;
     obj->plugin      = nullptr;
 
-    effect->ptr3 = obj;
+    // done
+    effect->object = obj;
 
     return effect;
 }

@@ -1,6 +1,6 @@
 /*
  * Carla VST utils
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -27,7 +27,7 @@
 #define VST_2_4_EXTENSIONS 1
 #define VST_FORCE_DEPRECATED 0
 
-#include "vestige/aeffectx.h"
+#include "vestige/vestige.h"
 #define audioMasterGetOutputSpeakerArrangement audioMasterGetSpeakerArrangement
 #define effFlagsProgramChunks (1 << 5)
 #define effSetProgramName 4
@@ -81,13 +81,6 @@
 #define effSetProcessPrecision 77
 #define effGetNumMidiInputChannels 78
 #define effGetNumMidiOutputChannels 79
-#define kPlugCategSynth 2
-#define kPlugCategAnalysis 3
-#define kPlugCategMastering 4
-#define kPlugCategRoomFx 6
-#define kPlugCategRestoration 8
-#define kPlugCategShell 10
-#define kPlugCategGenerator 11
 #define kVstAutomationOff 1
 #define kVstAutomationReadWrite 4
 #define kVstProcessLevelUnknown 0
@@ -95,7 +88,6 @@
 #define kVstProcessLevelRealtime 2
 #define kVstProcessLevelOffline 4
 #define kVstProcessPrecision32 0
-#define kVstTransportChanged 1
 #define kVstVersion 2400
 #define DECLARE_VST_DEPRECATED(idx) idx
 #if defined(CARLA_OS_WIN) && defined(__cdecl)
