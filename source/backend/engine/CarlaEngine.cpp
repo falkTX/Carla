@@ -427,7 +427,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
     }
     else
     {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         bool use16Outs;
 #endif
         setLastError("Invalid or unsupported plugin type");
@@ -453,7 +453,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
             plugin = CarlaPlugin::newVST2(initializer);
             break;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         case PLUGIN_INTERNAL:
             plugin = CarlaPlugin::newNative(initializer);
             break;
