@@ -709,8 +709,8 @@ protected:
 
     bool usesConstantBufferSize() const noexcept override
     {
-        // FIXME at least LV2 hosts can report this
-        return false;
+        // TODO LV2 hosts can report this, till then we allow this
+        return true;
     }
 
     EngineType getType() const noexcept override
