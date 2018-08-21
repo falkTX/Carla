@@ -454,6 +454,7 @@ const char* carla_get_complete_license_text()
 #ifdef HAVE_FLUIDSYNTH
         "<li>FluidSynth library for SF2/3 support</li>"
 #endif
+        "<li>SFZero module for SFZ support</li>"
 
         // misc libs
         "<li>base64 utilities based on code by Ren\u00E9 Nyffenegger</li>"
