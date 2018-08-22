@@ -762,7 +762,7 @@ class MidiOutWinMM: public MidiOutApi
 class MidiInDummy: public MidiInApi
 {
  public:
- MidiInDummy( const std::string &/*clientName*/, unsigned int queueSizeLimit ) : MidiInApi( queueSizeLimit ) { errorString_ = "MidiInDummy: This class provides no functionality."; error( RtMidiError::WARNING, errorString_ ); }
+ MidiInDummy( const std::string &/*clientName*/, unsigned int queueSizeLimit ) : MidiInApi( queueSizeLimit ) {}
   RtMidi::Api getCurrentApi( void ) { return RtMidi::RTMIDI_DUMMY; }
   void openPort( unsigned int /*portNumber*/, const std::string &/*portName*/ ) {}
   void openVirtualPort( const std::string &/*portName*/ ) {}
@@ -777,7 +777,7 @@ class MidiInDummy: public MidiInApi
 class MidiOutDummy: public MidiOutApi
 {
  public:
-  MidiOutDummy( const std::string &/*clientName*/ ) { errorString_ = "MidiOutDummy: This class provides no functionality."; error( RtMidiError::WARNING, errorString_ ); }
+  MidiOutDummy( const std::string &/*clientName*/ ) {}
   RtMidi::Api getCurrentApi( void ) { return RtMidi::RTMIDI_DUMMY; }
   void openPort( unsigned int /*portNumber*/, const std::string &/*portName*/ ) {}
   void openVirtualPort( const std::string &/*portName*/ ) {}
