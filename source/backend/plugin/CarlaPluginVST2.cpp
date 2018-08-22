@@ -1571,6 +1571,8 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Set MIDI events
 
+        fIsProcessing = true;
+
         if (fMidiEventCount > 0)
         {
             fEvents.numEvents = static_cast<int32_t>(fMidiEventCount);
@@ -1580,8 +1582,6 @@ public:
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
-
-        fIsProcessing = true;
 
         if (pData->hints & PLUGIN_CAN_PROCESS_REPLACING)
         {
@@ -1598,7 +1598,6 @@ public:
         }
 
         fIsProcessing = false;
-
         fTimeInfo.samplePos += frames;
 
 #ifndef BUILD_BRIDGE
@@ -1776,11 +1775,10 @@ protected:
             const uint32_t uindex(static_cast<uint32_t>(index));
             const float fixedValue(pData->param.getFixedValue(uindex, opt));
 
-            // Called from plugin process thread, nasty!
+            // Called from plugin process thread, nasty! (likely MIDI learn)
             if (pthread_equal(pthread_self(), fProcThread))
             {
                 CARLA_SAFE_ASSERT(fIsProcessing);
-
                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, fixedValue);
             }
             // Called from UI
