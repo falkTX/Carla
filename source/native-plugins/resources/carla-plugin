@@ -83,9 +83,9 @@ class PluginHost(CarlaHostQtPlugin):
 # Main Window
 
 class CarlaMiniW(ExternalUI, HostWindow):
-    def __init__(self, host, parent=None):
+    def __init__(self, host, isPatchbay, parent=None):
         ExternalUI.__init__(self)
-        HostWindow.__init__(self, host, sys.argv[0].lower().endswith("/carla-plugin-patchbay"), parent)
+        HostWindow.__init__(self, host, isPatchbay, parent)
         self.host = host
 
         if False:
@@ -485,8 +485,8 @@ else:
 # Embed plugin UI
 
 class CarlaEmbedW(QEmbedWidget):
-    def __init__(self, host, winId):
-        QEmbedWidget.__init__(self, winId)
+    def __init__(self, host, winId, isPatchbay):
+        QEmbedWidget.__init__(self, winId, isPatchbay)
 
         self.host = host
         self.fWinId = winId
@@ -498,7 +498,7 @@ class CarlaEmbedW(QEmbedWidget):
         self.fLayout.setSpacing(0)
         self.fWidget.setLayout(self.fLayout)
 
-        self.gui = CarlaMiniW(host, self.fWidget)
+        self.gui = CarlaMiniW(host, isPatchbay, self.fWidget)
         self.gui.hide()
 
         self.gui.ui.act_file_quit.setEnabled(False)
@@ -610,8 +610,10 @@ if __name__ == '__main__':
     # -------------------------------------------------------------
     # Init host backend
 
+    isPatchbay = sys.argv[0].rsplit(os.path.sep)[-1].lower().replace(".exe","") == "carla-plugin-patchbay"
+
     host = initHost("Carla-Plugin", None, False, True, True, PluginHost)
-    host.processMode       = ENGINE_PROCESS_MODE_PATCHBAY if sys.argv[0].lower().endswith("/carla-plugin-patchbay") else ENGINE_PROCESS_MODE_CONTINUOUS_RACK
+    host.processMode       = ENGINE_PROCESS_MODE_PATCHBAY if isPatchbay else ENGINE_PROCESS_MODE_CONTINUOUS_RACK
     host.processModeForced = True
     host.nextProcessMode   = host.processMode
     loadHostSettings(host)
@@ -627,9 +629,9 @@ if __name__ == '__main__':
     gCarla.utils.setenv("CARLA_PLUGIN_EMBED_WINID", "0")
 
     if LINUX and winId != 0:
-        gui = CarlaEmbedW(host, winId)
+        gui = CarlaEmbedW(host, winId, isPatchbay)
     else:
-        gui = CarlaMiniW(host)
+        gui = CarlaMiniW(host, isPatchbay)
 
     # -------------------------------------------------------------
     # App-Loop

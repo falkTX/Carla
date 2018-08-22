@@ -66,6 +66,7 @@ if [ x"${ARCH}" != x"32" ]; then
 fi
 
 export WINEARCH=win${ARCH}
+export WINEDEBUG=-all
 export WINEPREFIX=~/.winepy3_x${ARCH}
 export PYTHON_EXE="wine C:\\\\Python34\\\\python.exe"
 

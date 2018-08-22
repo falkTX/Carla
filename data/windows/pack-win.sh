@@ -59,6 +59,7 @@ if [ x"${ARCH}" != x"32" ]; then
 fi
 
 export WINEARCH=win${ARCH}
+export WINEDEBUG=-all
 export WINEPREFIX=~/.winepy3_x${ARCH}
 export PYTHON_EXE="wine C:\\\\Python34\\\\python.exe"
 
@@ -114,6 +115,10 @@ cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/Qt5Gui.dll          Carl
 cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/Qt5Widgets.dll      Carla/resources/
 cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/Qt5OpenGL.dll       Carla/resources/
 cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/Qt5Svg.dll          Carla/resources/
+
+if [ x"${CARLA_DEV}" != x"" ]; then
+    exit 0
+fi
 
 # Build unzipfx
 make -C unzipfx-carla -f Makefile.win32 clean
