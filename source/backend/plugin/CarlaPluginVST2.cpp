@@ -50,6 +50,12 @@ const uint PLUGIN_WANTS_MIDI_INPUT      = 0x8000;
 
 static const int32_t kVstMidiEventSize = static_cast<int32_t>(sizeof(VstMidiEvent));
 
+#ifdef PTW32_DLLPORT
+static const pthread_t kNullThread = {nullptr, 0};
+#else
+static const pthread_t kNullThread = 0;
+#endif
+
 // -----------------------------------------------------
 
 class CarlaPluginVST2 : public CarlaPlugin,
@@ -64,13 +70,11 @@ public:
           fTimeInfo(),
           fNeedIdle(false),
           fLastChunk(nullptr),
+          fIsInitializing(true),
           fIsProcessing(false),
+          fChangingValuesThread(kNullThread),
           fMainThread(pthread_self()),
-#ifdef PTW32_DLLPORT
-          fProcThread({nullptr, 0}),
-#else
-          fProcThread(0),
-#endif
+          fProcThread(kNullThread),
 #ifdef CARLA_OS_MAC
           fMacBundleRef(nullptr),
           fMacBundleRefNum(0),
@@ -391,6 +395,8 @@ public:
 
         {
             const ScopedSingleProcessLocker spl(this, true);
+            const ScopedValueSetter<pthread_t> svs(fChangingValuesThread, pthread_self(), kNullThread);
+
             dispatcher(effSetChunk, 0 /* bank */, static_cast<intptr_t>(dataSize), fLastChunk);
         }
 
@@ -419,6 +425,7 @@ public:
 
             {
                 const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
+                const ScopedValueSetter<pthread_t> svs(fChangingValuesThread, pthread_self(), kNullThread);
 
                 try {
                     dispatcher(effSetProgram, 0, index);
@@ -566,6 +573,7 @@ public:
 
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
+        const ScopedValueSetter<bool> svs(fIsInitializing, fIsInitializing, true);
 
         if (pData->active)
             deactivate();
@@ -1048,7 +1056,7 @@ public:
 
     void process(const float** const audioIn, float** const audioOut, const float** const, float** const, const uint32_t frames) override
     {
-        fProcThread = pthread_self();
+        const ScopedValueSetter<pthread_t> svs(fProcThread, pthread_self(), kNullThread);
 
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -1764,10 +1772,16 @@ protected:
         switch (opcode)
         {
         case audioMasterAutomate: {
-            CARLA_SAFE_ASSERT_BREAK(pData->enabled);
+            if (fIsInitializing) {
+                // some plugins can be stupid...
+                if (pData->param.count == 0)
+                    break;
+            } else {
+                CARLA_SAFE_ASSERT_BREAK(pData->enabled);
+            }
 
             // plugins should never do this:
-            CARLA_SAFE_ASSERT_INT(index >= 0 && index < static_cast<int32_t>(pData->param.count), index);
+            CARLA_SAFE_ASSERT_INT2(index >= 0 && index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
 
             if (index < 0 || index >= static_cast<int32_t>(pData->param.count))
                 break;
@@ -1775,10 +1789,17 @@ protected:
             const uint32_t uindex(static_cast<uint32_t>(index));
             const float fixedValue(pData->param.getFixedValue(uindex, opt));
 
+            const pthread_t thisThread = pthread_self();
+
             // Called from plugin process thread, nasty! (likely MIDI learn)
-            if (pthread_equal(pthread_self(), fProcThread))
+            /**/ if (pthread_equal(thisThread, fProcThread))
             {
                 CARLA_SAFE_ASSERT(fIsProcessing);
+                pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, fixedValue);
+            }
+            // Called from effSetChunk or effSetProgram
+            else if (pthread_equal(thisThread, fChangingValuesThread))
+            {
                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, fixedValue);
             }
             // Called from UI
@@ -2256,7 +2277,6 @@ public:
         dispatcher(effSetBlockSizeAndSampleRate, 0, iBufferSize, nullptr, fSampleRate);
         dispatcher(effSetSampleRate, 0, 0, nullptr, fSampleRate);
         dispatcher(effSetBlockSize, 0, iBufferSize);
-
         dispatcher(effOpen);
 
         // ---------------------------------------------------------------
@@ -2354,7 +2374,9 @@ private:
     bool  fNeedIdle;
     void* fLastChunk;
 
+    bool      fIsInitializing;
     bool      fIsProcessing;
+    pthread_t fChangingValuesThread;
     pthread_t fMainThread;
     pthread_t fProcThread;
 
