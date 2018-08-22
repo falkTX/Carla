@@ -46,7 +46,10 @@ from carla_shared import *
 # ----------------------------------------------------------------------------------------------------------------------
 # Try Import LADSPA-RDF
 
-if not CXFREEZE:
+if WINDOWS:
+    haveLRDF = False
+
+elif not CXFREEZE:
     try:
         import ladspa_rdf
         import json
@@ -901,6 +904,8 @@ class PluginRefreshW(QDialog):
             self.ui.ico_posix64.hide()
             self.ui.label_posix32.hide()
             self.ui.label_posix64.hide()
+            self.ui.ico_rdflib.hide()
+            self.ui.label_rdflib.hide()
 
         else:
             if kIs64bit:
