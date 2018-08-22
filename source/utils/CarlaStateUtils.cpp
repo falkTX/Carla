@@ -293,22 +293,22 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
         // ---------------------------------------------------------------
         // Info
 
-        if (tagName.equalsIgnoreCase("info"))
+        if (tagName == "Info")
         {
             for (XmlElement* xmlInfo = elem->getFirstChildElement(); xmlInfo != nullptr; xmlInfo = xmlInfo->getNextElement())
             {
                 const String& tag(xmlInfo->getTagName());
                 const String  text(xmlInfo->getAllSubText().trim());
 
-                if (tag.equalsIgnoreCase("type"))
+                /**/ if (tag == "Type")
                     type = xmlSafeStringCharDup(text, false);
-                else if (tag.equalsIgnoreCase("name"))
+                else if (tag == "Name")
                     name = xmlSafeStringCharDup(text, false);
-                else if (tag.equalsIgnoreCase("label") || tag.equalsIgnoreCase("identifier") || tag.equalsIgnoreCase("uri") || tag.equalsIgnoreCase("setup"))
+                else if (tag == "Label" || tag == "URI" || tag == "Setup")
                     label = xmlSafeStringCharDup(text, false);
-                else if (tag.equalsIgnoreCase("binary") || tag.equalsIgnoreCase("bundle") || tag.equalsIgnoreCase("filename"))
+                else if (tag == "Binary" || tag == "Filename")
                     binary = xmlSafeStringCharDup(text, false);
-                else if (tag.equalsIgnoreCase("uniqueid"))
+                else if (tag == "UniqueID")
                     uniqueId = text.getLargeIntValue();
             }
         }
@@ -316,7 +316,7 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
         // ---------------------------------------------------------------
         // Data
 
-        else if (tagName.equalsIgnoreCase("data"))
+        else if (tagName == "Data")
         {
             for (XmlElement* xmlData = elem->getFirstChildElement(); xmlData != nullptr; xmlData = xmlData->getNextElement())
             {
@@ -327,31 +327,31 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                 // -------------------------------------------------------
                 // Internal Data
 
-                if (tag.equalsIgnoreCase("active"))
+                /**/ if (tag == "Active")
                 {
-                    active = (text.equalsIgnoreCase("yes") || text.equalsIgnoreCase("true"));
+                    active = (text == "Yes");
                 }
-                else if (tag.equalsIgnoreCase("drywet"))
+                else if (tag == "DryWet")
                 {
                     dryWet = carla_fixedValue(0.0f, 1.0f, text.getFloatValue());
                 }
-                else if (tag.equalsIgnoreCase("volume"))
+                else if (tag == "Volume")
                 {
                     volume = carla_fixedValue(0.0f, 1.27f, text.getFloatValue());
                 }
-                else if (tag.equalsIgnoreCase("balanceleft") || tag.equalsIgnoreCase("balance-left"))
+                else if (tag == "Balance-Left")
                 {
                     balanceLeft = carla_fixedValue(-1.0f, 1.0f, text.getFloatValue());
                 }
-                else if (tag.equalsIgnoreCase("balanceright") || tag.equalsIgnoreCase("balance-right"))
+                else if (tag == "Balance-Right")
                 {
                     balanceRight = carla_fixedValue(-1.0f, 1.0f, text.getFloatValue());
                 }
-                else if (tag.equalsIgnoreCase("panning"))
+                else if (tag == "Panning")
                 {
                     panning = carla_fixedValue(-1.0f, 1.0f, text.getFloatValue());
                 }
-                else if (tag.equalsIgnoreCase("controlchannel") || tag.equalsIgnoreCase("control-channel"))
+                else if (tag == "ControlChannel")
                 {
                     if (! text.startsWithIgnoreCase("n"))
                     {
@@ -360,7 +360,7 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                             ctrlChannel = static_cast<int8_t>(value-1);
                     }
                 }
-                else if (tag.equalsIgnoreCase("options"))
+                else if (tag == "Options")
                 {
                     const int value(text.getHexValue32());
                     if (value > 0)
@@ -373,13 +373,13 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                 // -------------------------------------------------------
                 // Program (current)
 
-                else if (tag.equalsIgnoreCase("currentprogramindex") || tag.equalsIgnoreCase("current-program-index"))
+                else if (tag == "CurrentProgramIndex")
                 {
                     const int value(text.getIntValue());
                     if (value >= 1)
                         currentProgramIndex = value-1;
                 }
-                else if (tag.equalsIgnoreCase("currentprogramname") || tag.equalsIgnoreCase("current-program-name"))
+                else if (tag == "CurrentProgramName")
                 {
                     currentProgramName = xmlSafeStringCharDup(text, false);
                 }
@@ -387,13 +387,13 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                 // -------------------------------------------------------
                 // Midi Program (current)
 
-                else if (tag.equalsIgnoreCase("currentmidibank") || tag.equalsIgnoreCase("current-midi-bank"))
+                else if (tag == "CurrentMidiBank")
                 {
                     const int value(text.getIntValue());
                     if (value >= 1)
                         currentMidiBank = value-1;
                 }
-                else if (tag.equalsIgnoreCase("currentmidiprogram") || tag.equalsIgnoreCase("current-midi-program"))
+                else if (tag == "CurrentMidiProgram")
                 {
                     const int value(text.getIntValue());
                     if (value >= 1)
@@ -403,7 +403,7 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                 // -------------------------------------------------------
                 // Parameters
 
-                else if (tag.equalsIgnoreCase("parameter"))
+                else if (tag == "Parameter")
                 {
                     Parameter* const stateParameter(new Parameter());
 
@@ -412,33 +412,33 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                         const String& pTag(xmlSubData->getTagName());
                         const String  pText(xmlSubData->getAllSubText().trim());
 
-                        if (pTag.equalsIgnoreCase("index"))
+                        /**/ if (pTag == "Index")
                         {
                             const int index(pText.getIntValue());
                             if (index >= 0)
                                 stateParameter->index = index;
                         }
-                        else if (pTag.equalsIgnoreCase("name"))
+                        else if (pTag == "Name")
                         {
                             stateParameter->name = xmlSafeStringCharDup(pText, false);
                         }
-                        else if (pTag.equalsIgnoreCase("symbol"))
+                        else if (pTag == "Symbol")
                         {
                             stateParameter->symbol = xmlSafeStringCharDup(pText, false);
                         }
-                        else if (pTag.equalsIgnoreCase("value"))
+                        else if (pTag == "Value")
                         {
                             stateParameter->dummy = false;
                             stateParameter->value = pText.getFloatValue();
                         }
 #ifndef BUILD_BRIDGE
-                        else if (pTag.equalsIgnoreCase("midichannel") || pTag.equalsIgnoreCase("midi-channel"))
+                        else if (pTag == "MidiChannel")
                         {
                             const int channel(pText.getIntValue());
                             if (channel >= 1 && channel <= MAX_MIDI_CHANNELS)
                                 stateParameter->midiChannel = static_cast<uint8_t>(channel-1);
                         }
-                        else if (pTag.equalsIgnoreCase("midicc") || pTag.equalsIgnoreCase("midi-cc"))
+                        else if (pTag == "MidiCC")
                         {
                             const int cc(pText.getIntValue());
                             if (cc >= -1 && cc < MAX_MIDI_CONTROL)
@@ -453,7 +453,7 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                 // -------------------------------------------------------
                 // Custom Data
 
-                else if (tag.equalsIgnoreCase("customdata") || tag.equalsIgnoreCase("custom-data"))
+                else if (tag == "CustomData")
                 {
                     CustomData* const stateCustomData(new CustomData());
 
@@ -462,11 +462,11 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                         const String& cTag(xmlSubData->getTagName());
                         const String  cText(xmlSubData->getAllSubText().trim());
 
-                        if (cTag.equalsIgnoreCase("type"))
+                        /**/ if (cTag == "Type")
                             stateCustomData->type = xmlSafeStringCharDup(cText, false);
-                        else if (cTag.equalsIgnoreCase("key"))
+                        else if (cTag == "Key")
                             stateCustomData->key = xmlSafeStringCharDup(cText, false);
-                        else if (cTag.equalsIgnoreCase("value"))
+                        else if (cTag == "Value")
                             stateCustomData->value = carla_strdup(cText.toRawUTF8()); //xmlSafeStringCharDup(cText, false);
                     }
 
@@ -479,7 +479,7 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                 // -------------------------------------------------------
                 // Chunk
 
-                else if (tag.equalsIgnoreCase("chunk"))
+                else if (tag == "Chunk")
                 {
                     chunk = carla_strdup(text.toRawUTF8());
                 }

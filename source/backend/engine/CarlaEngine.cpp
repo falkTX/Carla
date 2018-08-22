@@ -1956,76 +1956,76 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
             const String& tag(settElem->getTagName());
             const String  text(settElem->getAllSubText().trim());
 
-           /** some settings might be incorrect or require extra work,
-               so we call setOption rather than modifying them direly */
+            /** some settings might be incorrect or require extra work,
+                so we call setOption rather than modifying them direly */
 
-           int option = -1;
-           int value  = 0;
-           const char* valueStr = nullptr;
+            int option = -1;
+            int value  = 0;
+            const char* valueStr = nullptr;
 
-            /**/ if (tag.equalsIgnoreCase("forcestereo"))
+            /**/ if (tag == "ForceStereo")
             {
                 option = ENGINE_OPTION_FORCE_STEREO;
-                value  = text.equalsIgnoreCase("true") ? 1 : 0;
+                value  = text == "true" ? 1 : 0;
             }
-            else if (tag.equalsIgnoreCase("preferpluginbridges"))
+            else if (tag == "PreferPluginBridges")
             {
                 option = ENGINE_OPTION_PREFER_PLUGIN_BRIDGES;
-                value  = text.equalsIgnoreCase("true") ? 1 : 0;
+                value  = text == "true" ? 1 : 0;
             }
-            else if (tag.equalsIgnoreCase("preferuibridges"))
+            else if (tag == "PreferUiBridges")
             {
                 option = ENGINE_OPTION_PREFER_UI_BRIDGES;
-                value  = text.equalsIgnoreCase("true") ? 1 : 0;
+                value  = text == "true" ? 1 : 0;
             }
-            else if (tag.equalsIgnoreCase("uisalwaysontop"))
+            else if (tag == "UIsAlwaysOnTop")
             {
                 option = ENGINE_OPTION_UIS_ALWAYS_ON_TOP;
-                value  = text.equalsIgnoreCase("true") ? 1 : 0;
+                value  = text == "true" ? 1 : 0;
             }
-            else if (tag.equalsIgnoreCase("maxparameters"))
+            else if (tag == "MaxParameters")
             {
                 option = ENGINE_OPTION_MAX_PARAMETERS;
                 value  = text.getIntValue();
             }
-            else if (tag.equalsIgnoreCase("uibridgestimeout"))
+            else if (tag == "UIBridgesTimeout")
             {
                 option = ENGINE_OPTION_UI_BRIDGES_TIMEOUT;
                 value  = text.getIntValue();
             }
             else if (isPlugin)
             {
-                /**/ if (tag.equalsIgnoreCase("LADSPA_PATH"))
+                /**/ if (tag == "LADSPA_PATH")
                 {
                     option   = ENGINE_OPTION_PLUGIN_PATH;
                     value    = PLUGIN_LADSPA;
                     valueStr = text.toRawUTF8();
                 }
-                else if (tag.equalsIgnoreCase("DSSI_PATH"))
+                else if (tag == "DSSI_PATH")
                 {
                     option   = ENGINE_OPTION_PLUGIN_PATH;
                     value    = PLUGIN_DSSI;
                     valueStr = text.toRawUTF8();
                 }
-                else if (tag.equalsIgnoreCase("LV2_PATH"))
+                else if (tag == "LV2_PATH")
                 {
                     option   = ENGINE_OPTION_PLUGIN_PATH;
                     value    = PLUGIN_LV2;
                     valueStr = text.toRawUTF8();
                 }
-                else if (tag.equalsIgnoreCase("VST2_PATH"))
+                else if (tag == "VST2_PATH")
                 {
                     option   = ENGINE_OPTION_PLUGIN_PATH;
                     value    = PLUGIN_VST2;
                     valueStr = text.toRawUTF8();
                 }
-                else if (tag.equalsIgnoreCase("SF2_PATH"))
+                else if (tag == "SF2_PATH")
                 {
                     option   = ENGINE_OPTION_PLUGIN_PATH;
                     value    = PLUGIN_SF2;
                     valueStr = text.toRawUTF8();
                 }
-                else if (tag.equalsIgnoreCase("SFZ_PATH"))
+                else if (tag == "SFZ_PATH")
                 {
                     option   = ENGINE_OPTION_PLUGIN_PATH;
                     value    = PLUGIN_SFZ;
@@ -2064,7 +2064,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
     {
         const String& tagName(elem->getTagName());
 
-        if (isPreset || tagName.equalsIgnoreCase("plugin"))
+        if (isPreset || tagName == "Plugin")
         {
             CarlaStateSave stateSave;
             stateSave.fillFromXmlElement(isPreset ? xmlElement.get() : elem);
@@ -2278,41 +2278,34 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
     {
         const bool isUsingExternal(pData->graph.isUsingExternal());
 
-        for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
+        if (XmlElement* const elem = xmlElement->getChildByName("Patchbay"))
         {
-            const String& tagName(elem->getTagName());
-
-            // only load internal patchbay connections
-            if (! tagName.equalsIgnoreCase("patchbay"))
-                continue;
-
             CarlaString sourcePort, targetPort;
 
             for (XmlElement* patchElem = elem->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
             {
                 const String& patchTag(patchElem->getTagName());
 
+                if (patchTag != "Connection")
+                    continue;
+
                 sourcePort.clear();
                 targetPort.clear();
-
-                if (! patchTag.equalsIgnoreCase("connection"))
-                    continue;
 
                 for (XmlElement* connElem = patchElem->getFirstChildElement(); connElem != nullptr; connElem = connElem->getNextElement())
                 {
                     const String& tag(connElem->getTagName());
                     const String  text(connElem->getAllSubText().trim());
 
-                    /**/ if (tag.equalsIgnoreCase("source"))
+                    /**/ if (tag == "Source")
                         sourcePort = xmlSafeString(text, false).toRawUTF8();
-                    else if (tag.equalsIgnoreCase("target"))
+                    else if (tag == "Target")
                         targetPort = xmlSafeString(text, false).toRawUTF8();
                 }
 
                 if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
                     restorePatchbayConnection(false, sourcePort, targetPort, !isUsingExternal);
             }
-            break;
         }
 
         callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
@@ -2348,13 +2341,13 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
             const String& tagName(elem->getTagName());
 
             // check if we want to load patchbay-mode connections into an external (multi-client) graph
-            if (tagName.equalsIgnoreCase("patchbay"))
+            if (tagName == "Patchbay")
             {
                 if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
                     continue;
             }
             // or load external patchbay connections
-            else if (! tagName.equalsIgnoreCase("externalpatchbay"))
+            else if (tagName != "ExternalPatchbay")
             {
                 continue;
             }
@@ -2365,20 +2358,20 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
             {
                 const String& patchTag(patchElem->getTagName());
 
+                if (patchTag != "Connection")
+                    continue;
+
                 sourcePort.clear();
                 targetPort.clear();
-
-                if (! patchTag.equalsIgnoreCase("connection"))
-                    continue;
 
                 for (XmlElement* connElem = patchElem->getFirstChildElement(); connElem != nullptr; connElem = connElem->getNextElement())
                 {
                     const String& tag(connElem->getTagName());
                     const String  text(connElem->getAllSubText().trim());
 
-                    /**/ if (tag.equalsIgnoreCase("source"))
+                    /**/ if (tag == "Source")
                         sourcePort = xmlSafeString(text, false).toRawUTF8();
-                    else if (tag.equalsIgnoreCase("target"))
+                    else if (tag == "Target")
                         targetPort = xmlSafeString(text, false).toRawUTF8();
                 }
 
