@@ -1575,12 +1575,12 @@ class HostWindow(QMainWindow):
             #if MACOS and not settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, type=bool):
             #    self.setUnifiedTitleAndToolBarOnMac(True)
 
-            showMeters = settings.value("ShowMeters", False, type=bool)
+            showMeters = settings.value("ShowMeters", True, type=bool)
             self.ui.act_settings_show_meters.setChecked(showMeters)
             self.ui.peak_in.setVisible(showMeters)
             self.ui.peak_out.setVisible(showMeters)
 
-            showKeyboard = settings.value("ShowKeyboard", not(MACOS or WINDOWS), type=bool)
+            showKeyboard = settings.value("ShowKeyboard", True, type=bool)
             self.ui.act_settings_show_keyboard.setChecked(showKeyboard)
             self.ui.scrollArea.setVisible(showKeyboard)
 
