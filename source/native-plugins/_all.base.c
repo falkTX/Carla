@@ -18,10 +18,6 @@
 #include "CarlaDefines.h"
 #include "CarlaNative.h"
 
-#ifdef CARLA_OS_WIN
-# undef HAVE_PYQT
-#endif
-
 // --------------------------------------------------------------------------------------------------------------------
 
 // Simple plugins

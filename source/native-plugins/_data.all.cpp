@@ -19,10 +19,6 @@
 #include "CarlaMIDI.h"
 #include "CarlaUtils.hpp"
 
-#ifdef CARLA_OS_WIN
-# undef HAVE_PYQT
-#endif
-
 #undef DESCFUNCS
 #define DESCFUNCS \
     nullptr, nullptr, nullptr, nullptr, nullptr, \
