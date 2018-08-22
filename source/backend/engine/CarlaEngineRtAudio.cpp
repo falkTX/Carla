@@ -90,7 +90,7 @@ static const char* getRtAudioApiName(const RtAudio::Api api) noexcept
     case RtAudio::UNIX_PULSE:
         return "PulseAudio";
     case RtAudio::UNIX_JACK:
-#if defined(CARLA_OS_LINUX) && defined(HAVE_ALSA)
+#if defined(CARLA_OS_LINUX) && defined(__LINUX_ALSA__)
         return "JACK with ALSA-MIDI";
 #elif defined(CARLA_OS_MAC)
         return "JACK with CoreMidi";
@@ -128,7 +128,7 @@ static RtMidi::Api getMatchedAudioMidiAPI(const RtAudio::Api rtApi) noexcept
 
     case RtAudio::UNIX_PULSE:
     case RtAudio::UNIX_JACK:
-#if defined(CARLA_OS_LINUX) && defined(HAVE_ALSA)
+#if defined(CARLA_OS_LINUX) && defined(__LINUX_ALSA__)
         return RtMidi::LINUX_ALSA;
 #elif defined(CARLA_OS_MAC)
         return RtMidi::MACOSX_CORE;
