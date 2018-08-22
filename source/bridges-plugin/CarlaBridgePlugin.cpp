@@ -362,7 +362,6 @@ int main(int argc, char* argv[])
         nonRtClientBaseName[0] = '\0';
         nonRtServerBaseName[0] = '\0';
         jackbridge_init();
-        carla_setenv("CARLA_PLUGIN_DIRECT", "1");
     }
 
     // ---------------------------------------------------------------------

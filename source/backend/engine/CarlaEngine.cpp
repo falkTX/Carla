@@ -1301,10 +1301,12 @@ bool CarlaEngine::setAboutToClose() noexcept
     return (pData->isIdling == 0);
 }
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 bool CarlaEngine::isLoadingProject() const noexcept
 {
     return pData->loadingProject;
 }
+#endif
 
 // -----------------------------------------------------------------------
 // Global options

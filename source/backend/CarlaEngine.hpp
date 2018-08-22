@@ -1036,10 +1036,12 @@ public:
      */
     bool setAboutToClose() noexcept;
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
      * TODO.
      */
     bool isLoadingProject() const noexcept;
+#endif
 
     // -------------------------------------------------------------------
     // Options

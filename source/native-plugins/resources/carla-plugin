@@ -621,9 +621,6 @@ if __name__ == '__main__':
     host.nextProcessMode   = host.processMode
     loadHostSettings(host)
 
-    if os.getenv("CARLA_PLUGIN_DIRECT") == "1":
-        host.isPlugin = False
-
     # -------------------------------------------------------------
     # Create GUI
 
