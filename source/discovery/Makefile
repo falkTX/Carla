@@ -34,8 +34,8 @@ ifeq ($(MACOS),true)
 BUILD_CXX_FLAGS += -ObjC++
 endif
 
-32BIT_FLAGS += -DBUILD_BRIDGE
-64BIT_FLAGS += -DBUILD_BRIDGE
+32BIT_FLAGS += -DBUILD_BRIDGE -DBUILD_BRIDGE_ALTERNATIVE_ARCH
+64BIT_FLAGS += -DBUILD_BRIDGE -DBUILD_BRIDGE_ALTERNATIVE_ARCH
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

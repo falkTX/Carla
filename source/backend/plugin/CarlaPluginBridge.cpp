@@ -1831,20 +1831,10 @@ public:
 
             case kPluginBridgeNonRtServerAudioCount: {
                 // uint/ins, uint/outs
+                fInfo.clear();
+
                 fInfo.aIns  = fShmNonRtServerControl.readUInt();
                 fInfo.aOuts = fShmNonRtServerControl.readUInt();
-
-                if (fInfo.aInNames != nullptr)
-                {
-                    delete[] fInfo.aInNames;
-                    fInfo.aInNames = nullptr;
-                }
-
-                if (fInfo.aOutNames != nullptr)
-                {
-                    delete[] fInfo.aOutNames;
-                    fInfo.aOutNames = nullptr;
-                }
 
                 if (fInfo.aIns > 0)
                 {
@@ -2520,6 +2510,38 @@ private:
               aInNames(nullptr),
               aOutNames(nullptr),
               chunk() {}
+
+        ~Info()
+        {
+            clear();
+        }
+
+        void clear()
+        {
+            if (aInNames != nullptr)
+            {
+                CARLA_SAFE_ASSERT_INT(aIns > 0, aIns);
+
+                for (uint32_t i=0; i<aIns; ++i)
+                    delete[] aInNames[i];
+
+                delete[] aInNames;
+                aInNames = nullptr;
+            }
+
+            if (aOutNames != nullptr)
+            {
+                CARLA_SAFE_ASSERT_INT(aOuts > 0, aOuts);
+
+                for (uint32_t i=0; i<aOuts; ++i)
+                    delete[] aOutNames[i];
+
+                delete[] aOutNames;
+                aOutNames = nullptr;
+            }
+
+            aIns = aOuts = 0;
+        }
 
         CARLA_DECLARE_NON_COPY_STRUCT(Info)
     } fInfo;

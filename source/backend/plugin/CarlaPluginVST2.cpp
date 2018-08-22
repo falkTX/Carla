@@ -1205,7 +1205,7 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             bool allNotesOffSent = false;
 #endif
             bool isSampleAccurate = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
@@ -1258,7 +1258,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeParameter: {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                         // Control backend stuff
                         if (event.channel == pData->ctrlChannel)
                         {
@@ -1417,7 +1417,7 @@ public:
                     case kEngineControlEventTypeAllNotesOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
@@ -1608,7 +1608,7 @@ public:
         fIsProcessing = false;
         fTimeInfo.samplePos += frames;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
 

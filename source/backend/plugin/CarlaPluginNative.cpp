@@ -708,7 +708,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
-        carla_debug("CarlaPluginNative::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
+        carla_debug("CarlaPluginNative::setCustomData(%s, %s, ..., %s)", type, key, bool2str(sendGui));
 
         if (std::strcmp(type, CUSTOM_DATA_TYPE_PROPERTY) == 0)
             return CarlaPlugin::setCustomData(type, key, value, sendGui);

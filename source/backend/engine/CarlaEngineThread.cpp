@@ -41,7 +41,7 @@ CarlaEngineThread::~CarlaEngineThread() noexcept
 void CarlaEngineThread::run() noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(kEngine != nullptr,);
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CARLA_SAFE_ASSERT(kEngine->isRunning());
 #endif
     carla_debug("CarlaEngineThread::run()");
@@ -51,7 +51,7 @@ void CarlaEngineThread::run() noexcept
 #endif
     float value;
 
-#ifdef BUILD_BRIDGE
+#ifdef BUILD_BRIDGE_ALTERNATIVE_ARCH
     for (; ! shouldThreadExit();)
 #else
     for (; kEngine->isRunning() && ! shouldThreadExit();)
