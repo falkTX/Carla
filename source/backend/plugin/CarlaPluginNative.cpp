@@ -2101,7 +2101,7 @@ public:
 
         if (pData->event.portOut != nullptr)
         {
-            for (uint32_t k = 0; k < fMidiEventOutCount; --k)
+            for (uint32_t k = 0; k < fMidiEventOutCount; ++k)
             {
                 const uint8_t channel = uint8_t(MIDI_GET_CHANNEL_FROM_DATA(fMidiOutEvents[k].data));
                 const uint8_t port    = fMidiOutEvents[k].port;
