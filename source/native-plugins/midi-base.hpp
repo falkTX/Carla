@@ -329,8 +329,9 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
 
-        const char* dataRead = data;
-        const char* needle;
+        const size_t dataLen  = std::strlen(data);
+        const char*  dataRead = data;
+        const char*  needle;
         RawMidiEvent midiEvent;
         char    tmpBuf[24];
         ssize_t tmpSize;
@@ -339,7 +340,7 @@ public:
 
         const CarlaMutexLocker sl(fMutex);
 
-        for (; *dataRead != '\0';)
+        for (size_t dataPos=0; dataPos < dataLen && *dataRead != '\0';)
         {
             // get time
             needle = std::strchr(dataRead, ':');
@@ -356,6 +357,7 @@ public:
             std::strncpy(tmpBuf, dataRead, static_cast<size_t>(tmpSize));
             tmpBuf[tmpSize] = '\0';
             dataRead += tmpSize+1;
+            dataPos += tmpSize+1;
 
             const long long time = std::atoll(tmpBuf);
             CARLA_SAFE_ASSERT_RETURN(time >= 0,);
@@ -372,6 +374,7 @@ public:
             std::strncpy(tmpBuf, dataRead, static_cast<size_t>(tmpSize));
             tmpBuf[tmpSize] = '\0';
             dataRead += tmpSize+1;
+            dataPos += tmpSize+1;
 
             const int size = std::atoi(tmpBuf);
             CARLA_SAFE_ASSERT_RETURN(size > 0 && size <= MAX_EVENT_DATA_SIZE,);
@@ -388,6 +391,7 @@ public:
                 std::strncpy(tmpBuf, dataRead, static_cast<size_t>(tmpSize));
                 tmpBuf[tmpSize] = '\0';
                 dataRead += tmpSize+1;
+                dataPos += tmpSize+1;
 
                 long mdata;
 
