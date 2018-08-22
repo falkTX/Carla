@@ -53,8 +53,8 @@ OBJS_all = \
 # ---------------------------------------------------------------------------------------------------------------------
 # Include external plugins, if present
 
-ifneq (,$(wildcard external/Makefile))
-include external/Makefile
+ifneq (,$(wildcard external/Makefile.mk2))
+include external/Makefile.mk2
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

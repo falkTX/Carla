@@ -202,7 +202,10 @@ HAVE_HYLIA = true
 endif
 endif
 
-ifneq ($(MACOS_OR_WIN32),true)
+ifeq ($(MACOS_OR_WIN32),true)
+HAVE_DGL   = true
+else
+HAVE_DGL   = $(shell pkg-config --exists gl x11 && echo true)
 HAVE_GTK2  = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3  = $(shell pkg-config --exists gtk+-3.0 && echo true)
 HAVE_X11   = $(shell pkg-config --exists x11 && echo true)
@@ -307,8 +310,9 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Set base defines
 
-ifeq ($(HAVE_PYQT),true)
-BASE_FLAGS += -DHAVE_PYQT
+ifeq ($(HAVE_DGL),true)
+BASE_FLAGS += -DHAVE_DGL
+BASE_FLAGS += -DDGL_NAMESPACE=CarlaDGL -DDGL_FILE_BROWSER_DISABLED -DDGL_NO_SHARED_RESOURCES
 endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
@@ -331,6 +335,10 @@ ifeq ($(HAVE_LIBMAGIC),true)
 BASE_FLAGS += -DHAVE_LIBMAGIC
 endif
 
+ifeq ($(HAVE_PYQT),true)
+BASE_FLAGS += -DHAVE_PYQT
+endif
+
 ifeq ($(HAVE_SNDFILE),true)
 BASE_FLAGS += -DHAVE_SNDFILE
 endif
@@ -346,9 +354,29 @@ ifeq ($(LINUX_OR_MACOS),true)
 LIBDL_LIBS = -ldl
 endif
 
+ifeq ($(HAVE_DGL),true)
+ifeq ($(MACOS),true)
+DGL_LIBS  = -framework OpenGL -framework Cocoa
+endif
+ifeq ($(WIN32),true)
+DGL_LIBS  = -lopengl32 -lgdi32
+endif
+ifneq ($(MACOS_OR_WIN32),true)
+DGL_FLAGS = $(shell pkg-config --cflags gl x11)
+DGL_LIBS  = $(shell pkg-config --libs gl x11)
+endif
+endif
+
 ifeq ($(HAVE_LIBLO),true)
 LIBLO_FLAGS = $(shell pkg-config --cflags liblo)
 LIBLO_LIBS  = $(shell pkg-config --libs liblo)
+endif
+
+ifeq ($(HAVE_LIBMAGIC),true)
+MAGIC_LIBS += -lmagic
+ifeq ($(LINUX_OR_MACOS),true)
+MAGIC_LIBS += -lz
+endif
 endif
 
 ifeq ($(HAVE_FFMPEG),true)
@@ -369,13 +397,6 @@ endif
 ifeq ($(HAVE_X11),true)
 X11_FLAGS = $(shell pkg-config --cflags x11)
 X11_LIBS  = $(shell pkg-config --libs x11)
-endif
-
-ifeq ($(HAVE_LIBMAGIC),true)
-MAGIC_LIBS += -lmagic
-ifeq ($(LINUX_OR_MACOS),true)
-MAGIC_LIBS += -lz
-endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -459,6 +480,7 @@ endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
+NATIVE_PLUGINS_LIBS += $(DGL_LIBS)
 NATIVE_PLUGINS_LIBS += $(FFMPEG_LIBS)
 NATIVE_PLUGINS_LIBS += $(SNDFILE_LIBS)
 

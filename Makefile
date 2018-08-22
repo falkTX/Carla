@@ -62,6 +62,10 @@ ALL_LIBS += $(MODULEDIR)/rtmempool.a
 ALL_LIBS += $(MODULEDIR)/sfzero.a
 ALL_LIBS += $(MODULEDIR)/water.a
 
+ifeq ($(HAVE_DGL),true)
+ALL_LIBS += $(MODULEDIR)/dgl.a
+endif
+
 ifeq ($(HAVE_HYLIA),true)
 ALL_LIBS += $(MODULEDIR)/hylia.a
 endif
