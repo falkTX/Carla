@@ -62,28 +62,112 @@
 // win32 stuff
 
 static inline
-ssize_t ReadFileWin32(const HANDLE pipeh, void* const buf, const std::size_t numBytes)
+bool waitForAsyncObject(const HANDLE object)
 {
-    DWORD dsize = numBytes;
+    DWORD dw, dw2;
+    MSG msg;
+
+    // we give it a max
+    for (int i=20000; --i>=0;)
+    {
+        carla_debug("waitForAsyncObject loop start");
+        dw = MsgWaitForMultipleObjectsEx(1, &object, INFINITE, QS_POSTMESSAGE, 0);
+        carla_debug("waitForAsyncObject initial code is: %u", dw);
+
+        if (dw == WAIT_OBJECT_0)
+            return true;
+
+        dw2 = GetLastError();
+
+        if (dw == WAIT_OBJECT_0 + 1)
+        {
+            carla_debug("waitForAsyncObject loop +1");
+
+            while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+                DispatchMessage(&msg);
+
+            continue;
+        }
+
+        if (dw2 == 0)
+        {
+            carla_debug("waitForAsyncObject loop stop");
+            return true;
+        }
+
+        carla_stderr2("waitForAsyncObject loop end reached, error was: %u", dw2);
+        carla_msleep(5);
+    }
+
+    carla_stderr2("waitForAsyncObject reached the end, this should not happen");
+    return false;
+}
+
+static inline
+ssize_t ReadFileWin32(const HANDLE pipeh, const HANDLE event, void* const buf, const std::size_t numBytes)
+{
+    DWORD dw, dsize = numBytes;
     DWORD available = 0;
 
     if (::PeekNamedPipe(pipeh, nullptr, 0, nullptr, &available, nullptr) == FALSE || available == 0)
         return -1;
 
-    if (::ReadFile(pipeh, buf, dsize, &dsize, nullptr) != FALSE)
-        return static_cast<ssize_t>(dsize);
+    OVERLAPPED ov;
+    carla_zeroStruct(ov);
+    ov.hEvent = event;
 
+    if (::ReadFile(pipeh, buf, dsize, NULL, &ov))
+    {
+        if (::GetOverlappedResult(pipeh, &ov, &dw, FALSE))
+            return static_cast<ssize_t>(dsize);
+
+        carla_stderr("GetOverlappedResult failed reading from pipe. %u", GetLastError());
+        return -1;
+    }
+
+    if (GetLastError() == ERROR_IO_PENDING)
+    {
+        if (waitForAsyncObject(event))
+            if (::GetOverlappedResult(pipeh, &ov, &dw, FALSE))
+                return static_cast<ssize_t>(dsize);
+
+        carla_stderr("Read from pipe failed asynchronously. %u", GetLastError());
+        return -1;
+    }
+
+    carla_stderr("Read from pipe failed synchronously. %u", GetLastError());
     return -1;
 }
 
 static inline
-ssize_t WriteFileWin32(const HANDLE pipeh, const void* const buf, const std::size_t numBytes)
+ssize_t WriteFileWin32(const HANDLE pipeh, const HANDLE event, const void* const buf, const std::size_t numBytes)
 {
-    DWORD dsize = numBytes;
+    DWORD dw, dsize = numBytes;
 
-    if (::WriteFile(pipeh, buf, dsize, &dsize, nullptr) != FALSE)
-        return static_cast<ssize_t>(dsize);
+    OVERLAPPED ov;
+    carla_zeroStruct(ov);
+    ov.hEvent = event;
 
+    if (::WriteFile(pipeh, buf, dsize, nullptr, &ov))
+    {
+        if (::GetOverlappedResult(event, &ov, &dw, FALSE))
+            return static_cast<ssize_t>(dsize);
+
+        carla_stderr("GetOverlappedResult failed writing to pipe. %u", GetLastError());
+        return -1;
+    }
+
+    if (GetLastError() == ERROR_IO_PENDING)
+    {
+        if (waitForAsyncObject(event))
+            if (::GetOverlappedResult(event, &ov, &dw, FALSE))
+                return static_cast<ssize_t>(dsize);
+
+        carla_stderr("Write to pipe failed asynchronously. %u", GetLastError());
+        return -1;
+    }
+
+    carla_stderr("Write to pipe failed synchronously. %u", GetLastError());
     return -1;
 }
 #endif // CARLA_OS_WIN
@@ -125,36 +209,56 @@ bool startProcess(const char* const argv[], PROCESS_INFORMATION* const processIn
 }
 
 static inline
-bool waitForClientConnect(const HANDLE pipe, const uint32_t timeOutMilliseconds) noexcept
+bool waitForClientConnect(const HANDLE pipe, const HANDLE event, const uint32_t timeOutMilliseconds) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pipe != INVALID_PIPE_VALUE, false);
     CARLA_SAFE_ASSERT_RETURN(timeOutMilliseconds > 0, false);
 
-    bool connecting = true;
+    DWORD dw;
+
+    OVERLAPPED ov;
+    carla_zeroStruct(ov);
+    ov.hEvent = event;
+
     const uint32_t timeoutEnd(water::Time::getMillisecondCounter() + timeOutMilliseconds);
 
-    for (; connecting && ::ConnectNamedPipe(pipe, nullptr) == FALSE;)
+    for (;;)
     {
+        if (::ConnectNamedPipe(pipe, &ov))
+        {
+            if (::GetOverlappedResult(pipe, &ov, &dw, FALSE))
+                return true;
+
+            carla_stderr2("waitForClientConnect failed during ConnectNamedPipe");
+            return false;
+        }
+
         const DWORD err = ::GetLastError();
 
         switch (err)
         {
         case ERROR_PIPE_CONNECTED:
-            connecting = false;
-            break;
+            return true;
 
         case ERROR_IO_PENDING:
+            if (waitForAsyncObject(event))
+                if (::GetOverlappedResult(pipe, &ov, &dw, FALSE))
+                    return true;
+
+            carla_stderr2("waitForClientConnect failed during pending wait");
+            return false;
+
         case ERROR_PIPE_LISTENING:
             if (water::Time::getMillisecondCounter() < timeoutEnd)
             {
                 carla_msleep(5);
                 continue;
             }
-            carla_stderr("waitForClientFirstMessage() - connect timed out");
+            carla_stderr2("waitForClientConnect timed out");
             return false;
 
         default:
-            carla_stderr("waitForClientFirstMessage() - connect returned %i", int(err));
+            carla_stderr2("waitForClientConnect connect refused, error was: %u", err);
             return false;
         }
     }
@@ -196,7 +300,7 @@ bool startProcess(const char* const argv[], pid_t& pidinst) noexcept
 
 template<typename P>
 static inline
-bool waitForClientFirstMessage(const P& pipe, const uint32_t timeOutMilliseconds) noexcept
+bool waitForClientFirstMessage(const P& pipe, void* const ovRecv, const uint32_t timeOutMilliseconds) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pipe != INVALID_PIPE_VALUE, false);
     CARLA_SAFE_ASSERT_RETURN(timeOutMilliseconds > 0, false);
@@ -206,7 +310,7 @@ bool waitForClientFirstMessage(const P& pipe, const uint32_t timeOutMilliseconds
     const uint32_t timeoutEnd(water::Time::getMillisecondCounter() + timeOutMilliseconds);
 
 #ifdef CARLA_OS_WIN
-    if (! waitForClientConnect(pipe, timeOutMilliseconds))
+    if (! waitForClientConnect(pipe, (HANDLE)ovRecv, timeOutMilliseconds))
         return false;
 #endif
 
@@ -214,7 +318,7 @@ bool waitForClientFirstMessage(const P& pipe, const uint32_t timeOutMilliseconds
     {
         try {
 #ifdef CARLA_OS_WIN
-            ret = ::ReadFileWin32(pipe, &c, 1);
+            ret = ::ReadFileWin32(pipe, (HANDLE)ovRecv, &c, 1);
 #else
             ret = ::read(pipe, &c, 1);
 #endif
@@ -259,6 +363,9 @@ bool waitForClientFirstMessage(const P& pipe, const uint32_t timeOutMilliseconds
             return false;
         }
     }
+
+    // maybe unused
+    (void)ovRecv;
 }
 
 // -----------------------------------------------------------------------
@@ -411,6 +518,8 @@ struct CarlaPipeCommon::PrivateData {
     PROCESS_INFORMATION processInfo;
     HANDLE pipeRecv;
     HANDLE pipeSend;
+    HANDLE ovRecv;
+    HANDLE ovSend;
 #else
     pid_t pid;
     int pipeRecv;
@@ -460,6 +569,9 @@ struct CarlaPipeCommon::PrivateData {
         carla_zeroStruct(processInfo);
         processInfo.hProcess = INVALID_HANDLE_VALUE;
         processInfo.hThread  = INVALID_HANDLE_VALUE;
+
+        ovRecv = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        ovSend = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 #endif
 
         carla_zeroChars(tmpBuf, 0xff+1);
@@ -774,14 +886,15 @@ bool CarlaPipeCommon::flushMessages() const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->pipeSend != INVALID_PIPE_VALUE, false);
 
-#ifdef CARLA_OS_WIN
+#if 0 // def CARLA_OS_WIN
     try {
         return (::FlushFileBuffers(pData->pipeSend) != FALSE);
     } CARLA_SAFE_EXCEPTION_RETURN("CarlaPipeCommon::writeMsgBuffer", false);
-#else
+#endif
+
     // nothing to do
     return true;
-#endif
+
 }
 
 // -------------------------------------------------------------------
@@ -1024,7 +1137,7 @@ const char* CarlaPipeCommon::_readline() const noexcept
     {
         try {
 #ifdef CARLA_OS_WIN
-            ret = ::ReadFileWin32(pData->pipeRecv, &c, 1);
+            ret = ::ReadFileWin32(pData->pipeRecv, pData->ovRecv, &c, 1);
 #else
             ret = ::read(pData->pipeRecv, &c, 1);
 #endif
@@ -1097,7 +1210,7 @@ bool CarlaPipeCommon::_writeMsgBuffer(const char* const msg, const std::size_t s
 
     try {
 #ifdef CARLA_OS_WIN
-        ret = ::WriteFileWin32(pData->pipeSend, msg, size);
+        ret = ::WriteFileWin32(pData->pipeSend, pData->ovSend, msg, size);
 #else
         ret = ::write(pData->pipeSend, msg, size);
 #endif
@@ -1202,7 +1315,7 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     std::snprintf(pipeRecvClientStr, 100, "ignored");
     std::snprintf(pipeSendClientStr, 100, "ignored");
 
-    pipe1 = ::CreateNamedPipeA(pipeRecvServerStr, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE|PIPE_READMODE_BYTE|PIPE_NOWAIT, 2, size, size, 0, nullptr);
+    pipe1 = ::CreateNamedPipeA(pipeRecvServerStr, PIPE_ACCESS_DUPLEX|FILE_FLAG_FIRST_PIPE_INSTANCE|FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE|PIPE_READMODE_BYTE, 1, size, size, 0, nullptr);
 
     if (pipe1 == INVALID_HANDLE_VALUE)
     {
@@ -1210,7 +1323,7 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
         return false;
     }
 
-    pipe2 = ::CreateNamedPipeA(pipeSendServerStr, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE|PIPE_READMODE_BYTE|PIPE_NOWAIT, 2, size, size, 0, nullptr);
+    pipe2 = ::CreateNamedPipeA(pipeSendServerStr, PIPE_ACCESS_DUPLEX|FILE_FLAG_FIRST_PIPE_INSTANCE|FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE|PIPE_READMODE_BYTE, 1, size, size, 0, nullptr);
 
     if (pipe2 == INVALID_HANDLE_VALUE)
     {
@@ -1363,11 +1476,14 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     //-----------------------------------------------------------------------------------------------------------------
     // wait for client to say something
 
-    if (waitForClientFirstMessage(pipeRecvClient, 10*1000 /* 10 secs */))
-    {
 #ifdef CARLA_OS_WIN
-        CARLA_SAFE_ASSERT(waitForClientConnect(pipeSendClient, 1000 /* 1 sec */));
+    void* const ovRecv = pData->ovRecv;
+#else
+    void* const ovRecv = nullptr;
 #endif
+
+    if (waitForClientFirstMessage(pipeRecvClient, ovRecv, 10*1000 /* 10 secs */))
+    {
         pData->pipeRecv = pipeRecvClient;
         pData->pipeSend = pipeSendClient;
         pData->pipeClosed = false;
@@ -1414,7 +1530,7 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     return false;
 
     // maybe unused
-    (void)size;
+    (void)size; (void)ovRecv;
 }
 
 void CarlaPipeServer::stopPipeServer(const uint32_t timeOutMilliseconds) noexcept
