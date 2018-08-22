@@ -1707,34 +1707,43 @@ void CarlaEngine::saveProjectInternal(water::MemoryOutputStream& outStream) cons
     const bool isPlugin(getType() == kEngineTypePlugin);
     const EngineOptions& options(pData->options);
 
-    MemoryOutputStream outSettings(1024);
-
-    // save appropriate engine settings
-    outSettings << " <EngineSettings>\n";
-
-    //processMode
-    //transportMode
-
-    outSettings << "  <ForceStereo>"         << bool2str(options.forceStereo)         << "</ForceStereo>\n";
-    outSettings << "  <PreferPluginBridges>" << bool2str(options.preferPluginBridges) << "</PreferPluginBridges>\n";
-    outSettings << "  <PreferUiBridges>"     << bool2str(options.preferUiBridges)     << "</PreferUiBridges>\n";
-    outSettings << "  <UIsAlwaysOnTop>"      << bool2str(options.uisAlwaysOnTop)      << "</UIsAlwaysOnTop>\n";
-
-    outSettings << "  <MaxParameters>"       << String(options.maxParameters)    << "</MaxParameters>\n";
-    outSettings << "  <UIBridgesTimeout>"    << String(options.uiBridgesTimeout) << "</UIBridgesTimeout>\n";
-
-    if (isPlugin)
     {
-        outSettings << "  <LADSPA_PATH>" << xmlSafeString(options.pathLADSPA, true) << "</LADSPA_PATH>\n";
-        outSettings << "  <DSSI_PATH>"   << xmlSafeString(options.pathDSSI,   true) << "</DSSI_PATH>\n";
-        outSettings << "  <LV2_PATH>"    << xmlSafeString(options.pathLV2,    true) << "</LV2_PATH>\n";
-        outSettings << "  <VST2_PATH>"   << xmlSafeString(options.pathVST2,   true) << "</VST2_PATH>\n";
-        outSettings << "  <SF2_PATH>"    << xmlSafeString(options.pathSF2,    true) << "</SF2_PATH>\n";
-        outSettings << "  <SFZ_PATH>"    << xmlSafeString(options.pathSFZ,    true) << "</SFZ_PATH>\n";
+        MemoryOutputStream outSettings(1024);
+
+        outSettings << " <EngineSettings>\n";
+
+        outSettings << "  <ForceStereo>"         << bool2str(options.forceStereo)         << "</ForceStereo>\n";
+        outSettings << "  <PreferPluginBridges>" << bool2str(options.preferPluginBridges) << "</PreferPluginBridges>\n";
+        outSettings << "  <PreferUiBridges>"     << bool2str(options.preferUiBridges)     << "</PreferUiBridges>\n";
+        outSettings << "  <UIsAlwaysOnTop>"      << bool2str(options.uisAlwaysOnTop)      << "</UIsAlwaysOnTop>\n";
+
+        outSettings << "  <MaxParameters>"       << String(options.maxParameters)    << "</MaxParameters>\n";
+        outSettings << "  <UIBridgesTimeout>"    << String(options.uiBridgesTimeout) << "</UIBridgesTimeout>\n";
+
+        if (isPlugin)
+        {
+            outSettings << "  <LADSPA_PATH>" << xmlSafeString(options.pathLADSPA, true) << "</LADSPA_PATH>\n";
+            outSettings << "  <DSSI_PATH>"   << xmlSafeString(options.pathDSSI,   true) << "</DSSI_PATH>\n";
+            outSettings << "  <LV2_PATH>"    << xmlSafeString(options.pathLV2,    true) << "</LV2_PATH>\n";
+            outSettings << "  <VST2_PATH>"   << xmlSafeString(options.pathVST2,   true) << "</VST2_PATH>\n";
+            outSettings << "  <SF2_PATH>"    << xmlSafeString(options.pathSF2,    true) << "</SF2_PATH>\n";
+            outSettings << "  <SFZ_PATH>"    << xmlSafeString(options.pathSFZ,    true) << "</SFZ_PATH>\n";
+        }
+
+        outSettings << " </EngineSettings>\n";
+        outStream << outSettings;
     }
 
-    outSettings << " </EngineSettings>\n";
-    outStream << outSettings;
+    if (pData->timeInfo.bbt.valid && ! isPlugin)
+    {
+        MemoryOutputStream outTransport(128);
+
+        outTransport << "\n <Transport>\n";
+        // outTransport << "  <BeatsPerBar>"    << pData->timeInfo.bbt.beatsPerBar    << "</BeatsPerBar>\n";
+        outTransport << "  <BeatsPerMinute>" << pData->timeInfo.bbt.beatsPerMinute << "</BeatsPerMinute>\n";
+        outTransport << " </Transport>\n";
+        outStream << outTransport;
+    }
 
     char strBuf[STR_MAX+1];
 
@@ -1939,14 +1948,9 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
 
     const bool isPlugin(getType() == kEngineTypePlugin);
 
-    // engine settings
-    for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
+    // load engine settings first of all
+    if (XmlElement* const elem = isPreset ? nullptr : xmlElement->getChildByName("EngineSettings"))
     {
-        const String& tagName(elem->getTagName());
-
-        if (! tagName.equalsIgnoreCase("enginesettings"))
-            continue;
-
         for (XmlElement* settElem = elem->getFirstChildElement(); settElem != nullptr; settElem = settElem->getNextElement())
         {
             const String& tag(settElem->getTagName());
@@ -2033,14 +2037,29 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
 
             setOption(static_cast<EngineOption>(option), value, valueStr);
         }
-
-        break;
     }
 
     if (pData->aboutToClose)
         return true;
 
-    // handle plugins first
+    // now setup transport
+    if (XmlElement* const elem = isPreset || isPlugin ? nullptr : xmlElement->getChildByName("Transport"))
+    {
+        if (XmlElement* const bpmElem = elem->getChildByName("BeatsPerMinute"))
+        {
+            const String bpmText(bpmElem->getAllSubText().trim());
+            const double bpm = bpmText.getDoubleValue();
+
+            // some sane limits
+            if (bpm >= 20.0 && bpm < 400.0)
+                pData->time.setBPM(bpm);
+        }
+    }
+
+    if (pData->aboutToClose)
+        return true;
+
+    // and we handle plugins
     for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
     {
         const String& tagName(elem->getTagName());
@@ -2254,7 +2273,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
     if (pData->aboutToClose)
         return true;
 
-    // handle connections (internal)
+    // and now we handle connections (internal)
     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
     {
         const bool isUsingExternal(pData->graph.isUsingExternal());
@@ -2318,7 +2337,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
     else
         loadExternalConnections = true;
 
-    // handle connections
+    // plus external connections too
     if (loadExternalConnections)
     {
         const bool isUsingExternal(pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY ||
