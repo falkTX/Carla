@@ -607,7 +607,7 @@ typedef enum {
      */
     PARAMETER_NULL = -1,
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
      * Active parameter, boolean type.
      * Default is 'false'.
@@ -716,7 +716,7 @@ typedef enum {
      */
     ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED = 6,
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
      * A parameter's MIDI CC has changed.
      * @a pluginId Plugin Id
@@ -814,7 +814,7 @@ typedef enum {
      */
     ENGINE_CALLBACK_RELOAD_ALL = 19,
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
      * A patchbay client has been added.
      * @a pluginId Client Id

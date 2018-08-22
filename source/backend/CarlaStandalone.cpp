@@ -98,39 +98,73 @@ typedef void (*void_func)(void);
 class ThreadSafeFFTW
 {
 public:
+    struct Deinitializer {
+        Deinitializer(ThreadSafeFFTW& s)
+            : tsfftw(s) {}
+
+        ~Deinitializer()
+        {
+            tsfftw.deinit();
+        }
+
+        ThreadSafeFFTW& tsfftw;
+    };
+
     ThreadSafeFFTW()
-        : libfftw3(lib_open("libfftw3_threads.so.3")),
-          libfftw3f(lib_open("libfftw3f_threads.so.3")),
-          libfftw3l(lib_open("libfftw3l_threads.so.3")),
-          libfftw3q(lib_open("libfftw3q_threads.so.3"))
+        : libfftw3(nullptr),
+          libfftw3f(nullptr),
+          libfftw3l(nullptr),
+          libfftw3q(nullptr) {}
+
+    ~ThreadSafeFFTW()
     {
-        if (libfftw3 != nullptr)
+        CARLA_SAFE_ASSERT(libfftw3 == nullptr);
+    }
+
+    void init()
+    {
+        if ((libfftw3 = lib_open("libfftw3_threads.so.3")) != nullptr)
             if (const void_func func = lib_symbol<void_func>(libfftw3, "fftw_make_planner_thread_safe"))
                 func();
 
-        if (libfftw3f != nullptr)
+        if ((libfftw3f = lib_open("libfftw3f_threads.so.3")) != nullptr)
             if (const void_func func = lib_symbol<void_func>(libfftw3f, "fftwf_make_planner_thread_safe"))
                 func();
 
-        if (libfftw3l != nullptr)
+        if ((libfftw3l = lib_open("libfftw3l_threads.so.3")) != nullptr)
             if (const void_func func = lib_symbol<void_func>(libfftw3l, "fftwl_make_planner_thread_safe"))
                 func();
 
-        if (libfftw3q != nullptr)
+        if ((libfftw3q = lib_open("libfftw3q_threads.so.3")) != nullptr)
             if (const void_func func = lib_symbol<void_func>(libfftw3q, "fftwq_make_planner_thread_safe"))
                 func();
     }
 
-    ~ThreadSafeFFTW()
+    void deinit()
     {
         if (libfftw3 != nullptr)
+        {
             lib_close(libfftw3);
+            libfftw3 = nullptr;
+        }
+
         if (libfftw3f != nullptr)
+        {
             lib_close(libfftw3f);
+            libfftw3f = nullptr;
+        }
+
         if (libfftw3l != nullptr)
+        {
             lib_close(libfftw3l);
+            libfftw3l = nullptr;
+        }
+
         if (libfftw3q != nullptr)
+        {
             lib_close(libfftw3q);
+            libfftw3q = nullptr;
+        }
     }
 
 private:
@@ -139,6 +173,8 @@ private:
     lib_t libfftw3l;
     lib_t libfftw3q;
 };
+
+static ThreadSafeFFTW sThreadSafeFFTW;
 #endif
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -350,7 +386,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     carla_setenv("WINEASIO_CLIENT_NAME", clientName);
 #endif
 #ifdef CARLA_OS_UNIX
-    static const ThreadSafeFFTW tsfftw;
+    sThreadSafeFFTW.init();
 #endif
 
     ScopedPointer<CarlaEngine> engine(CarlaEngine::newDriverByName(driverName));
@@ -431,6 +467,10 @@ bool carla_engine_close()
     carla_debug("carla_engine_close()");
 
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(gStandalone.engine != nullptr, "Engine is not initialized", false);
+
+#ifdef CARLA_OS_UNIX
+    const ThreadSafeFFTW::Deinitializer tsfftwde(sThreadSafeFFTW);
+#endif
 
     ScopedPointer<CarlaEngine> engine(gStandalone.engine);
     gStandalone.engine = nullptr;
@@ -1856,7 +1896,7 @@ const char* carla_get_host_osc_url_tcp()
 {
     carla_debug("carla_get_host_osc_url_tcp()");
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     if (gStandalone.engine == nullptr)
     {
         carla_stderr2("carla_get_host_osc_url_tcp() failed, engine is not running");
@@ -1874,7 +1914,7 @@ const char* carla_get_host_osc_url_udp()
 {
     carla_debug("carla_get_host_osc_url_udp()");
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     if (gStandalone.engine == nullptr)
     {
         carla_stderr2("carla_get_host_osc_url_udp() failed, engine is not running");

@@ -54,6 +54,7 @@ extern void carla_register_native_plugin_notes(void);
 
 void carla_register_all_native_plugins(void)
 {
+    puts("carla register all plugins\n");
     // Simple plugins
     carla_register_native_plugin_bypass();
     carla_register_native_plugin_lfo();
@@ -68,20 +69,18 @@ void carla_register_all_native_plugins(void)
     // Audio file
     carla_register_native_plugin_audiofile();
 
-    // MIDI file and sequencer
+    // MIDI file
     carla_register_native_plugin_midifile();
-#ifdef HAVE_PYQT
-    carla_register_native_plugin_midipattern();
-#endif
 
-    // Carla
 #ifdef HAVE_PYQT
+    // Carla
     carla_register_native_plugin_carla();
-#endif
 
     // External-UI plugins
     carla_register_native_plugin_bigmeter();
+    carla_register_native_plugin_midipattern();
     carla_register_native_plugin_notes();
+#endif // HAVE_PYQT
 
 #ifdef HAVE_EXTERNAL_PLUGINS
     // Experimental plugins

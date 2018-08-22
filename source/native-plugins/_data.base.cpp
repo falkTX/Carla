@@ -338,7 +338,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
-#endif
+#endif // HAVE_PYQT
 
 // --------------------------------------------------------------------------------------------------------------------
 // External-UI plugins
@@ -379,7 +379,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
-#endif
+#endif // HAVE_PYQT
 
 };
 

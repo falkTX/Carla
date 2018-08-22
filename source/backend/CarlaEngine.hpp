@@ -821,7 +821,7 @@ public:
      */
     bool removeAllPlugins();
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
      * Rename plugin with id @a id to @a newName.
      * Returns the new name, or null if the operation failed.
@@ -965,7 +965,7 @@ public:
      */
     void setFileCallback(const FileCallbackFunc func, void* const ptr) noexcept;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     // -------------------------------------------------------------------
     // Patchbay
 
@@ -1052,7 +1052,6 @@ public:
      * Check if OSC controller is registered.
      */
     bool isOscControlRegistered() const noexcept;
-#endif
 
     /*!
      * Idle OSC.
@@ -1068,6 +1067,7 @@ public:
      * Get OSC UDP server path.
      */
     const char* getOscServerPathUDP() const noexcept;
+#endif
 
     // -------------------------------------------------------------------
     // Helper functions
@@ -1078,7 +1078,7 @@ public:
      */
     EngineEvent* getInternalEventBuffer(const bool isInput) const noexcept;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
      * Virtual functions for handling external graph ports.
      */
@@ -1142,7 +1142,7 @@ protected:
      */
     bool loadProjectInternal(water::XmlDocument& xmlDoc);
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     // -------------------------------------------------------------------
     // Patchbay stuff
 

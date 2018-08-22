@@ -163,7 +163,7 @@ const char* InternalParameterIndex2Str(const InternalParameterIndex index) noexc
     {
     case PARAMETER_NULL:
         return "PARAMETER_NULL";
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     case PARAMETER_ACTIVE:
         return "PARAMETER_ACTIVE";
     case PARAMETER_DRYWET:
@@ -206,7 +206,7 @@ const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode) noexcept
         return "ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED";
     case ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
         return "ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED";
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     case ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
         return "ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED";
     case ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
@@ -234,7 +234,7 @@ const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode) noexcept
         return "ENGINE_CALLBACK_RELOAD_PROGRAMS";
     case ENGINE_CALLBACK_RELOAD_ALL:
         return "ENGINE_CALLBACK_RELOAD_ALL";
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     case ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED:
         return "ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED";
     case ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED:
@@ -325,7 +325,7 @@ const char* EngineOption2Str(const EngineOption option) noexcept
         return "ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR";
     case ENGINE_OPTION_FRONTEND_WIN_ID:
         return "ENGINE_OPTION_FRONTEND_WIN_ID";
-#ifndef CARLA_OS_WIN
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     case ENGINE_OPTION_WINE_EXECUTABLE:
         return "ENGINE_OPTION_WINE_EXECUTABLE";
     case ENGINE_OPTION_WINE_AUTO_PREFIX:

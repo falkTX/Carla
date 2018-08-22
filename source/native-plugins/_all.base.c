@@ -57,16 +57,14 @@ void carla_register_all_native_plugins(void)
     carla_register_native_plugin_miditranspose();
 
 #ifdef HAVE_PYQT
-    // MIDI sequencer
-    carla_register_native_plugin_midipattern();
-
     // Carla
     carla_register_native_plugin_carla();
-#endif
 
     // External-UI plugins
     carla_register_native_plugin_bigmeter();
+    carla_register_native_plugin_midipattern();
     carla_register_native_plugin_notes();
+#endif
 }
 
 // --------------------------------------------------------------------------------------------------------------------

@@ -363,7 +363,9 @@ private:
 
 #ifdef CARLA_OS_MAC
 
-#ifdef BUILD_BRIDGE
+#if defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+# define CarlaPluginWindow CARLA_JOIN_MACRO(CarlaPluginWindowBridgedArch, CARLA_PLUGIN_UI_CLASS_PREFIX)
+#elif defined(BUILD_BRIDGE)
 # define CarlaPluginWindow CARLA_JOIN_MACRO(CarlaPluginWindowBridged, CARLA_PLUGIN_UI_CLASS_PREFIX)
 #else
 # define CarlaPluginWindow CARLA_JOIN_MACRO(CarlaPluginWindow, CARLA_PLUGIN_UI_CLASS_PREFIX)
@@ -853,7 +855,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 // -----------------------------------------------------
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* const uiTitle, const uintptr_t winId, const bool centerUI)
 {
     CARLA_SAFE_ASSERT_RETURN(uiTitle != nullptr && uiTitle[0] != '\0', true);
@@ -1141,7 +1143,7 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
     return true;
     (void)pid; (void)centerUI;
 }
-#endif // BUILD_BRIDGE
+#endif // BUILD_BRIDGE_ALTERNATIVE_ARCH
 
 // -----------------------------------------------------
 

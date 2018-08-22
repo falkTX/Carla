@@ -548,8 +548,8 @@ class HostWindow(QMainWindow):
             self.ui.cb_transport_link.setVisible(False)
 
         # Plugin needs to have timers always running so it receives messages
-        if self.host.isPlugin:
-            self.startTimers()
+        #if self.host.isPlugin:
+        self.startTimers()
 
         # Qt needs this so it properly creates & resizes the canvas
         self.ui.tabWidget.blockSignals(True)

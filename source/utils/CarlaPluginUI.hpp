@@ -46,7 +46,7 @@ public:
     virtual void* getDisplay() const noexcept = 0;
 #endif
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     static bool tryTransientWinIdMatch(const uintptr_t pid, const char* const uiTitle, const uintptr_t winId, const bool centerUI);
 #endif
 

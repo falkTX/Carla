@@ -418,7 +418,7 @@ void EngineNextAction::clearAndReset() noexcept
 
 CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
     : thread(engine),
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
       osc(engine),
       oscData(nullptr),
 #endif
@@ -426,7 +426,7 @@ CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
       callbackPtr(nullptr),
       fileCallback(nullptr),
       fileCallbackPtr(nullptr),
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
       loadingProject(false),
 #endif
       hints(0x0),
@@ -442,17 +442,17 @@ CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
       name(),
       options(),
       timeInfo(),
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
       plugins(nullptr),
 #endif
       events(),
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
       graph(engine),
 #endif
       time(timeInfo, options.transportMode),
       nextAction()
 {
-#ifdef BUILD_BRIDGE
+#ifdef BUILD_BRIDGE_ALTERNATIVE_ARCH
     carla_zeroStructs(plugins, 1);
 #endif
 }
@@ -463,7 +463,7 @@ CarlaEngine::ProtectedData::~ProtectedData() noexcept
     CARLA_SAFE_ASSERT(maxPluginNumber == 0);
     CARLA_SAFE_ASSERT(nextPluginId == 0);
     CARLA_SAFE_ASSERT(isIdling == 0);
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CARLA_SAFE_ASSERT(plugins == nullptr);
 #endif
 }
@@ -473,13 +473,13 @@ CarlaEngine::ProtectedData::~ProtectedData() noexcept
 bool CarlaEngine::ProtectedData::init(const char* const clientName)
 {
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(name.isEmpty(), "Invalid engine internal data (err #1)");
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(oscData == nullptr, "Invalid engine internal data (err #2)");
 #endif
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(events.in  == nullptr, "Invalid engine internal data (err #4)");
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(events.out == nullptr, "Invalid engine internal data (err #5)");
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(clientName != nullptr && clientName[0] != '\0', "Invalid client name");
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(plugins == nullptr, "Invalid engine internal data (err #3)");
 #endif
 
@@ -525,14 +525,12 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
 
     timeInfo.clear();
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     osc.init(clientName);
-# ifndef BUILD_BRIDGE
     oscData = osc.getControlData();
-# endif
 #endif
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     plugins = new EnginePluginData[maxPluginNumber];
     carla_zeroStructs(plugins, maxPluginNumber);
 #endif
@@ -546,7 +544,7 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
 void CarlaEngine::ProtectedData::close()
 {
     CARLA_SAFE_ASSERT(name.isNotEmpty());
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CARLA_SAFE_ASSERT(plugins != nullptr);
     CARLA_SAFE_ASSERT(nextPluginId == maxPluginNumber);
 #endif
@@ -556,7 +554,7 @@ void CarlaEngine::ProtectedData::close()
     thread.stopThread(500);
     nextAction.clearAndReset();
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     osc.close();
     oscData = nullptr;
 #endif
@@ -566,7 +564,7 @@ void CarlaEngine::ProtectedData::close()
     maxPluginNumber = 0;
     nextPluginId    = 0;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (plugins != nullptr)
     {
         delete[] plugins;
@@ -595,7 +593,7 @@ void CarlaEngine::ProtectedData::initTime(const char* const features)
 
 // -----------------------------------------------------------------------
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 void CarlaEngine::ProtectedData::doPluginRemove(const uint pluginId) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(curPluginCount > 0,);
@@ -656,7 +654,7 @@ void CarlaEngine::ProtectedData::doNextPluginAction() noexcept
 
     const EnginePostAction opcode    = nextAction.opcode;
     const bool             needsPost = nextAction.needsPost;
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     const uint             pluginId  = nextAction.pluginId;
     const uint             value     = nextAction.value;
 #endif
@@ -675,7 +673,7 @@ void CarlaEngine::ProtectedData::doNextPluginAction() noexcept
     case kEnginePostActionZeroCount:
         curPluginCount = 0;
         break;
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     case kEnginePostActionRemovePlugin:
         doPluginRemove(pluginId);
         break;

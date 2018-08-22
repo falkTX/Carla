@@ -1761,7 +1761,7 @@ public:
         {
             const PluginBridgeNonRtServerOpcode opcode(fShmNonRtServerControl.readOpcode());
 #ifdef DEBUG
-            if (opcode != kPluginBridgeNonRtServerPong) {
+            if (opcode != kPluginBridgeNonRtServerPong && opcode != kPluginBridgeNonRtServerParameterValue2) {
                 carla_debug("CarlaPluginBridge::handleNonRtData() - got opcode: %s", PluginBridgeNonRtServerOpcode2str(opcode));
             }
 #endif
