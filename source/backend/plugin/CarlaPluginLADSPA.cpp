@@ -942,7 +942,7 @@ public:
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
 
                 uint32_t eventTime = event.time;
-                CARLA_SAFE_ASSERT_CONTINUE(eventTime < frames);
+                CARLA_SAFE_ASSERT_UINT2_CONTINUE(eventTime < frames, eventTime, frames);
 
                 if (eventTime < timeOffset)
                 {
