@@ -62,7 +62,7 @@
 // win32 stuff
 
 static inline
-bool waitForAsyncObject(const HANDLE object)
+bool waitForAsyncObject(const HANDLE object, const HANDLE process = INVALID_HANDLE_VALUE)
 {
     DWORD dw, dw2;
     MSG msg;
@@ -70,21 +70,35 @@ bool waitForAsyncObject(const HANDLE object)
     // we give it a max
     for (int i=20000; --i>=0;)
     {
+        if (process != INVALID_HANDLE_VALUE)
+        {
+            switch (WaitForSingleObject(process, 0))
+            {
+            case WAIT_OBJECT_0:
+            case -1:
+                carla_stderr("waitForAsyncObject process has stopped");
+                return false;
+            }
+        }
+
         carla_debug("waitForAsyncObject loop start");
-        dw = MsgWaitForMultipleObjectsEx(1, &object, INFINITE, QS_POSTMESSAGE, 0);
+        dw = ::MsgWaitForMultipleObjectsEx(1, &object, INFINITE, QS_POSTMESSAGE|QS_TIMER, 0);
         carla_debug("waitForAsyncObject initial code is: %u", dw);
 
         if (dw == WAIT_OBJECT_0)
+        {
+            carla_debug("waitForAsyncObject WAIT_OBJECT_0");
             return true;
+        }
 
-        dw2 = GetLastError();
+        dw2 = ::GetLastError();
 
         if (dw == WAIT_OBJECT_0 + 1)
         {
             carla_debug("waitForAsyncObject loop +1");
 
-            while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-                DispatchMessage(&msg);
+            while (::PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+                ::DispatchMessage(&msg);
 
             continue;
         }
@@ -116,26 +130,37 @@ ssize_t ReadFileWin32(const HANDLE pipeh, const HANDLE event, void* const buf, c
     carla_zeroStruct(ov);
     ov.hEvent = event;
 
-    if (::ReadFile(pipeh, buf, dsize, NULL, &ov))
+    if (::ReadFile(pipeh, buf, dsize, nullptr, &ov))
     {
-        if (::GetOverlappedResult(pipeh, &ov, &dw, FALSE))
-            return static_cast<ssize_t>(dsize);
+        if (! ::GetOverlappedResult(pipeh, &ov, &dw, FALSE))
+        {
+            carla_stderr("ReadFileWin32 GetOverlappedResult failed, error was: %u", ::GetLastError());
+            return -1;
+        }
 
-        carla_stderr("GetOverlappedResult failed reading from pipe. %u", GetLastError());
-        return -1;
+        return static_cast<ssize_t>(dsize);
     }
 
-    if (GetLastError() == ERROR_IO_PENDING)
-    {
-        if (waitForAsyncObject(event))
-            if (::GetOverlappedResult(pipeh, &ov, &dw, FALSE))
-                return static_cast<ssize_t>(dsize);
+    dw = ::GetLastError();
 
-        carla_stderr("Read from pipe failed asynchronously. %u", GetLastError());
-        return -1;
+    if (dw == ERROR_IO_PENDING)
+    {
+        if (! waitForAsyncObject(event))
+        {
+            carla_stderr("ReadFileWin32 waitForAsyncObject failed, error was: %u", ::GetLastError());
+            return -1;
+        }
+
+        if (! ::GetOverlappedResult(pipeh, &ov, &dw, FALSE))
+        {
+            carla_stderr("ReadFileWin32 GetOverlappedResult of pending failed, error was: %u", ::GetLastError());
+            return -1;
+        }
+
+        return static_cast<ssize_t>(dsize);
     }
 
-    carla_stderr("Read from pipe failed synchronously. %u", GetLastError());
+    carla_stderr("ReadFileWin32 failed, error was: %u", dw);
     return -1;
 }
 
@@ -150,24 +175,41 @@ ssize_t WriteFileWin32(const HANDLE pipeh, const HANDLE event, const void* const
 
     if (::WriteFile(pipeh, buf, dsize, nullptr, &ov))
     {
-        if (::GetOverlappedResult(event, &ov, &dw, FALSE))
-            return static_cast<ssize_t>(dsize);
+        if (! ::GetOverlappedResult(pipeh, &ov, &dw, FALSE))
+        {
+            carla_stderr("WriteFileWin32 GetOverlappedResult failed, error was: %u", ::GetLastError());
+            return -1;
+        }
 
-        carla_stderr("GetOverlappedResult failed writing to pipe. %u", GetLastError());
-        return -1;
+        return static_cast<ssize_t>(dsize);
     }
 
-    if (GetLastError() == ERROR_IO_PENDING)
+    dw = ::GetLastError();
+
+    if (dw == ERROR_IO_PENDING)
     {
-        if (waitForAsyncObject(event))
-            if (::GetOverlappedResult(event, &ov, &dw, FALSE))
-                return static_cast<ssize_t>(dsize);
+        if (! waitForAsyncObject(event))
+        {
+            carla_stderr("WriteFileWin32 waitForAsyncObject failed, error was: %u", ::GetLastError());
+            return -1;
+        }
 
-        carla_stderr("Write to pipe failed asynchronously. %u", GetLastError());
-        return -1;
+        if (! ::GetOverlappedResult(pipeh, &ov, &dw, FALSE))
+        {
+            carla_stderr("WriteFileWin32 GetOverlappedResult of pending failed, error was: %u", ::GetLastError());
+            return -1;
+        }
+
+        return static_cast<ssize_t>(dsize);
     }
 
-    carla_stderr("Write to pipe failed synchronously. %u", GetLastError());
+    if (dw == ERROR_PIPE_NOT_CONNECTED)
+    {
+        carla_stdout("WriteFileWin32 failed, client has closed");
+        return -2;
+    }
+
+    carla_stderr("WriteFileWin32 failed, error was: %u", dw);
     return -1;
 }
 #endif // CARLA_OS_WIN
@@ -203,13 +245,13 @@ bool startProcess(const char* const argv[], PROCESS_INFORMATION* const processIn
     carla_zeroStruct(startupInfo);
     startupInfo.cb = sizeof(startupInfo);
 
-    return CreateProcess(nullptr, const_cast<LPSTR>(command.toRawUTF8()),
-                         nullptr, nullptr, TRUE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
-                         nullptr, nullptr, &startupInfo, processInfo) != FALSE;
+    return ::CreateProcess(nullptr, const_cast<LPSTR>(command.toRawUTF8()),
+                           nullptr, nullptr, TRUE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
+                           nullptr, nullptr, &startupInfo, processInfo) != FALSE;
 }
 
 static inline
-bool waitForClientConnect(const HANDLE pipe, const HANDLE event, const uint32_t timeOutMilliseconds) noexcept
+bool waitForClientConnect(const HANDLE pipe, const HANDLE event, const HANDLE process, const uint32_t timeOutMilliseconds) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pipe != INVALID_PIPE_VALUE, false);
     CARLA_SAFE_ASSERT_RETURN(timeOutMilliseconds > 0, false);
@@ -226,11 +268,13 @@ bool waitForClientConnect(const HANDLE pipe, const HANDLE event, const uint32_t 
     {
         if (::ConnectNamedPipe(pipe, &ov))
         {
-            if (::GetOverlappedResult(pipe, &ov, &dw, FALSE))
-                return true;
+            if (! ::GetOverlappedResult(pipe, &ov, &dw, FALSE))
+            {
+                carla_stderr2("ConnectNamedPipe GetOverlappedResult failed, error was: %u", ::GetLastError());
+                return false;
+            }
 
-            carla_stderr2("waitForClientConnect failed during ConnectNamedPipe");
-            return false;
+            return true;
         }
 
         const DWORD err = ::GetLastError();
@@ -241,12 +285,19 @@ bool waitForClientConnect(const HANDLE pipe, const HANDLE event, const uint32_t 
             return true;
 
         case ERROR_IO_PENDING:
-            if (waitForAsyncObject(event))
-                if (::GetOverlappedResult(pipe, &ov, &dw, FALSE))
-                    return true;
+            if (! waitForAsyncObject(event, process))
+            {
+                carla_stderr2("ConnectNamedPipe waitForAsyncObject failed, error was: %u", ::GetLastError());
+                return false;
+            }
 
-            carla_stderr2("waitForClientConnect failed during pending wait");
-            return false;
+            if (! ::GetOverlappedResult(pipe, &ov, &dw, FALSE))
+            {
+                carla_stderr2("ConnectNamedPipe GetOverlappedResult of pending failed, error was: %u", ::GetLastError());
+                return false;
+            }
+
+            return true;
 
         case ERROR_PIPE_LISTENING:
             if (water::Time::getMillisecondCounter() < timeoutEnd)
@@ -254,11 +305,11 @@ bool waitForClientConnect(const HANDLE pipe, const HANDLE event, const uint32_t 
                 carla_msleep(5);
                 continue;
             }
-            carla_stderr2("waitForClientConnect timed out");
+            carla_stderr2("ConnectNamedPipe listening timed out");
             return false;
 
         default:
-            carla_stderr2("waitForClientConnect connect refused, error was: %u", err);
+            carla_stderr2("ConnectNamedPipe failed, error was: %u", err);
             return false;
         }
     }
@@ -300,7 +351,7 @@ bool startProcess(const char* const argv[], pid_t& pidinst) noexcept
 
 template<typename P>
 static inline
-bool waitForClientFirstMessage(const P& pipe, void* const ovRecv, const uint32_t timeOutMilliseconds) noexcept
+bool waitForClientFirstMessage(const P& pipe, void* const ovRecv, void* const process, const uint32_t timeOutMilliseconds) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pipe != INVALID_PIPE_VALUE, false);
     CARLA_SAFE_ASSERT_RETURN(timeOutMilliseconds > 0, false);
@@ -310,7 +361,7 @@ bool waitForClientFirstMessage(const P& pipe, void* const ovRecv, const uint32_t
     const uint32_t timeoutEnd(water::Time::getMillisecondCounter() + timeOutMilliseconds);
 
 #ifdef CARLA_OS_WIN
-    if (! waitForClientConnect(pipe, (HANDLE)ovRecv, timeOutMilliseconds))
+    if (! waitForClientConnect(pipe, (HANDLE)ovRecv, (HANDLE)process, timeOutMilliseconds))
         return false;
 #endif
 
@@ -318,7 +369,7 @@ bool waitForClientFirstMessage(const P& pipe, void* const ovRecv, const uint32_t
     {
         try {
 #ifdef CARLA_OS_WIN
-            ret = ::ReadFileWin32(pipe, (HANDLE)ovRecv, &c, 1);
+            ret = ReadFileWin32(pipe, (HANDLE)ovRecv, &c, 1);
 #else
             ret = ::read(pipe, &c, 1);
 #endif
@@ -365,7 +416,7 @@ bool waitForClientFirstMessage(const P& pipe, void* const ovRecv, const uint32_t
     }
 
     // maybe unused
-    (void)ovRecv;
+    (void)ovRecv; (void)process;
 }
 
 // -----------------------------------------------------------------------
@@ -373,16 +424,16 @@ bool waitForClientFirstMessage(const P& pipe, void* const ovRecv, const uint32_t
 
 #ifdef CARLA_OS_WIN
 static inline
-bool waitForProcessToStop(const PROCESS_INFORMATION& processInfo, const uint32_t timeOutMilliseconds, bool sendTerminate) noexcept
+bool waitForProcessToStop(const HANDLE process, const uint32_t timeOutMilliseconds, bool sendTerminate) noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(processInfo.hProcess != INVALID_HANDLE_VALUE, false);
+    CARLA_SAFE_ASSERT_RETURN(process != INVALID_HANDLE_VALUE, false);
     CARLA_SAFE_ASSERT_RETURN(timeOutMilliseconds > 0, false);
 
     const uint32_t timeoutEnd(water::Time::getMillisecondCounter() + timeOutMilliseconds);
 
     for (;;)
     {
-        switch (WaitForSingleObject(processInfo.hProcess, 0))
+        switch (::WaitForSingleObject(process, 0))
         {
         case WAIT_OBJECT_0:
         case -1:
@@ -392,7 +443,7 @@ bool waitForProcessToStop(const PROCESS_INFORMATION& processInfo, const uint32_t
         if (sendTerminate)
         {
             sendTerminate = false;
-            ::TerminateProcess(processInfo.hProcess, 15);
+            ::TerminateProcess(process, 15);
         }
 
         if (water::Time::getMillisecondCounter() >= timeoutEnd)
@@ -405,19 +456,19 @@ bool waitForProcessToStop(const PROCESS_INFORMATION& processInfo, const uint32_t
 }
 
 static inline
-void waitForProcessToStopOrKillIt(const PROCESS_INFORMATION& processInfo, const uint32_t timeOutMilliseconds) noexcept
+void waitForProcessToStopOrKillIt(const HANDLE process, const uint32_t timeOutMilliseconds) noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(processInfo.hProcess != INVALID_HANDLE_VALUE,);
+    CARLA_SAFE_ASSERT_RETURN(process != INVALID_HANDLE_VALUE,);
     CARLA_SAFE_ASSERT_RETURN(timeOutMilliseconds > 0,);
 
-    if (! waitForProcessToStop(processInfo, timeOutMilliseconds, true))
+    if (! waitForProcessToStop(process, timeOutMilliseconds, true))
     {
         carla_stderr("waitForProcessToStopOrKillIt() - process didn't stop, force termination");
 
-        if (::TerminateProcess(processInfo.hProcess, 9) != FALSE)
+        if (::TerminateProcess(process, 9) != FALSE)
         {
             // wait for process to stop
-            waitForProcessToStop(processInfo, timeOutMilliseconds, false);
+            waitForProcessToStop(process, timeOutMilliseconds, false);
         }
     }
 }
@@ -570,8 +621,8 @@ struct CarlaPipeCommon::PrivateData {
         processInfo.hProcess = INVALID_HANDLE_VALUE;
         processInfo.hThread  = INVALID_HANDLE_VALUE;
 
-        ovRecv = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-        ovSend = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        ovRecv = ::CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        ovSend = ::CreateEvent(nullptr, FALSE, FALSE, nullptr);
 #endif
 
         carla_zeroChars(tmpBuf, 0xff+1);
@@ -1137,7 +1188,7 @@ const char* CarlaPipeCommon::_readline() const noexcept
     {
         try {
 #ifdef CARLA_OS_WIN
-            ret = ::ReadFileWin32(pData->pipeRecv, pData->ovRecv, &c, 1);
+            ret = ReadFileWin32(pData->pipeRecv, pData->ovRecv, &c, 1);
 #else
             ret = ::read(pData->pipeRecv, &c, 1);
 #endif
@@ -1210,11 +1261,19 @@ bool CarlaPipeCommon::_writeMsgBuffer(const char* const msg, const std::size_t s
 
     try {
 #ifdef CARLA_OS_WIN
-        ret = ::WriteFileWin32(pData->pipeSend, pData->ovSend, msg, size);
+        ret = WriteFileWin32(pData->pipeSend, pData->ovSend, msg, size);
 #else
         ret = ::write(pData->pipeSend, msg, size);
 #endif
     } CARLA_SAFE_EXCEPTION_RETURN("CarlaPipeCommon::writeMsgBuffer", false);
+
+#ifdef CARLA_OS_WIN
+    if (ret == -2)
+    {
+        pData->pipeClosed = true;
+        return false;
+    }
+#endif
 
     if (ret == static_cast<ssize_t>(size))
     {
@@ -1222,12 +1281,6 @@ bool CarlaPipeCommon::_writeMsgBuffer(const char* const msg, const std::size_t s
             pData->lastMessageFailed = false;
         return true;
     }
-
-#if 0
-    // ignore errors if the other side of the pipe has closed
-    if (pData->pipeClosed)
-        return false;
-#endif
 
     if (! pData->lastMessageFailed)
     {
@@ -1315,7 +1368,12 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     std::snprintf(pipeRecvClientStr, 100, "ignored");
     std::snprintf(pipeSendClientStr, 100, "ignored");
 
-    pipe1 = ::CreateNamedPipeA(pipeRecvServerStr, PIPE_ACCESS_DUPLEX|FILE_FLAG_FIRST_PIPE_INSTANCE|FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE|PIPE_READMODE_BYTE, 1, size, size, 0, nullptr);
+    SECURITY_ATTRIBUTES sa;
+    carla_zeroStruct(sa);
+    sa.nLength = sizeof(sa);
+    sa.bInheritHandle = TRUE;
+
+    pipe1 = ::CreateNamedPipeA(pipeRecvServerStr, PIPE_ACCESS_DUPLEX|FILE_FLAG_FIRST_PIPE_INSTANCE|FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE|PIPE_READMODE_BYTE, 1, size, size, 0, &sa);
 
     if (pipe1 == INVALID_HANDLE_VALUE)
     {
@@ -1323,7 +1381,7 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
         return false;
     }
 
-    pipe2 = ::CreateNamedPipeA(pipeSendServerStr, PIPE_ACCESS_DUPLEX|FILE_FLAG_FIRST_PIPE_INSTANCE|FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE|PIPE_READMODE_BYTE, 1, size, size, 0, nullptr);
+    pipe2 = ::CreateNamedPipeA(pipeSendServerStr, PIPE_ACCESS_DUPLEX|FILE_FLAG_FIRST_PIPE_INSTANCE|FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE|PIPE_READMODE_BYTE, 1, size, size, 0, &sa);
 
     if (pipe2 == INVALID_HANDLE_VALUE)
     {
@@ -1477,12 +1535,14 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     // wait for client to say something
 
 #ifdef CARLA_OS_WIN
-    void* const ovRecv = pData->ovRecv;
+    void* const ovRecv  = pData->ovRecv;
+    void* const process = pData->processInfo.hProcess;
 #else
-    void* const ovRecv = nullptr;
+    void* const ovRecv  = nullptr;
+    void* const process = nullptr;
 #endif
 
-    if (waitForClientFirstMessage(pipeRecvClient, ovRecv, 10*1000 /* 10 secs */))
+    if (waitForClientFirstMessage(pipeRecvClient, ovRecv, process, 10*1000 /* 10 secs */))
     {
         pData->pipeRecv = pipeRecvClient;
         pData->pipeSend = pipeSendClient;
@@ -1495,15 +1555,15 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     // failed to set non-block or get first child message, cannot continue
 
 #ifdef CARLA_OS_WIN
-    if (TerminateProcess(pData->processInfo.hProcess, 9) != FALSE)
+    if (::TerminateProcess(pData->processInfo.hProcess, 9) != FALSE)
     {
         // wait for process to stop
-        waitForProcessToStop(pData->processInfo, 2*1000, false);
+        waitForProcessToStop(pData->processInfo.hProcess, 2*1000, false);
     }
 
     // clear pData->processInfo
-    try { CloseHandle(pData->processInfo.hThread);  } CARLA_SAFE_EXCEPTION("CloseHandle(pData->processInfo.hThread)");
-    try { CloseHandle(pData->processInfo.hProcess); } CARLA_SAFE_EXCEPTION("CloseHandle(pData->processInfo.hProcess)");
+    try { ::CloseHandle(pData->processInfo.hThread);  } CARLA_SAFE_EXCEPTION("CloseHandle(pData->processInfo.hThread)");
+    try { ::CloseHandle(pData->processInfo.hProcess); } CARLA_SAFE_EXCEPTION("CloseHandle(pData->processInfo.hProcess)");
     carla_zeroStruct(pData->processInfo);
     pData->processInfo.hProcess = INVALID_HANDLE_VALUE;
     pData->processInfo.hThread  = INVALID_HANDLE_VALUE;
@@ -1530,7 +1590,7 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     return false;
 
     // maybe unused
-    (void)size; (void)ovRecv;
+    (void)size; (void)ovRecv; (void)process;
 }
 
 void CarlaPipeServer::stopPipeServer(const uint32_t timeOutMilliseconds) noexcept
@@ -1548,9 +1608,9 @@ void CarlaPipeServer::stopPipeServer(const uint32_t timeOutMilliseconds) noexcep
                 flushMessages();
         }
 
-        waitForProcessToStopOrKillIt(pData->processInfo, timeOutMilliseconds);
-        try { CloseHandle(pData->processInfo.hThread);  } CARLA_SAFE_EXCEPTION("CloseHandle(pData->processInfo.hThread)");
-        try { CloseHandle(pData->processInfo.hProcess); } CARLA_SAFE_EXCEPTION("CloseHandle(pData->processInfo.hProcess)");
+        waitForProcessToStopOrKillIt(pData->processInfo.hProcess, timeOutMilliseconds);
+        try { ::CloseHandle(pData->processInfo.hThread);  } CARLA_SAFE_EXCEPTION("CloseHandle(pData->processInfo.hThread)");
+        try { ::CloseHandle(pData->processInfo.hProcess); } CARLA_SAFE_EXCEPTION("CloseHandle(pData->processInfo.hProcess)");
         carla_zeroStruct(pData->processInfo);
         pData->processInfo.hProcess = INVALID_HANDLE_VALUE;
         pData->processInfo.hThread  = INVALID_HANDLE_VALUE;
@@ -1753,12 +1813,14 @@ void CarlaPipeClient::writeExitingMessageAndWait() noexcept
     // NOTE: no more messages are handled after this point
     pData->clientClosingDown = true;
 
-    // FIXME: don't sleep forever
-    for (; ! pData->pipeClosed;)
+    for (int i=0; i < 100 && ! pData->pipeClosed; ++i)
     {
         carla_msleep(50);
         idlePipe(true);
     }
+
+    if (! pData->pipeClosed)
+        carla_stderr2("writeExitingMessageAndWait pipe is still running!");
 }
 
 // -----------------------------------------------------------------------
