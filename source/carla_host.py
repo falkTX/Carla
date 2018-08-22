@@ -769,6 +769,11 @@ class HostWindow(QMainWindow):
         self.ui.text_logs.appendPlainText("======= Starting engine =======")
 
         if self.host.engine_init(audioDriver, self.fClientName):
+            if firstInit and not (self.host.isControl or self.host.isPlugin):
+                settings = QSettings()
+                lastBpm  = settings.value("LastBPM", 120.0, type=float)
+                del settings
+                self.host.transport_bpm(lastBpm)
             return
 
         elif firstInit:
@@ -1523,11 +1528,7 @@ class HostWindow(QMainWindow):
         settings = QSettings()
 
         settings.setValue("Geometry", self.saveGeometry())
-
-        #settings.setValue("SplitterState", self.ui.splitter.saveState())
-
         settings.setValue("ShowToolbar", self.ui.toolBar.isEnabled())
-
         settings.setValue("ShowSidePanel", self.ui.dockWidget.isEnabled())
 
         diskFolders = []
@@ -1536,6 +1537,7 @@ class HostWindow(QMainWindow):
             diskFolders.append(self.ui.cb_disk.itemData(i))
 
         settings.setValue("DiskFolders", diskFolders)
+        settings.setValue("LastBPM", self.fLastTransportBPM)
 
         settings.setValue("ShowMeters", self.ui.act_settings_show_meters.isChecked())
         settings.setValue("ShowKeyboard", self.ui.act_settings_show_keyboard.isChecked())
