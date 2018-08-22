@@ -511,6 +511,8 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
     case ENGINE_PROCESS_MODE_BRIDGE:
         events.in  = new EngineEvent[kMaxEngineEventInternalCount];
         events.out = new EngineEvent[kMaxEngineEventInternalCount];
+        carla_zeroStructs(events.in,  kMaxEngineEventInternalCount);
+        carla_zeroStructs(events.out, kMaxEngineEventInternalCount);
         break;
     default:
         break;
