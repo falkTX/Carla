@@ -2085,7 +2085,9 @@ protected:
                 }
             }
 
-            pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0f, nullptr);
+            if (! fIsInitializing)
+                pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0f, nullptr);
+
             ret = 1;
             break;
 

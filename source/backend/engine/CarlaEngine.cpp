@@ -1301,6 +1301,11 @@ bool CarlaEngine::setAboutToClose() noexcept
     return (pData->isIdling == 0);
 }
 
+bool CarlaEngine::isLoadingProject() const noexcept
+{
+    return pData->loadingProject;
+}
+
 // -----------------------------------------------------------------------
 // Global options
 

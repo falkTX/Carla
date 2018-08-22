@@ -1036,6 +1036,11 @@ public:
      */
     bool setAboutToClose() noexcept;
 
+    /*!
+     * TODO.
+     */
+    bool isLoadingProject() const noexcept;
+
     // -------------------------------------------------------------------
     // Options
 

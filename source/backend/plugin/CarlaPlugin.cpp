@@ -888,9 +888,10 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     setPanning(stateSave.panning, true, true);
     setCtrlChannel(stateSave.ctrlChannel, true, true);
     setActive(stateSave.active, true, true);
-#endif
 
-    pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0f, nullptr);
+    if (! pData->engine->isLoadingProject())
+        pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0f, nullptr);
+#endif
 }
 
 bool CarlaPlugin::saveStateToFile(const char* const filename)
