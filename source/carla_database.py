@@ -941,7 +941,8 @@ class PluginRefreshW(QDialog):
         # -------------------------------------------------------------------------------------------------------------
         # Hide bridges if disabled
 
-        if not host.showPluginBridges:
+        # NOTE: We Assume win32 carla build will not run win64 plugins
+        if (WINDOWS and not kIs64bit) or not host.showPluginBridges:
             self.ui.ch_native.setChecked(True)
             self.ui.ch_native.setEnabled(False)
             self.ui.ch_native.setVisible(False)
@@ -1211,7 +1212,8 @@ class PluginDatabaseW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Disable bridges if not enabled in settings
 
-        if not host.showPluginBridges:
+        # NOTE: We Assume win32 carla build will not run win64 plugins
+        if (WINDOWS and not kIs64bit) or not host.showPluginBridges:
             self.ui.ch_native.setChecked(True)
             self.ui.ch_native.setEnabled(False)
             self.ui.ch_native.setVisible(False)
