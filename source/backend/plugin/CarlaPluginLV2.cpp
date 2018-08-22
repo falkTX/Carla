@@ -16,7 +16,7 @@
  */
 
 // testing macros
-// #define LV2_UIS_ONLY_BRIDGES
+#define LV2_UIS_ONLY_BRIDGES
 // #define LV2_UIS_ONLY_INPROCESS
 
 #include "CarlaPluginInternal.hpp"
@@ -1274,7 +1274,7 @@ public:
 
         const uintptr_t frontendWinId(pData->engine->getOptions().frontendWinId);
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (! yesNo)
             pData->transientTryCounter = 0;
 #endif
@@ -1486,7 +1486,7 @@ public:
                 else if (fExt.uishow != nullptr)
                 {
                     fExt.uishow->show(fUI.handle);
-# ifndef BUILD_BRIDGE
+# ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                     pData->tryTransient();
 # endif
                 }
@@ -1495,7 +1495,7 @@ public:
 #endif
             {
                 LV2_EXTERNAL_UI_SHOW((LV2_External_UI_Widget*)fUI.widget);
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                 pData->tryTransient();
 #endif
             }
@@ -1570,7 +1570,7 @@ public:
                 fPipeServer.stopPipeServer(2000);
                 // fall through
             case CarlaPipeServerLV2::UiCrashed:
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                 pData->transientTryCounter = 0;
 #endif
                 pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
@@ -3023,7 +3023,7 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             bool allNotesOffSent  = false;
 #endif
             bool isSampleAccurate = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
@@ -3121,7 +3121,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeParameter: {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                         // Control backend stuff
                         if (event.channel == pData->ctrlChannel)
                         {
@@ -3306,7 +3306,7 @@ public:
                     case kEngineControlEventTypeAllNotesOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
@@ -3503,7 +3503,7 @@ public:
             }
         }
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // --------------------------------------------------------------------------------------------------------
         // Control Output
 
@@ -3642,7 +3642,7 @@ public:
 
         pData->postRtEvents.trySplice();
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
 
@@ -3663,11 +3663,13 @@ public:
 
                     for (uint32_t k=0; k < frames; ++k)
                     {
+# ifndef BUILD_BRIDGE
                         if (k < pData->latency.frames)
                             bufValue = pData->latency.buffers[c][k];
                         else if (pData->latency.frames < frames)
                             bufValue = fAudioInBuffers[c][k-pData->latency.frames];
                         else
+# endif
                             bufValue = fAudioInBuffers[c][k];
 
                         fAudioOutBuffers[i][k] = (fAudioOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
@@ -3713,6 +3715,7 @@ public:
             }
         } // End of Post-processing
 
+# ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
         // Save latency values for next callback
 
@@ -3741,8 +3744,8 @@ public:
                 }
             }
         }
-
-#else // BUILD_BRIDGE
+# endif
+#else // BUILD_BRIDGE_ALTERNATIVE_ARCH
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
         {
             for (uint32_t k=0; k < frames; ++k)
@@ -5287,7 +5290,7 @@ public:
 
 #if defined(LV2_UIS_ONLY_BRIDGES)
         const bool preferUiBridges = true;
-#elif defined(BUILD_BRIDGE)
+#elif defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
         const bool preferUiBridges = false;
 #else
         const bool preferUiBridges = pData->engine->getOptions().preferUiBridges;
@@ -5383,7 +5386,7 @@ public:
         else if (iExt >= 0)
             iFinal = iExt;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (iFinal < 0)
 #endif
         {
@@ -5459,7 +5462,7 @@ public:
              iFinal == eCocoa   ||
              iFinal == eWindows ||
              iFinal == eX11)
-#ifdef BUILD_BRIDGE
+#ifdef BUILD_BRIDGE_ALTERNATIVE_ARCH
             && ! hasShowInterface
 #endif
             )

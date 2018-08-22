@@ -1242,6 +1242,22 @@ const char* CarlaPipeCommon::_readlineblock(const uint32_t timeOutMilliseconds) 
         carla_msleep(5);
     }
 
+    if (std::getenv("CARLA_VALGRIND_TEST") != nullptr)
+    {
+        const uint32_t timeoutEnd2(water::Time::getMillisecondCounter() + 1000);
+
+        for (;;)
+        {
+            if (const char* const msg = _readline())
+                return msg;
+
+            if (water::Time::getMillisecondCounter() >= timeoutEnd2)
+                break;
+
+            carla_msleep(100);
+        }
+    }
+
     carla_stderr("readlineblock timed out");
     return nullptr;
 }
