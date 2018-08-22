@@ -2938,6 +2938,8 @@ def runHostWithoutUI(host):
     # --------------------------------------------------------------------------------------------------------
     # Idle
 
+    print("Carla ready!")
+
     while host.is_engine_running() and not gCarla.term:
         host.engine_idle()
         sleep(0.0333) # 30 Hz
