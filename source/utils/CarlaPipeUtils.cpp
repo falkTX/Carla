@@ -937,15 +937,19 @@ bool CarlaPipeCommon::flushMessages() const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->pipeSend != INVALID_PIPE_VALUE, false);
 
-#ifdef CARLA_OS_WIN
-    // FIXME
+#if defined(CARLA_OS_LINUX) || defined(CARLA_OS_GNU_HURD)
+    // the only call that seems to do something
+    return ::syncfs(pData->pipeSend) == 0;
+#elif defined(CARLA_OS_WIN)
+    // FIXME causes issues
     return true;
 
     try {
         return (::FlushFileBuffers(pData->pipeSend) != FALSE);
     } CARLA_SAFE_EXCEPTION_RETURN("CarlaPipeCommon::writeMsgBuffer", false);
 #else
-    return ::syncfs(pData->pipeSend) == 0;
+    // unsupported
+    return true;
 #endif
 
 }
