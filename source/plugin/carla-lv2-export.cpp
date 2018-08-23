@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -30,6 +30,7 @@
 #include "lv2/ui.h"
 #include "lv2/units.h"
 #include "lv2/urid.h"
+#include "lv2/worker.h"
 #include "lv2/lv2_external_ui.h"
 #include "lv2/lv2_programs.h"
 
@@ -156,6 +157,14 @@ static void writeManifestFile(PluginListManager& plm)
     text += "                      <" LV2_PROGRAMS__UIInterface "> ;\n";
     text += "    lv2:requiredFeature <" LV2_INSTANCE_ACCESS_URI "> ;\n";
     text += "    opts:supportedOption <" LV2_PARAMETERS__sampleRate "> .\n";
+    text += "\n";
+
+    text += "<http://kxstudio.sf.net/carla/ui-bridge-ext>\n";
+    text += "    a <" LV2_EXTERNAL_UI__Widget "> ;\n";
+    text += "    ui:binary <carla-ui" PLUGIN_EXT "> ;\n";
+    text += "    lv2:extensionData <" LV2_UI__idleInterface "> ,\n";
+    text += "                      <" LV2_UI__showInterface "> ,\n";
+    text += "                      <" LV2_PROGRAMS__UIInterface "> .\n";
 
     // -------------------------------------------------------------------
     // Write file now
@@ -292,6 +301,9 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     if (pluginDesc->category != NATIVE_PLUGIN_CATEGORY_SYNTH)
         text += "    lv2:extensionData <" LV2_PROGRAMS__Interface "> ;\n";
 
+    if (pluginDesc->hints & NATIVE_PLUGIN_HAS_UI)
+        text += "    lv2:extensionData <" LV2_WORKER__interface "> ;\n";
+
     text += "\n";
 
     // -------------------------------------------------------------------
@@ -311,40 +323,48 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
         if (std::strncmp(pluginDesc->label, "carla", 5) == 0)
         {
             text += "    ui:ui <http://kxstudio.sf.net/carla/ui-embed> ,\n";
-            text += "          <http://kxstudio.sf.net/carla/ui-ext> ;\n";
+            text += "          <http://kxstudio.sf.net/carla/ui-ext> ,\n";
+            text += "          <http://kxstudio.sf.net/carla/ui-bridge-ext> ;\n";
         }
         else
 #endif
         {
-            text += "    ui:ui <http://kxstudio.sf.net/carla/ui-ext> ;\n";
+            text += "    ui:ui <http://kxstudio.sf.net/carla/ui-ext> ,\n";
+            text += "          <http://kxstudio.sf.net/carla/ui-bridge-ext> ;\n";
         }
 
         text += "\n";
     }
 
     // -------------------------------------------------------------------
-    // First MIDI/Time port
+    // First input MIDI/Time/UI port
 
-    if (pluginDesc->midiIns > 0 || (pluginDesc->hints & NATIVE_PLUGIN_USES_TIME) != 0)
+    const bool hasEventInPort  = (pluginDesc->hints & NATIVE_PLUGIN_USES_TIME) != 0 || (pluginDesc->hints & NATIVE_PLUGIN_HAS_UI) != 0;
+
+    if (pluginDesc->midiIns > 0 || hasEventInPort)
     {
         text += "    lv2:port [\n";
         text += "        a lv2:InputPort, atom:AtomPort ;\n";
         text += "        atom:bufferType atom:Sequence ;\n";
 
-        if (pluginDesc->midiIns > 0 && (pluginDesc->hints & NATIVE_PLUGIN_USES_TIME) != 0)
+        if (pluginDesc->midiIns > 0 && hasEventInPort)
         {
             text += "        atom:supports <" LV2_MIDI__MidiEvent "> ,\n";
             text += "                      <" LV2_TIME__Position "> ;\n";
         }
         else if (pluginDesc->midiIns > 0)
+        {
             text += "        atom:supports <" LV2_MIDI__MidiEvent "> ;\n";
+        }
         else
+        {
             text += "        atom:supports <" LV2_TIME__Position "> ;\n";
+        }
 
         text += "        lv2:designation lv2:control ;\n";
         text += "        lv2:index " + String(portIndex++) + " ;\n";
 
-        if (pluginDesc->hints & NATIVE_PLUGIN_USES_TIME)
+        if (hasEventInPort)
         {
             if (pluginDesc->midiIns > 1)
             {
@@ -393,6 +413,52 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
             text += "    ] ;\n\n";
         else
             text += "    ] , [\n";
+    }
+
+    // -------------------------------------------------------------------
+    // First output MIDI/UI port
+
+    const bool hasEventOutPort = (pluginDesc->hints & NATIVE_PLUGIN_HAS_UI) != 0;
+
+    if (pluginDesc->midiIns > 0 || hasEventOutPort)
+    {
+        text += "    lv2:port [\n";
+        text += "        a lv2:OutputPort, atom:AtomPort ;\n";
+        text += "        atom:bufferType atom:Sequence ;\n";
+
+        if (pluginDesc->midiOuts > 0)
+            text += "        atom:supports <" LV2_MIDI__MidiEvent "> ;\n";
+
+        text += "        lv2:index " + String(portIndex++) + " ;\n";
+
+        if (hasEventOutPort)
+        {
+            if (pluginDesc->midiOuts > 1)
+            {
+                text += "        lv2:symbol \"lv2_events_out_1\" ;\n";
+                text += "        lv2:name \"Events Input #1\" ;\n";
+            }
+            else
+            {
+                text += "        lv2:symbol \"lv2_events_out\" ;\n";
+                text += "        lv2:name \"Events Output\" ;\n";
+            }
+        }
+        else
+        {
+            if (pluginDesc->midiOuts > 1)
+            {
+                text += "        lv2:symbol \"lv2_midi_out_" + String(portIndex+1) + "\" ;\n";
+                text += "        lv2:name \"MIDI Output #" + String(portIndex+1) + "\" ;\n";
+            }
+            else
+            {
+                text += "        lv2:symbol \"lv2_midi_out\" ;\n";
+                text += "        lv2:name \"MIDI Output\" ;\n";
+            }
+        }
+
+        text += "    ] ;\n\n";
     }
 
     // -------------------------------------------------------------------

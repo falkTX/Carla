@@ -105,11 +105,12 @@ public:
         fHandle = fDescriptor->instantiate(&fHost);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, false);
 
+        fPorts.hasUI        = fDescriptor->hints & NATIVE_PLUGIN_HAS_UI;
         fPorts.usesTime     = fDescriptor->hints & NATIVE_PLUGIN_USES_TIME;
         fPorts.numAudioIns  = fDescriptor->audioIns;
         fPorts.numAudioOuts = fDescriptor->audioOuts;
-        fPorts.numMidiIns   = std::max(fDescriptor->midiIns, 1U);
-        fPorts.numMidiOuts  = std::max(fDescriptor->midiOuts, 1U);
+        fPorts.numMidiIns   = fDescriptor->midiIns;
+        fPorts.numMidiOuts  = fDescriptor->midiOuts;
 
         if (fDescriptor->get_parameter_count != nullptr &&
             fDescriptor->get_parameter_info  != nullptr &&
@@ -202,11 +203,19 @@ public:
 
                     if (event->body.type == fURIs.uiEvents && fWorkerUISignal != -1)
                     {
-                        fWorkerUISignal = 1;
-                        const char* const msg((const char*)(event + 1));
-                        const size_t msgSize = std::strlen(msg);
-                        //std::puts(msg);
-                        fWorker->schedule_work(fWorker->handle, msgSize+1, msg);
+                        if (fWorker != nullptr)
+                        {
+                            // worker is supported by the host, we can continue
+                            fWorkerUISignal = 1;
+                            const char* const msg((const char*)(event + 1));
+                            const size_t msgSize = std::strlen(msg);
+                            fWorker->schedule_work(fWorker->handle, msgSize+1, msg);
+                        }
+                        else
+                        {
+                            // worker is not supported, cancel
+                            fWorkerUISignal = -1;
+                        }
                         continue;
                     }
 
@@ -242,13 +251,13 @@ public:
                              const_cast<float**>(fPorts.audioIns), fPorts.audioOuts, frames,
                              fMidiEvents, fMidiEventCount);
 
-        if (fWorkerUISignal == -1 && fPorts.numMidiOuts > 0)
+        if (fWorkerUISignal == -1 && fPorts.hasUI)
         {
             const char* const msg = "quit";
             const size_t msgSize  = 5;
 
-            LV2_Atom_Sequence* const seq(fPorts.midiOuts[0]);
-            Ports::MidiOutData& mData(fPorts.midiOutData[0]);
+            LV2_Atom_Sequence* const seq(fPorts.eventsOut[0]);
+            Ports::EventsOutData& mData(fPorts.eventsOutData[0]);
 
             if (sizeof(LV2_Atom_Event) + msgSize <= mData.capacity - mData.offset)
             {
@@ -596,10 +605,10 @@ protected:
         const uint8_t port(event->port);
         CARLA_SAFE_ASSERT_RETURN(port < fPorts.numMidiOuts, false);
 
-        LV2_Atom_Sequence* const seq(fPorts.midiOuts[port]);
+        LV2_Atom_Sequence* const seq(fPorts.eventsOut[port]);
         CARLA_SAFE_ASSERT_RETURN(seq != nullptr, false);
 
-        Ports::MidiOutData& mData(fPorts.midiOutData[port]);
+        Ports::EventsOutData& mData(fPorts.eventsOutData[port]);
 
         if (sizeof(LV2_Atom_Event) + event->size > mData.capacity - mData.offset)
             return false;

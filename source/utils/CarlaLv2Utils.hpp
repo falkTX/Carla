@@ -587,9 +587,9 @@ public:
                 worker = (const LV2_Worker_Schedule*)features[i]->data;
         }
 
-        if (options == nullptr || uridMap == nullptr || worker == nullptr)
+        if (options == nullptr || uridMap == nullptr)
         {
-            carla_stderr("Host doesn't provide option, urid-map and worker features");
+            carla_stderr("Host doesn't provide option and urid-map features");
             return;
         }
 
@@ -935,15 +935,15 @@ public:
             return false;
 
         // init midi out data
-        if (fPorts.numMidiOuts > 0)
+        if (fPorts.numMidiOuts > 0 || fPorts.hasUI)
         {
             for (uint32_t i=0; i<fPorts.numMidiOuts; ++i)
             {
-                LV2_Atom_Sequence* const seq(fPorts.midiOuts[i]);
+                LV2_Atom_Sequence* const seq(fPorts.eventsOut[i]);
                 CARLA_SAFE_ASSERT_CONTINUE(seq != nullptr);
 
-                fPorts.midiOutData[i].capacity = seq->atom.size;
-                fPorts.midiOutData[i].offset   = 0;
+                fPorts.eventsOutData[i].capacity = seq->atom.size;
+                fPorts.eventsOutData[i].offset   = 0;
 
                 seq->atom.size = sizeof(LV2_Atom_Sequence_Body);
                 seq->atom.type = fURIs.atomSequence;
@@ -1191,11 +1191,11 @@ protected:
     // Port stuff
     struct Ports {
         // need to save current state
-        struct MidiOutData {
+        struct EventsOutData {
             uint32_t capacity;
             uint32_t offset;
 
-            MidiOutData()
+            EventsOutData()
                 : capacity(0),
                   offset(0) {}
         };
@@ -1207,12 +1207,13 @@ protected:
         uint32_t numMidiIns;
         uint32_t numMidiOuts;
         uint32_t numParams;
+        bool hasUI;
         bool usesTime;
 
         // port buffers
         const LV2_Atom_Sequence** eventsIn;
-        /* */ LV2_Atom_Sequence** midiOuts;
-        /* */ MidiOutData*        midiOutData;
+        /* */ LV2_Atom_Sequence** eventsOut;
+        /* */ EventsOutData*      eventsOutData;
         const float** audioIns;
         /* */ float** audioOuts;
         /* */ float*  freewheel;
@@ -1229,10 +1230,11 @@ protected:
               numMidiIns(0),
               numMidiOuts(0),
               numParams(0),
+              hasUI(false),
               usesTime(false),
               eventsIn(nullptr),
-              midiOuts(nullptr),
-              midiOutData(nullptr),
+              eventsOut(nullptr),
+              eventsOutData(nullptr),
               audioIns(nullptr),
               audioOuts(nullptr),
               freewheel(nullptr),
@@ -1248,16 +1250,16 @@ protected:
                 eventsIn = nullptr;
             }
 
-            if (midiOuts != nullptr)
+            if (eventsOut != nullptr)
             {
-                delete[] midiOuts;
-                midiOuts = nullptr;
+                delete[] eventsOut;
+                eventsOut = nullptr;
             }
 
-            if (midiOutData != nullptr)
+            if (eventsOutData != nullptr)
             {
-                delete[] midiOutData;
-                midiOutData = nullptr;
+                delete[] eventsOutData;
+                eventsOutData = nullptr;
             }
 
             if (audioIns != nullptr)
@@ -1301,7 +1303,7 @@ protected:
                 for (uint32_t i=0; i < numMidiIns; ++i)
                     eventsIn[i] = nullptr;
             }
-            else if (usesTime)
+            else if (usesTime || hasUI)
             {
                 eventsIn = new const LV2_Atom_Sequence*[1];
                 eventsIn[0] = nullptr;
@@ -1309,11 +1311,16 @@ protected:
 
             if (numMidiOuts > 0)
             {
-                midiOuts = new LV2_Atom_Sequence*[numMidiOuts];
-                midiOutData = new MidiOutData[numMidiOuts];
+                eventsOut = new LV2_Atom_Sequence*[numMidiOuts];
+                eventsOutData = new EventsOutData[numMidiOuts];
 
                 for (uint32_t i=0; i < numMidiOuts; ++i)
-                    midiOuts[i] = nullptr;
+                    eventsOut[i] = nullptr;
+            }
+            else if (hasUI)
+            {
+                eventsOut = new LV2_Atom_Sequence*[1];
+                eventsOut[0] = nullptr;
             }
 
             if (numAudioIns > 0)
@@ -1345,9 +1352,11 @@ protected:
                 // NOTE: need to be filled in by the parent class
             }
 
-            indexOffset  = numAudioIns + numAudioOuts + numMidiOuts;
-            // 1 event port for time if no midi input is used
-            indexOffset += numMidiIns > 0 ? numMidiIns : (usesTime ? 1 : 0);
+            indexOffset  = numAudioIns + numAudioOuts;
+            // 1 event port for time or ui if no midi input is used
+            indexOffset += numMidiIns > 0 ? numMidiIns : ((usesTime || hasUI) ? 1 : 0);
+            // 1 event port for ui if no midi output is used
+            indexOffset += numMidiOuts > 0 ? numMidiOuts : (hasUI ? 1 : 0);
             // 1 extra for freewheel port
             indexOffset += 1;
         }
@@ -1356,7 +1365,7 @@ protected:
         {
             uint32_t index = 0;
 
-            if (numMidiIns > 0 || usesTime)
+            if (numMidiIns > 0 || usesTime || hasUI)
             {
                 if (port == index++)
                 {
@@ -1374,11 +1383,20 @@ protected:
                 }
             }
 
-            for (uint32_t i=0; i < numMidiOuts; ++i)
+            if (numMidiOuts > 0 || hasUI)
             {
                 if (port == index++)
                 {
-                    midiOuts[i] = (LV2_Atom_Sequence*)dataLocation;
+                    eventsOut[0] = (LV2_Atom_Sequence*)dataLocation;
+                    return;
+                }
+            }
+
+            for (uint32_t i=1; i < numMidiOuts; ++i)
+            {
+                if (port == index++)
+                {
+                    eventsOut[i] = (LV2_Atom_Sequence*)dataLocation;
                     return;
                 }
             }

@@ -97,7 +97,7 @@ LIBS_ui = $(MODULEDIR)/water.a
 
 TARGETS = \
 	$(BINDIR)/carla.lv2/carla$(LIB_EXT) \
-	$(BINDIR)/carla.lv2/carla_ui$(LIB_EXT)
+	$(BINDIR)/carla.lv2/carla-ui$(LIB_EXT)
 
 ifneq ($(CROSS_COMPILING),true)
 TARGETS += \
@@ -139,7 +139,7 @@ $(BINDIR)/carla.lv2/carla$(LIB_EXT): $(OBJDIR)/carla-lv2.cpp.o $(LIBS)
 	@echo "Linking carla.lv2/carla$(LIB_EXT)"
 	@$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
 
-$(BINDIR)/carla.lv2/carla_ui$(LIB_EXT): $(OBJDIR)/carla-lv2-ui.cpp.o $(LIBS_ui)
+$(BINDIR)/carla.lv2/carla-ui$(LIB_EXT): $(OBJDIR)/carla-lv2-ui.cpp.o $(LIBS_ui)
 	-@mkdir -p $(BINDIR)/carla.lv2
 	@echo "Linking carla.lv2/carla-ui$(LIB_EXT)"
 	@$(CXX) $< $(LIBS_START) $(LIBS_ui) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@

@@ -24,7 +24,7 @@ class NativePluginUI : public LV2_External_UI_Widget_Compat
 {
 public:
     NativePluginUI(LV2UI_Write_Function writeFunction, LV2UI_Controller controller,
-                   LV2UI_Widget* widget, const LV2_Feature* const* features, const bool isEmbed)
+                   LV2UI_Widget* widget, const LV2_Feature* const* features)
         : fUridMap(nullptr),
           fUridUnmap(nullptr),
           fUridTranser(0),
@@ -37,7 +37,6 @@ public:
 
         fUI.writeFunction = writeFunction;
         fUI.controller = controller;
-        fUI.isEmbed = isEmbed;
 
         const LV2_URID_Map*   uridMap   = nullptr;
         const LV2_URID_Unmap* uridUnmap = nullptr;
@@ -50,7 +49,7 @@ public:
                 uridUnmap = (const LV2_URID_Unmap*)features[i]->data;
         }
 
-        if (uridMap == nullptr || uridUnmap == nullptr)
+        if (uridMap == nullptr)
         {
             carla_stderr("Host doesn't provide urid-map feature");
             return;
@@ -60,52 +59,6 @@ public:
         fUridUnmap = uridUnmap;
         fUridTranser = uridMap->map(uridMap->handle, LV2_ATOM__eventTransfer);
         fUridTranser2 = uridMap->map(uridMap->handle, "urn:carla:transmitEv");
-
-#ifdef CARLA_OS_LINUX
-        // ---------------------------------------------------------------
-        // show embed UI if needed
-
-        if (isEmbed)
-        {
-            intptr_t parentId = 0;
-            const LV2UI_Resize* uiResize = nullptr;
-
-            for (int i=0; features[i] != nullptr; ++i)
-            {
-                if (std::strcmp(features[i]->URI, LV2_UI__parent) == 0)
-                {
-                    parentId = (intptr_t)features[i]->data;
-                }
-                else if (std::strcmp(features[i]->URI, LV2_UI__resize) == 0)
-                {
-                    uiResize = (const LV2UI_Resize*)features[i]->data;
-                }
-            }
-
-            // -----------------------------------------------------------
-            // see if the host can really embed the UI
-
-            if (parentId != 0)
-            {
-                if (uiResize && uiResize->ui_resize != nullptr)
-                    uiResize->ui_resize(uiResize->handle, 740, 512);
-
-                fUI.name = carla_strdup("Carla");
-                fUI.isVisible = true;
-
-                char strBuf[0xff+1];
-                strBuf[0xff] = '\0';
-                std::snprintf(strBuf, 0xff, P_INTPTR, parentId);
-
-                carla_setenv("CARLA_PLUGIN_EMBED_WINID", strBuf);
-                writeAtomMessage("show");
-
-                // FIXME
-                *widget = nullptr;
-                return;
-            }
-        }
-#endif
 
         // ---------------------------------------------------------------
         // see if the host supports external-ui
@@ -209,7 +162,11 @@ public:
             }
         }
 
-        carla_stdout("lv2ui_port_event %u %u %u:%s %p", portIndex, bufferSize, format, fUridUnmap->unmap(fUridUnmap->handle, format), buffer);
+        if (fUridUnmap != nullptr)
+        {
+            carla_stdout("lv2ui_port_event %u %u %u:%s %p",
+                         portIndex, bufferSize, format, fUridUnmap->unmap(fUridUnmap->handle, format), buffer);
+        }
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -333,7 +290,6 @@ private:
         LV2UI_Write_Function writeFunction;
         LV2UI_Controller controller;
         const char* name;
-        bool isEmbed;
         bool isVisible;
 
         UI()
@@ -341,7 +297,6 @@ private:
               writeFunction(nullptr),
               controller(nullptr),
               name(nullptr),
-              isEmbed(false),
               isVisible(false) {}
 
         ~UI()
@@ -385,36 +340,17 @@ private:
 // -----------------------------------------------------------------------
 // LV2 UI descriptor functions
 
-static LV2UI_Handle lv2ui_instantiate(LV2UI_Write_Function writeFunction, LV2UI_Controller controller,
-                                      LV2UI_Widget* widget, const LV2_Feature* const* features, const bool isEmbed)
+static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char*, const char*,
+                                      LV2UI_Write_Function writeFunction, LV2UI_Controller controller,
+                                      LV2UI_Widget* widget, const LV2_Feature* const* features)
 {
     carla_debug("lv2ui_instantiate(..., %p, %p, %p)", writeFunction, controller, widget, features);
-#ifndef CARLA_OS_LINUX
-    CARLA_SAFE_ASSERT_RETURN(! isEmbed, nullptr);
-#endif
-    carla_debug("writeAtomMessage==========================================================================");
 
-    NativePluginUI* const ui = new NativePluginUI(writeFunction, controller, widget, features, isEmbed);
+    NativePluginUI* const ui = new NativePluginUI(writeFunction, controller, widget, features);
 
     // TODO: check ok
 
     return (LV2UI_Handle)ui;
-}
-
-#ifdef CARLA_OS_LINUX
-static LV2UI_Handle lv2ui_instantiate_embed(const LV2UI_Descriptor*, const char*, const char*,
-                                            LV2UI_Write_Function writeFunction, LV2UI_Controller controller,
-                                            LV2UI_Widget* widget, const LV2_Feature* const* features)
-{
-    return lv2ui_instantiate(writeFunction, controller, widget, features, true);
-}
-#endif
-
-static LV2UI_Handle lv2ui_instantiate_external(const LV2UI_Descriptor*, const char*, const char*,
-                                               LV2UI_Write_Function writeFunction, LV2UI_Controller controller,
-                                               LV2UI_Widget* widget, const LV2_Feature* const* features)
-{
-    return lv2ui_instantiate(writeFunction, controller, widget, features, false);
 }
 
 #define uiPtr ((NativePluginUI*)ui)
@@ -482,24 +418,9 @@ const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index)
 {
     carla_debug("lv2ui_descriptor(%i)", index);
 
-#ifdef CARLA_OS_LINUX
-    static const LV2UI_Descriptor lv2UiEmbedDesc = {
-    /* URI            */ "http://kxstudio.sf.net/carla/ui-bridge-embed",
-    /* instantiate    */ lv2ui_instantiate_embed,
-    /* cleanup        */ lv2ui_cleanup,
-    /* port_event     */ lv2ui_port_event,
-    /* extension_data */ lv2ui_extension_data
-    };
-
-    if (index == 0)
-        return &lv2UiEmbedDesc;
-    else
-        --index;
-#endif
-
     static const LV2UI_Descriptor lv2UiExtDesc = {
     /* URI            */ "http://kxstudio.sf.net/carla/ui-bridge-ext",
-    /* instantiate    */ lv2ui_instantiate_external,
+    /* instantiate    */ lv2ui_instantiate,
     /* cleanup        */ lv2ui_cleanup,
     /* port_event     */ lv2ui_port_event,
     /* extension_data */ lv2ui_extension_data
