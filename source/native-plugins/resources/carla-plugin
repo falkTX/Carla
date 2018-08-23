@@ -486,7 +486,7 @@ else:
 
 class CarlaEmbedW(QEmbedWidget):
     def __init__(self, host, winId, isPatchbay):
-        QEmbedWidget.__init__(self, winId, isPatchbay)
+        QEmbedWidget.__init__(self, winId)
 
         self.host = host
         self.fWinId = winId
