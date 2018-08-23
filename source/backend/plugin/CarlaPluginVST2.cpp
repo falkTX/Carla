@@ -2359,9 +2359,6 @@ public:
         }
 
         return true;
-
-        // unused
-        (void)uniqueId;
     }
 
 private:
