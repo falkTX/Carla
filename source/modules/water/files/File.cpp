@@ -1407,21 +1407,20 @@ File File::getLinkedTarget() const
 
 bool File::copyInternal (const File& dest) const
 {
-    //@autoreleasepool
-    {
-        NSFileManager* fm = [NSFileManager defaultManager];
+    const AutoNSAutoreleasePool arpool;
 
-        return [fm fileExistsAtPath: waterStringToNS (fullPath)]
-               #if defined (MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
-                && [fm copyItemAtPath: waterStringToNS (fullPath)
-                               toPath: waterStringToNS (dest.getFullPathName())
-                                error: nil];
-               #else
-                && [fm copyPath: waterStringToNS (fullPath)
-                         toPath: waterStringToNS (dest.getFullPathName())
-                        handler: nil];
-               #endif
-    }
+    NSFileManager* fm = [NSFileManager defaultManager];
+
+    return [fm fileExistsAtPath: waterStringToNS (fullPath)]
+           #if defined (MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
+            && [fm copyItemAtPath: waterStringToNS (fullPath)
+                           toPath: waterStringToNS (dest.getFullPathName())
+                            error: nil];
+           #else
+            && [fm copyPath: waterStringToNS (fullPath)
+                     toPath: waterStringToNS (dest.getFullPathName())
+                    handler: nil];
+           #endif
 }
 
 File File::getSpecialLocation (const SpecialLocationType type)

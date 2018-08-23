@@ -97,8 +97,12 @@ LIBS_ui = $(MODULEDIR)/water.a
 
 TARGETS = \
 	$(BINDIR)/carla.lv2/carla$(LIB_EXT) \
-	$(BINDIR)/carla.lv2/carla_ui$(LIB_EXT) \
+	$(BINDIR)/carla.lv2/carla_ui$(LIB_EXT)
+
+ifneq ($(CROSS_COMPILING),true)
+TARGETS += \
 	$(BINDIR)/carla.lv2/manifest.ttl
+endif
 
 ifeq ($(LINUX),true)
 ifeq ($(HAVE_X11),true)

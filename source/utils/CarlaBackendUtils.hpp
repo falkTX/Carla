@@ -325,7 +325,7 @@ const char* EngineOption2Str(const EngineOption option) noexcept
         return "ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR";
     case ENGINE_OPTION_FRONTEND_WIN_ID:
         return "ENGINE_OPTION_FRONTEND_WIN_ID";
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+#if !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) && !defined(CARLA_OS_WIN)
     case ENGINE_OPTION_WINE_EXECUTABLE:
         return "ENGINE_OPTION_WINE_EXECUTABLE";
     case ENGINE_OPTION_WINE_AUTO_PREFIX:

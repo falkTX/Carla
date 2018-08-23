@@ -1525,7 +1525,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         pData->options.frontendWinId = static_cast<uintptr_t>(winId);
     }   break;
 
-#ifndef CARLA_OS_WIN
+#if !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) && !defined(CARLA_OS_WIN)
     case ENGINE_OPTION_WINE_EXECUTABLE:
         CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
 

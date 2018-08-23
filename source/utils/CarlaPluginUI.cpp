@@ -549,6 +549,11 @@ public:
             [fWindow setContentMaxSize:size];
             [[fWindow standardWindowButton:NSWindowZoomButton] setHidden:YES];
         }
+
+        if (forceUpdate)
+        {
+            // TODO
+        }
     }
 
     void setTitle(const char* const title) override
@@ -1070,14 +1075,25 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 
     int windowToMap, windowWithPID = 0, windowWithNameAndPID = 0;
 
-    for (NSDictionary* const entry in windowList)
+    const NSDictionary* entry;
+    for (entry in windowList)
     {
+        // FIXME: is this needed? is old version safe?
+#if defined (MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
         if ([entry[(id)kCGWindowSharingState] intValue] == kCGWindowSharingNone)
             continue;
 
         NSString* const windowName   =  entry[(id)kCGWindowName];
         int       const windowNumber = [entry[(id)kCGWindowNumber] intValue];
         uintptr_t const windowPID    = [entry[(id)kCGWindowOwnerPID] intValue];
+#else
+        if ([[entry objectForKey:(id)kCGWindowSharingState] intValue] == kCGWindowSharingNone)
+            continue;
+
+        NSString* const windowName   =  [entry objectForKey:(id)kCGWindowName];
+        int       const windowNumber = [[entry objectForKey:(id)kCGWindowNumber] intValue];
+        uintptr_t const windowPID    = [[entry objectForKey:(id)kCGWindowOwnerPID] intValue];
+#endif
 
         if (windowPID != pid)
             continue;

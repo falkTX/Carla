@@ -21,6 +21,7 @@
 
 #ifdef CARLA_OS_MAC
 # include "text/String.h"
+# import <Foundation/NSAutoreleasePool.h>
 # import <Foundation/NSString.h>
 #endif
 
@@ -90,6 +91,15 @@ NSString* waterStringToNS (const String& s)
 {
     return [NSString stringWithUTF8String: s.toUTF8()];
 }
+
+class AutoNSAutoreleasePool {
+public:
+    AutoNSAutoreleasePool() : pool([NSAutoreleasePool new]) {}
+    ~AutoNSAutoreleasePool() { [pool drain]; }
+
+private:
+    NSAutoreleasePool* const pool;
+};
 #endif
 
 }

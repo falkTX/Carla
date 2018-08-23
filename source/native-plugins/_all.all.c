@@ -54,7 +54,6 @@ extern void carla_register_native_plugin_notes(void);
 
 void carla_register_all_native_plugins(void)
 {
-    puts("carla register all plugins\n");
     // Simple plugins
     carla_register_native_plugin_bypass();
     carla_register_native_plugin_lfo();

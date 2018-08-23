@@ -1087,7 +1087,7 @@ typedef enum {
      */
     ENGINE_OPTION_FRONTEND_WIN_ID = 17,
 
-#ifndef CARLA_OS_WIN
+#if !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) && !defined(CARLA_OS_WIN)
     /*!
      * Set path to wine executable.
      */
