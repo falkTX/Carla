@@ -69,6 +69,7 @@ public:
         @param other    the array to copy
     */
     Array (const Array<ElementType>& other) noexcept
+        : numUsed (0)
     {
         CARLA_SAFE_ASSERT_RETURN(data.setAllocatedSize (other.numUsed),);
         numUsed = other.numUsed;

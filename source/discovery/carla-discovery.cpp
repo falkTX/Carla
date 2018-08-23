@@ -1040,7 +1040,7 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
 
 #ifdef CARLA_OS_MAC
     CFBundleRef bundleRef = nullptr;
-    CFBundleRefNum resFileId;
+    CFBundleRefNum resFileId = 0;
 
     if (libHandle == nullptr)
     {

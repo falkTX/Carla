@@ -41,8 +41,8 @@ struct AudioFilePool {
           size(0) {}
 #else
     AudioFilePool()
-        : startFrame(0),
-          sampleRate(0),
+        : sampleRate(0),
+          startFrame(0),
           size(0)
     {
         buffer[0] = buffer[1] = nullptr;

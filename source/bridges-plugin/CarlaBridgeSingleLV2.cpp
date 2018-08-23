@@ -40,7 +40,7 @@ public:
     CarlaEngineSingleLV2(const double sampleRate,
                          const char* const bundlePath,
                          const LV2_Feature* const* const features)
-        : Lv2PluginBaseClass(sampleRate, features),
+        : Lv2PluginBaseClass<EngineTimeInfo>(sampleRate, features),
           fPlugin(nullptr),
           fUiName()
     {

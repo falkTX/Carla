@@ -489,6 +489,8 @@ public:
                 fUI.window = CarlaPluginUI::newX11(this, frontendWinId, false);
 #else
                 msg = "Unknown UI type";
+                // unused
+                (void)frontendWinId;
 #endif
 
                 if (fUI.window == nullptr)

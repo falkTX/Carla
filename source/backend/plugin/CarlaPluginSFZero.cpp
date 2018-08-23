@@ -589,7 +589,7 @@ public:
 
         {
             const bool doVolume  = carla_isNotEqual(pData->postProc.volume, 1.0f);
-            const bool doBalance = carla_isNotEqual(pData->postProc.balanceLeft, -1.0f) || carla_isNotEqual(pData->postProc.balanceRight, 1.0f);
+            //const bool doBalance = carla_isNotEqual(pData->postProc.balanceLeft, -1.0f) || carla_isNotEqual(pData->postProc.balanceRight, 1.0f);
 
             float* outBufferL = audioOutBuffer.getWritePointer(0, timeOffset);
             float* outBufferR = audioOutBuffer.getWritePointer(1, timeOffset);

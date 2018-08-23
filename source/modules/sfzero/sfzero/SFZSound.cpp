@@ -123,7 +123,7 @@ Region *Sound::regionAt(int index) { return regions_[index]; }
 water::String Sound::dump()
 {
   water::String info;
-  auto &errors = getErrors();
+  const water::StringArray& errors = getErrors();
   if (errors.size() > 0)
   {
     info << errors.size() << " errors: \n";
@@ -135,7 +135,7 @@ water::String Sound::dump()
     info << "no errors.\n\n";
   }
 
-  auto &warnings = getWarnings();
+  const water::StringArray& warnings = getWarnings();
   if (warnings.size() > 0)
   {
     info << warnings.size() << " warnings: \n";
