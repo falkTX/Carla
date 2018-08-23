@@ -7,7 +7,14 @@ export WINEDEBUG=-all
 # export PYTHONMALLOC=malloc
 # export SKIP_STRIPPING=true
 
-valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes --suppressions=./data/valgrind.supp -- ./bin/carla-bridge-native internal "" carlapatchbay &
+valgrind \
+    --tool=memcheck \
+    --leak-check=full \
+    --show-leak-kinds=all \
+    --track-origins=yes \
+    --gen-suppressions=all \
+    --suppressions=./data/valgrind.supp \
+    -- ./bin/carla-bridge-native internal "" carlapatchbay &
 PID=$!
 
 while true; do

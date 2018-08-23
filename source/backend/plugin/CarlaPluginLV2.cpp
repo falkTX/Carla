@@ -16,7 +16,7 @@
  */
 
 // testing macros
-#define LV2_UIS_ONLY_BRIDGES
+// #define LV2_UIS_ONLY_BRIDGES
 // #define LV2_UIS_ONLY_INPROCESS
 
 #include "CarlaPluginInternal.hpp"
@@ -6276,7 +6276,7 @@ private:
     static void carla_lv2_inline_display_queue_draw(LV2_Inline_Display_Handle handle)
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
-        carla_debug("carla_lv2_inline_display_queue_draw(%p)", handle);
+        // carla_debug("carla_lv2_inline_display_queue_draw(%p)", handle);
 
         ((CarlaPluginLV2*)handle)->handleInlineDisplayQueueRedraw();
     }

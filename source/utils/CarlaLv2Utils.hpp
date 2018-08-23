@@ -554,6 +554,7 @@ public:
           fBufferSize(0),
           fSampleRate(sampleRate),
           fUridMap(nullptr),
+          fWorker(nullptr),
           fTimeInfo(),
           fLastPositionData(),
           fURIs(),
@@ -572,20 +573,23 @@ public:
         const LV2_Options_Option*  options   = nullptr;
         const LV2_URID_Map*        uridMap   = nullptr;
         const LV2_URID_Unmap*      uridUnmap = nullptr;
+        const LV2_Worker_Schedule* worker    = nullptr;
 
         for (int i=0; features[i] != nullptr; ++i)
         {
-            if (std::strcmp(features[i]->URI, LV2_OPTIONS__options) == 0)
+            /**/ if (std::strcmp(features[i]->URI, LV2_OPTIONS__options) == 0)
                 options = (const LV2_Options_Option*)features[i]->data;
             else if (std::strcmp(features[i]->URI, LV2_URID__map) == 0)
                 uridMap = (const LV2_URID_Map*)features[i]->data;
             else if (std::strcmp(features[i]->URI, LV2_URID__unmap) == 0)
                 uridUnmap = (const LV2_URID_Unmap*)features[i]->data;
+            else if (std::strcmp(features[i]->URI, LV2_WORKER__schedule) == 0)
+                worker = (const LV2_Worker_Schedule*)features[i]->data;
         }
 
-        if (options == nullptr || uridMap == nullptr)
+        if (options == nullptr || uridMap == nullptr || worker == nullptr)
         {
-            carla_stderr("Host doesn't provide option or urid-map features");
+            carla_stderr("Host doesn't provide option, urid-map and worker features");
             return;
         }
 
@@ -639,6 +643,8 @@ public:
 
         fUridMap = uridMap;
         fURIs.map(uridMap);
+
+        fWorker = worker;
 
         carla_zeroStruct(fTimeInfo);
         carla_zeroStruct(fLastPositionData);
@@ -1140,6 +1146,7 @@ protected:
 
     // LV2 host features
     const LV2_URID_Map* fUridMap;
+    const LV2_Worker_Schedule* fWorker;
 
     // Time info stuff
     TimeInfoStruct fTimeInfo;
@@ -1433,6 +1440,7 @@ protected:
         LV2_URID timeFrame;
         LV2_URID timeSpeed;
         LV2_URID timeTicksPerBeat;
+        LV2_URID uiEvents;
 
         URIDs()
             : atomBlank(0),
@@ -1452,7 +1460,8 @@ protected:
               timeBeatUnit(0),
               timeFrame(0),
               timeSpeed(0),
-              timeTicksPerBeat(0) {}
+              timeTicksPerBeat(0),
+              uiEvents(0) {}
 
         void map(const LV2_URID_Map* const uridMap)
         {
@@ -1474,6 +1483,7 @@ protected:
             timeBeatsPerBar    = uridMap->map(uridMap->handle, LV2_TIME__beatsPerBar);
             timeBeatsPerMinute = uridMap->map(uridMap->handle, LV2_TIME__beatsPerMinute);
             timeTicksPerBeat   = uridMap->map(uridMap->handle, LV2_KXSTUDIO_PROPERTIES__TimePositionTicksPerBeat);
+            uiEvents           = uridMap->map(uridMap->handle, "urn:carla:transmitEv");
         }
     } fURIs;
 

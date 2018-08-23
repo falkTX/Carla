@@ -714,10 +714,10 @@ CarlaPlugin::ProtectedData::~ProtectedData() noexcept
     masterMutex.unlock();
     singleMutex.unlock();
 
+    CARLA_SAFE_ASSERT(uiLib == nullptr);
+
     if (lib != nullptr)
         libClose();
-
-    CARLA_SAFE_ASSERT(uiLib == nullptr);
 }
 
 // -----------------------------------------------------------------------

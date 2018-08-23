@@ -41,7 +41,8 @@ public:
 #ifdef CARLA_PROPER_CPP11_SUPPORT
           fProgramDesc({0, 0, nullptr}),
 #endif
-          fMidiEventCount(0)
+          fMidiEventCount(0),
+          fWorkerUISignal(0)
     {
         carla_zeroStruct(fHost);
 
@@ -107,8 +108,8 @@ public:
         fPorts.usesTime     = fDescriptor->hints & NATIVE_PLUGIN_USES_TIME;
         fPorts.numAudioIns  = fDescriptor->audioIns;
         fPorts.numAudioOuts = fDescriptor->audioOuts;
-        fPorts.numMidiIns   = fDescriptor->midiIns;
-        fPorts.numMidiOuts  = fDescriptor->midiOuts;
+        fPorts.numMidiIns   = std::max(fDescriptor->midiIns, 1U);
+        fPorts.numMidiOuts  = std::max(fDescriptor->midiOuts, 1U);
 
         if (fDescriptor->get_parameter_count != nullptr &&
             fDescriptor->get_parameter_info  != nullptr &&
@@ -198,6 +199,17 @@ public:
                 {
                     if (event == nullptr)
                         continue;
+
+                    if (event->body.type == fURIs.uiEvents && fWorkerUISignal != -1)
+                    {
+                        fWorkerUISignal = 1;
+                        const char* const msg((const char*)(event + 1));
+                        const size_t msgSize = std::strlen(msg);
+                        //std::puts(msg);
+                        fWorker->schedule_work(fWorker->handle, msgSize+1, msg);
+                        continue;
+                    }
+
                     if (event->body.type != fURIs.midiEvent)
                         continue;
                     if (event->body.size > 4)
@@ -229,6 +241,31 @@ public:
         fDescriptor->process(fHandle,
                              const_cast<float**>(fPorts.audioIns), fPorts.audioOuts, frames,
                              fMidiEvents, fMidiEventCount);
+
+        if (fWorkerUISignal == -1 && fPorts.numMidiOuts > 0)
+        {
+            const char* const msg = "quit";
+            const size_t msgSize  = 5;
+
+            LV2_Atom_Sequence* const seq(fPorts.midiOuts[0]);
+            Ports::MidiOutData& mData(fPorts.midiOutData[0]);
+
+            if (sizeof(LV2_Atom_Event) + msgSize <= mData.capacity - mData.offset)
+            {
+                LV2_Atom_Event* const aev = (LV2_Atom_Event*)(LV2_ATOM_CONTENTS(LV2_Atom_Sequence, seq) + mData.offset);
+
+                aev->time.frames = 0;
+                aev->body.size   = msgSize;
+                aev->body.type   = fURIs.uiEvents;
+                std::memcpy(LV2_ATOM_BODY(&aev->body), msg, msgSize);
+
+                const uint32_t size = lv2_atom_pad_size(static_cast<uint32_t>(sizeof(LV2_Atom_Event) + msgSize));
+                mData.offset       += size;
+                seq->atom.size     += size;
+
+                fWorkerUISignal = 0;
+            }
+        }
 
         lv2_post_run(frames);
         updateParameterOutputs();
@@ -317,6 +354,42 @@ public:
         fDescriptor->set_state(fHandle, (const char*)data);
 
         return LV2_STATE_SUCCESS;
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+
+    LV2_Worker_Status lv2_work(LV2_Worker_Respond_Function, LV2_Worker_Respond_Handle, uint32_t, const void* data)
+    {
+        const char* const msg = (const char*)data;
+
+        /**/ if (std::strcmp(msg, "show") == 0)
+        {
+            handleUiShow();
+        }
+        else if (std::strcmp(msg, "hide") == 0)
+        {
+            handleUiHide();
+        }
+        else if (std::strcmp(msg, "idle") == 0)
+        {
+            handleUiRun();
+        }
+        else if (std::strcmp(msg, "quit") == 0)
+        {
+            handleUiRun();
+        }
+        else
+        {
+            carla_stdout("lv2_work unknown msg '%s'", msg);
+            return LV2_WORKER_ERR_UNKNOWN;
+        }
+
+        return LV2_WORKER_SUCCESS;
+    }
+
+    LV2_Worker_Status lv2_work_resp(uint32_t /*size*/, const void* /*body*/)
+    {
+        return LV2_WORKER_SUCCESS;
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -547,8 +620,11 @@ protected:
 
     void handleUiParameterChanged(const uint32_t index, const float value) const
     {
-        if (fUI.writeFunction != nullptr && fUI.controller != nullptr)
-            fUI.writeFunction(fUI.controller, index+fPorts.indexOffset, sizeof(float), 0, &value);
+        if (fWorkerUISignal)
+        {
+        }
+        else if (fUI.writeFunction != nullptr && fUI.controller != nullptr)
+                 fUI.writeFunction(fUI.controller, index+fPorts.indexOffset, sizeof(float), 0, &value);
     }
 
     void handleUiCustomDataChanged(const char* const /*key*/, const char* const /*value*/) const
@@ -558,13 +634,17 @@ protected:
 
     void handleUiClosed()
     {
+        fUI.isVisible = false;
+
+        if (fWorkerUISignal)
+            fWorkerUISignal = -1;
+
         if (fUI.host != nullptr && fUI.host->ui_closed != nullptr && fUI.controller != nullptr)
             fUI.host->ui_closed(fUI.controller);
 
         fUI.host = nullptr;
         fUI.writeFunction = nullptr;
         fUI.controller = nullptr;
-        fUI.isVisible = false;
     }
 
     const char* handleUiOpenFile(const bool /*isDir*/, const char* const /*title*/, const char* const /*filter*/) const
@@ -638,6 +718,8 @@ private:
 
     uint32_t        fMidiEventCount;
     NativeMidiEvent fMidiEvents[kMaxMidiEvents];
+
+    int fWorkerUISignal;
 
     // -------------------------------------------------------------------
 
@@ -823,6 +905,18 @@ static LV2_State_Status lv2_restore(LV2_Handle instance, LV2_State_Retrieve_Func
     return instancePtr->lv2_restore(retrieve, handle, flags, features);
 }
 
+static LV2_Worker_Status lv2_work(LV2_Handle instance, LV2_Worker_Respond_Function respond, LV2_Worker_Respond_Handle handle, uint32_t size, const void* data)
+{
+    carla_debug("work(%p, %p, %p, %u, %p)", instance, respond, handle, size, data);
+    return instancePtr->lv2_work(respond, handle, size, data);
+}
+
+LV2_Worker_Status lv2_work_resp(LV2_Handle instance, uint32_t size, const void* body)
+{
+    carla_debug("work_resp(%p, %u, %p)", instance, size, body);
+    return instancePtr->lv2_work_resp(size, body);
+}
+
 static const void* lv2_extension_data(const char* uri)
 {
     carla_debug("lv2_extension_data(\"%s\")", uri);
@@ -830,6 +924,7 @@ static const void* lv2_extension_data(const char* uri)
     static const LV2_Options_Interface  options  = { lv2_get_options, lv2_set_options };
     static const LV2_Programs_Interface programs = { lv2_get_program, lv2_select_program };
     static const LV2_State_Interface    state    = { lv2_save, lv2_restore };
+    static const LV2_Worker_Interface   worker   = { lv2_work, lv2_work_resp, nullptr };
 
     if (std::strcmp(uri, LV2_OPTIONS__interface) == 0)
         return &options;
@@ -837,6 +932,8 @@ static const void* lv2_extension_data(const char* uri)
         return &programs;
     if (std::strcmp(uri, LV2_STATE__interface) == 0)
         return &state;
+    if (std::strcmp(uri, LV2_WORKER__interface) == 0)
+        return &worker;
 
     return nullptr;
 }
@@ -896,7 +993,7 @@ static LV2UI_Handle lv2ui_instantiate_external(const LV2UI_Descriptor*, const ch
 
 static void lv2ui_port_event(LV2UI_Handle ui, uint32_t portIndex, uint32_t bufferSize, uint32_t format, const void* buffer)
 {
-    carla_debug("lv2ui_port_event(%p, %i, %i, %i, %p)", ui, portIndex, bufferSize, format, buffer);
+    carla_debug("lv2ui_port_eventxx(%p, %i, %i, %i, %p)", ui, portIndex, bufferSize, format, buffer);
     uiPtr->lv2ui_port_event(portIndex, bufferSize, format, buffer);
 }
 

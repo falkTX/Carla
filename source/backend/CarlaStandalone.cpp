@@ -385,9 +385,6 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 #ifdef CARLA_OS_WIN
     carla_setenv("WINEASIO_CLIENT_NAME", clientName);
 #endif
-#ifdef CARLA_OS_UNIX
-    sThreadSafeFFTW.init();
-#endif
 
     ScopedPointer<CarlaEngine> engine(CarlaEngine::newDriverByName(driverName));
 
@@ -411,6 +408,9 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 #ifndef BUILD_BRIDGE
         if (gStandalone.logThreadEnabled && std::getenv("CARLA_LOGS_DISABLED") == nullptr)
             gStandalone.logThread.init();
+#endif
+#ifdef CARLA_OS_UNIX
+        sThreadSafeFFTW.init();
 #endif
         gStandalone.lastError = "No error";
         gStandalone.engine = engine.release();
