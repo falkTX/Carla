@@ -16,6 +16,7 @@
  */
 
 #include "buffers.hpp"
+#include "CarlaMathUtils.hpp"
 
 #include <cstdio>
 #include <cstring>
@@ -50,6 +51,45 @@ const char* size_buf(const char* const buf)
 
 // -------------------------------------------------------------------------------------------------------------------
 
+const char* str_buf_bool(const uint value)
+{
+    strBuf[0] = value ? '1' : '0';
+    strBuf[1] = '\0';
+    return strBuf;
+}
+
+const char* str_buf_float(const double value)
+{
+    std::snprintf(strBuf, kStrBufSize, "%f", value);
+    strBuf[kStrBufSize] = '\0';
+    return strBuf;
+}
+
+const char* str_buf_float_array(const double* const values, const char sep)
+{
+    size_t bytesRead = 0;
+    char tmpBuf[32];
+
+    for (int i=0; carla_isNotZero(values[i]) && bytesRead < kStrBufSize; ++i)
+    {
+        std::snprintf(tmpBuf, 31, "%f", values[i]);
+        tmpBuf[31] = '\0';
+
+        const std::size_t size = std::strlen(tmpBuf);
+
+        if (bytesRead + size > kStrBufSize)
+            break;
+
+        std::strncpy(strBuf+bytesRead, tmpBuf, kStrBufSize - bytesRead);
+        bytesRead += size;
+        strBuf[bytesRead] = sep;
+        bytesRead += 1;
+    }
+
+    strBuf[bytesRead > 0 ? bytesRead-1 : 0] = '\0';
+    return strBuf;
+}
+
 const char* str_buf_string(const char* const string)
 {
     std::strncpy(strBuf, string, kStrBufSize);
@@ -68,13 +108,13 @@ const char* str_buf_string_array(const char* const* const array)
         if (bytesRead + size > kStrBufSize)
             break;
 
-        std::strncpy(strBuf+bytesRead, array[i], kStrBufSize);
+        std::strncpy(strBuf+bytesRead, array[i], kStrBufSize - bytesRead);
         bytesRead += size;
         strBuf[bytesRead] = '\n';
         bytesRead += 1;
     }
 
-    strBuf[bytesRead] = '\0';
+    strBuf[bytesRead > 0 ? bytesRead-1 : 0] = '\0';
     return strBuf;
 }
 
@@ -82,6 +122,31 @@ const char* str_buf_uint(const uint value)
 {
     std::snprintf(strBuf, kStrBufSize, "%u", value);
     strBuf[kStrBufSize] = '\0';
+    return strBuf;
+}
+
+const char* str_buf_uint_array(const uint* const values, const char sep)
+{
+    size_t bytesRead = 0;
+    char tmpBuf[32];
+
+    for (int i=0; values[i] != 0 && bytesRead < kStrBufSize; ++i)
+    {
+        std::snprintf(tmpBuf, 31, "%u", values[i]);
+        tmpBuf[31] = '\0';
+
+        const std::size_t size = std::strlen(tmpBuf);
+
+        if (bytesRead + size > kStrBufSize)
+            break;
+
+        std::strncpy(strBuf+bytesRead, tmpBuf, kStrBufSize - bytesRead);
+        bytesRead += size;
+        strBuf[bytesRead] = sep;
+        bytesRead += 1;
+    }
+
+    strBuf[bytesRead > 0 ? bytesRead-1 : 0] = '\0';
     return strBuf;
 }
 
@@ -96,13 +161,10 @@ char* json_buf_start()
 template <typename T, typename Fn>
 char* json_buf_add(char* jsonBufPtr, const char* const key, const T value, const Fn fn)
 {
-    fn(value);
+    const char* const valueBuf = fn(value);
 
     if (jsonBufPtr != jsonBuf+1)
-    {
-        *jsonBufPtr = ',';
-        jsonBufPtr += 1;
-    }
+        *jsonBufPtr++ = ',';
 
     *jsonBufPtr++ = '"';
 
@@ -112,10 +174,54 @@ char* json_buf_add(char* jsonBufPtr, const char* const key, const T value, const
     *jsonBufPtr++ = '"';
     *jsonBufPtr++ = ':';
 
-    std::strcpy(jsonBufPtr, strBuf);
-    jsonBufPtr += std::strlen(strBuf);
+    std::strcpy(jsonBufPtr, valueBuf);
+    jsonBufPtr += std::strlen(valueBuf);
 
     return jsonBufPtr;
+}
+
+template <typename T, typename Fn>
+char* json_buf_add_array(char* jsonBufPtr, const char* const key, const T value, const Fn fn)
+{
+    const char* const valueBuf = fn(value, ',');
+
+    if (jsonBufPtr != jsonBuf+1)
+        *jsonBufPtr++ = ',';
+
+    *jsonBufPtr++ = '"';
+
+    std::strcpy(jsonBufPtr, key);
+    jsonBufPtr += std::strlen(key);
+
+    *jsonBufPtr++ = '"';
+    *jsonBufPtr++ = ':';
+    *jsonBufPtr++ = '[';
+
+    std::strcpy(jsonBufPtr, valueBuf);
+    jsonBufPtr += std::strlen(valueBuf);
+
+    *jsonBufPtr++ = ']';
+
+    return jsonBufPtr;
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+
+// typedef const char* (*str_buf_bool_type)(const bool value);
+//
+// char* json_buf_add_bool(char* jsonBufPtr, const char* const key, const bool value)
+// {
+//     return json_buf_add<bool, str_buf_bool_type>(jsonBufPtr, key, value, str_buf_bool);
+// }
+
+char* json_buf_add_float(char* jsonBufPtr, const char* const key, const double value)
+{
+    return json_buf_add(jsonBufPtr, key, value, str_buf_float);
+}
+
+char* json_buf_add_float_array(char* jsonBufPtr, const char* const key, const double* const values)
+{
+    return json_buf_add_array(jsonBufPtr, key, values, str_buf_float_array);
 }
 
 char* json_buf_add_string(char* jsonBufPtr, const char* const key, const char* const value)
@@ -126,6 +232,11 @@ char* json_buf_add_string(char* jsonBufPtr, const char* const key, const char* c
 char* json_buf_add_uint(char* jsonBufPtr, const char* const key, const uint value)
 {
     return json_buf_add(jsonBufPtr, key, value, str_buf_uint);
+}
+
+char* json_buf_add_uint_array(char* jsonBufPtr, const char* const key, const uint* const values)
+{
+    return json_buf_add_array(jsonBufPtr, key, values, str_buf_uint_array);
 }
 
 const char* json_buf_end(char* jsonBufPtr)

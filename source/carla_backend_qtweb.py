@@ -43,11 +43,38 @@ class CarlaHostQtWeb(CarlaHostQtNull):
         return requests.get("{}/get_engine_driver_name/{}".format(self.baseurl, index)).text
 
     def get_engine_driver_device_names(self, index):
-        # FIXME strip should not be needed
-        return requests.get("{}/get_engine_driver_device_names/{}".format(self.baseurl, index)).text.strip().split("\n")
+        return requests.get("{}/get_engine_driver_device_names/{}".format(self.baseurl, index)).text.split("\n")
 
     def get_engine_driver_device_info(self, index, name):
         return requests.get("{}/get_engine_driver_device_info/{}/{}".format(self.baseurl, index, name)).json()
+
+    def engine_init(self, driverName, clientName):
+        resp = requests.get("{}/engine_init/{}/{}".format(self.baseurl, driverName, clientName)).status_code
+
+        # TESTING
+        if self.fEngineCallback is not None:
+            self.fEngineCallback(None, ENGINE_CALLBACK_ENGINE_STARTED, 0, self.processMode, self.transportMode, 0.0, driverName)
+
+        return resp == 200
+
+    def engine_close(self):
+        # TESTING
+        if self.fEngineCallback is not None:
+            self.fEngineCallback(None, ENGINE_CALLBACK_ENGINE_STOPPED, 0, 0, 0, 0.0, "")
+
+        return requests.get("{}/engine_close".format(self.baseurl)).status_code == 200
+
+    def engine_idle(self):
+        requests.get("{}/engine_idle".format(self.baseurl))
+
+    def is_engine_running(self):
+        return requests.get("{}/is_engine_running".format(self.baseurl)).status_code == 200
+
+    def set_engine_about_to_close(self):
+        return requests.get("{}/set_engine_about_to_close".format(self.baseurl)).status_code == 200
+
+    def get_last_error(self):
+        return requests.get("{}/get_last_error".format(self.baseurl)).text
 
 # ---------------------------------------------------------------------------------------------------------------------
 # TESTING
@@ -66,9 +93,8 @@ if __name__ == '__main__':
         print("\t -", requests.get("{}/get_engine_driver_name/{}".format(baseurl, index)).text)
 
     print("Driver device names:")
-    # FIXME strip should not be needed
     for index in range(driver_count):
-        for name in requests.get("{}/get_engine_driver_device_names/{}".format(baseurl, index)).text.strip().split("\n"):
+        for name in requests.get("{}/get_engine_driver_device_names/{}".format(baseurl, index)).text.split("\n"):
             print("\t {}:".format(name), requests.get("{}/get_engine_driver_device_info/{}/{}".format(baseurl, index, name)).json())
 
 # ---------------------------------------------------------------------------------------------------------------------

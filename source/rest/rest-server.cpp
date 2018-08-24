@@ -50,6 +50,15 @@ int main(int, const char**)
     make_resource(service, "/get_engine_driver_device_names/{index: .*}", handle_carla_get_engine_driver_device_names);
     make_resource(service, "/get_engine_driver_device_info/{index: .*}/{name: .*}", handle_carla_get_engine_driver_device_info);
 
+    make_resource(service, "/engine_init/{driverName: .*}/{clientName: .*}", handle_carla_engine_init);
+    make_resource(service, "/engine_close", handle_carla_engine_close);
+    make_resource(service, "/engine_idle", handle_carla_engine_idle);
+    make_resource(service, "/is_engine_running", handle_carla_is_engine_running);
+    make_resource(service, "/set_engine_about_to_close", handle_carla_set_engine_about_to_close);
+
+    // ...
+    make_resource(service, "/get_last_error", handle_carla_get_last_error);
+
     // carla-utils
     make_resource(service, "/get_complete_license_text", handle_carla_get_complete_license_text);
     make_resource(service, "/get_supported_file_extensions", handle_carla_get_supported_file_extensions);

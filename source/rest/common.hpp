@@ -30,6 +30,7 @@ using restbed::Resource;
 using restbed::Service;
 using restbed::Session;
 using restbed::Settings;
+using restbed::BAD_REQUEST;
 using restbed::OK;
 
 CARLA_BACKEND_USE_NAMESPACE;

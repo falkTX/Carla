@@ -27,7 +27,7 @@ LINK_FLAGS += -L$(BINDIR) -lcarla_standalone2 -lcarla_utils -lrestbed -Wl,-rpath
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-OBJS    =
+OBJS    = $(OBJDIR)/rest-server.cpp.o $(OBJDIR)/buffers.cpp.o
 TARGETS = $(BINDIR)/carla-rest-server
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -44,7 +44,7 @@ debug:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-$(BINDIR)/carla-rest-server: $(OBJDIR)/rest-server.cpp.o $(OBJDIR)/buffers.cpp.o
+$(BINDIR)/carla-rest-server: $(OBJS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking carla-rest-server"
 	@$(CXX) $^ $(LINK_FLAGS) -o $@

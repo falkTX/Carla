@@ -63,15 +63,56 @@ void handle_carla_get_engine_driver_device_info(const std::shared_ptr<Session> s
     char* jsonBuf;
     jsonBuf = json_buf_start();
     jsonBuf = json_buf_add_uint(jsonBuf, "hints", info->hints);
-
-    // TODO
-    //jsonBuf = json_buf_add_uint(jsonBuf, "bufferSizes", info->bufferSizes);
-    //jsonBuf = json_buf_add_uint(jsonBuf, "sampleRates", info->sampleRates);
+    jsonBuf = json_buf_add_uint_array(jsonBuf, "bufferSizes", info->bufferSizes);
+    jsonBuf = json_buf_add_float_array(jsonBuf, "sampleRates", info->sampleRates);
 
     const char* const buf = json_buf_end(jsonBuf);
     session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
 }
 
 // -------------------------------------------------------------------------------------------------------------------
+
+void handle_carla_engine_init(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const std::string driverName = request->get_path_parameter("driverName");
+    const std::string clientName = request->get_path_parameter("clientName");
+
+    const bool resp = carla_engine_init(driverName.c_str(), clientName.c_str());
+    session->close(resp ? OK : BAD_REQUEST);
+}
+
+void handle_carla_engine_close(const std::shared_ptr<Session> session)
+{
+    const bool resp = carla_engine_close();
+    session->close(resp ? OK : BAD_REQUEST);
+}
+
+void handle_carla_engine_idle(const std::shared_ptr<Session> session)
+{
+    carla_engine_idle();
+    session->close(OK);
+}
+
+void handle_carla_is_engine_running(const std::shared_ptr<Session> session)
+{
+    const bool resp = carla_is_engine_running();
+    session->close(resp ? OK : BAD_REQUEST);
+}
+
+void handle_carla_set_engine_about_to_close(const std::shared_ptr<Session> session)
+{
+    const bool resp = carla_set_engine_about_to_close();
+    session->close(resp ? OK : BAD_REQUEST);
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+
+void handle_carla_get_last_error(const std::shared_ptr<Session> session)
+{
+    const char* const buf = carla_get_last_error();
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
 
 // -------------------------------------------------------------------------------------------------------------------
