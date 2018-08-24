@@ -83,9 +83,9 @@ LINK_FLAGS += $(MAGIC_LIBS)
 LINK_FLAGS += $(X11_LIBS)
 
 ifeq ($(MACOS),true)
-# NOTE: this assumes only LV2 version will be built
-SHARED += -Wl,-exported_symbol,_lv2_descriptor
-SHARED += -Wl,-exported_symbol,_lv2ui_descriptor
+SYMBOLS_LV2    = -Wl,-exported_symbol,_lv2_descriptor -Wl,-exported_symbol,_lv2ui_descriptor
+SYMBOLS_LV2_UI = -Wl,-exported_symbol,_lv2ui_descriptor
+SYMBOLS_VST    = # TODO
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -137,12 +137,12 @@ debug:
 $(BINDIR)/carla.lv2/carla$(LIB_EXT): $(OBJDIR)/carla-lv2.cpp.o $(LIBS)
 	-@mkdir -p $(BINDIR)/carla.lv2
 	@echo "Linking carla.lv2/carla$(LIB_EXT)"
-	@$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
+	@$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(SYMBOLS_LV2) $(LINK_FLAGS) -o $@
 
 $(BINDIR)/carla.lv2/carla-ui$(LIB_EXT): $(OBJDIR)/carla-lv2-ui.cpp.o $(LIBS_ui)
 	-@mkdir -p $(BINDIR)/carla.lv2
 	@echo "Linking carla.lv2/carla-ui$(LIB_EXT)"
-	@$(CXX) $< $(LIBS_START) $(LIBS_ui) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
+	@$(CXX) $< $(LIBS_START) $(LIBS_ui) $(LIBS_END) $(SHARED) $(SYMBOLS_LV2_UI) $(LINK_FLAGS) -o $@
 
 $(BINDIR)/CarlaRack$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.rack-syn.o $(LIBS)
 	-@mkdir -p $(BINDIR)

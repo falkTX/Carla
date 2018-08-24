@@ -481,14 +481,14 @@ public:
                 const char* msg = nullptr;
                 const uintptr_t frontendWinId(pData->engine->getOptions().frontendWinId);
 
-#if defined(CARLA_OS_MAC) && defined(CARLA_OS_64BIT)
+#if defined(CARLA_OS_MAC)
                 fUI.window = CarlaPluginUI::newCocoa(this, frontendWinId, false);
 #elif defined(CARLA_OS_WIN)
                 fUI.window = CarlaPluginUI::newWindows(this, frontendWinId, false);
 #elif defined(HAVE_X11)
                 fUI.window = CarlaPluginUI::newX11(this, frontendWinId, false);
 #else
-                msg = "Unknown UI type";
+                msg = "Unsupported UI type";
                 // unused
                 (void)frontendWinId;
 #endif
@@ -864,7 +864,13 @@ public:
 
         if (fEffect->flags & effFlagsHasEditor)
         {
-            pData->hints |= PLUGIN_HAS_CUSTOM_UI;
+#ifndef CARLA_OS_64BIT
+            if (static_cast<uintptr_t>(dispatcher(effCanDo, 0, 0, const_cast<char*>("hasCockosViewAsConfig")) & 0xffff0000) == 0xbeef0000)
+#endif
+            {
+                pData->hints |= PLUGIN_HAS_CUSTOM_UI;
+            }
+
             pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
         }
 
@@ -874,7 +880,7 @@ public:
         if ((fEffect->flags & effFlagsCanReplacing) != 0 && fEffect->processReplacing != fEffect->process)
             pData->hints |= PLUGIN_CAN_PROCESS_REPLACING;
 
-        if (static_cast<uintptr_t>(dispatcher(effCanDo, 0, 0, const_cast<char*>("hasCockosExtensions"), 0.0f)) == 0xbeef0000)
+        if (static_cast<uintptr_t>(dispatcher(effCanDo, 0, 0, const_cast<char*>("hasCockosExtensions"))) == 0xbeef0000)
             pData->hints |= PLUGIN_HAS_COCKOS_EXTENSIONS;
 
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))

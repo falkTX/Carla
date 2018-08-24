@@ -396,6 +396,7 @@ struct Window::PrivateData {
 #elif defined(DISTRHO_OS_MAC)
         if (mWindow != nullptr)
             [mWindow makeKeyWindow];
+        [NSApp activateIgnoringOtherApps:YES];
 #else
         XRaiseWindow(xDisplay, xWindow);
         XSetInputFocus(xDisplay, xWindow, RevertToPointerRoot, CurrentTime);

@@ -1935,6 +1935,7 @@ const char* carla_get_host_osc_url_udp()
 #undef CARLA_PLUGIN_UI_CLASS_PREFIX
 
 #include "CarlaDssiUtils.cpp"
+#include "CarlaMacUtils.cpp"
 #include "CarlaPatchbayUtils.cpp"
 #include "CarlaPipeUtils.cpp"
 #include "CarlaStateUtils.cpp"

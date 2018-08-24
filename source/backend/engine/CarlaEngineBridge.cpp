@@ -190,7 +190,7 @@ public:
             shmNonRtClientDataSize != sizeof(BridgeNonRtClientData) ||
             shmNonRtServerDataSize != sizeof(BridgeNonRtServerData))
         {
-            carla_stderr2("CarlaJackAppClient: data size mismatch");
+            carla_stderr2("CarlaEngineBridge: data size mismatch");
             return false;
         }
 
