@@ -141,7 +141,7 @@ CARLA_EXPORT const char* const* carla_get_supported_features();
 
 /*!
  * Get how many cached plugins are available.
- * Internal, LV2 and AU plugin formats are cached and need to be discovered via this function.
+ * Internal and LV2 plugin formats are cached and need to be discovered via this function.
  * Do not call this for any other plugin formats.
  */
 CARLA_EXPORT uint carla_get_cached_plugin_count(PluginType ptype, const char* pluginPath);

@@ -270,6 +270,8 @@ class CarlaUtils(object):
         return charPtrPtrToStringList(self.lib.carla_get_supported_features())
 
     # Get how many internal plugins are available.
+    # Internal and LV2 plugin formats are cached and need to be discovered via this function.
+    # Do not call this for any other plugin formats.
     def get_cached_plugin_count(self, ptype, pluginPath):
         return int(self.lib.carla_get_cached_plugin_count(ptype, pluginPath.encode("utf-8")))
 
