@@ -20,7 +20,7 @@
 
 #include "CarlaRingBuffer.hpp"
 
-#define CARLA_PLUGIN_BRIDGE_API_VERSION 4
+#define CARLA_PLUGIN_BRIDGE_API_VERSION 5
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -37,7 +37,7 @@ enum PluginBridgeRtClientOpcode {
     kPluginBridgeRtClientControlEventAllSoundOff, // uint/frame, byte/chan
     kPluginBridgeRtClientControlEventAllNotesOff, // uint/frame, byte/chan
     kPluginBridgeRtClientMidiEvent,               // uint/frame, byte/port, byte/size, byte[]/data
-    kPluginBridgeRtClientProcess,
+    kPluginBridgeRtClientProcess,                 // uint/frames
     kPluginBridgeRtClientQuit
 };
 

@@ -967,6 +967,7 @@ public:
 
         {
             fShmRtClientControl.writeOpcode(kPluginBridgeRtClientProcess);
+            fShmRtClientControl.writeUInt(frames);
             fShmRtClientControl.commitWrite();
         }
 
