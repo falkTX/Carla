@@ -1190,6 +1190,8 @@ protected:
                 }
 
                 case kPluginBridgeRtClientProcess: {
+                    const uint32_t frames(fShmRtClientControl.readUInt());
+
                     CARLA_SAFE_ASSERT_BREAK(fShmAudioPool.data != nullptr);
 
                     if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock(fIsOffline))
@@ -1240,7 +1242,7 @@ protected:
                         }
 
                         plugin->initBuffers();
-                        plugin->process(audioIn, audioOut, cvIn, cvOut, pData->bufferSize);
+                        plugin->process(audioIn, audioOut, cvIn, cvOut, frames);
                         plugin->unlock();
                     }
 

@@ -571,6 +571,11 @@ bool CarlaJackAppClient::handleRtData()
         }
 
         case kPluginBridgeRtClientProcess: {
+            const uint32_t frames(fShmRtClientControl.readUInt());
+            CARLA_SAFE_ASSERT_UINT2_BREAK(frames == fServer.bufferSize, frames, fServer.bufferSize);
+
+            // TODO tell client of xrun in case buffersize does not match
+
             // FIXME - lock if offline
             const CarlaMutexTryLocker cmtl(fRealtimeThreadMutex);
 
