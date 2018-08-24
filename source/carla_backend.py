@@ -1911,7 +1911,7 @@ class CarlaHostNull(CarlaHostMeta):
         return
 
     def is_engine_running(self):
-        return False
+        return self.fEngineRunning
 
     def set_engine_about_to_close(self):
         return True

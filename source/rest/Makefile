@@ -23,7 +23,7 @@ endif
 
 BUILD_CXX_FLAGS += -I$(CWD) -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils
 
-LINK_FLAGS += -L$(BINDIR) -lcarla_utils -lrestbed -Wl,-rpath=$(shell realpath $(CWD)/../bin)
+LINK_FLAGS += -L$(BINDIR) -lcarla_standalone2 -lcarla_utils -lrestbed -Wl,-rpath=$(shell realpath $(CWD)/../bin)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -44,14 +44,14 @@ debug:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-$(BINDIR)/carla-rest-server: $(OBJDIR)/rest-server.cpp.o
+$(BINDIR)/carla-rest-server: $(OBJDIR)/rest-server.cpp.o $(OBJDIR)/buffers.cpp.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking carla-rest-server"
-	@$(CXX) $< $(LINK_FLAGS) -o $@
+	@$(CXX) $^ $(LINK_FLAGS) -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-$(OBJDIR)/rest-server.cpp.o: rest-server.cpp
+$(OBJDIR)/%.cpp.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
