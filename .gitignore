@@ -152,6 +152,17 @@ source/includes/rewire/
 source/includes/vst2
 source/includes/vst3
 source/includes/config.h
+source/modules/dgl/src/Resources.cpp
+source/modules/dgl/src/Resources.hpp
+source/modules/dgl/src/resources/
+source/modules/dgl/src/sofd/
+source/modules/distrho/src/DistrhoPluginJack.cpp
+source/modules/distrho/src/DistrhoPluginLADSPA+DSSI.cpp
+source/modules/distrho/src/DistrhoPluginLV2.cpp
+source/modules/distrho/src/DistrhoPluginLV2export.cpp
+source/modules/distrho/src/DistrhoPluginVST.cpp
+source/modules/distrho/src/DistrhoUIDSSI.cpp
+source/modules/distrho/src/DistrhoUILV2.cpp
 
 data/linux/*.gz
 data/linux/*.tgz
