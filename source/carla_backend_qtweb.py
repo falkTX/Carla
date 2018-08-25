@@ -339,6 +339,13 @@ class CarlaHostQtWeb(CarlaHostQtNull):
             'customDataId': customDataId,
         }).json()
 
+    def get_custom_data_value(self, pluginId, type_, key):
+        return requests.get("{}/get_custom_data_value".format(self.baseurl), params={
+            'pluginId': pluginId,
+            'type_': type_,
+            'key': key,
+        }).text
+
     def get_chunk_data(self, pluginId):
         return requests.get("{}/get_chunk_data".format(self.baseurl), params={
             'pluginId': pluginId,

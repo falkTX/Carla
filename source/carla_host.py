@@ -1948,14 +1948,10 @@ class HostWindow(QMainWindow):
         wasCompacted = pitem.isCompacted()
         isCompacted  = wasCompacted
 
-        for i in range(self.host.get_custom_data_count(pluginId)):
-            cdata = self.host.get_custom_data(pluginId, i)
-
-            if cdata['type'] == CUSTOM_DATA_TYPE_PROPERTY and cdata['key'] == "CarlaSkinIsCompacted":
-                isCompacted = bool(cdata['value'] == "true")
-                break
-        else:
+        check = self.host.get_custom_data_value(pluginId, CUSTOM_DATA_TYPE_PROPERTY, "CarlaSkinIsCompacted")
+        if not check:
             return
+        isCompacted = bool(check == "true")
 
         if wasCompacted == isCompacted:
             return

@@ -612,12 +612,21 @@ CARLA_EXPORT const ParameterRanges* carla_get_parameter_ranges(uint pluginId, ui
 CARLA_EXPORT const MidiProgramData* carla_get_midi_program_data(uint pluginId, uint32_t midiProgramId);
 
 /*!
- * Get a plugin's custom data.
+ * Get a plugin's custom data, using index.
  * @param pluginId     Plugin
  * @param customDataId Custom data index
  * @see carla_get_custom_data_count()
  */
 CARLA_EXPORT const CustomData* carla_get_custom_data(uint pluginId, uint32_t customDataId);
+
+/*!
+ * Get a plugin's custom data value, using type and key.
+ * @param pluginId Plugin
+ * @param type     Custom data type
+ * @param key      Custom data key
+ * @see carla_get_custom_data_count()
+ */
+CARLA_EXPORT const char* carla_get_custom_data_value(uint pluginId, const char* type, const char* key);
 
 /*!
  * Get a plugin's chunk data.

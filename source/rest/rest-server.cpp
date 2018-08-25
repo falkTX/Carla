@@ -175,6 +175,7 @@ int main(int, const char**)
     make_resource(service, "/get_parameter_ranges", handle_carla_get_parameter_ranges);
     make_resource(service, "/get_midi_program_data", handle_carla_get_midi_program_data);
     make_resource(service, "/get_custom_data", handle_carla_get_custom_data);
+    make_resource(service, "/get_custom_data_value", handle_carla_get_custom_data_value);
     make_resource(service, "/get_chunk_data", handle_carla_get_chunk_data);
 
     make_resource(service, "/get_parameter_count", handle_carla_get_parameter_count);

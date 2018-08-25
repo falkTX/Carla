@@ -697,6 +697,20 @@ void handle_carla_get_custom_data(const std::shared_ptr<Session> session)
     session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
 }
 
+void handle_carla_get_custom_data_value(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const std::string type = request->get_query_parameter("type");
+    const std::string key = request->get_query_parameter("key");
+
+    const char* const buf = carla_get_custom_data_value(pluginId, type.c_str(), key.c_str());
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
 void handle_carla_get_chunk_data(const std::shared_ptr<Session> session)
 {
     const std::shared_ptr<const Request> request = session->get_request();

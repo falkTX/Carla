@@ -1364,6 +1364,38 @@ const CustomData* carla_get_custom_data(uint pluginId, uint32_t customDataId)
     return &retCustomData;
 }
 
+const char* carla_get_custom_data_value(uint pluginId, const char* type, const char* key)
+{
+    CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0', gNullCharPtr);
+    CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0', gNullCharPtr);
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, gNullCharPtr);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, gNullCharPtr);
+
+    const uint32_t count = plugin->getCustomDataCount();
+    CARLA_SAFE_ASSERT_RETURN(count != 0, gNullCharPtr);
+
+    carla_debug("carla_get_custom_data_value(%i, %s, %s)", pluginId, type, key);
+
+    static CarlaString customDataValue;
+
+    for (uint32_t i=0; i<count; ++i)
+    {
+        const CustomData& pluginCustomData(plugin->getCustomData(i));
+
+        if (std::strcmp(pluginCustomData.type, type) != 0)
+            continue;
+        if (std::strcmp(pluginCustomData.key, key) != 0)
+            continue;
+
+        customDataValue = pluginCustomData.value;
+        return customDataValue.buffer();
+    }
+
+    return gNullCharPtr;
+}
+
 const char* carla_get_chunk_data(uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, gNullCharPtr);
