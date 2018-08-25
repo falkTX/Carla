@@ -35,7 +35,9 @@ const char* str_buf_float(const double value);
 const char* str_buf_float_array(const double* const values, const char sep = '\n');
 const char* str_buf_string(const char* const string);
 const char* str_buf_string_array(const char* const* const array);
+const char* str_buf_string_quoted(const char* const string);
 const char* str_buf_int(const int value);
+const char* str_buf_int64(const int64_t value);
 const char* str_buf_uint(const uint value);
 const char* str_buf_uint64(const uint64_t value);
 const char* str_buf_uint_array(const uint* const values, const char sep = '\n');
@@ -47,6 +49,7 @@ char* json_buf_add_float(char* jsonBufPtr, const char* const key, const double v
 char* json_buf_add_float_array(char* jsonBufPtr, const char* const key, const double* const values);
 char* json_buf_add_string(char* jsonBufPtr, const char* const key, const char* const value);
 char* json_buf_add_int(char* jsonBufPtr, const char* const key, const int value);
+char* json_buf_add_int64(char* jsonBufPtr, const char* const key, const int64_t value);
 char* json_buf_add_uint(char* jsonBufPtr, const char* const key, const uint value);
 char* json_buf_add_uint64(char* jsonBufPtr, const char* const key, const uint64_t value);
 char* json_buf_add_uint_array(char* jsonBufPtr, const char* const key, const uint* const values);

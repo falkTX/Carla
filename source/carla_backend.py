@@ -1241,6 +1241,7 @@ class CarlaHostMeta(object):
         # info about this host object
         self.isControl = False
         self.isPlugin  = False
+        self.isRemote  = False
         self.nsmOK     = False
 
         # settings

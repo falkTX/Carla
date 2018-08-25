@@ -43,10 +43,10 @@ void handle_carla_get_cached_plugin_count(const std::shared_ptr<Session> session
 {
     const std::shared_ptr<const Request> request = session->get_request();
 
-    const int ptype = std::atoi(request->get_path_parameter("ptype").c_str());
+    const int ptype = std::atoi(request->get_query_parameter("ptype").c_str());
     CARLA_SAFE_ASSERT_RETURN(ptype >= PLUGIN_NONE && ptype <= PLUGIN_JACK,)
 
-    const std::string pluginPath = request->get_path_parameter("pluginPath");
+    const std::string pluginPath = request->get_query_parameter("pluginPath");
 
     const char* const buf = str_buf_uint(carla_get_cached_plugin_count(static_cast<PluginType>(ptype),
                                                                        pluginPath.c_str()));
@@ -57,10 +57,10 @@ void handle_carla_get_cached_plugin_info(const std::shared_ptr<Session> session)
 {
     const std::shared_ptr<const Request> request = session->get_request();
 
-    const int ptype = std::atoi(request->get_path_parameter("ptype").c_str());
+    const int ptype = std::atoi(request->get_query_parameter("ptype").c_str());
     CARLA_SAFE_ASSERT_RETURN(ptype >= PLUGIN_NONE && ptype <= PLUGIN_JACK,)
 
-    const int index = std::atoi(request->get_path_parameter("index").c_str());
+    const int index = std::atoi(request->get_query_parameter("index").c_str());
     CARLA_SAFE_ASSERT_RETURN(index >= 0 /*&& index < INT_MAX*/,)
 
     const CarlaCachedPluginInfo* const info = carla_get_cached_plugin_info(static_cast<PluginType>(ptype),

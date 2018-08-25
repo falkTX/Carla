@@ -34,8 +34,10 @@ void engine_idle_handler()
 
 static void EngineCallback(void* ptr, EngineCallbackOpcode action, uint pluginId, int value1, int value2, float value3, const char* valueStr)
 {
+#if 0
     carla_stdout("EngineCallback(%p, %u:%s, %u, %i, %i, %f, %s)",
                  ptr, (uint)action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
+#endif
 
     char msgBuf[1024];
     std::snprintf(msgBuf, 1023, "Carla: %u %u %i %i %f %s\n", action, pluginId, value1, value2, value3, valueStr);
@@ -84,7 +86,7 @@ void handle_carla_get_engine_driver_name(const std::shared_ptr<Session> session)
 {
     const std::shared_ptr<const Request> request = session->get_request();
 
-    const int index = std::atoi(request->get_path_parameter("index").c_str());
+    const int index = std::atoi(request->get_query_parameter("index").c_str());
     CARLA_SAFE_ASSERT_RETURN(index >= 0 /*&& index < INT_MAX*/,)
 
     const char* const buf = str_buf_string(carla_get_engine_driver_name(index));
@@ -95,7 +97,7 @@ void handle_carla_get_engine_driver_device_names(const std::shared_ptr<Session> 
 {
     const std::shared_ptr<const Request> request = session->get_request();
 
-    const int index = std::atoi(request->get_path_parameter("index").c_str());
+    const int index = std::atoi(request->get_query_parameter("index").c_str());
     CARLA_SAFE_ASSERT_RETURN(index >= 0 /*&& index < INT_MAX*/,)
 
     const char* const buf = str_buf_string_array(carla_get_engine_driver_device_names(index));
@@ -106,10 +108,10 @@ void handle_carla_get_engine_driver_device_info(const std::shared_ptr<Session> s
 {
     const std::shared_ptr<const Request> request = session->get_request();
 
-    const int index = std::atoi(request->get_path_parameter("index").c_str());
+    const int index = std::atoi(request->get_query_parameter("index").c_str());
     CARLA_SAFE_ASSERT_RETURN(index >= 0 /*&& index < INT_MAX*/,)
 
-    const std::string name = request->get_path_parameter("name");
+    const std::string name = request->get_query_parameter("name");
 
     const EngineDriverDeviceInfo* const info = carla_get_engine_driver_device_info(index, name.c_str());
 
@@ -134,46 +136,124 @@ void handle_carla_engine_init(const std::shared_ptr<Session> session)
     // handle request now
     const std::shared_ptr<const Request> request = session->get_request();
 
-    const std::string driverName = request->get_path_parameter("driverName");
-    const std::string clientName = request->get_path_parameter("clientName");
+    const std::string driverName = request->get_query_parameter("driverName");
+    const std::string clientName = request->get_query_parameter("clientName");
 
-    const bool resp = carla_engine_init(driverName.c_str(), clientName.c_str());
-    session->close(resp ? OK : BAD_REQUEST);
+    const char* const buf = str_buf_bool(carla_engine_init(driverName.c_str(), clientName.c_str()));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
 }
 
 void handle_carla_engine_close(const std::shared_ptr<Session> session)
 {
-    const bool resp = carla_engine_close();
-    session->close(resp ? OK : BAD_REQUEST);
+    const char* const buf = str_buf_bool(carla_engine_close());
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
 }
 
 void handle_carla_is_engine_running(const std::shared_ptr<Session> session)
 {
-    const bool resp = carla_is_engine_running();
-    session->close(resp ? OK : BAD_REQUEST);
+    const char* const buf = str_buf_bool(carla_is_engine_running());
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
 }
 
 void handle_carla_set_engine_about_to_close(const std::shared_ptr<Session> session)
 {
-    const bool resp = carla_set_engine_about_to_close();
-    session->close(resp ? OK : BAD_REQUEST);
+    const char* const buf = str_buf_bool(carla_set_engine_about_to_close());
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
 }
 
 // -------------------------------------------------------------------------------------------------------------------
 
-void carla_set_engine_option(EngineOption option, int value, const char* valueStr);
+void handle_carla_set_engine_option(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int option = std::atol(request->get_query_parameter("option").c_str());
+    CARLA_SAFE_ASSERT_RETURN(option >= ENGINE_OPTION_DEBUG && option < ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT,)
+
+    const int value = std::atol(request->get_query_parameter("value").c_str());
+    CARLA_SAFE_ASSERT_RETURN(value >= 0,)
+
+    const std::string valueStr = request->get_query_parameter("valueStr");
+
+    carla_set_engine_option(static_cast<EngineOption>(option), value, valueStr.c_str());
+    session->close(OK);
+}
 
 // -------------------------------------------------------------------------------------------------------------------
 
-bool carla_load_file(const char* filename);
-bool carla_load_project(const char* filename);
-bool carla_save_project(const char* filename);
+void handle_carla_load_file(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const std::string filename = request->get_query_parameter("filename");
+
+    const char* const buf = str_buf_bool(carla_load_file(filename.c_str()));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_load_project(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const std::string filename = request->get_query_parameter("filename");
+
+    const char* const buf = str_buf_bool(carla_load_project(filename.c_str()));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_save_project(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const std::string filename = request->get_query_parameter("filename");
+
+    const char* const buf = str_buf_bool(carla_save_project(filename.c_str()));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
 
 // -------------------------------------------------------------------------------------------------------------------
 
-bool carla_patchbay_connect(uint groupIdA, uint portIdA, uint groupIdB, uint portIdB);
-bool carla_patchbay_disconnect(uint connectionId);
-bool carla_patchbay_refresh(bool external);
+void handle_carla_patchbay_connect(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int groupIdA = std::atoi(request->get_query_parameter("groupIdA").c_str());
+    CARLA_SAFE_ASSERT_RETURN(groupIdA >= 0,)
+
+    const int portIdA = std::atoi(request->get_query_parameter("portIdA").c_str());
+    CARLA_SAFE_ASSERT_RETURN(portIdA >= 0,)
+
+    const int groupIdB = std::atoi(request->get_query_parameter("groupIdB").c_str());
+    CARLA_SAFE_ASSERT_RETURN(groupIdB >= 0,)
+
+    const int portIdB = std::atoi(request->get_query_parameter("portIdB").c_str());
+    CARLA_SAFE_ASSERT_RETURN(portIdB >= 0,)
+
+    const char* const buf = str_buf_bool(carla_patchbay_connect(groupIdA, portIdA, groupIdB, portIdB));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_patchbay_disconnect(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int connectionId = std::atoi(request->get_query_parameter("connectionId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(connectionId >= 0,)
+
+    const char* const buf = str_buf_bool(carla_patchbay_disconnect(connectionId));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_patchbay_refresh(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int external = std::atoi(request->get_query_parameter("external").c_str());
+    CARLA_SAFE_ASSERT_RETURN(external == 0 || external == 1,)
+
+    const char* const buf = str_buf_bool(carla_patchbay_refresh(external));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -193,7 +273,7 @@ void handle_carla_transport_bpm(const std::shared_ptr<Session> session)
 {
     const std::shared_ptr<const Request> request = session->get_request();
 
-    const double bpm = std::atof(request->get_path_parameter("bpm").c_str());
+    const double bpm = std::atof(request->get_query_parameter("bpm").c_str());
     CARLA_SAFE_ASSERT_RETURN(bpm > 0.0,) // FIXME
 
     carla_transport_bpm(bpm);
@@ -204,7 +284,7 @@ void handle_carla_transport_relocate(const std::shared_ptr<Session> session)
 {
     const std::shared_ptr<const Request> request = session->get_request();
 
-    const long int frame = std::atol(request->get_path_parameter("frame").c_str());
+    const long int frame = std::atol(request->get_query_parameter("frame").c_str());
     CARLA_SAFE_ASSERT_RETURN(frame >= 0,)
 
     carla_transport_relocate(frame);
@@ -236,94 +316,882 @@ void handle_carla_get_transport_info(const std::shared_ptr<Session> session)
 
 // -------------------------------------------------------------------------------------------------------------------
 
-uint32_t carla_get_current_plugin_count();
-uint32_t carla_get_max_plugin_number();
-bool carla_add_plugin(BinaryType btype, PluginType ptype,
-                                   const char* filename, const char* name, const char* label, int64_t uniqueId,
-                                   const void* extraPtr, uint options);
-bool carla_remove_plugin(uint pluginId);
-bool carla_remove_all_plugins();
+void handle_carla_get_current_plugin_count(const std::shared_ptr<Session> session)
+{
+    const char* const buf = str_buf_uint(carla_get_current_plugin_count());
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_max_plugin_number(const std::shared_ptr<Session> session)
+{
+    const char* const buf = str_buf_uint(carla_get_max_plugin_number());
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_add_plugin(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const long int btype = std::atoi(request->get_query_parameter("btype").c_str());
+    CARLA_SAFE_ASSERT_RETURN(btype >= BINARY_NONE && btype <= BINARY_OTHER,)
+
+    const long int ptype = std::atoi(request->get_query_parameter("ptype").c_str());
+    CARLA_SAFE_ASSERT_RETURN(ptype >= PLUGIN_NONE && ptype <= PLUGIN_JACK,)
+
+    const std::string filename = request->get_query_parameter("filename");
+    const std::string name = request->get_query_parameter("name");
+    const std::string label = request->get_query_parameter("label");
+
+    const long int uniqueId = std::atol(request->get_query_parameter("uniqueId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(uniqueId >= 0,)
+
+    const int options = std::atoi(request->get_query_parameter("options").c_str());
+    CARLA_SAFE_ASSERT_RETURN(options >= 0,)
+
+    const char* const buf = str_buf_bool(carla_add_plugin(static_cast<BinaryType>(btype),
+                                         static_cast<PluginType>(ptype),
+                                         filename.c_str(),
+                                         name.c_str(),
+                                         label.c_str(),
+                                         uniqueId,
+                                         nullptr,
+                                         options));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_remove_plugin(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const char* const buf = str_buf_bool(carla_remove_plugin(pluginId));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_remove_all_plugins(const std::shared_ptr<Session> session)
+{
+    const char* const buf = str_buf_bool(carla_remove_all_plugins());
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
 
 // -------------------------------------------------------------------------------------------------------------------
 
-const char* carla_rename_plugin(uint pluginId, const char* newName);
-bool carla_clone_plugin(uint pluginId);
-bool carla_replace_plugin(uint pluginId);
-bool carla_switch_plugins(uint pluginIdA, uint pluginIdB);
+void handle_carla_rename_plugin(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const std::string newName = request->get_query_parameter("newName");
+
+    const char* const buf = carla_rename_plugin(pluginId, newName.c_str());
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_clone_plugin(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const char* const buf = str_buf_bool(carla_clone_plugin(pluginId));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_replace_plugin(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const char* const buf = str_buf_bool(carla_replace_plugin(pluginId));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_switch_plugins(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginIdA = std::atol(request->get_query_parameter("pluginIdA").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginIdA >= 0,)
+
+    const int pluginIdB = std::atol(request->get_query_parameter("pluginIdB").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginIdB >= 0,)
+
+    const char* const buf = str_buf_bool(carla_switch_plugins(pluginIdA, pluginIdB));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
 
 // -------------------------------------------------------------------------------------------------------------------
 
-bool carla_load_plugin_state(uint pluginId, const char* filename);
-bool carla_save_plugin_state(uint pluginId, const char* filename);
-bool carla_export_plugin_lv2(uint pluginId, const char* lv2path);
+void handle_carla_load_plugin_state(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const std::string filename = request->get_query_parameter("filename");
+
+    const char* const buf = str_buf_bool(carla_load_plugin_state(pluginId, filename.c_str()));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_save_plugin_state(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const std::string filename = request->get_query_parameter("filename");
+
+    const char* const buf = str_buf_bool(carla_save_plugin_state(pluginId, filename.c_str()));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_export_plugin_lv2(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const std::string lv2path = request->get_query_parameter("lv2path");
+
+    const char* const buf = str_buf_bool(carla_export_plugin_lv2(pluginId, lv2path.c_str()));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
 
 // -------------------------------------------------------------------------------------------------------------------
 
-const CarlaPluginInfo* carla_get_plugin_info(uint pluginId);
-const CarlaPortCountInfo* carla_get_audio_port_count_info(uint pluginId);
-const CarlaPortCountInfo* carla_get_midi_port_count_info(uint pluginId);
-const CarlaPortCountInfo* carla_get_parameter_count_info(uint pluginId);
-const CarlaParameterInfo* carla_get_parameter_info(uint pluginId, uint32_t parameterId);
-const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(uint pluginId, uint32_t parameterId, uint32_t scalePointId);
-const ParameterData* carla_get_parameter_data(uint pluginId, uint32_t parameterId);
-const ParameterRanges* carla_get_parameter_ranges(uint pluginId, uint32_t parameterId);
-const MidiProgramData* carla_get_midi_program_data(uint pluginId, uint32_t midiProgramId);
-const CustomData* carla_get_custom_data(uint pluginId, uint32_t customDataId);
-const char* carla_get_chunk_data(uint pluginId);
+void handle_carla_get_plugin_info(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const CarlaPluginInfo* const info = carla_get_plugin_info(pluginId);
+
+    // running remotely, so we cannot show custom UI or inline display
+    const uint hints = info->hints & ~(PLUGIN_HAS_CUSTOM_UI|PLUGIN_HAS_INLINE_DISPLAY);
+
+    char* jsonBuf;
+    jsonBuf = json_buf_start();
+    jsonBuf = json_buf_add_uint(jsonBuf, "type", info->type);
+    jsonBuf = json_buf_add_uint(jsonBuf, "category", info->category);
+    jsonBuf = json_buf_add_uint(jsonBuf, "hints", hints);
+    jsonBuf = json_buf_add_uint(jsonBuf, "optionsAvailable", info->optionsAvailable);
+    jsonBuf = json_buf_add_uint(jsonBuf, "optionsEnabled", info->optionsEnabled);
+    jsonBuf = json_buf_add_string(jsonBuf, "filename", info->filename);
+    jsonBuf = json_buf_add_string(jsonBuf, "name", info->name);
+    jsonBuf = json_buf_add_string(jsonBuf, "label", info->label);
+    jsonBuf = json_buf_add_string(jsonBuf, "maker", info->maker);
+    jsonBuf = json_buf_add_string(jsonBuf, "copyright", info->copyright);
+    jsonBuf = json_buf_add_string(jsonBuf, "iconName", info->iconName);
+    jsonBuf = json_buf_add_int64(jsonBuf, "uniqueId", info->uniqueId);
+
+    const char* const buf = json_buf_end(jsonBuf);
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_audio_port_count_info(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const CarlaPortCountInfo* const info = carla_get_audio_port_count_info(pluginId);
+
+    char* jsonBuf;
+    jsonBuf = json_buf_start();
+    jsonBuf = json_buf_add_uint(jsonBuf, "ins", info->ins);
+    jsonBuf = json_buf_add_uint(jsonBuf, "outs", info->outs);
+
+    const char* const buf = json_buf_end(jsonBuf);
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_midi_port_count_info(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const CarlaPortCountInfo* const info = carla_get_midi_port_count_info(pluginId);
+
+    char* jsonBuf;
+    jsonBuf = json_buf_start();
+    jsonBuf = json_buf_add_uint(jsonBuf, "ins", info->ins);
+    jsonBuf = json_buf_add_uint(jsonBuf, "outs", info->outs);
+
+    const char* const buf = json_buf_end(jsonBuf);
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_parameter_count_info(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const CarlaPortCountInfo* const info = carla_get_parameter_count_info(pluginId);
+
+    char* jsonBuf;
+    jsonBuf = json_buf_start();
+    jsonBuf = json_buf_add_uint(jsonBuf, "ins", info->ins);
+    jsonBuf = json_buf_add_uint(jsonBuf, "outs", info->outs);
+
+    const char* const buf = json_buf_end(jsonBuf);
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_parameter_info(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int parameterId = std::atoi(request->get_query_parameter("parameterId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(parameterId >= 0,)
+
+    const CarlaParameterInfo* const info = carla_get_parameter_info(pluginId, parameterId);
+
+    char* jsonBuf;
+    jsonBuf = json_buf_start();
+    jsonBuf = json_buf_add_string(jsonBuf, "name", info->name);
+    jsonBuf = json_buf_add_string(jsonBuf, "symbol", info->symbol);
+    jsonBuf = json_buf_add_string(jsonBuf, "unit", info->unit);
+    jsonBuf = json_buf_add_uint(jsonBuf, "scalePointCount", info->scalePointCount);
+
+    const char* const buf = json_buf_end(jsonBuf);
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_parameter_scalepoint_info(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int parameterId = std::atoi(request->get_query_parameter("parameterId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(parameterId >= 0,)
+
+    const int scalePointId = std::atoi(request->get_query_parameter("scalePointId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(scalePointId >= 0,)
+
+    const CarlaScalePointInfo* const info = carla_get_parameter_scalepoint_info(pluginId, parameterId, scalePointId);
+
+    char* jsonBuf;
+    jsonBuf = json_buf_start();
+    jsonBuf = json_buf_add_float(jsonBuf, "value", info->value);
+    jsonBuf = json_buf_add_string(jsonBuf, "label", info->label);
+
+    const char* const buf = json_buf_end(jsonBuf);
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_parameter_data(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int parameterId = std::atoi(request->get_query_parameter("parameterId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(parameterId >= 0,)
+
+    const ParameterData* const info = carla_get_parameter_data(pluginId, parameterId);
+
+    char* jsonBuf;
+    jsonBuf = json_buf_start();
+    jsonBuf = json_buf_add_uint(jsonBuf, "type", info->type);
+    jsonBuf = json_buf_add_uint(jsonBuf, "hints", info->hints);
+    jsonBuf = json_buf_add_int(jsonBuf, "index", info->index);
+    jsonBuf = json_buf_add_int(jsonBuf, "rindex", info->rindex);
+    jsonBuf = json_buf_add_int(jsonBuf, "midiCC", info->midiCC);
+    jsonBuf = json_buf_add_uint(jsonBuf, "midiChannel", info->midiChannel);
+
+    const char* const buf = json_buf_end(jsonBuf);
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_parameter_ranges(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int parameterId = std::atoi(request->get_query_parameter("parameterId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(parameterId >= 0,)
+
+    const ParameterRanges* const info = carla_get_parameter_ranges(pluginId, parameterId);
+
+    char* jsonBuf;
+    jsonBuf = json_buf_start();
+    jsonBuf = json_buf_add_float(jsonBuf, "def", info->def);
+    jsonBuf = json_buf_add_float(jsonBuf, "min", info->min);
+    jsonBuf = json_buf_add_float(jsonBuf, "max", info->max);
+    jsonBuf = json_buf_add_float(jsonBuf, "step", info->step);
+    jsonBuf = json_buf_add_float(jsonBuf, "stepSmall", info->stepSmall);
+    jsonBuf = json_buf_add_float(jsonBuf, "stepLarge", info->stepLarge);
+
+    const char* const buf = json_buf_end(jsonBuf);
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_midi_program_data(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int midiProgramId = std::atoi(request->get_query_parameter("midiProgramId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(midiProgramId >= 0,)
+
+    const MidiProgramData* const info = carla_get_midi_program_data(pluginId, midiProgramId);
+
+    char* jsonBuf;
+    jsonBuf = json_buf_start();
+    jsonBuf = json_buf_add_uint(jsonBuf, "bank", info->bank);
+    jsonBuf = json_buf_add_uint(jsonBuf, "program", info->program);
+    jsonBuf = json_buf_add_string(jsonBuf, "name", info->name);
+
+    const char* const buf = json_buf_end(jsonBuf);
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_custom_data(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int customDataId = std::atoi(request->get_query_parameter("customDataId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(customDataId >= 0,)
+
+    const CustomData* const info = carla_get_custom_data(pluginId, customDataId);
+
+    char* jsonBuf;
+    jsonBuf = json_buf_start();
+    jsonBuf = json_buf_add_string(jsonBuf, "type", info->type);
+    jsonBuf = json_buf_add_string(jsonBuf, "key", info->key);
+    jsonBuf = json_buf_add_string(jsonBuf, "value", info->value);
+
+    const char* const buf = json_buf_end(jsonBuf);
+    puts(buf);
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_chunk_data(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const char* const buf = carla_get_chunk_data(pluginId);
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
 
 // -------------------------------------------------------------------------------------------------------------------
 
-uint32_t carla_get_parameter_count(uint pluginId);
-uint32_t carla_get_program_count(uint pluginId);
-uint32_t carla_get_midi_program_count(uint pluginId);
-uint32_t carla_get_custom_data_count(uint pluginId);
-const char* carla_get_parameter_text(uint pluginId, uint32_t parameterId);
-const char* carla_get_program_name(uint pluginId, uint32_t programId);
-const char* carla_get_midi_program_name(uint pluginId, uint32_t midiProgramId);
-const char* carla_get_real_plugin_name(uint pluginId);
-int32_t carla_get_current_program_index(uint pluginId);
-int32_t carla_get_current_midi_program_index(uint pluginId);
-float carla_get_default_parameter_value(uint pluginId, uint32_t parameterId);
-float carla_get_current_parameter_value(uint pluginId, uint32_t parameterId);
-float carla_get_internal_parameter_value(uint pluginId, int32_t parameterId);
-float carla_get_input_peak_value(uint pluginId, bool isLeft);
-float carla_get_output_peak_value(uint pluginId, bool isLeft);
+void handle_carla_get_parameter_count(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const char* const buf = str_buf_uint(carla_get_parameter_count(pluginId));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_program_count(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const char* const buf = str_buf_uint(carla_get_program_count(pluginId));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_midi_program_count(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const char* const buf = str_buf_uint(carla_get_midi_program_count(pluginId));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_custom_data_count(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const char* const buf = str_buf_uint(carla_get_custom_data_count(pluginId));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_parameter_text(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int parameterId = std::atoi(request->get_query_parameter("parameterId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(parameterId >= 0,)
+
+    const char* const buf = carla_get_parameter_text(pluginId, parameterId);
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_program_name(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int programId = std::atoi(request->get_query_parameter("programId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(programId >= 0,)
+
+    const char* const buf = carla_get_program_name(pluginId, programId);
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_midi_program_name(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int midiProgramId = std::atoi(request->get_query_parameter("midiProgramId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(midiProgramId >= 0,)
+
+    const char* const buf = carla_get_midi_program_name(pluginId, midiProgramId);
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_real_plugin_name(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const char* const buf = carla_get_real_plugin_name(pluginId);
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_current_program_index(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const char* const buf = str_buf_uint(carla_get_current_program_index(pluginId));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_current_midi_program_index(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const char* const buf = str_buf_uint(carla_get_current_midi_program_index(pluginId));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_default_parameter_value(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int parameterId = std::atoi(request->get_query_parameter("parameterId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(parameterId >= 0,)
+
+    const char* const buf = str_buf_float(carla_get_default_parameter_value(pluginId, parameterId));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_current_parameter_value(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int parameterId = std::atoi(request->get_query_parameter("parameterId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(parameterId >= 0,)
+
+    const char* const buf = str_buf_float(carla_get_current_parameter_value(pluginId, parameterId));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_internal_parameter_value(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int parameterId = std::atoi(request->get_query_parameter("parameterId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(parameterId > PARAMETER_MAX,);
+
+    const char* const buf = str_buf_float(carla_get_internal_parameter_value(pluginId, parameterId));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_input_peak_value(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int isLeft = std::atoi(request->get_query_parameter("isLeft").c_str());
+    CARLA_SAFE_ASSERT_RETURN(isLeft == 0 || isLeft == 1,)
+
+    const char* const buf = str_buf_float(carla_get_input_peak_value(pluginId, isLeft));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_output_peak_value(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int isLeft = std::atoi(request->get_query_parameter("isLeft").c_str());
+    CARLA_SAFE_ASSERT_RETURN(isLeft == 0 || isLeft == 1,)
+
+    const char* const buf = str_buf_float(carla_get_output_peak_value(pluginId, isLeft));
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
 
 // -------------------------------------------------------------------------------------------------------------------
 
-void carla_set_active(uint pluginId, bool onOff);
-void carla_set_drywet(uint pluginId, float value);
-void carla_set_volume(uint pluginId, float value);
-void carla_set_balance_left(uint pluginId, float value);
-void carla_set_balance_right(uint pluginId, float value);
-void carla_set_panning(uint pluginId, float value);
-void carla_set_ctrl_channel(uint pluginId, int8_t channel);
-void carla_set_option(uint pluginId, uint option, bool yesNo);
+void handle_carla_set_active(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int onOff = std::atoi(request->get_query_parameter("onOff").c_str());
+    CARLA_SAFE_ASSERT_RETURN(onOff == 0 || onOff == 1,)
+
+    carla_set_active(pluginId, onOff);
+    session->close(OK);
+}
+
+void handle_carla_set_drywet(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const double value = std::atof(request->get_query_parameter("value").c_str());
+    CARLA_SAFE_ASSERT_RETURN(value >= 0.0 && value >= 1.0,)
+
+    carla_set_drywet(pluginId, value);
+    session->close(OK);
+}
+
+void handle_carla_set_volume(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const double value = std::atof(request->get_query_parameter("value").c_str());
+    CARLA_SAFE_ASSERT_RETURN(value >= 0.0 && value >= 1.0,)
+
+    carla_set_volume(pluginId, value);
+    session->close(OK);
+}
+
+void handle_carla_set_balance_left(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const double value = std::atof(request->get_query_parameter("value").c_str());
+    CARLA_SAFE_ASSERT_RETURN(value >= 0.0 && value >= 1.0,)
+
+    carla_set_balance_left(pluginId, value);
+    session->close(OK);
+}
+
+void handle_carla_set_balance_right(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const double value = std::atof(request->get_query_parameter("value").c_str());
+    CARLA_SAFE_ASSERT_RETURN(value >= 0.0 && value >= 1.0,)
+
+    carla_set_balance_right(pluginId, value);
+    session->close(OK);
+}
+
+void handle_carla_set_panning(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const double value = std::atof(request->get_query_parameter("value").c_str());
+    CARLA_SAFE_ASSERT_RETURN(value >= 0.0 && value >= 1.0,)
+
+    carla_set_panning(pluginId, value);
+    session->close(OK);
+}
+
+void handle_carla_set_ctrl_channel(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int channel = std::atoi(request->get_query_parameter("channel").c_str());
+    CARLA_SAFE_ASSERT_RETURN(channel < 16,)
+
+    carla_set_ctrl_channel(pluginId, channel);
+    session->close(OK);
+}
+
+void handle_carla_set_option(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int option = std::atoi(request->get_query_parameter("option").c_str());
+    CARLA_SAFE_ASSERT_RETURN(option >= 0,)
+
+    const int yesNo = std::atoi(request->get_query_parameter("yesNo").c_str());
+    CARLA_SAFE_ASSERT_RETURN(yesNo == 0 || yesNo == 1,)
+
+    carla_set_option(pluginId, option, yesNo);
+    session->close(OK);
+}
 
 // -------------------------------------------------------------------------------------------------------------------
 
-void carla_set_parameter_value(uint pluginId, uint32_t parameterId, float value);
-void carla_set_parameter_midi_channel(uint pluginId, uint32_t parameterId, uint8_t channel);
-void carla_set_parameter_midi_cc(uint pluginId, uint32_t parameterId, int16_t cc);
-void carla_set_program(uint pluginId, uint32_t programId);
-void carla_set_midi_program(uint pluginId, uint32_t midiProgramId);
-void carla_set_custom_data(uint pluginId, const char* type, const char* key, const char* value);
-void carla_set_chunk_data(uint pluginId, const char* chunkData);
+void handle_carla_set_parameter_value(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int parameterId = std::atoi(request->get_query_parameter("parameterId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(parameterId >= 0,)
+
+    const double value = std::atof(request->get_query_parameter("value").c_str());
+
+    carla_set_parameter_value(pluginId, parameterId, value);
+    session->close(OK);
+}
+
+void handle_carla_set_parameter_midi_channel(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int parameterId = std::atoi(request->get_query_parameter("parameterId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(parameterId >= 0,)
+
+    const int channel = std::atoi(request->get_query_parameter("channel").c_str());
+    CARLA_SAFE_ASSERT_RETURN(channel >= 0 && channel < 16,)
+
+    carla_set_parameter_midi_channel(pluginId, parameterId, channel);
+    session->close(OK);
+}
+
+void handle_carla_set_parameter_midi_cc(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int parameterId = std::atoi(request->get_query_parameter("parameterId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(parameterId >= 0,)
+
+    const int cc = std::atoi(request->get_query_parameter("channel").c_str());
+    CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc < INT16_MAX,);
+
+    carla_set_parameter_midi_cc(pluginId, parameterId, cc);
+    session->close(OK);
+}
+
+void handle_carla_set_program(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int programId = std::atoi(request->get_query_parameter("programId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(programId >= 0,)
+
+    carla_set_program(pluginId, programId);
+    session->close(OK);
+}
+
+void handle_carla_set_midi_program(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int midiProgramId = std::atoi(request->get_query_parameter("midiProgramId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(midiProgramId >= 0,)
+
+    carla_set_midi_program(pluginId, midiProgramId);
+    session->close(OK);
+}
+
+void handle_carla_set_custom_data(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const std::string type = request->get_query_parameter("type");
+    const std::string key = request->get_query_parameter("key");
+    const std::string value = request->get_query_parameter("value");
+
+    carla_set_custom_data(pluginId, type.c_str(), key.c_str(), value.c_str());
+    session->close(OK);
+}
+
+void handle_carla_set_chunk_data(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const std::string chunkData = request->get_query_parameter("chunkData");
+
+    carla_set_chunk_data(pluginId, chunkData.c_str());
+    session->close(OK);
+}
 
 // -------------------------------------------------------------------------------------------------------------------
 
-void carla_prepare_for_save(uint pluginId);
-void carla_reset_parameters(uint pluginId);
-void carla_randomize_parameters(uint pluginId);
+void handle_carla_prepare_for_save(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    carla_prepare_for_save(pluginId);
+    session->close(OK);
+}
+
+void handle_carla_reset_parameters(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    carla_reset_parameters(pluginId);
+    session->close(OK);
+}
+
+void handle_carla_randomize_parameters(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    carla_randomize_parameters(pluginId);
+    session->close(OK);
+}
+
+void handle_carla_send_midi_note(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const int channel = std::atoi(request->get_query_parameter("channel").c_str());
+    CARLA_SAFE_ASSERT_RETURN(channel >= 0 && channel < 16,)
+
+    const int note = std::atoi(request->get_query_parameter("note").c_str());
+    CARLA_SAFE_ASSERT_RETURN(note >= 0 && note < 128,)
+
+    const int velocity = std::atoi(request->get_query_parameter("velocity").c_str());
+    CARLA_SAFE_ASSERT_RETURN(velocity >= 0 && velocity < 128,)
+
+    carla_send_midi_note(pluginId, channel, note, velocity);
+    session->close(OK);
+}
 
 // -------------------------------------------------------------------------------------------------------------------
 
-void carla_send_midi_note(uint pluginId, uint8_t channel, uint8_t note, uint8_t velocity);
+void handle_carla_get_buffer_size(const std::shared_ptr<Session> session)
+{
+    const char* const buf = str_buf_uint(carla_get_buffer_size());
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
 
-// -------------------------------------------------------------------------------------------------------------------
-
-uint32_t carla_get_buffer_size();
-double carla_get_sample_rate();
+void handle_carla_get_sample_rate(const std::shared_ptr<Session> session)
+{
+    const char* const buf = str_buf_float(carla_get_sample_rate());
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
 
 void handle_carla_get_last_error(const std::shared_ptr<Session> session)
 {
@@ -331,7 +1199,16 @@ void handle_carla_get_last_error(const std::shared_ptr<Session> session)
     session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
 }
 
-const char* carla_get_host_osc_url_tcp();
-const char* carla_get_host_osc_url_udp();
+void handle_carla_get_host_osc_url_tcp(const std::shared_ptr<Session> session)
+{
+    const char* const buf = carla_get_host_osc_url_tcp();
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_host_osc_url_udp(const std::shared_ptr<Session> session)
+{
+    const char* const buf = carla_get_host_osc_url_udp();
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
 
 // -------------------------------------------------------------------------------------------------------------------
