@@ -2886,7 +2886,10 @@ class CarlaHostPlugin(CarlaHostMeta):
         return self.sendMsgAndSetError(["replace_plugin", pluginId])
 
     def switch_plugins(self, pluginIdA, pluginIdB):
-        return self.sendMsgAndSetError(["switch_plugins", pluginIdA, pluginIdB])
+        ret = self.sendMsgAndSetError(["switch_plugins", pluginIdA, pluginIdB])
+        if ret:
+            self._switchPlugins(pluginIdA, pluginIdB)
+        return ret
 
     def load_plugin_state(self, pluginId, filename):
         return self.sendMsgAndSetError(["load_plugin_state", pluginId, filename])
@@ -3243,5 +3246,10 @@ class CarlaHostPlugin(CarlaHostMeta):
 
     def _set_peaks(self, pluginId, in1, in2, out1, out2):
         self.fPluginsInfo[pluginId].peaks = [in1, in2, out1, out2]
+
+    def _switchPlugins(self, pluginIdA, pluginIdB):
+        tmp = self.fPluginsInfo[pluginIdA]
+        self.fPluginsInfo[pluginIdA] = self.fPluginsInfo[pluginIdB]
+        self.fPluginsInfo[pluginIdB] = tmp
 
 # ------------------------------------------------------------------------------------------------------------
