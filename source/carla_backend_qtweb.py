@@ -33,7 +33,7 @@ from time import sleep
 # Iterates over the content of a file-like object line-by-line.
 # Based on code by Lars Kellogg-Stedman, see https://github.com/requests/requests/issues/2433
 
-def iterate_stream_nonblock(stream, chunk_size=128):
+def iterate_stream_nonblock(stream, chunk_size=1024):
     pending = None
 
     while True:

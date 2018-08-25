@@ -923,7 +923,7 @@ void handle_carla_set_drywet(const std::shared_ptr<Session> session)
     CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
 
     const double value = std::atof(request->get_query_parameter("value").c_str());
-    CARLA_SAFE_ASSERT_RETURN(value >= 0.0 && value >= 1.0,)
+    CARLA_SAFE_ASSERT_RETURN(value >= 0.0 && value <= 1.0,)
 
     carla_set_drywet(pluginId, value);
     session->close(OK);
@@ -937,7 +937,7 @@ void handle_carla_set_volume(const std::shared_ptr<Session> session)
     CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
 
     const double value = std::atof(request->get_query_parameter("value").c_str());
-    CARLA_SAFE_ASSERT_RETURN(value >= 0.0 && value >= 1.0,)
+    CARLA_SAFE_ASSERT_RETURN(value >= 0.0 && value <= 1.27,)
 
     carla_set_volume(pluginId, value);
     session->close(OK);
@@ -951,7 +951,7 @@ void handle_carla_set_balance_left(const std::shared_ptr<Session> session)
     CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
 
     const double value = std::atof(request->get_query_parameter("value").c_str());
-    CARLA_SAFE_ASSERT_RETURN(value >= 0.0 && value >= 1.0,)
+    CARLA_SAFE_ASSERT_RETURN(value >= -1.0 && value <= 1.0,)
 
     carla_set_balance_left(pluginId, value);
     session->close(OK);
@@ -965,7 +965,7 @@ void handle_carla_set_balance_right(const std::shared_ptr<Session> session)
     CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
 
     const double value = std::atof(request->get_query_parameter("value").c_str());
-    CARLA_SAFE_ASSERT_RETURN(value >= 0.0 && value >= 1.0,)
+    CARLA_SAFE_ASSERT_RETURN(value >= -1.0 && value <= 1.0,)
 
     carla_set_balance_right(pluginId, value);
     session->close(OK);
@@ -979,7 +979,7 @@ void handle_carla_set_panning(const std::shared_ptr<Session> session)
     CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
 
     const double value = std::atof(request->get_query_parameter("value").c_str());
-    CARLA_SAFE_ASSERT_RETURN(value >= 0.0 && value >= 1.0,)
+    CARLA_SAFE_ASSERT_RETURN(value >= -1.0 && value <= 1.0,)
 
     carla_set_panning(pluginId, value);
     session->close(OK);
