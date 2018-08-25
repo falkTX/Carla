@@ -23,7 +23,7 @@ endif
 
 BUILD_CXX_FLAGS += -I$(CWD) -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils
 
-LINK_FLAGS += -L$(BINDIR) -lcarla_standalone2 -lcarla_utils -lrestbed -Wl,-rpath=$(shell realpath $(CWD)/../bin)
+LINK_FLAGS += -L$(BINDIR) -lcarla_standalone2 -lcarla_utils -lrestbed -lpthread -Wl,-rpath=$(shell realpath $(CWD)/../bin)
 
 # ----------------------------------------------------------------------------------------------------------------------
 

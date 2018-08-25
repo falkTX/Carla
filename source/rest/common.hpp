@@ -35,4 +35,6 @@ using restbed::OK;
 
 CARLA_BACKEND_USE_NAMESPACE;
 
+void send_server_side_message(const char* const message);
+
 #endif // REST_COMMON_HPP_INCLUDED

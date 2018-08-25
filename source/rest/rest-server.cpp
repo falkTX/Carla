@@ -26,9 +26,71 @@
 #include "carla-host.cpp"
 #include "carla-utils.cpp"
 
+#include "CarlaMutex.hpp"
+#include "CarlaStringList.hpp"
+
 // -------------------------------------------------------------------------------------------------------------------
 
-void make_resource(Service& service,
+std::vector<std::shared_ptr<Session>> gSessions;
+
+CarlaStringList gSessionMessages;
+CarlaMutex gSessionMessagesMutex;
+
+// -------------------------------------------------------------------------------------------------------------------
+
+void send_server_side_message(const char* const message)
+{
+    const CarlaMutexLocker cml(gSessionMessagesMutex);
+
+    gSessionMessages.append(message);
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+
+static void register_server_side_handler(const std::shared_ptr<Session> session)
+{
+    const auto headers = std::multimap<std::string, std::string> {
+        { "Connection", "keep-alive" },
+        { "Cache-Control", "no-cache" },
+        { "Content-Type", "text/event-stream" },
+        { "Access-Control-Allow-Origin", "*" } //Only required for demo purposes.
+    };
+
+    session->yield(OK, headers, [](const std::shared_ptr<Session> rsession) {
+        gSessions.push_back(rsession);
+    });
+}
+
+static void event_stream_handler(void)
+{
+    gSessions.erase(
+            std::remove_if(gSessions.begin(), gSessions.end(),
+                                [](const std::shared_ptr<Session> &a) {
+                                    return a->is_closed();
+                                }),
+            gSessions.end());
+
+    CarlaStringList messages;
+
+    {
+        const CarlaMutexLocker cml(gSessionMessagesMutex);
+
+        if (gSessionMessages.count() > 0)
+            gSessionMessages.moveTo(messages);
+    }
+
+    for (auto message : messages)
+    {
+        std::puts(message);
+
+        for (auto session : gSessions)
+            session->yield(OK, message);
+    }
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+
+static void make_resource(Service& service,
                    const char* const path,
                    const std::function<void (const std::shared_ptr<Session>)>& callback)
 {
@@ -44,6 +106,14 @@ int main(int, const char**)
 {
     Service service;
 
+    // server-side messages
+    {
+        std::shared_ptr<Resource> resource = std::make_shared<Resource>();
+        resource->set_path("/stream");
+        resource->set_method_handler("GET", register_server_side_handler);
+        service.publish(resource);
+    }
+
     // carla-host
     make_resource(service, "/get_engine_driver_count", handle_carla_get_engine_driver_count);
     make_resource(service, "/get_engine_driver_name/{index: .*}", handle_carla_get_engine_driver_name);
@@ -52,7 +122,6 @@ int main(int, const char**)
 
     make_resource(service, "/engine_init/{driverName: .*}/{clientName: .*}", handle_carla_engine_init);
     make_resource(service, "/engine_close", handle_carla_engine_close);
-    make_resource(service, "/engine_idle", handle_carla_engine_idle);
     make_resource(service, "/is_engine_running", handle_carla_is_engine_running);
     make_resource(service, "/set_engine_about_to_close", handle_carla_set_engine_about_to_close);
 
@@ -65,6 +134,10 @@ int main(int, const char**)
     make_resource(service, "/get_supported_features", handle_carla_get_supported_features);
     make_resource(service, "/get_cached_plugin_count/{ptype: .*}/{pluginPath: .*}", handle_carla_get_cached_plugin_count);
     make_resource(service, "/get_cached_plugin_info/{ptype: .*}/{index: .*}", handle_carla_get_cached_plugin_info);
+
+    // schedule events
+    service.schedule(engine_idle_handler, std::chrono::milliseconds(33)); // ~30Hz
+    service.schedule(event_stream_handler, std::chrono::milliseconds(500));
 
     std::shared_ptr<Settings> settings = std::make_shared<Settings>();
     settings->set_port(2228);

@@ -1881,6 +1881,7 @@ class CarlaHostNull(CarlaHostMeta):
         CarlaHostMeta.__init__(self)
 
         self.fEngineCallback = None
+        self.fFileCallback   = None
         self.fEngineRunning  = False
 
     def get_engine_driver_count(self):
@@ -1923,7 +1924,7 @@ class CarlaHostNull(CarlaHostMeta):
         return
 
     def set_file_callback(self, func):
-        return
+        self.fFileCallback = func
 
     def load_file(self, filename):
         return False
