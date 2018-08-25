@@ -2603,7 +2603,7 @@ class CarlaHostDLL(CarlaHostMeta):
     def get_custom_data(self, pluginId, customDataId):
         return structToDict(self.lib.carla_get_custom_data(pluginId, customDataId).contents)
 
-    def get_custom_data_by_key(self, pluginId, type_, key):
+    def get_custom_data_value(self, pluginId, type_, key):
         return charPtrToString(self.lib.carla_get_custom_data_value(pluginId, type_.encode("utf-8"), key.encode("utf-8")))
 
     def get_chunk_data(self, pluginId):
