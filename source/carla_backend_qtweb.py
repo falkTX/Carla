@@ -73,7 +73,7 @@ def create_stream(baseurl):
     return stream
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Carla Host object for connecting to the REST API
+# Carla Host object for connecting to the REST API backend
 
 class CarlaHostQtWeb(CarlaHostQtNull):
     def __init__(self):
@@ -126,10 +126,11 @@ class CarlaHostQtWeb(CarlaHostQtNull):
                 self.fEngineCallback(None, action, pluginId, value1, value2, value3, valueStr)
 
             elif line == "Connection: close":
-                closed = True
+                if not closed:
+                    self.stream = create_stream(self.baseurl)
+                    closed = True
 
         if closed:
-            self.stream = create_stream(self.baseurl)
             stream.close()
 
     def is_engine_running(self):
@@ -143,229 +144,229 @@ class CarlaHostQtWeb(CarlaHostQtNull):
         return requests.get("{}/set_engine_about_to_close".format(self.baseurl)).status_code == 200
 
     def set_engine_option(self, option, value, valueStr):
-        return
+        requests.get("{}/set_engine_option/{}/{}/{}".format(self.baseurl, option, value, valueStr))
 
     def load_file(self, filename):
-        return False
+        return requests.get("{}/load_file/{}".format(self.baseurl, filename)).status_code == 200
 
     def load_project(self, filename):
-        return False
+        return requests.get("{}/load_project/{}".format(self.baseurl, filename)).status_code == 200
 
     def save_project(self, filename):
-        return False
+        return requests.get("{}/save_project/{}".format(self.baseurl, filename)).status_code == 200
 
     def patchbay_connect(self, groupIdA, portIdA, groupIdB, portIdB):
-        return False
+        return requests.get("{}/patchbay_connect/{}/{}/{}/{}".format(self.baseurl, groupIdA, portIdA, groupIdB, portIdB)).status_code == 200
 
     def patchbay_disconnect(self, connectionId):
-        return False
+        return requests.get("{}/patchbay_disconnect/{}".format(self.baseurl, connectionId)).status_code == 200
 
     def patchbay_refresh(self, external):
-        return False
+        return requests.get("{}/patchbay_refresh/{}".format(self.baseurl, external)).status_code == 200
 
     def transport_play(self):
-        return
+        requests.get("{}/transport_play".format(self.baseurl))
 
     def transport_pause(self):
-        return
+        requests.get("{}/transport_pause".format(self.baseurl))
 
     def transport_bpm(self, bpm):
-        return
+        requests.get("{}/transport_bpm/{}".format(self.baseurl, bpm))
 
     def transport_relocate(self, frame):
-        return
+        requests.get("{}/transport_relocate/{}".format(self.baseurl, frame))
 
     def get_current_transport_frame(self):
-        return 0
+        return int(requests.get("{}/get_current_transport_frame".format(self.baseurl)).text)
 
     def get_transport_info(self):
-        return PyCarlaTransportInfo
+        return requests.get("{}/get_transport_info".format(self.baseurl)).json()
 
     def get_current_plugin_count(self):
-        return 0
+        return int(requests.get("{}/get_current_plugin_count".format(self.baseurl)).text)
 
     def get_max_plugin_number(self):
-        return 0
+        return int(requests.get("{}/get_max_plugin_number".format(self.baseurl)).text)
 
     def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr, options):
-        return False
+        return requests.get("{}/add_plugin/{}/{}/{}/{}/{}/{}/{}/{}".format(self.baseurl, btype, ptype, filename, name, label, uniqueId, extraPtr, options)).status_code == 200
 
     def remove_plugin(self, pluginId):
-        return False
+        return requests.get("{}/remove_plugin/{}".format(self.baseurl, pluginId)).status_code == 200
 
     def remove_all_plugins(self):
-        return False
+        return requests.get("{}/remove_all_plugins".format(self.baseurl)).status_code == 200
 
     def rename_plugin(self, pluginId, newName):
-        return ""
+        return requests.get("{}/rename_plugin/{}/{}".format(self.baseurl, pluginId, newName)).text
 
     def clone_plugin(self, pluginId):
-        return False
+        return requests.get("{}/clone_plugin/{}".format(self.baseurl, pluginId)).status_code == 200
 
     def replace_plugin(self, pluginId):
-        return False
+        return requests.get("{}/replace_plugin/{}".format(self.baseurl, pluginId)).status_code == 200
 
     def switch_plugins(self, pluginIdA, pluginIdB):
-        return False
+        return requests.get("{}/switch_plugins/{}/{}".format(self.baseurl, pluginIdA, pluginIdB)).status_code == 200
 
     def load_plugin_state(self, pluginId, filename):
-        return False
+        return requests.get("{}/load_plugin_state/{}/{}".format(self.baseurl, pluginId, filename)).status_code == 200
 
     def save_plugin_state(self, pluginId, filename):
-        return False
+        return requests.get("{}/save_plugin_state/{}/{}".format(self.baseurl, pluginId, filename)).status_code == 200
 
     def export_plugin_lv2(self, pluginId, lv2path):
-        return False
+        return requests.get("{}/export_plugin_lv2/{}/{}".format(self.baseurl, pluginId, lv2path)).status_code == 200
 
     def get_plugin_info(self, pluginId):
-        return PyCarlaPluginInfo
+        return requests.get("{}/get_plugin_info/{}".format(self.baseurl, pluginId)).json()
 
     def get_audio_port_count_info(self, pluginId):
-        return PyCarlaPortCountInfo
+        return requests.get("{}/get_audio_port_count_info/{}".format(self.baseurl, pluginId)).json()
 
     def get_midi_port_count_info(self, pluginId):
-        return PyCarlaPortCountInfo
+        return requests.get("{}/get_midi_port_count_info/{}".format(self.baseurl, pluginId)).json()
 
     def get_parameter_count_info(self, pluginId):
-        return PyCarlaPortCountInfo
+        return requests.get("{}/get_parameter_count_info/{}".format(self.baseurl, pluginId)).json()
 
     def get_parameter_info(self, pluginId, parameterId):
-        return PyCarlaParameterInfo
+        return requests.get("{}/get_parameter_info/{}/{}".format(self.baseurl, pluginId, parameterId)).json()
 
     def get_parameter_scalepoint_info(self, pluginId, parameterId, scalePointId):
-        return PyCarlaScalePointInfo
+        return requests.get("{}/get_parameter_scalepoint_info/{}/{}/{}".format(self.baseurl, pluginId, parameterId, scalePointId)).json()
 
     def get_parameter_data(self, pluginId, parameterId):
-        return PyParameterData
+        return requests.get("{}/get_parameter_data/{}/{}".format(self.baseurl, pluginId, parameterId)).json()
 
     def get_parameter_ranges(self, pluginId, parameterId):
-        return PyParameterRanges
+        return requests.get("{}/get_parameter_ranges/{}/{}".format(self.baseurl, pluginId, parameterId)).json()
 
     def get_midi_program_data(self, pluginId, midiProgramId):
-        return PyMidiProgramData
+        return requests.get("{}/get_midi_program_data/{}/{}".format(self.baseurl, pluginId, midiProgramId)).json()
 
     def get_custom_data(self, pluginId, customDataId):
-        return PyCustomData
+        return requests.get("{}/get_custom_data/{}/{}".format(self.baseurl, pluginId, customDataId)).json()
 
     def get_chunk_data(self, pluginId):
-        return ""
+        return requests.get("{}/get_chunk_data/{}".format(self.baseurl, pluginId)).text
 
     def get_parameter_count(self, pluginId):
-        return 0
+        return int(requests.get("{}/get_parameter_count/{}".format(self.baseurl, pluginId)).text)
 
     def get_program_count(self, pluginId):
-        return 0
+        return int(requests.get("{}/get_program_count/{}".format(self.baseurl, pluginId)).text)
 
     def get_midi_program_count(self, pluginId):
-        return 0
+        return int(requests.get("{}/get_midi_program_count/{}".format(self.baseurl, pluginId)).text)
 
     def get_custom_data_count(self, pluginId):
-        return 0
+        return int(requests.get("{}/get_custom_data_count/{}".format(self.baseurl, pluginId)).text)
 
     def get_parameter_text(self, pluginId, parameterId):
-        return ""
+        return requests.get("{}/get_parameter_text/{}/{}".format(self.baseurl, pluginId, parameterId)).text
 
     def get_program_name(self, pluginId, programId):
-        return ""
+        return requests.get("{}/get_program_name/{}/{}".format(self.baseurl, pluginId, programId)).text
 
     def get_midi_program_name(self, pluginId, midiProgramId):
-        return ""
+        return requests.get("{}/get_midi_program_name/{}/{}".format(self.baseurl, pluginId, midiProgramId)).text
 
     def get_real_plugin_name(self, pluginId):
-        return ""
+        return requests.get("{}/get_real_plugin_name/{}".format(self.baseurl, pluginId)).text
 
     def get_current_program_index(self, pluginId):
-        return 0
+        return int(requests.get("{}/get_custom_data_count/{}".format(self.baseurl, pluginId)).text)
 
     def get_current_midi_program_index(self, pluginId):
-        return 0
+        return int(requests.get("{}/get_custom_data_count/{}".format(self.baseurl, pluginId)).text)
 
     def get_default_parameter_value(self, pluginId, parameterId):
-        return 0.0
+        return float(requests.get("{}/get_default_parameter_value/{}/{}".format(self.baseurl, pluginId, parameterId)).text)
 
     def get_current_parameter_value(self, pluginId, parameterId):
-        return 0.0
+        return float(requests.get("{}/get_current_parameter_value/{}/{}".format(self.baseurl, pluginId, parameterId)).text)
 
     def get_internal_parameter_value(self, pluginId, parameterId):
-        return 0.0
+        return float(requests.get("{}/get_internal_parameter_value/{}/{}".format(self.baseurl, pluginId, parameterId)).text)
 
     def get_input_peak_value(self, pluginId, isLeft):
-        return 0.0
+        return float(requests.get("{}/get_input_peak_value/{}/{}".format(self.baseurl, pluginId, isLeft)).text)
 
     def get_output_peak_value(self, pluginId, isLeft):
-        return 0.0
+        return float(requests.get("{}/get_output_peak_value/{}/{}".format(self.baseurl, pluginId, isLeft)).text)
 
     def set_option(self, pluginId, option, yesNo):
-        return
+        requests.get("{}/set_option/{}/{}/{}".format(self.baseurl, pluginId, option, yesNo))
 
     def set_active(self, pluginId, onOff):
-        return
+        requests.get("{}/set_active/{}/{}".format(self.baseurl, pluginId, onOff))
 
     def set_drywet(self, pluginId, value):
-        return
+        requests.get("{}/set_drywet/{}/{}".format(self.baseurl, pluginId, value))
 
     def set_volume(self, pluginId, value):
-        return
+        requests.get("{}/set_volume/{}/{}".format(self.baseurl, pluginId, value))
 
     def set_balance_left(self, pluginId, value):
-        return
+        requests.get("{}/set_balance_left/{}/{}".format(self.baseurl, pluginId, value))
 
     def set_balance_right(self, pluginId, value):
-        return
+        requests.get("{}/set_balance_right/{}/{}".format(self.baseurl, pluginId, value))
 
     def set_panning(self, pluginId, value):
-        return
+        requests.get("{}/set_panning/{}/{}".format(self.baseurl, pluginId, value))
 
     def set_ctrl_channel(self, pluginId, channel):
-        return
+        requests.get("{}/set_ctrl_channel/{}/{}".format(self.baseurl, pluginId, channel))
 
     def set_parameter_value(self, pluginId, parameterId, value):
-        return
+        requests.get("{}/set_parameter_value/{}/{}/{}".format(self.baseurl, pluginId, parameterId, value))
 
     def set_parameter_midi_channel(self, pluginId, parameterId, channel):
-        return
+        requests.get("{}/set_parameter_midi_channel/{}/{}/{}".format(self.baseurl, pluginId, parameterId, channel))
 
     def set_parameter_midi_cc(self, pluginId, parameterId, cc):
-        return
+        requests.get("{}/set_parameter_midi_cc/{}/{}/{}".format(self.baseurl, pluginId, parameterId, cc))
 
     def set_program(self, pluginId, programId):
-        return
+        requests.get("{}/set_program/{}/{}".format(self.baseurl, pluginId, programId))
 
     def set_midi_program(self, pluginId, midiProgramId):
-        return
+        requests.get("{}/set_midi_program/{}/{}".format(self.baseurl, pluginId, midiProgramId))
 
     def set_custom_data(self, pluginId, type_, key, value):
-        return
+        requests.get("{}/set_custom_data/{}/{}/{}/{}".format(self.baseurl, pluginId, type_, key, value))
 
     def set_chunk_data(self, pluginId, chunkData):
-        return
+        requests.get("{}/set_chunk_data/{}/{}".format(self.baseurl, pluginId, chunkData))
 
     def prepare_for_save(self, pluginId):
-        return
+        requests.get("{}/prepare_for_save/{}".format(self.baseurl, pluginId))
 
     def reset_parameters(self, pluginId):
-        return
+        requests.get("{}/reset_parameters/{}".format(self.baseurl, pluginId))
 
     def randomize_parameters(self, pluginId):
-        return
+        requests.get("{}/randomize_parameters/{}".format(self.baseurl, pluginId))
 
     def send_midi_note(self, pluginId, channel, note, velocity):
-        return
+        requests.get("{}/send_midi_note/{}/{}/{}/{}".format(self.baseurl, pluginId, channel, note, velocity))
 
     def get_buffer_size(self):
-        return 0
+        return int(requests.get("{}/get_buffer_size".format(self.baseurl)).text)
 
     def get_sample_rate(self):
-        return 0.0
+        return float(requests.get("{}/get_sample_rate".format(self.baseurl)).text)
 
     def get_last_error(self):
         return requests.get("{}/get_last_error".format(self.baseurl)).text
 
     def get_host_osc_url_tcp(self):
-        return ""
+        return requests.get("{}/get_host_osc_url_tcp".format(self.baseurl)).text
 
     def get_host_osc_url_udp(self):
-        return ""
+        return requests.get("{}/get_host_osc_url_udp".format(self.baseurl)).text
 
 # ---------------------------------------------------------------------------------------------------------------------
 # TESTING

@@ -161,116 +161,169 @@ void handle_carla_set_engine_about_to_close(const std::shared_ptr<Session> sessi
 
 // -------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT void carla_set_engine_option(EngineOption option, int value, const char* valueStr);
+void carla_set_engine_option(EngineOption option, int value, const char* valueStr);
 
 // -------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT bool carla_load_file(const char* filename);
-CARLA_EXPORT bool carla_load_project(const char* filename);
-CARLA_EXPORT bool carla_save_project(const char* filename);
-CARLA_EXPORT bool carla_patchbay_connect(uint groupIdA, uint portIdA, uint groupIdB, uint portIdB);
-CARLA_EXPORT bool carla_patchbay_disconnect(uint connectionId);
-CARLA_EXPORT bool carla_patchbay_refresh(bool external);
+bool carla_load_file(const char* filename);
+bool carla_load_project(const char* filename);
+bool carla_save_project(const char* filename);
 
 // -------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT void carla_transport_play();
-CARLA_EXPORT void carla_transport_pause();
-CARLA_EXPORT void carla_transport_bpm(double bpm);
-CARLA_EXPORT void carla_transport_relocate(uint64_t frame);
-CARLA_EXPORT uint64_t carla_get_current_transport_frame();
-CARLA_EXPORT const CarlaTransportInfo* carla_get_transport_info();
+bool carla_patchbay_connect(uint groupIdA, uint portIdA, uint groupIdB, uint portIdB);
+bool carla_patchbay_disconnect(uint connectionId);
+bool carla_patchbay_refresh(bool external);
 
 // -------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT uint32_t carla_get_current_plugin_count();
-CARLA_EXPORT uint32_t carla_get_max_plugin_number();
-CARLA_EXPORT bool carla_add_plugin(BinaryType btype, PluginType ptype,
+void handle_carla_transport_play(const std::shared_ptr<Session> session)
+{
+    carla_transport_play();
+    session->close(OK);
+}
+
+void handle_carla_transport_pause(const std::shared_ptr<Session> session)
+{
+    carla_transport_pause();
+    session->close(OK);
+}
+
+void handle_carla_transport_bpm(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const double bpm = std::atof(request->get_path_parameter("bpm").c_str());
+    CARLA_SAFE_ASSERT_RETURN(bpm > 0.0,) // FIXME
+
+    carla_transport_bpm(bpm);
+    session->close(OK);
+}
+
+void handle_carla_transport_relocate(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const long int frame = std::atol(request->get_path_parameter("frame").c_str());
+    CARLA_SAFE_ASSERT_RETURN(frame >= 0,)
+
+    carla_transport_relocate(frame);
+    session->close(OK);
+}
+
+void handle_carla_get_current_transport_frame(const std::shared_ptr<Session> session)
+{
+    const char* const buf = str_buf_uint64(carla_get_current_transport_frame());
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+void handle_carla_get_transport_info(const std::shared_ptr<Session> session)
+{
+    const CarlaTransportInfo* const info = carla_get_transport_info();
+
+    char* jsonBuf;
+    jsonBuf = json_buf_start();
+    jsonBuf = json_buf_add_bool(jsonBuf, "playing", info->playing);
+    jsonBuf = json_buf_add_uint64(jsonBuf, "frame", info->frame);
+    jsonBuf = json_buf_add_int(jsonBuf, "bar", info->bar);
+    jsonBuf = json_buf_add_int(jsonBuf, "beat", info->beat);
+    jsonBuf = json_buf_add_int(jsonBuf, "tick", info->tick);
+    jsonBuf = json_buf_add_float(jsonBuf, "bpm", info->bpm);
+
+    const char* const buf = json_buf_end(jsonBuf);
+    session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+
+uint32_t carla_get_current_plugin_count();
+uint32_t carla_get_max_plugin_number();
+bool carla_add_plugin(BinaryType btype, PluginType ptype,
                                    const char* filename, const char* name, const char* label, int64_t uniqueId,
                                    const void* extraPtr, uint options);
-CARLA_EXPORT bool carla_remove_plugin(uint pluginId);
-CARLA_EXPORT bool carla_remove_all_plugins();
+bool carla_remove_plugin(uint pluginId);
+bool carla_remove_all_plugins();
 
 // -------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT const char* carla_rename_plugin(uint pluginId, const char* newName);
-CARLA_EXPORT bool carla_clone_plugin(uint pluginId);
-CARLA_EXPORT bool carla_replace_plugin(uint pluginId);
-CARLA_EXPORT bool carla_switch_plugins(uint pluginIdA, uint pluginIdB);
+const char* carla_rename_plugin(uint pluginId, const char* newName);
+bool carla_clone_plugin(uint pluginId);
+bool carla_replace_plugin(uint pluginId);
+bool carla_switch_plugins(uint pluginIdA, uint pluginIdB);
 
 // -------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT bool carla_load_plugin_state(uint pluginId, const char* filename);
-CARLA_EXPORT bool carla_save_plugin_state(uint pluginId, const char* filename);
-CARLA_EXPORT bool carla_export_plugin_lv2(uint pluginId, const char* lv2path);
+bool carla_load_plugin_state(uint pluginId, const char* filename);
+bool carla_save_plugin_state(uint pluginId, const char* filename);
+bool carla_export_plugin_lv2(uint pluginId, const char* lv2path);
 
 // -------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT const CarlaPluginInfo* carla_get_plugin_info(uint pluginId);
-CARLA_EXPORT const CarlaPortCountInfo* carla_get_audio_port_count_info(uint pluginId);
-CARLA_EXPORT const CarlaPortCountInfo* carla_get_midi_port_count_info(uint pluginId);
-CARLA_EXPORT const CarlaPortCountInfo* carla_get_parameter_count_info(uint pluginId);
-CARLA_EXPORT const CarlaParameterInfo* carla_get_parameter_info(uint pluginId, uint32_t parameterId);
-CARLA_EXPORT const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(uint pluginId, uint32_t parameterId, uint32_t scalePointId);
-CARLA_EXPORT const ParameterData* carla_get_parameter_data(uint pluginId, uint32_t parameterId);
-CARLA_EXPORT const ParameterRanges* carla_get_parameter_ranges(uint pluginId, uint32_t parameterId);
-CARLA_EXPORT const MidiProgramData* carla_get_midi_program_data(uint pluginId, uint32_t midiProgramId);
-CARLA_EXPORT const CustomData* carla_get_custom_data(uint pluginId, uint32_t customDataId);
-CARLA_EXPORT const char* carla_get_chunk_data(uint pluginId);
+const CarlaPluginInfo* carla_get_plugin_info(uint pluginId);
+const CarlaPortCountInfo* carla_get_audio_port_count_info(uint pluginId);
+const CarlaPortCountInfo* carla_get_midi_port_count_info(uint pluginId);
+const CarlaPortCountInfo* carla_get_parameter_count_info(uint pluginId);
+const CarlaParameterInfo* carla_get_parameter_info(uint pluginId, uint32_t parameterId);
+const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(uint pluginId, uint32_t parameterId, uint32_t scalePointId);
+const ParameterData* carla_get_parameter_data(uint pluginId, uint32_t parameterId);
+const ParameterRanges* carla_get_parameter_ranges(uint pluginId, uint32_t parameterId);
+const MidiProgramData* carla_get_midi_program_data(uint pluginId, uint32_t midiProgramId);
+const CustomData* carla_get_custom_data(uint pluginId, uint32_t customDataId);
+const char* carla_get_chunk_data(uint pluginId);
 
 // -------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT uint32_t carla_get_parameter_count(uint pluginId);
-CARLA_EXPORT uint32_t carla_get_program_count(uint pluginId);
-CARLA_EXPORT uint32_t carla_get_midi_program_count(uint pluginId);
-CARLA_EXPORT uint32_t carla_get_custom_data_count(uint pluginId);
-CARLA_EXPORT const char* carla_get_parameter_text(uint pluginId, uint32_t parameterId);
-CARLA_EXPORT const char* carla_get_program_name(uint pluginId, uint32_t programId);
-CARLA_EXPORT const char* carla_get_midi_program_name(uint pluginId, uint32_t midiProgramId);
-CARLA_EXPORT const char* carla_get_real_plugin_name(uint pluginId);
-CARLA_EXPORT int32_t carla_get_current_program_index(uint pluginId);
-CARLA_EXPORT int32_t carla_get_current_midi_program_index(uint pluginId);
-CARLA_EXPORT float carla_get_default_parameter_value(uint pluginId, uint32_t parameterId);
-CARLA_EXPORT float carla_get_current_parameter_value(uint pluginId, uint32_t parameterId);
-CARLA_EXPORT float carla_get_internal_parameter_value(uint pluginId, int32_t parameterId);
-CARLA_EXPORT float carla_get_input_peak_value(uint pluginId, bool isLeft);
-CARLA_EXPORT float carla_get_output_peak_value(uint pluginId, bool isLeft);
+uint32_t carla_get_parameter_count(uint pluginId);
+uint32_t carla_get_program_count(uint pluginId);
+uint32_t carla_get_midi_program_count(uint pluginId);
+uint32_t carla_get_custom_data_count(uint pluginId);
+const char* carla_get_parameter_text(uint pluginId, uint32_t parameterId);
+const char* carla_get_program_name(uint pluginId, uint32_t programId);
+const char* carla_get_midi_program_name(uint pluginId, uint32_t midiProgramId);
+const char* carla_get_real_plugin_name(uint pluginId);
+int32_t carla_get_current_program_index(uint pluginId);
+int32_t carla_get_current_midi_program_index(uint pluginId);
+float carla_get_default_parameter_value(uint pluginId, uint32_t parameterId);
+float carla_get_current_parameter_value(uint pluginId, uint32_t parameterId);
+float carla_get_internal_parameter_value(uint pluginId, int32_t parameterId);
+float carla_get_input_peak_value(uint pluginId, bool isLeft);
+float carla_get_output_peak_value(uint pluginId, bool isLeft);
 
 // -------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT void carla_set_active(uint pluginId, bool onOff);
-CARLA_EXPORT void carla_set_drywet(uint pluginId, float value);
-CARLA_EXPORT void carla_set_volume(uint pluginId, float value);
-CARLA_EXPORT void carla_set_balance_left(uint pluginId, float value);
-CARLA_EXPORT void carla_set_balance_right(uint pluginId, float value);
-CARLA_EXPORT void carla_set_panning(uint pluginId, float value);
-CARLA_EXPORT void carla_set_ctrl_channel(uint pluginId, int8_t channel);
-CARLA_EXPORT void carla_set_option(uint pluginId, uint option, bool yesNo);
+void carla_set_active(uint pluginId, bool onOff);
+void carla_set_drywet(uint pluginId, float value);
+void carla_set_volume(uint pluginId, float value);
+void carla_set_balance_left(uint pluginId, float value);
+void carla_set_balance_right(uint pluginId, float value);
+void carla_set_panning(uint pluginId, float value);
+void carla_set_ctrl_channel(uint pluginId, int8_t channel);
+void carla_set_option(uint pluginId, uint option, bool yesNo);
 
 // -------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT void carla_set_parameter_value(uint pluginId, uint32_t parameterId, float value);
-CARLA_EXPORT void carla_set_parameter_midi_channel(uint pluginId, uint32_t parameterId, uint8_t channel);
-CARLA_EXPORT void carla_set_parameter_midi_cc(uint pluginId, uint32_t parameterId, int16_t cc);
-CARLA_EXPORT void carla_set_program(uint pluginId, uint32_t programId);
-CARLA_EXPORT void carla_set_midi_program(uint pluginId, uint32_t midiProgramId);
-CARLA_EXPORT void carla_set_custom_data(uint pluginId, const char* type, const char* key, const char* value);
-CARLA_EXPORT void carla_set_chunk_data(uint pluginId, const char* chunkData);
+void carla_set_parameter_value(uint pluginId, uint32_t parameterId, float value);
+void carla_set_parameter_midi_channel(uint pluginId, uint32_t parameterId, uint8_t channel);
+void carla_set_parameter_midi_cc(uint pluginId, uint32_t parameterId, int16_t cc);
+void carla_set_program(uint pluginId, uint32_t programId);
+void carla_set_midi_program(uint pluginId, uint32_t midiProgramId);
+void carla_set_custom_data(uint pluginId, const char* type, const char* key, const char* value);
+void carla_set_chunk_data(uint pluginId, const char* chunkData);
 
 // -------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT void carla_prepare_for_save(uint pluginId);
-CARLA_EXPORT void carla_reset_parameters(uint pluginId);
-CARLA_EXPORT void carla_randomize_parameters(uint pluginId);
+void carla_prepare_for_save(uint pluginId);
+void carla_reset_parameters(uint pluginId);
+void carla_randomize_parameters(uint pluginId);
 
 // -------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT void carla_send_midi_note(uint pluginId, uint8_t channel, uint8_t note, uint8_t velocity);
+void carla_send_midi_note(uint pluginId, uint8_t channel, uint8_t note, uint8_t velocity);
 
 // -------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT uint32_t carla_get_buffer_size();
-CARLA_EXPORT double carla_get_sample_rate();
+uint32_t carla_get_buffer_size();
+double carla_get_sample_rate();
 
 void handle_carla_get_last_error(const std::shared_ptr<Session> session)
 {
@@ -278,7 +331,7 @@ void handle_carla_get_last_error(const std::shared_ptr<Session> session)
     session->close(OK, buf, { { "Content-Length", size_buf(buf) } } );
 }
 
-CARLA_EXPORT const char* carla_get_host_osc_url_tcp();
-CARLA_EXPORT const char* carla_get_host_osc_url_udp();
+const char* carla_get_host_osc_url_tcp();
+const char* carla_get_host_osc_url_udp();
 
 // -------------------------------------------------------------------------------------------------------------------

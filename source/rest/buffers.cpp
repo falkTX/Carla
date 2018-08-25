@@ -58,6 +58,8 @@ const char* str_buf_bool(const uint value)
     return strBuf;
 }
 
+// -------------------------------------------------------------------------------------------------------------------
+
 const char* str_buf_float(const double value)
 {
     std::snprintf(strBuf, kStrBufSize, "%f", value);
@@ -90,6 +92,8 @@ const char* str_buf_float_array(const double* const values, const char sep)
     return strBuf;
 }
 
+// -------------------------------------------------------------------------------------------------------------------
+
 const char* str_buf_string(const char* const string)
 {
     std::strncpy(strBuf, string, kStrBufSize);
@@ -118,9 +122,25 @@ const char* str_buf_string_array(const char* const* const array)
     return strBuf;
 }
 
+// -------------------------------------------------------------------------------------------------------------------
+
+const char* str_buf_int(const int value)
+{
+    std::snprintf(strBuf, kStrBufSize, "%i", value);
+    strBuf[kStrBufSize] = '\0';
+    return strBuf;
+}
+
 const char* str_buf_uint(const uint value)
 {
     std::snprintf(strBuf, kStrBufSize, "%u", value);
+    strBuf[kStrBufSize] = '\0';
+    return strBuf;
+}
+
+const char* str_buf_uint64(const uint64_t value)
+{
+    std::snprintf(strBuf, kStrBufSize, P_UINT64, value);
     strBuf[kStrBufSize] = '\0';
     return strBuf;
 }
@@ -207,12 +227,12 @@ char* json_buf_add_array(char* jsonBufPtr, const char* const key, const T value,
 
 // -------------------------------------------------------------------------------------------------------------------
 
-// typedef const char* (*str_buf_bool_type)(const bool value);
-//
-// char* json_buf_add_bool(char* jsonBufPtr, const char* const key, const bool value)
-// {
-//     return json_buf_add<bool, str_buf_bool_type>(jsonBufPtr, key, value, str_buf_bool);
-// }
+char* json_buf_add_bool(char* jsonBufPtr, const char* const key, const bool value)
+{
+    static const char* const kTrue  = "true";
+    static const char* const kFalse = "false";
+    return json_buf_add(jsonBufPtr, key, value ? kTrue : kFalse, str_buf_string);
+}
 
 char* json_buf_add_float(char* jsonBufPtr, const char* const key, const double value)
 {
@@ -229,6 +249,11 @@ char* json_buf_add_string(char* jsonBufPtr, const char* const key, const char* c
     return json_buf_add(jsonBufPtr, key, value, str_buf_string);
 }
 
+char* json_buf_add_int(char* jsonBufPtr, const char* const key, const int value)
+{
+    return json_buf_add(jsonBufPtr, key, value, str_buf_int);
+}
+
 char* json_buf_add_uint(char* jsonBufPtr, const char* const key, const uint value)
 {
     return json_buf_add(jsonBufPtr, key, value, str_buf_uint);
@@ -237,6 +262,11 @@ char* json_buf_add_uint(char* jsonBufPtr, const char* const key, const uint valu
 char* json_buf_add_uint_array(char* jsonBufPtr, const char* const key, const uint* const values)
 {
     return json_buf_add_array(jsonBufPtr, key, values, str_buf_uint_array);
+}
+
+char* json_buf_add_uint64(char* jsonBufPtr, const char* const key, const uint64_t value)
+{
+    return json_buf_add(jsonBufPtr, key, value, str_buf_uint64);
 }
 
 const char* json_buf_end(char* jsonBufPtr)

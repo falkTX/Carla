@@ -63,9 +63,6 @@ void handle_carla_get_cached_plugin_info(const std::shared_ptr<Session> session)
     const int index = std::atoi(request->get_path_parameter("index").c_str());
     CARLA_SAFE_ASSERT_RETURN(index >= 0 /*&& index < INT_MAX*/,)
 
-    // REMOVE THIS
-    carla_get_cached_plugin_count(static_cast<PluginType>(ptype), nullptr);
-
     const CarlaCachedPluginInfo* const info = carla_get_cached_plugin_info(static_cast<PluginType>(ptype),
                                                                            static_cast<uint>(index));
 

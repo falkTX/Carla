@@ -125,6 +125,17 @@ int main(int, const char**)
     make_resource(service, "/is_engine_running", handle_carla_is_engine_running);
     make_resource(service, "/set_engine_about_to_close", handle_carla_set_engine_about_to_close);
 
+    // project
+
+    // patchbay
+
+    make_resource(service, "/transport_play", handle_carla_transport_play);
+    make_resource(service, "/transport_pause", handle_carla_transport_pause);
+    make_resource(service, "/transport_bpm/{bpm: .*}", handle_carla_transport_bpm);
+    make_resource(service, "/transport_relocate/{frame: .*}", handle_carla_transport_relocate);
+    make_resource(service, "/get_current_transport_frame", handle_carla_get_current_transport_frame);
+    make_resource(service, "/get_transport_info", handle_carla_get_transport_info);
+
     // ...
     make_resource(service, "/get_last_error", handle_carla_get_last_error);
 
