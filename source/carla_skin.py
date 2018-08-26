@@ -527,6 +527,12 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 QLabel#label_name:disabled { color: #555; }
             """ % styleSheet2
 
+        styleSheet += """
+            QComboBox#cb_presets,
+            QLabel#label_audio_in,
+            QLabel#label_audio_out,
+            QLabel#label_midi { font-size: 10px; }
+        """
         self.setStyleSheet(styleSheet)
 
         # -------------------------------------------------------------
