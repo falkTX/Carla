@@ -900,7 +900,7 @@ endif
 ifeq ($(HAVE_FLUIDSYNTH),true)
 	@printf -- "SF2/3: $(ANS_YES)\n"
 else
-	@printf -- "SF2/3: $(ANS_NO)    $(mS)FluidSynth missing$(mE)\n"
+	@printf -- "SF2/3: $(ANS_NO) $(mS)FluidSynth missing$(mE)\n"
 endif
 	@printf -- "SFZ:   $(ANS_YES)\n"
 	@printf -- "\n"
@@ -911,8 +911,8 @@ ifneq ($(WIN32),true)
 	@printf -- "Carla-Patchbay:   $(ANS_YES)\n"
 	@printf -- "Carla-Rack:       $(ANS_YES)\n"
 else
-	@printf -- "Carla-Patchbay:   $(ANS_NO)   $(mS)Not available for Windows$(mE)\n"
-	@printf -- "Carla-Rack:       $(ANS_NO)   $(mS)Not available for Windows$(mE)\n"
+	@printf -- "Carla-Patchbay:   $(ANS_NO) $(mS)Not available for Windows$(mE)\n"
+	@printf -- "Carla-Rack:       $(ANS_NO) $(mS)Not available for Windows$(mE)\n"
 endif
 ifeq ($(EXTERNAL_PLUGINS),true)
 	@printf -- "External Plugins: $(ANS_YES)\n"
