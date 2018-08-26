@@ -163,6 +163,9 @@ libjack: libs
 plugin: backend bridges-plugin bridges-ui discovery
 	@$(MAKE) -C source/plugin
 
+rest: libs
+	@$(MAKE) -C source/rest
+
 theme: libs
 	@$(MAKE) -C source/theme
 
