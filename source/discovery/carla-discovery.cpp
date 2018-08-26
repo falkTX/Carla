@@ -44,8 +44,7 @@
 #include "water/text/StringArray.h"
 
 #ifndef BUILD_BRIDGE
-# define CARLA_UTILS_CACHED_PLUGINS_ONLY
-# include "CarlaUtils.cpp"
+# include "../backend/utils/CachedPlugins.cpp"
 #endif
 
 #define DISCOVERY_OUT(x, y) std::cout << "\ncarla-discovery::" << x << "::" << y << std::endl;
@@ -279,6 +278,9 @@ static void do_cached_check(const PluginType type)
     {
         const CarlaCachedPluginInfo* pinfo(carla_get_cached_plugin_info(type, i));
         CARLA_SAFE_ASSERT_CONTINUE(pinfo != nullptr);
+
+        if (! pinfo->valid)
+            continue;
 
         DISCOVERY_OUT("init", "-----------");
         DISCOVERY_OUT("build", BINARY_NATIVE);
@@ -1476,18 +1478,16 @@ int main(int argc, char* argv[])
         break;
     }
 
-    if (type != PLUGIN_SF2 && type != PLUGIN_SFZ)
+    if (type != PLUGIN_SF2 && filenameCheck.contains("fluidsynth", true))
     {
-        if (filenameCheck.contains("fluidsynth", true))
-        {
-            DISCOVERY_OUT("info", "skipping fluidsynth based plugin");
-            return 0;
-        }
-#ifdef CARLA_OS_MAC
-        if (type == PLUGIN_VST2 && (filenameCheck.endsWith(".vst") || filenameCheck.endsWith(".vst/")))
-            openLib = false;
-#endif
+        DISCOVERY_OUT("info", "skipping fluidsynth based plugin");
+        return 0;
     }
+
+#ifdef CARLA_OS_MAC
+    if (type == PLUGIN_VST2 && (filenameCheck.endsWith(".vst") || filenameCheck.endsWith(".vst/")))
+        openLib = false;
+#endif
 
     if (openLib)
     {

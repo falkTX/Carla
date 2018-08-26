@@ -25,10 +25,23 @@ namespace CB = CarlaBackend;
 
 static const char* const gNullCharPtr = "";
 
+static bool isCachedPluginType(const CB::PluginType ptype)
+{
+    switch (ptype)
+    {
+    case CB::PLUGIN_INTERNAL:
+    case CB::PLUGIN_LV2:
+        return false;
+    default:
+        return true;
+    }
+}
+
 // -------------------------------------------------------------------------------------------------------------------
 
 _CarlaCachedPluginInfo::_CarlaCachedPluginInfo() noexcept
-    : category(CB::PLUGIN_CATEGORY_NONE),
+    : valid(false),
+      category(CB::PLUGIN_CATEGORY_NONE),
       hints(0x0),
       audioIns(0),
       audioOuts(0),
@@ -45,7 +58,7 @@ _CarlaCachedPluginInfo::_CarlaCachedPluginInfo() noexcept
 
 uint carla_get_cached_plugin_count(CB::PluginType ptype, const char* pluginPath)
 {
-    CARLA_SAFE_ASSERT_RETURN(ptype == CB::PLUGIN_INTERNAL || ptype == CB::PLUGIN_LV2, 0);
+    CARLA_SAFE_ASSERT_RETURN(isCachedPluginType(ptype), 0);
     carla_debug("carla_get_cached_plugin_count(%i:%s)", ptype, CB::PluginType2Str(ptype));
 
     switch (ptype)
@@ -99,6 +112,7 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
         if (desc.hints & NATIVE_PLUGIN_USES_MULTI_PROGS)
             info.hints |= CB::PLUGIN_USES_MULTI_PROGS;
 
+        info.valid         = true;
         info.audioIns      = desc.audioIns;
         info.audioOuts     = desc.audioOuts;
         info.midiIns       = desc.midiIns;
@@ -382,6 +396,7 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
 
         lilv_nodes_free(const_cast<LilvNodes*>(licenseNodes.me));
 
+        info.valid     = true;
         info.name      = sname;
         info.label     = suri;
         info.maker     = smaker;
@@ -394,6 +409,7 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
         break;
     }
 
+    info.valid         = true;
     info.category      = CB::PLUGIN_CATEGORY_NONE;
     info.hints         = 0x0;
     info.audioIns      = 0;

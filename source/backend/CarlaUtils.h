@@ -50,6 +50,14 @@ typedef void (*CarlaPipeCallbackFunc)(void* ptr, const char* msg);
  */
 typedef struct _CarlaCachedPluginInfo {
     /*!
+     * Wherever the data in this struct is valid.
+     * For performance reasons, plugins are only checked on request,
+     *  and as such, the count vs number of really valid plugins might not match.
+     * Use this field to skip on plugins which cannot be loaded in Carla.
+     */
+    bool valid;
+
+    /*!
      * Plugin category.
      */
     PluginCategory category;

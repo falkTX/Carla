@@ -68,6 +68,7 @@ void handle_carla_get_cached_plugin_info(const std::shared_ptr<Session> session)
 
     char* jsonBuf;
     jsonBuf = json_buf_start();
+    jsonBuf = json_buf_add_bool(jsonBuf, "valid", info->valid);
     jsonBuf = json_buf_add_uint(jsonBuf, "category", info->category);
     jsonBuf = json_buf_add_uint(jsonBuf, "hints", info->hints);
     jsonBuf = json_buf_add_uint(jsonBuf, "audioIns", info->audioIns);

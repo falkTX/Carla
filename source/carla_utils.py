@@ -90,6 +90,12 @@ CarlaPipeCallbackFunc = CFUNCTYPE(None, c_void_p, c_char_p)
 # @see carla_get_cached_plugin_info()
 class CarlaCachedPluginInfo(Structure):
     _fields_ = [
+        # Wherever the data in this struct is valid.
+        # For performance reasons, plugins are only checked on request,
+        #  and as such, the count vs number of really valid plugins might not match.
+        # Use this field to skip on plugins which cannot be loaded in Carla.
+        ("valid", c_bool),
+
         # Plugin category.
         ("category", c_enum),
 
@@ -133,6 +139,7 @@ class CarlaCachedPluginInfo(Structure):
 
 # @see CarlaCachedPluginInfo
 PyCarlaCachedPluginInfo = {
+    'valid': False,
     'category': PLUGIN_CATEGORY_NONE,
     'hints': 0x0,
     'audioIns': 0,
