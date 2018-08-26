@@ -96,8 +96,12 @@ LIBS_ui = $(MODULEDIR)/water.a
 # ----------------------------------------------------------------------------------------------------------------------------
 
 TARGETS = \
-	$(BINDIR)/carla.lv2/carla$(LIB_EXT) \
+	$(BINDIR)/carla.lv2/carla$(LIB_EXT)
+
+ifeq ($(HAVE_PYQT),true)
+TARGETS += \
 	$(BINDIR)/carla.lv2/carla-ui$(LIB_EXT)
+endif
 
 ifneq ($(CROSS_COMPILING),true)
 TARGETS += \

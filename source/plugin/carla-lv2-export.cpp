@@ -137,7 +137,8 @@ static void writeManifestFile(PluginListManager& plm)
     // -------------------------------------------------------------------
     // UI
 
-#ifdef CARLA_OS_LINUX
+#ifdef HAVE_PYQT
+# if defined(CARLA_OS_LINUX) && defined(HAVE_X11)
     text += "<http://kxstudio.sf.net/carla/ui-embed>\n";
     text += "    a <" LV2_UI__X11UI "> ;\n";
     text += "    ui:binary <carla" PLUGIN_EXT "> ;\n";
@@ -148,7 +149,7 @@ static void writeManifestFile(PluginListManager& plm)
     text += "                        <" LV2_UI__resize "> ;\n";
     text += "    opts:supportedOption <" LV2_PARAMETERS__sampleRate "> .\n";
     text += "\n";
-#endif
+# endif
 
     text += "<http://kxstudio.sf.net/carla/ui-ext>\n";
     text += "    a <" LV2_EXTERNAL_UI__Widget "> ;\n";
@@ -166,6 +167,7 @@ static void writeManifestFile(PluginListManager& plm)
     text += "    lv2:extensionData <" LV2_UI__idleInterface "> ,\n";
     text += "                      <" LV2_UI__showInterface "> ,\n";
     text += "                      <" LV2_PROGRAMS__UIInterface "> .\n";
+#endif
 
     // -------------------------------------------------------------------
     // Write file now
@@ -318,9 +320,10 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     // -------------------------------------------------------------------
     // UIs
 
+#ifdef HAVE_PYQT
     if (pluginDesc->hints & NATIVE_PLUGIN_HAS_UI)
     {
-#ifdef CARLA_OS_LINUX
+# if defined(CARLA_OS_LINUX) && defined(HAVE_X11)
         if (std::strncmp(pluginDesc->label, "carla", 5) == 0)
         {
             text += "    ui:ui <http://kxstudio.sf.net/carla/ui-embed> ,\n";
@@ -328,7 +331,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
             text += "          <http://kxstudio.sf.net/carla/ui-bridge-ext> ;\n";
         }
         else
-#endif
+# endif
         {
             text += "    ui:ui <http://kxstudio.sf.net/carla/ui-ext> ,\n";
             text += "          <http://kxstudio.sf.net/carla/ui-bridge-ext> ;\n";
@@ -336,6 +339,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
 
         text += "\n";
     }
+#endif
 
     // -------------------------------------------------------------------
     // First input MIDI/Time/UI port

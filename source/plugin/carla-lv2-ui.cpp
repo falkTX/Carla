@@ -15,6 +15,10 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#ifndef HAVE_PYQT
+# error This file should not be built
+#endif
+
 #include "CarlaLv2Utils.hpp"
 #include "CarlaPipeUtils.hpp"
 

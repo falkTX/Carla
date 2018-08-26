@@ -416,7 +416,7 @@ public:
             fHost.uiName = nullptr;
         }
 
-#ifdef CARLA_OS_LINUX
+#if defined(CARLA_OS_LINUX) && defined(HAVE_X11)
         // ---------------------------------------------------------------
         // show embed UI if needed
 
@@ -519,6 +519,10 @@ public:
             fHost.uiName = carla_strdup(fDescriptor->name);
 
         *widget = nullptr;
+        return;
+
+        // maybe be unused
+        (void)isEmbed;
     }
 
     void lv2ui_port_event(uint32_t portIndex, uint32_t bufferSize, uint32_t format, const void* buffer) const
@@ -949,6 +953,7 @@ static const void* lv2_extension_data(const char* uri)
 
 #undef instancePtr
 
+#ifdef HAVE_PYQT
 // -----------------------------------------------------------------------
 // LV2 UI descriptor functions
 
@@ -956,9 +961,9 @@ static LV2UI_Handle lv2ui_instantiate(LV2UI_Write_Function writeFunction, LV2UI_
                                       LV2UI_Widget* widget, const LV2_Feature* const* features, const bool isEmbed)
 {
     carla_debug("lv2ui_instantiate(..., %p, %p, %p)", writeFunction, controller, widget, features);
-#ifndef CARLA_OS_LINUX
+# if defined(CARLA_OS_LINUX) && defined(HAVE_X11)
     CARLA_SAFE_ASSERT_RETURN(! isEmbed, nullptr);
-#endif
+# endif
 
     NativePlugin* plugin = nullptr;
 
@@ -982,14 +987,14 @@ static LV2UI_Handle lv2ui_instantiate(LV2UI_Write_Function writeFunction, LV2UI_
     return (LV2UI_Handle)plugin;
 }
 
-#ifdef CARLA_OS_LINUX
+# if defined(CARLA_OS_LINUX) && defined(HAVE_X11)
 static LV2UI_Handle lv2ui_instantiate_embed(const LV2UI_Descriptor*, const char*, const char*,
                                             LV2UI_Write_Function writeFunction, LV2UI_Controller controller,
                                             LV2UI_Widget* widget, const LV2_Feature* const* features)
 {
     return lv2ui_instantiate(writeFunction, controller, widget, features, true);
 }
-#endif
+# endif
 
 static LV2UI_Handle lv2ui_instantiate_external(const LV2UI_Descriptor*, const char*, const char*,
                                                LV2UI_Write_Function writeFunction, LV2UI_Controller controller,
@@ -1052,6 +1057,7 @@ static const void* lv2ui_extension_data(const char* uri)
 
     return nullptr;
 }
+#endif
 
 #undef uiPtr
 
@@ -1108,12 +1114,13 @@ const LV2_Descriptor* lv2_descriptor(uint32_t index)
     return lv2Desc;
 }
 
+#ifdef HAVE_PYQT
 CARLA_EXPORT
 const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index)
 {
     carla_debug("lv2ui_descriptor(%i)", index);
 
-#ifdef CARLA_OS_LINUX
+#if defined(CARLA_OS_LINUX) && defined(HAVE_X11)
     static const LV2UI_Descriptor lv2UiEmbedDesc = {
     /* URI            */ "http://kxstudio.sf.net/carla/ui-embed",
     /* instantiate    */ lv2ui_instantiate_embed,
@@ -1138,5 +1145,6 @@ const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index)
 
     return (index == 0) ? &lv2UiExtDesc : nullptr;
 }
+#endif
 
 // -----------------------------------------------------------------------
