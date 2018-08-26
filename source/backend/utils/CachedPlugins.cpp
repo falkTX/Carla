@@ -21,6 +21,10 @@
 #include "CarlaString.hpp"
 #include "CarlaLv2Utils.hpp"
 
+#ifdef DEBUG
+# include "CarlaBackendUtils.hpp"
+#endif
+
 #include "water/containers/Array.h"
 #include "water/files/File.h"
 
@@ -467,9 +471,12 @@ const CarlaCachedPluginInfo* get_cached_plugin_sfz(const File file)
 {
     static CarlaCachedPluginInfo info;
 
-    static CarlaString name;
+    static CarlaString name, filename;
+
     name = file.getFileNameWithoutExtension().toRawUTF8();
     name.replace('_',' ');
+
+    filename = file.getFullPathName().toRawUTF8();
 
     info.category = CB::PLUGIN_CATEGORY_SYNTH;
     info.hints    = CB::PLUGIN_IS_SYNTH;
@@ -484,9 +491,9 @@ const CarlaCachedPluginInfo* get_cached_plugin_sfz(const File file)
     info.parameterOuts = 1;
 
     info.name      = name.buffer();
-    info.label     = name.buffer();
-    info.maker     = "";
-    info.copyright = "";
+    info.label     = filename.buffer();
+    info.maker     = gNullCharPtr;
+    info.copyright = gNullCharPtr;
     return &info;
 }
 
@@ -495,7 +502,7 @@ const CarlaCachedPluginInfo* get_cached_plugin_sfz(const File file)
 uint carla_get_cached_plugin_count(CB::PluginType ptype, const char* pluginPath)
 {
     CARLA_SAFE_ASSERT_RETURN(isCachedPluginType(ptype), 0);
-    carla_debug("carla_get_cached_plugin_count(%i:%s)", ptype, CB::PluginType2Str(ptype));
+    carla_debug("carla_get_cached_plugin_count(%i:%s, %s)", ptype, CB::PluginType2Str(ptype), pluginPath);
 
     switch (ptype)
     {

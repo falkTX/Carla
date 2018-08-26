@@ -61,11 +61,11 @@ LIBS_win32    = $(MODULEDIR)/lilv.win32.a
 LIBS_win64    = $(MODULEDIR)/lilv.win64.a
 LINK_FLAGS   += $(LILV_LIBS)
 
-LIBS_native  += $(MODULEDIR)/water.a
-LIBS_posix32 += $(MODULEDIR)/water.posix32.a
-LIBS_posix64 += $(MODULEDIR)/water.posix64.a
-LIBS_win32   += $(MODULEDIR)/water.win32.a
-LIBS_win64   += $(MODULEDIR)/water.win64.a
+LIBS_native  += $(MODULEDIR)/water.files.a
+LIBS_posix32 += $(MODULEDIR)/water.files.posix32.a
+LIBS_posix64 += $(MODULEDIR)/water.files.posix64.a
+LIBS_win32   += $(MODULEDIR)/water.files.win32.a
+LIBS_win64   += $(MODULEDIR)/water.files.win64.a
 LINK_FLAGS   += $(WATER_LIBS)
 
 LINK_FLAGS   += $(LIBDL_LIBS)

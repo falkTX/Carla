@@ -27,11 +27,11 @@ from carla_config import *
 import json
 
 if config_UseQt5:
-    from PyQt5.QtCore import qCritical, QFileInfo, QModelIndex, QPointF, QTimer
+    from PyQt5.QtCore import qCritical, QEventLoop, QFileInfo, QModelIndex, QPointF, QTimer
     from PyQt5.QtGui import QImage, QPalette
     from PyQt5.QtWidgets import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QMainWindow
 else:
-    from PyQt4.QtCore import qCritical, QFileInfo, QModelIndex, QPointF, QTimer
+    from PyQt4.QtCore import qCritical, QEventLoop, QFileInfo, QModelIndex, QPointF, QTimer
     from PyQt4.QtGui import QImage, QPalette
     from PyQt4.QtGui import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QMainWindow
 
@@ -2525,7 +2525,7 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
     elif action == ENGINE_CALLBACK_NSM:
         host.NSMCallback.emit(value1, value2, valueStr)
     elif action == ENGINE_CALLBACK_IDLE:
-        QApplication.instance().processEvents()
+        QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
     elif action == ENGINE_CALLBACK_INFO:
         host.InfoCallback.emit(valueStr)
     elif action == ENGINE_CALLBACK_ERROR:
