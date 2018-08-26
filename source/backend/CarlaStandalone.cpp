@@ -1373,10 +1373,12 @@ const char* carla_get_custom_data_value(uint pluginId, const char* type, const c
     CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, gNullCharPtr);
 
-    const uint32_t count = plugin->getCustomDataCount();
-    CARLA_SAFE_ASSERT_RETURN(count != 0, gNullCharPtr);
-
     carla_debug("carla_get_custom_data_value(%i, %s, %s)", pluginId, type, key);
+
+    const uint32_t count = plugin->getCustomDataCount();
+
+    if (count == 0)
+        return gNullCharPtr;
 
     static CarlaString customDataValue;
 
