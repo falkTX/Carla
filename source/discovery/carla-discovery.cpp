@@ -291,7 +291,21 @@ static void print_cached_plugin(const CarlaCachedPluginInfo* const pinfo)
 
 static void do_cached_check(const PluginType type)
 {
-    const char* const plugPath = (type == PLUGIN_LV2) ? std::getenv("LV2_PATH") : nullptr;
+    const char* plugPath;
+
+    switch (type)
+    {
+    case PLUGIN_LV2:
+        plugPath = std::getenv("LV2_PATH");
+        break;
+    case PLUGIN_SFZ:
+        plugPath = std::getenv("SFZ_PATH");
+        break;
+    default:
+        plugPath = nullptr;
+        break;
+    }
+
     const uint count = carla_get_cached_plugin_count(type, plugPath);
 
     for (uint i=0; i<count; ++i)

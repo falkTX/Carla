@@ -21,7 +21,15 @@
 #include "CarlaString.hpp"
 #include "CarlaLv2Utils.hpp"
 
+#include "water/containers/Array.h"
+#include "water/files/File.h"
+
 namespace CB = CarlaBackend;
+
+using water::Array;
+using water::File;
+using water::String;
+using water::StringArray;
 
 static const char* const gNullCharPtr = "";
 
@@ -32,9 +40,9 @@ static bool isCachedPluginType(const CB::PluginType ptype)
     case CB::PLUGIN_INTERNAL:
     case CB::PLUGIN_LV2:
     case CB::PLUGIN_SFZ:
-        return false;
-    default:
         return true;
+    default:
+        return false;
     }
 }
 
@@ -54,6 +62,31 @@ _CarlaCachedPluginInfo::_CarlaCachedPluginInfo() noexcept
       label(gNullCharPtr),
       maker(gNullCharPtr),
       copyright(gNullCharPtr) {}
+
+// -------------------------------------------------------------------------------------------------------------------
+
+static Array<File> gSFZs;
+
+void findSFZsIfNeeded(const char* const sfzPaths)
+{
+    CARLA_SAFE_ASSERT_RETURN(sfzPaths != nullptr && sfzPaths[0] != '\0',);
+
+    static bool needsInit = true;
+
+    if (! needsInit)
+        return;
+    needsInit = false;
+
+    const StringArray splitPaths(StringArray::fromTokens(sfzPaths, CARLA_OS_SPLIT_STR, ""));
+
+    for (String path : splitPaths)
+    {
+        Array<File> results;
+
+        if (File(path).findChildFiles(results, File::findFiles|File::ignoreHiddenFiles, true, "*.sfz") > 0)
+            gSFZs.addArray(results);
+    }
+}
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -430,9 +463,30 @@ const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2World, Lilv
     return &info;
 }
 
-const CarlaCachedPluginInfo* get_cached_plugin_sfz()
+const CarlaCachedPluginInfo* get_cached_plugin_sfz(const File file)
 {
     static CarlaCachedPluginInfo info;
+
+    static CarlaString name;
+    name = file.getFileNameWithoutExtension().toRawUTF8();
+    name.replace('_',' ');
+
+    info.category = CB::PLUGIN_CATEGORY_SYNTH;
+    info.hints    = CB::PLUGIN_IS_SYNTH;
+    // CB::PLUGIN_IS_RTSAFE
+
+    info.valid         = true;
+    info.audioIns      = 0;
+    info.audioOuts     = 2;
+    info.midiIns       = 1;
+    info.midiOuts      = 0;
+    info.parameterIns  = 0;
+    info.parameterOuts = 1;
+
+    info.name      = name.buffer();
+    info.label     = name.buffer();
+    info.maker     = "";
+    info.copyright = "";
     return &info;
 }
 
@@ -458,7 +512,8 @@ uint carla_get_cached_plugin_count(CB::PluginType ptype, const char* pluginPath)
     }
 
     case CB::PLUGIN_SFZ: {
-        return 0;
+        findSFZsIfNeeded(pluginPath);
+        return gSFZs.size();
     }
 
     default:
@@ -495,7 +550,8 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
     }
 
     case CB::PLUGIN_SFZ: {
-        return get_cached_plugin_sfz();
+        CARLA_SAFE_ASSERT_BREAK(index < static_cast<uint>(gSFZs.size()));
+        return get_cached_plugin_sfz(gSFZs.getUnchecked(index));
     }
 
     default:
