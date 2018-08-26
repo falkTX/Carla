@@ -41,21 +41,17 @@ CarlaEngineThread::~CarlaEngineThread() noexcept
 void CarlaEngineThread::run() noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(kEngine != nullptr,);
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-    CARLA_SAFE_ASSERT(kEngine->isRunning());
-#endif
     carla_debug("CarlaEngineThread::run()");
 
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
-    const bool isPlugin(kEngine->getType() == kEngineTypePlugin);
+    const bool kIsPlugin(kEngine->getType() == kEngineTypePlugin);
 #endif
     float value;
 
-#ifdef BUILD_BRIDGE_ALTERNATIVE_ARCH
-    for (; ! shouldThreadExit();)
-#else
-    for (; kEngine->isRunning() && ! shouldThreadExit();)
-#endif
+    // thread must do something...
+    CARLA_SAFE_ASSERT_RETURN(kEngine->getType() == kEngineTypeBridge || kEngine->isRunning(),);
+
+    for (; (kEngine->getType() == kEngineTypeBridge || kEngine->isRunning()) && ! shouldThreadExit();)
     {
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
         const bool oscRegisted = kEngine->isOscControlRegistered();
@@ -64,7 +60,7 @@ void CarlaEngineThread::run() noexcept
 #endif
 
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
-        if (isPlugin)
+        if (kIsPlugin)
             kEngine->idleOsc();
 #endif
 

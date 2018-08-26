@@ -594,6 +594,7 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
       options(0x0),
       nodeId(0),
       active(false),
+      bridged(eng->getType() == kEngineTypeBridge),
       enabled(false),
       needsReset(false),
       lib(nullptr),

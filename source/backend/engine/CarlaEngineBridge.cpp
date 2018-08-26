@@ -713,7 +713,7 @@ public:
                 const float    value(fShmNonRtClientControl.readFloat());
 
                 if (plugin != nullptr && plugin->isEnabled())
-                    plugin->setParameterValue(index, value, true, false, false);
+                    plugin->setParameterValue(index, value, false, false, false);
                 break;
             }
 

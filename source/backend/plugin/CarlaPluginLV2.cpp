@@ -4856,7 +4856,7 @@ public:
         {
             if (pData->param.data[i].rindex == rindex)
             {
-                setParameterValue(i, paramValue, true, true, true);
+                setParameterValueRT(i, paramValue);
                 break;
             }
         }

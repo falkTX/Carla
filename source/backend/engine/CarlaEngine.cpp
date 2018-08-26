@@ -486,7 +486,6 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
 
     plugin->reload();
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     bool canRun = true;
 
     /**/ if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
@@ -516,11 +515,6 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
         delete plugin;
         return false;
     }
-
-# if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
-    plugin->registerToOscClient();
-# endif
-#endif
 
     EnginePluginData& pluginData(pData->plugins[id]);
     pluginData.plugin      = plugin;
@@ -559,17 +553,23 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
     else if (! pData->loadingProject)
 #endif
     {
-        plugin->setActive(true, true, false);
         plugin->setEnabled(true);
 
         ++pData->curPluginCount;
         callback(ENGINE_CALLBACK_PLUGIN_ADDED, id, 0, 0, 0.0f, plugin->getName());
+
+        if (getType() != kEngineTypeBridge)
+            plugin->setActive(true, false, true);
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
             pData->graph.addPlugin(plugin);
 #endif
     }
+
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
+    plugin->registerToOscClient();
+#endif
 
     return true;
 }
@@ -1570,28 +1570,42 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
     }
 }
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
+#ifndef BUILD_BRIDGE
 // -----------------------------------------------------------------------
 // OSC Stuff
 
 bool CarlaEngine::isOscControlRegistered() const noexcept
 {
+# ifdef HAVE_LIBLO
     return pData->osc.isControlRegistered();
+# else
+    return false;
+# endif
 }
 
 void CarlaEngine::idleOsc() const noexcept
 {
+# ifdef HAVE_LIBLO
     pData->osc.idle();
+# endif
 }
 
 const char* CarlaEngine::getOscServerPathTCP() const noexcept
 {
+# ifdef HAVE_LIBLO
     return pData->osc.getServerPathTCP();
+# else
+    return nullptr;
+# endif
 }
 
 const char* CarlaEngine::getOscServerPathUDP() const noexcept
 {
+# ifdef HAVE_LIBLO
     return pData->osc.getServerPathUDP();
+# else
+    return nullptr;
+# endif
 }
 #endif
 
@@ -2234,13 +2248,9 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                      *       When project is loading we do not enable the plugin right away,
                      *        as we want to load state first.
                      */
-#ifdef BUILD_BRIDGE_ALTERNATIVE_ARCH
-                    plugin->setActive(true, true, false);
-#else
-                    ++pData->curPluginCount;
-#endif
-
                     plugin->setEnabled(true);
+
+                    ++pData->curPluginCount;
                     callback(ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, 0, 0, 0.0f, plugin->getName());
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
