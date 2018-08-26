@@ -67,13 +67,14 @@ static const String nameToSymbol(const String& name, const uint32_t portIndex)
     }
     else
     {
+        if (std::isdigit(trimmedName[0]))
+            symbol += "_";
+
         for (int i=0; i < trimmedName.length(); ++i)
         {
             const water_uchar c = trimmedName[i];
 
-            if (i == 0 && std::isdigit(c))
-                symbol += "_";
-            else if (std::isalpha(c) || std::isdigit(c))
+            if (std::isalpha(c) || std::isdigit(c))
                 symbol += c;
             else
                 symbol += "_";
