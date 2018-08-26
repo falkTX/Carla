@@ -952,6 +952,8 @@ public:
 
         if (opts.transportMode == ENGINE_TRANSPORT_MODE_JACK)
             fTimebaseMaster = jackbridge_set_timebase_callback(fClient, true, carla_jack_timebase_callback, this);
+        else
+            fTimebaseMaster = false;
 
         if (opts.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
             initJackPatchbay(jackClientName);

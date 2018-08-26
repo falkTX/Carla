@@ -338,9 +338,6 @@ class HostWindow(QMainWindow):
             self.ui.dsb_transport_bpm.setEnabled(False)
             self.ui.dsb_transport_bpm.setReadOnly(True)
 
-        if MACOS: # FIXME
-            self.ui.cb_transport_link.setEnabled(False)
-
         self.ui.w_transport.setEnabled(False)
 
         # ----------------------------------------------------------------------------------------------------
@@ -548,8 +545,8 @@ class HostWindow(QMainWindow):
             self.ui.cb_transport_link.setVisible(False)
 
         # Plugin needs to have timers always running so it receives messages
-        #if self.host.isPlugin:
-        self.startTimers()
+        if self.host.isPlugin or self.host.isRemote:
+            self.startTimers()
 
         # Qt needs this so it properly creates & resizes the canvas
         self.ui.tabWidget.blockSignals(True)
@@ -1544,6 +1541,8 @@ class HostWindow(QMainWindow):
         settings.setValue("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().value())
         settings.setValue("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().value())
 
+        settings.setValue(CARLA_KEY_ENGINE_TRANSPORT_MODE, self.host.transportMode)
+
     def loadSettings(self, firstTime):
         settings = QSettings()
 
@@ -1617,17 +1616,6 @@ class HostWindow(QMainWindow):
                                                            CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS, type=bool))
         else:
             self.ui.act_add_jack.setVisible(False)
-
-        if not (self.host.isControl or self.host.isPlugin):
-            if self.ui.cb_transport_jack.isChecked():
-                transportMode = ENGINE_TRANSPORT_MODE_JACK
-            else:
-                transportMode = ENGINE_TRANSPORT_MODE_INTERNAL
-            transportExtra = ":link:" if self.ui.cb_transport_link.isChecked() else ""
-
-            self.enableTransport(transportMode != ENGINE_TRANSPORT_MODE_DISABLED)
-            self.host.transportMode = transportMode
-            self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, transportMode, transportExtra)
 
         self.fMiniCanvasUpdateTimeout = 1000 if self.fSavedSettings[CARLA_KEY_CANVAS_FANCY_EYE_CANDY] else 0
 
@@ -1871,6 +1859,7 @@ class HostWindow(QMainWindow):
             return
         mode  = ENGINE_TRANSPORT_MODE_JACK if clicked else ENGINE_TRANSPORT_MODE_INTERNAL
         extra = ":link:" if self.ui.cb_transport_link.isChecked() else ""
+        self.host.transportMode = mode
         self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, mode, extra)
 
     @pyqtSlot(bool)
@@ -1879,6 +1868,7 @@ class HostWindow(QMainWindow):
             return
         mode  = ENGINE_TRANSPORT_MODE_JACK if self.ui.cb_transport_jack.isChecked() else ENGINE_TRANSPORT_MODE_INTERNAL
         extra = ":link:" if clicked else ""
+        self.host.transportMode = mode
         self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, mode, extra)
 
     # --------------------------------------------------------------------------------------------------------
