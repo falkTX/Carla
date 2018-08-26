@@ -107,6 +107,13 @@ void carla_pipe_client_lock(CarlaPipeClientHandle handle)
     return ((ExposedCarlaPipeClient*)handle)->lockPipe();
 }
 
+void carla_pipe_client_unlock(CarlaPipeClientHandle handle)
+{
+    CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
+
+    return ((ExposedCarlaPipeClient*)handle)->unlockPipe();
+}
+
 const char* carla_pipe_client_readlineblock(CarlaPipeClientHandle handle, uint timeout)
 {
     CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
