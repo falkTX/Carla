@@ -1127,7 +1127,7 @@ const EngineOptions& CarlaEngine::getOptions() const noexcept
     return pData->options;
 }
 
-const EngineTimeInfo& CarlaEngine::getTimeInfo() const noexcept
+EngineTimeInfo CarlaEngine::getTimeInfo() const noexcept
 {
     return pData->timeInfo;
 }

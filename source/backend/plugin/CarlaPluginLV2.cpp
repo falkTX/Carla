@@ -2779,7 +2779,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // TimeInfo
 
-        const EngineTimeInfo& timeInfo(pData->engine->getTimeInfo());
+        const EngineTimeInfo timeInfo(pData->engine->getTimeInfo());
 
         if (fFirstActive || fLastTimeInfo != timeInfo)
         {

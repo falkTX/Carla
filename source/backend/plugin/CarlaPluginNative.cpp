@@ -1537,7 +1537,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Set TimeInfo
 
-        const EngineTimeInfo& timeInfo(pData->engine->getTimeInfo());
+        const EngineTimeInfo timeInfo(pData->engine->getTimeInfo());
 
         fTimeInfo.playing = timeInfo.playing;
         fTimeInfo.frame   = timeInfo.frame;
@@ -1562,6 +1562,39 @@ public:
         {
             fTimeInfo.bbt.valid = false;
         }
+
+#if 0
+        // This test code has proven to be quite useful
+        // So I am leaving it behind, I might need it again..
+        if (pData->id == 1)
+        {
+            static int64_t last_frame = timeInfo.frame;
+            static int64_t last_dev_frame = 0;
+            static double last_val = timeInfo.bbt.barStartTick + ((timeInfo.bbt.beat-1) * timeInfo.bbt.ticksPerBeat) + timeInfo.bbt.tick;
+            static double last_dev_val = 0.0;
+
+            int64_t cur_frame = timeInfo.frame;
+            int64_t cur_dev_frame = cur_frame - last_frame;
+
+            double cur_val = timeInfo.bbt.barStartTick + ((timeInfo.bbt.beat-1) * timeInfo.bbt.ticksPerBeat) + timeInfo.bbt.tick;
+            double cur_dev_val = cur_val - last_val;
+
+            if (std::abs(last_dev_val - cur_dev_val) >= 0.0001 || last_dev_frame != cur_dev_frame)
+            {
+                carla_stdout("currently %u at %u => %f : DEV1: %li : DEV2: %f",
+                            frames,
+                            timeInfo.frame,
+                            cur_val,
+                            cur_dev_frame,
+                            cur_dev_val);
+            }
+
+            last_val = cur_val;
+            last_dev_val = cur_dev_val;
+            last_frame = cur_frame;
+            last_dev_frame = cur_dev_frame;
+        }
+#endif
 
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing

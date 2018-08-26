@@ -291,6 +291,7 @@ struct CARLA_API EngineTimeInfoBBT {
 
 #ifndef DOXYGEN
     EngineTimeInfoBBT() noexcept;
+    EngineTimeInfoBBT(const EngineTimeInfoBBT&) noexcept;
 #endif
 };
 
@@ -310,6 +311,8 @@ struct CARLA_API EngineTimeInfo {
 
 #ifndef DOXYGEN
     EngineTimeInfo() noexcept;
+    EngineTimeInfo(const EngineTimeInfo&) noexcept;
+    EngineTimeInfo& operator=(const EngineTimeInfo&) noexcept;
 
     // quick operator, doesn't check all values
     bool operator==(const EngineTimeInfo& timeInfo) const noexcept;
@@ -922,7 +925,7 @@ public:
     /*!
      * Get the current Time information (read-only).
      */
-    const EngineTimeInfo& getTimeInfo() const noexcept;
+    virtual EngineTimeInfo getTimeInfo() const noexcept;
 
     // -------------------------------------------------------------------
     // Information (peaks)

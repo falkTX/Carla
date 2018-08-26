@@ -176,10 +176,11 @@ void EngineInternalTime::fillEngineTimeInfo(const uint32_t newFrames) noexcept
 
     double ticktmp;
 
-    timeInfo.usecs = 0;
-
     if (transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
+    {
+        timeInfo.usecs = 0;
         timeInfo.frame = nextFrame;
+    }
 
     if (needsReset)
     {
@@ -256,74 +257,19 @@ void EngineInternalTime::fillJackTimeInfo(jack_position_t* const pos, const uint
 {
     CARLA_SAFE_ASSERT_RETURN(carla_isNotZero(sampleRate),);
     CARLA_SAFE_ASSERT_RETURN(newFrames > 0,);
+    CARLA_SAFE_ASSERT(transportMode == ENGINE_TRANSPORT_MODE_JACK);
 
-    double ticktmp;
+    fillEngineTimeInfo(newFrames);
 
-    if (needsReset)
-    {
-        pos->valid = JackPositionBBT;
-        pos->beat_type = 4.0f;
-        pos->ticks_per_beat = kTicksPerBeat;
-
-        double abs_beat, abs_tick;
-
-#if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
-        if (hylia.enabled)
-        {
-            if (hylia.timeInfo.beat >= 0.0)
-            {
-                abs_beat = hylia.timeInfo.beat;
-                abs_tick = abs_beat * kTicksPerBeat;
-            }
-            else
-            {
-                abs_beat = 0.0;
-                abs_tick = 0.0;
-                timeInfo.playing = false;
-            }
-        }
-        else
-#endif
-        {
-            const double min = static_cast<double>(pos->frame) / (sampleRate * 60.0);
-            abs_beat = min * beatsPerMinute;
-            abs_tick = abs_beat * kTicksPerBeat;
-        }
-
-        const double bar  = std::floor(abs_beat / beatsPerBar);
-        const double beat = std::floor(std::fmod(abs_beat, beatsPerBar));
-
-        pos->bar  = static_cast<int32_t>(bar) + 1;
-        pos->beat = static_cast<int32_t>(beat) + 1;
-        pos->bar_start_tick = ((bar * beatsPerBar) + beat) * kTicksPerBeat;
-
-        ticktmp = abs_tick - pos->bar_start_tick;
-    }
-    else if (timeInfo.playing)
-    {
-        ticktmp = tick + (newFrames * kTicksPerBeat * beatsPerMinute / (sampleRate * 60.0));
-
-        while (ticktmp >= kTicksPerBeat)
-        {
-            ticktmp -= kTicksPerBeat;
-
-            if (++pos->beat > beatsPerBar)
-            {
-                ++pos->bar;
-                pos->beat = 1;
-                pos->bar_start_tick += beatsPerBar * kTicksPerBeat;
-            }
-        }
-    }
-    else
-    {
-        ticktmp = tick;
-    }
-
-    pos->beats_per_bar = static_cast<float>(beatsPerBar);
+    pos->valid = JackPositionBBT;
+    pos->bar   = timeInfo.bbt.bar;
+    pos->beat  = timeInfo.bbt.beat;
+    pos->tick  = static_cast<int32_t>(tick + 0.5);
+    pos->bar_start_tick = timeInfo.bbt.barStartTick;
+    pos->beats_per_bar = timeInfo.bbt.beatsPerBar;
+    pos->beat_type = timeInfo.bbt.beatType;
+    pos->ticks_per_beat = kTicksPerBeat;
     pos->beats_per_minute = beatsPerMinute;
-    pos->tick = ticktmp;
-    tick = ticktmp;
 }
 
 void EngineInternalTime::preProcess(const uint32_t numFrames)

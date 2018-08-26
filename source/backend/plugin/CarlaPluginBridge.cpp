@@ -1467,7 +1467,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // TimeInfo
 
-        const EngineTimeInfo& timeInfo(pData->engine->getTimeInfo());
+        const EngineTimeInfo timeInfo(pData->engine->getTimeInfo());
         BridgeTimeInfo& bridgeTimeInfo(fShmRtClientControl.data->timeInfo);
 
         bridgeTimeInfo.playing    = timeInfo.playing;
