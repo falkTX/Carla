@@ -1318,13 +1318,15 @@ void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool se
 
     const float value = active ? 1.0f : 0.0f;
 
-# if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_ACTIVE, value);
-# endif
+#endif
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_ACTIVE, 0, value, nullptr);
+#endif
 }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -1534,13 +1536,15 @@ void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const
 
     const float channelf = static_cast<float>(channel);
 
-# if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_CTRL_CHANNEL, channelf);
-# endif
+#endif
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_CTRL_CHANNEL, 0, channelf, nullptr);
+#endif
 }
 
 // -------------------------------------------------------------------

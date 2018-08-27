@@ -26,7 +26,6 @@
 #endif
 
 #include "CarlaLadspaUtils.hpp"
-#include "CarlaDssiUtils.cpp"
 #include "CarlaLv2Utils.hpp"
 #include "CarlaVstUtils.hpp"
 
@@ -40,11 +39,13 @@
 
 #include <iostream>
 
-#include "water/files/File.h"
-#include "water/text/StringArray.h"
-
 #ifndef BUILD_BRIDGE
+# include "water/files/File.h"
+# include "water/text/StringArray.h"
+# include "CarlaDssiUtils.cpp"
 # include "../backend/utils/CachedPlugins.cpp"
+#else
+# include "CarlaDssiUtils.hpp"
 #endif
 
 #define DISCOVERY_OUT(x, y) std::cout << "\ncarla-discovery::" << x << "::" << y << std::endl;
@@ -695,11 +696,13 @@ static void do_dssi_check(lib_t& libHandle, const char* const filename, const bo
         if (midiIns > 0 && audioIns == 0 && audioOuts > 0)
             hints |= PLUGIN_IS_SYNTH;
 
+#ifndef BUILD_BRIDGE
         if (const char* const ui = find_dssi_ui(filename, ldescriptor->Label))
         {
             hints |= PLUGIN_HAS_CUSTOM_UI;
             delete[] ui;
         }
+#endif
 
         if (doInit)
         {
@@ -849,6 +852,7 @@ static void do_dssi_check(lib_t& libHandle, const char* const filename, const bo
     }
 }
 
+#ifndef BUILD_BRIDGE
 static void do_lv2_check(const char* const bundle, const bool doInit)
 {
     Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
@@ -931,6 +935,7 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
         print_cached_plugin(get_cached_plugin_lv2(lv2World, lilvPlugin));
     }
 }
+#endif
 
 static void do_vst_check(lib_t& libHandle, const char* const filename, const bool doInit)
 {
@@ -1436,9 +1441,11 @@ int main(int argc, char* argv[])
     case PLUGIN_DSSI:
         do_dssi_check(handle, filename, doInit);
         break;
+#ifndef BUILD_BRIDGE
     case PLUGIN_LV2:
         do_lv2_check(filename, doInit);
         break;
+#endif
     case PLUGIN_VST2:
         do_vst_check(handle, filename, doInit);
         break;
