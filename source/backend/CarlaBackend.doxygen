@@ -243,8 +243,8 @@ INCLUDE_PATH           =
 INCLUDE_FILE_PATTERNS  =
 PREDEFINED             = DOXYGEN \
                          BUILDING_CARLA REAL_BUILD \
-                         HAVE_DGL HAVE_LIBLO HAVE_LIBMAGIC HAVE_FLUIDSYNTH HAVE_LINUXSAMPLER HAVE_PROJECTM HAVE_X11 \
-                         HAVE_EXPERIMENTAL_PLUGINS HAVE_ZYN_DEPS HAVE_ZYN_UI_DEPS
+                         HAVE_DGL HAVE_LIBLO HAVE_LIBMAGIC HAVE_FLUIDSYNTH HAVE_PROJECTM HAVE_X11 \
+                         HAVE_ZYN_DEPS HAVE_ZYN_UI_DEPS
 EXPAND_AS_DEFINED      =
 SKIP_FUNCTION_MACROS   = YES
 #---------------------------------------------------------------------------

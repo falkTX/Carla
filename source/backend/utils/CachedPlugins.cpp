@@ -83,11 +83,11 @@ void findSFZsIfNeeded(const char* const sfzPaths)
 
     const StringArray splitPaths(StringArray::fromTokens(sfzPaths, CARLA_OS_SPLIT_STR, ""));
 
-    for (String path : splitPaths)
+    for (String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
     {
         Array<File> results;
 
-        if (File(path).findChildFiles(results, File::findFiles|File::ignoreHiddenFiles, true, "*.sfz") > 0)
+        if (File(*it).findChildFiles(results, File::findFiles|File::ignoreHiddenFiles, true, "*.sfz") > 0)
             gSFZs.addArray(results);
     }
 }

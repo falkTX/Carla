@@ -47,11 +47,6 @@ NATIVE_BUILD_FLAGS += $(FLUIDSYNTH_FLAGS)
 NATIVE_LINK_FLAGS  += $(FLUIDSYNTH_LIBS)
 endif
 
-ifeq ($(HAVE_LINUXSAMPLER),true)
-NATIVE_BUILD_FLAGS += $(LINUXSAMPLER_FLAGS)
-NATIVE_LINK_FLAGS  += $(LINUXSAMPLER_LIBS)
-endif
-
 # ----------------------------------------------------------------------------------------------------------------------------
 
 LIBS_native   = $(MODULEDIR)/lilv.a

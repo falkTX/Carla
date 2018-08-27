@@ -2052,7 +2052,16 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                 }
             }
 
-            CARLA_SAFE_ASSERT_CONTINUE(option != -1);
+            if (option == -1)
+            {
+                // check old stuff, unhandled now
+                if (tag == "GIG_PATH")
+                    continue;
+
+                // hmm something is wrong..
+                carla_stderr2("CarlaEngine::loadProjectInternal() - Unhandled option '%s'", tag.toRawUTF8());
+                continue;
+            }
 
             setOption(static_cast<EngineOption>(option), value, valueStr);
         }

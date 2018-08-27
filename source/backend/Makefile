@@ -54,7 +54,6 @@ STANDALONE_LINK_FLAGS += $(RTMIDI_LIBS)
 STANDALONE_LINK_FLAGS += $(LIBLO_LIBS)
 STANDALONE_LINK_FLAGS += $(MAGIC_LIBS)
 STANDALONE_LINK_FLAGS += $(FLUIDSYNTH_LIBS)
-STANDALONE_LINK_FLAGS += $(LINUXSAMPLER_LIBS)
 STANDALONE_LINK_FLAGS += $(X11_LIBS)
 
 # ----------------------------------------------------------------------------------------------------------------------------

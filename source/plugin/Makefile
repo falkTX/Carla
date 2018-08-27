@@ -32,16 +32,8 @@ ifeq ($(HAVE_FLUIDSYNTH),true)
 BUILD_CXX_FLAGS += $(FLUIDSYNTH_FLAGS)
 endif
 
-ifeq ($(HAVE_LINUXSAMPLER),true)
-BUILD_CXX_FLAGS += $(LINUXSAMPLER_FLAGS)
-endif
-
 ifeq ($(HAVE_X11),true)
 BUILD_CXX_FLAGS += $(X11_FLAGS)
-endif
-
-ifeq ($(CARLA_ZYN_COMPAT),true)
-BUILD_CXX_FLAGS += -DCARLA_ZYN_LV2_EXPORTED
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -78,7 +70,6 @@ LINK_FLAGS += $(NATIVE_PLUGINS_LIBS)
 
 LINK_FLAGS += $(FLUIDSYNTH_LIBS)
 LINK_FLAGS += $(LIBLO_LIBS)
-LINK_FLAGS += $(LINUXSAMPLER_LIBS)
 LINK_FLAGS += $(MAGIC_LIBS)
 LINK_FLAGS += $(X11_LIBS)
 

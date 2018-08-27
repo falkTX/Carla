@@ -382,7 +382,9 @@ private:
                    backing:(NSBackingStoreType)bufferingType
                      defer:(BOOL)flag;
 - (void) setCallback:(CarlaPluginUI::Callback*)cb;
+- (BOOL) acceptsFirstResponder;
 - (BOOL) canBecomeKeyWindow;
+- (BOOL) canBecomeMainWindow;
 - (BOOL) windowShouldClose:(id)sender;
 - (NSSize) windowWillResize:(NSWindow*)sender toSize:(NSSize)frameSize;
 @end
@@ -418,9 +420,19 @@ private:
     callback = cb;
 }
 
+- (BOOL)acceptsFirstResponder
+{
+    return YES;
+}
+
 - (BOOL)canBecomeKeyWindow
 {
     return YES;
+}
+
+- (BOOL)canBecomeMainWindow
+{
+    return NO;
 }
 
 - (BOOL)windowShouldClose:(id)sender
@@ -428,7 +440,7 @@ private:
     if (callback != nil)
         callback->handlePluginUIClosed();
 
-    return NO;
+    return YES;
 
     // unused
     (void)sender;
@@ -494,6 +506,7 @@ public:
         if (fView == nullptr)
             return;
 
+        [fView removeFromSuperview];
         [fWindow close];
         [fView release];
         [fWindow release];
