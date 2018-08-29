@@ -52,6 +52,8 @@ SAMPLE_RATE_LIST = (22050, 32000, 44100, 48000, 88200, 96000, 176400, 192000)
 # Driver Settings
 
 class DriverSettingsW(QDialog):
+    AUTOMATIC_OPTION = "(Auto)"
+
     def __init__(self, parent, host, driverIndex, driverName):
         QDialog.__init__(self, parent)
         self.host = host
@@ -130,9 +132,17 @@ class DriverSettingsW(QDialog):
     def slot_saveSettings(self):
         settings = QSettings("falkTX", "Carla2")
 
+        bufferSize = self.ui.cb_buffersize.currentText()
+        sampleRate = self.ui.cb_samplerate.currentText()
+
+        if bufferSize == self.AUTOMATIC_OPTION:
+            bufferSize = "0"
+        if sampleRate == self.AUTOMATIC_OPTION:
+            sampleRate = "0"
+
         settings.setValue("%s%s/Device"       % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.cb_device.currentText())
-        settings.setValue("%s%s/BufferSize"   % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.cb_buffersize.currentText())
-        settings.setValue("%s%s/SampleRate"   % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.cb_samplerate.currentText())
+        settings.setValue("%s%s/BufferSize"   % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), bufferSize)
+        settings.setValue("%s%s/SampleRate"   % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), sampleRate)
         settings.setValue("%s%s/TripleBuffer" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.cb_triple_buffer.isChecked())
 
     # --------------------------------------------------------------------------------------------------------
@@ -147,34 +157,39 @@ class DriverSettingsW(QDialog):
         self.ui.cb_buffersize.clear()
         self.ui.cb_samplerate.clear()
 
-        if deviceName:
-            driverDeviceInfo  = self.host.get_engine_driver_device_info(self.fDriverIndex, deviceName)
-            driverDeviceHints = driverDeviceInfo['hints']
-            self.fBufferSizes = driverDeviceInfo['bufferSizes']
-            self.fSampleRates = driverDeviceInfo['sampleRates']
-        else:
-            driverDeviceHints = 0x0
-            self.fBufferSizes = BUFFER_SIZE_LIST
-            self.fSampleRates = SAMPLE_RATE_LIST
+        driverDeviceInfo  = self.host.get_engine_driver_device_info(self.fDriverIndex, deviceName)
+        driverDeviceHints = driverDeviceInfo['hints']
+        self.fBufferSizes = driverDeviceInfo['bufferSizes']
+        self.fSampleRates = driverDeviceInfo['sampleRates']
 
         if driverDeviceHints & ENGINE_DRIVER_DEVICE_CAN_TRIPLE_BUFFER:
             self.ui.cb_triple_buffer.setEnabled(True)
         else:
             self.ui.cb_triple_buffer.setEnabled(False)
 
-        for bsize in self.fBufferSizes:
-            sbsize = str(bsize)
-            self.ui.cb_buffersize.addItem(sbsize)
+        if len(self.fBufferSizes) > 0:
+            for bsize in self.fBufferSizes:
+                sbsize = str(bsize)
+                self.ui.cb_buffersize.addItem(sbsize)
 
-            if oldBufferSize == sbsize:
-                self.ui.cb_buffersize.setCurrentIndex(self.ui.cb_buffersize.count()-1)
+                if oldBufferSize == sbsize:
+                    self.ui.cb_buffersize.setCurrentIndex(self.ui.cb_buffersize.count()-1)
 
-        for srate in self.fSampleRates:
-            ssrate = str(int(srate))
-            self.ui.cb_samplerate.addItem(ssrate)
+        else:
+            self.ui.cb_buffersize.addItem(self.AUTOMATIC_OPTION)
+            self.ui.cb_buffersize.setCurrentIndex(0)
 
-            if oldSampleRate == ssrate:
-                self.ui.cb_samplerate.setCurrentIndex(self.ui.cb_samplerate.count()-1)
+        if len(self.fSampleRates) > 0:
+            for srate in self.fSampleRates:
+                ssrate = str(int(srate))
+                self.ui.cb_samplerate.addItem(ssrate)
+
+                if oldSampleRate == ssrate:
+                    self.ui.cb_samplerate.setCurrentIndex(self.ui.cb_samplerate.count()-1)
+
+        else:
+            self.ui.cb_samplerate.addItem(self.AUTOMATIC_OPTION)
+            self.ui.cb_samplerate.setCurrentIndex(0)
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -402,10 +417,10 @@ class CarlaSettingsW(QDialog):
 
         if audioDriver == "JACK":
             self.ui.sw_engine_process_mode.setCurrentIndex(0)
-            self.ui.tb_engine_driver_config.setEnabled(False)
         else:
             self.ui.sw_engine_process_mode.setCurrentIndex(1)
-            self.ui.tb_engine_driver_config.setEnabled(self.host.audioDriverForced is None and not self.host.isPlugin)
+
+        self.ui.tb_engine_driver_config.setEnabled(self.host.audioDriverForced is None and not self.host.isPlugin)
 
         self.ui.cb_engine_process_mode_jack.setCurrentIndex(self.host.nextProcessMode)
 
@@ -853,10 +868,8 @@ class CarlaSettingsW(QDialog):
     def slot_engineAudioDriverChanged(self):
         if self.ui.cb_engine_audio_driver.currentText() == "JACK":
             self.ui.sw_engine_process_mode.setCurrentIndex(0)
-            self.ui.tb_engine_driver_config.setEnabled(False)
         else:
             self.ui.sw_engine_process_mode.setCurrentIndex(1)
-            self.ui.tb_engine_driver_config.setEnabled(True)
 
     @pyqtSlot()
     def slot_showAudioDriverSettings(self):

@@ -2868,9 +2868,11 @@ def setEngineSettings(host):
     # Only setup audio things if engine is not running
     if not host.is_engine_running():
         host.set_engine_option(ENGINE_OPTION_AUDIO_DEVICE, 0, audioDevice)
-        host.set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, audioBufferSize, "")
-        host.set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, audioSampleRate, "")
-        host.set_engine_option(ENGINE_OPTION_AUDIO_TRIPLE_BUFFER, audioTripleBuffer, "")
+
+        if not audioDriver.startswith("JACK"):
+            host.set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, audioBufferSize, "")
+            host.set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, audioSampleRate, "")
+            host.set_engine_option(ENGINE_OPTION_AUDIO_TRIPLE_BUFFER, audioTripleBuffer, "")
 
     # --------------------------------------------------------------------------------------------------------
     # fix things if needed

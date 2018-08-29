@@ -118,7 +118,7 @@ const char* const* CarlaEngine::getDriverDeviceNames(const uint index2)
 
     if (jackbridge_is_ok() && index-- == 0)
     {
-        static const char* ret[3] = { "Auto-Connect OFF", "Auto-Connect ON", nullptr };
+        static const char* ret[3] = { "Auto-Connect ON", "Auto-Connect OFF", nullptr };
         return ret;
     }
 
@@ -142,10 +142,9 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index2
 
     if (jackbridge_is_ok() && index-- == 0)
     {
-        static uint32_t bufSizes[11] = { 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 0 };
         static EngineDriverDeviceInfo devInfo;
         devInfo.hints       = ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE;
-        devInfo.bufferSizes = bufSizes;
+        devInfo.bufferSizes = nullptr;
         devInfo.sampleRates = nullptr;
         return &devInfo;
     }
