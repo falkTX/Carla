@@ -209,7 +209,7 @@ const char* const* carla_get_engine_driver_device_names(uint index)
 
 const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(uint index, const char* name)
 {
-    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', nullptr);
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr, nullptr);
 
     static EngineDriverDeviceInfo retDevInfo;
     static const uint32_t nullBufferSizes[] = { 0   };
