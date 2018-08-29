@@ -426,7 +426,7 @@ class SearchPluginsThread(QThread):
         self.fContinueChecking = False
 
     def run(self):
-        settingsDB = QSettings("falkTX", "CarlaPlugins3")
+        settingsDB = QSettings("falkTX", "CarlaPlugins4")
 
         self.fContinueChecking = True
         self.fCurCount = 0
