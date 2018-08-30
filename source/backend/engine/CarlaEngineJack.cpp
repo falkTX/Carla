@@ -989,6 +989,45 @@ public:
 
         if (jackbridge_activate(fClient))
         {
+            if (opts.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
+                opts.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+            {
+                if (pData->options.audioDevice != nullptr &&
+                    std::strcmp(pData->options.audioDevice, "Auto-Connect ON") == 0 &&
+                    std::getenv("LADISH_APP_NAME") == nullptr &&
+                    std::getenv("NSM_URL") == nullptr)
+                {
+                    char strBuf[STR_MAX];
+                    strBuf[STR_MAX-1] = '\0';
+
+                    if (jackbridge_port_by_name(fClient, "system:capture_1") != nullptr)
+                    {
+                        std::snprintf(strBuf, STR_MAX-2, "%s:audio-in1", jackClientName);
+                        jackbridge_connect(fClient, "system:capture_1", strBuf);
+
+                        std::snprintf(strBuf, STR_MAX-2, "%s:audio-in2", jackClientName);
+
+                        if (jackbridge_port_by_name(fClient, "system:capture_2") != nullptr)
+                            jackbridge_connect(fClient, "system:capture_2", strBuf);
+                        else
+                            jackbridge_connect(fClient, "system:capture_1", strBuf);
+                    }
+
+                    if (jackbridge_port_by_name(fClient, "system:capture_1") != nullptr)
+                    {
+                        std::snprintf(strBuf, STR_MAX-2, "%s:audio-out1", jackClientName);
+                        jackbridge_connect(fClient, strBuf, "system:playback_1");
+
+                        std::snprintf(strBuf, STR_MAX-2, "%s:audio-out2", jackClientName);
+
+                        if (jackbridge_port_by_name(fClient, "system:playback_2") != nullptr)
+                            jackbridge_connect(fClient, strBuf, "system:playback_2");
+                        else
+                            jackbridge_connect(fClient, strBuf, "system:playback_1");
+                    }
+                }
+            }
+
             startThread();
             callback(ENGINE_CALLBACK_ENGINE_STARTED, 0,
                      opts.processMode, opts.transportMode,
@@ -997,7 +1036,8 @@ public:
             return true;
         }
 
-        if (opts.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || opts.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        if (opts.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
+            opts.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         {
             pData->graph.destroy();
         }
@@ -1798,7 +1838,6 @@ protected:
 
             if (fTimebaseRolling != playing)
             {
-                carla_stdout("state changed SAVE %i", playing);
                 fTimebaseRolling = playing;
                 pData->timeInfo.playing = playing;
             }

@@ -2218,8 +2218,10 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
     }
   }
 
-  // auto-connect "device" is #1
-  shouldAutoconnect_ = device == 0;
+  // auto-connect-off "device" is at index 1
+  shouldAutoconnect_ = (device != 1 &&
+                        std::getenv("LADISH_APP_NAME") == nullptr &&
+                        std::getenv("NSM_URL") == nullptr);
 
   // Setup the buffer conversion information structure.  We don't use
   // buffers to do channel offsets, so we override that parameter
