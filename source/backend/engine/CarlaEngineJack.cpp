@@ -1013,7 +1013,7 @@ public:
                             jackbridge_connect(fClient, "system:capture_1", strBuf);
                     }
 
-                    if (jackbridge_port_by_name(fClient, "system:capture_1") != nullptr)
+                    if (jackbridge_port_by_name(fClient, "system:playback_1") != nullptr)
                     {
                         std::snprintf(strBuf, STR_MAX-2, "%s:audio-out1", jackClientName);
                         jackbridge_connect(fClient, strBuf, "system:playback_1");
