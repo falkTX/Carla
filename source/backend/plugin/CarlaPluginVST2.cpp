@@ -481,14 +481,16 @@ public:
                 const char* msg = nullptr;
                 const uintptr_t frontendWinId(pData->engine->getOptions().frontendWinId);
 
-#if defined(CARLA_OS_MAC) && defined(CARLA_OS_64BIT)
+#if defined(CARLA_OS_MAC)
                 fUI.window = CarlaPluginUI::newCocoa(this, frontendWinId, false);
 #elif defined(CARLA_OS_WIN)
                 fUI.window = CarlaPluginUI::newWindows(this, frontendWinId, false);
 #elif defined(HAVE_X11)
                 fUI.window = CarlaPluginUI::newX11(this, frontendWinId, false);
 #else
-                msg = "Unknown UI type";
+                msg = "Unsupported UI type";
+                // unused
+                (void)frontendWinId;
 #endif
 
                 if (fUI.window == nullptr)
@@ -862,7 +864,13 @@ public:
 
         if (fEffect->flags & effFlagsHasEditor)
         {
-            pData->hints |= PLUGIN_HAS_CUSTOM_UI;
+#ifndef CARLA_OS_64BIT
+            if (static_cast<uintptr_t>(dispatcher(effCanDo, 0, 0, const_cast<char*>("hasCockosViewAsConfig")) & 0xffff0000) == 0xbeef0000)
+#endif
+            {
+                pData->hints |= PLUGIN_HAS_CUSTOM_UI;
+            }
+
             pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
         }
 
@@ -872,7 +880,7 @@ public:
         if ((fEffect->flags & effFlagsCanReplacing) != 0 && fEffect->processReplacing != fEffect->process)
             pData->hints |= PLUGIN_CAN_PROCESS_REPLACING;
 
-        if (static_cast<uintptr_t>(dispatcher(effCanDo, 0, 0, const_cast<char*>("hasCockosExtensions"), 0.0f)) == 0xbeef0000)
+        if (static_cast<uintptr_t>(dispatcher(effCanDo, 0, 0, const_cast<char*>("hasCockosExtensions"))) == 0xbeef0000)
             pData->hints |= PLUGIN_HAS_COCKOS_EXTENSIONS;
 
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
@@ -1113,7 +1121,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Set TimeInfo
 
-        const EngineTimeInfo& timeInfo(pData->engine->getTimeInfo());
+        const EngineTimeInfo timeInfo(pData->engine->getTimeInfo());
 
         fTimeInfo.flags = kVstTransportChanged;
 
@@ -1205,7 +1213,7 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             bool allNotesOffSent = false;
 #endif
             bool isSampleAccurate = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
@@ -1258,7 +1266,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeParameter: {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                         // Control backend stuff
                         if (event.channel == pData->ctrlChannel)
                         {
@@ -1417,7 +1425,7 @@ public:
                     case kEngineControlEventTypeAllNotesOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
@@ -1608,7 +1616,7 @@ public:
         fIsProcessing = false;
         fTimeInfo.samplePos += frames;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
 
@@ -2085,7 +2093,9 @@ protected:
                 }
             }
 
-            pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0f, nullptr);
+            if (! fIsInitializing)
+                pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0f, nullptr);
+
             ret = 1;
             break;
 
@@ -2357,9 +2367,6 @@ public:
         }
 
         return true;
-
-        // unused
-        (void)uniqueId;
     }
 
 private:

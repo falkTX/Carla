@@ -23,9 +23,11 @@
 # include <X11/Xatom.h>
 # include <X11/Xlib.h>
 # include <X11/Xutil.h>
+# include "CarlaPluginUI_X11Icon.hpp"
 #endif
 
 #ifdef CARLA_OS_MAC
+# include "CarlaMacUtils.hpp"
 # import <Cocoa/Cocoa.h>
 #endif
 
@@ -41,8 +43,6 @@
 // X11
 
 #ifdef HAVE_X11
-# include "CarlaPluginUI_X11Icon.hpp"
-
 typedef void (*EventProcPtr)(XEvent* ev);
 
 static const uint X11Key_Escape = 9;
@@ -363,7 +363,9 @@ private:
 
 #ifdef CARLA_OS_MAC
 
-#ifdef BUILD_BRIDGE
+#if defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+# define CarlaPluginWindow CARLA_JOIN_MACRO(CarlaPluginWindowBridgedArch, CARLA_PLUGIN_UI_CLASS_PREFIX)
+#elif defined(BUILD_BRIDGE)
 # define CarlaPluginWindow CARLA_JOIN_MACRO(CarlaPluginWindowBridged, CARLA_PLUGIN_UI_CLASS_PREFIX)
 #else
 # define CarlaPluginWindow CARLA_JOIN_MACRO(CarlaPluginWindow, CARLA_PLUGIN_UI_CLASS_PREFIX)
@@ -373,15 +375,16 @@ private:
 {
 @public
     CarlaPluginUI::Callback* callback;
-    NSView* view;
 }
 
 - (id) initWithContentRect:(NSRect)contentRect
                  styleMask:(unsigned int)aStyle
                    backing:(NSBackingStoreType)bufferingType
                      defer:(BOOL)flag;
-- (void) setup:(CarlaPluginUI::Callback*)cb view:(NSView*)v;
+- (void) setCallback:(CarlaPluginUI::Callback*)cb;
+- (BOOL) acceptsFirstResponder;
 - (BOOL) canBecomeKeyWindow;
+- (BOOL) canBecomeMainWindow;
 - (BOOL) windowShouldClose:(id)sender;
 - (NSSize) windowWillResize:(NSWindow*)sender toSize:(NSSize)frameSize;
 @end
@@ -394,17 +397,17 @@ private:
                     defer:(BOOL)flag
 {
     callback = nil;
-    view = nil;
 
     NSWindow* result = [super initWithContentRect:contentRect
                                         styleMask:(NSClosableWindowMask |
                                                    NSTitledWindowMask |
                                                    NSResizableWindowMask)
-                                          backing:NSBackingStoreBuffered defer:NO];
+                                          backing:NSBackingStoreBuffered
+                                            defer:YES];
 
-    [result setAcceptsMouseMovedEvents:YES];
-    [result setContentSize:NSMakeSize(1, 1)];
     [result setIsVisible:NO];
+    [result setAcceptsMouseMovedEvents:YES];
+    [result setContentSize:NSMakeSize(18, 100)];
 
     return (CarlaPluginWindow*)result;
 
@@ -412,10 +415,14 @@ private:
     (void)aStyle; (void)bufferingType; (void)flag;
 }
 
-- (void)setup:(CarlaPluginUI::Callback*)cb view:(NSView*)v
+- (void)setCallback:(CarlaPluginUI::Callback*)cb
 {
     callback = cb;
-    view = v;
+}
+
+- (BOOL)acceptsFirstResponder
+{
+    return YES;
 }
 
 - (BOOL)canBecomeKeyWindow
@@ -423,12 +430,17 @@ private:
     return YES;
 }
 
+- (BOOL)canBecomeMainWindow
+{
+    return NO;
+}
+
 - (BOOL)windowShouldClose:(id)sender
 {
     if (callback != nil)
         callback->handlePluginUIClosed();
 
-    return NO;
+    return YES;
 
     // unused
     (void)sender;
@@ -453,20 +465,22 @@ public:
     CocoaPluginUI(Callback* const cb, const uintptr_t parentId, const bool isResizable) noexcept
         : CarlaPluginUI(cb, isResizable),
           fView(nullptr),
-          fWindow(0)
+          fWindow(nullptr)
     {
-        [NSAutoreleasePool new];
-        [NSApplication sharedApplication];
+        carla_debug("CocoaPluginUI::CocoaPluginUI(%p, " P_UINTPTR, "%s)", cb, parentId, bool2str(isResizable));
+        const CarlaBackend::AutoNSAutoreleasePool arp;
 
-        fView = [NSView new];
+        fView = [[NSView new]retain];
         CARLA_SAFE_ASSERT_RETURN(fView != nullptr,)
+
+        [fView setHidden:YES];
 
         if (isResizable)
             [fView setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];
 
         fWindow = [[CarlaPluginWindow new]retain];
 
-        if (fWindow == 0)
+        if (fWindow == nullptr)
         {
             [fView release];
             fView = nullptr;
@@ -476,12 +490,10 @@ public:
         if (! isResizable)
             [[fWindow standardWindowButton:NSWindowZoomButton] setHidden:YES];
 
-        [fWindow setup:cb view:fView];
+        [fWindow setCallback:cb];
         [fWindow setContentView:fView];
         [fWindow makeFirstResponder:fView];
         [fWindow makeKeyAndOrderFront:fWindow];
-
-        [NSApp activateIgnoringOtherApps:YES];
         [fWindow center];
 
         if (parentId != 0)
@@ -490,9 +502,11 @@ public:
 
     ~CocoaPluginUI() override
     {
+        carla_debug("CocoaPluginUI::~CocoaPluginUI()");
         if (fView == nullptr)
             return;
 
+        [fView removeFromSuperview];
         [fWindow close];
         [fView release];
         [fWindow release];
@@ -500,6 +514,7 @@ public:
 
     void show() override
     {
+        carla_debug("CocoaPluginUI::show()");
         CARLA_SAFE_ASSERT_RETURN(fView != nullptr,);
 
         [fView setHidden:NO];
@@ -508,6 +523,7 @@ public:
 
     void hide() override
     {
+        carla_debug("CocoaPluginUI::hide()");
         CARLA_SAFE_ASSERT_RETURN(fView != nullptr,);
 
         [fWindow setIsVisible:NO];
@@ -516,18 +532,22 @@ public:
 
     void idle() override
     {
+        // carla_debug("CocoaPluginUI::idle()");
     }
 
     void focus() override
     {
-        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+        carla_debug("CocoaPluginUI::focus()");
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
 
         [fWindow makeKeyWindow];
+        [NSApp activateIgnoringOtherApps:YES];
     }
 
     void setSize(const uint width, const uint height, const bool forceUpdate) override
     {
-        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+        carla_debug("CocoaPluginUI::setSize(%u, %u, %s)", width, height, bool2str(forceUpdate));
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fView != nullptr,);
 
         [fView setFrame:NSMakeRect(0, 0, width, height)];
@@ -547,11 +567,18 @@ public:
             [fWindow setContentMaxSize:size];
             [[fWindow standardWindowButton:NSWindowZoomButton] setHidden:YES];
         }
+
+        if (forceUpdate)
+        {
+            // FIXME, not enough
+            [fView setNeedsDisplay:YES];
+        }
     }
 
     void setTitle(const char* const title) override
     {
-        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+        carla_debug("CocoaPluginUI::setTitle(\"%s\")", title);
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
 
         NSString* titleString = [[NSString alloc]
                                   initWithBytes:title
@@ -563,7 +590,8 @@ public:
 
     void setTransientWinId(const uintptr_t winId) override
     {
-        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+        carla_debug("CocoaPluginUI::setTransientWinId(" P_UINTPTR ")", winId);
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
 
         NSWindow* const parentWindow = [NSApp windowWithWindowNumber:winId];
         CARLA_SAFE_ASSERT_RETURN(parentWindow != nullptr,);
@@ -572,24 +600,27 @@ public:
                              ordered:NSWindowAbove];
     }
 
-    void setChildWindow(void* const winId) override
+    void setChildWindow(void* const window) override
     {
-        CARLA_SAFE_ASSERT_RETURN(winId != nullptr,);
+        carla_debug("CocoaPluginUI::setChildWindow(%p)", window);
+        CARLA_SAFE_ASSERT_RETURN(window != nullptr,);
     }
 
     void* getPtr() const noexcept override
     {
+        carla_debug("CocoaPluginUI::getPtr()");
         return (void*)fView;
     }
 
     void* getDisplay() const noexcept
     {
+        carla_debug("CocoaPluginUI::getDisplay()");
         return (void*)fWindow;
     }
 
 private:
-    NSView* fView;
-    id      fWindow;
+    NSView*            fView;
+    CarlaPluginWindow* fWindow;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CocoaPluginUI)
 };
@@ -853,7 +884,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 // -----------------------------------------------------
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* const uiTitle, const uintptr_t winId, const bool centerUI)
 {
     CARLA_SAFE_ASSERT_RETURN(uiTitle != nullptr && uiTitle[0] != '\0', true);
@@ -1068,14 +1099,25 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 
     int windowToMap, windowWithPID = 0, windowWithNameAndPID = 0;
 
-    for (NSDictionary* const entry in windowList)
+    const NSDictionary* entry;
+    for (entry in windowList)
     {
+        // FIXME: is this needed? is old version safe?
+#if defined (MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
         if ([entry[(id)kCGWindowSharingState] intValue] == kCGWindowSharingNone)
             continue;
 
         NSString* const windowName   =  entry[(id)kCGWindowName];
         int       const windowNumber = [entry[(id)kCGWindowNumber] intValue];
         uintptr_t const windowPID    = [entry[(id)kCGWindowOwnerPID] intValue];
+#else
+        if ([[entry objectForKey:(id)kCGWindowSharingState] intValue] == kCGWindowSharingNone)
+            continue;
+
+        NSString* const windowName   =  [entry objectForKey:(id)kCGWindowName];
+        int       const windowNumber = [[entry objectForKey:(id)kCGWindowNumber] intValue];
+        uintptr_t const windowPID    = [[entry objectForKey:(id)kCGWindowOwnerPID] intValue];
+#endif
 
         if (windowPID != pid)
             continue;
@@ -1141,7 +1183,7 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
     return true;
     (void)pid; (void)centerUI;
 }
-#endif // BUILD_BRIDGE
+#endif // BUILD_BRIDGE_ALTERNATIVE_ARCH
 
 // -----------------------------------------------------
 

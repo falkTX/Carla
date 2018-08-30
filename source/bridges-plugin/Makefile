@@ -68,13 +68,10 @@ LINK_FLAGS += $(X11_LIBS)
 # ----------------------------------------------------------------------------------------------------------------------
 
 NATIVE_BUILD_FLAGS  = $(NATIVE_PLUGINS_FLAGS) $(LIBLO_FLAGS)
-NATIVE_LINK_FLAGS   = $(LIBLO_LIBS)
+# NATIVE_LINK_FLAGS   = $(LIBLO_LIBS)
 
 NATIVE_BUILD_FLAGS += $(FLUIDSYNTH_FLAGS)
 NATIVE_LINK_FLAGS  += $(FLUIDSYNTH_LIBS)
-
-NATIVE_BUILD_FLAGS += $(LINUXSAMPLER_FLAGS)
-NATIVE_LINK_FLAGS  += $(LINUXSAMPLER_LIBS)
 
 NATIVE_LINK_FLAGS  += $(FFMPEG_LIBS)
 NATIVE_LINK_FLAGS  += $(MAGIC_LIBS)
@@ -95,8 +92,9 @@ OBJS_native = \
 	$(OBJDIR)/CarlaEngine.cpp.o \
 	$(OBJDIR)/CarlaEngineClient.cpp.o \
 	$(OBJDIR)/CarlaEngineData.cpp.o \
+	$(OBJDIR)/CarlaEngineGraph.cpp.o \
 	$(OBJDIR)/CarlaEngineInternal.cpp.o \
-	$(OBJDIR)/CarlaEngineOsc.cpp.o \
+	$(OBJDIR)/CarlaEngineNative.cpp.o \
 	$(OBJDIR)/CarlaEngineOscSend.cpp.o \
 	$(OBJDIR)/CarlaEnginePorts.cpp.o \
 	$(OBJDIR)/CarlaEngineThread.cpp.o \

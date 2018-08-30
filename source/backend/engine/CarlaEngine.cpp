@@ -118,7 +118,7 @@ const char* const* CarlaEngine::getDriverDeviceNames(const uint index2)
 
     if (jackbridge_is_ok() && index-- == 0)
     {
-        static const char* ret[3] = { "Auto-Connect OFF", "Auto-Connect ON", nullptr };
+        static const char* ret[3] = { "Auto-Connect ON", "Auto-Connect OFF", nullptr };
         return ret;
     }
 
@@ -142,10 +142,9 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index2
 
     if (jackbridge_is_ok() && index-- == 0)
     {
-        static uint32_t bufSizes[11] = { 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 0 };
         static EngineDriverDeviceInfo devInfo;
         devInfo.hints       = ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE;
-        devInfo.bufferSizes = bufSizes;
+        devInfo.bufferSizes = nullptr;
         devInfo.sampleRates = nullptr;
         return &devInfo;
     }
@@ -285,7 +284,7 @@ void CarlaEngine::idle() noexcept
         }
     }
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     pData->osc.idle();
 #endif
 }
@@ -303,7 +302,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
                             const void* const extra, const uint options)
 {
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->isIdling == 0, "An operation is still being processed, please wait for it to finish");
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data");
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextPluginId <= pData->maxPluginNumber, "Invalid engine internal data");
 #endif
@@ -315,7 +314,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
 
     uint id;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CarlaPlugin* oldPlugin = nullptr;
 
     if (pData->nextPluginId < pData->curPluginCount)
@@ -338,7 +337,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
             return false;
         }
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins[id].plugin == nullptr, "Invalid engine internal data");
 #endif
     }
@@ -486,7 +485,6 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
 
     plugin->reload();
 
-#ifndef BUILD_BRIDGE
     bool canRun = true;
 
     /**/ if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
@@ -517,11 +515,6 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
         return false;
     }
 
-# ifdef HAVE_LIBLO
-    plugin->registerToOscClient();
-# endif
-#endif
-
     EnginePluginData& pluginData(pData->plugins[id]);
     pluginData.plugin      = plugin;
     pluginData.insPeak[0]  = 0.0f;
@@ -529,7 +522,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
     pluginData.outsPeak[0] = 0.0f;
     pluginData.outsPeak[1] = 0.0f;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (oldPlugin != nullptr)
     {
         CARLA_SAFE_ASSERT(! pData->loadingProject);
@@ -559,17 +552,23 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
     else if (! pData->loadingProject)
 #endif
     {
-        plugin->setActive(true, true, false);
         plugin->setEnabled(true);
 
         ++pData->curPluginCount;
         callback(ENGINE_CALLBACK_PLUGIN_ADDED, id, 0, 0, 0.0f, plugin->getName());
 
-#ifndef BUILD_BRIDGE
+        if (getType() != kEngineTypeBridge)
+            plugin->setActive(true, false, true);
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
             pData->graph.addPlugin(plugin);
 #endif
     }
+
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
+    plugin->registerToOscClient();
+#endif
 
     return true;
 }
@@ -582,7 +581,7 @@ bool CarlaEngine::addPlugin(const PluginType ptype, const char* const filename, 
 bool CarlaEngine::removePlugin(const uint id)
 {
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->isIdling == 0, "An operation is still being processed, please wait for it to finish");
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data");
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->curPluginCount != 0, "Invalid engine internal data");
 #endif
@@ -597,7 +596,7 @@ bool CarlaEngine::removePlugin(const uint id)
 
     const ScopedThreadStopper sts(this);
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         pData->graph.removePlugin(plugin);
 
@@ -612,7 +611,7 @@ bool CarlaEngine::removePlugin(const uint id)
     }
     */
 
-# ifdef HAVE_LIBLO
+# if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     if (isOscControlRegistered())
         oscSend_control_remove_plugin(id);
 # endif
@@ -630,7 +629,7 @@ bool CarlaEngine::removePlugin(const uint id)
 bool CarlaEngine::removeAllPlugins()
 {
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->isIdling == 0, "An operation is still being processed, please wait for it to finish");
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data");
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextPluginId == pData->maxPluginNumber, "Invalid engine internal data");
 #endif
@@ -644,11 +643,11 @@ bool CarlaEngine::removeAllPlugins()
 
     const uint curPluginCount(pData->curPluginCount);
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         pData->graph.removeAllPlugins();
 
-# ifdef HAVE_LIBLO
+# if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     if (isOscControlRegistered())
     {
         for (uint i=0; i < curPluginCount; ++i)
@@ -682,7 +681,7 @@ bool CarlaEngine::removeAllPlugins()
     return true;
 }
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 const char* CarlaEngine::renamePlugin(const uint id, const char* const newName)
 {
     CARLA_SAFE_ASSERT_RETURN_ERRN(pData->isIdling == 0, "An operation is still being processed, please wait for it to finish");
@@ -810,7 +809,7 @@ bool CarlaEngine::switchPlugins(const uint idA, const uint idB) noexcept
 
 CarlaPlugin* CarlaEngine::getPlugin(const uint id) const noexcept
 {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CARLA_SAFE_ASSERT_RETURN_ERRN(pData->plugins != nullptr, "Invalid engine internal data");
     CARLA_SAFE_ASSERT_RETURN_ERRN(pData->curPluginCount != 0, "Invalid engine internal data");
 #endif
@@ -1127,7 +1126,7 @@ const EngineOptions& CarlaEngine::getOptions() const noexcept
     return pData->options;
 }
 
-const EngineTimeInfo& CarlaEngine::getTimeInfo() const noexcept
+EngineTimeInfo CarlaEngine::getTimeInfo() const noexcept
 {
     return pData->timeInfo;
 }
@@ -1171,11 +1170,11 @@ float CarlaEngine::getOutputPeak(const uint pluginId, const bool isLeft) const n
 void CarlaEngine::callback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr) noexcept
 {
 #ifdef DEBUG
-    if (action != ENGINE_CALLBACK_IDLE)
+    if (action != ENGINE_CALLBACK_IDLE && action != ENGINE_CALLBACK_NOTE_ON && action != ENGINE_CALLBACK_NOTE_OFF)
         carla_debug("CarlaEngine::callback(%i:%s, %i, %i, %i, %f, \"%s\")", action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
 #endif
 
-#ifdef BUILD_BRIDGE
+#ifdef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (pData->isIdling)
 #else
     if (pData->isIdling && action != ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED)
@@ -1301,6 +1300,13 @@ bool CarlaEngine::setAboutToClose() noexcept
     return (pData->isIdling == 0);
 }
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+bool CarlaEngine::isLoadingProject() const noexcept
+{
+    return pData->loadingProject;
+}
+#endif
+
 // -----------------------------------------------------------------------
 // Global options
 
@@ -1363,7 +1369,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         break;
 
     case ENGINE_OPTION_PREFER_PLUGIN_BRIDGES:
-#ifdef BUILD_BRIDGE
+#ifdef BUILD_BRIDGE_ALTERNATIVE_ARCH
         CARLA_SAFE_ASSERT_RETURN(value == 0,);
 #else
         CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
@@ -1518,7 +1524,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         pData->options.frontendWinId = static_cast<uintptr_t>(winId);
     }   break;
 
-#ifndef CARLA_OS_WIN
+#if !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) && !defined(CARLA_OS_WIN)
     case ENGINE_OPTION_WINE_EXECUTABLE:
         CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
 
@@ -1563,30 +1569,42 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
     }
 }
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#ifndef BUILD_BRIDGE
 // -----------------------------------------------------------------------
 // OSC Stuff
 
-# ifndef BUILD_BRIDGE
 bool CarlaEngine::isOscControlRegistered() const noexcept
 {
+# ifdef HAVE_LIBLO
     return pData->osc.isControlRegistered();
-}
+# else
+    return false;
 # endif
+}
 
 void CarlaEngine::idleOsc() const noexcept
 {
+# ifdef HAVE_LIBLO
     pData->osc.idle();
+# endif
 }
 
 const char* CarlaEngine::getOscServerPathTCP() const noexcept
 {
+# ifdef HAVE_LIBLO
     return pData->osc.getServerPathTCP();
+# else
+    return nullptr;
+# endif
 }
 
 const char* CarlaEngine::getOscServerPathUDP() const noexcept
 {
+# ifdef HAVE_LIBLO
     return pData->osc.getServerPathUDP();
+# else
+    return nullptr;
+# endif
 }
 #endif
 
@@ -1605,7 +1623,7 @@ void CarlaEngine::bufferSizeChanged(const uint32_t newBufferSize)
 {
     carla_debug("CarlaEngine::bufferSizeChanged(%i)", newBufferSize);
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
         pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
     {
@@ -1630,7 +1648,7 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
 {
     carla_debug("CarlaEngine::sampleRateChanged(%g)", newSampleRate);
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
         pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
     {
@@ -1655,7 +1673,7 @@ void CarlaEngine::offlineModeChanged(const bool isOfflineNow)
 {
     carla_debug("CarlaEngine::offlineModeChanged(%s)", bool2str(isOfflineNow));
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
         pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
     {
@@ -1691,7 +1709,7 @@ void CarlaEngine::saveProjectInternal(water::MemoryOutputStream& outStream) cons
 
         if (plugin != nullptr && plugin->isEnabled())
         {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             // deactivate bridge client-side ping check, since some plugins block during save
             if (plugin->getHints() & PLUGIN_IS_BRIDGE)
                 plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "__CarlaPingOnOff__", "false", false);
@@ -1771,7 +1789,7 @@ void CarlaEngine::saveProjectInternal(water::MemoryOutputStream& outStream) cons
         }
     }
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     // tell bridges we're done saving
     for (uint i=0; i < pData->curPluginCount; ++i)
     {
@@ -1935,7 +1953,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
         return false;
     }
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     const ScopedValueSetter<bool> _svs(pData->loadingProject, true, false);
 #endif
 
@@ -2033,7 +2051,16 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                 }
             }
 
-            CARLA_SAFE_ASSERT_CONTINUE(option != -1);
+            if (option == -1)
+            {
+                // check old stuff, unhandled now
+                if (tag == "GIG_PATH")
+                    continue;
+
+                // hmm something is wrong..
+                carla_stderr2("CarlaEngine::loadProjectInternal() - Unhandled option '%s'", tag.toRawUTF8());
+                continue;
+            }
 
             setOption(static_cast<EngineOption>(option), value, valueStr);
         }
@@ -2206,7 +2233,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
             if (addPlugin(getBinaryTypeFromFile(stateSave.binary), ptype, stateSave.binary,
                           stateSave.name, stateSave.label, stateSave.uniqueId, extraStuff, stateSave.options))
             {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                 const uint pluginId = pData->curPluginCount;
 #else
                 const uint pluginId = 0;
@@ -2229,16 +2256,12 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                      *       When project is loading we do not enable the plugin right away,
                      *        as we want to load state first.
                      */
-#ifdef BUILD_BRIDGE
-                    plugin->setActive(true, true, false);
-#else
-                    ++pData->curPluginCount;
-#endif
-
                     plugin->setEnabled(true);
+
+                    ++pData->curPluginCount;
                     callback(ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, 0, 0, 0.0f, plugin->getName());
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
                         pData->graph.addPlugin(plugin);
 #endif
@@ -2258,7 +2281,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
             return true;
     }
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     // tell bridges we're done loading
     for (uint i=0; i < pData->curPluginCount; ++i)
     {

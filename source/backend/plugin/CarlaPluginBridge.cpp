@@ -397,7 +397,7 @@ public:
     {
         carla_debug("CarlaPluginBridge::~CarlaPluginBridge()");
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // close UI
         if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
             pData->transientTryCounter = 0;
@@ -877,7 +877,7 @@ public:
             fShmNonRtClientControl.commitWrite();
         }
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (yesNo)
         {
             pData->tryTransient();
@@ -1185,7 +1185,7 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             bool allNotesOffSent = false;
 #endif
 
@@ -1208,7 +1208,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeParameter:
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                         // Control backend stuff
                         if (event.channel == pData->ctrlChannel)
                         {
@@ -1295,7 +1295,7 @@ public:
                     case kEngineControlEventTypeAllNotesOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
@@ -1467,7 +1467,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // TimeInfo
 
-        const EngineTimeInfo& timeInfo(pData->engine->getTimeInfo());
+        const EngineTimeInfo timeInfo(pData->engine->getTimeInfo());
         BridgeTimeInfo& bridgeTimeInfo(fShmRtClientControl.data->timeInfo);
 
         bridgeTimeInfo.playing    = timeInfo.playing;
@@ -1509,7 +1509,7 @@ public:
         for (uint32_t i=0; i < fInfo.aOuts; ++i)
             carla_copyFloats(audioOut[i], fShmAudioPool.data + ((i + fInfo.aIns) * frames), frames);
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
 
@@ -1531,11 +1531,13 @@ public:
 
                     for (uint32_t k=0; k < frames; ++k)
                     {
+# ifndef BUILD_BRIDGE
                         if (k < pData->latency.frames)
                             bufValue = pData->latency.buffers[c][k];
                         else if (pData->latency.frames < frames)
                             bufValue = audioIn[c][k-pData->latency.frames];
                         else
+# endif
                             bufValue = audioIn[c][k];
 
                         audioOut[i][k] = (audioOut[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
@@ -1583,6 +1585,7 @@ public:
 
         } // End of Post-processing
 
+# ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
         // Save latency values for next callback
 
@@ -1609,8 +1612,8 @@ public:
                 }
             }
         }
-
-#endif // BUILD_BRIDGE
+# endif
+#endif // BUILD_BRIDGE_ALTERNATIVE_ARCH
 
         // --------------------------------------------------------------------------------------------------------
 
@@ -1762,7 +1765,7 @@ public:
         {
             const PluginBridgeNonRtServerOpcode opcode(fShmNonRtServerControl.readOpcode());
 #ifdef DEBUG
-            if (opcode != kPluginBridgeNonRtServerPong) {
+            if (opcode != kPluginBridgeNonRtServerPong && opcode != kPluginBridgeNonRtServerParameterValue2) {
                 carla_debug("CarlaPluginBridge::handleNonRtData() - got opcode: %s", PluginBridgeNonRtServerOpcode2str(opcode));
             }
 #endif
@@ -1832,20 +1835,10 @@ public:
 
             case kPluginBridgeNonRtServerAudioCount: {
                 // uint/ins, uint/outs
+                fInfo.clear();
+
                 fInfo.aIns  = fShmNonRtServerControl.readUInt();
                 fInfo.aOuts = fShmNonRtServerControl.readUInt();
-
-                if (fInfo.aInNames != nullptr)
-                {
-                    delete[] fInfo.aInNames;
-                    fInfo.aInNames = nullptr;
-                }
-
-                if (fInfo.aOutNames != nullptr)
-                {
-                    delete[] fInfo.aOutNames;
-                    fInfo.aOutNames = nullptr;
-                }
 
                 if (fInfo.aIns > 0)
                 {
@@ -2224,7 +2217,7 @@ public:
                 break;
 
             case kPluginBridgeNonRtServerUiClosed:
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                 pData->transientTryCounter = 0;
 #endif
                 pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
@@ -2521,6 +2514,38 @@ private:
               aInNames(nullptr),
               aOutNames(nullptr),
               chunk() {}
+
+        ~Info()
+        {
+            clear();
+        }
+
+        void clear()
+        {
+            if (aInNames != nullptr)
+            {
+                CARLA_SAFE_ASSERT_INT(aIns > 0, aIns);
+
+                for (uint32_t i=0; i<aIns; ++i)
+                    delete[] aInNames[i];
+
+                delete[] aInNames;
+                aInNames = nullptr;
+            }
+
+            if (aOutNames != nullptr)
+            {
+                CARLA_SAFE_ASSERT_INT(aOuts > 0, aOuts);
+
+                for (uint32_t i=0; i<aOuts; ++i)
+                    delete[] aOutNames[i];
+
+                delete[] aOutNames;
+                aOutNames = nullptr;
+            }
+
+            aIns = aOuts = 0;
+        }
 
         CARLA_DECLARE_NON_COPY_STRUCT(Info)
     } fInfo;

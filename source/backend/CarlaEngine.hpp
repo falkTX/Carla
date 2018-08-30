@@ -291,6 +291,7 @@ struct CARLA_API EngineTimeInfoBBT {
 
 #ifndef DOXYGEN
     EngineTimeInfoBBT() noexcept;
+    EngineTimeInfoBBT(const EngineTimeInfoBBT&) noexcept;
 #endif
 };
 
@@ -310,6 +311,8 @@ struct CARLA_API EngineTimeInfo {
 
 #ifndef DOXYGEN
     EngineTimeInfo() noexcept;
+    EngineTimeInfo(const EngineTimeInfo&) noexcept;
+    EngineTimeInfo& operator=(const EngineTimeInfo&) noexcept;
 
     // quick operator, doesn't check all values
     bool operator==(const EngineTimeInfo& timeInfo) const noexcept;
@@ -821,7 +824,7 @@ public:
      */
     bool removeAllPlugins();
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
      * Rename plugin with id @a id to @a newName.
      * Returns the new name, or null if the operation failed.
@@ -922,7 +925,7 @@ public:
     /*!
      * Get the current Time information (read-only).
      */
-    const EngineTimeInfo& getTimeInfo() const noexcept;
+    virtual EngineTimeInfo getTimeInfo() const noexcept;
 
     // -------------------------------------------------------------------
     // Information (peaks)
@@ -965,7 +968,7 @@ public:
      */
     void setFileCallback(const FileCallbackFunc func, void* const ptr) noexcept;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     // -------------------------------------------------------------------
     // Patchbay
 
@@ -1036,6 +1039,13 @@ public:
      */
     bool setAboutToClose() noexcept;
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    /*!
+     * TODO.
+     */
+    bool isLoadingProject() const noexcept;
+#endif
+
     // -------------------------------------------------------------------
     // Options
 
@@ -1052,7 +1062,6 @@ public:
      * Check if OSC controller is registered.
      */
     bool isOscControlRegistered() const noexcept;
-#endif
 
     /*!
      * Idle OSC.
@@ -1068,6 +1077,7 @@ public:
      * Get OSC UDP server path.
      */
     const char* getOscServerPathUDP() const noexcept;
+#endif
 
     // -------------------------------------------------------------------
     // Helper functions
@@ -1078,7 +1088,7 @@ public:
      */
     EngineEvent* getInternalEventBuffer(const bool isInput) const noexcept;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
      * Virtual functions for handling external graph ports.
      */
@@ -1142,7 +1152,7 @@ protected:
      */
     bool loadProjectInternal(water::XmlDocument& xmlDoc);
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     // -------------------------------------------------------------------
     // Patchbay stuff
 

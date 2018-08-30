@@ -200,7 +200,8 @@ class ExternalUI(object):
                     line2 = "%.10f" % line
                 else:
                     print("unknown data type to send:", type(line))
-                    return False
+                    hasError = True
+                    break
 
                 if not gCarla.utils.pipe_client_write_msg(self.fPipeClient, line2 + "\n"):
                     hasError = True

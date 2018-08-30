@@ -40,7 +40,7 @@ public:
     CarlaEngineSingleLV2(const double sampleRate,
                          const char* const bundlePath,
                          const LV2_Feature* const* const features)
-        : Lv2PluginBaseClass(sampleRate, features),
+        : Lv2PluginBaseClass<EngineTimeInfo>(sampleRate, features),
           fPlugin(nullptr),
           fUiName()
     {
@@ -93,6 +93,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fPlugin->isEnabled(),);
 
+        fPorts.hasUI        = false;
         fPorts.usesTime     = true;
         fPorts.numAudioIns  = fPlugin->getAudioInCount();
         fPorts.numAudioOuts = fPlugin->getAudioOutCount();
@@ -479,10 +480,10 @@ private:
         CARLA_SAFE_ASSERT_RETURN(midiData != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(midiSize > 0, false);
 
-        LV2_Atom_Sequence* const seq(fPorts.midiOuts[port]);
+        LV2_Atom_Sequence* const seq(fPorts.eventsOut[port]);
         CARLA_SAFE_ASSERT_RETURN(seq != nullptr, false);
 
-        Ports::MidiOutData& mData(fPorts.midiOutData[port]);
+        Ports::EventsOutData& mData(fPorts.eventsOutData[port]);
 
         if (sizeof(LV2_Atom_Event) + midiSize > mData.capacity - mData.offset)
             return false;

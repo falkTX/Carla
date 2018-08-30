@@ -217,6 +217,7 @@ struct CarlaPlugin::ProtectedData {
     uint32_t nodeId;
 
     bool active;
+    bool bridged;
     bool enabled;
     bool needsReset;
 
@@ -226,7 +227,7 @@ struct CarlaPlugin::ProtectedData {
     // misc
     int8_t ctrlChannel;
     uint   extraHints;
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     uint   transientTryCounter;
     bool   transientFirstTry;
 #endif
@@ -328,7 +329,7 @@ struct CarlaPlugin::ProtectedData {
 
     } postUiEvents;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     struct PostProc {
         float dryWet;
         float volume;
@@ -383,7 +384,7 @@ struct CarlaPlugin::ProtectedData {
     // -------------------------------------------------------------------
     // Misc
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     void tryTransient() noexcept;
 #endif
     void updateParameterValues(CarlaPlugin* const plugin, const bool sendOsc, const bool sendCallback, const bool useDefault) noexcept;

@@ -104,6 +104,9 @@ public:
         lib.filename  = dfilename;
         lib.count     = 1;
         lib.canDelete = canDelete;
+#ifdef BUILD_BRIDGE
+        lib.canDelete = true;
+#endif
 
         if (fLibs.append(lib))
             return libPtr;

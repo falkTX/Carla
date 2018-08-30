@@ -74,6 +74,9 @@ class PluginHost(CarlaHostQtPlugin):
         self.fExternalUI.idleExternalUI()
 
     def is_engine_running(self):
+        if self.fExternalUI is None:
+            return False
+
         return self.fExternalUI.isRunning()
 
     def set_engine_about_to_close(self):

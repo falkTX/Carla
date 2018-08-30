@@ -937,14 +937,20 @@ bool CarlaPipeCommon::flushMessages() const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->pipeSend != INVALID_PIPE_VALUE, false);
 
-#if 0 // def CARLA_OS_WIN
+#if defined(CARLA_OS_LINUX) || defined(CARLA_OS_GNU_HURD)
+    // the only call that seems to do something
+    return ::syncfs(pData->pipeSend) == 0;
+#elif defined(CARLA_OS_WIN)
+    // FIXME causes issues
+    return true;
+
     try {
         return (::FlushFileBuffers(pData->pipeSend) != FALSE);
     } CARLA_SAFE_EXCEPTION_RETURN("CarlaPipeCommon::writeMsgBuffer", false);
-#endif
-
-    // nothing to do
+#else
+    // unsupported
     return true;
+#endif
 
 }
 
@@ -1240,6 +1246,22 @@ const char* CarlaPipeCommon::_readlineblock(const uint32_t timeOutMilliseconds) 
             break;
 
         carla_msleep(5);
+    }
+
+    if (std::getenv("CARLA_VALGRIND_TEST") != nullptr)
+    {
+        const uint32_t timeoutEnd2(water::Time::getMillisecondCounter() + 1000);
+
+        for (;;)
+        {
+            if (const char* const msg = _readline())
+                return msg;
+
+            if (water::Time::getMillisecondCounter() >= timeoutEnd2)
+                break;
+
+            carla_msleep(100);
+        }
     }
 
     carla_stderr("readlineblock timed out");

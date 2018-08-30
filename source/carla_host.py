@@ -27,11 +27,11 @@ from carla_config import *
 import json
 
 if config_UseQt5:
-    from PyQt5.QtCore import qCritical, QFileInfo, QModelIndex, QPointF, QTimer
+    from PyQt5.QtCore import qCritical, QEventLoop, QFileInfo, QModelIndex, QPointF, QTimer
     from PyQt5.QtGui import QImage, QPalette
     from PyQt5.QtWidgets import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QMainWindow
 else:
-    from PyQt4.QtCore import qCritical, QFileInfo, QModelIndex, QPointF, QTimer
+    from PyQt4.QtCore import qCritical, QEventLoop, QFileInfo, QModelIndex, QPointF, QTimer
     from PyQt4.QtGui import QImage, QPalette
     from PyQt4.QtGui import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QMainWindow
 
@@ -338,9 +338,6 @@ class HostWindow(QMainWindow):
             self.ui.dsb_transport_bpm.setEnabled(False)
             self.ui.dsb_transport_bpm.setReadOnly(True)
 
-        if MACOS: # FIXME
-            self.ui.cb_transport_link.setEnabled(False)
-
         self.ui.w_transport.setEnabled(False)
 
         # ----------------------------------------------------------------------------------------------------
@@ -548,7 +545,7 @@ class HostWindow(QMainWindow):
             self.ui.cb_transport_link.setVisible(False)
 
         # Plugin needs to have timers always running so it receives messages
-        if self.host.isPlugin:
+        if self.host.isPlugin or self.host.isRemote:
             self.startTimers()
 
         # Qt needs this so it properly creates & resizes the canvas
@@ -1544,6 +1541,8 @@ class HostWindow(QMainWindow):
         settings.setValue("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().value())
         settings.setValue("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().value())
 
+        settings.setValue(CARLA_KEY_ENGINE_TRANSPORT_MODE, self.host.transportMode)
+
     def loadSettings(self, firstTime):
         settings = QSettings()
 
@@ -1617,17 +1616,6 @@ class HostWindow(QMainWindow):
                                                            CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS, type=bool))
         else:
             self.ui.act_add_jack.setVisible(False)
-
-        if not (self.host.isControl or self.host.isPlugin):
-            if self.ui.cb_transport_jack.isChecked():
-                transportMode = ENGINE_TRANSPORT_MODE_JACK
-            else:
-                transportMode = ENGINE_TRANSPORT_MODE_INTERNAL
-            transportExtra = ":link:" if self.ui.cb_transport_link.isChecked() else ""
-
-            self.enableTransport(transportMode != ENGINE_TRANSPORT_MODE_DISABLED)
-            self.host.transportMode = transportMode
-            self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, transportMode, transportExtra)
 
         self.fMiniCanvasUpdateTimeout = 1000 if self.fSavedSettings[CARLA_KEY_CANVAS_FANCY_EYE_CANDY] else 0
 
@@ -1871,6 +1859,7 @@ class HostWindow(QMainWindow):
             return
         mode  = ENGINE_TRANSPORT_MODE_JACK if clicked else ENGINE_TRANSPORT_MODE_INTERNAL
         extra = ":link:" if self.ui.cb_transport_link.isChecked() else ""
+        self.host.transportMode = mode
         self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, mode, extra)
 
     @pyqtSlot(bool)
@@ -1879,6 +1868,7 @@ class HostWindow(QMainWindow):
             return
         mode  = ENGINE_TRANSPORT_MODE_JACK if self.ui.cb_transport_jack.isChecked() else ENGINE_TRANSPORT_MODE_INTERNAL
         extra = ":link:" if clicked else ""
+        self.host.transportMode = mode
         self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, mode, extra)
 
     # --------------------------------------------------------------------------------------------------------
@@ -1948,14 +1938,10 @@ class HostWindow(QMainWindow):
         wasCompacted = pitem.isCompacted()
         isCompacted  = wasCompacted
 
-        for i in range(self.host.get_custom_data_count(pluginId)):
-            cdata = self.host.get_custom_data(pluginId, i)
-
-            if cdata['type'] == CUSTOM_DATA_TYPE_PROPERTY and cdata['key'] == "CarlaSkinIsCompacted":
-                isCompacted = bool(cdata['value'] == "true")
-                break
-        else:
+        check = self.host.get_custom_data_value(pluginId, CUSTOM_DATA_TYPE_PROPERTY, "CarlaSkinIsCompacted")
+        if not check:
             return
+        isCompacted = bool(check == "true")
 
         if wasCompacted == isCompacted:
             return
@@ -2529,7 +2515,7 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
     elif action == ENGINE_CALLBACK_NSM:
         host.NSMCallback.emit(value1, value2, valueStr)
     elif action == ENGINE_CALLBACK_IDLE:
-        QApplication.instance().processEvents()
+        QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
     elif action == ENGINE_CALLBACK_INFO:
         host.InfoCallback.emit(valueStr)
     elif action == ENGINE_CALLBACK_ERROR:
@@ -2774,15 +2760,15 @@ def setHostSettings(host):
     host.set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, host.preferPluginBridges, "")
     host.set_engine_option(ENGINE_OPTION_PREFER_UI_BRIDGES,     host.preferUIBridges,     "")
     host.set_engine_option(ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR, host.preventBadBehaviour, "")
-    host.set_engine_option(ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT,  host.showLogs,            "")
     host.set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    host.uiBridgesTimeout,    "")
     host.set_engine_option(ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     host.uisAlwaysOnTop,      "")
 
-    if host.isPlugin or host.is_engine_running():
+    if host.isPlugin or host.isRemote or host.is_engine_running():
         return
 
     host.set_engine_option(ENGINE_OPTION_PROCESS_MODE,          host.nextProcessMode,     "")
     host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE,        host.transportMode,       "")
+    host.set_engine_option(ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT,  host.showLogs,            "")
 
 # ------------------------------------------------------------------------------------------------------------
 # Set Engine settings according to carla preferences. Returns selected audio driver.
@@ -2882,9 +2868,11 @@ def setEngineSettings(host):
     # Only setup audio things if engine is not running
     if not host.is_engine_running():
         host.set_engine_option(ENGINE_OPTION_AUDIO_DEVICE, 0, audioDevice)
-        host.set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, audioBufferSize, "")
-        host.set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, audioSampleRate, "")
-        host.set_engine_option(ENGINE_OPTION_AUDIO_TRIPLE_BUFFER, audioTripleBuffer, "")
+
+        if not audioDriver.startswith("JACK"):
+            host.set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, audioBufferSize, "")
+            host.set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, audioSampleRate, "")
+            host.set_engine_option(ENGINE_OPTION_AUDIO_TRIPLE_BUFFER, audioTripleBuffer, "")
 
     # --------------------------------------------------------------------------------------------------------
     # fix things if needed

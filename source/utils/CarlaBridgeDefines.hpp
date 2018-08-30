@@ -134,12 +134,13 @@ struct BridgeSemaphore {
     };
 };
 
-// needs to be 64bit aligned
+// NOTE: needs to be 64bit aligned
 struct BridgeTimeInfo {
     uint64_t playing;
     uint64_t frame;
     uint64_t usecs;
     uint32_t validFlags;
+    uint32_t unused;
     // bbt
     int32_t bar, beat;
     float beatsPerBar, beatType;

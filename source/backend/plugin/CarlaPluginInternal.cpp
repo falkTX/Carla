@@ -572,7 +572,7 @@ void CarlaPlugin::ProtectedData::PostUiEvents::clear() noexcept
     mutex.unlock();
 }
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 // -----------------------------------------------------------------------
 // ProtectedData::PostProc
 
@@ -594,13 +594,14 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
       options(0x0),
       nodeId(0),
       active(false),
+      bridged(eng->getType() == kEngineTypeBridge),
       enabled(false),
       needsReset(false),
       lib(nullptr),
       uiLib(nullptr),
       ctrlChannel(0),
       extraHints(0x0),
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
       transientTryCounter(0),
       transientFirstTry(true),
 #endif
@@ -623,7 +624,7 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
       latency(),
       postRtEvents(),
       postUiEvents()
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     , postProc()
 #endif
       {}
@@ -631,7 +632,7 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
 CarlaPlugin::ProtectedData::~ProtectedData() noexcept
 {
     CARLA_SAFE_ASSERT(! (active && needsReset));
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CARLA_SAFE_ASSERT(transientTryCounter == 0);
 #endif
 
@@ -714,10 +715,10 @@ CarlaPlugin::ProtectedData::~ProtectedData() noexcept
     masterMutex.unlock();
     singleMutex.unlock();
 
+    CARLA_SAFE_ASSERT(uiLib == nullptr);
+
     if (lib != nullptr)
         libClose();
-
-    CARLA_SAFE_ASSERT(uiLib == nullptr);
 }
 
 // -----------------------------------------------------------------------
@@ -793,7 +794,7 @@ bool CarlaPlugin::ProtectedData::uiLibClose() noexcept
 
 // -----------------------------------------------------------------------
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 void CarlaPlugin::ProtectedData::tryTransient() noexcept
 {
     if (engine->getOptions().frontendWinId != 0)
