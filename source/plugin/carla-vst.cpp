@@ -695,6 +695,12 @@ struct VstObject {
 #define vstObjectPtr (VstObject*)effect->object
 #define pluginPtr    (vstObjectPtr)->plugin
 
+#if CARLA_VST_SHELL
+const char *shell_name[3] = { "Plugin 1", "Plugin 2", "Plugin 3" };
+static const int32_t shell_uniqueId [3] = { CCONST('P', 'l', 'u', '1'), CCONST('P', 'l', 'u', '2'), CCONST('P', 'l', 'u', '3') };
+static int shell_name_count  = 0;
+#endif
+
 static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt)
 {
     // handle base opcodes
@@ -722,13 +728,15 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
 
             const NativePluginDescriptor* pluginDesc  = nullptr;
 #if CARLA_PLUGIN_PATCHBAY
-# if defined(CARLA_PLUGIN_32CH)
+#  if defined(CARLA_PLUGIN_32CH)
             const char* const pluginLabel = "carlapatchbay32";
-# elif defined(CARLA_PLUGIN_16CH)
+#  elif defined(CARLA_PLUGIN_16CH)
             const char* const pluginLabel = "carlapatchbay16";
-# else
+#  else
             const char* const pluginLabel = "carlapatchbay";
-# endif
+#  endif
+#elif CARLA_VST_SHELL
+            const char* const pluginLabel = "carlavstshell";
 #else
             const char* const pluginLabel = "carlarack";
 #endif
@@ -781,6 +789,8 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
     case effGetPlugCategory:
 #if CARLA_PLUGIN_SYNTH
         return kPlugCategSynth;
+#elif CARLA_VST_SHELL
+        return  kPlugCategShell;
 #else
         return kPlugCategEffect;
 #endif
@@ -789,23 +799,25 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
         if (char* const cptr = (char*)ptr)
         {
 #if CARLA_PLUGIN_PATCHBAY
-# if CARLA_PLUGIN_SYNTH
-#  if defined(CARLA_PLUGIN_32CH)
+#  if CARLA_PLUGIN_SYNTH
+#      if defined(CARLA_PLUGIN_32CH)
             std::strncpy(cptr, "Carla-Patchbay32", 32);
-#  elif defined(CARLA_PLUGIN_16CH)
+#      elif defined(CARLA_PLUGIN_16CH)
             std::strncpy(cptr, "Carla-Patchbay16", 32);
-#  else
+#      else
             std::strncpy(cptr, "Carla-Patchbay", 32);
-#  endif
-# else
+#      endif
+#  else
             std::strncpy(cptr, "Carla-PatchbayFX", 32);
-# endif
+#  endif
 #else
-# if CARLA_PLUGIN_SYNTH
+#  if CARLA_PLUGIN_SYNTH
             std::strncpy(cptr, "Carla-Rack", 32);
-# else
+#  elif CARLA_VST_SHELL
+            std::strncpy(cptr, "Carla-VstShell", 32);
+#  else
             std::strncpy(cptr, "Carla-RackFX", 32);
-# endif
+#  endif
 #endif
             return 1;
         }
@@ -823,23 +835,25 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
         if (char* const cptr = (char*)ptr)
         {
 #if CARLA_PLUGIN_PATCHBAY
-# if CARLA_PLUGIN_SYNTH
-#  if defined(CARLA_PLUGIN_32CH)
+#  if CARLA_PLUGIN_SYNTH
+#      if defined(CARLA_PLUGIN_32CH)
             std::strncpy(cptr, "CarlaPatchbay32", 32);
-#  elif defined(CARLA_PLUGIN_16CH)
+#      elif defined(CARLA_PLUGIN_16CH)
             std::strncpy(cptr, "CarlaPatchbay16", 32);
-#  else
+#      else
             std::strncpy(cptr, "CarlaPatchbay", 32);
-#  endif
-# else
+#      endif
+#  else
             std::strncpy(cptr, "CarlaPatchbayFX", 32);
-# endif
+#  endif
 #else
-# if CARLA_PLUGIN_SYNTH
+#  if CARLA_PLUGIN_SYNTH
             std::strncpy(cptr, "CarlaRack", 32);
-# else
+#  elif CARLA_VST_SHELL
+            std::strncpy(cptr, "CarlaVstShell", 32);
+#  else
             std::strncpy(cptr, "CarlaRackFX", 32);
-# endif
+#  endif
 #endif
             return 1;
         }
@@ -850,6 +864,18 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
 
     case effGetVstVersion:
         return kVstVersion;
+
+#if CARLA_VST_SHELL
+    case effShellGetNextPlugin:
+// FIXME maybe add a redundant check of canHostDo == canDoShellCategory ?
+// actually return a real list of subplugins
+        if (char* const cptr = (char*)ptr)
+            if (shell_name_count < 3)
+            {
+                std::strcpy(cptr, shell_name[shell_name_count]);
+                return shell_uniqueId[shell_name_count++];
+            }
+#endif
     };
 
     // handle advanced opcodes
@@ -905,6 +931,10 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
     if (audioMaster(nullptr, audioMasterVersion, 0, 0, nullptr, 0.0f) == 0)
         return nullptr;
 
+#if CARLA_VST_SHELL
+// FIXME get CurrentUniqueId from master, if 0 instantiate self, otherwise instantiate the subplugin
+#endif
+
     AEffect* const effect(new AEffect);
     std::memset(effect, 0, sizeof(AEffect));
 
@@ -914,23 +944,25 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
 
     static const int32_t uniqueId = CCONST('C', 'r', 'l', 'a');
 #if CARLA_PLUGIN_SYNTH
-# if CARLA_PLUGIN_PATCHBAY
-#  if defined(CARLA_PLUGIN_32CH)
+#  if CARLA_PLUGIN_PATCHBAY
+#      if defined(CARLA_PLUGIN_32CH)
+    effect->uniqueID = uniqueId+7;
+#      elif defined(CARLA_PLUGIN_16CH)
     effect->uniqueID = uniqueId+6;
-#  elif defined(CARLA_PLUGIN_16CH)
+#      else
     effect->uniqueID = uniqueId+5;
+#      endif
 #  else
     effect->uniqueID = uniqueId+4;
 #  endif
-# else
-    effect->uniqueID = uniqueId+3;
-# endif
 #else
-# if CARLA_PLUGIN_PATCHBAY
+#  if CARLA_PLUGIN_PATCHBAY
+    effect->uniqueID = uniqueId+3;
+#  elif CARLA_VST_SHELL
     effect->uniqueID = uniqueId+2;
-# else
+#  else
     effect->uniqueID = uniqueId+1;
-# endif
+#  endif
 #endif
 
     // plugin fields
@@ -942,6 +974,9 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
 #elif defined(CARLA_PLUGIN_16CH)
     effect->numInputs   = 16;
     effect->numOutputs  = 16;
+#elif CARLA_VST_SHELL
+    effect->numParams   = 0;
+    effect->numPrograms = 0;
 #else
     effect->numInputs   = 2;
     effect->numOutputs  = 2;
