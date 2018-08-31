@@ -24,8 +24,7 @@ cd $(dirname $0)
 source common.env
 
 CHROOT_CARLA_DIR="/tmp/carla-src"
-PKG_FOLDER="Carla_2.0-beta6-linux"
-export MAKE_ARGS="${MAKE_ARGS} SKIP_ZYN_SYNTH=true"
+PKG_FOLDER="Carla_2.0-beta7-linux"
 
 # ---------------------------------------------------------------------------------------------------------------------
 # function to remove old stuff
@@ -33,8 +32,27 @@ export MAKE_ARGS="${MAKE_ARGS} SKIP_ZYN_SYNTH=true"
 cleanup()
 {
 
-rm -rf ${TARGETDIR}/chroot32/
-rm -rf ${TARGETDIR}/chroot64/
+if [ -d ${TARGETDIR}/chroot32 ]; then
+    sudo umount -lf ${TARGETDIR}/chroot32/dev/pts || true
+    sudo umount -lf ${TARGETDIR}/chroot32/sys || true
+    sudo umount -lf ${TARGETDIR}/chroot32/proc || true
+fi
+
+if [ -d ${TARGETDIR}/chroot64 ]; then
+    sudo umount -lf ${TARGETDIR}/chroot64/dev/pts || true
+    sudo umount -lf ${TARGETDIR}/chroot64/sys || true
+    sudo umount -lf ${TARGETDIR}/chroot64/proc || true
+fi
+
+if [ -d ${TARGETDIR}/chroot32 ]; then
+    sudo mv ${TARGETDIR}/chroot32 ${TARGETDIR}/chroot32-deleteme
+    sudo rm -rf ${TARGETDIR}/chroot32-deleteme || true
+fi
+
+if [ -d ${TARGETDIR}/chroot64 ]; then
+    sudo mv ${TARGETDIR}/chroot64 ${TARGETDIR}/chroot64-deleteme
+    sudo rm -rf ${TARGETDIR}/chroot64-deleteme || true
+fi
 
 }
 
@@ -42,11 +60,11 @@ rm -rf ${TARGETDIR}/chroot64/
 # create chroots
 
 if [ ! -d ${TARGETDIR}/chroot32 ]; then
-sudo debootstrap --arch=i386 lucid ${TARGETDIR}/chroot32 http://old-releases.ubuntu.com/ubuntu/
+    sudo debootstrap --arch=i386 lucid ${TARGETDIR}/chroot32 http://old-releases.ubuntu.com/ubuntu/
 fi
 
 if [ ! -d ${TARGETDIR}/chroot64 ]; then
-sudo debootstrap --arch=amd64 lucid ${TARGETDIR}/chroot64 http://old-releases.ubuntu.com/ubuntu/
+    sudo debootstrap --arch=amd64 lucid ${TARGETDIR}/chroot64 http://old-releases.ubuntu.com/ubuntu/
 fi
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -56,6 +74,17 @@ chroot_setup()
 {
 
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
+
+if [ ! -f ${CHROOT_DIR}/tmp/setup-aria2 ]; then
+  pushd ${CHROOT_DIR}/tmp
+  if [ x"${ARCH}" = x"32" ]; then
+    wget -c https://github.com/q3aql/aria2-static-builds/releases/download/v1.34.0/aria2-1.34.0-linux-gnu-32bit-build1.tar.bz2
+  else
+    wget -c https://github.com/q3aql/aria2-static-builds/releases/download/v1.34.0/aria2-1.34.0-linux-gnu-64bit-build1.tar.bz2
+  fi
+  tar xf aria2-*.tar.bz2
+  popd
+fi
 
 cat <<EOF | sudo chroot ${CHROOT_DIR}
 mount -t proc none /proc/
@@ -88,6 +117,8 @@ deb http://old-releases.ubuntu.com/ubuntu/ lucid-backports main restricted unive
 fi
 
 if [ ! -f /tmp/setup-repo-upgrade ]; then
+  dpkg-divert --local --rename --add /sbin/initctl
+  ln -s /bin/true /sbin/initctl
   apt-get dist-upgrade
   touch /tmp/setup-repo-upgrade
 fi
@@ -102,9 +133,20 @@ if [ ! -f /tmp/setup-repo-packages ]; then
   touch /tmp/setup-repo-packages
 fi
 
+if [ ! -f /tmp/setup-aria2 ]; then
+  pushd /tmp/aria2-*
+  make install
+  popd
+  rm -r /tmp/aria2-*
+  touch /tmp/setup-aria2
+fi
+
 if [ ! -d ${CHROOT_CARLA_DIR} ]; then
-  git clone git://github.com/falkTX/Carla --depth=1 ${CHROOT_CARLA_DIR}
-  chmod -R 777 ${CHROOT_CARLA_DIR}/data/linux/
+  git clone --depth=1 git://github.com/falkTX/Carla ${CHROOT_CARLA_DIR}
+fi
+
+if [ ! -d ${CHROOT_CARLA_DIR}/source/native-plugins/external ]; then
+  git clone --depth=1 git://github.com/falkTX/Carla-Plugins ${CHROOT_CARLA_DIR}/source/native-plugins/external
 fi
 
 cd ${CHROOT_CARLA_DIR}
@@ -114,6 +156,8 @@ git pull
 # might be updated by git pull
 chmod 777 data/linux/*.sh
 chmod 777 data/linux/common.env
+
+sync
 
 EOF
 
@@ -133,6 +177,8 @@ chroot_build_deps()
 
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
 cp build-deps.sh common.env ${CHROOT_DIR}${CHROOT_CARLA_DIR}/data/linux/
+sudo cp /etc/ca-certificates.conf ${CHROOT_DIR}/etc/
+sudo cp -r /usr/share/ca-certificates/* ${CHROOT_DIR}/usr/share/ca-certificates/
 
 cat <<EOF | sudo chroot ${CHROOT_DIR}
 export HOME=/root
@@ -149,6 +195,8 @@ if [ ! -f /tmp/setup-repo-packages-extra1 ]; then
   fi
   touch /tmp/setup-repo-packages-extra1
 fi
+
+update-ca-certificates
 
 ${CHROOT_CARLA_DIR}/data/linux/build-deps.sh ${ARCH}
 
@@ -222,7 +270,10 @@ download_carla_extras()
 {
 
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
-PKGS_NUM="20180116"
+PKGS_NUM="20180625"
+PKGS_VER="1.9.8+git${PKGS_NUM}"
+CARLA_VER="1.9.8+git20180628"
+WINE64_VER="1.9.8.git20180625"
 
 cat <<EOF | sudo chroot ${CHROOT_DIR}
 set -e
@@ -230,17 +281,16 @@ set -e
 cd ${CHROOT_CARLA_DIR}
 
 if [ ! -d carla-pkgs${PKGS_NUM} ]; then
-  rm -rf tmp-carla-pkgs
-  mkdir tmp-carla-pkgs
+  mkdir -p tmp-carla-pkgs
   cd tmp-carla-pkgs
-  wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win32_1.9.8+git20180116_i386.deb
-  wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-wine32_1.9.8+git20180116_i386.deb
+  wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win32_${PKGS_VER}_i386.deb
+  wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-wine32_${PKGS_VER}_i386.deb
   if [ x"${ARCH}" != x"32" ]; then
-    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win64_1.9.8+git20180116_amd64.deb
-    wget -c https://github.com/KXStudio/Repository/releases/download/initial/carla-bridge-wine64_1.9.5.git20160114_amd64.deb
-    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-git_1.9.8+git20180116_amd64.deb
+    aria2c https://github.com/KXStudio/Repository/releases/download/initial/carla-bridge-wine64_${WINE64_VER}_amd64.deb
+    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win64_${PKGS_VER}_amd64.deb
+    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-git_${CARLA_VER}_amd64.deb
   else
-    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-git_1.9.8+git20180116_i386.deb
+    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-git_${CARLA_VER}_i386.deb
   fi
   cd ..
   mv tmp-carla-pkgs carla-pkgs${PKGS_NUM}
@@ -248,14 +298,14 @@ fi
 
 if [ ! -f carla-pkgs${PKGS_NUM}/extrated ]; then
   cd carla-pkgs${PKGS_NUM}
-  dpkg -x carla-bridge-win32_1.9.8+git20180116_i386.deb .
-  dpkg -x carla-bridge-wine32_1.9.8+git20180116_i386.deb .
+  dpkg -x carla-bridge-win32_${PKGS_VER}_i386.deb .
+  dpkg -x carla-bridge-wine32_${PKGS_VER}_i386.deb .
   if [ x"${ARCH}" != x"32" ]; then
-    dpkg -x carla-bridge-win64_1.9.8+git20180116_amd64.deb .
-    dpkg -x carla-bridge-wine64_1.9.5.git20160114_amd64.deb .
-    dpkg -x carla-git_1.9.8+git20180116_amd64.deb .
+    dpkg -x carla-bridge-win64_${PKGS_VER}_amd64.deb .
+    dpkg -x carla-bridge-wine64_${WINE64_VER}_amd64.deb .
+    dpkg -x carla-git_${CARLA_VER}_amd64.deb .
   else
-    dpkg -x carla-git_1.9.8+git20180116_i386.deb .
+    dpkg -x carla-git_${CARLA_VER}_i386.deb .
   fi
   touch extrated
   cd ..

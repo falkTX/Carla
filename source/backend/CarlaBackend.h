@@ -179,7 +179,7 @@ static const uint PLUGIN_NEEDS_UI_MAIN_THREAD = 0x200;
 
 /*!
  * Plugin uses 1 program per MIDI channel.
- * @note: Only used in some internal plugins, gig and sf2 files.
+ * @note: Only used in some internal plugins and sf2 files.
  */
 static const uint PLUGIN_USES_MULTI_PROGS = 0x400;
 
@@ -495,24 +495,19 @@ typedef enum {
     PLUGIN_VST2 = 5,
 
     /*!
-     * GIG file.
-     */
-    PLUGIN_GIG = 6,
-
-    /*!
      * SF2 file (SoundFont).
      */
-    PLUGIN_SF2 = 7,
+    PLUGIN_SF2 = 6,
 
     /*!
      * SFZ file.
      */
-    PLUGIN_SFZ = 8,
+    PLUGIN_SFZ = 7,
 
     /*!
      * JACK application.
      */
-    PLUGIN_JACK = 9
+    PLUGIN_JACK = 8
 
 } PluginType;
 
@@ -612,7 +607,7 @@ typedef enum {
      */
     PARAMETER_NULL = -1,
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
      * Active parameter, boolean type.
      * Default is 'false'.
@@ -721,7 +716,7 @@ typedef enum {
      */
     ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED = 6,
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
      * A parameter's MIDI CC has changed.
      * @a pluginId Plugin Id
@@ -819,7 +814,7 @@ typedef enum {
      */
     ENGINE_CALLBACK_RELOAD_ALL = 19,
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
      * A patchbay client has been added.
      * @a pluginId Client Id
@@ -1037,22 +1032,22 @@ typedef enum {
     ENGINE_OPTION_UI_BRIDGES_TIMEOUT = 8,
 
     /*!
-     * Number of audio periods.
-     * Default is 2.
-     */
-    ENGINE_OPTION_AUDIO_NUM_PERIODS = 9,
-
-    /*!
      * Audio buffer size.
      * Default is 512.
      */
-    ENGINE_OPTION_AUDIO_BUFFER_SIZE = 10,
+    ENGINE_OPTION_AUDIO_BUFFER_SIZE = 9,
 
     /*!
      * Audio sample rate.
      * Default is 44100.
      */
-    ENGINE_OPTION_AUDIO_SAMPLE_RATE = 11,
+    ENGINE_OPTION_AUDIO_SAMPLE_RATE = 10,
+
+    /*!
+     * Wherever to use 3 audio periods instead of the default 2.
+     * Default is false.
+     */
+    ENGINE_OPTION_AUDIO_TRIPLE_BUFFER = 11,
 
     /*!
      * Audio device (within a driver).
@@ -1092,7 +1087,7 @@ typedef enum {
      */
     ENGINE_OPTION_FRONTEND_WIN_ID = 17,
 
-#ifndef CARLA_OS_WIN
+#if !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) && !defined(CARLA_OS_WIN)
     /*!
      * Set path to wine executable.
      */
@@ -1271,7 +1266,7 @@ enum PatchbayIcon {
 
     /*!
      * File icon.
-     * Used for file type plugins (like GIG and SF2).
+     * Used for file type plugins (like SF2 snd SFZ).
      */
     PATCHBAY_ICON_FILE = 5
 };
@@ -1335,7 +1330,7 @@ typedef struct {
 /*!
  * Parameter ranges.
  */
-typedef struct {
+typedef struct _ParameterRanges {
     /*!
      * Default value.
      */

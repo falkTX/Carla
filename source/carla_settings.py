@@ -52,6 +52,8 @@ SAMPLE_RATE_LIST = (22050, 32000, 44100, 48000, 88200, 96000, 176400, 192000)
 # Driver Settings
 
 class DriverSettingsW(QDialog):
+    AUTOMATIC_OPTION = "(Auto)"
+
     def __init__(self, parent, host, driverIndex, driverName):
         QDialog.__init__(self, parent)
         self.host = host
@@ -79,12 +81,6 @@ class DriverSettingsW(QDialog):
         for name in self.fDeviceNames:
             self.ui.cb_device.addItem(name)
 
-        if driverName != "ALSA":
-            self.ui.label_numperiods.setEnabled(False)
-            self.ui.label_numperiods.setVisible(False)
-            self.ui.sb_numperiods.setEnabled(False)
-            self.ui.sb_numperiods.setVisible(False)
-
         # ----------------------------------------------------------------------------------------------------
         # Load settings
 
@@ -101,10 +97,10 @@ class DriverSettingsW(QDialog):
     def loadSettings(self):
         settings = QSettings("falkTX", "Carla2")
 
-        audioDevice     = settings.value("%s%s/Device"     % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), "",                              type=str)
-        audioNumPeriods = settings.value("%s%s/NumPeriods" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), CARLA_DEFAULT_AUDIO_NUM_PERIODS, type=int)
-        audioBufferSize = settings.value("%s%s/BufferSize" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), CARLA_DEFAULT_AUDIO_BUFFER_SIZE, type=int)
-        audioSampleRate = settings.value("%s%s/SampleRate" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), CARLA_DEFAULT_AUDIO_SAMPLE_RATE, type=int)
+        audioDevice       = settings.value("%s%s/Device"       % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), "",                                type=str)
+        audioBufferSize   = settings.value("%s%s/BufferSize"   % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), CARLA_DEFAULT_AUDIO_BUFFER_SIZE,   type=int)
+        audioSampleRate   = settings.value("%s%s/SampleRate"   % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), CARLA_DEFAULT_AUDIO_SAMPLE_RATE,   type=int)
+        audioTripleBuffer = settings.value("%s%s/TripleBuffer" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), CARLA_DEFAULT_AUDIO_TRIPLE_BUFFER, type=bool)
 
         if audioDevice and audioDevice in self.fDeviceNames:
             self.ui.cb_device.setCurrentIndex(self.fDeviceNames.index(audioDevice))
@@ -113,11 +109,6 @@ class DriverSettingsW(QDialog):
 
         # fill combo-boxes first
         self.slot_updateDeviceInfo()
-
-        if audioNumPeriods in (2, 3):
-            self.ui.sb_numperiods.setValue(audioNumPeriods)
-        else:
-            self.ui.sb_numperiods.setValue(CARLA_DEFAULT_AUDIO_NUM_PERIODS)
 
         if audioBufferSize and audioBufferSize in self.fBufferSizes:
             self.ui.cb_buffersize.setCurrentIndex(self.fBufferSizes.index(audioBufferSize))
@@ -133,16 +124,26 @@ class DriverSettingsW(QDialog):
         else:
             self.ui.cb_samplerate.setCurrentIndex(len(self.fSampleRates)/2)
 
+        self.ui.cb_triple_buffer.setChecked(audioTripleBuffer and self.ui.cb_triple_buffer.isEnabled())
+
     # --------------------------------------------------------------------------------------------------------
 
     @pyqtSlot()
     def slot_saveSettings(self):
         settings = QSettings("falkTX", "Carla2")
 
-        settings.setValue("%s%s/Device"     % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.cb_device.currentText())
-        settings.setValue("%s%s/NumPeriods" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.sb_numperiods.value())
-        settings.setValue("%s%s/BufferSize" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.cb_buffersize.currentText())
-        settings.setValue("%s%s/SampleRate" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.cb_samplerate.currentText())
+        bufferSize = self.ui.cb_buffersize.currentText()
+        sampleRate = self.ui.cb_samplerate.currentText()
+
+        if bufferSize == self.AUTOMATIC_OPTION:
+            bufferSize = "0"
+        if sampleRate == self.AUTOMATIC_OPTION:
+            sampleRate = "0"
+
+        settings.setValue("%s%s/Device"       % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.cb_device.currentText())
+        settings.setValue("%s%s/BufferSize"   % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), bufferSize)
+        settings.setValue("%s%s/SampleRate"   % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), sampleRate)
+        settings.setValue("%s%s/TripleBuffer" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.cb_triple_buffer.isChecked())
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -156,27 +157,39 @@ class DriverSettingsW(QDialog):
         self.ui.cb_buffersize.clear()
         self.ui.cb_samplerate.clear()
 
-        if deviceName:
-            driverDeviceInfo  = self.host.get_engine_driver_device_info(self.fDriverIndex, deviceName)
-            self.fBufferSizes = driverDeviceInfo['bufferSizes']
-            self.fSampleRates = driverDeviceInfo['sampleRates']
+        driverDeviceInfo  = self.host.get_engine_driver_device_info(self.fDriverIndex, deviceName)
+        driverDeviceHints = driverDeviceInfo['hints']
+        self.fBufferSizes = driverDeviceInfo['bufferSizes']
+        self.fSampleRates = driverDeviceInfo['sampleRates']
+
+        if driverDeviceHints & ENGINE_DRIVER_DEVICE_CAN_TRIPLE_BUFFER:
+            self.ui.cb_triple_buffer.setEnabled(True)
         else:
-            self.fBufferSizes = BUFFER_SIZE_LIST
-            self.fSampleRates = SAMPLE_RATE_LIST
+            self.ui.cb_triple_buffer.setEnabled(False)
 
-        for bsize in self.fBufferSizes:
-            sbsize = str(bsize)
-            self.ui.cb_buffersize.addItem(sbsize)
+        if len(self.fBufferSizes) > 0:
+            for bsize in self.fBufferSizes:
+                sbsize = str(bsize)
+                self.ui.cb_buffersize.addItem(sbsize)
 
-            if oldBufferSize == sbsize:
-                self.ui.cb_buffersize.setCurrentIndex(self.ui.cb_buffersize.count()-1)
+                if oldBufferSize == sbsize:
+                    self.ui.cb_buffersize.setCurrentIndex(self.ui.cb_buffersize.count()-1)
 
-        for srate in self.fSampleRates:
-            ssrate = str(int(srate))
-            self.ui.cb_samplerate.addItem(ssrate)
+        else:
+            self.ui.cb_buffersize.addItem(self.AUTOMATIC_OPTION)
+            self.ui.cb_buffersize.setCurrentIndex(0)
 
-            if oldSampleRate == ssrate:
-                self.ui.cb_samplerate.setCurrentIndex(self.ui.cb_samplerate.count()-1)
+        if len(self.fSampleRates) > 0:
+            for srate in self.fSampleRates:
+                ssrate = str(int(srate))
+                self.ui.cb_samplerate.addItem(ssrate)
+
+                if oldSampleRate == ssrate:
+                    self.ui.cb_samplerate.setCurrentIndex(self.ui.cb_samplerate.count()-1)
+
+        else:
+            self.ui.cb_samplerate.addItem(self.AUTOMATIC_OPTION)
+            self.ui.cb_samplerate.setCurrentIndex(0)
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -202,9 +215,8 @@ class CarlaSettingsW(QDialog):
     PATH_INDEX_DSSI   = 1
     PATH_INDEX_LV2    = 2
     PATH_INDEX_VST2   = 3
-    PATH_INDEX_GIG    = 4
-    PATH_INDEX_SF2    = 5
-    PATH_INDEX_SFZ    = 6
+    PATH_INDEX_SF2    = 4
+    PATH_INDEX_SFZ    = 5
 
     # Single and Multiple client mode is only for JACK,
     # but we still want to match QComboBox index to backend defines,
@@ -274,6 +286,7 @@ class CarlaSettingsW(QDialog):
                 self.ui.ch_engine_force_stereo.setEnabled(False)
 
         if host.isControl or host.isPlugin:
+            self.ui.ch_main_confirm_exit.hide()
             self.ui.ch_exp_load_lib_global.hide()
             self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
 
@@ -282,19 +295,6 @@ class CarlaSettingsW(QDialog):
             self.ui.ch_exp_jack_apps.setVisible(False)
             self.ui.ch_exp_prevent_bad_behaviour.setVisible(False)
             self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
-
-        if not MACOS:
-            self.ui.label_engine_ui_bridges_mac_note.setVisible(False)
-
-        # FIXME, pipes on win32 not working, and mis-behaving on macOS
-        if MACOS or WINDOWS:
-            self.ui.ch_engine_prefer_ui_bridges.setChecked(False)
-            self.ui.ch_engine_prefer_ui_bridges.setEnabled(False)
-            self.ui.ch_engine_prefer_ui_bridges.setVisible(False)
-            self.ui.label_engine_ui_bridges_timeout.setEnabled(False)
-            self.ui.label_engine_ui_bridges_timeout.setVisible(False)
-            self.ui.sb_engine_ui_bridges_timeout.setEnabled(False)
-            self.ui.sb_engine_ui_bridges_timeout.setVisible(False)
 
         # FIXME, not implemented yet
         self.ui.ch_engine_uis_always_on_top.hide()
@@ -323,7 +323,6 @@ class CarlaSettingsW(QDialog):
         self.ui.lw_dssi.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_lv2.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_vst.currentRowChanged.connect(self.slot_pluginPathRowChanged)
-        self.ui.lw_gig.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_sf2.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_sfz.currentRowChanged.connect(self.slot_pluginPathRowChanged)
 
@@ -341,7 +340,6 @@ class CarlaSettingsW(QDialog):
         self.ui.lw_dssi.setCurrentRow(0)
         self.ui.lw_lv2.setCurrentRow(0)
         self.ui.lw_vst.setCurrentRow(0)
-        self.ui.lw_gig.setCurrentRow(0)
         self.ui.lw_sf2.setCurrentRow(0)
         self.ui.lw_sfz.setCurrentRow(0)
 
@@ -364,6 +362,7 @@ class CarlaSettingsW(QDialog):
         self.ui.ch_main_theme_pro.setChecked(settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, CARLA_DEFAULT_MAIN_USE_PRO_THEME, type=bool) and self.ui.group_main_theme.isEnabled())
         self.ui.cb_main_theme_color.setCurrentIndex(self.ui.cb_main_theme_color.findText(settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, CARLA_DEFAULT_MAIN_PRO_THEME_COLOR, type=str)))
         self.ui.sb_main_refresh_interval.setValue(settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL, CARLA_DEFAULT_MAIN_REFRESH_INTERVAL, type=int))
+        self.ui.ch_main_confirm_exit.setChecked(settings.value(CARLA_KEY_MAIN_CONFIRM_EXIT, CARLA_DEFAULT_MAIN_CONFIRM_EXIT, type=bool))
         self.ui.ch_main_use_custom_skins.setChecked(settings.value(CARLA_KEY_MAIN_USE_CUSTOM_SKINS, CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS, type=bool))
 
         # ----------------------------------------------------------------------------------------------------
@@ -418,10 +417,10 @@ class CarlaSettingsW(QDialog):
 
         if audioDriver == "JACK":
             self.ui.sw_engine_process_mode.setCurrentIndex(0)
-            self.ui.tb_engine_driver_config.setEnabled(False)
         else:
             self.ui.sw_engine_process_mode.setCurrentIndex(1)
-            self.ui.tb_engine_driver_config.setEnabled(self.host.audioDriverForced is None and not self.host.isPlugin)
+
+        self.ui.tb_engine_driver_config.setEnabled(self.host.audioDriverForced is None and not self.host.isPlugin)
 
         self.ui.cb_engine_process_mode_jack.setCurrentIndex(self.host.nextProcessMode)
 
@@ -447,7 +446,6 @@ class CarlaSettingsW(QDialog):
         dssis   = toList(settings.value(CARLA_KEY_PATHS_DSSI,   CARLA_DEFAULT_DSSI_PATH))
         lv2s    = toList(settings.value(CARLA_KEY_PATHS_LV2,    CARLA_DEFAULT_LV2_PATH))
         vst2s   = toList(settings.value(CARLA_KEY_PATHS_VST2,   CARLA_DEFAULT_VST2_PATH))
-        gigs    = toList(settings.value(CARLA_KEY_PATHS_GIG,    CARLA_DEFAULT_GIG_PATH))
         sf2s    = toList(settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH))
         sfzs    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH))
 
@@ -455,7 +453,6 @@ class CarlaSettingsW(QDialog):
         dssis.sort()
         lv2s.sort()
         vst2s.sort()
-        gigs.sort()
         sf2s.sort()
         sfzs.sort()
 
@@ -474,10 +471,6 @@ class CarlaSettingsW(QDialog):
         for vst2 in vst2s:
             if not vst2: continue
             self.ui.lw_vst.addItem(vst2)
-
-        for gig in gigs:
-            if not gig: continue
-            self.ui.lw_gig.addItem(gig)
 
         for sf2 in sf2s:
             if not sf2: continue
@@ -548,6 +541,7 @@ class CarlaSettingsW(QDialog):
         # Main
 
         settings.setValue(CARLA_KEY_MAIN_PROJECT_FOLDER,   self.ui.le_main_proj_folder.text())
+        settings.setValue(CARLA_KEY_MAIN_CONFIRM_EXIT,     self.ui.ch_main_confirm_exit.isChecked())
         settings.setValue(CARLA_KEY_MAIN_USE_PRO_THEME,    self.ui.ch_main_theme_pro.isChecked())
         settings.setValue(CARLA_KEY_MAIN_PRO_THEME_COLOR,  self.ui.cb_main_theme_color.currentText())
         settings.setValue(CARLA_KEY_MAIN_REFRESH_INTERVAL, self.ui.sb_main_refresh_interval.value())
@@ -586,9 +580,10 @@ class CarlaSettingsW(QDialog):
 
         if not self.host.processModeForced:
             # engine sends callback if processMode really changes
-            self.host.nextProcessMode = self.ui.cb_engine_process_mode_jack.currentIndex() if audioDriver == "JACK" else self.ui.cb_engine_process_mode_other.currentIndex()+self.PROCESS_MODE_NON_JACK_PADDING
-
-            self.host.set_engine_option(ENGINE_OPTION_PROCESS_MODE, self.host.nextProcessMode, "")
+            if audioDriver == "JACK":
+                self.host.nextProcessMode = self.ui.cb_engine_process_mode_jack.currentIndex()
+            else:
+                self.host.nextProcessMode = self.ui.cb_engine_process_mode_other.currentIndex() + self.PROCESS_MODE_NON_JACK_PADDING
 
             settings.setValue(CARLA_KEY_ENGINE_PROCESS_MODE, self.host.nextProcessMode)
 
@@ -603,15 +598,6 @@ class CarlaSettingsW(QDialog):
         self.host.showWineBridges     = self.ui.ch_exp_wine_bridges.isChecked()
         self.host.uiBridgesTimeout    = self.ui.sb_engine_ui_bridges_timeout.value()
         self.host.uisAlwaysOnTop      = self.ui.ch_engine_uis_always_on_top.isChecked()
-
-        if self.ui.ch_engine_force_stereo.isEnabled():
-            self.host.set_engine_option(ENGINE_OPTION_FORCE_STEREO,      self.host.forceStereo,         "")
-
-        self.host.set_engine_option(ENGINE_OPTION_MAX_PARAMETERS,        self.host.maxParameters,       "")
-        self.host.set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, self.host.preferPluginBridges, "")
-        self.host.set_engine_option(ENGINE_OPTION_PREFER_UI_BRIDGES,     self.host.preferUIBridges,     "")
-        self.host.set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    self.host.uiBridgesTimeout,    "")
-        self.host.set_engine_option(ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     self.host.uisAlwaysOnTop,      "")
 
         if self.ui.ch_engine_force_stereo.isEnabled():
             settings.setValue(CARLA_KEY_ENGINE_FORCE_STEREO,      self.host.forceStereo)
@@ -634,7 +620,6 @@ class CarlaSettingsW(QDialog):
         dssis   = []
         lv2s    = []
         vst2s   = []
-        gigs    = []
         sf2s    = []
         sfzs    = []
 
@@ -650,9 +635,6 @@ class CarlaSettingsW(QDialog):
         for i in range(self.ui.lw_vst.count()):
             vst2s.append(self.ui.lw_vst.item(i).text())
 
-        for i in range(self.ui.lw_gig.count()):
-            gigs.append(self.ui.lw_gig.item(i).text())
-
         for i in range(self.ui.lw_sf2.count()):
             sf2s.append(self.ui.lw_sf2.item(i).text())
 
@@ -663,7 +645,6 @@ class CarlaSettingsW(QDialog):
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_DSSI,   splitter.join(dssis))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2,    splitter.join(lv2s))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST2,   splitter.join(vst2s))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_GIG,    splitter.join(gigs))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(sf2s))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(sfzs))
 
@@ -671,7 +652,6 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_PATHS_DSSI,   dssis)
         settings.setValue(CARLA_KEY_PATHS_LV2,    lv2s)
         settings.setValue(CARLA_KEY_PATHS_VST2,   vst2s)
-        settings.setValue(CARLA_KEY_PATHS_GIG,    gigs)
         settings.setValue(CARLA_KEY_PATHS_SF2,    sf2s)
         settings.setValue(CARLA_KEY_PATHS_SFZ,    sfzs)
 
@@ -704,6 +684,7 @@ class CarlaSettingsW(QDialog):
             self.ui.ch_main_theme_pro.setChecked(CARLA_DEFAULT_MAIN_USE_PRO_THEME and self.ui.group_main_theme.isEnabled())
             self.ui.cb_main_theme_color.setCurrentIndex(self.ui.cb_main_theme_color.findText(CARLA_DEFAULT_MAIN_PRO_THEME_COLOR))
             self.ui.sb_main_refresh_interval.setValue(CARLA_DEFAULT_MAIN_REFRESH_INTERVAL)
+            self.ui.ch_main_confirm_exit.setChecked(CARLA_DEFAULT_MAIN_CONFIRM_EXIT)
             self.ui.ch_main_use_custom_skins.setChecked(CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS)
             self.ui.ch_main_show_logs.setChecked(CARLA_DEFAULT_MAIN_SHOW_LOGS)
 
@@ -781,15 +762,6 @@ class CarlaSettingsW(QDialog):
                 for path in paths:
                     if not path: continue
                     self.ui.lw_vst.addItem(path)
-
-            elif curIndex == self.PATH_INDEX_GIG:
-                paths = CARLA_DEFAULT_GIG_PATH
-                paths.sort()
-                self.ui.lw_gig.clear()
-
-                for path in paths:
-                    if not path: continue
-                    self.ui.lw_gig.addItem(path)
 
             elif curIndex == self.PATH_INDEX_SF2:
                 paths = CARLA_DEFAULT_SF2_PATH
@@ -896,10 +868,8 @@ class CarlaSettingsW(QDialog):
     def slot_engineAudioDriverChanged(self):
         if self.ui.cb_engine_audio_driver.currentText() == "JACK":
             self.ui.sw_engine_process_mode.setCurrentIndex(0)
-            self.ui.tb_engine_driver_config.setEnabled(False)
         else:
             self.ui.sw_engine_process_mode.setCurrentIndex(1)
-            self.ui.tb_engine_driver_config.setEnabled(True)
 
     @pyqtSlot()
     def slot_showAudioDriverSettings(self):
@@ -926,8 +896,6 @@ class CarlaSettingsW(QDialog):
             self.ui.lw_lv2.addItem(newPath)
         elif curIndex == self.PATH_INDEX_VST2:
             self.ui.lw_vst.addItem(newPath)
-        elif curIndex == self.PATH_INDEX_GIG:
-            self.ui.lw_gig.addItem(newPath)
         elif curIndex == self.PATH_INDEX_SF2:
             self.ui.lw_sf2.addItem(newPath)
         elif curIndex == self.PATH_INDEX_SFZ:
@@ -945,8 +913,6 @@ class CarlaSettingsW(QDialog):
             self.ui.lw_lv2.takeItem(self.ui.lw_lv2.currentRow())
         elif curIndex == self.PATH_INDEX_VST2:
             self.ui.lw_vst.takeItem(self.ui.lw_vst.currentRow())
-        elif curIndex == self.PATH_INDEX_GIG:
-            self.ui.lw_gig.takeItem(self.ui.lw_gig.currentRow())
         elif curIndex == self.PATH_INDEX_SF2:
             self.ui.lw_sf2.takeItem(self.ui.lw_sf2.currentRow())
         elif curIndex == self.PATH_INDEX_SFZ:
@@ -964,8 +930,6 @@ class CarlaSettingsW(QDialog):
             currentPath = self.ui.lw_lv2.currentItem().text()
         elif curIndex == self.PATH_INDEX_VST2:
             currentPath = self.ui.lw_vst.currentItem().text()
-        elif curIndex == self.PATH_INDEX_GIG:
-            currentPath = self.ui.lw_gig.currentItem().text()
         elif curIndex == self.PATH_INDEX_SF2:
             currentPath = self.ui.lw_sf2.currentItem().text()
         elif curIndex == self.PATH_INDEX_SFZ:
@@ -986,8 +950,6 @@ class CarlaSettingsW(QDialog):
             self.ui.lw_lv2.currentItem().setText(newPath)
         elif curIndex == self.PATH_INDEX_VST2:
             self.ui.lw_vst.currentItem().setText(newPath)
-        elif curIndex == self.PATH_INDEX_GIG:
-            self.ui.lw_gig.currentItem().setText(newPath)
         elif curIndex == self.PATH_INDEX_SF2:
             self.ui.lw_sf2.currentItem().setText(newPath)
         elif curIndex == self.PATH_INDEX_SFZ:
@@ -1005,8 +967,6 @@ class CarlaSettingsW(QDialog):
             row = self.ui.lw_lv2.currentRow()
         elif index == self.PATH_INDEX_VST2:
             row = self.ui.lw_vst.currentRow()
-        elif index == self.PATH_INDEX_GIG:
-            row = self.ui.lw_gig.currentRow()
         elif index == self.PATH_INDEX_SF2:
             row = self.ui.lw_sf2.currentRow()
         elif index == self.PATH_INDEX_SFZ:

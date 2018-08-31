@@ -19,10 +19,6 @@
 #include "CarlaMIDI.h"
 #include "CarlaUtils.hpp"
 
-#ifdef CARLA_OS_WIN
-# undef HAVE_PYQT
-#endif
-
 #undef DESCFUNCS
 #define DESCFUNCS \
     nullptr, nullptr, nullptr, nullptr, nullptr, \
@@ -80,6 +76,22 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* name      */ "MIDI Channel Filter",
     /* label     */ "midichanfilter",
     /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    DESCFUNCS
+},
+{
+    /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
+    /* hints     */ NATIVE_PLUGIN_IS_RTSAFE,
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_EVERYTHING,
+    /* audioIns  */ 0,
+    /* audioOuts */ 0,
+    /* midiIns   */ 1,
+    /* midiOuts  */ 2,
+    /* paramIns  */ 0,
+    /* paramOuts */ 0,
+    /* name      */ "MIDI Channel A/B",
+    /* label     */ "midichanab",
+    /* maker     */ "Milk Brewster",
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },

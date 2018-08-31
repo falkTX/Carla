@@ -230,16 +230,15 @@ struct CARLA_API EngineOptions {
 
     uint maxParameters;
     uint uiBridgesTimeout;
-    uint audioNumPeriods;
     uint audioBufferSize;
     uint audioSampleRate;
+    bool audioTripleBuffer;
     const char* audioDevice;
 
     const char* pathLADSPA;
     const char* pathDSSI;
     const char* pathLV2;
     const char* pathVST2;
-    const char* pathGIG;
     const char* pathSF2;
     const char* pathSFZ;
 
@@ -281,8 +280,8 @@ struct CARLA_API EngineTimeInfoBBT {
 
     int32_t bar;  //!< current bar
     int32_t beat; //!< current beat-within-bar
-    int32_t tick; //!< current tick-within-beat
-    double barStartTick;
+    double  tick; //!< current tick-within-beat
+    double  barStartTick;
 
     float beatsPerBar; //!< time signature "numerator"
     float beatType;    //!< time signature "denominator"
@@ -292,6 +291,7 @@ struct CARLA_API EngineTimeInfoBBT {
 
 #ifndef DOXYGEN
     EngineTimeInfoBBT() noexcept;
+    EngineTimeInfoBBT(const EngineTimeInfoBBT&) noexcept;
 #endif
 };
 
@@ -311,6 +311,8 @@ struct CARLA_API EngineTimeInfo {
 
 #ifndef DOXYGEN
     EngineTimeInfo() noexcept;
+    EngineTimeInfo(const EngineTimeInfo&) noexcept;
+    EngineTimeInfo& operator=(const EngineTimeInfo&) noexcept;
 
     // quick operator, doesn't check all values
     bool operator==(const EngineTimeInfo& timeInfo) const noexcept;
@@ -822,7 +824,7 @@ public:
      */
     bool removeAllPlugins();
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
      * Rename plugin with id @a id to @a newName.
      * Returns the new name, or null if the operation failed.
@@ -871,7 +873,7 @@ public:
     /*!
      * Load a file of any type.
      * This will try to load a generic file as a plugin,
-     * either by direct handling (GIG, SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
+     * either by direct handling (SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
      */
     bool loadFile(const char* const filename);
 
@@ -923,7 +925,7 @@ public:
     /*!
      * Get the current Time information (read-only).
      */
-    const EngineTimeInfo& getTimeInfo() const noexcept;
+    virtual EngineTimeInfo getTimeInfo() const noexcept;
 
     // -------------------------------------------------------------------
     // Information (peaks)
@@ -966,7 +968,7 @@ public:
      */
     void setFileCallback(const FileCallbackFunc func, void* const ptr) noexcept;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     // -------------------------------------------------------------------
     // Patchbay
 
@@ -1037,6 +1039,13 @@ public:
      */
     bool setAboutToClose() noexcept;
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    /*!
+     * TODO.
+     */
+    bool isLoadingProject() const noexcept;
+#endif
+
     // -------------------------------------------------------------------
     // Options
 
@@ -1053,7 +1062,6 @@ public:
      * Check if OSC controller is registered.
      */
     bool isOscControlRegistered() const noexcept;
-#endif
 
     /*!
      * Idle OSC.
@@ -1069,6 +1077,7 @@ public:
      * Get OSC UDP server path.
      */
     const char* getOscServerPathUDP() const noexcept;
+#endif
 
     // -------------------------------------------------------------------
     // Helper functions
@@ -1079,7 +1088,7 @@ public:
      */
     EngineEvent* getInternalEventBuffer(const bool isInput) const noexcept;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
      * Virtual functions for handling external graph ports.
      */
@@ -1143,7 +1152,7 @@ protected:
      */
     bool loadProjectInternal(water::XmlDocument& xmlDoc);
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     // -------------------------------------------------------------------
     // Patchbay stuff
 

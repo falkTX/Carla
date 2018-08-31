@@ -26,7 +26,8 @@
 #ifndef WATER_SHAREDRESOURCEPOINTER_H_INCLUDED
 #define WATER_SHAREDRESOURCEPOINTER_H_INCLUDED
 
-#include "../water.h"
+#include "ReferenceCountedObject.h"
+#include "../threads/SpinLock.h"
 
 namespace water {
 
@@ -125,6 +126,7 @@ public:
         The pointer returned may be a nullptr, of course.
     */
     SharedObjectType& getObject() const noexcept        { return *sharedObject; }
+    SharedObjectType* getPointer() const noexcept       { return sharedObject; }
 
     SharedObjectType* operator->() const noexcept       { return sharedObject; }
 

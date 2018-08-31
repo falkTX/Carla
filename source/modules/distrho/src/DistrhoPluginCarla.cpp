@@ -1,17 +1,17 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation.
+ * Permission to use, copy, modify, and/or distribute this software for any purpose with
+ * or without fee is hereby granted, provided that the above copyright notice and this
+ * permission notice appear in all copies.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * For a full copy of the license see the LGPL.txt file
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
+ * TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
+ * NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
+ * IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #include "DistrhoPluginInternal.hpp"
@@ -30,6 +30,9 @@ START_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 // Carla UI
 
+#if ! DISTRHO_PLUGIN_WANT_MIDI_OUTPUT
+static const writeMidiFunc writeMidiCallback = nullptr;
+#endif
 #if ! DISTRHO_PLUGIN_WANT_STATE
 static const setStateFunc setStateCallback = nullptr;
 #endif
@@ -104,15 +107,19 @@ protected:
         fHost->ui_parameter_changed(fHost->handle, rindex, value);
     }
 
+#if DISTRHO_PLUGIN_WANT_STATE
     void handleSetState(const char* const key, const char* const value)
     {
         fHost->ui_custom_data_changed(fHost->handle, key, value);
     }
+#endif
 
+#if DISTRHO_PLUGIN_IS_SYNTH
     void handleSendNote(const uint8_t, const uint8_t, const uint8_t)
     {
         // TODO
     }
+#endif
 
     void handleSetSize(const uint width, const uint height)
     {
@@ -175,7 +182,9 @@ class PluginCarla : public NativePluginClass
 {
 public:
     PluginCarla(const NativeHostDescriptor* const host)
-        : NativePluginClass(host)
+        : NativePluginClass(host),
+          fPlugin(this, writeMidiCallback),
+          fScalePointsCache(nullptr)
     {
 #if DISTRHO_PLUGIN_HAS_UI
         fUiPtr = nullptr;
@@ -191,6 +200,12 @@ public:
             fUiPtr = nullptr;
         }
 #endif
+
+        if (fScalePointsCache != nullptr)
+        {
+            delete[] fScalePointsCache;
+            fScalePointsCache = nullptr;
+        }
     }
 
 protected:
@@ -238,6 +253,32 @@ protected:
             param.ranges.def = ranges.def;
             param.ranges.min = ranges.min;
             param.ranges.max = ranges.max;
+        }
+
+        {
+            const ParameterEnumerationValues& enumValues(fPlugin.getParameterEnumValues(index));
+
+            if (const uint32_t scalePointCount = enumValues.count)
+            {
+                NativeParameterScalePoint* const scalePoints = new NativeParameterScalePoint[scalePointCount];
+
+                for (uint32_t i=0; i<scalePointCount; ++i)
+                {
+                    scalePoints[i].label = enumValues.values[i].label.buffer();
+                    scalePoints[i].value = enumValues.values[i].value;
+                }
+
+                param.scalePoints     = scalePoints;
+                param.scalePointCount = scalePointCount;
+
+                if (enumValues.restrictedMode)
+                    param.hints = static_cast<NativeParameterHints>(param.hints|::NATIVE_PARAMETER_USES_SCALEPOINTS);
+            }
+            else if (fScalePointsCache != nullptr)
+            {
+                delete[] fScalePointsCache;
+                fScalePointsCache = nullptr;
+            }
         }
 
         return &param;
@@ -317,7 +358,7 @@ protected:
         fPlugin.deactivate();
     }
 
-#if DISTRHO_PLUGIN_IS_SYNTH
+#if DISTRHO_PLUGIN_WANT_MIDI_INPUT
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
         MidiEvent realMidiEvents[midiEventCount];
@@ -440,6 +481,7 @@ protected:
 
 private:
     PluginExporter fPlugin;
+    mutable NativeParameterScalePoint* fScalePointsCache;
 
 #if DISTRHO_PLUGIN_HAS_UI
     // UI
@@ -452,6 +494,20 @@ private:
             d_lastUiSampleRate = getSampleRate();
             fUiPtr = new UICarla(getHostHandle(), &fPlugin);
         }
+    }
+#endif
+
+#if DISTRHO_PLUGIN_WANT_MIDI_OUTPUT
+    static bool writeMidiCallback(void* ptr, const MidiEvent& midiEvent)
+    {
+        if (midiEvent.size > 4)
+            return;
+
+        const NativeMidiEvent event = {
+            midiEvent.frame, 0, midiEvent.size, midiEvent.data
+        };
+
+        return ((PluginCarla*)ptr)->fPlugin.writeMidiEvent(midiEvent);
     }
 #endif
 

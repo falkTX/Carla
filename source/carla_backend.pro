@@ -17,14 +17,12 @@ DEFINES += REAL_BUILD
 DEFINES += HAVE_LIBLO
 DEFINES += HAVE_LIBMAGIC
 DEFINES += HAVE_FLUIDSYNTH
-DEFINES += HAVE_LINUXSAMPLER
 DEFINES += HAVE_ZYN_DEPS
 DEFINES += HAVE_ZYN_UI_DEPS
 
 PKGCONFIG += liblo
 PKGCONFIG += fftw3
 PKGCONFIG += fluidsynth
-PKGCONFIG += linuxsampler
 PKGCONFIG += mxml
 PKGCONFIG += zlib
 
@@ -53,7 +51,6 @@ SOURCES = \
     backend/plugin/CarlaPluginInternal.cpp \
     backend/plugin/CarlaPluginJuce.cpp \
     backend/plugin/CarlaPluginLADSPA.cpp \
-    backend/plugin/CarlaPluginLinuxSampler.cpp \
     backend/plugin/CarlaPluginLV2.cpp \
     backend/plugin/CarlaPluginNative.cpp \
     backend/plugin/CarlaPluginVST2.cpp

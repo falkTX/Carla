@@ -193,15 +193,14 @@ EngineOptions::EngineOptions() noexcept
       uisAlwaysOnTop(true),
       maxParameters(MAX_DEFAULT_PARAMETERS),
       uiBridgesTimeout(4000),
-      audioNumPeriods(2),
       audioBufferSize(512),
       audioSampleRate(44100),
+      audioTripleBuffer(false),
       audioDevice(nullptr),
       pathLADSPA(nullptr),
       pathDSSI(nullptr),
       pathLV2(nullptr),
       pathVST2(nullptr),
-      pathGIG(nullptr),
       pathSF2(nullptr),
       pathSFZ(nullptr),
       binaryDir(nullptr),
@@ -239,12 +238,6 @@ EngineOptions::~EngineOptions() noexcept
     {
         delete[] pathVST2;
         pathVST2 = nullptr;
-    }
-
-    if (pathGIG != nullptr)
-    {
-        delete[] pathGIG;
-        pathGIG = nullptr;
     }
 
     if (pathSF2 != nullptr)
@@ -304,12 +297,23 @@ EngineTimeInfoBBT::EngineTimeInfoBBT() noexcept
     : valid(false),
       bar(0),
       beat(0),
-      tick(0),
+      tick(0.0),
       barStartTick(0.0),
       beatsPerBar(0.0f),
       beatType(0.0f),
       ticksPerBeat(0.0),
       beatsPerMinute(0.0) {}
+
+EngineTimeInfoBBT::EngineTimeInfoBBT(const EngineTimeInfoBBT& bbt) noexcept
+    : valid(bbt.valid),
+      bar(bbt.bar),
+      beat(bbt.beat),
+      tick(bbt.tick),
+      barStartTick(bbt.barStartTick),
+      beatsPerBar(bbt.beatsPerBar),
+      beatType(bbt.beatType),
+      ticksPerBeat(bbt.ticksPerBeat),
+      beatsPerMinute(bbt.beatsPerMinute) {}
 
 // -----------------------------------------------------------------------
 // EngineTimeInfo
@@ -326,6 +330,30 @@ void EngineTimeInfo::clear() noexcept
     frame   = 0;
     usecs   = 0;
     carla_zeroStruct(bbt);
+}
+
+EngineTimeInfo::EngineTimeInfo(const EngineTimeInfo& info) noexcept
+    : playing(info.playing),
+      frame(info.frame),
+      usecs(info.usecs),
+      bbt(info.bbt) {}
+
+EngineTimeInfo& EngineTimeInfo::operator=(const EngineTimeInfo& info) noexcept
+{
+    playing = info.playing;
+    frame = info.frame;
+    usecs = info.usecs;
+    bbt.valid = info.bbt.valid;
+    bbt.bar = info.bbt.bar;
+    bbt.tick = info.bbt.tick;
+    bbt.tick = info.bbt.tick;
+    bbt.barStartTick = info.bbt.barStartTick;
+    bbt.beatsPerBar = info.bbt.beatsPerBar;
+    bbt.beatType = info.bbt.beatType;
+    bbt.ticksPerBeat = info.bbt.ticksPerBeat;
+    bbt.beatsPerMinute = info.bbt.beatsPerMinute;
+
+    return *this;
 }
 
 bool EngineTimeInfo::operator==(const EngineTimeInfo& timeInfo) const noexcept

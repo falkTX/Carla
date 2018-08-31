@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -41,21 +41,17 @@ CarlaEngineThread::~CarlaEngineThread() noexcept
 void CarlaEngineThread::run() noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(kEngine != nullptr,);
-#ifndef BUILD_BRIDGE
-    CARLA_SAFE_ASSERT(kEngine->isRunning());
-#endif
     carla_debug("CarlaEngineThread::run()");
 
-#ifdef HAVE_LIBLO
-    const bool isPlugin(kEngine->getType() == kEngineTypePlugin);
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
+    const bool kIsPlugin(kEngine->getType() == kEngineTypePlugin);
 #endif
     float value;
 
-#ifdef BUILD_BRIDGE
-    for (; ! shouldThreadExit();)
-#else
-    for (; kEngine->isRunning() && ! shouldThreadExit();)
-#endif
+    // thread must do something...
+    CARLA_SAFE_ASSERT_RETURN(kEngine->getType() == kEngineTypeBridge || kEngine->isRunning(),);
+
+    for (; (kEngine->getType() == kEngineTypeBridge || kEngine->isRunning()) && ! shouldThreadExit();)
     {
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
         const bool oscRegisted = kEngine->isOscControlRegistered();
@@ -63,8 +59,8 @@ void CarlaEngineThread::run() noexcept
         const bool oscRegisted = false;
 #endif
 
-#ifdef HAVE_LIBLO
-        if (isPlugin)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
+        if (kIsPlugin)
             kEngine->idleOsc();
 #endif
 

@@ -216,7 +216,7 @@ PLUGIN_NEEDS_FIXED_BUFFERS = 0x100
 PLUGIN_NEEDS_UI_MAIN_THREAD = 0x200
 
 # Plugin uses 1 program per MIDI channel.
-# @note: Only used in some internal plugins, gig and sf2 files.
+# @note: Only used in some internal plugins and sf2 files.
 PLUGIN_USES_MULTI_PROGS = 0x400
 
 # Plugin can make use of inline display API.
@@ -394,17 +394,14 @@ PLUGIN_LV2 = 4
 # VST2 plugin.
 PLUGIN_VST2 = 5
 
-# GIG file.
-PLUGIN_GIG = 6
-
 # SF2 file (SoundFont).
-PLUGIN_SF2 = 7
+PLUGIN_SF2 = 6
 
 # SFZ file.
-PLUGIN_SFZ = 8
+PLUGIN_SFZ = 7
 
 # JACK application.
-PLUGIN_JACK = 9
+PLUGIN_JACK = 8
 
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Category
@@ -753,17 +750,17 @@ ENGINE_OPTION_MAX_PARAMETERS = 7
 # Default is 4000 (4 seconds).
 ENGINE_OPTION_UI_BRIDGES_TIMEOUT = 8
 
-# Number of audio periods.
-# Default is 2.
-ENGINE_OPTION_AUDIO_NUM_PERIODS = 9
-
 # Audio buffer size.
 # Default is 512.
-ENGINE_OPTION_AUDIO_BUFFER_SIZE = 10
+ENGINE_OPTION_AUDIO_BUFFER_SIZE = 9
 
 # Audio sample rate.
 # Default is 44100.
-ENGINE_OPTION_AUDIO_SAMPLE_RATE = 11
+ENGINE_OPTION_AUDIO_SAMPLE_RATE = 10
+
+# Wherever to use 3 audio periods instead of the default 2.
+# Default is false.
+ENGINE_OPTION_AUDIO_TRIPLE_BUFFER = 11
 
 # Audio device (within a driver).
 # Default unset.
@@ -897,7 +894,7 @@ PATCHBAY_ICON_CARLA = 3
 PATCHBAY_ICON_DISTRHO = 4
 
 # File icon.
-# Used for file type plugins (like GIG and SF2).
+# Used for file type plugins (like SF2 and SFZ).
 PATCHBAY_ICON_FILE = 5
 
 # ------------------------------------------------------------------------------------------------------------
@@ -1244,6 +1241,7 @@ class CarlaHostMeta(object):
         # info about this host object
         self.isControl = False
         self.isPlugin  = False
+        self.isRemote  = False
         self.nsmOK     = False
 
         # settings
@@ -1252,7 +1250,6 @@ class CarlaHostMeta(object):
         self.nextProcessMode   = self.processMode
         self.processModeForced = False
         self.audioDriverForced = None
-
 
         # settings
         self.experimental        = False
@@ -1352,7 +1349,7 @@ class CarlaHostMeta(object):
 
     # Load a file of any type.
     # This will try to load a generic file as a plugin,
-    # either by direct handling (GIG, SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
+    # either by direct handling (SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
     # @see carla_get_supported_file_extensions()
     @abstractmethod
     def load_file(self, filename):
@@ -1575,12 +1572,21 @@ class CarlaHostMeta(object):
     def get_midi_program_data(self, pluginId, midiProgramId):
         raise NotImplementedError
 
-    # Get a plugin's custom data.
+    # Get a plugin's custom data, using index.
     # @param pluginId     Plugin
     # @param customDataId Custom data index
     # @see carla_get_custom_data_count()
     @abstractmethod
     def get_custom_data(self, pluginId, customDataId):
+        raise NotImplementedError
+
+    # Get a plugin's custom data value, using type and key.
+    # @param pluginId Plugin
+    # @param type     Custom data type
+    # @param key      Custom data key
+    # @see carla_get_custom_data_count()
+    @abstractmethod
+    def get_custom_data_value(self, pluginId, type_, key):
         raise NotImplementedError
 
     # Get a plugin's chunk data.
@@ -1885,6 +1891,7 @@ class CarlaHostNull(CarlaHostMeta):
         CarlaHostMeta.__init__(self)
 
         self.fEngineCallback = None
+        self.fFileCallback   = None
         self.fEngineRunning  = False
 
     def get_engine_driver_count(self):
@@ -1915,7 +1922,7 @@ class CarlaHostNull(CarlaHostMeta):
         return
 
     def is_engine_running(self):
-        return False
+        return self.fEngineRunning
 
     def set_engine_about_to_close(self):
         return True
@@ -1927,7 +1934,7 @@ class CarlaHostNull(CarlaHostMeta):
         return
 
     def set_file_callback(self, func):
-        return
+        self.fFileCallback = func
 
     def load_file(self, filename):
         return False
@@ -2030,6 +2037,9 @@ class CarlaHostNull(CarlaHostMeta):
 
     def get_custom_data(self, pluginId, customDataId):
         return PyCustomData
+
+    def get_custom_data_value(self, pluginId, type_, key):
+        return ""
 
     def get_chunk_data(self, pluginId):
         return ""
@@ -2313,6 +2323,9 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_get_custom_data.argtypes = [c_uint, c_uint32]
         self.lib.carla_get_custom_data.restype = POINTER(CustomData)
 
+        self.lib.carla_get_custom_data_value.argtypes = [c_uint, c_char_p, c_char_p]
+        self.lib.carla_get_custom_data_value.restype = c_char_p
+
         self.lib.carla_get_chunk_data.argtypes = [c_uint]
         self.lib.carla_get_chunk_data.restype = c_char_p
 
@@ -2589,6 +2602,9 @@ class CarlaHostDLL(CarlaHostMeta):
 
     def get_custom_data(self, pluginId, customDataId):
         return structToDict(self.lib.carla_get_custom_data(pluginId, customDataId).contents)
+
+    def get_custom_data_value(self, pluginId, type_, key):
+        return charPtrToString(self.lib.carla_get_custom_data_value(pluginId, type_.encode("utf-8"), key.encode("utf-8")))
 
     def get_chunk_data(self, pluginId):
         return charPtrToString(self.lib.carla_get_chunk_data(pluginId))
@@ -2888,7 +2904,10 @@ class CarlaHostPlugin(CarlaHostMeta):
         return self.sendMsgAndSetError(["replace_plugin", pluginId])
 
     def switch_plugins(self, pluginIdA, pluginIdB):
-        return self.sendMsgAndSetError(["switch_plugins", pluginIdA, pluginIdB])
+        ret = self.sendMsgAndSetError(["switch_plugins", pluginIdA, pluginIdB])
+        if ret:
+            self._switchPlugins(pluginIdA, pluginIdB)
+        return ret
 
     def load_plugin_state(self, pluginId, filename):
         return self.sendMsgAndSetError(["load_plugin_state", pluginId, filename])
@@ -2929,6 +2948,12 @@ class CarlaHostPlugin(CarlaHostMeta):
 
     def get_custom_data(self, pluginId, customDataId):
         return self.fPluginsInfo[pluginId].customData[customDataId]
+
+    def get_custom_data_value(self, pluginId, type_, key):
+        for customData in self.fPluginsInfo[pluginId].customData:
+            if customData['type'] == type_ and customData['key'] == key:
+                return customData['value']
+        return ""
 
     def get_chunk_data(self, pluginId):
         return ""
@@ -3245,5 +3270,10 @@ class CarlaHostPlugin(CarlaHostMeta):
 
     def _set_peaks(self, pluginId, in1, in2, out1, out2):
         self.fPluginsInfo[pluginId].peaks = [in1, in2, out1, out2]
+
+    def _switchPlugins(self, pluginIdA, pluginIdB):
+        tmp = self.fPluginsInfo[pluginIdA]
+        self.fPluginsInfo[pluginIdA] = self.fPluginsInfo[pluginIdB]
+        self.fPluginsInfo[pluginIdB] = tmp
 
 # ------------------------------------------------------------------------------------------------------------

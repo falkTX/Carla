@@ -28,12 +28,10 @@ rm -rf file-*
 rm -rf flac-*
 rm -rf fltk-*
 rm -rf fluidsynth-*
-rm -rf libgig-*
 rm -rf liblo-*
 rm -rf libogg-*
 rm -rf libsndfile-*
 rm -rf libvorbis-*
-rm -rf linuxsampler-*
 rm -rf pkg-config-*
 rm -rf zlib-*
 
@@ -63,7 +61,7 @@ export LDFLAGS="${LDFLAGS} -L${PREFIX}/lib -m${ARCH}"
 # pkgconfig
 
 if [ ! -d pkg-config-${PKG_CONFIG_VERSION} ]; then
-  wget --no-check-certificate https://pkg-config.freedesktop.org/releases/pkg-config-${PKG_CONFIG_VERSION}.tar.gz
+  aria2c https://pkg-config.freedesktop.org/releases/pkg-config-${PKG_CONFIG_VERSION}.tar.gz
   tar -xf pkg-config-${PKG_CONFIG_VERSION}.tar.gz
 fi
 
@@ -81,7 +79,7 @@ fi
 # liblo
 
 if [ ! -d liblo-${LIBLO_VERSION} ]; then
-  wget --no-check-certificate https://download.sourceforge.net/liblo/liblo-${LIBLO_VERSION}.tar.gz
+  aria2c https://download.sourceforge.net/liblo/liblo-${LIBLO_VERSION}.tar.gz
   tar -xf liblo-${LIBLO_VERSION}.tar.gz
 fi
 
@@ -107,7 +105,7 @@ fi
 # zlib
 
 if [ ! -d zlib-${ZLIB_VERSION} ]; then
-  wget --no-check-certificate https://github.com/madler/zlib/archive/v${ZLIB_VERSION}.tar.gz -O zlib-${ZLIB_VERSION}.tar.gz
+  aria2c https://github.com/madler/zlib/archive/v${ZLIB_VERSION}.tar.gz
   tar -xf zlib-${ZLIB_VERSION}.tar.gz
 fi
 
@@ -141,7 +139,7 @@ fi
 # libogg
 
 if [ ! -d libogg-${LIBOGG_VERSION} ]; then
-  wget --no-check-certificate https://ftp.osuosl.org/pub/xiph/releases/ogg/libogg-${LIBOGG_VERSION}.tar.gz
+  aria2c https://ftp.osuosl.org/pub/xiph/releases/ogg/libogg-${LIBOGG_VERSION}.tar.gz
   tar -xf libogg-${LIBOGG_VERSION}.tar.gz
 fi
 
@@ -158,7 +156,7 @@ fi
 # libvorbis
 
 if [ ! -d libvorbis-${LIBVORBIS_VERSION} ]; then
-  wget --no-check-certificate https://ftp.osuosl.org/pub/xiph/releases/vorbis/libvorbis-${LIBVORBIS_VERSION}.tar.gz
+  aria2c https://ftp.osuosl.org/pub/xiph/releases/vorbis/libvorbis-${LIBVORBIS_VERSION}.tar.gz
   tar -xf libvorbis-${LIBVORBIS_VERSION}.tar.gz
 fi
 
@@ -175,7 +173,7 @@ fi
 # flac
 
 if [ ! -d flac-${FLAC_VERSION} ]; then
-  wget --no-check-certificate https://svn.xiph.org/releases/flac/flac-${FLAC_VERSION}.tar.xz
+  aria2c https://svn.xiph.org/releases/flac/flac-${FLAC_VERSION}.tar.xz
   tar -xf flac-${FLAC_VERSION}.tar.xz
 fi
 
@@ -209,58 +207,6 @@ if [ ! -f libsndfile-${LIBSNDFILE_VERSION}/build-done ]; then
 fi
 
 # ---------------------------------------------------------------------------------------------------------------------
-# libgig
-
-if [ ! -d libgig-${LIBGIG_VERSION} ]; then
-  wget http://download.linuxsampler.org/packages/libgig-${LIBGIG_VERSION}.tar.bz2
-  tar -xf libgig-${LIBGIG_VERSION}.tar.bz2
-fi
-
-if [ ! -f libgig-${LIBGIG_VERSION}/build-done ]; then
-  cd libgig-${LIBGIG_VERSION}
-  if [ ! -f patched ]; then
-    patch -p1 -i ../patches/libgig_fix-build.patch
-    touch patched
-  fi
-  ./configure --enable-static --disable-shared --prefix=${PREFIX}
-  make ${MAKE_ARGS}
-  make install
-  touch build-done
-  cd ..
-fi
-
-# ---------------------------------------------------------------------------------------------------------------------
-# linuxsampler
-
-if [ ! -d linuxsampler-${LINUXSAMPLER_VERSION} ]; then
-  wget http://download.linuxsampler.org/packages/linuxsampler-${LINUXSAMPLER_VERSION}.tar.bz2
-  tar -xf linuxsampler-${LINUXSAMPLER_VERSION}.tar.bz2
-fi
-
-if [ ! -f linuxsampler-${LINUXSAMPLER_VERSION}/build-done ]; then
-  cd linuxsampler-${LINUXSAMPLER_VERSION}
-  if [ ! -f patched ]; then
-    patch -p1 -i ../patches/linuxsampler_allow-no-drivers-build.patch
-    patch -p1 -i ../patches/linuxsampler_disable-ladspa-fx.patch
-    touch patched
-  fi
-  rm -f configure
-  make -f Makefile.svn configure
-  ./configure \
-    --enable-static --disable-shared --prefix=${PREFIX} \
-    --enable-signed-triang-algo=diharmonic --enable-unsigned-triang-algo=diharmonic --enable-subfragment-size=8 \
-    --disable-alsa-driver --disable-arts-driver --disable-jack-driver \
-    --disable-asio-driver --disable-midishare-driver --disable-mmemidi-driver \
-    --disable-coreaudio-driver --disable-coremidi-driver \
-    --disable-instruments-db --disable-sf2-engine
-  make ${MAKE_ARGS}
-  make install
-  sed -i -e "s|-llinuxsampler|-llinuxsampler -L${PREFIX}/lib/libgig -lgig -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -lpthread -lm|" ${PREFIX}/lib/pkgconfig/linuxsampler.pc
-  touch build-done
-  cd ..
-fi
-
-# ---------------------------------------------------------------------------------------------------------------------
 # glib
 
 if [ ! -d ${PREFIX}/include/glib-2.0 ]; then
@@ -282,7 +228,7 @@ fi
 # fluidsynth
 
 if [ ! -d fluidsynth-${FLUIDSYNTH_VERSION} ]; then
-  wget --no-check-certificate https://download.sourceforge.net/fluidsynth/fluidsynth-${FLUIDSYNTH_VERSION}.tar.gz
+  aria2c https://download.sourceforge.net/fluidsynth/fluidsynth-${FLUIDSYNTH_VERSION}.tar.gz
   tar -xf fluidsynth-${FLUIDSYNTH_VERSION}.tar.gz
 fi
 
@@ -305,7 +251,7 @@ fi
 # mxml
 
 if [ ! -d mxml-${MXML_VERSION} ]; then
-  wget --no-check-certificate https://github.com/michaelrsweet/mxml/releases/download/v${MXML_VERSION}/mxml-${MXML_VERSION}.tar.gz -O mxml-${MXML_VERSION}.tar.gz
+  aria2c https://github.com/michaelrsweet/mxml/releases/download/v${MXML_VERSION}/mxml-${MXML_VERSION}.tar.gz
   mkdir mxml-${MXML_VERSION}
   cd mxml-${MXML_VERSION}
   tar -xf ../mxml-${MXML_VERSION}.tar.gz
@@ -327,7 +273,7 @@ fi
 # fftw3 (needs to be last as it modifies C[XX]FLAGS)
 
 if [ ! -d fftw-${FFTW3_VERSION} ]; then
-  wget --no-check-certificate http://www.fftw.org/fftw-${FFTW3_VERSION}.tar.gz
+  aria2c http://www.fftw.org/fftw-${FFTW3_VERSION}.tar.gz
   tar -xf fftw-${FFTW3_VERSION}.tar.gz
 fi
 

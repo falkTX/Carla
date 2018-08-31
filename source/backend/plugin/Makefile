@@ -19,7 +19,7 @@ OBJS = \
 	$(OBJDIR)/CarlaPluginLV2.cpp.o \
 	$(OBJDIR)/CarlaPluginVST2.cpp.o \
 	$(OBJDIR)/CarlaPluginFluidSynth.cpp.o \
-	$(OBJDIR)/CarlaPluginLinuxSampler.cpp.o \
+	$(OBJDIR)/CarlaPluginSFZero.cpp.o \
 	$(OBJDIR)/CarlaPluginJack.cpp.o
 
 TARGETS = \
@@ -51,11 +51,6 @@ $(OBJDIR)/CarlaPluginFluidSynth.cpp.o: CarlaPluginFluidSynth.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(FLUIDSYNTH_FLAGS) -c -o $@
-
-$(OBJDIR)/CarlaPluginLinuxSampler.cpp.o: CarlaPluginLinuxSampler.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(LINUXSAMPLER_FLAGS) -c -o $@
 
 ifeq ($(MACOS),true)
 $(OBJDIR)/CarlaPluginVST2.cpp.o: CarlaPluginVST2.cpp

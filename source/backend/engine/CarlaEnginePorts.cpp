@@ -91,7 +91,10 @@ CarlaEngineEventPort::CarlaEngineEventPort(const CarlaEngineClient& client, cons
     carla_debug("CarlaEngineEventPort::CarlaEngineEventPort(%s)", bool2str(isInputPort));
 
     if (kProcessMode == ENGINE_PROCESS_MODE_PATCHBAY)
+    {
         fBuffer = new EngineEvent[kMaxEngineEventInternalCount];
+        carla_zeroStructs(fBuffer, kMaxEngineEventInternalCount);
+    }
 }
 
 CarlaEngineEventPort::~CarlaEngineEventPort() noexcept

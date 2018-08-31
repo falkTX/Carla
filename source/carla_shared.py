@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Common Carla code
-# Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -66,7 +66,7 @@ if WINDOWS:
 # ------------------------------------------------------------------------------------------------------------
 # Set Version
 
-VERSION = "1.9.8 (2.0-beta6)"
+VERSION = "1.9.9 (2.0-beta7)"
 
 # ------------------------------------------------------------------------------------------------------------
 # Set TMP
@@ -191,6 +191,7 @@ CARLA_KEY_MAIN_PROJECT_FOLDER   = "Main/ProjectFolder"   # str
 CARLA_KEY_MAIN_USE_PRO_THEME    = "Main/UseProTheme"     # bool
 CARLA_KEY_MAIN_PRO_THEME_COLOR  = "Main/ProThemeColor"   # str
 CARLA_KEY_MAIN_REFRESH_INTERVAL = "Main/RefreshInterval" # int
+CARLA_KEY_MAIN_CONFIRM_EXIT     = "Main/ConfirmExit"     # bool
 CARLA_KEY_MAIN_USE_CUSTOM_SKINS = "Main/UseCustomSkins"  # bool
 CARLA_KEY_MAIN_SHOW_LOGS        = "Main/ShowLogs"        # bool
 CARLA_KEY_MAIN_EXPERIMENTAL     = "Main/Experimental"    # bool
@@ -222,7 +223,6 @@ CARLA_KEY_PATHS_LADSPA = "Paths/LADSPA"
 CARLA_KEY_PATHS_DSSI   = "Paths/DSSI"
 CARLA_KEY_PATHS_LV2    = "Paths/LV2"
 CARLA_KEY_PATHS_VST2   = "Paths/VST2"
-CARLA_KEY_PATHS_GIG    = "Paths/GIG"
 CARLA_KEY_PATHS_SF2    = "Paths/SF2"
 CARLA_KEY_PATHS_SFZ    = "Paths/SFZ"
 
@@ -251,6 +251,7 @@ CARLA_DEFAULT_MAIN_PROJECT_FOLDER   = HOME
 CARLA_DEFAULT_MAIN_USE_PRO_THEME    = True
 CARLA_DEFAULT_MAIN_PRO_THEME_COLOR  = "Black"
 CARLA_DEFAULT_MAIN_REFRESH_INTERVAL = 20
+CARLA_DEFAULT_MAIN_CONFIRM_EXIT     = True
 CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS = True
 CARLA_DEFAULT_MAIN_SHOW_LOGS        = bool(not WINDOWS)
 CARLA_DEFAULT_MAIN_EXPERIMENTAL     = False
@@ -272,15 +273,15 @@ CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING   = False
 # Engine
 CARLA_DEFAULT_FORCE_STEREO          = False
 CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES = False
-CARLA_DEFAULT_PREFER_UI_BRIDGES     = bool(not (MACOS or WINDOWS))
+CARLA_DEFAULT_PREFER_UI_BRIDGES     = True
 CARLA_DEFAULT_MANAGE_UIS            = True
 CARLA_DEFAULT_UIS_ALWAYS_ON_TOP     = False
 CARLA_DEFAULT_MAX_PARAMETERS        = MAX_DEFAULT_PARAMETERS
 CARLA_DEFAULT_UI_BRIDGES_TIMEOUT    = 4000
 
-CARLA_DEFAULT_AUDIO_NUM_PERIODS     = 2
 CARLA_DEFAULT_AUDIO_BUFFER_SIZE     = 512
 CARLA_DEFAULT_AUDIO_SAMPLE_RATE     = 44100
+CARLA_DEFAULT_AUDIO_TRIPLE_BUFFER   = False
 
 if WINDOWS:
     CARLA_DEFAULT_AUDIO_DRIVER = "DirectSound"
@@ -319,7 +320,6 @@ DEFAULT_LADSPA_PATH = ""
 DEFAULT_DSSI_PATH   = ""
 DEFAULT_LV2_PATH    = ""
 DEFAULT_VST2_PATH   = ""
-DEFAULT_GIG_PATH    = ""
 DEFAULT_SF2_PATH    = ""
 DEFAULT_SFZ_PATH    = ""
 
@@ -360,7 +360,6 @@ if WINDOWS:
     if kIs64bit:
         DEFAULT_VST2_PATH  += ";" + COMMONPROGRAMFILES + "\\VST2"
 
-    DEFAULT_GIG_PATH     = APPDATA + "\\GIG"
     DEFAULT_SF2_PATH     = APPDATA + "\\SF2"
     DEFAULT_SFZ_PATH     = APPDATA + "\\SFZ"
 
@@ -419,9 +418,6 @@ else:
     DEFAULT_VST2_PATH   += ":/usr/lib/vst"
     DEFAULT_VST2_PATH   += ":/usr/local/lib/vst"
 
-    DEFAULT_GIG_PATH     = HOME + "/.sounds/gig"
-    DEFAULT_GIG_PATH    += ":/usr/share/sounds/gig"
-
     DEFAULT_SF2_PATH     = HOME + "/.sounds/sf2"
     DEFAULT_SF2_PATH    += ":/usr/share/sounds/sf2"
 
@@ -468,7 +464,6 @@ if readEnvVars:
     CARLA_DEFAULT_DSSI_PATH   = os.getenv("DSSI_PATH",   DEFAULT_DSSI_PATH).split(splitter)
     CARLA_DEFAULT_LV2_PATH    = os.getenv("LV2_PATH",    DEFAULT_LV2_PATH).split(splitter)
     CARLA_DEFAULT_VST2_PATH   = os.getenv("VST_PATH",    DEFAULT_VST2_PATH).split(splitter)
-    CARLA_DEFAULT_GIG_PATH    = os.getenv("GIG_PATH",    DEFAULT_GIG_PATH).split(splitter)
     CARLA_DEFAULT_SF2_PATH    = os.getenv("SF2_PATH",    DEFAULT_SF2_PATH).split(splitter)
     CARLA_DEFAULT_SFZ_PATH    = os.getenv("SFZ_PATH",    DEFAULT_SFZ_PATH).split(splitter)
 
@@ -477,7 +472,6 @@ else:
     CARLA_DEFAULT_DSSI_PATH   = DEFAULT_DSSI_PATH.split(splitter)
     CARLA_DEFAULT_LV2_PATH    = DEFAULT_LV2_PATH.split(splitter)
     CARLA_DEFAULT_VST2_PATH   = DEFAULT_VST2_PATH.split(splitter)
-    CARLA_DEFAULT_GIG_PATH    = DEFAULT_GIG_PATH.split(splitter)
     CARLA_DEFAULT_SF2_PATH    = DEFAULT_SF2_PATH.split(splitter)
     CARLA_DEFAULT_SFZ_PATH    = DEFAULT_SFZ_PATH.split(splitter)
 
@@ -488,7 +482,6 @@ del DEFAULT_LADSPA_PATH
 del DEFAULT_DSSI_PATH
 del DEFAULT_LV2_PATH
 del DEFAULT_VST2_PATH
-del DEFAULT_GIG_PATH
 del DEFAULT_SF2_PATH
 del DEFAULT_SFZ_PATH
 

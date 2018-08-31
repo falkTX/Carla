@@ -224,7 +224,12 @@ class CarlaApplication(object):
         if MACOS:
             QApplication.setAttribute(Qt.AA_DontShowIconsInMenus)
 
-        self.fApp = QCoreApplication(sys.argv) if gCarla.nogui else QApplication(sys.argv)
+        args = sys.argv[:]
+
+        if WINDOWS:
+            args += ["-platform", "windows:fontengine=freetype"]
+
+        self.fApp = QCoreApplication(args) if gCarla.nogui else QApplication(args)
         self.fApp.setApplicationName(appName)
         self.fApp.setApplicationVersion(VERSION)
         self.fApp.setOrganizationName("falkTX")

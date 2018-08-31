@@ -1258,17 +1258,16 @@ class PatchScene(QGraphicsScene):
                     rect = item.boundingRect()
 
                     if first_value:
+                        first_value = False
                         min_x = pos.x()
                         min_y = pos.y()
                         max_x = pos.x() + rect.width()
                         max_y = pos.y() + rect.height()
                     else:
-                        min_x = min( min_x, pos.x() )
-                        min_y = min( min_y, pos.y() )
-                        max_x = max( max_x, pos.x() + rect.width() )
-                        max_y = max( max_y, pos.y() + rect.height() )
-
-                    first_value = False
+                        min_x = min(min_x, pos.x())
+                        min_y = min(min_y, pos.y())
+                        max_x = max(max_x, pos.x() + rect.width())
+                        max_y = max(max_y, pos.y() + rect.height())
 
             if not first_value:
                 self.m_view.fitInView(min_x, min_y, abs(max_x - min_x), abs(max_y - min_y), Qt.KeepAspectRatio)
@@ -1373,13 +1372,14 @@ class PatchScene(QGraphicsScene):
                 self.m_rubberband_orig_point = event.scenePos()
 
             pos = event.scenePos()
-            x = min( pos.x(), self.m_rubberband_orig_point.x() )
-            y = min( pos.y(), self.m_rubberband_orig_point.y() )
+            x = min(pos.x(), self.m_rubberband_orig_point.x())
+            y = min(pos.y(), self.m_rubberband_orig_point.y())
 
             lineHinting = canvas.theme.rubberband_pen.widthF() / 2
-            self.m_rubberband.setRect( x+lineHinting, y+lineHinting,
-                                       abs(pos.x() - self.m_rubberband_orig_point.x()),
-                                       abs(pos.y() - self.m_rubberband_orig_point.y()) )
+            self.m_rubberband.setRect(x+lineHinting,
+                                      y+lineHinting,
+                                      abs(pos.x() - self.m_rubberband_orig_point.x()),
+                                      abs(pos.y() - self.m_rubberband_orig_point.y()))
             return event.accept()
 
         if self.m_mid_button_down and self.m_ctrl_down:
@@ -1392,10 +1392,6 @@ class PatchScene(QGraphicsScene):
         QGraphicsScene.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
-        if event.button() == Qt.MidButton:
-            self.m_mid_button_down = False
-            return event.accept()
-
         if self.m_rubberband_selection:
             items_list = self.items()
             if len(items_list) > 0:
@@ -1424,6 +1420,11 @@ class PatchScene(QGraphicsScene):
 
         self.m_mouse_down_init  = False
         self.m_mouse_rubberband = False
+
+        if event.button() == Qt.MidButton:
+            self.m_mid_button_down = False
+            return event.accept()
+
         QGraphicsScene.mouseReleaseEvent(self, event)
 
     def wheelEvent(self, event):

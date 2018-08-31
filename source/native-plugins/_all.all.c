@@ -18,16 +18,13 @@
 #include "CarlaDefines.h"
 #include "CarlaNative.h"
 
-#ifdef CARLA_OS_WIN
-# undef HAVE_PYQT
-#endif
-
 // --------------------------------------------------------------------------------------------------------------------
 
 // Simple plugins
 extern void carla_register_native_plugin_bypass(void);
 extern void carla_register_native_plugin_lfo(void);
 extern void carla_register_native_plugin_midichanfilter(void);
+extern void carla_register_native_plugin_midichanab(void);
 extern void carla_register_native_plugin_midigain(void);
 extern void carla_register_native_plugin_midijoin(void);
 extern void carla_register_native_plugin_midisplit(void);
@@ -61,6 +58,7 @@ void carla_register_all_native_plugins(void)
     carla_register_native_plugin_bypass();
     carla_register_native_plugin_lfo();
     carla_register_native_plugin_midichanfilter();
+    carla_register_native_plugin_midichanab();
     carla_register_native_plugin_midigain();
     carla_register_native_plugin_midijoin();
     carla_register_native_plugin_midisplit();
@@ -70,20 +68,18 @@ void carla_register_all_native_plugins(void)
     // Audio file
     carla_register_native_plugin_audiofile();
 
-    // MIDI file and sequencer
+    // MIDI file
     carla_register_native_plugin_midifile();
-#ifdef HAVE_PYQT
-    carla_register_native_plugin_midipattern();
-#endif
 
-    // Carla
 #ifdef HAVE_PYQT
+    // Carla
     carla_register_native_plugin_carla();
-#endif
 
     // External-UI plugins
     carla_register_native_plugin_bigmeter();
+    carla_register_native_plugin_midipattern();
     carla_register_native_plugin_notes();
+#endif // HAVE_PYQT
 
 #ifdef HAVE_EXTERNAL_PLUGINS
     // Experimental plugins

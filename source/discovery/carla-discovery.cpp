@@ -1,6 +1,6 @@
 /*
  * Carla Plugin discovery
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,19 +23,11 @@
 
 #ifdef BUILD_BRIDGE
 # undef HAVE_FLUIDSYNTH
-# undef HAVE_LINUXSAMPLER
 #endif
 
 #include "CarlaLadspaUtils.hpp"
-#include "CarlaDssiUtils.cpp"
 #include "CarlaLv2Utils.hpp"
 #include "CarlaVstUtils.hpp"
-
-#ifndef BUILD_BRIDGE
-// need to include this before linuxsampler
-# define CARLA_UTILS_CACHED_PLUGINS_ONLY
-# include "CarlaUtils.cpp"
-#endif
 
 #ifdef CARLA_OS_MAC
 # import <Foundation/Foundation.h>
@@ -45,14 +37,16 @@
 # include <fluidsynth.h>
 #endif
 
-#ifdef HAVE_LINUXSAMPLER
-# include "linuxsampler/EngineFactory.h"
-#endif
-
 #include <iostream>
 
-#include "water/files/File.h"
-#include "water/text/StringArray.h"
+#ifndef BUILD_BRIDGE
+# include "water/files/File.h"
+# include "water/text/StringArray.h"
+# include "CarlaDssiUtils.cpp"
+# include "../backend/utils/CachedPlugins.cpp"
+#else
+# include "CarlaDssiUtils.hpp"
+#endif
 
 #define DISCOVERY_OUT(x, y) std::cout << "\ncarla-discovery::" << x << "::" << y << std::endl;
 
@@ -273,144 +267,46 @@ static intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t
     return ret;
 }
 
-#ifdef HAVE_LINUXSAMPLER
-// --------------------------------------------------------------------------
-// LinuxSampler stuff
-
-class LinuxSamplerScopedEngine
-{
-public:
-    LinuxSamplerScopedEngine(const char* const filename, const char* const stype)
-        : fEngine(nullptr)
-    {
-        using namespace LinuxSampler;
-
-        try {
-            fEngine = EngineFactory::Create(stype);
-        }
-        catch (const Exception& e)
-        {
-            DISCOVERY_OUT("error", e.what());
-            return;
-        }
-
-        if (fEngine == nullptr)
-            return;
-
-        InstrumentManager* const insMan(fEngine->GetInstrumentManager());
-
-        if (insMan == nullptr)
-        {
-            DISCOVERY_OUT("error", "Failed to get LinuxSampler instrument manager");
-            return;
-        }
-
-        std::vector<InstrumentManager::instrument_id_t> ids;
-
-        try {
-            ids = insMan->GetInstrumentFileContent(filename);
-        }
-        catch (const InstrumentManagerException& e)
-        {
-            DISCOVERY_OUT("error", e.what());
-            return;
-        }
-
-        if (ids.size() == 0)
-        {
-            DISCOVERY_OUT("error", "Failed to find any instruments");
-            return;
-        }
-
-        InstrumentManager::instrument_info_t info;
-
-        try {
-            info = insMan->GetInstrumentInfo(ids[0]);
-        }
-        catch (const InstrumentManagerException& e)
-        {
-            DISCOVERY_OUT("error", e.what());
-            return;
-        }
-
-        outputInfo(&info, nullptr, ids.size() > 1);
-    }
-
-    ~LinuxSamplerScopedEngine()
-    {
-        if (fEngine != nullptr)
-        {
-            LinuxSampler::EngineFactory::Destroy(fEngine);
-            fEngine = nullptr;
-        }
-    }
-
-    static void outputInfo(const LinuxSampler::InstrumentManager::instrument_info_t* const info, const char* const basename, const bool has16Outs)
-    {
-        CarlaString name;
-        const char* label;
-
-        if (info != nullptr)
-        {
-            name  = info->InstrumentName.c_str();
-            label = info->Product.c_str();
-        }
-        else
-        {
-            name  = basename;
-            label = basename;
-        }
-
-        // 2 channels
-        DISCOVERY_OUT("init", "-----------");
-        DISCOVERY_OUT("build", BINARY_NATIVE);
-        DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
-
-        DISCOVERY_OUT("name", name.buffer());
-        DISCOVERY_OUT("label", label);
-
-        if (info != nullptr)
-            DISCOVERY_OUT("maker", info->Artists);
-
-        DISCOVERY_OUT("audio.outs", 2);
-        DISCOVERY_OUT("midi.ins", 1);
-        DISCOVERY_OUT("end", "------------");
-
-        // 16 channels
-        if (name.isEmpty() || ! has16Outs)
-            return;
-
-        name += " (16 outputs)";
-
-        DISCOVERY_OUT("init", "-----------");
-        DISCOVERY_OUT("build", BINARY_NATIVE);
-        DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
-
-        DISCOVERY_OUT("name", name.buffer());
-        DISCOVERY_OUT("label", label);
-
-        if (info != nullptr)
-            DISCOVERY_OUT("maker", info->Artists);
-
-        DISCOVERY_OUT("audio.outs", 32);
-        DISCOVERY_OUT("midi.ins", 1);
-        DISCOVERY_OUT("end", "------------");
-    }
-
-private:
-    LinuxSampler::Engine* fEngine;
-
-    CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(LinuxSamplerScopedEngine)
-};
-#endif // HAVE_LINUXSAMPLER
-
 // ------------------------------ Plugin Checks -----------------------------
 
 #ifndef BUILD_BRIDGE
+static void print_cached_plugin(const CarlaCachedPluginInfo* const pinfo)
+{
+    if (! pinfo->valid)
+        return;
+
+    DISCOVERY_OUT("init", "-----------");
+    DISCOVERY_OUT("build", BINARY_NATIVE);
+    DISCOVERY_OUT("hints", pinfo->hints);
+    DISCOVERY_OUT("name", pinfo->name);
+    DISCOVERY_OUT("maker", pinfo->maker);
+    DISCOVERY_OUT("label", pinfo->label);
+    DISCOVERY_OUT("audio.ins", pinfo->audioIns);
+    DISCOVERY_OUT("audio.outs", pinfo->audioOuts);
+    DISCOVERY_OUT("midi.ins", pinfo->midiIns);
+    DISCOVERY_OUT("midi.outs", pinfo->midiOuts);
+    DISCOVERY_OUT("parameters.ins", pinfo->parameterIns);
+    DISCOVERY_OUT("parameters.outs", pinfo->parameterOuts);
+    DISCOVERY_OUT("end", "------------");
+}
+
 static void do_cached_check(const PluginType type)
 {
-    const char* const plugPath = (type == PLUGIN_LV2) ? std::getenv("LV2_PATH") : nullptr;
+    const char* plugPath;
+
+    switch (type)
+    {
+    case PLUGIN_LV2:
+        plugPath = std::getenv("LV2_PATH");
+        break;
+    case PLUGIN_SFZ:
+        plugPath = std::getenv("SFZ_PATH");
+        break;
+    default:
+        plugPath = nullptr;
+        break;
+    }
+
     const uint count = carla_get_cached_plugin_count(type, plugPath);
 
     for (uint i=0; i<count; ++i)
@@ -418,19 +314,7 @@ static void do_cached_check(const PluginType type)
         const CarlaCachedPluginInfo* pinfo(carla_get_cached_plugin_info(type, i));
         CARLA_SAFE_ASSERT_CONTINUE(pinfo != nullptr);
 
-        DISCOVERY_OUT("init", "-----------");
-        DISCOVERY_OUT("build", BINARY_NATIVE);
-        DISCOVERY_OUT("hints", pinfo->hints);
-        DISCOVERY_OUT("name", pinfo->name);
-        DISCOVERY_OUT("maker", pinfo->maker);
-        DISCOVERY_OUT("label", pinfo->label);
-        DISCOVERY_OUT("audio.ins", pinfo->audioIns);
-        DISCOVERY_OUT("audio.outs", pinfo->audioOuts);
-        DISCOVERY_OUT("midi.ins", pinfo->midiIns);
-        DISCOVERY_OUT("midi.outs", pinfo->midiOuts);
-        DISCOVERY_OUT("parameters.ins", pinfo->parameterIns);
-        DISCOVERY_OUT("parameters.outs", pinfo->parameterOuts);
-        DISCOVERY_OUT("end", "------------");
+        print_cached_plugin(pinfo);
     }
 }
 #endif
@@ -812,11 +696,13 @@ static void do_dssi_check(lib_t& libHandle, const char* const filename, const bo
         if (midiIns > 0 && audioIns == 0 && audioOuts > 0)
             hints |= PLUGIN_IS_SYNTH;
 
+#ifndef BUILD_BRIDGE
         if (const char* const ui = find_dssi_ui(filename, ldescriptor->Label))
         {
             hints |= PLUGIN_HAS_CUSTOM_UI;
             delete[] ui;
         }
+#endif
 
         if (doInit)
         {
@@ -966,6 +852,7 @@ static void do_dssi_check(lib_t& libHandle, const char* const filename, const bo
     }
 }
 
+#ifndef BUILD_BRIDGE
 static void do_lv2_check(const char* const bundle, const bool doInit)
 {
     Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
@@ -1004,17 +891,18 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
     // Get & check every plugin-instance
     for (int i=0, count=URIs.size(); i < count; ++i)
     {
-        const LV2_RDF_Descriptor* const rdfDescriptor(lv2_rdf_new(URIs[i].toRawUTF8(), false));
+        const char* const URI = URIs[i].toRawUTF8();
+        ScopedPointer<const LV2_RDF_Descriptor> rdfDescriptor(lv2_rdf_new(URI, false));
 
         if (rdfDescriptor == nullptr || rdfDescriptor->URI == nullptr)
         {
-            DISCOVERY_OUT("error", "Failed to find LV2 plugin '" << URIs[i].toRawUTF8() << "'");
+            DISCOVERY_OUT("error", "Failed to find LV2 plugin '" << URI << "'");
             continue;
         }
 
         if (doInit)
         {
-            // test if DLL is loadable, twice
+            // test if lib is loadable, twice
             const lib_t libHandle1 = lib_open(rdfDescriptor->Binary);
 
             if (libHandle1 == nullptr)
@@ -1038,139 +926,16 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
             lib_close(libHandle2);
         }
 
-        // test if we support all required ports and features
-        {
-            bool supported = true;
+        const LilvPlugin* const cPlugin(lv2World.getPluginFromURI(URI));
+        CARLA_SAFE_ASSERT_CONTINUE(cPlugin != nullptr);
 
-            for (uint32_t j=0; j < rdfDescriptor->PortCount && supported; ++j)
-            {
-                const LV2_RDF_Port* const rdfPort(&rdfDescriptor->Ports[j]);
+        Lilv::Plugin lilvPlugin(cPlugin);
+        CARLA_SAFE_ASSERT_CONTINUE(lilvPlugin.get_uri().is_uri());
 
-                if (is_lv2_port_supported(rdfPort->Types))
-                {
-                    pass();
-                }
-                else if (! LV2_IS_PORT_OPTIONAL(rdfPort->Properties))
-                {
-                    DISCOVERY_OUT("error", "Plugin '" << rdfDescriptor->URI << "' requires a non-supported port type (portName: '" << rdfPort->Name << "')");
-                    supported = false;
-                    break;
-                }
-            }
-
-            for (uint32_t j=0; j < rdfDescriptor->FeatureCount && supported; ++j)
-            {
-                const LV2_RDF_Feature& feature(rdfDescriptor->Features[j]);
-
-                if (std::strcmp(feature.URI, LV2_DATA_ACCESS_URI) == 0 || std::strcmp(feature.URI, LV2_INSTANCE_ACCESS_URI) == 0)
-                {
-                    DISCOVERY_OUT("warning", "Plugin '" << rdfDescriptor->URI << "' DSP wants UI feature '" << feature.URI << "', ignoring this");
-                }
-                else if (feature.Required && ! is_lv2_feature_supported(feature.URI))
-                {
-                    DISCOVERY_OUT("error", "Plugin '" << rdfDescriptor->URI << "' requires a non-supported feature '" << feature.URI << "'");
-                    supported = false;
-                    break;
-                }
-            }
-
-            if (! supported)
-            {
-                delete rdfDescriptor;
-                continue;
-            }
-        }
-
-        uint hints = 0x0;
-        int audioIns = 0;
-        int audioOuts = 0;
-        int midiIns = 0;
-        int midiOuts = 0;
-        int parametersIns = 0;
-        int parametersOuts = 0;
-
-        for (uint32_t j=0; j < rdfDescriptor->FeatureCount; ++j)
-        {
-            const LV2_RDF_Feature* const rdfFeature(&rdfDescriptor->Features[j]);
-
-            if (std::strcmp(rdfFeature->URI, LV2_CORE__hardRTCapable) == 0)
-                hints |= PLUGIN_IS_RTSAFE;
-        }
-
-        for (uint32_t j=0; j < rdfDescriptor->PortCount; ++j)
-        {
-            const LV2_RDF_Port* const rdfPort(&rdfDescriptor->Ports[j]);
-
-            if (LV2_IS_PORT_AUDIO(rdfPort->Types))
-            {
-                if (LV2_IS_PORT_INPUT(rdfPort->Types))
-                    audioIns += 1;
-                else if (LV2_IS_PORT_OUTPUT(rdfPort->Types))
-                    audioOuts += 1;
-            }
-            else if (LV2_IS_PORT_CONTROL(rdfPort->Types))
-            {
-                if (LV2_IS_PORT_DESIGNATION_LATENCY(rdfPort->Designation))
-                {
-                    pass();
-                }
-                else if (LV2_IS_PORT_DESIGNATION_SAMPLE_RATE(rdfPort->Designation))
-                {
-                    pass();
-                }
-                else if (LV2_IS_PORT_DESIGNATION_FREEWHEELING(rdfPort->Designation))
-                {
-                    pass();
-                }
-                else if (LV2_IS_PORT_DESIGNATION_TIME(rdfPort->Designation))
-                {
-                    pass();
-                }
-                else
-                {
-                    if (LV2_IS_PORT_INPUT(rdfPort->Types))
-                        parametersIns += 1;
-                    else if (LV2_IS_PORT_OUTPUT(rdfPort->Types))
-                        parametersOuts += 1;
-                }
-            }
-            else if (LV2_PORT_SUPPORTS_MIDI_EVENT(rdfPort->Types))
-            {
-                if (LV2_IS_PORT_INPUT(rdfPort->Types))
-                    midiIns += 1;
-                else if (LV2_IS_PORT_OUTPUT(rdfPort->Types))
-                    midiOuts += 1;
-            }
-        }
-
-        if (LV2_IS_INSTRUMENT(rdfDescriptor->Type[0], rdfDescriptor->Type[1]))
-            hints |= PLUGIN_IS_SYNTH;
-
-        if (rdfDescriptor->UICount > 0)
-            hints |= PLUGIN_HAS_CUSTOM_UI;
-
-        DISCOVERY_OUT("init", "-----------");
-        DISCOVERY_OUT("build", BINARY_NATIVE);
-        DISCOVERY_OUT("hints", hints);
-
-        if (rdfDescriptor->Name != nullptr)
-            DISCOVERY_OUT("name", rdfDescriptor->Name);
-        if (rdfDescriptor->Author != nullptr)
-            DISCOVERY_OUT("maker", rdfDescriptor->Author);
-
-        DISCOVERY_OUT("uri", rdfDescriptor->URI);
-        DISCOVERY_OUT("uniqueId", rdfDescriptor->UniqueID);
-        DISCOVERY_OUT("audio.ins", audioIns);
-        DISCOVERY_OUT("audio.outs", audioOuts);
-        DISCOVERY_OUT("midi.ins", midiIns);
-        DISCOVERY_OUT("midi.outs", midiOuts);
-        DISCOVERY_OUT("parameters.ins", parametersIns);
-        DISCOVERY_OUT("parameters.outs", parametersOuts);
-        DISCOVERY_OUT("end", "------------");
-
-        delete rdfDescriptor;
+        print_cached_plugin(get_cached_plugin_lv2(lv2World, lilvPlugin));
     }
 }
+#endif
 
 static void do_vst_check(lib_t& libHandle, const char* const filename, const bool doInit)
 {
@@ -1178,7 +943,7 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
 
 #ifdef CARLA_OS_MAC
     CFBundleRef bundleRef = nullptr;
-    CFBundleRefNum resFileId;
+    CFBundleRefNum resFileId = 0;
 
     if (libHandle == nullptr)
     {
@@ -1584,32 +1349,6 @@ static void do_fluidsynth_check(const char* const filename, const bool doInit)
 #endif
 }
 
-static void do_linuxsampler_check(const char* const filename, const char* const stype, const bool doInit)
-{
-#ifdef HAVE_LINUXSAMPLER
-    const water::String jfilename = water::String(CharPointer_UTF8(filename));
-    const File file(jfilename);
-
-    if (! file.existsAsFile())
-    {
-        DISCOVERY_OUT("error", "Requested file is not valid or does not exist");
-        return;
-    }
-
-    if (doInit)
-        const LinuxSamplerScopedEngine engine(filename, stype);
-    else
-        LinuxSamplerScopedEngine::outputInfo(nullptr, file.getFileNameWithoutExtension().toRawUTF8(), std::strcmp(stype, "gig") == 0);
-#else // HAVE_LINUXSAMPLER
-    DISCOVERY_OUT("error", stype << " support not available");
-    return;
-
-    // unused
-    (void)filename;
-    (void)doInit;
-#endif
-}
-
 // ------------------------------ main entry point ------------------------------
 
 int main(int argc, char* argv[])
@@ -1640,23 +1379,16 @@ int main(int argc, char* argv[])
         break;
     }
 
-    if (type != PLUGIN_GIG && type != PLUGIN_SF2 && type != PLUGIN_SFZ)
+    if (type != PLUGIN_SF2 && filenameCheck.contains("fluidsynth", true))
     {
-        if (filenameCheck.contains("fluidsynth", true))
-        {
-            DISCOVERY_OUT("info", "skipping fluidsynth based plugin");
-            return 0;
-        }
-        if (filenameCheck.contains("linuxsampler", true) || filenameCheck.endsWith("ls16.so"))
-        {
-            DISCOVERY_OUT("info", "skipping linuxsampler based plugin");
-            return 0;
-        }
-#ifdef CARLA_OS_MAC
-        if (type == PLUGIN_VST2 && (filenameCheck.endsWith(".vst") || filenameCheck.endsWith(".vst/")))
-            openLib = false;
-#endif
+        DISCOVERY_OUT("info", "skipping fluidsynth based plugin");
+        return 0;
     }
+
+#ifdef CARLA_OS_MAC
+    if (type == PLUGIN_VST2 && (filenameCheck.endsWith(".vst") || filenameCheck.endsWith(".vst/")))
+        openLib = false;
+#endif
 
     if (openLib)
     {
@@ -1709,20 +1441,16 @@ int main(int argc, char* argv[])
     case PLUGIN_DSSI:
         do_dssi_check(handle, filename, doInit);
         break;
+#ifndef BUILD_BRIDGE
     case PLUGIN_LV2:
         do_lv2_check(filename, doInit);
         break;
+#endif
     case PLUGIN_VST2:
         do_vst_check(handle, filename, doInit);
         break;
-    case PLUGIN_GIG:
-        do_linuxsampler_check(filename, "gig", doInit);
-        break;
     case PLUGIN_SF2:
         do_fluidsynth_check(filename, doInit);
-        break;
-    case PLUGIN_SFZ:
-        do_linuxsampler_check(filename, "sfz", doInit);
         break;
     default:
         break;

@@ -32,16 +32,8 @@ ifeq ($(HAVE_FLUIDSYNTH),true)
 BUILD_CXX_FLAGS += $(FLUIDSYNTH_FLAGS)
 endif
 
-ifeq ($(HAVE_LINUXSAMPLER),true)
-BUILD_CXX_FLAGS += $(LINUXSAMPLER_FLAGS)
-endif
-
 ifeq ($(HAVE_X11),true)
 BUILD_CXX_FLAGS += $(X11_FLAGS)
-endif
-
-ifeq ($(CARLA_ZYN_COMPAT),true)
-BUILD_CXX_FLAGS += -DCARLA_ZYN_LV2_EXPORTED
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -57,6 +49,7 @@ LIBS += $(MODULEDIR)/water.a
 
 LIBS += $(MODULEDIR)/audio_decoder.a
 LIBS += $(MODULEDIR)/native-plugins.all.a
+LIBS += $(MODULEDIR)/sfzero.a
 
 ifeq ($(HAVE_DGL),true)
 LIBS += $(MODULEDIR)/dgl.a
@@ -77,21 +70,34 @@ LINK_FLAGS += $(NATIVE_PLUGINS_LIBS)
 
 LINK_FLAGS += $(FLUIDSYNTH_LIBS)
 LINK_FLAGS += $(LIBLO_LIBS)
-LINK_FLAGS += $(LINUXSAMPLER_LIBS)
 LINK_FLAGS += $(MAGIC_LIBS)
 LINK_FLAGS += $(X11_LIBS)
 
 ifeq ($(MACOS),true)
-# NOTE: this assumes only LV2 version will be built
-SHARED += -Wl,-exported_symbol,_lv2_descriptor
-SHARED += -Wl,-exported_symbol,_lv2ui_descriptor
+SYMBOLS_LV2    = -Wl,-exported_symbol,_lv2_descriptor -Wl,-exported_symbol,_lv2ui_descriptor
+SYMBOLS_LV2_UI = -Wl,-exported_symbol,_lv2ui_descriptor
+SYMBOLS_VST    = # TODO
 endif
+
+# ----------------------------------------------------------------------------------------------------------------------------
+# ...
+
+LIBS_ui = $(MODULEDIR)/water.a
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
 TARGETS = \
-	$(BINDIR)/carla.lv2/carla$(LIB_EXT) \
+	$(BINDIR)/carla.lv2/carla$(LIB_EXT)
+
+ifeq ($(HAVE_PYQT),true)
+TARGETS += \
+	$(BINDIR)/carla.lv2/carla-ui$(LIB_EXT)
+endif
+
+ifneq ($(CROSS_COMPILING),true)
+TARGETS += \
 	$(BINDIR)/carla.lv2/manifest.ttl
+endif
 
 ifeq ($(LINUX),true)
 ifeq ($(HAVE_X11),true)
@@ -126,7 +132,12 @@ debug:
 $(BINDIR)/carla.lv2/carla$(LIB_EXT): $(OBJDIR)/carla-lv2.cpp.o $(LIBS)
 	-@mkdir -p $(BINDIR)/carla.lv2
 	@echo "Linking carla.lv2/carla$(LIB_EXT)"
-	@$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
+	@$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(SYMBOLS_LV2) $(LINK_FLAGS) -o $@
+
+$(BINDIR)/carla.lv2/carla-ui$(LIB_EXT): $(OBJDIR)/carla-lv2-ui.cpp.o $(LIBS_ui)
+	-@mkdir -p $(BINDIR)/carla.lv2
+	@echo "Linking carla.lv2/carla-ui$(LIB_EXT)"
+	@$(CXX) $< $(LIBS_START) $(LIBS_ui) $(LIBS_END) $(SHARED) $(SYMBOLS_LV2_UI) $(LINK_FLAGS) -o $@
 
 $(BINDIR)/CarlaRack$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.rack-syn.o $(LIBS)
 	-@mkdir -p $(BINDIR)
@@ -161,6 +172,11 @@ $(BINDIR)/CarlaPatchbayFX$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.patchbay-fx.o $(LIB
 # ----------------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/carla-lv2.cpp.o: carla-lv2.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+$(OBJDIR)/carla-lv2-ui.cpp.o: carla-lv2-ui.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@

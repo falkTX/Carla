@@ -356,7 +356,7 @@ void CarlaPlugin::getParameterScalePointLabel(const uint32_t parameterId, const 
 
 float CarlaPlugin::getInternalParameterValue(const int32_t parameterId) const noexcept
 {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CARLA_SAFE_ASSERT_RETURN(parameterId != PARAMETER_NULL && parameterId > PARAMETER_MAX, 0.0f);
 
     switch (parameterId)
@@ -498,14 +498,14 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
     pData->stateSave.name     = carla_strdup(pData->name);
     pData->stateSave.label    = carla_strdup(strBuf);
     pData->stateSave.uniqueId = getUniqueId();
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     pData->stateSave.options  = pData->options;
 #endif
 
     if (pData->filename != nullptr)
         pData->stateSave.binary = carla_strdup(pData->filename);
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     // ---------------------------------------------------------------
     // Internals
 
@@ -540,7 +540,7 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
     // ---------------------------------------------------------------
     // Current Program
 
-    if (pData->prog.current >= 0 && pluginType != PLUGIN_LV2 && pluginType != PLUGIN_GIG)
+    if (pData->prog.current >= 0 && pluginType != PLUGIN_LV2)
     {
         pData->stateSave.currentProgramIndex = pData->prog.current;
         pData->stateSave.currentProgramName  = carla_strdup(pData->prog.names[pData->prog.current]);
@@ -578,7 +578,7 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
 
         stateParameter->dummy = dummy;
         stateParameter->index = paramData.index;
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         stateParameter->midiCC      = paramData.midiCC;
         stateParameter->midiChannel = paramData.midiChannel;
 #endif
@@ -745,7 +745,9 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
                     index = stateParameter->index;
             }
             else
+            {
                 index = stateParameter->index;
+            }
         }
         else if (pluginType == PLUGIN_LV2)
         {
@@ -765,10 +767,13 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
                     }
                 }
                 if (index == -1)
-                    carla_stderr("Failed to find LV2 parameter symbol '%s')", stateParameter->symbol);
+                    carla_stderr("Failed to find LV2 parameter symbol '%s' for '%s'",
+                                 stateParameter->symbol, pData->name);
             }
             else
+            {
                 carla_stderr("LV2 Plugin parameter '%s' has no symbol", stateParameter->name);
+            }
         }
         else
         {
@@ -789,13 +794,14 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
                 setParameterValue(static_cast<uint32_t>(index), stateParameter->value, true, true, true);
             }
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             setParameterMidiCC(static_cast<uint32_t>(index), stateParameter->midiCC, true, true);
             setParameterMidiChannel(static_cast<uint32_t>(index), stateParameter->midiChannel, true, true);
 #endif
         }
         else
-            carla_stderr("Could not set parameter data for '%s'", stateParameter->name);
+            carla_stderr("Could not set parameter '%s' value for '%s'",
+                         stateParameter->name, pData->name);
     }
 
     // ---------------------------------------------------------------
@@ -861,7 +867,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 #endif
     }
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     // ---------------------------------------------------------------
     // Part 6 - set internal stuff
 
@@ -882,9 +888,10 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     setPanning(stateSave.panning, true, true);
     setCtrlChannel(stateSave.ctrlChannel, true, true);
     setActive(stateSave.active, true, true);
-#endif
 
-    pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0f, nullptr);
+    if (! pData->engine->isLoadingProject())
+        pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0f, nullptr);
+#endif
 }
 
 bool CarlaPlugin::saveStateToFile(const char* const filename)
@@ -1014,6 +1021,7 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
 
         mainStream << "@prefix atom: <http://lv2plug.in/ns/ext/atom#> .\n";
         mainStream << "@prefix doap: <http://usefulinc.com/ns/doap#> .\n";
+        mainStream << "@prefix foaf: <http://xmlns.com/foaf/0.1/> .\n";
         mainStream << "@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .\n";
         mainStream << "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n";
         mainStream << "@prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .\n";
@@ -1195,8 +1203,13 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
             mainStream << "    ] ;\n";
         }
 
+        char strBuf[STR_MAX];
+        getMaker(strBuf);
+        strBuf[STR_MAX-1] = '\0';
+
         mainStream << "    rdfs:comment \"Plugin generated using Carla LV2 export.\" ;\n";
-        mainStream << "    doap:name \"\"\"" << getName() << "\"\"\" .\n";
+        mainStream << "    doap:name \"\"\"" << getName() << "\"\"\" ;\n";
+        mainStream << "    doap:maintainer [ foaf:name \"\"\"" << strBuf << "\"\"\" ] .\n";
         mainStream << "\n";
 
         const CarlaString mainFilename(bundlepath + CARLA_OS_SEP_STR + symbol + ".ttl");
@@ -1258,7 +1271,7 @@ void CarlaPlugin::setOption(const uint option, const bool yesNo, const bool send
     else
         pData->options &= ~option;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_OPTION_CHANGED, pData->id, static_cast<int>(option), yesNo ? 1 : 0, 0.0f, nullptr);
 #else
@@ -1283,9 +1296,11 @@ void CarlaPlugin::setEnabled(const bool yesNo) noexcept
 
 void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool sendCallback) noexcept
 {
-#ifndef BUILD_BRIDGE
-    CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
-#endif
+    if (pData->bridged) {
+        CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
+    } else {
+        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
+    }
 
     if (pData->active == active)
         return;
@@ -1301,25 +1316,27 @@ void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool se
 
     pData->active = active;
 
-#ifndef BUILD_BRIDGE
-    const float value(active ? 1.0f : 0.0f);
+    const float value = active ? 1.0f : 0.0f;
 
-# ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_ACTIVE, value);
-# endif
+#endif
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_ACTIVE, 0, value, nullptr);
 #endif
-
-    // may be unused
-    return; (void)sendOsc; (void)sendCallback;
 }
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool sendCallback) noexcept
 {
+    if (pData->bridged) {
+        CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
+    } else {
+        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
+    }
     CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.0f);
 
     const float fixedValue(carla_fixedValue<float>(0.0f, 1.0f, value));
@@ -1329,20 +1346,22 @@ void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool se
 
     pData->postProc.dryWet = fixedValue;
 
-#ifdef HAVE_LIBLO
+# if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_DRYWET, fixedValue);
-#endif
+# endif
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_DRYWET, 0, fixedValue, nullptr);
-
-    // may be unused
-    return; (void)sendOsc;
 }
 
 void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool sendCallback) noexcept
 {
+    if (pData->bridged) {
+        CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
+    } else {
+        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
+    }
     CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.27f);
 
     const float fixedValue(carla_fixedValue<float>(0.0f, 1.27f, value));
@@ -1352,20 +1371,22 @@ void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool se
 
     pData->postProc.volume = fixedValue;
 
-#ifdef HAVE_LIBLO
+# if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_VOLUME, fixedValue);
-#endif
+# endif
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_VOLUME, 0, fixedValue, nullptr);
-
-    // may be unused
-    return; (void)sendOsc;
 }
 
 void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bool sendCallback) noexcept
 {
+    if (pData->bridged) {
+        CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
+    } else {
+        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
+    }
     CARLA_SAFE_ASSERT(value >= -1.0f && value <= 1.0f);
 
     const float fixedValue(carla_fixedValue<float>(-1.0f, 1.0f, value));
@@ -1375,20 +1396,22 @@ void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bo
 
     pData->postProc.balanceLeft = fixedValue;
 
-#ifdef HAVE_LIBLO
+# if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_BALANCE_LEFT, fixedValue);
-#endif
+# endif
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_BALANCE_LEFT, 0, fixedValue, nullptr);
-
-    // may be unused
-    return; (void)sendOsc;
 }
 
 void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const bool sendCallback) noexcept
 {
+    if (pData->bridged) {
+        CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
+    } else {
+        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
+    }
     CARLA_SAFE_ASSERT(value >= -1.0f && value <= 1.0f);
 
     const float fixedValue(carla_fixedValue<float>(-1.0f, 1.0f, value));
@@ -1398,20 +1421,22 @@ void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const b
 
     pData->postProc.balanceRight = fixedValue;
 
-#ifdef HAVE_LIBLO
+# if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_BALANCE_RIGHT, fixedValue);
-#endif
+# endif
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_BALANCE_RIGHT, 0, fixedValue, nullptr);
-
-    // may be unused
-    return; (void)sendOsc;
 }
 
 void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool sendCallback) noexcept
 {
+    if (pData->bridged) {
+        CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
+    } else {
+        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
+    }
     CARLA_SAFE_ASSERT(value >= -1.0f && value <= 1.0f);
 
     const float fixedValue(carla_fixedValue<float>(-1.0f, 1.0f, value));
@@ -1421,16 +1446,13 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
 
     pData->postProc.panning = fixedValue;
 
-#ifdef HAVE_LIBLO
+# if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_PANNING, fixedValue);
-#endif
+# endif
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_PANNING, 0, fixedValue, nullptr);
-
-    // may be unused
-    return; (void)sendOsc;
 }
 
 void CarlaPlugin::setDryWetRT(const float value) noexcept
@@ -1496,13 +1518,15 @@ void CarlaPlugin::setPanningRT(const float value) noexcept
 
     pData->postProc.panning = fixedValue;
 }
-#endif // ! BUILD_BRIDGE
+#endif // ! BUILD_BRIDGE_ALTERNATIVE_ARCH
 
 void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept
 {
-#ifndef BUILD_BRIDGE
-    CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
-#endif
+    if (pData->bridged) {
+        CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
+    } else {
+        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
+    }
     CARLA_SAFE_ASSERT_RETURN(channel >= -1 && channel < MAX_MIDI_CHANNELS,);
 
     if (pData->ctrlChannel == channel)
@@ -1510,20 +1534,17 @@ void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const
 
     pData->ctrlChannel = channel;
 
-#ifndef BUILD_BRIDGE
-    const float channelf(channel);
+    const float channelf = static_cast<float>(channel);
 
-# ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_CTRL_CHANNEL, channelf);
-# endif
+#endif
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_CTRL_CHANNEL, 0, channelf, nullptr);
 #endif
-
-    // may be unused
-    return; (void)sendOsc; (void)sendCallback;
 }
 
 // -------------------------------------------------------------------
@@ -1531,6 +1552,11 @@ void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const
 
 void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
 {
+    if (pData->bridged) {
+        CARLA_SAFE_ASSERT_RETURN(!sendGui && !sendOsc && !sendCallback,);
+    } else {
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,); // never call this from RT
+    }
     CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
     if (sendGui && (pData->hints & PLUGIN_HAS_CUSTOM_UI) != 0)
@@ -1543,9 +1569,6 @@ void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float valu
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, static_cast<int>(parameterId), 0, value, nullptr);
-
-    // may be unused
-    return; (void)sendOsc;
 }
 
 void CarlaPlugin::setParameterValueRT(const uint32_t parameterId, const float value) noexcept
@@ -1555,7 +1578,7 @@ void CarlaPlugin::setParameterValueRT(const uint32_t parameterId, const float va
 
 void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
 {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CARLA_SAFE_ASSERT_RETURN(rindex > PARAMETER_MAX && rindex != PARAMETER_NULL,);
 
     switch (rindex)
@@ -1591,16 +1614,18 @@ void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float
 
 void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, const uint8_t channel, const bool sendOsc, const bool sendCallback) noexcept
 {
-#ifndef BUILD_BRIDGE
-    CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
-#endif
+    if (pData->bridged) {
+        CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
+    } else {
+        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
+    }
     CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
     CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
 
     pData->param.data[parameterId].midiChannel = channel;
 
-#ifndef BUILD_BRIDGE
-# ifdef HAVE_LIBLO
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+# if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_midi_channel(pData->id, parameterId, channel);
 # endif
@@ -1608,23 +1633,22 @@ void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, const uint
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED, pData->id, static_cast<int>(parameterId), channel, 0.0f, nullptr);
 #endif
-
-    // may be unused
-    return; (void)sendOsc; (void)sendCallback;
 }
 
 void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, const int16_t cc, const bool sendOsc, const bool sendCallback) noexcept
 {
-#ifndef BUILD_BRIDGE
-    CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
-#endif
+    if (pData->bridged) {
+        CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
+    } else {
+        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
+    }
     CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
     CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc < MAX_MIDI_CONTROL,);
 
     pData->param.data[parameterId].midiCC = cc;
 
-#ifndef BUILD_BRIDGE
-# ifdef HAVE_LIBLO
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+# if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_midi_cc(pData->id, parameterId, cc);
 # endif
@@ -1632,9 +1656,6 @@ void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, const int16_t c
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED, pData->id, static_cast<int>(parameterId), cc, 0.0f, nullptr);
 #endif
-
-    // may be unused
-    return; (void)sendOsc; (void)sendCallback;
 }
 
 void CarlaPlugin::setCustomData(const char* const type, const char* const key, const char* const value, const bool)
@@ -1711,7 +1732,6 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
 
         switch (getType())
         {
-        case PLUGIN_GIG:
         case PLUGIN_SF2:
         case PLUGIN_SFZ:
             break;
@@ -1752,7 +1772,6 @@ void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const 
 
         switch (getType())
         {
-        case PLUGIN_GIG:
         case PLUGIN_SF2:
         case PLUGIN_SFZ:
             break;
@@ -1786,7 +1805,6 @@ void CarlaPlugin::setProgramRT(const uint32_t uindex) noexcept
     // Change default parameter values
     switch (getType())
     {
-    case PLUGIN_GIG:
     case PLUGIN_SF2:
     case PLUGIN_SFZ:
         break;
@@ -1809,7 +1827,6 @@ void CarlaPlugin::setMidiProgramRT(const uint32_t uindex) noexcept
     // Change default parameter values
     switch (getType())
     {
-    case PLUGIN_GIG:
     case PLUGIN_SF2:
     case PLUGIN_SFZ:
         break;
@@ -2270,7 +2287,7 @@ void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, 
     return; (void)sendOsc;
 }
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 void CarlaPlugin::sendMidiAllNotesOffToCallback()
 {
     if (pData->ctrlChannel < 0 || pData->ctrlChannel >= MAX_MIDI_CHANNELS)
@@ -2293,9 +2310,11 @@ void CarlaPlugin::sendMidiAllNotesOffToCallback()
 // -------------------------------------------------------------------
 // UI Stuff
 
-void CarlaPlugin::showCustomUI(const bool)
+void CarlaPlugin::showCustomUI(const bool yesNo)
 {
-    CARLA_SAFE_ASSERT(false);
+    if (yesNo) {
+        CARLA_SAFE_ASSERT(false);
+    }
 }
 
 void CarlaPlugin::uiIdle()
@@ -2347,7 +2366,7 @@ void CarlaPlugin::uiIdle()
         pData->postUiEvents.data.clear();
     }
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (pData->transientTryCounter == 0)
         return;
     if (++pData->transientTryCounter % 10 != 0)
@@ -2399,11 +2418,6 @@ void CarlaPlugin::uiNoteOff(const uint8_t channel, const uint8_t note) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
     CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
-}
-
-bool CarlaPlugin::canRunInRack() const noexcept
-{
-    return (pData->extraHints & PLUGIN_EXTRA_HINT_CAN_RUN_RACK) != 0;
 }
 
 CarlaEngine* CarlaPlugin::getEngine() const noexcept
@@ -2477,6 +2491,7 @@ void CarlaPlugin::setPatchbayNodeId(const uint32_t nodeId) noexcept
 
 void CarlaPlugin::restoreLV2State() noexcept
 {
+    carla_stderr2("Warning: restoreLV2State() called for non-implemented type");
 }
 
 void CarlaPlugin::waitForBridgeSaveSignal() noexcept
@@ -2549,7 +2564,7 @@ CarlaPlugin::ScopedSingleProcessLocker::~ScopedSingleProcessLocker() noexcept
     if (! fBlock)
         return;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (fPlugin->pData->singleMutex.wasTryLockCalled())
         fPlugin->pData->needsReset = true;
 #endif

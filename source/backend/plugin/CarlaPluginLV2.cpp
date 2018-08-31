@@ -30,7 +30,6 @@
 #include "CarlaPluginUI.hpp"
 #include "Lv2AtomRingBuffer.hpp"
 
-#include "../engine/CarlaEngineOsc.hpp"
 #include "../modules/lilv/config/lilv_config.h"
 
 extern "C" {
@@ -519,7 +518,6 @@ public:
           fCvInBuffers(nullptr),
           fCvOutBuffers(nullptr),
           fParamBuffers(nullptr),
-          fCanInit2(true),
           fNeedsFixedBuffers(false),
           fNeedsUiClose(false),
           fLatencyIndex(-1),
@@ -841,7 +839,7 @@ public:
         if (pData->engine->getOptions().forceStereo)
             pass();
         // if inputs or outputs are just 1, then yes we can force stereo
-        else if (((pData->audioIn.count == 1 || pData->audioOut.count == 1) && fCanInit2) || fHandle2 != nullptr)
+        else if ((pData->audioIn.count == 1 || pData->audioOut.count == 1) || fHandle2 != nullptr)
             options |= PLUGIN_OPTION_FORCE_STEREO;
 
         if (fExt.programs != nullptr)
@@ -1268,11 +1266,15 @@ public:
 
     void showCustomUI(const bool yesNo) override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL,);
+        if (fUI.type == UI::TYPE_NULL)
+        {
+            CARLA_SAFE_ASSERT(!yesNo);
+            return;
+        }
 
         const uintptr_t frontendWinId(pData->engine->getOptions().frontendWinId);
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (! yesNo)
             pData->transientTryCounter = 0;
 #endif
@@ -1484,7 +1486,7 @@ public:
                 else if (fExt.uishow != nullptr)
                 {
                     fExt.uishow->show(fUI.handle);
-# ifndef BUILD_BRIDGE
+# ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                     pData->tryTransient();
 # endif
                 }
@@ -1493,7 +1495,7 @@ public:
 #endif
             {
                 LV2_EXTERNAL_UI_SHOW((LV2_External_UI_Widget*)fUI.widget);
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                 pData->tryTransient();
 #endif
             }
@@ -1568,7 +1570,7 @@ public:
                 fPipeServer.stopPipeServer(2000);
                 // fall through
             case CarlaPipeServerLV2::UiCrashed:
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                 pData->transientTryCounter = 0;
 #endif
                 pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
@@ -2377,7 +2379,7 @@ public:
         if (fEventsOut.ctrl != nullptr && fEventsOut.ctrl->port == nullptr)
             fEventsOut.ctrl->port = pData->event.portOut;
 
-        if (fCanInit2 && (forcedStereoIn || forcedStereoOut))
+        if (forcedStereoIn || forcedStereoOut)
             pData->options |= PLUGIN_OPTION_FORCE_STEREO;
         else
             pData->options &= ~PLUGIN_OPTION_FORCE_STEREO;
@@ -2410,21 +2412,6 @@ public:
 
         // extra plugin hints
         pData->extraHints = 0x0;
-
-        if (! fCanInit2)
-        {
-            // can't run in rack
-        }
-        else if (fExt.state != nullptr || fExt.worker != nullptr)
-        {
-            if ((aIns == 0 || aIns == 2) && (aOuts == 0 || aOuts == 2) && evIns.count() <= 1 && evOuts.count() <= 1)
-                pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
-        }
-        else
-        {
-            if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0) && evIns.count() <= 1 && evOuts.count() <= 1)
-                pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
-        }
 
         // check initial latency
         findInitialLatencyValue(aIns, aOuts);
@@ -2792,7 +2779,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // TimeInfo
 
-        const EngineTimeInfo& timeInfo(pData->engine->getTimeInfo());
+        const EngineTimeInfo timeInfo(pData->engine->getTimeInfo());
 
         if (fFirstActive || fLastTimeInfo != timeInfo)
         {
@@ -2800,7 +2787,7 @@ public:
             int32_t rindex;
 
             const double barBeat = static_cast<double>(timeInfo.bbt.beat - 1)
-                                 + (static_cast<double>(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat);
+                                 + (timeInfo.bbt.tick / timeInfo.bbt.ticksPerBeat);
 
             // update input ports
             for (uint32_t k=0; k < pData->param.count; ++k)
@@ -3036,7 +3023,7 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             bool allNotesOffSent  = false;
 #endif
             bool isSampleAccurate = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
@@ -3056,17 +3043,22 @@ public:
             {
                 const EngineEvent& event(fEventsIn.ctrl->port->getEvent(i));
 
-                if (event.time >= frames)
-                    continue;
+                uint32_t eventTime = event.time;
+                CARLA_SAFE_ASSERT_UINT2_CONTINUE(eventTime < frames, eventTime, frames);
 
-                CARLA_ASSERT_INT2(event.time >= timeOffset, event.time, timeOffset);
-
-                if (isSampleAccurate && event.time > timeOffset)
+                if (eventTime < timeOffset)
                 {
-                    if (processSingle(audioIn, audioOut, cvIn, cvOut, event.time - timeOffset, timeOffset))
+                    carla_stderr2("Timing error, eventTime:%u < timeOffset:%u for '%s'",
+                                  eventTime, timeOffset, pData->name);
+                    eventTime = timeOffset;
+                }
+
+                if (isSampleAccurate && eventTime > timeOffset)
+                {
+                    if (processSingle(audioIn, audioOut, cvIn, cvOut, eventTime - timeOffset, timeOffset))
                     {
                         startTime  = 0;
-                        timeOffset = event.time;
+                        timeOffset = eventTime;
 
                         if (pData->midiprog.current >= 0 && pData->midiprog.count > 0)
                             nextBankId = pData->midiprog.data[pData->midiprog.current].bank;
@@ -3089,7 +3081,7 @@ public:
                             {
                                 fEventsIn.data[j].midi.event_count = 0;
                                 fEventsIn.data[j].midi.size        = 0;
-                                evInMidiStates[j].position         = event.time;
+                                evInMidiStates[j].position         = eventTime;
                             }
                         }
 
@@ -3129,7 +3121,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeParameter: {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                         // Control backend stuff
                         if (event.channel == pData->ctrlChannel)
                         {
@@ -3213,7 +3205,7 @@ public:
                             midiData[1] = uint8_t(ctrlEvent.param);
                             midiData[2] = uint8_t(ctrlEvent.value*127.0f);
 
-                            const uint32_t mtime(isSampleAccurate ? startTime : event.time);
+                            const uint32_t mtime(isSampleAccurate ? startTime : eventTime);
 
                             if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
                                 lv2_atom_buffer_write(&evInAtomIters[fEventsIn.ctrlIndex], mtime, 0, kUridMidiEvent, 3, midiData);
@@ -3241,7 +3233,7 @@ public:
                             midiData[1] = MIDI_CONTROL_BANK_SELECT;
                             midiData[2] = uint8_t(ctrlEvent.param);
 
-                            const uint32_t mtime(isSampleAccurate ? startTime : event.time);
+                            const uint32_t mtime(isSampleAccurate ? startTime : eventTime);
 
                             if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
                                 lv2_atom_buffer_write(&evInAtomIters[fEventsIn.ctrlIndex], mtime, 0, kUridMidiEvent, 3, midiData);
@@ -3277,7 +3269,7 @@ public:
                             midiData[0] = uint8_t(MIDI_STATUS_PROGRAM_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             midiData[1] = uint8_t(ctrlEvent.param);
 
-                            const uint32_t mtime(isSampleAccurate ? startTime : event.time);
+                            const uint32_t mtime(isSampleAccurate ? startTime : eventTime);
 
                             if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
                                 lv2_atom_buffer_write(&evInAtomIters[fEventsIn.ctrlIndex], mtime, 0, kUridMidiEvent, 2, midiData);
@@ -3293,7 +3285,7 @@ public:
                     case kEngineControlEventTypeAllSoundOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-                            const uint32_t mtime(isSampleAccurate ? startTime : event.time);
+                            const uint32_t mtime(isSampleAccurate ? startTime : eventTime);
 
                             uint8_t midiData[3];
                             midiData[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
@@ -3314,7 +3306,7 @@ public:
                     case kEngineControlEventTypeAllNotesOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
@@ -3322,7 +3314,7 @@ public:
                             }
 #endif
 
-                            const uint32_t mtime(isSampleAccurate ? startTime : event.time);
+                            const uint32_t mtime(isSampleAccurate ? startTime : eventTime);
 
                             uint8_t midiData[3];
                             midiData[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
@@ -3364,7 +3356,7 @@ public:
                         status = MIDI_STATUS_NOTE_OFF;
 
                     const uint32_t j     = fEventsIn.ctrlIndex;
-                    const uint32_t mtime = isSampleAccurate ? startTime : event.time;
+                    const uint32_t mtime = isSampleAccurate ? startTime : eventTime;
 
                     // put back channel in data
                     uint8_t midiData2[midiEvent.size];
@@ -3511,7 +3503,7 @@ public:
             }
         }
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // --------------------------------------------------------------------------------------------------------
         // Control Output
 
@@ -3650,7 +3642,7 @@ public:
 
         pData->postRtEvents.trySplice();
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
 
@@ -3671,11 +3663,13 @@ public:
 
                     for (uint32_t k=0; k < frames; ++k)
                     {
+# ifndef BUILD_BRIDGE
                         if (k < pData->latency.frames)
                             bufValue = pData->latency.buffers[c][k];
                         else if (pData->latency.frames < frames)
                             bufValue = fAudioInBuffers[c][k-pData->latency.frames];
                         else
+# endif
                             bufValue = fAudioInBuffers[c][k];
 
                         fAudioOutBuffers[i][k] = (fAudioOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
@@ -3721,6 +3715,7 @@ public:
             }
         } // End of Post-processing
 
+# ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
         // Save latency values for next callback
 
@@ -3749,8 +3744,8 @@ public:
                 }
             }
         }
-
-#else // BUILD_BRIDGE
+# endif
+#else // BUILD_BRIDGE_ALTERNATIVE_ARCH
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
         {
             for (uint32_t k=0; k < frames; ++k)
@@ -4491,7 +4486,10 @@ public:
         CARLA_SAFE_ASSERT_RETURN(value != nullptr, LV2_STATE_ERR_NO_PROPERTY);
         CARLA_SAFE_ASSERT_RETURN(size > 0, LV2_STATE_ERR_NO_PROPERTY);
         CARLA_SAFE_ASSERT_RETURN(type != kUridNull, LV2_STATE_ERR_BAD_TYPE);
-        CARLA_SAFE_ASSERT_RETURN(flags & LV2_STATE_IS_POD, LV2_STATE_ERR_BAD_FLAGS);
+
+        // FIXME linuxsampler does not set POD flag
+        // CARLA_SAFE_ASSERT_RETURN(flags & LV2_STATE_IS_POD, LV2_STATE_ERR_BAD_FLAGS);
+
         carla_debug("CarlaPluginLV2::handleStateStore(%i:\"%s\", %p, " P_SIZE ", %i:\"%s\", %i)",
                     key, carla_lv2_urid_unmap(this, key), value, size, type, carla_lv2_urid_unmap(this, type), flags);
 
@@ -4534,6 +4532,9 @@ public:
         pData->custom.append(newData);
 
         return LV2_STATE_SUCCESS;
+
+        // unused
+        (void)flags;
     }
 
     const void* handleStateRetrieve(const uint32_t key, size_t* const size, uint32_t* const type, uint32_t* const flags)
@@ -4855,7 +4856,7 @@ public:
         {
             if (pData->param.data[i].rindex == rindex)
             {
-                setParameterValue(i, paramValue, true, true, true);
+                setParameterValueRT(i, paramValue);
                 break;
             }
         }
@@ -5235,9 +5236,6 @@ public:
             return false;
         }
 
-        if (std::strcmp(uri, "http://hyperglitch.com/dev/VocProc") == 0)
-            fCanInit2 = false;
-
         recheckExtensions();
 
         // ---------------------------------------------------------------
@@ -5250,13 +5248,10 @@ public:
         else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-        if (fCanInit2)
-        {
-            if (pData->engine->getOptions().forceStereo)
-                pData->options |= PLUGIN_OPTION_FORCE_STEREO;
-            else if (options & PLUGIN_OPTION_FORCE_STEREO)
-                pData->options |= PLUGIN_OPTION_FORCE_STEREO;
-        }
+        if (pData->engine->getOptions().forceStereo)
+            pData->options |= PLUGIN_OPTION_FORCE_STEREO;
+        else if (options & PLUGIN_OPTION_FORCE_STEREO)
+            pData->options |= PLUGIN_OPTION_FORCE_STEREO;
 
         if (getMidiInCount() != 0)
         {
@@ -5295,7 +5290,7 @@ public:
 
 #if defined(LV2_UIS_ONLY_BRIDGES)
         const bool preferUiBridges = true;
-#elif defined(BUILD_BRIDGE)
+#elif defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
         const bool preferUiBridges = false;
 #else
         const bool preferUiBridges = pData->engine->getOptions().preferUiBridges;
@@ -5391,7 +5386,7 @@ public:
         else if (iExt >= 0)
             iFinal = iExt;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (iFinal < 0)
 #endif
         {
@@ -5467,7 +5462,7 @@ public:
              iFinal == eCocoa   ||
              iFinal == eWindows ||
              iFinal == eX11)
-#ifdef BUILD_BRIDGE
+#ifdef BUILD_BRIDGE_ALTERNATIVE_ARCH
             && ! hasShowInterface
 #endif
             )
@@ -5756,7 +5751,6 @@ private:
     float** fCvOutBuffers;
     float*  fParamBuffers;
 
-    bool    fCanInit2; // some plugins don't like 2 instances
     bool    fNeedsFixedBuffers;
     bool    fNeedsUiClose;
     int32_t fLatencyIndex; // -1 if invalid
@@ -6282,7 +6276,7 @@ private:
     static void carla_lv2_inline_display_queue_draw(LV2_Inline_Display_Handle handle)
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
-        carla_debug("carla_lv2_inline_display_queue_draw(%p)", handle);
+        // carla_debug("carla_lv2_inline_display_queue_draw(%p)", handle);
 
         ((CarlaPluginLV2*)handle)->handleInlineDisplayQueueRedraw();
     }

@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -57,13 +57,20 @@ static void midijoin_process(NativePluginHandle handle, float** inBuffer, float*
         const NativeMidiEvent* const midiEvent = &midiEvents[i];
 
         if (midiEvent->port >= MAX_MIDI_CHANNELS)
+        {
+            printf("Assertion error: midiEvent->port:%u >= MAX_MIDI_CHANNELS\n", midiEvent->port);
             continue;
+        }
 
-        const uint8_t status = (uint8_t)MIDI_GET_STATUS_FROM_DATA(midiEvent->data);
+        const uint8_t statusByte = midiEvent->data[0];
+
+        if (MIDI_IS_CHANNEL_MESSAGE(statusByte))
+            tmpEvent.data[0] = (uint8_t)((statusByte & MIDI_STATUS_BIT) | (midiEvent->port & MIDI_CHANNEL_BIT));
+        else
+            tmpEvent.data[0] = statusByte;
 
         tmpEvent.port    = 0;
         tmpEvent.time    = midiEvent->time;
-        tmpEvent.data[0] = (uint8_t)(status | (midiEvent->port & MIDI_CHANNEL_BIT));
         tmpEvent.data[1] = midiEvent->data[1];
         tmpEvent.data[2] = midiEvent->data[2];
         tmpEvent.data[3] = midiEvent->data[3];

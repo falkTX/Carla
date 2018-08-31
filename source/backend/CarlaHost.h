@@ -382,7 +382,7 @@ CARLA_EXPORT void carla_set_file_callback(FileCallbackFunc func, void* ptr);
 /*!
  * Load a file of any type.
  * This will try to load a generic file as a plugin,
- * either by direct handling (GIG, SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
+ * either by direct handling (SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
  * @see carla_get_supported_file_extensions()
  */
 CARLA_EXPORT bool carla_load_file(const char* filename);
@@ -612,12 +612,21 @@ CARLA_EXPORT const ParameterRanges* carla_get_parameter_ranges(uint pluginId, ui
 CARLA_EXPORT const MidiProgramData* carla_get_midi_program_data(uint pluginId, uint32_t midiProgramId);
 
 /*!
- * Get a plugin's custom data.
+ * Get a plugin's custom data, using index.
  * @param pluginId     Plugin
  * @param customDataId Custom data index
  * @see carla_get_custom_data_count()
  */
 CARLA_EXPORT const CustomData* carla_get_custom_data(uint pluginId, uint32_t customDataId);
+
+/*!
+ * Get a plugin's custom data value, using type and key.
+ * @param pluginId Plugin
+ * @param type     Custom data type
+ * @param key      Custom data key
+ * @see carla_get_custom_data_count()
+ */
+CARLA_EXPORT const char* carla_get_custom_data_value(uint pluginId, const char* type, const char* key);
 
 /*!
  * Get a plugin's chunk data.

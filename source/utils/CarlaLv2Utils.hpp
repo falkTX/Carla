@@ -554,6 +554,7 @@ public:
           fBufferSize(0),
           fSampleRate(sampleRate),
           fUridMap(nullptr),
+          fWorker(nullptr),
           fTimeInfo(),
           fLastPositionData(),
           fURIs(),
@@ -572,20 +573,23 @@ public:
         const LV2_Options_Option*  options   = nullptr;
         const LV2_URID_Map*        uridMap   = nullptr;
         const LV2_URID_Unmap*      uridUnmap = nullptr;
+        const LV2_Worker_Schedule* worker    = nullptr;
 
         for (int i=0; features[i] != nullptr; ++i)
         {
-            if (std::strcmp(features[i]->URI, LV2_OPTIONS__options) == 0)
+            /**/ if (std::strcmp(features[i]->URI, LV2_OPTIONS__options) == 0)
                 options = (const LV2_Options_Option*)features[i]->data;
             else if (std::strcmp(features[i]->URI, LV2_URID__map) == 0)
                 uridMap = (const LV2_URID_Map*)features[i]->data;
             else if (std::strcmp(features[i]->URI, LV2_URID__unmap) == 0)
                 uridUnmap = (const LV2_URID_Unmap*)features[i]->data;
+            else if (std::strcmp(features[i]->URI, LV2_WORKER__schedule) == 0)
+                worker = (const LV2_Worker_Schedule*)features[i]->data;
         }
 
         if (options == nullptr || uridMap == nullptr)
         {
-            carla_stderr("Host doesn't provide option or urid-map features");
+            carla_stderr("Host doesn't provide option and urid-map features");
             return;
         }
 
@@ -639,6 +643,8 @@ public:
 
         fUridMap = uridMap;
         fURIs.map(uridMap);
+
+        fWorker = worker;
 
         carla_zeroStruct(fTimeInfo);
         carla_zeroStruct(fLastPositionData);
@@ -929,15 +935,15 @@ public:
             return false;
 
         // init midi out data
-        if (fPorts.numMidiOuts > 0)
+        if (fPorts.numMidiOuts > 0 || fPorts.hasUI)
         {
             for (uint32_t i=0; i<fPorts.numMidiOuts; ++i)
             {
-                LV2_Atom_Sequence* const seq(fPorts.midiOuts[i]);
+                LV2_Atom_Sequence* const seq(fPorts.eventsOut[i]);
                 CARLA_SAFE_ASSERT_CONTINUE(seq != nullptr);
 
-                fPorts.midiOutData[i].capacity = seq->atom.size;
-                fPorts.midiOutData[i].offset   = 0;
+                fPorts.eventsOutData[i].capacity = seq->atom.size;
+                fPorts.eventsOutData[i].offset   = 0;
 
                 seq->atom.size = sizeof(LV2_Atom_Sequence_Body);
                 seq->atom.type = fURIs.atomSequence;
@@ -1140,6 +1146,7 @@ protected:
 
     // LV2 host features
     const LV2_URID_Map* fUridMap;
+    const LV2_Worker_Schedule* fWorker;
 
     // Time info stuff
     TimeInfoStruct fTimeInfo;
@@ -1184,11 +1191,11 @@ protected:
     // Port stuff
     struct Ports {
         // need to save current state
-        struct MidiOutData {
+        struct EventsOutData {
             uint32_t capacity;
             uint32_t offset;
 
-            MidiOutData()
+            EventsOutData()
                 : capacity(0),
                   offset(0) {}
         };
@@ -1200,12 +1207,13 @@ protected:
         uint32_t numMidiIns;
         uint32_t numMidiOuts;
         uint32_t numParams;
+        bool hasUI;
         bool usesTime;
 
         // port buffers
         const LV2_Atom_Sequence** eventsIn;
-        /* */ LV2_Atom_Sequence** midiOuts;
-        /* */ MidiOutData*        midiOutData;
+        /* */ LV2_Atom_Sequence** eventsOut;
+        /* */ EventsOutData*      eventsOutData;
         const float** audioIns;
         /* */ float** audioOuts;
         /* */ float*  freewheel;
@@ -1222,10 +1230,11 @@ protected:
               numMidiIns(0),
               numMidiOuts(0),
               numParams(0),
+              hasUI(false),
               usesTime(false),
               eventsIn(nullptr),
-              midiOuts(nullptr),
-              midiOutData(nullptr),
+              eventsOut(nullptr),
+              eventsOutData(nullptr),
               audioIns(nullptr),
               audioOuts(nullptr),
               freewheel(nullptr),
@@ -1241,16 +1250,16 @@ protected:
                 eventsIn = nullptr;
             }
 
-            if (midiOuts != nullptr)
+            if (eventsOut != nullptr)
             {
-                delete[] midiOuts;
-                midiOuts = nullptr;
+                delete[] eventsOut;
+                eventsOut = nullptr;
             }
 
-            if (midiOutData != nullptr)
+            if (eventsOutData != nullptr)
             {
-                delete[] midiOutData;
-                midiOutData = nullptr;
+                delete[] eventsOutData;
+                eventsOutData = nullptr;
             }
 
             if (audioIns != nullptr)
@@ -1294,7 +1303,7 @@ protected:
                 for (uint32_t i=0; i < numMidiIns; ++i)
                     eventsIn[i] = nullptr;
             }
-            else if (usesTime)
+            else if (usesTime || hasUI)
             {
                 eventsIn = new const LV2_Atom_Sequence*[1];
                 eventsIn[0] = nullptr;
@@ -1302,11 +1311,16 @@ protected:
 
             if (numMidiOuts > 0)
             {
-                midiOuts = new LV2_Atom_Sequence*[numMidiOuts];
-                midiOutData = new MidiOutData[numMidiOuts];
+                eventsOut = new LV2_Atom_Sequence*[numMidiOuts];
+                eventsOutData = new EventsOutData[numMidiOuts];
 
                 for (uint32_t i=0; i < numMidiOuts; ++i)
-                    midiOuts[i] = nullptr;
+                    eventsOut[i] = nullptr;
+            }
+            else if (hasUI)
+            {
+                eventsOut = new LV2_Atom_Sequence*[1];
+                eventsOut[0] = nullptr;
             }
 
             if (numAudioIns > 0)
@@ -1338,9 +1352,11 @@ protected:
                 // NOTE: need to be filled in by the parent class
             }
 
-            indexOffset  = numAudioIns + numAudioOuts + numMidiOuts;
-            // 1 event port for time if no midi input is used
-            indexOffset += numMidiIns > 0 ? numMidiIns : (usesTime ? 1 : 0);
+            indexOffset  = numAudioIns + numAudioOuts;
+            // 1 event port for time or ui if no midi input is used
+            indexOffset += numMidiIns > 0 ? numMidiIns : ((usesTime || hasUI) ? 1 : 0);
+            // 1 event port for ui if no midi output is used
+            indexOffset += numMidiOuts > 0 ? numMidiOuts : (hasUI ? 1 : 0);
             // 1 extra for freewheel port
             indexOffset += 1;
         }
@@ -1349,7 +1365,7 @@ protected:
         {
             uint32_t index = 0;
 
-            if (numMidiIns > 0 || usesTime)
+            if (numMidiIns > 0 || usesTime || hasUI)
             {
                 if (port == index++)
                 {
@@ -1367,11 +1383,20 @@ protected:
                 }
             }
 
-            for (uint32_t i=0; i < numMidiOuts; ++i)
+            if (numMidiOuts > 0 || hasUI)
             {
                 if (port == index++)
                 {
-                    midiOuts[i] = (LV2_Atom_Sequence*)dataLocation;
+                    eventsOut[0] = (LV2_Atom_Sequence*)dataLocation;
+                    return;
+                }
+            }
+
+            for (uint32_t i=1; i < numMidiOuts; ++i)
+            {
+                if (port == index++)
+                {
+                    eventsOut[i] = (LV2_Atom_Sequence*)dataLocation;
                     return;
                 }
             }
@@ -1433,6 +1458,7 @@ protected:
         LV2_URID timeFrame;
         LV2_URID timeSpeed;
         LV2_URID timeTicksPerBeat;
+        LV2_URID uiEvents;
 
         URIDs()
             : atomBlank(0),
@@ -1452,7 +1478,8 @@ protected:
               timeBeatUnit(0),
               timeFrame(0),
               timeSpeed(0),
-              timeTicksPerBeat(0) {}
+              timeTicksPerBeat(0),
+              uiEvents(0) {}
 
         void map(const LV2_URID_Map* const uridMap)
         {
@@ -1474,6 +1501,7 @@ protected:
             timeBeatsPerBar    = uridMap->map(uridMap->handle, LV2_TIME__beatsPerBar);
             timeBeatsPerMinute = uridMap->map(uridMap->handle, LV2_TIME__beatsPerMinute);
             timeTicksPerBeat   = uridMap->map(uridMap->handle, LV2_KXSTUDIO_PROPERTIES__TimePositionTicksPerBeat);
+            uiEvents           = uridMap->map(uridMap->handle, "urn:carla:transmitEv");
         }
     } fURIs;
 
@@ -2492,31 +2520,38 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 {
                     Lilv::Nodes portNotifNodes(lv2World.find_nodes(lilvUI.get_uri(), lv2World.ui_portNotif.me, nullptr));
 
-                    if (portNotifNodes.size() > 0)
+                    if (const uint portNotifCount = portNotifNodes.size())
                     {
-                        rdfUI->PortNotificationCount = portNotifNodes.size();
-                        rdfUI->PortNotifications = new LV2_RDF_UI_PortNotification[rdfUI->PortNotificationCount];
+                        rdfUI->PortNotificationCount = portNotifCount;
+                        rdfUI->PortNotifications = new LV2_RDF_UI_PortNotification[portNotifCount];
 
                         uint32_t h2 = 0;
                         LILV_FOREACH(nodes, it2, portNotifNodes)
                         {
-                            CARLA_SAFE_ASSERT_BREAK(h2 < rdfUI->PortNotificationCount);
+                            CARLA_SAFE_ASSERT_BREAK(h2 < portNotifCount);
 
                             Lilv::Node portNotifNode(portNotifNodes.get(it2));
                             LV2_RDF_UI_PortNotification* const rdfPortNotif(&rdfUI->PortNotifications[h2++]);
 
                             LilvNode* const protocolNode = lilv_world_get(lv2World.me, portNotifNode,
                                                                           lv2World.ui_protocol.me, nullptr);
-                            CARLA_SAFE_ASSERT_CONTINUE(protocolNode != nullptr);
-                            CARLA_SAFE_ASSERT_CONTINUE(lilv_node_is_uri(protocolNode));
 
-                            const char* const protocol = lilv_node_as_uri(protocolNode);
-                            CARLA_SAFE_ASSERT_CONTINUE(protocol != nullptr && protocol[0] != '\0');
+                            if (protocolNode != nullptr)
+                            {
+                                CARLA_SAFE_ASSERT_CONTINUE(lilv_node_is_uri(protocolNode));
 
-                            /**/ if (std::strcmp(protocol, LV2_UI__floatProtocol) == 0)
+                                const char* const protocol = lilv_node_as_uri(protocolNode);
+                                CARLA_SAFE_ASSERT_CONTINUE(protocol != nullptr && protocol[0] != '\0');
+
+                                /**/ if (std::strcmp(protocol, LV2_UI__floatProtocol) == 0)
+                                    rdfPortNotif->Protocol = LV2_UI_PORT_PROTOCOL_FLOAT;
+                                else if (std::strcmp(protocol, LV2_UI__peakProtocol) == 0)
+                                    rdfPortNotif->Protocol = LV2_UI_PORT_PROTOCOL_PEAK;
+                            }
+                            else
+                            {
                                 rdfPortNotif->Protocol = LV2_UI_PORT_PROTOCOL_FLOAT;
-                            else if (std::strcmp(protocol, LV2_UI__peakProtocol) == 0)
-                                rdfPortNotif->Protocol = LV2_UI_PORT_PROTOCOL_PEAK;
+                            }
 
                             /**/ if (LilvNode* const symbolNode = lilv_world_get(lv2World.me, portNotifNode,
                                                                                  lv2World.symbol.me, nullptr))
@@ -2531,7 +2566,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                                 lilv_node_free(symbolNode);
                             }
                             else if (LilvNode* const indexNode = lilv_world_get(lv2World.me, portNotifNode,
-                                                                                 lv2World.ui_portIndex.me, nullptr))
+                                                                                lv2World.ui_portIndex.me, nullptr))
                             {
                                 CARLA_SAFE_ASSERT_CONTINUE(lilv_node_is_int(indexNode));
 

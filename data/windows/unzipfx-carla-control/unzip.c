@@ -758,7 +758,7 @@ int unzip(__G__ argc, argv)
 #endif /* NO_EXCEPT_SIGNALS */
 
     /* initialize international char support to the current environment */
-    SETLOCALE(LC_CTYPE, "");
+    SETLOCALE(LC_CTYPE, "C");
 
 #ifdef UNICODE_SUPPORT
     /* see if can use UTF-8 Unicode locale */

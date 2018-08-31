@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -88,6 +88,15 @@ static const uint32_t kParameterIsLogarithmic = 0x08;
    Outputs are changed by the plugin and never modified by the host.
  */
 static const uint32_t kParameterIsOutput = 0x10;
+
+/**
+   Parameter value is a trigger.@n
+   This means the value resets back to its default after each process/run call.@n
+   Cannot be used for output parameters.
+
+   @note Only officially supported under LV2. For other formats DPF simulates the behaviour.
+*/
+static const uint32_t kParameterIsTrigger = 0x20 | kParameterIsBoolean;
 
 /** @} */
 
@@ -275,6 +284,90 @@ struct ParameterRanges {
 };
 
 /**
+   Parameter enumeration value.@n
+   A string representation of a plugin parameter value.@n
+   Used together can be used to give meaning to parameter values, working as an enumeration.
+ */
+struct ParameterEnumerationValue {
+   /**
+      Parameter value.
+    */
+    float value;
+
+   /**
+      String representation of this value.
+    */
+    String label;
+
+   /**
+      Default constructor, using 0.0 as value and empty label.
+    */
+    ParameterEnumerationValue() noexcept
+        : value(0.0f),
+          label() {}
+
+   /**
+      Constructor using custom values.
+    */
+    ParameterEnumerationValue(float v, const char* l) noexcept
+        : value(v),
+          label(l) {}
+};
+
+/**
+   Collection of parameter enumeration values.@n
+   Handy class to handle the lifetime and count of all enumeration values.
+ */
+struct ParameterEnumerationValues {
+   /**
+      Number of elements allocated in @values.
+    */
+    uint8_t count;
+
+   /**
+      Wherever the host is to be restricted to only use enumeration values.
+
+      @note This mode is only a hint! Not all hosts and plugin formats support this mode.
+    */
+    bool restrictedMode;
+
+   /**
+      Array of @ParameterEnumerationValue items.@n
+      This pointer must be null or have been allocated on the heap with `new`.
+    */
+    const ParameterEnumerationValue* values;
+
+   /**
+      Default constructor, for zero enumeration values.
+    */
+    ParameterEnumerationValues() noexcept
+        : count(0),
+          restrictedMode(false),
+          values() {}
+
+   /**
+      Constructor using custom values.@n
+      The pointer to @values must have been allocated on the heap with `new`.
+    */
+    ParameterEnumerationValues(uint32_t c, bool r, const ParameterEnumerationValue* v) noexcept
+        : count(c),
+          restrictedMode(r),
+          values(v) {}
+
+    ~ParameterEnumerationValues() noexcept
+    {
+        count = 0;
+        restrictedMode = false;
+
+        if (values != nullptr)
+        {
+            delete[] values;
+            values = nullptr;
+        }
+    }
+};
+
+/**
    Parameter.
  */
 struct Parameter {
@@ -313,6 +406,12 @@ struct Parameter {
     ParameterRanges ranges;
 
    /**
+      Enumeration values.@n
+      Can be used to give meaning to parameter values, working as an enumeration.
+    */
+    ParameterEnumerationValues enumValues;
+
+   /**
       Designation for this parameter.
     */
     ParameterDesignation designation;
@@ -334,6 +433,7 @@ struct Parameter {
           symbol(),
           unit(),
           ranges(),
+          enumValues(),
           designation(kParameterDesignationNull),
           midiCC(0) {}
 
@@ -346,6 +446,7 @@ struct Parameter {
           symbol(s),
           unit(u),
           ranges(def, min, max),
+          enumValues(),
           designation(kParameterDesignationNull),
           midiCC(0) {}
 
@@ -593,9 +694,6 @@ public:
       Write a MIDI output event.@n
       This function must only be called during run().@n
       Returns false when the host buffer is full, in which case do not call this again until the next run().
-      @note This function is not implemented yet!@n
-            It's here so that developers can prepare MIDI plugins in advance.@n
-            If you plan to use this, please report to DPF authors so it can be implemented.
     */
     bool writeMidiEvent(const MidiEvent& midiEvent) noexcept;
 #endif

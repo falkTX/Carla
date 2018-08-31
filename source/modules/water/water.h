@@ -1,6 +1,6 @@
 /*
  * Cross-platform C++ library for Carla, based on Juce v4
- * Copyright (C) 2015 ROLI Ltd.
+ * Copyright (C) 2015-2016 ROLI Ltd.
  * Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -62,11 +62,30 @@
 #endif
 
 //==============================================================================
+// FIXME
+
+/* WATER_PACKED needs to be a macro which
+    expands into a compiler directive. The directive must
+    tell the compiler to arrange the preceding structure
+    declaration so that it is packed on byte-boundaries rather
+    than use the natural alignment of the processor and/or
+    compiler.
+*/
+#if defined(__GNUC__)
+ #define WATER_PACKED __attribute__((__packed__))
+#elif defined(_MSC_VER)
+ #define WATER_PACKED ;__pragma(pack(pop))
+#else
+ #define WATER_PACKED
+#endif
+
+//==============================================================================
 
 namespace water
 {
 
 class AudioProcessor;
+class AudioSampleBuffer;
 class File;
 class FileInputStream;
 class FileInputSource;

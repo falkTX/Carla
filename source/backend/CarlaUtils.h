@@ -50,6 +50,14 @@ typedef void (*CarlaPipeCallbackFunc)(void* ptr, const char* msg);
  */
 typedef struct _CarlaCachedPluginInfo {
     /*!
+     * Wherever the data in this struct is valid.
+     * For performance reasons, plugins are only checked on request,
+     *  and as such, the count vs number of really valid plugins might not match.
+     * Use this field to skip on plugins which cannot be loaded in Carla.
+     */
+    bool valid;
+
+    /*!
      * Plugin category.
      */
     PluginCategory category;
@@ -141,7 +149,7 @@ CARLA_EXPORT const char* const* carla_get_supported_features();
 
 /*!
  * Get how many cached plugins are available.
- * Internal, LV2 and AU plugin formats are cached and need to be discovered via this function.
+ * Internal and LV2 plugin formats are cached and need to be discovered via this function.
  * Do not call this for any other plugin formats.
  */
 CARLA_EXPORT uint carla_get_cached_plugin_count(PluginType ptype, const char* pluginPath);

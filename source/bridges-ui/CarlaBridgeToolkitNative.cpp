@@ -226,5 +226,6 @@ CARLA_BRIDGE_UI_END_NAMESPACE
 
 #define CARLA_PLUGIN_UI_CLASS_PREFIX ToolkitNative
 #include "CarlaPluginUI.cpp"
+#include "CarlaMacUtils.cpp"
 
 // -------------------------------------------------------------------------

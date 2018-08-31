@@ -202,11 +202,9 @@ class PluginParameter(QWidget):
 
         self.ui.label.setText(pInfo['name'])
         self.ui.widget.setName(pInfo['name'])
-
         self.ui.widget.setMinimum(pInfo['minimum'])
         self.ui.widget.setMaximum(pInfo['maximum'])
         self.ui.widget.setDefault(pInfo['default'])
-        self.ui.widget.setValue(pInfo['current'])
         self.ui.widget.setLabel(pInfo['unit'])
         self.ui.widget.setStep(pInfo['step'])
         self.ui.widget.setStepSmall(pInfo['stepSmall'])
@@ -235,6 +233,9 @@ class PluginParameter(QWidget):
             self.ui.widget.setVisible(False)
             self.ui.sb_control.setVisible(False)
             self.ui.sb_channel.setVisible(False)
+
+        # Only set value after all hints are handled
+        self.ui.widget.setValue(pInfo['current'])
 
         if pHints & PARAMETER_USES_CUSTOM_TEXT and not host.isPlugin:
             self.ui.widget.setTextCallback(self._textCallBack)
@@ -753,7 +754,7 @@ class PluginEdit(QDialog):
         self.ui.ch_send_program_changes.setEnabled(canSendPrograms)
         self.ui.ch_send_program_changes.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
 
-        self.ui.sw_programs.setCurrentIndex(0 if self.fPluginInfo['type'] in (PLUGIN_VST2, PLUGIN_GIG, PLUGIN_SFZ) else 1)
+        self.ui.sw_programs.setCurrentIndex(0 if self.fPluginInfo['type'] in (PLUGIN_VST2, PLUGIN_SFZ) else 1)
 
         # Show/hide keyboard
         showKeyboard = (self.fPluginInfo['category'] == PLUGIN_CATEGORY_SYNTH or midiCountInfo['ins'] > 0 < midiCountInfo['outs'])
@@ -1480,7 +1481,7 @@ class PluginEdit(QDialog):
     def _updateCtrlPrograms(self):
         self.ui.keyboard.setEnabled(self.fControlChannel >= 0)
 
-        if self.fPluginInfo['category'] != PLUGIN_CATEGORY_SYNTH or self.fPluginInfo['type'] not in (PLUGIN_INTERNAL, PLUGIN_SF2, PLUGIN_GIG):
+        if self.fPluginInfo['category'] != PLUGIN_CATEGORY_SYNTH or self.fPluginInfo['type'] not in (PLUGIN_INTERNAL, PLUGIN_SF2):
             return
 
         if self.fControlChannel < 0:

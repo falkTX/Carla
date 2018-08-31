@@ -1,6 +1,6 @@
 /*
  * Carla Bridge definitions
- * Copyright (C) 2013-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
 
 #include "CarlaRingBuffer.hpp"
 
-#define CARLA_PLUGIN_BRIDGE_API_VERSION 2
+#define CARLA_PLUGIN_BRIDGE_API_VERSION 5
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -37,7 +37,7 @@ enum PluginBridgeRtClientOpcode {
     kPluginBridgeRtClientControlEventAllSoundOff, // uint/frame, byte/chan
     kPluginBridgeRtClientControlEventAllNotesOff, // uint/frame, byte/chan
     kPluginBridgeRtClientMidiEvent,               // uint/frame, byte/port, byte/size, byte[]/data
-    kPluginBridgeRtClientProcess,
+    kPluginBridgeRtClientProcess,                 // uint/frames
     kPluginBridgeRtClientQuit
 };
 
@@ -61,6 +61,7 @@ enum PluginBridgeNonRtClientOpcode {
     kPluginBridgeNonRtClientSetOption,               // uint/option, bool
     kPluginBridgeNonRtClientGetParameterText,        // uint
     kPluginBridgeNonRtClientPrepareForSave,
+    kPluginBridgeNonRtClientRestoreLV2State,
     kPluginBridgeNonRtClientShowUI,
     kPluginBridgeNonRtClientHideUI,
     kPluginBridgeNonRtClientUiParameterChange,       // uint, float
@@ -133,16 +134,17 @@ struct BridgeSemaphore {
     };
 };
 
-// needs to be 64bit aligned
+// NOTE: needs to be 64bit aligned
 struct BridgeTimeInfo {
     uint64_t playing;
     uint64_t frame;
     uint64_t usecs;
     uint32_t validFlags;
+    uint32_t unused;
     // bbt
-    int32_t bar, beat, tick;
+    int32_t bar, beat;
     float beatsPerBar, beatType;
-    double barStartTick, ticksPerBeat, beatsPerMinute;
+    double tick, barStartTick, ticksPerBeat, beatsPerMinute;
 };
 
 // -------------------------------------------------------------------------------------------------------------------

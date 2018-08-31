@@ -13,6 +13,7 @@ fi
 
 if [ x"${ARCH}" = x"32nosse" ]; then
   ARCH="32"
+  MAKE_ARGS="NOOPT=true"
 fi
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -65,6 +66,7 @@ if [ x"${ARCH}" != x"32" ]; then
 fi
 
 export WINEARCH=win${ARCH}
+export WINEDEBUG=-all
 export WINEPREFIX=~/.winepy3_x${ARCH}
 export PYTHON_EXE="wine C:\\\\Python34\\\\python.exe"
 
@@ -75,7 +77,12 @@ export PYRCC="wine C:\\\\Python34\\\\Lib\\\\site-packages\\\\PyQt5\\\\pyrcc5.exe
 make ${MAKE_ARGS}
 
 if [ x"${ARCH}" != x"32" ]; then
-  make ${MAKE_ARGS} HAVE_LIBLO=false LDFLAGS="-L${TARGETDIR}/carla-w32/lib -L/opt/mingw32/lib -L/opt/mingw32/i686-w64-mingw32/lib" win32
+  make ${MAKE_ARGS} \
+    AR="i686-w64-mingw32-ar" \
+    CC="i686-w64-mingw32-gcc" \
+    CXX="i686-w64-mingw32-g++" \
+    LDFLAGS="-L${TARGETDIR}/carla-w32/lib -L/opt/mingw32/lib -L/opt/mingw32/i686-w64-mingw32/lib" \
+    win32
 fi
 
 # Testing:

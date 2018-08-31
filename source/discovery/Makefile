@@ -34,8 +34,8 @@ ifeq ($(MACOS),true)
 BUILD_CXX_FLAGS += -ObjC++
 endif
 
-32BIT_FLAGS += -DBUILD_BRIDGE
-64BIT_FLAGS += -DBUILD_BRIDGE
+32BIT_FLAGS += -DBUILD_BRIDGE -DBUILD_BRIDGE_ALTERNATIVE_ARCH
+64BIT_FLAGS += -DBUILD_BRIDGE -DBUILD_BRIDGE_ALTERNATIVE_ARCH
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -47,11 +47,6 @@ NATIVE_BUILD_FLAGS += $(FLUIDSYNTH_FLAGS)
 NATIVE_LINK_FLAGS  += $(FLUIDSYNTH_LIBS)
 endif
 
-ifeq ($(HAVE_LINUXSAMPLER),true)
-NATIVE_BUILD_FLAGS += $(LINUXSAMPLER_FLAGS)
-NATIVE_LINK_FLAGS  += $(LINUXSAMPLER_LIBS)
-endif
-
 # ----------------------------------------------------------------------------------------------------------------------------
 
 LIBS_native   = $(MODULEDIR)/lilv.a
@@ -61,11 +56,7 @@ LIBS_win32    = $(MODULEDIR)/lilv.win32.a
 LIBS_win64    = $(MODULEDIR)/lilv.win64.a
 LINK_FLAGS   += $(LILV_LIBS)
 
-LIBS_native  += $(MODULEDIR)/water.a
-LIBS_posix32 += $(MODULEDIR)/water.posix32.a
-LIBS_posix64 += $(MODULEDIR)/water.posix64.a
-LIBS_win32   += $(MODULEDIR)/water.win32.a
-LIBS_win64   += $(MODULEDIR)/water.win64.a
+LIBS_native  += $(MODULEDIR)/water.files.a
 LINK_FLAGS   += $(WATER_LIBS)
 
 LINK_FLAGS   += $(LIBDL_LIBS)

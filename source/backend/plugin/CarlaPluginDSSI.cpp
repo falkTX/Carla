@@ -21,7 +21,7 @@
 #include "CarlaDssiUtils.hpp"
 #include "CarlaMathUtils.hpp"
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
 # include "CarlaOscUtils.hpp"
 # include "CarlaPipeUtils.hpp"
 # include "CarlaThread.hpp"
@@ -63,7 +63,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 static const CustomData kCustomDataFallback = { nullptr, nullptr, nullptr };
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
 // -------------------------------------------------------------------
 
 class CarlaThreadDSSIUI : public CarlaThread
@@ -283,7 +283,7 @@ public:
           fForcedStereoOut(false),
           fNeedsFixedBuffers(false),
           fUsesCustomData(false)
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
         , fOscData(),
           fThreadUI(engine, this, fOscData),
           fUiFilename(nullptr)
@@ -298,7 +298,7 @@ public:
     {
         carla_debug("CarlaPluginDSSI::~CarlaPluginDSSI()");
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
         // close UI
         if (fUiFilename != nullptr)
         {
@@ -594,7 +594,7 @@ public:
             }
         }
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
         if (sendGui && fOscData.target != nullptr)
             osc_send_configure(fOscData, key, value);
 #endif
@@ -632,7 +632,7 @@ public:
             }
         }
 
-#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
         const bool sendOsc(pData->engine->isOscControlRegistered());
 #else
         const bool sendOsc(false);
@@ -684,7 +684,7 @@ public:
         }
     }
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     // -------------------------------------------------------------------
     // Set ui stuff
 
@@ -1083,7 +1083,7 @@ public:
         if (LADSPA_IS_HARD_RT_CAPABLE(fDescriptor->Properties))
             pData->hints |= PLUGIN_IS_RTSAFE;
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
         if (fUiFilename != nullptr)
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
 #endif
@@ -1100,8 +1100,7 @@ public:
 #endif
 
         // extra plugin hints
-        pData->extraHints  = 0x0;
-        pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
+        pData->extraHints = 0x0;
 
         if (mIns > 0)
             pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_IN;
@@ -1219,7 +1218,7 @@ public:
             }
         }
 
-#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
         // Update OSC Names
         if (pData->engine->isOscControlRegistered() && pData->id < pData->engine->getCurrentPluginCount())
         {
@@ -1417,17 +1416,22 @@ public:
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
 
-                if (event.time >= frames)
-                    continue;
+                uint32_t eventTime = event.time;
+                CARLA_SAFE_ASSERT_UINT2_CONTINUE(eventTime < frames, eventTime, frames);
 
-                CARLA_ASSERT_INT2(event.time >= timeOffset, event.time, timeOffset);
-
-                if (isSampleAccurate && event.time > timeOffset)
+                if (eventTime < timeOffset)
                 {
-                    if (processSingle(audioIn, audioOut, event.time - timeOffset, timeOffset, midiEventCount))
+                    carla_stderr2("Timing error, eventTime:%u < timeOffset:%u for '%s'",
+                                  eventTime, timeOffset, pData->name);
+                    eventTime = timeOffset;
+                }
+
+                if (isSampleAccurate && eventTime > timeOffset)
+                {
+                    if (processSingle(audioIn, audioOut, eventTime - timeOffset, timeOffset, midiEventCount))
                     {
                         startTime  = 0;
-                        timeOffset = event.time;
+                        timeOffset = eventTime;
                         midiEventCount = 0;
 
                         if (pData->midiprog.current >= 0 && pData->midiprog.count > 0)
@@ -1536,7 +1540,7 @@ public:
 
                             snd_seq_event_t& seqEvent(fMidiEvents[midiEventCount++]);
 
-                            seqEvent.time.tick = isSampleAccurate ? startTime : event.time;
+                            seqEvent.time.tick = isSampleAccurate ? startTime : eventTime;
 
                             seqEvent.type = SND_SEQ_EVENT_CONTROLLER;
                             seqEvent.data.control.channel = event.channel;
@@ -1576,7 +1580,7 @@ public:
 
                             snd_seq_event_t& seqEvent(fMidiEvents[midiEventCount++]);
 
-                            seqEvent.time.tick = isSampleAccurate ? startTime : event.time;
+                            seqEvent.time.tick = isSampleAccurate ? startTime : eventTime;
 
                             seqEvent.type = SND_SEQ_EVENT_CONTROLLER;
                             seqEvent.data.control.channel = event.channel;
@@ -1600,7 +1604,7 @@ public:
 
                             snd_seq_event_t& seqEvent(fMidiEvents[midiEventCount++]);
 
-                            seqEvent.time.tick = isSampleAccurate ? startTime : event.time;
+                            seqEvent.time.tick = isSampleAccurate ? startTime : eventTime;
 
                             seqEvent.type = SND_SEQ_EVENT_CONTROLLER;
                             seqEvent.data.control.channel = event.channel;
@@ -1628,7 +1632,7 @@ public:
 
                     snd_seq_event_t& seqEvent(fMidiEvents[midiEventCount++]);
 
-                    seqEvent.time.tick = isSampleAccurate ? startTime : event.time;
+                    seqEvent.time.tick = isSampleAccurate ? startTime : eventTime;
 
                     switch (status)
                     {
@@ -2180,7 +2184,7 @@ public:
         carla_debug("CarlaPluginDSSI::clearBuffers() - end");
     }
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     // -------------------------------------------------------------------
     // OSC stuff
 
@@ -2439,7 +2443,7 @@ public:
         osc_send_midi(fOscData, midiData);
 #endif
     }
-#endif // HAVE_LIBLO
+#endif // HAVE_LIBLO && !BUILD_BRIDGE
 
     // -------------------------------------------------------------------
 
@@ -2448,7 +2452,7 @@ public:
         return fDssiDescriptor;
     }
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     uintptr_t getUiBridgeProcessId() const noexcept override
     {
         return fThreadUI.getProcessId();
@@ -2648,7 +2652,7 @@ public:
             }
         }
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
         // ---------------------------------------------------------------
         // check for gui
 
@@ -2714,7 +2718,7 @@ private:
     bool    fNeedsFixedBuffers;
     bool    fUsesCustomData;
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     CarlaOscData      fOscData;
     CarlaThreadDSSIUI fThreadUI;
     const char*       fUiFilename;

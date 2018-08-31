@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -29,7 +29,7 @@ public:
     AudioFilePlugin(const NativeHostDescriptor* const host)
         : NativePluginClass(host),
           AbstractAudioPlayer(),
-          fLoopMode(false),
+          fLoopMode(true),
           fDoProcess(false),
           fLastFrame(0),
           fMaxFrame(0),
@@ -55,7 +55,7 @@ protected:
 
     uint32_t getParameterCount() const override
     {
-        return 0; // TODO - loopMode
+        return 1;
     }
 
     const NativeParameter* getParameterInfo(const uint32_t index) const override
@@ -67,7 +67,7 @@ protected:
 
         param.name  = "Loop Mode";
         param.unit  = nullptr;
-        param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_BOOLEAN);
+        param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_BOOLEAN);
         param.ranges.def = 1.0f;
         param.ranges.min = 0.0f;
         param.ranges.max = 1.0f;
@@ -102,6 +102,7 @@ protected:
             return;
 
         fLoopMode = b;
+        fThread.setLoopingMode(b);
         fThread.setNeedsRead();
     }
 
@@ -149,9 +150,12 @@ protected:
         fThread.tryPutData(fPool);
 
         // out of reach
-        if (timePos->frame + frames < fPool.startFrame || timePos->frame >= fMaxFrame) /*&& ! loopMode)*/
+        if (timePos->frame + frames < fPool.startFrame || (timePos->frame >= fMaxFrame && !fLoopMode))
         {
-            //carla_stderr("P: out of reach");
+            if (fLoopMode) {
+                carla_stderr("P: out of reach");
+            }
+
             fLastFrame = timePos->frame;
 
             if (timePos->frame + frames < fPool.startFrame)
@@ -254,7 +258,7 @@ static const NativePluginDescriptor audiofileDesc = {
     /* audioOuts */ 2,
     /* midiIns   */ 0,
     /* midiOuts  */ 0,
-    /* paramIns  */ 0, // TODO - loopMode
+    /* paramIns  */ 1,
     /* paramOuts */ 0,
     /* name      */ "Audio File",
     /* label     */ "audiofile",

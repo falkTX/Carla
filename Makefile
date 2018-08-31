@@ -59,7 +59,12 @@ ALL_LIBS += $(MODULEDIR)/native-plugins.a
 ALL_LIBS += $(MODULEDIR)/audio_decoder.a
 ALL_LIBS += $(MODULEDIR)/lilv.a
 ALL_LIBS += $(MODULEDIR)/rtmempool.a
+ALL_LIBS += $(MODULEDIR)/sfzero.a
 ALL_LIBS += $(MODULEDIR)/water.a
+
+ifeq ($(HAVE_DGL),true)
+ALL_LIBS += $(MODULEDIR)/dgl.a
+endif
 
 ifeq ($(HAVE_HYLIA),true)
 ALL_LIBS += $(MODULEDIR)/hylia.a
@@ -157,6 +162,9 @@ libjack: libs
 
 plugin: backend bridges-plugin bridges-ui discovery
 	@$(MAKE) -C source/plugin
+
+rest: libs
+	@$(MAKE) -C source/rest
 
 theme: libs
 	@$(MAKE) -C source/theme
@@ -391,7 +399,6 @@ install_main:
 	install -d $(DESTDIR)$(BINDIR)
 ifeq ($(LINUX),true)
 	install -d $(DESTDIR)$(LIBDIR)/carla/jack
-	install -d $(DESTDIR)$(LIBDIR)/python3/dist-packages
 else
 	install -d $(DESTDIR)$(LIBDIR)/carla
 endif
@@ -457,14 +464,6 @@ endif
 	sed $(SED_ARGS) 's?X-INCLUDEDIR-X?$(INCLUDEDIR)?' \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
-
-ifeq ($(LINUX),true)
-	# Install python code (dist-packages)
-	install -m 644 \
-		source/carla_backend.py \
-		source/carla_utils.py \
-		$(DESTDIR)$(LIBDIR)/python3/dist-packages
-endif
 
 	# Install headers
 	install -m 644 \
@@ -891,21 +890,22 @@ endif
 	@printf -- "\n"
 
 	@printf -- "$(tS)---> File formats: $(tE)\n"
-ifeq ($(HAVE_LINUXSAMPLER),true)
-	@printf -- "GIG: $(ANS_YES)\n"
+ifeq ($(HAVE_SNDFILE),true)
+	@printf -- "Basic: $(ANS_YES)\n"
 else
-	@printf -- "GIG: $(ANS_NO)    $(mS)LinuxSampler missing or too old$(mE)\n"
+	@printf -- "Basic: $(ANS_NO) $(mS)libsndfile missing$(mE)\n"
+endif
+ifeq ($(HAVE_FFMPEG),true)
+	@printf -- "Extra: $(ANS_YES)\n"
+else
+	@printf -- "Extra: $(ANS_NO) $(mS)FFmpeg missing or too new$(mE)\n"
 endif
 ifeq ($(HAVE_FLUIDSYNTH),true)
-	@printf -- "SF2: $(ANS_YES)\n"
+	@printf -- "SF2/3: $(ANS_YES)\n"
 else
-	@printf -- "SF2: $(ANS_NO)    $(mS)FluidSynth missing$(mE)\n"
+	@printf -- "SF2/3: $(ANS_NO) $(mS)FluidSynth missing$(mE)\n"
 endif
-ifeq ($(HAVE_LINUXSAMPLER),true)
-	@printf -- "SFZ: $(ANS_YES)\n"
-else
-	@printf -- "SFZ: $(ANS_NO)    $(mS)LinuxSampler missing or too old$(mE)\n"
-endif
+	@printf -- "SFZ:   $(ANS_YES)\n"
 	@printf -- "\n"
 
 	@printf -- "$(tS)---> Internal plugins: $(tE)\n"
@@ -914,8 +914,8 @@ ifneq ($(WIN32),true)
 	@printf -- "Carla-Patchbay:   $(ANS_YES)\n"
 	@printf -- "Carla-Rack:       $(ANS_YES)\n"
 else
-	@printf -- "Carla-Patchbay:   $(ANS_NO)   $(mS)Not available for Windows$(mE)\n"
-	@printf -- "Carla-Rack:       $(ANS_NO)   $(mS)Not available for Windows$(mE)\n"
+	@printf -- "Carla-Patchbay:   $(ANS_NO) $(mS)Not available for Windows$(mE)\n"
+	@printf -- "Carla-Rack:       $(ANS_NO) $(mS)Not available for Windows$(mE)\n"
 endif
 ifeq ($(EXTERNAL_PLUGINS),true)
 	@printf -- "External Plugins: $(ANS_YES)\n"

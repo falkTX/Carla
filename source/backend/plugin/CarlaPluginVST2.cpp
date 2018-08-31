@@ -50,6 +50,12 @@ const uint PLUGIN_WANTS_MIDI_INPUT      = 0x8000;
 
 static const int32_t kVstMidiEventSize = static_cast<int32_t>(sizeof(VstMidiEvent));
 
+#ifdef PTW32_DLLPORT
+static const pthread_t kNullThread = {nullptr, 0};
+#else
+static const pthread_t kNullThread = 0;
+#endif
+
 // -----------------------------------------------------
 
 class CarlaPluginVST2 : public CarlaPlugin,
@@ -64,13 +70,11 @@ public:
           fTimeInfo(),
           fNeedIdle(false),
           fLastChunk(nullptr),
+          fIsInitializing(true),
           fIsProcessing(false),
+          fChangingValuesThread(kNullThread),
           fMainThread(pthread_self()),
-#ifdef PTW32_DLLPORT
-          fProcThread({nullptr, 0}),
-#else
-          fProcThread(0),
-#endif
+          fProcThread(kNullThread),
 #ifdef CARLA_OS_MAC
           fMacBundleRef(nullptr),
           fMacBundleRefNum(0),
@@ -118,7 +122,7 @@ public:
 
         if (fEffect != nullptr)
         {
-            dispatcher(effClose, 0, 0, nullptr, 0.0f);
+            dispatcher(effClose);
             fEffect = nullptr;
         }
 
@@ -161,7 +165,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, CarlaPlugin::getCategory());
 
-        const intptr_t category(dispatcher(effGetPlugCategory, 0, 0, nullptr, 0.0f));
+        const intptr_t category = dispatcher(effGetPlugCategory);
 
         switch (category)
         {
@@ -209,7 +213,7 @@ public:
         *dataPtr = nullptr;
 
         try {
-            const intptr_t ret = dispatcher(effGetChunk, 0 /* bank */, 0, dataPtr, 0.0f);
+            const intptr_t ret = dispatcher(effGetChunk, 0 /* bank */, 0, dataPtr);
             CARLA_SAFE_ASSERT_RETURN(ret >= 0, 0);
             return static_cast<std::size_t>(ret);
         } CARLA_SAFE_EXCEPTION_RETURN("CarlaPluginVST2::getChunkData", 0);
@@ -260,7 +264,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
 
         strBuf[0] = '\0';
-        dispatcher(effGetProductString, 0, 0, strBuf, 0.0f);
+        dispatcher(effGetProductString, 0, 0, strBuf);
     }
 
     void getMaker(char* const strBuf) const noexcept override
@@ -268,7 +272,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
 
         strBuf[0] = '\0';
-        dispatcher(effGetVendorString, 0, 0, strBuf, 0.0f);
+        dispatcher(effGetVendorString, 0, 0, strBuf);
     }
 
     void getCopyright(char* const strBuf) const noexcept override
@@ -281,7 +285,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
 
         strBuf[0] = '\0';
-        dispatcher(effGetEffectName, 0, 0, strBuf, 0.0f);
+        dispatcher(effGetEffectName, 0, 0, strBuf);
     }
 
     void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
@@ -294,7 +298,7 @@ public:
         VstParameterProperties prop;
         carla_zeroStruct(prop);
 
-        if (dispatcher(effGetParameterProperties, static_cast<int32_t>(parameterId), 0, &prop, 0) == 1 && prop.label[0] != '\0')
+        if (dispatcher(effGetParameterProperties, static_cast<int32_t>(parameterId), 0, &prop) == 1 && prop.label[0] != '\0')
         {
             std::strncpy(strBuf, prop.label, 64);
             strBuf[64] = '\0';
@@ -302,7 +306,7 @@ public:
         }
 
         strBuf[0] = '\0';
-        dispatcher(effGetParamName, static_cast<int32_t>(parameterId), 0, strBuf, 0.0f);
+        dispatcher(effGetParamName, static_cast<int32_t>(parameterId), 0, strBuf);
     }
 
     void getParameterText(const uint32_t parameterId, char* const strBuf) noexcept override
@@ -311,7 +315,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
         strBuf[0] = '\0';
-        dispatcher(effGetParamDisplay, static_cast<int32_t>(parameterId), 0, strBuf, 0.0f);
+        dispatcher(effGetParamDisplay, static_cast<int32_t>(parameterId), 0, strBuf);
 
         if (strBuf[0] == '\0')
             std::snprintf(strBuf, STR_MAX, "%f", getParameterValue(parameterId));
@@ -323,7 +327,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
         strBuf[0] = '\0';
-        dispatcher(effGetParamLabel, static_cast<int32_t>(parameterId), 0, strBuf, 0.0f);
+        dispatcher(effGetParamLabel, static_cast<int32_t>(parameterId), 0, strBuf);
     }
 
     // -------------------------------------------------------------------
@@ -391,7 +395,9 @@ public:
 
         {
             const ScopedSingleProcessLocker spl(this, true);
-            dispatcher(effSetChunk, 0 /* bank */, static_cast<intptr_t>(dataSize), fLastChunk, 0.0f);
+            const ScopedValueSetter<pthread_t> svs(fChangingValuesThread, pthread_self(), kNullThread);
+
+            dispatcher(effSetChunk, 0 /* bank */, static_cast<intptr_t>(dataSize), fLastChunk);
         }
 
         // simulate an updateDisplay callback
@@ -414,19 +420,20 @@ public:
         if (index >= 0)
         {
             try {
-                dispatcher(effBeginSetProgram, 0, 0, nullptr, 0.0f);
+                dispatcher(effBeginSetProgram);
             } CARLA_SAFE_EXCEPTION_RETURN("effBeginSetProgram",);
 
             {
                 const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
+                const ScopedValueSetter<pthread_t> svs(fChangingValuesThread, pthread_self(), kNullThread);
 
                 try {
-                    dispatcher(effSetProgram, 0, index, nullptr, 0.0f);
+                    dispatcher(effSetProgram, 0, index);
                 } CARLA_SAFE_EXCEPTION("effSetProgram");
             }
 
             try {
-                dispatcher(effEndSetProgram, 0, 0, nullptr, 0.0f);
+                dispatcher(effEndSetProgram);
             } CARLA_SAFE_EXCEPTION("effEndSetProgram");
         }
 
@@ -439,15 +446,15 @@ public:
         CARLA_SAFE_ASSERT_RETURN(uindex < pData->prog.count,);
 
         try {
-            dispatcher(effBeginSetProgram, 0, 0, nullptr, 0.0f);
+            dispatcher(effBeginSetProgram);
         } CARLA_SAFE_EXCEPTION_RETURN("effBeginSetProgram",);
 
         try {
-            dispatcher(effSetProgram, 0, static_cast<intptr_t>(uindex), nullptr, 0.0f);
+            dispatcher(effSetProgram, 0, static_cast<intptr_t>(uindex));
         } CARLA_SAFE_EXCEPTION("effSetProgram");
 
         try {
-            dispatcher(effEndSetProgram, 0, 0, nullptr, 0.0f);
+            dispatcher(effEndSetProgram);
         } CARLA_SAFE_EXCEPTION("effEndSetProgram");
 
         CarlaPlugin::setProgramRT(uindex);
@@ -466,23 +473,24 @@ public:
             CarlaString uiTitle(pData->name);
             uiTitle += " (GUI)";
 
-            intptr_t value  = 0;
-            void*    vstPtr = nullptr;
-            ERect*  vstRect = nullptr;
+            intptr_t value = 0;
+            ERect* vstRect = nullptr;
 
             if (fUI.window == nullptr)
             {
                 const char* msg = nullptr;
                 const uintptr_t frontendWinId(pData->engine->getOptions().frontendWinId);
 
-#if defined(CARLA_OS_MAC) && defined(CARLA_OS_64BIT)
+#if defined(CARLA_OS_MAC)
                 fUI.window = CarlaPluginUI::newCocoa(this, frontendWinId, false);
 #elif defined(CARLA_OS_WIN)
                 fUI.window = CarlaPluginUI::newWindows(this, frontendWinId, false);
 #elif defined(HAVE_X11)
                 fUI.window = CarlaPluginUI::newX11(this, frontendWinId, false);
 #else
-                msg = "Unknown UI type";
+                msg = "Unsupported UI type";
+                // unused
+                (void)frontendWinId;
 #endif
 
                 if (fUI.window == nullptr)
@@ -491,18 +499,13 @@ public:
                 fUI.window->setTitle(uiTitle.buffer());
             }
 
-            vstPtr = fUI.window->getPtr();
-
-            dispatcher(effEditGetRect, 0, 0, &vstRect, 0.0f);
-
 #ifdef HAVE_X11
             value = (intptr_t)fUI.window->getDisplay();
 #endif
 
-            if (dispatcher(effEditOpen, 0, value, vstPtr, 0.0f) != 0)
+            if (dispatcher(effEditOpen, 0, value, fUI.window->getPtr()) != 0)
             {
-                if (vstRect == nullptr || vstRect->right - vstRect->left < 2)
-                    dispatcher(effEditGetRect, 0, 0, &vstRect, 0.0f);
+                dispatcher(effEditGetRect, 0, 0, &vstRect);
 
                 if (vstRect != nullptr)
                 {
@@ -534,14 +537,14 @@ public:
             CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
             fUI.window->hide();
 
-            dispatcher(effEditClose, 0, 0, nullptr, 0.0f);
+            dispatcher(effEditClose);
         }
     }
 
     void idle() override
     {
         if (fNeedIdle)
-            dispatcher(effIdle, 0, 0, nullptr, 0.0f);
+            dispatcher(effIdle);
 
         CarlaPlugin::idle();
     }
@@ -553,7 +556,7 @@ public:
             fUI.window->idle();
 
             if (fUI.isVisible)
-                dispatcher(effEditIdle, 0, 0, nullptr, 0.0f);
+                dispatcher(effEditIdle);
         }
 
         CarlaPlugin::uiIdle();
@@ -572,6 +575,7 @@ public:
 
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
+        const ScopedValueSetter<bool> svs(fIsInitializing, fIsInitializing, true);
 
         if (pData->active)
             deactivate();
@@ -690,7 +694,7 @@ public:
                 double vrange[2] = { 0.0, 1.0 };
                 bool   isInteger = false;
 
-                if (static_cast<uintptr_t>(dispatcher(effVendorSpecific, static_cast<int32_t>(0xdeadbef0), ij, vrange, 0.0f)) >= 0xbeef)
+                if (static_cast<uintptr_t>(dispatcher(effVendorSpecific, static_cast<int32_t>(0xdeadbef0), ij, vrange)) >= 0xbeef)
                 {
                     min = static_cast<float>(vrange[0]);
                     max = static_cast<float>(vrange[1]);
@@ -708,7 +712,7 @@ public:
 
                     // only use values as integer if we have a proper range
                     if (max - min >= 1.0f)
-                        isInteger = dispatcher(effVendorSpecific, kVstParameterUsesIntStep, ij, nullptr, 0.0f) >= 0xbeef;
+                        isInteger = dispatcher(effVendorSpecific, kVstParameterUsesIntStep, ij) >= 0xbeef;
                 }
                 else
                 {
@@ -730,7 +734,7 @@ public:
                     stepLarge = range/10.0f;
                 }
             }
-            else if (dispatcher(effGetParameterProperties, ij, 0, &prop, 0) == 1)
+            else if (dispatcher(effGetParameterProperties, ij, 0, &prop) == 1)
             {
 #if 0
                 if (prop.flags & kVstParameterUsesIntegerMinMax)
@@ -799,7 +803,7 @@ public:
             pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
             pData->param.data[j].hints |= PARAMETER_USES_CUSTOM_TEXT;
 
-            if ((pData->hints & PLUGIN_USES_OLD_VSTSDK) != 0 || dispatcher(effCanBeAutomated, ij, 0, nullptr, 0.0f) == 1)
+            if ((pData->hints & PLUGIN_USES_OLD_VSTSDK) != 0 || dispatcher(effCanBeAutomated, ij) == 1)
                 pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
 
             // no such thing as VST default parameters
@@ -851,7 +855,7 @@ public:
         }
 
         // plugin hints
-        const intptr_t vstCategory = dispatcher(effGetPlugCategory, 0, 0, nullptr, 0.0f);
+        const intptr_t vstCategory = dispatcher(effGetPlugCategory);
 
         pData->hints = 0x0;
 
@@ -860,17 +864,23 @@ public:
 
         if (fEffect->flags & effFlagsHasEditor)
         {
-            pData->hints |= PLUGIN_HAS_CUSTOM_UI;
+#ifndef CARLA_OS_64BIT
+            if (static_cast<uintptr_t>(dispatcher(effCanDo, 0, 0, const_cast<char*>("hasCockosViewAsConfig")) & 0xffff0000) == 0xbeef0000)
+#endif
+            {
+                pData->hints |= PLUGIN_HAS_CUSTOM_UI;
+            }
+
             pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
         }
 
-        if (dispatcher(effGetVstVersion, 0, 0, nullptr, 0.0f) < kVstVersion)
+        if (dispatcher(effGetVstVersion) < kVstVersion)
             pData->hints |= PLUGIN_USES_OLD_VSTSDK;
 
         if ((fEffect->flags & effFlagsCanReplacing) != 0 && fEffect->processReplacing != fEffect->process)
             pData->hints |= PLUGIN_CAN_PROCESS_REPLACING;
 
-        if (static_cast<uintptr_t>(dispatcher(effCanDo, 0, 0, const_cast<char*>("hasCockosExtensions"), 0.0f)) == 0xbeef0000)
+        if (static_cast<uintptr_t>(dispatcher(effCanDo, 0, 0, const_cast<char*>("hasCockosExtensions"))) == 0xbeef0000)
             pData->hints |= PLUGIN_HAS_COCKOS_EXTENSIONS;
 
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
@@ -891,9 +901,6 @@ public:
         if (mOuts > 0)
             pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_OUT;
 
-        if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0))
-            pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
-
         // dummy pre-start to get latency and wantEvents() on old plugins
         {
             activate();
@@ -901,9 +908,7 @@ public:
         }
 
         // check initial latency
-        char* const empty3Ptr = &fEffect->empty3[0];
-        int32_t initialDelay = *(int32_t*)empty3Ptr;
-        const uint32_t latency = (initialDelay > 0) ? static_cast<uint32_t>(initialDelay) : 0;
+        const uint32_t latency = (fEffect->initialDelay > 0) ? static_cast<uint32_t>(fEffect->initialDelay) : 0;
 
         if (latency != 0)
         {
@@ -968,7 +973,7 @@ public:
             if (newCount > 0)
                 setProgram(0, false, false, false, true);
             else
-                dispatcher(effSetProgram, 0, 0, nullptr, 0.0f);
+                dispatcher(effSetProgram);
         }
         else
         {
@@ -1027,21 +1032,20 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
 
-        dispatcher(effSetProcessPrecision, 0, kVstProcessPrecision32, nullptr, 0.0f);
+        const int32_t iBufferSize = static_cast<int32_t>(pData->engine->getBufferSize());
+        const float   fSampleRate = static_cast<float>(pData->engine->getSampleRate());
 
-        dispatcher(effSetBlockSizeAndSampleRate, 0,
-                   static_cast<int32_t>(pData->engine->getBufferSize()), nullptr,
-                   static_cast<float>(pData->engine->getSampleRate()));
-
-        dispatcher(effSetSampleRate, 0, 0, nullptr, static_cast<float>(pData->engine->getSampleRate()));
-        dispatcher(effSetBlockSize, 0, static_cast<int32_t>(pData->engine->getBufferSize()), nullptr, 0.0f);
+        dispatcher(effSetProcessPrecision, 0, kVstProcessPrecision32);
+        dispatcher(effSetBlockSizeAndSampleRate, 0, iBufferSize, nullptr, fSampleRate);
+        dispatcher(effSetSampleRate, 0, 0, nullptr, fSampleRate);
+        dispatcher(effSetBlockSize, 0, iBufferSize);
 
         try {
-            dispatcher(effMainsChanged, 0, 1, nullptr, 0.0f);
+            dispatcher(effMainsChanged, 0, 1);
         } catch(...) {}
 
         try {
-            dispatcher(effStartProcess, 0, 0, nullptr, 0.0f);
+            dispatcher(effStartProcess, 0, 0);
         } catch(...) {}
     }
 
@@ -1050,17 +1054,17 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
 
         try {
-            dispatcher(effStopProcess, 0, 0, nullptr, 0.0f);
+            dispatcher(effStopProcess);
         } catch(...) {}
 
         try {
-            dispatcher(effMainsChanged, 0, 0, nullptr, 0.0f);
+            dispatcher(effMainsChanged);
         } catch(...) {}
     }
 
     void process(const float** const audioIn, float** const audioOut, const float** const, float** const, const uint32_t frames) override
     {
-        fProcThread = pthread_self();
+        const ScopedValueSetter<pthread_t> svs(fProcThread, pthread_self(), kNullThread);
 
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -1117,7 +1121,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Set TimeInfo
 
-        const EngineTimeInfo& timeInfo(pData->engine->getTimeInfo());
+        const EngineTimeInfo timeInfo(pData->engine->getTimeInfo());
 
         fTimeInfo.flags = kVstTransportChanged;
 
@@ -1140,7 +1144,7 @@ public:
 
             const double ppqBar  = double(timeInfo.bbt.bar - 1) * timeInfo.bbt.beatsPerBar;
             const double ppqBeat = double(timeInfo.bbt.beat - 1);
-            const double ppqTick = double(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat;
+            const double ppqTick = timeInfo.bbt.tick / timeInfo.bbt.ticksPerBeat;
 
             // PPQ Pos
             fTimeInfo.ppqPos = ppqBar + ppqBeat + ppqTick;
@@ -1209,7 +1213,7 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             bool allNotesOffSent = false;
 #endif
             bool isSampleAccurate = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
@@ -1221,17 +1225,22 @@ public:
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
 
-                if (event.time >= frames)
-                    continue;
+                uint32_t eventTime = event.time;
+                CARLA_SAFE_ASSERT_UINT2_CONTINUE(eventTime < frames, eventTime, frames);
 
-                CARLA_ASSERT_INT2(event.time >= timeOffset, event.time, timeOffset);
-
-                if (isSampleAccurate && event.time > timeOffset)
+                if (eventTime < timeOffset)
                 {
-                    if (processSingle(audioIn, audioOut, event.time - timeOffset, timeOffset))
+                    carla_stderr2("Timing error, eventTime:%u < timeOffset:%u for '%s'",
+                                  eventTime, timeOffset, pData->name);
+                    eventTime = timeOffset;
+                }
+
+                if (isSampleAccurate && eventTime > timeOffset)
+                {
+                    if (processSingle(audioIn, audioOut, eventTime - timeOffset, timeOffset))
                     {
                         startTime  = 0;
-                        timeOffset = event.time;
+                        timeOffset = eventTime;
 
                         if (fMidiEventCount > 0)
                         {
@@ -1257,7 +1266,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeParameter: {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                         // Control backend stuff
                         if (event.channel == pData->ctrlChannel)
                         {
@@ -1344,7 +1353,7 @@ public:
 
                             vstMidiEvent.type        = kVstMidiType;
                             vstMidiEvent.byteSize    = kVstMidiEventSize;
-                            vstMidiEvent.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : event.time);
+                            vstMidiEvent.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : eventTime);
                             vstMidiEvent.midiData[0] = char(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             vstMidiEvent.midiData[1] = char(ctrlEvent.param);
                             vstMidiEvent.midiData[2] = char(ctrlEvent.value*127.0f);
@@ -1364,7 +1373,7 @@ public:
 
                             vstMidiEvent.type        = kVstMidiType;
                             vstMidiEvent.byteSize    = kVstMidiEventSize;
-                            vstMidiEvent.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : event.time);
+                            vstMidiEvent.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : eventTime);
                             vstMidiEvent.midiData[0] = char(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             vstMidiEvent.midiData[1] = MIDI_CONTROL_BANK_SELECT;
                             vstMidiEvent.midiData[2] = char(ctrlEvent.param);
@@ -1390,7 +1399,7 @@ public:
 
                             vstMidiEvent.type        = kVstMidiType;
                             vstMidiEvent.byteSize    = kVstMidiEventSize;
-                            vstMidiEvent.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : event.time);
+                            vstMidiEvent.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : eventTime);
                             vstMidiEvent.midiData[0] = char(MIDI_STATUS_PROGRAM_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             vstMidiEvent.midiData[1] = char(ctrlEvent.param);
                         }
@@ -1407,7 +1416,7 @@ public:
 
                             vstMidiEvent.type        = kVstMidiType;
                             vstMidiEvent.byteSize    = kVstMidiEventSize;
-                            vstMidiEvent.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : event.time);
+                            vstMidiEvent.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : eventTime);
                             vstMidiEvent.midiData[0] = char(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             vstMidiEvent.midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
                         }
@@ -1416,7 +1425,7 @@ public:
                     case kEngineControlEventTypeAllNotesOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
@@ -1432,7 +1441,7 @@ public:
 
                             vstMidiEvent.type        = kVstMidiType;
                             vstMidiEvent.byteSize    = kVstMidiEventSize;
-                            vstMidiEvent.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : event.time);
+                            vstMidiEvent.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : eventTime);
                             vstMidiEvent.midiData[0] = char(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             vstMidiEvent.midiData[1] = MIDI_CONTROL_ALL_NOTES_OFF;
                         }
@@ -1473,7 +1482,7 @@ public:
 
                     vstMidiEvent.type        = kVstMidiType;
                     vstMidiEvent.byteSize    = kVstMidiEventSize;
-                    vstMidiEvent.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : event.time);
+                    vstMidiEvent.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : eventTime);
                     vstMidiEvent.midiData[0] = char(status | (event.channel & MIDI_CHANNEL_BIT));
                     vstMidiEvent.midiData[1] = char(midiEvent.size >= 2 ? midiEvent.data[1] : 0);
                     vstMidiEvent.midiData[2] = char(midiEvent.size >= 3 ? midiEvent.data[2] : 0);
@@ -1578,6 +1587,8 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Set MIDI events
 
+        fIsProcessing = true;
+
         if (fMidiEventCount > 0)
         {
             fEvents.numEvents = static_cast<int32_t>(fMidiEventCount);
@@ -1587,8 +1598,6 @@ public:
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
-
-        fIsProcessing = true;
 
         if (pData->hints & PLUGIN_CAN_PROCESS_REPLACING)
         {
@@ -1605,10 +1614,9 @@ public:
         }
 
         fIsProcessing = false;
-
         fTimeInfo.samplePos += frames;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
 
@@ -1747,7 +1755,7 @@ protected:
 
     // -------------------------------------------------------------------
 
-    intptr_t dispatcher(int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt) const noexcept
+    intptr_t dispatcher(int32_t opcode, int32_t index = 0, intptr_t value = 0, void* ptr = nullptr, float opt = 0.0f) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, 0);
 #ifdef DEBUG
@@ -1772,10 +1780,16 @@ protected:
         switch (opcode)
         {
         case audioMasterAutomate: {
-            CARLA_SAFE_ASSERT_BREAK(pData->enabled);
+            if (fIsInitializing) {
+                // some plugins can be stupid...
+                if (pData->param.count == 0)
+                    break;
+            } else {
+                CARLA_SAFE_ASSERT_BREAK(pData->enabled);
+            }
 
             // plugins should never do this:
-            CARLA_SAFE_ASSERT_INT(index >= 0 && index < static_cast<int32_t>(pData->param.count), index);
+            CARLA_SAFE_ASSERT_INT2(index >= 0 && index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
 
             if (index < 0 || index >= static_cast<int32_t>(pData->param.count))
                 break;
@@ -1783,11 +1797,17 @@ protected:
             const uint32_t uindex(static_cast<uint32_t>(index));
             const float fixedValue(pData->param.getFixedValue(uindex, opt));
 
-            // Called from plugin process thread, nasty!
-            if (pthread_equal(pthread_self(), fProcThread))
+            const pthread_t thisThread = pthread_self();
+
+            // Called from plugin process thread, nasty! (likely MIDI learn)
+            /**/ if (pthread_equal(thisThread, fProcThread))
             {
                 CARLA_SAFE_ASSERT(fIsProcessing);
-
+                pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, fixedValue);
+            }
+            // Called from effSetChunk or effSetProgram
+            else if (pthread_equal(thisThread, fChangingValuesThread))
+            {
                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, fixedValue);
             }
             // Called from UI
@@ -1917,8 +1937,8 @@ protected:
 
             if (m_active)
             {
-                effect->dispatcher(effect, effStopProcess, 0, 0, nullptr, 0.0f);
-                effect->dispatcher(effect, effMainsChanged, 0, 0, nullptr, 0.0f);
+                effect->dispatcher(effect, effStopProcess);
+                effect->dispatcher(effect, effMainsChanged, 0, 0);
             }
 
             reload();
@@ -1926,7 +1946,7 @@ protected:
             if (m_active)
             {
                 effect->dispatcher(effect, effMainsChanged, 0, 1, nullptr, 0.0f);
-                effect->dispatcher(effect, effStartProcess, 0, 0, nullptr, 0.0f);
+                effect->dispatcher(effect, effStartProcess);
             }
 
             x_engine->callback(CALLBACK_RELOAD_ALL, m_id, 0, 0, 0.0, nullptr);
@@ -2048,17 +2068,17 @@ protected:
         case audioMasterUpdateDisplay:
             // Idle UI if visible
             if (fUI.isVisible)
-                dispatcher(effEditIdle, 0, 0, nullptr, 0.0f);
+                dispatcher(effEditIdle);
 
             // Update current program
             if (pData->prog.count > 0)
             {
-                const int32_t current = static_cast<int32_t>(dispatcher(effGetProgram, 0, 0, nullptr, 0.0f));
+                const int32_t current = static_cast<int32_t>(dispatcher(effGetProgram));
 
                 if (current >= 0 && current < static_cast<int32_t>(pData->prog.count))
                 {
                     char strBuf[STR_MAX+1]  = { '\0' };
-                    dispatcher(effGetProgramName, 0, 0, strBuf, 0.0f);
+                    dispatcher(effGetProgramName, 0, 0, strBuf);
 
                     if (pData->prog.names[current] != nullptr)
                         delete[] pData->prog.names[current];
@@ -2073,7 +2093,9 @@ protected:
                 }
             }
 
-            pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0f, nullptr);
+            if (! fIsInitializing)
+                pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0f, nullptr);
+
             ret = 1;
             break;
 
@@ -2118,7 +2140,7 @@ protected:
     bool canDo(const char* const feature) const noexcept
     {
         try {
-            return (fEffect->dispatcher(fEffect, effCanDo, 0, 0, const_cast<char*>(feature), 0.0f) == 1);
+            return (dispatcher(effCanDo, 0, 0, const_cast<char*>(feature)) == 1);
         } CARLA_SAFE_EXCEPTION_RETURN("vstPluginCanDo", false);
     }
 
@@ -2257,18 +2279,15 @@ public:
 
         fEffect->ptr1 = this;
 
-        dispatcher(effIdentify, 0, 0, 0, 0);
+        const int32_t iBufferSize = static_cast<int32_t>(pData->engine->getBufferSize());
+        const float   fSampleRate = static_cast<float>(pData->engine->getSampleRate());
 
-        dispatcher(effSetProcessPrecision, 0, kVstProcessPrecision32, nullptr, 0.0f);
-
-        dispatcher(effSetBlockSizeAndSampleRate, 0,
-                   static_cast<int32_t>(pData->engine->getBufferSize()), nullptr,
-                   static_cast<float>(pData->engine->getSampleRate()));
-
-        dispatcher(effSetSampleRate, 0, 0, nullptr, static_cast<float>(pData->engine->getSampleRate()));
-        dispatcher(effSetBlockSize, 0, static_cast<int32_t>(pData->engine->getBufferSize()), nullptr, 0.0f);
-
-        dispatcher(effOpen, 0, 0, nullptr, 0.0f);
+        dispatcher(effIdentify);
+        dispatcher(effSetProcessPrecision, 0, kVstProcessPrecision32);
+        dispatcher(effSetBlockSizeAndSampleRate, 0, iBufferSize, nullptr, fSampleRate);
+        dispatcher(effSetSampleRate, 0, 0, nullptr, fSampleRate);
+        dispatcher(effSetBlockSize, 0, iBufferSize);
+        dispatcher(effOpen);
 
         // ---------------------------------------------------------------
         // get info
@@ -2281,7 +2300,7 @@ public:
         {
             char strBuf[STR_MAX+1];
             carla_zeroChars(strBuf, STR_MAX+1);
-            dispatcher(effGetEffectName, 0, 0, strBuf, 0.0f);
+            dispatcher(effGetEffectName, 0, 0, strBuf);
 
             if (strBuf[0] != '\0')
                 pData->name = pData->engine->getUniquePluginName(strBuf);
@@ -2307,15 +2326,15 @@ public:
         // ---------------------------------------------------------------
         // initialize plugin (part 2)
 
-        for (int i = fEffect->numInputs;  --i >= 0;) dispatcher(effConnectInput,  i, 1, 0, 0);
-        for (int i = fEffect->numOutputs; --i >= 0;) dispatcher(effConnectOutput, i, 1, 0, 0);
+        for (int i = fEffect->numInputs;  --i >= 0;) dispatcher(effConnectInput,  i, 1);
+        for (int i = fEffect->numOutputs; --i >= 0;) dispatcher(effConnectOutput, i, 1);
 
-        if (dispatcher(effGetVstVersion, 0, 0, nullptr, 0.0f) < kVstVersion)
+        if (dispatcher(effGetVstVersion) < kVstVersion)
             pData->hints |= PLUGIN_USES_OLD_VSTSDK;
 
         static const char kHasCockosExtensions[] = "hasCockosExtensions";
 
-        if (static_cast<uintptr_t>(dispatcher(effCanDo, 0, 0, const_cast<char*>(kHasCockosExtensions), 0.0f)) == 0xbeef0000)
+        if (static_cast<uintptr_t>(dispatcher(effCanDo, 0, 0, const_cast<char*>(kHasCockosExtensions))) == 0xbeef0000)
             pData->hints |= PLUGIN_HAS_COCKOS_EXTENSIONS;
 
         // ---------------------------------------------------------------
@@ -2348,9 +2367,6 @@ public:
         }
 
         return true;
-
-        // unused
-        (void)uniqueId;
     }
 
 private:
@@ -2365,7 +2381,9 @@ private:
     bool  fNeedIdle;
     void* fLastChunk;
 
+    bool      fIsInitializing;
     bool      fIsProcessing;
+    pthread_t fChangingValuesThread;
     pthread_t fMainThread;
     pthread_t fProcThread;
 

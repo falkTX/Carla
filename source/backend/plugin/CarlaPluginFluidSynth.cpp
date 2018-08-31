@@ -919,9 +919,6 @@ public:
         pData->extraHints  = 0x0;
         pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_IN;
 
-        if (! kUse16Outs)
-            pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
-
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
 
@@ -1132,16 +1129,20 @@ public:
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
 
-                if (event.time >= frames)
-                    continue;
+                uint32_t eventTime = event.time;
+                CARLA_SAFE_ASSERT_UINT2_CONTINUE(eventTime < frames, eventTime, frames);
 
-                CARLA_ASSERT_INT2(event.time >= timeOffset, event.time, timeOffset);
-
-                if (event.time > timeOffset)
+                if (eventTime < timeOffset)
                 {
-                    if (processSingle(audioOut, event.time - timeOffset, timeOffset))
+                    carla_stderr2("Timing error, eventTime:%u < timeOffset:%u for '%s'",
+                                  eventTime, timeOffset, pData->name);
+                    eventTime = timeOffset;
+                }
+                else if (eventTime > timeOffset)
+                {
+                    if (processSingle(audioOut, eventTime - timeOffset, timeOffset))
                     {
-                        timeOffset = event.time;
+                        timeOffset = eventTime;
 
                         if (pData->midiprog.current >= 0 && pData->midiprog.count > 0 && pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
                             nextBankIds[pData->ctrlChannel] = pData->midiprog.data[pData->midiprog.current].bank;
@@ -1755,20 +1756,6 @@ CarlaPlugin* CarlaPlugin::newFluidSynth(const Initializer& init, const bool use1
     return plugin;
 #else
     init.engine->setLastError("fluidsynth support not available");
-    return nullptr;
-
-    // unused
-    (void)use16Outs;
-#endif
-}
-
-CarlaPlugin* CarlaPlugin::newFileSF2(const Initializer& init, const bool use16Outs)
-{
-    carla_debug("CarlaPlugin::newFileSF2({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
-#ifdef HAVE_FLUIDSYNTH
-    return newFluidSynth(init, use16Outs);
-#else
-    init.engine->setLastError("SF2 support not available");
     return nullptr;
 
     // unused

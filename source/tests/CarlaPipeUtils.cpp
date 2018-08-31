@@ -1,6 +1,6 @@
 /*
  * Carla Utility Tests
- * Copyright (C) 2013-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
  */
 
 #include "CarlaPipeUtils.hpp"
-#include "juce_core/juce_core.h"
+#include "../modules/water/files/File.h"
 
 // -----------------------------------------------------------------------
 
@@ -65,20 +65,29 @@ int main(int argc, const char* argv[])
         p.unlockPipe();
 
         carla_msleep(500);
+
         carla_stderr2("CLIENT idle start");
         std::fflush(stdout);
+
         p.idlePipe();
+
         carla_stderr2("CLIENT idle end");
         std::fflush(stdout);
+
         carla_msleep(500);
     }
     else
     {
         carla_stdout("SERVER STARTED %i", argc);
+        std::fflush(stdout);
 
-        using juce::File;
-        using juce::String;
+        using water::File;
+        using water::String;
         String path = File(File::getSpecialLocation(File::currentExecutableFile)).getFullPathName();
+
+#ifdef CARLA_OS_WINDOWS
+        path = "wine " + path;
+#endif
 
         CarlaPipeServer2 p;
         const bool ok = p.startPipeServer(path.toRawUTF8(), "/home/falktx/Videos", "/home/falktx");
@@ -89,9 +98,14 @@ int main(int argc, const char* argv[])
         p.unlockPipe();
 
         carla_msleep(500);
+
         carla_stderr2("SERVER idle start");
+        std::fflush(stdout);
+
         p.idlePipe();
         carla_stderr2("SERVER idle end");
+        std::fflush(stdout);
+
         carla_msleep(500);
     }
 

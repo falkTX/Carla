@@ -108,7 +108,7 @@ endif
 
 ifeq ($(NOOPT),true)
 # No CPU-specific optimization flags
-BASE_OPTS  = -O3 -ffast-math -fdata-sections -ffunction-sections
+BASE_OPTS  = -O2 -ffast-math -fdata-sections -ffunction-sections
 endif
 
 ifneq ($(WIN32),true)
@@ -146,6 +146,11 @@ endif
 
 ifeq ($(MACOS_OLD),true)
 BUILD_CXX_FLAGS = $(BASE_FLAGS) $(CXXFLAGS) -DHAVE_CPP11_SUPPORT=0
+endif
+
+ifeq ($(WIN32),true)
+# Always build statically on windows
+LINK_FLAGS     += -static
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -197,7 +202,10 @@ HAVE_HYLIA = true
 endif
 endif
 
-ifneq ($(MACOS_OR_WIN32),true)
+ifeq ($(MACOS_OR_WIN32),true)
+HAVE_DGL   = true
+else
+HAVE_DGL   = $(shell pkg-config --exists gl x11 && echo true)
 HAVE_GTK2  = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3  = $(shell pkg-config --exists gtk+-3.0 && echo true)
 HAVE_X11   = $(shell pkg-config --exists x11 && echo true)
@@ -205,17 +213,16 @@ endif
 
 ifeq ($(UNIX),true)
 ifneq ($(MACOS),true)
-HAVE_PULSEAUDIO   = $(shell pkg-config --exists libpulse-simple && echo true)
+HAVE_PULSEAUDIO = $(shell pkg-config --exists libpulse-simple && echo true)
 endif
 endif
 
-HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
-HAVE_FLUIDSYNTH   = $(shell pkg-config --exists fluidsynth && echo true)
-HAVE_LIBLO        = $(shell pkg-config --exists liblo && echo true)
-HAVE_LINUXSAMPLER = $(shell pkg-config --atleast-version=1.0.0.svn41 linuxsampler && echo true)
-HAVE_QT4          = $(shell pkg-config --exists QtCore QtGui && echo true)
-HAVE_QT5          = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
-HAVE_SNDFILE      = $(shell pkg-config --exists sndfile && echo true)
+HAVE_FFMPEG     = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
+HAVE_FLUIDSYNTH = $(shell pkg-config --exists fluidsynth && echo true)
+HAVE_LIBLO      = $(shell pkg-config --exists liblo && echo true)
+HAVE_QT4        = $(shell pkg-config --exists QtCore QtGui && echo true)
+HAVE_QT5        = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
+HAVE_SNDFILE    = $(shell pkg-config --exists sndfile && echo true)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Check for optional libs (special non-pkgconfig tests)
@@ -233,6 +240,7 @@ endif
 ifeq ($(HAVE_QT4),true)
 MOC_QT4 ?= $(shell pkg-config --variable=moc_location QtCore)
 RCC_QT4 ?= $(shell pkg-config --variable=rcc_location QtCore)
+UIC_QT4 ?= $(shell pkg-config --variable=uic_location QtCore)
 ifeq (,$(wildcard $(MOC_QT4)))
 HAVE_QT4=false
 endif
@@ -245,6 +253,7 @@ ifeq ($(HAVE_QT5),true)
 QT5_HOSTBINS = $(shell pkg-config --variable=host_bins Qt5Core)
 MOC_QT5 ?= $(QT5_HOSTBINS)/moc
 RCC_QT5 ?= $(QT5_HOSTBINS)/rcc
+UIC_QT5 ?= $(QT5_HOSTBINS)/uic
 ifeq (,$(wildcard $(MOC_QT5)))
 HAVE_QT5=false
 endif
@@ -301,8 +310,9 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Set base defines
 
-ifeq ($(HAVE_PYQT),true)
-BASE_FLAGS += -DHAVE_PYQT
+ifeq ($(HAVE_DGL),true)
+BASE_FLAGS += -DHAVE_DGL
+BASE_FLAGS += -DDGL_NAMESPACE=CarlaDGL -DDGL_FILE_BROWSER_DISABLED -DDGL_NO_SHARED_RESOURCES
 endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
@@ -325,8 +335,8 @@ ifeq ($(HAVE_LIBMAGIC),true)
 BASE_FLAGS += -DHAVE_LIBMAGIC
 endif
 
-ifeq ($(HAVE_LINUXSAMPLER),true)
-BASE_FLAGS += -DHAVE_LINUXSAMPLER
+ifeq ($(HAVE_PYQT),true)
+BASE_FLAGS += -DHAVE_PYQT
 endif
 
 ifeq ($(HAVE_SNDFILE),true)
@@ -344,9 +354,29 @@ ifeq ($(LINUX_OR_MACOS),true)
 LIBDL_LIBS = -ldl
 endif
 
+ifeq ($(HAVE_DGL),true)
+ifeq ($(MACOS),true)
+DGL_LIBS  = -framework OpenGL -framework Cocoa
+endif
+ifeq ($(WIN32),true)
+DGL_LIBS  = -lopengl32 -lgdi32
+endif
+ifneq ($(MACOS_OR_WIN32),true)
+DGL_FLAGS = $(shell pkg-config --cflags gl x11)
+DGL_LIBS  = $(shell pkg-config --libs gl x11)
+endif
+endif
+
 ifeq ($(HAVE_LIBLO),true)
 LIBLO_FLAGS = $(shell pkg-config --cflags liblo)
 LIBLO_LIBS  = $(shell pkg-config --libs liblo)
+endif
+
+ifeq ($(HAVE_LIBMAGIC),true)
+MAGIC_LIBS += -lmagic
+ifeq ($(LINUX_OR_MACOS),true)
+MAGIC_LIBS += -lz
+endif
 endif
 
 ifeq ($(HAVE_FFMPEG),true)
@@ -359,17 +389,6 @@ FLUIDSYNTH_FLAGS = $(shell pkg-config --cflags fluidsynth)
 FLUIDSYNTH_LIBS  = $(shell pkg-config --libs fluidsynth)
 endif
 
-ifeq ($(HAVE_LINUXSAMPLER),true)
-LINUXSAMPLER_FLAGS = $(shell pkg-config --cflags linuxsampler) -DIS_CPP11=1 -Wno-non-virtual-dtor -Wno-shadow -Wno-unused-parameter
-ifeq ($(LINUX),true)
-LINUXSAMPLER_LIBS  = -Wl,-rpath=$(shell pkg-config --variable=libdir gig):$(shell pkg-config --variable=libdir linuxsampler)
-endif
-LINUXSAMPLER_LIBS += $(shell pkg-config --libs linuxsampler)
-ifeq ($(WIN32),true)
-LINUXSAMPLER_LIBS += -lws2_32
-endif
-endif
-
 ifeq ($(HAVE_SNDFILE),true)
 SNDFILE_FLAGS = $(shell pkg-config --cflags sndfile)
 SNDFILE_LIBS  = $(shell pkg-config --libs sndfile)
@@ -380,18 +399,11 @@ X11_FLAGS = $(shell pkg-config --cflags x11)
 X11_LIBS  = $(shell pkg-config --libs x11)
 endif
 
-ifeq ($(HAVE_LIBMAGIC),true)
-MAGIC_LIBS += -lmagic
-ifeq ($(LINUX_OR_MACOS),true)
-MAGIC_LIBS += -lz
-endif
-endif
-
 # ---------------------------------------------------------------------------------------------------------------------
 # Set libs stuff (part 2)
 
-RTAUDIO_FLAGS    = -DHAVE_GETTIMEOFDAY -D__RTAUDIO_DUMMY__
-RTMIDI_FLAGS     = -D__RTMIDI_DUMMY__
+RTAUDIO_FLAGS    = -DHAVE_GETTIMEOFDAY
+RTMIDI_FLAGS     =
 
 ifeq ($(DEBUG),true)
 RTAUDIO_FLAGS   += -D__RTAUDIO_DEBUG__
@@ -418,6 +430,8 @@ JACKBRIDGE_LIBS  = -lpthread
 LILV_LIBS        = -lm
 RTMEMPOOL_LIBS   = -lpthread
 WATER_LIBS       = -lpthread
+RTAUDIO_FLAGS   += -D__RTAUDIO_DUMMY__
+RTMIDI_FLAGS    += -D__RTMIDI_DUMMY__
 endif
 
 ifeq ($(HURD),true)
@@ -466,6 +480,7 @@ endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
+NATIVE_PLUGINS_LIBS += $(DGL_LIBS)
 NATIVE_PLUGINS_LIBS += $(FFMPEG_LIBS)
 NATIVE_PLUGINS_LIBS += $(SNDFILE_LIBS)
 
@@ -520,6 +535,7 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifneq (,$(wildcard $(CWD)/native-plugins/external/Makefile.mk))
+EXTERNAL_PLUGINS = true
 BASE_FLAGS += -DHAVE_EXTERNAL_PLUGINS
 include $(CWD)/native-plugins/external/Makefile.mk
 endif

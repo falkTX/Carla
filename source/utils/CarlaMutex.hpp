@@ -97,7 +97,6 @@ private:
     mutable pthread_mutex_t fMutex;
     mutable volatile bool fTryLockWasCalled; // true if "tryLock()" was called at least once
 
-    CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(CarlaMutex)
 };
 
@@ -185,7 +184,6 @@ private:
     mutable pthread_mutex_t fMutex;
 #endif
 
-    CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(CarlaRecursiveMutex)
 };
 

@@ -24,9 +24,6 @@
 
 #include "pugl_internal.h"
 
-#define PuglWindow PuglWindow ## DGL_NAMESPACE
-#define PuglOpenGLView PuglOpenGLView ## DGL_NAMESPACE
-
 @interface PuglWindow : NSWindow
 {
 @public

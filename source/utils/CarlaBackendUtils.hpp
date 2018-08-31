@@ -1,6 +1,6 @@
 /*
  * Carla Backend utils
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -96,8 +96,6 @@ const char* PluginType2Str(const PluginType type) noexcept
         return "PLUGIN_LV2";
     case PLUGIN_VST2:
         return "PLUGIN_VST2";
-    case PLUGIN_GIG:
-        return "PLUGIN_GIG";
     case PLUGIN_SF2:
         return "PLUGIN_SF2";
     case PLUGIN_SFZ:
@@ -165,7 +163,7 @@ const char* InternalParameterIndex2Str(const InternalParameterIndex index) noexc
     {
     case PARAMETER_NULL:
         return "PARAMETER_NULL";
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     case PARAMETER_ACTIVE:
         return "PARAMETER_ACTIVE";
     case PARAMETER_DRYWET:
@@ -208,7 +206,7 @@ const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode) noexcept
         return "ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED";
     case ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
         return "ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED";
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     case ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
         return "ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED";
     case ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
@@ -236,7 +234,7 @@ const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode) noexcept
         return "ENGINE_CALLBACK_RELOAD_PROGRAMS";
     case ENGINE_CALLBACK_RELOAD_ALL:
         return "ENGINE_CALLBACK_RELOAD_ALL";
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     case ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED:
         return "ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED";
     case ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED:
@@ -309,12 +307,12 @@ const char* EngineOption2Str(const EngineOption option) noexcept
         return "ENGINE_OPTION_MAX_PARAMETERS";
     case ENGINE_OPTION_UI_BRIDGES_TIMEOUT:
         return "ENGINE_OPTION_UI_BRIDGES_TIMEOUT";
-    case ENGINE_OPTION_AUDIO_NUM_PERIODS:
-        return "ENGINE_OPTION_AUDIO_NUM_PERIODS";
     case ENGINE_OPTION_AUDIO_BUFFER_SIZE:
         return "ENGINE_OPTION_AUDIO_BUFFER_SIZE";
     case ENGINE_OPTION_AUDIO_SAMPLE_RATE:
         return "ENGINE_OPTION_AUDIO_SAMPLE_RATE";
+    case ENGINE_OPTION_AUDIO_TRIPLE_BUFFER:
+        return "ENGINE_OPTION_AUDIO_TRIPLE_BUFFER";
     case ENGINE_OPTION_AUDIO_DEVICE:
         return "ENGINE_OPTION_AUDIO_DEVICE";
     case ENGINE_OPTION_PLUGIN_PATH:
@@ -327,7 +325,7 @@ const char* EngineOption2Str(const EngineOption option) noexcept
         return "ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR";
     case ENGINE_OPTION_FRONTEND_WIN_ID:
         return "ENGINE_OPTION_FRONTEND_WIN_ID";
-#ifndef CARLA_OS_WIN
+#if !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) && !defined(CARLA_OS_WIN)
     case ENGINE_OPTION_WINE_EXECUTABLE:
         return "ENGINE_OPTION_WINE_EXECUTABLE";
     case ENGINE_OPTION_WINE_AUTO_PREFIX:
@@ -484,8 +482,6 @@ const char* getPluginTypeAsString(const PluginType type) noexcept
         return "LV2";
     case PLUGIN_VST2:
         return "VST2";
-    case PLUGIN_GIG:
-        return "GIG";
     case PLUGIN_SF2:
         return "SF2";
     case PLUGIN_SFZ:
@@ -523,8 +519,6 @@ PluginType getPluginTypeFromString(const char* const ctype) noexcept
         return PLUGIN_LV2;
     if (stype == "vst2" || stype == "vst")
         return PLUGIN_VST2;
-    if (stype == "gig")
-        return PLUGIN_GIG;
     if (stype == "sf2")
         return PLUGIN_SF2;
     if (stype == "sfz")

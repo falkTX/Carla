@@ -527,6 +527,12 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 QLabel#label_name:disabled { color: #555; }
             """ % styleSheet2
 
+        styleSheet += """
+            QComboBox#cb_presets,
+            QLabel#label_audio_in,
+            QLabel#label_audio_out,
+            QLabel#label_midi { font-size: 10px; }
+        """
         self.setStyleSheet(styleSheet)
 
         # -------------------------------------------------------------
@@ -1152,16 +1158,29 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         # Export LV2
 
         elif actSel == actExportLV2:
-            ret = QFileDialog.getSaveFileName(self, self.tr("Export Plugin as LV2"), "", "", "", QFileDialog.ShowDirsOnly|QFileDialog.HideNameFilterDetails)
-
-            if config_UseQt5:
-                ret = ret[0]
-            if not ret:
+            filepath = QInputDialog.getItem(self, self.tr("Export LV2 Plugin"),
+                                                  self.tr("Select LV2 Path where plugin will be exported to:"),
+                                                  CARLA_DEFAULT_LV2_PATH, editable=False)
+            if not all(filepath):
                 return
 
-            if not self.host.export_plugin_lv2(self.fPluginId, ret):
-                CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
-                                       self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+            plugname = self.fPluginInfo['name']
+            filepath = os.path.join(filepath[0], plugname.replace(" ","_"))
+
+            if not filepath.endswith(".lv2"):
+                filepath += ".lv2"
+
+            if os.path.exists(filepath):
+                if QMessageBox.question(self, self.tr("Export to LV2"),
+                                              self.tr("Plugin bundle already exists, overwrite?")) == QMessageBox.Ok:
+                    return
+
+            if not self.host.export_plugin_lv2(self.fPluginId, filepath):
+                return CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
+                                              self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+
+            QMessageBox.information(self, self.tr("Plugin exported"),
+                                          self.tr("Plugin exported successfully, saved in folder:\n%s" % filepath))
 
         # -------------------------------------------------------------
 
@@ -1835,8 +1854,6 @@ def getSkinStyle(host, pluginId):
         progCount = host.get_midi_program_count(pluginId)
 
     # Samplers
-    if pluginInfo['type'] == PLUGIN_GIG:
-        return "gig"
     if pluginInfo['type'] == PLUGIN_SF2:
         return "sf2"
     if pluginInfo['type'] == PLUGIN_SFZ:

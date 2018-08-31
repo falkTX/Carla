@@ -101,7 +101,7 @@ public:
 #elif defined(__MACH__) && defined(__APPLE__) \
   || defined(__NetBSD__) || defined(__FreeBSD__) || defined(__OpenBSD__) \
   || defined(_AIX) || defined(__hpux) || defined(__osf__) \
-  || defined(__ANDROID__)
+  || defined(__ANDROID__) || (defined(__linux__) && !defined(__GLIBC__))
     char buf[256] = "";
     using namespace std;
     strerror_r(value, buf, sizeof(buf));

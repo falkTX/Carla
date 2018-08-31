@@ -571,6 +571,11 @@ bool CarlaJackAppClient::handleRtData()
         }
 
         case kPluginBridgeRtClientProcess: {
+            const uint32_t frames(fShmRtClientControl.readUInt());
+            CARLA_SAFE_ASSERT_UINT2_BREAK(frames == fServer.bufferSize, frames, fServer.bufferSize);
+
+            // TODO tell client of xrun in case buffersize does not match
+
             // FIXME - lock if offline
             const CarlaMutexTryLocker cmtl(fRealtimeThreadMutex);
 
@@ -602,7 +607,7 @@ bool CarlaJackAppClient::handleRtData()
 
                         fServer.position.bar  = bridgeTimeInfo.bar;
                         fServer.position.beat = bridgeTimeInfo.beat;
-                        fServer.position.tick = bridgeTimeInfo.tick;
+                        fServer.position.tick = static_cast<int32_t>(bridgeTimeInfo.tick + 0.5);
 
                         fServer.position.beats_per_bar = bridgeTimeInfo.beatsPerBar;
                         fServer.position.beat_type     = bridgeTimeInfo.beatType;
@@ -932,6 +937,9 @@ bool CarlaJackAppClient::handleNonRtData()
                 fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerSaved);
                 fShmNonRtServerControl.commitWrite();
             }
+            break;
+
+        case kPluginBridgeNonRtClientRestoreLV2State:
             break;
 
         case kPluginBridgeNonRtClientShowUI:

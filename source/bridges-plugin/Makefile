@@ -24,7 +24,6 @@ endif
 
 BUILD_CXX_FLAGS += -DBUILD_BRIDGE -I. -I$(CWD) -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils
 BUILD_CXX_FLAGS += -I$(CWD)/backend/engine -I$(CWD)/backend/plugin
-BUILD_CXX_FLAGS += $(LIBLO_FLAGS)
 
 32BIT_FLAGS += -DBUILD_BRIDGE_ALTERNATIVE_ARCH
 64BIT_FLAGS += -DBUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -64,19 +63,15 @@ LIBS_win32   += $(MODULEDIR)/water.win32.a
 LIBS_win64   += $(MODULEDIR)/water.win64.a
 LINK_FLAGS   += $(WATER_LIBS)
 
-LINK_FLAGS += $(LIBLO_LIBS)
 LINK_FLAGS += $(X11_LIBS)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-NATIVE_BUILD_FLAGS  = $(NATIVE_PLUGINS_FLAGS)
-NATIVE_LINK_FLAGS   =
+NATIVE_BUILD_FLAGS  = $(NATIVE_PLUGINS_FLAGS) $(LIBLO_FLAGS)
+# NATIVE_LINK_FLAGS   = $(LIBLO_LIBS)
 
 NATIVE_BUILD_FLAGS += $(FLUIDSYNTH_FLAGS)
 NATIVE_LINK_FLAGS  += $(FLUIDSYNTH_LIBS)
-
-NATIVE_BUILD_FLAGS += $(LINUXSAMPLER_FLAGS)
-NATIVE_LINK_FLAGS  += $(LINUXSAMPLER_LIBS)
 
 NATIVE_LINK_FLAGS  += $(FFMPEG_LIBS)
 NATIVE_LINK_FLAGS  += $(MAGIC_LIBS)
@@ -84,6 +79,7 @@ NATIVE_LINK_FLAGS  += $(SNDFILE_LIBS)
 
 LIBS_native        += $(MODULEDIR)/audio_decoder.a
 LIBS_native        += $(MODULEDIR)/native-plugins.base.a
+LIBS_native        += $(MODULEDIR)/sfzero.a
 
 ifeq ($(HAVE_DGL),true)
 LIBS_native        += $(MODULEDIR)/dgl.a
@@ -96,8 +92,9 @@ OBJS_native = \
 	$(OBJDIR)/CarlaEngine.cpp.o \
 	$(OBJDIR)/CarlaEngineClient.cpp.o \
 	$(OBJDIR)/CarlaEngineData.cpp.o \
+	$(OBJDIR)/CarlaEngineGraph.cpp.o \
 	$(OBJDIR)/CarlaEngineInternal.cpp.o \
-	$(OBJDIR)/CarlaEngineOsc.cpp.o \
+	$(OBJDIR)/CarlaEngineNative.cpp.o \
 	$(OBJDIR)/CarlaEngineOscSend.cpp.o \
 	$(OBJDIR)/CarlaEnginePorts.cpp.o \
 	$(OBJDIR)/CarlaEngineThread.cpp.o \
@@ -113,7 +110,7 @@ OBJS_native = \
 	$(OBJDIR)/CarlaPluginLV2.cpp.o \
 	$(OBJDIR)/CarlaPluginVST2.cpp.o \
 	$(OBJDIR)/CarlaPluginFluidSynth.cpp.o \
-	$(OBJDIR)/CarlaPluginLinuxSampler.cpp.o \
+	$(OBJDIR)/CarlaPluginSFZero.cpp.o \
 	$(OBJDIR)/CarlaStandalone.cpp.o
 
 OBJS_lv2 = $(OBJS_native) \
@@ -125,8 +122,6 @@ OBJS_arch = \
 	$(OBJDIR)/CarlaEngineClient.cpp.arch.o \
 	$(OBJDIR)/CarlaEngineData.cpp.arch.o \
 	$(OBJDIR)/CarlaEngineInternal.cpp.arch.o \
-	$(OBJDIR)/CarlaEngineOsc.cpp.arch.o \
-	$(OBJDIR)/CarlaEngineOscSend.cpp.arch.o \
 	$(OBJDIR)/CarlaEnginePorts.cpp.arch.o \
 	$(OBJDIR)/CarlaEngineThread.cpp.arch.o \
 	$(OBJDIR)/CarlaEngineJack.cpp.arch.o \
@@ -134,7 +129,6 @@ OBJS_arch = \
 	$(OBJDIR)/CarlaPlugin.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginBridge.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginInternal.cpp.arch.o \
-	$(OBJDIR)/CarlaPluginJack.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginLADSPA.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginDSSI.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginLV2.cpp.arch.o \

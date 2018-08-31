@@ -28,6 +28,7 @@ OBJS = \
 	$(OBJDIR)/bypass.c.o \
 	$(OBJDIR)/lfo.c.o \
 	$(OBJDIR)/midi-channel-filter.c.o \
+	$(OBJDIR)/midi-channel-ab.c.o \
 	$(OBJDIR)/midi-gain.c.o \
 	$(OBJDIR)/midi-join.c.o \
 	$(OBJDIR)/midi-split.c.o \
@@ -52,8 +53,8 @@ OBJS_all = \
 # ---------------------------------------------------------------------------------------------------------------------
 # Include external plugins, if present
 
-ifneq (,$(wildcard external/Makefile))
-include external/Makefile
+ifneq (,$(wildcard external/Makefile.mk2))
+include external/Makefile.mk2
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

@@ -17,8 +17,8 @@
 
 #include "CarlaDefines.h"
 
-#ifdef BUILD_BRIDGE
-# error This file should not be compiled if building bridge
+#ifdef BUILD_BRIDGE_ALTERNATIVE_ARCH
+# error This file should not be compiled if building alternative-arch bridges
 #endif
 
 #include "CarlaEngineInternal.hpp"
@@ -647,6 +647,7 @@ public:
         pData->options.binaryDir   = carla_strdup(carla_get_library_folder());
 
         setCallback(_ui_server_callback, this);
+        setFileCallback(_ui_file_callback, this);
     }
 
     ~CarlaEngineNative() override
@@ -708,7 +709,7 @@ protected:
 
     bool usesConstantBufferSize() const noexcept override
     {
-        // TODO
+        // TODO LV2 hosts can report this, till then we allow this
         return true;
     }
 
@@ -1137,6 +1138,23 @@ protected:
         fUiServer.flushMessages();
     }
 
+    const char* uiFileCallback(FileCallbackOpcode action, bool isDir, const char* title, const char* filter)
+    {
+        switch (action)
+        {
+        case FILE_CALLBACK_DEBUG:
+            return nullptr;
+
+        case FILE_CALLBACK_OPEN:
+            return pHost->ui_open_file(pHost->handle, isDir, title, filter);
+
+        case FILE_CALLBACK_SAVE:
+            return pHost->ui_save_file(pHost->handle, isDir, title, filter);
+        }
+
+        return nullptr;
+    }
+
     void uiServerInfo()
     {
         CARLA_SAFE_ASSERT_RETURN(fIsRunning,);
@@ -1147,7 +1165,7 @@ protected:
 
         const CarlaMutexLocker cml(fUiServer.getPipeLock());
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
         if (! fUiServer.writeAndFixMessage("osc-urls"))
             return;
         if (! fUiServer.writeAndFixMessage(pData->osc.getServerPathTCP()))
@@ -1751,7 +1769,8 @@ protected:
 
         if (timeInfo.bbt.valid)
         {
-            std::sprintf(tmpBuf, P_UINT64 ":%i:%i:%i\n", timeInfo.frame, timeInfo.bbt.bar, timeInfo.bbt.beat, timeInfo.bbt.tick);
+            std::sprintf(tmpBuf, P_UINT64 ":%i:%i:%i\n",
+                         timeInfo.frame, timeInfo.bbt.bar, timeInfo.bbt.beat, static_cast<int>(timeInfo.bbt.tick + 0.5));
             if (! fUiServer.writeMessage(tmpBuf))
                 return;
 
@@ -1986,6 +2005,11 @@ public:
     static void _ui_server_callback(void* handle, EngineCallbackOpcode action, uint pluginId, int value1, int value2, float value3, const char* valueStr)
     {
         handlePtr->uiServerCallback(action, pluginId, value1, value2, value3, valueStr);
+    }
+
+    static const char* _ui_file_callback(void* handle, FileCallbackOpcode action, bool isDir, const char* title, const char* filter)
+    {
+        return handlePtr->uiFileCallback(action, isDir, title, filter);
     }
 
     // -------------------------------------------------------------------
@@ -2324,6 +2348,7 @@ CARLA_BACKEND_END_NAMESPACE
 #include "CarlaHostCommon.cpp"
 #include "CarlaPluginUI.cpp"
 #include "CarlaDssiUtils.cpp"
+#include "CarlaMacUtils.cpp"
 #include "CarlaPatchbayUtils.cpp"
 #include "CarlaPipeUtils.cpp"
 #include "CarlaStateUtils.cpp"

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla Backend utils
-# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -42,8 +42,6 @@ def getPluginTypeAsString(ptype):
         return "LV2"
     if ptype == PLUGIN_VST2:
         return "VST2"
-    if ptype == PLUGIN_GIG:
-        return "GIG"
     if ptype == PLUGIN_SF2:
         return "SF2"
     if ptype == PLUGIN_SFZ:
@@ -72,8 +70,6 @@ def getPluginTypeFromString(stype):
         return PLUGIN_LV2
     if stype in ("vst2", "vst"):
         return PLUGIN_VST2
-    if stype == "gig":
-        return PLUGIN_GIG
     if stype == "sf2":
         return PLUGIN_SF2
     if stype == "sfz":
@@ -94,6 +90,12 @@ CarlaPipeCallbackFunc = CFUNCTYPE(None, c_void_p, c_char_p)
 # @see carla_get_cached_plugin_info()
 class CarlaCachedPluginInfo(Structure):
     _fields_ = [
+        # Wherever the data in this struct is valid.
+        # For performance reasons, plugins are only checked on request,
+        #  and as such, the count vs number of really valid plugins might not match.
+        # Use this field to skip on plugins which cannot be loaded in Carla.
+        ("valid", c_bool),
+
         # Plugin category.
         ("category", c_enum),
 
@@ -137,6 +139,7 @@ class CarlaCachedPluginInfo(Structure):
 
 # @see CarlaCachedPluginInfo
 PyCarlaCachedPluginInfo = {
+    'valid': False,
     'category': PLUGIN_CATEGORY_NONE,
     'hints': 0x0,
     'audioIns': 0,
@@ -274,6 +277,8 @@ class CarlaUtils(object):
         return charPtrPtrToStringList(self.lib.carla_get_supported_features())
 
     # Get how many internal plugins are available.
+    # Internal and LV2 plugin formats are cached and need to be discovered via this function.
+    # Do not call this for any other plugin formats.
     def get_cached_plugin_count(self, ptype, pluginPath):
         return int(self.lib.carla_get_cached_plugin_count(ptype, pluginPath.encode("utf-8")))
 

@@ -44,12 +44,12 @@ void Application::idle()
     }
 }
 
-void Application::exec()
+void Application::exec(int idleTime)
 {
     for (; pData->doLoop;)
     {
         idle();
-        d_msleep(10);
+        d_msleep(idleTime);
     }
 }
 

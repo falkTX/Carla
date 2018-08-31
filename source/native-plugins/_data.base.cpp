@@ -19,10 +19,6 @@
 #include "CarlaMIDI.h"
 #include "CarlaUtils.hpp"
 
-#ifdef CARLA_OS_WIN
-# undef HAVE_PYQT
-#endif
-
 #undef DESCFUNCS
 #define DESCFUNCS \
     nullptr, nullptr, nullptr, nullptr, nullptr, \
@@ -64,6 +60,22 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* name      */ "MIDI Channel Filter",
     /* label     */ "midichanfilter",
     /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    DESCFUNCS
+},
+{
+    /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
+    /* hints     */ NATIVE_PLUGIN_IS_RTSAFE,
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_EVERYTHING,
+    /* audioIns  */ 0,
+    /* audioOuts */ 0,
+    /* midiIns   */ 1,
+    /* midiOuts  */ 2,
+    /* paramIns  */ 0,
+    /* paramOuts */ 0,
+    /* name      */ "MIDI Channel A/B",
+    /* label     */ "midichanab",
+    /* maker     */ "Milk Brewster",
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
@@ -143,6 +155,29 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* paramOuts */ 0,
     /* name      */ "MIDI Transpose",
     /* label     */ "miditranspose",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    DESCFUNCS
+},
+
+// --------------------------------------------------------------------------------------------------------------------
+// Audio file
+
+{
+    /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE
+                                                  |NATIVE_PLUGIN_USES_TIME),
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
+    /* audioIns  */ 0,
+    /* audioOuts */ 2,
+    /* midiIns   */ 0,
+    /* midiOuts  */ 0,
+    /* paramIns  */ 1,
+    /* paramOuts */ 0,
+    /* name      */ "Audio File",
+    /* label     */ "audiofile",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
@@ -303,7 +338,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
-#endif
+#endif // HAVE_PYQT
 
 // --------------------------------------------------------------------------------------------------------------------
 // External-UI plugins
@@ -344,7 +379,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
-#endif
+#endif // HAVE_PYQT
 
 };
 

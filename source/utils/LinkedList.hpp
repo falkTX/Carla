@@ -159,6 +159,7 @@ public:
             return *this;
         }
 
+#if 0
         T& operator*() noexcept
         {
             static T& fallback(_getFallback());
@@ -168,6 +169,7 @@ public:
 
             return data->value;
         }
+#endif
 
         const T& operator*() const noexcept
         {
@@ -180,8 +182,8 @@ public:
         }
 
     private:
-        ListHead* fEntry;
-        ListHead* fEntry2;
+        const ListHead* fEntry;
+        const ListHead* fEntry2;
 
         static T& _getFallback()
         {

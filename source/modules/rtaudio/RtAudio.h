@@ -246,6 +246,9 @@ class RTAUDIO_DLL_PUBLIC RtAudioError : public std::runtime_error
  */
 typedef void (*RtAudioErrorCallback)( RtAudioError::Type type, const std::string &errorText );
 
+//! RtAudio buffer size change callback.
+typedef bool (*RtAudioBufferSizeCallback)( unsigned int bufferSize, void* userData );
+
 // **************************************************************** //
 //
 // RtAudio class declaration.
@@ -494,7 +497,9 @@ class RTAUDIO_DLL_PUBLIC RtAudio
                    RtAudio::StreamParameters *inputParameters,
                    RtAudioFormat format, unsigned int sampleRate,
                    unsigned int *bufferFrames, RtAudioCallback callback,
-                   void *userData = NULL, RtAudio::StreamOptions *options = NULL, RtAudioErrorCallback errorCallback = NULL );
+                   void *userData = NULL, RtAudio::StreamOptions *options = NULL,
+                   RtAudioBufferSizeCallback bufSizeCallback = NULL,
+                   RtAudioErrorCallback errorCallback = NULL );
 
   //! A function that closes a stream and frees any associated stream memory.
   /*!
@@ -611,6 +616,7 @@ struct CallbackInfo {
   ThreadHandle thread;
   void *callback;
   void *userData;
+  void *bufSizeCallback;
   void *errorCallback;
   void *apiInfo;   // void pointer for API specific callback information
   bool isRunning;
@@ -619,7 +625,7 @@ struct CallbackInfo {
 
   // Default constructor.
   CallbackInfo()
-  :object(0), callback(0), userData(0), errorCallback(0), apiInfo(0), isRunning(false), doRealtime(false), priority(0) {}
+  :object(0), callback(0), userData(0), bufSizeCallback(0), errorCallback(0), apiInfo(0), isRunning(false), doRealtime(false), priority(0) {}
 };
 
 // **************************************************************** //
@@ -688,6 +694,7 @@ public:
                    RtAudioFormat format, unsigned int sampleRate,
                    unsigned int *bufferFrames, RtAudioCallback callback,
                    void *userData, RtAudio::StreamOptions *options,
+                   RtAudioBufferSizeCallback bufSizeCallback,
                    RtAudioErrorCallback errorCallback );
   virtual void closeStream( void );
   virtual void startStream( void ) = 0;
@@ -908,6 +915,9 @@ public:
   // which is not a member of RtAudio.  External use of this function
   // will most likely produce highly undesireable results!
   bool callbackEvent( unsigned long nframes );
+
+  // Buffer size change callback
+  bool bufferSizeEvent( unsigned long nframes );
 
   private:
 

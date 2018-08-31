@@ -1,7 +1,8 @@
 /*
  * Carla misc utils based on Juce
  * Copyright (C) 2013 Raw Material Software Ltd.
- * Copyright (C) 2013-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (c) 2016 ROLI Ltd.
+ * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -26,6 +27,7 @@
 #include "CarlaUtils.hpp"
 
 #include <algorithm>
+#include <cmath>
 
 /** A good old-fashioned C macro concatenation helper.
     This combines two items (which may themselves be macros) into a single string,
@@ -64,6 +66,20 @@
 # define CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ClassName) \
     CARLA_DECLARE_NON_COPY_CLASS(ClassName)
 #endif
+
+//=====================================================================================================================
+/** Converts a dBFS value to its equivalent gain level.
+
+    A gain of 1.0 = 0 dB, and lower gains map onto negative decibel values. Any
+    decibel value lower than minusInfinityDb will return a gain of 0.
+*/
+static inline
+float decibelsToGain (const double decibels, const double minusInfinityDb = -100.0)
+{
+    return decibels > minusInfinityDb
+            ? static_cast<float>(std::pow(10.0, decibels * 0.05))
+            : 0.0f;
+}
 
 //=====================================================================================================================
 /**

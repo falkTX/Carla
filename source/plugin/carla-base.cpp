@@ -63,6 +63,7 @@ struct PluginListManager {
 
             if (std::strcmp(desc->label, "lfo"             ) == 0 ||
                 std::strcmp(desc->label, "midichanfilter"  ) == 0 ||
+                std::strcmp(desc->label, "midichanab"      ) == 0 ||
                 std::strcmp(desc->label, "midigain"        ) == 0 ||
                 std::strcmp(desc->label, "midijoin"        ) == 0 ||
                 std::strcmp(desc->label, "midisplit"       ) == 0 ||
@@ -75,21 +76,7 @@ struct PluginListManager {
                 std::strcmp(desc->label, "carlapatchbay16" ) == 0 ||
                 std::strcmp(desc->label, "carlapatchbay32" ) == 0 ||
                 std::strcmp(desc->label, "bigmeter"        ) == 0 ||
-                std::strcmp(desc->label, "notes"           ) == 0 ||
-#ifdef CARLA_ZYN_LV2_EXPORTED
-                std::strcmp(desc->label, "zynalienwah"     ) == 0 ||
-                std::strcmp(desc->label, "zynchorus"       ) == 0 ||
-                std::strcmp(desc->label, "zyndistortion"   ) == 0 ||
-                std::strcmp(desc->label, "zyndynamicfilter") == 0 ||
-                std::strcmp(desc->label, "zynecho"         ) == 0 ||
-                std::strcmp(desc->label, "zynphaser"       ) == 0 ||
-                std::strcmp(desc->label, "zynreverb"       ) == 0 ||
-                std::strcmp(desc->label, "zynaddsubfx"     ) == 0 ||
-#endif
-                std::strcmp(desc->label, "at1"             ) == 0 ||
-                std::strcmp(desc->label, "bls1"            ) == 0 ||
-                std::strcmp(desc->label, "rev1-ambisonic"  ) == 0 ||
-                std::strcmp(desc->label, "rev1-stereo"     ) == 0)
+                std::strcmp(desc->label, "notes"           ) == 0)
             {
                 descs.append(desc);
             }

@@ -181,8 +181,9 @@ class ExternalUI(object):
 
     def send(self, lines):
         if self.fPipeClient is None or len(lines) == 0:
-            return
+            return False
 
+        hasError = False
         gCarla.utils.pipe_client_lock(self.fPipeClient)
 
         try:
@@ -199,9 +200,12 @@ class ExternalUI(object):
                     line2 = "%.10f" % line
                 else:
                     print("unknown data type to send:", type(line))
-                    return
+                    hasError = True
+                    break
 
-                gCarla.utils.pipe_client_write_msg(self.fPipeClient, line2 + "\n")
+                if not gCarla.utils.pipe_client_write_msg(self.fPipeClient, line2 + "\n"):
+                    hasError = True
+                    break
 
         finally:
-            gCarla.utils.pipe_client_flush_and_unlock(self.fPipeClient)
+            return gCarla.utils.pipe_client_flush_and_unlock(self.fPipeClient) and not hasError

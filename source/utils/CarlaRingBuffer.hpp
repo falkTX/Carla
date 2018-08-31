@@ -350,9 +350,17 @@ protected:
         if (readto > fBuffer->size)
         {
             readto -= fBuffer->size;
-            const uint32_t firstpart(fBuffer->size - tail);
-            std::memcpy(bytebuf, fBuffer->buf + tail, firstpart);
-            std::memcpy(bytebuf + firstpart, fBuffer->buf, readto);
+
+            if (size == 1)
+            {
+                std::memcpy(bytebuf, fBuffer->buf + tail, 1);
+            }
+            else
+            {
+                const uint32_t firstpart(fBuffer->size - tail);
+                std::memcpy(bytebuf, fBuffer->buf + tail, firstpart);
+                std::memcpy(bytebuf + firstpart, fBuffer->buf, readto);
+            }
         }
         else
         {
@@ -396,9 +404,17 @@ protected:
         if (writeto > fBuffer->size)
         {
             writeto -= fBuffer->size;
-            const uint32_t firstpart(fBuffer->size - wrtn);
-            std::memcpy(fBuffer->buf + wrtn, bytebuf, firstpart);
-            std::memcpy(fBuffer->buf, bytebuf + firstpart, writeto);
+
+            if (size == 1)
+            {
+                std::memcpy(fBuffer->buf, bytebuf, 1);
+            }
+            else
+            {
+                const uint32_t firstpart(fBuffer->size - wrtn);
+                std::memcpy(fBuffer->buf + wrtn, bytebuf, firstpart);
+                std::memcpy(fBuffer->buf, bytebuf + firstpart, writeto);
+            }
         }
         else
         {

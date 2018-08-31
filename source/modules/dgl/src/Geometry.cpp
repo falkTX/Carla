@@ -545,7 +545,7 @@ const T& Circle<T>::getX() const noexcept
 template<typename T>
 const T& Circle<T>::getY() const noexcept
 {
-    return fPos.fX;
+    return fPos.fY;
 }
 
 template<typename T>

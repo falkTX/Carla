@@ -472,8 +472,8 @@ void NanoVG::skewY(float angle)
 void NanoVG::scale(float x, float y)
 {
     if (fContext == nullptr) return;
-    DISTRHO_SAFE_ASSERT_RETURN(x > 0.0f,);
-    DISTRHO_SAFE_ASSERT_RETURN(y > 0.0f,);
+    DISTRHO_SAFE_ASSERT_RETURN(d_isNotZero(x),);
+    DISTRHO_SAFE_ASSERT_RETURN(d_isNotZero(y),);
 
     nvgScale(fContext, x, y);
 }
@@ -863,9 +863,9 @@ float NanoVG::textBounds(float x, float y, const char* string, const char* end, 
     if (fContext == nullptr) return 0.0f;
     DISTRHO_SAFE_ASSERT_RETURN(string != nullptr && string[0] != '\0', 0.0f);
 
-    float b[4];
+    float b[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
     const float ret = nvgTextBounds(fContext, x, y, string, end, b);
-    bounds = Rectangle<float>(b[0], b[1], b[2], b[3]);
+    bounds = Rectangle<float>(b[0], b[1], b[2] - b[0], b[3] - b[1]);
     return ret;
 }
 

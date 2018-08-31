@@ -90,10 +90,11 @@ public:
     void setState(const char* key, const char* value);
 #endif
 
-#if DISTRHO_PLUGIN_IS_SYNTH
+#if DISTRHO_PLUGIN_WANT_MIDI_INPUT
    /**
       sendNote.
       @TODO Document this.
+      @note Work in progress. Implemented for DSSI and LV2 formats.
     */
     void sendNote(uint8_t channel, uint8_t note, uint8_t velocity);
 #endif

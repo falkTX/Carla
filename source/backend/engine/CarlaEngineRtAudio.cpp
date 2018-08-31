@@ -90,7 +90,7 @@ static const char* getRtAudioApiName(const RtAudio::Api api) noexcept
     case RtAudio::UNIX_PULSE:
         return "PulseAudio";
     case RtAudio::UNIX_JACK:
-#if defined(CARLA_OS_LINUX)
+#if defined(CARLA_OS_LINUX) && defined(__LINUX_ALSA__)
         return "JACK with ALSA-MIDI";
 #elif defined(CARLA_OS_MAC)
         return "JACK with CoreMidi";
@@ -128,7 +128,7 @@ static RtMidi::Api getMatchedAudioMidiAPI(const RtAudio::Api rtApi) noexcept
 
     case RtAudio::UNIX_PULSE:
     case RtAudio::UNIX_JACK:
-#if defined(CARLA_OS_LINUX)
+#if defined(CARLA_OS_LINUX) && defined(__LINUX_ALSA__)
         return RtMidi::LINUX_ALSA;
 #elif defined(CARLA_OS_MAC)
         return RtMidi::MACOSX_CORE;
@@ -271,7 +271,7 @@ public:
 
         RtAudio::StreamOptions rtOptions;
         rtOptions.flags = RTAUDIO_MINIMIZE_LATENCY | RTAUDIO_HOG_DEVICE | RTAUDIO_SCHEDULE_REALTIME;
-        rtOptions.numberOfBuffers = pData->options.audioNumPeriods;
+        rtOptions.numberOfBuffers = pData->options.audioTripleBuffer ? 3 : 2;
         rtOptions.streamName = clientName;
         rtOptions.priority = 85;
 
@@ -286,7 +286,8 @@ public:
             fAudio.openStream(oParams.nChannels > 0 ? &oParams : nullptr,
                               iParams.nChannels > 0 ? &iParams : nullptr,
                               RTAUDIO_FLOAT32, pData->options.audioSampleRate, &bufferFrames,
-                              carla_rtaudio_process_callback, this, &rtOptions);
+                              carla_rtaudio_process_callback, this, &rtOptions,
+                              carla_rtaudio_buffer_size_callback);
         }
         catch (const RtAudioError& e) {
             setLastError(e.what());
@@ -592,8 +593,7 @@ protected:
         /* */ float* const outsPtr =       (float*)outputBuffer;
 
         // assert rtaudio buffers
-        CARLA_SAFE_ASSERT_RETURN(outputBuffer      != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(pData->bufferSize == nframes,);
+        CARLA_SAFE_ASSERT_RETURN(outputBuffer != nullptr,);
 
         // set rtaudio buffers as non-interleaved
         const float* inBuf[fAudioInCount];
@@ -601,6 +601,7 @@ protected:
 
         if (fAudioInterleaved)
         {
+            // FIXME - this looks completely wrong!
             float* inBuf2[fAudioInCount];
 
             for (uint i=0, count=fAudioInCount; i<count; ++i)
@@ -753,6 +754,28 @@ protected:
 
         return; // unused
         (void)streamTime; (void)status;
+    }
+
+    void handleBufferSizeCallback(const uint newBufferSize)
+    {
+        carla_stdout("bufferSize callback %u %u", pData->bufferSize, newBufferSize);
+        if (pData->bufferSize == newBufferSize)
+            return;
+
+        if (fAudioInCount > 0)
+        {
+            delete[] fAudioIntBufIn;
+            fAudioIntBufIn = new float[fAudioInCount*newBufferSize];
+        }
+
+        if (fAudioOutCount > 0)
+        {
+            delete[] fAudioIntBufOut;
+            fAudioIntBufOut = new float[fAudioOutCount*newBufferSize];
+        }
+
+        pData->bufferSize = newBufferSize;
+        bufferSizeChanged(newBufferSize);
     }
 
     void handleMidiCallback(double timeStamp, std::vector<uchar>* const message)
@@ -1056,6 +1079,12 @@ private:
         return 0;
     }
 
+    static bool carla_rtaudio_buffer_size_callback(unsigned int bufferSize, void* userData)
+    {
+        handlePtr->handleBufferSizeCallback(bufferSize);
+        return true;
+    }
+
     static void carla_rtmidi_callback(double timeStamp, std::vector<uchar>* message, void* userData)
     {
         handlePtr->handleMidiCallback(timeStamp, message);
@@ -1132,23 +1161,25 @@ const char* const* CarlaEngine::getRtAudioApiDeviceNames(const uint index)
         return nullptr;
 
     const RtAudio::Api& api(gRtAudioApis[index]);
-
-    RtAudio rtAudio(api);
-
-    const uint devCount(rtAudio.getDeviceCount());
-
-    if (devCount == 0)
-        return nullptr;
-
     CarlaStringList devNames;
 
-    for (uint i=0; i < devCount; ++i)
-    {
-        RtAudio::DeviceInfo devInfo(rtAudio.getDeviceInfo(i));
+    try {
+        RtAudio rtAudio(api);
 
-        if (devInfo.probed && devInfo.outputChannels > 0 /*&& (devInfo.nativeFormats & RTAUDIO_FLOAT32) != 0*/)
-            devNames.append(devInfo.name.c_str());
-    }
+        const uint devCount(rtAudio.getDeviceCount());
+
+        if (devCount == 0)
+            return nullptr;
+
+        for (uint i=0; i < devCount; ++i)
+        {
+            RtAudio::DeviceInfo devInfo(rtAudio.getDeviceInfo(i));
+
+            if (devInfo.probed && devInfo.outputChannels > 0 /*&& (devInfo.nativeFormats & RTAUDIO_FLOAT32) != 0*/)
+                devNames.append(devInfo.name.c_str());
+        }
+
+    } CARLA_SAFE_EXCEPTION_RETURN("RtAudio device names", nullptr);
 
     gDeviceNames = devNames.toCharStringListPtr();
 
@@ -1162,50 +1193,80 @@ const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const uint index
     if (index >= gRtAudioApis.size())
         return nullptr;
 
-    const RtAudio::Api& api(gRtAudioApis[index]);
-
-    RtAudio rtAudio(api);
-
-    const uint devCount(rtAudio.getDeviceCount());
-
-    if (devCount == 0)
-        return nullptr;
-
-    uint i;
-    RtAudio::DeviceInfo rtAudioDevInfo;
-
-    for (i=0; i < devCount; ++i)
-    {
-        rtAudioDevInfo = rtAudio.getDeviceInfo(i);
-
-        if (rtAudioDevInfo.name == deviceName)
-            break;
-    }
-
-    if (i == devCount)
-        return nullptr;
-
     static EngineDriverDeviceInfo devInfo = { 0x0, nullptr, nullptr };
     static uint32_t dummyBufferSizes[]    = { 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 0 };
     static double   dummySampleRates[]    = { 22050.0, 32000.0, 44100.0, 48000.0, 88200.0, 96000.0, 176400.0, 192000.0, 0.0 };
 
     // reset
     devInfo.hints = 0x0;
-    devInfo.bufferSizes = dummyBufferSizes;
 
     // cleanup
+    if (devInfo.bufferSizes != nullptr && devInfo.bufferSizes != dummyBufferSizes)
+    {
+        delete[] devInfo.bufferSizes;
+        devInfo.bufferSizes = nullptr;
+    }
     if (devInfo.sampleRates != nullptr && devInfo.sampleRates != dummySampleRates)
     {
         delete[] devInfo.sampleRates;
         devInfo.sampleRates = nullptr;
     }
 
-    if (size_t sampleRatesCount = rtAudioDevInfo.sampleRates.size())
+    const RtAudio::Api& api(gRtAudioApis[index]);
+
+    if (api == RtAudio::UNIX_JACK)
+    {
+        devInfo.bufferSizes = nullptr;
+        devInfo.sampleRates = nullptr;
+        return &devInfo;
+    }
+
+    RtAudio::DeviceInfo rtAudioDevInfo;
+
+    try {
+        RtAudio rtAudio(api);
+
+        const uint devCount(rtAudio.getDeviceCount());
+
+        if (devCount == 0)
+            return nullptr;
+
+        uint i;
+        for (i=0; i < devCount; ++i)
+        {
+            rtAudioDevInfo = rtAudio.getDeviceInfo(i);
+
+            if (rtAudioDevInfo.name == deviceName)
+                break;
+        }
+
+        if (i == devCount)
+            rtAudioDevInfo = rtAudio.getDeviceInfo(rtAudio.getDefaultOutputDevice());
+
+    } CARLA_SAFE_EXCEPTION_RETURN("RtAudio device discovery", nullptr);
+
+    // a few APIs can do triple buffer
+    switch (api)
+    {
+    case RtAudio::LINUX_ALSA:
+    case RtAudio::LINUX_OSS:
+    case RtAudio::WINDOWS_DS:
+        devInfo.hints |= ENGINE_DRIVER_DEVICE_CAN_TRIPLE_BUFFER;
+        break;
+    default:
+        break;
+    }
+
+    // always use default buffer sizes
+    devInfo.bufferSizes = dummyBufferSizes;
+
+    // valid sample rates
+    if (const size_t sampleRatesCount = rtAudioDevInfo.sampleRates.size())
     {
         double* const sampleRates(new double[sampleRatesCount+1]);
 
-        for (size_t j=0; j < sampleRatesCount; ++j)
-            sampleRates[j] = rtAudioDevInfo.sampleRates[j];
+        for (size_t i=0; i < sampleRatesCount; ++i)
+            sampleRates[i] = rtAudioDevInfo.sampleRates[i];
         sampleRates[sampleRatesCount] = 0.0;
 
         devInfo.sampleRates = sampleRates;

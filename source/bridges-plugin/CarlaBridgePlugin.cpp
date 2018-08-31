@@ -27,8 +27,15 @@
 #include "CarlaMIDI.h"
 
 #ifdef CARLA_OS_LINUX
+# include <sched.h>
 # include <signal.h>
 # include <sys/prctl.h>
+# define SCHED_RESET_ON_FORK 0x40000000
+#endif
+
+#ifdef CARLA_OS_WIN
+# include <pthread.h>
+# include <objbase.h>
 #endif
 
 #ifdef HAVE_X11
@@ -433,7 +440,7 @@ int main(int argc, char* argv[])
 
     const void* extraStuff = nullptr;
 
-    if (itype == CarlaBackend::PLUGIN_GIG || itype == CarlaBackend::PLUGIN_SF2)
+    if (itype == CarlaBackend::PLUGIN_SF2)
     {
         if (label == nullptr)
             label = clientName;
@@ -442,21 +449,52 @@ int main(int argc, char* argv[])
             extraStuff = "true";
     }
 
+    // ---------------------------------------------------------------------
+    // Initialize OS features
+
+#ifdef CARLA_OS_WIN
+    CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+# ifndef __WINPTHREADS_VERSION
+    // (non-portable) initialization of statically linked pthread library
+    pthread_win32_process_attach_np();
+    pthread_win32_thread_attach_np();
+# endif
+#endif
+
 #ifdef HAVE_X11
     if (std::getenv("DISPLAY") != nullptr)
         XInitThreads();
 #endif
 
     // ---------------------------------------------------------------------
-    // Init plugin bridge
+    // Set ourselves with high priority
 
-    CarlaBridgePlugin bridge(useBridge, clientName, audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
+#ifdef CARLA_OS_LINUX
+    // reset scheduler to normal mode
+    struct sched_param sparam;
+    carla_zeroStruct(sparam);
+    sched_setscheduler(0, SCHED_OTHER|SCHED_RESET_ON_FORK, &sparam);
 
-    if (! bridge.isOk())
+    // try niceness first, if it fails, try SCHED_RR
+    if (nice(-5) < 0)
     {
-        carla_stderr("Failed to init engine, error was:\n%s", carla_get_last_error());
-        return 1;
+        sparam.sched_priority = (sched_get_priority_max(SCHED_RR) + sched_get_priority_min(SCHED_RR*7)) / 8;
+
+        if (sparam.sched_priority > 0)
+        {
+            if (sched_setscheduler(0, SCHED_RR|SCHED_RESET_ON_FORK, &sparam) < 0)
+            {
+                CarlaString error(std::strerror(errno));
+                carla_stderr("Failed to set high priority, error %i: %s", errno, error.buffer());
+            }
+        }
     }
+#endif
+
+#ifdef CARLA_OS_WIN
+    if (! SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS))
+        carla_stderr("Failed to set high priority.");
+#endif
 
     // ---------------------------------------------------------------------
     // Listen for ctrl+c or sigint/sigterm events
@@ -464,42 +502,64 @@ int main(int argc, char* argv[])
     initSignalHandler();
 
     // ---------------------------------------------------------------------
-    // Init plugin
+    // Init plugin bridge
 
     int ret;
 
-    if (carla_add_plugin(btype, itype, filename, name, label, uniqueId, extraStuff, 0x0))
     {
-        ret = 0;
+        CarlaBridgePlugin bridge(useBridge, clientName,
+                                 audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
 
-        if (! useBridge)
+        if (! bridge.isOk())
         {
-            carla_set_active(0, true);
-
-            if (const CarlaPluginInfo* const pluginInfo = carla_get_plugin_info(0))
-            {
-                if (pluginInfo->hints & CarlaBackend::PLUGIN_HAS_CUSTOM_UI)
-                {
-#ifdef HAVE_X11
-                    if (std::getenv("DISPLAY") != nullptr)
-#endif
-                        carla_show_custom_ui(0, true);
-                }
-            }
+            carla_stderr("Failed to init engine, error was:\n%s", carla_get_last_error());
+            return 1;
         }
 
-        bridge.exec(useBridge);
-    }
-    else
-    {
-        ret = 1;
+        // -----------------------------------------------------------------
+        // Init plugin
 
-        const char* const lastError(carla_get_last_error());
-        carla_stderr("Plugin failed to load, error was:\n%s", lastError);
+        if (carla_add_plugin(btype, itype, filename, name, label, uniqueId, extraStuff, 0x0))
+        {
+            ret = 0;
 
-        //if (useBridge)
-        //    bridge.sendOscBridgeError(lastError);
+            if (! useBridge)
+            {
+                carla_set_active(0, true);
+
+                if (const CarlaPluginInfo* const pluginInfo = carla_get_plugin_info(0))
+                {
+                    if (pluginInfo->hints & CarlaBackend::PLUGIN_HAS_CUSTOM_UI)
+                    {
+#ifdef HAVE_X11
+                        if (std::getenv("DISPLAY") != nullptr)
+#endif
+                            carla_show_custom_ui(0, true);
+                    }
+                }
+            }
+
+            bridge.exec(useBridge);
+        }
+        else
+        {
+            ret = 1;
+
+            const char* const lastError(carla_get_last_error());
+            carla_stderr("Plugin failed to load, error was:\n%s", lastError);
+
+            //if (useBridge)
+            //    bridge.sendOscBridgeError(lastError);
+        }
     }
+
+#ifdef CARLA_OS_WIN
+#ifndef __WINPTHREADS_VERSION
+    pthread_win32_thread_detach_np();
+    pthread_win32_process_detach_np();
+#endif
+    CoUninitialize();
+#endif
 
     return ret;
 }

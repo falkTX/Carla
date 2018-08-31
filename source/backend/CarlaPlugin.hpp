@@ -47,6 +47,7 @@ CARLA_BACKEND_START_NAMESPACE
 class CarlaEngineAudioPort;
 class CarlaEngineCVPort;
 class CarlaEngineEventPort;
+class CarlaEngineBridge;
 struct CarlaStateSave;
 
 // -----------------------------------------------------------------------
@@ -462,7 +463,7 @@ public:
      */
     void setActive(const bool active, const bool sendOsc, const bool sendCallback) noexcept;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
      * Set the plugin's dry/wet signal value to @a value.
      * @a value must be between 0.0 and 1.0.
@@ -748,7 +749,7 @@ public:
      */
     void sendMidiSingleNote(const uint8_t channel, const uint8_t note, const uint8_t velo, const bool sendGui, const bool sendOsc, const bool sendCallback);
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
      * Send all midi notes off to the host callback.
      * This doesn't send the actual MIDI All-Notes-Off event, but 128 note-offs instead (IFF ctrlChannel is valid).
@@ -805,11 +806,6 @@ public:
 
     // -------------------------------------------------------------------
     // Helper functions
-
-    /*!
-     * Check if the plugin can run in rack mode.
-     */
-    bool canRunInRack() const noexcept;
 
     /*!
      * Get the plugin's engine, as passed in the constructor.
@@ -922,11 +918,7 @@ public:
     static CarlaPlugin* newVST2(const Initializer& init);
 
     static CarlaPlugin* newFluidSynth(const Initializer& init, const bool use16Outs);
-    static CarlaPlugin* newLinuxSampler(const Initializer& init, const char* const format, const bool use16Outs);
-
-    static CarlaPlugin* newFileGIG(const Initializer& init, const bool use16Outs);
-    static CarlaPlugin* newFileSF2(const Initializer& init, const bool use16Outs);
-    static CarlaPlugin* newFileSFZ(const Initializer& init);
+    static CarlaPlugin* newSFZero(const Initializer& init);
 
     static CarlaPlugin* newJackApp(const Initializer& init);
 #endif
@@ -943,11 +935,14 @@ protected:
     // -------------------------------------------------------------------
     // Internal helper functions
 
+public:
+    // FIXME: remove public exception on 2.1 release
     /*!
      * Call LV2 restore.
      */
     virtual void restoreLV2State() noexcept;
 
+protected:
     /*!
      * Give plugin bridges a change to update their custom data sets.
      */
@@ -993,6 +988,7 @@ protected:
         CARLA_DECLARE_NON_COPY_CLASS(ScopedSingleProcessLocker)
     };
 
+    friend class CarlaEngineBridge;
     CARLA_DECLARE_NON_COPY_CLASS(CarlaPlugin)
 };
 

@@ -106,7 +106,7 @@ std::vector<uint8_t> d_getChunkFromBase64String(const char* const base64string)
         if (c == ' ' || c == '\n')
             continue;
 
-         DISTRHO_SAFE_ASSERT_CONTINUE(CarlaBase64Helpers::isBase64Char(c));
+        DISTRHO_SAFE_ASSERT_CONTINUE(DistrhoBase64Helpers::isBase64Char(c));
 
         charArray4[i++] = static_cast<uint>(c);
 

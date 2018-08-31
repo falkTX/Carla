@@ -15,10 +15,14 @@ OBJS = \
 	$(OBJDIR)/CarlaEngineData.cpp.o \
 	$(OBJDIR)/CarlaEngineGraph.cpp.o \
 	$(OBJDIR)/CarlaEngineInternal.cpp.o \
-	$(OBJDIR)/CarlaEngineOsc.cpp.o \
-	$(OBJDIR)/CarlaEngineOscSend.cpp.o \
 	$(OBJDIR)/CarlaEnginePorts.cpp.o \
 	$(OBJDIR)/CarlaEngineThread.cpp.o
+
+ifeq ($(HAVE_LIBLO),true)
+OBJS += \
+	$(OBJDIR)/CarlaEngineOsc.cpp.o \
+	$(OBJDIR)/CarlaEngineOscSend.cpp.o
+endif
 
 OBJSa = $(OBJS) \
 	$(OBJDIR)/CarlaEngineJack.cpp.o \
