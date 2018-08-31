@@ -1258,6 +1258,7 @@ class PatchScene(QGraphicsScene):
                     rect = item.boundingRect()
 
                     if first_value:
+                        first_value = False
                         min_x = pos.x()
                         min_y = pos.y()
                         max_x = pos.x() + rect.width()
@@ -1267,8 +1268,6 @@ class PatchScene(QGraphicsScene):
                         min_y = min(min_y, pos.y())
                         max_x = max(max_x, pos.x() + rect.width())
                         max_y = max(max_y, pos.y() + rect.height())
-
-                    first_value = False
 
             if not first_value:
                 self.m_view.fitInView(min_x, min_y, abs(max_x - min_x), abs(max_y - min_y), Qt.KeepAspectRatio)
@@ -2075,6 +2074,9 @@ class CanvasPort(QGraphicsItem):
         lineHinting = canvas.theme.port_audio_jack_pen.widthF() / 2
 
         poly_locx = [0, 0, 0, 0, 0]
+        poly_corner_xhinting = (float(canvas.theme.port_height)/2) % floor(float(canvas.theme.port_height)/2)
+        if poly_corner_xhinting == 0:
+            poly_corner_xhinting = 0.5 * (1 - 7 / (float(canvas.theme.port_height)/2))
 
         if self.m_port_mode == PORT_MODE_INPUT:
             text_pos = QPointF(3, canvas.theme.port_text_ypos)
@@ -2082,7 +2084,7 @@ class CanvasPort(QGraphicsItem):
             if canvas.theme.port_mode == Theme.THEME_PORT_POLYGON:
                 poly_locx[0] = lineHinting
                 poly_locx[1] = self.m_port_width + 5 - lineHinting
-                poly_locx[2] = self.m_port_width + 12 - lineHinting
+                poly_locx[2] = self.m_port_width + 12 - poly_corner_xhinting
                 poly_locx[3] = self.m_port_width + 5 - lineHinting
                 poly_locx[4] = lineHinting
             elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE:
@@ -2101,7 +2103,7 @@ class CanvasPort(QGraphicsItem):
             if canvas.theme.port_mode == Theme.THEME_PORT_POLYGON:
                 poly_locx[0] = self.m_port_width + 12 - lineHinting
                 poly_locx[1] = 7 + lineHinting
-                poly_locx[2] = 0 + lineHinting
+                poly_locx[2] = 0 + poly_corner_xhinting
                 poly_locx[3] = 7 + lineHinting
                 poly_locx[4] = self.m_port_width + 12 - lineHinting
             elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE:
