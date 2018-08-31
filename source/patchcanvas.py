@@ -1263,10 +1263,10 @@ class PatchScene(QGraphicsScene):
                         max_x = pos.x() + rect.width()
                         max_y = pos.y() + rect.height()
                     else:
-                        min_x = min( min_x, pos.x() )
-                        min_y = min( min_y, pos.y() )
-                        max_x = max( max_x, pos.x() + rect.width() )
-                        max_y = max( max_y, pos.y() + rect.height() )
+                        min_x = min(min_x, pos.x())
+                        min_y = min(min_y, pos.y())
+                        max_x = max(max_x, pos.x() + rect.width())
+                        max_y = max(max_y, pos.y() + rect.height())
 
                     first_value = False
 
@@ -1373,8 +1373,8 @@ class PatchScene(QGraphicsScene):
                 self.m_rubberband_orig_point = event.scenePos()
 
             pos = event.scenePos()
-            x = min( pos.x(), self.m_rubberband_orig_point.x() )
-            y = min( pos.y(), self.m_rubberband_orig_point.y() )
+            x = min(pos.x(), self.m_rubberband_orig_point.x())
+            y = min(pos.y(), self.m_rubberband_orig_point.y())
 
             lineHinting = canvas.theme.rubberband_pen.widthF() / 2
             self.m_rubberband.setRect(x+lineHinting,
