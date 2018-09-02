@@ -16,8 +16,8 @@ sudo apt-get install -y \
     libpulse-dev \
     libmagic-dev \
     libgl1-mesa-dev \
-    libx11:i386 \
     libx11-dev \
+    libx11-6:i386 \
     liblo-static \
     fluidsynth-static \
     apple-x86-setup \
