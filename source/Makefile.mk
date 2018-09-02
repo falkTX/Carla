@@ -354,6 +354,10 @@ ifeq ($(LINUX_OR_MACOS),true)
 LIBDL_LIBS = -ldl
 endif
 
+ifeq ($(WIN32),true)
+PKG_CONFIG_FLAGS = --static
+endif
+
 ifeq ($(HAVE_DGL),true)
 ifeq ($(MACOS),true)
 DGL_LIBS  = -framework OpenGL -framework Cocoa
@@ -362,14 +366,14 @@ ifeq ($(WIN32),true)
 DGL_LIBS  = -lopengl32 -lgdi32
 endif
 ifneq ($(MACOS_OR_WIN32),true)
-DGL_FLAGS = $(shell pkg-config --cflags gl x11)
-DGL_LIBS  = $(shell pkg-config --libs gl x11)
+DGL_FLAGS = $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags gl x11)
+DGL_LIBS  = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs gl x11)
 endif
 endif
 
 ifeq ($(HAVE_LIBLO),true)
-LIBLO_FLAGS = $(shell pkg-config --cflags liblo)
-LIBLO_LIBS  = $(shell pkg-config --libs liblo)
+LIBLO_FLAGS = $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags liblo)
+LIBLO_LIBS  = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs liblo)
 endif
 
 ifeq ($(HAVE_LIBMAGIC),true)
@@ -380,23 +384,23 @@ endif
 endif
 
 ifeq ($(HAVE_FFMPEG),true)
-FFMPEG_FLAGS = $(shell pkg-config --cflags libavcodec libavformat libavutil)
-FFMPEG_LIBS  = $(shell pkg-config --libs libavcodec libavformat libavutil)
+FFMPEG_FLAGS = $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags libavcodec libavformat libavutil)
+FFMPEG_LIBS  = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs libavcodec libavformat libavutil)
 endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
-FLUIDSYNTH_FLAGS = $(shell pkg-config --cflags fluidsynth)
-FLUIDSYNTH_LIBS  = $(shell pkg-config --libs fluidsynth)
+FLUIDSYNTH_FLAGS = $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags fluidsynth)
+FLUIDSYNTH_LIBS  = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs fluidsynth)
 endif
 
 ifeq ($(HAVE_SNDFILE),true)
-SNDFILE_FLAGS = $(shell pkg-config --cflags sndfile)
-SNDFILE_LIBS  = $(shell pkg-config --libs sndfile)
+SNDFILE_FLAGS = $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags sndfile)
+SNDFILE_LIBS  = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs sndfile)
 endif
 
 ifeq ($(HAVE_X11),true)
-X11_FLAGS = $(shell pkg-config --cflags x11)
-X11_LIBS  = $(shell pkg-config --libs x11)
+X11_FLAGS = $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags x11)
+X11_LIBS  = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs x11)
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -413,8 +417,8 @@ endif
 ifeq ($(UNIX),true)
 RTAUDIO_FLAGS   += -D__UNIX_JACK__
 ifeq ($(HAVE_PULSEAUDIO),true)
-RTAUDIO_FLAGS   += $(shell pkg-config --cflags libpulse-simple) -D__UNIX_PULSE__
-RTAUDIO_LIBS    += $(shell pkg-config --libs libpulse-simple)
+RTAUDIO_FLAGS   += $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags libpulse-simple) -D__UNIX_PULSE__
+RTAUDIO_LIBS    += $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs libpulse-simple)
 endif
 endif
 
@@ -448,10 +452,10 @@ LILV_LIBS        = -ldl -lm -lrt
 RTMEMPOOL_LIBS   = -lpthread -lrt
 WATER_LIBS       = -ldl -lpthread -lrt
 ifeq ($(HAVE_ALSA),true)
-RTAUDIO_FLAGS   += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
-RTAUDIO_LIBS    += $(shell pkg-config --libs alsa) -lpthread
-RTMIDI_FLAGS    += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
-RTMIDI_LIBS     += $(shell pkg-config --libs alsa)
+RTAUDIO_FLAGS   += $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags alsa) -D__LINUX_ALSA__
+RTAUDIO_LIBS    += $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs alsa) -lpthread
+RTMIDI_FLAGS    += $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags alsa) -D__LINUX_ALSA__
+RTMIDI_LIBS     += $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs alsa)
 endif
 endif
 
@@ -476,6 +480,12 @@ WATER_LIBS       = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleau
 RTAUDIO_FLAGS   += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_WASAPI__
 RTAUDIO_LIBS    += -ldsound -luuid -lksuser -lwinmm
 RTMIDI_FLAGS    += -D__WINDOWS_MM__
+ifeq ($(HAVE_FLUIDSYNTH),true)
+ifeq ($(HAVE_SNDFILE),true)
+FLUIDSYNTH_LIBS += $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs sndfile)
+endif
+FLUIDSYNTH_LIBS += $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs glib-2.0 gthread-2.0) -ldsound -lole32 -lwinmm -lws2_32
+endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
