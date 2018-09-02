@@ -17,7 +17,7 @@ make distclean >/dev/null
 make features
 
 # Build native stuff
-make all posix32
+make all posix32 posix64
 
 # Build wine bridges
 make wine32 wine64

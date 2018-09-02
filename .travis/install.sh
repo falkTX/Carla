@@ -16,6 +16,7 @@ sudo apt-get install -y \
     libpulse-dev \
     libmagic-dev \
     libgl1-mesa-dev \
+    libx11:i386 \
     libx11-dev \
     liblo-static \
     fluidsynth-static \
@@ -40,3 +41,5 @@ wget https://launchpad.net/~kxstudio-team/+archive/ubuntu/builds/+files/apple-ma
 wget https://launchpad.net/~kxstudio-team/+archive/ubuntu/builds/+files/apple-macports-libvorbis_1.3.3-0_all.deb
 cd ~
 rm -r /tmp/osx-macports-pkgs
+
+sudo ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
