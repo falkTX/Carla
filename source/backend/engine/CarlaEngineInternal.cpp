@@ -176,10 +176,11 @@ void EngineInternalTime::fillEngineTimeInfo(const uint32_t newFrames) noexcept
 
     double ticktmp;
 
-    timeInfo.usecs = 0;
-
     if (transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
+    {
+        timeInfo.usecs = 0;
         timeInfo.frame = nextFrame;
+    }
 
     if (needsReset)
     {
@@ -256,74 +257,19 @@ void EngineInternalTime::fillJackTimeInfo(jack_position_t* const pos, const uint
 {
     CARLA_SAFE_ASSERT_RETURN(carla_isNotZero(sampleRate),);
     CARLA_SAFE_ASSERT_RETURN(newFrames > 0,);
+    CARLA_SAFE_ASSERT(transportMode == ENGINE_TRANSPORT_MODE_JACK);
 
-    double ticktmp;
+    fillEngineTimeInfo(newFrames);
 
-    if (needsReset)
-    {
-        pos->valid = JackPositionBBT;
-        pos->beat_type = 4.0f;
-        pos->ticks_per_beat = kTicksPerBeat;
-
-        double abs_beat, abs_tick;
-
-#if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
-        if (hylia.enabled)
-        {
-            if (hylia.timeInfo.beat >= 0.0)
-            {
-                abs_beat = hylia.timeInfo.beat;
-                abs_tick = abs_beat * kTicksPerBeat;
-            }
-            else
-            {
-                abs_beat = 0.0;
-                abs_tick = 0.0;
-                timeInfo.playing = false;
-            }
-        }
-        else
-#endif
-        {
-            const double min = static_cast<double>(pos->frame) / (sampleRate * 60.0);
-            abs_beat = min * beatsPerMinute;
-            abs_tick = abs_beat * kTicksPerBeat;
-        }
-
-        const double bar  = std::floor(abs_beat / beatsPerBar);
-        const double beat = std::floor(std::fmod(abs_beat, beatsPerBar));
-
-        pos->bar  = static_cast<int32_t>(bar) + 1;
-        pos->beat = static_cast<int32_t>(beat) + 1;
-        pos->bar_start_tick = ((bar * beatsPerBar) + beat) * kTicksPerBeat;
-
-        ticktmp = abs_tick - pos->bar_start_tick;
-    }
-    else if (timeInfo.playing)
-    {
-        ticktmp = tick + (newFrames * kTicksPerBeat * beatsPerMinute / (sampleRate * 60.0));
-
-        while (ticktmp >= kTicksPerBeat)
-        {
-            ticktmp -= kTicksPerBeat;
-
-            if (++pos->beat > beatsPerBar)
-            {
-                ++pos->bar;
-                pos->beat = 1;
-                pos->bar_start_tick += beatsPerBar * kTicksPerBeat;
-            }
-        }
-    }
-    else
-    {
-        ticktmp = tick;
-    }
-
-    pos->beats_per_bar = static_cast<float>(beatsPerBar);
+    pos->valid = JackPositionBBT;
+    pos->bar   = timeInfo.bbt.bar;
+    pos->beat  = timeInfo.bbt.beat;
+    pos->tick  = static_cast<int32_t>(tick + 0.5);
+    pos->bar_start_tick = timeInfo.bbt.barStartTick;
+    pos->beats_per_bar = timeInfo.bbt.beatsPerBar;
+    pos->beat_type = timeInfo.bbt.beatType;
+    pos->ticks_per_beat = kTicksPerBeat;
     pos->beats_per_minute = beatsPerMinute;
-    pos->tick = ticktmp;
-    tick = ticktmp;
 }
 
 void EngineInternalTime::preProcess(const uint32_t numFrames)
@@ -418,7 +364,7 @@ void EngineNextAction::clearAndReset() noexcept
 
 CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
     : thread(engine),
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
       osc(engine),
       oscData(nullptr),
 #endif
@@ -426,7 +372,7 @@ CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
       callbackPtr(nullptr),
       fileCallback(nullptr),
       fileCallbackPtr(nullptr),
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
       loadingProject(false),
 #endif
       hints(0x0),
@@ -442,17 +388,17 @@ CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
       name(),
       options(),
       timeInfo(),
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
       plugins(nullptr),
 #endif
       events(),
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
       graph(engine),
 #endif
       time(timeInfo, options.transportMode),
       nextAction()
 {
-#ifdef BUILD_BRIDGE
+#ifdef BUILD_BRIDGE_ALTERNATIVE_ARCH
     carla_zeroStructs(plugins, 1);
 #endif
 }
@@ -463,7 +409,7 @@ CarlaEngine::ProtectedData::~ProtectedData() noexcept
     CARLA_SAFE_ASSERT(maxPluginNumber == 0);
     CARLA_SAFE_ASSERT(nextPluginId == 0);
     CARLA_SAFE_ASSERT(isIdling == 0);
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CARLA_SAFE_ASSERT(plugins == nullptr);
 #endif
 }
@@ -473,13 +419,13 @@ CarlaEngine::ProtectedData::~ProtectedData() noexcept
 bool CarlaEngine::ProtectedData::init(const char* const clientName)
 {
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(name.isEmpty(), "Invalid engine internal data (err #1)");
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(oscData == nullptr, "Invalid engine internal data (err #2)");
 #endif
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(events.in  == nullptr, "Invalid engine internal data (err #4)");
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(events.out == nullptr, "Invalid engine internal data (err #5)");
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(clientName != nullptr && clientName[0] != '\0', "Invalid client name");
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(plugins == nullptr, "Invalid engine internal data (err #3)");
 #endif
 
@@ -525,14 +471,12 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
 
     timeInfo.clear();
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     osc.init(clientName);
-# ifndef BUILD_BRIDGE
     oscData = osc.getControlData();
-# endif
 #endif
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     plugins = new EnginePluginData[maxPluginNumber];
     carla_zeroStructs(plugins, maxPluginNumber);
 #endif
@@ -546,7 +490,7 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
 void CarlaEngine::ProtectedData::close()
 {
     CARLA_SAFE_ASSERT(name.isNotEmpty());
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CARLA_SAFE_ASSERT(plugins != nullptr);
     CARLA_SAFE_ASSERT(nextPluginId == maxPluginNumber);
 #endif
@@ -556,7 +500,7 @@ void CarlaEngine::ProtectedData::close()
     thread.stopThread(500);
     nextAction.clearAndReset();
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     osc.close();
     oscData = nullptr;
 #endif
@@ -566,7 +510,7 @@ void CarlaEngine::ProtectedData::close()
     maxPluginNumber = 0;
     nextPluginId    = 0;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (plugins != nullptr)
     {
         delete[] plugins;
@@ -595,7 +539,7 @@ void CarlaEngine::ProtectedData::initTime(const char* const features)
 
 // -----------------------------------------------------------------------
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 void CarlaEngine::ProtectedData::doPluginRemove(const uint pluginId) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(curPluginCount > 0,);
@@ -656,7 +600,7 @@ void CarlaEngine::ProtectedData::doNextPluginAction() noexcept
 
     const EnginePostAction opcode    = nextAction.opcode;
     const bool             needsPost = nextAction.needsPost;
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     const uint             pluginId  = nextAction.pluginId;
     const uint             value     = nextAction.value;
 #endif
@@ -675,7 +619,7 @@ void CarlaEngine::ProtectedData::doNextPluginAction() noexcept
     case kEnginePostActionZeroCount:
         curPluginCount = 0;
         break;
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     case kEnginePostActionRemovePlugin:
         doPluginRemove(pluginId);
         break;

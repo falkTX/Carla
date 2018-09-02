@@ -166,7 +166,9 @@ struct ConnectionToId {
 
     void clear() noexcept
     {
-        id     = 0;
+        // needed for apple GCC4.2
+        this->id = 0;
+
         groupA = 0;
         portA  = 0;
         groupB = 0;
@@ -175,7 +177,9 @@ struct ConnectionToId {
 
     void setData(const uint i, const uint gA, const uint pA, const uint gB, const uint pB) noexcept
     {
-        id     = i;
+        // needed for apple GCC4.2
+        this->id = i;
+
         groupA = gA;
         portA  = pA;
         groupB = gB;

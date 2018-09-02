@@ -118,9 +118,9 @@ class Theme(object):
             self.port_parameter_text = self.port_text
             self.port_parameter_text_sel = self.port_text
 
-            self.port_height   = 15
+            self.port_height   = 16
             self.port_offset   = 0
-            self.port_spacing  = 3
+            self.port_spacing  = 2
             self.port_spacingT = 2
 
             # Lines
@@ -200,9 +200,9 @@ class Theme(object):
             self.port_parameter_text = self.port_text
             self.port_parameter_text_sel = self.port_text
 
-            self.port_height   = 11
+            self.port_height   = 12
             self.port_offset   = 0
-            self.port_spacing  = 2
+            self.port_spacing  = 1
             self.port_spacingT = 1
 
             # Lines
@@ -282,9 +282,9 @@ class Theme(object):
             self.port_parameter_text = self.port_text
             self.port_parameter_text_sel = self.port_text
 
-            self.port_height   = 15
+            self.port_height   = 16
             self.port_offset   = 0
-            self.port_spacing  = 3
+            self.port_spacing  = 2
             self.port_spacingT = 2
 
             # Lines
@@ -450,9 +450,9 @@ class Theme(object):
             self.port_parameter_text_sel = self.port_parameter_pen_sel
 
             # missing, ports 2
-            self.port_height   = 19
+            self.port_height   = 21
             self.port_offset   = 1
-            self.port_spacing  = 5
+            self.port_spacing  = 3
             self.port_spacingT = 0
 
             # Lines

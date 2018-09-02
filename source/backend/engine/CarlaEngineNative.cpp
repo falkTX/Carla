@@ -17,8 +17,8 @@
 
 #include "CarlaDefines.h"
 
-#ifdef BUILD_BRIDGE
-# error This file should not be compiled if building bridge
+#ifdef BUILD_BRIDGE_ALTERNATIVE_ARCH
+# error This file should not be compiled if building alternative-arch bridges
 #endif
 
 #include "CarlaEngineInternal.hpp"
@@ -1165,7 +1165,7 @@ protected:
 
         const CarlaMutexLocker cml(fUiServer.getPipeLock());
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
         if (! fUiServer.writeAndFixMessage("osc-urls"))
             return;
         if (! fUiServer.writeAndFixMessage(pData->osc.getServerPathTCP()))
@@ -2348,6 +2348,7 @@ CARLA_BACKEND_END_NAMESPACE
 #include "CarlaHostCommon.cpp"
 #include "CarlaPluginUI.cpp"
 #include "CarlaDssiUtils.cpp"
+#include "CarlaMacUtils.cpp"
 #include "CarlaPatchbayUtils.cpp"
 #include "CarlaPipeUtils.cpp"
 #include "CarlaStateUtils.cpp"

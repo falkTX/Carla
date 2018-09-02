@@ -463,7 +463,7 @@ public:
      */
     void setActive(const bool active, const bool sendOsc, const bool sendCallback) noexcept;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
      * Set the plugin's dry/wet signal value to @a value.
      * @a value must be between 0.0 and 1.0.
@@ -749,7 +749,7 @@ public:
      */
     void sendMidiSingleNote(const uint8_t channel, const uint8_t note, const uint8_t velo, const bool sendGui, const bool sendOsc, const bool sendCallback);
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
      * Send all midi notes off to the host callback.
      * This doesn't send the actual MIDI All-Notes-Off event, but 128 note-offs instead (IFF ctrlChannel is valid).

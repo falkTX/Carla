@@ -1241,6 +1241,7 @@ class CarlaHostMeta(object):
         # info about this host object
         self.isControl = False
         self.isPlugin  = False
+        self.isRemote  = False
         self.nsmOK     = False
 
         # settings
@@ -1571,12 +1572,21 @@ class CarlaHostMeta(object):
     def get_midi_program_data(self, pluginId, midiProgramId):
         raise NotImplementedError
 
-    # Get a plugin's custom data.
+    # Get a plugin's custom data, using index.
     # @param pluginId     Plugin
     # @param customDataId Custom data index
     # @see carla_get_custom_data_count()
     @abstractmethod
     def get_custom_data(self, pluginId, customDataId):
+        raise NotImplementedError
+
+    # Get a plugin's custom data value, using type and key.
+    # @param pluginId Plugin
+    # @param type     Custom data type
+    # @param key      Custom data key
+    # @see carla_get_custom_data_count()
+    @abstractmethod
+    def get_custom_data_value(self, pluginId, type_, key):
         raise NotImplementedError
 
     # Get a plugin's chunk data.
@@ -1881,6 +1891,7 @@ class CarlaHostNull(CarlaHostMeta):
         CarlaHostMeta.__init__(self)
 
         self.fEngineCallback = None
+        self.fFileCallback   = None
         self.fEngineRunning  = False
 
     def get_engine_driver_count(self):
@@ -1911,7 +1922,7 @@ class CarlaHostNull(CarlaHostMeta):
         return
 
     def is_engine_running(self):
-        return False
+        return self.fEngineRunning
 
     def set_engine_about_to_close(self):
         return True
@@ -1923,7 +1934,7 @@ class CarlaHostNull(CarlaHostMeta):
         return
 
     def set_file_callback(self, func):
-        return
+        self.fFileCallback = func
 
     def load_file(self, filename):
         return False
@@ -2026,6 +2037,9 @@ class CarlaHostNull(CarlaHostMeta):
 
     def get_custom_data(self, pluginId, customDataId):
         return PyCustomData
+
+    def get_custom_data_value(self, pluginId, type_, key):
+        return ""
 
     def get_chunk_data(self, pluginId):
         return ""
@@ -2309,6 +2323,9 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_get_custom_data.argtypes = [c_uint, c_uint32]
         self.lib.carla_get_custom_data.restype = POINTER(CustomData)
 
+        self.lib.carla_get_custom_data_value.argtypes = [c_uint, c_char_p, c_char_p]
+        self.lib.carla_get_custom_data_value.restype = c_char_p
+
         self.lib.carla_get_chunk_data.argtypes = [c_uint]
         self.lib.carla_get_chunk_data.restype = c_char_p
 
@@ -2585,6 +2602,9 @@ class CarlaHostDLL(CarlaHostMeta):
 
     def get_custom_data(self, pluginId, customDataId):
         return structToDict(self.lib.carla_get_custom_data(pluginId, customDataId).contents)
+
+    def get_custom_data_value(self, pluginId, type_, key):
+        return charPtrToString(self.lib.carla_get_custom_data_value(pluginId, type_.encode("utf-8"), key.encode("utf-8")))
 
     def get_chunk_data(self, pluginId):
         return charPtrToString(self.lib.carla_get_chunk_data(pluginId))
@@ -2928,6 +2948,12 @@ class CarlaHostPlugin(CarlaHostMeta):
 
     def get_custom_data(self, pluginId, customDataId):
         return self.fPluginsInfo[pluginId].customData[customDataId]
+
+    def get_custom_data_value(self, pluginId, type_, key):
+        for customData in self.fPluginsInfo[pluginId].customData:
+            if customData['type'] == type_ and customData['key'] == key:
+                return customData['value']
+        return ""
 
     def get_chunk_data(self, pluginId):
         return ""

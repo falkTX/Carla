@@ -811,6 +811,7 @@ public:
           fIsRunning(false)
 #else
           fTimebaseMaster(false),
+          fTimebaseRolling(false),
           fUsedGroups(),
           fUsedPorts(),
           fUsedConnections(),
@@ -950,8 +951,12 @@ public:
         jackbridge_set_process_callback(fClient, carla_jack_process_callback, this);
         jackbridge_on_shutdown(fClient, carla_jack_shutdown_callback, this);
 
+        fTimebaseRolling = false;
+
         if (opts.transportMode == ENGINE_TRANSPORT_MODE_JACK)
             fTimebaseMaster = jackbridge_set_timebase_callback(fClient, true, carla_jack_timebase_callback, this);
+        else
+            fTimebaseMaster = false;
 
         if (opts.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
             initJackPatchbay(jackClientName);
@@ -984,6 +989,45 @@ public:
 
         if (jackbridge_activate(fClient))
         {
+            if (opts.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
+                opts.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+            {
+                if (pData->options.audioDevice != nullptr &&
+                    std::strcmp(pData->options.audioDevice, "Auto-Connect ON") == 0 &&
+                    std::getenv("LADISH_APP_NAME") == nullptr &&
+                    std::getenv("NSM_URL") == nullptr)
+                {
+                    char strBuf[STR_MAX];
+                    strBuf[STR_MAX-1] = '\0';
+
+                    if (jackbridge_port_by_name(fClient, "system:capture_1") != nullptr)
+                    {
+                        std::snprintf(strBuf, STR_MAX-2, "%s:audio-in1", jackClientName);
+                        jackbridge_connect(fClient, "system:capture_1", strBuf);
+
+                        std::snprintf(strBuf, STR_MAX-2, "%s:audio-in2", jackClientName);
+
+                        if (jackbridge_port_by_name(fClient, "system:capture_2") != nullptr)
+                            jackbridge_connect(fClient, "system:capture_2", strBuf);
+                        else
+                            jackbridge_connect(fClient, "system:capture_1", strBuf);
+                    }
+
+                    if (jackbridge_port_by_name(fClient, "system:playback_1") != nullptr)
+                    {
+                        std::snprintf(strBuf, STR_MAX-2, "%s:audio-out1", jackClientName);
+                        jackbridge_connect(fClient, strBuf, "system:playback_1");
+
+                        std::snprintf(strBuf, STR_MAX-2, "%s:audio-out2", jackClientName);
+
+                        if (jackbridge_port_by_name(fClient, "system:playback_2") != nullptr)
+                            jackbridge_connect(fClient, strBuf, "system:playback_2");
+                        else
+                            jackbridge_connect(fClient, strBuf, "system:playback_1");
+                    }
+                }
+            }
+
             startThread();
             callback(ENGINE_CALLBACK_ENGINE_STARTED, 0,
                      opts.processMode, opts.transportMode,
@@ -992,7 +1036,8 @@ public:
             return true;
         }
 
-        if (opts.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || opts.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        if (opts.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
+            opts.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         {
             pData->graph.destroy();
         }
@@ -1082,6 +1127,55 @@ public:
     const char* getCurrentDriverName() const noexcept override
     {
         return "JACK";
+    }
+
+    EngineTimeInfo getTimeInfo() const noexcept override
+    {
+        if (pData->options.transportMode != ENGINE_TRANSPORT_MODE_JACK)
+            return CarlaEngine::getTimeInfo();
+        if (pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+            return CarlaEngine::getTimeInfo();
+
+        jack_position_t jpos;
+
+        // invalidate
+        jpos.unique_1 = 1;
+        jpos.unique_2 = 2;
+
+        EngineTimeInfo timeInfo;
+        const bool playing = jackbridge_transport_query(fClient, &jpos) == JackTransportRolling;
+
+        if (jpos.unique_1 != jpos.unique_2)
+        {
+            timeInfo.playing = false;
+            timeInfo.frame = 0;
+            timeInfo.usecs = 0;
+            timeInfo.bbt.valid = false;
+            return timeInfo;
+        }
+
+        timeInfo.playing = playing;
+        timeInfo.frame   = jpos.frame;
+        timeInfo.usecs   = jpos.usecs;
+
+        if (jpos.valid & JackPositionBBT)
+        {
+            timeInfo.bbt.valid          = true;
+            timeInfo.bbt.bar            = jpos.bar;
+            timeInfo.bbt.beat           = jpos.beat;
+            timeInfo.bbt.tick           = jpos.tick;
+            timeInfo.bbt.barStartTick   = jpos.bar_start_tick;
+            timeInfo.bbt.beatsPerBar    = jpos.beats_per_bar;
+            timeInfo.bbt.beatType       = jpos.beat_type;
+            timeInfo.bbt.ticksPerBeat   = jpos.ticks_per_beat;
+            timeInfo.bbt.beatsPerMinute = jpos.beats_per_minute;
+        }
+        else
+        {
+            timeInfo.bbt.valid = false;
+        }
+
+        return timeInfo;
     }
 
 #ifndef BUILD_BRIDGE
@@ -1390,7 +1484,7 @@ public:
 
     void transportPlay() noexcept override
     {
-        if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
+        if (pData->options.transportMode != ENGINE_TRANSPORT_MODE_JACK)
             return CarlaEngine::transportPlay();
 
         if (fClient != nullptr)
@@ -1410,7 +1504,7 @@ public:
 
     void transportPause() noexcept override
     {
-        if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
+        if (pData->options.transportMode != ENGINE_TRANSPORT_MODE_JACK)
             return CarlaEngine::transportPause();
 
         if (fClient != nullptr)
@@ -1423,9 +1517,10 @@ public:
 
     void transportBPM(const double bpm) noexcept override
     {
-        CarlaEngine::transportBPM(bpm);
+        if (pData->options.transportMode != ENGINE_TRANSPORT_MODE_JACK || fTimebaseMaster)
+            return CarlaEngine::transportBPM(bpm);
 
-        if (fClient == nullptr || fTimebaseMaster)
+        if (fClient == nullptr)
             return;
 
         jack_position_t jpos;
@@ -1448,7 +1543,7 @@ public:
 
     void transportRelocate(const uint64_t frame) noexcept override
     {
-        if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
+        if (pData->options.transportMode != ENGINE_TRANSPORT_MODE_JACK)
             return CarlaEngine::transportRelocate(frame);
 
         if (fClient != nullptr)
@@ -1555,56 +1650,11 @@ protected:
         offlineModeChanged(isFreewheel);
     }
 
-    void saveTransportInfo()
-    {
-        if (pData->options.transportMode != ENGINE_TRANSPORT_MODE_JACK)
-            return;
-
-        jack_position_t jpos;
-
-        // invalidate
-        jpos.unique_1 = 1;
-        jpos.unique_2 = 2;
-
-        pData->timeInfo.playing = (jackbridge_transport_query(fClient, &jpos) == JackTransportRolling);
-
-        if (jpos.unique_1 == jpos.unique_2)
-        {
-            pData->timeInfo.frame = jpos.frame;
-            pData->timeInfo.usecs = jpos.usecs;
-
-            if (jpos.valid & JackPositionBBT)
-            {
-                pData->timeInfo.bbt.valid          = true;
-                pData->timeInfo.bbt.bar            = jpos.bar;
-                pData->timeInfo.bbt.beat           = jpos.beat;
-                pData->timeInfo.bbt.tick           = jpos.tick;
-                pData->timeInfo.bbt.barStartTick   = jpos.bar_start_tick;
-                pData->timeInfo.bbt.beatsPerBar    = jpos.beats_per_bar;
-                pData->timeInfo.bbt.beatType       = jpos.beat_type;
-                pData->timeInfo.bbt.ticksPerBeat   = jpos.ticks_per_beat;
-                pData->timeInfo.bbt.beatsPerMinute = jpos.beats_per_minute;
-            }
-            else
-            {
-                pData->timeInfo.bbt.valid = false;
-            }
-        }
-        else
-        {
-            pData->timeInfo.frame = 0;
-            pData->timeInfo.usecs = 0;
-            pData->timeInfo.bbt.valid = false;
-        }
-    }
-
     void handleJackProcessCallback(const uint32_t nframes)
     {
         const PendingRtEventsRunner prt(this, nframes);
 
         CARLA_SAFE_ASSERT_RETURN(nframes == pData->bufferSize,);
-
-        saveTransportInfo();
 
 #ifdef BUILD_BRIDGE
         CarlaPlugin* const plugin(pData->plugins[0].plugin);
@@ -1781,6 +1831,17 @@ protected:
                 }
             }
         }
+
+        if (fTimebaseMaster)
+        {
+            const bool playing = jackbridge_transport_query(fClient, nullptr) == JackTransportRolling;
+
+            if (fTimebaseRolling != playing)
+            {
+                fTimebaseRolling = playing;
+                pData->timeInfo.playing = playing;
+            }
+        }
 #endif // ! BUILD_BRIDGE
     }
 
@@ -1795,6 +1856,9 @@ protected:
         if (new_pos)
             pData->time.setNeedsReset();
 
+        pData->timeInfo.playing = fTimebaseRolling;
+        pData->timeInfo.frame = pos->frame;
+        pData->timeInfo.usecs = pos->usecs;
         pData->time.fillJackTimeInfo(pos, nframes);
     }
 
@@ -2053,6 +2117,8 @@ private:
     jack_port_t* fRackPorts[kRackPortCount];
 
     bool fTimebaseMaster;
+    bool fTimebaseRolling;
+
     PatchbayGroupList      fUsedGroups;
     PatchbayPortList       fUsedPorts;
     PatchbayConnectionList fUsedConnections;
@@ -2484,15 +2550,15 @@ private:
         handlePtr->handleJackFreewheelCallback(bool(starting));
     }
 
+    static void JACKBRIDGE_API carla_jack_latency_callback(jack_latency_callback_mode_t mode, void* arg)
+    {
+        handlePtr->handleJackLatencyCallback(mode);
+    }
+
     static int JACKBRIDGE_API carla_jack_process_callback(jack_nframes_t nframes, void* arg) __attribute__((annotate("realtime")))
     {
         handlePtr->handleJackProcessCallback(nframes);
         return 0;
-    }
-
-    static void JACKBRIDGE_API carla_jack_latency_callback(jack_latency_callback_mode_t mode, void* arg)
-    {
-        handlePtr->handleJackLatencyCallback(mode);
     }
 
 #ifndef BUILD_BRIDGE
@@ -2565,7 +2631,6 @@ private:
         if (plugin->tryLock(engine->fFreewheel))
         {
             plugin->initBuffers();
-            engine->saveTransportInfo();
             engine->processPlugin(plugin, nframes);
             plugin->unlock();
         }

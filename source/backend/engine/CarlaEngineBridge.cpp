@@ -190,7 +190,7 @@ public:
             shmNonRtClientDataSize != sizeof(BridgeNonRtClientData) ||
             shmNonRtServerDataSize != sizeof(BridgeNonRtServerData))
         {
-            carla_stderr2("CarlaJackAppClient: data size mismatch");
+            carla_stderr2("CarlaEngineBridge: data size mismatch");
             return false;
         }
 
@@ -713,7 +713,7 @@ public:
                 const float    value(fShmNonRtClientControl.readFloat());
 
                 if (plugin != nullptr && plugin->isEnabled())
-                    plugin->setParameterValue(index, value, true, false, false);
+                    plugin->setParameterValue(index, value, false, false, false);
                 break;
             }
 
@@ -1190,6 +1190,8 @@ protected:
                 }
 
                 case kPluginBridgeRtClientProcess: {
+                    const uint32_t frames(fShmRtClientControl.readUInt());
+
                     CARLA_SAFE_ASSERT_BREAK(fShmAudioPool.data != nullptr);
 
                     if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock(fIsOffline))
@@ -1240,7 +1242,7 @@ protected:
                         }
 
                         plugin->initBuffers();
-                        plugin->process(audioIn, audioOut, cvIn, cvOut, pData->bufferSize);
+                        plugin->process(audioIn, audioOut, cvIn, cvOut, frames);
                         plugin->unlock();
                     }
 
@@ -1408,14 +1410,6 @@ CarlaEngine* CarlaEngine::newBridge(const char* const audioPoolBaseName, const c
 CARLA_BACKEND_END_NAMESPACE
 
 // -----------------------------------------------------------------------
-
-#if defined(CARLA_OS_WIN) && ! defined(__WINE__)
-extern "C" __declspec (dllexport)
-#else
-extern "C" __attribute__ ((visibility("default")))
-#endif
-void carla_register_native_plugin_carla();
-void carla_register_native_plugin_carla(){}
 
 #include "CarlaBridgeUtils.cpp"
 

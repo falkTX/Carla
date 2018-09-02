@@ -122,7 +122,7 @@ CarlaStateSave::Parameter::Parameter() noexcept
       index(-1),
       name(nullptr),
       symbol(nullptr),
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
       value(0.0f),
       midiChannel(0),
       midiCC(-1) {}
@@ -189,7 +189,7 @@ CarlaStateSave::CarlaStateSave() noexcept
       binary(nullptr),
       uniqueId(0),
       options(0x0),
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
       active(false),
       dryWet(1.0f),
       volume(1.0f),
@@ -247,7 +247,7 @@ void CarlaStateSave::clear() noexcept
     uniqueId = 0;
     options  = 0x0;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     active = false;
     dryWet = 1.0f;
     volume = 1.0f;
@@ -323,7 +323,7 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                 const String& tag(xmlData->getTagName());
                 const String  text(xmlData->getAllSubText().trim());
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                 // -------------------------------------------------------
                 // Internal Data
 
@@ -431,7 +431,7 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                             stateParameter->dummy = false;
                             stateParameter->value = pText.getFloatValue();
                         }
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                         else if (pTag == "MidiChannel")
                         {
                             const int channel(pText.getIntValue());
@@ -545,7 +545,7 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
 
     content << "  <Data>\n";
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     {
         MemoryOutputStream dataXml;
 
@@ -588,7 +588,7 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
         if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
             parameterXml << "    <Symbol>" << xmlSafeString(stateParameter->symbol, true) << "</Symbol>\n";
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (stateParameter->midiCC > 0)
         {
             parameterXml << "    <MidiCC>"      << stateParameter->midiCC        << "</MidiCC>\n";

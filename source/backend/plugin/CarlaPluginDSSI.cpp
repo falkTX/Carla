@@ -21,7 +21,7 @@
 #include "CarlaDssiUtils.hpp"
 #include "CarlaMathUtils.hpp"
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
 # include "CarlaOscUtils.hpp"
 # include "CarlaPipeUtils.hpp"
 # include "CarlaThread.hpp"
@@ -63,7 +63,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 static const CustomData kCustomDataFallback = { nullptr, nullptr, nullptr };
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
 // -------------------------------------------------------------------
 
 class CarlaThreadDSSIUI : public CarlaThread
@@ -283,7 +283,7 @@ public:
           fForcedStereoOut(false),
           fNeedsFixedBuffers(false),
           fUsesCustomData(false)
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
         , fOscData(),
           fThreadUI(engine, this, fOscData),
           fUiFilename(nullptr)
@@ -298,7 +298,7 @@ public:
     {
         carla_debug("CarlaPluginDSSI::~CarlaPluginDSSI()");
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
         // close UI
         if (fUiFilename != nullptr)
         {
@@ -594,7 +594,7 @@ public:
             }
         }
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
         if (sendGui && fOscData.target != nullptr)
             osc_send_configure(fOscData, key, value);
 #endif
@@ -684,7 +684,7 @@ public:
         }
     }
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     // -------------------------------------------------------------------
     // Set ui stuff
 
@@ -1083,7 +1083,7 @@ public:
         if (LADSPA_IS_HARD_RT_CAPABLE(fDescriptor->Properties))
             pData->hints |= PLUGIN_IS_RTSAFE;
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
         if (fUiFilename != nullptr)
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
 #endif
@@ -2184,7 +2184,7 @@ public:
         carla_debug("CarlaPluginDSSI::clearBuffers() - end");
     }
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     // -------------------------------------------------------------------
     // OSC stuff
 
@@ -2443,7 +2443,7 @@ public:
         osc_send_midi(fOscData, midiData);
 #endif
     }
-#endif // HAVE_LIBLO && !BUILD_BRIDGE_ALTERNATIVE_ARCH
+#endif // HAVE_LIBLO && !BUILD_BRIDGE
 
     // -------------------------------------------------------------------
 
@@ -2452,7 +2452,7 @@ public:
         return fDssiDescriptor;
     }
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     uintptr_t getUiBridgeProcessId() const noexcept override
     {
         return fThreadUI.getProcessId();
@@ -2652,7 +2652,7 @@ public:
             }
         }
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
         // ---------------------------------------------------------------
         // check for gui
 
@@ -2718,7 +2718,7 @@ private:
     bool    fNeedsFixedBuffers;
     bool    fUsesCustomData;
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     CarlaOscData      fOscData;
     CarlaThreadDSSIUI fThreadUI;
     const char*       fUiFilename;

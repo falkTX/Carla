@@ -760,15 +760,7 @@ def getGroupPos(group_id, port_mode=PORT_MODE_OUTPUT):
 
     for group in canvas.group_list:
         if group.group_id == group_id:
-            if group.split:
-                if port_mode == PORT_MODE_OUTPUT:
-                    return group.widgets[0].pos()
-                elif port_mode == PORT_MODE_INPUT:
-                    return group.widgets[1].pos()
-                else:
-                    return QPointF(0, 0)
-            else:
-                return group.widgets[0].pos()
+            return group.widgets[1 if (group.split and port_mode == PORT_MODE_INPUT) else 0].pos()
 
     qCritical("PatchCanvas::getGroupPos(%i, %s) - unable to find group" % (group_id, port_mode2str(port_mode)))
     return QPointF(0, 0)
@@ -1266,26 +1258,16 @@ class PatchScene(QGraphicsScene):
                     rect = item.boundingRect()
 
                     if first_value:
+                        first_value = False
                         min_x = pos.x()
-                    elif pos.x() < min_x:
-                        min_x = pos.x()
-
-                    if first_value:
                         min_y = pos.y()
-                    elif pos.y() < min_y:
-                        min_y = pos.y()
-
-                    if first_value:
                         max_x = pos.x() + rect.width()
-                    elif pos.x() + rect.width() > max_x:
-                        max_x = pos.x() + rect.width()
-
-                    if first_value:
                         max_y = pos.y() + rect.height()
-                    elif pos.y() + rect.height() > max_y:
-                        max_y = pos.y() + rect.height()
-
-                    first_value = False
+                    else:
+                        min_x = min(min_x, pos.x())
+                        min_y = min(min_y, pos.y())
+                        max_x = max(max_x, pos.x() + rect.width())
+                        max_y = max(max_y, pos.y() + rect.height())
 
             if not first_value:
                 self.m_view.fitInView(min_x, min_y, abs(max_x - min_x), abs(max_y - min_y), Qt.KeepAspectRatio)
@@ -1390,19 +1372,14 @@ class PatchScene(QGraphicsScene):
                 self.m_rubberband_orig_point = event.scenePos()
 
             pos = event.scenePos()
-
-            if pos.x() > self.m_rubberband_orig_point.x():
-                x = self.m_rubberband_orig_point.x()
-            else:
-                x = pos.x()
-
-            if pos.y() > self.m_rubberband_orig_point.y():
-                y = self.m_rubberband_orig_point.y()
-            else:
-                y = pos.y()
+            x = min(pos.x(), self.m_rubberband_orig_point.x())
+            y = min(pos.y(), self.m_rubberband_orig_point.y())
 
             lineHinting = canvas.theme.rubberband_pen.widthF() / 2
-            self.m_rubberband.setRect(x+lineHinting, y+lineHinting, abs(pos.x() - self.m_rubberband_orig_point.x()), abs(pos.y() - self.m_rubberband_orig_point.y()))
+            self.m_rubberband.setRect(x+lineHinting,
+                                      y+lineHinting,
+                                      abs(pos.x() - self.m_rubberband_orig_point.x()),
+                                      abs(pos.y() - self.m_rubberband_orig_point.y()))
             return event.accept()
 
         if self.m_mid_button_down and self.m_ctrl_down:
@@ -1570,10 +1547,12 @@ class CanvasLine(QGraphicsLineItem):
 
     def updateLinePos(self):
         if self.item1.getPortMode() == PORT_MODE_OUTPUT:
-            line = QLineF(self.item1.scenePos().x() + self.item1.getPortWidth() + 12,
-                          self.item1.scenePos().y() + float(canvas.theme.port_height)/2,
-                          self.item2.scenePos().x(),
-                          self.item2.scenePos().y() + float(canvas.theme.port_height)/2)
+            rect1 = self.item1.sceneBoundingRect()
+            rect2 = self.item2.sceneBoundingRect()
+            line = QLineF(rect1.right(),
+                          rect1.top() + float(canvas.theme.port_height)/2,
+                          rect2.left(),
+                          rect2.top() + float(canvas.theme.port_height)/2)
             self.setLine(line)
 
             self.m_lineSelected = False
@@ -1669,17 +1648,15 @@ class CanvasBezierLine(QGraphicsPathItem):
 
     def updateLinePos(self):
         if self.item1.getPortMode() == PORT_MODE_OUTPUT:
-            item1_x = self.item1.scenePos().x() + self.item1.getPortWidth() + 12
-            item1_y = self.item1.scenePos().y() + float(canvas.theme.port_height)/2
+            rect1 = self.item1.sceneBoundingRect()
+            rect2 = self.item2.sceneBoundingRect()
 
-            item2_x = self.item2.scenePos().x()
-            item2_y = self.item2.scenePos().y() + float(canvas.theme.port_height)/2
-
-            item1_mid_x = abs(item1_x - item2_x) / 2
-            item1_new_x = item1_x + item1_mid_x
-
-            item2_mid_x = abs(item1_x - item2_x) / 2
-            item2_new_x = item2_x - item2_mid_x
+            item1_x = rect1.right()
+            item2_x = rect2.left()
+            item1_y = rect1.top() + float(canvas.theme.port_height)/2
+            item2_y = rect2.top() + float(canvas.theme.port_height)/2
+            item1_new_x = item1_x + abs(item1_x - item2_x) / 2
+            item2_new_x = item2_x - abs(item1_x - item2_x) / 2
 
             path = QPainterPath(QPointF(item1_x, item1_y))
             path.cubicTo(item1_new_x, item1_y, item2_new_x, item2_y, item2_x, item2_y)
@@ -2092,11 +2069,14 @@ class CanvasPort(QGraphicsItem):
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing == ANTIALIASING_FULL))
 
-        # FIXME: would be more correct is to take line width from Pen, loaded to painter,
+        # FIXME: would be more correct to take line width from Pen, loaded to painter,
         # but this needs some code rearrangement
         lineHinting = canvas.theme.port_audio_jack_pen.widthF() / 2
 
         poly_locx = [0, 0, 0, 0, 0]
+        poly_corner_xhinting = (float(canvas.theme.port_height)/2) % floor(float(canvas.theme.port_height)/2)
+        if poly_corner_xhinting == 0:
+            poly_corner_xhinting = 0.5 * (1 - 7 / (float(canvas.theme.port_height)/2))
 
         if self.m_port_mode == PORT_MODE_INPUT:
             text_pos = QPointF(3, canvas.theme.port_text_ypos)
@@ -2104,7 +2084,7 @@ class CanvasPort(QGraphicsItem):
             if canvas.theme.port_mode == Theme.THEME_PORT_POLYGON:
                 poly_locx[0] = lineHinting
                 poly_locx[1] = self.m_port_width + 5 - lineHinting
-                poly_locx[2] = self.m_port_width + 12 - lineHinting
+                poly_locx[2] = self.m_port_width + 12 - poly_corner_xhinting
                 poly_locx[3] = self.m_port_width + 5 - lineHinting
                 poly_locx[4] = lineHinting
             elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE:
@@ -2123,7 +2103,7 @@ class CanvasPort(QGraphicsItem):
             if canvas.theme.port_mode == Theme.THEME_PORT_POLYGON:
                 poly_locx[0] = self.m_port_width + 12 - lineHinting
                 poly_locx[1] = 7 + lineHinting
-                poly_locx[2] = 0 + lineHinting
+                poly_locx[2] = 0 + poly_corner_xhinting
                 poly_locx[3] = 7 + lineHinting
                 poly_locx[4] = self.m_port_width + 12 - lineHinting
             elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE:
@@ -2407,23 +2387,9 @@ class CanvasBox(QGraphicsItem):
     def updatePositions(self):
         self.prepareGeometryChange()
 
-        max_in_width   = 0
-        max_in_height  = canvas.theme.box_header_height + canvas.theme.box_header_spacing
-        max_out_width  = 0
-        max_out_height = canvas.theme.box_header_height + canvas.theme.box_header_spacing
-        port_spacing   = canvas.theme.port_height + canvas.theme.port_spacing
-
-        have_audio_jack_in  = have_midi_jack_in  = have_midi_alsa_in  = have_parameter_in  = False
-        have_audio_jack_out = have_midi_jack_out = have_midi_alsa_out = have_parameter_out = False
-
-        # reset box size
-        self.p_width  = 50
-        self.p_height = canvas.theme.box_header_height + canvas.theme.box_header_spacing + 1
-
         # Check Text Name size
         app_name_size = QFontMetrics(self.m_font_name).width(self.m_group_name) + 30
-        if app_name_size > self.p_width:
-            self.p_width = app_name_size
+        self.p_width = max( 50, app_name_size )
 
         # Get Port List
         port_list = []
@@ -2431,175 +2397,60 @@ class CanvasBox(QGraphicsItem):
             if port.group_id == self.m_group_id and port.port_id in self.m_port_list_ids:
                 port_list.append(port)
 
-        # Get Max Box Width/Height
-        for port in port_list:
-            if port.port_mode == PORT_MODE_INPUT:
-                max_in_height += port_spacing
+        if len(port_list) == 0:
+            self.p_height = canvas.theme.box_header_height
+        else:
+            max_in_width = max_out_width = 0
+            port_spacing = canvas.theme.port_height + canvas.theme.port_spacing
 
-                size = QFontMetrics(self.m_font_port).width(port.port_name)
-                if size > max_in_width:
-                    max_in_width = size
+            # Get Max Box Width, vertical ports re-positioning
+            port_types   = [PORT_TYPE_AUDIO_JACK, PORT_TYPE_MIDI_JACK, PORT_TYPE_MIDI_ALSA, PORT_TYPE_PARAMETER]
+            last_in_type = last_out_type = PORT_TYPE_NULL
+            last_in_pos  = last_out_pos  = canvas.theme.box_header_height + canvas.theme.box_header_spacing
 
-                if port.port_type == PORT_TYPE_AUDIO_JACK and not have_audio_jack_in:
-                    have_audio_jack_in = True
-                    max_in_height += canvas.theme.port_spacingT
-                elif port.port_type == PORT_TYPE_MIDI_JACK and not have_midi_jack_in:
-                    have_midi_jack_in = True
-                    max_in_height += canvas.theme.port_spacingT
-                elif port.port_type == PORT_TYPE_MIDI_ALSA and not have_midi_alsa_in:
-                    have_midi_alsa_in = True
-                    max_in_height += canvas.theme.port_spacingT
-                elif port.port_type == PORT_TYPE_PARAMETER and not have_parameter_in:
-                    have_parameter_in = True
-                    max_in_height += canvas.theme.port_spacingT
+            for port_type in port_types:
+                for port in port_list:
+                    if port.port_type != port_type:
+                        continue
 
-            elif port.port_mode == PORT_MODE_OUTPUT:
-                max_out_height += port_spacing
+                    size = QFontMetrics(self.m_font_port).width(port.port_name)
 
-                size = QFontMetrics(self.m_font_port).width(port.port_name)
-                if size > max_out_width:
-                    max_out_width = size
+                    if port.port_mode == PORT_MODE_INPUT:
+                        max_in_width = max( max_in_width, size )
+                        if port.port_type != last_in_type:
+                            if last_in_type != PORT_TYPE_NULL:
+                                last_in_pos += canvas.theme.port_spacingT
+                            last_in_type = port.port_type
+                        port.widget.setY(last_in_pos)
+                        last_in_pos += port_spacing
 
-                if port.port_type == PORT_TYPE_AUDIO_JACK and not have_audio_jack_out:
-                    have_audio_jack_out = True
-                    max_out_height += canvas.theme.port_spacingT
-                elif port.port_type == PORT_TYPE_MIDI_JACK and not have_midi_jack_out:
-                    have_midi_jack_out = True
-                    max_out_height += canvas.theme.port_spacingT
-                elif port.port_type == PORT_TYPE_MIDI_ALSA and not have_midi_alsa_out:
-                    have_midi_alsa_out = True
-                    max_out_height += canvas.theme.port_spacingT
-                elif port.port_type == PORT_TYPE_PARAMETER and not have_parameter_out:
-                    have_parameter_out = True
-                    max_out_height += canvas.theme.port_spacingT
+                    elif port.port_mode == PORT_MODE_OUTPUT:
+                        max_out_width = max( max_out_width, size )
+                        if port.port_type != last_out_type:
+                            if last_out_type != PORT_TYPE_NULL:
+                                last_out_pos += canvas.theme.port_spacingT
+                            last_out_type = port.port_type
+                        port.widget.setY(last_out_pos)
+                        last_out_pos += port_spacing
 
-        if canvas.theme.port_spacingT == 0:
-            max_in_height  += 2
-            max_out_height += 2
+            self.p_width = max(self.p_width, 30 + max_in_width + max_out_width)
 
-        final_width = 30 + max_in_width + max_out_width
-        if final_width > self.p_width:
-            self.p_width = final_width
+            # Horizontal ports re-positioning
+            inX = 1 + canvas.theme.port_offset
+            outX = self.p_width - max_out_width - canvas.theme.port_offset - 13
+            for port_type in port_types:
+                for port in port_list:
+                    if port.port_mode == PORT_MODE_INPUT:
+                        port.widget.setX(inX)
+                        port.widget.setPortWidth(max_in_width)
 
-        if max_in_height > self.p_height:
-            self.p_height = max_in_height
+                    elif port.port_mode == PORT_MODE_OUTPUT:
+                        port.widget.setX(outX)
+                        port.widget.setPortWidth(max_out_width)
 
-        if max_out_height > self.p_height:
-            self.p_height = max_out_height
-
-        # Remove bottom space
-        self.p_height -= canvas.theme.port_spacingT
-
-        if canvas.theme.box_header_spacing > 0:
-            if len(port_list) == 0:
-                self.p_height -= canvas.theme.box_header_spacing
-            else:
-                self.p_height -= canvas.theme.box_header_spacing/2
-
-        last_in_pos  = canvas.theme.box_header_height + canvas.theme.box_header_spacing
-        last_out_pos = canvas.theme.box_header_height + canvas.theme.box_header_spacing
-        last_in_type  = PORT_TYPE_NULL
-        last_out_type = PORT_TYPE_NULL
-
-        # Re-position ports, AUDIO_JACK
-        for port in port_list:
-            if port.port_type != PORT_TYPE_AUDIO_JACK:
-                continue
-
-            if port.port_mode == PORT_MODE_INPUT:
-                if last_in_type != PORT_TYPE_NULL and port.port_type != last_in_type:
-                    last_in_pos += canvas.theme.port_spacingT
-
-                port.widget.setPos(QPointF(1 + canvas.theme.port_offset, last_in_pos))
-                port.widget.setPortWidth(max_in_width)
-
-                last_in_pos += port_spacing
-                last_in_type = port.port_type
-
-            elif port.port_mode == PORT_MODE_OUTPUT:
-                if last_out_type != PORT_TYPE_NULL and port.port_type != last_out_type:
-                    last_out_pos += canvas.theme.port_spacingT
-
-                port.widget.setPos(QPointF(self.p_width - max_out_width - canvas.theme.port_offset - 13, last_out_pos))
-                port.widget.setPortWidth(max_out_width)
-
-                last_out_pos += port_spacing
-                last_out_type = port.port_type
-
-        # Re-position ports, MIDI_JACK
-        for port in port_list:
-            if port.port_type != PORT_TYPE_MIDI_JACK:
-                continue
-
-            if port.port_mode == PORT_MODE_INPUT:
-                if last_in_type != PORT_TYPE_NULL and port.port_type != last_in_type:
-                    last_in_pos += canvas.theme.port_spacingT
-
-                port.widget.setPos(QPointF(1 + canvas.theme.port_offset, last_in_pos))
-                port.widget.setPortWidth(max_in_width)
-
-                last_in_pos += port_spacing
-                last_in_type = port.port_type
-
-            elif port.port_mode == PORT_MODE_OUTPUT:
-                if last_out_type != PORT_TYPE_NULL and port.port_type != last_out_type:
-                    last_out_pos += canvas.theme.port_spacingT
-
-                port.widget.setPos(QPointF(self.p_width - max_out_width - canvas.theme.port_offset - 13, last_out_pos))
-                port.widget.setPortWidth(max_out_width)
-
-                last_out_pos += port_spacing
-                last_out_type = port.port_type
-
-        # Re-position ports, MIDI_ALSA
-        for port in port_list:
-            if port.port_type != PORT_TYPE_MIDI_ALSA:
-                continue
-
-            if port.port_mode == PORT_MODE_INPUT:
-                if last_in_type != PORT_TYPE_NULL and port.port_type != last_in_type:
-                    last_in_pos += canvas.theme.port_spacingT
-
-                port.widget.setPos(QPointF(1 + canvas.theme.port_offset, last_in_pos))
-                port.widget.setPortWidth(max_in_width)
-
-                last_in_pos += port_spacing
-                last_in_type = port.port_type
-
-            elif port.port_mode == PORT_MODE_OUTPUT:
-                if last_out_type != PORT_TYPE_NULL and port.port_type != last_out_type:
-                    last_out_pos += canvas.theme.port_spacingT
-
-                port.widget.setPos(QPointF(self.p_width - max_out_width - canvas.theme.port_offset - 13, last_out_pos))
-                port.widget.setPortWidth(max_out_width)
-
-                last_out_pos += port_spacing
-                last_out_type = port.port_type
-
-        # Re-position ports, PARAMETER
-        for port in port_list:
-            if port.port_type != PORT_TYPE_PARAMETER:
-                continue
-
-            if port.port_mode == PORT_MODE_INPUT:
-                if last_in_type != PORT_TYPE_NULL and port.port_type != last_in_type:
-                    last_in_pos += canvas.theme.port_spacingT
-
-                port.widget.setPos(QPointF(1 + canvas.theme.port_offset, last_in_pos))
-                port.widget.setPortWidth(max_in_width)
-
-                last_in_pos += port_spacing
-                last_in_type = port.port_type
-
-            elif port.port_mode == PORT_MODE_OUTPUT:
-                if last_out_type != PORT_TYPE_NULL and port.port_type != last_out_type:
-                    last_out_pos += canvas.theme.port_spacingT
-
-                port.widget.setPos(QPointF(self.p_width - max_out_width - canvas.theme.port_offset - 13, last_out_pos))
-                port.widget.setPortWidth(max_out_width)
-
-                last_out_pos += port_spacing
-                last_out_type = port.port_type
+            self.p_height  = max(last_in_pos, last_out_pos)
+            self.p_height += max(canvas.theme.port_spacing, canvas.theme.port_spacingT) - canvas.theme.port_spacing
+            self.p_height += canvas.theme.box_pen.widthF()
 
         self.repaintLines(True)
         self.update()
@@ -2801,12 +2652,12 @@ class CanvasBox(QGraphicsItem):
     def paint(self, painter, option, widget):
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing == ANTIALIASING_FULL))
+        rect = QRectF(0, 0, self.p_width, self.p_height)
 
         # Draw rectangle
-        if self.isSelected():
-            painter.setPen(canvas.theme.box_pen_sel)
-        else:
-            painter.setPen(canvas.theme.box_pen)
+        pen = canvas.theme.box_pen_sel if self.isSelected() else canvas.theme.box_pen
+        painter.setPen(pen)
+        lineHinting = pen.widthF() / 2
 
         if canvas.theme.box_bg_type == Theme.THEME_BG_GRADIENT:
             box_gradient = QLinearGradient(0, 0, 0, self.p_height)
@@ -2816,18 +2667,21 @@ class CanvasBox(QGraphicsItem):
         else:
             painter.setBrush(canvas.theme.box_bg_1)
 
-        lineHinting = painter.pen().widthF() / 2
-        painter.drawRect(QRectF(lineHinting, lineHinting, self.p_width - lineHinting*2, self.p_height - lineHinting*2))
+        rect.adjust(lineHinting, lineHinting, -lineHinting, -lineHinting)
+        painter.drawRect(rect)
 
         # Draw pixmap header
+        rect.setHeight(canvas.theme.box_header_height)
         if canvas.theme.box_header_pixmap:
             painter.setPen(Qt.NoPen)
             painter.setBrush(canvas.theme.box_bg_2)
-            painter.drawRect(1, 1, self.p_width-2, canvas.theme.box_header_height)
 
-            headerPos  = QPointF(1, 1)
-            headerRect = QRectF(2, 2, self.p_width-4, canvas.theme.box_header_height-3)
-            painter.drawTiledPixmap(headerRect, canvas.theme.box_header_pixmap, headerPos)
+            # outline
+            rect.adjust(lineHinting, lineHinting, -lineHinting, -lineHinting)
+            painter.drawRect(rect)
+
+            rect.adjust(1, 1, -1, 0)
+            painter.drawTiledPixmap(rect, canvas.theme.box_header_pixmap, rect.topLeft())
 
         # Draw text
         painter.setFont(self.m_font_name)
@@ -2933,14 +2787,14 @@ class CanvasIcon(QGraphicsSvgItem):
         return self.p_size
 
     def paint(self, painter, option, widget):
-        if self.m_renderer:
-            painter.save()
-            painter.setRenderHint(QPainter.Antialiasing, False)
-            painter.setRenderHint(QPainter.TextAntialiasing, False)
-            self.m_renderer.render(painter, self.p_size)
-            painter.restore()
-        else:
-            QGraphicsSvgItem.paint(self, painter, option, widget)
+        if not self.m_renderer:
+            return QGraphicsSvgItem.paint(self, painter, option, widget)
+
+        painter.save()
+        painter.setRenderHint(QPainter.Antialiasing, False)
+        painter.setRenderHint(QPainter.TextAntialiasing, False)
+        self.m_renderer.render(painter, self.p_size)
+        painter.restore()
 
 # ------------------------------------------------------------------------------
 # canvasportglow.cpp

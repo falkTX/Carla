@@ -516,7 +516,7 @@ const char *Reader::readPathInto(water::String *pathOut, const char *pIn, const 
 
 int Reader::keyValue(const water::String &str)
 {
-  auto chars = str.toRawUTF8();
+  const char* const chars = str.toRawUTF8();
 
   char c = chars[0];
 

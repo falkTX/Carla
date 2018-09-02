@@ -1193,7 +1193,34 @@ const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const uint index
     if (index >= gRtAudioApis.size())
         return nullptr;
 
+    static EngineDriverDeviceInfo devInfo = { 0x0, nullptr, nullptr };
+    static uint32_t dummyBufferSizes[]    = { 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 0 };
+    static double   dummySampleRates[]    = { 22050.0, 32000.0, 44100.0, 48000.0, 88200.0, 96000.0, 176400.0, 192000.0, 0.0 };
+
+    // reset
+    devInfo.hints = 0x0;
+
+    // cleanup
+    if (devInfo.bufferSizes != nullptr && devInfo.bufferSizes != dummyBufferSizes)
+    {
+        delete[] devInfo.bufferSizes;
+        devInfo.bufferSizes = nullptr;
+    }
+    if (devInfo.sampleRates != nullptr && devInfo.sampleRates != dummySampleRates)
+    {
+        delete[] devInfo.sampleRates;
+        devInfo.sampleRates = nullptr;
+    }
+
     const RtAudio::Api& api(gRtAudioApis[index]);
+
+    if (api == RtAudio::UNIX_JACK)
+    {
+        devInfo.bufferSizes = nullptr;
+        devInfo.sampleRates = nullptr;
+        return &devInfo;
+    }
+
     RtAudio::DeviceInfo rtAudioDevInfo;
 
     try {
@@ -1214,24 +1241,9 @@ const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const uint index
         }
 
         if (i == devCount)
-            return nullptr;
+            rtAudioDevInfo = rtAudio.getDeviceInfo(rtAudio.getDefaultOutputDevice());
 
     } CARLA_SAFE_EXCEPTION_RETURN("RtAudio device discovery", nullptr);
-
-    static EngineDriverDeviceInfo devInfo = { 0x0, nullptr, nullptr };
-    static uint32_t dummyBufferSizes[]    = { 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 0 };
-    static double   dummySampleRates[]    = { 22050.0, 32000.0, 44100.0, 48000.0, 88200.0, 96000.0, 176400.0, 192000.0, 0.0 };
-
-    // reset
-    devInfo.hints = 0x0;
-    devInfo.bufferSizes = dummyBufferSizes;
-
-    // cleanup
-    if (devInfo.sampleRates != nullptr && devInfo.sampleRates != dummySampleRates)
-    {
-        delete[] devInfo.sampleRates;
-        devInfo.sampleRates = nullptr;
-    }
 
     // a few APIs can do triple buffer
     switch (api)
@@ -1245,13 +1257,16 @@ const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const uint index
         break;
     }
 
+    // always use default buffer sizes
+    devInfo.bufferSizes = dummyBufferSizes;
+
     // valid sample rates
     if (const size_t sampleRatesCount = rtAudioDevInfo.sampleRates.size())
     {
         double* const sampleRates(new double[sampleRatesCount+1]);
 
-        for (size_t j=0; j < sampleRatesCount; ++j)
-            sampleRates[j] = rtAudioDevInfo.sampleRates[j];
+        for (size_t i=0; i < sampleRatesCount; ++i)
+            sampleRates[i] = rtAudioDevInfo.sampleRates[i];
         sampleRates[sampleRatesCount] = 0.0;
 
         devInfo.sampleRates = sampleRates;

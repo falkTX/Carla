@@ -20,7 +20,7 @@
 
 #include "CarlaRingBuffer.hpp"
 
-#define CARLA_PLUGIN_BRIDGE_API_VERSION 4
+#define CARLA_PLUGIN_BRIDGE_API_VERSION 5
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -37,7 +37,7 @@ enum PluginBridgeRtClientOpcode {
     kPluginBridgeRtClientControlEventAllSoundOff, // uint/frame, byte/chan
     kPluginBridgeRtClientControlEventAllNotesOff, // uint/frame, byte/chan
     kPluginBridgeRtClientMidiEvent,               // uint/frame, byte/port, byte/size, byte[]/data
-    kPluginBridgeRtClientProcess,
+    kPluginBridgeRtClientProcess,                 // uint/frames
     kPluginBridgeRtClientQuit
 };
 
@@ -134,12 +134,13 @@ struct BridgeSemaphore {
     };
 };
 
-// needs to be 64bit aligned
+// NOTE: needs to be 64bit aligned
 struct BridgeTimeInfo {
     uint64_t playing;
     uint64_t frame;
     uint64_t usecs;
     uint32_t validFlags;
+    uint32_t unused;
     // bbt
     int32_t bar, beat;
     float beatsPerBar, beatType;

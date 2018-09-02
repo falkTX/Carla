@@ -776,7 +776,7 @@ public:
         if (LADSPA_IS_HARD_RT_CAPABLE(fDescriptor->Properties))
             pData->hints |= PLUGIN_IS_RTSAFE;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
             pData->hints |= PLUGIN_CAN_DRYWET;
 
@@ -971,7 +971,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeParameter: {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                         // Control backend stuff
                         if (event.channel == pData->ctrlChannel)
                         {
@@ -1194,7 +1194,7 @@ public:
             carla_copyFloats(fAudioOutBuffers[1], fExtraStereoBuffer[1], frames);
         }
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
 
@@ -1215,11 +1215,13 @@ public:
 
                     for (uint32_t k=0; k < frames; ++k)
                     {
+# ifndef BUILD_BRIDGE
                         if (k < pData->latency.frames)
                             bufValue = pData->latency.buffers[c][k];
                         else if (pData->latency.frames < frames)
                             bufValue = fAudioInBuffers[c][k-pData->latency.frames];
                         else
+# endif
                             bufValue = fAudioInBuffers[c][k];
 
                         fAudioOutBuffers[i][k] = (fAudioOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
@@ -1266,6 +1268,7 @@ public:
 
         } // End of Post-processing
 
+# ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
         // Save latency values for next callback
 
@@ -1294,8 +1297,8 @@ public:
                 }
             }
         }
-
-#else // BUILD_BRIDGE
+# endif
+#else // BUILD_BRIDGE_ALTERNATIVE_ARCH
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
         {
             for (uint32_t k=0; k < frames; ++k)

@@ -106,7 +106,7 @@ const char* carla_get_library_filename()
 
     if (ret.isEmpty())
     {
-        using namespace water;
+        using water::File;
         ret = File(File::getSpecialLocation(File::currentExecutableFile)).getFullPathName().toRawUTF8();
     }
 
@@ -121,7 +121,7 @@ const char* carla_get_library_folder()
 
     if (ret.isEmpty())
     {
-        using namespace water;
+        using water::File;
         ret = File(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory()).getFullPathName().toRawUTF8();
     }
 

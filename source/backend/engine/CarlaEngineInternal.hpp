@@ -21,7 +21,7 @@
 #include "CarlaEngineThread.hpp"
 #include "CarlaEngineUtils.hpp"
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+#ifndef BUILD_BRIDGE
 # include "CarlaEngineOsc.hpp"
 # include "hylia/hylia.h"
 #endif
@@ -57,7 +57,7 @@ struct EngineInternalEvents {
     CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalEvents)
 };
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 // -----------------------------------------------------------------------
 // InternalGraph
 
@@ -111,7 +111,7 @@ private:
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalGraph)
 };
-#endif
+#endif // BUILD_BRIDGE_ALTERNATIVE_ARCH
 
 // -----------------------------------------------------------------------
 // InternalTime
@@ -170,7 +170,7 @@ private:
 enum EnginePostAction {
     kEnginePostActionNull = 0,
     kEnginePostActionZeroCount,    // set curPluginCount to 0
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     kEnginePostActionRemovePlugin, // remove a plugin
     kEnginePostActionSwitchPlugins // switch between 2 plugins
 #endif
@@ -209,13 +209,9 @@ struct EnginePluginData {
 struct CarlaEngine::ProtectedData {
     CarlaEngineThread thread;
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     CarlaEngineOsc osc;
-# ifdef BUILD_BRIDGE
-    CarlaOscData* oscData;
-# else
     const CarlaOscData* oscData;
-# endif
 #endif
 
     EngineCallbackFunc callback;
@@ -224,7 +220,7 @@ struct CarlaEngine::ProtectedData {
     FileCallbackFunc fileCallback;
     void*            fileCallbackPtr;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     bool loadingProject;
 #endif
 
@@ -244,14 +240,14 @@ struct CarlaEngine::ProtectedData {
     EngineOptions  options;
     EngineTimeInfo timeInfo;
 
-#ifdef BUILD_BRIDGE
+#ifdef BUILD_BRIDGE_ALTERNATIVE_ARCH
     EnginePluginData plugins[1];
 #else
     EnginePluginData* plugins;
 #endif
 
     EngineInternalEvents events;
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     EngineInternalGraph  graph;
 #endif
     EngineInternalTime   time;

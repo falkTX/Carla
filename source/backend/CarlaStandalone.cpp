@@ -98,39 +98,73 @@ typedef void (*void_func)(void);
 class ThreadSafeFFTW
 {
 public:
+    struct Deinitializer {
+        Deinitializer(ThreadSafeFFTW& s)
+            : tsfftw(s) {}
+
+        ~Deinitializer()
+        {
+            tsfftw.deinit();
+        }
+
+        ThreadSafeFFTW& tsfftw;
+    };
+
     ThreadSafeFFTW()
-        : libfftw3(lib_open("libfftw3_threads.so.3")),
-          libfftw3f(lib_open("libfftw3f_threads.so.3")),
-          libfftw3l(lib_open("libfftw3l_threads.so.3")),
-          libfftw3q(lib_open("libfftw3q_threads.so.3"))
+        : libfftw3(nullptr),
+          libfftw3f(nullptr),
+          libfftw3l(nullptr),
+          libfftw3q(nullptr) {}
+
+    ~ThreadSafeFFTW()
     {
-        if (libfftw3 != nullptr)
+        CARLA_SAFE_ASSERT(libfftw3 == nullptr);
+    }
+
+    void init()
+    {
+        if ((libfftw3 = lib_open("libfftw3_threads.so.3")) != nullptr)
             if (const void_func func = lib_symbol<void_func>(libfftw3, "fftw_make_planner_thread_safe"))
                 func();
 
-        if (libfftw3f != nullptr)
+        if ((libfftw3f = lib_open("libfftw3f_threads.so.3")) != nullptr)
             if (const void_func func = lib_symbol<void_func>(libfftw3f, "fftwf_make_planner_thread_safe"))
                 func();
 
-        if (libfftw3l != nullptr)
+        if ((libfftw3l = lib_open("libfftw3l_threads.so.3")) != nullptr)
             if (const void_func func = lib_symbol<void_func>(libfftw3l, "fftwl_make_planner_thread_safe"))
                 func();
 
-        if (libfftw3q != nullptr)
+        if ((libfftw3q = lib_open("libfftw3q_threads.so.3")) != nullptr)
             if (const void_func func = lib_symbol<void_func>(libfftw3q, "fftwq_make_planner_thread_safe"))
                 func();
     }
 
-    ~ThreadSafeFFTW()
+    void deinit()
     {
         if (libfftw3 != nullptr)
+        {
             lib_close(libfftw3);
+            libfftw3 = nullptr;
+        }
+
         if (libfftw3f != nullptr)
+        {
             lib_close(libfftw3f);
+            libfftw3f = nullptr;
+        }
+
         if (libfftw3l != nullptr)
+        {
             lib_close(libfftw3l);
+            libfftw3l = nullptr;
+        }
+
         if (libfftw3q != nullptr)
+        {
             lib_close(libfftw3q);
+            libfftw3q = nullptr;
+        }
     }
 
 private:
@@ -139,6 +173,8 @@ private:
     lib_t libfftw3l;
     lib_t libfftw3q;
 };
+
+static ThreadSafeFFTW sThreadSafeFFTW;
 #endif
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -173,7 +209,7 @@ const char* const* carla_get_engine_driver_device_names(uint index)
 
 const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(uint index, const char* name)
 {
-    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', nullptr);
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr, nullptr);
 
     static EngineDriverDeviceInfo retDevInfo;
     static const uint32_t nullBufferSizes[] = { 0   };
@@ -349,9 +385,6 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 #ifdef CARLA_OS_WIN
     carla_setenv("WINEASIO_CLIENT_NAME", clientName);
 #endif
-#ifdef CARLA_OS_UNIX
-    static const ThreadSafeFFTW tsfftw;
-#endif
 
     ScopedPointer<CarlaEngine> engine(CarlaEngine::newDriverByName(driverName));
 
@@ -375,6 +408,9 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 #ifndef BUILD_BRIDGE
         if (gStandalone.logThreadEnabled && std::getenv("CARLA_LOGS_DISABLED") == nullptr)
             gStandalone.logThread.init();
+#endif
+#ifdef CARLA_OS_UNIX
+        sThreadSafeFFTW.init();
 #endif
         gStandalone.lastError = "No error";
         gStandalone.engine = engine.release();
@@ -431,6 +467,10 @@ bool carla_engine_close()
     carla_debug("carla_engine_close()");
 
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(gStandalone.engine != nullptr, "Engine is not initialized", false);
+
+#ifdef CARLA_OS_UNIX
+    const ThreadSafeFFTW::Deinitializer tsfftwde(sThreadSafeFFTW);
+#endif
 
     ScopedPointer<CarlaEngine> engine(gStandalone.engine);
     gStandalone.engine = nullptr;
@@ -1324,6 +1364,40 @@ const CustomData* carla_get_custom_data(uint pluginId, uint32_t customDataId)
     return &retCustomData;
 }
 
+const char* carla_get_custom_data_value(uint pluginId, const char* type, const char* key)
+{
+    CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0', gNullCharPtr);
+    CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0', gNullCharPtr);
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, gNullCharPtr);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, gNullCharPtr);
+
+    carla_debug("carla_get_custom_data_value(%i, %s, %s)", pluginId, type, key);
+
+    const uint32_t count = plugin->getCustomDataCount();
+
+    if (count == 0)
+        return gNullCharPtr;
+
+    static CarlaString customDataValue;
+
+    for (uint32_t i=0; i<count; ++i)
+    {
+        const CustomData& pluginCustomData(plugin->getCustomData(i));
+
+        if (std::strcmp(pluginCustomData.type, type) != 0)
+            continue;
+        if (std::strcmp(pluginCustomData.key, key) != 0)
+            continue;
+
+        customDataValue = pluginCustomData.value;
+        return customDataValue.buffer();
+    }
+
+    return gNullCharPtr;
+}
+
 const char* carla_get_chunk_data(uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, gNullCharPtr);
@@ -1856,7 +1930,7 @@ const char* carla_get_host_osc_url_tcp()
 {
     carla_debug("carla_get_host_osc_url_tcp()");
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     if (gStandalone.engine == nullptr)
     {
         carla_stderr2("carla_get_host_osc_url_tcp() failed, engine is not running");
@@ -1874,7 +1948,7 @@ const char* carla_get_host_osc_url_udp()
 {
     carla_debug("carla_get_host_osc_url_udp()");
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     if (gStandalone.engine == nullptr)
     {
         carla_stderr2("carla_get_host_osc_url_udp() failed, engine is not running");
@@ -1895,6 +1969,7 @@ const char* carla_get_host_osc_url_udp()
 #undef CARLA_PLUGIN_UI_CLASS_PREFIX
 
 #include "CarlaDssiUtils.cpp"
+#include "CarlaMacUtils.cpp"
 #include "CarlaPatchbayUtils.cpp"
 #include "CarlaPipeUtils.cpp"
 #include "CarlaStateUtils.cpp"

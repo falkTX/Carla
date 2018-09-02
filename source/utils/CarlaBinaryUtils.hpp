@@ -25,6 +25,9 @@
 
 #ifdef HAVE_LIBMAGIC
 # include <magic.h>
+# ifdef CARLA_OS_MAC
+#  include "CarlaMacUtils.hpp"
+# endif
 #endif
 
 CARLA_BACKEND_START_NAMESPACE
@@ -94,6 +97,26 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
             return (std::strstr(output, "x86-64") != nullptr || std::strstr(output, "aarch64") != nullptr)
                    ? BINARY_POSIX64
                    : BINARY_POSIX32;
+
+# ifdef CARLA_OS_MAC
+        if (std::strcmp(output, "directory") == 0)
+            if (const char* const binary = findBinaryInBundle(filename))
+                return getBinaryTypeFromFile(binary);
+
+        if (std::strstr(output, "Mach-O universal binary") != nullptr)
+        {
+            // This is tricky, binary actually contains multiple architectures
+            // We just assume what architectures are more important, and check for them first
+            if (std::strstr(output, "x86_64") != nullptr)
+                return BINARY_POSIX64;
+            if (std::strstr(output, "i386"))
+                return BINARY_POSIX32;
+            if (std::strstr(output, "ppc"))
+                return BINARY_OTHER;
+        }
+
+        carla_stdout("getBinaryTypeFromFile(\"%s\") - have output:\n%s", filename, output);
+# endif
 
         return BINARY_NATIVE;
     }

@@ -63,15 +63,9 @@ class RackListItem(QListWidgetItem):
         self.fWidget   = None
 
         self.fOptions = {
-            'compact':  False,
+            'compact':  bool(self.host.get_custom_data_value(pluginId, CUSTOM_DATA_TYPE_PROPERTY, "CarlaSkinIsCompacted") == "true"),
             'useSkins': useSkins
         }
-
-        for i in range(self.host.get_custom_data_count(pluginId)):
-            cdata = self.host.get_custom_data(pluginId, i)
-            if cdata['type'] == CUSTOM_DATA_TYPE_PROPERTY and cdata['key'] == "CarlaSkinIsCompacted":
-                self.fOptions['compact'] = bool(cdata['value'] == "true")
-                break
 
         self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
         #self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled|Qt.ItemIsDragEnabled)

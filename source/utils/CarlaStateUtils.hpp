@@ -34,7 +34,7 @@ struct CarlaStateSave {
         const char* name;
         const char* symbol;
         float       value;
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         uint8_t     midiChannel;
         int16_t     midiCC;
 #endif
@@ -70,7 +70,7 @@ struct CarlaStateSave {
     int64_t     uniqueId;
     uint        options;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     bool   active;
     float  dryWet;
     float  volume;

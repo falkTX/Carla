@@ -1392,9 +1392,7 @@ static NSString* getFileLink (const String& path)
 
 bool File::isSymbolicLink() const
 {
-    // FIXME
-    return false;
-    //return getFileLink (fullPath) != nil;
+    return getFileLink (fullPath) != nil;
 }
 
 File File::getLinkedTarget() const
@@ -1407,61 +1405,61 @@ File File::getLinkedTarget() const
 
 bool File::copyInternal (const File& dest) const
 {
-    //@autoreleasepool
-    {
-        NSFileManager* fm = [NSFileManager defaultManager];
+    const AutoNSAutoreleasePool arpool;
 
-        return [fm fileExistsAtPath: waterStringToNS (fullPath)]
-               #if defined (MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
-                && [fm copyItemAtPath: waterStringToNS (fullPath)
-                               toPath: waterStringToNS (dest.getFullPathName())
-                                error: nil];
-               #else
-                && [fm copyPath: waterStringToNS (fullPath)
-                         toPath: waterStringToNS (dest.getFullPathName())
-                        handler: nil];
-               #endif
-    }
+    NSFileManager* fm = [NSFileManager defaultManager];
+
+    return [fm fileExistsAtPath: waterStringToNS (fullPath)]
+           #if defined (MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
+            && [fm copyItemAtPath: waterStringToNS (fullPath)
+                           toPath: waterStringToNS (dest.getFullPathName())
+                            error: nil];
+           #else
+            && [fm copyPath: waterStringToNS (fullPath)
+                     toPath: waterStringToNS (dest.getFullPathName())
+                    handler: nil];
+           #endif
 }
 
 File File::getSpecialLocation (const SpecialLocationType type)
 {
-    //@autoreleasepool
+    const AutoNSAutoreleasePool arpool;
+
+    String resultPath;
+
+    switch (type)
     {
-        String resultPath;
+        case userHomeDirectory:
+          resultPath = nsStringToWater (NSHomeDirectory());
+          break;
 
-        switch (type)
+        case tempDirectory:
         {
-            case userHomeDirectory:                 resultPath = nsStringToWater (NSHomeDirectory()); break;
-
-            case tempDirectory:
-            {
-                File tmp ("~/Library/Caches/" + water_getExecutableFile().getFileNameWithoutExtension());
-                tmp.createDirectory();
-                return File (tmp.getFullPathName());
-            }
-
-            case currentExecutableFile:
-                return water_getExecutableFile();
-
-            case hostApplicationPath:
-            {
-                unsigned int size = 8192;
-                HeapBlock<char> buffer;
-                buffer.calloc (size + 8);
-
-                _NSGetExecutablePath (buffer.getData(), &size);
-                return File (String::fromUTF8 (buffer, (int) size));
-            }
-
-            default:
-                jassertfalse; // unknown type?
-                break;
+            File tmp ("~/Library/Caches/" + water_getExecutableFile().getFileNameWithoutExtension());
+            tmp.createDirectory();
+            return File (tmp.getFullPathName());
         }
 
-        if (resultPath.isNotEmpty())
-            return File (resultPath.convertToPrecomposedUnicode());
+        case currentExecutableFile:
+            return water_getExecutableFile();
+
+        case hostApplicationPath:
+        {
+            unsigned int size = 8192;
+            HeapBlock<char> buffer;
+            buffer.calloc (size + 8);
+
+            _NSGetExecutablePath (buffer.getData(), &size);
+            return File (String::fromUTF8 (buffer, (int) size));
+        }
+
+        default:
+            jassertfalse; // unknown type?
+            break;
     }
+
+    if (resultPath.isNotEmpty())
+        return File (resultPath.convertToPrecomposedUnicode());
 
     return File();
 }
@@ -1474,10 +1472,9 @@ public:
           wildCard (wildCard_),
           enumerator (nil)
     {
-        //@autoreleasepool
-        {
-            enumerator = [[[NSFileManager defaultManager] enumeratorAtPath: waterStringToNS (directory.getFullPathName())] retain];
-        }
+        const AutoNSAutoreleasePool arpool;
+
+        enumerator = [[[NSFileManager defaultManager] enumeratorAtPath: waterStringToNS (directory.getFullPathName())] retain];
     }
 
     ~Pimpl()
@@ -1489,30 +1486,29 @@ public:
                bool* const isDir, int64* const fileSize,
                Time* const modTime, Time* const creationTime, bool* const isReadOnly)
     {
-        //@autoreleasepool
+        const AutoNSAutoreleasePool arpool;
+
+        const char* wildcardUTF8 = nullptr;
+
+        for (;;)
         {
-            const char* wildcardUTF8 = nullptr;
+            NSString* file;
+            if (enumerator == nil || (file = [enumerator nextObject]) == nil)
+                return false;
 
-            for (;;)
-            {
-                NSString* file;
-                if (enumerator == nil || (file = [enumerator nextObject]) == nil)
-                    return false;
+            [enumerator skipDescendents];
+            filenameFound = nsStringToWater (file).convertToPrecomposedUnicode();
 
-                [enumerator skipDescendents];
-                filenameFound = nsStringToWater (file).convertToPrecomposedUnicode();
+            if (wildcardUTF8 == nullptr)
+                wildcardUTF8 = wildCard.toUTF8();
 
-                if (wildcardUTF8 == nullptr)
-                    wildcardUTF8 = wildCard.toUTF8();
+            if (fnmatch (wildcardUTF8, filenameFound.toUTF8(), FNM_CASEFOLD) != 0)
+                continue;
 
-                if (fnmatch (wildcardUTF8, filenameFound.toUTF8(), FNM_CASEFOLD) != 0)
-                    continue;
+            const String fullPath (parentDir + filenameFound);
+            updateStatInfoForFile (fullPath, isDir, fileSize, modTime, creationTime, isReadOnly);
 
-                const String fullPath (parentDir + filenameFound);
-                updateStatInfoForFile (fullPath, isDir, fileSize, modTime, creationTime, isReadOnly);
-
-                return true;
-            }
+            return true;
         }
     }
 
