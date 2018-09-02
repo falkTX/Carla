@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Preparation
 _FLAGS="-I/opt/kxstudio/include -Werror"
 export CFLAGS="${_FLAGS}"

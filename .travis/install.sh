@@ -30,12 +30,12 @@ sudo apt-get install -y \
     wine-rt-dev
 
 mkdir /tmp/osx-macports-pkgs
-pushd /tmp/osx-macports-pkgs
+cd /tmp/osx-macports-pkgs
 wget https://launchpad.net/~kxstudio-team/+archive/ubuntu/builds/+files/apple-macports-flac_1.2.1-1_all.deb
 wget https://launchpad.net/~kxstudio-team/+archive/ubuntu/builds/+files/apple-macports-libiconv_1.14-0_all.deb
 wget https://launchpad.net/~kxstudio-team/+archive/ubuntu/builds/+files/apple-macports-liblo_0.26-1_all.deb
 wget https://launchpad.net/~kxstudio-team/+archive/ubuntu/builds/+files/apple-macports-libogg_1.3.0-1_all.deb
 wget https://launchpad.net/~kxstudio-team/+archive/ubuntu/builds/+files/apple-macports-libsndfile_1.0.25-0_all.deb
 wget https://launchpad.net/~kxstudio-team/+archive/ubuntu/builds/+files/apple-macports-libvorbis_1.3.3-0_all.deb
-popd
+cd ~
 rm -r /tmp/osx-macports-pkgs
