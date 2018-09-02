@@ -1,14 +1,18 @@
+os:
+  - linux
+
 sudo: required
 dist: trusty
-language: cpp
+
+languages: c++
 compiler: gcc
-#matrix:
-    #include:
-        #- env: TARGET_OS=win32
-        #- env: TARGET_OS=win64
+
 before_install:
-    - sh ${TRAVIS_BUILD_DIR}/.travis/${TRAVIS_OS_NAME}.${TARGET_OS}.before_install.sh
+  - sh ${TRAVIS_BUILD_DIR}/.travis/before_install.sh
 install:
-    - sh ${TRAVIS_BUILD_DIR}/.travis/${TRAVIS_OS_NAME}.${TARGET_OS}.install.sh
+  - sh ${TRAVIS_BUILD_DIR}/.travis/install.sh
 script:
-    - sh ${TRAVIS_BUILD_DIR}/.travis/${TRAVIS_OS_NAME}.${TARGET_OS}.script.sh
+  - sh ${TRAVIS_BUILD_DIR}/.travis/script-linux.sh
+  - sh ${TRAVIS_BUILD_DIR}/.travis/script-macos.sh
+  - sh ${TRAVIS_BUILD_DIR}/.travis/script-win32.sh
+  - sh ${TRAVIS_BUILD_DIR}/.travis/script-win64.sh
