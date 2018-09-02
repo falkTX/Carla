@@ -385,7 +385,7 @@ public:
         }
         else if (std::strcmp(msg, "quit") == 0)
         {
-            handleUiRun();
+            handleUiClosed();
         }
         else
         {
