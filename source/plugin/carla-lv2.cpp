@@ -961,7 +961,7 @@ static LV2UI_Handle lv2ui_instantiate(LV2UI_Write_Function writeFunction, LV2UI_
                                       LV2UI_Widget* widget, const LV2_Feature* const* features, const bool isEmbed)
 {
     carla_debug("lv2ui_instantiate(..., %p, %p, %p)", writeFunction, controller, widget, features);
-# if defined(CARLA_OS_LINUX) && defined(HAVE_X11)
+# if ! (defined(CARLA_OS_LINUX) && defined(HAVE_X11))
     CARLA_SAFE_ASSERT_RETURN(! isEmbed, nullptr);
 # endif
 
