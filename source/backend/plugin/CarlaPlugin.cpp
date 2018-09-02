@@ -1327,6 +1327,9 @@ void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool se
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_ACTIVE, 0, value, nullptr);
 #endif
+
+    // maybe unused
+    return; (void)value;
 }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -1545,6 +1548,9 @@ void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_CTRL_CHANNEL, 0, channelf, nullptr);
 #endif
+
+    // maybe unused
+    return; (void)channelf;
 }
 
 // -------------------------------------------------------------------
