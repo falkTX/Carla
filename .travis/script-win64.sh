@@ -12,6 +12,7 @@ export CFLAGS="${_FLAGS}"
 export CXXFLAGS="${_FLAGS}"
 export PATH=/opt/mingw64/${_PREFIX}/bin:/opt/mingw64/bin:${PATH}
 export PKG_CONFIG_PATH=/opt/mingw64/lib/pkgconfig:${PKG_CONFIG_PATH}
+export CROSS_COMPILING=true
 
 # Start clean
 make distclean >/dev/null

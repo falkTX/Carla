@@ -3,6 +3,7 @@
 set -e
 
 sudo apt-get install -y \
+    g++-multilib \
     pkg-config \
     pyqt5-dev-tools \
     python3-pyqt5.qtsvg \
