@@ -8,7 +8,7 @@ export CFLAGS="${_FLAGS}"
 export CXXFLAGS="${_FLAGS}"
 export MACOS_OLD=true
 export CROSS_COMPILING=true
-source /usr/bin/apple-cross-setup.env
+. /usr/bin/apple-cross-setup.env
 
 # Start clean
 make distclean >/dev/null
