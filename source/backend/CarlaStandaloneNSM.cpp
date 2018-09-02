@@ -1,6 +1,6 @@
 /*
  * Carla Standalone
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -169,13 +169,19 @@ public:
         case 5: // show gui
             CARLA_SAFE_ASSERT_BREAK(fReplyAddress != nullptr);
             CARLA_SAFE_ASSERT_BREAK(fServer != nullptr);
-            lo_send_from(fReplyAddress, fServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_shown", "");
+            {
+                // NOTE: lo_send_from is a macro that creates local variables
+                lo_send_from(fReplyAddress, fServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_shown", "");
+            }
             break;
 
         case 6: // hide gui
             CARLA_SAFE_ASSERT_BREAK(fReplyAddress != nullptr);
             CARLA_SAFE_ASSERT_BREAK(fServer != nullptr);
-            lo_send_from(fReplyAddress, fServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_hidden", "");
+            {
+                // NOTE: lo_send_from is a macro that creates local variables
+                lo_send_from(fReplyAddress, fServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_hidden", "");
+            }
             break;
         }
     }

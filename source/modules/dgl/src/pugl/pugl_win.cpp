@@ -418,7 +418,7 @@ handleMessage(PuglView* view, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 void
-puglGrabFocus(PuglView* view)
+puglGrabFocus(PuglView*)
 {
 	// TODO
 }
@@ -474,7 +474,7 @@ puglGetNativeWindow(PuglView* view)
 }
 
 void*
-puglGetContext(PuglView* view)
+puglGetContext(PuglView*)
 {
 #ifdef PUGL_HAVE_CAIRO
 	if (view->ctx_type == PUGL_CAIRO) {
