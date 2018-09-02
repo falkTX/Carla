@@ -1134,18 +1134,33 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
                 midiIns = 1;
             }
 
-            float* bufferAudioIn[audioIns];
-            for (int j=0; j < audioIns; ++j)
+            float* bufferAudioIn[std::max(1, audioIns)];
+            float* bufferAudioOut[std::max(1, audioOuts)];
+
+            if (audioIns == 0)
             {
-                bufferAudioIn[j] = new float[kBufferSize];
-                carla_zeroFloats(bufferAudioIn[j], kBufferSize);
+                bufferAudioIn[0] = nullptr;
+            }
+            else
+            {
+                for (int j=0; j < audioIns; ++j)
+                {
+                    bufferAudioIn[j] = new float[kBufferSize];
+                    carla_zeroFloats(bufferAudioIn[j], kBufferSize);
+                }
             }
 
-            float* bufferAudioOut[audioOuts];
-            for (int j=0; j < audioOuts; ++j)
+            if (audioIns == 0)
             {
-                bufferAudioOut[j] = new float[kBufferSize];
-                carla_zeroFloats(bufferAudioOut[j], kBufferSize);
+                bufferAudioOut[0] = nullptr;
+            }
+            else
+            {
+                for (int j=0; j < audioOuts; ++j)
+                {
+                    bufferAudioOut[j] = new float[kBufferSize];
+                    carla_zeroFloats(bufferAudioOut[j], kBufferSize);
+                }
             }
 
             struct VstEventsFixed {

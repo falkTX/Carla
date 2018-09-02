@@ -108,7 +108,8 @@ TARGETS += \
 	$(BINDIR)/CarlaPatchbay$(LIB_EXT) \
 	$(BINDIR)/CarlaPatchbay16$(LIB_EXT) \
 	$(BINDIR)/CarlaPatchbay32$(LIB_EXT) \
-	$(BINDIR)/CarlaPatchbayFX$(LIB_EXT)
+	$(BINDIR)/CarlaPatchbayFX$(LIB_EXT) \
+	$(BINDIR)/CarlaVstShell$(LIB_EXT)
 endif
 endif
 endif
@@ -169,6 +170,11 @@ $(BINDIR)/CarlaPatchbayFX$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.patchbay-fx.o $(LIB
 	@echo "Linking CarlaPatchbayFX$(LIB_EXT)"
 	@$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
 
+$(BINDIR)/CarlaVstShell$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.shell.o $(LIBS)
+	-@mkdir -p $(BINDIR)
+	@echo "Linking CarlaRackVstShell$(LIB_EXT)"
+	@$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
+
 # ----------------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/carla-lv2.cpp.o: carla-lv2.cpp
@@ -204,12 +210,17 @@ $(OBJDIR)/carla-vst.cpp.patchbay-syn.o: carla-vst.cpp
 $(OBJDIR)/carla-vst.cpp.patchbay-syn16.o: carla-vst.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (PatchbaySynth 16ch)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_PATCHBAY=1 -DCARLA_PLUGIN_SYNTH=1 -DCARLA_PLUGIN_16CH -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_PATCHBAY=1 -DCARLA_PLUGIN_SYNTH=1 -DCARLA_PLUGIN_16CH=1 -c -o $@
 
 $(OBJDIR)/carla-vst.cpp.patchbay-syn32.o: carla-vst.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (PatchbaySynth 32ch)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_PATCHBAY=1 -DCARLA_PLUGIN_SYNTH=1 -DCARLA_PLUGIN_32CH -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_PATCHBAY=1 -DCARLA_PLUGIN_SYNTH=1 -DCARLA_PLUGIN_32CH=1 -c -o $@
+
+$(OBJDIR)/carla-vst.cpp.shell.o: carla-vst.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (VstShell)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_VST_SHELL=1 -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -245,5 +256,6 @@ $(OBJDIR)/carla-lv2-export.cpp.o: carla-lv2-export.cpp
 -include $(OBJDIR)/carla-vst.cpp.patchbay-syn16.d
 -include $(OBJDIR)/carla-vst.cpp.rack-fx.d
 -include $(OBJDIR)/carla-vst.cpp.rack-syn.d
+-include $(OBJDIR)/carla-vst.cpp.shell.d
 
 # ----------------------------------------------------------------------------------------------------------------------------
