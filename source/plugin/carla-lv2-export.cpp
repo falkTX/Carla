@@ -469,7 +469,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     // -------------------------------------------------------------------
     // MIDI outputs
 
-    for (uint32_t i=0; i < pluginDesc->midiOuts; ++i)
+    for (uint32_t i=1; i < pluginDesc->midiOuts; ++i)
     {
         if (i == 0)
             text += "    lv2:port [\n";
