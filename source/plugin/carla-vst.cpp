@@ -793,10 +793,12 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
             effect->numInputs   = pluginDesc->audioIns;
             effect->numOutputs  = pluginDesc->audioOuts;
 
+            /*
             if (pluginDesc->hints & NATIVE_PLUGIN_HAS_UI)
                 effect->flags |= effFlagsHasEditor;
             else
                 effect->flags &= ~effFlagsHasEditor;
+            */
 
             if (pluginDesc->hints & NATIVE_PLUGIN_IS_SYNTH)
                 effect->flags |= effFlagsIsSynth;
