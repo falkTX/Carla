@@ -52,5 +52,5 @@
    match-leak-kinds: reachable
    fun:malloc
    fun:XInitThreads
-   fun:main
+   ...
 }
