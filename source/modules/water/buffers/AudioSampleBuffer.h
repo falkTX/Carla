@@ -380,8 +380,8 @@ public:
                            const int newNumChannels,
                            const int newNumSamples) noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN (dataToReferTo != nullptr, false);
-        CARLA_SAFE_ASSERT_RETURN (newNumChannels >= 0 && newNumSamples >= 0, false);
+        CARLA_SAFE_ASSERT_RETURN(dataToReferTo != nullptr, false);
+        CARLA_SAFE_ASSERT_INT2_RETURN(newNumChannels >= 0 && newNumSamples >= 0, newNumChannels, newNumSamples, false);
 
         if (allocatedBytes != 0)
         {
@@ -416,7 +416,7 @@ public:
     void clear (int startSample,
                 int numSamples) noexcept
     {
-        jassert (startSample >= 0 && startSample + numSamples <= size);
+        CARLA_SAFE_ASSERT_INT2_RETURN(startSample >= 0 && startSample + numSamples <= size, numSamples, size,);
 
         if (! isClear)
         {
@@ -437,8 +437,8 @@ public:
                 int startSample,
                 int numSamples) noexcept
     {
-        jassert (isPositiveAndBelow (channel, numChannels));
-        jassert (startSample >= 0 && startSample + numSamples <= size);
+        CARLA_SAFE_ASSERT_INT2_RETURN(isPositiveAndBelow(channel, numChannels), channel, numChannels,);
+        CARLA_SAFE_ASSERT_INT2_RETURN(startSample >= 0 && startSample + numSamples <= size, numSamples, size,);
 
         if (! isClear)
             carla_zeroFloats (channels [channel] + startSample, numSamples);
@@ -474,11 +474,11 @@ public:
                   int numSamples,
                   float gainToApplyToSource = (float) 1) noexcept
     {
-        jassert (&source != this || sourceChannel != destChannel);
-        jassert (isPositiveAndBelow (destChannel, numChannels));
-        jassert (destStartSample >= 0 && destStartSample + numSamples <= size);
-        jassert (isPositiveAndBelow (sourceChannel, source.numChannels));
-        jassert (sourceStartSample >= 0 && sourceStartSample + numSamples <= source.size);
+        CARLA_SAFE_ASSERT_INT2_RETURN(&source != this || sourceChannel != destChannel, sourceChannel, destChannel,);
+        CARLA_SAFE_ASSERT_INT2_RETURN(isPositiveAndBelow(destChannel, numChannels), destChannel, numChannels,);
+        CARLA_SAFE_ASSERT_INT2_RETURN(isPositiveAndBelow(sourceChannel, source.numChannels), sourceChannel, source.numChannels,);
+        CARLA_SAFE_ASSERT_INT2_RETURN(destStartSample >= 0 && destStartSample + numSamples <= size, numSamples, size,);
+        CARLA_SAFE_ASSERT_INT2_RETURN(sourceStartSample >= 0 && sourceStartSample + numSamples <= source.size, numSamples, source.size,);
 
         if (gainToApplyToSource != 0.0f && numSamples > 0 && ! source.isClear)
         {
@@ -522,9 +522,9 @@ public:
                   int numSamples,
                   float gainToApplyToSource = (float) 1) noexcept
     {
-        jassert (isPositiveAndBelow (destChannel, numChannels));
-        jassert (destStartSample >= 0 && destStartSample + numSamples <= size);
-        jassert (source != nullptr);
+        CARLA_SAFE_ASSERT_INT2_RETURN(isPositiveAndBelow(destChannel, numChannels), destChannel, numChannels,);
+        CARLA_SAFE_ASSERT_INT2_RETURN(destStartSample >= 0 && destStartSample + numSamples <= size, numSamples, size,);
+        CARLA_SAFE_ASSERT_RETURN(source != nullptr,);
 
         if (gainToApplyToSource != 0.0f && numSamples > 0)
         {
@@ -567,11 +567,11 @@ public:
                    int sourceStartSample,
                    int numSamples) noexcept
     {
-        jassert (&source != this || sourceChannel != destChannel);
-        jassert (isPositiveAndBelow (destChannel, numChannels));
-        jassert (destStartSample >= 0 && destStartSample + numSamples <= size);
-        jassert (isPositiveAndBelow (sourceChannel, source.numChannels));
-        jassert (sourceStartSample >= 0 && sourceStartSample + numSamples <= source.size);
+        CARLA_SAFE_ASSERT_INT2_RETURN(&source != this || sourceChannel != destChannel, sourceChannel, destChannel,);
+        CARLA_SAFE_ASSERT_INT2_RETURN(isPositiveAndBelow(destChannel, numChannels), destChannel, numChannels,);
+        CARLA_SAFE_ASSERT_INT2_RETURN(isPositiveAndBelow(sourceChannel, source.numChannels), sourceChannel, source.numChannels,);
+        CARLA_SAFE_ASSERT_INT2_RETURN(destStartSample >= 0 && destStartSample + numSamples <= size, numSamples, size,);
+        CARLA_SAFE_ASSERT_INT2_RETURN(sourceStartSample >= 0 && sourceStartSample + numSamples <= source.size, numSamples, source.size,);
 
         if (numSamples > 0)
         {
@@ -604,9 +604,9 @@ public:
                    const float* source,
                    int numSamples) noexcept
     {
-        jassert (isPositiveAndBelow (destChannel, numChannels));
-        jassert (destStartSample >= 0 && destStartSample + numSamples <= size);
-        jassert (source != nullptr);
+        CARLA_SAFE_ASSERT_INT2_RETURN(isPositiveAndBelow(destChannel, numChannels), destChannel, numChannels,);
+        CARLA_SAFE_ASSERT_INT2_RETURN(destStartSample >= 0 && destStartSample + numSamples <= size, numSamples, size,);
+        CARLA_SAFE_ASSERT_RETURN(source != nullptr,);
 
         if (numSamples > 0)
         {
@@ -631,9 +631,9 @@ public:
                    int numSamples,
                    float gain) noexcept
     {
-        jassert (isPositiveAndBelow (destChannel, numChannels));
-        jassert (destStartSample >= 0 && destStartSample + numSamples <= size);
-        jassert (source != nullptr);
+        CARLA_SAFE_ASSERT_INT2_RETURN(isPositiveAndBelow(destChannel, numChannels), destChannel, numChannels,);
+        CARLA_SAFE_ASSERT_INT2_RETURN(destStartSample >= 0 && destStartSample + numSamples <= size, numSamples, size,);
+        CARLA_SAFE_ASSERT_RETURN(source != nullptr,);
 
         if (numSamples > 0)
         {
