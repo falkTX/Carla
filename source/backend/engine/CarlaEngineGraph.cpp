@@ -1425,6 +1425,9 @@ void PatchbayGraph::setBufferSize(const uint32_t bufferSize)
 {
     const int bufferSizei(static_cast<int>(bufferSize));
 
+    const CarlaRecursiveMutexLocker cml1(graph.getReorderMutex());
+    const CarlaRecursiveMutexLocker cml2(graph.getCallbackLock());
+
     graph.releaseResources();
     graph.prepareToPlay(kEngine->getSampleRate(), bufferSizei);
     audioBuffer.setSize(audioBuffer.getNumChannels(), bufferSizei);
@@ -1432,6 +1435,9 @@ void PatchbayGraph::setBufferSize(const uint32_t bufferSize)
 
 void PatchbayGraph::setSampleRate(const double sampleRate)
 {
+    const CarlaRecursiveMutexLocker cml1(graph.getReorderMutex());
+    const CarlaRecursiveMutexLocker cml2(graph.getCallbackLock());
+
     graph.releaseResources();
     graph.prepareToPlay(sampleRate, static_cast<int>(kEngine->getBufferSize()));
 }
