@@ -1219,6 +1219,10 @@ public:
             jackbridge_set_thread_init_callback(client, carla_jack_thread_init_callback, nullptr);
 
 #ifndef BUILD_BRIDGE
+            /*
+            jackbridge_set_buffer_size_callback(fClient, carla_jack_bufsize_callback_plugin, plugin);
+            jackbridge_set_sample_rate_callback(fClient, carla_jack_srate_callback_plugin, plugin);
+            */
             jackbridge_set_latency_callback(client, carla_jack_latency_callback_plugin, plugin);
             jackbridge_set_process_callback(client, carla_jack_process_callback_plugin, plugin);
             jackbridge_on_shutdown(client, carla_jack_shutdown_callback_plugin, plugin);
@@ -1654,7 +1658,7 @@ protected:
     {
         const PendingRtEventsRunner prt(this, nframes);
 
-        CARLA_SAFE_ASSERT_RETURN(nframes == pData->bufferSize,);
+        CARLA_SAFE_ASSERT_INT2_RETURN(nframes == pData->bufferSize, nframes, pData->bufferSize,);
 
 #ifdef BUILD_BRIDGE
         CarlaPlugin* const plugin(pData->plugins[0].plugin);
@@ -2637,6 +2641,26 @@ private:
 
         return 0;
     }
+
+    /*
+    static int JACKBRIDGE_API carla_jack_bufsize_callback_plugin(jack_nframes_t nframes, void* arg)
+    {
+        CarlaPlugin* const plugin((CarlaPlugin*)arg);
+        CARLA_SAFE_ASSERT_RETURN(plugin != nullptr && plugin->isEnabled(), 0);
+
+        plugin->bufferSizeChanged(nframes);
+        return 1;
+    }
+
+    static int JACKBRIDGE_API carla_jack_srate_callback_plugin(jack_nframes_t nframes, void* arg)
+    {
+        CarlaPlugin* const plugin((CarlaPlugin*)arg);
+        CARLA_SAFE_ASSERT_RETURN(plugin != nullptr && plugin->isEnabled(), 0);
+
+        plugin->sampleRateChanged(nframes);
+        return 1;
+    }
+    */
 
     static void JACKBRIDGE_API carla_jack_latency_callback_plugin(jack_latency_callback_mode_t /*mode*/, void* /*arg*/)
     {

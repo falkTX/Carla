@@ -1380,6 +1380,11 @@ void AudioProcessorGraph::reorderNowIfNeeded()
     }
 }
 
+const CarlaRecursiveMutex& AudioProcessorGraph::getReorderMutex() const
+{
+    return reorderMutex;
+}
+
 //==============================================================================
 AudioProcessorGraph::AudioGraphIOProcessor::AudioGraphIOProcessor (const IODeviceType deviceType)
     : type (deviceType), graph (nullptr)

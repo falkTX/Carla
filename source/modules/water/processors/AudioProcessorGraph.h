@@ -345,6 +345,7 @@ public:
     bool producesMidi() const override;
 
     void reorderNowIfNeeded();
+    const CarlaRecursiveMutex& getReorderMutex() const;
 
 private:
     //==============================================================================
