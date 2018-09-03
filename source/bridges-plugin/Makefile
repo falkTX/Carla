@@ -78,7 +78,7 @@ NATIVE_LINK_FLAGS  += $(MAGIC_LIBS)
 NATIVE_LINK_FLAGS  += $(SNDFILE_LIBS)
 
 LIBS_native        += $(MODULEDIR)/audio_decoder.a
-LIBS_native        += $(MODULEDIR)/native-plugins.base.a
+LIBS_native        += $(MODULEDIR)/native-plugins.all.a
 LIBS_native        += $(MODULEDIR)/sfzero.a
 
 ifeq ($(HAVE_DGL),true)
