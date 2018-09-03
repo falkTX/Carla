@@ -1289,9 +1289,11 @@ void AudioProcessorGraph::buildRenderingSequence()
 }
 
 //==============================================================================
-void AudioProcessorGraph::prepareToPlay (double /*sampleRate*/, int estimatedSamplesPerBlock)
+void AudioProcessorGraph::prepareToPlay (double sampleRate, int estimatedSamplesPerBlock)
 {
-    audioBuffers->prepareInOutBuffers (jmax (1, getTotalNumOutputChannels()), estimatedSamplesPerBlock);
+    setRateAndBufferSizeDetails(sampleRate, estimatedSamplesPerBlock);
+
+    audioBuffers->prepareInOutBuffers(jmax(1, getTotalNumOutputChannels()), estimatedSamplesPerBlock);
 
     currentMidiInputBuffer = nullptr;
     currentMidiOutputBuffer.clear();
@@ -1336,14 +1338,18 @@ void AudioProcessorGraph::setNonRealtime (bool isProcessingNonRealtime) noexcept
 
 void AudioProcessorGraph::processAudio (AudioSampleBuffer& buffer, MidiBuffer& midiMessages)
 {
-    AudioSampleBuffer&  renderingBuffers         = audioBuffers->renderingBuffers;
     AudioSampleBuffer*& currentAudioInputBuffer  = audioBuffers->currentAudioInputBuffer;
     AudioSampleBuffer&  currentAudioOutputBuffer = audioBuffers->currentAudioOutputBuffer;
+    AudioSampleBuffer&  renderingBuffers         = audioBuffers->renderingBuffers;
 
     const int numSamples = buffer.getNumSamples();
 
+    if (! audioBuffers->currentAudioOutputBuffer.setSizeRT(numSamples))
+        return;
+    if (! audioBuffers->renderingBuffers.setSizeRT(numSamples))
+        return;
+
     currentAudioInputBuffer = &buffer;
-    currentAudioOutputBuffer.setSizeRT (numSamples);
     currentAudioOutputBuffer.clear();
     currentMidiInputBuffer = &midiMessages;
     currentMidiOutputBuffer.clear();

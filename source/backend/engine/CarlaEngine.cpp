@@ -1638,7 +1638,11 @@ void CarlaEngine::bufferSizeChanged(const uint32_t newBufferSize)
         CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
         if (plugin != nullptr && plugin->isEnabled())
+        {
+            plugin->tryLock(true);
             plugin->bufferSizeChanged(newBufferSize);
+            plugin->unlock();
+        }
     }
 
     callback(ENGINE_CALLBACK_BUFFER_SIZE_CHANGED, 0, static_cast<int>(newBufferSize), 0, 0.0f, nullptr);
@@ -1663,7 +1667,11 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
         CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
         if (plugin != nullptr && plugin->isEnabled())
+        {
+            plugin->tryLock(true);
             plugin->sampleRateChanged(newSampleRate);
+            plugin->unlock();
+        }
     }
 
     callback(ENGINE_CALLBACK_SAMPLE_RATE_CHANGED, 0, 0, 0, static_cast<float>(newSampleRate), nullptr);
