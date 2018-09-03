@@ -596,6 +596,9 @@ class CarlaEmbedW(QEmbedWidget):
         # there might be other qt windows open which will block carla-plugin from quitting
         app.quit()
 
+    def setLoadRDFsNeeded(self):
+        self.gui.setLoadRDFsNeeded()
+
 # ------------------------------------------------------------------------------------------------------------
 # Main
 
