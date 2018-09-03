@@ -2078,7 +2078,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
         return true;
 
     // now setup transport
-    if (XmlElement* const elem = isPreset || isPlugin ? nullptr : xmlElement->getChildByName("Transport"))
+    if (XmlElement* const elem = (isPreset || isPlugin) ? nullptr : xmlElement->getChildByName("Transport"))
     {
         if (XmlElement* const bpmElem = elem->getChildByName("BeatsPerMinute"))
         {
@@ -2286,7 +2286,10 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
         }
 
         if (isPreset)
+        {
+            callback(ENGINE_CALLBACK_PROJECT_LOAD_FINISHED, 0, 0, 0, 0.0f, nullptr);
             return true;
+        }
     }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
