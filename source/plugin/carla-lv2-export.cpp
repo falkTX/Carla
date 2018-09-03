@@ -471,7 +471,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
 
     for (uint32_t i=1; i < pluginDesc->midiOuts; ++i)
     {
-        if (i == 0)
+        if (i == 1)
             text += "    lv2:port [\n";
 
         text += "        a lv2:OutputPort, atom:AtomPort ;\n";
