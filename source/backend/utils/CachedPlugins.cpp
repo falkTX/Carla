@@ -322,6 +322,13 @@ const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2World, Lilv
     // ----------------------------------------------------------------------------------------------------------------
     // number data
 
+    info.audioIns      = 0;
+    info.audioOuts     = 0;
+    info.midiIns       = 0;
+    info.midiOuts      = 0;
+    info.parameterIns  = 0;
+    info.parameterOuts = 0;
+
     for (uint i=0, count=lilvPlugin.get_num_ports(); i<count; ++i)
     {
         Lilv::Port lilvPort(lilvPlugin.get_port_by_index(i));
