@@ -23,12 +23,18 @@ sudo apt-get install -y \
     apple-x86-setup \
     mingw32-x-gcc \
     mingw32-x-fluidsynth \
+    mingw32-x-fftw \
     mingw32-x-liblo \
+    mingw32-x-mxml \
     mingw32-x-pkgconfig \
+    mingw32-x-zlib \
     mingw64-x-gcc \
     mingw64-x-fluidsynth \
+    mingw64-x-fftw \
     mingw64-x-liblo \
+    mingw64-x-mxml \
     mingw64-x-pkgconfig \
+    mingw64-x-zlib \
     wine-rt-dev
 
 mkdir /tmp/osx-macports-pkgs
