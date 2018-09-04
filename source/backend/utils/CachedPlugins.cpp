@@ -578,6 +578,6 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
 
 // -------------------------------------------------------------------------------------------------------------------
 
-#include "../native-plugins/_data.all.cpp"
+#include "../native-plugins/_data.cpp"
 
 // -------------------------------------------------------------------------------------------------------------------

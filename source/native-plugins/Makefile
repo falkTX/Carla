@@ -17,14 +17,14 @@ BUILD_CXX_FLAGS += -I.. -I$(CWD)/modules
 # ---------------------------------------------------------------------------------------------------------------------
 # Set targets
 
-TARGETS = \
-	$(MODULEDIR)/$(MODULENAME).all.a \
-	$(MODULEDIR)/$(MODULENAME).base.a
+TARGETS = $(MODULEDIR)/$(MODULENAME).a
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Set objects
 
 OBJS = \
+	$(OBJDIR)/_all.c.o \
+	$(OBJDIR)/_data.cpp.o \
 	$(OBJDIR)/bypass.c.o \
 	$(OBJDIR)/lfo.c.o \
 	$(OBJDIR)/midi-channel-filter.c.o \
@@ -39,16 +39,6 @@ OBJS = \
 	$(OBJDIR)/midi-file.cpp.o \
 	$(OBJDIR)/midi-pattern.cpp.o \
 	$(OBJDIR)/notes.cpp.o
-
-OBJS_base = \
-	$(OBJDIR)/_all.base.c.o \
-	$(OBJDIR)/_data.base.cpp.o \
-	$(OBJS)
-
-OBJS_all = \
-	$(OBJDIR)/_all.all.c.o \
-	$(OBJDIR)/_data.all.cpp.o \
-	$(OBJS)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Include external plugins, if present
@@ -71,15 +61,9 @@ debug:
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-$(MODULEDIR)/$(MODULENAME).all.a: $(OBJS_all)
+$(MODULEDIR)/$(MODULENAME).a: $(OBJS)
 	-@mkdir -p $(MODULEDIR)
-	@echo "Creating $(MODULENAME).all.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
-
-$(MODULEDIR)/$(MODULENAME).base.a: $(OBJS_base)
-	-@mkdir -p $(MODULEDIR)
-	@echo "Creating $(MODULENAME).base.a"
+	@echo "Creating $(MODULENAME).a"
 	@rm -f $@
 	@$(AR) crs $@ $^
 
