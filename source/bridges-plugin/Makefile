@@ -67,16 +67,16 @@ LINK_FLAGS += $(X11_LIBS)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-NATIVE_BUILD_FLAGS  = $(NATIVE_PLUGINS_FLAGS) $(LIBLO_FLAGS)
-# NATIVE_LINK_FLAGS   = $(LIBLO_LIBS)
+NATIVE_BUILD_FLAGS  = $(NATIVE_PLUGINS_FLAGS)
+NATIVE_LINK_FLAGS   = $(NATIVE_PLUGINS_LIBS)
+
+NATIVE_BUILD_FLAGS += $(LIBLO_FLAGS)
+NATIVE_LINK_FLAGS  += $(LIBLO_LIBS)
 
 NATIVE_BUILD_FLAGS += $(FLUIDSYNTH_FLAGS)
 NATIVE_LINK_FLAGS  += $(FLUIDSYNTH_LIBS)
 
-NATIVE_LINK_FLAGS  += $(DGL_LIBS)
-NATIVE_LINK_FLAGS  += $(FFMPEG_LIBS)
 NATIVE_LINK_FLAGS  += $(MAGIC_LIBS)
-NATIVE_LINK_FLAGS  += $(SNDFILE_LIBS)
 
 LIBS_native        += $(MODULEDIR)/audio_decoder.a
 LIBS_native        += $(MODULEDIR)/native-plugins.all.a
