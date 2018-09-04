@@ -864,7 +864,7 @@ public:
 
         if (fEffect->flags & effFlagsHasEditor)
         {
-#ifndef CARLA_OS_64BIT
+#if defined(CARLA_OS_MAC) && ! defined(CARLA_OS_64BIT)
             if (static_cast<uintptr_t>(dispatcher(effCanDo, 0, 0, const_cast<char*>("hasCockosViewAsConfig")) & 0xffff0000) == 0xbeef0000)
 #endif
             {
