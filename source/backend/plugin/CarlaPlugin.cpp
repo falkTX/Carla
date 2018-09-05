@@ -1559,7 +1559,7 @@ void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const
 void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
 {
     if (pData->bridged) {
-        CARLA_SAFE_ASSERT_RETURN(!sendGui && !sendOsc && !sendCallback,);
+        CARLA_SAFE_ASSERT_RETURN(!sendGui,);
     } else {
         CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,); // never call this from RT
     }
