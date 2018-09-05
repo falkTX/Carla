@@ -45,7 +45,7 @@ public:
           fUiName()
     {
         CARLA_SAFE_ASSERT_RETURN(pData->curPluginCount == 0,)
-        CARLA_SAFE_ASSERT_RETURN(pData->plugins[0].plugin == nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(pData->plugins == nullptr,);
 
         if (! loadedInProperHost())
             return;
@@ -613,7 +613,6 @@ static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char*, cons
 
 static void lv2ui_port_event(LV2UI_Handle ui, uint32_t portIndex, uint32_t bufferSize, uint32_t format, const void* buffer)
 {
-    carla_debug("lv2ui_port_event(%p, %i, %i, %i, %p)", ui, portIndex, bufferSize, format, buffer);
     uiPtr->lv2ui_port_event(portIndex, bufferSize, format, buffer);
 }
 

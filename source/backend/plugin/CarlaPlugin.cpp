@@ -887,7 +887,9 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     setBalanceRight(stateSave.balanceRight, true, true);
     setPanning(stateSave.panning, true, true);
     setCtrlChannel(stateSave.ctrlChannel, true, true);
-    setActive(stateSave.active, true, true);
+
+    if (! pData->enginePlugin)
+        setActive(stateSave.active, true, true);
 
     if (! pData->engine->isLoadingProject())
         pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0f, nullptr);
@@ -1296,7 +1298,7 @@ void CarlaPlugin::setEnabled(const bool yesNo) noexcept
 
 void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool sendCallback) noexcept
 {
-    if (pData->bridged) {
+    if (pData->engineBridged || pData->enginePlugin) {
         CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
     } else {
         CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
@@ -1335,7 +1337,7 @@ void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool se
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool sendCallback) noexcept
 {
-    if (pData->bridged) {
+    if (pData->engineBridged) {
         CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
     } else {
         CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
@@ -1360,7 +1362,7 @@ void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool se
 
 void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool sendCallback) noexcept
 {
-    if (pData->bridged) {
+    if (pData->engineBridged) {
         CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
     } else {
         CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
@@ -1385,7 +1387,7 @@ void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool se
 
 void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bool sendCallback) noexcept
 {
-    if (pData->bridged) {
+    if (pData->engineBridged) {
         CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
     } else {
         CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
@@ -1410,7 +1412,7 @@ void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bo
 
 void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const bool sendCallback) noexcept
 {
-    if (pData->bridged) {
+    if (pData->engineBridged) {
         CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
     } else {
         CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
@@ -1435,7 +1437,7 @@ void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const b
 
 void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool sendCallback) noexcept
 {
-    if (pData->bridged) {
+    if (pData->engineBridged) {
         CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
     } else {
         CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
@@ -1525,7 +1527,7 @@ void CarlaPlugin::setPanningRT(const float value) noexcept
 
 void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept
 {
-    if (pData->bridged) {
+    if (pData->engineBridged) {
         CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
     } else {
         CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
@@ -1558,7 +1560,7 @@ void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const
 
 void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
 {
-    if (pData->bridged) {
+    if (pData->engineBridged) {
         CARLA_SAFE_ASSERT_RETURN(!sendGui,);
     } else {
         CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,); // never call this from RT
@@ -1620,7 +1622,7 @@ void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float
 
 void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, const uint8_t channel, const bool sendOsc, const bool sendCallback) noexcept
 {
-    if (pData->bridged) {
+    if (pData->engineBridged) {
         CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
     } else {
         CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
@@ -1643,7 +1645,7 @@ void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, const uint
 
 void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, const int16_t cc, const bool sendOsc, const bool sendCallback) noexcept
 {
-    if (pData->bridged) {
+    if (pData->engineBridged) {
         CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
     } else {
         CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT

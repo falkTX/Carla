@@ -217,9 +217,11 @@ struct CarlaPlugin::ProtectedData {
     uint32_t nodeId;
 
     bool active;
-    bool bridged;
     bool enabled;
     bool needsReset;
+
+    bool engineBridged;
+    bool enginePlugin;
 
     lib_t lib;
     lib_t uiLib;
