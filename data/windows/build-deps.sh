@@ -113,10 +113,6 @@ export WINDRES=${MINGW_PREFIX}-windres
 
 export PATH=/opt/mingw${ARCH}/${MINGW_PREFIX}/bin:/opt/mingw${ARCH}/bin:${PATH}
 
-# export MOC=${MINGW_PREFIX}-moc
-# export RCC=${MINGW_PREFIX}-rcc
-# export PKGCONFIG=${MINGW_PREFIX}-pkg-config
-
 if [ -z "${NOSSE}" ]; then
 export CFLAGS="-O3 -mtune=generic -msse -msse2 -mfpmath=sse -fvisibility=hidden -fdata-sections -ffunction-sections"
 else

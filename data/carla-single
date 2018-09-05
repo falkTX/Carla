@@ -59,10 +59,11 @@ $ %s dssi /usr/lib/dssi/whysynth.so
 $ %s lv2 http://calf.sourceforge.net/plugins/Compressor
 $ %s native vst /usr/lib/vst/TAL-NoiseMaker.so
 $ %s win32 vst \"~/.wine/drive_c/Program Files (x86)/VstPlugins/Kontakt 5.dll\"
+$ CARLA_BRIDGE_PLUGIN_BINARY_TYPE=win64 %s vst \"~/.wine/drive_c/Program Files/Common Files/VST2/Sytrus VSTi.dll\"
 
 Format can be skipped for internal and lv2 plugins (auto-detected), like this:
 $ %s midipattern
-$ %s http://synthv1.sourceforge.net/lv2""" % ((sys.argv[0],)*8)
+$ %s http://synthv1.sourceforge.net/lv2""" % ((sys.argv[0],)*9)
 
 def printUsageAndQuit():
     print(usageMsg)
@@ -74,7 +75,7 @@ if len(sys.argv) < 2:
 # --------------------------------------------------------------------------------------------------------
 # Initialize variables to null
 
-ARCH     = "native"
+ARCH     = os.getenv("CARLA_BRIDGE_PLUGIN_BINARY_TYPE", "native")
 FORMAT   = "none"
 FILENAME = ""
 LABEL    = ""
@@ -202,10 +203,6 @@ if FILENAME and not os.path.exists(FILENAME):
 # --------------------------------------------------------------------------------------------------------
 # Setup environment
 
-#os.environ["ENGINE_OPTION_UIS_ALWAYS_ON_TOP"]  = "false"
-#os.environ["ENGINE_OPTION_MAX_PARAMETERS"]     = "200"
-#os.environ["ENGINE_OPTION_UI_BRIDGES_TIMEOUT"] = "3000"
-
 LADSPA_PATH = os.getenv("LADSPA_PATH")
 DSSI_PATH   = os.getenv("DSSI_PATH")
 LV2_PATH    = os.getenv("LV2_PATH")
@@ -240,7 +237,9 @@ else:
 
 command = []
 
-if ARCH == "win32":
+if os.getenv("CARLA_BRIDGE_PLUGIN_BINARY_TYPE") is not None:
+    BRIDGE = os.path.join(CARLA_LIBDIR, "carla-bridge-native")
+elif ARCH == "win32":
     command.append("wine")
 elif ARCH == "win64":
     command.append("wine64")
