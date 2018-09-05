@@ -887,9 +887,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     setBalanceRight(stateSave.balanceRight, true, true);
     setPanning(stateSave.panning, true, true);
     setCtrlChannel(stateSave.ctrlChannel, true, true);
-
-    if (! pData->enginePlugin)
-        setActive(stateSave.active, true, true);
+    setActive(stateSave.active, true, true);
 
     if (! pData->engine->isLoadingProject())
         pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0f, nullptr);
@@ -1298,8 +1296,10 @@ void CarlaPlugin::setEnabled(const bool yesNo) noexcept
 
 void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool sendCallback) noexcept
 {
-    if (pData->engineBridged || pData->enginePlugin) {
+    if (pData->engineBridged) {
         CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
+    } else if (pData->enginePlugin) {
+        // nothing here
     } else {
         CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
     }

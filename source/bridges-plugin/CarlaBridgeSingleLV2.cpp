@@ -388,6 +388,8 @@ protected:
         switch (action)
         {
         case ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
+            if (value1 == PARAMETER_ACTIVE)
+                return;
             CARLA_SAFE_ASSERT_RETURN(value1 >= 0,);
             if (fUI.writeFunction != nullptr && fUI.controller != nullptr && fUI.isVisible)
             {
