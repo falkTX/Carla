@@ -161,12 +161,14 @@ static void writeManifestFile(PluginListManager& plm)
     text += "    opts:supportedOption <" LV2_PARAMETERS__sampleRate "> .\n";
     text += "\n";
 
+#  if 0
     text += "<http://kxstudio.sf.net/carla/ui-bridge-ext>\n";
     text += "    a <" LV2_EXTERNAL_UI__Widget "> ;\n";
     text += "    ui:binary <carla-ui" PLUGIN_EXT "> ;\n";
     text += "    lv2:extensionData <" LV2_UI__idleInterface "> ,\n";
     text += "                      <" LV2_UI__showInterface "> ,\n";
     text += "                      <" LV2_PROGRAMS__UIInterface "> .\n";
+#  endif
 #endif
 
     // -------------------------------------------------------------------
@@ -327,14 +329,12 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
         if (std::strncmp(pluginDesc->label, "carla", 5) == 0)
         {
             text += "    ui:ui <http://kxstudio.sf.net/carla/ui-embed> ,\n";
-            text += "          <http://kxstudio.sf.net/carla/ui-ext> ,\n";
-            text += "          <http://kxstudio.sf.net/carla/ui-bridge-ext> ;\n";
+            text += "          <http://kxstudio.sf.net/carla/ui-ext> ;\n";
         }
         else
 # endif
         {
-            text += "    ui:ui <http://kxstudio.sf.net/carla/ui-ext> ,\n";
-            text += "          <http://kxstudio.sf.net/carla/ui-bridge-ext> ;\n";
+            text += "    ui:ui <http://kxstudio.sf.net/carla/ui-ext> ;\n";
         }
 
         text += "\n";
