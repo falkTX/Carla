@@ -347,7 +347,7 @@ class CarlaUtils(object):
 
     def x11_get_window_pos(self, winId):
         data = self.lib.carla_x11_get_window_pos(winId)
-        return (int(data[0]), int(data[1]))
+        return tuple(int(data[i]) for i in range(4))
 
     def cocoa_get_window(self, winId):
         return self.lib.carla_cocoa_get_window(winId)

@@ -436,7 +436,7 @@ if config_UseQt5 and LINUX:
                 return
             self.fPos = pos
             self.move(pos[0], pos[1])
-            gCarla.utils.x11_move_window(self.fWinId, 0, 0)
+            gCarla.utils.x11_move_window(self.fWinId, pos[2], pos[3])
 
         def eventFilter(self, obj, ev):
             if isinstance(ev, QMouseEvent):

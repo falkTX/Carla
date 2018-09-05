@@ -64,12 +64,14 @@ void carla_x11_move_window(uintptr_t winId, int x, int y)
 
 int* carla_x11_get_window_pos(uintptr_t winId)
 {
-    static int pos[2];
+    static int pos[4];
 
     if (winId == 0)
     {
         pos[0] = 0;
         pos[1] = 0;
+        pos[2] = 0;
+        pos[3] = 0;
     }
 #ifdef HAVE_X11
     else if (::Display* const disp = XOpenDisplay(nullptr))
@@ -82,12 +84,16 @@ int* carla_x11_get_window_pos(uintptr_t winId)
         XCloseDisplay(disp);
         pos[0] = x - xwa.x;
         pos[1] = y - xwa.y;
+        pos[2] = xwa.x;
+        pos[3] = xwa.y;
     }
 #endif
     else
     {
         pos[0] = 0;
         pos[1] = 0;
+        pos[2] = 0;
+        pos[3] = 0;
     }
 
     return pos;
