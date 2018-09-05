@@ -679,9 +679,13 @@ protected:
             fUI.writeFunction(fUI.controller, index+fPorts.indexOffset, sizeof(float), 0, &value);
     }
 
-    void handleUiCustomDataChanged(const char* const /*key*/, const char* const /*value*/) const
+    void handleUiCustomDataChanged(const char* const key, const char* const value) const
     {
+        carla_stdout("TODO: handleUiCustomDataChanged %s %s", key, value);
         //storeCustomData(key, value);
+
+        if (fUI.writeFunction == nullptr || fUI.controller == nullptr)
+            return;
     }
 
     void handleUiClosed()
