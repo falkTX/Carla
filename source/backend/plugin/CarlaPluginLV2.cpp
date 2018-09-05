@@ -5290,7 +5290,7 @@ public:
 
 #if defined(LV2_UIS_ONLY_BRIDGES)
         const bool preferUiBridges = true;
-#elif defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#elif defined(BUILD_BRIDGE)
         const bool preferUiBridges = false;
 #else
         const bool preferUiBridges = pData->engine->getOptions().preferUiBridges;
@@ -5349,7 +5349,7 @@ public:
             }
         }
 
-        if (eQt4 >= 0)
+        /**/ if (eQt4 >= 0)
             iFinal = eQt4;
         else if (eQt5 >= 0)
             iFinal = eQt5;
@@ -5386,7 +5386,7 @@ public:
         else if (iExt >= 0)
             iFinal = iExt;
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+#ifndef BUILD_BRIDGE
         if (iFinal < 0)
 #endif
         {
@@ -5462,7 +5462,7 @@ public:
              iFinal == eCocoa   ||
              iFinal == eWindows ||
              iFinal == eX11)
-#ifdef BUILD_BRIDGE_ALTERNATIVE_ARCH
+#ifdef BUILD_BRIDGE
             && ! hasShowInterface
 #endif
             )
