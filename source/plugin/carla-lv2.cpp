@@ -568,7 +568,7 @@ public:
     {
         if (format != 0 || bufferSize != sizeof(float) || buffer == nullptr)
             return;
-        if (portIndex >= fPorts.indexOffset || ! fUI.isVisible)
+        if (portIndex < fPorts.indexOffset || ! fUI.isVisible)
             return;
         if (fDescriptor->ui_set_parameter_value == nullptr)
             return;
