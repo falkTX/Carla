@@ -1150,7 +1150,7 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
                 }
             }
 
-            if (audioIns == 0)
+            if (audioOuts == 0)
             {
                 bufferAudioOut[0] = nullptr;
             }
