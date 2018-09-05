@@ -12,7 +12,10 @@
 namespace sfzero
 {
 
-Synth::Synth() : Synthesiser() {}
+Synth::Synth() : Synthesiser()
+{
+    carla_zeroStructs(noteVelocities_, 128);
+}
 
 void Synth::noteOn(int midiChannel, int midiNoteNumber, float velocity)
 {
