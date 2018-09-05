@@ -713,7 +713,11 @@ public:
                 const LV2_Atom* const atom((const LV2_Atom*)buffer);
 
                 // plugins sometimes fail on this, not good...
-                CARLA_SAFE_ASSERT_INT2(bufferSize == lv2_atom_total_size(atom), bufferSize, atom->size);
+                const uint32_t totalSize =  lv2_atom_total_size(atom);
+                const uint32_t paddedSize = lv2_atom_pad_size(totalSize);
+
+                if (bufferSize != totalSize && bufferSize != paddedSize)
+                    carla_stderr2("Warning: LV2 UI sending atom with invalid size! size: %u, padded-size: %u", totalSize, paddedSize);
 
                 writeLv2AtomMessage(rindex, atom);
             }
