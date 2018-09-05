@@ -246,8 +246,14 @@ protected:
     bool writeAtomMessage(const char* const msg) const
     {
         CARLA_SAFE_ASSERT_RETURN(fUI.writeFunction != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fUridTranser != 0, false);
         CARLA_SAFE_ASSERT_RETURN(fUridTranser2 != 0, false);
-        carla_debug("writeAtomMessage(%s)", msg);
+
+#ifdef DEBUG
+        if (std::strcmp(msg, "idle") != 0) {
+            carla_debug("writeAtomMessage(%s)", msg);
+        }
+#endif
 
         const size_t msgSize  = std::strlen(msg)+1;
         const size_t atomSize = sizeof(LV2_Atom) + msgSize;

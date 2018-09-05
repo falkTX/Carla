@@ -20,6 +20,7 @@
 
 #include "CarlaLv2Utils.hpp"
 #include "CarlaMathUtils.hpp"
+#include "CarlaPipeUtils.hpp"
 #include "CarlaString.hpp"
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -186,12 +187,22 @@ public:
             return;
         }
 
-        if (fPorts.numMidiIns > 0)
+        if (fPorts.numMidiIns > 0 || fPorts.hasUI)
         {
-            fMidiEventCount = 0;
-            carla_zeroStructs(fMidiEvents, kMaxMidiEvents);
+            uint32_t numEventsIn;
 
-            for (uint32_t i=0; i < fPorts.numMidiIns; ++i)
+            if (fPorts.numMidiIns > 0)
+            {
+                numEventsIn = fPorts.numMidiIns;
+                fMidiEventCount = 0;
+                carla_zeroStructs(fMidiEvents, kMaxMidiEvents);
+            }
+            else
+            {
+                numEventsIn = 1;
+            }
+
+            for (uint32_t i=0; i < numEventsIn; ++i)
             {
                 const LV2_Atom_Sequence* const eventsIn(fPorts.eventsIn[i]);
                 CARLA_SAFE_ASSERT_CONTINUE(eventsIn != nullptr);
@@ -371,7 +382,35 @@ public:
     {
         const char* const msg = (const char*)data;
 
-        /**/ if (std::strcmp(msg, "show") == 0)
+        /**/ if (std::strncmp(msg, "control ", 8) == 0)
+        {
+            if (fDescriptor->ui_set_parameter_value == nullptr)
+                return LV2_WORKER_SUCCESS;
+
+            if (const char* const msgSplit = std::strstr(msg+8, " "))
+            {
+                const char* const msgIndex = msg+8;
+                CARLA_SAFE_ASSERT_RETURN(msgSplit - msgIndex < 8, LV2_WORKER_ERR_UNKNOWN);
+                CARLA_SAFE_ASSERT_RETURN(msgSplit[0] != '\0', LV2_WORKER_ERR_UNKNOWN);
+
+                char strBufIndex[8];
+                carla_zeroChars(strBufIndex, 8);
+                std::strncpy(strBufIndex, msgIndex, msgSplit-msgIndex);
+
+                const int index = std::atoi(msgIndex) - fPorts.indexOffset;
+                CARLA_SAFE_ASSERT_RETURN(index >= 0, LV2_WORKER_ERR_UNKNOWN);
+
+                double value;
+
+                {
+                    const ScopedLocale csl;
+                    value = std::atof(msgSplit+1);
+                }
+
+                fDescriptor->ui_set_parameter_value(fHandle, index, value);
+            }
+        }
+        else if (std::strcmp(msg, "show") == 0)
         {
             handleUiShow();
         }
@@ -634,10 +673,10 @@ protected:
     void handleUiParameterChanged(const uint32_t index, const float value) const
     {
         if (fWorkerUISignal)
-        {
-        }
-        else if (fUI.writeFunction != nullptr && fUI.controller != nullptr)
-                 fUI.writeFunction(fUI.controller, index+fPorts.indexOffset, sizeof(float), 0, &value);
+            return;
+
+        if (fUI.writeFunction != nullptr && fUI.controller != nullptr)
+            fUI.writeFunction(fUI.controller, index+fPorts.indexOffset, sizeof(float), 0, &value);
     }
 
     void handleUiCustomDataChanged(const char* const /*key*/, const char* const /*value*/) const
