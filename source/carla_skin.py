@@ -384,7 +384,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
             if isCalfSkin:
                 self.b_gui.setPixmaps(":/bitmaps/button_calf2.png", ":/bitmaps/button_calf2_down.png", ":/bitmaps/button_calf2_hover.png")
-            elif self.fPluginInfo['iconName'] == "distrho" or self.fSkinStyle in ("3bandeq","3bandsplitter","pingpongpan"):
+            elif self.fPluginInfo['iconName'] == "distrho" or self.fSkinStyle in ("3bandeq","3bandsplitter","pingpongpan", "nekobi"):
                 self.b_gui.setPixmaps(":/bitmaps/button_distrho.png", ":/bitmaps/button_distrho_down.png", ":/bitmaps/button_distrho_hover.png")
             elif self.fPluginInfo['iconName'] == "file":
                 self.b_gui.setPixmaps(":/bitmaps/button_file.png", ":/bitmaps/button_file_down.png", ":/bitmaps/button_file_hover.png")
@@ -1002,7 +1002,11 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         # Expand/Minimize
 
         actCompact = menu.addAction(self.tr("Expand") if isinstance(self, PluginSlot_Compact) else self.tr("Minimize"))
+        actSkin    = menu.addAction(self.tr("Change Skin..."))
         menu.addSeparator()
+
+        if isinstance(self, PluginSlot_Classic):
+            actCompact.setEnabled(False)
 
         # -------------------------------------------------------------
         # Move up and down
@@ -1087,6 +1091,31 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         elif actSel == actCompact:
             # FIXME
             gCarla.gui.compactPlugin(self.fPluginId)
+
+        # -------------------------------------------------------------
+        # Expand/Minimize
+
+        elif actSel == actSkin:
+            skinList = [
+                "default",
+                "3bandeq",
+                "rncbc",
+                "calf_black",
+                "calf_blue",
+                "classic",
+                "openav-old",
+                "openav",
+                "zynfx",
+                "presets",
+                "mpresets",
+            ]
+
+            skin = QInputDialog.getItem(self, self.tr("Change Skin"),
+                                              self.tr("Change Skin to:"),
+                                              skinList, editable=False)
+            if not all(skin):
+                return
+            gCarla.gui.changePluginSkin(self.fPluginId, skin[0])
 
         # -------------------------------------------------------------
         # Move up and down
@@ -1895,10 +1924,10 @@ def getSkinStyle(host, pluginId):
     return "default"
 
 def createPluginSlot(parent, host, pluginId, options):
-    if not options['useSkins']:
-        return PluginSlot_Classic(parent, host, pluginId)
+    skinStyle = options['skin'] or getSkinStyle(host, pluginId)
 
-    skinStyle = getSkinStyle(host, pluginId)
+    if skinStyle == "classic":
+        return PluginSlot_Classic(parent, host, pluginId)
 
     if "compact" in skinStyle or options['compact']:
         return PluginSlot_Compact(parent, host, pluginId, skinStyle)

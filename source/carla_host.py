@@ -586,6 +586,18 @@ class HostWindow(QMainWindow):
 
         pitem.recreateWidget(True)
 
+    def changePluginSkin(self, pluginId, skin):
+        if pluginId > self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+
+        if pitem is None:
+            return
+
+        self.host.set_custom_data(pluginId, CUSTOM_DATA_TYPE_PROPERTY, "CarlaSkin", skin)
+        pitem.recreateWidget(newSkin = skin)
+
     def switchPlugins(self, pluginIdA, pluginIdB):
         if pluginIdA == pluginIdB:
             return
@@ -593,8 +605,6 @@ class HostWindow(QMainWindow):
             return
         if pluginIdA >= self.fPluginCount or pluginIdB >= self.fPluginCount:
             return
-
-        useCustomSkins = self.fSavedSettings[CARLA_KEY_MAIN_USE_CUSTOM_SKINS]
 
         self.host.switch_plugins(pluginIdA, pluginIdB)
 
@@ -1197,7 +1207,7 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot(int, str)
     def slot_handlePluginAddedCallback(self, pluginId, pluginName):
-        pitem = self.ui.listWidget.createItem(pluginId, self.fSavedSettings[CARLA_KEY_MAIN_USE_CUSTOM_SKINS])
+        pitem = self.ui.listWidget.createItem(pluginId)
 
         self.fPluginList.append(pitem)
         self.fPluginCount += 1
@@ -1593,7 +1603,6 @@ class HostWindow(QMainWindow):
             CARLA_KEY_MAIN_PROJECT_FOLDER:      settings.value(CARLA_KEY_MAIN_PROJECT_FOLDER,      CARLA_DEFAULT_MAIN_PROJECT_FOLDER,      type=str),
             CARLA_KEY_MAIN_CONFIRM_EXIT:        settings.value(CARLA_KEY_MAIN_CONFIRM_EXIT,        CARLA_DEFAULT_MAIN_CONFIRM_EXIT,        type=bool),
             CARLA_KEY_MAIN_REFRESH_INTERVAL:    settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL,    CARLA_DEFAULT_MAIN_REFRESH_INTERVAL,    type=int),
-            CARLA_KEY_MAIN_USE_CUSTOM_SKINS:    settings.value(CARLA_KEY_MAIN_USE_CUSTOM_SKINS,    CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS,    type=bool),
             CARLA_KEY_MAIN_EXPERIMENTAL:        settings.value(CARLA_KEY_MAIN_EXPERIMENTAL,        CARLA_DEFAULT_MAIN_EXPERIMENTAL,        type=bool),
             CARLA_KEY_CANVAS_THEME:             settings.value(CARLA_KEY_CANVAS_THEME,             CARLA_DEFAULT_CANVAS_THEME,             type=str),
             CARLA_KEY_CANVAS_SIZE:              settings.value(CARLA_KEY_CANVAS_SIZE,              CARLA_DEFAULT_CANVAS_SIZE,              type=str),
@@ -1676,12 +1685,6 @@ class HostWindow(QMainWindow):
             pass
         elif self.host.is_engine_running():
             self.host.patchbay_refresh(self.fExternalPatchbay)
-
-        for pitem in self.fPluginList:
-            if pitem is None:
-                break
-            pitem.setUsingSkins(self.fSavedSettings[CARLA_KEY_MAIN_USE_CUSTOM_SKINS])
-            pitem.recreateWidget()
 
     # --------------------------------------------------------------------------------------------------------
     # About (menu actions)

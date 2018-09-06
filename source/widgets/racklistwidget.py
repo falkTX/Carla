@@ -44,7 +44,7 @@ class RackListItem(QListWidgetItem):
     kRackItemType = QListWidgetItem.UserType + 1
     kMinimumWidth = 620
 
-    def __init__(self, parent, pluginId, useSkins):
+    def __init__(self, parent, pluginId):
         QListWidgetItem.__init__(self, parent, self.kRackItemType)
         self.host = parent.host
 
@@ -62,9 +62,12 @@ class RackListItem(QListWidgetItem):
         self.fPluginId = pluginId
         self.fWidget   = None
 
+        compact = bool(self.host.get_custom_data_value(pluginId, CUSTOM_DATA_TYPE_PROPERTY, "CarlaSkinIsCompacted") == "true")
+        skin    = self.host.get_custom_data_value(pluginId, CUSTOM_DATA_TYPE_PROPERTY, "CarlaSkin")
+
         self.fOptions = {
-            'compact':  bool(self.host.get_custom_data_value(pluginId, CUSTOM_DATA_TYPE_PROPERTY, "CarlaSkinIsCompacted") == "true"),
-            'useSkins': useSkins
+            'skin'    : skin,
+            'compact' : compact and skin != "classic",
         }
 
         self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
@@ -112,9 +115,6 @@ class RackListItem(QListWidgetItem):
     def isCompacted(self):
         return self.fOptions['compact']
 
-    def isUsingSkins(self):
-        return self.fOptions['useSkins']
-
     def isGuiShown(self):
         if self.fWidget is None or self.fWidget.b_gui is not None:
             return None
@@ -139,9 +139,6 @@ class RackListItem(QListWidgetItem):
     def setCompacted(self, compact):
         self.fOptions['compact'] = compact
 
-    def setUsingSkins(self, useSkins):
-        self.fOptions['useSkins'] = useSkins
-
     # --------------------------------------------------------------------------------------------------------
 
     def compact(self):
@@ -154,9 +151,11 @@ class RackListItem(QListWidgetItem):
             return
         self.recreateWidget(True)
 
-    def recreateWidget(self, invertCompactOption = False, firstInit = False):
+    def recreateWidget(self, invertCompactOption = False, firstInit = False, newSkin = ''):
         if invertCompactOption:
             self.fOptions['compact'] = not self.fOptions['compact']
+        if newSkin:
+            self.fOptions['skin'] = newSkin
 
         wasGuiShown = None
 
@@ -235,8 +234,8 @@ class RackListWidget(QListWidget):
 
     # --------------------------------------------------------------------------------------------------------
 
-    def createItem(self, pluginId, useSkins):
-        return RackListItem(self, pluginId, useSkins)
+    def createItem(self, pluginId):
+        return RackListItem(self, pluginId)
 
     def getPluginCount(self):
         return self.fParent.getPluginCount()
