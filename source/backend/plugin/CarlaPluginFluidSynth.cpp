@@ -26,10 +26,6 @@
 
 #include <fluidsynth.h>
 
-#if (FLUIDSYNTH_VERSION_MAJOR >= 1 && FLUIDSYNTH_VERSION_MINOR >= 1 && FLUIDSYNTH_VERSION_MICRO >= 4)
-# define FLUIDSYNTH_VERSION_NEW_API
-#endif
-
 #define FLUID_DEFAULT_POLYPHONY 64
 
 using water::String;
@@ -77,9 +73,7 @@ public:
         fSynth = new_fluid_synth(fSettings);
         CARLA_SAFE_ASSERT_RETURN(fSynth != nullptr,);
 
-#ifdef FLUIDSYNTH_VERSION_NEW_API
         fluid_synth_set_sample_rate(fSynth, (float)pData->engine->getSampleRate());
-#endif
 
         // set default values
         fluid_synth_set_reverb_on(fSynth, 1);
@@ -1009,9 +1003,7 @@ public:
             // select first program, or 128 for ch10
             for (int i=0; i < MAX_MIDI_CHANNELS && i != 9; ++i)
             {
-#ifdef FLUIDSYNTH_VERSION_NEW_API
                 fluid_synth_set_channel_type(fSynth, i, CHANNEL_TYPE_MELODIC);
-#endif
                 fluid_synth_program_select(fSynth, i, fSynthId, pData->midiprog.data[0].bank, pData->midiprog.data[0].program);
 
                 fCurMidiProgs[i] = 0;
@@ -1019,18 +1011,14 @@ public:
 
             if (hasDrums)
             {
-#ifdef FLUIDSYNTH_VERSION_NEW_API
                 fluid_synth_set_channel_type(fSynth, 9, CHANNEL_TYPE_DRUM);
-#endif
                 fluid_synth_program_select(fSynth, 9, fSynthId, 128, drumProg);
 
                 fCurMidiProgs[9] = static_cast<int32_t>(drumIndex);
             }
             else
             {
-#ifdef FLUIDSYNTH_VERSION_NEW_API
                 fluid_synth_set_channel_type(fSynth, 9, CHANNEL_TYPE_MELODIC);
-#endif
                 fluid_synth_program_select(fSynth, 9, fSynthId, pData->midiprog.data[0].bank, pData->midiprog.data[0].program);
 
                 fCurMidiProgs[9] = 0;
@@ -1069,13 +1057,8 @@ public:
             {
                 for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
                 {
-#ifdef FLUIDSYNTH_VERSION_NEW_API
                     fluid_synth_all_notes_off(fSynth, i);
                     fluid_synth_all_sounds_off(fSynth, i);
-#else
-                    fluid_synth_cc(fSynth, i, MIDI_CONTROL_ALL_SOUND_OFF, 0);
-                    fluid_synth_cc(fSynth, i, MIDI_CONTROL_ALL_NOTES_OFF, 0);
-#endif
                 }
             }
             else if (pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
@@ -1279,13 +1262,7 @@ public:
 
                     case kEngineControlEventTypeAllSoundOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
-                        {
-#ifdef FLUIDSYNTH_VERSION_NEW_API
                             fluid_synth_all_sounds_off(fSynth, event.channel);
-#else
-                            fluid_synth_cc(fSynth, event.channel, MIDI_CONTROL_ALL_SOUND_OFF, 0);
-#endif
-                        }
                         break;
 
                     case kEngineControlEventTypeAllNotesOff:
@@ -1299,11 +1276,7 @@ public:
                             }
 #endif
 
-#ifdef FLUIDSYNTH_VERSION_NEW_API
                             fluid_synth_all_notes_off(fSynth, event.channel);
-#else
-                            fluid_synth_cc(fSynth, event.channel, MIDI_CONTROL_ALL_NOTES_OFF, 0);
-#endif
                         }
                         break;
                     }
@@ -1550,14 +1523,10 @@ public:
     void sampleRateChanged(const double newSampleRate) override
     {
         CARLA_SAFE_ASSERT_RETURN(fSettings != nullptr,);
-
         fluid_settings_setnum(fSettings, "synth.sample-rate", newSampleRate);
 
-#ifdef FLUIDSYNTH_VERSION_NEW_API
         CARLA_SAFE_ASSERT_RETURN(fSynth != nullptr,);
-
         fluid_synth_set_sample_rate(fSynth, float(newSampleRate));
-#endif
     }
 
     // -------------------------------------------------------------------
