@@ -198,21 +198,21 @@
           <widget class="QLabel" name="label_19">
            <property name="minimumSize">
             <size>
-             <width>40</width>
-             <height>40</height>
+             <width>37</width>
+             <height>37</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>40</width>
-             <height>40</height>
+             <width>37</width>
+             <height>37</height>
             </size>
            </property>
            <property name="text">
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap resource="../resources.qrc">:/bitmaps/dial_14d.png</pixmap>
+            <pixmap resource="../resources.qrc">:/bitmaps/dial_01d.png</pixmap>
            </property>
           </widget>
          </item>
@@ -227,7 +227,7 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>Contains some knobs, backgrounds and other small artwork from ArtyFX, Calf Studio Gear, MOD-SDK and TAL-Plugins projects.</string>
+          <string>Contains some knobs, backgrounds and other small artwork from ArtyFX, Calf Studio Gear and TAL-Plugins projects.</string>
          </property>
          <property name="wordWrap">
           <bool>true</bool>
