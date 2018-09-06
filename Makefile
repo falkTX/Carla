@@ -903,7 +903,7 @@ endif
 ifeq ($(HAVE_FLUIDSYNTH),true)
 	@printf -- "SF2/3: $(ANS_YES)\n"
 else
-	@printf -- "SF2/3: $(ANS_NO) $(mS)FluidSynth missing$(mE)\n"
+	@printf -- "SF2/3: $(ANS_NO) $(mS)FluidSynth missing or too old$(mE)\n"
 endif
 	@printf -- "SFZ:   $(ANS_YES)\n"
 	@printf -- "\n"
