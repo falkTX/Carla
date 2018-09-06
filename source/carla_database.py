@@ -332,6 +332,10 @@ def checkPluginCached(desc, ptype):
     pinfo['parameters.ins']  = desc['parameterIns']
     pinfo['parameters.outs'] = desc['parameterOuts']
 
+    if ptype == PLUGIN_SFZ:
+        pinfo['filename'] = pinfo['label']
+        pinfo['label']    = pinfo['name']
+
     return pinfo
 
 def checkPluginLADSPA(filename, tool, wineSettings=None):
@@ -1548,13 +1552,11 @@ class PluginDatabaseW(QDialog):
         elif ptype == PLUGIN_LV2:
             ptypeStr   = "LV2"
             ptypeStrTr = ptypeStr
-        elif ptype == PLUGIN_SFZ:
-            ptypeStr   = "SFZ"
-            ptypeStrTr = ptypeStr
+        #elif ptype == PLUGIN_SFZ:
+            #ptypeStr   = "SFZ"
+            #ptypeStrTr = ptypeStr
         else:
             return 0
-
-        #qApp = QApplication.instance()
 
         plugins     = toList(settingsDB.value("Plugins/" + ptypeStr, []))
         pluginCount = settingsDB.value("PluginCount/" + ptypeStr, 0, type=int)
@@ -1574,10 +1576,6 @@ class PluginDatabaseW(QDialog):
                     continue
 
                 info = checkPluginCached(descInfo, ptype)
-
-                if ptype == PLUGIN_SFZ:
-                    info['filename'] = info['label']
-                    info['label']    = info['name']
 
                 plugins.append(info)
 
@@ -1606,7 +1604,6 @@ class PluginDatabaseW(QDialog):
 
         settings = QSettings("falkTX", "Carla2")
         LV2_PATH = splitter.join(toList(settings.value(CARLA_KEY_PATHS_LV2, CARLA_DEFAULT_LV2_PATH)))
-        SFZ_PATH = splitter.join(toList(settings.value(CARLA_KEY_PATHS_SFZ, CARLA_DEFAULT_SFZ_PATH)))
         del settings
 
         # ----------------------------------------------------------------------------------------------------
@@ -1614,7 +1611,6 @@ class PluginDatabaseW(QDialog):
 
         internalCount = self._reAddInternalHelper(settingsDB, PLUGIN_INTERNAL, "")
         lv2Count      = self._reAddInternalHelper(settingsDB, PLUGIN_LV2, LV2_PATH)
-        sfzCount      = self._reAddInternalHelper(settingsDB, PLUGIN_SFZ, SFZ_PATH)
 
         # ----------------------------------------------------------------------------------------------------
         # LADSPA
@@ -1650,6 +1646,7 @@ class PluginDatabaseW(QDialog):
         # Kits
 
         sf2s = toList(settingsDB.value("Plugins/SF2", []))
+        sfzs = toList(settingsDB.value("Plugins/SFZ", []))
 
         # ----------------------------------------------------------------------------------------------------
         # count plugins first, so we can create rows in advance
@@ -1658,6 +1655,7 @@ class PluginDatabaseW(QDialog):
         dssiCount   = 0
         vstCount    = 0
         sf2Count    = 0
+        sfzCount    = 0
 
         for plugins in ladspaPlugins:
             ladspaCount += len(plugins)
@@ -1671,7 +1669,9 @@ class PluginDatabaseW(QDialog):
         for plugins in sf2s:
             sf2Count += len(plugins)
 
-        self.ui.tableWidget.setRowCount(self.fLastTableIndex+ladspaCount+dssiCount+vstCount+sf2Count)
+        sfzCount += len(sfzs)
+
+        self.ui.tableWidget.setRowCount(self.fLastTableIndex+ladspaCount+dssiCount+vstCount+sf2Count+sfzCount)
 
         self.ui.label.setText(self.tr("Have %i Internal, %i LADSPA, %i DSSI, %i LV2 and %i VST plugins, plus %i Sound Kits" % (
                                       internalCount, ladspaCount, dssiCount, lv2Count, vstCount, sf2Count+sfzCount)))
@@ -1694,6 +1694,9 @@ class PluginDatabaseW(QDialog):
         for sf2 in sf2s:
             for sf2_i in sf2:
                 self._addPluginToTable(sf2_i, "SF2")
+
+        for sfz in sfzs:
+            self._addPluginToTable(sfz, "SFZ")
 
         # ----------------------------------------------------------------------------------------------------
 

@@ -71,15 +71,9 @@ _CarlaCachedPluginInfo::_CarlaCachedPluginInfo() noexcept
 
 static Array<File> gSFZs;
 
-void findSFZsIfNeeded(const char* const sfzPaths)
+void findSFZs(const char* const sfzPaths)
 {
     CARLA_SAFE_ASSERT_RETURN(sfzPaths != nullptr && sfzPaths[0] != '\0',);
-
-    static bool needsInit = true;
-
-    if (! needsInit)
-        return;
-    needsInit = false;
 
     const StringArray splitPaths(StringArray::fromTokens(sfzPaths, CARLA_OS_SPLIT_STR, ""));
 
@@ -526,7 +520,7 @@ uint carla_get_cached_plugin_count(CB::PluginType ptype, const char* pluginPath)
     }
 
     case CB::PLUGIN_SFZ: {
-        findSFZsIfNeeded(pluginPath);
+        findSFZs(pluginPath);
         return gSFZs.size();
     }
 
