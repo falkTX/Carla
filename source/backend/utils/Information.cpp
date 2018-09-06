@@ -22,6 +22,10 @@
 #include "rtaudio/RtAudio.h"
 #include "rtmidi/RtMidi.h"
 
+#ifdef HAVE_FLUIDSYNTH
+# include <fluidsynth.h>
+#endif
+
 #include "water/files/File.h"
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -46,7 +50,7 @@ const char* carla_get_complete_license_text()
 
         // Sample kit libraries
 #ifdef HAVE_FLUIDSYNTH
-        "<li>FluidSynth library for SF2/3 support</li>"
+        "<li>FluidSynth library v" FLUIDSYNTH_VERSION " for SF2/3 support</li>"
 #endif
         "<li>SFZero module for SFZ support</li>"
 
