@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # PatchBay Canvas engine using QGraphicsView/Scene
-# Copyright (C) 2010-2014 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2010-2018 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -32,14 +32,14 @@ if config_UseQt5:
     from PyQt5.QtGui import QColor, QLinearGradient, QPen, QPolygonF, QPainter, QPainterPath
     from PyQt5.QtGui import QCursor, QFont, QFontMetrics
     from PyQt5.QtSvg import QGraphicsSvgItem, QSvgRenderer
-    from PyQt5.QtWidgets import QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem
+    from PyQt5.QtWidgets import QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem, QGraphicsRectItem
     from PyQt5.QtWidgets import QGraphicsColorizeEffect, QGraphicsDropShadowEffect, QMenu
 else:
     from PyQt4.QtCore import pyqtSignal, pyqtSlot, qCritical, qFatal, qWarning, Qt, QObject
     from PyQt4.QtCore import QAbstractAnimation, QLineF, QPointF, QRectF, QSizeF, QSettings, QTimer
     from PyQt4.QtGui import QColor, QLinearGradient, QPen, QPolygonF, QPainter, QPainterPath
     from PyQt4.QtGui import QCursor, QFont, QFontMetrics
-    from PyQt4.QtGui import QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem
+    from PyQt4.QtGui import QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem, QGraphicsRectItem
     from PyQt4.QtGui import QGraphicsColorizeEffect, QGraphicsDropShadowEffect, QMenu
     from PyQt4.QtSvg import QGraphicsSvgItem, QSvgRenderer
 
@@ -138,6 +138,7 @@ CanvasLineType          = QGraphicsItem.UserType + 4
 CanvasBezierLineType    = QGraphicsItem.UserType + 5
 CanvasLineMovType       = QGraphicsItem.UserType + 6
 CanvasBezierLineMovType = QGraphicsItem.UserType + 7
+CanvasRubberbandType    = QGraphicsItem.UserType + 8
 
 # object lists
 class group_dict_t(object):
@@ -430,6 +431,8 @@ def clear():
         animatedItems.append(animation.item())
 
     for item in canvas.scene.items():
+        if item.type() == CanvasRubberbandType:
+            continue
         if item.type() != CanvasIconType and item not in animatedItems:
             canvas.scene.removeItem(item)
             del item
@@ -1193,6 +1196,21 @@ def CanvasRemoveItemFX(item):
     QTimer.singleShot(0, canvas.scene.update)
 
 # ------------------------------------------------------------------------------
+# rubberbandrect.cpp
+
+class RubberbandRect(QGraphicsRectItem):
+    def __init__(self, scene):
+        QGraphicsRectItem.__init__(self, QRectF(0, 0, 0, 0))
+
+        self.setZValue(-1)
+        self.hide()
+
+        scene.addItem(self)
+
+    def type(self):
+        return CanvasRubberbandType
+
+# ------------------------------------------------------------------------------
 # patchscene.cpp
 
 class PatchScene(QGraphicsScene):
@@ -1209,26 +1227,15 @@ class PatchScene(QGraphicsScene):
         self.m_mid_button_down = False
         self.m_pointer_border = QRectF(0.0, 0.0, 1.0, 1.0)
 
-        self.addRubberBand()
+        self.m_rubberband = RubberbandRect(self)
+        self.m_rubberband_selection = False
+        self.m_rubberband_orig_point = QPointF(0, 0)
 
         self.m_view = view
         if not self.m_view:
             qFatal("PatchCanvas::PatchScene() - invalid view")
 
         self.selectionChanged.connect(self.slot_selectionChanged)
-
-    def addRubberBand(self):
-        self.m_rubberband = self.addRect(QRectF(0, 0, 0, 0))
-        self.m_rubberband.setZValue(-1)
-        self.m_rubberband.hide()
-        self.m_rubberband_selection = False
-        self.m_rubberband_orig_point = QPointF(0, 0)
-
-    def clear(self):
-        QGraphicsScene.clear(self)
-
-        # Re-add rubberband, that just got deleted
-        self.addRubberBand()
 
     def fixScaleFactor(self):
         scale = self.m_view.transform().m11()
