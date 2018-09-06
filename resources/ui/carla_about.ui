@@ -227,7 +227,7 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>Contains some knobs, backgrounds and other small artwork from ArtyFX, Calf Studio Gear and TAL-Plugins projects.</string>
+          <string>Contains some knobs, backgrounds and other small artwork from ArtyFX, Calf Studio Gear, OpenOctave and TAL-Plugins projects.</string>
          </property>
          <property name="wordWrap">
           <bool>true</bool>
