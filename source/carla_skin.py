@@ -27,10 +27,11 @@ from carla_config import *
 if config_UseQt5:
     from PyQt5.QtCore import Qt, QRectF
     from PyQt5.QtGui import QFont, QFontDatabase, QPen, QPixmap
-    from PyQt5.QtWidgets import QFrame, QPushButton
+    from PyQt5.QtWidgets import QColorDialog, QFrame, QPushButton
 else:
     from PyQt4.QtCore import Qt, QRectF
-    from PyQt4.QtGui import QFont, QFontDatabase, QFrame, QPen, QPixmap, QPushButton
+    from PyQt4.QtGui import QFont, QFontDatabase, QPen, QPixmap
+    from PyQt4.QtGui import QColorDialog, QFrame, QPushButton
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -164,27 +165,6 @@ def getColorFromCategory(category):
 
     return (r, g, b)
 
-def getModColorFromCategory(category):
-    if category == PLUGIN_CATEGORY_NONE:
-        return (40, 40, 40)
-    if category == PLUGIN_CATEGORY_SYNTH:
-        return (30, 150, 49)
-    if category == PLUGIN_CATEGORY_DELAY:
-        return (47, 47, 47)
-    if category in (PLUGIN_CATEGORY_EQ, PLUGIN_CATEGORY_FILTER):
-        return (255, 220, 25)
-    if category == PLUGIN_CATEGORY_DISTORTION:
-        return (255, 127, 25)
-    if category == PLUGIN_CATEGORY_DYNAMICS:
-        return (255, 25, 25)
-    if category == PLUGIN_CATEGORY_MODULATOR:
-        return (109, 31, 142)
-    if category == PLUGIN_CATEGORY_UTILITY:
-        return (95, 95, 95)
-    if category == PLUGIN_CATEGORY_OTHER:
-        return (92, 210, 254)
-    return (40, 40, 40)
-
 # ------------------------------------------------------------------------------------------------------------
 #
 
@@ -221,8 +201,7 @@ def setPixmapDialStyle(widget, parameterId, parameterCount, skinStyle):
 # Abstract plugin slot
 
 class AbstractPluginSlot(QFrame, PluginEditParentMeta):
-#class AbstractPluginSlot(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
-    def __init__(self, parent, host, pluginId, skinStyle):
+    def __init__(self, parent, host, pluginId, skinColor, skinStyle):
         QFrame.__init__(self, parent)
         self.host = host
         self.fParent = parent
@@ -237,6 +216,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         self.fPluginId   = pluginId
         self.fPluginInfo = host.get_plugin_info(self.fPluginId)
+        self.fSkinColor  = skinColor
         self.fSkinStyle  = skinStyle
 
         # -------------------------------------------------------------
@@ -511,7 +491,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             if self.fSkinStyle in ("3bandeq", "calf_black", "calf_blue", "nekobi", "zynfx"):
                 styleSheet2  = "background-image: url(:/bitmaps/background_%s.png);" % self.fSkinStyle
             else:
-                styleSheet2  = "background-color: rgb(%i, %i, %i);" % getColorFromCategory(self.fPluginInfo['category'])
+                styleSheet2  = "background-color: rgb(%i, %i, %i);" % self.fSkinColor
                 styleSheet2 += "background-image: url(:/bitmaps/background_noise1.png);"
 
             styleSheet = """
@@ -1002,11 +982,15 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         # Expand/Minimize
 
         actCompact = menu.addAction(self.tr("Expand") if isinstance(self, PluginSlot_Compact) else self.tr("Minimize"))
+        actColor   = menu.addAction(self.tr("Change Color..."))
         actSkin    = menu.addAction(self.tr("Change Skin..."))
         menu.addSeparator()
 
         if isinstance(self, PluginSlot_Classic):
             actCompact.setEnabled(False)
+            actColor.setEnabled(False)
+        elif self.fSkinStyle in ("openav", "openav-old", "3bandeq", "calf_black", "calf_blue", "nekobi", "zynfx"):
+            actColor.setEnabled(False)
 
         # -------------------------------------------------------------
         # Move up and down
@@ -1093,7 +1077,18 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             gCarla.gui.compactPlugin(self.fPluginId)
 
         # -------------------------------------------------------------
-        # Expand/Minimize
+        # Tweaks
+
+        elif actSel == actColor:
+            initial = QColor(self.fSkinColor[0], self.fSkinColor[1], self.fSkinColor[2])
+            color   = QColorDialog.getColor(initial, self, self.tr("Change Color"), QColorDialog.DontUseNativeDialog)
+
+            if not color.isValid():
+                return
+
+            color    = (color.red(), color.green(), color.blue())
+            colorStr = "%i;%i;%i" % color
+            gCarla.gui.changePluginColor(self.fPluginId, color, colorStr)
 
         elif actSel == actSkin:
             skinList = [
@@ -1377,8 +1372,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 # ------------------------------------------------------------------------------------------------------------
 
 class PluginSlot_Calf(AbstractPluginSlot):
-    def __init__(self, parent, host, pluginId, skinStyle):
-        AbstractPluginSlot.__init__(self, parent, host, pluginId, skinStyle)
+    def __init__(self, parent, host, pluginId, skinColor, skinStyle):
+        AbstractPluginSlot.__init__(self, parent, host, pluginId, skinColor, skinStyle)
         self.ui = ui_carla_plugin_calf.Ui_PluginWidget()
         self.ui.setupUi(self)
 
@@ -1478,7 +1473,7 @@ class PluginSlot_Calf(AbstractPluginSlot):
 
 class PluginSlot_Classic(AbstractPluginSlot):
     def __init__(self, parent, host, pluginId):
-        AbstractPluginSlot.__init__(self, parent, host, pluginId, "classic")
+        AbstractPluginSlot.__init__(self, parent, host, pluginId, (0,0,0), "classic")
         self.ui = ui_carla_plugin_classic.Ui_PluginWidget()
         self.ui.setupUi(self)
 
@@ -1565,8 +1560,8 @@ class PluginSlot_Classic(AbstractPluginSlot):
 # ------------------------------------------------------------------------------------------------------------
 
 class PluginSlot_Compact(AbstractPluginSlot):
-    def __init__(self, parent, host, pluginId, skinStyle):
-        AbstractPluginSlot.__init__(self, parent, host, pluginId, skinStyle)
+    def __init__(self, parent, host, pluginId, skinColor, skinStyle):
+        AbstractPluginSlot.__init__(self, parent, host, pluginId, skinColor, skinStyle)
         self.ui = ui_carla_plugin_compact.Ui_PluginWidget()
         self.ui.setupUi(self)
 
@@ -1596,8 +1591,8 @@ class PluginSlot_Compact(AbstractPluginSlot):
 # ------------------------------------------------------------------------------------------------------------
 
 class PluginSlot_Default(AbstractPluginSlot):
-    def __init__(self, parent, host, pluginId, skinStyle):
-        AbstractPluginSlot.__init__(self, parent, host, pluginId, skinStyle)
+    def __init__(self, parent, host, pluginId, skinColor, skinStyle):
+        AbstractPluginSlot.__init__(self, parent, host, pluginId, skinColor, skinStyle)
         self.ui = ui_carla_plugin_default.Ui_PluginWidget()
         self.ui.setupUi(self)
 
@@ -1644,8 +1639,8 @@ class PluginSlot_Default(AbstractPluginSlot):
 # ------------------------------------------------------------------------------------------------------------
 
 class PluginSlot_Presets(AbstractPluginSlot):
-    def __init__(self, parent, host, pluginId, skinStyle):
-        AbstractPluginSlot.__init__(self, parent, host, pluginId, skinStyle)
+    def __init__(self, parent, host, pluginId, skinColor, skinStyle):
+        AbstractPluginSlot.__init__(self, parent, host, pluginId, skinColor, skinStyle)
         self.ui = ui_carla_plugin_presets.Ui_PluginWidget()
         self.ui.setupUi(self)
 
@@ -1867,7 +1862,7 @@ class PluginSlot_Presets(AbstractPluginSlot):
 
 # ------------------------------------------------------------------------------------------------------------
 
-def getSkinStyle(host, pluginId):
+def getColorAndSkinStyle(host, pluginId):
     if False:
         # kdevelop likes this :)
         host       = CarlaHostNull()
@@ -1886,63 +1881,71 @@ def getSkinStyle(host, pluginId):
     else:
         progCount = host.get_midi_program_count(pluginId)
 
+    color = getColorFromCategory(pluginInfo['category'])
+
     # Samplers
     if pluginInfo['type'] == PLUGIN_SF2:
-        return "sf2"
+        return (color, "sf2")
     if pluginInfo['type'] == PLUGIN_SFZ:
-        return "sfz"
+        return (color, "sfz")
 
     # Calf
     if pluginName.split(" ", 1)[0].lower() == "calf":
-        return "calf_black" if "mono" in pluginLabel else "calf_blue"
+        return (color, "calf_black" if "mono" in pluginLabel else "calf_blue")
 
     # OpenAV
     if pluginMaker == "OpenAV Productions":
-        return "openav-old"
+        return (color, "openav-old")
     if pluginMaker == "OpenAV":
-        return "openav"
+        return (color, "openav")
 
     # ZynFX
     if pluginInfo['type'] == PLUGIN_INTERNAL:
         if pluginLabel.startswith("zyn") and pluginInfo['category'] != PLUGIN_CATEGORY_SYNTH:
-            return "zynfx"
+            return (color, "zynfx")
 
     if pluginInfo['type'] == PLUGIN_LADSPA:
         if pluginLabel.startswith("zyn") and pluginMaker.startswith("Josep Andreu"):
-            return "zynfx"
+            return (color, "zynfx")
 
     if pluginInfo['type'] == PLUGIN_LV2:
         if pluginLabel.startswith("http://kxstudio.sf.net/carla/plugins/zyn") and pluginName != "ZynAddSubFX":
-            return "zynfx"
+            return (color, "zynfx")
 
     # Presets
     if progCount > 1 and (pluginInfo['hints'] & PLUGIN_USES_MULTI_PROGS) == 0:
         if pluginInfo['type'] == PLUGIN_VST2:
-            return "presets"
-        return "mpresets"
+            return (color, "presets")
+        return (color, "mpresets")
 
     # DISTRHO Plugins (needs to be last)
     if pluginMaker.startswith("falkTX, ") or pluginMaker == "DISTRHO" or pluginLabel.startswith("http://distrho.sf.net/plugins/"):
         return pluginLabel.replace("http://distrho.sf.net/plugins/","")
 
-    return "default"
+    return (color, "default")
 
 def createPluginSlot(parent, host, pluginId, options):
-    skinStyle = options['skin'] or getSkinStyle(host, pluginId)
+    skinColor, skinStyle = getColorAndSkinStyle(host, pluginId)
+
+    if options['color'] is not None:
+        skinColor = options['color']
+
+    if options['skin']:
+        skinStyle = options['skin']
 
     if skinStyle == "classic":
         return PluginSlot_Classic(parent, host, pluginId)
 
     if "compact" in skinStyle or options['compact']:
-        return PluginSlot_Compact(parent, host, pluginId, skinStyle)
+        return PluginSlot_Compact(parent, host, pluginId, skinColor, skinStyle)
 
     if skinStyle.startswith("calf"):
-        return PluginSlot_Calf(parent, host, pluginId, skinStyle)
+        return PluginSlot_Calf(parent, host, pluginId, skinColor, skinStyle)
 
     if skinStyle in ("mpresets", "presets", "zynfx"):
-        return PluginSlot_Presets(parent, host, pluginId, skinStyle)
+        return PluginSlot_Presets(parent, host, pluginId, skinColor, skinStyle)
 
-    return PluginSlot_Default(parent, host, pluginId, skinStyle)
+    return PluginSlot_Default(parent, host, pluginId, skinColor, skinStyle)
 
 # ------------------------------------------------------------------------------------------------------------
 # Main Testing
@@ -1964,7 +1967,7 @@ if __name__ == '__main__':
     host.set_active(0, True)
 
     #gui = createPluginSlot(None, host, 0, True)
-    gui = PluginSlot_Compact(None, host, 0, "default")
+    gui = PluginSlot_Compact(None, host, 0, (0, 0, 0), "default")
     gui.testTimer()
     gui.show()
 

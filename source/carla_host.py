@@ -586,6 +586,18 @@ class HostWindow(QMainWindow):
 
         pitem.recreateWidget(True)
 
+    def changePluginColor(self, pluginId, color, colorStr):
+        if pluginId > self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+
+        if pitem is None:
+            return
+
+        self.host.set_custom_data(pluginId, CUSTOM_DATA_TYPE_PROPERTY, "CarlaColor", colorStr)
+        pitem.recreateWidget(newColor = color)
+
     def changePluginSkin(self, pluginId, skin):
         if pluginId > self.fPluginCount:
             return

@@ -62,12 +62,23 @@ class RackListItem(QListWidgetItem):
         self.fPluginId = pluginId
         self.fWidget   = None
 
-        compact = bool(self.host.get_custom_data_value(pluginId, CUSTOM_DATA_TYPE_PROPERTY, "CarlaSkinIsCompacted") == "true")
+        color   = self.host.get_custom_data_value(pluginId, CUSTOM_DATA_TYPE_PROPERTY, "CarlaColor")
         skin    = self.host.get_custom_data_value(pluginId, CUSTOM_DATA_TYPE_PROPERTY, "CarlaSkin")
+        compact = bool(self.host.get_custom_data_value(pluginId, CUSTOM_DATA_TYPE_PROPERTY, "CarlaSkinIsCompacted") == "true")
+
+        if color:
+            try:
+                color = tuple(int(i) for i in color.split(";",3))
+            except:
+                print("Color value decode failed for", color)
+                color = None
+        else:
+            color = None
 
         self.fOptions = {
-            'skin'    : skin,
-            'compact' : compact and skin != "classic",
+            'color'  : color,
+            'skin'   : skin,
+            'compact': compact and skin != "classic",
         }
 
         self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
@@ -151,10 +162,12 @@ class RackListItem(QListWidgetItem):
             return
         self.recreateWidget(True)
 
-    def recreateWidget(self, invertCompactOption = False, firstInit = False, newSkin = ''):
+    def recreateWidget(self, invertCompactOption = False, firstInit = False, newColor = None, newSkin = None):
         if invertCompactOption:
             self.fOptions['compact'] = not self.fOptions['compact']
-        if newSkin:
+        if newColor is not None:
+            self.fOptions['color'] = newColor
+        if newSkin is not None:
             self.fOptions['skin'] = newSkin
 
         wasGuiShown = None
