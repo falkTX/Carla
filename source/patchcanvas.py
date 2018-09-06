@@ -431,11 +431,10 @@ def clear():
         animatedItems.append(animation.item())
 
     for item in canvas.scene.items():
-        if item.type() == CanvasRubberbandType:
+        if item.type() in (CanvasIconType, CanvasRubberbandType) or item in animatedItems:
             continue
-        if item.type() != CanvasIconType and item not in animatedItems:
-            canvas.scene.removeItem(item)
-            del item
+        canvas.scene.removeItem(item)
+        del item
 
     canvas.initiated = False
 
