@@ -37,6 +37,9 @@ CARLA_BRIDGE_UI_START_NAMESPACE
 // --------------------------------------------------------------------------------------------------------------------
 
 static double gInitialSampleRate = 44100.0;
+static const char* const kNullWindowTitle = "TestUI";
+static const uint32_t kNullWindowTitleSize = 6;
+
 
 // LV2 URI Map Ids
 enum CarlaLv2URIDs {
@@ -136,7 +139,7 @@ struct Lv2PluginOptions {
     Lv2PluginOptions() noexcept
         : sampleRate(gInitialSampleRate),
           transientWinId(0),
-          windowTitle(nullptr)
+          windowTitle(kNullWindowTitle)
     {
         LV2_Options_Option& optSampleRate(opts[SampleRate]);
         optSampleRate.context = LV2_OPTIONS_INSTANCE;
@@ -158,9 +161,9 @@ struct Lv2PluginOptions {
         optWindowTitle.context = LV2_OPTIONS_INSTANCE;
         optWindowTitle.subject = 0;
         optWindowTitle.key     = kUridWindowTitle;
-        optWindowTitle.size    = 0;
+        optWindowTitle.size    = kNullWindowTitleSize;
         optWindowTitle.type    = kUridAtomString;
-        optWindowTitle.value   = nullptr;
+        optWindowTitle.value   = kNullWindowTitle;
 
         LV2_Options_Option& optNull(opts[Null]);
         optNull.context = LV2_OPTIONS_INSTANCE;
@@ -598,13 +601,22 @@ public:
             }
         }
 
-        delete[] fLv2Options.windowTitle;
+        if (fLv2Options.windowTitle != nullptr && fLv2Options.windowTitle != kNullWindowTitle)
+            delete[] fLv2Options.windowTitle;
+
         fLv2Options.transientWinId = static_cast<int64_t>(transientWindowId);
         fLv2Options.windowTitle    = carla_strdup_safe(windowTitle);
 
+        if (fLv2Options.windowTitle == nullptr)
+            fLv2Options.windowTitle = kNullWindowTitle;
+        else
+            fUiOptions.windowTitle = fLv2Options.windowTitle;
+
+        fLv2Options.opts[Lv2PluginOptions::WindowTitle].size  = (uint32_t)std::strlen(fLv2Options.windowTitle);
+        fLv2Options.opts[Lv2PluginOptions::WindowTitle].value = fLv2Options.windowTitle;
+
         fUiOptions.useTheme          = useTheme;
         fUiOptions.useThemeColors    = useThemeColors;
-        fUiOptions.windowTitle       = fLv2Options.windowTitle;
         fUiOptions.transientWindowId = transientWindowId;
     }
 
