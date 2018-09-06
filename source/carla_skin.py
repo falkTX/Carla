@@ -1109,10 +1109,14 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 "presets",
                 "mpresets",
             ]
+            try:
+                index = skinList.index(self.fSkinStyle)
+            except:
+                index = 0
 
             skin = QInputDialog.getItem(self, self.tr("Change Skin"),
                                               self.tr("Change Skin to:"),
-                                              skinList, editable=False)
+                                              skinList, index, False)
             if not all(skin):
                 return
             gCarla.gui.changePluginSkin(self.fPluginId, skin[0])
