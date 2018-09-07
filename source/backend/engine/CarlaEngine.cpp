@@ -2307,14 +2307,17 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
     if (pData->aboutToClose)
         return true;
 
-    // and now we handle connections (internal)
-    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-    {
-        const bool isUsingExternal(pData->graph.isUsingExternal());
+    bool hasInternalConnections = false;
 
-        if (XmlElement* const elem = xmlElement->getChildByName("Patchbay"))
+    // and now we handle connections (internal)
+    if (XmlElement* const elem = xmlElement->getChildByName("Patchbay"))
+    {
+        hasInternalConnections = true;
+
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         {
             CarlaString sourcePort, targetPort;
+            const bool isUsingExternal(pData->graph.isUsingExternal());
 
             for (XmlElement* patchElem = elem->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
             {
@@ -2340,20 +2343,18 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                 if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
                     restorePatchbayConnection(false, sourcePort, targetPort, !isUsingExternal);
             }
+
+            callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
+            if (pData->aboutToClose)
+                return true;
         }
-
-        callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
-
-        if (pData->aboutToClose)
-            return true;
     }
 
     // if we're running inside some session-manager (and using JACK), let them handle the external connections
     bool loadExternalConnections;
 
-    /**/ if (isPlugin)
-        loadExternalConnections = false;
-    else if (std::strcmp(getCurrentDriverName(), "JACK") != 0)
+    /**/ if (std::strcmp(getCurrentDriverName(), "JACK") != 0)
         loadExternalConnections = true;
     else if (std::getenv("CARLA_DONT_MANAGE_CONNECTIONS") != nullptr)
         loadExternalConnections = false;
@@ -2367,8 +2368,10 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
     // plus external connections too
     if (loadExternalConnections)
     {
-        const bool isUsingExternal(pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY ||
-                                   pData->graph.isUsingExternal());
+        const bool isUsingExternal = pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY ||
+                                     pData->graph.isUsingExternal();
+        const bool loadingAsExternal = pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY &&
+                                       hasInternalConnections;
 
         for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
         {
@@ -2410,7 +2413,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                 }
 
                 if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
-                    restorePatchbayConnection(true, sourcePort, targetPort, isUsingExternal);
+                    restorePatchbayConnection(loadingAsExternal, sourcePort, targetPort, isUsingExternal);
             }
             break;
         }
