@@ -1882,7 +1882,6 @@ def getColorAndSkinStyle(host, pluginId):
         progCount = host.get_midi_program_count(pluginId)
 
     color = getColorFromCategory(pluginInfo['category'])
-    print(color, pluginInfo['type'], pluginName)
 
     # Samplers
     if pluginInfo['type'] == PLUGIN_SF2:
