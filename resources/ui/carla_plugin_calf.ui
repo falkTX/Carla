@@ -396,18 +396,18 @@
   <customwidget>
    <class>DigitalPeakMeter</class>
    <extends>QWidget</extends>
-   <header>digitalpeakmeter.h</header>
+   <header>widgets/digitalpeakmeter.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>LEDButton</class>
    <extends>QPushButton</extends>
-   <header>ledbutton.h</header>
+   <header>widgets/ledbutton.h</header>
   </customwidget>
   <customwidget>
    <class>PixmapButton</class>
    <extends>QPushButton</extends>
-   <header>pixmapbutton.h</header>
+   <header>widgets/pixmapbutton.h</header>
   </customwidget>
  </customwidgets>
  <resources>

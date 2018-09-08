@@ -58,20 +58,6 @@ ui_*.py
 *.xz
 *.zip
 
-# PyQt widgets
-source/canvaspreviewframe.py
-source/carla_config.py
-source/digitalpeakmeter.py
-source/draggablegraphicsview.py
-source/ledbutton.py
-source/paramspinbox.py
-source/pianoroll.py
-source/pixmapbutton.py
-source/pixmapdial.py
-source/pixmapkeyboard.py
-source/racklistwidget.py
-source/widgets/carla_config.py
-
 # Binaries
 carla-bridge-qtcreator
 carla-bridge-native
@@ -99,15 +85,11 @@ zynaddsubfx-ui
 
 stoat-output.png
 
-data/linux/unzipfx2cat32
-data/linux/unzipfx2cat64
 data/macos/*-svn/
 data/windows/Carla
 data/windows/CarlaControl
 data/windows/Carla-*-win32/
 data/windows/Carla-*-win64/
-source/bridges/jackplugin/libjack.so.0
-source/frontend/Makefile
 source/tests/ansi-pedantic-test_*
 source/tests/CachedPlugins
 source/tests/CarlaRingBuffer

@@ -42,7 +42,7 @@ from carla_utils import *
 
 from carla_app import CarlaApplication
 from externalui import ExternalUI
-from paramspinbox import ParamSpinBox
+from widgets.paramspinbox import ParamSpinBox
 
 # -----------------------------------------------------------------------
 # External UI

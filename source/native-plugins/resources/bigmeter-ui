@@ -40,7 +40,7 @@ from carla_utils import *
 
 from carla_app import CarlaApplication
 from externalui import ExternalUI
-from digitalpeakmeter import DigitalPeakMeter
+from widgets.digitalpeakmeter import DigitalPeakMeter
 
 # -----------------------------------------------------------------------
 # External UI

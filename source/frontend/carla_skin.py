@@ -43,8 +43,8 @@ import ui_carla_plugin_default
 import ui_carla_plugin_presets
 
 from carla_widgets import *
-from digitalpeakmeter import DigitalPeakMeter
-from pixmapdial import PixmapDial
+from widgets.digitalpeakmeter import DigitalPeakMeter
+from widgets.pixmapdial import PixmapDial
 
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Skin Rules (WORK IN PROGRESS)
@@ -1882,6 +1882,7 @@ def getColorAndSkinStyle(host, pluginId):
         progCount = host.get_midi_program_count(pluginId)
 
     color = getColorFromCategory(pluginInfo['category'])
+    print(color, pluginInfo['type'], pluginName)
 
     # Samplers
     if pluginInfo['type'] == PLUGIN_SF2:
@@ -1920,7 +1921,7 @@ def getColorAndSkinStyle(host, pluginId):
 
     # DISTRHO Plugins (needs to be last)
     if pluginMaker.startswith("falkTX, ") or pluginMaker == "DISTRHO" or pluginLabel.startswith("http://distrho.sf.net/plugins/"):
-        return pluginLabel.replace("http://distrho.sf.net/plugins/","")
+        return (color, pluginLabel.replace("http://distrho.sf.net/plugins/",""))
 
     return (color, "default")
 

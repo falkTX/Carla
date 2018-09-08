@@ -42,8 +42,8 @@ import ui_carla_parameter
 
 from carla_shared import *
 from carla_utils import *
-from paramspinbox import CustomInputDialog
-from pixmapkeyboard import PixmapKeyboardHArea
+from widgets.paramspinbox import CustomInputDialog
+from widgets.pixmapkeyboard import PixmapKeyboardHArea
 
 # ------------------------------------------------------------------------------------------------------------
 # Carla GUI defines

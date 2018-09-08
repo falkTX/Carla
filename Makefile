@@ -9,24 +9,6 @@ include source/Makefile.mk
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-LINK := ln -sf
-
-ifeq ($(DEFAULT_QT),4)
-PYUIC ?= pyuic4 -w
-PYRCC ?= pyrcc4 -py3
-ifeq ($(HAVE_QT4),true)
-HAVE_THEME = true
-endif
-else
-PYUIC ?= pyuic5
-PYRCC ?= pyrcc5
-ifeq ($(HAVE_QT5),true)
-HAVE_THEME = true
-endif
-endif
-
-# ---------------------------------------------------------------------------------------------------------------------
-
 PREFIX     := /usr/local
 BINDIR     := $(PREFIX)/bin
 LIBDIR     := $(PREFIX)/lib
@@ -42,14 +24,10 @@ endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-all: BIN RES UI WIDGETS
+all: backend discovery bridges-plugin bridges-ui frontend interposer libjack plugin theme
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Binaries (native)
-
-BIN: backend discovery bridges-plugin bridges-ui interposer libjack plugin theme
-
-# ---------------------------------------------------------------------------------------------------------------------
 
 ALL_LIBS += $(MODULEDIR)/carla_engine.a
 ALL_LIBS += $(MODULEDIR)/carla_engine_plugin.a
@@ -152,6 +130,11 @@ bridges-ui: libs
 discovery: libs
 	@$(MAKE) -C source/discovery
 
+frontend:
+ifeq ($(HAVE_PYQT),true)
+	@$(MAKE) -C source/frontend
+endif
+
 interposer:
 ifeq ($(LINUX),true)
 	@$(MAKE) -C source/interposer
@@ -237,142 +220,20 @@ wine64:
 	cp -f $(MODULEDIR)/jackbridge-wine64.dll.so $(CURDIR)/bin/jackbridge-wine64.dll
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Resources
-
-ifeq ($(HAVE_PYQT),true)
-RES = \
-	bin/resources/carla_app.py \
-	bin/resources/carla_backend.py \
-	bin/resources/carla_backend_qt.py \
-	bin/resources/carla_config.py \
-	bin/resources/carla_control.py \
-	bin/resources/carla_database.py \
-	bin/resources/carla_host.py \
-	bin/resources/carla_settings.py \
-	bin/resources/carla_skin.py \
-	bin/resources/carla_shared.py \
-	bin/resources/carla_utils.py \
-	bin/resources/carla_widgets.py \
-	bin/resources/canvaspreviewframe.py \
-	bin/resources/digitalpeakmeter.py \
-	bin/resources/draggablegraphicsview.py \
-	bin/resources/externalui.py \
-	bin/resources/ledbutton.py \
-	bin/resources/paramspinbox.py \
-	bin/resources/patchcanvas.py \
-	bin/resources/patchcanvas_theme.py \
-	bin/resources/pianoroll.py \
-	bin/resources/pixmapbutton.py \
-	bin/resources/pixmapdial.py \
-	bin/resources/pixmapkeyboard.py \
-	bin/resources/racklistwidget.py \
-	bin/resources/resources_rc.py \
-	bin/resources/ui_carla_about.py \
-	bin/resources/ui_carla_add_jack.py \
-	bin/resources/ui_carla_database.py \
-	bin/resources/ui_carla_edit.py \
-	bin/resources/ui_carla_host.py \
-	bin/resources/ui_carla_parameter.py \
-	bin/resources/ui_carla_plugin_calf.py \
-	bin/resources/ui_carla_plugin_classic.py \
-	bin/resources/ui_carla_plugin_compact.py \
-	bin/resources/ui_carla_plugin_default.py \
-	bin/resources/ui_carla_plugin_presets.py \
-	bin/resources/ui_carla_refresh.py \
-	bin/resources/ui_carla_settings.py \
-	bin/resources/ui_carla_settings_driver.py \
-	bin/resources/ui_inputdialog_value.py \
-	bin/resources/ui_midipattern.py \
-	source/carla_config.py \
-	source/resources_rc.py
-
-RES: $(RES)
-
-source/carla_config.py:
-	@echo "#!/usr/bin/env python3" > $@
-	@echo "# -*- coding: utf-8 -*-" >> $@
-ifeq ($(DEFAULT_QT),4)
-	@echo "config_UseQt5 = False" >> $@
-else
-	@echo "config_UseQt5 = True" >> $@
-endif
-
-source/resources_rc.py: resources/resources.qrc resources/*/*.png resources/*/*.svg
-	$(PYRCC) $< -o $@
-
-bin/resources/%.py: source/%.py
-	$(LINK) $(CURDIR)/source/$*.py bin/resources/
-else
-RES:
-endif
-
-# ---------------------------------------------------------------------------------------------------------------------
-# UI code
-
-ifeq ($(HAVE_PYQT),true)
-UIs = \
-	source/ui_carla_about.py \
-	source/ui_carla_add_jack.py \
-	source/ui_carla_database.py \
-	source/ui_carla_edit.py \
-	source/ui_carla_host.py \
-	source/ui_carla_parameter.py \
-	source/ui_carla_plugin_calf.py \
-	source/ui_carla_plugin_classic.py \
-	source/ui_carla_plugin_compact.py \
-	source/ui_carla_plugin_default.py \
-	source/ui_carla_plugin_presets.py \
-	source/ui_carla_refresh.py \
-	source/ui_carla_settings.py \
-	source/ui_carla_settings_driver.py \
-	source/ui_inputdialog_value.py \
-	source/ui_midipattern.py
-
-UI: $(UIs)
-
-source/ui_%.py: resources/ui/%.ui
-	$(PYUIC) $< -o $@
-else
-UI:
-endif
-
-# ---------------------------------------------------------------------------------------------------------------------
-# Widgets
-
-WIDGETS = \
-	source/canvaspreviewframe.py \
-	source/digitalpeakmeter.py \
-	source/draggablegraphicsview.py \
-	source/ledbutton.py \
-	source/paramspinbox.py \
-	source/pianoroll.py \
-	source/pixmapbutton.py \
-	source/pixmapdial.py \
-	source/pixmapkeyboard.py \
-	source/racklistwidget.py
-
-WIDGETS: $(WIDGETS)
-
-source/%.py: source/widgets/%.py
-	$(LINK) widgets/$*.py $@
-
-# ---------------------------------------------------------------------------------------------------------------------
 
 clean:
 	$(MAKE) clean -C source/backend
 	$(MAKE) clean -C source/bridges-plugin
 	$(MAKE) clean -C source/bridges-ui
 	$(MAKE) clean -C source/discovery
+	$(MAKE) clean -C source/frontend
 	$(MAKE) clean -C source/interposer
 	$(MAKE) clean -C source/libjack
 	$(MAKE) clean -C source/modules
 	$(MAKE) clean -C source/native-plugins
 	$(MAKE) clean -C source/plugin
 	$(MAKE) clean -C source/theme
-	rm -f $(RES)
-	rm -f $(UIs)
-	rm -f $(WIDGETS)
-	rm -f *~ source/*~ source/*.pyc source/*_rc.py source/ui_*.py
+	rm -f *~ source/*~
 
 distclean: clean
 	rm -f bin/*.exe bin/*.dll bin/*.dylib bin/*.so
@@ -403,7 +264,6 @@ else
 	install -d $(DESTDIR)$(LIBDIR)/carla
 endif
 	install -d $(DESTDIR)$(LIBDIR)/pkgconfig
-	install -d $(DESTDIR)$(DATADIR)/carla/resources
 	install -d $(DESTDIR)$(INCLUDEDIR)/carla/includes
 
 ifeq ($(HAVE_PYQT),true)
@@ -416,6 +276,8 @@ ifeq ($(HAVE_PYQT),true)
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/256x256/apps
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
 	install -d $(DESTDIR)$(DATADIR)/mime/packages
+	install -d $(DESTDIR)$(DATADIR)/carla/resources
+	install -d $(DESTDIR)$(DATADIR)/carla/widgets
 endif
 
 	# -------------------------------------------------------------------------------------------------------------
@@ -513,16 +375,20 @@ ifeq ($(HAVE_LIBLO),true)
 		$(DESTDIR)$(BINDIR)/carla-control
 endif
 
-	# Install python code (gui)
+	# Install frontend
 	install -m 644 \
-		source/carla \
-		source/carla-control \
-		source/carla-jack-multi \
-		source/carla-jack-single \
-		source/carla-patchbay \
-		source/carla-rack \
-		source/*.py \
-		$(DESTDIR)$(DATADIR)/carla
+		source/frontend/carla \
+		source/frontend/carla-control \
+		source/frontend/carla-jack-multi \
+		source/frontend/carla-jack-single \
+		source/frontend/carla-patchbay \
+		source/frontend/carla-rack \
+		source/frontend/*.py \
+		$(DESTDIR)$(DATADIR)/carla/
+
+	install -m 644 \
+		source/frontend/widgets/*.py \
+		$(DESTDIR)$(DATADIR)/carla/widgets/
 
 	# Adjust LIBDIR and DATADIR value in python code
 	sed $(SED_ARGS) 's?X_LIBDIR_X = None?X_LIBDIR_X = "$(LIBDIR)"?' \
@@ -575,6 +441,7 @@ endif
 	install -m 644 resources/scalable/carla-control.svg $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
 
 	# Install resources (re-use python files)
+	$(LINK) ../widgets                     $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_app.py                $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_backend.py            $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_backend_qt.py         $(DESTDIR)$(DATADIR)/carla/resources
@@ -587,19 +454,9 @@ endif
 	$(LINK) ../carla_shared.py             $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_utils.py              $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_widgets.py            $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../canvaspreviewframe.py       $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../digitalpeakmeter.py         $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../draggablegraphicsview.py    $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../externalui.py               $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../ledbutton.py                $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../paramspinbox.py             $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../patchcanvas.py              $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../patchcanvas_theme.py        $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../pianoroll.py                $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../pixmapbutton.py             $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../pixmapdial.py               $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../pixmapkeyboard.py           $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../racklistwidget.py           $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../resources_rc.py             $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_about.py           $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_add_jack.py        $(DESTDIR)$(DATADIR)/carla/resources
@@ -617,7 +474,7 @@ endif
 	$(LINK) ../ui_carla_settings_driver.py $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_inputdialog_value.py     $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_midipattern.py           $(DESTDIR)$(DATADIR)/carla/resources
-endif
+endif # HAVE_PYQT
 
 	# -------------------------------------------------------------------------------------------------------------
 

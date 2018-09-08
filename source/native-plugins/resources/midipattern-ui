@@ -38,7 +38,7 @@ else:
 
 from carla_shared import *
 from carla_utils import *
-from pianoroll import *
+from widgets.pianoroll import *
 
 import ui_midipattern
 
