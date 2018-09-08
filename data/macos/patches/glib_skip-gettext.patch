@@ -1,0 +1,25 @@
+--- glib-2.22.4/configure.in	2010-01-07 01:19:11.000000000 +0100
++++ glib-2.22.4.new/configure.in	2010-03-06 13:21:18.461943187 +0100
+@@ -465,13 +465,6 @@ ALL_LINGUAS="`grep -v '^#' "$srcdir/po/L
+ AC_SUBST([CONFIG_STATUS_DEPENDENCIES],['$(top_srcdir)/po/LINGUAS'])
+ GLIB_GNU_GETTEXT
+ 
+-if test "$gt_cv_have_gettext" != "yes" ; then
+-  AC_MSG_ERROR([
+-*** You must have either have gettext support in your C library, or use the 
+-*** GNU gettext library. (http://www.gnu.org/software/gettext/gettext.html
+-])
+-fi
+-
+ LIBS="$INTLLIBS $LIBS"
+ 
+ GETTEXT_PACKAGE=glib20
+@@ -2682,8 +2675,6 @@ dnl **************************
+ dnl *** Checks for gtk-doc ***
+ dnl **************************
+ 
+-GTK_DOC_CHECK([1.11])
+-
+ AC_ARG_ENABLE(man,
+               [AC_HELP_STRING([--enable-man],
+                               [regenerate man pages from Docbook [default=no]])],enable_man=yes,
