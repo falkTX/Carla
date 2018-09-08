@@ -277,6 +277,10 @@ fi
 
 if [ ! -f fluidsynth-${FLUIDSYNTH_VERSION}/build-done ]; then
   cd fluidsynth-${FLUIDSYNTH_VERSION}
+  if [ ! -f patched ]; then
+    patch -p1 -i ../../patches/fluidsynth-skip-drivers-build.patch
+    touch patched
+  fi
   cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_SHARED_LIBS=OFF \
     -Denable-debug=OFF -Denable-profiling=OFF -Denable-ladspa=OFF -Denable-fpe-check=OFF -Denable-portaudio=OFF \
     -Denable-trap-on-fpe=OFF -Denable-aufile=OFF -Denable-dbus=OFF -Denable-ipv6=OFF -Denable-jack=OFF \

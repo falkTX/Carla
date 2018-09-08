@@ -239,7 +239,6 @@ if [ ! -f glib-${GLIB_VERSION}/build-done ]; then
   cd glib-${GLIB_VERSION}
   if [ ! -f patched ]; then
     patch -p1 -i ../patches/glib_skip-gettext.patch
-    # sed -i "s|po docs|po|" Makefile.in
     rm m4macros/glib-gettext.m4
     touch patched
   fi
@@ -267,6 +266,10 @@ fi
 
 if [ ! -f fluidsynth-${FLUIDSYNTH_VERSION}/build-done ]; then
   cd fluidsynth-${FLUIDSYNTH_VERSION}
+  if [ ! -f patched ]; then
+    patch -p1 -i ../../patches/fluidsynth-skip-drivers-build.patch
+    touch patched
+  fi
   sed -i -e 's/_init_lib_suffix "64"/_init_lib_suffix ""/' CMakeLists.txt
   /opt/local/bin/cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_SHARED_LIBS=OFF \
     -Denable-debug=OFF -Denable-profiling=OFF -Denable-ladspa=OFF -Denable-fpe-check=OFF -Denable-portaudio=OFF \

@@ -1,0 +1,60 @@
+--- fluidsynth-static-1.1.11.orig/src/CMakeLists.txt
++++ fluidsynth-static-1.1.11/src/CMakeLists.txt
+@@ -175,11 +175,6 @@ set ( libfluidsynth_SOURCES
+     midi/fluid_midi_router.h
+     midi/fluid_seqbind.c
+     midi/fluid_seq.c
+-    drivers/fluid_adriver.c
+-    drivers/fluid_adriver.h
+-    drivers/fluid_mdriver.c
+-    drivers/fluid_mdriver.h
+-    drivers/fluid_aufile.c
+     bindings/fluid_cmd.c
+     bindings/fluid_cmd.h
+     bindings/fluid_filerenderer.c
+@@ -335,32 +330,14 @@ target_link_libraries ( libfluidsynth
+     ${LIBFLUID_LIBS}
+ )
+ 
+-# ************ CLI program ************
+-
+-set ( fluidsynth_SOURCES fluidsynth.c )
+-
+-add_executable ( fluidsynth
+-    ${fluidsynth_SOURCES}
+-)
+-
+-if ( FLUID_CPPFLAGS )
+-  set_target_properties ( fluidsynth
+-    PROPERTIES COMPILE_FLAGS ${FLUID_CPPFLAGS} )
+-endif ( FLUID_CPPFLAGS )
+-
+-target_link_libraries ( fluidsynth
+-    libfluidsynth
+-    ${FLUID_LIBS}
+-)
+-
+ if ( MACOSX_FRAMEWORK )
+-  install ( TARGETS fluidsynth libfluidsynth
++  install ( TARGETS libfluidsynth
+     RUNTIME DESTINATION ${BIN_INSTALL_DIR}
+     FRAMEWORK DESTINATION ${FRAMEWORK_INSTALL_DIR}
+     ARCHIVE DESTINATION ${FRAMEWORK_INSTALL_DIR}
+ )
+ else ( MACOSX_FRAMEWORK )
+-  install ( TARGETS fluidsynth libfluidsynth
++  install ( TARGETS libfluidsynth
+     RUNTIME DESTINATION ${BIN_INSTALL_DIR}
+     LIBRARY DESTINATION ${LIB_INSTALL_DIR}
+     ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
+--- fluidsynth-static-1.1.11.orig/src/utils/fluid_settings.c
++++ fluidsynth-static-1.1.11/src/utils/fluid_settings.c
+@@ -297,8 +297,6 @@ fluid_settings_init(fluid_settings_t* se
+   fluid_shell_settings(settings);
+   fluid_player_settings(settings);
+   fluid_file_renderer_settings(settings);
+-  fluid_audio_driver_settings(settings);
+-  fluid_midi_driver_settings(settings);
+ }
+ 
+ static int
