@@ -79,10 +79,11 @@ class CarlaAboutW(QDialog):
                                      "<br>Copyright (C) 2011-2018 falkTX<br>"
                                      "" % (VERSION, extraInfo)))
 
-        if self.ui.about.palette().color(QPalette.Background).blackF() > 0.5:
-            self.ui.l_icons.setPixmap(QPixmap(":/bitmaps/carla_about_white.png"))
-        else:
+        if self.ui.about.palette().color(QPalette.Background).blackF() < 0.5:
             self.ui.l_icons.setPixmap(QPixmap(":/bitmaps/carla_about_black.png"))
+            self.ui.ico_example_edit.setPixmap(QPixmap(":/bitmaps/button_file-black.png"))
+            self.ui.ico_example_file.setPixmap(QPixmap(":/bitmaps/button_edit-black.png"))
+            self.ui.ico_example_gui.setPixmap(QPixmap(":/bitmaps/button_gui-black.png"))
 
         if host.isControl:
             self.ui.l_extended.hide()

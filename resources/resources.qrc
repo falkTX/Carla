@@ -68,18 +68,30 @@
         <file>bitmaps/button_calf3_down.png</file>
         <file>bitmaps/button_calf1_hover.png</file>
         <file>bitmaps/button_calf2_hover.png</file>
-        <file>bitmaps/button_distrho.png</file>
-        <file>bitmaps/button_distrho_down.png</file>
-        <file>bitmaps/button_distrho_hover.png</file>
-        <file>bitmaps/button_edit.png</file>
-        <file>bitmaps/button_edit_down.png</file>
-        <file>bitmaps/button_edit_hover.png</file>
-        <file>bitmaps/button_file.png</file>
-        <file>bitmaps/button_file_down.png</file>
-        <file>bitmaps/button_file_hover.png</file>
-        <file>bitmaps/button_gui.png</file>
-        <file>bitmaps/button_gui_down.png</file>
-        <file>bitmaps/button_gui_hover.png</file>
+        <file>bitmaps/button_distrho-black.png</file>
+        <file>bitmaps/button_distrho-white.png</file>
+        <file>bitmaps/button_distrho_down-black.png</file>
+        <file>bitmaps/button_distrho_down-white.png</file>
+        <file>bitmaps/button_distrho_hover-black.png</file>
+        <file>bitmaps/button_distrho_hover-white.png</file>
+        <file>bitmaps/button_edit-black.png</file>
+        <file>bitmaps/button_edit-white.png</file>
+        <file>bitmaps/button_edit_down-black.png</file>
+        <file>bitmaps/button_edit_down-white.png</file>
+        <file>bitmaps/button_edit_hover-black.png</file>
+        <file>bitmaps/button_edit_hover-white.png</file>
+        <file>bitmaps/button_file-black.png</file>
+        <file>bitmaps/button_file-white.png</file>
+        <file>bitmaps/button_file_down-black.png</file>
+        <file>bitmaps/button_file_down-white.png</file>
+        <file>bitmaps/button_file_hover-black.png</file>
+        <file>bitmaps/button_file_hover-white.png</file>
+        <file>bitmaps/button_gui-black.png</file>
+        <file>bitmaps/button_gui-white.png</file>
+        <file>bitmaps/button_gui_down-black.png</file>
+        <file>bitmaps/button_gui_down-white.png</file>
+        <file>bitmaps/button_gui_hover-black.png</file>
+        <file>bitmaps/button_gui_hover-white.png</file>
         <file>bitmaps/button_off.png</file>
         <file>bitmaps/button_on.png</file>
 

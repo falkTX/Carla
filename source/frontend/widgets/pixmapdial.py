@@ -140,6 +140,11 @@ class PixmapDial(QDial):
         self.fLabelGradientColor2 = QColor(0, 0, 0, 0)
         self.fLabelGradientColorT = [Qt.white, Qt.darkGray]
 
+    def setLabelColor(self, enabled, disabled):
+        self.fLabelGradientColor1 = QColor(0, 0, 0, 255)
+        self.fLabelGradientColor2 = QColor(0, 0, 0, 0)
+        self.fLabelGradientColorT = [enabled, disabled]
+
     def updateSizes(self):
         self.fPixmapWidth  = self.fPixmap.width()
         self.fPixmapHeight = self.fPixmap.height()

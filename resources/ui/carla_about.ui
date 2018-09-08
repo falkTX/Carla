@@ -281,7 +281,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QLabel" name="label_21">
+          <widget class="QLabel" name="ico_example_gui">
            <property name="minimumSize">
             <size>
              <width>22</width>
@@ -298,12 +298,12 @@
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap resource="../resources.qrc">:/bitmaps/button_gui_down.png</pixmap>
+            <pixmap resource="../resources.qrc">:/bitmaps/button_gui_down-white.png</pixmap>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QLabel" name="label_17">
+          <widget class="QLabel" name="ico_example_edit">
            <property name="minimumSize">
             <size>
              <width>22</width>
@@ -320,12 +320,12 @@
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap resource="../resources.qrc">:/bitmaps/button_edit_down.png</pixmap>
+            <pixmap resource="../resources.qrc">:/bitmaps/button_edit_down-white.png</pixmap>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QLabel" name="label_22">
+          <widget class="QLabel" name="ico_example_file">
            <property name="minimumSize">
             <size>
              <width>22</width>
@@ -342,7 +342,7 @@
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap resource="../resources.qrc">:/bitmaps/button_file_down.png</pixmap>
+            <pixmap resource="../resources.qrc">:/bitmaps/button_file_down-white.png</pixmap>
            </property>
           </widget>
          </item>

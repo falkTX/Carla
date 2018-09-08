@@ -168,7 +168,7 @@ def getColorFromCategory(category):
 # ------------------------------------------------------------------------------------------------------------
 #
 
-def setPixmapDialStyle(widget, parameterId, parameterCount, skinStyle):
+def setPixmapDialStyle(widget, parameterId, parameterCount, darkStyle, skinStyle):
     if skinStyle.startswith("calf"):
         widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
         widget.setPixmap(7)
@@ -185,8 +185,10 @@ def setPixmapDialStyle(widget, parameterId, parameterCount, skinStyle):
     else:
         if parameterId == PARAMETER_DRYWET:
             widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_CARLA_WET)
+
         elif parameterId == PARAMETER_VOLUME:
             widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_CARLA_VOL)
+
         else:
             _r = 255 - int((float(parameterId)/float(parameterCount))*200.0)
             _g =  55 + int((float(parameterId)/float(parameterCount))*200.0)
@@ -194,8 +196,15 @@ def setPixmapDialStyle(widget, parameterId, parameterCount, skinStyle):
             widget.setCustomPaintColor(QColor(_r, _g, _b))
             widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_COLOR)
 
+        if darkStyle:
+            colorEnabled  = QColor("#BBB")
+            colorDisabled = QColor("#555")
+        else:
+            colorEnabled  = QColor("#111")
+            colorDisabled = QColor("#AAA")
+
+        widget.setLabelColor(colorEnabled, colorDisabled)
         widget.setPixmap(3)
-        widget.forceWhiteLabelGradientText()
 
 # ------------------------------------------------------------------------------------------------------------
 # Abstract plugin slot
@@ -218,6 +227,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         self.fPluginInfo = host.get_plugin_info(self.fPluginId)
         self.fSkinColor  = skinColor
         self.fSkinStyle  = skinStyle
+        self.fDarkStyle  = QColor(skinColor[0], skinColor[1], skinColor[2]).blackF() > 0.4
 
         # -------------------------------------------------------------
         # Internal stuff
@@ -347,37 +357,54 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
     def ready(self):
         self.fIsActive = bool(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_ACTIVE) >= 0.5)
 
-        isCalfSkin = self.fSkinStyle.startswith("calf") and not isinstance(self, PluginSlot_Compact)
+        isCalfSkin  = self.fSkinStyle.startswith("calf") and not isinstance(self, PluginSlot_Compact)
+        imageSuffix = "white" if self.fDarkStyle else "black"
 
         if self.b_enable is not None:
             self.b_enable.setChecked(self.fIsActive)
             self.b_enable.clicked.connect(self.slot_enableClicked)
 
             if isCalfSkin:
-                self.b_enable.setPixmaps(":/bitmaps/button_calf3.png", ":/bitmaps/button_calf3_down.png", ":/bitmaps/button_calf3.png")
+                self.b_enable.setPixmaps(":/bitmaps/button_calf3.png",
+                                         ":/bitmaps/button_calf3_down.png",
+                                         ":/bitmaps/button_calf3.png")
             else:
-                self.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
+                self.b_enable.setPixmaps(":/bitmaps/button_off.png",
+                                         ":/bitmaps/button_on.png",
+                                         ":/bitmaps/button_off.png")
 
         if self.b_gui is not None:
             self.b_gui.clicked.connect(self.slot_showCustomUi)
             self.b_gui.setEnabled(bool(self.fPluginInfo['hints'] & PLUGIN_HAS_CUSTOM_UI))
 
             if isCalfSkin:
-                self.b_gui.setPixmaps(":/bitmaps/button_calf2.png", ":/bitmaps/button_calf2_down.png", ":/bitmaps/button_calf2_hover.png")
+                self.b_gui.setPixmaps(":/bitmaps/button_calf2.png",
+                                      ":/bitmaps/button_calf2_down.png",
+                                      ":/bitmaps/button_calf2_hover.png")
             elif self.fPluginInfo['iconName'] == "distrho" or self.fSkinStyle in ("3bandeq","3bandsplitter","pingpongpan", "nekobi"):
-                self.b_gui.setPixmaps(":/bitmaps/button_distrho.png", ":/bitmaps/button_distrho_down.png", ":/bitmaps/button_distrho_hover.png")
+                self.b_gui.setPixmaps(":/bitmaps/button_distrho-{}.png",
+                                      ":/bitmaps/button_distrho_down-{}.png",
+                                      ":/bitmaps/button_distrho_hover-{}.png")
             elif self.fPluginInfo['iconName'] == "file":
-                self.b_gui.setPixmaps(":/bitmaps/button_file.png", ":/bitmaps/button_file_down.png", ":/bitmaps/button_file_hover.png")
+                self.b_gui.setPixmaps(":/bitmaps/button_file-{}.png".format(imageSuffix),
+                                      ":/bitmaps/button_file_down-{}.png".format(imageSuffix),
+                                      ":/bitmaps/button_file_hover-{}.png".format(imageSuffix))
             else:
-                self.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
+                self.b_gui.setPixmaps(":/bitmaps/button_gui-{}.png".format(imageSuffix),
+                                      ":/bitmaps/button_gui_down-{}.png".format(imageSuffix),
+                                      ":/bitmaps/button_gui_hover-{}.png".format(imageSuffix))
 
         if self.b_edit is not None:
             self.b_edit.clicked.connect(self.slot_showEditDialog)
 
             if isCalfSkin:
-                self.b_edit.setPixmaps(":/bitmaps/button_calf2.png", ":/bitmaps/button_calf2_down.png", ":/bitmaps/button_calf2_hover.png")
+                self.b_edit.setPixmaps(":/bitmaps/button_calf2.png".format(imageSuffix),
+                                       ":/bitmaps/button_calf2_down.png".format(imageSuffix),
+                                       ":/bitmaps/button_calf2_hover.png".format(imageSuffix))
             else:
-                self.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
+                self.b_edit.setPixmaps(":/bitmaps/button_edit-{}.png".format(imageSuffix),
+                                       ":/bitmaps/button_edit_down-{}.png".format(imageSuffix),
+                                       ":/bitmaps/button_edit_hover-{}.png".format(imageSuffix))
 
         else:
             # Edit button *must* be available
@@ -494,6 +521,13 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 styleSheet2  = "background-color: rgb(%i, %i, %i);" % self.fSkinColor
                 styleSheet2 += "background-image: url(:/bitmaps/background_noise1.png);"
 
+            if self.fDarkStyle:
+                colorEnabled  = "#BBB"
+                colorDisabled = "#555"
+            else:
+                colorEnabled  = "#111"
+                colorDisabled = "#AAA"
+
             styleSheet = """
                 QFrame#PluginWidget {
                     %s
@@ -503,9 +537,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 QLabel#label_audio_in,
                 QLabel#label_audio_out,
                 QLabel#label_midi,
-                QLabel#label_presets       { color: #BBB; }
-                QLabel#label_name:disabled { color: #555; }
-            """ % styleSheet2
+                QLabel#label_presets       { color: %s; }
+                QLabel#label_name:disabled { color: %s; }
+            """ % (styleSheet2, colorEnabled, colorDisabled)
 
         styleSheet += """
             QComboBox#cb_presets,
@@ -560,7 +594,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 if isInteger:
                     widget.setPrecision(paramRanges['max']-paramRanges['min'], True)
 
-                setPixmapDialStyle(widget, i, parameterCount, self.fSkinStyle)
+                setPixmapDialStyle(widget, i, parameterCount, self.fDarkStyle, self.fSkinStyle)
 
                 index += 1
                 self.fParameterList.append([i, widget])
@@ -571,7 +605,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             widget.setLabel("Dry/Wet")
             widget.setMinimum(0.0)
             widget.setMaximum(1.0)
-            setPixmapDialStyle(widget, PARAMETER_DRYWET, 0, self.fSkinStyle)
+            setPixmapDialStyle(widget, PARAMETER_DRYWET, 0, self.fDarkStyle, self.fSkinStyle)
 
             self.fParameterList.append([PARAMETER_DRYWET, widget])
             self.w_knobs_right.layout().addWidget(widget)
@@ -581,7 +615,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             widget.setLabel("Volume")
             widget.setMinimum(0.0)
             widget.setMaximum(1.27)
-            setPixmapDialStyle(widget, PARAMETER_VOLUME, 0, self.fSkinStyle)
+            setPixmapDialStyle(widget, PARAMETER_VOLUME, 0, self.fDarkStyle, self.fSkinStyle)
 
             self.fParameterList.append([PARAMETER_VOLUME, widget])
             self.w_knobs_right.layout().addWidget(widget)
