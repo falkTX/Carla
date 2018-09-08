@@ -938,8 +938,10 @@ bool CarlaPipeCommon::flushMessages() const noexcept
     CARLA_SAFE_ASSERT_RETURN(pData->pipeSend != INVALID_PIPE_VALUE, false);
 
 #if defined(CARLA_OS_LINUX) || defined(CARLA_OS_GNU_HURD)
+#  if defined(__GLIBC__) && (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2014
     // the only call that seems to do something
     return ::syncfs(pData->pipeSend) == 0;
+#  endif
 #elif defined(CARLA_OS_WIN)
     // FIXME causes issues
     return true;
