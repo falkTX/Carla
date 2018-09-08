@@ -56,7 +56,7 @@ make posix32 ${MAKE_ARGS}
 # Build Mac App
 
 export PATH=${TARGETDIR}/carla/bin:${TARGETDIR}/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
-export PYTHONPATH=$(pwd)/source
+export PYTHONPATH=$(pwd)/source/frontend
 unset CFLAGS
 unset CXXFLAGS
 unset LDLAGS
@@ -69,19 +69,19 @@ rm -rf ./build/CarlaControl.app
 rm -rf ./build/exe.*
 rm -rf ./build/*.lv2
 
-cp ./source/carla                 ./source/Carla.pyw
-cp ./source/carla-control         ./source/Carla-Control.pyw
-cp ./bin/resources/carla-plugin   ./source/carla-plugin.pyw
-cp ./bin/resources/bigmeter-ui    ./source/bigmeter-ui.pyw
-cp ./bin/resources/midipattern-ui ./source/midipattern-ui.pyw
-cp ./bin/resources/notes-ui       ./source/notes-ui.pyw
+cp ./source/frontend/carla         ./source/frontend/Carla.pyw
+cp ./source/frontend/carla-control ./source/frontend/Carla-Control.pyw
+cp ./bin/resources/carla-plugin    ./source/frontend/carla-plugin.pyw
+cp ./bin/resources/bigmeter-ui     ./source/frontend/bigmeter-ui.pyw
+cp ./bin/resources/midipattern-ui  ./source/frontend/midipattern-ui.pyw
+cp ./bin/resources/notes-ui        ./source/frontend/notes-ui.pyw
 env SCRIPT_NAME=Carla          python3 ./data/macos/bundle.py bdist_mac --bundle-name=Carla
 env SCRIPT_NAME=Carla-Control  python3 ./data/macos/bundle.py bdist_mac --bundle-name=Carla-Control
 env SCRIPT_NAME=carla-plugin   python3 ./data/macos/bundle.py bdist_mac --bundle-name=carla-plugin
 env SCRIPT_NAME=bigmeter-ui    python3 ./data/macos/bundle.py bdist_mac --bundle-name=bigmeter-ui
 env SCRIPT_NAME=midipattern-ui python3 ./data/macos/bundle.py bdist_mac --bundle-name=midipattern-ui
 env SCRIPT_NAME=notes-ui       python3 ./data/macos/bundle.py bdist_mac --bundle-name=notes-ui
-rm ./source/*.pyw
+rm ./source/frontend/*.pyw
 
 mkdir -p build/Carla.app/Contents/MacOS/resources
 mkdir -p build/Carla.app/Contents/MacOS/styles

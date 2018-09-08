@@ -1,6 +1,20 @@
---- glib-2.22.4/configure.in	2010-01-07 01:19:11.000000000 +0100
-+++ glib-2.22.4.new/configure.in	2010-03-06 13:21:18.461943187 +0100
-@@ -465,13 +465,6 @@ ALL_LINGUAS="`grep -v '^#' "$srcdir/po/L
+diff --git a/acinclude.m4 b/acinclude.m4
+index cac7f21..aff165a 100644
+--- a/acinclude.m4
++++ b/acinclude.m4
+@@ -449,4 +449,3 @@ AC_DEFUN([jm_AC_HEADER_INTTYPES_H],
+ m4_include(acglib.m4)dnl
+ m4_include(glib/libcharset/codeset.m4)dnl
+ m4_include(glib/libcharset/glibc21.m4)dnl
+-m4_include(m4macros/glib-gettext.m4)dnl
+diff --git a/autogen.sh b/autogen.sh
+old mode 100644
+new mode 100755
+diff --git a/configure.ac b/configure.ac
+index b6640da..55262f3 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -454,13 +454,6 @@ ALL_LINGUAS="`grep -v '^#' "$srcdir/po/LINGUAS" | tr '\n' ' '`"
  AC_SUBST([CONFIG_STATUS_DEPENDENCIES],['$(top_srcdir)/po/LINGUAS'])
  GLIB_GNU_GETTEXT
  
@@ -14,12 +28,62 @@
  LIBS="$INTLLIBS $LIBS"
  
  GETTEXT_PACKAGE=glib20
-@@ -2682,8 +2675,6 @@ dnl **************************
- dnl *** Checks for gtk-doc ***
- dnl **************************
+diff --git a/gio/gunixconnection.c b/gio/gunixconnection.c
+index 3bfbd4f..f27e731 100644
+--- a/gio/gunixconnection.c
++++ b/gio/gunixconnection.c
+@@ -26,6 +26,8 @@
+ #include <string.h>
+ #include <unistd.h>
  
--GTK_DOC_CHECK([1.11])
--
- AC_ARG_ENABLE(man,
-               [AC_HELP_STRING([--enable-man],
-                               [regenerate man pages from Docbook [default=no]])],enable_man=yes,
++#define ngettext(t1, t2, n) t1
++
+ /**
+  * SECTION:gunixconnection
+  * @title: GUnixConnection
+diff --git a/glib/ggettext.c b/glib/ggettext.c
+index bf74ccb..2430a0d 100644
+--- a/glib/ggettext.c
++++ b/glib/ggettext.c
+@@ -40,7 +40,6 @@
+ 
+ #include <string.h>
+ #include <locale.h>
+-#include <libintl.h>
+ 
+ #ifdef G_OS_WIN32
+ 
+diff --git a/glib/gi18n.h b/glib/gi18n.h
+index f765c3d..2c950cd 100644
+--- a/glib/gi18n.h
++++ b/glib/gi18n.h
+@@ -20,13 +20,13 @@
+ 
+ #include <glib.h>
+ 
+-#include <libintl.h>
+ #include <string.h>
+ 
+-#define  _(String) gettext (String)
+-#define Q_(String) g_dpgettext (NULL, String, 0)
++#define  _(String) String
+ #define N_(String) (String)
+-#define C_(Context,String) g_dpgettext (NULL, Context "\004" String, strlen (Context) + 1)
+ #define NC_(Context, String) (String)
+ 
++#define textdomain(...)
++#define bindtextdomain(...)
++
+ #endif  /* __G_I18N_H__ */
+diff --git a/m4macros/Makefile.am b/m4macros/Makefile.am
+index 971871c..8a4f40c 100644
+--- a/m4macros/Makefile.am
++++ b/m4macros/Makefile.am
+@@ -1,6 +1,6 @@
+ include $(top_srcdir)/glib.mk
+ 
+-installed_m4= glib-2.0.m4 glib-gettext.m4 gsettings.m4
++installed_m4= glib-2.0.m4 gsettings.m4
+ 
+ EXTRA_DIST+=$(installed_m4)
+ 

@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # NOTE: You need the following packages installed via MacPorts:
-# automake, autoconf, bison, flex, libtool
-# p5-libxml-perl, p5-xml-libxml, p7zip, pkgconfig
+# automake, autoconf, cmake, libtool, p7zip, pkgconfig, aria2
 
 # ---------------------------------------------------------------------------------------------------------------------
 # stop on error
@@ -125,7 +124,7 @@ fi
 # zlib
 
 if [ ! -d zlib-${ZLIB_VERSION} ]; then
-  curl -L https://github.com/madler/zlib/archive/v${ZLIB_VERSION}.tar.gz -o zlib-${ZLIB_VERSION}.tar.gz
+  /opt/local/bin/aria2c https://github.com/madler/zlib/archive/v${ZLIB_VERSION}.tar.gz
   tar -xf zlib-${ZLIB_VERSION}.tar.gz
 fi
 
@@ -228,44 +227,10 @@ if [ ! -f libsndfile-${LIBSNDFILE_VERSION}/build-done ]; then
 fi
 
 # ---------------------------------------------------------------------------------------------------------------------
-# libffi
-
-# if [ ! -d libffi-${LIBFFI_VERSION} ]; then
-#   curl -O ftp://sourceware.org/pub/libffi/libffi-${LIBFFI_VERSION}.tar.gz
-#   tar -xf libffi-${LIBFFI_VERSION}.tar.gz
-# fi
-#
-# if [ ! -f libffi-${LIBFFI_VERSION}/build-done ]; then
-#   cd libffi-${LIBFFI_VERSION}
-#   ./configure --enable-static --disable-shared --prefix=${PREFIX}
-#   make ${MAKE_ARGS}
-#   make install
-#   touch build-done
-#   cd ..
-# fi
-
-# ---------------------------------------------------------------------------------------------------------------------
-# gettext
-
-# if [ ! -d gettext-${GETTEXT_VERSION} ]; then
-#   curl -O http://ftp.gnu.org/gnu/gettext/gettext-${GETTEXT_VERSION}.tar.gz
-#   tar -xf gettext-${GETTEXT_VERSION}.tar.gz
-# fi
-#
-# if [ ! -f gettext-${GETTEXT_VERSION}/build-done ]; then
-#   cd gettext-${GETTEXT_VERSION}
-#   env PATH=/opt/local/bin:$PATH ./configure --enable-static --disable-shared --prefix=${PREFIX}
-#   env PATH=/opt/local/bin:$PATH make ${MAKE_ARGS}
-#   make install
-#   touch build-done
-#   cd ..
-# fi
-
-# ---------------------------------------------------------------------------------------------------------------------
 # glib
 
 if [ ! -d glib-${GLIB_VERSION} ]; then
-  curl -O http://caesar.ftp.acc.umu.se/pub/GNOME/sources/glib/${GLIB_MVERSION}/glib-${GLIB_VERSION}.tar.xz
+  /opt/local/bin/aria2c http://caesar.ftp.acc.umu.se/pub/GNOME/sources/glib/${GLIB_MVERSION}/glib-${GLIB_VERSION}.tar.xz
   /opt/local/bin/7z x glib-${GLIB_VERSION}.tar.xz
   /opt/local/bin/7z x glib-${GLIB_VERSION}.tar
 fi
@@ -274,16 +239,18 @@ if [ ! -f glib-${GLIB_VERSION}/build-done ]; then
   cd glib-${GLIB_VERSION}
   if [ ! -f patched ]; then
     patch -p1 -i ../patches/glib_skip-gettext.patch
-    sed -i "s|po docs|po|" Makefile.in
+    # sed -i "s|po docs|po|" Makefile.in
+    rm m4macros/glib-gettext.m4
     touch patched
   fi
-  chmod +x configure install-sh
-  env PATH=/opt/local/bin:$PATH autoconf
+  chmod +x autogen.sh configure install-sh
+  env PATH=/opt/local/bin:$PATH ./autogen.sh
   env PATH=/opt/local/bin:$PATH LDFLAGS="-L${PREFIX}/lib -m${ARCH}" \
-    ./configure --enable-static --disable-shared --disable-docs --prefix=${PREFIX}
-  env PATH=/opt/local/bin:$PATH make ${MAKE_ARGS} || true
+    ./configure --enable-static --disable-shared --prefix=${PREFIX}
+  env PATH=/opt/local/bin:$PATH make ${MAKE_ARGS} -k || true
   touch gio/gio-querymodules gio/glib-compile-resources gio/gsettings gio/gdbus gio/gresource gio/gapplication
-  env PATH=/opt/local/bin:$PATH make ${MAKE_ARGS}
+  touch gobject/gobject-query tests/gobject/performance tests/gobject/performance-threaded
+  env PATH=/opt/local/bin:$PATH make
   touch ${PREFIX}/bin/gtester-report
   env PATH=/opt/local/bin:$PATH make install
   touch build-done
@@ -294,23 +261,24 @@ fi
 # fluidsynth
 
 if [ ! -d fluidsynth-${FLUIDSYNTH_VERSION} ]; then
-  curl -L https://github.com/FluidSynth/fluidsynth/archive/v${FLUIDSYNTH_VERSION}.tar.gz -o fluidsynth-${FLUIDSYNTH_VERSION}.tar.gz
+  /opt/local/bin/aria2c https://github.com/FluidSynth/fluidsynth/archive/v${FLUIDSYNTH_VERSION}.tar.gz
   tar -xf fluidsynth-${FLUIDSYNTH_VERSION}.tar.gz
 fi
 
 if [ ! -f fluidsynth-${FLUIDSYNTH_VERSION}/build-done ]; then
   cd fluidsynth-${FLUIDSYNTH_VERSION}
-#   env LDFLAGS="${LDFLAGS} -framework Carbon -framework CoreFoundation"
-  sed -i 's/_init_lib_suffix "64"/_init_lib_suffix ""/' CMakeLists.txt
-  cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_SHARED_LIBS=OFF \
+  sed -i -e 's/_init_lib_suffix "64"/_init_lib_suffix ""/' CMakeLists.txt
+  /opt/local/bin/cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_SHARED_LIBS=OFF \
     -Denable-debug=OFF -Denable-profiling=OFF -Denable-ladspa=OFF -Denable-fpe-check=OFF -Denable-portaudio=OFF \
     -Denable-trap-on-fpe=OFF -Denable-aufile=OFF -Denable-dbus=OFF -Denable-ipv6=OFF -Denable-jack=OFF \
     -Denable-midishare=OFF -Denable-oss=OFF -Denable-pulseaudio=OFF -Denable-readline=OFF -Denable-ladcca=OFF \
     -Denable-lash=OFF -Denable-alsa=OFF -Denable-coreaudio=OFF -Denable-coremidi=OFF -Denable-framework=OFF \
     -Denable-floats=ON
-  make ${MAKE_ARGS}
+  make ${MAKE_ARGS} -k  || true
+  touch src/fluidsynth
+  make
   make install
-  sed -i -e "s|-lfluidsynth|-lfluidsynth -lglib-2.0 -lgthread-2.0 -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -lpthread -lm -liconv -lintl|" ${PREFIX}/lib/pkgconfig/fluidsynth.pc
+  sed -i -e "s|-lfluidsynth|-lfluidsynth -lglib-2.0 -lgthread-2.0 -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -lpthread -lm -liconv|" ${PREFIX}/lib/pkgconfig/fluidsynth.pc
   touch build-done
   cd ..
 fi
@@ -319,7 +287,7 @@ fi
 # mxml
 
 if [ ! -d mxml-${MXML_VERSION} ]; then
-  curl -L https://github.com/michaelrsweet/mxml/releases/download/v${MXML_VERSION}/mxml-${MXML_VERSION}.tar.gz -o mxml-${MXML_VERSION}.tar.gz
+  /opt/local/bin/aria2c https://github.com/michaelrsweet/mxml/releases/download/v${MXML_VERSION}/mxml-${MXML_VERSION}.tar.gz
   mkdir mxml-${MXML_VERSION}
   cd mxml-${MXML_VERSION}
   tar -xf ../mxml-${MXML_VERSION}.tar.gz
@@ -515,7 +483,7 @@ fi
 # python
 
 if [ ! -d Python-${PYTHON_VERSION} ]; then
-  curl -O https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz
+  /opt/local/bin/aria2c https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz
   tar -xf Python-${PYTHON_VERSION}.tgz
 fi
 
@@ -532,7 +500,7 @@ fi
 # sip
 
 if [ ! -d sip-${SIP_VERSION} ]; then
-  curl -L http://sourceforge.net/projects/pyqt/files/sip/sip-${SIP_VERSION}/sip-${SIP_VERSION}.tar.gz -o sip-${SIP_VERSION}.tar.gz
+  /opt/local/bin/aria2c http://sourceforge.net/projects/pyqt/files/sip/sip-${SIP_VERSION}/sip-${SIP_VERSION}.tar.gz
   tar -xf sip-${SIP_VERSION}.tar.gz
 fi
 
@@ -549,7 +517,7 @@ fi
 # pyqt5
 
 if [ ! -d PyQt-gpl-${PYQT5_VERSION} ]; then
-  curl -L http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-${PYQT5_VERSION}/PyQt-gpl-${PYQT5_VERSION}.tar.gz -o PyQt-gpl-${PYQT5_VERSION}.tar.gz
+  /opt/local/bin/aria2c http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-${PYQT5_VERSION}/PyQt-gpl-${PYQT5_VERSION}.tar.gz
   tar -xf PyQt-gpl-${PYQT5_VERSION}.tar.gz
 fi
 
@@ -566,7 +534,7 @@ fi
 # pyliblo
 
 if [ ! -d pyliblo-${PYLIBLO_VERSION} ]; then
-  curl -O http://das.nasophon.de/download/pyliblo-${PYLIBLO_VERSION}.tar.gz
+  /opt/local/bin/aria2c http://das.nasophon.de/download/pyliblo-${PYLIBLO_VERSION}.tar.gz
   tar -xf pyliblo-${PYLIBLO_VERSION}.tar.gz
 fi
 
@@ -583,7 +551,7 @@ fi
 # cxfreeze
 
 if [ ! -d cx_Freeze-${CXFREEZE_VERSION} ]; then
-  curl -L https://github.com/anthony-tuininga/cx_Freeze/archive/${CXFREEZE_VERSION}.tar.gz -o cx_Freeze-${CXFREEZE_VERSION}.tar.gz
+  /opt/local/bin/aria2c https://github.com/anthony-tuininga/cx_Freeze/archive/${CXFREEZE_VERSION}.tar.gz
   tar -xf cx_Freeze-${CXFREEZE_VERSION}.tar.gz
 fi
 

@@ -125,6 +125,7 @@ bin/resources/*.py
 source/native-plugins/resources/*.py
 
 # Other
+source/frontend/carla_config.py
 source/includes/asio/
 source/includes/rewire/
 source/includes/vst2
