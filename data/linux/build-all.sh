@@ -124,12 +124,8 @@ if [ ! -f /tmp/setup-repo-upgrade ]; then
 fi
 
 if [ ! -f /tmp/setup-repo-packages ]; then
-  apt-get install -y build-essential libglib2.0-dev uuid-dev git-core
-  apt-get install -y autoconf libtool
-  apt-get install -y bison flex libxml-libxml-perl libxml-parser-perl
-  apt-get install -y libgl1-mesa-dev libglu1-mesa-dev
+  apt-get install -y build-essential autoconf libtool cmake libglib2.0-dev libgl1-mesa-dev git-core
   apt-get clean
-  rm /usr/lib/libuuid.so
   touch /tmp/setup-repo-packages
 fi
 
@@ -145,13 +141,14 @@ if [ ! -d ${CHROOT_CARLA_DIR} ]; then
   git clone --depth=1 git://github.com/falkTX/Carla ${CHROOT_CARLA_DIR}
 fi
 
-if [ ! -d ${CHROOT_CARLA_DIR}/source/native-plugins/external ]; then
+if [ ! -f ${CHROOT_CARLA_DIR}/source/native-plugins/external/README.md ]; then
   git clone --depth=1 git://github.com/falkTX/Carla-Plugins ${CHROOT_CARLA_DIR}/source/native-plugins/external
 fi
 
 cd ${CHROOT_CARLA_DIR}
 git checkout .
 git pull
+git submodule update
 
 # might be updated by git pull
 chmod 777 data/linux/*.sh
@@ -240,7 +237,8 @@ export CXXFLAGS=${CFLAGS}
 export LDFLAGS="-L${CHROOT_TARGET_DIR}/carla${ARCH}/lib"
 export PKG_CONFIG_PATH=${CHROOT_TARGET_DIR}/carla${ARCH}/lib/pkgconfig
 export RCC_QT4=/usr/bin/rcc
-export LINUX="true"
+export LINUX=true
+export DEFAULT_QT=4
 
 cd ${CHROOT_CARLA_DIR}
 make ${MAKE_ARGS}
@@ -270,10 +268,10 @@ download_carla_extras()
 {
 
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
-PKGS_NUM="20180625"
-PKGS_VER="1.9.8+git${PKGS_NUM}"
-CARLA_VER="1.9.8+git20180628"
-WINE64_VER="1.9.8.git20180625"
+CARLA_VER="1.9.9+git20180906"
+WINBR_VER="1.9.8+git20180906"
+WINE32_VER="1.9.8+git20180823"
+WINE64_VER="1.9.8.git20180819"
 
 cat <<EOF | sudo chroot ${CHROOT_DIR}
 set -e
@@ -283,11 +281,11 @@ cd ${CHROOT_CARLA_DIR}
 if [ ! -d carla-pkgs${PKGS_NUM} ]; then
   mkdir -p tmp-carla-pkgs
   cd tmp-carla-pkgs
-  wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win32_${PKGS_VER}_i386.deb
-  wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-wine32_${PKGS_VER}_i386.deb
+  wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win32_${WINBR_VER}_i386.deb
+  wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-wine32_${WINE32_VER}_i386.deb
   if [ x"${ARCH}" != x"32" ]; then
     aria2c https://github.com/KXStudio/Repository/releases/download/initial/carla-bridge-wine64_${WINE64_VER}_amd64.deb
-    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win64_${PKGS_VER}_amd64.deb
+    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win64_${WINBR_VER}_amd64.deb
     wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-git_${CARLA_VER}_amd64.deb
   else
     wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-git_${CARLA_VER}_i386.deb
@@ -298,10 +296,10 @@ fi
 
 if [ ! -f carla-pkgs${PKGS_NUM}/extrated ]; then
   cd carla-pkgs${PKGS_NUM}
-  dpkg -x carla-bridge-win32_${PKGS_VER}_i386.deb .
-  dpkg -x carla-bridge-wine32_${PKGS_VER}_i386.deb .
+  dpkg -x carla-bridge-win32_${WINBR_VER}_i386.deb .
+  dpkg -x carla-bridge-wine32_${WINE32_VER}_i386.deb .
   if [ x"${ARCH}" != x"32" ]; then
-    dpkg -x carla-bridge-win64_${PKGS_VER}_amd64.deb .
+    dpkg -x carla-bridge-win64_${WINBR_VER}_amd64.deb .
     dpkg -x carla-bridge-wine64_${WINE64_VER}_amd64.deb .
     dpkg -x carla-git_${CARLA_VER}_amd64.deb .
   else
@@ -336,6 +334,7 @@ chroot_pack_carla()
 {
 
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
+CXFREEZE_FLAGS="--include-modules=re,sip,subprocess,inspect"
 
 cat <<EOF | sudo chroot ${CHROOT_DIR}
 export HOME=/root
@@ -351,7 +350,7 @@ export LINUX="true"
 
 cd ${CHROOT_CARLA_DIR}
 rm -rf ./tmp-install
-make EXTERNAL_PLUGINS=false ${MAKE_ARGS} install DESTDIR=./tmp-install PREFIX=/usr
+make ${MAKE_ARGS} install DESTDIR=./tmp-install PREFIX=/usr
 
 make -C data/windows/unzipfx-carla -f Makefile.linux ${MAKE_ARGS}
 make -C data/windows/unzipfx-carla-control -f Makefile.linux ${MAKE_ARGS}
@@ -359,10 +358,11 @@ make -C data/windows/unzipfx-carla-control -f Makefile.linux ${MAKE_ARGS}
 # ---------------------------------------------------------------------------------------------------------------------
 # Standalone
 
-rm -rf build-carla build-carla-control build-lv2 build-vst *.zip
+rm -rf build-carla build-carla-control build-lv2 build-vst carla *.zip
 mkdir build-carla
 mkdir build-carla/resources
 mkdir build-carla/src
+mkdir build-carla/src/widgets
 
 cp      extra-bins/*                               build-carla/
 cp -r  ./tmp-install/usr/lib/carla/*               build-carla/
@@ -370,18 +370,19 @@ cp -LR ./tmp-install/usr/share/carla/resources/*   build-carla/resources/
 cp     ./tmp-install/usr/share/carla/carla         build-carla/src/
 cp     ./tmp-install/usr/share/carla/carla-control build-carla/src/
 cp     ./tmp-install/usr/share/carla/*.py          build-carla/src/
+cp     ./tmp-install/usr/share/carla/widgets/*.py  build-carla/src/widgets/
 
 mv build-carla/resources/carla-plugin   build-carla/resources/carla-plugin.py
 mv build-carla/resources/bigmeter-ui    build-carla/resources/bigmeter-ui.py
 mv build-carla/resources/midipattern-ui build-carla/resources/midipattern-ui.py
 mv build-carla/resources/notes-ui       build-carla/resources/notes-ui.py
 
-cxfreeze-python3 --include-modules=re,sip,subprocess,inspect build-carla/src/carla                   --target-dir=build-carla/
-cxfreeze-python3 --include-modules=re,sip,subprocess,inspect build-carla/src/carla-control           --target-dir=build-carla-control/
-cxfreeze-python3 --include-modules=re,sip,subprocess,inspect build-carla/resources/carla-plugin.py   --target-dir=build-carla/resources/
-cxfreeze-python3 --include-modules=re,sip,subprocess,inspect build-carla/resources/bigmeter-ui.py    --target-dir=build-carla/resources/
-cxfreeze-python3 --include-modules=re,sip,subprocess,inspect build-carla/resources/midipattern-ui.py --target-dir=build-carla/resources/
-cxfreeze-python3 --include-modules=re,sip,subprocess,inspect build-carla/resources/notes-ui.py       --target-dir=build-carla/resources/
+cxfreeze-python3 ${CXFREEZE_FLAGS} build-carla/src/carla                   --target-dir=build-carla/
+cxfreeze-python3 ${CXFREEZE_FLAGS} build-carla/src/carla-control           --target-dir=build-carla-control/
+cxfreeze-python3 ${CXFREEZE_FLAGS} build-carla/resources/carla-plugin.py   --target-dir=build-carla/resources/
+cxfreeze-python3 ${CXFREEZE_FLAGS} build-carla/resources/bigmeter-ui.py    --target-dir=build-carla/resources/
+cxfreeze-python3 ${CXFREEZE_FLAGS} build-carla/resources/midipattern-ui.py --target-dir=build-carla/resources/
+cxfreeze-python3 ${CXFREEZE_FLAGS} build-carla/resources/notes-ui.py       --target-dir=build-carla/resources/
 
 cp /usr/lib/libpython3.2mu.so.1.0 build-carla/
 cp /usr/lib/libffi.so.5           build-carla/

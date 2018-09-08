@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# apt-get install build-essential libglib2.0-dev uuid-dev
+# apt-get install build-essential autoconf libtool cmake libglib2.0-dev libgl1-mesa-dev
 
 # ---------------------------------------------------------------------------------------------------------------------
 # stop on error
@@ -234,6 +234,8 @@ fi
 
 if [ ! -f fluidsynth-${FLUIDSYNTH_VERSION}/build-done ]; then
   cd fluidsynth-${FLUIDSYNTH_VERSION}
+  sed -i "s/3.0.2/2.8.0/" CMakeLists.txt
+  sed -i 's/_init_lib_suffix "64"/_init_lib_suffix ""/' CMakeLists.txt
   cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_SHARED_LIBS=OFF \
     -Denable-debug=OFF -Denable-profiling=OFF -Denable-ladspa=OFF -Denable-fpe-check=OFF -Denable-portaudio=OFF \
     -Denable-trap-on-fpe=OFF -Denable-aufile=OFF -Denable-dbus=OFF -Denable-ipv6=OFF -Denable-jack=OFF \
