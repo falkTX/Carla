@@ -1,7 +1,8 @@
 The pixmaps in this folder were made by falkTX and nieee, with the exception of:
 
-dial_01  - TAL Plugins
-dial_02  - TAL Plugins
-dial_05  - Guitarix
-kbd_*    - Image-Line
-*calf*   - Calf Studiogear
+canvas/*        - OpenOctave
+style/*         - Qt (from Fusion theme)
+*calf*          - Calf Studio Gear
+dial_{11,12}*   - OpenAV
+led_*           - Image-Line (need to find a good replacement, suggestions welcome!)
+rack_interior_* - OpenOctave

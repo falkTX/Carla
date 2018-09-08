@@ -26,11 +26,11 @@ from carla_config import *
 
 if config_UseQt5:
     from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QSettings, QTimer
-    from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
+    from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath, QPalette, QPixmap
     from PyQt5.QtWidgets import QDialog, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 else:
     from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QSettings, QTimer
-    from PyQt4.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
+    from PyQt4.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath, QPalette, QPixmap
     from PyQt4.QtGui import QDialog, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
@@ -78,6 +78,11 @@ class CarlaAboutW(QDialog):
                                      "<br>Carla is a fully-featured audio plugin host%s.<br>"
                                      "<br>Copyright (C) 2011-2018 falkTX<br>"
                                      "" % (VERSION, extraInfo)))
+
+        if self.ui.about.palette().color(QPalette.Background).blackF() > 0.5:
+            self.ui.l_icons.setPixmap(QPixmap(":/bitmaps/carla_about_white.png"))
+        else:
+            self.ui.l_icons.setPixmap(QPixmap(":/bitmaps/carla_about_black.png"))
 
         if host.isControl:
             self.ui.l_extended.hide()

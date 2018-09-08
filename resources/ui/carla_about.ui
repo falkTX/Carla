@@ -76,7 +76,7 @@
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../resources.qrc">:/bitmaps/carla_about.png</pixmap>
+          <pixmap resource="../resources.qrc">:/bitmaps/carla_about_white.png</pixmap>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
@@ -198,21 +198,21 @@
           <widget class="QLabel" name="label_19">
            <property name="minimumSize">
             <size>
-             <width>37</width>
-             <height>37</height>
+             <width>32</width>
+             <height>32</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>37</width>
-             <height>37</height>
+             <width>32</width>
+             <height>32</height>
             </size>
            </property>
            <property name="text">
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap resource="../resources.qrc">:/bitmaps/dial_01d.png</pixmap>
+            <pixmap resource="../resources.qrc">:/bitmaps/dial_11e.png</pixmap>
            </property>
           </widget>
          </item>
@@ -227,7 +227,7 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>Contains some knobs, backgrounds and other small artwork from ArtyFX, Calf Studio Gear, OpenOctave and TAL-Plugins projects.</string>
+          <string>Contains some knobs, backgrounds and other small artwork from Calf Studio Gear, OpenAV and OpenOctave projects.</string>
          </property>
          <property name="wordWrap">
           <bool>true</bool>

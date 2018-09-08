@@ -49,7 +49,8 @@
         <file>scalable/carla.svg</file>
         <file>scalable/carla-control.svg</file>
 
-        <file>bitmaps/carla_about.png</file>
+        <file>bitmaps/carla_about_black.png</file>
+        <file>bitmaps/carla_about_white.png</file>
         <file>bitmaps/background_3bandeq.png</file>
         <file>bitmaps/background_calf_black.png</file>
         <file>bitmaps/background_calf_blue.png</file>
@@ -82,10 +83,6 @@
         <file>bitmaps/button_off.png</file>
         <file>bitmaps/button_on.png</file>
 
-        <file>bitmaps/dial_01.png</file>
-        <file>bitmaps/dial_01d.png</file>
-        <file>bitmaps/dial_02.png</file>
-        <file>bitmaps/dial_02d.png</file>
         <file>bitmaps/dial_03.png</file>
         <file>bitmaps/dial_03d.png</file>
         <file>bitmaps/dial_04.png</file>
@@ -103,6 +100,7 @@
         <file>bitmaps/dial_10d.png</file>
         <file>bitmaps/dial_11.png</file>
         <file>bitmaps/dial_11d.png</file>
+        <file>bitmaps/dial_11e.png</file>
         <file>bitmaps/dial_12.png</file>
         <file>bitmaps/dial_12d.png</file>
         <file>bitmaps/dial_13.png</file>
