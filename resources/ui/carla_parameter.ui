@@ -87,7 +87,7 @@
   <customwidget>
    <class>ParamSpinBox</class>
    <extends>QWidget</extends>
-   <header>paramspinbox.h</header>
+   <header>widgets/paramspinbox.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

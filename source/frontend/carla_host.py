@@ -47,8 +47,8 @@ from carla_settings import *
 from carla_utils import *
 from carla_widgets import *
 
-from digitalpeakmeter import DigitalPeakMeter
-from pixmapkeyboard import PixmapKeyboardHArea
+from widgets.digitalpeakmeter import DigitalPeakMeter
+from widgets.pixmapkeyboard import PixmapKeyboardHArea
 
 # ------------------------------------------------------------------------------------------------------------
 # Try Import OpenGL

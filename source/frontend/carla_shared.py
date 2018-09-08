@@ -636,8 +636,8 @@ def getPaths(libPrefix = None):
         pathResources = os.path.join(libPrefix, datadir, "carla", "resources")
 
     # standalone, local source
-    elif CWDl.endswith("source"):
-        pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "bin"))
+    elif CWDl.endswith("frontend"):
+        pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "..", "bin"))
         pathResources = os.path.join(pathBinaries, "resources")
 
     # plugin

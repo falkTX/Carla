@@ -1145,24 +1145,24 @@
   <customwidget>
    <class>DigitalPeakMeter</class>
    <extends>QWidget</extends>
-   <header>digitalpeakmeter.h</header>
+   <header>widgets/digitalpeakmeter.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>CanvasPreviewFrame</class>
    <extends>QFrame</extends>
-   <header>canvaspreviewframe.h</header>
+   <header>widgets/canvaspreviewframe.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>RackListWidget</class>
    <extends>QListWidget</extends>
-   <header>racklistwidget.h</header>
+   <header>widgets/racklistwidget.h</header>
   </customwidget>
   <customwidget>
    <class>DraggableGraphicsView</class>
    <extends>QGraphicsView</extends>
-   <header>draggablegraphicsview.h</header>
+   <header>widgets/draggablegraphicsview.h</header>
   </customwidget>
  </customwidgets>
  <resources>

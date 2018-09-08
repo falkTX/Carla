@@ -464,12 +464,12 @@
   <customwidget>
    <class>PianoRollView</class>
    <extends>QGraphicsView</extends>
-   <header>pianoroll.h</header>
+   <header>widgets/pianoroll.h</header>
   </customwidget>
   <customwidget>
    <class>ModeIndicator</class>
    <extends>QWidget</extends>
-   <header>pianoroll.h</header>
+   <header>widgets/pianoroll.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -837,7 +837,7 @@ Plugin Name
   <customwidget>
    <class>PixmapDial</class>
    <extends>QDial</extends>
-   <header>pixmapdial.h</header>
+   <header>widgets/pixmapdial.h</header>
   </customwidget>
  </customwidgets>
  <resources>
