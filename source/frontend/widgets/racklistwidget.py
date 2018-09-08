@@ -363,7 +363,7 @@ class RackListWidget(QListWidget):
     def paintEvent(self, event):
         painter = QPainter(self.viewport())
         painter.drawTiledPixmap(0, 0, self.fPixmapWidth, self.height(), self.fPixmapL)
-        painter.drawTiledPixmap(self.width()-self.fPixmapWidth-2, 0, self.fPixmapWidth, self.height(), self.fPixmapR)
+        painter.drawTiledPixmap(self.width()-self.fPixmapWidth, 0, self.fPixmapWidth, self.height(), self.fPixmapR)
         QListWidget.paintEvent(self, event)
 
     # --------------------------------------------------------------------------------------------------------
