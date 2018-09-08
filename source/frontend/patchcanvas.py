@@ -2022,6 +2022,8 @@ class CanvasPort(QGraphicsItem):
         QGraphicsItem.mouseReleaseEvent(self, event)
 
     def contextMenuEvent(self, event):
+        event.accept()
+
         canvas.scene.clearSelection()
         self.setSelected(True)
 
@@ -2065,8 +2067,6 @@ class CanvasPort(QGraphicsItem):
 
         elif act_selected == act_x_rename:
             canvas.callback(ACTION_PORT_RENAME, self.m_group_id, self.m_port_id, "")
-
-        event.accept()
 
     def boundingRect(self):
         return QRectF(0, 0, self.m_port_width + 12, self.m_port_height)
@@ -2481,6 +2481,8 @@ class CanvasBox(QGraphicsItem):
         return CanvasBoxType
 
     def contextMenuEvent(self, event):
+        event.accept()
+
         menu = QMenu()
         discMenu = QMenu("Disconnect", menu)
 
@@ -2588,8 +2590,6 @@ class CanvasBox(QGraphicsItem):
 
         elif act_selected == act_p_remove:
             canvas.callback(ACTION_PLUGIN_REMOVE, self.m_plugin_id, 0, "")
-
-        event.accept()
 
     def keyPressEvent(self, event):
         if self.m_plugin_id >= 0 and event.key() == Qt.Key_Delete:

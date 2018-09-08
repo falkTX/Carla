@@ -433,7 +433,7 @@
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../resources.qrc">:/bitmaps/kbd_h_dark_top.png</pixmap>
+          <pixmap resource="../resources.qrc">:/bitmaps/kbd_normal.png</pixmap>
          </property>
         </widget>
        </item>

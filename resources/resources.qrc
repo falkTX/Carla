@@ -118,9 +118,11 @@
         <file>bitmaps/dial_13.png</file>
         <file>bitmaps/dial_13d.png</file>
 
-        <file>bitmaps/kbd_h_dark.png</file>
-        <file>bitmaps/kbd_h_dark_top.png</file>
-        <file>bitmaps/kbd_v_dark.png</file>
+        <file>bitmaps/kbd_normal.png</file>
+        <file>bitmaps/kbd_down-blue.png</file>
+        <file>bitmaps/kbd_down-green.png</file>
+        <file>bitmaps/kbd_down-orange.png</file>
+        <file>bitmaps/kbd_down-red.png</file>
 
         <file>bitmaps/led_off.png</file>
         <file>bitmaps/led_blue.png</file>

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Pixmap Keyboard, a custom Qt4 widget
-# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -25,78 +25,119 @@ from carla_config import *
 # Imports (Global)
 
 if config_UseQt5:
-    from PyQt5.QtCore import pyqtSignal, pyqtSlot, qCritical, Qt, QPointF, QRectF, QTimer, QSize
+    from PyQt5.QtCore import pyqtSignal, pyqtSlot, qCritical, Qt, QPointF, QRectF, QTimer, QSettings, QSize
     from PyQt5.QtGui import QColor, QFont, QPainter, QPixmap
-    from PyQt5.QtWidgets import QScrollArea, QWidget
+    from PyQt5.QtWidgets import QMenu, QScrollArea, QWidget
 else:
-    from PyQt4.QtCore import pyqtSignal, pyqtSlot, qCritical, Qt, QPointF, QRectF, QTimer, QSize
-    from PyQt4.QtGui import QColor, QFont, QPainter, QPixmap, QScrollArea, QWidget
+    from PyQt4.QtCore import pyqtSignal, pyqtSlot, qCritical, Qt, QPointF, QRectF, QTimer, QSettings, QSize
+    from PyQt4.QtGui import QColor, QFont, QPainter, QPixmap
+    from PyQt4.QtGui import QMenu, QScrollArea, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 
-kMidiKey2RectMapHorizontal = {
-    '0':  QRectF(0,   0, 24, 57), # C
-    '1':  QRectF(14,  0, 15, 33), # C#
-    '2':  QRectF(24,  0, 24, 57), # D
-    '3':  QRectF(42,  0, 15, 33), # D#
-    '4':  QRectF(48,  0, 24, 57), # E
-    '5':  QRectF(72,  0, 24, 57), # F
-    '6':  QRectF(84,  0, 15, 33), # F#
-    '7':  QRectF(96,  0, 24, 57), # G
-    '8':  QRectF(112, 0, 15, 33), # G#
-    '9':  QRectF(120, 0, 24, 57), # A
-    '10': QRectF(140, 0, 15, 33), # A#
-    '11': QRectF(144, 0, 24, 57)  # B
-}
+kMidiKey2RectMapHorizontal = [
+    QRectF(0,   0, 24, 57), # C
+    QRectF(14,  0, 15, 33), # C#
+    QRectF(24,  0, 24, 57), # D
+    QRectF(42,  0, 15, 33), # D#
+    QRectF(48,  0, 24, 57), # E
+    QRectF(72,  0, 24, 57), # F
+    QRectF(84,  0, 15, 33), # F#
+    QRectF(96,  0, 24, 57), # G
+    QRectF(112, 0, 15, 33), # G#
+    QRectF(120, 0, 24, 57), # A
+    QRectF(140, 0, 15, 33), # A#
+    QRectF(144, 0, 24, 57), # B
+]
 
-kMidiKey2RectMapVertical = {
-    '11': QRectF(0,  0,  57, 24), # B
-    '10': QRectF(0, 13,  33, 15), # A#
-    '9':  QRectF(0, 24,  57, 24), # A
-    '8':  QRectF(0, 41,  33, 15), # G#
-    '7':  QRectF(0, 48,  57, 24), # G
-    '6':  QRectF(0, 69,  33, 15), # F#
-    '5':  QRectF(0, 72,  57, 24), # F
-    '4':  QRectF(0, 96,  57, 24), # E
-    '3':  QRectF(0, 111, 33, 15), # D#
-    '2':  QRectF(0, 120, 57, 24), # D
-    '1':  QRectF(0, 139, 33, 15), # C#
-    '0':  QRectF(0, 144, 57, 24)  # C
-}
+kMidiKey2RectMapVertical = [
+    QRectF(0, 144, 57, 24), # C
+    QRectF(0, 139, 33, 15), # C#
+    QRectF(0, 120, 57, 24), # D
+    QRectF(0, 111, 33, 15), # D#
+    QRectF(0, 96,  57, 24), # E
+    QRectF(0, 72,  57, 24), # F
+    QRectF(0, 69,  33, 15), # F#
+    QRectF(0, 48,  57, 24), # G
+    QRectF(0, 41,  33, 15), # G#
+    QRectF(0, 24,  57, 24), # A
+    QRectF(0, 13,  33, 15), # A#
+    QRectF(0,  0,  57, 24), # B
+]
 
-kMidiKeyboard2KeyMap = {
-    # 3th octave
-    '%i' % Qt.Key_Z: 48,
-    '%i' % Qt.Key_S: 49,
-    '%i' % Qt.Key_X: 50,
-    '%i' % Qt.Key_D: 51,
-    '%i' % Qt.Key_C: 52,
-    '%i' % Qt.Key_V: 53,
-    '%i' % Qt.Key_G: 54,
-    '%i' % Qt.Key_B: 55,
-    '%i' % Qt.Key_H: 56,
-    '%i' % Qt.Key_N: 57,
-    '%i' % Qt.Key_J: 58,
-    '%i' % Qt.Key_M: 59,
-    # 4th octave
-    '%i' % Qt.Key_Q: 60,
-    '%i' % Qt.Key_2: 61,
-    '%i' % Qt.Key_W: 62,
-    '%i' % Qt.Key_3: 63,
-    '%i' % Qt.Key_E: 64,
-    '%i' % Qt.Key_R: 65,
-    '%i' % Qt.Key_5: 66,
-    '%i' % Qt.Key_T: 67,
-    '%i' % Qt.Key_6: 68,
-    '%i' % Qt.Key_Y: 69,
-    '%i' % Qt.Key_7: 70,
-    '%i' % Qt.Key_U: 71,
-    # 5th octave
-    '%i' % Qt.Key_I: 72,
-    '%i' % Qt.Key_9: 73,
-    '%i' % Qt.Key_O: 74,
-    '%i' % Qt.Key_0: 75,
-    '%i' % Qt.Key_P: 76,
+kPcKeys_qwerty = [
+    # 1st octave
+    '%i' % Qt.Key_Z,
+    '%i' % Qt.Key_S,
+    '%i' % Qt.Key_X,
+    '%i' % Qt.Key_D,
+    '%i' % Qt.Key_C,
+    '%i' % Qt.Key_V,
+    '%i' % Qt.Key_G,
+    '%i' % Qt.Key_B,
+    '%i' % Qt.Key_H,
+    '%i' % Qt.Key_N,
+    '%i' % Qt.Key_J,
+    '%i' % Qt.Key_M,
+    # 2nd octave
+    '%i' % Qt.Key_Q,
+    '%i' % Qt.Key_2,
+    '%i' % Qt.Key_W,
+    '%i' % Qt.Key_3,
+    '%i' % Qt.Key_E,
+    '%i' % Qt.Key_R,
+    '%i' % Qt.Key_5,
+    '%i' % Qt.Key_T,
+    '%i' % Qt.Key_6,
+    '%i' % Qt.Key_Y,
+    '%i' % Qt.Key_7,
+    '%i' % Qt.Key_U,
+    # 3rd octave
+    '%i' % Qt.Key_I,
+    '%i' % Qt.Key_9,
+    '%i' % Qt.Key_O,
+    '%i' % Qt.Key_0,
+    '%i' % Qt.Key_P,
+]
+
+kPcKeys_qwertz = [
+    # 1st octave
+    '%i' % Qt.Key_Y,
+    '%i' % Qt.Key_S,
+    '%i' % Qt.Key_X,
+    '%i' % Qt.Key_D,
+    '%i' % Qt.Key_C,
+    '%i' % Qt.Key_V,
+    '%i' % Qt.Key_G,
+    '%i' % Qt.Key_B,
+    '%i' % Qt.Key_H,
+    '%i' % Qt.Key_N,
+    '%i' % Qt.Key_J,
+    '%i' % Qt.Key_M,
+    # 2nd octave
+    '%i' % Qt.Key_Q,
+    '%i' % Qt.Key_2,
+    '%i' % Qt.Key_W,
+    '%i' % Qt.Key_3,
+    '%i' % Qt.Key_E,
+    '%i' % Qt.Key_R,
+    '%i' % Qt.Key_5,
+    '%i' % Qt.Key_T,
+    '%i' % Qt.Key_6,
+    '%i' % Qt.Key_Z,
+    '%i' % Qt.Key_7,
+    '%i' % Qt.Key_U,
+    # 3rd octave
+    '%i' % Qt.Key_I,
+    '%i' % Qt.Key_9,
+    '%i' % Qt.Key_O,
+    '%i' % Qt.Key_0,
+    '%i' % Qt.Key_P,
+]
+
+kPcKeysLayouts = {
+    'qwerty': kPcKeys_qwerty,
+    'qwertz': kPcKeys_qwertz,
 }
 
 kBlackNotes = (1, 3, 6, 8, 10)
@@ -105,10 +146,6 @@ kBlackNotes = (1, 3, 6, 8, 10)
 # MIDI Keyboard, using a pixmap for painting
 
 class PixmapKeyboard(QWidget):
-    # enum Orientation
-    HORIZONTAL = 0
-    VERTICAL   = 1
-
     # signals
     noteOn   = pyqtSignal(int)
     noteOff  = pyqtSignal(int)
@@ -118,20 +155,52 @@ class PixmapKeyboard(QWidget):
     def __init__(self, parent):
         QWidget.__init__(self, parent)
 
-        self.fOctaves = 6
+        self.fEnabledKeys   = []
         self.fLastMouseNote = -1
-
-        self.fEnabledKeys = []
+        self.fStartOctave   = 0
+        self.fPcKeybOffset  = 2
+        self.fInitalizing   = True
 
         self.fFont = self.font()
         self.fFont.setFamily("Monospace")
         self.fFont.setPixelSize(12)
         self.fFont.setBold(True)
 
-        self.fPixmap = QPixmap("")
+        self.fPixmapNormal   = QPixmap(":/bitmaps/kbd_normal.png")
+        self.fPixmapDown     = QPixmap(":/bitmaps/kbd_down-blue.png")
+        self.fHighlightColor = "Blue"
+
+        self.fkPcKeyLayout = "qwerty"
+        self.fkPcKeys      = kPcKeysLayouts["qwerty"]
+        self.fKey2RectMap  = kMidiKey2RectMapHorizontal
+
+        self.fWidth   = self.fPixmapNormal.width()
+        self.fHeight  = self.fPixmapNormal.height()
 
         self.setCursor(Qt.PointingHandCursor)
-        self.setMode(self.HORIZONTAL)
+        self.setStartOctave(0)
+        self.setOctaves(6)
+
+        self.loadSettings()
+
+        self.fInitalizing = False
+
+    def saveSettings(self):
+        if self.fInitalizing:
+            return
+
+        settings = QSettings("falkTX", "CarlaKeyboard")
+        settings.setValue("PcKeyboardLayout", self.fkPcKeyLayout)
+        settings.setValue("PcKeyboardOffset", self.fPcKeybOffset)
+        settings.setValue("HighlightColor", self.fHighlightColor)
+        del settings
+
+    def loadSettings(self):
+        settings = QSettings("falkTX", "CarlaKeyboard")
+        self.setPcKeyboardLayout(settings.value("PcKeyboardLayout", "qwerty", type=str))
+        self.setPcKeyboardOffset(settings.value("PcKeyboardOffset", 2, type=int))
+        self.setColor(settings.value("HighlightColor", "Blue", type=str))
+        del settings
 
     def allNotesOff(self, sendSignal=True):
         self.fEnabledKeys = []
@@ -165,24 +234,39 @@ class PixmapKeyboard(QWidget):
         if len(self.fEnabledKeys) == 0:
             self.notesOff.emit()
 
-    def setMode(self, mode):
-        if mode == self.HORIZONTAL:
-            self.fMidiMap = kMidiKey2RectMapHorizontal
-            self.fPixmap.load(":/bitmaps/kbd_h_dark.png")
-            self.fPixmapMode = self.HORIZONTAL
-            self.fWidth  = self.fPixmap.width()
-            self.fHeight = self.fPixmap.height() / 2
-        elif mode == self.VERTICAL:
-            self.fMidiMap = kMidiKey2RectMapVertical
-            self.fPixmap.load(":/bitmaps/kbd_v_dark.png")
-            self.fPixmapMode = self.VERTICAL
-            self.fWidth  = self.fPixmap.width() / 2
-            self.fHeight = self.fPixmap.height()
-        else:
-            qCritical("PixmapKeyboard::setMode(%i) - invalid mode" % mode)
-            return self.setMode(self.HORIZONTAL)
+    def setColor(self, color):
+        if color not in ("Blue", "Green", "Orange", "Red"):
+            return
 
-        self.setOctaves(self.fOctaves)
+        if self.fHighlightColor == color:
+            return
+
+        self.fHighlightColor = color
+        self.fPixmapDown.load(":/bitmaps/kbd_down-{}.png".format(color.lower()))
+        self.saveSettings()
+
+    def setPcKeyboardLayout(self, layout):
+        if layout not in kPcKeysLayouts.keys():
+            return
+
+        if self.fkPcKeyLayout == layout:
+            return
+
+        self.fkPcKeyLayout = layout
+        self.fkPcKeys = kPcKeysLayouts[layout]
+        self.saveSettings()
+
+    def setPcKeyboardOffset(self, offset):
+        if offset < 0:
+            offset = 0
+        elif offset > 9:
+            offset = 9
+
+        if self.fPcKeybOffset == offset:
+            return
+
+        self.fPcKeybOffset = offset
+        self.saveSettings()
 
     def setOctaves(self, octaves):
         if octaves < 1:
@@ -192,58 +276,56 @@ class PixmapKeyboard(QWidget):
 
         self.fOctaves = octaves
 
-        if self.fPixmapMode == self.HORIZONTAL:
-            self.setMinimumSize(self.fWidth * self.fOctaves, self.fHeight)
-            self.setMaximumSize(self.fWidth * self.fOctaves, self.fHeight)
-        elif self.fPixmapMode == self.VERTICAL:
-            self.setMinimumSize(self.fWidth, self.fHeight * self.fOctaves)
-            self.setMaximumSize(self.fWidth, self.fHeight * self.fOctaves)
+        self.setMinimumSize(self.fWidth * self.fOctaves, self.fHeight)
+        self.setMaximumSize(self.fWidth * self.fOctaves, self.fHeight)
 
+    def setStartOctave(self, octave):
+        if octave < 0:
+            octave = 0
+        elif octave > 9:
+            octave = 9
+
+        if self.fStartOctave == octave:
+            return
+
+        self.fStartOctave = octave
         self.update()
 
     def handleMousePos(self, pos):
-        if self.fPixmapMode == self.HORIZONTAL:
-            if pos.x() < 0 or pos.x() > self.fOctaves * self.fWidth:
-                return
-            octave = int(pos.x() / self.fWidth)
-            keyPos = QPointF(pos.x() % self.fWidth, pos.y())
-        elif self.fPixmapMode == self.VERTICAL:
-            if pos.y() < 0 or pos.y() > self.fOctaves * self.fHeight:
-                return
-            octave = int(self.fOctaves - pos.y() / self.fHeight)
-            keyPos = QPointF(pos.x(), (pos.y()-1) % self.fHeight)
-        else:
+        if pos.x() < 0 or pos.x() > self.fOctaves * self.fWidth:
             return
+        octave = int(pos.x() / self.fWidth)
+        keyPos = QPointF(pos.x() % self.fWidth, pos.y())
 
-        if self.fMidiMap['1'].contains(keyPos):   # C#
+        if self.fKey2RectMap[1].contains(keyPos):    # C#
             note = 1
-        elif self.fMidiMap['3'].contains(keyPos): # D#
+        elif self.fKey2RectMap[ 3].contains(keyPos): # D#
             note = 3
-        elif self.fMidiMap['6'].contains(keyPos): # F#
+        elif self.fKey2RectMap[ 6].contains(keyPos): # F#
             note = 6
-        elif self.fMidiMap['8'].contains(keyPos): # G#
+        elif self.fKey2RectMap[ 8].contains(keyPos): # G#
             note = 8
-        elif self.fMidiMap['10'].contains(keyPos):# A#
+        elif self.fKey2RectMap[10].contains(keyPos): # A#
             note = 10
-        elif self.fMidiMap['0'].contains(keyPos): # C
+        elif self.fKey2RectMap[ 0].contains(keyPos): # C
             note = 0
-        elif self.fMidiMap['2'].contains(keyPos): # D
+        elif self.fKey2RectMap[ 2].contains(keyPos): # D
             note = 2
-        elif self.fMidiMap['4'].contains(keyPos): # E
+        elif self.fKey2RectMap[ 4].contains(keyPos): # E
             note = 4
-        elif self.fMidiMap['5'].contains(keyPos): # F
+        elif self.fKey2RectMap[ 5].contains(keyPos): # F
             note = 5
-        elif self.fMidiMap['7'].contains(keyPos): # G
+        elif self.fKey2RectMap[ 7].contains(keyPos): # G
             note = 7
-        elif self.fMidiMap['9'].contains(keyPos): # A
+        elif self.fKey2RectMap[ 9].contains(keyPos): # A
             note = 9
-        elif self.fMidiMap['11'].contains(keyPos):# B
+        elif self.fKey2RectMap[11].contains(keyPos): # B
             note = 11
         else:
             note = -1
 
         if note != -1:
-            note += octave * 12
+            note += (self.fStartOctave + octave) * 12
 
             if self.fLastMouseNote != note:
                 self.sendNoteOff(self.fLastMouseNote)
@@ -254,39 +336,104 @@ class PixmapKeyboard(QWidget):
 
         self.fLastMouseNote = note
 
+    def showOptions(self, event):
+        event.accept()
+        menu = QMenu()
+
+        menu.addAction("Note: restart carla to apply globally").setEnabled(False)
+        menu.addSeparator()
+
+        menuColor      = QMenu("Highlight color", menu)
+        actColorBlue   = menuColor.addAction("Blue")
+        actColorGreen  = menuColor.addAction("Green")
+        actColorOrange = menuColor.addAction("Orange")
+        actColorRed    = menuColor.addAction("Red")
+        actColors      = (actColorBlue, actColorGreen, actColorOrange, actColorRed)
+
+        for act in actColors:
+            act.setCheckable(True)
+            if self.fHighlightColor == act.text():
+                act.setChecked(True)
+
+        menuLayout       = QMenu("PC Keyboard layout", menu)
+        actLayout_qwerty = menuLayout.addAction("qwerty")
+        actLayout_qwertz = menuLayout.addAction("qwertz")
+        actLayouts       = (actLayout_qwerty, actLayout_qwertz)
+
+        for act in actLayouts:
+            act.setCheckable(True)
+            if self.fkPcKeyLayout == act.text():
+                act.setChecked(True)
+
+        menu.addMenu(menuColor)
+        menu.addMenu(menuLayout)
+        menu.addSeparator()
+
+        actOctaveUp   = menu.addAction("PC Keyboard octave up")
+        actOctaveDown = menu.addAction("PC Keyboard octave down")
+
+        if self.fPcKeybOffset == 0:
+            actOctaveDown.setEnabled(False)
+
+        actSelected = menu.exec_(event.screenPos().toPoint())
+
+        if not actSelected:
+            return
+
+        if actSelected in actColors:
+            return self.setColor(actSelected.text())
+
+        if actSelected in actLayouts:
+            return self.setPcKeyboardLayout(actSelected.text())
+
+        if actSelected == actOctaveUp:
+            return self.setPcKeyboardOffset(self.fPcKeybOffset + 1)
+
+        if actSelected == actOctaveDown:
+            return self.setPcKeyboardOffset(self.fPcKeybOffset - 1)
+
     def minimumSizeHint(self):
         return QSize(self.fWidth, self.fHeight)
 
     def sizeHint(self):
-        if self.fPixmapMode == self.HORIZONTAL:
-            return QSize(self.fWidth * self.fOctaves, self.fHeight)
-        elif self.fPixmapMode == self.VERTICAL:
-            return QSize(self.fWidth, self.fHeight * self.fOctaves)
-        else:
-            return QSize(self.fWidth, self.fHeight)
+        return QSize(self.fWidth * self.fOctaves, self.fHeight)
 
     def keyPressEvent(self, event):
         if not event.isAutoRepeat():
-            qKey = str(event.key())
-            if qKey in kMidiKeyboard2KeyMap.keys():
-                self.sendNoteOn(kMidiKeyboard2KeyMap.get(qKey))
+            try:
+                qKey  = str(event.key())
+                index = self.fkPcKeys.index(qKey)
+            except:
+                pass
+            else:
+                self.sendNoteOn(index+(self.fPcKeybOffset*12))
+
         QWidget.keyPressEvent(self, event)
 
     def keyReleaseEvent(self, event):
         if not event.isAutoRepeat():
-            qKey = str(event.key())
-            if qKey in kMidiKeyboard2KeyMap.keys():
-                self.sendNoteOff(kMidiKeyboard2KeyMap.get(qKey))
+            try:
+                qKey  = str(event.key())
+                index = self.fkPcKeys.index(qKey)
+            except:
+                pass
+            else:
+                self.sendNoteOff(index+(self.fPcKeybOffset*12))
+
         QWidget.keyReleaseEvent(self, event)
 
     def mousePressEvent(self, event):
-        self.fLastMouseNote = -1
-        self.handleMousePos(event.pos())
-        self.setFocus()
+        if event.button() == Qt.RightButton:
+            self.showOptions(event)
+        else:
+            self.fLastMouseNote = -1
+            self.handleMousePos(event.pos())
+            self.setFocus()
         QWidget.mousePressEvent(self, event)
 
     def mouseMoveEvent(self, event):
-        self.handleMousePos(event.pos())
+        if event.button() != Qt.RightButton:
+            self.handleMousePos(event.pos())
         QWidget.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
@@ -303,15 +450,9 @@ class PixmapKeyboard(QWidget):
         # Paint clean keys (as background)
 
         for octave in range(self.fOctaves):
-            if self.fPixmapMode == self.HORIZONTAL:
-                target = QRectF(self.fWidth * octave, 0, self.fWidth, self.fHeight)
-            elif self.fPixmapMode == self.VERTICAL:
-                target = QRectF(0, self.fHeight * octave, self.fWidth, self.fHeight)
-            else:
-                return
-
+            target = QRectF(self.fWidth * octave, 0, self.fWidth, self.fHeight)
             source = QRectF(0, 0, self.fWidth, self.fHeight)
-            painter.drawPixmap(target, self.fPixmap, source)
+            painter.drawPixmap(target, self.fPixmapNormal, source)
 
         if not self.isEnabled():
             painter.setBrush(QColor(0, 0, 0, 150))
@@ -356,20 +497,13 @@ class PixmapKeyboard(QWidget):
                 # cannot paint this note
                 continue
 
-            if self.fPixmapMode == self.VERTICAL:
-                octave = self.fOctaves - octave - 1
+            octave -= self.fStartOctave
 
-            if self.fPixmapMode == self.HORIZONTAL:
-                target = QRectF(pos.x() + (self.fWidth * octave), 0, pos.width(), pos.height())
-                source = QRectF(pos.x(), self.fHeight, pos.width(), pos.height())
-            elif self.fPixmapMode == self.VERTICAL:
-                target = QRectF(pos.x(), pos.y() + (self.fHeight * octave), pos.width(), pos.height())
-                source = QRectF(self.fWidth, pos.y(), pos.width(), pos.height())
-            else:
-                return
+            target = QRectF(pos.x() + (self.fWidth * octave), 0, pos.width(), pos.height())
+            source = QRectF(pos.x(), 0, pos.width(), pos.height())
 
             paintedWhite = True
-            painter.drawPixmap(target, self.fPixmap, source)
+            painter.drawPixmap(target, self.fPixmapDown, source)
 
         # -------------------------------------------------------------
         # Clear white keys border
@@ -379,16 +513,10 @@ class PixmapKeyboard(QWidget):
                 for note in kBlackNotes:
                     pos = self._getRectFromMidiNote(note)
 
-                    if self.fPixmapMode == self.HORIZONTAL:
-                        target = QRectF(pos.x() + (self.fWidth * octave), 0, pos.width(), pos.height())
-                        source = QRectF(pos.x(), 0, pos.width(), pos.height())
-                    elif self.fPixmapMode == self.VERTICAL:
-                        target = QRectF(pos.x(), pos.y() + (self.fHeight * octave), pos.width(), pos.height())
-                        source = QRectF(0, pos.y(), pos.width(), pos.height())
-                    else:
-                        return
+                    target = QRectF(pos.x() + (self.fWidth * octave), 0, pos.width(), pos.height())
+                    source = QRectF(pos.x(), 0, pos.width(), pos.height())
 
-                    painter.drawPixmap(target, self.fPixmap, source)
+                    painter.drawPixmap(target, self.fPixmapNormal, source)
 
         # -------------------------------------------------------------
         # Paint (black) pressed keys
@@ -425,29 +553,23 @@ class PixmapKeyboard(QWidget):
                 # cannot paint this note
                 continue
 
-            if self.fPixmapMode == self.VERTICAL:
-                octave = self.fOctaves - octave - 1
+            octave -= self.fStartOctave
 
-            if self.fPixmapMode == self.HORIZONTAL:
-                target = QRectF(pos.x() + (self.fWidth * octave), 0, pos.width(), pos.height())
-                source = QRectF(pos.x(), self.fHeight, pos.width(), pos.height())
-            elif self.fPixmapMode == self.VERTICAL:
-                target = QRectF(pos.x(), pos.y() + (self.fHeight * octave), pos.width(), pos.height())
-                source = QRectF(self.fWidth, pos.y(), pos.width(), pos.height())
-            else:
-                return
+            target = QRectF(pos.x() + (self.fWidth * octave), 0, pos.width(), pos.height())
+            source = QRectF(pos.x(), 0, pos.width(), pos.height())
 
-            painter.drawPixmap(target, self.fPixmap, source)
+            painter.drawPixmap(target, self.fPixmapDown, source)
 
         # Paint C-number note info
         painter.setFont(self.fFont)
         painter.setPen(Qt.black)
 
         for i in range(self.fOctaves):
-            if self.fPixmapMode == self.HORIZONTAL:
-                painter.drawText(i * 168 + (4 if i == 0 else 3), 35, 20, 20, Qt.AlignCenter, "C%i" % (i-1))
-            elif self.fPixmapMode == self.VERTICAL:
-                painter.drawText(33, (self.fOctaves * 168) - (i * 168) - 20, 20, 20, Qt.AlignCenter, "C%i" % (i-1))
+            octave = self.fStartOctave + i - 1
+            painter.drawText(i * 168 + (4 if octave == -1 else 3),
+                             35, 20, 20,
+                             Qt.AlignCenter,
+                             "C{}".format(octave))
 
     def _isNoteBlack(self, note):
         baseNote = note % 12
@@ -455,7 +577,7 @@ class PixmapKeyboard(QWidget):
 
     def _getRectFromMidiNote(self, note):
         baseNote = note % 12
-        return self.fMidiMap.get(str(baseNote))
+        return self.fKey2RectMap[baseNote]
 
 # ------------------------------------------------------------------------------------------------------------
 # Horizontal scroll area for keyboard
@@ -468,7 +590,6 @@ class PixmapKeyboardHArea(QScrollArea):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         self.keyboard = PixmapKeyboard(self)
-        self.keyboard.setMode(PixmapKeyboard.HORIZONTAL)
         self.keyboard.setOctaves(10)
         self.setWidget(self.keyboard)
 
@@ -497,8 +618,6 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
 
     gui = PixmapKeyboard(None)
-    gui.setMode(gui.HORIZONTAL)
-    #gui.setMode(gui.VERTICAL)
     gui.setEnabled(True)
     gui.show()
 
