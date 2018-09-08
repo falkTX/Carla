@@ -497,12 +497,6 @@ WATER_LIBS       = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleau
 RTAUDIO_FLAGS   += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_WASAPI__
 RTAUDIO_LIBS    += -ldsound -luuid -lksuser -lwinmm
 RTMIDI_FLAGS    += -D__WINDOWS_MM__
-ifeq ($(HAVE_FLUIDSYNTH),true)
-ifeq ($(HAVE_SNDFILE),true)
-FLUIDSYNTH_LIBS += $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs sndfile)
-endif
-FLUIDSYNTH_LIBS += $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs glib-2.0 gthread-2.0) -ldsound -lole32 -lwinmm -lws2_32
-endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
