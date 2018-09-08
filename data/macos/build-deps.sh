@@ -193,7 +193,7 @@ fi
 # flac
 
 if [ ! -d flac-${FLAC_VERSION} ]; then
-  curl -O https://svn.xiph.org/releases/flac/flac-${FLAC_VERSION}.tar.xz
+  curl -O https://ftp.osuosl.org/pub/xiph/releases/flac/flac-${FLAC_VERSION}.tar.xz
   /opt/local/bin/7z x flac-${FLAC_VERSION}.tar.xz
   /opt/local/bin/7z x flac-${FLAC_VERSION}.tar
 fi
@@ -230,36 +230,36 @@ fi
 # ---------------------------------------------------------------------------------------------------------------------
 # libffi
 
-if [ ! -d libffi-${LIBFFI_VERSION} ]; then
-  curl -O ftp://sourceware.org/pub/libffi/libffi-${LIBFFI_VERSION}.tar.gz
-  tar -xf libffi-${LIBFFI_VERSION}.tar.gz
-fi
-
-if [ ! -f libffi-${LIBFFI_VERSION}/build-done ]; then
-  cd libffi-${LIBFFI_VERSION}
-  ./configure --enable-static --disable-shared --prefix=${PREFIX}
-  make ${MAKE_ARGS}
-  make install
-  touch build-done
-  cd ..
-fi
+# if [ ! -d libffi-${LIBFFI_VERSION} ]; then
+#   curl -O ftp://sourceware.org/pub/libffi/libffi-${LIBFFI_VERSION}.tar.gz
+#   tar -xf libffi-${LIBFFI_VERSION}.tar.gz
+# fi
+#
+# if [ ! -f libffi-${LIBFFI_VERSION}/build-done ]; then
+#   cd libffi-${LIBFFI_VERSION}
+#   ./configure --enable-static --disable-shared --prefix=${PREFIX}
+#   make ${MAKE_ARGS}
+#   make install
+#   touch build-done
+#   cd ..
+# fi
 
 # ---------------------------------------------------------------------------------------------------------------------
 # gettext
 
-if [ ! -d gettext-${GETTEXT_VERSION} ]; then
-  curl -O http://ftp.gnu.org/gnu/gettext/gettext-${GETTEXT_VERSION}.tar.gz
-  tar -xf gettext-${GETTEXT_VERSION}.tar.gz
-fi
-
-if [ ! -f gettext-${GETTEXT_VERSION}/build-done ]; then
-  cd gettext-${GETTEXT_VERSION}
-  env PATH=/opt/local/bin:$PATH ./configure --enable-static --disable-shared --prefix=${PREFIX}
-  env PATH=/opt/local/bin:$PATH make ${MAKE_ARGS}
-  make install
-  touch build-done
-  cd ..
-fi
+# if [ ! -d gettext-${GETTEXT_VERSION} ]; then
+#   curl -O http://ftp.gnu.org/gnu/gettext/gettext-${GETTEXT_VERSION}.tar.gz
+#   tar -xf gettext-${GETTEXT_VERSION}.tar.gz
+# fi
+#
+# if [ ! -f gettext-${GETTEXT_VERSION}/build-done ]; then
+#   cd gettext-${GETTEXT_VERSION}
+#   env PATH=/opt/local/bin:$PATH ./configure --enable-static --disable-shared --prefix=${PREFIX}
+#   env PATH=/opt/local/bin:$PATH make ${MAKE_ARGS}
+#   make install
+#   touch build-done
+#   cd ..
+# fi
 
 # ---------------------------------------------------------------------------------------------------------------------
 # glib
@@ -272,9 +272,15 @@ fi
 
 if [ ! -f glib-${GLIB_VERSION}/build-done ]; then
   cd glib-${GLIB_VERSION}
+  if [ ! -f patched ]; then
+    patch -p1 -i ../patches/glib_skip-gettext.patch
+    sed -i "s|po docs|po|" Makefile.in
+    touch patched
+  fi
   chmod +x configure install-sh
+  env PATH=/opt/local/bin:$PATH autoconf
   env PATH=/opt/local/bin:$PATH LDFLAGS="-L${PREFIX}/lib -m${ARCH}" \
-    ./configure --enable-static --disable-shared --prefix=${PREFIX}
+    ./configure --enable-static --disable-shared --disable-docs --prefix=${PREFIX}
   env PATH=/opt/local/bin:$PATH make ${MAKE_ARGS} || true
   touch gio/gio-querymodules gio/glib-compile-resources gio/gsettings gio/gdbus gio/gresource gio/gapplication
   env PATH=/opt/local/bin:$PATH make ${MAKE_ARGS}
@@ -288,19 +294,19 @@ fi
 # fluidsynth
 
 if [ ! -d fluidsynth-${FLUIDSYNTH_VERSION} ]; then
-  curl -L https://download.sourceforge.net/fluidsynth/fluidsynth-${FLUIDSYNTH_VERSION}.tar.gz -o fluidsynth-${FLUIDSYNTH_VERSION}.tar.gz
+  curl -L https://github.com/FluidSynth/fluidsynth/archive/v${FLUIDSYNTH_VERSION}.tar.gz -o fluidsynth-${FLUIDSYNTH_VERSION}.tar.gz
   tar -xf fluidsynth-${FLUIDSYNTH_VERSION}.tar.gz
 fi
 
 if [ ! -f fluidsynth-${FLUIDSYNTH_VERSION}/build-done ]; then
   cd fluidsynth-${FLUIDSYNTH_VERSION}
-  env LDFLAGS="${LDFLAGS} -framework Carbon -framework CoreFoundation" \
-  ./configure --enable-static --disable-shared --prefix=${PREFIX} \
-    --enable-libsndfile-support \
-    --disable-dbus-support --disable-aufile-support \
-    --disable-pulse-support --disable-alsa-support --disable-portaudio-support --disable-oss-support --disable-jack-support \
-    --disable-coreaudio --disable-coremidi --disable-dart --disable-lash --disable-ladcca \
-    --without-readline
+#   env LDFLAGS="${LDFLAGS} -framework Carbon -framework CoreFoundation"
+  cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_SHARED_LIBS=OFF \
+    -Denable-debug=OFF -Denable-profiling=OFF -Denable-ladspa=OFF -Denable-fpe-check=OFF -Denable-portaudio=OFF \
+    -Denable-trap-on-fpe=OFF -Denable-aufile=OFF -Denable-dbus=OFF -Denable-ipv6=OFF -Denable-jack=OFF \
+    -Denable-midishare=OFF -Denable-oss=OFF -Denable-pulseaudio=OFF -Denable-readline=OFF -Denable-ladcca=OFF \
+    -Denable-lash=OFF -Denable-alsa=OFF -Denable-coreaudio=OFF -Denable-coremidi=OFF -Denable-framework=OFF \
+    -Denable-floats=ON
   make ${MAKE_ARGS}
   make install
   sed -i -e "s|-lfluidsynth|-lfluidsynth -lglib-2.0 -lgthread-2.0 -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -lpthread -lm -liconv -lintl|" ${PREFIX}/lib/pkgconfig/fluidsynth.pc

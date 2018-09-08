@@ -21,7 +21,7 @@ source common.env
 cleanup_prefix()
 {
 
-rm -rf ${TARGETDIR}/carla-w32nosse ${TARGETDIR}/carla-w32/ ${TARGETDIR}/carla-w64/
+rm -rf ${TARGETDIR}/carla-w32nosse ${TARGETDIR}/carla-w32 ${TARGETDIR}/carla-w64
 
 }
 
@@ -30,11 +30,13 @@ cleanup_pkgs()
 
 rm -rf flac-*
 rm -rf fluidsynth-*
+rm -rf fftw-*
 rm -rf glib-*
 rm -rf liblo-*
 rm -rf libogg-*
 rm -rf libsndfile-*
 rm -rf libvorbis-*
+rm -rf mxml-*
 rm -rf pkg-config-*
 rm -rf zlib-*
 
@@ -204,7 +206,7 @@ fi
 # flac
 
 if [ ! -d flac-${FLAC_VERSION} ]; then
-  wget -c https://svn.xiph.org/releases/flac/flac-${FLAC_VERSION}.tar.xz
+  wget -c https://ftp.osuosl.org/pub/xiph/releases/flac/flac-${FLAC_VERSION}.tar.xz
   tar -xf flac-${FLAC_VERSION}.tar.xz
 fi
 
@@ -269,23 +271,22 @@ fi
 # fluidsynth
 
 if [ ! -d fluidsynth-${FLUIDSYNTH_VERSION} ]; then
-  wget -c https://download.sourceforge.net/fluidsynth/fluidsynth-${FLUIDSYNTH_VERSION}.tar.gz
+  wget -c https://github.com/FluidSynth/fluidsynth/archive/v${FLUIDSYNTH_VERSION}.tar.gz -O fluidsynth-${FLUIDSYNTH_VERSION}.tar.gz
   tar -xf fluidsynth-${FLUIDSYNTH_VERSION}.tar.gz
 fi
 
 if [ ! -f fluidsynth-${FLUIDSYNTH_VERSION}/build-done ]; then
   cd fluidsynth-${FLUIDSYNTH_VERSION}
-  if [ ! -f patched ]; then
-    patch -p1 -i ../patches/fluidsynth_fix-64-bit-cast.patch
-    touch patched
-  fi
-  ./configure --enable-static --disable-shared --prefix=${PREFIX} \
-    --target=${MINGW_PREFIX} --host=${MINGW_PREFIX} --build=${HOST_ARCH} \
-    --enable-libsndfile-support \
-    --disable-dbus-support --disable-aufile-support \
-    --disable-pulse-support --disable-alsa-support --disable-portaudio-support --disable-oss-support --disable-jack-support \
-    --disable-coreaudio --disable-coremidi --disable-dart --disable-lash --disable-ladcca \
-    --without-readline
+  cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_SHARED_LIBS=OFF \
+    -Denable-debug=OFF -Denable-profiling=OFF -Denable-ladspa=OFF -Denable-fpe-check=OFF -Denable-portaudio=OFF \
+    -Denable-trap-on-fpe=OFF -Denable-aufile=OFF -Denable-dbus=OFF -Denable-ipv6=OFF -Denable-jack=OFF \
+    -Denable-midishare=OFF -Denable-oss=OFF -Denable-pulseaudio=OFF -Denable-readline=OFF -Denable-ladcca=OFF \
+    -Denable-lash=OFF -Denable-alsa=OFF -Denable-coreaudio=OFF -Denable-coremidi=OFF -Denable-framework=OFF \
+    -Denable-floats=ON \
+    -DCMAKE_C_COMPILER_WORKS=1 \
+    -DCMAKE_CROSSCOMPILING=1 \
+    -DCMAKE_SYSTEM_NAME="Windows" \
+    -DCMAKE_HOST_SYSTEM_NAME=${HOST_ARCH}
   make ${MAKE_ARGS}
   make install
   sed -i -e "s|-lfluidsynth|-lfluidsynth -lglib-2.0 -lgthread-2.0 -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -lm -ldsound -lwinmm -lole32 -lws2_32|" ${PREFIX}/lib/pkgconfig/fluidsynth.pc
@@ -364,6 +365,7 @@ fi
 # build base libs
 
 cleanup_prefix
+cleanup_pkgs
 
 export ARCH=32
 export ARCH_PREFIX=32nosse
