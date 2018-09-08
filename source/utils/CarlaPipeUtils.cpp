@@ -942,18 +942,14 @@ bool CarlaPipeCommon::flushMessages() const noexcept
     // the only call that seems to do something
     return ::syncfs(pData->pipeSend) == 0;
 #  endif
-#elif defined(CARLA_OS_WIN)
+#elif 0 // defined(CARLA_OS_WIN)
     // FIXME causes issues
-    return true;
-
     try {
         return (::FlushFileBuffers(pData->pipeSend) != FALSE);
     } CARLA_SAFE_EXCEPTION_RETURN("CarlaPipeCommon::writeMsgBuffer", false);
-#else
-    // unsupported
-    return true;
 #endif
 
+    return true;
 }
 
 // -------------------------------------------------------------------
