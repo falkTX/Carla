@@ -897,7 +897,6 @@ class HostWindow(QMainWindow):
         self.ui.cb_transport_jack.setChecked(transportMode == ENGINE_TRANSPORT_MODE_JACK)
         self.ui.cb_transport_jack.setEnabled(driverName == "JACK" and processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
 
-        print("transport extra! ", self.host.transportExtra)
         if self.ui.cb_transport_link.isEnabled():
             self.ui.cb_transport_link.setChecked(":link:" in self.host.transportExtra)
 

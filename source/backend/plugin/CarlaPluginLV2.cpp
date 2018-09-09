@@ -5476,7 +5476,7 @@ public:
 
             if (const char* const bridgeBinary = getUiBridgeBinary(uiType))
             {
-                carla_stdout("Will use UI-Bridge, binary: \"%s\"", bridgeBinary);
+                carla_stdout("Will use UI-Bridge for '%s', binary: \"%s\"", pData->name, bridgeBinary);
 
                 CarlaString guiTitle(pData->name);
                 guiTitle += " (GUI)";
@@ -5491,7 +5491,7 @@ public:
 
             if (iFinal == eQt4 || iFinal == eQt5 || iFinal == eGtk2 || iFinal == eGtk3)
             {
-                carla_stderr2("Failed to find UI bridge binary, cannot use UI");
+                carla_stderr2("Failed to find UI bridge binary for '%s', cannot use UI", pData->name);
                 fUI.rdfDescriptor = nullptr;
                 return;
             }
@@ -5550,44 +5550,44 @@ public:
         switch (uiType)
         {
         case LV2_UI_QT4:
-            carla_stdout("Will use LV2 Qt4 UI, NOT!");
+            carla_stdout("Will use LV2 Qt4 UI for '%s', NOT!", pData->name);
             fUI.type = UI::TYPE_EMBED;
             break;
         case LV2_UI_QT5:
-            carla_stdout("Will use LV2 Qt5 UI, NOT!");
+            carla_stdout("Will use LV2 Qt5 UI for '%s', NOT!", pData->name);
             fUI.type = UI::TYPE_EMBED;
             break;
         case LV2_UI_GTK2:
-            carla_stdout("Will use LV2 Gtk2 UI, NOT!");
+            carla_stdout("Will use LV2 Gtk2 UI for '%s', NOT!", pData->name);
             fUI.type = UI::TYPE_EMBED;
             break;
         case LV2_UI_GTK3:
-            carla_stdout("Will use LV2 Gtk3 UI, NOT!");
+            carla_stdout("Will use LV2 Gtk3 UI for '%s', NOT!", pData->name);
             fUI.type = UI::TYPE_EMBED;
             break;
 #ifdef CARLA_OS_MAC
         case LV2_UI_COCOA:
-            carla_stdout("Will use LV2 Cocoa UI");
+            carla_stdout("Will use LV2 Cocoa UI for '%s'", pData->name);
             fUI.type = UI::TYPE_EMBED;
             break;
 #endif
 #ifdef CARLA_OS_WIN
         case LV2_UI_WINDOWS:
-            carla_stdout("Will use LV2 Windows UI");
+            carla_stdout("Will use LV2 Windows UI for '%s'", pData->name);
             fUI.type = UI::TYPE_EMBED;
             break;
 #endif
         case LV2_UI_X11:
 #ifdef HAVE_X11
-            carla_stdout("Will use LV2 X11 UI");
+            carla_stdout("Will use LV2 X11 UI for '%s'", pData->name);
 #else
-            carla_stdout("Will use LV2 X11 UI, NOT!");
+            carla_stdout("Will use LV2 X11 UI for '%s', NOT!", pData->name);
 #endif
             fUI.type = UI::TYPE_EMBED;
             break;
         case LV2_UI_EXTERNAL:
         case LV2_UI_OLD_EXTERNAL:
-            carla_stdout("Will use LV2 External UI");
+            carla_stdout("Will use LV2 External UI for '%s'", pData->name);
             fUI.type = UI::TYPE_EXTERNAL;
             break;
         }

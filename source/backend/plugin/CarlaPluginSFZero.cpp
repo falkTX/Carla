@@ -702,9 +702,7 @@ public:
             return false;
         }
 
-        const String dump = sound->dump();
-        carla_stdout("SFZero sound information:");
-        std::puts(dump.toRawUTF8());
+        sound->dumpToConsole();
 
         // ---------------------------------------------------------------
 

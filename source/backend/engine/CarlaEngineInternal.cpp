@@ -682,8 +682,10 @@ ScopedActionLock::ScopedActionLock(CarlaEngine* const engine,
 
     if (pData->nextAction.needsPost)
     {
+       #if defined(DEBUG) || defined(BUILD_BRIDGE)
         // block wait for unlock on processing side
         carla_stdout(ACTION_MSG_PREFIX "ScopedPluginAction(%i) - blocking START", pluginId);
+       #endif
 
         bool engineStoppedWhileWaiting = false;
 
@@ -709,7 +711,9 @@ ScopedActionLock::ScopedActionLock(CarlaEngine* const engine,
             }
         }
 
+       #if defined(DEBUG) || defined(BUILD_BRIDGE)
         carla_stdout(ACTION_MSG_PREFIX "ScopedPluginAction(%i) - blocking DONE", pluginId);
+       #endif
 
         // check if anything went wrong...
         if (! pData->nextAction.postDone)

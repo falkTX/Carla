@@ -1170,18 +1170,13 @@ float CarlaEngine::getOutputPeak(const uint pluginId, const bool isLeft) const n
 void CarlaEngine::callback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr) noexcept
 {
 #ifdef DEBUG
-    if (action != ENGINE_CALLBACK_IDLE && action != ENGINE_CALLBACK_NOTE_ON && action != ENGINE_CALLBACK_NOTE_OFF)
-        carla_debug("CarlaEngine::callback(%i:%s, %i, %i, %i, %f, \"%s\")", action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
-#endif
-
-#ifdef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (pData->isIdling)
-#else
-    if (pData->isIdling && action != ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED)
+        carla_stdout("CarlaEngine::callback [while idling] (%i:%s, %i, %i, %i, %f, \"%s\")",
+                     action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
+    else if (action != ENGINE_CALLBACK_IDLE && action != ENGINE_CALLBACK_NOTE_ON && action != ENGINE_CALLBACK_NOTE_OFF)
+        carla_debug("CarlaEngine::callback(%i:%s, %i, %i, %i, %f, \"%s\")",
+                    action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
 #endif
-    {
-        carla_stdout("callback while idling (%i:%s, %i, %i, %i, %f, \"%s\")", action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
-    }
 
     if (pData->callback != nullptr)
     {

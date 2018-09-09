@@ -177,4 +177,40 @@ water::String Sound::dump()
   return info;
 }
 
+void Sound::dumpToConsole()
+{
+  const water::String filename(file_.getFileNameWithoutExtension());
+
+  const water::StringArray& errors(getErrors());
+  const water::StringArray& warnings(getWarnings());
+
+  const int numErrors   = errors.size();
+  const int numWarnings = warnings.size();
+
+  if (numErrors == 0 && numWarnings == 0)
+  {
+      carla_stdout("SFZ '%s' loaded without errors or warnings, nice! :)", filename.toRawUTF8());
+      return;
+  }
+
+  if (numErrors != 0)
+  {
+      carla_stdout("SFZ '%s' loaded with %i errors and %i warnings:", filename.toRawUTF8(), numErrors, numWarnings);
+
+      if (numWarnings != 0)
+          carla_stdout("Errors:");
+
+      carla_stdout("%s", errors.joinIntoString("\n").toRawUTF8());
+
+      if (numWarnings != 0)
+      {
+          carla_stdout("Warnings:");
+          carla_stdout("%s", warnings.joinIntoString("\n").toRawUTF8());
+      }
+  }
+
+  carla_stdout("SFZ '%s' loaded without errors, but has %i warnings:", filename.toRawUTF8(), numWarnings);
+  carla_stdout("%s", warnings.joinIntoString("\n").toRawUTF8());
+}
+
 }

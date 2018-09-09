@@ -52,6 +52,8 @@ public:
   const water::StringArray &getWarnings() { return warnings_; }
 
   water::String dump();
+  void dumpToConsole();
+
   water::Array<Region *> &getRegions() { return regions_; }
   water::File &getFile() { return file_; }
 
