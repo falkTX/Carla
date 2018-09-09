@@ -74,6 +74,7 @@ static void print_lib_error(const char* const filename)
     if (error != nullptr &&
         std::strstr(error, "wrong ELF class") == nullptr &&
         std::strstr(error, "Bad EXE format") == nullptr &&
+        std::strstr(error, "no suitable image found") == nullptr &&
         std::strstr(error, "not a valid Win32 application") == nullptr)
     {
         DISCOVERY_OUT("error", error);
