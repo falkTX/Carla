@@ -1227,19 +1227,45 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
     const File binaryFileSource(File::getSpecialLocation(File::currentExecutableFile).getSiblingFile("carla-bridge-lv2" CARLA_LIB_EXT));
     const File binaryFileTarget(binaryFilename.buffer());
 
+    const EngineOptions& opts(pData->engine->getOptions());
+
+    const CarlaString binFolderTarget(bundlepath + CARLA_OS_SEP_STR + "bin");
+    const CarlaString resFolderTarget(bundlepath + CARLA_OS_SEP_STR + "res");
+
+#ifdef CARLA_OS_WIN
+    if (! binaryFileSource.copyFileTo(binaryFileTarget))
+    {
+        pData->engine->setLastError("Failed to copy plugin binary");
+        return false;
+    }
+
+    File(opts.resourceDir).copyDirectoryTo(File(resFolderTarget.buffer()));
+
+    // Copying all the binaries is pointless, just go through the expected needed bits
+    const File binFolder1(opts.binaryDir);
+    const File binFolder2(binFolderTarget.buffer());
+    binFolder2.createDirectory();
+
+    static const char* files[] = {
+      "carla-bridge-native.exe",
+      "carla-bridge-win32.exe",
+      "carla-discovery-win32.exe",
+      "carla-discovery-win64.exe",
+      "libcarla_utils.dll"
+    };
+
+    for (int i=0; i<5; ++i)
+        binFolder1.getChildFile(files[i]).copyFileTo(binFolder2.getChildFile(files[i]));;
+#else
     if (! binaryFileSource.createSymbolicLink(binaryFileTarget, true))
     {
         pData->engine->setLastError("Failed to create symbolik link of plugin binary");
         return false;
     }
 
-    const EngineOptions& opts(pData->engine->getOptions());
-
-    const CarlaString binFolderTarget(bundlepath + CARLA_OS_SEP_STR + "bin");
-    const CarlaString resFolderTarget(bundlepath + CARLA_OS_SEP_STR + "res");
-
     File(opts.binaryDir).createSymbolicLink(File(binFolderTarget.buffer()), true);
     File(opts.resourceDir).createSymbolicLink(File(resFolderTarget.buffer()), true);
+#endif
 
     return true;
 }
