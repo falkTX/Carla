@@ -77,9 +77,7 @@ public:
         using water::String;
 
         File curExe = File::getSpecialLocation(File::currentExecutableFile).getLinkedTarget();
-        File resDir = curExe.getSiblingFile("carla-resources");
-        if (! resDir.exists())
-            resDir = curExe.getSiblingFile("resources");
+        File resDir = curExe.getSiblingFile("resources");
         if (! resDir.exists())
             resDir = File("/usr/share/carla/resources/");
 
