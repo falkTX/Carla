@@ -157,6 +157,9 @@ class HostWindow(QMainWindow):
         self.fLastTransportState = False
         self.fSampleRate         = 0.0
 
+        if MACOS:
+            self.fMacClosingHelper = True
+
         # run a custom action after engine is properly closed
         self.fCustomStopAction = self.CUSTOM_ACTION_NONE
 
@@ -2352,6 +2355,16 @@ class HostWindow(QMainWindow):
     def closeEvent(self, event):
         if self.shouldIgnoreClose():
             event.ignore()
+            return
+
+        if MACOS and self.fMacClosingHelper:
+            self.fMacClosingHelper = False
+            event.ignore()
+
+            for i in reversed(range(self.fPluginCount)):
+                self.host.show_custom_ui(i, False)
+
+            QTimer.singleShot(100, self.close)
             return
 
         self.killTimers()

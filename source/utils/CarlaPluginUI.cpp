@@ -475,7 +475,7 @@ public:
             style |= NSResizableWindowMask;
         */
 
-        NSRect frame = NSMakeRect(0, 0, 100, 100);
+        NSRect frame = NSMakeRect(0, 0, 800, 600);
 
         fWindow = [[[CarlaPluginWindow alloc]
             initWithContentRect:frame
@@ -577,11 +577,11 @@ public:
             [fWindow setContentMaxSize:NSMakeSize(99999, 99999)];
         }
         else
-        */
         {
             [fWindow setContentMinSize:size];
             [fWindow setContentMaxSize:size];
         }
+        */
 
         if (forceUpdate)
         {
