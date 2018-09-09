@@ -399,20 +399,16 @@ private:
     callback = nil;
 
     NSWindow* result = [super initWithContentRect:contentRect
-                                        styleMask:(NSClosableWindowMask |
-                                                   NSTitledWindowMask |
-                                                   NSResizableWindowMask)
-                                          backing:NSBackingStoreBuffered
-                                            defer:YES];
+                                        styleMask:aStyle
+                                          backing:bufferingType
+                                            defer:NO];
 
-    [result setIsVisible:NO];
     [result setAcceptsMouseMovedEvents:YES];
-    [result setContentSize:NSMakeSize(18, 100)];
 
     return (CarlaPluginWindow*)result;
 
     // unused
-    (void)aStyle; (void)bufferingType; (void)flag;
+    (void)flag;
 }
 
 - (void)setCallback:(CarlaPluginUI::Callback*)cb
@@ -473,12 +469,20 @@ public:
         fView = [[NSView new]retain];
         CARLA_SAFE_ASSERT_RETURN(fView != nullptr,)
 
-        [fView setHidden:YES];
-
+        uint style = NSClosableWindowMask | NSTitledWindowMask;
+        /*
         if (isResizable)
-            [fView setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];
+            style |= NSResizableWindowMask;
+        */
 
-        fWindow = [[CarlaPluginWindow new]retain];
+        NSRect frame = NSMakeRect(0, 0, 100, 100);
+
+        fWindow = [[[CarlaPluginWindow alloc]
+            initWithContentRect:frame
+                      styleMask:style
+                        backing:NSBackingStoreBuffered
+                          defer:NO
+                    ] retain];
 
         if (fWindow == nullptr)
         {
@@ -487,14 +491,15 @@ public:
             return;
         }
 
-        if (! isResizable)
-            [[fWindow standardWindowButton:NSWindowZoomButton] setHidden:YES];
+        //if (! isResizable)
+        [fView setAutoresizingMask:NSViewNotSizable];
+        [[fWindow standardWindowButton:NSWindowZoomButton] setHidden:YES];
 
         [fWindow setCallback:cb];
         [fWindow setContentView:fView];
         [fWindow makeFirstResponder:fView];
-        [fWindow makeKeyAndOrderFront:fWindow];
-        [fWindow center];
+
+        [fView setHidden:NO];
 
         if (parentId != 0)
             setTransientWinId(parentId);
@@ -506,6 +511,7 @@ public:
         if (fView == nullptr)
             return;
 
+        [fView setHidden:YES];
         [fView removeFromSuperview];
         [fWindow close];
         [fView release];
@@ -517,8 +523,15 @@ public:
         carla_debug("CocoaPluginUI::show()");
         CARLA_SAFE_ASSERT_RETURN(fView != nullptr,);
 
-        [fView setHidden:NO];
-        [fWindow setIsVisible:YES];
+        if (fParentWindow != nullptr)
+        {
+            [fParentWindow addChildWindow:fWindow
+                                   ordered:NSWindowAbove];
+        }
+        else
+        {
+            [fWindow setIsVisible:YES];
+        }
     }
 
     void hide() override
@@ -527,7 +540,9 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fView != nullptr,);
 
         [fWindow setIsVisible:NO];
-        [fView setHidden:YES];
+
+        if (fParentWindow != nullptr)
+            [fParentWindow removeChildWindow:fWindow];
     }
 
     void idle() override
@@ -540,7 +555,7 @@ public:
         carla_debug("CocoaPluginUI::focus()");
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
 
-        [fWindow makeKeyWindow];
+        [fWindow makeKeyAndOrderFront:fWindow];
         [NSApp activateIgnoringOtherApps:YES];
     }
 
@@ -555,17 +570,17 @@ public:
         const NSSize size = NSMakeSize(width, height);
         [fWindow setContentSize:size];
 
+        /*
         if (fIsResizable)
         {
             [fWindow setContentMinSize:NSMakeSize(1, 1)];
             [fWindow setContentMaxSize:NSMakeSize(99999, 99999)];
-            [[fWindow standardWindowButton:NSWindowZoomButton] setHidden:NO];
         }
         else
+        */
         {
             [fWindow setContentMinSize:size];
             [fWindow setContentMaxSize:size];
-            [[fWindow standardWindowButton:NSWindowZoomButton] setHidden:YES];
         }
 
         if (forceUpdate)
@@ -596,8 +611,11 @@ public:
         NSWindow* const parentWindow = [NSApp windowWithWindowNumber:winId];
         CARLA_SAFE_ASSERT_RETURN(parentWindow != nullptr,);
 
-        [parentWindow addChildWindow:fWindow
-                             ordered:NSWindowAbove];
+        fParentWindow = parentWindow;
+
+        if ([fWindow isVisible])
+            [fParentWindow addChildWindow:fWindow
+                                   ordered:NSWindowAbove];
     }
 
     void setChildWindow(void* const window) override
@@ -620,6 +638,7 @@ public:
 
 private:
     NSView*            fView;
+    NSWindow*          fParentWindow;
     CarlaPluginWindow* fWindow;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CocoaPluginUI)
