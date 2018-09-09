@@ -173,17 +173,37 @@ void* carla_shm_map(carla_shm_t& shm, const std::size_t size) noexcept
         HANDLE map;
 
         if (shm.isServer)
-            map = ::CreateFileMapping(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE|SEC_COMMIT, 0, size, shm.filename);
+        {
+            SECURITY_ATTRIBUTES sa;
+            carla_zeroStruct(sa);
+            sa.nLength = sizeof(sa);
+            sa.bInheritHandle = TRUE;
+
+            map = ::CreateFileMappingA(INVALID_HANDLE_VALUE, &sa, PAGE_READWRITE|SEC_COMMIT, 0, size, shm.filename);
+
+            if (map == nullptr || map == INVALID_HANDLE_VALUE)
+            {
+                const DWORD errorCode = ::GetLastError();
+                carla_stderr2("CreateFileMapping failed for '%s', size:%lu, isServer:%i, errorCode:%x",
+                              shm.filename, size, shm.isServer, errorCode);
+                return nullptr;
+            }
+        }
         else
-            map = ::OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, shm.filename);
+        {
+            map = ::OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, shm.filename);
 
-        CARLA_SAFE_ASSERT_RETURN(map != INVALID_HANDLE_VALUE, nullptr);
+            CARLA_SAFE_ASSERT_RETURN(map != nullptr, nullptr);
+            CARLA_SAFE_ASSERT_RETURN(map != INVALID_HANDLE_VALUE, nullptr);
+        }
 
-        void* const ptr(::MapViewOfFile(map, FILE_MAP_ALL_ACCESS, 0, 0, size));
+        void* const ptr = ::MapViewOfFile(map, FILE_MAP_ALL_ACCESS, 0, 0, size);
 
         if (ptr == nullptr)
         {
-            carla_safe_assert("ptr != nullptr", __FILE__, __LINE__);
+            const DWORD errorCode = ::GetLastError();
+            carla_stderr2("MapViewOfFile failed for '%s', size:%lu, isServer:%i, errorCode:%u",
+                          shm.filename, size, shm.isServer, errorCode);
             ::CloseHandle(map);
             return nullptr;
         }

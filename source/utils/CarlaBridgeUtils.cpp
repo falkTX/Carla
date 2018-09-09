@@ -22,10 +22,10 @@
 #include "jackbridge/JackBridge.hpp"
 
 #if defined(CARLA_OS_WIN) && defined(BUILDING_CARLA_FOR_WINDOWS)
-# define PLUGIN_BRIDGE_NAMEPREFIX_AUDIO_POOL    "Global\\carla-bridge_shm_ap_"
-# define PLUGIN_BRIDGE_NAMEPREFIX_RT_CLIENT     "Global\\carla-bridge_shm_rtC_"
-# define PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_CLIENT "Global\\carla-bridge_shm_nonrtC_"
-# define PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_SERVER "Global\\carla-bridge_shm_nonrtS_"
+# define PLUGIN_BRIDGE_NAMEPREFIX_AUDIO_POOL    "Local\\carla-bridge_shm_ap_"
+# define PLUGIN_BRIDGE_NAMEPREFIX_RT_CLIENT     "Local\\carla-bridge_shm_rtC_"
+# define PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_CLIENT "Local\\carla-bridge_shm_nonrtC_"
+# define PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_SERVER "Local\\carla-bridge_shm_nonrtS_"
 #else
 # define PLUGIN_BRIDGE_NAMEPREFIX_AUDIO_POOL    "/crlbrdg_shm_ap_"
 # define PLUGIN_BRIDGE_NAMEPREFIX_RT_CLIENT     "/crlbrdg_shm_rtC_"
@@ -179,7 +179,6 @@ bool BridgeRtClientControl::initializeServer() noexcept
 
     filename = tmpFileBase;
     isServer = true;
-    needsSemDestroy = true;
 
     if (! mapData())
     {
@@ -207,6 +206,7 @@ bool BridgeRtClientControl::initializeServer() noexcept
         return false;
     }
 
+    needsSemDestroy = true;
     return true;
 }
 
