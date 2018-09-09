@@ -1588,6 +1588,8 @@ void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float valu
 {
     if (pData->engineBridged) {
         CARLA_SAFE_ASSERT_RETURN(!sendGui,);
+    } else if (pData->enginePlugin) {
+        // nothing here
     } else {
         CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,); // never call this from RT
     }
