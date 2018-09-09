@@ -702,7 +702,6 @@ lilv_world_load_bundle(LilvWorld* world, const LilvNode* bundle_uri)
 	// Read manifest into model with graph = bundle_node
 	SerdStatus st = lilv_world_load_graph(world, bundle_node, manifest);
 	if (st > SERD_FAILURE) {
-		LILV_ERRORF("Error reading %s\n", lilv_node_as_string(manifest));
 		lilv_node_free(manifest);
 		return;
 	}
@@ -1060,7 +1059,6 @@ lilv_world_load_file(LilvWorld* world, SerdReader* reader, const LilvNode* uri)
 	const SerdStatus st = serd_reader_read_file(
 		reader, sord_node_get_string(uri->node));
 	if (st) {
-		LILV_ERRORF("Error loading file `%s'\n", lilv_node_as_string(uri));
 		return st;
 	}
 
