@@ -940,51 +940,28 @@ bool File::createSymbolicLink (const File& linkFileToCreate, bool overwriteExist
 {
     if (linkFileToCreate.exists())
     {
-        if (! linkFileToCreate.isSymbolicLink())
-        {
-            // user has specified an existing file / directory as the link
-            // this is bad! the user could end up unintentionally destroying data
-            jassertfalse;
-            return false;
-        }
+        // user has specified an existing file / directory as the link
+        // this is bad! the user could end up unintentionally destroying data
+        CARLA_SAFE_ASSERT_RETURN(linkFileToCreate.isSymbolicLink(), false);
 
         if (overwriteExisting)
             linkFileToCreate.deleteFile();
     }
 
-   #ifndef CARLA_OS_WIN
-    // one common reason for getting an error here is that the file already exists
-    if (symlink (fullPath.toRawUTF8(), linkFileToCreate.getFullPathName().toRawUTF8()) == -1)
-    {
-        jassertfalse;
-        return false;
-    }
+   #ifdef CARLA_OS_WIN
+    typedef BOOLEAN (WINAPI* PFUNC)(LPCTSTR, LPCTSTR, DWORD);
 
-    return true;
-   #elif _MSVC_VER
-    return CreateSymbolicLink (linkFileToCreate.getFullPathName().toUTF8(),
-                               fullPath.toUTF8(),
-                               isDirectory() ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0) != FALSE;
+    const PFUNC pfn = (PFUNC)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "CreateSymbolicLinkA");
+
+    return pfn ? pfn(linkFileToCreate.getFullPathName().toRawUTF8(),
+                     fullPath.toRawUTF8(),
+                     isDirectory() ? 0x1 /*SYMBOLIC_LINK_FLAG_DIRECTORY*/ : 0x0) != FALSE
+               : false;
    #else
-    jassertfalse; // symbolic links not supported on this platform!
-    return false;
+    // one common reason for getting an error here is that the file already exists
+    return symlink(fullPath.toRawUTF8(), linkFileToCreate.getFullPathName().toRawUTF8()) != -1;
    #endif
 }
-
-#if 0
-//=====================================================================================================================
-MemoryMappedFile::MemoryMappedFile (const File& file, MemoryMappedFile::AccessMode mode, bool exclusive)
-    : address (nullptr), range (0, file.getSize()), fileHandle (0)
-{
-    openInternal (file, mode, exclusive);
-}
-
-MemoryMappedFile::MemoryMappedFile (const File& file, const Range<int64>& fileRange, AccessMode mode, bool exclusive)
-    : address (nullptr), range (fileRange.getIntersectionWith (Range<int64> (0, file.getSize()))), fileHandle (0)
-{
-    openInternal (file, mode, exclusive);
-}
-#endif
 
 //=====================================================================================================================
 #ifdef CARLA_OS_WIN
