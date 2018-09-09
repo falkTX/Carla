@@ -104,6 +104,12 @@ public:
         if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
         {
             showCustomUI(false);
+
+            if (fUI.isOpen)
+            {
+                fUI.isOpen = false;
+                dispatcher(effEditClose);
+            }
         }
 
         pData->singleMutex.lock();
@@ -497,38 +503,38 @@ public:
                     return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, msg);
 
                 fUI.window->setTitle(uiTitle.buffer());
-            }
 
 #ifdef HAVE_X11
-            value = (intptr_t)fUI.window->getDisplay();
+                value = (intptr_t)fUI.window->getDisplay();
 #endif
 
-            if (dispatcher(effEditOpen, 0, value, fUI.window->getPtr()) != 0)
-            {
-                dispatcher(effEditGetRect, 0, 0, &vstRect);
-
-                if (vstRect != nullptr)
+                if (dispatcher(effEditOpen, 0, value, fUI.window->getPtr()) != 0 || 1)
                 {
-                    const int width(vstRect->right - vstRect->left);
-                    const int height(vstRect->bottom - vstRect->top);
+                    fUI.isOpen = true;
 
-                    CARLA_SAFE_ASSERT_INT2(width > 1 && height > 1, width, height);
+                    if (vstRect != nullptr)
+                    {
+                        const int width(vstRect->right - vstRect->left);
+                        const int height(vstRect->bottom - vstRect->top);
 
-                    if (width > 1 && height > 1)
-                        fUI.window->setSize(static_cast<uint>(width), static_cast<uint>(height), true);
+                        CARLA_SAFE_ASSERT_INT2(width > 1 && height > 1, width, height);
+
+                        if (width > 1 && height > 1)
+                            fUI.window->setSize(static_cast<uint>(width), static_cast<uint>(height), true);
+                    }
                 }
+                else
+                {
+                    delete fUI.window;
+                    fUI.window = nullptr;
 
-                fUI.window->show();
-                fUI.isVisible = true;
+                    carla_stderr2("Plugin refused to open its own UI");
+                    return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, "Plugin refused to open its own UI");
+                }
             }
-            else
-            {
-                delete fUI.window;
-                fUI.window = nullptr;
 
-                carla_stderr2("Plugin refused to open its own UI");
-                return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, "Plugin refused to open its own UI");
-            }
+            fUI.window->show();
+            fUI.isVisible = true;
         }
         else
         {
@@ -536,8 +542,6 @@ public:
 
             CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
             fUI.window->hide();
-
-            dispatcher(effEditClose);
         }
     }
 
@@ -2408,11 +2412,13 @@ private:
     } fEvents;
 
     struct UI {
+        bool isOpen;
         bool isVisible;
         CarlaPluginUI* window;
 
         UI() noexcept
-            : isVisible(false),
+            : isOpen(false),
+              isVisible(false),
               window(nullptr) {}
 
         ~UI()
