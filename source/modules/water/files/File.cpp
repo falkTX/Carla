@@ -952,11 +952,10 @@ bool File::createSymbolicLink (const File& linkFileToCreate, bool overwriteExist
     typedef BOOLEAN (WINAPI* PFUNC)(LPCTSTR, LPCTSTR, DWORD);
 
     const PFUNC pfn = (PFUNC)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "CreateSymbolicLinkA");
+    CARLA_SAFE_ASSERT_RETURN(pfn != nullptr, false);
 
-    return pfn ? pfn(linkFileToCreate.getFullPathName().toRawUTF8(),
-                     fullPath.toRawUTF8(),
-                     isDirectory() ? 0x1 /*SYMBOLIC_LINK_FLAG_DIRECTORY*/ : 0x0) != FALSE
-               : false;
+    return pfn(linkFileToCreate.getFullPathName().toRawUTF8(), fullPath.toRawUTF8(),
+               isDirectory() ? 0x1 /*SYMBOLIC_LINK_FLAG_DIRECTORY*/ : 0x0) != FALSE;
    #else
     // one common reason for getting an error here is that the file already exists
     return symlink(fullPath.toRawUTF8(), linkFileToCreate.getFullPathName().toRawUTF8()) != -1;
