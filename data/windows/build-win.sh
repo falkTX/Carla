@@ -36,34 +36,43 @@ source data/windows/common.env
 MAKE_ARGS="${MAKE_ARGS} HAVE_QT4=false HAVE_QT5=false HAVE_PYQT5=true HAVE_FFMPEG=false HAVE_PROJECTM=false"
 MAKE_ARGS="${MAKE_ARGS} BUILDING_FOR_WINDOWS=true"
 
+export WIN32=true
+
 if [ x"${ARCH}" != x"32" ]; then
+  export WIN64=true
   CPUARCH="x86_64"
 else
   CPUARCH="i686"
 fi
 
-MINGW_PREFIX="${CPUARCH}-w64-mingw32"
+# ---------------------------------------------------------------------------------------------------------------------
 
-export PREFIX=${TARGETDIR}/carla-w${ARCH_PREFIX}
-export PATH=/opt/mingw${ARCH}/bin:${PREFIX}/bin/usr/sbin:/usr/bin:/sbin:/bin
+export_vars() {
+
+local _ARCH="${1}"
+local _ARCH_PREFIX="${2}"
+local _MINGW_PREFIX="${3}-w64-mingw32"
+
+export PREFIX=${TARGETDIR}/carla-w${_ARCH_PREFIX}
+export PATH=/opt/mingw${_ARCH}/bin:${PREFIX}/bin/usr/sbin:/usr/bin:/sbin:/bin
 export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 
-export AR=${MINGW_PREFIX}-ar
-export CC=${MINGW_PREFIX}-gcc
-export CXX=${MINGW_PREFIX}-g++
-export STRIP=${MINGW_PREFIX}-strip
-export WINDRES=${MINGW_PREFIX}-windres
+export AR=${_MINGW_PREFIX}-ar
+export CC=${_MINGW_PREFIX}-gcc
+export CXX=${_MINGW_PREFIX}-g++
+export STRIP=${_MINGW_PREFIX}-strip
+export WINDRES=${_MINGW_PREFIX}-windres
 
 export CFLAGS="-DPTW32_STATIC_LIB -DFLUIDSYNTH_NOT_A_DLL"
-export CFLAGS="${CFLAGS} -I${PREFIX}/include -I/opt/mingw${ARCH}/include -I/opt/mingw${ARCH}/${MINGW_PREFIX}/include"
+export CFLAGS="${CFLAGS} -I${PREFIX}/include -I/opt/mingw${_ARCH}/include -I/opt/mingw${_ARCH}/${_MINGW_PREFIX}/include"
 export CXXFLAGS="${CFLAGS}"
-export LDFLAGS="-L${PREFIX}/lib -L/opt/mingw${ARCH}/lib -L/opt/mingw${ARCH}/${MINGW_PREFIX}/lib"
+export LDFLAGS="-L${PREFIX}/lib -L/opt/mingw${_ARCH}/lib -L/opt/mingw${_ARCH}/${_MINGW_PREFIX}/lib"
 
-export WIN32=true
+}
 
-if [ x"${ARCH}" != x"32" ]; then
-  export WIN64=true
-fi
+# ---------------------------------------------------------------------------------------------------------------------
+
+export_vars "${ARCH}" "${ARCH_PREFIX}" "${CPUARCH}"
 
 export WINEARCH=win${ARCH}
 export WINEDEBUG=-all
@@ -77,12 +86,8 @@ export PYRCC="wine C:\\\\Python34\\\\Lib\\\\site-packages\\\\PyQt5\\\\pyrcc5.exe
 make ${MAKE_ARGS}
 
 if [ x"${ARCH}" != x"32" ]; then
-  make ${MAKE_ARGS} \
-    AR="i686-w64-mingw32-ar" \
-    CC="i686-w64-mingw32-gcc" \
-    CXX="i686-w64-mingw32-g++" \
-    LDFLAGS="-L${TARGETDIR}/carla-w32/lib -L/opt/mingw32/lib -L/opt/mingw32/i686-w64-mingw32/lib" \
-    win32
+  export_vars "32" "32" "i686"
+  make ${MAKE_ARGS} win32
 fi
 
 # Testing:
