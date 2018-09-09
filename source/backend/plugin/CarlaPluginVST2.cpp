@@ -480,7 +480,6 @@ public:
             uiTitle += " (GUI)";
 
             intptr_t value = 0;
-            ERect* vstRect = nullptr;
 
             if (fUI.window == nullptr)
             {
@@ -511,6 +510,9 @@ public:
                 if (dispatcher(effEditOpen, 0, value, fUI.window->getPtr()) != 0 || 1)
                 {
                     fUI.isOpen = true;
+
+                    ERect* vstRect = nullptr;
+                    dispatcher(effEditGetRect, 0, 0, &vstRect);
 
                     if (vstRect != nullptr)
                     {
