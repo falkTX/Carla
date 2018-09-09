@@ -54,8 +54,8 @@
 
 
 #define UNZIP_INTERNAL
+#include <windows.h>
 #include "../unzip.h"
-#include <windows.h>    /* must be AFTER unzip.h to avoid struct G problems */
 #ifdef __RSXNT__
 #  include "../win32/rsxntwin.h"
 #endif
