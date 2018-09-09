@@ -16,12 +16,11 @@ Features
 * Remote control over OSC
 * Rack and Patchbay processing modes, plus Single and Multi-Client if using JACK
 * Native audio drivers (ALSA, DirectSound, CoreAudio, etc) and JACK
+* Transport controls, sync with JACK Transport or Ableton Link
 
 In experimental phase / work in progress:
 * Export any Carla loadable plugin or sound bank as an LV2 plugin
 * Plugin bridge support (such as running 32bit plugins on a 64bit Carla, or Windows plugins on Linux)
-* Run JACK applications as audio plugins
-* Transport controls, sync with JACK Transport or Ableton Link
 
 For a complete and updated description of Carla, please check:
 http://kxstudio.linuxaudio.org/carla
