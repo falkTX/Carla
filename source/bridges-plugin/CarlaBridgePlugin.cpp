@@ -526,6 +526,7 @@ int main(int argc, char* argv[])
             if (! useBridge)
             {
                 carla_set_active(0, true);
+                carla_set_option(0, CarlaBackend::PLUGIN_OPTION_SEND_CONTROL_CHANGES, true);
 
                 if (const CarlaPluginInfo* const pluginInfo = carla_get_plugin_info(0))
                 {
