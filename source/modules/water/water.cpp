@@ -45,8 +45,6 @@ HINSTANCE water_getCurrentModuleInstanceHandle() noexcept
 #include "files/FileOutputStream.cpp"
 #include "files/TemporaryFile.cpp"
 
-#include "maths/BigInteger.cpp"
-
 #include "maths/Random.cpp"
 
 #include "memory/MemoryBlock.cpp"

@@ -92,6 +92,8 @@ Synthesiser::Synthesiser()
 {
     for (int i = 0; i < numElementsInArray (lastPitchWheelValues); ++i)
         lastPitchWheelValues[i] = 0x2000;
+
+    zerostruct(sustainPedalsDown);
 }
 
 Synthesiser::~Synthesiser()
@@ -303,6 +305,8 @@ void Synthesiser::startVoice (SynthesiserVoice* const voice,
 {
     if (voice != nullptr && sound != nullptr)
     {
+        CARLA_SAFE_ASSERT_RETURN(midiChannel > 0 && midiChannel <= 16,);
+
         if (voice->currentlyPlayingSound != nullptr)
             voice->stopNote (0.0f, false);
 
@@ -334,6 +338,7 @@ void Synthesiser::noteOff (const int midiChannel,
                            const float velocity,
                            const bool allowTailOff)
 {
+    CARLA_SAFE_ASSERT_RETURN(midiChannel > 0 && midiChannel <= 16,);
 
     for (int i = voices.size(); --i >= 0;)
     {
@@ -361,7 +366,6 @@ void Synthesiser::noteOff (const int midiChannel,
 
 void Synthesiser::allNotesOff (const int midiChannel, const bool allowTailOff)
 {
-
     for (int i = voices.size(); --i >= 0;)
     {
         SynthesiserVoice* const voice = voices.getUnchecked (i);
@@ -370,12 +374,11 @@ void Synthesiser::allNotesOff (const int midiChannel, const bool allowTailOff)
             voice->stopNote (1.0f, allowTailOff);
     }
 
-    sustainPedalsDown.clear();
+    zerostruct(sustainPedalsDown);
 }
 
 void Synthesiser::handlePitchWheel (const int midiChannel, const int wheelValue)
 {
-
     for (int i = voices.size(); --i >= 0;)
     {
         SynthesiserVoice* const voice = voices.getUnchecked (i);
@@ -434,11 +437,11 @@ void Synthesiser::handleChannelPressure (int midiChannel, int channelPressureVal
 
 void Synthesiser::handleSustainPedal (int midiChannel, bool isDown)
 {
-    jassert (midiChannel > 0 && midiChannel <= 16);
+    CARLA_SAFE_ASSERT_RETURN(midiChannel > 0 && midiChannel <= 16,);
 
     if (isDown)
     {
-        sustainPedalsDown.setBit (midiChannel);
+        sustainPedalsDown[midiChannel] = true;
 
         for (int i = voices.size(); --i >= 0;)
         {
@@ -463,7 +466,7 @@ void Synthesiser::handleSustainPedal (int midiChannel, bool isDown)
             }
         }
 
-        sustainPedalsDown.clearBit (midiChannel);
+        sustainPedalsDown[midiChannel] = false;
     }
 }
 

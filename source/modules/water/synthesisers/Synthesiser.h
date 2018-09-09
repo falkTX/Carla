@@ -29,7 +29,6 @@
 #include "../buffers/AudioSampleBuffer.h"
 #include "../containers/OwnedArray.h"
 #include "../containers/ReferenceCountedArray.h"
-#include "../maths/BigInteger.h"
 
 #include "CarlaJuceUtils.hpp"
 #include "CarlaMutex.hpp"
@@ -613,7 +612,7 @@ private:
     int minimumSubBlockSize;
     bool subBlockSubdivisionIsStrict;
     bool shouldStealNotes;
-    BigInteger sustainPedalsDown;
+    bool sustainPedalsDown[17];
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Synthesiser)
 };
