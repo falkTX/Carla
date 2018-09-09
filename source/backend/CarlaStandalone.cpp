@@ -1728,6 +1728,7 @@ void carla_set_ctrl_channel(uint pluginId, int8_t channel)
     carla_debug("carla_set_ctrl_channel(%i, %i)", pluginId, channel);
     return plugin->setCtrlChannel(channel, true, false);
 }
+#endif
 
 void carla_set_option(uint pluginId, uint option, bool yesNo)
 {
@@ -1739,7 +1740,6 @@ void carla_set_option(uint pluginId, uint option, bool yesNo)
     carla_debug("carla_set_option(%i, %i, %s)", pluginId, option, bool2str(yesNo));
     return plugin->setOption(option, yesNo, false);
 }
-#endif
 
 // --------------------------------------------------------------------------------------------------------------------
 

@@ -796,6 +796,7 @@ CARLA_EXPORT void carla_set_panning(uint pluginId, float value);
  * @param channel  New channel
  */
 CARLA_EXPORT void carla_set_ctrl_channel(uint pluginId, int8_t channel);
+#endif
 
 /*!
  * Enable a plugin's option.
@@ -804,7 +805,6 @@ CARLA_EXPORT void carla_set_ctrl_channel(uint pluginId, int8_t channel);
  * @param yesNo    New enabled state
  */
 CARLA_EXPORT void carla_set_option(uint pluginId, uint option, bool yesNo);
-#endif
 
 /*!
  * Change a plugin's parameter value.
