@@ -670,7 +670,8 @@ ENGINE_CALLBACK_ENGINE_STOPPED = 30
 ENGINE_CALLBACK_PROCESS_MODE_CHANGED = 31
 
 # Engine transport mode has changed.
-# @a value1 New transport mode
+# @a value1   New transport mode
+# @a valueStr New transport features enabled
 # @see EngineTransportMode
 ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED = 32
 
@@ -1247,6 +1248,7 @@ class CarlaHostMeta(object):
         # settings
         self.processMode       = ENGINE_PROCESS_MODE_PATCHBAY
         self.transportMode     = ENGINE_TRANSPORT_MODE_INTERNAL
+        self.transportExtra    = ""
         self.nextProcessMode   = self.processMode
         self.processModeForced = False
         self.audioDriverForced = None

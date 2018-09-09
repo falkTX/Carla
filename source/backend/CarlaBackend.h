@@ -911,7 +911,8 @@ typedef enum {
 
     /*!
      * Engine transport mode has changed.
-     * @a value1 New transport mode
+     * @a value1   New transport mode
+     * @a valueStr New transport features enabled
      * @see EngineTransportMode
      */
     ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED = 32,

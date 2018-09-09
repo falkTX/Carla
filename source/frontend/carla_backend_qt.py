@@ -71,7 +71,7 @@ class CarlaHostSignals(QObject):
     EngineStartedCallback = pyqtSignal(int, int, float, str)
     EngineStoppedCallback = pyqtSignal()
     ProcessModeChangedCallback = pyqtSignal(int)
-    TransportModeChangedCallback = pyqtSignal(int)
+    TransportModeChangedCallback = pyqtSignal(int, str)
     BufferSizeChangedCallback = pyqtSignal(int)
     SampleRateChangedCallback = pyqtSignal(float)
     ProjectLoadFinishedCallback = pyqtSignal()

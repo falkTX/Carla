@@ -502,6 +502,7 @@ class HostWindow(QMainWindow):
 
         host.EngineStartedCallback.connect(self.slot_handleEngineStartedCallback)
         host.EngineStoppedCallback.connect(self.slot_handleEngineStoppedCallback)
+        host.TransportModeChangedCallback.connect(self.slot_handleTransportModeChangedCallback)
         host.SampleRateChangedCallback.connect(self.slot_handleSampleRateChangedCallback)
         host.ProjectLoadFinishedCallback.connect(self.slot_handleProjectLoadFinishedCallback)
 
@@ -894,7 +895,11 @@ class HostWindow(QMainWindow):
         self.refreshTransport(True)
 
         self.ui.cb_transport_jack.setChecked(transportMode == ENGINE_TRANSPORT_MODE_JACK)
-        self.ui.cb_transport_jack.setEnabled(driverName == "JACK")
+        self.ui.cb_transport_jack.setEnabled(driverName == "JACK" and processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+
+        print("transport extra! ", self.host.transportExtra)
+        if self.ui.cb_transport_link.isEnabled():
+            self.ui.cb_transport_link.setChecked(":link:" in self.host.transportExtra)
 
         self.startTimers()
 
@@ -926,6 +931,13 @@ class HostWindow(QMainWindow):
         if self.host.isPlugin or not self.fSessionManagerName:
             self.ui.act_file_open.setEnabled(False)
             self.ui.act_file_save_as.setEnabled(False)
+
+    @pyqtSlot(int, str)
+    def slot_handleTransportModeChangedCallback(self, transportMode, transportExtra):
+        self.enableTransport(transportMode != ENGINE_TRANSPORT_MODE_DISABLED)
+
+        self.ui.cb_transport_jack.setChecked(transportMode == ENGINE_TRANSPORT_MODE_JACK)
+        self.ui.cb_transport_link.setChecked(":link:" in transportExtra)
 
     @pyqtSlot(float)
     def slot_handleSampleRateChangedCallback(self, newSampleRate):
@@ -1563,7 +1575,8 @@ class HostWindow(QMainWindow):
         settings.setValue("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().value())
         settings.setValue("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().value())
 
-        settings.setValue(CARLA_KEY_ENGINE_TRANSPORT_MODE, self.host.transportMode)
+        settings.setValue(CARLA_KEY_ENGINE_TRANSPORT_MODE,  self.host.transportMode)
+        settings.setValue(CARLA_KEY_ENGINE_TRANSPORT_EXTRA, self.host.transportExtra)
 
     def loadSettings(self, firstTime):
         settings = QSettings()
@@ -1872,19 +1885,20 @@ class HostWindow(QMainWindow):
     def slot_transportJackEnabled(self, clicked):
         if not self.host.is_engine_running():
             return
-        mode  = ENGINE_TRANSPORT_MODE_JACK if clicked else ENGINE_TRANSPORT_MODE_INTERNAL
-        extra = ":link:" if self.ui.cb_transport_link.isChecked() else ""
-        self.host.transportMode = mode
-        self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, mode, extra)
+        self.host.transportMode = ENGINE_TRANSPORT_MODE_JACK if clicked else ENGINE_TRANSPORT_MODE_INTERNAL
+        self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE,
+                                    self.host.transportMode,
+                                    self.host.transportExtra)
 
     @pyqtSlot(bool)
     def slot_transportLinkEnabled(self, clicked):
         if not self.host.is_engine_running():
             return
-        mode  = ENGINE_TRANSPORT_MODE_JACK if self.ui.cb_transport_jack.isChecked() else ENGINE_TRANSPORT_MODE_INTERNAL
         extra = ":link:" if clicked else ""
-        self.host.transportMode = mode
-        self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, mode, extra)
+        self.host.transportExtra = extra
+        self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE,
+                                    self.host.transportMode,
+                                    self.host.transportExtra)
 
     # --------------------------------------------------------------------------------------------------------
     # Canvas scrollbars
@@ -2444,15 +2458,16 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
     # kdevelop likes this :)
     if False: host = CarlaHostNull()
 
+    valueStr = charPtrToString(valueStr)
+
     if action == ENGINE_CALLBACK_ENGINE_STARTED:
         host.processMode   = value1
         host.transportMode = value2
     elif action == ENGINE_CALLBACK_PROCESS_MODE_CHANGED:
         host.processMode   = value1
     elif action == ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED:
-        host.transportMode = value1
-
-    valueStr = charPtrToString(valueStr)
+        host.transportMode  = value1
+        host.transportExtra = valueStr
 
     if action == ENGINE_CALLBACK_DEBUG:
         host.DebugCallback.emit(pluginId, value1, value2, value3, valueStr)
@@ -2520,7 +2535,7 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
     elif action == ENGINE_CALLBACK_PROCESS_MODE_CHANGED:
         host.ProcessModeChangedCallback.emit(value1)
     elif action == ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED:
-        host.TransportModeChangedCallback.emit(value1)
+        host.TransportModeChangedCallback.emit(value1, valueStr)
     elif action == ENGINE_CALLBACK_BUFFER_SIZE_CHANGED:
         host.BufferSizeChangedCallback.emit(value1)
     elif action == ENGINE_CALLBACK_SAMPLE_RATE_CHANGED:
@@ -2732,6 +2747,11 @@ def loadHostSettings(host):
     if host.isPlugin:
         return
 
+    try:
+        host.transportExtra = settings.value(CARLA_KEY_ENGINE_TRANSPORT_EXTRA, "", type=str)
+    except:
+        host.transportExtra = ""
+
     # enums
     if host.audioDriverForced is None:
         try:
@@ -2750,9 +2770,13 @@ def loadHostSettings(host):
     # --------------------------------------------------------------------------------------------------------
     # fix things if needed
 
-    if host.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS and LADISH_APP_NAME:
-        print("LADISH detected but using multiple clients (not allowed), forcing single client now")
-        host.nextProcessMode = host.processMode = ENGINE_PROCESS_MODE_SINGLE_CLIENT
+    if host.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
+        if LADISH_APP_NAME:
+            print("LADISH detected but using multiple clients (not allowed), forcing single client now")
+            host.nextProcessMode = host.processMode = ENGINE_PROCESS_MODE_SINGLE_CLIENT
+
+        else:
+            host.transportMode = ENGINE_TRANSPORT_MODE_JACK
 
     if gCarla.nogui:
         host.showLogs = False
@@ -2782,7 +2806,7 @@ def setHostSettings(host):
         return
 
     host.set_engine_option(ENGINE_OPTION_PROCESS_MODE,          host.nextProcessMode,     "")
-    host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE,        host.transportMode,       "")
+    host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE,        host.transportMode,       host.transportExtra)
     host.set_engine_option(ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT,  host.showLogs,            "")
 
 # ------------------------------------------------------------------------------------------------------------
@@ -2894,7 +2918,7 @@ def setEngineSettings(host):
 
     if audioDriver != "JACK" and host.transportMode == ENGINE_TRANSPORT_MODE_JACK:
         host.transportMode = ENGINE_TRANSPORT_MODE_INTERNAL
-        host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, ENGINE_TRANSPORT_MODE_INTERNAL, "")
+        host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, ENGINE_TRANSPORT_MODE_INTERNAL, host.transportExtra)
 
     # --------------------------------------------------------------------------------------------------------
     # return selected driver name

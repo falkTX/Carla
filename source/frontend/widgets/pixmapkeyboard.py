@@ -174,8 +174,8 @@ class PixmapKeyboard(QWidget):
         self.fkPcKeys      = kPcKeysLayouts["qwerty"]
         self.fKey2RectMap  = kMidiKey2RectMapHorizontal
 
-        self.fWidth   = self.fPixmapNormal.width()
-        self.fHeight  = self.fPixmapNormal.height()
+        self.fWidth  = self.fPixmapNormal.width()
+        self.fHeight = self.fPixmapNormal.height()
 
         self.setCursor(Qt.PointingHandCursor)
         self.setStartOctave(0)

@@ -1191,6 +1191,12 @@ public:
             }
             else
             {
+                // jack transport cannot be disabled in multi-client
+                callback(ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED, 0,
+                         ENGINE_TRANSPORT_MODE_JACK, 0, 0.0f,
+                         pData->options.transportExtra);
+                CARLA_SAFE_ASSERT_RETURN(pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS,);
+
                 jackbridge_release_timebase(fClient);
                 fTimebaseMaster = false;
             }
