@@ -515,18 +515,18 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             """ % (0.95 if isinstance(self, PluginSlot_Compact) else 0.35)
 
         else:
+            colorEnabled  = "#BBB"
+            colorDisabled = "#555"
+
             if self.fSkinStyle in ("3bandeq", "calf_black", "calf_blue", "nekobi", "zynfx"):
                 styleSheet2  = "background-image: url(:/bitmaps/background_%s.png);" % self.fSkinStyle
             else:
                 styleSheet2  = "background-color: rgb(%i, %i, %i);" % self.fSkinColor
                 styleSheet2 += "background-image: url(:/bitmaps/background_noise1.png);"
 
-            if self.fDarkStyle:
-                colorEnabled  = "#BBB"
-                colorDisabled = "#555"
-            else:
-                colorEnabled  = "#111"
-                colorDisabled = "#AAA"
+                if not self.fDarkStyle:
+                    colorEnabled  = "#111"
+                    colorDisabled = "#AAA"
 
             styleSheet = """
                 QFrame#PluginWidget {
