@@ -664,7 +664,7 @@ static const void* lv2ui_extension_data(const char* uri)
 CARLA_EXPORT
 const LV2_Descriptor* lv2_descriptor(uint32_t index)
 {
-    carla_stdout("lv2_descriptor(%i)", index);
+    carla_debug("lv2_descriptor(%i)", index);
 
     if (index != 0)
         return nullptr;
@@ -675,8 +675,15 @@ const LV2_Descriptor* lv2_descriptor(uint32_t index)
     {
         using namespace water;
         const File file(File::getSpecialLocation(File::currentExecutableFile).withFileExtension("ttl"));
+#ifdef CARLA_OS_WIN
+        ret = String("file:///" + file.getFullPathName()).toRawUTF8();
+        ret.replace('\\','/');
+#else
         ret = String("file://" + file.getFullPathName()).toRawUTF8();
+#endif
     }
+
+    carla_stdout("lv2_descriptor(%i) has URI '%s'", index, ret.buffer());
 
     static const LV2_Descriptor desc = {
     /* URI            */ ret.buffer(),
@@ -695,7 +702,7 @@ const LV2_Descriptor* lv2_descriptor(uint32_t index)
 CARLA_EXPORT
 const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index)
 {
-    carla_stdout("lv2ui_descriptor(%i)", index);
+    carla_debug("lv2ui_descriptor(%i)", index);
 
     static CarlaString ret;
 
@@ -703,8 +710,15 @@ const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index)
     {
         using namespace water;
         const File file(File::getSpecialLocation(File::currentExecutableFile).getSiblingFile("ext-ui"));
+#ifdef CARLA_OS_WIN
+        ret = String("file:///" + file.getFullPathName()).toRawUTF8();
+        ret.replace('\\','/');
+#else
         ret = String("file://" + file.getFullPathName()).toRawUTF8();
+#endif
     }
+
+    carla_stdout("lv2ui_descriptor(%i) has URI '%s'", index, ret.buffer());
 
     static const LV2UI_Descriptor lv2UiExtDesc = {
     /* URI            */ ret.buffer(),

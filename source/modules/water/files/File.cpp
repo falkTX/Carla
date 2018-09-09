@@ -1096,7 +1096,9 @@ File File::getSpecialLocation (const SpecialLocationType type)
 
     switch (type)
     {
-        case userHomeDirectory:                 csidlType = CSIDL_PROFILE; break;
+        case userHomeDirectory:
+            csidlType = CSIDL_PROFILE;
+            break;
 
         case tempDirectory:
         {
