@@ -407,14 +407,6 @@ public:
     */
     bool deleteRecursively() const;
 
-    /** Moves this file or folder to the trash.
-
-        @returns true if the operation succeeded. It could fail if the trash is full, or
-                 if the file is write-protected, so you should check the return value
-                 and act appropriately.
-    */
-    bool moveToTrash() const;
-
     /** Moves or renames a file.
 
         Tries to move a file to a different location.
@@ -642,55 +634,6 @@ public:
     bool hasIdenticalContentTo (const File& other) const;
 
     //==============================================================================
-    /** Creates a set of files to represent each file root.
-
-        e.g. on Windows this will create files for "c:\", "d:\" etc according
-        to which ones are available. On the Mac/Linux, this will probably
-        just add a single entry for "/".
-    */
-    static void findFileSystemRoots (Array<File>& results);
-
-    /** Finds the name of the drive on which this file lives.
-        @returns the volume label of the drive, or an empty string if this isn't possible
-    */
-    String getVolumeLabel() const;
-
-    /** Returns the serial number of the volume on which this file lives.
-        @returns the serial number, or zero if there's a problem doing this
-    */
-    int getVolumeSerialNumber() const;
-
-    /** Returns the number of bytes free on the drive that this file lives on.
-
-        @returns the number of bytes free, or 0 if there's a problem finding this out
-        @see getVolumeTotalSize
-    */
-    int64 getBytesFreeOnVolume() const;
-
-    /** Returns the total size of the drive that contains this file.
-
-        @returns the total number of bytes that the volume can hold
-        @see getBytesFreeOnVolume
-    */
-    int64 getVolumeTotalSize() const;
-
-    /** Returns true if this file is on a CD or DVD drive. */
-    bool isOnCDRomDrive() const;
-
-    /** Returns true if this file is on a hard disk.
-
-        This will fail if it's a network drive, but will still be true for
-        removable hard-disks.
-    */
-    bool isOnHardDisk() const;
-
-    /** Returns true if this file is on a removable disk drive.
-
-        This might be a usb-drive, a CD-rom, or maybe a network drive.
-    */
-    bool isOnRemovableDrive() const;
-
-    //==============================================================================
     /** A set of types of location that can be passed to the getSpecialLocation() method.
     */
     enum SpecialLocationType
@@ -806,23 +749,6 @@ public:
         If the file isn't actually link, it'll just return itself.
     */
     File getLinkedTarget() const;
-
-   #ifdef CARLA_OS_WIN
-    /** Windows ONLY - Creates a win32 .LNK shortcut file that links to this file. */
-    bool createShortcut (const String& description, const File& linkFileToCreate) const;
-
-    /** Windows ONLY - Returns true if this is a win32 .LNK file. */
-    bool isShortcut() const;
-   #endif
-
-    //==============================================================================
-   #if 0 //def CARLA_OS_MAC
-    /** OSX ONLY - Finds the OSType of a file from the its resources. */
-    OSType getMacOSType() const;
-
-    /** OSX ONLY - Returns true if this file is actually a bundle. */
-    bool isBundle() const;
-   #endif
 
     //==============================================================================
     struct NaturalFileComparator
