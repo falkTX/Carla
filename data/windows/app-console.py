@@ -26,6 +26,6 @@ setup(name = "Carla",
       version = VERSION,
       description = "Carla Plugin Host",
       options = {"build_exe": options},
-      executables = [Executable(".\\source\\carla")])
+      executables = [Executable(".\\source\\frontend\\carla")])
 
 # ------------------------------------------------------------------------------------------------------------

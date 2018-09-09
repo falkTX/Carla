@@ -26,6 +26,6 @@ setup(name = "Carla",
       version = VERSION,
       description = "Carla Plugin Host",
       options = {"build_exe": options},
-      executables = [Executable(".\\source\\Carla.pyw", base="Win32GUI")])
+      executables = [Executable(".\\source\\frontend\\Carla.pyw", base="Win32GUI")])
 
 # ------------------------------------------------------------------------------------------------------------

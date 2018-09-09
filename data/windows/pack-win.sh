@@ -4,10 +4,16 @@
 # check input
 
 ARCH="${1}"
+ARCH_PREFIX="${1}"
 
-if [ x"${ARCH}" != x"32" ] && [ x"${ARCH}" != x"64" ]; then
-  echo "usage: $0 32|64"
+if [ x"${ARCH}" != x"32" ] && [ x"${ARCH}" != x"32nosse" ] && [ x"${ARCH}" != x"64" ]; then
+  echo "usage: $0 32|nonosse|64"
   exit 1
+fi
+
+if [ x"${ARCH}" = x"32nosse" ]; then
+  ARCH="32"
+  MAKE_ARGS="NOOPT=true"
 fi
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -29,34 +35,48 @@ source data/windows/common.env
 
 PKG_FOLDER="Carla_2.0-RC1-win${ARCH}"
 
+export WIN32=true
+
 if [ x"${ARCH}" != x"32" ]; then
+  export WIN64=true
   CPUARCH="x86_64"
 else
   CPUARCH="i686"
 fi
 
-MINGW_PREFIX="${CPUARCH}-w64-mingw32"
+# ---------------------------------------------------------------------------------------------------------------------
 
-export PREFIX=${TARGETDIR}/carla-w${ARCH}
-export PATH=/opt/mingw${ARCH}/bin:${PREFIX}/bin/usr/sbin:/usr/bin:/sbin:/bin
+export_vars() {
+
+local _ARCH="${1}"
+local _ARCH_PREFIX="${2}"
+local _MINGW_PREFIX="${3}-w64-mingw32"
+
+export PREFIX=${TARGETDIR}/carla-w${_ARCH_PREFIX}
+export PATH=/opt/mingw${_ARCH}/bin:${PREFIX}/bin/usr/sbin:/usr/bin:/sbin:/bin
 export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 
-export AR=${MINGW_PREFIX}-ar
-export CC=${MINGW_PREFIX}-gcc
-export CXX=${MINGW_PREFIX}-g++
-export STRIP=${MINGW_PREFIX}-strip
-export WINDRES=${MINGW_PREFIX}-windres
+export AR=${_MINGW_PREFIX}-ar
+export CC=${_MINGW_PREFIX}-gcc
+export CXX=${_MINGW_PREFIX}-g++
+export STRIP=${_MINGW_PREFIX}-strip
+export WINDRES=${_MINGW_PREFIX}-windres
 
 export CFLAGS="-DPTW32_STATIC_LIB -DFLUIDSYNTH_NOT_A_DLL"
-export CFLAGS="${CFLAGS} -I${PREFIX}/include -I/opt/mingw${ARCH}/include -I/opt/mingw${ARCH}/${MINGW_PREFIX}/include"
-export CXXFLAGS="${CFLAGS}"
-export LDFLAGS="-L${PREFIX}/lib -L/opt/mingw${ARCH}/lib -L/opt/mingw${ARCH}/${MINGW_PREFIX}/lib"
-
-export WIN32=true
+export CFLAGS="${CFLAGS} -I${PREFIX}/include -I/opt/mingw${_ARCH}/include -I/opt/mingw${_ARCH}/${_MINGW_PREFIX}/include"
 
 if [ x"${ARCH}" != x"32" ]; then
-  export WIN64=true
+  export CFLAGS="${CFLAGS} -mtune=generic -msse -msse2"
 fi
+
+export CXXFLAGS="${CFLAGS}"
+export LDFLAGS="-L${PREFIX}/lib -L/opt/mingw${_ARCH}/lib -L/opt/mingw${_ARCH}/${_MINGW_PREFIX}/lib"
+
+}
+
+# ---------------------------------------------------------------------------------------------------------------------
+
+export_vars "${ARCH}" "${ARCH_PREFIX}" "${CPUARCH}"
 
 export WINEARCH=win${ARCH}
 export WINEDEBUG=-all
@@ -67,15 +87,15 @@ export CXFREEZE="$PYTHON_EXE C:\\\\Python34\\\\Scripts\\\\cxfreeze"
 export PYUIC="$PYTHON_EXE -m PyQt5.uic.pyuic"
 export PYRCC="wine C:\\\\Python34\\\\Lib\\\\site-packages\\\\PyQt5\\\\pyrcc5.exe"
 
-export PYTHONPATH=`pwd`/source
+export PYTHONPATH=$(pwd)/source/frontend
 
 rm -rf ./data/windows/Carla
 mkdir -p ./data/windows/Carla/Debug
-cp ./source/carla ./source/Carla.pyw
+cp ./source/frontend/carla ./source/frontend/Carla.pyw
 $PYTHON_EXE ./data/windows/app-console.py build_exe
 mv ./data/windows/Carla/carla.exe ./data/windows/Carla/Debug/Carla.exe
 $PYTHON_EXE ./data/windows/app-gui.py build_exe
-rm -f ./source/Carla.pyw
+rm -f ./source/frontend/Carla.pyw
 
 cd data/windows/
 

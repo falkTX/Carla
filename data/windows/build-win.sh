@@ -7,7 +7,7 @@ ARCH="${1}"
 ARCH_PREFIX="${1}"
 
 if [ x"${ARCH}" != x"32" ] && [ x"${ARCH}" != x"32nosse" ] && [ x"${ARCH}" != x"64" ]; then
-  echo "usage: $0 32|64"
+  echo "usage: $0 32|nonosse|64"
   exit 1
 fi
 
