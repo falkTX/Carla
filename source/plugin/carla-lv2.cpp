@@ -23,6 +23,9 @@
 #include "CarlaPipeUtils.hpp"
 #include "CarlaString.hpp"
 
+#include "water/files/File.h"
+
+
 // --------------------------------------------------------------------------------------------------------------------
 // Carla Internal Plugin API exposed as LV2 plugin
 
@@ -50,11 +53,13 @@ public:
         if (! loadedInProperHost())
             return;
 
-        CarlaString resourceDir(bundlePath);
-        resourceDir += CARLA_OS_SEP_STR "resources" CARLA_OS_SEP_STR;
+        using water::File;
+        using water::String;
+
+        String resourceDir(water::File(bundlePath).getChildFile("resources").getFullPathName());
 
         fHost.handle      = this;
-        fHost.resourceDir = resourceDir.dupSafe();
+        fHost.resourceDir = carla_strdup(resourceDir.toRawUTF8());
         fHost.uiName      = nullptr;
         fHost.uiParentId  = 0;
 
