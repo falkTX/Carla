@@ -967,6 +967,8 @@ class PluginRefreshW(QDialog):
                 self.ui.ch_dssi.setEnabled(False)
                 self.ui.ch_vst.setEnabled(False)
 
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+
         # -------------------------------------------------------------------------------------------------------------
         # Load settings
 
@@ -1237,6 +1239,8 @@ class PluginDatabaseW(QDialog):
         if not (LINUX or MACOS):
             self.ui.ch_bridged_wine.setChecked(False)
             self.ui.ch_bridged_wine.setEnabled(False)
+
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
         # ----------------------------------------------------------------------------------------------------
         # Load settings
@@ -1732,6 +1736,8 @@ class JackApplicationW(QDialog):
         if False:
             # kdevelop likes this :)
             self.host = host = CarlaHostNull()
+
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
         # --------------------------------------------------------------------------------------------------------------
         # Load settings

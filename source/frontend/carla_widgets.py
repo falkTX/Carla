@@ -165,8 +165,13 @@ class CarlaAboutW(QDialog):
         self.ui.tabWidget.setCurrentIndex(0)
         self.setFixedSize(self.size())
 
+        flags  = self.windowFlags()
+        flags &= ~Qt.WindowContextHelpButtonHint
+
         if WINDOWS:
-            self.setWindowFlags(self.windowFlags()|Qt.MSWindowsFixedSizeDialogHint)
+            flags |= Qt.MSWindowsFixedSizeDialogHint
+
+        self.setWindowFlags(flags)
 
     def done(self, r):
         QDialog.done(self, r)
@@ -497,6 +502,8 @@ class PluginEdit(QDialog):
         self.ui.rb_balance.setVisible(False)
         self.ui.rb_pan.setEnabled(False)
         self.ui.rb_pan.setVisible(False)
+
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
         self.reloadAll()
 

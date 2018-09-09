@@ -81,6 +81,8 @@ class DriverSettingsW(QDialog):
         for name in self.fDeviceNames:
             self.ui.cb_device.addItem(name)
 
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+
         # ----------------------------------------------------------------------------------------------------
         # Load settings
 
@@ -239,7 +241,7 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Set-up GUI
 
-        self.ui.lw_page.setFixedWidth(48 + 6*3 + QFontMetrics(self.ui.lw_page.font()).width("  Experimental  "))
+        self.ui.lw_page.setFixedWidth(48 + 6*3 + QFontMetrics(self.ui.lw_page.font()).width("   Experimental   "))
 
         for i in range(host.get_engine_driver_count()):
             self.ui.cb_engine_audio_driver.addItem(host.get_engine_driver_name(i))
@@ -298,6 +300,8 @@ class CarlaSettingsW(QDialog):
 
         # FIXME, not implemented yet
         self.ui.ch_engine_uis_always_on_top.hide()
+
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
         # ----------------------------------------------------------------------------------------------------
         # Load settings

@@ -92,4 +92,4 @@ fi
 
 # Testing:
 echo "export WINEPREFIX=~/.winepy3_x${ARCH}"
-echo "$PYTHON_EXE ./source/carla"
+echo "$PYTHON_EXE ./source/frontend/carla"
