@@ -22,5 +22,8 @@ In experimental phase / work in progress:
 * Export any Carla loadable plugin or sound bank as an LV2 plugin
 * Plugin bridge support (such as running 32bit plugins on a 64bit Carla, or Windows plugins on Linux)
 
+Carla is also available as an LV2 plugin for Windows.
+Create the "C:\Program Files\Common Files\LV2" folder (if it does not exist yet), then copy Carla.lv2 into it and restart your LV2 host.
+
 For a complete and updated description of Carla, please check:
 http://kxstudio.linuxaudio.org/carla

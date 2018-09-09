@@ -89,7 +89,7 @@ export PYRCC="wine C:\\\\Python34\\\\Lib\\\\site-packages\\\\PyQt5\\\\pyrcc5.exe
 
 export PYTHONPATH=$(pwd)/source/frontend
 
-rm -rf ./data/windows/Carla
+rm -rf ./data/windows/Carla ./data/windows/Carla.lv2
 mkdir -p ./data/windows/Carla/Debug
 cp ./source/frontend/carla ./source/frontend/Carla.pyw
 $PYTHON_EXE ./data/windows/app-console.py build_exe
@@ -136,6 +136,13 @@ cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/Qt5Widgets.dll      Carl
 cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/Qt5OpenGL.dll       Carla/resources/
 cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/Qt5Svg.dll          Carla/resources/
 
+mkdir Carla.lv2
+cp ../../bin/carla.lv2/*.dll    Carla.lv2/
+cp ../../bin/carla.lv2/*.exe    Carla.lv2/
+cp ../../bin/carla.lv2/*.ttl    Carla.lv2/
+cp ../../bin/libcarla_utils.dll Carla.lv2/
+cp -r Carla/resources           Carla.lv2/
+
 if [ x"${CARLA_DEV}" != x"" ]; then
     exit 0
 fi
@@ -166,7 +173,7 @@ fi
 rm -rf ${PKG_FOLDER}
 mkdir ${PKG_FOLDER}
 mkdir ${PKG_FOLDER}/vcredist
-cp Carla.exe README.txt ${PKG_FOLDER}
+cp -r Carla.exe Carla.lv2 README.txt ${PKG_FOLDER}
 cp ~/.cache/winetricks/vcrun2010/vcredist_x${VCARCH}.exe ${PKG_FOLDER}/vcredist
 zip -r -9 ${PKG_FOLDER}.zip ${PKG_FOLDER}
 
