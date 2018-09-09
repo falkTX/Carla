@@ -642,6 +642,7 @@ public:
     WindowsPluginUI(Callback* const cb, const uintptr_t parentId, const bool isResizable) noexcept
         : CarlaPluginUI(cb, isResizable),
           fWindow(nullptr),
+          fChildWindow(nullptr),
           fParentWindow(nullptr),
           fIsVisible(false),
           fFirstShow(true)
@@ -669,8 +670,12 @@ public:
         }
 
         int winFlags = WS_POPUPWINDOW | WS_CAPTION;
+
         if (isResizable)
-            winFlags |= WS_SIZEBOX;
+        {
+            // not supported right now
+            // winFlags |= WS_SIZEBOX;
+        }
 
         fWindow = CreateWindowEx(WS_EX_TOPMOST,
                                  classNameBuf, "Carla Plugin UI", winFlags,
@@ -834,6 +839,8 @@ public:
     void setChildWindow(void* const winId) override
     {
         CARLA_SAFE_ASSERT_RETURN(winId != nullptr,);
+
+        fChildWindow = (HWND)fChildWindow;
     }
 
     void* getPtr() const noexcept override
@@ -848,6 +855,7 @@ public:
 
 private:
     HWND     fWindow;
+    HWND     fChildWindow;
     HWND     fParentWindow;
     WNDCLASS fWindowClass;
 
