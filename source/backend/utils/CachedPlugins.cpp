@@ -73,7 +73,10 @@ static Array<File> gSFZs;
 
 void findSFZs(const char* const sfzPaths)
 {
-    CARLA_SAFE_ASSERT_RETURN(sfzPaths != nullptr && sfzPaths[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(sfzPaths != nullptr,);
+
+    if (sfzPaths[0] == '\0')
+        return;
 
     const StringArray splitPaths(StringArray::fromTokens(sfzPaths, CARLA_OS_SPLIT_STR, ""));
 
