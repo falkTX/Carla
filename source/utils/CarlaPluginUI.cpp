@@ -478,7 +478,7 @@ public:
             style |= NSResizableWindowMask;
         */
 
-        NSRect frame = NSMakeRect(0, 0, 800, 600);
+        NSRect frame = NSMakeRect(0, 0, 100, 100);
 
         fWindow = [[[CarlaPluginWindow alloc]
             initWithContentRect:frame
@@ -495,8 +495,10 @@ public:
         }
 
         //if (! isResizable)
-        [fView setAutoresizingMask:NSViewNotSizable];
-        [[fWindow standardWindowButton:NSWindowZoomButton] setHidden:YES];
+        {
+            [fView setAutoresizingMask:NSViewNotSizable];
+            [[fWindow standardWindowButton:NSWindowZoomButton] setHidden:YES];
+        }
 
         [fWindow setCallback:cb];
         [fWindow setContentView:fView];
@@ -569,6 +571,12 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fView != nullptr,);
 
         [fView setFrame:NSMakeRect(0, 0, width, height)];
+
+        for (NSView* subview in [fView subviews])
+        {
+            [subview setFrame:NSMakeRect(0, 0, width, height)];
+            break;
+        }
 
         const NSSize size = NSMakeSize(width, height);
         [fWindow setContentSize:size];
