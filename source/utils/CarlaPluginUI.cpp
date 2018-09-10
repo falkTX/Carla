@@ -402,7 +402,7 @@ private:
     NSWindow* result = [super initWithContentRect:contentRect
                                         styleMask:aStyle
                                           backing:bufferingType
-                                            defer:NO];
+                                            defer:flag];
 
     [result setAcceptsMouseMovedEvents:YES];
 
@@ -462,10 +462,12 @@ public:
     CocoaPluginUI(Callback* const cb, const uintptr_t parentId, const bool isResizable) noexcept
         : CarlaPluginUI(cb, isResizable),
           fView(nullptr),
+          fParentWindow(nullptr),
           fWindow(nullptr)
     {
         carla_debug("CocoaPluginUI::CocoaPluginUI(%p, " P_UINTPTR, "%s)", cb, parentId, bool2str(isResizable));
         const CarlaBackend::AutoNSAutoreleasePool arp;
+        [NSApplication sharedApplication];
 
         fView = [[NSView new]retain];
         CARLA_SAFE_ASSERT_RETURN(fView != nullptr,)
