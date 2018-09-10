@@ -375,6 +375,7 @@ public:
             CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor->UICount > 0, false);
 
             fRdfUiDescriptor = &fRdfDescriptor->UIs[0];
+            uiURI = fRdfUiDescriptor->URI;
         }
         else
         {
