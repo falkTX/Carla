@@ -25,7 +25,7 @@ namespace water
 #ifdef CARLA_OS_WIN
 static HINSTANCE currentModuleHandle = nullptr;
 
-HINSTANCE water_getCurrentModuleInstanceHandle() noexcept
+HINSTANCE getCurrentModuleInstanceHandle() noexcept
 {
     if (currentModuleHandle == nullptr)
         currentModuleHandle = GetModuleHandleA (nullptr);

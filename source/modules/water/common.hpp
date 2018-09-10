@@ -52,6 +52,8 @@ int64 water_fileSetPosition (void* handle, int64 pos)
     li.LowPart = SetFilePointer ((HANDLE) handle, (LONG) li.LowPart, &li.HighPart, FILE_BEGIN);  // (returns -1 if it fails)
     return li.QuadPart;
 }
+
+HINSTANCE getCurrentModuleInstanceHandle() noexcept;
 #else
 static inline
 Result getResultForErrno()

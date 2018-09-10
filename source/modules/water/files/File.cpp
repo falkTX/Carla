@@ -1109,7 +1109,7 @@ File File::getSpecialLocation (const SpecialLocationType type)
         }
 
         case currentExecutableFile:
-            return WindowsFileHelpers::getModuleFileName (water_getCurrentModuleInstanceHandle());
+            return WindowsFileHelpers::getModuleFileName (water::getCurrentModuleInstanceHandle());
 
         case hostApplicationPath:
             return WindowsFileHelpers::getModuleFileName (nullptr);

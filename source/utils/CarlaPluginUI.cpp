@@ -33,6 +33,7 @@
 
 #ifdef CARLA_OS_WIN
 # include <ctime>
+# include "water/common.hpp"
 #endif
 
 #ifndef CARLA_PLUGIN_UI_CLASS_PREFIX
@@ -668,12 +669,12 @@ public:
      {
         // FIXME
         static int wc_count = 0;
-        char classNameBuf[256];
-        std::srand((std::time(NULL)));
-        _snprintf(classNameBuf, sizeof(classNameBuf), "CaWin_%d-%d", std::rand(), ++wc_count);
-        classNameBuf[sizeof(classNameBuf)-1] = '\0';
+        char classNameBuf[32];
+        std::srand((std::time(nullptr)));
+        std::snprintf(classNameBuf, 32, "CarlaWin-%d-%d", ++wc_count, std::rand());
+        classNameBuf[31] = '\0';
 
-        const HINSTANCE hInstance = GetModuleHandleA(nullptr);
+        const HINSTANCE hInstance = water::getCurrentModuleInstanceHandle();
 
         carla_zeroStruct(fWindowClass);
         fWindowClass.style         = CS_OWNDC;
@@ -699,10 +700,13 @@ public:
         fWindow = CreateWindowEx(WS_EX_TOPMOST,
                                  classNameBuf, "Carla Plugin UI", winFlags,
                                  CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-                                 NULL, NULL, hInstance, NULL);
+                                 nullptr, nullptr, hInstance, nullptr);
 
-        if (! fWindow) {
-            UnregisterClass(fWindowClass.lpszClassName, NULL);
+        if (fWindow == nullptr) {
+            const DWORD errorCode = ::GetLastError();
+            carla_stderr2("CreateWindowEx failed with error code 0x%x, class name was '%s'",
+                          errorCode, fWindowClass.lpszClassName);
+            UnregisterClass(fWindowClass.lpszClassName, nullptr);
             free((void*)fWindowClass.lpszClassName);
             return;
         }
@@ -727,13 +731,13 @@ public:
         }
 
         // FIXME
-        UnregisterClass(fWindowClass.lpszClassName, NULL);
+        UnregisterClass(fWindowClass.lpszClassName, nullptr);
         free((void*)fWindowClass.lpszClassName);
     }
 
     void show() override
     {
-        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
 
         if (fFirstShow)
         {
@@ -765,7 +769,7 @@ public:
 
     void hide() override
     {
-        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
 
         ShowWindow(fWindow, SW_HIDE);
         fIsVisible = false;
@@ -774,7 +778,7 @@ public:
 
     void idle() override
     {
-        if (fIsIdling || fWindow == 0)
+        if (fIsIdling || fWindow == nullptr)
             return;
 
         MSG msg;
@@ -818,7 +822,7 @@ public:
 
     void focus() override
     {
-        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
 
         SetForegroundWindow(fWindow);
         SetActiveWindow(fWindow);
@@ -827,7 +831,7 @@ public:
 
     void setSize(const uint width, const uint height, const bool forceUpdate) override
     {
-        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
 
         const int winFlags = WS_POPUPWINDOW | WS_CAPTION | (fIsResizable ? WS_SIZEBOX : 0x0);
         RECT wr = { 0, 0, static_cast<long>(width), static_cast<long>(height) };
@@ -842,14 +846,14 @@ public:
 
     void setTitle(const char* const title) override
     {
-        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
 
         SetWindowTextA(fWindow, title);
     }
 
     void setTransientWinId(const uintptr_t winId) override
     {
-        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
 
         fParentWindow = (HWND)winId;
         SetWindowLongPtr(fWindow, GWLP_HWNDPARENT, (LONG_PTR)winId);
@@ -873,9 +877,9 @@ public:
     }
 
 private:
-    HWND     fWindow;
-    HWND     fChildWindow;
-    HWND     fParentWindow;
+    HWND fWindow;
+    HWND fChildWindow;
+    HWND fParentWindow;
     WNDCLASS fWindowClass;
 
     bool fIsVisible;

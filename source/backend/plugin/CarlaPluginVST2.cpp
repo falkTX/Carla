@@ -507,7 +507,7 @@ public:
                 value = (intptr_t)fUI.window->getDisplay();
 #endif
 
-                if (dispatcher(effEditOpen, 0, value, fUI.window->getPtr()) != 0 || 1)
+                if (dispatcher(effEditOpen, 0, value, fUI.window->getPtr()) != 0)
                 {
                     fUI.isOpen = true;
 
