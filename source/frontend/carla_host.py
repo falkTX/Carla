@@ -2358,6 +2358,7 @@ class HostWindow(QMainWindow):
             return
 
         if MACOS and self.fMacClosingHelper and not (self.host.isControl or self.host.isPlugin):
+            self.fCustomStopAction = self.CUSTOM_ACTION_APP_CLOSE
             self.fMacClosingHelper = False
             event.ignore()
 
