@@ -341,7 +341,7 @@ public:
     bool init(const int argc, const char* argv[]) override
     {
         const char* pluginURI = argv[1];
-        const char* uiURI     = argv[2];
+        const char* uiURI     = argc > 2 ? argv[2] : nullptr;
 
         // ------------------------------------------------------------------------------------------------------------
         // load plugin
@@ -370,12 +370,21 @@ public:
         // ------------------------------------------------------------------------------------------------------------
         // find requested UI
 
-        for (uint32_t i=0; i < fRdfDescriptor->UICount; ++i)
+        if (uiURI == nullptr)
         {
-            if (std::strcmp(fRdfDescriptor->UIs[i].URI, uiURI) == 0)
+            CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor->UICount > 0, false);
+
+            fRdfUiDescriptor = &fRdfDescriptor->UIs[0];
+        }
+        else
+        {
+            for (uint32_t i=0; i < fRdfDescriptor->UICount; ++i)
             {
-                fRdfUiDescriptor = &fRdfDescriptor->UIs[i];
-                break;
+                if (std::strcmp(fRdfDescriptor->UIs[i].URI, uiURI) == 0)
+                {
+                    fRdfUiDescriptor = &fRdfDescriptor->UIs[i];
+                    break;
+                }
             }
         }
 
@@ -1187,9 +1196,9 @@ int main(int argc, const char* argv[])
 {
     CARLA_BRIDGE_UI_USE_NAMESPACE
 
-    if (argc < 3)
+    if (argc < 2)
     {
-        carla_stderr("usage: %s <plugin-uri> <ui-uri>", argv[0]);
+        carla_stderr("usage: %s <plugin-uri> [ui-uri]", argv[0]);
         return 1;
     }
 
