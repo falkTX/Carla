@@ -446,7 +446,7 @@ RTMEMPOOL_LIBS   = -lpthread
 WATER_LIBS       = -lpthread -lrt
 endif
 
-ifneq ($(HAIKU),true)
+ifeq ($(HAIKU),true)
 JACKBRIDGE_LIBS  = -lpthread
 LILV_LIBS        = -lm
 RTMEMPOOL_LIBS   = -lpthread
