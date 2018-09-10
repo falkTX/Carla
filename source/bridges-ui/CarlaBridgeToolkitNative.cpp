@@ -90,7 +90,10 @@ public:
         carla_debug("CarlaBridgeToolkitNative::exec(%s)", bool2str(showUI));
 
         if (showUI)
+        {
             fHostUI->show();
+            fHostUI->focus();
+        }
 
         fIdling = true;
 
