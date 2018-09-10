@@ -437,7 +437,7 @@ private:
     if (callback != nil)
         callback->handlePluginUIClosed();
 
-    return YES;
+    return NO;
 
     // unused
     (void)sender;
