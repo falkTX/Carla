@@ -115,7 +115,7 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
                 return BINARY_OTHER;
         }
 
-        carla_stdout("getBinaryTypeFromFile(\"%s\") - have output:\n%s", filename, output);
+        carla_debug("getBinaryTypeFromFile(\"%s\") - have output:\n%s", filename, output);
 # endif
 
         return BINARY_NATIVE;
