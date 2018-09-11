@@ -74,6 +74,7 @@ LINK_FLAGS += $(MAGIC_LIBS)
 LINK_FLAGS += $(X11_LIBS)
 
 ifeq ($(MACOS),true)
+SYMBOLS_NATIVE = -Wl,-exported_symbol,_carla_get_native_rack_plugin -Wl,-exported_symbol,_carla_get_native_patchbay_plugin
 SYMBOLS_LV2    = -Wl,-exported_symbol,_lv2_descriptor -Wl,-exported_symbol,_lv2ui_descriptor
 SYMBOLS_LV2_UI = -Wl,-exported_symbol,_lv2ui_descriptor
 SYMBOLS_VST    = # TODO
@@ -87,6 +88,10 @@ LIBS_ui = $(MODULEDIR)/water.a
 # ---------------------------------------------------------------------------------------------------------------------
 
 TARGETS = \
+	$(BINDIR)/carla-native-plugin$(APP_EXT) \
+	$(BINDIR)/libcarla-native-plugin$(LIB_EXT)
+
+TARGETS += \
 	$(BINDIR)/carla.lv2/carla$(LIB_EXT)
 
 ifeq ($(HAVE_PYQT),true)
@@ -129,6 +134,16 @@ debug:
 	$(MAKE) DEBUG=true
 
 # ---------------------------------------------------------------------------------------------------------------------
+
+$(BINDIR)/carla-native-plugin$(APP_EXT): $(OBJDIR)/carla-native-plugin.cpp.o $(LIBS)
+	-@mkdir -p $(BINDIR)
+	@echo "Linking carla-native-plugin$(APP_EXT)"
+	@$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) -o $@
+
+$(BINDIR)/libcarla-native-plugin$(LIB_EXT): $(OBJDIR)/carla-native-plugin.cpp.o $(LIBS)
+	-@mkdir -p $(BINDIR)
+	@echo "Linking libcarla-native-plugin$(LIB_EXT)"
+	@$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(SYMBOLS_NATIVE) $(LINK_FLAGS) -o $@
 
 $(BINDIR)/carla.lv2/carla$(LIB_EXT): $(OBJDIR)/carla-lv2.cpp.o $(LIBS)
 	-@mkdir -p $(BINDIR)/carla.lv2
@@ -176,6 +191,11 @@ $(BINDIR)/CarlaVstShell$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.shell.o $(LIBS)
 	@$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
+
+$(OBJDIR)/carla-native-plugin.cpp.o: carla-native-plugin.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 $(OBJDIR)/carla-lv2.cpp.o: carla-lv2.cpp
 	-@mkdir -p $(OBJDIR)

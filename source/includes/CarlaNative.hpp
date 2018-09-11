@@ -490,6 +490,8 @@ public:
             CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, 0);
             handlePtr->uiNameChanged(static_cast<const char*>(ptr));
             return 0;
+        case NATIVE_PLUGIN_OPCODE_GET_INTERNAL_HANDLE:
+            return 0;
         }
 
         return 0;

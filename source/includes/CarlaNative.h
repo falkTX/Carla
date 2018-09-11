@@ -93,7 +93,8 @@ typedef enum {
     NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED = 1, /** uses value               */
     NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED = 2, /** uses opt                 */
     NATIVE_PLUGIN_OPCODE_OFFLINE_CHANGED     = 3, /** uses value (0=off, 1=on) */
-    NATIVE_PLUGIN_OPCODE_UI_NAME_CHANGED     = 4  /** uses ptr                 */
+    NATIVE_PLUGIN_OPCODE_UI_NAME_CHANGED     = 4, /** uses ptr                 */
+    NATIVE_PLUGIN_OPCODE_GET_INTERNAL_HANDLE = 5  /** nothing                  */
 } NativePluginDispatcherOpcode;
 
 typedef enum {

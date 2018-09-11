@@ -33,6 +33,7 @@
 #include "CarlaExternalUI.hpp"
 #include "CarlaHost.h"
 #include "CarlaNative.hpp"
+#include "CarlaNativePlugin.h"
 
 #include "water/files/File.h"
 #include "water/streams/MemoryOutputStream.h"
@@ -1988,6 +1989,10 @@ public:
         case NATIVE_PLUGIN_OPCODE_UI_NAME_CHANGED:
             //handlePtr->uiNameChanged(static_cast<const char*>(ptr));
             return 0;
+        case NATIVE_PLUGIN_OPCODE_GET_INTERNAL_HANDLE: {
+            CarlaEngineNative* const engine = handlePtr;
+            return (uintptr_t)(CarlaEngine*)engine;
+        }
         }
 
         return 0;
@@ -2308,16 +2313,12 @@ void carla_register_native_plugin_carla()
 
 // -----------------------------------------------------------------------
 
-CARLA_EXPORT
-const NativePluginDescriptor* carla_get_native_rack_plugin();
 const NativePluginDescriptor* carla_get_native_rack_plugin()
 {
     CARLA_BACKEND_USE_NAMESPACE;
     return &carlaRackDesc;
 }
 
-CARLA_EXPORT
-const NativePluginDescriptor* carla_get_native_patchbay_plugin();
 const NativePluginDescriptor* carla_get_native_patchbay_plugin()
 {
     CARLA_BACKEND_USE_NAMESPACE;
