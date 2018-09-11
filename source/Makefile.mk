@@ -111,13 +111,16 @@ ifeq ($(NOOPT),true)
 BASE_OPTS  = -O2 -ffast-math -fdata-sections -ffunction-sections
 endif
 
-ifneq ($(WIN32),true)
-# Not needed for Windows
-BASE_FLAGS += -fPIC -DPIC
-else
+ifeq ($(WIN32),true)
+# mingw has issues with this specific optimization
+# See https://github.com/falkTX/Carla/issues/696
+BASE_OPTS  += -fno-rerun-cse-after-loop
 ifeq ($(BUILDING_FOR_WINDOWS),true)
 BASE_FLAGS += -DBUILDING_CARLA_FOR_WINDOWS
 endif
+else
+# Not needed for Windows
+BASE_FLAGS += -fPIC -DPIC
 endif
 
 ifeq ($(CLANG),true)
