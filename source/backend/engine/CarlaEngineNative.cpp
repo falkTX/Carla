@@ -1757,8 +1757,6 @@ protected:
 
         const CarlaMutexLocker cml(fUiServer.getPipeLock());
         const ScopedLocale csl;
-
-#ifndef CARLA_OS_WIN
         const EngineTimeInfo& timeInfo(pData->timeInfo);
 
         // send transport
@@ -1789,7 +1787,6 @@ protected:
         }
 
         fUiServer.flushMessages();
-#endif
 
         // send peaks and param outputs for all plugins
         for (uint i=0; i < pData->curPluginCount; ++i)
