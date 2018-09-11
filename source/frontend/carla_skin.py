@@ -360,6 +360,10 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         isCalfSkin  = self.fSkinStyle.startswith("calf") and not isinstance(self, PluginSlot_Compact)
         imageSuffix = "white" if self.fDarkStyle else "black"
 
+        if self.fSkinStyle.startswith("calf") or self.fSkinStyle.startswith("openav") or self.fSkinStyle in (
+            "3bandeq", "3bandsplitter", "pingpongpan", "nekobi", "calf_black", "zynfx"):
+            imageSuffix = "white"
+
         if self.b_enable is not None:
             self.b_enable.setChecked(self.fIsActive)
             self.b_enable.clicked.connect(self.slot_enableClicked)
