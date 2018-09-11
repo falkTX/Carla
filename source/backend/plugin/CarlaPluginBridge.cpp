@@ -168,7 +168,7 @@ protected:
             else
                 wineCMD = "wine";
 
-            if (fBinary.endsWithIgnoreCase("64.exe"))
+            if (fBinary.endsWithIgnoreCase("64.exe") && File(wineCMD + "64").existsAsFile())
                 wineCMD += "64";
 
             arguments.add(wineCMD);
@@ -277,6 +277,9 @@ protected:
                     std::snprintf(strBuf, STR_MAX, "%i", options.wine.serverRtPrio);
                     carla_setenv("STAGING_RT_PRIORITY_SERVER", strBuf);
                     carla_setenv("WINE_SVR_RT", strBuf);
+
+                    carla_stdout("Using WINEPREFIX '%s', with base RT prio %i and server RT prio %i",
+                                fWinePrefix.toRawUTF8(), options.wine.baseRtPrio, options.wine.serverRtPrio);
                 }
                 else
                 {
@@ -287,13 +290,13 @@ protected:
                     carla_unsetenv("WINE_RT");
                     carla_unsetenv("WINE_RT_PRIO");
                     carla_unsetenv("WINE_SVR_RT");
-                }
 
-                carla_stdout("Using WINEPREFIX '%s'", fWinePrefix.toRawUTF8());
+                    carla_stdout("Using WINEPREFIX '%s', without RT priorities", fWinePrefix.toRawUTF8());
+                }
             }
 #endif
 
-            carla_stdout("starting plugin bridge, command is:\n%s \"%s\" \"%s\" \"%s\" " P_INT64,
+            carla_stdout("Starting plugin bridge, command is:\n%s \"%s\" \"%s\" \"%s\" " P_INT64,
                          fBinary.toRawUTF8(), getPluginTypeAsString(kPlugin->getType()), filename.toRawUTF8(), fLabel.toRawUTF8(), kPlugin->getUniqueId());
 
             started = fProcess->start(arguments);

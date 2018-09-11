@@ -195,7 +195,7 @@ def runCarlaDiscovery(itype, stype, filename, tool, wineSettings=None):
 
             wineCMD = wineSettings['executable'] if wineSettings['executable'] else "wine"
 
-            if tool.endswith("64.exe"):
+            if tool.endswith("64.exe") and os.path.exists(wineCMD + "64"):
                 wineCMD += "64"
 
             command.append("WINEPREFIX=" + winePrefix)
