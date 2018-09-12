@@ -80,6 +80,7 @@ carla-discovery-posix32
 carla-discovery-posix64
 
 carla-lv2-export
+carla-native-plugin
 carla-rest-server
 zynaddsubfx-ui
 
