@@ -356,6 +356,38 @@ EngineTimeInfo& EngineTimeInfo::operator=(const EngineTimeInfo& info) noexcept
     return *this;
 }
 
+bool EngineTimeInfo::compareIgnoringRollingFrames(const EngineTimeInfo& timeInfo, const uint32_t maxFrames) const noexcept
+{
+    if (timeInfo.playing != playing || timeInfo.bbt.valid != bbt.valid)
+        return false;
+    if (! bbt.valid)
+        return true;
+    if (carla_isNotEqual(timeInfo.bbt.beatsPerBar, bbt.beatsPerBar))
+        return false;
+    if (carla_isNotEqual(timeInfo.bbt.beatsPerMinute, bbt.beatsPerMinute))
+        return false;
+
+    // frame matches, nothing else to compare
+    if (timeInfo.frame == frame)
+        return true;
+
+    // if we went back in time, so a case of reposition
+    if (frame > timeInfo.frame)
+        return false;
+
+    // not playing, so dont bother checking transport
+    // assume frame changed, likely playback has stopped
+    if (! playing)
+        return false;
+
+    // if we are within expected bounds, assume we are rolling normally
+    if (frame + maxFrames <= timeInfo.frame)
+        return true;
+
+    // out of bounds, another reposition
+    return false;
+}
+
 bool EngineTimeInfo::operator==(const EngineTimeInfo& timeInfo) const noexcept
 {
     if (timeInfo.playing != playing || timeInfo.frame != frame || timeInfo.bbt.valid != bbt.valid)

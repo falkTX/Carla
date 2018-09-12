@@ -314,6 +314,9 @@ struct CARLA_API EngineTimeInfo {
     EngineTimeInfo(const EngineTimeInfo&) noexcept;
     EngineTimeInfo& operator=(const EngineTimeInfo&) noexcept;
 
+    // fast comparison, doesn't check all values
+    bool compareIgnoringRollingFrames(const EngineTimeInfo& timeInfo, const uint32_t maxFrames) const noexcept;
+
     // quick operator, doesn't check all values
     bool operator==(const EngineTimeInfo& timeInfo) const noexcept;
     bool operator!=(const EngineTimeInfo& timeInfo) const noexcept;
