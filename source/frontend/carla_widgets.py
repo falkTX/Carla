@@ -157,9 +157,9 @@ class CarlaAboutW(QDialog):
                                       "</ul>"))
         self.ui.l_vst2.setText(self.tr("About 85% complete (missing vst bank/presets and some minor stuff)"))
 
-        # 2nd tab is usually longer than the 1st
+        # 3rd tab is usually longer than the 1st
         # adjust appropriately
-        self.ui.tabWidget.setCurrentIndex(1)
+        self.ui.tabWidget.setCurrentIndex(2)
         self.adjustSize()
 
         self.ui.tabWidget.setCurrentIndex(0)
