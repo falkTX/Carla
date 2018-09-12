@@ -18,6 +18,11 @@
 #include "CarlaUtils.hpp"
 #include "CarlaNativePlugin.h"
 
+#include "CarlaString.hpp"
+#include "water/files/File.h"
+
+// --------------------------------------------------------------------------------------------------------------------
+
 static uint32_t get_buffer_size(NativeHostHandle)
 {
     return 128;
@@ -35,17 +40,21 @@ static bool is_offline(NativeHostHandle)
 
 int main()
 {
+    const char* const filename = carla_get_library_filename();
+    CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', 1);
+
+    const char* const folder = carla_get_library_folder();
+    CARLA_SAFE_ASSERT_RETURN(folder != nullptr && folder[0] != '\0', 1);
+
     const NativePluginDescriptor* const rack = carla_get_native_rack_plugin();
     CARLA_SAFE_ASSERT_RETURN(rack != nullptr, 1);
 
     const NativePluginDescriptor* const patchbay = carla_get_native_patchbay_plugin();
     CARLA_SAFE_ASSERT_RETURN(patchbay != nullptr, 1);
 
-    const char* const resourceDir = get_current_dir_name();
-
     const NativeHostDescriptor host = {
         nullptr,
-        resourceDir,
+        "", // resourceDir
         "Carla Plugin UI",
         0,
 
@@ -65,12 +74,12 @@ int main()
         nullptr, // ui_save_file
 
         nullptr, // dispatcher
-
     };
+
     const NativePluginHandle handle = rack->instantiate(&host);
     CARLA_SAFE_ASSERT_RETURN(handle != nullptr, 1);
 
-    CarlaEngine* const engine = carla_plugin_get_engine(rack, handle);
+    CarlaBackend::CarlaEngine* const engine = carla_plugin_get_engine(rack, handle);
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr, 1);
 
     carla_stdout("Got Engine %p, %s, %i, %f",
@@ -79,3 +88,5 @@ int main()
     rack->cleanup(handle);
     return 0;
 }
+
+// --------------------------------------------------------------------------------------------------------------------
