@@ -3,7 +3,7 @@ libdir=X-LIBDIR-X/carla
 includedir=X-INCLUDEDIR-X/carla
 
 Name: carla-utils
-Version: 1.9.5
+Version: 1.9.11
 Description: Carla Host Utilities
 Libs: -Wl,rpath=${libdir} -L${libdir} -lcarla_utils
 Cflags: -DREAL_BUILD -I${includedir} -I${includedir}/includes -I${includedir}/utils
