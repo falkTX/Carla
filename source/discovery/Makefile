@@ -35,7 +35,7 @@ BUILD_CXX_FLAGS += -ObjC++
 endif
 
 ifeq ($(WIN32),true)
-LINK_FLAGS += -mwindows
+LINK_FLAGS += -lole32 -mwindows
 endif
 
 32BIT_FLAGS += -DBUILD_BRIDGE -DBUILD_BRIDGE_ALTERNATIVE_ARCH
