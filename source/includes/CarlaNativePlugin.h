@@ -20,7 +20,6 @@
 
 #include "CarlaBackend.h"
 #include "CarlaNative.h"
-#include "CarlaEngine.hpp"
 
 /*!
  * Get the absolute filename of this carla library.
@@ -46,17 +45,7 @@ CARLA_EXPORT const NativePluginDescriptor* carla_get_native_patchbay_plugin();
 /*!
  * Get the internal CarlaEngine instance.
  */
-static inline
-CarlaBackend::CarlaEngine* carla_plugin_get_engine(const NativePluginDescriptor* desc, NativePluginHandle handle)
-{
-    CARLA_SAFE_ASSERT_RETURN(desc != nullptr, nullptr);
-    CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
-
-    using CarlaBackend::CarlaEngine;
-    return (CarlaEngine*)static_cast<uintptr_t>(desc->dispatcher(handle,
-                                                                 NATIVE_PLUGIN_OPCODE_GET_INTERNAL_HANDLE,
-                                                                 0, 0, nullptr, 0.0f));
-}
+CARLA_EXPORT CarlaBackend::CarlaEngine* carla_get_native_plugin_engine(const NativePluginDescriptor* desc, NativePluginHandle handle);
 #endif
 
 #endif /* CARLA_NATIVE_PLUGIN_H_INCLUDED */

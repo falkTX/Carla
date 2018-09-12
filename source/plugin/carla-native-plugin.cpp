@@ -15,11 +15,26 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaUtils.hpp"
 #include "CarlaNativePlugin.h"
 
+#include "CarlaEngine.hpp"
 #include "CarlaString.hpp"
+
 #include "water/files/File.h"
+
+CARLA_BACKEND_USE_NAMESPACE
+
+// --------------------------------------------------------------------------------------------------------------------
+
+CarlaEngine* carla_get_native_plugin_engine(const NativePluginDescriptor* desc, NativePluginHandle handle)
+{
+    CARLA_SAFE_ASSERT_RETURN(desc != nullptr, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
+
+    return (CarlaEngine*)static_cast<uintptr_t>(desc->dispatcher(handle,
+                                                                 NATIVE_PLUGIN_OPCODE_GET_INTERNAL_HANDLE,
+                                                                 0, 0, nullptr, 0.0f));
+}
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -79,7 +94,7 @@ int main()
     const NativePluginHandle handle = rack->instantiate(&host);
     CARLA_SAFE_ASSERT_RETURN(handle != nullptr, 1);
 
-    CarlaBackend::CarlaEngine* const engine = carla_plugin_get_engine(rack, handle);
+    CarlaEngine* const engine = carla_get_native_plugin_engine(rack, handle);
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr, 1);
 
     carla_stdout("Got Engine %p, %s, %i, %f",
