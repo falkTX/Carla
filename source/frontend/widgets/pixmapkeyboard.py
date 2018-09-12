@@ -160,7 +160,7 @@ kPcKeys_azerty = [
     str(Qt.Key_T),
     str(Qt.Key_Minus),
     str(Qt.Key_Y),
-    str(Qt.Key_Egrave ),
+    str(Qt.Key_Egrave),
     str(Qt.Key_U),
     # 3rd octave
     str(Qt.Key_I),
