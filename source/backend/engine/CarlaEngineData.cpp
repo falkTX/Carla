@@ -360,12 +360,14 @@ bool EngineTimeInfo::compareIgnoringRollingFrames(const EngineTimeInfo& timeInfo
 {
     if (timeInfo.playing != playing || timeInfo.bbt.valid != bbt.valid)
         return false;
-    if (! bbt.valid)
-        return true;
-    if (carla_isNotEqual(timeInfo.bbt.beatsPerBar, bbt.beatsPerBar))
-        return false;
-    if (carla_isNotEqual(timeInfo.bbt.beatsPerMinute, bbt.beatsPerMinute))
-        return false;
+
+    if (bbt.valid)
+    {
+        if (carla_isNotEqual(timeInfo.bbt.beatsPerBar, bbt.beatsPerBar))
+            return false;
+        if (carla_isNotEqual(timeInfo.bbt.beatsPerMinute, bbt.beatsPerMinute))
+            return false;
+    }
 
     // frame matches, nothing else to compare
     if (timeInfo.frame == frame)
