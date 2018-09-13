@@ -40,7 +40,7 @@ const char* findBinaryInBundle(const char* const bundleDir)
     const CFURLRef absoluteURL = CFURLCopyAbsoluteURL(exeRef);
     CARLA_SAFE_ASSERT_RETURN(absoluteURL != nullptr, nullptr);
 
-    const NSString* strRef = (NSString*)CFURLCopyFileSystemPath(absoluteURL, nil);
+    const NSString* strRef = (NSString*)CFURLCopyFileSystemPath(absoluteURL, kCFURLPOSIXPathStyle);
     CARLA_SAFE_ASSERT_RETURN(strRef != nullptr, nullptr);
 
     static CarlaString ret;

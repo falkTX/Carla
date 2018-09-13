@@ -69,3 +69,16 @@ index cd73148..3f8429e 100644
 -- 
 2.7.4
 
+diff --git a/src/platformsupport/fontdatabases/mac/qfontengine_coretext.mm b/src/platformsupport/fontdatabases/mac/qfontengine_coretext.mm
+index 7e1dfd9..674c037 100644
+--- a/src/platformsupport/fontdatabases/mac/qfontengine_coretext.mm
++++ b/src/platformsupport/fontdatabases/mac/qfontengine_coretext.mm
+@@ -736,7 +736,7 @@ void QCoreTextFontEngine::getUnscaledGlyph(glyph_t glyph, QPainterPath *path, gl
+ 
+ QFixed QCoreTextFontEngine::emSquareSize() const
+ {
+-    return QFixed::QFixed(int(CTFontGetUnitsPerEm(ctfont)));
++    return QFixed(int(CTFontGetUnitsPerEm(ctfont)));
+ }
+ 
+ QFontEngine *QCoreTextFontEngine::cloneWithSize(qreal pixelSize) const
