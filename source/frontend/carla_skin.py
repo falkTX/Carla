@@ -1754,13 +1754,9 @@ class PluginSlot_Presets(AbstractPluginSlot):
         # -------------------------------------------------------------
 
     def setupZynFxParams(self):
-        parameterCount = self.host.get_parameter_count(self.fPluginId)
+        parameterCount = min(self.host.get_parameter_count(self.fPluginId), 8)
 
-        index = 0
         for i in range(parameterCount):
-            if index >= 8:
-                break
-
             paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
             paramData   = self.host.get_parameter_data(self.fPluginId, i)
             paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
