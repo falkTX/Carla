@@ -645,8 +645,10 @@ public:
             carla_msleep(20);
         }
 
+        if (! fBridgeThread.isThreadRunning())
+            return carla_stderr("CarlaPluginBridge::waitForSaved() - Bridge is not running");
         if (! fSaved)
-            carla_stderr("CarlaPluginBridge::waitForSaved() - Timeout while requesting save state");
+            return carla_stderr("CarlaPluginBridge::waitForSaved() - Timeout while requesting save state");
     }
 
     // -------------------------------------------------------------------
@@ -1757,7 +1759,9 @@ public:
 
     void waitForBridgeSaveSignal() noexcept override
     {
-        waitForSaved();
+        // VSTs only save chunks, for which we already have a waitForSaved there
+        if (fPluginType != PLUGIN_VST2)
+            waitForSaved();
     }
 
     // -------------------------------------------------------------------
