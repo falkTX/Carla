@@ -127,6 +127,7 @@ class ParamProgressBar(QProgressBar):
 
         self.fMinimum   = 0.0
         self.fMaximum   = 1.0
+        self.fInitiated = False
         self.fRealValue = 0.0
 
         self.fLastPaintedValue   = None
@@ -152,9 +153,10 @@ class ParamProgressBar(QProgressBar):
         self.fMaximum = value
 
     def setValue(self, value):
-        if self.fRealValue == value:
+        if self.fRealValue == value and self.fInitiated:
             return False
 
+        self.fInitiated = True
         self.fRealValue = value
         div = float(self.fMaximum - self.fMinimum)
 
