@@ -41,7 +41,7 @@ struct carla_sem_t { char bootname[32]; semaphore_t sem; semaphore_t sem2; };
 # include <syscall.h>
 # include <sys/time.h>
 # include <linux/futex.h>
-struct carla_sem_t { int count; };
+struct carla_sem_t { int count; bool external; };
 #else
 # include <cerrno>
 # include <semaphore.h>
@@ -54,7 +54,7 @@ struct carla_sem_t { sem_t sem; };
  * Create a new semaphore, pre-allocated version.
  */
 static inline
-bool carla_sem_create2(carla_sem_t& sem) noexcept
+bool carla_sem_create2(carla_sem_t& sem, const bool externalIPC) noexcept
 {
     carla_zeroStruct(sem);
 #if defined(CARLA_OS_WIN)
@@ -63,15 +63,20 @@ bool carla_sem_create2(carla_sem_t& sem) noexcept
     sa.nLength        = sizeof(SECURITY_ATTRIBUTES);
     sa.bInheritHandle = TRUE;
 
-    sem.handle = ::CreateSemaphore(&sa, 0, 1, nullptr);
+    sem.handle = ::CreateSemaphoreA(externalIPC ? &sa : nullptr, 0, 1, nullptr);
 
     return (sem.handle != INVALID_HANDLE_VALUE);
 #elif defined(CARLA_OS_MAC)
+    mach_port_t bootport;
     const mach_port_t task = ::mach_task_self();
 
-    mach_port_t bootport;
-    CARLA_SAFE_ASSERT_RETURN(task_get_bootstrap_port(task, &bootport) == KERN_SUCCESS, false);
+    if (externalIPC) {
+        CARLA_SAFE_ASSERT_RETURN(task_get_bootstrap_port(task, &bootport) == KERN_SUCCESS, false);
+    }
     CARLA_SAFE_ASSERT_RETURN(::semaphore_create(task, &sem.sem, SYNC_POLICY_FIFO, 0) == KERN_SUCCESS, false);
+
+    if (! externalIPC)
+        return true;
 
     static int bootcounter = 0;
     std::snprintf(sem.bootname, 31, "crlsm_%i_%i_%p", ++bootcounter, ::getpid(), &sem);
@@ -80,12 +85,14 @@ bool carla_sem_create2(carla_sem_t& sem) noexcept
     if (::bootstrap_register(bootport, sem.bootname, sem.sem) == KERN_SUCCESS)
         return true;
 
+    sem.bootname[0] = '\0';
     ::semaphore_destroy(task, sem.sem);
     return false;
 #elif defined(CARLA_USE_FUTEXES)
+    sem.external = externalIPC;
     return true;
 #else
-    return (::sem_init(&sem.sem, 1, 0) == 0);
+    return (::sem_init(&sem.sem, externalIPC, 0) == 0);
 #endif
 }
 
@@ -93,11 +100,11 @@ bool carla_sem_create2(carla_sem_t& sem) noexcept
  * Create a new semaphore.
  */
 static inline
-carla_sem_t* carla_sem_create() noexcept
+carla_sem_t* carla_sem_create(const bool externalIPC) noexcept
 {
     if (carla_sem_t* const sem = (carla_sem_t*)std::malloc(sizeof(carla_sem_t)))
     {
-        if (carla_sem_create2(*sem))
+        if (carla_sem_create2(*sem, externalIPC))
             return sem;
 
         std::free(sem);
@@ -173,7 +180,7 @@ void carla_sem_post(carla_sem_t& sem, const bool server = true) noexcept
 #elif defined(CARLA_USE_FUTEXES)
     const bool unlocked = __sync_bool_compare_and_swap(&sem.count, 0, 1);
     CARLA_SAFE_ASSERT_RETURN(unlocked,);
-    ::syscall(__NR_futex, &sem.count, FUTEX_WAKE, 1, nullptr, nullptr, 0);
+    ::syscall(__NR_futex, &sem.count, sem.external ? FUTEX_WAKE : FUTEX_WAKE_PRIVATE, 1, nullptr, nullptr, 0);
 #else
     ::sem_post(&sem.sem);
 #endif
@@ -209,7 +216,7 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs, const bool server =
         if (__sync_bool_compare_and_swap(&sem.count, 1, 0))
             return true;
 
-        if (::syscall(__NR_futex, &sem.count, FUTEX_WAIT, 0, &timeout, nullptr, 0) != 0)
+        if (::syscall(__NR_futex, &sem.count, sem.external ? FUTEX_WAIT : FUTEX_WAIT_PRIVATE, 0, &timeout, nullptr, 0) != 0)
             if (errno != EAGAIN && errno != EINTR)
                 return false;
     }
