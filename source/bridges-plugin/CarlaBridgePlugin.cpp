@@ -453,6 +453,7 @@ int main(int argc, char* argv[])
     // Initialize OS features
 
 #ifdef CARLA_OS_WIN
+    OleInitialize(nullptr);
     CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 # ifndef __WINPTHREADS_VERSION
     // (non-portable) initialization of statically linked pthread library
@@ -560,6 +561,7 @@ int main(int argc, char* argv[])
     pthread_win32_process_detach_np();
 #endif
     CoUninitialize();
+    OleUninitialize();
 #endif
 
     return ret;

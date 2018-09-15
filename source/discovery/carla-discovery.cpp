@@ -33,6 +33,11 @@
 # import <Foundation/Foundation.h>
 #endif
 
+#ifdef CARLA_OS_WIN
+# include <pthread.h>
+# include <objbase.h>
+#endif
+
 #ifdef HAVE_FLUIDSYNTH
 # include <fluidsynth.h>
 #endif
@@ -1411,6 +1416,21 @@ int main(int argc, char* argv[])
         openLib = false;
 #endif
 
+    // ---------------------------------------------------------------------
+    // Initialize OS features
+
+#ifdef CARLA_OS_WIN
+    OleInitialize(nullptr);
+    CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+# ifndef __WINPTHREADS_VERSION
+    // (non-portable) initialization of statically linked pthread library
+    pthread_win32_process_attach_np();
+    pthread_win32_thread_attach_np();
+# endif
+#endif
+
+    // ---------------------------------------------------------------------
+
     if (openLib)
     {
         handle = lib_open(filename);
@@ -1427,6 +1447,8 @@ int main(int argc, char* argv[])
 
     if (doInit && getenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS") != nullptr)
         doInit = false;
+
+    // ---------------------------------------------------------------------
 
     if (doInit && openLib && handle != nullptr)
     {
@@ -1479,6 +1501,17 @@ int main(int argc, char* argv[])
 
     if (openLib && handle != nullptr)
         lib_close(handle);
+
+    // ---------------------------------------------------------------------
+
+#ifdef CARLA_OS_WIN
+#ifndef __WINPTHREADS_VERSION
+    pthread_win32_thread_detach_np();
+    pthread_win32_process_detach_np();
+#endif
+    CoUninitialize();
+    OleUninitialize();
+#endif
 
     return 0;
 }

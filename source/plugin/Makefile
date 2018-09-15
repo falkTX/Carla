@@ -74,10 +74,14 @@ LINK_FLAGS += $(MAGIC_LIBS)
 LINK_FLAGS += $(X11_LIBS)
 
 ifeq ($(MACOS),true)
-SYMBOLS_NATIVE = -Wl,-exported_symbol,_carla_get_native_rack_plugin -Wl,-exported_symbol,_carla_get_native_patchbay_plugin
-SYMBOLS_LV2    = -Wl,-exported_symbol,_lv2_descriptor -Wl,-exported_symbol,_lv2ui_descriptor
-SYMBOLS_LV2_UI = -Wl,-exported_symbol,_lv2ui_descriptor
-SYMBOLS_VST    = # TODO
+SYMBOLS_NATIVE  = -Wl,-exported_symbol,_carla_get_native_rack_plugin
+SYMBOLS_NATIVE += -Wl,-exported_symbol,_carla_get_native_patchbay_plugin
+SYMBOLS_NATIVE += -Wl,-exported_symbol,_carla_get_library_filename
+SYMBOLS_NATIVE += -Wl,-exported_symbol,_carla_get_library_folder
+SYMBOLS_LV2     = -Wl,-exported_symbol,_lv2_descriptor
+SYMBOLS_LV2    += -Wl,-exported_symbol,_lv2ui_descriptor
+SYMBOLS_LV2_UI  = -Wl,-exported_symbol,_lv2ui_descriptor
+SYMBOLS_VST     = # TODO
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -89,7 +93,7 @@ LIBS_ui = $(MODULEDIR)/water.a
 
 TARGETS = \
 	$(BINDIR)/carla-native-plugin$(APP_EXT) \
-	$(BINDIR)/libcarla-native-plugin$(LIB_EXT)
+	$(BINDIR)/libcarla_native-plugin$(LIB_EXT)
 
 TARGETS += \
 	$(BINDIR)/carla.lv2/carla$(LIB_EXT)
@@ -140,7 +144,7 @@ $(BINDIR)/carla-native-plugin$(APP_EXT): $(OBJDIR)/carla-native-plugin.cpp.o $(L
 	@echo "Linking carla-native-plugin$(APP_EXT)"
 	@$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) -o $@
 
-$(BINDIR)/libcarla-native-plugin$(LIB_EXT): $(OBJDIR)/carla-native-plugin.cpp.o $(LIBS)
+$(BINDIR)/libcarla_native-plugin$(LIB_EXT): $(OBJDIR)/carla-native-plugin.cpp.o $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking libcarla-native-plugin$(LIB_EXT)"
 	@$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(SYMBOLS_NATIVE) $(LINK_FLAGS) -o $@

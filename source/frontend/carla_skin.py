@@ -168,7 +168,7 @@ def getColorFromCategory(category):
 # ------------------------------------------------------------------------------------------------------------
 #
 
-def setPixmapDialStyle(widget, parameterId, parameterCount, darkStyle, skinStyle):
+def setPixmapDialStyle(widget, parameterId, parameterCount, whiteLabels, skinStyle):
     if skinStyle.startswith("calf"):
         widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
         widget.setPixmap(7)
@@ -196,7 +196,7 @@ def setPixmapDialStyle(widget, parameterId, parameterCount, darkStyle, skinStyle
             widget.setCustomPaintColor(QColor(_r, _g, _b))
             widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_COLOR)
 
-        if darkStyle:
+        if whiteLabels:
             colorEnabled  = QColor("#BBB")
             colorDisabled = QColor("#555")
         else:
@@ -359,10 +359,12 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         isCalfSkin  = self.fSkinStyle.startswith("calf") and not isinstance(self, PluginSlot_Compact)
         imageSuffix = "white" if self.fDarkStyle else "black"
+        whiteLabels = self.fDarkStyle
 
         if self.fSkinStyle.startswith("calf") or self.fSkinStyle.startswith("openav") or self.fSkinStyle in (
             "3bandeq", "3bandsplitter", "pingpongpan", "nekobi", "calf_black", "zynfx"):
             imageSuffix = "white"
+            whiteLabels = True
 
         if self.b_enable is not None:
             self.b_enable.setChecked(self.fIsActive)
@@ -598,7 +600,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 if isInteger:
                     widget.setPrecision(paramRanges['max']-paramRanges['min'], True)
 
-                setPixmapDialStyle(widget, i, parameterCount, self.fDarkStyle, self.fSkinStyle)
+                setPixmapDialStyle(widget, i, parameterCount, whiteLabels, self.fSkinStyle)
 
                 index += 1
                 self.fParameterList.append([i, widget])
@@ -609,7 +611,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             widget.setLabel("Dry/Wet")
             widget.setMinimum(0.0)
             widget.setMaximum(1.0)
-            setPixmapDialStyle(widget, PARAMETER_DRYWET, 0, self.fDarkStyle, self.fSkinStyle)
+            setPixmapDialStyle(widget, PARAMETER_DRYWET, 0, whiteLabels, self.fSkinStyle)
 
             self.fParameterList.append([PARAMETER_DRYWET, widget])
             self.w_knobs_right.layout().addWidget(widget)
@@ -619,7 +621,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             widget.setLabel("Volume")
             widget.setMinimum(0.0)
             widget.setMaximum(1.27)
-            setPixmapDialStyle(widget, PARAMETER_VOLUME, 0, self.fDarkStyle, self.fSkinStyle)
+            setPixmapDialStyle(widget, PARAMETER_VOLUME, 0, whiteLabels, self.fSkinStyle)
 
             self.fParameterList.append([PARAMETER_VOLUME, widget])
             self.w_knobs_right.layout().addWidget(widget)
@@ -1752,13 +1754,9 @@ class PluginSlot_Presets(AbstractPluginSlot):
         # -------------------------------------------------------------
 
     def setupZynFxParams(self):
-        parameterCount = self.host.get_parameter_count(self.fPluginId)
+        parameterCount = min(self.host.get_parameter_count(self.fPluginId), 8)
 
-        index = 0
         for i in range(parameterCount):
-            if index >= 8:
-                break
-
             paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
             paramData   = self.host.get_parameter_data(self.fPluginId, i)
             paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)

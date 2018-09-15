@@ -135,10 +135,48 @@ kPcKeys_qwertz = [
     str(Qt.Key_P),
 ]
 
+kPcKeys_azerty = [
+    # 1st octave
+    str(Qt.Key_W),
+    str(Qt.Key_S),
+    str(Qt.Key_X),
+    str(Qt.Key_D),
+    str(Qt.Key_C),
+    str(Qt.Key_V),
+    str(Qt.Key_G),
+    str(Qt.Key_B),
+    str(Qt.Key_H),
+    str(Qt.Key_N),
+    str(Qt.Key_J),
+    str(Qt.Key_Comma),
+    # 2nd octave
+    str(Qt.Key_A),
+    str(Qt.Key_Eacute),
+    str(Qt.Key_Z),
+    str(Qt.Key_QuoteDbl),
+    str(Qt.Key_E),
+    str(Qt.Key_R),
+    str(Qt.Key_ParenLeft),
+    str(Qt.Key_T),
+    str(Qt.Key_Minus),
+    str(Qt.Key_Y),
+    str(Qt.Key_Egrave),
+    str(Qt.Key_U),
+    # 3rd octave
+    str(Qt.Key_I),
+    str(Qt.Key_Ccedilla),
+    str(Qt.Key_O),
+    str(Qt.Key_Agrave),
+    str(Qt.Key_P),
+]
+
 kPcKeysLayouts = {
     'qwerty': kPcKeys_qwerty,
     'qwertz': kPcKeys_qwertz,
+    'azerty': kPcKeys_azerty,
 }
+
+kValidColors = ("Blue", "Green", "Orange", "Red")
 
 kBlackNotes = (1, 3, 6, 8, 10)
 
@@ -168,7 +206,7 @@ class PixmapKeyboard(QWidget):
 
         self.fPixmapNormal   = QPixmap(":/bitmaps/kbd_normal.png")
         self.fPixmapDown     = QPixmap(":/bitmaps/kbd_down-blue.png")
-        self.fHighlightColor = "Blue"
+        self.fHighlightColor = kValidColors[0]
 
         self.fkPcKeyLayout = "qwerty"
         self.fkPcKeys      = kPcKeysLayouts["qwerty"]
@@ -197,9 +235,9 @@ class PixmapKeyboard(QWidget):
 
     def loadSettings(self):
         settings = QSettings("falkTX", "CarlaKeyboard")
-        self.setPcKeyboardLayout(settings.value("PcKeyboardLayout", "qwerty", type=str))
-        self.setPcKeyboardOffset(settings.value("PcKeyboardOffset", 2, type=int))
-        self.setColor(settings.value("HighlightColor", "Blue", type=str))
+        self.setPcKeyboardLayout(settings.value("PcKeyboardLayout", self.fkPcKeyLayout, type=str))
+        self.setPcKeyboardOffset(settings.value("PcKeyboardOffset", self.fPcKeybOffset, type=int))
+        self.setColor(settings.value("HighlightColor", self.fHighlightColor, type=str))
         del settings
 
     def allNotesOff(self, sendSignal=True):
@@ -235,7 +273,7 @@ class PixmapKeyboard(QWidget):
             self.notesOff.emit()
 
     def setColor(self, color):
-        if color not in ("Blue", "Green", "Orange", "Red"):
+        if color not in kValidColors:
             return
 
         if self.fHighlightColor == color:
@@ -343,27 +381,24 @@ class PixmapKeyboard(QWidget):
         menu.addAction("Note: restart carla to apply globally").setEnabled(False)
         menu.addSeparator()
 
-        menuColor      = QMenu("Highlight color", menu)
-        actColorBlue   = menuColor.addAction("Blue")
-        actColorGreen  = menuColor.addAction("Green")
-        actColorOrange = menuColor.addAction("Orange")
-        actColorRed    = menuColor.addAction("Red")
-        actColors      = (actColorBlue, actColorGreen, actColorOrange, actColorRed)
+        menuColor  = QMenu("Highlight color", menu)
+        menuLayout = QMenu("PC Keyboard layout", menu)
+        actColors  = []
+        actLayouts = []
 
-        for act in actColors:
+        for color in kValidColors:
+            act = menuColor.addAction(color)
             act.setCheckable(True)
-            if self.fHighlightColor == act.text():
+            if self.fHighlightColor == color:
                 act.setChecked(True)
+            actColors.append(act)
 
-        menuLayout       = QMenu("PC Keyboard layout", menu)
-        actLayout_qwerty = menuLayout.addAction("qwerty")
-        actLayout_qwertz = menuLayout.addAction("qwertz")
-        actLayouts       = (actLayout_qwerty, actLayout_qwertz)
-
-        for act in actLayouts:
+        for pcKeyLayout in kPcKeysLayouts.keys():
+            act = menuLayout.addAction(pcKeyLayout)
             act.setCheckable(True)
-            if self.fkPcKeyLayout == act.text():
+            if self.fkPcKeyLayout == pcKeyLayout:
                 act.setChecked(True)
+            actLayouts.append(act)
 
         menu.addMenu(menuColor)
         menu.addMenu(menuLayout)

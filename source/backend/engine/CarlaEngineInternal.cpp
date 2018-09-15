@@ -333,7 +333,7 @@ EngineNextAction::EngineNextAction() noexcept
       mutex(),
       needsPost(false),
       postDone(false),
-      sem(carla_sem_create()) {}
+      sem(carla_sem_create(false)) {}
 
 EngineNextAction::~EngineNextAction() noexcept
 {

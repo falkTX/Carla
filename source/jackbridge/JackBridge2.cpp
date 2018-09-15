@@ -30,7 +30,7 @@ bool jackbridge_sem_init(void* sem) noexcept
     CARLA_SAFE_ASSERT_RETURN(sem != nullptr, false);
 
 #ifndef JACKBRIDGE_DUMMY
-    return carla_sem_create2(*(carla_sem_t*)sem);
+    return carla_sem_create2(*(carla_sem_t*)sem, true);
 #endif
 }
 

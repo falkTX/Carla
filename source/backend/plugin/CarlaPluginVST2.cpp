@@ -79,6 +79,9 @@ public:
           fMacBundleRef(nullptr),
           fMacBundleRefNum(0),
 #endif
+          fFirstActive(true),
+          fBufferSize(engine->getBufferSize()),
+          fLastTimeInfo(),
           fEvents(),
           fUI(),
           fUnique2(2)
@@ -1038,7 +1041,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
 
-        const int32_t iBufferSize = static_cast<int32_t>(pData->engine->getBufferSize());
+        const int32_t iBufferSize = static_cast<int32_t>(fBufferSize);
         const float   fSampleRate = static_cast<float>(pData->engine->getSampleRate());
 
         dispatcher(effSetProcessPrecision, 0, kVstProcessPrecision32);
@@ -1053,6 +1056,8 @@ public:
         try {
             dispatcher(effStartProcess, 0, 0);
         } catch(...) {}
+
+        fFirstActive = true;
     }
 
     void deactivate() noexcept override
@@ -1129,7 +1134,13 @@ public:
 
         const EngineTimeInfo timeInfo(pData->engine->getTimeInfo());
 
-        fTimeInfo.flags = kVstTransportChanged;
+        fTimeInfo.flags = 0;
+
+        if (fFirstActive || ! fLastTimeInfo.compareIgnoringRollingFrames(timeInfo, fBufferSize))
+        {
+            fTimeInfo.flags |= kVstTransportChanged;
+            carla_copyStruct(fLastTimeInfo, timeInfo);
+        }
 
         if (timeInfo.playing)
             fTimeInfo.flags |= kVstTransportPlaying;
@@ -1543,6 +1554,8 @@ public:
             }
 
         } // End of MIDI Output
+
+        fFirstActive = false;
     }
 
     bool processSingle(const float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
@@ -1698,6 +1711,8 @@ public:
     {
         CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
         carla_debug("CarlaPluginVST2::bufferSizeChanged(%i)", newBufferSize);
+
+        fBufferSize = pData->engine->getBufferSize();
 
         if (pData->active)
             deactivate();
@@ -2285,7 +2300,7 @@ public:
 
         fEffect->ptr1 = this;
 
-        const int32_t iBufferSize = static_cast<int32_t>(pData->engine->getBufferSize());
+        const int32_t iBufferSize = static_cast<int32_t>(fBufferSize);
         const float   fSampleRate = static_cast<float>(pData->engine->getSampleRate());
 
         dispatcher(effIdentify);
@@ -2398,6 +2413,10 @@ private:
     CFBundleRefNum fMacBundleRefNum;
 #endif
 
+    bool fFirstActive; // first process() call after activate()
+    uint32_t fBufferSize;
+    EngineTimeInfo fLastTimeInfo;
+
     struct FixedVstEvents {
         int32_t numEvents;
         intptr_t reserved;
@@ -2444,7 +2463,7 @@ private:
 
     // -------------------------------------------------------------------
 
-    static bool compareMagic (int32_t magic, const char* name) noexcept
+    static bool compareMagic(int32_t magic, const char* name) noexcept
     {
         return magic == (int32_t)ByteOrder::littleEndianInt (name)
             || magic == (int32_t)ByteOrder::bigEndianInt (name);
