@@ -135,9 +135,45 @@ kPcKeys_qwertz = [
     str(Qt.Key_P),
 ]
 
+kPcKeys_azerty = [
+    # 1st octave
+    str(Qt.Key_W),
+    str(Qt.Key_S),
+    str(Qt.Key_X),
+    str(Qt.Key_D),
+    str(Qt.Key_C),
+    str(Qt.Key_V),
+    str(Qt.Key_G),
+    str(Qt.Key_B),
+    str(Qt.Key_H),
+    str(Qt.Key_N),
+    str(Qt.Key_J),
+    str(Qt.Key_Comma),
+    # 2nd octave
+    str(Qt.Key_A),
+    str(Qt.Key_Eacute),
+    str(Qt.Key_Z),
+    str(Qt.Key_QuoteDbl),
+    str(Qt.Key_E),
+    str(Qt.Key_R),
+    str(Qt.Key_ParenLeft),
+    str(Qt.Key_T),
+    str(Qt.Key_Minus),
+    str(Qt.Key_Y),
+    str(Qt.Key_Egrave),
+    str(Qt.Key_U),
+    # 3rd octave
+    str(Qt.Key_I),
+    str(Qt.Key_Ccedilla),
+    str(Qt.Key_O),
+    str(Qt.Key_Agrave),
+    str(Qt.Key_P),
+]
+
 kPcKeysLayouts = {
     'qwerty': kPcKeys_qwerty,
     'qwertz': kPcKeys_qwertz,
+    'azerty': kPcKeys_azerty,
 }
 
 kBlackNotes = (1, 3, 6, 8, 10)
@@ -358,7 +394,8 @@ class PixmapKeyboard(QWidget):
         menuLayout       = QMenu("PC Keyboard layout", menu)
         actLayout_qwerty = menuLayout.addAction("qwerty")
         actLayout_qwertz = menuLayout.addAction("qwertz")
-        actLayouts       = (actLayout_qwerty, actLayout_qwertz)
+        actLayout_azerty = menuLayout.addAction("azerty")
+        actLayouts       = (actLayout_qwerty, actLayout_qwertz, actLayout_azerty)
 
         for act in actLayouts:
             act.setCheckable(True)
