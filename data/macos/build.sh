@@ -15,6 +15,8 @@ fi
 # ---------------------------------------------------------------------------------------------------------------------
 # set variables
 
+PKG_FOLDER="Carla_2.0-RC1-macos"
+
 source data/macos/common.env
 
 export MACOS="true"
@@ -154,5 +156,13 @@ cp bin/libcarla_utils.dylib build/carla.lv2/
 rm -f build/carla.lv2/carla-bridge-lv2-qt5
 cp -LR build/Carla.app/Contents/MacOS/resources/* build/carla.lv2/resources/
 cp     build/Carla.app/Contents/MacOS/styles/*    build/carla.lv2/styles/
+
+##############################################################################################
+
+rm -rf ${PKG_FOLDER}
+mkdir ${PKG_FOLDER}
+cp data/macos/README ${PKG_FOLDER}/
+mv build/carla.lv2 ${PKG_FOLDER}/
+mv build/Carla.app ${PKG_FOLDER}/
 
 ##############################################################################################
