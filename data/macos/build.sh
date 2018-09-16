@@ -164,5 +164,6 @@ mkdir ${PKG_FOLDER}
 cp data/macos/README ${PKG_FOLDER}/
 mv build/carla.lv2 ${PKG_FOLDER}/
 mv build/Carla.app ${PKG_FOLDER}/
+mv build/Carla-Control.app ${PKG_FOLDER}/
 
 ##############################################################################################
