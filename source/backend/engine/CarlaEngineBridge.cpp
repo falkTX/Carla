@@ -393,7 +393,7 @@ public:
             fShmNonRtServerControl.waitIfDataIsReachingLimit();
 
             // kPluginBridgeNonRtServerParameter*
-            if (const uint32_t count = plugin->getParameterCount())
+            if (const uint32_t count = std::min(pData->options.maxParameters, plugin->getParameterCount()))
             {
                 // uint/count
                 fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerParameterCount);
