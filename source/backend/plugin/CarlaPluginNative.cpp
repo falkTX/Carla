@@ -1435,14 +1435,21 @@ public:
         }
     }
 
-    const EngineEvent& findNextEvent(const uint32_t index)
+    const EngineEvent& findNextEvent()
     {
         if (fMidiIn.count == 1)
         {
-            if (index >= fMidiIn.multiportData[0].cachedEventCount)
-                return kNullEngineEvent;
+            NativePluginMidiInData::MultiPortData& multiportData(fMidiIn.multiportData[0]);
 
-            return pData->event.portIn->getEvent(index);
+            if (multiportData.usedIndex == multiportData.cachedEventCount)
+            {
+                const uint32_t eventCount = pData->event.portIn->getEventCount();
+                CARLA_SAFE_ASSERT_INT2(eventCount == multiportData.cachedEventCount,
+                                       eventCount, multiportData.cachedEventCount);
+                return kNullEngineEvent;
+            }
+
+            return pData->event.portIn->getEvent(multiportData.usedIndex++);
         }
 
         uint32_t lowestSampleTime = 9999999;
@@ -1643,9 +1650,9 @@ public:
             else
                 nextBankId = 0;
 
-            for (uint32_t i=0;; ++i)
+            for (;;)
             {
-                const EngineEvent& event(findNextEvent(i));
+                const EngineEvent& event(findNextEvent());
 
                 if (event.type == kEngineEventTypeNull)
                     break;
