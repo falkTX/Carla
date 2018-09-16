@@ -2558,7 +2558,7 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
     elif action == ENGINE_CALLBACK_NSM:
         host.NSMCallback.emit(value1, value2, valueStr)
     elif action == ENGINE_CALLBACK_IDLE:
-        QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
+        QApplication.processEvents()
     elif action == ENGINE_CALLBACK_INFO:
         host.InfoCallback.emit(valueStr)
     elif action == ENGINE_CALLBACK_ERROR:

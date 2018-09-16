@@ -291,7 +291,6 @@ bool BridgeRtClientControl::waitForClient(const uint msecs) noexcept
     jackbridge_sem_post(&data->sem.server, true);
 
     return jackbridge_sem_timedwait(&data->sem.client, msecs, true);
-    return false;
 }
 
 bool BridgeRtClientControl::writeOpcode(const PluginBridgeRtClientOpcode opcode) noexcept

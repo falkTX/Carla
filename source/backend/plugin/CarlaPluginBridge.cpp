@@ -2683,7 +2683,7 @@ private:
             if (pData->engine->isAboutToClose())
                 break;
 
-            carla_msleep(20);
+            carla_msleep(5);
         }
 
         fLastPongTime = -1;
