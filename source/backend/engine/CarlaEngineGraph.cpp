@@ -1189,8 +1189,6 @@ public:
             return;
         }
 
-        fPlugin->initBuffers();
-
         if (CarlaEngineEventPort* const port = fPlugin->getDefaultEventInPort())
         {
             EngineEvent* const engineEvents(port->fBuffer);
@@ -1201,6 +1199,8 @@ public:
         }
 
         midi.clear();
+
+        fPlugin->initBuffers();
 
         // TODO - CV support
 
