@@ -103,7 +103,7 @@ public:
                 if (! isRunning())
                     break;
 
-                Sleep(0);
+                Sleep(5);
             }
             else
             {
@@ -300,6 +300,8 @@ bool ChildProcess::waitForProcessToFinish (const int timeoutMs) const
     {
         if (! isRunning())
             return true;
+
+        carla_msleep(5);
     }
     while (timeoutMs < 0 || Time::getMillisecondCounter() < timeoutTime);
 
