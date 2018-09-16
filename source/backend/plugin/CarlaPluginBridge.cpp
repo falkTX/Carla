@@ -164,12 +164,18 @@ protected:
             String wineCMD;
 
             if (options.wine.executable != nullptr && options.wine.executable[0] != '\0')
+            {
                 wineCMD = options.wine.executable;
-            else
-                wineCMD = "wine";
 
-            if (fBinary.endsWithIgnoreCase("64.exe") && File(wineCMD + "64").existsAsFile())
-                wineCMD += "64";
+                if (fBinary.endsWithIgnoreCase("64.exe")
+                    && options.wine.executable[0] == CARLA_OS_SEP
+                    && File(wineCMD + "64").existsAsFile())
+                    wineCMD += "64";
+            }
+            else
+            {
+                wineCMD = "wine";
+            }
 
             arguments.add(wineCMD);
         }
