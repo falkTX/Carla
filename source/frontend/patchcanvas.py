@@ -2741,7 +2741,7 @@ class CanvasIcon(QGraphicsSvgItem):
                 self.p_size = QRectF(5, 4, 16, 16)
             elif "distrho" in name:
                 icon_path = ":/scalable/pb_distrho.svg"
-                self.p_size = QRectF(5, 4, 14, 14)
+                self.p_size = QRectF(5, 4, 16, 16)
             elif "jamin" in name:
                 icon_path = ":/scalable/pb_jamin.svg"
                 self.p_size = QRectF(5, 3, 16, 16)
@@ -2762,15 +2762,15 @@ class CanvasIcon(QGraphicsSvgItem):
 
         elif icon == ICON_DISTRHO:
             icon_path = ":/scalable/pb_distrho.svg"
-            self.p_size = QRectF(5, 4, 14, 14)
+            self.p_size = QRectF(5, 4, 16, 16)
 
         elif icon == ICON_FILE:
             icon_path = ":/scalable/pb_file.svg"
-            self.p_size = QRectF(5, 4, 12, 14)
+            self.p_size = QRectF(5, 4, 16, 16)
 
         elif icon == ICON_PLUGIN:
             icon_path = ":/scalable/pb_plugin.svg"
-            self.p_size = QRectF(5, 4, 14, 14)
+            self.p_size = QRectF(5, 4, 16, 16)
 
         elif icon == ICON_LADISH_ROOM:
             # TODO - make a unique ladish-room icon
