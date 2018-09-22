@@ -1757,8 +1757,9 @@ class JackApplicationW(QDialog):
         command = self.ui.le_command.text()
         smgr    = self.SESSION_MGR_NONE
         flags   = 0x0
+
         if not name:
-            name = command.split(" ",1)[0]
+            name = os.path.basename(command.split(" ",1)[0])
 
         # TODO finalize flag definitions
         #uiSessionMgrIndex = self.ui.cb_session_mgr.currentIndex()
