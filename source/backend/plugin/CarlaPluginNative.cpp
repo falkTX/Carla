@@ -2064,7 +2064,9 @@ public:
         }
 
         fIsProcessing = false;
-        fTimeInfo.frame += frames;
+
+        if (fTimeInfo.playing)
+            fTimeInfo.frame += frames;
 
 #ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
