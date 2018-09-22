@@ -2233,7 +2233,22 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                 break;
             }
 
-            if (addPlugin(getBinaryTypeFromFile(stateSave.binary), ptype, stateSave.binary,
+            BinaryType btype;
+
+            switch (ptype)
+            {
+            case PLUGIN_LADSPA:
+            case PLUGIN_DSSI:
+            case PLUGIN_LV2:
+            case PLUGIN_VST2:
+                btype = getBinaryTypeFromFile(stateSave.binary);
+                break;
+            default:
+                btype = BINARY_NATIVE;
+                break;
+            }
+
+            if (addPlugin(btype, ptype, stateSave.binary,
                           stateSave.name, stateSave.label, stateSave.uniqueId, extraStuff, stateSave.options))
             {
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
