@@ -2068,7 +2068,7 @@ public:
         if (fTimeInfo.playing)
             fTimeInfo.frame += frames;
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
 
