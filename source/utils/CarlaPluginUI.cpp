@@ -104,13 +104,14 @@ public:
         XChangeProperty(fDisplay, fHostWindow, _nwi, XA_CARDINAL, 32, PropModeReplace, (const uchar*)sCarlaX11Icon, sCarlaX11IconSize);
 
         const Atom _wt = XInternAtom(fDisplay, "_NET_WM_WINDOW_TYPE", False);
+
         // Setting the window to both dialog and normal will produce a decorated floating dialog
         // Order is important: DIALOG needs to come before NORMAL
-        long _wtd = XInternAtom(fDisplay, "_NET_WM_WINDOW_TYPE_DIALOG", False);
-        XChangeProperty(fDisplay, fHostWindow, _wt, XA_ATOM, 32, PropModeReplace, (const uchar*) &_wtd, 1);
-        long _wtn = XInternAtom(fDisplay, "_NET_WM_WINDOW_TYPE_NORMAL", False);
-        XChangeProperty(fDisplay, fHostWindow, _wt, XA_ATOM, 32, PropModeAppend, (const uchar*) &_wtn, 1);
-
+        const Atom _wts[2] = {
+            XInternAtom(fDisplay, "_NET_WM_WINDOW_TYPE_DIALOG", False),
+            XInternAtom(fDisplay, "_NET_WM_WINDOW_TYPE_NORMAL", False)
+        };
+        XChangeProperty(fDisplay, fHostWindow, _wt, XA_ATOM, 32, PropModeReplace, (const uchar*)&_wts, 2);
 
         if (parentId != 0)
             setTransientWinId(parentId);

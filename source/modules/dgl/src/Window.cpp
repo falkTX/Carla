@@ -241,9 +241,20 @@ struct Window::PrivateData {
 
         if (! fUsingEmbed)
         {
-            pid_t pid = getpid();
-            Atom _nwp = XInternAtom(xDisplay, "_NET_WM_PID", True);
+            const pid_t pid = getpid();
+            const Atom _nwp = XInternAtom(xDisplay, "_NET_WM_PID", False);
             XChangeProperty(xDisplay, xWindow, _nwp, XA_CARDINAL, 32, PropModeReplace, (const uchar*)&pid, 1);
+
+            const Atom _wt = XInternAtom(xDisplay, "_NET_WM_WINDOW_TYPE", False);
+
+            // Setting the window to both dialog and normal will produce a decorated floating dialog
+            // Order is important: DIALOG needs to come before NORMAL
+            const Atom _wts[2] = {
+                XInternAtom(xDisplay, "_NET_WM_WINDOW_TYPE_DIALOG", False),
+                XInternAtom(xDisplay, "_NET_WM_WINDOW_TYPE_NORMAL", False)
+            };
+            XChangeProperty(xDisplay, xWindow, _wt, XA_ATOM, 32, PropModeReplace, (const uchar*)&_wts, 2);
+
         }
 #endif
         puglEnterContext(fView);
