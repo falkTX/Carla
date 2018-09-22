@@ -1,6 +1,6 @@
 /*
  * Carla Interposer for X11 Window Mapping
- * Copyright (C) 2014-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,23 +20,33 @@
 #include <dlfcn.h>
 #include <X11/Xlib.h>
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // Function typedefs
 
-typedef int (*XMapWindowFunc)(Display*, Window);
-typedef int (*XUnmapWindowFunc)(Display*, Window);
+typedef int (*XWindowFunc)(Display*, Window);
 
-// -----------------------------------------------------------------------
-// Current mapped window
-
-static Window sCurrentlyMappedWindow = 0;
-
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // Calling the real functions
 
 static int real_XMapWindow(Display* display, Window window)
 {
-    static const XMapWindowFunc func = (XMapWindowFunc)::dlsym(RTLD_NEXT, "XMapWindow");
+    static const XWindowFunc func = (XWindowFunc)::dlsym(RTLD_NEXT, "XMapWindow");
+    CARLA_SAFE_ASSERT_RETURN(func != nullptr, 0);
+
+    return func(display, window);
+}
+
+static int real_XMapRaised(Display* display, Window window)
+{
+    static const XWindowFunc func = (XWindowFunc)::dlsym(RTLD_NEXT, "XMapRaised");
+    CARLA_SAFE_ASSERT_RETURN(func != nullptr, 0);
+
+    return func(display, window);
+}
+
+static int real_XMapSubwindows(Display* display, Window window)
+{
+    static const XWindowFunc func = (XWindowFunc)::dlsym(RTLD_NEXT, "XMapSubwindows");
     CARLA_SAFE_ASSERT_RETURN(func != nullptr, 0);
 
     return func(display, window);
@@ -44,53 +54,19 @@ static int real_XMapWindow(Display* display, Window window)
 
 static int real_XUnmapWindow(Display* display, Window window)
 {
-    static const XUnmapWindowFunc func = (XUnmapWindowFunc)::dlsym(RTLD_NEXT, "XUnmapWindow");
+    static const XWindowFunc func = (XWindowFunc)::dlsym(RTLD_NEXT, "XUnmapWindow");
     CARLA_SAFE_ASSERT_RETURN(func != nullptr, 0);
 
     return func(display, window);
 }
 
-// -----------------------------------------------------------------------
-// Our custom functions
+// --------------------------------------------------------------------------------------------------------------------
+// Custom carla window handling
 
-CARLA_EXPORT
-int XMapWindow(Display* display, Window window)
+static int carlaWindowMap(Display* const display, const Window window, const int fallbackFnType)
 {
     for (;;)
     {
-#if 0
-        if (sCurrentlyMappedWindow != 0)
-            break;
-
-        Atom atom;
-        int atomFormat;
-        unsigned char* atomPtrs;
-        unsigned long numItems, ignored;
-
-        const Atom wmWindowType = XInternAtom(display, "_NET_WM_WINDOW_TYPE", True);
-
-        if (XGetWindowProperty(display, window, wmWindowType, 0, ~0L, False, AnyPropertyType,
-                               &atom, &atomFormat, &numItems, &ignored, &atomPtrs) == Success)
-        {
-            const Atom* const atomValues = (const Atom*)atomPtrs;
-
-            for (ulong i=0; i<numItems; ++i)
-            {
-                const char* const atomValue(XGetAtomName(display, atomValues[i]));
-                CARLA_SAFE_ASSERT_CONTINUE(atomValue != nullptr && atomValue[0] != '\0');
-
-                if (std::strcmp(atomValue, "_NET_WM_WINDOW_TYPE_NORMAL") == 0)
-                {
-                    sCurrentlyMappedWindow = window;
-                    break;
-                }
-            }
-        }
-#endif
-
-        if (sCurrentlyMappedWindow == 0)
-            sCurrentlyMappedWindow = window;
-
         if (const char* const winIdStr = std::getenv("CARLA_ENGINE_OPTION_FRONTEND_WIN_ID"))
         {
             CARLA_SAFE_ASSERT_BREAK(winIdStr[0] != '\0');
@@ -107,16 +83,48 @@ int XMapWindow(Display* display, Window window)
         break;
     }
 
-    return real_XMapWindow(display, window);
+    switch (fallbackFnType)
+    {
+    case 1:
+        return real_XMapWindow(display, window);
+    case 2:
+        return real_XMapRaised(display, window);
+    case 3:
+        return real_XMapSubwindows(display, window);
+    default:
+        return 0;
+    }
+}
+
+// --------------------------------------------------------------------------------------------------------------------
+// Our custom X11 functions
+
+CARLA_EXPORT
+int XMapWindow(Display* display, Window window)
+{
+    carla_debug("XMapWindow(%p, %lu)", display, window);
+    return carlaWindowMap(display, window, 1);
+}
+
+CARLA_EXPORT
+int XMapRaised(Display* display, Window window)
+{
+    carla_debug("XMapRaised(%p, %lu)", display, window);
+    return carlaWindowMap(display, window, 2);
+}
+
+CARLA_EXPORT
+int XMapSubwindows(Display* display, Window window)
+{
+    carla_debug("XMapSubwindows(%p, %lu)", display, window);
+    return carlaWindowMap(display, window, 3);
 }
 
 CARLA_EXPORT
 int XUnmapWindow(Display* display, Window window)
 {
-    if (sCurrentlyMappedWindow == window)
-        sCurrentlyMappedWindow = 0;
-
+    carla_debug("XUnmapWindow(%p, %lu)", display, window);
     return real_XUnmapWindow(display, window);
 }
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
