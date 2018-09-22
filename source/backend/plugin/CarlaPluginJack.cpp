@@ -203,6 +203,7 @@ public:
           fTimedOut(false),
           fTimedError(false),
           fProcCanceled(false),
+          fBufferSize(engine->getBufferSize()),
           fProcWaitTime(0),
           fLastPingTime(-1),
           fBridgeThread(engine, this),
@@ -904,6 +905,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(! fTimedError, false);
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
+        CARLA_SAFE_ASSERT_RETURN(frames <= fBufferSize, false);
 
         if (pData->audioIn.count > 0)
         {
@@ -935,7 +937,7 @@ public:
         // Reset audio buffers
 
         for (uint32_t i=0; i < fInfo.aIns; ++i)
-            carla_copyFloats(fShmAudioPool.data + (i * frames), audioIn[i], frames);
+            carla_copyFloats(fShmAudioPool.data + (i * fBufferSize), audioIn[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
         // TimeInfo
@@ -986,7 +988,7 @@ public:
         }
 
         for (uint32_t i=0; i < fInfo.aOuts; ++i)
-            carla_copyFloats(audioOut[i], fShmAudioPool.data + ((i + fInfo.aIns) * frames), frames);
+            carla_copyFloats(audioOut[i], fShmAudioPool.data + ((i + fInfo.aIns) * fBufferSize), frames);
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // --------------------------------------------------------------------------------------------------------
@@ -1064,6 +1066,7 @@ public:
 
     void bufferSizeChanged(const uint32_t newBufferSize) override
     {
+        fBufferSize = newBufferSize;
         resizeAudioPool(newBufferSize);
 
         {
@@ -1360,6 +1363,7 @@ private:
     bool fTimedOut;
     bool fTimedError;
     bool fProcCanceled;
+    uint fBufferSize;
     uint fProcWaitTime;
 
     int64_t fLastPingTime;
