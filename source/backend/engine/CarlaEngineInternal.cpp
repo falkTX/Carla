@@ -555,21 +555,15 @@ void CarlaEngine::ProtectedData::doPluginRemove(const uint pluginId) noexcept
 
         plugin->setId(i);
 
-        plugins[i].plugin      = plugin;
-        plugins[i].insPeak[0]  = 0.0f;
-        plugins[i].insPeak[1]  = 0.0f;
-        plugins[i].outsPeak[0] = 0.0f;
-        plugins[i].outsPeak[1] = 0.0f;
+        plugins[i].plugin = plugin;
+        carla_zeroFloats(plugins[i].peaks, 4);
     }
 
     const uint id(curPluginCount);
 
     // reset last plugin (now removed)
-    plugins[id].plugin      = nullptr;
-    plugins[id].insPeak[0]  = 0.0f;
-    plugins[id].insPeak[1]  = 0.0f;
-    plugins[id].outsPeak[0] = 0.0f;
-    plugins[id].outsPeak[1] = 0.0f;
+    plugins[id].plugin = nullptr;
+    carla_zeroFloats(plugins[id].peaks, 4);
 }
 
 void CarlaEngine::ProtectedData::doPluginsSwitch(const uint idA, const uint idB) noexcept

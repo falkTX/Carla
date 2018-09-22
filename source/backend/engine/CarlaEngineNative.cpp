@@ -1799,7 +1799,8 @@ protected:
             if (! fUiServer.writeMessage(tmpBuf))
                 return;
 
-            std::sprintf(tmpBuf, "%f:%f:%f:%f\n", plugData.insPeak[0], plugData.insPeak[1], plugData.outsPeak[0], plugData.outsPeak[1]);
+            std::sprintf(tmpBuf, "%f:%f:%f:%f\n",
+                         plugData.peaks[0], plugData.peaks[1], plugData.peaks[2], plugData.peaks[3]);
             if (! fUiServer.writeMessage(tmpBuf))
                 return;
 

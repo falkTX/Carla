@@ -728,6 +728,12 @@ CARLA_EXPORT float carla_get_current_parameter_value(uint pluginId, uint32_t par
 CARLA_EXPORT float carla_get_internal_parameter_value(uint pluginId, int32_t parameterId);
 
 /*!
+ * Get a plugin's peak values.
+ * @param pluginId Plugin
+ */
+float* carla_get_peak_values(uint pluginId);
+
+/*!
  * Get a plugin's input peak value.
  * @param pluginId Plugin
  * @param isLeft   Wherever to get the left/mono value, otherwise right.

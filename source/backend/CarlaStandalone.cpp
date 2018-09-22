@@ -1612,6 +1612,13 @@ float carla_get_internal_parameter_value(uint pluginId, int32_t parameterId)
 
 // --------------------------------------------------------------------------------------------------------------------
 
+float* carla_get_peak_values(uint pluginId)
+{
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, nullptr);
+
+    return gStandalone.engine->getPeaks(pluginId);
+}
+
 float carla_get_input_peak_value(uint pluginId, bool isLeft)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0.0f);

@@ -934,12 +934,17 @@ public:
     // Information (peaks)
 
     /*!
-     * TODO.
+     * Get a plugin's peak values.
+     */
+    float* getPeaks(const uint pluginId) const noexcept;
+
+    /*!
+     * Get a plugin's input peak value.
      */
     float getInputPeak(const uint pluginId, const bool isLeft) const noexcept;
 
     /*!
-     * TODO.
+     * Get a plugin's output peak value.
      */
     float getOutputPeak(const uint pluginId, const bool isLeft) const noexcept;
 

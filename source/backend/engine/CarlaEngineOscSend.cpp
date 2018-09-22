@@ -400,7 +400,8 @@ void CarlaEngine::oscSend_control_set_peaks(const uint pluginId) const noexcept
     char targetPath[std::strlen(pData->oscData->path)+11];
     std::strcpy(targetPath, pData->oscData->path);
     std::strcat(targetPath, "/set_peaks");
-    try_lo_send(pData->oscData->target, targetPath, "iffff", static_cast<int32_t>(pluginId), epData.insPeak[0], epData.insPeak[1], epData.outsPeak[0], epData.outsPeak[1]);
+    try_lo_send(pData->oscData->target, targetPath, "iffff", static_cast<int32_t>(pluginId),
+                epData.peaks[0], epData.peaks[1], epData.peaks[2], epData.peaks[3]);
 }
 
 void CarlaEngine::oscSend_control_exit() const noexcept

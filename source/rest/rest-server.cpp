@@ -94,6 +94,24 @@ static void event_stream_handler(void)
         for (auto session : gSessions)
             session->yield(OK, message);
     }
+
+    if (const uint count = carla_get_current_plugin_count())
+    {
+        char msgBuf[1024];
+        float* peaks;
+
+        for (uint i=0; i<count; ++i)
+        {
+            peaks = carla_get_peak_values(i);
+            CARLA_SAFE_ASSERT_BREAK(peaks != nullptr);
+
+            std::snprintf(msgBuf, 1023, "Peaks: %u %f %f %f %f\n", i, peaks[0], peaks[1], peaks[2], peaks[3]);
+            msgBuf[1023] = '\0';
+
+            for (auto session : gSessions)
+                session->yield(OK, msgBuf);
+        }
+    }
 }
 
 // -------------------------------------------------------------------------------------------------------------------

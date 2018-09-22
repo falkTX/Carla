@@ -892,24 +892,24 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
 
             if (oldAudioInCount > 0)
             {
-                pluginData.insPeak[0] = carla_findMaxNormalizedFloat(inBuf0, frames);
-                pluginData.insPeak[1] = carla_findMaxNormalizedFloat(inBuf1, frames);
+                pluginData.peaks[0] = carla_findMaxNormalizedFloat(inBuf0, frames);
+                pluginData.peaks[1] = carla_findMaxNormalizedFloat(inBuf1, frames);
             }
             else
             {
-                pluginData.insPeak[0] = 0.0f;
-                pluginData.insPeak[1] = 0.0f;
+                pluginData.peaks[0] = 0.0f;
+                pluginData.peaks[1] = 0.0f;
             }
 
             if (oldAudioOutCount > 0)
             {
-                pluginData.outsPeak[0] = carla_findMaxNormalizedFloat(outBufReal[0], frames);
-                pluginData.outsPeak[1] = carla_findMaxNormalizedFloat(outBufReal[1], frames);
+                pluginData.peaks[2] = carla_findMaxNormalizedFloat(outBufReal[0], frames);
+                pluginData.peaks[3] = carla_findMaxNormalizedFloat(outBufReal[1], frames);
             }
             else
             {
-                pluginData.outsPeak[0] = 0.0f;
-                pluginData.outsPeak[1] = 0.0f;
+                pluginData.peaks[2] = 0.0f;
+                pluginData.peaks[3] = 0.0f;
             }
         }
 

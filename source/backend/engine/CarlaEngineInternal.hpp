@@ -199,8 +199,7 @@ struct EngineNextAction {
 
 struct EnginePluginData {
     CarlaPlugin* plugin;
-    float insPeak[2];
-    float outsPeak[2];
+    float peaks[4];
 };
 
 // -----------------------------------------------------------------------
@@ -245,6 +244,7 @@ struct CarlaEngine::ProtectedData {
 #else
     EnginePluginData* plugins;
 #endif
+    float peaks[4];
 
     EngineInternalEvents events;
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH

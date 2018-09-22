@@ -516,11 +516,8 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
     }
 
     EnginePluginData& pluginData(pData->plugins[id]);
-    pluginData.plugin      = plugin;
-    pluginData.insPeak[0]  = 0.0f;
-    pluginData.insPeak[1]  = 0.0f;
-    pluginData.outsPeak[0] = 0.0f;
-    pluginData.outsPeak[1] = 0.0f;
+    pluginData.plugin = plugin;
+    carla_zeroFloats(pluginData.peaks, 4);
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (oldPlugin != nullptr)
@@ -670,11 +667,7 @@ bool CarlaEngine::removeAllPlugins()
             pluginData.plugin = nullptr;
         }
 
-        pluginData.insPeak[0]  = 0.0f;
-        pluginData.insPeak[1]  = 0.0f;
-        pluginData.outsPeak[0] = 0.0f;
-        pluginData.outsPeak[1] = 0.0f;
-
+        carla_zeroFloats(pluginData.peaks, 4);
         callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
     }
 
@@ -1134,19 +1127,42 @@ EngineTimeInfo CarlaEngine::getTimeInfo() const noexcept
 // -----------------------------------------------------------------------
 // Information (peaks)
 
+float* CarlaEngine::getPeaks(const uint pluginId) const noexcept
+{
+    carla_zeroFloats(pData->peaks, 4);
+
+    if (pluginId == MAIN_CARLA_PLUGIN_ID)
+    {
+        // get peak from first plugin, if available
+        if (const uint count = pData->curPluginCount)
+        {
+            pData->peaks[0] = pData->plugins[0].peaks[0];
+            pData->peaks[1] = pData->plugins[0].peaks[1];
+            pData->peaks[2] = pData->plugins[count-1].peaks[2];
+            pData->peaks[3] = pData->plugins[count-1].peaks[3];
+        }
+
+        return pData->peaks;
+    }
+
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount, pData->peaks);
+
+    return pData->plugins[pluginId].peaks;
+}
+
 float CarlaEngine::getInputPeak(const uint pluginId, const bool isLeft) const noexcept
 {
     if (pluginId == MAIN_CARLA_PLUGIN_ID)
     {
         // get peak from first plugin, if available
         if (pData->curPluginCount > 0)
-            return pData->plugins[0].insPeak[isLeft ? 0 : 1];
+            return pData->plugins[0].peaks[isLeft ? 0 : 1];
         return 0.0f;
     }
 
     CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount, 0.0f);
 
-    return pData->plugins[pluginId].insPeak[isLeft ? 0 : 1];
+    return pData->plugins[pluginId].peaks[isLeft ? 0 : 1];
 }
 
 float CarlaEngine::getOutputPeak(const uint pluginId, const bool isLeft) const noexcept
@@ -1155,13 +1171,13 @@ float CarlaEngine::getOutputPeak(const uint pluginId, const bool isLeft) const n
     {
         // get peak from last plugin, if available
         if (pData->curPluginCount > 0)
-            return pData->plugins[pData->curPluginCount-1].outsPeak[isLeft ? 0 : 1];
+            return pData->plugins[pData->curPluginCount-1].peaks[isLeft ? 2 : 3];
         return 0.0f;
     }
 
     CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount, 0.0f);
 
-    return pData->plugins[pluginId].outsPeak[isLeft ? 0 : 1];
+    return pData->plugins[pluginId].peaks[isLeft ? 2 : 3];
 }
 
 // -----------------------------------------------------------------------
@@ -1697,10 +1713,10 @@ void CarlaEngine::setPluginPeaks(const uint pluginId, float const inPeaks[2], fl
 {
     EnginePluginData& pluginData(pData->plugins[pluginId]);
 
-    pluginData.insPeak[0]  = inPeaks[0];
-    pluginData.insPeak[1]  = inPeaks[1];
-    pluginData.outsPeak[0] = outPeaks[0];
-    pluginData.outsPeak[1] = outPeaks[1];
+    pluginData.peaks[0]  = inPeaks[0];
+    pluginData.peaks[1]  = inPeaks[1];
+    pluginData.peaks[2] = outPeaks[0];
+    pluginData.peaks[3] = outPeaks[1];
 }
 
 void CarlaEngine::saveProjectInternal(water::MemoryOutputStream& outStream) const
