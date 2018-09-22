@@ -298,6 +298,9 @@ class CarlaSettingsW(QDialog):
             self.ui.ch_exp_prevent_bad_behaviour.setVisible(False)
             self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
 
+        if not MACOS:
+            self.ui.label_engine_ui_bridges_mac_note.setVisible(False)
+
         # FIXME, not implemented yet
         self.ui.ch_engine_uis_always_on_top.hide()
 
