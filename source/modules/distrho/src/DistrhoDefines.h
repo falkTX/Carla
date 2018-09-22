@@ -28,15 +28,15 @@
 /* Check OS */
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 # define DISTRHO_PLUGIN_EXPORT extern "C" __declspec (dllexport)
-# define DISTRHO_OS_WINDOWS    1
+# define DISTRHO_OS_WINDOWS 1
 # define DISTRHO_DLL_EXTENSION "dll"
 #else
 # define DISTRHO_PLUGIN_EXPORT extern "C" __attribute__ ((visibility("default")))
 # if defined(__APPLE__)
-#  define DISTRHO_OS_MAC        1
+#  define DISTRHO_OS_MAC 1
 #  define DISTRHO_DLL_EXTENSION "dylib"
 # elif defined(__HAIKU__)
-#  define DISTRHO_OS_HAIKU      1
+#  define DISTRHO_OS_HAIKU 1
 # elif defined(__linux__) || defined(__linux)
 #  define DISTRHO_OS_LINUX 1
 # endif

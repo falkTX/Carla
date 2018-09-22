@@ -26,4 +26,6 @@
 # include "src/DistrhoUILV2.cpp"
 #elif defined(DISTRHO_PLUGIN_TARGET_VST)
 // nothing
+#else
+# error unsupported format
 #endif
