@@ -120,6 +120,7 @@ public:
           fMidiInBuffers(nullptr),
           fMidiOutBuffers(nullptr),
           fIsOffline(false),
+          fIsReady(false),
           fLastPingTime(-1),
           fSessionManager(0),
           fSetupHints(0),
@@ -194,6 +195,9 @@ public:
 
     JackClientState* createClient(const char* const name)
     {
+        while (fNonRealtimeThread.isThreadRunning() && ! fIsReady)
+            carla_sleep(1);
+
         return new JackClientState(fServer, name);
     }
 
@@ -285,6 +289,7 @@ private:
     char fBaseNameNonRtServerControl[6+1];
 
     bool fIsOffline;
+    volatile bool fIsReady;
     int64_t fLastPingTime;
 
     int fSessionManager;
@@ -390,17 +395,20 @@ bool CarlaJackAppClient::initSharedMemmory()
     fAudioTmpBuf = new float[fServer.bufferSize];
     carla_zeroFloats(fAudioTmpBuf, fServer.bufferSize);
 
-    // tell backend we're live
-    const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
-
     fLastPingTime = getCurrentTimeMilliseconds();
     CARLA_SAFE_ASSERT(fLastPingTime > 0);
 
-    // ready!
-    fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerReady);
-    fShmNonRtServerControl.commitWrite();
-    fShmNonRtServerControl.waitIfDataIsReachingLimit();
+    {
+        // tell backend we're live
+        const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
 
+        // ready!
+        fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerReady);
+        fShmNonRtServerControl.commitWrite();
+        fShmNonRtServerControl.waitIfDataIsReachingLimit();
+    }
+
+    fIsReady = true;
     return true;
 }
 
