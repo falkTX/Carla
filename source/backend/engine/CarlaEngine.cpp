@@ -2057,7 +2057,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
             if (option == -1)
             {
                 // check old stuff, unhandled now
-                if (tag == "GIG_PATH")
+                if (tag == "AU_PATH" || tag == "VST3_PATH" || tag == "GIG_PATH")
                     continue;
 
                 // hmm something is wrong..
