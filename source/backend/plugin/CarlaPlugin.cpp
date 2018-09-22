@@ -1587,7 +1587,8 @@ void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const
 void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
 {
     if (pData->engineBridged) {
-        CARLA_SAFE_ASSERT_RETURN(!sendGui,);
+        // NOTE: some LV2 plugins feedback messages to UI on purpose
+        CARLA_SAFE_ASSERT_RETURN(getType() == PLUGIN_LV2 || !sendGui,);
     } else if (pData->enginePlugin) {
         // nothing here
     } else {
