@@ -23,81 +23,9 @@
 # import <Cocoa/Cocoa.h>
 #endif
 
-#ifdef HAVE_X11
-# include <X11/Xlib.h>
-#endif
-
 namespace CB = CarlaBackend;
 
 // -------------------------------------------------------------------------------------------------------------------
-
-void carla_x11_reparent_window(uintptr_t winId1, uintptr_t winId2)
-{
-    CARLA_SAFE_ASSERT_RETURN(winId1 != 0,);
-    CARLA_SAFE_ASSERT_RETURN(winId2 != 0,);
-
-#ifdef HAVE_X11
-    if (::Display* const disp = XOpenDisplay(nullptr))
-    {
-        XReparentWindow(disp, winId1, winId2, 0, 0);
-        XMapWindow(disp, winId1);
-        XCloseDisplay(disp);
-    }
-#endif
-}
-
-void carla_x11_move_window(uintptr_t winId, int x, int y)
-{
-    CARLA_SAFE_ASSERT_RETURN(winId != 0,);
-
-#ifdef HAVE_X11
-    if (::Display* const disp = XOpenDisplay(nullptr))
-    {
-        XMoveWindow(disp, winId, x, y);
-        XCloseDisplay(disp);
-    }
-#else
-    // unused
-    return; (void)x; (void)y;
-#endif
-}
-
-int* carla_x11_get_window_pos(uintptr_t winId)
-{
-    static int pos[4];
-
-    if (winId == 0)
-    {
-        pos[0] = 0;
-        pos[1] = 0;
-        pos[2] = 0;
-        pos[3] = 0;
-    }
-#ifdef HAVE_X11
-    else if (::Display* const disp = XOpenDisplay(nullptr))
-    {
-        int x, y;
-        Window child;
-        XWindowAttributes xwa;
-        XTranslateCoordinates(disp, winId, XRootWindow(disp, 0), 0, 0, &x, &y, &child);
-        XGetWindowAttributes(disp, winId, &xwa);
-        XCloseDisplay(disp);
-        pos[0] = x - xwa.x;
-        pos[1] = y - xwa.y;
-        pos[2] = xwa.x;
-        pos[3] = xwa.y;
-    }
-#endif
-    else
-    {
-        pos[0] = 0;
-        pos[1] = 0;
-        pos[2] = 0;
-        pos[3] = 0;
-    }
-
-    return pos;
-}
 
 int carla_cocoa_get_window(void* nsViewPtr)
 {

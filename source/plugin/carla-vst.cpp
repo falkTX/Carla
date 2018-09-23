@@ -259,50 +259,8 @@ public:
         case effEditOpen:
             if (fDescriptor->ui_show != nullptr)
             {
-#if 0
-                char strBuf[0xff+1];
-                strBuf[0xff] = '\0';
-                std::snprintf(strBuf, 0xff, P_INTPTR, (intptr_t)ptr);
-
-                // set CARLA_PLUGIN_EMBED_WINID for external process
-                carla_setenv("CARLA_PLUGIN_EMBED_WINID", strBuf);
-
-                // check if vst host is an old version of tracktion
-                bool oldTracktionWorkaround = false;
-
-                // tracktion doesn't export its version properly, use env var instead
-                if (std::getenv("CARLA_TRACKTION_WORKAROUND") != nullptr)
-                {
-                    carla_zeroChars(strBuf, 0xff+1);
-                    hostCallback(audioMasterGetProductString, 0, 0, strBuf, 0.0f);
-                    oldTracktionWorkaround = (std::strcmp(strBuf, "Tracktion") == 0);
-
-                    // if vst host is old tracktion, delay UI appearance for a bit (part 1)
-                    if (oldTracktionWorkaround)
-                        fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_NULL, (int32_t)0xDEADF00D, 0xC0C0B00B, nullptr, 0.0f);
-                }
-
-                // show UI now
-                fDescriptor->ui_show(fHandle, true);
-
-                // reset CARLA_PLUGIN_EMBED_WINID just in case
-                carla_setenv("CARLA_PLUGIN_EMBED_WINID", "0");
-
-                // if vst host is old tracktion, delay UI appearance for a bit (part 2)
-                if (oldTracktionWorkaround)
-                {
-                    carla_stdout("Old Tracktion detected, delaying UI appearance so it works properly...");
-
-                    for (int x=10; --x>=0;)
-                    {
-                        hostCallback(audioMasterIdle);
-                        carla_msleep(25);
-                    }
-                }
-#else
                 destoryUILauncher(fUiLauncher);
                 fUiLauncher = createUILauncher((intptr_t)ptr, fDescriptor, fHandle);
-#endif
                 ret = 1;
             }
             break;
@@ -310,12 +268,8 @@ public:
         case effEditClose:
             if (fDescriptor->ui_show != nullptr)
             {
-#if 0
-                fDescriptor->ui_show(fHandle, false);
-#else
                 destoryUILauncher(fUiLauncher);
                 fUiLauncher = nullptr;
-#endif
                 ret = 1;
             }
             break;

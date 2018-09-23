@@ -54,8 +54,7 @@ class CarlaEngineNativeUI : public CarlaExternalUI
 {
 public:
     CarlaEngineNativeUI(CarlaEngine* const engine)
-        : fEngine(engine),
-          fRemoteWinId(0)
+        : fEngine(engine)
     {
         carla_debug("CarlaEngineNativeUI::CarlaEngineNativeUI(%p)", engine);
     }
@@ -63,16 +62,6 @@ public:
     ~CarlaEngineNativeUI() noexcept override
     {
         carla_debug("CarlaEngineNativeUI::~CarlaEngineNativeUI()");
-    }
-
-    bool isReady() const noexcept
-    {
-        return fRemoteWinId != 0;
-    }
-
-    intptr_t getRemoteWinId() const noexcept
-    {
-        return fRemoteWinId;
     }
 
 protected:
@@ -550,14 +539,6 @@ protected:
             if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
                 plugin->showCustomUI(yesNo);
         }
-        else if (std::strcmp(msg, "ready") == 0)
-        {
-            uint64_t winId;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsULong(winId), true);
-
-            fRemoteWinId = static_cast<intptr_t>(winId);
-        }
         else
         {
             carla_stderr("CarlaEngineNativeUI::msgReceived : %s", msg);
@@ -577,7 +558,6 @@ protected:
 
 private:
     CarlaEngine* const fEngine;
-    intptr_t           fRemoteWinId;
 
     void _updateParamValues(CarlaPlugin* const plugin, const uint32_t pluginId) const noexcept
     {
@@ -603,8 +583,7 @@ public:
           fIsActive(false),
           fIsRunning(false),
           fUiServer(this),
-          fOptionsForced(false),
-          fWaitForReadyMsg(false)
+          fOptionsForced(false)
     {
         carla_debug("CarlaEngineNative::CarlaEngineNative()");
 
@@ -1674,19 +1653,6 @@ protected:
 
             if (kIsPatchbay)
                 patchbayRefresh(false);
-
-            if (fWaitForReadyMsg)
-            {
-                carla_stdout("Using Carla plugin embedded, waiting for it to be ready...");
-
-                for (; fUiServer.isPipeRunning() && ! fUiServer.isReady();)
-                {
-                    carla_msleep(25);
-                    fUiServer.idlePipe();
-                }
-
-                carla_stdout("Done!");
-            }
         }
         else
         {
@@ -1970,11 +1936,6 @@ public:
         switch(opcode)
         {
         case NATIVE_PLUGIN_OPCODE_NULL:
-            if (static_cast<uint32_t>(index) == 0xDEADF00D && static_cast<uintptr_t>(value) == 0xC0C0B00B)
-            {
-                handlePtr->fWaitForReadyMsg = true;
-                return handlePtr->fUiServer.getRemoteWinId();
-            }
             return 0;
         case NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED:
             CARLA_SAFE_ASSERT_RETURN(value > 0, 0);
@@ -2028,7 +1989,6 @@ private:
     CarlaEngineNativeUI fUiServer;
 
     bool fOptionsForced;
-    bool fWaitForReadyMsg;
 
     CarlaPlugin* _getFirstPlugin() const noexcept
     {

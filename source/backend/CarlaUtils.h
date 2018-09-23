@@ -251,12 +251,6 @@ CARLA_EXPORT const char* carla_get_library_folder();
 // -------------------------------------------------------------------------------------------------------------------
 // TESTING
 
-CARLA_EXPORT void carla_x11_reparent_window(uintptr_t winId1, uintptr_t winId2);
-
-CARLA_EXPORT void carla_x11_move_window(uintptr_t winId, int x, int y);
-
-CARLA_EXPORT int* carla_x11_get_window_pos(uintptr_t winId);
-
 CARLA_EXPORT int carla_cocoa_get_window(void* nsViewPtr);
 
 // -------------------------------------------------------------------------------------------------------------------
