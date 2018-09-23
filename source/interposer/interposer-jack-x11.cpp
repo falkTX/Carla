@@ -361,7 +361,10 @@ int jack_carla_interposed_action(int action, int value, void* ptr)
         {
             gCurrentWindowVisible = true;
             if (gCurrentlyMappedDisplay == nullptr || gCurrentlyMappedWindow == 0)
+            {
+                carla_stdout("NOTICE: Interposer show-gui request ignored");
                 return 0;
+            }
 
             gCurrentWindowMapped = true;
 
@@ -382,7 +385,10 @@ int jack_carla_interposed_action(int action, int value, void* ptr)
         {
             gCurrentWindowVisible = false;
             if (gCurrentlyMappedDisplay == nullptr || gCurrentlyMappedWindow == 0)
+            {
+                carla_stdout("NOTICE: Interposer hide-gui request ignored");
                 return 0;
+            }
 
             gCurrentWindowMapped = false;
             return real_XUnmapWindow(gCurrentlyMappedDisplay, gCurrentlyMappedWindow);
