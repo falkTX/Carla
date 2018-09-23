@@ -34,6 +34,10 @@
 #ifndef _VESTIGE_H
 #define _VESTIGE_H
 
+#if ! (defined(WIN32) || defined(_WIN32) || defined(__WIN32__))
+# define __cdecl
+#endif
+
 #define CCONST(a, b, c, d)( ( ( (int) a ) << 24 ) |		\
 				( ( (int) b ) << 16 ) |		\
 				( ( (int) c ) << 8 ) |		\
@@ -271,13 +275,13 @@ struct _AEffect
 	// 00-03
 	int magic;
 	// dispatcher 04-07
-	intptr_t (* dispatcher) (struct _AEffect *, int, int, intptr_t, void *, float);
+	intptr_t (__cdecl *dispatcher) (struct _AEffect *, int, int, intptr_t, void *, float);
 	// process, quite sure 08-0b
-	void (* process) (struct _AEffect *, float **, float **, int);
+	void (__cdecl *process) (struct _AEffect *, float **, float **, int);
 	// setParameter 0c-0f
-	void (* setParameter) (struct _AEffect *, int, float);
+	void (__cdecl *setParameter) (struct _AEffect *, int, float);
 	// getParameter 10-13
-	float (* getParameter) (struct _AEffect *, int);
+	float (__cdecl *getParameter) (struct _AEffect *, int);
 	// programs 14-17
 	int numPrograms;
 	// Params 18-1b
@@ -305,7 +309,7 @@ struct _AEffect
 	// plugin version 4c-4f
 	int32_t version;
 	// processReplacing 50-53
-	void (* processReplacing) (struct _AEffect *, float **, float **, int);
+	void (__cdecl *processReplacing) (struct _AEffect *, float **, float **, int);
 };
 
 typedef struct _AEffect AEffect;
@@ -331,6 +335,6 @@ typedef struct _VstTimeInfo
 
 } VstTimeInfo;
 
-typedef intptr_t (* audioMasterCallback) (AEffect *, int32_t, int32_t, intptr_t, void *, float);
+typedef intptr_t (__cdecl *audioMasterCallback) (AEffect *, int32_t, int32_t, intptr_t, void *, float);
 
 #endif
