@@ -130,7 +130,7 @@ public:
         carla_debug("CarlaJackAppClient::CarlaJackAppClient()");
 
         const char* const shmIds(std::getenv("CARLA_SHM_IDS"));
-        CARLA_SAFE_ASSERT_RETURN(shmIds != nullptr && std::strlen(shmIds) == 6*4,);
+        CARLA_SAFE_ASSERT_INT2_RETURN(shmIds != nullptr && std::strlen(shmIds) == 6*4, std::strlen(shmIds), 6*4,);
 
         const char* const libjackSetup(std::getenv("CARLA_LIBJACK_SETUP"));
         CARLA_SAFE_ASSERT_RETURN(libjackSetup != nullptr && std::strlen(libjackSetup) == 6,);
