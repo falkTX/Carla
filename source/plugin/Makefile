@@ -87,9 +87,18 @@ SYMBOLS_VST     = # TODO
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
-# ...
+# Other libs
 
 LIBS_ui = $(MODULEDIR)/water.a
+
+LIBS_wine  = $(MODULEDIR)/dgl.wine.a
+LIBS_wine += $(MODULEDIR)/water.files.a
+
+WINE_LINK_FLAGS  = $(LINK_FLAGS)
+WINE_LINK_FLAGS += -L$(BINDIR) -lcarla_native-plugin
+WINE_LINK_FLAGS += -lstdc++ -lopengl32 -lgdi32
+WINE_LINK_FLAGS += -Wl,-rpath,/usr/local/lib/carla
+WINE_LINK_FLAGS += -Wl,-rpath,/usr/lib/carla
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -126,6 +135,10 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 
 all: $(TARGETS)
+
+ifneq ($(WIN32),true)
+wine: $(BINDIR)/CarlaVstShell.dll
+endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -193,9 +206,16 @@ $(BINDIR)/CarlaPatchbayFX$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.patchbay-fx.o $(OBJ
 	@echo "Linking CarlaPatchbayFX$(LIB_EXT)"
 	@$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
 
-$(BINDIR)/CarlaVstShell$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.shell.o $(OBJDIR)/carla-vst-export.cpp.o
+ifneq ($(WIN32),true)
+$(BINDIR)/CarlaVstShell.dll: $(OBJDIR)/carla-vst.cpp.shell.o $(OBJDIR)/carla-vst-export.cpp.dll.o carla-vst-export.def
 	-@mkdir -p $(BINDIR)
 	@echo "Linking CarlaRackVstShell$(LIB_EXT)"
+	@$(WINECC) $^ $(LIBS_START) $(LIBS_wine) $(LIBS_END) $(SHARED) $(WINE_LINK_FLAGS) -o $@
+endif
+
+$(BINDIR)/CarlaVstShell$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.shell.o $(OBJDIR)/carla-vst-export.cpp.o
+	-@mkdir -p $(BINDIR)
+	@echo "Linking CarlaVstShell$(LIB_EXT)"
 	@$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -259,6 +279,11 @@ $(OBJDIR)/carla-vst-export.cpp.o: carla-vst-export.cpp
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
+$(OBJDIR)/carla-vst-export.cpp.dll.o: carla-vst-export.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (Wine)"
+	@$(WINECC) $< $(BUILD_CXX_FLAGS) -c -o $@
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(BINDIR)/carla.lv2/manifest.ttl: $(OBJDIR)/carla-lv2-export.cpp.o
@@ -286,6 +311,7 @@ $(OBJDIR)/carla-lv2-export.cpp.o: carla-lv2-export.cpp
 
 # ---------------------------------------------------------------------------------------------------------------------
 
+-include $(OBJDIR)/carla-native-plugin.cpp.d
 -include $(OBJDIR)/carla-lv2.cpp.d
 -include $(OBJDIR)/carla-lv2-export.cpp.d
 -include $(OBJDIR)/carla-vst.cpp.patchbay-fx.d
@@ -295,5 +321,6 @@ $(OBJDIR)/carla-lv2-export.cpp.o: carla-lv2-export.cpp
 -include $(OBJDIR)/carla-vst.cpp.rack-syn.d
 -include $(OBJDIR)/carla-vst.cpp.shell.d
 -include $(OBJDIR)/carla-vst-export.cpp.d
+-include $(OBJDIR)/carla-vst-export.cpp.dll.d
 
 # ---------------------------------------------------------------------------------------------------------------------

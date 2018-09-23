@@ -15,6 +15,10 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#ifdef __WINE__
+  #error This file is not supposed to be built with wine!
+#endif
+
 #ifndef CARLA_VST_SHELL
   #ifndef CARLA_PLUGIN_PATCHBAY
     #error CARLA_PLUGIN_PATCHBAY undefined
@@ -79,8 +83,12 @@ public:
 
         File curExe = File::getSpecialLocation(File::currentExecutableFile).getLinkedTarget();
         File resDir = curExe.getSiblingFile("resources");
+
+        // FIXME: proper fallback path for other OSes
         if (! resDir.exists())
-            resDir = File("/usr/share/carla/resources/");
+            resDir = File("/usr/local/share/carla/resources");
+        if (! resDir.exists())
+            resDir = File("/usr/share/carla/resources");
 
         // find host type
         const String hostFilename(File::getSpecialLocation(File::hostApplicationPath).getFileName());
@@ -755,12 +763,10 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
             effect->numInputs   = pluginDesc->audioIns;
             effect->numOutputs  = pluginDesc->audioOuts;
 
-            /*
             if (pluginDesc->hints & NATIVE_PLUGIN_HAS_UI)
                 effect->flags |= effFlagsHasEditor;
             else
                 effect->flags &= ~effFlagsHasEditor;
-            */
 
             if (pluginDesc->hints & NATIVE_PLUGIN_IS_SYNTH)
                 effect->flags |= effFlagsIsSynth;
@@ -927,10 +933,6 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
                 ++effect->uniqueID;
 
                 if (desc->midiIns > 1 || desc->midiOuts > 1)
-                    continue;
-                if (std::strncmp(desc->label, "carlarack", 9) == 0)
-                    continue;
-                if (std::strncmp(desc->label, "carlapatchbay", 13) == 0)
                     continue;
 
                 std::strncpy(cptr, desc->label, 32);

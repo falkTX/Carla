@@ -113,6 +113,9 @@ else
 	$(error Trying to build Windows binaries with a regular toolchain, this cannot work)
 endif
 
+$(MODULEDIR)/dgl.wine.a: .FORCE
+	@$(MAKE) -C source/modules/dgl wine
+
 $(MODULEDIR)/%.a: .FORCE
 	@$(MAKE) -C source/modules/$*
 
@@ -145,6 +148,9 @@ libjack: libs
 
 plugin: backend bridges-plugin bridges-ui discovery
 	@$(MAKE) -C source/plugin
+
+plugin-wine: $(MODULEDIR)/dgl.wine.a
+	@$(MAKE) -C source/plugin wine
 
 rest: libs
 	@$(MAKE) -C source/rest
