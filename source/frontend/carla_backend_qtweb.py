@@ -20,6 +20,7 @@
 # Imports (Global)
 
 import requests
+from websocket import WebSocket, WebSocketConnectionClosedException
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -30,63 +31,29 @@ import os
 from time import sleep
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Iterates over the content of a file-like object line-by-line.
-# Based on code by Lars Kellogg-Stedman, see https://github.com/requests/requests/issues/2433
-
-def iterate_stream_nonblock(stream, chunk_size=1024):
-    pending = None
-
-    while True:
-        try:
-            chunk = os.read(stream.raw.fileno(), chunk_size)
-        except BlockingIOError:
-            break
-        if not chunk:
-            break
-
-        if pending is not None:
-            chunk = pending + chunk
-            pending = None
-
-        lines = chunk.splitlines()
-
-        if lines and lines[-1]:
-            pending = lines.pop()
-
-        for line in lines:
-            yield line
-
-        if not pending:
-            break
-
-    if pending:
-        yield pending
-
-# ---------------------------------------------------------------------------------------------------------------------
-
-def create_stream(baseurl):
-    stream = requests.get("{}/stream".format(baseurl), stream=True, timeout=0.1)
-
-    if stream.encoding is None:
-        stream.encoding = 'utf-8'
-
-    return stream
-
-# ---------------------------------------------------------------------------------------------------------------------
 # Carla Host object for connecting to the REST API backend
 
 class CarlaHostQtWeb(CarlaHostQtNull):
     def __init__(self):
         CarlaHostQtNull.__init__(self)
 
-        self.baseurl = "http://localhost:2228"
-        self.stream  = create_stream(self.baseurl)
+        self.host = "localhost"
+        self.port = 2228
+
+        self.baseurl = "http://{}:{}".format(self.host, self.port)
+
+        self.socket = WebSocket()
+        self.socket.connect("ws://{}:{}/ws".format(self.host, self.port), timeout=1)
 
         self.isRemote = True
+        self.isRunning = True
+        self.peaks = []
+
+        for i in range(99):
+            self.peaks.append((0.0, 0.0, 0.0, 0.0))
 
     def get_engine_driver_count(self):
-        # FIXME
-        return int(requests.get("{}/get_engine_driver_count".format(self.baseurl)).text) - 1
+        return int(requests.get("{}/get_engine_driver_count".format(self.baseurl)).text)
 
     def get_engine_driver_name(self, index):
         return requests.get("{}/get_engine_driver_name".format(self.baseurl), params={
@@ -114,13 +81,22 @@ class CarlaHostQtWeb(CarlaHostQtNull):
         return bool(int(requests.get("{}/engine_close".format(self.baseurl)).text))
 
     def engine_idle(self):
-        closed = False
-        stream = self.stream
+        if not self.isRunning:
+            return
 
-        for line in iterate_stream_nonblock(stream):
-            line = line.decode('utf-8', errors='ignore')
+        while True:
+            try:
+                line = self.socket.recv().strip()
+            except WebSocketConnectionClosedException:
+                self.isRunning = False
+                if self.fEngineCallback is None:
+                    self.fEngineCallback(None, ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0, "")
+                return
 
-            if line.startswith("Carla: "):
+            if line == "Keep-Alive":
+                return
+
+            elif line.startswith("Carla: "):
                 if self.fEngineCallback is None:
                     continue
 
@@ -137,15 +113,24 @@ class CarlaHostQtWeb(CarlaHostQtNull):
                 # pass to callback
                 self.fEngineCallback(None, action, pluginId, value1, value2, value3, valueStr)
 
-            elif line == "Connection: close":
-                if not closed:
-                    self.stream = create_stream(self.baseurl)
-                    closed = True
+            elif line.startswith("Peaks: "):
+                # split values from line
+                pluginId, value1, value2, value3, value4 = line[7:].split(" ",5)
 
-        if closed:
-            stream.close()
+                # convert to proper types
+                pluginId = int(pluginId)
+                value1   = float(value1)
+                value2   = float(value2)
+                value3   = float(value3)
+                value4   = float(value4)
+
+                # store peaks
+                self.peaks[pluginId] = (value1, value2, value3, value4)
 
     def is_engine_running(self):
+        if not self.isRunning:
+            return False
+
         try:
             return bool(int(requests.get("{}/is_engine_running".format(self.baseurl)).text))
         except requests.exceptions.ConnectionError:
@@ -192,7 +177,7 @@ class CarlaHostQtWeb(CarlaHostQtNull):
 
     def patchbay_refresh(self, external):
         return bool(int(requests.get("{}/patchbay_refresh".format(self.baseurl), params={
-            'external': external,
+            'external': int(external),
         }).text))
 
     def transport_play(self):
@@ -215,7 +200,13 @@ class CarlaHostQtWeb(CarlaHostQtNull):
         return int(requests.get("{}/get_current_transport_frame".format(self.baseurl)).text)
 
     def get_transport_info(self):
-        return requests.get("{}/get_transport_info".format(self.baseurl)).json()
+        if self.isRunning:
+            try:
+                return requests.get("{}/get_transport_info".format(self.baseurl)).json()
+            except requests.exceptions.ConnectionError:
+                if self.fEngineCallback is None:
+                    self.fEngineCallback(None, ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0, "")
+        return PyCarlaTransportInfo()
 
     def get_current_plugin_count(self):
         return int(requests.get("{}/get_current_plugin_count".format(self.baseurl)).text)
@@ -411,10 +402,16 @@ class CarlaHostQtWeb(CarlaHostQtNull):
         }).text)
 
     def get_current_parameter_value(self, pluginId, parameterId):
-        return float(requests.get("{}/get_current_parameter_value".format(self.baseurl), params={
-            'pluginId': pluginId,
-            'parameterId': parameterId,
-        }).text)
+        if self.isRunning:
+            try:
+                return float(requests.get("{}/get_current_parameter_value".format(self.baseurl), params={
+                    'pluginId': pluginId,
+                    'parameterId': parameterId,
+                }).text)
+            except requests.exceptions.ConnectionError:
+                if self.fEngineCallback is None:
+                    self.fEngineCallback(None, ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0, "")
+        return 0.0
 
     def get_internal_parameter_value(self, pluginId, parameterId):
         return float(requests.get("{}/get_internal_parameter_value".format(self.baseurl), params={
@@ -423,28 +420,22 @@ class CarlaHostQtWeb(CarlaHostQtNull):
         }).text)
 
     def get_input_peak_value(self, pluginId, isLeft):
-        return float(requests.get("{}/get_input_peak_value".format(self.baseurl), params={
-            'pluginId': pluginId,
-            'isLeft': isLeft,
-        }).text)
+        return self.peaks[pluginId][0 if isLeft else 1]
 
     def get_output_peak_value(self, pluginId, isLeft):
-        return float(requests.get("{}/get_output_peak_value".format(self.baseurl), params={
-            'pluginId': pluginId,
-            'isLeft': isLeft,
-        }).text)
+        return self.peaks[pluginId][2 if isLeft else 3]
 
     def set_option(self, pluginId, option, yesNo):
         requests.get("{}/set_option".format(self.baseurl), params={
             'pluginId': pluginId,
             'option': option,
-            'yesNo': yesNo,
+            'yesNo': int(yesNo),
         })
 
     def set_active(self, pluginId, onOff):
         requests.get("{}/set_active".format(self.baseurl), params={
             'pluginId': pluginId,
-            'onOff': onOff,
+            'onOff': int(onOff),
         })
 
     def set_drywet(self, pluginId, value):

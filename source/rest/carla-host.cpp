@@ -24,23 +24,15 @@
 
 static bool gEngineRunning = false;
 
-void engine_idle_handler()
-{
-    if (gEngineRunning)
-        carla_engine_idle();
-}
-
 // -------------------------------------------------------------------------------------------------------------------
 
 static void EngineCallback(void* ptr, EngineCallbackOpcode action, uint pluginId, int value1, int value2, float value3, const char* valueStr)
 {
-#if 0
-    carla_stdout("EngineCallback(%p, %u:%s, %u, %i, %i, %f, %s)",
-                 ptr, (uint)action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
-#endif
+    carla_debug("EngineCallback(%p, %u:%s, %u, %i, %i, %f, %s)",
+                ptr, (uint)action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
 
     char msgBuf[1024];
-    std::snprintf(msgBuf, 1023, "Carla: %u %u %i %i %f %s\n", action, pluginId, value1, value2, value3, valueStr);
+    std::snprintf(msgBuf, 1023, "Carla: %u %u %i %i %f %s", action, pluginId, value1, value2, value3, valueStr);
     msgBuf[1023] = '\0';
 
     switch (action)
@@ -56,7 +48,10 @@ static void EngineCallback(void* ptr, EngineCallbackOpcode action, uint pluginId
         break;
     }
 
-    send_server_side_message(msgBuf);
+    return send_server_side_message(msgBuf);
+
+    // maybe unused
+    (void)ptr;
 }
 
 static const char* FileCallback(void* ptr, FileCallbackOpcode action, bool isDir, const char* title, const char* filter)
@@ -274,7 +269,7 @@ void handle_carla_transport_bpm(const std::shared_ptr<Session> session)
     const std::shared_ptr<const Request> request = session->get_request();
 
     const double bpm = std::atof(request->get_query_parameter("bpm").c_str());
-    CARLA_SAFE_ASSERT_RETURN(bpm > 0.0,) // FIXME
+    CARLA_SAFE_ASSERT_RETURN(bpm > 0.0, session->close(OK)) // FIXME
 
     carla_transport_bpm(bpm);
     session->close(OK);

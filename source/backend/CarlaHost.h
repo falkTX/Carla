@@ -731,7 +731,7 @@ CARLA_EXPORT float carla_get_internal_parameter_value(uint pluginId, int32_t par
  * Get a plugin's peak values.
  * @param pluginId Plugin
  */
-float* carla_get_peak_values(uint pluginId);
+CARLA_EXPORT float* carla_get_peak_values(uint pluginId);
 
 /*!
  * Get a plugin's input peak value.
