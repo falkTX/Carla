@@ -19,9 +19,11 @@
 
 #include "Geometry.hpp"
 
+#ifdef DISTRHO_DEFINES_H_INCLUDED
 START_NAMESPACE_DISTRHO
 class UIExporter;
 END_NAMESPACE_DISTRHO
+#endif
 
 START_NAMESPACE_DGL
 
@@ -129,7 +131,9 @@ private:
     friend class Application;
     friend class Widget;
     friend class StandaloneWindow;
+#ifdef DISTRHO_DEFINES_H_INCLUDED
     friend class DISTRHO_NAMESPACE::UIExporter;
+#endif
 
     virtual void _addWidget(Widget* const widget);
     virtual void _removeWidget(Widget* const widget);
