@@ -58,6 +58,7 @@ struct ScopedLibOpen {
 // Function typedefs
 
 typedef int (*XWindowFunc)(Display*, Window);
+typedef int (*XNextEventFunc)(Display*, XEvent*);
 typedef int (*CarlaInterposedCallback)(int, void*);
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -105,6 +106,14 @@ static int real_XUnmapWindow(Display* display, Window window)
     CARLA_SAFE_ASSERT_RETURN(func != nullptr, 0);
 
     return func(display, window);
+}
+
+static int real_XNextEvent(Display* display, XEvent* event)
+{
+    static const XNextEventFunc func = (XNextEventFunc)::dlsym(RTLD_NEXT, "XNextEvent");
+    CARLA_SAFE_ASSERT_RETURN(func != nullptr, 0);
+
+    return func(display, event);
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -290,6 +299,39 @@ int XUnmapWindow(Display* display, Window window)
     }
 
     return real_XUnmapWindow(display, window);
+}
+
+CARLA_EXPORT
+int XNextEvent(Display* display, XEvent* event)
+{
+    const int ret = real_XNextEvent(display, event);
+
+    if (ret != 0)
+        return ret;
+    if (gCurrentlyMappedWindow == 0)
+        return ret;
+    if (event->type != ClientMessage)
+        return ret;
+    if (event->xclient.window != gCurrentlyMappedWindow)
+        return ret;
+
+    char* const type = XGetAtomName(display, event->xclient.message_type);
+    CARLA_SAFE_ASSERT_RETURN(type != nullptr, 0);
+
+    if (std::strcmp(type, "WM_PROTOCOLS") != 0)
+        return ret;
+    if (event->xclient.data.l[0] != XInternAtom(display, "WM_DELETE_WINDOW", False))
+        return ret;
+
+    gCurrentWindowVisible = false;
+    gCurrentWindowMapped = false;
+
+    if (gInterposedCallback != nullptr)
+        gInterposedCallback(1, nullptr);
+
+    event->type = 0;
+    carla_stdout("XNextEvent close event catched, hiding UI instead");
+    return real_XUnmapWindow(display, gCurrentlyMappedWindow);
 }
 
 // --------------------------------------------------------------------------------------------------------------------

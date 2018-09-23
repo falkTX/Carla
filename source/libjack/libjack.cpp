@@ -242,7 +242,7 @@ public:
 
     int handleInterposerCallback(const int cb_action, void* const ptr)
     {
-        carla_stdout("handleInterposerCallback(%o, %p)", cb_action, ptr);
+        carla_debug("handleInterposerCallback(%o, %p)", cb_action, ptr);
 
         switch (cb_action)
         {
@@ -255,6 +255,9 @@ public:
         }
 
         return 0;
+
+        // maybe unused
+        (void)ptr;
     }
 
     // -------------------------------------------------------------------

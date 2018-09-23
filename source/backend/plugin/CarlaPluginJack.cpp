@@ -1182,11 +1182,7 @@ public:
                 break;
 
             case kPluginBridgeNonRtServerUiClosed:
-                carla_stdout("got kPluginBridgeNonRtServerUiClosed, bridge closed cleanly?");
                 pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
-                //fBridgeThread.signalThreadShouldExit();
-                //handleProcessStopped();
-                //fBridgeThread.stopThread(5000);
                 break;
 
             case kPluginBridgeNonRtServerError: {
