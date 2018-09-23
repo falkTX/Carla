@@ -111,7 +111,11 @@ puglCreateWindow(PuglView* view, const char* title)
 	static int wc_count = 0;
 	char classNameBuf[256];
 	std::srand((std::time(NULL)));
+#ifdef __WINE__
+        std::snprintf(classNameBuf, sizeof(classNameBuf), "%s_%d-%d", title, std::rand(), ++wc_count);
+#else
 	_snprintf(classNameBuf, sizeof(classNameBuf), "%s_%d-%d", title, std::rand(), ++wc_count);
+#endif
 	classNameBuf[sizeof(classNameBuf)-1] = '\0';
 
 	impl->wc.style         = CS_OWNDC;

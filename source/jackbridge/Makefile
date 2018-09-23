@@ -10,8 +10,6 @@ include ../modules/Makefile.mk
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-WINECC ?= winegcc
-
 BUILD_CXX_FLAGS += $(JACKBRIDGE_FLAGS)
 LINK_FLAGS      += $(JACKBRIDGE_LIBS)
 

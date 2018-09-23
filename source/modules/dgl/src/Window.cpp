@@ -32,6 +32,8 @@
 
 #if defined(DISTRHO_OS_WINDOWS)
 # include "pugl/pugl_win.cpp"
+# undef max
+# undef min
 #elif defined(DISTRHO_OS_MAC)
 # define PuglWindow     DISTRHO_JOIN_MACRO(PuglWindow,     DGL_NAMESPACE)
 # define PuglOpenGLView DISTRHO_JOIN_MACRO(PuglOpenGLView, DGL_NAMESPACE)
@@ -573,7 +575,7 @@ struct Window::PrivateData {
 
 #if defined(DISTRHO_OS_WINDOWS)
         const int winFlags = WS_POPUPWINDOW | WS_CAPTION | (fResizable ? WS_SIZEBOX : 0x0);
-        RECT wr = { 0, 0, static_cast<long>(width), static_cast<long>(height) };
+        RECT wr = { 0, 0, static_cast<LONG>(width), static_cast<LONG>(height) };
         AdjustWindowRectEx(&wr, fUsingEmbed ? WS_CHILD : winFlags, FALSE, WS_EX_TOPMOST);
 
         SetWindowPos(hwnd, 0, 0, 0, wr.right-wr.left, wr.bottom-wr.top,
