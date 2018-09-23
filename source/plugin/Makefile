@@ -110,8 +110,7 @@ TARGETS += \
 	$(BINDIR)/carla.lv2/manifest.ttl
 endif
 
-ifeq ($(LINUX),true)
-ifeq ($(HAVE_X11),true)
+ifneq ($(HAIKU),true)
 ifeq ($(HAVE_PYQT),true)
 TARGETS += \
 	$(BINDIR)/CarlaRack$(LIB_EXT) \
@@ -121,7 +120,6 @@ TARGETS += \
 	$(BINDIR)/CarlaPatchbay32$(LIB_EXT) \
 	$(BINDIR)/CarlaPatchbayFX$(LIB_EXT) \
 	$(BINDIR)/CarlaVstShell$(LIB_EXT)
-endif
 endif
 endif
 

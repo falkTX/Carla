@@ -515,8 +515,7 @@ endif
 
 	# -------------------------------------------------------------------------------------------------------------
 
-ifeq ($(LINUX),true)
-ifeq ($(HAVE_X11),true)
+ifneq ($(HAIKU),true)
 ifeq ($(HAVE_PYQT),true)
 	# Install vst plugin
 	install -d $(DESTDIR)$(LIBDIR)/vst/carla.vst
@@ -543,7 +542,6 @@ ifeq ($(HAVE_PYQT),true)
 	# Link styles for vst plugin
 	rm -rf $(DESTDIR)$(LIBDIR)/vst/carla.vst/styles
 	$(LINK) ../../carla/styles $(DESTDIR)$(LIBDIR)/vst/carla.vst/styles
-endif
 endif
 endif
 
