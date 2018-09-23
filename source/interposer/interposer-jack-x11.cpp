@@ -320,7 +320,7 @@ int XNextEvent(Display* display, XEvent* event)
 
     if (std::strcmp(type, "WM_PROTOCOLS") != 0)
         return ret;
-    if (event->xclient.data.l[0] != XInternAtom(display, "WM_DELETE_WINDOW", False))
+    if ((Atom)event->xclient.data.l[0] != XInternAtom(display, "WM_DELETE_WINDOW", False))
         return ret;
 
     gCurrentWindowVisible = false;
