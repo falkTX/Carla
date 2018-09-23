@@ -770,7 +770,7 @@ class PluginEdit(QDialog):
         self.ui.sw_programs.setCurrentIndex(0 if self.fPluginInfo['type'] in (PLUGIN_VST2, PLUGIN_SFZ) else 1)
 
         # Show/hide keyboard
-        showKeyboard = (self.fPluginInfo['category'] == PLUGIN_CATEGORY_SYNTH or midiCountInfo['ins'] > 0 < midiCountInfo['outs'])
+        showKeyboard = (self.fPluginInfo['category'] == PLUGIN_CATEGORY_SYNTH or midiCountInfo['ins'] > 0)
         self.ui.scrollArea.setEnabled(showKeyboard)
         self.ui.scrollArea.setVisible(showKeyboard)
 
