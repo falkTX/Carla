@@ -940,6 +940,20 @@ bool CarlaJackAppClient::handleNonRtData()
 
         case kPluginBridgeNonRtClientPrepareForSave:
             {
+                if (fSessionManager == 1) // auto
+                {
+                    struct sigaction sig;
+                    carla_zeroStruct(sig);
+
+                    sigaction(SIGUSR1, nullptr, &sig);
+
+                    if (sig.sa_handler != nullptr)
+                        fSessionManager = 3;
+                }
+
+                if (fSessionManager == 3)
+                    ::kill(::getpid(), SIGUSR1);
+
                 const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
 
                 fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerSaved);

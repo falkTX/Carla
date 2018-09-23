@@ -1718,9 +1718,9 @@ class PluginDatabaseW(QDialog):
 
 class JackApplicationW(QDialog):
     SESSION_MGR_NONE   = 0
-    SESSION_MGR_JACK   = 1
-    SESSION_MGR_LADISH = 2
-    SESSION_MGR_LASH   = 3
+    SESSION_MGR_AUTO   = 1
+    SESSION_MGR_JACK   = 2
+    SESSION_MGR_LADISH = 3
     SESSION_MGR_NSM    = 4
 
     FLAG_CONTROL_WINDOW        = 0x01
@@ -1762,9 +1762,11 @@ class JackApplicationW(QDialog):
             name = os.path.basename(command.split(" ",1)[0])
 
         # TODO finalize flag definitions
-        #uiSessionMgrIndex = self.ui.cb_session_mgr.currentIndex()
-        #if uiSessionMgrIndex == 1:
-            #smgr = self.SESSION_MGR_LADISH
+        uiSessionMgrIndex = self.ui.cb_session_mgr.currentIndex()
+        if uiSessionMgrIndex == 1:
+            smgr = self.SESSION_MGR_AUTO
+        elif uiSessionMgrIndex == 2:
+            smgr = self.SESSION_MGR_LADISH
         #elif uiSessionMgrIndex == 2:
             #smgr = self.SESSION_MGR_NSM
 

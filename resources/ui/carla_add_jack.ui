@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>468</width>
+    <width>471</width>
     <height>369</height>
    </rect>
   </property>
@@ -111,9 +111,6 @@
         </item>
         <item>
          <widget class="QLabel" name="label_6">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
           <property name="text">
            <string>Session Manager:</string>
           </property>
@@ -124,22 +121,22 @@
         </item>
         <item>
          <widget class="QComboBox" name="cb_session_mgr">
-          <property name="enabled">
-           <bool>false</bool>
+          <property name="currentIndex">
+           <number>1</number>
           </property>
           <item>
            <property name="text">
-            <string>None / Manual</string>
+            <string>None</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Auto</string>
            </property>
           </item>
           <item>
            <property name="text">
             <string>LADISH (SIGUSR1)</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Non Session Manager (OSC)</string>
            </property>
           </item>
          </widget>

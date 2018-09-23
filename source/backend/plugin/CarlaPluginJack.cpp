@@ -325,6 +325,16 @@ public:
     // -------------------------------------------------------------------
     // Set data (state)
 
+    void prepareForSave() noexcept override
+    {
+        {
+            const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
+
+            fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientPrepareForSave);
+            fShmNonRtClientControl.commitWrite();
+        }
+    }
+
     // -------------------------------------------------------------------
     // Set data (internal stuff)
 
