@@ -137,7 +137,7 @@ endif
 all: $(TARGETS)
 
 ifneq ($(WIN32),true)
-wine: $(BINDIR)/CarlaVstShell.dll
+wine: $(BINDIR)/CarlaVstShell.dll $(BINDIR)/CarlaVstFXShell.dll
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -211,6 +211,11 @@ $(BINDIR)/CarlaVstShell.dll: $(OBJDIR)/carla-vst.cpp.shell.o $(OBJDIR)/carla-vst
 	-@mkdir -p $(BINDIR)
 	@echo "Linking CarlaRackVstShell$(LIB_EXT)"
 	@$(WINECC) $^ $(LIBS_START) $(LIBS_wine) $(LIBS_END) $(SHARED) $(WINE_LINK_FLAGS) -o $@
+
+$(BINDIR)/CarlaVstFXShell.dll: $(OBJDIR)/carla-vst.cpp.shellfx.o $(OBJDIR)/carla-vst-export.cpp.dll.o carla-vst-export.def
+	-@mkdir -p $(BINDIR)
+	@echo "Linking CarlaRackVstShell$(LIB_EXT)"
+	@$(WINECC) $^ $(LIBS_START) $(LIBS_wine) $(LIBS_END) $(SHARED) $(WINE_LINK_FLAGS) -o $@
 endif
 
 $(BINDIR)/CarlaVstShell$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.shell.o $(OBJDIR)/carla-vst-export.cpp.o
@@ -272,7 +277,12 @@ $(OBJDIR)/carla-vst.cpp.patchbay-syn32.o: carla-vst.cpp
 $(OBJDIR)/carla-vst.cpp.shell.o: carla-vst.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (VstShell)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_VST_SHELL=1 -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_VST_SHELL=1 -DCARLA_PLUGIN_SYNTH=1 -c -o $@
+
+$(OBJDIR)/carla-vst.cpp.shellfx.o: carla-vst.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (VstShell)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_VST_SHELL=1 -DCARLA_PLUGIN_SYNTH=0 -c -o $@
 
 $(OBJDIR)/carla-vst-export.cpp.o: carla-vst-export.cpp
 	-@mkdir -p $(OBJDIR)

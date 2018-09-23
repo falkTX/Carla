@@ -18,13 +18,13 @@
 #ifdef __WINE__
   #error This file is not supposed to be built with wine!
 #endif
+#ifndef CARLA_PLUGIN_SYNTH
+  #error CARLA_PLUGIN_SYNTH undefined
+#endif
 
 #ifndef CARLA_VST_SHELL
   #ifndef CARLA_PLUGIN_PATCHBAY
     #error CARLA_PLUGIN_PATCHBAY undefined
-  #endif
-  #ifndef CARLA_PLUGIN_SYNTH
-    #error CARLA_PLUGIN_SYNTH undefined
   #endif
   #if CARLA_PLUGIN_32CH || CARLA_PLUGIN_16CH
     #if ! CARLA_PLUGIN_SYNTH
@@ -774,6 +774,11 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
                 effect->flags &= ~effFlagsIsSynth;
            #endif // CARLA_VST_SHELL
 
+           #if CARLA_PLUGIN_SYNTH
+            // override if requested
+            effect->flags |= effFlagsIsSynth;
+           #endif
+
             obj->plugin = new NativePlugin(effect, pluginDesc);
             return 1;
         }
@@ -807,8 +812,12 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
 #if CARLA_VST_SHELL
         if (validPlugin)
         {
+           #if CARLA_PLUGIN_SYNTH
+            return kPlugCategSynth;
+           #else
             const NativePluginDescriptor* const desc = pluginPtr->getDescriptor();
             return desc->category == NATIVE_PLUGIN_CATEGORY_SYNTH ? kPlugCategSynth : kPlugCategEffect;
+           #endif
         }
 
         return kPlugCategShell;
@@ -1028,9 +1037,9 @@ const AEffect* VSTPluginMainInit(AEffect* const effect)
     effect->flags |= effFlagsProgramChunks;
 #if ! CARLA_VST_SHELL
     effect->flags |= effFlagsHasEditor;
-#  if CARLA_PLUGIN_SYNTH
+#endif
+#if CARLA_PLUGIN_SYNTH
     effect->flags |= effFlagsIsSynth;
-#  endif
 #endif
 
     return effect;
