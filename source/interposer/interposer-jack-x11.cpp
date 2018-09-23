@@ -203,7 +203,15 @@ static int carlaWindowMap(Display* const display, const Window window, const int
                 break;
 
             carla_stdout("NOTICE: XMapWindow now showing previous window");
-            real_XMapWindow(gCurrentlyMappedDisplay, gCurrentlyMappedWindow);
+            switch (fallbackFnType)
+            {
+            case 1:
+                real_XMapWindow(gCurrentlyMappedDisplay, gCurrentlyMappedWindow);
+            case 2:
+                real_XMapRaised(gCurrentlyMappedDisplay, gCurrentlyMappedWindow);
+            case 3:
+                real_XMapSubwindows(gCurrentlyMappedDisplay, gCurrentlyMappedWindow);
+            }
         }
 
         gCurrentlyMappedDisplay = display;
