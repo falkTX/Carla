@@ -138,19 +138,6 @@ static void writeManifestFile(PluginListManager& plm)
     // UI
 
 #ifdef HAVE_PYQT
-# if defined(CARLA_OS_LINUX) && defined(HAVE_X11)
-    text += "<http://kxstudio.sf.net/carla/ui-embed>\n";
-    text += "    a <" LV2_UI__X11UI "> ;\n";
-    text += "    ui:binary <carla" PLUGIN_EXT "> ;\n";
-    text += "    lv2:extensionData <" LV2_PROGRAMS__UIInterface "> ;\n";
-    text += "    lv2:optionalFeature <" LV2_UI__fixedSize "> ,\n";
-    text += "                        <" LV2_UI__noUserResize "> ;\n";
-    text += "    lv2:requiredFeature <" LV2_INSTANCE_ACCESS_URI "> ,\n";
-    text += "                        <" LV2_UI__resize "> ;\n";
-    text += "    opts:supportedOption <" LV2_PARAMETERS__sampleRate "> .\n";
-    text += "\n";
-# endif
-
     text += "<http://kxstudio.sf.net/carla/ui-ext>\n";
     text += "    a <" LV2_EXTERNAL_UI__Widget "> ;\n";
     text += "    ui:binary <carla" PLUGIN_EXT "> ;\n";
@@ -325,18 +312,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
 #ifdef HAVE_PYQT
     if (pluginDesc->hints & NATIVE_PLUGIN_HAS_UI)
     {
-# if defined(CARLA_OS_LINUX) && defined(HAVE_X11)
-        if (std::strncmp(pluginDesc->label, "carla", 5) == 0)
-        {
-            text += "    ui:ui <http://kxstudio.sf.net/carla/ui-embed> ,\n";
-            text += "          <http://kxstudio.sf.net/carla/ui-ext> ;\n";
-        }
-        else
-# endif
-        {
-            text += "    ui:ui <http://kxstudio.sf.net/carla/ui-ext> ;\n";
-        }
-
+        text += "    ui:ui <http://kxstudio.sf.net/carla/ui-ext> ;\n";
         text += "\n";
     }
 #endif

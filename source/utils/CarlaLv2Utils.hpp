@@ -1509,14 +1509,12 @@ protected:
         const LV2_External_UI_Host* host;
         LV2UI_Write_Function writeFunction;
         LV2UI_Controller controller;
-        bool isEmbed;
         bool isVisible;
 
         UI()
             : host(nullptr),
               writeFunction(nullptr),
               controller(nullptr),
-              isEmbed(false),
               isVisible(false) {}
     } fUI;
 

@@ -448,71 +448,16 @@ public:
     // ----------------------------------------------------------------------------------------------------------------
 
     void lv2ui_instantiate(LV2UI_Write_Function writeFunction, LV2UI_Controller controller,
-                           LV2UI_Widget* widget, const LV2_Feature* const* features, const bool isEmbed)
+                           LV2UI_Widget* widget, const LV2_Feature* const* features)
     {
         fUI.writeFunction = writeFunction;
         fUI.controller = controller;
-        fUI.isEmbed = isEmbed;
 
         if (fHost.uiName != nullptr)
         {
             delete[] fHost.uiName;
             fHost.uiName = nullptr;
         }
-
-#if defined(CARLA_OS_LINUX) && defined(HAVE_X11)
-        // ---------------------------------------------------------------
-        // show embed UI if needed
-
-        if (isEmbed)
-        {
-            intptr_t parentId = 0;
-            const LV2UI_Resize* uiResize = nullptr;
-
-            for (int i=0; features[i] != nullptr; ++i)
-            {
-                if (std::strcmp(features[i]->URI, LV2_UI__parent) == 0)
-                {
-                    parentId = (intptr_t)features[i]->data;
-                }
-                else if (std::strcmp(features[i]->URI, LV2_UI__resize) == 0)
-                {
-                    uiResize = (const LV2UI_Resize*)features[i]->data;
-                }
-            }
-
-            // -----------------------------------------------------------
-            // see if the host can really embed the UI
-
-            if (parentId != 0)
-            {
-                // wait for remote side to be ready
-                fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_NULL, (int32_t)0xDEADF00D, 0xC0C0B00B, nullptr, 0.0f);
-
-                if (uiResize && uiResize->ui_resize != nullptr)
-                    uiResize->ui_resize(uiResize->handle, 740, 512);
-
-                fHost.uiName = carla_strdup(fDescriptor->name);
-                fUI.isVisible = true;
-
-                char strBuf[0xff+1];
-                strBuf[0xff] = '\0';
-                std::snprintf(strBuf, 0xff, P_INTPTR, parentId);
-
-                carla_setenv("CARLA_PLUGIN_EMBED_WINID", strBuf);
-
-                fDescriptor->ui_show(fHandle, true);
-
-                carla_setenv("CARLA_PLUGIN_EMBED_WINID", "0");
-
-                const intptr_t winId(fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_NULL, (int32_t)0xDEADF00D, 0xC0C0B00B, nullptr, 0.0f));
-                CARLA_SAFE_ASSERT_RETURN(winId != 0,);
-
-                *widget = (LV2UI_Widget)winId;
-                return;
-            }
-        }
-#endif
 
         // ---------------------------------------------------------------
         // see if the host supports external-ui
@@ -564,9 +509,6 @@ public:
 
         *widget = nullptr;
         return;
-
-        // maybe be unused
-        (void)isEmbed;
     }
 
     void lv2ui_port_event(uint32_t portIndex, uint32_t bufferSize, uint32_t format, const void* buffer) const
@@ -1005,13 +947,11 @@ static const void* lv2_extension_data(const char* uri)
 // -----------------------------------------------------------------------
 // LV2 UI descriptor functions
 
-static LV2UI_Handle lv2ui_instantiate(LV2UI_Write_Function writeFunction, LV2UI_Controller controller,
-                                      LV2UI_Widget* widget, const LV2_Feature* const* features, const bool isEmbed)
+static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char*, const char*,
+                                            LV2UI_Write_Function writeFunction, LV2UI_Controller controller,
+                                            LV2UI_Widget* widget, const LV2_Feature* const* features)
 {
     carla_debug("lv2ui_instantiate(..., %p, %p, %p)", writeFunction, controller, widget, features);
-# if ! (defined(CARLA_OS_LINUX) && defined(HAVE_X11))
-    CARLA_SAFE_ASSERT_RETURN(! isEmbed, nullptr);
-# endif
 
     NativePlugin* plugin = nullptr;
 
@@ -1030,25 +970,9 @@ static LV2UI_Handle lv2ui_instantiate(LV2UI_Write_Function writeFunction, LV2UI_
         return nullptr;
     }
 
-    plugin->lv2ui_instantiate(writeFunction, controller, widget, features, isEmbed);
+    plugin->lv2ui_instantiate(writeFunction, controller, widget, features);
 
     return (LV2UI_Handle)plugin;
-}
-
-# if defined(CARLA_OS_LINUX) && defined(HAVE_X11)
-static LV2UI_Handle lv2ui_instantiate_embed(const LV2UI_Descriptor*, const char*, const char*,
-                                            LV2UI_Write_Function writeFunction, LV2UI_Controller controller,
-                                            LV2UI_Widget* widget, const LV2_Feature* const* features)
-{
-    return lv2ui_instantiate(writeFunction, controller, widget, features, true);
-}
-# endif
-
-static LV2UI_Handle lv2ui_instantiate_external(const LV2UI_Descriptor*, const char*, const char*,
-                                               LV2UI_Write_Function writeFunction, LV2UI_Controller controller,
-                                               LV2UI_Widget* widget, const LV2_Feature* const* features)
-{
-    return lv2ui_instantiate(writeFunction, controller, widget, features, false);
 }
 
 #define uiPtr ((NativePlugin*)ui)
@@ -1168,24 +1092,9 @@ const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index)
 {
     carla_debug("lv2ui_descriptor(%i)", index);
 
-#if defined(CARLA_OS_LINUX) && defined(HAVE_X11)
-    static const LV2UI_Descriptor lv2UiEmbedDesc = {
-    /* URI            */ "http://kxstudio.sf.net/carla/ui-embed",
-    /* instantiate    */ lv2ui_instantiate_embed,
-    /* cleanup        */ lv2ui_cleanup,
-    /* port_event     */ lv2ui_port_event,
-    /* extension_data */ lv2ui_extension_data
-    };
-
-    if (index == 0)
-        return &lv2UiEmbedDesc;
-    else
-        --index;
-#endif
-
     static const LV2UI_Descriptor lv2UiExtDesc = {
     /* URI            */ "http://kxstudio.sf.net/carla/ui-ext",
-    /* instantiate    */ lv2ui_instantiate_external,
+    /* instantiate    */ lv2ui_instantiate,
     /* cleanup        */ lv2ui_cleanup,
     /* port_event     */ lv2ui_port_event,
     /* extension_data */ lv2ui_extension_data
