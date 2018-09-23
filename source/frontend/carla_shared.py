@@ -616,6 +616,7 @@ def getInitialProjectFile(app, skipExistCheck = False):
             continue
         if arg in ("-n", "--n", "-no-gui", "--no-gui", "-nogui", "--nogui"):
             continue
+        arg = os.path.expanduser(arg)
         if skipExistCheck or os.path.exists(arg):
             return arg
 
