@@ -1052,6 +1052,11 @@ bool File::deleteFile() const
                          : DeleteFile (fullPath.toUTF8()) != 0;
 }
 
+File File::getLinkedTarget() const
+{
+    return *this;
+}
+
 bool File::copyInternal (const File& dest) const
 {
     return CopyFile (fullPath.toUTF8(), dest.getFullPathName().toUTF8(), false) != 0;
