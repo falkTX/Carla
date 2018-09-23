@@ -2286,6 +2286,18 @@ const NativePluginDescriptor* carla_get_native_patchbay_plugin()
     return &carlaPatchbayDesc;
 }
 
+const NativePluginDescriptor* carla_get_native_patchbay16_plugin()
+{
+    CARLA_BACKEND_USE_NAMESPACE;
+    return &carlaPatchbay16Desc;
+}
+
+const NativePluginDescriptor* carla_get_native_patchbay32_plugin()
+{
+    CARLA_BACKEND_USE_NAMESPACE;
+    return &carlaPatchbay32Desc;
+}
+
 // -----------------------------------------------------------------------
 // Extra stuff for linking purposes
 

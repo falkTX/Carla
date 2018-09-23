@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -16,47 +16,33 @@
  */
 
 #include "CarlaEngine.hpp"
-#include "CarlaPlugin.hpp"
-#include "CarlaHost.h"
-#include "CarlaNative.h"
-
-#include "CarlaBackendUtils.hpp"
+#include "CarlaNativePlugin.h"
+#include "CarlaJuceUtils.hpp"
 #include "LinkedList.hpp"
 
-#ifdef CARLA_NATIVE_PLUGIN_DSSI
-# include "dssi/dssi.h"
-#endif
+// -----------------------------------------------------------------------
 
 #ifdef CARLA_NATIVE_PLUGIN_LV2
-# include "lv2/lv2.h"
-#endif
-
-using CarlaBackend::CarlaPlugin;
-
-// -----------------------------------------------------------------------
+#include "lv2/lv2.h"
 
 CARLA_EXTERN_C
 std::size_t carla_getNativePluginCount() noexcept;
 
 CARLA_EXTERN_C
 const NativePluginDescriptor* carla_getNativePluginDescriptor(const std::size_t index) noexcept;
+#endif
 
 // -----------------------------------------------------------------------
 // Plugin List
 
 struct PluginListManager {
     PluginListManager()
-#ifdef CARLA_NATIVE_PLUGIN_DSSI
-        : dssiDescs(),
-#endif
+        : descs()
 #ifdef CARLA_NATIVE_PLUGIN_LV2
-        : lv2Descs(),
+        , lv2Descs()
 #endif
-#ifdef CARLA_NATIVE_PLUGIN_VST
-        : _dummy(0),
-#endif
-          descs()
     {
+#ifdef CARLA_NATIVE_PLUGIN_LV2
         for (std::size_t i=0, count = carla_getNativePluginCount(); i < count; ++i)
         {
             const NativePluginDescriptor* const desc(carla_getNativePluginDescriptor(i));
@@ -81,22 +67,16 @@ struct PluginListManager {
                 descs.append(desc);
             }
         }
+#else
+        descs.append(carla_get_native_rack_plugin());
+        descs.append(carla_get_native_patchbay_plugin());
+        descs.append(carla_get_native_patchbay16_plugin());
+        descs.append(carla_get_native_patchbay32_plugin());
+#endif
     }
 
     ~PluginListManager()
     {
-#ifdef CARLA_NATIVE_PLUGIN_DSSI
-        for (LinkedList<const DSSI_Descriptor*>::Itenerator it = dssiDescs.begin2(); it.valid(); it.next())
-        {
-            const DSSI_Descriptor* const dssiDesc(it.getValue());
-            CARLA_SAFE_ASSERT_CONTINUE(dssiDesc != nullptr);
-
-            //delete[] lv2Desc->URI;
-            delete dssiDesc;
-        }
-        dssiDescs.clear();
-#endif
-
 #ifdef CARLA_NATIVE_PLUGIN_LV2
         for (LinkedList<const LV2_Descriptor*>::Itenerator it = lv2Descs.begin2(); it.valid(); it.next())
         {
@@ -118,16 +98,10 @@ struct PluginListManager {
         return plm;
     }
 
-#ifdef CARLA_NATIVE_PLUGIN_DSSI
-    LinkedList<const DSSI_Descriptor*> dssiDescs;
-#endif
+    LinkedList<const NativePluginDescriptor*> descs;
 #ifdef CARLA_NATIVE_PLUGIN_LV2
     LinkedList<const LV2_Descriptor*> lv2Descs;
 #endif
-#ifdef CARLA_NATIVE_PLUGIN_VST
-    char _dummy;
-#endif
-    LinkedList<const NativePluginDescriptor*> descs;
 };
 
 // -----------------------------------------------------------------------
