@@ -31,6 +31,7 @@
 
 #define CARLA_NATIVE_PLUGIN_VST
 #include "carla-base.cpp"
+#include "carla-vst.hpp"
 
 #include "water/files/File.h"
 
@@ -52,9 +53,8 @@ class NativePlugin
 public:
     static const uint32_t kMaxMidiEvents = 512;
 
-    NativePlugin(const audioMasterCallback audioMaster, AEffect* const effect, const NativePluginDescriptor* desc)
-        : fAudioMaster(audioMaster),
-          fEffect(effect),
+    NativePlugin(AEffect* const effect, const NativePluginDescriptor* desc)
+        : fEffect(effect),
           fHandle(nullptr),
           fHost(),
           fDescriptor(desc),
@@ -64,6 +64,7 @@ public:
           fMidiEventCount(0),
           fTimeInfo(),
           fVstRect(),
+          fUiLauncher(nullptr),
           fHostType(kHostTypeNull),
           fMidiOutEvents(),
           fStateChunk(nullptr)
@@ -103,8 +104,8 @@ public:
 
         fVstRect.top    = 0;
         fVstRect.left   = 0;
-        fVstRect.bottom = 512;
-        fVstRect.right  = 740;
+        fVstRect.bottom = ui_launcher_res::carla_uiHeight;
+        fVstRect.right  = ui_launcher_res::carla_uiWidth;
 
         init();
     }
@@ -258,6 +259,7 @@ public:
         case effEditOpen:
             if (fDescriptor->ui_show != nullptr)
             {
+#if 0
                 char strBuf[0xff+1];
                 strBuf[0xff] = '\0';
                 std::snprintf(strBuf, 0xff, P_INTPTR, (intptr_t)ptr);
@@ -297,7 +299,10 @@ public:
                         carla_msleep(25);
                     }
                 }
-
+#else
+                destoryUILauncher(fUiLauncher);
+                fUiLauncher = createUILauncher((intptr_t)ptr, fDescriptor, fHandle);
+#endif
                 ret = 1;
             }
             break;
@@ -305,14 +310,24 @@ public:
         case effEditClose:
             if (fDescriptor->ui_show != nullptr)
             {
+#if 0
                 fDescriptor->ui_show(fHandle, false);
+#else
+                destoryUILauncher(fUiLauncher);
+                fUiLauncher = nullptr;
+#endif
                 ret = 1;
             }
             break;
 
         case effEditIdle:
-            if (fDescriptor->ui_idle != nullptr)
-                fDescriptor->ui_idle(fHandle);
+            if (fUiLauncher != nullptr)
+            {
+                idleUILauncher(fUiLauncher);
+
+                if (fDescriptor->ui_idle != nullptr)
+                    fDescriptor->ui_idle(fHandle);
+            }
             break;
 
         case effGetChunk:
@@ -578,7 +593,6 @@ protected:
 
 private:
     // VST stuff
-    const audioMasterCallback fAudioMaster;
     AEffect* const fEffect;
 
     // Native data
@@ -597,6 +611,9 @@ private:
     NativeTimeInfo  fTimeInfo;
     ERect           fVstRect;
 
+    // UI button
+    CarlaUILauncher* fUiLauncher;
+
     // Host data
     enum HostType {
         kHostTypeNull = 0,
@@ -611,7 +628,7 @@ private:
                           void* const ptr = nullptr,
                           const float opt = 0.0f)
     {
-        return fAudioMaster(fEffect, opcode, index, value, ptr, opt);
+        return VSTAudioMaster(fEffect, opcode, index, value, ptr, opt);
     }
 
     struct FixedVstEvents {
@@ -701,17 +718,12 @@ private:
 
 // -----------------------------------------------------------------------
 
-struct VstObject {
-    audioMasterCallback audioMaster;
-    NativePlugin* plugin;
-};
-
 #define validObject  effect != nullptr && effect->object != nullptr
 #define validPlugin  effect != nullptr && effect->object != nullptr && ((VstObject*)effect->object)->plugin != nullptr
 #define vstObjectPtr (VstObject*)effect->object
 #define pluginPtr    (vstObjectPtr)->plugin
 
-static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt)
+intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt)
 {
     // handle base opcodes
     switch (opcode)
@@ -725,10 +737,8 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
             // some hosts call effOpen twice
             CARLA_SAFE_ASSERT_RETURN(obj->plugin == nullptr, 1);
 
-            const audioMasterCallback audioMaster = (audioMasterCallback)obj->audioMaster;
-
-            d_lastBufferSize = static_cast<uint32_t>(audioMaster(effect, audioMasterGetBlockSize, 0, 0, nullptr, 0.0f));
-            d_lastSampleRate = static_cast<double>(audioMaster(effect, audioMasterGetSampleRate, 0, 0, nullptr, 0.0f));
+            d_lastBufferSize = static_cast<uint32_t>(VSTAudioMaster(effect, audioMasterGetBlockSize, 0, 0, nullptr, 0.0f));
+            d_lastSampleRate = static_cast<double>(VSTAudioMaster(effect, audioMasterGetSampleRate, 0, 0, nullptr, 0.0f));
 
             // some hosts are not ready at this point or return 0 buffersize/samplerate
             if (d_lastBufferSize == 0)
@@ -804,7 +814,7 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
                 effect->flags &= ~effFlagsIsSynth;
            #endif // CARLA_VST_SHELL
 
-            obj->plugin = new NativePlugin(audioMaster, effect, pluginDesc);
+            obj->plugin = new NativePlugin(effect, pluginDesc);
             return 1;
         }
         return 0;
@@ -983,26 +993,26 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
     return 0;
 }
 
-static float vst_getParameterCallback(AEffect* effect, int32_t index)
+float vst_getParameterCallback(AEffect* effect, int32_t index)
 {
     if (validPlugin)
         return pluginPtr->vst_getParameter(index);
     return 0.0f;
 }
 
-static void vst_setParameterCallback(AEffect* effect, int32_t index, float value)
+void vst_setParameterCallback(AEffect* effect, int32_t index, float value)
 {
     if (validPlugin)
         pluginPtr->vst_setParameter(index, value);
 }
 
-static void vst_processCallback(AEffect* effect, float** inputs, float** outputs, int32_t sampleFrames)
+void vst_processCallback(AEffect* effect, float** inputs, float** outputs, int32_t sampleFrames)
 {
     if (validPlugin)
         pluginPtr->vst_processReplacing(const_cast<const float**>(inputs), outputs, sampleFrames);
 }
 
-static void vst_processReplacingCallback(AEffect* effect, float** inputs, float** outputs, int32_t sampleFrames)
+void vst_processReplacingCallback(AEffect* effect, float** inputs, float** outputs, int32_t sampleFrames)
 {
     if (validPlugin)
         pluginPtr->vst_processReplacing(const_cast<const float**>(inputs), outputs, sampleFrames);
@@ -1015,29 +1025,10 @@ static void vst_processReplacingCallback(AEffect* effect, float** inputs, float*
 
 // -----------------------------------------------------------------------
 
-CARLA_EXPORT
-#if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
-const AEffect* VSTPluginMain(audioMasterCallback audioMaster);
-#else
-const AEffect* VSTPluginMain(audioMasterCallback audioMaster) asm ("main");
-#endif
-
-CARLA_EXPORT
-const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
+const AEffect* VSTPluginMainInit(AEffect* const effect)
 {
-    // old version
-    if (audioMaster(nullptr, audioMasterVersion, 0, 0, nullptr, 0.0f) == 0)
-        return nullptr;
-
-    AEffect* const effect(new AEffect);
-    std::memset(effect, 0, sizeof(AEffect));
-
-    // vst fields
-    effect->magic   = kEffectMagic;
-    effect->version = CARLA_VERSION_HEX;
-
    #if CARLA_VST_SHELL
-    if (const intptr_t uniqueID = audioMaster(nullptr, audioMasterCurrentId, 0, 0, nullptr, 0.0f))
+    if (const intptr_t uniqueID = VSTAudioMaster(effect, audioMasterCurrentId, 0, 0, nullptr, 0.0f))
         effect->uniqueID = uniqueID;
     else
         effect->uniqueID = kShellUniqueID;
@@ -1085,21 +1076,6 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
     effect->flags |= effFlagsIsSynth;
 #  endif
 #endif
-
-    // static calls
-    effect->dispatcher   = vst_dispatcherCallback;
-    effect->process      = vst_processCallback;
-    effect->getParameter = vst_getParameterCallback;
-    effect->setParameter = vst_setParameterCallback;
-    effect->processReplacing = vst_processReplacingCallback;
-
-    // pointers
-    VstObject* const obj(new VstObject());
-    obj->audioMaster = audioMaster;
-    obj->plugin      = nullptr;
-
-    // done
-    effect->object = obj;
 
     return effect;
 }
