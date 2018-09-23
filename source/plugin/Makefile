@@ -128,7 +128,8 @@ TARGETS += \
 	$(BINDIR)/CarlaPatchbay16$(LIB_EXT) \
 	$(BINDIR)/CarlaPatchbay32$(LIB_EXT) \
 	$(BINDIR)/CarlaPatchbayFX$(LIB_EXT) \
-	$(BINDIR)/CarlaVstShell$(LIB_EXT)
+	$(BINDIR)/CarlaVstShell$(LIB_EXT) \
+	$(BINDIR)/CarlaVstFxShell$(LIB_EXT)
 endif
 endif
 
@@ -219,6 +220,11 @@ $(BINDIR)/CarlaVstFXShell.dll: $(OBJDIR)/carla-vst.cpp.shellfx.o $(OBJDIR)/carla
 endif
 
 $(BINDIR)/CarlaVstShell$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.shell.o $(OBJDIR)/carla-vst-export.cpp.o
+	-@mkdir -p $(BINDIR)
+	@echo "Linking CarlaVstShell$(LIB_EXT)"
+	@$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
+
+$(BINDIR)/CarlaVstFxShell$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.shellfx.o $(OBJDIR)/carla-vst-export.cpp.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking CarlaVstShell$(LIB_EXT)"
 	@$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
