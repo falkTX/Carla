@@ -369,6 +369,12 @@
        <property name="spacing">
         <number>1</number>
        </property>
+       <property name="leftMargin">
+        <number>1</number>
+       </property>
+       <property name="bottomMargin">
+        <number>1</number>
+       </property>
        <item>
         <widget class="QTabWidget" name="tabUtils">
          <property name="sizePolicy">
