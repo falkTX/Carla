@@ -190,9 +190,9 @@ class CanvasPreviewFrame(QFrame):
         height = self.fViewRect[iHeight]/self.fScale
 
         # cursor
-        lineHinting = painter.pen().widthF() / 2
         painter.setBrush(self.fViewBrush)
         painter.setPen(self.fViewPen)
+        lineHinting = painter.pen().widthF() / 2
         painter.drawRect(QRectF(
             floor(self.fViewRect[iX]+self.fInitialX)+lineHinting,
             floor(self.fViewRect[iY]+3)+lineHinting,
