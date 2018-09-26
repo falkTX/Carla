@@ -499,6 +499,7 @@ class HostWindow(QMainWindow):
         self.scene.scaleChanged.connect(self.slot_canvasScaleChanged)
         self.scene.sceneGroupMoved.connect(self.slot_canvasItemMoved)
         self.scene.pluginSelected.connect(self.slot_canvasPluginSelected)
+        self.scene.selectionChanged.connect(self.slot_canvasSelectionChanged)
 
         self.SIGUSR1.connect(self.slot_handleSIGUSR1)
         self.SIGTERM.connect(self.slot_handleSIGTERM)
@@ -1422,6 +1423,10 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot(int, int, QPointF)
     def slot_canvasItemMoved(self, group_id, split_mode, pos):
+        self.updateMiniCanvasLater()
+
+    @pyqtSlot()
+    def slot_canvasSelectionChanged(self):
         self.updateMiniCanvasLater()
 
     @pyqtSlot(float)
