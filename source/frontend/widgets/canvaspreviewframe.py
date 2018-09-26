@@ -24,7 +24,7 @@ from carla_config import *
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from math import floor
+from math import floor, ceil
 
 if config_UseQt5:
     from PyQt5.QtCore import pyqtSignal, Qt, QRectF, QTimer
@@ -225,10 +225,16 @@ class CanvasPreviewFrame(QFrame):
         painter.setBrush(self.fViewBrush)
         painter.setPen(self.fViewPen)
         lineHinting = painter.pen().widthF() / 2
+
+        x = self.fViewRect[iX]+self.fInitialX
+        y = self.fViewRect[iY]+self.fInitialY
+        scr_x = floor(x)
+        scr_y = floor(y)
         painter.drawRect(QRectF(
-            floor(self.fViewRect[iX]+self.fInitialX)+lineHinting,
-            floor(self.fViewRect[iY]+3)+lineHinting,
-            round(width)-1, round(height)-1))
+            scr_x-1+lineHinting,
+            scr_y-1+lineHinting,
+            ceil(width+x-scr_x)+2-lineHinting*2,
+            ceil(height+y-scr_y)+2-lineHinting*2 ))
 
         if self.fUseCustomPaint:
             event.accept()
