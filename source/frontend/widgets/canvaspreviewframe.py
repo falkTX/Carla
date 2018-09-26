@@ -171,14 +171,21 @@ class CanvasPreviewFrame(QFrame):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing == ANTIALIASING_FULL))
 
+        # Brightness-aware out-of-canvas shading
+        bg_color = self.fViewBg
+        bg_black = bg_color.black()
+        bg_shade = -12 if bg_black < 127 else 12
+        r,g,b,a = bg_color.getRgb()
+        bg_color = QColor(r+bg_shade, g+bg_shade, b+bg_shade)
         if self.fUseCustomPaint:
             # Shadow
             painter.setPen(QColor(0,0,0,100))
             painter.setBrush(Qt.transparent)
             painter.drawRect(QRectF(0.5, 0.5, self.width()-1, self.height()-1))
 
-            painter.setBrush(self.fViewBg)
-            painter.setPen(self.fViewBg)
+            # Background
+            painter.setBrush(bg_color)
+            painter.setPen(bg_color)
             painter.drawRect(QRectF(1.5, 1.5, self.width()-3, self.height()-3))
 
             # Edge (overlay)
@@ -186,9 +193,9 @@ class CanvasPreviewFrame(QFrame):
             painter.setPen(QColor(255,255,255,62))
             painter.drawRect(QRectF(1.5, 1.5, self.width()-3, self.height()-3))
         else:
-            painter.setBrush(self.fViewBg)
-            painter.setPen(self.fViewBg)
-            painter.drawRoundedRect(3, 3, self.width()-6, self.height()-6, 3, 3)
+            painter.setBrush(bg_color)
+            painter.setPen(bg_color)
+            painter.drawRoundedRect(QRectF(0.5, 0.5, self.width()-1, self.height()-1), 1, 1)
 
         self.fScene.render(painter, self.fRenderTarget, self.fRenderSource, Qt.KeepAspectRatio)
 
