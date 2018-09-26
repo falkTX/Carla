@@ -98,11 +98,11 @@ class CanvasPreviewFrame(QFrame):
         self.fRealParent = parent
 
     def setViewPosX(self, xp):
-        self.fViewRect[iX] = (xp * self.kInternalWidth) - (xp * (self.fViewRect[iWidth]/self.fScale)) + xp
+        self.fViewRect[iX] = xp * (self.kInternalWidth - self.fViewRect[iWidth]/self.fScale)
         self.update()
 
     def setViewPosY(self, yp):
-        self.fViewRect[iY] = (yp * self.kInternalHeight) - (yp * (self.fViewRect[iHeight]/self.fScale)) + yp
+        self.fViewRect[iY] = yp * (self.kInternalHeight - self.fViewRect[iHeight]/self.fScale)
         self.update()
 
     def setViewScale(self, scale):
@@ -140,8 +140,8 @@ class CanvasPreviewFrame(QFrame):
         xp = x/self.kInternalWidth
         yp = y/self.kInternalHeight
 
-        self.fViewRect[iX] = x - (xp * self.fViewRect[iWidth]/self.fScale) + xp
-        self.fViewRect[iY] = y - (yp * self.fViewRect[iHeight]/self.fScale) + yp
+        self.fViewRect[iX] = xp * (self.kInternalWidth - self.fViewRect[iWidth]/self.fScale)
+        self.fViewRect[iY] = yp * (self.kInternalHeight - self.fViewRect[iHeight]/self.fScale)
         self.update()
 
         self.miniCanvasMoved.emit(xp, yp)
