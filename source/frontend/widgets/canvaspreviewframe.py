@@ -61,6 +61,7 @@ class CanvasPreviewFrame(QFrame):
 
     kInternalWidth  = 210-6 # -4 for width + -1px*2 bounds
     kInternalHeight = 162-5 # -3 for height + -1px*2 bounds
+    kInternalRatio = kInternalWidth / kInternalHeight
 
     def __init__(self, parent):
         QFrame.__init__(self, parent)
@@ -78,6 +79,7 @@ class CanvasPreviewFrame(QFrame):
         self.fFrameWidth = 0.0
 
         self.fInitialX = 0.0
+        self.fInitialY = 0.0
         self.fScale    = 1.0
 
         self.fViewBg    = QColor(0, 0, 0)
@@ -88,8 +90,10 @@ class CanvasPreviewFrame(QFrame):
         self.fMouseDown = False
 
     def init(self, scene, realWidth, realHeight, useCustomPaint = False):
+        realWidth,realHeight = float(realWidth),float(realHeight)
         self.fScene = scene
-        self.fRenderSource = QRectF(0.0, 0.0, float(realWidth), float(realHeight))
+        self.fRenderSource = QRectF(0.0, 0.0, realWidth, realHeight)
+        self.kInternalRatio = realWidth / realHeight
         self.fFrameWidth = 2 if useCustomPaint else self.frameWidth()
 
         if self.fUseCustomPaint != useCustomPaint:
@@ -127,7 +131,7 @@ class CanvasPreviewFrame(QFrame):
 
     def handleMouseEvent(self, eventX, eventY):
         x = float(eventX) - self.fInitialX
-        y = float(eventY) - 3.0
+        y = float(eventY) - self.fInitialY
 
         if x < 0.0:
             x = 0.0
@@ -232,8 +236,22 @@ class CanvasPreviewFrame(QFrame):
             QFrame.paintEvent(self, event)
 
     def resizeEvent(self, event):
-        self.fInitialX     = float(self.width())/2.0 - float(self.kInternalWidth)/2.0
-        self.fRenderTarget = QRectF(self.fInitialX, 3.0, float(self.kInternalWidth), float(self.kInternalHeight))
+        size = event.size()
+        width = size.width()
+        height = size.height()
+        extRatio = (width - self.fFrameWidth * 2) / (height - self.fFrameWidth * 2)
+        if extRatio >= self.kInternalRatio:
+            self.kInternalHeight = floor(height - self.fFrameWidth * 2)
+            self.kInternalWidth  = floor(self.kInternalHeight * self.kInternalRatio)
+            self.fInitialX       = floor(float(width - self.kInternalWidth) / 2.0)
+            self.fInitialY       = self.fFrameWidth
+        else:
+            self.kInternalWidth  = floor(width - self.fFrameWidth * 2)
+            self.kInternalHeight = floor(self.kInternalWidth / self.kInternalRatio)
+            self.fInitialX       = self.fFrameWidth
+            self.fInitialY       = floor(float(height - self.kInternalHeight) / 2.0)
+
+        self.fRenderTarget = QRectF(self.fInitialX, self.fInitialY, float(self.kInternalWidth), float(self.kInternalHeight))
 
         if self.fRealParent is not None:
             QTimer.singleShot(0, self.fRealParent.slot_miniCanvasCheckAll)
