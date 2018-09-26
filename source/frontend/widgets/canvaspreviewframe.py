@@ -75,6 +75,7 @@ class CanvasPreviewFrame(QFrame):
         self.fRenderSource   = QRectF(0.0, 0.0, 0.0, 0.0)
         self.fRenderTarget   = QRectF(0.0, 0.0, 0.0, 0.0)
         self.fUseCustomPaint = False
+        self.fFrameWidth = 0.0
 
         self.fInitialX = 0.0
         self.fScale    = 1.0
@@ -89,6 +90,7 @@ class CanvasPreviewFrame(QFrame):
     def init(self, scene, realWidth, realHeight, useCustomPaint = False):
         self.fScene = scene
         self.fRenderSource = QRectF(0.0, 0.0, float(realWidth), float(realHeight))
+        self.fFrameWidth = 2 if useCustomPaint else self.frameWidth()
 
         if self.fUseCustomPaint != useCustomPaint:
             self.fUseCustomPaint = useCustomPaint
@@ -177,6 +179,8 @@ class CanvasPreviewFrame(QFrame):
         bg_shade = -12 if bg_black < 127 else 12
         r,g,b,a = bg_color.getRgb()
         bg_color = QColor(r+bg_shade, g+bg_shade, b+bg_shade)
+
+        frameWidth = self.fFrameWidth
         if self.fUseCustomPaint:
             # Shadow
             painter.setPen(QColor(0,0,0,100))
@@ -193,12 +197,16 @@ class CanvasPreviewFrame(QFrame):
             painter.setPen(QColor(255,255,255,62))
             painter.drawRect(QRectF(1.5, 1.5, self.width()-3, self.height()-3))
         else:
+            use_rounding = int(frameWidth > 1)
+
+            rounding = 1 * use_rounding
             painter.setBrush(bg_color)
             painter.setPen(bg_color)
-            painter.drawRoundedRect(QRectF(0.5, 0.5, self.width()-1, self.height()-1), 1, 1)
+            painter.drawRoundedRect(QRectF(0.5+frameWidth, 0.5+frameWidth, self.width()-1-frameWidth*2, self.height()-1-frameWidth*2), rounding, rounding)
 
             clipPath = QPainterPath()
-            clipPath.addRoundedRect(QRectF(0, 0, self.width(), self.height()), 2, 2)
+            rounding = 2 * use_rounding
+            clipPath.addRoundedRect(QRectF(frameWidth, frameWidth, self.width()-frameWidth*2, self.height()-frameWidth*2), rounding, rounding)
             painter.setClipPath(clipPath)
 
         self.fScene.render(painter, self.fRenderTarget, self.fRenderSource, Qt.KeepAspectRatio)
