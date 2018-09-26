@@ -172,13 +172,19 @@ class CanvasPreviewFrame(QFrame):
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing == ANTIALIASING_FULL))
 
         if self.fUseCustomPaint:
-            painter.setBrush(QColor(36, 36, 36))
-            painter.setPen(QColor(62, 62, 62))
-            painter.drawRect(2, 2, self.width()-4, self.height()-4)
+            # Shadow
+            painter.setPen(QColor(0,0,0,100))
+            painter.setBrush(Qt.transparent)
+            painter.drawRect(QRectF(0.5, 0.5, self.width()-1, self.height()-1))
 
             painter.setBrush(self.fViewBg)
             painter.setPen(self.fViewBg)
-            painter.drawRect(3, 3, self.width()-6, self.height()-6)
+            painter.drawRect(QRectF(1.5, 1.5, self.width()-3, self.height()-3))
+
+            # Edge (overlay)
+            painter.setBrush(Qt.transparent)
+            painter.setPen(QColor(255,255,255,62))
+            painter.drawRect(QRectF(1.5, 1.5, self.width()-3, self.height()-3))
         else:
             painter.setBrush(self.fViewBg)
             painter.setPen(self.fViewBg)
