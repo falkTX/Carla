@@ -28,11 +28,11 @@ from math import floor
 
 if config_UseQt5:
     from PyQt5.QtCore import pyqtSignal, Qt, QRectF, QTimer
-    from PyQt5.QtGui import QBrush, QColor, QCursor, QPainter, QPen
+    from PyQt5.QtGui import QBrush, QColor, QCursor, QPainter, QPainterPath, QPen
     from PyQt5.QtWidgets import QFrame
 else:
     from PyQt4.QtCore import pyqtSignal, Qt, QRectF, QTimer
-    from PyQt4.QtGui import QBrush, QColor, QCursor, QFrame, QPainter, QPen
+    from PyQt4.QtGui import QBrush, QColor, QCursor, QFrame, QPainter, QPainterPath, QPen
 
 # ------------------------------------------------------------------------------------------------------------
 # Antialiasing settings
@@ -197,7 +197,14 @@ class CanvasPreviewFrame(QFrame):
             painter.setPen(bg_color)
             painter.drawRoundedRect(QRectF(0.5, 0.5, self.width()-1, self.height()-1), 1, 1)
 
+            clipPath = QPainterPath()
+            clipPath.addRoundedRect(QRectF(0, 0, self.width(), self.height()), 2, 2)
+            painter.setClipPath(clipPath)
+
         self.fScene.render(painter, self.fRenderTarget, self.fRenderSource, Qt.KeepAspectRatio)
+
+        # Allow cursor frame to look joined with minicanvas frame
+        painter.setClipping(False)
 
         width  = self.fViewRect[iWidth]/self.fScale
         height = self.fViewRect[iHeight]/self.fScale
