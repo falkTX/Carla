@@ -189,11 +189,6 @@ class CanvasPreviewFrame(QFrame):
         width  = self.fViewRect[iWidth]/self.fScale
         height = self.fViewRect[iHeight]/self.fScale
 
-        if width > self.kInternalWidth:
-            width = self.kInternalWidth
-        if height > self.kInternalHeight:
-            height = self.kInternalHeight
-
         # cursor
         lineHinting = painter.pen().widthF() / 2
         painter.setBrush(self.fViewBrush)
