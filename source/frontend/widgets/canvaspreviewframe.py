@@ -199,13 +199,13 @@ class CanvasPreviewFrame(QFrame):
         else:
             use_rounding = int(frameWidth > 1)
 
-            rounding = 1 * use_rounding
+            rounding = 0.5 * use_rounding
             painter.setBrush(bg_color)
             painter.setPen(bg_color)
             painter.drawRoundedRect(QRectF(0.5+frameWidth, 0.5+frameWidth, self.width()-1-frameWidth*2, self.height()-1-frameWidth*2), rounding, rounding)
 
             clipPath = QPainterPath()
-            rounding = 2 * use_rounding
+            rounding = 1.0 * use_rounding
             clipPath.addRoundedRect(QRectF(frameWidth, frameWidth, self.width()-frameWidth*2, self.height()-frameWidth*2), rounding, rounding)
             painter.setClipPath(clipPath)
 
