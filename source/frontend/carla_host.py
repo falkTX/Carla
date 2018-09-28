@@ -392,6 +392,7 @@ class HostWindow(QMainWindow):
         self.ui.scrollArea.setEnabled(False)
 
         self.ui.miniCanvasPreview.setRealParent(self)
+        self.ui.verticalLayout_7.setContentsMargins(0, 0, 0, 1)
 
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (special stuff for Mac OS)
@@ -1603,8 +1604,7 @@ class HostWindow(QMainWindow):
 
             showSidePanel = settings.value("ShowSidePanel", True, type=bool)
             self.ui.act_settings_show_side_panel.setChecked(showSidePanel)
-            self.ui.dockWidget.setEnabled(showSidePanel)
-            self.ui.dockWidget.setVisible(showSidePanel)
+            self.slot_showSidePanel(showSidePanel)
 
             diskFolders = toList(settings.value("DiskFolders", [HOME]))
 

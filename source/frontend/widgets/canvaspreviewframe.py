@@ -94,12 +94,14 @@ class CanvasPreviewFrame(QFrame):
         self.fScene = scene
         self.fRenderSource = QRectF(0.0, 0.0, realWidth, realHeight)
         self.kInternalRatio = realWidth / realHeight
-        self.fFrameWidth = 2 if useCustomPaint else self.frameWidth()
+        self.updateStyle()
 
         if self.fUseCustomPaint != useCustomPaint:
             self.fUseCustomPaint = useCustomPaint
             self.repaint()
 
+    def updateStyle(self):
+        self.fFrameWidth = 1 if self.fUseCustomPaint else self.frameWidth()
     def setRealParent(self, parent):
         self.fRealParent = parent
 
@@ -186,19 +188,15 @@ class CanvasPreviewFrame(QFrame):
 
         frameWidth = self.fFrameWidth
         if self.fUseCustomPaint:
-            # Shadow
-            painter.setPen(QColor(0,0,0,100))
+            # Inner shadow
+            color = QColor.fromHsv(40, 0, 255-max(210, bg_color.black(), bg_black))
             painter.setBrush(Qt.transparent)
+            painter.setPen(color)
             painter.drawRect(QRectF(0.5, 0.5, self.width()-1, self.height()-1))
 
             # Background
             painter.setBrush(bg_color)
             painter.setPen(bg_color)
-            painter.drawRect(QRectF(1.5, 1.5, self.width()-3, self.height()-3))
-
-            # Edge (overlay)
-            painter.setBrush(Qt.transparent)
-            painter.setPen(QColor(255,255,255,62))
             painter.drawRect(QRectF(1.5, 1.5, self.width()-3, self.height()-3))
         else:
             use_rounding = int(frameWidth > 1)
