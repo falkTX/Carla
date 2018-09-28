@@ -27,12 +27,12 @@ from carla_config import *
 from math import floor, ceil
 
 if config_UseQt5:
-    from PyQt5.QtCore import pyqtSignal, Qt, QRectF, QTimer
+    from PyQt5.QtCore import pyqtSignal, Qt, QRectF, QTimer, QEvent
     from PyQt5.QtGui import QBrush, QColor, QCursor, QPainter, QPainterPath, QPen
-    from PyQt5.QtWidgets import QFrame
+    from PyQt5.QtWidgets import QFrame, QWidget
 else:
-    from PyQt4.QtCore import pyqtSignal, Qt, QRectF, QTimer
-    from PyQt4.QtGui import QBrush, QColor, QCursor, QFrame, QPainter, QPainterPath, QPen
+    from PyQt4.QtCore import pyqtSignal, Qt, QRectF, QTimer, QEvent
+    from PyQt4.QtGui import QBrush, QColor, QCursor, QFrame, QPainter, QPainterPath, QPen, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Antialiasing settings
@@ -102,6 +102,12 @@ class CanvasPreviewFrame(QFrame):
 
     def updateStyle(self):
         self.fFrameWidth = 1 if self.fUseCustomPaint else self.frameWidth()
+
+    def changeEvent(self, event):
+        if event.type() in (QEvent.StyleChange, QEvent.PaletteChange):
+            self.updateStyle()
+        QWidget.changeEvent(self, event)
+
     def setRealParent(self, parent):
         self.fRealParent = parent
 
