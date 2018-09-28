@@ -131,7 +131,19 @@ class CanvasPreviewFrame(QFrame):
         self.update()
 
     def setViewTheme(self, bgColor, brushColor, penColor):
-        brushColor.setAlpha(40)
+        bg_black = bgColor.blackF()
+        brush_black = brushColor.blackF()
+        r0,g0,b0,a = bgColor.getRgb()
+        r1,g1,b1,a = brushColor.getRgb()
+        if brush_black < bg_black:
+            self.fRubberBandBlending = 1
+            brushColor = QColor(r1-r0, g1-g0, b1-b0, 40)
+        elif bg_black < brush_black:
+            self.fRubberBandBlending = -1
+            brushColor = QColor(r0-r1, g0-g1, b0-b1, 40)
+        else:
+            bgColor.setAlpha(40)
+            self.fRubberBandBlending = 0
         penColor.setAlpha(100)
         self.fViewBg    = bgColor
         self.fViewBrush = QBrush(brushColor)
@@ -226,19 +238,29 @@ class CanvasPreviewFrame(QFrame):
         height = self.fViewRect[iHeight]/self.fScale
 
         # cursor
-        painter.setBrush(self.fViewBrush)
-        painter.setPen(self.fViewPen)
-        lineHinting = painter.pen().widthF() / 2
-
+        lineHinting = self.fViewPen.widthF() / 2
         x = self.fViewRect[iX]+self.fInitialX
         y = self.fViewRect[iY]+self.fInitialY
         scr_x = floor(x)
         scr_y = floor(y)
-        painter.drawRect(QRectF(
-            scr_x-1+lineHinting,
-            scr_y-1+lineHinting,
-            ceil(width+x-scr_x)+2-lineHinting*2,
-            ceil(height+y-scr_y)+2-lineHinting*2 ))
+        rect = QRectF(
+            scr_x+lineHinting,
+            scr_y+lineHinting,
+            ceil(width+x-scr_x)-lineHinting*2,
+            ceil(height+y-scr_y)-lineHinting*2 )
+
+        if self.fRubberBandBlending == 1:
+            painter.setCompositionMode(QPainter.CompositionMode_Plus)
+        elif self.fRubberBandBlending == -1:
+            painter.setCompositionMode(QPainter.CompositionMode_Difference)
+        painter.setBrush(self.fViewBrush)
+        painter.setPen(Qt.NoPen)
+        painter.drawRect(rect)
+
+        painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+        painter.setBrush(Qt.NoBrush)
+        painter.setPen(self.fViewPen)
+        painter.drawRect(rect)
 
         if self.fUseCustomPaint:
             event.accept()
