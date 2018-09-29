@@ -593,7 +593,7 @@ class RTAUDIO_DLL_PUBLIC RtAudio
   typedef uintptr_t ThreadHandle;
   typedef CRITICAL_SECTION StreamMutex;
 
-#elif defined(__LINUX_ALSA__) || defined(__UNIX_PULSE__) || defined(__UNIX_JACK__) || defined(__LINUX_OSS__) || defined(__MACOSX_CORE__)
+#elif defined(__LINUX_ALSA__) || defined(__UNIX_PULSE__) || defined(__UNIX_JACK__) || defined(__LINUX_OSS__) || defined(__MACOSX_CORE__) || defined(__HAIKU__)
   // Using pthread library for various flavors of unix.
   #include <pthread.h>
 

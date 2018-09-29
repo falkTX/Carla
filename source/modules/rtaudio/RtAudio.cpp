@@ -76,7 +76,7 @@ const unsigned int RtApi::SAMPLE_RATES[] = {
     return s;
   }
 
-#elif defined(__LINUX_ALSA__) || defined(__UNIX_PULSE__) || defined(__UNIX_JACK__) || defined(__LINUX_OSS__) || defined(__MACOSX_CORE__)
+#elif defined(__LINUX_ALSA__) || defined(__UNIX_PULSE__) || defined(__UNIX_JACK__) || defined(__LINUX_OSS__) || defined(__MACOSX_CORE__) || defined(__HAIKU__)
   // pthread API
   #define MUTEX_INITIALIZE(A) pthread_mutex_init(A, NULL)
   #define MUTEX_DESTROY(A)    pthread_mutex_destroy(A)
