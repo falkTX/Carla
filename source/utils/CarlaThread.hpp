@@ -103,17 +103,19 @@ public:
         {
             sched_param.sched_priority = 80;
 
+#ifndef CARLA_OS_HAIKU
             if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)          == 0  &&
                 pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED) == 0  &&
-#ifndef CARLA_OS_WIN
+# ifndef CARLA_OS_WIN
                (pthread_attr_setschedpolicy(&attr, SCHED_FIFO)              == 0  ||
                 pthread_attr_setschedpolicy(&attr, SCHED_RR)                == 0) &&
-#endif
+# endif
                 pthread_attr_setschedparam(&attr, &sched_param)             == 0)
             {
                 carla_stdout("CarlaThread with realtime priority successful");
             }
             else
+#endif
             {
                 carla_stdout("CarlaThread with realtime priority failed, going with normal priority instead");
                 pthread_attr_destroy(&attr);

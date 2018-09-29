@@ -454,8 +454,6 @@ JACKBRIDGE_LIBS  = -lpthread
 LILV_LIBS        = -lm
 RTMEMPOOL_LIBS   = -lpthread
 WATER_LIBS       = -lpthread
-RTAUDIO_FLAGS   += -D__RTAUDIO_DUMMY__
-RTMIDI_FLAGS    += -D__RTMIDI_DUMMY__
 endif
 
 ifeq ($(HURD),true)
