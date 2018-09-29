@@ -26,13 +26,14 @@
 
 START_NAMESPACE_DISTRHO
 
+#if ! DISTRHO_PLUGIN_WANT_MIDI_OUTPUT
+static const writeMidiFunc writeMidiCallback = nullptr;
+#endif
+
 #if DISTRHO_PLUGIN_HAS_UI
 // -----------------------------------------------------------------------
 // Carla UI
 
-#if ! DISTRHO_PLUGIN_WANT_MIDI_OUTPUT
-static const writeMidiFunc writeMidiCallback = nullptr;
-#endif
 #if ! DISTRHO_PLUGIN_WANT_STATE
 static const setStateFunc setStateCallback = nullptr;
 #endif
