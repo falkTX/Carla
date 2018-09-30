@@ -165,7 +165,7 @@ protected:
         if (fRetAtom.atom.size == 0 || fRetAtom.atom.type == 0)
             return nullptr;
 
-        CARLA_SAFE_ASSERT_RETURN(fRetAtom.atom.size < kMaxAtomDataSize, nullptr);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(fRetAtom.atom.size < kMaxAtomDataSize, fRetAtom.atom.size, kMaxAtomDataSize, nullptr);
 
         int32_t index = -1;
         if (! tryRead(&index, sizeof(int32_t)))

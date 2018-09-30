@@ -380,7 +380,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(buf != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(size > 0, false);
-        CARLA_SAFE_ASSERT_RETURN(size < fBuffer->size, false);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(size < fBuffer->size, size, fBuffer->size, false);
 
         const uint8_t* const bytebuf(static_cast<const uint8_t*>(buf));
 
