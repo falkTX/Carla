@@ -64,12 +64,19 @@ typedef int (*CarlaInterposedCallback)(int, void*);
 // --------------------------------------------------------------------------------------------------------------------
 // Current state
 
+typedef enum {
+    WindowMapNone,
+    WindowMapNormal,
+    WindowMapRaised,
+    WindowMapSubwindows
+} WindowMappingType;
+
 static Display* gCurrentlyMappedDisplay = nullptr;
 static Window gCurrentlyMappedWindow = 0;
 static CarlaInterposedCallback gInterposedCallback = nullptr;
 static int gInterposedSessionManager = 0;
 static int gInterposedHints = 0;
-static int gCurrentWindowType = 0;
+static WindowMappingType gCurrentWindowType = WindowMapNone;
 static bool gCurrentWindowMapped = false;
 static bool gCurrentWindowVisible = false;
 
@@ -119,7 +126,7 @@ static int real_XNextEvent(Display* display, XEvent* event)
 // --------------------------------------------------------------------------------------------------------------------
 // Custom carla window handling
 
-static int carlaWindowMap(Display* const display, const Window window, const int fallbackFnType)
+static int carlaWindowMap(Display* const display, const Window window, const WindowMappingType fallbackFnType)
 {
     const ScopedLibOpen& slo(ScopedLibOpen::getInstance());
 
@@ -214,12 +221,17 @@ static int carlaWindowMap(Display* const display, const Window window, const int
             carla_stdout("NOTICE: XMapWindow now showing previous window");
             switch (gCurrentWindowType)
             {
-            case 1:
+            case WindowMapNone:
+                break;
+            case WindowMapNormal:
                 real_XMapWindow(gCurrentlyMappedDisplay, gCurrentlyMappedWindow);
-            case 2:
+                break;
+            case WindowMapRaised:
                 real_XMapRaised(gCurrentlyMappedDisplay, gCurrentlyMappedWindow);
-            case 3:
+                break;
+            case WindowMapSubwindows:
                 real_XMapSubwindows(gCurrentlyMappedDisplay, gCurrentlyMappedWindow);
+                break;
             }
         }
 
@@ -264,21 +276,21 @@ CARLA_EXPORT
 int XMapWindow(Display* display, Window window)
 {
     carla_debug("XMapWindow(%p, %lu)", display, window);
-    return carlaWindowMap(display, window, 1);
+    return carlaWindowMap(display, window, WindowMapNormal);
 }
 
 CARLA_EXPORT
 int XMapRaised(Display* display, Window window)
 {
     carla_debug("XMapRaised(%p, %lu)", display, window);
-    return carlaWindowMap(display, window, 2);
+    return carlaWindowMap(display, window, WindowMapRaised);
 }
 
 CARLA_EXPORT
 int XMapSubwindows(Display* display, Window window)
 {
     carla_debug("XMapSubwindows(%p, %lu)", display, window);
-    return carlaWindowMap(display, window, 3);
+    return carlaWindowMap(display, window, WindowMapSubwindows);
 }
 
 CARLA_EXPORT
@@ -290,7 +302,7 @@ int XUnmapWindow(Display* display, Window window)
     {
         gCurrentlyMappedDisplay = nullptr;
         gCurrentlyMappedWindow  = 0;
-        gCurrentWindowType      = 0;
+        gCurrentWindowType      = WindowMapNone;
         gCurrentWindowMapped    = false;
         gCurrentWindowVisible   = false;
 
@@ -370,11 +382,11 @@ int jack_carla_interposed_action(int action, int value, void* ptr)
 
             switch (gCurrentWindowType)
             {
-            case 1:
+            case WindowMapNormal:
                 return real_XMapWindow(gCurrentlyMappedDisplay, gCurrentlyMappedWindow);
-            case 2:
+            case WindowMapRaised:
                 return real_XMapRaised(gCurrentlyMappedDisplay, gCurrentlyMappedWindow);
-            case 3:
+            case WindowMapSubwindows:
                 return real_XMapSubwindows(gCurrentlyMappedDisplay, gCurrentlyMappedWindow);
             default:
                 return 0;
@@ -396,7 +408,7 @@ int jack_carla_interposed_action(int action, int value, void* ptr)
         break;
 
     case 4: // close everything
-        gCurrentWindowType      = 0;
+        gCurrentWindowType      = WindowMapNone;
         gCurrentWindowMapped    = false;
         gCurrentWindowVisible   = false;
         gCurrentlyMappedDisplay = nullptr;
