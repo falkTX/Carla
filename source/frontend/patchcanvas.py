@@ -1369,7 +1369,8 @@ class PatchScene(QGraphicsScene):
     def mouseMoveEvent(self, event):
         if self.m_mouse_down_init:
             self.m_mouse_down_init  = False
-            self.m_mouse_rubberband = bool(len(self.selectedItems()) == 0)
+            topmost = self.itemAt(event.scenePos(), self.m_view.transform())
+            self.m_mouse_rubberband = not (topmost and topmost.type() in [CanvasBoxType, CanvasPortType])
 
         if self.m_mouse_rubberband:
             if not self.m_rubberband_selection:
@@ -1410,9 +1411,9 @@ class PatchScene(QGraphicsScene):
                         if self.m_rubberband.contains(item_top_left) and self.m_rubberband.contains(item_bottom_right):
                             item.setSelected(True)
 
-                self.m_rubberband.hide()
-                self.m_rubberband.setRect(0, 0, 0, 0)
-                self.m_rubberband_selection = False
+            self.m_rubberband.hide()
+            self.m_rubberband.setRect(0, 0, 0, 0)
+            self.m_rubberband_selection = False
 
         else:
             items_list = self.selectedItems()
