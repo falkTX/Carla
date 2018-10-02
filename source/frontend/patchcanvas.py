@@ -1234,6 +1234,7 @@ class PatchScene(QGraphicsScene):
         if not self.m_view:
             qFatal("PatchCanvas::PatchScene() - invalid view")
 
+        self.curCut = None
         self.selectionChanged.connect(self.slot_selectionChanged)
 
     def fixScaleFactor(self, transform=None):
@@ -1264,6 +1265,9 @@ class PatchScene(QGraphicsScene):
         self.setBackgroundBrush(canvas.theme.canvas_bg)
         self.m_rubberband.setPen(canvas.theme.rubberband_pen)
         self.m_rubberband.setBrush(canvas.theme.rubberband_brush)
+
+        cur_color = "black" if canvas.theme.canvas_bg.blackF() < 0.5 else "white"
+        self.curCut = QCursor(QPixmap(":/cursors/cut-"+cur_color+".png"), 1, 1)
 
     def zoom_fit(self):
         min_x = min_y = max_x = max_y = None
@@ -1350,6 +1354,8 @@ class PatchScene(QGraphicsScene):
 
         if event.key() == Qt.Key_Control:
             self.m_ctrl_down = True
+            if self.m_mid_button_down:
+                self.startConnectionCut()
 
         elif event.key() == Qt.Key_Home:
             self.zoom_fit()
@@ -1371,13 +1377,23 @@ class PatchScene(QGraphicsScene):
     def keyReleaseEvent(self, event):
         if event.key() == Qt.Key_Control:
             self.m_ctrl_down = False
+
+            # Connection cut mode off
+            if self.m_mid_button_down:
+                self.m_view.viewport().unsetCursor()
         QGraphicsScene.keyReleaseEvent(self, event)
+
+    def startConnectionCut(self):
+        if self.curCut:
+            self.m_view.viewport().setCursor(self.curCut)
 
     def mousePressEvent(self, event):
         self.m_mouse_down_init  = bool(event.button() == Qt.LeftButton)
         self.m_mouse_rubberband = False
         if event.button() == Qt.MidButton and self.m_ctrl_down:
             self.m_mid_button_down = True
+            self.startConnectionCut()
+
             pos = event.scenePos()
             self.m_pointer_border.moveTo(floor(pos.x()), floor(pos.y()))
 
@@ -1454,6 +1470,10 @@ class PatchScene(QGraphicsScene):
 
         if event.button() == Qt.MidButton:
             self.m_mid_button_down = False
+
+            # Connection cut mode off
+            if self.m_ctrl_down:
+                self.m_view.viewport().unsetCursor()
             return event.accept()
 
         QGraphicsScene.mouseReleaseEvent(self, event)

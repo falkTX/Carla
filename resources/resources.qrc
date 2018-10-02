@@ -159,6 +159,9 @@
         <file>scalable/pb_mplayer.svg</file>
         <file>scalable/pb_vlc.svg</file>
 
+        <file>cursors/cut-white.png</file>
+        <file>cursors/cut-black.png</file>
+
         <file>fonts/uranium.ttf</file>
     </qresource>
 </RCC>
