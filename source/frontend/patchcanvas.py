@@ -2029,7 +2029,7 @@ class CanvasPort(QGraphicsItem):
                 canvas.scene.clearSelection()
 
         if self.m_cursor_moving:
-            self.setCursor(QCursor(Qt.ArrowCursor))
+            self.unsetCursor()
 
         self.m_hover_item = None
         self.m_mouse_down = False
@@ -2665,7 +2665,7 @@ class CanvasBox(QGraphicsItem):
 
     def mouseReleaseEvent(self, event):
         if self.m_cursor_moving:
-            self.setCursor(QCursor(Qt.ArrowCursor))
+            self.unsetCursor()
             self.setX(round(self.x()))
             self.setY(round(self.y()))
         self.m_mouse_down = False
