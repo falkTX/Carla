@@ -1237,14 +1237,18 @@ class PatchScene(QGraphicsScene):
         self.selectionChanged.connect(self.slot_selectionChanged)
 
     def fixScaleFactor(self):
-        scale = self.m_view.transform().m11()
+        view = self.m_view
+        transform = view.transform()
+        scale = transform.m11()
         if scale > 3.0:
-            self.m_view.resetTransform()
-            self.m_view.scale(3.0, 3.0)
+            transform.reset()
+            transform.scale(3.0, 3.0)
+            view.setTransform(transform)
         elif scale < 0.2:
-            self.m_view.resetTransform()
-            self.m_view.scale(0.2, 0.2)
-        self.scaleChanged.emit(self.m_view.transform().m11())
+            transform.reset()
+            transform.scale(0.2, 0.2)
+            view.setTransform(transform)
+        self.scaleChanged.emit(transform.m11())
 
     def updateTheme(self):
         self.setBackgroundBrush(canvas.theme.canvas_bg)
