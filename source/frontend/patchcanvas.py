@@ -1459,14 +1459,22 @@ class PatchScene(QGraphicsScene):
         QGraphicsScene.mouseReleaseEvent(self, event)
 
     def wheelEvent(self, event):
-        if not self.m_view:
+        view = self.m_view
+        if not view:
             return event.ignore()
 
         if self.m_ctrl_down:
-            factor = 1.41 ** (event.delta() / 240.0)
-            self.m_view.scale(factor, factor)
+            transform = view.transform()
+            scale = transform.m11()
+            delta = event.delta()
 
-            self.fixScaleFactor()
+            if (delta > 0 and scale < 3.0) or (delta < 0 and scale > 0.2):
+                factor = 1.41 ** (delta / 240.0)
+                transform.scale(factor, factor)
+                self.fixScaleFactor(transform)
+                view.setTransform(transform)
+                self.scaleChanged.emit(transform.m11())
+
             return event.accept()
 
         QGraphicsScene.wheelEvent(self, event)
