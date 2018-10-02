@@ -1263,17 +1263,18 @@ class PatchScene(QGraphicsScene):
                     pos = item.scenePos()
                     rect = item.boundingRect()
 
+                    x = pos.x()
+                    y = pos.y()
                     if first_value:
                         first_value = False
-                        min_x = pos.x()
-                        min_y = pos.y()
-                        max_x = pos.x() + rect.width()
-                        max_y = pos.y() + rect.height()
+                        min_x, min_y = x, y
+                        max_x = x + rect.width()
+                        max_y = y + rect.height()
                     else:
-                        min_x = min(min_x, pos.x())
-                        min_y = min(min_y, pos.y())
-                        max_x = max(max_x, pos.x() + rect.width())
-                        max_y = max(max_y, pos.y() + rect.height())
+                        min_x = min(min_x, x)
+                        min_y = min(min_y, y)
+                        max_x = max(max_x, x + rect.width())
+                        max_y = max(max_y, y + rect.height())
 
             if not first_value:
                 self.m_view.fitInView(min_x, min_y, abs(max_x - min_x), abs(max_y - min_y), Qt.KeepAspectRatio)
