@@ -1098,7 +1098,7 @@ def CanvasGetNewGroupPos(horizontal):
     if canvas.debug:
         print("PatchCanvas::CanvasGetNewGroupPos(%s)" % bool2str(horizontal))
 
-    new_pos = QPointF(canvas.initial_pos.x(), canvas.initial_pos.y())
+    new_pos = QPointF(canvas.initial_pos)
     items = canvas.scene.items()
 
     break_loop = False
