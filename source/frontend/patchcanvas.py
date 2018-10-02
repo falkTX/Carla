@@ -1285,14 +1285,20 @@ class PatchScene(QGraphicsScene):
                 self.fixScaleFactor()
 
     def zoom_in(self):
-        if self.m_view.transform().m11() < 3.0:
-            self.m_view.scale(1.2, 1.2)
-        self.scaleChanged.emit(self.m_view.transform().m11())
+        view = self.m_view
+        transform = view.transform()
+        if transform.m11() < 3.0:
+            transform.scale(1.2, 1.2)
+            view.setTransform(transform)
+        self.scaleChanged.emit(transform.m11())
 
     def zoom_out(self):
-        if self.m_view.transform().m11() > 0.2:
-            self.m_view.scale(0.8, 0.8)
-        self.scaleChanged.emit(self.m_view.transform().m11())
+        view = self.m_view
+        transform = view.transform()
+        if transform.m11() > 0.2:
+            transform.scale(0.833333333333333, 0.833333333333333)
+            view.setTransform(transform)
+        self.scaleChanged.emit(transform.m11())
 
     def zoom_reset(self):
         self.m_view.resetTransform()
