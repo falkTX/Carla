@@ -1373,7 +1373,7 @@ class PatchScene(QGraphicsScene):
 
             items = self.items(self.m_pointer_border)
             for item in items:
-                if item and item.type() in [CanvasLineType, CanvasBezierLineType]:
+                if item and item.type() in [CanvasLineType, CanvasBezierLineType, CanvasPortType]:
                     item.triggerDisconnect()
         QGraphicsScene.mousePressEvent(self, event)
 
@@ -2071,14 +2071,19 @@ class CanvasPort(QGraphicsItem):
         act_selected = menu.exec_(event.screenPos())
 
         if act_selected == act_x_disc_all:
-            for conn_id, group_id, port_id in conn_list:
-                canvas.callback(ACTION_PORTS_DISCONNECT, conn_id, 0, "")
+            self.triggerDisconnect(conn_list)
 
         elif act_selected == act_x_info:
             canvas.callback(ACTION_PORT_INFO, self.m_group_id, self.m_port_id, "")
 
         elif act_selected == act_x_rename:
             canvas.callback(ACTION_PORT_RENAME, self.m_group_id, self.m_port_id, "")
+
+    def triggerDisconnect(self, conn_list=None):
+        if not conn_list:
+            conn_list = CanvasGetPortConnectionList(self.m_group_id, self.m_port_id)
+        for conn_id, group_id, port_id in conn_list:
+            canvas.callback(ACTION_PORTS_DISCONNECT, conn_id, 0, "")
 
     def boundingRect(self):
         return QRectF(0, 0, self.m_port_width + 12, self.m_port_height)
