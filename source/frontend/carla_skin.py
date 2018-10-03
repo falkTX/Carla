@@ -527,7 +527,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             if self.fSkinStyle in ("3bandeq", "calf_black", "calf_blue", "nekobi", "zynfx"):
                 styleSheet2  = "background-image: url(:/bitmaps/background_%s.png);" % self.fSkinStyle
             else:
-                styleSheet2  = "background-color: rgb(%i, %i, %i);" % self.fSkinColor
+                styleSheet2  = "background-color: rgb(200, 200, 200);"
                 styleSheet2 += "background-image: url(:/bitmaps/background_noise1.png);"
 
                 if not self.fDarkStyle:
@@ -987,8 +987,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
     #------------------------------------------------------------------
 
-    def drawOutline(self):
-        painter = QPainter(self)
+    def drawOutline(self, painter):
+        painter.save()
 
         if self.fIsSelected:
             painter.setPen(QPen(Qt.cyan, 4))
@@ -998,6 +998,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             painter.setPen(QPen(Qt.black, 1))
             painter.setBrush(Qt.black)
             painter.drawLine(0, self.height()-1, self.width(), self.height()-1)
+
+        painter.restore()
 
     def updateParameterValues(self):
         for paramIndex, paramWidget in self.fParameterList:
@@ -1025,12 +1027,6 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         actColor   = menu.addAction(self.tr("Change Color..."))
         actSkin    = menu.addAction(self.tr("Change Skin..."))
         menu.addSeparator()
-
-        if isinstance(self, PluginSlot_Classic):
-            actCompact.setEnabled(False)
-            actColor.setEnabled(False)
-        elif self.fSkinStyle in ("openav", "openav-old", "3bandeq", "calf_black", "calf_blue", "nekobi", "zynfx"):
-            actColor.setEnabled(False)
 
         # -------------------------------------------------------------
         # Move up and down
@@ -1406,7 +1402,18 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         QFrame.timerEvent(self, event)
 
     def paintEvent(self, event):
-        self.drawOutline()
+        painter = QPainter(self)
+
+        # Colorization
+        if self.fSkinColor != (0,0,0):
+            painter.setCompositionMode(QPainter.CompositionMode_Multiply)
+            r,g,b = self.fSkinColor
+            painter.setBrush(QColor(r,g,b))
+            painter.setPen(Qt.NoPen)
+            painter.drawRect(QRectF(0,0,self.width(),self.height()))
+            painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+
+        self.drawOutline(painter)
         QFrame.paintEvent(self, event)
 
 # ------------------------------------------------------------------------------------------------------------
