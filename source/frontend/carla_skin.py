@@ -1122,7 +1122,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             if not color.isValid():
                 return
 
-            color    = (color.red(), color.green(), color.blue())
+            color    = color.getRgb()[0:3]
             colorStr = "%i;%i;%i" % color
             gCarla.gui.changePluginColor(self.fPluginId, color, colorStr)
 
