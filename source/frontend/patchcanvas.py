@@ -1221,6 +1221,7 @@ class PatchScene(QGraphicsScene):
         QGraphicsScene.__init__(self, parent)
 
         self.m_ctrl_down = False
+        self.m_scale_area = False
         self.m_mouse_down_init = False
         self.m_mouse_rubberband = False
         self.m_mid_button_down = False
@@ -1235,6 +1236,8 @@ class PatchScene(QGraphicsScene):
             qFatal("PatchCanvas::PatchScene() - invalid view")
 
         self.curCut = None
+        self.curZoomArea = None
+
         self.selectionChanged.connect(self.slot_selectionChanged)
 
     def fixScaleFactor(self, transform=None):
@@ -1268,6 +1271,7 @@ class PatchScene(QGraphicsScene):
 
         cur_color = "black" if canvas.theme.canvas_bg.blackF() < 0.5 else "white"
         self.curCut = QCursor(QPixmap(":/cursors/cut-"+cur_color+".png"), 1, 1)
+        self.curZoomArea = QCursor(QPixmap(":/cursors/zoom-area-"+cur_color+".png"), 8, 7)
 
     def zoom_fit(self):
         min_x = min_y = max_x = max_y = None
@@ -1348,6 +1352,11 @@ class PatchScene(QGraphicsScene):
 
         self.pluginSelected.emit(plugin_list)
 
+    def triggerRubberbandScale(self):
+        self.m_scale_area = True
+        if self.curZoomArea:
+            self.m_view.viewport().setCursor(self.curZoomArea)
+
     def keyPressEvent(self, event):
         if not self.m_view:
             return event.ignore()
@@ -1388,7 +1397,7 @@ class PatchScene(QGraphicsScene):
             self.m_view.viewport().setCursor(self.curCut)
 
     def mousePressEvent(self, event):
-        self.m_mouse_down_init  = bool(event.button() == Qt.LeftButton)
+        self.m_mouse_down_init  = bool(event.button() == Qt.LeftButton) or ((event.button() == Qt.RightButton) and self.m_ctrl_down)
         self.m_mouse_rubberband = False
         if event.button() == Qt.MidButton and self.m_ctrl_down:
             self.m_mid_button_down = True
@@ -1440,16 +1449,24 @@ class PatchScene(QGraphicsScene):
 
     def mouseReleaseEvent(self, event):
         if self.m_rubberband_selection:
-            items_list = self.items()
-            if len(items_list) > 0:
-                for item in items_list:
-                    if item and item.isVisible() and item.type() == CanvasBoxType:
-                        item_rect = item.sceneBoundingRect()
-                        item_top_left = QPointF(item_rect.x(), item_rect.y())
-                        item_bottom_right = QPointF(item_rect.x() + item_rect.width(), item_rect.y() + item_rect.height())
+            if self.m_scale_area:
+                self.m_scale_area = False
+                self.m_view.viewport().unsetCursor()
 
-                        if self.m_rubberband.contains(item_top_left) and self.m_rubberband.contains(item_bottom_right):
-                            item.setSelected(True)
+                rect = self.m_rubberband.rect()
+                self.m_view.fitInView(rect.x(), rect.y(), rect.width(), rect.height(), Qt.KeepAspectRatio)
+                self.fixScaleFactor()
+            else:
+                items_list = self.items()
+                if len(items_list) > 0:
+                    for item in items_list:
+                        if item and item.isVisible() and item.type() == CanvasBoxType:
+                            item_rect = item.sceneBoundingRect()
+                            item_top_left = QPointF(item_rect.x(), item_rect.y())
+                            item_bottom_right = QPointF(item_rect.x() + item_rect.width(), item_rect.y() + item_rect.height())
+
+                            if self.m_rubberband.contains(item_top_left) and self.m_rubberband.contains(item_bottom_right):
+                                item.setSelected(True)
 
             self.m_rubberband.hide()
             self.m_rubberband.setRect(0, 0, 0, 0)
@@ -1500,7 +1517,10 @@ class PatchScene(QGraphicsScene):
         QGraphicsScene.wheelEvent(self, event)
 
     def contextMenuEvent(self, event):
-        if len(self.selectedItems()) == 0:
+        if self.m_ctrl_down:
+            self.triggerRubberbandScale()
+            event.accept()
+        elif len(self.selectedItems()) == 0:
             event.accept()
             canvas.callback(ACTION_BG_RIGHT_CLICK, 0, 0, "")
         else:
