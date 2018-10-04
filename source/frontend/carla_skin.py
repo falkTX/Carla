@@ -25,11 +25,11 @@ from carla_config import *
 # Imports (Global)
 
 if config_UseQt5:
-    from PyQt5.QtCore import Qt, QRectF
+    from PyQt5.QtCore import Qt, QRectF, QLineF
     from PyQt5.QtGui import QFont, QFontDatabase, QPen, QPixmap
     from PyQt5.QtWidgets import QColorDialog, QFrame, QPushButton
 else:
-    from PyQt4.QtCore import Qt, QRectF
+    from PyQt4.QtCore import Qt, QRectF, QLineF
     from PyQt4.QtGui import QFont, QFontDatabase, QPen, QPixmap
     from PyQt4.QtGui import QColorDialog, QFrame, QPushButton
 
@@ -299,6 +299,10 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         host.MidiProgramChangedCallback.connect(self.slot_handleMidiProgramChangedCallback)
         host.OptionChangedCallback.connect(self.slot_handleOptionChangedCallback)
         host.UiStateChangedCallback.connect(self.slot_handleUiStateChangedCallback)
+
+        # Prepare resources
+        self.sel_pen = QPen(Qt.cyan, 2, Qt.SolidLine, Qt.FlatCap, Qt.MiterJoin)
+        self.shadow_pen = QPen(Qt.black, 1)
 
     # -----------------------------------------------------------------
 
@@ -990,13 +994,15 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
     def drawOutline(self, painter):
         painter.save()
         painter.setBrush(Qt.transparent)
+        w = float(self.width())
+        h = float(self.height())
 
         if self.fIsSelected:
-            painter.setPen(QPen(Qt.cyan, 4))
-            painter.drawRect(0, 0, self.width(), self.height())
+            painter.setPen(self.sel_pen)
+            painter.drawRect(1, 1, w-2, h-2)
         else:
-            painter.setPen(QPen(Qt.black, 1))
-            painter.drawLine(0, self.height()-1, self.width(), self.height()-1)
+            painter.setPen(self.shadow_pen)
+            painter.drawLine(QLineF(0.5, h-1, w-1, h-1))
 
         painter.restore()
 
