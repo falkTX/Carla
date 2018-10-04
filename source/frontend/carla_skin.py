@@ -301,7 +301,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         host.UiStateChangedCallback.connect(self.slot_handleUiStateChangedCallback)
 
         # Prepare resources
-        self.sel_pen = QPen(Qt.cyan, 2, Qt.SolidLine, Qt.FlatCap, Qt.MiterJoin)
+        self.sel_pen = QPen(Qt.cyan, 1, Qt.SolidLine, Qt.FlatCap, Qt.MiterJoin)
+        self.sel_pen.setDashPattern([2.0, 4.0])
+        self.sel_side_pen = QPen(Qt.cyan, 2, Qt.SolidLine, Qt.FlatCap)
         self.shadow_pen = QPen(Qt.black, 1)
 
     # -----------------------------------------------------------------
@@ -997,12 +999,19 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         w = float(self.width())
         h = float(self.height())
 
+        painter.setPen(self.shadow_pen)
+        painter.drawLine(QLineF(0.5, h-1, w-1, h-1))
+
         if self.fIsSelected:
+            painter.setCompositionMode(QPainter.CompositionMode_Plus)
+
             painter.setPen(self.sel_pen)
-            painter.drawRect(1, 1, w-2, h-2)
-        else:
-            painter.setPen(self.shadow_pen)
-            painter.drawLine(QLineF(0.5, h-1, w-1, h-1))
+            painter.drawRect(QRectF(0.5, 0.5, w-1, h-1))
+            sidelines = [QLineF(1, 1, 1, h-1), QLineF(w-1, 1, w-1, h-1)]
+            painter.setPen(self.sel_side_pen)
+            painter.drawLines(sidelines)
+
+            painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
 
         painter.restore()
 
