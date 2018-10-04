@@ -989,14 +989,13 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
     def drawOutline(self, painter):
         painter.save()
+        painter.setBrush(Qt.transparent)
 
         if self.fIsSelected:
             painter.setPen(QPen(Qt.cyan, 4))
-            painter.setBrush(Qt.transparent)
             painter.drawRect(0, 0, self.width(), self.height())
         else:
             painter.setPen(QPen(Qt.black, 1))
-            painter.setBrush(Qt.black)
             painter.drawLine(0, self.height()-1, self.width(), self.height()-1)
 
         painter.restore()
