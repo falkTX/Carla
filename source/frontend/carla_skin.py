@@ -26,11 +26,11 @@ from carla_config import *
 
 if config_UseQt5:
     from PyQt5.QtCore import Qt, QRectF, QLineF
-    from PyQt5.QtGui import QFont, QFontDatabase, QPen, QPixmap
+    from PyQt5.QtGui import QFont, QFontDatabase, QPen, QPixmap, QImage
     from PyQt5.QtWidgets import QColorDialog, QFrame, QPushButton
 else:
     from PyQt4.QtCore import Qt, QRectF, QLineF
-    from PyQt4.QtGui import QFont, QFontDatabase, QPen, QPixmap
+    from PyQt4.QtGui import QFont, QFontDatabase, QPen, QPixmap, QImage
     from PyQt4.QtGui import QColorDialog, QFrame, QPushButton
 
 # ------------------------------------------------------------------------------------------------------------
@@ -301,8 +301,17 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         host.UiStateChangedCallback.connect(self.slot_handleUiStateChangedCallback)
 
         # Prepare resources
-        self.sel_pen = QPen(Qt.cyan, 2, Qt.SolidLine, Qt.FlatCap, Qt.MiterJoin)
+        self.sel_pen = QPen(Qt.cyan, 1, Qt.SolidLine, Qt.FlatCap, Qt.MiterJoin)
+        self.sel_pen.setDashPattern([2.0, 4.0])
         self.shadow_pen = QPen(Qt.black, 1)
+
+        color = QColor(Qt.cyan)
+        hl_img = QImage(110, 1, QImage.Format_ARGB32_Premultiplied)
+        for shift in range(110):
+            px_color = color.darker(60*(shift*4+1))
+            hl_img.setPixelColor(shift, 0, px_color)
+        self.hl_pixmap_left = QPixmap.fromImage(hl_img)
+        self.hl_pixmap_right = QPixmap.fromImage(hl_img.mirrored(True, False))
 
     # -----------------------------------------------------------------
 
@@ -997,12 +1006,19 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         w = float(self.width())
         h = float(self.height())
 
+        painter.setPen(self.shadow_pen)
+        painter.drawLine(QLineF(0.5, h-1, w-1, h-1))
+
         if self.fIsSelected:
+            painter.setCompositionMode(QPainter.CompositionMode_Plus)
+
+            iw = self.hl_pixmap_left.width()
             painter.setPen(self.sel_pen)
-            painter.drawRect(1, 1, w-2, h-2)
-        else:
-            painter.setPen(self.shadow_pen)
-            painter.drawLine(QLineF(0.5, h-1, w-1, h-1))
+            painter.drawRect(QRectF(0.5, 0.5, w-1, h-1))
+            painter.drawTiledPixmap(QRectF(0, 1, iw, h-2), self.hl_pixmap_left)
+            painter.drawTiledPixmap(QRectF(w-iw, 1, iw, h-2), self.hl_pixmap_right)
+
+            painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
 
         painter.restore()
 
