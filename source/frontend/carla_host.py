@@ -2257,17 +2257,8 @@ class HostWindow(QMainWindow):
     # --------------------------------------------------------------------------------------------------------
     # resize event
 
-    def fixCanvasPreviewSize(self):
-        self.ui.patchbay.resize(self.ui.rack.size())
-        self.slot_miniCanvasCheckSize()
-
     def resizeEvent(self, event):
         QMainWindow.resizeEvent(self, event)
-
-        if self.ui.tabWidget.currentIndex() != 1:
-            size = self.ui.rack.size()
-            self.ui.patchbay.resize(size)
-
         self.slot_miniCanvasCheckSize()
 
     # --------------------------------------------------------------------------------------------------------
