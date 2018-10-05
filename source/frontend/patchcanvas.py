@@ -455,6 +455,8 @@ def setCanvasSize(x, y, width, height):
     canvas.size_rect.setY(y)
     canvas.size_rect.setWidth(width)
     canvas.size_rect.setHeight(height)
+    canvas.scene.updateLimits()
+    canvas.scene.fixScaleFactor()
 
 def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
     if canvas.debug:
@@ -1252,10 +1254,10 @@ class PatchScene(QGraphicsScene):
             fix = True
             transform.reset()
             transform.scale(3.0, 3.0)
-        elif scale < 0.2:
+        elif scale < self.scale_min:
             fix = True
             transform.reset()
-            transform.scale(0.2, 0.2)
+            transform.scale(self.scale_min, self.scale_min)
 
         if set_view:
             if fix:
@@ -1263,6 +1265,13 @@ class PatchScene(QGraphicsScene):
             self.scaleChanged.emit(transform.m11())
 
         return fix
+
+    def updateLimits(self):
+        w0 = canvas.size_rect.width()
+        h0 = canvas.size_rect.height()
+        w1 = self.m_view.width()
+        h1 = self.m_view.height()
+        self.scale_min = w1/w0 if w0/h0 > w1/h1 else h1/h0
 
     def updateTheme(self):
         self.setBackgroundBrush(canvas.theme.canvas_bg)
@@ -1313,7 +1322,7 @@ class PatchScene(QGraphicsScene):
     def zoom_out(self):
         view = self.m_view
         transform = view.transform()
-        if transform.m11() > 0.2:
+        if transform.m11() > self.scale_min:
             transform.scale(0.833333333333333, 0.833333333333333)
             view.setTransform(transform)
         self.scaleChanged.emit(transform.m11())
@@ -1505,7 +1514,7 @@ class PatchScene(QGraphicsScene):
             scale = transform.m11()
             delta = event.delta()
 
-            if (delta > 0 and scale < 3.0) or (delta < 0 and scale > 0.2):
+            if (delta > 0 and scale < 3.0) or (delta < 0 and scale > self.scale_min):
                 factor = 1.41 ** (delta / 240.0)
                 transform.scale(factor, factor)
                 self.fixScaleFactor(transform)
