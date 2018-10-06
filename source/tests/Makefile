@@ -26,7 +26,7 @@ BASE_FLAGS += -Wpointer-arith -Wabi -Winit-self -Wuninitialized -Wunused-paramet
 
 LINK_FLAGS =
 
-ifneq ($(CC),clang-3.4)
+ifneq ($(CC),clang)
 BASE_FLAGS += -Wlogical-op -Wunsafe-loop-optimizations
 endif
 
@@ -118,6 +118,12 @@ ansi-pedantic-test_cxx11: ansi-pedantic-test.cpp ../backend/Carla*.h ../includes
 
 ansi-pedantic-test_cxxlang: ansi-pedantic-test.cpp ../backend/Carla*.h ../includes/*.h
 	$(CXXLANG) $< $(ANSI_FLAGS) -ansi -pedantic -pedantic-errors -Weverything -Wno-padded -Wno-unknown-warning-option -L../../bin -lcarla_standalone2 -o $@
+
+# --------------------------------------------------------------
+
+ctypes-test.so: ctypes-test.c .FORCED
+	$(CC) $< $(PEDANTIC_C_FLAGS) -shared -o $@
+	set -e; ./ctypes-test.py
 
 # --------------------------------------------------------------
 
@@ -269,3 +275,5 @@ DGL: DGL.cpp ../modules/distrho/dgl/src/Window.cpp
 # 	valgrind ./DGL
 
 # --------------------------------------------------------------
+
+.PHONY: .FORCED
