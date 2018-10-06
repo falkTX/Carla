@@ -228,16 +228,16 @@ static void test_CarlaUtils()
         assert(a1[2] == 1791);
         assert(a1[3] == 1791);
 
-        int16_t d = 1527, e = 0;
+        int16_t d = 1527, d2 = d, e = 0;
 
-        carla_add(&d, &d, 1);
+        carla_add(&d, &d2, 1);
         assert(d == 1527*2);
 
-        carla_add(&d, &d, 1);
-        assert(d == 1527*4);
+        carla_add(&d, &d2, 1);
+        assert(d == 1527*3);
 
         carla_add(&d, &e, 1);
-        assert(d == 1527*4);
+        assert(d == 1527*3);
         assert(e == 0);
 
         carla_add(&e, &d, 1);
