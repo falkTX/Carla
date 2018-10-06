@@ -122,7 +122,7 @@ ansi-pedantic-test_cxxlang: ansi-pedantic-test.cpp ../backend/Carla*.h ../includ
 # --------------------------------------------------------------
 
 ctypes-test.so: ctypes-test.c .FORCED
-	$(CC) $< $(PEDANTIC_C_FLAGS) -shared -o $@
+	$(CC) $< $(BASE_FLAGS) -fPIC -shared -o $@
 	set -e; ./ctypes-test.py
 
 # --------------------------------------------------------------

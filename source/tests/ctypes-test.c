@@ -2,17 +2,17 @@
 #include <stdio.h>
 
 typedef void (*PythonSideFn)(int checker);
+__attribute__ ((visibility("default"))) void set_python_side_fn(PythonSideFn fn);
+__attribute__ ((visibility("default"))) void call_python_side_fn(void);
 
 PythonSideFn pyFn = NULL;
 
-__attribute__ ((visibility("default")))
 void set_python_side_fn(PythonSideFn fn)
 {
     printf("set_python_side_fn(%p)\n", fn);
     pyFn = fn;
 }
 
-__attribute__ ((visibility("default")))
 void call_python_side_fn(void)
 {
     assert(pyFn != NULL);
