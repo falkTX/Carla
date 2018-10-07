@@ -264,6 +264,11 @@ typedef struct _CarlaTransportInfo {
      * C++ constructor.
      */
     CARLA_API _CarlaTransportInfo() noexcept;
+
+    /*!
+     * Clear struct contents.
+     */
+    CARLA_API void clear() noexcept;
 #endif
 
 } CarlaTransportInfo;

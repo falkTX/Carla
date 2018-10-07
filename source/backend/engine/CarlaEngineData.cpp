@@ -315,6 +315,19 @@ EngineTimeInfoBBT::EngineTimeInfoBBT(const EngineTimeInfoBBT& bbt) noexcept
       ticksPerBeat(bbt.ticksPerBeat),
       beatsPerMinute(bbt.beatsPerMinute) {}
 
+void EngineTimeInfoBBT::clear() noexcept
+{
+    valid = false;
+    bar = 0;
+    beat = 0;
+    tick = 0.0;
+    barStartTick = 0.0;
+    beatsPerBar = 0.0f;
+    beatType = 0.0f;
+    ticksPerBeat = 0.0;
+    beatsPerMinute = 0.0;
+}
+
 // -----------------------------------------------------------------------
 // EngineTimeInfo
 
@@ -329,7 +342,7 @@ void EngineTimeInfo::clear() noexcept
     playing = false;
     frame   = 0;
     usecs   = 0;
-    carla_zeroStruct(bbt);
+    bbt.clear();
 }
 
 EngineTimeInfo::EngineTimeInfo(const EngineTimeInfo& info) noexcept
@@ -345,7 +358,7 @@ EngineTimeInfo& EngineTimeInfo::operator=(const EngineTimeInfo& info) noexcept
     usecs = info.usecs;
     bbt.valid = info.bbt.valid;
     bbt.bar = info.bbt.bar;
-    bbt.tick = info.bbt.tick;
+    bbt.beat = info.bbt.beat;
     bbt.tick = info.bbt.tick;
     bbt.barStartTick = info.bbt.barStartTick;
     bbt.beatsPerBar = info.bbt.beatsPerBar;

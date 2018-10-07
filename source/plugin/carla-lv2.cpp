@@ -25,6 +25,12 @@
 
 #include "water/files/File.h"
 
+template<>
+void Lv2PluginBaseClass<NativeTimeInfo>::clearTimeData() noexcept
+{
+    fLastPositionData.clear();
+    carla_zeroStruct(fTimeInfo);
+}
 
 // --------------------------------------------------------------------------------------------------------------------
 // Carla Internal Plugin API exposed as LV2 plugin

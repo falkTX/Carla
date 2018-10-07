@@ -329,6 +329,7 @@ public:
                 std::strncpy(strBuf, "Triangle wave", STR_MAX);
                 return;
             }
+            break;
         case FluidSynthInterpolation:
             switch (scalePointId)
             {
@@ -345,6 +346,7 @@ public:
                 std::strncpy(strBuf, "Seventh-order", STR_MAX);
                 return;
             }
+            break;
         }
 
         CarlaPlugin::getParameterScalePointLabel(parameterId, scalePointId, strBuf);

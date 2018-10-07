@@ -2214,7 +2214,7 @@ public:
             CARLA_SAFE_ASSERT_RETURN(std::strcmp(msgport, ourport) == 0,);
         }
 
-        const lo_arg* const* const argv(static_cast<const lo_arg* const* const>(argvx));
+        const lo_arg* const* const argv(static_cast<const lo_arg* const*>(argvx));
 
         if (std::strcmp(method, "configure") == 0)
             return handleOscMessageConfigure(argc, argv, types);

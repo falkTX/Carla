@@ -29,6 +29,13 @@
 
 #include "water/files/File.h"
 
+template<>
+void Lv2PluginBaseClass<CarlaBackend::EngineTimeInfo>::clearTimeData() noexcept
+{
+    fLastPositionData.clear();
+    fTimeInfo.clear();
+}
+
 // --------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE

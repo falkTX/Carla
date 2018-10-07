@@ -2941,7 +2941,7 @@ public:
 
             pData->postRtEvents.trySplice();
 
-            carla_copyStruct(fLastTimeInfo, timeInfo);
+            fLastTimeInfo = timeInfo;
         }
 
         // --------------------------------------------------------------------------------------------------------

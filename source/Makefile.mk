@@ -160,7 +160,7 @@ endif
 # Strict test build
 
 ifeq ($(TESTBUILD),true)
-BASE_FLAGS += -Werror -Wabi -Wcast-qual -Wclobbered -Wconversion -Wdisabled-optimization -Wfloat-equal -Wformat=2 -Winit-self -Wmissing-declarations
+BASE_FLAGS += -Werror -Wabi=98 -Wcast-qual -Wclobbered -Wconversion -Wdisabled-optimization -Wfloat-equal -Wformat=2 -Winit-self -Wmissing-declarations
 BASE_FLAGS += -Woverlength-strings -Wpointer-arith -Wredundant-decls -Wshadow -Wsign-conversion -Wundef -Wuninitialized -Wunused
 BASE_FLAGS += -Wstrict-aliasing -fstrict-aliasing
 BASE_FLAGS += -Wstrict-overflow -fstrict-overflow

@@ -646,8 +646,7 @@ public:
 
         fWorker = worker;
 
-        carla_zeroStruct(fTimeInfo);
-        carla_zeroStruct(fLastPositionData);
+        clearTimeData();
     }
 
     virtual ~Lv2PluginBaseClass() {}
@@ -1137,6 +1136,19 @@ protected:
     virtual void handleBufferSizeChanged(const uint32_t bufferSize) = 0;
     virtual void handleSampleRateChanged(const double sampleRate) = 0;
 
+    void resetTimeInfo() noexcept
+    {
+        clearTimeData();
+
+        // hosts may not send all values, resulting on some invalid data
+        fTimeInfo.bbt.bar   = 1;
+        fTimeInfo.bbt.beat  = 1;
+        fTimeInfo.bbt.beatsPerBar    = 4;
+        fTimeInfo.bbt.beatType       = 4;
+        fTimeInfo.bbt.ticksPerBeat   = fLastPositionData.ticksPerBeat   = 960.0;
+        fTimeInfo.bbt.beatsPerMinute = fLastPositionData.beatsPerMinute = 120.0;
+    }
+
     // LV2 host data
     bool     fIsActive : 1;
     bool     fIsOffline : 1;
@@ -1172,21 +1184,21 @@ protected:
               frame(0),
               speed(0.0),
               ticksPerBeat(-1.0) {}
+
+        void clear()
+        {
+            bar = -1;
+            bar_f = -1.0f;
+            barBeat = -1.0f;
+            beatUnit = 0;
+            beatsPerBar = 0.0f;
+            beatsPerMinute = -1.0;
+            frame = 0;
+            speed = 0.0;
+            ticksPerBeat = -1.0;
+        }
+
     } fLastPositionData;
-
-    void resetTimeInfo()
-    {
-        carla_zeroStruct(fLastPositionData);
-        carla_zeroStruct(fTimeInfo);
-
-        // hosts may not send all values, resulting on some invalid data
-        fTimeInfo.bbt.bar   = 1;
-        fTimeInfo.bbt.beat  = 1;
-        fTimeInfo.bbt.beatsPerBar    = 4;
-        fTimeInfo.bbt.beatType       = 4;
-        fTimeInfo.bbt.ticksPerBeat   = fLastPositionData.ticksPerBeat   = 960.0;
-        fTimeInfo.bbt.beatsPerMinute = fLastPositionData.beatsPerMinute = 120.0;
-    }
 
     // Port stuff
     struct Ports {
@@ -1543,6 +1555,10 @@ private:
     }
 
     #undef handlePtr
+
+    // ----------------------------------------------------------------------------------------------------------------
+
+    void clearTimeData() noexcept;
 
     // ----------------------------------------------------------------------------------------------------------------
 
