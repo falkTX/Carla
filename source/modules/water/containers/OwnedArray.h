@@ -642,8 +642,8 @@ public:
     */
     void removeRange (size_t startIndex, const size_t numberToRemove, bool deleteObjects = true)
     {
-        const size_t endIndex = jlimit (0UL, numUsed, startIndex + numberToRemove);
-        startIndex = jlimit (0UL, numUsed, startIndex);
+        const size_t endIndex = jlimit ((size_t)0U, numUsed, startIndex + numberToRemove);
+        startIndex = jlimit ((size_t)0U, numUsed, startIndex);
 
         if (endIndex > startIndex)
         {

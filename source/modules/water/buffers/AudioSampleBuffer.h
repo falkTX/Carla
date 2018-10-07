@@ -700,7 +700,7 @@ public:
                                     const float* source,
                                     const uint32_t totalNumSamples) noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(isPositiveAndBelow(destChannel, numChannels),);
+        CARLA_SAFE_ASSERT_RETURN(destChannel < numChannels,);
         CARLA_SAFE_ASSERT_RETURN(source != nullptr,);
 
         if (const uint32_t numSamples = totalNumSamples / numChannels)
