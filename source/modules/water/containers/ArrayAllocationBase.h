@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -44,6 +44,29 @@ namespace water {
 template <class ElementType>
 class ArrayAllocationBase
 {
+#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
+private:
+   #if defined(__GNUC__) && !defined(__clang__) && __GNUC__ < 5
+    template <typename T>
+    struct IsTriviallyCopyable : std::integral_constant<bool, false> {};
+   #else
+    template <typename T>
+    using IsTriviallyCopyable = std::is_trivially_copyable<T>;
+   #endif
+
+    template <typename T>
+    using TriviallyCopyableVoid = typename std::enable_if<IsTriviallyCopyable<T>::value, void>::type;
+
+    template <typename T>
+    using TriviallyCopyableBool = typename std::enable_if<IsTriviallyCopyable<T>::value, bool>::type;
+
+    template <typename T>
+    using NonTriviallyCopyableVoid = typename std::enable_if<! IsTriviallyCopyable<T>::value, void>::type;
+
+    template <typename T>
+    using NonTriviallyCopyableBool = typename std::enable_if<! IsTriviallyCopyable<T>::value, bool>::type;
+#endif // WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
+
 public:
     //==============================================================================
     /** Creates an empty array. */
@@ -60,9 +83,7 @@ public:
    #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     ArrayAllocationBase (ArrayAllocationBase<ElementType>&& other) noexcept
         : elements (static_cast<HeapBlock<ElementType>&&> (other.elements)),
-          numAllocated (other.numAllocated)
-    {
-    }
+          numAllocated (other.numAllocated) {}
 
     ArrayAllocationBase& operator= (ArrayAllocationBase<ElementType>&& other) noexcept
     {
@@ -78,15 +99,20 @@ public:
         This will retain any data currently held in the array, and either add or
         remove extra space at the end.
 
-        @param numElements  the number of elements that are needed
+        @param numNewElements  the number of elements that are needed
     */
-    bool setAllocatedSize (const int numElements) noexcept
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
+    template <typename T = ElementType> TriviallyCopyableBool<T>
+   #else
+    bool
+   #endif
+    setAllocatedSize (const int numNewElements) noexcept
     {
-        if (numAllocated != numElements)
+        if (numAllocated != numNewElements)
         {
-            if (numElements > 0)
+            if (numNewElements > 0)
             {
-                if (! elements.realloc ((size_t) numElements))
+                if (! elements.realloc ((size_t) numNewElements))
                     return false;
             }
             else
@@ -94,11 +120,51 @@ public:
                 elements.free();
             }
 
-            numAllocated = numElements;
+            numAllocated = numNewElements;
         }
 
         return true;
     }
+
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
+    template <typename T = ElementType>
+    NonTriviallyCopyableBool<T> setAllocatedSize (const int numNewElements) noexcept
+    {
+        if (numAllocated != numNewElements)
+        {
+            if (numNewElements > 0)
+            {
+                HeapBlock<ElementType> newElements;
+
+                if (! newElements.malloc (numNewElements))
+                    return false;
+
+                for (int i = 0; i < numNewElements; ++i)
+                {
+                    if (i < numAllocated)
+                    {
+                        new (newElements + i) ElementType (std::move (elements[i]));
+                        elements[i].~ElementType();
+                    }
+                    else
+                    {
+                        new (newElements + i) ElementType ();
+                    }
+                }
+
+                elements = std::move (newElements);
+            }
+            else
+            {
+                elements.free();
+            }
+
+            numAllocated = numNewElements;
+        }
+
+        return true;
+    }
+   #endif
 
     /** Increases the amount of storage allocated if it is less than a given amount.
 
@@ -133,6 +199,57 @@ public:
         elements.swapWith (other.elements);
         std::swap (numAllocated, other.numAllocated);
     }
+
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
+    template <typename T = ElementType> TriviallyCopyableVoid<T>
+   #else
+    void
+   #endif
+    moveMemory (ElementType* target, const ElementType* source, const int numElements) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(target != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(source != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(target != source,);
+        CARLA_SAFE_ASSERT_RETURN(numElements > 0,);
+
+        std::memmove (target, source, ((size_t) numElements) * sizeof (ElementType));
+    }
+
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
+    template <typename T = ElementType>
+    NonTriviallyCopyableVoid<T> moveMemory (ElementType* target, const ElementType* source, const int numElements) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(target != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(source != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(target != source,);
+        CARLA_SAFE_ASSERT_RETURN(numElements > 0,);
+
+        if (target > source)
+        {
+            for (int i = numElements; --i >= 0;)
+            {
+                moveElement (target, std::move (*source));
+                ++target;
+                ++source;
+            }
+        }
+        else
+        {
+            for (int i = numElements; --i >= 0;)
+            {
+                moveElement (target, std::move (*source));
+                --target;
+                --source;
+            }
+        }
+    }
+
+    void moveElement (ElementType* destination, const ElementType&& source)
+    {
+        destination->~ElementType();
+        new (destination) ElementType (std::move (source));
+    }
+   #endif
 
     //==============================================================================
     HeapBlock<ElementType> elements;

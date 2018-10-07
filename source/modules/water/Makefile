@@ -129,6 +129,7 @@ $(OBJDIR)/$(MODULENAME).mm.%64.o: $(MODULENAME).cpp
 # ----------------------------------------------------------------------------------------------------------------------------
 
 -include $(OBJS:%.o=%.d)
+-include $(OBJS_files:%.o=%.d)
 -include $(OBJS_posix32:%.o=%.d)
 -include $(OBJS_posix64:%.o=%.d)
 -include $(OBJS_win32:%.o=%.d)

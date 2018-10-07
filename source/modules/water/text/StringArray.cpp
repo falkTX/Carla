@@ -199,11 +199,6 @@ int StringArray::indexOf (StringRef stringToLookFor, const bool ignoreCase, int 
     return -1;
 }
 
-void StringArray::move (const int currentIndex, const int newIndex) noexcept
-{
-    strings.move (currentIndex, newIndex);
-}
-
 //==============================================================================
 void StringArray::remove (const int index)
 {

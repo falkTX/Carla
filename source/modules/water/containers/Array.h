@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -416,7 +416,7 @@ public:
             const int numberToMove = numUsed - indexToInsertAt;
 
             if (numberToMove > 0)
-                std::memmove (insertPos + 1, insertPos, ((size_t) numberToMove) * sizeof (ElementType));
+                data.moveMemory (insertPos + 1, insertPos, numberToMove);
 
             new (insertPos) ElementType (newElement);
             ++numUsed;
@@ -441,19 +441,21 @@ public:
         @param numberOfTimesToInsertIt  how many copies of the value to insert
         @see insert, add, addSorted, set
     */
-    void insertMultiple (int indexToInsertAt, ParameterType newElement,
+    bool insertMultiple (int indexToInsertAt, ParameterType newElement,
                          int numberOfTimesToInsertIt)
     {
         if (numberOfTimesToInsertIt > 0)
         {
-            data.ensureAllocatedSize (numUsed + numberOfTimesToInsertIt);
+            if (! data.ensureAllocatedSize (numUsed + numberOfTimesToInsertIt))
+                return false;
+
             ElementType* insertPos;
 
             if (isPositiveAndBelow (indexToInsertAt, numUsed))
             {
                 insertPos = data.elements + indexToInsertAt;
                 const int numberToMove = numUsed - indexToInsertAt;
-                memmove (insertPos + numberOfTimesToInsertIt, insertPos, ((size_t) numberToMove) * sizeof (ElementType));
+                data.moveMemory (insertPos + numberOfTimesToInsertIt, insertPos, numberToMove);
             }
             else
             {
@@ -469,8 +471,11 @@ public:
                              // new statement to avoid a compiler bug in VS2014
             }
         }
+
+        return true;
     }
 
+#if 0
     /** Inserts an array of values into this array at a given position.
 
         If the index is less than 0 or greater than the size of the array, the
@@ -483,20 +488,22 @@ public:
         @param numberOfElements     how many items are in the array
         @see insert, add, addSorted, set
     */
-    void insertArray (int indexToInsertAt,
+    bool insertArray (int indexToInsertAt,
                       const ElementType* newElements,
                       int numberOfElements)
     {
         if (numberOfElements > 0)
         {
-            data.ensureAllocatedSize (numUsed + numberOfElements);
+            if (! data.ensureAllocatedSize (numUsed + numberOfElements))
+                return false;
+
             ElementType* insertPos = data.elements;
 
             if (isPositiveAndBelow (indexToInsertAt, numUsed))
             {
                 insertPos += indexToInsertAt;
                 const int numberToMove = numUsed - indexToInsertAt;
-                memmove (insertPos + numberOfElements, insertPos, (size_t) numberToMove * sizeof (ElementType));
+                std::memmove (insertPos + numberOfElements, insertPos, (size_t) numberToMove * sizeof (ElementType));
             }
             else
             {
@@ -508,7 +515,10 @@ public:
             while (--numberOfElements >= 0)
                 new (insertPos++) ElementType (*newElements++);
         }
+
+        return true;
     }
+#endif
 
     /** Appends a new element at the end of the array as long as the array doesn't
         already contain it.
@@ -903,7 +913,7 @@ public:
 
             const int numToShift = numUsed - endIndex;
             if (numToShift > 0)
-                memmove (e, e + numberToRemove, ((size_t) numToShift) * sizeof (ElementType));
+                data.moveMemory (e, e + numberToRemove, numToShift);
 
             numUsed -= numberToRemove;
             minimiseStorageAfterRemoval();
@@ -994,50 +1004,6 @@ public:
         }
     }
 
-    /** Moves one of the values to a different position.
-
-        This will move the value to a specified index, shuffling along
-        any intervening elements as required.
-
-        So for example, if you have the array { 0, 1, 2, 3, 4, 5 } then calling
-        move (2, 4) would result in { 0, 1, 3, 4, 2, 5 }.
-
-        @param currentIndex     the index of the value to be moved. If this isn't a
-                                valid index, then nothing will be done
-        @param newIndex         the index at which you'd like this value to end up. If this
-                                is less than zero, the value will be moved to the end
-                                of the array
-    */
-    void move (const int currentIndex, int newIndex) noexcept
-    {
-        if (currentIndex != newIndex)
-        {
-            if (isPositiveAndBelow (currentIndex, numUsed))
-            {
-                if (! isPositiveAndBelow (newIndex, numUsed))
-                    newIndex = numUsed - 1;
-
-                char tempCopy [sizeof (ElementType)];
-                memcpy (tempCopy, data.elements + currentIndex, sizeof (ElementType));
-
-                if (newIndex > currentIndex)
-                {
-                    memmove (data.elements + currentIndex,
-                             data.elements + currentIndex + 1,
-                             sizeof (ElementType) * (size_t) (newIndex - currentIndex));
-                }
-                else
-                {
-                    memmove (data.elements + newIndex + 1,
-                             data.elements + newIndex,
-                             sizeof (ElementType) * (size_t) (currentIndex - newIndex));
-                }
-
-                memcpy (data.elements + newIndex, tempCopy, sizeof (ElementType));
-            }
-        }
-    }
-
     //==============================================================================
     /** Reduces the amount of storage being used by the array.
 
@@ -1120,7 +1086,7 @@ private:
         const int numberToShift = numUsed - indexToRemove;
 
         if (numberToShift > 0)
-            memmove (e, e + 1, ((size_t) numberToShift) * sizeof (ElementType));
+            data.moveMemory (e, e + 1, numberToShift);
 
         minimiseStorageAfterRemoval();
     }
