@@ -223,7 +223,7 @@ endif
 endif
 
 HAVE_FFMPEG     = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
-HAVE_FLUIDSYNTH = $(shell pkg-config --atleast-version=1.1.7 fluidsynth && echo true)
+HAVE_FLUIDSYNTH = $(shell pkg-config --atleast-version=1.1.7 fluidsynth && pkg-config --max-version=1.9.9 && echo true)
 HAVE_LIBLO      = $(shell pkg-config --exists liblo && echo true)
 HAVE_QT4        = $(shell pkg-config --exists QtCore QtGui && echo true)
 HAVE_QT5        = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
