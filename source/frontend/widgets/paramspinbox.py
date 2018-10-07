@@ -564,9 +564,13 @@ class ParamSpinBox(QAbstractSpinBox):
 
     @pyqtSlot()
     def slot_updateProgressBarGeometry(self):
-        self.fBar.setGeometry(self.lineEdit().geometry())
+        geometry = self.lineEdit().geometry()
+        dx = geometry.x()-1
+        dy = geometry.y()-1
+        geometry.adjust(-dx, -dy, dx, dy)
+        self.fBar.setGeometry(geometry)
         if self.fUseScalePoints:
-            self.fBox.setGeometry(self.lineEdit().geometry())
+            self.fBox.setGeometry(geometry)
 
     def _getNearestScalePoint(self, realValue):
         finalValue = 0.0
