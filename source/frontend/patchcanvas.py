@@ -2362,6 +2362,7 @@ class CanvasBox(QGraphicsItem):
         self.updatePositions()
 
         canvas.scene.addItem(self)
+        QTimer.singleShot(0, self.fixPos)
 
     def getGroupId(self):
         return self.m_group_id
@@ -2733,11 +2734,18 @@ class CanvasBox(QGraphicsItem):
     def mouseReleaseEvent(self, event):
         if self.m_cursor_moving:
             self.unsetCursor()
-            self.setX(round(self.x()))
-            self.setY(round(self.y()))
+            self.fixPos()
         self.m_mouse_down = False
         self.m_cursor_moving = False
         QGraphicsItem.mouseReleaseEvent(self, event)
+
+    def moveEvent(self, event):
+        if not self.m_mouse_down:
+            self.fixPos()
+
+    def fixPos(self):
+        self.setX(round(self.x()))
+        self.setY(round(self.y()))
 
     def boundingRect(self):
         return QRectF(0, 0, self.p_width, self.p_height)
