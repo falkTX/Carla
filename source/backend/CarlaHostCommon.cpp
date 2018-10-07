@@ -96,6 +96,16 @@ _CarlaTransportInfo::_CarlaTransportInfo() noexcept
       tick(0),
       bpm(0.0) {}
 
+void _CarlaTransportInfo::clear() noexcept
+{
+    playing = false;
+    frame = 0;
+    bar = 0;
+    beat = 0;
+    tick = 0;
+    bpm = 0.0;
+}
+
 // -------------------------------------------------------------------------------------------------------------------
 
 const char* carla_get_library_filename()

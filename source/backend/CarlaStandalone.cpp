@@ -857,7 +857,7 @@ uint64_t carla_get_current_transport_frame()
 const CarlaTransportInfo* carla_get_transport_info()
 {
     static CarlaTransportInfo retTransInfo;
-    carla_zeroStruct(retTransInfo);
+    retTransInfo.clear();
 
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr && gStandalone.engine->isRunning(), &retTransInfo);
 

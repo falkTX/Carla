@@ -289,6 +289,11 @@ struct CARLA_API EngineTimeInfoBBT {
     double ticksPerBeat;
     double beatsPerMinute;
 
+    /*!
+     * Clear.
+     */
+    void clear() noexcept;
+
 #ifndef DOXYGEN
     EngineTimeInfoBBT() noexcept;
     EngineTimeInfoBBT(const EngineTimeInfoBBT&) noexcept;

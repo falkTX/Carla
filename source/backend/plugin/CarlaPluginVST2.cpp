@@ -1139,7 +1139,7 @@ public:
         if (fFirstActive || ! fLastTimeInfo.compareIgnoringRollingFrames(timeInfo, fBufferSize))
         {
             fTimeInfo.flags |= kVstTransportChanged;
-            carla_copyStruct(fLastTimeInfo, timeInfo);
+            fLastTimeInfo = timeInfo;
         }
 
         if (timeInfo.playing)
@@ -2491,10 +2491,10 @@ private:
         const int32_t chunkSize = fxbSwap(set[39]);
         CARLA_SAFE_ASSERT_RETURN(chunkSize > 0, false);
 
-        if (static_cast<const std::size_t>(chunkSize + 160) > dataSize)
+        if (static_cast<std::size_t>(chunkSize + 160) > dataSize)
             return false;
 
-        setChunkData(&set[40], static_cast<const std::size_t>(chunkSize));
+        setChunkData(&set[40], static_cast<std::size_t>(chunkSize));
         return true;
     }
 
