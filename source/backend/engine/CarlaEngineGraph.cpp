@@ -861,11 +861,11 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
         {
             carla_zeroFloats(dummyBuf, frames);
 
-            for (uint32_t i=2; i<numInBufs; ++i)
-                inBuf[i] = dummyBuf;
+            for (uint32_t j=2; j<numInBufs; ++j)
+                inBuf[j] = dummyBuf;
 
-            for (uint32_t i=2; i<numOutBufs; ++i)
-                outBuf[i] = dummyBuf;
+            for (uint32_t j=2; j<numOutBufs; ++j)
+                outBuf[j] = dummyBuf;
         }
 
         // process
@@ -1206,16 +1206,16 @@ public:
 
         const uint32_t numSamples(static_cast<uint32_t>(audio.getNumSamples()));
 
-        if (const int numChan = audio.getNumChannels())
+        if (const uint32_t numChan = audio.getNumChannels())
         {
-            const uint numChanu = static_cast<uint>(jmin(numChan, 2));
+            const uint32_t numChanu = jmin(numChan, 2U);
 
             if (fPlugin->getAudioInCount() == 0)
                 audio.clear();
 
             float* audioBuffers[numChan];
 
-            for (int i=0; i<numChan; ++i)
+            for (uint32_t i=0; i<numChan; ++i)
                 audioBuffers[i] = audio.getWritePointer(i);
 
             float inPeaks[2] = { 0.0f };
@@ -1328,13 +1328,13 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
       extGraph(engine),
       kEngine(engine)
 {
-    const int    bufferSize(static_cast<int>(engine->getBufferSize()));
-    const double sampleRate(engine->getSampleRate());
+    const uint32_t bufferSize(engine->getBufferSize());
+    const double   sampleRate(engine->getSampleRate());
 
-    graph.setPlayConfigDetails(static_cast<int>(inputs), static_cast<int>(outputs), sampleRate, bufferSize);
-    graph.prepareToPlay(sampleRate, bufferSize);
+    graph.setPlayConfigDetails(static_cast<int>(inputs), static_cast<int>(outputs), sampleRate, static_cast<int>(bufferSize));
+    graph.prepareToPlay(sampleRate, static_cast<int>(bufferSize));
 
-    audioBuffer.setSize(static_cast<int>(jmax(inputs, outputs)), bufferSize);
+    audioBuffer.setSize(jmax(inputs, outputs), bufferSize);
 
     midiBuffer.ensureSize(kMaxEngineEventInternalCount*2);
     midiBuffer.clear();
@@ -1423,13 +1423,11 @@ PatchbayGraph::~PatchbayGraph()
 
 void PatchbayGraph::setBufferSize(const uint32_t bufferSize)
 {
-    const int bufferSizei(static_cast<int>(bufferSize));
-
     const CarlaRecursiveMutexLocker cml1(graph.getReorderMutex());
 
     graph.releaseResources();
-    graph.prepareToPlay(kEngine->getSampleRate(), bufferSizei);
-    audioBuffer.setSize(audioBuffer.getNumChannels(), bufferSizei);
+    graph.prepareToPlay(kEngine->getSampleRate(), static_cast<int>(bufferSize));
+    audioBuffer.setSize(audioBuffer.getNumChannels(), bufferSize);
 }
 
 void PatchbayGraph::setSampleRate(const double sampleRate)
@@ -1698,7 +1696,7 @@ void PatchbayGraph::refresh(const char* const deviceName)
     char strBuf[STR_MAX+1];
     strBuf[STR_MAX] = '\0';
 
-    for (int i=0, count=graph.getNumConnections(); i<count; ++i)
+    for (size_t i=0, count=graph.getNumConnections(); i<count; ++i)
     {
         const AudioProcessorGraph::Connection* const conn(graph.getConnection(i));
         CARLA_SAFE_ASSERT_CONTINUE(conn != nullptr);
@@ -1834,7 +1832,7 @@ bool PatchbayGraph::getGroupAndPortIdFromFullName(const bool external, const cha
     return false;
 }
 
-void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const int frames)
+void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const uint32_t frames)
 {
     CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(data->events.in != nullptr,);
@@ -1853,13 +1851,13 @@ void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float*
 
     // put carla audio in water buffer
     {
-        int i=0;
+        uint32_t i=0;
 
-        for (; i < static_cast<int>(inputs); ++i)
+        for (; i < inputs; ++i)
             audioBuffer.copyFrom(i, 0, inBuf[i], frames);
 
         // clear remaining channels
-        for (const int count=audioBuffer.getNumChannels(); i<count; ++i)
+        for (const uint32_t count=audioBuffer.getNumChannels(); i<count; ++i)
             audioBuffer.clear(i, 0, frames);
     }
 
@@ -1868,7 +1866,7 @@ void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float*
 
     // put water audio in carla buffer
     {
-        for (int i=0; i < static_cast<int>(outputs); ++i)
+        for (uint32_t i=0; i < outputs; ++i)
             carla_copyFloats(outBuf[i], audioBuffer.getReadPointer(i), frames);
     }
 
@@ -1893,7 +1891,8 @@ void PatchbayGraph::run()
 // InternalGraph
 
 EngineInternalGraph::EngineInternalGraph(CarlaEngine* const engine) noexcept
-    : fIsReady(false),
+    : fIsRack(false),
+      fIsReady(false),
       fRack(nullptr),
       kEngine(engine) {}
 
@@ -2019,7 +2018,7 @@ void EngineInternalGraph::process(CarlaEngine::ProtectedData* const data, const 
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
-        fPatchbay->process(data, inBuf, outBuf, static_cast<int>(frames));
+        fPatchbay->process(data, inBuf, outBuf, frames);
     }
 }
 

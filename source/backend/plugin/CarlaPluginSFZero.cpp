@@ -555,7 +555,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Parameter outputs
 
-        fNumVoices = fSynth.numVoicesUsed();
+        fNumVoices = static_cast<float>(fSynth.numVoicesUsed());
     }
 
     bool processSingle(AudioSampleBuffer& audioOutBuffer, const uint32_t frames, const uint32_t timeOffset)
@@ -581,7 +581,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
 
-        fSynth.renderVoices(audioOutBuffer, timeOffset, frames);
+        fSynth.renderVoices(audioOutBuffer, static_cast<int>(timeOffset), static_cast<int>(frames));
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // --------------------------------------------------------------------------------------------------------

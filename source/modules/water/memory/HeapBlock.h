@@ -253,6 +253,8 @@ public:
 private:
     //==============================================================================
     ElementType* data;
+
+    CARLA_DECLARE_NON_COPY_CLASS(HeapBlock)
 };
 
 }

@@ -747,7 +747,7 @@ class ConnectionLookupTable
 public:
     explicit ConnectionLookupTable (const OwnedArray<AudioProcessorGraph::Connection>& connections)
     {
-        for (int i = 0; i < connections.size(); ++i)
+        for (int i = 0; i < static_cast<int>(connections.size()); ++i)
         {
             const AudioProcessorGraph::Connection* const c = connections.getUnchecked(i);
 
@@ -1275,10 +1275,10 @@ void AudioProcessorGraph::buildRenderingSequence()
 
         audioBuffers->setRenderingBufferSize (numRenderingBuffersNeeded, getBlockSize());
 
-        for (int i = midiBuffers.size(); --i >= 0;)
+        for (int i = static_cast<int>(midiBuffers.size()); --i >= 0;)
             midiBuffers.getUnchecked(i)->clear();
 
-        while (midiBuffers.size() < numMidiBuffersNeeded)
+        while (static_cast<int>(midiBuffers.size()) < numMidiBuffersNeeded)
             midiBuffers.add (new MidiBuffer());
 
         renderingOps.swapWith (newRenderingOps);
@@ -1362,7 +1362,7 @@ void AudioProcessorGraph::processAudio (AudioSampleBuffer& buffer, MidiBuffer& m
         op->perform (renderingBuffers, midiBuffers, numSamples);
     }
 
-    for (int i = 0; i < buffer.getNumChannels(); ++i)
+    for (uint32_t i = 0; i < buffer.getNumChannels(); ++i)
         buffer.copyFrom (i, 0, currentAudioOutputBuffer, i, 0, numSamples);
 
     midiMessages.clear();

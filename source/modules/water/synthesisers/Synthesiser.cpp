@@ -90,7 +90,7 @@ Synthesiser::Synthesiser()
       subBlockSubdivisionIsStrict (false),
       shouldStealNotes (true)
 {
-    for (int i = 0; i < numElementsInArray (lastPitchWheelValues); ++i)
+    for (size_t i = 0; i < numElementsInArray (lastPitchWheelValues); ++i)
         lastPitchWheelValues[i] = 0x2000;
 
     zerostruct(sustainPedalsDown);
@@ -506,7 +506,7 @@ SynthesiserVoice* Synthesiser::findFreeVoice (SynthesiserSound* soundToPlay,
                                               const bool stealIfNoneAvailable) const
 {
 
-    for (int i = 0; i < voices.size(); ++i)
+    for (size_t i = 0; i < voices.size(); ++i)
     {
         SynthesiserVoice* const voice = voices.getUnchecked (i);
 
@@ -546,7 +546,7 @@ SynthesiserVoice* Synthesiser::findVoiceToSteal (SynthesiserSound* soundToPlay,
     Array<SynthesiserVoice*> usableVoices;
     usableVoices.ensureStorageAllocated (voices.size());
 
-    for (int i = 0; i < voices.size(); ++i)
+    for (size_t i = 0; i < voices.size(); ++i)
     {
         SynthesiserVoice* const voice = voices.getUnchecked (i);
 

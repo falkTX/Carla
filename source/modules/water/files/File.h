@@ -54,7 +54,7 @@ public:
 
         You can use its operator= method to point it at a proper file.
     */
-    File() noexcept  {}
+    File() noexcept;
 
     /** Creates a file from an absolute path.
 
@@ -760,11 +760,7 @@ public:
             if (foldersFirst && (firstFile.isDirectory() != secondFile.isDirectory()))
                 return firstFile.isDirectory() ? -1 : 1;
 
-           #if NAMES_ARE_CASE_SENSITIVE
-            return firstFile.getFullPathName().compareNatural (secondFile.getFullPathName(), true);
-           #else
-            return firstFile.getFullPathName().compareNatural (secondFile.getFullPathName(), false);
-           #endif
+            return firstFile.getFullPathName().compareNatural (secondFile.getFullPathName(), File::areFileNamesCaseSensitive());
         }
 
         bool foldersFirst;

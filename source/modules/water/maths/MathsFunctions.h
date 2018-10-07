@@ -170,7 +170,8 @@ Type jlimit (const Type lowerLimit,
              const Type upperLimit,
              const Type valueToConstrain) noexcept
 {
-    jassert (lowerLimit <= upperLimit); // if these are in the wrong order, results are unpredictable..
+    // if these are in the wrong order, results are unpredictable..
+    CARLA_SAFE_ASSERT_RETURN(lowerLimit <= upperLimit, lowerLimit);
 
     return (valueToConstrain < lowerLimit) ? lowerLimit
                                            : ((upperLimit < valueToConstrain) ? upperLimit
@@ -185,14 +186,18 @@ Type jlimit (const Type lowerLimit,
 template <typename Type>
 bool isPositiveAndBelow (Type valueToTest, Type upperLimit) noexcept
 {
-    jassert (Type() <= upperLimit); // makes no sense to call this if the upper limit is itself below zero..
+    // makes no sense to call this if the upper limit is itself below zero..
+    CARLA_SAFE_ASSERT_RETURN(Type() <= upperLimit, false);
+
     return Type() <= valueToTest && valueToTest < upperLimit;
 }
 
 template <>
 inline bool isPositiveAndBelow (const int valueToTest, const int upperLimit) noexcept
 {
-    jassert (upperLimit >= 0); // makes no sense to call this if the upper limit is itself below zero..
+    // makes no sense to call this if the upper limit is itself below zero..
+    CARLA_SAFE_ASSERT_RETURN(upperLimit >= 0, false);
+
     return static_cast<unsigned int> (valueToTest) < static_cast<unsigned int> (upperLimit);
 }
 
@@ -204,14 +209,18 @@ inline bool isPositiveAndBelow (const int valueToTest, const int upperLimit) noe
 template <typename Type>
 bool isPositiveAndNotGreaterThan (Type valueToTest, Type upperLimit) noexcept
 {
-    jassert (Type() <= upperLimit); // makes no sense to call this if the upper limit is itself below zero..
+    // makes no sense to call this if the upper limit is itself below zero..
+    CARLA_SAFE_ASSERT_RETURN(Type() <= upperLimit, false);
+
     return Type() <= valueToTest && valueToTest <= upperLimit;
 }
 
 template <>
 inline bool isPositiveAndNotGreaterThan (const int valueToTest, const int upperLimit) noexcept
 {
-    jassert (upperLimit >= 0); // makes no sense to call this if the upper limit is itself below zero..
+    // makes no sense to call this if the upper limit is itself below zero..
+    CARLA_SAFE_ASSERT_RETURN(upperLimit >= 0, false);
+
     return static_cast<unsigned int> (valueToTest) <= static_cast<unsigned int> (upperLimit);
 }
 
@@ -239,13 +248,13 @@ void ignoreUnused (const Type1&, const Type2&, const Type3&, const Type4&) noexc
 /** Handy function for getting the number of elements in a simple const C array.
     E.g.
     @code
-    static int myArray[] = { 1, 2, 3 };
+    static size_t myArray[] = { 1, 2, 3 };
 
-    int numElements = numElementsInArray (myArray) // returns 3
+    size_t numElements = numElementsInArray (myArray) // returns 3
     @endcode
 */
-template <typename Type, int N>
-int numElementsInArray (Type (&array)[N])
+template <typename Type, size_t N>
+size_t numElementsInArray (Type (&array)[N])
 {
     ignoreUnused (array);
     (void) sizeof (0[array]); // This line should cause an error if you pass an object with a user-defined subscript operator

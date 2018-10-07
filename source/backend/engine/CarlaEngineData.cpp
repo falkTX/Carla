@@ -206,7 +206,12 @@ EngineOptions::EngineOptions() noexcept
       binaryDir(nullptr),
       resourceDir(nullptr),
       preventBadBehaviour(false),
-      frontendWinId(0) {}
+      frontendWinId(0)
+#ifndef CARLA_OS_WIN
+      , wine()
+#endif
+{
+}
 
 EngineOptions::~EngineOptions() noexcept
 {

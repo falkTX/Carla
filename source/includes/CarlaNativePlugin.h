@@ -21,6 +21,7 @@
 #include "CarlaBackend.h"
 #include "CarlaNative.h"
 
+#ifndef CARLA_HOST_H_INCLUDED
 /*!
  * Get the absolute filename of this carla library.
  */
@@ -30,6 +31,7 @@ CARLA_EXPORT const char* carla_get_library_filename();
  * Get the folder where this carla library resides.
  */
 CARLA_EXPORT const char* carla_get_library_folder();
+#endif
 
 /*!
  * Get the native plugin descriptor for the carla-rack plugin.

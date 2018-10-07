@@ -54,6 +54,11 @@
 
 namespace water {
 
+File::File () noexcept
+    : fullPath ()
+{
+}
+
 File::File (const String& fullPathName)
     : fullPath (parseAbsolutePath (fullPathName))
 {

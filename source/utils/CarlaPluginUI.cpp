@@ -155,7 +155,8 @@ public:
                     carla_zeroStruct(hints);
 
                     if (XGetNormalHints(fDisplay, childWindow, &hints) && hints.width > 0 && hints.height > 0)
-                        setSize(hints.width, hints.height, false);
+                        setSize(static_cast<uint>(hints.width),
+                                static_cast<uint>(hints.height), false);
                 }
 
                 const Atom _xevp = XInternAtom(fDisplay, "_XEventProc", False);

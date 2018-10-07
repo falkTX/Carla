@@ -104,7 +104,8 @@ public:
 protected:
     //==============================================================================
     /** Creates the reference-counted object (with an initial ref count of zero). */
-    ReferenceCountedObject() {}
+    ReferenceCountedObject()
+        : refCount() {}
 
     /** Destructor. */
     virtual ~ReferenceCountedObject()
@@ -123,7 +124,7 @@ protected:
 
 private:
     //==============================================================================
-    Atomic <int> refCount;
+    Atomic<int> refCount;
 
     CARLA_DECLARE_NON_COPY_CLASS (ReferenceCountedObject)
 };

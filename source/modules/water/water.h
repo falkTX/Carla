@@ -155,7 +155,7 @@ namespace NumberToStringConverters
 
         do
         {
-            *--t = '0' + (char) (v % 10);
+            *--t = static_cast<char>('0' + (v % 10));
             v /= 10;
 
         } while (v > 0);

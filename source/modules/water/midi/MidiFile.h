@@ -64,13 +64,13 @@ public:
     /** Returns the number of tracks in the file.
         @see getTrack, addTrack
     */
-    int getNumTracks() const noexcept;
+    size_t getNumTracks() const noexcept;
 
     /** Returns a pointer to one of the tracks in the file.
         @returns a pointer to the track, or nullptr if the index is out-of-range
         @see getNumTracks, addTrack
     */
-    const MidiMessageSequence* getTrack (int index) const noexcept;
+    const MidiMessageSequence* getTrack (size_t index) const noexcept;
 
     /** Adds a midi track to the file.
         This will make its own internal copy of the sequence that is passed-in.

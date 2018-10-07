@@ -64,8 +64,8 @@ public:
     //==============================================================================
     struct NamedValue
     {
-        NamedValue() noexcept {}
-        NamedValue (const Identifier& n, const var& v)  : name (n), value (v) {}
+        NamedValue() noexcept : name(), value() {}
+        NamedValue (const Identifier& n, const var& v) : name (n), value (v) {}
         NamedValue (const NamedValue& other) : name (other.name), value (other.value) {}
 
     #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS

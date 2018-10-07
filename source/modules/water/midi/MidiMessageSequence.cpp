@@ -142,7 +142,7 @@ MidiMessageSequence::MidiEventHolder* MidiMessageSequence::addEvent (const MidiM
 void MidiMessageSequence::deleteEvent (const int index,
                                        const bool deleteMatchingNoteUp)
 {
-    if (isPositiveAndBelow (index, list.size()))
+    if (isPositiveAndBelow (index, static_cast<int>(list.size())))
     {
         if (deleteMatchingNoteUp)
             deleteEvent (getIndexOfMatchingKeyUp (index), false);
@@ -163,7 +163,7 @@ struct MidiMessageSequenceSorter
 
 void MidiMessageSequence::addSequence (const MidiMessageSequence& other, double timeAdjustment)
 {
-    for (int i = 0; i < other.list.size(); ++i)
+    for (int i = 0; i < static_cast<int>(other.list.size()); ++i)
     {
         const MidiMessage& m = other.list.getUnchecked(i)->message;
 
@@ -180,7 +180,7 @@ void MidiMessageSequence::addSequence (const MidiMessageSequence& other,
                                        double firstAllowableTime,
                                        double endOfAllowableDestTimes)
 {
-    for (int i = 0; i < other.list.size(); ++i)
+    for (int i = 0; i < static_cast<int>(other.list.size()); ++i)
     {
         const MidiMessage& m = other.list.getUnchecked(i)->message;
         const double t = m.getTimeStamp() + timeAdjustment;
@@ -206,7 +206,7 @@ void MidiMessageSequence::sort() noexcept
 
 void MidiMessageSequence::updateMatchedPairs() noexcept
 {
-    for (int i = 0; i < list.size(); ++i)
+    for (int i = 0; i < static_cast<int>(list.size()); ++i)
     {
         MidiEventHolder* const meh = list.getUnchecked(i);
         const MidiMessage& m1 = meh->message;
@@ -245,7 +245,7 @@ void MidiMessageSequence::updateMatchedPairs() noexcept
 
 void MidiMessageSequence::addTimeToMessages (const double delta) noexcept
 {
-    for (int i = list.size(); --i >= 0;)
+    for (int i = static_cast<int>(list.size()); --i >= 0;)
     {
         MidiMessage& mm = list.getUnchecked(i)->message;
         mm.setTimeStamp (mm.getTimeStamp() + delta);
@@ -257,7 +257,7 @@ void MidiMessageSequence::extractMidiChannelMessages (const int channelNumberToE
                                                       MidiMessageSequence& destSequence,
                                                       const bool alsoIncludeMetaEvents) const
 {
-    for (int i = 0; i < list.size(); ++i)
+    for (int i = 0; i < static_cast<int>(list.size()); ++i)
     {
         const MidiMessage& mm = list.getUnchecked(i)->message;
 
@@ -268,7 +268,7 @@ void MidiMessageSequence::extractMidiChannelMessages (const int channelNumberToE
 
 void MidiMessageSequence::extractSysExMessages (MidiMessageSequence& destSequence) const
 {
-    for (int i = 0; i < list.size(); ++i)
+    for (int i = 0; i < static_cast<int>(list.size()); ++i)
     {
         const MidiMessage& mm = list.getUnchecked(i)->message;
 

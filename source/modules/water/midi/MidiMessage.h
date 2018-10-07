@@ -900,8 +900,9 @@ private:
     double timeStamp;
     int size;
 
-    inline bool isHeapAllocated() const noexcept  { return size > (int) sizeof (packedData); }
-    inline uint8* getData() const noexcept        { return isHeapAllocated() ? packedData.allocatedData : (uint8*) packedData.asBytes; }
+    inline bool isHeapAllocated() const noexcept { return size > (int) sizeof (packedData); }
+    inline uint8* getData() noexcept             { return isHeapAllocated() ? packedData.allocatedData : packedData.asBytes; }
+    inline const uint8* getData() const noexcept { return isHeapAllocated() ? packedData.allocatedData : packedData.asBytes; }
     uint8* allocateSpace (int);
 };
 

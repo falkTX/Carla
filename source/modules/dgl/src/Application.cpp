@@ -44,7 +44,7 @@ void Application::idle()
     }
 }
 
-void Application::exec(int idleTime)
+void Application::exec(unsigned int idleTime)
 {
     for (; pData->doLoop;)
     {

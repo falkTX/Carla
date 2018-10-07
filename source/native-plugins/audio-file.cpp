@@ -33,9 +33,10 @@ public:
           fDoProcess(false),
           fLastFrame(0),
           fMaxFrame(0),
-          fThread(this, getSampleRate())
+          fPool(),
+          fThread(this, static_cast<uint32_t>(getSampleRate()))
     {
-        fPool.create(getSampleRate());
+        fPool.create(static_cast<uint32_t>(getSampleRate()));
     }
 
     ~AudioFilePlugin() override
@@ -44,7 +45,7 @@ public:
         fThread.stopNow();
     }
 
-    uint32_t getLastFrame() const override
+    uint64_t getLastFrame() const override
     {
         return fLastFrame;
     }
@@ -166,19 +167,21 @@ protected:
             return;
         }
 
-        int64_t poolFrame = (int64_t)timePos->frame - fPool.startFrame;
-        int64_t poolSize  = fPool.size;
+        const uint32_t poolSize = fPool.size;
+        int64_t poolFrame = static_cast<uint32_t>(timePos->frame - fPool.startFrame);
+        float* const bufferL = fPool.buffer[0];
+        float* const bufferR = fPool.buffer[1];
 
         for (uint32_t i=0; i < frames; ++i, ++poolFrame)
         {
             if (poolFrame >= 0 && poolFrame < poolSize)
             {
-                out1[i] = fPool.buffer[0][poolFrame];
-                out2[i] = fPool.buffer[1][poolFrame];
+                out1[i] = bufferL[poolFrame];
+                out2[i] = bufferR[poolFrame];
 
                 // reset
-                fPool.buffer[0][poolFrame] = 0.0f;
-                fPool.buffer[1][poolFrame] = 0.0f;
+                bufferL[poolFrame] = 0.0f;
+                bufferR[poolFrame] = 0.0f;
             }
             else
             {
@@ -208,7 +211,7 @@ private:
     bool fLoopMode;
     bool fDoProcess;
 
-    uint32_t fLastFrame;
+    uint64_t fLastFrame;
     uint32_t fMaxFrame;
 
     AudioFilePool   fPool;

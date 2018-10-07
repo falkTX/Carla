@@ -841,7 +841,7 @@ public:
             } catch(...) {}
         }
 
-        fCurMidiProgs[channel] = index;
+        fCurMidiProgs[channel] = static_cast<int32_t>(index);
 
         CarlaPlugin::setMidiProgramRT(index);
     }

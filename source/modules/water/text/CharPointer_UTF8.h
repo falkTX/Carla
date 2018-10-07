@@ -54,13 +54,13 @@ public:
     {
     }
 
-    inline CharPointer_UTF8 operator= (CharPointer_UTF8 other) noexcept
+    inline CharPointer_UTF8& operator= (CharPointer_UTF8 other) noexcept
     {
         data = other.data;
         return *this;
     }
 
-    inline CharPointer_UTF8 operator= (const CharType* text) noexcept
+    inline CharPointer_UTF8& operator= (const CharType* text) noexcept
     {
         data = const_cast<CharType*> (text);
         return *this;
@@ -129,7 +129,7 @@ public:
         {
             water_uchar bit = 0x40;
 
-            while ((n & bit) != 0 && bit > 0x8)
+            while ((static_cast<unsigned char>(n) & bit) != 0 && bit > 0x8)
             {
                 ++data;
                 bit >>= 1;
@@ -140,7 +140,7 @@ public:
     }
 
     /** Moves this pointer back to the previous character in the string. */
-    CharPointer_UTF8 operator--() noexcept
+    CharPointer_UTF8& operator--() noexcept
     {
         int count = 0;
 

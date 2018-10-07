@@ -334,7 +334,7 @@ public:
 
         callback(ENGINE_CALLBACK_ENGINE_STARTED, 0,
                  pData->options.processMode, pData->options.transportMode,
-                 pData->sampleRate, getCurrentDriverName());
+                 static_cast<float>(pData->sampleRate), getCurrentDriverName());
         return true;
     }
 
@@ -445,7 +445,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
 
-        char strBuf[STR_MAX+1];
+        char strBuf[STR_MAX+1U];
         strBuf[STR_MAX] = '\0';
 
         ExternalGraph& extGraph(graph->extGraph);
@@ -715,7 +715,7 @@ protected:
                         mdataTmp[0] = static_cast<uint8_t>(midiEvent.data[0] | (engineEvent.channel & MIDI_CHANNEL_BIT));
 
                         // copy rest
-                        carla_copy<uint8_t>(mdataTmp+1, midiEvent.data+1, size-1);
+                        carla_copy<uint8_t>(mdataTmp+1, midiEvent.data+1, size-1U);
 
                         // done
                         mdataPtr = mdataTmp;

@@ -549,9 +549,9 @@ public:
             const int numberToShift = numUsed - indexToRemove;
 
             if (numberToShift > 0)
-                memmove (e, e + 1, sizeof (ObjectClass*) * (size_t) numberToShift);
+                std::memmove (e, e + 1, sizeof (ObjectClass*) * (size_t) numberToShift);
 
-            if ((numUsed << 1) < data.numAllocated)
+            if ((numUsed << 1) < static_cast<int>(data.numAllocated))
                 minimiseStorageOverheads();
         }
     }

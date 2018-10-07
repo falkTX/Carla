@@ -1637,7 +1637,7 @@ protected:
             uiServerOptions();
             uiServerCallback(ENGINE_CALLBACK_ENGINE_STARTED, 0,
                              pData->options.processMode, pData->options.transportMode,
-                             pData->sampleRate, "Plugin");
+                             static_cast<float>(pData->sampleRate), "Plugin");
 
             fUiServer.writeShowMessage();
 
@@ -1953,7 +1953,7 @@ public:
             return 0;
         case NATIVE_PLUGIN_OPCODE_GET_INTERNAL_HANDLE: {
             CarlaEngineNative* const engine = handlePtr;
-            return (uintptr_t)(CarlaEngine*)engine;
+            return (intptr_t)(CarlaEngine*)engine;
         }
         }
 

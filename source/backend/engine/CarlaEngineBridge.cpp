@@ -837,8 +837,8 @@ public:
                 if (index >= 0 && plugin != nullptr && plugin->isEnabled())
                 {
                     char strBuf[STR_MAX];
-                    plugin->getParameterText(index, strBuf);
-                    const uint32_t strBufLen(std::strlen(strBuf));
+                    plugin->getParameterText(static_cast<uint32_t>(index), strBuf);
+                    const uint32_t strBufLen = static_cast<uint32_t>(std::strlen(strBuf));
 
                     const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
 

@@ -46,6 +46,7 @@ extern void carla_register_native_plugin_bigmeter(void);
 extern void carla_register_native_plugin_notes(void);
 
 #ifdef HAVE_EXTERNAL_PLUGINS
+void carla_register_all_native_external_plugins(void);
 # define CARLA_EXTERNAL_PLUGINS_INCLUDED_DIRECTLY
 # include "external/_all.c"
 #endif

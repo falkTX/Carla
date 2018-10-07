@@ -32,6 +32,14 @@
 
 namespace water {
 
+#if defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Weffc++"
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Weffc++"
+#endif
+
 //==============================================================================
 /**
     Simple class to hold a primitive value and perform atomic operations on it.
@@ -159,10 +167,12 @@ private:
     template <typename Dest, typename Source>
     static inline Dest castTo (Source value) noexcept         { union { Dest d; Source s; } u; u.s = value; return u.d; }
 
-    static inline Type castFrom32Bit (int32 value) noexcept   { return castTo <Type, int32> (value); }
-    static inline Type castFrom64Bit (int64 value) noexcept   { return castTo <Type, int64> (value); }
-    static inline int32 castTo32Bit (Type value) noexcept     { return castTo <int32, Type> (value); }
-    static inline int64 castTo64Bit (Type value) noexcept     { return castTo <int64, Type> (value); }
+    static inline Type castFrom32Bit (int32 value)  noexcept  { return castTo <Type, int32>  (value); }
+    static inline Type castFrom64Bit (int64 value)  noexcept  { return castTo <Type, int64>  (value); }
+    static inline Type castFrom32Bit (uint32 value) noexcept  { return castTo <Type, uint32> (value); }
+    static inline Type castFrom64Bit (uint64 value) noexcept  { return castTo <Type, uint64> (value); }
+    static inline int32 castTo32Bit (Type value) noexcept     { return castTo <int32, Type>  (value); }
+    static inline int64 castTo64Bit (Type value) noexcept     { return castTo <int64, Type>  (value); }
 
     Type operator++ (int); // better to just use pre-increment with atomics..
     Type operator-- (int);
@@ -186,11 +196,32 @@ private:
 };
 
 //==============================================================================
-template <typename Type>
-inline Type Atomic<Type>::get() const noexcept
+template<>
+inline int32 Atomic<int32>::get() const noexcept
 {
-    return sizeof (Type) == 4 ? castFrom32Bit ((int32) __sync_add_and_fetch ((volatile int32*) &value, 0))
-                              : castFrom64Bit ((int64) __sync_add_and_fetch ((volatile int64*) &value, 0));
+    static_jassert (sizeof (int32) == 4);
+    return castFrom32Bit ((int32) __sync_add_and_fetch (const_cast<volatile int32*>(&value), 0));
+}
+
+template<>
+inline int64 Atomic<int64>::get() const noexcept
+{
+    static_jassert (sizeof (int64) == 8);
+    return castFrom64Bit ((int64) __sync_add_and_fetch (const_cast<volatile int64*>(&value), 0));
+}
+
+template<>
+inline uint32 Atomic<uint32>::get() const noexcept
+{
+    static_jassert (sizeof (uint32) == 4);
+    return castFrom32Bit ((uint32) __sync_add_and_fetch (const_cast<volatile uint32*>(&value), 0));
+}
+
+template<>
+inline uint64 Atomic<uint64>::get() const noexcept
+{
+    static_jassert (sizeof (uint64) == 8);
+    return castFrom64Bit ((uint64) __sync_add_and_fetch (const_cast<volatile uint64*>(&value), 0));
 }
 
 template <typename Type>
@@ -217,14 +248,14 @@ template <typename Type>
 inline Type Atomic<Type>::operator++() noexcept
 {
     return sizeof (Type) == 4 ? (Type) __sync_add_and_fetch (&value, (Type) 1)
-                              : (Type) __sync_add_and_fetch ((int64_t*) &value, 1);
+                              : (Type) __sync_add_and_fetch ((volatile int64*) &value, 1);
 }
 
 template <typename Type>
 inline Type Atomic<Type>::operator--() noexcept
 {
     return sizeof (Type) == 4 ? (Type) __sync_add_and_fetch (&value, (Type) -1)
-                              : (Type) __sync_add_and_fetch ((int64_t*) &value, -1);
+                              : (Type) __sync_add_and_fetch ((volatile int64*) &value, -1);
 }
 
 template <typename Type>
@@ -246,6 +277,12 @@ inline void Atomic<Type>::memoryBarrier() noexcept
 {
     __sync_synchronize();
 }
+
+#if defined(__clang__)
+# pragma clang diagnostic pop
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
 
 }
 

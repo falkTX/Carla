@@ -44,9 +44,12 @@ public:
     //==============================================================================
     /** Creates an empty buffer with 0 channels and 0 length. */
     AudioSampleBuffer() noexcept
-       : numChannels (0), size (0), allocatedBytes (0),
-         channels (static_cast<float**> (preallocatedChannelSpace)),
-         isClear (false)
+       : numChannels(0),
+         size(0),
+         allocatedBytes(0),
+         channels(static_cast<float**> (preallocatedChannelSpace)),
+         allocatedData(),
+         isClear(false)
     {
     }
 
@@ -60,17 +63,16 @@ public:
         when the buffer is deleted. If the memory can't be allocated, this will
         throw a std::bad_alloc exception.
     */
-    AudioSampleBuffer (int numChannelsToAllocate,
-                       int numSamplesToAllocate,
-                       bool clearData = false) noexcept
-       : numChannels (numChannelsToAllocate),
-         size (numSamplesToAllocate),
-         allocatedBytes (0),
-         isClear (false)
+    AudioSampleBuffer (const uint32_t numChannelsToAllocate,
+                       const uint32_t numSamplesToAllocate,
+                       const bool clearData = false) noexcept
+       : numChannels(numChannelsToAllocate),
+         size(numSamplesToAllocate),
+         allocatedBytes(0),
+         channels(nullptr),
+         allocatedData(),
+         isClear(false)
     {
-        CARLA_SAFE_ASSERT_RETURN (size >= 0,);
-        CARLA_SAFE_ASSERT_RETURN (numChannels >= 0,);
-
         allocateData (clearData);
     }
 
@@ -90,15 +92,16 @@ public:
                                 size of the arrays passed in
     */
     AudioSampleBuffer (float* const* dataToReferTo,
-                       int numChannelsToUse,
-                       int numSamples) noexcept
-        : numChannels (numChannelsToUse),
-          size (numSamples),
-          allocatedBytes (0),
-          isClear (false)
+                       const uint32_t numChannelsToUse,
+                       const uint32_t numSamples) noexcept
+        : numChannels(numChannelsToUse),
+          size(numSamples),
+          allocatedBytes(0),
+          channels(nullptr),
+          allocatedData(),
+          isClear(false)
     {
         CARLA_SAFE_ASSERT_RETURN (dataToReferTo != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN (numChannelsToUse >= 0 && numSamples >= 0,);
 
         allocateChannels (dataToReferTo, 0);
     }
@@ -120,16 +123,17 @@ public:
                                 size of the arrays passed in
     */
     AudioSampleBuffer (float* const* dataToReferTo,
-                       int numChannelsToUse,
-                       int startSample,
-                       int numSamples) noexcept
-        : numChannels (numChannelsToUse),
-          size (numSamples),
-          allocatedBytes (0),
-          isClear (false)
+                       const uint32_t numChannelsToUse,
+                       const uint32_t startSample,
+                       const uint32_t numSamples) noexcept
+        : numChannels(numChannelsToUse),
+          size(numSamples),
+          allocatedBytes(0),
+          channels(nullptr),
+          allocatedData(),
+          isClear(false)
     {
         CARLA_SAFE_ASSERT_RETURN (dataToReferTo != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN (numChannelsToUse >= 0 && startSample >= 0 && numSamples >= 0,);
 
         allocateChannels (dataToReferTo, startSample);
     }
@@ -141,9 +145,12 @@ public:
         shared block of data.
     */
     AudioSampleBuffer (const AudioSampleBuffer& other) noexcept
-       : numChannels (other.numChannels),
-         size (other.size),
-         allocatedBytes (other.allocatedBytes)
+       : numChannels(other.numChannels),
+         size(other.size),
+         allocatedBytes(other.allocatedBytes),
+         channels(nullptr),
+         allocatedData(),
+         isClear(false)
     {
         if (allocatedBytes == 0)
         {
@@ -159,10 +166,38 @@ public:
             }
             else
             {
-                for (int i = 0; i < numChannels; ++i)
+                for (uint32_t i = 0; i < numChannels; ++i)
                     carla_copyFloats (channels[i], other.channels[i], size);
             }
         }
+    }
+
+    AudioSampleBuffer& operator= (const AudioSampleBuffer& other) noexcept
+    {
+        numChannels = other.numChannels;
+        size = other.size;
+        allocatedBytes = other.allocatedBytes;
+        channels = other.channels;
+
+        if (allocatedBytes == 0)
+        {
+            allocateChannels (other.channels, 0);
+        }
+        else
+        {
+            allocateData();
+
+            if (other.isClear)
+            {
+                clear();
+            }
+            else
+            {
+                for (uint32_t i = 0; i < numChannels; ++i)
+                    carla_copyFloats (channels[i], other.channels[i], size);
+            }
+        }
+        return *this;
     }
 
     /** Destructor.
@@ -180,7 +215,7 @@ public:
           allocatedData (static_cast<HeapBlock<char>&&> (other.allocatedData)),
           isClear (other.isClear)
     {
-        memcpy (preallocatedChannelSpace, other.preallocatedChannelSpace, sizeof (preallocatedChannelSpace));
+        std::memcpy (preallocatedChannelSpace, other.preallocatedChannelSpace, sizeof (preallocatedChannelSpace));
         other.numChannels = 0;
         other.size = 0;
         other.allocatedBytes = 0;
@@ -207,12 +242,12 @@ public:
     /** Returns the number of channels of audio data that this buffer contains.
         @see getSampleData
     */
-    int getNumChannels() const noexcept                             { return numChannels; }
+    uint32_t getNumChannels() const noexcept                             { return numChannels; }
 
     /** Returns the number of samples allocated in each of the buffer's channels.
         @see getSampleData
     */
-    int getNumSamples() const noexcept                              { return size; }
+    uint32_t getNumSamples() const noexcept                              { return size; }
 
     /** Returns a pointer to an array of read-only samples in one of the buffer's channels.
         For speed, this doesn't check whether the channel number is out of range,
@@ -221,9 +256,10 @@ public:
         result! Instead, you must call getWritePointer so that the buffer knows you're
         planning on modifying the data.
     */
-    const float* getReadPointer (int channelNumber) const noexcept
+    const float* getReadPointer (const uint32_t channelNumber) const noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN (isPositiveAndBelow (channelNumber, numChannels), nullptr);
+        CARLA_SAFE_ASSERT_RETURN (channelNumber < numChannels, nullptr);
+
         return channels [channelNumber];
     }
 
@@ -234,10 +270,11 @@ public:
         result! Instead, you must call getWritePointer so that the buffer knows you're
         planning on modifying the data.
     */
-    const float* getReadPointer (int channelNumber, int sampleIndex) const noexcept
+    const float* getReadPointer (const uint32_t channelNumber, const uint32_t sampleIndex) const noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN (isPositiveAndBelow (channelNumber, numChannels), nullptr);
-        CARLA_SAFE_ASSERT_RETURN (isPositiveAndBelow (sampleIndex, size), nullptr);
+        CARLA_SAFE_ASSERT_RETURN (channelNumber < numChannels, nullptr);
+        CARLA_SAFE_ASSERT_RETURN (sampleIndex < size, nullptr);
+
         return channels [channelNumber] + sampleIndex;
     }
 
@@ -247,9 +284,10 @@ public:
         Note that if you're not planning on writing to the data, you should always
         use getReadPointer instead.
     */
-    float* getWritePointer (int channelNumber) noexcept
+    float* getWritePointer (const uint32_t channelNumber) noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN (isPositiveAndBelow (channelNumber, numChannels), nullptr);
+        CARLA_SAFE_ASSERT_RETURN (channelNumber < numChannels, nullptr);
+
         isClear = false;
         return channels [channelNumber];
     }
@@ -260,10 +298,11 @@ public:
         Note that if you're not planning on writing to the data, you should
         use getReadPointer instead.
     */
-    float* getWritePointer (int channelNumber, int sampleIndex) noexcept
+    float* getWritePointer (const uint32_t channelNumber, const uint32_t sampleIndex) noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN (isPositiveAndBelow (channelNumber, numChannels), nullptr);
-        CARLA_SAFE_ASSERT_RETURN (isPositiveAndBelow (sampleIndex, size), nullptr);
+        CARLA_SAFE_ASSERT_RETURN (channelNumber < numChannels, nullptr);
+        CARLA_SAFE_ASSERT_RETURN (sampleIndex < size, nullptr);
+
         isClear = false;
         return channels [channelNumber] + sampleIndex;
     }
@@ -287,17 +326,13 @@ public:
 
         This can expand the buffer's length, and add or remove channels.
     */
-    bool setSize (int newNumChannels, int newNumSamples) noexcept
+    bool setSize (const uint32_t newNumChannels, const uint32_t newNumSamples) noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN (newNumChannels >= 0, false);
-        CARLA_SAFE_ASSERT_RETURN (newNumSamples >= 0, false);
-
         if (newNumSamples != size || newNumChannels != numChannels)
         {
-            const size_t allocatedSamplesPerChannel = ((size_t) newNumSamples + 3) & ~3u;
-            const size_t channelListSize = ((sizeof (float*) * (size_t) (newNumChannels + 1)) + 15) & ~15u;
-            const size_t newTotalBytes = ((size_t) newNumChannels * (size_t) allocatedSamplesPerChannel * sizeof (float))
-                                            + channelListSize + 32;
+            const uint32_t allocatedSamplesPerChannel = (newNumSamples + 3) & ~3u;
+            const uint32_t channelListSize = ((sizeof (float*) * (newNumChannels + 1)) + 15) & ~15u;
+            const size_t newTotalBytes = newNumChannels * allocatedSamplesPerChannel * sizeof(float) + channelListSize + 32u;
 
             if (allocatedBytes >= newTotalBytes)
             {
@@ -312,13 +347,13 @@ public:
             }
 
             float* chan = reinterpret_cast<float*> (allocatedData + channelListSize);
-            for (int i = 0; i < newNumChannels; ++i)
+            for (uint32_t i = 0; i < newNumChannels; ++i)
             {
                 channels[i] = chan;
                 chan += allocatedSamplesPerChannel;
             }
 
-            channels [newNumChannels] = 0;
+            channels [newNumChannels] = nullptr;
             size = newNumSamples;
             numChannels = newNumChannels;
         }
@@ -331,22 +366,18 @@ public:
 
         Returns true if the required memory is available.
     */
-    bool setSizeRT (int newNumSamples) noexcept
+    bool setSizeRT (const uint32_t newNumSamples) noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN (newNumSamples >= 0, false);
-        CARLA_SAFE_ASSERT_RETURN (numChannels >= 0, false);
-
         if (newNumSamples != size)
         {
-            const size_t allocatedSamplesPerChannel = ((size_t) newNumSamples + 3) & ~3u;
-            const size_t channelListSize = ((sizeof (float*) * (size_t) (numChannels + 1)) + 15) & ~15u;
-            const size_t newTotalBytes = ((size_t) numChannels * (size_t) allocatedSamplesPerChannel * sizeof (float))
-                                            + channelListSize + 32;
+            const uint32_t allocatedSamplesPerChannel = (newNumSamples + 3) & ~3u;
+            const uint32_t channelListSize = ((sizeof (float*) * (numChannels + 1)) + 15) & ~15u;
+            const size_t newTotalBytes = numChannels * allocatedSamplesPerChannel * sizeof(float) + channelListSize + 32u;
 
             CARLA_SAFE_ASSERT_RETURN(allocatedBytes >= newTotalBytes, false);
 
             float* chan = reinterpret_cast<float*> (allocatedData + channelListSize);
-            for (int i = 0; i < numChannels; ++i)
+            for (uint32_t i = 0; i < numChannels; ++i)
             {
                 channels[i] = chan;
                 chan += allocatedSamplesPerChannel;
@@ -377,11 +408,10 @@ public:
                                 size of the arrays passed in
     */
     bool setDataToReferTo (float** dataToReferTo,
-                           const int newNumChannels,
-                           const int newNumSamples) noexcept
+                           const uint32_t newNumChannels,
+                           const uint32_t newNumSamples) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(dataToReferTo != nullptr, false);
-        CARLA_SAFE_ASSERT_INT2_RETURN(newNumChannels >= 0 && newNumSamples >= 0, newNumChannels, newNumSamples, false);
 
         if (allocatedBytes != 0)
         {
@@ -401,7 +431,7 @@ public:
     {
         if (! isClear)
         {
-            for (int i = 0; i < numChannels; ++i)
+            for (uint32_t i = 0; i < numChannels; ++i)
                 carla_zeroFloats (channels[i], size);
 
             isClear = true;
@@ -413,17 +443,17 @@ public:
         For speed, this doesn't check whether the channel and sample number
         are in-range, so be careful!
     */
-    void clear (int startSample,
-                int numSamples) noexcept
+    void clear (const uint32_t startSample,
+                const uint32_t numSamples) noexcept
     {
-        CARLA_SAFE_ASSERT_INT2_RETURN(startSample >= 0 && startSample + numSamples <= size, numSamples, size,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(startSample + numSamples <= size, numSamples, size,);
 
         if (! isClear)
         {
             if (startSample == 0 && numSamples == size)
                 isClear = true;
 
-            for (int i = 0; i < numChannels; ++i)
+            for (uint32_t i = 0; i < numChannels; ++i)
                 carla_zeroFloats (channels[i] + startSample, numSamples);
         }
     }
@@ -433,12 +463,12 @@ public:
         For speed, this doesn't check whether the channel and sample number
         are in-range, so be careful!
     */
-    void clear (int channel,
-                int startSample,
-                int numSamples) noexcept
+    void clear (const uint32_t channel,
+                const uint32_t startSample,
+                const uint32_t numSamples) noexcept
     {
-        CARLA_SAFE_ASSERT_INT2_RETURN(isPositiveAndBelow(channel, numChannels), channel, numChannels,);
-        CARLA_SAFE_ASSERT_INT2_RETURN(startSample >= 0 && startSample + numSamples <= size, numSamples, size,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(channel < numChannels, channel, numChannels,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(startSample + numSamples <= size, numSamples, size,);
 
         if (! isClear)
             carla_zeroFloats (channels [channel] + startSample, numSamples);
@@ -466,21 +496,21 @@ public:
 
         @see copyFrom
     */
-    void addFrom (int destChannel,
-                  int destStartSample,
+    void addFrom (const uint32_t destChannel,
+                  const uint32_t destStartSample,
                   const AudioSampleBuffer& source,
-                  int sourceChannel,
-                  int sourceStartSample,
-                  int numSamples,
-                  float gainToApplyToSource = (float) 1) noexcept
+                  const uint32_t sourceChannel,
+                  const uint32_t sourceStartSample,
+                  const uint32_t numSamples,
+                  const float gainToApplyToSource = 1.0f) noexcept
     {
-        CARLA_SAFE_ASSERT_INT2_RETURN(&source != this || sourceChannel != destChannel, sourceChannel, destChannel,);
-        CARLA_SAFE_ASSERT_INT2_RETURN(isPositiveAndBelow(destChannel, numChannels), destChannel, numChannels,);
-        CARLA_SAFE_ASSERT_INT2_RETURN(isPositiveAndBelow(sourceChannel, source.numChannels), sourceChannel, source.numChannels,);
-        CARLA_SAFE_ASSERT_INT2_RETURN(destStartSample >= 0 && destStartSample + numSamples <= size, numSamples, size,);
-        CARLA_SAFE_ASSERT_INT2_RETURN(sourceStartSample >= 0 && sourceStartSample + numSamples <= source.size, numSamples, source.size,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(&source != this || sourceChannel != destChannel, sourceChannel, destChannel,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(destChannel < numChannels, destChannel, numChannels,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(sourceChannel < source.numChannels, sourceChannel, source.numChannels,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(destStartSample + numSamples <= size, numSamples, size,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(sourceStartSample + numSamples <= source.size, numSamples, source.size,);
 
-        if (gainToApplyToSource != 0.0f && numSamples > 0 && ! source.isClear)
+        if (carla_isNotZero(gainToApplyToSource) && numSamples != 0 && ! source.isClear)
         {
             float* const d = channels [destChannel] + destStartSample;
             const float* const s  = source.channels [sourceChannel] + sourceStartSample;
@@ -489,14 +519,14 @@ public:
             {
                 isClear = false;
 
-                if (gainToApplyToSource != 1.0f)
+                if (carla_isNotZero(gainToApplyToSource - 1.0f))
                     carla_copyWithMultiply (d, s, gainToApplyToSource, numSamples);
                 else
                     carla_copyFloats (d, s, numSamples);
             }
             else
             {
-                if (gainToApplyToSource != 1.0f)
+                if (carla_isNotZero(gainToApplyToSource - 1.0f))
                     carla_addWithMultiply (d, s, gainToApplyToSource, numSamples);
                 else
                     carla_add (d, s, numSamples);
@@ -516,17 +546,17 @@ public:
 
         @see copyFrom
     */
-    void addFrom (int destChannel,
-                  int destStartSample,
+    void addFrom (const uint32_t destChannel,
+                  const uint32_t destStartSample,
                   const float* source,
-                  int numSamples,
-                  float gainToApplyToSource = (float) 1) noexcept
+                  const uint32_t numSamples,
+                  float gainToApplyToSource = 1.0f) noexcept
     {
-        CARLA_SAFE_ASSERT_INT2_RETURN(isPositiveAndBelow(destChannel, numChannels), destChannel, numChannels,);
-        CARLA_SAFE_ASSERT_INT2_RETURN(destStartSample >= 0 && destStartSample + numSamples <= size, numSamples, size,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(destChannel < numChannels, destChannel, numChannels,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(destStartSample + numSamples <= size, numSamples, size,);
         CARLA_SAFE_ASSERT_RETURN(source != nullptr,);
 
-        if (gainToApplyToSource != 0.0f && numSamples > 0)
+        if (carla_isNotZero(gainToApplyToSource) && numSamples != 0)
         {
             float* const d = channels [destChannel] + destStartSample;
 
@@ -534,14 +564,14 @@ public:
             {
                 isClear = false;
 
-                if (gainToApplyToSource != 1.0f)
+                if (carla_isNotZero(gainToApplyToSource - 1.0f))
                     carla_copyWithMultiply (d, source, gainToApplyToSource, numSamples);
                 else
                     carla_copyFloats (d, source, numSamples);
             }
             else
             {
-                if (gainToApplyToSource != 1.0f)
+                if (carla_isNotZero(gainToApplyToSource - 1.0f))
                     carla_addWithMultiply (d, source, gainToApplyToSource, numSamples);
                 else
                     carla_add (d, source, numSamples);
@@ -560,18 +590,18 @@ public:
 
         @see addFrom
     */
-    void copyFrom (int destChannel,
-                   int destStartSample,
+    void copyFrom (const uint32_t destChannel,
+                   const uint32_t destStartSample,
                    const AudioSampleBuffer& source,
-                   int sourceChannel,
-                   int sourceStartSample,
-                   int numSamples) noexcept
+                   const uint32_t sourceChannel,
+                   const uint32_t sourceStartSample,
+                   const uint32_t numSamples) noexcept
     {
-        CARLA_SAFE_ASSERT_INT2_RETURN(&source != this || sourceChannel != destChannel, sourceChannel, destChannel,);
-        CARLA_SAFE_ASSERT_INT2_RETURN(isPositiveAndBelow(destChannel, numChannels), destChannel, numChannels,);
-        CARLA_SAFE_ASSERT_INT2_RETURN(isPositiveAndBelow(sourceChannel, source.numChannels), sourceChannel, source.numChannels,);
-        CARLA_SAFE_ASSERT_INT2_RETURN(destStartSample >= 0 && destStartSample + numSamples <= size, numSamples, size,);
-        CARLA_SAFE_ASSERT_INT2_RETURN(sourceStartSample >= 0 && sourceStartSample + numSamples <= source.size, numSamples, source.size,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(&source != this || sourceChannel != destChannel, sourceChannel, destChannel,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(destChannel < numChannels, destChannel, numChannels,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(sourceChannel < source.numChannels, sourceChannel, source.numChannels,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(destStartSample + numSamples <= size, numSamples, size,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(sourceStartSample + numSamples <= source.size, numSamples, source.size,);
 
         if (numSamples > 0)
         {
@@ -599,13 +629,13 @@ public:
 
         @see addFrom
     */
-    void copyFrom (int destChannel,
-                   int destStartSample,
+    void copyFrom (const uint32_t destChannel,
+                   const uint32_t destStartSample,
                    const float* source,
-                   int numSamples) noexcept
+                   const uint32_t numSamples) noexcept
     {
-        CARLA_SAFE_ASSERT_INT2_RETURN(isPositiveAndBelow(destChannel, numChannels), destChannel, numChannels,);
-        CARLA_SAFE_ASSERT_INT2_RETURN(destStartSample >= 0 && destStartSample + numSamples <= size, numSamples, size,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(destChannel < numChannels, destChannel, numChannels,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(destStartSample + numSamples <= size, numSamples, size,);
         CARLA_SAFE_ASSERT_RETURN(source != nullptr,);
 
         if (numSamples > 0)
@@ -625,37 +655,34 @@ public:
 
         @see addFrom
     */
-    void copyFrom (int destChannel,
-                   int destStartSample,
+    void copyFrom (const uint32_t destChannel,
+                   const uint32_t destStartSample,
                    const float* source,
-                   int numSamples,
+                   const uint32_t numSamples,
                    float gain) noexcept
     {
-        CARLA_SAFE_ASSERT_INT2_RETURN(isPositiveAndBelow(destChannel, numChannels), destChannel, numChannels,);
-        CARLA_SAFE_ASSERT_INT2_RETURN(destStartSample >= 0 && destStartSample + numSamples <= size, numSamples, size,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(destChannel < numChannels, destChannel, numChannels,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(destStartSample + numSamples <= size, numSamples, size,);
         CARLA_SAFE_ASSERT_RETURN(source != nullptr,);
 
         if (numSamples > 0)
         {
             float* const d = channels [destChannel] + destStartSample;
 
-            if (gain != 1.0f)
+            if (carla_isZero(gain))
             {
-                if (gain == 0)
-                {
-                    if (! isClear)
-                        carla_zeroFloats (d, numSamples);
-                }
-                else
-                {
-                    isClear = false;
-                    carla_copyWithMultiply (d, source, gain, numSamples);
-                }
+                if (! isClear)
+                    carla_zeroFloats (d, numSamples);
+            }
+            else if (carla_isZero(gain - 1.0f))
+            {
+                isClear = false;
+                carla_copyFloats (d, source, numSamples);
             }
             else
             {
                 isClear = false;
-                carla_copyFloats (d, source, numSamples);
+                carla_copyWithMultiply (d, source, gain, numSamples);
             }
         }
     }
@@ -669,28 +696,28 @@ public:
 
         @see addFrom
     */
-    void copyFromInterleavedSource (int destChannel,
+    void copyFromInterleavedSource (const uint32_t destChannel,
                                     const float* source,
-                                    int totalNumSamples) noexcept
+                                    const uint32_t totalNumSamples) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(isPositiveAndBelow(destChannel, numChannels),);
         CARLA_SAFE_ASSERT_RETURN(source != nullptr,);
 
-        if (const int numSamples = totalNumSamples / numChannels)
+        if (const uint32_t numSamples = totalNumSamples / numChannels)
         {
             CARLA_SAFE_ASSERT_RETURN(numSamples <= size,);
 
             isClear = false;
             float* d = channels [destChannel];
 
-            for (int i=numSamples; --i >= 0;)
+            for (uint32_t i=0; i < numSamples; ++i)
                 d[i] = source[i * numChannels + destChannel];
         }
     }
 
 private:
     //==============================================================================
-    int numChannels, size;
+    uint32_t numChannels, size;
     size_t allocatedBytes;
     float** channels;
     HeapBlock<char> allocatedData;
@@ -699,15 +726,15 @@ private:
 
     bool allocateData (bool clearData = false)
     {
-        const size_t channelListSize = sizeof (float*) * (size_t) (numChannels + 1);
-        const size_t nextAllocatedBytes = (size_t) numChannels * (size_t) size * sizeof (float) + channelListSize + 32;
+        const size_t channelListSize = sizeof (float*) * (numChannels + 1);
+        const size_t nextAllocatedBytes = numChannels * size * sizeof (float) + channelListSize + 32;
         CARLA_SAFE_ASSERT_RETURN (allocatedData.allocate (nextAllocatedBytes, clearData), false);
 
         allocatedBytes = nextAllocatedBytes;
         channels = reinterpret_cast<float**> (allocatedData.getData());
 
         float* chan = (float*) (allocatedData + channelListSize);
-        for (int i = 0; i < numChannels; ++i)
+        for (uint32_t i = 0; i < numChannels; ++i)
         {
             channels[i] = chan;
             chan += size;
@@ -718,22 +745,20 @@ private:
         return true;
     }
 
-    bool allocateChannels (float* const* const dataToReferTo, int offset)
+    bool allocateChannels (float* const* const dataToReferTo, const uint32_t offset)
     {
-        CARLA_SAFE_ASSERT_RETURN (offset >= 0, false);
-
         // (try to avoid doing a malloc here, as that'll blow up things like Pro-Tools)
-        if (numChannels < (int) numElementsInArray (preallocatedChannelSpace))
+        if (numChannels < numElementsInArray (preallocatedChannelSpace))
         {
             channels = static_cast<float**> (preallocatedChannelSpace);
         }
         else
         {
-            CARLA_SAFE_ASSERT_RETURN( allocatedData.malloc ((size_t) numChannels + 1, sizeof (float*)), false);
+            CARLA_SAFE_ASSERT_RETURN( allocatedData.malloc (numChannels + 1, sizeof (float*)), false);
             channels = reinterpret_cast<float**> (allocatedData.getData());
         }
 
-        for (int i = 0; i < numChannels; ++i)
+        for (uint32_t i = 0; i < numChannels; ++i)
         {
             // you have to pass in the same number of valid pointers as numChannels
             CARLA_SAFE_ASSERT_CONTINUE (dataToReferTo[i] != nullptr);
@@ -745,6 +770,8 @@ private:
         isClear = false;
         return true;
     }
+
+    // CARLA_DECLARE_NON_COPY_CLASS(AudioSampleBuffer)
 };
 
 }

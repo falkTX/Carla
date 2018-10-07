@@ -71,7 +71,8 @@ public:
     //==============================================================================
     /** Creates an empty array. */
     ArrayAllocationBase() noexcept
-        : numAllocated (0)
+        : elements(),
+          numAllocated(0)
     {
     }
 
@@ -106,7 +107,7 @@ public:
    #else
     bool
    #endif
-    setAllocatedSize (const int numNewElements) noexcept
+    setAllocatedSize (const size_t numNewElements) noexcept
     {
         if (numAllocated != numNewElements)
         {
@@ -128,7 +129,7 @@ public:
 
    #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     template <typename T = ElementType>
-    NonTriviallyCopyableBool<T> setAllocatedSize (const int numNewElements) noexcept
+    NonTriviallyCopyableBool<T> setAllocatedSize (const size_t numNewElements) noexcept
     {
         if (numAllocated != numNewElements)
         {
@@ -139,7 +140,7 @@ public:
                 if (! newElements.malloc (numNewElements))
                     return false;
 
-                for (int i = 0; i < numNewElements; ++i)
+                for (size_t i = 0; i < numNewElements; ++i)
                 {
                     if (i < numAllocated)
                     {
@@ -174,10 +175,10 @@ public:
 
         @param minNumElements  the minimum number of elements that are needed
     */
-    bool ensureAllocatedSize (const int minNumElements) noexcept
+    bool ensureAllocatedSize (const size_t minNumElements) noexcept
     {
         if (minNumElements > numAllocated)
-            return setAllocatedSize ((minNumElements + minNumElements / 2 + 8) & ~7);
+            return setAllocatedSize ((minNumElements + minNumElements / 2U + 8U) & ~7U);
 
         return true;
     }
@@ -185,7 +186,7 @@ public:
     /** Minimises the amount of storage allocated so that it's no more than
         the given number of elements.
     */
-    bool shrinkToNoMoreThan (const int maxNumElements) noexcept
+    bool shrinkToNoMoreThan (const size_t maxNumElements) noexcept
     {
         if (maxNumElements < numAllocated)
             return setAllocatedSize (maxNumElements);
@@ -205,28 +206,28 @@ public:
    #else
     void
    #endif
-    moveMemory (ElementType* target, const ElementType* source, const int numElements) noexcept
+    moveMemory (ElementType* target, const ElementType* source, const size_t numElements) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(target != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(source != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(target != source,);
-        CARLA_SAFE_ASSERT_RETURN(numElements > 0,);
+        CARLA_SAFE_ASSERT_RETURN(numElements != 0,);
 
         std::memmove (target, source, ((size_t) numElements) * sizeof (ElementType));
     }
 
    #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     template <typename T = ElementType>
-    NonTriviallyCopyableVoid<T> moveMemory (ElementType* target, const ElementType* source, const int numElements) noexcept
+    NonTriviallyCopyableVoid<T> moveMemory (ElementType* target, const ElementType* source, const size_t numElements) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(target != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(source != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(target != source,);
-        CARLA_SAFE_ASSERT_RETURN(numElements > 0,);
+        CARLA_SAFE_ASSERT_RETURN(numElements != 0,);
 
         if (target > source)
         {
-            for (int i = numElements; --i >= 0;)
+            for (size_t i = 0; i < numElements; ++i)
             {
                 moveElement (target, std::move (*source));
                 ++target;
@@ -235,7 +236,7 @@ public:
         }
         else
         {
-            for (int i = numElements; --i >= 0;)
+            for (size_t i = 0; i < numElements; ++i)
             {
                 moveElement (target, std::move (*source));
                 --target;
@@ -253,7 +254,7 @@ public:
 
     //==============================================================================
     HeapBlock<ElementType> elements;
-    int numAllocated;
+    size_t numAllocated;
 
 private:
     CARLA_DECLARE_NON_COPY_CLASS (ArrayAllocationBase)

@@ -117,7 +117,7 @@ public:
     /** Returns the number of items currently in the array.
         @see operator[]
     */
-    inline int size() const noexcept
+    inline size_t size() const noexcept
     {
         return numUsed;
     }
@@ -136,11 +136,11 @@ public:
 
         @see getUnchecked
     */
-    inline ObjectClass* operator[] (const int index) const noexcept
+    inline ObjectClass* operator[] (const size_t index) const noexcept
     {
-        if (isPositiveAndBelow (index, numUsed))
+        if (index < numUsed)
         {
-            jassert (data.elements != nullptr);
+            CARLA_SAFE_ASSERT_RETURN(data.elements != nullptr, nullptr);
             return data.elements [index];
         }
 
@@ -154,7 +154,6 @@ public:
     */
     inline ObjectClass* getUnchecked (const int index) const noexcept
     {
-        jassert (isPositiveAndBelow (index, numUsed) && data.elements != nullptr);
         return data.elements [index];
     }
 
@@ -167,7 +166,7 @@ public:
     {
         if (numUsed > 0)
         {
-            jassert (data.elements != nullptr);
+            CARLA_SAFE_ASSERT_RETURN(data.elements != nullptr, nullptr);
             return data.elements [0];
         }
 
@@ -183,7 +182,7 @@ public:
     {
         if (numUsed > 0)
         {
-            jassert (data.elements != nullptr);
+            CARLA_SAFE_ASSERT_RETURN(data.elements != nullptr, nullptr);
             return data.elements [numUsed - 1];
         }
 
@@ -301,14 +300,16 @@ public:
         if (indexToInsertAt < 0)
             return add (newObject);
 
-        if (indexToInsertAt > numUsed)
-            indexToInsertAt = numUsed;
+        size_t uindexToInsertAt = indexToInsertAt;
+
+        if (uindexToInsertAt > numUsed)
+            uindexToInsertAt = numUsed;
 
         if (! data.ensureAllocatedSize (numUsed + 1))
             return nullptr;
 
-        ObjectClass** const e = data.elements + indexToInsertAt;
-        const int numToMove = numUsed - indexToInsertAt;
+        ObjectClass** const e = data.elements + uindexToInsertAt;
+        const int numToMove = numUsed - uindexToInsertAt;
 
         if (numToMove > 0)
             std::memmove (e + 1, e, sizeof (ObjectClass*) * (size_t) numToMove);
@@ -330,20 +331,20 @@ public:
         @param numberOfElements     how many items are in the array
         @see insert, add, addSorted, set
     */
-    void insertArray (int indexToInsertAt,
+    void insertArray (const size_t indexToInsertAt,
                       ObjectClass* const* newObjects,
-                      int numberOfElements)
+                      const size_t numberOfElements)
     {
         if (numberOfElements > 0)
         {
             data.ensureAllocatedSize (numUsed + numberOfElements);
             ObjectClass** insertPos = data.elements;
 
-            if (isPositiveAndBelow (indexToInsertAt, numUsed))
+            if (indexToInsertAt < numUsed)
             {
                 insertPos += indexToInsertAt;
-                const size_t numberToMove = (size_t) (numUsed - indexToInsertAt);
-                memmove (insertPos + numberOfElements, insertPos, numberToMove * sizeof (ObjectClass*));
+                const size_t numberToMove = numUsed - indexToInsertAt;
+                std::memmove (insertPos + numberOfElements, insertPos, numberToMove * sizeof (ObjectClass*));
             }
             else
             {
@@ -352,7 +353,7 @@ public:
 
             numUsed += numberOfElements;
 
-            while (--numberOfElements >= 0)
+            for (size_t i=0; i < numberOfElements; ++i)
                 *insertPos++ = *newObjects++;
         }
     }
@@ -470,15 +471,9 @@ public:
     */
     template <class OtherArrayType>
     void addCopiesOf (const OtherArrayType& arrayToAddFrom,
-                      int startIndex = 0,
+                      size_t startIndex = 0,
                       int numElementsToAdd = -1)
     {
-        if (startIndex < 0)
-        {
-            jassertfalse;
-            startIndex = 0;
-        }
-
         if (numElementsToAdd < 0 || startIndex + numElementsToAdd > arrayToAddFrom.size())
             numElementsToAdd = arrayToAddFrom.size() - startIndex;
 
@@ -558,24 +553,22 @@ public:
         @param deleteObject     whether to delete the object that is removed
         @see removeObject, removeRange
     */
-    void remove (int indexToRemove, bool deleteObject = true)
+    void remove (const size_t indexToRemove, bool deleteObject = true)
     {
         ScopedPointer<ObjectClass> toDelete;
 
+        if (indexToRemove < numUsed)
         {
-            if (isPositiveAndBelow (indexToRemove, numUsed))
-            {
-                ObjectClass** const e = data.elements + indexToRemove;
+            ObjectClass** const e = data.elements + indexToRemove;
 
-                if (deleteObject)
-                    toDelete = *e;
+            if (deleteObject)
+                toDelete = *e;
 
-                --numUsed;
-                const int numToShift = numUsed - indexToRemove;
+            --numUsed;
+            const size_t numToShift = numUsed - indexToRemove;
 
-                if (numToShift > 0)
-                    memmove (e, e + 1, sizeof (ObjectClass*) * (size_t) numToShift);
-            }
+            if (numToShift > 0)
+                std::memmove (e, e + 1, sizeof (ObjectClass*) * numToShift);
         }
 
         if ((numUsed << 1) < data.numAllocated)
@@ -591,19 +584,19 @@ public:
         @param indexToRemove    the index of the element to remove
         @see remove, removeObject, removeRange
     */
-    ObjectClass* removeAndReturn (int indexToRemove)
+    ObjectClass* removeAndReturn (const size_t indexToRemove)
     {
         ObjectClass* removedItem = nullptr;
-        if (isPositiveAndBelow (indexToRemove, numUsed))
+        if (indexToRemove < numUsed)
         {
             ObjectClass** const e = data.elements + indexToRemove;
             removedItem = *e;
 
             --numUsed;
-            const int numToShift = numUsed - indexToRemove;
+            const size_t numToShift = numUsed - indexToRemove;
 
             if (numToShift > 0)
-                memmove (e, e + 1, sizeof (ObjectClass*) * (size_t) numToShift);
+                std::memmove (e, e + 1, sizeof (ObjectClass*) * (size_t) numToShift);
 
             if ((numUsed << 1) < data.numAllocated)
                 minimiseStorageOverheads();
@@ -647,10 +640,10 @@ public:
         @param deleteObjects    whether to delete the objects that get removed
         @see remove, removeObject
     */
-    void removeRange (int startIndex, int numberToRemove, bool deleteObjects = true)
+    void removeRange (size_t startIndex, const size_t numberToRemove, bool deleteObjects = true)
     {
-        const int endIndex = jlimit (0, numUsed, startIndex + numberToRemove);
-        startIndex = jlimit (0, numUsed, startIndex);
+        const size_t endIndex = jlimit (0UL, numUsed, startIndex + numberToRemove);
+        startIndex = jlimit (0UL, numUsed, startIndex);
 
         if (endIndex > startIndex)
         {
@@ -663,12 +656,12 @@ public:
                 }
             }
 
-            const int rangeSize = endIndex - startIndex;
+            const size_t rangeSize = endIndex - startIndex;
             ObjectClass** e = data.elements + startIndex;
-            int numToShift = numUsed - endIndex;
+            size_t numToShift = numUsed - endIndex;
             numUsed -= rangeSize;
 
-            while (--numToShift >= 0)
+            for (size_t i=0; i < numToShift; ++i)
             {
                 *e = e [rangeSize];
                 ++e;
@@ -699,11 +692,10 @@ public:
         If either of the indexes passed in is out-of-range, nothing will happen,
         otherwise the two objects at these positions will be exchanged.
     */
-    void swap (int index1,
-               int index2) noexcept
+    void swap (const size_t index1,
+               const size_t index2) noexcept
     {
-        if (isPositiveAndBelow (index1, numUsed)
-             && isPositiveAndBelow (index2, numUsed))
+        if (index1 < numUsed && index2 < numUsed)
         {
             std::swap (data.elements [index1],
                        data.elements [index2]);
@@ -723,28 +715,28 @@ public:
         @param newIndex         the index at which you'd like this object to end up. If this
                                 is less than zero, it will be moved to the end of the array
     */
-    void move (int currentIndex, int newIndex) noexcept
+    void move (const size_t currentIndex, const size_t newIndex) noexcept
     {
         if (currentIndex != newIndex)
         {
-            if (isPositiveAndBelow (currentIndex, numUsed))
+            if (currentIndex < numUsed)
             {
-                if (! isPositiveAndBelow (newIndex, numUsed))
+                if (newIndex >=  numUsed)
                     newIndex = numUsed - 1;
 
                 ObjectClass* const value = data.elements [currentIndex];
 
                 if (newIndex > currentIndex)
                 {
-                    memmove (data.elements + currentIndex,
-                             data.elements + currentIndex + 1,
-                             sizeof (ObjectClass*) * (size_t) (newIndex - currentIndex));
+                    std::memmove (data.elements + currentIndex,
+                                  data.elements + currentIndex + 1,
+                                  sizeof (ObjectClass*) * (size_t) (newIndex - currentIndex));
                 }
                 else
                 {
-                    memmove (data.elements + newIndex + 1,
-                             data.elements + newIndex,
-                             sizeof (ObjectClass*) * (size_t) (currentIndex - newIndex));
+                    std::memmove (data.elements + newIndex + 1,
+                                  data.elements + newIndex,
+                                  sizeof (ObjectClass*) * (size_t) (currentIndex - newIndex));
                 }
 
                 data.elements [newIndex] = value;
@@ -826,7 +818,7 @@ public:
 private:
     //==============================================================================
     ArrayAllocationBase <ObjectClass*> data;
-    int numUsed;
+    size_t numUsed;
 
     void deleteAllObjects()
     {

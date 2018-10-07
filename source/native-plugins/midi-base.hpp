@@ -354,10 +354,13 @@ public:
             CARLA_SAFE_ASSERT_RETURN(tmpSize > 0,);
             CARLA_SAFE_ASSERT_RETURN(tmpSize < 24,);
 
-            std::strncpy(tmpBuf, dataRead, static_cast<size_t>(tmpSize));
-            tmpBuf[tmpSize] = '\0';
-            dataRead += tmpSize+1;
-            dataPos += tmpSize+1;
+            {
+                const size_t uSize = static_cast<size_t>(tmpSize);
+                std::strncpy(tmpBuf, dataRead, uSize);
+                tmpBuf[tmpSize] = '\0';
+                dataRead += uSize+1U;
+                dataPos += uSize+1U;
+            }
 
             const long long time = std::atoll(tmpBuf);
             CARLA_SAFE_ASSERT_RETURN(time >= 0,);
@@ -371,27 +374,31 @@ public:
             tmpSize = needle - dataRead;
             CARLA_SAFE_ASSERT_RETURN(tmpSize > 0 && tmpSize < 24,);
 
-            std::strncpy(tmpBuf, dataRead, static_cast<size_t>(tmpSize));
-            tmpBuf[tmpSize] = '\0';
-            dataRead += tmpSize+1;
-            dataPos += tmpSize+1;
+            {
+                const size_t uSize = static_cast<size_t>(tmpSize);
+                std::strncpy(tmpBuf, dataRead, uSize);
+                tmpBuf[tmpSize] = '\0';
+                dataRead += uSize+1U;
+                dataPos += uSize+1U;
+            }
 
-            const int size = std::atoi(tmpBuf);
-            CARLA_SAFE_ASSERT_RETURN(size > 0 && size <= MAX_EVENT_DATA_SIZE,);
+            const int midiDataSize = std::atoi(tmpBuf);
+            CARLA_SAFE_ASSERT_RETURN(midiDataSize > 0 && midiDataSize <= MAX_EVENT_DATA_SIZE,);
 
-            midiEvent.size = static_cast<uint8_t>(size);
+            midiEvent.size = static_cast<uint8_t>(midiDataSize);
 
             // get events
-            for (int i=0; i<size; ++i)
+            for (int i=0; i<midiDataSize; ++i)
             {
                 CARLA_SAFE_ASSERT_RETURN(dataRead-data >= 4,);
 
                 tmpSize = i==0 ? 4 : 3;
 
-                std::strncpy(tmpBuf, dataRead, static_cast<size_t>(tmpSize));
+                const size_t uSize = static_cast<size_t>(tmpSize);
+                std::strncpy(tmpBuf, dataRead, uSize);
                 tmpBuf[tmpSize] = '\0';
-                dataRead += tmpSize+1;
-                dataPos += tmpSize+1;
+                dataRead += uSize+1U;
+                dataPos += uSize+1U;
 
                 long mdata;
 
@@ -409,7 +416,7 @@ public:
                 midiEvent.data[i] = static_cast<uint8_t>(mdata);
             }
 
-            for (int i=size; i<MAX_EVENT_DATA_SIZE; ++i)
+            for (int i=midiDataSize; i<MAX_EVENT_DATA_SIZE; ++i)
                 midiEvent.data[i] = 0;
 
             RawMidiEvent* const event(new RawMidiEvent());

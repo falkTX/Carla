@@ -61,7 +61,9 @@ private:
 public:
     //==============================================================================
     /** Creates an empty array. */
-    Array() noexcept   : numUsed (0)
+    Array() noexcept
+        : data(),
+          numUsed(0)
     {
     }
 
@@ -69,7 +71,8 @@ public:
         @param other    the array to copy
     */
     Array (const Array<ElementType>& other) noexcept
-        : numUsed (0)
+        : data(),
+          numUsed(0)
     {
         CARLA_SAFE_ASSERT_RETURN(data.setAllocatedSize (other.numUsed),);
         numUsed = other.numUsed;
@@ -385,7 +388,7 @@ public:
     */
     bool add (ElementType&& newElement) noexcept
     {
-        if (! data.ensureAllocatedSize (numUsed + 1))
+        if (! data.ensureAllocatedSize (static_cast<size_t>(numUsed + 1)))
             return false;
 
         new (data.elements + numUsed++) ElementType (static_cast<ElementType&&> (newElement));
@@ -1099,7 +1102,7 @@ private:
 
     void minimiseStorageAfterRemoval()
     {
-        if (data.numAllocated > jmax (minimumAllocatedSize, numUsed * 2))
+        if (data.numAllocated > static_cast<size_t>(jmax (minimumAllocatedSize, numUsed * 2)))
             data.shrinkToNoMoreThan (jmax (numUsed, jmax (minimumAllocatedSize, 64 / (int) sizeof (ElementType))));
     }
 };

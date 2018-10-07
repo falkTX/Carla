@@ -29,20 +29,20 @@ typedef struct adinfo ADInfo;
 
 struct AudioFilePool {
     float*   buffer[2];
+    uint64_t startFrame;
     uint32_t sampleRate;
-    uint32_t startFrame;
     uint32_t size;
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     AudioFilePool()
         : buffer{nullptr},
-          sampleRate(0),
           startFrame(0),
+          sampleRate(0),
           size(0) {}
 #else
     AudioFilePool()
-        : sampleRate(0),
-          startFrame(0),
+        : startFrame(0),
+          sampleRate(0),
           size(0)
     {
         buffer[0] = buffer[1] = nullptr;
@@ -103,28 +103,33 @@ struct AudioFilePool {
         carla_zeroFloats(buffer[0], size);
         carla_zeroFloats(buffer[1], size);
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(AudioFilePool)
 };
 
 class AbstractAudioPlayer
 {
 public:
     virtual ~AbstractAudioPlayer() {}
-    virtual uint32_t getLastFrame() const = 0;
+    virtual uint64_t getLastFrame() const = 0;
 };
 
 class AudioFileThread : public CarlaThread
 {
 public:
-    AudioFileThread(AbstractAudioPlayer* const player, const double sampleRate)
+    AudioFileThread(AbstractAudioPlayer* const player, const uint32_t sampleRate)
         : CarlaThread("AudioFileThread"),
           kPlayer(player),
           fLoopingMode(true),
           fNeedsRead(false),
           fQuitNow(true),
           fFilePtr(nullptr),
+          fFileNfo(),
           fMaxPlayerFrame(0),
           fPollTempData(nullptr),
-          fPollTempSize(0)
+          fPollTempSize(0),
+          fPool(),
+          fMutex()
     {
         CARLA_ASSERT(kPlayer != nullptr);
 
@@ -247,7 +252,7 @@ public:
                 return false;
             }
 
-            fMaxPlayerFrame = fFileNfo.frames/fFileNfo.channels;
+            fMaxPlayerFrame = static_cast<uint32_t>(fFileNfo.frames/fFileNfo.channels);
             fPollTempSize = pollTempSize;
 
             readPoll();
@@ -289,16 +294,18 @@ public:
             return;
         }
 
-        int64_t lastFrame = kPlayer->getLastFrame();
-        int64_t readFrame = lastFrame;
-        int64_t maxFrame  = fFileNfo.frames;
+        const uint64_t lastFrame = kPlayer->getLastFrame();
+        int32_t readFrameCheck;
 
-        if (lastFrame >= maxFrame)
+        if (lastFrame >= static_cast<uint64_t>(fFileNfo.frames))
         {
             if (fLoopingMode)
             {
+                const uint64_t readFrameCheckLoop = lastFrame % fMaxPlayerFrame;
+                CARLA_SAFE_ASSERT_RETURN(readFrameCheckLoop < INT32_MAX,);
+
                 carla_debug("R: transport out of bounds for loop");
-                readFrame %= fMaxPlayerFrame;
+                readFrameCheck = static_cast<int32_t>(readFrameCheckLoop);
             }
             else
             {
@@ -307,6 +314,13 @@ public:
                 return;
             }
         }
+        else
+        {
+            CARLA_SAFE_ASSERT_RETURN(lastFrame < INT32_MAX,);
+            readFrameCheck = static_cast<int32_t>(lastFrame);
+        }
+
+        const int32_t readFrame = readFrameCheck;
 
         // temp data buffer
         carla_zeroFloats(fPollTempData, fPollTempSize);
@@ -326,12 +340,14 @@ public:
                 return;
             }
 
+            const size_t urv = static_cast<size_t>(rv);
+
             // see if we can read more
-            if (readFrame + rv >= static_cast<ssize_t>(fFileNfo.frames) && static_cast<size_t>(rv) < fPollTempSize)
+            if (readFrame + rv >= static_cast<ssize_t>(fFileNfo.frames) && urv < fPollTempSize)
             {
                 carla_debug("R: from start");
                 ad_seek(fFilePtr, 0);
-                rv += ad_read(fFilePtr, fPollTempData+rv, fPollTempSize-rv);
+                rv += ad_read(fFilePtr, fPollTempData+urv, fPollTempSize-urv);
             }
 
             // lock, and put data asap
@@ -396,8 +412,8 @@ protected:
     {
         while (! fQuitNow)
         {
-            const uint32_t lastFrame = kPlayer->getLastFrame();
-            const uint32_t loopedFrame = fLoopingMode ? lastFrame % fMaxPlayerFrame : lastFrame;
+            const uint64_t lastFrame = kPlayer->getLastFrame();
+            const uint64_t loopedFrame = fLoopingMode ? lastFrame % fMaxPlayerFrame : lastFrame;
 
             if (fNeedsRead || lastFrame < fPool.startFrame || (lastFrame - fPool.startFrame >= fPool.size*3/4 && loopedFrame < fMaxPlayerFrame))
                 readPoll();
@@ -423,6 +439,8 @@ private:
 
     AudioFilePool fPool;
     CarlaMutex    fMutex;
+
+    CARLA_DECLARE_NON_COPY_STRUCT(AudioFileThread)
 };
 
 #endif // AUDIO_BASE_HPP_INCLUDED

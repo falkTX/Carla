@@ -71,7 +71,7 @@ _CarlaCachedPluginInfo::_CarlaCachedPluginInfo() noexcept
 
 static Array<File> gSFZs;
 
-void findSFZs(const char* const sfzPaths)
+static void findSFZs(const char* const sfzPaths)
 {
     CARLA_SAFE_ASSERT_RETURN(sfzPaths != nullptr,);
 
@@ -91,7 +91,7 @@ void findSFZs(const char* const sfzPaths)
 
 // -------------------------------------------------------------------------------------------------------------------
 
-const CarlaCachedPluginInfo* get_cached_plugin_internal(const NativePluginDescriptor& desc)
+static const CarlaCachedPluginInfo* get_cached_plugin_internal(const NativePluginDescriptor& desc)
 {
     static CarlaCachedPluginInfo info;
 
@@ -125,7 +125,7 @@ const CarlaCachedPluginInfo* get_cached_plugin_internal(const NativePluginDescri
     return &info;
 }
 
-const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2World, Lilv::Plugin& lilvPlugin)
+static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2World, Lilv::Plugin& lilvPlugin)
 {
     static CarlaCachedPluginInfo info;
 
@@ -471,7 +471,7 @@ const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2World, Lilv
     return &info;
 }
 
-const CarlaCachedPluginInfo* get_cached_plugin_sfz(const File file)
+static const CarlaCachedPluginInfo* get_cached_plugin_sfz(const File file)
 {
     static CarlaCachedPluginInfo info;
 
@@ -524,7 +524,7 @@ uint carla_get_cached_plugin_count(CB::PluginType ptype, const char* pluginPath)
 
     case CB::PLUGIN_SFZ: {
         findSFZs(pluginPath);
-        return gSFZs.size();
+        return static_cast<uint>(gSFZs.size());
     }
 
     default:
@@ -562,7 +562,7 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
 
     case CB::PLUGIN_SFZ: {
         CARLA_SAFE_ASSERT_BREAK(index < static_cast<uint>(gSFZs.size()));
-        return get_cached_plugin_sfz(gSFZs.getUnchecked(index));
+        return get_cached_plugin_sfz(gSFZs.getUnchecked(static_cast<int>(index)));
     }
 
     default:

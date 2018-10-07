@@ -172,6 +172,8 @@ private:
     lib_t libfftw3f;
     lib_t libfftw3l;
     lib_t libfftw3q;
+
+    CARLA_DECLARE_NON_COPY_CLASS(ThreadSafeFFTW)
 };
 
 static ThreadSafeFFTW sThreadSafeFFTW;
@@ -870,7 +872,7 @@ const CarlaTransportInfo* carla_get_transport_info()
     {
         retTransInfo.bar  = timeInfo.bbt.bar;
         retTransInfo.beat = timeInfo.bbt.beat;
-        retTransInfo.tick = timeInfo.bbt.tick;
+        retTransInfo.tick = static_cast<int32_t>(timeInfo.bbt.tick + 0.5);
         retTransInfo.bpm  = timeInfo.bbt.beatsPerMinute;
     }
 

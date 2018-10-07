@@ -2834,7 +2834,7 @@ public:
                     break;
 
                 case LV2_PORT_DESIGNATION_TIME_BAR_BEAT:
-                    if (timeInfo.bbt.valid && (fLastTimeInfo.bbt.tick != timeInfo.bbt.tick ||
+                    if (timeInfo.bbt.valid && (carla_isNotEqual(fLastTimeInfo.bbt.tick, timeInfo.bbt.tick) ||
                                                fLastTimeInfo.bbt.beat != timeInfo.bbt.beat))
                     {
                         fParamBuffers[k] = static_cast<float>(barBeat);
@@ -5082,7 +5082,7 @@ public:
         fLv2Options.minBufferSize     = fNeedsFixedBuffers ? bufferSize : 1;
         fLv2Options.maxBufferSize     = bufferSize;
         fLv2Options.nominalBufferSize = bufferSize;
-        fLv2Options.sampleRate        = pData->engine->getSampleRate();
+        fLv2Options.sampleRate        = static_cast<float>(pData->engine->getSampleRate());
         fLv2Options.transientWinId    = static_cast<int64_t>(pData->engine->getOptions().frontendWinId);
 
         uint32_t eventBufferSize = MAX_DEFAULT_BUFFER_SIZE;

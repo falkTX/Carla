@@ -557,6 +557,7 @@ public:
           fWorker(nullptr),
           fTimeInfo(),
           fLastPositionData(),
+          fPorts(),
           fURIs(),
           fUI()
     {

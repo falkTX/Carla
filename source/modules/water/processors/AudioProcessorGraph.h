@@ -190,10 +190,10 @@ public:
 
     //==============================================================================
     /** Returns the number of connections in the graph. */
-    int getNumConnections() const                                       { return connections.size(); }
+    size_t getNumConnections() const                                    { return connections.size(); }
 
     /** Returns a pointer to one of the connections in the graph. */
-    const Connection* getConnection (int index) const                   { return connections [index]; }
+    const Connection* getConnection (size_t index) const                { return connections [index]; }
 
     /** Searches for a connection between some specified channels.
         If no such connection is found, this returns nullptr.

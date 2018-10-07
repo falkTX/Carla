@@ -160,7 +160,7 @@ private:
 
         const double sampleRate(getSampleRate());
 
-        for (int i=0, numTracks = midiFile.getNumTracks(); i<numTracks; ++i)
+        for (size_t i=0, numTracks = midiFile.getNumTracks(); i<numTracks; ++i)
         {
             const MidiMessageSequence* const track(midiFile.getTrack(i));
             CARLA_SAFE_ASSERT_CONTINUE(track != nullptr);

@@ -189,7 +189,7 @@ void fillWaterMidiBufferFromEngineEvents(water::MidiBuffer& midiBuffer, const En
                 mdataTmp[0] = static_cast<uint8_t>(midiEvent.data[0] | (engineEvent.channel & MIDI_CHANNEL_BIT));
 
                 // copy rest
-                carla_copy<uint8_t>(mdataTmp+1, midiEvent.data+1, size-1);
+                carla_copy<uint8_t>(mdataTmp+1, midiEvent.data+1, size-1U);
 
                 // done
                 mdataPtr = mdataTmp;

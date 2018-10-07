@@ -311,7 +311,7 @@ public:
     void clearVoices();
 
     /** Returns the number of voices that have been added. */
-    int getNumVoices() const noexcept                               { return voices.size(); }
+    size_t getNumVoices() const noexcept                            { return voices.size(); }
 
     /** Returns one of the voices that have been added. */
     SynthesiserVoice* getVoice (int index) const;

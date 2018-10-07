@@ -160,7 +160,7 @@ namespace MidiFileHelpers
                                        MidiMessageSequence& results,
                                        MethodType method)
     {
-        for (int i = 0; i < tracks.size(); ++i)
+        for (size_t i = 0; i < tracks.size(); ++i)
         {
             const MidiMessageSequence& track = *tracks.getUnchecked(i);
             const int numEvents = track.getNumEvents();
@@ -207,12 +207,12 @@ void MidiFile::clear()
 }
 
 //==============================================================================
-int MidiFile::getNumTracks() const noexcept
+size_t MidiFile::getNumTracks() const noexcept
 {
     return tracks.size();
 }
 
-const MidiMessageSequence* MidiFile::getTrack (const int index) const noexcept
+const MidiMessageSequence* MidiFile::getTrack (const size_t index) const noexcept
 {
     return tracks [index];
 }
@@ -259,7 +259,7 @@ double MidiFile::getLastTimestamp() const
 {
     double t = 0.0;
 
-    for (int i = tracks.size(); --i >= 0;)
+    for (size_t i=0; i < tracks.size(); ++i)
         t = jmax (t, tracks.getUnchecked(i)->getEndTime());
 
     return t;
@@ -359,7 +359,7 @@ void MidiFile::convertTimestampTicksToSeconds()
 
     if (timeFormat != 0)
     {
-        for (int i = 0; i < tracks.size(); ++i)
+        for (size_t i = 0; i < tracks.size(); ++i)
         {
             const MidiMessageSequence& ms = *tracks.getUnchecked(i);
 
@@ -383,7 +383,7 @@ bool MidiFile::writeTo (OutputStream& out, int midiFileType)
     if (! out.writeShortBigEndian ((short) tracks.size()))                return false;
     if (! out.writeShortBigEndian (timeFormat))                           return false;
 
-    for (int i = 0; i < tracks.size(); ++i)
+    for (size_t i = 0; i < tracks.size(); ++i)
         if (! writeTrack (out, i))
             return false;
 
