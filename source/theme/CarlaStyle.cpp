@@ -2530,15 +2530,27 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
                     QPixmap upArrow = colorizedImage(QLatin1String(":/bitmaps/style/arrow.png"),
                                                      (spinBox->stepEnabled & QAbstractSpinBox::StepUpEnabled) ? arrowColor : disabledColor);
 
-                    cachePainter.drawPixmap(QRectF(upRect.center().x() - upArrow.width() / 4 + 1,
-                                                  upRect.center().y() - upArrow.height() / 4 + 2,
-                                                  upArrow.width()/2, upArrow.height()/2), upArrow, upArrow.rect());
-
                     QPixmap downArrow = colorizedImage(QLatin1String(":/bitmaps/style/arrow.png"),
                                                        (spinBox->stepEnabled & QAbstractSpinBox::StepDownEnabled) ? arrowColor : disabledColor, 180);
-                    cachePainter.drawPixmap(QRectF(downRect.center().x() - downArrow.width() / 4 + 1,
-                                                  downRect.center().y() - downArrow.height() / 4,
-                                                  downArrow.width()/2, downArrow.height()/2), downArrow, downArrow.rect());
+
+                    int y1, y2;
+                    const int imgW = (upArrow.width() + downArrow.width()) / 2;
+                    const int imgH = (upArrow.height() + downArrow.height()) / 2;
+                    const float f = 1.0 / ceil(imgW / upRect.width() * 2);
+                    const int w = imgW * f;
+                    const int h = imgH * f;
+
+                    const int x = upRect.center().x() - w / 2;
+                    y1 = upRect.center().y();
+                    y2 = downRect.center().y();
+                    const int dy1 = 1+upRect.bottom() - y1;
+                    const int dy2 = y2 - downRect.top();
+                    const int dy = dy1 < dy2 ? dy1 : dy2;
+                    y1 = (1+upRect.bottom() - dy - 1) - ceil(h / 4.0);
+                    y2 = (downRect.top() + dy + 1) - floor(h / 4.0 * 3);
+
+                    cachePainter.drawPixmap(QRectF(x, y1, w, h), upArrow, upArrow.rect());
+                    cachePainter.drawPixmap(QRectF(x, y2, w, h), downArrow, downArrow.rect());
                 }
 
                 cachePainter.end();
