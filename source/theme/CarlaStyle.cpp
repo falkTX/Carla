@@ -1227,7 +1227,7 @@ void CarlaStyle::drawPrimitive(PrimitiveElement elem,
         QLinearGradient gradient = qt_fusion_gradient(rect, (isEnabled && option->state & State_MouseOver ) ? buttonColor : buttonColor.darker(104));
         p->setBrush(isDown ? QBrush(buttonColor.darker(110)) : gradient);
         p->setPen(QPen(p->brush(), 1));
-        p->drawRoundedRect(r.adjusted(1,1,-1,-1), 1.5, 1.5);
+        p->drawRoundedRect(r.adjusted(1,1,-1,-1), 1.8, 1.8);
         p->setBrush(Qt::NoBrush);
 
         // Outline
@@ -1235,7 +1235,7 @@ void CarlaStyle::drawPrimitive(PrimitiveElement elem,
         p->drawRoundedRect(r, 2.5, 2.5);
 
         p->setPen(d->innerContrastLine());
-        p->drawRoundedRect(r.adjusted(1, 1, -1, -1), 1.5, 1.5);
+        p->drawRoundedRect(r.adjusted(1, 1, -1, -1), 1.8, 1.8);
 
         END_STYLE_PIXMAPCACHE
         }
@@ -1377,11 +1377,11 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
             painter->setRenderHint(QPainter::Antialiasing, true);
             painter->translate(0.5, 0.5);
             painter->setBrush(dimHighlight);
-            painter->drawRoundedRect(option->rect.adjusted(0, 0, -1, -1), 1.5, 1.5);
+            painter->drawRoundedRect(option->rect.adjusted(0, 0, -1, -1), 1.3, 1.3);
             QColor innerLine = Qt::white;
             innerLine.setAlpha(40);
             painter->setPen(innerLine);
-            painter->drawRoundedRect(option->rect.adjusted(1, 1, -2, -2), 0.5, 0.5);
+            painter->drawRoundedRect(option->rect.adjusted(1, 1, -2, -2), 0.7, 0.7);
             painter->restore();
             return;
         }
@@ -1628,7 +1628,7 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
         painter->drawRoundedRect(rect.adjusted(0, 0, -1, -1), 2.5, 2.5);
         painter->setBrush(option->palette.base());
         painter->setPen(QPen(option->palette.base(), 1));
-        painter->drawRoundedRect(rect.adjusted(1, 1, -2, -2), 1.5, 1.5);
+        painter->drawRoundedRect(rect.adjusted(1, 1, -2, -2), 1.8, 1.8);
 
         // Inner shadow
         painter->setPen(d->topShadow());
@@ -1717,12 +1717,12 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                     painter->setClipRect(progressBar.adjusted(0, 0, -1, 0));
                 QRect fillRect = progressBar.adjusted( indeterminate || complete || !reverse ? 1 : -1, 1,
                                                        indeterminate || complete || reverse ? -1 : 1, -1);
-                painter->drawRoundedRect(fillRect, 1.5, 1.5);
+                painter->drawRoundedRect(fillRect, 1.8, 1.8);
                 painter->restore();
 
                 painter->setBrush(Qt::NoBrush);
                 painter->setPen(QColor(255, 255, 255, 50));
-                painter->drawRoundedRect(progressBar.adjusted(1, 1, -1, -1), 1.5, 1.5);
+                painter->drawRoundedRect(progressBar.adjusted(1, 1, -1, -1), 1.8, 1.8);
 
                 if (!indeterminate) {
                     d->stopAnimation(widget);
@@ -2211,11 +2211,11 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
             painter->setBrush(fillGradient);
             painter->setPen(QPen(QBrush(fillGradient), 1));
             drawRect.adjust(1, 1, -2, -1);
-            painter->drawRoundedRect(drawRect, 1.5, 1.5);
+            painter->drawRoundedRect(drawRect, 1.8, 1.8);
 
             painter->setBrush(Qt::NoBrush);
             painter->setPen(d->innerContrastLine());
-            painter->drawRoundedRect(drawRect, 1.5, 1.5);
+            painter->drawRoundedRect(drawRect, 1.8, 1.8);
 
             painter->restore();
 
@@ -2390,7 +2390,7 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
                     const QBrush & brush = option->palette.base();
                     cachePainter.setPen(brush.color());
                     cachePainter.setBrush(brush);
-                    cachePainter.drawRoundedRect(r.adjusted(1, 1, -2, -2), 1.5, 1.5);
+                    cachePainter.drawRoundedRect(r.adjusted(1, 1, -2, -2), 1.8, 1.8);
 
                     // Draw inner shadow
                     cachePainter.setPen(d->topShadow());
@@ -2408,10 +2408,10 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
 
                     cachePainter.save();
                     cachePainter.setClipRect(updownRect);
-                    cachePainter.drawRoundedRect(QRect(0, bty, brx, bby-bty), 1.5, 1.5);
+                    cachePainter.drawRoundedRect(QRect(0, bty, brx, bby-bty), 1.8, 1.8);
                     cachePainter.setPen(QPen(d->innerContrastLine()));
                     cachePainter.setBrush(Qt::NoBrush);
-                    cachePainter.drawRoundedRect(QRect(0, bty, brx, bby-bty), 1.5, 1.5);
+                    cachePainter.drawRoundedRect(QRect(0, bty, brx, bby-bty), 1.8, 1.8);
                     cachePainter.drawLine(upRect.left(), bty + 1, upRect.left(), bby - 1);
                     if (hover) {
                         const int y = oddHeight ? (downRect.top() - 1) : (upIsActive ? (1+upRect.bottom() - 1) : downRect.top());
@@ -2474,7 +2474,7 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
                         QColor softHighlight = option->palette.highlight().color();
                         softHighlight.setAlpha(40);
                         cachePainter.setPen(softHighlight);
-                        cachePainter.drawRoundedRect(r.adjusted(1, 1, -2, -2), 1.5, 1.5);
+                        cachePainter.drawRoundedRect(r.adjusted(1, 1, -2, -2), 1.8, 1.8);
                     }
                     cachePainter.restore();
                 }
