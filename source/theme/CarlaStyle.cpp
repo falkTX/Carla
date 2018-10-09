@@ -2407,6 +2407,7 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
                     cachePainter.setPen(QPen(d->innerContrastLine()));
                     cachePainter.setBrush(Qt::NoBrush);
                     cachePainter.drawRoundedRect(r.adjusted(1, 1, -2, -2), 1.5, 1.5);
+                    cachePainter.drawLine(upRect.left(), upRect.top() + 1, upRect.left(), 1+downRect.bottom() - 1);
                     cachePainter.restore();
                     cachePainter.setPen(Qt::NoPen);
 
