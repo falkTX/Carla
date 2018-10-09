@@ -2413,6 +2413,12 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
                     cachePainter.setBrush(Qt::NoBrush);
                     cachePainter.drawRoundedRect(QRect(0, bty, brx, bby-bty), 1.5, 1.5);
                     cachePainter.drawLine(upRect.left(), bty + 1, upRect.left(), bby - 1);
+                    if (hover) {
+                        const int y = oddHeight ? (downRect.top() - 1) : (upIsActive ? (1+upRect.bottom() - 1) : downRect.top());
+                        cachePainter.setOpacity(0.4);
+                        cachePainter.drawLine(downRect.left() + 1, y, brx - 1, y);
+                        cachePainter.setOpacity(1.0);
+                    }
                     cachePainter.restore();
                     cachePainter.setPen(Qt::NoPen);
 
