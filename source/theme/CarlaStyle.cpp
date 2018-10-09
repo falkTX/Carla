@@ -2362,12 +2362,12 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
                 QColor arrowColor = spinBox->palette.foreground().color();
                 arrowColor.setAlpha(220);
 
-                bool isEnabled = (spinBox->state & State_Enabled);
-                bool hover = isEnabled && (spinBox->state & State_MouseOver);
-                bool sunken = (spinBox->state & State_Sunken);
-                bool upIsActive = (spinBox->activeSubControls == SC_SpinBoxUp);
-                bool downIsActive = (spinBox->activeSubControls == SC_SpinBoxDown);
-                bool hasFocus = (option->state & State_HasFocus);
+                const bool isEnabled = (spinBox->state & State_Enabled);
+                const bool hover = isEnabled && (spinBox->state & State_MouseOver);
+                const bool sunken = (spinBox->state & State_Sunken);
+                const bool upIsActive = (spinBox->activeSubControls == SC_SpinBoxUp);
+                const bool downIsActive = (spinBox->activeSubControls == SC_SpinBoxDown);
+                const bool hasFocus = (option->state & State_HasFocus);
 
                 QStyleOptionSpinBox spinBoxCopy = *spinBox;
                 spinBoxCopy.rect = pixmapRect;
