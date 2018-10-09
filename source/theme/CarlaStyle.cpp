@@ -2424,19 +2424,45 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
 
                     // Buttons mouse over background
                     if ((spinBox->stepEnabled & QAbstractSpinBox::StepUpEnabled) && upIsActive) {
+                        QPointF clipTLeft(0, upRect.top());
+                        QPointF clipBRight(1+downRect.right() - 1, 1+downRect.bottom() - 1);
+                        QRectF clipRect(clipTLeft, clipBRight);
+
+                        cachePainter.save();
+
+                        clipRect.adjust(-0.5,-0.5, 0.5, 0.5);
+                        QPainterPath clipPath;
+                        clipPath.addRoundedRect(clipRect, 2.0, 2.0);
+                        cachePainter.setClipPath(clipPath);
+
                         const int cy_fix = oddHeight ? 0 : -1;
                         if (sunken)
                             cachePainter.fillRect(QRectF(upRect).adjusted(-0.5, -0.5, 0.5-1, 0.5+cy_fix), gradientStopColor.darker(110));
                         else if (hover)
                             cachePainter.fillRect(QRectF(upRect).adjusted(-0.5, -0.5, 0.5-1, 0.5+cy_fix), d->innerContrastLine());
+
+                        cachePainter.restore();
                     }
 
                     if ((spinBox->stepEnabled & QAbstractSpinBox::StepDownEnabled) && downIsActive) {
+                        QPointF clipTLeft(0, upRect.top());
+                        QPointF clipBRight(1+downRect.right() - 1, 1+downRect.bottom() - 1);
+                        QRectF clipRect(clipTLeft, clipBRight);
+
+                        cachePainter.save();
+
+                        clipRect.adjust(-0.5,-0.5, 0.5, 0.5);
+                        QPainterPath clipPath;
+                        clipPath.addRoundedRect(clipRect, 2.0, 2.0);
+                        cachePainter.setClipPath(clipPath);
+
                         const int cy_fix = oddHeight ? 0 : 1;
                         if (sunken)
                             cachePainter.fillRect(QRectF(downRect).adjusted(-0.5, -0.5-1+cy_fix, 0.5-1, 0.5-1-cy_fix), gradientStopColor.darker(110));
                         else if (hover)
                             cachePainter.fillRect(QRectF(downRect).adjusted(-0.5, -0.5-1+cy_fix, 0.5-1, 0.5-1-cy_fix), d->innerContrastLine());
+
+                        cachePainter.restore();
                     }
 
                     // Common highlight border
