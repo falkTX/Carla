@@ -3292,7 +3292,7 @@ int CarlaStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, cons
     case PM_DefaultFrameWidth:
         return 1;
     case PM_SpinBoxFrameWidth:
-        return 3;
+        return 2;
     case PM_MenuVMargin:
     case PM_MenuHMargin:
         return 0;
@@ -3584,26 +3584,26 @@ QRect CarlaStyle::subControlRect(ComplexControl control, const QStyleOptionCompl
     case CC_SpinBox:
         if (const QStyleOptionSpinBox *spinbox = qstyleoption_cast<const QStyleOptionSpinBox *>(option)) {
             QSize bs;
-            int center = spinbox->rect.height() / 2;
-            int fw = spinbox->frame ? proxy()->pixelMetric(PM_SpinBoxFrameWidth, spinbox, widget) : 0;
-            int y = fw;
-            bs.setHeight(qMax(8, spinbox->rect.height()/2 - y));
+            const float center = spinbox->rect.height() / 2.0;
+            const int fw = spinbox->frame ? proxy()->pixelMetric(PM_SpinBoxFrameWidth, spinbox, widget) : 0;
+            const int y = 1;
+            bs.setHeight(qMax(8, int(floor(center) - y)));
             bs.setWidth(14);
             int x, lx, rx;
-            x = spinbox->rect.width() - y - bs.width() + 2;
+            x = spinbox->rect.width() - y - bs.width();
             lx = fw;
             rx = x - fw;
             switch (subControl) {
             case SC_SpinBoxUp:
                 if (spinbox->buttonSymbols == QAbstractSpinBox::NoButtons)
                     return QRect();
-                rect = QRect(x, fw, bs.width(), center - fw);
+                rect = QRect(x, y, bs.width(), bs.height());
                 break;
             case SC_SpinBoxDown:
                 if (spinbox->buttonSymbols == QAbstractSpinBox::NoButtons)
                     return QRect();
 
-                rect = QRect(x, center, bs.width(), spinbox->rect.bottom() - center - fw + 1);
+                rect = QRect(x, ceil(center), bs.width(), bs.height());
                 break;
             case SC_SpinBoxEditField:
                 if (spinbox->buttonSymbols == QAbstractSpinBox::NoButtons) {
