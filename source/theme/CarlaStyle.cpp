@@ -2357,7 +2357,7 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
 
                 QRect pixmapRect(0, 0, spinBox->rect.width(), spinBox->rect.height());
                 QRect rect = pixmapRect;
-                QRect r = rect.adjusted(0, 1, 0, -1);
+                QRect r = rect;
                 QPainter cachePainter(&cache);
                 QColor arrowColor = spinBox->palette.foreground().color();
                 arrowColor.setAlpha(220);
@@ -2373,6 +2373,8 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
                 spinBoxCopy.rect = pixmapRect;
                 QRect upRect = proxy()->subControlRect(CC_SpinBox, &spinBoxCopy, SC_SpinBoxUp, widget);
                 QRect downRect = proxy()->subControlRect(CC_SpinBox, &spinBoxCopy, SC_SpinBoxDown, widget);
+                upRect.adjust(0,-2,0,0);
+                downRect.adjust(0,0,0,1);
 
                 if (spinBox->frame) {
                     cachePainter.save();
@@ -2387,12 +2389,13 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
 
                     // Draw inner shadow
                     cachePainter.setPen(d->topShadow());
-                    cachePainter.drawLine(QPoint(r.left() + 2, r.top() + 1), QPoint(r.right() - 2, r.top() + 1));
+                    cachePainter.drawLine(QPoint(r.left() + 2, r.top() + 1), QPoint(1+r.right() - 2, r.top() + 1));
 
                     // Draw button gradient
                     QColor buttonColor = d->buttonColor(option->palette);
-                    QRect updownRect = upRect.adjusted(0, -2, 0, downRect.height() + 2);
-                    QLinearGradient gradient = qt_fusion_gradient(updownRect, (isEnabled && option->state & State_MouseOver ) ? buttonColor : buttonColor.darker(104));
+                    QRectF updownRect(upRect.topLeft(), downRect.bottomRight() + QPoint(1,1));
+                    updownRect.adjust(-0.5,-0.5, -0.5, 0.5);
+                    QLinearGradient gradient = qt_fusion_gradient(updownRect.toAlignedRect(), (isEnabled && option->state & State_MouseOver ) ? buttonColor : buttonColor.darker(104));
 
                     // Draw button gradient
                     cachePainter.setPen(QPen(gradient, 1));
@@ -2407,20 +2410,22 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
                     cachePainter.restore();
                     cachePainter.setPen(Qt::NoPen);
 
+                    // Buttons mouse over background
                     if ((spinBox->stepEnabled & QAbstractSpinBox::StepUpEnabled) && upIsActive) {
                         if (sunken)
-                            cachePainter.fillRect(upRect.adjusted(0, -1, 0, 0), gradientStopColor.darker(110));
+                            cachePainter.fillRect(QRectF(upRect).adjusted(0.5, -0.5, -0.5, 0), gradientStopColor.darker(110));
                         else if (hover)
-                            cachePainter.fillRect(upRect.adjusted(0, -1, 0, 0), d->innerContrastLine());
+                            cachePainter.fillRect(QRectF(upRect).adjusted(0.5, -0.5, -0.5, 0), d->innerContrastLine());
                     }
 
                     if ((spinBox->stepEnabled & QAbstractSpinBox::StepDownEnabled) && downIsActive) {
                         if (sunken)
-                            cachePainter.fillRect(downRect.adjusted(0, 0, 0, 1), gradientStopColor.darker(110));
+                            cachePainter.fillRect(QRectF(downRect).adjusted(0.5, 0, -0.5, 0.5), gradientStopColor.darker(110));
                         else if (hover)
-                            cachePainter.fillRect(downRect.adjusted(0, 0, 0, 1), d->innerContrastLine());
+                            cachePainter.fillRect(QRectF(downRect).adjusted(0.5, 0, -0.5, 0.5), d->innerContrastLine());
                     }
 
+                    // Common highlight border
                     QColor highlightOutline = d->highlightedOutline(option->palette);
                     cachePainter.setPen(hasFocus ? highlightOutline : highlightOutline.darker(160));
                     cachePainter.setBrush(Qt::NoBrush);
@@ -2437,32 +2442,33 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
                 // outline the up/down buttons
                 cachePainter.setPen(outline);
                 if (spinBox->direction == Qt::RightToLeft) {
-                    cachePainter.drawLine(upRect.right(), upRect.top() - 1, upRect.right(), downRect.bottom() + 1);
+                    cachePainter.drawLine(1+upRect.right() + 1, upRect.top(), 1+upRect.right() + 1, 1+downRect.bottom());
                 } else {
-                    cachePainter.drawLine(upRect.left(), upRect.top() - 1, upRect.left(), downRect.bottom() + 1);
+                    cachePainter.drawLine(upRect.left() - 1, upRect.top(), upRect.left() - 1, 1+downRect.bottom());
                 }
 
                 if (upIsActive && sunken) {
                     cachePainter.setPen(gradientStopColor.darker(130));
-                    cachePainter.drawLine(downRect.left() + 1, downRect.top(), downRect.right(), downRect.top());
-                    cachePainter.drawLine(upRect.left() + 1, upRect.top(), upRect.left() + 1, upRect.bottom());
-                    cachePainter.drawLine(upRect.left() + 1, upRect.top() - 1, upRect.right(), upRect.top() - 1);
+                    cachePainter.drawLine(downRect.left(), downRect.top(), 1+downRect.right() - 1, downRect.top());
+                    cachePainter.drawLine(upRect.left(), upRect.top(), upRect.left(), 1+upRect.bottom());
+                    cachePainter.drawLine(upRect.left(), upRect.top(), 1+upRect.right() - 1, upRect.top());
                 }
 
                 if (downIsActive && sunken) {
                     cachePainter.setPen(gradientStopColor.darker(130));
-                    cachePainter.drawLine(downRect.left() + 1, downRect.top(), downRect.left() + 1, downRect.bottom() + 1);
-                    cachePainter.drawLine(downRect.left() + 1, downRect.top(), downRect.right(), downRect.top());
+                    cachePainter.drawLine(downRect.left(), downRect.top(), downRect.left(), 1+downRect.bottom());
+                    cachePainter.drawLine(downRect.left(), downRect.top(), 1+downRect.right() - 1, downRect.top());
                     cachePainter.setPen(gradientStopColor.darker(110));
-                    cachePainter.drawLine(downRect.left() + 1, downRect.bottom() + 1, downRect.right(), downRect.bottom() + 1);
+                    cachePainter.drawLine(downRect.left(), 1+downRect.bottom(), 1+downRect.right() - 1, 1+downRect.bottom());
                 }
 
                 QColor disabledColor = mergedColors(arrowColor, option->palette.button().color());
                 if (spinBox->buttonSymbols == QAbstractSpinBox::PlusMinus) {
-                    int centerX = upRect.center().x();
-                    int centerY = upRect.center().y();
-
                     // plus/minus
+                    int centerX, centerY;
+
+                    centerX = upRect.center().x();
+                    centerY = upRect.center().y();
                     cachePainter.setPen((spinBox->stepEnabled & QAbstractSpinBox::StepUpEnabled) ? arrowColor : disabledColor);
                     cachePainter.drawLine(centerX - 1, centerY, centerX + 3, centerY);
                     cachePainter.drawLine(centerX + 1, centerY - 2, centerX + 1, centerY + 2);
@@ -2479,15 +2485,15 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
                     QPixmap upArrow = colorizedImage(QLatin1String(":/bitmaps/style/arrow.png"),
                                                      (spinBox->stepEnabled & QAbstractSpinBox::StepUpEnabled) ? arrowColor : disabledColor);
 
-                    cachePainter.drawPixmap(QRect(upRect.center().x() - upArrow.width() / 4 + 1,
-                                                  upRect.center().y() - upArrow.height() / 4 + 1,
-                                                  upArrow.width()/2, upArrow.height()/2), upArrow);
+                    cachePainter.drawPixmap(QRectF(upRect.center().x() - upArrow.width() / 4 + 1,
+                                                  upRect.center().y() - upArrow.height() / 4 + 2,
+                                                  upArrow.width()/2, upArrow.height()/2), upArrow, upArrow.rect());
 
                     QPixmap downArrow = colorizedImage(QLatin1String(":/bitmaps/style/arrow.png"),
                                                        (spinBox->stepEnabled & QAbstractSpinBox::StepDownEnabled) ? arrowColor : disabledColor, 180);
-                    cachePainter.drawPixmap(QRect(downRect.center().x() - downArrow.width() / 4 + 1,
-                                                  downRect.center().y() - downArrow.height() / 4 + 1,
-                                                  downArrow.width()/2, downArrow.height()/2), downArrow);
+                    cachePainter.drawPixmap(QRectF(downRect.center().x() - downArrow.width() / 4 + 1,
+                                                  downRect.center().y() - downArrow.height() / 4,
+                                                  downArrow.width()/2, downArrow.height()/2), downArrow, downArrow.rect());
                 }
 
                 cachePainter.end();
