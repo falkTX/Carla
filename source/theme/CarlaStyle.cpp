@@ -2373,10 +2373,15 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
                 spinBoxCopy.rect = pixmapRect;
                 QRect upRect = proxy()->subControlRect(CC_SpinBox, &spinBoxCopy, SC_SpinBoxUp, widget);
                 QRect downRect = proxy()->subControlRect(CC_SpinBox, &spinBoxCopy, SC_SpinBoxDown, widget);
-                upRect.adjust(0,-2,0,0);
-                downRect.adjust(0,0,0,1);
+
+                const bool oddHeight = (1+upRect.bottom() != downRect.top());
 
                 if (spinBox->frame) {
+                    // Button group outer bounds
+                    const int bty = upRect.top();
+                    const int bby = 1+downRect.bottom() - 1;
+                    const int brx = 1+upRect.right() - 1;
+
                     cachePainter.save();
                     cachePainter.setRenderHint(QPainter::Antialiasing, true);
                     cachePainter.translate(0.5, 0.5);
@@ -2394,7 +2399,7 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
                     // Draw button gradient
                     QColor buttonColor = d->buttonColor(option->palette);
                     QRectF updownRect(upRect.topLeft(), downRect.bottomRight() + QPoint(1,1));
-                    updownRect.adjust(-0.5,-0.5, -0.5, 0.5);
+                    updownRect.adjust(-0.5, -0.5, 0.5-1, 0.5-1);
                     QLinearGradient gradient = qt_fusion_gradient(updownRect.toAlignedRect(), (isEnabled && option->state & State_MouseOver ) ? buttonColor : buttonColor.darker(104));
 
                     // Draw button gradient
@@ -2403,27 +2408,29 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
 
                     cachePainter.save();
                     cachePainter.setClipRect(updownRect);
-                    cachePainter.drawRoundedRect(r.adjusted(1, 1, -2, -2), 1.5, 1.5);
+                    cachePainter.drawRoundedRect(QRect(0, bty, brx, bby-bty), 1.5, 1.5);
                     cachePainter.setPen(QPen(d->innerContrastLine()));
                     cachePainter.setBrush(Qt::NoBrush);
-                    cachePainter.drawRoundedRect(r.adjusted(1, 1, -2, -2), 1.5, 1.5);
-                    cachePainter.drawLine(upRect.left(), upRect.top() + 1, upRect.left(), 1+downRect.bottom() - 1);
+                    cachePainter.drawRoundedRect(QRect(0, bty, brx, bby-bty), 1.5, 1.5);
+                    cachePainter.drawLine(upRect.left(), bty + 1, upRect.left(), bby - 1);
                     cachePainter.restore();
                     cachePainter.setPen(Qt::NoPen);
 
                     // Buttons mouse over background
                     if ((spinBox->stepEnabled & QAbstractSpinBox::StepUpEnabled) && upIsActive) {
+                        const int cy_fix = oddHeight ? 0 : -1;
                         if (sunken)
-                            cachePainter.fillRect(QRectF(upRect).adjusted(0.5, -0.5, -0.5, 0), gradientStopColor.darker(110));
+                            cachePainter.fillRect(QRectF(upRect).adjusted(-0.5, -0.5, 0.5-1, 0.5+cy_fix), gradientStopColor.darker(110));
                         else if (hover)
-                            cachePainter.fillRect(QRectF(upRect).adjusted(0.5, -0.5, -0.5, 0), d->innerContrastLine());
+                            cachePainter.fillRect(QRectF(upRect).adjusted(-0.5, -0.5, 0.5-1, 0.5+cy_fix), d->innerContrastLine());
                     }
 
                     if ((spinBox->stepEnabled & QAbstractSpinBox::StepDownEnabled) && downIsActive) {
+                        const int cy_fix = oddHeight ? 0 : 1;
                         if (sunken)
-                            cachePainter.fillRect(QRectF(downRect).adjusted(0.5, 0, -0.5, 0.5), gradientStopColor.darker(110));
+                            cachePainter.fillRect(QRectF(downRect).adjusted(-0.5, -0.5-1+cy_fix, 0.5-1, 0.5-1-cy_fix), gradientStopColor.darker(110));
                         else if (hover)
-                            cachePainter.fillRect(QRectF(downRect).adjusted(0.5, 0, -0.5, 0.5), d->innerContrastLine());
+                            cachePainter.fillRect(QRectF(downRect).adjusted(-0.5, -0.5-1+cy_fix, 0.5-1, 0.5-1-cy_fix), d->innerContrastLine());
                     }
 
                     // Common highlight border
@@ -2443,24 +2450,29 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
                 // outline the up/down buttons
                 cachePainter.setPen(outline);
                 if (spinBox->direction == Qt::RightToLeft) {
-                    cachePainter.drawLine(1+upRect.right() + 1, upRect.top(), 1+upRect.right() + 1, 1+downRect.bottom());
+                    cachePainter.drawLine(1+upRect.right() + 1, upRect.top(), 1+upRect.right() + 1, 1+downRect.bottom() - 1);
                 } else {
-                    cachePainter.drawLine(upRect.left() - 1, upRect.top(), upRect.left() - 1, 1+downRect.bottom());
+                    cachePainter.drawLine(upRect.left() - 1, upRect.top(), upRect.left() - 1, 1+downRect.bottom() - 1);
                 }
 
                 if (upIsActive && sunken) {
                     cachePainter.setPen(gradientStopColor.darker(130));
-                    cachePainter.drawLine(downRect.left(), downRect.top(), 1+downRect.right() - 1, downRect.top());
-                    cachePainter.drawLine(upRect.left(), upRect.top(), upRect.left(), 1+upRect.bottom());
-                    cachePainter.drawLine(upRect.left(), upRect.top(), 1+upRect.right() - 1, upRect.top());
+                    const int left = upRect.left();
+                    const int right = 1+upRect.right() - 1;
+                    const int top = upRect.top();
+                    const int bottom = oddHeight ? (1+upRect.bottom()) : (1+upRect.bottom() - 1);
+                    const QPoint points[] = {QPoint(right,bottom), QPoint(left,bottom), QPoint(left,top), QPoint(right-1,top)};
+                    cachePainter.drawPolyline(points, 4);
                 }
 
                 if (downIsActive && sunken) {
                     cachePainter.setPen(gradientStopColor.darker(130));
-                    cachePainter.drawLine(downRect.left(), downRect.top(), downRect.left(), 1+downRect.bottom());
-                    cachePainter.drawLine(downRect.left(), downRect.top(), 1+downRect.right() - 1, downRect.top());
-                    cachePainter.setPen(gradientStopColor.darker(110));
-                    cachePainter.drawLine(downRect.left(), 1+downRect.bottom(), 1+downRect.right() - 1, 1+downRect.bottom());
+                    const int left = downRect.left();
+                    const int right = 1+downRect.right() - 1;
+                    const int top = oddHeight ? (downRect.top() - 1) : downRect.top();
+                    const int bottom = 1+downRect.bottom() - 1;
+                    const QPoint points[] = {QPoint(left,bottom), QPoint(left,top), QPoint(right,top)};
+                    cachePainter.drawPolyline(points, 3);
                 }
 
                 QColor disabledColor = mergedColors(arrowColor, option->palette.button().color());
