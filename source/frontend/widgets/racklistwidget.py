@@ -242,9 +242,6 @@ class RackListWidget(QListWidget):
         self.setDropIndicatorShown(True)
         self.viewport().setAcceptDrops(True)
 
-        self.setFrameShape(QFrame.NoFrame)
-        self.setFrameShadow(QFrame.Plain)
-
     # --------------------------------------------------------------------------------------------------------
 
     def createItem(self, pluginId):
