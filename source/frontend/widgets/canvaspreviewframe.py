@@ -28,11 +28,11 @@ from math import floor, ceil
 
 if config_UseQt5:
     from PyQt5.QtCore import pyqtSignal, Qt, QRectF, QTimer, QEvent, QPoint
-    from PyQt5.QtGui import QBrush, QColor, QCursor, QPainter, QPainterPath, QPen
+    from PyQt5.QtGui import QBrush, QColor, QCursor, QPainter, QPainterPath, QPen, QCursor, QPixmap
     from PyQt5.QtWidgets import QFrame, QWidget
 else:
     from PyQt4.QtCore import pyqtSignal, Qt, QRectF, QTimer, QEvent, QPoint
-    from PyQt4.QtGui import QBrush, QColor, QCursor, QPainter, QPainterPath, QPen
+    from PyQt4.QtGui import QBrush, QColor, QCursor, QPainter, QPainterPath, QPen, QCursor, QPixmap
     from PyQt5.QtGui import QFrame, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
@@ -47,6 +47,10 @@ iX = 0
 iY = 1
 iWidth  = 2
 iHeight = 3
+
+MOUSE_MODE_NONE = 0
+MOUSE_MODE_MOVE = 1
+MOUSE_MODE_SCALE = 2
 
 # ------------------------------------------------------------------------------------------------------------
 # Widget Class
@@ -88,7 +92,10 @@ class CanvasPreviewFrame(QFrame):
         self.fViewPen   = QPen(Qt.blue, 1)
         self.fViewRect  = [3.0, 3.0, 10.0, 10.0]
 
-        self.fMouseDown = False
+        self.fMouseMode = MOUSE_MODE_NONE
+        self.fMouseLeftDown = False
+        self.fMouseRightDown = False
+        self.fMousePos = None
 
     def init(self, scene, realWidth, realHeight, useCustomPaint = False):
         realWidth,realHeight = float(realWidth),float(realHeight)
@@ -150,9 +157,14 @@ class CanvasPreviewFrame(QFrame):
         self.fViewBrush = QBrush(brushColor)
         self.fViewPen   = QPen(penColor, 1)
 
-    def handleMouseEvent(self, eventX, eventY):
-        x = float(eventX) - self.fInitialX
-        y = float(eventY) - self.fInitialY
+        cur_color = "black" if bg_black < 0.5 else "white"
+        self.fScaleCursors = ( QCursor(QPixmap(":/cursors/zoom-generic-"+cur_color+".png"), 8, 7),
+                               QCursor(QPixmap(":/cursors/zoom-in-"+cur_color+".png"), 8, 7),
+                               QCursor(QPixmap(":/cursors/zoom-out-"+cur_color+".png"), 8, 7) )
+
+    def moveViewRect(self, x, y):
+        x = float(x) - self.fInitialX
+        y = float(y) - self.fInitialY
 
         fixPos = False
         rCentX = self.fViewRect[iWidth] / self.fScale / 2
@@ -179,26 +191,67 @@ class CanvasPreviewFrame(QFrame):
         y = self.fRenderSource.height() * y / self.kInternalHeight
         self.fScene.m_view.centerOn(x, y)
 
+    def updateMouseMode(self, event=None):
+        if self.fMouseLeftDown and self.fMouseRightDown:
+            self.fMousePos = event.globalPos()
+            self.setCursor(self.fScaleCursors[0])
+            self.fMouseMode = MOUSE_MODE_SCALE
+        elif self.fMouseLeftDown:
+            self.setCursor(QCursor(Qt.SizeAllCursor))
+            if self.fMouseMode == MOUSE_MODE_NONE:
+                self.moveViewRect(event.x(), event.y())
+            self.fMouseMode = MOUSE_MODE_MOVE
+        else:
+            self.unsetCursor()
+            self.fMouseMode = MOUSE_MODE_NONE
+
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
-            self.fMouseDown = True
-            self.setCursor(QCursor(Qt.SizeAllCursor))
-            self.handleMouseEvent(event.x(), event.y())
+            self.fMouseLeftDown = True
+            self.updateMouseMode(event)
+            return event.accept()
+        elif event.button() == Qt.RightButton:
+            self.fMouseRightDown = True
+            self.updateMouseMode(event)
+            return event.accept()
+        elif event.button() == Qt.MidButton:
+            self.fMouseLeftDown = True
+            self.fMouseRightDown = True
+            self.updateMouseMode(event)
             return event.accept()
         QFrame.mouseMoveEvent(self, event)
 
     def mouseMoveEvent(self, event):
-        if self.fMouseDown:
-            self.handleMouseEvent(event.x(), event.y())
+        if self.fMouseMode == MOUSE_MODE_MOVE:
+            self.moveViewRect(event.x(), event.y())
             return event.accept()
+        if self.fMouseMode == MOUSE_MODE_SCALE:
+            dy = self.fMousePos.y() - event.globalY()
+            if dy != 0:
+                self.setCursor(self.fScaleCursors[1 if dy > 0 else 2])
+                self.fScene.zoom_wheel(dy)
+            self.cursor().setPos(self.fMousePos)
         QFrame.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
-        if self.fMouseDown:
-            self.setCursor(QCursor(Qt.ArrowCursor))
-            self.fMouseDown = False
+        if event.button() == Qt.LeftButton:
+            self.fMouseLeftDown = False
+            self.updateMouseMode()
+            return event.accept()
+        elif event.button() == Qt.RightButton:
+            self.fMouseRightDown = False
+            self.updateMouseMode(event)
+            return event.accept()
+        elif event.button() == Qt.MidButton:
+            self.fMouseLeftDown = event.buttons() & Qt.LeftButton
+            self.fMouseRightDown = event.buttons() & Qt.RightButton
+            self.updateMouseMode(event)
             return event.accept()
         QFrame.mouseReleaseEvent(self, event)
+
+    def wheelEvent(self, event):
+        self.fScene.zoom_wheel(event.angleDelta().y())
+        return event.accept()
 
     def paintEvent(self, event):
         painter = QPainter(self)

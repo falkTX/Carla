@@ -159,6 +159,12 @@
         <file>scalable/pb_mplayer.svg</file>
         <file>scalable/pb_vlc.svg</file>
 
+        <file>cursors/zoom-generic-white.png</file>
+        <file>cursors/zoom-generic-black.png</file>
+        <file>cursors/zoom-in-white.png</file>
+        <file>cursors/zoom-in-black.png</file>
+        <file>cursors/zoom-out-white.png</file>
+        <file>cursors/zoom-out-black.png</file>
         <file>cursors/zoom-area-white.png</file>
         <file>cursors/zoom-area-black.png</file>
         <file>cursors/cut-white.png</file>
