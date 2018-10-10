@@ -27,12 +27,13 @@ from carla_config import *
 from math import floor, ceil
 
 if config_UseQt5:
-    from PyQt5.QtCore import pyqtSignal, Qt, QRectF, QTimer, QEvent
+    from PyQt5.QtCore import pyqtSignal, Qt, QRectF, QTimer, QEvent, QPoint
     from PyQt5.QtGui import QBrush, QColor, QCursor, QPainter, QPainterPath, QPen
     from PyQt5.QtWidgets import QFrame, QWidget
 else:
-    from PyQt4.QtCore import pyqtSignal, Qt, QRectF, QTimer, QEvent
-    from PyQt4.QtGui import QBrush, QColor, QCursor, QFrame, QPainter, QPainterPath, QPen, QWidget
+    from PyQt4.QtCore import pyqtSignal, Qt, QRectF, QTimer, QEvent, QPoint
+    from PyQt4.QtGui import QBrush, QColor, QCursor, QPainter, QPainterPath, QPen
+    from PyQt5.QtGui import QFrame, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Antialiasing settings
@@ -153,15 +154,24 @@ class CanvasPreviewFrame(QFrame):
         x = float(eventX) - self.fInitialX
         y = float(eventY) - self.fInitialY
 
+        fixPos = False
         if x < 0.0:
             x = 0.0
+            fixPos = True
         elif x > self.kInternalWidth:
             x = float(self.kInternalWidth)
+            fixPos = True
 
         if y < 0.0:
             y = 0.0
+            fixPos = True
         elif y > self.kInternalHeight:
             y = float(self.kInternalHeight)
+            fixPos = True
+
+        if fixPos:
+            globalPos = self.mapToGlobal(QPoint(self.fInitialX + x, self.fInitialY + y))
+            self.cursor().setPos(globalPos)
 
         xp = x/self.kInternalWidth
         yp = y/self.kInternalHeight
