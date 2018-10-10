@@ -210,12 +210,12 @@ $(BINDIR)/CarlaPatchbayFX$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.patchbay-fx.o $(OBJ
 ifneq ($(WIN32),true)
 $(BINDIR)/CarlaVstShell.dll: $(OBJDIR)/carla-vst.cpp.shell.o $(OBJDIR)/carla-vst-export.cpp.dll.o carla-vst-export.def
 	-@mkdir -p $(BINDIR)
-	@echo "Linking CarlaRackVstShell$(LIB_EXT)"
+	@echo "Linking CarlaRackVstShell.dll"
 	@$(WINECC) $^ $(LIBS_START) $(LIBS_wine) $(LIBS_END) $(SHARED) $(WINE_LINK_FLAGS) -o $@
 
 $(BINDIR)/CarlaVstFXShell.dll: $(OBJDIR)/carla-vst.cpp.shellfx.o $(OBJDIR)/carla-vst-export.cpp.dll.o carla-vst-export.def
 	-@mkdir -p $(BINDIR)
-	@echo "Linking CarlaRackVstShell$(LIB_EXT)"
+	@echo "Linking CarlaVstFXShell.dll"
 	@$(WINECC) $^ $(LIBS_START) $(LIBS_wine) $(LIBS_END) $(SHARED) $(WINE_LINK_FLAGS) -o $@
 endif
 
@@ -226,7 +226,7 @@ $(BINDIR)/CarlaVstShell$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.shell.o $(OBJDIR)/car
 
 $(BINDIR)/CarlaVstFxShell$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.shellfx.o $(OBJDIR)/carla-vst-export.cpp.o
 	-@mkdir -p $(BINDIR)
-	@echo "Linking CarlaVstShell$(LIB_EXT)"
+	@echo "Linking CarlaVstFxShell$(LIB_EXT)"
 	@$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
