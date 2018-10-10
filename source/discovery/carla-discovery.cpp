@@ -1323,10 +1323,15 @@ static void do_fluidsynth_check(const char* const filename, const bool doInit)
 
         if (fluid_sfont_t* const f_sfont = fluid_synth_get_sfont_by_id(f_synth, static_cast<uint>(f_id)))
         {
+#if FLUIDSYNTH_VERSION_MAJOR < 2
             fluid_preset_t f_preset;
 
             f_sfont->iteration_start(f_sfont);
             for (; f_sfont->iteration_next(f_sfont, &f_preset);)
+#else
+            fluid_sfont_iteration_start(f_sfont);
+            for (; fluid_sfont_iteration_next(f_sfont);)
+#endif
                 ++programs;
         }
 
