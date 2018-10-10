@@ -27,12 +27,12 @@ from carla_config import *
 import json
 
 if config_UseQt5:
-    from PyQt5.QtCore import qCritical, QEventLoop, QFileInfo, QModelIndex, QPointF, QTimer
-    from PyQt5.QtGui import QImage, QPalette
+    from PyQt5.QtCore import qCritical, QEventLoop, QFileInfo, QModelIndex, QPointF, QTimer, QEvent
+    from PyQt5.QtGui import QImage, QPalette, QBrush
     from PyQt5.QtWidgets import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QMainWindow
 else:
-    from PyQt4.QtCore import qCritical, QEventLoop, QFileInfo, QModelIndex, QPointF, QTimer
-    from PyQt4.QtGui import QImage, QPalette
+    from PyQt4.QtCore import qCritical, QEventLoop, QFileInfo, QModelIndex, QPointF, QTimer, QEvent
+    from PyQt4.QtGui import QImage, QPalette, QBrush
     from PyQt4.QtGui import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QMainWindow
 
 # ------------------------------------------------------------------------------------------------------------
@@ -358,15 +358,9 @@ class HostWindow(QMainWindow):
         self.ui.rackScrollBar.rangeChanged.connect(sb.setRange)
         self.ui.rackScrollBar.valueChanged.connect(sb.setValue)
 
+        self.updateStyle()
+
         self.ui.rack.setStyleSheet("""
-          QLabel#pad_left {
-            background-image: url(:/bitmaps/rack_padding_left.png);
-            background-repeat: repeat-y;
-          }
-          QLabel#pad_right {
-            background-image: url(:/bitmaps/rack_padding_right.png);
-            background-repeat: repeat-y;
-          }
           CarlaRackList#CarlaRackList {
             background-color: black;
           }
@@ -2319,6 +2313,54 @@ class HostWindow(QMainWindow):
             self.idleSlow()
 
         QMainWindow.timerEvent(self, event)
+
+    # --------------------------------------------------------------------------------------------------------
+    # color/style change event
+
+    def changeEvent(self, event):
+        if event.type() in (QEvent.PaletteChange, QEvent.StyleChange):
+            self.updateStyle()
+        QWidget.changeEvent(self, event)
+
+    def updateStyle(self):
+        # Rack padding images setup
+        rack_imgL = QImage(":/bitmaps/rack_padding_left.png")
+        rack_imgR = QImage(":/bitmaps/rack_padding_right.png")
+
+        min_value = 0.07
+
+        value_fix = 1.0/(1.0-rack_imgL.scaled(1, 1, Qt.IgnoreAspectRatio, Qt.SmoothTransformation).pixelColor(0,0).blackF())
+        bg_color = self.ui.rack.palette().window().color()
+        bg_value = 1.0 - bg_color.blackF()
+        if bg_value == 0:
+            bg_color = QColor.fromHsvF(0.0, 0.0, min_value*value_fix)
+        elif bg_value < min_value:
+            pad_color = bg_color.lighter(100*min_value/bg_value*value_fix)
+
+        painter = QPainter()
+        fillRect = rack_imgL.rect().adjusted(-1,-1,1,1)
+
+        painter.begin(rack_imgL)
+        painter.setCompositionMode(QPainter.CompositionMode_Multiply)
+        painter.setBrush(pad_color)
+        painter.drawRect(fillRect)
+        painter.end()
+        rack_pixmapL = QPixmap(rack_imgL)
+        self.imgL_palette = QPalette()
+        self.imgL_palette.setBrush(QPalette.Window, QBrush(rack_pixmapL))
+        self.ui.pad_left.setPalette(self.imgL_palette)
+        self.ui.pad_left.setAutoFillBackground(True)
+
+        painter.begin(rack_imgR)
+        painter.setCompositionMode(QPainter.CompositionMode_Multiply)
+        painter.setBrush(pad_color)
+        painter.drawRect(fillRect)
+        painter.end()
+        rack_pixmapR = QPixmap(rack_imgR)
+        self.imgR_palette = QPalette()
+        self.imgR_palette.setBrush(QPalette.Window, QBrush(rack_pixmapR))
+        self.ui.pad_right.setPalette(self.imgR_palette)
+        self.ui.pad_right.setAutoFillBackground(True)
 
     # --------------------------------------------------------------------------------------------------------
     # paint event
