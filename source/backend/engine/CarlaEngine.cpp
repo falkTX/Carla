@@ -2307,7 +2307,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
             }
             else
             {
-                carla_stderr2("Failed to load a plugin, error was:\n%s", getLastError());
+                carla_stderr2("Failed to load a plugin '%s', error was:\n%s", stateSave.name, getLastError());
             }
         }
 
