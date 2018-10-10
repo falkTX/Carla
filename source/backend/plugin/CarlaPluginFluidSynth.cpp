@@ -943,6 +943,7 @@ public:
 
         if (fluid_sfont_t* const f_sfont = fluid_synth_get_sfont_by_id(fSynth, fSynthId))
         {
+#if FLUIDSYNTH_VERSION_MAJOR < 2
             fluid_preset_t f_preset;
 
             // initial check to know how many midi-programs we have
@@ -971,6 +972,36 @@ public:
                 pData->midiprog.data[i].program = (tmp >= 0) ? static_cast<uint32_t>(tmp) : 0;
 
                 pData->midiprog.data[i].name = carla_strdup(f_preset.get_name(&f_preset));
+#else
+            fluid_preset_t* f_preset;
+
+            // initial check to know how many midi-programs we have
+            fluid_sfont_iteration_start(f_sfont);
+            for (; fluid_sfont_iteration_next(f_sfont);)
+                ++count;
+
+            // sound kits must always have at least 1 midi-program
+            CARLA_SAFE_ASSERT_RETURN(count > 0,);
+
+            pData->midiprog.createNew(count);
+
+            // Update data
+            int tmp;
+            uint32_t i = 0;
+            fluid_sfont_iteration_start(f_sfont);
+
+            for (; (f_preset = fluid_sfont_iteration_next(f_sfont));)
+            {
+                CARLA_SAFE_ASSERT_BREAK(i < count);
+
+                tmp = fluid_preset_get_banknum(f_preset);
+                pData->midiprog.data[i].bank = (tmp >= 0) ? static_cast<uint32_t>(tmp) : 0;
+
+                tmp = fluid_preset_get_num(f_preset);
+                pData->midiprog.data[i].program = (tmp >= 0) ? static_cast<uint32_t>(tmp) : 0;
+
+                pData->midiprog.data[i].name = carla_strdup(fluid_preset_get_name(f_preset));
+#endif
 
                 if (pData->midiprog.data[i].bank == 128 && ! hasDrums)
                 {
@@ -1662,17 +1693,48 @@ private:
     {
         if (!bFluidDefaultsKept)
         {
+            // reverb defaults
             fFluidDefaults[FluidSynthReverbOnOff] = 1.0f;
+#if FLUIDSYNTH_VERSION_MAJOR < 2
             fFluidDefaults[FluidSynthReverbRoomSize] = FLUID_REVERB_DEFAULT_ROOMSIZE;
             fFluidDefaults[FluidSynthReverbDamp] = FLUID_REVERB_DEFAULT_DAMP;
             fFluidDefaults[FluidSynthReverbLevel] = FLUID_REVERB_DEFAULT_LEVEL;
             fFluidDefaults[FluidSynthReverbWidth] = FLUID_REVERB_DEFAULT_WIDTH;
+#else
+            double reverbVal;
+            fluid_settings_getnum_default(fSettings, "synth.reverb.room-size", &reverbVal);
+            fFluidDefaults[FluidSynthReverbRoomSize] = reverbVal;
+            fluid_settings_getnum_default(fSettings, "synth.reverb.damp", &reverbVal);
+            fFluidDefaults[FluidSynthReverbDamp] = reverbVal;
+            fluid_settings_getnum_default(fSettings, "synth.reverb.level", &reverbVal);
+            fFluidDefaults[FluidSynthReverbLevel] = reverbVal;
+            fluid_settings_getnum_default(fSettings, "synth.reverb.width", &reverbVal);
+            fFluidDefaults[FluidSynthReverbWidth] = reverbVal;
+#endif
+
+            // chorus defaults
             fFluidDefaults[FluidSynthChorusOnOff] = 1.0f;
+#if FLUIDSYNTH_VERSION_MAJOR < 2
             fFluidDefaults[FluidSynthChorusNr] = FLUID_CHORUS_DEFAULT_N;
             fFluidDefaults[FluidSynthChorusLevel] = FLUID_CHORUS_DEFAULT_LEVEL;
             fFluidDefaults[FluidSynthChorusSpeedHz] = FLUID_CHORUS_DEFAULT_SPEED;
             fFluidDefaults[FluidSynthChorusDepthMs] = FLUID_CHORUS_DEFAULT_DEPTH;
             fFluidDefaults[FluidSynthChorusType] = FLUID_CHORUS_DEFAULT_TYPE;
+#else
+            double chorusVal;
+            fluid_settings_getnum_default(fSettings, "synth.chorus.nr", &chorusVal);
+            fFluidDefaults[FluidSynthChorusNr] = chorusVal;
+            fluid_settings_getnum_default(fSettings, "synth.chorus.level", &chorusVal);
+            fFluidDefaults[FluidSynthChorusLevel] = chorusVal;
+            fluid_settings_getnum_default(fSettings, "synth.chorus.speed", &chorusVal);
+            fFluidDefaults[FluidSynthChorusSpeedHz] = chorusVal;
+            fluid_settings_getnum_default(fSettings, "synth.chorus.depth", &chorusVal);
+            fFluidDefaults[FluidSynthChorusDepthMs] = chorusVal;
+            // There is no settings for chorus default type
+            fFluidDefaults[FluidSynthChorusType] = (float)fluid_synth_get_chorus_type(fSynth);
+#endif
+
+            // misc. defaults
             fFluidDefaults[FluidSynthPolyphony] = (float)fluid_synth_get_polyphony(fSynth);
             fFluidDefaults[FluidSynthInterpolation] = FLUID_INTERP_DEFAULT;
             fFluidDefaults[FluidSynthVoiceCount] = 0.0f;
