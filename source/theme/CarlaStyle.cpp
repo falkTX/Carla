@@ -3439,7 +3439,7 @@ QSize CarlaStyle::sizeFromContents(ContentsType type, const QStyleOption* option
         break;
 
     case CT_ToolButton:
-        newSize += QSize(2, 2);
+        newSize += QSize(3, 3);
         break;
 
     case CT_SpinBox:
