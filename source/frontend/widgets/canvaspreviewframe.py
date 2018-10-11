@@ -155,32 +155,29 @@ class CanvasPreviewFrame(QFrame):
         y = float(eventY) - self.fInitialY
 
         fixPos = False
-        if x < 0.0:
-            x = 0.0
+        rCentX = self.fViewRect[iWidth] / self.fScale / 2
+        rCentY = self.fViewRect[iHeight] / self.fScale / 2
+        if x < rCentX:
+            x = rCentX
             fixPos = True
-        elif x > self.kInternalWidth:
-            x = float(self.kInternalWidth)
+        elif x > self.kInternalWidth - rCentX:
+            x = self.kInternalWidth - rCentX
             fixPos = True
 
-        if y < 0.0:
-            y = 0.0
+        if y < rCentY:
+            y = rCentY
             fixPos = True
-        elif y > self.kInternalHeight:
-            y = float(self.kInternalHeight)
+        elif y > self.kInternalHeight - rCentY:
+            y = self.kInternalHeight - rCentY
             fixPos = True
 
         if fixPos:
             globalPos = self.mapToGlobal(QPoint(self.fInitialX + x, self.fInitialY + y))
             self.cursor().setPos(globalPos)
 
-        xp = x/self.kInternalWidth
-        yp = y/self.kInternalHeight
-
-        self.fViewRect[iX] = xp * (self.kInternalWidth - self.fViewRect[iWidth]/self.fScale)
-        self.fViewRect[iY] = yp * (self.kInternalHeight - self.fViewRect[iHeight]/self.fScale)
-        self.update()
-
-        self.miniCanvasMoved.emit(xp, yp)
+        x = self.fRenderSource.width() * x / self.kInternalWidth
+        y = self.fRenderSource.height() * y / self.kInternalHeight
+        self.fScene.m_view.centerOn(x, y)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
