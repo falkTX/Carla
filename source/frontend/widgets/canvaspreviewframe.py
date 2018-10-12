@@ -24,15 +24,16 @@ from carla_config import *
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from math import floor
+from math import floor, ceil
 
 if config_UseQt5:
-    from PyQt5.QtCore import pyqtSignal, Qt, QRectF, QTimer
-    from PyQt5.QtGui import QBrush, QColor, QCursor, QPainter, QPen
-    from PyQt5.QtWidgets import QFrame
+    from PyQt5.QtCore import pyqtSignal, Qt, QRectF, QTimer, QEvent, QPoint
+    from PyQt5.QtGui import QBrush, QColor, QCursor, QPainter, QPainterPath, QPen
+    from PyQt5.QtWidgets import QFrame, QWidget
 else:
-    from PyQt4.QtCore import pyqtSignal, Qt, QRectF, QTimer
-    from PyQt4.QtGui import QBrush, QColor, QCursor, QFrame, QPainter, QPen
+    from PyQt4.QtCore import pyqtSignal, Qt, QRectF, QTimer, QEvent, QPoint
+    from PyQt4.QtGui import QBrush, QColor, QCursor, QPainter, QPainterPath, QPen
+    from PyQt5.QtGui import QFrame, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Antialiasing settings
@@ -61,6 +62,7 @@ class CanvasPreviewFrame(QFrame):
 
     kInternalWidth  = 210-6 # -4 for width + -1px*2 bounds
     kInternalHeight = 162-5 # -3 for height + -1px*2 bounds
+    kInternalRatio = kInternalWidth / kInternalHeight
 
     def __init__(self, parent):
         QFrame.__init__(self, parent)
@@ -75,8 +77,10 @@ class CanvasPreviewFrame(QFrame):
         self.fRenderSource   = QRectF(0.0, 0.0, 0.0, 0.0)
         self.fRenderTarget   = QRectF(0.0, 0.0, 0.0, 0.0)
         self.fUseCustomPaint = False
+        self.fFrameWidth = 0.0
 
         self.fInitialX = 0.0
+        self.fInitialY = 0.0
         self.fScale    = 1.0
 
         self.fViewBg    = QColor(0, 0, 0)
@@ -87,22 +91,33 @@ class CanvasPreviewFrame(QFrame):
         self.fMouseDown = False
 
     def init(self, scene, realWidth, realHeight, useCustomPaint = False):
+        realWidth,realHeight = float(realWidth),float(realHeight)
         self.fScene = scene
-        self.fRenderSource = QRectF(0.0, 0.0, float(realWidth), float(realHeight))
+        self.fRenderSource = QRectF(0.0, 0.0, realWidth, realHeight)
+        self.kInternalRatio = realWidth / realHeight
+        self.updateStyle()
 
         if self.fUseCustomPaint != useCustomPaint:
             self.fUseCustomPaint = useCustomPaint
             self.repaint()
 
+    def updateStyle(self):
+        self.fFrameWidth = 1 if self.fUseCustomPaint else self.frameWidth()
+
+    def changeEvent(self, event):
+        if event.type() in (QEvent.StyleChange, QEvent.PaletteChange):
+            self.updateStyle()
+        QWidget.changeEvent(self, event)
+
     def setRealParent(self, parent):
         self.fRealParent = parent
 
     def setViewPosX(self, xp):
-        self.fViewRect[iX] = (xp * self.kInternalWidth) - (xp * (self.fViewRect[iWidth]/self.fScale)) + xp
+        self.fViewRect[iX] = xp * (self.kInternalWidth - self.fViewRect[iWidth]/self.fScale)
         self.update()
 
     def setViewPosY(self, yp):
-        self.fViewRect[iY] = (yp * self.kInternalHeight) - (yp * (self.fViewRect[iHeight]/self.fScale)) + yp
+        self.fViewRect[iY] = yp * (self.kInternalHeight - self.fViewRect[iHeight]/self.fScale)
         self.update()
 
     def setViewScale(self, scale):
@@ -117,7 +132,19 @@ class CanvasPreviewFrame(QFrame):
         self.update()
 
     def setViewTheme(self, bgColor, brushColor, penColor):
-        brushColor.setAlpha(40)
+        bg_black = bgColor.blackF()
+        brush_black = brushColor.blackF()
+        r0,g0,b0,a = bgColor.getRgb()
+        r1,g1,b1,a = brushColor.getRgb()
+        if brush_black < bg_black:
+            self.fRubberBandBlending = 1
+            brushColor = QColor(r1-r0, g1-g0, b1-b0, 40)
+        elif bg_black < brush_black:
+            self.fRubberBandBlending = -1
+            brushColor = QColor(r0-r1, g0-g1, b0-b1, 40)
+        else:
+            bgColor.setAlpha(40)
+            self.fRubberBandBlending = 0
         penColor.setAlpha(100)
         self.fViewBg    = bgColor
         self.fViewBrush = QBrush(brushColor)
@@ -125,26 +152,32 @@ class CanvasPreviewFrame(QFrame):
 
     def handleMouseEvent(self, eventX, eventY):
         x = float(eventX) - self.fInitialX
-        y = float(eventY) - 3.0
+        y = float(eventY) - self.fInitialY
 
-        if x < 0.0:
-            x = 0.0
-        elif x > self.kInternalWidth:
-            x = float(self.kInternalWidth)
+        fixPos = False
+        rCentX = self.fViewRect[iWidth] / self.fScale / 2
+        rCentY = self.fViewRect[iHeight] / self.fScale / 2
+        if x < rCentX:
+            x = rCentX
+            fixPos = True
+        elif x > self.kInternalWidth - rCentX:
+            x = self.kInternalWidth - rCentX
+            fixPos = True
 
-        if y < 0.0:
-            y = 0.0
-        elif y > self.kInternalHeight:
-            y = float(self.kInternalHeight)
+        if y < rCentY:
+            y = rCentY
+            fixPos = True
+        elif y > self.kInternalHeight - rCentY:
+            y = self.kInternalHeight - rCentY
+            fixPos = True
 
-        xp = x/self.kInternalWidth
-        yp = y/self.kInternalHeight
+        if fixPos:
+            globalPos = self.mapToGlobal(QPoint(self.fInitialX + x, self.fInitialY + y))
+            self.cursor().setPos(globalPos)
 
-        self.fViewRect[iX] = x - (xp * self.fViewRect[iWidth]/self.fScale) + xp
-        self.fViewRect[iY] = y - (yp * self.fViewRect[iHeight]/self.fScale) + yp
-        self.update()
-
-        self.miniCanvasMoved.emit(xp, yp)
+        x = self.fRenderSource.width() * x / self.kInternalWidth
+        y = self.fRenderSource.height() * y / self.kInternalHeight
+        self.fScene.m_view.centerOn(x, y)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -171,37 +204,70 @@ class CanvasPreviewFrame(QFrame):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing == ANTIALIASING_FULL))
 
-        if self.fUseCustomPaint:
-            painter.setBrush(QColor(36, 36, 36))
-            painter.setPen(QColor(62, 62, 62))
-            painter.drawRect(2, 2, self.width()-4, self.height()-4)
+        # Brightness-aware out-of-canvas shading
+        bg_color = self.fViewBg
+        bg_black = bg_color.black()
+        bg_shade = -12 if bg_black < 127 else 12
+        r,g,b,a = bg_color.getRgb()
+        bg_color = QColor(r+bg_shade, g+bg_shade, b+bg_shade)
 
-            painter.setBrush(self.fViewBg)
-            painter.setPen(self.fViewBg)
-            painter.drawRect(3, 3, self.width()-6, self.height()-6)
+        frameWidth = self.fFrameWidth
+        if self.fUseCustomPaint:
+            # Inner shadow
+            color = QColor.fromHsv(40, 0, 255-max(210, bg_color.black(), bg_black))
+            painter.setBrush(Qt.transparent)
+            painter.setPen(color)
+            painter.drawRect(QRectF(0.5, 0.5, self.width()-1, self.height()-1))
+
+            # Background
+            painter.setBrush(bg_color)
+            painter.setPen(bg_color)
+            painter.drawRect(QRectF(1.5, 1.5, self.width()-3, self.height()-3))
         else:
-            painter.setBrush(self.fViewBg)
-            painter.setPen(self.fViewBg)
-            painter.drawRoundedRect(3, 3, self.width()-6, self.height()-6, 3, 3)
+            use_rounding = int(frameWidth > 1)
+
+            rounding = 0.5 * use_rounding
+            painter.setBrush(bg_color)
+            painter.setPen(bg_color)
+            painter.drawRoundedRect(QRectF(0.5+frameWidth, 0.5+frameWidth, self.width()-1-frameWidth*2, self.height()-1-frameWidth*2), rounding, rounding)
+
+            clipPath = QPainterPath()
+            rounding = 1.0 * use_rounding
+            clipPath.addRoundedRect(QRectF(frameWidth, frameWidth, self.width()-frameWidth*2, self.height()-frameWidth*2), rounding, rounding)
+            painter.setClipPath(clipPath)
 
         self.fScene.render(painter, self.fRenderTarget, self.fRenderSource, Qt.KeepAspectRatio)
+
+        # Allow cursor frame to look joined with minicanvas frame
+        painter.setClipping(False)
 
         width  = self.fViewRect[iWidth]/self.fScale
         height = self.fViewRect[iHeight]/self.fScale
 
-        if width > self.kInternalWidth:
-            width = self.kInternalWidth
-        if height > self.kInternalHeight:
-            height = self.kInternalHeight
-
         # cursor
-        lineHinting = painter.pen().widthF() / 2
+        lineHinting = self.fViewPen.widthF() / 2
+        x = self.fViewRect[iX]+self.fInitialX
+        y = self.fViewRect[iY]+self.fInitialY
+        scr_x = floor(x)
+        scr_y = floor(y)
+        rect = QRectF(
+            scr_x+lineHinting,
+            scr_y+lineHinting,
+            ceil(width+x-scr_x)-lineHinting*2,
+            ceil(height+y-scr_y)-lineHinting*2 )
+
+        if self.fRubberBandBlending == 1:
+            painter.setCompositionMode(QPainter.CompositionMode_Plus)
+        elif self.fRubberBandBlending == -1:
+            painter.setCompositionMode(QPainter.CompositionMode_Difference)
         painter.setBrush(self.fViewBrush)
+        painter.setPen(Qt.NoPen)
+        painter.drawRect(rect)
+
+        painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+        painter.setBrush(Qt.NoBrush)
         painter.setPen(self.fViewPen)
-        painter.drawRect(QRectF(
-            floor(self.fViewRect[iX]+self.fInitialX)+lineHinting,
-            floor(self.fViewRect[iY]+3)+lineHinting,
-            round(width)-1, round(height)-1))
+        painter.drawRect(rect)
 
         if self.fUseCustomPaint:
             event.accept()
@@ -209,8 +275,22 @@ class CanvasPreviewFrame(QFrame):
             QFrame.paintEvent(self, event)
 
     def resizeEvent(self, event):
-        self.fInitialX     = float(self.width())/2.0 - float(self.kInternalWidth)/2.0
-        self.fRenderTarget = QRectF(self.fInitialX, 3.0, float(self.kInternalWidth), float(self.kInternalHeight))
+        size = event.size()
+        width = size.width()
+        height = size.height()
+        extRatio = (width - self.fFrameWidth * 2) / (height - self.fFrameWidth * 2)
+        if extRatio >= self.kInternalRatio:
+            self.kInternalHeight = floor(height - self.fFrameWidth * 2)
+            self.kInternalWidth  = floor(self.kInternalHeight * self.kInternalRatio)
+            self.fInitialX       = floor(float(width - self.kInternalWidth) / 2.0)
+            self.fInitialY       = self.fFrameWidth
+        else:
+            self.kInternalWidth  = floor(width - self.fFrameWidth * 2)
+            self.kInternalHeight = floor(self.kInternalWidth / self.kInternalRatio)
+            self.fInitialX       = self.fFrameWidth
+            self.fInitialY       = floor(float(height - self.kInternalHeight) / 2.0)
+
+        self.fRenderTarget = QRectF(self.fInitialX, self.fInitialY, float(self.kInternalWidth), float(self.kInternalHeight))
 
         if self.fRealParent is not None:
             QTimer.singleShot(0, self.fRealParent.slot_miniCanvasCheckAll)
