@@ -291,9 +291,9 @@ class ParamSpinBox(QAbstractSpinBox):
         self.fBar.setContextMenuPolicy(Qt.NoContextMenu)
         #self.fBar.show()
 
-        fBarPalette = QPalette()
-        fBarPalette.setColor(QPalette.Window, Qt.transparent)
-        self.fBar.setPalette(fBarPalette)
+        barPalette = self.fBar.palette()
+        barPalette.setColor(QPalette.Window, Qt.transparent)
+        self.fBar.setPalette(barPalette)
 
         self.fBox = None
 
