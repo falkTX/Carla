@@ -63,7 +63,7 @@ public:
     // Used for grip handles
     QColor lightShade() const
     {
-        return QColor(102, 102, 102, 90);
+        return QColor(255, 255, 255, 36);
     }
 
     QColor darkShade() const

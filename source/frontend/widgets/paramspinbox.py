@@ -29,11 +29,11 @@ from random import random
 
 if config_UseQt5:
     from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QTimer
-    from PyQt5.QtGui import QCursor
+    from PyQt5.QtGui import QCursor, QPalette
     from PyQt5.QtWidgets import QAbstractSpinBox, QApplication, QComboBox, QDialog, QMenu, QProgressBar
 else:
     from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QTimer
-    from PyQt4.QtGui import QAbstractSpinBox, QApplication, QComboBox, QCursor, QDialog, QMenu, QProgressBar
+    from PyQt4.QtGui import QAbstractSpinBox, QApplication, QComboBox, QCursor, QDialog, QMenu, QProgressBar, QPalette
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -290,6 +290,10 @@ class ParamSpinBox(QAbstractSpinBox):
         self.fBar = ParamProgressBar(self)
         self.fBar.setContextMenuPolicy(Qt.NoContextMenu)
         #self.fBar.show()
+
+        fBarPalette = QPalette()
+        fBarPalette.setColor(QPalette.Window, Qt.transparent)
+        self.fBar.setPalette(fBarPalette)
 
         self.fBox = None
 
@@ -564,9 +568,13 @@ class ParamSpinBox(QAbstractSpinBox):
 
     @pyqtSlot()
     def slot_updateProgressBarGeometry(self):
-        self.fBar.setGeometry(self.lineEdit().geometry())
+        geometry = self.lineEdit().geometry()
+        dx = geometry.x()-1
+        dy = geometry.y()-1
+        geometry.adjust(-dx, -dy, dx, dy)
+        self.fBar.setGeometry(geometry)
         if self.fUseScalePoints:
-            self.fBox.setGeometry(self.lineEdit().geometry())
+            self.fBox.setGeometry(geometry)
 
     def _getNearestScalePoint(self, realValue):
         finalValue = 0.0
