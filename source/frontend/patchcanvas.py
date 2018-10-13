@@ -2530,8 +2530,8 @@ class CanvasBox(QGraphicsItem):
             self.p_width = max(self.p_width, 30 + max_in_width + max_out_width)
 
             # Horizontal ports re-positioning
-            inX = 1 + canvas.theme.port_offset
-            outX = self.p_width - max_out_width - canvas.theme.port_offset - 13
+            inX = canvas.theme.port_offset
+            outX = self.p_width - max_out_width - canvas.theme.port_offset - 12
             for port_type in port_types:
                 for port in port_list:
                     if port.port_mode == PORT_MODE_INPUT:
