@@ -528,10 +528,11 @@ void CarlaPlugin::ProtectedData::PostRtEvents::appendRT(const PluginPostRtEvent&
 
 void CarlaPlugin::ProtectedData::PostRtEvents::trySplice() noexcept
 {
-    if (dataMutex.tryLock())
+    const CarlaMutexTryLocker cmtl(dataPendingMutex);
+
+    if (cmtl.wasLocked() && dataPendingRT.count() > 0 && dataMutex.tryLock())
     {
-        if (dataPendingRT.count() > 0)
-            dataPendingRT.moveTo(data, true);
+        dataPendingRT.moveTo(data, true);
         dataMutex.unlock();
     }
 }
