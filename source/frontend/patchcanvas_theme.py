@@ -365,7 +365,7 @@ class Theme(object):
             self.port_parameter_text_sel = self.port_text
 
             self.port_height   = 14
-            self.port_offset   = -1
+            self.port_offset   = 0
             self.port_spacing  = 1
             self.port_spacingT = 0
 

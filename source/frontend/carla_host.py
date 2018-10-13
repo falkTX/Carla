@@ -2005,6 +2005,8 @@ class HostWindow(QMainWindow):
             self.ui.tabWidget.setCurrentIndex(currentIndex)
             self.ui.tabWidget.blockSignals(False)
 
+        self.scene.updateLimits()
+
         self.ui.miniCanvasPreview.setViewSize(float(width)/self.fCanvasWidth, float(height)/self.fCanvasHeight)
 
     @pyqtSlot(float, float)

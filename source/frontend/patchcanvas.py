@@ -455,6 +455,8 @@ def setCanvasSize(x, y, width, height):
     canvas.size_rect.setY(y)
     canvas.size_rect.setWidth(width)
     canvas.size_rect.setHeight(height)
+    canvas.scene.updateLimits()
+    canvas.scene.fixScaleFactor()
 
 def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
     if canvas.debug:
@@ -1098,7 +1100,7 @@ def CanvasGetNewGroupPos(horizontal):
     if canvas.debug:
         print("PatchCanvas::CanvasGetNewGroupPos(%s)" % bool2str(horizontal))
 
-    new_pos = QPointF(canvas.initial_pos.x(), canvas.initial_pos.y())
+    new_pos = QPointF(canvas.initial_pos)
     items = canvas.scene.items()
 
     break_loop = False
@@ -1221,6 +1223,7 @@ class PatchScene(QGraphicsScene):
         QGraphicsScene.__init__(self, parent)
 
         self.m_ctrl_down = False
+        self.m_scale_area = False
         self.m_mouse_down_init = False
         self.m_mouse_rubberband = False
         self.m_mid_button_down = False
@@ -1234,22 +1237,50 @@ class PatchScene(QGraphicsScene):
         if not self.m_view:
             qFatal("PatchCanvas::PatchScene() - invalid view")
 
+        self.curCut = None
+        self.curZoomArea = None
+
         self.selectionChanged.connect(self.slot_selectionChanged)
 
-    def fixScaleFactor(self):
-        scale = self.m_view.transform().m11()
+    def fixScaleFactor(self, transform=None):
+        fix, set_view = False, False
+        if not transform:
+            set_view = True
+            view = self.m_view
+            transform = view.transform()
+
+        scale = transform.m11()
         if scale > 3.0:
-            self.m_view.resetTransform()
-            self.m_view.scale(3.0, 3.0)
-        elif scale < 0.2:
-            self.m_view.resetTransform()
-            self.m_view.scale(0.2, 0.2)
-        self.scaleChanged.emit(self.m_view.transform().m11())
+            fix = True
+            transform.reset()
+            transform.scale(3.0, 3.0)
+        elif scale < self.scale_min:
+            fix = True
+            transform.reset()
+            transform.scale(self.scale_min, self.scale_min)
+
+        if set_view:
+            if fix:
+                view.setTransform(transform)
+            self.scaleChanged.emit(transform.m11())
+
+        return fix
+
+    def updateLimits(self):
+        w0 = canvas.size_rect.width()
+        h0 = canvas.size_rect.height()
+        w1 = self.m_view.width()
+        h1 = self.m_view.height()
+        self.scale_min = w1/w0 if w0/h0 > w1/h1 else h1/h0
 
     def updateTheme(self):
         self.setBackgroundBrush(canvas.theme.canvas_bg)
         self.m_rubberband.setPen(canvas.theme.rubberband_pen)
         self.m_rubberband.setBrush(canvas.theme.rubberband_brush)
+
+        cur_color = "black" if canvas.theme.canvas_bg.blackF() < 0.5 else "white"
+        self.curCut = QCursor(QPixmap(":/cursors/cut-"+cur_color+".png"), 1, 1)
+        self.curZoomArea = QCursor(QPixmap(":/cursors/zoom-area-"+cur_color+".png"), 8, 7)
 
     def zoom_fit(self):
         min_x = min_y = max_x = max_y = None
@@ -1263,31 +1294,38 @@ class PatchScene(QGraphicsScene):
                     pos = item.scenePos()
                     rect = item.boundingRect()
 
+                    x = pos.x()
+                    y = pos.y()
                     if first_value:
                         first_value = False
-                        min_x = pos.x()
-                        min_y = pos.y()
-                        max_x = pos.x() + rect.width()
-                        max_y = pos.y() + rect.height()
+                        min_x, min_y = x, y
+                        max_x = x + rect.width()
+                        max_y = y + rect.height()
                     else:
-                        min_x = min(min_x, pos.x())
-                        min_y = min(min_y, pos.y())
-                        max_x = max(max_x, pos.x() + rect.width())
-                        max_y = max(max_y, pos.y() + rect.height())
+                        min_x = min(min_x, x)
+                        min_y = min(min_y, y)
+                        max_x = max(max_x, x + rect.width())
+                        max_y = max(max_y, y + rect.height())
 
             if not first_value:
                 self.m_view.fitInView(min_x, min_y, abs(max_x - min_x), abs(max_y - min_y), Qt.KeepAspectRatio)
                 self.fixScaleFactor()
 
     def zoom_in(self):
-        if self.m_view.transform().m11() < 3.0:
-            self.m_view.scale(1.2, 1.2)
-        self.scaleChanged.emit(self.m_view.transform().m11())
+        view = self.m_view
+        transform = view.transform()
+        if transform.m11() < 3.0:
+            transform.scale(1.2, 1.2)
+            view.setTransform(transform)
+        self.scaleChanged.emit(transform.m11())
 
     def zoom_out(self):
-        if self.m_view.transform().m11() > 0.2:
-            self.m_view.scale(0.8, 0.8)
-        self.scaleChanged.emit(self.m_view.transform().m11())
+        view = self.m_view
+        transform = view.transform()
+        if transform.m11() > self.scale_min:
+            transform.scale(0.833333333333333, 0.833333333333333)
+            view.setTransform(transform)
+        self.scaleChanged.emit(transform.m11())
 
     def zoom_reset(self):
         self.m_view.resetTransform()
@@ -1323,12 +1361,19 @@ class PatchScene(QGraphicsScene):
 
         self.pluginSelected.emit(plugin_list)
 
+    def triggerRubberbandScale(self):
+        self.m_scale_area = True
+        if self.curZoomArea:
+            self.m_view.viewport().setCursor(self.curZoomArea)
+
     def keyPressEvent(self, event):
         if not self.m_view:
             return event.ignore()
 
         if event.key() == Qt.Key_Control:
             self.m_ctrl_down = True
+            if self.m_mid_button_down:
+                self.startConnectionCut()
 
         elif event.key() == Qt.Key_Home:
             self.zoom_fit()
@@ -1350,42 +1395,56 @@ class PatchScene(QGraphicsScene):
     def keyReleaseEvent(self, event):
         if event.key() == Qt.Key_Control:
             self.m_ctrl_down = False
+
+            # Connection cut mode off
+            if self.m_mid_button_down:
+                self.m_view.viewport().unsetCursor()
         QGraphicsScene.keyReleaseEvent(self, event)
 
+    def startConnectionCut(self):
+        if self.curCut:
+            self.m_view.viewport().setCursor(self.curCut)
+
     def mousePressEvent(self, event):
-        self.m_mouse_down_init  = bool(event.button() == Qt.LeftButton)
+        self.m_mouse_down_init  = bool(event.button() == Qt.LeftButton) or ((event.button() == Qt.RightButton) and self.m_ctrl_down)
         self.m_mouse_rubberband = False
         if event.button() == Qt.MidButton and self.m_ctrl_down:
             self.m_mid_button_down = True
+            self.startConnectionCut()
+
             pos = event.scenePos()
             self.m_pointer_border.moveTo(floor(pos.x()), floor(pos.y()))
 
             items = self.items(self.m_pointer_border)
             for item in items:
-                if item and item.type() in [CanvasLineType, CanvasBezierLineType]:
+                if item and item.type() in [CanvasLineType, CanvasBezierLineType, CanvasPortType]:
                     item.triggerDisconnect()
         QGraphicsScene.mousePressEvent(self, event)
 
     def mouseMoveEvent(self, event):
         if self.m_mouse_down_init:
             self.m_mouse_down_init  = False
-            self.m_mouse_rubberband = bool(len(self.selectedItems()) == 0)
+            topmost = self.itemAt(event.scenePos(), self.m_view.transform())
+            self.m_mouse_rubberband = not (topmost and topmost.type() in [CanvasBoxType, CanvasPortType])
 
         if self.m_mouse_rubberband:
+            pos = event.scenePos()
+            pos_x = pos.x()
+            pos_y = pos.y()
             if not self.m_rubberband_selection:
                 self.m_rubberband.show()
                 self.m_rubberband_selection = True
-                self.m_rubberband_orig_point = event.scenePos()
+                self.m_rubberband_orig_point = pos
+            rubberband_orig_point = self.m_rubberband_orig_point
 
-            pos = event.scenePos()
-            x = min(pos.x(), self.m_rubberband_orig_point.x())
-            y = min(pos.y(), self.m_rubberband_orig_point.y())
+            x = min(pos_x, rubberband_orig_point.x())
+            y = min(pos_y, rubberband_orig_point.y())
 
             lineHinting = canvas.theme.rubberband_pen.widthF() / 2
             self.m_rubberband.setRect(x+lineHinting,
                                       y+lineHinting,
-                                      abs(pos.x() - self.m_rubberband_orig_point.x()),
-                                      abs(pos.y() - self.m_rubberband_orig_point.y()))
+                                      abs(pos_x - rubberband_orig_point.x()),
+                                      abs(pos_y - rubberband_orig_point.y()))
             return event.accept()
 
         if self.m_mid_button_down and self.m_ctrl_down:
@@ -1399,20 +1458,28 @@ class PatchScene(QGraphicsScene):
 
     def mouseReleaseEvent(self, event):
         if self.m_rubberband_selection:
-            items_list = self.items()
-            if len(items_list) > 0:
-                for item in items_list:
-                    if item and item.isVisible() and item.type() == CanvasBoxType:
-                        item_rect = item.sceneBoundingRect()
-                        item_top_left = QPointF(item_rect.x(), item_rect.y())
-                        item_bottom_right = QPointF(item_rect.x() + item_rect.width(), item_rect.y() + item_rect.height())
+            if self.m_scale_area:
+                self.m_scale_area = False
+                self.m_view.viewport().unsetCursor()
 
-                        if self.m_rubberband.contains(item_top_left) and self.m_rubberband.contains(item_bottom_right):
-                            item.setSelected(True)
+                rect = self.m_rubberband.rect()
+                self.m_view.fitInView(rect.x(), rect.y(), rect.width(), rect.height(), Qt.KeepAspectRatio)
+                self.fixScaleFactor()
+            else:
+                items_list = self.items()
+                if len(items_list) > 0:
+                    for item in items_list:
+                        if item and item.isVisible() and item.type() == CanvasBoxType:
+                            item_rect = item.sceneBoundingRect()
+                            item_top_left = QPointF(item_rect.x(), item_rect.y())
+                            item_bottom_right = QPointF(item_rect.x() + item_rect.width(), item_rect.y() + item_rect.height())
 
-                self.m_rubberband.hide()
-                self.m_rubberband.setRect(0, 0, 0, 0)
-                self.m_rubberband_selection = False
+                            if self.m_rubberband.contains(item_top_left) and self.m_rubberband.contains(item_bottom_right):
+                                item.setSelected(True)
+
+            self.m_rubberband.hide()
+            self.m_rubberband.setRect(0, 0, 0, 0)
+            self.m_rubberband_selection = False
 
         else:
             items_list = self.selectedItems()
@@ -1429,25 +1496,40 @@ class PatchScene(QGraphicsScene):
 
         if event.button() == Qt.MidButton:
             self.m_mid_button_down = False
+
+            # Connection cut mode off
+            if self.m_ctrl_down:
+                self.m_view.viewport().unsetCursor()
             return event.accept()
 
         QGraphicsScene.mouseReleaseEvent(self, event)
+
+    def zoom_wheel(self, delta):
+        transform = self.m_view.transform()
+        scale = transform.m11()
+
+        if (delta > 0 and scale < 3.0) or (delta < 0 and scale > self.scale_min):
+            factor = 1.41 ** (delta / 240.0)
+            transform.scale(factor, factor)
+            self.fixScaleFactor(transform)
+            self.m_view.setTransform(transform)
+            self.scaleChanged.emit(transform.m11())
 
     def wheelEvent(self, event):
         if not self.m_view:
             return event.ignore()
 
         if self.m_ctrl_down:
-            factor = 1.41 ** (event.delta() / 240.0)
-            self.m_view.scale(factor, factor)
-
-            self.fixScaleFactor()
+            self.zoom_wheel(event.delta())
             return event.accept()
 
         QGraphicsScene.wheelEvent(self, event)
 
     def contextMenuEvent(self, event):
-        if len(self.selectedItems()) == 0:
+        if self.m_ctrl_down:
+            self.triggerRubberbandScale()
+            event.accept()
+        elif len(self.selectedItems()) == 0:
             event.accept()
             canvas.callback(ACTION_BG_RIGHT_CLICK, 0, 0, "")
         else:
@@ -1599,7 +1681,7 @@ class CanvasLine(QGraphicsLineItem):
         elif port_type2 == PORT_TYPE_PARAMETER:
             port_gradient.setColorAt(pos2, canvas.theme.line_parameter_sel if self.m_lineSelected else canvas.theme.line_parameter)
 
-        self.setPen(QPen(port_gradient, 2))
+        self.setPen(QPen(port_gradient, 2, Qt.SolidLine, Qt.RoundCap))
 
     def paint(self, painter, option, widget):
         painter.save()
@@ -1706,7 +1788,7 @@ class CanvasBezierLine(QGraphicsPathItem):
         elif port_type2 == PORT_TYPE_PARAMETER:
             port_gradient.setColorAt(pos2, canvas.theme.line_parameter_sel if self.m_lineSelected else canvas.theme.line_parameter)
 
-        self.setPen(QPen(port_gradient, 2))
+        self.setPen(QPen(port_gradient, 2, Qt.SolidLine, Qt.FlatCap))
 
     def paint(self, painter, option, widget):
         painter.save()
@@ -1741,6 +1823,7 @@ class CanvasLineMov(QGraphicsLineItem):
             qWarning("PatchCanvas::CanvasLineMov(%s, %s, %s) - invalid port type" % (port_mode2str(port_mode), port_type2str(port_type), parent))
             pen = QPen(Qt.black)
 
+        pen.setCapStyle(Qt.RoundCap)
         self.setPen(pen)
 
     def updateLinePos(self, scenePos):
@@ -1794,7 +1877,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
             qWarning("PatchCanvas::CanvasBezierLineMov(%s, %s, %s) - invalid port type" % (port_mode2str(port_mode), port_type2str(port_type), parent))
             pen = QPen(Qt.black)
 
-        self.setBrush(QColor(0, 0, 0, 0))
+        pen.setCapStyle(Qt.FlatCap)
         self.setPen(pen)
 
     def updateLinePos(self, scenePos):
@@ -2014,7 +2097,7 @@ class CanvasPort(QGraphicsItem):
                 canvas.scene.clearSelection()
 
         if self.m_cursor_moving:
-            self.setCursor(QCursor(Qt.ArrowCursor))
+            self.unsetCursor()
 
         self.m_hover_item = None
         self.m_mouse_down = False
@@ -2059,14 +2142,19 @@ class CanvasPort(QGraphicsItem):
         act_selected = menu.exec_(event.screenPos())
 
         if act_selected == act_x_disc_all:
-            for conn_id, group_id, port_id in conn_list:
-                canvas.callback(ACTION_PORTS_DISCONNECT, conn_id, 0, "")
+            self.triggerDisconnect(conn_list)
 
         elif act_selected == act_x_info:
             canvas.callback(ACTION_PORT_INFO, self.m_group_id, self.m_port_id, "")
 
         elif act_selected == act_x_rename:
             canvas.callback(ACTION_PORT_RENAME, self.m_group_id, self.m_port_id, "")
+
+    def triggerDisconnect(self, conn_list=None):
+        if not conn_list:
+            conn_list = CanvasGetPortConnectionList(self.m_group_id, self.m_port_id)
+        for conn_id, group_id, port_id in conn_list:
+            canvas.callback(ACTION_PORTS_DISCONNECT, conn_id, 0, "")
 
     def boundingRect(self):
         return QRectF(0, 0, self.m_port_width + 12, self.m_port_height)
@@ -2075,9 +2163,39 @@ class CanvasPort(QGraphicsItem):
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing == ANTIALIASING_FULL))
 
-        # FIXME: would be more correct to take line width from Pen, loaded to painter,
-        # but this needs some code rearrangement
-        lineHinting = canvas.theme.port_audio_jack_pen.widthF() / 2
+        selected = self.isSelected()
+        theme = canvas.theme
+        if self.m_port_type == PORT_TYPE_AUDIO_JACK:
+            poly_color = theme.port_audio_jack_bg_sel if selected else theme.port_audio_jack_bg
+            poly_pen = theme.port_audio_jack_pen_sel  if selected else theme.port_audio_jack_pen
+            text_pen = theme.port_audio_jack_text_sel if selected else theme.port_audio_jack_text
+            conn_pen = theme.port_audio_jack_pen_sel
+        elif self.m_port_type == PORT_TYPE_MIDI_JACK:
+            poly_color = theme.port_midi_jack_bg_sel if selected else theme.port_midi_jack_bg
+            poly_pen = theme.port_midi_jack_pen_sel  if selected else theme.port_midi_jack_pen
+            text_pen = theme.port_midi_jack_text_sel if selected else theme.port_midi_jack_text
+            conn_pen = theme.port_midi_jack_pen_sel
+        elif self.m_port_type == PORT_TYPE_MIDI_ALSA:
+            poly_color = theme.port_midi_alsa_bg_sel if selected else theme.port_midi_alsa_bg
+            poly_pen = theme.port_midi_alsa_pen_sel  if selected else theme.port_midi_alsa_pen
+            text_pen = theme.port_midi_alsa_text_sel if selected else theme.port_midi_alsa_text
+            conn_pen = theme.port_midi_alsa_pen_sel
+        elif self.m_port_type == PORT_TYPE_PARAMETER:
+            poly_color = theme.port_parameter_bg_sel if selected else theme.port_parameter_bg
+            poly_pen = theme.port_parameter_pen_sel  if selected else theme.port_parameter_pen
+            text_pen = theme.port_parameter_text_sel if selected else theme.port_parameter_text
+            conn_pen = theme.port_parameter_pen_sel
+        else:
+            qCritical("PatchCanvas::CanvasPort.paint() - invalid port type '%s'" % port_type2str(self.m_port_type))
+            return
+
+        if self.m_is_alternate:
+            poly_color = poly_color.darker(180)
+            #poly_pen.setColor(poly_pen.color().darker(110))
+            #text_pen.setColor(text_pen.color()) #.darker(150))
+            #conn_pen.setColor(conn_pen.color()) #.darker(150))
+
+        lineHinting = poly_pen.widthF() / 2
 
         poly_locx = [0, 0, 0, 0, 0]
         poly_corner_xhinting = (float(canvas.theme.port_height)/2) % floor(float(canvas.theme.port_height)/2)
@@ -2125,36 +2243,6 @@ class CanvasPort(QGraphicsItem):
         else:
             qCritical("PatchCanvas::CanvasPort.paint() - invalid port mode '%s'" % port_mode2str(self.m_port_mode))
             return
-
-        if self.m_port_type == PORT_TYPE_AUDIO_JACK:
-            poly_color = canvas.theme.port_audio_jack_bg_sel if self.isSelected() else canvas.theme.port_audio_jack_bg
-            poly_pen = canvas.theme.port_audio_jack_pen_sel  if self.isSelected() else canvas.theme.port_audio_jack_pen
-            text_pen = canvas.theme.port_audio_jack_text_sel if self.isSelected() else canvas.theme.port_audio_jack_text
-            conn_pen = canvas.theme.port_audio_jack_pen_sel
-        elif self.m_port_type == PORT_TYPE_MIDI_JACK:
-            poly_color = canvas.theme.port_midi_jack_bg_sel if self.isSelected() else canvas.theme.port_midi_jack_bg
-            poly_pen = canvas.theme.port_midi_jack_pen_sel  if self.isSelected() else canvas.theme.port_midi_jack_pen
-            text_pen = canvas.theme.port_midi_jack_text_sel if self.isSelected() else canvas.theme.port_midi_jack_text
-            conn_pen = canvas.theme.port_midi_jack_pen_sel
-        elif self.m_port_type == PORT_TYPE_MIDI_ALSA:
-            poly_color = canvas.theme.port_midi_alsa_bg_sel if self.isSelected() else canvas.theme.port_midi_alsa_bg
-            poly_pen = canvas.theme.port_midi_alsa_pen_sel  if self.isSelected() else canvas.theme.port_midi_alsa_pen
-            text_pen = canvas.theme.port_midi_alsa_text_sel if self.isSelected() else canvas.theme.port_midi_alsa_text
-            conn_pen = canvas.theme.port_midi_alsa_pen_sel
-        elif self.m_port_type == PORT_TYPE_PARAMETER:
-            poly_color = canvas.theme.port_parameter_bg_sel if self.isSelected() else canvas.theme.port_parameter_bg
-            poly_pen = canvas.theme.port_parameter_pen_sel  if self.isSelected() else canvas.theme.port_parameter_pen
-            text_pen = canvas.theme.port_parameter_text_sel if self.isSelected() else canvas.theme.port_parameter_text
-            conn_pen = canvas.theme.port_parameter_pen_sel
-        else:
-            qCritical("PatchCanvas::CanvasPort.paint() - invalid port type '%s'" % port_type2str(self.m_port_type))
-            return
-
-        if self.m_is_alternate:
-            poly_color = poly_color.darker(180)
-            #poly_pen.setColor(poly_pen.color().darker(110))
-            #text_pen.setColor(text_pen.color()) #.darker(150))
-            #conn_pen.setColor(conn_pen.color()) #.darker(150))
 
         polygon  = QPolygonF()
         polygon += QPointF(poly_locx[0], lineHinting)
@@ -2275,6 +2363,7 @@ class CanvasBox(QGraphicsItem):
         self.updatePositions()
 
         canvas.scene.addItem(self)
+        QTimer.singleShot(0, self.fixPos)
 
     def getGroupId(self):
         return self.m_group_id
@@ -2442,8 +2531,8 @@ class CanvasBox(QGraphicsItem):
             self.p_width = max(self.p_width, 30 + max_in_width + max_out_width)
 
             # Horizontal ports re-positioning
-            inX = 1 + canvas.theme.port_offset
-            outX = self.p_width - max_out_width - canvas.theme.port_offset - 13
+            inX = canvas.theme.port_offset
+            outX = self.p_width - max_out_width - canvas.theme.port_offset - 12
             for port_type in port_types:
                 for port in port_list:
                     if port.port_mode == PORT_MODE_INPUT:
@@ -2645,12 +2734,19 @@ class CanvasBox(QGraphicsItem):
 
     def mouseReleaseEvent(self, event):
         if self.m_cursor_moving:
-            self.setCursor(QCursor(Qt.ArrowCursor))
-            self.setX(round(self.x()))
-            self.setY(round(self.y()))
+            self.unsetCursor()
+            self.fixPos()
         self.m_mouse_down = False
         self.m_cursor_moving = False
         QGraphicsItem.mouseReleaseEvent(self, event)
+
+    def moveEvent(self, event):
+        if not self.m_mouse_down:
+            self.fixPos()
+
+    def fixPos(self):
+        self.setX(round(self.x()))
+        self.setY(round(self.y()))
 
     def boundingRect(self):
         return QRectF(0, 0, self.p_width, self.p_height)
