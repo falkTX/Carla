@@ -636,6 +636,33 @@ public:
             }
             break;
 
+        case ENGINE_CALLBACK_RELOAD_PARAMETERS:
+            if (CarlaPlugin* const plugin = pData->plugins[0].plugin)
+            {
+                if (const uint32_t count = std::min(pData->options.maxParameters, plugin->getParameterCount()))
+                {
+                    const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
+
+                    for (uint32_t i=0; i<count; ++i)
+                    {
+                        const ParameterData& paramData(plugin->getParameterData(i));
+
+                        if (paramData.type != PARAMETER_INPUT && paramData.type != PARAMETER_OUTPUT)
+                            continue;
+                        if ((paramData.hints & PARAMETER_IS_ENABLED) == 0)
+                            continue;
+
+                        fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerParameterValue);
+                        fShmNonRtServerControl.writeUInt(i);
+                        fShmNonRtServerControl.writeFloat(plugin->getParameterValue(i));
+                        fShmNonRtServerControl.commitWrite();
+
+                        fShmNonRtServerControl.waitIfDataIsReachingLimit();
+                    }
+                }
+            }
+            break;
+
         default:
             break;
         }

@@ -2045,9 +2045,12 @@ public:
                 if (index < pData->param.count)
                 {
                     const float fixedValue(pData->param.getFixedValue(index, value));
-                    fParams[index].value = fixedValue;
 
-                    CarlaPlugin::setParameterValue(index, fixedValue, false, true, true);
+                    if (carla_isNotEqual(fParams[index].value, fixedValue))
+                    {
+                        fParams[index].value = fixedValue;
+                        CarlaPlugin::setParameterValue(index, fixedValue, false, true, true);
+                    }
                 }
             }   break;
 

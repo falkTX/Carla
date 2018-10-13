@@ -584,7 +584,7 @@ public:
 
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
-        const ScopedValueSetter<bool> svs(fIsInitializing, fIsInitializing, true);
+        const ScopedValueSetter<bool> svs(fIsInitializing, fIsInitializing, false);
 
         if (pData->active)
             deactivate();
@@ -1820,26 +1820,26 @@ protected:
 
             const pthread_t thisThread = pthread_self();
 
-            // Called from plugin process thread, nasty! (likely MIDI learn)
-            /**/ if (pthread_equal(thisThread, fProcThread))
+            /**/ if (fProcThread != kNullThread && pthread_equal(thisThread, fProcThread))
             {
+                // Called from plugin process thread, nasty! (likely MIDI learn)
                 CARLA_SAFE_ASSERT(fIsProcessing);
                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, fixedValue);
             }
-            // Called from effSetChunk or effSetProgram
-            else if (pthread_equal(thisThread, fChangingValuesThread))
+            else if (fChangingValuesThread != kNullThread && pthread_equal(thisThread, fChangingValuesThread))
             {
+                // Called from effSetChunk or effSetProgram
                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, fixedValue);
             }
-            // Called from UI
             else if (fUI.isVisible)
             {
+                // Called from UI?
                 CarlaPlugin::setParameterValue(uindex, fixedValue, false, true, true);
             }
-            // Unknown
-            // TODO - check if plugin or UI is initializing
             else
             {
+                // Unknown
+                // TODO - check if plugin or UI is initializing
                 carla_stdout("audioMasterAutomate called from unknown source");
 
                 setParameterValue(uindex, fixedValue, true, true, true);
@@ -2092,7 +2092,7 @@ protected:
                 dispatcher(effEditIdle);
 
             // Update current program
-            if (pData->prog.count > 0)
+            if (pData->prog.count > 1)
             {
                 const int32_t current = static_cast<int32_t>(dispatcher(effGetProgram));
 
@@ -2115,7 +2115,7 @@ protected:
             }
 
             if (! fIsInitializing)
-                pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0f, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_RELOAD_PARAMETERS, pData->id, 0, 0, 0.0f, nullptr);
 
             ret = 1;
             break;
