@@ -1619,9 +1619,9 @@ class CanvasLine(QGraphicsLineItem):
             return
 
         if options.eyecandy == EYECANDY_FULL:
-            if yesno:
+            if yesno and not self.m_lineSelected:
                 self.setGraphicsEffect(CanvasPortGlow(self.item1.getPortType(), self.toGraphicsObject()))
-            else:
+            elif self.m_lineSelected and not yesno:
                 self.setGraphicsEffect(None)
 
         self.m_lineSelected = yesno
@@ -1720,9 +1720,9 @@ class CanvasBezierLine(QGraphicsPathItem):
             return
 
         if options.eyecandy == EYECANDY_FULL:
-            if yesno:
+            if yesno and not self.m_lineSelected:
                 self.setGraphicsEffect(CanvasPortGlow(self.item1.getPortType(), self.toGraphicsObject()))
-            else:
+            elif self.m_lineSelected and not yesno:
                 self.setGraphicsEffect(None)
 
         self.m_lineSelected = yesno
@@ -1935,7 +1935,6 @@ class CanvasPort(QGraphicsItem):
 
         self.m_line_mov = None
         self.m_hover_item = None
-        self.m_last_selected_state = False
 
         self.m_mouse_down = False
         self.m_cursor_moving = False
@@ -2150,6 +2149,17 @@ class CanvasPort(QGraphicsItem):
         elif act_selected == act_x_rename:
             canvas.callback(ACTION_PORT_RENAME, self.m_group_id, self.m_port_id, "")
 
+    def setPortSelected(self, yesno):
+        for connection in canvas.connection_list:
+            if ((connection.group_out_id == self.m_group_id and connection.port_out_id == self.m_port_id) or
+                (connection.group_in_id  == self.m_group_id and connection.port_in_id  == self.m_port_id)):
+                connection.widget.setLineSelected(yesno)
+
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemSelectedHasChanged:
+            self.setPortSelected(value)
+        return QGraphicsItem.itemChange(self, change, value)
+
     def triggerDisconnect(self, conn_list=None):
         if not conn_list:
             conn_list = CanvasGetPortConnectionList(self.m_group_id, self.m_port_id)
@@ -2266,12 +2276,6 @@ class CanvasPort(QGraphicsItem):
         painter.setFont(self.m_port_font)
         painter.drawText(text_pos, self.m_port_name)
 
-        if self.isSelected() != self.m_last_selected_state:
-            for connection in canvas.connection_list:
-                if ((connection.group_out_id == self.m_group_id and connection.port_out_id == self.m_port_id) or
-                    (connection.group_in_id  == self.m_group_id and connection.port_in_id  == self.m_port_id)):
-                    connection.widget.setLineSelected(self.isSelected())
-
         if canvas.theme.idx == Theme.THEME_OOSTUDIO and canvas.theme.port_bg_pixmap:
             painter.setPen(Qt.NoPen)
             painter.setBrush(conn_pen.brush())
@@ -2282,8 +2286,6 @@ class CanvasPort(QGraphicsItem):
                 connRect = QRectF(QPointF(portRect.right()-2, portRect.top()), QSizeF(2, portRect.height()))
 
             painter.drawRect(connRect)
-
-        self.m_last_selected_state = self.isSelected()
 
         painter.restore()
 
