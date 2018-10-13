@@ -25,11 +25,11 @@ from carla_config import *
 # Imports (Global)
 
 if config_UseQt5:
-    from PyQt5.QtCore import Qt, QRectF
+    from PyQt5.QtCore import Qt, QRectF, QLineF
     from PyQt5.QtGui import QFont, QFontDatabase, QPen, QPixmap
     from PyQt5.QtWidgets import QColorDialog, QFrame, QPushButton
 else:
-    from PyQt4.QtCore import Qt, QRectF
+    from PyQt4.QtCore import Qt, QRectF, QLineF
     from PyQt4.QtGui import QFont, QFontDatabase, QPen, QPixmap
     from PyQt4.QtGui import QColorDialog, QFrame, QPushButton
 
@@ -300,6 +300,12 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         host.OptionChangedCallback.connect(self.slot_handleOptionChangedCallback)
         host.UiStateChangedCallback.connect(self.slot_handleUiStateChangedCallback)
 
+        # Prepare resources
+        self.sel_pen = QPen(Qt.cyan, 1, Qt.SolidLine, Qt.FlatCap, Qt.MiterJoin)
+        self.sel_pen.setDashPattern([2.0, 4.0])
+        self.sel_side_pen = QPen(Qt.cyan, 2, Qt.SolidLine, Qt.FlatCap)
+        self.shadow_pen = QPen(Qt.black, 1)
+
     # -----------------------------------------------------------------
 
     @pyqtSlot(int, str)
@@ -527,7 +533,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             if self.fSkinStyle in ("3bandeq", "calf_black", "calf_blue", "nekobi", "zynfx"):
                 styleSheet2  = "background-image: url(:/bitmaps/background_%s.png);" % self.fSkinStyle
             else:
-                styleSheet2  = "background-color: rgb(%i, %i, %i);" % self.fSkinColor
+                styleSheet2  = "background-color: rgb(200, 200, 200);"
                 styleSheet2 += "background-image: url(:/bitmaps/background_noise1.png);"
 
                 if not self.fDarkStyle:
@@ -987,17 +993,27 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
     #------------------------------------------------------------------
 
-    def drawOutline(self):
-        painter = QPainter(self)
+    def drawOutline(self, painter):
+        painter.save()
+        painter.setBrush(Qt.transparent)
+        w = float(self.width())
+        h = float(self.height())
+
+        painter.setPen(self.shadow_pen)
+        painter.drawLine(QLineF(0.5, h-1, w-1, h-1))
 
         if self.fIsSelected:
-            painter.setPen(QPen(Qt.cyan, 4))
-            painter.setBrush(Qt.transparent)
-            painter.drawRect(0, 0, self.width(), self.height())
-        else:
-            painter.setPen(QPen(Qt.black, 1))
-            painter.setBrush(Qt.black)
-            painter.drawLine(0, self.height()-1, self.width(), self.height()-1)
+            painter.setCompositionMode(QPainter.CompositionMode_Plus)
+
+            painter.setPen(self.sel_pen)
+            painter.drawRect(QRectF(0.5, 0.5, w-1, h-1))
+            sidelines = [QLineF(1, 1, 1, h-1), QLineF(w-1, 1, w-1, h-1)]
+            painter.setPen(self.sel_side_pen)
+            painter.drawLines(sidelines)
+
+            painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+
+        painter.restore()
 
     def updateParameterValues(self):
         for paramIndex, paramWidget in self.fParameterList:
@@ -1025,12 +1041,6 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         actColor   = menu.addAction(self.tr("Change Color..."))
         actSkin    = menu.addAction(self.tr("Change Skin..."))
         menu.addSeparator()
-
-        if isinstance(self, PluginSlot_Classic):
-            actCompact.setEnabled(False)
-            actColor.setEnabled(False)
-        elif self.fSkinStyle in ("openav", "openav-old", "3bandeq", "calf_black", "calf_blue", "nekobi", "zynfx"):
-            actColor.setEnabled(False)
 
         # -------------------------------------------------------------
         # Move up and down
@@ -1126,7 +1136,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             if not color.isValid():
                 return
 
-            color    = (color.red(), color.green(), color.blue())
+            color    = color.getRgb()[0:3]
             colorStr = "%i;%i;%i" % color
             gCarla.gui.changePluginColor(self.fPluginId, color, colorStr)
 
@@ -1406,7 +1416,18 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         QFrame.timerEvent(self, event)
 
     def paintEvent(self, event):
-        self.drawOutline()
+        painter = QPainter(self)
+
+        # Colorization
+        if self.fSkinColor != (0,0,0):
+            painter.setCompositionMode(QPainter.CompositionMode_Multiply)
+            r,g,b = self.fSkinColor
+            painter.setBrush(QColor(r,g,b))
+            painter.setPen(Qt.NoPen)
+            painter.drawRect(QRectF(0,0,self.width(),self.height()))
+            painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+
+        self.drawOutline(painter)
         QFrame.paintEvent(self, event)
 
 # ------------------------------------------------------------------------------------------------------------

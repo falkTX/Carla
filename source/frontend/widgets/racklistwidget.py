@@ -25,11 +25,11 @@ from carla_config import *
 # Imports (Global)
 
 if config_UseQt5:
-    from PyQt5.QtCore import Qt, QSize
+    from PyQt5.QtCore import Qt, QSize, QRect, QEvent
     from PyQt5.QtGui import QPainter, QPixmap
     from PyQt5.QtWidgets import QAbstractItemView, QFrame, QListWidget, QListWidgetItem
 else:
-    from PyQt4.QtCore import Qt, QSize
+    from PyQt4.QtCore import Qt, QSize, QRect, QEvent
     from PyQt4.QtGui import QAbstractItemView, QFrame, QListWidget, QListWidgetItem, QPainter, QPixmap
 
 # ------------------------------------------------------------------------------------------------------------
@@ -242,8 +242,7 @@ class RackListWidget(QListWidget):
         self.setDropIndicatorShown(True)
         self.viewport().setAcceptDrops(True)
 
-        self.setFrameShape(QFrame.NoFrame)
-        self.setFrameShadow(QFrame.Plain)
+        self.updateStyle()
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -360,13 +359,49 @@ class RackListWidget(QListWidget):
 
         QListWidget.mousePressEvent(self, event)
 
+    def changeEvent(self, event):
+        if event.type() in (QEvent.StyleChange, QEvent.PaletteChange):
+            self.updateStyle()
+        QWidget.changeEvent(self, event)
+
     def paintEvent(self, event):
         painter = QPainter(self.viewport())
-        painter.drawTiledPixmap(0, 0, self.fPixmapWidth, self.height(), self.fPixmapL)
-        painter.drawTiledPixmap(self.width()-self.fPixmapWidth, 0, self.fPixmapWidth, self.height(), self.fPixmapR)
+
+        width = self.width()
+        height = self.height()
+        imgL_rect = QRect(0, 0, self.fPixmapWidth, height)
+        imgR_rect = QRect(width-self.fPixmapWidth, 0, self.fPixmapWidth, height)
+
+        painter.setBrush(self.rail_color)
+        painter.setPen(Qt.NoPen)
+        painter.drawRects(imgL_rect, imgR_rect)
+        painter.setCompositionMode(QPainter.CompositionMode_Multiply)
+        painter.drawTiledPixmap(imgL_rect, self.fPixmapL)
+        painter.drawTiledPixmap(imgR_rect, self.fPixmapR)
+        painter.setCompositionMode(QPainter.CompositionMode_Plus)
+        painter.drawTiledPixmap(imgL_rect, self.fPixmapL)
+        painter.drawTiledPixmap(imgR_rect, self.fPixmapR)
+        painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+
+        painter.setPen(self.edge_color)
+        painter.setBrush(Qt.NoBrush)
+        painter.drawRect(self.fPixmapWidth, 0, width-self.fPixmapWidth*2, height)
+
         QListWidget.paintEvent(self, event)
 
     # --------------------------------------------------------------------------------------------------------
+
+    def updateStyle(self):
+        palette = self.palette()
+
+        bg_color = palette.window().color()
+        base_color = palette.base().color()
+        text_color = palette.text().color()
+        r0,g0,b0,a = bg_color.getRgb()
+        r1,g1,b1,a = text_color.getRgb()
+
+        self.rail_color = QColor((r0*3+r1)/4, (g0*3+g1)/4, (b0*3+b1)/4)
+        self.edge_color = self.rail_color.darker(115) if self.rail_color.blackF() > base_color.blackF() else base_color.darker(115)
 
     def selectionChanged(self, selected, deselected):
         for index in deselected.indexes():
