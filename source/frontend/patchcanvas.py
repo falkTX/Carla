@@ -2265,7 +2265,7 @@ class CanvasPort(QGraphicsItem):
         polygon += QPointF(poly_locx[0], lineHinting)
 
         if canvas.theme.port_bg_pixmap:
-            portRect = polygon.boundingRect()
+            portRect = polygon.boundingRect().adjusted(-lineHinting+1, -lineHinting+1, lineHinting-1, lineHinting-1)
             portPos  = portRect.topLeft()
             painter.drawTiledPixmap(portRect, canvas.theme.port_bg_pixmap, portPos)
         else:
@@ -2279,15 +2279,11 @@ class CanvasPort(QGraphicsItem):
         painter.drawText(text_pos, self.m_port_name)
 
         if canvas.theme.idx == Theme.THEME_OOSTUDIO and canvas.theme.port_bg_pixmap:
-            painter.setPen(Qt.NoPen)
-            painter.setBrush(conn_pen.brush())
-
             if self.m_port_mode == PORT_MODE_INPUT:
-                connRect = QRectF(portRect.topLeft(), QSizeF(2, portRect.height()))
+                connLineX = portRect.left()+1
             else:
-                connRect = QRectF(QPointF(portRect.right()-2, portRect.top()), QSizeF(2, portRect.height()))
-
-            painter.drawRect(connRect)
+                connLineX = portRect.right()-1
+            painter.fillRect(QRectF(connLineX-1, portRect.top(), 2, portRect.height()), conn_pen.brush())
 
         painter.restore()
 
