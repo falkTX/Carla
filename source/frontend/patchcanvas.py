@@ -2181,22 +2181,22 @@ class CanvasPort(QGraphicsItem):
             poly_color = theme.port_audio_jack_bg_sel if selected else theme.port_audio_jack_bg
             poly_pen = theme.port_audio_jack_pen_sel  if selected else theme.port_audio_jack_pen
             text_pen = theme.port_audio_jack_text_sel if selected else theme.port_audio_jack_text
-            conn_pen = theme.port_audio_jack_pen_sel
+            conn_pen = QPen(theme.port_audio_jack_pen_sel)
         elif self.m_port_type == PORT_TYPE_MIDI_JACK:
             poly_color = theme.port_midi_jack_bg_sel if selected else theme.port_midi_jack_bg
             poly_pen = theme.port_midi_jack_pen_sel  if selected else theme.port_midi_jack_pen
             text_pen = theme.port_midi_jack_text_sel if selected else theme.port_midi_jack_text
-            conn_pen = theme.port_midi_jack_pen_sel
+            conn_pen = QPen(theme.port_midi_jack_pen_sel)
         elif self.m_port_type == PORT_TYPE_MIDI_ALSA:
             poly_color = theme.port_midi_alsa_bg_sel if selected else theme.port_midi_alsa_bg
             poly_pen = theme.port_midi_alsa_pen_sel  if selected else theme.port_midi_alsa_pen
             text_pen = theme.port_midi_alsa_text_sel if selected else theme.port_midi_alsa_text
-            conn_pen = theme.port_midi_alsa_pen_sel
+            conn_pen = QPen(theme.port_midi_alsa_pen_sel)
         elif self.m_port_type == PORT_TYPE_PARAMETER:
             poly_color = theme.port_parameter_bg_sel if selected else theme.port_parameter_bg
             poly_pen = theme.port_parameter_pen_sel  if selected else theme.port_parameter_pen
             text_pen = theme.port_parameter_text_sel if selected else theme.port_parameter_text
-            conn_pen = theme.port_parameter_pen_sel
+            conn_pen = QPen(theme.port_parameter_pen_sel)
         else:
             qCritical("PatchCanvas::CanvasPort.paint() - invalid port type '%s'" % port_type2str(self.m_port_type))
             return
@@ -2279,11 +2279,18 @@ class CanvasPort(QGraphicsItem):
         painter.drawText(text_pos, self.m_port_name)
 
         if canvas.theme.idx == Theme.THEME_OOSTUDIO and canvas.theme.port_bg_pixmap:
+            conn_pen.setCosmetic(True)
+            conn_pen.setWidthF(0.4)
+            painter.setPen(conn_pen)
+
             if self.m_port_mode == PORT_MODE_INPUT:
                 connLineX = portRect.left()+1
             else:
                 connLineX = portRect.right()-1
-            painter.fillRect(QRectF(connLineX-1, portRect.top(), 2, portRect.height()), conn_pen.brush())
+            conn_path = QPainterPath()
+            conn_path.addRect(QRectF(connLineX-1, portRect.top(), 2, portRect.height()))
+            painter.fillPath(conn_path, conn_pen.brush())
+            painter.drawLine(QLineF(connLineX, portRect.top(), connLineX, portRect.bottom()))
 
         painter.restore()
 
