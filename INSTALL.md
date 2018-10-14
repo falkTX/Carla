@@ -9,7 +9,7 @@ $ [sudo] make install
 You can run it without installing, by using instead:
 ```
 $ make
-$ ./source/carla
+$ ./source/frontend/carla
 ```
 
 Packagers can make use of the `PREFIX` and `DESTDIR` variable during install, like this:
