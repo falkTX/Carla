@@ -608,7 +608,10 @@ class HostWindow(QMainWindow):
             return
 
         self.host.set_custom_data(pluginId, CUSTOM_DATA_TYPE_PROPERTY, "CarlaSkin", skin)
-        pitem.recreateWidget(newSkin = skin)
+        if skin not in ("default","rncbc","presets","mpresets"):
+            pitem.recreateWidget(newSkin = skin, newColor = (255,255,255))
+        else:
+            pitem.recreateWidget(newSkin = skin)
 
     def switchPlugins(self, pluginIdA, pluginIdB):
         if pluginIdA == pluginIdB:
