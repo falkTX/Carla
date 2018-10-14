@@ -1687,7 +1687,18 @@ class CanvasLine(QGraphicsLineItem):
     def paint(self, painter, option, widget):
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing))
+
+        pen = self.pen()
+        cosm_pen = QPen(pen)
+        cosm_pen.setCosmetic(True)
+        cosm_pen.setWidthF(0.20)
+
         QGraphicsLineItem.paint(self, painter, option, widget)
+
+        painter.setPen(cosm_pen)
+        painter.setBrush(Qt.NoBrush)
+        painter.drawLine(self.line())
+
         painter.restore()
 
 # ------------------------------------------------------------------------------
@@ -1795,7 +1806,18 @@ class CanvasBezierLine(QGraphicsPathItem):
     def paint(self, painter, option, widget):
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing))
+
+        pen = self.pen()
+        cosm_pen = QPen(pen)
+        cosm_pen.setCosmetic(True)
+        cosm_pen.setWidthF(0.20)
+
         QGraphicsPathItem.paint(self, painter, option, widget)
+
+        painter.setPen(cosm_pen)
+        painter.setBrush(Qt.NoBrush)
+        painter.drawPath(self.path())
+
         painter.restore()
 
 # ------------------------------------------------------------------------------
