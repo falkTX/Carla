@@ -1614,14 +1614,15 @@ class CanvasLine(QGraphicsLineItem):
     def isLineSelected(self):
         return self.m_lineSelected
 
-    def setLineSelected(self, yesno):
+    def updateLineSelected(self):
         if self.m_locked:
             return
 
-        if options.eyecandy == EYECANDY_FULL:
-            if yesno and not self.m_lineSelected:
+        yesno = self.item1.isSelected() or self.item2.isSelected()
+        if yesno != self.m_lineSelected and options.eyecandy == EYECANDY_FULL:
+            if yesno:
                 self.setGraphicsEffect(CanvasPortGlow(self.item1.getPortType(), self.toGraphicsObject()))
-            elif self.m_lineSelected and not yesno:
+            else:
                 self.setGraphicsEffect(None)
 
         self.m_lineSelected = yesno
@@ -1715,14 +1716,15 @@ class CanvasBezierLine(QGraphicsPathItem):
     def isLineSelected(self):
         return self.m_lineSelected
 
-    def setLineSelected(self, yesno):
+    def updateLineSelected(self):
         if self.m_locked:
             return
 
-        if options.eyecandy == EYECANDY_FULL:
-            if yesno and not self.m_lineSelected:
+        yesno = self.item1.isSelected() or self.item2.isSelected()
+        if yesno != self.m_lineSelected and options.eyecandy == EYECANDY_FULL:
+            if yesno:
                 self.setGraphicsEffect(CanvasPortGlow(self.item1.getPortType(), self.toGraphicsObject()))
-            elif self.m_lineSelected and not yesno:
+            else:
                 self.setGraphicsEffect(None)
 
         self.m_lineSelected = yesno
@@ -2153,7 +2155,7 @@ class CanvasPort(QGraphicsItem):
         for connection in canvas.connection_list:
             if ((connection.group_out_id == self.m_group_id and connection.port_out_id == self.m_port_id) or
                 (connection.group_in_id  == self.m_group_id and connection.port_in_id  == self.m_port_id)):
-                connection.widget.setLineSelected(yesno)
+                    connection.widget.updateLineSelected()
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemSelectedHasChanged:
