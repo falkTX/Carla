@@ -175,6 +175,22 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
+{
+    /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
+    /* hints     */ NATIVE_PLUGIN_IS_RTSAFE,
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_EVERYTHING,
+    /* audioIns  */ 0,
+    /* audioOuts */ 0,
+    /* midiIns   */ 1,
+    /* midiOuts  */ 1,
+    /* paramIns  */ 2,
+    /* paramOuts */ 0,
+    /* name      */ "MIDI Channelize",
+    /* label     */ "midichannelize",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    DESCFUNCS
+},
 
 // --------------------------------------------------------------------------------------------------------------------
 // Audio file
