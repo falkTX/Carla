@@ -1396,15 +1396,23 @@ public:
                             if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                                 continue;
 
-                            VstMidiEvent& vstMidiEvent(fMidiEvents[fMidiEventCount++]);
-                            carla_zeroStruct(vstMidiEvent);
+                            VstMidiEvent& vstMidiEvent_MSB(fMidiEvents[fMidiEventCount++]);
+                            carla_zeroStruct(vstMidiEvent_MSB);
+                            vstMidiEvent_MSB.type = kVstMidiType;
+                            vstMidiEvent_MSB.byteSize = kVstMidiEventSize;
+                            vstMidiEvent_MSB.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : event.time);
+                            vstMidiEvent_MSB.midiData[0] = char(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
+                            vstMidiEvent_MSB.midiData[1] = MIDI_CONTROL_BANK_SELECT;
+                            vstMidiEvent_MSB.midiData[2] = 0;
 
-                            vstMidiEvent.type        = kVstMidiType;
-                            vstMidiEvent.byteSize    = kVstMidiEventSize;
-                            vstMidiEvent.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : eventTime);
-                            vstMidiEvent.midiData[0] = char(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
-                            vstMidiEvent.midiData[1] = MIDI_CONTROL_BANK_SELECT;
-                            vstMidiEvent.midiData[2] = char(ctrlEvent.param);
+                            VstMidiEvent& vstMidiEvent_LSB(fMidiEvents[fMidiEventCount++]);
+                            carla_zeroStruct(vstMidiEvent_LSB);
+                            vstMidiEvent_LSB.type        = kVstMidiType;
+                            vstMidiEvent_LSB.byteSize    = kVstMidiEventSize;
+                            vstMidiEvent_LSB.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : eventTime);
+                            vstMidiEvent_LSB.midiData[0] = char(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
+                            vstMidiEvent_LSB.midiData[1] = MIDI_CONTROL_BANK_SELECT__LSB;
+                            vstMidiEvent_LSB.midiData[2] = char(ctrlEvent.param);
                         }
                         break;
 
