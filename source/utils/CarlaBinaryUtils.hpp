@@ -93,6 +93,9 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
                        ? BINARY_WIN64
                        : BINARY_WIN32;
 
+        if (std::strstr(output, "MS-DOS executable, MZ for MS-DOS") != nullptr)
+            return BINARY_WIN32;
+
         if (std::strstr(output, "ELF") != nullptr)
             return (std::strstr(output, "x86-64") != nullptr || std::strstr(output, "aarch64") != nullptr)
                    ? BINARY_POSIX64
