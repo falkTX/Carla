@@ -1457,6 +1457,10 @@ class PatchScene(QGraphicsScene):
         QGraphicsScene.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
+        if self.m_scale_area and not self.m_rubberband_selection:
+            self.m_scale_area = False
+            self.m_view.viewport().unsetCursor()
+
         if self.m_rubberband_selection:
             if self.m_scale_area:
                 self.m_scale_area = False
