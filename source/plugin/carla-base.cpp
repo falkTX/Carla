@@ -25,10 +25,8 @@
 #ifdef CARLA_NATIVE_PLUGIN_LV2
 #include "lv2/lv2.h"
 
-CARLA_EXTERN_C
+// defined in CarlaPluginNative.cpp
 std::size_t carla_getNativePluginCount() noexcept;
-
-CARLA_EXTERN_C
 const NativePluginDescriptor* carla_getNativePluginDescriptor(const std::size_t index) noexcept;
 #endif
 

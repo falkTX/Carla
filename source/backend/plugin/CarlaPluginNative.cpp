@@ -27,10 +27,10 @@ using water::jmax;
 using water::String;
 using water::StringArray;
 
-CARLA_EXTERN_C
-std::size_t carla_getNativePluginCount() noexcept;
+// -----------------------------------------------------------------------
+// used in carla-base.cpp
 
-CARLA_EXTERN_C
+std::size_t carla_getNativePluginCount() noexcept;
 const NativePluginDescriptor* carla_getNativePluginDescriptor(const std::size_t index) noexcept;
 
 // -----------------------------------------------------------------------
