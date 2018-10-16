@@ -258,7 +258,7 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
             CARLA_SAFE_ASSERT_RETURN(size >= 2, true);
 
             event.type       = kEngineEventTypeControl;
-            event.ctrl.type  = kEngineControlEventTypeMidiBank;
+            event.ctrl.type  = kEngineControlEventTypeMidiProgram;
             event.ctrl.param = data[1];
             event.ctrl.value = 0.0f;
             return true;
