@@ -3,7 +3,7 @@ Manager=KDevGenericManager
 Name=Carla
 
 [Filters]
-Excludes=*/.*,*/*~,*/*.pyc,*/ui_*.py,*/__pycache__/
+Excludes=*/.*,*/*~,*/*.pyc,*/ui_*.py,*/__pycache__/,external
 
 [Project]
 VersionControlSupport=kdevgit
