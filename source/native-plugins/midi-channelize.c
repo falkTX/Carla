@@ -53,7 +53,7 @@ static void midichannelize_cleanup(NativePluginHandle handle)
     free(handlePtr);
 }
 
-static uint32_t midichannelize_get_parameter_count(MidiChannelizeHandle handle)
+static uint32_t midichannelize_get_parameter_count(NativePluginHandle handle)
 {
     return PARAM_COUNT;
 
@@ -61,7 +61,7 @@ static uint32_t midichannelize_get_parameter_count(MidiChannelizeHandle handle)
     (void)handle;
 }
 
-static const NativeParameter* midichannelize_get_parameter_info(MidiChannelizeHandle handle, uint32_t index)
+static const NativeParameter* midichannelize_get_parameter_info(NativePluginHandle handle, uint32_t index)
 {
     if (index > PARAM_COUNT)
         return NULL;
