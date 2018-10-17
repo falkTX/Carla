@@ -1686,7 +1686,7 @@ class CanvasLine(QGraphicsLineItem):
         elif port_type2 == PORT_TYPE_PARAMETER:
             port_gradient.setColorAt(pos2, canvas.theme.line_parameter_sel if self.m_lineSelected else canvas.theme.line_parameter)
 
-        self.setPen(QPen(port_gradient, 2, Qt.SolidLine, Qt.RoundCap))
+        self.setPen(QPen(port_gradient, 2.00001, Qt.SolidLine, Qt.RoundCap))
 
     def paint(self, painter, option, widget):
         painter.save()
@@ -1695,12 +1695,13 @@ class CanvasLine(QGraphicsLineItem):
         pen = self.pen()
         cosm_pen = QPen(pen)
         cosm_pen.setCosmetic(True)
-        cosm_pen.setWidthF(0.20)
+        cosm_pen.setWidthF(1.00001)
 
         QGraphicsLineItem.paint(self, painter, option, widget)
 
         painter.setPen(cosm_pen)
         painter.setBrush(Qt.NoBrush)
+        painter.setOpacity(0.2)
         painter.drawLine(self.line())
 
         painter.restore()
@@ -1805,7 +1806,7 @@ class CanvasBezierLine(QGraphicsPathItem):
         elif port_type2 == PORT_TYPE_PARAMETER:
             port_gradient.setColorAt(pos2, canvas.theme.line_parameter_sel if self.m_lineSelected else canvas.theme.line_parameter)
 
-        self.setPen(QPen(port_gradient, 2, Qt.SolidLine, Qt.FlatCap))
+        self.setPen(QPen(port_gradient, 2.00001, Qt.SolidLine, Qt.FlatCap))
 
     def paint(self, painter, option, widget):
         painter.save()
@@ -1814,12 +1815,13 @@ class CanvasBezierLine(QGraphicsPathItem):
         pen = self.pen()
         cosm_pen = QPen(pen)
         cosm_pen.setCosmetic(True)
-        cosm_pen.setWidthF(0.20)
+        cosm_pen.setWidthF(1.00001)
 
         QGraphicsPathItem.paint(self, painter, option, widget)
 
         painter.setPen(cosm_pen)
         painter.setBrush(Qt.NoBrush)
+        painter.setOpacity(0.2)
         painter.drawPath(self.path())
 
         painter.restore()
@@ -1852,6 +1854,7 @@ class CanvasLineMov(QGraphicsLineItem):
             pen = QPen(Qt.black)
 
         pen.setCapStyle(Qt.RoundCap)
+        pen.setWidthF(pen.widthF() + 0.00001)
         self.setPen(pen)
 
     def updateLinePos(self, scenePos):
@@ -1906,6 +1909,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
             pen = QPen(Qt.black)
 
         pen.setCapStyle(Qt.FlatCap)
+        pen.setWidthF(pen.widthF() + 0.00001)
         self.setPen(pen)
 
     def updateLinePos(self, scenePos):
@@ -2226,6 +2230,10 @@ class CanvasPort(QGraphicsItem):
         else:
             qCritical("PatchCanvas::CanvasPort.paint() - invalid port type '%s'" % port_type2str(self.m_port_type))
             return
+
+        # To prevent quality worsening
+        poly_pen = QPen(poly_pen)
+        poly_pen.setWidthF(poly_pen.widthF() + 0.00001)
 
         if self.m_is_alternate:
             poly_color = poly_color.darker(180)
@@ -2790,7 +2798,8 @@ class CanvasBox(QGraphicsItem):
         rect = QRectF(0, 0, self.p_width, self.p_height)
 
         # Draw rectangle
-        pen = canvas.theme.box_pen_sel if self.isSelected() else canvas.theme.box_pen
+        pen = QPen(canvas.theme.box_pen_sel if self.isSelected() else canvas.theme.box_pen)
+        pen.setWidthF(pen.widthF() + 0.00001)
         painter.setPen(pen)
         lineHinting = pen.widthF() / 2
 
