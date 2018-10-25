@@ -3,7 +3,7 @@ libdir=X-LIBDIR-X/carla
 includedir=X-INCLUDEDIR-X/carla
 
 Name: carla-standalone
-Version: 1.9.11
+Version: 1.9.12
 Description: Carla Host Standalone
 Libs: -Wl,rpath=${libdir} -L${libdir} -lcarla_standalone2
 Cflags: -DREAL_BUILD -I${includedir} -I${includedir}/includes
