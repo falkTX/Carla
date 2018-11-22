@@ -63,6 +63,7 @@ public:
           fDisplay(nullptr),
           fHostWindow(0),
           fChildWindow(0),
+          fChildWindowConfigured(false),
           fIsVisible(false),
           fFirstShow(true),
           fSetSizeCalledAtLeastOnce(false),
@@ -155,8 +156,10 @@ public:
                     carla_zeroStruct(hints);
 
                     if (XGetNormalHints(fDisplay, childWindow, &hints) && hints.width > 0 && hints.height > 0)
+                    {
                         setSize(static_cast<uint>(hints.width),
                                 static_cast<uint>(hints.height), false);
+                    }
                 }
 
                 const Atom _xevp = XInternAtom(fDisplay, "_XEventProc", False);
@@ -225,7 +228,18 @@ public:
                         const uint height = static_cast<uint>(event.xconfigure.height);
 
                         if (fChildWindow != 0)
+                        {
+                            XSizeHints sizeHints;
+                            carla_zeroStruct(sizeHints);
+
+                            if (!fChildWindowConfigured && XGetNormalHints(fDisplay, fChildWindow, &sizeHints))
+                            {
+                                fChildWindowConfigured = true;
+                                XSetNormalHints(fDisplay, fHostWindow, &sizeHints);
+                            }
+
                             XResizeWindow(fDisplay, fChildWindow, width, height);
+                        }
 
                         fCallback->handlePluginUIResized(width, height);
                     }
@@ -361,6 +375,7 @@ private:
     Display* fDisplay;
     Window   fHostWindow;
     Window   fChildWindow;
+    bool     fChildWindowConfigured;
     bool     fIsVisible;
     bool     fFirstShow;
     bool     fSetSizeCalledAtLeastOnce;
