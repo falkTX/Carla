@@ -281,9 +281,17 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHostWindow != 0,);
 
-        XRaiseWindow(fDisplay, fHostWindow);
-        XSetInputFocus(fDisplay, fHostWindow, RevertToPointerRoot, CurrentTime);
-        XFlush(fDisplay);
+        XWindowAttributes wa;
+        carla_zeroStruct(wa);
+
+        CARLA_SAFE_ASSERT_RETURN(XGetWindowAttributes(fDisplay, fHostWindow, &wa),);
+
+        if (wa.map_state == IsViewable)
+        {
+            XRaiseWindow(fDisplay, fHostWindow);
+            XSetInputFocus(fDisplay, fHostWindow, RevertToPointerRoot, CurrentTime);
+            XFlush(fDisplay);
+        }
     }
 
     void setSize(const uint width, const uint height, const bool forceUpdate) override
