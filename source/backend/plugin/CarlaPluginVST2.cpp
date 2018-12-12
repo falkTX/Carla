@@ -2087,10 +2087,6 @@ protected:
             break;
 
         case audioMasterUpdateDisplay:
-            // Idle UI if visible
-            if (fUI.isVisible)
-                dispatcher(effEditIdle);
-
             // Update current program
             if (pData->prog.count > 0)
             {
