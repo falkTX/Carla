@@ -2075,6 +2075,11 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                 // check old stuff, unhandled now
                 if (tag == "AU_PATH" || tag == "VST3_PATH" || tag == "GIG_PATH")
                     continue;
+                // ignored tags
+                if (tag == "LADSPA_PATH" || tag == "DSSI_PATH" || tag == "LV2_PATH" || tag == "VST2_PATH")
+                    continue;
+                if (tag == "SF2_PATH" || tag == "SFZ_PATH")
+                    continue;
 
                 // hmm something is wrong..
                 carla_stderr2("CarlaEngine::loadProjectInternal() - Unhandled option '%s'", tag.toRawUTF8());
