@@ -28,7 +28,11 @@
 
 #include "../water.h"
 
-#ifdef CARLA_OS_MAC
+#if defined(CARLA_OS_BSD)
+# include <sys/endian.h>
+#elif defined(CARLA_OS_LINUX)
+# include <byteswap.h>
+#elif defined(CARLA_OS_MAC)
 # include <libkern/OSByteOrder.h>
 #endif
 
@@ -146,14 +150,24 @@ private:
 //==============================================================================
 inline uint16 ByteOrder::swap (uint16 n) noexcept
 {
+   #if defined(CARLA_OS_BSD)
+    return bswap16 (n);
+   #elif defined(CARLA_OS_LINUX)
+    return bswap_16 (n);
+   #else
     return static_cast<uint16> ((n << 8) | (n >> 8));
+   #endif
 }
 
 inline uint32 ByteOrder::swap (uint32 n) noexcept
 {
-   #ifdef CARLA_OS_MAC
+   #if defined(CARLA_OS_BSD)
+    return bswap32 (n);
+   #elif defined(CARLA_OS_LINUX)
+    return bswap_32 (n);
+   #elif defined(CARLA_OS_MAC)
     return OSSwapInt32 (n);
-   #elif defined(CARLA_OS_WIN) || ! (defined (__arm__) || defined (__arm64__) || defined (__aarch64__))
+   #elif defined(__i386__) || defined(__x86_64__)
     asm("bswap %%eax" : "=a"(n) : "a"(n));
     return n;
    #else
@@ -163,7 +177,11 @@ inline uint32 ByteOrder::swap (uint32 n) noexcept
 
 inline uint64 ByteOrder::swap (uint64 value) noexcept
 {
-   #ifdef CARLA_OS_MAC
+   #if defined(CARLA_OS_BSD)
+    return bswap64 (value);
+   #elif defined(CARLA_OS_LINUX)
+    return bswap_64 (value);
+   #elif defined(CARLA_OS_MAC)
     return OSSwapInt64 (value);
    #else
     return (((uint64) swap ((uint32) value)) << 32) | swap ((uint32) (value >> 32));
