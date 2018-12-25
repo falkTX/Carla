@@ -390,9 +390,9 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
     }
 
     // Prefer bridges for some specific plugins
-    bool preferBridges = pData->options.preferPluginBridges;
+    const bool preferBridges = pData->options.preferPluginBridges;
 
-#ifndef BUILD_BRIDGE
+#if 0 // ndef BUILD_BRIDGE
     if (! preferBridges)
     {
         if (ptype == PLUGIN_LV2 && label != nullptr)
