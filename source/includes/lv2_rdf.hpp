@@ -391,6 +391,7 @@ struct LV2_RDF_Port {
     LV2_Property Designation;
     const char* Name;
     const char* Symbol;
+    const char* Comment;
 
     LV2_RDF_PortMidiMap MidiMap;
     LV2_RDF_PortPoints Points;
@@ -407,6 +408,7 @@ struct LV2_RDF_Port {
           Designation(0),
           Name(nullptr),
           Symbol(nullptr),
+          Comment(nullptr),
           MidiMap(),
           Points(),
           Unit(),
@@ -426,6 +428,11 @@ struct LV2_RDF_Port {
             delete[] Symbol;
             Symbol = nullptr;
         }
+        if (Comment != nullptr)
+        {
+            delete[] Comment;
+            Comment = nullptr;
+        }
         if (ScalePoints != nullptr)
         {
             delete[] ScalePoints;
@@ -434,6 +441,52 @@ struct LV2_RDF_Port {
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_Port)
+};
+
+// Parameter
+struct LV2_RDF_Parameter {
+    LV2_URI URI;
+    LV2_URI Range;
+    bool Input;
+    const char* Label;
+    const char* Comment;
+
+    LV2_RDF_PortMidiMap MidiMap;
+    LV2_RDF_PortPoints Points;
+    LV2_RDF_PortUnit Unit;
+
+    LV2_RDF_Parameter() noexcept
+        : URI(nullptr),
+          Range(nullptr),
+          Input(true),
+          Label(nullptr),
+          Comment(nullptr) {}
+
+    ~LV2_RDF_Parameter() noexcept
+    {
+        if (URI != nullptr)
+        {
+            delete[] URI;
+            URI = nullptr;
+        }
+        if (Range != nullptr)
+        {
+            delete[] Range;
+            Range = nullptr;
+        }
+        if (Label != nullptr)
+        {
+            delete[] Label;
+            Label = nullptr;
+        }
+        if (Comment != nullptr)
+        {
+            delete[] Comment;
+            Comment = nullptr;
+        }
+    }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_Parameter)
 };
 
 // Preset
@@ -593,6 +646,9 @@ struct LV2_RDF_Descriptor {
     uint32_t PortCount;
     LV2_RDF_Port* Ports;
 
+    uint32_t ParameterCount;
+    LV2_RDF_Parameter* Parameters;
+
     uint32_t PresetCount;
     LV2_RDF_Preset* Presets;
 
@@ -615,6 +671,8 @@ struct LV2_RDF_Descriptor {
           UniqueID(0),
           PortCount(0),
           Ports(nullptr),
+          ParameterCount(0),
+          Parameters(nullptr),
           PresetCount(0),
           Presets(nullptr),
           FeatureCount(0),
@@ -663,6 +721,11 @@ struct LV2_RDF_Descriptor {
         {
             delete[] Ports;
             Ports = nullptr;
+        }
+        if (Parameters != nullptr)
+        {
+            delete[] Parameters;
+            Parameters = nullptr;
         }
         if (Presets != nullptr)
         {

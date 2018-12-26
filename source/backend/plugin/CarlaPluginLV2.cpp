@@ -939,12 +939,23 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
-        const int32_t rindex(pData->param.data[parameterId].rindex);
+        int32_t rindex = pData->param.data[parameterId].rindex;
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
+        {
             std::strncpy(strBuf, fRdfDescriptor->Ports[rindex].Name, STR_MAX);
-        else
-            CarlaPlugin::getParameterName(parameterId, strBuf);
+            return;
+        }
+
+        rindex -= fRdfDescriptor->PortCount;
+
+        if (rindex < static_cast<int32_t>(fRdfDescriptor->ParameterCount))
+        {
+            std::strncpy(strBuf, fRdfDescriptor->Parameters[rindex].Label, STR_MAX);
+            return;
+        }
+
+        CarlaPlugin::getParameterName(parameterId, strBuf);
     }
 
     void getParameterSymbol(const uint32_t parameterId, char* const strBuf) const noexcept override
@@ -952,18 +963,31 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
-        const int32_t rindex(pData->param.data[parameterId].rindex);
+        int32_t rindex = pData->param.data[parameterId].rindex;
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
+        {
             std::strncpy(strBuf, fRdfDescriptor->Ports[rindex].Symbol, STR_MAX);
-        else
-            CarlaPlugin::getParameterSymbol(parameterId, strBuf);
+            return;
+        }
+
+        rindex -= fRdfDescriptor->PortCount;
+
+        if (rindex < static_cast<int32_t>(fRdfDescriptor->ParameterCount))
+        {
+            std::strncpy(strBuf, fRdfDescriptor->Parameters[rindex].URI, STR_MAX);
+            return;
+        }
+
+        CarlaPlugin::getParameterSymbol(parameterId, strBuf);
     }
 
     void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+
+        // TODO param support
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
 
@@ -1142,6 +1166,11 @@ public:
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
         fParamBuffers[parameterId] = fixedValue;
 
+        if (parameterId >= fRdfDescriptor->PortCount)
+        {
+            // TODO
+        }
+
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
@@ -1152,6 +1181,11 @@ public:
 
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
         fParamBuffers[parameterId] = fixedValue;
+
+        if (parameterId >= fRdfDescriptor->PortCount)
+        {
+            // TODO
+        }
 
         CarlaPlugin::setParameterValueRT(parameterId, fixedValue);
     }
@@ -1692,6 +1726,20 @@ public:
                 params += 1;
         }
 
+        for (uint32_t i=0; i < fRdfDescriptor->ParameterCount; ++i)
+        {
+            const LV2_RDF_Parameter& rdfParam(fRdfDescriptor->Parameters[i]);
+
+            if (rdfParam.Range == nullptr)
+                continue;
+            if (std::strcmp(rdfParam.Range, LV2_ATOM__Bool)  != 0 &&
+                std::strcmp(rdfParam.Range, LV2_ATOM__Int)   != 0 &&
+                std::strcmp(rdfParam.Range, LV2_ATOM__Float) != 0)
+                continue;
+
+            params += 1;
+        }
+
         if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && aIns <= 1 && aOuts <= 1 && fExt.state == nullptr && fExt.worker == nullptr)
         {
             if (fHandle2 == nullptr)
@@ -1822,8 +1870,9 @@ public:
 
         const uint portNameSize(pData->engine->getMaxPortNameSize());
         CarlaString portName;
+        uint32_t iCtrl = 0;
 
-        for (uint32_t i=0, iAudioIn=0, iAudioOut=0, iCvIn=0, iCvOut=0, iEvIn=0, iEvOut=0, iCtrl=0; i < portCount; ++i)
+        for (uint32_t i=0, iAudioIn=0, iAudioOut=0, iCvIn=0, iCvOut=0, iEvIn=0, iEvOut=0; i < portCount; ++i)
         {
             const LV2_Property portTypes(fRdfDescriptor->Ports[i].Types);
 
@@ -2330,6 +2379,101 @@ public:
                 if (fHandle2 != nullptr)
                     fDescriptor->connect_port(fHandle2, i, nullptr);
             }
+        }
+
+        for (uint32_t i=0; i < fRdfDescriptor->ParameterCount; ++i)
+        {
+            const LV2_RDF_Parameter& rdfParam(fRdfDescriptor->Parameters[i]);
+            const LV2_RDF_PortPoints portPoints(fRdfDescriptor->Parameters[i].Points);
+
+            const uint32_t j = iCtrl++;
+            pData->param.data[j].index  = static_cast<int32_t>(j);
+            pData->param.data[j].rindex = static_cast<int32_t>(fRdfDescriptor->PortCount + i);
+
+            float min, max, def, step, stepSmall, stepLarge;
+
+            // min value
+            if (LV2_HAVE_MINIMUM_PORT_POINT(portPoints.Hints))
+                min = portPoints.Minimum;
+            else
+                min = 0.0f;
+
+            // max value
+            if (LV2_HAVE_MAXIMUM_PORT_POINT(portPoints.Hints))
+                max = portPoints.Maximum;
+            else
+                max = 1.0f;
+
+            if (min >= max)
+            {
+                carla_stderr2("WARNING - Broken plugin parameter '%s': min >= max", fRdfDescriptor->Parameters[i].Label);
+                max = min + 0.1f;
+            }
+
+            // default value
+            if (LV2_HAVE_DEFAULT_PORT_POINT(portPoints.Hints))
+            {
+                def = portPoints.Default;
+            }
+            else
+            {
+                // no default value
+                if (min < 0.0f && max > 0.0f)
+                    def = 0.0f;
+                else
+                    def = min;
+            }
+
+            if (def < min)
+                def = min;
+            else if (def > max)
+                def = max;
+
+            if (std::strcmp(rdfParam.Range, LV2_ATOM__Bool) == 0)
+            {
+                step = max - min;
+                stepSmall = step;
+                stepLarge = step;
+                pData->param.data[j].hints |= PARAMETER_IS_BOOLEAN;
+            }
+            else if (std::strcmp(rdfParam.Range, LV2_ATOM__Int) == 0)
+            {
+                step = 1.0f;
+                stepSmall = 1.0f;
+                stepLarge = 10.0f;
+                pData->param.data[j].hints |= PARAMETER_IS_INTEGER;
+            }
+            else
+            {
+                float range = max - min;
+                step = range/100.0f;
+                stepSmall = range/1000.0f;
+                stepLarge = range/10.0f;
+            }
+
+            if (rdfParam.Input)
+            {
+                pData->param.data[j].type   = PARAMETER_INPUT;
+                pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
+                pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
+                needsCtrlIn = true;
+            }
+            else
+            {
+                pData->param.data[j].type   = PARAMETER_OUTPUT;
+                pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
+                pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
+                needsCtrlOut = true;
+            }
+
+            pData->param.ranges[j].min = min;
+            pData->param.ranges[j].max = max;
+            pData->param.ranges[j].def = def;
+            pData->param.ranges[j].step = step;
+            pData->param.ranges[j].stepSmall = stepSmall;
+            pData->param.ranges[j].stepLarge = stepLarge;
+
+            fParamBuffers[j] = def;
         }
 
         if (needsCtrlIn)

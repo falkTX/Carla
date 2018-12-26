@@ -98,6 +98,7 @@ typedef std::map<double,const LilvScalePoint*> LilvScalePointMap;
 #define NS_rdf  "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 #define NS_rdfs "http://www.w3.org/2000/01/rdf-schema#"
 #define NS_llmm "http://ll-plugins.nongnu.org/lv2/ext/midimap#"
+#define NS_devp "http://lv2plug.in/ns/dev/extportinfo#"
 
 #define LV2_MIDI_Map__CC      "http://ll-plugins.nongnu.org/lv2/namespace#CC"
 #define LV2_MIDI_Map__NRPN    "http://ll-plugins.nongnu.org/lv2/namespace#NRPN"
@@ -108,7 +109,8 @@ typedef std::map<double,const LilvScalePoint*> LilvScalePointMap;
 #define LV2_UI__makeSONameResident LV2_UI_PREFIX "makeSONameResident"
 
 // TODO: update LV2 headers once again
-#define LV2_CORE__enabled LV2_CORE_PREFIX "enabled" ///< http://lv2plug.in/ns/lv2core#enabled
+#define LV2_CORE__Parameter LV2_CORE_PREFIX "Parameter" ///< http://lv2plug.in/ns/lv2core#Parameter
+#define LV2_CORE__enabled   LV2_CORE_PREFIX "enabled"   ///< http://lv2plug.in/ns/lv2core#enabled
 
 // --------------------------------------------------------------------------------------------------------------------
 // Custom Atom types
@@ -243,6 +245,9 @@ public:
     Lilv::Node atom_sequence;
     Lilv::Node atom_supports;
 
+    Lilv::Node patch_writable;
+    Lilv::Node parameter;
+
     Lilv::Node preset_preset;
 
     Lilv::Node state_state;
@@ -272,7 +277,9 @@ public:
     Lilv::Node dct_replaces;
     Lilv::Node doap_license;
     Lilv::Node rdf_type;
+    Lilv::Node rdfs_comment;
     Lilv::Node rdfs_label;
+    Lilv::Node rdfs_range;
 
     bool needsInit;
 
@@ -373,6 +380,9 @@ public:
           atom_sequence      (new_uri(LV2_ATOM__Sequence)),
           atom_supports      (new_uri(LV2_ATOM__supports)),
 
+          patch_writable     (new_uri(LV2_PATCH__writable)),
+          parameter          (new_uri(LV2_CORE__Parameter)),
+
           preset_preset      (new_uri(LV2_PRESETS__Preset)),
 
           state_state        (new_uri(LV2_STATE__state)),
@@ -399,7 +409,9 @@ public:
           dct_replaces       (new_uri(NS_dct "replaces")),
           doap_license       (new_uri(NS_doap "license")),
           rdf_type           (new_uri(NS_rdf "type")),
+          rdfs_comment       (new_uri(NS_rdfs "comment")),
           rdfs_label         (new_uri(NS_rdfs "label")),
+          rdfs_range         (new_uri(NS_rdfs "range")),
 
           needsInit(true),
           allPlugins(nullptr),
@@ -1742,12 +1754,12 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
     // ----------------------------------------------------------------------------------------------------------------
     // Set Plugin Ports
 
-    if (lilvPlugin.get_num_ports() > 0)
+    if (const uint numPorts = lilvPlugin.get_num_ports())
     {
-        rdfDescriptor->PortCount = lilvPlugin.get_num_ports();
-        rdfDescriptor->Ports = new LV2_RDF_Port[rdfDescriptor->PortCount];
+        rdfDescriptor->PortCount = numPorts;
+        rdfDescriptor->Ports = new LV2_RDF_Port[numPorts];
 
-        for (uint32_t i = 0; i < rdfDescriptor->PortCount; ++i)
+        for (uint i = 0; i < numPorts; ++i)
         {
             Lilv::Port lilvPort(lilvPlugin.get_port_by_index(i));
             LV2_RDF_Port* const rdfPort(&rdfDescriptor->Ports[i]);
@@ -1907,15 +1919,15 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 // no port properties set, check if using old/invalid ones
                 if (rdfPort->Properties == 0x0)
                 {
-                    const Lilv::Node oldPropArtifacts(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#causesArtifacts"));
-                    const Lilv::Node oldPropContinuousCV(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#continuousCV"));
-                    const Lilv::Node oldPropDiscreteCV(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#discreteCV"));
-                    const Lilv::Node oldPropExpensive(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#expensive"));
-                    const Lilv::Node oldPropStrictBounds(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#hasStrictBounds"));
-                    const Lilv::Node oldPropLogarithmic(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#logarithmic"));
-                    const Lilv::Node oldPropNotAutomatic(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#notAutomatic"));
-                    const Lilv::Node oldPropNotOnGUI(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#notOnGUI"));
-                    const Lilv::Node oldPropTrigger(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#trigger"));
+                    const Lilv::Node oldPropArtifacts(lv2World.new_uri(NS_devp "causesArtifacts"));
+                    const Lilv::Node oldPropContinuousCV(lv2World.new_uri(NS_devp "continuousCV"));
+                    const Lilv::Node oldPropDiscreteCV(lv2World.new_uri(NS_devp "discreteCV"));
+                    const Lilv::Node oldPropExpensive(lv2World.new_uri(NS_devp "expensive"));
+                    const Lilv::Node oldPropStrictBounds(lv2World.new_uri(NS_devp "hasStrictBounds"));
+                    const Lilv::Node oldPropLogarithmic(lv2World.new_uri(NS_devp "logarithmic"));
+                    const Lilv::Node oldPropNotAutomatic(lv2World.new_uri(NS_devp "notAutomatic"));
+                    const Lilv::Node oldPropNotOnGUI(lv2World.new_uri(NS_devp "notOnGUI"));
+                    const Lilv::Node oldPropTrigger(lv2World.new_uri(NS_devp "trigger"));
 
                     if (lilvPort.has_property(oldPropArtifacts))
                     {
@@ -2192,10 +2204,10 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
             {
                 Lilv::ScalePoints lilvScalePoints(lilvPort.get_scale_points());
 
-                if (lilvScalePoints.size() > 0)
+                if (const uint numScalePoints = lilvScalePoints.size())
                 {
-                    rdfPort->ScalePointCount = lilvScalePoints.size();
-                    rdfPort->ScalePoints = new LV2_RDF_PortScalePoint[rdfPort->ScalePointCount];
+                    rdfPort->ScalePointCount = numScalePoints;
+                    rdfPort->ScalePoints = new LV2_RDF_PortScalePoint[numScalePoints];
 
                     // get all scalepoints and sort them by value
                     LilvScalePointMap sortedpoints;
@@ -2214,10 +2226,10 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                     }
 
                     // now safe to store, sorted by using std::map
-                    uint32_t h = 0;
+                    uint h = 0;
                     for (LilvScalePointMap::iterator it=sortedpoints.begin(), end=sortedpoints.end(); it != end; ++it)
                     {
-                        CARLA_SAFE_ASSERT_BREAK(h < rdfPort->ScalePointCount);
+                        CARLA_SAFE_ASSERT_BREAK(h < numScalePoints);
                         LV2_RDF_PortScalePoint* const rdfScalePoint(&rdfPort->ScalePoints[h++]);
 
                         const LilvScalePoint* const scalepoint = it->second;
@@ -2233,6 +2245,51 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 lilv_nodes_free(const_cast<LilvNodes*>(lilvScalePoints.me));
             }
         }
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // Set Plugin Parameters
+    {
+        Lilv::Nodes patchWritableNodes(lilvPlugin.get_value(lv2World.patch_writable));
+
+        if (const uint numParameters = patchWritableNodes.size())
+        {
+            rdfDescriptor->ParameterCount = numParameters;
+            rdfDescriptor->Parameters = new LV2_RDF_Parameter[numParameters];
+
+            uint h = 0;
+            LILV_FOREACH(nodes, it, patchWritableNodes)
+            {
+                CARLA_SAFE_ASSERT_BREAK(h < numParameters);
+
+                Lilv::Node patchWritableNode(patchWritableNodes.get(it));
+                LV2_RDF_Parameter* const rdfParam(&rdfDescriptor->Parameters[h++]);
+
+                CARLA_SAFE_ASSERT_CONTINUE(patchWritableNode.is_uri());
+
+                rdfParam->URI = carla_strdup(patchWritableNode.as_uri());
+
+                if (LilvNode* const label = lilv_world_get(lv2World.me, patchWritableNode,
+                                                           lv2World.rdfs_range.me, nullptr))
+                {
+                    rdfParam->Range = carla_strdup(lilv_node_as_string(label));
+                }
+                if (LilvNode* const label = lilv_world_get(lv2World.me, patchWritableNode,
+                                                           lv2World.rdfs_label.me, nullptr))
+                {
+                    rdfParam->Label = carla_strdup(lilv_node_as_string(label));
+                }
+                if (LilvNode* const comment = lilv_world_get(lv2World.me, patchWritableNode,
+                                                             lv2World.rdfs_comment.me, nullptr))
+                {
+                    rdfParam->Comment = carla_strdup(lilv_node_as_string(comment));
+                }
+
+                // TODO: MidiMap, Points, Unit;
+            }
+        }
+
+        lilv_nodes_free(const_cast<LilvNodes*>(patchWritableNodes.me));
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -2336,17 +2393,17 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
     {
         Lilv::Nodes lilvFeatureNodes(lilvPlugin.get_supported_features());
 
-        if (lilvFeatureNodes.size() > 0)
+        if (const uint numFeatures = lilvFeatureNodes.size())
         {
             Lilv::Nodes lilvFeatureNodesR(lilvPlugin.get_required_features());
 
-            rdfDescriptor->FeatureCount = lilvFeatureNodes.size();
-            rdfDescriptor->Features = new LV2_RDF_Feature[rdfDescriptor->FeatureCount];
+            rdfDescriptor->FeatureCount = numFeatures;
+            rdfDescriptor->Features = new LV2_RDF_Feature[numFeatures];
 
-            uint32_t h = 0;
+            uint h = 0;
             LILV_FOREACH(nodes, it, lilvFeatureNodes)
             {
-                CARLA_SAFE_ASSERT_BREAK(h < rdfDescriptor->FeatureCount);
+                CARLA_SAFE_ASSERT_BREAK(h < numFeatures);
 
                 Lilv::Node lilvFeatureNode(lilvFeatureNodes.get(it));
                 LV2_RDF_Feature* const rdfFeature(&rdfDescriptor->Features[h++]);
@@ -2370,15 +2427,15 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
     {
         Lilv::Nodes lilvExtensionDataNodes(lilvPlugin.get_extension_data());
 
-        if (lilvExtensionDataNodes.size() > 0)
+        if (const uint numExtensions = lilvExtensionDataNodes.size())
         {
-            rdfDescriptor->ExtensionCount = lilvExtensionDataNodes.size();
-            rdfDescriptor->Extensions = new LV2_URI[rdfDescriptor->ExtensionCount];
+            rdfDescriptor->ExtensionCount = numExtensions;
+            rdfDescriptor->Extensions = new LV2_URI[numExtensions];
 
-            uint32_t h = 0;
+            uint h = 0;
             LILV_FOREACH(nodes, it, lilvExtensionDataNodes)
             {
-                CARLA_SAFE_ASSERT_BREAK(h < rdfDescriptor->ExtensionCount);
+                CARLA_SAFE_ASSERT_BREAK(h < numExtensions);
 
                 Lilv::Node lilvExtensionDataNode(lilvExtensionDataNodes.get(it));
                 LV2_URI* const rdfExtension(&rdfDescriptor->Extensions[h++]);
@@ -2406,15 +2463,15 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
     {
         Lilv::UIs lilvUIs(lilvPlugin.get_uis());
 
-        if (lilvUIs.size() > 0)
+        if (const uint numUIs = lilvUIs.size())
         {
-            rdfDescriptor->UICount = lilvUIs.size();
-            rdfDescriptor->UIs = new LV2_RDF_UI[rdfDescriptor->UICount];
+            rdfDescriptor->UICount = numUIs;
+            rdfDescriptor->UIs = new LV2_RDF_UI[numUIs];
 
-            uint32_t h = 0;
+            uint h = 0;
             LILV_FOREACH(uis, it, lilvUIs)
             {
-                CARLA_SAFE_ASSERT_BREAK(h < rdfDescriptor->UICount);
+                CARLA_SAFE_ASSERT_BREAK(h < numUIs);
 
                 Lilv::UI lilvUI(lilvUIs.get(it));
                 LV2_RDF_UI* const rdfUI(&rdfDescriptor->UIs[h++]);
@@ -2465,17 +2522,17 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 {
                     Lilv::Nodes lilvFeatureNodes(lilvUI.get_supported_features());
 
-                    if (lilvFeatureNodes.size() > 0)
+                    if (const uint numFeatures = lilvFeatureNodes.size())
                     {
                         Lilv::Nodes lilvFeatureNodesR(lilvUI.get_required_features());
 
-                        rdfUI->FeatureCount = lilvFeatureNodes.size();
-                        rdfUI->Features = new LV2_RDF_Feature[rdfUI->FeatureCount];
+                        rdfUI->FeatureCount = numFeatures;
+                        rdfUI->Features = new LV2_RDF_Feature[numFeatures];
 
-                        uint32_t h2 = 0;
+                        uint h2 = 0;
                         LILV_FOREACH(nodes, it2, lilvFeatureNodes)
                         {
-                            CARLA_SAFE_ASSERT_BREAK(h2 < rdfUI->FeatureCount);
+                            CARLA_SAFE_ASSERT_BREAK(h2 < numFeatures);
 
                             Lilv::Node lilvFeatureNode(lilvFeatureNodes.get(it2));
                             LV2_RDF_Feature* const rdfFeature(&rdfUI->Features[h2++]);
@@ -2499,15 +2556,15 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 {
                     Lilv::Nodes lilvExtensionDataNodes(lilvUI.get_extension_data());
 
-                    if (lilvExtensionDataNodes.size() > 0)
+                    if (const uint numExtensions = lilvExtensionDataNodes.size() > 0)
                     {
-                        rdfUI->ExtensionCount = lilvExtensionDataNodes.size();
-                        rdfUI->Extensions = new LV2_URI[rdfUI->ExtensionCount];
+                        rdfUI->ExtensionCount = numExtensions;
+                        rdfUI->Extensions = new LV2_URI[numExtensions];
 
-                        uint32_t h2 = 0;
+                        uint h2 = 0;
                         LILV_FOREACH(nodes, it2, lilvExtensionDataNodes)
                         {
-                            CARLA_SAFE_ASSERT_BREAK(h2 < rdfUI->ExtensionCount);
+                            CARLA_SAFE_ASSERT_BREAK(h2 < numExtensions);
 
                             Lilv::Node lilvExtensionDataNode(lilvExtensionDataNodes.get(it2));
                             LV2_URI* const rdfExtension(&rdfUI->Extensions[h2++]);
@@ -2523,7 +2580,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                             *rdfExtension = nullptr;
                         }
 
-                        for (uint32_t x2=h2; x2 < rdfUI->ExtensionCount; ++x2)
+                        for (uint x2=h2; x2 < rdfUI->ExtensionCount; ++x2)
                             rdfUI->Extensions[x2] = nullptr;
                     }
 
@@ -2540,7 +2597,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                         rdfUI->PortNotificationCount = portNotifCount;
                         rdfUI->PortNotifications = new LV2_RDF_UI_PortNotification[portNotifCount];
 
-                        uint32_t h2 = 0;
+                        uint h2 = 0;
                         LILV_FOREACH(nodes, it2, portNotifNodes)
                         {
                             CARLA_SAFE_ASSERT_BREAK(h2 < portNotifCount);
