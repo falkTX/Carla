@@ -113,6 +113,9 @@ enum CarlaLv2URIDs {
     kUridLogNote,
     kUridLogTrace,
     kUridLogWarning,
+    kUridPatchSet,
+    kUridPatchPoperty,
+    kUridPatchValue,
     // time base type
     kUridTimePosition,
      // time values
@@ -987,23 +990,35 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
-        // TODO param support
+        LV2_RDF_PortUnit* portUnit = nullptr;
 
-        const int32_t rindex(pData->param.data[parameterId].rindex);
+        int32_t rindex = pData->param.data[parameterId].rindex;
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
-            const LV2_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
+            portUnit = &fRdfDescriptor->Ports[rindex].Unit;
+        }
+        else
+        {
+            rindex -= fRdfDescriptor->PortCount;
 
-            if (LV2_HAVE_PORT_UNIT_SYMBOL(port->Unit.Hints) && port->Unit.Symbol != nullptr)
+            if (rindex < static_cast<int32_t>(fRdfDescriptor->ParameterCount))
             {
-                std::strncpy(strBuf, port->Unit.Symbol, STR_MAX);
+                portUnit = &fRdfDescriptor->Parameters[rindex].Unit;
+            }
+        }
+
+        if (portUnit != nullptr)
+        {
+            if (LV2_HAVE_PORT_UNIT_SYMBOL(portUnit->Hints) && portUnit->Symbol != nullptr)
+            {
+                std::strncpy(strBuf, portUnit->Symbol, STR_MAX);
                 return;
             }
 
-            if (LV2_HAVE_PORT_UNIT_UNIT(port->Unit.Hints))
+            if (LV2_HAVE_PORT_UNIT_UNIT(portUnit->Hints))
             {
-                switch (port->Unit.Unit)
+                switch (portUnit->Unit)
                 {
                 case LV2_PORT_UNIT_BAR:
                     std::strncpy(strBuf, "bars", STR_MAX);
@@ -1166,9 +1181,42 @@ public:
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
         fParamBuffers[parameterId] = fixedValue;
 
-        if (parameterId >= fRdfDescriptor->PortCount)
+        if (pData->param.data[parameterId].rindex >= static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
-            // TODO
+            const uint32_t rparamId = pData->param.data[parameterId].rindex - fRdfDescriptor->PortCount;
+            CARLA_SAFE_ASSERT_UINT2_RETURN(rparamId < fRdfDescriptor->ParameterCount,
+                                           rparamId, fRdfDescriptor->PortCount,);
+
+            uint8_t atomBuf[256];
+            lv2_atom_forge_set_buffer(&fAtomForge, atomBuf, sizeof(atomBuf));
+
+            LV2_Atom_Forge_Frame forgeFrame;
+            lv2_atom_forge_object(&fAtomForge, &forgeFrame, kUridNull, kUridPatchSet);
+
+            lv2_atom_forge_key(&fAtomForge, kUridPatchPoperty);
+            lv2_atom_forge_urid(&fAtomForge, getCustomURID(fRdfDescriptor->Parameters[rparamId].URI));
+            lv2_atom_forge_key(&fAtomForge, kUridPatchValue);
+
+            if (std::strcmp(fRdfDescriptor->Parameters[rparamId].Range, LV2_ATOM__Bool) == 0)
+                lv2_atom_forge_bool(&fAtomForge, fixedValue > 0.5f);
+            else if (std::strcmp(fRdfDescriptor->Parameters[rparamId].Range, LV2_ATOM__Int) == 0)
+                lv2_atom_forge_int(&fAtomForge, fixedValue + 0.5f);
+            else if (std::strcmp(fRdfDescriptor->Parameters[rparamId].Range, LV2_ATOM__Long) == 0)
+                lv2_atom_forge_long(&fAtomForge, fixedValue + 0.5f);
+            else if (std::strcmp(fRdfDescriptor->Parameters[rparamId].Range, LV2_ATOM__Float) == 0)
+                lv2_atom_forge_float(&fAtomForge, fixedValue);
+            else if (std::strcmp(fRdfDescriptor->Parameters[rparamId].Range, LV2_ATOM__Double) == 0)
+                lv2_atom_forge_double(&fAtomForge, fixedValue);
+            else
+                return;
+
+            lv2_atom_forge_pop(&fAtomForge, &forgeFrame);
+
+            LV2_Atom* const atom((LV2_Atom*)atomBuf);
+            CARLA_SAFE_ASSERT(atom->size < sizeof(atomBuf));
+
+            carla_stdout("Set new param type thing");
+            fAtomBufferIn.put(atom, fEventsIn.ctrlIndex);
         }
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
@@ -1732,9 +1780,11 @@ public:
 
             if (rdfParam.Range == nullptr)
                 continue;
-            if (std::strcmp(rdfParam.Range, LV2_ATOM__Bool)  != 0 &&
-                std::strcmp(rdfParam.Range, LV2_ATOM__Int)   != 0 &&
-                std::strcmp(rdfParam.Range, LV2_ATOM__Float) != 0)
+            if (std::strcmp(rdfParam.Range, LV2_ATOM__Bool)   != 0 &&
+                std::strcmp(rdfParam.Range, LV2_ATOM__Int)    != 0 &&
+                std::strcmp(rdfParam.Range, LV2_ATOM__Long)   != 0 &&
+                std::strcmp(rdfParam.Range, LV2_ATOM__Float)  != 0 &&
+                std::strcmp(rdfParam.Range, LV2_ATOM__Double) != 0)
                 continue;
 
             params += 1;
@@ -2436,7 +2486,8 @@ public:
                 stepLarge = step;
                 pData->param.data[j].hints |= PARAMETER_IS_BOOLEAN;
             }
-            else if (std::strcmp(rdfParam.Range, LV2_ATOM__Int) == 0)
+            else if (std::strcmp(rdfParam.Range, LV2_ATOM__Int)  == 0 ||
+                     std::strcmp(rdfParam.Range, LV2_ATOM__Long) == 0)
             {
                 step = 1.0f;
                 stepSmall = 1.0f;
@@ -2508,8 +2559,12 @@ public:
             pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, 0);
         }
 
-        if (fExt.worker != nullptr || (fUI.type != UI::TYPE_NULL && fEventsIn.count > 0 && (fEventsIn.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
+        if (fRdfDescriptor->ParameterCount > 0 ||
+            fExt.worker != nullptr ||
+            (fUI.type != UI::TYPE_NULL && fEventsIn.count > 0 && (fEventsIn.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
+        {
             fAtomBufferIn.createBuffer(eventBufferSize);
+        }
 
         if (fExt.worker != nullptr || (fUI.type != UI::TYPE_NULL && fEventsOut.count > 0 && (fEventsOut.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
         {
@@ -6238,6 +6293,14 @@ private:
         if (std::strcmp(uri, LV2_LOG__Warning) == 0)
             return kUridLogWarning;
 
+        // Patch types
+        if (std::strcmp(uri, LV2_PATCH__Set) == 0)
+            return kUridPatchSet;
+        if (std::strcmp(uri, LV2_PATCH__property) == 0)
+            return kUridPatchPoperty;
+        if (std::strcmp(uri, LV2_PATCH__value) == 0)
+            return kUridPatchValue;
+
         // Time types
         if (std::strcmp(uri, LV2_TIME__Position) == 0)
             return kUridTimePosition;
@@ -6355,6 +6418,14 @@ private:
             return LV2_LOG__Trace;
         case kUridLogWarning:
             return LV2_LOG__Warning;
+
+        // Patch types
+        case kUridPatchSet:
+            return LV2_PATCH__Set;
+        case kUridPatchPoperty:
+            return LV2_PATCH__property;
+        case kUridPatchValue:
+            return LV2_PATCH__value;
 
         // Time types
         case kUridTimePosition:
