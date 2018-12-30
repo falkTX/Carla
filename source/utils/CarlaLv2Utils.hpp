@@ -229,6 +229,7 @@ public:
     Lilv::Node unit_unit;
 
     // UI Types
+    Lilv::Node ui;
     Lilv::Node ui_gtk2;
     Lilv::Node ui_gtk3;
     Lilv::Node ui_qt4;
@@ -365,6 +366,7 @@ public:
           unit_symbol        (new_uri(LV2_UNITS__symbol)),
           unit_unit          (new_uri(LV2_UNITS__unit)),
 
+          ui                 (new_uri(LV2_UI__UI)),
           ui_gtk2            (new_uri(LV2_UI__GtkUI)),
           ui_gtk3            (new_uri(LV2_UI__Gtk3UI)),
           ui_qt4             (new_uri(LV2_UI__Qt4UI)),
@@ -2617,7 +2619,9 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 // ----------------------------------------------------------------------------------------------------
                 // Set UI Type
 
-                /**/ if (lilvUI.is_a(lv2World.ui_gtk2))
+                /**/ if (lilvUI.is_a(lv2World.ui))
+                    rdfUI->Type = LV2_UI_NONE;
+                else if (lilvUI.is_a(lv2World.ui_gtk2))
                     rdfUI->Type = LV2_UI_GTK2;
                 else if (lilvUI.is_a(lv2World.ui_gtk3))
                     rdfUI->Type = LV2_UI_GTK3;
@@ -2667,7 +2671,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                         uint numUsed2 = 0;
                         LILV_FOREACH(nodes, it2, lilvFeatureNodes)
                         {
-                            CARLA_SAFE_ASSERT_BREAK(numUsed2 < numFeatures);
+                            CARLA_SAFE_ASSERT_UINT2_BREAK(numUsed2 < numFeatures, numUsed2, numFeatures);
 
                             Lilv::Node lilvFeatureNode(lilvFeatureNodes.get(it2));
                             LV2_RDF_Feature* const rdfFeature(&rdfUI->Features[numUsed2++]);
@@ -2692,14 +2696,14 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 {
                     Lilv::Nodes lilvExtensionDataNodes(lilvUI.get_extension_data());
 
-                    if (const uint numExtensions = lilvExtensionDataNodes.size() > 0)
+                    if (const uint numExtensions = lilvExtensionDataNodes.size())
                     {
                         rdfUI->Extensions = new LV2_URI[numExtensions];
 
                         uint numUsed2 = 0;
                         LILV_FOREACH(nodes, it2, lilvExtensionDataNodes)
                         {
-                            CARLA_SAFE_ASSERT_BREAK(numUsed2 < numExtensions);
+                            CARLA_SAFE_ASSERT_UINT2_BREAK(numUsed2 < numExtensions, numUsed2, numExtensions);
 
                             Lilv::Node lilvExtensionDataNode(lilvExtensionDataNodes.get(it2));
                             LV2_URI* const rdfExtension(&rdfUI->Extensions[numUsed2++]);
@@ -2734,13 +2738,13 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                         rdfUI->PortNotificationCount = portNotifCount;
                         rdfUI->PortNotifications = new LV2_RDF_UI_PortNotification[portNotifCount];
 
-                        uint h2 = 0;
+                        uint numUsed2 = 0;
                         LILV_FOREACH(nodes, it2, portNotifNodes)
                         {
-                            CARLA_SAFE_ASSERT_BREAK(h2 < portNotifCount);
+                            CARLA_SAFE_ASSERT_UINT2_BREAK(numUsed2 < portNotifCount, numUsed2, portNotifCount);
 
                             Lilv::Node portNotifNode(portNotifNodes.get(it2));
-                            LV2_RDF_UI_PortNotification* const rdfPortNotif(&rdfUI->PortNotifications[h2++]);
+                            LV2_RDF_UI_PortNotification* const rdfPortNotif(&rdfUI->PortNotifications[numUsed2++]);
 
                             LilvNode* const protocolNode = lilv_world_get(lv2World.me, portNotifNode,
                                                                           lv2World.ui_protocol.me, nullptr);

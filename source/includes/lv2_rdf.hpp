@@ -215,6 +215,7 @@ typedef uint32_t LV2_Property;
 #define LV2_IS_UI_PORT_PROTOCOL_PEAK(x)  ((x) == LV2_UI_PORT_PROTOCOL_PEAK)
 
 // UI Types
+#define LV2_UI_NONE                      0
 #define LV2_UI_GTK2                      1
 #define LV2_UI_GTK3                      2
 #define LV2_UI_QT4                       3

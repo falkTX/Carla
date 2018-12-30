@@ -1477,7 +1477,7 @@ public:
             if (fUI.handle == nullptr)
             {
 #ifndef LV2_UIS_ONLY_BRIDGES
-                if (fUI.type == UI::TYPE_EMBED && fUI.window == nullptr)
+                if (fUI.type == UI::TYPE_EMBED && fUI.rdfDescriptor->Type != LV2_UI_NONE && fUI.window == nullptr)
                 {
                     const char* msg = nullptr;
 
@@ -5748,6 +5748,10 @@ public:
 
         switch (uiType)
         {
+        case LV2_UI_NONE:
+            carla_stdout("Will use LV2 Show Interface for '%s'", pData->name);
+            fUI.type = UI::TYPE_EMBED;
+            break;
         case LV2_UI_QT4:
             carla_stdout("Will use LV2 Qt4 UI for '%s', NOT!", pData->name);
             fUI.type = UI::TYPE_EMBED;
