@@ -1,6 +1,6 @@
 /*
  * Carla DSSI utils
- * Copyright (C) 2013-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -36,8 +36,16 @@ const char* find_dssi_ui(const char* const filename, const char* const label) no
         String checkLabel(label);
         String checkSName(File(pluginDir).getFileName());
 
-        if (! checkLabel.endsWith("_")) checkLabel += "_";
-        if (! checkSName.endsWith("_")) checkSName += "_";
+        if (checkSName.endsWithIgnoreCase("dssi"))
+        {
+            checkSName = checkSName.dropLastCharacters(4);
+
+            if (checkSName.endsWithChar('-'))
+                checkSName = checkSName.dropLastCharacters(1);
+        }
+
+        if (! checkLabel.endsWithChar('_')) checkLabel += "_";
+        if (! checkSName.endsWithChar('_')) checkSName += "_";
 
         Array<File> results;
 
