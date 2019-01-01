@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -120,7 +120,7 @@ static const NativeParameter* lfo_get_parameter_info(NativePluginHandle handle, 
         param.unit = "(coef)";
         param.ranges.def = 1.0f;
         param.ranges.min = 0.01f;
-        param.ranges.max = 2.0f;
+        param.ranges.max = 32.0f;
         param.ranges.step = 0.25f;
         param.ranges.stepSmall = 0.1f;
         param.ranges.stepLarge = 0.5f;
