@@ -312,6 +312,10 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
     CARLA_SAFE_ASSERT_RETURN_ERR((filename != nullptr && filename[0] != '\0') || (label != nullptr && label[0] != '\0'), "Invalid plugin filename and label");
     carla_debug("CarlaEngine::addPlugin(%i:%s, %i:%s, \"%s\", \"%s\", \"%s\", " P_INT64 ", %p, %u)", btype, BinaryType2Str(btype), ptype, PluginType2Str(ptype), filename, name, label, uniqueId, extra, options);
 
+    if (filename != nullptr && filename[0] != '\0') {
+        CARLA_SAFE_ASSERT_RETURN_ERR(filename[0] == CARLA_OS_SEP || filename[0] == '.' || filename[0] == '~', "Invalid plugin filename");
+    }
+
     uint id;
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH

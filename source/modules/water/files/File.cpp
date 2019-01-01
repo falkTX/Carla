@@ -217,15 +217,6 @@ String File::parseAbsolutePath (const String& p)
     }
     else if (! path.startsWithChar (separator))
     {
-        /*  When you supply a raw string to the File object constructor, it must be an absolute path.
-            If you're trying to parse a string that may be either a relative path or an absolute path,
-            you MUST provide a context against which the partial path can be evaluated - you can do
-            this by simply using File::getChildFile() instead of the File constructor. E.g. saying
-            "File::getCurrentWorkingDirectory().getChildFile (myUnknownPath)" would return an absolute
-            path if that's what was supplied, or would evaluate a partial path relative to the CWD.
-        */
-        CARLA_SAFE_ASSERT_RETURN(path.startsWith ("./") || path.startsWith ("../"), String());
-
         return File::getCurrentWorkingDirectory().getChildFile (path).getFullPathName();
     }
 #endif
