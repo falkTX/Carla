@@ -149,8 +149,13 @@ libjack: libs
 plugin: backend bridges-plugin bridges-ui discovery
 	@$(MAKE) -C source/plugin
 
+ifeq ($(WIN32),true)
+plugin-wine:
+	@$(MAKE) -C source/plugin wine
+else
 plugin-wine: $(MODULEDIR)/dgl.wine.a
 	@$(MAKE) -C source/plugin wine
+endif
 
 rest: libs
 	@$(MAKE) -C source/rest
