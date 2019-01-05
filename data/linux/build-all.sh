@@ -24,7 +24,7 @@ cd $(dirname $0)
 source common.env
 
 CHROOT_CARLA_DIR="/tmp/carla-src"
-PKG_FOLDER="Carla_2.0-RC2-linux"
+PKG_FOLDER="Carla_2.0-RC3-linux"
 
 # ---------------------------------------------------------------------------------------------------------------------
 # function to remove old stuff
