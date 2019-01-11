@@ -11,5 +11,6 @@ if [ "$1" = "--gdb" ]; then
 fi
 
 INSTALL_PREFIX="X-PREFIX-X"
-export PATH="$INSTALL_PREFIX"/lib/carla:$PATH
+PATH="$INSTALL_PREFIX"/lib/carla:$PATH
+export PATH
 exec $PYTHON "$INSTALL_PREFIX"/share/carla/carla --with-appname="$0" --with-libprefix="$INSTALL_PREFIX" "$@"
