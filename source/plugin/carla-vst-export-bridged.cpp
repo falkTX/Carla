@@ -59,7 +59,6 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
         GetModuleFileName(getCurrentModuleInstanceHandle(), filename, MAX_PATH + 256);
         strcat(filename, ".so");
 
-
         carla_stdout("FILENAME: '%s'", filename);
         static const lib_t lib = lib_open(filename);
         if (lib == nullptr)

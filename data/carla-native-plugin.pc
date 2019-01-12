@@ -3,7 +3,7 @@ libdir=X-LIBDIR-X/carla
 includedir=X-INCLUDEDIR-X/carla
 
 Name: carla-native-plugin
-Version: 1.9.11
+Version: 1.9.13
 Description: Carla Native Plugin
 Libs: -Wl,rpath=${libdir} -L${libdir} -lcarla_native-plugin
 Cflags: -DREAL_BUILD -I${includedir} -I${includedir}/includes

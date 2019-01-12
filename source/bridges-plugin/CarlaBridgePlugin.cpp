@@ -315,6 +315,11 @@ int main(int argc, char* argv[])
     }
 
     // ---------------------------------------------------------------------
+    // Set file
+
+    const File file(filename != nullptr ? filename : "");
+
+    // ---------------------------------------------------------------------
     // Set name
 
     const char* name(std::getenv("CARLA_CLIENT_NAME"));
@@ -424,8 +429,7 @@ int main(int argc, char* argv[])
     }
     else
     {
-        const String jfilename = String(CharPointer_UTF8(filename));
-        clientName = File(jfilename).getFileNameWithoutExtension().toRawUTF8();
+        clientName = file.getFileNameWithoutExtension().toRawUTF8();
     }
 
     // if we still have no client name by now, use a dummy one
@@ -520,7 +524,7 @@ int main(int argc, char* argv[])
         // -----------------------------------------------------------------
         // Init plugin
 
-        if (carla_add_plugin(btype, itype, filename, name, label, uniqueId, extraStuff, 0x0))
+        if (carla_add_plugin(btype, itype, file.getFullPathName().toRawUTF8(), name, label, uniqueId, extraStuff, 0x0))
         {
             ret = 0;
 

@@ -15,7 +15,7 @@ fi
 # ---------------------------------------------------------------------------------------------------------------------
 # set variables
 
-PKG_FOLDER="Carla_2.0-RC1-macos"
+PKG_FOLDER="Carla_2.0-RC3-macos"
 
 source data/macos/common.env
 
