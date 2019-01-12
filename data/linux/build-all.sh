@@ -24,7 +24,7 @@ cd $(dirname $0)
 source common.env
 
 CHROOT_CARLA_DIR="/tmp/carla-src"
-PKG_FOLDER="Carla_2.0-RC1-linux"
+PKG_FOLDER="Carla_2.0-RC3-linux"
 
 # ---------------------------------------------------------------------------------------------------------------------
 # function to remove old stuff
@@ -268,8 +268,8 @@ download_carla_extras()
 {
 
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
-CARLA_VER="1.9.11+git20180916"
-WINBR_VER="1.9.11+git20180916"
+CARLA_VER="1.9.13+git20190112"
+WINBR_VER="1.9.13+git20190112"
 WINE32_VER="1.9.11+git20180916"
 WINE64_VER="1.9.11.git20180916"
 
