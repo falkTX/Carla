@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # A piano roll viewer/editor
-# Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
 # Copyright (C) 2014-2015 Perry Nguyen
 #
 # This program is free software; you can redistribute it and/or
@@ -18,25 +18,13 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Config)
-
-from carla_config import *
-
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-if config_UseQt5:
-    from PyQt5.QtCore import Qt, QRectF, QPointF, pyqtSignal
-    from PyQt5.QtGui import QColor, QFont, QPen, QPainter
-    from PyQt5.QtWidgets import QGraphicsItem, QGraphicsLineItem, QGraphicsOpacityEffect, QGraphicsRectItem, QGraphicsSimpleTextItem
-    from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView
-    from PyQt5.QtWidgets import QWidget, QLabel, QComboBox, QHBoxLayout, QVBoxLayout, QStyle
-else:
-    from PyQt4.QtCore import Qt, QRectF, QPointF, pyqtSignal
-    from PyQt4.QtGui import QColor, QFont, QPen, QPainter
-    from PyQt4.QtGui import QGraphicsItem, QGraphicsLineItem, QGraphicsOpacityEffect, QGraphicsRectItem, QGraphicsSimpleTextItem
-    from PyQt4.QtGui import QGraphicsScene, QGraphicsView
-    from PyQt4.QtGui import QWidget, QLabel, QComboBox, QSlider, QHBoxLayout, QVBoxLayout, QStyle
+from PyQt5.QtCore import Qt, QRectF, QPointF, pyqtSignal
+from PyQt5.QtGui import QColor, QFont, QPen, QPainter
+from PyQt5.QtWidgets import QGraphicsItem, QGraphicsLineItem, QGraphicsOpacityEffect, QGraphicsRectItem, QGraphicsSimpleTextItem
+from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView
+from PyQt5.QtWidgets import QWidget, QLabel, QComboBox, QHBoxLayout, QVBoxLayout, QStyle
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)

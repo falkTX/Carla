@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla settings code
-# Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,21 +17,11 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Config)
-
-from carla_config import *
-
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-if config_UseQt5:
-    from PyQt5.QtCore import pyqtSlot, QByteArray, QDir, QSettings
-    from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
-    from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
-else:
-    from PyQt4.QtCore import pyqtSlot, QByteArray, QDir, QSettings
-    from PyQt4.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
-    from PyQt4.QtGui import QDialog, QDialogButtonBox, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
+from PyQt5.QtCore import pyqtSlot, QByteArray, QDir, QSettings
+from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
+from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -249,7 +239,7 @@ class CarlaSettingsW(QDialog):
         for i in range(Theme.THEME_MAX):
             self.ui.cb_canvas_theme.addItem(getThemeName(i))
 
-        if MACOS or (WINDOWS and not config_UseQt5):
+        if MACOS:
             self.ui.group_main_theme.setEnabled(False)
             self.ui.group_main_theme.setVisible(False)
 

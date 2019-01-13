@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Rack List Widget, a custom Qt4 widget
-# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+# Rack List Widget, a custom Qt widget
+# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,20 +17,11 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Config)
-
-from carla_config import *
-
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-if config_UseQt5:
-    from PyQt5.QtCore import Qt, QSize, QRect, QEvent
-    from PyQt5.QtGui import QPainter, QPixmap
-    from PyQt5.QtWidgets import QAbstractItemView, QFrame, QListWidget, QListWidgetItem
-else:
-    from PyQt4.QtCore import Qt, QSize, QRect, QEvent
-    from PyQt4.QtGui import QAbstractItemView, QFrame, QListWidget, QListWidgetItem, QPainter, QPixmap
+from PyQt5.QtCore import Qt, QSize, QRect, QEvent
+from PyQt5.QtGui import QPainter, QPixmap
+from PyQt5.QtWidgets import QAbstractItemView, QFrame, QListWidget, QListWidgetItem
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)

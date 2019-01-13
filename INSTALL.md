@@ -21,10 +21,12 @@ $ make install PREFIX=/usr DESTDIR=./test-dir
 
 There are no required build dependencies.
 
-But if you want the frontend (which is likely), you will need PyQt4/5 (python3 version)
+But if you want the frontend (which is likely), you will need PyQt5 (python3 version).
+
+You likely will also want:
 
  - libmagic (for auto-detection of binary types, needed for plugin-bridges)
- - liblo    (for OSC support)
+ - liblo    (for OSC support, also a requirement for DSSI UIs)
 
 Optional for extra Linux-only engine features:
 

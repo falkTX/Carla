@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Custom Mini Canvas Preview, a custom Qt4 widget
-# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+# Custom Mini Canvas Preview, a custom Qt widget
+# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,23 +17,13 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Config)
-
-from carla_config import *
-
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 from math import floor, ceil
 
-if config_UseQt5:
-    from PyQt5.QtCore import pyqtSignal, Qt, QRectF, QTimer, QEvent, QPoint
-    from PyQt5.QtGui import QBrush, QColor, QCursor, QPainter, QPainterPath, QPen, QCursor, QPixmap
-    from PyQt5.QtWidgets import QFrame, QWidget
-else:
-    from PyQt4.QtCore import pyqtSignal, Qt, QRectF, QTimer, QEvent, QPoint
-    from PyQt4.QtGui import QBrush, QColor, QCursor, QPainter, QPainterPath, QPen, QCursor, QPixmap
-    from PyQt5.QtGui import QFrame, QWidget
+from PyQt5.QtCore import pyqtSignal, Qt, QRectF, QTimer, QEvent, QPoint
+from PyQt5.QtGui import QBrush, QColor, QCursor, QPainter, QPainterPath, QPen, QCursor, QPixmap
+from PyQt5.QtWidgets import QFrame, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Antialiasing settings

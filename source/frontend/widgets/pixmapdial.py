@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Pixmap Dial, a custom Qt widget
-# Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,24 +17,14 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Config)
-
-from carla_config import *
-
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 from math import cos, floor, pi, sin
 
-if config_UseQt5:
-    from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QEvent, QPointF, QRectF, QTimer, QSize
-    from PyQt5.QtGui import QColor, QConicalGradient, QFont, QFontMetrics
-    from PyQt5.QtGui import QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
-    from PyQt5.QtWidgets import QDial
-else:
-    from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QEvent, QPointF, QRectF, QTimer, QSize
-    from PyQt4.QtGui import QColor, QConicalGradient, QFont, QFontMetrics
-    from PyQt4.QtGui import QDial, QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QEvent, QPointF, QRectF, QTimer, QSize
+from PyQt5.QtGui import QColor, QConicalGradient, QFont, QFontMetrics
+from PyQt5.QtGui import QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
+from PyQt5.QtWidgets import QDial
 
 # ------------------------------------------------------------------------------------------------------------
 # Widget Class
@@ -512,11 +502,10 @@ class PixmapDial(QDial):
 
 if __name__ == '__main__':
     import sys
-    from PyQt4.QtGui import QApplication
+    from PyQt5.QtWidgets import QApplication
     import resources_rc
 
     app = QApplication(sys.argv)
-
     gui = PixmapDial(None)
     #gui.setEnabled(True)
     #gui.setEnabled(False)

@@ -45,13 +45,12 @@ UIs = \
 # Resources
 
 RES = \
-	carla_config.py \
 	resources_rc.py \
+	$(BINDIR)/resources/patchcanvas \
 	$(BINDIR)/resources/widgets \
 	$(BINDIR)/resources/carla_app.py \
 	$(BINDIR)/resources/carla_backend.py \
 	$(BINDIR)/resources/carla_backend_qt.py \
-	$(BINDIR)/resources/carla_config.py \
 	$(BINDIR)/resources/carla_control.py \
 	$(BINDIR)/resources/carla_database.py \
 	$(BINDIR)/resources/carla_host.py \
@@ -61,8 +60,6 @@ RES = \
 	$(BINDIR)/resources/carla_utils.py \
 	$(BINDIR)/resources/carla_widgets.py \
 	$(BINDIR)/resources/externalui.py \
-	$(BINDIR)/resources/patchcanvas.py \
-	$(BINDIR)/resources/patchcanvas_theme.py \
 	$(BINDIR)/resources/resources_rc.py \
 	$(BINDIR)/resources/ui_carla_about.py \
 	$(BINDIR)/resources/ui_carla_add_jack.py \
@@ -89,15 +86,6 @@ all: $(UIs) $(RES)
 
 ui_%.py: $(RESDIR)/ui/%.ui
 	$(PYUIC) $< -o $@
-
-carla_config.py:
-	@echo "#!/usr/bin/env python3" > $@
-	@echo "# -*- coding: utf-8 -*-" >> $@
-ifeq ($(DEFAULT_QT),4)
-	@echo "config_UseQt5 = False" >> $@
-else
-	@echo "config_UseQt5 = True" >> $@
-endif
 
 resources_rc.py: $(RESDIR)/resources.qrc $(RESDIR)/*/*.png $(RESDIR)/*/*.svg
 	$(PYRCC) $< -o $@

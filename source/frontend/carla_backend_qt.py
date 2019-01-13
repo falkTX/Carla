@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla Backend code (Qt stuff)
-# Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,17 +17,9 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Config)
-
-from carla_config import *
-
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-if config_UseQt5:
-    from PyQt5.QtCore import pyqtSignal, QObject
-else:
-    from PyQt4.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import pyqtSignal, QObject
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)

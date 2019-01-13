@@ -174,11 +174,7 @@ CXXFLAGS   += -isystem /usr/include/glib-2.0
 CXXFLAGS   += -isystem /usr/include/glib-2.0/glib
 CXXFLAGS   += -isystem /usr/include/gtk-2.0
 CXXFLAGS   += -isystem /usr/include/gtk-2.0/gio
-ifeq ($(DEFAULT_QT),4)
-CXXFLAGS   += -isystem /usr/include/qt4
-else
 CXXFLAGS   += -isystem /usr/include/qt5
-endif
 endif
 ifeq ($(MACOS),true)
 BASE_FLAGS += -isystem /opt/kxstudio/include
@@ -280,53 +276,22 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Set PyQt tools
 
-PYRCC4 ?= $(shell which pyrcc4 2>/dev/null)
-PYUIC4 ?= $(shell which pyuic4 2>/dev/null)
-
 PYRCC5 ?= $(shell which pyrcc5 2>/dev/null)
 PYUIC5 ?= $(shell which pyuic5 2>/dev/null)
-
-HAVE_PYQT4=false
-HAVE_PYQT5=false
-
-ifneq ($(PYUIC4),)
-ifneq ($(PYRCC4),)
-HAVE_PYQT=true
-HAVE_PYQT4=true
-endif
-endif
 
 ifneq ($(PYUIC5),)
 ifneq ($(PYRCC5),)
 HAVE_PYQT=true
-HAVE_PYQT5=true
 endif
-endif
-
-# ---------------------------------------------------------------------------------------------------------------------
-# Set default Qt used in frontend
-
-ifeq ($(HAVE_PYQT5),true)
-DEFAULT_QT ?= 5
-else
-DEFAULT_QT ?= 4
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Set PyQt tools, part2
 
-ifeq ($(DEFAULT_QT),4)
-PYUIC ?= pyuic4 -w
-PYRCC ?= pyrcc4 -py3
-ifeq ($(HAVE_QT4),true)
-HAVE_THEME = true
-endif
-else
 PYUIC ?= pyuic5
 PYRCC ?= pyrcc5
 ifeq ($(HAVE_QT5),true)
 HAVE_THEME = true
-endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

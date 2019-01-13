@@ -323,6 +323,7 @@ ifeq ($(HAVE_PYQT),true)
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
 	install -d $(DESTDIR)$(DATADIR)/mime/packages
 	install -d $(DESTDIR)$(DATADIR)/carla/resources
+	install -d $(DESTDIR)$(DATADIR)/carla/patchcanvas
 	install -d $(DESTDIR)$(DATADIR)/carla/widgets
 endif
 
@@ -438,6 +439,10 @@ endif
 		$(DESTDIR)$(DATADIR)/carla/
 
 	install -m 644 \
+		source/frontend/patchcanvas/*.py \
+		$(DESTDIR)$(DATADIR)/carla/patchcanvas/
+
+	install -m 644 \
 		source/frontend/widgets/*.py \
 		$(DESTDIR)$(DATADIR)/carla/widgets/
 
@@ -492,11 +497,11 @@ endif
 	install -m 644 resources/scalable/carla-control.svg $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
 
 	# Install resources (re-use python files)
+	$(LINK) ../patchcanvas                 $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../widgets                     $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_app.py                $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_backend.py            $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_backend_qt.py         $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../carla_config.py             $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_control.py            $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_database.py           $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_host.py               $(DESTDIR)$(DATADIR)/carla/resources
@@ -506,8 +511,6 @@ endif
 	$(LINK) ../carla_utils.py              $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_widgets.py            $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../externalui.py               $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../patchcanvas.py              $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../patchcanvas_theme.py        $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../resources_rc.py             $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_about.py           $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_add_jack.py        $(DESTDIR)$(DATADIR)/carla/resources
@@ -636,16 +639,10 @@ mZ=[
 mE=]
 endif
 
-ifeq ($(DEFAULT_QT),4)
-FEV="Qt4"
-else
-FEV="Qt5"
-endif
-
 features_print_main:
 	@printf -- "$(tS)---> Main features $(tE)\n"
 ifeq ($(HAVE_PYQT),true)
-	@printf -- "Front-End:     $(ANS_YES) (Using $(FEV))\n"
+	@printf -- "Front-End:     $(ANS_YES)\n"
 ifneq ($(WIN32),true)
 	@printf -- "LV2 plugin:    $(ANS_YES)\n"
 else

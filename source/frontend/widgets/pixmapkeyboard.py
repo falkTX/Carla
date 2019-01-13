@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Pixmap Keyboard, a custom Qt4 widget
-# Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+# Pixmap Keyboard, a custom Qt widget
+# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,21 +17,11 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Config)
-
-from carla_config import *
-
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-if config_UseQt5:
-    from PyQt5.QtCore import pyqtSignal, pyqtSlot, qCritical, Qt, QPointF, QRectF, QTimer, QSettings, QSize
-    from PyQt5.QtGui import QColor, QFont, QPainter, QPixmap
-    from PyQt5.QtWidgets import QMenu, QScrollArea, QWidget
-else:
-    from PyQt4.QtCore import pyqtSignal, pyqtSlot, qCritical, Qt, QPointF, QRectF, QTimer, QSettings, QSize
-    from PyQt4.QtGui import QColor, QFont, QPainter, QPixmap
-    from PyQt4.QtGui import QMenu, QScrollArea, QWidget
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, qCritical, Qt, QPointF, QRectF, QTimer, QSettings, QSize
+from PyQt5.QtGui import QColor, QFont, QPainter, QPixmap
+from PyQt5.QtWidgets import QMenu, QScrollArea, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 

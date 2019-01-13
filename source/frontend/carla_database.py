@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla plugin database code
-# Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,22 +17,13 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Imports (Config)
-
-from carla_config import *
-
-# ----------------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 from copy import deepcopy
 from subprocess import Popen, PIPE
 
-if config_UseQt5:
-    from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QEventLoop, QThread, QSettings
-    from PyQt5.QtWidgets import QApplication, QDialog, QDialogButtonBox, QTableWidgetItem
-else:
-    from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QEventLoop, QThread, QSettings
-    from PyQt4.QtGui import QApplication, QDialog, QDialogButtonBox, QTableWidgetItem
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QEventLoop, QThread, QSettings
+from PyQt5.QtWidgets import QApplication, QDialog, QDialogButtonBox, QTableWidgetItem
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -1338,7 +1329,7 @@ class PluginDatabaseW(QDialog):
     def slot_saveSettings(self):
         settings = QSettings("falkTX", "CarlaDatabase2")
         settings.setValue("PluginDatabase/Geometry", self.saveGeometry())
-        settings.setValue("PluginDatabase/TableGeometry%s" % ("_5" if config_UseQt5 else "_4"), self.ui.tableWidget.horizontalHeader().saveState())
+        settings.setValue("PluginDatabase/TableGeometry_5", self.ui.tableWidget.horizontalHeader().saveState())
         settings.setValue("PluginDatabase/ShowFilters", (self.ui.tb_filters.arrowType() == Qt.UpArrow))
         settings.setValue("PluginDatabase/ShowEffects", self.ui.ch_effects.isChecked())
         settings.setValue("PluginDatabase/ShowInstruments", self.ui.ch_instruments.isChecked())
@@ -1381,7 +1372,7 @@ class PluginDatabaseW(QDialog):
         self.ui.ch_stereo.setChecked(settings.value("PluginDatabase/ShowStereoOnly", False, type=bool))
         self.ui.lineEdit.setText(settings.value("PluginDatabase/SearchText", "", type=str))
 
-        tableGeometry = settings.value("PluginDatabase/TableGeometry%s" % ("_5" if config_UseQt5 else "_4"))
+        tableGeometry = settings.value("PluginDatabase/TableGeometry_5")
         if tableGeometry:
             self.ui.tableWidget.horizontalHeader().restoreState(tableGeometry)
         else:

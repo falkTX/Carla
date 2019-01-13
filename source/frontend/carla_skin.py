@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla plugin/slot skin code
-# Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,21 +17,11 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Config)
-
-from carla_config import *
-
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-if config_UseQt5:
-    from PyQt5.QtCore import Qt, QRectF, QLineF
-    from PyQt5.QtGui import QFont, QFontDatabase, QPen, QPixmap
-    from PyQt5.QtWidgets import QColorDialog, QFrame, QPushButton
-else:
-    from PyQt4.QtCore import Qt, QRectF, QLineF
-    from PyQt4.QtGui import QFont, QFontDatabase, QPen, QPixmap
-    from PyQt4.QtGui import QColorDialog, QFrame, QPushButton
+from PyQt5.QtCore import Qt, QRectF, QLineF
+from PyQt5.QtGui import QFont, QFontDatabase, QPen, QPixmap
+from PyQt5.QtWidgets import QColorDialog, QFrame, QPushButton
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)

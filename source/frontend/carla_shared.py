@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Common Carla code
-# Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,9 +17,7 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Config)
-
-from carla_config import *
+# Config
 
 # These will be modified during install
 X_LIBDIR_X = None
@@ -31,15 +29,10 @@ X_DATADIR_X = None
 import os
 import sys
 
-if config_UseQt5:
-    from PyQt5.Qt import PYQT_VERSION_STR
-    from PyQt5.QtCore import qFatal, qVersion, qWarning, QDir
-    from PyQt5.QtGui import QIcon
-    from PyQt5.QtWidgets import QFileDialog, QMessageBox
-else:
-    from PyQt4.Qt import PYQT_VERSION_STR
-    from PyQt4.QtCore import qFatal, qVersion, qWarning, QDir
-    from PyQt4.QtGui import QFileDialog, QIcon, QMessageBox
+from PyQt5.Qt import PYQT_VERSION_STR
+from PyQt5.QtCore import qFatal, qVersion, qWarning, QDir
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QFileDialog, QMessageBox
 
 # ------------------------------------------------------------------------------------------------------------
 # Import Signal

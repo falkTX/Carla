@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla host code
-# Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,23 +17,13 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Config)
-
-from carla_config import *
-
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 import json
 
-if config_UseQt5:
-    from PyQt5.QtCore import qCritical, QEventLoop, QFileInfo, QModelIndex, QPointF, QTimer, QEvent
-    from PyQt5.QtGui import QImage, QPalette, QBrush
-    from PyQt5.QtWidgets import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QMainWindow
-else:
-    from PyQt4.QtCore import qCritical, QEventLoop, QFileInfo, QModelIndex, QPointF, QTimer, QEvent
-    from PyQt4.QtGui import QImage, QPalette, QBrush
-    from PyQt4.QtGui import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QMainWindow
+from PyQt5.QtCore import qCritical, QEventLoop, QFileInfo, QModelIndex, QPointF, QTimer, QEvent
+from PyQt5.QtGui import QImage, QPalette, QBrush
+from PyQt5.QtWidgets import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QMainWindow
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -54,10 +44,7 @@ from widgets.pixmapkeyboard import PixmapKeyboardHArea
 # Try Import OpenGL
 
 try:
-    if config_UseQt5:
-        from PyQt5.QtOpenGL import QGLWidget
-    else:
-        from PyQt4.QtOpenGL import QGLWidget
+    from PyQt5.QtOpenGL import QGLWidget
     hasGL = True
 except:
     hasGL = False
@@ -724,10 +711,9 @@ class HostWindow(QMainWindow):
     @pyqtSlot()
     def slot_fileOpen(self):
         fileFilter = self.tr("Carla Project File (*.carxp);;Carla Preset File (*.carxs)")
-        filename   = QFileDialog.getOpenFileName(self, self.tr("Open Carla Project File"), self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], filter=fileFilter)
+        filename, ok = QFileDialog.getOpenFileName(self, self.tr("Open Carla Project File"), self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], filter=fileFilter)
 
-        if config_UseQt5:
-            filename = filename[0]
+        # FIXME use ok value, test if it works as expected
         if not filename:
             return
 
@@ -755,10 +741,9 @@ class HostWindow(QMainWindow):
             return self.saveProjectNow()
 
         fileFilter = self.tr("Carla Project File (*.carxp)")
-        filename   = QFileDialog.getSaveFileName(self, self.tr("Save Carla Project File"), self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], filter=fileFilter)
+        filename, ok = QFileDialog.getSaveFileName(self, self.tr("Save Carla Project File"), self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], filter=fileFilter)
 
-        if config_UseQt5:
-            filename = filename[0]
+        # FIXME use ok value, test if it works as expected
         if not filename:
             return
 
@@ -1010,38 +995,11 @@ class HostWindow(QMainWindow):
     def showPluginActionsMenu(self):
         menu = QMenu(self)
 
-        if config_UseQt5:
-            menu.addSection("Plugins")
-        else:
-            # fake section
-            act  = menu.addAction("  Plugins")
-            font = act.font()
-            font.setBold(True)
-            act.setFont(font)
-            act.setEnabled(False)
-            menu.addSeparator()
-
+        menu.addSection("Plugins")
         menu.addAction(self.ui.act_plugin_add)
         menu.addAction(self.ui.act_plugin_remove_all)
 
-        if config_UseQt5:
-            menu.addSection("All plugins (macros)")
-        else:
-            # fake space
-            act  = menu.addAction(" ")
-            font = act.font()
-            font.setBold(True)
-            font.setPointSize(font.pointSize()/2)
-            act.setEnabled(False)
-
-            # fake section
-            act  = menu.addAction("  All plugins (macros)")
-            font = act.font()
-            font.setBold(True)
-            act.setFont(font)
-            act.setEnabled(False)
-            menu.addSeparator()
-
+        menu.addSection("All plugins (macros)")
         menu.addAction(self.ui.act_plugins_enable)
         menu.addAction(self.ui.act_plugins_disable)
         menu.addSeparator()
@@ -1389,10 +1347,9 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_canvasSaveImage(self):
-        newPath = QFileDialog.getSaveFileName(self, self.tr("Save Image"), filter=self.tr("PNG Image (*.png);;JPEG Image (*.jpg)"))
+        newPath, ok = QFileDialog.getSaveFileName(self, self.tr("Save Image"), filter=self.tr("PNG Image (*.png);;JPEG Image (*.jpg)"))
 
-        if config_UseQt5:
-            newPath = newPath[0]
+        # FIXME use ok value, test if it works as expected
         if not newPath:
             return
 
@@ -2613,18 +2570,17 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
 # File callback
 
 def fileCallback(ptr, action, isDir, title, filter):
-    ret = ("", "") if config_UseQt5 else ""
-
     title  = charPtrToString(title)
     filter = charPtrToString(filter)
 
     if action == FILE_CALLBACK_OPEN:
-        ret = QFileDialog.getOpenFileName(gCarla.gui, title, "", filter) #, QFileDialog.ShowDirsOnly if isDir else 0x0)
+        ret, ok = QFileDialog.getOpenFileName(gCarla.gui, title, "", filter) #, QFileDialog.ShowDirsOnly if isDir else 0x0)
     elif action == FILE_CALLBACK_SAVE:
-        ret = QFileDialog.getSaveFileName(gCarla.gui, title, "", filter, QFileDialog.ShowDirsOnly if isDir else 0x0)
+        ret, ok = QFileDialog.getSaveFileName(gCarla.gui, title, "", filter, QFileDialog.ShowDirsOnly if isDir else 0x0)
+    else:
+        ret, ok = ("", "")
 
-    if config_UseQt5:
-        ret = ret[0]
+    # FIXME use ok value, test if it works as expected
     if not ret:
         return None
 
@@ -2717,9 +2673,7 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError, HostClass = No
 
     sys.stdout = CarlaPrint(False)
     sys.stderr = CarlaPrint(True)
-
-    if config_UseQt5:
-        sys.excepthook = sys_excepthook
+    sys.excepthook = sys_excepthook
 
     # --------------------------------------------------------------------------------------------------------
     # Done
