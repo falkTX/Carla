@@ -164,6 +164,41 @@ theme: libs
 	@$(MAKE) -C source/theme
 
 # ---------------------------------------------------------------------------------------------------------------------
+# nuitka
+
+nuitka: bin/carla bin/carla-rack bin/carla-plugin
+
+bin/carla:
+	python3 -m nuitka \
+		-j 8 \
+		--recurse-all \
+		--python-flag -O --warn-unusual-code --warn-implicit-exceptions \
+		--recurse-not-to=PyQt5 \
+		--file-reference-choice=runtime \
+		-o ./$@ \
+		./source/frontend/carla
+
+bin/carla-rack:
+	python3 -m nuitka \
+		-j 8 \
+		--recurse-all \
+		--python-flag -O --warn-unusual-code --warn-implicit-exceptions \
+		--recurse-not-to=PyQt5 \
+		--file-reference-choice=runtime \
+		-o ./$@ \
+		./source/frontend/carla
+
+bin/carla-plugin:
+	python3 -m nuitka \
+		-j 8 \
+		--recurse-all \
+		--python-flag -O --warn-unusual-code --warn-implicit-exceptions \
+		--recurse-not-to=PyQt5 \
+		--file-reference-choice=runtime \
+		-o ./$@ \
+		./source/native-plugins/resources/carla-plugin
+
+# ---------------------------------------------------------------------------------------------------------------------
 # Binaries (posix32)
 
 LIBS_POSIX32  = $(MODULEDIR)/jackbridge.posix32.a

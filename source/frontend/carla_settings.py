@@ -40,7 +40,7 @@ import ui_carla_settings
 import ui_carla_settings_driver
 
 from carla_shared import *
-from patchcanvas_theme import *
+from patchcanvas.theme import *
 
 # ------------------------------------------------------------------------------------------------------------
 # ...

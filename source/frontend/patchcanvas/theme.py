@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # PatchBay Canvas Themes
-# Copyright (C) 2010-2014 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2010-2019 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,40 +17,28 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Config)
-
-from carla_config import *
-
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-#from sys import platform
-
-if config_UseQt5:
-    from PyQt5.QtCore import Qt
-    from PyQt5.QtGui import QColor, QFont, QPen, QPixmap
-else:
-    from PyQt4.QtCore import Qt
-    from PyQt4.QtGui import QColor, QFont, QPen, QPixmap
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor, QFont, QPen, QPixmap
 
 # ------------------------------------------------------------------------------------------------------------
-# patchcanvas-theme.cpp
 
 class Theme(object):
     # enum PortType
-    THEME_PORT_SQUARE  = 0
+    THEME_PORT_SQUARE = 0
     THEME_PORT_POLYGON = 1
 
     # enum List
-    THEME_MODERN_DARK      = 0
+    THEME_MODERN_DARK = 0
     THEME_MODERN_DARK_TINY = 1
-    THEME_MODERN_LIGHT     = 2
-    THEME_CLASSIC_DARK     = 3
-    THEME_OOSTUDIO         = 4
-    THEME_MAX              = 5
+    THEME_MODERN_LIGHT = 2
+    THEME_CLASSIC_DARK = 3
+    THEME_OOSTUDIO = 4
+    THEME_MAX = 5
 
     # enum BackgroundType
-    THEME_BG_SOLID    = 0
+    THEME_BG_SOLID = 0
     THEME_BG_GRADIENT = 1
 
     def __init__(self, idx):
@@ -68,18 +56,18 @@ class Theme(object):
             self.box_bg_1 = QColor(32, 34, 35)
             self.box_bg_2 = QColor(43, 47, 48)
             self.box_shadow = QColor(89, 89, 89, 180)
-            self.box_header_pixmap  = None
-            self.box_header_height  = 24
+            self.box_header_pixmap = None
+            self.box_header_height = 24
             self.box_header_spacing = 0
 
             self.box_text = QPen(QColor(240, 240, 240), 0)
-            self.box_text_sel  = self.box_text
+            self.box_text_sel = self.box_text
             self.box_text_ypos = 16
             self.box_font_name = "Deja Vu Sans"
             self.box_font_size = 11
             self.box_font_state = QFont.Bold
 
-            self.box_bg_type  = self.THEME_BG_GRADIENT
+            self.box_bg_type = self.THEME_BG_GRADIENT
             self.box_use_icon = True
 
             # Ports
@@ -118,9 +106,9 @@ class Theme(object):
             self.port_parameter_text = self.port_text
             self.port_parameter_text_sel = self.port_text
 
-            self.port_height   = 16
-            self.port_offset   = 0
-            self.port_spacing  = 2
+            self.port_height = 16
+            self.port_offset = 0
+            self.port_spacing = 2
             self.port_spacingT = 2
 
             # Lines
@@ -150,18 +138,18 @@ class Theme(object):
             self.box_bg_1 = QColor(32, 34, 35)
             self.box_bg_2 = QColor(43, 47, 48)
             self.box_shadow = QColor(89, 89, 89, 180)
-            self.box_header_pixmap  = None
-            self.box_header_height  = 14
+            self.box_header_pixmap = None
+            self.box_header_height = 14
             self.box_header_spacing = 0
 
             self.box_text = QPen(QColor(240, 240, 240), 0)
-            self.box_text_sel  = self.box_text
+            self.box_text_sel = self.box_text
             self.box_text_ypos = 10
             self.box_font_name = "Deja Vu Sans"
             self.box_font_size = 10
             self.box_font_state = QFont.Bold
 
-            self.box_bg_type  = self.THEME_BG_GRADIENT
+            self.box_bg_type = self.THEME_BG_GRADIENT
             self.box_use_icon = False
 
             # Ports
@@ -200,9 +188,9 @@ class Theme(object):
             self.port_parameter_text = self.port_text
             self.port_parameter_text_sel = self.port_text
 
-            self.port_height   = 12
-            self.port_offset   = 0
-            self.port_spacing  = 1
+            self.port_height = 12
+            self.port_offset = 0
+            self.port_spacing = 1
             self.port_spacingT = 1
 
             # Lines
@@ -232,18 +220,18 @@ class Theme(object):
             self.box_bg_1 = QColor(250, 250, 250)
             self.box_bg_2 = QColor(200, 200, 200)
             self.box_shadow = QColor(1, 1, 1, 100)
-            self.box_header_pixmap  = None
-            self.box_header_height  = 24
+            self.box_header_pixmap = None
+            self.box_header_height = 24
             self.box_header_spacing = 0
 
             self.box_text = QPen(QColor(1, 1, 1), 0)
-            self.box_text_sel  = self.box_text
+            self.box_text_sel = self.box_text
             self.box_text_ypos = 16
             self.box_font_name = "Ubuntu"
             self.box_font_size = 11
             self.box_font_state = QFont.Bold
 
-            self.box_bg_type  = self.THEME_BG_GRADIENT
+            self.box_bg_type = self.THEME_BG_GRADIENT
             self.box_use_icon = True
 
             # Ports
@@ -282,9 +270,9 @@ class Theme(object):
             self.port_parameter_text = self.port_text
             self.port_parameter_text_sel = self.port_text
 
-            self.port_height   = 16
-            self.port_offset   = 0
-            self.port_spacing  = 2
+            self.port_height = 16
+            self.port_offset = 0
+            self.port_spacing = 2
             self.port_spacingT = 2
 
             # Lines
@@ -314,18 +302,18 @@ class Theme(object):
             self.box_bg_1 = QColor(30, 34, 36)
             self.box_bg_2 = QColor(30, 34, 36)
             self.box_shadow = QColor(89, 89, 89, 180)
-            self.box_header_pixmap  = None
-            self.box_header_height  = 19
+            self.box_header_pixmap = None
+            self.box_header_height = 19
             self.box_header_spacing = 0
 
             self.box_text = QPen(QColor(255, 255, 255), 0)
-            self.box_text_sel  = self.box_text
+            self.box_text_sel = self.box_text
             self.box_text_ypos = 12
             self.box_font_name = "Sans"
             self.box_font_size = 12
             self.box_font_state = QFont.Normal
 
-            self.box_bg_type  = self.THEME_BG_GRADIENT
+            self.box_bg_type = self.THEME_BG_GRADIENT
             self.box_use_icon = False
 
             # Ports
@@ -364,9 +352,9 @@ class Theme(object):
             self.port_parameter_text = self.port_text
             self.port_parameter_text_sel = self.port_text
 
-            self.port_height   = 14
-            self.port_offset   = 0
-            self.port_spacing  = 1
+            self.port_height = 14
+            self.port_offset = 0
+            self.port_spacing = 1
             self.port_spacingT = 0
 
             # Lines
@@ -396,18 +384,18 @@ class Theme(object):
             self.box_bg_1 = QColor(46, 46, 46)
             self.box_bg_2 = QColor(23, 23, 23)
             self.box_shadow = QColor(89, 89, 89, 180)
-            self.box_header_pixmap  = QPixmap(":/bitmaps/canvas/frame_node_header.png")
-            self.box_header_height  = 22
+            self.box_header_pixmap = QPixmap(":/bitmaps/canvas/frame_node_header.png")
+            self.box_header_height = 22
             self.box_header_spacing = 6
 
             self.box_text = QPen(QColor(144, 144, 144), 0)
-            self.box_text_sel  = QPen(QColor(189, 122, 214), 0)
+            self.box_text_sel = QPen(QColor(189, 122, 214), 0)
             self.box_text_ypos = 16
             self.box_font_name = "Deja Vu Sans"
             self.box_font_size = 11
             self.box_font_state = QFont.Bold
 
-            self.box_bg_type  = self.THEME_BG_SOLID
+            self.box_bg_type = self.THEME_BG_SOLID
             self.box_use_icon = False
 
             # Ports
@@ -450,9 +438,9 @@ class Theme(object):
             self.port_parameter_text_sel = self.port_parameter_pen_sel
 
             # missing, ports 2
-            self.port_height   = 21
-            self.port_offset   = 1
-            self.port_spacing  = 3
+            self.port_height = 21
+            self.port_offset = 1
+            self.port_spacing = 3
             self.port_spacingT = 0
 
             # Lines
@@ -472,22 +460,25 @@ class Theme(object):
             self.rubberband_pen = QPen(QColor(1, 230, 238), 2, Qt.SolidLine)
             self.rubberband_brush = QColor(90, 90, 90, 100)
 
+# ------------------------------------------------------------------------------------------------------------
+
 def getDefaultTheme():
     return Theme.THEME_MODERN_DARK
 
 def getThemeName(idx):
     if idx == Theme.THEME_MODERN_DARK:
         return "Modern Dark"
-    elif idx == Theme.THEME_MODERN_DARK_TINY:
+    if idx == Theme.THEME_MODERN_DARK_TINY:
         return "Modern Dark (Tiny)"
-    elif idx == Theme.THEME_MODERN_LIGHT:
+    if idx == Theme.THEME_MODERN_LIGHT:
         return "Modern Light"
-    elif idx == Theme.THEME_CLASSIC_DARK:
+    if idx == Theme.THEME_CLASSIC_DARK:
         return "Classic Dark"
-    elif idx == Theme.THEME_OOSTUDIO:
+    if idx == Theme.THEME_OOSTUDIO:
         return "OpenOctave Studio"
-    else:
-        return ""
+    return ""
 
 def getDefaultThemeName():
     return "Modern Dark"
+
+# ------------------------------------------------------------------------------------------------------------

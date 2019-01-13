@@ -38,7 +38,6 @@ else:
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
-import patchcanvas
 import ui_carla_host
 
 from carla_app import *
@@ -47,6 +46,7 @@ from carla_settings import *
 from carla_utils import *
 from carla_widgets import *
 
+from patchcanvas import patchcanvas
 from widgets.digitalpeakmeter import DigitalPeakMeter
 from widgets.pixmapkeyboard import PixmapKeyboardHArea
 
