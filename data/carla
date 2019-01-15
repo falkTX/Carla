@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 PYTHON=$(which python3 2>/dev/null)
 
@@ -11,6 +11,5 @@ if [ "$1" = "--gdb" ]; then
 fi
 
 INSTALL_PREFIX="X-PREFIX-X"
-PATH="$INSTALL_PREFIX"/lib/carla:$PATH
-export PATH
+export PATH="$INSTALL_PREFIX"/lib/carla:$PATH
 exec $PYTHON "$INSTALL_PREFIX"/share/carla/carla --with-appname="$0" --with-libprefix="$INSTALL_PREFIX" "$@"
