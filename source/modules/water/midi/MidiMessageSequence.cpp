@@ -317,7 +317,7 @@ void MidiMessageSequence::createControllerUpdatesForTime (const int channelNumbe
             else if (mm.isController())
             {
                 const int controllerNumber = mm.getControllerNumber();
-                jassert (isPositiveAndBelow (controllerNumber, 128));
+                wassert (isPositiveAndBelow (controllerNumber, 128));
 
                 if (! doneControllers[controllerNumber])
                 {

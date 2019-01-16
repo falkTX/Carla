@@ -122,7 +122,7 @@ static int findInsertIndexInSortedArray (ElementComparator& comparator,
                                          int firstElement,
                                          int lastElement)
 {
-    jassert (firstElement <= lastElement);
+    wassert (firstElement <= lastElement);
 
     ignoreUnused (comparator); // if you pass in an object with a static compareElements() method, this
                                // avoids getting warning messages about the parameter being unused

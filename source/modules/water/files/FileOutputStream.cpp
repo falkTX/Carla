@@ -87,7 +87,7 @@ void FileOutputStream::flush()
 
 bool FileOutputStream::write (const void* const src, const size_t numBytes)
 {
-    jassert (src != nullptr && ((ssize_t) numBytes) >= 0);
+    wassert (src != nullptr && ((ssize_t) numBytes) >= 0);
 
     if (bytesInBuffer + numBytes < bufferSize)
     {
@@ -123,7 +123,7 @@ bool FileOutputStream::write (const void* const src, const size_t numBytes)
 
 bool FileOutputStream::writeRepeatedByte (uint8 byte, size_t numBytes)
 {
-    jassert (((ssize_t) numBytes) >= 0);
+    wassert (((ssize_t) numBytes) >= 0);
 
     if (bytesInBuffer + numBytes < bufferSize)
     {

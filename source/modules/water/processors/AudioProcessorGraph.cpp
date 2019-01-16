@@ -360,7 +360,7 @@ private:
                 if (inputChan >= numOuts)
                 {
                     bufIndex = getReadOnlyEmptyBuffer();
-                    jassert (bufIndex >= 0);
+                    wassert (bufIndex >= 0);
                 }
                 else
                 {
@@ -380,7 +380,7 @@ private:
                 {
                     // if not found, this is probably a feedback loop
                     bufIndex = getReadOnlyEmptyBuffer();
-                    jassert (bufIndex >= 0);
+                    wassert (bufIndex >= 0);
                 }
 
                 if (inputChan < numOuts
@@ -436,7 +436,7 @@ private:
                 {
                     // can't re-use any of our input chans, so get a new one and copy everything into it..
                     bufIndex = getFreeBuffer (false);
-                    jassert (bufIndex != 0);
+                    wassert (bufIndex != 0);
 
                     const int srcIndex = getBufferContaining (sourceNodes.getUnchecked (0),
                                                               sourceOutputChans.getUnchecked (0));
@@ -490,7 +490,7 @@ private:
                 }
             }
 
-            jassert (bufIndex >= 0);
+            wassert (bufIndex >= 0);
             audioChannelsToUse.add (bufIndex);
 
             if (inputChan < numOuts)
@@ -500,7 +500,7 @@ private:
         for (int outputChan = numIns; outputChan < numOuts; ++outputChan)
         {
             const int bufIndex = getFreeBuffer (false);
-            jassert (bufIndex != 0);
+            wassert (bufIndex != 0);
             audioChannelsToUse.add (bufIndex);
 
             markBufferAsContaining (bufIndex, node.nodeId, outputChan);
@@ -578,7 +578,7 @@ private:
             {
                 // can't re-use any of our input buffers, so get a new one and copy everything into it..
                 midiBufferToUse = getFreeBuffer (true);
-                jassert (midiBufferToUse >= 0);
+                wassert (midiBufferToUse >= 0);
 
                 const int srcIndex = getBufferContaining (midiSourceNodes.getUnchecked(0),
                                                           AudioProcessorGraph::midiChannelIndex);
@@ -724,13 +724,13 @@ private:
     {
         if (outputIndex == AudioProcessorGraph::midiChannelIndex)
         {
-            jassert (bufferNum > 0 && bufferNum < midiNodeIds.size());
+            wassert (bufferNum > 0 && bufferNum < midiNodeIds.size());
 
             midiNodeIds.set (bufferNum, nodeId);
         }
         else
         {
-            jassert (bufferNum >= 0 && bufferNum < nodeIds.size());
+            wassert (bufferNum >= 0 && bufferNum < nodeIds.size());
 
             nodeIds.set (bufferNum, nodeId);
             channels.set (bufferNum, outputIndex);
@@ -884,7 +884,7 @@ AudioProcessorGraph::Connection::Connection (const uint32 sourceID, const int so
 AudioProcessorGraph::Node::Node (const uint32 nodeID, AudioProcessor* const p) noexcept
     : nodeId (nodeID), processor (p), isPrepared (false)
 {
-    jassert (processor != nullptr);
+    wassert (processor != nullptr);
 }
 
 void AudioProcessorGraph::Node::prepare (const double newSampleRate, const int newBlockSize,
@@ -997,7 +997,7 @@ AudioProcessorGraph::Node* AudioProcessorGraph::addNode (AudioProcessor* const n
     else
     {
         // you can't add a node with an id that already exists in the graph..
-        jassert (getNodeForId (nodeId) == nullptr);
+        wassert (getNodeForId (nodeId) == nullptr);
         removeNode (nodeId);
 
         if (nodeId > lastNodeId)
@@ -1166,7 +1166,7 @@ bool AudioProcessorGraph::disconnectNode (const uint32 nodeId)
 
 bool AudioProcessorGraph::isConnectionLegal (const Connection* const c) const
 {
-    jassert (c != nullptr);
+    wassert (c != nullptr);
 
     const Node* const source = getNodeForId (c->sourceNodeId);
     const Node* const dest   = getNodeForId (c->destNodeId);

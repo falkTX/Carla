@@ -144,7 +144,7 @@ void Synthesiser::setNoteStealingEnabled (const bool shouldSteal)
 
 void Synthesiser::setMinimumRenderingSubdivisionSize (int numSamples, bool shouldBeStrict) noexcept
 {
-    jassert (numSamples > 0); // it wouldn't make much sense for this to be less than 1
+    wassert (numSamples > 0); // it wouldn't make much sense for this to be less than 1
     minimumSubBlockSize = numSamples;
     subBlockSubdivisionIsStrict = shouldBeStrict;
 }
@@ -169,7 +169,7 @@ void Synthesiser::processNextBlock (AudioSampleBuffer& outputAudio,
                                     int numSamples)
 {
     // must set the sample rate before using this!
-    jassert (sampleRate != 0);
+    wassert (sampleRate != 0);
     const int targetChannels = outputAudio.getNumChannels();
 
     MidiBuffer::Iterator midiIterator (midiData);
@@ -325,12 +325,12 @@ void Synthesiser::startVoice (SynthesiserVoice* const voice,
 
 void Synthesiser::stopVoice (SynthesiserVoice* voice, float velocity, const bool allowTailOff)
 {
-    jassert (voice != nullptr);
+    wassert (voice != nullptr);
 
     voice->stopNote (velocity, allowTailOff);
 
     // the subclass MUST call clearCurrentNote() if it's not tailing off! RTFM for stopNote()!
-    jassert (allowTailOff || (voice->getCurrentlyPlayingNote() < 0 && voice->getCurrentlyPlayingSound() == 0));
+    wassert (allowTailOff || (voice->getCurrentlyPlayingNote() < 0 && voice->getCurrentlyPlayingSound() == 0));
 }
 
 void Synthesiser::noteOff (const int midiChannel,
@@ -472,7 +472,7 @@ void Synthesiser::handleSustainPedal (int midiChannel, bool isDown)
 
 void Synthesiser::handleSostenutoPedal (int midiChannel, bool isDown)
 {
-    jassert (midiChannel > 0 && midiChannel <= 16);
+    wassert (midiChannel > 0 && midiChannel <= 16);
 
     for (int i = voices.size(); --i >= 0;)
     {
@@ -491,13 +491,13 @@ void Synthesiser::handleSostenutoPedal (int midiChannel, bool isDown)
 void Synthesiser::handleSoftPedal (int midiChannel, bool /*isDown*/)
 {
     ignoreUnused (midiChannel);
-    jassert (midiChannel > 0 && midiChannel <= 16);
+    wassert (midiChannel > 0 && midiChannel <= 16);
 }
 
 void Synthesiser::handleProgramChange (int midiChannel, int programNumber)
 {
     ignoreUnused (midiChannel, programNumber);
-    jassert (midiChannel > 0 && midiChannel <= 16);
+    wassert (midiChannel > 0 && midiChannel <= 16);
 }
 
 //==============================================================================
@@ -536,7 +536,7 @@ SynthesiserVoice* Synthesiser::findVoiceToSteal (SynthesiserSound* soundToPlay,
     // - Protect the lowest & topmost notes, even if sustained, but not if they've been released.
 
     // apparently you are trying to render audio without having any voices...
-    jassert (voices.size() > 0);
+    wassert (voices.size() > 0);
 
     // These are the voices we want to protect (ie: only steal if unavoidable)
     SynthesiserVoice* low = nullptr; // Lowest sounding note, might be sustained, but NOT in release phase
@@ -552,7 +552,7 @@ SynthesiserVoice* Synthesiser::findVoiceToSteal (SynthesiserSound* soundToPlay,
 
         if (voice->canPlaySound (soundToPlay))
         {
-            jassert (voice->isVoiceActive()); // We wouldn't be here otherwise
+            wassert (voice->isVoiceActive()); // We wouldn't be here otherwise
 
             VoiceAgeSorter sorter;
             usableVoices.addSorted (sorter, voice);
@@ -613,7 +613,7 @@ SynthesiserVoice* Synthesiser::findVoiceToSteal (SynthesiserSound* soundToPlay,
     }
 
     // We've only got "protected" voices now: lowest note takes priority
-    jassert (low != nullptr);
+    wassert (low != nullptr);
 
     // Duophonic synth: give priority to the bass note:
     if (top != nullptr)

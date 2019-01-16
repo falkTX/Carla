@@ -74,7 +74,7 @@ public:
     {
 #ifdef CARLA_PROPER_CPP11_SUPPORT
         // This class can only be used for types which are 32 or 64 bits in size.
-        static_jassert (sizeof (Type) == 4 || sizeof (Type) == 8);
+        static_wassert (sizeof (Type) == 4 || sizeof (Type) == 8);
 #endif
     }
 
@@ -200,7 +200,7 @@ template<>
 inline int32 Atomic<int32>::get() const noexcept
 {
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-    static_jassert (sizeof (int32) == 4);
+    static_wassert (sizeof (int32) == 4);
 #endif
     return castFrom32Bit ((int32) __sync_add_and_fetch (const_cast<volatile int32*>(&value), 0));
 }
@@ -209,7 +209,7 @@ template<>
 inline int64 Atomic<int64>::get() const noexcept
 {
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-    static_jassert (sizeof (int64) == 8);
+    static_wassert (sizeof (int64) == 8);
 #endif
     return castFrom64Bit ((int64) __sync_add_and_fetch (const_cast<volatile int64*>(&value), 0));
 }
@@ -218,7 +218,7 @@ template<>
 inline uint32 Atomic<uint32>::get() const noexcept
 {
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-    static_jassert (sizeof (uint32) == 4);
+    static_wassert (sizeof (uint32) == 4);
 #endif
     return castFrom32Bit ((uint32) __sync_add_and_fetch (const_cast<volatile uint32*>(&value), 0));
 }
@@ -227,7 +227,7 @@ template<>
 inline uint64 Atomic<uint64>::get() const noexcept
 {
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-    static_jassert (sizeof (uint64) == 8);
+    static_wassert (sizeof (uint64) == 8);
 #endif
     return castFrom64Bit ((uint64) __sync_add_and_fetch (const_cast<volatile uint64*>(&value), 0));
 }

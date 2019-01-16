@@ -476,6 +476,7 @@ private:
     static void errorCallback (const char* msg)
     {
         JUCE_JACK_LOG ("JackAudioIODevice::errorCallback " + String (msg));
+        ignoreUnused(msg);
     }
 
     static void sendDeviceChangedCallback();
