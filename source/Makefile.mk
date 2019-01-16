@@ -405,6 +405,8 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Set libs stuff (part 2)
 
+ifneq ($(USING_JUCE),true)
+
 RTAUDIO_FLAGS    = -DHAVE_GETTIMEOFDAY
 RTMIDI_FLAGS     =
 
@@ -420,6 +422,8 @@ RTAUDIO_FLAGS   += $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags libpulse-simp
 RTAUDIO_LIBS    += $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs libpulse-simple)
 endif
 endif
+
+endif # USING_JUCE
 
 ifeq ($(BSD),true)
 JACKBRIDGE_LIBS  = -lpthread -lrt
@@ -448,11 +452,16 @@ JACKBRIDGE_LIBS  = -ldl -lpthread -lrt
 LILV_LIBS        = -ldl -lm -lrt
 RTMEMPOOL_LIBS   = -lpthread -lrt
 WATER_LIBS       = -ldl -lpthread -lrt
+ifeq ($(USING_JUCE),true)
+JUCE_CORE_LIBS          = -ldl -lpthread -lrt
+JUCE_AUDIO_DEVICES_LIBS = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs alsa)
+else
 ifeq ($(HAVE_ALSA),true)
 RTAUDIO_FLAGS   += $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags alsa) -D__LINUX_ALSA__
 RTAUDIO_LIBS    += $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs alsa) -lpthread
 RTMIDI_FLAGS    += $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags alsa) -D__LINUX_ALSA__
 RTMIDI_LIBS     += $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs alsa)
+endif
 endif
 endif
 
@@ -462,10 +471,21 @@ JACKBRIDGE_LIBS  = -ldl -lpthread
 LILV_LIBS        = -ldl -lm
 RTMEMPOOL_LIBS   = -lpthread
 WATER_LIBS       = -framework AppKit
+ifeq ($(USING_JUCE),true)
+JUCE_AUDIO_BASICS_LIBS     = -framework Accelerate
+JUCE_AUDIO_DEVICES_LIBS    = -framework AppKit -framework AudioToolbox -framework CoreAudio -framework CoreMIDI
+JUCE_AUDIO_FORMATS_LIBS    = -framework AudioToolbox -framework CoreFoundation
+JUCE_AUDIO_PROCESSORS_LIBS = -framework AudioToolbox -framework AudioUnit -framework CoreAudio -framework CoreAudioKit -framework Cocoa -framework Carbon
+JUCE_CORE_LIBS             = -framework AppKit
+JUCE_EVENTS_LIBS           = -framework AppKit
+JUCE_GRAPHICS_LIBS         = -framework Cocoa -framework QuartzCore
+JUCE_GUI_BASICS_LIBS       = -framework Cocoa
+else
 RTAUDIO_FLAGS   += -D__MACOSX_CORE__
 RTAUDIO_LIBS    += -framework CoreAudio
 RTMIDI_FLAGS    += -D__MACOSX_CORE__
 RTMIDI_LIBS     += -framework CoreMIDI
+endif
 endif
 
 ifeq ($(WIN32),true)
@@ -474,9 +494,16 @@ JACKBRIDGE_LIBS  = -lpthread
 LILV_LIBS        = -lm
 RTMEMPOOL_LIBS   = -lpthread
 WATER_LIBS       = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
+ifeq ($(USING_JUCE),true)
+JUCE_AUDIO_DEVICES_LIBS    = -lwinmm -lole32
+JUCE_CORE_LIBS             = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
+JUCE_GRAPHICS_LIBS         = -lgdi32
+JUCE_GUI_BASICS_LIBS       = -lgdi32 -limm32 -lcomdlg32 -lole32
+else
 RTAUDIO_FLAGS   += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_WASAPI__
 RTAUDIO_LIBS    += -ldsound -luuid -lksuser -lwinmm
 RTMIDI_FLAGS    += -D__WINDOWS_MM__
+endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

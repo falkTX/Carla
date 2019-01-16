@@ -203,6 +203,12 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
 #ifndef BUILD_BRIDGE
 # ifdef USING_JUCE
     // -------------------------------------------------------------------
+    // linux
+
+    if (std::strcmp(driverName, "ALSA") == 0)
+        return newJuce(AUDIO_API_ALSA);
+
+    // -------------------------------------------------------------------
     // macos
 
     if (std::strcmp(driverName, "CoreAudio") == 0)

@@ -51,7 +51,7 @@ namespace water {
 
     @see forEachXmlChildElementWithTagName
 */
-#define forEachXmlChildElement(parentXmlElement, childElementVariableName) \
+#define __forEachXmlChildElement(parentXmlElement, childElementVariableName) \
 \
     for (water::XmlElement* childElementVariableName = (parentXmlElement).getFirstChildElement(); \
          childElementVariableName != nullptr; \
@@ -80,7 +80,7 @@ namespace water {
 
     @see forEachXmlChildElement
 */
-#define forEachXmlChildElementWithTagName(parentXmlElement, childElementVariableName, requiredTagName) \
+#define __forEachXmlChildElementWithTagName(parentXmlElement, childElementVariableName, requiredTagName) \
 \
     for (water::XmlElement* childElementVariableName = (parentXmlElement).getChildByName (requiredTagName); \
          childElementVariableName != nullptr; \

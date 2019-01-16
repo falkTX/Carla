@@ -37,8 +37,23 @@ ifeq ($(HAVE_HYLIA),true)
 STANDALONE_LIBS += $(MODULEDIR)/hylia.a
 endif
 
+ifeq ($(USING_JUCE),true)
+STANDALONE_LIBS += $(MODULEDIR)/juce_audio_basics.a
+STANDALONE_LIBS += $(MODULEDIR)/juce_audio_devices.a
+STANDALONE_LIBS += $(MODULEDIR)/juce_audio_processors.a
+STANDALONE_LIBS += $(MODULEDIR)/juce_core.a
+STANDALONE_LIBS += $(MODULEDIR)/juce_data_structures.a
+STANDALONE_LIBS += $(MODULEDIR)/juce_events.a
+ifeq ($(MACOS_OR_WIN32),true)
+STANDALONE_LIBS += $(MODULEDIR)/juce_graphics.a
+STANDALONE_LIBS += $(MODULEDIR)/juce_gui_basics.a
+# ifeq ($(MACOS),true)
+# STANDALONE_LIBS += $(MODULEDIR)/juce_gui_extra.a
+endif
+else
 STANDALONE_LIBS += $(MODULEDIR)/rtaudio.a
 STANDALONE_LIBS += $(MODULEDIR)/rtmidi.a
+endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -48,13 +63,26 @@ STANDALONE_LINK_FLAGS += $(NATIVE_PLUGINS_LIBS)
 STANDALONE_LINK_FLAGS += $(RTMEMPOOL_LIBS)
 STANDALONE_LINK_FLAGS += $(WATER_LIBS)
 
-STANDALONE_LINK_FLAGS += $(RTAUDIO_LIBS)
-STANDALONE_LINK_FLAGS += $(RTMIDI_LIBS)
-
 STANDALONE_LINK_FLAGS += $(LIBLO_LIBS)
 STANDALONE_LINK_FLAGS += $(MAGIC_LIBS)
 STANDALONE_LINK_FLAGS += $(FLUIDSYNTH_LIBS)
 STANDALONE_LINK_FLAGS += $(X11_LIBS)
+
+ifeq ($(USING_JUCE),true)
+STANDALONE_LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
+STANDALONE_LINK_FLAGS += $(JUCE_AUDIO_DEVICES_LIBS)
+STANDALONE_LINK_FLAGS += $(JUCE_AUDIO_PROCESSORS_LIBS)
+STANDALONE_LINK_FLAGS += $(JUCE_CORE_LIBS)
+STANDALONE_LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
+STANDALONE_LINK_FLAGS += $(JUCE_EVENTS_LIBS)
+ifeq ($(MACOS_OR_WIN32),true)
+STANDALONE_LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
+STANDALONE_LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
+endif
+else
+STANDALONE_LINK_FLAGS += $(RTAUDIO_LIBS)
+STANDALONE_LINK_FLAGS += $(RTMIDI_LIBS)
+endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
