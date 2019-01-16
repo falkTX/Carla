@@ -52,7 +52,7 @@ uint16 MidiMessage::pitchbendToPitchwheelPos (const float pitchbend,
                                  const float pitchbendRange) noexcept
 {
     // can't translate a pitchbend value that is outside of the given range!
-    jassert (std::abs (pitchbend) <= pitchbendRange);
+    wassert (std::abs (pitchbend) <= pitchbendRange);
 
     return static_cast<uint16> (pitchbend > 0.0f
                                   ? jmap (pitchbend, 0.0f, pitchbendRange, 8192.0f, 16383.0f)
@@ -82,7 +82,7 @@ int MidiMessage::readVariableLengthVal (const uint8* data, int& numBytesUsed) no
 int MidiMessage::getMessageLengthFromFirstByte (const uint8 firstByte) noexcept
 {
     // this method only works for valid starting bytes of a short midi message
-    jassert (firstByte >= 0x80 && firstByte != 0xf0 && firstByte != 0xf7);
+    wassert (firstByte >= 0x80 && firstByte != 0xf0 && firstByte != 0xf7);
 
     static const char messageLengths[] =
     {
@@ -110,9 +110,9 @@ MidiMessage::MidiMessage() noexcept
 MidiMessage::MidiMessage (const void* const d, const int dataSize, const double t)
    : timeStamp (t), size (dataSize)
 {
-    jassert (dataSize > 0);
+    wassert (dataSize > 0);
     // this checks that the length matches the data..
-    jassert (dataSize > 3 || *(uint8*)d >= 0xf0 || getMessageLengthFromFirstByte (*(uint8*)d) == size);
+    wassert (dataSize > 3 || *(uint8*)d >= 0xf0 || getMessageLengthFromFirstByte (*(uint8*)d) == size);
 
     memcpy (allocateSpace (dataSize), d, (size_t) dataSize);
 }
@@ -123,7 +123,7 @@ MidiMessage::MidiMessage (const int byte1, const double t) noexcept
     packedData.asBytes[0] = (uint8) byte1;
 
     // check that the length matches the data..
-    jassert (byte1 >= 0xf0 || getMessageLengthFromFirstByte ((uint8) byte1) == 1);
+    wassert (byte1 >= 0xf0 || getMessageLengthFromFirstByte ((uint8) byte1) == 1);
 }
 
 MidiMessage::MidiMessage (const int byte1, const int byte2, const double t) noexcept
@@ -133,7 +133,7 @@ MidiMessage::MidiMessage (const int byte1, const int byte2, const double t) noex
     packedData.asBytes[1] = (uint8) byte2;
 
     // check that the length matches the data..
-    jassert (byte1 >= 0xf0 || getMessageLengthFromFirstByte ((uint8) byte1) == 2);
+    wassert (byte1 >= 0xf0 || getMessageLengthFromFirstByte ((uint8) byte1) == 2);
 }
 
 MidiMessage::MidiMessage (const int byte1, const int byte2, const int byte3, const double t) noexcept
@@ -144,7 +144,7 @@ MidiMessage::MidiMessage (const int byte1, const int byte2, const int byte3, con
     packedData.asBytes[2] = (uint8) byte3;
 
     // check that the length matches the data..
-    jassert (byte1 >= 0xf0 || getMessageLengthFromFirstByte ((uint8) byte1) == 3);
+    wassert (byte1 >= 0xf0 || getMessageLengthFromFirstByte ((uint8) byte1) == 3);
 }
 
 MidiMessage::MidiMessage (const MidiMessage& other)
@@ -334,7 +334,7 @@ int MidiMessage::getChannel() const noexcept
 
 bool MidiMessage::isForChannel (const int channel) const noexcept
 {
-    jassert (channel > 0 && channel <= 16); // valid channels are numbered 1 to 16
+    wassert (channel > 0 && channel <= 16); // valid channels are numbered 1 to 16
 
     const uint8* const data = getData();
 
@@ -344,7 +344,7 @@ bool MidiMessage::isForChannel (const int channel) const noexcept
 
 void MidiMessage::setChannel (const int channel) noexcept
 {
-    jassert (channel > 0 && channel <= 16); // valid channels are numbered 1 to 16
+    wassert (channel > 0 && channel <= 16); // valid channels are numbered 1 to 16
 
     uint8* const data = getData();
 
@@ -423,7 +423,7 @@ bool MidiMessage::isAftertouch() const noexcept
 
 int MidiMessage::getAfterTouchValue() const noexcept
 {
-    jassert (isAftertouch());
+    wassert (isAftertouch());
     return getData()[2];
 }
 
@@ -431,9 +431,9 @@ MidiMessage MidiMessage::aftertouchChange (const int channel,
                                            const int noteNum,
                                            const int aftertouchValue) noexcept
 {
-    jassert (channel > 0 && channel <= 16); // valid channels are numbered 1 to 16
-    jassert (isPositiveAndBelow (noteNum, (int) 128));
-    jassert (isPositiveAndBelow (aftertouchValue, (int) 128));
+    wassert (channel > 0 && channel <= 16); // valid channels are numbered 1 to 16
+    wassert (isPositiveAndBelow (noteNum, (int) 128));
+    wassert (isPositiveAndBelow (aftertouchValue, (int) 128));
 
     return MidiMessage (MidiHelpers::initialByte (0xa0, channel),
                         noteNum & 0x7f,
@@ -447,14 +447,14 @@ bool MidiMessage::isChannelPressure() const noexcept
 
 int MidiMessage::getChannelPressureValue() const noexcept
 {
-    jassert (isChannelPressure());
+    wassert (isChannelPressure());
     return getData()[1];
 }
 
 MidiMessage MidiMessage::channelPressureChange (const int channel, const int pressure) noexcept
 {
-    jassert (channel > 0 && channel <= 16); // valid channels are numbered 1 to 16
-    jassert (isPositiveAndBelow (pressure, (int) 128));
+    wassert (channel > 0 && channel <= 16); // valid channels are numbered 1 to 16
+    wassert (isPositiveAndBelow (pressure, (int) 128));
 
     return MidiMessage (MidiHelpers::initialByte (0xd0, channel), pressure & 0x7f);
 }
@@ -476,13 +476,13 @@ bool MidiMessage::isProgramChange() const noexcept
 
 int MidiMessage::getProgramChangeNumber() const noexcept
 {
-    jassert (isProgramChange());
+    wassert (isProgramChange());
     return getData()[1];
 }
 
 MidiMessage MidiMessage::programChange (const int channel, const int programNumber) noexcept
 {
-    jassert (channel > 0 && channel <= 16); // valid channels are numbered 1 to 16
+    wassert (channel > 0 && channel <= 16); // valid channels are numbered 1 to 16
 
     return MidiMessage (MidiHelpers::initialByte (0xc0, channel), programNumber & 0x7f);
 }
@@ -494,15 +494,15 @@ bool MidiMessage::isPitchWheel() const noexcept
 
 int MidiMessage::getPitchWheelValue() const noexcept
 {
-    jassert (isPitchWheel());
+    wassert (isPitchWheel());
     const uint8* const data = getData();
     return data[1] | (data[2] << 7);
 }
 
 MidiMessage MidiMessage::pitchWheel (const int channel, const int position) noexcept
 {
-    jassert (channel > 0 && channel <= 16); // valid channels are numbered 1 to 16
-    jassert (isPositiveAndBelow (position, (int) 0x4000));
+    wassert (channel > 0 && channel <= 16); // valid channels are numbered 1 to 16
+    wassert (isPositiveAndBelow (position, (int) 0x4000));
 
     return MidiMessage (MidiHelpers::initialByte (0xe0, channel),
                         position & 127, (position >> 7) & 127);
@@ -521,20 +521,20 @@ bool MidiMessage::isControllerOfType (const int controllerType) const noexcept
 
 int MidiMessage::getControllerNumber() const noexcept
 {
-    jassert (isController());
+    wassert (isController());
     return getData()[1];
 }
 
 int MidiMessage::getControllerValue() const noexcept
 {
-    jassert (isController());
+    wassert (isController());
     return getData()[2];
 }
 
 MidiMessage MidiMessage::controllerEvent (const int channel, const int controllerType, const int value) noexcept
 {
     // the channel must be between 1 and 16 inclusive
-    jassert (channel > 0 && channel <= 16);
+    wassert (channel > 0 && channel <= 16);
 
     return MidiMessage (MidiHelpers::initialByte (0xb0, channel),
                         controllerType & 127, value & 127);
@@ -542,8 +542,8 @@ MidiMessage MidiMessage::controllerEvent (const int channel, const int controlle
 
 MidiMessage MidiMessage::noteOn (const int channel, const int noteNumber, const uint8 velocity) noexcept
 {
-    jassert (channel > 0 && channel <= 16);
-    jassert (isPositiveAndBelow (noteNumber, (int) 128));
+    wassert (channel > 0 && channel <= 16);
+    wassert (isPositiveAndBelow (noteNumber, (int) 128));
 
     return MidiMessage (MidiHelpers::initialByte (0x90, channel),
                         noteNumber & 127, MidiHelpers::validVelocity (velocity));
@@ -556,8 +556,8 @@ MidiMessage MidiMessage::noteOn (const int channel, const int noteNumber, const 
 
 MidiMessage MidiMessage::noteOff (const int channel, const int noteNumber, uint8 velocity) noexcept
 {
-    jassert (channel > 0 && channel <= 16);
-    jassert (isPositiveAndBelow (noteNumber, (int) 128));
+    wassert (channel > 0 && channel <= 16);
+    wassert (isPositiveAndBelow (noteNumber, (int) 128));
 
     return MidiMessage (MidiHelpers::initialByte (0x80, channel),
                         noteNumber & 127, MidiHelpers::validVelocity (velocity));
@@ -570,8 +570,8 @@ MidiMessage MidiMessage::noteOff (const int channel, const int noteNumber, float
 
 MidiMessage MidiMessage::noteOff (const int channel, const int noteNumber) noexcept
 {
-    jassert (channel > 0 && channel <= 16);
-    jassert (isPositiveAndBelow (noteNumber, (int) 128));
+    wassert (channel > 0 && channel <= 16);
+    wassert (isPositiveAndBelow (noteNumber, (int) 128));
 
     return MidiMessage (MidiHelpers::initialByte (0x80, channel), noteNumber & 127, 0);
 }
@@ -667,7 +667,7 @@ int MidiMessage::getMetaEventLength() const noexcept
 
 const uint8* MidiMessage::getMetaEventData() const noexcept
 {
-    jassert (isMetaEvent());
+    wassert (isMetaEvent());
 
     int n;
     const uint8* d = getData() + 2;
@@ -693,7 +693,7 @@ String MidiMessage::getTextFromTextMetaEvent() const
 
 MidiMessage MidiMessage::textMetaEvent (int type, StringRef text)
 {
-    jassert (type > 0 && type < 16);
+    wassert (type > 0 && type < 16);
 
     MidiMessage result;
 
@@ -728,7 +728,7 @@ bool MidiMessage::isMidiChannelMetaEvent() const noexcept   { const uint8* data 
 
 int MidiMessage::getMidiChannelMetaEventChannel() const noexcept
 {
-    jassert (isMidiChannelMetaEvent());
+    wassert (isMidiChannelMetaEvent());
     return getData()[3] + 1;
 }
 
@@ -841,7 +841,7 @@ bool MidiMessage::isKeySignatureMajorKey() const noexcept
 
 MidiMessage MidiMessage::keySignatureMetaEvent (int numberOfSharpsOrFlats, bool isMinorKey)
 {
-    jassert (numberOfSharpsOrFlats >= -7 && numberOfSharpsOrFlats <= 7);
+    wassert (numberOfSharpsOrFlats >= -7 && numberOfSharpsOrFlats <= 7);
 
     const uint8 d[] = { 0xff, 0x59, 0x02, (uint8) numberOfSharpsOrFlats, isMinorKey ? (uint8) 1 : (uint8) 0 };
     return MidiMessage (d, 5, 0.0);
@@ -898,7 +898,7 @@ bool MidiMessage::isFullFrame() const noexcept
 void MidiMessage::getFullFrameParameters (int& hours, int& minutes, int& seconds, int& frames,
                                           MidiMessage::SmpteTimecodeType& timecodeType) const noexcept
 {
-    jassert (isFullFrame());
+    wassert (isFullFrame());
 
     const uint8* const data = getData();
     timecodeType = (SmpteTimecodeType) (data[5] >> 5);
@@ -933,7 +933,7 @@ bool MidiMessage::isMidiMachineControlMessage() const noexcept
 
 MidiMessage::MidiMachineControlCommand MidiMessage::getMidiMachineControlCommand() const noexcept
 {
-    jassert (isMidiMachineControlMessage());
+    wassert (isMidiMachineControlMessage());
 
     return (MidiMachineControlCommand) getData()[4];
 }

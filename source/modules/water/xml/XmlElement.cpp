@@ -71,44 +71,44 @@ XmlElement::XmlAttributeNode::XmlAttributeNode (const XmlAttributeNode& other) n
 XmlElement::XmlAttributeNode::XmlAttributeNode (const Identifier& n, const String& v) noexcept
     : name (n), value (v)
 {
-    jassert (isValidXmlName (name));
+    wassert (isValidXmlName (name));
 }
 
 XmlElement::XmlAttributeNode::XmlAttributeNode (String::CharPointerType nameStart, String::CharPointerType nameEnd)
     : name (nameStart, nameEnd)
 {
-    jassert (isValidXmlName (name));
+    wassert (isValidXmlName (name));
 }
 
 //==============================================================================
 XmlElement::XmlElement (const String& tag)
     : tagName (StringPool::getGlobalPool().getPooledString (tag))
 {
-    jassert (isValidXmlName (tagName));
+    wassert (isValidXmlName (tagName));
 }
 
 XmlElement::XmlElement (const char* tag)
     : tagName (StringPool::getGlobalPool().getPooledString (tag))
 {
-    jassert (isValidXmlName (tagName));
+    wassert (isValidXmlName (tagName));
 }
 
 XmlElement::XmlElement (StringRef tag)
     : tagName (StringPool::getGlobalPool().getPooledString (tag))
 {
-    jassert (isValidXmlName (tagName));
+    wassert (isValidXmlName (tagName));
 }
 
 XmlElement::XmlElement (const Identifier& tag)
     : tagName (tag.toString())
 {
-    jassert (isValidXmlName (tagName));
+    wassert (isValidXmlName (tagName));
 }
 
 XmlElement::XmlElement (String::CharPointerType tagNameStart, String::CharPointerType tagNameEnd)
     : tagName (StringPool::getGlobalPool().getPooledString (tagNameStart, tagNameEnd))
 {
-    jassert (isValidXmlName (tagName));
+    wassert (isValidXmlName (tagName));
 }
 
 XmlElement::XmlElement (int /*dummy*/) noexcept
@@ -145,7 +145,7 @@ XmlElement::XmlElement (XmlElement&& other) noexcept
 
 XmlElement& XmlElement::operator= (XmlElement&& other) noexcept
 {
-    jassert (this != &other); // hopefully the compiler should make this situation impossible!
+    wassert (this != &other); // hopefully the compiler should make this situation impossible!
 
     removeAllAttributes();
     deleteAllChildElements();
@@ -161,10 +161,10 @@ XmlElement& XmlElement::operator= (XmlElement&& other) noexcept
 
 void XmlElement::copyChildrenAndAttributesFrom (const XmlElement& other)
 {
-    jassert (firstChildElement.get() == nullptr);
+    wassert (firstChildElement.get() == nullptr);
     firstChildElement.addCopyOfList (other.firstChildElement);
 
-    jassert (attributes.get() == nullptr);
+    wassert (attributes.get() == nullptr);
     attributes.addCopyOfList (other.attributes);
 }
 
@@ -428,7 +428,7 @@ bool XmlElement::hasTagName (StringRef possibleTagName) const noexcept
 
     // XML tags should be case-sensitive, so although this method allows a
     // case-insensitive match to pass, you should try to avoid this.
-    jassert ((! matches) || tagName == possibleTagName);
+    wassert ((! matches) || tagName == possibleTagName);
 
     return matches;
 }
@@ -628,7 +628,7 @@ XmlElement* XmlElement::getChildElement (const int index) const noexcept
 
 XmlElement* XmlElement::getChildByName (StringRef childName) const noexcept
 {
-    jassert (! childName.isEmpty());
+    wassert (! childName.isEmpty());
 
     for (XmlElement* child = firstChildElement; child != nullptr; child = child->nextListItem)
         if (child->hasTagName (childName))
@@ -639,7 +639,7 @@ XmlElement* XmlElement::getChildByName (StringRef childName) const noexcept
 
 XmlElement* XmlElement::getChildByAttribute (StringRef attributeName, StringRef attributeValue) const noexcept
 {
-    jassert (! attributeName.isEmpty());
+    wassert (! attributeName.isEmpty());
 
     for (XmlElement* child = firstChildElement; child != nullptr; child = child->nextListItem)
         if (child->compareAttribute (attributeName, attributeValue))
@@ -653,7 +653,7 @@ void XmlElement::addChildElement (XmlElement* const newNode) noexcept
     if (newNode != nullptr)
     {
         // The element being added must not be a child of another node!
-        jassert (newNode->nextListItem == nullptr);
+        wassert (newNode->nextListItem == nullptr);
 
         firstChildElement.append (newNode);
     }
@@ -664,7 +664,7 @@ void XmlElement::insertChildElement (XmlElement* const newNode, int indexToInser
     if (newNode != nullptr)
     {
         // The element being added must not be a child of another node!
-        jassert (newNode->nextListItem == nullptr);
+        wassert (newNode->nextListItem == nullptr);
 
         firstChildElement.insertAtIndex (indexToInsertAt, newNode);
     }
@@ -675,7 +675,7 @@ void XmlElement::prependChildElement (XmlElement* newNode) noexcept
     if (newNode != nullptr)
     {
         // The element being added must not be a child of another node!
-        jassert (newNode->nextListItem == nullptr);
+        wassert (newNode->nextListItem == nullptr);
 
         firstChildElement.insertNext (newNode);
     }
@@ -858,7 +858,7 @@ static const String water_xmltextContentAttributeName ("text");
 
 const String& XmlElement::getText() const noexcept
 {
-    jassert (isTextElement());  // you're trying to get the text from an element that
+    wassert (isTextElement());  // you're trying to get the text from an element that
                                 // isn't actually a text element.. If this contains text sub-nodes, you
                                 // probably want to use getAllSubText instead.
 

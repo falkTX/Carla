@@ -62,14 +62,15 @@ endif
 ifeq ($(USING_JUCE),true)
 ALL_LIBS += $(MODULEDIR)/juce_audio_basics.a
 ALL_LIBS += $(MODULEDIR)/juce_audio_devices.a
-ALL_LIBS += $(MODULEDIR)/juce_audio_formats.a
-ALL_LIBS += $(MODULEDIR)/juce_audio_processors.a
 ALL_LIBS += $(MODULEDIR)/juce_core.a
 ALL_LIBS += $(MODULEDIR)/juce_data_structures.a
 ALL_LIBS += $(MODULEDIR)/juce_events.a
+ifeq ($(MACOS_OR_WIN32),true)
+ALL_LIBS += $(MODULEDIR)/juce_audio_processors.a
 ALL_LIBS += $(MODULEDIR)/juce_graphics.a
 ALL_LIBS += $(MODULEDIR)/juce_gui_basics.a
 # ALL_LIBS += $(MODULEDIR)/juce_gui_extra.a
+endif
 endif
 
 libs: $(ALL_LIBS)

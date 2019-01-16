@@ -156,7 +156,7 @@ public:
 
         // Looks like you're trying to launch a non-existent exe or a folder (perhaps on OSX
         // you're trying to launch the .app folder rather than the actual binary inside it?)
-        jassert (File::getCurrentWorkingDirectory().getChildFile (exe).existsAsFile()
+        wassert (File::getCurrentWorkingDirectory().getChildFile (exe).existsAsFile()
                   || ! exe.containsChar (File::separator));
 
         int pipeHandles[2] = { 0 };
@@ -218,7 +218,7 @@ public:
 
     int read (void* const dest, const int numBytes) noexcept
     {
-        jassert (dest != nullptr);
+        wassert (dest != nullptr);
 
         #ifdef fdopen
          #error // the zlib headers define this function as NULL!

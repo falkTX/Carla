@@ -229,7 +229,7 @@ public:
     {
         if (isPositiveAndBelow (index, numUsed))
         {
-            jassert (data.elements != nullptr);
+            wassert (data.elements != nullptr);
             return data.elements [index];
         }
 
@@ -247,7 +247,7 @@ public:
     */
     inline ElementType getUnchecked (const int index) const
     {
-        jassert (isPositiveAndBelow (index, numUsed) && data.elements != nullptr);
+        wassert (isPositiveAndBelow (index, numUsed) && data.elements != nullptr);
         return data.elements [index];
     }
 
@@ -262,7 +262,7 @@ public:
     */
     inline ElementType& getReference (const int index) const noexcept
     {
-        jassert (isPositiveAndBelow (index, numUsed) && data.elements != nullptr);
+        wassert (isPositiveAndBelow (index, numUsed) && data.elements != nullptr);
         return data.elements [index];
     }
 
@@ -274,7 +274,7 @@ public:
     {
         if (numUsed > 0)
         {
-            jassert (data.elements != nullptr);
+            wassert (data.elements != nullptr);
             return data.elements[0];
         }
 
@@ -289,7 +289,7 @@ public:
     {
         if (numUsed > 0)
         {
-            jassert (data.elements != nullptr);
+            wassert (data.elements != nullptr);
             return data.elements[numUsed - 1];
         }
 
@@ -551,11 +551,11 @@ public:
     */
     void set (const int indexToChange, ParameterType newValue)
     {
-        jassert (indexToChange >= 0);
+        wassert (indexToChange >= 0);
 
         if (isPositiveAndBelow (indexToChange, numUsed))
         {
-            jassert (data.elements != nullptr);
+            wassert (data.elements != nullptr);
             data.elements [indexToChange] = newValue;
         }
         else if (indexToChange >= 0)
@@ -576,7 +576,7 @@ public:
     */
     void setUnchecked (const int indexToChange, ParameterType newValue)
     {
-        jassert (isPositiveAndBelow (indexToChange, numUsed));
+        wassert (isPositiveAndBelow (indexToChange, numUsed));
         data.elements [indexToChange] = newValue;
     }
 
@@ -646,7 +646,7 @@ public:
     {
         if (startIndex < 0)
         {
-            jassertfalse;
+            wassertfalse;
             startIndex = 0;
         }
 
@@ -666,7 +666,7 @@ public:
     */
     void resize (const int targetNumItems)
     {
-        jassert (targetNumItems >= 0);
+        wassert (targetNumItems >= 0);
 
         const int numToAdd = targetNumItems - numUsed;
         if (numToAdd > 0)
@@ -761,7 +761,7 @@ public:
     {
         if (isPositiveAndBelow (indexToRemove, numUsed))
         {
-            jassert (data.elements != nullptr);
+            wassert (data.elements != nullptr);
             removeInternal (indexToRemove);
         }
     }
@@ -780,7 +780,7 @@ public:
     {
         if (isPositiveAndBelow (indexToRemove, numUsed))
         {
-            jassert (data.elements != nullptr);
+            wassert (data.elements != nullptr);
             ElementType removed (data.elements[indexToRemove]);
             removeInternal (indexToRemove);
             return removed;
@@ -801,13 +801,13 @@ public:
     */
     void remove (const ElementType* elementToRemove)
     {
-        jassert (elementToRemove != nullptr);
-        jassert (data.elements != nullptr);
+        wassert (elementToRemove != nullptr);
+        wassert (data.elements != nullptr);
         const int indexToRemove = int (elementToRemove - data.elements);
 
         if (! isPositiveAndBelow (indexToRemove, numUsed))
         {
-            jassertfalse;
+            wassertfalse;
             return;
         }
 

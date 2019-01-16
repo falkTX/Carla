@@ -100,7 +100,7 @@ int InputStream::readCompressedInt()
     const int numBytes = (sizeByte & 0x7f);
     if (numBytes > 4)
     {
-        jassertfalse;    // trying to read corrupt data - this method must only be used
+        wassertfalse;    // trying to read corrupt data - this method must only be used
                        // to read data that was written by OutputStream::writeCompressedInt()
         return 0;
     }
@@ -137,7 +137,7 @@ float InputStream::readFloat()
 {
     // the union below relies on these types being the same size...
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-    static_jassert (sizeof (int32) == sizeof (float));
+    static_wassert (sizeof (int32) == sizeof (float));
 #endif
     union { int32 asInt; float asFloat; } n;
     n.asInt = (int32) readInt();

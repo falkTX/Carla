@@ -29,8 +29,8 @@ OBJSa = $(OBJS) \
 	$(OBJDIR)/CarlaEngineNative.cpp.o
 
 ifeq ($(USING_JUCE),true)
-# OBJSa += \
-# -	$(OBJDIR)/CarlaEngineJuce.cpp.o
+OBJSa += \
+	$(OBJDIR)/CarlaEngineJuce.cpp.o
 else
 OBJSa += \
 	$(OBJDIR)/CarlaEngineRtAudio.cpp.o

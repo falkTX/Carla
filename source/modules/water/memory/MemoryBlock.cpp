@@ -50,7 +50,7 @@ MemoryBlock::MemoryBlock (const MemoryBlock& other)
 {
     if (size > 0)
     {
-        jassert (other.data != nullptr);
+        wassert (other.data != nullptr);
         data.malloc (size);
         memcpy (data, other.data, size);
     }
@@ -59,11 +59,11 @@ MemoryBlock::MemoryBlock (const MemoryBlock& other)
 MemoryBlock::MemoryBlock (const void* const dataToInitialiseFrom, const size_t sizeInBytes)
     : size (sizeInBytes)
 {
-    jassert (((ssize_t) sizeInBytes) >= 0);
+    wassert (((ssize_t) sizeInBytes) >= 0);
 
     if (size > 0)
     {
-        jassert (dataToInitialiseFrom != nullptr); // non-zero size, but a zero pointer passed-in?
+        wassert (dataToInitialiseFrom != nullptr); // non-zero size, but a zero pointer passed-in?
 
         data.malloc (size);
 
@@ -177,7 +177,7 @@ void MemoryBlock::append (const void* const srcData, const size_t numBytes)
 {
     if (numBytes > 0)
     {
-        jassert (srcData != nullptr); // this must not be null!
+        wassert (srcData != nullptr); // this must not be null!
         const size_t oldSize = size;
         setSize (size + numBytes);
         memcpy (data + oldSize, srcData, numBytes);
@@ -188,7 +188,7 @@ void MemoryBlock::replaceWith (const void* const srcData, const size_t numBytes)
 {
     if (numBytes > 0)
     {
-        jassert (srcData != nullptr); // this must not be null!
+        wassert (srcData != nullptr); // this must not be null!
         setSize (numBytes);
         memcpy (data, srcData, numBytes);
     }
@@ -198,7 +198,7 @@ void MemoryBlock::insert (const void* const srcData, const size_t numBytes, size
 {
     if (numBytes > 0)
     {
-        jassert (srcData != nullptr); // this must not be null!
+        wassert (srcData != nullptr); // this must not be null!
         insertPosition = jmin (size, insertPosition);
         const size_t trailingDataSize = size - insertPosition;
         setSize (size + numBytes, false);
