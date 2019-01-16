@@ -711,10 +711,12 @@ const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index)
 {
     carla_debug("lv2ui_descriptor(%i)", index);
 
+    static CarlaMutex retLock;
     static CarlaString ret;
 
-    if (ret.isEmpty())
     {
+        const CarlaMutexLocker cml(retLock);
+
         using namespace water;
         const File file(File::getSpecialLocation(File::currentExecutableFile).getSiblingFile("ext-ui"));
 #ifdef CARLA_OS_WIN
