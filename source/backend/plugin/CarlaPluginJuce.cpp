@@ -26,6 +26,10 @@
 
 #include "juce_audio_processors/juce_audio_processors.h"
 
+namespace juce {
+extern bool juce_isRunningInWine();
+}
+
 CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -236,7 +240,7 @@ public:
 
         if (fWindow != nullptr)
         {
-            String uiName(pData->name);
+            juce::String uiName(pData->name);
             uiName += " (GUI)";
             fWindow->setName(uiName);
         }
@@ -306,14 +310,14 @@ public:
         {
             if (fWindow == nullptr)
             {
-                String uiName(pData->name);
+                juce::String uiName(pData->name);
                 uiName += " (GUI)";
 
                 fWindow = new JucePluginWindow();
                 fWindow->setName(uiName);
             }
 
-            if (AudioProcessorEditor* const editor = fInstance->createEditorIfNeeded())
+            if (juce::AudioProcessorEditor* const editor = fInstance->createEditorIfNeeded())
                 fWindow->show(editor);
         }
         else
@@ -321,7 +325,7 @@ public:
             if (fWindow != nullptr)
                 fWindow->hide();
 
-            if (AudioProcessorEditor* const editor = fInstance->getActiveEditor())
+            if (juce::AudioProcessorEditor* const editor = fInstance->getActiveEditor())
                 delete editor;
 
             fWindow = nullptr;
@@ -1170,7 +1174,7 @@ public:
 
 #ifdef CARLA_OS_WIN
             // Fix for wine usage
-            if (juce_isRunningInWine() && filename[0] == '/')
+            if (juce::juce_isRunningInWine() && filename[0] == '/')
             {
                 jfilename.replace("/", "\\");
                 jfilename = "Z:" + jfilename;
