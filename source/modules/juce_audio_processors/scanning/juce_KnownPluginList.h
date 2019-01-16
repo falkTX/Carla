@@ -142,6 +142,7 @@ public:
     };
 
     //==============================================================================
+#if ! JUCE_AUDIOPROCESSOR_NO_GUI
     /** Adds all the plugin types to a popup menu so that the user can select one.
 
         Depending on the sort method, it may add sub-menus for categories,
@@ -151,6 +152,7 @@ public:
     */
     void addToMenu (PopupMenu& menu, SortMethod sortMethod,
                     const String& currentlyTickedPluginID = String()) const;
+#endif
 
     /** Converts a menu item index that has been chosen into its index in this list.
         Returns -1 if it's not an ID that was used.

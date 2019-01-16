@@ -113,6 +113,7 @@
 */
 #ifdef APPCONFIG_OS_LINUX
  #define JUCE_ALSA 1
+ #define JUCE_ALSA_MIDI_NAME "Carla"
  #define JUCE_ALSA_MIDI_INPUT_NAME  "Carla"
  #define JUCE_ALSA_MIDI_OUTPUT_NAME "Carla"
  #define JUCE_ALSA_MIDI_INPUT_PORT_NAME  "Midi In"

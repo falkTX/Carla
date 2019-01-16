@@ -37,7 +37,10 @@
 #define JUCE_CORE_INCLUDE_OBJC_HELPERS 1
 
 #include "juce_audio_processors.h"
-#include <juce_gui_extra/juce_gui_extra.h>
+
+#if JUCE_MODULE_AVAILABLE_juce_gui_extra
+ #include <juce_gui_extra/juce_gui_extra.h>
+#endif
 
 //==============================================================================
 #if JUCE_MAC
@@ -180,6 +183,10 @@ void AutoResizingNSViewComponentWithParent::timerCallback() override
 #include "format_types/juce_AudioUnitPluginFormat.mm"
 #include "scanning/juce_KnownPluginList.cpp"
 #include "scanning/juce_PluginDirectoryScanner.cpp"
-#include "scanning/juce_PluginListComponent.cpp"
-#include "utilities/juce_AudioProcessorParameters.cpp"
-#include "utilities/juce_AudioProcessorValueTreeState.cpp"
+#if ! JUCE_AUDIOPROCESSOR_NO_GUI
+ #include "scanning/juce_PluginListComponent.cpp"
+#endif
+ #include "utilities/juce_AudioProcessorParameters.cpp"
+#if ! JUCE_AUDIOPROCESSOR_NO_GUI
+ #include "utilities/juce_AudioProcessorValueTreeState.cpp"
+#endif
