@@ -46,6 +46,9 @@ namespace jpeglibNamespace
     #if __has_warning("-Wcomma")
      #pragma clang diagnostic ignored "-Wcomma"
     #endif
+   #elif defined(__GNUC__) && (__GNUC__ >= 7)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
    #endif
 
     #define JPEG_INTERNALS
@@ -123,6 +126,8 @@ namespace jpeglibNamespace
 
    #if JUCE_CLANG
     #pragma clang diagnostic pop
+   #elif defined(__GNUC__) && (__GNUC__ >= 7)
+    #pragma GCC diagnostic pop
    #endif
 #else
     #define JPEG_INTERNALS

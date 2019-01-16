@@ -313,7 +313,7 @@ public:
 
     //==============================================================================
     void handleMouseEvent (MouseInputSource::InputSourceType type, Point<float> positionWithinPeer, ModifierKeys newMods, float pressure,
-                           float orientation, int64 time, PenDetails pen = {}, int touchIndex = 0);
+                           float orientation, int64 time, PenDetails pen = { 0.0f, 0.0f, 0.0f }, int touchIndex = 0);
 
     void handleMouseWheel (MouseInputSource::InputSourceType type, Point<float> positionWithinPeer,
                            int64 time, const MouseWheelDetails&, int touchIndex = 0);
