@@ -75,7 +75,7 @@ class CarlaApplication(object):
         # set palette
         proThemeColor = settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, CARLA_DEFAULT_MAIN_PRO_THEME_COLOR, type=str).lower()
 
-        if forceTheme or proThemeColor == "black":
+        if MACOS or proThemeColor == "black":
             self.fPalBlack = QPalette()
             self.fPalBlack.setColor(QPalette.Disabled, QPalette.Window, QColor(14, 14, 14))
             self.fPalBlack.setColor(QPalette.Active,   QPalette.Window, QColor(17, 17, 17))
