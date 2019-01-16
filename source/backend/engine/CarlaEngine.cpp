@@ -83,7 +83,11 @@ uint CarlaEngine::getDriverCount()
         count += 1;
 
 #ifndef BUILD_BRIDGE
+# ifdef USING_JUCE
+    count += getJuceApiCount();
+# else
     count += getRtAudioApiCount();
+# endif
 #endif
 
     return count;
@@ -93,17 +97,26 @@ const char* CarlaEngine::getDriverName(const uint index2)
 {
     carla_debug("CarlaEngine::getDriverName(%i)", index2);
 
-    uint index(index2);
+    uint index = index2;
 
     if (jackbridge_is_ok() && index-- == 0)
         return "JACK";
 
 #ifndef BUILD_BRIDGE
+# ifdef USING_JUCE
+    if (const uint count = getJuceApiCount())
+    {
+        if (index < count)
+            return getJuceApiName(index);
+        index -= count;
+    }
+# else
     if (const uint count = getRtAudioApiCount())
     {
         if (index < count)
             return getRtAudioApiName(index);
     }
+# endif
 #endif
 
     carla_stderr("CarlaEngine::getDriverName(%i) - invalid index", index2);
@@ -114,7 +127,7 @@ const char* const* CarlaEngine::getDriverDeviceNames(const uint index2)
 {
     carla_debug("CarlaEngine::getDriverDeviceNames(%i)", index2);
 
-    uint index(index2);
+    uint index = index2;
 
     if (jackbridge_is_ok() && index-- == 0)
     {
@@ -123,11 +136,20 @@ const char* const* CarlaEngine::getDriverDeviceNames(const uint index2)
     }
 
 #ifndef BUILD_BRIDGE
+# ifdef USING_JUCE
+    if (const uint count = getJuceApiCount())
+    {
+        if (index < count)
+            return getJuceApiDeviceNames(index);
+        index -= count;
+    }
+# else
     if (const uint count = getRtAudioApiCount())
     {
         if (index < count)
             return getRtAudioApiDeviceNames(index);
     }
+# endif
 #endif
 
     carla_stderr("CarlaEngine::getDriverDeviceNames(%i) - invalid index", index2);
@@ -138,7 +160,7 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index2
 {
     carla_debug("CarlaEngine::getDriverDeviceInfo(%i, \"%s\")", index2, deviceName);
 
-    uint index(index2);
+    uint index = index2;
 
     if (jackbridge_is_ok() && index-- == 0)
     {
@@ -150,11 +172,20 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index2
     }
 
 #ifndef BUILD_BRIDGE
+# ifdef USING_JUCE
+    if (const uint count = getJuceApiCount())
+    {
+        if (index < count)
+            return getJuceDeviceInfo(index, deviceName);
+        index -= count;
+    }
+# else
     if (const uint count = getRtAudioApiCount())
     {
         if (index < count)
             return getRtAudioDeviceInfo(index, deviceName);
     }
+# endif
 #endif
 
     carla_stderr("CarlaEngine::getDriverDeviceNames(%i, \"%s\") - invalid index", index2, deviceName);
@@ -170,6 +201,21 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
         return newJack();
 
 #ifndef BUILD_BRIDGE
+# ifdef USING_JUCE
+    // -------------------------------------------------------------------
+    // macos
+
+    if (std::strcmp(driverName, "CoreAudio") == 0)
+        return newJuce(AUDIO_API_COREAUDIO);
+
+    // -------------------------------------------------------------------
+    // windows
+
+    if (std::strcmp(driverName, "ASIO") == 0)
+        return newJuce(AUDIO_API_ASIO);
+    if (std::strcmp(driverName, "DirectSound") == 0)
+        return newJuce(AUDIO_API_DIRECTSOUND);
+# else
     // -------------------------------------------------------------------
     // common
 
@@ -203,6 +249,7 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
         return newRtAudio(AUDIO_API_DIRECTSOUND);
     if (std::strcmp(driverName, "WASAPI") == 0)
         return newRtAudio(AUDIO_API_WASAPI);
+# endif
 #endif
 
     carla_stderr("CarlaEngine::newDriverByName(\"%s\") - invalid driver name", driverName);
@@ -456,6 +503,14 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
 
         case PLUGIN_VST2:
             plugin = CarlaPlugin::newVST2(initializer);
+            break;
+
+        case PLUGIN_VST3:
+            plugin = CarlaPlugin::newVST3(initializer);
+            break;
+
+        case PLUGIN_AU:
+            plugin = CarlaPlugin::newAU(initializer);
             break;
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -1054,6 +1109,11 @@ bool CarlaEngine::loadFile(const char* const filename)
         return addPlugin(getBinaryTypeFromFile(filename), PLUGIN_VST2, filename, nullptr, nullptr, 0, nullptr, 0x0);
 #endif
 
+#ifdef USING_JUCE
+    if (extension == "vst3")
+        return addPlugin(getBinaryTypeFromFile(filename), PLUGIN_VST3, filename, nullptr, nullptr, 0, nullptr, 0x0);
+#endif
+
     // -------------------------------------------------------------------
 
     setLastError("Unknown file extension");
@@ -1476,6 +1536,14 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
             else
                 pData->options.pathVST2 = nullptr;
             break;
+        case PLUGIN_VST3:
+            if (pData->options.pathVST3 != nullptr)
+                delete[] pData->options.pathVST3;
+            if (valueStr != nullptr)
+                pData->options.pathVST3 = carla_strdup_safe(valueStr);
+            else
+                pData->options.pathVST3 = nullptr;
+            break;
         case PLUGIN_SF2:
             if (pData->options.pathSF2 != nullptr)
                 delete[] pData->options.pathSF2;
@@ -1769,6 +1837,7 @@ void CarlaEngine::saveProjectInternal(water::MemoryOutputStream& outStream) cons
             outSettings << "  <DSSI_PATH>"   << xmlSafeString(options.pathDSSI,   true) << "</DSSI_PATH>\n";
             outSettings << "  <LV2_PATH>"    << xmlSafeString(options.pathLV2,    true) << "</LV2_PATH>\n";
             outSettings << "  <VST2_PATH>"   << xmlSafeString(options.pathVST2,   true) << "</VST2_PATH>\n";
+            outSettings << "  <VST3_PATH>"   << xmlSafeString(options.pathVST3,   true) << "</VST3_PATH>\n";
             outSettings << "  <SF2_PATH>"    << xmlSafeString(options.pathSF2,    true) << "</SF2_PATH>\n";
             outSettings << "  <SFZ_PATH>"    << xmlSafeString(options.pathSFZ,    true) << "</SFZ_PATH>\n";
         }
@@ -1919,7 +1988,7 @@ static String findBinaryInCustomPath(const char* const searchPath, const char* c
 
     int searchFlags = File::findFiles|File::ignoreHiddenFiles;
 #ifdef CARLA_OS_MAC
-    if (filename.endsWithIgnoreCase(".vst"))
+    if (filename.endsWithIgnoreCase(".vst") || filename.endsWithIgnoreCase(".vst3"))
         searchFlags |= File::findDirectories;
 #endif
 
@@ -2062,6 +2131,12 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                     value    = PLUGIN_VST2;
                     valueStr = text.toRawUTF8();
                 }
+                else if (tag.equalsIgnoreCase("VST3_PATH"))
+                {
+                    option   = ENGINE_OPTION_PLUGIN_PATH;
+                    value    = PLUGIN_VST3;
+                    valueStr = text.toRawUTF8();
+                }
                 else if (tag == "SF2_PATH")
                 {
                     option   = ENGINE_OPTION_PLUGIN_PATH;
@@ -2079,10 +2154,12 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
             if (option == -1)
             {
                 // check old stuff, unhandled now
-                if (tag == "AU_PATH" || tag == "VST3_PATH" || tag == "GIG_PATH")
+                if (tag == "GIG_PATH")
                     continue;
                 // ignored tags
                 if (tag == "LADSPA_PATH" || tag == "DSSI_PATH" || tag == "LV2_PATH" || tag == "VST2_PATH")
+                    continue;
+                if (tag == "VST3_PATH" || tag == "AU_PATH")
                     continue;
                 if (tag == "SF2_PATH" || tag == "SFZ_PATH")
                     continue;
@@ -2204,6 +2281,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
             case PLUGIN_LADSPA:
             case PLUGIN_DSSI:
             case PLUGIN_VST2:
+            case PLUGIN_VST3:
             case PLUGIN_SFZ:
                 if (stateSave.binary != nullptr && stateSave.binary[0] != '\0' &&
                     ! (File::isAbsolutePath(stateSave.binary) && File(stateSave.binary).exists()))
@@ -2215,6 +2293,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                     case PLUGIN_LADSPA: searchPath = pData->options.pathLADSPA; break;
                     case PLUGIN_DSSI:   searchPath = pData->options.pathDSSI;   break;
                     case PLUGIN_VST2:   searchPath = pData->options.pathVST2;   break;
+                    case PLUGIN_VST3:   searchPath = pData->options.pathVST3;   break;
                     case PLUGIN_SF2:    searchPath = pData->options.pathSF2;    break;
                     case PLUGIN_SFZ:    searchPath = pData->options.pathSFZ;    break;
                     default:            searchPath = nullptr;                   break;
@@ -2234,6 +2313,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                             case PLUGIN_LADSPA: searchPath = std::getenv("LADSPA_PATH"); break;
                             case PLUGIN_DSSI:   searchPath = std::getenv("DSSI_PATH");   break;
                             case PLUGIN_VST2:   searchPath = std::getenv("VST_PATH");    break;
+                            case PLUGIN_VST3:   searchPath = std::getenv("VST3_PATH");   break;
                             case PLUGIN_SF2:    searchPath = std::getenv("SF2_PATH");    break;
                             case PLUGIN_SFZ:    searchPath = std::getenv("SFZ_PATH");    break;
                             default:            searchPath = nullptr;                    break;

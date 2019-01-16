@@ -2307,11 +2307,19 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaEngine* CarlaEngine::newJack() { return nullptr; }
 
+# ifdef USING_JUCE
+CarlaEngine*       CarlaEngine::newJuce(const AudioApi)           { return nullptr; }
+uint               CarlaEngine::getJuceApiCount()                 { return 0;       }
+const char*        CarlaEngine::getJuceApiName(const uint)        { return nullptr; }
+const char* const* CarlaEngine::getJuceApiDeviceNames(const uint) { return nullptr; }
+const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const uint, const char* const) { return nullptr; }
+# else
 CarlaEngine*       CarlaEngine::newRtAudio(const AudioApi)           { return nullptr; }
 uint               CarlaEngine::getRtAudioApiCount()                 { return 0;       }
 const char*        CarlaEngine::getRtAudioApiName(const uint)        { return nullptr; }
 const char* const* CarlaEngine::getRtAudioApiDeviceNames(const uint) { return nullptr; }
 const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const uint, const char* const) { return nullptr; }
+# endif
 
 CARLA_BACKEND_END_NAMESPACE
 

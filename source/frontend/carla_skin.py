@@ -1923,7 +1923,7 @@ def getColorAndSkinStyle(host, pluginId):
     pluginMaker = pluginInfo['maker']
     uniqueId    = pluginInfo['uniqueId']
 
-    if pluginInfo['type'] == PLUGIN_VST2:
+    if pluginInfo['type'] in (PLUGIN_VST2, PLUGIN_VST3, PLUGIN_AU):
         progCount = host.get_program_count(pluginId)
     else:
         progCount = host.get_midi_program_count(pluginId)
@@ -1961,7 +1961,7 @@ def getColorAndSkinStyle(host, pluginId):
 
     # Presets
     if progCount > 1 and (pluginInfo['hints'] & PLUGIN_USES_MULTI_PROGS) == 0:
-        if pluginInfo['type'] == PLUGIN_VST2:
+        if pluginInfo['type'] in (PLUGIN_VST2, PLUGIN_VST3, PLUGIN_AU):
             return (color, "presets")
         return (color, "mpresets")
 

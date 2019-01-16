@@ -42,6 +42,10 @@ def getPluginTypeAsString(ptype):
         return "LV2"
     if ptype == PLUGIN_VST2:
         return "VST2"
+    if ptype == PLUGIN_VST3:
+        return "VST3"
+    if ptype == PLUGIN_AU:
+        return "AU"
     if ptype == PLUGIN_SF2:
         return "SF2"
     if ptype == PLUGIN_SFZ:
@@ -70,6 +74,10 @@ def getPluginTypeFromString(stype):
         return PLUGIN_LV2
     if stype in ("vst2", "vst"):
         return PLUGIN_VST2
+    if stype == "vst3":
+        return PLUGIN_VST3
+    if stype in ("au", "audiounit"):
+        return PLUGIN_AU
     if stype == "sf2":
         return PLUGIN_SF2
     if stype == "sfz":
