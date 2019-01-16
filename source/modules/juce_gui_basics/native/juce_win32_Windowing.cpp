@@ -2282,6 +2282,8 @@ private:
                     return MouseInputSource::InputSourceType::pen;
             }
         }
+#else
+        ignoreUnused(wParam);
 #endif
 
         return MouseInputSource::InputSourceType::mouse;

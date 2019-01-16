@@ -467,7 +467,7 @@ decode_mcu_AC_refine (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
   phuff_entropy_ptr2 entropy = (phuff_entropy_ptr2) cinfo->entropy;
   int Se = cinfo->Se;
   int p1 = 1 << cinfo->Al;	/* 1 in the bit position being coded */
-  int m1 = (-1) << cinfo->Al;	/* -1 in the bit position being coded */
+  int m1 = (unsigned int)(-1) << cinfo->Al;	/* -1 in the bit position being coded */
   int s, k, r;
   unsigned int EOBRUN;
   JBLOCKROW block;
