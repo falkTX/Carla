@@ -10,7 +10,7 @@ include ../Makefile.mk
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(JUCE_AUDIO_PROCESSORS_FLAGS) -I$(CWD)/includes/ladspa -I$(CWD)/includes/vst2 -I$(CWD)/includes/vst3 -I..
+BUILD_CXX_FLAGS += $(JUCE_AUDIO_PROCESSORS_FLAGS) -I$(CWD)/includes/vst3sdk -I..
 
 ifeq ($(CARLA_VESTIGE_HEADER),true)
 BUILD_CXX_FLAGS += -DVESTIGE_HEADER

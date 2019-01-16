@@ -79,9 +79,9 @@ struct ASIOSampleFormat
 
     ASIOSampleFormat (const long type) noexcept
         : bitDepth (24),
-          littleEndian (true),
+          byteStride (4),
           formatIsFloat (false),
-          byteStride (4)
+          littleEndian (true)
     {
         switch (type)
         {
@@ -1132,7 +1132,9 @@ private:
             return CoCreateInstance (classId, 0, CLSCTX_INPROC_SERVER,
                                      classId, (void**) &asioObject) == S_OK;
         }
-       #if ! JUCE_MINGW
+       #if JUCE_MINGW
+        ignoreUnused(crashed);
+       #else
         __except (EXCEPTION_EXECUTE_HANDLER) { crashed = true; }
         return false;
        #endif
