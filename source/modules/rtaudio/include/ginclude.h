@@ -8,7 +8,7 @@
 	//
 	#define ASIO_BIG_ENDIAN 1
 	#define ASIO_CPU_MIPS 1
-#elif defined WIN32
+#elif defined(WIN32) || defined(_WIN64)
 	#undef BEOS 
 	#undef MAC 
 	#undef SGI
