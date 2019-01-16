@@ -697,7 +697,7 @@ public:
                 if (obj->body.otype != fURIs.timePos)
                     continue;
 
-                LV2_Atom* bar     = nullptr;
+                LV2_Atom* bar = nullptr;
                 LV2_Atom* barBeat = nullptr;
                 LV2_Atom* beatUnit = nullptr;
                 LV2_Atom* beatsPerBar = nullptr;
@@ -915,12 +915,12 @@ public:
                 }
 
                 fTimeInfo.bbt.barStartTick = fTimeInfo.bbt.ticksPerBeat*
-                                              fTimeInfo.bbt.beatsPerBar*
-                                              (fTimeInfo.bbt.bar-1);
+                                             fTimeInfo.bbt.beatsPerBar*
+                                            (fTimeInfo.bbt.bar-1);
 
                 fTimeInfo.bbt.valid = (fLastPositionData.beatsPerMinute > 0.0 &&
-                                        fLastPositionData.beatUnit > 0 &&
-                                        fLastPositionData.beatsPerBar > 0.0f);
+                                       fLastPositionData.beatUnit > 0 &&
+                                       fLastPositionData.beatsPerBar > 0.0f);
             }
         }
 
