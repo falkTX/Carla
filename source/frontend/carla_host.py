@@ -21,6 +21,7 @@
 
 import json
 
+from PyQt5.Qt import PYQT_VERSION
 from PyQt5.QtCore import qCritical, QEventLoop, QFileInfo, QModelIndex, QPointF, QTimer, QEvent
 from PyQt5.QtGui import QImage, QPalette, QBrush
 from PyQt5.QtWidgets import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QMainWindow
@@ -2291,13 +2292,17 @@ class HostWindow(QMainWindow):
 
         min_value = 0.07
 
-        value_fix = 1.0/(1.0-rack_imgL.scaled(1, 1, Qt.IgnoreAspectRatio, Qt.SmoothTransformation).pixelColor(0,0).blackF())
+        if PYQT_VERSION >= 0x50600:
+            value_fix = 1.0/(1.0-rack_imgL.scaled(1, 1, Qt.IgnoreAspectRatio, Qt.SmoothTransformation).pixelColor(0,0).blackF())
+        else:
+            value_fix = 1.5
+
         bg_color = self.ui.rack.palette().window().color()
         bg_value = 1.0 - bg_color.blackF()
-        if bg_value == 0:
-            bg_color = QColor.fromHsvF(0.0, 0.0, min_value*value_fix)
-        elif bg_value < min_value:
+        if bg_value != 0.0 and bg_value < min_value:
             pad_color = bg_color.lighter(100*min_value/bg_value*value_fix)
+        else:
+            pad_color = QColor.fromHsvF(0.0, 0.0, min_value*value_fix)
 
         painter = QPainter()
         fillRect = rack_imgL.rect().adjusted(-1,-1,1,1)
