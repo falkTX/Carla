@@ -37,6 +37,16 @@
 # include "CarlaLogThread.hpp"
 #endif
 
+#ifdef USING_JUCE
+// # include "AppConfig.h"
+# if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+#  include "juce_gui_basics/juce_gui_basics.h"
+# else
+#  include "juce_events/juce_events.h"
+# endif
+# include "juce_core/juce_core.h"
+#endif
+
 #define CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(cond, msg, ret) \
     if (! (cond)) {                                              \
         carla_stderr2("%s: " msg, __FUNCTION__);                 \
@@ -287,6 +297,9 @@ static void carla_engine_init_common(CarlaEngine* const engine)
     if (const char* const pathVST2 = std::getenv("ENGINE_OPTION_PLUGIN_PATH_VST2"))
         engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_VST2, pathVST2);
 
+    if (const char* const pathVST3 = std::getenv("ENGINE_OPTION_PLUGIN_PATH_VST3"))
+        engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_VST3, pathVST3);
+
     if (const char* const pathSF2 = std::getenv("ENGINE_OPTION_PLUGIN_PATH_SF2"))
         engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_SF2, pathSF2);
 
@@ -333,6 +346,9 @@ static void carla_engine_init_common(CarlaEngine* const engine)
 
     if (gStandalone.engineOptions.pathVST2 != nullptr)
         engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_VST2, gStandalone.engineOptions.pathVST2);
+
+    if (gStandalone.engineOptions.pathVST3 != nullptr)
+        engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_VST3, gStandalone.engineOptions.pathVST3);
 
     if (gStandalone.engineOptions.pathSF2 != nullptr)
         engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_SF2, gStandalone.engineOptions.pathSF2);
@@ -403,6 +419,10 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE,        static_cast<int>(gStandalone.engineOptions.transportMode), gStandalone.engineOptions.transportExtra);
 #endif
 
+#ifdef USING_JUCE
+    juce::initialiseJuce_GUI();
+#endif
+
     carla_engine_init_common(engine);
 
     if (engine->init(clientName))
@@ -421,6 +441,9 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     else
     {
         gStandalone.lastError = engine->getLastError();
+#ifdef USING_JUCE
+        juce::shutdownJuce_GUI();
+#endif
         return false;
     }
 }
@@ -487,6 +510,9 @@ bool carla_engine_close()
 
 #ifndef BUILD_BRIDGE
     gStandalone.logThread.stop();
+# ifdef USING_JUCE
+    juce::shutdownJuce_GUI();
+# endif
 #endif
 
     return closed;
@@ -497,6 +523,13 @@ void carla_engine_idle()
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
 
     gStandalone.engine->idle();
+
+#if defined(USING_JUCE) && !(defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+    const juce::MessageManager* const msgMgr(juce::MessageManager::getInstanceWithoutCreating());
+    CARLA_SAFE_ASSERT_RETURN(msgMgr != nullptr,);
+
+    for (; msgMgr->dispatchNextMessageOnSystemQueue(true);) {}
+#endif
 }
 
 bool carla_is_engine_running()
@@ -644,6 +677,11 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
             if (gStandalone.engineOptions.pathVST2 != nullptr)
                 delete[] gStandalone.engineOptions.pathVST2;
             gStandalone.engineOptions.pathVST2 = carla_strdup_safe(valueStr);
+            break;
+        case CB::PLUGIN_VST3:
+            if (gStandalone.engineOptions.pathVST3 != nullptr)
+                delete[] gStandalone.engineOptions.pathVST3;
+            gStandalone.engineOptions.pathVST3 = carla_strdup_safe(valueStr);
             break;
         case CB::PLUGIN_SF2:
             if (gStandalone.engineOptions.pathSF2 != nullptr)

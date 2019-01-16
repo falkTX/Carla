@@ -59,6 +59,18 @@ ifeq ($(HAVE_HYLIA),true)
 LIBS += $(MODULEDIR)/hylia.a
 endif
 
+ifeq ($(USING_JUCE),true)
+LIBS += $(MODULEDIR)/juce_audio_basics.a
+LIBS += $(MODULEDIR)/juce_audio_processors.a
+LIBS += $(MODULEDIR)/juce_core.a
+LIBS += $(MODULEDIR)/juce_data_structures.a
+LIBS += $(MODULEDIR)/juce_events.a
+ifeq ($(MACOS_OR_WIN32),true)
+LIBS += $(MODULEDIR)/juce_graphics.a
+LIBS += $(MODULEDIR)/juce_gui_basics.a
+endif
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Link flags
 
@@ -73,6 +85,18 @@ NATIVE_LINK_FLAGS += $(FLUIDSYNTH_LIBS)
 NATIVE_LINK_FLAGS += $(LIBLO_LIBS)
 NATIVE_LINK_FLAGS += $(MAGIC_LIBS)
 NATIVE_LINK_FLAGS += $(X11_LIBS)
+
+ifeq ($(USING_JUCE),true)
+LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
+LINK_FLAGS += $(JUCE_AUDIO_PROCESSORS_LIBS)
+LINK_FLAGS += $(JUCE_CORE_LIBS)
+LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
+LINK_FLAGS += $(JUCE_EVENTS_LIBS)
+ifeq ($(MACOS_OR_WIN32),true)
+LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
+LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
+endif
+endif
 
 ifeq ($(MACOS),true)
 SYMBOLS_NATIVE  = -Wl,-exported_symbol,_carla_get_native_rack_plugin

@@ -27,7 +27,7 @@
 
 // always enabled
 #define JUCE_MODULE_AVAILABLE_juce_audio_basics          1
-#define JUCE_MODULE_AVAILABLE_juce_audio_devices         1
+#define JUCE_MODULE_AVAILABLE_juce_audio_processors      1
 #define JUCE_MODULE_AVAILABLE_juce_core                  1
 #define JUCE_MODULE_AVAILABLE_juce_data_structures       1
 #define JUCE_MODULE_AVAILABLE_juce_events                1
@@ -38,19 +38,22 @@
 #define JUCE_MODULE_AVAILABLE_juce_audio_utils           0
 #define JUCE_MODULE_AVAILABLE_juce_cryptography          0
 #define JUCE_MODULE_AVAILABLE_juce_opengl                0
+#define JUCE_MODULE_AVAILABLE_juce_gui_extra             0
 #define JUCE_MODULE_AVAILABLE_juce_video                 0
 
 // conditional
 #if defined(APPCONFIG_OS_MAC) || defined(APPCONFIG_OS_WIN)
-# define JUCE_MODULE_AVAILABLE_juce_audio_processors     1
 # define JUCE_MODULE_AVAILABLE_juce_graphics             1
 # define JUCE_MODULE_AVAILABLE_juce_gui_basics           1
-# define JUCE_MODULE_AVAILABLE_juce_gui_extra            1
 #else
-# define JUCE_MODULE_AVAILABLE_juce_audio_processors     0
 # define JUCE_MODULE_AVAILABLE_juce_graphics             0
 # define JUCE_MODULE_AVAILABLE_juce_gui_basics           0
-# define JUCE_MODULE_AVAILABLE_juce_gui_extra            0
+#endif
+
+#ifndef BUILD_BRIDGE
+# define JUCE_MODULE_AVAILABLE_juce_audio_devices        1
+#else
+# define JUCE_MODULE_AVAILABLE_juce_audio_devices        0
 #endif
 
 // misc
@@ -191,7 +194,11 @@
 
     @see VSTPluginFormat, AudioPluginFormat, AudioPluginFormatManager, JUCE_PLUGINHOST_AU
 */
-#define JUCE_PLUGINHOST_VST 1
+#if defined(APPCONFIG_OS_MAC) || defined(APPCONFIG_OS_WIN)
+# define JUCE_PLUGINHOST_VST 1
+#else
+# define JUCE_PLUGINHOST_VST 0
+#endif
 
 /** Config: JUCE_PLUGINHOST_VST3
     Enables the VST3 audio plugin hosting classes. This requires the Steinberg VST3 SDK to be
