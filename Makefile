@@ -48,9 +48,6 @@ ifeq ($(HAVE_HYLIA),true)
 ALL_LIBS += $(MODULEDIR)/hylia.a
 endif
 
-ALL_LIBS += $(MODULEDIR)/rtaudio.a
-ALL_LIBS += $(MODULEDIR)/rtmidi.a
-
 ifeq ($(HAVE_QT4),true)
 ALL_LIBS += $(MODULEDIR)/theme.qt4.a
 endif
@@ -70,6 +67,9 @@ ifeq ($(MACOS_OR_WIN32),true)
 ALL_LIBS += $(MODULEDIR)/juce_graphics.a
 ALL_LIBS += $(MODULEDIR)/juce_gui_basics.a
 endif
+else
+ALL_LIBS += $(MODULEDIR)/rtaudio.a
+ALL_LIBS += $(MODULEDIR)/rtmidi.a
 endif
 
 libs: $(ALL_LIBS)

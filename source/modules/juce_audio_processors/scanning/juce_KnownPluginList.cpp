@@ -493,6 +493,7 @@ struct PluginTreeUtils
         return false;
     }
 
+#if ! JUCE_AUDIOPROCESSOR_NO_GUI
     static bool addToMenu (const KnownPluginList::PluginTree& tree, PopupMenu& m,
                            const OwnedArray<PluginDescription>& allPlugins,
                            const String& currentlyTickedPluginID)
@@ -523,6 +524,7 @@ struct PluginTreeUtils
 
         return isTicked;
     }
+#endif
 };
 
 KnownPluginList::PluginTree* KnownPluginList::createTree (const SortMethod sortMethod) const
@@ -557,12 +559,14 @@ KnownPluginList::PluginTree* KnownPluginList::createTree (const SortMethod sortM
 }
 
 //==============================================================================
+#if ! JUCE_AUDIOPROCESSOR_NO_GUI
 void KnownPluginList::addToMenu (PopupMenu& menu, const SortMethod sortMethod,
                                  const String& currentlyTickedPluginID) const
 {
     ScopedPointer<PluginTree> tree (createTree (sortMethod));
     PluginTreeUtils::addToMenu (*tree, menu, types, currentlyTickedPluginID);
 }
+#endif
 
 int KnownPluginList::getIndexChosenByMenu (const int menuResultCode) const
 {

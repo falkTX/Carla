@@ -1190,6 +1190,13 @@ public:
             juce::KnownPluginList plist;
             for (int i = 0; i < fFormatManager.getNumFormats(); ++i)
                 plist.scanAndAddFile(fileOrIdentifier, true, pluginDescriptions, *fFormatManager.getFormat(i));
+
+            if (pluginDescriptions.size() == 0)
+            {
+                pData->engine->setLastError("Failed to get plugin description");
+                return false;
+            }
+
             fDesc = *pluginDescriptions[0];
         }
 

@@ -47,8 +47,6 @@ STANDALONE_LIBS += $(MODULEDIR)/juce_events.a
 ifeq ($(MACOS_OR_WIN32),true)
 STANDALONE_LIBS += $(MODULEDIR)/juce_graphics.a
 STANDALONE_LIBS += $(MODULEDIR)/juce_gui_basics.a
-# ifeq ($(MACOS),true)
-# STANDALONE_LIBS += $(MODULEDIR)/juce_gui_extra.a
 endif
 else
 STANDALONE_LIBS += $(MODULEDIR)/rtaudio.a
