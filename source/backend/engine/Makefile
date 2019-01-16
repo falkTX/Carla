@@ -26,8 +26,15 @@ endif
 
 OBJSa = $(OBJS) \
 	$(OBJDIR)/CarlaEngineJack.cpp.o \
-	$(OBJDIR)/CarlaEngineNative.cpp.o \
+	$(OBJDIR)/CarlaEngineNative.cpp.o
+
+ifeq ($(USING_JUCE),true)
+# OBJSa += \
+# -	$(OBJDIR)/CarlaEngineJuce.cpp.o
+else
+OBJSa += \
 	$(OBJDIR)/CarlaEngineRtAudio.cpp.o
+endif
 
 OBJSp = $(OBJS) \
 	$(OBJDIR)/CarlaEngineNative.cpp.exp.o

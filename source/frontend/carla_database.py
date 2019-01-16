@@ -83,6 +83,15 @@ def findBinaries(binPath, OS):
 
     return binaries
 
+def findVST3Binaries(binPath):
+    binaries = []
+
+    for root, dirs, files in os.walk(binPath):
+        for name in [name for name in files if name.lower().endswith(".vst3")]:
+            binaries.append(os.path.join(root, name))
+
+    return binaries
+
 def findLV2Bundles(bundlePath):
     bundles = []
 
@@ -93,12 +102,13 @@ def findLV2Bundles(bundlePath):
 
     return bundles
 
-def findMacVSTBundles(bundlePath):
+def findMacVSTBundles(bundlePath, isVST3):
     bundles = []
+    extension = ".vst3" if isVST3 else ".vst"
 
     for root, dirs, files in os.walk(bundlePath, followlinks=True):
         #if root == bundlePath: continue # FIXME
-        for name in [name for name in dirs if name.lower().endswith(".vst")]:
+        for name in [name for name in dirs if name.lower().endswith(extension)]:
             bundles.append(os.path.join(root, name))
 
     return bundles
@@ -341,6 +351,9 @@ def checkPluginLV2(filename, tool, wineSettings=None):
 def checkPluginVST2(filename, tool, wineSettings=None):
     return runCarlaDiscovery(PLUGIN_VST2, "VST2", filename, tool, wineSettings)
 
+def checkPluginVST3(filename, tool, wineSettings=None):
+    return runCarlaDiscovery(PLUGIN_VST3, "VST3", filename, tool, wineSettings)
+
 def checkFileSF2(filename, tool):
     return runCarlaDiscovery(PLUGIN_SF2, "SF2", filename, tool)
 
@@ -369,6 +382,8 @@ class SearchPluginsThread(QThread):
         self.fCheckDSSI   = False
         self.fCheckLV2    = False
         self.fCheckVST2   = False
+        self.fCheckVST3   = False
+        self.fCheckAU     = False
         self.fCheckSF2    = False
         self.fCheckSFZ    = False
 
@@ -409,11 +424,13 @@ class SearchPluginsThread(QThread):
         self.fCheckWin32   = win32
         self.fCheckWin64   = win64
 
-    def setSearchPluginTypes(self, ladspa, dssi, lv2, vst2, sf2, sfz):
+    def setSearchPluginTypes(self, ladspa, dssi, lv2, vst2, vst3, au, sf2, sfz):
         self.fCheckLADSPA = ladspa
         self.fCheckDSSI   = dssi
         self.fCheckLV2    = lv2
         self.fCheckVST2   = vst2
+        self.fCheckVST3   = vst3 and (MACOS or WINDOWS)
+        self.fCheckAU     = au and MACOS
         self.fCheckSF2    = sf2
         self.fCheckSFZ    = sfz
 
@@ -432,16 +449,26 @@ class SearchPluginsThread(QThread):
         if self.fCheckLADSPA: pluginCount += 1
         if self.fCheckDSSI:   pluginCount += 1
         if self.fCheckVST2:   pluginCount += 1
+        if self.fCheckVST3:   pluginCount += 1
 
         # Increase count by the number of externally discoverable plugin types
         if self.fCheckNative:
             self.fCurCount += pluginCount
+            # MacOS and Windows are the only VST3 supported OSes
+            if self.fCheckVST3 and not (MACOS or WINDOWS):
+                self.fCurCount -= 1
 
         if self.fCheckPosix32:
             self.fCurCount += pluginCount
+            # MacOS is the only VST3 supported posix OS
+            if self.fCheckVST3 and not MACOS:
+                self.fCurCount -= 1
 
         if self.fCheckPosix64:
             self.fCurCount += pluginCount
+            # MacOS is the only VST3 supported posix OS
+            if self.fCheckVST3 and not MACOS:
+                self.fCurCount -= 1
 
         if self.fCheckWin32:
             self.fCurCount += pluginCount
@@ -710,7 +737,7 @@ class SearchPluginsThread(QThread):
 
         for iPATH in VST2_PATH:
             if MACOS and not isWine:
-                binaries = findMacVSTBundles(iPATH)
+                binaries = findMacVSTBundles(iPATH, False)
             else:
                 binaries = findBinaries(iPATH, OS)
             for binary in binaries:
@@ -1128,8 +1155,12 @@ class PluginRefreshW(QDialog):
                                             self.ui.ch_lv2.isChecked(), self.ui.ch_vst.isChecked(),
                                             self.ui.ch_sf2.isChecked(), self.ui.ch_sfz.isChecked())
 
+        # TODO
+        vst3 = False
+        au = False
+
         self.fThread.setSearchBinaryTypes(native, posix32, posix64, win32, win64)
-        self.fThread.setSearchPluginTypes(ladspa, dssi, lv2, vst, sf2, sfz)
+        self.fThread.setSearchPluginTypes(ladspa, dssi, lv2, vst, vst3, au, sf2, sfz)
         self.fThread.start()
 
     # ------------------------------------------------------------------------------------------------------------------

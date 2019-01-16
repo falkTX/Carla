@@ -92,6 +92,13 @@ UNIX=true
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
+# Set USING_JUCE
+
+ifeq ($(MACOS_OR_WIN32),true)
+USING_JUCE=true
+endif
+
+# ---------------------------------------------------------------------------------------------------------------------
 # Set build and link flags
 
 BASE_FLAGS = -Wall -Wextra -pipe -DBUILDING_CARLA -DREAL_BUILD -MD -MP
@@ -332,6 +339,10 @@ endif
 
 ifeq ($(HAVE_X11),true)
 BASE_FLAGS += -DHAVE_X11
+endif
+
+ifeq ($(USING_JUCE),true)
+BASE_FLAGS += -DUSING_JUCE
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

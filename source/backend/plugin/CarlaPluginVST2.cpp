@@ -18,6 +18,8 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
+#ifndef USING_JUCE
+
 #include "CarlaVstUtils.hpp"
 
 #include "CarlaMathUtils.hpp"
@@ -2619,6 +2621,8 @@ CarlaPluginVST2* CarlaPluginVST2::sLastCarlaPluginVST2 = nullptr;
 
 CARLA_BACKEND_END_NAMESPACE
 
+#endif // USING_JUCE
+
 // -------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
@@ -2627,6 +2631,9 @@ CarlaPlugin* CarlaPlugin::newVST2(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newVST2({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.uniqueId);
 
+#ifdef USING_JUCE
+    return newJuce(init, "VST2");
+#else
     CarlaPluginVST2* const plugin(new CarlaPluginVST2(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name, init.uniqueId, init.options))
@@ -2636,6 +2643,7 @@ CarlaPlugin* CarlaPlugin::newVST2(const Initializer& init)
     }
 
     return plugin;
+#endif
 }
 
 // -------------------------------------------------------------------------------------------------------------------
