@@ -1,7 +1,7 @@
 #ifndef __asiosys__
 	#define __asiosys__
 
-	#ifdef WIN32
+	#if defined(WIN32) || defined(_WIN64)
 		#undef MAC 
 		#define PPC 0
 		#define WINDOWS 1
