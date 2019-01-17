@@ -1464,7 +1464,12 @@ public:
             TCHAR name [256];
 
             while (RegEnumKey (hk, index++, name, numElementsInArray (name)) == ERROR_SUCCESS)
+            {
+                if (isBlacklistedDriver (name))
+                    continue;
+
                 addDriverInfo (name, hk);
+            }
 
             RegCloseKey (hk);
         }
@@ -1597,6 +1602,11 @@ private:
     }
 
     //==============================================================================
+    static bool isBlacklistedDriver (const String& driverName)
+    {
+        return driverName == "ASIO DirectX Full Duplex Driver" || driverName == "ASIO Multimedia Driver";
+    }
+
     void addDriverInfo (const String& keyName, HKEY hk)
     {
         HKEY subKey;
