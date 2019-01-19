@@ -69,6 +69,9 @@ ifeq ($(MACOS_OR_WIN32),true)
 LIBS += $(MODULEDIR)/juce_graphics.a
 LIBS += $(MODULEDIR)/juce_gui_basics.a
 endif
+ifeq ($(MACOS),true)
+LIBS += $(MODULEDIR)/juce_gui_extra.a
+endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -95,6 +98,9 @@ LINK_FLAGS += $(JUCE_EVENTS_LIBS)
 ifeq ($(MACOS_OR_WIN32),true)
 LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
 LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
+endif
+ifeq ($(MACOS),true)
+LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
 endif
 endif
 
