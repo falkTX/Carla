@@ -85,7 +85,8 @@ namespace FileChooserHelpers
                 if (FilePreviewComponent* comp = dynamic_cast<FilePreviewComponent*> (info->customComponent->getChildComponent(0)))
                 {
                     WCHAR path [MAX_PATH * 2] = { 0 };
-                    CommDlg_OpenSave_GetFilePath (GetParent (hdlg), (LPARAM) &path, MAX_PATH);
+                    if (CommDlg_OpenSave_GetFilePath (GetParent (hdlg), (LPARAM) &path, MAX_PATH) < 0)
+                        return 0;
 
                     comp->selectedFileChanged (File (path));
                 }
