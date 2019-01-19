@@ -79,7 +79,7 @@ public:
 	virtual ParamValue PLUGIN_API getParamNormalized (ParamID tag) SMTG_OVERRIDE;
 	virtual tresult PLUGIN_API setParamNormalized (ParamID tag, ParamValue value) SMTG_OVERRIDE;
 	virtual tresult PLUGIN_API setComponentHandler (IComponentHandler* handler) SMTG_OVERRIDE;
-	virtual IPlugView* PLUGIN_API createView (FIDString /*name*/) SMTG_OVERRIDE {return 0;}
+	virtual IPlugView* PLUGIN_API createView (FIDString name) SMTG_OVERRIDE;
 
 	//---from IEditController2-------
 	virtual tresult PLUGIN_API setKnobMode (KnobMode mode) SMTG_OVERRIDE { hostKnobMode = mode; return kResultTrue; }
