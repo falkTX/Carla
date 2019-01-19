@@ -1,6 +1,6 @@
 /*
  * Carla Plugin discovery
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,6 +23,12 @@
 
 #ifdef BUILD_BRIDGE
 # undef HAVE_FLUIDSYNTH
+#endif
+
+#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+# include "AppConfig.h"
+# include "juce_audio_processors/juce_audio_processors.h"
+# define USE_JUCE_PROCESSORS
 #endif
 
 #include "CarlaLadspaUtils.hpp"
@@ -84,198 +90,6 @@ static void print_lib_error(const char* const filename)
     {
         DISCOVERY_OUT("error", error);
     }
-}
-
-// --------------------------------------------------------------------------
-// VST stuff
-
-// Check if plugin is currently processing
-static bool gVstIsProcessing = false;
-
-// Check if plugin needs idle
-static bool gVstNeedsIdle = false;
-
-// Check if plugin wants midi
-static bool gVstWantsMidi = false;
-
-// Check if plugin wants time
-static bool gVstWantsTime = false;
-
-// Current uniqueId for VST shell plugins
-static intptr_t gVstCurrentUniqueId = 0;
-
-// Supported Carla features
-static intptr_t vstHostCanDo(const char* const feature)
-{
-    carla_debug("vstHostCanDo(\"%s\")", feature);
-
-    if (std::strcmp(feature, "supplyIdle") == 0)
-        return 1;
-    if (std::strcmp(feature, "sendVstEvents") == 0)
-        return 1;
-    if (std::strcmp(feature, "sendVstMidiEvent") == 0)
-        return 1;
-    if (std::strcmp(feature, "sendVstMidiEventFlagIsRealtime") == 0)
-        return 1;
-    if (std::strcmp(feature, "sendVstTimeInfo") == 0)
-    {
-        gVstWantsTime = true;
-        return 1;
-    }
-    if (std::strcmp(feature, "receiveVstEvents") == 0)
-        return 1;
-    if (std::strcmp(feature, "receiveVstMidiEvent") == 0)
-        return 1;
-    if (std::strcmp(feature, "receiveVstTimeInfo") == 0)
-        return -1;
-    if (std::strcmp(feature, "reportConnectionChanges") == 0)
-        return -1;
-    if (std::strcmp(feature, "acceptIOChanges") == 0)
-        return 1;
-    if (std::strcmp(feature, "sizeWindow") == 0)
-        return 1;
-    if (std::strcmp(feature, "offline") == 0)
-        return -1;
-    if (std::strcmp(feature, "openFileSelector") == 0)
-        return -1;
-    if (std::strcmp(feature, "closeFileSelector") == 0)
-        return -1;
-    if (std::strcmp(feature, "startStopProcess") == 0)
-        return 1;
-    if (std::strcmp(feature, "supportShell") == 0)
-        return 1;
-    if (std::strcmp(feature, "shellCategory") == 0)
-        return 1;
-    if (std::strcmp(feature, "NIMKPIVendorSpecificCallbacks") == 0)
-        return -1;
-
-    // non-official features found in some plugins:
-    // "asyncProcessing"
-    // "editFile"
-
-    // unimplemented
-    carla_stderr("vstHostCanDo(\"%s\") - unknown feature", feature);
-    return 0;
-}
-
-// Host-side callback
-static intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
-{
-    carla_debug("vstHostCallback(%p, %i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
-
-    static VstTimeInfo timeInfo;
-    intptr_t ret = 0;
-
-    switch (opcode)
-    {
-    case audioMasterAutomate:
-        ret = 1;
-        break;
-
-    case audioMasterVersion:
-        ret = kVstVersion;
-        break;
-
-    case audioMasterCurrentId:
-        ret = gVstCurrentUniqueId;
-        break;
-
-    case DECLARE_VST_DEPRECATED(audioMasterWantMidi):
-        if (gVstWantsMidi) { DISCOVERY_OUT("warning", "Plugin requested MIDI more than once"); }
-
-        gVstWantsMidi = true;
-        ret = 1;
-        break;
-
-    case audioMasterGetTime:
-        if (! gVstIsProcessing) { DISCOVERY_OUT("warning", "Plugin requested timeInfo out of process"); }
-        if (! gVstWantsTime)    { DISCOVERY_OUT("warning", "Plugin requested timeInfo but didn't ask if host could do \"sendVstTimeInfo\""); }
-
-        carla_zeroStruct(timeInfo);
-        timeInfo.sampleRate = kSampleRate;
-
-        // Tempo
-        timeInfo.tempo  = 120.0;
-        timeInfo.flags |= kVstTempoValid;
-
-        // Time Signature
-        timeInfo.timeSigNumerator   = 4;
-        timeInfo.timeSigDenominator = 4;
-        timeInfo.flags |= kVstTimeSigValid;
-
-        ret = (intptr_t)&timeInfo;
-        break;
-
-    case DECLARE_VST_DEPRECATED(audioMasterTempoAt):
-        ret = 120 * 10000;
-        break;
-
-    case DECLARE_VST_DEPRECATED(audioMasterGetNumAutomatableParameters):
-        ret = carla_minPositive(effect->numParams, static_cast<int>(MAX_DEFAULT_PARAMETERS));
-        break;
-
-    case DECLARE_VST_DEPRECATED(audioMasterGetParameterQuantization):
-        ret = 1; // full single float precision
-        break;
-
-    case DECLARE_VST_DEPRECATED(audioMasterNeedIdle):
-        if (gVstNeedsIdle) { DISCOVERY_OUT("warning", "Plugin requested idle more than once"); }
-
-        gVstNeedsIdle = true;
-        ret = 1;
-        break;
-
-    case audioMasterGetSampleRate:
-        ret = kSampleRatei;
-        break;
-
-    case audioMasterGetBlockSize:
-        ret = kBufferSize;
-        break;
-
-    case DECLARE_VST_DEPRECATED(audioMasterWillReplaceOrAccumulate):
-        ret = 1; // replace
-        break;
-
-    case audioMasterGetCurrentProcessLevel:
-        ret = gVstIsProcessing ? kVstProcessLevelRealtime : kVstProcessLevelUser;
-        break;
-
-    case audioMasterGetAutomationState:
-        ret = kVstAutomationOff;
-        break;
-
-    case audioMasterGetVendorString:
-        CARLA_SAFE_ASSERT_BREAK(ptr != nullptr);
-        std::strcpy((char*)ptr, "falkTX");
-        ret = 1;
-        break;
-
-    case audioMasterGetProductString:
-        CARLA_SAFE_ASSERT_BREAK(ptr != nullptr);
-        std::strcpy((char*)ptr, "Carla-Discovery");
-        ret = 1;
-        break;
-
-    case audioMasterGetVendorVersion:
-        ret = CARLA_VERSION_HEX;
-        break;
-
-    case audioMasterCanDo:
-        CARLA_SAFE_ASSERT_BREAK(ptr != nullptr);
-        ret = vstHostCanDo((const char*)ptr);
-        break;
-
-    case audioMasterGetLanguage:
-        ret = kVstLangEnglish;
-        break;
-
-    default:
-        carla_stdout("vstHostCallback(%p, %i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
-        break;
-    }
-
-    return ret;
 }
 
 // ------------------------------ Plugin Checks -----------------------------
@@ -948,6 +762,199 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
 }
 #endif
 
+#ifndef USE_JUCE_PROCESSORS
+// --------------------------------------------------------------------------
+// VST stuff
+
+// Check if plugin is currently processing
+static bool gVstIsProcessing = false;
+
+// Check if plugin needs idle
+static bool gVstNeedsIdle = false;
+
+// Check if plugin wants midi
+static bool gVstWantsMidi = false;
+
+// Check if plugin wants time
+static bool gVstWantsTime = false;
+
+// Current uniqueId for VST shell plugins
+static intptr_t gVstCurrentUniqueId = 0;
+
+// Supported Carla features
+static intptr_t vstHostCanDo(const char* const feature)
+{
+    carla_debug("vstHostCanDo(\"%s\")", feature);
+
+    if (std::strcmp(feature, "supplyIdle") == 0)
+        return 1;
+    if (std::strcmp(feature, "sendVstEvents") == 0)
+        return 1;
+    if (std::strcmp(feature, "sendVstMidiEvent") == 0)
+        return 1;
+    if (std::strcmp(feature, "sendVstMidiEventFlagIsRealtime") == 0)
+        return 1;
+    if (std::strcmp(feature, "sendVstTimeInfo") == 0)
+    {
+        gVstWantsTime = true;
+        return 1;
+    }
+    if (std::strcmp(feature, "receiveVstEvents") == 0)
+        return 1;
+    if (std::strcmp(feature, "receiveVstMidiEvent") == 0)
+        return 1;
+    if (std::strcmp(feature, "receiveVstTimeInfo") == 0)
+        return -1;
+    if (std::strcmp(feature, "reportConnectionChanges") == 0)
+        return -1;
+    if (std::strcmp(feature, "acceptIOChanges") == 0)
+        return 1;
+    if (std::strcmp(feature, "sizeWindow") == 0)
+        return 1;
+    if (std::strcmp(feature, "offline") == 0)
+        return -1;
+    if (std::strcmp(feature, "openFileSelector") == 0)
+        return -1;
+    if (std::strcmp(feature, "closeFileSelector") == 0)
+        return -1;
+    if (std::strcmp(feature, "startStopProcess") == 0)
+        return 1;
+    if (std::strcmp(feature, "supportShell") == 0)
+        return 1;
+    if (std::strcmp(feature, "shellCategory") == 0)
+        return 1;
+    if (std::strcmp(feature, "NIMKPIVendorSpecificCallbacks") == 0)
+        return -1;
+
+    // non-official features found in some plugins:
+    // "asyncProcessing"
+    // "editFile"
+
+    // unimplemented
+    carla_stderr("vstHostCanDo(\"%s\") - unknown feature", feature);
+    return 0;
+}
+
+// Host-side callback
+static intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
+{
+    carla_debug("vstHostCallback(%p, %i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
+
+    static VstTimeInfo timeInfo;
+    intptr_t ret = 0;
+
+    switch (opcode)
+    {
+    case audioMasterAutomate:
+        ret = 1;
+        break;
+
+    case audioMasterVersion:
+        ret = kVstVersion;
+        break;
+
+    case audioMasterCurrentId:
+        ret = gVstCurrentUniqueId;
+        break;
+
+    case DECLARE_VST_DEPRECATED(audioMasterWantMidi):
+        if (gVstWantsMidi) { DISCOVERY_OUT("warning", "Plugin requested MIDI more than once"); }
+
+        gVstWantsMidi = true;
+        ret = 1;
+        break;
+
+    case audioMasterGetTime:
+        if (! gVstIsProcessing) { DISCOVERY_OUT("warning", "Plugin requested timeInfo out of process"); }
+        if (! gVstWantsTime)    { DISCOVERY_OUT("warning", "Plugin requested timeInfo but didn't ask if host could do \"sendVstTimeInfo\""); }
+
+        carla_zeroStruct(timeInfo);
+        timeInfo.sampleRate = kSampleRate;
+
+        // Tempo
+        timeInfo.tempo  = 120.0;
+        timeInfo.flags |= kVstTempoValid;
+
+        // Time Signature
+        timeInfo.timeSigNumerator   = 4;
+        timeInfo.timeSigDenominator = 4;
+        timeInfo.flags |= kVstTimeSigValid;
+
+        ret = (intptr_t)&timeInfo;
+        break;
+
+    case DECLARE_VST_DEPRECATED(audioMasterTempoAt):
+        ret = 120 * 10000;
+        break;
+
+    case DECLARE_VST_DEPRECATED(audioMasterGetNumAutomatableParameters):
+        ret = carla_minPositive(effect->numParams, static_cast<int>(MAX_DEFAULT_PARAMETERS));
+        break;
+
+    case DECLARE_VST_DEPRECATED(audioMasterGetParameterQuantization):
+        ret = 1; // full single float precision
+        break;
+
+    case DECLARE_VST_DEPRECATED(audioMasterNeedIdle):
+        if (gVstNeedsIdle) { DISCOVERY_OUT("warning", "Plugin requested idle more than once"); }
+
+        gVstNeedsIdle = true;
+        ret = 1;
+        break;
+
+    case audioMasterGetSampleRate:
+        ret = kSampleRatei;
+        break;
+
+    case audioMasterGetBlockSize:
+        ret = kBufferSize;
+        break;
+
+    case DECLARE_VST_DEPRECATED(audioMasterWillReplaceOrAccumulate):
+        ret = 1; // replace
+        break;
+
+    case audioMasterGetCurrentProcessLevel:
+        ret = gVstIsProcessing ? kVstProcessLevelRealtime : kVstProcessLevelUser;
+        break;
+
+    case audioMasterGetAutomationState:
+        ret = kVstAutomationOff;
+        break;
+
+    case audioMasterGetVendorString:
+        CARLA_SAFE_ASSERT_BREAK(ptr != nullptr);
+        std::strcpy((char*)ptr, "falkTX");
+        ret = 1;
+        break;
+
+    case audioMasterGetProductString:
+        CARLA_SAFE_ASSERT_BREAK(ptr != nullptr);
+        std::strcpy((char*)ptr, "Carla-Discovery");
+        ret = 1;
+        break;
+
+    case audioMasterGetVendorVersion:
+        ret = CARLA_VERSION_HEX;
+        break;
+
+    case audioMasterCanDo:
+        CARLA_SAFE_ASSERT_BREAK(ptr != nullptr);
+        ret = vstHostCanDo((const char*)ptr);
+        break;
+
+    case audioMasterGetLanguage:
+        ret = kVstLangEnglish;
+        break;
+
+    default:
+        carla_stdout("vstHostCallback(%p, %i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
+        break;
+    }
+
+    return ret;
+}
+
 static void do_vst_check(lib_t& libHandle, const char* const filename, const bool doInit)
 {
     VST_Function vstFn = nullptr;
@@ -1284,6 +1291,128 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
     (void)filename;
 #endif
 }
+#endif // ! USE_JUCE_PROCESSORS
+
+#ifdef USE_JUCE_PROCESSORS
+namespace juce {
+extern bool juce_isRunningInWine();
+}
+
+static void do_juce_check(const char* const filename_, const char* const stype, const bool doInit)
+{
+    CARLA_SAFE_ASSERT_RETURN(stype != nullptr && stype[0] != 0,) // FIXME
+    carla_debug("do_juce_check(%s, %s, %s)", filename_, stype, bool2str(doInit));
+
+    juce::String filename;
+
+#ifdef CARLA_OS_WIN
+    // Fix for wine usage
+    if (juce::juce_isRunningInWine() && filename_[0] == '/')
+    {
+        filename = filename_;
+        filename.replace("/", "\\");
+        filename = "Z:" + filename;
+    }
+    else
+#endif
+    filename = juce::File(filename_).getFullPathName();
+
+    juce::ScopedPointer<juce::AudioPluginFormat> pluginFormat;
+
+    /* */ if (std::strcmp(stype, "VST2") == 0)
+    {
+#if JUCE_PLUGINHOST_VST
+        pluginFormat = new juce::VSTPluginFormat();
+#else
+        DISCOVERY_OUT("error", "VST support not available");
+#endif
+    }
+    else if (std::strcmp(stype, "VST3") == 0)
+    {
+#if JUCE_PLUGINHOST_VST3
+        pluginFormat = new juce::VST3PluginFormat();
+#else
+        DISCOVERY_OUT("error", "VST3 support not available");
+#endif
+    }
+    else if (std::strcmp(stype, "AU") == 0)
+    {
+#if JUCE_PLUGINHOST_AU
+        pluginFormat = new juce::AudioUnitPluginFormat();
+#else
+        DISCOVERY_OUT("error", "AU support not available");
+#endif
+    }
+
+    if (pluginFormat == nullptr)
+    {
+        DISCOVERY_OUT("error", stype << " support not available");
+        return;
+    }
+
+#ifdef CARLA_OS_WIN
+    CARLA_SAFE_ASSERT_RETURN(juce::File(filename).existsAsFile(),);
+#endif
+    CARLA_SAFE_ASSERT_RETURN(pluginFormat->fileMightContainThisPluginType(filename),);
+
+    juce::OwnedArray<juce::PluginDescription> results;
+    pluginFormat->findAllTypesForFile(results, filename);
+
+    if (results.size() == 0)
+    {
+        DISCOVERY_OUT("error", "No plugins found");
+        return;
+    }
+
+    for (juce::PluginDescription **it = results.begin(), **end = results.end(); it != end; ++it)
+    {
+        juce::PluginDescription* const desc(*it);
+
+        uint hints = 0x0;
+        int audioIns = desc->numInputChannels;
+        int audioOuts = desc->numOutputChannels;
+        int midiIns = 0;
+        int midiOuts = 0;
+        int parameters = 0;
+
+        if (desc->isInstrument)
+            hints |= PLUGIN_IS_SYNTH;
+
+        if (doInit)
+        {
+            if (juce::AudioPluginInstance* const instance = pluginFormat->createInstanceFromDescription(*desc, kSampleRate, kBufferSize))
+            {
+                instance->refreshParameterList();
+
+                parameters = instance->getNumParameters();
+
+                if (instance->hasEditor())
+                    hints |= PLUGIN_HAS_CUSTOM_UI;
+                if (instance->acceptsMidi())
+                    midiIns = 1;
+                if (instance->producesMidi())
+                    midiOuts = 1;
+
+                delete instance;
+            }
+        }
+
+        DISCOVERY_OUT("init", "-----------");
+        DISCOVERY_OUT("build", BINARY_NATIVE);
+        DISCOVERY_OUT("hints", hints);
+        DISCOVERY_OUT("name", desc->descriptiveName);
+        DISCOVERY_OUT("label", desc->name);
+        DISCOVERY_OUT("maker", desc->manufacturerName);
+        DISCOVERY_OUT("uniqueId", desc->uid);
+        DISCOVERY_OUT("audio.ins", audioIns);
+        DISCOVERY_OUT("audio.outs", audioOuts);
+        DISCOVERY_OUT("midi.ins", midiIns);
+        DISCOVERY_OUT("midi.outs", midiOuts);
+        DISCOVERY_OUT("parameters.ins", parameters);
+        DISCOVERY_OUT("end", "------------");
+    }
+}
+#endif // USE_JUCE_PROCESSORS
 
 static void do_fluidsynth_check(const char* const filename, const bool doInit)
 {
@@ -1486,20 +1615,45 @@ int main(int argc, char* argv[])
     case PLUGIN_LADSPA:
         do_ladspa_check(handle, filename, doInit);
         break;
+
     case PLUGIN_DSSI:
         do_dssi_check(handle, filename, doInit);
         break;
+
 #ifndef BUILD_BRIDGE
     case PLUGIN_LV2:
         do_lv2_check(filename, doInit);
         break;
 #endif
+
     case PLUGIN_VST2:
+#ifdef USE_JUCE_PROCESSORS
+        do_juce_check(filename, "VST2", doInit);
+#else
         do_vst_check(handle, filename, doInit);
+#endif
         break;
+
+    case PLUGIN_VST3:
+#ifdef USE_JUCE_PROCESSORS
+        do_juce_check(filename, "VST3", doInit);
+#else
+        DISCOVERY_OUT("error", "VST3 support not available");
+#endif
+        break;
+
+    case PLUGIN_AU:
+#ifdef USE_JUCE_PROCESSORS
+        do_juce_check(filename, "AU", doInit);
+#else
+        DISCOVERY_OUT("error", "AU support not available");
+#endif
+         break;
+
     case PLUGIN_SF2:
         do_fluidsynth_check(filename, doInit);
         break;
+
     default:
         break;
     }

@@ -65,6 +65,66 @@ LINK_FLAGS   += $(WATER_LIBS)
 
 LINK_FLAGS   += $(LIBDL_LIBS)
 
+ifeq ($(USING_JUCE),true)
+LIBS_native  += $(MODULEDIR)/juce_audio_basics.a
+LIBS_posix32 += $(MODULEDIR)/juce_audio_basics.posix32.a
+LIBS_posix64 += $(MODULEDIR)/juce_audio_basics.posix64.a
+LIBS_win32   += $(MODULEDIR)/juce_audio_basics.win32.a
+LIBS_win64   += $(MODULEDIR)/juce_audio_basics.win64.a
+LINK_FLAGS   += $(JUCE_AUDIO_BASICS_LIBS)
+
+LIBS_native  += $(MODULEDIR)/juce_audio_processors.a
+LIBS_posix32 += $(MODULEDIR)/juce_audio_processors.posix32.a
+LIBS_posix64 += $(MODULEDIR)/juce_audio_processors.posix64.a
+LIBS_win32   += $(MODULEDIR)/juce_audio_processors.win32.a
+LIBS_win64   += $(MODULEDIR)/juce_audio_processors.win64.a
+LINK_FLAGS   += $(JUCE_AUDIO_PROCESSORS_LIBS)
+
+LIBS_native  += $(MODULEDIR)/juce_core.a
+LIBS_posix32 += $(MODULEDIR)/juce_core.posix32.a
+LIBS_posix64 += $(MODULEDIR)/juce_core.posix64.a
+LIBS_win32   += $(MODULEDIR)/juce_core.win32.a
+LIBS_win64   += $(MODULEDIR)/juce_core.win64.a
+LINK_FLAGS   += $(JUCE_CORE_LIBS)
+
+LIBS_native  += $(MODULEDIR)/juce_data_structures.a
+LIBS_posix32 += $(MODULEDIR)/juce_data_structures.posix32.a
+LIBS_posix64 += $(MODULEDIR)/juce_data_structures.posix64.a
+LIBS_win32   += $(MODULEDIR)/juce_data_structures.win32.a
+LIBS_win64   += $(MODULEDIR)/juce_data_structures.win64.a
+LINK_FLAGS   += $(JUCE_DATA_STRUCTURES_LIBS)
+
+LIBS_native  += $(MODULEDIR)/juce_events.a
+LIBS_posix32 += $(MODULEDIR)/juce_events.posix32.a
+LIBS_posix64 += $(MODULEDIR)/juce_events.posix64.a
+LIBS_win32   += $(MODULEDIR)/juce_events.win32.a
+LIBS_win64   += $(MODULEDIR)/juce_events.win64.a
+LINK_FLAGS   += $(JUCE_EVENTS_LIBS)
+
+ifeq ($(MACOS_OR_WIN32),true)
+LIBS_native  += $(MODULEDIR)/juce_graphics.a
+LIBS_posix32 += $(MODULEDIR)/juce_graphics.posix32.a
+LIBS_posix64 += $(MODULEDIR)/juce_graphics.posix64.a
+LIBS_win32   += $(MODULEDIR)/juce_graphics.win32.a
+LIBS_win64   += $(MODULEDIR)/juce_graphics.win64.a
+LINK_FLAGS   += $(JUCE_GRAPHICS_LIBS)
+
+LIBS_native  += $(MODULEDIR)/juce_gui_basics.a
+LIBS_posix32 += $(MODULEDIR)/juce_gui_basics.posix32.a
+LIBS_posix64 += $(MODULEDIR)/juce_gui_basics.posix64.a
+LIBS_win32   += $(MODULEDIR)/juce_gui_basics.win32.a
+LIBS_win64   += $(MODULEDIR)/juce_gui_basics.win64.a
+LINK_FLAGS   += $(JUCE_GUI_BASICS_LIBS)
+endif # MACOS_OR_WIN32
+
+ifeq ($(MACOS),true)
+LIBS_native  += $(MODULEDIR)/juce_gui_extra.a
+LIBS_posix32 += $(MODULEDIR)/juce_gui_extra.posix32.a
+LIBS_posix64 += $(MODULEDIR)/juce_gui_extra.posix64.a
+LINK_FLAGS   += $(JUCE_GUI_EXTRA_LIBS)
+endif # MACOS
+endif # USING_JUCE
+
 # ----------------------------------------------------------------------------------------------------------------------------
 
 OBJS_native  = $(OBJDIR)/$(MODULENAME).cpp.o
