@@ -220,6 +220,12 @@ tresult PLUGIN_API EditController::setComponentHandler (IComponentHandler* newHa
 }
 
 //------------------------------------------------------------------------
+IPlugView* PLUGIN_API createView (FIDString /*name*/)
+{
+	return 0;
+}
+
+//------------------------------------------------------------------------
 tresult EditController::beginEdit (ParamID tag)
 {
 	if (componentHandler)
