@@ -220,7 +220,7 @@ tresult PLUGIN_API EditController::setComponentHandler (IComponentHandler* newHa
 }
 
 //------------------------------------------------------------------------
-IPlugView* PLUGIN_API createView (FIDString /*name*/)
+IPlugView* PLUGIN_API EditController::createView (FIDString /*name*/)
 {
 	return 0;
 }
