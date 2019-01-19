@@ -67,6 +67,9 @@ ifeq ($(MACOS_OR_WIN32),true)
 ALL_LIBS += $(MODULEDIR)/juce_graphics.a
 ALL_LIBS += $(MODULEDIR)/juce_gui_basics.a
 endif
+ifeq ($(MACOS),true)
+ALL_LIBS += $(MODULEDIR)/juce_gui_extra.a
+endif
 else
 ALL_LIBS += $(MODULEDIR)/rtaudio.a
 ALL_LIBS += $(MODULEDIR)/rtmidi.a

@@ -26,5 +26,6 @@ clean:
 	$(MAKE) clean -C juce_events
 	$(MAKE) clean -C juce_graphics
 	$(MAKE) clean -C juce_gui_basics
+	$(MAKE) clean -C juce_gui_extra
 
 # ----------------------------------------------------------------------------------------------------------------------------

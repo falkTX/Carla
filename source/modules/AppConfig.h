@@ -38,7 +38,6 @@
 #define JUCE_MODULE_AVAILABLE_juce_audio_utils           0
 #define JUCE_MODULE_AVAILABLE_juce_cryptography          0
 #define JUCE_MODULE_AVAILABLE_juce_opengl                0
-#define JUCE_MODULE_AVAILABLE_juce_gui_extra             0
 #define JUCE_MODULE_AVAILABLE_juce_video                 0
 
 // conditional
@@ -48,6 +47,12 @@
 #else
 # define JUCE_MODULE_AVAILABLE_juce_graphics             0
 # define JUCE_MODULE_AVAILABLE_juce_gui_basics           0
+#endif
+
+#if defined(APPCONFIG_OS_MAC)
+# define JUCE_MODULE_AVAILABLE_juce_gui_extra            1
+#else
+# define JUCE_MODULE_AVAILABLE_juce_gui_extra            0
 #endif
 
 #ifndef BUILD_BRIDGE
