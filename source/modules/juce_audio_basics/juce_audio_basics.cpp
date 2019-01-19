@@ -29,6 +29,8 @@
  #error "Incorrect use of JUCE cpp file"
 #endif
 
+#include "AppConfig.h"
+
 #include "juce_audio_basics.h"
 
 #if JUCE_MINGW

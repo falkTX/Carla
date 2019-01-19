@@ -343,7 +343,6 @@ endif
 
 ifeq ($(USING_JUCE),true)
 BASE_FLAGS += -DUSING_JUCE
-BUILD_CXX_FLAGS += -DJUCE_APP_CONFIG_HEADER='<AppConfig.h>'
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

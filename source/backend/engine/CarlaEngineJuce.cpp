@@ -22,6 +22,7 @@
 
 #include "RtLinkedList.hpp"
 
+#include "AppConfig.h"
 #include "juce_audio_devices/juce_audio_devices.h"
 
 CARLA_BACKEND_START_NAMESPACE

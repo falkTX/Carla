@@ -33,6 +33,8 @@
  #error "Incorrect use of JUCE cpp file"
 #endif
 
+#include "AppConfig.h"
+
 #define NS_FORMAT_FUNCTION(F,A) // To avoid spurious warnings from GCC
 
 #define JUCE_CORE_INCLUDE_OBJC_HELPERS 1

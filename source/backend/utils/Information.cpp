@@ -26,6 +26,11 @@
 # include <fluidsynth.h>
 #endif
 
+#ifdef USING_JUCE
+# include "AppConfig.h"
+# include "juce_core/juce_core.h"
+#endif
+
 #include "water/files/File.h"
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -46,7 +51,14 @@ const char* carla_get_complete_license_text()
         "<li>LADSPA plugin support</li>"
         "<li>DSSI plugin support</li>"
         "<li>LV2 plugin support</li>"
-        "<li>VST2 plugin support using VeSTige header by Javier Serrano Polo</li>"
+#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+        "<li>VST2/2 plugin support (using Juce)</li>"
+#else
+        "<li>VST2 plugin support (using VeSTige header by Javier Serrano Polo)</li>"
+#endif
+#if defined(USING_JUCE) && defined(CARLA_OS_MAC)
+        "<li>AU plugin support (using Juce)</li>"
+#endif
 
         // Sample kit libraries
 #ifdef HAVE_FLUIDSYNTH
@@ -59,7 +71,9 @@ const char* carla_get_complete_license_text()
         "<li>liblo library for OSC support</li>"
         "<li>rtmempool library by Nedko Arnaudov"
         "<li>serd, sord, sratom and lilv libraries for LV2 discovery</li>"
+#ifndef USING_JUCE
         "<li>RtAudio v" RTAUDIO_VERSION " and RtMidi v" RTMIDI_VERSION " for native Audio and MIDI support</li>"
+#endif
 
         // Internal plugins
         "<li>MIDI Sequencer UI code by Perry Nguyen</li>"
@@ -80,6 +94,25 @@ const char* carla_get_complete_license_text()
     return retText;
 }
 
+const char* carla_get_juce_version()
+{
+    carla_debug("carla_get_juce_version()");
+
+    static CarlaString retVersion;
+
+#ifdef USING_JUCE
+    if (retVersion.isEmpty())
+    {
+        if (const char* const version = juce::SystemStats::getJUCEVersion().toRawUTF8())
+            retVersion = version+6;
+        else
+            retVersion = "Unknown";
+    }
+#endif
+
+    return retVersion;
+}
+
 const char* const* carla_get_supported_file_extensions()
 {
     carla_debug("carla_get_supported_file_extensions()");
@@ -96,11 +129,14 @@ const char* const* carla_get_supported_file_extensions()
 #ifdef HAVE_ZYN_DEPS
         "xmz", "xiz",
 #endif
-#if defined(CARLA_OS_MAC)
+#ifdef CARLA_OS_MAC
         "vst",
 #else
         "dll",
         "so",
+#endif
+#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+        "vst3",
 #endif
 
         // Audio files
@@ -110,7 +146,7 @@ const char* const* carla_get_supported_file_extensions()
 #endif
 #ifdef HAVE_FFMPEG
         "3g2", "3gp", "aac", "ac3", "amr", "ape", "mp2", "mp3", "mpc", "wma",
-# ifdef HAVE_SNDFILE
+# ifndef HAVE_SNDFILE
         // FFmpeg without sndfile
         "flac", "oga", "ogg", "w64", "wav",
 # endif
@@ -148,6 +184,15 @@ const char* const* carla_get_supported_features()
 #endif
 #ifdef HAVE_PYQT
         "gui",
+#endif
+#ifdef USING_JUCE
+        "juce",
+# if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+        "vst3",
+# endif
+# if defined(CARLA_OS_MAC)
+        "au",
+# endif
 #endif
         nullptr
     };

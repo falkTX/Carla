@@ -1039,7 +1039,7 @@ bool CarlaEngine::loadFile(const char* const filename)
         extension == "mp3" ||
         extension == "mpc" ||
         extension == "wma" ||
-# ifdef HAVE_SNDFILE
+# ifndef HAVE_SNDFILE
         // FFmpeg without sndfile
         extension == "flac" ||
         extension == "oga"  ||
@@ -1115,7 +1115,7 @@ bool CarlaEngine::loadFile(const char* const filename)
         return addPlugin(getBinaryTypeFromFile(filename), PLUGIN_VST2, filename, nullptr, nullptr, 0, nullptr, 0x0);
 #endif
 
-#ifdef USING_JUCE
+#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
     if (extension == "vst3")
         return addPlugin(getBinaryTypeFromFile(filename), PLUGIN_VST3, filename, nullptr, nullptr, 0, nullptr, 0x0);
 #endif
