@@ -114,7 +114,7 @@ ifeq ($(HAVE_PYQT),true)
 SYMBOLS_LV2    += -Wl,-exported_symbol,_lv2ui_descriptor
 SYMBOLS_LV2_UI  = -Wl,-exported_symbol,_lv2ui_descriptor
 endif
-SYMBOLS_VST     = -Wl,-exported_symbol,VSTPluginMain
+SYMBOLS_VST     = -Wl,-exported_symbol,_VSTPluginMain
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
