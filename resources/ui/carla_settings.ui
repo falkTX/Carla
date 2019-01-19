@@ -1155,7 +1155,12 @@
              </item>
              <item>
               <property name="text">
-               <string>VST</string>
+               <string>VST2</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>VST3</string>
               </property>
              </item>
              <item>
