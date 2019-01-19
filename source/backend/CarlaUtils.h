@@ -138,6 +138,11 @@ typedef struct _CarlaCachedPluginInfo {
 CARLA_EXPORT const char* carla_get_complete_license_text();
 
 /*!
+ * Get the juce version used in the current Carla build.
+ */
+CARLA_EXPORT const char* carla_get_juce_version();
+
+/*!
  * Get the list of supported file extensions in carla_load_file().
  */
 CARLA_EXPORT const char* const* carla_get_supported_file_extensions();

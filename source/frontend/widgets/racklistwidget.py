@@ -258,7 +258,7 @@ class RackListWidget(QListWidget):
         if os.path.isdir(filename):
             #if os.path.exists(os.path.join(filename, "manifest.ttl")):
                 #return True
-            if MACOS and filename.lower().endswith(".vst"):
+            if MACOS and filename.lower().endswith((".vst", ".vst3")):
                 return True
 
         elif os.path.isfile(filename):

@@ -33,6 +33,8 @@
  #error "Incorrect use of JUCE cpp file"
 #endif
 
+#include "AppConfig.h"
+
 #include "juce_data_structures.h"
 
 #include "values/juce_Value.cpp"
