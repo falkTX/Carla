@@ -314,7 +314,7 @@ public:
                 juce::String uiName(pData->name);
                 uiName += " (GUI)";
 
-                fWindow = new JucePluginWindow();
+                fWindow = new JucePluginWindow(pData->engine->getOptions().frontendWinId);
                 fWindow->setName(uiName);
             }
 
@@ -1232,7 +1232,8 @@ public:
         else
             pData->name = pData->engine->getUniquePluginName(fInstance->getName().toRawUTF8());
 
-        pData->filename = carla_strdup(filename);
+        if (filename != nullptr && pData->filename[0] != '\0')
+            pData->filename = carla_strdup(filename);
 
         // ---------------------------------------------------------------
         // register client
