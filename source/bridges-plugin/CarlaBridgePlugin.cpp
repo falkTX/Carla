@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Bridge Plugin
- * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -40,6 +40,15 @@
 
 #ifdef HAVE_X11
 # include <X11/Xlib.h>
+#endif
+
+#ifdef USING_JUCE
+# include "AppConfig.h"
+# if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+#  include "juce_gui_basics/juce_gui_basics.h"
+# else
+#  include "juce_events/juce_events.h"
+# endif
 #endif
 
 #include "jackbridge/JackBridge.hpp"
@@ -123,6 +132,52 @@ static void gIdle()
     }
 }
 
+ // -------------------------------------------------------------------------
+
+#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+class CarlaJuceApp : public juce::JUCEApplication,
+                     private juce::Timer
+{
+public:
+    CarlaJuceApp()  {}
+    ~CarlaJuceApp() {}
+
+    void initialise(const juce::String&) override
+    {
+        startTimer(8);
+    }
+
+    void shutdown() override
+    {
+        gCloseNow = true;
+        stopTimer();
+    }
+
+    const juce::String getApplicationName() override
+    {
+        return "CarlaPlugin";
+    }
+
+    const juce::String getApplicationVersion() override
+    {
+        return CARLA_VERSION_STRING;
+    }
+
+    void timerCallback() override
+    {
+        gIdle();
+
+        if (gCloseNow)
+        {
+            quit();
+            gCloseNow = false;
+        }
+    }
+};
+
+static juce::JUCEApplicationBase* juce_CreateApplication() { return new CarlaJuceApp(); }
+#endif
+
 // -------------------------------------------------------------------------
 
 class CarlaBridgePlugin
@@ -195,16 +250,21 @@ public:
 
         gIsInitiated = true;
 
+#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+        juce::JUCEApplicationBase::createInstance = &juce_CreateApplication;
+        juce::JUCEApplicationBase::main(JUCE_MAIN_FUNCTION_ARGS);
+#else
         for (; runMainLoopOnce() && ! gCloseNow;)
         {
             gIdle();
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+# if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
             // MacOS and Win32 have event-loops to run, so minimize sleep time
             carla_msleep(1);
-#else
+# else
             carla_msleep(5);
-#endif
+# endif
         }
+#endif
 
         carla_engine_close();
     }
@@ -238,6 +298,10 @@ private:
     const CarlaEngine* fEngine;
     bool               fUsingBridge;
     bool               fUsingExec;
+
+#ifdef USING_JUCE
+    const juce::ScopedJuceInitialiser_GUI sJuceInitialiser;
+#endif
 
     static void callback(void* ptr, EngineCallbackOpcode action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr)
     {
