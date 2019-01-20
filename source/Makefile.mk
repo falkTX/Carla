@@ -452,8 +452,11 @@ LILV_LIBS        = -ldl -lm -lrt
 RTMEMPOOL_LIBS   = -lpthread -lrt
 WATER_LIBS       = -ldl -lpthread -lrt
 ifeq ($(USING_JUCE),true)
-JUCE_CORE_LIBS          = -ldl -lpthread -lrt
 JUCE_AUDIO_DEVICES_LIBS = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs alsa)
+JUCE_CORE_LIBS          = -ldl -lpthread -lrt
+JUCE_EVENTS_LIBS        = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs x11)
+JUCE_GRAPHICS_LIBS      = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs freetype2)
+JUCE_GUI_BASICS_LIBS    = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs x11 xext)
 else
 ifeq ($(HAVE_ALSA),true)
 RTAUDIO_FLAGS   += $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags alsa) -D__LINUX_ALSA__

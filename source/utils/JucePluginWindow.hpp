@@ -33,10 +33,6 @@
 
 namespace juce {
 
-#if JUCE_LINUX && defined(HAVE_X11)
-extern Display* display;
-#endif
-
 class JucePluginWindow : public DialogWindow
 {
 public:
@@ -103,6 +99,7 @@ private:
             return;
 
 #if JUCE_LINUX && defined(HAVE_X11)
+        Display* const display = XWindowSystem::getInstance()->displayRef();
         CARLA_SAFE_ASSERT_RETURN(display != nullptr,);
 
         ::Window window = (::Window)getWindowHandle();
