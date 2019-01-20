@@ -1,6 +1,6 @@
 /*
  * Juce Plugin Window Helper
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,24 +23,27 @@
 #include "AppConfig.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 
-#ifdef HAVE_X11
+#if JUCE_LINUX && defined(HAVE_X11)
 # include <X11/Xlib.h>
+#elif JUCE_MAC
+# import <Cocoa/Cocoa.h>
 #endif
 
 // -----------------------------------------------------------------------
 
 namespace juce {
 
-#ifdef HAVE_X11
+#if JUCE_LINUX && defined(HAVE_X11)
 extern Display* display;
 #endif
 
-class JucePluginWindow : public DocumentWindow
+class JucePluginWindow : public DialogWindow
 {
 public:
-    JucePluginWindow()
-        : DocumentWindow("JucePluginWindow", Colour(50, 50, 200), DocumentWindow::closeButton, false),
-          fClosed(false)
+    JucePluginWindow(const uintptr_t parentId)
+        : DialogWindow("JucePluginWindow", Colour(50, 50, 200), true, false),
+          fClosed(false),
+          fTransientId(parentId)
     {
         setVisible(false);
         //setAlwaysOnTop(true);
@@ -49,21 +52,18 @@ public:
         setUsingNativeTitleBar(true);
     }
 
-    void show(Component* const comp, const bool useContentOwned = false)
+    void show(Component* const comp)
     {
         fClosed = false;
 
         centreWithSize(comp->getWidth(), comp->getHeight());
-
-        if (useContentOwned)
-            setContentOwned(comp, false);
-        else
-            setContentNonOwned(comp, true);
+        setContentNonOwned(comp, true);
 
         if (! isOnDesktop())
             addToDesktop();
 
         setVisible(true);
+        setTransient();
     }
 
     void hide()
@@ -81,29 +81,51 @@ public:
         return fClosed;
     }
 
-    void setTransientWinId(const uintptr_t winId) const
-    {
-        CARLA_SAFE_ASSERT_RETURN(winId != 0,);
-
-#ifdef HAVE_X11
-        CARLA_SAFE_ASSERT_RETURN(display != nullptr,);
-
-        ::Window window = (::Window)getWindowHandle();
-
-        CARLA_SAFE_ASSERT_RETURN(window != 0,);
-
-        XSetTransientForHint(display, window, static_cast<Window>(winId));
-#endif
-    }
-
 protected:
     void closeButtonPressed() override
     {
         fClosed = true;
     }
 
+    bool escapeKeyPressed() override
+    {
+        fClosed = true;
+        return true;
+    }
+
 private:
     volatile bool fClosed;
+    const uintptr_t fTransientId;
+
+    void setTransient()
+    {
+        if (fTransientId == 0)
+            return;
+
+#if JUCE_LINUX && defined(HAVE_X11)
+        CARLA_SAFE_ASSERT_RETURN(display != nullptr,);
+
+        ::Window window = (::Window)getWindowHandle();
+
+        CARLA_SAFE_ASSERT_RETURN(window != 0,);
+
+        XSetTransientForHint(display, window, static_cast<::Window>(fTransientId));
+#endif
+
+#if JUCE_MAC
+        NSView* const view = (NSView*)getWindowHandle();
+        CARLA_SAFE_ASSERT_RETURN(view != nullptr,);
+
+        NSWindow* const window = [view window];
+        CARLA_SAFE_ASSERT_RETURN(window != nullptr,);
+
+        NSWindow* const parentWindow = [NSApp windowWithWindowNumber:fTransientId];
+        CARLA_SAFE_ASSERT_RETURN(parentWindow != nullptr,);
+
+        [parentWindow addChildWindow:window
+                             ordered:NSWindowAbove];
+#endif
+    }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(JucePluginWindow)
 };
