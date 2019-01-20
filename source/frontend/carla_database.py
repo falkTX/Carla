@@ -777,7 +777,7 @@ class SearchPluginsThread(QThread):
 
     def _checkVST2(self, OS, tool, isWine=False):
         vst2Binaries = []
-        vstPlugins = []
+        vst2Plugins = []
 
         if MACOS and not isWine:
             self._pluginLook(self.fLastCheckValue, "VST2 bundles...")
@@ -800,7 +800,7 @@ class SearchPluginsThread(QThread):
         vst2Binaries.sort()
 
         if not self.fContinueChecking:
-            return vstPlugins
+            return vst2Plugins
 
         for i in range(len(vst2Binaries)):
             vst2    = vst2Binaries[i]
@@ -809,13 +809,13 @@ class SearchPluginsThread(QThread):
 
             plugins = checkPluginVST2(vst2, tool, self.fWineSettings if isWine else None)
             if plugins:
-                vstPlugins.append(plugins)
+                vst2Plugins.append(plugins)
 
             if not self.fContinueChecking:
                 break
 
         self.fLastCheckValue += self.fCurPercentValue
-        return vstPlugins
+        return vst2Plugins
 
     def _checkVST3(self, OS, tool, isWine=False):
         vst3Binaries = []
@@ -832,7 +832,7 @@ class SearchPluginsThread(QThread):
 
         for iPATH in VST3_PATH:
             if MACOS and not isWine:
-                binaries = findMacVSTBundles(iPATH, False)
+                binaries = findMacVSTBundles(iPATH, True)
             else:
                 binaries = findVST3Binaries(iPATH)
             for binary in binaries:
@@ -1875,7 +1875,7 @@ class PluginDatabaseW(QDialog):
 
         sfzCount += len(sfzs)
 
-        self.ui.tableWidget.setRowCount(self.fLastTableIndex+ladspaCount+dssiCount+vstCount+sf2Count+sfzCount)
+        self.ui.tableWidget.setRowCount(self.fLastTableIndex+ladspaCount+dssiCount+vstCount+vst3Count+auCount+sf2Count+sfzCount)
 
         if MACOS:
             self.ui.label.setText(self.tr("Have %i Internal, %i LADSPA, %i DSSI, %i LV2, %i VST2, %i VST3 and %i AudioUnit plugins, plus %i Sound Kits" % (
