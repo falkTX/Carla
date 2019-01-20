@@ -1096,6 +1096,19 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
             carla_stdout("Match found using pid and simple name");
             windowToMap = lastGoodWindowPID;
         }
+        else if (lastGoodWindowNameUTF8 != 0)
+        {
+            if (lastGoodWindowNameUTF8 == lastGoodWindowNameSimple)
+            {
+                carla_stdout("Match found using simple and UTF-8 name (ignoring pid)");
+                windowToMap = lastGoodWindowNameUTF8;
+            }
+            else
+            {
+                carla_stdout("Match found using UTF-8 name (ignoring pid)");
+                windowToMap = lastGoodWindowNameUTF8;
+            }
+        }
         else
         {
             carla_stdout("Match found using pid");
@@ -1111,7 +1124,7 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
         }
         else
         {
-            carla_stdout("Match found using simple and UTF-8 name");
+            carla_stdout("Match found using UTF-8 name");
             windowToMap = lastGoodWindowNameUTF8;
         }
     }
