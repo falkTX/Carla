@@ -21,4 +21,4 @@ make distclean >/dev/null
 make features
 
 # Build native stuff
-make BUILDING_FOR_WINDOWS=true
+make BUILDING_FOR_WINDOWS=true USING_JUCE=false
