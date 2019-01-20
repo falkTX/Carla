@@ -125,6 +125,13 @@ private:
         [parentWindow addChildWindow:window
                              ordered:NSWindowAbove];
 #endif
+
+#if JUCE_WINDOWS
+        const HWND window = (HWND)getWindowHandle();
+        CARLA_SAFE_ASSERT_RETURN(window != nullptr,);
+
+        SetWindowLongPtr(window, GWLP_HWNDPARENT, static_cast<LONG_PTR>(fTransientId));
+#endif
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(JucePluginWindow)
