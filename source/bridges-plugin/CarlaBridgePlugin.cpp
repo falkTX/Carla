@@ -251,6 +251,8 @@ public:
         gIsInitiated = true;
 
 #if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+        static const int argc = 0;
+        static const char* argv[] = {};
         juce::JUCEApplicationBase::createInstance = &juce_CreateApplication;
         juce::JUCEApplicationBase::main(JUCE_MAIN_FUNCTION_ARGS);
 #else

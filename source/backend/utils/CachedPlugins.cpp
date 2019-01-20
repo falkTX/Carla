@@ -500,7 +500,7 @@ static const CarlaCachedPluginInfo* get_cached_plugin_au(const juce::String plug
     info.valid = false;
 
     juce::AudioUnitPluginFormat auFormat;
-     juce::OwnedArray<juce::PluginDescription> results;
+    juce::OwnedArray<juce::PluginDescription> results;
     auFormat.findAllTypesForFile(results, pluginId);
     CARLA_SAFE_ASSERT_RETURN(results.size() > 0, &info);
     CARLA_SAFE_ASSERT(results.size() == 1);
@@ -510,6 +510,7 @@ static const CarlaCachedPluginInfo* get_cached_plugin_au(const juce::String plug
 
     info.category = CB::getPluginCategoryFromName(desc->category.toRawUTF8());
     info.hints    = 0x0;
+    info.valid    = true;
 
     if (desc->isInstrument)
         info.hints |= CB::PLUGIN_IS_SYNTH;

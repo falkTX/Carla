@@ -486,6 +486,12 @@ class SearchPluginsThread(QThread):
             else:
                 self.fCheckLV2 = False
 
+        if self.fCheckAU:
+            if self.fCheckNative or self.fCheckPosix32:
+                self.fCurCount += int(self.fCheckNative) + int(self.fCheckPosix32)
+            else:
+                self.fCheckAU = False
+
         if self.fCheckSFZ:
             if self.fCheckNative:
                 self.fCurCount += 1
@@ -1724,6 +1730,9 @@ class PluginDatabaseW(QDialog):
         elif ptype == PLUGIN_LV2:
             ptypeStr   = "LV2"
             ptypeStrTr = ptypeStr
+        elif ptype == PLUGIN_AU:
+            ptypeStr   = "AU"
+            ptypeStrTr = ptypeStr
         #elif ptype == PLUGIN_SFZ:
             #ptypeStr   = "SFZ"
             #ptypeStrTr = ptypeStr
@@ -1735,7 +1744,7 @@ class PluginDatabaseW(QDialog):
 
         pluginCountNew = gCarla.utils.get_cached_plugin_count(ptype, path)
 
-        if pluginCountNew != pluginCount or (len(plugins) > 0 and plugins[0]['API'] != PLUGIN_QUERY_API_VERSION):
+        if pluginCountNew != pluginCount or len(plugins) != pluginCount or (len(plugins) > 0 and plugins[0]['API'] != PLUGIN_QUERY_API_VERSION):
             plugins     = []
             pluginCount = pluginCountNew
 
