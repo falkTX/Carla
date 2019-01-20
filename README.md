@@ -10,7 +10,7 @@ It's open source and licensed under the GNU General Public License, version 2 or
 Features
 ---------
 
-* LADSPA, DSSI, LV2 and VST plugin formats
+* LADSPA, DSSI, LV2 and VST2, VST3 and AU plugin formats
 * SF2/3 and SFZ sound banks
 * Internal audio and midi file player
 * Automation of plugin parameters via MIDI CC
@@ -24,7 +24,7 @@ In experimental phase / work in progress:
 * Run JACK applications as audio plugins
 * Transport controls, sync with JACK Transport or Ableton Link
 
-Carla is also available as an LV2 plugin for MacOS and Linux, and VST plugin for Linux.
+Carla is also available as an LV2 plugin and VST2 plugin.
 
 Screenshot
 ----------
