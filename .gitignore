@@ -25,6 +25,8 @@
 *.exe
 *.msi
 *.so
+*.vst
+*.vst3
 
 # Binary dir
 bin/jack/
