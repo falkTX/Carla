@@ -145,7 +145,24 @@ class CarlaAboutW(QDialog):
                                       "<li>http://ll-plugins.nongnu.org/lv2/ext/midimap</li>"
                                       "<li>http://ll-plugins.nongnu.org/lv2/ext/miditype</li>"
                                       "</ul>"))
-        self.ui.l_vst2.setText(self.tr("About 85% complete (missing vst bank/presets and some minor stuff)"))
+
+        usingJuce = "juce" in gCarla.utils.get_supported_features()
+
+        if usingJuce and (MACOS or WINDOWS):
+            self.ui.l_vst2.setText(self.tr("Using Juce host"))
+            self.ui.l_vst3.setText(self.tr("Using Juce host"))
+        else:
+            self.ui.l_vst2.setText(self.tr("About 85% complete (missing vst bank/presets and some minor stuff)"))
+            self.ui.line_vst2.hide()
+            self.ui.l_vst3.hide()
+            self.ui.lid_vst3.hide()
+
+        if MACOS:
+            self.ui.l_au.setText(self.tr("Using Juce host"))
+        else:
+            self.ui.line_vst3.hide()
+            self.ui.l_au.hide()
+            self.ui.lid_au.hide()
 
         # 3rd tab is usually longer than the 1st
         # adjust appropriately
