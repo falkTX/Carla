@@ -19,10 +19,12 @@
 
 #include "CarlaNative.h"
 #include "CarlaString.hpp"
+#include "CarlaBackendUtils.hpp"
 #include "CarlaLv2Utils.hpp"
 
-#ifdef DEBUG
-# include "CarlaBackendUtils.hpp"
+#if defined(USING_JUCE) && defined(CARLA_OS_MAC)
+# include "AppConfig.h"
+# include "juce_audio_processors/juce_audio_processors.h"
 #endif
 
 #include "water/containers/Array.h"
@@ -35,6 +37,8 @@ using water::File;
 using water::String;
 using water::StringArray;
 
+// -------------------------------------------------------------------------------------------------------------------
+
 static const char* const gNullCharPtr = "";
 
 static bool isCachedPluginType(const CB::PluginType ptype)
@@ -43,6 +47,7 @@ static bool isCachedPluginType(const CB::PluginType ptype)
     {
     case CB::PLUGIN_INTERNAL:
     case CB::PLUGIN_LV2:
+    case CB::PLUGIN_AU:
     case CB::PLUGIN_SFZ:
         return true;
     default:
@@ -124,6 +129,8 @@ static const CarlaCachedPluginInfo* get_cached_plugin_internal(const NativePlugi
     info.copyright     = desc.copyright;
     return &info;
 }
+
+// -------------------------------------------------------------------------------------------------------------------
 
 static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2World, Lilv::Plugin& lilvPlugin)
 {
@@ -471,6 +478,66 @@ static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2Worl
     return &info;
 }
 
+// -------------------------------------------------------------------------------------------------------------------
+
+#if defined(USING_JUCE) && defined(CARLA_OS_MAC)
+static juce::StringArray gCachedAuPluginResults;
+
+static void findAUs()
+{
+    if (gCachedAuPluginResults.size() != 0)
+        return;
+
+    juce::AudioUnitPluginFormat auFormat;
+    gCachedAuPluginResults = auFormat.searchPathsForPlugins(juce::FileSearchPath(), false, false);
+}
+
+static const CarlaCachedPluginInfo* get_cached_plugin_au(const juce::String pluginId)
+{
+    static CarlaCachedPluginInfo info;
+    static CarlaString sname, slabel, smaker;
+
+    info.valid = false;
+
+    juce::AudioUnitPluginFormat auFormat;
+     juce::OwnedArray<juce::PluginDescription> results;
+    auFormat.findAllTypesForFile(results, pluginId);
+    CARLA_SAFE_ASSERT_RETURN(results.size() > 0, &info);
+    CARLA_SAFE_ASSERT(results.size() == 1);
+
+    juce::PluginDescription* const desc(results[0]);
+    CARLA_SAFE_ASSERT_RETURN(desc != nullptr, &info);
+
+    info.category = CB::getPluginCategoryFromName(desc->category.toRawUTF8());
+    info.hints    = 0x0;
+
+    if (desc->isInstrument)
+        info.hints |= CB::PLUGIN_IS_SYNTH;
+    if (true)
+        info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
+
+    info.audioIns  = static_cast<uint32_t>(desc->numInputChannels);
+    info.audioOuts = static_cast<uint32_t>(desc->numOutputChannels);
+    info.midiIns   = desc->isInstrument ? 1 : 0;
+    info.midiOuts  = 0;
+    info.parameterIns  = 0;
+    info.parameterOuts = 0;
+
+    sname  = desc->name.toRawUTF8();
+    slabel = desc->fileOrIdentifier.toRawUTF8();
+    smaker = desc->manufacturerName.toRawUTF8();
+
+    info.name      = sname;
+    info.label     = slabel;
+    info.maker     = smaker;
+    info.copyright = gNullCharPtr;
+
+    return &info;
+}
+#endif
+
+// -------------------------------------------------------------------------------------------------------------------
+
 static const CarlaCachedPluginInfo* get_cached_plugin_sfz(const File file)
 {
     static CarlaCachedPluginInfo info;
@@ -522,6 +589,13 @@ uint carla_get_cached_plugin_count(CB::PluginType ptype, const char* pluginPath)
         return lv2World.getPluginCount();
     }
 
+#if defined(USING_JUCE) && defined(CARLA_OS_MAC)
+    case CB::PLUGIN_AU: {
+        findAUs();
+        return static_cast<uint>(gCachedAuPluginResults.size());
+    }
+#endif
+
     case CB::PLUGIN_SFZ: {
         findSFZs(pluginPath);
         return static_cast<uint>(gSFZs.size());
@@ -559,6 +633,13 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
 
         return get_cached_plugin_lv2(lv2World, lilvPlugin);
     }
+
+#if defined(USING_JUCE) && defined(CARLA_OS_MAC)
+    case CB::PLUGIN_AU: {
+        CARLA_SAFE_ASSERT_BREAK(index < static_cast<uint>(gCachedAuPluginResults.size()));
+        return get_cached_plugin_au(gCachedAuPluginResults.strings.getUnchecked(static_cast<int>(index)));
+    }
+#endif
 
     case CB::PLUGIN_SFZ: {
         CARLA_SAFE_ASSERT_BREAK(index < static_cast<uint>(gSFZs.size()));

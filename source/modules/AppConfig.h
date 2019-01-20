@@ -282,8 +282,10 @@
 */
 #ifdef DEBUG
  #define JUCE_CHECK_MEMORY_LEAKS 1
+ // #define JUCE_DISABLE_ASSERTIONS 1
 #else
  #define JUCE_CHECK_MEMORY_LEAKS 0
+ // #define JUCE_DISABLE_ASSERTIONS 0
 #endif
 
 //=============================================================================
