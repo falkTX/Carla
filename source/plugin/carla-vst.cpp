@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -41,6 +41,11 @@
 
 #include "CarlaMathUtils.hpp"
 #include "CarlaVstUtils.hpp"
+
+#ifdef USING_JUCE
+# include "AppConfig.h"
+# include "juce_events/juce_events.h"
+#endif
 
 static uint32_t d_lastBufferSize = 0;
 static double   d_lastSampleRate = 0.0;
@@ -612,6 +617,10 @@ private:
     } fMidiOutEvents;
 
     char* fStateChunk;
+
+#ifdef USING_JUCE
+    juce::SharedResourcePointer<juce::ScopedJuceInitialiser_GUI> sJuceInitialiser;
+#endif
 
     // -------------------------------------------------------------------
 
