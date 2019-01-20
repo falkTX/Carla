@@ -1232,7 +1232,7 @@ public:
         else
             pData->name = pData->engine->getUniquePluginName(fInstance->getName().toRawUTF8());
 
-        if (filename != nullptr && pData->filename[0] != '\0')
+        if (filename != nullptr && filename[0] != '\0')
             pData->filename = carla_strdup(filename);
 
         // ---------------------------------------------------------------
