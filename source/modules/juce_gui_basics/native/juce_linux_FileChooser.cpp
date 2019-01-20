@@ -27,16 +27,6 @@
 namespace juce
 {
 
-static bool exeIsAvailable (const char* const executable)
-{
-     ChildProcess child;
-     const bool ok = child.start ("which " + String (executable))
-                       && child.readAllProcessOutput().trim().isNotEmpty();
-
-     child.waitForProcessToFinish (60 * 1000);
-     return ok;
-}
-
 bool FileChooser::isPlatformDialogAvailable()
 {
    #if JUCE_DISABLE_NATIVE_FILECHOOSERS
@@ -45,6 +35,17 @@ bool FileChooser::isPlatformDialogAvailable()
     static bool canUseNativeBox = exeIsAvailable ("zenity") || exeIsAvailable ("kdialog");
     return canUseNativeBox;
    #endif
+}
+
+#if ! JUCE_DISABLE_NATIVE_FILECHOOSERS
+static bool exeIsAvailable (const char* const executable)
+{
+     ChildProcess child;
+     const bool ok = child.start ("which " + String (executable))
+                       && child.readAllProcessOutput().trim().isNotEmpty();
+
+     child.waitForProcessToFinish (60 * 1000);
+     return ok;
 }
 
 static uint64 getTopWindowID() noexcept
@@ -209,5 +210,6 @@ void FileChooser::showPlatformDialog (Array<File>& results,
 
     previousWorkingDirectory.setAsCurrentWorkingDirectory();
 }
+#endif
 
 } // namespace juce

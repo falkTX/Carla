@@ -53,10 +53,8 @@ public:
           fAudioBuffer(),
           fMidiBuffer(),
           fPosInfo(),
-          fChunk()
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-        , fWindow()
-#endif
+          fChunk(),
+          fWindow()
     {
         carla_debug("CarlaPluginJuce::CarlaPluginJuce(%p, %i)", engine, id);
 
@@ -234,7 +232,6 @@ public:
     // -------------------------------------------------------------------
     // Set data (internal stuff)
 
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
     void setName(const char* const newName) override
     {
         CarlaPlugin::setName(newName);
@@ -246,7 +243,6 @@ public:
             fWindow->setName(uiName);
         }
     }
-#endif
 
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
@@ -269,9 +265,29 @@ public:
         CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(dataSize > 0,);
 
+        if (isJuceSaveFormat(data, dataSize))
         {
             const ScopedSingleProcessLocker spl(this, true);
             fInstance->setStateInformation(data, static_cast<int>(dataSize));
+        }
+        else
+        {
+            carla_stdout("NOTE: Loading plugin state in Carla compatibiity mode");
+            uint8_t* const dataCompat = new uint8_t[dataSize + 160];
+            std::memset(dataCompat, 0, 160);
+            std::memcpy(dataCompat+160, data, dataSize);
+
+            int32_t* const set = (int32_t*)dataCompat;
+
+            dataCompat[39] = dataSize;
+
+            set[0]  = (int32_t)juce::ByteOrder::littleEndianInt("CcnK");
+            set[2]  = (int32_t)juce::ByteOrder::littleEndianInt("FBCh");
+            set[3]  = fxbSwap(1);
+            set[39] = fxbSwap(dataSize);
+
+            const ScopedSingleProcessLocker spl(this, true);
+            fInstance->setStateInformation(dataCompat, static_cast<int>(dataSize+160));
         }
 
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
@@ -302,7 +318,6 @@ public:
     // -------------------------------------------------------------------
     // Set ui stuff
 
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
     void showCustomUI(const bool yesNo) override
     {
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
@@ -346,7 +361,6 @@ public:
 
         CarlaPlugin::uiIdle();
     }
-#endif
 
     // -------------------------------------------------------------------
     // Plugin state
@@ -542,13 +556,11 @@ public:
         if (fDesc.isInstrument)
             pData->hints |= PLUGIN_IS_SYNTH;
 
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
         if (fInstance->hasEditor())
         {
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
             pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
         }
-#endif
 
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
             pData->hints |= PLUGIN_CAN_DRYWET;
@@ -1224,6 +1236,8 @@ public:
         fInstance->setPlayHead(this);
         fInstance->addListener(this);
 
+        fFormatName = format;
+
         // ---------------------------------------------------------------
         // get info
 
@@ -1279,10 +1293,41 @@ private:
     juce::MidiBuffer        fMidiBuffer;
     CurrentPositionInfo     fPosInfo;
     juce::MemoryBlock       fChunk;
+    juce::String            fFormatName;
 
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
     ScopedPointer<JucePluginWindow> fWindow;
-#endif
+
+    bool isJuceSaveFormat(const void* const data, const std::size_t dataSize)
+    {
+        if (fFormatName != "VST2")
+            return true;
+        if (dataSize < 160)
+            return false;
+
+        const int32_t* const set = (const int32_t*)data;
+
+        if (! compareMagic(set[0], "CcnK"))
+            return false;
+        if (! compareMagic(set[2], "FBCh"))
+            return false;
+        if (fxbSwap(set[3]) > 1)
+            return false;
+
+        const int32_t chunkSize = fxbSwap(set[39]);
+
+        return static_cast<std::size_t>(chunkSize + 160) == dataSize;
+    }
+
+    static bool compareMagic(int32_t magic, const char* name) noexcept
+    {
+        return magic == (int32_t)juce::ByteOrder::littleEndianInt (name)
+            || magic == (int32_t)juce::ByteOrder::bigEndianInt (name);
+    }
+
+    static int32_t fxbSwap(const int32_t x) noexcept
+    {
+        return (int32_t)juce::ByteOrder::swapIfLittleEndian ((uint32_t) x);
+    }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginJuce)
 };
