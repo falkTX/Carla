@@ -175,6 +175,9 @@ class CarlaUtils(object):
         self.lib.carla_get_complete_license_text.argtypes = None
         self.lib.carla_get_complete_license_text.restype = c_char_p
 
+        self.lib.carla_get_juce_version.argtypes = None
+        self.lib.carla_get_juce_version.restype = c_char_p
+
         self.lib.carla_get_supported_file_extensions.argtypes = None
         self.lib.carla_get_supported_file_extensions.restype = POINTER(c_char_p)
 
@@ -266,6 +269,10 @@ class CarlaUtils(object):
     # Returned string is in basic html format.
     def get_complete_license_text(self):
         return charPtrToString(self.lib.carla_get_complete_license_text())
+
+    # Get the juce version used in the current Carla build.
+    def get_juce_version(self):
+        return charPtrToString(self.lib.carla_get_juce_version())
 
     # Get the list of supported file extensions in carla_load_file().
     def get_supported_file_extensions(self):
