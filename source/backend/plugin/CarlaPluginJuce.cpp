@@ -272,8 +272,10 @@ public:
         }
         else
         {
+            uint8_t* const dataCompat = (uint8_t*)std::malloc(dataSize + 160);
+            CARLA_SAFE_ASSERT_RETURN(dataCompat != nullptr,);
+
             carla_stdout("NOTE: Loading plugin state in Carla compatibiity mode");
-            uint8_t* const dataCompat = new uint8_t[dataSize + 160];
             std::memset(dataCompat, 0, 160);
             std::memcpy(dataCompat+160, data, dataSize);
 
@@ -286,8 +288,12 @@ public:
             set[3]  = fxbSwap(1);
             set[39] = fxbSwap(dataSize);
 
-            const ScopedSingleProcessLocker spl(this, true);
-            fInstance->setStateInformation(dataCompat, static_cast<int>(dataSize+160));
+            {
+                const ScopedSingleProcessLocker spl(this, true);
+                fInstance->setStateInformation(dataCompat, static_cast<int>(dataSize+160));
+            }
+
+            std::free(dataCompat);
         }
 
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
