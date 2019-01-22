@@ -1837,7 +1837,7 @@ class PluginDatabaseW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # AU (extra non-cached)
 
-        auPlugins = toList(settingsDB.value("Plugins/AU_posix32", [])) if MACOS else []
+        auPlugins32 = toList(settingsDB.value("Plugins/AU_posix32", [])) if MACOS else []
 
         # ----------------------------------------------------------------------------------------------------
         # Kits
@@ -1852,8 +1852,9 @@ class PluginDatabaseW(QDialog):
         dssiCount   = 0
         vstCount    = 0
         vst3Count   = 0
+        au32Count   = 0
         sf2Count    = 0
-        sfzCount    = 0
+        sfzCount    = len(sfzs)
 
         for plugins in ladspaPlugins:
             ladspaCount += len(plugins)
@@ -1867,19 +1868,17 @@ class PluginDatabaseW(QDialog):
         for plugins in vst3Plugins:
             vst3Count += len(plugins)
 
-        for plugins in auPlugins:
-            auCount += len(plugins)
+        for plugins in auPlugins32:
+            au32Count += len(plugins)
 
         for plugins in sf2s:
             sf2Count += len(plugins)
 
-        sfzCount += len(sfzs)
-
-        self.ui.tableWidget.setRowCount(self.fLastTableIndex+ladspaCount+dssiCount+vstCount+vst3Count+auCount+sf2Count+sfzCount)
+        self.ui.tableWidget.setRowCount(self.fLastTableIndex+ladspaCount+dssiCount+vstCount+vst3Count+au32Count+sf2Count+sfzCount)
 
         if MACOS:
             self.ui.label.setText(self.tr("Have %i Internal, %i LADSPA, %i DSSI, %i LV2, %i VST2, %i VST3 and %i AudioUnit plugins, plus %i Sound Kits" % (
-                                          internalCount, ladspaCount, dssiCount, lv2Count, vstCount, vst3Count, auCount, sf2Count+sfzCount)))
+                                          internalCount, ladspaCount, dssiCount, lv2Count, vstCount, vst3Count, auCount+au32Count, sf2Count+sfzCount)))
         else:
             self.ui.label.setText(self.tr("Have %i Internal, %i LADSPA, %i DSSI, %i LV2, %i VST2 and %i VST3 plugins, plus %i Sound Kits" % (
                                           internalCount, ladspaCount, dssiCount, lv2Count, vstCount, vst3Count, sf2Count+sfzCount)))
@@ -1903,7 +1902,7 @@ class PluginDatabaseW(QDialog):
             for plugin in plugins:
                 self._addPluginToTable(plugin, "VST3")
 
-        for plugins in auPlugins:
+        for plugins in auPlugins32:
             for plugin in plugins:
                 self._addPluginToTable(plugin, "AU")
 
