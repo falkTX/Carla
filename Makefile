@@ -571,6 +571,7 @@ endif
 	$(LINK) ../externalui.py               $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../resources_rc.py             $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_about.py           $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../ui_carla_about_juce.py      $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_add_jack.py        $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_database.py        $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_edit.py            $(DESTDIR)$(DATADIR)/carla/resources

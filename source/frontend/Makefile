@@ -25,6 +25,7 @@ endif
 
 UIs = \
 	ui_carla_about.py \
+	ui_carla_about_juce.py \
 	ui_carla_add_jack.py \
 	ui_carla_database.py \
 	ui_carla_edit.py \
@@ -62,6 +63,7 @@ RES = \
 	$(BINDIR)/resources/externalui.py \
 	$(BINDIR)/resources/resources_rc.py \
 	$(BINDIR)/resources/ui_carla_about.py \
+	$(BINDIR)/resources/ui_carla_about_juce.py \
 	$(BINDIR)/resources/ui_carla_add_jack.py \
 	$(BINDIR)/resources/ui_carla_database.py \
 	$(BINDIR)/resources/ui_carla_edit.py \
