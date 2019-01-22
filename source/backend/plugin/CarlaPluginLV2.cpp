@@ -1595,8 +1595,9 @@ public:
 
             uint32_t portIndex;
             const LV2_Atom* atom;
-            const bool hasPortEvent(fUI.handle != nullptr && fUI.descriptor != nullptr &&
-                                    fUI.descriptor->port_event != nullptr && ! fNeedsUiClose);
+            const bool hasPortEvent(fUI.handle != nullptr &&
+                                    fUI.descriptor != nullptr &&
+                                    fUI.descriptor->port_event != nullptr);
 
             for (; tmpRingBuffer.get(atom, portIndex);)
             {
@@ -1607,7 +1608,7 @@ public:
                 }
                 else
                 {
-                    if (hasPortEvent)
+                    if (hasPortEvent && ! fNeedsUiClose)
                         fUI.descriptor->port_event(fUI.handle, portIndex, lv2_atom_total_size(atom), kUridAtomTransferEvent, atom);
                 }
             }
