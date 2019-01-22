@@ -2531,7 +2531,10 @@ public:
         }
 
         if (fExt.worker != nullptr)
+        {
             fAtomBufferWorker.createBuffer(eventBufferSize);
+            fAtomBufferWorkerTmpData = new uint8_t[fAtomBufferWorker.getSize()];
+        }
 
         if (fUI.type != UI::TYPE_NULL && fEventsIn.count > 0 && (fEventsIn.data[0].type & CARLA_EVENT_DATA_ATOM) != 0)
             fAtomBufferUiIn.createBuffer(eventBufferSize);
