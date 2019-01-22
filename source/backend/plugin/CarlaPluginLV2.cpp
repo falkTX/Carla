@@ -1,6 +1,6 @@
 /*
  * Carla LV2 Plugin
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -43,7 +43,8 @@ extern "C" {
 
 using water::File;
 
-#define URI_CARLA_ATOM_WORKER "http://kxstudio.sf.net/ns/carla/atomWorker"
+#define URI_CARLA_ATOM_WORKER_IN   "http://kxstudio.sf.net/ns/carla/atomWorkerIn"
+#define URI_CARLA_ATOM_WORKER_RESP "http://kxstudio.sf.net/ns/carla/atomWorkerResp"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -129,7 +130,8 @@ enum CarlaLv2URIDs {
     kUridMidiEvent,
     kUridParamSampleRate,
     kUridWindowTitle,
-    kUridCarlaAtomWorker,
+    kUridCarlaAtomWorkerIn,
+    kUridCarlaAtomWorkerResp,
     kUridCarlaTransientWindowId,
     kUridCount
 };
@@ -524,10 +526,11 @@ public:
           fStrictBounds(-1),
           fAtomBufferUiIn(),
           fAtomBufferUiOut(),
-          fAtomBufferWorker(),
+          fAtomBufferWorkerIn(),
+          fAtomBufferWorkerResp(),
           fAtomForge(),
           fAtomBufferUiOutTmpData(nullptr),
-          fAtomBufferWorkerTmpData(nullptr),
+          fAtomBufferWorkerInTmpData(nullptr),
           fEventsIn(),
           fEventsOut(),
           fLv2Options(),
@@ -711,10 +714,10 @@ public:
             fAtomBufferUiOutTmpData = nullptr;
         }
 
-        if (fAtomBufferWorkerTmpData != nullptr)
+        if (fAtomBufferWorkerInTmpData != nullptr)
         {
-            delete[] fAtomBufferWorkerTmpData;
-            fAtomBufferWorkerTmpData = nullptr;
+            delete[] fAtomBufferWorkerInTmpData;
+            fAtomBufferWorkerInTmpData = nullptr;
         }
 
         clearBuffers();
@@ -1569,10 +1572,10 @@ public:
 
     void idle() override
     {
-        if (! fAtomBufferWorker.isDataAvailableForReading())
+        if (! fAtomBufferWorkerIn.isDataAvailableForReading())
             return;
 
-        Lv2AtomRingBuffer tmpRingBuffer(fAtomBufferWorker, fAtomBufferWorkerTmpData);
+        Lv2AtomRingBuffer tmpRingBuffer(fAtomBufferWorkerIn, fAtomBufferWorkerInTmpData);
         CARLA_SAFE_ASSERT_RETURN(tmpRingBuffer.isDataAvailableForReading(),);
         CARLA_SAFE_ASSERT_RETURN(fExt.worker != nullptr && fExt.worker->work != nullptr,);
 
@@ -1581,7 +1584,7 @@ public:
 
         for (; tmpRingBuffer.get(atom, portIndex);)
         {
-            CARLA_SAFE_ASSERT_CONTINUE(atom->type == kUridCarlaAtomWorker);
+            CARLA_SAFE_ASSERT_CONTINUE(atom->type == kUridCarlaAtomWorkerIn);
             fExt.worker->work(fHandle, carla_lv2_worker_respond, this, atom->size, LV2_ATOM_BODY_CONST(atom));
         }
     }
@@ -2531,10 +2534,11 @@ public:
             pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, 0);
         }
 
-        if (fExt.worker != nullptr)
+        if (fExt.worker != nullptr && fEventsIn.ctrl != nullptr)
         {
-            fAtomBufferWorker.createBuffer(eventBufferSize);
-            fAtomBufferWorkerTmpData = new uint8_t[fAtomBufferWorker.getSize()];
+            fAtomBufferWorkerIn.createBuffer(eventBufferSize);
+            fAtomBufferWorkerResp.createBuffer(eventBufferSize);
+            fAtomBufferWorkerInTmpData = new uint8_t[fAtomBufferWorkerIn.getSize()];
         }
 
         if (fUI.type != UI::TYPE_NULL && fEventsIn.count > 0 && (fEventsIn.data[0].type & CARLA_EVENT_DATA_ATOM) != 0)
@@ -3147,6 +3151,23 @@ public:
                 fAtomBufferUiIn.unlock();
             }
 
+            if (fExt.worker != nullptr && fAtomBufferWorkerIn.tryLock())
+            {
+                if (fAtomBufferWorkerIn.isDataAvailableForReading())
+                {
+                    const LV2_Atom* atom;
+                    uint32_t portIndex;
+
+                    for (; fAtomBufferWorkerIn.get(atom, portIndex);)
+                    {
+                        CARLA_SAFE_ASSERT_CONTINUE(atom->type == kUridCarlaAtomWorkerIn);
+                        fExt.worker->work(fHandle, carla_lv2_worker_respond, this, atom->size, LV2_ATOM_BODY_CONST(atom));
+                    }
+                }
+
+                fAtomBufferWorkerIn.unlock();
+            }
+
             // ----------------------------------------------------------------------------------------------------
             // MIDI Input (External)
 
@@ -3703,6 +3724,23 @@ public:
 
         // --------------------------------------------------------------------------------------------------------
         // Final work
+
+        if (fEventsIn.ctrl != nullptr && fExt.worker != nullptr && fAtomBufferWorkerResp.tryLock())
+        {
+            if (fAtomBufferWorkerResp.isDataAvailableForReading())
+            {
+                const LV2_Atom* atom;
+                uint32_t portIndex;
+
+                for (; fAtomBufferWorkerResp.get(atom, portIndex);)
+                {
+                    CARLA_SAFE_ASSERT_CONTINUE(atom->type == kUridCarlaAtomWorkerResp);
+                    fExt.worker->work_response(fHandle, atom->size, LV2_ATOM_BODY_CONST(atom));
+                }
+            }
+
+            fAtomBufferWorkerResp.unlock();
+        }
 
         if (fExt.worker != nullptr && fExt.worker->end_run != nullptr)
         {
@@ -4786,20 +4824,21 @@ public:
 
         LV2_Atom atom;
         atom.size = size;
-        atom.type = kUridCarlaAtomWorker;
+        atom.type = kUridCarlaAtomWorkerIn;
 
-        return fAtomBufferWorker.putChunk(&atom, data, fEventsOut.ctrlIndex) ? LV2_WORKER_SUCCESS : LV2_WORKER_ERR_NO_SPACE;
+        return fAtomBufferWorkerIn.putChunk(&atom, data, fEventsOut.ctrlIndex) ? LV2_WORKER_SUCCESS : LV2_WORKER_ERR_NO_SPACE;
     }
 
     LV2_Worker_Status handleWorkerRespond(const uint32_t size, const void* const data)
     {
+        CARLA_SAFE_ASSERT_RETURN(fExt.worker != nullptr && fExt.worker->work_response != nullptr, LV2_WORKER_ERR_UNKNOWN);
         carla_stdout("CarlaPluginLV2::handleWorkerRespond(%i, %p)", size, data);
 
         LV2_Atom atom;
         atom.size = size;
-        atom.type = kUridCarlaAtomWorker;
+        atom.type = kUridCarlaAtomWorkerResp;
 
-        return fAtomBufferWorker.putChunk(&atom, data, fEventsIn.ctrlIndex) ? LV2_WORKER_SUCCESS : LV2_WORKER_ERR_NO_SPACE;
+        return fAtomBufferWorkerResp.putChunk(&atom, data, fEventsIn.ctrlIndex) ? LV2_WORKER_SUCCESS : LV2_WORKER_ERR_NO_SPACE;
     }
 
     // -------------------------------------------------------------------
@@ -5930,10 +5969,11 @@ private:
 
     Lv2AtomRingBuffer fAtomBufferUiIn;
     Lv2AtomRingBuffer fAtomBufferUiOut;
-    Lv2AtomRingBuffer fAtomBufferWorker;
+    Lv2AtomRingBuffer fAtomBufferWorkerIn;
+    Lv2AtomRingBuffer fAtomBufferWorkerResp;
     LV2_Atom_Forge    fAtomForge;
     uint8_t*          fAtomBufferUiOutTmpData;
-    uint8_t*          fAtomBufferWorkerTmpData;
+    uint8_t*          fAtomBufferWorkerInTmpData;
 
     CarlaPluginLV2EventData fEventsIn;
     CarlaPluginLV2EventData fEventsOut;
@@ -6297,8 +6337,10 @@ private:
             return kUridWindowTitle;
 
         // Custom Carla types
-        if (std::strcmp(uri, URI_CARLA_ATOM_WORKER) == 0)
-            return kUridCarlaAtomWorker;
+        if (std::strcmp(uri, URI_CARLA_ATOM_WORKER_IN) == 0)
+            return kUridCarlaAtomWorkerIn;
+        if (std::strcmp(uri, URI_CARLA_ATOM_WORKER_RESP) == 0)
+            return kUridCarlaAtomWorkerResp;
         if (std::strcmp(uri, LV2_KXSTUDIO_PROPERTIES__TransientWindowId) == 0)
             return kUridCarlaTransientWindowId;
 
@@ -6415,8 +6457,10 @@ private:
             return LV2_UI__windowTitle;
 
         // Custom Carla types
-        case kUridCarlaAtomWorker:
-            return URI_CARLA_ATOM_WORKER;
+        case kUridCarlaAtomWorkerIn:
+            return URI_CARLA_ATOM_WORKER_IN;
+        case kUridCarlaAtomWorkerResp:
+            return URI_CARLA_ATOM_WORKER_RESP;
         case kUridCarlaTransientWindowId:
             return LV2_KXSTUDIO_PROPERTIES__TransientWindowId;
         }
