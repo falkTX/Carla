@@ -56,19 +56,24 @@ enum EngineType {
     kEngineTypeJack = 1,
 
     /*!
+     * Juce engine type, used to provide Native Audio and MIDI support.
+     */
+    kEngineTypeJuce = 2,
+
+    /*!
      * RtAudio engine type, used to provide Native Audio and MIDI support.
      */
-    kEngineTypeRtAudio = 2,
+    kEngineTypeRtAudio = 3,
 
     /*!
      * Plugin engine type, used to export the engine as a plugin.
      */
-    kEngineTypePlugin = 3,
+    kEngineTypePlugin = 4,
 
     /*!
      * Bridge engine type, used in BridgePlugin class.
      */
-    kEngineTypeBridge = 4
+    kEngineTypeBridge = 5
 };
 
 /*!
@@ -239,6 +244,7 @@ struct CARLA_API EngineOptions {
     const char* pathDSSI;
     const char* pathLV2;
     const char* pathVST2;
+    const char* pathVST3;
     const char* pathSF2;
     const char* pathSFZ;
 
@@ -1212,12 +1218,21 @@ public:
                                   const char* const nonRtClientBaseName,
                                   const char* const nonRtServerBaseName);
 #else
+# ifdef USING_JUCE
+    // Juce
+    static CarlaEngine*       newJuce(const AudioApi api);
+    static uint               getJuceApiCount();
+    static const char*        getJuceApiName(const uint index);
+    static const char* const* getJuceApiDeviceNames(const uint index);
+    static const EngineDriverDeviceInfo* getJuceDeviceInfo(const uint index, const char* const deviceName);
+# else
     // RtAudio
     static CarlaEngine*       newRtAudio(const AudioApi api);
     static uint               getRtAudioApiCount();
     static const char*        getRtAudioApiName(const uint index);
     static const char* const* getRtAudioApiDeviceNames(const uint index);
     static const EngineDriverDeviceInfo* getRtAudioDeviceInfo(const uint index, const char* const deviceName);
+# endif
 #endif
 
 #ifndef BUILD_BRIDGE

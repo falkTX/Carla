@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla plugin/slot skin code
-# Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,21 +17,11 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Config)
-
-from carla_config import *
-
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-if config_UseQt5:
-    from PyQt5.QtCore import Qt, QRectF, QLineF
-    from PyQt5.QtGui import QFont, QFontDatabase, QPen, QPixmap
-    from PyQt5.QtWidgets import QColorDialog, QFrame, QPushButton
-else:
-    from PyQt4.QtCore import Qt, QRectF, QLineF
-    from PyQt4.QtGui import QFont, QFontDatabase, QPen, QPixmap
-    from PyQt4.QtGui import QColorDialog, QFrame, QPushButton
+from PyQt5.QtCore import Qt, QRectF, QLineF
+from PyQt5.QtGui import QFont, QFontDatabase, QPen, QPixmap
+from PyQt5.QtWidgets import QColorDialog, QFrame, QPushButton
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -1933,7 +1923,7 @@ def getColorAndSkinStyle(host, pluginId):
     pluginMaker = pluginInfo['maker']
     uniqueId    = pluginInfo['uniqueId']
 
-    if pluginInfo['type'] == PLUGIN_VST2:
+    if pluginInfo['type'] in (PLUGIN_VST2, PLUGIN_VST3, PLUGIN_AU):
         progCount = host.get_program_count(pluginId)
     else:
         progCount = host.get_midi_program_count(pluginId)
@@ -1971,7 +1961,7 @@ def getColorAndSkinStyle(host, pluginId):
 
     # Presets
     if progCount > 1 and (pluginInfo['hints'] & PLUGIN_USES_MULTI_PROGS) == 0:
-        if pluginInfo['type'] == PLUGIN_VST2:
+        if pluginInfo['type'] in (PLUGIN_VST2, PLUGIN_VST3, PLUGIN_AU):
             return (color, "presets")
         return (color, "mpresets")
 

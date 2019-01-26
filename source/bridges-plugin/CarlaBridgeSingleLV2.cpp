@@ -1,6 +1,6 @@
 /*
  * Carla LV2 Single Plugin
- * Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2017-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -26,6 +26,11 @@
 #include "CarlaEngineUtils.hpp"
 #include "CarlaLv2Utils.hpp"
 #include "CarlaUtils.h"
+
+#ifdef USING_JUCE
+# include "AppConfig.h"
+# include "juce_events/juce_events.h"
+#endif
 
 #include "water/files/File.h"
 
@@ -466,6 +471,10 @@ private:
     CarlaPlugin* fPlugin;
     CarlaString fUiName;
 
+#ifdef USING_JUCE
+    juce::SharedResourcePointer<juce::ScopedJuceInitialiser_GUI> sJuceInitialiser;
+#endif
+
     void updateParameterOutputs() noexcept
     {
         float value;
@@ -711,10 +720,12 @@ const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index)
 {
     carla_debug("lv2ui_descriptor(%i)", index);
 
+    static CarlaMutex retLock;
     static CarlaString ret;
 
-    if (ret.isEmpty())
     {
+        const CarlaMutexLocker cml(retLock);
+
         using namespace water;
         const File file(File::getSpecialLocation(File::currentExecutableFile).getSiblingFile("ext-ui"));
 #ifdef CARLA_OS_WIN

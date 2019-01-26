@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 export HAIKU=true
 export CC=gcc-x86

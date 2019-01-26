@@ -1,6 +1,6 @@
 /*
  * Carla Bridge UI
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -28,7 +28,8 @@
 #include <string>
 #include <vector>
 
-#define URI_CARLA_ATOM_WORKER "http://kxstudio.sf.net/ns/carla/atomWorker"
+#define URI_CARLA_ATOM_WORKER_IN   "http://kxstudio.sf.net/ns/carla/atomWorkerIn"
+#define URI_CARLA_ATOM_WORKER_RESP "http://kxstudio.sf.net/ns/carla/atomWorkerResp"
 
 using water::File;
 
@@ -91,7 +92,8 @@ enum CarlaLv2URIDs {
     kUridMidiEvent,
     kUridParamSampleRate,
     kUridWindowTitle,
-    kUridCarlaAtomWorker,
+    kUridCarlaAtomWorkerIn,
+    kUridCarlaAtomWorkerResp,
     kUridCarlaTransientWindowId,
     kUridCount
 };
@@ -1023,8 +1025,10 @@ private:
             return kUridWindowTitle;
 
         // Custom Carla types
-        if (std::strcmp(uri, URI_CARLA_ATOM_WORKER) == 0)
-            return kUridCarlaAtomWorker;
+        if (std::strcmp(uri, URI_CARLA_ATOM_WORKER_IN) == 0)
+            return kUridCarlaAtomWorkerIn;
+        if (std::strcmp(uri, URI_CARLA_ATOM_WORKER_RESP) == 0)
+            return kUridCarlaAtomWorkerResp;
         if (std::strcmp(uri, LV2_KXSTUDIO_PROPERTIES__TransientWindowId) == 0)
             return kUridCarlaTransientWindowId;
 
@@ -1141,8 +1145,10 @@ private:
             return LV2_UI__windowTitle;
 
         // Custom Carla types
-        case kUridCarlaAtomWorker:
-            return URI_CARLA_ATOM_WORKER;
+        case kUridCarlaAtomWorkerIn:
+            return URI_CARLA_ATOM_WORKER_IN;
+        case kUridCarlaAtomWorkerResp:
+            return URI_CARLA_ATOM_WORKER_RESP;
         case kUridCarlaTransientWindowId:
             return LV2_KXSTUDIO_PROPERTIES__TransientWindowId;
         }

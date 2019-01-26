@@ -1,6 +1,6 @@
 /*
  * Carla VST Plugin
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -17,6 +17,12 @@
 
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
+
+#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+# define USE_JUCE_FOR_VST2
+#endif
+
+#ifndef USE_JUCE_FOR_VST2
 
 #include "CarlaVstUtils.hpp"
 
@@ -391,7 +397,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(dataSize > 0,);
 
-        if (loadOldSaveFormat(data, dataSize))
+        if (loadJuceSaveFormat(data, dataSize))
             return;
 
         if (fLastChunk != nullptr)
@@ -2470,7 +2476,7 @@ private:
         return (int32_t)ByteOrder::swapIfLittleEndian ((uint32_t) x);
     }
 
-    bool loadOldSaveFormat(const void* const data, const std::size_t dataSize)
+    bool loadJuceSaveFormat(const void* const data, const std::size_t dataSize)
     {
         if (dataSize < 28)
             return false;
@@ -2490,6 +2496,7 @@ private:
         if (static_cast<std::size_t>(chunkSize + 160) > dataSize)
             return false;
 
+        carla_stdout("NOTE: Loading plugin state in Juce compatibiity mode");
         setChunkData(&set[40], static_cast<std::size_t>(chunkSize));
         return true;
     }
@@ -2619,6 +2626,8 @@ CarlaPluginVST2* CarlaPluginVST2::sLastCarlaPluginVST2 = nullptr;
 
 CARLA_BACKEND_END_NAMESPACE
 
+#endif // USE_JUCE_FOR_VST2
+
 // -------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
@@ -2627,6 +2636,9 @@ CarlaPlugin* CarlaPlugin::newVST2(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newVST2({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.uniqueId);
 
+#ifdef USE_JUCE_FOR_VST2
+    return newJuce(init, "VST2");
+#else
     CarlaPluginVST2* const plugin(new CarlaPluginVST2(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name, init.uniqueId, init.options))
@@ -2636,6 +2648,7 @@ CarlaPlugin* CarlaPlugin::newVST2(const Initializer& init)
     }
 
     return plugin;
+#endif
 }
 
 // -------------------------------------------------------------------------------------------------------------------

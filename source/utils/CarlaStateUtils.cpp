@@ -525,6 +525,13 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
             infoXml << "   <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
             infoXml << "   <UniqueID>" << water::int64(uniqueId)       << "</UniqueID>\n";
             break;
+        case PLUGIN_VST3:
+            infoXml << "   <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
+            infoXml << "   <Label>"    << xmlSafeString(label, true)  << "</Label>\n";
+            break;
+        case PLUGIN_AU:
+            infoXml << "   <Identifier>" << xmlSafeString(label, true) << "</Identifier>\n";
+            break;
         case PLUGIN_SF2:
             infoXml << "   <Filename>"   << xmlSafeString(binary, true) << "</Filename>\n";
             infoXml << "   <Label>"      << xmlSafeString(label, true)  << "</Label>\n";

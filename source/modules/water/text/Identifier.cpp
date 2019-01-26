@@ -53,21 +53,21 @@ Identifier::Identifier (const String& nm)
     : name (StringPool::getGlobalPool().getPooledString (nm))
 {
     // An Identifier cannot be created from an empty string!
-    jassert (nm.isNotEmpty());
+    wassert (nm.isNotEmpty());
 }
 
 Identifier::Identifier (const char* nm)
     : name (StringPool::getGlobalPool().getPooledString (nm))
 {
     // An Identifier cannot be created from an empty string!
-    jassert (nm != nullptr && nm[0] != 0);
+    wassert (nm != nullptr && nm[0] != 0);
 }
 
 Identifier::Identifier (String::CharPointerType start, String::CharPointerType end)
     : name (StringPool::getGlobalPool().getPooledString (start, end))
 {
     // An Identifier cannot be created from an empty string!
-    jassert (start < end);
+    wassert (start < end);
 }
 
 Identifier Identifier::null;

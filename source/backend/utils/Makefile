@@ -23,6 +23,19 @@ TARGETS = $(BINDIR)/libcarla_utils$(LIB_EXT)
 LIBS  = $(MODULEDIR)/lilv.a
 LIBS += $(MODULEDIR)/water.files.a
 
+ifeq ($(USING_JUCE),true)
+LIBS += $(MODULEDIR)/juce_audio_basics.a
+LIBS += $(MODULEDIR)/juce_audio_processors.a
+LIBS += $(MODULEDIR)/juce_core.a
+LIBS += $(MODULEDIR)/juce_data_structures.a
+LIBS += $(MODULEDIR)/juce_events.a
+LIBS += $(MODULEDIR)/juce_graphics.a
+LIBS += $(MODULEDIR)/juce_gui_basics.a
+ifeq ($(MACOS),true)
+LIBS += $(MODULEDIR)/juce_gui_extra.a
+endif
+endif
+
 LINK_FLAGS += $(LILV_LIBS)
 LINK_FLAGS += $(WATER_LIBS)
 
@@ -32,6 +45,19 @@ endif
 
 ifneq ($(HAIKU),true)
 LINK_FLAGS += -lpthread
+endif
+
+ifeq ($(USING_JUCE),true)
+LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
+LINK_FLAGS += $(JUCE_AUDIO_PROCESSORS_LIBS)
+LINK_FLAGS += $(JUCE_CORE_LIBS)
+LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
+LINK_FLAGS += $(JUCE_EVENTS_LIBS)
+LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
+LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
+ifeq ($(MACOS),true)
+LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
+endif
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------

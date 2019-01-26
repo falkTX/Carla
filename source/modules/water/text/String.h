@@ -185,7 +185,7 @@ public:
     void appendCharPointer (const CharPointer startOfTextToAppend,
                             const CharPointer endOfTextToAppend)
     {
-        jassert (startOfTextToAppend.getAddress() != nullptr && endOfTextToAppend.getAddress() != nullptr);
+        wassert (startOfTextToAppend.getAddress() != nullptr && endOfTextToAppend.getAddress() != nullptr);
 
         size_t extraBytesNeeded = 0, numChars = 1;
 

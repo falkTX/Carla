@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # A piano roll viewer/editor
-# Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
 # Copyright (C) 2014-2015 Perry Nguyen
 #
 # This program is free software; you can redistribute it and/or
@@ -18,20 +18,11 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Config)
-
-from carla_config import *
-
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-if config_UseQt5:
-    from PyQt5.QtCore import pyqtSlot, Qt, QEvent
-    from PyQt5.QtGui import QKeyEvent
-    from PyQt5.QtWidgets import QMainWindow
-else:
-    from PyQt4.QtCore import pyqtSlot, Qt, QEvent
-    from PyQt4.QtGui import QKeyEvent, QMainWindow
+from PyQt5.QtCore import pyqtSlot, Qt, QEvent
+from PyQt5.QtGui import QKeyEvent
+from PyQt5.QtWidgets import QMainWindow
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)

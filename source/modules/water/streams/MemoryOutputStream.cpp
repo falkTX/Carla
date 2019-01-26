@@ -48,7 +48,7 @@ MemoryOutputStream::MemoryOutputStream (void* destBuffer, size_t destBufferSize)
   : blockToUse (nullptr), externalData (destBuffer),
     position (0), size (0), availableSize (destBufferSize)
 {
-    jassert (externalData != nullptr); // This must be a valid pointer.
+    wassert (externalData != nullptr); // This must be a valid pointer.
 }
 
 MemoryOutputStream::~MemoryOutputStream()
@@ -81,7 +81,7 @@ void MemoryOutputStream::reset() noexcept
 
 char* MemoryOutputStream::prepareToWrite (size_t numBytes)
 {
-    jassert ((ssize_t) numBytes >= 0);
+    wassert ((ssize_t) numBytes >= 0);
     size_t storageNeeded = position + numBytes;
 
     char* data;
@@ -109,7 +109,7 @@ char* MemoryOutputStream::prepareToWrite (size_t numBytes)
 
 bool MemoryOutputStream::write (const void* const buffer, size_t howMany)
 {
-    jassert (buffer != nullptr);
+    wassert (buffer != nullptr);
 
     if (howMany == 0)
         return true;

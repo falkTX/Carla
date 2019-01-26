@@ -3,11 +3,12 @@
 
 /*
 	Steinberg Audio Stream I/O API
-	(c) 1997 - 2005, Steinberg Media Technologies GmbH
+	(c) 1997 - 2013, Steinberg Media Technologies GmbH
 
-	ASIO Interface Specification v 2.1
+	ASIO Interface Specification v 2.3
 
 	2005 - Added support for DSD sample data (in cooperation with Sony)
+	2012 - Added support for drop out detection
 
 
 	basic concept is an i/o synchronous double-buffer scheme:
@@ -916,6 +917,7 @@ enum
 	kAsioCanInputMeter,
 	kAsioCanOutputGain,
 	kAsioCanOutputMeter,
+	kAsioOptionalOne,
 
 	//	DSD support
 	//	The following extensions are required to allow switching
@@ -923,6 +925,9 @@ enum
 	kAsioSetIoFormat			= 0x23111961,		/* ASIOIoFormat * in params.			*/
 	kAsioGetIoFormat			= 0x23111983,		/* ASIOIoFormat * in params.			*/
 	kAsioCanDoIoFormat			= 0x23112004,		/* ASIOIoFormat * in params.			*/
+	// Extension for drop out detection
+	kAsioCanReportOverload			= 0x24042012,	/* return ASE_SUCCESS if driver can detect and report overloads */
+	kAsioGetInternalBufferSamples	= 0x25042012	/* ASIOInternalBufferInfo * in params. Deliver size of driver internal buffering, return ASE_SUCCESS if supported */
 };
 
 typedef struct ASIOInputMonitor
@@ -1002,6 +1007,14 @@ typedef struct ASIOIoFormat_s
 	ASIOIoFormatType	FormatType;
 	char				future[512-sizeof(ASIOIoFormatType)];
 } ASIOIoFormat;
+
+// Extension for drop detection
+// Note: Refers to buffering that goes beyond the double buffer e.g. used by USB driver designs
+typedef struct ASIOInternalBufferInfo
+{
+	long inputSamples;			// size of driver's internal input buffering which is included in getLatencies
+	long outputSamples;			// size of driver's internal output buffering which is included in getLatencies
+} ASIOInternalBufferInfo;
 
 
 ASIOError ASIOOutputReady(void);

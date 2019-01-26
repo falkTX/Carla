@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla settings code
-# Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,21 +17,11 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Config)
-
-from carla_config import *
-
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-if config_UseQt5:
-    from PyQt5.QtCore import pyqtSlot, QByteArray, QDir, QSettings
-    from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
-    from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
-else:
-    from PyQt4.QtCore import pyqtSlot, QByteArray, QDir, QSettings
-    from PyQt4.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
-    from PyQt4.QtGui import QDialog, QDialogButtonBox, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
+from PyQt5.QtCore import pyqtSlot, QByteArray, QDir, QSettings
+from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
+from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -40,7 +30,7 @@ import ui_carla_settings
 import ui_carla_settings_driver
 
 from carla_shared import *
-from patchcanvas_theme import *
+from patchcanvas.theme import *
 
 # ------------------------------------------------------------------------------------------------------------
 # ...
@@ -217,8 +207,9 @@ class CarlaSettingsW(QDialog):
     PATH_INDEX_DSSI   = 1
     PATH_INDEX_LV2    = 2
     PATH_INDEX_VST2   = 3
-    PATH_INDEX_SF2    = 4
-    PATH_INDEX_SFZ    = 5
+    PATH_INDEX_VST3   = 4
+    PATH_INDEX_SF2    = 5
+    PATH_INDEX_SFZ    = 6
 
     # Single and Multiple client mode is only for JACK,
     # but we still want to match QComboBox index to backend defines,
@@ -249,7 +240,7 @@ class CarlaSettingsW(QDialog):
         for i in range(Theme.THEME_MAX):
             self.ui.cb_canvas_theme.addItem(getThemeName(i))
 
-        if MACOS or (WINDOWS and not config_UseQt5):
+        if MACOS:
             self.ui.group_main_theme.setEnabled(False)
             self.ui.group_main_theme.setVisible(False)
 
@@ -330,6 +321,7 @@ class CarlaSettingsW(QDialog):
         self.ui.lw_dssi.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_lv2.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_vst.currentRowChanged.connect(self.slot_pluginPathRowChanged)
+        self.ui.lw_vst3.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_sf2.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_sfz.currentRowChanged.connect(self.slot_pluginPathRowChanged)
 
@@ -347,6 +339,7 @@ class CarlaSettingsW(QDialog):
         self.ui.lw_dssi.setCurrentRow(0)
         self.ui.lw_lv2.setCurrentRow(0)
         self.ui.lw_vst.setCurrentRow(0)
+        self.ui.lw_vst3.setCurrentRow(0)
         self.ui.lw_sf2.setCurrentRow(0)
         self.ui.lw_sfz.setCurrentRow(0)
 
@@ -452,6 +445,7 @@ class CarlaSettingsW(QDialog):
         dssis   = toList(settings.value(CARLA_KEY_PATHS_DSSI,   CARLA_DEFAULT_DSSI_PATH))
         lv2s    = toList(settings.value(CARLA_KEY_PATHS_LV2,    CARLA_DEFAULT_LV2_PATH))
         vst2s   = toList(settings.value(CARLA_KEY_PATHS_VST2,   CARLA_DEFAULT_VST2_PATH))
+        vst3s   = toList(settings.value(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH))
         sf2s    = toList(settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH))
         sfzs    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH))
 
@@ -459,6 +453,7 @@ class CarlaSettingsW(QDialog):
         dssis.sort()
         lv2s.sort()
         vst2s.sort()
+        vst3s.sort()
         sf2s.sort()
         sfzs.sort()
 
@@ -477,6 +472,10 @@ class CarlaSettingsW(QDialog):
         for vst2 in vst2s:
             if not vst2: continue
             self.ui.lw_vst.addItem(vst2)
+
+        for vst3 in vst3s:
+            if not vst3: continue
+            self.ui.lw_vst3.addItem(vst3)
 
         for sf2 in sf2s:
             if not sf2: continue
@@ -625,6 +624,7 @@ class CarlaSettingsW(QDialog):
         dssis   = []
         lv2s    = []
         vst2s   = []
+        vst3s   = []
         sf2s    = []
         sfzs    = []
 
@@ -640,6 +640,9 @@ class CarlaSettingsW(QDialog):
         for i in range(self.ui.lw_vst.count()):
             vst2s.append(self.ui.lw_vst.item(i).text())
 
+        for i in range(self.ui.lw_vst3.count()):
+            vst3s.append(self.ui.lw_vst3.item(i).text())
+
         for i in range(self.ui.lw_sf2.count()):
             sf2s.append(self.ui.lw_sf2.item(i).text())
 
@@ -650,6 +653,7 @@ class CarlaSettingsW(QDialog):
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_DSSI,   splitter.join(dssis))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2,    splitter.join(lv2s))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST2,   splitter.join(vst2s))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST3,   splitter.join(vst3s))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(sf2s))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(sfzs))
 
@@ -657,6 +661,7 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_PATHS_DSSI,   dssis)
         settings.setValue(CARLA_KEY_PATHS_LV2,    lv2s)
         settings.setValue(CARLA_KEY_PATHS_VST2,   vst2s)
+        settings.setValue(CARLA_KEY_PATHS_VST3,   vst3s)
         settings.setValue(CARLA_KEY_PATHS_SF2,    sf2s)
         settings.setValue(CARLA_KEY_PATHS_SFZ,    sfzs)
 
@@ -766,6 +771,15 @@ class CarlaSettingsW(QDialog):
                 for path in paths:
                     if not path: continue
                     self.ui.lw_vst.addItem(path)
+
+            elif curIndex == self.PATH_INDEX_VST3:
+                paths = CARLA_DEFAULT_VST3_PATH
+                paths.sort()
+                self.ui.lw_vst3.clear()
+
+                for path in paths:
+                    if not path: continue
+                    self.ui.lw_vst3.addItem(path)
 
             elif curIndex == self.PATH_INDEX_SF2:
                 paths = CARLA_DEFAULT_SF2_PATH
@@ -900,6 +914,8 @@ class CarlaSettingsW(QDialog):
             self.ui.lw_lv2.addItem(newPath)
         elif curIndex == self.PATH_INDEX_VST2:
             self.ui.lw_vst.addItem(newPath)
+        elif curIndex == self.PATH_INDEX_VST3:
+            self.ui.lw_vst3.addItem(newPath)
         elif curIndex == self.PATH_INDEX_SF2:
             self.ui.lw_sf2.addItem(newPath)
         elif curIndex == self.PATH_INDEX_SFZ:
@@ -917,6 +933,8 @@ class CarlaSettingsW(QDialog):
             self.ui.lw_lv2.takeItem(self.ui.lw_lv2.currentRow())
         elif curIndex == self.PATH_INDEX_VST2:
             self.ui.lw_vst.takeItem(self.ui.lw_vst.currentRow())
+        elif curIndex == self.PATH_INDEX_VST3:
+            self.ui.lw_vst3.takeItem(self.ui.lw_vst3.currentRow())
         elif curIndex == self.PATH_INDEX_SF2:
             self.ui.lw_sf2.takeItem(self.ui.lw_sf2.currentRow())
         elif curIndex == self.PATH_INDEX_SFZ:
@@ -934,6 +952,8 @@ class CarlaSettingsW(QDialog):
             currentPath = self.ui.lw_lv2.currentItem().text()
         elif curIndex == self.PATH_INDEX_VST2:
             currentPath = self.ui.lw_vst.currentItem().text()
+        elif curIndex == self.PATH_INDEX_VST3:
+            currentPath = self.ui.lw_vst3.currentItem().text()
         elif curIndex == self.PATH_INDEX_SF2:
             currentPath = self.ui.lw_sf2.currentItem().text()
         elif curIndex == self.PATH_INDEX_SFZ:
@@ -954,6 +974,8 @@ class CarlaSettingsW(QDialog):
             self.ui.lw_lv2.currentItem().setText(newPath)
         elif curIndex == self.PATH_INDEX_VST2:
             self.ui.lw_vst.currentItem().setText(newPath)
+        elif curIndex == self.PATH_INDEX_VST3:
+            self.ui.lw_vst3.currentItem().setText(newPath)
         elif curIndex == self.PATH_INDEX_SF2:
             self.ui.lw_sf2.currentItem().setText(newPath)
         elif curIndex == self.PATH_INDEX_SFZ:
@@ -971,6 +993,8 @@ class CarlaSettingsW(QDialog):
             row = self.ui.lw_lv2.currentRow()
         elif index == self.PATH_INDEX_VST2:
             row = self.ui.lw_vst.currentRow()
+        elif index == self.PATH_INDEX_VST3:
+            row = self.ui.lw_vst3.currentRow()
         elif index == self.PATH_INDEX_SF2:
             row = self.ui.lw_sf2.currentRow()
         elif index == self.PATH_INDEX_SFZ:

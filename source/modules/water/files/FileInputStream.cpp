@@ -42,7 +42,7 @@ FileInputStream::FileInputStream (const File& f)
 int64 FileInputStream::getTotalLength()
 {
     // You should always check that a stream opened successfully before using it!
-    jassert (openedOk());
+    wassert (openedOk());
 
     return file.getSize();
 }
@@ -50,11 +50,11 @@ int64 FileInputStream::getTotalLength()
 int FileInputStream::read (void* buffer, int bytesToRead)
 {
     // You should always check that a stream opened successfully before using it!
-    jassert (openedOk());
+    wassert (openedOk());
 
     // The buffer should never be null, and a negative size is probably a
     // sign that something is broken!
-    jassert (buffer != nullptr && bytesToRead >= 0);
+    wassert (buffer != nullptr && bytesToRead >= 0);
 
     const size_t num = readInternal (buffer, (size_t) bytesToRead);
     currentPosition += (int64) num;
@@ -75,7 +75,7 @@ int64 FileInputStream::getPosition()
 bool FileInputStream::setPosition (int64 pos)
 {
     // You should always check that a stream opened successfully before using it!
-    jassert (openedOk());
+    wassert (openedOk());
 
     if (pos != currentPosition)
         currentPosition = water_fileSetPosition (fileHandle, pos);

@@ -122,7 +122,7 @@ public:
     /** Moves this pointer along to the next character in the string. */
     CharPointer_UTF8& operator++() noexcept
     {
-        jassert (*data != 0); // trying to advance past the end of the string?
+        wassert (*data != 0); // trying to advance past the end of the string?
         const signed char n = (signed char) *data++;
 
         if (n < 0)
@@ -282,7 +282,7 @@ public:
     */
     size_t sizeInBytes() const noexcept
     {
-        jassert (data != nullptr);
+        wassert (data != nullptr);
         return strlen (data) + 1;
     }
 
@@ -556,7 +556,7 @@ public:
     */
     static bool isByteOrderMark (const void* possibleByteOrder) noexcept
     {
-        jassert (possibleByteOrder != nullptr);
+        wassert (possibleByteOrder != nullptr);
         const uint8* const c = static_cast<const uint8*> (possibleByteOrder);
 
         return c[0] == (uint8) byteOrderMark1

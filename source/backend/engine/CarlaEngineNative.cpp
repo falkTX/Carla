@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -35,6 +35,12 @@
 #include "CarlaNative.hpp"
 #include "CarlaNativePlugin.h"
 
+#if defined(USING_JUCE) && ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+# include "AppConfig.h"
+# include "juce_events/juce_events.h"
+# define USE_JUCE_MESSAGE_THREAD
+#endif
+
 #include "water/files/File.h"
 #include "water/streams/MemoryOutputStream.h"
 #include "water/xml/XmlDocument.h"
@@ -47,6 +53,63 @@ using water::XmlDocument;
 using water::XmlElement;
 
 CARLA_BACKEND_START_NAMESPACE
+
+// -----------------------------------------------------------------------
+
+#ifdef USE_JUCE_MESSAGE_THREAD
+static int numScopedInitInstances = 0;
+
+class SharedJuceMessageThread : public juce::Thread
+{
+public:
+    SharedJuceMessageThread()
+      : juce::Thread ("SharedJuceMessageThread"),
+        initialised (false) {}
+
+    ~SharedJuceMessageThread()
+    {
+        CARLA_SAFE_ASSERT(numScopedInitInstances == 0);
+
+        // in case something fails
+        juce::MessageManager::getInstance()->stopDispatchLoop();
+        waitForThreadToExit (5000);
+    }
+
+    void incRef()
+    {
+        if (numScopedInitInstances++ == 0)
+        {
+            startThread (7);
+
+            while (! initialised)
+                juce::Thread::sleep (1);
+        }
+    }
+
+    void decRef()
+    {
+        if (--numScopedInitInstances == 0)
+        {
+            juce::MessageManager::getInstance()->stopDispatchLoop();
+            waitForThreadToExit (5000);
+        }
+    }
+
+protected:
+    void run() override
+    {
+        const juce::ScopedJuceInitialiser_GUI juceInitialiser;
+
+        juce::MessageManager::getInstance()->setCurrentThreadAsMessageThread();
+        initialised = true;
+
+        juce::MessageManager::getInstance()->runDispatchLoop();
+    }
+
+private:
+    volatile bool initialised;
+};
+#endif
 
 // -----------------------------------------------------------------------
 
@@ -584,8 +647,18 @@ public:
           fIsRunning(false),
           fUiServer(this),
           fOptionsForced(false)
+#ifdef USE_JUCE_MESSAGE_THREAD
+          // if not running inside Carla, we will have to run event loop ourselves
+        , kNeedsJuceMsgThread(host->dispatcher(pHost->handle,
+                                               NATIVE_HOST_OPCODE_INTERNAL_PLUGIN, 0, 0, nullptr, 0.0f) == 0)
+#endif
     {
         carla_debug("CarlaEngineNative::CarlaEngineNative()");
+
+#ifdef USE_JUCE_MESSAGE_THREAD
+        if (kNeedsJuceMsgThread)
+            sJuceMsgThread->incRef();
+#endif
 
         pData->bufferSize = pHost->get_buffer_size(pHost->handle);
         pData->sampleRate = pHost->get_sample_rate(pHost->handle);
@@ -643,6 +716,11 @@ public:
         close();
 
         pData->graph.destroy();
+
+#ifdef USE_JUCE_MESSAGE_THREAD
+        if (kNeedsJuceMsgThread)
+            sJuceMsgThread->decRef();
+#endif
 
         carla_debug("CarlaEngineNative::~CarlaEngineNative() - END");
     }
@@ -1990,6 +2068,11 @@ private:
 
     bool fOptionsForced;
 
+#ifdef USE_JUCE_MESSAGE_THREAD
+    const bool kNeedsJuceMsgThread;
+    const juce::SharedResourcePointer<SharedJuceMessageThread> sJuceMsgThread;
+#endif
+
     CarlaPlugin* _getFirstPlugin() const noexcept
     {
         if (pData->curPluginCount == 0 || pData->plugins == nullptr)
@@ -2307,11 +2390,19 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaEngine* CarlaEngine::newJack() { return nullptr; }
 
+# ifdef USING_JUCE
+CarlaEngine*       CarlaEngine::newJuce(const AudioApi)           { return nullptr; }
+uint               CarlaEngine::getJuceApiCount()                 { return 0;       }
+const char*        CarlaEngine::getJuceApiName(const uint)        { return nullptr; }
+const char* const* CarlaEngine::getJuceApiDeviceNames(const uint) { return nullptr; }
+const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const uint, const char* const) { return nullptr; }
+# else
 CarlaEngine*       CarlaEngine::newRtAudio(const AudioApi)           { return nullptr; }
 uint               CarlaEngine::getRtAudioApiCount()                 { return 0;       }
 const char*        CarlaEngine::getRtAudioApiName(const uint)        { return nullptr; }
 const char* const* CarlaEngine::getRtAudioApiDeviceNames(const uint) { return nullptr; }
 const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const uint, const char* const) { return nullptr; }
+# endif
 
 CARLA_BACKEND_END_NAMESPACE
 

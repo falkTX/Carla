@@ -52,7 +52,7 @@ TemporaryFile::TemporaryFile (const File& target, const int optionFlags)
       targetFile (target)
 {
     // If you use this constructor, you need to give it a valid target file!
-    jassert (targetFile != File());
+    wassert (targetFile != File());
 }
 
 TemporaryFile::TemporaryFile (const File& target, const File& temporary)
@@ -72,7 +72,7 @@ TemporaryFile::~TemporaryFile()
            call TemporaryFile::deleteTemporaryFile() to detect those error cases and
            handle them appropriately.
         */
-        jassertfalse;
+        wassertfalse;
     }
 }
 
@@ -81,7 +81,7 @@ bool TemporaryFile::overwriteTargetFileWithTemporary() const
 {
     // This method only works if you created this object with the constructor
     // that takes a target file!
-    jassert (targetFile != File());
+    wassert (targetFile != File());
 
     if (temporaryFile.exists())
     {
@@ -98,7 +98,7 @@ bool TemporaryFile::overwriteTargetFileWithTemporary() const
     {
         // There's no temporary file to use. If your write failed, you should
         // probably check, and not bother calling this method.
-        jassertfalse;
+        wassertfalse;
     }
 
     return false;

@@ -427,7 +427,7 @@ namespace NumberToStringConverters
 
         StackArrayStream strm (buffer);
         len = strm.writeDouble (n, numDecPlaces);
-        jassert (len <= charsNeededForDouble);
+        wassert (len <= charsNeededForDouble);
         return buffer;
     }
 
@@ -482,7 +482,7 @@ size_t String::getByteOffsetOfEnd() const noexcept
 
 water_uchar String::operator[] (int index) const noexcept
 {
-    jassert (index == 0 || (index > 0 && index <= (int) text.lengthUpTo ((size_t) index + 1)));
+    wassert (index == 0 || (index > 0 && index <= (int) text.lengthUpTo ((size_t) index + 1)));
     return text [index];
 }
 
@@ -559,7 +559,7 @@ static int stringCompareRight (String::CharPointerType s1, String::CharPointerTy
         if (c1 != c2 && bias == 0)
             bias = c1 < c2 ? -1 : 1;
 
-        jassert (c1 != 0 && c2 != 0);
+        wassert (c1 != 0 && c2 != 0);
     }
 }
 
@@ -632,7 +632,7 @@ static int naturalStringCompare (String::CharPointerType s1, String::CharPointer
             return c1 < c2 ? -1 : 1;
         }
 
-        jassert (c1 != 0 && c2 != 0);
+        wassert (c1 != 0 && c2 != 0);
     }
 }
 
@@ -656,11 +656,11 @@ void String::appendCharPointer (const CharPointerType textToAppend)
 void String::appendCharPointer (const CharPointerType startOfTextToAppend,
                                 const CharPointerType endOfTextToAppend)
 {
-    jassert (startOfTextToAppend.getAddress() != nullptr && endOfTextToAppend.getAddress() != nullptr);
+    wassert (startOfTextToAppend.getAddress() != nullptr && endOfTextToAppend.getAddress() != nullptr);
 
     const int extraBytesNeeded = getAddressDifference (endOfTextToAppend.getAddress(),
                                                        startOfTextToAppend.getAddress());
-    jassert (extraBytesNeeded >= 0);
+    wassert (extraBytesNeeded >= 0);
 
     if (extraBytesNeeded > 0)
     {
@@ -1058,7 +1058,7 @@ String String::repeatedString (StringRef stringToRepeat, int numberOfTimesToRepe
 
 String String::paddedLeft (const water_uchar padCharacter, int minimumLength) const
 {
-    jassert (padCharacter != 0);
+    wassert (padCharacter != 0);
 
     int extraChars = minimumLength;
     CharPointerType end (text);
@@ -1118,7 +1118,7 @@ String String::replaceSection (int index, int numCharsToReplace, StringRef strin
     if (index < 0)
     {
         // a negative index to replace from?
-        jassertfalse;
+        wassertfalse;
         index = 0;
     }
 
@@ -1126,7 +1126,7 @@ String String::replaceSection (int index, int numCharsToReplace, StringRef strin
     {
         // replacing a negative number of characters?
         numCharsToReplace = 0;
-        jassertfalse;
+        wassertfalse;
     }
 
     CharPointerType insertPoint (text);
@@ -1136,7 +1136,7 @@ String String::replaceSection (int index, int numCharsToReplace, StringRef strin
         if (insertPoint.isEmpty())
         {
             // replacing beyond the end of the string?
-            jassertfalse;
+            wassertfalse;
             return *this + stringToInsert;
         }
 
@@ -1258,7 +1258,7 @@ String String::replaceCharacters (StringRef charactersToReplace, StringRef chara
 {
     // Each character in the first string must have a matching one in the
     // second, so the two strings must be the same length.
-    jassert (charactersToReplace.length() == charactersToInsertInstead.length());
+    wassert (charactersToReplace.length() == charactersToInsertInstead.length());
 
     StringCreationHelper builder (text);
 
@@ -1937,7 +1937,7 @@ struct StringCopier
 {
     static size_t copyToBuffer (const CharPointerType_Src source, typename CharPointerType_Dest::CharType* const buffer, const size_t maxBufferSizeBytes)
     {
-        jassert (((ssize_t) maxBufferSizeBytes) >= 0); // keep this value positive!
+        wassert (((ssize_t) maxBufferSizeBytes) >= 0); // keep this value positive!
 
         if (buffer == nullptr)
             return CharPointerType_Dest::getBytesRequiredFor (source) + sizeof (typename CharPointerType_Dest::CharType);
@@ -1966,7 +1966,7 @@ String String::fromUTF8 (const char* const buffer, int bufferSizeBytes)
 
         if (bufferSizeBytes > 0)
         {
-            jassert (CharPointer_UTF8::isValidString (buffer, bufferSizeBytes));
+            wassert (CharPointer_UTF8::isValidString (buffer, bufferSizeBytes));
             return String (CharPointer_UTF8 (buffer), CharPointer_UTF8 (buffer + bufferSizeBytes));
         }
     }
@@ -2032,7 +2032,7 @@ StringRef::StringRef() noexcept  : text ((const String::CharPointerType::CharTyp
 StringRef::StringRef (const char* stringLiteral) noexcept
     : text (stringLiteral)
 {
-    jassert (stringLiteral != nullptr); // This must be a valid string literal, not a null pointer!!
+    wassert (stringLiteral != nullptr); // This must be a valid string literal, not a null pointer!!
 
     /*  If you get an assertion here, then you're trying to create a string from 8-bit data
         that contains values greater than 127. These can NOT be correctly converted to unicode
@@ -2047,12 +2047,12 @@ StringRef::StringRef (const char* stringLiteral) noexcept
         because there's no other way to represent these strings in a way that isn't dependent on
         the compiler, source code editor and platform.
     */
-    jassert (CharPointer_UTF8::isValidString (stringLiteral, std::numeric_limits<int>::max()));
+    wassert (CharPointer_UTF8::isValidString (stringLiteral, std::numeric_limits<int>::max()));
 }
 
 StringRef::StringRef (String::CharPointerType stringLiteral) noexcept  : text (stringLiteral)
 {
-    jassert (stringLiteral.getAddress() != nullptr); // This must be a valid string literal, not a null pointer!!
+    wassert (stringLiteral.getAddress() != nullptr); // This must be a valid string literal, not a null pointer!!
 }
 
 StringRef::StringRef (const String& string) noexcept  : text (string.getCharPointer()) {}

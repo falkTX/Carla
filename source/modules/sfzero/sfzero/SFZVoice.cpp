@@ -192,8 +192,9 @@ void Voice::renderNextBlock(water::AudioSampleBuffer &outputBuffer, int startSam
 
   while (--numSamples >= 0)
   {
-    int pos = static_cast<int>(sourceSamplePosition);
-    jassert(pos >= 0 && pos < bufferNumSamples); // leoo
+    const int pos = static_cast<int>(sourceSamplePosition);
+    CARLA_SAFE_ASSERT_CONTINUE(pos >= 0 && pos < bufferNumSamples); // leoo
+
     float alpha = static_cast<float>(sourceSamplePosition - pos);
     float invAlpha = 1.0f - alpha;
     int nextPos = pos + 1;

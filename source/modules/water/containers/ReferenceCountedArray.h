@@ -187,7 +187,7 @@ public:
     {
         if (isPositiveAndBelow (index, numUsed))
         {
-            jassert (data.elements != nullptr);
+            wassert (data.elements != nullptr);
             return data.elements [index];
         }
 
@@ -199,7 +199,7 @@ public:
     */
     inline ObjectClass* getObjectPointerUnchecked (const int index) const noexcept
     {
-        jassert (isPositiveAndBelow (index, numUsed) && data.elements != nullptr);
+        wassert (isPositiveAndBelow (index, numUsed) && data.elements != nullptr);
         return data.elements [index];
     }
 
@@ -212,7 +212,7 @@ public:
     {
         if (numUsed > 0)
         {
-            jassert (data.elements != nullptr);
+            wassert (data.elements != nullptr);
             return data.elements [0];
         }
 
@@ -228,7 +228,7 @@ public:
     {
         if (numUsed > 0)
         {
-            jassert (data.elements != nullptr);
+            wassert (data.elements != nullptr);
             return data.elements [numUsed - 1];
         }
 
@@ -314,7 +314,7 @@ public:
     ObjectClass* add (ObjectClass* const newObject) noexcept
     {
         data.ensureAllocatedSize (numUsed + 1);
-        jassert (data.elements != nullptr);
+        wassert (data.elements != nullptr);
         data.elements [numUsed++] = newObject;
 
         if (newObject != nullptr)
@@ -346,7 +346,7 @@ public:
             indexToInsertAt = numUsed;
 
         data.ensureAllocatedSize (numUsed + 1);
-        jassert (data.elements != nullptr);
+        wassert (data.elements != nullptr);
 
         ObjectClass** const e = data.elements + indexToInsertAt;
         const int numToMove = numUsed - indexToInsertAt;
@@ -411,7 +411,7 @@ public:
             else
             {
                 data.ensureAllocatedSize (numUsed + 1);
-                jassert (data.elements != nullptr);
+                wassert (data.elements != nullptr);
                 data.elements [numUsed++] = newObject;
             }
         }
@@ -432,7 +432,7 @@ public:
     {
         if (startIndex < 0)
         {
-            jassertfalse;
+            wassertfalse;
             startIndex = 0;
         }
 
@@ -840,7 +840,7 @@ private:
             if (ObjectClass* o = data.elements [--numUsed])
                 releaseObject (o);
 
-        jassert (numUsed == 0);
+        wassert (numUsed == 0);
     }
 
     static void releaseObject (ObjectClass* o)

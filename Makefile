@@ -48,15 +48,29 @@ ifeq ($(HAVE_HYLIA),true)
 ALL_LIBS += $(MODULEDIR)/hylia.a
 endif
 
-ALL_LIBS += $(MODULEDIR)/rtaudio.a
-ALL_LIBS += $(MODULEDIR)/rtmidi.a
-
 ifeq ($(HAVE_QT4),true)
 ALL_LIBS += $(MODULEDIR)/theme.qt4.a
 endif
 
 ifeq ($(HAVE_QT5),true)
 ALL_LIBS += $(MODULEDIR)/theme.qt5.a
+endif
+
+ifeq ($(USING_JUCE),true)
+ALL_LIBS += $(MODULEDIR)/juce_audio_basics.a
+ALL_LIBS += $(MODULEDIR)/juce_audio_devices.a
+ALL_LIBS += $(MODULEDIR)/juce_audio_processors.a
+ALL_LIBS += $(MODULEDIR)/juce_core.a
+ALL_LIBS += $(MODULEDIR)/juce_data_structures.a
+ALL_LIBS += $(MODULEDIR)/juce_events.a
+ALL_LIBS += $(MODULEDIR)/juce_graphics.a
+ALL_LIBS += $(MODULEDIR)/juce_gui_basics.a
+ifeq ($(MACOS),true)
+ALL_LIBS += $(MODULEDIR)/juce_gui_extra.a
+endif
+else
+ALL_LIBS += $(MODULEDIR)/rtaudio.a
+ALL_LIBS += $(MODULEDIR)/rtmidi.a
 endif
 
 libs: $(ALL_LIBS)
@@ -164,12 +178,59 @@ theme: libs
 	@$(MAKE) -C source/theme
 
 # ---------------------------------------------------------------------------------------------------------------------
+# nuitka
+
+nuitka: bin/carla bin/carla-rack bin/carla-plugin
+
+bin/carla:
+	python3 -m nuitka \
+		-j 8 \
+		--recurse-all \
+		--python-flag -O --warn-unusual-code --warn-implicit-exceptions \
+		--recurse-not-to=PyQt5 \
+		--file-reference-choice=runtime \
+		-o ./$@ \
+		./source/frontend/carla
+
+bin/carla-rack:
+	python3 -m nuitka \
+		-j 8 \
+		--recurse-all \
+		--python-flag -O --warn-unusual-code --warn-implicit-exceptions \
+		--recurse-not-to=PyQt5 \
+		--file-reference-choice=runtime \
+		-o ./$@ \
+		./source/frontend/carla
+
+bin/carla-plugin:
+	python3 -m nuitka \
+		-j 8 \
+		--recurse-all \
+		--python-flag -O --warn-unusual-code --warn-implicit-exceptions \
+		--recurse-not-to=PyQt5 \
+		--file-reference-choice=runtime \
+		-o ./$@ \
+		./source/native-plugins/resources/carla-plugin
+
+# ---------------------------------------------------------------------------------------------------------------------
 # Binaries (posix32)
 
 LIBS_POSIX32  = $(MODULEDIR)/jackbridge.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/lilv.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/rtmempool.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/water.posix32.a
+
+ifeq ($(USING_JUCE),true)
+LIBS_POSIX32 += $(MODULEDIR)/juce_audio_basics.posix32.a
+LIBS_POSIX32 += $(MODULEDIR)/juce_audio_processors.posix32.a
+LIBS_POSIX32 += $(MODULEDIR)/juce_data_structures.posix32.a
+LIBS_POSIX32 += $(MODULEDIR)/juce_core.posix32.a
+LIBS_POSIX32 += $(MODULEDIR)/juce_events.posix32.a
+ifeq ($(MACOS_OR_WIN32),true)
+LIBS_POSIX32 += $(MODULEDIR)/juce_graphics.posix32.a
+LIBS_POSIX32 += $(MODULEDIR)/juce_gui_basics.posix32.a
+endif
+endif
 
 posix32: $(LIBS_POSIX32)
 	$(MAKE) -C source/bridges-plugin posix32
@@ -182,6 +243,18 @@ LIBS_POSIX64  = $(MODULEDIR)/jackbridge.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/lilv.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/rtmempool.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/water.posix64.a
+
+ifeq ($(USING_JUCE),true)
+LIBS_POSIX64 += $(MODULEDIR)/juce_audio_basics.posix64.a
+LIBS_POSIX64 += $(MODULEDIR)/juce_audio_processors.posix64.a
+LIBS_POSIX64 += $(MODULEDIR)/juce_data_structures.posix64.a
+LIBS_POSIX64 += $(MODULEDIR)/juce_core.posix64.a
+LIBS_POSIX64 += $(MODULEDIR)/juce_events.posix64.a
+ifeq ($(MACOS_OR_WIN32),true)
+LIBS_POSIX64 += $(MODULEDIR)/juce_graphics.posix64.a
+LIBS_POSIX64 += $(MODULEDIR)/juce_gui_basics.posix64.a
+endif
+endif
 
 posix64: $(LIBS_POSIX64)
 	$(MAKE) -C source/bridges-plugin posix64
@@ -199,6 +272,16 @@ LIBS_WIN32 += $(MODULEDIR)/lilv.win32.a
 LIBS_WIN32 += $(MODULEDIR)/rtmempool.win32.a
 LIBS_WIN32 += $(MODULEDIR)/water.win32.a
 
+ifeq ($(USING_JUCE),true)
+LIBS_WIN32 += $(MODULEDIR)/juce_audio_basics.win32.a
+LIBS_WIN32 += $(MODULEDIR)/juce_audio_processors.win32.a
+LIBS_WIN32 += $(MODULEDIR)/juce_data_structures.win32.a
+LIBS_WIN32 += $(MODULEDIR)/juce_core.win32.a
+LIBS_WIN32 += $(MODULEDIR)/juce_events.win32.a
+LIBS_WIN32 += $(MODULEDIR)/juce_graphics.win32.a
+LIBS_WIN32 += $(MODULEDIR)/juce_gui_basics.win32.a
+endif
+
 win32: $(LIBS_WIN32)
 	$(MAKE) -C source/bridges-plugin win32
 	$(MAKE) -C source/discovery win32
@@ -214,6 +297,16 @@ endif
 LIBS_WIN64 += $(MODULEDIR)/lilv.win64.a
 LIBS_WIN64 += $(MODULEDIR)/rtmempool.win64.a
 LIBS_WIN64 += $(MODULEDIR)/water.win64.a
+
+ifeq ($(USING_JUCE),true)
+LIBS_WIN64 += $(MODULEDIR)/juce_audio_basics.win64.a
+LIBS_WIN64 += $(MODULEDIR)/juce_audio_processors.win64.a
+LIBS_WIN64 += $(MODULEDIR)/juce_data_structures.win64.a
+LIBS_WIN64 += $(MODULEDIR)/juce_core.win64.a
+LIBS_WIN64 += $(MODULEDIR)/juce_events.win64.a
+LIBS_WIN64 += $(MODULEDIR)/juce_graphics.win64.a
+LIBS_WIN64 += $(MODULEDIR)/juce_gui_basics.win64.a
+endif
 
 win64: $(LIBS_WIN64)
 	$(MAKE) -C source/bridges-plugin win64
@@ -288,6 +381,7 @@ ifeq ($(HAVE_PYQT),true)
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
 	install -d $(DESTDIR)$(DATADIR)/mime/packages
 	install -d $(DESTDIR)$(DATADIR)/carla/resources
+	install -d $(DESTDIR)$(DATADIR)/carla/patchcanvas
 	install -d $(DESTDIR)$(DATADIR)/carla/widgets
 endif
 
@@ -403,6 +497,10 @@ endif
 		$(DESTDIR)$(DATADIR)/carla/
 
 	install -m 644 \
+		source/frontend/patchcanvas/*.py \
+		$(DESTDIR)$(DATADIR)/carla/patchcanvas/
+
+	install -m 644 \
 		source/frontend/widgets/*.py \
 		$(DESTDIR)$(DATADIR)/carla/widgets/
 
@@ -457,11 +555,11 @@ endif
 	install -m 644 resources/scalable/carla-control.svg $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
 
 	# Install resources (re-use python files)
+	$(LINK) ../patchcanvas                 $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../widgets                     $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_app.py                $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_backend.py            $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_backend_qt.py         $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../carla_config.py             $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_control.py            $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_database.py           $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_host.py               $(DESTDIR)$(DATADIR)/carla/resources
@@ -471,10 +569,9 @@ endif
 	$(LINK) ../carla_utils.py              $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_widgets.py            $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../externalui.py               $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../patchcanvas.py              $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../patchcanvas_theme.py        $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../resources_rc.py             $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_about.py           $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../ui_carla_about_juce.py      $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_add_jack.py        $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_database.py        $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_edit.py            $(DESTDIR)$(DATADIR)/carla/resources
@@ -601,16 +698,10 @@ mZ=[
 mE=]
 endif
 
-ifeq ($(DEFAULT_QT),4)
-FEV="Qt4"
-else
-FEV="Qt5"
-endif
-
 features_print_main:
 	@printf -- "$(tS)---> Main features $(tE)\n"
 ifeq ($(HAVE_PYQT),true)
-	@printf -- "Front-End:     $(ANS_YES) (Using $(FEV))\n"
+	@printf -- "Front-End:     $(ANS_YES)\n"
 ifneq ($(WIN32),true)
 	@printf -- "LV2 plugin:    $(ANS_YES)\n"
 else
