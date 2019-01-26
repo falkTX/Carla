@@ -1227,7 +1227,7 @@ public:
             CARLA_SAFE_ASSERT(atom->size < sizeof(atomBuf));
 
             carla_stdout("Set new param type thing");
-            fAtomBufferIn.put(atom, fEventsIn.ctrlIndex);
+            fAtomBufferEvIn.put(atom, fEventsIn.ctrlIndex);
         }
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
