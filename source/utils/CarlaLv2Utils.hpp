@@ -2147,7 +2147,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                             else if (std::strcmp(unitUnit, LV2_UNITS__semitone12TET) == 0)
                                 rdfPort->Unit.Unit = LV2_PORT_UNIT_SEMITONE;
                             else
-                                carla_stderr("lv2_rdf_new(\"%s\") - got unknown unit unit '%s'", uri, unitUnit);
+                                carla_stderr("lv2_rdf_new(\"%s\") - got unknown unit '%s'", uri, unitUnit);
                         }
                     }
 
@@ -2383,7 +2383,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                             else if (std::strcmp(unitUnit, LV2_UNITS__semitone12TET) == 0)
                                 rdfParam->Unit.Unit = LV2_PORT_UNIT_SEMITONE;
                             else
-                                carla_stderr("lv2_rdf_new(\"%s\") - got unknown unit unit '%s'", uri, unitUnit);
+                                carla_stderr("lv2_rdf_new(\"%s\") - got unknown unit '%s'", uri, unitUnit);
                         }
                     }
 
