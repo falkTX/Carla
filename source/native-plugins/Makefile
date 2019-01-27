@@ -44,8 +44,12 @@ OBJS = \
 # ---------------------------------------------------------------------------------------------------------------------
 # Include external plugins, if present
 
+ifeq ($(EXTERNAL_PLUGINS),true)
 ifneq (,$(wildcard external/Makefile.mk2))
 include external/Makefile.mk2
+else
+$(error External plugins build requested but submodule not present, cannot build)
+endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
