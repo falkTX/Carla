@@ -158,9 +158,6 @@ public:
         }
         else
         {
-            for (size_t i = 0; i < numAllocated; ++i)
-                elements[i].~ElementType();
-
             elements.free();
         }
 
