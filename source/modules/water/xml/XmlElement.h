@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2019 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -235,6 +235,7 @@ public:
                         StringRef encodingType = "UTF-8",
                         int lineWrapLength = 60) const;
 
+#if 0
     /** Writes the element to a file as an XML document.
 
         To improve safety in case something goes wrong while writing the file, this
@@ -258,6 +259,7 @@ public:
                       StringRef dtdToUse,
                       StringRef encodingType = "UTF-8",
                       int lineWrapLength = 60) const;
+#endif
 
     //==============================================================================
     /** Returns this element's tag type name.
