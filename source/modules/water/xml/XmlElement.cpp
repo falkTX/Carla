@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2019 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -272,6 +272,8 @@ void XmlElement::writeElementAsText (OutputStream& outputStream,
 {
     using namespace XmlOutputFunctions;
 
+    NewLine newLine;
+
     if (indentationLevel >= 0)
         writeSpaces (outputStream, (size_t) indentationLevel);
 
@@ -368,6 +370,8 @@ void XmlElement::writeToStream (OutputStream& output,
                                 const int lineWrapLength) const
 {
     using namespace XmlOutputFunctions;
+
+    NewLine newLine;
 
     if (includeXmlHeader)
     {
@@ -854,7 +858,10 @@ bool XmlElement::isTextElement() const noexcept
     return tagName.isEmpty();
 }
 
-static const String water_xmltextContentAttributeName ("text");
+static const String water_xmltextContentAttributeName ()
+{
+    return String ("text");
+}
 
 const String& XmlElement::getText() const noexcept
 {
@@ -862,13 +869,13 @@ const String& XmlElement::getText() const noexcept
                                 // isn't actually a text element.. If this contains text sub-nodes, you
                                 // probably want to use getAllSubText instead.
 
-    return getStringAttribute (water_xmltextContentAttributeName);
+    return getStringAttribute (water_xmltextContentAttributeName());
 }
 
 void XmlElement::setText (const String& newText)
 {
     CARLA_SAFE_ASSERT_RETURN(isTextElement(),);
-    setAttribute (water_xmltextContentAttributeName, newText);
+    setAttribute (water_xmltextContentAttributeName(), newText);
 }
 
 String XmlElement::getAllSubText() const
@@ -898,7 +905,7 @@ String XmlElement::getChildElementAllSubText (StringRef childTagName, const Stri
 XmlElement* XmlElement::createTextElement (const String& text)
 {
     XmlElement* const e = new XmlElement ((int) 0);
-    e->setAttribute (water_xmltextContentAttributeName, text);
+    e->setAttribute (water_xmltextContentAttributeName(), text);
     return e;
 }
 

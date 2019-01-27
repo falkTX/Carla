@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2019 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -59,16 +59,6 @@ public:
     */
     operator StringRef() const noexcept             { return getDefault(); }
 };
-
-//==============================================================================
-/** A predefined object representing a new-line, which can be written to a string or stream.
-
-    To write a new-line to a stream, you can use the predefined 'newLine' variable like this:
-    @code
-    myOutputStream << "Hello World" << newLine << newLine;
-    @endcode
-*/
-extern NewLine newLine;
 
 //==============================================================================
 /** Writes a new-line sequence to a string.
