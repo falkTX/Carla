@@ -120,7 +120,7 @@ public:
     /** Destructor. */
     ~Array() noexcept
     {
-        clear();
+        deleteAllElements();
     }
 
     /** Copies another array.

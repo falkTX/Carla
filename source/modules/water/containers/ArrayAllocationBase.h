@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2019 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -131,38 +131,40 @@ public:
     template <typename T = ElementType>
     NonTriviallyCopyableBool<T> setAllocatedSize (const size_t numNewElements) noexcept
     {
-        if (numAllocated != numNewElements)
+        if (numAllocated == numNewElements)
+            return true;
+
+        if (numNewElements > 0)
         {
-            if (numNewElements > 0)
+            HeapBlock<ElementType> newElements;
+
+            if (! newElements.malloc (numNewElements))
+                return false;
+
+            size_t i = 0;
+
+            for (; i < numNewElements; ++i)
             {
-                HeapBlock<ElementType> newElements;
-
-                if (! newElements.malloc (numNewElements))
-                    return false;
-
-                for (size_t i = 0; i < numNewElements; ++i)
-                {
-                    if (i < numAllocated)
-                    {
-                        new (newElements + i) ElementType (std::move (elements[i]));
-                        elements[i].~ElementType();
-                    }
-                    else
-                    {
-                        new (newElements + i) ElementType ();
-                    }
-                }
-
-                elements = std::move (newElements);
-            }
-            else
-            {
-                elements.free();
+                if (i < numAllocated)
+                    new (newElements + i) ElementType (std::move (elements[i]));
+                else
+                    new (newElements + i) ElementType ();
             }
 
-            numAllocated = numNewElements;
+            for (; i < numAllocated; ++i)
+                elements[i].~ElementType();
+
+            elements = std::move (newElements);
+        }
+        else
+        {
+            for (size_t i = 0; i < numAllocated; ++i)
+                elements[i].~ElementType();
+
+            elements.free();
         }
 
+        numAllocated = numNewElements;
         return true;
     }
    #endif
@@ -233,6 +235,8 @@ public:
                 ++target;
                 ++source;
             }
+
+            (--source)->~ElementType();
         }
         else
         {
@@ -242,6 +246,8 @@ public:
                 --target;
                 --source;
             }
+
+            (++source)->~ElementType();
         }
     }
 
