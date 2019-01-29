@@ -108,7 +108,6 @@ $CXFREEZE ../../bin/resources/carla-plugin-patchbay
 
 cp ../../bin/*.dll Carla/
 cp ../../bin/*.exe Carla/
-rm Carla/carla-bridge-lv2-windows.exe
 rm Carla/carla-discovery-native.exe
 rm Carla/carla-lv2-export.exe
 
@@ -142,6 +141,15 @@ cp ../../bin/carla.lv2/*.exe    Carla.lv2/
 cp ../../bin/carla.lv2/*.ttl    Carla.lv2/
 cp ../../bin/libcarla_utils.dll Carla.lv2/
 cp -r Carla/resources           Carla.lv2/
+
+mkdir Carla.vst
+cp ../../bin/CarlaVst*.dll      Carla.vst/
+cp ../../bin/carla.lv2/*.exe    Carla.vst/
+cp ../../bin/libcarla_utils.dll Carla.vst/
+cp -r Carla/resources           Carla.vst/
+
+rm Carla.lv2/carla-discovery-native.exe
+rm Carla.vst/carla-discovery-native.exe
 
 if [ x"${CARLA_DEV}" != x"" ]; then
     exit 0
