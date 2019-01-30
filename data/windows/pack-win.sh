@@ -33,7 +33,7 @@ fi
 
 source data/windows/common.env
 
-PKG_FOLDER="Carla_2.0-RC3-win${ARCH}"
+PKG_FOLDER="Carla_2.0-alpha1-win${ARCH}"
 
 export WIN32=true
 
@@ -89,7 +89,7 @@ export PYRCC="wine C:\\\\Python34\\\\Lib\\\\site-packages\\\\PyQt5\\\\pyrcc5.exe
 
 export PYTHONPATH=$(pwd)/source/frontend
 
-rm -rf ./data/windows/Carla ./data/windows/Carla.lv2
+rm -rf ./data/windows/Carla ./data/windows/Carla.lv2 ./data/windows/Carla.vst
 mkdir -p ./data/windows/Carla/Debug
 cp ./source/frontend/carla ./source/frontend/Carla.pyw
 $PYTHON_EXE ./data/windows/app-console.py build_exe
@@ -110,6 +110,7 @@ cp ../../bin/*.dll Carla/
 cp ../../bin/*.exe Carla/
 rm Carla/carla-discovery-native.exe
 rm Carla/carla-lv2-export.exe
+rm Carla/carla-native-plugin.exe
 
 rm -f Carla/PyQt5.Qsci.pyd Carla/PyQt5.QtNetwork.pyd Carla/PyQt5.QtSql.pyd Carla/PyQt5.QtTest.pyd Carla/PyQt5.QtXml.pyd
 rm -f dist/PyQt5.Qsci.pyd dist/PyQt5.QtNetwork.pyd dist/PyQt5.QtSql.pyd dist/PyQt5.QtTest.pyd dist/PyQt5.QtXml.pyd
@@ -136,20 +137,21 @@ cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/Qt5OpenGL.dll       Carl
 cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/Qt5Svg.dll          Carla/resources/
 
 mkdir Carla.lv2
+cp Carla/*.exe                  Carla.lv2/
 cp ../../bin/carla.lv2/*.dll    Carla.lv2/
-cp ../../bin/carla.lv2/*.exe    Carla.lv2/
 cp ../../bin/carla.lv2/*.ttl    Carla.lv2/
 cp ../../bin/libcarla_utils.dll Carla.lv2/
 cp -r Carla/resources           Carla.lv2/
 
 mkdir Carla.vst
+cp Carla/*.exe                  Carla.vst/
+cp Carla/carla-bridge-lv2.dll   Carla.vst/
 cp ../../bin/CarlaVst*.dll      Carla.vst/
-cp ../../bin/carla.lv2/*.exe    Carla.vst/
 cp ../../bin/libcarla_utils.dll Carla.vst/
 cp -r Carla/resources           Carla.vst/
 
-rm Carla.lv2/carla-discovery-native.exe
-rm Carla.vst/carla-discovery-native.exe
+rm Carla.lv2/Carla.exe
+rm Carla.vst/Carla.exe
 
 if [ x"${CARLA_DEV}" != x"" ]; then
     exit 0
@@ -181,7 +183,8 @@ fi
 rm -rf ${PKG_FOLDER}
 mkdir ${PKG_FOLDER}
 mkdir ${PKG_FOLDER}/vcredist
-cp -r Carla.exe Carla.lv2 README.txt ${PKG_FOLDER}
+cp -r Carla.exe Carla.lv2 Carla.vst README.txt ${PKG_FOLDER}
+unix2dos ${PKG_FOLDER}/README.txt
 cp ~/.cache/winetricks/vcrun2010/vcredist_x${VCARCH}.exe ${PKG_FOLDER}/vcredist
 zip -r -9 ${PKG_FOLDER}.zip ${PKG_FOLDER}
 
