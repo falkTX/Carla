@@ -842,7 +842,7 @@ protected:
                 carla_zeroChars(tmpBuf, STR_MAX);
 
                 {
-                    const ScopedLocale csl;
+                    const CarlaScopedLocale csl;
                     std::sprintf(tmpBuf, "%f\n", newSampleRate);
                 }
 
@@ -943,7 +943,7 @@ protected:
         carla_zeroChars(tmpBuf, STR_MAX);
 
         const CarlaMutexLocker cml(fUiServer.getPipeLock());
-        const ScopedLocale csl;
+        const CarlaScopedLocale csl;
 
         const uint pluginId(plugin->getId());
 
@@ -1191,7 +1191,7 @@ protected:
         if (! fUiServer.writeMessage(tmpBuf))
             return;
         {
-            const ScopedLocale csl;
+            const CarlaScopedLocale csl;
             std::sprintf(tmpBuf, "%f\n", static_cast<double>(value3));
         }
         if (! fUiServer.writeMessage(tmpBuf))
@@ -1253,7 +1253,7 @@ protected:
         if (! fUiServer.writeAndFixMessage("sample-rate"))
             return;
         {
-            const ScopedLocale csl;
+            const CarlaScopedLocale csl;
             std::sprintf(tmpBuf, "%f\n", pData->sampleRate);
         }
         if (! fUiServer.writeMessage(tmpBuf))
@@ -1807,7 +1807,7 @@ protected:
         carla_zeroChars(tmpBuf, STR_MAX);
 
         const CarlaMutexLocker cml(fUiServer.getPipeLock());
-        const ScopedLocale csl;
+        const CarlaScopedLocale csl;
         const EngineTimeInfo& timeInfo(pData->timeInfo);
 
         // send transport

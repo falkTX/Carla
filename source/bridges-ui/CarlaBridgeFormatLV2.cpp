@@ -1213,7 +1213,10 @@ int main(int argc, const char* argv[])
 
     // try to get sampleRate value
     if (const char* const sampleRateStr = std::getenv("CARLA_SAMPLE_RATE"))
+    {
+        const CarlaScopedLocale csl;
         gInitialSampleRate = std::atof(sampleRateStr);
+    }
 
     // Init LV2 client
     CarlaLv2Client client;

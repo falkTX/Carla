@@ -358,20 +358,5 @@ private:
 };
 
 // -----------------------------------------------------------------------
-// ScopedLocale class
-
-class ScopedLocale {
-public:
-    ScopedLocale() noexcept;
-    ~ScopedLocale() noexcept;
-
-private:
-    const char* const fLocale;
-
-    CARLA_DECLARE_NON_COPY_CLASS(ScopedLocale)
-    CARLA_PREVENT_HEAP_ALLOCATION
-};
-
-// -----------------------------------------------------------------------
 
 #endif // CARLA_PIPE_UTILS_HPP_INCLUDED

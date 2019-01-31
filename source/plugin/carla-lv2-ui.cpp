@@ -21,6 +21,7 @@
 
 #include "CarlaLv2Utils.hpp"
 #include "CarlaPipeUtils.hpp"
+#include "CarlaScopedLocale.hpp"
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -137,7 +138,7 @@ public:
             const float* const valuePtr = (const float*)buffer;
 
             {
-                const ScopedLocale csl;
+                const CarlaScopedLocale csl;
                 std::snprintf(msg, 127, "control %u %f", portIndex, static_cast<double>(*valuePtr));
             }
 
