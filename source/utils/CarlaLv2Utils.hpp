@@ -239,7 +239,6 @@ public:
     Lilv::Node ui_x11;
     Lilv::Node ui_external;
     Lilv::Node ui_externalOld;
-    Lilv::Node ui_externalOld2;
 
     // Misc
     Lilv::Node atom_bufferType;
@@ -376,7 +375,6 @@ public:
           ui_x11             (new_uri(LV2_UI__X11UI)),
           ui_external        (new_uri(LV2_EXTERNAL_UI__Widget)),
           ui_externalOld     (new_uri(LV2_EXTERNAL_UI_DEPRECATED_URI)),
-          ui_externalOld2    (new_uri("http://nedko.arnaudov.name/lv2/external_ui/")),
 
           atom_bufferType    (new_uri(LV2_ATOM__bufferType)),
           atom_sequence      (new_uri(LV2_ATOM__Sequence)),
@@ -2627,9 +2625,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 // ----------------------------------------------------------------------------------------------------
                 // Set UI Type
 
-                /**/ if (lilvUI.is_a(lv2World.ui))
-                    rdfUI->Type = LV2_UI_NONE;
-                else if (lilvUI.is_a(lv2World.ui_gtk2))
+                /**/ if (lilvUI.is_a(lv2World.ui_gtk2))
                     rdfUI->Type = LV2_UI_GTK2;
                 else if (lilvUI.is_a(lv2World.ui_gtk3))
                     rdfUI->Type = LV2_UI_GTK3;
@@ -2647,8 +2643,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                     rdfUI->Type = LV2_UI_EXTERNAL;
                 else if (lilvUI.is_a(lv2World.ui_externalOld))
                     rdfUI->Type = LV2_UI_OLD_EXTERNAL;
-                else if (lilvUI.is_a(lv2World.ui_externalOld2))
-                    pass();
+                else if (lilvUI.is_a(lv2World.ui))
+                    rdfUI->Type = LV2_UI_NONE;
                 else
                     carla_stderr("lv2_rdf_new(\"%s\") - UI '%s' is of unknown type", uri, lilvUI.get_uri().as_uri());
 
