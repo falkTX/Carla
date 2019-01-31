@@ -306,7 +306,6 @@ protected:
             const uint32_t bar  = static_cast<uint32_t>(std::floor(fullBeats/beatsPerBar));
 
             const CarlaMutexLocker cml(getPipeLock());
-            const ScopedLocale csl;
 
             if (! writeAndFixMessage("transport"))
                 return;
@@ -317,10 +316,13 @@ protected:
             if (! writeMessage(strBuf))
                 return;
 
-            std::sprintf(strBuf, "%f:%f:%f\n",
-                         static_cast<double>(beatsPerMinute),
-                         static_cast<double>(beatsPerBar),
-                         static_cast<double>(beatType));
+            {
+                const CarlaScopedLocale csl;
+                std::sprintf(strBuf, "%f:%f:%f\n",
+                             static_cast<double>(beatsPerMinute),
+                             static_cast<double>(beatsPerBar),
+                             static_cast<double>(beatType));
+            }
             if (! writeMessage(strBuf))
                 return;
 

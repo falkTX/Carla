@@ -31,7 +31,6 @@
 # include "lv2/lv2plug.in/ns/ext/atom/util.h"
 #endif
 
-#include <clocale>
 #include <fcntl.h>
 
 #include "water/misc/Time.h"
@@ -827,7 +826,10 @@ bool CarlaPipeCommon::readNextLineAsFloat(float& value) const noexcept
 
     if (const char* const msg = _readlineblock())
     {
-        value = static_cast<float>(std::atof(msg));
+        {
+            const CarlaScopedLocale csl;
+            value = static_cast<float>(std::atof(msg));
+        }
         delete[] msg;
         return true;
     }
@@ -841,7 +843,10 @@ bool CarlaPipeCommon::readNextLineAsDouble(double& value) const noexcept
 
     if (const char* const msg = _readlineblock())
     {
-        value = std::atof(msg);
+        {
+            const CarlaScopedLocale csl;
+            value = std::atof(msg);
+        }
         delete[] msg;
         return true;
     }
@@ -983,7 +988,7 @@ void CarlaPipeCommon::writeControlMessage(const uint32_t index, const float valu
         return;
 
     {
-        const ScopedLocale csl;
+        const CarlaScopedLocale csl;
         std::snprintf(tmpBuf, 0xff, "%f\n", static_cast<double>(value));
     }
 
@@ -1890,22 +1895,6 @@ ScopedEnvVar::~ScopedEnvVar() noexcept
     }
 }
 
-// -----------------------------------------------------------------------
-
-ScopedLocale::ScopedLocale() noexcept
-    : fLocale(carla_strdup_safe(::setlocale(LC_NUMERIC, nullptr)))
-{
-    ::setlocale(LC_NUMERIC, "C");
-}
-
-ScopedLocale::~ScopedLocale() noexcept
-{
-    if (fLocale != nullptr)
-    {
-        ::setlocale(LC_NUMERIC, fLocale);
-        delete[] fLocale;
-    }
-}
 
 // -----------------------------------------------------------------------
 

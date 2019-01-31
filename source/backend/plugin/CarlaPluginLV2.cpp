@@ -462,15 +462,18 @@ public:
 
     bool startPipeServer(const int size) noexcept
     {
+        char sampleRateStr[32];
+        {
+            const CarlaScopedLocale csl;
+            std::snprintf(sampleRateStr, 31, "%f", kEngine->getSampleRate());
+        }
+        sampleRateStr[31] = '\0';
+
         const ScopedEngineEnvironmentLocker _seel(kEngine);
         const ScopedEnvVar _sev1("LV2_PATH", kEngine->getOptions().pathLV2);
 #ifdef CARLA_OS_LINUX
         const ScopedEnvVar _sev2("LD_PRELOAD", nullptr);
 #endif
-
-        char sampleRateStr[32];
-        carla_zeroChars(sampleRateStr, 32);
-        std::snprintf(sampleRateStr, 31, "%f", kEngine->getSampleRate());
         carla_setenv("CARLA_SAMPLE_RATE", sampleRateStr);
 
         return CarlaPipeServer::startPipeServer(fFilename, fPluginURI, fUiURI, size);
@@ -1394,7 +1397,7 @@ public:
                     tmpBuf[0xff] = '\0';
 
                     const CarlaMutexLocker cml(fPipeServer.getPipeLock());
-                    const ScopedLocale csl;
+                    const CarlaScopedLocale csl;
 
                     // write URI mappings
                     uint32_t u = 0;

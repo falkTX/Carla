@@ -20,6 +20,7 @@
 
 #include "CarlaMathUtils.hpp"
 #include "CarlaJuceUtils.hpp"
+#include "CarlaScopedLocale.hpp"
 
 #include <algorithm>
 
@@ -176,7 +177,12 @@ public:
           fBufferAlloc(false)
     {
         char strBuf[0xff+1];
-        std::snprintf(strBuf, 0xff, "%f", static_cast<double>(value));
+
+        {
+            const CarlaScopedLocale csl;
+            std::snprintf(strBuf, 0xff, "%f", static_cast<double>(value));
+        }
+
         strBuf[0xff] = '\0';
 
         _dup(strBuf);
@@ -191,7 +197,12 @@ public:
           fBufferAlloc(false)
     {
         char strBuf[0xff+1];
-        std::snprintf(strBuf, 0xff, "%f", value);
+
+        {
+            const CarlaScopedLocale csl;
+            std::snprintf(strBuf, 0xff, "%f", value);
+        }
+
         strBuf[0xff] = '\0';
 
         _dup(strBuf);

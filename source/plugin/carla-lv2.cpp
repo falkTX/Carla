@@ -419,7 +419,7 @@ public:
                 float value;
 
                 {
-                    const ScopedLocale csl;
+                    const CarlaScopedLocale csl;
                     value = static_cast<float>(std::atof(msgSplit+1));
                 }
 
