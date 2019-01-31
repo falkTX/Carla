@@ -148,6 +148,14 @@ static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2Worl
 
         suri = lilvPlugin.get_uri().as_uri();
 
+#if 0 // def HAVE_FLUIDSYNTH
+        // If we have fluidsynth support built-in, loading these plugins will lead to issues
+        if (suri == "urn:ardour:a-fluidsynth")
+            return &info;
+        if (suri == "http://calf.sourceforge.net/plugins/Fluidsynth")
+            return &info;
+#endif
+
         if (LilvNode* const nameNode = lilv_plugin_get_name(lilvPlugin.me))
         {
             if (const char* const name = lilv_node_as_string(nameNode))
