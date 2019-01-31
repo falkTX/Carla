@@ -333,7 +333,7 @@ public:
         dispatcher(effGetParamDisplay, static_cast<int32_t>(parameterId), 0, strBuf);
 
         if (strBuf[0] == '\0')
-            std::snprintf(strBuf, STR_MAX, "%f", getParameterValue(parameterId));
+            std::snprintf(strBuf, STR_MAX, "%f", static_cast<double>(getParameterValue(parameterId)));
     }
 
     void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
@@ -1165,8 +1165,8 @@ public:
             CARLA_SAFE_ASSERT_INT(timeInfo.bbt.bar > 0, timeInfo.bbt.bar);
             CARLA_SAFE_ASSERT_INT(timeInfo.bbt.beat > 0, timeInfo.bbt.beat);
 
-            const double ppqBar  = double(timeInfo.bbt.bar - 1) * timeInfo.bbt.beatsPerBar;
-            const double ppqBeat = double(timeInfo.bbt.beat - 1);
+            const double ppqBar  = static_cast<double>(timeInfo.bbt.beatsPerBar) * (timeInfo.bbt.bar - 1);
+            const double ppqBeat = static_cast<double>(timeInfo.bbt.beat - 1.0);
             const double ppqTick = timeInfo.bbt.tick / timeInfo.bbt.ticksPerBeat;
 
             // PPQ Pos

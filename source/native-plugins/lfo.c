@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -240,8 +240,8 @@ static void lfo_process(NativePluginHandle handle, float** inBuffer, float** out
         break;
     }
 
-    value *= handlePtr->multiplier;
-    value += handlePtr->baseStart;
+    value *= (double)handlePtr->multiplier;
+    value += (double)handlePtr->baseStart;
 
     if (value <= 0.0)
         handlePtr->value = 0.0f;

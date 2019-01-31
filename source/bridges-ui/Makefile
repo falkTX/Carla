@@ -54,6 +54,13 @@ LINK_GTK3_FLAGS += -lX11
 LINK_QT4_FLAGS  += -lX11
 endif
 
+ifeq ($(TESTBUILD),true)
+BUILD_GTK2_FLAGS += -isystem /usr/include/glib-2.0
+BUILD_GTK3_FLAGS += -isystem /usr/include/glib-2.0
+BUILD_QT4_FLAGS  += -isystem /usr/include/qt4
+BUILD_QT5_FLAGS  += -isystem /usr/include/x86_64-linux-gnu/qt5
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifneq ($(MACOS_OR_WIN32),true)

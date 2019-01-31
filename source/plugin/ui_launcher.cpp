@@ -19,6 +19,7 @@
 #include "dgl/ImageWidgets.hpp"
 #include "CarlaNative.h"
 #include "ui_launcher_res.hpp"
+#include "CarlaDefines.h"
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -63,6 +64,8 @@ private:
     ImageButton startButton;
     const NativePluginDescriptor* const descriptor;
     const NativePluginHandle handle;
+
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaButtonWidget);
 };
 
 END_NAMESPACE_DGL
