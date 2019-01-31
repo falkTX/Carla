@@ -114,6 +114,9 @@ enum CarlaLv2URIDs {
     kUridLogNote,
     kUridLogTrace,
     kUridLogWarning,
+    kUridPatchSet,
+    kUridPatchPoperty,
+    kUridPatchValue,
     // time base type
     kUridTimePosition,
      // time values
@@ -527,7 +530,7 @@ public:
           fNeedsUiClose(false),
           fLatencyIndex(-1),
           fStrictBounds(-1),
-          fAtomBufferUiIn(),
+          fAtomBufferEvIn(),
           fAtomBufferUiOut(),
           fAtomBufferWorkerIn(),
           fAtomBufferWorkerResp(),
@@ -542,6 +545,7 @@ public:
           fFirstActive(true),
           fLastStateChunk(nullptr),
           fLastTimeInfo(),
+          fFilePathURI(),
           fExt(),
           fUI()
     {
@@ -1001,23 +1005,35 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
-        // TODO param support
+        LV2_RDF_PortUnit* portUnit = nullptr;
 
-        const int32_t rindex(pData->param.data[parameterId].rindex);
+        int32_t rindex = pData->param.data[parameterId].rindex;
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
-            const LV2_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
+            portUnit = &fRdfDescriptor->Ports[rindex].Unit;
+        }
+        else
+        {
+            rindex -= fRdfDescriptor->PortCount;
 
-            if (LV2_HAVE_PORT_UNIT_SYMBOL(port->Unit.Hints) && port->Unit.Symbol != nullptr)
+            if (rindex < static_cast<int32_t>(fRdfDescriptor->ParameterCount))
             {
-                std::strncpy(strBuf, port->Unit.Symbol, STR_MAX);
+                portUnit = &fRdfDescriptor->Parameters[rindex].Unit;
+            }
+        }
+
+        if (portUnit != nullptr)
+        {
+            if (LV2_HAVE_PORT_UNIT_SYMBOL(portUnit->Hints) && portUnit->Symbol != nullptr)
+            {
+                std::strncpy(strBuf, portUnit->Symbol, STR_MAX);
                 return;
             }
 
-            if (LV2_HAVE_PORT_UNIT_UNIT(port->Unit.Hints))
+            if (LV2_HAVE_PORT_UNIT_UNIT(portUnit->Hints))
             {
-                switch (port->Unit.Unit)
+                switch (portUnit->Unit)
                 {
                 case LV2_PORT_UNIT_BAR:
                     std::strncpy(strBuf, "bars", STR_MAX);
@@ -1180,9 +1196,50 @@ public:
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
         fParamBuffers[parameterId] = fixedValue;
 
-        if (parameterId >= fRdfDescriptor->PortCount)
+        if (pData->param.data[parameterId].rindex >= static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
-            // TODO
+            const uint32_t rparamId = pData->param.data[parameterId].rindex - fRdfDescriptor->PortCount;
+            CARLA_SAFE_ASSERT_UINT2_RETURN(rparamId < fRdfDescriptor->ParameterCount,
+                                           rparamId, fRdfDescriptor->PortCount,);
+
+            uint8_t atomBuf[256];
+            lv2_atom_forge_set_buffer(&fAtomForge, atomBuf, sizeof(atomBuf));
+
+            LV2_Atom_Forge_Frame forgeFrame;
+            lv2_atom_forge_object(&fAtomForge, &forgeFrame, kUridNull, kUridPatchSet);
+
+            lv2_atom_forge_key(&fAtomForge, kUridPatchPoperty);
+            lv2_atom_forge_urid(&fAtomForge, getCustomURID(fRdfDescriptor->Parameters[rparamId].URI));
+            lv2_atom_forge_key(&fAtomForge, kUridPatchValue);
+
+            switch (fRdfDescriptor->Parameters[rparamId].Type)
+            {
+            case LV2_PARAMETER_BOOL:
+                lv2_atom_forge_bool(&fAtomForge, fixedValue > 0.5f);
+                break;
+            case LV2_PARAMETER_INT:
+                lv2_atom_forge_int(&fAtomForge, fixedValue + 0.5f);
+                break;
+            case LV2_PARAMETER_LONG:
+                lv2_atom_forge_long(&fAtomForge, fixedValue + 0.5f);
+                break;
+            case LV2_PARAMETER_FLOAT:
+                lv2_atom_forge_float(&fAtomForge, fixedValue);
+                break;
+            case LV2_PARAMETER_DOUBLE:
+                lv2_atom_forge_double(&fAtomForge, fixedValue);
+                break;
+            default:
+                carla_stderr2("setParameterValue called for invalid parameter, expect issues!");
+                break;
+            }
+
+            lv2_atom_forge_pop(&fAtomForge, &forgeFrame);
+
+            LV2_Atom* const atom((LV2_Atom*)atomBuf);
+            CARLA_SAFE_ASSERT(atom->size < sizeof(atomBuf));
+
+            fAtomBufferEvIn.put(atom, fEventsIn.ctrlIndex);
         }
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
@@ -1316,7 +1373,39 @@ public:
     {
         if (fUI.type == UI::TYPE_NULL)
         {
-            CARLA_SAFE_ASSERT(!yesNo);
+            if (fFilePathURI.isNotEmpty())
+            {
+                const char* const path = pData->engine->runFileCallback(FILE_CALLBACK_OPEN, false, "Open File", "");
+
+                if (path != nullptr && path[0] != '\0')
+                {
+                    carla_stdout("LV2 file path to send: '%s'", path);
+
+                    uint8_t atomBuf[4096];
+                    lv2_atom_forge_set_buffer(&fAtomForge, atomBuf, sizeof(atomBuf));
+
+                    LV2_Atom_Forge_Frame forgeFrame;
+                    lv2_atom_forge_object(&fAtomForge, &forgeFrame, kUridNull, kUridPatchSet);
+
+                    lv2_atom_forge_key(&fAtomForge, kUridPatchPoperty);
+                    lv2_atom_forge_urid(&fAtomForge, getCustomURID(fFilePathURI));
+
+                    lv2_atom_forge_key(&fAtomForge, kUridPatchValue);
+                    lv2_atom_forge_path(&fAtomForge, path, std::strlen(path));
+
+                    lv2_atom_forge_pop(&fAtomForge, &forgeFrame);
+
+                    LV2_Atom* const atom((LV2_Atom*)atomBuf);
+                    CARLA_SAFE_ASSERT(atom->size < sizeof(atomBuf));
+
+                    fAtomBufferEvIn.put(atom, fEventsIn.ctrlIndex);
+                }
+            }
+            else
+            {
+                CARLA_SAFE_ASSERT(!yesNo);
+            }
+            pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
             return;
         }
 
@@ -1443,7 +1532,7 @@ public:
             if (fUI.handle == nullptr)
             {
 #ifndef LV2_UIS_ONLY_BRIDGES
-                if (fUI.type == UI::TYPE_EMBED && fUI.window == nullptr)
+                if (fUI.type == UI::TYPE_EMBED && fUI.rdfDescriptor->Type != LV2_UI_NONE && fUI.window == nullptr)
                 {
                     const char* msg = nullptr;
 
@@ -1757,16 +1846,20 @@ public:
 
         for (uint32_t i=0; i < fRdfDescriptor->ParameterCount; ++i)
         {
-            const LV2_RDF_Parameter& rdfParam(fRdfDescriptor->Parameters[i]);
-
-            if (rdfParam.Range == nullptr)
-                continue;
-            if (std::strcmp(rdfParam.Range, LV2_ATOM__Bool)  != 0 &&
-                std::strcmp(rdfParam.Range, LV2_ATOM__Int)   != 0 &&
-                std::strcmp(rdfParam.Range, LV2_ATOM__Float) != 0)
-                continue;
-
-            params += 1;
+            switch (fRdfDescriptor->Parameters[i].Type)
+            {
+            case LV2_PARAMETER_BOOL:
+            case LV2_PARAMETER_INT:
+            // case LV2_PARAMETER_LONG:
+            case LV2_PARAMETER_FLOAT:
+            case LV2_PARAMETER_DOUBLE:
+                params += 1;
+                break;
+            case LV2_PARAMETER_PATH:
+                if (fFilePathURI.isEmpty())
+                    fFilePathURI = fRdfDescriptor->Parameters[i].URI;
+                break;
+            }
         }
 
         if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && aIns <= 1 && aOuts <= 1 && fExt.state == nullptr && fExt.worker == nullptr)
@@ -2413,7 +2506,20 @@ public:
         for (uint32_t i=0; i < fRdfDescriptor->ParameterCount; ++i)
         {
             const LV2_RDF_Parameter& rdfParam(fRdfDescriptor->Parameters[i]);
-            const LV2_RDF_PortPoints portPoints(fRdfDescriptor->Parameters[i].Points);
+
+            switch (rdfParam.Type)
+            {
+            case LV2_PARAMETER_BOOL:
+            case LV2_PARAMETER_INT:
+            // case LV2_PARAMETER_LONG:
+            case LV2_PARAMETER_FLOAT:
+            case LV2_PARAMETER_DOUBLE:
+                break;
+            default:
+                continue;
+            }
+
+            const LV2_RDF_PortPoints& portPoints(rdfParam.Points);
 
             const uint32_t j = iCtrl++;
             pData->param.data[j].index  = static_cast<int32_t>(j);
@@ -2435,7 +2541,7 @@ public:
 
             if (min >= max)
             {
-                carla_stderr2("WARNING - Broken plugin parameter '%s': min >= max", fRdfDescriptor->Parameters[i].Label);
+                carla_stderr2("WARNING - Broken plugin parameter '%s': min >= max", rdfParam.Label);
                 max = min + 0.1f;
             }
 
@@ -2458,26 +2564,29 @@ public:
             else if (def > max)
                 def = max;
 
-            if (std::strcmp(rdfParam.Range, LV2_ATOM__Bool) == 0)
+            switch (rdfParam.Type)
             {
+            case LV2_PARAMETER_BOOL:
                 step = max - min;
                 stepSmall = step;
                 stepLarge = step;
                 pData->param.data[j].hints |= PARAMETER_IS_BOOLEAN;
-            }
-            else if (std::strcmp(rdfParam.Range, LV2_ATOM__Int) == 0)
-            {
+                break;
+
+            case LV2_PARAMETER_INT:
+            case LV2_PARAMETER_LONG:
                 step = 1.0f;
                 stepSmall = 1.0f;
                 stepLarge = 10.0f;
                 pData->param.data[j].hints |= PARAMETER_IS_INTEGER;
-            }
-            else
-            {
-                float range = max - min;
+                break;
+
+            default:
+                const float range = max - min;
                 step = range/100.0f;
                 stepSmall = range/1000.0f;
                 stepLarge = range/10.0f;
+                break;
             }
 
             if (rdfParam.Input)
@@ -2544,8 +2653,9 @@ public:
             fAtomBufferWorkerInTmpData = new uint8_t[fAtomBufferWorkerIn.getSize()];
         }
 
-        if (fUI.type != UI::TYPE_NULL && fEventsIn.count > 0 && (fEventsIn.data[0].type & CARLA_EVENT_DATA_ATOM) != 0)
-            fAtomBufferUiIn.createBuffer(eventBufferSize);
+        if (fRdfDescriptor->ParameterCount > 0 ||
+            (fUI.type != UI::TYPE_NULL && fEventsIn.count > 0 && (fEventsIn.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
+            fAtomBufferEvIn.createBuffer(eventBufferSize);
 
         if (fUI.type != UI::TYPE_NULL && fEventsOut.count > 0 && (fEventsOut.data[0].type & CARLA_EVENT_DATA_ATOM) != 0)
         {
@@ -2570,7 +2680,7 @@ public:
         if (isRealtimeSafe())
             pData->hints |= PLUGIN_IS_RTSAFE;
 
-        if (fUI.type != UI::TYPE_NULL)
+        if (fUI.type != UI::TYPE_NULL || fFilePathURI.isNotEmpty())
         {
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
 
@@ -3132,14 +3242,14 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Message Input
 
-            if (fAtomBufferUiIn.tryLock())
+            if (fAtomBufferEvIn.tryLock())
             {
-                if (fAtomBufferUiIn.isDataAvailableForReading())
+                if (fAtomBufferEvIn.isDataAvailableForReading())
                 {
                     const LV2_Atom* atom;
                     uint32_t j, portIndex;
 
-                    for (; fAtomBufferUiIn.get(atom, portIndex);)
+                    for (; fAtomBufferEvIn.get(atom, portIndex);)
                     {
                         j = (portIndex < fEventsIn.count) ? portIndex : fEventsIn.ctrlIndex;
 
@@ -3151,7 +3261,7 @@ public:
                     }
                 }
 
-                fAtomBufferUiIn.unlock();
+                fAtomBufferEvIn.unlock();
             }
 
             if (fExt.worker != nullptr && fAtomBufferWorkerIn.tryLock())
@@ -3628,9 +3738,8 @@ public:
                             evData.port->writeMidiEvent(currentFrame, static_cast<uint8_t>(ev->body.size), data);
                         }
                     }
-                    else //if (ev->body.type == kUridAtomBLANK)
+                    else if (fAtomBufferUiOutTmpData != nullptr)
                     {
-                        //carla_stdout("Got out event, %s", carla_lv2_urid_unmap(this, ev->body.type));
                         fAtomBufferUiOut.put(&ev->body, evData.rindex);
                     }
 
@@ -4226,7 +4335,7 @@ public:
 
     void uiParameterChange(const uint32_t index, const float value) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL || fFilePathURI.isNotEmpty(),);
         CARLA_SAFE_ASSERT_RETURN(index < pData->param.count,);
 
         if (fUI.type == UI::TYPE_BRIDGE)
@@ -4246,7 +4355,7 @@ public:
 
     void uiMidiProgramChange(const uint32_t index) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL || fFilePathURI.isNotEmpty(),);
         CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count,);
 
         if (fUI.type == UI::TYPE_BRIDGE)
@@ -4263,7 +4372,7 @@ public:
 
     void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL || fFilePathURI.isNotEmpty(),);
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
         CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
         CARLA_SAFE_ASSERT_RETURN(velo > 0 && velo < MAX_MIDI_VALUE,);
@@ -4293,7 +4402,7 @@ public:
 
     void uiNoteOff(const uint8_t channel, const uint8_t note) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL || fFilePathURI.isNotEmpty(),);
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
         CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
 
@@ -4817,7 +4926,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fExt.worker != nullptr && fExt.worker->work != nullptr, LV2_WORKER_ERR_UNKNOWN);
         CARLA_SAFE_ASSERT_RETURN(fEventsIn.ctrl != nullptr, LV2_WORKER_ERR_UNKNOWN);
-        carla_stdout("CarlaPluginLV2::handleWorkerSchedule(%i, %p)", size, data);
+        carla_debug("CarlaPluginLV2::handleWorkerSchedule(%i, %p)", size, data);
 
         if (pData->engine->isOffline())
         {
@@ -4835,7 +4944,7 @@ public:
     LV2_Worker_Status handleWorkerRespond(const uint32_t size, const void* const data)
     {
         CARLA_SAFE_ASSERT_RETURN(fExt.worker != nullptr && fExt.worker->work_response != nullptr, LV2_WORKER_ERR_UNKNOWN);
-        carla_stdout("CarlaPluginLV2::handleWorkerRespond(%i, %p)", size, data);
+        carla_debug("CarlaPluginLV2::handleWorkerRespond(%i, %p)", size, data);
 
         LV2_Atom atom;
         atom.size = size;
@@ -5003,7 +5112,7 @@ public:
                 index = fEventsIn.ctrlIndex;
             }
 
-            fAtomBufferUiIn.put(atom, index);
+            fAtomBufferEvIn.put(atom, index);
         } break;
 
         default:
@@ -5759,6 +5868,10 @@ public:
 
         switch (uiType)
         {
+        case LV2_UI_NONE:
+            carla_stdout("Will use LV2 Show Interface for '%s'", pData->name);
+            fUI.type = UI::TYPE_EMBED;
+            break;
         case LV2_UI_QT4:
             carla_stdout("Will use LV2 Qt4 UI for '%s', NOT!", pData->name);
             fUI.type = UI::TYPE_EMBED;
@@ -5922,7 +6035,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(atom != nullptr,);
         carla_debug("CarlaPluginLV2::handleTransferAtom(%i, %p)", portIndex, atom);
 
-        fAtomBufferUiIn.put(atom, portIndex);
+        fAtomBufferEvIn.put(atom, portIndex);
     }
 
     void handleUridMap(const LV2_URID urid, const char* const uri)
@@ -5970,7 +6083,7 @@ private:
     int32_t fLatencyIndex; // -1 if invalid
     int     fStrictBounds; // -1 unsupported, 0 optional, 1 required
 
-    Lv2AtomRingBuffer fAtomBufferUiIn;
+    Lv2AtomRingBuffer fAtomBufferEvIn;
     Lv2AtomRingBuffer fAtomBufferUiOut;
     Lv2AtomRingBuffer fAtomBufferWorkerIn;
     Lv2AtomRingBuffer fAtomBufferWorkerResp;
@@ -5988,6 +6101,9 @@ private:
     bool fFirstActive; // first process() call after activate()
     void* fLastStateChunk;
     EngineTimeInfo fLastTimeInfo;
+
+    // if plugin provides path parameter, use it as fake "gui"
+    CarlaString fFilePathURI;
 
     struct Extensions {
         const LV2_Options_Interface* options;
@@ -6307,6 +6423,14 @@ private:
         if (std::strcmp(uri, LV2_LOG__Warning) == 0)
             return kUridLogWarning;
 
+        // Patch types
+        if (std::strcmp(uri, LV2_PATCH__Set) == 0)
+            return kUridPatchSet;
+        if (std::strcmp(uri, LV2_PATCH__property) == 0)
+            return kUridPatchPoperty;
+        if (std::strcmp(uri, LV2_PATCH__value) == 0)
+            return kUridPatchValue;
+
         // Time types
         if (std::strcmp(uri, LV2_TIME__Position) == 0)
             return kUridTimePosition;
@@ -6426,6 +6550,14 @@ private:
             return LV2_LOG__Trace;
         case kUridLogWarning:
             return LV2_LOG__Warning;
+
+        // Patch types
+        case kUridPatchSet:
+            return LV2_PATCH__Set;
+        case kUridPatchPoperty:
+            return LV2_PATCH__property;
+        case kUridPatchValue:
+            return LV2_PATCH__value;
 
         // Time types
         case kUridTimePosition:
