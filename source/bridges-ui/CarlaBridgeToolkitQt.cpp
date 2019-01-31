@@ -1,6 +1,6 @@
 /*
  * Carla Bridge UI
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -85,7 +85,7 @@ public:
 
         fApp = new QApplication(qargc, qargv);
 
-        fWindow = new QMainWindow(nullptr);
+        fWindow = new QMainWindow(nullptr, nullptr);
         fWindow->resize(30, 30);
         fWindow->hide();
 
@@ -259,7 +259,14 @@ private:
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 # include "CarlaBridgeToolkitQt5.moc"
 #else
+# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+# endif
 # include "CarlaBridgeToolkitQt4.moc"
+# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+#  pragma GCC diagnostic pop
+# endif
 #endif
 
 // -------------------------------------------------------------------------
@@ -275,13 +282,12 @@ CARLA_BRIDGE_UI_END_NAMESPACE
 
 // -------------------------------------------------------------------------
 
-// missing declaration
-int qInitResources();
-int qCleanupResources();
-
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 # include "resources.qt5.cpp"
 #else
+// missing declaration
+int qInitResources();
+int qCleanupResources();
 # include "resources.qt4.cpp"
 #endif
 

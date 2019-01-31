@@ -953,7 +953,7 @@ protected:
             if (! fUiServer.writeMessage(tmpBuf))
                 return;
 
-            std::sprintf(tmpBuf, "%f\n", plugin->getInternalParameterValue(i));
+            std::sprintf(tmpBuf, "%f\n", static_cast<double>(plugin->getInternalParameterValue(i)));
             if (! fUiServer.writeMessage(tmpBuf))
                 return;
 
@@ -993,7 +993,13 @@ protected:
             if (! fUiServer.writeMessage(tmpBuf))
                 return;
 
-            std::sprintf(tmpBuf, "%f:%f:%f:%f:%f:%f\n", paramRanges.def, paramRanges.min, paramRanges.max, paramRanges.step, paramRanges.stepSmall, paramRanges.stepLarge);
+            std::sprintf(tmpBuf, "%f:%f:%f:%f:%f:%f\n",
+                         static_cast<double>(paramRanges.def),
+                         static_cast<double>(paramRanges.min),
+                         static_cast<double>(paramRanges.max),
+                         static_cast<double>(paramRanges.step),
+                         static_cast<double>(paramRanges.stepSmall),
+                         static_cast<double>(paramRanges.stepLarge));
             if (! fUiServer.writeMessage(tmpBuf))
                 return;
 
@@ -1001,7 +1007,7 @@ protected:
             if (! fUiServer.writeMessage(tmpBuf))
                 return;
 
-            std::sprintf(tmpBuf, "%f\n", plugin->getParameterValue(i));
+            std::sprintf(tmpBuf, "%f\n", static_cast<double>(plugin->getParameterValue(i)));
             if (! fUiServer.writeMessage(tmpBuf))
                 return;
         }
@@ -1186,7 +1192,7 @@ protected:
             return;
         {
             const ScopedLocale csl;
-            std::sprintf(tmpBuf, "%f\n", value3);
+            std::sprintf(tmpBuf, "%f\n", static_cast<double>(value3));
         }
         if (! fUiServer.writeMessage(tmpBuf))
             return;
@@ -1844,7 +1850,10 @@ protected:
                 return;
 
             std::sprintf(tmpBuf, "%f:%f:%f:%f\n",
-                         plugData.peaks[0], plugData.peaks[1], plugData.peaks[2], plugData.peaks[3]);
+                         static_cast<double>(plugData.peaks[0]),
+                         static_cast<double>(plugData.peaks[1]),
+                         static_cast<double>(plugData.peaks[2]),
+                         static_cast<double>(plugData.peaks[3]));
             if (! fUiServer.writeMessage(tmpBuf))
                 return;
 
@@ -1859,7 +1868,7 @@ protected:
                 if (! fUiServer.writeMessage(tmpBuf))
                     return;
 
-                std::sprintf(tmpBuf, "%f\n", plugin->getParameterValue(j));
+                std::sprintf(tmpBuf, "%f\n", static_cast<double>(plugin->getParameterValue(j)));
                 if (! fUiServer.writeMessage(tmpBuf))
                     return;
 
@@ -2020,7 +2029,7 @@ public:
             handlePtr->bufferSizeChanged(static_cast<uint32_t>(value));
             return 0;
         case NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
-            CARLA_SAFE_ASSERT_RETURN(opt > 0.0, 0);
+            CARLA_SAFE_ASSERT_RETURN(opt > 0.0f, 0);
             handlePtr->sampleRateChanged(static_cast<double>(opt));
             return 0;
         case NATIVE_PLUGIN_OPCODE_OFFLINE_CHANGED:

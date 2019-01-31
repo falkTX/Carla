@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -401,7 +401,10 @@ void CarlaEngine::oscSend_control_set_peaks(const uint pluginId) const noexcept
     std::strcpy(targetPath, pData->oscData->path);
     std::strcat(targetPath, "/set_peaks");
     try_lo_send(pData->oscData->target, targetPath, "iffff", static_cast<int32_t>(pluginId),
-                epData.peaks[0], epData.peaks[1], epData.peaks[2], epData.peaks[3]);
+                static_cast<double>(epData.peaks[0]),
+                static_cast<double>(epData.peaks[1]),
+                static_cast<double>(epData.peaks[2]),
+                static_cast<double>(epData.peaks[3]));
 }
 
 void CarlaEngine::oscSend_control_exit() const noexcept

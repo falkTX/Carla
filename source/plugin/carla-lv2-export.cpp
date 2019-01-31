@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -67,14 +67,14 @@ static const String nameToSymbol(const String& name, const uint32_t portIndex)
     }
     else
     {
-        if (std::isdigit(trimmedName[0]))
+        if (std::isdigit(static_cast<int>(trimmedName[0])))
             symbol += "_";
 
         for (int i=0; i < trimmedName.length(); ++i)
         {
             const water_uchar c = trimmedName[i];
 
-            if (std::isalpha(c) || std::isdigit(c))
+            if (std::isalpha(static_cast<int>(c)) || std::isdigit(static_cast<int>(c)))
                 symbol += c;
             else
                 symbol += "_";
@@ -562,10 +562,10 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
             text += "        lv2:name \"Port " + String(i+1) + "\" ;\n";
 
         if ((paramInfo->hints & NATIVE_PARAMETER_IS_OUTPUT) == 0)
-            text += "        lv2:default " + String::formatted("%f", paramInfo->ranges.def) + " ;\n";
+            text += "        lv2:default " + String::formatted("%f", static_cast<double>(paramInfo->ranges.def)) + " ;\n";
 
-        text += "        lv2:minimum " + String::formatted("%f", paramInfo->ranges.min) + " ;\n";
-        text += "        lv2:maximum " + String::formatted("%f", paramInfo->ranges.max) + " ;\n";
+        text += "        lv2:minimum " + String::formatted("%f", static_cast<double>(paramInfo->ranges.min)) + " ;\n";
+        text += "        lv2:maximum " + String::formatted("%f", static_cast<double>(paramInfo->ranges.max)) + " ;\n";
 
         if ((paramInfo->hints & NATIVE_PARAMETER_IS_AUTOMABLE) == 0)
             text += "        lv2:portProperty <" LV2_PORT_PROPS__expensive "> ;\n";
@@ -592,7 +592,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
                 text += "                       [ ";
 
             text += "rdfs:label \"" + String(scalePoint->label) + "\" ;\n";
-            text += "                         rdf:value  " + String::formatted("%f", scalePoint->value) + " ";
+            text += "                         rdf:value  " + String::formatted("%f", static_cast<double>(scalePoint->value)) + " ";
 
             if (j+1 == paramInfo->scalePointCount)
                 text += "] ;\n";
@@ -665,7 +665,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
                         presetText += "    lv2:port [\n";
 
                     presetText += "        lv2:symbol \"" + nameToSymbol(paramName, j) + "\" ;\n";
-                    presetText += "        pset:value " + String::formatted("%f", pluginDesc->get_parameter_value(pluginHandle, j)) + " ;\n";
+                    presetText += "        pset:value " + String::formatted("%f", static_cast<double>(pluginDesc->get_parameter_value(pluginHandle, j))) + " ;\n";
 
                     if (j+1 == paramCount)
                         presetText += "    ] ;\n\n";

@@ -15,12 +15,10 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include "CarlaHost.h"
 #include "CarlaUtils.h"
 
 #include "CarlaString.hpp"
-
-#include "rtaudio/RtAudio.h"
-#include "rtmidi/RtMidi.h"
 
 #ifdef HAVE_FLUIDSYNTH
 # include <fluidsynth.h>
@@ -29,6 +27,28 @@
 #ifdef USING_JUCE
 # include "AppConfig.h"
 # include "juce_core/juce_core.h"
+#else
+
+#if defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wconversion"
+# pragma clang diagnostic ignored "-Weffc++"
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wconversion"
+# pragma GCC diagnostic ignored "-Weffc++"
+# pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
+
+#include "rtaudio/RtAudio.h"
+#include "rtmidi/RtMidi.h"
+
+#if defined(__clang__)
+# pragma clang diagnostic pop
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
+
 #endif
 
 #include "water/files/File.h"

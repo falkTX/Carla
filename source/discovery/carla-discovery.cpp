@@ -441,11 +441,11 @@ static void do_dssi_check(lib_t& libHandle, const char* const filename, const bo
 
     while ((descriptor = descFn(i++)) != nullptr)
     {
-        const LADSPA_Descriptor* const ldescriptor(descriptor->LADSPA_Plugin);
+        const LADSPA_Descriptor* const ldescriptor = descriptor->LADSPA_Plugin;
 
         if (ldescriptor == nullptr)
         {
-            DISCOVERY_OUT("error", "Plugin '" << ldescriptor->Name << "' has no LADSPA interface");
+            DISCOVERY_OUT("error", "Plugin has no LADSPA interface");
             continue;
         }
         if (descriptor->DSSI_API_Version != DSSI_VERSION_MAJOR)
@@ -838,7 +838,8 @@ static intptr_t vstHostCanDo(const char* const feature)
 // Host-side callback
 static intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
 {
-    carla_debug("vstHostCallback(%p, %i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
+    carla_debug("vstHostCallback(%p, %i:%s, %i, " P_INTPTR ", %p, %f)",
+                effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, static_cast<double>(opt));
 
     static VstTimeInfo timeInfo;
     intptr_t ret = 0;
@@ -948,7 +949,8 @@ static intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t
         break;
 
     default:
-        carla_stdout("vstHostCallback(%p, %i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
+        carla_stdout("vstHostCallback(%p, %i:%s, %i, " P_INTPTR ", %p, %f)",
+                     effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, static_cast<double>(opt));
         break;
     }
 

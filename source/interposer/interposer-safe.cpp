@@ -1,6 +1,6 @@
 /*
  * Carla Interposer for unsafe backend functions
- * Copyright (C) 2014-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,6 +23,13 @@
 #include <spawn.h>
 
 #define PREVENTED_FUNC_MSG carla_stderr2("Carla prevented a plugin from calling '%s', bad plugin!", __FUNCTION__)
+
+// -----------------------------------------------------------------------
+// Gtk stuff
+
+CARLA_EXPORT void gtk_init(int*, char***);
+CARLA_EXPORT int gtk_init_check(int*, char***);
+CARLA_EXPORT int gtk_init_with_args(int*, char***, const char*, void*, const char*, void**);
 
 // -----------------------------------------------------------------------
 // Our custom functions

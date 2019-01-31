@@ -422,7 +422,8 @@ protected:
 
         default:
             carla_stdout("engineCallback(%i:%s, %u, %i, %i, %f, %s)",
-                         action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
+                         action, EngineCallbackOpcode2Str(action), pluginId, value1, value2,
+                         static_cast<double>(value3), valueStr);
             break;
         }
     }
