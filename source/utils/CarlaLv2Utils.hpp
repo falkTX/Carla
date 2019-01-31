@@ -2271,11 +2271,11 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 CARLA_SAFE_ASSERT_BREAK(numUsed < numParameters);
 
                 Lilv::Node patchWritableNode(patchWritableNodes.get(it));
-                LV2_RDF_Parameter* const rdfParam(&rdfDescriptor->Parameters[numUsed++]);
+                LV2_RDF_Parameter& rdfParam(rdfDescriptor->Parameters[numUsed++]);
 
                 CARLA_SAFE_ASSERT_CONTINUE(patchWritableNode.is_uri());
 
-                rdfParam->URI = carla_strdup(patchWritableNode.as_uri());
+                rdfParam.URI = carla_strdup(patchWritableNode.as_uri());
 
                 // ----------------------------------------------------------------------------------------------------
                 // Set Basics
@@ -2283,21 +2283,39 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 if (LilvNode* const rangeNode = lilv_world_get(lv2World.me, patchWritableNode,
                                                                lv2World.rdfs_range.me, nullptr))
                 {
-                    rdfParam->Range = carla_strdup(lilv_node_as_string(rangeNode));
+                    const char* const rangeURI = lilv_node_as_string(rangeNode);
+
+                    /**/ if (std::strcmp(rangeURI, LV2_ATOM__Bool) == 0)
+                        rdfParam.Type = LV2_PARAMETER_BOOL;
+                    else if (std::strcmp(rangeURI, LV2_ATOM__Int) == 0)
+                        rdfParam.Type = LV2_PARAMETER_INT;
+                    else if (std::strcmp(rangeURI, LV2_ATOM__Long) == 0)
+                        rdfParam.Type = LV2_PARAMETER_LONG;
+                    else if (std::strcmp(rangeURI, LV2_ATOM__Float) == 0)
+                        rdfParam.Type = LV2_PARAMETER_FLOAT;
+                    else if (std::strcmp(rangeURI, LV2_ATOM__Double) == 0)
+                        rdfParam.Type = LV2_PARAMETER_DOUBLE;
+                    else if (std::strcmp(rangeURI, LV2_ATOM__Path) == 0)
+                        rdfParam.Type = LV2_PARAMETER_PATH;
+                    else if (std::strcmp(rangeURI, LV2_ATOM__String) == 0)
+                        rdfParam.Type = LV2_PARAMETER_STRING;
+                    else
+                        carla_stderr("lv2_rdf_new(\"%s\") - got unknown parameter type '%s'", uri, rangeURI);
+
                     lilv_node_free(rangeNode);
                 }
 
                 if (LilvNode* const labelNode = lilv_world_get(lv2World.me, patchWritableNode,
                                                                lv2World.rdfs_label.me, nullptr))
                 {
-                    rdfParam->Label = carla_strdup(lilv_node_as_string(labelNode));
+                    rdfParam.Label = carla_strdup(lilv_node_as_string(labelNode));
                     lilv_node_free(labelNode);
                 }
 
                 if (LilvNode* const commentNode = lilv_world_get(lv2World.me, patchWritableNode,
                                                                  lv2World.rdfs_comment.me, nullptr))
                 {
-                    rdfParam->Comment = carla_strdup(lilv_node_as_string(commentNode));
+                    rdfParam.Comment = carla_strdup(lilv_node_as_string(commentNode));
                     lilv_node_free(commentNode);
                 }
 
@@ -2307,24 +2325,24 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 if (LilvNode* const defNode = lilv_world_get(lv2World.me, patchWritableNode,
                                                              lv2World.value_default.me, nullptr))
                 {
-                    rdfParam->Points.Hints  |= LV2_PORT_POINT_DEFAULT;
-                    rdfParam->Points.Default = lilv_node_as_float(defNode);
+                    rdfParam.Points.Hints  |= LV2_PORT_POINT_DEFAULT;
+                    rdfParam.Points.Default = lilv_node_as_float(defNode);
                     lilv_node_free(defNode);
                 }
 
                 if (LilvNode* const minNode = lilv_world_get(lv2World.me, patchWritableNode,
                                                              lv2World.value_minimum.me, nullptr))
                 {
-                    rdfParam->Points.Hints  |= LV2_PORT_POINT_MINIMUM;
-                    rdfParam->Points.Minimum = lilv_node_as_float(minNode);
+                    rdfParam.Points.Hints  |= LV2_PORT_POINT_MINIMUM;
+                    rdfParam.Points.Minimum = lilv_node_as_float(minNode);
                     lilv_node_free(minNode);
                 }
 
                 if (LilvNode* const maxNode = lilv_world_get(lv2World.me, patchWritableNode,
                                                              lv2World.value_maximum.me, nullptr))
                 {
-                    rdfParam->Points.Hints  |= LV2_PORT_POINT_MAXIMUM;
-                    rdfParam->Points.Maximum = lilv_node_as_float(maxNode);
+                    rdfParam.Points.Hints  |= LV2_PORT_POINT_MAXIMUM;
+                    rdfParam.Points.Maximum = lilv_node_as_float(maxNode);
                     lilv_node_free(maxNode);
                 }
 
@@ -2338,56 +2356,56 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                     {
                         if (const char* const unitUnit = lilv_node_as_uri(unitUnitNode))
                         {
-                            rdfParam->Unit.Hints |= LV2_PORT_UNIT_UNIT;
+                            rdfParam.Unit.Hints |= LV2_PORT_UNIT_UNIT;
 
                             /**/ if (std::strcmp(unitUnit, LV2_UNITS__bar) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_BAR;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_BAR;
                             else if (std::strcmp(unitUnit, LV2_UNITS__beat) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_BEAT;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_BEAT;
                             else if (std::strcmp(unitUnit, LV2_UNITS__bpm) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_BPM;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_BPM;
                             else if (std::strcmp(unitUnit, LV2_UNITS__cent) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_CENT;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_CENT;
                             else if (std::strcmp(unitUnit, LV2_UNITS__cm) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_CM;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_CM;
                             else if (std::strcmp(unitUnit, LV2_UNITS__coef) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_COEF;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_COEF;
                             else if (std::strcmp(unitUnit, LV2_UNITS__db) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_DB;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_DB;
                             else if (std::strcmp(unitUnit, LV2_UNITS__degree) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_DEGREE;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_DEGREE;
                             else if (std::strcmp(unitUnit, LV2_UNITS__frame) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_FRAME;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_FRAME;
                             else if (std::strcmp(unitUnit, LV2_UNITS__hz) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_HZ;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_HZ;
                             else if (std::strcmp(unitUnit, LV2_UNITS__inch) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_INCH;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_INCH;
                             else if (std::strcmp(unitUnit, LV2_UNITS__khz) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_KHZ;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_KHZ;
                             else if (std::strcmp(unitUnit, LV2_UNITS__km) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_KM;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_KM;
                             else if (std::strcmp(unitUnit, LV2_UNITS__m) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_M;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_M;
                             else if (std::strcmp(unitUnit, LV2_UNITS__mhz) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_MHZ;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_MHZ;
                             else if (std::strcmp(unitUnit, LV2_UNITS__midiNote) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_MIDINOTE;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_MIDINOTE;
                             else if (std::strcmp(unitUnit, LV2_UNITS__mile) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_MILE;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_MILE;
                             else if (std::strcmp(unitUnit, LV2_UNITS__min) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_MIN;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_MIN;
                             else if (std::strcmp(unitUnit, LV2_UNITS__mm) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_MM;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_MM;
                             else if (std::strcmp(unitUnit, LV2_UNITS__ms) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_MS;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_MS;
                             else if (std::strcmp(unitUnit, LV2_UNITS__oct) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_OCT;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_OCT;
                             else if (std::strcmp(unitUnit, LV2_UNITS__pc) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_PC;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_PC;
                             else if (std::strcmp(unitUnit, LV2_UNITS__s) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_S;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_S;
                             else if (std::strcmp(unitUnit, LV2_UNITS__semitone12TET) == 0)
-                                rdfParam->Unit.Unit = LV2_PORT_UNIT_SEMITONE;
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_SEMITONE;
                             else
                                 carla_stderr("lv2_rdf_new(\"%s\") - got unknown unit '%s'", uri, unitUnit);
                         }
@@ -2398,8 +2416,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                     {
                         if (const char* const unitName = lilv_node_as_string(unitNameNode))
                         {
-                            rdfParam->Unit.Hints |= LV2_PORT_UNIT_NAME;
-                            rdfParam->Unit.Name   = carla_strdup(unitName);
+                            rdfParam.Unit.Hints |= LV2_PORT_UNIT_NAME;
+                            rdfParam.Unit.Name   = carla_strdup(unitName);
                         }
                         lilv_node_free(unitNameNode);
                     }
@@ -2409,8 +2427,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                     {
                         if (const char* const unitRender = lilv_node_as_string(unitRenderNode))
                         {
-                            rdfParam->Unit.Hints |= LV2_PORT_UNIT_RENDER;
-                            rdfParam->Unit.Render = carla_strdup(unitRender);
+                            rdfParam.Unit.Hints |= LV2_PORT_UNIT_RENDER;
+                            rdfParam.Unit.Render = carla_strdup(unitRender);
                         }
                         lilv_node_free(unitRenderNode);
                     }
@@ -2420,8 +2438,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                     {
                         if (const char* const unitSymbol = lilv_node_as_string(unitSymbolNode))
                         {
-                            rdfParam->Unit.Hints |= LV2_PORT_UNIT_SYMBOL;
-                            rdfParam->Unit.Symbol = carla_strdup(unitSymbol);
+                            rdfParam.Unit.Hints |= LV2_PORT_UNIT_SYMBOL;
+                            rdfParam.Unit.Symbol = carla_strdup(unitSymbol);
                         }
                         lilv_node_free(unitSymbolNode);
                     }

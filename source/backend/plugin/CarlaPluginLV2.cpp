@@ -1211,25 +1211,33 @@ public:
             lv2_atom_forge_urid(&fAtomForge, getCustomURID(fRdfDescriptor->Parameters[rparamId].URI));
             lv2_atom_forge_key(&fAtomForge, kUridPatchValue);
 
-            if (std::strcmp(fRdfDescriptor->Parameters[rparamId].Range, LV2_ATOM__Bool) == 0)
+            switch (fRdfDescriptor->Parameters[rparamId].Type)
+            {
+            case LV2_PARAMETER_BOOL:
                 lv2_atom_forge_bool(&fAtomForge, fixedValue > 0.5f);
-            else if (std::strcmp(fRdfDescriptor->Parameters[rparamId].Range, LV2_ATOM__Int) == 0)
+                break;
+            case LV2_PARAMETER_INT:
                 lv2_atom_forge_int(&fAtomForge, fixedValue + 0.5f);
-            else if (std::strcmp(fRdfDescriptor->Parameters[rparamId].Range, LV2_ATOM__Long) == 0)
+                break;
+            case LV2_PARAMETER_LONG:
                 lv2_atom_forge_long(&fAtomForge, fixedValue + 0.5f);
-            else if (std::strcmp(fRdfDescriptor->Parameters[rparamId].Range, LV2_ATOM__Float) == 0)
+                break;
+            case LV2_PARAMETER_FLOAT:
                 lv2_atom_forge_float(&fAtomForge, fixedValue);
-            else if (std::strcmp(fRdfDescriptor->Parameters[rparamId].Range, LV2_ATOM__Double) == 0)
+                break;
+            case LV2_PARAMETER_DOUBLE:
                 lv2_atom_forge_double(&fAtomForge, fixedValue);
-            else
-                return;
+                break;
+            default:
+                carla_stderr2("setParameterValue called for invalid parameter, expect issues!");
+                break;
+            }
 
             lv2_atom_forge_pop(&fAtomForge, &forgeFrame);
 
             LV2_Atom* const atom((LV2_Atom*)atomBuf);
             CARLA_SAFE_ASSERT(atom->size < sizeof(atomBuf));
 
-            carla_stdout("Set new param type thing");
             fAtomBufferEvIn.put(atom, fEventsIn.ctrlIndex);
         }
 
@@ -1805,18 +1813,16 @@ public:
 
         for (uint32_t i=0; i < fRdfDescriptor->ParameterCount; ++i)
         {
-            const LV2_RDF_Parameter& rdfParam(fRdfDescriptor->Parameters[i]);
-
-            if (rdfParam.Range == nullptr)
-                continue;
-            if (std::strcmp(rdfParam.Range, LV2_ATOM__Bool)   != 0 &&
-                std::strcmp(rdfParam.Range, LV2_ATOM__Int)    != 0 &&
-                std::strcmp(rdfParam.Range, LV2_ATOM__Long)   != 0 &&
-                std::strcmp(rdfParam.Range, LV2_ATOM__Float)  != 0 &&
-                std::strcmp(rdfParam.Range, LV2_ATOM__Double) != 0)
-                continue;
-
-            params += 1;
+            switch (fRdfDescriptor->Parameters[i].Type)
+            {
+            case LV2_PARAMETER_BOOL:
+            case LV2_PARAMETER_INT:
+            // case LV2_PARAMETER_LONG:
+            case LV2_PARAMETER_FLOAT:
+            case LV2_PARAMETER_DOUBLE:
+                params += 1;
+                break;
+            }
         }
 
         if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && aIns <= 1 && aOuts <= 1 && fExt.state == nullptr && fExt.worker == nullptr)
@@ -2463,7 +2469,20 @@ public:
         for (uint32_t i=0; i < fRdfDescriptor->ParameterCount; ++i)
         {
             const LV2_RDF_Parameter& rdfParam(fRdfDescriptor->Parameters[i]);
-            const LV2_RDF_PortPoints portPoints(fRdfDescriptor->Parameters[i].Points);
+
+            switch (rdfParam.Type)
+            {
+            case LV2_PARAMETER_BOOL:
+            case LV2_PARAMETER_INT:
+            // case LV2_PARAMETER_LONG:
+            case LV2_PARAMETER_FLOAT:
+            case LV2_PARAMETER_DOUBLE:
+                break;
+            default:
+                continue;
+            }
+
+            const LV2_RDF_PortPoints& portPoints(rdfParam.Points);
 
             const uint32_t j = iCtrl++;
             pData->param.data[j].index  = static_cast<int32_t>(j);
@@ -2485,7 +2504,7 @@ public:
 
             if (min >= max)
             {
-                carla_stderr2("WARNING - Broken plugin parameter '%s': min >= max", fRdfDescriptor->Parameters[i].Label);
+                carla_stderr2("WARNING - Broken plugin parameter '%s': min >= max", rdfParam.Label);
                 max = min + 0.1f;
             }
 
@@ -2508,27 +2527,29 @@ public:
             else if (def > max)
                 def = max;
 
-            if (std::strcmp(rdfParam.Range, LV2_ATOM__Bool) == 0)
+            switch (rdfParam.Type)
             {
+            case LV2_PARAMETER_BOOL:
                 step = max - min;
                 stepSmall = step;
                 stepLarge = step;
                 pData->param.data[j].hints |= PARAMETER_IS_BOOLEAN;
-            }
-            else if (std::strcmp(rdfParam.Range, LV2_ATOM__Int)  == 0 ||
-                     std::strcmp(rdfParam.Range, LV2_ATOM__Long) == 0)
-            {
+                break;
+
+            case LV2_PARAMETER_INT:
+            case LV2_PARAMETER_LONG:
                 step = 1.0f;
                 stepSmall = 1.0f;
                 stepLarge = 10.0f;
                 pData->param.data[j].hints |= PARAMETER_IS_INTEGER;
-            }
-            else
-            {
-                float range = max - min;
+                break;
+
+            default:
+                const float range = max - min;
                 step = range/100.0f;
                 stepSmall = range/1000.0f;
                 stepLarge = range/10.0f;
+                break;
             }
 
             if (rdfParam.Input)
@@ -3680,9 +3701,8 @@ public:
                             evData.port->writeMidiEvent(currentFrame, static_cast<uint8_t>(ev->body.size), data);
                         }
                     }
-                    else //if (ev->body.type == kUridAtomBLANK)
+                    else if (fAtomBufferUiOutTmpData != nullptr)
                     {
-                        //carla_stdout("Got out event, %s", carla_lv2_urid_unmap(this, ev->body.type));
                         fAtomBufferUiOut.put(&ev->body, evData.rindex);
                     }
 
@@ -4869,7 +4889,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fExt.worker != nullptr && fExt.worker->work != nullptr, LV2_WORKER_ERR_UNKNOWN);
         CARLA_SAFE_ASSERT_RETURN(fEventsIn.ctrl != nullptr, LV2_WORKER_ERR_UNKNOWN);
-        carla_stdout("CarlaPluginLV2::handleWorkerSchedule(%i, %p)", size, data);
+        carla_debug("CarlaPluginLV2::handleWorkerSchedule(%i, %p)", size, data);
 
         if (pData->engine->isOffline())
         {
@@ -4887,7 +4907,7 @@ public:
     LV2_Worker_Status handleWorkerRespond(const uint32_t size, const void* const data)
     {
         CARLA_SAFE_ASSERT_RETURN(fExt.worker != nullptr && fExt.worker->work_response != nullptr, LV2_WORKER_ERR_UNKNOWN);
-        carla_stdout("CarlaPluginLV2::handleWorkerRespond(%i, %p)", size, data);
+        carla_debug("CarlaPluginLV2::handleWorkerRespond(%i, %p)", size, data);
 
         LV2_Atom atom;
         atom.size = size;

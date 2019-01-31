@@ -31,6 +31,15 @@ typedef const char* LV2_URI;
 typedef uint32_t LV2_Property;
 #define LV2UI_INVALID_PORT_INDEX ((uint32_t)-1)
 
+// Parameter Types
+#define LV2_PARAMETER_BOOL              1
+#define LV2_PARAMETER_INT               2
+#define LV2_PARAMETER_LONG              3
+#define LV2_PARAMETER_FLOAT             4
+#define LV2_PARAMETER_DOUBLE            5
+#define LV2_PARAMETER_PATH              6
+#define LV2_PARAMETER_STRING            7
+
 // Port Midi Map Types
 #define LV2_PORT_MIDI_MAP_CC             1
 #define LV2_PORT_MIDI_MAP_NRPN           2
@@ -447,7 +456,7 @@ struct LV2_RDF_Port {
 // Parameter
 struct LV2_RDF_Parameter {
     LV2_URI URI;
-    LV2_URI Range;
+    LV2_Property Type;
     bool Input;
     const char* Label;
     const char* Comment;
@@ -458,7 +467,7 @@ struct LV2_RDF_Parameter {
 
     LV2_RDF_Parameter() noexcept
         : URI(nullptr),
-          Range(nullptr),
+          Type(0),
           Input(true),
           Label(nullptr),
           Comment(nullptr),
@@ -472,11 +481,6 @@ struct LV2_RDF_Parameter {
         {
             delete[] URI;
             URI = nullptr;
-        }
-        if (Range != nullptr)
-        {
-            delete[] Range;
-            Range = nullptr;
         }
         if (Label != nullptr)
         {
