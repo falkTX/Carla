@@ -545,6 +545,7 @@ public:
           fFirstActive(true),
           fLastStateChunk(nullptr),
           fLastTimeInfo(),
+          fFilePathURI(),
           fExt(),
           fUI()
     {
@@ -1372,7 +1373,39 @@ public:
     {
         if (fUI.type == UI::TYPE_NULL)
         {
-            CARLA_SAFE_ASSERT(!yesNo);
+            if (fFilePathURI.isNotEmpty())
+            {
+                const char* const path = pData->engine->runFileCallback(FILE_CALLBACK_OPEN, false, "Open File", "");
+
+                if (path != nullptr && path[0] != '\0')
+                {
+                    carla_stdout("LV2 file path to send: '%s'", path);
+
+                    uint8_t atomBuf[4096];
+                    lv2_atom_forge_set_buffer(&fAtomForge, atomBuf, sizeof(atomBuf));
+
+                    LV2_Atom_Forge_Frame forgeFrame;
+                    lv2_atom_forge_object(&fAtomForge, &forgeFrame, kUridNull, kUridPatchSet);
+
+                    lv2_atom_forge_key(&fAtomForge, kUridPatchPoperty);
+                    lv2_atom_forge_urid(&fAtomForge, getCustomURID(fFilePathURI));
+
+                    lv2_atom_forge_key(&fAtomForge, kUridPatchValue);
+                    lv2_atom_forge_path(&fAtomForge, path, std::strlen(path));
+
+                    lv2_atom_forge_pop(&fAtomForge, &forgeFrame);
+
+                    LV2_Atom* const atom((LV2_Atom*)atomBuf);
+                    CARLA_SAFE_ASSERT(atom->size < sizeof(atomBuf));
+
+                    fAtomBufferEvIn.put(atom, fEventsIn.ctrlIndex);
+                }
+            }
+            else
+            {
+                CARLA_SAFE_ASSERT(!yesNo);
+            }
+            pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
             return;
         }
 
@@ -1821,6 +1854,10 @@ public:
             case LV2_PARAMETER_FLOAT:
             case LV2_PARAMETER_DOUBLE:
                 params += 1;
+                break;
+            case LV2_PARAMETER_PATH:
+                if (fFilePathURI.isEmpty())
+                    fFilePathURI = fRdfDescriptor->Parameters[i].URI;
                 break;
             }
         }
@@ -2643,7 +2680,7 @@ public:
         if (isRealtimeSafe())
             pData->hints |= PLUGIN_IS_RTSAFE;
 
-        if (fUI.type != UI::TYPE_NULL)
+        if (fUI.type != UI::TYPE_NULL || fFilePathURI.isNotEmpty())
         {
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
 
@@ -4298,7 +4335,7 @@ public:
 
     void uiParameterChange(const uint32_t index, const float value) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL || fFilePathURI.isNotEmpty(),);
         CARLA_SAFE_ASSERT_RETURN(index < pData->param.count,);
 
         if (fUI.type == UI::TYPE_BRIDGE)
@@ -4318,7 +4355,7 @@ public:
 
     void uiMidiProgramChange(const uint32_t index) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL || fFilePathURI.isNotEmpty(),);
         CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count,);
 
         if (fUI.type == UI::TYPE_BRIDGE)
@@ -4335,7 +4372,7 @@ public:
 
     void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL || fFilePathURI.isNotEmpty(),);
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
         CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
         CARLA_SAFE_ASSERT_RETURN(velo > 0 && velo < MAX_MIDI_VALUE,);
@@ -4365,7 +4402,7 @@ public:
 
     void uiNoteOff(const uint8_t channel, const uint8_t note) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL || fFilePathURI.isNotEmpty(),);
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
         CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
 
@@ -6064,6 +6101,9 @@ private:
     bool fFirstActive; // first process() call after activate()
     void* fLastStateChunk;
     EngineTimeInfo fLastTimeInfo;
+
+    // if plugin provides path parameter, use it as fake "gui"
+    CarlaString fFilePathURI;
 
     struct Extensions {
         const LV2_Options_Interface* options;
