@@ -41,7 +41,6 @@ static double gInitialSampleRate = 44100.0;
 static const char* const kNullWindowTitle = "TestUI";
 static const uint32_t kNullWindowTitleSize = 6;
 
-
 // LV2 URI Map Ids
 enum CarlaLv2URIDs {
     kUridNull = 0,
@@ -76,6 +75,9 @@ enum CarlaLv2URIDs {
     kUridLogNote,
     kUridLogTrace,
     kUridLogWarning,
+    kUridPatchSet,
+    kUridPatchPoperty,
+    kUridPatchValue,
     // time base type
     kUridTimePosition,
      // time values
@@ -737,11 +739,12 @@ public:
                 const LV2_Atom* const atom((const LV2_Atom*)buffer);
 
                 // plugins sometimes fail on this, not good...
-                const uint32_t totalSize =  lv2_atom_total_size(atom);
+                const uint32_t totalSize = lv2_atom_total_size(atom);
                 const uint32_t paddedSize = lv2_atom_pad_size(totalSize);
 
                 if (bufferSize != totalSize && bufferSize != paddedSize)
-                    carla_stderr2("Warning: LV2 UI sending atom with invalid size! size: %u, padded-size: %u", totalSize, paddedSize);
+                    carla_stderr2("Warning: LV2 UI sending atom with invalid size %u! size: %u, padded-size: %u",
+                                  bufferSize, totalSize, paddedSize);
 
                 writeLv2AtomMessage(rindex, atom);
             }
@@ -992,6 +995,14 @@ private:
         if (std::strcmp(uri, LV2_LOG__Warning) == 0)
             return kUridLogWarning;
 
+        // Patch types
+        if (std::strcmp(uri, LV2_PATCH__Set) == 0)
+            return kUridPatchSet;
+        if (std::strcmp(uri, LV2_PATCH__property) == 0)
+            return kUridPatchPoperty;
+        if (std::strcmp(uri, LV2_PATCH__value) == 0)
+            return kUridPatchValue;
+
         // Time types
         if (std::strcmp(uri, LV2_TIME__Position) == 0)
             return kUridTimePosition;
@@ -1111,6 +1122,14 @@ private:
             return LV2_LOG__Trace;
         case kUridLogWarning:
             return LV2_LOG__Warning;
+
+        // Patch types
+        case kUridPatchSet:
+            return LV2_PATCH__Set;
+        case kUridPatchPoperty:
+            return LV2_PATCH__property;
+        case kUridPatchValue:
+            return LV2_PATCH__value;
 
         // Time types
         case kUridTimePosition:
