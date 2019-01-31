@@ -374,7 +374,7 @@ class HostWindow(QMainWindow):
         self.ui.scrollArea.setEnabled(False)
 
         self.ui.miniCanvasPreview.setRealParent(self)
-        self.ui.verticalLayout_7.setContentsMargins(0, 0, 0, 1)
+        self.ui.tw_miniCanvas.tabBar().hide()
 
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (special stuff for Mac OS)
