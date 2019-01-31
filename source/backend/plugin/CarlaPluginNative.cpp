@@ -2479,7 +2479,7 @@ public:
             return false;
         }
 
-        if (label == nullptr || label[0] != '\0')
+        if (label == nullptr || label[0] == '\0')
         {
             pData->engine->setLastError("null label");
             return false;
