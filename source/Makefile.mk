@@ -170,30 +170,30 @@ endif
 # Strict test build
 
 ifeq ($(TESTBUILD),true)
-BASE_FLAGS += -Werror -Wabi=98 -Wcast-qual -Wclobbered -Wconversion -Wdisabled-optimization -Wfloat-equal -Wformat=2 -Winit-self -Wmissing-declarations
-BASE_FLAGS += -Woverlength-strings -Wpointer-arith -Wredundant-decls -Wshadow -Wsign-conversion -Wundef -Wuninitialized -Wunused
+BASE_FLAGS += -Werror -Wabi=98 -Wcast-qual -Wclobbered -Wconversion -Wdisabled-optimization
+BASE_FLAGS += -Wdouble-promotion -Wfloat-equal -Wlogical-op -Wpointer-arith -Wsign-conversion
+BASE_FLAGS += -Wformat=2 -Woverlength-strings
+BASE_FLAGS += -Wmissing-declarations -Wredundant-decls
+BASE_FLAGS += -Wshadow  -Wundef -Wuninitialized -Wunused
 BASE_FLAGS += -Wstrict-aliasing -fstrict-aliasing
 BASE_FLAGS += -Wstrict-overflow -fstrict-overflow
-CFLAGS     += -Wnested-externs -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings
-CXXFLAGS   += -Wc++0x-compat -Wc++11-compat -Weffc++ -Wnon-virtual-dtor -Woverloaded-virtual -Wzero-as-null-pointer-constant
+BASE_FLAGS += -Wduplicated-branches -Wduplicated-cond  -Wnull-dereference
+CFLAGS     += -Winit-self -Wjump-misses-init -Wmissing-prototypes -Wnested-externs -Wstrict-prototypes -Wwrite-strings
+CXXFLAGS   += -Wc++0x-compat -Wc++11-compat -Weffc++
+CXXFLAGS   += -Wnon-virtual-dtor -Woverloaded-virtual
+# CXXFLAGS   += -Wold-style-cast -Wuseless-cast
+CXXFLAGS   += -Wzero-as-null-pointer-constant
 ifeq ($(LINUX),true)
 BASE_FLAGS += -isystem /opt/kxstudio/include
-CXXFLAGS   += -isystem /usr/include/glib-2.0
-CXXFLAGS   += -isystem /usr/include/glib-2.0/glib
-CXXFLAGS   += -isystem /usr/include/gtk-2.0
-CXXFLAGS   += -isystem /usr/include/gtk-2.0/gio
-CXXFLAGS   += -isystem /usr/include/qt5
 endif
 ifeq ($(MACOS),true)
-BASE_FLAGS += -isystem /opt/kxstudio/include
 CXXFLAGS   += -isystem /System/Library/Frameworks
 endif
-ifeq ($(WIN64),true)
-BASE_FLAGS += -isystem /opt/mingw64/include
-else
 ifeq ($(WIN32),true)
 BASE_FLAGS += -isystem /opt/mingw32/include
 endif
+ifeq ($(WIN64),true)
+BASE_FLAGS += -isystem /opt/mingw64/include
 endif
 endif
 

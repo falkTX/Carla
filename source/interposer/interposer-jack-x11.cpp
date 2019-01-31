@@ -1,6 +1,6 @@
 /*
  * Carla Interposer for JACK Applications X11 control
- * Copyright (C) 2014-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,6 +19,11 @@
 
 #include <dlfcn.h>
 #include <X11/Xlib.h>
+
+CARLA_EXPORT
+int jack_carla_interposed_action(int action, int value, void* ptr);
+
+// --------------------------------------------------------------------------------------------------------------------
 
 struct ScopedLibOpen {
     void* handle;
@@ -52,6 +57,8 @@ struct ScopedLibOpen {
         static const ScopedLibOpen slo;
         return slo;
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(ScopedLibOpen);
 };
 
 // --------------------------------------------------------------------------------------------------------------------

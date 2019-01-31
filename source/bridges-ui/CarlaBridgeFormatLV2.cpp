@@ -139,7 +139,7 @@ struct Lv2PluginOptions {
     LV2_Options_Option opts[Count];
 
     Lv2PluginOptions() noexcept
-        : sampleRate(gInitialSampleRate),
+        : sampleRate(static_cast<float>(gInitialSampleRate)),
           transientWinId(0),
           windowTitle(kNullWindowTitle)
     {

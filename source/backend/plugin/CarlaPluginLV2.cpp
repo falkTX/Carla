@@ -961,7 +961,7 @@ public:
             return;
         }
 
-        rindex -= fRdfDescriptor->PortCount;
+        rindex -= static_cast<int32_t>(fRdfDescriptor->PortCount);
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->ParameterCount))
         {
@@ -985,7 +985,7 @@ public:
             return;
         }
 
-        rindex -= fRdfDescriptor->PortCount;
+        rindex -= static_cast<int32_t>(fRdfDescriptor->PortCount);
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->ParameterCount))
         {
@@ -1449,7 +1449,7 @@ public:
                         if (! fPipeServer.writeMessage(tmpBuf))
                             return;
 
-                        std::snprintf(tmpBuf, 0xff, "%f\n", getParameterValue(i));
+                        std::snprintf(tmpBuf, 0xff, "%f\n", static_cast<double>(getParameterValue(i)));
                         if (! fPipeServer.writeMessage(tmpBuf))
                             return;
                     }

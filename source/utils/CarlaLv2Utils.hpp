@@ -1,6 +1,6 @@
 /*
  * Carla LV2 utils
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -548,9 +548,11 @@ public:
 #if defined(__clang__)
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Weffc++"
+# pragma clang diagnostic ignored "-Wnon-virtual-dtor"
 #elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Weffc++"
+# pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
 #endif
 template<class TimeInfoStruct>
 class Lv2PluginBaseClass : public LV2_External_UI_Widget_Compat
@@ -757,7 +759,7 @@ public:
 
                     fTimeInfo.playing = carla_isNotZero(fLastPositionData.speed);
 
-                    if (fTimeInfo.playing && fLastPositionData.beatsPerMinute > 0.0f)
+                    if (fTimeInfo.playing && fLastPositionData.beatsPerMinute > 0.0)
                     {
                         fTimeInfo.bbt.beatsPerMinute = fLastPositionData.beatsPerMinute*
                                                         std::abs(fLastPositionData.speed);
@@ -916,9 +918,9 @@ public:
                         carla_stderr("Invalid lv2 frame value");
                 }
 
-                fTimeInfo.bbt.barStartTick = fTimeInfo.bbt.ticksPerBeat*
-                                             fTimeInfo.bbt.beatsPerBar*
-                                            (fTimeInfo.bbt.bar-1);
+                fTimeInfo.bbt.barStartTick = static_cast<double>(fTimeInfo.bbt.ticksPerBeat) *
+                                             static_cast<double>(fTimeInfo.bbt.beatsPerBar) *
+                                             (fTimeInfo.bbt.bar-1);
 
                 fTimeInfo.bbt.valid = (fLastPositionData.beatsPerMinute > 0.0 &&
                                        fLastPositionData.beatUnit > 0 &&
@@ -1004,7 +1006,7 @@ public:
                                                       fLastPositionData.beatsPerBar);
 
                 const double rest  = std::fmod(fLastPositionData.barBeat, 1.0f);
-                fTimeInfo.bbt.beat = static_cast<int32_t>(fLastPositionData.barBeat-rest+1.0);
+                fTimeInfo.bbt.beat = static_cast<int32_t>(static_cast<double>(fLastPositionData.barBeat)-rest+1.0);
                 fTimeInfo.bbt.tick = static_cast<int32_t>(rest*fTimeInfo.bbt.ticksPerBeat+0.5);
 
                 if (fLastPositionData.bar_f >= 0.0f)
@@ -1024,8 +1026,8 @@ public:
 
                     fTimeInfo.bbt.bar = fLastPositionData.bar + 1;
 
-                    fTimeInfo.bbt.barStartTick = fTimeInfo.bbt.ticksPerBeat *
-                                                 fTimeInfo.bbt.beatsPerBar *
+                    fTimeInfo.bbt.barStartTick = static_cast<double>(fTimeInfo.bbt.ticksPerBeat) *
+                                                 static_cast<double>(fTimeInfo.bbt.beatsPerBar) *
                                                  (fTimeInfo.bbt.bar-1);
                 }
             }
@@ -1552,18 +1554,24 @@ private:
 
     static void extui_run(LV2_External_UI_Widget_Compat* handle)
     {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
+
         handlePtr->handleUiRun();
     }
 
     static void extui_show(LV2_External_UI_Widget_Compat* handle)
     {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
         carla_debug("extui_show(%p)", handle);
+
         handlePtr->handleUiShow();
     }
 
     static void extui_hide(LV2_External_UI_Widget_Compat* handle)
     {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
         carla_debug("extui_hide(%p)", handle);
+
         handlePtr->handleUiHide();
     }
 
