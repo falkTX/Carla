@@ -44,7 +44,8 @@ from . import (
 
 class CanvasBezierLineMov(QGraphicsPathItem):
     def __init__(self, port_mode, port_type, parent):
-        QGraphicsPathItem.__init__(self, parent)
+        QGraphicsPathItem.__init__(self)
+        self.setParentItem(parent)
 
         self.m_port_mode = port_mode
         self.m_port_type = port_type
@@ -52,7 +53,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
         # Port position doesn't change while moving around line
         self.p_itemX = self.scenePos().x()
         self.p_itemY = self.scenePos().y()
-        self.p_width = self.parentItem().getPortWidth()
+        self.p_width = parent.getPortWidth()
 
         if port_type == PORT_TYPE_AUDIO_JACK:
             pen = QPen(canvas.theme.line_audio_jack, 2)
