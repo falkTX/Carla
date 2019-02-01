@@ -7,7 +7,7 @@ sudo add-apt-repository -y ppa:kxstudio-debian/mingw
 sudo add-apt-repository -y ppa:kxstudio-debian/toolchain
 
 if [ "${TARGET}" = "linux-strict" ]; then
-  sudo add-apt-repository -y ubuntu-toolchain-r-test
+  sudo add-apt-repository -y ppa:ubuntu-toolchain-r-test
 fi
 
 sudo apt-get update -qq
