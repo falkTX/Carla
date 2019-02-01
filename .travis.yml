@@ -52,6 +52,9 @@ matrix:
       env:
         - TARGET="win64"
 
+before_install:
+  - sh ${TRAVIS_BUILD_DIR}/.travis/before_install.sh
+
 install:
   - sh ${TRAVIS_BUILD_DIR}/.travis/install.sh
 
