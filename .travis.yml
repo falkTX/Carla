@@ -17,7 +17,7 @@ matrix:
             - kxstudio-debian/mingw
             - kxstudio-debian/toolchain
       env:
-        - MATRIX_EVAL="TARGET=linux"
+        - TARGET="linux"
 
     # linux with macOS cross-compilation
     - os: linux
@@ -28,7 +28,7 @@ matrix:
           sources:
             - kxstudio-debian/toolchain
       env:
-        - MATRIX_EVAL="TARGET=macos"
+        - TARGET="macos"
 
     # linux with win32 cross-compilation
     - os: linux
@@ -39,7 +39,7 @@ matrix:
           sources:
             - kxstudio-debian/mingw
       env:
-        - MATRIX_EVAL="TARGET=win32"
+        - TARGET="win32"
 
     # linux with win64 cross-compilation
     - os: linux
@@ -50,13 +50,10 @@ matrix:
           sources:
             - kxstudio-debian/mingw
       env:
-        - MATRIX_EVAL="TARGET=win64"
-
-before_install:
-  - eval "${MATRIX_EVAL}"
+        - TARGET="win64"
 
 install:
   - sh ${TRAVIS_BUILD_DIR}/.travis/install.sh
 
 script:
-  - sh ${TRAVIS_BUILD_DIR}/.travis/script-${MATRIX_EVAL}.sh
+  - sh ${TRAVIS_BUILD_DIR}/.travis/script-${TARGET}.sh
