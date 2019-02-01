@@ -52,10 +52,11 @@ matrix:
       env:
         - MATRIX_EVAL="TARGET=win64"
 
-install:
+before_install:
   - eval "${MATRIX_EVAL}"
+
+install:
   - sh ${TRAVIS_BUILD_DIR}/.travis/install.sh
 
 script:
-  - eval "${MATRIX_EVAL}"
   - sh ${TRAVIS_BUILD_DIR}/.travis/script-${MATRIX_EVAL}.sh
