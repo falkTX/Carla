@@ -19,8 +19,8 @@ if [ "${TARGET}" = "linux" ]; then
         libgl1-mesa-dev \
         libx11-dev \
         libx11-6:i386 \
-        liblo-dev \
-        libfluidsynth-dev \
+        liblo-static \
+        fluidsynth-static \
         mingw32-x-gcc \
         mingw32-x-pkgconfig \
         mingw64-x-gcc \
@@ -32,7 +32,7 @@ if [ "${TARGET}" = "linux" ]; then
 
 elif [ "${TARGET}" = "linux-strict" ]; then
     sudo apt-get install -y \
-        gcc-8 \
+        g++-8 \
         pkg-config \
         pyqt5-dev-tools \
         python3-pyqt5.qtsvg \
@@ -47,8 +47,8 @@ elif [ "${TARGET}" = "linux-strict" ]; then
         libgl1-mesa-dev \
         libx11-dev \
         libx11-6:i386 \
-        liblo-dev \
-        libfluidsynth-dev
+        liblo-static \
+        fluidsynth-static
 
 elif [ "${TARGET}" = "macos" ]; then
     sudo apt-get install -y \
