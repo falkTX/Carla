@@ -1,6 +1,6 @@
 /*
  * Carla OSC utils
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -128,7 +128,7 @@ void osc_send_control(const CarlaOscData& oscData, const int32_t index, const fl
     char targetPath[std::strlen(oscData.path)+9];
     std::strcpy(targetPath, oscData.path);
     std::strcat(targetPath, "/control");
-    try_lo_send(oscData.target, targetPath, "if", index, value);
+    try_lo_send(oscData.target, targetPath, "if", index, static_cast<double>(value));
 }
 
 static inline
@@ -209,7 +209,7 @@ void osc_send_sample_rate(const CarlaOscData& oscData, const float sampleRate) n
     char targetPath[std::strlen(oscData.path)+13];
     std::strcpy(targetPath, oscData.path);
     std::strcat(targetPath, "/sample-rate");
-    try_lo_send(oscData.target, targetPath, "f", sampleRate);
+    try_lo_send(oscData.target, targetPath, "f", static_cast<double>(sampleRate));
 }
 
 static inline

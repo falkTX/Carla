@@ -1,18 +1,46 @@
-os:
-  - linux
+language:
+  - cpp
 
 sudo: required
 dist: trusty
 
-languages: c++
-compiler: gcc
+matrix:
+  include:
+    # linux with default, builds native and bridges
+    - os: linux
+      compiler: gcc
+      env:
+        - TARGET="linux"
+
+    # linux with macOS cross-compilation
+    - os: linux
+      compiler: gcc
+      env:
+        - TARGET="macos"
+
+    # linux with win32 cross-compilation
+    - os: linux
+      compiler: gcc
+      env:
+        - TARGET="win32"
+
+    # linux with win64 cross-compilation
+    - os: linux
+      compiler: gcc
+      env:
+        - TARGET="win64"
+
+    # linux with gcc 8, strict build
+    - os: linux
+      compiler: gcc
+      env:
+        - TARGET="linux-strict"
 
 before_install:
   - sh ${TRAVIS_BUILD_DIR}/.travis/before_install.sh
+
 install:
   - sh ${TRAVIS_BUILD_DIR}/.travis/install.sh
+
 script:
-  - sh ${TRAVIS_BUILD_DIR}/.travis/script-linux.sh
-  - sh ${TRAVIS_BUILD_DIR}/.travis/script-macos.sh
-  - sh ${TRAVIS_BUILD_DIR}/.travis/script-win32.sh
-  - sh ${TRAVIS_BUILD_DIR}/.travis/script-win64.sh
+  - sh ${TRAVIS_BUILD_DIR}/.travis/script-${TARGET}.sh

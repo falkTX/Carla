@@ -221,12 +221,12 @@ static void do_ladspa_check(lib_t& libHandle, const char* const filename, const 
         }
 
         uint hints = 0x0;
-        int audioIns = 0;
-        int audioOuts = 0;
-        int audioTotal = 0;
-        int parametersIns = 0;
-        int parametersOuts = 0;
-        int parametersTotal = 0;
+        uint audioIns = 0;
+        uint audioOuts = 0;
+        uint audioTotal = 0;
+        uint parametersIns = 0;
+        uint parametersOuts = 0;
+        uint parametersTotal = 0;
 
         if (LADSPA_IS_HARD_RT_CAPABLE(descriptor->Properties))
             hints |= PLUGIN_IS_RTSAFE;
@@ -479,13 +479,13 @@ static void do_dssi_check(lib_t& libHandle, const char* const filename, const bo
         }
 
         uint hints = 0x0;
-        int audioIns = 0;
-        int audioOuts = 0;
-        int audioTotal = 0;
-        int midiIns = 0;
-        int parametersIns = 0;
-        int parametersOuts = 0;
-        int parametersTotal = 0;
+        uint audioIns = 0;
+        uint audioOuts = 0;
+        uint audioTotal = 0;
+        uint midiIns = 0;
+        uint parametersIns = 0;
+        uint parametersOuts = 0;
+        uint parametersTotal = 0;
 
         if (LADSPA_IS_HARD_RT_CAPABLE(ldescriptor->Properties))
             hints |= PLUGIN_IS_RTSAFE;
@@ -1116,11 +1116,11 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
 
         // get everything else
         uint hints = 0x0;
-        int audioIns = effect->numInputs;
-        int audioOuts = effect->numOutputs;
-        int midiIns = 0;
-        int midiOuts = 0;
-        int parameters = effect->numParams;
+        uint audioIns = static_cast<uint>(std::max(0, effect->numInputs));
+        uint audioOuts = static_cast<uint>(std::max(0, effect->numOutputs));
+        uint midiIns = 0;
+        uint midiOuts = 0;
+        uint parameters = static_cast<uint>(std::max(0, effect->numParams));
 
         if (effect->flags & effFlagsHasEditor)
             hints |= PLUGIN_HAS_CUSTOM_UI;
@@ -1154,8 +1154,8 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
                 midiIns = 1;
             }
 
-            float* bufferAudioIn[std::max(1, audioIns)];
-            float* bufferAudioOut[std::max(1, audioOuts)];
+            float* bufferAudioIn[std::max(1U, audioIns)];
+            float* bufferAudioOut[std::max(1U, audioOuts)];
 
             if (audioIns == 0)
             {
@@ -1163,7 +1163,7 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
             }
             else
             {
-                for (int j=0; j < audioIns; ++j)
+                for (uint j=0; j < audioIns; ++j)
                 {
                     bufferAudioIn[j] = new float[kBufferSize];
                     carla_zeroFloats(bufferAudioIn[j], kBufferSize);
@@ -1176,7 +1176,7 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
             }
             else
             {
-                for (int j=0; j < audioOuts; ++j)
+                for (uint j=0; j < audioOuts; ++j)
                 {
                     bufferAudioOut[j] = new float[kBufferSize];
                     carla_zeroFloats(bufferAudioOut[j], kBufferSize);
@@ -1236,9 +1236,9 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
             if (gVstNeedsIdle)
                 effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effIdle), 0, 0, nullptr, 0.0f);
 
-            for (int j=0; j < audioIns; ++j)
+            for (uint j=0; j < audioIns; ++j)
                 delete[] bufferAudioIn[j];
-            for (int j=0; j < audioOuts; ++j)
+            for (uint j=0; j < audioOuts; ++j)
                 delete[] bufferAudioOut[j];
         }
 

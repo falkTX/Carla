@@ -571,10 +571,12 @@ LINK := ln -sf
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifneq ($(DEBUG),true)
+ifneq ($(TESTBUILD),true)
 ifneq (,$(wildcard $(CWD)/native-plugins/external/Makefile.mk))
 EXTERNAL_PLUGINS = true
 BASE_FLAGS += -DHAVE_EXTERNAL_PLUGINS
 include $(CWD)/native-plugins/external/Makefile.mk
+endif
 endif
 endif
 
