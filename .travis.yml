@@ -1,18 +1,61 @@
-os:
-  - linux
+language:
+    - cpp
 
 sudo: required
 dist: trusty
 
-languages: c++
-compiler: gcc
+matrix:
+include:
+    # linux with gcc default (4.8)
+    - os: linux
+      dist: trusty
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - kxstudio-debian/libs
+            - kxstudio-debian/mingw
+            - kxstudio-debian/toolchain
+      env:
+        - MATRIX_EVAL="TARGET=linux"
 
-before_install:
-  - sh ${TRAVIS_BUILD_DIR}/.travis/before_install.sh
+    # linux with macOS cross-compilation
+    - os: linux
+      dist: trusty
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - kxstudio-debian/toolchain
+      env:
+        - MATRIX_EVAL="TARGET=macos"
+
+    # linux with win32 cross-compilation
+    - os: linux
+      dist: trusty
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - kxstudio-debian/mingw
+      env:
+        - MATRIX_EVAL="TARGET=win32"
+
+    # linux with win64 cross-compilation
+    - os: linux
+      dist: trusty
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - kxstudio-debian/mingw
+      env:
+        - MATRIX_EVAL="TARGET=win64"
+
 install:
-  - sh ${TRAVIS_BUILD_DIR}/.travis/install.sh
+    - eval "${MATRIX_EVAL}"
+    - sh ${TRAVIS_BUILD_DIR}/.travis/install.sh
+
 script:
-  - sh ${TRAVIS_BUILD_DIR}/.travis/script-linux.sh
-  - sh ${TRAVIS_BUILD_DIR}/.travis/script-macos.sh
-  - sh ${TRAVIS_BUILD_DIR}/.travis/script-win32.sh
-  - sh ${TRAVIS_BUILD_DIR}/.travis/script-win64.sh
+    - eval "${MATRIX_EVAL}"
+    - sh ${TRAVIS_BUILD_DIR}/.travis/script-${MATRIX_EVAL}.sh
