@@ -395,16 +395,17 @@ class HostWindow(QMainWindow):
         # ----------------------------------------------------------------------------------------------------
         # Set-up Canvas
 
-        self.scene = patchcanvas.PatchScene(self, self.ui.graphicsView)
-        self.ui.graphicsView.setScene(self.scene)
-        self.ui.graphicsView.setRenderHint(QPainter.Antialiasing, bool(self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING] == patchcanvas.ANTIALIASING_FULL))
+        if withCanvas:
+            self.scene = patchcanvas.PatchScene(self, self.ui.graphicsView)
+            self.ui.graphicsView.setScene(self.scene)
+            self.ui.graphicsView.setRenderHint(QPainter.Antialiasing, bool(self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING] == patchcanvas.ANTIALIASING_FULL))
 
-        if self.fSavedSettings[CARLA_KEY_CANVAS_USE_OPENGL] and hasGL:
-            self.ui.glView = QGLWidget(self)
-            self.ui.graphicsView.setViewport(self.ui.glView)
-            self.ui.graphicsView.setRenderHint(QPainter.HighQualityAntialiasing, self.fSavedSettings[CARLA_KEY_CANVAS_HQ_ANTIALIASING])
+            if self.fSavedSettings[CARLA_KEY_CANVAS_USE_OPENGL] and hasGL:
+                self.ui.glView = QGLWidget(self)
+                self.ui.graphicsView.setViewport(self.ui.glView)
+                self.ui.graphicsView.setRenderHint(QPainter.HighQualityAntialiasing, self.fSavedSettings[CARLA_KEY_CANVAS_HQ_ANTIALIASING])
 
-        self.setupCanvas()
+            self.setupCanvas()
 
         # ----------------------------------------------------------------------------------------------------
         # Connect actions to functions
@@ -434,16 +435,6 @@ class HostWindow(QMainWindow):
         self.ui.act_plugins_expand.triggered.connect(self.slot_pluginsExpand)
         self.ui.act_plugins_panic.triggered.connect(self.slot_pluginsDisable)
 
-        self.ui.act_canvas_show_internal.triggered.connect(self.slot_canvasShowInternal)
-        self.ui.act_canvas_show_external.triggered.connect(self.slot_canvasShowExternal)
-        self.ui.act_canvas_arrange.triggered.connect(self.slot_canvasArrange)
-        self.ui.act_canvas_refresh.triggered.connect(self.slot_canvasRefresh)
-        self.ui.act_canvas_zoom_fit.triggered.connect(self.slot_canvasZoomFit)
-        self.ui.act_canvas_zoom_in.triggered.connect(self.slot_canvasZoomIn)
-        self.ui.act_canvas_zoom_out.triggered.connect(self.slot_canvasZoomOut)
-        self.ui.act_canvas_zoom_100.triggered.connect(self.slot_canvasZoomReset)
-        self.ui.act_canvas_save_image.triggered.connect(self.slot_canvasSaveImage)
-        self.ui.act_canvas_arrange.setEnabled(False) # TODO, later
 
         self.ui.act_settings_show_toolbar.toggled.connect(self.slot_showToolbar)
         self.ui.act_settings_show_meters.toggled.connect(self.slot_showCanvasMeters)
@@ -470,20 +461,29 @@ class HostWindow(QMainWindow):
 
         self.ui.listWidget.customContextMenuRequested.connect(self.showPluginActionsMenu)
 
-        self.ui.graphicsView.horizontalScrollBar().valueChanged.connect(self.slot_horizontalScrollBarChanged)
-        self.ui.graphicsView.verticalScrollBar().valueChanged.connect(self.slot_verticalScrollBarChanged)
-
         self.ui.keyboard.noteOn.connect(self.slot_noteOn)
         self.ui.keyboard.noteOff.connect(self.slot_noteOff)
 
-        self.ui.miniCanvasPreview.miniCanvasMoved.connect(self.slot_miniCanvasMoved)
-
         self.ui.tabWidget.currentChanged.connect(self.slot_tabChanged)
 
-        self.scene.scaleChanged.connect(self.slot_canvasScaleChanged)
-        self.scene.sceneGroupMoved.connect(self.slot_canvasItemMoved)
-        self.scene.pluginSelected.connect(self.slot_canvasPluginSelected)
-        self.scene.selectionChanged.connect(self.slot_canvasSelectionChanged)
+        if withCanvas:
+            self.ui.act_canvas_show_internal.triggered.connect(self.slot_canvasShowInternal)
+            self.ui.act_canvas_show_external.triggered.connect(self.slot_canvasShowExternal)
+            self.ui.act_canvas_arrange.triggered.connect(self.slot_canvasArrange)
+            self.ui.act_canvas_refresh.triggered.connect(self.slot_canvasRefresh)
+            self.ui.act_canvas_zoom_fit.triggered.connect(self.slot_canvasZoomFit)
+            self.ui.act_canvas_zoom_in.triggered.connect(self.slot_canvasZoomIn)
+            self.ui.act_canvas_zoom_out.triggered.connect(self.slot_canvasZoomOut)
+            self.ui.act_canvas_zoom_100.triggered.connect(self.slot_canvasZoomReset)
+            self.ui.act_canvas_save_image.triggered.connect(self.slot_canvasSaveImage)
+            self.ui.act_canvas_arrange.setEnabled(False) # TODO, later
+            self.ui.graphicsView.horizontalScrollBar().valueChanged.connect(self.slot_horizontalScrollBarChanged)
+            self.ui.graphicsView.verticalScrollBar().valueChanged.connect(self.slot_verticalScrollBarChanged)
+            self.ui.miniCanvasPreview.miniCanvasMoved.connect(self.slot_miniCanvasMoved)
+            self.scene.scaleChanged.connect(self.slot_canvasScaleChanged)
+            self.scene.sceneGroupMoved.connect(self.slot_canvasItemMoved)
+            self.scene.pluginSelected.connect(self.slot_canvasPluginSelected)
+            self.scene.selectionChanged.connect(self.slot_canvasSelectionChanged)
 
         self.SIGUSR1.connect(self.slot_handleSIGUSR1)
         self.SIGTERM.connect(self.slot_handleSIGTERM)
@@ -674,6 +674,9 @@ class HostWindow(QMainWindow):
 
         self.host.save_project(self.fProjectFilename)
 
+        if not self.fWithCanvas:
+            return
+
         with open(self.makeExtraFilename(), 'w') as fh:
             json.dump({
                 'canvas': patchcanvas.saveGroupPositions(),
@@ -686,6 +689,10 @@ class HostWindow(QMainWindow):
     def projectLoadingFinished(self):
         self.ui.rack.setEnabled(True)
         self.ui.graphicsView.setEnabled(True)
+
+        if not self.fWithCanvas:
+            return
+
         QTimer.singleShot(1000, self.slot_canvasRefresh)
 
         extrafile = self.makeExtraFilename()
@@ -1231,7 +1238,8 @@ class HostWindow(QMainWindow):
     # Canvas
 
     def clearSideStuff(self):
-        self.scene.clearSelection()
+        if self.fWithCanvas:
+            self.scene.clearSelection()
 
         self.fSelectedPlugins = []
 
@@ -2230,7 +2238,9 @@ class HostWindow(QMainWindow):
 
     def resizeEvent(self, event):
         QMainWindow.resizeEvent(self, event)
-        self.slot_miniCanvasCheckSize()
+
+        if self.fWithCanvas:
+            self.slot_miniCanvasCheckSize()
 
     # --------------------------------------------------------------------------------------------------------
     # timer event
