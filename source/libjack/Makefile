@@ -68,7 +68,7 @@ debug:
 $(TARGET): $(OBJS)
 	-@mkdir -p $(BINDIR)/jack
 	@echo "Linking libjack.so.0"
-	$(CXX) $^ $(SHARED) $(LINK_FLAGS) $(LIBJACK_LIBS) -o $@
+	@$(CXX) $^ $(SHARED) $(LINK_FLAGS) $(LIBJACK_LIBS) -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------
 

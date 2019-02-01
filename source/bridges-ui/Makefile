@@ -60,6 +60,7 @@ BUILD_GTK2_FLAGS += -isystem /usr/include/gtk-2.0
 BUILD_GTK3_FLAGS += -isystem /usr/include/glib-2.0
 BUILD_GTK3_FLAGS += -isystem /usr/include/gtk-3.0
 BUILD_QT4_FLAGS  += -isystem /usr/include/qt4
+BUILD_QT5_FLAGS  += -isystem /usr/include/qt5
 BUILD_QT5_FLAGS  += -isystem /usr/include/x86_64-linux-gnu/qt5
 endif
 
