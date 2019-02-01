@@ -1,11 +1,11 @@
 language:
-    - cpp
+  - cpp
 
 sudo: required
 dist: trusty
 
 matrix:
-include:
+  include:
     # linux with gcc default (4.8)
     - os: linux
       dist: trusty
@@ -53,9 +53,9 @@ include:
         - MATRIX_EVAL="TARGET=win64"
 
 install:
-    - eval "${MATRIX_EVAL}"
-    - sh ${TRAVIS_BUILD_DIR}/.travis/install.sh
+  - eval "${MATRIX_EVAL}"
+  - sh ${TRAVIS_BUILD_DIR}/.travis/install.sh
 
 script:
-    - eval "${MATRIX_EVAL}"
-    - sh ${TRAVIS_BUILD_DIR}/.travis/script-${MATRIX_EVAL}.sh
+  - eval "${MATRIX_EVAL}"
+  - sh ${TRAVIS_BUILD_DIR}/.travis/script-${MATRIX_EVAL}.sh
