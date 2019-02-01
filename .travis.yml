@@ -8,47 +8,25 @@ matrix:
   include:
     # linux with gcc default (4.8)
     - os: linux
-      dist: trusty
       compiler: gcc
-      addons:
-        apt:
-          sources:
-            - kxstudio-debian/libs
-            - kxstudio-debian/mingw
-            - kxstudio-debian/toolchain
       env:
         - TARGET="linux"
 
     # linux with macOS cross-compilation
     - os: linux
-      dist: trusty
       compiler: gcc
-      addons:
-        apt:
-          sources:
-            - kxstudio-debian/toolchain
       env:
         - TARGET="macos"
 
     # linux with win32 cross-compilation
     - os: linux
-      dist: trusty
       compiler: gcc
-      addons:
-        apt:
-          sources:
-            - kxstudio-debian/mingw
       env:
         - TARGET="win32"
 
     # linux with win64 cross-compilation
     - os: linux
-      dist: trusty
       compiler: gcc
-      addons:
-        apt:
-          sources:
-            - kxstudio-debian/mingw
       env:
         - TARGET="win64"
 
