@@ -3,7 +3,7 @@
 set -e
 
 # Preparation
-_FLAGS="-I/opt/kxstudio/include -Werror"
+_FLAGS="-Werror"
 export CFLAGS="${_FLAGS}"
 export CXXFLAGS="${_FLAGS}"
 export LDFLAGS="-L/opt/kxstudio/lib"

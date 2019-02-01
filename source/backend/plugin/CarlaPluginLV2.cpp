@@ -1015,7 +1015,7 @@ public:
         }
         else
         {
-            rindex -= fRdfDescriptor->PortCount;
+            rindex -= static_cast<int32_t>(fRdfDescriptor->PortCount);
 
             if (rindex < static_cast<int32_t>(fRdfDescriptor->ParameterCount))
             {
@@ -1198,7 +1198,7 @@ public:
 
         if (pData->param.data[parameterId].rindex >= static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
-            const uint32_t rparamId = pData->param.data[parameterId].rindex - fRdfDescriptor->PortCount;
+            const uint32_t rparamId = static_cast<uint32_t>(pData->param.data[parameterId].rindex) - fRdfDescriptor->PortCount;
             CARLA_SAFE_ASSERT_UINT2_RETURN(rparamId < fRdfDescriptor->ParameterCount,
                                            rparamId, fRdfDescriptor->PortCount,);
 
@@ -1218,10 +1218,10 @@ public:
                 lv2_atom_forge_bool(&fAtomForge, fixedValue > 0.5f);
                 break;
             case LV2_PARAMETER_INT:
-                lv2_atom_forge_int(&fAtomForge, fixedValue + 0.5f);
+                lv2_atom_forge_int(&fAtomForge, static_cast<int32_t>(fixedValue + 0.5f));
                 break;
             case LV2_PARAMETER_LONG:
-                lv2_atom_forge_long(&fAtomForge, fixedValue + 0.5f);
+                lv2_atom_forge_long(&fAtomForge, static_cast<int64_t>(fixedValue + 0.5f));
                 break;
             case LV2_PARAMETER_FLOAT:
                 lv2_atom_forge_float(&fAtomForge, fixedValue);
@@ -1391,7 +1391,7 @@ public:
                     lv2_atom_forge_urid(&fAtomForge, getCustomURID(fFilePathURI));
 
                     lv2_atom_forge_key(&fAtomForge, kUridPatchValue);
-                    lv2_atom_forge_path(&fAtomForge, path, std::strlen(path));
+                    lv2_atom_forge_path(&fAtomForge, path, static_cast<uint32_t>(std::strlen(path)));
 
                     lv2_atom_forge_pop(&fAtomForge, &forgeFrame);
 

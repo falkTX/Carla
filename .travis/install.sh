@@ -30,6 +30,26 @@ if [ "${TARGET}" = "linux" ]; then
     # Fix for 32bit bridge link
     sudo ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
 
+elif [ "${TARGET}" = "linux-strict" ]; then
+    sudo apt-get install -y \
+        g++-8 \
+        pkg-config \
+        pyqt5-dev-tools \
+        python3-pyqt5.qtsvg \
+        python3-rdflib \
+        libgtk2.0-dev \
+        libgtk-3-dev \
+        libqt4-dev \
+        qtbase5-dev \
+        libasound2-dev \
+        libpulse-dev \
+        libmagic-dev \
+        libgl1-mesa-dev \
+        libx11-dev \
+        libx11-6:i386 \
+        liblo-dev \
+        libfluidsynth-dev
+
 elif [ "${TARGET}" = "macos" ]; then
     sudo apt-get install -y \
         pkg-config \

@@ -6,7 +6,7 @@ dist: trusty
 
 matrix:
   include:
-    # linux with gcc default (4.8)
+    # linux with default, builds native and bridges
     - os: linux
       compiler: gcc
       env:
@@ -29,6 +29,12 @@ matrix:
       compiler: gcc
       env:
         - TARGET="win64"
+
+    # linux with gcc 8, strict build
+    - os: linux
+      compiler: gcc
+      env:
+        - TARGET="linux-strict"
 
 before_install:
   - sh ${TRAVIS_BUILD_DIR}/.travis/before_install.sh
