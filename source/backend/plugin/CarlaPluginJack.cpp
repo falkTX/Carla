@@ -68,6 +68,7 @@ public:
           fShmIds(),
           fNumPorts(),
 #ifdef HAVE_LIBLO
+          fOscClientAddress(nullptr),
           fOscServer(nullptr),
 #endif
           fProcess() {}
@@ -101,6 +102,11 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, 0);
         carla_stdout("CarlaPluginJackThread::_broadcast_handler(%s, %s, %p, %i)", path, types, argv, argc);
 
+        return ((CarlaPluginJackThread*)data)->handleBroadcast(path, types, argv, msg);
+    }
+
+    int handleBroadcast(const char* path, const char* types, lo_arg** argv, lo_message msg)
+    {
         if (std::strcmp(path, "/nsm/server/announce") == 0)
         {
             CARLA_SAFE_ASSERT_RETURN(std::strcmp(types, "sssiii") == 0, 0);
@@ -111,44 +117,51 @@ protected:
             char* const msgURL(lo_address_get_url(msgAddress));
             CARLA_SAFE_ASSERT_RETURN(msgURL != nullptr, 0);
 
-            lo_address replyAddress = lo_address_new_from_url(msgURL);
-            CARLA_SAFE_ASSERT_RETURN(replyAddress != nullptr, 0);
+            if (fOscClientAddress != nullptr)
+                lo_address_free(fOscClientAddress);
 
-            ((CarlaPluginJackThread*)data)->handleBroadcast(replyAddress);
+            fOscClientAddress = lo_address_new_from_url(msgURL);
+            CARLA_SAFE_ASSERT_RETURN(fOscClientAddress != nullptr, 0);
+
+            const char* const method   = "/nsm/server/announce";
+            const char* const message  = "Howdy, what took you so long?";
+            const char* const smName   = "Carla";
+            const char* const features = ":server-control:";
+
+            lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE, "/reply", "ssss",
+                         method, message, smName, features);
+        }
+
+        if (std::strcmp(path, "/reply") == 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(std::strcmp(types, "ss") == 0, 0);
+
+            const char* const method  = &argv[0]->s;
+            const char* const message = &argv[1]->s;
+
+            carla_stdout("Got reply of '%s' as '%s'", method, message);
         }
 
         return 0;
-    }
-
-    void handleBroadcast(lo_address replyAddress)
-    {
-        const char* const method   = "/nsm/server/announce";
-        const char* const message  = "Howdy, what took you so long?";
-        const char* const smName   = "Carla";
-        const char* const features = ":server-control:";
-
-        lo_send_from(replyAddress, fOscServer, LO_TT_IMMEDIATE, "/reply", "ssss",
-                      method, message, smName, features);
-
-//         carla_sleep(2);
-//
-//         const char* const projectPath  = "/home/falktx/NSM Sessions/hy/Carla.nVBVL";
-//         const char* const displayName  = "hy";
-//         const char* const clientNameId = "Carla.test1";
-//
-//         lo_send_from(replyAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/open", "sss",
-//                       projectPath, displayName, clientNameId);
     }
 #endif
 
     void run()
     {
 #ifdef HAVE_LIBLO
+        if (fOscClientAddress != nullptr)
+        {
+            lo_address_free(fOscClientAddress);
+            fOscClientAddress = nullptr;
+        }
+
         // NSM support
         fOscServer = lo_server_new_with_proto(nullptr, LO_UDP, _osc_error_handler);
         CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr,);
 
         lo_server_add_method(fOscServer, nullptr, nullptr, _broadcast_handler, this);
+
+        bool nsmOpened = false;
 #endif
 
         if (fProcess == nullptr)
@@ -219,6 +232,18 @@ protected:
         {
 #ifdef HAVE_LIBLO
             lo_server_recv_noblock(fOscServer, 50);
+
+            if (fOscClientAddress != nullptr && ! nsmOpened)
+            {
+                const char* const projectPath  = "/tmp/Carla.nsm-test1";
+                const char* const displayName  = "hy";
+                const char* const clientNameId = "Carla.test1";
+
+                lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/open", "sss",
+                             projectPath, displayName, clientNameId);
+
+                nsmOpened = true;
+            }
 #else
             carla_msleep(50);
 #endif
@@ -227,6 +252,12 @@ protected:
 #ifdef HAVE_LIBLO
         lo_server_free(fOscServer);
         fOscServer = nullptr;
+
+        if (fOscClientAddress != nullptr)
+        {
+            lo_address_free(fOscClientAddress);
+            fOscClientAddress = nullptr;
+        }
 #endif
 
         // we only get here if bridge crashed or thread asked to exit
@@ -265,7 +296,8 @@ private:
     CarlaString fNumPorts;
 
 #ifdef HAVE_LIBLO
-    lo_server fOscServer;
+    lo_address fOscClientAddress;
+    lo_server  fOscServer;
 #endif
 
     ScopedPointer<ChildProcess> fProcess;
