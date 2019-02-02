@@ -943,7 +943,7 @@ bool CarlaJackAppClient::handleNonRtData()
 
         case kPluginBridgeNonRtClientPrepareForSave:
             {
-                if (fSessionManager == 1) // auto
+                if (fSessionManager == 1 && std::getenv("NSM_URL") == nullptr) // auto
                 {
                     struct sigaction sig;
                     carla_zeroStruct(sig);

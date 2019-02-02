@@ -90,6 +90,33 @@ public:
         return (uintptr_t)fProcess->getPID();
     }
 
+    void sendTerminate() const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(fProcess != nullptr,);
+
+        fProcess->terminate();
+    }
+
+#ifdef HAVE_LIBLO
+    void nsmSave()
+    {
+        if (fOscClientAddress == nullptr)
+            return;
+
+        lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/save", "");
+    }
+
+    void nsmShowGui(const bool yesNo)
+    {
+        if (fOscClientAddress == nullptr)
+            return;
+
+        lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE,
+                     yesNo ? "/nsm/client/show_optional_gui"
+                           : "/nsm/client/hide_optional_gui", "");
+    }
+#endif
+
 protected:
 #ifdef HAVE_LIBLO
     static void _osc_error_handler(int num, const char* msg, const char* path)
@@ -132,7 +159,7 @@ protected:
                          method, message, smName, features);
         }
 
-        if (std::strcmp(path, "/reply") == 0)
+        else if (std::strcmp(path, "/reply") == 0)
         {
             CARLA_SAFE_ASSERT_RETURN(std::strcmp(types, "ss") == 0, 0);
 
@@ -140,6 +167,20 @@ protected:
             const char* const message = &argv[1]->s;
 
             carla_stdout("Got reply of '%s' as '%s'", method, message);
+        }
+
+        else if (std::strcmp(path, "/nsm/client/gui_is_shown") == 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(std::strcmp(types, "") == 0, 0);
+
+            kEngine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, kPlugin->getId(), 1, 0, 0.0f, nullptr);
+        }
+
+        else if (std::strcmp(path, "/nsm/client/gui_is_hidden") == 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(std::strcmp(types, "") == 0, 0);
+
+            kEngine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, kPlugin->getId(), 0, 0, 0.0f, nullptr);
         }
 
         return 0;
@@ -362,6 +403,8 @@ public:
             fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientQuit);
             fShmNonRtClientControl.commitWrite();
 
+            fBridgeThread.sendTerminate();
+
             if (! fTimedOut)
                 waitForClient("stopping", 3000);
         }
@@ -441,6 +484,10 @@ public:
 
     void prepareForSave() noexcept override
     {
+#ifdef HAVE_LIBLO
+        fBridgeThread.nsmSave();
+#endif
+
         {
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
 
@@ -516,6 +563,10 @@ public:
         if (yesNo && ! fBridgeThread.isThreadRunning()) {
             CARLA_SAFE_ASSERT_RETURN(restartBridgeThread(),);
         }
+
+#ifdef HAVE_LIBLO
+        fBridgeThread.nsmShowGui(yesNo);
+#endif
 
         const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
 
