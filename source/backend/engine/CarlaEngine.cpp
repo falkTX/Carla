@@ -366,7 +366,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
     carla_debug("CarlaEngine::addPlugin(%i:%s, %i:%s, \"%s\", \"%s\", \"%s\", " P_INT64 ", %p, %u)", btype, BinaryType2Str(btype), ptype, PluginType2Str(ptype), filename, name, label, uniqueId, extra, options);
 
 #ifndef CARLA_OS_WIN
-    if (filename != nullptr && filename[0] != '\0') {
+    if (ptype != PLUGIN_JACK && filename != nullptr && filename[0] != '\0') {
         CARLA_SAFE_ASSERT_RETURN_ERR(filename[0] == CARLA_OS_SEP || filename[0] == '.' || filename[0] == '~', "Invalid plugin filename");
     }
 #endif
