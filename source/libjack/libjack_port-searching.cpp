@@ -104,26 +104,26 @@ const char** jack_get_ports(jack_client_t* client, const char* a, const char* b,
 CARLA_EXPORT
 jack_port_t* jack_port_by_name(jack_client_t* client, const char* name)
 {
-    carla_stdout("%s(%p, %s) WIP", __FUNCTION__, client, name);
+    carla_debug("%s(%p, %s)", __FUNCTION__, client, name);
 
     JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
 
-    const JackServerState& jserver(jclient->server);
-    const int commonFlags = JackPortIsPhysical|JackPortIsTerminal;
-
-    static JackPortState retPort(
-        /* name        */ nullptr,
-        /* fullname    */ nullptr,
-        /* index       */ 0,
-        /* flags       */ 0x0,
-        /* isMidi      */ false,
-        /* isSystem    */ true,
-        /* isConnected */ false
-    );
-
     if (std::strncmp(name, "system:", 7) == 0)
     {
+        static JackPortState retPort(
+            /* name        */ nullptr,
+            /* fullname    */ nullptr,
+            /* index       */ 0,
+            /* flags       */ 0x0,
+            /* isMidi      */ false,
+            /* isSystem    */ true,
+            /* isConnected */ false
+        );
+
+        const JackServerState& jserver(jclient->server);
+        const int commonFlags = JackPortIsPhysical|JackPortIsTerminal;
+
         std::free(retPort.fullname);
         retPort.fullname = strdup(name);
 
@@ -187,6 +187,11 @@ jack_port_t* jack_port_by_name(jack_client_t* client, const char* name)
         }
 
         return (jack_port_t*)&retPort;
+    }
+    else
+    {
+        if (JackPortState* const port = jclient->portNameMapping[name])
+            return (jack_port_t*)port;
     }
 
     carla_stderr2("jack_port_by_name: invalid port name '%s'", name);

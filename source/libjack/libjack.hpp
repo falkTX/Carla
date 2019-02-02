@@ -37,6 +37,7 @@
 #endif
 
 #include <cerrno>
+#include <map>
 
 #ifdef __SSE2_MATH__
 # include <xmmintrin.h>
@@ -164,6 +165,8 @@ struct JackClientState {
     LinkedList<JackPortState*> midiIns;
     LinkedList<JackPortState*> midiOuts;
 
+    std::map<std::string, JackPortState*> portNameMapping;
+
     JackShutdownCallback shutdownCb;
     void* shutdownCbPtr;
 
@@ -195,6 +198,7 @@ struct JackClientState {
           audioOuts(),
           midiIns(),
           midiOuts(),
+          portNameMapping(),
           shutdownCb(nullptr),
           shutdownCbPtr(nullptr),
           infoShutdownCb(nullptr),

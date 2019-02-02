@@ -48,6 +48,7 @@ jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, co
                 jclient->audioIns.append(port);
             }
 
+            jclient->portNameMapping[port->fullname] = port;
             return (jack_port_t*)port;
         }
 
@@ -62,6 +63,7 @@ jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, co
                 jclient->audioOuts.append(port);
             }
 
+            jclient->portNameMapping[port->fullname] = port;
             return (jack_port_t*)port;
         }
 
@@ -82,6 +84,7 @@ jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, co
                 jclient->midiIns.append(port);
             }
 
+            jclient->portNameMapping[port->fullname] = port;
             return (jack_port_t*)port;
         }
 
@@ -96,6 +99,7 @@ jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, co
                 jclient->midiOuts.append(port);
             }
 
+            jclient->portNameMapping[port->fullname] = port;
             return (jack_port_t*)port;
         }
 
@@ -130,12 +134,14 @@ int jack_port_unregister(jack_client_t* client, jack_port_t* port)
             if (jport->flags & JackPortIsInput)
             {
                 CARLA_SAFE_ASSERT_RETURN(jclient->midiIns.removeOne(jport), ENOENT);
+                jclient->portNameMapping.erase(jport->fullname);
                 return 0;
             }
 
             if (jport->flags & JackPortIsOutput)
             {
                 CARLA_SAFE_ASSERT_RETURN(jclient->midiOuts.removeOne(jport), ENOENT);
+                jclient->portNameMapping.erase(jport->fullname);
                 return 0;
             }
         }
@@ -144,12 +150,14 @@ int jack_port_unregister(jack_client_t* client, jack_port_t* port)
             if (jport->flags & JackPortIsInput)
             {
                 CARLA_SAFE_ASSERT_RETURN(jclient->audioIns.removeOne(jport), ENOENT);
+                jclient->portNameMapping.erase(jport->fullname);
                 return 0;
             }
 
             if (jport->flags & JackPortIsOutput)
             {
                 CARLA_SAFE_ASSERT_RETURN(jclient->audioOuts.removeOne(jport), ENOENT);
+                jclient->portNameMapping.erase(jport->fullname);
                 return 0;
             }
         }
@@ -325,8 +333,37 @@ int jack_port_set_name(jack_port_t *port, const char *port_name)
 CARLA_EXPORT
 int jack_port_rename(jack_client_t* client, jack_port_t *port, const char *port_name)
 {
-    carla_stderr2("%s(%p, %p, %s)", __FUNCTION__, client, port, port_name);
-    return ENOSYS;
+    carla_stderr2("%s(%p, %p, %s) WIP", __FUNCTION__, client, port, port_name);
+
+    JackClientState* const jclient = (JackClientState*)client;
+    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, EINVAL);
+
+    CARLA_SAFE_ASSERT_RETURN(port_name != nullptr && port_name[0] != '\0', EINVAL);
+
+    JackPortState* const jport = (JackPortState*)port;
+    CARLA_SAFE_ASSERT_RETURN(jport != nullptr, EINVAL);
+    CARLA_SAFE_ASSERT_RETURN(! jport->isSystem, EINVAL);
+
+    // TODO: verify uniqueness
+
+    char* const name = strdup(port_name);
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr, ENOMEM);
+
+    char* const fullname = (char*)std::malloc(STR_MAX);
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr, ENOMEM);
+
+    std::free(jport->name);
+    jport->name = strdup(port_name);
+
+    std::snprintf(fullname, STR_MAX, "%s:%s", jclient->name, port_name);
+    fullname[STR_MAX-1] = '\0';
+
+    std::free(jport->fullname);
+    jport->fullname = fullname;
+
+    // TODO: port rename callback
+
+    return 0;
 }
 
 CARLA_EXPORT
