@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -138,6 +138,11 @@ typedef struct _CarlaCachedPluginInfo {
 CARLA_EXPORT const char* carla_get_complete_license_text();
 
 /*!
+ * Get the juce version used in the current Carla build.
+ */
+CARLA_EXPORT const char* carla_get_juce_version();
+
+/*!
  * Get the list of supported file extensions in carla_load_file().
  */
 CARLA_EXPORT const char* const* carla_get_supported_file_extensions();
@@ -235,6 +240,7 @@ CARLA_EXPORT bool carla_pipe_client_flush_and_unlock(CarlaPipeClientHandle handl
  */
 CARLA_EXPORT void carla_pipe_client_destroy(CarlaPipeClientHandle handle);
 
+#ifndef CARLA_HOST_H_INCLUDED
 /* ------------------------------------------------------------------------------------------------------------
  * info about current library */
 
@@ -247,6 +253,7 @@ CARLA_EXPORT const char* carla_get_library_filename();
  * Get the folder where this carla library resides.
  */
 CARLA_EXPORT const char* carla_get_library_folder();
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 // TESTING

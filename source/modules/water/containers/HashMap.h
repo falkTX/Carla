@@ -443,7 +443,7 @@ private:
     int generateHashFor (KeyTypeParameter key) const
     {
         const int hash = hashFunctionToUse.generateHash (key, getNumSlots());
-        jassert (isPositiveAndBelow (hash, getNumSlots())); // your hash function is generating out-of-range numbers!
+        wassert (isPositiveAndBelow (hash, getNumSlots())); // your hash function is generating out-of-range numbers!
         return hash;
     }
 

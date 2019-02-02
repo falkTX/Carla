@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Digital Peak Meter, a custom Qt4 widget
-# Copyright (C) 2011-2015 Filipe Coelho <falktx@falktx.com>
+# Digital Peak Meter, a custom Qt widget
+# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,22 +17,13 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Config)
-
-from carla_config import *
-
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 from math import sqrt
 
-if config_UseQt5:
-    from PyQt5.QtCore import qCritical, Qt, QTimer, QSize
-    from PyQt5.QtGui import QColor, QLinearGradient, QPainter, QPen, QPixmap
-    from PyQt5.QtWidgets import QWidget
-else:
-    from PyQt4.QtCore import qCritical, Qt, QTimer, QSize
-    from PyQt4.QtGui import QColor, QLinearGradient, QPainter, QPen, QPixmap, QWidget
+from PyQt5.QtCore import qCritical, Qt, QTimer, QSize
+from PyQt5.QtGui import QColor, QLinearGradient, QPainter, QPen, QPixmap
+from PyQt5.QtWidgets import QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Widget Class
@@ -461,11 +452,7 @@ class DigitalPeakMeter(QWidget):
 if __name__ == '__main__':
     import sys
     import resources_rc
-
-    if config_UseQt5:
-        from PyQt5.QtWidgets import QApplication
-    else:
-        from PyQt4.QtGui import QApplication
+    from PyQt5.QtWidgets import QApplication
 
     app = QApplication(sys.argv)
 

@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -22,6 +22,11 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaPipeUtils.hpp"
 #include "CarlaString.hpp"
+
+#ifdef USING_JUCE
+# include "AppConfig.h"
+# include "juce_events/juce_events.h"
+#endif
 
 #include "water/files/File.h"
 
@@ -231,7 +236,7 @@ public:
                             fWorkerUISignal = 1;
                             const char* const msg((const char*)(event + 1));
                             const size_t msgSize = std::strlen(msg);
-                            fWorker->schedule_work(fWorker->handle, msgSize+1, msg);
+                            fWorker->schedule_work(fWorker->handle, static_cast<uint32_t>(msgSize + 1U), msg);
                         }
                         else
                         {
@@ -406,19 +411,19 @@ public:
 
                 char strBufIndex[8];
                 carla_zeroChars(strBufIndex, 8);
-                std::strncpy(strBufIndex, msgIndex, msgSplit-msgIndex);
+                std::strncpy(strBufIndex, msgIndex, static_cast<size_t>(msgSplit - msgIndex));
 
-                const int index = std::atoi(msgIndex) - fPorts.indexOffset;
+                const int index = std::atoi(msgIndex) - static_cast<int>(fPorts.indexOffset);
                 CARLA_SAFE_ASSERT_RETURN(index >= 0, LV2_WORKER_ERR_UNKNOWN);
 
-                double value;
+                float value;
 
                 {
-                    const ScopedLocale csl;
-                    value = std::atof(msgSplit+1);
+                    const CarlaScopedLocale csl;
+                    value = static_cast<float>(std::atof(msgSplit+1));
                 }
 
-                fDescriptor->ui_set_parameter_value(fHandle, index, value);
+                fDescriptor->ui_set_parameter_value(fHandle, static_cast<uint32_t>(index), value);
             }
         }
         else if (std::strcmp(msg, "show") == 0)
@@ -730,6 +735,10 @@ private:
 
     int fWorkerUISignal;
 
+#ifdef USING_JUCE
+    juce::SharedResourcePointer<juce::ScopedJuceInitialiser_GUI> sJuceInitialiser;
+#endif
+
     // -------------------------------------------------------------------
 
     #define handlePtr ((NativePlugin*)handle)
@@ -920,7 +929,7 @@ static LV2_Worker_Status lv2_work(LV2_Handle instance, LV2_Worker_Respond_Functi
     return instancePtr->lv2_work(respond, handle, size, data);
 }
 
-LV2_Worker_Status lv2_work_resp(LV2_Handle instance, uint32_t size, const void* body)
+static LV2_Worker_Status lv2_work_resp(LV2_Handle instance, uint32_t size, const void* body)
 {
     carla_debug("work_resp(%p, %u, %p)", instance, size, body);
     return instancePtr->lv2_work_resp(size, body);

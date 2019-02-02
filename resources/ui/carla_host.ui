@@ -67,16 +67,7 @@
            <property name="spacing">
             <number>0</number>
            </property>
-           <property name="leftMargin">
-            <number>0</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
+           <property name="margin">
             <number>0</number>
            </property>
            <item>
@@ -239,7 +230,7 @@
      <x>0</x>
      <y>0</y>
      <width>1058</width>
-     <height>30</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -328,6 +319,7 @@
      <string>&amp;Help</string>
     </property>
     <addaction name="act_help_about"/>
+    <addaction name="act_help_about_juce"/>
     <addaction name="act_help_about_qt"/>
    </widget>
    <addaction name="menu_File"/>
@@ -715,7 +707,7 @@
          </layout>
         </widget>
        </widget>
-       <widget class="QTabWidget" name="tabWidget_2">
+       <widget class="QTabWidget" name="tw_miniCanvas">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
           <horstretch>0</horstretch>
@@ -728,7 +720,7 @@
         <property name="currentIndex">
          <number>0</number>
         </property>
-        <property name="tabBarAutoHide">
+        <property name="tabBarAutoHide" stdset="0">
          <bool>true</bool>
         </property>
         <widget class="QWidget" name="tab_3">
@@ -739,7 +731,7 @@
           </sizepolicy>
          </property>
          <attribute name="title">
-          <string>Tab 1</string>
+          <string/>
          </attribute>
          <layout class="QVBoxLayout" name="verticalLayout_7">
           <property name="spacing">
@@ -1111,6 +1103,11 @@
   <action name="act_help_about">
    <property name="text">
     <string>&amp;About</string>
+   </property>
+  </action>
+  <action name="act_help_about_juce">
+   <property name="text">
+    <string>About &amp;JUCE</string>
    </property>
   </action>
   <action name="act_help_about_qt">

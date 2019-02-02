@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla host code
-# Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,28 +17,18 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Config)
-
-from carla_config import *
-
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 import json
 
-if config_UseQt5:
-    from PyQt5.QtCore import qCritical, QEventLoop, QFileInfo, QModelIndex, QPointF, QTimer, QEvent
-    from PyQt5.QtGui import QImage, QPalette, QBrush
-    from PyQt5.QtWidgets import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QMainWindow
-else:
-    from PyQt4.QtCore import qCritical, QEventLoop, QFileInfo, QModelIndex, QPointF, QTimer, QEvent
-    from PyQt4.QtGui import QImage, QPalette, QBrush
-    from PyQt4.QtGui import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QMainWindow
+from PyQt5.Qt import PYQT_VERSION
+from PyQt5.QtCore import qCritical, QEventLoop, QFileInfo, QModelIndex, QPointF, QTimer, QEvent
+from PyQt5.QtGui import QImage, QPalette, QBrush
+from PyQt5.QtWidgets import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QMainWindow
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
-import patchcanvas
 import ui_carla_host
 
 from carla_app import *
@@ -47,6 +37,7 @@ from carla_settings import *
 from carla_utils import *
 from carla_widgets import *
 
+from patchcanvas import patchcanvas
 from widgets.digitalpeakmeter import DigitalPeakMeter
 from widgets.pixmapkeyboard import PixmapKeyboardHArea
 
@@ -54,10 +45,7 @@ from widgets.pixmapkeyboard import PixmapKeyboardHArea
 # Try Import OpenGL
 
 try:
-    if config_UseQt5:
-        from PyQt5.QtOpenGL import QGLWidget
-    else:
-        from PyQt4.QtOpenGL import QGLWidget
+    from PyQt5.QtOpenGL import QGLWidget
     hasGL = True
 except:
     hasGL = False
@@ -386,7 +374,7 @@ class HostWindow(QMainWindow):
         self.ui.scrollArea.setEnabled(False)
 
         self.ui.miniCanvasPreview.setRealParent(self)
-        self.ui.verticalLayout_7.setContentsMargins(0, 0, 0, 1)
+        self.ui.tw_miniCanvas.tabBar().hide()
 
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (special stuff for Mac OS)
@@ -407,16 +395,17 @@ class HostWindow(QMainWindow):
         # ----------------------------------------------------------------------------------------------------
         # Set-up Canvas
 
-        self.scene = patchcanvas.PatchScene(self, self.ui.graphicsView)
-        self.ui.graphicsView.setScene(self.scene)
-        self.ui.graphicsView.setRenderHint(QPainter.Antialiasing, bool(self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING] == patchcanvas.ANTIALIASING_FULL))
+        if withCanvas:
+            self.scene = patchcanvas.PatchScene(self, self.ui.graphicsView)
+            self.ui.graphicsView.setScene(self.scene)
+            self.ui.graphicsView.setRenderHint(QPainter.Antialiasing, bool(self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING] == patchcanvas.ANTIALIASING_FULL))
 
-        if self.fSavedSettings[CARLA_KEY_CANVAS_USE_OPENGL] and hasGL:
-            self.ui.glView = QGLWidget(self)
-            self.ui.graphicsView.setViewport(self.ui.glView)
-            self.ui.graphicsView.setRenderHint(QPainter.HighQualityAntialiasing, self.fSavedSettings[CARLA_KEY_CANVAS_HQ_ANTIALIASING])
+            if self.fSavedSettings[CARLA_KEY_CANVAS_USE_OPENGL] and hasGL:
+                self.ui.glView = QGLWidget(self)
+                self.ui.graphicsView.setViewport(self.ui.glView)
+                self.ui.graphicsView.setRenderHint(QPainter.HighQualityAntialiasing, self.fSavedSettings[CARLA_KEY_CANVAS_HQ_ANTIALIASING])
 
-        self.setupCanvas()
+            self.setupCanvas()
 
         # ----------------------------------------------------------------------------------------------------
         # Connect actions to functions
@@ -446,16 +435,6 @@ class HostWindow(QMainWindow):
         self.ui.act_plugins_expand.triggered.connect(self.slot_pluginsExpand)
         self.ui.act_plugins_panic.triggered.connect(self.slot_pluginsDisable)
 
-        self.ui.act_canvas_show_internal.triggered.connect(self.slot_canvasShowInternal)
-        self.ui.act_canvas_show_external.triggered.connect(self.slot_canvasShowExternal)
-        self.ui.act_canvas_arrange.triggered.connect(self.slot_canvasArrange)
-        self.ui.act_canvas_refresh.triggered.connect(self.slot_canvasRefresh)
-        self.ui.act_canvas_zoom_fit.triggered.connect(self.slot_canvasZoomFit)
-        self.ui.act_canvas_zoom_in.triggered.connect(self.slot_canvasZoomIn)
-        self.ui.act_canvas_zoom_out.triggered.connect(self.slot_canvasZoomOut)
-        self.ui.act_canvas_zoom_100.triggered.connect(self.slot_canvasZoomReset)
-        self.ui.act_canvas_save_image.triggered.connect(self.slot_canvasSaveImage)
-        self.ui.act_canvas_arrange.setEnabled(False) # TODO, later
 
         self.ui.act_settings_show_toolbar.toggled.connect(self.slot_showToolbar)
         self.ui.act_settings_show_meters.toggled.connect(self.slot_showCanvasMeters)
@@ -464,6 +443,7 @@ class HostWindow(QMainWindow):
         self.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
 
         self.ui.act_help_about.triggered.connect(self.slot_aboutCarla)
+        self.ui.act_help_about_juce.triggered.connect(self.slot_aboutJuce)
         self.ui.act_help_about_qt.triggered.connect(self.slot_aboutQt)
 
         self.ui.cb_disk.currentIndexChanged.connect(self.slot_diskFolderChanged)
@@ -481,20 +461,29 @@ class HostWindow(QMainWindow):
 
         self.ui.listWidget.customContextMenuRequested.connect(self.showPluginActionsMenu)
 
-        self.ui.graphicsView.horizontalScrollBar().valueChanged.connect(self.slot_horizontalScrollBarChanged)
-        self.ui.graphicsView.verticalScrollBar().valueChanged.connect(self.slot_verticalScrollBarChanged)
-
         self.ui.keyboard.noteOn.connect(self.slot_noteOn)
         self.ui.keyboard.noteOff.connect(self.slot_noteOff)
 
-        self.ui.miniCanvasPreview.miniCanvasMoved.connect(self.slot_miniCanvasMoved)
-
         self.ui.tabWidget.currentChanged.connect(self.slot_tabChanged)
 
-        self.scene.scaleChanged.connect(self.slot_canvasScaleChanged)
-        self.scene.sceneGroupMoved.connect(self.slot_canvasItemMoved)
-        self.scene.pluginSelected.connect(self.slot_canvasPluginSelected)
-        self.scene.selectionChanged.connect(self.slot_canvasSelectionChanged)
+        if withCanvas:
+            self.ui.act_canvas_show_internal.triggered.connect(self.slot_canvasShowInternal)
+            self.ui.act_canvas_show_external.triggered.connect(self.slot_canvasShowExternal)
+            self.ui.act_canvas_arrange.triggered.connect(self.slot_canvasArrange)
+            self.ui.act_canvas_refresh.triggered.connect(self.slot_canvasRefresh)
+            self.ui.act_canvas_zoom_fit.triggered.connect(self.slot_canvasZoomFit)
+            self.ui.act_canvas_zoom_in.triggered.connect(self.slot_canvasZoomIn)
+            self.ui.act_canvas_zoom_out.triggered.connect(self.slot_canvasZoomOut)
+            self.ui.act_canvas_zoom_100.triggered.connect(self.slot_canvasZoomReset)
+            self.ui.act_canvas_save_image.triggered.connect(self.slot_canvasSaveImage)
+            self.ui.act_canvas_arrange.setEnabled(False) # TODO, later
+            self.ui.graphicsView.horizontalScrollBar().valueChanged.connect(self.slot_horizontalScrollBarChanged)
+            self.ui.graphicsView.verticalScrollBar().valueChanged.connect(self.slot_verticalScrollBarChanged)
+            self.ui.miniCanvasPreview.miniCanvasMoved.connect(self.slot_miniCanvasMoved)
+            self.scene.scaleChanged.connect(self.slot_canvasScaleChanged)
+            self.scene.sceneGroupMoved.connect(self.slot_canvasItemMoved)
+            self.scene.pluginSelected.connect(self.slot_canvasPluginSelected)
+            self.scene.selectionChanged.connect(self.slot_canvasSelectionChanged)
 
         self.SIGUSR1.connect(self.slot_handleSIGUSR1)
         self.SIGTERM.connect(self.slot_handleSIGTERM)
@@ -543,6 +532,10 @@ class HostWindow(QMainWindow):
         if "link" not in features:
             self.ui.cb_transport_link.setEnabled(False)
             self.ui.cb_transport_link.setVisible(False)
+
+        if "juce" not in features:
+            self.ui.act_help_about_juce.setEnabled(False)
+            self.ui.act_help_about_juce.setVisible(False)
 
         # Plugin needs to have timers always running so it receives messages
         if self.host.isPlugin or self.host.isRemote:
@@ -681,6 +674,9 @@ class HostWindow(QMainWindow):
 
         self.host.save_project(self.fProjectFilename)
 
+        if not self.fWithCanvas:
+            return
+
         with open(self.makeExtraFilename(), 'w') as fh:
             json.dump({
                 'canvas': patchcanvas.saveGroupPositions(),
@@ -693,6 +689,10 @@ class HostWindow(QMainWindow):
     def projectLoadingFinished(self):
         self.ui.rack.setEnabled(True)
         self.ui.graphicsView.setEnabled(True)
+
+        if not self.fWithCanvas:
+            return
+
         QTimer.singleShot(1000, self.slot_canvasRefresh)
 
         extrafile = self.makeExtraFilename()
@@ -724,10 +724,9 @@ class HostWindow(QMainWindow):
     @pyqtSlot()
     def slot_fileOpen(self):
         fileFilter = self.tr("Carla Project File (*.carxp);;Carla Preset File (*.carxs)")
-        filename   = QFileDialog.getOpenFileName(self, self.tr("Open Carla Project File"), self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], filter=fileFilter)
+        filename, ok = QFileDialog.getOpenFileName(self, self.tr("Open Carla Project File"), self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], filter=fileFilter)
 
-        if config_UseQt5:
-            filename = filename[0]
+        # FIXME use ok value, test if it works as expected
         if not filename:
             return
 
@@ -755,10 +754,9 @@ class HostWindow(QMainWindow):
             return self.saveProjectNow()
 
         fileFilter = self.tr("Carla Project File (*.carxp)")
-        filename   = QFileDialog.getSaveFileName(self, self.tr("Save Carla Project File"), self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], filter=fileFilter)
+        filename, ok = QFileDialog.getSaveFileName(self, self.tr("Save Carla Project File"), self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], filter=fileFilter)
 
-        if config_UseQt5:
-            filename = filename[0]
+        # FIXME use ok value, test if it works as expected
         if not filename:
             return
 
@@ -1010,38 +1008,11 @@ class HostWindow(QMainWindow):
     def showPluginActionsMenu(self):
         menu = QMenu(self)
 
-        if config_UseQt5:
-            menu.addSection("Plugins")
-        else:
-            # fake section
-            act  = menu.addAction("  Plugins")
-            font = act.font()
-            font.setBold(True)
-            act.setFont(font)
-            act.setEnabled(False)
-            menu.addSeparator()
-
+        menu.addSection("Plugins")
         menu.addAction(self.ui.act_plugin_add)
         menu.addAction(self.ui.act_plugin_remove_all)
 
-        if config_UseQt5:
-            menu.addSection("All plugins (macros)")
-        else:
-            # fake space
-            act  = menu.addAction(" ")
-            font = act.font()
-            font.setBold(True)
-            font.setPointSize(font.pointSize()/2)
-            act.setEnabled(False)
-
-            # fake section
-            act  = menu.addAction("  All plugins (macros)")
-            font = act.font()
-            font.setBold(True)
-            act.setFont(font)
-            act.setEnabled(False)
-            menu.addSeparator()
-
+        menu.addSection("All plugins (macros)")
         menu.addAction(self.ui.act_plugins_enable)
         menu.addAction(self.ui.act_plugins_disable)
         menu.addSeparator()
@@ -1267,7 +1238,8 @@ class HostWindow(QMainWindow):
     # Canvas
 
     def clearSideStuff(self):
-        self.scene.clearSelection()
+        if self.fWithCanvas:
+            self.scene.clearSelection()
 
         self.fSelectedPlugins = []
 
@@ -1389,10 +1361,9 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_canvasSaveImage(self):
-        newPath = QFileDialog.getSaveFileName(self, self.tr("Save Image"), filter=self.tr("PNG Image (*.png);;JPEG Image (*.jpg)"))
+        newPath, ok = QFileDialog.getSaveFileName(self, self.tr("Save Image"), filter=self.tr("PNG Image (*.png);;JPEG Image (*.jpg)"))
 
-        if config_UseQt5:
-            newPath = newPath[0]
+        # FIXME use ok value, test if it works as expected
         if not newPath:
             return
 
@@ -1721,6 +1692,10 @@ class HostWindow(QMainWindow):
     @pyqtSlot()
     def slot_aboutCarla(self):
         CarlaAboutW(self.fParentOrSelf, self.host).exec_()
+
+    @pyqtSlot()
+    def slot_aboutJuce(self):
+        JuceAboutW(self.fParentOrSelf).exec_()
 
     @pyqtSlot()
     def slot_aboutQt(self):
@@ -2263,7 +2238,9 @@ class HostWindow(QMainWindow):
 
     def resizeEvent(self, event):
         QMainWindow.resizeEvent(self, event)
-        self.slot_miniCanvasCheckSize()
+
+        if self.fWithCanvas:
+            self.slot_miniCanvasCheckSize()
 
     # --------------------------------------------------------------------------------------------------------
     # timer event
@@ -2334,13 +2311,17 @@ class HostWindow(QMainWindow):
 
         min_value = 0.07
 
-        value_fix = 1.0/(1.0-rack_imgL.scaled(1, 1, Qt.IgnoreAspectRatio, Qt.SmoothTransformation).pixelColor(0,0).blackF())
+        if PYQT_VERSION >= 0x50600:
+            value_fix = 1.0/(1.0-rack_imgL.scaled(1, 1, Qt.IgnoreAspectRatio, Qt.SmoothTransformation).pixelColor(0,0).blackF())
+        else:
+            value_fix = 1.5
+
         bg_color = self.ui.rack.palette().window().color()
         bg_value = 1.0 - bg_color.blackF()
-        if bg_value == 0:
-            bg_color = QColor.fromHsvF(0.0, 0.0, min_value*value_fix)
-        elif bg_value < min_value:
+        if bg_value != 0.0 and bg_value < min_value:
             pad_color = bg_color.lighter(100*min_value/bg_value*value_fix)
+        else:
+            pad_color = QColor.fromHsvF(0.0, 0.0, min_value*value_fix)
 
         painter = QPainter()
         fillRect = rack_imgL.rect().adjusted(-1,-1,1,1)
@@ -2613,18 +2594,17 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
 # File callback
 
 def fileCallback(ptr, action, isDir, title, filter):
-    ret = ("", "") if config_UseQt5 else ""
-
     title  = charPtrToString(title)
     filter = charPtrToString(filter)
 
     if action == FILE_CALLBACK_OPEN:
-        ret = QFileDialog.getOpenFileName(gCarla.gui, title, "", filter) #, QFileDialog.ShowDirsOnly if isDir else 0x0)
+        ret, ok = QFileDialog.getOpenFileName(gCarla.gui, title, "", filter) #, QFileDialog.ShowDirsOnly if isDir else 0x0)
     elif action == FILE_CALLBACK_SAVE:
-        ret = QFileDialog.getSaveFileName(gCarla.gui, title, "", filter, QFileDialog.ShowDirsOnly if isDir else 0x0)
+        ret, ok = QFileDialog.getSaveFileName(gCarla.gui, title, "", filter, QFileDialog.ShowDirsOnly if isDir else 0x0)
+    else:
+        ret, ok = ("", "")
 
-    if config_UseQt5:
-        ret = ret[0]
+    # FIXME use ok value, test if it works as expected
     if not ret:
         return None
 
@@ -2717,9 +2697,7 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError, HostClass = No
 
     sys.stdout = CarlaPrint(False)
     sys.stderr = CarlaPrint(True)
-
-    if config_UseQt5:
-        sys.excepthook = sys_excepthook
+    sys.excepthook = sys_excepthook
 
     # --------------------------------------------------------------------------------------------------------
     # Done
@@ -2894,6 +2872,7 @@ def setEngineSettings(host):
     DSSI_PATH   = toList(settings.value(CARLA_KEY_PATHS_DSSI,   CARLA_DEFAULT_DSSI_PATH))
     LV2_PATH    = toList(settings.value(CARLA_KEY_PATHS_LV2,    CARLA_DEFAULT_LV2_PATH))
     VST2_PATH   = toList(settings.value(CARLA_KEY_PATHS_VST2,   CARLA_DEFAULT_VST2_PATH))
+    VST3_PATH   = toList(settings.value(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH))
     SF2_PATH    = toList(settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH))
     SFZ_PATH    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH))
 
@@ -2901,6 +2880,7 @@ def setEngineSettings(host):
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_DSSI,   splitter.join(DSSI_PATH))
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2,    splitter.join(LV2_PATH))
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST2,   splitter.join(VST2_PATH))
+    host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST3,   splitter.join(VST3_PATH))
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(SF2_PATH))
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(SFZ_PATH))
 

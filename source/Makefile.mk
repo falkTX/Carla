@@ -92,6 +92,14 @@ UNIX=true
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
+# Set USING_JUCE
+
+# Not ready yet
+# ifeq ($(MACOS_OR_WIN32),true)
+# USING_JUCE=true
+# endif
+
+# ---------------------------------------------------------------------------------------------------------------------
 # Set build and link flags
 
 BASE_FLAGS = -Wall -Wextra -pipe -DBUILDING_CARLA -DREAL_BUILD -MD -MP
@@ -162,34 +170,30 @@ endif
 # Strict test build
 
 ifeq ($(TESTBUILD),true)
-BASE_FLAGS += -Werror -Wabi=98 -Wcast-qual -Wclobbered -Wconversion -Wdisabled-optimization -Wfloat-equal -Wformat=2 -Winit-self -Wmissing-declarations
-BASE_FLAGS += -Woverlength-strings -Wpointer-arith -Wredundant-decls -Wshadow -Wsign-conversion -Wundef -Wuninitialized -Wunused
+BASE_FLAGS += -Werror -Wabi=98 -Wcast-qual -Wclobbered -Wconversion -Wdisabled-optimization
+BASE_FLAGS += -Wdouble-promotion -Wfloat-equal -Wlogical-op -Wpointer-arith -Wsign-conversion
+BASE_FLAGS += -Wformat=2 -Woverlength-strings
+BASE_FLAGS += -Wmissing-declarations -Wredundant-decls
+BASE_FLAGS += -Wshadow  -Wundef -Wuninitialized -Wunused
 BASE_FLAGS += -Wstrict-aliasing -fstrict-aliasing
 BASE_FLAGS += -Wstrict-overflow -fstrict-overflow
-CFLAGS     += -Wnested-externs -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings
-CXXFLAGS   += -Wc++0x-compat -Wc++11-compat -Weffc++ -Wnon-virtual-dtor -Woverloaded-virtual -Wzero-as-null-pointer-constant
+BASE_FLAGS += -Wduplicated-branches -Wduplicated-cond  -Wnull-dereference
+CFLAGS     += -Winit-self -Wjump-misses-init -Wmissing-prototypes -Wnested-externs -Wstrict-prototypes -Wwrite-strings
+CXXFLAGS   += -Wc++0x-compat -Wc++11-compat -Weffc++
+CXXFLAGS   += -Wnon-virtual-dtor -Woverloaded-virtual
+# CXXFLAGS   += -Wold-style-cast -Wuseless-cast
+CXXFLAGS   += -Wzero-as-null-pointer-constant
 ifeq ($(LINUX),true)
 BASE_FLAGS += -isystem /opt/kxstudio/include
-CXXFLAGS   += -isystem /usr/include/glib-2.0
-CXXFLAGS   += -isystem /usr/include/glib-2.0/glib
-CXXFLAGS   += -isystem /usr/include/gtk-2.0
-CXXFLAGS   += -isystem /usr/include/gtk-2.0/gio
-ifeq ($(DEFAULT_QT),4)
-CXXFLAGS   += -isystem /usr/include/qt4
-else
-CXXFLAGS   += -isystem /usr/include/qt5
-endif
 endif
 ifeq ($(MACOS),true)
-BASE_FLAGS += -isystem /opt/kxstudio/include
 CXXFLAGS   += -isystem /System/Library/Frameworks
 endif
-ifeq ($(WIN64),true)
-BASE_FLAGS += -isystem /opt/mingw64/include
-else
 ifeq ($(WIN32),true)
 BASE_FLAGS += -isystem /opt/mingw32/include
 endif
+ifeq ($(WIN64),true)
+BASE_FLAGS += -isystem /opt/mingw64/include
 endif
 endif
 
@@ -280,53 +284,22 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Set PyQt tools
 
-PYRCC4 ?= $(shell which pyrcc4 2>/dev/null)
-PYUIC4 ?= $(shell which pyuic4 2>/dev/null)
-
 PYRCC5 ?= $(shell which pyrcc5 2>/dev/null)
 PYUIC5 ?= $(shell which pyuic5 2>/dev/null)
-
-HAVE_PYQT4=false
-HAVE_PYQT5=false
-
-ifneq ($(PYUIC4),)
-ifneq ($(PYRCC4),)
-HAVE_PYQT=true
-HAVE_PYQT4=true
-endif
-endif
 
 ifneq ($(PYUIC5),)
 ifneq ($(PYRCC5),)
 HAVE_PYQT=true
-HAVE_PYQT5=true
 endif
-endif
-
-# ---------------------------------------------------------------------------------------------------------------------
-# Set default Qt used in frontend
-
-ifeq ($(HAVE_PYQT5),true)
-DEFAULT_QT ?= 5
-else
-DEFAULT_QT ?= 4
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Set PyQt tools, part2
 
-ifeq ($(DEFAULT_QT),4)
-PYUIC ?= pyuic4 -w
-PYRCC ?= pyrcc4 -py3
-ifeq ($(HAVE_QT4),true)
-HAVE_THEME = true
-endif
-else
 PYUIC ?= pyuic5
 PYRCC ?= pyrcc5
 ifeq ($(HAVE_QT5),true)
 HAVE_THEME = true
-endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -367,6 +340,10 @@ endif
 
 ifeq ($(HAVE_X11),true)
 BASE_FLAGS += -DHAVE_X11
+endif
+
+ifeq ($(USING_JUCE),true)
+BASE_FLAGS += -DUSING_JUCE
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -428,6 +405,8 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Set libs stuff (part 2)
 
+ifneq ($(USING_JUCE),true)
+
 RTAUDIO_FLAGS    = -DHAVE_GETTIMEOFDAY
 RTMIDI_FLAGS     =
 
@@ -443,6 +422,8 @@ RTAUDIO_FLAGS   += $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags libpulse-simp
 RTAUDIO_LIBS    += $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs libpulse-simple)
 endif
 endif
+
+endif # USING_JUCE
 
 ifeq ($(BSD),true)
 JACKBRIDGE_LIBS  = -lpthread -lrt
@@ -471,11 +452,19 @@ JACKBRIDGE_LIBS  = -ldl -lpthread -lrt
 LILV_LIBS        = -ldl -lm -lrt
 RTMEMPOOL_LIBS   = -lpthread -lrt
 WATER_LIBS       = -ldl -lpthread -lrt
+ifeq ($(USING_JUCE),true)
+JUCE_AUDIO_DEVICES_LIBS = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs alsa)
+JUCE_CORE_LIBS          = -ldl -lpthread -lrt
+JUCE_EVENTS_LIBS        = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs x11)
+JUCE_GRAPHICS_LIBS      = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs freetype2)
+JUCE_GUI_BASICS_LIBS    = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs x11 xext)
+else
 ifeq ($(HAVE_ALSA),true)
 RTAUDIO_FLAGS   += $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags alsa) -D__LINUX_ALSA__
 RTAUDIO_LIBS    += $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs alsa) -lpthread
 RTMIDI_FLAGS    += $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags alsa) -D__LINUX_ALSA__
 RTMIDI_LIBS     += $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs alsa)
+endif
 endif
 endif
 
@@ -485,10 +474,21 @@ JACKBRIDGE_LIBS  = -ldl -lpthread
 LILV_LIBS        = -ldl -lm
 RTMEMPOOL_LIBS   = -lpthread
 WATER_LIBS       = -framework AppKit
+ifeq ($(USING_JUCE),true)
+JUCE_AUDIO_BASICS_LIBS     = -framework Accelerate
+JUCE_AUDIO_DEVICES_LIBS    = -framework AppKit -framework AudioToolbox -framework CoreAudio -framework CoreMIDI
+JUCE_AUDIO_FORMATS_LIBS    = -framework AudioToolbox -framework CoreFoundation
+JUCE_AUDIO_PROCESSORS_LIBS = -framework AudioToolbox -framework AudioUnit -framework CoreAudio -framework CoreAudioKit -framework Cocoa -framework Carbon
+JUCE_CORE_LIBS             = -framework AppKit
+JUCE_EVENTS_LIBS           = -framework AppKit
+JUCE_GRAPHICS_LIBS         = -framework Cocoa -framework QuartzCore
+JUCE_GUI_BASICS_LIBS       = -framework Cocoa
+else
 RTAUDIO_FLAGS   += -D__MACOSX_CORE__
 RTAUDIO_LIBS    += -framework CoreAudio
 RTMIDI_FLAGS    += -D__MACOSX_CORE__
 RTMIDI_LIBS     += -framework CoreMIDI
+endif
 endif
 
 ifeq ($(WIN32),true)
@@ -497,9 +497,16 @@ JACKBRIDGE_LIBS  = -lpthread
 LILV_LIBS        = -lm
 RTMEMPOOL_LIBS   = -lpthread
 WATER_LIBS       = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
+ifeq ($(USING_JUCE),true)
+JUCE_AUDIO_DEVICES_LIBS    = -lwinmm -lole32
+JUCE_CORE_LIBS             = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
+JUCE_GRAPHICS_LIBS         = -lgdi32
+JUCE_GUI_BASICS_LIBS       = -lgdi32 -limm32 -lcomdlg32 -lole32
+else
 RTAUDIO_FLAGS   += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_WASAPI__
 RTAUDIO_LIBS    += -ldsound -luuid -lksuser -lwinmm
 RTMIDI_FLAGS    += -D__WINDOWS_MM__
+endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -563,10 +570,14 @@ LINK := ln -sf
 
 # ---------------------------------------------------------------------------------------------------------------------
 
+ifneq ($(DEBUG),true)
+ifneq ($(TESTBUILD),true)
 ifneq (,$(wildcard $(CWD)/native-plugins/external/Makefile.mk))
 EXTERNAL_PLUGINS = true
 BASE_FLAGS += -DHAVE_EXTERNAL_PLUGINS
 include $(CWD)/native-plugins/external/Makefile.mk
+endif
+endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

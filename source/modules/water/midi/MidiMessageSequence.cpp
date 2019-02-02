@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2019 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -33,7 +33,7 @@ MidiMessageSequence::MidiMessageSequence()
 
 MidiMessageSequence::MidiMessageSequence (const MidiMessageSequence& other)
 {
-    list.addCopiesOf (other.list);
+    addSequence(other, 0.0);
     updateMatchedPairs();
 }
 
@@ -317,7 +317,7 @@ void MidiMessageSequence::createControllerUpdatesForTime (const int channelNumbe
             else if (mm.isController())
             {
                 const int controllerNumber = mm.getControllerNumber();
-                jassert (isPositiveAndBelow (controllerNumber, 128));
+                wassert (isPositiveAndBelow (controllerNumber, 128));
 
                 if (! doneControllers[controllerNumber])
                 {

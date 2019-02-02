@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla application
-# Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,20 +17,11 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Config)
-
-from carla_config import *
-
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-if config_UseQt5:
-    from PyQt5.QtCore import Qt, QCoreApplication, QSettings
-    from PyQt5.QtGui import QColor, QPalette
-    from PyQt5.QtWidgets import QApplication
-else:
-    from PyQt4.QtCore import Qt, QCoreApplication, QSettings
-    from PyQt4.QtGui import QApplication, QColor, QPalette
+from PyQt5.QtCore import Qt, QCoreApplication, QSettings
+from PyQt5.QtGui import QColor, QPalette
+from PyQt5.QtWidgets import QApplication
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -58,19 +49,13 @@ class CarlaApplication(object):
             QApplication.addLibraryPath(pathBinaries)
             stylesDir = pathBinaries
 
-        # If style is not available we can still fake it in Qt5
-        elif config_UseQt5:
-            stylesDir = ""
-
+        # If style is not available we can still fake it
         else:
-            self.createApp(appName)
-            return
-
-        forceTheme  = MACOS or (WINDOWS and not config_UseQt5)
+            stylesDir = ""
 
         # base settings
         settings    = QSettings("falkTX", appName)
-        useProTheme = forceTheme or settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, CARLA_DEFAULT_MAIN_USE_PRO_THEME, type=bool)
+        useProTheme = MACOS or settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, CARLA_DEFAULT_MAIN_USE_PRO_THEME, type=bool)
 
         if not useProTheme:
             self.createApp(appName)
@@ -90,7 +75,7 @@ class CarlaApplication(object):
         # set palette
         proThemeColor = settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, CARLA_DEFAULT_MAIN_PRO_THEME_COLOR, type=str).lower()
 
-        if forceTheme or proThemeColor == "black":
+        if MACOS or proThemeColor == "black":
             self.fPalBlack = QPalette()
             self.fPalBlack.setColor(QPalette.Disabled, QPalette.Window, QColor(14, 14, 14))
             self.fPalBlack.setColor(QPalette.Active,   QPalette.Window, QColor(17, 17, 17))

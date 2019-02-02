@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -26,7 +26,7 @@
   #ifndef CARLA_PLUGIN_PATCHBAY
     #error CARLA_PLUGIN_PATCHBAY undefined
   #endif
-  #if CARLA_PLUGIN_32CH || CARLA_PLUGIN_16CH
+  #if defined(CARLA_PLUGIN_32CH) || defined(CARLA_PLUGIN_16CH)
     #if ! CARLA_PLUGIN_SYNTH
       #error CARLA_PLUGIN_16/32CH requires CARLA_PLUGIN_SYNTH
     #endif
@@ -41,6 +41,11 @@
 
 #include "CarlaMathUtils.hpp"
 #include "CarlaVstUtils.hpp"
+
+#ifdef USING_JUCE
+# include "AppConfig.h"
+# include "juce_events/juce_events.h"
+#endif
 
 static uint32_t d_lastBufferSize = 0;
 static double   d_lastSampleRate = 0.0;
@@ -455,7 +460,9 @@ public:
                 fTimeInfo.bbt.beatType    = 4.0f;
             }
 
-            fTimeInfo.bbt.barStartTick = fTimeInfo.bbt.ticksPerBeat*fTimeInfo.bbt.beatsPerBar*(fTimeInfo.bbt.bar-1);
+            fTimeInfo.bbt.barStartTick = fTimeInfo.bbt.ticksPerBeat *
+                                         static_cast<double>(fTimeInfo.bbt.beatsPerBar) *
+                                         (fTimeInfo.bbt.bar - 1);
         }
 
         fMidiOutEvents.numEvents = 0;
@@ -613,6 +620,10 @@ private:
 
     char* fStateChunk;
 
+#ifdef USING_JUCE
+    juce::SharedResourcePointer<juce::ScopedJuceInitialiser_GUI> sJuceInitialiser;
+#endif
+
     // -------------------------------------------------------------------
 
     #define handlePtr ((NativePlugin*)handle)
@@ -711,7 +722,7 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
             const NativePluginDescriptor* pluginDesc = nullptr;
             PluginListManager& plm(PluginListManager::getInstance());
 
-           #if CARLA_VST_SHELL
+           #ifdef CARLA_VST_SHELL
             if (effect->uniqueID == 0)
                 effect->uniqueID = kShellUniqueID;
 
@@ -728,13 +739,13 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
             const int32_t plugIndex = effect->uniqueID - kShellUniqueID - 1;
             CARLA_SAFE_ASSERT_RETURN(plugIndex >= 0, 0);
 
-            pluginDesc = plm.descs.getAt(plugIndex, nullptr);
+            pluginDesc = plm.descs.getAt(static_cast<size_t>(plugIndex), nullptr);
 
            #else // CARLA_VST_SHELL
 
-           #  if CARLA_PLUGIN_32CH
+           #  if defined(CARLA_PLUGIN_32CH)
             const char* const pluginLabel = "carlapatchbay32";
-           #  elif CARLA_PLUGIN_16CH
+           #  elif defined(CARLA_PLUGIN_16CH)
             const char* const pluginLabel = "carlapatchbay16";
            #  elif CARLA_PLUGIN_PATCHBAY
             const char* const pluginLabel = "carlapatchbay";
@@ -757,11 +768,11 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
 
             CARLA_SAFE_ASSERT_RETURN(pluginDesc != nullptr, 0);
 
-           #if CARLA_VST_SHELL
+           #ifdef CARLA_VST_SHELL
             effect->numParams   = 0;
             effect->numPrograms = 0;
-            effect->numInputs   = pluginDesc->audioIns;
-            effect->numOutputs  = pluginDesc->audioOuts;
+            effect->numInputs   = static_cast<int>(pluginDesc->audioIns);
+            effect->numOutputs  = static_cast<int>(pluginDesc->audioOuts);
 
             if (pluginDesc->hints & NATIVE_PLUGIN_HAS_UI)
                 effect->flags |= effFlagsHasEditor;
@@ -809,7 +820,7 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
         return 0;
 
     case effGetPlugCategory:
-#if CARLA_VST_SHELL
+#ifdef CARLA_VST_SHELL
         if (validPlugin)
         {
            #if CARLA_PLUGIN_SYNTH
@@ -830,7 +841,7 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
     case effGetEffectName:
         if (char* const cptr = (char*)ptr)
         {
-           #if CARLA_VST_SHELL
+           #if defined(CARLA_VST_SHELL)
             if (validPlugin)
             {
                 const NativePluginDescriptor* const desc = pluginPtr->getDescriptor();
@@ -840,9 +851,9 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
             {
                 std::strncpy(cptr, "Carla-VstShell", 32);
             }
-           #elif CARLA_PLUGIN_32CH
+           #elif defined(CARLA_PLUGIN_32CH)
             std::strncpy(cptr, "Carla-Patchbay32", 32);
-           #elif CARLA_PLUGIN_16CH
+           #elif defined(CARLA_PLUGIN_16CH)
             std::strncpy(cptr, "Carla-Patchbay16", 32);
            #elif CARLA_PLUGIN_PATCHBAY
            #  if CARLA_PLUGIN_SYNTH
@@ -864,7 +875,7 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
     case effGetVendorString:
         if (char* const cptr = (char*)ptr)
         {
-           #if CARLA_VST_SHELL
+           #ifdef CARLA_VST_SHELL
             if (validPlugin)
             {
                 const NativePluginDescriptor* const desc = pluginPtr->getDescriptor();
@@ -880,7 +891,7 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
     case effGetProductString:
         if (char* const cptr = (char*)ptr)
         {
-           #if CARLA_VST_SHELL
+           #if defined(CARLA_VST_SHELL)
             if (validPlugin)
             {
                 const NativePluginDescriptor* const desc = pluginPtr->getDescriptor();
@@ -890,9 +901,9 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
             {
                 std::strncpy(cptr, "CarlaVstShell", 32);
             }
-           #elif CARLA_PLUGIN_32CH
+           #elif defined(CARLA_PLUGIN_32CH)
             std::strncpy(cptr, "CarlaPatchbay32", 32);
-           #elif CARLA_PLUGIN_16CH
+           #elif defined(CARLA_PLUGIN_16CH)
             std::strncpy(cptr, "CarlaPatchbay16", 32);
            #elif CARLA_PLUGIN_PATCHBAY
            #  if CARLA_PLUGIN_SYNTH
@@ -917,7 +928,7 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
     case effGetVstVersion:
         return kVstVersion;
 
-#if CARLA_VST_SHELL
+#ifdef CARLA_VST_SHELL
     case effShellGetNextPlugin:
         if (char* const cptr = (char*)ptr)
         {
@@ -928,15 +939,15 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
 
             for (;;)
             {
-                const uint index = effect->uniqueID - kShellUniqueID;
+                const uint index2 = static_cast<uint>(effect->uniqueID - kShellUniqueID);
 
-                if (index >= plm.descs.count())
+                if (index2 >= plm.descs.count())
                 {
                     effect->uniqueID = kShellUniqueID;
                     return 0;
                 }
 
-                const NativePluginDescriptor* const desc = plm.descs.getAt(index, nullptr);
+                const NativePluginDescriptor* const desc = plm.descs.getAt(index2, nullptr);
                 CARLA_SAFE_ASSERT_RETURN(desc != nullptr, 0);
 
                 ++effect->uniqueID;
@@ -992,14 +1003,14 @@ void vst_processReplacingCallback(AEffect* effect, float** inputs, float** outpu
 
 const AEffect* VSTPluginMainInit(AEffect* const effect)
 {
-   #if CARLA_VST_SHELL
+   #if defined(CARLA_VST_SHELL)
     if (const intptr_t uniqueID = VSTAudioMaster(effect, audioMasterCurrentId, 0, 0, nullptr, 0.0f))
-        effect->uniqueID = uniqueID;
+        effect->uniqueID = static_cast<int>(uniqueID);
     else
         effect->uniqueID = kShellUniqueID;
-   #elif CARLA_PLUGIN_32CH
+   #elif defined(CARLA_PLUGIN_32CH)
     effect->uniqueID = kBaseUniqueID+6;
-   #elif CARLA_PLUGIN_16CH
+   #elif defined(CARLA_PLUGIN_16CH)
     effect->uniqueID = kBaseUniqueID+5;
    #elif CARLA_PLUGIN_PATCHBAY
    #  if CARLA_PLUGIN_SYNTH
@@ -1018,13 +1029,13 @@ const AEffect* VSTPluginMainInit(AEffect* const effect)
     // plugin fields
     effect->numParams   = 0;
     effect->numPrograms = 0;
-#if CARLA_VST_SHELL
+#if defined(CARLA_VST_SHELL)
     effect->numInputs   = 0;
     effect->numOutputs  = 0;
-#elif CARLA_PLUGIN_32CH
+#elif defined(CARLA_PLUGIN_32CH)
     effect->numInputs   = 32;
     effect->numOutputs  = 32;
-#elif CARLA_PLUGIN_16CH
+#elif defined(CARLA_PLUGIN_16CH)
     effect->numInputs   = 16;
     effect->numOutputs  = 16;
 #else
@@ -1035,7 +1046,7 @@ const AEffect* VSTPluginMainInit(AEffect* const effect)
     // plugin flags
     effect->flags |= effFlagsCanReplacing;
     effect->flags |= effFlagsProgramChunks;
-#if ! CARLA_VST_SHELL
+#ifndef CARLA_VST_SHELL
     effect->flags |= effFlagsHasEditor;
 #endif
 #if CARLA_PLUGIN_SYNTH

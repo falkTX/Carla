@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla widgets code
-# Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,26 +17,17 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Config)
-
-from carla_config import *
-
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-if config_UseQt5:
-    from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QSettings, QTimer
-    from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath, QPalette, QPixmap
-    from PyQt5.QtWidgets import QDialog, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
-else:
-    from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QSettings, QTimer
-    from PyQt4.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath, QPalette, QPixmap
-    from PyQt4.QtGui import QDialog, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QSettings, QTimer
+from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath, QPalette, QPixmap
+from PyQt5.QtWidgets import QDialog, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
 import ui_carla_about
+import ui_carla_about_juce
 import ui_carla_edit
 import ui_carla_parameter
 
@@ -76,7 +67,7 @@ class CarlaAboutW(QDialog):
         self.ui.l_about.setText(self.tr(""
                                      "<br>Version %s"
                                      "<br>Carla is a fully-featured audio plugin host%s.<br>"
-                                     "<br>Copyright (C) 2011-2018 falkTX<br>"
+                                     "<br>Copyright (C) 2011-2019 falkTX<br>"
                                      "" % (VERSION, extraInfo)))
 
         if self.ui.about.palette().color(QPalette.Background).blackF() < 0.5:
@@ -155,7 +146,24 @@ class CarlaAboutW(QDialog):
                                       "<li>http://ll-plugins.nongnu.org/lv2/ext/midimap</li>"
                                       "<li>http://ll-plugins.nongnu.org/lv2/ext/miditype</li>"
                                       "</ul>"))
-        self.ui.l_vst2.setText(self.tr("About 85% complete (missing vst bank/presets and some minor stuff)"))
+
+        usingJuce = "juce" in gCarla.utils.get_supported_features()
+
+        if usingJuce and (MACOS or WINDOWS):
+            self.ui.l_vst2.setText(self.tr("Using Juce host"))
+            self.ui.l_vst3.setText(self.tr("Using Juce host"))
+        else:
+            self.ui.l_vst2.setText(self.tr("About 85% complete (missing vst bank/presets and some minor stuff)"))
+            self.ui.line_vst2.hide()
+            self.ui.l_vst3.hide()
+            self.ui.lid_vst3.hide()
+
+        if MACOS:
+            self.ui.l_au.setText(self.tr("Using Juce host"))
+        else:
+            self.ui.line_vst3.hide()
+            self.ui.l_au.hide()
+            self.ui.lid_au.hide()
 
         # 3rd tab is usually longer than the 1st
         # adjust appropriately
@@ -172,6 +180,27 @@ class CarlaAboutW(QDialog):
             flags |= Qt.MSWindowsFixedSizeDialogHint
 
         self.setWindowFlags(flags)
+
+    def done(self, r):
+        QDialog.done(self, r)
+        self.close()
+
+# ------------------------------------------------------------------------------------------------------------
+# JUCE About dialog
+
+class JuceAboutW(QDialog):
+    def __init__(self, parent):
+        QDialog.__init__(self, parent)
+        self.ui = ui_carla_about_juce.Ui_JuceAboutW()
+        self.ui.setupUi(self)
+
+        self.ui.l_text2.setText(self.tr("This program uses JUCE version %s." % gCarla.utils.get_juce_version()))
+
+        self.adjustSize()
+        self.setFixedSize(self.size())
+
+        if WINDOWS:
+            self.setWindowFlags(self.windowFlags()|Qt.MSWindowsFixedSizeDialogHint)
 
     def done(self, r):
         QDialog.done(self, r)
@@ -686,6 +715,7 @@ class PluginEdit(QDialog):
         if not self.ui.scrollArea.isEnabled():
             self.resize(self.width(), self.height()-self.ui.scrollArea.height())
 
+        # FIXME: See if this is still needed
         # Workaround for a Qt4 bug, see https://bugreports.qt-project.org/browse/QTBUG-7792
         if LINUX: QTimer.singleShot(0, self.slot_fixNameWordWrap)
 
@@ -1150,10 +1180,9 @@ class PluginEdit(QDialog):
             self.fCurrentStateFilename = None
 
         fileFilter = self.tr("Carla State File (*.carxs)")
-        filename   = QFileDialog.getSaveFileName(self, self.tr("Save Plugin State File"), filter=fileFilter)
+        filename, ok = QFileDialog.getSaveFileName(self, self.tr("Save Plugin State File"), filter=fileFilter)
 
-        if config_UseQt5:
-            filename = filename[0]
+        # FIXME use ok value, test if it works as expected
         if not filename:
             return
 
@@ -1181,10 +1210,9 @@ class PluginEdit(QDialog):
             return
 
         fileFilter = self.tr("Carla State File (*.carxs)")
-        filename   = QFileDialog.getOpenFileName(self, self.tr("Open Plugin State File"), filter=fileFilter)
+        filename, ok = QFileDialog.getOpenFileName(self, self.tr("Open Plugin State File"), filter=fileFilter)
 
-        if config_UseQt5:
-            filename = filename[0]
+        # FIXME use ok value, test if it works as expected
         if not filename:
             return
 

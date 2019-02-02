@@ -194,7 +194,7 @@ String File::parseAbsolutePath (const String& p)
     // Yes, I know it's legal for a unix pathname to contain a backslash, but this assertion is here
     // to catch anyone who's trying to run code that was written on Windows with hard-coded path names.
     // If that's why you've ended up here, use File::getChildFile() to build your paths instead.
-    jassert ((! p.containsChar ('\\')) || (p.indexOfChar ('/') >= 0 && p.indexOfChar ('/') < p.indexOfChar ('\\')));
+    wassert ((! p.containsChar ('\\')) || (p.indexOfChar ('/') >= 0 && p.indexOfChar ('/') < p.indexOfChar ('\\')));
 
     String path (removeEllipsis (p));
 
@@ -722,7 +722,7 @@ FileOutputStream* File::createOutputStream (const size_t bufferSize) const
 bool File::appendData (const void* const dataToAppend,
                        const size_t numberOfBytes) const
 {
-    jassert (((ssize_t) numberOfBytes) >= 0);
+    wassert (((ssize_t) numberOfBytes) >= 0);
 
     if (numberOfBytes == 0)
         return true;
@@ -969,7 +969,9 @@ namespace WindowsFileHelpers
 
     int64 fileTimeToTime (const FILETIME* const ft)
     {
-        static_jassert (sizeof (ULARGE_INTEGER) == sizeof (FILETIME)); // tell me if this fails!
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+        static_wassert (sizeof (ULARGE_INTEGER) == sizeof (FILETIME)); // tell me if this fails!
+#endif
 
         return (int64) ((reinterpret_cast<const ULARGE_INTEGER*> (ft)->QuadPart - 116444736000000000LL) / 10000);
     }
@@ -1116,7 +1118,7 @@ File File::getSpecialLocation (const SpecialLocationType type)
             return WindowsFileHelpers::getModuleFileName (nullptr);
 
         default:
-            jassertfalse; // unknown type?
+            wassertfalse; // unknown type?
             return File();
     }
 
@@ -1354,7 +1356,7 @@ File water_getExecutableFile()
             }
 
             // if we reach this, we failed to find ourselves...
-            jassertfalse;
+            wassertfalse;
             return filename;
         }
     };
@@ -1433,7 +1435,7 @@ File File::getSpecialLocation (const SpecialLocationType type)
         }
 
         default:
-            jassertfalse; // unknown type?
+            wassertfalse; // unknown type?
             break;
     }
 
@@ -1584,7 +1586,7 @@ File File::getSpecialLocation (const SpecialLocationType type)
         }
 
         default:
-            jassertfalse; // unknown type?
+            wassertfalse; // unknown type?
             break;
     }
 

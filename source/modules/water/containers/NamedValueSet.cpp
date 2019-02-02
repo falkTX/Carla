@@ -186,7 +186,7 @@ Identifier NamedValueSet::getName (const int index) const noexcept
     if (isPositiveAndBelow (index, values.size()))
         return values.getReference (index).name;
 
-    jassertfalse;
+    wassertfalse;
     return Identifier();
 }
 
@@ -195,7 +195,7 @@ const var& NamedValueSet::getValueAt (const int index) const noexcept
     if (isPositiveAndBelow (index, values.size()))
         return values.getReference (index).value;
 
-    jassertfalse;
+    wassertfalse;
     return getNullVarRef();
 }
 

@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -130,7 +130,7 @@ static void midichannelize_process(NativePluginHandle handle, float** inBuffer, 
             tmpEvent.port = midiEvent->port;
             tmpEvent.time = midiEvent->time;
 
-            tmpEvent.data[0] = status | (channel - 1);
+            tmpEvent.data[0] = (uint8_t)(status | (channel - 1));
             tmpEvent.data[1] = midiEvent->data[1];
             tmpEvent.data[2] = midiEvent->data[2];
             tmpEvent.data[3] = midiEvent->data[3];

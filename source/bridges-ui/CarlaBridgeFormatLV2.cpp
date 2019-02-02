@@ -1,6 +1,6 @@
 /*
  * Carla Bridge UI
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -28,7 +28,8 @@
 #include <string>
 #include <vector>
 
-#define URI_CARLA_ATOM_WORKER "http://kxstudio.sf.net/ns/carla/atomWorker"
+#define URI_CARLA_ATOM_WORKER_IN   "http://kxstudio.sf.net/ns/carla/atomWorkerIn"
+#define URI_CARLA_ATOM_WORKER_RESP "http://kxstudio.sf.net/ns/carla/atomWorkerResp"
 
 using water::File;
 
@@ -39,7 +40,6 @@ CARLA_BRIDGE_UI_START_NAMESPACE
 static double gInitialSampleRate = 44100.0;
 static const char* const kNullWindowTitle = "TestUI";
 static const uint32_t kNullWindowTitleSize = 6;
-
 
 // LV2 URI Map Ids
 enum CarlaLv2URIDs {
@@ -75,6 +75,9 @@ enum CarlaLv2URIDs {
     kUridLogNote,
     kUridLogTrace,
     kUridLogWarning,
+    kUridPatchSet,
+    kUridPatchPoperty,
+    kUridPatchValue,
     // time base type
     kUridTimePosition,
      // time values
@@ -91,7 +94,8 @@ enum CarlaLv2URIDs {
     kUridMidiEvent,
     kUridParamSampleRate,
     kUridWindowTitle,
-    kUridCarlaAtomWorker,
+    kUridCarlaAtomWorkerIn,
+    kUridCarlaAtomWorkerResp,
     kUridCarlaTransientWindowId,
     kUridCount
 };
@@ -137,7 +141,7 @@ struct Lv2PluginOptions {
     LV2_Options_Option opts[Count];
 
     Lv2PluginOptions() noexcept
-        : sampleRate(gInitialSampleRate),
+        : sampleRate(static_cast<float>(gInitialSampleRate)),
           transientWinId(0),
           windowTitle(kNullWindowTitle)
     {
@@ -735,11 +739,12 @@ public:
                 const LV2_Atom* const atom((const LV2_Atom*)buffer);
 
                 // plugins sometimes fail on this, not good...
-                const uint32_t totalSize =  lv2_atom_total_size(atom);
+                const uint32_t totalSize = lv2_atom_total_size(atom);
                 const uint32_t paddedSize = lv2_atom_pad_size(totalSize);
 
                 if (bufferSize != totalSize && bufferSize != paddedSize)
-                    carla_stderr2("Warning: LV2 UI sending atom with invalid size! size: %u, padded-size: %u", totalSize, paddedSize);
+                    carla_stderr2("Warning: LV2 UI sending atom with invalid size %u! size: %u, padded-size: %u",
+                                  bufferSize, totalSize, paddedSize);
 
                 writeLv2AtomMessage(rindex, atom);
             }
@@ -990,6 +995,14 @@ private:
         if (std::strcmp(uri, LV2_LOG__Warning) == 0)
             return kUridLogWarning;
 
+        // Patch types
+        if (std::strcmp(uri, LV2_PATCH__Set) == 0)
+            return kUridPatchSet;
+        if (std::strcmp(uri, LV2_PATCH__property) == 0)
+            return kUridPatchPoperty;
+        if (std::strcmp(uri, LV2_PATCH__value) == 0)
+            return kUridPatchValue;
+
         // Time types
         if (std::strcmp(uri, LV2_TIME__Position) == 0)
             return kUridTimePosition;
@@ -1023,8 +1036,10 @@ private:
             return kUridWindowTitle;
 
         // Custom Carla types
-        if (std::strcmp(uri, URI_CARLA_ATOM_WORKER) == 0)
-            return kUridCarlaAtomWorker;
+        if (std::strcmp(uri, URI_CARLA_ATOM_WORKER_IN) == 0)
+            return kUridCarlaAtomWorkerIn;
+        if (std::strcmp(uri, URI_CARLA_ATOM_WORKER_RESP) == 0)
+            return kUridCarlaAtomWorkerResp;
         if (std::strcmp(uri, LV2_KXSTUDIO_PROPERTIES__TransientWindowId) == 0)
             return kUridCarlaTransientWindowId;
 
@@ -1108,6 +1123,14 @@ private:
         case kUridLogWarning:
             return LV2_LOG__Warning;
 
+        // Patch types
+        case kUridPatchSet:
+            return LV2_PATCH__Set;
+        case kUridPatchPoperty:
+            return LV2_PATCH__property;
+        case kUridPatchValue:
+            return LV2_PATCH__value;
+
         // Time types
         case kUridTimePosition:
             return LV2_TIME__Position;
@@ -1141,8 +1164,10 @@ private:
             return LV2_UI__windowTitle;
 
         // Custom Carla types
-        case kUridCarlaAtomWorker:
-            return URI_CARLA_ATOM_WORKER;
+        case kUridCarlaAtomWorkerIn:
+            return URI_CARLA_ATOM_WORKER_IN;
+        case kUridCarlaAtomWorkerResp:
+            return URI_CARLA_ATOM_WORKER_RESP;
         case kUridCarlaTransientWindowId:
             return LV2_KXSTUDIO_PROPERTIES__TransientWindowId;
         }
@@ -1207,7 +1232,10 @@ int main(int argc, const char* argv[])
 
     // try to get sampleRate value
     if (const char* const sampleRateStr = std::getenv("CARLA_SAMPLE_RATE"))
+    {
+        const CarlaScopedLocale csl;
         gInitialSampleRate = std::atof(sampleRateStr);
+    }
 
     // Init LV2 client
     CarlaLv2Client client;

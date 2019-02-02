@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Common Carla code
-# Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,9 +17,7 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Config)
-
-from carla_config import *
+# Config
 
 # These will be modified during install
 X_LIBDIR_X = None
@@ -31,15 +29,10 @@ X_DATADIR_X = None
 import os
 import sys
 
-if config_UseQt5:
-    from PyQt5.Qt import PYQT_VERSION_STR
-    from PyQt5.QtCore import qFatal, qVersion, qWarning, QDir
-    from PyQt5.QtGui import QIcon
-    from PyQt5.QtWidgets import QFileDialog, QMessageBox
-else:
-    from PyQt4.Qt import PYQT_VERSION_STR
-    from PyQt4.QtCore import qFatal, qVersion, qWarning, QDir
-    from PyQt4.QtGui import QFileDialog, QIcon, QMessageBox
+from PyQt5.Qt import PYQT_VERSION_STR
+from PyQt5.QtCore import qFatal, qVersion, qWarning, QDir
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QFileDialog, QMessageBox
 
 # ------------------------------------------------------------------------------------------------------------
 # Import Signal
@@ -66,7 +59,7 @@ if WINDOWS:
 # ------------------------------------------------------------------------------------------------------------
 # Set Version
 
-VERSION = "1.9.13 (2.0-RC3)"
+VERSION = "2.0.90 (2.1-alpha1)"
 
 # ------------------------------------------------------------------------------------------------------------
 # Set TMP
@@ -223,6 +216,7 @@ CARLA_KEY_PATHS_LADSPA = "Paths/LADSPA"
 CARLA_KEY_PATHS_DSSI   = "Paths/DSSI"
 CARLA_KEY_PATHS_LV2    = "Paths/LV2"
 CARLA_KEY_PATHS_VST2   = "Paths/VST2"
+CARLA_KEY_PATHS_VST3   = "Paths/VST3"
 CARLA_KEY_PATHS_SF2    = "Paths/SF2"
 CARLA_KEY_PATHS_SFZ    = "Paths/SFZ"
 
@@ -319,6 +313,7 @@ DEFAULT_LADSPA_PATH = ""
 DEFAULT_DSSI_PATH   = ""
 DEFAULT_LV2_PATH    = ""
 DEFAULT_VST2_PATH   = ""
+DEFAULT_VST3_PATH   = ""
 DEFAULT_SF2_PATH    = ""
 DEFAULT_SFZ_PATH    = ""
 
@@ -359,14 +354,19 @@ if WINDOWS:
     if kIs64bit:
         DEFAULT_VST2_PATH  += ";" + COMMONPROGRAMFILES + "\\VST2"
 
+    DEFAULT_VST3_PATH    = COMMONPROGRAMFILES + "\\VST3"
+
     DEFAULT_SF2_PATH     = APPDATA + "\\SF2"
     DEFAULT_SFZ_PATH     = APPDATA + "\\SFZ"
 
     if PROGRAMFILESx86:
         DEFAULT_LADSPA_PATH += ";" + PROGRAMFILESx86 + "\\LADSPA"
         DEFAULT_DSSI_PATH   += ";" + PROGRAMFILESx86 + "\\DSSI"
-        DEFAULT_VST2_PATH    += ";" + PROGRAMFILESx86 + "\\VstPlugins"
-        DEFAULT_VST2_PATH    += ";" + PROGRAMFILESx86 + "\\Steinberg\\VstPlugins"
+        DEFAULT_VST2_PATH   += ";" + PROGRAMFILESx86 + "\\VstPlugins"
+        DEFAULT_VST2_PATH   += ";" + PROGRAMFILESx86 + "\\Steinberg\\VstPlugins"
+
+    if COMMONPROGRAMFILESx86:
+        DEFAULT_VST3_PATH   += COMMONPROGRAMFILESx86 + "\\VST3"
 
 elif HAIKU:
     splitter = ":"
@@ -383,6 +383,9 @@ elif HAIKU:
     DEFAULT_VST2_PATH    = HOME + "/.vst"
     DEFAULT_VST2_PATH   += ":/boot/common/add-ons/vst"
 
+    DEFAULT_VST3_PATH    = HOME + "/.vst3"
+    DEFAULT_VST3_PATH   += ":/boot/common/add-ons/vst3"
+
 elif MACOS:
     splitter = ":"
 
@@ -397,6 +400,9 @@ elif MACOS:
 
     DEFAULT_VST2_PATH    = HOME + "/Library/Audio/Plug-Ins/VST"
     DEFAULT_VST2_PATH   += ":/Library/Audio/Plug-Ins/VST"
+
+    DEFAULT_VST3_PATH    = HOME + "/Library/Audio/Plug-Ins/VST3"
+    DEFAULT_VST3_PATH   += ":/Library/Audio/Plug-Ins/VST3"
 
 else:
     splitter = ":"
@@ -417,6 +423,10 @@ else:
     DEFAULT_VST2_PATH   += ":/usr/lib/vst"
     DEFAULT_VST2_PATH   += ":/usr/local/lib/vst"
 
+    DEFAULT_VST3_PATH    = HOME + "/.vst3"
+    DEFAULT_VST3_PATH   += ":/usr/lib/vst3"
+    DEFAULT_VST3_PATH   += ":/usr/local/lib/vst3"
+
     DEFAULT_SF2_PATH     = HOME + "/.sounds/sf2"
     DEFAULT_SF2_PATH    += ":/usr/share/sounds/sf2"
 
@@ -431,9 +441,11 @@ if not WINDOWS:
 
     if os.path.exists(winePrefix):
         DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files/VstPlugins"
+        DEFAULT_VST3_PATH += ":" + winePrefix + "/drive_c/Program Files/Common Files/VST3"
 
         if kIs64bit and os.path.exists(winePrefix + "/drive_c/Program Files (x86)"):
             DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/VstPlugins"
+            DEFAULT_VST3_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/VST3"
 
     del winePrefix
 
@@ -463,6 +475,7 @@ if readEnvVars:
     CARLA_DEFAULT_DSSI_PATH   = os.getenv("DSSI_PATH",   DEFAULT_DSSI_PATH).split(splitter)
     CARLA_DEFAULT_LV2_PATH    = os.getenv("LV2_PATH",    DEFAULT_LV2_PATH).split(splitter)
     CARLA_DEFAULT_VST2_PATH   = os.getenv("VST_PATH",    DEFAULT_VST2_PATH).split(splitter)
+    CARLA_DEFAULT_VST3_PATH   = os.getenv("VST3_PATH",   DEFAULT_VST3_PATH).split(splitter)
     CARLA_DEFAULT_SF2_PATH    = os.getenv("SF2_PATH",    DEFAULT_SF2_PATH).split(splitter)
     CARLA_DEFAULT_SFZ_PATH    = os.getenv("SFZ_PATH",    DEFAULT_SFZ_PATH).split(splitter)
 
@@ -471,6 +484,7 @@ else:
     CARLA_DEFAULT_DSSI_PATH   = DEFAULT_DSSI_PATH.split(splitter)
     CARLA_DEFAULT_LV2_PATH    = DEFAULT_LV2_PATH.split(splitter)
     CARLA_DEFAULT_VST2_PATH   = DEFAULT_VST2_PATH.split(splitter)
+    CARLA_DEFAULT_VST3_PATH   = DEFAULT_VST3_PATH.split(splitter)
     CARLA_DEFAULT_SF2_PATH    = DEFAULT_SF2_PATH.split(splitter)
     CARLA_DEFAULT_SFZ_PATH    = DEFAULT_SFZ_PATH.split(splitter)
 
@@ -481,6 +495,7 @@ del DEFAULT_LADSPA_PATH
 del DEFAULT_DSSI_PATH
 del DEFAULT_LV2_PATH
 del DEFAULT_VST2_PATH
+del DEFAULT_VST3_PATH
 del DEFAULT_SF2_PATH
 del DEFAULT_SFZ_PATH
 

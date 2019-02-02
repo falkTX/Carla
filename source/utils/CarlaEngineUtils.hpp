@@ -42,6 +42,8 @@ const char* EngineType2Str(const EngineType type) noexcept
         return "kEngineTypeNull";
     case kEngineTypeJack:
         return "kEngineTypeJack";
+    case kEngineTypeJuce:
+        return "kEngineTypeJuce";
     case kEngineTypeRtAudio:
         return "kEngineTypeRtAudio";
     case kEngineTypePlugin:

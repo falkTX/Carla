@@ -1,6 +1,6 @@
 ﻿/*
  * Carla FluidSynth Plugin
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -79,16 +79,25 @@ public:
 
         // set default values
         fluid_synth_set_reverb_on(fSynth, 1);
-        fluid_synth_set_reverb(fSynth, sFluidDefaults[FluidSynthReverbRoomSize], sFluidDefaults[FluidSynthReverbDamp], sFluidDefaults[FluidSynthReverbWidth], sFluidDefaults[FluidSynthReverbLevel]);
+        fluid_synth_set_reverb(fSynth,
+                               sFluidDefaults[FluidSynthReverbRoomSize],
+                               sFluidDefaults[FluidSynthReverbDamp],
+                               sFluidDefaults[FluidSynthReverbWidth],
+                               sFluidDefaults[FluidSynthReverbLevel]);
 
         fluid_synth_set_chorus_on(fSynth, 1);
-        fluid_synth_set_chorus(fSynth, sFluidDefaults[FluidSynthChorusNr], sFluidDefaults[FluidSynthChorusLevel], sFluidDefaults[FluidSynthChorusSpeedHz], sFluidDefaults[FluidSynthChorusDepthMs], sFluidDefaults[FluidSynthChorusType]);
+        fluid_synth_set_chorus(fSynth,
+                               static_cast<int>(sFluidDefaults[FluidSynthChorusNr] + 0.5f),
+                               sFluidDefaults[FluidSynthChorusLevel],
+                               sFluidDefaults[FluidSynthChorusSpeedHz],
+                               sFluidDefaults[FluidSynthChorusDepthMs],
+                               static_cast<int>(sFluidDefaults[FluidSynthChorusType] + 0.5f));
 
         fluid_synth_set_polyphony(fSynth, FLUID_DEFAULT_POLYPHONY);
         fluid_synth_set_gain(fSynth, 1.0f);
 
         for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
-            fluid_synth_set_interp_method(fSynth, i, sFluidDefaults[FluidSynthInterpolation]);
+            fluid_synth_set_interp_method(fSynth, i, static_cast<int>(sFluidDefaults[FluidSynthInterpolation] + 0.5f));
     }
 
     ~CarlaPluginFluidSynth() override
@@ -1736,9 +1745,7 @@ private:
 #endif
 
         // misc. defaults
-        sFluidDefaults[FluidSynthPolyphony] = (float)fluid_synth_get_polyphony(fSynth);
         sFluidDefaults[FluidSynthInterpolation] = FLUID_INTERP_DEFAULT;
-        sFluidDefaults[FluidSynthVoiceCount] = 0.0f;
     }
 
     enum FluidSynthParameters {
@@ -1779,7 +1786,9 @@ private:
 };
 
 bool CarlaPluginFluidSynth::sFluidDefaultsStored = false;
-float CarlaPluginFluidSynth::sFluidDefaults[FluidSynthParametersMax];
+float CarlaPluginFluidSynth::sFluidDefaults[FluidSynthParametersMax] = {
+    0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+};
 
 CARLA_BACKEND_END_NAMESPACE
 

@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -463,7 +463,7 @@ void CarlaPlugin::randomizeParameters() noexcept
         if (paramData.hints & PARAMETER_IS_BOOLEAN)
         {
             random = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
-            value  = random > 0.5 ? paramRanges.max : paramRanges.min;
+            value  = random > 0.5f ? paramRanges.max : paramRanges.min;
         }
         else
         {
@@ -1232,13 +1232,13 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
     const CarlaString binFolderTarget(bundlepath + CARLA_OS_SEP_STR + "bin");
     const CarlaString resFolderTarget(bundlepath + CARLA_OS_SEP_STR + "res");
 
-#ifdef CARLA_OS_WIN
     if (! binaryFileSource.copyFileTo(binaryFileTarget))
     {
         pData->engine->setLastError("Failed to copy plugin binary");
         return false;
     }
 
+#ifdef CARLA_OS_WIN
     File(opts.resourceDir).copyDirectoryTo(File(resFolderTarget.buffer()));
 
     // Copying all the binaries is pointless, just go through the expected needed bits
@@ -1257,12 +1257,6 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
     for (int i=0; i<5; ++i)
         binFolder1.getChildFile(files[i]).copyFileTo(binFolder2.getChildFile(files[i]));;
 #else
-    if (! binaryFileSource.createSymbolicLink(binaryFileTarget, true))
-    {
-        pData->engine->setLastError("Failed to create symbolik link of plugin binary");
-        return false;
-    }
-
     File(opts.binaryDir).createSymbolicLink(File(binFolderTarget.buffer()), true);
     File(opts.resourceDir).createSymbolicLink(File(resFolderTarget.buffer()), true);
 #endif
@@ -2201,7 +2195,7 @@ void CarlaPlugin::registerToOscClient() noexcept
                 if (--paramIns == 0)
                     break;
             }
-            else if (paramData.type == PARAMETER_INPUT)
+            else if (paramData.type == PARAMETER_OUTPUT)
             {
                 if (--paramOuts == 0)
                     break;

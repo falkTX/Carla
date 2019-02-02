@@ -23,10 +23,10 @@
 
 //==============================================================================
 
-#define jassertfalse        carla_safe_assert("jassertfalse triggered", __FILE__, __LINE__);
-#define jassert(expression) CARLA_SAFE_ASSERT(expression)
+#define wassertfalse        carla_safe_assert("wassertfalse triggered", __FILE__, __LINE__);
+#define wassert(expression) CARLA_SAFE_ASSERT(expression)
 
-#define static_jassert(expression) static_assert(expression, #expression);
+#define static_wassert(expression) static_assert(expression, #expression);
 
 //==============================================================================
 // Compiler support

@@ -375,7 +375,7 @@ void MidiFile::convertTimestampTicksToSeconds()
 //==============================================================================
 bool MidiFile::writeTo (OutputStream& out, int midiFileType)
 {
-    jassert (midiFileType >= 0 && midiFileType <= 2);
+    wassert (midiFileType >= 0 && midiFileType <= 2);
 
     if (! out.writeIntBigEndian ((int) ByteOrder::bigEndianInt ("MThd"))) return false;
     if (! out.writeIntBigEndian (6))                                      return false;

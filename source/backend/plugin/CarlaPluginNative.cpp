@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugin
- * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -1150,8 +1150,6 @@ public:
 
             if (min > max)
                 max = min;
-            else if (max < min)
-                min = max;
 
             if (carla_isEqual(min, max))
             {
@@ -2481,7 +2479,7 @@ public:
             return false;
         }
 
-        if (label == nullptr && label[0] != '\0')
+        if (label == nullptr || label[0] == '\0')
         {
             pData->engine->setLastError("null label");
             return false;

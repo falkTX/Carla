@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -52,7 +52,7 @@ public:
         fParameters[kParameterDefLength] = 4.0f;
         fParameters[kParameterQuantize]  = 4.0f;
 
-        fMaxTicks = 48.0*fTimeSigNum*fParameters[kParameterMeasures] /2; // FIXME: why /2 ?
+        fMaxTicks = 48.0 * fTimeSigNum * 4 /* kParameterMeasures */ / 2; // FIXME: why / 2 ?
     }
 
 protected:
@@ -192,15 +192,17 @@ protected:
                 fTimeSigNum = 5;
             else if (value > 2.5f)
                 fTimeSigNum = 4;
+            /* FIXME
             else if (value > 2.5f)
                 fTimeSigNum = 3;
+            */
             else if (value > 1.5f)
                 fTimeSigNum = 2;
             else
                 fTimeSigNum = 1;
             // fall through
         case kParameterMeasures:
-            fMaxTicks = 48.0*fTimeSigNum*fParameters[kParameterMeasures] /2; // FIXME: why /2 ?
+            fMaxTicks = 48.0 * fTimeSigNum * static_cast<double>(fParameters[kParameterMeasures]) /2; // FIXME: why /2 ?
             break;
         }
     }
@@ -290,9 +292,9 @@ protected:
             char strBuf[0xff+1];
             strBuf[0xff] = '\0';
 
-            const float  beatsPerBar    = fTimeInfo.bbt.valid ? fTimeInfo.bbt.beatsPerBar    : 4.0f;
+            const double beatsPerBar    = fTimeInfo.bbt.valid ? static_cast<double>(fTimeInfo.bbt.beatsPerBar) : 4.0;
             const double beatsPerMinute = fTimeInfo.bbt.valid ? fTimeInfo.bbt.beatsPerMinute : 120.0;
-            const float  beatType       = fTimeInfo.bbt.valid ? fTimeInfo.bbt.beatType       : 4.0f;
+            const float  beatType       = fTimeInfo.bbt.valid ? fTimeInfo.bbt.beatType : 4.0f;
 
             const double ticksPerBeat  = 48.0;
             const double ticksPerFrame = ticksPerBeat / (60.0 / beatsPerMinute * getSampleRate());
@@ -300,11 +302,10 @@ protected:
             const double fullBeats     = fullTicks / ticksPerBeat;
 
             const uint32_t tick = static_cast<uint32_t>(std::floor(std::fmod(fullTicks, ticksPerBeat)));
-            const uint32_t beat = static_cast<uint32_t>(std::floor(std::fmod(fullBeats, static_cast<double>(beatsPerBar))));
+            const uint32_t beat = static_cast<uint32_t>(std::floor(std::fmod(fullBeats, beatsPerBar)));
             const uint32_t bar  = static_cast<uint32_t>(std::floor(fullBeats/beatsPerBar));
 
             const CarlaMutexLocker cml(getPipeLock());
-            const ScopedLocale csl;
 
             if (! writeAndFixMessage("transport"))
                 return;
@@ -315,7 +316,13 @@ protected:
             if (! writeMessage(strBuf))
                 return;
 
-            std::sprintf(strBuf, "%f:%f:%f\n", beatsPerMinute, beatsPerBar, beatType);
+            {
+                const CarlaScopedLocale csl;
+                std::sprintf(strBuf, "%f:%f:%f\n",
+                             static_cast<double>(beatsPerMinute),
+                             static_cast<double>(beatsPerBar),
+                             static_cast<double>(beatType));
+            }
             if (! writeMessage(strBuf))
                 return;
 

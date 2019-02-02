@@ -1,6 +1,6 @@
 /*
  * Carla String
- * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,6 +20,7 @@
 
 #include "CarlaMathUtils.hpp"
 #include "CarlaJuceUtils.hpp"
+#include "CarlaScopedLocale.hpp"
 
 #include <algorithm>
 
@@ -176,7 +177,12 @@ public:
           fBufferAlloc(false)
     {
         char strBuf[0xff+1];
-        std::snprintf(strBuf, 0xff, "%f", value);
+
+        {
+            const CarlaScopedLocale csl;
+            std::snprintf(strBuf, 0xff, "%f", static_cast<double>(value));
+        }
+
         strBuf[0xff] = '\0';
 
         _dup(strBuf);
@@ -191,7 +197,12 @@ public:
           fBufferAlloc(false)
     {
         char strBuf[0xff+1];
-        std::snprintf(strBuf, 0xff, "%g", value);
+
+        {
+            const CarlaScopedLocale csl;
+            std::snprintf(strBuf, 0xff, "%f", value);
+        }
+
         strBuf[0xff] = '\0';
 
         _dup(strBuf);

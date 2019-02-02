@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,6 +21,7 @@
 
 #include "CarlaLv2Utils.hpp"
 #include "CarlaPipeUtils.hpp"
+#include "CarlaScopedLocale.hpp"
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -137,8 +138,8 @@ public:
             const float* const valuePtr = (const float*)buffer;
 
             {
-                const ScopedLocale csl;
-                std::snprintf(msg, 127, "control %u %f", portIndex, *valuePtr);
+                const CarlaScopedLocale csl;
+                std::snprintf(msg, 127, "control %u %f", portIndex, static_cast<double>(*valuePtr));
             }
 
             msg[127] = '\0';
@@ -264,11 +265,11 @@ protected:
             carla_zeroChars(atomBuf, atomSize);
 
             LV2_Atom* const atom = (LV2_Atom*)atomBuf;
-            atom->size = msgSize;
+            atom->size = static_cast<uint32_t>(msgSize);
             atom->type = fUridTranser2;
             std::memcpy(atomBuf+sizeof(LV2_Atom), msg, msgSize);
 
-            fUI.writeFunction(fUI.controller, 0, atomSize, fUridTranser, atomBuf);
+            fUI.writeFunction(fUI.controller, 0, static_cast<uint32_t>(atomSize), fUridTranser, atomBuf);
         }
         else
         {
@@ -276,11 +277,11 @@ protected:
             carla_zeroChars(atomBuf, atomSize);
 
             LV2_Atom* const atom = (LV2_Atom*)atomBuf;
-            atom->size = msgSize;
+            atom->size = static_cast<uint32_t>(msgSize);
             atom->type = fUridTranser2;
             std::memcpy(atomBuf+sizeof(LV2_Atom), msg, msgSize);
 
-            fUI.writeFunction(fUI.controller, 0, atomSize, fUridTranser, atomBuf);
+            fUI.writeFunction(fUI.controller, 0, static_cast<uint32_t>(atomSize), fUridTranser, atomBuf);
 
             delete[] atomBuf;
         }
@@ -317,6 +318,8 @@ private:
                 name = nullptr;
             }
         }
+
+        CARLA_DECLARE_NON_COPY_STRUCT(UI);
     } fUI;
 
     // ----------------------------------------------------------------------------------------------------------------

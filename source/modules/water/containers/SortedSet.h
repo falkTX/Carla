@@ -331,13 +331,13 @@ public:
                  int startIndex = 0,
                  int numElementsToAdd = -1) noexcept
     {
-        jassert (this != &setToAddFrom);
+        wassert (this != &setToAddFrom);
 
         if (this != &setToAddFrom)
         {
             if (startIndex < 0)
             {
-                jassertfalse;
+                wassertfalse;
                 startIndex = 0;
             }
 

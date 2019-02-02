@@ -59,6 +59,19 @@ ifeq ($(HAVE_HYLIA),true)
 LIBS += $(MODULEDIR)/hylia.a
 endif
 
+ifeq ($(USING_JUCE),true)
+LIBS += $(MODULEDIR)/juce_audio_basics.a
+LIBS += $(MODULEDIR)/juce_audio_processors.a
+LIBS += $(MODULEDIR)/juce_core.a
+LIBS += $(MODULEDIR)/juce_data_structures.a
+LIBS += $(MODULEDIR)/juce_events.a
+LIBS += $(MODULEDIR)/juce_graphics.a
+LIBS += $(MODULEDIR)/juce_gui_basics.a
+ifeq ($(MACOS),true)
+LIBS += $(MODULEDIR)/juce_gui_extra.a
+endif
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Link flags
 
@@ -74,6 +87,19 @@ NATIVE_LINK_FLAGS += $(LIBLO_LIBS)
 NATIVE_LINK_FLAGS += $(MAGIC_LIBS)
 NATIVE_LINK_FLAGS += $(X11_LIBS)
 
+ifeq ($(USING_JUCE),true)
+LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
+LINK_FLAGS += $(JUCE_AUDIO_PROCESSORS_LIBS)
+LINK_FLAGS += $(JUCE_CORE_LIBS)
+LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
+LINK_FLAGS += $(JUCE_EVENTS_LIBS)
+LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
+LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
+ifeq ($(MACOS),true)
+LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
+endif
+endif
+
 ifeq ($(MACOS),true)
 SYMBOLS_NATIVE  = -Wl,-exported_symbol,_carla_get_native_rack_plugin
 SYMBOLS_NATIVE += -Wl,-exported_symbol,_carla_get_native_patchbay_plugin
@@ -84,7 +110,7 @@ ifeq ($(HAVE_PYQT),true)
 SYMBOLS_LV2    += -Wl,-exported_symbol,_lv2ui_descriptor
 SYMBOLS_LV2_UI  = -Wl,-exported_symbol,_lv2ui_descriptor
 endif
-SYMBOLS_VST     = # TODO
+SYMBOLS_VST     = -Wl,-exported_symbol,_VSTPluginMain
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -183,44 +209,44 @@ $(BINDIR)/carla.lv2/carla-ui$(LIB_EXT): $(OBJDIR)/carla-lv2-ui.cpp.o $(LIBS_ui)
 $(BINDIR)/CarlaRack$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.rack-syn.o $(OBJDIR)/carla-vst-export.cpp.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking CarlaRack$(LIB_EXT)"
-	@$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(NATIVE_LINK_FLAGS) -o $@
+	@$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(SYMBOLS_VST) $(NATIVE_LINK_FLAGS) -o $@
 
 $(BINDIR)/CarlaRackFX$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.rack-fx.o $(OBJDIR)/carla-vst-export.cpp.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking CarlaRackFX$(LIB_EXT)"
-	@$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(NATIVE_LINK_FLAGS) -o $@
+	@$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(SYMBOLS_VST) $(NATIVE_LINK_FLAGS) -o $@
 
 $(BINDIR)/CarlaPatchbay$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.patchbay-syn.o $(OBJDIR)/carla-vst-export.cpp.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking CarlaPatchbay$(LIB_EXT)"
-	@$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(NATIVE_LINK_FLAGS) -o $@
+	@$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(SYMBOLS_VST) $(NATIVE_LINK_FLAGS) -o $@
 
 $(BINDIR)/CarlaPatchbay16$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.patchbay-syn16.o $(OBJDIR)/carla-vst-export.cpp.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking CarlaPatchbay16$(LIB_EXT)"
-	@$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(NATIVE_LINK_FLAGS) -o $@
+	@$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(SYMBOLS_VST) $(NATIVE_LINK_FLAGS) -o $@
 
 $(BINDIR)/CarlaPatchbay32$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.patchbay-syn32.o $(OBJDIR)/carla-vst-export.cpp.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking CarlaPatchbay32$(LIB_EXT)"
-	@$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(NATIVE_LINK_FLAGS) -o $@
+	@$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(SYMBOLS_VST) $(NATIVE_LINK_FLAGS) -o $@
 
 $(BINDIR)/CarlaPatchbayFX$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.patchbay-fx.o $(OBJDIR)/carla-vst-export.cpp.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking CarlaPatchbayFX$(LIB_EXT)"
-	@$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(NATIVE_LINK_FLAGS) -o $@
+	@$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(SYMBOLS_VST) $(NATIVE_LINK_FLAGS) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(BINDIR)/CarlaVstShell$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.shell.o $(OBJDIR)/carla-vst-export.cpp.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking CarlaVstShell$(LIB_EXT)"
-	@$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(NATIVE_LINK_FLAGS) -o $@
+	@$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(SYMBOLS_VST) $(NATIVE_LINK_FLAGS) -o $@
 
 $(BINDIR)/CarlaVstFxShell$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.shellfx.o $(OBJDIR)/carla-vst-export.cpp.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking CarlaVstFxShell$(LIB_EXT)"
-	@$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(NATIVE_LINK_FLAGS) -o $@
+	@$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(SYMBOLS_VST) $(NATIVE_LINK_FLAGS) -o $@
 
 ifeq ($(WIN32),true)
 $(BINDIR)/CarlaVstShellBridged.dll: $(OBJDIR)/carla-vst-export-bridged.cpp.synth.o carla-vst-export.def
@@ -288,22 +314,22 @@ $(OBJDIR)/carla-vst.cpp.patchbay-syn.o: carla-vst.cpp
 $(OBJDIR)/carla-vst.cpp.patchbay-syn16.o: carla-vst.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (PatchbaySynth 16ch)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_PATCHBAY=1 -DCARLA_PLUGIN_SYNTH=1 -DCARLA_PLUGIN_16CH=1 -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_PATCHBAY=1 -DCARLA_PLUGIN_SYNTH=1 -DCARLA_PLUGIN_16CH -c -o $@
 
 $(OBJDIR)/carla-vst.cpp.patchbay-syn32.o: carla-vst.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (PatchbaySynth 32ch)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_PATCHBAY=1 -DCARLA_PLUGIN_SYNTH=1 -DCARLA_PLUGIN_32CH=1 -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_PATCHBAY=1 -DCARLA_PLUGIN_SYNTH=1 -DCARLA_PLUGIN_32CH -c -o $@
 
 $(OBJDIR)/carla-vst.cpp.shell.o: carla-vst.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (VstShell)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_VST_SHELL=1 -DCARLA_PLUGIN_SYNTH=1 -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_VST_SHELL -DCARLA_PLUGIN_SYNTH=1 -c -o $@
 
 $(OBJDIR)/carla-vst.cpp.shellfx.o: carla-vst.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (VstShell)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_VST_SHELL=1 -DCARLA_PLUGIN_SYNTH=0 -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_VST_SHELL -DCARLA_PLUGIN_SYNTH=0 -c -o $@
 
 $(OBJDIR)/carla-vst-export-bridged.cpp.fx.o: carla-vst-export-bridged.cpp
 	-@mkdir -p $(OBJDIR)

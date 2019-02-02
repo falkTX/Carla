@@ -495,19 +495,31 @@ typedef enum {
     PLUGIN_VST2 = 5,
 
     /*!
+     * VST3 plugin.
+     * @note Windows and MacOS only
+     */
+    PLUGIN_VST3 = 6,
+
+    /*!
+     * AU plugin.
+     * @note MacOS only
+     */
+    PLUGIN_AU = 7,
+
+    /*!
      * SF2 file (SoundFont).
      */
-    PLUGIN_SF2 = 6,
+    PLUGIN_SF2 = 8,
 
     /*!
      * SFZ file.
      */
-    PLUGIN_SFZ = 7,
+    PLUGIN_SFZ = 9,
 
     /*!
      * JACK application.
      */
-    PLUGIN_JACK = 8
+    PLUGIN_JACK = 10
 
 } PluginType;
 

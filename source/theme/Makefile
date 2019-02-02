@@ -22,14 +22,6 @@ QT5_LINK_FLAGS = $(LINK_FLAGS) $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widge
 QT5_STYLES_DIR = $(shell pkg-config --variable=libdir Qt5Core)/qt5/plugins/styles
 endif
 
-ifeq ($(DEFAULT_QT),4)
-QT_STYLES_DIR     = $(QT4_STYLES_DIR)
-SHARED_LINK_FLAGS = $(QT4_LINK_FLAGS)
-else
-QT_STYLES_DIR     = $(QT5_STYLES_DIR)
-SHARED_LINK_FLAGS = $(QT5_LINK_FLAGS)
-endif
-
 # ----------------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(HAVE_QT4),true)
@@ -48,12 +40,6 @@ FILES_qt5 = \
 	$(OBJDIR)/moc_CarlaStylePlugin.qt5.cpp \
 	$(OBJDIR)/moc_CarlaStylePrivate.qt5.cpp \
 	$(OBJDIR)/resources.qt5.cpp
-endif
-
-ifeq ($(DEFAULT_QT),4)
-FILES_shared = $(FILES_qt4)
-else
-FILES_shared = $(FILES_qt5)
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -84,24 +70,12 @@ OBJS_qt5_shared = $(OBJS_qt5) \
 	$(OBJDIR)/moc_CarlaStylePlugin.qt5.cpp.o
 endif
 
-ifeq ($(DEFAULT_QT),4)
-OBJS_shared = $(OBJS_qt4_shared)
-else
-OBJS_shared = $(OBJS_qt5_shared)
-endif
-
 # ----------------------------------------------------------------------------------------------------------------------------
 
-all:
-
-ifeq ($(DEFAULT_QT),4)
-ifeq ($(HAVE_QT4),true)
-all: $(BINDIR)/styles/carlastyle$(LIB_EXT) $(BINDIR)/styles/carlastyle.json
-endif
-else # DEFAULT_QT
 ifeq ($(HAVE_QT5),true)
 all: $(BINDIR)/styles/carlastyle$(LIB_EXT) $(BINDIR)/styles/carlastyle.json
-endif
+else
+all:
 endif
 
 qt4: $(MODULEDIR)/$(MODULENAME).qt4.a
@@ -116,12 +90,8 @@ debug:
 	$(MAKE) DEBUG=true
 
 install: $(BINDIR)/styles/carlastyle$(LIB_EXT) $(BINDIR)/styles/carlastyle.json
-	install -d $(QT_STYLES_DIR)
-	install -m 644 $^ $(QT_STYLES_DIR)
-
-install-main: $(BINDIR)/styles/carlastyle$(LIB_EXT) $(BINDIR)/styles/carlastyle.json
-	install -d $(STYLES_DIR)
-	install -m 644 $^ $(STYLES_DIR)
+	install -d $(QT5_STYLES_DIR)
+	install -m 644 $^ $(QT5_STYLES_DIR)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -139,20 +109,20 @@ $(MODULEDIR)/$(MODULENAME).qt5.a: $(FILES_qt5) $(OBJS_qt5)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-$(BINDIR)/styles/carlastyle.dll: $(FILES_shared) $(OBJS_shared)
+$(BINDIR)/styles/carlastyle.dll: $(FILES_qt5) $(OBJS_qt5_shared)
 	-@mkdir -p $(BINDIR)/styles
 	@echo "Linking carlastyle.dll"
-	@$(CXX) $(OBJS_shared) $(SHARED_LINK_FLAGS) -luuid -lwinspool -lgdi32 -limm32 -lole32 -lshell32 -lws2_32 -shared -o $@
+	@$(CXX) $(OBJS_qt5_shared) $(QT5_LINK_FLAGS) -luuid -lwinspool -lgdi32 -limm32 -lole32 -lshell32 -lws2_32 -shared -o $@
 
-$(BINDIR)/styles/carlastyle.dylib: $(FILES_shared) $(OBJS_shared)
+$(BINDIR)/styles/carlastyle.dylib: $(FILES_qt5) $(OBJS_qt5_shared)
 	-@mkdir -p $(BINDIR)/styles
 	@echo "Linking carlastyle.dylib"
-	@$(CXX) $(OBJS_shared) $(SHARED_LINK_FLAGS) -dynamiclib -o $@
+	@$(CXX) $(OBJS_qt5_shared) $(QT5_LINK_FLAGS) -dynamiclib -o $@
 
-$(BINDIR)/styles/carlastyle.so: $(FILES_shared) $(OBJS_shared)
+$(BINDIR)/styles/carlastyle.so: $(FILES_qt5) $(OBJS_qt5_shared)
 	-@mkdir -p $(BINDIR)/styles
 	@echo "Linking carlastyle.so"
-	@$(CXX) $(OBJS_shared) $(SHARED_LINK_FLAGS) -shared -o $@
+	@$(CXX) $(OBJS_qt5_shared) $(QT5_LINK_FLAGS) -shared -o $@
 
 $(BINDIR)/styles/carlastyle.json: styles/carlastyle.json
 	-@mkdir -p $(BINDIR)/styles

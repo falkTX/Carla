@@ -17,4 +17,4 @@ make distclean >/dev/null
 make features
 
 # Build native stuff
-make
+make USING_JUCE=false

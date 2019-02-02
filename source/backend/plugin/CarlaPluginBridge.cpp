@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Bridge
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -236,6 +236,11 @@ protected:
                 carla_setenv("ENGINE_OPTION_PLUGIN_PATH_VST2", options.pathVST2);
             else
                 carla_setenv("ENGINE_OPTION_PLUGIN_PATH_VST2", "");
+
+            if (options.pathVST3 != nullptr)
+                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_VST3", options.pathVST3);
+            else
+                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_VST3", "");
 
             if (options.pathSF2 != nullptr)
                 carla_setenv("ENGINE_OPTION_PLUGIN_PATH_SF2", options.pathSF2);
@@ -569,7 +574,7 @@ public:
         }
 
         if (! waitForParameterText())
-            std::snprintf(strBuf, STR_MAX, "%f", fParams[parameterId].value);
+            std::snprintf(strBuf, STR_MAX, "%f", static_cast<double>(fParams[parameterId].value));
     }
 
     void getParameterSymbol(const uint32_t parameterId, char* const strBuf) const noexcept override

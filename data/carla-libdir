@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # small script that only prints carla's libdir.
 # can be used to detect if carla is installed, and where to find its libcarla_standalone2.so file
 

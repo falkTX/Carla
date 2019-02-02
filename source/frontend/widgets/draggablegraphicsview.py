@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Middle-click draggable QGraphicsView
-# Copyright (C) 2016 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2016-2019 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,20 +17,11 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Config)
-
-from carla_config import *
-
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-if config_UseQt5:
-    from PyQt5.QtCore import Qt
-    from PyQt5.QtGui import QCursor, QMouseEvent
-    from PyQt5.QtWidgets import QGraphicsView
-else:
-    from PyQt4.QtCore import Qt
-    from PyQt4.QtGui import QCursor, QGraphicsView, QMouseEvent
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QCursor, QMouseEvent
+from PyQt5.QtWidgets import QGraphicsView
 
 # ------------------------------------------------------------------------------------------------------------
 # Widget Class

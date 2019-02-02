@@ -1,6 +1,6 @@
 /*
  * Carla LV2 Plugin
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -43,7 +43,8 @@ extern "C" {
 
 using water::File;
 
-#define URI_CARLA_ATOM_WORKER "http://kxstudio.sf.net/ns/carla/atomWorker"
+#define URI_CARLA_ATOM_WORKER_IN   "http://kxstudio.sf.net/ns/carla/atomWorkerIn"
+#define URI_CARLA_ATOM_WORKER_RESP "http://kxstudio.sf.net/ns/carla/atomWorkerResp"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -113,6 +114,9 @@ enum CarlaLv2URIDs {
     kUridLogNote,
     kUridLogTrace,
     kUridLogWarning,
+    kUridPatchSet,
+    kUridPatchPoperty,
+    kUridPatchValue,
     // time base type
     kUridTimePosition,
      // time values
@@ -129,7 +133,8 @@ enum CarlaLv2URIDs {
     kUridMidiEvent,
     kUridParamSampleRate,
     kUridWindowTitle,
-    kUridCarlaAtomWorker,
+    kUridCarlaAtomWorkerIn,
+    kUridCarlaAtomWorkerResp,
     kUridCarlaTransientWindowId,
     kUridCount
 };
@@ -457,15 +462,18 @@ public:
 
     bool startPipeServer(const int size) noexcept
     {
+        char sampleRateStr[32];
+        {
+            const CarlaScopedLocale csl;
+            std::snprintf(sampleRateStr, 31, "%f", kEngine->getSampleRate());
+        }
+        sampleRateStr[31] = '\0';
+
         const ScopedEngineEnvironmentLocker _seel(kEngine);
         const ScopedEnvVar _sev1("LV2_PATH", kEngine->getOptions().pathLV2);
 #ifdef CARLA_OS_LINUX
         const ScopedEnvVar _sev2("LD_PRELOAD", nullptr);
 #endif
-
-        char sampleRateStr[32];
-        carla_zeroChars(sampleRateStr, 32);
-        std::snprintf(sampleRateStr, 31, "%f", kEngine->getSampleRate());
         carla_setenv("CARLA_SAMPLE_RATE", sampleRateStr);
 
         return CarlaPipeServer::startPipeServer(fFilename, fPluginURI, fUiURI, size);
@@ -522,10 +530,13 @@ public:
           fNeedsUiClose(false),
           fLatencyIndex(-1),
           fStrictBounds(-1),
-          fAtomBufferIn(),
-          fAtomBufferOut(),
+          fAtomBufferEvIn(),
+          fAtomBufferUiOut(),
+          fAtomBufferWorkerIn(),
+          fAtomBufferWorkerResp(),
           fAtomForge(),
-          fTmpAtomBuffer(nullptr),
+          fAtomBufferUiOutTmpData(nullptr),
+          fAtomBufferWorkerInTmpData(nullptr),
           fEventsIn(),
           fEventsOut(),
           fLv2Options(),
@@ -534,6 +545,7 @@ public:
           fFirstActive(true),
           fLastStateChunk(nullptr),
           fLastTimeInfo(),
+          fFilePathURI(),
           fExt(),
           fUI()
     {
@@ -703,10 +715,16 @@ public:
             fLastStateChunk = nullptr;
         }
 
-        if (fTmpAtomBuffer != nullptr)
+        if (fAtomBufferUiOutTmpData != nullptr)
         {
-            delete[] fTmpAtomBuffer;
-            fTmpAtomBuffer = nullptr;
+            delete[] fAtomBufferUiOutTmpData;
+            fAtomBufferUiOutTmpData = nullptr;
+        }
+
+        if (fAtomBufferWorkerInTmpData != nullptr)
+        {
+            delete[] fAtomBufferWorkerInTmpData;
+            fAtomBufferWorkerInTmpData = nullptr;
         }
 
         clearBuffers();
@@ -947,7 +965,7 @@ public:
             return;
         }
 
-        rindex -= fRdfDescriptor->PortCount;
+        rindex -= static_cast<int32_t>(fRdfDescriptor->PortCount);
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->ParameterCount))
         {
@@ -971,7 +989,7 @@ public:
             return;
         }
 
-        rindex -= fRdfDescriptor->PortCount;
+        rindex -= static_cast<int32_t>(fRdfDescriptor->PortCount);
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->ParameterCount))
         {
@@ -987,23 +1005,35 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
-        // TODO param support
+        LV2_RDF_PortUnit* portUnit = nullptr;
 
-        const int32_t rindex(pData->param.data[parameterId].rindex);
+        int32_t rindex = pData->param.data[parameterId].rindex;
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
-            const LV2_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
+            portUnit = &fRdfDescriptor->Ports[rindex].Unit;
+        }
+        else
+        {
+            rindex -= static_cast<int32_t>(fRdfDescriptor->PortCount);
 
-            if (LV2_HAVE_PORT_UNIT_SYMBOL(port->Unit.Hints) && port->Unit.Symbol != nullptr)
+            if (rindex < static_cast<int32_t>(fRdfDescriptor->ParameterCount))
             {
-                std::strncpy(strBuf, port->Unit.Symbol, STR_MAX);
+                portUnit = &fRdfDescriptor->Parameters[rindex].Unit;
+            }
+        }
+
+        if (portUnit != nullptr)
+        {
+            if (LV2_HAVE_PORT_UNIT_SYMBOL(portUnit->Hints) && portUnit->Symbol != nullptr)
+            {
+                std::strncpy(strBuf, portUnit->Symbol, STR_MAX);
                 return;
             }
 
-            if (LV2_HAVE_PORT_UNIT_UNIT(port->Unit.Hints))
+            if (LV2_HAVE_PORT_UNIT_UNIT(portUnit->Hints))
             {
-                switch (port->Unit.Unit)
+                switch (portUnit->Unit)
                 {
                 case LV2_PORT_UNIT_BAR:
                     std::strncpy(strBuf, "bars", STR_MAX);
@@ -1166,9 +1196,50 @@ public:
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
         fParamBuffers[parameterId] = fixedValue;
 
-        if (parameterId >= fRdfDescriptor->PortCount)
+        if (pData->param.data[parameterId].rindex >= static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
-            // TODO
+            const uint32_t rparamId = static_cast<uint32_t>(pData->param.data[parameterId].rindex) - fRdfDescriptor->PortCount;
+            CARLA_SAFE_ASSERT_UINT2_RETURN(rparamId < fRdfDescriptor->ParameterCount,
+                                           rparamId, fRdfDescriptor->PortCount,);
+
+            uint8_t atomBuf[256];
+            lv2_atom_forge_set_buffer(&fAtomForge, atomBuf, sizeof(atomBuf));
+
+            LV2_Atom_Forge_Frame forgeFrame;
+            lv2_atom_forge_object(&fAtomForge, &forgeFrame, kUridNull, kUridPatchSet);
+
+            lv2_atom_forge_key(&fAtomForge, kUridPatchPoperty);
+            lv2_atom_forge_urid(&fAtomForge, getCustomURID(fRdfDescriptor->Parameters[rparamId].URI));
+            lv2_atom_forge_key(&fAtomForge, kUridPatchValue);
+
+            switch (fRdfDescriptor->Parameters[rparamId].Type)
+            {
+            case LV2_PARAMETER_BOOL:
+                lv2_atom_forge_bool(&fAtomForge, fixedValue > 0.5f);
+                break;
+            case LV2_PARAMETER_INT:
+                lv2_atom_forge_int(&fAtomForge, static_cast<int32_t>(fixedValue + 0.5f));
+                break;
+            case LV2_PARAMETER_LONG:
+                lv2_atom_forge_long(&fAtomForge, static_cast<int64_t>(fixedValue + 0.5f));
+                break;
+            case LV2_PARAMETER_FLOAT:
+                lv2_atom_forge_float(&fAtomForge, fixedValue);
+                break;
+            case LV2_PARAMETER_DOUBLE:
+                lv2_atom_forge_double(&fAtomForge, fixedValue);
+                break;
+            default:
+                carla_stderr2("setParameterValue called for invalid parameter, expect issues!");
+                break;
+            }
+
+            lv2_atom_forge_pop(&fAtomForge, &forgeFrame);
+
+            LV2_Atom* const atom((LV2_Atom*)atomBuf);
+            CARLA_SAFE_ASSERT(atom->size < sizeof(atomBuf));
+
+            fAtomBufferEvIn.put(atom, fEventsIn.ctrlIndex);
         }
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
@@ -1302,7 +1373,39 @@ public:
     {
         if (fUI.type == UI::TYPE_NULL)
         {
-            CARLA_SAFE_ASSERT(!yesNo);
+            if (fFilePathURI.isNotEmpty())
+            {
+                const char* const path = pData->engine->runFileCallback(FILE_CALLBACK_OPEN, false, "Open File", "");
+
+                if (path != nullptr && path[0] != '\0')
+                {
+                    carla_stdout("LV2 file path to send: '%s'", path);
+
+                    uint8_t atomBuf[4096];
+                    lv2_atom_forge_set_buffer(&fAtomForge, atomBuf, sizeof(atomBuf));
+
+                    LV2_Atom_Forge_Frame forgeFrame;
+                    lv2_atom_forge_object(&fAtomForge, &forgeFrame, kUridNull, kUridPatchSet);
+
+                    lv2_atom_forge_key(&fAtomForge, kUridPatchPoperty);
+                    lv2_atom_forge_urid(&fAtomForge, getCustomURID(fFilePathURI));
+
+                    lv2_atom_forge_key(&fAtomForge, kUridPatchValue);
+                    lv2_atom_forge_path(&fAtomForge, path, static_cast<uint32_t>(std::strlen(path)));
+
+                    lv2_atom_forge_pop(&fAtomForge, &forgeFrame);
+
+                    LV2_Atom* const atom((LV2_Atom*)atomBuf);
+                    CARLA_SAFE_ASSERT(atom->size < sizeof(atomBuf));
+
+                    fAtomBufferEvIn.put(atom, fEventsIn.ctrlIndex);
+                }
+            }
+            else
+            {
+                CARLA_SAFE_ASSERT(!yesNo);
+            }
+            pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
             return;
         }
 
@@ -1335,7 +1438,7 @@ public:
                     tmpBuf[0xff] = '\0';
 
                     const CarlaMutexLocker cml(fPipeServer.getPipeLock());
-                    const ScopedLocale csl;
+                    const CarlaScopedLocale csl;
 
                     // write URI mappings
                     uint32_t u = 0;
@@ -1390,7 +1493,7 @@ public:
                         if (! fPipeServer.writeMessage(tmpBuf))
                             return;
 
-                        std::snprintf(tmpBuf, 0xff, "%f\n", getParameterValue(i));
+                        std::snprintf(tmpBuf, 0xff, "%f\n", static_cast<double>(getParameterValue(i)));
                         if (! fPipeServer.writeMessage(tmpBuf))
                             return;
                     }
@@ -1429,7 +1532,7 @@ public:
             if (fUI.handle == nullptr)
             {
 #ifndef LV2_UIS_ONLY_BRIDGES
-                if (fUI.type == UI::TYPE_EMBED && fUI.window == nullptr)
+                if (fUI.type == UI::TYPE_EMBED && fUI.rdfDescriptor->Type != LV2_UI_NONE && fUI.window == nullptr)
                 {
                     const char* msg = nullptr;
 
@@ -1559,33 +1662,48 @@ public:
         }
     }
 
+    void idle() override
+    {
+        if (! fAtomBufferWorkerIn.isDataAvailableForReading())
+            return;
+
+        Lv2AtomRingBuffer tmpRingBuffer(fAtomBufferWorkerIn, fAtomBufferWorkerInTmpData);
+        CARLA_SAFE_ASSERT_RETURN(tmpRingBuffer.isDataAvailableForReading(),);
+        CARLA_SAFE_ASSERT_RETURN(fExt.worker != nullptr && fExt.worker->work != nullptr,);
+
+        uint32_t portIndex;
+        const LV2_Atom* atom;
+
+        for (; tmpRingBuffer.get(atom, portIndex);)
+        {
+            CARLA_SAFE_ASSERT_CONTINUE(atom->type == kUridCarlaAtomWorkerIn);
+            fExt.worker->work(fHandle, carla_lv2_worker_respond, this, atom->size, LV2_ATOM_BODY_CONST(atom));
+        }
+    }
+
     void uiIdle() override
     {
-        if (fAtomBufferOut.isDataAvailableForReading())
+        if (fAtomBufferUiOut.isDataAvailableForReading())
         {
-            Lv2AtomRingBuffer tmpRingBuffer(fAtomBufferOut, fTmpAtomBuffer);
+            Lv2AtomRingBuffer tmpRingBuffer(fAtomBufferUiOut, fAtomBufferUiOutTmpData);
             CARLA_SAFE_ASSERT(tmpRingBuffer.isDataAvailableForReading());
 
             uint32_t portIndex;
             const LV2_Atom* atom;
-            const bool hasPortEvent(fUI.handle != nullptr && fUI.descriptor != nullptr &&
-                                    fUI.descriptor->port_event != nullptr && ! fNeedsUiClose);
+            const bool hasPortEvent(fUI.handle != nullptr &&
+                                    fUI.descriptor != nullptr &&
+                                    fUI.descriptor->port_event != nullptr);
 
             for (; tmpRingBuffer.get(atom, portIndex);)
             {
-                if (atom->type == kUridCarlaAtomWorker)
-                {
-                    CARLA_SAFE_ASSERT_CONTINUE(fExt.worker != nullptr && fExt.worker->work != nullptr);
-                    fExt.worker->work(fHandle, carla_lv2_worker_respond, this, atom->size, LV2_ATOM_BODY_CONST(atom));
-                }
-                else if (fUI.type == UI::TYPE_BRIDGE)
+                if (fUI.type == UI::TYPE_BRIDGE)
                 {
                     if (fPipeServer.isPipeRunning())
                         fPipeServer.writeLv2AtomMessage(portIndex, atom);
                 }
                 else
                 {
-                    if (hasPortEvent)
+                    if (hasPortEvent && ! fNeedsUiClose)
                         fUI.descriptor->port_event(fUI.handle, portIndex, lv2_atom_total_size(atom), kUridAtomTransferEvent, atom);
                 }
             }
@@ -1728,16 +1846,20 @@ public:
 
         for (uint32_t i=0; i < fRdfDescriptor->ParameterCount; ++i)
         {
-            const LV2_RDF_Parameter& rdfParam(fRdfDescriptor->Parameters[i]);
-
-            if (rdfParam.Range == nullptr)
-                continue;
-            if (std::strcmp(rdfParam.Range, LV2_ATOM__Bool)  != 0 &&
-                std::strcmp(rdfParam.Range, LV2_ATOM__Int)   != 0 &&
-                std::strcmp(rdfParam.Range, LV2_ATOM__Float) != 0)
-                continue;
-
-            params += 1;
+            switch (fRdfDescriptor->Parameters[i].Type)
+            {
+            case LV2_PARAMETER_BOOL:
+            case LV2_PARAMETER_INT:
+            // case LV2_PARAMETER_LONG:
+            case LV2_PARAMETER_FLOAT:
+            case LV2_PARAMETER_DOUBLE:
+                params += 1;
+                break;
+            case LV2_PARAMETER_PATH:
+                if (fFilePathURI.isEmpty())
+                    fFilePathURI = fRdfDescriptor->Parameters[i].URI;
+                break;
+            }
         }
 
         if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && aIns <= 1 && aOuts <= 1 && fExt.state == nullptr && fExt.worker == nullptr)
@@ -2384,7 +2506,20 @@ public:
         for (uint32_t i=0; i < fRdfDescriptor->ParameterCount; ++i)
         {
             const LV2_RDF_Parameter& rdfParam(fRdfDescriptor->Parameters[i]);
-            const LV2_RDF_PortPoints portPoints(fRdfDescriptor->Parameters[i].Points);
+
+            switch (rdfParam.Type)
+            {
+            case LV2_PARAMETER_BOOL:
+            case LV2_PARAMETER_INT:
+            // case LV2_PARAMETER_LONG:
+            case LV2_PARAMETER_FLOAT:
+            case LV2_PARAMETER_DOUBLE:
+                break;
+            default:
+                continue;
+            }
+
+            const LV2_RDF_PortPoints& portPoints(rdfParam.Points);
 
             const uint32_t j = iCtrl++;
             pData->param.data[j].index  = static_cast<int32_t>(j);
@@ -2406,7 +2541,7 @@ public:
 
             if (min >= max)
             {
-                carla_stderr2("WARNING - Broken plugin parameter '%s': min >= max", fRdfDescriptor->Parameters[i].Label);
+                carla_stderr2("WARNING - Broken plugin parameter '%s': min >= max", rdfParam.Label);
                 max = min + 0.1f;
             }
 
@@ -2429,26 +2564,29 @@ public:
             else if (def > max)
                 def = max;
 
-            if (std::strcmp(rdfParam.Range, LV2_ATOM__Bool) == 0)
+            switch (rdfParam.Type)
             {
+            case LV2_PARAMETER_BOOL:
                 step = max - min;
                 stepSmall = step;
                 stepLarge = step;
                 pData->param.data[j].hints |= PARAMETER_IS_BOOLEAN;
-            }
-            else if (std::strcmp(rdfParam.Range, LV2_ATOM__Int) == 0)
-            {
+                break;
+
+            case LV2_PARAMETER_INT:
+            case LV2_PARAMETER_LONG:
                 step = 1.0f;
                 stepSmall = 1.0f;
                 stepLarge = 10.0f;
                 pData->param.data[j].hints |= PARAMETER_IS_INTEGER;
-            }
-            else
-            {
-                float range = max - min;
+                break;
+
+            default:
+                const float range = max - min;
                 step = range/100.0f;
                 stepSmall = range/1000.0f;
                 stepLarge = range/10.0f;
+                break;
             }
 
             if (rdfParam.Input)
@@ -2508,13 +2646,21 @@ public:
             pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, 0);
         }
 
-        if (fExt.worker != nullptr || (fUI.type != UI::TYPE_NULL && fEventsIn.count > 0 && (fEventsIn.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
-            fAtomBufferIn.createBuffer(eventBufferSize);
-
-        if (fExt.worker != nullptr || (fUI.type != UI::TYPE_NULL && fEventsOut.count > 0 && (fEventsOut.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
+        if (fExt.worker != nullptr && fEventsIn.ctrl != nullptr)
         {
-            fAtomBufferOut.createBuffer(std::min(eventBufferSize*32, 1638400U));
-            fTmpAtomBuffer = new uint8_t[fAtomBufferOut.getSize()];
+            fAtomBufferWorkerIn.createBuffer(eventBufferSize);
+            fAtomBufferWorkerResp.createBuffer(eventBufferSize);
+            fAtomBufferWorkerInTmpData = new uint8_t[fAtomBufferWorkerIn.getSize()];
+        }
+
+        if (fRdfDescriptor->ParameterCount > 0 ||
+            (fUI.type != UI::TYPE_NULL && fEventsIn.count > 0 && (fEventsIn.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
+            fAtomBufferEvIn.createBuffer(eventBufferSize);
+
+        if (fUI.type != UI::TYPE_NULL && fEventsOut.count > 0 && (fEventsOut.data[0].type & CARLA_EVENT_DATA_ATOM) != 0)
+        {
+            fAtomBufferUiOut.createBuffer(std::min(eventBufferSize*32, 1638400U));
+            fAtomBufferUiOutTmpData = new uint8_t[fAtomBufferUiOut.getSize()];
         }
 
         if (fEventsIn.ctrl != nullptr && fEventsIn.ctrl->port == nullptr)
@@ -2534,7 +2680,7 @@ public:
         if (isRealtimeSafe())
             pData->hints |= PLUGIN_IS_RTSAFE;
 
-        if (fUI.type != UI::TYPE_NULL)
+        if (fUI.type != UI::TYPE_NULL || fFilePathURI.isNotEmpty())
         {
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
 
@@ -3096,23 +3242,18 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Message Input
 
-            if (fAtomBufferIn.tryLock())
+            if (fAtomBufferEvIn.tryLock())
             {
-                if (fAtomBufferIn.isDataAvailableForReading())
+                if (fAtomBufferEvIn.isDataAvailableForReading())
                 {
                     const LV2_Atom* atom;
                     uint32_t j, portIndex;
 
-                    for (; fAtomBufferIn.get(atom, portIndex);)
+                    for (; fAtomBufferEvIn.get(atom, portIndex);)
                     {
                         j = (portIndex < fEventsIn.count) ? portIndex : fEventsIn.ctrlIndex;
 
-                        if (atom->type == kUridCarlaAtomWorker)
-                        {
-                            CARLA_SAFE_ASSERT_CONTINUE(fExt.worker != nullptr && fExt.worker->work_response != nullptr);
-                            fExt.worker->work_response(fHandle, atom->size, LV2_ATOM_BODY_CONST(atom));
-                        }
-                        else if (! lv2_atom_buffer_write(&evInAtomIters[j], 0, 0, atom->type, atom->size, LV2_ATOM_BODY_CONST(atom)))
+                        if (! lv2_atom_buffer_write(&evInAtomIters[j], 0, 0, atom->type, atom->size, LV2_ATOM_BODY_CONST(atom)))
                         {
                             carla_stderr2("Event input buffer full, at least 1 message lost");
                             continue;
@@ -3120,7 +3261,24 @@ public:
                     }
                 }
 
-                fAtomBufferIn.unlock();
+                fAtomBufferEvIn.unlock();
+            }
+
+            if (fExt.worker != nullptr && fAtomBufferWorkerIn.tryLock())
+            {
+                if (fAtomBufferWorkerIn.isDataAvailableForReading())
+                {
+                    const LV2_Atom* atom;
+                    uint32_t portIndex;
+
+                    for (; fAtomBufferWorkerIn.get(atom, portIndex);)
+                    {
+                        CARLA_SAFE_ASSERT_CONTINUE(atom->type == kUridCarlaAtomWorkerIn);
+                        fExt.worker->work(fHandle, carla_lv2_worker_respond, this, atom->size, LV2_ATOM_BODY_CONST(atom));
+                    }
+                }
+
+                fAtomBufferWorkerIn.unlock();
             }
 
             // ----------------------------------------------------------------------------------------------------
@@ -3580,10 +3738,9 @@ public:
                             evData.port->writeMidiEvent(currentFrame, static_cast<uint8_t>(ev->body.size), data);
                         }
                     }
-                    else //if (ev->body.type == kUridAtomBLANK)
+                    else if (fAtomBufferUiOutTmpData != nullptr)
                     {
-                        //carla_stdout("Got out event, %s", carla_lv2_urid_unmap(this, ev->body.type));
-                        fAtomBufferOut.put(&ev->body, evData.rindex);
+                        fAtomBufferUiOut.put(&ev->body, evData.rindex);
                     }
 
                     lv2_atom_buffer_increment(&iter);
@@ -3679,6 +3836,23 @@ public:
 
         // --------------------------------------------------------------------------------------------------------
         // Final work
+
+        if (fEventsIn.ctrl != nullptr && fExt.worker != nullptr && fAtomBufferWorkerResp.tryLock())
+        {
+            if (fAtomBufferWorkerResp.isDataAvailableForReading())
+            {
+                const LV2_Atom* atom;
+                uint32_t portIndex;
+
+                for (; fAtomBufferWorkerResp.get(atom, portIndex);)
+                {
+                    CARLA_SAFE_ASSERT_CONTINUE(atom->type == kUridCarlaAtomWorkerResp);
+                    fExt.worker->work_response(fHandle, atom->size, LV2_ATOM_BODY_CONST(atom));
+                }
+            }
+
+            fAtomBufferWorkerResp.unlock();
+        }
 
         if (fExt.worker != nullptr && fExt.worker->end_run != nullptr)
         {
@@ -4161,7 +4335,7 @@ public:
 
     void uiParameterChange(const uint32_t index, const float value) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL || fFilePathURI.isNotEmpty(),);
         CARLA_SAFE_ASSERT_RETURN(index < pData->param.count,);
 
         if (fUI.type == UI::TYPE_BRIDGE)
@@ -4181,7 +4355,7 @@ public:
 
     void uiMidiProgramChange(const uint32_t index) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL || fFilePathURI.isNotEmpty(),);
         CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count,);
 
         if (fUI.type == UI::TYPE_BRIDGE)
@@ -4198,7 +4372,7 @@ public:
 
     void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL || fFilePathURI.isNotEmpty(),);
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
         CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
         CARLA_SAFE_ASSERT_RETURN(velo > 0 && velo < MAX_MIDI_VALUE,);
@@ -4228,7 +4402,7 @@ public:
 
     void uiNoteOff(const uint8_t channel, const uint8_t note) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL || fFilePathURI.isNotEmpty(),);
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
         CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
 
@@ -4762,20 +4936,21 @@ public:
 
         LV2_Atom atom;
         atom.size = size;
-        atom.type = kUridCarlaAtomWorker;
+        atom.type = kUridCarlaAtomWorkerIn;
 
-        return fAtomBufferOut.putChunk(&atom, data, fEventsOut.ctrlIndex) ? LV2_WORKER_SUCCESS : LV2_WORKER_ERR_NO_SPACE;
+        return fAtomBufferWorkerIn.putChunk(&atom, data, fEventsOut.ctrlIndex) ? LV2_WORKER_SUCCESS : LV2_WORKER_ERR_NO_SPACE;
     }
 
     LV2_Worker_Status handleWorkerRespond(const uint32_t size, const void* const data)
     {
+        CARLA_SAFE_ASSERT_RETURN(fExt.worker != nullptr && fExt.worker->work_response != nullptr, LV2_WORKER_ERR_UNKNOWN);
         carla_debug("CarlaPluginLV2::handleWorkerRespond(%i, %p)", size, data);
 
         LV2_Atom atom;
         atom.size = size;
-        atom.type = kUridCarlaAtomWorker;
+        atom.type = kUridCarlaAtomWorkerResp;
 
-        return fAtomBufferIn.putChunk(&atom, data, fEventsIn.ctrlIndex) ? LV2_WORKER_SUCCESS : LV2_WORKER_ERR_NO_SPACE;
+        return fAtomBufferWorkerResp.putChunk(&atom, data, fEventsIn.ctrlIndex) ? LV2_WORKER_SUCCESS : LV2_WORKER_ERR_NO_SPACE;
     }
 
     // -------------------------------------------------------------------
@@ -4916,11 +5091,12 @@ public:
             const LV2_Atom* const atom((const LV2_Atom*)buffer);
 
             // plugins sometimes fail on this, not good...
-            const uint32_t totalSize =  lv2_atom_total_size(atom);
+            const uint32_t totalSize = lv2_atom_total_size(atom);
             const uint32_t paddedSize = lv2_atom_pad_size(totalSize);
 
             if (bufferSize != totalSize && bufferSize != paddedSize)
-                carla_stderr2("Warning: LV2 UI sending atom with invalid size! size: %u, padded-size: %u", totalSize, paddedSize);
+                carla_stderr2("Warning: LV2 UI sending atom with invalid size %u! size: %u, padded-size: %u",
+                              bufferSize, totalSize, paddedSize);
 
             for (uint32_t i=0; i < fEventsIn.count; ++i)
             {
@@ -4937,7 +5113,7 @@ public:
                 index = fEventsIn.ctrlIndex;
             }
 
-            fAtomBufferIn.put(atom, index);
+            fAtomBufferEvIn.put(atom, index);
         } break;
 
         default:
@@ -5693,6 +5869,10 @@ public:
 
         switch (uiType)
         {
+        case LV2_UI_NONE:
+            carla_stdout("Will use LV2 Show Interface for '%s'", pData->name);
+            fUI.type = UI::TYPE_EMBED;
+            break;
         case LV2_UI_QT4:
             carla_stdout("Will use LV2 Qt4 UI for '%s', NOT!", pData->name);
             fUI.type = UI::TYPE_EMBED;
@@ -5856,7 +6036,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(atom != nullptr,);
         carla_debug("CarlaPluginLV2::handleTransferAtom(%i, %p)", portIndex, atom);
 
-        fAtomBufferIn.put(atom, portIndex);
+        fAtomBufferEvIn.put(atom, portIndex);
     }
 
     void handleUridMap(const LV2_URID urid, const char* const uri)
@@ -5904,10 +6084,13 @@ private:
     int32_t fLatencyIndex; // -1 if invalid
     int     fStrictBounds; // -1 unsupported, 0 optional, 1 required
 
-    Lv2AtomRingBuffer fAtomBufferIn;
-    Lv2AtomRingBuffer fAtomBufferOut;
+    Lv2AtomRingBuffer fAtomBufferEvIn;
+    Lv2AtomRingBuffer fAtomBufferUiOut;
+    Lv2AtomRingBuffer fAtomBufferWorkerIn;
+    Lv2AtomRingBuffer fAtomBufferWorkerResp;
     LV2_Atom_Forge    fAtomForge;
-    uint8_t*          fTmpAtomBuffer;
+    uint8_t*          fAtomBufferUiOutTmpData;
+    uint8_t*          fAtomBufferWorkerInTmpData;
 
     CarlaPluginLV2EventData fEventsIn;
     CarlaPluginLV2EventData fEventsOut;
@@ -5919,6 +6102,9 @@ private:
     bool fFirstActive; // first process() call after activate()
     void* fLastStateChunk;
     EngineTimeInfo fLastTimeInfo;
+
+    // if plugin provides path parameter, use it as fake "gui"
+    CarlaString fFilePathURI;
 
     struct Extensions {
         const LV2_Options_Interface* options;
@@ -6238,6 +6424,14 @@ private:
         if (std::strcmp(uri, LV2_LOG__Warning) == 0)
             return kUridLogWarning;
 
+        // Patch types
+        if (std::strcmp(uri, LV2_PATCH__Set) == 0)
+            return kUridPatchSet;
+        if (std::strcmp(uri, LV2_PATCH__property) == 0)
+            return kUridPatchPoperty;
+        if (std::strcmp(uri, LV2_PATCH__value) == 0)
+            return kUridPatchValue;
+
         // Time types
         if (std::strcmp(uri, LV2_TIME__Position) == 0)
             return kUridTimePosition;
@@ -6271,8 +6465,10 @@ private:
             return kUridWindowTitle;
 
         // Custom Carla types
-        if (std::strcmp(uri, URI_CARLA_ATOM_WORKER) == 0)
-            return kUridCarlaAtomWorker;
+        if (std::strcmp(uri, URI_CARLA_ATOM_WORKER_IN) == 0)
+            return kUridCarlaAtomWorkerIn;
+        if (std::strcmp(uri, URI_CARLA_ATOM_WORKER_RESP) == 0)
+            return kUridCarlaAtomWorkerResp;
         if (std::strcmp(uri, LV2_KXSTUDIO_PROPERTIES__TransientWindowId) == 0)
             return kUridCarlaTransientWindowId;
 
@@ -6356,6 +6552,14 @@ private:
         case kUridLogWarning:
             return LV2_LOG__Warning;
 
+        // Patch types
+        case kUridPatchSet:
+            return LV2_PATCH__Set;
+        case kUridPatchPoperty:
+            return LV2_PATCH__property;
+        case kUridPatchValue:
+            return LV2_PATCH__value;
+
         // Time types
         case kUridTimePosition:
             return LV2_TIME__Position;
@@ -6389,8 +6593,10 @@ private:
             return LV2_UI__windowTitle;
 
         // Custom Carla types
-        case kUridCarlaAtomWorker:
-            return URI_CARLA_ATOM_WORKER;
+        case kUridCarlaAtomWorkerIn:
+            return URI_CARLA_ATOM_WORKER_IN;
+        case kUridCarlaAtomWorkerResp:
+            return URI_CARLA_ATOM_WORKER_RESP;
         case kUridCarlaTransientWindowId:
             return LV2_KXSTUDIO_PROPERTIES__TransientWindowId;
         }

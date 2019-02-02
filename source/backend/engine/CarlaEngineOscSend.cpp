@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -209,7 +209,12 @@ void CarlaEngine::oscSend_control_set_parameter_ranges1(const uint pluginId, con
     char targetPath[std::strlen(pData->oscData->path)+24];
     std::strcpy(targetPath, pData->oscData->path);
     std::strcat(targetPath, "/set_parameter_ranges1");
-    try_lo_send(pData->oscData->target, targetPath, "iifff", static_cast<int32_t>(pluginId), static_cast<int32_t>(index), def, min, max);
+    try_lo_send(pData->oscData->target, targetPath, "iifff",
+                static_cast<int32_t>(pluginId),
+                static_cast<int32_t>(index),
+                static_cast<double>(def),
+                static_cast<double>(min),
+                static_cast<double>(max));
 }
 
 void CarlaEngine::oscSend_control_set_parameter_ranges2(const uint pluginId, const uint32_t index, const float step, const float stepSmall, const float stepLarge) const noexcept
@@ -226,7 +231,12 @@ void CarlaEngine::oscSend_control_set_parameter_ranges2(const uint pluginId, con
     char targetPath[std::strlen(pData->oscData->path)+24];
     std::strcpy(targetPath, pData->oscData->path);
     std::strcat(targetPath, "/set_parameter_ranges2");
-    try_lo_send(pData->oscData->target, targetPath, "iifff", static_cast<int32_t>(pluginId), static_cast<int32_t>(index), step, stepSmall, stepLarge);
+    try_lo_send(pData->oscData->target, targetPath, "iifff",
+                static_cast<int32_t>(pluginId),
+                static_cast<int32_t>(index),
+                static_cast<double>(step),
+                static_cast<double>(stepSmall),
+                static_cast<double>(stepLarge));
 }
 
 void CarlaEngine::oscSend_control_set_parameter_midi_cc(const uint pluginId, const uint32_t index, const int16_t cc) const noexcept
@@ -269,12 +279,16 @@ void CarlaEngine::oscSend_control_set_parameter_value(const uint pluginId, const
     CARLA_SAFE_ASSERT_RETURN(pluginId <= pData->curPluginCount,);
     CARLA_SAFE_ASSERT_RETURN(index < 50,);
     CARLA_SAFE_ASSERT_RETURN(index != PARAMETER_NULL,);
-    carla_debug("CarlaEngine::oscSend_control_set_parameter_value(%i, %i:%s, %f)", pluginId, index, (index < 0) ? InternalParameterIndex2Str(static_cast<InternalParameterIndex>(index)) : "(none)", value);
+    carla_debug("CarlaEngine::oscSend_control_set_parameter_value(%i, %i:%s, %f)", pluginId, index,
+                (index < 0) ? InternalParameterIndex2Str(static_cast<InternalParameterIndex>(index)) : "(none)", value);
 
     char targetPath[std::strlen(pData->oscData->path)+21];
     std::strcpy(targetPath, pData->oscData->path);
     std::strcat(targetPath, "/set_parameter_value");
-    try_lo_send(pData->oscData->target, targetPath, "iif", static_cast<int32_t>(pluginId), index, value);
+    try_lo_send(pData->oscData->target, targetPath, "iif",
+                static_cast<int32_t>(pluginId),
+                index,
+                static_cast<double>(value));
 }
 
 void CarlaEngine::oscSend_control_set_default_value(const uint pluginId, const uint32_t index, const float value) const noexcept
@@ -289,7 +303,10 @@ void CarlaEngine::oscSend_control_set_default_value(const uint pluginId, const u
     char targetPath[std::strlen(pData->oscData->path)+19];
     std::strcpy(targetPath, pData->oscData->path);
     std::strcat(targetPath, "/set_default_value");
-    try_lo_send(pData->oscData->target, targetPath, "iif", static_cast<int32_t>(pluginId), static_cast<int32_t>(index), value);
+    try_lo_send(pData->oscData->target, targetPath, "iif",
+                static_cast<int32_t>(pluginId),
+                static_cast<int32_t>(index),
+                static_cast<double>(value));
 }
 
 void CarlaEngine::oscSend_control_set_current_program(const uint pluginId, const int32_t index) const noexcept
@@ -401,7 +418,10 @@ void CarlaEngine::oscSend_control_set_peaks(const uint pluginId) const noexcept
     std::strcpy(targetPath, pData->oscData->path);
     std::strcat(targetPath, "/set_peaks");
     try_lo_send(pData->oscData->target, targetPath, "iffff", static_cast<int32_t>(pluginId),
-                epData.peaks[0], epData.peaks[1], epData.peaks[2], epData.peaks[3]);
+                static_cast<double>(epData.peaks[0]),
+                static_cast<double>(epData.peaks[1]),
+                static_cast<double>(epData.peaks[2]),
+                static_cast<double>(epData.peaks[3]));
 }
 
 void CarlaEngine::oscSend_control_exit() const noexcept
