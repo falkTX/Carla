@@ -510,7 +510,8 @@ public:
                 value = (intptr_t)fUI.window->getDisplay();
 #endif
 
-                if (dispatcher(effEditOpen, 0, value, fUI.window->getPtr()) != 0)
+                // NOTE: there are far too many broken VST2 plugins, don't bother checking return value
+                if (dispatcher(effEditOpen, 0, value, fUI.window->getPtr()) != 0 || true)
                 {
                     fUI.isOpen = true;
 
