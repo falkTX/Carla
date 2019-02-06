@@ -51,6 +51,14 @@ using water::Time;
 
 CARLA_BACKEND_START_NAMESPACE
 
+enum {
+    SESSION_MGR_NONE   = 0,
+    SESSION_MGR_AUTO   = 1,
+    SESSION_MGR_JACK   = 2,
+    SESSION_MGR_LADISH = 3,
+    SESSION_MGR_NSM    = 4
+};
+
 // -------------------------------------------------------------------------------------------------------------------
 // Fallback data
 
@@ -66,21 +74,21 @@ public:
           kEngine(engine),
           kPlugin(plugin),
           fShmIds(),
-          fNumPorts(),
+          fSetupLabel(),
 #ifdef HAVE_LIBLO
           fOscClientAddress(nullptr),
           fOscServer(nullptr),
 #endif
           fProcess() {}
 
-    void setData(const char* const shmIds, const char* const numPorts) noexcept
+    void setData(const char* const shmIds, const char* const setupLabel) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(shmIds != nullptr && shmIds[0] != '\0',);
-        CARLA_SAFE_ASSERT_RETURN(numPorts != nullptr && numPorts[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(setupLabel != nullptr && setupLabel[0] != '\0',);
         CARLA_SAFE_ASSERT(! isThreadRunning());
 
-        fShmIds   = shmIds;
-        fNumPorts = numPorts;
+        fShmIds     = shmIds;
+        fSetupLabel = setupLabel;
     }
 
     uintptr_t getProcessID() const noexcept
@@ -196,11 +204,16 @@ protected:
             fOscClientAddress = nullptr;
         }
 
-        // NSM support
-        fOscServer = lo_server_new_with_proto(nullptr, LO_UDP, _osc_error_handler);
-        CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr,);
+        const int sessionManager = fSetupLabel[4] - '0';
 
-        lo_server_add_method(fOscServer, nullptr, nullptr, _broadcast_handler, this);
+        if (sessionManager == SESSION_MGR_NSM)
+        {
+            // NSM support
+            fOscServer = lo_server_new_with_proto(nullptr, LO_UDP, _osc_error_handler);
+            CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr,);
+
+            lo_server_add_method(fOscServer, nullptr, nullptr, _broadcast_handler, this);
+        }
 
         bool nsmOpened = false;
 #endif
@@ -256,7 +269,7 @@ protected:
             else
                 carla_unsetenv("CARLA_FRONTEND_WIN_ID");
 
-            carla_setenv("CARLA_LIBJACK_SETUP", fNumPorts.buffer());
+            carla_setenv("CARLA_LIBJACK_SETUP", fSetupLabel.buffer());
             carla_setenv("CARLA_SHM_IDS", fShmIds.buffer());
 
             started = fProcess->start(arguments);
@@ -272,32 +285,40 @@ protected:
         for (; fProcess->isRunning() && ! shouldThreadExit();)
         {
 #ifdef HAVE_LIBLO
-            lo_server_recv_noblock(fOscServer, 50);
-
-            if (fOscClientAddress != nullptr && ! nsmOpened)
+            if (sessionManager == SESSION_MGR_NSM)
             {
-                const char* const projectPath  = "/tmp/Carla.nsm-test1";
-                const char* const displayName  = "hy";
-                const char* const clientNameId = "Carla.test1";
+                lo_server_recv_noblock(fOscServer, 50);
 
-                lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/open", "sss",
-                             projectPath, displayName, clientNameId);
+                if (fOscClientAddress != nullptr && ! nsmOpened)
+                {
+                    const char* const projectPath  = "/tmp/Carla.nsm-test1";
+                    const char* const displayName  = "hy";
+                    const char* const clientNameId = "Carla.test1";
 
-                nsmOpened = true;
+                    lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/open", "sss",
+                                projectPath, displayName, clientNameId);
+
+                    nsmOpened = true;
+                }
             }
-#else
-            carla_msleep(50);
+            else
 #endif
+            {
+                carla_msleep(50);
+            }
         }
 
 #ifdef HAVE_LIBLO
-        lo_server_free(fOscServer);
-        fOscServer = nullptr;
-
-        if (fOscClientAddress != nullptr)
+        if (sessionManager == SESSION_MGR_NSM)
         {
-            lo_address_free(fOscClientAddress);
-            fOscClientAddress = nullptr;
+            lo_server_free(fOscServer);
+            fOscServer = nullptr;
+
+            if (fOscClientAddress != nullptr)
+            {
+                lo_address_free(fOscClientAddress);
+                fOscClientAddress = nullptr;
+            }
         }
 #endif
 
@@ -334,7 +355,7 @@ private:
     CarlaPlugin* const kPlugin;
 
     CarlaString fShmIds;
-    CarlaString fNumPorts;
+    CarlaString fSetupLabel;
 
 #ifdef HAVE_LIBLO
     lo_address fOscClientAddress;
