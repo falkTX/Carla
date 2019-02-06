@@ -372,6 +372,7 @@ CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
       callbackPtr(nullptr),
       fileCallback(nullptr),
       fileCallbackPtr(nullptr),
+      actionCanceled(false),
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
       loadingProject(false),
 #endif

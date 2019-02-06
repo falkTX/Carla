@@ -691,28 +691,34 @@ ENGINE_CALLBACK_BUFFER_SIZE_CHANGED = 33
 # @a value3 New sample rate
 ENGINE_CALLBACK_SAMPLE_RATE_CHANGED = 34
 
+# A cancelable action has been started or stopped.
+# @a pluginId Plugin Id the action relates to, -1 for none
+# @a value1   1 for action started, 0 for stopped
+# @a valueStr Action name
+ENGINE_CALLBACK_CANCELABLE_ACTION = 35
+
 # Project has finished loading.
-ENGINE_CALLBACK_PROJECT_LOAD_FINISHED = 35
+ENGINE_CALLBACK_PROJECT_LOAD_FINISHED = 36
 
 # NSM callback.
 # (Work in progress, values are not defined yet)
-ENGINE_CALLBACK_NSM = 36
+ENGINE_CALLBACK_NSM = 37
 
 # Idle frontend.
 # This is used by the engine during long operations that might block the frontend,
 # giving it the possibility to idle while the operation is still in place.
-ENGINE_CALLBACK_IDLE = 37
+ENGINE_CALLBACK_IDLE = 38
 
 # Show a message as information.
 # @a valueStr The message
-ENGINE_CALLBACK_INFO = 38
+ENGINE_CALLBACK_INFO = 39
 
 # Show a message as an error.
 # @a valueStr The message
-ENGINE_CALLBACK_ERROR = 39
+ENGINE_CALLBACK_ERROR = 40
 
 # The engine has crashed or malfunctioned and will no longer work.
-ENGINE_CALLBACK_QUIT = 40
+ENGINE_CALLBACK_QUIT = 41
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine Option
@@ -1330,6 +1336,10 @@ class CarlaHostMeta(object):
     def is_engine_running(self):
         raise NotImplementedError
 
+    @abstractmethod
+    def cancel_engine_action(self):
+        raise NotImplementedError
+
     # Tell the engine it's about to close.
     # This is used to prevent the engine thread(s) from reactivating.
     @abstractmethod
@@ -1934,6 +1944,9 @@ class CarlaHostNull(CarlaHostMeta):
     def is_engine_running(self):
         return self.fEngineRunning
 
+    def cancel_engine_action(self):
+        return
+
     def set_engine_about_to_close(self):
         return True
 
@@ -2219,6 +2232,9 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_is_engine_running.argtypes = None
         self.lib.carla_is_engine_running.restype = c_bool
 
+        self.lib.carla_cancel_engine_action.argtypes = None
+        self.lib.carla_cancel_engine_action.restype = None
+
         self.lib.carla_set_engine_about_to_close.argtypes = None
         self.lib.carla_set_engine_about_to_close.restype = c_bool
 
@@ -2493,6 +2509,9 @@ class CarlaHostDLL(CarlaHostMeta):
 
     def is_engine_running(self):
         return bool(self.lib.carla_is_engine_running())
+
+    def cancel_engine_action(self):
+        return self.lib.carla_cancel_engine_action()
 
     def set_engine_about_to_close(self):
         return bool(self.lib.carla_set_engine_about_to_close())
@@ -2838,6 +2857,9 @@ class CarlaHostPlugin(CarlaHostMeta):
 
     def get_engine_driver_device_info(self, index, name):
         return PyEngineDriverDeviceInfo
+
+    def cancel_engine_action(self):
+        self.sendMsg(["cancel_engine_action"])
 
     def set_engine_callback(self, func):
         return # TODO

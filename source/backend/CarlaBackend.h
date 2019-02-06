@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -942,39 +942,47 @@ typedef enum {
     ENGINE_CALLBACK_SAMPLE_RATE_CHANGED = 34,
 
     /*!
+     * A cancelable action has been started or stopped.
+     * @a pluginId Plugin Id the action relates to, -1 for none
+     * @a value1   1 for action started, 0 for stopped
+     * @a valueStr Action name
+     */
+    ENGINE_CALLBACK_CANCELABLE_ACTION = 35,
+
+    /*!
      * Project has finished loading.
      */
-    ENGINE_CALLBACK_PROJECT_LOAD_FINISHED = 35,
+    ENGINE_CALLBACK_PROJECT_LOAD_FINISHED = 36,
 
     /*!
      * NSM callback.
      * (Work in progress, values are not defined yet)
      */
-    ENGINE_CALLBACK_NSM = 36,
+    ENGINE_CALLBACK_NSM = 37,
 
     /*!
      * Idle frontend.
      * This is used by the engine during long operations that might block the frontend,
      * giving it the possibility to idle while the operation is still in place.
      */
-    ENGINE_CALLBACK_IDLE = 37,
+    ENGINE_CALLBACK_IDLE = 38,
 
     /*!
      * Show a message as information.
      * @a valueStr The message
      */
-    ENGINE_CALLBACK_INFO = 38,
+    ENGINE_CALLBACK_INFO = 39,
 
     /*!
      * Show a message as an error.
      * @a valueStr The message
      */
-    ENGINE_CALLBACK_ERROR = 39,
+    ENGINE_CALLBACK_ERROR = 40,
 
     /*!
      * The engine has crashed or malfunctioned and will no longer work.
      */
-    ENGINE_CALLBACK_QUIT = 40
+    ENGINE_CALLBACK_QUIT = 41
 
 } EngineCallbackOpcode;
 

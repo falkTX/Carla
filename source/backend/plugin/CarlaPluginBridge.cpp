@@ -387,7 +387,6 @@ public:
           fTimedError(false),
           fBufferSize(engine->getBufferSize()),
           fProcWaitTime(0),
-          fLastPongTime(-1),
           fBridgeBinary(),
           fBridgeThread(engine, this),
           fShmAudioPool(),
@@ -1790,9 +1789,6 @@ public:
                 carla_debug("CarlaPluginBridge::handleNonRtData() - got opcode: %s", PluginBridgeNonRtServerOpcode2str(opcode));
             }
 #endif
-            if (opcode != kPluginBridgeNonRtServerNull && fLastPongTime > 0)
-                fLastPongTime = Time::currentTimeMillis();
-
             switch (opcode)
             {
             case kPluginBridgeNonRtServerNull:
@@ -2436,8 +2432,6 @@ private:
     uint fBufferSize;
     uint fProcWaitTime;
 
-    int64_t fLastPongTime;
-
     CarlaString             fBridgeBinary;
     CarlaPluginBridgeThread fBridgeThread;
 
@@ -2664,24 +2658,18 @@ private:
 
         fBridgeThread.startThread();
 
-        fLastPongTime = Time::currentTimeMillis();
-        CARLA_SAFE_ASSERT(fLastPongTime > 0);
-
-        static bool sFirstInit = true;
-
-        int64_t timeoutEnd = 5000;
-
-        if (sFirstInit)
-            timeoutEnd *= 2;
-#ifndef CARLA_OS_WIN
-         if (fBinaryType == BINARY_WIN32 || fBinaryType == BINARY_WIN64)
-            timeoutEnd *= 2;
-#endif
-        sFirstInit = false;
-
         const bool needsEngineIdle = pData->engine->getType() != kEngineTypePlugin;
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+        const bool needsCancelableAction = ! pData->engine->isLoadingProject();
 
-        for (; Time::currentTimeMillis() < fLastPongTime + timeoutEnd && fBridgeThread.isThreadRunning();)
+        if (needsCancelableAction)
+        {
+            pData->engine->setActionCanceled(false);
+            pData->engine->callback(ENGINE_CALLBACK_CANCELABLE_ACTION, pData->id, 1, 0, 0.0f, "Loading JACK application");
+        }
+#endif
+
+        for (;fBridgeThread.isThreadRunning();)
         {
             pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
 
@@ -2692,13 +2680,16 @@ private:
 
             if (fInitiated)
                 break;
-            if (pData->engine->isAboutToClose())
+            if (pData->engine->isAboutToClose() || pData->engine->wasActionCanceled())
                 break;
 
             carla_msleep(5);
         }
 
-        fLastPongTime = -1;
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+        if (needsCancelableAction)
+            pData->engine->callback(ENGINE_CALLBACK_CANCELABLE_ACTION, pData->id, 0, 0, 0.0f, "Loading JACK application");
+#endif
 
         if (fInitError || ! fInitiated)
         {
