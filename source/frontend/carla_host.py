@@ -2616,7 +2616,6 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
     elif action == ENGINE_CALLBACK_CANCELABLE_ACTION:
         host.CancelableActionCallback.emit(pluginId, bool(value1 != 0), valueStr)
     elif action == ENGINE_CALLBACK_PROJECT_LOAD_FINISHED:
-        print("ProjectLoadFinishedCallback")
         host.ProjectLoadFinishedCallback.emit()
     elif action == ENGINE_CALLBACK_NSM:
         host.NSMCallback.emit(value1, value2, valueStr)
