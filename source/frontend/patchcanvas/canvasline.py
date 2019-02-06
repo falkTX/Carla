@@ -45,7 +45,8 @@ from .canvasportglow import CanvasPortGlow
 
 class CanvasLine(QGraphicsLineItem):
     def __init__(self, item1, item2, parent):
-        QGraphicsLineItem.__init__(self, parent)
+        QGraphicsLineItem.__init__(self)
+        self.setParentItem(parent)
 
         self.item1 = item1
         self.item2 = item2

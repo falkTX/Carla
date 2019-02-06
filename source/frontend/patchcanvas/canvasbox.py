@@ -61,7 +61,6 @@ from .canvasicon import CanvasIcon
 from .canvasport import CanvasPort
 from .theme import Theme
 from .utils import CanvasItemFX, CanvasGetFullPortName, CanvasGetPortConnectionList
-#from .canvasportglow import CanvasPortGlow
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -74,7 +73,8 @@ class cb_line_t(object):
 
 class CanvasBox(QGraphicsItem):
     def __init__(self, group_id, group_name, icon, parent=None):
-        QGraphicsItem.__init__(self, parent)
+        QGraphicsItem.__init__(self)
+        self.setParentItem(parent)
 
         # Save Variables, useful for later
         self.m_group_id = group_id
@@ -125,13 +125,11 @@ class CanvasBox(QGraphicsItem):
             self.shadow = None
 
         # Final touches
-        self.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
+        self.setFlags(QGraphicsItem.ItemIsFocusable | QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
 
         # Wait for at least 1 port
         if options.auto_hide_groups:
             self.setVisible(False)
-
-        self.setFlag(QGraphicsItem.ItemIsFocusable, True)
 
         if options.auto_select_items:
             self.setAcceptHoverEvents(True)
@@ -515,14 +513,10 @@ class CanvasBox(QGraphicsItem):
     def mouseReleaseEvent(self, event):
         if self.m_cursor_moving:
             self.unsetCursor()
-            self.fixPos()
+            QTimer.singleShot(0, self.fixPos)
         self.m_mouse_down = False
         self.m_cursor_moving = False
         QGraphicsItem.mouseReleaseEvent(self, event)
-
-    def moveEvent(self, event):
-        if not self.m_mouse_down:
-            self.fixPos()
 
     def fixPos(self):
         self.setX(round(self.x()))

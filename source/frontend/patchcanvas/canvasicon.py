@@ -43,7 +43,8 @@ from . import (
 
 class CanvasIcon(QGraphicsSvgItem):
     def __init__(self, icon, name, parent):
-        QGraphicsSvgItem.__init__(self, parent)
+        QGraphicsSvgItem.__init__(self)
+        self.setParentItem(parent)
 
         self.m_renderer = None
         self.p_size = QRectF(0, 0, 0, 0)
