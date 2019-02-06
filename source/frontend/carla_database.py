@@ -1934,6 +1934,10 @@ class JackApplicationW(QDialog):
     SESSION_MGR_LADISH = 3
     SESSION_MGR_NSM    = 4
 
+    UI_SESSION_NONE   = 0
+    UI_SESSION_LADISH = 1
+    UI_SESSION_NSM    = 2
+
     FLAG_CONTROL_WINDOW        = 0x01
     FLAG_CAPTURE_FIRST_WINDOW  = 0x02
     FLAG_BUFFERS_ADDITION_MODE = 0x10
@@ -1959,6 +1963,7 @@ class JackApplicationW(QDialog):
         # Set-up connections
 
         self.finished.connect(self.slot_saveSettings)
+        self.ui.cb_session_mgr.currentIndexChanged.connect(self.slot_sessionManagerChanged)
         self.ui.le_command.textChanged.connect(self.slot_commandChanged)
 
     # ------------------------------------------------------------------------------------------------------------------
@@ -1997,6 +2002,15 @@ class JackApplicationW(QDialog):
                                        chr(baseIntVal+flags))
         return (command, name, labelSetup)
 
+    def checkIfButtonBoxShouldBeEnabled(self, index, text):
+        enabled = len(text) > 0
+
+        # NSM applications must not be abstract or absolute paths, and must not contain arguments
+        if enabled and index == self.UI_SESSION_NSM:
+            enabled = text[0] not in (".", "/") and " " not in text
+
+        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(enabled)
+
     def loadSettings(self):
         settings = QSettings("falkTX", "CarlaAddJackApp")
 
@@ -2015,7 +2029,11 @@ class JackApplicationW(QDialog):
 
     @pyqtSlot(str)
     def slot_commandChanged(self, text):
-        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(len(text) > 0)
+        self.checkIfButtonBoxShouldBeEnabled(self.ui.cb_session_mgr.currentIndex(), text)
+
+    @pyqtSlot(int)
+    def slot_sessionManagerChanged(self, index):
+        self.checkIfButtonBoxShouldBeEnabled(index, self.ui.le_command.text())
 
     @pyqtSlot()
     def slot_saveSettings(self):
