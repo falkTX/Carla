@@ -1975,16 +1975,13 @@ class JackApplicationW(QDialog):
         flags   = 0x0
 
         if not name:
-            name = os.path.basename(command.split(" ",1)[0])
+            name = os.path.basename(command.split(" ",1)[0]).title()
 
-        # TODO finalize flag definitions
         uiSessionMgrIndex = self.ui.cb_session_mgr.currentIndex()
-        if uiSessionMgrIndex == 1:
-            smgr = self.SESSION_MGR_AUTO
-        elif uiSessionMgrIndex == 2:
+        if uiSessionMgrIndex == self.UI_SESSION_LADISH:
             smgr = self.SESSION_MGR_LADISH
-        #elif uiSessionMgrIndex == 2:
-            #smgr = self.SESSION_MGR_NSM
+        elif uiSessionMgrIndex == self.UI_SESSION_NSM:
+            smgr = self.SESSION_MGR_NSM
 
         if self.ui.cb_manage_window.isChecked():
             flags |= self.FLAG_CONTROL_WINDOW
