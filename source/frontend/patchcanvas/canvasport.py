@@ -57,7 +57,8 @@ from .utils import CanvasGetFullPortName, CanvasGetPortConnectionList
 
 class CanvasPort(QGraphicsItem):
     def __init__(self, group_id, port_id, port_name, port_mode, port_type, is_alternate, parent):
-        QGraphicsItem.__init__(self, parent)
+        QGraphicsItem.__init__(self)
+        self.setParentItem(parent)
 
         # Save Variables, useful for later
         self.m_group_id = group_id

@@ -74,7 +74,8 @@ class cb_line_t(object):
 
 class CanvasBox(QGraphicsItem):
     def __init__(self, group_id, group_name, icon, parent=None):
-        QGraphicsItem.__init__(self, parent)
+        QGraphicsItem.__init__(self)
+        self.setParentItem(parent)
 
         # Save Variables, useful for later
         self.m_group_id = group_id
