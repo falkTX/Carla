@@ -152,6 +152,10 @@ protected:
             if (valueStr != nullptr)
                 delete[] valueStr;
         }
+        else if (std::strcmp(msg, "cancel_engine_action") == 0)
+        {
+            fEngine->setActionCanceled(true);
+        }
         else if (std::strcmp(msg, "load_file") == 0)
         {
             const char* filename;

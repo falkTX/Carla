@@ -66,6 +66,7 @@ class CarlaHostSignals(QObject):
     TransportModeChangedCallback = pyqtSignal(int, str)
     BufferSizeChangedCallback = pyqtSignal(int)
     SampleRateChangedCallback = pyqtSignal(float)
+    CancelableActionCallback = pyqtSignal(int, bool, str)
     ProjectLoadFinishedCallback = pyqtSignal()
     NSMCallback = pyqtSignal(int, int, str)
     InfoCallback = pyqtSignal(str)

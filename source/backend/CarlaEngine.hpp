@@ -1065,6 +1065,17 @@ public:
     bool isLoadingProject() const noexcept;
 #endif
 
+    /*!
+     * Tell the engine to stop the current cancelable action.
+     * @see ENGINE_CALLBACK_CANCELABLE_ACTION
+     */
+    void setActionCanceled(const bool canceled) noexcept;
+
+    /*!
+     * Check wherever the last cancelable action was indeed canceled or not.
+     */
+    bool wasActionCanceled() const noexcept;
+
     // -------------------------------------------------------------------
     // Options
 

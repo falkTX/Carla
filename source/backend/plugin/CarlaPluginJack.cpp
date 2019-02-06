@@ -205,7 +205,6 @@ public:
           fProcCanceled(false),
           fBufferSize(engine->getBufferSize()),
           fProcWaitTime(0),
-          fLastPingTime(-1),
           fBridgeThread(engine, this),
           fShmAudioPool(),
           fShmRtClientControl(),
@@ -426,14 +425,6 @@ public:
             try {
                 handleNonRtData();
             } CARLA_SAFE_EXCEPTION("handleNonRtData");
-
-            if (fLastPingTime > 0 && Time::currentTimeMillis() > fLastPingTime + 30000)
-            {
-                carla_stderr("Did not receive ping message from server for 30 secs, closing...");
-                // TODO
-                //threadShouldExit();
-                //callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0f, nullptr);
-            }
         }
         else if (fInitiated)
         {
@@ -1132,9 +1123,6 @@ public:
                 carla_debug("CarlaPluginJack::handleNonRtData() - got opcode: %s", PluginBridgeNonRtServerOpcode2str(opcode));
             }
 //#endif
-            if (opcode != kPluginBridgeNonRtServerNull && fLastPingTime > 0)
-                fLastPingTime = Time::currentTimeMillis();
-
             switch (opcode)
             {
             case kPluginBridgeNonRtServerNull:
@@ -1372,8 +1360,6 @@ private:
     uint fBufferSize;
     uint fProcWaitTime;
 
-    int64_t fLastPingTime;
-
     CarlaPluginJackThread fBridgeThread;
 
     BridgeAudioPool          fShmAudioPool;
@@ -1486,20 +1472,16 @@ private:
 
         fBridgeThread.startThread();
 
-        fLastPingTime = Time::currentTimeMillis();
-        CARLA_SAFE_ASSERT(fLastPingTime > 0);
-
-        static bool sFirstInit = true;
-
-        int64_t timeoutEnd = 5000;
-
-        if (sFirstInit)
-            timeoutEnd *= 2;
-        sFirstInit = false;
-
+        const bool needsCancelableAction = ! pData->engine->isLoadingProject();
         const bool needsEngineIdle = pData->engine->getType() != kEngineTypePlugin;
 
-        for (; Time::currentTimeMillis() < fLastPingTime + timeoutEnd && fBridgeThread.isThreadRunning();)
+        if (needsCancelableAction)
+        {
+            pData->engine->setActionCanceled(false);
+            pData->engine->callback(ENGINE_CALLBACK_CANCELABLE_ACTION, pData->id, 1, 0, 0.0f, "Loading JACK application");
+        }
+
+        for (;fBridgeThread.isThreadRunning();)
         {
             pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
 
@@ -1510,13 +1492,14 @@ private:
 
             if (fInitiated)
                 break;
-            if (pData->engine->isAboutToClose())
+            if (pData->engine->isAboutToClose() || pData->engine->wasActionCanceled())
                 break;
 
-            carla_msleep(20);
+            carla_msleep(5);
         }
 
-        fLastPingTime = -1;
+        if (needsCancelableAction)
+            pData->engine->callback(ENGINE_CALLBACK_CANCELABLE_ACTION, pData->id, 0, 0, 0.0f, "Loading JACK application");
 
         if (fInitError || ! fInitiated)
         {

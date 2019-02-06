@@ -219,6 +219,8 @@ struct CarlaEngine::ProtectedData {
     FileCallbackFunc fileCallback;
     void*            fileCallbackPtr;
 
+    bool actionCanceled;
+
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     bool loadingProject;
 #endif

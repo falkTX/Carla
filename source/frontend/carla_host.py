@@ -148,6 +148,9 @@ class HostWindow(QMainWindow):
         if MACOS:
             self.fMacClosingHelper = True
 
+        # CancelableActionCallback Box
+        self.fCancelableActionBox = None
+
         # run a custom action after engine is properly closed
         self.fCustomStopAction = self.CUSTOM_ACTION_NONE
 
@@ -492,6 +495,7 @@ class HostWindow(QMainWindow):
         host.EngineStoppedCallback.connect(self.slot_handleEngineStoppedCallback)
         host.TransportModeChangedCallback.connect(self.slot_handleTransportModeChangedCallback)
         host.SampleRateChangedCallback.connect(self.slot_handleSampleRateChangedCallback)
+        host.CancelableActionCallback.connect(self.slot_handleCancelableActionCallback)
         host.ProjectLoadFinishedCallback.connect(self.slot_handleProjectLoadFinishedCallback)
 
         host.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
@@ -659,9 +663,14 @@ class HostWindow(QMainWindow):
 
         self.projectLoadingStarted()
         self.fIsProjectLoading = True
-        self.host.load_project(self.fProjectFilename)
 
-        # Project finished loading is sent by engine
+        if not self.host.load_project(self.fProjectFilename):
+            self.fIsProjectLoading = False
+            self.projectLoadingFinished()
+
+            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load project"),
+                             self.host.get_last_error(),
+                             QMessageBox.Ok, QMessageBox.Ok)
 
     def loadProjectLater(self, filename):
         self.fProjectFilename = QFileInfo(filename).absoluteFilePath()
@@ -672,7 +681,11 @@ class HostWindow(QMainWindow):
         if not self.fProjectFilename:
             return qCritical("ERROR: saving project without filename set")
 
-        self.host.save_project(self.fProjectFilename)
+        if not self.host.save_project(self.fProjectFilename):
+            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to save project"),
+                             self.host.get_last_error(),
+                             QMessageBox.Ok, QMessageBox.Ok)
+            return
 
         if not self.fWithCanvas:
             return
@@ -942,6 +955,29 @@ class HostWindow(QMainWindow):
     def slot_handleSampleRateChangedCallback(self, newSampleRate):
         self.fSampleRate = newSampleRate
         self.refreshTransport(True)
+
+    @pyqtSlot(int, bool, str)
+    def slot_handleCancelableActionCallback(self, pluginId, started, action):
+        if self.fCancelableActionBox is not None:
+            self.fCancelableActionBox.close()
+
+        if started:
+            self.fCancelableActionBox = QMessageBox(self)
+            self.fCancelableActionBox.setIcon(QMessageBox.Critical)
+            self.fCancelableActionBox.setWindowTitle(self.tr("Action in progress"))
+            self.fCancelableActionBox.setText(action)
+            self.fCancelableActionBox.setInformativeText(self.tr("An action is in progress, please wait..."))
+            self.fCancelableActionBox.setStandardButtons(QMessageBox.Cancel)
+            self.fCancelableActionBox.setDefaultButton(QMessageBox.Cancel)
+            self.fCancelableActionBox.buttonClicked.connect(self.slot_canlableActionBoxClicked)
+            self.fCancelableActionBox.show()
+
+        else:
+            self.fCancelableActionBox = None
+
+    @pyqtSlot()
+    def slot_canlableActionBoxClicked(self):
+        self.host.cancel_engine_action()
 
     @pyqtSlot()
     def slot_handleProjectLoadFinishedCallback(self):
@@ -2577,7 +2613,10 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
         host.BufferSizeChangedCallback.emit(value1)
     elif action == ENGINE_CALLBACK_SAMPLE_RATE_CHANGED:
         host.SampleRateChangedCallback.emit(value3)
+    elif action == ENGINE_CALLBACK_CANCELABLE_ACTION:
+        host.CancelableActionCallback.emit(pluginId, bool(value1 != 0), valueStr)
     elif action == ENGINE_CALLBACK_PROJECT_LOAD_FINISHED:
+        print("ProjectLoadFinishedCallback")
         host.ProjectLoadFinishedCallback.emit()
     elif action == ENGINE_CALLBACK_NSM:
         host.NSMCallback.emit(value1, value2, valueStr)

@@ -1390,6 +1390,16 @@ bool CarlaEngine::isLoadingProject() const noexcept
 }
 #endif
 
+void CarlaEngine::setActionCanceled(const bool canceled) noexcept
+{
+    pData->actionCanceled = canceled;
+}
+
+bool CarlaEngine::wasActionCanceled() const noexcept
+{
+    return pData->actionCanceled;
+}
+
 // -----------------------------------------------------------------------
 // Global options
 
@@ -2053,16 +2063,27 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
         return false;
     }
 
+    pData->actionCanceled = false;
+    callback(ENGINE_CALLBACK_CANCELABLE_ACTION, 0, 1, 0, 0.0f, "Loading project");
+
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-    const ScopedValueSetter<bool> _svs(pData->loadingProject, true, false);
+    const ScopedValueSetter<bool> _svs2(pData->loadingProject, true, false);
 #endif
 
     // completely load file
     xmlElement = xmlDoc.getDocumentElement(false);
     CARLA_SAFE_ASSERT_RETURN_ERR(xmlElement != nullptr, "Failed to completely parse project file");
 
+    callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
     if (pData->aboutToClose)
         return true;
+
+    if (pData->actionCanceled)
+    {
+        setLastError("Project load canceled");
+        return false;
+    }
 
     const bool isPlugin(getType() == kEngineTypePlugin);
 
@@ -2177,10 +2198,18 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
 
             setOption(static_cast<EngineOption>(option), value, valueStr);
         }
-    }
 
-    if (pData->aboutToClose)
-        return true;
+        callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
+        if (pData->aboutToClose)
+            return true;
+
+        if (pData->actionCanceled)
+        {
+            setLastError("Project load canceled");
+            return false;
+        }
+    }
 
     // now setup transport
     if (XmlElement* const elem = (isPreset || isPlugin) ? nullptr : xmlElement->getChildByName("Transport"))
@@ -2193,11 +2222,19 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
             // some sane limits
             if (bpm >= 20.0 && bpm < 400.0)
                 pData->time.setBPM(bpm);
+
+            callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
+            if (pData->aboutToClose)
+                return true;
+
+            if (pData->actionCanceled)
+            {
+                setLastError("Project load canceled");
+                return false;
+            }
         }
     }
-
-    if (pData->aboutToClose)
-        return true;
 
     // and we handle plugins
     for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
@@ -2213,6 +2250,12 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
 
             if (pData->aboutToClose)
                 return true;
+
+            if (pData->actionCanceled)
+            {
+                setLastError("Project load canceled");
+                return false;
+            }
 
             CARLA_SAFE_ASSERT_CONTINUE(stateSave.type != nullptr);
 
@@ -2231,6 +2274,12 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
 
                         if (pData->aboutToClose)
                             return true;
+
+                        if (pData->actionCanceled)
+                        {
+                            setLastError("Project load canceled");
+                            return false;
+                        }
 
                         String lsState;
                         lsState << "0.35\n";
@@ -2377,6 +2426,12 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                     if (pData->aboutToClose)
                         return true;
 
+                    if (pData->actionCanceled)
+                    {
+                        setLastError("Project load canceled");
+                        return false;
+                    }
+
                     // deactivate bridge client-side ping check, since some plugins block during load
                     if ((plugin->getHints() & PLUGIN_IS_BRIDGE) != 0 && ! isPreset)
                         plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "__CarlaPingOnOff__", "false", false);
@@ -2411,6 +2466,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
         if (isPreset)
         {
             callback(ENGINE_CALLBACK_PROJECT_LOAD_FINISHED, 0, 0, 0, 0.0f, nullptr);
+            callback(ENGINE_CALLBACK_CANCELABLE_ACTION, 0, 0, 0, 0.0f, "Loading project");
             return true;
         }
     }
@@ -2429,6 +2485,12 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
 
     if (pData->aboutToClose)
         return true;
+
+    if (pData->actionCanceled)
+    {
+        setLastError("Project load canceled");
+        return false;
+    }
 
     bool hasInternalConnections = false;
 
@@ -2471,6 +2533,12 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
 
             if (pData->aboutToClose)
                 return true;
+
+            if (pData->actionCanceled)
+            {
+                setLastError("Project load canceled");
+                return false;
+            }
         }
     }
 
@@ -2541,10 +2609,10 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
             break;
         }
     }
-
 #endif
 
     callback(ENGINE_CALLBACK_PROJECT_LOAD_FINISHED, 0, 0, 0, 0.0f, nullptr);
+    callback(ENGINE_CALLBACK_CANCELABLE_ACTION, 0, 0, 0, 0.0f, "Loading project");
     return true;
 }
 

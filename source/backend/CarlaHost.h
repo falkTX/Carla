@@ -354,6 +354,12 @@ CARLA_EXPORT void carla_engine_idle();
 CARLA_EXPORT bool carla_is_engine_running();
 
 /*!
+ * Tell the engine to stop the current cancelable action.
+ * @see ENGINE_CALLBACK_CANCELABLE_ACTION
+ */
+CARLA_EXPORT void carla_cancel_engine_action();
+
+/*!
  * Tell the engine it's about to close.
  * This is used to prevent the engine thread(s) from reactivating.
  * Returns true if there's no pending engine events.
