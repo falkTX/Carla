@@ -66,6 +66,14 @@ enum {
     SESSION_MGR_NSM    = 4,
 };
 
+static size_t safe_rand(const size_t limit)
+{
+    const int r = std::rand();
+    CARLA_SAFE_ASSERT_RETURN(r >= 0, 0);
+
+    return static_cast<uint>(r) % limit;
+}
+
 // -------------------------------------------------------------------------------------------------------------------
 // Fallback data
 
@@ -383,11 +391,17 @@ private:
     lo_address fOscClientAddress;
     lo_server  fOscServer;
 
-    struct {
+    struct ProjectData {
         CarlaString appName;
         CarlaString path;
         CarlaString display;
         CarlaString clientName;
+
+        ProjectData()
+            : appName(),
+              path(),
+              display(),
+              clientName() {}
 
         bool init(const char* const engineProjectFilename, const char* const uniqueCodeID)
         {
@@ -403,6 +417,8 @@ private:
 
             return true;
         }
+
+        CARLA_DECLARE_NON_COPY_STRUCT(ProjectData)
     } fProject;
 #endif
 
@@ -1678,11 +1694,11 @@ private:
 
             static const size_t kValidCharsLen(std::strlen(kValidChars)-1U);
 
-            code[0] = kValidChars[std::rand() % kValidCharsLen];
-            code[1] = kValidChars[std::rand() % kValidCharsLen];
-            code[2] = kValidChars[std::rand() % kValidCharsLen];
-            code[3] = kValidChars[std::rand() % kValidCharsLen];
-            code[4] = kValidChars[std::rand() % kValidCharsLen];
+            code[0] = kValidChars[safe_rand(kValidCharsLen)];
+            code[1] = kValidChars[safe_rand(kValidCharsLen)];
+            code[2] = kValidChars[safe_rand(kValidCharsLen)];
+            code[3] = kValidChars[safe_rand(kValidCharsLen)];
+            code[4] = kValidChars[safe_rand(kValidCharsLen)];
 
             const File newFile(file.withFileExtension(code));
 

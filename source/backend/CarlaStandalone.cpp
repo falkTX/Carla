@@ -825,6 +825,7 @@ bool carla_save_project(const char* filename)
     return gStandalone.engine->saveProject(filename, true);
 }
 
+#ifndef BUILD_BRIDGE
 void carla_clear_project_filename()
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
@@ -834,7 +835,6 @@ void carla_clear_project_filename()
     gStandalone.engine->clearCurrentProjectFilename();
 }
 
-#ifndef BUILD_BRIDGE
 // --------------------------------------------------------------------------------------------------------------------
 
 bool carla_patchbay_connect(uint groupIdA, uint portIdA, uint groupIdB, uint portIdB)

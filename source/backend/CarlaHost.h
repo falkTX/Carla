@@ -409,12 +409,12 @@ CARLA_EXPORT bool carla_load_project(const char* filename);
  */
 CARLA_EXPORT bool carla_save_project(const char* filename);
 
+#ifndef BUILD_BRIDGE
 /*!
  * Clear the currently set project filename.
  */
 CARLA_EXPORT void carla_clear_project_filename();
 
-#ifndef BUILD_BRIDGE
 /*!
  * Connect two patchbay ports.
  * @param groupIdA Output group
