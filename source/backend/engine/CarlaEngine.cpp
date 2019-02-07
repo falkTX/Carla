@@ -990,7 +990,7 @@ bool CarlaEngine::loadFile(const char* const filename)
     // NOTE: please keep in sync with carla_get_supported_file_extensions!!
 
     if (extension == "carxp" || extension == "carxs")
-        return loadProject(filename);
+        return loadProject(filename, false);
 
     // -------------------------------------------------------------------
 
@@ -1126,7 +1126,7 @@ bool CarlaEngine::loadFile(const char* const filename)
     return false;
 }
 
-bool CarlaEngine::loadProject(const char* const filename)
+bool CarlaEngine::loadProject(const char* const filename, const bool setAsCurrentProject)
 {
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->isIdling == 0, "An operation is still being processed, please wait for it to finish");
     CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename");
@@ -1136,11 +1136,14 @@ bool CarlaEngine::loadProject(const char* const filename)
     File file(jfilename);
     CARLA_SAFE_ASSERT_RETURN_ERR(file.existsAsFile(), "Requested file does not exist or is not a readable file");
 
+    if (setAsCurrentProject)
+        pData->currentProjectFilename = filename;
+
     XmlDocument xml(file);
     return loadProjectInternal(xml);
 }
 
-bool CarlaEngine::saveProject(const char* const filename)
+bool CarlaEngine::saveProject(const char* const filename, const bool setAsCurrentProject)
 {
     CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename");
     carla_debug("CarlaEngine::saveProject(\"%s\")", filename);
@@ -1151,12 +1154,27 @@ bool CarlaEngine::saveProject(const char* const filename)
     const String jfilename = String(CharPointer_UTF8(filename));
     File file(jfilename);
 
+    if (setAsCurrentProject)
+        pData->currentProjectFilename = filename;
+
     if (file.replaceWithData(out.getData(), out.getDataSize()))
         return true;
 
     setLastError("Failed to write file");
     return false;
 }
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+const char* CarlaEngine::getCurrentProjectFilename() const noexcept
+{
+    return pData->currentProjectFilename;
+}
+
+void CarlaEngine::clearCurrentProjectFilename() noexcept
+{
+    pData->currentProjectFilename.clear();
+}
+#endif
 
 // -----------------------------------------------------------------------
 // Information (base)

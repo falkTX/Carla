@@ -895,12 +895,24 @@ public:
      * Load a project file.
      * @note Already loaded plugins are not removed; call removeAllPlugins() first if needed.
      */
-    bool loadProject(const char* const filename);
+    bool loadProject(const char* const filename, const bool setAsCurrentProject);
 
     /*!
      * Save current project to a file.
      */
-    bool saveProject(const char* const filename);
+    bool saveProject(const char* const filename, const bool setAsCurrentProject);
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    /*!
+     * Get the currently set project filename.
+     */
+    const char* getCurrentProjectFilename() const noexcept;
+
+    /*!
+     * Clear the currently set project filename.
+     */
+    void clearCurrentProjectFilename() noexcept;
+#endif
 
     // -------------------------------------------------------------------
     // Information (base)

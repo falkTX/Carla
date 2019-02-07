@@ -93,7 +93,7 @@ public:
         using water::File;
         const File pluginFile(File::getSpecialLocation(File::currentExecutableFile).withFileExtension("xml"));
 
-        if (! loadProject(pluginFile.getFullPathName().toRawUTF8()))
+        if (! loadProject(pluginFile.getFullPathName().toRawUTF8(), true))
         {
             carla_stderr2("Failed to init plugin, possible reasons: %s", getLastError());
             return;

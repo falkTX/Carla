@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla Backend code
-# Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -1386,6 +1386,11 @@ class CarlaHostMeta(object):
     def save_project(self, filename):
         raise NotImplementedError
 
+    # Clear the currently set project filename.
+    @abstractmethod
+    def clear_project_filename(self):
+        raise NotImplementedError
+
     # Connect two patchbay ports.
     # @param groupIdA Output group
     # @param portIdA  Output port
@@ -1968,6 +1973,9 @@ class CarlaHostNull(CarlaHostMeta):
     def save_project(self, filename):
         return False
 
+    def clear_project_filename(self):
+        return
+
     def patchbay_connect(self, groupIdA, portIdA, groupIdB, portIdB):
         return False
 
@@ -2256,6 +2264,9 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_save_project.argtypes = [c_char_p]
         self.lib.carla_save_project.restype = c_bool
 
+        self.lib.carla_clear_project_filename.argtypes = None
+        self.lib.carla_clear_project_filename.restype = None
+
         self.lib.carla_patchbay_connect.argtypes = [c_uint, c_uint, c_uint, c_uint]
         self.lib.carla_patchbay_connect.restype = c_bool
 
@@ -2535,6 +2546,9 @@ class CarlaHostDLL(CarlaHostMeta):
 
     def save_project(self, filename):
         return bool(self.lib.carla_save_project(filename.encode("utf-8")))
+
+    def clear_project_filename(self):
+        self.lib.carla_clear_project_filename()
 
     def patchbay_connect(self, groupIdA, portIdA, groupIdB, portIdB):
         return bool(self.lib.carla_patchbay_connect(groupIdA, portIdA, groupIdB, portIdB))
@@ -2878,6 +2892,9 @@ class CarlaHostPlugin(CarlaHostMeta):
 
     def save_project(self, filename):
         return self.sendMsgAndSetError(["save_project", filename])
+
+    def clear_project_filename(self):
+        return self.sendMsgAndSetError(["clear_project_filename"])
 
     def patchbay_connect(self, groupIdA, portIdA, groupIdB, portIdB):
         return self.sendMsgAndSetError(["patchbay_connect", groupIdA, portIdA, groupIdB, portIdB])
