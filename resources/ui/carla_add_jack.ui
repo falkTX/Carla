@@ -217,12 +217,12 @@
           </item>
           <item>
            <property name="text">
-            <string>LADISH (SIGUSR1)</string>
+            <string notr="true">LADISH (SIGUSR1)</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>NSM</string>
+            <string notr="true">NSM</string>
            </property>
           </item>
          </widget>

@@ -2011,16 +2011,26 @@ class JackApplicationW(QDialog):
     def loadSettings(self):
         settings = QSettings("falkTX", "CarlaAddJackApp")
 
-        command = settings.value("Command", "", type=str)
-        self.ui.le_command.setText(command)
-        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(len(command) > 0)
+        smName = settings.value("SessionManager", "", type=str)
 
+        if smName == "LADISH (SIGUSR1)":
+            self.ui.cb_session_mgr.setCurrentIndex(self.UI_SESSION_LADISH)
+        elif smName == "NSM":
+            self.ui.cb_session_mgr.setCurrentIndex(self.UI_SESSION_NSM)
+        else:
+            self.ui.cb_session_mgr.setCurrentIndex(self.UI_SESSION_NONE)
+
+        self.ui.le_command.setText(settings.value("Command", "", type=str))
         self.ui.le_name.setText(settings.value("Name", "", type=str))
+        self.ui.sb_audio_ins.setValue(settings.value("NumAudioIns", 2, type=int))
         self.ui.sb_audio_ins.setValue(settings.value("NumAudioIns", 2, type=int))
         self.ui.sb_audio_outs.setValue(settings.value("NumAudioOuts", 2, type=int))
         self.ui.sb_midi_ins.setValue(settings.value("NumMidiIns", 0, type=int))
         self.ui.sb_midi_outs.setValue(settings.value("NumMidiOuts", 0, type=int))
         self.ui.cb_manage_window.setChecked(settings.value("ManageWindow", True, type=bool))
+
+        self.checkIfButtonBoxShouldBeEnabled(self.ui.cb_session_mgr.currentIndex(),
+                                             self.ui.le_command.text())
 
     # ------------------------------------------------------------------------------------------------------------------
 
@@ -2037,6 +2047,7 @@ class JackApplicationW(QDialog):
         settings = QSettings("falkTX", "CarlaAddJackApp")
         settings.setValue("Command", self.ui.le_command.text())
         settings.setValue("Name", self.ui.le_name.text())
+        settings.setValue("SessionManager", self.ui.cb_session_mgr.currentText())
         settings.setValue("NumAudioIns", self.ui.sb_audio_ins.value())
         settings.setValue("NumAudioOuts", self.ui.sb_audio_outs.value())
         settings.setValue("NumMidiIns", self.ui.sb_midi_ins.value())
