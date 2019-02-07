@@ -96,8 +96,8 @@ struct JackMidiPortBuffer {
 };
 
 struct JackPortState {
-    char* name;
-    char* fullname;
+    const char* name;
+    const char* fullname;
     void* buffer;
     uint index;
     uint flags;
@@ -144,8 +144,6 @@ struct JackPortState {
 
     ~JackPortState()
     {
-        std::free(name);
-        std::free(fullname);
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(JackPortState)

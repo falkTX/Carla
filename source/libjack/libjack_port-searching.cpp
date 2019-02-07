@@ -120,17 +120,19 @@ jack_port_t* jack_port_by_name(jack_client_t* client, const char* name)
             /* isSystem    */ true,
             /* isConnected */ false
         );
+        static CarlaString rname, rfullname;
 
         const JackServerState& jserver(jclient->server);
         const int commonFlags = JackPortIsPhysical|JackPortIsTerminal;
 
-        std::free(retPort.fullname);
-        retPort.fullname = strdup(name);
+        rfullname = name;
 
         name += 7;
 
-        std::free(retPort.name);
-        retPort.name = strdup(name);
+        rname = name;
+
+        retPort.name = rname.buffer();
+        retPort.fullname = rfullname.buffer();
 
         /**/ if (std::strncmp(name, "capture_", 8) == 0)
         {
@@ -161,7 +163,7 @@ jack_port_t* jack_port_by_name(jack_client_t* client, const char* name)
             name += 13;
 
             const int index = std::atoi(name)-1;
-            CARLA_SAFE_ASSERT_RETURN(index >= 0 && index < jserver.numAudioIns, nullptr);
+            CARLA_SAFE_ASSERT_RETURN(index >= 0 && index < jserver.numMidiIns, nullptr);
 
             retPort.index  = index;
             retPort.flags  = commonFlags|JackPortIsOutput;
@@ -173,7 +175,7 @@ jack_port_t* jack_port_by_name(jack_client_t* client, const char* name)
             name += 14;
 
             const int index = std::atoi(name)-1;
-            CARLA_SAFE_ASSERT_RETURN(index >= 0 && index < jserver.numAudioOuts, nullptr);
+            CARLA_SAFE_ASSERT_RETURN(index >= 0 && index < jserver.numMidiOuts, nullptr);
 
             retPort.index  = (jserver.numAudioIns) + index;
             retPort.flags  = commonFlags|JackPortIsInput;

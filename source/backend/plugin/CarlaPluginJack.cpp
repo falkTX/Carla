@@ -114,13 +114,6 @@ public:
         return (uintptr_t)fProcess->getPID();
     }
 
-    void sendTerminate() const noexcept
-    {
-        CARLA_SAFE_ASSERT_RETURN(fProcess != nullptr,);
-
-        fProcess->terminate();
-    }
-
 #ifdef HAVE_LIBLO
     void nsmSave(const char* const setupLabel)
     {
@@ -486,8 +479,6 @@ public:
 
             fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientQuit);
             fShmNonRtClientControl.commitWrite();
-
-            fBridgeThread.sendTerminate();
 
             if (! fTimedOut)
                 waitForClient("stopping", 3000);

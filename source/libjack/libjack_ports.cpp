@@ -344,22 +344,23 @@ int jack_port_rename(jack_client_t* client, jack_port_t *port, const char *port_
     CARLA_SAFE_ASSERT_RETURN(jport != nullptr, EINVAL);
     CARLA_SAFE_ASSERT_RETURN(! jport->isSystem, EINVAL);
 
+    static CarlaString rname, rfullname;
+
     // TODO: verify uniqueness
 
-    char* const name = strdup(port_name);
-    CARLA_SAFE_ASSERT_RETURN(name != nullptr, ENOMEM);
+    rname = port_name;
+    CARLA_SAFE_ASSERT_RETURN(rname.isNotEmpty(), ENOMEM);
 
     char* const fullname = (char*)std::malloc(STR_MAX);
-    CARLA_SAFE_ASSERT_RETURN(name != nullptr, ENOMEM);
-
-    std::free(jport->name);
-    jport->name = strdup(port_name);
+    CARLA_SAFE_ASSERT_RETURN(fullname != nullptr, ENOMEM);
 
     std::snprintf(fullname, STR_MAX, "%s:%s", jclient->name, port_name);
     fullname[STR_MAX-1] = '\0';
 
-    std::free(jport->fullname);
-    jport->fullname = fullname;
+    jport->name = rname.buffer();
+    jport->fullname = rfullname.buffer();
+
+    std::free(fullname);
 
     // TODO: port rename callback
 
