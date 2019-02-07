@@ -218,7 +218,11 @@ protected:
 
             carla_stdout("Got reply of '%s' as '%s'", method, message);
 
-            // TODO reply first load time with /nsm/client/session_is_loaded
+            if (std::strcmp(method, "/nsm/client/open") == 0)
+            {
+                carla_stdout("Sending 'Session is loaded' to %s", fProject.appName.buffer());
+                lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/session_is_loaded", "");
+            }
         }
 
         else if (std::strcmp(path, "/nsm/client/gui_is_shown") == 0)
