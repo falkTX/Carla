@@ -851,10 +851,17 @@ class HostWindow(QMainWindow):
 
     def engineStopFinal(self):
         self.killTimers()
-        self.removeAllPlugins()
 
         if self.host.is_engine_running():
-            self.host.remove_all_plugins()
+            if self.fCustomStopAction == self.CUSTOM_ACTION_PROJECT_LOAD:
+                self.removeAllPlugins()
+            else:
+                self.fCurrentlyRemovingAllPlugins = True
+                self.projectLoadingStarted()
+
+            if not self.host.remove_all_plugins():
+                self.ui.text_logs.appendPlainText("Failed to remove all plugins, error was:")
+                self.ui.text_logs.appendPlainText(self.host.get_last_error())
 
             if not self.host.engine_close():
                 self.ui.text_logs.appendPlainText("Failed to stop engine, error was:")
@@ -1096,32 +1103,14 @@ class HostWindow(QMainWindow):
         if self.fPluginCount == 0:
             return
 
-        # FIXME - this is not working
-        # removing a plugin causes flicker, the rack-list becomes empty for some time
-        # this breaks the remove-all animation, so don't bother using it
-        if False and not self.host.isPlugin:
-            self.projectLoadingStarted()
-
-            app = QApplication.instance()
-            app.processEvents()
-
-            for i in reversed(range(self.fPluginCount)):
-                self.host.remove_plugin(i)
-                app.processEvents()
-
-            self.projectLoadingFinished()
-
         self.fCurrentlyRemovingAllPlugins = True
-        ok = self.host.remove_all_plugins()
-        self.fCurrentlyRemovingAllPlugins = False
+        self.projectLoadingStarted()
 
-        if ok:
-            self.removeAllPlugins()
-        else:
+        if not self.host.remove_all_plugins():
+            self.projectLoadingFinished()
+            self.fCurrentlyRemovingAllPlugins = False
             CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
                                    self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
-
-        self.fCurrentlyRemovingAllPlugins = False
 
     @pyqtSlot()
     def slot_jackAppAdd(self):
@@ -1266,12 +1255,19 @@ class HostWindow(QMainWindow):
             pitem.close()
             del pitem
 
+        if self.fPluginCount == 0:
+            self.ui.act_plugin_remove_all.setEnabled(False)
+            if self.fCurrentlyRemovingAllPlugins:
+                self.fCurrentlyRemovingAllPlugins = False
+                self.projectLoadingFinished()
+            return
+
         # push all plugins 1 slot back
         for i in range(pluginId, self.fPluginCount):
             pitem = self.fPluginList[i]
             pitem.setPluginId(i)
 
-        self.ui.act_plugin_remove_all.setEnabled(self.fPluginCount > 0)
+        self.ui.act_plugin_remove_all.setEnabled(True)
 
     # --------------------------------------------------------------------------------------------------------
     # Canvas

@@ -726,7 +726,8 @@ bool CarlaEngine::removeAllPlugins()
 
     for (uint i=0; i < curPluginCount; ++i)
     {
-        EnginePluginData& pluginData(pData->plugins[i]);
+        const uint id = curPluginCount - i - 1;
+        EnginePluginData& pluginData(pData->plugins[id]);
 
         if (pluginData.plugin != nullptr)
         {
@@ -735,6 +736,8 @@ bool CarlaEngine::removeAllPlugins()
         }
 
         carla_zeroFloats(pluginData.peaks, 4);
+
+        callback(ENGINE_CALLBACK_PLUGIN_REMOVED, id, 0, 0, 0.0f, nullptr);
         callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
     }
 

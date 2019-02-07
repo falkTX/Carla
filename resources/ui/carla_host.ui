@@ -809,6 +809,12 @@
    <property name="text">
     <string>&amp;Open...</string>
    </property>
+   <property name="iconText">
+    <string>Open...</string>
+   </property>
+   <property name="toolTip">
+    <string>Open...</string>
+   </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
    </property>
@@ -832,6 +838,12 @@
    </property>
    <property name="text">
     <string>Save &amp;As...</string>
+   </property>
+   <property name="iconText">
+    <string>Save As...</string>
+   </property>
+   <property name="toolTip">
+    <string>Save As...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+S</string>
@@ -891,6 +903,12 @@
      <normaloff>:/16x16/list-add.png</normaloff>:/16x16/list-add.png</iconset>
    </property>
    <property name="text">
+    <string>Add Plugin...</string>
+   </property>
+   <property name="iconText">
+    <string>Add Plugin...</string>
+   </property>
+   <property name="toolTip">
     <string>Add Plugin...</string>
    </property>
   </action>
@@ -1224,6 +1242,12 @@
    </property>
    <property name="text">
     <string>Add &amp;JACK Application</string>
+   </property>
+   <property name="iconText">
+    <string>Add JACK Application...</string>
+   </property>
+   <property name="toolTip">
+    <string>Add JACK Application...</string>
    </property>
   </action>
   <action name="act_plugin_add_jack">
