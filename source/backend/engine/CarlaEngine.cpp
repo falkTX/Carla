@@ -1137,7 +1137,11 @@ bool CarlaEngine::loadProject(const char* const filename, const bool setAsCurren
     CARLA_SAFE_ASSERT_RETURN_ERR(file.existsAsFile(), "Requested file does not exist or is not a readable file");
 
     if (setAsCurrentProject)
+    {
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         pData->currentProjectFilename = filename;
+#endif
+    }
 
     XmlDocument xml(file);
     return loadProjectInternal(xml);
@@ -1155,7 +1159,11 @@ bool CarlaEngine::saveProject(const char* const filename, const bool setAsCurren
     File file(jfilename);
 
     if (setAsCurrentProject)
+    {
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         pData->currentProjectFilename = filename;
+#endif
+    }
 
     if (file.replaceWithData(out.getData(), out.getDataSize()))
         return true;
