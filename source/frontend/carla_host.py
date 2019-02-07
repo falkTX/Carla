@@ -213,6 +213,7 @@ class HostWindow(QMainWindow):
                 self.ui.act_file_save_as.setVisible(False)
                 self.ui.act_plugin_add.setVisible(False)
                 self.ui.act_plugin_add2.setVisible(False)
+                self.ui.act_plugin_add_jack.setVisible(False)
                 self.ui.act_plugin_remove_all.setVisible(False)
                 self.ui.act_add_jack.setVisible(False)
                 self.ui.menu_Plugin.setEnabled(False)
@@ -426,6 +427,7 @@ class HostWindow(QMainWindow):
         self.ui.act_plugin_remove_all.triggered.connect(self.slot_confirmRemoveAll)
 
         self.ui.act_add_jack.triggered.connect(self.slot_jackAppAdd)
+        self.ui.act_plugin_add_jack.triggered.connect(self.slot_jackAppAdd)
 
         self.ui.act_plugins_enable.triggered.connect(self.slot_pluginsEnable)
         self.ui.act_plugins_disable.triggered.connect(self.slot_pluginsDisable)
@@ -1658,10 +1660,12 @@ class HostWindow(QMainWindow):
         settings = QSettings("falkTX", "Carla2")
 
         if self.host.experimental and not self.host.isControl:
-            self.ui.act_add_jack.setVisible(settings.value(CARLA_KEY_EXPERIMENTAL_JACK_APPS,
-                                                           CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS, type=bool))
+            visible = settings.value(CARLA_KEY_EXPERIMENTAL_JACK_APPS, CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS, type=bool)
+            self.ui.act_add_jack.setVisible(visible)
+            self.ui.act_plugin_add_jack.setVisible(visible)
         else:
             self.ui.act_add_jack.setVisible(False)
+            self.ui.act_plugin_add_jack.setVisible(False)
 
         self.fMiniCanvasUpdateTimeout = 1000 if self.fSavedSettings[CARLA_KEY_CANVAS_FANCY_EYE_CANDY] else 0
 

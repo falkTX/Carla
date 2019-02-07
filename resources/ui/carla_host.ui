@@ -230,7 +230,7 @@
      <x>0</x>
      <y>0</y>
      <width>1058</width>
-     <height>20</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -276,6 +276,7 @@
      <addaction name="act_plugins_expand"/>
     </widget>
     <addaction name="act_plugin_add"/>
+    <addaction name="act_plugin_add_jack"/>
     <addaction name="act_plugin_remove_all"/>
     <addaction name="separator"/>
     <addaction name="menu_PluginMacros"/>
@@ -878,7 +879,7 @@
      <normaloff>:/16x16/list-add.png</normaloff>:/16x16/list-add.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Add...</string>
+    <string>&amp;Add Plugin...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+A</string>
@@ -1222,7 +1223,16 @@
      <normaloff>:/16x16/list-add.png</normaloff>:/16x16/list-add.png</iconset>
    </property>
    <property name="text">
-    <string>Add &amp;Jack Application</string>
+    <string>Add &amp;JACK Application</string>
+   </property>
+  </action>
+  <action name="act_plugin_add_jack">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/list-add.png</normaloff>:/16x16/list-add.png</iconset>
+   </property>
+   <property name="text">
+    <string>Add &amp;JACK Application...</string>
    </property>
   </action>
  </widget>
