@@ -223,6 +223,7 @@ struct CarlaEngine::ProtectedData {
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     bool loadingProject;
+    CarlaString currentProjectFilename;
 #endif
 
     uint     hints;

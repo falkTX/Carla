@@ -175,7 +175,7 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename), true);
 
             try {
-                ok = fEngine->loadProject(filename);
+                ok = fEngine->loadProject(filename, true);
             } CARLA_SAFE_EXCEPTION("loadProject");
 
             delete[] filename;
@@ -187,10 +187,14 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename), true);
 
             try {
-                ok = fEngine->saveProject(filename);
+                ok = fEngine->saveProject(filename, true);
             } CARLA_SAFE_EXCEPTION("saveProject");
 
             delete[] filename;
+        }
+        else if (std::strcmp(msg, "clear_project_filename") == 0)
+        {
+            fEngine->clearCurrentProjectFilename();
         }
         else if (std::strcmp(msg, "patchbay_connect") == 0)
         {

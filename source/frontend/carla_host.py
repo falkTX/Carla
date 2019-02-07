@@ -733,6 +733,7 @@ class HostWindow(QMainWindow):
         self.pluginRemoveAll()
         self.fProjectFilename = ""
         self.setProperWindowTitle()
+        self.host.clear_project_filename()
 
     @pyqtSlot()
     def slot_fileOpen(self):

@@ -812,7 +812,7 @@ bool carla_load_project(const char* filename)
 
     carla_debug("carla_load_project(\"%s\")", filename);
 
-    return gStandalone.engine->loadProject(filename);
+    return gStandalone.engine->loadProject(filename, true);
 }
 
 bool carla_save_project(const char* filename)
@@ -822,10 +822,19 @@ bool carla_save_project(const char* filename)
 
     carla_debug("carla_save_project(\"%s\")", filename);
 
-    return gStandalone.engine->saveProject(filename);
+    return gStandalone.engine->saveProject(filename, true);
 }
 
 #ifndef BUILD_BRIDGE
+void carla_clear_project_filename()
+{
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+
+    carla_debug("carla_clear_project_filename()");
+
+    gStandalone.engine->clearCurrentProjectFilename();
+}
+
 // --------------------------------------------------------------------------------------------------------------------
 
 bool carla_patchbay_connect(uint groupIdA, uint portIdA, uint groupIdB, uint portIdB)

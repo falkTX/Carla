@@ -107,6 +107,7 @@ public:
         result in undefined behaviour.
     */
     bool kill();
+    bool terminate();
 
     uint32 getPID() const noexcept;
 

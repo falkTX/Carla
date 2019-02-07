@@ -1,6 +1,6 @@
 /*
  * Carla Plugin JACK
- * Copyright (C) 2016-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -28,6 +28,11 @@
 #include "CarlaShmUtils.hpp"
 #include "CarlaThread.hpp"
 
+#ifdef HAVE_LIBLO
+# include "CarlaOscUtils.hpp"
+#endif
+
+#include "water/files/File.h"
 #include "water/misc/Time.h"
 #include "water/text/StringArray.h"
 #include "water/threads/ChildProcess.h"
@@ -47,6 +52,28 @@ using water::Time;
 
 CARLA_BACKEND_START_NAMESPACE
 
+enum {
+    FLAG_CONTROL_WINDOW        = 0x01,
+    FLAG_CAPTURE_FIRST_WINDOW  = 0x02,
+    FLAG_BUFFERS_ADDITION_MODE = 0x10,
+};
+
+enum {
+    SESSION_MGR_NONE   = 0,
+    SESSION_MGR_AUTO   = 1,
+    SESSION_MGR_JACK   = 2,
+    SESSION_MGR_LADISH = 3,
+    SESSION_MGR_NSM    = 4,
+};
+
+static size_t safe_rand(const size_t limit)
+{
+    const int r = std::rand();
+    CARLA_SAFE_ASSERT_RETURN(r >= 0, 0);
+
+    return static_cast<uint>(r) % limit;
+}
+
 // -------------------------------------------------------------------------------------------------------------------
 // Fallback data
 
@@ -62,17 +89,22 @@ public:
           kEngine(engine),
           kPlugin(plugin),
           fShmIds(),
-          fNumPorts(),
+          fSetupLabel(),
+#ifdef HAVE_LIBLO
+          fOscClientAddress(nullptr),
+          fOscServer(nullptr),
+          fProject(),
+#endif
           fProcess() {}
 
-    void setData(const char* const shmIds, const char* const numPorts) noexcept
+    void setData(const char* const shmIds, const char* const setupLabel) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(shmIds != nullptr && shmIds[0] != '\0',);
-        CARLA_SAFE_ASSERT_RETURN(numPorts != nullptr && numPorts[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(setupLabel != nullptr && setupLabel[0] != '\0',);
         CARLA_SAFE_ASSERT(! isThreadRunning());
 
-        fShmIds   = shmIds;
-        fNumPorts = numPorts;
+        fShmIds     = shmIds;
+        fSetupLabel = setupLabel;
     }
 
     uintptr_t getProcessID() const noexcept
@@ -82,9 +114,156 @@ public:
         return (uintptr_t)fProcess->getPID();
     }
 
+    void sendTerminate() const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(fProcess != nullptr,);
+
+        fProcess->terminate();
+    }
+
+#ifdef HAVE_LIBLO
+    void nsmSave(const char* const setupLabel)
+    {
+        if (fOscClientAddress == nullptr)
+            return;
+
+        if (fSetupLabel != setupLabel)
+            fSetupLabel = setupLabel;
+
+        maybeOpenFirstTime();
+
+        lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/save", "");
+    }
+
+    void nsmShowGui(const bool yesNo)
+    {
+        if (fOscClientAddress == nullptr)
+            return;
+
+        lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE,
+                     yesNo ? "/nsm/client/show_optional_gui"
+                           : "/nsm/client/hide_optional_gui", "");
+    }
+#endif
+
 protected:
+#ifdef HAVE_LIBLO
+    static void _osc_error_handler(int num, const char* msg, const char* path)
+    {
+        carla_stderr2("CarlaPluginJackThread::_osc_error_handler(%i, \"%s\", \"%s\")", num, msg, path);
+    }
+
+    static int _broadcast_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* data)
+    {
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr, 0);
+        carla_stdout("CarlaPluginJackThread::_broadcast_handler(%s, %s, %p, %i)", path, types, argv, argc);
+
+        return ((CarlaPluginJackThread*)data)->handleBroadcast(path, types, argv, msg);
+    }
+
+    void maybeOpenFirstTime()
+    {
+        if (fProject.path.isNotEmpty())
+            return;
+        if (fSetupLabel.length() <= 6)
+            return;
+
+        if (fProject.init(kEngine->getCurrentProjectFilename(), &fSetupLabel[6]))
+        {
+            carla_stdout("Sending first open signal %s %s %s",
+                         fProject.path.buffer(), fProject.display.buffer(), fProject.clientName.buffer());
+
+            lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/open", "sss",
+                            fProject.path.buffer(), fProject.display.buffer(), fProject.clientName.buffer());
+        }
+    }
+
+    int handleBroadcast(const char* path, const char* types, lo_arg** argv, lo_message msg)
+    {
+        if (std::strcmp(path, "/nsm/server/announce") == 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(std::strcmp(types, "sssiii") == 0, 0);
+
+            const lo_address msgAddress(lo_message_get_source(msg));
+            CARLA_SAFE_ASSERT_RETURN(msgAddress != nullptr, 0);
+
+            char* const msgURL(lo_address_get_url(msgAddress));
+            CARLA_SAFE_ASSERT_RETURN(msgURL != nullptr, 0);
+
+            if (fOscClientAddress != nullptr)
+                lo_address_free(fOscClientAddress);
+
+            fOscClientAddress = lo_address_new_from_url(msgURL);
+            CARLA_SAFE_ASSERT_RETURN(fOscClientAddress != nullptr, 0);
+
+            fProject.appName = &argv[0]->s;
+
+            static const char* const method   = "/nsm/server/announce";
+            static const char* const message  = "Howdy, what took you so long?";
+            static const char* const smName   = "Carla";
+            static const char* const features = ":server-control:optional-gui:";
+
+            lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE, "/reply", "ssss",
+                         method, message, smName, features);
+
+            maybeOpenFirstTime();
+        }
+
+        else if (std::strcmp(path, "/reply") == 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(std::strcmp(types, "ss") == 0, 0);
+
+            const char* const method  = &argv[0]->s;
+            const char* const message = &argv[1]->s;
+
+            carla_stdout("Got reply of '%s' as '%s'", method, message);
+
+            if (std::strcmp(method, "/nsm/client/open") == 0)
+            {
+                carla_stdout("Sending 'Session is loaded' to %s", fProject.appName.buffer());
+                lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/session_is_loaded", "");
+            }
+        }
+
+        else if (std::strcmp(path, "/nsm/client/gui_is_shown") == 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(std::strcmp(types, "") == 0, 0);
+
+            kEngine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, kPlugin->getId(), 1, 0, 0.0f, nullptr);
+        }
+
+        else if (std::strcmp(path, "/nsm/client/gui_is_hidden") == 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(std::strcmp(types, "") == 0, 0);
+
+            kEngine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, kPlugin->getId(), 0, 0, 0.0f, nullptr);
+        }
+
+        return 0;
+    }
+#endif
+
     void run()
     {
+#ifdef HAVE_LIBLO
+        if (fOscClientAddress != nullptr)
+        {
+            lo_address_free(fOscClientAddress);
+            fOscClientAddress = nullptr;
+        }
+
+        const int sessionManager = fSetupLabel[4] - '0';
+
+        if (sessionManager == SESSION_MGR_NSM)
+        {
+            // NSM support
+            fOscServer = lo_server_new_with_proto(nullptr, LO_UDP, _osc_error_handler);
+            CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr,);
+
+            lo_server_add_method(fOscServer, nullptr, nullptr, _broadcast_handler, this);
+        }
+#endif
+
         if (fProcess == nullptr)
         {
             fProcess = new ChildProcess();
@@ -127,6 +306,7 @@ protected:
 
             const ScopedEngineEnvironmentLocker _seel(kEngine);
 
+            const ScopedEnvVar sev3("NSM_URL", lo_server_get_url(fOscServer));
             const ScopedEnvVar sev2("LD_LIBRARY_PATH", libjackdir.buffer());
             const ScopedEnvVar sev1("LD_PRELOAD", ldpreload.isNotEmpty() ? ldpreload.buffer() : nullptr);
 
@@ -135,7 +315,7 @@ protected:
             else
                 carla_unsetenv("CARLA_FRONTEND_WIN_ID");
 
-            carla_setenv("CARLA_LIBJACK_SETUP", fNumPorts.buffer());
+            carla_setenv("CARLA_LIBJACK_SETUP", fSetupLabel.buffer());
             carla_setenv("CARLA_SHM_IDS", fShmIds.buffer());
 
             started = fProcess->start(arguments);
@@ -149,7 +329,32 @@ protected:
         }
 
         for (; fProcess->isRunning() && ! shouldThreadExit();)
-            carla_msleep(50);
+        {
+#ifdef HAVE_LIBLO
+            if (sessionManager == SESSION_MGR_NSM)
+            {
+                lo_server_recv_noblock(fOscServer, 50);
+            }
+            else
+#endif
+            {
+                carla_msleep(50);
+            }
+        }
+
+#ifdef HAVE_LIBLO
+        if (sessionManager == SESSION_MGR_NSM)
+        {
+            lo_server_free(fOscServer);
+            fOscServer = nullptr;
+
+            if (fOscClientAddress != nullptr)
+            {
+                lo_address_free(fOscClientAddress);
+                fOscClientAddress = nullptr;
+            }
+        }
+#endif
 
         // we only get here if bridge crashed or thread asked to exit
         if (fProcess->isRunning() && shouldThreadExit())
@@ -184,7 +389,42 @@ private:
     CarlaPlugin* const kPlugin;
 
     CarlaString fShmIds;
-    CarlaString fNumPorts;
+    CarlaString fSetupLabel;
+
+#ifdef HAVE_LIBLO
+    lo_address fOscClientAddress;
+    lo_server  fOscServer;
+
+    struct ProjectData {
+        CarlaString appName;
+        CarlaString path;
+        CarlaString display;
+        CarlaString clientName;
+
+        ProjectData()
+            : appName(),
+              path(),
+              display(),
+              clientName() {}
+
+        bool init(const char* const engineProjectFilename, const char* const uniqueCodeID)
+        {
+            CARLA_SAFE_ASSERT_RETURN(engineProjectFilename != nullptr && engineProjectFilename[0] != '\0', false);
+            CARLA_SAFE_ASSERT_RETURN(uniqueCodeID != nullptr && uniqueCodeID[0] != '\0', false);
+            CARLA_SAFE_ASSERT_RETURN(appName.isNotEmpty(), false);
+
+            const File file(File(engineProjectFilename).withFileExtension(uniqueCodeID));
+
+            path = file.getFullPathName().toRawUTF8();
+            display = file.getFileNameWithoutExtension().toRawUTF8();
+            clientName = appName + "." + uniqueCodeID;
+
+            return true;
+        }
+
+        CARLA_DECLARE_NON_COPY_STRUCT(ProjectData)
+    } fProject;
+#endif
 
     ScopedPointer<ChildProcess> fProcess;
 
@@ -246,6 +486,8 @@ public:
 
             fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientQuit);
             fShmNonRtClientControl.commitWrite();
+
+            fBridgeThread.sendTerminate();
 
             if (! fTimedOut)
                 waitForClient("stopping", 3000);
@@ -326,6 +568,13 @@ public:
 
     void prepareForSave() noexcept override
     {
+#ifdef HAVE_LIBLO
+        if (fInfo.setupLabel.length() == 6)
+            setupUniqueProjectID();
+
+        fBridgeThread.nsmSave(fInfo.setupLabel);
+#endif
+
         {
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
 
@@ -401,6 +650,10 @@ public:
         if (yesNo && ! fBridgeThread.isThreadRunning()) {
             CARLA_SAFE_ASSERT_RETURN(restartBridgeThread(),);
         }
+
+#ifdef HAVE_LIBLO
+        fBridgeThread.nsmShowGui(yesNo);
+#endif
 
         const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
 
@@ -1236,7 +1489,7 @@ public:
         // ---------------------------------------------------------------
         // check setup
 
-        if (std::strlen(label) != 6)
+        if (std::strlen(label) < 6)
         {
             pData->engine->setLastError("invalid application setup received");
             return false;
@@ -1256,7 +1509,11 @@ public:
 
         fInfo.setupLabel = label;
 
-        const int setupHints = label[5] - '0';
+        // ---------------------------------------------------------------
+        // set project unique id
+
+        if (label[6] == '\0')
+            setupUniqueProjectID();
 
         // ---------------------------------------------------------------
         // set info
@@ -1306,6 +1563,8 @@ public:
         // ---------------------------------------------------------------
         // setup hints and options
 
+        const int setupHints = label[5] - '0';
+
         // FIXME dryWet broken
         pData->hints  = PLUGIN_IS_BRIDGE | PLUGIN_OPTION_FIXED_BUFFERS;
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -1313,7 +1572,7 @@ public:
 #endif
         //fInfo.optionsAvailable = optionAv;
 
-        if (setupHints & 0x1)
+        if (setupHints & FLAG_CONTROL_WINDOW)
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
 
         // ---------------------------------------------------------------
@@ -1328,7 +1587,7 @@ public:
             std::strncpy(shmIdsStr+6*2, &fShmNonRtClientControl.filename[fShmNonRtClientControl.filename.length()-6], 6);
             std::strncpy(shmIdsStr+6*3, &fShmNonRtServerControl.filename[fShmNonRtServerControl.filename.length()-6], 6);
 
-            fBridgeThread.setData(shmIdsStr, label);
+            fBridgeThread.setData(shmIdsStr, fInfo.setupLabel);
         }
 
         if (! restartBridgeThread())
@@ -1415,16 +1674,45 @@ private:
         waitForClient("resize-pool", 5000);
     }
 
-    void waitForClient(const char* const action, const uint msecs)
+    void setupUniqueProjectID()
     {
-        CARLA_SAFE_ASSERT_RETURN(! fTimedOut,);
-        CARLA_SAFE_ASSERT_RETURN(! fTimedError,);
+        const char* const engineProjectFilename = pData->engine->getCurrentProjectFilename();
+        carla_stdout("setupUniqueProjectID %s", engineProjectFilename);
 
-        if (fShmRtClientControl.waitForClient(msecs))
+        if (engineProjectFilename == nullptr || engineProjectFilename[0] == '\0')
             return;
 
-        fTimedOut = true;
-        carla_stderr2("waitForClient(%s) timed out", action);
+        const File file(engineProjectFilename);
+        CARLA_SAFE_ASSERT_RETURN(file.existsAsFile(),);
+        CARLA_SAFE_ASSERT_RETURN(file.getFileExtension().isNotEmpty(),);
+
+        char code[6];
+        code[5] = '\0';
+
+        for (;;)
+        {
+            static const char* const kValidChars =
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                "abcdefghijklmnopqrstuvwxyz"
+                "0123456789";
+
+            static const size_t kValidCharsLen(std::strlen(kValidChars)-1U);
+
+            code[0] = kValidChars[safe_rand(kValidCharsLen)];
+            code[1] = kValidChars[safe_rand(kValidCharsLen)];
+            code[2] = kValidChars[safe_rand(kValidCharsLen)];
+            code[3] = kValidChars[safe_rand(kValidCharsLen)];
+            code[4] = kValidChars[safe_rand(kValidCharsLen)];
+
+            const File newFile(file.withFileExtension(code));
+
+            if (newFile.existsAsFile())
+                continue;
+
+            fInfo.setupLabel += code;
+            carla_stdout("new label %s", fInfo.setupLabel.buffer());
+            break;
+        }
     }
 
     bool restartBridgeThread()
@@ -1513,6 +1801,18 @@ private:
         }
 
         return true;
+    }
+
+    void waitForClient(const char* const action, const uint msecs)
+    {
+        CARLA_SAFE_ASSERT_RETURN(! fTimedOut,);
+        CARLA_SAFE_ASSERT_RETURN(! fTimedError,);
+
+        if (fShmRtClientControl.waitForClient(msecs))
+            return;
+
+        fTimedOut = true;
+        carla_stderr2("waitForClient(%s) timed out", action);
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginJack)

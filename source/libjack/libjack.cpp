@@ -133,7 +133,7 @@ public:
         CARLA_SAFE_ASSERT_INT2_RETURN(shmIds != nullptr && std::strlen(shmIds) == 6*4, std::strlen(shmIds), 6*4,);
 
         const char* const libjackSetup(std::getenv("CARLA_LIBJACK_SETUP"));
-        CARLA_SAFE_ASSERT_RETURN(libjackSetup != nullptr && std::strlen(libjackSetup) == 6,);
+        CARLA_SAFE_ASSERT_RETURN(libjackSetup != nullptr && std::strlen(libjackSetup) >= 6,);
 
         // make sure we don't get loaded again
         carla_unsetenv("CARLA_SHM_IDS");
@@ -943,7 +943,7 @@ bool CarlaJackAppClient::handleNonRtData()
 
         case kPluginBridgeNonRtClientPrepareForSave:
             {
-                if (fSessionManager == 1) // auto
+                if (fSessionManager == 1 && std::getenv("NSM_URL") == nullptr) // auto
                 {
                     struct sigaction sig;
                     carla_zeroStruct(sig);

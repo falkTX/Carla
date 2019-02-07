@@ -125,6 +125,11 @@ public:
         return TerminateProcess (processInfo.hProcess, 0) != FALSE;
     }
 
+    bool terminateProcess() const noexcept
+    {
+        return TerminateProcess (processInfo.hProcess, 0) != FALSE;
+    }
+
     uint32 getExitCode() const noexcept
     {
         DWORD exitCode = 0;
@@ -238,6 +243,11 @@ public:
         return ::kill (childPID, SIGKILL) == 0;
     }
 
+    bool terminateProcess() const noexcept
+    {
+        return ::kill (childPID, SIGTERM) == 0;
+    }
+
     uint32 getExitCode() const noexcept
     {
         if (childPID != 0)
@@ -285,6 +295,11 @@ int ChildProcess::readProcessOutput (void* dest, int numBytes)
 bool ChildProcess::kill()
 {
     return activeProcess == nullptr || activeProcess->killProcess();
+}
+
+bool ChildProcess::terminate()
+{
+    return activeProcess == nullptr || activeProcess->terminateProcess();
 }
 
 uint32 ChildProcess::getExitCode() const

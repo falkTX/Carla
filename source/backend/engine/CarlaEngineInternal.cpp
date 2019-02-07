@@ -375,6 +375,7 @@ CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
       actionCanceled(false),
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
       loadingProject(false),
+      currentProjectFilename(),
 #endif
       hints(0x0),
       bufferSize(0),
