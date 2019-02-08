@@ -26,8 +26,5 @@ make -C source/modules/sfzero
 make -C source/modules/water
 make -C source/theme all qt4 qt5
 
-# FIXME
-make -C source/libjack
-
 # Build native stuff
 make TESTBUILD=true

@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,7 +23,7 @@ CARLA_BACKEND_USE_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
 
-const char* allocate_port_name(const char* const prefix, const uint32_t num)
+static const char* allocate_port_name(const char* const prefix, const uint num)
 {
     static CarlaStringList portList;
 
@@ -39,6 +39,8 @@ const char* allocate_port_name(const char* const prefix, const uint32_t num)
     return portList.getLast();
 }
 
+// --------------------------------------------------------------------------------------------------------------------
+
 CARLA_EXPORT
 const char** jack_get_ports(jack_client_t* client, const char* a, const char* b, unsigned long flags)
 {
@@ -49,21 +51,21 @@ const char** jack_get_ports(jack_client_t* client, const char* a, const char* b,
 
     const JackServerState& jserver(jclient->server);
 
-    const uint32_t numIns  = jserver.numAudioIns  + jserver.numMidiIns;
-    const uint32_t numOuts = jserver.numAudioOuts + jserver.numMidiOuts;
+    const uint numIns  = static_cast<uint>(jserver.numAudioIns  + jserver.numMidiIns);
+    const uint numOuts = static_cast<uint>(jserver.numAudioOuts + jserver.numMidiOuts);
 
     if (flags == 0 || (flags & (JackPortIsInput|JackPortIsOutput)) == (JackPortIsInput|JackPortIsOutput))
     {
         if (const char** const ret = (const char**)calloc(numIns+numOuts, sizeof(const char*)))
         {
-            uint32_t i=0;
-            for (uint32_t j=0; j<jserver.numAudioIns; ++i, ++j)
+            uint i=0;
+            for (uint j=0; j<jserver.numAudioIns; ++i, ++j)
                 ret[i] = allocate_port_name("system:capture_", j);
-            for (uint32_t j=0; j<jserver.numAudioOuts; ++i, ++j)
+            for (uint j=0; j<jserver.numAudioOuts; ++i, ++j)
                 ret[i] = allocate_port_name("system:playback_", j);
-            for (uint32_t j=0; j<jserver.numMidiIns; ++i, ++j)
+            for (uint j=0; j<jserver.numMidiIns; ++i, ++j)
                 ret[i] = allocate_port_name("system:midi_capture_", j);
-            for (uint32_t j=0; j<jserver.numMidiOuts; ++i, ++j)
+            for (uint j=0; j<jserver.numMidiOuts; ++i, ++j)
                 ret[i] = allocate_port_name("system:midi_playback_", j);
 
             return ret;
@@ -74,10 +76,10 @@ const char** jack_get_ports(jack_client_t* client, const char* a, const char* b,
     {
         if (const char** const ret = (const char**)calloc(numIns, sizeof(const char*)))
         {
-            uint32_t i=0;
-            for (uint32_t j=0; j<jserver.numAudioOuts; ++i, ++j)
+            uint i=0;
+            for (uint j=0; j<jserver.numAudioOuts; ++i, ++j)
                 ret[i] = allocate_port_name("system:playback_", j);
-            for (uint32_t j=0; j<jserver.numMidiOuts; ++i, ++j)
+            for (uint j=0; j<jserver.numMidiOuts; ++i, ++j)
                 ret[i] = allocate_port_name("system:midi_playback_", j);
 
             return ret;
@@ -88,10 +90,10 @@ const char** jack_get_ports(jack_client_t* client, const char* a, const char* b,
     {
         if (const char** const ret = (const char**)calloc(numOuts, sizeof(const char*)))
         {
-            uint32_t i=0;
-            for (uint32_t j=0; j<jserver.numAudioIns; ++i, ++j)
+            uint i=0;
+            for (uint j=0; j<jserver.numAudioIns; ++i, ++j)
                 ret[i] = allocate_port_name("system:capture_", j);
-            for (uint32_t j=0; j<jserver.numMidiIns; ++i, ++j)
+            for (uint j=0; j<jserver.numMidiIns; ++i, ++j)
                 ret[i] = allocate_port_name("system:midi_capture_", j);
 
             return ret;
@@ -107,7 +109,7 @@ jack_port_t* jack_port_by_name(jack_client_t* client, const char* name)
     carla_debug("%s(%p, %s)", __FUNCTION__, client, name);
 
     JackClientState* const jclient = (JackClientState*)client;
-    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
+    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, nullptr);
 
     if (std::strncmp(name, "system:", 7) == 0)
     {
@@ -141,7 +143,7 @@ jack_port_t* jack_port_by_name(jack_client_t* client, const char* name)
             const int index = std::atoi(name)-1;
             CARLA_SAFE_ASSERT_RETURN(index >= 0 && index < jserver.numAudioIns, nullptr);
 
-            retPort.index  = index;
+            retPort.index  = static_cast<uint>(index);
             retPort.flags  = commonFlags|JackPortIsOutput;
             retPort.isMidi = false;
             retPort.isConnected = jserver.numAudioIns > index;
@@ -153,7 +155,7 @@ jack_port_t* jack_port_by_name(jack_client_t* client, const char* name)
             const int index = std::atoi(name)-1;
             CARLA_SAFE_ASSERT_RETURN(index >= 0 && index < jserver.numAudioOuts, nullptr);
 
-            retPort.index  = (jserver.numAudioIns) + index;
+            retPort.index  = static_cast<uint>(jserver.numAudioIns + index);
             retPort.flags  = commonFlags|JackPortIsInput;
             retPort.isMidi = false;
             retPort.isConnected = jserver.numAudioOuts > index;
@@ -165,7 +167,7 @@ jack_port_t* jack_port_by_name(jack_client_t* client, const char* name)
             const int index = std::atoi(name)-1;
             CARLA_SAFE_ASSERT_RETURN(index >= 0 && index < jserver.numMidiIns, nullptr);
 
-            retPort.index  = index;
+            retPort.index  = static_cast<uint>(index);
             retPort.flags  = commonFlags|JackPortIsOutput;
             retPort.isMidi = true;
             retPort.isConnected = jserver.numMidiIns > index;
@@ -177,7 +179,7 @@ jack_port_t* jack_port_by_name(jack_client_t* client, const char* name)
             const int index = std::atoi(name)-1;
             CARLA_SAFE_ASSERT_RETURN(index >= 0 && index < jserver.numMidiOuts, nullptr);
 
-            retPort.index  = (jserver.numAudioIns) + index;
+            retPort.index  = static_cast<uint>(jserver.numMidiIns + index);
             retPort.flags  = commonFlags|JackPortIsInput;
             retPort.isMidi = true;
             retPort.isConnected = jserver.numMidiOuts > index;

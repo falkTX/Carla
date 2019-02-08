@@ -87,7 +87,7 @@ int jack_transport_locate(jack_client_t* client, jack_nframes_t frame)
 CARLA_EXPORT
 jack_transport_state_t jack_transport_query(const jack_client_t* client, jack_position_t* pos)
 {
-    if (const JackClientState* const jclient = (JackClientState*)client)
+    if (const JackClientState* const jclient = (const JackClientState*)client)
     {
         const JackServerState& jserver(jclient->server);
 
@@ -106,7 +106,7 @@ jack_transport_state_t jack_transport_query(const jack_client_t* client, jack_po
 CARLA_EXPORT
 jack_nframes_t jack_get_current_transport_frame(const jack_client_t* client)
 {
-    if (const JackClientState* const jclient = (JackClientState*)client)
+    if (const JackClientState* const jclient = (const JackClientState*)client)
         return jclient->server.position.frame;
 
     return 0;

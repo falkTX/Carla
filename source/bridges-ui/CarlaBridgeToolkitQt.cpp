@@ -286,9 +286,11 @@ CARLA_BRIDGE_UI_END_NAMESPACE
 
 // -------------------------------------------------------------------------
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 12, 0)
 // missing declaration
 int qInitResources();
 int qCleanupResources();
+#endif
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 # include "resources.qt5.cpp"

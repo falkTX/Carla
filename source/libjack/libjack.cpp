@@ -23,6 +23,8 @@
 #include <sys/prctl.h>
 #include <sys/time.h>
 
+// ---------------------------------------------------------------------------------------------------------------------
+
 typedef int (*CarlaInterposedCallback)(int, void*);
 
 CARLA_EXPORT
@@ -32,7 +34,11 @@ int jack_carla_interposed_action(int, int, void*)
     return 1337;
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+
 CARLA_BACKEND_START_NAMESPACE
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 static int64_t getCurrentTimeMilliseconds() noexcept
 {
@@ -40,6 +46,8 @@ static int64_t getCurrentTimeMilliseconds() noexcept
     gettimeofday (&tv, nullptr);
     return ((int64_t) tv.tv_sec) * 1000 + tv.tv_usec / 1000;
 }
+
+static int carla_interposed_callback(int, void*);
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -95,8 +103,6 @@ private:
     CARLA_DECLARE_NON_COPY_CLASS(CarlaJackNonRealtimeThread)
 };
 
-static int carla_interposed_callback(int, void*);
-
 // ---------------------------------------------------------------------------------------------------------------------
 
 class CarlaJackAppClient : public CarlaJackRealtimeThread::Callback,
@@ -125,7 +131,8 @@ public:
           fSessionManager(0),
           fSetupHints(0),
           fRealtimeThread(this),
-          fNonRealtimeThread(this)
+          fNonRealtimeThread(this),
+          fRealtimeThreadMutex()
     {
         carla_debug("CarlaJackAppClient::CarlaJackAppClient()");
 
@@ -609,7 +616,7 @@ bool CarlaJackAppClient::handleRtData()
                     const BridgeTimeInfo& bridgeTimeInfo(fShmRtClientControl.data->timeInfo);
 
                     fServer.playing        = bridgeTimeInfo.playing;
-                    fServer.position.frame = bridgeTimeInfo.frame;
+                    fServer.position.frame = static_cast<jack_nframes_t>(bridgeTimeInfo.frame);
                     fServer.position.usecs = bridgeTimeInfo.usecs;
 
                     if (bridgeTimeInfo.validFlags & kPluginBridgeTimeInfoValidBBT)
@@ -687,7 +694,7 @@ bool CarlaJackAppClient::handleRtData()
                             }
                             if (i < fServer.numAudioIns)
                             {
-                                const std::size_t remainingBufferSize = fServer.bufferSize * (fServer.numAudioIns - i);
+                                const std::size_t remainingBufferSize = fServer.bufferSize * static_cast<uint8_t>(fServer.numAudioIns - i);
                                 //fdataReal += remainingBufferSize;
                                 fdataCopy += remainingBufferSize;
                             }
@@ -715,7 +722,7 @@ bool CarlaJackAppClient::handleRtData()
                             }
                             if (i < fServer.numAudioOuts)
                             {
-                                const std::size_t remainingBufferSize = fServer.bufferSize * (fServer.numAudioOuts - i);
+                                const std::size_t remainingBufferSize = fServer.bufferSize * static_cast<uint8_t>(fServer.numAudioOuts - i);
                                 carla_zeroFloats(fdataCopy, remainingBufferSize);
                                 //fdataCopy += remainingBufferSize;
                             }
@@ -1158,14 +1165,23 @@ void CarlaJackAppClient::runNonRealtimeThread()
     carla_debug("CarlaJackAppClient runNonRealtimeThread FINISHED");
 }
 
+CARLA_BACKEND_END_NAMESPACE
+
 // ---------------------------------------------------------------------------------------------------------------------
 
+using CarlaBackend::CarlaJackAppClient;
+using CarlaBackend::JackClientState;
+
 static CarlaJackAppClient gClient;
+
+CARLA_BACKEND_START_NAMESPACE
 
 static int carla_interposed_callback(int cb_action, void* ptr)
 {
     return gClient.handleInterposerCallback(cb_action, ptr);
 }
+
+CARLA_BACKEND_END_NAMESPACE
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -1246,8 +1262,6 @@ pthread_t jack_client_thread_id(jack_client_t* client)
 
     return jackAppPtr->getRealtimeThreadId();
 }
-
-CARLA_BACKEND_END_NAMESPACE
 
 // ---------------------------------------------------------------------------------------------------------------------
 

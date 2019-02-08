@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -16,10 +16,6 @@
  */
 
 #include "libjack.hpp"
-
-#define JACK_UUID_SIZE 36
-#define JACK_UUID_STRING_SIZE (JACK_UUID_SIZE+1) /* includes trailing null */
-#define JACK_UUID_EMPTY_INITIALIZER 0
 
 CARLA_BACKEND_USE_NAMESPACE
 

@@ -51,7 +51,7 @@ jack_nframes_t jack_get_sample_rate(jack_client_t* client)
     JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
 
-    return jclient->server.sampleRate;
+    return static_cast<jack_nframes_t>(jclient->server.sampleRate);
 }
 
 CARLA_EXPORT

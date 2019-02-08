@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -40,7 +40,9 @@ jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, co
         if (flags & JackPortIsInput)
         {
             const std::size_t index = jclient->audioIns.count();
-            JackPortState* const port = new JackPortState(jclient->name, port_name, index, flags,
+            JackPortState* const port = new JackPortState(jclient->name, port_name,
+                                                          static_cast<uint>(index),
+                                                          static_cast<int>(flags),
                                                           false, false, index < jserver.numAudioIns);
 
             {
@@ -55,7 +57,9 @@ jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, co
         if (flags & JackPortIsOutput)
         {
             const std::size_t index = jclient->audioOuts.count();
-            JackPortState* const port = new JackPortState(jclient->name, port_name, index, flags,
+            JackPortState* const port = new JackPortState(jclient->name, port_name,
+                                                          static_cast<uint>(index),
+                                                          static_cast<int>(flags),
                                                           false, false, index < jserver.numAudioOuts);
 
             {
@@ -76,7 +80,9 @@ jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, co
         if (flags & JackPortIsInput)
         {
             const std::size_t index = jclient->midiIns.count();
-            JackPortState* const port = new JackPortState(jclient->name, port_name, index, flags,
+            JackPortState* const port = new JackPortState(jclient->name, port_name,
+                                                          static_cast<uint>(index),
+                                                          static_cast<int>(flags),
                                                           true, false, index < jserver.numMidiIns);
 
             {
@@ -91,7 +97,9 @@ jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, co
         if (flags & JackPortIsOutput)
         {
             const std::size_t index = jclient->midiOuts.count();
-            JackPortState* const port = new JackPortState(jclient->name, port_name, index, flags,
+            JackPortState* const port = new JackPortState(jclient->name, port_name,
+                                                          static_cast<uint>(index),
+                                                          static_cast<int>(flags),
                                                           true, false, index < jserver.numMidiOuts);
 
             {
@@ -183,7 +191,7 @@ jack_uuid_t jack_port_uuid(const jack_port_t* port)
 {
     carla_debug("%s(%p)", __FUNCTION__, port);
 
-    JackPortState* const jport = (JackPortState*)port;
+    const JackPortState* const jport = (const JackPortState*)port;
     CARLA_SAFE_ASSERT_RETURN(jport != nullptr, 0);
 
     return jport->uuid;
@@ -194,7 +202,7 @@ const char* jack_port_name(const jack_port_t* port)
 {
     carla_debug("%s(%p)", __FUNCTION__, port);
 
-    JackPortState* const jport = (JackPortState*)port;
+    const JackPortState* const jport = (const JackPortState*)port;
     CARLA_SAFE_ASSERT_RETURN(jport != nullptr, nullptr);
 
     return jport->fullname;
@@ -205,7 +213,7 @@ const char* jack_port_short_name(const jack_port_t* port)
 {
     carla_debug("%s(%p)", __FUNCTION__, port);
 
-    JackPortState* const jport = (JackPortState*)port;
+    const JackPortState* const jport = (const JackPortState*)port;
     CARLA_SAFE_ASSERT_RETURN(jport != nullptr, nullptr);
 
     return jport->name;
@@ -216,7 +224,7 @@ int jack_port_flags(const jack_port_t* port)
 {
     carla_debug("%s(%p)", __FUNCTION__, port);
 
-    JackPortState* const jport = (JackPortState*)port;
+    const JackPortState* const jport = (const JackPortState*)port;
     CARLA_SAFE_ASSERT_RETURN(jport != nullptr, 0);
 
     return jport->flags;
@@ -227,7 +235,7 @@ const char* jack_port_type(const jack_port_t* port)
 {
     carla_debug("%s(%p)", __FUNCTION__, port);
 
-    JackPortState* const jport = (JackPortState*)port;
+    const JackPortState* const jport = (const JackPortState*)port;
     CARLA_SAFE_ASSERT_RETURN(jport != nullptr, nullptr);
 
     static const char* const kAudioType = JACK_DEFAULT_AUDIO_TYPE;
@@ -241,7 +249,7 @@ uint32_t jack_port_type_id(const jack_port_t* port)
 {
     carla_debug("%s(%p)", __FUNCTION__, port);
 
-    JackPortState* const jport = (JackPortState*)port;
+    const JackPortState* const jport = (const JackPortState*)port;
     CARLA_SAFE_ASSERT_RETURN(jport != nullptr, 0);
 
     return jport->isMidi ? 1 : 0;
@@ -252,7 +260,7 @@ uint32_t jack_port_type_id(const jack_port_t* port)
 CARLA_EXPORT
 int jack_port_is_mine(const jack_client_t*, const jack_port_t* port)
 {
-    JackPortState* const jport = (JackPortState*)port;
+    const JackPortState* const jport = (const JackPortState*)port;
     CARLA_SAFE_ASSERT_RETURN(jport != nullptr, 0);
 
     return jport->isSystem ? 0 : 1;
@@ -261,7 +269,7 @@ int jack_port_is_mine(const jack_client_t*, const jack_port_t* port)
 CARLA_EXPORT
 int jack_port_connected(const jack_port_t* port)
 {
-    JackPortState* const jport = (JackPortState*)port;
+    const JackPortState* const jport = (const JackPortState*)port;
     CARLA_SAFE_ASSERT_RETURN(jport != nullptr, 0);
 
     return jport->isConnected ? 1 : 0;
@@ -272,7 +280,7 @@ int jack_port_connected_to(const jack_port_t* port, const char* port_name)
 {
     carla_stderr2("%s(%p, %s) WIP", __FUNCTION__, port, port_name);
 
-    JackPortState* const jport = (JackPortState*)port;
+    const JackPortState* const jport = (const JackPortState*)port;
     CARLA_SAFE_ASSERT_RETURN(jport != nullptr, 0);
 
     if (! jport->isConnected)
@@ -382,10 +390,10 @@ int jack_port_unset_alias(jack_port_t* port, const char* alias)
 }
 
 CARLA_EXPORT
-int jack_port_get_aliases(const jack_port_t*, const char* aliases[2])
+int jack_port_get_aliases(const jack_port_t*, char* const aliases[2])
 {
-    static const char nullChar = '\0';
-    aliases[0] = aliases[1] = &nullChar;
+    *aliases[0] = '\0';
+    *aliases[1] = '\0';
     return 0;
 }
 

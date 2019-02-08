@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -44,7 +44,7 @@
 #endif
 
 // must be last include
-#include "jackbridge/JackBridge.hpp"
+#include "api.hpp"
 
 // small check to not hurt myself
 #ifdef JACKBRIDGE_DIRECT
@@ -100,7 +100,7 @@ struct JackPortState {
     const char* fullname;
     void* buffer;
     uint index;
-    uint flags;
+    int flags;
     jack_uuid_t uuid;
     bool isMidi : 1;
     bool isSystem : 1;
@@ -119,7 +119,7 @@ struct JackPortState {
           isConnected(false),
           unused(false) {}
 
-    JackPortState(const char* const clientName, const char* const portName, const uint i, const uint f,
+    JackPortState(const char* const clientName, const char* const portName, const uint i, const int f,
                   const bool midi, const bool sys, const bool con)
         : name(portName != nullptr ? strdup(portName) : nullptr),
           fullname(nullptr),

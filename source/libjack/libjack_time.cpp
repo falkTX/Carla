@@ -38,7 +38,7 @@ jack_nframes_t jack_frame_time(const jack_client_t* client)
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
 
     // FIXME
-    return jclient->server.position.usecs;
+    return static_cast<jack_nframes_t>(jclient->server.position.usecs);
 }
 
 CARLA_EXPORT
@@ -48,7 +48,7 @@ jack_nframes_t jack_last_frame_time(const jack_client_t* client)
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
 
     // FIXME
-    return jclient->server.position.usecs;
+    return static_cast<jack_nframes_t>(jclient->server.position.usecs);
 }
 
 // int jack_get_cycle_times(const jack_client_t *client,
@@ -65,7 +65,7 @@ jack_time_t jack_frames_to_time(const jack_client_t* client, jack_nframes_t fram
     const JackClientState* const jclient = (const JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
 
-    return static_cast<double>(frames) / jclient->server.sampleRate * 1000000.0;
+    return static_cast<jack_time_t>(static_cast<double>(frames) / jclient->server.sampleRate * 1000000.0);
 }
 
 CARLA_EXPORT
@@ -74,7 +74,7 @@ jack_nframes_t jack_time_to_frames(const jack_client_t* client, jack_time_t time
     const JackClientState* const jclient = (const JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
 
-    return static_cast<double>(time) / 1000000.0 * jclient->server.sampleRate;
+    return static_cast<jack_nframes_t>(static_cast<double>(time) / 1000000.0 * jclient->server.sampleRate);
 }
 
 CARLA_EXPORT
@@ -82,7 +82,7 @@ jack_time_t jack_get_time(void)
 {
     timespec t;
     clock_gettime(CLOCK_MONOTONIC, &t);
-    return t.tv_sec * 1000000 + t.tv_nsec / 1000;
+    return static_cast<jack_time_t>(t.tv_sec * 1000000 + t.tv_nsec / 1000);
 }
 
 // --------------------------------------------------------------------------------------------------------------------
