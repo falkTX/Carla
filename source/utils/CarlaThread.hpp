@@ -112,12 +112,12 @@ public:
 # endif
                 pthread_attr_setschedparam(&attr, &sched_param)             == 0)
             {
-                carla_stdout("CarlaThread with realtime priority successful");
+                carla_stdout("CarlaThread setup with realtime priority successful");
             }
             else
 #endif
             {
-                carla_stdout("CarlaThread with realtime priority failed, going with normal priority instead");
+                carla_stdout("CarlaThread setup with realtime priority failed, going with normal priority instead");
                 pthread_attr_destroy(&attr);
                 pthread_attr_init(&attr);
             }
@@ -127,8 +127,16 @@ public:
 
         fShouldExit = false;
 
-        const bool ok = pthread_create(&handle, &attr, _entryPoint, this) == 0;
+        bool ok = pthread_create(&handle, &attr, _entryPoint, this) == 0;
         pthread_attr_destroy(&attr);
+
+        if (withRealtimePriority && !ok)
+       {
+            carla_stdout("CarlaThread with realtime priority failed on creation, going with normal priority instead");
+            pthread_attr_init(&attr);
+            ok = pthread_create(&handle, &attr, _entryPoint, this) == 0;
+            pthread_attr_destroy(&attr);
+       }
 
         CARLA_SAFE_ASSERT_RETURN(ok, false);
 #ifdef PTW32_DLLPORT
