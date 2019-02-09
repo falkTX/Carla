@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -24,9 +24,12 @@ CARLA_BACKEND_USE_NAMESPACE
 CARLA_EXPORT
 jack_nframes_t jack_midi_get_event_count(void* buf)
 {
-    JackMidiPortBuffer* const jmidibuf((JackMidiPortBuffer*)buf);
-    CARLA_SAFE_ASSERT_RETURN(jmidibuf != nullptr, 0);
-    CARLA_SAFE_ASSERT_RETURN(jmidibuf->isInput, 0);
+    const JackMidiPortBufferBase* const jbasebuf((const JackMidiPortBufferBase*)buf);
+    CARLA_SAFE_ASSERT_RETURN(jbasebuf != nullptr, 0);
+    CARLA_SAFE_ASSERT_RETURN(jbasebuf->isInput, 0);
+    CARLA_SAFE_ASSERT_RETURN(jbasebuf->isValid, 0);
+
+    const JackMidiPortBufferOnStack* const jmidibuf((const JackMidiPortBufferOnStack*)jbasebuf);
 
     return jmidibuf->count;
 }
@@ -34,9 +37,12 @@ jack_nframes_t jack_midi_get_event_count(void* buf)
 CARLA_EXPORT
 int jack_midi_event_get(jack_midi_event_t* ev, void* buf, uint32_t index)
 {
-    JackMidiPortBuffer* const jmidibuf((JackMidiPortBuffer*)buf);
-    CARLA_SAFE_ASSERT_RETURN(jmidibuf != nullptr, EFAULT);
-    CARLA_SAFE_ASSERT_RETURN(jmidibuf->isInput, EFAULT);
+    const JackMidiPortBufferBase* const jbasebuf((const JackMidiPortBufferBase*)buf);
+    CARLA_SAFE_ASSERT_RETURN(jbasebuf != nullptr, EFAULT);
+    CARLA_SAFE_ASSERT_RETURN(jbasebuf->isInput, EFAULT);
+    CARLA_SAFE_ASSERT_RETURN(jbasebuf->isValid, EFAULT);
+
+    const JackMidiPortBufferOnStack* const jmidibuf((const JackMidiPortBufferOnStack*)jbasebuf);
 
     if (index >= jmidibuf->count)
         return ENODATA;
@@ -48,17 +54,18 @@ int jack_midi_event_get(jack_midi_event_t* ev, void* buf, uint32_t index)
 CARLA_EXPORT
 void jack_midi_clear_buffer(void* buf)
 {
-    JackMidiPortBuffer* const jmidibuf((JackMidiPortBuffer*)buf);
-    CARLA_SAFE_ASSERT_RETURN(jmidibuf != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(! jmidibuf->isInput,);
+    JackMidiPortBufferBase* const jbasebuf((JackMidiPortBufferBase*)buf);
+    CARLA_SAFE_ASSERT_RETURN(jbasebuf != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(! jbasebuf->isInput,);
+
+    if (! jbasebuf->isValid)
+        return;
+
+    JackMidiPortBufferOnStack* const jmidibuf((JackMidiPortBufferOnStack*)jbasebuf);
 
     jmidibuf->count = 0;
-
-    if (jmidibuf->bufferPool != nullptr)
-    {
-        jmidibuf->bufferPoolPos = 0;
-        std::memset(jmidibuf->bufferPool, 0, JackMidiPortBuffer::kBufferPoolSize);
-    }
+    jmidibuf->bufferPoolPos = 0;
+    std::memset(jmidibuf->bufferPool, 0, JackMidiPortBufferBase::kBufferPoolSize);
 }
 
 CARLA_EXPORT
@@ -70,24 +77,27 @@ void jack_midi_reset_buffer(void* buf)
 CARLA_EXPORT
 size_t jack_midi_max_event_size(void*)
 {
-    return JackMidiPortBuffer::kMaxEventSize;
+    return JackMidiPortBufferBase::kMaxEventSize;
 }
 
 CARLA_EXPORT
 jack_midi_data_t* jack_midi_event_reserve(void* buf, jack_nframes_t frame, size_t size)
 {
-    JackMidiPortBuffer* const jmidibuf((JackMidiPortBuffer*)buf);
-    CARLA_SAFE_ASSERT_RETURN(jmidibuf != nullptr, nullptr);
-    CARLA_SAFE_ASSERT_RETURN(! jmidibuf->isInput, nullptr);
-    CARLA_SAFE_ASSERT_RETURN(size < JackMidiPortBuffer::kMaxEventSize, nullptr);
+    JackMidiPortBufferBase* const jbasebuf((JackMidiPortBufferBase*)buf);
+    CARLA_SAFE_ASSERT_RETURN(jbasebuf != nullptr, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(! jbasebuf->isInput, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(jbasebuf->isValid, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(size < JackMidiPortBufferBase::kMaxEventSize, nullptr);
 
     // broken jack applicatons, wow...
     if (size == 0)
         return nullptr;
 
-    if (jmidibuf->count >= JackMidiPortBuffer::kMaxEventCount)
+    JackMidiPortBufferOnStack* const jmidibuf((JackMidiPortBufferOnStack*)jbasebuf);
+
+    if (jmidibuf->count >= JackMidiPortBufferBase::kMaxEventCount)
         return nullptr;
-    if (jmidibuf->bufferPoolPos + size >= JackMidiPortBuffer::kBufferPoolSize)
+    if (jmidibuf->bufferPoolPos + size >= JackMidiPortBufferBase::kBufferPoolSize)
         return nullptr;
 
     jack_midi_data_t* const jmdata = jmidibuf->bufferPool + jmidibuf->bufferPoolPos;
@@ -101,18 +111,21 @@ jack_midi_data_t* jack_midi_event_reserve(void* buf, jack_nframes_t frame, size_
 CARLA_EXPORT
 int jack_midi_event_write(void* buf, jack_nframes_t frame, const jack_midi_data_t* data, size_t size)
 {
-    JackMidiPortBuffer* const jmidibuf((JackMidiPortBuffer*)buf);
-    CARLA_SAFE_ASSERT_RETURN(jmidibuf != nullptr, EFAULT);
-    CARLA_SAFE_ASSERT_RETURN(! jmidibuf->isInput, EINVAL);
-    CARLA_SAFE_ASSERT_RETURN(size < JackMidiPortBuffer::kMaxEventSize, ENOBUFS);
+    JackMidiPortBufferBase* const jbasebuf((JackMidiPortBufferBase*)buf);
+    CARLA_SAFE_ASSERT_RETURN(jbasebuf != nullptr, EFAULT);
+    CARLA_SAFE_ASSERT_RETURN(! jbasebuf->isInput, EINVAL);
+    CARLA_SAFE_ASSERT_RETURN(jbasebuf->isValid, EINVAL);
+    CARLA_SAFE_ASSERT_RETURN(size < JackMidiPortBufferBase::kMaxEventSize, ENOBUFS);
 
     // broken jack applicatons, wow...
     if (size == 0)
         return EINVAL;
 
-    if (jmidibuf->count >= JackMidiPortBuffer::kMaxEventCount)
+    JackMidiPortBufferOnStack* const jmidibuf((JackMidiPortBufferOnStack*)jbasebuf);
+
+    if (jmidibuf->count >= JackMidiPortBufferBase::kMaxEventCount)
         return ENOBUFS;
-    if (jmidibuf->bufferPoolPos + size >= JackMidiPortBuffer::kBufferPoolSize)
+    if (jmidibuf->bufferPoolPos + size >= JackMidiPortBufferBase::kBufferPoolSize)
         return ENOBUFS;
 
     jack_midi_data_t* const jmdata = jmidibuf->bufferPool + jmidibuf->bufferPoolPos;

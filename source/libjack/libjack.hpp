@@ -59,40 +59,43 @@ class CarlaJackAppClient;
 struct JackClientState;
 struct JackServerState;
 
-struct JackMidiPortBuffer {
+struct JackMidiPortBufferBase {
     static const uint8_t kMaxEventSize   = 128;
     static const size_t  kMaxEventCount  = 512;
     static const size_t  kBufferPoolSize = kMaxEventCount*8;
 
-    uint16_t count;
     bool isInput;
-    jack_midi_event_t* events;
+    bool isValid;
+};
 
+struct JackMidiPortBufferOnStack : JackMidiPortBufferBase {
     size_t bufferPoolPos;
-    jack_midi_data_t* bufferPool;
+    uint16_t count;
 
-    JackMidiPortBuffer()
-        : count(0),
-          isInput(true),
-          events(new jack_midi_event_t[kMaxEventCount]),
-          bufferPoolPos(0),
-          bufferPool(new jack_midi_data_t[kBufferPoolSize]) {}
+    jack_midi_event_t events[kMaxEventCount];
+    jack_midi_data_t bufferPool[kBufferPoolSize];
 
-    // for unused ports
-    JackMidiPortBuffer(const bool input, const char*)
-        : count(0),
-          isInput(input),
-          events(nullptr),
-          bufferPoolPos(kBufferPoolSize),
-          bufferPool(nullptr) {}
-
-    ~JackMidiPortBuffer()
+    JackMidiPortBufferOnStack()
+        : bufferPoolPos(0),
+          count(0),
+          events(),
+          bufferPool()
     {
-        delete[] events;
-        delete[] bufferPool;
+        isInput = true;
+        isValid = true;
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(JackMidiPortBuffer)
+    CARLA_DECLARE_NON_COPY_STRUCT(JackMidiPortBufferOnStack)
+};
+
+struct JackMidiPortBufferDummy : JackMidiPortBufferBase {
+    JackMidiPortBufferDummy(const bool input)
+    {
+        isInput = input;
+        isValid = false;
+    }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(JackMidiPortBufferDummy)
 };
 
 struct JackPortState {

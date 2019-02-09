@@ -471,7 +471,7 @@ size_t jack_port_type_get_buffer_size(jack_client_t* client, const char* port_ty
     CARLA_SAFE_ASSERT_RETURN(port_type != nullptr && port_type[0] != '\0', 0);
 
     if (std::strcmp(port_type, JACK_DEFAULT_MIDI_TYPE) == 0)
-        return JackMidiPortBuffer::kMaxEventSize;
+        return JackMidiPortBufferBase::kMaxEventSize;
 
     return 0;
 

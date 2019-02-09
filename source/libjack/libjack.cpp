@@ -121,8 +121,8 @@ public:
           fShmNonRtServerControl(),
           fAudioPoolCopy(nullptr),
           fAudioTmpBuf(nullptr),
-          fDummyMidiInBuffer(true, "ignored"),
-          fDummyMidiOutBuffer(false, "ignored"),
+          fDummyMidiInBuffer(true),
+          fDummyMidiOutBuffer(false),
           fMidiInBuffers(nullptr),
           fMidiOutBuffers(nullptr),
           fIsOffline(false),
@@ -288,10 +288,10 @@ private:
     float* fAudioPoolCopy;
     float* fAudioTmpBuf;
 
-    JackMidiPortBuffer fDummyMidiInBuffer;
-    JackMidiPortBuffer fDummyMidiOutBuffer;
-    JackMidiPortBuffer* fMidiInBuffers;
-    JackMidiPortBuffer* fMidiOutBuffers;
+    JackMidiPortBufferDummy fDummyMidiInBuffer;
+    JackMidiPortBufferDummy fDummyMidiOutBuffer;
+    JackMidiPortBufferOnStack* fMidiInBuffers;
+    JackMidiPortBufferOnStack* fMidiOutBuffers;
 
     char fBaseNameAudioPool[6+1];
     char fBaseNameRtClientControl[6+1];
@@ -561,17 +561,17 @@ bool CarlaJackAppClient::handleRtData()
             const uint8_t  size(fShmRtClientControl.readByte());
             CARLA_SAFE_ASSERT_BREAK(size > 0);
 
-            if (port >= fServer.numMidiIns || size > JackMidiPortBuffer::kMaxEventSize || ! fRealtimeThreadMutex.tryLock())
+            if (port >= fServer.numMidiIns || size > JackMidiPortBufferBase::kMaxEventSize || ! fRealtimeThreadMutex.tryLock())
             {
                 for (uint8_t i=0; i<size; ++i)
                     fShmRtClientControl.readByte();
                 break;
             }
 
-            JackMidiPortBuffer& midiPortBuf(fMidiInBuffers[port]);
+            JackMidiPortBufferOnStack& midiPortBuf(fMidiInBuffers[port]);
 
-            if (midiPortBuf.count < JackMidiPortBuffer::kMaxEventCount &&
-                midiPortBuf.bufferPoolPos + size < JackMidiPortBuffer::kBufferPoolSize)
+            if (midiPortBuf.count < JackMidiPortBufferBase::kMaxEventCount &&
+                midiPortBuf.bufferPoolPos + size < JackMidiPortBufferBase::kBufferPoolSize)
             {
                 jack_midi_event_t& ev(midiPortBuf.events[midiPortBuf.count++]);
 
@@ -822,7 +822,7 @@ bool CarlaJackAppClient::handleRtData()
 
                     for (uint8_t i=0; i<fServer.numMidiOuts; ++i)
                     {
-                        JackMidiPortBuffer& midiPortBuf(fMidiOutBuffers[i]);
+                        JackMidiPortBufferOnStack& midiPortBuf(fMidiOutBuffers[i]);
 
                         for (uint16_t j=0; j<midiPortBuf.count; ++j)
                         {
@@ -1054,7 +1054,7 @@ void CarlaJackAppClient::runNonRealtimeThread()
 
     if (fServer.numMidiIns > 0)
     {
-        fMidiInBuffers = new JackMidiPortBuffer[fServer.numMidiIns];
+        fMidiInBuffers = new JackMidiPortBufferOnStack[fServer.numMidiIns];
 
         for (uint8_t i=0; i<fServer.numMidiIns; ++i)
             fMidiInBuffers[i].isInput = true;
@@ -1062,7 +1062,7 @@ void CarlaJackAppClient::runNonRealtimeThread()
 
     if (fServer.numMidiOuts > 0)
     {
-        fMidiOutBuffers = new JackMidiPortBuffer[fServer.numMidiOuts];
+        fMidiOutBuffers = new JackMidiPortBufferOnStack[fServer.numMidiOuts];
 
         for (uint8_t i=0; i<fServer.numMidiOuts; ++i)
             fMidiOutBuffers[i].isInput = false;

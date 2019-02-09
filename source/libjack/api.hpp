@@ -27,7 +27,7 @@
 extern "C" {
 
 typedef uint32_t jack_port_type_id_t;
-typedef void *(*JackThreadCallback)(void* arg);
+typedef void*(*JackThreadCallback)(void* arg);
 
 int jack_carla_interposed_action(int, int, void*);
 
@@ -40,9 +40,9 @@ jack_client_t* jack_client_open(const char*, jack_options_t, jack_status_t*, ...
 jack_client_t* jack_client_new(const char*);
 int jack_client_close(jack_client_t*);
 int jack_client_name_size(void);
-char * jack_get_client_name(jack_client_t*);
-char *jack_get_uuid_for_client_name(jack_client_t*, const char*);
-char *jack_get_client_name_by_uuid(jack_client_t*, const char*);
+char* jack_get_client_name(jack_client_t*);
+char* jack_get_uuid_for_client_name(jack_client_t*, const char*);
+char* jack_get_client_name_by_uuid(jack_client_t*, const char*);
 int jack_internal_client_new(const char*, const char*, const char*);
 void jack_internal_client_close(const char*);
 int jack_activate(jack_client_t*);
@@ -62,7 +62,7 @@ int jack_set_freewheel_callback(jack_client_t*, JackFreewheelCallback, void*);
 int jack_set_buffer_size_callback(jack_client_t*, JackBufferSizeCallback, void*);
 int jack_set_sample_rate_callback(jack_client_t*, JackSampleRateCallback, void*);
 int jack_set_client_registration_callback(jack_client_t*, JackClientRegistrationCallback, void*);
- int jack_set_port_registration_callback(jack_client_t*, JackPortRegistrationCallback, void*);
+int jack_set_port_registration_callback(jack_client_t*, JackPortRegistrationCallback, void*);
 int jack_set_port_connect_callback(jack_client_t*, JackPortConnectCallback, void*);
 int jack_set_port_rename_callback(jack_client_t*, JackPortRenameCallback, void*);
 int jack_set_graph_order_callback(jack_client_t*, JackGraphOrderCallback, void*);
@@ -74,14 +74,14 @@ jack_nframes_t jack_get_sample_rate(jack_client_t*);
 jack_nframes_t jack_get_buffer_size(jack_client_t*);
 int jack_engine_takeover_timebase(jack_client_t*);
 float jack_cpu_load(jack_client_t*);
-jack_port_t * jack_port_register(jack_client_t*, const char*, const char*, unsigned long, unsigned long);
+jack_port_t* jack_port_register(jack_client_t*, const char*, const char*, unsigned long, unsigned long);
 int jack_port_unregister(jack_client_t*, jack_port_t*);
-void * jack_port_get_buffer(jack_port_t*, jack_nframes_t);
+void* jack_port_get_buffer(jack_port_t*, jack_nframes_t);
 jack_uuid_t jack_port_uuid(const jack_port_t*);
-const char * jack_port_name(const jack_port_t*);
-const char * jack_port_short_name(const jack_port_t*);
+const char* jack_port_name(const jack_port_t*);
+const char* jack_port_short_name(const jack_port_t*);
 int jack_port_flags(const jack_port_t*);
-const char * jack_port_type(const jack_port_t*);
+const char* jack_port_type(const jack_port_t*);
 jack_port_type_id_t jack_port_type_id(const jack_port_t*);
 int jack_port_is_mine(const jack_client_t*, const jack_port_t*);
 int jack_port_connected(const jack_port_t*);
@@ -124,11 +124,11 @@ jack_nframes_t jack_time_to_frames(const jack_client_t*, jack_time_t);
 jack_time_t jack_get_time(void);
 void jack_free(void*);
 
-extern void(*jack_error_callback)(const char *msg);
-void jack_set_error_function(void (*func)(const char *));
+extern void(*jack_error_callback)(const char*msg);
+void jack_set_error_function(void (*func)(const char*));
 
-extern void (*jack_info_callback)(const char *msg);
-void jack_set_info_function(void (*func)(const char *));
+extern void (*jack_info_callback)(const char*msg);
+void jack_set_info_function(void (*func)(const char*));
 
 // --------------------------------------------------------------------------------------------------------------------
 // medadata.h
@@ -168,7 +168,7 @@ uint32_t jack_midi_get_lost_event_count(void*);
 int jack_client_real_time_priority(jack_client_t*);
 int jack_client_max_real_time_priority(jack_client_t*);
 int jack_acquire_real_time_scheduling(pthread_t, int );
-int jack_client_create_thread(jack_client_t*, pthread_t*, int, int, void *(*start_routine)(void*), void*);
+int jack_client_create_thread(jack_client_t*, pthread_t*, int, int, void*(*start_routine)(void*), void*);
 int jack_drop_real_time_scheduling(pthread_t);
 int jack_client_stop_thread(jack_client_t*, pthread_t);
 int jack_client_kill_thread(jack_client_t*, pthread_t);
@@ -222,12 +222,12 @@ jack_uuid_t jack_client_uuid_generate();
 jack_uuid_t jack_port_uuid_generate(uint32_t port_id);
 uint32_t jack_uuid_to_index(jack_uuid_t);
 
-int  jack_uuid_compare(jack_uuid_t, jack_uuid_t);
+int jack_uuid_compare(jack_uuid_t, jack_uuid_t);
 void jack_uuid_copy(jack_uuid_t* dst, jack_uuid_t src);
 void jack_uuid_clear(jack_uuid_t*);
-int  jack_uuid_parse(const char *buf, jack_uuid_t*);
+int jack_uuid_parse(const char*buf, jack_uuid_t*);
 void jack_uuid_unparse(jack_uuid_t, char buf[JACK_UUID_STRING_SIZE]);
-int  jack_uuid_empty(jack_uuid_t);
+int jack_uuid_empty(jack_uuid_t);
 
 // --------------------------------------------------------------------------------------------------------------------
 
