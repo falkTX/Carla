@@ -151,9 +151,8 @@ public:
         for (int i=4; --i >= 0;) {
             CARLA_SAFE_ASSERT_RETURN(libjackSetup[i] >= '0' && libjackSetup[i] <= '0'+64,);
         }
-        for (int i=6; --i >= 4;) {
-            CARLA_SAFE_ASSERT_RETURN(libjackSetup[i] >= '0' && libjackSetup[i] < '0'+0x4f,);
-        }
+        CARLA_SAFE_ASSERT_RETURN(libjackSetup[4] >= '0' && libjackSetup[4] <= '0' + LIBJACK_SESSION_MANAGER_NSM,);
+        CARLA_SAFE_ASSERT_RETURN(libjackSetup[5] >= '0' && libjackSetup[5] < '0'+0x4f,);
 
         std::memcpy(fBaseNameAudioPool,          shmIds+6*0, 6);
         std::memcpy(fBaseNameRtClientControl,    shmIds+6*1, 6);
@@ -170,8 +169,8 @@ public:
         fServer.numMidiIns   = static_cast<uint8_t>(libjackSetup[2] - '0');
         fServer.numMidiOuts  = static_cast<uint8_t>(libjackSetup[3] - '0');
 
-        fSessionManager = libjackSetup[4] - '0';
-        fSetupHints     = libjackSetup[5] - '0';
+        fSessionManager = static_cast<uint>(libjackSetup[4] - '0');
+        fSetupHints     = static_cast<uint>(libjackSetup[5] - '0');
 
         jack_carla_interposed_action(LIBJACK_INTERPOSER_ACTION_SET_HINTS_AND_CALLBACK, fSetupHints, (void*)carla_interposed_callback);
         jack_carla_interposed_action(LIBJACK_INTERPOSER_ACTION_SET_SESSION_MANAGER, fSessionManager, nullptr);
@@ -302,8 +301,8 @@ private:
     volatile bool fIsReady;
     int64_t fLastPingTime;
 
-    int fSessionManager;
-    int fSetupHints;
+    uint fSessionManager;
+    uint fSetupHints;
 
     CarlaJackRealtimeThread    fRealtimeThread;
     CarlaJackNonRealtimeThread fNonRealtimeThread;
@@ -950,7 +949,7 @@ bool CarlaJackAppClient::handleNonRtData()
 
         case kPluginBridgeNonRtClientPrepareForSave:
             {
-                if (fSessionManager == 1 && std::getenv("NSM_URL") == nullptr) // auto
+                if (fSessionManager == LIBJACK_SESSION_MANAGER_AUTO && std::getenv("NSM_URL") == nullptr)
                 {
                     struct sigaction sig;
                     carla_zeroStruct(sig);
@@ -958,10 +957,10 @@ bool CarlaJackAppClient::handleNonRtData()
                     sigaction(SIGUSR1, nullptr, &sig);
 
                     if (sig.sa_handler != nullptr)
-                        fSessionManager = 3;
+                        fSessionManager = LIBJACK_SESSION_MANAGER_LADISH;
                 }
 
-                if (fSessionManager == 3)
+                if (fSessionManager == LIBJACK_SESSION_MANAGER_LADISH)
                     ::kill(::getpid(), SIGUSR1);
 
                 const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
