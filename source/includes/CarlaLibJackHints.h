@@ -49,6 +49,8 @@ enum InterposerAction {
     LIBJACK_INTERPOSER_ACTION_CLOSE_EVERYTHING,
 };
 
+int jack_carla_interposed_action(uint action, uint value, void* ptr);
+
 #ifdef __cplusplus
 }
 #endif
