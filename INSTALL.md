@@ -25,14 +25,14 @@ But if you want the frontend (which is likely), you will need PyQt5 (python3 ver
 
 You likely will also want:
 
- - libmagic (for auto-detection of binary types, needed for plugin-bridges)
- - liblo    (for OSC support, also a requirement for DSSI UIs)
+ - libmagic/file (for auto-detection of binary types, needed for plugin-bridges)
+ - liblo         (for OSC support, also a requirement for DSSI UIs)
 
 Optional for extra Linux-only engine features:
 
  - ALSA
  - PulseAudio
- - X11 (internal/LV2/VST X11 UI support)
+ - X11 (LV2/VST X11 UI support)
 
 Optional for extended LV2 UIs support: (Linux only)
 
@@ -57,11 +57,18 @@ $ make features
 To find out which dependencies are missing.
 
 
-Under debian based systems, you can use this command to install all dependencies:
+Under Debian based systems, you can use this command to install all dependencies:
 ```
 sudo apt install python3-pyqt5.qtsvg python3-rdflib pyqt5-dev-tools \
   libmagic-dev liblo-dev libasound2-dev libpulse-dev libx11-dev \
   libgtk2.0-dev libgtk-3-dev libqt4-dev qtbase5-dev libfluidsynth-dev
+```
+
+Under Fedora, you can use the following command instead:
+```
+sudo dnf install python3-qt5-devel python3-rdflib \
+  file-devel liblo-devel alsa-lib-devel pulseaudio-libs-devel libX11-devel
+  gtk2-devel gtk3-devel qt4-devel qt5-devel fluidsynth-devel libsndfile-devel
 ```
 
 ## BUILD BRIDGES
