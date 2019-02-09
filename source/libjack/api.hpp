@@ -18,8 +18,7 @@
 #ifndef CARLA_LIBJACK_API_H_INCLUDED
 #define CARLA_LIBJACK_API_H_INCLUDED
 
-#include "CarlaDefines.h"
-
+#include "CarlaLibJackHints.h"
 #include "jackbridge/JackBridge.hpp"
 
 #include <pthread.h>
@@ -28,8 +27,6 @@ extern "C" {
 
 typedef uint32_t jack_port_type_id_t;
 typedef void*(*JackThreadCallback)(void* arg);
-
-int jack_carla_interposed_action(int, int, void*);
 
 // --------------------------------------------------------------------------------------------------------------------
 // jack.h

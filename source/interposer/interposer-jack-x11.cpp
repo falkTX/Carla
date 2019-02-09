@@ -15,13 +15,11 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include "CarlaLibJackHints.h"
 #include "CarlaUtils.hpp"
 
 #include <dlfcn.h>
 #include <X11/Xlib.h>
-
-CARLA_EXPORT
-int jack_carla_interposed_action(int action, int value, void* ptr);
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -81,8 +79,8 @@ typedef enum {
 static Display* gCurrentlyMappedDisplay = nullptr;
 static Window gCurrentlyMappedWindow = 0;
 static CarlaInterposedCallback gInterposedCallback = nullptr;
-static int gInterposedSessionManager = 0;
-static int gInterposedHints = 0;
+static uint gInterposedSessionManager = LIBJACK_SESSION_MANAGER_NONE;
+static uint gInterposedHints = 0x0;
 static WindowMappingType gCurrentWindowType = WindowMapNone;
 static bool gCurrentWindowMapped = false;
 static bool gCurrentWindowVisible = false;
@@ -357,24 +355,22 @@ int XNextEvent(Display* display, XEvent* event)
 // Full control helper
 
 CARLA_EXPORT
-int jack_carla_interposed_action(int action, int value, void* ptr)
+int jack_carla_interposed_action(uint action, uint value, void* ptr)
 {
     carla_debug("jack_carla_interposed_action(%i, %i, %p)", action, value, ptr);
 
     switch (action)
     {
-    case 1:
-        // set hints and callback
+    case LIBJACK_INTERPOSER_ACTION_SET_HINTS_AND_CALLBACK:
         gInterposedHints = value;
         gInterposedCallback = (CarlaInterposedCallback)ptr;
         return 1;
 
-    case 2:
-        // session manager
+    case LIBJACK_INTERPOSER_ACTION_SET_SESSION_MANAGER:
         gInterposedSessionManager = value;
         return 1;
 
-    case 3:
+    case LIBJACK_INTERPOSER_ACTION_SHOW_HIDE_GUI:
         // show gui
         if (value != 0)
         {
@@ -414,7 +410,7 @@ int jack_carla_interposed_action(int action, int value, void* ptr)
         }
         break;
 
-    case 4: // close everything
+    case LIBJACK_INTERPOSER_ACTION_CLOSE_EVERYTHING:
         gCurrentWindowType      = WindowMapNone;
         gCurrentWindowMapped    = false;
         gCurrentWindowVisible   = false;

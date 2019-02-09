@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -28,7 +28,7 @@
 typedef int (*CarlaInterposedCallback)(int, void*);
 
 CARLA_EXPORT
-int jack_carla_interposed_action(int, int, void*)
+int jack_carla_interposed_action(uint, uint, void*)
 {
     carla_stderr2("Non-export jack_carla_interposed_action called, this should not happen!!");
     return 1337;
@@ -173,8 +173,8 @@ public:
         fSessionManager = libjackSetup[4] - '0';
         fSetupHints     = libjackSetup[5] - '0';
 
-        jack_carla_interposed_action(1, fSetupHints, (void*)carla_interposed_callback);
-        jack_carla_interposed_action(2, fSessionManager, nullptr);
+        jack_carla_interposed_action(LIBJACK_INTERPOSER_ACTION_SET_HINTS_AND_CALLBACK, fSetupHints, (void*)carla_interposed_callback);
+        jack_carla_interposed_action(LIBJACK_INTERPOSER_ACTION_SET_SESSION_MANAGER, fSessionManager, nullptr);
 
         fNonRealtimeThread.startThread(false);
     }
@@ -975,7 +975,7 @@ bool CarlaJackAppClient::handleNonRtData()
             break;
 
         case kPluginBridgeNonRtClientShowUI:
-            if (jack_carla_interposed_action(3, 1, nullptr) == 1337)
+            if (jack_carla_interposed_action(LIBJACK_INTERPOSER_ACTION_SHOW_HIDE_GUI, 1, nullptr) == 1337)
             {
                 // failed, LD_PRELOAD did not work?
                 const char* const message("Cannot show UI, LD_PRELOAD not working?");
@@ -994,7 +994,7 @@ bool CarlaJackAppClient::handleNonRtData()
             break;
 
         case kPluginBridgeNonRtClientHideUI:
-            jack_carla_interposed_action(3, 0, nullptr);
+            jack_carla_interposed_action(LIBJACK_INTERPOSER_ACTION_SHOW_HIDE_GUI, 0, nullptr);
             break;
 
         case kPluginBridgeNonRtClientUiParameterChange:

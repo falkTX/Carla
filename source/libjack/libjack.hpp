@@ -15,6 +15,9 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#ifndef CARLA_LIBJACK_HPP_INCLUDED
+#define CARLA_LIBJACK_HPP_INCLUDED
+
 // need to include this first
 #include "CarlaDefines.h"
 
@@ -289,3 +292,5 @@ struct JackServerState {
 CARLA_BACKEND_END_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
+
+#endif // CARLA_LIBJACK_HPP_INCLUDED

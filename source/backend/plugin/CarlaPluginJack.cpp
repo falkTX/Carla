@@ -20,6 +20,7 @@
 
 #ifdef CARLA_OS_LINUX
 
+#include "CarlaLibJackHints.h"
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBridgeUtils.hpp"
 #include "CarlaEngineUtils.hpp"
@@ -51,20 +52,6 @@ using water::StringArray;
 using water::Time;
 
 CARLA_BACKEND_START_NAMESPACE
-
-enum {
-    FLAG_CONTROL_WINDOW        = 0x01,
-    FLAG_CAPTURE_FIRST_WINDOW  = 0x02,
-    FLAG_BUFFERS_ADDITION_MODE = 0x10,
-};
-
-enum {
-    SESSION_MGR_NONE   = 0,
-    SESSION_MGR_AUTO   = 1,
-    SESSION_MGR_JACK   = 2,
-    SESSION_MGR_LADISH = 3,
-    SESSION_MGR_NSM    = 4,
-};
 
 static size_t safe_rand(const size_t limit)
 {
@@ -247,7 +234,7 @@ protected:
 
         const int sessionManager = fSetupLabel[4] - '0';
 
-        if (sessionManager == SESSION_MGR_NSM)
+        if (sessionManager == LIBJACK_SESSION_MANAGER_NSM)
         {
             // NSM support
             fOscServer = lo_server_new_with_proto(nullptr, LO_UDP, _osc_error_handler);
@@ -324,7 +311,7 @@ protected:
         for (; fProcess->isRunning() && ! shouldThreadExit();)
         {
 #ifdef HAVE_LIBLO
-            if (sessionManager == SESSION_MGR_NSM)
+            if (sessionManager == LIBJACK_SESSION_MANAGER_NSM)
             {
                 lo_server_recv_noblock(fOscServer, 50);
             }
@@ -336,7 +323,7 @@ protected:
         }
 
 #ifdef HAVE_LIBLO
-        if (sessionManager == SESSION_MGR_NSM)
+        if (sessionManager == LIBJACK_SESSION_MANAGER_NSM)
         {
             lo_server_free(fOscServer);
             fOscServer = nullptr;
@@ -1563,7 +1550,7 @@ public:
 #endif
         //fInfo.optionsAvailable = optionAv;
 
-        if (setupHints & FLAG_CONTROL_WINDOW)
+        if (setupHints & LIBJACK_FLAG_CONTROL_WINDOW)
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
 
         // ---------------------------------------------------------------
