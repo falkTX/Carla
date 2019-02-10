@@ -2665,7 +2665,7 @@ private:
         if (needsCancelableAction)
         {
             pData->engine->setActionCanceled(false);
-            pData->engine->callback(ENGINE_CALLBACK_CANCELABLE_ACTION, pData->id, 1, 0, 0.0f, "Loading JACK application");
+            pData->engine->callback(ENGINE_CALLBACK_CANCELABLE_ACTION, pData->id, 1, 0, 0.0f, "Loading plugin bridge");
         }
 #endif
 
