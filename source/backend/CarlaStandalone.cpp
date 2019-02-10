@@ -38,13 +38,20 @@
 #endif
 
 #ifdef USING_JUCE
-# include "AppConfig.h"
-# if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-#  include "juce_gui_basics/juce_gui_basics.h"
-# else
-#  include "juce_events/juce_events.h"
+# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Weffc++"
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
+#  pragma GCC diagnostic ignored "-Wundef"
 # endif
-# include "juce_core/juce_core.h"
+
+# include "AppConfig.h"
+# include "juce_events/juce_events.h"
+
+# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+#  pragma GCC diagnostic pop
+# endif
 #endif
 
 #define CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(cond, msg, ret) \

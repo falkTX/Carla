@@ -23,9 +23,9 @@
 #include "AppConfig.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 
-#if JUCE_LINUX && defined(HAVE_X11)
+#if defined(CARLA_OS_LINUX) && defined(HAVE_X11)
 # include <X11/Xlib.h>
-#elif JUCE_MAC
+#elif defined(CARLA_OS_MAC)
 # import <Cocoa/Cocoa.h>
 #endif
 
@@ -98,7 +98,7 @@ private:
         if (fTransientId == 0)
             return;
 
-#if JUCE_LINUX && defined(HAVE_X11)
+#if defined(CARLA_OS_LINUX) && defined(HAVE_X11)
         Display* const display = XWindowSystem::getInstance()->displayRef();
         CARLA_SAFE_ASSERT_RETURN(display != nullptr,);
 
@@ -109,7 +109,7 @@ private:
         XSetTransientForHint(display, window, static_cast<::Window>(fTransientId));
 #endif
 
-#if JUCE_MAC
+#ifdef CARLA_OS_MAC
         NSView* const view = (NSView*)getWindowHandle();
         CARLA_SAFE_ASSERT_RETURN(view != nullptr,);
 
@@ -123,7 +123,7 @@ private:
                              ordered:NSWindowAbove];
 #endif
 
-#if JUCE_WINDOWS
+#ifdef CARLA_OS_WIN
         const HWND window = (HWND)getWindowHandle();
         CARLA_SAFE_ASSERT_RETURN(window != nullptr,);
 

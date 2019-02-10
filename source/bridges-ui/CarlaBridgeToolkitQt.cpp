@@ -286,16 +286,19 @@ CARLA_BRIDGE_UI_END_NAMESPACE
 
 // -------------------------------------------------------------------------
 
-#if QT_VERSION < QT_VERSION_CHECK(5, 12, 0)
-// missing declaration
-int qInitResources();
-int qCleanupResources();
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wmissing-declarations"
 #endif
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 # include "resources.qt5.cpp"
 #else
 # include "resources.qt4.cpp"
+#endif
+
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
 #endif
 
 // -------------------------------------------------------------------------

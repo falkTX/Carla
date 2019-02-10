@@ -22,8 +22,25 @@
 
 #include "RtLinkedList.hpp"
 
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcast-qual"
+# pragma GCC diagnostic ignored "-Wclass-memaccess"
+# pragma GCC diagnostic ignored "-Wconversion"
+# pragma GCC diagnostic ignored "-Wdouble-promotion"
+# pragma GCC diagnostic ignored "-Weffc++"
+# pragma GCC diagnostic ignored "-Wfloat-equal"
+# pragma GCC diagnostic ignored "-Wsign-conversion"
+# pragma GCC diagnostic ignored "-Wundef"
+# pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
+
 #include "AppConfig.h"
 #include "juce_audio_devices/juce_audio_devices.h"
+
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -295,8 +312,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
 
-        char strBuf[STR_MAX+1];
-        strBuf[STR_MAX] = '\0';
+        char strBuf[STR_MAX];
 
         ExternalGraph& extGraph(graph->extGraph);
 
@@ -385,7 +401,8 @@ public:
             ConnectionToId connectionToId;
             connectionToId.setData(++(extGraph.connections.lastId), kExternalGraphGroupMidiIn, portId, kExternalGraphGroupCarla, kExternalGraphCarlaPortMidiIn);
 
-            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
+            std::snprintf(strBuf, STR_MAX-1, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
+            strBuf[STR_MAX-1] = '\0';
 
             callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
 
@@ -405,7 +422,8 @@ public:
             ConnectionToId connectionToId;
             connectionToId.setData(++(extGraph.connections.lastId), kExternalGraphGroupCarla, kExternalGraphCarlaPortMidiOut, kExternalGraphGroupMidiOut, portId);
 
-            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
+            std::snprintf(strBuf, STR_MAX-1, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
+            strBuf[STR_MAX-1] = '\0';
 
             callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
 
@@ -444,7 +462,10 @@ protected:
     void audioDeviceIOCallback(const float** inputChannelData, int numInputChannels, float** outputChannelData,
                                int numOutputChannels, int numSamples) override
     {
-        const PendingRtEventsRunner prt(this, numSamples);
+        CARLA_SAFE_ASSERT_RETURN(numSamples >= 0,);
+
+        const uint32_t nframes(static_cast<uint32_t>(numSamples));
+        const PendingRtEventsRunner prt(this, nframes);
 
         // assert juce buffers
         CARLA_SAFE_ASSERT_RETURN(numInputChannels >= 0,);
@@ -452,11 +473,9 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(outputChannelData != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(numSamples == static_cast<int>(pData->bufferSize),);
 
-        const uint32_t nframes(static_cast<uint32_t>(numSamples));
-
         // initialize juce output
         for (int i=0; i < numOutputChannels; ++i)
-            carla_zeroFloats(outputChannelData[i], numSamples);
+            carla_zeroFloats(outputChannelData[i], nframes);
 
         // initialize events
         carla_zeroStructs(pData->events.in,  kMaxEngineEventInternalCount);

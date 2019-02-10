@@ -22,10 +22,30 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
-#include "JucePluginWindow.hpp"
+
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcast-qual"
+# pragma GCC diagnostic ignored "-Wclass-memaccess"
+# pragma GCC diagnostic ignored "-Wconversion"
+# pragma GCC diagnostic ignored "-Wdouble-promotion"
+# pragma GCC diagnostic ignored "-Weffc++"
+# pragma GCC diagnostic ignored "-Wfloat-equal"
+# pragma GCC diagnostic ignored "-Woverloaded-virtual"
+# pragma GCC diagnostic ignored "-Wsign-conversion"
+# pragma GCC diagnostic ignored "-Wundef"
+# pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
 
 #include "AppConfig.h"
 #include "juce_audio_processors/juce_audio_processors.h"
+#include "juce_gui_basics/juce_gui_basics.h"
+
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
+
+#include "JucePluginWindow.hpp"
 
 namespace juce {
 extern bool juce_isRunningInWine();
@@ -54,6 +74,7 @@ public:
           fMidiBuffer(),
           fPosInfo(),
           fChunk(),
+          fFormatName(),
           fWindow()
     {
         carla_debug("CarlaPluginJuce::CarlaPluginJuce(%p, %i)", engine, id);
@@ -281,12 +302,10 @@ public:
 
             int32_t* const set = (int32_t*)dataCompat;
 
-            dataCompat[39] = dataSize;
-
             set[0]  = (int32_t)juce::ByteOrder::littleEndianInt("CcnK");
             set[2]  = (int32_t)juce::ByteOrder::littleEndianInt("FBCh");
             set[3]  = fxbSwap(1);
-            set[39] = fxbSwap(dataSize);
+            set[39] = fxbSwap(static_cast<int32_t>(dataSize));
 
             {
                 const ScopedSingleProcessLocker spl(this, true);
@@ -714,7 +733,7 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                carla_zeroFloats(audioOut[i], static_cast<int>(frames));
+                carla_zeroFloats(audioOut[i], frames);
             return;
         }
 
@@ -977,9 +996,12 @@ public:
 
         if (timeInfo.bbt.valid)
         {
-            const double ppqBar  = double(timeInfo.bbt.bar - 1) * timeInfo.bbt.beatsPerBar;
-            const double ppqBeat = double(timeInfo.bbt.beat - 1);
-            const double ppqTick = double(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat;
+            CARLA_SAFE_ASSERT_INT(timeInfo.bbt.bar > 0, timeInfo.bbt.bar);
+            CARLA_SAFE_ASSERT_INT(timeInfo.bbt.beat > 0, timeInfo.bbt.beat);
+
+            const double ppqBar  = static_cast<double>(timeInfo.bbt.beatsPerBar) * (timeInfo.bbt.bar - 1);
+            const double ppqBeat = static_cast<double>(timeInfo.bbt.beat - 1);
+            const double ppqTick = timeInfo.bbt.tick / timeInfo.bbt.ticksPerBeat;
 
             fPosInfo.bpm = timeInfo.bbt.beatsPerMinute;
 
@@ -1022,7 +1044,7 @@ public:
         else if (! pData->singleMutex.tryLock())
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                carla_zeroFloats(outBuffer[i], static_cast<int>(frames));
+                carla_zeroFloats(outBuffer[i], frames);
             return false;
         }
 
@@ -1041,7 +1063,7 @@ public:
         // Set audio out buffers
 
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
-            carla_copyFloats(outBuffer[i], fAudioBuffer.getReadPointer(static_cast<int>(i)), static_cast<int>(frames));
+            carla_copyFloats(outBuffer[i], fAudioBuffer.getReadPointer(static_cast<int>(i)), frames);
 
         // --------------------------------------------------------------------------------------------------------
         // Midi out

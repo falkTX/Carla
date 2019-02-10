@@ -24,8 +24,19 @@
 #include "CarlaString.hpp"
 
 #ifdef USING_JUCE
+# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Weffc++"
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
+#  pragma GCC diagnostic ignored "-Wundef"
+#  pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+# endif
 # include "AppConfig.h"
 # include "juce_events/juce_events.h"
+# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+#  pragma GCC diagnostic pop
+# endif
 #endif
 
 #include "water/files/File.h"
@@ -57,6 +68,9 @@ public:
           fProgramDesc({0, 0, nullptr}),
 #endif
           fMidiEventCount(0),
+#ifdef USING_JUCE
+          fJuceInitialiser(),
+#endif
           fWorkerUISignal(0)
     {
         carla_zeroStruct(fHost);
@@ -733,11 +747,11 @@ private:
     uint32_t        fMidiEventCount;
     NativeMidiEvent fMidiEvents[kMaxMidiEvents];
 
-    int fWorkerUISignal;
-
 #ifdef USING_JUCE
-    juce::SharedResourcePointer<juce::ScopedJuceInitialiser_GUI> sJuceInitialiser;
+    juce::SharedResourcePointer<juce::ScopedJuceInitialiser_GUI> fJuceInitialiser;
 #endif
+
+    int fWorkerUISignal;
 
     // -------------------------------------------------------------------
 

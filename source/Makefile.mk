@@ -172,7 +172,7 @@ endif
 ifeq ($(TESTBUILD),true)
 BASE_FLAGS += -Werror -Wabi=98 -Wcast-qual -Wclobbered -Wconversion -Wdisabled-optimization
 BASE_FLAGS += -Wdouble-promotion -Wfloat-equal -Wlogical-op -Wpointer-arith -Wsign-conversion
-BASE_FLAGS += -Wformat=2 -Woverlength-strings
+BASE_FLAGS += -Wformat=2 -Woverlength-strings -Wstringop-overflow=4 -Wstringop-truncation
 BASE_FLAGS += -Wmissing-declarations -Wredundant-decls
 BASE_FLAGS += -Wshadow  -Wundef -Wuninitialized -Wunused
 BASE_FLAGS += -Wstrict-aliasing -fstrict-aliasing

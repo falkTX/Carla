@@ -36,9 +36,20 @@
 #include "CarlaNativePlugin.h"
 
 #if defined(USING_JUCE) && ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Weffc++"
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
+#  pragma GCC diagnostic ignored "-Wundef"
+#  pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+# endif
 # include "AppConfig.h"
 # include "juce_events/juce_events.h"
 # define USE_JUCE_MESSAGE_THREAD
+# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+#  pragma GCC diagnostic pop
+# endif
 #endif
 
 #include "water/files/File.h"
@@ -108,6 +119,8 @@ protected:
 
 private:
     volatile bool initialised;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SharedJuceMessageThread);
 };
 #endif
 
@@ -649,23 +662,24 @@ public:
                       const uint32_t inChan = 2, uint32_t outChan = 2)
         : CarlaEngine(),
           pHost(host),
+#ifdef USE_JUCE_MESSAGE_THREAD
+          // if not running inside Carla, we will have to run event loop ourselves
+          kNeedsJuceMsgThread(host->dispatcher(pHost->handle,
+                                               NATIVE_HOST_OPCODE_INTERNAL_PLUGIN, 0, 0, nullptr, 0.0f) == 0),
+          fJuceMsgThread(),
+#endif
           kIsPatchbay(isPatchbay),
           kHasMidiOut(withMidiOut),
           fIsActive(false),
           fIsRunning(false),
           fUiServer(this),
           fOptionsForced(false)
-#ifdef USE_JUCE_MESSAGE_THREAD
-          // if not running inside Carla, we will have to run event loop ourselves
-        , kNeedsJuceMsgThread(host->dispatcher(pHost->handle,
-                                               NATIVE_HOST_OPCODE_INTERNAL_PLUGIN, 0, 0, nullptr, 0.0f) == 0)
-#endif
     {
         carla_debug("CarlaEngineNative::CarlaEngineNative()");
 
 #ifdef USE_JUCE_MESSAGE_THREAD
         if (kNeedsJuceMsgThread)
-            sJuceMsgThread->incRef();
+            fJuceMsgThread->incRef();
 #endif
 
         pData->bufferSize = pHost->get_buffer_size(pHost->handle);
@@ -727,7 +741,7 @@ public:
 
 #ifdef USE_JUCE_MESSAGE_THREAD
         if (kNeedsJuceMsgThread)
-            sJuceMsgThread->decRef();
+            fJuceMsgThread->decRef();
 #endif
 
         carla_debug("CarlaEngineNative::~CarlaEngineNative() - END");
@@ -2078,17 +2092,17 @@ public:
 private:
     const NativeHostDescriptor* const pHost;
 
+#ifdef USE_JUCE_MESSAGE_THREAD
+    const bool kNeedsJuceMsgThread;
+    const juce::SharedResourcePointer<SharedJuceMessageThread> fJuceMsgThread;
+#endif
+
     const bool kIsPatchbay; // rack if false
     const bool kHasMidiOut;
     bool fIsActive, fIsRunning;
     CarlaEngineNativeUI fUiServer;
 
     bool fOptionsForced;
-
-#ifdef USE_JUCE_MESSAGE_THREAD
-    const bool kNeedsJuceMsgThread;
-    const juce::SharedResourcePointer<SharedJuceMessageThread> sJuceMsgThread;
-#endif
 
     CarlaPlugin* _getFirstPlugin() const noexcept
     {

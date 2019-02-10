@@ -8,6 +8,13 @@ CWD=..
 MODULENAME=carla-bridge
 include $(CWD)/Makefile.mk
 
+# Workaround GCC bug
+ifeq ($(TESTBUILD),true)
+ifeq ($(USING_JUCE),true)
+BUILD_CXX_FLAGS += -Wno-undef
+endif
+endif
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 BINDIR    := $(CWD)/../bin

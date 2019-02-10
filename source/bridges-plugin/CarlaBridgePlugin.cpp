@@ -43,11 +43,22 @@
 #endif
 
 #ifdef USING_JUCE
+# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Weffc++"
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
+#  pragma GCC diagnostic ignored "-Wundef"
+#  pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+# endif
 # include "AppConfig.h"
 # if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
 #  include "juce_gui_basics/juce_gui_basics.h"
 # else
 #  include "juce_events/juce_events.h"
+# endif
+# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+#  pragma GCC diagnostic pop
 # endif
 #endif
 
@@ -186,6 +197,9 @@ public:
     CarlaBridgePlugin(const bool useBridge, const char* const clientName, const char* const audioPoolBaseName,
                       const char* const rtClientBaseName, const char* const nonRtClientBaseName, const char* const nonRtServerBaseName)
         : fEngine(nullptr),
+#ifdef USING_JUCE
+          fJuceInitialiser(),
+#endif
           fUsingBridge(false),
           fUsingExec(false)
     {
@@ -300,12 +314,13 @@ protected:
 
 private:
     const CarlaEngine* fEngine;
-    bool               fUsingBridge;
-    bool               fUsingExec;
 
 #ifdef USING_JUCE
-    const juce::ScopedJuceInitialiser_GUI sJuceInitialiser;
+    const juce::ScopedJuceInitialiser_GUI fJuceInitialiser;
 #endif
+
+    bool fUsingBridge;
+    bool fUsingExec;
 
     static void callback(void* ptr, EngineCallbackOpcode action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr)
     {
