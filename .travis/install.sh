@@ -50,6 +50,9 @@ elif [ "${TARGET}" = "linux-strict" ]; then
         liblo-static \
         fluidsynth-static
 
+    # Fix for 32bit bridge link
+    sudo ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
+
 elif [ "${TARGET}" = "linux-juce-strict" ]; then
     sudo apt-get install -y \
         g++-8 \
