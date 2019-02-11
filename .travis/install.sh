@@ -33,6 +33,7 @@ if [ "${TARGET}" = "linux" ]; then
 elif [ "${TARGET}" = "linux-strict" ]; then
     sudo apt-get install -y \
         g++-8 \
+        g++-8-multilib \
         pkg-config \
         pyqt5-dev-tools \
         python3-pyqt5.qtsvg \
