@@ -36,6 +36,12 @@ matrix:
       env:
         - TARGET="linux-strict"
 
+    # linux with gcc 8, strict build, using juce
+    - os: linux
+      compiler: gcc
+      env:
+        - TARGET="linux-juce-strict"
+
 before_install:
   - sh ${TRAVIS_BUILD_DIR}/.travis/before_install.sh
 

@@ -2279,7 +2279,7 @@ public:
         // ---------------------------------------------------------------
         // initialize plugin (part 1)
 
-        sCurrentUniqueId     = uniqueId;
+        sCurrentUniqueId     = static_cast<intptr_t>(uniqueId);
         sLastCarlaPluginVST2 = this;
 
         try {

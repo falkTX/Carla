@@ -6,7 +6,7 @@ sudo add-apt-repository -y ppa:kxstudio-debian/kxstudio
 sudo add-apt-repository -y ppa:kxstudio-debian/mingw
 sudo add-apt-repository -y ppa:kxstudio-debian/toolchain
 
-if [ "${TARGET}" = "linux-strict" ]; then
+if [ "${TARGET}" = "linux-strict" ] || [ "${TARGET}" = "linux-juce-strict" ]; then
   sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
 fi
 

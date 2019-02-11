@@ -1273,7 +1273,9 @@ jack_port_t* jackbridge_port_register(jack_client_t* client, const char* port_na
     return jack_port_register(client, port_name, port_type, flags, buffer_size);
 #else
     if (getBridgeInstance().port_register_ptr != nullptr)
-        return getBridgeInstance().port_register_ptr(client, port_name, port_type, flags, buffer_size);
+        return getBridgeInstance().port_register_ptr(client, port_name, port_type,
+                                                     static_cast<ulong>(flags),
+                                                     static_cast<ulong>(buffer_size));
 #endif
     return nullptr;
 }
@@ -1613,7 +1615,9 @@ void jackbridge_port_get_latency_range(jack_port_t* port, uint32_t mode, jack_la
     return jack_port_get_latency_range(port, static_cast<jack_latency_callback_mode_t>(mode), range);
 #else
     if (getBridgeInstance().port_get_latency_range_ptr != nullptr)
-        return getBridgeInstance().port_get_latency_range_ptr(port, static_cast<jack_latency_callback_mode_t>(mode), range);
+        return getBridgeInstance().port_get_latency_range_ptr(port,
+                                                              static_cast<jack_latency_callback_mode_t>(mode),
+                                                              range);
 #endif
     range->min = 0;
     range->max = 0;
@@ -1626,7 +1630,9 @@ void jackbridge_port_set_latency_range(jack_port_t* port, uint32_t mode, jack_la
     jack_port_set_latency_range(port, static_cast<jack_latency_callback_mode_t>(mode), range);
 #else
     if (getBridgeInstance().port_set_latency_range_ptr != nullptr)
-        getBridgeInstance().port_set_latency_range_ptr(port, static_cast<jack_latency_callback_mode_t>(mode), range);
+        getBridgeInstance().port_set_latency_range_ptr(port,
+                                                       static_cast<jack_latency_callback_mode_t>(mode),
+                                                       range);
 #endif
 }
 
@@ -1651,7 +1657,8 @@ const char** jackbridge_get_ports(jack_client_t* client, const char* port_name_p
     return jack_get_ports(client, port_name_pattern, type_name_pattern, flags);
 #else
     if (getBridgeInstance().get_ports_ptr != nullptr)
-        return getBridgeInstance().get_ports_ptr(client, port_name_pattern, type_name_pattern, flags);
+        return getBridgeInstance().get_ports_ptr(client, port_name_pattern, type_name_pattern,
+                                                 static_cast<ulong>(flags));
 #endif
     return nullptr;
 }

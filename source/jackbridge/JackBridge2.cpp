@@ -121,7 +121,7 @@ void* jackbridge_shm_map(void* shm, uint64_t size) noexcept
 #ifdef JACKBRIDGE_DUMMY
     return nullptr;
 #else
-    return carla_shm_map(*(carla_shm_t*)shm, size);
+    return carla_shm_map(*(carla_shm_t*)shm, static_cast<std::size_t>(size));
 #endif
 }
 

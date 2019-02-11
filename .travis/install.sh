@@ -50,6 +50,26 @@ elif [ "${TARGET}" = "linux-strict" ]; then
         liblo-static \
         fluidsynth-static
 
+elif [ "${TARGET}" = "linux-juce-strict" ]; then
+    sudo apt-get install -y \
+        g++-8 \
+        pkg-config \
+        pyqt5-dev-tools \
+        python3-pyqt5.qtsvg \
+        python3-rdflib \
+        libgtk2.0-dev \
+        libgtk-3-dev \
+        libqt4-dev \
+        qtbase5-dev \
+        libasound2-dev \
+        libfreetype6-dev \
+        libmagic-dev \
+        libgl1-mesa-dev \
+        libx11-dev \
+        libxext-dev \
+        liblo-static \
+        fluidsynth-static
+
 elif [ "${TARGET}" = "macos" ]; then
     sudo apt-get install -y \
         pkg-config \
