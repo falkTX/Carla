@@ -66,6 +66,7 @@ elif [ "${TARGET}" = "linux-juce-strict" ]; then
         libqt4-dev \
         qtbase5-dev \
         libasound2-dev \
+        libjack-jackd2-dev \
         libfreetype6-dev \
         libmagic-dev \
         libgl1-mesa-dev \
