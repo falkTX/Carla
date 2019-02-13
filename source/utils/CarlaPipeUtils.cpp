@@ -654,20 +654,12 @@ bool CarlaPipeCommon::isPipeRunning() const noexcept
 
 void CarlaPipeCommon::idlePipe(const bool onlyOnce) noexcept
 {
-    const char* locale = nullptr;
-
     for (;;)
     {
         const char* const msg(_readline());
 
         if (msg == nullptr)
             break;
-
-        if (locale == nullptr && ! onlyOnce)
-        {
-            locale = carla_strdup_safe(::setlocale(LC_NUMERIC, nullptr));
-            ::setlocale(LC_NUMERIC, "C");
-        }
 
         pData->isReading = true;
 
@@ -688,12 +680,6 @@ void CarlaPipeCommon::idlePipe(const bool onlyOnce) noexcept
 
         if (onlyOnce || pData->pipeRecv == INVALID_PIPE_VALUE)
             break;
-    }
-
-    if (locale != nullptr)
-    {
-        ::setlocale(LC_NUMERIC, locale);
-        delete[] locale;
     }
 }
 
@@ -774,7 +760,7 @@ bool CarlaPipeCommon::readNextLineAsUInt(uint32_t& value) const noexcept
 
     if (const char* const msg = _readlineblock())
     {
-        int32_t tmp = std::atoi(msg);
+        const int32_t tmp = std::atoi(msg);
         delete[] msg;
 
         if (tmp >= 0)
@@ -807,7 +793,7 @@ bool CarlaPipeCommon::readNextLineAsULong(uint64_t& value) const noexcept
 
     if (const char* const msg = _readlineblock())
     {
-        int64_t tmp = std::atol(msg);
+        const int64_t tmp = std::atol(msg);
         delete[] msg;
 
         if (tmp >= 0)
@@ -943,10 +929,10 @@ bool CarlaPipeCommon::flushMessages() const noexcept
     CARLA_SAFE_ASSERT_RETURN(pData->pipeSend != INVALID_PIPE_VALUE, false);
 
 #if defined(CARLA_OS_LINUX) || defined(CARLA_OS_GNU_HURD)
-#  if defined(__GLIBC__) && (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2014
+# if defined(__GLIBC__) && (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2014
     // the only call that seems to do something
     return ::syncfs(pData->pipeSend) == 0;
-#  endif
+# endif
 #elif 0 // defined(CARLA_OS_WIN)
     // FIXME causes issues
     try {
