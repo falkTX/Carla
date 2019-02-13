@@ -1860,13 +1860,12 @@ protected:
             break;
 
         case audioMasterIdle:
-            if (pthread_equal(pthread_self(), fMainThread))
-            {
-                pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+            CARLA_SAFE_ASSERT_BREAK(pthread_equal(pthread_self(), fMainThread));
 
-                if (pData->engine->getType() != kEngineTypePlugin)
-                    pData->engine->idle();
-            }
+            pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
+            if (pData->engine->getType() != kEngineTypePlugin)
+                pData->engine->idle();
             break;
 
 #if ! VST_FORCE_DEPRECATED
