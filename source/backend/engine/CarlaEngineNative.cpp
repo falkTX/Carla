@@ -1583,7 +1583,7 @@ protected:
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames,
                  const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount)
     {
-        const PendingRtEventsRunner prt(this, frames);
+        const PendingRtEventsRunner prt(this, frames, true);
 
         // ---------------------------------------------------------------
         // Time Info
@@ -1851,7 +1851,20 @@ protected:
         const CarlaScopedLocale csl;
         const EngineTimeInfo& timeInfo(pData->timeInfo);
 
+        // ------------------------------------------------------------------------------------------------------------
+        // send engine info
+
+        if (! fUiServer.writeAndFixMessage("runtime-info"))
+            return;
+        std::sprintf(tmpBuf, "%f:0\n", static_cast<double>(getDSPLoad()));
+        if (! fUiServer.writeMessage(tmpBuf))
+            return;
+
+        fUiServer.flushMessages();
+
+        // ------------------------------------------------------------------------------------------------------------
         // send transport
+
         if (! fUiServer.writeAndFixMessage("transport"))
             return;
         if (! fUiServer.writeMessage(timeInfo.playing ? "true\n" : "false\n"))
@@ -1880,7 +1893,9 @@ protected:
 
         fUiServer.flushMessages();
 
+        // ------------------------------------------------------------------------------------------------------------
         // send peaks and param outputs for all plugins
+
         for (uint i=0; i < pData->curPluginCount; ++i)
         {
             const EnginePluginData& plugData(pData->plugins[i]);

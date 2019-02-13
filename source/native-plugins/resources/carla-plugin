@@ -164,7 +164,19 @@ class CarlaMiniW(ExternalUI, HostWindow):
         #if not msg:
             #return
 
-        if msg.startswith("PEAKS_"):
+        if msg == "runtime-info":
+            values = self.readlineblock().split(":")
+            load = float(values[0])
+            xruns = int(values[1])
+            self.host._set_runtime_info(load, xruns)
+
+        elif msg == "transport":
+            playing = bool(self.readlineblock() == "true")
+            frame, bar, beat, tick = [int(i) for i in self.readlineblock().split(":")]
+            bpm = float(self.readlineblock())
+            self.host._set_transport(playing, frame, bar, beat, tick, bpm)
+
+        elif msg.startswith("PEAKS_"):
             pluginId = int(msg.replace("PEAKS_", ""))
             in1, in2, out1, out2 = [float(i) for i in self.readlineblock().split(":")]
             self.host._set_peaks(pluginId, in1, in2, out1, out2)
@@ -366,12 +378,6 @@ class CarlaMiniW(ExternalUI, HostWindow):
         elif msg == "sample-rate":
             srate = float(self.readlineblock())
             self.host.fSampleRate = srate
-
-        elif msg == "transport":
-            playing = bool(self.readlineblock() == "true")
-            frame, bar, beat, tick = [int(i) for i in self.readlineblock().split(":")]
-            bpm = float(self.readlineblock())
-            self.host._set_transport(playing, frame, bar, beat, tick, bpm)
 
         elif msg == "error":
             error = self.readlineblock().replace("\r", "\n")

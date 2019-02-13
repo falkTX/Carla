@@ -26,6 +26,10 @@
 # include "hylia/hylia.h"
 #endif
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+# include "water/memory/Atomic.h"
+#endif
+
 // FIXME only use CARLA_PREVENT_HEAP_ALLOCATION for structs
 // maybe separate macro
 
@@ -247,6 +251,7 @@ struct CarlaEngine::ProtectedData {
 #else
     EnginePluginData* plugins;
     uint32_t xruns;
+    float dspLoad;
 #endif
     float peaks[4];
 
@@ -288,11 +293,14 @@ struct CarlaEngine::ProtectedData {
 class PendingRtEventsRunner
 {
 public:
-    PendingRtEventsRunner(CarlaEngine* const engine, const uint32_t numFrames) noexcept;
+    PendingRtEventsRunner(CarlaEngine* const engine,
+                          const uint32_t numFrames,
+                          const bool calcDSPLoad = false) noexcept;
     ~PendingRtEventsRunner() noexcept;
 
 private:
     CarlaEngine::ProtectedData* const pData;
+    int64_t prevTime;
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(PendingRtEventsRunner)

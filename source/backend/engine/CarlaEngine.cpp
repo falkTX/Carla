@@ -349,7 +349,11 @@ CarlaEngineClient* CarlaEngine::addClient(CarlaPlugin* const)
 
 float CarlaEngine::getDSPLoad() const noexcept
 {
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    return pData->dspLoad;
+#else
     return 0.0f;
+#endif
 }
 
 uint32_t CarlaEngine::getTotalXruns() const noexcept

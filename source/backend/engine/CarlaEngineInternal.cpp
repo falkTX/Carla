@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -393,6 +393,7 @@ CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
       plugins(nullptr),
       xruns(0),
+      dspLoad(0.0f),
 #endif
       events(),
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -483,6 +484,7 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
     plugins = new EnginePluginData[maxPluginNumber];
     carla_zeroStructs(plugins, maxPluginNumber);
     xruns = 0;
+    dspLoad = 0.0f;
 #endif
 
     nextAction.clearAndReset();
@@ -638,8 +640,19 @@ void CarlaEngine::ProtectedData::doNextPluginAction() noexcept
 // -----------------------------------------------------------------------
 // PendingRtEventsRunner
 
-PendingRtEventsRunner::PendingRtEventsRunner(CarlaEngine* const engine, const uint32_t frames) noexcept
-    : pData(engine->pData)
+static int64_t getTimeInMicroseconds() noexcept
+{
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &t);
+
+    return (t.tv_sec * 1000000) + (t.tv_nsec / 1000);
+}
+
+PendingRtEventsRunner::PendingRtEventsRunner(CarlaEngine* const engine,
+                                             const uint32_t frames,
+                                             const bool calcDSPLoad) noexcept
+    : pData(engine->pData),
+      prevTime(calcDSPLoad ? getTimeInMicroseconds() : 0)
 {
     pData->time.preProcess(frames);
 }
@@ -647,6 +660,25 @@ PendingRtEventsRunner::PendingRtEventsRunner(CarlaEngine* const engine, const ui
 PendingRtEventsRunner::~PendingRtEventsRunner() noexcept
 {
     pData->doNextPluginAction();
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    if (prevTime > 0)
+    {
+        const int64_t newTime = getTimeInMicroseconds();
+
+        if (newTime < prevTime)
+            return;
+
+        const double timeDiff = static_cast<double>(newTime - prevTime) / 1000000.0;
+        const double maxTime = pData->bufferSize / pData->sampleRate;
+        const float dspLoad = static_cast<float>(timeDiff / maxTime) * 100.0f;
+
+        if (dspLoad > pData->dspLoad)
+            pData->dspLoad = std::min(100.0f, (pData->dspLoad + pData->dspLoad + dspLoad) / 3.0f);
+        else
+            pData->dspLoad *= static_cast<float>(1.0 - maxTime);
+    }
+#endif
 }
 
 // -----------------------------------------------------------------------

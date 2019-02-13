@@ -310,6 +310,18 @@ public:
         return fDeviceType->getTypeName().toRawUTF8();
     }
 
+    float getDSPLoad() const noexcept override
+    {
+        return 0.0f;
+    }
+
+    uint32_t getTotalXruns() const noexcept override
+    {
+        const int xruns = fDevice->getXRunCount();
+
+        return xruns > 0 ? static_cast<uint32_t>(xruns) : 0;
+    }
+
     // -------------------------------------------------------------------
     // Patchbay
 

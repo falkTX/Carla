@@ -613,9 +613,15 @@ public:
     // -------------------------------------------------------------------
 
 protected:
-    void handleAudioProcessCallback(void* outputBuffer, void* inputBuffer, uint nframes, double streamTime, RtAudioStreamStatus status)
+    void handleAudioProcessCallback(void* outputBuffer, void* inputBuffer,
+                                    uint nframes, double streamTime, RtAudioStreamStatus status)
     {
-        const PendingRtEventsRunner prt(this, nframes);
+        const PendingRtEventsRunner prt(this, nframes, true);
+
+        if (status & RTAUDIO_INPUT_OVERFLOW)
+            ++pData->xruns;
+        if (status & RTAUDIO_OUTPUT_UNDERFLOW)
+            ++pData->xruns;
 
         // get buffers from RtAudio
         const float* const insPtr  = (const float*)inputBuffer;
@@ -782,7 +788,7 @@ protected:
         }
 
         return; // unused
-        (void)streamTime; (void)status;
+        (void)streamTime;
     }
 
     void handleBufferSizeCallback(const uint newBufferSize)
