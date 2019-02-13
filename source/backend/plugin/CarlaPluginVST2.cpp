@@ -508,7 +508,11 @@ public:
 #endif
 
                 if (fUI.window == nullptr)
-                    return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, msg);
+                    return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+                                                   pData->id,
+                                                   -1,
+                                                   0, 0, 0.0f,
+                                                   msg);
 
                 fUI.window->setTitle(uiTitle.buffer());
 
@@ -541,7 +545,11 @@ public:
                     fUI.window = nullptr;
 
                     carla_stderr2("Plugin refused to open its own UI");
-                    return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, "Plugin refused to open its own UI");
+                    return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+                                                   pData->id,
+                                                   -1,
+                                                   0, 0, 0.0f,
+                                                   "Plugin refused to open its own UI");
                 }
             }
 
@@ -1037,7 +1045,7 @@ public:
                     dispatcher(effSetProgram, 0, pData->prog.current, nullptr, 0.0f);
             }
 
-            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -1512,9 +1520,20 @@ public:
                     vstMidiEvent.midiData[2] = char(midiEvent.size >= 3 ? midiEvent.data[2] : 0);
 
                     if (status == MIDI_STATUS_NOTE_ON)
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, event.channel, midiEvent.data[1], midiEvent.data[2]);
+                    {
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOn,
+                                               event.channel,
+                                               midiEvent.data[1],
+                                               midiEvent.data[2],
+                                               0.0f);
+                    }
                     else if (status == MIDI_STATUS_NOTE_OFF)
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, event.channel, midiEvent.data[1], 0.0f);
+                    {
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOff,
+                                               event.channel,
+                                               midiEvent.data[1],
+                                               0, 0.0f);
+                    }
                 } break;
                 } // switch (event.type)
             }
@@ -1769,7 +1788,10 @@ protected:
         carla_debug("CarlaPluginVST2::handlePluginUIClosed()");
 
         showCustomUI(false);
-        pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+                                pData->id,
+                                0,
+                                0, 0, 0.0f, nullptr);
     }
 
     void handlePluginUIResized(const uint width, const uint height) override
@@ -1831,12 +1853,12 @@ protected:
             {
                 // Called from plugin process thread, nasty! (likely MIDI learn)
                 CARLA_SAFE_ASSERT(fIsProcessing);
-                pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, fixedValue);
+                pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, 0, fixedValue);
             }
             else if (fChangingValuesThread != kNullThread && pthread_equal(thisThread, fChangingValuesThread))
             {
                 // Called from effSetChunk or effSetProgram
-                pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, fixedValue);
+                pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, 0, fixedValue);
             }
             else if (fUI.isVisible)
             {
@@ -1850,7 +1872,7 @@ protected:
                 carla_stdout("audioMasterAutomate called from unknown source");
 
                 setParameterValue(uindex, fixedValue, true, true, true);
-                //pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, fixedValue);
+                //pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, 0, fixedValue);
             }
             break;
         }
@@ -1862,7 +1884,7 @@ protected:
         case audioMasterIdle:
             CARLA_SAFE_ASSERT_BREAK(pthread_equal(pthread_self(), fMainThread));
 
-            pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
             if (pData->engine->getType() != kEngineTypePlugin)
                 pData->engine->idle();
@@ -1976,7 +1998,7 @@ protected:
                 effect->dispatcher(effect, effStartProcess);
             }
 
-            x_engine->callback(CALLBACK_RELOAD_ALL, m_id, 0, 0, 0.0, nullptr);
+            x_engine->callback(CALLBACK_RELOAD_ALL, m_id, 0, 0, 0, 0.0, nullptr);
 
             ret = 1;
             break;
@@ -2111,13 +2133,16 @@ protected:
                     if (pData->prog.current != current)
                     {
                         pData->prog.current = current;
-                        pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED, pData->id, current, 0, 0.0f, nullptr);
+                        pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED,
+                                                pData->id,
+                                                current,
+                                                0, 0, 0.0f, nullptr);
                     }
                 }
             }
 
             if (! fIsInitializing)
-                pData->engine->callback(ENGINE_CALLBACK_RELOAD_PARAMETERS, pData->id, 0, 0, 0.0f, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_RELOAD_PARAMETERS, pData->id, 0, 0, 0, 0.0f, nullptr);
 
             ret = 1;
             break;

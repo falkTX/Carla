@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -26,6 +26,7 @@ using CarlaBackend::PluginType;
 using CarlaBackend::PluginCategory;
 using CarlaBackend::InternalParameterIndex;
 using CarlaBackend::EngineCallbackOpcode;
+using CarlaBackend::NsmCallbackOpcode;
 using CarlaBackend::EngineOption;
 using CarlaBackend::EngineProcessMode;
 using CarlaBackend::EngineTransportMode;
@@ -274,6 +275,22 @@ typedef struct _CarlaTransportInfo {
 } CarlaTransportInfo;
 
 /*!
+ * Runtime engine information.
+ */
+typedef struct _CarlaRuntimeEngineInfo {
+    /*!
+     * DSP load.
+     */
+    float load;
+
+    /*!
+     * Number of xruns.
+     */
+    uint32_t xruns;
+
+} CarlaRuntimeEngineInfo;
+
+/*!
  * Image data for LV2 inline display API.
  * raw image pixmap format is ARGB32,
  */
@@ -352,6 +369,11 @@ CARLA_EXPORT void carla_engine_idle();
  * Check if the engine is running.
  */
 CARLA_EXPORT bool carla_is_engine_running();
+
+/*!
+ * Get information about the currently running engine.
+ */
+CARLA_EXPORT const CarlaRuntimeEngineInfo* carla_get_runtime_engine_info();
 
 /*!
  * Tell the engine to stop the current cancelable action.
@@ -959,6 +981,18 @@ CARLA_EXPORT const char* carla_get_library_filename();
  * Get the folder where this carla library resides.
  */
 CARLA_EXPORT const char* carla_get_library_folder();
+
+/*!
+ * Initialize NSM (that is, announce ourselves to it).
+ * Must be called as early as possible in the program's lifecycle.
+ * Returns true if NSM is available and initialized correctly.
+ */
+CARLA_EXPORT bool carla_nsm_init(int pid, const char* executableName);
+
+/*!
+ * Respond to an NSM callback.
+ */
+CARLA_EXPORT void carla_nsm_ready(NsmCallbackOpcode opcode);
 
 /** @} */
 

@@ -475,10 +475,10 @@ bool carla_engine_init_bridge(const char audioBaseName[6+1], const char rtClient
 
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(engine != nullptr, "The seleted audio driver is not available", false);
 
-    carla_engine_init_common(engine);
-
     engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,   CB::ENGINE_PROCESS_MODE_BRIDGE,   nullptr);
     engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE, CB::ENGINE_TRANSPORT_MODE_BRIDGE, nullptr);
+
+    carla_engine_init_common(engine);
 
     if (engine->init(clientName))
     {
@@ -544,6 +544,22 @@ bool carla_is_engine_running()
     return (gStandalone.engine != nullptr && gStandalone.engine->isRunning());
 }
 
+const CarlaRuntimeEngineInfo* carla_get_runtime_engine_info()
+{
+    static CarlaRuntimeEngineInfo retInfo;
+
+    // reset
+    retInfo.load = 0.0f;
+    retInfo.xruns = 0;
+
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &retInfo);
+
+    retInfo.load = gStandalone.engine->getDSPLoad();
+    retInfo.xruns = gStandalone.engine->getTotalXruns();
+
+    return &retInfo;
+}
+
 void carla_cancel_engine_action()
 {
     if (gStandalone.engine != nullptr)
@@ -596,8 +612,10 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
             // jack transport cannot be disabled in multi-client
             if (gStandalone.engineCallback != nullptr)
                 gStandalone.engineCallback(gStandalone.engineCallbackPtr,
-                                           CB::ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED, 0,
-                                           CB::ENGINE_TRANSPORT_MODE_JACK, 0, 0.0f,
+                                           CB::ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED,
+                                           0,
+                                           CB::ENGINE_TRANSPORT_MODE_JACK,
+                                           0, 0, 0.0f,
                                            gStandalone.engineOptions.transportExtra);
             CARLA_SAFE_ASSERT_RETURN(gStandalone.engineOptions.processMode != CB::ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS,);
         }

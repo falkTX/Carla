@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -89,7 +89,8 @@ struct PluginPostRtEvent {
     PluginPostRtEventType type;
     int32_t value1;
     int32_t value2;
-    float   value3;
+    int32_t value4;
+    float   valueF;
 };
 
 // -----------------------------------------------------------------------
@@ -358,7 +359,9 @@ struct CarlaPlugin::ProtectedData {
     // Post-poned events
 
     void postponeRtEvent(const PluginPostRtEvent& rtEvent) noexcept;
-    void postponeRtEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const float value3) noexcept;
+    void postponeRtEvent(const PluginPostRtEventType type,
+                         const int32_t value1, const int32_t value2, const int32_t value3,
+                         const float valueF) noexcept;
 
     // -------------------------------------------------------------------
     // Library functions

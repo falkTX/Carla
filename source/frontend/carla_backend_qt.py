@@ -31,7 +31,7 @@ from carla_backend import *
 
 class CarlaHostSignals(QObject):
     # signals
-    DebugCallback = pyqtSignal(int, int, int, float, str)
+    DebugCallback = pyqtSignal(int, int, int, int, float, str)
     PluginAddedCallback = pyqtSignal(int, str)
     PluginRemovedCallback = pyqtSignal(int)
     PluginRenamedCallback = pyqtSignal(int, str)
@@ -60,7 +60,7 @@ class CarlaHostSignals(QObject):
     PatchbayPortRenamedCallback = pyqtSignal(int, int, str)
     PatchbayConnectionAddedCallback = pyqtSignal(int, int, int, int, int)
     PatchbayConnectionRemovedCallback = pyqtSignal(int, int, int)
-    EngineStartedCallback = pyqtSignal(int, int, float, str)
+    EngineStartedCallback = pyqtSignal(int, int, int, float, str)
     EngineStoppedCallback = pyqtSignal()
     ProcessModeChangedCallback = pyqtSignal(int)
     TransportModeChangedCallback = pyqtSignal(int, str)

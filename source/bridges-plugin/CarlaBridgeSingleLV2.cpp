@@ -411,7 +411,9 @@ protected:
         return "LV2 Plugin";
     }
 
-    void engineCallback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr)
+    void engineCallback(const EngineCallbackOpcode action, const uint pluginId,
+                        const int value1, const int value2, const int value3,
+                        const float valueF, const char* const valueStr)
     {
         switch (action)
         {
@@ -423,7 +425,7 @@ protected:
             {
                 fUI.writeFunction(fUI.controller,
                                   static_cast<uint32_t>(value1)+fPorts.indexOffset,
-                                  sizeof(float), 0, &value3);
+                                  sizeof(float), 0, &valueF);
             }
             break;
 
@@ -438,8 +440,9 @@ protected:
 
         default:
             carla_stdout("engineCallback(%i:%s, %u, %i, %i, %f, %s)",
-                         action, EngineCallbackOpcode2Str(action), pluginId, value1, value2,
-                         static_cast<double>(value3), valueStr);
+                         action, EngineCallbackOpcode2Str(action), pluginId,
+                         value1, value2, value3,
+                         static_cast<double>(valueF), valueStr);
             break;
         }
     }
@@ -541,9 +544,11 @@ private:
 
     #define handlePtr ((CarlaEngineSingleLV2*)handle)
 
-    static void _engine_callback(void* handle, EngineCallbackOpcode action, uint pluginId, int value1, int value2, float value3, const char* valueStr)
+    static void _engine_callback(void* handle, EngineCallbackOpcode action, uint pluginId,
+                                 int value1, int value2, int value3,
+                                 float valueF, const char* valueStr)
     {
-        handlePtr->engineCallback(action, pluginId, value1, value2, value3, valueStr);
+        handlePtr->engineCallback(action, pluginId, value1, value2, value3, valueF, valueStr);
     }
 
     #undef handlePtr

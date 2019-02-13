@@ -209,14 +209,20 @@ protected:
         {
             CARLA_SAFE_ASSERT_RETURN(std::strcmp(types, "") == 0, 0);
 
-            kEngine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, kPlugin->getId(), 1, 0, 0.0f, nullptr);
+            kEngine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+                              kPlugin->getId(),
+                              1,
+                              0, 0, 0.0f, nullptr);
         }
 
         else if (std::strcmp(path, "/nsm/client/gui_is_hidden") == 0)
         {
             CARLA_SAFE_ASSERT_RETURN(std::strcmp(types, "") == 0, 0);
 
-            kEngine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, kPlugin->getId(), 0, 0, 0.0f, nullptr);
+            kEngine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+                              kPlugin->getId(),
+                              0,
+                              0, 0, 0.0f, nullptr);
         }
 
         return 0;
@@ -357,7 +363,10 @@ protected:
                 CarlaString errorString("Plugin '" + CarlaString(kPlugin->getName()) + "' has crashed!\n"
                                         "Saving now will lose its current settings.\n"
                                         "Please remove this plugin, and not rely on it from this point.");
-                kEngine->callback(CarlaBackend::ENGINE_CALLBACK_ERROR, kPlugin->getId(), 0, 0, 0.0f, errorString);
+                kEngine->callback(CarlaBackend::ENGINE_CALLBACK_ERROR,
+                                  kPlugin->getId(),
+                                  0, 0, 0, 0.0f,
+                                  errorString);
             }
         }
 
@@ -1080,9 +1089,20 @@ public:
                     fShmRtClientControl.commitWrite();
 
                     if (status == MIDI_STATUS_NOTE_ON)
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, event.channel, midiData[1], midiData[2]);
+                    {
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOn,
+                                               event.channel,
+                                               midiData[1],
+                                               midiData[2],
+                                               0.0f);
+                    }
                     else if (status == MIDI_STATUS_NOTE_OFF)
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, event.channel, midiData[1], 0.0f);
+                    {
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOff,
+                                               event.channel,
+                                               midiData[1],
+                                               0, 0.0f);
+                    }
                 } break;
                 }
             }
@@ -1401,7 +1421,10 @@ public:
                 break;
 
             case kPluginBridgeNonRtServerUiClosed:
-                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+                                        pData->id,
+                                        0,
+                                        0, 0, 0.0f, nullptr);
                 break;
 
             case kPluginBridgeNonRtServerError: {
@@ -1413,7 +1436,7 @@ public:
 
                 if (fInitiated)
                 {
-                    pData->engine->callback(ENGINE_CALLBACK_ERROR, pData->id, 0, 0, 0.0f, error);
+                    pData->engine->callback(ENGINE_CALLBACK_ERROR, pData->id, 0, 0, 0, 0.0f, error);
 
                     // just in case
                     pData->engine->setLastError(error);
@@ -1633,12 +1656,20 @@ private:
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
             if (pData->engine->isOscControlRegistered())
                 pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_ACTIVE, 0.0f);
-            pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_ACTIVE, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+                                    pData->id,
+                                    PARAMETER_ACTIVE,
+                                    0, 0,
+                                    0.0f,
+                                    nullptr);
 #endif
         }
 
         if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
-            pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+                                    pData->id,
+                                    0,
+                                    0, 0, 0.0f, nullptr);
     }
 
     void resizeAudioPool(const uint32_t bufferSize)
@@ -1744,12 +1775,16 @@ private:
         if (needsCancelableAction)
         {
             pData->engine->setActionCanceled(false);
-            pData->engine->callback(ENGINE_CALLBACK_CANCELABLE_ACTION, pData->id, 1, 0, 0.0f, "Loading JACK application");
+            pData->engine->callback(ENGINE_CALLBACK_CANCELABLE_ACTION,
+                                    pData->id,
+                                    1,
+                                    0, 0, 0.0f,
+                                    "Loading JACK application");
         }
 
         for (;fBridgeThread.isThreadRunning();)
         {
-            pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
             if (needsEngineIdle)
                 pData->engine->idle();
@@ -1765,7 +1800,13 @@ private:
         }
 
         if (needsCancelableAction)
-            pData->engine->callback(ENGINE_CALLBACK_CANCELABLE_ACTION, pData->id, 0, 0, 0.0f, "Loading JACK application");
+        {
+            pData->engine->callback(ENGINE_CALLBACK_CANCELABLE_ACTION,
+                                    pData->id,
+                                    0,
+                                    0, 0, 0.0f,
+                                    "Loading JACK application");
+        }
 
         if (fInitError || ! fInitiated)
         {

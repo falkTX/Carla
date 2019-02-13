@@ -143,6 +143,7 @@ class HostWindow(QMainWindow):
         self.fLastTransportBPM   = 0.0
         self.fLastTransportFrame = 0
         self.fLastTransportState = False
+        self.fBufferSize         = 0
         self.fSampleRate         = 0.0
 
         if MACOS:
@@ -496,6 +497,7 @@ class HostWindow(QMainWindow):
         host.EngineStartedCallback.connect(self.slot_handleEngineStartedCallback)
         host.EngineStoppedCallback.connect(self.slot_handleEngineStoppedCallback)
         host.TransportModeChangedCallback.connect(self.slot_handleTransportModeChangedCallback)
+        host.BufferSizeChangedCallback.connect(self.slot_handleBufferSizeChangedCallback)
         host.SampleRateChangedCallback.connect(self.slot_handleSampleRateChangedCallback)
         host.CancelableActionCallback.connect(self.slot_handleCancelableActionCallback)
         host.ProjectLoadFinishedCallback.connect(self.slot_handleProjectLoadFinishedCallback)
@@ -650,6 +652,23 @@ class HostWindow(QMainWindow):
             title += " (%s)" % self.fSessionManagerName
 
         self.setWindowTitle(title)
+
+    def updateBufferSize(self, newBufferSize):
+        if self.fBufferSize == newBufferSize:
+            return
+        self.fBufferSize = newBufferSize
+        self.ui.cb_buffer_size.clear()
+        self.ui.cb_buffer_size.addItem(str(newBufferSize))
+        self.ui.cb_buffer_size.setCurrentIndex(0)
+
+    def updateSampleRate(self, newSampleRate):
+        if self.fSampleRate == newSampleRate:
+            return
+        self.fSampleRate = newSampleRate
+        self.ui.cb_sample_rate.clear()
+        self.ui.cb_sample_rate.addItem(str(newSampleRate))
+        self.ui.cb_sample_rate.setCurrentIndex(0)
+        self.refreshTransport(True)
 
     # --------------------------------------------------------------------------------------------------------
     # Files
@@ -879,10 +898,8 @@ class HostWindow(QMainWindow):
     # --------------------------------------------------------------------------------------------------------
     # Engine (host callbacks)
 
-    @pyqtSlot(int, int, float, str)
-    def slot_handleEngineStartedCallback(self, processMode, transportMode, sampleRate, driverName):
-        self.fSampleRate = sampleRate
-
+    @pyqtSlot(int, int, int, float, str)
+    def slot_handleEngineStartedCallback(self, processMode, transportMode, bufferSize, sampleRate, driverName):
         self.ui.menu_PluginMacros.setEnabled(True)
         self.ui.menu_Canvas.setEnabled(True)
         self.ui.w_transport.setEnabled(True)
@@ -915,14 +932,15 @@ class HostWindow(QMainWindow):
             self.ui.act_file_open.setEnabled(True)
             self.ui.act_file_save_as.setEnabled(True)
 
-        self.refreshTransport(True)
-
         self.ui.cb_transport_jack.setChecked(transportMode == ENGINE_TRANSPORT_MODE_JACK)
         self.ui.cb_transport_jack.setEnabled(driverName == "JACK" and processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
 
         if self.ui.cb_transport_link.isEnabled():
             self.ui.cb_transport_link.setChecked(":link:" in self.host.transportExtra)
 
+        self.updateBufferSize(bufferSize)
+        self.updateSampleRate(sampleRate)
+        self.refreshRuntimeInfo(0.0, 0)
         self.startTimers()
 
         self.ui.text_logs.appendPlainText("======= Engine started ========")
@@ -940,6 +958,7 @@ class HostWindow(QMainWindow):
 
         # just in case
         self.removeAllPlugins()
+        self.refreshRuntimeInfo(0.0, 0)
 
         self.ui.menu_PluginMacros.setEnabled(False)
         self.ui.menu_Canvas.setEnabled(False)
@@ -961,10 +980,13 @@ class HostWindow(QMainWindow):
         self.ui.cb_transport_jack.setChecked(transportMode == ENGINE_TRANSPORT_MODE_JACK)
         self.ui.cb_transport_link.setChecked(":link:" in transportExtra)
 
+    @pyqtSlot(int)
+    def slot_handleBufferSizeChangedCallback(self, newBufferSize):
+        self.updateBufferSize(newBufferSize)
+
     @pyqtSlot(float)
     def slot_handleSampleRateChangedCallback(self, newSampleRate):
-        self.fSampleRate = newSampleRate
-        self.refreshTransport(True)
+        self.updateSampleRate(newSampleRate)
 
     @pyqtSlot(int, bool, str)
     def slot_handleCancelableActionCallback(self, pluginId, started, action):
@@ -2084,19 +2106,22 @@ class HostWindow(QMainWindow):
     # --------------------------------------------------------------------------------------------------------
 
     @pyqtSlot(int, int, str)
-    def slot_handleNSMCallback(self, value1, value2, valueStr):
+    def slot_handleNSMCallback(self, opcode, valueInt, valueStr):
+        if opcode == NSM_CALLBACK_INIT:
+            return
+
         # Error
-        if value1 == 0:
+        elif opcode == NSM_CALLBACK_ERROR:
             pass
 
         # Reply
-        elif value1 == 1:
+        elif opcode == NSM_CALLBACK_ANNOUNCE:
             self.fFirstEngineInit    = False
             self.fSessionManagerName = valueStr
             self.setProperWindowTitle()
 
         # Open
-        elif value1 == 2:
+        elif opcode == NSM_CALLBACK_OPEN:
             self.fClientName      = os.path.basename(valueStr)
             self.fProjectFilename = QFileInfo(valueStr+".carxp").absoluteFilePath()
             self.setProperWindowTitle()
@@ -2106,22 +2131,22 @@ class HostWindow(QMainWindow):
             return
 
         # Save
-        elif value1 == 3:
+        elif opcode == NSM_CALLBACK_SAVE:
             self.saveProjectNow()
 
         # Session is Loaded
-        elif value1 == 4:
+        elif opcode == NSM_CALLBACK_SESSION_IS_LOADED:
             pass
 
         # Show Optional Gui
-        elif value1 == 5:
+        elif opcode == NSM_CALLBACK_SHOW_OPTIONAL_GUI:
             self.show()
 
         # Hide Optional Gui
-        elif value1 == 6:
+        elif opcode == NSM_CALLBACK_HIDE_OPTIONAL_GUI:
             self.hide()
 
-        self.host.nsm_ready(value1)
+        self.host.nsm_ready(opcode)
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -2129,7 +2154,7 @@ class HostWindow(QMainWindow):
         return text.replace("\x1b[30;1m", "").replace("\x1b[31m", "").replace("\x1b[0m", "")
 
     @pyqtSlot(int, int, int, float, str)
-    def slot_handleDebugCallback(self, pluginId, value1, value2, value3, valueStr):
+    def slot_handleDebugCallback(self, pluginId, value1, value2, value3, valuef, valueStr):
         self.ui.text_logs.appendPlainText(self.fixLogText(valueStr))
 
     @pyqtSlot(str)
@@ -2251,6 +2276,7 @@ class HostWindow(QMainWindow):
     # show/hide event
 
     def showEvent(self, event):
+        self.getAndRefreshRuntimeInfo()
         self.refreshTransport(True)
         QMainWindow.showEvent(self, event)
 
@@ -2281,6 +2307,20 @@ class HostWindow(QMainWindow):
 
     # --------------------------------------------------------------------------------------------------------
     # timer event
+
+    def refreshRuntimeInfo(self, load, xruns):
+        txt1 = str(xruns) if (xruns >= 0) else "--"
+        txt2 = "" if (xruns == 1) else "s"
+        self.ui.b_xruns.setText("%s Xrun%s" % (txt1, txt2))
+        self.ui.pb_dsp_load.setValue(int(load))
+
+    def getAndRefreshRuntimeInfo(self):
+        if not self.isVisible():
+            return
+        if not self.host.is_engine_running():
+            return
+        info = self.host.get_runtime_engine_info()
+        self.refreshRuntimeInfo(info['load'], info['xruns'])
 
     def idleFast(self):
         self.host.engine_idle()
@@ -2315,6 +2355,8 @@ class HostWindow(QMainWindow):
         self.ui.peak_out.displayMeter(2, 0.0, True)
 
     def idleSlow(self):
+        self.getAndRefreshRuntimeInfo()
+
         if self.fPluginCount == 0 or self.fCurrentlyRemovingAllPlugins:
             return
 
@@ -2528,7 +2570,7 @@ def canvasCallback(action, value1, value2, valueStr):
 # ------------------------------------------------------------------------------------------------------------
 # Engine callback
 
-def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
+def engineCallback(host, action, pluginId, value1, value2, value3, valuef, valueStr):
     # kdevelop likes this :)
     if False: host = CarlaHostNull()
 
@@ -2544,7 +2586,7 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
         host.transportExtra = valueStr
 
     if action == ENGINE_CALLBACK_DEBUG:
-        host.DebugCallback.emit(pluginId, value1, value2, value3, valueStr)
+        host.DebugCallback.emit(pluginId, value1, value2, value3, valuef, valueStr)
     elif action == ENGINE_CALLBACK_PLUGIN_ADDED:
         host.PluginAddedCallback.emit(pluginId, valueStr)
     elif action == ENGINE_CALLBACK_PLUGIN_REMOVED:
@@ -2554,9 +2596,9 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
     elif action == ENGINE_CALLBACK_PLUGIN_UNAVAILABLE:
         host.PluginUnavailableCallback.emit(pluginId, valueStr)
     elif action == ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
-        host.ParameterValueChangedCallback.emit(pluginId, value1, value3)
+        host.ParameterValueChangedCallback.emit(pluginId, value1, valuef)
     elif action == ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
-        host.ParameterDefaultChangedCallback.emit(pluginId, value1, value3)
+        host.ParameterDefaultChangedCallback.emit(pluginId, value1, valuef)
     elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
         host.ParameterMidiCcChangedCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
@@ -2570,7 +2612,7 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
     elif action == ENGINE_CALLBACK_UI_STATE_CHANGED:
         host.UiStateChangedCallback.emit(pluginId, value1)
     elif action == ENGINE_CALLBACK_NOTE_ON:
-        host.NoteOnCallback.emit(pluginId, value1, value2, round(value3))
+        host.NoteOnCallback.emit(pluginId, value1, value2, value3)
     elif action == ENGINE_CALLBACK_NOTE_OFF:
         host.NoteOffCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_UPDATE:
@@ -2603,7 +2645,7 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
     elif action == ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED:
         host.PatchbayConnectionRemovedCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_ENGINE_STARTED:
-        host.EngineStartedCallback.emit(value1, value2, value3, valueStr)
+        host.EngineStartedCallback.emit(value1, value2, value3, valuef, valueStr)
     elif action == ENGINE_CALLBACK_ENGINE_STOPPED:
         host.EngineStoppedCallback.emit()
     elif action == ENGINE_CALLBACK_PROCESS_MODE_CHANGED:
@@ -2613,7 +2655,7 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
     elif action == ENGINE_CALLBACK_BUFFER_SIZE_CHANGED:
         host.BufferSizeChangedCallback.emit(value1)
     elif action == ENGINE_CALLBACK_SAMPLE_RATE_CHANGED:
-        host.SampleRateChangedCallback.emit(value3)
+        host.SampleRateChangedCallback.emit(valuef)
     elif action == ENGINE_CALLBACK_CANCELABLE_ACTION:
         host.CancelableActionCallback.emit(pluginId, bool(value1 != 0), valueStr)
     elif action == ENGINE_CALLBACK_PROJECT_LOAD_FINISHED:
@@ -2710,7 +2752,7 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError, HostClass = No
     host.isControl = isControl
     host.isPlugin  = isPlugin
 
-    host.set_engine_callback(lambda h,a,p,v1,v2,v3,vs: engineCallback(host,a,p,v1,v2,v3,vs))
+    host.set_engine_callback(lambda h,a,p,v1,v2,v3,vf,vs: engineCallback(host,a,p,v1,v2,v3,vf,vs))
     host.set_file_callback(fileCallback)
 
     # If it's a plugin the paths are already set

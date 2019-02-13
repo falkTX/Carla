@@ -246,6 +246,7 @@ struct CarlaEngine::ProtectedData {
     EnginePluginData plugins[1];
 #else
     EnginePluginData* plugins;
+    uint32_t xruns;
 #endif
     float peaks[4];
 

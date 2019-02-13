@@ -754,7 +754,10 @@ public:
                         if (pData->ctrlChannel == static_cast<int32_t>(channel))
                         {
                             pData->midiprog.current = index;
-                            pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
+                            pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED,
+                                                    pData->id,
+                                                    index,
+                                                    0, 0, 0.0f, nullptr);
                         }
                     }
 
@@ -1386,7 +1389,9 @@ public:
             if (programChanged)
                 setMidiProgram(pData->midiprog.current, true, true, true, false);
 
-            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS,
+                                    pData->id,
+                                    0, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -1843,7 +1848,11 @@ public:
                                         fCurMidiProgs[event.channel] = static_cast<int32_t>(k);
 
                                         if (event.channel == pData->ctrlChannel)
-                                            pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, static_cast<int32_t>(k), 0, 0.0f);
+                                        {
+                                            pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange,
+                                                                   static_cast<int32_t>(k),
+                                                                   0, 0, 0.0f);
+                                        }
 
                                         break;
                                     }
@@ -1950,9 +1959,20 @@ public:
                     nativeEvent.data[3] = midiEvent.size == 4 ? midiEvent.data[3] : 0;
 
                     if (status == MIDI_STATUS_NOTE_ON)
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, event.channel, midiEvent.data[1], midiEvent.data[2]);
+                    {
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOn,
+                                               event.channel,
+                                               midiEvent.data[1],
+                                               midiEvent.data[2],
+                                               0.0f);
+                    }
                     else if (status == MIDI_STATUS_NOTE_OFF)
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, event.channel, midiEvent.data[1], 0.0f);
+                    {
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOff,
+                                               event.channel,
+                                               midiEvent.data[1],
+                                               0, 0.0f);
+                    }
                 } break;
                 } // switch (event.type)
             }
@@ -2386,7 +2406,7 @@ protected:
 
     void handleUiClosed()
     {
-        pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0, 0.0f, nullptr);
         fIsUiVisible = false;
     }
 
@@ -2412,30 +2432,30 @@ protected:
             break;
         case NATIVE_HOST_OPCODE_UPDATE_PARAMETER:
             // TODO
-            pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, -1, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, -1, 0, 0, 0.0f, nullptr);
             break;
         case NATIVE_HOST_OPCODE_UPDATE_MIDI_PROGRAM:
             // TODO
-            pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, -1, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, -1, 0, 0, 0.0f, nullptr);
             break;
         case NATIVE_HOST_OPCODE_RELOAD_PARAMETERS:
             reload(); // FIXME
-            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PARAMETERS, pData->id, -1, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PARAMETERS, pData->id, -1, 0, 0, 0.0f, nullptr);
             break;
         case NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS:
             reloadPrograms(false);
-            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, -1, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, -1, 0, 0, 0.0f, nullptr);
             break;
         case NATIVE_HOST_OPCODE_RELOAD_ALL:
             reload();
-            pData->engine->callback(ENGINE_CALLBACK_RELOAD_ALL, pData->id, -1, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_ALL, pData->id, -1, 0, 0, 0.0f, nullptr);
             break;
         case NATIVE_HOST_OPCODE_UI_UNAVAILABLE:
-            pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0, 0.0f, nullptr);
             fIsUiAvailable = false;
             break;
         case NATIVE_HOST_OPCODE_HOST_IDLE:
-            pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
             break;
         case NATIVE_HOST_OPCODE_INTERNAL_PLUGIN:
             ret = 1;

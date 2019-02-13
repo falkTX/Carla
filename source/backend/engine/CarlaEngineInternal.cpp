@@ -392,6 +392,7 @@ CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
       timeInfo(),
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
       plugins(nullptr),
+      xruns(0),
 #endif
       events(),
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -481,6 +482,7 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     plugins = new EnginePluginData[maxPluginNumber];
     carla_zeroStructs(plugins, maxPluginNumber);
+    xruns = 0;
 #endif
 
     nextAction.clearAndReset();

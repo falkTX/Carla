@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -808,6 +808,16 @@ public:
      */
     virtual CarlaEngineClient* addClient(CarlaPlugin* const plugin);
 
+    /*!
+     * Get the current CPU load estimated by the engine.
+     */
+    virtual float getDSPLoad() const noexcept;
+
+    /*!
+     * Get the total number of xruns so far.
+     */
+    virtual uint32_t getTotalXruns() const noexcept;
+
     // -------------------------------------------------------------------
     // Plugin management
 
@@ -978,7 +988,9 @@ public:
      * Call the main engine callback, if set.
      * May be called by plugins.
      */
-    virtual void callback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr) noexcept;
+    virtual void callback(const EngineCallbackOpcode action, const uint pluginId,
+                          const int value1, const int value2, const int value3,
+                          const float valueF, const char* const valueStr) noexcept;
 
     /*!
      * Set the main engine callback to @a func.

@@ -227,7 +227,13 @@ public:
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
             refreshExternalGraphPorts<PatchbayGraph>(pData->graph.getPatchbayGraph(), false);
 
-        callback(ENGINE_CALLBACK_ENGINE_STARTED, 0, pData->options.processMode, pData->options.transportMode, 0.0f, getCurrentDriverName());
+        callback(ENGINE_CALLBACK_ENGINE_STARTED,
+                 0,
+                 pData->options.processMode,
+                 pData->options.transportMode,
+                 static_cast<int>(pData->bufferSize),
+                 static_cast<float>(pData->sampleRate),
+                 getCurrentDriverName());
         return true;
     }
 
@@ -404,7 +410,10 @@ public:
             std::snprintf(strBuf, STR_MAX-1, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
             strBuf[STR_MAX-1] = '\0';
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
+                     connectionToId.id,
+                     0, 0, 0, 0.0f,
+                     strBuf);
 
             extGraph.connections.list.append(connectionToId);
         }
@@ -425,7 +434,10 @@ public:
             std::snprintf(strBuf, STR_MAX-1, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
             strBuf[STR_MAX-1] = '\0';
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
+                     connectionToId.id,
+                     0, 0, 0, 0.0f,
+                     strBuf);
 
             extGraph.connections.list.append(connectionToId);
         }
@@ -582,7 +594,7 @@ protected:
 
     void audioDeviceError(const juce::String& errorMessage) override
     {
-        callback(ENGINE_CALLBACK_ERROR, 0, 0, 0, 0.0f, errorMessage.toRawUTF8());
+        callback(ENGINE_CALLBACK_ERROR, 0, 0, 0, 0, 0.0f, errorMessage.toRawUTF8());
     }
 
     // -------------------------------------------------------------------

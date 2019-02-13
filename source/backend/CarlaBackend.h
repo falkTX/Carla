@@ -716,7 +716,7 @@ typedef enum {
      * A parameter value has changed.
      * @a pluginId Plugin Id
      * @a value1   Parameter index
-     * @a value3   New parameter value
+     * @a valuef   New parameter value
      */
     ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED = 5,
 
@@ -724,7 +724,7 @@ typedef enum {
      * A parameter default has changed.
      * @a pluginId Plugin Id
      * @a value1   Parameter index
-     * @a value3   New default value
+     * @a valuef   New default value
      */
     ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED = 6,
 
@@ -902,7 +902,8 @@ typedef enum {
      * Engine started.
      * @a value1   Process mode
      * @a value2   Transport mode
-     * @a value3   Sample rate
+     * @a value3   Buffer size
+     * @a valuef   Sample rate
      * @a valuestr Engine driver
      * @see EngineProcessMode
      * @see EngineTransportMode
@@ -937,7 +938,7 @@ typedef enum {
 
     /*!
      * Engine sample-rate changed.
-     * @a value3 New sample rate
+     * @a valuef New sample rate
      */
     ENGINE_CALLBACK_SAMPLE_RATE_CHANGED = 34,
 
@@ -955,8 +956,12 @@ typedef enum {
     ENGINE_CALLBACK_PROJECT_LOAD_FINISHED = 36,
 
     /*!
-     * NSM callback.
-     * (Work in progress, values are not defined yet)
+     * NSM callback, to be handled by a frontend.
+     * Frontend must call carla_nsm_ready() with opcode as parameter as a response
+     * @a value1   NSM opcode
+     * @a value2   Integer value
+     * @a valueStr String value
+     * @see NsmCallbackOpcode
      */
     ENGINE_CALLBACK_NSM = 37,
 
@@ -985,6 +990,61 @@ typedef enum {
     ENGINE_CALLBACK_QUIT = 41
 
 } EngineCallbackOpcode;
+
+/* ------------------------------------------------------------------------------------------------------------
+ * NSM Callback Opcode */
+
+/*!
+ * NSM callback opcodes.
+ * @see ENGINE_CALLBACK_NSM
+ */
+typedef enum {
+    /*!
+     * NSM is available and initialized.
+     */
+    NSM_CALLBACK_INIT = 0,
+
+    /*!
+     * Error from NSM side.
+     * @a valueInt Error code
+     * @a valueStr Error string
+     */
+    NSM_CALLBACK_ERROR = 1,
+
+    /*!
+     * Announce message.
+     * @a valueInt SM Flags (WIP, to be defined)
+     * @a valueStr SM Name
+     */
+    NSM_CALLBACK_ANNOUNCE = 2,
+
+    /*!
+     * Open message.
+     * @a valueStr Project filename
+     */
+    NSM_CALLBACK_OPEN = 3,
+
+    /*!
+     * Save message.
+     */
+    NSM_CALLBACK_SAVE = 4,
+
+    /*!
+     * Session-is-loaded message.
+     */
+    NSM_CALLBACK_SESSION_IS_LOADED = 5,
+
+    /*!
+     * Show-optional-gui message.
+     */
+    NSM_CALLBACK_SHOW_OPTIONAL_GUI = 6,
+
+    /*!
+     * Hide-optional-gui message.
+     */
+    NSM_CALLBACK_HIDE_OPTIONAL_GUI = 7,
+
+} NsmCallbackOpcode;
 
 /* ------------------------------------------------------------------------------------------------------------
  * Engine Option */
@@ -1300,7 +1360,9 @@ enum PatchbayIcon {
  * Front-ends must never block indefinitely during a callback.
  * @see EngineCallbackOpcode, CarlaEngine::setCallback() and carla_set_engine_callback()
  */
-typedef void (*EngineCallbackFunc)(void* ptr, EngineCallbackOpcode action, uint pluginId, int value1, int value2, float value3, const char* valueStr);
+typedef void (*EngineCallbackFunc)(void* ptr, EngineCallbackOpcode action, uint pluginId,
+                                   int value1, int value2, int value3,
+                                   float valuef, const char* valueStr);
 
 /*!
  * File callback function.

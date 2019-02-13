@@ -1405,7 +1405,7 @@ public:
             {
                 CARLA_SAFE_ASSERT(!yesNo);
             }
-            pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0, 0.0f, nullptr);
             return;
         }
 
@@ -1428,7 +1428,7 @@ public:
 
                 if (! fPipeServer.startPipeServer(std::min(fLv2Options.sequenceSize, 819200)))
                 {
-                    pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+                    pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0, 0.0f, nullptr);
                     return;
                 }
 
@@ -1577,7 +1577,7 @@ public:
                     }
 
                     if (fUI.window == nullptr && fExt.uishow == nullptr)
-                        return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, msg);
+                        return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0, 0.0f, msg);
 
                     if (fUI.window != nullptr)
                         fFeatures[kFeatureIdUiParent]->data = fUI.window->getPtr();
@@ -1608,7 +1608,11 @@ public:
                     fUI.handle = nullptr;
                 }
 
-                return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, "Plugin refused to open its own UI");
+                return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+                                               pData->id,
+                                               -1,
+                                               0, 0, 0.0f,
+                                               "Plugin refused to open its own UI");
             }
 
             updateUi();
@@ -1725,7 +1729,10 @@ public:
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                 pData->transientTryCounter = 0;
 #endif
-                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+                                        pData->id,
+                                        0,
+                                        0, 0, 0.0f, nullptr);
                 break;
             }
         }
@@ -1738,7 +1745,10 @@ public:
         {
             fNeedsUiClose = false;
             showCustomUI(false);
-            pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+                                    pData->id,
+                                    0,
+                                    0, 0, 0.0f, nullptr);
         }
         else if (fUI.handle != nullptr && fUI.descriptor != nullptr)
         {
@@ -1756,7 +1766,10 @@ public:
             else if (fUI.handle != nullptr && fExt.uiidle != nullptr && fExt.uiidle->idle(fUI.handle) != 0)
             {
                 showCustomUI(false);
-                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+                                        pData->id,
+                                        0,
+                                        0, 0, 0.0f, nullptr);
                 CARLA_SAFE_ASSERT(fUI.handle == nullptr);
             }
 #endif
@@ -2894,7 +2907,7 @@ public:
             if (programChanged)
                 setMidiProgram(pData->midiprog.current, true, true, true, false);
 
-            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -3173,7 +3186,11 @@ public:
                 }
 
                 if (doPostRt)
-                    pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 1, fParamBuffers[k]);
+                    pData->postponeRtEvent(kPluginPostRtEventParameterChange,
+                                           static_cast<int32_t>(k),
+                                           1,
+                                           0,
+                                           fParamBuffers[k]);
             }
 
             for (uint32_t i=0; i < fEventsIn.count; ++i)
@@ -3675,9 +3692,20 @@ public:
                         lv2midi_put_event(&evInMidiStates[j], mtime, midiEvent.size, midiData2);
 
                     if (status == MIDI_STATUS_NOTE_ON)
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, event.channel, midiData[1], midiData[2]);
+                    {
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOn,
+                                               event.channel,
+                                               midiData[1],
+                                               midiData[2],
+                                               0.0f);
+                    }
                     else if (status == MIDI_STATUS_NOTE_OFF)
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, event.channel, midiData[1], 0.0f);
+                    {
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOff,
+                                               event.channel,
+                                               midiData[1],
+                                               0, 0.0f);
+                    }
                 } break;
                 } // switch (event.type)
             }
@@ -3953,7 +3981,10 @@ public:
                 if (carla_isNotEqual(fParamBuffers[k], pData->param.ranges[k].def))
                 {
                     fParamBuffers[k] = pData->param.ranges[k].def;
-                    pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, fParamBuffers[k]);
+                    pData->postponeRtEvent(kPluginPostRtEventParameterChange,
+                                           static_cast<int32_t>(k),
+                                           0, 0,
+                                           fParamBuffers[k]);
                 }
             }
         }
@@ -4221,7 +4252,11 @@ public:
                 continue;
 
             fParamBuffers[k] = sampleRatef;
-            pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 1, fParamBuffers[k]);
+            pData->postponeRtEvent(kPluginPostRtEventParameterChange,
+                                   static_cast<int32_t>(k),
+                                   1,
+                                   0,
+                                   fParamBuffers[k]);
             break;
         }
 
@@ -4235,7 +4270,11 @@ public:
             if (pData->param.data[k].type == PARAMETER_INPUT && pData->param.special[k] == PARAMETER_SPECIAL_FREEWHEEL)
             {
                 fParamBuffers[k] = isOffline ? pData->param.ranges[k].max : pData->param.ranges[k].min;
-                pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 1, fParamBuffers[k]);
+                pData->postponeRtEvent(kPluginPostRtEventParameterChange,
+                                       static_cast<int32_t>(k),
+                                       1,
+                                       0,
+                                       fParamBuffers[k]);
                 break;
             }
         }
@@ -4777,9 +4816,9 @@ public:
                 pData->midiprog.data[index].name = carla_strdup(progDesc->name);
 
                 if (index == pData->midiprog.current)
-                    pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0, nullptr);
+                    pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0, 0.0, nullptr);
                 else
-                    pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0.0, nullptr);
+                    pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0, 0.0, nullptr);
             }
         }
     }

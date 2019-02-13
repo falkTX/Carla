@@ -645,9 +645,14 @@ private:
 
     void _updateParamValues(CarlaPlugin* const plugin, const uint32_t pluginId) const noexcept
     {
-        for (uint32_t i=0, count=plugin->getParameterCount(); i<count; ++i)
+        for (uint32_t i=0, count=plugin->getParameterCount(); i<count; ++i) {
             fEngine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
-                              pluginId, static_cast<int>(i), 0, plugin->getParameterValue(i), nullptr);
+                              pluginId,
+                              static_cast<int>(i),
+                              0, 0,
+                              plugin->getParameterValue(i),
+                              nullptr);
+        }
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineNativeUI)
@@ -803,12 +808,17 @@ protected:
         return "Plugin";
     }
 
-    void callback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr) noexcept override
+    void callback(const EngineCallbackOpcode action, const uint pluginId,
+                  const int value1, const int value2, const int value3,
+                  const float valueF, const char* const valueStr) noexcept override
     {
-        CarlaEngine::callback(action, pluginId, value1, value2, value3, valueStr);
+        CarlaEngine::callback(action, pluginId, value1, value2, value3, valueF, valueStr);
 
-        if (action == ENGINE_CALLBACK_IDLE && ! pData->aboutToClose)
-            pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_HOST_IDLE, 0, 0, nullptr, 0.0f);
+        if (action == ENGINE_CALLBACK_IDLE && ! pData->aboutToClose) {
+            pHost->dispatcher(pHost->handle,
+                              NATIVE_HOST_OPCODE_HOST_IDLE,
+                              0, 0, nullptr, 0.0f);
+        }
     }
 
     // -------------------------------------------------------------------
@@ -817,7 +827,7 @@ protected:
     {
         if (const char* const retName = CarlaEngine::renamePlugin(id, newName))
         {
-            uiServerCallback(ENGINE_CALLBACK_PLUGIN_RENAMED, id, 0, 0, 0.0f, retName);
+            uiServerCallback(ENGINE_CALLBACK_PLUGIN_RENAMED, id, 0, 0, 0, 0.0f, retName);
             return retName;
         }
 
@@ -1126,7 +1136,9 @@ protected:
         fUiServer.flushMessages();
     }
 
-    void uiServerCallback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr)
+    void uiServerCallback(const EngineCallbackOpcode action, const uint pluginId,
+                          const int value1, const int value2, const int value3,
+                          const float valueF, const char* const valueStr)
     {
         if (! fIsRunning)
             return;
@@ -1212,9 +1224,12 @@ protected:
         std::sprintf(tmpBuf, "%i\n", value2);
         if (! fUiServer.writeMessage(tmpBuf))
             return;
+        std::sprintf(tmpBuf, "%i\n", value3);
+        if (! fUiServer.writeMessage(tmpBuf))
+            return;
         {
             const CarlaScopedLocale csl;
-            std::sprintf(tmpBuf, "%f\n", static_cast<double>(value3));
+            std::sprintf(tmpBuf, "%f\n", static_cast<double>(valueF));
         }
         if (! fUiServer.writeMessage(tmpBuf))
             return;
@@ -1741,9 +1756,13 @@ protected:
 
             uiServerInfo();
             uiServerOptions();
-            uiServerCallback(ENGINE_CALLBACK_ENGINE_STARTED, 0,
-                             pData->options.processMode, pData->options.transportMode,
-                             static_cast<float>(pData->sampleRate), "Plugin");
+            uiServerCallback(ENGINE_CALLBACK_ENGINE_STARTED,
+                             0,
+                             pData->options.processMode,
+                             pData->options.transportMode,
+                             static_cast<int>(pData->bufferSize),
+                             static_cast<float>(pData->sampleRate),
+                             "Plugin");
 
             fUiServer.writeShowMessage();
 
@@ -1753,7 +1772,7 @@ protected:
 
                 if (plugin != nullptr && plugin->isEnabled())
                 {
-                    uiServerCallback(ENGINE_CALLBACK_PLUGIN_ADDED, i, 0, 0, 0.0f, plugin->getName());
+                    uiServerCallback(ENGINE_CALLBACK_PLUGIN_ADDED, i, 0, 0, 0, 0.0f, plugin->getName());
                 }
             }
 
@@ -1913,7 +1932,7 @@ protected:
     {
         // remove all plugins from UI side
         for (uint i=0, count=pData->curPluginCount; i < count; ++i)
-            CarlaEngine::callback(ENGINE_CALLBACK_PLUGIN_REMOVED, count-i-1, 0, 0, 0.0f, nullptr);
+            CarlaEngine::callback(ENGINE_CALLBACK_PLUGIN_REMOVED, count-i-1, 0, 0, 0, 0.0f, nullptr);
 
         // remove all plugins from backend, no lock
         fIsRunning = false;
@@ -2075,12 +2094,15 @@ public:
 
     // -------------------------------------------------------------------
 
-    static void _ui_server_callback(void* handle, EngineCallbackOpcode action, uint pluginId, int value1, int value2, float value3, const char* valueStr)
+    static void _ui_server_callback(void* handle, EngineCallbackOpcode action, uint pluginId,
+                                    int value1, int value2, int value3,
+                                    float valueF, const char* valueStr)
     {
-        handlePtr->uiServerCallback(action, pluginId, value1, value2, value3, valueStr);
+        handlePtr->uiServerCallback(action, pluginId, value1, value2, value3, valueF, valueStr);
     }
 
-    static const char* _ui_file_callback(void* handle, FileCallbackOpcode action, bool isDir, const char* title, const char* filter)
+    static const char* _ui_file_callback(void* handle, FileCallbackOpcode action, bool isDir,
+                                         const char* title, const char* filter)
     {
         return handlePtr->uiFileCallback(action, isDir, title, filter);
     }

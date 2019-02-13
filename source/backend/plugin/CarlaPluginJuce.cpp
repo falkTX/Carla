@@ -380,7 +380,10 @@ public:
             if (fWindow->wasClosedByUser())
             {
                 showCustomUI(false);
-                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+                                        pData->id,
+                                        0,
+                                        0, 0, 0.0f, nullptr);
             }
         }
 
@@ -699,7 +702,7 @@ public:
                     fInstance->setCurrentProgram(pData->prog.current);
             }
 
-            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -813,14 +816,14 @@ public:
                             {
                                 value = ctrlEvent.value;
                                 setDryWet(value, false, false);
-                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, 0, value);
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
-                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, 0, value);
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
@@ -846,8 +849,8 @@ public:
 
                                 setBalanceLeft(left, false, false);
                                 setBalanceRight(right, false, false);
-                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
-                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, 0, left);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, 0, right);
                             }
                         }
 #endif
@@ -882,7 +885,7 @@ public:
                             }
 
                             setParameterValue(k, value, false, false, false);
-                            pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
+                            pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, 0, value);
                         }
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_CONTROL)
@@ -907,7 +910,7 @@ public:
                             if (ctrlEvent.param < pData->prog.count)
                             {
                                 setProgramRT(ctrlEvent.param);
-                                pData->postponeRtEvent(kPluginPostRtEventProgramChange, ctrlEvent.param, 0, 0.0f);
+                                pData->postponeRtEvent(kPluginPostRtEventProgramChange, ctrlEvent.param, 0, 0, 0.0f);
                                 break;
                             }
                         }
@@ -976,9 +979,20 @@ public:
                     fMidiBuffer.addEvent(midiData2, midiEvent.size, static_cast<int>(event.time));
 
                     if (status == MIDI_STATUS_NOTE_ON)
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, event.channel, midiData[1], midiData[2]);
+                    {
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOn,
+                                               event.channel,
+                                               midiData[1],
+                                               midiData[2],
+                                               0.0f);
+                    }
                     else if (status == MIDI_STATUS_NOTE_OFF)
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, event.channel, midiData[1], 0.0f);
+                    {
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOff,
+                                               event.channel,
+                                               midiData[1],
+                                               0, 0.0f);
+                    }
                 } break;
                 } // switch (event.type)
             }
@@ -1152,7 +1166,7 @@ protected:
 
     void audioProcessorChanged(juce::AudioProcessor*) override
     {
-        pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0f, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0, 0.0f, nullptr);
     }
 
     void audioProcessorParameterChangeGestureBegin(juce::AudioProcessor*, int) override {}

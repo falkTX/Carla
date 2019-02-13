@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -576,13 +576,15 @@ public:
         {
             carla_stderr("Did not receive ping message from server for 30 secs, closing...");
             signalThreadShouldExit();
-            callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0f, nullptr);
+            callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0, 0.0f, nullptr);
         }
     }
 
-    void callback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr) noexcept override
+    void callback(const EngineCallbackOpcode action, const uint pluginId,
+                  const int value1, const int value2, const int value3,
+                  const float valueF, const char* const valueStr) noexcept override
     {
-        CarlaEngine::callback(action, pluginId, value1, value2, value3, valueStr);
+        CarlaEngine::callback(action, pluginId, value1, value2, value3, valueF, valueStr);
 
         if (fClosingDown)
             return;
@@ -595,7 +597,7 @@ public:
             const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
             fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerParameterValue);
             fShmNonRtServerControl.writeUInt(static_cast<uint>(value1));
-            fShmNonRtServerControl.writeFloat(value3);
+            fShmNonRtServerControl.writeFloat(valueF);
             fShmNonRtServerControl.commitWrite();
         }   break;
 
@@ -605,7 +607,7 @@ public:
             const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
             fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerDefaultValue);
             fShmNonRtServerControl.writeUInt(static_cast<uint>(value1));
-            fShmNonRtServerControl.writeFloat(value3);
+            fShmNonRtServerControl.writeFloat(valueF);
             fShmNonRtServerControl.commitWrite();
         }   break;
 
@@ -1020,7 +1022,7 @@ public:
             case kPluginBridgeNonRtClientQuit:
                 fClosingDown = true;
                 signalThreadShouldExit();
-                callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0f, nullptr);
+                callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0, 0.0f, nullptr);
                 break;
             }
         }
@@ -1367,7 +1369,7 @@ protected:
             }
         }
 
-        callback(ENGINE_CALLBACK_ENGINE_STOPPED, 0, 0, 0, 0.0f, nullptr);
+        callback(ENGINE_CALLBACK_ENGINE_STOPPED, 0, 0, 0, 0, 0.0f, nullptr);
 
         if (! quitReceived)
         {

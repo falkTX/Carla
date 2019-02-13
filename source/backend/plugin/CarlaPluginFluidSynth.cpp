@@ -522,7 +522,10 @@ public:
                     if (pData->ctrlChannel == static_cast<int32_t>(channel))
                     {
                         pData->midiprog.current = index;
-                        pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
+                        pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED,
+                                                pData->id,
+                                                index,
+                                                0, 0, 0.0f, nullptr);
                     }
                 }
 
@@ -1072,7 +1075,7 @@ public:
         }
         else
         {
-            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -1296,7 +1299,11 @@ public:
                                     fCurMidiProgs[event.channel] = static_cast<int32_t>(k);
 
                                     if (event.channel == pData->ctrlChannel)
-                                        pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, static_cast<int32_t>(k), 0, 0.0f);
+                                    {
+                                        pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange,
+                                                               static_cast<int32_t>(k),
+                                                               0, 0, 0.0f);
+                                    }
 
                                     break;
                                 }
@@ -1347,7 +1354,7 @@ public:
 
                         fluid_synth_noteoff(fSynth, event.channel, note);
 
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, event.channel, note, 0.0f);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, event.channel, note, 0, 0.0f);
                         break;
                     }
 
@@ -1357,7 +1364,7 @@ public:
 
                         fluid_synth_noteon(fSynth, event.channel, note, velo);
 
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, event.channel, note, velo);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, event.channel, note, velo, 0.0f);
                         break;
                     }
 

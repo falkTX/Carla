@@ -1,6 +1,6 @@
 /*
  * Carla Log Thread
- * Copyright (C) 2013-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -176,7 +176,7 @@ protected:
                     bufTemp[0] = '\0';
                     bufTempPos = 0;
 
-                    fCallback(fCallbackPtr, CarlaBackend::ENGINE_CALLBACK_DEBUG, 0, 0, 0, 0.0f, bufSend);
+                    fCallback(fCallbackPtr, CarlaBackend::ENGINE_CALLBACK_DEBUG, 0, 0, 0, 0, 0.0f, bufSend);
                 }
 
                 if (lastRead > 0 && lastRead != r)

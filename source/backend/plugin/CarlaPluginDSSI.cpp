@@ -1,6 +1,6 @@
 /*
  * Carla Plugin, DSSI implementation
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -112,7 +112,10 @@ public:
 
             fProcess->kill();
             fProcess = nullptr;
-            kEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, kPlugin->getId(), 0, 0, 0.0f, nullptr);
+            kEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED,
+                              kPlugin->getId(),
+                              0,
+                              0, 0, 0.0f, nullptr);
             return;
         }
 
@@ -219,7 +222,10 @@ public:
         }
 
         fProcess = nullptr;
-        kEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, kPlugin->getId(), 0, 0, 0.0f, nullptr);
+        kEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED,
+                          kPlugin->getId(),
+                          0,
+                          0, 0, 0.0f, nullptr);
 
         carla_stdout("DSSI UI thread finished");
     }
@@ -1272,7 +1278,7 @@ public:
             if (programChanged)
                 setMidiProgram(pData->midiprog.current, true, true, true, false);
 
-            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -1643,7 +1649,7 @@ public:
                         seqEvent.data.note.channel = event.channel;
                         seqEvent.data.note.note    = note;
 
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, event.channel, note, 0.0f);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, event.channel, note, 0, 0.0f);
                         break;
                     }
 
@@ -1656,7 +1662,7 @@ public:
                         seqEvent.data.note.note     = note;
                         seqEvent.data.note.velocity = velo;
 
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, event.channel, note, velo);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, event.channel, note, velo, 0.0f);
                         break;
                     }
 
@@ -2379,7 +2385,10 @@ public:
         showCustomUI(false);
 
         // tell frontend
-        pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+                                pData->id,
+                                0,
+                                0, 0, 0.0f, nullptr);
     }
 
     // -------------------------------------------------------------------

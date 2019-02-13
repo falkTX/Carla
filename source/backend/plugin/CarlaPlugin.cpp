@@ -50,7 +50,7 @@ static const MidiProgramData kMidiProgramDataNull = { 0, 0, nullptr };
 
 static const CustomData        kCustomDataFallback        = { nullptr, nullptr, nullptr };
 static /* */ CustomData        kCustomDataFallbackNC      = { nullptr, nullptr, nullptr };
-static const PluginPostRtEvent kPluginPostRtEventFallback = { kPluginPostRtEventNull, 0, 0, 0.0f };
+static const PluginPostRtEvent kPluginPostRtEventFallback = { kPluginPostRtEventNull, 0, 0, 0, 0.0f };
 
 // -------------------------------------------------------------------
 // ParamSymbol struct, needed for CarlaPlugin::loadStateSave()
@@ -890,7 +890,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     setActive(stateSave.active, true, true);
 
     if (! pData->engine->isLoadingProject())
-        pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0f, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0, 0.0f, nullptr);
 #endif
 }
 
@@ -1293,7 +1293,11 @@ void CarlaPlugin::setOption(const uint option, const bool yesNo, const bool send
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (sendCallback)
-        pData->engine->callback(ENGINE_CALLBACK_OPTION_CHANGED, pData->id, static_cast<int>(option), yesNo ? 1 : 0, 0.0f, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_OPTION_CHANGED,
+                                pData->id,
+                                static_cast<int>(option),
+                                yesNo ? 1 : 0,
+                                0, 0.0f, nullptr);
 #else
     // unused
     return; (void)sendCallback;
@@ -1347,7 +1351,12 @@ void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool se
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (sendCallback)
-        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_ACTIVE, 0, value, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+                                pData->id,
+                                PARAMETER_ACTIVE,
+                                0, 0,
+                                value,
+                                nullptr);
 #endif
 
     // maybe unused
@@ -1377,7 +1386,12 @@ void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool se
 # endif
 
     if (sendCallback)
-        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_DRYWET, 0, fixedValue, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+                                pData->id,
+                                PARAMETER_DRYWET,
+                                0, 0,
+                                fixedValue,
+                                nullptr);
 }
 
 void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool sendCallback) noexcept
@@ -1402,7 +1416,12 @@ void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool se
 # endif
 
     if (sendCallback)
-        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_VOLUME, 0, fixedValue, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+                                pData->id,
+                                PARAMETER_VOLUME,
+                                0, 0,
+                                fixedValue,
+                                nullptr);
 }
 
 void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bool sendCallback) noexcept
@@ -1427,7 +1446,12 @@ void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bo
 # endif
 
     if (sendCallback)
-        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_BALANCE_LEFT, 0, fixedValue, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+                                pData->id,
+                                PARAMETER_BALANCE_LEFT,
+                                0, 0,
+                                fixedValue,
+                                nullptr);
 }
 
 void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const bool sendCallback) noexcept
@@ -1452,7 +1476,12 @@ void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const b
 # endif
 
     if (sendCallback)
-        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_BALANCE_RIGHT, 0, fixedValue, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+                                pData->id,
+                                PARAMETER_BALANCE_RIGHT,
+                                0, 0,
+                                fixedValue,
+                                nullptr);
 }
 
 void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool sendCallback) noexcept
@@ -1477,7 +1506,12 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
 # endif
 
     if (sendCallback)
-        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_PANNING, 0, fixedValue, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+                                pData->id,
+                                PARAMETER_PANNING,
+                                0, 0,
+                                fixedValue,
+                                nullptr);
 }
 
 void CarlaPlugin::setDryWetRT(const float value) noexcept
@@ -1490,7 +1524,7 @@ void CarlaPlugin::setDryWetRT(const float value) noexcept
         return;
 
     pData->postProc.dryWet = fixedValue;
-    pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, fixedValue);
+    pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, 0, fixedValue);
 }
 
 void CarlaPlugin::setVolumeRT(const float value) noexcept
@@ -1503,7 +1537,7 @@ void CarlaPlugin::setVolumeRT(const float value) noexcept
         return;
 
     pData->postProc.volume = fixedValue;
-    pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, fixedValue);
+    pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, 0, fixedValue);
 }
 
 void CarlaPlugin::setBalanceLeftRT(const float value) noexcept
@@ -1516,7 +1550,7 @@ void CarlaPlugin::setBalanceLeftRT(const float value) noexcept
         return;
 
     pData->postProc.balanceLeft = fixedValue;
-    pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, fixedValue);
+    pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, 0, fixedValue);
 }
 
 void CarlaPlugin::setBalanceRightRT(const float value) noexcept
@@ -1529,7 +1563,7 @@ void CarlaPlugin::setBalanceRightRT(const float value) noexcept
         return;
 
     pData->postProc.balanceRight = fixedValue;
-    pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, fixedValue);
+    pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, 0, fixedValue);
 }
 
 void CarlaPlugin::setPanningRT(const float value) noexcept
@@ -1568,7 +1602,11 @@ void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (sendCallback)
-        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_CTRL_CHANNEL, 0, channelf, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+                                pData->id,
+                                PARAMETER_CTRL_CHANNEL,
+                                0, 0,
+                                channelf, nullptr);
 #endif
 
     // maybe unused
@@ -1599,12 +1637,17 @@ void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float valu
 #endif
 
     if (sendCallback)
-        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, static_cast<int>(parameterId), 0, value, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+                                pData->id,
+                                static_cast<int>(parameterId),
+                                0, 0,
+                                value,
+                                nullptr);
 }
 
 void CarlaPlugin::setParameterValueRT(const uint32_t parameterId, const float value) noexcept
 {
-    pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(parameterId), 0, value);
+    pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(parameterId), 0, 0, value);
 }
 
 void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
@@ -1662,7 +1705,11 @@ void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, const uint
 # endif
 
     if (sendCallback)
-        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED, pData->id, static_cast<int>(parameterId), channel, 0.0f, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED,
+                                pData->id,
+                                static_cast<int>(parameterId),
+                                channel,
+                                0, 0.0f, nullptr);
 #endif
 }
 
@@ -1685,7 +1732,11 @@ void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, const int16_t c
 # endif
 
     if (sendCallback)
-        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED, pData->id, static_cast<int>(parameterId), cc, 0.0f, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED,
+                                pData->id,
+                                static_cast<int>(parameterId),
+                                cc,
+                                0, 0.0f, nullptr);
 #endif
 }
 
@@ -1753,7 +1804,10 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
 #endif
 
     if (sendCallback)
-        pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED,
+                                pData->id,
+                                index,
+                                0, 0, 0.0f, nullptr);
 
     // Change default parameter values
     if (index >= 0)
@@ -1793,7 +1847,10 @@ void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const 
 #endif
 
     if (sendCallback)
-        pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED,
+                                pData->id,
+                                index,
+                                0, 0, 0.0f, nullptr);
 
     // Change default parameter values
     if (index >= 0)
@@ -1845,7 +1902,7 @@ void CarlaPlugin::setProgramRT(const uint32_t uindex) noexcept
         break;
     }
 
-    pData->postponeRtEvent(kPluginPostRtEventProgramChange, index, 0, 0.0f);
+    pData->postponeRtEvent(kPluginPostRtEventProgramChange, index, 0, 0, 0.0f);
 }
 
 void CarlaPlugin::setMidiProgramRT(const uint32_t uindex) noexcept
@@ -1867,7 +1924,7 @@ void CarlaPlugin::setMidiProgramRT(const uint32_t uindex) noexcept
         break;
     }
 
-    pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, index, 0, 0.0f);
+    pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, index, 0, 0, 0.0f);
 }
 
 // -------------------------------------------------------------------
@@ -1944,7 +2001,11 @@ void CarlaPlugin::idle()
         } break;
 
         case kPluginPostRtEventDebug: {
-            pData->engine->callback(ENGINE_CALLBACK_DEBUG, pData->id, event.value1, event.value2, event.value3, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_DEBUG, pData->id,
+                                    event.value1, event.value2,
+                                    0,
+                                    event.valueF,
+                                    nullptr);
         } break;
 
         case kPluginPostRtEventParameterChange: {
@@ -1954,7 +2015,7 @@ void CarlaPlugin::idle()
                 if (needsUiMainThread)
                     pData->postUiEvents.append(event);
                 else
-                    uiParameterChange(static_cast<uint32_t>(event.value1), event.value3);
+                    uiParameterChange(static_cast<uint32_t>(event.value1), event.valueF);
             }
 
             if (event.value2 != 1)
@@ -1962,10 +2023,15 @@ void CarlaPlugin::idle()
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
                 // Update OSC control client
                 if (sendOsc)
-                    pData->engine->oscSend_control_set_parameter_value(pData->id, event.value1, event.value3);
+                    pData->engine->oscSend_control_set_parameter_value(pData->id, event.value1, event.valueF);
 #endif
                 // Update Host
-                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, event.value1, 0, event.value3, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+                                        pData->id,
+                                        event.value1,
+                                        0, 0,
+                                        event.valueF,
+                                        nullptr);
             }
         } break;
 
@@ -1992,8 +2058,18 @@ void CarlaPlugin::idle()
                     pData->engine->oscSend_control_set_default_value(pData->id, j, paramDefault);
                 }
 #endif
-                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, static_cast<int>(j), 0, paramValue, nullptr);
-                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, pData->id, static_cast<int>(j), 0, paramDefault, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+                                        pData->id,
+                                        static_cast<int>(j),
+                                        0, 0,
+                                        paramValue,
+                                        nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED,
+                                        pData->id,
+                                        static_cast<int>(j),
+                                        0, 0,
+                                        paramDefault,
+                                        nullptr);
             }
 
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
@@ -2002,7 +2078,10 @@ void CarlaPlugin::idle()
                 pData->engine->oscSend_control_set_current_program(pData->id, event.value1);
 #endif
             // Update Host
-            pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED, pData->id, event.value1, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED,
+                                    pData->id,
+                                    event.value1,
+                                    0, 0, 0.0f, nullptr);
 
         } break;
 
@@ -2029,8 +2108,18 @@ void CarlaPlugin::idle()
                     pData->engine->oscSend_control_set_default_value(pData->id, j, paramDefault);
                 }
 #endif
-                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, static_cast<int>(j), 0, paramValue, nullptr);
-                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, pData->id, static_cast<int>(j), 0, paramDefault, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+                                        pData->id,
+                                        static_cast<int>(j),
+                                        0, 0,
+                                        paramValue,
+                                        nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED,
+                                        pData->id,
+                                        static_cast<int>(j),
+                                        0, 0,
+                                        paramDefault,
+                                        nullptr);
             }
 
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
@@ -2039,18 +2128,21 @@ void CarlaPlugin::idle()
                 pData->engine->oscSend_control_set_current_midi_program(pData->id, event.value1);
 #endif
             // Update Host
-            pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED, pData->id, event.value1, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED,
+                                    pData->id,
+                                    event.value1,
+                                    0, 0, 0.0f, nullptr);
 
         } break;
 
         case kPluginPostRtEventNoteOn: {
             CARLA_SAFE_ASSERT_BREAK(event.value1 >= 0 && event.value1 < MAX_MIDI_CHANNELS);
             CARLA_SAFE_ASSERT_BREAK(event.value2 >= 0 && event.value2 < MAX_MIDI_NOTE);
-            CARLA_SAFE_ASSERT_BREAK(event.value3 >= 0 && event.value3 < MAX_MIDI_VALUE);
+            CARLA_SAFE_ASSERT_BREAK(event.value4 >= 0 && event.value4 < MAX_MIDI_VALUE);
 
             const uint8_t channel  = static_cast<uint8_t>(event.value1);
             const uint8_t note     = static_cast<uint8_t>(event.value2);
-            const uint8_t velocity = uint8_t(event.value3);
+            const uint8_t velocity = static_cast<uint8_t>(event.value4);
 
             // Update UI
             if (hasUI)
@@ -2067,7 +2159,12 @@ void CarlaPlugin::idle()
                 pData->engine->oscSend_control_note_on(pData->id, channel, note, velocity);
 #endif
             // Update Host
-            pData->engine->callback(ENGINE_CALLBACK_NOTE_ON, pData->id, event.value1, event.value2, event.value3, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_NOTE_ON,
+                                    pData->id,
+                                    event.value1,
+                                    event.value2,
+                                    event.value4,
+                                    0.0f, nullptr);
 
         } break;
 
@@ -2093,7 +2190,11 @@ void CarlaPlugin::idle()
                 pData->engine->oscSend_control_note_off(pData->id, channel, note);
 #endif
             // Update Host
-            pData->engine->callback(ENGINE_CALLBACK_NOTE_OFF, pData->id, event.value1, event.value2, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_NOTE_OFF,
+                                    pData->id,
+                                    event.value1,
+                                    event.value2,
+                                    0, 0.0f, nullptr);
 
         } break;
         }
@@ -2312,7 +2413,12 @@ void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, 
 #endif
 
     if (sendCallback)
-        pData->engine->callback((velo > 0) ? ENGINE_CALLBACK_NOTE_ON : ENGINE_CALLBACK_NOTE_OFF, pData->id, channel, note, velo, nullptr);
+        pData->engine->callback((velo > 0) ? ENGINE_CALLBACK_NOTE_ON : ENGINE_CALLBACK_NOTE_OFF,
+                                pData->id,
+                                channel,
+                                note,
+                                velo,
+                                0.0f, nullptr);
 
     // may be unused
     return; (void)sendOsc;
@@ -2328,7 +2434,8 @@ void CarlaPlugin::sendMidiAllNotesOffToCallback()
     postEvent.type   = kPluginPostRtEventNoteOff;
     postEvent.value1 = pData->ctrlChannel;
     postEvent.value2 = 0;
-    postEvent.value3 = 0.0f;
+    postEvent.value4 = 0;
+    postEvent.valueF = 0.0f;
 
     for (int32_t i=0; i < MAX_MIDI_NOTE; ++i)
     {
@@ -2373,7 +2480,7 @@ void CarlaPlugin::uiIdle()
                 break;
 
             case kPluginPostRtEventParameterChange:
-                uiParameterChange(static_cast<uint32_t>(event.value1), event.value3);
+                uiParameterChange(static_cast<uint32_t>(event.value1), event.valueF);
                 break;
 
             case kPluginPostRtEventProgramChange:
@@ -2385,11 +2492,14 @@ void CarlaPlugin::uiIdle()
                 break;
 
             case kPluginPostRtEventNoteOn:
-                uiNoteOn(static_cast<uint8_t>(event.value1), static_cast<uint8_t>(event.value2), uint8_t(event.value3));
+                uiNoteOn(static_cast<uint8_t>(event.value1),
+                         static_cast<uint8_t>(event.value2),
+                         static_cast<uint8_t>(event.value4));
                 break;
 
             case kPluginPostRtEventNoteOff:
-                uiNoteOff(static_cast<uint8_t>(event.value1), static_cast<uint8_t>(event.value2));
+                uiNoteOff(static_cast<uint8_t>(event.value1),
+                          static_cast<uint8_t>(event.value2));
                 break;
             }
         }

@@ -1,6 +1,6 @@
 /*
  * Carla Standalone
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -134,39 +134,48 @@ public:
 
         lo_address_free(nsmAddress);
 
+        if (gStandalone.engineCallback != nullptr)
+        {
+            gStandalone.engineCallback(gStandalone.engineCallbackPtr,
+                                       CB::ENGINE_CALLBACK_NSM,
+                                       0,
+                                       CB::NSM_CALLBACK_INIT,
+                                       0, 0, 0.0f, nullptr);
+        }
+
         return true;
     }
 
-    void ready(const int action)
+    void ready(const CB::NsmCallbackOpcode action)
     {
         CARLA_SAFE_ASSERT_RETURN(fServerThread != nullptr,);
 
         switch (action)
         {
-        case -1: // init
+        case CB::NSM_CALLBACK_INIT:
             CARLA_SAFE_ASSERT_BREAK(! fStarted);
             fStarted = true;
             lo_server_thread_start(fServerThread);
             break;
 
-        case 0: // error
+        case CB::NSM_CALLBACK_ERROR:
             break;
 
-        case 1: // reply
+        case CB::NSM_CALLBACK_ANNOUNCE:
             break;
 
-        case 2: // open
+        case CB::NSM_CALLBACK_OPEN:
             fReadyActionOpen = true;
             break;
 
-        case 3: // save
+        case CB::NSM_CALLBACK_SAVE:
             fReadyActionSave = true;
             break;
 
-        case 4: // session loaded
+        case CB::NSM_CALLBACK_SESSION_IS_LOADED:
             break;
 
-        case 5: // show gui
+        case CB::NSM_CALLBACK_SHOW_OPTIONAL_GUI:
             CARLA_SAFE_ASSERT_BREAK(fReplyAddress != nullptr);
             CARLA_SAFE_ASSERT_BREAK(fServer != nullptr);
             {
@@ -175,7 +184,7 @@ public:
             }
             break;
 
-        case 6: // hide gui
+        case CB::NSM_CALLBACK_HIDE_OPTIONAL_GUI:
             CARLA_SAFE_ASSERT_BREAK(fReplyAddress != nullptr);
             CARLA_SAFE_ASSERT_BREAK(fServer != nullptr);
             {
@@ -198,9 +207,15 @@ protected:
         carla_stdout("CarlaNSM::handleError(\"%s\", %i, \"%s\")", method, code, message);
 
         if (gStandalone.engineCallback != nullptr)
-            gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 0, code, 0.0f, message);
+            gStandalone.engineCallback(gStandalone.engineCallbackPtr,
+                                       CB::ENGINE_CALLBACK_NSM,
+                                       0,
+                                       CB::NSM_CALLBACK_ERROR,
+                                       code,
+                                       0, 0.0f,
+                                       message);
 
-        return 1;
+        return 0;
 
         // may be unused
         (void)method;
@@ -249,7 +264,13 @@ protected:
                 if (fHasServerControl)
                     flags |= 1 << 2;
 
-                gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 1, flags, 0.0f, smName);
+                gStandalone.engineCallback(gStandalone.engineCallbackPtr,
+                                           CB::ENGINE_CALLBACK_NSM,
+                                           0,
+                                           CB::NSM_CALLBACK_ANNOUNCE,
+                                           flags,
+                                           0, 0.0f,
+                                           smName);
             }
 
             std::free(msgURL);
@@ -271,7 +292,12 @@ protected:
         if (gStandalone.engineCallback != nullptr)
         {
             fReadyActionOpen = false;
-            gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 2, 0, 0.0f, projectPath);
+            gStandalone.engineCallback(gStandalone.engineCallbackPtr,
+                                       CB::ENGINE_CALLBACK_NSM,
+                                       0,
+                                       CB::NSM_CALLBACK_OPEN,
+                                       0, 0, 0.0f,
+                                       projectPath);
 
             for (; ! fReadyActionOpen;)
                 carla_msleep(10);
@@ -322,7 +348,11 @@ protected:
         if (gStandalone.engineCallback != nullptr)
         {
             fReadyActionSave = false;
-            gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 3, 0, 0.0f, nullptr);
+            gStandalone.engineCallback(gStandalone.engineCallbackPtr,
+                                       CB::ENGINE_CALLBACK_NSM,
+                                       0,
+                                       CB::NSM_CALLBACK_SAVE,
+                                       0, 0, 0.0f, nullptr);
 
             for (; ! fReadyActionSave;)
                 carla_msleep(10);
@@ -346,7 +376,11 @@ protected:
         carla_stdout("CarlaNSM::handleSessionIsLoaded()");
 
         if (gStandalone.engineCallback != nullptr)
-            gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 4, 0, 0.0f, nullptr);
+            gStandalone.engineCallback(gStandalone.engineCallbackPtr,
+                                       CB::ENGINE_CALLBACK_NSM,
+                                       0,
+                                       CB::NSM_CALLBACK_SESSION_IS_LOADED,
+                                       0, 0, 0.0f, nullptr);
 
         return 0;
     }
@@ -358,7 +392,11 @@ protected:
         carla_stdout("CarlaNSM::handleShowOptionalGui()");
 
         if (gStandalone.engineCallback != nullptr)
-            gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 5, 0, 0.0f, nullptr);
+            gStandalone.engineCallback(gStandalone.engineCallbackPtr,
+                                       CB::ENGINE_CALLBACK_NSM,
+                                       0,
+                                       CB::NSM_CALLBACK_SHOW_OPTIONAL_GUI,
+                                       0, 0, 0.0f, nullptr);
 
         return 0;
     }
@@ -370,7 +408,11 @@ protected:
         carla_stdout("CarlaNSM::handleHideOptionalGui()");
 
         if (gStandalone.engineCallback != nullptr)
-            gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 6, 0, 0.0f, nullptr);
+            gStandalone.engineCallback(gStandalone.engineCallbackPtr,
+                                       CB::ENGINE_CALLBACK_NSM,
+                                       0,
+                                       CB::NSM_CALLBACK_HIDE_OPTIONAL_GUI,
+                                       0, 0, 0.0f, nullptr);
 
         return 0;
     }
@@ -594,9 +636,6 @@ private:
 
 // -------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
-bool carla_nsm_init(int pid, const char* executableName);
-
 bool carla_nsm_init(int pid, const char* executableName)
 {
 #ifdef HAVE_LIBLO
@@ -609,10 +648,7 @@ bool carla_nsm_init(int pid, const char* executableName)
 #endif
 }
 
-CARLA_EXPORT
-void carla_nsm_ready(int action);
-
-void carla_nsm_ready(int action)
+void carla_nsm_ready(CB::NsmCallbackOpcode action)
 {
 #ifdef HAVE_LIBLO
     CarlaNSM::getInstance().ready(action);

@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -965,6 +965,7 @@ public:
         jackbridge_set_port_registration_callback(fClient, carla_jack_port_registration_callback, this);
         jackbridge_set_port_connect_callback(fClient, carla_jack_port_connect_callback, this);
         jackbridge_set_port_rename_callback(fClient, carla_jack_port_rename_callback, this);
+        jackbridge_set_xrun_callback(fClient, carla_jack_xrun_callback, this);
 
         if (opts.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || opts.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         {
@@ -1030,7 +1031,9 @@ public:
 
             startThread();
             callback(ENGINE_CALLBACK_ENGINE_STARTED, 0,
-                     opts.processMode, opts.transportMode,
+                     opts.processMode,
+                     opts.transportMode,
+                     static_cast<int>(pData->bufferSize),
                      static_cast<float>(pData->sampleRate),
                      getCurrentDriverName());
             return true;
@@ -1129,6 +1132,15 @@ public:
         return "JACK";
     }
 
+#ifndef BUILD_BRIDGE
+    float getDSPLoad() const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 0.0f);
+
+        return jackbridge_cpu_load(fClient);
+    }
+#endif
+
     EngineTimeInfo getTimeInfo() const noexcept override
     {
         if (pData->options.transportMode != ENGINE_TRANSPORT_MODE_JACK)
@@ -1193,7 +1205,8 @@ public:
             {
                 // jack transport cannot be disabled in multi-client
                 callback(ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED, 0,
-                         ENGINE_TRANSPORT_MODE_JACK, 0, 0.0f,
+                         ENGINE_TRANSPORT_MODE_JACK,
+                         0, 0, 0.0f,
                          pData->options.transportExtra);
                 CARLA_SAFE_ASSERT_RETURN(pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS,);
 
@@ -1358,7 +1371,9 @@ public:
                             if (connectionToId.groupA != groupId && connectionToId.groupB != groupId)
                                 continue;
 
-                            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connectionToId.id, 0, 0, 0.0f, nullptr);
+                            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED,
+                                     connectionToId.id,
+                                     0, 0, 0, 0.0f, nullptr);
                             fUsedConnections.list.remove(it2);
                         }
 
@@ -1370,7 +1385,10 @@ public:
                         if (portNameToId.group != groupId)
                             continue;
 
-                        callback(ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED, portNameToId.group, static_cast<int>(portNameToId.port), 0, 0.0f, nullptr);
+                        callback(ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
+                                 portNameToId.group,
+                                 static_cast<int>(portNameToId.port),
+                                 0, 0, 0.0f, nullptr);
                         fUsedPorts.list.remove(it);
                     }
                 }
@@ -1890,7 +1908,7 @@ protected:
         GroupNameToId groupNameToId;
         groupNameToId.setData(groupId, name);
 
-        callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED, groupNameToId.group, 0, 0, 0.0f, nullptr);
+        callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED, groupNameToId.group, 0, 0, 0, 0.0f, nullptr);
         fUsedGroups.list.removeOne(groupNameToId);
     }
 
@@ -1923,12 +1941,16 @@ protected:
             if (groupId == 0)
             {
                 groupId = ++fUsedGroups.lastId;
-                PatchbayIcon icon = (jackPortFlags & JackPortIsPhysical) ? PATCHBAY_ICON_HARDWARE : PATCHBAY_ICON_APPLICATION;
 
                 GroupNameToId groupNameToId;
                 groupNameToId.setData(groupId, groupName);
 
-                callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, groupNameToId.group, icon, -1, 0.0f, groupNameToId.name);
+                callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
+                         groupNameToId.group,
+                         (jackPortFlags & JackPortIsPhysical) ? PATCHBAY_ICON_HARDWARE : PATCHBAY_ICON_APPLICATION,
+                         -1,
+                         0, 0.0f,
+                         groupNameToId.name);
 
                 fNewGroups.append(groupId);
                 fUsedGroups.list.append(groupNameToId);
@@ -1944,7 +1966,10 @@ protected:
                      See the comment on CarlaEngineJack::renamePlugin() for more information. */
             if (portNameToId.group <= 0 || portNameToId.port <= 0) return;
 
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED, portNameToId.group, static_cast<int>(portNameToId.port), 0, 0.0f, nullptr);
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
+                     portNameToId.group,
+                     static_cast<int>(portNameToId.port),
+                     0, 0, 0.0f, nullptr);
             fUsedPorts.list.removeOne(portNameToId);
         }
     }
@@ -1983,7 +2008,10 @@ protected:
             ConnectionToId connectionToId;
             connectionToId.setData(++fUsedConnections.lastId, portNameToIdA.group, portNameToIdA.port, portNameToIdB.group, portNameToIdB.port);
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
+                     connectionToId.id,
+                     0, 0, 0, 0.0f,
+                     strBuf);
             fUsedConnections.list.append(connectionToId);
         }
         else
@@ -2009,8 +2037,11 @@ protected:
                 }
             }
 
-            if (found)
-                callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connectionToId.id, 0, 0, 0.0f, nullptr);
+            if (found) {
+                callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED,
+                         connectionToId.id,
+                         0, 0, 0, 0.0f, nullptr);
+            }
         }
     }
 
@@ -2049,7 +2080,11 @@ protected:
                 CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group == groupId);
 
                 portNameToId.rename(shortPortName, newFullName);
-                callback(ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED, portNameToId.group, static_cast<int>(portNameToId.port), 0, 0.0f, portNameToId.name);
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED,
+                         portNameToId.group,
+                         static_cast<int>(portNameToId.port),
+                         0, 0, 0.0f,
+                         portNameToId.name);
                 break;
             }
         }
@@ -2082,7 +2117,7 @@ protected:
         carla_zeroPointers(fRackPorts, kRackPortCount);
 #endif
 
-        callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0f, nullptr);
+        callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0, 0.0f, nullptr);
     }
 
     // -------------------------------------------------------------------
@@ -2099,7 +2134,7 @@ protected:
         //if (pData->nextAction.pluginId == plugin->getId())
         //    pData->nextAction.clearAndReset();
 
-        callback(ENGINE_CALLBACK_PLUGIN_UNAVAILABLE, plugin->getId(), 0, 0, 0.0f, "Killed by JACK");
+        callback(ENGINE_CALLBACK_PLUGIN_UNAVAILABLE, plugin->getId(), 0, 0, 0, 0.0f, "Killed by JACK");
     }
 
     // -------------------------------------------------------------------
@@ -2201,7 +2236,12 @@ private:
             GroupNameToId groupNameToId;
             groupNameToId.setData(++fUsedGroups.lastId, ourName);
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, groupNameToId.group, PATCHBAY_ICON_CARLA, -1, 0.0f, groupNameToId.name);
+            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
+                     groupNameToId.group,
+                     PATCHBAY_ICON_CARLA,
+                     -1,
+                     0, 0.0f,
+                     groupNameToId.name);
             fUsedGroups.list.append(groupNameToId);
         }
 
@@ -2247,7 +2287,12 @@ private:
                     GroupNameToId groupNameToId;
                     groupNameToId.setData(groupId, groupName);
 
-                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, groupNameToId.group, icon, pluginId, 0.0f, groupNameToId.name);
+                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
+                             groupNameToId.group,
+                             icon,
+                             pluginId,
+                             0, 0.0f,
+                             groupNameToId.name);
                     fUsedGroups.list.append(groupNameToId);
                 }
 
@@ -2293,7 +2338,10 @@ private:
                         ConnectionToId connectionToId;
                         connectionToId.setData(++fUsedConnections.lastId, thisPort.group, thisPort.port, targetPort.group, targetPort.port);
 
-                        callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+                        callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
+                                 connectionToId.id,
+                                 0, 0, 0, 0.0f,
+                                 strBuf);
                         fUsedConnections.list.append(connectionToId);
                     }
 
@@ -2343,7 +2391,12 @@ private:
         PortNameToId portNameToId;
         portNameToId.setData(groupId, ++fUsedPorts.lastId, shortPortName, fullPortName);
 
-        callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, portNameToId.group, static_cast<int>(portNameToId.port), static_cast<int>(canvasPortFlags), 0.0f, portNameToId.name);
+        callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
+                 portNameToId.group,
+                 static_cast<int>(portNameToId.port),
+                 static_cast<int>(canvasPortFlags),
+                 0, 0.0f,
+                 portNameToId.name);
         fUsedPorts.list.append(portNameToId);
     }
 #endif
@@ -2509,8 +2562,13 @@ private:
                 int pluginId = -1;
                 PatchbayIcon icon = PATCHBAY_ICON_PLUGIN;
 
-                if (findPluginIdAndIcon(groupName, pluginId, icon))
-                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED, groupId, icon, pluginId, 0.0f, nullptr);
+                if (findPluginIdAndIcon(groupName, pluginId, icon)) {
+                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED,
+                             groupId,
+                             icon,
+                             pluginId,
+                             0, 0.0f, nullptr);
+                }
             }
 
             events.clear();
@@ -2617,6 +2675,12 @@ private:
         std::strncpy(ev.name1, oldName, STR_MAX);
         std::strncpy(ev.name2, newName, STR_MAX);
         handlePtr->postPoneJackCallback(ev);
+    }
+
+    static int JACKBRIDGE_API carla_jack_xrun_callback(void* arg)
+    {
+        ++(handlePtr->pData->xruns);
+        return 0;
     }
 #endif
 

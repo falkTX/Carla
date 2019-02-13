@@ -1,6 +1,6 @@
 /*
  * Carla Plugin
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -749,11 +749,15 @@ void CarlaPlugin::ProtectedData::postponeRtEvent(const PluginPostRtEvent& rtEven
     postRtEvents.appendRT(rtEvent);
 }
 
-void CarlaPlugin::ProtectedData::postponeRtEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const float value3) noexcept
+void CarlaPlugin::ProtectedData::postponeRtEvent(const PluginPostRtEventType type,
+                                                 const int32_t value1,
+                                                 const int32_t value2,
+                                                 const int32_t value3,
+                                                 const float valueF) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(type != kPluginPostRtEventNull,);
 
-    PluginPostRtEvent rtEvent = { type, value1, value2, value3 };
+    PluginPostRtEvent rtEvent = { type, value1, value2, value3, valueF };
 
     postRtEvents.appendRT(rtEvent);
 }
@@ -826,9 +830,21 @@ void CarlaPlugin::ProtectedData::updateParameterValues(CarlaPlugin* const plugin
 
         if (sendCallback)
         {
-            if (useDefault)
-                engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, id, static_cast<int>(i), 0, value, nullptr);
-            engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, id, static_cast<int>(i), 0, value, nullptr);
+            if (useDefault) {
+                engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED,
+                                 id,
+                                 static_cast<int>(i),
+                                 0, 0,
+                                 value,
+                                 nullptr);
+            }
+
+            engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+                             id,
+                             static_cast<int>(i),
+                             0, 0,
+                             value,
+                             nullptr);
         }
     }
 

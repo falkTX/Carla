@@ -529,13 +529,13 @@ ENGINE_CALLBACK_PLUGIN_UNAVAILABLE = 4
 # A parameter value has changed.
 # @a pluginId Plugin Id
 # @a value1   Parameter index
-# @a value3   New parameter value
+# @a valuef   New parameter value
 ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED = 5
 
 # A parameter default has changed.
 # @a pluginId Plugin Id
 # @a value1   Parameter index
-# @a value3   New default value
+# @a valuef   New default value
 ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED = 6
 
 # A parameter's MIDI CC has changed.
@@ -663,7 +663,8 @@ ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED = 28
 # Engine started.
 # @a value1   Process mode
 # @a value2   Transport mode
-# @a value3   Sample rate
+# @a value3   Buffer size
+# @a valuef   Sample rate
 # @a valuestr Engine driver
 # @see EngineProcessMode
 # @see EngineTransportMode
@@ -688,7 +689,7 @@ ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED = 32
 ENGINE_CALLBACK_BUFFER_SIZE_CHANGED = 33
 
 # Engine sample-rate changed.
-# @a value3 New sample rate
+# @a valuef New sample rate
 ENGINE_CALLBACK_SAMPLE_RATE_CHANGED = 34
 
 # A cancelable action has been started or stopped.
@@ -701,7 +702,11 @@ ENGINE_CALLBACK_CANCELABLE_ACTION = 35
 ENGINE_CALLBACK_PROJECT_LOAD_FINISHED = 36
 
 # NSM callback.
-# (Work in progress, values are not defined yet)
+# Frontend must call carla_nsm_ready() with opcode as parameter as a response
+# @a value1   NSM opcode
+# @a value2   Integer value
+# @a valueStr String value
+# @see NsmCallbackOpcode
 ENGINE_CALLBACK_NSM = 37
 
 # Idle frontend.
@@ -719,6 +724,40 @@ ENGINE_CALLBACK_ERROR = 40
 
 # The engine has crashed or malfunctioned and will no longer work.
 ENGINE_CALLBACK_QUIT = 41
+
+# ------------------------------------------------------------------------------------------------------------
+# NSM Callback Opcode
+# NSM callback opcodes.
+# @see ENGINE_CALLBACK_NSM
+
+# NSM is available and initialized.
+NSM_CALLBACK_INIT = 0
+
+# Error from NSM side.
+# @a valueInt Error code
+# @a valueStr Error string
+NSM_CALLBACK_ERROR = 1
+
+# Announce message.
+# @a valueInt SM Flags (WIP, to be defined)
+# @a valueStr SM Name
+NSM_CALLBACK_ANNOUNCE = 2
+
+# Open message.
+# @a valueStr Project filename
+NSM_CALLBACK_OPEN = 3
+
+# Save message.
+NSM_CALLBACK_SAVE = 4
+
+# Session-is-loaded message.
+NSM_CALLBACK_SESSION_IS_LOADED = 5
+
+# Show-optional-gui message.
+NSM_CALLBACK_SHOW_OPTIONAL_GUI = 6
+
+# Hide-optional-gui message.
+NSM_CALLBACK_HIDE_OPTIONAL_GUI = 7
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine Option
@@ -918,7 +957,7 @@ PATCHBAY_ICON_FILE = 5
 # Engine callback function.
 # Front-ends must never block indefinitely during a callback.
 # @see EngineCallbackOpcode and carla_set_engine_callback()
-EngineCallbackFunc = CFUNCTYPE(None, c_void_p, c_enum, c_uint, c_int, c_int, c_float, c_char_p)
+EngineCallbackFunc = CFUNCTYPE(None, c_void_p, c_enum, c_uint, c_int, c_int, c_int, c_float, c_char_p)
 
 # File callback function.
 # @see FileCallbackOpcode
@@ -1178,6 +1217,16 @@ class CarlaTransportInfo(Structure):
         ("bpm", c_double)
     ]
 
+# Runtime engine information.
+class CarlaRuntimeEngineInfo(Structure):
+    _fields_ = [
+        # DSP load.
+        ("load", c_float),
+
+        # Number of xruns.
+        ("xruns", c_uint32)
+    ]
+
 # Image data for LV2 inline display API.
 # raw image pixmap format is ARGB32,
 class CarlaInlineDisplayImageSurface(Structure):
@@ -1235,6 +1284,12 @@ PyCarlaTransportInfo = {
     "beat": 0,
     "tick": 0,
     "bpm": 0.0
+}
+
+# @see CarlaRuntimeEngineInfo
+PyCarlaRuntimeEngineInfo = {
+    "load": 0.0,
+    "xruns": 0
 }
 
 # ------------------------------------------------------------------------------------------------------------
@@ -1334,6 +1389,11 @@ class CarlaHostMeta(object):
     # Check if the engine is running.
     @abstractmethod
     def is_engine_running(self):
+        raise NotImplementedError
+
+    # Get information about the currently running engine.
+    @abstractmethod
+    def get_runtime_engine_info(self):
         raise NotImplementedError
 
     @abstractmethod
@@ -1908,6 +1968,18 @@ class CarlaHostMeta(object):
     def get_host_osc_url_udp(self):
         raise NotImplementedError
 
+    # Initialize NSM (that is, announce ourselves to it).
+    # Must be called as early as possible in the program's lifecycle.
+    # Returns true if NSM is available and initialized correctly.
+    @abstractmethod
+    def nsm_init(self, pid, executableName):
+        raise NotImplementedError
+
+    # Respond to an NSM callback.
+    @abstractmethod
+    def nsm_ready(self, opcode):
+        raise NotImplementedError
+
 # ------------------------------------------------------------------------------------------------------------
 # Carla Host object (dummy/null, does nothing)
 
@@ -1934,13 +2006,19 @@ class CarlaHostNull(CarlaHostMeta):
     def engine_init(self, driverName, clientName):
         self.fEngineRunning = True
         if self.fEngineCallback is not None:
-            self.fEngineCallback(None, ENGINE_CALLBACK_ENGINE_STARTED, 0, self.processMode, self.transportMode, 0.0, driverName)
+            self.fEngineCallback(None,
+                                 ENGINE_CALLBACK_ENGINE_STARTED,
+                                 0,
+                                 self.processMode,
+                                 self.transportMode,
+                                 0, 0.0,
+                                 driverName)
         return True
 
     def engine_close(self):
         self.fEngineRunning = False
         if self.fEngineCallback is not None:
-            self.fEngineCallback(None, ENGINE_CALLBACK_ENGINE_STOPPED, 0, 0, 0, 0.0, "")
+            self.fEngineCallback(None, ENGINE_CALLBACK_ENGINE_STOPPED, 0, 0, 0, 0, 0.0, "")
         return True
 
     def engine_idle(self):
@@ -1948,6 +2026,9 @@ class CarlaHostNull(CarlaHostMeta):
 
     def is_engine_running(self):
         return self.fEngineRunning
+
+    def get_runtime_engine_info(self):
+        return PyCarlaRuntimeEngineInfo
 
     def cancel_engine_action(self):
         return
@@ -2201,7 +2282,7 @@ class CarlaHostNull(CarlaHostMeta):
     def nsm_init(self, pid, executableName):
         return False
 
-    def nsm_ready(self, action):
+    def nsm_ready(self, opcode):
         return
 
 # ------------------------------------------------------------------------------------------------------------
@@ -2239,6 +2320,9 @@ class CarlaHostDLL(CarlaHostMeta):
 
         self.lib.carla_is_engine_running.argtypes = None
         self.lib.carla_is_engine_running.restype = c_bool
+
+        self.lib.carla_get_runtime_engine_info.argtypes = None
+        self.lib.carla_get_runtime_engine_info.restype = POINTER(CarlaRuntimeEngineInfo)
 
         self.lib.carla_cancel_engine_action.argtypes = None
         self.lib.carla_cancel_engine_action.restype = None
@@ -2521,6 +2605,9 @@ class CarlaHostDLL(CarlaHostMeta):
     def is_engine_running(self):
         return bool(self.lib.carla_is_engine_running())
 
+    def get_runtime_engine_info(self):
+        return structToDict(self.lib.carla_get_runtime_engine_info().contents)
+
     def cancel_engine_action(self):
         return self.lib.carla_cancel_engine_action()
 
@@ -2778,8 +2865,8 @@ class CarlaHostDLL(CarlaHostMeta):
     def nsm_init(self, pid, executableName):
         return bool(self.lib.carla_nsm_init(pid, executableName.encode("utf-8")))
 
-    def nsm_ready(self, action):
-        self.lib.carla_nsm_ready(action)
+    def nsm_ready(self, opcode):
+        self.lib.carla_nsm_ready(opcode)
 
 # ------------------------------------------------------------------------------------------------------------
 # Helper object for CarlaHostPlugin
@@ -2827,6 +2914,12 @@ class CarlaHostPlugin(CarlaHostMeta):
         # plugin info
         self.fPluginsInfo = []
 
+        # runtime engine info
+        self.fRuntimeEngineInfo = {
+            "load": 0.0,
+            "xruns": 0
+        }
+
         # transport info
         self.fTransportInfo = {
             "playing": False,
@@ -2871,6 +2964,9 @@ class CarlaHostPlugin(CarlaHostMeta):
 
     def get_engine_driver_device_info(self, index, name):
         return PyEngineDriverDeviceInfo
+
+    def get_runtime_engine_info(self):
+        return self.fRuntimeEngineInfo
 
     def cancel_engine_action(self):
         self.sendMsg(["cancel_engine_action"])
@@ -3156,6 +3252,12 @@ class CarlaHostPlugin(CarlaHostMeta):
         return self.fOscUDP
 
     # --------------------------------------------------------------------------------------------------------
+
+    def _set_runtime_info(self, load, xruns):
+        self.fRuntimeEngineInfo = {
+            "load": load,
+            "xruns": xruns
+        }
 
     def _set_transport(self, playing, frame, bar, beat, tick, bpm):
         self.fTransportInfo = {

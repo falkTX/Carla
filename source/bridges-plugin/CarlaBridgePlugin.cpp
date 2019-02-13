@@ -290,7 +290,9 @@ public:
     // ---------------------------------------------------------------------
 
 protected:
-    void handleCallback(const EngineCallbackOpcode action, const int value1, const int, const float, const char* const)
+    void handleCallback(const EngineCallbackOpcode action,
+                        const int value1,
+                        const int, const int, const float, const char* const)
     {
         CARLA_BACKEND_USE_NAMESPACE;
 
@@ -322,13 +324,17 @@ private:
     bool fUsingBridge;
     bool fUsingExec;
 
-    static void callback(void* ptr, EngineCallbackOpcode action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr)
+    static void callback(void* ptr, EngineCallbackOpcode action, unsigned int pluginId,
+                         int value1, int value2, int value3,
+                         float valueF, const char* valueStr)
     {
-        carla_debug("CarlaBridgePlugin::callback(%p, %i:%s, %i, %i, %i, %f, \"%s\")", ptr, action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
+        carla_debug("CarlaBridgePlugin::callback(%p, %i:%s, %i, %i, %i, %i, %f, \"%s\")",
+                    ptr, action, EngineCallbackOpcode2Str(action),
+                    pluginId, value1, value2, value3, valueF, valueStr);
         CARLA_SAFE_ASSERT_RETURN(ptr != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(pluginId == 0,);
 
-        return ((CarlaBridgePlugin*)ptr)->handleCallback(action, value1, value2, value3, valueStr);
+        return ((CarlaBridgePlugin*)ptr)->handleCallback(action, value1, value2, value3, valueF, valueStr);
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgePlugin)
