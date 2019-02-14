@@ -642,10 +642,21 @@ void CarlaEngine::ProtectedData::doNextPluginAction() noexcept
 
 static int64_t getTimeInMicroseconds() noexcept
 {
-    struct timespec t;
-    clock_gettime(CLOCK_MONOTONIC_RAW, &t);
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+    struct timeval tv;
+    gettimeofday(&tv, nullptr);
 
-    return (t.tv_sec * 1000000) + (t.tv_nsec / 1000);
+    return (tv.tv_sec * 1000000) + tv.tv_usec;
+#else
+    struct timespec ts;
+# ifdef CLOCK_MONOTONIC_RAW
+    clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
+# else
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+# endif
+
+    return (ts.tv_sec * 1000000) + (ts.tv_nsec / 1000);
+#endif
 }
 
 PendingRtEventsRunner::PendingRtEventsRunner(CarlaEngine* const engine,
@@ -676,7 +687,7 @@ PendingRtEventsRunner::~PendingRtEventsRunner() noexcept
         if (dspLoad > pData->dspLoad)
             pData->dspLoad = std::min(100.0f, dspLoad);
         else
-            pData->dspLoad *= static_cast<float>(1.0 - maxTime);
+            pData->dspLoad *= static_cast<float>(1.0 - maxTime) + 1e-12f;
     }
 #endif
 }
