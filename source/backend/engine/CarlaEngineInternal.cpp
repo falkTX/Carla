@@ -674,7 +674,7 @@ PendingRtEventsRunner::~PendingRtEventsRunner() noexcept
         const float dspLoad = static_cast<float>(timeDiff / maxTime) * 100.0f;
 
         if (dspLoad > pData->dspLoad)
-            pData->dspLoad = std::min(100.0f, (pData->dspLoad + pData->dspLoad + dspLoad) / 3.0f);
+            pData->dspLoad = std::min(100.0f, dspLoad);
         else
             pData->dspLoad *= static_cast<float>(1.0 - maxTime);
     }
