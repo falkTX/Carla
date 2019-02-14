@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaDefines.h"
+#include "CarlaHost.h"
 
 #ifdef HAVE_LIBLO
 
@@ -25,7 +25,6 @@
 #define NSM_CLIENT_FEATURES ":switch:"
 //#define NSM_CLIENT_FEATURES ":switch:optional-gui:"
 
-#include "CarlaHost.h"
 #include "CarlaOscUtils.hpp"
 #include "CarlaString.hpp"
 
