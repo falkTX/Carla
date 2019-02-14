@@ -21,6 +21,9 @@
 
 #include "jackbridge/JackBridge.hpp"
 
+#include <ctime>
+#include <sys/time.h>
+
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
