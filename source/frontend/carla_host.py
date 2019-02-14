@@ -2153,7 +2153,7 @@ class HostWindow(QMainWindow):
     def fixLogText(self, text):
         return text.replace("\x1b[30;1m", "").replace("\x1b[31m", "").replace("\x1b[0m", "")
 
-    @pyqtSlot(int, int, int, float, str)
+    @pyqtSlot(int, int, int, int, float, str)
     def slot_handleDebugCallback(self, pluginId, value1, value2, value3, valuef, valueStr):
         self.ui.text_logs.appendPlainText(self.fixLogText(valueStr))
 
