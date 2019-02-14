@@ -146,7 +146,7 @@ public:
         return true;
     }
 
-    void ready(const CB::NsmCallbackOpcode action)
+    void ready(const NsmCallbackOpcode action)
     {
         CARLA_SAFE_ASSERT_RETURN(fServerThread != nullptr,);
 
@@ -648,7 +648,7 @@ bool carla_nsm_init(int pid, const char* executableName)
 #endif
 }
 
-void carla_nsm_ready(CB::NsmCallbackOpcode action)
+void carla_nsm_ready(NsmCallbackOpcode action)
 {
 #ifdef HAVE_LIBLO
     CarlaNSM::getInstance().ready(action);
