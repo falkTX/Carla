@@ -332,7 +332,7 @@ class CanvasPort(QGraphicsItem):
     def triggerDisconnect(self, conn_list=None):
         if not conn_list:
             conn_list = CanvasGetPortConnectionList(self.m_group_id, self.m_port_id)
-        for conn_id, in conn_list:
+        for conn_id, group_id, port_id in conn_list:
             canvas.callback(ACTION_PORTS_DISCONNECT, conn_id, 0, "")
 
     def boundingRect(self):
