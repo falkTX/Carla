@@ -874,7 +874,7 @@ class HostWindow(QMainWindow):
         if self.host.is_engine_running():
             if self.fCustomStopAction == self.CUSTOM_ACTION_PROJECT_LOAD:
                 self.removeAllPlugins()
-            else:
+            elif self.fPluginCount != 0:
                 self.fCurrentlyRemovingAllPlugins = True
                 self.projectLoadingStarted()
 
