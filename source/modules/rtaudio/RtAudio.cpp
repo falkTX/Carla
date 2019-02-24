@@ -2049,7 +2049,7 @@ static int jackXrun( void *infoPointer )
 }
 
 bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigned int channels,
-                                   unsigned int firstChannel, unsigned int sampleRate,
+                                   unsigned int firstChannel, unsigned int,
                                    RtAudioFormat format, unsigned int *bufferSize,
                                    RtAudio::StreamOptions *options )
 {
@@ -2076,11 +2076,7 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
   }
 
   // Check the jack server sample rate.
-  unsigned int jackRate = jackbridge_get_sample_rate( client );
-  if ( sampleRate != jackRate ) {
-    std::cerr << "RtApiJack::probeDeviceOpen: the requested sample rate (" << sampleRate << ") is different than the JACK server rate (" << jackRate << ")." << std::endl;
-  }
-  stream_.sampleRate = jackRate;
+  stream_.sampleRate = jackbridge_get_sample_rate( client );
 
   // Get the latency of the JACK port.
   const char **ports;
