@@ -1850,7 +1850,8 @@ protected:
         }
 
         case audioMasterCurrentId:
-            ret = fEffect->uniqueID;
+            if (fEffect != nullptr)
+                ret = fEffect->uniqueID;
             break;
 
         case audioMasterIdle:
