@@ -17,7 +17,7 @@ make distclean >/dev/null
 make features
 
 # Build things that we skip strict tests for
-make 3rd
+make 3rd USING_JUCE=true
 
 # Build native stuff
 make TESTBUILD=true USING_JUCE=true
