@@ -17,14 +17,8 @@ make distclean >/dev/null
 make features
 
 # Build things that we skip strict tests for
-make -C source/modules/audio_decoder
-make -C source/modules/dgl
-make -C source/modules/hylia
-make -C source/modules/rtaudio
-make -C source/modules/rtmidi
-make -C source/modules/sfzero
-make -C source/modules/water all posix32
-make -C source/theme all qt4 qt5
+make 3rd
+make -C source/modules/water posix32
 
 # Build native stuff
 make TESTBUILD=true

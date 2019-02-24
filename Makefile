@@ -34,44 +34,50 @@ ALL_LIBS += $(MODULEDIR)/carla_engine_plugin.a
 ALL_LIBS += $(MODULEDIR)/carla_plugin.a
 ALL_LIBS += $(MODULEDIR)/jackbridge.a
 ALL_LIBS += $(MODULEDIR)/native-plugins.a
-ALL_LIBS += $(MODULEDIR)/audio_decoder.a
-ALL_LIBS += $(MODULEDIR)/lilv.a
 ALL_LIBS += $(MODULEDIR)/rtmempool.a
-ALL_LIBS += $(MODULEDIR)/sfzero.a
-ALL_LIBS += $(MODULEDIR)/water.a
+
+3RD_LIBS += $(MODULEDIR)/audio_decoder.a
+3RD_LIBS += $(MODULEDIR)/lilv.a
+3RD_LIBS += $(MODULEDIR)/sfzero.a
+3RD_LIBS += $(MODULEDIR)/water.a
 
 ifeq ($(HAVE_DGL),true)
-ALL_LIBS += $(MODULEDIR)/dgl.a
+3RD_LIBS += $(MODULEDIR)/dgl.a
 endif
 
 ifeq ($(HAVE_HYLIA),true)
-ALL_LIBS += $(MODULEDIR)/hylia.a
+3RD_LIBS += $(MODULEDIR)/hylia.a
 endif
 
 ifeq ($(HAVE_QT4),true)
-ALL_LIBS += $(MODULEDIR)/theme.qt4.a
+3RD_LIBS += $(MODULEDIR)/theme.qt4.a
 endif
 
 ifeq ($(HAVE_QT5),true)
-ALL_LIBS += $(MODULEDIR)/theme.qt5.a
+3RD_LIBS += $(MODULEDIR)/theme.qt5.a
 endif
 
 ifeq ($(USING_JUCE),true)
-ALL_LIBS += $(MODULEDIR)/juce_audio_basics.a
-ALL_LIBS += $(MODULEDIR)/juce_audio_devices.a
-ALL_LIBS += $(MODULEDIR)/juce_audio_processors.a
-ALL_LIBS += $(MODULEDIR)/juce_core.a
-ALL_LIBS += $(MODULEDIR)/juce_data_structures.a
-ALL_LIBS += $(MODULEDIR)/juce_events.a
-ALL_LIBS += $(MODULEDIR)/juce_graphics.a
-ALL_LIBS += $(MODULEDIR)/juce_gui_basics.a
+3RD_LIBS += $(MODULEDIR)/juce_audio_basics.a
+3RD_LIBS += $(MODULEDIR)/juce_audio_devices.a
+3RD_LIBS += $(MODULEDIR)/juce_audio_processors.a
+3RD_LIBS += $(MODULEDIR)/juce_core.a
+3RD_LIBS += $(MODULEDIR)/juce_data_structures.a
+3RD_LIBS += $(MODULEDIR)/juce_events.a
+3RD_LIBS += $(MODULEDIR)/juce_graphics.a
+3RD_LIBS += $(MODULEDIR)/juce_gui_basics.a
 ifeq ($(MACOS),true)
-ALL_LIBS += $(MODULEDIR)/juce_gui_extra.a
+3RD_LIBS += $(MODULEDIR)/juce_gui_extra.a
 endif
 else
-ALL_LIBS += $(MODULEDIR)/rtaudio.a
-ALL_LIBS += $(MODULEDIR)/rtmidi.a
+3RD_LIBS += $(MODULEDIR)/rtaudio.a
+3RD_LIBS += $(MODULEDIR)/rtmidi.a
 endif
+
+ALL_LIBS += $(3RD_LIBS)
+
+3rd: $(3RD_LIBS)
+	@$(MAKE) -C source/theme
 
 libs: $(ALL_LIBS)
 
