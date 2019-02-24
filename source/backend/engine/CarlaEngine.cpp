@@ -1312,7 +1312,7 @@ void CarlaEngine::callback(const EngineCallbackOpcode action, const uint pluginI
                      action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueF, valueStr);
     else if (action != ENGINE_CALLBACK_IDLE && action != ENGINE_CALLBACK_NOTE_ON && action != ENGINE_CALLBACK_NOTE_OFF)
         carla_debug("CarlaEngine::callback(%i:%s, %i, %i, %i, %i, %f, \"%s\")",
-                    action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueF. valueStr);
+                    action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueF, valueStr);
 #endif
 
     if (pData->callback != nullptr)
