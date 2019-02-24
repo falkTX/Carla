@@ -338,7 +338,7 @@ bool startProcess(const char* const argv[], pid_t& pidinst) noexcept
 
     case -1: { // error
         CarlaString error(std::strerror(errno));
-        carla_stderr2("fork() failed: %s", error.buffer());
+        carla_stderr2("vfork() failed: %s", error.buffer());
     }   break;
     }
 
