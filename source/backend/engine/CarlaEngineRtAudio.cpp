@@ -287,7 +287,7 @@ public:
         }
 
         RtAudio::StreamOptions rtOptions;
-        rtOptions.flags = RTAUDIO_MINIMIZE_LATENCY | RTAUDIO_HOG_DEVICE | RTAUDIO_SCHEDULE_REALTIME;
+        rtOptions.flags = RTAUDIO_MINIMIZE_LATENCY | RTAUDIO_SCHEDULE_REALTIME;
         rtOptions.numberOfBuffers = pData->options.audioTripleBuffer ? 3 : 2;
         rtOptions.streamName = clientName;
         rtOptions.priority = 85;
