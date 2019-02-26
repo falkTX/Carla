@@ -812,6 +812,7 @@ public:
 #else
           fTimebaseMaster(false),
           fTimebaseRolling(false),
+          fTimebaseUsecs(0),
           fUsedGroups(),
           fUsedPorts(),
           fUsedConnections(),
@@ -1676,6 +1677,51 @@ protected:
             plugin->unlock();
         }
 #else
+        if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_JACK && !fTimebaseMaster)
+        {
+            jack_position_t jpos;
+
+            // invalidate
+            jpos.unique_1 = 1;
+            jpos.unique_2 = 2;
+
+            EngineTimeInfo timeInfo;
+            const bool playing = jackbridge_transport_query(fClient, &jpos) == JackTransportRolling;
+
+            if (jpos.unique_1 != jpos.unique_2)
+            {
+                timeInfo.playing = false;
+                timeInfo.frame = 0;
+                timeInfo.usecs = 0;
+                timeInfo.bbt.valid = false;
+            }
+            else
+            {
+                timeInfo.playing = playing;
+                timeInfo.frame   = jpos.frame;
+                timeInfo.usecs   = jpos.usecs;
+
+                if (jpos.valid & JackPositionBBT)
+                {
+                    timeInfo.bbt.valid          = true;
+                    timeInfo.bbt.bar            = jpos.bar;
+                    timeInfo.bbt.beat           = jpos.beat;
+                    timeInfo.bbt.tick           = jpos.tick;
+                    timeInfo.bbt.barStartTick   = jpos.bar_start_tick;
+                    timeInfo.bbt.beatsPerBar    = jpos.beats_per_bar;
+                    timeInfo.bbt.beatType       = jpos.beat_type;
+                    timeInfo.bbt.ticksPerBeat   = jpos.ticks_per_beat;
+                    timeInfo.bbt.beatsPerMinute = jpos.beats_per_minute;
+                }
+                else
+                {
+                    timeInfo.bbt.valid = false;
+                }
+            }
+
+            pData->timeInfo = timeInfo;
+        }
+
         if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
         {
             if (pData->aboutToClose)
@@ -1842,15 +1888,27 @@ protected:
             }
         }
 
-        if (fTimebaseMaster)
+        if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_JACK)
         {
-            const bool playing = jackbridge_transport_query(fClient, nullptr) == JackTransportRolling;
-
-            if (fTimebaseRolling != playing)
+            if (fTimebaseMaster)
             {
-                fTimebaseRolling = playing;
-                pData->timeInfo.playing = playing;
+                const bool playing = jackbridge_transport_query(fClient, nullptr) == JackTransportRolling;
+
+                if (fTimebaseRolling != playing)
+                {
+                    fTimebaseRolling = playing;
+                    pData->timeInfo.playing = playing;
+                }
+
+                // Check if we are no longer timebase master
+                if (playing && fTimebaseUsecs != 0 && fTimebaseUsecs == pData->timeInfo.usecs)
+                {
+                    carla_debug("No longer timerbase master");
+                    fTimebaseMaster = false;
+                }
             }
+
+            fTimebaseUsecs = pData->timeInfo.usecs;
         }
 #endif // ! BUILD_BRIDGE
     }
@@ -2128,6 +2186,7 @@ private:
 
     bool fTimebaseMaster;
     bool fTimebaseRolling;
+    uint64_t fTimebaseUsecs;
 
     PatchbayGroupList      fUsedGroups;
     PatchbayPortList       fUsedPorts;
