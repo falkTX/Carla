@@ -81,6 +81,7 @@ public:
 #endif
           fFirstActive(true),
           fBufferSize(engine->getBufferSize()),
+          fAudioOutBuffers(nullptr),
           fLastTimeInfo(),
           fEvents(),
           fUI(),
@@ -625,7 +626,11 @@ public:
         if (aOuts > 0)
         {
             pData->audioOut.createNew(aOuts);
+            fAudioOutBuffers = new float*[aOuts];
             needsCtrlIn = true;
+
+            for (uint32_t i=0; i < aOuts; ++i)
+                fAudioOutBuffers[i] = nullptr;
         }
 
         if (params > 0)
@@ -928,7 +933,7 @@ public:
 #endif
         }
 
-        //bufferSizeChanged(pData->engine->getBufferSize());
+        bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
 
         if (pData->active)
@@ -1570,6 +1575,7 @@ public:
         if (pData->audioOut.count > 0)
         {
             CARLA_SAFE_ASSERT_RETURN(outBuffer != nullptr, false);
+            CARLA_SAFE_ASSERT_RETURN(fAudioOutBuffers != nullptr, false);
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -1597,12 +1603,12 @@ public:
         // Set audio buffers
 
         float* vstInBuffer[pData->audioIn.count];
-        float* vstOutBuffer[pData->audioOut.count];
 
         for (uint32_t i=0; i < pData->audioIn.count; ++i)
             vstInBuffer[i] = const_cast<float*>(inBuffer[i]+timeOffset);
+
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
-            vstOutBuffer[i] = outBuffer[i]+timeOffset;
+            carla_zeroFloats(fAudioOutBuffers[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
         // Set MIDI events
@@ -1621,15 +1627,18 @@ public:
 
         if (pData->hints & PLUGIN_CAN_PROCESS_REPLACING)
         {
-            fEffect->processReplacing(fEffect, (pData->audioIn.count > 0) ? vstInBuffer : nullptr, (pData->audioOut.count > 0) ? vstOutBuffer : nullptr, static_cast<int32_t>(frames));
+            fEffect->processReplacing(fEffect,
+                                      (pData->audioIn.count > 0) ? vstInBuffer : nullptr,
+                                      (pData->audioOut.count > 0) ? fAudioOutBuffers : nullptr,
+                                      static_cast<int32_t>(frames));
         }
         else
         {
-            for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                carla_zeroFloats(vstOutBuffer[i], frames);
-
 #if ! VST_FORCE_DEPRECATED
-            fEffect->process(fEffect, (pData->audioIn.count > 0) ? vstInBuffer : nullptr, (pData->audioOut.count > 0) ? vstOutBuffer : nullptr, static_cast<int32_t>(frames));
+            fEffect->process(fEffect,
+                             (pData->audioIn.count > 0) ? vstInBuffer : nullptr,
+                             (pData->audioOut.count > 0) ? fAudioOutBuffers : nullptr,
+                             static_cast<int32_t>(frames));
 #endif
         }
 
@@ -1641,9 +1650,9 @@ public:
         // Post-processing (dry/wet, volume and balance)
 
         {
-            const bool doVolume  = (pData->hints & PLUGIN_CAN_VOLUME) != 0 && carla_isNotEqual(pData->postProc.volume, 1.0f);
             const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && carla_isNotEqual(pData->postProc.dryWet, 1.0f);
             const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_isEqual(pData->postProc.balanceLeft, -1.0f) && carla_isEqual(pData->postProc.balanceRight, 1.0f));
+            const bool isMono    = (pData->audioIn.count == 1);
 
             bool isPair;
             float bufValue, oldBufLeft[doBalance ? frames : 1];
@@ -1653,10 +1662,12 @@ public:
                 // Dry/Wet
                 if (doDryWet)
                 {
+                    const uint32_t c = isMono ? 0 : i;
+
                     for (uint32_t k=0; k < frames; ++k)
                     {
-                        bufValue = inBuffer[(pData->audioIn.count == 1) ? 0 : i][k+timeOffset];
-                        outBuffer[i][k+timeOffset] = (outBuffer[i][k+timeOffset] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
+                        bufValue = inBuffer[c][k+timeOffset];
+                        fAudioOutBuffers[i][k] = (fAudioOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
                     }
                 }
 
@@ -1668,7 +1679,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-                        carla_copyFloats(oldBufLeft, outBuffer[i]+timeOffset, frames);
+                        carla_copyFloats(oldBufLeft, fAudioOutBuffers[i], frames);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
@@ -1679,27 +1690,32 @@ public:
                         if (isPair)
                         {
                             // left
-                            outBuffer[i][k+timeOffset]  = oldBufLeft[k]                * (1.0f - balRangeL);
-                            outBuffer[i][k+timeOffset] += outBuffer[i+1][k+timeOffset] * (1.0f - balRangeR);
+                            fAudioOutBuffers[i][k]  = oldBufLeft[k]            * (1.0f - balRangeL);
+                            fAudioOutBuffers[i][k] += fAudioOutBuffers[i+1][k] * (1.0f - balRangeR);
                         }
                         else
                         {
                             // right
-                            outBuffer[i][k+timeOffset]  = outBuffer[i][k+timeOffset] * balRangeR;
-                            outBuffer[i][k+timeOffset] += oldBufLeft[k]              * balRangeL;
+                            fAudioOutBuffers[i][k]  = fAudioOutBuffers[i][k] * balRangeR;
+                            fAudioOutBuffers[i][k] += oldBufLeft[k]          * balRangeL;
                         }
                     }
                 }
 
-                // Volume
-                if (doVolume)
+                // Volume (and buffer copy)
                 {
                     for (uint32_t k=0; k < frames; ++k)
-                        outBuffer[i][k+timeOffset] *= pData->postProc.volume;
+                        outBuffer[i][k+timeOffset] = fAudioOutBuffers[i][k] * pData->postProc.volume;
                 }
             }
 
         } // End of Post-processing
+#else // BUILD_BRIDGE_ALTERNATIVE_ARCH
+        for (uint32_t i=0; i < pData->audioOut.count; ++i)
+        {
+            for (uint32_t k=0; k < frames; ++k)
+                outBuffer[i][k+timeOffset] = fAudioOutBuffers[i][k];
+        }
 #endif
 
         // --------------------------------------------------------------------------------------------------------
@@ -1717,6 +1733,13 @@ public:
 
         if (pData->active)
             deactivate();
+
+        for (uint32_t i=0; i < pData->audioOut.count; ++i)
+        {
+            if (fAudioOutBuffers[i] != nullptr)
+                delete[] fAudioOutBuffers[i];
+            fAudioOutBuffers[i] = new float[newBufferSize];
+        }
 
 #if ! VST_FORCE_DEPRECATED
         dispatcher(effSetBlockSizeAndSampleRate, 0, static_cast<int32_t>(newBufferSize), nullptr, static_cast<float>(pData->engine->getSampleRate()));
@@ -1747,7 +1770,29 @@ public:
     // -------------------------------------------------------------------
     // Plugin buffers
 
-    // nothing
+    void clearBuffers() noexcept override
+    {
+        carla_debug("CarlaPluginVST2::clearBuffers() - start");
+
+        if (fAudioOutBuffers != nullptr)
+        {
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
+            {
+                if (fAudioOutBuffers[i] != nullptr)
+                {
+                    delete[] fAudioOutBuffers[i];
+                    fAudioOutBuffers[i] = nullptr;
+                }
+            }
+
+            delete[] fAudioOutBuffers;
+            fAudioOutBuffers = nullptr;
+        }
+
+        CarlaPlugin::clearBuffers();
+
+        carla_debug("CarlaPluginVST2::clearBuffers() - end");
+    }
 
     // -------------------------------------------------------------------
     // Post-poned UI Stuff
@@ -2413,6 +2458,7 @@ private:
 
     bool fFirstActive; // first process() call after activate()
     uint32_t fBufferSize;
+    float** fAudioOutBuffers;
     EngineTimeInfo fLastTimeInfo;
 
     struct FixedVstEvents {

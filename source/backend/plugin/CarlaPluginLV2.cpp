@@ -3556,10 +3556,12 @@ public:
         if (pData->audioIn.count > 0)
         {
             CARLA_SAFE_ASSERT_RETURN(audioIn != nullptr, false);
+            CARLA_SAFE_ASSERT_RETURN(fAudioInBuffers != nullptr, false);
         }
         if (pData->audioOut.count > 0)
         {
             CARLA_SAFE_ASSERT_RETURN(audioOut != nullptr, false);
+            CARLA_SAFE_ASSERT_RETURN(fAudioOutBuffers != nullptr, false);
         }
         if (pData->cvIn.count > 0)
         {
