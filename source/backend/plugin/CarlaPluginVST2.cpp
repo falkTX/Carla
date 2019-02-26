@@ -79,6 +79,7 @@ public:
           fIsInitializing(true),
           fIsProcessing(false),
           fChangingValuesThread(kNullThread),
+          fIdleThread(kNullThread),
           fMainThread(pthread_self()),
           fProcThread(kNullThread),
 #ifdef CARLA_OS_MAC
@@ -569,7 +570,10 @@ public:
     void idle() override
     {
         if (fNeedIdle)
+        {
+            const ScopedValueSetter<pthread_t> svs(fIdleThread, pthread_self(), kNullThread);
             dispatcher(effIdle);
+        }
 
         CarlaPlugin::idle();
     }
@@ -1894,30 +1898,40 @@ protected:
 
             const pthread_t thisThread = pthread_self();
 
-            /**/ if (fProcThread != kNullThread && pthread_equal(thisThread, fProcThread))
+            if (pthread_equal(thisThread, kNullThread))
             {
-                // Called from plugin process thread, nasty! (likely MIDI learn)
+                carla_stderr("audioMasterAutomate called with null thread!?");
+                setParameterValue(uindex, fixedValue, false, true, true);
+            }
+            // Called from plugin process thread, nasty! (likely MIDI learn)
+            else if (pthread_equal(thisThread, fProcThread))
+            {
                 CARLA_SAFE_ASSERT(fIsProcessing);
                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, 0, fixedValue);
             }
-            else if (fChangingValuesThread != kNullThread && pthread_equal(thisThread, fChangingValuesThread))
+            // Called from effSetChunk or effSetProgram
+            else if (pthread_equal(thisThread, fChangingValuesThread))
             {
-                // Called from effSetChunk or effSetProgram
+                carla_debug("audioMasterAutomate called while setting state");
                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, 0, fixedValue);
             }
+            // Called from effIdle
+            else if (pthread_equal(thisThread, fIdleThread))
+            {
+                carla_debug("audioMasterAutomate called from idle thread");
+                pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, 0, fixedValue);
+            }
+            // Called from UI?
             else if (fUI.isVisible)
             {
-                // Called from UI?
+                carla_debug("audioMasterAutomate called while UI visible");
                 CarlaPlugin::setParameterValue(uindex, fixedValue, false, true, true);
             }
+            // Unknown
             else
             {
-                // Unknown
-                // TODO - check if plugin or UI is initializing
                 carla_stdout("audioMasterAutomate called from unknown source");
-
-                setParameterValue(uindex, fixedValue, true, true, true);
-                //pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, 0, fixedValue);
+                setParameterValue(uindex, fixedValue, false, true, true);
             }
             break;
         }
@@ -2478,6 +2492,7 @@ private:
     bool      fIsInitializing;
     bool      fIsProcessing;
     pthread_t fChangingValuesThread;
+    pthread_t fIdleThread;
     pthread_t fMainThread;
     pthread_t fProcThread;
 
