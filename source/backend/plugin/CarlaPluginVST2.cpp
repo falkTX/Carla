@@ -1170,11 +1170,12 @@ public:
             CARLA_SAFE_ASSERT_INT(timeInfo.bbt.beat > 0, timeInfo.bbt.beat);
 
             const double ppqBar  = double(timeInfo.bbt.bar - 1) * timeInfo.bbt.beatsPerBar;
-            const double ppqBeat = double(timeInfo.bbt.beat - 1);
-            const double ppqTick = timeInfo.bbt.tick / timeInfo.bbt.ticksPerBeat;
+            // const double ppqBeat = double(timeInfo.bbt.beat - 1);
+            // const double ppqTick = timeInfo.bbt.tick / timeInfo.bbt.ticksPerBeat;
 
             // PPQ Pos
-            fTimeInfo.ppqPos = ppqBar + ppqBeat + ppqTick;
+            fTimeInfo.ppqPos = fTimeInfo.samplePos / (fTimeInfo.sampleRate * 60 / fTimeInfo.tempo);
+            // fTimeInfo.ppqPos = ppqBar + ppqBeat + ppqTick;
             fTimeInfo.flags |= kVstPpqPosValid;
 
             // Tempo
