@@ -1,6 +1,6 @@
 /*
- * JackBridge (Part 2, Semaphore + Shared memory functions)
- * Copyright (C) 2013-2015 Filipe Coelho <falktx@falktx.com>
+ * JackBridge (Part 2, Semaphore + Shared memory and other misc functions)
+ * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -19,6 +19,7 @@
 #ifdef JACKBRIDGE_DUMMY
 # include "CarlaUtils.hpp"
 #else
+# include "CarlaProcessUtils.hpp"
 # include "CarlaSemUtils.hpp"
 # include "CarlaShmUtils.hpp"
 #endif // ! JACKBRIDGE_DUMMY
@@ -131,6 +132,15 @@ void jackbridge_shm_unmap(void* shm, void* ptr) noexcept
 
 #ifndef JACKBRIDGE_DUMMY
     return carla_shm_unmap(*(carla_shm_t*)shm, ptr);
+#endif
+}
+
+// -----------------------------------------------------------------------------
+
+void jackbridge_parent_deathsig(bool kill) noexcept
+{
+#ifndef JACKBRIDGE_DUMMY
+    carla_terminateProcessOnParentExit(kill);
 #endif
 }
 

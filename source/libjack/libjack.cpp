@@ -139,7 +139,7 @@ public:
         carla_unsetenv("CARLA_SHM_IDS");
 
         // kill ourselves if main carla dies
-        ::prctl(PR_SET_PDEATHSIG, SIGKILL);
+        carla_terminateProcessOnParentExit(true);
 
         for (int i=4; --i >= 0;) {
             CARLA_SAFE_ASSERT_RETURN(libjackSetup[i] >= '0' && libjackSetup[i] <= '0'+64,);

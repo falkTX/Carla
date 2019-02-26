@@ -137,6 +137,7 @@ const JackBridgeExportedFunctions* JACKBRIDGE_API jackbridge_get_exported_functi
     funcs.shm_close_ptr                        = jackbridge_shm_close;
     funcs.shm_map_ptr                          = jackbridge_shm_map;
     funcs.shm_unmap_ptr                        = jackbridge_shm_unmap;
+    funcs.parent_deathsig_ptr                  = jackbridge_parent_deathsig;
 
     funcs.unique1 = funcs.unique2 = funcs.unique3 = 0xdeadf00d;
 

@@ -1,6 +1,6 @@
 /*
  * Carla Thread
- * Copyright (C) 2013-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,6 +20,7 @@
 
 #include "CarlaMutex.hpp"
 #include "CarlaString.hpp"
+#include "CarlaProcessUtils.hpp"
 
 #ifdef CARLA_OS_LINUX
 # include <sys/prctl.h>
@@ -241,9 +242,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
 
-#ifdef CARLA_OS_LINUX
-        prctl(PR_SET_NAME, name, 0, 0, 0);
-#endif
+        carla_setProcessName(name);
 #if defined(__GLIBC__) && (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012 && !defined(CARLA_OS_GNU_HURD)
         pthread_setname_np(pthread_self(), name);
 #endif
