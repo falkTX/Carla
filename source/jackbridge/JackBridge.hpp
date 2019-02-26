@@ -407,4 +407,6 @@ JACKBRIDGE_API void  jackbridge_shm_close(void* shm) noexcept;
 JACKBRIDGE_API void* jackbridge_shm_map(void* shm, uint64_t size) noexcept;
 JACKBRIDGE_API void  jackbridge_shm_unmap(void* shm, void* ptr) noexcept;
 
+JACKBRIDGE_API void jackbridge_parent_deathsig(bool kill) noexcept;
+
 #endif // JACKBRIDGE_HPP_INCLUDED

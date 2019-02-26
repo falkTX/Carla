@@ -588,4 +588,9 @@ void jackbridge_shm_unmap(void* shm, void* ptr) noexcept
     return getBridgeInstance().shm_unmap_ptr(shm, ptr);
 }
 
+void jackbridge_parent_deathsig(bool kill) noexcept
+{
+    return getBridgeInstance().parent_deathsig_ptr(kill);
+}
+
 // -----------------------------------------------------------------------------

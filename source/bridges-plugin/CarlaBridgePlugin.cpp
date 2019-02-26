@@ -29,7 +29,6 @@
 #ifdef CARLA_OS_LINUX
 # include <sched.h>
 # include <signal.h>
-# include <sys/prctl.h>
 # define SCHED_RESET_ON_FORK 0x40000000
 #endif
 
@@ -442,12 +441,7 @@ int main(int argc, char* argv[])
         rtClientBaseName[6]    = '\0';
         nonRtClientBaseName[6] = '\0';
         nonRtServerBaseName[6] = '\0';
-
-#ifdef CARLA_OS_LINUX
-        // terminate ourselves if main carla dies
-        ::prctl(PR_SET_PDEATHSIG, SIGTERM);
-        // TODO, osx version too, see https://stackoverflow.com/questions/284325/how-to-make-child-process-die-after-parent-exits
-#endif
+        jackbridge_parent_deathsig(false);
     }
     else
     {

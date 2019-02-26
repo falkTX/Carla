@@ -16,6 +16,7 @@
  */
 
 #include "CarlaPipeUtils.hpp"
+#include "CarlaProcessUtils.hpp"
 #include "CarlaString.hpp"
 #include "CarlaMIDI.h"
 
@@ -1763,10 +1764,7 @@ bool CarlaPipeClient::initPipeClient(const char* argv[]) noexcept
     //----------------------------------------------------------------
     // kill ourselves if parent dies
 
-# ifdef CARLA_OS_LINUX
-    ::prctl(PR_SET_PDEATHSIG, SIGKILL);
-    // TODO, osx version too, see https://stackoverflow.com/questions/284325/how-to-make-child-process-die-after-parent-exits
-# endif
+    carla_terminateProcessOnParentExit(false);
 #endif
 
     //----------------------------------------------------------------
