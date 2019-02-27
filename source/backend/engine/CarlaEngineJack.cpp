@@ -1071,8 +1071,9 @@ public:
 
         CARLA_SAFE_ASSERT_RETURN_ERR(fClient != nullptr, "JACK Client is null");
 
-        // deactivate first
-        const bool deactivated(jackbridge_deactivate(fClient));
+        // deactivate and close client
+        jackbridge_deactivate(fClient);
+        jackbridge_client_close(fClient);
 
         // clear engine data
         CarlaEngine::close();
@@ -1087,23 +1088,9 @@ public:
         if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
             pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         {
-            if (deactivated)
-            {
-                jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioIn1]);
-                jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioIn2]);
-                jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioOut1]);
-                jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioOut2]);
-                jackbridge_port_unregister(fClient, fRackPorts[kRackPortEventIn]);
-                jackbridge_port_unregister(fClient, fRackPorts[kRackPortEventOut]);
-            }
             carla_zeroPointers(fRackPorts, kRackPortCount);
-
             pData->graph.destroy();
         }
-
-        // close client
-        if (deactivated)
-            jackbridge_client_close(fClient);
 
         fClient = nullptr;
         return true;
