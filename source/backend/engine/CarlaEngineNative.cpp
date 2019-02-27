@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -1483,6 +1483,16 @@ protected:
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames,
                  const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount)
     {
+        if (frames > pData->bufferSize)
+        {
+            carla_stderr2("Host is calling process with too high number of frames! %u vs %u",
+                          frames, pData->bufferSize);
+
+            deactivate();
+            bufferSizeChanged(frames);
+            activate();
+        }
+
         const PendingRtEventsRunner prt(this, frames);
 
         // ---------------------------------------------------------------
