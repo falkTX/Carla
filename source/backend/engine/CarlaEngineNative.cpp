@@ -1583,6 +1583,16 @@ protected:
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames,
                  const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount)
     {
+        if (frames > pData->bufferSize)
+        {
+            carla_stderr2("Host is calling process with too high number of frames! %u vs %u",
+                          frames, pData->bufferSize);
+
+            deactivate();
+            bufferSizeChanged(frames);
+            activate();
+        }
+
         const PendingRtEventsRunner prt(this, frames, true);
 
         // ---------------------------------------------------------------
