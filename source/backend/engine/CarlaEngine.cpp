@@ -30,6 +30,7 @@
 #include "CarlaEngineUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaPipeUtils.hpp"
+#include "CarlaProcessUtils.hpp"
 #include "CarlaStateUtils.hpp"
 #include "CarlaMIDI.h"
 
@@ -430,6 +431,9 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
         bool use16Outs;
 #endif
         setLastError("Invalid or unsupported plugin type");
+
+        // Some stupid plugins mess up with global signals, err!!
+        const CarlaSignalRestorer csr;
 
         switch (ptype)
         {

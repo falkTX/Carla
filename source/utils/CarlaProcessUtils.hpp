@@ -20,8 +20,10 @@
 
 #include "CarlaUtils.hpp"
 
-#ifdef CARLA_OS_LINUX
+#ifndef CARLA_OS_WIN
 # include <signal.h>
+#endif
+#ifdef CARLA_OS_LINUX
 # include <sys/prctl.h>
 #endif
 
@@ -56,6 +58,38 @@ void carla_terminateProcessOnParentExit(const bool kill) noexcept
     // maybe unused
     return; (void)kill;
 }
+
+// --------------------------------------------------------------------------------------------------------------------
+// process functions
+
+class CarlaSignalRestorer {
+public:
+  CarlaSignalRestorer()
+  {
+#ifndef CARLA_OS_WIN
+      carla_zeroStructs(sigs, 16);
+
+      for (int i=0; i < 16; ++i)
+          ::sigaction(i+1, nullptr, &sigs[i]);
+#endif
+  }
+
+  ~CarlaSignalRestorer()
+  {
+#ifndef CARLA_OS_WIN
+      for (int i=0; i < 16; ++i)
+          ::sigaction(i+1, &sigs[i], nullptr);
+#endif
+  }
+
+private:
+#ifndef CARLA_OS_WIN
+    struct ::sigaction sigs[16];
+#endif
+
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaSignalRestorer)
+    CARLA_PREVENT_HEAP_ALLOCATION
+};
 
 // --------------------------------------------------------------------------------------------------------------------
 
