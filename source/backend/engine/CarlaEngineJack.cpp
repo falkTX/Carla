@@ -817,6 +817,7 @@ public:
           fUsedPorts(),
           fUsedConnections(),
           fNewGroups(),
+          fPatchbayProcThreadProtectionMutex(),
           fRetConns(),
           fPostPonedEvents(),
           fPostPonedEventsMutex()
@@ -1657,6 +1658,10 @@ protected:
         if (pData->bufferSize == newBufferSize)
             return;
 
+#ifndef BUILD_BRIDGE
+        const CarlaMutexLocker cml(fPatchbayProcThreadProtectionMutex);
+#endif
+
         pData->bufferSize = newBufferSize;
         bufferSizeChanged(newBufferSize);
     }
@@ -1666,6 +1671,10 @@ protected:
         if (carla_isEqual(pData->sampleRate, newSampleRate))
             return;
 
+#ifndef BUILD_BRIDGE
+        const CarlaMutexLocker cml(fPatchbayProcThreadProtectionMutex);
+#endif
+
         pData->sampleRate = newSampleRate;
         sampleRateChanged(newSampleRate);
     }
@@ -1674,6 +1683,10 @@ protected:
     {
         if (fFreewheel == isFreewheel)
             return;
+
+#ifndef BUILD_BRIDGE
+        const CarlaMutexLocker cml(fPatchbayProcThreadProtectionMutex);
+#endif
 
         fFreewheel = isFreewheel;
         offlineModeChanged(isFreewheel);
@@ -1842,9 +1855,14 @@ protected:
             }
 
             if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+            {
                 pData->graph.processRack(pData, inBuf, outBuf, nframes);
+            }
             else
+            {
+                const CarlaMutexLocker cml(fPatchbayProcThreadProtectionMutex);
                 pData->graph.process(pData, inBuf, outBuf, nframes);
+            }
 
             // output control
             if (eventOut != nullptr)
@@ -2227,6 +2245,7 @@ private:
     PatchbayPortList       fUsedPorts;
     PatchbayConnectionList fUsedConnections;
     LinkedList<uint>       fNewGroups;
+    CarlaMutex             fPatchbayProcThreadProtectionMutex;
 
     mutable CharStringListPtr fRetConns;
 
