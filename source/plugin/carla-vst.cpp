@@ -112,7 +112,9 @@ public:
         // find host type
         const String hostFilename(File::getSpecialLocation(File::hostApplicationPath).getFileName());
 
-        if (hostFilename.startsWith("Bitwig"))
+        /**/ if (hostFilename.startsWith("ardour"))
+            fHostType = kHostTypeArdour;
+        else if (hostFilename.startsWith("Bitwig"))
             fHostType = kHostTypeBitwig;
 
         fHost.resourceDir = carla_strdup(resDir.getFullPathName().toRawUTF8());
@@ -246,12 +248,12 @@ public:
                 const uint32_t bufferSize = static_cast<uint32_t>(hostCallback(audioMasterGetBlockSize));
                 const double   sampleRate = static_cast<double>(hostCallback(audioMasterGetSampleRate));
 
-                if (bufferSize != 0 && fBufferSize != bufferSize)
+                if (bufferSize != 0 && fBufferSize != bufferSize && (fHostType != kHostTypeArdour || fBufferSize == 0))
                 {
                     fBufferSize = bufferSize;
 
                     if (fDescriptor->dispatcher != nullptr)
-                        fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, (int32_t)value, nullptr, 0.0f);
+                        fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, bufferSize, nullptr, 0.0f);
                 }
 
                 if (carla_isNotZero(sampleRate) && carla_isNotEqual(fSampleRate, sampleRate))
@@ -600,6 +602,7 @@ private:
     // Host data
     enum HostType {
         kHostTypeNull = 0,
+        kHostTypeArdour,
         kHostTypeBitwig
     };
     HostType fHostType;
