@@ -457,15 +457,23 @@ public:
 
             if (vstTimeInfo->flags & (kVstPpqPosValid|kVstTimeSigValid))
             {
-                const int    ppqPerBar = vstTimeInfo->timeSigNumerator * 4 / vstTimeInfo->timeSigDenominator;
-                const double barBeats  = (std::fmod(vstTimeInfo->ppqPos, ppqPerBar) / ppqPerBar) * vstTimeInfo->timeSigDenominator;
+                const double ppqPos    = std::abs(vstTimeInfo->ppqPos);
+                const double ppqPerBar = static_cast<double>(vstTimeInfo->timeSigNumerator * 4) / vstTimeInfo->timeSigDenominator;
+                const double barBeats  = (std::fmod(ppqPos, ppqPerBar) / ppqPerBar) * vstTimeInfo->timeSigNumerator;
                 const double rest      =  std::fmod(barBeats, 1.0);
 
-                fTimeInfo.bbt.bar         = static_cast<int32_t>(vstTimeInfo->ppqPos)/ppqPerBar + 1;
-                fTimeInfo.bbt.beat        = static_cast<int32_t>(barBeats-rest+1.0);
-                fTimeInfo.bbt.tick        = static_cast<int32_t>(rest*fTimeInfo.bbt.ticksPerBeat+0.5);
+                fTimeInfo.bbt.bar         = static_cast<int32_t>(ppqPos / ppqPerBar + 0.5) + 1;
+                fTimeInfo.bbt.beat        = static_cast<int32_t>(barBeats + 0.5) + 1;
+                fTimeInfo.bbt.tick        = static_cast<int32_t>(rest * fTimeInfo.bbt.ticksPerBeat + 0.5);
                 fTimeInfo.bbt.beatsPerBar = static_cast<float>(vstTimeInfo->timeSigNumerator);
                 fTimeInfo.bbt.beatType    = static_cast<float>(vstTimeInfo->timeSigDenominator);
+
+                if (vstTimeInfo->ppqPos < 0.0)
+                {
+                    --fTimeInfo.bbt.bar;
+                    fTimeInfo.bbt.beat = vstTimeInfo->timeSigNumerator - fTimeInfo.bbt.beat + 1;
+                    fTimeInfo.bbt.tick = fTimeInfo.bbt.ticksPerBeat - fTimeInfo.bbt.tick - 1;
+                }
             }
             else
             {
