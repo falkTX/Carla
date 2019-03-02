@@ -334,7 +334,8 @@ public:
 
     void clearXruns() const noexcept override
     {
-        pData->xruns = fDevice->getXRunCount();
+        const int xruns = fDevice->getXRunCount();
+        pData->xruns = xruns > 0 ? static_cast<uint32_t>(xruns) : 0;
     }
 
     // -------------------------------------------------------------------
