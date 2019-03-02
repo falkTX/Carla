@@ -520,7 +520,7 @@ CarlaPlugin::ProtectedData::PostRtEvents::~PostRtEvents() noexcept
 
 void CarlaPlugin::ProtectedData::PostRtEvents::appendRT(const PluginPostRtEvent& e) noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(dataPendingMutex.tryLock(),);
+    CARLA_SAFE_ASSERT_INT2_RETURN(dataPendingMutex.tryLock(), e.type, e.value1,);
 
     dataPendingRT.append(e);
     dataPendingMutex.unlock();
