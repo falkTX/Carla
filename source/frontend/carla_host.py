@@ -568,7 +568,7 @@ class HostWindow(QMainWindow):
 
         # For NSM we wait for the open message
         if NSM_URL and host.nsmOK:
-            host.nsm_ready(-1)
+            host.nsm_ready(NSM_CALLBACK_INIT)
             return
 
         QTimer.singleShot(0, self.slot_engineStart)
@@ -891,7 +891,7 @@ class HostWindow(QMainWindow):
         elif self.fCustomStopAction == self.CUSTOM_ACTION_PROJECT_LOAD:
             self.slot_engineStart()
             self.loadProjectNow()
-            self.host.nsm_ready(2) # open
+            self.host.nsm_ready(NSM_CALLBACK_OPEN)
 
         self.fCustomStopAction = self.CUSTOM_ACTION_NONE
 
