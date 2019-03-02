@@ -1861,10 +1861,9 @@ protected:
             }
 
             // plugins should never do this:
-            CARLA_SAFE_ASSERT_INT2(index >= 0 && index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
-
-            if (index < 0 || index >= static_cast<int32_t>(pData->param.count))
-                break;
+            CARLA_SAFE_ASSERT_INT2_BREAK(index >= 0 && index < static_cast<int32_t>(pData->param.count),
+                                         index,
+                                         static_cast<int32_t>(pData->param.count));
 
             const uint32_t uindex(static_cast<uint32_t>(index));
             const float fixedValue(pData->param.getFixedValue(uindex, opt));

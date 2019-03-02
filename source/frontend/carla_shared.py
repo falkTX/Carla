@@ -562,7 +562,7 @@ def handleInitialCommandLineArguments(file):
 
     for arg in sys.argv[1:]:
         if arg.startswith("--with-appname="):
-            initName = os.path.basename(arg.replace("--with-initname=", ""))
+            initName = os.path.basename(arg.replace("--with-appname=", ""))
 
         elif arg.startswith("--with-libprefix="):
             libPrefix = arg.replace("--with-libprefix=", "")
