@@ -1188,11 +1188,8 @@ public:
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
-    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
+    float setParamterValueCommon(const uint32_t parameterId, const float value) noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(fParamBuffers != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
-
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
         fParamBuffers[parameterId] = fixedValue;
 
@@ -1200,7 +1197,7 @@ public:
         {
             const uint32_t rparamId = static_cast<uint32_t>(pData->param.data[parameterId].rindex) - fRdfDescriptor->PortCount;
             CARLA_SAFE_ASSERT_UINT2_RETURN(rparamId < fRdfDescriptor->ParameterCount,
-                                           rparamId, fRdfDescriptor->PortCount,);
+                                           rparamId, fRdfDescriptor->PortCount, fixedValue);
 
             uint8_t atomBuf[256];
             lv2_atom_forge_set_buffer(&fAtomForge, atomBuf, sizeof(atomBuf));
@@ -1242,6 +1239,16 @@ public:
             fAtomBufferEvIn.put(atom, fEventsIn.ctrlIndex);
         }
 
+        return fixedValue;
+    }
+
+    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fParamBuffers != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+
+        const float fixedValue = setParamterValueCommon(parameterId, value);
+
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
@@ -1250,13 +1257,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fParamBuffers != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
-        const float fixedValue(pData->param.getFixedValue(parameterId, value));
-        fParamBuffers[parameterId] = fixedValue;
-
-        if (parameterId >= fRdfDescriptor->PortCount)
-        {
-            // TODO
-        }
+        const float fixedValue = setParamterValueCommon(parameterId, value);
 
         CarlaPlugin::setParameterValueRT(parameterId, fixedValue);
     }
@@ -1668,21 +1669,23 @@ public:
 
     void idle() override
     {
-        if (! fAtomBufferWorkerIn.isDataAvailableForReading())
-            return;
-
-        Lv2AtomRingBuffer tmpRingBuffer(fAtomBufferWorkerIn, fAtomBufferWorkerInTmpData);
-        CARLA_SAFE_ASSERT_RETURN(tmpRingBuffer.isDataAvailableForReading(),);
-        CARLA_SAFE_ASSERT_RETURN(fExt.worker != nullptr && fExt.worker->work != nullptr,);
-
-        uint32_t portIndex;
-        const LV2_Atom* atom;
-
-        for (; tmpRingBuffer.get(atom, portIndex);)
+        if (fAtomBufferWorkerIn.isDataAvailableForReading())
         {
-            CARLA_SAFE_ASSERT_CONTINUE(atom->type == kUridCarlaAtomWorkerIn);
-            fExt.worker->work(fHandle, carla_lv2_worker_respond, this, atom->size, LV2_ATOM_BODY_CONST(atom));
+            Lv2AtomRingBuffer tmpRingBuffer(fAtomBufferWorkerIn, fAtomBufferWorkerInTmpData);
+            CARLA_SAFE_ASSERT_RETURN(tmpRingBuffer.isDataAvailableForReading(),);
+            CARLA_SAFE_ASSERT_RETURN(fExt.worker != nullptr && fExt.worker->work != nullptr,);
+
+            uint32_t portIndex;
+            const LV2_Atom* atom;
+
+            for (; tmpRingBuffer.get(atom, portIndex);)
+            {
+                CARLA_SAFE_ASSERT_CONTINUE(atom->type == kUridCarlaAtomWorkerIn);
+                fExt.worker->work(fHandle, carla_lv2_worker_respond, this, atom->size, LV2_ATOM_BODY_CONST(atom));
+            }
         }
+
+        CarlaPlugin::idle();
     }
 
     void uiIdle() override
