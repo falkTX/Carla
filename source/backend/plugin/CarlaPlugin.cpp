@@ -1524,7 +1524,7 @@ void CarlaPlugin::setDryWetRT(const float value) noexcept
         return;
 
     pData->postProc.dryWet = fixedValue;
-    pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, 0, fixedValue);
+    pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 1, 0, fixedValue);
 }
 
 void CarlaPlugin::setVolumeRT(const float value) noexcept
@@ -1537,7 +1537,7 @@ void CarlaPlugin::setVolumeRT(const float value) noexcept
         return;
 
     pData->postProc.volume = fixedValue;
-    pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, 0, fixedValue);
+    pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 1, 0, fixedValue);
 }
 
 void CarlaPlugin::setBalanceLeftRT(const float value) noexcept
@@ -1550,7 +1550,7 @@ void CarlaPlugin::setBalanceLeftRT(const float value) noexcept
         return;
 
     pData->postProc.balanceLeft = fixedValue;
-    pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, 0, fixedValue);
+    pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 1, 0, fixedValue);
 }
 
 void CarlaPlugin::setBalanceRightRT(const float value) noexcept
@@ -1563,7 +1563,7 @@ void CarlaPlugin::setBalanceRightRT(const float value) noexcept
         return;
 
     pData->postProc.balanceRight = fixedValue;
-    pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, 0, fixedValue);
+    pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 1, 0, fixedValue);
 }
 
 void CarlaPlugin::setPanningRT(const float value) noexcept
@@ -1647,7 +1647,7 @@ void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float valu
 
 void CarlaPlugin::setParameterValueRT(const uint32_t parameterId, const float value) noexcept
 {
-    pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(parameterId), 0, 0, value);
+    pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(parameterId), 1, 0, value);
 }
 
 void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
@@ -2002,10 +2002,7 @@ void CarlaPlugin::idle()
 
         case kPluginPostRtEventDebug: {
             pData->engine->callback(ENGINE_CALLBACK_DEBUG, pData->id,
-                                    event.value1, event.value2,
-                                    0,
-                                    event.valueF,
-                                    nullptr);
+                                    event.value1, event.value2, event.value3, event.valuef, nullptr);
         } break;
 
         case kPluginPostRtEventParameterChange: {
@@ -2015,22 +2012,22 @@ void CarlaPlugin::idle()
                 if (needsUiMainThread)
                     pData->postUiEvents.append(event);
                 else
-                    uiParameterChange(static_cast<uint32_t>(event.value1), event.valueF);
+                    uiParameterChange(static_cast<uint32_t>(event.value1), event.valuef);
             }
 
-            if (event.value2 != 1)
+            if (event.value2 != 0)
             {
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
                 // Update OSC control client
                 if (sendOsc)
-                    pData->engine->oscSend_control_set_parameter_value(pData->id, event.value1, event.valueF);
+                    pData->engine->oscSend_control_set_parameter_value(pData->id, event.value1, event.valuef);
 #endif
                 // Update Host
                 pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
                                         pData->id,
                                         event.value1,
                                         0, 0,
-                                        event.valueF,
+                                        event.valuef,
                                         nullptr);
             }
         } break;
@@ -2138,11 +2135,11 @@ void CarlaPlugin::idle()
         case kPluginPostRtEventNoteOn: {
             CARLA_SAFE_ASSERT_BREAK(event.value1 >= 0 && event.value1 < MAX_MIDI_CHANNELS);
             CARLA_SAFE_ASSERT_BREAK(event.value2 >= 0 && event.value2 < MAX_MIDI_NOTE);
-            CARLA_SAFE_ASSERT_BREAK(event.value4 >= 0 && event.value4 < MAX_MIDI_VALUE);
+            CARLA_SAFE_ASSERT_BREAK(event.value3 >= 0 && event.value3 < MAX_MIDI_VALUE);
 
             const uint8_t channel  = static_cast<uint8_t>(event.value1);
             const uint8_t note     = static_cast<uint8_t>(event.value2);
-            const uint8_t velocity = static_cast<uint8_t>(event.value4);
+            const uint8_t velocity = static_cast<uint8_t>(event.value3);
 
             // Update UI
             if (hasUI)
@@ -2163,9 +2160,8 @@ void CarlaPlugin::idle()
                                     pData->id,
                                     event.value1,
                                     event.value2,
-                                    event.value4,
+                                    event.value3,
                                     0.0f, nullptr);
-
         } break;
 
         case kPluginPostRtEventNoteOff: {
@@ -2195,7 +2191,6 @@ void CarlaPlugin::idle()
                                     event.value1,
                                     event.value2,
                                     0, 0.0f, nullptr);
-
         } break;
         }
     }
@@ -2434,8 +2429,8 @@ void CarlaPlugin::sendMidiAllNotesOffToCallback()
     postEvent.type   = kPluginPostRtEventNoteOff;
     postEvent.value1 = pData->ctrlChannel;
     postEvent.value2 = 0;
-    postEvent.value4 = 0;
-    postEvent.valueF = 0.0f;
+    postEvent.value3 = 0;
+    postEvent.valuef = 0.0f;
 
     for (int32_t i=0; i < MAX_MIDI_NOTE; ++i)
     {
@@ -2480,7 +2475,7 @@ void CarlaPlugin::uiIdle()
                 break;
 
             case kPluginPostRtEventParameterChange:
-                uiParameterChange(static_cast<uint32_t>(event.value1), event.valueF);
+                uiParameterChange(static_cast<uint32_t>(event.value1), event.valuef);
                 break;
 
             case kPluginPostRtEventProgramChange:
@@ -2494,7 +2489,7 @@ void CarlaPlugin::uiIdle()
             case kPluginPostRtEventNoteOn:
                 uiNoteOn(static_cast<uint8_t>(event.value1),
                          static_cast<uint8_t>(event.value2),
-                         static_cast<uint8_t>(event.value4));
+                         static_cast<uint8_t>(event.value3));
                 break;
 
             case kPluginPostRtEventNoteOff:

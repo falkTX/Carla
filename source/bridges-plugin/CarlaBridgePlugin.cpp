@@ -325,15 +325,15 @@ private:
 
     static void callback(void* ptr, EngineCallbackOpcode action, unsigned int pluginId,
                          int value1, int value2, int value3,
-                         float valueF, const char* valueStr)
+                         float valuef, const char* valueStr)
     {
         carla_debug("CarlaBridgePlugin::callback(%p, %i:%s, %i, %i, %i, %i, %f, \"%s\")",
                     ptr, action, EngineCallbackOpcode2Str(action),
-                    pluginId, value1, value2, value3, valueF, valueStr);
+                    pluginId, value1, value2, value3, valuef, valueStr);
         CARLA_SAFE_ASSERT_RETURN(ptr != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(pluginId == 0,);
 
-        return ((CarlaBridgePlugin*)ptr)->handleCallback(action, value1, value2, value3, valueF, valueStr);
+        return ((CarlaBridgePlugin*)ptr)->handleCallback(action, value1, value2, value3, valuef, valueStr);
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgePlugin)

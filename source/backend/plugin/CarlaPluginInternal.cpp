@@ -753,11 +753,11 @@ void CarlaPlugin::ProtectedData::postponeRtEvent(const PluginPostRtEventType typ
                                                  const int32_t value1,
                                                  const int32_t value2,
                                                  const int32_t value3,
-                                                 const float valueF) noexcept
+                                                 const float valuef) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(type != kPluginPostRtEventNull,);
 
-    PluginPostRtEvent rtEvent = { type, value1, value2, value3, valueF };
+    PluginPostRtEvent rtEvent = { type, value1, value2, value3, valuef };
 
     postRtEvents.appendRT(rtEvent);
 }

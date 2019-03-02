@@ -413,7 +413,7 @@ protected:
 
     void engineCallback(const EngineCallbackOpcode action, const uint pluginId,
                         const int value1, const int value2, const int value3,
-                        const float valueF, const char* const valueStr)
+                        const float valuef, const char* const valueStr)
     {
         switch (action)
         {
@@ -425,7 +425,7 @@ protected:
             {
                 fUI.writeFunction(fUI.controller,
                                   static_cast<uint32_t>(value1)+fPorts.indexOffset,
-                                  sizeof(float), 0, &valueF);
+                                  sizeof(float), 0, &valuef);
             }
             break;
 
@@ -442,7 +442,7 @@ protected:
             carla_stdout("engineCallback(%i:%s, %u, %i, %i, %f, %s)",
                          action, EngineCallbackOpcode2Str(action), pluginId,
                          value1, value2, value3,
-                         static_cast<double>(valueF), valueStr);
+                         static_cast<double>(valuef), valueStr);
             break;
         }
     }
@@ -546,9 +546,9 @@ private:
 
     static void _engine_callback(void* handle, EngineCallbackOpcode action, uint pluginId,
                                  int value1, int value2, int value3,
-                                 float valueF, const char* valueStr)
+                                 float valuef, const char* valueStr)
     {
-        handlePtr->engineCallback(action, pluginId, value1, value2, value3, valueF, valueStr);
+        handlePtr->engineCallback(action, pluginId, value1, value2, value3, valuef, valueStr);
     }
 
     #undef handlePtr

@@ -560,6 +560,7 @@ public:
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback, doingInit);
     }
 
+    // FIXME: this is never used
     void setMidiProgramRT(const uint32_t uindex) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fSynth != nullptr,);

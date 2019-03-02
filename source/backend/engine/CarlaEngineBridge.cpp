@@ -582,9 +582,9 @@ public:
 
     void callback(const EngineCallbackOpcode action, const uint pluginId,
                   const int value1, const int value2, const int value3,
-                  const float valueF, const char* const valueStr) noexcept override
+                  const float valuef, const char* const valueStr) noexcept override
     {
-        CarlaEngine::callback(action, pluginId, value1, value2, value3, valueF, valueStr);
+        CarlaEngine::callback(action, pluginId, value1, value2, value3, valuef, valueStr);
 
         if (fClosingDown)
             return;
@@ -597,7 +597,7 @@ public:
             const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
             fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerParameterValue);
             fShmNonRtServerControl.writeUInt(static_cast<uint>(value1));
-            fShmNonRtServerControl.writeFloat(valueF);
+            fShmNonRtServerControl.writeFloat(valuef);
             fShmNonRtServerControl.commitWrite();
         }   break;
 
@@ -607,7 +607,7 @@ public:
             const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
             fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerDefaultValue);
             fShmNonRtServerControl.writeUInt(static_cast<uint>(value1));
-            fShmNonRtServerControl.writeFloat(valueF);
+            fShmNonRtServerControl.writeFloat(valuef);
             fShmNonRtServerControl.commitWrite();
         }   break;
 

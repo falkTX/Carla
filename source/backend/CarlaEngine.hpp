@@ -990,7 +990,7 @@ public:
      */
     virtual void callback(const EngineCallbackOpcode action, const uint pluginId,
                           const int value1, const int value2, const int value3,
-                          const float valueF, const char* const valueStr) noexcept;
+                          const float valuef, const char* const valueStr) noexcept;
 
     /*!
      * Set the main engine callback to @a func.

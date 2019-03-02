@@ -1907,19 +1907,19 @@ protected:
             else if (pthread_equal(thisThread, fProcThread))
             {
                 CARLA_SAFE_ASSERT(fIsProcessing);
-                pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, 0, fixedValue);
+                pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 1, 0, fixedValue);
             }
             // Called from effSetChunk or effSetProgram
             else if (pthread_equal(thisThread, fChangingValuesThread))
             {
                 carla_debug("audioMasterAutomate called while setting state");
-                pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, 0, fixedValue);
+                pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 1, 0, fixedValue);
             }
             // Called from effIdle
             else if (pthread_equal(thisThread, fIdleThread))
             {
                 carla_debug("audioMasterAutomate called from idle thread");
-                pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, 0, fixedValue);
+                pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 1, 0, fixedValue);
             }
             // Called from UI?
             else if (fUI.isVisible)

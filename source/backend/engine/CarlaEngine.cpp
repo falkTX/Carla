@@ -1308,15 +1308,15 @@ float CarlaEngine::getOutputPeak(const uint pluginId, const bool isLeft) const n
 
 void CarlaEngine::callback(const EngineCallbackOpcode action, const uint pluginId,
                            const int value1, const int value2, const int value3,
-                           const float valueF, const char* const valueStr) noexcept
+                           const float valuef, const char* const valueStr) noexcept
 {
 #ifdef DEBUG
     if (pData->isIdling)
         carla_stdout("CarlaEngine::callback [while idling] (%i:%s, %i, %i, %i, %i, %f, \"%s\")",
-                     action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueF, valueStr);
+                     action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valuef, valueStr);
     else if (action != ENGINE_CALLBACK_IDLE && action != ENGINE_CALLBACK_NOTE_ON && action != ENGINE_CALLBACK_NOTE_OFF)
         carla_debug("CarlaEngine::callback(%i:%s, %i, %i, %i, %i, %f, \"%s\")",
-                    action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueF, valueStr);
+                    action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valuef, valueStr);
 #endif
 
     if (pData->callback != nullptr)
@@ -1325,7 +1325,7 @@ void CarlaEngine::callback(const EngineCallbackOpcode action, const uint pluginI
             ++pData->isIdling;
 
         try {
-            pData->callback(pData->callbackPtr, action, pluginId, value1, value2, value3, valueF, valueStr);
+            pData->callback(pData->callbackPtr, action, pluginId, value1, value2, value3, valuef, valueStr);
 #if defined(CARLA_OS_LINUX) && defined(__arm__)
         } catch (__cxxabiv1::__forced_unwind&) {
             carla_stderr2("Caught forced unwind exception in callback");

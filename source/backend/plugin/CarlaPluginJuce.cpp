@@ -279,6 +279,17 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
+    void setParameterValueRT(const uint32_t parameterId, const float value) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
+
+        const float fixedValue(pData->param.getFixedValue(parameterId, value));
+        fInstance->setParameter(static_cast<int>(parameterId), value);
+
+        CarlaPlugin::setParameterValueRT(parameterId, fixedValue);
+    }
+
     void setChunkData(const void* const data, const std::size_t dataSize) override
     {
         CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS,);
@@ -815,15 +826,13 @@ public:
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) != 0)
                             {
                                 value = ctrlEvent.value;
-                                setDryWet(value, false, false);
-                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, 0, value);
+                                setDryWetRT(value);
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
-                                setVolume(value, false, false);
-                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, 0, value);
+                                setVolumeRT(value);
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
@@ -847,10 +856,8 @@ public:
                                     right = 1.0f;
                                 }
 
-                                setBalanceLeft(left, false, false);
-                                setBalanceRight(right, false, false);
-                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, 0, left);
-                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, 0, right);
+                                setBalanceLeftRT(left);
+                                setBalanceRightRT(right);
                             }
                         }
 #endif
@@ -884,8 +891,7 @@ public:
                                     value = std::rint(value);
                             }
 
-                            setParameterValue(k, value, false, false, false);
-                            pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, 0, value);
+                            setParameterValueRT(k, value);
                         }
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_CONTROL)
@@ -910,7 +916,6 @@ public:
                             if (ctrlEvent.param < pData->prog.count)
                             {
                                 setProgramRT(ctrlEvent.param);
-                                pData->postponeRtEvent(kPluginPostRtEventProgramChange, ctrlEvent.param, 0, 0, 0.0f);
                                 break;
                             }
                         }

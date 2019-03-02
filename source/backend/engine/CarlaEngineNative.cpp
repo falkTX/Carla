@@ -810,9 +810,9 @@ protected:
 
     void callback(const EngineCallbackOpcode action, const uint pluginId,
                   const int value1, const int value2, const int value3,
-                  const float valueF, const char* const valueStr) noexcept override
+                  const float valuef, const char* const valueStr) noexcept override
     {
-        CarlaEngine::callback(action, pluginId, value1, value2, value3, valueF, valueStr);
+        CarlaEngine::callback(action, pluginId, value1, value2, value3, valuef, valueStr);
 
         if (action == ENGINE_CALLBACK_IDLE && ! pData->aboutToClose) {
             pHost->dispatcher(pHost->handle,
@@ -1138,7 +1138,7 @@ protected:
 
     void uiServerCallback(const EngineCallbackOpcode action, const uint pluginId,
                           const int value1, const int value2, const int value3,
-                          const float valueF, const char* const valueStr)
+                          const float valuef, const char* const valueStr)
     {
         if (! fIsRunning)
             return;
@@ -1229,7 +1229,7 @@ protected:
             return;
         {
             const CarlaScopedLocale csl;
-            std::sprintf(tmpBuf, "%f\n", static_cast<double>(valueF));
+            std::sprintf(tmpBuf, "%f\n", static_cast<double>(valuef));
         }
         if (! fUiServer.writeMessage(tmpBuf))
             return;
@@ -2121,9 +2121,9 @@ public:
 
     static void _ui_server_callback(void* handle, EngineCallbackOpcode action, uint pluginId,
                                     int value1, int value2, int value3,
-                                    float valueF, const char* valueStr)
+                                    float valuef, const char* valueStr)
     {
-        handlePtr->uiServerCallback(action, pluginId, value1, value2, value3, valueF, valueStr);
+        handlePtr->uiServerCallback(action, pluginId, value1, value2, value3, valuef, valueStr);
     }
 
     static const char* _ui_file_callback(void* handle, FileCallbackOpcode action, bool isDir,

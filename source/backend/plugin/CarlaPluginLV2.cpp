@@ -3188,7 +3188,7 @@ public:
                 if (doPostRt)
                     pData->postponeRtEvent(kPluginPostRtEventParameterChange,
                                            static_cast<int32_t>(k),
-                                           1,
+                                           0,
                                            0,
                                            fParamBuffers[k]);
             }
@@ -3985,7 +3985,7 @@ public:
                     fParamBuffers[k] = pData->param.ranges[k].def;
                     pData->postponeRtEvent(kPluginPostRtEventParameterChange,
                                            static_cast<int32_t>(k),
-                                           0, 0,
+                                           1, 0,
                                            fParamBuffers[k]);
                 }
             }
@@ -4256,7 +4256,7 @@ public:
             fParamBuffers[k] = sampleRatef;
             pData->postponeRtEvent(kPluginPostRtEventParameterChange,
                                    static_cast<int32_t>(k),
-                                   1,
+                                   0,
                                    0,
                                    fParamBuffers[k]);
             break;
@@ -4274,7 +4274,7 @@ public:
                 fParamBuffers[k] = isOffline ? pData->param.ranges[k].max : pData->param.ranges[k].min;
                 pData->postponeRtEvent(kPluginPostRtEventParameterChange,
                                        static_cast<int32_t>(k),
-                                       1,
+                                       0,
                                        0,
                                        fParamBuffers[k]);
                 break;

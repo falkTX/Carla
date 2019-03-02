@@ -67,14 +67,14 @@ enum SpecialParameterType {
  * Post-RT event type.
  * These are events postponned from within the process function,
  *
- * During process, we cannot lock, allocate memory or do UI stuff,
- * so events have to be postponned to be executed later, on a separate thread.
+ * During process, we cannot lock, allocate memory or do UI stuff.
+ * Events have to be postponned to be executed later, on a separate thread.
  * @see PluginPostRtEvent
  */
 enum PluginPostRtEventType {
     kPluginPostRtEventNull = 0,
     kPluginPostRtEventDebug,
-    kPluginPostRtEventParameterChange,   // param, SP (*), value (SP: if 1 only report change to UI, don't report to Callback and OSC)
+    kPluginPostRtEventParameterChange,   // param, SP (*), unused, value (SP: if 1 report to Callback and OSC)
     kPluginPostRtEventProgramChange,     // index
     kPluginPostRtEventMidiProgramChange, // index
     kPluginPostRtEventNoteOn,            // channel, note, velo
@@ -89,8 +89,8 @@ struct PluginPostRtEvent {
     PluginPostRtEventType type;
     int32_t value1;
     int32_t value2;
-    int32_t value4;
-    float   valueF;
+    int32_t value3;
+    float   valuef;
 };
 
 // -----------------------------------------------------------------------
@@ -361,7 +361,7 @@ struct CarlaPlugin::ProtectedData {
     void postponeRtEvent(const PluginPostRtEvent& rtEvent) noexcept;
     void postponeRtEvent(const PluginPostRtEventType type,
                          const int32_t value1, const int32_t value2, const int32_t value3,
-                         const float valueF) noexcept;
+                         const float valuef) noexcept;
 
     // -------------------------------------------------------------------
     // Library functions
