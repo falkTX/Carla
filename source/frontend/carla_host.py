@@ -940,14 +940,14 @@ class HostWindow(QMainWindow):
             self.ui.cb_transport_link.setChecked(":link:" in self.host.transportExtra)
 
         self.updateBufferSize(bufferSize)
-        self.updateSampleRate(sampleRate)
+        self.updateSampleRate(int(sampleRate))
         self.refreshRuntimeInfo(0.0, 0)
         self.startTimers()
 
         self.ui.text_logs.appendPlainText("======= Engine started ========")
         self.ui.text_logs.appendPlainText("Carla engine started, details:")
         self.ui.text_logs.appendPlainText("  Driver name:  %s" % driverName)
-        self.ui.text_logs.appendPlainText("  Sample rate:  %.1f" % sampleRate)
+        self.ui.text_logs.appendPlainText("  Sample rate:  %i" % int(sampleRate))
         self.ui.text_logs.appendPlainText("  Process mode: %s" % processMode2Str(processMode))
 
     @pyqtSlot()
@@ -987,7 +987,7 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot(float)
     def slot_handleSampleRateChangedCallback(self, newSampleRate):
-        self.updateSampleRate(newSampleRate)
+        self.updateSampleRate(int(newSampleRate))
 
     @pyqtSlot(int, bool, str)
     def slot_handleCancelableActionCallback(self, pluginId, started, action):
