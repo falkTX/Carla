@@ -139,11 +139,11 @@ if [ ! -f /tmp/setup-aria2 ]; then
 fi
 
 if [ ! -d ${CHROOT_CARLA_DIR} ]; then
-  git clone --depth=1 git://github.com/falkTX/Carla ${CHROOT_CARLA_DIR}
+  git clone --depth=1 -b master git://github.com/falkTX/Carla ${CHROOT_CARLA_DIR}
 fi
 
 if [ ! -f ${CHROOT_CARLA_DIR}/source/native-plugins/external/README.md ]; then
-  git clone --depth=1 git://github.com/falkTX/Carla-Plugins ${CHROOT_CARLA_DIR}/source/native-plugins/external
+  git clone --depth=1 -b master git://github.com/falkTX/Carla-Plugins ${CHROOT_CARLA_DIR}/source/native-plugins/external
 fi
 
 cd ${CHROOT_CARLA_DIR}
