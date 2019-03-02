@@ -818,6 +818,11 @@ public:
      */
     virtual uint32_t getTotalXruns() const noexcept;
 
+    /*!
+     * Clear the xrun count.
+     */
+    virtual void clearXruns() const noexcept;
+
     // -------------------------------------------------------------------
     // Plugin management
 

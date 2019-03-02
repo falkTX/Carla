@@ -441,7 +441,6 @@ class HostWindow(QMainWindow):
         self.ui.act_plugins_expand.triggered.connect(self.slot_pluginsExpand)
         self.ui.act_plugins_panic.triggered.connect(self.slot_pluginsDisable)
 
-
         self.ui.act_settings_show_toolbar.toggled.connect(self.slot_showToolbar)
         self.ui.act_settings_show_meters.toggled.connect(self.slot_showCanvasMeters)
         self.ui.act_settings_show_keyboard.toggled.connect(self.slot_showCanvasKeyboard)
@@ -464,6 +463,8 @@ class HostWindow(QMainWindow):
         self.ui.dsb_transport_bpm.valueChanged.connect(self.slot_transportBpmChanged)
         self.ui.cb_transport_jack.clicked.connect(self.slot_transportJackEnabled)
         self.ui.cb_transport_link.clicked.connect(self.slot_transportLinkEnabled)
+
+        self.ui.b_xruns.clicked.connect(self.slot_xrunClear)
 
         self.ui.listWidget.customContextMenuRequested.connect(self.showPluginActionsMenu)
 
@@ -1937,6 +1938,13 @@ class HostWindow(QMainWindow):
         self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE,
                                     self.host.transportMode,
                                     self.host.transportExtra)
+
+    # --------------------------------------------------------------------------------------------------------
+    # Other
+
+    @pyqtSlot(bool)
+    def slot_xrunClear(self):
+        self.host.clear_engine_xruns()
 
     # --------------------------------------------------------------------------------------------------------
     # Canvas scrollbars

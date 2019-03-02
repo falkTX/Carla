@@ -366,6 +366,13 @@ uint32_t CarlaEngine::getTotalXruns() const noexcept
 #endif
 }
 
+void CarlaEngine::clearXruns() const noexcept
+{
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    pData->xruns = 0;
+#endif
+}
+
 // -----------------------------------------------------------------------
 // Plugin management
 

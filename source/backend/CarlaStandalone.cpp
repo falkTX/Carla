@@ -560,6 +560,12 @@ const CarlaRuntimeEngineInfo* carla_get_runtime_engine_info()
     return &retInfo;
 }
 
+void carla_clear_engine_xruns()
+{
+    if (gStandalone.engine != nullptr)
+        gStandalone.engine->clearXruns();
+}
+
 void carla_cancel_engine_action()
 {
     if (gStandalone.engine != nullptr)

@@ -310,16 +310,31 @@ public:
         return fDeviceType->getTypeName().toRawUTF8();
     }
 
+    /*
     float getDSPLoad() const noexcept override
     {
         return 0.0f;
     }
+    */
 
     uint32_t getTotalXruns() const noexcept override
     {
         const int xruns = fDevice->getXRunCount();
 
-        return xruns > 0 ? static_cast<uint32_t>(xruns) : 0;
+        if (xruns <= 0)
+          return 0;
+
+        const uint uxruns = static_cast<uint>(xruns);
+
+        if (uxruns <= pData->xruns)
+            return 0;
+
+        return uxruns - pData->xruns;
+    }
+
+    void clearXruns() const noexcept override
+    {
+        pData->xruns = fDevice->getXRunCount();
     }
 
     // -------------------------------------------------------------------
@@ -489,7 +504,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(numSamples >= 0,);
 
         const uint32_t nframes(static_cast<uint32_t>(numSamples));
-        const PendingRtEventsRunner prt(this, nframes);
+        const PendingRtEventsRunner prt(this, nframes, true); // FIXME remove dspCalc after updating juce
 
         // assert juce buffers
         CARLA_SAFE_ASSERT_RETURN(numInputChannels >= 0,);

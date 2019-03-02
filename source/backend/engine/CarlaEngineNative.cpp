@@ -165,6 +165,10 @@ protected:
             if (valueStr != nullptr)
                 delete[] valueStr;
         }
+        else if (std::strcmp(msg, "clear_engine_xruns") == 0)
+        {
+            fEngine->clearXruns();
+        }
         else if (std::strcmp(msg, "cancel_engine_action") == 0)
         {
             fEngine->setActionCanceled(true);

@@ -376,6 +376,11 @@ CARLA_EXPORT bool carla_is_engine_running();
 CARLA_EXPORT const CarlaRuntimeEngineInfo* carla_get_runtime_engine_info();
 
 /*!
+ * Clear the xrun count on the engine, so that the next time carla_get_runtime_engine_info() is called, it returns 0.
+ */
+CARLA_EXPORT void carla_clear_engine_xruns();
+
+/*!
  * Tell the engine to stop the current cancelable action.
  * @see ENGINE_CALLBACK_CANCELABLE_ACTION
  */

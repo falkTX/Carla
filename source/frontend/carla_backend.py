@@ -1396,6 +1396,13 @@ class CarlaHostMeta(object):
     def get_runtime_engine_info(self):
         raise NotImplementedError
 
+    # Clear the xrun count on the engine, so that the next time carla_get_runtime_engine_info() is called, it returns 0.
+    @abstractmethod
+    def clear_engine_xruns(self):
+        raise NotImplementedError
+
+    # Tell the engine to stop the current cancelable action.
+    # @see ENGINE_CALLBACK_CANCELABLE_ACTION
     @abstractmethod
     def cancel_engine_action(self):
         raise NotImplementedError
@@ -2030,6 +2037,9 @@ class CarlaHostNull(CarlaHostMeta):
     def get_runtime_engine_info(self):
         return PyCarlaRuntimeEngineInfo
 
+    def clear_engine_xruns(self):
+        return
+
     def cancel_engine_action(self):
         return
 
@@ -2324,6 +2334,9 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_get_runtime_engine_info.argtypes = None
         self.lib.carla_get_runtime_engine_info.restype = POINTER(CarlaRuntimeEngineInfo)
 
+        self.lib.carla_clear_engine_xruns.argtypes = None
+        self.lib.carla_clear_engine_xruns.restype = None
+
         self.lib.carla_cancel_engine_action.argtypes = None
         self.lib.carla_cancel_engine_action.restype = None
 
@@ -2607,6 +2620,9 @@ class CarlaHostDLL(CarlaHostMeta):
 
     def get_runtime_engine_info(self):
         return structToDict(self.lib.carla_get_runtime_engine_info().contents)
+
+    def clear_engine_xruns(self):
+        return self.lib.carla_clear_engine_xruns()
 
     def cancel_engine_action(self):
         return self.lib.carla_cancel_engine_action()
@@ -2967,6 +2983,9 @@ class CarlaHostPlugin(CarlaHostMeta):
 
     def get_runtime_engine_info(self):
         return self.fRuntimeEngineInfo
+
+    def clear_engine_xruns(self):
+        self.sendMsg(["clear_engine_xruns"])
 
     def cancel_engine_action(self):
         self.sendMsg(["cancel_engine_action"])
