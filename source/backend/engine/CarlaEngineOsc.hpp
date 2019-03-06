@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -61,7 +61,7 @@ public:
     CarlaEngineOsc(CarlaEngine* const engine) noexcept;
     ~CarlaEngineOsc() noexcept;
 
-    void init(const char* const name) noexcept;
+    void init(const char* const name, int tcpPort, int udpPort) noexcept;
     void idle() const noexcept;
     void close() noexcept;
 
@@ -77,7 +77,6 @@ public:
         return fServerPathUDP;
     }
 
-#ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------
 
     bool isControlRegistered() const noexcept
@@ -89,32 +88,25 @@ public:
     {
         return &fControlData;
     }
-#endif
 
     // -------------------------------------------------------------------
 
 private:
     CarlaEngine* const fEngine;
 
-#ifndef BUILD_BRIDGE
     CarlaOscData fControlData; // for carla-control
-#endif
-
-    CarlaString fName;
-
-    CarlaString fServerPathTCP;
-    CarlaString fServerPathUDP;
-    lo_server   fServerTCP;
-    lo_server   fServerUDP;
+    CarlaString  fName;
+    CarlaString  fServerPathTCP;
+    CarlaString  fServerPathUDP;
+    lo_server    fServerTCP;
+    lo_server    fServerUDP;
 
     // -------------------------------------------------------------------
 
     int handleMessage(const bool isTCP, const char* const path, const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg);
 
-#ifndef BUILD_BRIDGE
     int handleMsgRegister(const bool isTCP, const int argc, const lo_arg* const* const argv, const char* const types);
     int handleMsgUnregister();
-#endif
 
     // Internal methods
     int handleMsgSetActive(CARLA_ENGINE_OSC_HANDLE_ARGS);

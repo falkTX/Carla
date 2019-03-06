@@ -479,8 +479,11 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
     timeInfo.clear();
 
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
-    osc.init(clientName);
-    oscData = osc.getControlData();
+    if (options.oscEnabled)
+    {
+        osc.init(clientName, options.oscPortTCP, options.oscPortUDP);
+        oscData = osc.getControlData();
+    }
 #endif
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH

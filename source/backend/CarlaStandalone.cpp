@@ -342,6 +342,10 @@ static void carla_engine_init_common(CarlaEngine* const engine)
     if (gStandalone.engineOptions.audioDevice != nullptr)
         engine->setOption(CB::ENGINE_OPTION_AUDIO_DEVICE,      0, gStandalone.engineOptions.audioDevice);
 
+    engine->setOption(CB::ENGINE_OPTION_OSC_ENABLE,   gStandalone.engineOptions.oscEnabled, nullptr);
+    engine->setOption(CB::ENGINE_OPTION_OSC_PORT_TCP, gStandalone.engineOptions.oscPortTCP, nullptr);
+    engine->setOption(CB::ENGINE_OPTION_OSC_PORT_UDP, gStandalone.engineOptions.oscPortUDP, nullptr);
+
     if (gStandalone.engineOptions.pathLADSPA != nullptr)
         engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_LADSPA, gStandalone.engineOptions.pathLADSPA);
 
@@ -411,9 +415,10 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     carla_setenv("WINEASIO_CLIENT_NAME", clientName);
 #endif
 
-    ScopedPointer<CarlaEngine> engine(CarlaEngine::newDriverByName(driverName));
-
+    CarlaEngine* const engine = CarlaEngine::newDriverByName(driverName);
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(engine != nullptr, "The seleted audio driver is not available", false);
+
+    gStandalone.engine = engine;
 
 #ifdef BUILD_BRIDGE
     engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,          CB::ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, nullptr);
@@ -442,12 +447,12 @@ bool carla_engine_init(const char* driverName, const char* clientName)
         sThreadSafeFFTW.init();
 #endif
         gStandalone.lastError = "No error";
-        gStandalone.engine = engine.release();
         return true;
     }
     else
     {
         gStandalone.lastError = engine->getLastError();
+        gStandalone.engine = nullptr;
 #ifdef USING_JUCE
         juce::shutdownJuce_GUI();
 #endif
@@ -686,6 +691,21 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
             delete[] gStandalone.engineOptions.audioDevice;
 
         gStandalone.engineOptions.audioDevice = carla_strdup_safe(valueStr);
+        break;
+
+    case CB::ENGINE_OPTION_OSC_ENABLE:
+        CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
+        gStandalone.engineOptions.oscEnabled = (value != 0);
+        break;
+
+    case CB::ENGINE_OPTION_OSC_PORT_TCP:
+        CARLA_SAFE_ASSERT_RETURN(value <= 0 || value >= 1024,);
+        gStandalone.engineOptions.oscPortTCP = value;
+        break;
+
+    case CB::ENGINE_OPTION_OSC_PORT_UDP:
+        CARLA_SAFE_ASSERT_RETURN(value <= 0 || value >= 1024,);
+        gStandalone.engineOptions.oscPortUDP = value;
         break;
 
     case CB::ENGINE_OPTION_PLUGIN_PATH:
@@ -2043,7 +2063,13 @@ const char* carla_get_host_osc_url_tcp()
         return gNullCharPtr;
     }
 
-    return gStandalone.engine->getOscServerPathTCP();
+    const char* const path = gStandalone.engine->getOscServerPathTCP();
+
+    if (path != nullptr && path[0] != '\0')
+        return path;
+
+    static const char* const notAvailable = "OSC TCP port not available";
+    return notAvailable;
 #else
     return gNullCharPtr;
 #endif
@@ -2061,7 +2087,13 @@ const char* carla_get_host_osc_url_udp()
         return gNullCharPtr;
     }
 
-    return gStandalone.engine->getOscServerPathUDP();
+    const char* const path = gStandalone.engine->getOscServerPathUDP();
+
+    if (path != nullptr && path[0] != '\0')
+        return path;
+
+    static const char* const notAvailable = "OSC UDP port not available";
+    return notAvailable;
 #else
     return gNullCharPtr;
 #endif

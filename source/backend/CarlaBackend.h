@@ -1137,73 +1137,93 @@ typedef enum {
     ENGINE_OPTION_AUDIO_DEVICE = 12,
 
     /*!
+     * Wherever to enable OSC support in the engine.
+     */
+    ENGINE_OPTION_OSC_ENABLE = 13,
+
+    /*!
+     * The network TCP port to use for OSC.
+     * A value of 0 means use a random port.
+     * A value of < 0 means to not enable the TCP port for OSC.
+     */
+    ENGINE_OPTION_OSC_PORT_TCP = 14,
+
+    /*!
+     * The network UDP port to use for OSC.
+     * A value of 0 means use a random port.
+     * A value of < 0 means to not enable the UDP port for OSC.
+     * @note Disabling this option prevents DSSI UIs from working!
+     */
+    ENGINE_OPTION_OSC_PORT_UDP = 15,
+
+    /*!
      * Set path used for a specific plugin type.
      * Uses value as the plugin format, valueStr as actual path.
      * @see PluginType
      */
-    ENGINE_OPTION_PLUGIN_PATH = 13,
+    ENGINE_OPTION_PLUGIN_PATH = 16,
 
     /*!
      * Set path to the binary files.
      * Default unset.
      * @note Must be set for plugin and UI bridges to work
      */
-    ENGINE_OPTION_PATH_BINARIES = 14,
+    ENGINE_OPTION_PATH_BINARIES = 17,
 
     /*!
      * Set path to the resource files.
      * Default unset.
      * @note Must be set for some internal plugins to work
      */
-    ENGINE_OPTION_PATH_RESOURCES = 15,
+    ENGINE_OPTION_PATH_RESOURCES = 18,
 
     /*!
      * Prevent bad plugin and UI behaviour.
      * @note: Linux only
      */
-    ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 16,
+    ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 19,
 
     /*!
      * Set frontend winId, used to define as parent window for plugin UIs.
      */
-    ENGINE_OPTION_FRONTEND_WIN_ID = 17,
+    ENGINE_OPTION_FRONTEND_WIN_ID = 20,
 
 #if !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) && !defined(CARLA_OS_WIN)
     /*!
      * Set path to wine executable.
      */
-    ENGINE_OPTION_WINE_EXECUTABLE = 18,
+    ENGINE_OPTION_WINE_EXECUTABLE = 21,
 
     /*!
      * Enable automatic wineprefix detection.
      */
-    ENGINE_OPTION_WINE_AUTO_PREFIX = 19,
+    ENGINE_OPTION_WINE_AUTO_PREFIX = 22,
 
     /*!
      * Fallback wineprefix to use if automatic detection fails or is disabled, and WINEPREFIX is not set.
      */
-    ENGINE_OPTION_WINE_FALLBACK_PREFIX = 20,
+    ENGINE_OPTION_WINE_FALLBACK_PREFIX = 23,
 
     /*!
      * Enable realtime priority for Wine application and server threads.
      */
-    ENGINE_OPTION_WINE_RT_PRIO_ENABLED = 21,
+    ENGINE_OPTION_WINE_RT_PRIO_ENABLED = 24,
 
     /*!
      * Base realtime priority for Wine threads.
      */
-    ENGINE_OPTION_WINE_BASE_RT_PRIO = 22,
+    ENGINE_OPTION_WINE_BASE_RT_PRIO = 25,
 
     /*!
      * Wine server realtime priority.
      */
-    ENGINE_OPTION_WINE_SERVER_RT_PRIO = 23,
+    ENGINE_OPTION_WINE_SERVER_RT_PRIO = 26,
 #endif
 
     /*!
      * Capture console output into debug callbacks.
      */
-    ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 24
+    ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 27
 
 } EngineOption;
 

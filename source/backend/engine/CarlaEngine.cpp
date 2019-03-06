@@ -1574,6 +1574,27 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         pData->options.audioDevice = carla_strdup_safe(valueStr);
         break;
 
+    case ENGINE_OPTION_OSC_ENABLE:
+        CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
+#ifndef BUILD_BRIDGE
+        pData->options.oscEnabled = (value != 0);
+#endif
+        break;
+
+    case ENGINE_OPTION_OSC_PORT_TCP:
+        CARLA_SAFE_ASSERT_RETURN(value <= 0 || value >= 1024,);
+#ifndef BUILD_BRIDGE
+        pData->options.oscPortTCP = value;
+#endif
+        break;
+
+    case ENGINE_OPTION_OSC_PORT_UDP:
+        CARLA_SAFE_ASSERT_RETURN(value <= 0 || value >= 1024,);
+#ifndef BUILD_BRIDGE
+        pData->options.oscPortUDP = value;
+#endif
+        break;
+
     case ENGINE_OPTION_PLUGIN_PATH:
         CARLA_SAFE_ASSERT_RETURN(value > PLUGIN_NONE,);
         CARLA_SAFE_ASSERT_RETURN(value <= PLUGIN_SFZ,);

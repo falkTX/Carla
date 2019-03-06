@@ -240,6 +240,12 @@ struct CARLA_API EngineOptions {
     bool audioTripleBuffer;
     const char* audioDevice;
 
+#ifndef BUILD_BRIDGE
+    bool oscEnabled;
+    int oscPortTCP;
+    int oscPortUDP;
+#endif
+
     const char* pathLADSPA;
     const char* pathDSSI;
     const char* pathLV2;

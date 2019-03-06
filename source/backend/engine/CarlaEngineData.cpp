@@ -197,6 +197,15 @@ EngineOptions::EngineOptions() noexcept
       audioSampleRate(44100),
       audioTripleBuffer(false),
       audioDevice(nullptr),
+#ifndef BUILD_BRIDGE
+# ifdef CARLA_OS_WIN
+      oscEnabled(false),
+# else
+      oscEnabled(true),
+# endif
+      oscPortTCP(0),
+      oscPortUDP(0),
+#endif
       pathLADSPA(nullptr),
       pathDSSI(nullptr),
       pathLV2(nullptr),

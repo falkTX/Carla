@@ -321,6 +321,12 @@ const char* EngineOption2Str(const EngineOption option) noexcept
         return "ENGINE_OPTION_AUDIO_TRIPLE_BUFFER";
     case ENGINE_OPTION_AUDIO_DEVICE:
         return "ENGINE_OPTION_AUDIO_DEVICE";
+    case ENGINE_OPTION_OSC_ENABLE:
+        return "ENGINE_OPTION_OSC_ENABLE";
+    case ENGINE_OPTION_OSC_PORT_UDP:
+        return "ENGINE_OPTION_OSC_PORT_UDP";
+    case ENGINE_OPTION_OSC_PORT_TCP:
+        return "ENGINE_OPTION_OSC_PORT_TCP";
     case ENGINE_OPTION_PLUGIN_PATH:
         return "ENGINE_OPTION_PLUGIN_PATH";
     case ENGINE_OPTION_PATH_BINARIES:

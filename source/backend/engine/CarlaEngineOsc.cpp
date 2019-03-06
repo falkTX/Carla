@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -32,9 +32,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaEngineOsc::CarlaEngineOsc(CarlaEngine* const engine) noexcept
     : fEngine(engine),
-#ifndef BUILD_BRIDGE
       fControlData(),
-#endif
       fName(),
       fServerPathTCP(),
       fServerPathUDP(),
@@ -57,7 +55,7 @@ CarlaEngineOsc::~CarlaEngineOsc() noexcept
 
 // -----------------------------------------------------------------------
 
-void CarlaEngineOsc::init(const char* const name) noexcept
+void CarlaEngineOsc::init(const char* const name, int tcpPort, int udpPort) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fName.isEmpty(),);
     CARLA_SAFE_ASSERT_RETURN(fServerPathTCP.isEmpty(),);
@@ -70,18 +68,35 @@ void CarlaEngineOsc::init(const char* const name) noexcept
     fName = name;
     fName.toBasic();
 
-    const char* tcpPort = nullptr;
-    const char* udpPort = nullptr;
-
-#ifndef BUILD_BRIDGE
     if (fEngine->getType() != kEngineTypePlugin)
     {
-        tcpPort = std::getenv("CARLA_OSC_TCP_PORT");
-        udpPort = std::getenv("CARLA_OSC_UDP_PORT");
-    }
-#endif
+        const char* const tcpPortEnv = std::getenv("CARLA_OSC_TCP_PORT");
+        const char* const udpPortEnv = std::getenv("CARLA_OSC_UDP_PORT");
 
-    fServerTCP = lo_server_new_with_proto(tcpPort, LO_TCP, osc_error_handler_TCP);
+        if (tcpPortEnv != nullptr)
+            tcpPort = std::atoi(tcpPortEnv);
+        if (udpPortEnv != nullptr)
+            udpPort = std::atoi(udpPortEnv);
+    }
+
+    // port == 0 means to pick a random one
+    // port < 0 will get osc disabled
+
+    // ----------------------------------------------------------------------------------------------------------------
+
+    if (tcpPort == 0)
+    {
+        for (int i=0; i < 5 && fServerTCP == nullptr; ++i)
+            fServerTCP = lo_server_new_with_proto(nullptr, LO_TCP, osc_error_handler_TCP);
+    }
+    else if (tcpPort >= 1024)
+    {
+        char strBuf[0xff];
+        std::snprintf(strBuf, 0xff-1, "%d", tcpPort);
+        strBuf[0xff-1] = '\0';
+
+        fServerTCP = lo_server_new_with_proto(strBuf, LO_TCP, osc_error_handler_TCP);
+    }
 
     if (fServerTCP != nullptr)
     {
@@ -95,7 +110,21 @@ void CarlaEngineOsc::init(const char* const name) noexcept
         lo_server_add_method(fServerTCP, nullptr, nullptr, osc_message_handler_TCP, this);
     }
 
-    fServerUDP = lo_server_new_with_proto(udpPort, LO_UDP, osc_error_handler_UDP);
+    // ----------------------------------------------------------------------------------------------------------------
+
+    if (udpPort == 0)
+    {
+        for (int i=0; i < 5 && fServerUDP == nullptr; ++i)
+            fServerUDP = lo_server_new_with_proto(nullptr, LO_UDP, osc_error_handler_UDP);
+    }
+    else if (udpPort >= 1024)
+    {
+        char strBuf[0xff];
+        std::snprintf(strBuf, 0xff-1, "%d", udpPort);
+        strBuf[0xff-1] = '\0';
+
+        fServerUDP = lo_server_new_with_proto(strBuf, LO_UDP, osc_error_handler_UDP);
+    }
 
     if (fServerUDP != nullptr)
     {
@@ -109,9 +138,9 @@ void CarlaEngineOsc::init(const char* const name) noexcept
         lo_server_add_method(fServerUDP, nullptr, nullptr, osc_message_handler_UDP, this);
     }
 
+    // ----------------------------------------------------------------------------------------------------------------
+
     CARLA_SAFE_ASSERT(fName.isNotEmpty());
-    CARLA_SAFE_ASSERT(fServerTCP != nullptr);
-    CARLA_SAFE_ASSERT(fServerUDP != nullptr);
 }
 
 void CarlaEngineOsc::idle() const noexcept
@@ -167,9 +196,7 @@ void CarlaEngineOsc::close() noexcept
     fServerPathTCP.clear();
     fServerPathUDP.clear();
 
-#ifndef BUILD_BRIDGE
     fControlData.clear();
-#endif
 }
 
 // -----------------------------------------------------------------------
@@ -195,14 +222,12 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         CARLA_SAFE_ASSERT_RETURN(fServerUDP != nullptr, 1);
     }
 
-#ifndef BUILD_BRIDGE
     // Initial path check
     if (std::strcmp(path, "/register") == 0)
         return handleMsgRegister(isTCP, argc, argv, types);
 
     if (std::strcmp(path, "/unregister") == 0)
         return handleMsgUnregister();
-#endif
 
     const std::size_t nameSize(fName.length());
 
@@ -281,7 +306,6 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         return 0;
     }
 
-#ifndef BUILD_BRIDGE
     // Internal methods
     if (std::strcmp(method, "set_option") == 0)
         return 0; //handleMsgSetOption(plugin, argc, argv, types); // TODO
@@ -317,7 +341,6 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         return handleMsgNoteOn(plugin, argc, argv, types);
     if (std::strcmp(method, "note_off") == 0)
         return handleMsgNoteOff(plugin, argc, argv, types);
-#endif
 
     // Send all other methods to plugins, TODO
     plugin->handleOscMessage(method, argc, argv, types, msg);
@@ -326,7 +349,6 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
 
 // -----------------------------------------------------------------------
 
-#ifndef BUILD_BRIDGE
 int CarlaEngineOsc::handleMsgRegister(const bool isTCP, const int argc, const lo_arg* const* const argv, const char* const types)
 {
     carla_debug("CarlaEngineOsc::handleMsgRegister()");
@@ -546,7 +568,6 @@ int CarlaEngineOsc::handleMsgNoteOff(CARLA_ENGINE_OSC_HANDLE_ARGS)
     plugin->sendMidiSingleNote(static_cast<uint8_t>(channel), static_cast<uint8_t>(note), 0, true, false, true);
     return 0;
 }
-#endif // ! BUILD_BRIDGE
 
 // -----------------------------------------------------------------------
 

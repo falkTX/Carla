@@ -2661,14 +2661,22 @@ public:
             }
         }
 
+        // ---------------------------------------------------------------
+        // get engine options
+
+        const EngineOptions& opts(pData->engine->getOptions());
+
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
         // ---------------------------------------------------------------
         // check for gui
 
-        if (const char* const guiFilename = find_dssi_ui(filename, fDescriptor->Label))
+        if (opts.oscEnabled && opts.oscPortUDP >= 0)
         {
-            fUiFilename = guiFilename;
-            fThreadUI.setData(guiFilename, fDescriptor->Label);
+            if (const char* const guiFilename = find_dssi_ui(filename, fDescriptor->Label))
+            {
+                fUiFilename = guiFilename;
+                fThreadUI.setData(guiFilename, fDescriptor->Label);
+            }
         }
 #endif
 
@@ -2682,7 +2690,7 @@ public:
         else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-        /**/ if (pData->engine->getOptions().forceStereo)
+        /**/ if (opts.forceStereo)
             pData->options |= PLUGIN_OPTION_FORCE_STEREO;
         else if (options & PLUGIN_OPTION_FORCE_STEREO)
             pData->options |= PLUGIN_OPTION_FORCE_STEREO;
