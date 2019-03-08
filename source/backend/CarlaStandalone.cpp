@@ -128,7 +128,8 @@ public:
     };
 
     ThreadSafeFFTW()
-        : libfftw3(nullptr),
+        : initialized(false),
+          libfftw3(nullptr),
           libfftw3f(nullptr),
           libfftw3l(nullptr),
           libfftw3q(nullptr) {}
@@ -140,6 +141,10 @@ public:
 
     void init()
     {
+        if (initialized)
+            return;
+        initialized = true;
+
         if ((libfftw3 = lib_open("libfftw3_threads.so.3")) != nullptr)
             if (const void_func func = lib_symbol<void_func>(libfftw3, "fftw_make_planner_thread_safe"))
                 func();
@@ -159,6 +164,10 @@ public:
 
     void deinit()
     {
+        if (! initialized)
+            return;
+        initialized = false;
+
         if (libfftw3 != nullptr)
         {
             lib_close(libfftw3);
@@ -185,6 +194,7 @@ public:
     }
 
 private:
+    bool initialized;
     lib_t libfftw3;
     lib_t libfftw3f;
     lib_t libfftw3l;
@@ -415,6 +425,10 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     carla_setenv("WINEASIO_CLIENT_NAME", clientName);
 #endif
 
+#ifdef USING_JUCE
+    juce::initialiseJuce_GUI();
+#endif
+
     CarlaEngine* const engine = CarlaEngine::newDriverByName(driverName);
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(engine != nullptr, "The seleted audio driver is not available", false);
 
@@ -429,10 +443,6 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 #else
     engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,          static_cast<int>(gStandalone.engineOptions.processMode),   nullptr);
     engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE,        static_cast<int>(gStandalone.engineOptions.transportMode), gStandalone.engineOptions.transportExtra);
-#endif
-
-#ifdef USING_JUCE
-    juce::initialiseJuce_GUI();
 #endif
 
     carla_engine_init_common(engine);
@@ -453,6 +463,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     {
         gStandalone.lastError = engine->getLastError();
         gStandalone.engine = nullptr;
+        delete engine;
 #ifdef USING_JUCE
         juce::shutdownJuce_GUI();
 #endif
