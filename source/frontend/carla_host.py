@@ -285,9 +285,6 @@ class HostWindow(QMainWindow):
             if WINDOWS:
                 self.ui.tabWidget.tabBar().hide()
 
-            if host.isControl:
-                self.ui.dockWidget.hide()
-
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (disk)
 
@@ -1562,7 +1559,9 @@ class HostWindow(QMainWindow):
 
         settings.setValue("Geometry", self.saveGeometry())
         settings.setValue("ShowToolbar", self.ui.toolBar.isEnabled())
-        settings.setValue("ShowSidePanel", self.ui.dockWidget.isEnabled())
+
+        if not self.host.isControl:
+            settings.setValue("ShowSidePanel", self.ui.dockWidget.isEnabled())
 
         diskFolders = []
 
@@ -1596,7 +1595,7 @@ class HostWindow(QMainWindow):
             #else:
                 #self.ui.splitter.setSizes([210, 99999])
 
-            showSidePanel = settings.value("ShowSidePanel", True, type=bool)
+            showSidePanel = settings.value("ShowSidePanel", True, type=bool) and not self.host.isControl
             self.ui.act_settings_show_side_panel.setChecked(showSidePanel)
             self.ui.dockWidget.setEnabled(showSidePanel)
             self.ui.dockWidget.setVisible(showSidePanel)
