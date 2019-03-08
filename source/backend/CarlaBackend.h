@@ -1145,7 +1145,7 @@ typedef enum {
      * The network TCP port to use for OSC.
      * A value of 0 means use a random port.
      * A value of < 0 means to not enable the TCP port for OSC.
-     * @note Valid ports begin at 1024
+     * @note Valid ports begin at 1024 and end at 32767 (inclusive)
      */
     ENGINE_OPTION_OSC_PORT_TCP = 14,
 
@@ -1154,7 +1154,7 @@ typedef enum {
      * A value of 0 means use a random port.
      * A value of < 0 means to not enable the UDP port for OSC.
      * @note Disabling this option prevents DSSI UIs from working!
-     * @note Valid ports begin at 1024
+     * @note Valid ports begin at 1024 and end at 32767 (inclusive)
      */
     ENGINE_OPTION_OSC_PORT_UDP = 15,
 

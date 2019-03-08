@@ -95,7 +95,7 @@ void CarlaEngineOsc::init(const char* const name, int tcpPort, int udpPort) noex
     {
         char strBuf[0xff];
 
-        for (int i=0; i < kRetryAttempts && fServerTCP == nullptr; ++i, ++tcpPort)
+        for (int i=0; i < kRetryAttempts && tcpPort < 32767 && fServerTCP == nullptr; ++i, ++tcpPort)
         {
             std::snprintf(strBuf, 0xff-1, "%d", tcpPort);
             strBuf[0xff-1] = '\0';
@@ -127,7 +127,7 @@ void CarlaEngineOsc::init(const char* const name, int tcpPort, int udpPort) noex
     {
         char strBuf[0xff];
 
-        for (int i=0; i < kRetryAttempts && fServerUDP == nullptr; ++i, ++udpPort)
+        for (int i=0; i < kRetryAttempts && udpPort < 32768 && fServerUDP == nullptr; ++i, ++udpPort)
         {
             std::snprintf(strBuf, 0xff-1, "%d", udpPort);
             strBuf[0xff-1] = '\0';
