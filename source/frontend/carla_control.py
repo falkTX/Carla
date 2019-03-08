@@ -24,10 +24,16 @@ from carla_host import *
 # ------------------------------------------------------------------------------------------------------------
 # Imports (liblo)
 
-from liblo import make_method, Address, ServerError, Server
-from liblo import send as lo_send
-from liblo import TCP as LO_TCP
-from liblo import UDP as LO_UDP
+from liblo import (
+  Address,
+  AddressError,
+  ServerError,
+  Server,
+  make_method,
+  send as lo_send,
+  TCP as LO_TCP,
+  UDP as LO_UDP,
+)
 
 from random import random
 
@@ -49,7 +55,7 @@ class CarlaHostOSC(CarlaHostQtPlugin):
         return False
 
     def sendMsg(self, lines):
-        if len(lines) < 2:
+        if len(lines) < 1:
             return self.printAndReturnError("not enough arguments")
 
         method = lines.pop(0)
@@ -390,6 +396,15 @@ class CarlaControlServer(Server):
         self.fReceivedMsgs = True
         self.host.QuitCallback.emit()
 
+    @make_method('/carla-control/exit-error', 's')
+    def set_exit_error_callback(self, path, args):
+        print(path, args)
+        self.fReceivedMsgs = True
+        error, = args
+        self.host.lo_target = None
+        self.host.QuitCallback.emit()
+        self.host.ErrorCallback.emit(error)
+
     @make_method(None, None)
     def fallback(self, path, args):
         print("ControlServer::fallback(\"%s\") - unknown message, args =" % path, args)
@@ -411,14 +426,7 @@ class HostWindowOSC(HostWindow):
         # ----------------------------------------------------------------------------------------------------
         # Internal stuff
 
-        self.fIdleTimer  = 0
-        self.fOscAddress = oscAddr
-        self.fOscServer  = None
-
-        # ----------------------------------------------------------------------------------------------------
-        # Set up GUI (not connected)
-
-        self.ui.act_file_refresh.setEnabled(False)
+        self.fOscServer = None
 
         # ----------------------------------------------------------------------------------------------------
         # Connect actions to functions
@@ -436,34 +444,60 @@ class HostWindowOSC(HostWindow):
         if addr is not None:
             self.fOscAddress = addr
 
-        self.host.lo_target      = Address(self.fOscAddress)
-        self.host.lo_target_name = self.fOscAddress.rsplit("/", 1)[-1]
-        print("Connecting to \"%s\" as '%s'..." % (self.fOscAddress, self.host.lo_target_name))
+        lo_protocol    = LO_UDP if self.fOscAddress.startswith("osc.udp") else LO_TCP
+        lo_target_name = self.fOscAddress.rsplit("/", 1)[-1]
+
+        err = None
+        print("Connecting to \"%s\" as '%s'..." % (self.fOscAddress, lo_target_name))
 
         try:
-            self.fOscServer = CarlaControlServer(self.host, LO_UDP if self.fOscAddress.startswith("osc.udp") else LO_TCP)
-        except: # ServerError as err:
-            QMessageBox.critical(self, self.tr("Error"), self.tr("Failed to connect, operation failed."))
+            lo_target = Address(self.fOscAddress)
+            self.fOscServer = CarlaControlServer(self.host, lo_protocol)
+            lo_send(lo_target, "/register", self.fOscServer.getFullURL())
+
+        except AddressError as e:
+            err = e
+        except OSError as e:
+            err = e
+        except:
+            err = { 'args': [] }
+
+        if err is not None:
+            del self.fOscServer
+            self.fOscServer = None
+
+            fullError = self.tr("Failed to connect to the Carla instance.")
+
+            if len(err.args) > 0:
+                fullError += " %s\n%s\n" % (self.tr("Error was:"), err.args[0])
+
+            fullError += "\n"
+            fullError += self.tr("Make sure the remote Carla is running and the URL and Port are correct.") + "\n"
+            fullError += self.tr("If it still does not work, check your current device and the remote's firewall.")
+
+            CustomMessageBox(self,
+                             QMessageBox.Warning,
+                             self.tr("Error"),
+                             self.tr("Connection failed"),
+                             fullError,
+                             QMessageBox.Ok,
+                             QMessageBox.Ok)
             return
 
-        self.fIdleTimer = self.startTimer(20)
-        lo_send(self.host.lo_target, "/register", self.fOscServer.getFullURL())
+        self.host.lo_target = lo_target
+        self.host.lo_target_name = lo_target_name
+        self.ui.act_file_refresh.setEnabled(True)
 
         self.startTimers()
-        self.ui.act_file_refresh.setEnabled(True)
 
     def disconnectOsc(self):
         self.killTimers()
-        self.ui.act_file_refresh.setEnabled(False)
 
         if self.host.lo_target is not None:
             try:
-                lo_send(self.host.lo_target, "/unregister")
+                lo_send(self.host.lo_target, "/unregister", self.fOscServer.getFullURL())
             except:
                 pass
-
-        self.killTimer(self.fIdleTimer)
-        self.fIdleTimer = 0
 
         if self.fOscServer is not None:
             del self.fOscServer
@@ -473,26 +507,72 @@ class HostWindowOSC(HostWindow):
 
         self.host.lo_target = None
         self.host.lo_target_name = ""
-        self.fOscAddress = ""
+        self.ui.act_file_refresh.setEnabled(False)
+
+    # --------------------------------------------------------------------------------------------------------
+    # Timers
+
+    def startTimers(self):
+        if self.fIdleTimerOSC == 0:
+            self.fIdleTimerOSC = self.startTimer(20)
+
+        HostWindow.startTimers(self)
+
+    def restartTimersIfNeeded(self):
+        if self.fIdleTimerOSC != 0:
+            self.killTimer(self.fIdleTimerOSC)
+            self.fIdleTimerOSC = self.startTimer(20)
+
+        HostWindow.restartTimersIfNeeded(self)
+
+    def killTimers(self):
+        if self.fIdleTimerOSC != 0:
+            self.killTimer(self.fIdleTimerOSC)
+            self.fIdleTimerOSC = 0
+
+        HostWindow.killTimers(self)
+
+    # --------------------------------------------------------------------------------------------------------
 
     def removeAllPlugins(self):
         self.host.fPluginsInfo = []
         HostWindow.removeAllPlugins(self)
 
+    # --------------------------------------------------------------------------------------------------------
+
+    def loadSettings(self, firstTime):
+        settings = HostWindow.loadSettings(self, firstTime)
+        self.fOscAddress = settings.value("RemoteAddress", "osc.tcp://127.0.0.1:22752/Carla", type=str)
+
+    def saveSettings(self):
+        settings = HostWindow.saveSettings(self)
+        if self.fOscAddress:
+            settings.setValue("RemoteAddress", self.fOscAddress)
+
+    # --------------------------------------------------------------------------------------------------------
+
     @pyqtSlot()
     def slot_fileConnect(self):
-        if self.host.lo_target and self.fOscServer:
-            urlText = self.fOscAddress
-        else:
-            urlText = "osc.tcp://127.0.0.1:19000/Carla"
+        dialog = QInputDialog(self)
+        dialog.setInputMode(QInputDialog.TextInput)
+        dialog.setLabelText(self.tr("Address:"))
+        dialog.setTextValue(self.fOscAddress or "osc.tcp://127.0.0.1:22752/Carla")
+        dialog.setWindowTitle(self.tr("Carla Control - Connect"))
+        dialog.resize(400,1)
 
-        addr, ok = QInputDialog.getText(self, self.tr("Carla Control - Connect"), self.tr("Address"), text=urlText)
+        ok = dialog.exec_()
+        addr = dialog.textValue().strip()
+        del dialog
 
         if not ok:
             return
+        if not addr:
+            return
 
         self.disconnectOsc()
-        self.connectOsc(addr)
+
+        if addr:
+            self.connectOsc(addr)
 
     @pyqtSlot()
     def slot_fileRefresh(self):
@@ -500,25 +580,34 @@ class HostWindowOSC(HostWindow):
             return
 
         self.killTimers()
-        lo_send(self.host.lo_target, "/unregister")
         self.removeAllPlugins()
+
+        lo_send(self.host.lo_target, "/unregister", self.fOscServer.getFullURL())
         lo_send(self.host.lo_target, "/register", self.fOscServer.getFullURL())
+
         self.startTimers()
 
     @pyqtSlot()
     def slot_handleQuitCallback(self):
+        HostWindow.slot_handleQuitCallback(self)
         self.disconnectOsc()
 
+    # --------------------------------------------------------------------------------------------------------
+
     def timerEvent(self, event):
-        if event.timerId() == self.fIdleTimer:
+        if event.timerId() == self.fIdleTimerOSC:
             self.fOscServer.idle()
+
+            if self.host.lo_target is None:
+                self.disconnectOsc()
+
         HostWindow.timerEvent(self, event)
 
     def closeEvent(self, event):
         self.killTimers()
 
         if self.host.lo_target is not None and self.fOscServer is not None:
-            lo_send(self.host.lo_target, "/unregister")
+            lo_send(self.host.lo_target, "/unregister", self.fOscServer.getFullURL())
 
         HostWindow.closeEvent(self, event)
 

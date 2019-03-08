@@ -128,6 +128,7 @@ class HostWindow(QMainWindow):
         # Internal stuff
 
         self.fIdleTimerNull = self.startTimer(1000) # keep application signals alive
+        self.fIdleTimerOSC  = 0
         self.fIdleTimerFast = 0
         self.fIdleTimerSlow = 0
 
@@ -146,6 +147,7 @@ class HostWindow(QMainWindow):
         self.fLastTransportState = False
         self.fBufferSize         = 0
         self.fSampleRate         = 0.0
+        self.fOscAddress         = ""
 
         if MACOS:
             self.fMacClosingHelper = True
@@ -221,6 +223,8 @@ class HostWindow(QMainWindow):
                 self.ui.menu_Plugin.setEnabled(False)
                 self.ui.menu_Plugin.setVisible(False)
                 self.ui.menu_Plugin.menuAction().setVisible(False)
+                self.ui.tw_statusbar.setEnabled(False)
+                self.ui.tw_statusbar.setVisible(False)
             else:
                 self.ui.act_file_save_as.setText(self.tr("Export as..."))
 
@@ -230,7 +234,9 @@ class HostWindow(QMainWindow):
             if WINDOWS:
                 self.ui.tabWidget.removeTab(2)
 
-        if not self.host.isControl:
+        if self.host.isControl:
+            self.ui.act_file_refresh.setEnabled(False)
+        else:
             self.ui.act_file_connect.setEnabled(False)
             self.ui.act_file_connect.setVisible(False)
             self.ui.act_file_refresh.setEnabled(False)
@@ -298,7 +304,7 @@ class HostWindow(QMainWindow):
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (transport)
 
-        fontMetrics   = QFontMetrics(self.ui.l_transport_bbt.font())
+        fontMetrics   = self.ui.l_transport_bbt.fontMetrics()
         minValueWidth = fontMetrics.width("000|00|0000")
         minLabelWidth = fontMetrics.width(self.ui.label_transport_frame.text())
 
@@ -637,7 +643,8 @@ class HostWindow(QMainWindow):
         itemB.setPluginId(pluginIdB)
         itemB.recreateWidget2(compactA, guiShownA)
 
-        self.slot_canvasRefresh()
+        if self.fWithCanvas:
+            self.slot_canvasRefresh()
 
     def setLoadRDFsNeeded(self):
         self.fLadspaRdfNeedsUpdate = True
@@ -1612,6 +1619,8 @@ class HostWindow(QMainWindow):
         settings.setValue(CARLA_KEY_ENGINE_TRANSPORT_MODE,  self.host.transportMode)
         settings.setValue(CARLA_KEY_ENGINE_TRANSPORT_EXTRA, self.host.transportExtra)
 
+        return settings
+
     def loadSettings(self, firstTime):
         settings = QSettings()
 
@@ -1676,10 +1685,10 @@ class HostWindow(QMainWindow):
                                                 settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, "Black", type=str).lower() == "black"),
         }
 
-        settings = QSettings("falkTX", "Carla2")
+        settings2 = QSettings("falkTX", "Carla2")
 
         if self.host.experimental and not self.host.isControl:
-            visible = settings.value(CARLA_KEY_EXPERIMENTAL_JACK_APPS, CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS, type=bool)
+            visible = settings2.value(CARLA_KEY_EXPERIMENTAL_JACK_APPS, CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS, type=bool)
             self.ui.act_add_jack.setVisible(visible)
             self.ui.act_plugin_add_jack.setVisible(visible)
         else:
@@ -1690,6 +1699,8 @@ class HostWindow(QMainWindow):
 
         setEngineSettings(self.host)
         self.restartTimersIfNeeded()
+
+        return settings
 
     # --------------------------------------------------------------------------------------------------------
     # Settings (helpers)
@@ -2175,7 +2186,10 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_handleQuitCallback(self):
-        pass # TODO
+        self.fIsProjectLoading = False
+        self.killTimers()
+        self.removeAllPlugins()
+        self.projectLoadingFinished()
 
     # --------------------------------------------------------------------------------------------------------
 

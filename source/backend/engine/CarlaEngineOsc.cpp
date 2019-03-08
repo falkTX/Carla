@@ -237,7 +237,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         return handleMsgRegister(isTCP, argc, argv, types);
 
     if (std::strcmp(path, "/unregister") == 0)
-        return handleMsgUnregister();
+        return handleMsgUnregister(argc, argv, types);
 
     const std::size_t nameSize(fName.length());
 
@@ -364,48 +364,71 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP, const int argc, const lo
     carla_debug("CarlaEngineOsc::handleMsgRegister()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "s");
 
-    if (fControlData.path != nullptr)
+    const char* const url = &argv[0]->s;
+    const lo_address addr = lo_address_new_from_url(url);
+
+    if (fControlData.owner != nullptr)
     {
-        carla_stderr("CarlaEngineOsc::handleMsgRegister() - OSC backend already registered to %s", fControlData.path);
-        return 1;
+        carla_stderr("OSC backend already registered to %s", fControlData.owner);
+
+        char* const path = lo_url_get_path(url);
+
+        char targetPath[std::strlen(path)+18];
+        std::strcpy(targetPath, path);
+        std::strcat(targetPath, "/exit-error");
+
+        lo_send_from(addr, isTCP ? fServerTCP : fServerUDP, LO_TT_IMMEDIATE,
+                     targetPath, "s", "OSC already registered to another client");
+
+        free(path);
+    }
+    else
+    {
+        carla_stdout("OSC backend registered to %s", url);
+
+        const char* const host  = lo_address_get_hostname(addr);
+        const char* const port  = lo_address_get_port(addr);
+        const lo_address target = lo_address_new_with_proto(isTCP ? LO_TCP : LO_UDP, host, port);
+
+        fControlData.owner  = carla_strdup_safe(url);
+        fControlData.path   = carla_strdup_free(lo_url_get_path(url));
+        fControlData.source = lo_address_new_with_proto(isTCP ? LO_TCP : LO_UDP, host, port);
+        fControlData.target = target;
+
+        for (uint i=0, count=fEngine->getCurrentPluginCount(); i < count; ++i)
+        {
+            CarlaPlugin* const plugin(fEngine->getPluginUnchecked(i));
+
+            if (plugin != nullptr && plugin->isEnabled())
+                plugin->registerToOscClient();
+        }
+    }
+
+    lo_address_free(addr);
+    return 0;
+}
+
+int CarlaEngineOsc::handleMsgUnregister(const int argc, const lo_arg* const* const argv, const char* const types)
+{
+    carla_debug("CarlaEngineOsc::handleMsgUnregister()");
+    CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "s");
+
+    if (fControlData.owner == nullptr)
+    {
+        carla_stderr("OSC backend is not registered yet, unregister failed");
+        return 0;
     }
 
     const char* const url = &argv[0]->s;
 
-    carla_debug("CarlaEngineOsc::handleMsgRegister() - OSC backend registered to %s", url);
-
+    if (std::strcmp(fControlData.owner, url) == 0)
     {
-        const lo_address  addr = lo_address_new_from_url(url);
-        const char* const host = lo_address_get_hostname(addr);
-        const char* const port = lo_address_get_port(addr);
-
-        fControlData.source = lo_address_new_with_proto(isTCP ? LO_TCP : LO_UDP, host, port);
-        fControlData.path   = carla_strdup_free(lo_url_get_path(url));
-        fControlData.target = lo_address_new_with_proto(isTCP ? LO_TCP : LO_UDP, host, port);
+        carla_stdout("OSC client %s unregistered", url);
+        fControlData.clear();
+        return 0;
     }
 
-    for (uint i=0, count=fEngine->getCurrentPluginCount(); i < count; ++i)
-    {
-        CarlaPlugin* const plugin(fEngine->getPluginUnchecked(i));
-
-        if (plugin != nullptr && plugin->isEnabled())
-            plugin->registerToOscClient();
-    }
-
-    return 0;
-}
-
-int CarlaEngineOsc::handleMsgUnregister()
-{
-    carla_debug("CarlaEngineOsc::handleMsgUnregister()");
-
-    if (fControlData.path == nullptr)
-    {
-        carla_stderr("CarlaEngineOsc::handleMsgUnregister() - OSC backend is not registered yet");
-        return 1;
-    }
-
-    fControlData.clear();
+    carla_stderr("OSC backend unregister failed, current owner %s does not match requested %s", fControlData.owner, url);
     return 0;
 }
 

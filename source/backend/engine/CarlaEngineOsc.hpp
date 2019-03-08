@@ -106,7 +106,7 @@ private:
     int handleMessage(const bool isTCP, const char* const path, const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg);
 
     int handleMsgRegister(const bool isTCP, const int argc, const lo_arg* const* const argv, const char* const types);
-    int handleMsgUnregister();
+    int handleMsgUnregister(const int argc, const lo_arg* const* const argv, const char* const types);
 
     // Internal methods
     int handleMsgSetActive(CARLA_ENGINE_OSC_HANDLE_ARGS);

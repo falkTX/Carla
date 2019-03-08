@@ -30,12 +30,14 @@
 // -----------------------------------------------------------------------
 
 struct CarlaOscData {
+    const char* owner;
     const char* path;
     lo_address source;
     lo_address target;
 
     CarlaOscData() noexcept
-        : path(nullptr),
+        : owner(nullptr),
+          path(nullptr),
           source(nullptr),
           target(nullptr) {}
 
@@ -46,6 +48,12 @@ struct CarlaOscData {
 
     void clear() noexcept
     {
+        if (owner != nullptr)
+        {
+            delete[] owner;
+            owner = nullptr;
+        }
+
         if (path != nullptr)
         {
             delete[] path;
