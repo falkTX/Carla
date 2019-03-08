@@ -82,20 +82,26 @@ void CarlaEngineOsc::init(const char* const name, int tcpPort, int udpPort) noex
     // port == 0 means to pick a random one
     // port < 0 will get osc disabled
 
+    static const int kRetryAttempts = 5;
+
     // ----------------------------------------------------------------------------------------------------------------
 
     if (tcpPort == 0)
     {
-        for (int i=0; i < 5 && fServerTCP == nullptr; ++i)
+        for (int i=0; i < kRetryAttempts && fServerTCP == nullptr; ++i)
             fServerTCP = lo_server_new_with_proto(nullptr, LO_TCP, osc_error_handler_TCP);
     }
     else if (tcpPort >= 1024)
     {
         char strBuf[0xff];
-        std::snprintf(strBuf, 0xff-1, "%d", tcpPort);
-        strBuf[0xff-1] = '\0';
 
-        fServerTCP = lo_server_new_with_proto(strBuf, LO_TCP, osc_error_handler_TCP);
+        for (int i=0; i < kRetryAttempts && fServerTCP == nullptr; ++i, ++tcpPort)
+        {
+            std::snprintf(strBuf, 0xff-1, "%d", tcpPort);
+            strBuf[0xff-1] = '\0';
+
+            fServerTCP = lo_server_new_with_proto(strBuf, LO_TCP, osc_error_handler_TCP);
+        }
     }
 
     if (fServerTCP != nullptr)
@@ -114,16 +120,20 @@ void CarlaEngineOsc::init(const char* const name, int tcpPort, int udpPort) noex
 
     if (udpPort == 0)
     {
-        for (int i=0; i < 5 && fServerUDP == nullptr; ++i)
+        for (int i=0; i < kRetryAttempts && fServerUDP == nullptr; ++i)
             fServerUDP = lo_server_new_with_proto(nullptr, LO_UDP, osc_error_handler_UDP);
     }
     else if (udpPort >= 1024)
     {
         char strBuf[0xff];
-        std::snprintf(strBuf, 0xff-1, "%d", udpPort);
-        strBuf[0xff-1] = '\0';
 
-        fServerUDP = lo_server_new_with_proto(strBuf, LO_UDP, osc_error_handler_UDP);
+        for (int i=0; i < kRetryAttempts && fServerUDP == nullptr; ++i, ++udpPort)
+        {
+            std::snprintf(strBuf, 0xff-1, "%d", udpPort);
+            strBuf[0xff-1] = '\0';
+
+            fServerUDP = lo_server_new_with_proto(strBuf, LO_UDP, osc_error_handler_UDP);
+        }
     }
 
     if (fServerUDP != nullptr)
