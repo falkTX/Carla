@@ -20,7 +20,7 @@
 # Imports (Global)
 
 from PyQt5.QtCore import pyqtSlot, QByteArray, QDir, QSettings
-from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
+from PyQt5.QtGui import QColor, QCursor, QPainter, QPainterPath
 from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
@@ -233,7 +233,7 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Set-up GUI
 
-        self.ui.lw_page.setFixedWidth(48 + 6*3 + QFontMetrics(self.ui.lw_page.font()).width("   Experimental   "))
+        self.ui.lw_page.setFixedWidth(48 + 6*3 + self.ui.lw_page.fontMetrics().width("   Experimental   "))
 
         for i in range(host.get_engine_driver_count()):
             self.ui.cb_engine_audio_driver.addItem(host.get_engine_driver_name(i))

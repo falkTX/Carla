@@ -881,7 +881,7 @@ class PluginEdit(QDialog):
             # Get width values, in packs of 20
 
             if parameter['type'] == PARAMETER_INPUT:
-                paramInputWidthTMP = QFontMetrics(self.font()).width(parameter['name'])
+                paramInputWidthTMP = self.fontMetrics().width(parameter['name'])
 
                 if paramInputWidthTMP > paramInputWidth:
                     paramInputWidth = paramInputWidthTMP
@@ -894,7 +894,7 @@ class PluginEdit(QDialog):
                     paramInputWidth = 0
 
             else:
-                paramOutputWidthTMP = QFontMetrics(self.font()).width(parameter['name'])
+                paramOutputWidthTMP = self.fontMetrics().width(parameter['name'])
 
                 if paramOutputWidthTMP > paramOutputWidth:
                     paramOutputWidth = paramOutputWidthTMP
