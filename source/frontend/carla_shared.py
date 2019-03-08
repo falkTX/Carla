@@ -733,8 +733,30 @@ def getAndSetPath(parent, lineEdit):
 # ------------------------------------------------------------------------------------------------------------
 # Custom MessageBox
 
-def CustomMessageBox(parent, icon, title, text, extraText="", buttons=QMessageBox.Yes|QMessageBox.No, defButton=QMessageBox.No):
-    msgBox = QMessageBox(parent)
+class QMessageBoxWithBetterWidth(QMessageBox):
+    def __init__(self, parent):
+        QMessageBox.__init__(self, parent)
+
+    def showEvent(self, event):
+        fontMetrics = self.fontMetrics()
+
+        lines = self.text().strip().split("\n") + self.informativeText().strip().split("\n")
+
+        if len(lines) > 0:
+            width = 0
+
+            for line in lines:
+                width = max(fontMetrics.width(line), width)
+
+            self.layout().setColumnMinimumWidth(2, width + 12)
+
+        QMessageBox.showEvent(self, event)
+
+def CustomMessageBox(parent, icon, title, text,
+                     extraText="",
+                     buttons=QMessageBox.Yes|QMessageBox.No,
+                     defButton=QMessageBox.No):
+    msgBox = QMessageBoxWithBetterWidth(parent)
     msgBox.setIcon(icon)
     msgBox.setWindowTitle(title)
     msgBox.setText(text)
