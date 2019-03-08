@@ -32,18 +32,14 @@ from liblo import UDP as LO_UDP
 from random import random
 
 # ------------------------------------------------------------------------------------------------------------
-# Global liblo objects
-
-global lo_target, lo_target_name
-lo_target      = None
-lo_target_name = ""
-
-# ------------------------------------------------------------------------------------------------------------
 # Host OSC object
 
 class CarlaHostOSC(CarlaHostQtPlugin):
     def __init__(self):
         CarlaHostQtPlugin.__init__(self)
+
+        self.lo_target = None
+        self.lo_target_name = ""
 
     # -------------------------------------------------------------------
 
@@ -53,16 +49,18 @@ class CarlaHostOSC(CarlaHostQtPlugin):
         return False
 
     def sendMsg(self, lines):
-        global lo_target, lo_target_name
-
-        if lo_target is None:
-            return self.printAndReturnError("lo_target is None")
-        if lo_target_name is None:
-            return self.printAndReturnError("lo_target_name is None")
         if len(lines) < 2:
             return self.printAndReturnError("not enough arguments")
 
         method = lines.pop(0)
+
+        if method == "set_engine_option":
+            return True
+
+        if self.lo_target is None:
+            return self.printAndReturnError("lo_target is None")
+        if self.lo_target_name is None:
+            return self.printAndReturnError("lo_target_name is None")
 
         if method not in (
                           #"set_option",
@@ -112,14 +110,13 @@ class CarlaHostOSC(CarlaHostQtPlugin):
 
         print(path, args)
 
-        lo_send(lo_target, path, *args)
+        lo_send(self.lo_target, path, *args)
         return True
 
     # -------------------------------------------------------------------
 
     def engine_init(self, driverName, clientName):
-        global lo_target
-        return lo_target is not None
+        return self.lo_target is not None
 
     def engine_close(self):
         return True
@@ -128,8 +125,7 @@ class CarlaHostOSC(CarlaHostQtPlugin):
         return
 
     def is_engine_running(self):
-        global lo_target
-        return lo_target is not None
+        return self.lo_target is not None
 
     def set_engine_about_to_close(self):
         return
@@ -437,14 +433,12 @@ class HostWindowOSC(HostWindow):
             QTimer.singleShot(0, self.connectOsc)
 
     def connectOsc(self, addr = None):
-        global lo_target, lo_target_name
-
         if addr is not None:
             self.fOscAddress = addr
 
-        lo_target      = Address(self.fOscAddress)
-        lo_target_name = self.fOscAddress.rsplit("/", 1)[-1]
-        print("Connecting to \"%s\" as '%s'..." % (self.fOscAddress, lo_target_name))
+        self.host.lo_target      = Address(self.fOscAddress)
+        self.host.lo_target_name = self.fOscAddress.rsplit("/", 1)[-1]
+        print("Connecting to \"%s\" as '%s'..." % (self.fOscAddress, self.host.lo_target_name))
 
         try:
             self.fOscServer = CarlaControlServer(self.host, LO_UDP if self.fOscAddress.startswith("osc.udp") else LO_TCP)
@@ -453,20 +447,18 @@ class HostWindowOSC(HostWindow):
             return
 
         self.fIdleTimer = self.startTimer(20)
-        lo_send(lo_target, "/register", self.fOscServer.getFullURL())
+        lo_send(self.host.lo_target, "/register", self.fOscServer.getFullURL())
 
         self.startTimers()
         self.ui.act_file_refresh.setEnabled(True)
 
     def disconnectOsc(self):
-        global lo_target, lo_target_name
-
         self.killTimers()
         self.ui.act_file_refresh.setEnabled(False)
 
-        if lo_target is not None:
+        if self.host.lo_target is not None:
             try:
-                lo_send(lo_target, "/unregister")
+                lo_send(self.host.lo_target, "/unregister")
             except:
                 pass
 
@@ -479,8 +471,8 @@ class HostWindowOSC(HostWindow):
 
         self.removeAllPlugins()
 
-        lo_target        = None
-        lo_target_name   = ""
+        self.host.lo_target = None
+        self.host.lo_target_name = ""
         self.fOscAddress = ""
 
     def removeAllPlugins(self):
@@ -489,9 +481,7 @@ class HostWindowOSC(HostWindow):
 
     @pyqtSlot()
     def slot_fileConnect(self):
-        global lo_target, lo_target_name
-
-        if lo_target and self.fOscServer:
+        if self.host.lo_target and self.fOscServer:
             urlText = self.fOscAddress
         else:
             urlText = "osc.tcp://127.0.0.1:19000/Carla"
@@ -506,15 +496,13 @@ class HostWindowOSC(HostWindow):
 
     @pyqtSlot()
     def slot_fileRefresh(self):
-        global lo_target
-
-        if lo_target is None or self.fOscServer is None:
+        if self.host.lo_target is None or self.fOscServer is None:
             return
 
         self.killTimers()
-        lo_send(lo_target, "/unregister")
+        lo_send(self.host.lo_target, "/unregister")
         self.removeAllPlugins()
-        lo_send(lo_target, "/register", self.fOscServer.getFullURL())
+        lo_send(self.host.lo_target, "/register", self.fOscServer.getFullURL())
         self.startTimers()
 
     @pyqtSlot()
@@ -527,12 +515,10 @@ class HostWindowOSC(HostWindow):
         HostWindow.timerEvent(self, event)
 
     def closeEvent(self, event):
-        global lo_target
-
         self.killTimers()
 
-        if lo_target is not None and self.fOscServer is not None:
-            lo_send(lo_target, "/unregister")
+        if self.host.lo_target is not None and self.fOscServer is not None:
+            lo_send(self.host.lo_target, "/unregister")
 
         HostWindow.closeEvent(self, event)
 
