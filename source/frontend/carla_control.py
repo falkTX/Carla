@@ -112,7 +112,7 @@ class CarlaHostOSC(CarlaHostQtPlugin):
                 else:
                     args.append(line)
 
-        path = "/%s/%i/%s" % (lo_target_name, pluginId, method)
+        path = "/%s/%i/%s" % (self.lo_target_name, pluginId, method)
 
         print(path, args)
 
