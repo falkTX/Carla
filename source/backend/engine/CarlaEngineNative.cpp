@@ -695,6 +695,13 @@ public:
         pData->sampleRate = pHost->get_sample_rate(pHost->handle);
         pData->initTime(nullptr);
 
+#ifndef BUILD_BRIDGE
+        // Forced OSC setup when running as plugin
+        pData->options.oscEnabled = true;
+        pData->options.oscPortTCP = -1;
+        pData->options.oscPortUDP = 0;
+#endif
+
         if (outChan == 0)
             outChan = inChan;
 

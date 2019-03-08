@@ -1574,7 +1574,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         pData->options.audioDevice = carla_strdup_safe(valueStr);
         break;
 
-    case ENGINE_OPTION_OSC_ENABLE:
+    case ENGINE_OPTION_OSC_ENABLED:
         CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
 #ifndef BUILD_BRIDGE
         pData->options.oscEnabled = (value != 0);

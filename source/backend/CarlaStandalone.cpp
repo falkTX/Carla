@@ -352,7 +352,7 @@ static void carla_engine_init_common(CarlaEngine* const engine)
     if (gStandalone.engineOptions.audioDevice != nullptr)
         engine->setOption(CB::ENGINE_OPTION_AUDIO_DEVICE,      0, gStandalone.engineOptions.audioDevice);
 
-    engine->setOption(CB::ENGINE_OPTION_OSC_ENABLE,   gStandalone.engineOptions.oscEnabled, nullptr);
+    engine->setOption(CB::ENGINE_OPTION_OSC_ENABLED,  gStandalone.engineOptions.oscEnabled, nullptr);
     engine->setOption(CB::ENGINE_OPTION_OSC_PORT_TCP, gStandalone.engineOptions.oscPortTCP, nullptr);
     engine->setOption(CB::ENGINE_OPTION_OSC_PORT_UDP, gStandalone.engineOptions.oscPortUDP, nullptr);
 
@@ -704,7 +704,7 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
         gStandalone.engineOptions.audioDevice = carla_strdup_safe(valueStr);
         break;
 
-    case CB::ENGINE_OPTION_OSC_ENABLE:
+    case CB::ENGINE_OPTION_OSC_ENABLED:
         CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
         gStandalone.engineOptions.oscEnabled = (value != 0);
         break;

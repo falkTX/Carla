@@ -2980,6 +2980,29 @@ def setEngineSettings(host):
         return "Plugin"
 
     # --------------------------------------------------------------------------------------------------------
+    # osc settings
+
+    oscEnabled = settings.value(CARLA_KEY_OSC_ENABLED, CARLA_DEFAULT_OSC_ENABLED, type=bool)
+
+    if not settings.value(CARLA_KEY_OSC_TCP_PORT_ENABLED, CARLA_DEFAULT_OSC_TCP_PORT_ENABLED, type=bool):
+        portNumTCP = -1
+    elif settings.value(CARLA_KEY_OSC_TCP_PORT_RANDOM, CARLA_DEFAULT_OSC_TCP_PORT_RANDOM, type=bool):
+        portNumTCP = 0
+    else:
+        portNumTCP = settings.value(CARLA_KEY_OSC_TCP_PORT_NUMBER, CARLA_DEFAULT_OSC_TCP_PORT_NUMBER, type=int)
+
+    if not settings.value(CARLA_KEY_OSC_UDP_PORT_ENABLED, CARLA_DEFAULT_OSC_UDP_PORT_ENABLED, type=bool):
+        portNumUDP = -1
+    elif settings.value(CARLA_KEY_OSC_UDP_PORT_RANDOM, CARLA_DEFAULT_OSC_UDP_PORT_RANDOM, type=bool):
+        portNumUDP = 0
+    else:
+        portNumUDP = settings.value(CARLA_KEY_OSC_UDP_PORT_NUMBER, CARLA_DEFAULT_OSC_UDP_PORT_NUMBER, type=int)
+
+    host.set_engine_option(ENGINE_OPTION_OSC_ENABLED, 1 if oscEnabled else 0, "")
+    host.set_engine_option(ENGINE_OPTION_OSC_PORT_TCP, portNumTCP, "")
+    host.set_engine_option(ENGINE_OPTION_OSC_PORT_UDP, portNumUDP, "")
+
+    # --------------------------------------------------------------------------------------------------------
     # wine settings
 
     optWineExecutable = settings.value(CARLA_KEY_WINE_EXECUTABLE, CARLA_DEFAULT_WINE_EXECUTABLE, type=str)

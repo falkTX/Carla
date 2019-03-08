@@ -197,10 +197,11 @@ class CarlaSettingsW(QDialog):
     TAB_INDEX_MAIN         = 0
     TAB_INDEX_CANVAS       = 1
     TAB_INDEX_ENGINE       = 2
-    TAB_INDEX_PATHS        = 3
-    TAB_INDEX_WINE         = 4
-    TAB_INDEX_EXPERIMENTAL = 5
-    TAB_INDEX_NONE         = 6
+    TAB_INDEX_OSC          = 3
+    TAB_INDEX_PATHS        = 4
+    TAB_INDEX_WINE         = 5
+    TAB_INDEX_EXPERIMENTAL = 6
+    TAB_INDEX_NONE         = 7
 
     # Path indexes
     PATH_INDEX_LADSPA = 0
@@ -281,6 +282,7 @@ class CarlaSettingsW(QDialog):
         if host.isControl or host.isPlugin:
             self.ui.ch_main_confirm_exit.hide()
             self.ui.ch_exp_load_lib_global.hide()
+            self.ui.lw_page.hideRow(self.TAB_INDEX_OSC)
             self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
 
         if not LINUX:
@@ -437,6 +439,43 @@ class CarlaSettingsW(QDialog):
         self.ui.ch_exp_export_lv2.setChecked(self.host.exportLV2)
         self.ui.cb_exp_plugin_bridges.setChecked(self.host.showPluginBridges)
         self.ui.ch_exp_wine_bridges.setChecked(self.host.showWineBridges)
+
+        # ----------------------------------------------------------------------------------------------------
+        # OSC
+
+        self.ui.ch_osc_enable.setChecked(settings.value(CARLA_KEY_OSC_ENABLED,
+                                                        CARLA_DEFAULT_OSC_ENABLED,
+                                                        type=bool))
+
+        self.ui.group_osc_tcp_port.setChecked(settings.value(CARLA_KEY_OSC_TCP_PORT_ENABLED,
+                                                             CARLA_DEFAULT_OSC_TCP_PORT_ENABLED,
+                                                             type=bool))
+
+        self.ui.group_osc_udp_port.setChecked(settings.value(CARLA_KEY_OSC_UDP_PORT_ENABLED,
+                                                             CARLA_DEFAULT_OSC_UDP_PORT_ENABLED,
+                                                             type=bool))
+
+        self.ui.sb_osc_tcp_port_number.setValue(settings.value(CARLA_KEY_OSC_TCP_PORT_NUMBER,
+                                                               CARLA_DEFAULT_OSC_TCP_PORT_NUMBER,
+                                                               type=int))
+
+        self.ui.sb_osc_udp_port_number.setValue(settings.value(CARLA_KEY_OSC_UDP_PORT_NUMBER,
+                                                               CARLA_DEFAULT_OSC_UDP_PORT_NUMBER,
+                                                               type=int))
+
+        if settings.value(CARLA_KEY_OSC_TCP_PORT_RANDOM, CARLA_DEFAULT_OSC_TCP_PORT_RANDOM, type=bool):
+            self.ui.rb_osc_tcp_port_specific.setChecked(False)
+            self.ui.rb_osc_tcp_port_random.setChecked(True)
+        else:
+            self.ui.rb_osc_tcp_port_random.setChecked(False)
+            self.ui.rb_osc_tcp_port_specific.setChecked(True)
+
+        if settings.value(CARLA_KEY_OSC_UDP_PORT_RANDOM, CARLA_DEFAULT_OSC_UDP_PORT_RANDOM, type=bool):
+            self.ui.rb_osc_udp_port_specific.setChecked(False)
+            self.ui.rb_osc_udp_port_random.setChecked(True)
+        else:
+            self.ui.rb_osc_udp_port_random.setChecked(False)
+            self.ui.rb_osc_udp_port_specific.setChecked(True)
 
         # ----------------------------------------------------------------------------------------------------
         # Paths
@@ -618,6 +657,17 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_EXPERIMENTAL_WINE_BRIDGES,    self.host.showWineBridges)
 
         # ----------------------------------------------------------------------------------------------------
+        # OSC
+
+        settings.setValue(CARLA_KEY_OSC_ENABLED,          self.ui.ch_osc_enable.isChecked())
+        settings.setValue(CARLA_KEY_OSC_TCP_PORT_ENABLED, self.ui.group_osc_tcp_port.isChecked())
+        settings.setValue(CARLA_KEY_OSC_UDP_PORT_ENABLED, self.ui.group_osc_udp_port.isChecked())
+        settings.setValue(CARLA_KEY_OSC_TCP_PORT_RANDOM,  self.ui.rb_osc_tcp_port_random.isChecked())
+        settings.setValue(CARLA_KEY_OSC_UDP_PORT_RANDOM,  self.ui.rb_osc_udp_port_random.isChecked())
+        settings.setValue(CARLA_KEY_OSC_TCP_PORT_NUMBER,  self.ui.sb_osc_tcp_port_number.value())
+        settings.setValue(CARLA_KEY_OSC_UDP_PORT_NUMBER,  self.ui.sb_osc_udp_port_number.value())
+
+        # ----------------------------------------------------------------------------------------------------
         # Paths
 
         ladspas = []
@@ -686,10 +736,12 @@ class CarlaSettingsW(QDialog):
 
     @pyqtSlot()
     def slot_resetSettings(self):
+        currentRow = self.ui.lw_page.currentRow()
+
         # ----------------------------------------------------------------------------------------------------
         # Main
 
-        if self.ui.lw_page.currentRow() == self.TAB_INDEX_MAIN:
+        if currentRow == self.TAB_INDEX_MAIN:
             self.ui.le_main_proj_folder.setText(CARLA_DEFAULT_MAIN_PROJECT_FOLDER)
             self.ui.ch_main_theme_pro.setChecked(CARLA_DEFAULT_MAIN_USE_PRO_THEME and self.ui.group_main_theme.isEnabled())
             self.ui.cb_main_theme_color.setCurrentIndex(self.ui.cb_main_theme_color.findText(CARLA_DEFAULT_MAIN_PRO_THEME_COLOR))
@@ -700,7 +752,7 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Canvas
 
-        elif self.ui.lw_page.currentRow() == self.TAB_INDEX_CANVAS:
+        elif currentRow == self.TAB_INDEX_CANVAS:
             self.ui.cb_canvas_theme.setCurrentIndex(self.ui.cb_canvas_theme.findText(CARLA_DEFAULT_CANVAS_THEME))
             self.ui.cb_canvas_size.setCurrentIndex(self.ui.cb_canvas_size.findText(CARLA_DEFAULT_CANVAS_SIZE))
             self.ui.cb_canvas_bezier_lines.setChecked(CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES)
@@ -712,7 +764,7 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Engine
 
-        elif self.ui.lw_page.currentRow() == self.TAB_INDEX_ENGINE:
+        elif currentRow == self.TAB_INDEX_ENGINE:
             if not self.host.isPlugin:
                 self.ui.cb_engine_audio_driver.setCurrentIndex(0)
 
@@ -731,9 +783,33 @@ class CarlaSettingsW(QDialog):
             self.ui.ch_engine_manage_uis.setChecked(CARLA_DEFAULT_MANAGE_UIS)
 
         # ----------------------------------------------------------------------------------------------------
+        # OSC
+
+        elif currentRow == self.TAB_INDEX_OSC:
+            self.ui.ch_osc_enable.setChecked(CARLA_DEFAULT_OSC_ENABLED)
+            self.ui.group_osc_tcp_port.setChecked(CARLA_DEFAULT_OSC_TCP_PORT_ENABLED)
+            self.ui.group_osc_udp_port.setChecked(CARLA_DEFAULT_OSC_UDP_PORT_ENABLED)
+            self.ui.sb_osc_tcp_port_number.setValue(CARLA_DEFAULT_OSC_TCP_PORT_NUMBER)
+            self.ui.sb_osc_udp_port_number.setValue(CARLA_DEFAULT_OSC_UDP_PORT_NUMBER)
+
+            if CARLA_DEFAULT_OSC_TCP_PORT_RANDOM:
+                self.ui.rb_osc_tcp_port_specific.setChecked(False)
+                self.ui.rb_osc_tcp_port_random.setChecked(True)
+            else:
+                self.ui.rb_osc_tcp_port_random.setChecked(False)
+                self.ui.rb_osc_tcp_port_specific.setChecked(True)
+
+            if CARLA_DEFAULT_OSC_UDP_PORT_RANDOM:
+                self.ui.rb_osc_udp_port_specific.setChecked(False)
+                self.ui.rb_osc_udp_port_random.setChecked(True)
+            else:
+                self.ui.rb_osc_udp_port_random.setChecked(False)
+                self.ui.rb_osc_udp_port_specific.setChecked(True)
+
+        # ----------------------------------------------------------------------------------------------------
         # Paths
 
-        elif self.ui.lw_page.currentRow() == self.TAB_INDEX_PATHS:
+        elif currentRow == self.TAB_INDEX_PATHS:
             curIndex = self.ui.tw_paths.currentIndex()
 
             if curIndex == self.PATH_INDEX_LADSPA:
@@ -802,7 +878,7 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Wine
 
-        elif self.ui.lw_page.currentRow() == self.TAB_INDEX_WINE:
+        elif currentRow == self.TAB_INDEX_WINE:
             self.ui.le_wine_exec.setText(CARLA_DEFAULT_WINE_EXECUTABLE)
             self.ui.cb_wine_prefix_detect.setChecked(CARLA_DEFAULT_WINE_AUTO_PREFIX)
             self.ui.le_wine_prefix_fallback.setText(CARLA_DEFAULT_WINE_FALLBACK_PREFIX)
@@ -813,7 +889,7 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Experimental
 
-        elif self.ui.lw_page.currentRow() == self.TAB_INDEX_EXPERIMENTAL:
+        elif currentRow == self.TAB_INDEX_EXPERIMENTAL:
             self.resetExperimentalSettings()
 
     def resetExperimentalSettings(self):

@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -203,8 +203,8 @@ EngineOptions::EngineOptions() noexcept
 # else
       oscEnabled(true),
 # endif
-      oscPortTCP(0),
-      oscPortUDP(0),
+      oscPortTCP(22752),
+      oscPortUDP(22752),
 #endif
       pathLADSPA(nullptr),
       pathDSSI(nullptr),

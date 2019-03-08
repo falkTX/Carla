@@ -821,17 +821,19 @@ ENGINE_OPTION_AUDIO_TRIPLE_BUFFER = 11
 ENGINE_OPTION_AUDIO_DEVICE = 12
 
 # Wherever to enable OSC support in the engine.
-ENGINE_OPTION_OSC_ENABLE = 13
+ENGINE_OPTION_OSC_ENABLED = 13
 
 # The network TCP port to use for OSC.
 # A value of 0 means use a random port.
 # A value of < 0 means to not enable the TCP port for OSC.
+# @note Valid ports begin at 1024
 ENGINE_OPTION_OSC_PORT_TCP = 14
 
 # The network UDP port to use for OSC.
 # A value of 0 means use a random port.
 # A value of < 0 means to not enable the UDP port for OSC.
 # @note Disabling this option prevents DSSI UIs from working!
+# @note Valid ports begin at 1024
 ENGINE_OPTION_OSC_PORT_UDP = 15
 
 # Set path used for a specific plugin type.

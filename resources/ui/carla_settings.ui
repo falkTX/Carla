@@ -1155,13 +1155,13 @@
           </layout>
          </item>
          <item>
-          <widget class="QGroupBox" name="groupBox_4">
+          <widget class="QGroupBox" name="group_osc_core">
            <property name="title">
             <string>Core</string>
            </property>
            <layout class="QGridLayout" name="gridLayout_13">
             <item row="0" column="1">
-             <widget class="QCheckBox" name="checkBox">
+             <widget class="QCheckBox" name="ch_osc_enable">
               <property name="text">
                <string>Enable OSC</string>
               </property>
@@ -1197,7 +1197,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QGroupBox" name="groupBox_2">
+          <widget class="QGroupBox" name="group_osc_tcp_port">
            <property name="title">
             <string>Enable TCP port</string>
            </property>
@@ -1205,56 +1205,10 @@
             <bool>true</bool>
            </property>
            <layout class="QGridLayout" name="gridLayout_12">
-            <item row="0" column="0" rowspan="2">
-             <spacer name="horizontalSpacer_41">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item row="0" column="1" colspan="2">
-             <widget class="QRadioButton" name="radioButton">
-              <property name="text">
-               <string>Use randomly assigned port:</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="3" rowspan="2">
-             <spacer name="horizontalSpacer_42">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
             <item row="1" column="1">
-             <widget class="QRadioButton" name="radioButton_2">
+             <widget class="QRadioButton" name="rb_osc_tcp_port_specific">
               <property name="text">
                <string>Use specific port:</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="2">
-             <widget class="QSpinBox" name="sb_engine_max_params_3">
-              <property name="toolTip">
-               <string>Maximum number of parameters to allow in the built-in 'Edit' dialog</string>
-              </property>
-              <property name="minimum">
-               <number>1024</number>
-              </property>
-              <property name="maximum">
-               <number>32767</number>
               </property>
              </widget>
             </item>
@@ -1295,7 +1249,7 @@
               <item>
                <widget class="QLabel" name="label_40">
                 <property name="text">
-                 <string>Can also use CARLA_OSC_TCP_PORT env var</string>
+                 <string>Overridden by CARLA_OSC_TCP_PORT env var</string>
                 </property>
                 <property name="textInteractionFlags">
                  <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
@@ -1317,11 +1271,63 @@
               </item>
              </layout>
             </item>
+            <item row="0" column="0" rowspan="2">
+             <spacer name="horizontalSpacer_41">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="0" column="3" rowspan="2">
+             <spacer name="horizontalSpacer_42">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="1" column="2">
+             <widget class="QSpinBox" name="sb_osc_tcp_port_number">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="toolTip">
+               <string>Maximum number of parameters to allow in the built-in 'Edit' dialog</string>
+              </property>
+              <property name="minimum">
+               <number>1024</number>
+              </property>
+              <property name="maximum">
+               <number>32767</number>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1" colspan="2">
+             <widget class="QRadioButton" name="rb_osc_tcp_port_random">
+              <property name="text">
+               <string>Use randomly assigned port</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </item>
          <item>
-          <widget class="QGroupBox" name="groupBox_3">
+          <widget class="QGroupBox" name="group_osc_udp_port">
            <property name="title">
             <string>Enable UDP port</string>
            </property>
@@ -1330,7 +1336,7 @@
            </property>
            <layout class="QGridLayout" name="gridLayout_11">
             <item row="1" column="1">
-             <widget class="QRadioButton" name="radioButton_4">
+             <widget class="QRadioButton" name="rb_osc_udp_port_specific">
               <property name="text">
                <string>Use specific port:</string>
               </property>
@@ -1363,7 +1369,10 @@
              </spacer>
             </item>
             <item row="1" column="2">
-             <widget class="QSpinBox" name="sb_engine_max_params_4">
+             <widget class="QSpinBox" name="sb_osc_udp_port_number">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="toolTip">
                <string>Maximum number of parameters to allow in the built-in 'Edit' dialog</string>
               </property>
@@ -1376,9 +1385,12 @@
              </widget>
             </item>
             <item row="0" column="1" colspan="2">
-             <widget class="QRadioButton" name="radioButton_3">
+             <widget class="QRadioButton" name="rb_osc_udp_port_random">
               <property name="text">
                <string>Use randomly assigned port</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -1419,7 +1431,7 @@
               <item>
                <widget class="QLabel" name="label_42">
                 <property name="text">
-                 <string>Can also use CARLA_OSC_UDP_PORT env var</string>
+                 <string>Overridden by CARLA_OSC_UDP_PORT env var</string>
                 </property>
                 <property name="textInteractionFlags">
                  <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
@@ -1584,15 +1596,10 @@
          </item>
         </layout>
         <zorder>verticalSpacer_10</zorder>
-        <zorder>layoutWidget</zorder>
         <zorder>label_36</zorder>
-        <zorder>layoutWidget_2</zorder>
-        <zorder>groupBox_2</zorder>
-        <zorder>label_35</zorder>
-        <zorder>label_35</zorder>
-        <zorder>groupBox_3</zorder>
-        <zorder>groupBox_4</zorder>
-        <zorder>layoutWidget_3</zorder>
+        <zorder>group_osc_tcp_port</zorder>
+        <zorder>group_osc_udp_port</zorder>
+        <zorder>group_osc_core</zorder>
        </widget>
        <widget class="QWidget" name="page_paths">
         <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -2612,6 +2619,38 @@ This mode is not available for VST plugins.</string>
     <hint type="destinationlabel">
      <x>402</x>
      <y>433</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>rb_osc_tcp_port_specific</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>sb_osc_tcp_port_number</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>368</x>
+     <y>174</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>467</x>
+     <y>174</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>rb_osc_udp_port_specific</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>sb_osc_udp_port_number</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>368</x>
+     <y>282</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>467</x>
+     <y>282</y>
     </hint>
    </hints>
   </connection>
