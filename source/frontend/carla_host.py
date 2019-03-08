@@ -127,6 +127,7 @@ class HostWindow(QMainWindow):
         # ----------------------------------------------------------------------------------------------------
         # Internal stuff
 
+        self.fIdleTimerNull = self.startTimer(1000) # keep application signals alive
         self.fIdleTimerFast = 0
         self.fIdleTimerSlow = 0
 
