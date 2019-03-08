@@ -280,7 +280,7 @@ class HostWindow(QMainWindow):
             self.ui.menu_Canvas.setEnabled(False)
             self.ui.menu_Canvas.setVisible(False)
             self.ui.menu_Canvas.menuAction().setVisible(False)
-            self.ui.miniCanvasPreview.hide()
+            self.ui.tw_miniCanvas.hide()
             self.ui.tabWidget.removeTab(1)
             if WINDOWS:
                 self.ui.tabWidget.tabBar().hide()
