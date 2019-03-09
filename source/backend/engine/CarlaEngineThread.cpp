@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaEngine.hpp"
 #include "CarlaEngineThread.hpp"
+#include "CarlaEngineInternal.hpp"
 #include "CarlaPlugin.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
@@ -48,6 +48,10 @@ void CarlaEngineThread::run() noexcept
 
     float value;
 
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
+    CarlaEngineOsc& engineOsc(kEngine->pData->osc);
+#endif
+
     // thread must do something...
     CARLA_SAFE_ASSERT_RETURN(kIsAlwaysRunning || kEngine->isRunning(),);
 
@@ -61,7 +65,9 @@ void CarlaEngineThread::run() noexcept
 
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
         if (kIsPlugin)
-            kEngine->idleOsc();
+            engineOsc.idle();
+        if (oscRegisted)
+            engineOsc.sendRuntimeInfo();
 #endif
 
         for (uint i=0, count = kEngine->getCurrentPluginCount(); i < count; ++i)
@@ -99,7 +105,7 @@ void CarlaEngineThread::run() noexcept
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
                     // Update OSC engine client
                     if (oscRegisted)
-                        kEngine->oscSend_control_set_output_parameter_value(i, static_cast<int32_t>(j), value);
+                        engineOsc.sendParameterValue(i, j, value);
 #endif
                     // Update UI
                     if (updateUI)
@@ -119,7 +125,7 @@ void CarlaEngineThread::run() noexcept
             // Update OSC control client peaks
 
             if (oscRegisted)
-                kEngine->oscSend_control_set_peaks(i);
+                engineOsc.sendPeaks(i, kEngine->getPeaks(i));
 #endif
         }
 

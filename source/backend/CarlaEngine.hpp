@@ -20,10 +20,6 @@
 
 #include "CarlaBackend.h"
 
-#ifdef BUILD_BRIDGE
-struct CarlaOscData;
-#endif
-
 namespace water {
 class MemoryOutputStream;
 class XmlDocument;
@@ -979,8 +975,9 @@ public:
 
     /*!
      * Get a plugin's peak values.
+     * @note not thread-safe if pluginId == MAIN_CARLA_PLUGIN_ID
      */
-    float* getPeaks(const uint pluginId) const noexcept;
+    const float* getPeaks(const uint pluginId) const noexcept;
 
     /*!
      * Get a plugin's input peak value.
@@ -1130,11 +1127,6 @@ public:
     bool isOscControlRegistered() const noexcept;
 
     /*!
-     * Idle OSC.
-     */
-    void idleOsc() const noexcept;
-
-    /*!
      * Get OSC TCP server path.
      */
     const char* getOscServerPathTCP() const noexcept;
@@ -1166,7 +1158,7 @@ public:
 
 protected:
     /*!
-     * Internal data, for CarlaEngine subclasses only.
+     * Internal data, for CarlaEngine subclasses and friends.
      */
     struct ProtectedData;
     ProtectedData* const pData;
@@ -1174,6 +1166,7 @@ protected:
     /*!
      * Some internal classes read directly from pData or call protected functions.
      */
+    friend class CarlaEngineThread;
     friend class CarlaPluginInstance;
     friend class EngineInternalGraph;
     friend class PendingRtEventsRunner;
@@ -1206,7 +1199,7 @@ protected:
      * Set a plugin (stereo) peak values.
      * @note RT call
      */
-    void setPluginPeaks(const uint pluginId, float const inPeaks[2], float const outPeaks[2]) noexcept;
+    void setPluginPeaksRT(const uint pluginId, float const inPeaks[2], float const outPeaks[2]) noexcept;
 
     /*!
      * Common save project function for main engine and plugin.
@@ -1280,40 +1273,6 @@ public:
     static const char* const* getRtAudioApiDeviceNames(const uint index);
     static const EngineDriverDeviceInfo* getRtAudioDeviceInfo(const uint index, const char* const deviceName);
 # endif
-#endif
-
-#ifndef BUILD_BRIDGE
-    // -------------------------------------------------------------------
-    // OSC Controller stuff
-
-    void oscSend_control_callback(const EngineCallbackOpcode action, const uint pluginId,
-                                  const int value1, const int value2, const int value3,
-                                  const float valuef, const char* const valueStr) const noexcept;
-    void oscSend_control_add_plugin_start(const uint pluginId, const char* const pluginName) const noexcept;
-    // void oscSend_control_add_plugin_end(const uint pluginId) const noexcept;
-    // void oscSend_control_remove_plugin(const uint pluginId) const noexcept;
-    void oscSend_control_set_plugin_info1(const uint pluginId, const PluginType type, const PluginCategory category, const uint hints, const int64_t uniqueId) const noexcept;
-    void oscSend_control_set_plugin_info2(const uint pluginId, const char* const realName, const char* const label, const char* const maker, const char* const copyright) const noexcept;
-    void oscSend_control_set_audio_count(const uint pluginId, const uint32_t ins, const uint32_t outs) const noexcept;
-    void oscSend_control_set_midi_count(const uint pluginId, const uint32_t ins, const uint32_t outs) const noexcept;
-    void oscSend_control_set_parameter_count(const uint pluginId, const uint32_t ins, const uint32_t outs) const noexcept;
-    void oscSend_control_set_program_count(const uint pluginId, const uint32_t count) const noexcept;
-    void oscSend_control_set_midi_program_count(const uint pluginId, const uint32_t count) const noexcept;
-    void oscSend_control_set_parameter_data(const uint pluginId, const uint32_t index, const ParameterType type, const uint hints, const char* const name, const char* const unit) const noexcept;
-    void oscSend_control_set_parameter_ranges1(const uint pluginId, const uint32_t index, const float def, const float min, const float max) const noexcept;
-    void oscSend_control_set_parameter_ranges2(const uint pluginId, const uint32_t index, const float step, const float stepSmall, const float stepLarge) const noexcept;
-    // void oscSend_control_set_parameter_midi_cc(const uint pluginId, const uint32_t index, const int16_t cc) const noexcept;
-    // void oscSend_control_set_parameter_midi_channel(const uint pluginId, const uint32_t index, const uint8_t channel) const noexcept;
-    void oscSend_control_set_output_parameter_value(const uint pluginId, const int32_t index, const float value) const noexcept;
-    // void oscSend_control_set_default_value(const uint pluginId, const uint32_t index, const float value) const noexcept;
-    // void oscSend_control_set_current_program(const uint pluginId, const int32_t index) const noexcept;
-    // void oscSend_control_set_current_midi_program(const uint pluginId, const int32_t index) const noexcept;
-    void oscSend_control_set_program_name(const uint pluginId, const uint32_t index, const char* const name) const noexcept;
-    void oscSend_control_set_midi_program_data(const uint pluginId, const uint32_t index, const uint32_t bank, const uint32_t program, const char* const name) const noexcept;
-    // void oscSend_control_note_on(const uint pluginId, const uint8_t channel, const uint8_t note, const uint8_t velo) const noexcept;
-    // void oscSend_control_note_off(const uint pluginId, const uint8_t channel, const uint8_t note) const noexcept;
-    void oscSend_control_set_peaks(const uint pluginId) const noexcept;
-    // void oscSend_control_exit() const noexcept;
 #endif
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaEngine)

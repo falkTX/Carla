@@ -81,20 +81,37 @@ public:
 
     bool isControlRegistered() const noexcept
     {
-        return (fControlData.target != nullptr);
+        return (fControlDataTCP.target != nullptr);
     }
 
-    const CarlaOscData* getControlData() const noexcept
-    {
-        return &fControlData;
-    }
+    // -------------------------------------------------------------------
+    // TCP
+
+    void sendCallback(const EngineCallbackOpcode action, const uint pluginId,
+                      const int value1, const int value2, const int value3,
+                      const float valuef, const char* const valueStr) const noexcept;
+    void sendPluginInit(const uint pluginId, const char* const pluginName) const noexcept;
+    void sendPluginInfo(const CarlaPlugin* const plugin) const noexcept;
+    void sendPluginPortCount(const CarlaPlugin* const plugin) const noexcept;
+    void sendPluginParameterInfo(const CarlaPlugin* const plugin, const uint32_t parameterId) const noexcept;
+    void sendPluginInternalParameterValues(const CarlaPlugin* const plugin) const noexcept;
+    void sendRuntimeInfo() const noexcept;
+
+    // -------------------------------------------------------------------
+    // UDP
+
+    void sendParameterValue(const uint pluginId, const uint32_t index, const float value) const noexcept;
+    void sendPeaks(const uint pluginId, const float peaks[4]) const noexcept;
 
     // -------------------------------------------------------------------
 
 private:
     CarlaEngine* const fEngine;
 
-    CarlaOscData fControlData; // for carla-control
+    // for carla-control
+    CarlaOscData fControlDataTCP;
+    CarlaOscData fControlDataUDP;
+
     CarlaString  fName;
     CarlaString  fServerPathTCP;
     CarlaString  fServerPathUDP;
@@ -103,10 +120,11 @@ private:
 
     // -------------------------------------------------------------------
 
-    int handleMessage(const bool isTCP, const char* const path, const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg);
+    int handleMessage(const bool isTCP, const char* const path,
+                      const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg);
 
     int handleMsgRegister(const bool isTCP, const int argc, const lo_arg* const* const argv, const char* const types);
-    int handleMsgUnregister(const int argc, const lo_arg* const* const argv, const char* const types);
+    int handleMsgUnregister(const bool isTCP, const int argc, const lo_arg* const* const argv, const char* const types);
 
     // Internal methods
     int handleMsgSetActive(CARLA_ENGINE_OSC_HANDLE_ARGS);

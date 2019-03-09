@@ -154,34 +154,38 @@ class CarlaControlServer(Server):
     def getFullURL(self):
         return "%scarla-control" % self.get_url()
 
-    @make_method('/carla-control/add_plugin_start', 'is') # FIXME skip name
-    def add_plugin_start_callback(self, path, args):
+    @make_method('/carla-control/cb', 'iiiiifs')
+    def carla_cb(self, path, args):
+        print(path, args)
+        self.fReceivedMsgs = True
+        action, pluginId, value1, value2, value3, valuef, valueStr = args
+        self.host._setViaCallback(action, pluginId, value1, value2, value3, valuef, valueStr)
+        engineCallback(self.host, action, pluginId, value1, value2, value3, valuef, valueStr)
+
+    @make_method('/carla-control/init', 'is') # FIXME set name in add method
+    def carla_init(self, path, args):
         print(path, args)
         self.fReceivedMsgs = True
         pluginId, pluginName = args
         self.host._add(pluginId)
         self.host._set_pluginInfoUpdate(pluginId, {'name': pluginName})
 
-    #@make_method('/carla-control/add_plugin_end', 'i') # FIXME skip name
-    #def add_plugin_end_callback(self, path, args):
-        #print(path, args)
-        #self.fReceivedMsgs = True
-        #pluginId, = args
-        #self.host.PluginAddedCallback.emit(pluginId, "") #self.fPluginsInfo[pluginId].pluginInfo['name'])
-
-    #@make_method('/carla-control/remove_plugin', 'i')
-    #def remove_plugin_callback(self, path, args):
-        #print(path, args)
-        #self.fReceivedMsgs = True
-        #pluginId, = args
-        #self.host.PluginRemovedCallback.emit(pluginId)
-
-    @make_method('/carla-control/set_plugin_info1', 'iiiih')
-    def set_plugin_info1_callback(self, path, args):
+    @make_method('/carla-control/ports', 'iiiiiiii')
+    def carla_ports(self, path, args):
         print(path, args)
         self.fReceivedMsgs = True
-        pluginId, type_, category, hints, uniqueId = args # , optsAvail, optsEnabled
+        pluginId, audioIns, audioOuts, midiIns, midiOuts, paramIns, paramOuts, paramTotal = args
+        self.host._set_audioCountInfo(pluginId, {'ins': audioIns, 'outs': audioOuts})
+        self.host._set_midiCountInfo(pluginId, {'ins': midiOuts, 'outs': midiOuts})
+        self.host._set_parameterCountInfo(pluginId, paramTotal, {'ins': paramIns, 'outs': paramOuts})
+
+    @make_method('/carla-control/info', 'iiiihssss')
+    def carla_info(self, path, args):
+        print(path, args)
+        self.fReceivedMsgs = True
+        pluginId, type_, category, hints, uniqueId, realName, label, maker, copyright = args
         optsAvail = optsEnabled = 0x0 # FIXME
+        filename = name = iconName = "" # FIXME
 
         hints &= ~PLUGIN_HAS_CUSTOM_UI
 
@@ -191,19 +195,7 @@ class CarlaControlServer(Server):
             'hints': hints,
             'optionsAvailable': optsAvail,
             'optionsEnabled': optsEnabled,
-            'uniqueId': uniqueId
-        }
-
-        self.host._set_pluginInfoUpdate(pluginId, pinfo)
-
-    @make_method('/carla-control/set_plugin_info2', 'issss')
-    def set_plugin_info2_callback(self, path, args):
-        print(path, args)
-        self.fReceivedMsgs = True
-        pluginId, realName, label, maker, copyright = args # , filename, name, iconName
-        filename = name = iconName = "" # FIXME
-
-        pinfo = {
+            'uniqueId': uniqueId,
             'filename': filename,
             #'name':  name, # FIXME
             'label': label,
@@ -215,47 +207,14 @@ class CarlaControlServer(Server):
         self.host._set_pluginInfoUpdate(pluginId, pinfo)
         self.host._set_pluginRealName(pluginId, realName)
 
-    @make_method('/carla-control/set_audio_count', 'iii')
-    def set_audio_count_callback(self, path, args):
+    @make_method('/carla-control/param', 'iiiiiissfffffff')
+    def carla_param(self, path, args):
         print(path, args)
         self.fReceivedMsgs = True
-        pluginId, ins, outs = args
-        self.host._set_audioCountInfo(pluginId, {'ins': ins, 'outs': outs})
-
-    @make_method('/carla-control/set_midi_count', 'iii')
-    def set_midi_count_callback(self, path, args):
-        print(path, args)
-        self.fReceivedMsgs = True
-        pluginId, ins, outs = args
-        self.host._set_midiCountInfo(pluginId, {'ins': ins, 'outs': outs})
-
-    @make_method('/carla-control/set_parameter_count', 'iii') # FIXME
-    def set_parameter_count_callback(self, path, args):
-        print(path, args)
-        self.fReceivedMsgs = True
-        pluginId, ins, outs = args # , count
-        count = ins + outs
-        self.host._set_parameterCountInfo(pluginId, count, {'ins': ins, 'outs': outs})
-
-    @make_method('/carla-control/set_program_count', 'ii')
-    def set_program_count_callback(self, path, args):
-        print(path, args)
-        self.fReceivedMsgs = True
-        pluginId, count = args
-        self.host._set_programCount(pluginId, count)
-
-    @make_method('/carla-control/set_midi_program_count', 'ii')
-    def set_midi_program_count_callback(self, path, args):
-        print(path, args)
-        self.fReceivedMsgs = True
-        pluginId, count = args
-        self.host._set_midiProgramCount(pluginId, count)
-
-    @make_method('/carla-control/set_parameter_data', 'iiiiss')
-    def set_parameter_data_callback(self, path, args):
-        print(path, args)
-        self.fReceivedMsgs = True
-        pluginId, paramId, type_, hints, name, unit = args
+        (
+          pluginId, paramId, type_, hints, midiChan, midiCC, name, unit,
+          def_, min_, max_, step, stepSmall, stepLarge, value
+        ) = args
 
         hints &= ~(PARAMETER_USES_SCALEPOINTS | PARAMETER_USES_CUSTOM_TEXT)
 
@@ -272,89 +231,49 @@ class CarlaControlServer(Server):
             'hints': hints,
             'index': paramId,
             'rindex': -1,
-            'midiCC': -1,
-            'midiChannel': 0
+            'midiCC': midiCC,
+            'midiChannel': midiChan,
         }
         self.host._set_parameterData(pluginId, paramId, paramData)
-
-    @make_method('/carla-control/set_parameter_ranges1', 'iifff')
-    def set_parameter_ranges1_callback(self, path, args):
-        print(path, args)
-        self.fReceivedMsgs = True
-        pluginId, paramId, def_, min_, max_ = args
 
         paramRanges = {
             'def': def_,
             'min': min_,
-            'max': max_
-        }
-
-        self.host._set_parameterRangesUpdate(pluginId, paramId, paramRanges)
-
-    @make_method('/carla-control/set_parameter_ranges2', 'iifff')
-    def set_parameter_ranges2_callback(self, path, args):
-        print(path, args)
-        self.fReceivedMsgs = True
-        pluginId, paramId, step, stepSmall, stepLarge = args
-
-        paramRanges = {
+            'max': max_,
             'step': step,
             'stepSmall': stepSmall,
-            'stepLarge': stepLarge
+            'stepLarge': stepLarge,
         }
-
         self.host._set_parameterRangesUpdate(pluginId, paramId, paramRanges)
 
-    #@make_method('/carla-control/set_parameter_midi_cc', 'iii')
-    #def set_parameter_midi_cc_callback(self, path, args):
-        #print(path, args)
-        #self.fReceivedMsgs = True
-        #pluginId, paramId, cc = args
-        #self.host._set_parameterMidiCC(pluginId, paramId, cc)
-        #self.host.ParameterMidiCcChangedCallback.emit(pluginId, paramId, cc)
+        self.host._set_parameterValue(pluginId, paramId, value)
 
-    #@make_method('/carla-control/set_parameter_midi_channel', 'iii')
-    #def set_parameter_midi_channel_callback(self, path, args):
-        #print(path, args)
-        #self.fReceivedMsgs = True
-        #pluginId, paramId, channel = args
-        #self.host._set_parameterMidiChannel(pluginId, paramId, channel)
-        #self.host.ParameterMidiChannelChangedCallback.emit(pluginId, paramId, channel)
+    @make_method('/carla-control/iparams', 'ifffffff')
+    def carla_iparams(self, path, args):
+        print(path, args)
+        self.fReceivedMsgs = True
+        pluginId, active, drywet, volume, balLeft, balRight, pan, ctrlChan = args
+        self.host._set_internalValue(pluginId, PARAMETER_ACTIVE, active)
+        self.host._set_internalValue(pluginId, PARAMETER_DRYWET, drywet)
+        self.host._set_internalValue(pluginId, PARAMETER_VOLUME, volume)
+        self.host._set_internalValue(pluginId, PARAMETER_BALANCE_LEFT, balLeft)
+        self.host._set_internalValue(pluginId, PARAMETER_BALANCE_RIGHT, balRight)
+        self.host._set_internalValue(pluginId, PARAMETER_PANNING, pan)
+        self.host._set_internalValue(pluginId, PARAMETER_CTRL_CHANNEL, ctrlChan)
 
-    @make_method('/carla-control/set_output_parameter_value', 'iif')
-    def set_parameter_value_callback(self, path, args):
-        pluginId, paramId, paramValue = args
+    @make_method('/carla-control/set_program_count', 'ii')
+    def set_program_count_callback(self, path, args):
+        print(path, args)
+        self.fReceivedMsgs = True
+        pluginId, count = args
+        self.host._set_programCount(pluginId, count)
 
-        if paramId < 0:
-            self.host._set_internalValue(pluginId, paramId, paramValue)
-        else:
-            self.host._set_parameterValue(pluginId, paramId, paramValue)
-
-        self.host.ParameterValueChangedCallback.emit(pluginId, paramId, paramValue)
-
-    #@make_method('/carla-control/set_default_value', 'iif')
-    #def set_default_value_callback(self, path, args):
-        #print(path, args)
-        #self.fReceivedMsgs = True
-        #pluginId, paramId, paramValue = args
-        #self.host._set_parameterDefault(pluginId, paramId, paramValue)
-        #self.host.ParameterDefaultChangedCallback.emit(pluginId, paramId, paramValue)
-
-    #@make_method('/carla-control/set_current_program', 'ii')
-    #def set_current_program_callback(self, path, args):
-        #print(path, args)
-        #self.fReceivedMsgs = True
-        #pluginId, current = args
-        #self.host._set_currentProgram(pluginId, current)
-        #self.host.ProgramChangedCallback.emit(pluginId, current)
-
-    #@make_method('/carla-control/set_current_midi_program', 'ii')
-    #def set_current_midi_program_callback(self, path, args):
-        #print(path, args)
-        #self.fReceivedMsgs = True
-        #pluginId, current = args
-        #self.host._set_currentMidiProgram(pluginId, current)
-        #self.host.MidiProgramChangedCallback.emit(pluginId, current)
+    @make_method('/carla-control/set_midi_program_count', 'ii')
+    def set_midi_program_count_callback(self, path, args):
+        print(path, args)
+        self.fReceivedMsgs = True
+        pluginId, count = args
+        self.host._set_midiProgramCount(pluginId, count)
 
     @make_method('/carla-control/set_program_name', 'iis')
     def set_program_name_callback(self, path, args):
@@ -371,30 +290,27 @@ class CarlaControlServer(Server):
         self.host._set_midiProgramData(pluginId, midiProgId, {'bank': bank, 'program': program, 'name': name})
 
     #@make_method('/carla-control/note_on', 'iiii')
-    #def set_note_on_callback(self, path, args):
-        #print(path, args)
-        #self.fReceivedMsgs = True
-        #pluginId, channel, note, velocity = args
-        #self.host.NoteOnCallback.emit(pluginId, channel, note, velocity)
 
-    #@make_method('/carla-control/note_off', 'iii')
-    #def set_note_off_callback(self, path, args):
-        #print(path, args)
-        #self.fReceivedMsgs = True
-        #pluginId, channel, note = args
-        #self.host.NoteOffCallback.emit(pluginId, channel, note)
+    @make_method('/carla-control/runtime', 'fiihiiif')
+    def carla_runtime(self, path, args):
+        self.fReceivedMsgs = True
+        load, xruns, playing, frame, bar, beat, tick, bpm = args
+        self.host._set_runtime_info(load, xruns)
+        self.host._set_transport(bool(playing), frame, bar, beat, tick, bpm)
 
-    @make_method('/carla-control/set_peaks', 'iffff')
-    def set_peaks_callback(self, path, args):
+    @make_method('/carla-control/param_fixme', 'iif')
+    def carla_param_fixme(self, path, args):
+        self.fReceivedMsgs = True
+        pluginId, paramId, paramValue = args
+        self.host._set_parameterValue(pluginId, paramId, paramValue)
+
+    @make_method('/carla-control/peaks', 'iffff')
+    def carla_peaks(self, path, args):
         self.fReceivedMsgs = True
         pluginId, in1, in2, out1, out2 = args
         self.host._set_peaks(pluginId, in1, in2, out1, out2)
 
-    @make_method('/carla-control/exit', '')
-    def set_exit_callback(self, path, args):
-        print(path, args)
-        self.fReceivedMsgs = True
-        self.host.QuitCallback.emit()
+    #@make_method('/carla-control/note_on', 'iiii')
 
     @make_method('/carla-control/exit-error', 's')
     def set_exit_error_callback(self, path, args):
@@ -404,13 +320,6 @@ class CarlaControlServer(Server):
         self.host.lo_target = None
         self.host.QuitCallback.emit()
         self.host.ErrorCallback.emit(error)
-
-    @make_method('/carla-control/callback', 'iiiiifs')
-    def set_callback_callback(self, path, args):
-        print(path, args)
-        self.fReceivedMsgs = True
-        action, pluginId, value1, value2, value3, valuef, valueStr = args
-        engineCallback(self.host, action, pluginId, value1, value2, value3, valuef, valueStr)
 
     @make_method(None, None)
     def fallback(self, path, args):

@@ -3462,4 +3462,23 @@ class CarlaHostPlugin(CarlaHostMeta):
         self.fPluginsInfo[pluginIdA] = self.fPluginsInfo[pluginIdB]
         self.fPluginsInfo[pluginIdB] = tmp
 
+    def _setViaCallback(self, action, pluginId, value1, value2, value3, valuef, valueStr):
+        if action == ENGINE_CALLBACK_PLUGIN_RENAMED:
+            self._set_pluginName(pluginId, valueStr)
+        elif action == ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
+            if value1 < 0:
+                self._set_internalValue(pluginId, value1, valuef)
+            else:
+                self._set_parameterValue(pluginId, value1, valuef)
+        elif action == ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
+            self._set_parameterDefault(pluginId, value1, valuef)
+        elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
+            self._set_parameterMidiCC(pluginId, value1, value2)
+        elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
+            self._set_parameterMidiChannel(pluginId, value1, value2)
+        elif action == ENGINE_CALLBACK_PROGRAM_CHANGED:
+            self._set_currentProgram(pluginId, value1)
+        elif action == ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED:
+            self._set_currentMidiProgram(pluginId, value1)
+
 # ------------------------------------------------------------------------------------------------------------

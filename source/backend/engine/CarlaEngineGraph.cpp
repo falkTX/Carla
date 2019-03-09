@@ -1377,7 +1377,7 @@ public:
             for (uint32_t i=0, count=jmin(fPlugin->getAudioOutCount(), numChanu); i<count; ++i)
                 outPeaks[i] = carla_findMaxNormalizedFloat(audioBuffers[i], numSamples);
 
-            kEngine->setPluginPeaks(fPlugin->getId(), inPeaks, outPeaks);
+            kEngine->setPluginPeaksRT(fPlugin->getId(), inPeaks, outPeaks);
         }
         else
         {

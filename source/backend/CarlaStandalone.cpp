@@ -1729,7 +1729,7 @@ float carla_get_internal_parameter_value(uint pluginId, int32_t parameterId)
 
 // --------------------------------------------------------------------------------------------------------------------
 
-float* carla_get_peak_values(uint pluginId)
+const float* carla_get_peak_values(uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, nullptr);
 

@@ -1235,9 +1235,9 @@ EngineTimeInfo CarlaEngine::getTimeInfo() const noexcept
 // -----------------------------------------------------------------------
 // Information (peaks)
 
-float* CarlaEngine::getPeaks(const uint pluginId) const noexcept
+const float* CarlaEngine::getPeaks(const uint pluginId) const noexcept
 {
-    carla_zeroFloats(pData->peaks, 4);
+    static const float kFallback[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
     if (pluginId == MAIN_CARLA_PLUGIN_ID)
     {
@@ -1249,11 +1249,15 @@ float* CarlaEngine::getPeaks(const uint pluginId) const noexcept
             pData->peaks[2] = pData->plugins[count-1].peaks[2];
             pData->peaks[3] = pData->plugins[count-1].peaks[3];
         }
+        else
+        {
+            carla_zeroFloats(pData->peaks, 4);
+        }
 
         return pData->peaks;
     }
 
-    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount, pData->peaks);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount, kFallback);
 
     return pData->plugins[pluginId].peaks;
 }
@@ -1332,13 +1336,66 @@ void CarlaEngine::callback(const bool sendHost, const bool sendOsc,
         {
             switch (action)
             {
+            case ENGINE_CALLBACK_RELOAD_INFO:
+            {
+                CarlaPlugin* const plugin = pData->plugins[pluginId].plugin;
+                CARLA_SAFE_ASSERT_BREAK(plugin != nullptr);
+
+                pData->osc.sendPluginInfo(plugin);
+                break;
+            }
+
+            case ENGINE_CALLBACK_RELOAD_PARAMETERS:
+            {
+                CarlaPlugin* const plugin = pData->plugins[pluginId].plugin;
+                CARLA_SAFE_ASSERT_BREAK(plugin != nullptr);
+
+                pData->osc.sendPluginPortCount(plugin);
+
+                if (const uint32_t count = plugin->getParameterCount())
+                {
+                    for (uint32_t i=0; i<count; ++i)
+                      pData->osc.sendPluginParameterInfo(plugin, i);
+                }
+                break;
+            }
+
+            case ENGINE_CALLBACK_RELOAD_PROGRAMS:
+            {
+                CarlaPlugin* const plugin = pData->plugins[pluginId].plugin;
+                CARLA_SAFE_ASSERT_BREAK(plugin != nullptr);
+
+#if 0
+                pData->engine->oscSend_control_set_midi_program_count(pData->id, count);
+
+                for (uint32_t i=0; i < count; ++i)
+                    pData->engine->oscSend_control_set_midi_program_data(pData->id, i, pData->midiprog.data[i].bank, pData->midiprog.data[i].program, pData->midiprog.data[i].name);
+
+                pData->engine->oscSend_control_set_program_count(pData->id, newCount);
+
+                for (uint32_t i=0; i < newCount; ++i)
+                    pData->engine->oscSend_control_set_program_name(pData->id, i, pData->prog.names[i]);
+#endif
+                break;
+            }
+
             case ENGINE_CALLBACK_PLUGIN_ADDED:
             case ENGINE_CALLBACK_RELOAD_ALL:
             {
                 CarlaPlugin* const plugin = pData->plugins[pluginId].plugin;
                 CARLA_SAFE_ASSERT_BREAK(plugin != nullptr);
 
-                plugin->registerToOscClient();
+                pData->osc.sendPluginInit(pluginId, plugin->getName());
+                pData->osc.sendPluginInfo(plugin);
+                pData->osc.sendPluginPortCount(plugin);
+
+                if (const uint32_t count = plugin->getParameterCount())
+                {
+                    for (uint32_t i=0; i<count; ++i)
+                      pData->osc.sendPluginParameterInfo(plugin, i);
+                }
+
+                pData->osc.sendPluginInternalParameterValues(plugin);
                 break;
             }
 
@@ -1349,7 +1406,7 @@ void CarlaEngine::callback(const bool sendHost, const bool sendOsc,
                 break;
             }
 
-            oscSend_control_callback(action, pluginId, value1, value2, value3, valuef, valueStr);
+            pData->osc.sendCallback(action, pluginId, value1, value2, value3, valuef, valueStr);
         }
 #endif
     }
@@ -1772,13 +1829,6 @@ bool CarlaEngine::isOscControlRegistered() const noexcept
 # endif
 }
 
-void CarlaEngine::idleOsc() const noexcept
-{
-# ifdef HAVE_LIBLO
-    pData->osc.idle();
-# endif
-}
-
 const char* CarlaEngine::getOscServerPathTCP() const noexcept
 {
 # ifdef HAVE_LIBLO
@@ -1888,7 +1938,7 @@ void CarlaEngine::offlineModeChanged(const bool isOfflineNow)
     }
 }
 
-void CarlaEngine::setPluginPeaks(const uint pluginId, float const inPeaks[2], float const outPeaks[2]) noexcept
+void CarlaEngine::setPluginPeaksRT(const uint pluginId, float const inPeaks[2], float const outPeaks[2]) noexcept
 {
     EnginePluginData& pluginData(pData->plugins[pluginId]);
 

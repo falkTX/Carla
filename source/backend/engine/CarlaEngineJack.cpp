@@ -2544,7 +2544,7 @@ private:
             }
         }
 
-        setPluginPeaks(plugin->getId(), inPeaks, outPeaks);
+        setPluginPeaksRT(plugin->getId(), inPeaks, outPeaks);
     }
 
 #ifndef BUILD_BRIDGE

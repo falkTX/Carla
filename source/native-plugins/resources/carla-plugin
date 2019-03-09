@@ -198,24 +198,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
             valuef   = float(self.readlineblock())
             valueStr = self.readlineblock().replace("\r", "\n")
 
-            if action == ENGINE_CALLBACK_PLUGIN_RENAMED:
-                self.host._set_pluginName(pluginId, valueStr)
-            elif action == ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
-                if value1 < 0:
-                    self.host._set_internalValue(pluginId, value1, valuef)
-                else:
-                    self.host._set_parameterValue(pluginId, value1, valuef)
-            elif action == ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
-                self.host._set_parameterDefault(pluginId, value1, valuef)
-            elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
-                self.host._set_parameterMidiCC(pluginId, value1, value2)
-            elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
-                self.host._set_parameterMidiChannel(pluginId, value1, value2)
-            elif action == ENGINE_CALLBACK_PROGRAM_CHANGED:
-                self.host._set_currentProgram(pluginId, value1)
-            elif action == ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED:
-                self.host._set_currentMidiProgram(pluginId, value1)
-
+            self.host._setViaCallback(action, pluginId, value1, value2, value3, valuef, valueStr)
             engineCallback(self.host, action, pluginId, value1, value2, value3, valuef, valueStr)
 
         elif msg.startswith("ENGINE_OPTION_"):

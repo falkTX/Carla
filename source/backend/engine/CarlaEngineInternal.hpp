@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -214,7 +214,6 @@ struct CarlaEngine::ProtectedData {
 
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     CarlaEngineOsc osc;
-    const CarlaOscData* oscData;
 #endif
 
     EngineCallbackFunc callback;

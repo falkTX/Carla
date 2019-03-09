@@ -369,7 +369,6 @@ CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
     : thread(engine),
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
       osc(engine),
-      oscData(nullptr),
 #endif
       callback(nullptr),
       callbackPtr(nullptr),
@@ -426,9 +425,6 @@ CarlaEngine::ProtectedData::~ProtectedData() noexcept
 bool CarlaEngine::ProtectedData::init(const char* const clientName)
 {
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(name.isEmpty(), "Invalid engine internal data (err #1)");
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
-    CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(oscData == nullptr, "Invalid engine internal data (err #2)");
-#endif
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(events.in  == nullptr, "Invalid engine internal data (err #4)");
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(events.out == nullptr, "Invalid engine internal data (err #5)");
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(clientName != nullptr && clientName[0] != '\0', "Invalid client name");
@@ -480,10 +476,7 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
 
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     if (options.oscEnabled)
-    {
         osc.init(clientName, options.oscPortTCP, options.oscPortUDP);
-        oscData = osc.getControlData();
-    }
 #endif
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -514,7 +507,6 @@ void CarlaEngine::ProtectedData::close()
 
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     osc.close();
-    oscData = nullptr;
 #endif
 
     aboutToClose    = false;

@@ -28,6 +28,7 @@ OBJS = \
 ifeq ($(HAVE_LIBLO),true)
 OBJS += \
 	$(OBJDIR)/CarlaEngineOsc.cpp.o \
+	$(OBJDIR)/CarlaEngineOscHandlers.cpp.o \
 	$(OBJDIR)/CarlaEngineOscSend.cpp.o
 endif
 

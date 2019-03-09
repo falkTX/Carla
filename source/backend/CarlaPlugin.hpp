@@ -725,19 +725,15 @@ public:
     // -------------------------------------------------------------------
     // OSC stuff
 
-#ifndef BUILD_BRIDGE
-    /*!
-     * Register this plugin to the engine's OSC client (controller or bridge).
-     * TODO
-     */
-    void registerToOscClient() noexcept;
-#endif
-
     /*!
      * Handle an OSC message.
      * FIXME
      */
-    virtual void handleOscMessage(const char* const method, const int argc, const void* const argv, const char* const types, const lo_message msg);
+    virtual void handleOscMessage(const char* const method,
+                                  const int argc,
+                                  const void* const argv,
+                                  const char* const types,
+                                  const lo_message msg);
 
     // -------------------------------------------------------------------
     // MIDI events
@@ -747,7 +743,8 @@ public:
      * A note with 0 velocity means note-off.
      * @note Non-RT call
      */
-    void sendMidiSingleNote(const uint8_t channel, const uint8_t note, const uint8_t velo, const bool sendGui, const bool sendOsc, const bool sendCallback);
+    void sendMidiSingleNote(const uint8_t channel, const uint8_t note, const uint8_t velo,
+                            const bool sendGui, const bool sendOsc, const bool sendCallback);
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
@@ -755,7 +752,7 @@ public:
      * This doesn't send the actual MIDI All-Notes-Off event, but 128 note-offs instead (IFF ctrlChannel is valid).
      * @note RT call
      */
-    void sendMidiAllNotesOffToCallback();
+    void postponeRtAllNotesOff();
 #endif
 
     // -------------------------------------------------------------------

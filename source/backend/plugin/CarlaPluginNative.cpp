@@ -1337,17 +1337,6 @@ public:
             }
         }
 
-#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
-        // Update OSC Names
-        if (pData->engine->isOscControlRegistered() && pData->id < pData->engine->getCurrentPluginCount())
-        {
-            pData->engine->oscSend_control_set_midi_program_count(pData->id, count);
-
-            for (i=0; i < count; ++i)
-                pData->engine->oscSend_control_set_midi_program_data(pData->id, i, pData->midiprog.data[i].bank, pData->midiprog.data[i].program, pData->midiprog.data[i].name);
-        }
-#endif
-
         if (doInit)
         {
             if (count > 0)
@@ -1901,7 +1890,7 @@ public:
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
-                                sendMidiAllNotesOffToCallback();
+                                postponeRtAllNotesOff();
                             }
 #endif
 

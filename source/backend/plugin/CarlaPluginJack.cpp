@@ -1042,7 +1042,7 @@ public:
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
-                                sendMidiAllNotesOffToCallback();
+                                postponeRtAllNotesOff();
                             }
 #endif
 
