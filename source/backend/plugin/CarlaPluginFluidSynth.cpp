@@ -522,7 +522,8 @@ public:
                     if (pData->ctrlChannel == static_cast<int32_t>(channel))
                     {
                         pData->midiprog.current = index;
-                        pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED,
+                        pData->engine->callback(true, true,
+                                                ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED,
                                                 pData->id,
                                                 index,
                                                 0, 0, 0.0f, nullptr);
@@ -1076,7 +1077,7 @@ public:
         }
         else
         {
-            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(true, true, ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0, 0.0f, nullptr);
         }
     }
 

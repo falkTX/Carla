@@ -99,7 +99,7 @@ void CarlaEngineThread::run() noexcept
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
                     // Update OSC engine client
                     if (oscRegisted)
-                        kEngine->oscSend_control_set_parameter_value(i, static_cast<int32_t>(j), value);
+                        kEngine->oscSend_control_set_output_parameter_value(i, static_cast<int32_t>(j), value);
 #endif
                     // Update UI
                     if (updateUI)

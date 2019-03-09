@@ -28,6 +28,26 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 
 #ifndef BUILD_BRIDGE
+void CarlaEngine::oscSend_control_callback(const EngineCallbackOpcode action, const uint pluginId,
+                                           const int value1, const int value2, const int value3,
+                                           const float valuef, const char* const valueStr) const noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData->path != nullptr && pData->oscData->path[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData->target != nullptr,);
+    carla_debug("CarlaEngine::oscSend_control_callback(%i:%s, %i, %i, %i, %i, %f, \"%s\")",
+                action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valuef, valueStr);
+
+    static const char* const kFakeNullString = "(null)";
+
+    char targetPath[std::strlen(pData->oscData->path)+10];
+    std::strcpy(targetPath, pData->oscData->path);
+    std::strcat(targetPath, "/callback");
+    try_lo_send(pData->oscData->target, targetPath, "iiiiifs",
+                action, pluginId, value1, value2, value3, static_cast<double>(valuef),
+                valueStr != nullptr ? valueStr : kFakeNullString);
+}
+
 void CarlaEngine::oscSend_control_add_plugin_start(const uint pluginId, const char* const pluginName) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
@@ -43,6 +63,7 @@ void CarlaEngine::oscSend_control_add_plugin_start(const uint pluginId, const ch
     try_lo_send(pData->oscData->target, targetPath, "is", static_cast<int32_t>(pluginId), pluginName);
 }
 
+#if 0
 void CarlaEngine::oscSend_control_add_plugin_end(const uint pluginId) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
@@ -70,6 +91,7 @@ void CarlaEngine::oscSend_control_remove_plugin(const uint pluginId) const noexc
     std::strcat(targetPath, "/remove_plugin");
     try_lo_send(pData->oscData->target, targetPath, "i", static_cast<int32_t>(pluginId));
 }
+#endif
 
 void CarlaEngine::oscSend_control_set_plugin_info1(const uint pluginId, const PluginType type, const PluginCategory category, const uint hints, const int64_t uniqueId) const noexcept
 {
@@ -239,6 +261,7 @@ void CarlaEngine::oscSend_control_set_parameter_ranges2(const uint pluginId, con
                 static_cast<double>(stepLarge));
 }
 
+#if 0
 void CarlaEngine::oscSend_control_set_parameter_midi_cc(const uint pluginId, const uint32_t index, const int16_t cc) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
@@ -270,8 +293,9 @@ void CarlaEngine::oscSend_control_set_parameter_midi_channel(const uint pluginId
     std::strcat(targetPath, "/set_parameter_midi_channel");
     try_lo_send(pData->oscData->target, targetPath, "iii", static_cast<int32_t>(pluginId), static_cast<int32_t>(index), static_cast<int32_t>(channel));
 }
+#endif
 
-void CarlaEngine::oscSend_control_set_parameter_value(const uint pluginId, const int32_t index, const float value) const noexcept
+void CarlaEngine::oscSend_control_set_output_parameter_value(const uint pluginId, const int32_t index, const float value) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->path != nullptr && pData->oscData->path[0] != '\0',);
@@ -279,18 +303,19 @@ void CarlaEngine::oscSend_control_set_parameter_value(const uint pluginId, const
     CARLA_SAFE_ASSERT_RETURN(pluginId <= pData->curPluginCount,);
     CARLA_SAFE_ASSERT_RETURN(index < 50,);
     CARLA_SAFE_ASSERT_RETURN(index != PARAMETER_NULL,);
-    carla_debug("CarlaEngine::oscSend_control_set_parameter_value(%i, %i:%s, %f)", pluginId, index,
+    carla_debug("CarlaEngine::oscSend_control_set_output_parameter_value(%i, %i:%s, %f)", pluginId, index,
                 (index < 0) ? InternalParameterIndex2Str(static_cast<InternalParameterIndex>(index)) : "(none)", value);
 
     char targetPath[std::strlen(pData->oscData->path)+21];
     std::strcpy(targetPath, pData->oscData->path);
-    std::strcat(targetPath, "/set_parameter_value");
+    std::strcat(targetPath, "/set_output_parameter_value");
     try_lo_send(pData->oscData->target, targetPath, "iif",
                 static_cast<int32_t>(pluginId),
                 index,
                 static_cast<double>(value));
 }
 
+#if 0
 void CarlaEngine::oscSend_control_set_default_value(const uint pluginId, const uint32_t index, const float value) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
@@ -338,6 +363,7 @@ void CarlaEngine::oscSend_control_set_current_midi_program(const uint pluginId, 
     std::strcat(targetPath, "/set_current_midi_program");
     try_lo_send(pData->oscData->target, targetPath, "ii", static_cast<int32_t>(pluginId), index);
 }
+#endif
 
 void CarlaEngine::oscSend_control_set_program_name(const uint pluginId, const uint32_t index, const char* const name) const noexcept
 {
@@ -371,6 +397,7 @@ void CarlaEngine::oscSend_control_set_midi_program_data(const uint pluginId, con
     try_lo_send(pData->oscData->target, targetPath, "iiiis", static_cast<int32_t>(pluginId), static_cast<int32_t>(index), static_cast<int32_t>(bank), static_cast<int32_t>(program), name);
 }
 
+#if 0
 void CarlaEngine::oscSend_control_note_on(const uint pluginId, const uint8_t channel, const uint8_t note, const uint8_t velo) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
@@ -403,6 +430,7 @@ void CarlaEngine::oscSend_control_note_off(const uint pluginId, const uint8_t ch
     std::strcat(targetPath, "/note_off");
     try_lo_send(pData->oscData->target, targetPath, "iii", static_cast<int32_t>(pluginId), static_cast<int32_t>(channel), static_cast<int32_t>(note));
 }
+#endif
 
 void CarlaEngine::oscSend_control_set_peaks(const uint pluginId) const noexcept
 {
@@ -424,6 +452,7 @@ void CarlaEngine::oscSend_control_set_peaks(const uint pluginId) const noexcept
                 static_cast<double>(epData.peaks[3]));
 }
 
+#if 0
 void CarlaEngine::oscSend_control_exit() const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
@@ -436,6 +465,7 @@ void CarlaEngine::oscSend_control_exit() const noexcept
     std::strcat(targetPath, "/exit");
     try_lo_send(pData->oscData->target, targetPath, "");
 }
+#endif
 #endif // BUILD_BRIDGE
 
 // -----------------------------------------------------------------------

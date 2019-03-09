@@ -227,7 +227,8 @@ public:
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
             refreshExternalGraphPorts<PatchbayGraph>(pData->graph.getPatchbayGraph(), false);
 
-        callback(ENGINE_CALLBACK_ENGINE_STARTED,
+        callback(true, true,
+                 ENGINE_CALLBACK_ENGINE_STARTED,
                  0,
                  pData->options.processMode,
                  pData->options.transportMode,
@@ -438,7 +439,8 @@ public:
             std::snprintf(strBuf, STR_MAX-1, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
             strBuf[STR_MAX-1] = '\0';
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
+            callback(true, true,
+                     ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
                      connectionToId.id,
                      0, 0, 0, 0.0f,
                      strBuf);
@@ -462,7 +464,8 @@ public:
             std::snprintf(strBuf, STR_MAX-1, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
             strBuf[STR_MAX-1] = '\0';
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
+            callback(true, true,
+                     ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
                      connectionToId.id,
                      0, 0, 0, 0.0f,
                      strBuf);
@@ -622,7 +625,7 @@ protected:
 
     void audioDeviceError(const juce::String& errorMessage) override
     {
-        callback(ENGINE_CALLBACK_ERROR, 0, 0, 0, 0, 0.0f, errorMessage.toRawUTF8());
+        callback(true, true, ENGINE_CALLBACK_ERROR, 0, 0, 0, 0, 0.0f, errorMessage.toRawUTF8());
     }
 
     // -------------------------------------------------------------------

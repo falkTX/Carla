@@ -398,10 +398,23 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP, const int argc, const lo
         for (uint i=0, count=fEngine->getCurrentPluginCount(); i < count; ++i)
         {
             CarlaPlugin* const plugin(fEngine->getPluginUnchecked(i));
+            CARLA_SAFE_ASSERT_CONTINUE(plugin != nullptr);
 
-            if (plugin != nullptr && plugin->isEnabled())
-                plugin->registerToOscClient();
+            fEngine->callback(false, true, ENGINE_CALLBACK_PLUGIN_ADDED, i, 0, 0, 0, 0.0f, plugin->getName());
         }
+
+        const EngineOptions& opts(fEngine->getOptions());
+
+        fEngine->callback(false, true,
+                          ENGINE_CALLBACK_ENGINE_STARTED, 0,
+                          opts.processMode,
+                          opts.transportMode,
+                          static_cast<int>(fEngine->getBufferSize()),
+                          static_cast<float>(fEngine->getSampleRate()),
+                          fEngine->getCurrentDriverName());
+
+        // TODO
+        // fEngine->patchbayRefresh();
     }
 
     lo_address_free(addr);

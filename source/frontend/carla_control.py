@@ -162,19 +162,19 @@ class CarlaControlServer(Server):
         self.host._add(pluginId)
         self.host._set_pluginInfoUpdate(pluginId, {'name': pluginName})
 
-    @make_method('/carla-control/add_plugin_end', 'i') # FIXME skip name
-    def add_plugin_end_callback(self, path, args):
-        print(path, args)
-        self.fReceivedMsgs = True
-        pluginId, = args
-        self.host.PluginAddedCallback.emit(pluginId, "") #self.fPluginsInfo[pluginId].pluginInfo['name'])
+    #@make_method('/carla-control/add_plugin_end', 'i') # FIXME skip name
+    #def add_plugin_end_callback(self, path, args):
+        #print(path, args)
+        #self.fReceivedMsgs = True
+        #pluginId, = args
+        #self.host.PluginAddedCallback.emit(pluginId, "") #self.fPluginsInfo[pluginId].pluginInfo['name'])
 
-    @make_method('/carla-control/remove_plugin', 'i')
-    def remove_plugin_callback(self, path, args):
-        print(path, args)
-        self.fReceivedMsgs = True
-        pluginId, = args
-        self.host.PluginRemovedCallback.emit(pluginId)
+    #@make_method('/carla-control/remove_plugin', 'i')
+    #def remove_plugin_callback(self, path, args):
+        #print(path, args)
+        #self.fReceivedMsgs = True
+        #pluginId, = args
+        #self.host.PluginRemovedCallback.emit(pluginId)
 
     @make_method('/carla-control/set_plugin_info1', 'iiiih')
     def set_plugin_info1_callback(self, path, args):
@@ -305,23 +305,23 @@ class CarlaControlServer(Server):
 
         self.host._set_parameterRangesUpdate(pluginId, paramId, paramRanges)
 
-    @make_method('/carla-control/set_parameter_midi_cc', 'iii')
-    def set_parameter_midi_cc_callback(self, path, args):
-        print(path, args)
-        self.fReceivedMsgs = True
-        pluginId, paramId, cc = args
-        self.host._set_parameterMidiCC(pluginId, paramId, cc)
-        self.host.ParameterMidiCcChangedCallback.emit(pluginId, paramId, cc)
+    #@make_method('/carla-control/set_parameter_midi_cc', 'iii')
+    #def set_parameter_midi_cc_callback(self, path, args):
+        #print(path, args)
+        #self.fReceivedMsgs = True
+        #pluginId, paramId, cc = args
+        #self.host._set_parameterMidiCC(pluginId, paramId, cc)
+        #self.host.ParameterMidiCcChangedCallback.emit(pluginId, paramId, cc)
 
-    @make_method('/carla-control/set_parameter_midi_channel', 'iii')
-    def set_parameter_midi_channel_callback(self, path, args):
-        print(path, args)
-        self.fReceivedMsgs = True
-        pluginId, paramId, channel = args
-        self.host._set_parameterMidiChannel(pluginId, paramId, channel)
-        self.host.ParameterMidiChannelChangedCallback.emit(pluginId, paramId, channel)
+    #@make_method('/carla-control/set_parameter_midi_channel', 'iii')
+    #def set_parameter_midi_channel_callback(self, path, args):
+        #print(path, args)
+        #self.fReceivedMsgs = True
+        #pluginId, paramId, channel = args
+        #self.host._set_parameterMidiChannel(pluginId, paramId, channel)
+        #self.host.ParameterMidiChannelChangedCallback.emit(pluginId, paramId, channel)
 
-    @make_method('/carla-control/set_parameter_value', 'iif')
+    @make_method('/carla-control/set_output_parameter_value', 'iif')
     def set_parameter_value_callback(self, path, args):
         pluginId, paramId, paramValue = args
 
@@ -332,29 +332,29 @@ class CarlaControlServer(Server):
 
         self.host.ParameterValueChangedCallback.emit(pluginId, paramId, paramValue)
 
-    @make_method('/carla-control/set_default_value', 'iif')
-    def set_default_value_callback(self, path, args):
-        print(path, args)
-        self.fReceivedMsgs = True
-        pluginId, paramId, paramValue = args
-        self.host._set_parameterDefault(pluginId, paramId, paramValue)
-        self.host.ParameterDefaultChangedCallback.emit(pluginId, paramId, paramValue)
+    #@make_method('/carla-control/set_default_value', 'iif')
+    #def set_default_value_callback(self, path, args):
+        #print(path, args)
+        #self.fReceivedMsgs = True
+        #pluginId, paramId, paramValue = args
+        #self.host._set_parameterDefault(pluginId, paramId, paramValue)
+        #self.host.ParameterDefaultChangedCallback.emit(pluginId, paramId, paramValue)
 
-    @make_method('/carla-control/set_current_program', 'ii')
-    def set_current_program_callback(self, path, args):
-        print(path, args)
-        self.fReceivedMsgs = True
-        pluginId, current = args
-        self.host._set_currentProgram(pluginId, current)
-        self.host.ProgramChangedCallback.emit(pluginId, current)
+    #@make_method('/carla-control/set_current_program', 'ii')
+    #def set_current_program_callback(self, path, args):
+        #print(path, args)
+        #self.fReceivedMsgs = True
+        #pluginId, current = args
+        #self.host._set_currentProgram(pluginId, current)
+        #self.host.ProgramChangedCallback.emit(pluginId, current)
 
-    @make_method('/carla-control/set_current_midi_program', 'ii')
-    def set_current_midi_program_callback(self, path, args):
-        print(path, args)
-        self.fReceivedMsgs = True
-        pluginId, current = args
-        self.host._set_currentMidiProgram(pluginId, current)
-        self.host.MidiProgramChangedCallback.emit(pluginId, current)
+    #@make_method('/carla-control/set_current_midi_program', 'ii')
+    #def set_current_midi_program_callback(self, path, args):
+        #print(path, args)
+        #self.fReceivedMsgs = True
+        #pluginId, current = args
+        #self.host._set_currentMidiProgram(pluginId, current)
+        #self.host.MidiProgramChangedCallback.emit(pluginId, current)
 
     @make_method('/carla-control/set_program_name', 'iis')
     def set_program_name_callback(self, path, args):
@@ -370,19 +370,19 @@ class CarlaControlServer(Server):
         pluginId, midiProgId, bank, program, name = args
         self.host._set_midiProgramData(pluginId, midiProgId, {'bank': bank, 'program': program, 'name': name})
 
-    @make_method('/carla-control/note_on', 'iiii')
-    def set_note_on_callback(self, path, args):
-        print(path, args)
-        self.fReceivedMsgs = True
-        pluginId, channel, note, velocity = args
-        self.host.NoteOnCallback.emit(pluginId, channel, note, velocity)
+    #@make_method('/carla-control/note_on', 'iiii')
+    #def set_note_on_callback(self, path, args):
+        #print(path, args)
+        #self.fReceivedMsgs = True
+        #pluginId, channel, note, velocity = args
+        #self.host.NoteOnCallback.emit(pluginId, channel, note, velocity)
 
-    @make_method('/carla-control/note_off', 'iii')
-    def set_note_off_callback(self, path, args):
-        print(path, args)
-        self.fReceivedMsgs = True
-        pluginId, channel, note = args
-        self.host.NoteOffCallback.emit(pluginId, channel, note)
+    #@make_method('/carla-control/note_off', 'iii')
+    #def set_note_off_callback(self, path, args):
+        #print(path, args)
+        #self.fReceivedMsgs = True
+        #pluginId, channel, note = args
+        #self.host.NoteOffCallback.emit(pluginId, channel, note)
 
     @make_method('/carla-control/set_peaks', 'iffff')
     def set_peaks_callback(self, path, args):
@@ -405,6 +405,13 @@ class CarlaControlServer(Server):
         self.host.QuitCallback.emit()
         self.host.ErrorCallback.emit(error)
 
+    @make_method('/carla-control/callback', 'iiiiifs')
+    def set_callback_callback(self, path, args):
+        print(path, args)
+        self.fReceivedMsgs = True
+        action, pluginId, value1, value2, value3, valuef, valueStr = args
+        engineCallback(self.host, action, pluginId, value1, value2, value3, valuef, valueStr)
+
     @make_method(None, None)
     def fallback(self, path, args):
         print("ControlServer::fallback(\"%s\") - unknown message, args =" % path, args)
@@ -415,7 +422,7 @@ class CarlaControlServer(Server):
 
 class HostWindowOSC(HostWindow):
     def __init__(self, host, oscAddr):
-        HostWindow.__init__(self, host, False)
+        HostWindow.__init__(self, host, True)
         self.host = host
 
         if False:
@@ -607,7 +614,10 @@ class HostWindowOSC(HostWindow):
         self.killTimers()
 
         if self.host.lo_target is not None and self.fOscServer is not None:
-            lo_send(self.host.lo_target, "/unregister", self.fOscServer.getFullURL())
+            try:
+                lo_send(self.host.lo_target, "/unregister", self.fOscServer.getFullURL())
+            except:
+                pass
 
         HostWindow.closeEvent(self, event)
 

@@ -209,7 +209,8 @@ protected:
         {
             CARLA_SAFE_ASSERT_RETURN(std::strcmp(types, "") == 0, 0);
 
-            kEngine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+            kEngine->callback(true, true,
+                              ENGINE_CALLBACK_UI_STATE_CHANGED,
                               kPlugin->getId(),
                               1,
                               0, 0, 0.0f, nullptr);
@@ -219,7 +220,8 @@ protected:
         {
             CARLA_SAFE_ASSERT_RETURN(std::strcmp(types, "") == 0, 0);
 
-            kEngine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+            kEngine->callback(true, true,
+                              ENGINE_CALLBACK_UI_STATE_CHANGED,
                               kPlugin->getId(),
                               0,
                               0, 0, 0.0f, nullptr);
@@ -363,7 +365,8 @@ protected:
                 CarlaString errorString("Plugin '" + CarlaString(kPlugin->getName()) + "' has crashed!\n"
                                         "Saving now will lose its current settings.\n"
                                         "Please remove this plugin, and not rely on it from this point.");
-                kEngine->callback(CarlaBackend::ENGINE_CALLBACK_ERROR,
+                kEngine->callback(true, true,
+                                  ENGINE_CALLBACK_ERROR,
                                   kPlugin->getId(),
                                   0, 0, 0, 0.0f,
                                   errorString);
@@ -1421,7 +1424,8 @@ public:
                 break;
 
             case kPluginBridgeNonRtServerUiClosed:
-                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+                pData->engine->callback(true, true,
+                                        ENGINE_CALLBACK_UI_STATE_CHANGED,
                                         pData->id,
                                         0,
                                         0, 0, 0.0f, nullptr);
@@ -1436,7 +1440,7 @@ public:
 
                 if (fInitiated)
                 {
-                    pData->engine->callback(ENGINE_CALLBACK_ERROR, pData->id, 0, 0, 0, 0.0f, error);
+                    pData->engine->callback(true, true, ENGINE_CALLBACK_ERROR, pData->id, 0, 0, 0, 0.0f, error);
 
                     // just in case
                     pData->engine->setLastError(error);
@@ -1653,20 +1657,18 @@ private:
 
         if (wasActive)
         {
-#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
-            if (pData->engine->isOscControlRegistered())
-                pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_ACTIVE, 0.0f);
-            pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+            pData->engine->callback(true, true,
+                                    ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
                                     pData->id,
                                     PARAMETER_ACTIVE,
                                     0, 0,
                                     0.0f,
                                     nullptr);
-#endif
         }
 
         if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
-            pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+            pData->engine->callback(true, true,
+                                    ENGINE_CALLBACK_UI_STATE_CHANGED,
                                     pData->id,
                                     0,
                                     0, 0, 0.0f, nullptr);
@@ -1775,7 +1777,8 @@ private:
         if (needsCancelableAction)
         {
             pData->engine->setActionCanceled(false);
-            pData->engine->callback(ENGINE_CALLBACK_CANCELABLE_ACTION,
+            pData->engine->callback(true, true,
+                                    ENGINE_CALLBACK_CANCELABLE_ACTION,
                                     pData->id,
                                     1,
                                     0, 0, 0.0f,
@@ -1784,7 +1787,7 @@ private:
 
         for (;fBridgeThread.isThreadRunning();)
         {
-            pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(true, false, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
             if (needsEngineIdle)
                 pData->engine->idle();
@@ -1801,7 +1804,8 @@ private:
 
         if (needsCancelableAction)
         {
-            pData->engine->callback(ENGINE_CALLBACK_CANCELABLE_ACTION,
+            pData->engine->callback(true, true,
+                                    ENGINE_CALLBACK_CANCELABLE_ACTION,
                                     pData->id,
                                     0,
                                     0, 0, 0.0f,

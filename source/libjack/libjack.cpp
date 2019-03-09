@@ -1098,7 +1098,7 @@ void CarlaJackAppClient::runNonRealtimeThread()
         */
     }
 
-    //callback(ENGINE_CALLBACK_ENGINE_STOPPED, 0, 0, 0, 0.0f, nullptr);
+    //callback(true, true, ENGINE_CALLBACK_ENGINE_STOPPED, 0, 0, 0, 0.0f, nullptr);
 
     if (quitReceived)
     {

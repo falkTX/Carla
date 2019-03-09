@@ -819,33 +819,23 @@ void CarlaPlugin::ProtectedData::updateParameterValues(CarlaPlugin* const plugin
         if (useDefault)
             param.ranges[i].def = value;
 
-#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
-        if (sendOsc && i < 50)
-        {
-            if (useDefault)
-                engine->oscSend_control_set_default_value(id, i, value);
-            engine->oscSend_control_set_parameter_value(id, static_cast<int32_t>(i), value);
+        if (useDefault) {
+            engine->callback(sendCallback, sendOsc,
+                              ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED,
+                              id,
+                              static_cast<int>(i),
+                              0, 0,
+                              value,
+                              nullptr);
         }
-#endif
 
-        if (sendCallback)
-        {
-            if (useDefault) {
-                engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED,
-                                 id,
-                                 static_cast<int>(i),
-                                 0, 0,
-                                 value,
-                                 nullptr);
-            }
-
-            engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
-                             id,
-                             static_cast<int>(i),
-                             0, 0,
-                             value,
-                             nullptr);
-        }
+        engine->callback(sendCallback, sendOsc,
+                          ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+                          id,
+                          static_cast<int>(i),
+                          0, 0,
+                          value,
+                          nullptr);
     }
 
     // may be unused

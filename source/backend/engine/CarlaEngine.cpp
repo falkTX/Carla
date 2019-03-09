@@ -299,14 +299,9 @@ bool CarlaEngine::close()
         removeAllPlugins();
     }
 
-#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
-    if (pData->osc.isControlRegistered())
-        oscSend_control_exit();
-#endif
-
     pData->close();
 
-    callback(ENGINE_CALLBACK_ENGINE_STOPPED, 0, 0, 0, 0, 0.0f, nullptr);
+    callback(true, true, ENGINE_CALLBACK_ENGINE_STOPPED, 0, 0, 0, 0, 0.0f, nullptr);
     return true;
 }
 
@@ -640,7 +635,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
         plugin->setActive(wasActive, true, true);
         plugin->setEnabled(true);
 
-        callback(ENGINE_CALLBACK_RELOAD_ALL, id, 0, 0, 0, 0.0f, nullptr);
+        callback(true, true, ENGINE_CALLBACK_RELOAD_ALL, id, 0, 0, 0, 0.0f, nullptr);
     }
     else if (! pData->loadingProject)
 #endif
@@ -648,7 +643,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
         plugin->setEnabled(true);
 
         ++pData->curPluginCount;
-        callback(ENGINE_CALLBACK_PLUGIN_ADDED, id, 0, 0, 0, 0.0f, plugin->getName());
+        callback(true, true, ENGINE_CALLBACK_PLUGIN_ADDED, id, 0, 0, 0, 0.0f, plugin->getName());
 
         if (getType() != kEngineTypeBridge)
             plugin->setActive(true, false, true);
@@ -658,10 +653,6 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
             pData->graph.addPlugin(plugin);
 #endif
     }
-
-#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
-    plugin->registerToOscClient();
-#endif
 
     return true;
 }
@@ -703,11 +694,6 @@ bool CarlaEngine::removePlugin(const uint id)
         plugin2->updateOscURL();
     }
     */
-
-# if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
-    if (isOscControlRegistered())
-        oscSend_control_remove_plugin(id);
-# endif
 #else
     pData->curPluginCount = 0;
     carla_zeroStructs(pData->plugins, 1);
@@ -715,7 +701,7 @@ bool CarlaEngine::removePlugin(const uint id)
 
     delete plugin;
 
-    callback(ENGINE_CALLBACK_PLUGIN_REMOVED, id, 0, 0, 0, 0.0f, nullptr);
+    callback(true, true, ENGINE_CALLBACK_PLUGIN_REMOVED, id, 0, 0, 0, 0.0f, nullptr);
     return true;
 }
 
@@ -739,19 +725,11 @@ bool CarlaEngine::removeAllPlugins()
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         pData->graph.removeAllPlugins();
-
-# if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
-    if (isOscControlRegistered())
-    {
-        for (uint i=0; i < curPluginCount; ++i)
-            oscSend_control_remove_plugin(curPluginCount-i-1);
-    }
-# endif
 #endif
 
     const ScopedActionLock sal(this, kEnginePostActionZeroCount, 0, 0);
 
-    callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+    callback(true, false, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
     for (uint i=0; i < curPluginCount; ++i)
     {
@@ -766,8 +744,8 @@ bool CarlaEngine::removeAllPlugins()
 
         carla_zeroFloats(pluginData.peaks, 4);
 
-        callback(ENGINE_CALLBACK_PLUGIN_REMOVED, id, 0, 0, 0, 0.0f, nullptr);
-        callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+        callback(true, true, ENGINE_CALLBACK_PLUGIN_REMOVED, id, 0, 0, 0, 0.0f, nullptr);
+        callback(true, false, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
     }
 
     return true;
@@ -1123,7 +1101,7 @@ bool CarlaEngine::loadFile(const char* const filename)
         //nicerName
         if (addPlugin(PLUGIN_INTERNAL, nullptr, nicerName, "zynaddsubfx", 0, nullptr))
         {
-            callback(ENGINE_CALLBACK_UI_STATE_CHANGED, curPluginId, 0, 0, 0, 0.0f, nullptr);
+            callback(true, true, ENGINE_CALLBACK_UI_STATE_CHANGED, curPluginId, 0, 0, 0, 0.0f, nullptr);
 
             if (CarlaPlugin* const plugin = getPlugin(curPluginId))
                 plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, (extension == "xmz") ? "CarlaAlternateFile1" : "CarlaAlternateFile2", filename, true);
@@ -1313,7 +1291,8 @@ float CarlaEngine::getOutputPeak(const uint pluginId, const bool isLeft) const n
 // -----------------------------------------------------------------------
 // Callback
 
-void CarlaEngine::callback(const EngineCallbackOpcode action, const uint pluginId,
+void CarlaEngine::callback(const bool sendHost, const bool sendOsc,
+                           const EngineCallbackOpcode action, const uint pluginId,
                            const int value1, const int value2, const int value3,
                            const float valuef, const char* const valueStr) noexcept
 {
@@ -1326,7 +1305,7 @@ void CarlaEngine::callback(const EngineCallbackOpcode action, const uint pluginI
                     action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valuef, valueStr);
 #endif
 
-    if (pData->callback != nullptr)
+    if (sendHost && pData->callback != nullptr)
     {
         if (action == ENGINE_CALLBACK_IDLE)
             ++pData->isIdling;
@@ -1344,6 +1323,37 @@ void CarlaEngine::callback(const EngineCallbackOpcode action, const uint pluginI
 
         if (action == ENGINE_CALLBACK_IDLE)
             --pData->isIdling;
+    }
+
+    if (sendOsc)
+    {
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
+        if (pData->osc.isControlRegistered())
+        {
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
+            switch (action)
+            {
+            case ENGINE_CALLBACK_PLUGIN_ADDED:
+            case ENGINE_CALLBACK_RELOAD_ALL:
+            {
+                CarlaPlugin* const plugin = pData->plugins[pluginId].plugin;
+                CARLA_SAFE_ASSERT_BREAK(plugin != nullptr);
+
+                plugin->registerToOscClient();
+                break;
+            }
+
+            case ENGINE_CALLBACK_IDLE:
+                return;
+
+            default:
+                break;
+            }
+#endif
+
+            oscSend_control_callback(action, pluginId, value1, value2, value3, valuef, valueStr);
+        }
+#endif
     }
 }
 
@@ -1827,7 +1837,7 @@ void CarlaEngine::bufferSizeChanged(const uint32_t newBufferSize)
         }
     }
 
-    callback(ENGINE_CALLBACK_BUFFER_SIZE_CHANGED, 0, static_cast<int>(newBufferSize), 0, 0, 0.0f, nullptr);
+    callback(true, true, ENGINE_CALLBACK_BUFFER_SIZE_CHANGED, 0, static_cast<int>(newBufferSize), 0, 0, 0.0f, nullptr);
 }
 
 void CarlaEngine::sampleRateChanged(const double newSampleRate)
@@ -1856,7 +1866,7 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
         }
     }
 
-    callback(ENGINE_CALLBACK_SAMPLE_RATE_CHANGED, 0, 0, 0, 0, static_cast<float>(newSampleRate), nullptr);
+    callback(true, true, ENGINE_CALLBACK_SAMPLE_RATE_CHANGED, 0, 0, 0, 0, static_cast<float>(newSampleRate), nullptr);
 }
 
 void CarlaEngine::offlineModeChanged(const bool isOfflineNow)
@@ -2139,13 +2149,13 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
 
     if (! (xmlType.equalsIgnoreCase("carla-project") || isPreset))
     {
-        callback(ENGINE_CALLBACK_PROJECT_LOAD_FINISHED, 0, 0, 0, 0, 0.0f, nullptr);
+        callback(true, true, ENGINE_CALLBACK_PROJECT_LOAD_FINISHED, 0, 0, 0, 0, 0.0f, nullptr);
         setLastError("Not a valid Carla project or preset file");
         return false;
     }
 
     pData->actionCanceled = false;
-    callback(ENGINE_CALLBACK_CANCELABLE_ACTION, 0, 1, 0, 0, 0.0f, "Loading project");
+    callback(true, true, ENGINE_CALLBACK_CANCELABLE_ACTION, 0, 1, 0, 0, 0.0f, "Loading project");
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     const ScopedValueSetter<bool> _svs2(pData->loadingProject, true, false);
@@ -2155,7 +2165,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
     xmlElement = xmlDoc.getDocumentElement(false);
     CARLA_SAFE_ASSERT_RETURN_ERR(xmlElement != nullptr, "Failed to completely parse project file");
 
-    callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+    callback(true, false, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
     if (pData->aboutToClose)
         return true;
@@ -2280,7 +2290,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
             setOption(static_cast<EngineOption>(option), value, valueStr);
         }
 
-        callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+        callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
         if (pData->aboutToClose)
             return true;
@@ -2304,7 +2314,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
             if (bpm >= 20.0 && bpm < 400.0)
                 pData->time.setBPM(bpm);
 
-            callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+            callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
             if (pData->aboutToClose)
                 return true;
@@ -2327,7 +2337,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
             CarlaStateSave stateSave;
             stateSave.fillFromXmlElement(isPreset ? xmlElement.get() : elem);
 
-            callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+            callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
             if (pData->aboutToClose)
                 return true;
@@ -2351,7 +2361,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
 
                     if (CarlaPlugin* const plugin = pData->plugins[pluginId].plugin)
                     {
-                        callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+                        callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
                         if (pData->aboutToClose)
                             return true;
@@ -2380,11 +2390,10 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                         plugin->setPanning(stateSave.panning, true, true);
                         plugin->setCtrlChannel(stateSave.ctrlChannel, true, true);
                         plugin->setActive(stateSave.active, true, true);
+                        plugin->setEnabled(true);
 
                         ++pData->curPluginCount;
-
-                        plugin->setEnabled(true);
-                        callback(ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, 0, 0, 0, 0.0f, plugin->getName());
+                        callback(true, true, ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, 0, 0, 0, 0.0f, plugin->getName());
 
                         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
                             pData->graph.addPlugin(plugin);
@@ -2502,7 +2511,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
 
                 if (CarlaPlugin* const plugin = pData->plugins[pluginId].plugin)
                 {
-                    callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+                    callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
                     if (pData->aboutToClose)
                         return true;
@@ -2526,7 +2535,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                     plugin->setEnabled(true);
 
                     ++pData->curPluginCount;
-                    callback(ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, 0, 0, 0, 0.0f, plugin->getName());
+                    callback(true, true, ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, 0, 0, 0, 0.0f, plugin->getName());
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
@@ -2546,8 +2555,8 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
 
         if (isPreset)
         {
-            callback(ENGINE_CALLBACK_PROJECT_LOAD_FINISHED, 0, 0, 0, 0, 0.0f, nullptr);
-            callback(ENGINE_CALLBACK_CANCELABLE_ACTION, 0, 0, 0, 0, 0.0f, "Loading project");
+            callback(true, true, ENGINE_CALLBACK_PROJECT_LOAD_FINISHED, 0, 0, 0, 0, 0.0f, nullptr);
+            callback(true, true, ENGINE_CALLBACK_CANCELABLE_ACTION, 0, 0, 0, 0, 0.0f, "Loading project");
             return true;
         }
     }
@@ -2562,7 +2571,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
             plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "__CarlaPingOnOff__", "true", false);
     }
 
-    callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+    callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
     if (pData->aboutToClose)
         return true;
@@ -2610,7 +2619,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                     restorePatchbayConnection(false, sourcePort, targetPort, !isUsingExternal);
             }
 
-            callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+            callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
             if (pData->aboutToClose)
                 return true;
@@ -2692,8 +2701,8 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
     }
 #endif
 
-    callback(ENGINE_CALLBACK_PROJECT_LOAD_FINISHED, 0, 0, 0, 0, 0.0f, nullptr);
-    callback(ENGINE_CALLBACK_CANCELABLE_ACTION, 0, 0, 0, 0, 0.0f, "Loading project");
+    callback(true, true, ENGINE_CALLBACK_PROJECT_LOAD_FINISHED, 0, 0, 0, 0, 0.0f, nullptr);
+    callback(true, true, ENGINE_CALLBACK_CANCELABLE_ACTION, 0, 0, 0, 0, 0.0f, "Loading project");
     return true;
 }
 

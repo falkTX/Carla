@@ -349,7 +349,8 @@ public:
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
             refreshExternalGraphPorts<PatchbayGraph>(pData->graph.getPatchbayGraph(), false);
 
-        callback(ENGINE_CALLBACK_ENGINE_STARTED,
+        callback(true, true,
+                 ENGINE_CALLBACK_ENGINE_STARTED,
                  0,
                  pData->options.processMode,
                  pData->options.transportMode,
@@ -555,12 +556,11 @@ public:
 
             extGraph.connections.list.append(connectionToId);
 
-            if (sendCallback) {
-                callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
-                         connectionToId.id,
-                         0, 0, 0, 0.0f,
-                         strBuf);
-            }
+            callback(sendCallback, true,
+                     ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
+                     connectionToId.id,
+                     0, 0, 0, 0.0f,
+                     strBuf);
         }
 
         fMidiOutMutex.lock();
@@ -582,12 +582,11 @@ public:
 
             extGraph.connections.list.append(connectionToId);
 
-            if (sendCallback) {
-                callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
-                         connectionToId.id,
-                         0, 0, 0, 0.0f,
-                         strBuf);
-            }
+            callback(sendCallback, true,
+                     ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
+                     connectionToId.id,
+                     0, 0, 0, 0.0f,
+                     strBuf);
         }
 
         fMidiOutMutex.unlock();

@@ -112,7 +112,8 @@ public:
 
             fProcess->kill();
             fProcess = nullptr;
-            kEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED,
+            kEngine->callback(true, true,
+                              ENGINE_CALLBACK_UI_STATE_CHANGED,
                               kPlugin->getId(),
                               0,
                               0, 0, 0.0f, nullptr);
@@ -222,7 +223,8 @@ public:
         }
 
         fProcess = nullptr;
-        kEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED,
+        kEngine->callback(true, true,
+                          ENGINE_CALLBACK_UI_STATE_CHANGED,
                           kPlugin->getId(),
                           0,
                           0, 0, 0.0f, nullptr);
@@ -1278,7 +1280,7 @@ public:
             if (programChanged)
                 setMidiProgram(pData->midiprog.current, true, true, true, false);
 
-            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(true, true, ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -2385,7 +2387,8 @@ public:
         showCustomUI(false);
 
         // tell frontend
-        pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+        pData->engine->callback(true, true,
+                                ENGINE_CALLBACK_UI_STATE_CHANGED,
                                 pData->id,
                                 0,
                                 0, 0, 0.0f, nullptr);

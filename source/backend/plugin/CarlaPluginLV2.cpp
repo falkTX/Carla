@@ -1406,7 +1406,8 @@ public:
             {
                 CARLA_SAFE_ASSERT(!yesNo);
             }
-            pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(true, true,
+                                    ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0, 0.0f, nullptr);
             return;
         }
 
@@ -1429,7 +1430,8 @@ public:
 
                 if (! fPipeServer.startPipeServer(std::min(fLv2Options.sequenceSize, 819200)))
                 {
-                    pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0, 0.0f, nullptr);
+                    pData->engine->callback(true, true,
+                                            ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0, 0.0f, nullptr);
                     return;
                 }
 
@@ -1578,7 +1580,8 @@ public:
                     }
 
                     if (fUI.window == nullptr && fExt.uishow == nullptr)
-                        return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0, 0.0f, msg);
+                        return pData->engine->callback(true, true,
+                                                       ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0, 0.0f, msg);
 
                     if (fUI.window != nullptr)
                         fFeatures[kFeatureIdUiParent]->data = fUI.window->getPtr();
@@ -1609,7 +1612,8 @@ public:
                     fUI.handle = nullptr;
                 }
 
-                return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+                return pData->engine->callback(true, true,
+                                               ENGINE_CALLBACK_UI_STATE_CHANGED,
                                                pData->id,
                                                -1,
                                                0, 0, 0.0f,
@@ -1732,7 +1736,8 @@ public:
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                 pData->transientTryCounter = 0;
 #endif
-                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+                pData->engine->callback(true, true,
+                                        ENGINE_CALLBACK_UI_STATE_CHANGED,
                                         pData->id,
                                         0,
                                         0, 0, 0.0f, nullptr);
@@ -1748,7 +1753,8 @@ public:
         {
             fNeedsUiClose = false;
             showCustomUI(false);
-            pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+            pData->engine->callback(true, true,
+                                    ENGINE_CALLBACK_UI_STATE_CHANGED,
                                     pData->id,
                                     0,
                                     0, 0, 0.0f, nullptr);
@@ -1769,7 +1775,8 @@ public:
             else if (fUI.handle != nullptr && fExt.uiidle != nullptr && fExt.uiidle->idle(fUI.handle) != 0)
             {
                 showCustomUI(false);
-                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+                pData->engine->callback(true, true,
+                                        ENGINE_CALLBACK_UI_STATE_CHANGED,
                                         pData->id,
                                         0,
                                         0, 0, 0.0f, nullptr);
@@ -2910,7 +2917,7 @@ public:
             if (programChanged)
                 setMidiProgram(pData->midiprog.current, true, true, true, false);
 
-            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(true, true, ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -4821,9 +4828,9 @@ public:
                 pData->midiprog.data[index].name = carla_strdup(progDesc->name);
 
                 if (index == pData->midiprog.current)
-                    pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0, 0.0, nullptr);
+                    pData->engine->callback(true, true, ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0, 0.0, nullptr);
                 else
-                    pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0, 0.0, nullptr);
+                    pData->engine->callback(true, true, ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0, 0.0, nullptr);
             }
         }
     }

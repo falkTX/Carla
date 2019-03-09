@@ -220,8 +220,7 @@ bool ExternalGraph::connect(const uint groupA, const uint portA, const uint grou
     strBuf[STR_MAX] = '\0';
     std::snprintf(strBuf, STR_MAX, "%u:%u:%u:%u", groupA, portA, groupB, portB);
 
-    if (sendCallback)
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0, 0.0f, strBuf);
+    kEngine->callback(sendCallback, true, ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0, 0.0f, strBuf);
 
     connections.list.append(connectionToId);
     return true;
@@ -300,7 +299,7 @@ bool ExternalGraph::disconnect(const uint connectionId) noexcept
             return false;
         }
 
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connectionToId.id, 0, 0, 0, 0.0f, nullptr);
+        kEngine->callback(true, true, ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connectionToId.id, 0, 0, 0, 0.0f, nullptr);
 
         connections.list.remove(it);
         return true;
@@ -318,7 +317,8 @@ void ExternalGraph::refresh(const char* const deviceName)
 
     // Main
     {
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
+        kEngine->callback(true, true,
+                          ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
                           kExternalGraphGroupCarla,
                           PATCHBAY_ICON_CARLA,
                           MAIN_CARLA_PLUGIN_ID,
@@ -327,28 +327,32 @@ void ExternalGraph::refresh(const char* const deviceName)
 
         if (isRack)
         {
-            kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
+            kEngine->callback(true, true,
+                              ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                               kExternalGraphGroupCarla,
                               kExternalGraphCarlaPortAudioIn1,
                               PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT,
                               0, 0.0f,
                               "audio-in1");
 
-            kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
+            kEngine->callback(true, true,
+                              ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                               kExternalGraphGroupCarla,
                               kExternalGraphCarlaPortAudioIn2,
                               PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT,
                               0, 0.0f,
                               "audio-in2");
 
-            kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
+            kEngine->callback(true, true,
+                              ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                               kExternalGraphGroupCarla,
                               kExternalGraphCarlaPortAudioOut1,
                               PATCHBAY_PORT_TYPE_AUDIO,
                               0, 0.0f,
                               "audio-out1");
 
-            kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
+            kEngine->callback(true, true,
+                              ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                               kExternalGraphGroupCarla,
                               kExternalGraphCarlaPortAudioOut2,
                               PATCHBAY_PORT_TYPE_AUDIO,
@@ -356,14 +360,16 @@ void ExternalGraph::refresh(const char* const deviceName)
                               "audio-out2");
         }
 
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
+        kEngine->callback(true, true,
+                          ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                           kExternalGraphGroupCarla,
                           kExternalGraphCarlaPortMidiIn,
                           PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT,
                           0, 0.0f,
                           "midi-in");
 
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
+        kEngine->callback(true, true,
+                          ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                           kExternalGraphGroupCarla,
                           kExternalGraphCarlaPortMidiOut,
                           PATCHBAY_PORT_TYPE_MIDI,
@@ -382,7 +388,8 @@ void ExternalGraph::refresh(const char* const deviceName)
         else
             std::strncpy(strBuf, "Capture", STR_MAX);
 
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
+        kEngine->callback(true, true,
+                          ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
                           kExternalGraphGroupAudioIn,
                           PATCHBAY_ICON_HARDWARE,
                           -1,
@@ -399,7 +406,8 @@ void ExternalGraph::refresh(const char* const deviceName)
 
             portNameToId.setFullName(groupNameIn + portNameToId.name);
 
-            kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
+            kEngine->callback(true, true,
+                              ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                               kExternalGraphGroupAudioIn,
                               ++h,
                               PATCHBAY_PORT_TYPE_AUDIO,
@@ -413,7 +421,8 @@ void ExternalGraph::refresh(const char* const deviceName)
         else
             std::strncpy(strBuf, "Playback", STR_MAX);
 
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
+        kEngine->callback(true, true,
+                          ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
                           kExternalGraphGroupAudioOut,
                           PATCHBAY_ICON_HARDWARE,
                           -1,
@@ -430,7 +439,8 @@ void ExternalGraph::refresh(const char* const deviceName)
 
             portNameToId.setFullName(groupNameOut + portNameToId.name);
 
-            kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
+            kEngine->callback(true, true,
+                              ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                               kExternalGraphGroupAudioOut,
                               ++h,
                               PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT,
@@ -441,7 +451,8 @@ void ExternalGraph::refresh(const char* const deviceName)
 
     // MIDI In
     {
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
+        kEngine->callback(true, true,
+                          ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
                           kExternalGraphGroupMidiIn,
                           PATCHBAY_ICON_HARDWARE,
                           -1,
@@ -458,7 +469,8 @@ void ExternalGraph::refresh(const char* const deviceName)
 
             portNameToId.setFullName(groupNamePlus + portNameToId.name);
 
-            kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
+            kEngine->callback(true, true,
+                              ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                               kExternalGraphGroupMidiIn,
                               ++h,
                               PATCHBAY_PORT_TYPE_MIDI,
@@ -469,7 +481,8 @@ void ExternalGraph::refresh(const char* const deviceName)
 
     // MIDI Out
     {
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
+        kEngine->callback(true, true,
+                          ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
                           kExternalGraphGroupMidiOut,
                           PATCHBAY_ICON_HARDWARE,
                           -1,
@@ -486,7 +499,8 @@ void ExternalGraph::refresh(const char* const deviceName)
 
             portNameToId.setFullName(groupNamePlus + portNameToId.name);
 
-            kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
+            kEngine->callback(true, true,
+                              ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                               kExternalGraphGroupMidiOut,
                               ++h,
                               PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT,
@@ -788,7 +802,8 @@ void RackGraph::refresh(const char* const deviceName)
 
         std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
 
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
+        kEngine->callback(true, true,
+                          ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
                           connectionToId.id,
                           0, 0, 0, 0.0f,
                           strBuf);
@@ -807,7 +822,8 @@ void RackGraph::refresh(const char* const deviceName)
 
         std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
 
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
+        kEngine->callback(true, true,
+                          ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
                           connectionToId.id,
                           0, 0, 0, 0.0f,
                           strBuf);
@@ -826,7 +842,8 @@ void RackGraph::refresh(const char* const deviceName)
 
         std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
 
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
+        kEngine->callback(true, true,
+                          ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
                           connectionToId.id,
                           0, 0, 0, 0.0f,
                           strBuf);
@@ -845,7 +862,8 @@ void RackGraph::refresh(const char* const deviceName)
 
         std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
 
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
+        kEngine->callback(true, true,
+                          ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
                           connectionToId.id,
                           0, 0, 0, 0.0f,
                           strBuf);
@@ -1176,7 +1194,8 @@ void addNodeToPatchbay(CarlaEngine* const engine, const uint32_t groupId, const 
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(proc != nullptr,);
 
-    engine->callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
+    engine->callback(true, true,
+                     ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
                      groupId,
                      clientId >= 0 ? PATCHBAY_ICON_PLUGIN : PATCHBAY_ICON_HARDWARE,
                      clientId,
@@ -1185,7 +1204,8 @@ void addNodeToPatchbay(CarlaEngine* const engine, const uint32_t groupId, const 
 
     for (int i=0, numInputs=proc->getTotalNumInputChannels(); i<numInputs; ++i)
     {
-        engine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
+        engine->callback(true, true,
+                         ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                          groupId,
                          static_cast<int>(kAudioInputPortOffset)+i,
                          PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT,
@@ -1195,7 +1215,8 @@ void addNodeToPatchbay(CarlaEngine* const engine, const uint32_t groupId, const 
 
     for (int i=0, numOutputs=proc->getTotalNumOutputChannels(); i<numOutputs; ++i)
     {
-        engine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
+        engine->callback(true, true,
+                         ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                          groupId,
                          static_cast<int>(kAudioOutputPortOffset)+i,
                          PATCHBAY_PORT_TYPE_AUDIO,
@@ -1205,7 +1226,8 @@ void addNodeToPatchbay(CarlaEngine* const engine, const uint32_t groupId, const 
 
     if (proc->acceptsMidi())
     {
-        engine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
+        engine->callback(true, true,
+                         ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                          groupId,
                          static_cast<int>(kMidiInputPortOffset),
                          PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT,
@@ -1215,7 +1237,8 @@ void addNodeToPatchbay(CarlaEngine* const engine, const uint32_t groupId, const 
 
     if (proc->producesMidi())
     {
-        engine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
+        engine->callback(true, true,
+                         ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                          groupId,
                          static_cast<int>(kMidiOutputPortOffset),
                          PATCHBAY_PORT_TYPE_MIDI,
@@ -1232,7 +1255,8 @@ void removeNodeFromPatchbay(CarlaEngine* const engine, const uint32_t groupId, c
 
     for (int i=0, numInputs=proc->getTotalNumInputChannels(); i<numInputs; ++i)
     {
-        engine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
+        engine->callback(true, true,
+                         ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
                          groupId,
                          static_cast<int>(kAudioInputPortOffset)+i,
                          0, 0, 0.0f, nullptr);
@@ -1240,7 +1264,8 @@ void removeNodeFromPatchbay(CarlaEngine* const engine, const uint32_t groupId, c
 
     for (int i=0, numOutputs=proc->getTotalNumOutputChannels(); i<numOutputs; ++i)
     {
-        engine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
+        engine->callback(true, true,
+                         ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
                          groupId,
                          static_cast<int>(kAudioOutputPortOffset)+i,
                          0, 0, 0.0f,
@@ -1249,7 +1274,8 @@ void removeNodeFromPatchbay(CarlaEngine* const engine, const uint32_t groupId, c
 
     if (proc->acceptsMidi())
     {
-        engine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
+        engine->callback(true, true,
+                         ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
                          groupId,
                          static_cast<int>(kMidiInputPortOffset),
                          0, 0, 0.0f, nullptr);
@@ -1257,13 +1283,15 @@ void removeNodeFromPatchbay(CarlaEngine* const engine, const uint32_t groupId, c
 
     if (proc->producesMidi())
     {
-        engine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
+        engine->callback(true, true,
+                         ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
                          groupId,
                          static_cast<int>(kMidiOutputPortOffset),
                          0, 0, 0.0f, nullptr);
     }
 
-    engine->callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED,
+    engine->callback(true, true,
+                     ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED,
                      groupId,
                      0, 0, 0, 0.0f, nullptr);
 }
@@ -1621,7 +1649,8 @@ void PatchbayGraph::renamePlugin(CarlaPlugin* const plugin, const char* const ne
     CARLA_SAFE_ASSERT_RETURN(node != nullptr,);
 
     if (! usingExternal)
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED,
+        kEngine->callback(true, true,
+                          ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED,
                           node->nodeId,
                           0, 0, 0, 0.0f,
                           newName);
@@ -1710,7 +1739,8 @@ bool PatchbayGraph::connect(const bool external, const uint groupA, const uint p
     std::snprintf(strBuf, STR_MAX, "%u:%u:%u:%u", groupA, portA, groupB, portB);
 
     if (sendCallback)
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
+        kEngine->callback(true, true,
+                          ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
                           connectionToId.id,
                           0, 0, 0, 0.0f,
                           strBuf);
@@ -1746,7 +1776,8 @@ bool PatchbayGraph::disconnect(const uint connectionId)
                                      connectionToId.groupB, static_cast<int>(adjustedPortB)))
             return false;
 
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED,
+        kEngine->callback(true, true,
+                          ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED,
                           connectionToId.id,
                           0, 0, 0, 0.0f,
                           nullptr);
@@ -1787,7 +1818,8 @@ void PatchbayGraph::disconnectInternalGroup(const uint groupId) noexcept
         */
 
         if (! usingExternal)
-            kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED,
+            kEngine->callback(true, true,
+                              ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED,
                               connectionToId.id,
                               0, 0, 0, 0.0f,
                               nullptr);
@@ -1854,7 +1886,8 @@ void PatchbayGraph::refresh(const char* const deviceName)
 
         std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", groupA, portA, groupB, portB);
 
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
+        kEngine->callback(true, true,
+                          ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
                           connectionToId.id,
                           0, 0, 0, 0.0f,
                           strBuf);

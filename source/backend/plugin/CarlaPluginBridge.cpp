@@ -348,7 +348,8 @@ protected:
                 CarlaString errorString("Plugin '" + CarlaString(kPlugin->getName()) + "' has crashed!\n"
                                         "Saving now will lose its current settings.\n"
                                         "Please remove this plugin, and not rely on it from this point.");
-                kEngine->callback(CarlaBackend::ENGINE_CALLBACK_ERROR, kPlugin->getId(), 0, 0, 0, 0.0f, errorString);
+                kEngine->callback(true, true,
+                                  CarlaBackend::ENGINE_CALLBACK_ERROR, kPlugin->getId(), 0, 0, 0, 0.0f, errorString);
             }
         }
 
@@ -625,7 +626,7 @@ public:
 
 #if 0
         // we waited and blocked for 5 secs, give host idle time now
-        pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+        pData->engine->callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
         if (pData->engine->getType() != kEngineTypePlugin)
             pData->engine->idle();
@@ -645,7 +646,7 @@ public:
 
         for (; Time::getMillisecondCounter() < timeoutEnd && fBridgeThread.isThreadRunning();)
         {
-            pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
             if (needsEngineIdle)
                 pData->engine->idle();
@@ -2251,7 +2252,7 @@ public:
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                 pData->transientTryCounter = 0;
 #endif
-                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0, 0.0f, nullptr);
+                pData->engine->callback(true, true, ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0, 0.0f, nullptr);
                 break;
 
             case kPluginBridgeNonRtServerError: {
@@ -2263,7 +2264,7 @@ public:
 
                 if (fInitiated)
                 {
-                    pData->engine->callback(ENGINE_CALLBACK_ERROR, pData->id, 0, 0, 0, 0.0f, error);
+                    pData->engine->callback(true, true, ENGINE_CALLBACK_ERROR, pData->id, 0, 0, 0, 0.0f, error);
 
                     // just in case
                     pData->engine->setLastError(error);
@@ -2592,11 +2593,9 @@ private:
 
         if (wasActive)
         {
-#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
-            if (pData->engine->isOscControlRegistered())
-                pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_ACTIVE, 0.0f);
-
-            pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+            pData->engine->callback(true, true,
+                                    ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
                                     pData->id,
                                     PARAMETER_ACTIVE,
                                     0, 0,
@@ -2607,7 +2606,8 @@ private:
 
         if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
         {
-            pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+            pData->engine->callback(true, true,
+                                    ENGINE_CALLBACK_UI_STATE_CHANGED,
                                     pData->id,
                                     0,
                                     0, 0, 0.0f, nullptr);
@@ -2687,7 +2687,8 @@ private:
         if (needsCancelableAction)
         {
             pData->engine->setActionCanceled(false);
-            pData->engine->callback(ENGINE_CALLBACK_CANCELABLE_ACTION,
+            pData->engine->callback(true, true,
+                                    ENGINE_CALLBACK_CANCELABLE_ACTION,
                                     pData->id,
                                     1,
                                     0, 0, 0.0f,
@@ -2697,7 +2698,7 @@ private:
 
         for (;fBridgeThread.isThreadRunning();)
         {
-            pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
             if (needsEngineIdle)
                 pData->engine->idle();
@@ -2715,7 +2716,8 @@ private:
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (needsCancelableAction)
         {
-            pData->engine->callback(ENGINE_CALLBACK_CANCELABLE_ACTION,
+            pData->engine->callback(true, true,
+                                    ENGINE_CALLBACK_CANCELABLE_ACTION,
                                     pData->id,
                                     0,
                                     0, 0, 0.0f,

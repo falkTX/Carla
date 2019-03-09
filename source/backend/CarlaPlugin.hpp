@@ -523,7 +523,7 @@ public:
     void setBalanceLeftRT(const float value) noexcept;
     void setBalanceRightRT(const float value) noexcept;
     void setPanningRT(const float value) noexcept;
-#endif
+#endif // ! BUILD_BRIDGE_ALTERNATIVE_ARCH
 
     /*!
      * Set the plugin's midi control channel.

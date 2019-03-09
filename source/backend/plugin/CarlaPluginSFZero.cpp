@@ -41,7 +41,7 @@ static const ExternalMidiNote kExternalMidiNoteFallback = { -1, 0, 0 };
 
 static void loadingIdleCallbackFunction(void* ptr)
 {
-    ((CarlaEngine*)ptr)->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+    ((CarlaEngine*)ptr)->callback(true, false, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 }
 
 // -------------------------------------------------------------------------------------------------------------------

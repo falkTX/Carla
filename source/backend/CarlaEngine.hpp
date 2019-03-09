@@ -999,7 +999,8 @@ public:
      * Call the main engine callback, if set.
      * May be called by plugins.
      */
-    virtual void callback(const EngineCallbackOpcode action, const uint pluginId,
+    virtual void callback(const bool sendHost, const bool sendOsc,
+                          const EngineCallbackOpcode action, const uint pluginId,
                           const int value1, const int value2, const int value3,
                           const float valuef, const char* const valueStr) noexcept;
 
@@ -1285,9 +1286,12 @@ public:
     // -------------------------------------------------------------------
     // OSC Controller stuff
 
+    void oscSend_control_callback(const EngineCallbackOpcode action, const uint pluginId,
+                                  const int value1, const int value2, const int value3,
+                                  const float valuef, const char* const valueStr) const noexcept;
     void oscSend_control_add_plugin_start(const uint pluginId, const char* const pluginName) const noexcept;
-    void oscSend_control_add_plugin_end(const uint pluginId) const noexcept;
-    void oscSend_control_remove_plugin(const uint pluginId) const noexcept;
+    // void oscSend_control_add_plugin_end(const uint pluginId) const noexcept;
+    // void oscSend_control_remove_plugin(const uint pluginId) const noexcept;
     void oscSend_control_set_plugin_info1(const uint pluginId, const PluginType type, const PluginCategory category, const uint hints, const int64_t uniqueId) const noexcept;
     void oscSend_control_set_plugin_info2(const uint pluginId, const char* const realName, const char* const label, const char* const maker, const char* const copyright) const noexcept;
     void oscSend_control_set_audio_count(const uint pluginId, const uint32_t ins, const uint32_t outs) const noexcept;
@@ -1298,18 +1302,18 @@ public:
     void oscSend_control_set_parameter_data(const uint pluginId, const uint32_t index, const ParameterType type, const uint hints, const char* const name, const char* const unit) const noexcept;
     void oscSend_control_set_parameter_ranges1(const uint pluginId, const uint32_t index, const float def, const float min, const float max) const noexcept;
     void oscSend_control_set_parameter_ranges2(const uint pluginId, const uint32_t index, const float step, const float stepSmall, const float stepLarge) const noexcept;
-    void oscSend_control_set_parameter_midi_cc(const uint pluginId, const uint32_t index, const int16_t cc) const noexcept;
-    void oscSend_control_set_parameter_midi_channel(const uint pluginId, const uint32_t index, const uint8_t channel) const noexcept;
-    void oscSend_control_set_parameter_value(const uint pluginId, const int32_t index, const float value) const noexcept; // may be used for internal params (< 0)
-    void oscSend_control_set_default_value(const uint pluginId, const uint32_t index, const float value) const noexcept;
-    void oscSend_control_set_current_program(const uint pluginId, const int32_t index) const noexcept;
-    void oscSend_control_set_current_midi_program(const uint pluginId, const int32_t index) const noexcept;
+    // void oscSend_control_set_parameter_midi_cc(const uint pluginId, const uint32_t index, const int16_t cc) const noexcept;
+    // void oscSend_control_set_parameter_midi_channel(const uint pluginId, const uint32_t index, const uint8_t channel) const noexcept;
+    void oscSend_control_set_output_parameter_value(const uint pluginId, const int32_t index, const float value) const noexcept;
+    // void oscSend_control_set_default_value(const uint pluginId, const uint32_t index, const float value) const noexcept;
+    // void oscSend_control_set_current_program(const uint pluginId, const int32_t index) const noexcept;
+    // void oscSend_control_set_current_midi_program(const uint pluginId, const int32_t index) const noexcept;
     void oscSend_control_set_program_name(const uint pluginId, const uint32_t index, const char* const name) const noexcept;
     void oscSend_control_set_midi_program_data(const uint pluginId, const uint32_t index, const uint32_t bank, const uint32_t program, const char* const name) const noexcept;
-    void oscSend_control_note_on(const uint pluginId, const uint8_t channel, const uint8_t note, const uint8_t velo) const noexcept;
-    void oscSend_control_note_off(const uint pluginId, const uint8_t channel, const uint8_t note) const noexcept;
+    // void oscSend_control_note_on(const uint pluginId, const uint8_t channel, const uint8_t note, const uint8_t velo) const noexcept;
+    // void oscSend_control_note_off(const uint pluginId, const uint8_t channel, const uint8_t note) const noexcept;
     void oscSend_control_set_peaks(const uint pluginId) const noexcept;
-    void oscSend_control_exit() const noexcept;
+    // void oscSend_control_exit() const noexcept;
 #endif
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaEngine)

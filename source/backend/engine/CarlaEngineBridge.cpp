@@ -576,15 +576,16 @@ public:
         {
             carla_stderr("Did not receive ping message from server for 30 secs, closing...");
             signalThreadShouldExit();
-            callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0, 0.0f, nullptr);
+            callback(true, true, ENGINE_CALLBACK_QUIT, 0, 0, 0, 0, 0.0f, nullptr);
         }
     }
 
-    void callback(const EngineCallbackOpcode action, const uint pluginId,
+    void callback(const bool sendHost, const bool sendOsc,
+                  const EngineCallbackOpcode action, const uint pluginId,
                   const int value1, const int value2, const int value3,
                   const float valuef, const char* const valueStr) noexcept override
     {
-        CarlaEngine::callback(action, pluginId, value1, value2, value3, valuef, valueStr);
+        CarlaEngine::callback(sendHost, sendOsc, action, pluginId, value1, value2, value3, valuef, valueStr);
 
         if (fClosingDown)
             return;
@@ -1022,7 +1023,7 @@ public:
             case kPluginBridgeNonRtClientQuit:
                 fClosingDown = true;
                 signalThreadShouldExit();
-                callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0, 0.0f, nullptr);
+                callback(true, true, ENGINE_CALLBACK_QUIT, 0, 0, 0, 0, 0.0f, nullptr);
                 break;
             }
         }
@@ -1369,7 +1370,7 @@ protected:
             }
         }
 
-        callback(ENGINE_CALLBACK_ENGINE_STOPPED, 0, 0, 0, 0, 0.0f, nullptr);
+        callback(true, true, ENGINE_CALLBACK_ENGINE_STOPPED, 0, 0, 0, 0, 0.0f, nullptr);
 
         if (! quitReceived)
         {

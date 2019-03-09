@@ -510,7 +510,8 @@ public:
 #endif
 
                 if (fUI.window == nullptr)
-                    return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+                    return pData->engine->callback(true, true,
+                                                   ENGINE_CALLBACK_UI_STATE_CHANGED,
                                                    pData->id,
                                                    -1,
                                                    0, 0, 0.0f,
@@ -547,7 +548,8 @@ public:
                     fUI.window = nullptr;
 
                     carla_stderr2("Plugin refused to open its own UI");
-                    return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+                    return pData->engine->callback(true, true,
+                                                   ENGINE_CALLBACK_UI_STATE_CHANGED,
                                                    pData->id,
                                                    -1,
                                                    0, 0, 0.0f,
@@ -1054,7 +1056,7 @@ public:
                     dispatcher(effSetProgram, 0, pData->prog.current, nullptr, 0.0f);
             }
 
-            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(true, true, ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -1838,7 +1840,8 @@ protected:
         carla_debug("CarlaPluginVST2::handlePluginUIClosed()");
 
         showCustomUI(false);
-        pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+        pData->engine->callback(true, true,
+                                ENGINE_CALLBACK_UI_STATE_CHANGED,
                                 pData->id,
                                 0,
                                 0, 0, 0.0f, nullptr);
@@ -1944,7 +1947,7 @@ protected:
         case audioMasterIdle:
             CARLA_SAFE_ASSERT_BREAK(pthread_equal(pthread_self(), fMainThread));
 
-            pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(true, false, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
             if (pData->engine->getType() != kEngineTypePlugin)
                 pData->engine->idle();
@@ -2193,7 +2196,8 @@ protected:
                     if (pData->prog.current != current)
                     {
                         pData->prog.current = current;
-                        pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED,
+                        pData->engine->callback(true, true,
+                                                ENGINE_CALLBACK_PROGRAM_CHANGED,
                                                 pData->id,
                                                 current,
                                                 0, 0, 0.0f, nullptr);
@@ -2202,7 +2206,8 @@ protected:
             }
 
             if (! fIsInitializing)
-                pData->engine->callback(ENGINE_CALLBACK_RELOAD_PARAMETERS, pData->id, 0, 0, 0, 0.0f, nullptr);
+                pData->engine->callback(true, true,
+                                        ENGINE_CALLBACK_RELOAD_PARAMETERS, pData->id, 0, 0, 0, 0.0f, nullptr);
 
             ret = 1;
             break;

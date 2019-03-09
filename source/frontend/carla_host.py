@@ -208,7 +208,6 @@ class HostWindow(QMainWindow):
             self.ui.menu_Engine.setEnabled(False)
             self.ui.menu_Engine.setVisible(False)
             self.ui.menu_Engine.menuAction().setVisible(False)
-            self.ui.tabWidget.removeTab(2)
 
             if self.host.isControl:
                 self.ui.act_file_new.setVisible(False)
@@ -223,10 +222,12 @@ class HostWindow(QMainWindow):
                 self.ui.menu_Plugin.setEnabled(False)
                 self.ui.menu_Plugin.setVisible(False)
                 self.ui.menu_Plugin.menuAction().setVisible(False)
-                self.ui.tw_statusbar.setEnabled(False)
-                self.ui.tw_statusbar.setVisible(False)
+                self.ui.tabUtils.removeTab(0)
+                #self.ui.tw_statusbar.setEnabled(False)
+                #self.ui.tw_statusbar.setVisible(False)
             else:
                 self.ui.act_file_save_as.setText(self.tr("Export as..."))
+                self.ui.tabWidget.removeTab(2)
 
         else:
             self.ui.act_engine_start.setEnabled(True)
@@ -324,7 +325,7 @@ class HostWindow(QMainWindow):
         self.ui.l_transport_frame.setMinimumWidth(minValueWidth + 3)
         self.ui.l_transport_time.setMinimumWidth(minValueWidth + 3)
 
-        if host.isControl or host.isPlugin:
+        if host.isPlugin:
             self.ui.b_transport_play.setEnabled(False)
             self.ui.b_transport_stop.setEnabled(False)
             self.ui.b_transport_backwards.setEnabled(False)
@@ -561,7 +562,7 @@ class HostWindow(QMainWindow):
         self.ui.tabWidget.blockSignals(False)
 
         # Start in patchbay tab if using forced patchbay mode
-        if host.processModeForced and host.processMode == ENGINE_PROCESS_MODE_PATCHBAY and not host.isControl:
+        if host.processModeForced and host.processMode == ENGINE_PROCESS_MODE_PATCHBAY:
             self.ui.tabWidget.setCurrentIndex(1)
 
         # Load initial project file if set
@@ -913,7 +914,7 @@ class HostWindow(QMainWindow):
         self.ui.act_canvas_show_internal.blockSignals(True)
         self.ui.act_canvas_show_external.blockSignals(True)
 
-        if processMode == ENGINE_PROCESS_MODE_PATCHBAY and not (self.host.isControl or self.host.isPlugin):
+        if processMode == ENGINE_PROCESS_MODE_PATCHBAY and not self.host.isPlugin:
             self.ui.act_canvas_show_internal.setChecked(True)
             self.ui.act_canvas_show_internal.setVisible(True)
             self.ui.act_canvas_show_external.setChecked(False)
@@ -932,6 +933,8 @@ class HostWindow(QMainWindow):
             self.ui.act_file_save.setEnabled(canSave)
             self.ui.act_engine_start.setEnabled(False)
             self.ui.act_engine_stop.setEnabled(True)
+
+        if not self.host.isPlugin:
             self.enableTransport(transportMode != ENGINE_TRANSPORT_MODE_DISABLED)
 
         if self.host.isPlugin or not self.fSessionManagerName:
@@ -1398,7 +1401,7 @@ class HostWindow(QMainWindow):
     def slot_canvasRefresh(self):
         patchcanvas.clear()
 
-        if self.host.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK and (self.host.isControl or self.host.isPlugin):
+        if self.host.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK and self.host.isPlugin:
             return
 
         if self.host.is_engine_running():
@@ -1599,9 +1602,7 @@ class HostWindow(QMainWindow):
 
         settings.setValue("Geometry", self.saveGeometry())
         settings.setValue("ShowToolbar", self.ui.toolBar.isEnabled())
-
-        if not self.host.isControl:
-            settings.setValue("ShowSidePanel", self.ui.dockWidget.isEnabled())
+        settings.setValue("ShowSidePanel", self.ui.dockWidget.isEnabled())
 
         diskFolders = []
 
@@ -1637,7 +1638,7 @@ class HostWindow(QMainWindow):
             #else:
                 #self.ui.splitter.setSizes([210, 99999])
 
-            showSidePanel = settings.value("ShowSidePanel", True, type=bool) and not self.host.isControl
+            showSidePanel = settings.value("ShowSidePanel", True, type=bool)
             self.ui.act_settings_show_side_panel.setChecked(showSidePanel)
             self.slot_showSidePanel(showSidePanel)
 

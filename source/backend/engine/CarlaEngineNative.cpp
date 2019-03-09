@@ -650,7 +650,8 @@ private:
     void _updateParamValues(CarlaPlugin* const plugin, const uint32_t pluginId) const noexcept
     {
         for (uint32_t i=0, count=plugin->getParameterCount(); i<count; ++i) {
-            fEngine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+            fEngine->callback(true, true,
+                              ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
                               pluginId,
                               static_cast<int>(i),
                               0, 0,
@@ -819,11 +820,12 @@ protected:
         return "Plugin";
     }
 
-    void callback(const EngineCallbackOpcode action, const uint pluginId,
+    void callback(const bool sendHost, const bool sendOsc,
+                  const EngineCallbackOpcode action, const uint pluginId,
                   const int value1, const int value2, const int value3,
                   const float valuef, const char* const valueStr) noexcept override
     {
-        CarlaEngine::callback(action, pluginId, value1, value2, value3, valuef, valueStr);
+        CarlaEngine::callback(sendHost, sendOsc, action, pluginId, value1, value2, value3, valuef, valueStr);
 
         if (action == ENGINE_CALLBACK_IDLE && ! pData->aboutToClose) {
             pHost->dispatcher(pHost->handle,
@@ -1968,7 +1970,7 @@ protected:
     {
         // remove all plugins from UI side
         for (uint i=0, count=pData->curPluginCount; i < count; ++i)
-            CarlaEngine::callback(ENGINE_CALLBACK_PLUGIN_REMOVED, count-i-1, 0, 0, 0, 0.0f, nullptr);
+            CarlaEngine::callback(true, true, ENGINE_CALLBACK_PLUGIN_REMOVED, count-i-1, 0, 0, 0, 0.0f, nullptr);
 
         // remove all plugins from backend, no lock
         fIsRunning = false;

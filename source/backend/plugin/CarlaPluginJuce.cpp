@@ -391,7 +391,8 @@ public:
             if (fWindow->wasClosedByUser())
             {
                 showCustomUI(false);
-                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED,
+                pData->engine->callback(true, true,
+                                        ENGINE_CALLBACK_UI_STATE_CHANGED,
                                         pData->id,
                                         0,
                                         0, 0, 0.0f, nullptr);
@@ -713,7 +714,7 @@ public:
                     fInstance->setCurrentProgram(pData->prog.current);
             }
 
-            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(true, true, ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -1171,7 +1172,7 @@ protected:
 
     void audioProcessorChanged(juce::AudioProcessor*) override
     {
-        pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0, 0.0f, nullptr);
+        pData->engine->callback(true, true, ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0, 0.0f, nullptr);
     }
 
     void audioProcessorParameterChangeGestureBegin(juce::AudioProcessor*, int) override {}
