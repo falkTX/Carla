@@ -808,7 +808,10 @@ void CarlaPlugin::ProtectedData::tryTransient() noexcept
 }
 #endif
 
-void CarlaPlugin::ProtectedData::updateParameterValues(CarlaPlugin* const plugin, const bool sendOsc, const bool sendCallback, const bool useDefault) noexcept
+void CarlaPlugin::ProtectedData::updateParameterValues(CarlaPlugin* const plugin,
+                                                       const bool sendCallback,
+                                                       const bool sendOsc,
+                                                       const bool useDefault) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback || useDefault,);
 
@@ -821,25 +824,22 @@ void CarlaPlugin::ProtectedData::updateParameterValues(CarlaPlugin* const plugin
 
         if (useDefault) {
             engine->callback(sendCallback, sendOsc,
-                              ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED,
-                              id,
-                              static_cast<int>(i),
-                              0, 0,
-                              value,
-                              nullptr);
+                             ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED,
+                             id,
+                             static_cast<int>(i),
+                             0, 0,
+                             value,
+                             nullptr);
         }
 
         engine->callback(sendCallback, sendOsc,
-                          ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
-                          id,
-                          static_cast<int>(i),
-                          0, 0,
-                          value,
-                          nullptr);
+                         ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+                         id,
+                         static_cast<int>(i),
+                         0, 0,
+                         value,
+                         nullptr);
     }
-
-    // may be unused
-    return; (void)sendOsc;
 }
 
 void CarlaPlugin::ProtectedData::updateDefaultParameterValues(CarlaPlugin* const plugin) noexcept

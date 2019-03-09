@@ -220,7 +220,9 @@ bool ExternalGraph::connect(const uint groupA, const uint portA, const uint grou
     strBuf[STR_MAX] = '\0';
     std::snprintf(strBuf, STR_MAX, "%u:%u:%u:%u", groupA, portA, groupB, portB);
 
-    kEngine->callback(sendCallback, true, ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0, 0.0f, strBuf);
+    if (sendCallback)
+        kEngine->callback(true, true,
+                          ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0, 0.0f, strBuf);
 
     connections.list.append(connectionToId);
     return true;

@@ -1330,7 +1330,6 @@ void CarlaEngine::callback(const bool sendHost, const bool sendOsc,
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
         if (pData->osc.isControlRegistered())
         {
-#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
             switch (action)
             {
             case ENGINE_CALLBACK_PLUGIN_ADDED:
@@ -1349,7 +1348,6 @@ void CarlaEngine::callback(const bool sendHost, const bool sendOsc,
             default:
                 break;
             }
-#endif
 
             oscSend_control_callback(action, pluginId, value1, value2, value3, valuef, valueStr);
         }

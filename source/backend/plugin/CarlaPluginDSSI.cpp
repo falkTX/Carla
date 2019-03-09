@@ -640,12 +640,7 @@ public:
             }
         }
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
-        const bool sendOsc(pData->engine->isOscControlRegistered());
-#else
-        const bool sendOsc(false);
-#endif
-        pData->updateParameterValues(this, sendOsc, true, false);
+        pData->updateParameterValues(this, true, true, false);
     }
 
     void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool doingInit) noexcept override

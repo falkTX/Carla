@@ -556,11 +556,13 @@ public:
 
             extGraph.connections.list.append(connectionToId);
 
-            callback(sendCallback, true,
-                     ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
-                     connectionToId.id,
-                     0, 0, 0, 0.0f,
-                     strBuf);
+            if (sendCallback) {
+                callback(true, true,
+                         ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
+                         connectionToId.id,
+                         0, 0, 0, 0.0f,
+                         strBuf);
+            }
         }
 
         fMidiOutMutex.lock();
@@ -582,11 +584,13 @@ public:
 
             extGraph.connections.list.append(connectionToId);
 
-            callback(sendCallback, true,
-                     ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
-                     connectionToId.id,
-                     0, 0, 0, 0.0f,
-                     strBuf);
+            if (sendCallback) {
+                callback(true, true,
+                         ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
+                         connectionToId.id,
+                         0, 0, 0, 0.0f,
+                         strBuf);
+            }
         }
 
         fMidiOutMutex.unlock();
