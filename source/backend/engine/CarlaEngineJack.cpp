@@ -1975,7 +1975,11 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
 
         // ignore this if on internal patchbay mode
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
         if (! (fExternalPatchbayHost || (fExternalPatchbayOsc && pData->osc.isControlRegisteredForTCP()))) return;
+#else
+        if (! fExternalPatchbayHost) return;
+#endif
 
         // do nothing on client registration, wait for first port
         if (reg) return;
@@ -1997,7 +2001,11 @@ protected:
     void handleJackPortRegistrationCallback(const jack_port_id_t port, const bool reg)
     {
         // ignore this if on internal patchbay mode
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
         if (! (fExternalPatchbayHost || (fExternalPatchbayOsc && pData->osc.isControlRegisteredForTCP()))) return;
+#else
+        if (! fExternalPatchbayHost) return;
+#endif
 
         const jack_port_t* const jackPort(jackbridge_port_by_id(fClient, port));
         CARLA_SAFE_ASSERT_RETURN(jackPort != nullptr,);
@@ -2062,7 +2070,11 @@ protected:
     void handleJackPortConnectCallback(const jack_port_id_t a, const jack_port_id_t b, const bool connect)
     {
         // ignore this if on internal patchbay mode
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
         if (! (fExternalPatchbayHost || (fExternalPatchbayOsc && pData->osc.isControlRegisteredForTCP()))) return;
+#else
+        if (! fExternalPatchbayHost) return;
+#endif
 
         const jack_port_t* const jackPortA(jackbridge_port_by_id(fClient, a));
         CARLA_SAFE_ASSERT_RETURN(jackPortA != nullptr,);
@@ -2135,7 +2147,11 @@ protected:
     void handleJackPortRenameCallback(const jack_port_id_t port, const char* const oldFullName, const char* const newFullName)
     {
         // ignore this if on internal patchbay mode
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
         if (! (fExternalPatchbayHost || (fExternalPatchbayOsc && pData->osc.isControlRegisteredForTCP()))) return;
+#else
+        if (! fExternalPatchbayHost) return;
+#endif
 
         CARLA_SAFE_ASSERT_RETURN(oldFullName != nullptr && oldFullName[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(newFullName != nullptr && newFullName[0] != '\0',);
