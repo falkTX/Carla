@@ -116,10 +116,19 @@ class CarlaHostOSC(CarlaHostQtPlugin):
                         #"prepare_for_save",
                         #"reset_parameters",
                         #"randomize_parameters",
-                        "send_midi_note"
                         ):
             pluginId = lines.pop(0)
             path = "/%s/%i/%s" % (self.lo_target_tcp_name, pluginId, method)
+
+        elif method == "send_midi_note":
+            pluginId = lines.pop(0)
+            channel, note, velocity = lines
+
+            if velocity:
+                path = "/%s/%i/note_on" % (self.lo_target_tcp_name, pluginId)
+            else:
+                path = "/%s/%i/note_off" % (self.lo_target_tcp_name, pluginId)
+                lines.pop(2)
 
         else:
             return self.printAndReturnError("invalid method '%s'" % method)
