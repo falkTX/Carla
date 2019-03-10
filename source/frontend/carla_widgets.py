@@ -76,7 +76,7 @@ class CarlaAboutW(QDialog):
         self.ui.l_about.setText(self.tr(""
                                      "<br>Version %s"
                                      "<br>Carla is a fully-featured audio plugin host%s.<br>"
-                                     "<br>Copyright (C) 2011-2018 falkTX<br>"
+                                     "<br>Copyright (C) 2011-2019 falkTX<br>"
                                      "" % (VERSION, extraInfo)))
 
         if self.ui.about.palette().color(QPalette.Background).blackF() < 0.5:
