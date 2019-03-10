@@ -33,8 +33,9 @@ void CarlaEngineOsc::sendCallback(const EngineCallbackOpcode action, const uint 
 {
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
-    carla_debug("CarlaEngineOsc::sendCallback(%i:%s, %i, %i, %i, %i, %f, \"%s\")",
-                action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valuef, valueStr);
+    carla_stdout("CarlaEngineOsc::sendCallback(%i:%s, %i, %i, %i, %i, %f, \"%s\")",
+                action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3,
+                 static_cast<double>(valuef), valueStr);
 
     static const char* const kFakeNullString = "(null)";
 
@@ -51,7 +52,7 @@ void CarlaEngineOsc::sendPluginInit(const uint pluginId, const char* const plugi
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(pluginName != nullptr && pluginName[0] != '\0',);
-    carla_debug("CarlaEngineOsc::sendadd_plugin_start(%i, \"%s\")", pluginId, pluginName);
+    carla_stdout("CarlaEngineOsc::sendPluginInit(%i, \"%s\")", pluginId, pluginName);
 
     char targetPath[std::strlen(fControlDataTCP.path)+18];
     std::strcpy(targetPath, fControlDataTCP.path);
@@ -64,7 +65,7 @@ void CarlaEngineOsc::sendPluginInfo(const CarlaPlugin* const plugin) const noexc
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-    carla_debug("CarlaEngineOsc::sendPluginInfo(%p)", plugin);
+    carla_stdout("CarlaEngineOsc::sendPluginInfo(%p)", plugin);
 
     char bufName[STR_MAX+1], bufLabel[STR_MAX+1], bufMaker[STR_MAX+1], bufCopyright[STR_MAX+1];
     carla_zeroChars(bufName, STR_MAX+1);
@@ -94,7 +95,7 @@ void CarlaEngineOsc::sendPluginPortCount(const CarlaPlugin* const plugin) const 
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-    carla_debug("CarlaEngineOsc::sendPluginInfo(%p)", plugin);
+    carla_stdout("CarlaEngineOsc::sendPluginInfo(%p)", plugin);
 
     uint32_t paramIns, paramOuts;
     plugin->getParameterCountInfo(paramIns, paramOuts);
@@ -235,20 +236,43 @@ void CarlaEngineOsc::sendset_midi_program_data(const uint pluginId, const uint32
 
 // -----------------------------------------------------------------------
 
-// FIXME use UDP
-
-void CarlaEngineOsc::sendRuntimeInfo() const noexcept
+void CarlaEngineOsc::sendPing() const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
+
+    char targetPath[std::strlen(fControlDataTCP.path)+6];
+    std::strcpy(targetPath, fControlDataTCP.path);
+    std::strcat(targetPath, "/ping");
+    try_lo_send(fControlDataTCP.target, targetPath, "");
+}
+
+void CarlaEngineOsc::sendExit() const noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
+    carla_debug("CarlaEngineOsc::sendExit()");
+
+    char targetPath[std::strlen(fControlDataTCP.path)+6];
+    std::strcpy(targetPath, fControlDataTCP.path);
+    std::strcat(targetPath, "/exit");
+    try_lo_send(fControlDataTCP.target, targetPath, "");
+}
+
+// -----------------------------------------------------------------------
+
+void CarlaEngineOsc::sendRuntimeInfo() const noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(fControlDataUDP.path != nullptr && fControlDataUDP.path[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(fControlDataUDP.target != nullptr,);
     carla_debug("CarlaEngineOsc::sendRuntimeInfo()");
 
     const EngineTimeInfo timeInfo(fEngine->getTimeInfo());
 
-    char targetPath[std::strlen(fControlDataTCP.path)+18];
-    std::strcpy(targetPath, fControlDataTCP.path);
+    char targetPath[std::strlen(fControlDataUDP.path)+18];
+    std::strcpy(targetPath, fControlDataUDP.path);
     std::strcat(targetPath, "/runtime");
-    try_lo_send(fControlDataTCP.target, targetPath, "fiihiiif",
+    try_lo_send(fControlDataUDP.target, targetPath, "fiihiiif",
                 static_cast<double>(fEngine->getDSPLoad()),
                 static_cast<int32_t>(fEngine->getTotalXruns()),
                 timeInfo.playing ? 1 : 0,
@@ -261,13 +285,13 @@ void CarlaEngineOsc::sendRuntimeInfo() const noexcept
 
 void CarlaEngineOsc::sendParameterValue(const uint pluginId, const uint32_t index, const float value) const noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
-    CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(fControlDataUDP.path != nullptr && fControlDataUDP.path[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(fControlDataUDP.target != nullptr,);
 
-    char targetPath[std::strlen(fControlDataTCP.path)+21];
-    std::strcpy(targetPath, fControlDataTCP.path);
-    std::strcat(targetPath, "/param_fixme");
-    try_lo_send(fControlDataTCP.target, targetPath, "iif",
+    char targetPath[std::strlen(fControlDataUDP.path)+21];
+    std::strcpy(targetPath, fControlDataUDP.path);
+    std::strcat(targetPath, "/param");
+    try_lo_send(fControlDataUDP.target, targetPath, "iif",
                 static_cast<int32_t>(pluginId),
                 index,
                 static_cast<double>(value));
@@ -275,13 +299,13 @@ void CarlaEngineOsc::sendParameterValue(const uint pluginId, const uint32_t inde
 
 void CarlaEngineOsc::sendPeaks(const uint pluginId, const float peaks[4]) const noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
-    CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(fControlDataUDP.path != nullptr && fControlDataUDP.path[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(fControlDataUDP.target != nullptr,);
 
-    char targetPath[std::strlen(fControlDataTCP.path)+11];
-    std::strcpy(targetPath, fControlDataTCP.path);
+    char targetPath[std::strlen(fControlDataUDP.path)+11];
+    std::strcpy(targetPath, fControlDataUDP.path);
     std::strcat(targetPath, "/peaks");
-    try_lo_send(fControlDataTCP.target, targetPath, "iffff", static_cast<int32_t>(pluginId),
+    try_lo_send(fControlDataUDP.target, targetPath, "iffff", static_cast<int32_t>(pluginId),
                 static_cast<double>(peaks[0]),
                 static_cast<double>(peaks[1]),
                 static_cast<double>(peaks[2]),

@@ -238,8 +238,11 @@ protected:
         }
         else if (std::strcmp(msg, "patchbay_refresh") == 0)
         {
+            bool external;
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(external), true);
+
             try {
-                ok = fEngine->patchbayRefresh(false);
+                ok = fEngine->patchbayRefresh(external);
             } CARLA_SAFE_EXCEPTION("patchbayRefresh");
         }
         else if (std::strcmp(msg, "transport_play") == 0)

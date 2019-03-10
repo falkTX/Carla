@@ -3034,8 +3034,7 @@ class CarlaHostPlugin(CarlaHostMeta):
         return self.sendMsgAndSetError(["patchbay_disconnect", connectionId])
 
     def patchbay_refresh(self, external):
-        # don't send external param, never used in plugins
-        return self.sendMsgAndSetError(["patchbay_refresh"])
+        return self.sendMsgAndSetError(["patchbay_refresh", external])
 
     def transport_play(self):
         self.sendMsg(["transport_play"])
@@ -3047,7 +3046,7 @@ class CarlaHostPlugin(CarlaHostMeta):
         self.sendMsg(["transport_bpm", bpm])
 
     def transport_relocate(self, frame):
-        self.sendMsg(["transport_relocate"])
+        self.sendMsg(["transport_relocate", frame])
 
     def get_current_transport_frame(self):
         return self.fTransportInfo['frame']
@@ -3313,6 +3312,15 @@ class CarlaHostPlugin(CarlaHostMeta):
         self._reset_info(info)
         self.fPluginsInfo.append(info)
 
+    def _allocateAsNeeded(self, pluginId):
+        if pluginId < len(self.fPluginsInfo):
+            return
+
+        for i in range(pluginId + 1 - len(self.fPluginsInfo)):
+            info = PluginStoreInfo()
+            self._reset_info(info)
+            self.fPluginsInfo.append(info)
+
     def _reset_info(self, info):
         info.pluginInfo     = PyCarlaPluginInfo.copy()
         info.pluginRealName = ""
@@ -3352,6 +3360,7 @@ class CarlaHostPlugin(CarlaHostMeta):
             self.fPluginsInfo[pluginId].internalValues[abs(paramIndex)-2] = float(value)
 
     def _set_audioCountInfo(self, pluginId, info):
+        #self._allocateAsNeeded(pluginId)
         self.fPluginsInfo[pluginId].audioCountInfo = info
 
     def _set_midiCountInfo(self, pluginId, info):
@@ -3455,7 +3464,8 @@ class CarlaHostPlugin(CarlaHostMeta):
             self.fPluginsInfo[pluginId].customData[cdIndex] = data
 
     def _set_peaks(self, pluginId, in1, in2, out1, out2):
-        self.fPluginsInfo[pluginId].peaks = [in1, in2, out1, out2]
+        if pluginId < len(self.fPluginsInfo):
+            self.fPluginsInfo[pluginId].peaks = [in1, in2, out1, out2]
 
     def _switchPlugins(self, pluginIdA, pluginIdB):
         tmp = self.fPluginsInfo[pluginIdA]

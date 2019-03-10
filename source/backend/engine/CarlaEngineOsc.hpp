@@ -79,9 +79,14 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool isControlRegistered() const noexcept
+    bool isControlRegisteredForTCP() const noexcept
     {
-        return (fControlDataTCP.target != nullptr);
+        return fControlDataTCP.target != nullptr;
+    }
+
+    bool isControlRegisteredForUDP() const noexcept
+    {
+        return fControlDataUDP.target != nullptr;
     }
 
     // -------------------------------------------------------------------
@@ -95,11 +100,13 @@ public:
     void sendPluginPortCount(const CarlaPlugin* const plugin) const noexcept;
     void sendPluginParameterInfo(const CarlaPlugin* const plugin, const uint32_t parameterId) const noexcept;
     void sendPluginInternalParameterValues(const CarlaPlugin* const plugin) const noexcept;
-    void sendRuntimeInfo() const noexcept;
+    void sendPing() const noexcept;
+    void sendExit() const noexcept;
 
     // -------------------------------------------------------------------
     // UDP
 
+    void sendRuntimeInfo() const noexcept;
     void sendParameterValue(const uint pluginId, const uint32_t index, const float value) const noexcept;
     void sendPeaks(const uint pluginId, const float peaks[4]) const noexcept;
 
@@ -125,6 +132,8 @@ private:
 
     int handleMsgRegister(const bool isTCP, const int argc, const lo_arg* const* const argv, const char* const types);
     int handleMsgUnregister(const bool isTCP, const int argc, const lo_arg* const* const argv, const char* const types);
+    int handleMsgControl(const char* const method,
+                         const int argc, const lo_arg* const* const argv, const char* const types);
 
     // Internal methods
     int handleMsgSetActive(CARLA_ENGINE_OSC_HANDLE_ARGS);

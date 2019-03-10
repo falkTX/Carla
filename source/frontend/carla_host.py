@@ -128,7 +128,6 @@ class HostWindow(QMainWindow):
         # Internal stuff
 
         self.fIdleTimerNull = self.startTimer(1000) # keep application signals alive
-        self.fIdleTimerOSC  = 0
         self.fIdleTimerFast = 0
         self.fIdleTimerSlow = 0
 
@@ -147,7 +146,8 @@ class HostWindow(QMainWindow):
         self.fLastTransportState = False
         self.fBufferSize         = 0
         self.fSampleRate         = 0.0
-        self.fOscAddress         = ""
+        self.fOscAddressTCP      = ""
+        self.fOscAddressUDP      = ""
 
         if MACOS:
             self.fMacClosingHelper = True
@@ -577,7 +577,8 @@ class HostWindow(QMainWindow):
             host.nsm_ready(NSM_CALLBACK_INIT)
             return
 
-        QTimer.singleShot(0, self.slot_engineStart)
+        if not host.isControl:
+            QTimer.singleShot(0, self.slot_engineStart)
 
     # --------------------------------------------------------------------------------------------------------
     # Setup
@@ -1262,8 +1263,13 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot(int, str)
     def slot_handlePluginAddedCallback(self, pluginId, pluginName):
-        pitem = self.ui.listWidget.createItem(pluginId)
+        if pluginId != self.fPluginCount:
+            print("ERROR: pluginAdded mismatch Id:", pluginId, self.fPluginCount)
+            pitem = self.getPluginItem(pluginId)
+            pitem.recreateWidget()
+            return
 
+        pitem = self.ui.listWidget.createItem(pluginId)
         self.fPluginList.append(pitem)
         self.fPluginCount += 1
 

@@ -175,6 +175,10 @@
 #define CARLA_SAFE_ASSERT_CONTINUE(cond)      if (! (cond)) { carla_safe_assert(#cond, __FILE__, __LINE__); continue; }
 #define CARLA_SAFE_ASSERT_RETURN(cond, ret)   if (! (cond)) { carla_safe_assert(#cond, __FILE__, __LINE__); return ret; }
 
+#define CARLA_SAFE_ASSERT_INT_BREAK(cond, value)       if (! (cond)) { carla_safe_assert_int(#cond, __FILE__, __LINE__, static_cast<int>(value); break; }
+#define CARLA_SAFE_ASSERT_INT_CONTINUE(cond, value)    if (! (cond)) { carla_safe_assert_int(#cond, __FILE__, __LINE__, static_cast<int>(value)); continue; }
+#define CARLA_SAFE_ASSERT_INT_RETURN(cond, value, ret) if (! (cond)) { carla_safe_assert_int(#cond, __FILE__, __LINE__, static_cast<int>(value)); return ret; }
+
 #define CARLA_SAFE_ASSERT_INT2_BREAK(cond, v1, v2)        if (! (cond)) { carla_safe_assert_int2(#cond, __FILE__, __LINE__, static_cast<int>(v1), static_cast<int>(v2)); break; }
 #define CARLA_SAFE_ASSERT_INT2_CONTINUE(cond, v1, v2)     if (! (cond)) { carla_safe_assert_int2(#cond, __FILE__, __LINE__, static_cast<int>(v1), static_cast<int>(v2)); continue; }
 #define CARLA_SAFE_ASSERT_INT2_RETURN(cond, v1, v2, ret)  if (! (cond)) { carla_safe_assert_int2(#cond, __FILE__, __LINE__, static_cast<int>(v1), static_cast<int>(v2)); return ret; }

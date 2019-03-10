@@ -57,12 +57,19 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     if (std::strcmp(path, "/unregister") == 0)
         return handleMsgUnregister(isTCP, argc, argv, types);
 
+    if (std::strncmp(path, "/ctrl/", 6) == 0)
+    {
+        CARLA_SAFE_ASSERT_RETURN(isTCP, 1);
+        return handleMsgControl(path + 6, argc, argv, types);
+    }
+
     const std::size_t nameSize(fName.length());
 
     // Check if message is for this client
     if (std::strlen(path) <= nameSize || std::strncmp(path+1, fName, nameSize) != 0)
     {
-        carla_stderr("CarlaEngineOsc::handleMessage() - message not for this client -> '%s' != '/%s/'", path, fName.buffer());
+        carla_stderr("CarlaEngineOsc::handleMessage() - message not for this client -> '%s' != '/%s/'",
+                     path, fName.buffer());
         return 1;
     }
 
@@ -213,29 +220,28 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP,
 
         oscData.owner  = carla_strdup_safe(url);
         oscData.path   = carla_strdup_free(lo_url_get_path(url));
-        oscData.source = lo_address_new_with_proto(isTCP ? LO_TCP : LO_UDP, host, port);
         oscData.target = target;
 
-        for (uint i=0, count=fEngine->getCurrentPluginCount(); i < count; ++i)
+        if (isTCP)
         {
-            CarlaPlugin* const plugin(fEngine->getPluginUnchecked(i));
-            CARLA_SAFE_ASSERT_CONTINUE(plugin != nullptr);
+            const EngineOptions& opts(fEngine->getOptions());
 
-            fEngine->callback(false, true, ENGINE_CALLBACK_PLUGIN_ADDED, i, 0, 0, 0, 0.0f, plugin->getName());
+            fEngine->callback(false, true,
+                              ENGINE_CALLBACK_ENGINE_STARTED, 0,
+                              opts.processMode,
+                              opts.transportMode,
+                              static_cast<int>(fEngine->getBufferSize()),
+                              static_cast<float>(fEngine->getSampleRate()),
+                              fEngine->getCurrentDriverName());
+
+            for (uint i=0, count=fEngine->getCurrentPluginCount(); i < count; ++i)
+            {
+                CarlaPlugin* const plugin(fEngine->getPluginUnchecked(i));
+                CARLA_SAFE_ASSERT_CONTINUE(plugin != nullptr);
+
+                fEngine->callback(false, true, ENGINE_CALLBACK_PLUGIN_ADDED, i, 0, 0, 0, 0.0f, plugin->getName());
+            }
         }
-
-        const EngineOptions& opts(fEngine->getOptions());
-
-        fEngine->callback(false, true,
-                          ENGINE_CALLBACK_ENGINE_STARTED, 0,
-                          opts.processMode,
-                          opts.transportMode,
-                          static_cast<int>(fEngine->getBufferSize()),
-                          static_cast<float>(fEngine->getSampleRate()),
-                          fEngine->getCurrentDriverName());
-
-        // TODO
-        // fEngine->patchbayRefresh();
     }
 
     lo_address_free(addr);
@@ -266,6 +272,137 @@ int CarlaEngineOsc::handleMsgUnregister(const bool isTCP,
     }
 
     carla_stderr("OSC backend unregister failed, current owner %s does not match requested %s", oscData.owner, url);
+    return 0;
+}
+
+int CarlaEngineOsc::handleMsgControl(const char* const method,
+                                     const int argc, const lo_arg* const* const argv, const char* const types)
+{
+    carla_debug("CarlaEngineOsc::handleMsgControl()");
+    CARLA_SAFE_ASSERT_RETURN(method != nullptr && method[0] != '\0', 0);
+    CARLA_SAFE_ASSERT_RETURN(types != nullptr, 0);
+
+    if (fControlDataTCP.owner == nullptr)
+    {
+        carla_stderr("OSC backend is not registered yet, control failed");
+        return 0;
+    }
+
+    carla_stdout("OSC control for '%s'", method);
+
+//     "patchbay_refresh",
+//     "transport_play",
+//     "transport_pause",
+//     "transport_relocate",
+//     "transport_bpm",
+
+
+    /**/ if (std::strcmp(method, "clear_engine_xruns") == 0)
+    {
+        fEngine->clearXruns();
+    }
+    else if (std::strcmp(method, "cancel_engine_action") == 0)
+    {
+        fEngine->setActionCanceled(true);
+    }
+//                       "patchbay_connect",
+//                       "patchbay_disconnect",
+    else if (std::strcmp(method, "patchbay_connect") == 0)
+    {
+        CARLA_SAFE_ASSERT_INT_RETURN(argc == 4, argc, 0);
+        CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
+        CARLA_SAFE_ASSERT_RETURN(types[1] == 'i', 0);
+        CARLA_SAFE_ASSERT_RETURN(types[2] == 'i', 0);
+        CARLA_SAFE_ASSERT_RETURN(types[3] == 'i', 0);
+
+        const int32_t i0 = argv[0]->i;
+        CARLA_SAFE_ASSERT_RETURN(i0 >= 0, 0);
+
+        const int32_t i1 = argv[1]->i;
+        CARLA_SAFE_ASSERT_RETURN(i1 >= 0, 0);
+
+        const int32_t i2 = argv[2]->i;
+        CARLA_SAFE_ASSERT_RETURN(i2 >= 0, 0);
+
+        const int32_t i3 = argv[3]->i;
+        CARLA_SAFE_ASSERT_RETURN(i3 >= 0, 0);
+
+        fEngine->patchbayConnect(static_cast<uint32_t>(i0),
+                                 static_cast<uint32_t>(i1),
+                                 static_cast<uint32_t>(i2),
+                                 static_cast<uint32_t>(i3));
+    }
+    else if (std::strcmp(method, "patchbay_disconnect") == 0)
+    {
+        CARLA_SAFE_ASSERT_INT_RETURN(argc == 1, argc, 0);
+        CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
+
+        const int32_t i = argv[0]->i;
+        CARLA_SAFE_ASSERT_RETURN(i >= 0, 0);
+
+        fEngine->patchbayDisconnect(static_cast<uint32_t>(i));
+    }
+    else if (std::strcmp(method, "patchbay_refresh") == 0)
+    {
+        CARLA_SAFE_ASSERT_INT_RETURN(argc == 1, argc, 0);
+        CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
+
+        const int32_t i = argv[0]->i;
+        fEngine->patchbayRefresh(i != 0);
+    }
+    else if (std::strcmp(method, "transport_play") == 0)
+    {
+        CARLA_SAFE_ASSERT_INT_RETURN(argc == 0, argc, 0);
+        fEngine->transportPlay();
+    }
+    else if (std::strcmp(method, "transport_pause") == 0)
+    {
+        CARLA_SAFE_ASSERT_INT_RETURN(argc == 0, argc, 0);
+        fEngine->transportPause();
+    }
+    else if (std::strcmp(method, "transport_bpm") == 0)
+    {
+        CARLA_SAFE_ASSERT_INT_RETURN(argc == 1, argc, 0);
+        CARLA_SAFE_ASSERT_RETURN(types[0] == 'f', 0);
+
+        const double f = argv[0]->f;
+        CARLA_SAFE_ASSERT_RETURN(f >= 0.0, 0);
+
+        fEngine->transportBPM(f);
+    }
+    else if (std::strcmp(method, "transport_relocate") == 0)
+    {
+        CARLA_SAFE_ASSERT_INT_RETURN(argc == 1, argc, 0);
+        uint64_t frame;
+
+        /**/ if (types[0] == 'i')
+        {
+            const int32_t i = argv[0]->i;
+            CARLA_SAFE_ASSERT_RETURN(i >= 0, 0);
+            frame = static_cast<uint64_t>(i);
+        }
+        else if (types[0] == 'h')
+        {
+            const int64_t h = argv[0]->h;
+            CARLA_SAFE_ASSERT_RETURN(h >= 0, 0);
+            frame = static_cast<uint64_t>(h);
+        }
+        else
+        {
+            carla_stderr2("Wrong OSC type used for '%s'", method);
+            return 0;
+        }
+
+        fEngine->transportRelocate(frame);
+    }
+
+//                       #"add_plugin",
+//                       "remove_plugin",
+//                       "remove_all_plugins",
+//                       "rename_plugin",
+//                       "clone_plugin",
+//                       "replace_plugin",
+//                       "switch_plugins",
     return 0;
 }
 

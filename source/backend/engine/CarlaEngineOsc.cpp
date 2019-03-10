@@ -183,6 +183,9 @@ void CarlaEngineOsc::close() noexcept
     CARLA_SAFE_ASSERT(fServerUDP != nullptr);
     carla_debug("CarlaEngineOsc::close()");
 
+    if (fControlDataTCP.target != nullptr)
+        sendExit();
+
     fName.clear();
 
     if (fServerTCP != nullptr)

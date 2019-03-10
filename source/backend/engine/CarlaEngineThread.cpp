@@ -19,6 +19,8 @@
 #include "CarlaEngineInternal.hpp"
 #include "CarlaPlugin.hpp"
 
+#include "water/misc/Time.h"
+
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
@@ -49,7 +51,8 @@ void CarlaEngineThread::run() noexcept
     float value;
 
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
-    CarlaEngineOsc& engineOsc(kEngine->pData->osc);
+    // int64_t lastPingTime = 0;
+    const CarlaEngineOsc& engineOsc(kEngine->pData->osc);
 #endif
 
     // thread must do something...
@@ -58,16 +61,14 @@ void CarlaEngineThread::run() noexcept
     for (; (kIsAlwaysRunning || kEngine->isRunning()) && ! shouldThreadExit();)
     {
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
-        const bool oscRegisted = kEngine->isOscControlRegistered();
+        const bool oscRegistedForUDP = engineOsc.isControlRegisteredForUDP();
 #else
-        const bool oscRegisted = false;
+        const bool oscRegistedForUDP = false;
 #endif
 
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
         if (kIsPlugin)
             engineOsc.idle();
-        if (oscRegisted)
-            engineOsc.sendRuntimeInfo();
 #endif
 
         for (uint i=0, count = kEngine->getCurrentPluginCount(); i < count; ++i)
@@ -90,7 +91,7 @@ void CarlaEngineThread::run() noexcept
             // -----------------------------------------------------------
             // Post-poned events
 
-            if (oscRegisted || updateUI)
+            if (oscRegistedForUDP || updateUI)
             {
                 // -------------------------------------------------------
                 // Update parameter outputs
@@ -104,7 +105,7 @@ void CarlaEngineThread::run() noexcept
 
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
                     // Update OSC engine client
-                    if (oscRegisted)
+                    if (oscRegistedForUDP)
                         engineOsc.sendParameterValue(i, j, value);
 #endif
                     // Update UI
@@ -124,10 +125,28 @@ void CarlaEngineThread::run() noexcept
             // -----------------------------------------------------------
             // Update OSC control client peaks
 
-            if (oscRegisted)
+            if (oscRegistedForUDP)
                 engineOsc.sendPeaks(i, kEngine->getPeaks(i));
 #endif
         }
+
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
+        if (oscRegistedForUDP)
+            engineOsc.sendRuntimeInfo();
+
+        /*
+        if (engineOsc.isControlRegisteredForTCP())
+        {
+            const int64_t timeNow = water::Time::currentTimeMillis();
+
+            if (timeNow - lastPingTime > 1000)
+            {
+                engineOsc.sendPing();
+                lastPingTime = timeNow;
+            }
+        }
+        */
+#endif
 
         carla_msleep(25);
     }

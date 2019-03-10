@@ -44,8 +44,12 @@ class CarlaHostOSC(CarlaHostQtPlugin):
     def __init__(self):
         CarlaHostQtPlugin.__init__(self)
 
-        self.lo_target = None
-        self.lo_target_name = ""
+        self.lo_server_tcp = None
+        self.lo_server_udp = None
+        self.lo_target_tcp = None
+        self.lo_target_udp = None
+        self.lo_target_tcp_name = ""
+        self.lo_target_udp_name = ""
 
     # -------------------------------------------------------------------
 
@@ -61,87 +65,96 @@ class CarlaHostOSC(CarlaHostQtPlugin):
         method = lines.pop(0)
 
         if method == "set_engine_option":
+            print(method, lines)
             return True
 
-        if self.lo_target is None:
-            return self.printAndReturnError("lo_target is None")
-        if self.lo_target_name is None:
-            return self.printAndReturnError("lo_target_name is None")
+        if self.lo_target_tcp is None:
+            return self.printAndReturnError("lo_target_tcp is None")
+        if self.lo_target_tcp_name is None:
+            return self.printAndReturnError("lo_target_tcp_name is None")
 
-        if method not in (
-                          #"set_option",
-                          "set_active",
-                          "set_drywet",
-                          "set_volume",
-                          "set_balance_left",
-                          "set_balance_right",
-                          "set_panning",
-                          #"set_ctrl_channel",
-                          "set_parameter_value",
-                          "set_parameter_midi_channel",
-                          "set_parameter_midi_cc",
-                          "set_program",
-                          "set_midi_program",
-                          #"set_custom_data",
-                          #"set_chunk_data",
-                          #"prepare_for_save",
-                          #"reset_parameters",
-                          #"randomize_parameters",
-                          "send_midi_note"
-                          ):
-            return self.printAndReturnError("invalid method '%s'" % method)
+        if method in ("clear_engine_xruns",
+                      "cancel_engine_action",
+                      #"load_file",
+                      #"load_project",
+                      #"save_project",
+                      #"clear_project_filename",
+                      "patchbay_connect",
+                      "patchbay_disconnect",
+                      "patchbay_refresh",
+                      "transport_play",
+                      "transport_pause",
+                      "transport_bpm",
+                      "transport_relocate",
+                      #"add_plugin",
+                      "remove_plugin",
+                      "remove_all_plugins",
+                      "rename_plugin",
+                      "clone_plugin",
+                      #"replace_plugin",
+                      "switch_plugins",
+                      #"load_plugin_state",
+                      #"save_plugin_state",
+                      ):
+            path = "/ctrl/" + method
 
-        pluginId = lines.pop(0)
-
-        args = []
-
-        if method == "send_midi_note":
-            channel, note, velocity = lines
-
-            if velocity:
-                method = "note_on"
-                args   = [channel, note, velocity]
-            else:
-                method = "note_off"
-                args   = [channel, note]
+        elif method in (#"set_option",
+                        "set_active",
+                        "set_drywet",
+                        "set_volume",
+                        "set_balance_left",
+                        "set_balance_right",
+                        "set_panning",
+                        #"set_ctrl_channel",
+                        "set_parameter_value",
+                        "set_parameter_midi_channel",
+                        "set_parameter_midi_cc",
+                        "set_program",
+                        "set_midi_program",
+                        #"set_custom_data",
+                        #"set_chunk_data",
+                        #"prepare_for_save",
+                        #"reset_parameters",
+                        #"randomize_parameters",
+                        "send_midi_note"
+                        ):
+            pluginId = lines.pop(0)
+            path = "/%s/%i/%s" % (self.lo_target_tcp_name, pluginId, method)
 
         else:
-            for line in lines:
-                if isinstance(line, bool):
-                    args.append(int(line))
-                else:
-                    args.append(line)
+            return self.printAndReturnError("invalid method '%s'" % method)
 
-        path = "/%s/%i/%s" % (self.lo_target_name, pluginId, method)
+        args = [int(line) if isinstance(line, bool) else line for line in lines]
+        #print(path, args)
 
-        print(path, args)
-
-        lo_send(self.lo_target, path, *args)
+        lo_send(self.lo_target_tcp, path, *args)
         return True
 
     # -------------------------------------------------------------------
 
     def engine_init(self, driverName, clientName):
-        return self.lo_target is not None
+        print("engine_init", self.lo_target_tcp is not None)
+        return self.lo_target_tcp is not None
 
     def engine_close(self):
+        print("engine_close")
         return True
 
     def engine_idle(self):
         return
 
     def is_engine_running(self):
-        return self.lo_target is not None
+        return self.lo_target_tcp is not None
 
     def set_engine_about_to_close(self):
         return
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # OSC Control server
 
-class CarlaControlServer(Server):
-    def __init__(self, host, mode):
-        Server.__init__(self, 8998 + int(random()*9000), mode)
+class CarlaControlServerTCP(Server):
+    def __init__(self, host):
+        Server.__init__(self, proto=LO_TCP)
 
         self.host = host
 
@@ -152,36 +165,32 @@ class CarlaControlServer(Server):
             pass
 
     def getFullURL(self):
-        return "%scarla-control" % self.get_url()
+        return "%sctrl" % self.get_url()
 
-    @make_method('/carla-control/cb', 'iiiiifs')
+    @make_method('/ctrl/cb', 'iiiiifs')
     def carla_cb(self, path, args):
-        print(path, args)
         self.fReceivedMsgs = True
         action, pluginId, value1, value2, value3, valuef, valueStr = args
         self.host._setViaCallback(action, pluginId, value1, value2, value3, valuef, valueStr)
         engineCallback(self.host, action, pluginId, value1, value2, value3, valuef, valueStr)
 
-    @make_method('/carla-control/init', 'is') # FIXME set name in add method
+    @make_method('/ctrl/init', 'is') # FIXME set name in add method
     def carla_init(self, path, args):
-        print(path, args)
         self.fReceivedMsgs = True
         pluginId, pluginName = args
         self.host._add(pluginId)
         self.host._set_pluginInfoUpdate(pluginId, {'name': pluginName})
 
-    @make_method('/carla-control/ports', 'iiiiiiii')
+    @make_method('/ctrl/ports', 'iiiiiiii')
     def carla_ports(self, path, args):
-        print(path, args)
         self.fReceivedMsgs = True
         pluginId, audioIns, audioOuts, midiIns, midiOuts, paramIns, paramOuts, paramTotal = args
         self.host._set_audioCountInfo(pluginId, {'ins': audioIns, 'outs': audioOuts})
         self.host._set_midiCountInfo(pluginId, {'ins': midiOuts, 'outs': midiOuts})
         self.host._set_parameterCountInfo(pluginId, paramTotal, {'ins': paramIns, 'outs': paramOuts})
 
-    @make_method('/carla-control/info', 'iiiihssss')
+    @make_method('/ctrl/info', 'iiiihssss')
     def carla_info(self, path, args):
-        print(path, args)
         self.fReceivedMsgs = True
         pluginId, type_, category, hints, uniqueId, realName, label, maker, copyright = args
         optsAvail = optsEnabled = 0x0 # FIXME
@@ -207,9 +216,8 @@ class CarlaControlServer(Server):
         self.host._set_pluginInfoUpdate(pluginId, pinfo)
         self.host._set_pluginRealName(pluginId, realName)
 
-    @make_method('/carla-control/param', 'iiiiiissfffffff')
+    @make_method('/ctrl/param', 'iiiiiissfffffff')
     def carla_param(self, path, args):
-        print(path, args)
         self.fReceivedMsgs = True
         (
           pluginId, paramId, type_, hints, midiChan, midiCC, name, unit,
@@ -248,9 +256,8 @@ class CarlaControlServer(Server):
 
         self.host._set_parameterValue(pluginId, paramId, value)
 
-    @make_method('/carla-control/iparams', 'ifffffff')
+    @make_method('/ctrl/iparams', 'ifffffff')
     def carla_iparams(self, path, args):
-        print(path, args)
         self.fReceivedMsgs = True
         pluginId, active, drywet, volume, balLeft, balRight, pan, ctrlChan = args
         self.host._set_internalValue(pluginId, PARAMETER_ACTIVE, active)
@@ -261,72 +268,97 @@ class CarlaControlServer(Server):
         self.host._set_internalValue(pluginId, PARAMETER_PANNING, pan)
         self.host._set_internalValue(pluginId, PARAMETER_CTRL_CHANNEL, ctrlChan)
 
-    @make_method('/carla-control/set_program_count', 'ii')
-    def set_program_count_callback(self, path, args):
-        print(path, args)
+    #@make_method('/ctrl/set_program_count', 'ii')
+    #def set_program_count_callback(self, path, args):
+        #print(path, args)
+        #self.fReceivedMsgs = True
+        #pluginId, count = args
+        #self.host._set_programCount(pluginId, count)
+
+    #@make_method('/ctrl/set_midi_program_count', 'ii')
+    #def set_midi_program_count_callback(self, path, args):
+        #print(path, args)
+        #self.fReceivedMsgs = True
+        #pluginId, count = args
+        #self.host._set_midiProgramCount(pluginId, count)
+
+    #@make_method('/ctrl/set_program_name', 'iis')
+    #def set_program_name_callback(self, path, args):
+        #print(path, args)
+        #self.fReceivedMsgs = True
+        #pluginId, progId, progName = args
+        #self.host._set_programName(pluginId, progId, progName)
+
+    #@make_method('/ctrl/set_midi_program_data', 'iiiis')
+    #def set_midi_program_data_callback(self, path, args):
+        #print(path, args)
+        #self.fReceivedMsgs = True
+        #pluginId, midiProgId, bank, program, name = args
+        #self.host._set_midiProgramData(pluginId, midiProgId, {'bank': bank, 'program': program, 'name': name})
+
+    #@make_method('/note_on', 'iiii')
+
+    @make_method('/ctrl/exit', '')
+    def carla_exit(self, path, args):
         self.fReceivedMsgs = True
-        pluginId, count = args
-        self.host._set_programCount(pluginId, count)
+        #self.host.lo_target_tcp = None
+        self.host.QuitCallback.emit()
 
-    @make_method('/carla-control/set_midi_program_count', 'ii')
-    def set_midi_program_count_callback(self, path, args):
-        print(path, args)
+    @make_method('/ctrl/exit-error', 's')
+    def carla_exit_error(self, path, args):
         self.fReceivedMsgs = True
-        pluginId, count = args
-        self.host._set_midiProgramCount(pluginId, count)
+        error, = args
+        self.host.lo_target_tcp = None
+        self.host.QuitCallback.emit()
+        self.host.ErrorCallback.emit(error)
 
-    @make_method('/carla-control/set_program_name', 'iis')
-    def set_program_name_callback(self, path, args):
-        print(path, args)
+    @make_method(None, None)
+    def fallback(self, path, args):
+        print("ControlServerTCP::fallback(\"%s\") - unknown message, args =" % path, args)
         self.fReceivedMsgs = True
-        pluginId, progId, progName = args
-        self.host._set_programName(pluginId, progId, progName)
 
-    @make_method('/carla-control/set_midi_program_data', 'iiiis')
-    def set_midi_program_data_callback(self, path, args):
-        print(path, args)
-        self.fReceivedMsgs = True
-        pluginId, midiProgId, bank, program, name = args
-        self.host._set_midiProgramData(pluginId, midiProgId, {'bank': bank, 'program': program, 'name': name})
+# ---------------------------------------------------------------------------------------------------------------------
 
-    #@make_method('/carla-control/note_on', 'iiii')
+class CarlaControlServerUDP(Server):
+    def __init__(self, host):
+        Server.__init__(self, proto=LO_UDP)
 
-    @make_method('/carla-control/runtime', 'fiihiiif')
+        self.host = host
+
+    def idle(self):
+        self.fReceivedMsgs = False
+
+        while self.recv(0) and self.fReceivedMsgs:
+            pass
+
+    def getFullURL(self):
+        return "%sctrl" % self.get_url()
+
+    @make_method('/ctrl/runtime', 'fiihiiif')
     def carla_runtime(self, path, args):
         self.fReceivedMsgs = True
         load, xruns, playing, frame, bar, beat, tick, bpm = args
         self.host._set_runtime_info(load, xruns)
         self.host._set_transport(bool(playing), frame, bar, beat, tick, bpm)
 
-    @make_method('/carla-control/param_fixme', 'iif')
+    @make_method('/ctrl/param', 'iif')
     def carla_param_fixme(self, path, args):
         self.fReceivedMsgs = True
         pluginId, paramId, paramValue = args
         self.host._set_parameterValue(pluginId, paramId, paramValue)
 
-    @make_method('/carla-control/peaks', 'iffff')
+    @make_method('/ctrl/peaks', 'iffff')
     def carla_peaks(self, path, args):
         self.fReceivedMsgs = True
         pluginId, in1, in2, out1, out2 = args
         self.host._set_peaks(pluginId, in1, in2, out1, out2)
 
-    #@make_method('/carla-control/note_on', 'iiii')
-
-    @make_method('/carla-control/exit-error', 's')
-    def set_exit_error_callback(self, path, args):
-        print(path, args)
-        self.fReceivedMsgs = True
-        error, = args
-        self.host.lo_target = None
-        self.host.QuitCallback.emit()
-        self.host.ErrorCallback.emit(error)
-
     @make_method(None, None)
     def fallback(self, path, args):
-        print("ControlServer::fallback(\"%s\") - unknown message, args =" % path, args)
+        print("ControlServerUDP::fallback(\"%s\") - unknown message, args =" % path, args)
         self.fReceivedMsgs = True
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Main Window
 
 class HostWindowOSC(HostWindow):
@@ -340,11 +372,6 @@ class HostWindowOSC(HostWindow):
             self.host = host
 
         # ----------------------------------------------------------------------------------------------------
-        # Internal stuff
-
-        self.fOscServer = None
-
-        # ----------------------------------------------------------------------------------------------------
         # Connect actions to functions
 
         self.ui.act_file_connect.triggered.connect(self.slot_fileConnect)
@@ -356,32 +383,36 @@ class HostWindowOSC(HostWindow):
         if oscAddr:
             QTimer.singleShot(0, self.connectOsc)
 
-    def connectOsc(self, addr = None):
-        if addr is not None:
-            self.fOscAddress = addr
+    def connectOsc(self, addrTCP = None, addrUDP = None):
+        if addrTCP is not None:
+            self.fOscAddressTCP = addrTCP
+        if addrUDP is not None:
+            self.fOscAddressUDP = addrUDP
 
-        lo_protocol    = LO_UDP if self.fOscAddress.startswith("osc.udp") else LO_TCP
-        lo_target_name = self.fOscAddress.rsplit("/", 1)[-1]
+        lo_target_tcp_name = self.fOscAddressTCP.rsplit("/", 1)[-1]
+        lo_target_udp_name = self.fOscAddressUDP.rsplit("/", 1)[-1]
 
         err = None
-        print("Connecting to \"%s\" as '%s'..." % (self.fOscAddress, lo_target_name))
 
         try:
-            lo_target = Address(self.fOscAddress)
-            self.fOscServer = CarlaControlServer(self.host, lo_protocol)
-            lo_send(lo_target, "/register", self.fOscServer.getFullURL())
+            lo_target_tcp = Address(self.fOscAddressTCP)
+            lo_server_tcp = CarlaControlServerTCP(self.host)
+            lo_send(lo_target_tcp, "/register", lo_server_tcp.getFullURL())
+            print(lo_server_tcp.getFullURL())
+
+            lo_target_udp = Address(self.fOscAddressUDP)
+            lo_server_udp = CarlaControlServerUDP(self.host)
+            lo_send(lo_target_udp, "/register", lo_server_udp.getFullURL())
+            print(lo_server_udp.getFullURL())
 
         except AddressError as e:
             err = e
         except OSError as e:
             err = e
         except:
-            err = { 'args': [] }
+            err = Exception()
 
         if err is not None:
-            del self.fOscServer
-            self.fOscServer = None
-
             fullError = self.tr("Failed to connect to the Carla instance.")
 
             if len(err.args) > 0:
@@ -400,53 +431,72 @@ class HostWindowOSC(HostWindow):
                              QMessageBox.Ok)
             return
 
-        self.host.lo_target = lo_target
-        self.host.lo_target_name = lo_target_name
+        self.host.lo_server_tcp = lo_server_tcp
+        self.host.lo_target_tcp = lo_target_tcp
+        self.host.lo_target_tcp_name = lo_target_tcp_name
+
+        self.host.lo_server_udp = lo_server_udp
+        self.host.lo_target_udp = lo_target_udp
+        self.host.lo_target_udp_name = lo_target_udp_name
+
         self.ui.act_file_refresh.setEnabled(True)
 
         self.startTimers()
 
     def disconnectOsc(self):
         self.killTimers()
-
-        if self.host.lo_target is not None:
-            try:
-                lo_send(self.host.lo_target, "/unregister", self.fOscServer.getFullURL())
-            except:
-                pass
-
-        if self.fOscServer is not None:
-            del self.fOscServer
-            self.fOscServer = None
-
+        self.unregister()
         self.removeAllPlugins()
 
-        self.host.lo_target = None
-        self.host.lo_target_name = ""
         self.ui.act_file_refresh.setEnabled(False)
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def unregister(self):
+        if self.host.lo_server_tcp is not None:
+            if self.host.lo_target_tcp is not None:
+                try:
+                    lo_send(self.host.lo_target_tcp, "/unregister", self.host.lo_server_tcp.getFullURL())
+                except:
+                    pass
+                self.host.lo_target_tcp = None
+
+            while self.host.lo_server_tcp.recv(0):
+                pass
+            #self.host.lo_server_tcp.free()
+            self.host.lo_server_tcp = None
+
+        if self.host.lo_server_udp is not None:
+            if self.host.lo_target_udp is not None:
+                try:
+                    lo_send(self.host.lo_target_udp, "/unregister", self.host.lo_server_udp.getFullURL())
+                except:
+                    pass
+                self.host.lo_target_udp = None
+
+            while self.host.lo_server_udp.recv(0):
+                pass
+            #self.host.lo_server_udp.free()
+            self.host.lo_server_udp = None
+
+        self.host.lo_target_tcp_name = ""
+        self.host.lo_target_udp_name = ""
 
     # --------------------------------------------------------------------------------------------------------
     # Timers
 
-    def startTimers(self):
-        if self.fIdleTimerOSC == 0:
-            self.fIdleTimerOSC = self.startTimer(20)
+    def idleFast(self):
+        HostWindow.idleFast(self)
 
-        HostWindow.startTimers(self)
+        if self.host.lo_server_tcp is not None:
+            self.host.lo_server_tcp.idle()
+        else:
+            self.disconnectOsc()
 
-    def restartTimersIfNeeded(self):
-        if self.fIdleTimerOSC != 0:
-            self.killTimer(self.fIdleTimerOSC)
-            self.fIdleTimerOSC = self.startTimer(20)
-
-        HostWindow.restartTimersIfNeeded(self)
-
-    def killTimers(self):
-        if self.fIdleTimerOSC != 0:
-            self.killTimer(self.fIdleTimerOSC)
-            self.fIdleTimerOSC = 0
-
-        HostWindow.killTimers(self)
+        if self.host.lo_server_udp is not None:
+            self.host.lo_server_udp.idle()
+        else:
+            self.disconnectOsc()
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -458,12 +508,15 @@ class HostWindowOSC(HostWindow):
 
     def loadSettings(self, firstTime):
         settings = HostWindow.loadSettings(self, firstTime)
-        self.fOscAddress = settings.value("RemoteAddress", "osc.tcp://127.0.0.1:22752/Carla", type=str)
+        self.fOscAddressTCP = settings.value("RemoteAddressTCP", "osc.tcp://127.0.0.1:22752/Carla", type=str)
+        self.fOscAddressUDP = settings.value("RemoteAddressUDP", "osc.udp://127.0.0.1:22752/Carla", type=str)
 
     def saveSettings(self):
         settings = HostWindow.saveSettings(self)
-        if self.fOscAddress:
-            settings.setValue("RemoteAddress", self.fOscAddress)
+        if self.fOscAddressTCP:
+            settings.setValue("RemoteAddressTCP", self.fOscAddressTCP)
+        if self.fOscAddressUDP:
+            settings.setValue("RemoteAddressUDP", self.fOscAddressUDP)
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -472,7 +525,7 @@ class HostWindowOSC(HostWindow):
         dialog = QInputDialog(self)
         dialog.setInputMode(QInputDialog.TextInput)
         dialog.setLabelText(self.tr("Address:"))
-        dialog.setTextValue(self.fOscAddress or "osc.tcp://127.0.0.1:22752/Carla")
+        dialog.setTextValue(self.fOscAddressTCP or "osc.tcp://127.0.0.1:22752/Carla")
         dialog.setWindowTitle(self.tr("Carla Control - Connect"))
         dialog.resize(400,1)
 
@@ -488,45 +541,50 @@ class HostWindowOSC(HostWindow):
         self.disconnectOsc()
 
         if addr:
-            self.connectOsc(addr)
+            self.connectOsc(addr.replace("osc.udp:", "osc.tcp:"), addr.replace("osc.tcp:", "osc.udp:"))
 
     @pyqtSlot()
     def slot_fileRefresh(self):
-        if self.host.lo_target is None or self.fOscServer is None:
+        if None in (self.host.lo_server_tcp, self.host.lo_server_udp, self.host.lo_target_tcp, self.host.lo_target_udp):
             return
 
-        self.killTimers()
+        lo_send(self.host.lo_target_udp, "/unregister", self.host.lo_server_udp.getFullURL())
+        while self.host.lo_server_udp.recv(0):
+            pass
+        #self.host.lo_server_udp.free()
+
+        lo_send(self.host.lo_target_tcp, "/unregister", self.host.lo_server_tcp.getFullURL())
+        while self.host.lo_server_tcp.recv(0):
+            pass
+        #self.host.lo_server_tcp.free()
+
         self.removeAllPlugins()
 
-        lo_send(self.host.lo_target, "/unregister", self.fOscServer.getFullURL())
-        lo_send(self.host.lo_target, "/register", self.fOscServer.getFullURL())
+        self.host.lo_server_tcp = CarlaControlServerTCP(self.host)
+        self.host.lo_server_udp = CarlaControlServerUDP(self.host)
 
-        self.startTimers()
+        try:
+            lo_send(self.host.lo_target_tcp, "/register", self.host.lo_server_tcp.getFullURL())
+        except:
+            self.disconnectOsc()
+            return
+
+        try:
+            lo_send(self.host.lo_target_udp, "/register", self.host.lo_server_udp.getFullURL())
+        except:
+            self.disconnectOsc()
+            return
 
     @pyqtSlot()
     def slot_handleQuitCallback(self):
-        HostWindow.slot_handleQuitCallback(self)
         self.disconnectOsc()
+        HostWindow.slot_handleQuitCallback(self)
 
     # --------------------------------------------------------------------------------------------------------
 
-    def timerEvent(self, event):
-        if event.timerId() == self.fIdleTimerOSC:
-            self.fOscServer.idle()
-
-            if self.host.lo_target is None:
-                self.disconnectOsc()
-
-        HostWindow.timerEvent(self, event)
-
     def closeEvent(self, event):
         self.killTimers()
-
-        if self.host.lo_target is not None and self.fOscServer is not None:
-            try:
-                lo_send(self.host.lo_target, "/unregister", self.fOscServer.getFullURL())
-            except:
-                pass
+        self.unregister()
 
         HostWindow.closeEvent(self, event)
 

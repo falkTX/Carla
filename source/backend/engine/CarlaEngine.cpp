@@ -1332,7 +1332,7 @@ void CarlaEngine::callback(const bool sendHost, const bool sendOsc,
     if (sendOsc)
     {
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
-        if (pData->osc.isControlRegistered())
+        if (pData->osc.isControlRegisteredForTCP())
         {
             switch (action)
             {
@@ -1823,7 +1823,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
 bool CarlaEngine::isOscControlRegistered() const noexcept
 {
 # ifdef HAVE_LIBLO
-    return pData->osc.isControlRegistered();
+    return pData->osc.isControlRegisteredForTCP();
 # else
     return false;
 # endif
