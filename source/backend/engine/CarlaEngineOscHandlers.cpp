@@ -243,6 +243,38 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP,
             }
 
             fEngine->patchbayRefresh(false, true, fEngine->pData->graph.isUsingExternal());
+
+#if 0
+void CarlaPlugin::registerToOscClient() noexcept
+{
+    // Programs
+    if (const uint32_t count = std::min<uint32_t>(pData->prog.count, 50U))
+    {
+        pData->engine->oscSend_control_set_program_count(pData->id, count);
+
+        for (uint32_t i=0; i < count; ++i)
+            pData->engine->oscSend_control_set_program_name(pData->id, i, pData->prog.names[i]);
+
+//         pData->engine->oscSend_control_set_current_program(pData->id, pData->prog.current);
+    }
+
+    // MIDI Programs
+    if (const uint32_t count = std::min<uint32_t>(pData->midiprog.count, 50U))
+    {
+        pData->engine->oscSend_control_set_midi_program_count(pData->id, count);
+
+        for (uint32_t i=0; i < count; ++i)
+        {
+            const MidiProgramData& mpData(pData->midiprog.data[i]);
+
+            pData->engine->oscSend_control_set_midi_program_data(pData->id, i, mpData.bank, mpData.program, mpData.name);
+        }
+
+//         pData->engine->oscSend_control_set_current_midi_program(pData->id, pData->midiprog.current);
+    }
+}
+#endif
+
         }
     }
 

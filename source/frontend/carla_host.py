@@ -1683,7 +1683,7 @@ class HostWindow(QMainWindow):
 
         settings2 = QSettings("falkTX", "Carla2")
 
-        if self.host.experimental and not self.host.isControl:
+        if self.host.experimental:
             visible = settings2.value(CARLA_KEY_EXPERIMENTAL_JACK_APPS, CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS, type=bool)
             self.ui.act_add_jack.setVisible(visible)
             self.ui.act_plugin_add_jack.setVisible(visible)

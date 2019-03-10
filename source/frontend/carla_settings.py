@@ -250,13 +250,10 @@ class CarlaSettingsW(QDialog):
             self.ui.ch_main_show_logs.setVisible(False)
 
         if host.isControl:
-            self.ui.lw_page.hideRow(self.TAB_INDEX_CANVAS)
             self.ui.lw_page.hideRow(self.TAB_INDEX_ENGINE)
             self.ui.lw_page.hideRow(self.TAB_INDEX_PATHS)
-            self.ui.lw_page.hideRow(self.TAB_INDEX_EXPERIMENTAL)
-            self.ui.ch_main_experimental.setEnabled(False)
-            self.ui.group_main_experimental.setEnabled(False)
-            self.ui.group_main_experimental.setVisible(False)
+            self.ui.ch_exp_export_lv2.hide()
+            self.ui.group_experimental_engine.hide()
 
         elif not hasCanvas:
             self.ui.lw_page.hideRow(self.TAB_INDEX_CANVAS)
@@ -387,15 +384,14 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Main
 
-        if not self.host.isControl:
-            self.ui.ch_main_experimental.setChecked(self.host.experimental)
+        self.ui.ch_main_experimental.setChecked(self.host.experimental)
 
-            if not self.host.experimental:
-                self.ui.lw_page.hideRow(self.TAB_INDEX_EXPERIMENTAL)
-                self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
+        if not self.host.experimental:
+            self.ui.lw_page.hideRow(self.TAB_INDEX_EXPERIMENTAL)
+            self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
 
-            elif not self.host.showWineBridges:
-                self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
+        elif not self.host.showWineBridges:
+            self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
 
         # ----------------------------------------------------------------------------------------------------
         # Engine
@@ -914,7 +910,7 @@ class CarlaSettingsW(QDialog):
     def slot_enableExperimental(self, toggled):
         if toggled:
             self.ui.lw_page.showRow(self.TAB_INDEX_EXPERIMENTAL)
-            if self.ui.ch_exp_wine_bridges.isChecked():
+            if self.ui.ch_exp_wine_bridges.isChecked() and not self.host.isControl:
                 self.ui.lw_page.showRow(self.TAB_INDEX_WINE)
         else:
             self.ui.lw_page.hideRow(self.TAB_INDEX_EXPERIMENTAL)
@@ -922,7 +918,7 @@ class CarlaSettingsW(QDialog):
 
     @pyqtSlot(bool)
     def slot_enableWineBridges(self, toggled):
-        if toggled:
+        if toggled and not self.host.isControl:
             self.ui.lw_page.showRow(self.TAB_INDEX_WINE)
         else:
             self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
