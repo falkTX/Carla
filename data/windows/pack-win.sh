@@ -174,6 +174,7 @@ rm -rf ${PKG_FOLDER}
 mkdir ${PKG_FOLDER}
 mkdir ${PKG_FOLDER}/vcredist
 cp -r Carla.exe Carla.lv2 README.txt ${PKG_FOLDER}
+unix2dos ${PKG_FOLDER}/README.txt
 cp ~/.cache/winetricks/vcrun2010/vcredist_x${VCARCH}.exe ${PKG_FOLDER}/vcredist
 zip -r -9 ${PKG_FOLDER}.zip ${PKG_FOLDER}
 
