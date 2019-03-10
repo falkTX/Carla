@@ -276,7 +276,7 @@
      </column>
      <column>
       <property name="text">
-       <string>Label</string>
+       <string>Label/URI</string>
       </property>
      </column>
      <column>
