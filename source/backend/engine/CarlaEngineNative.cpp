@@ -242,7 +242,7 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(external), true);
 
             try {
-                ok = fEngine->patchbayRefresh(external);
+                ok = fEngine->patchbayRefresh(true, false, external);
             } CARLA_SAFE_EXCEPTION("patchbayRefresh");
         }
         else if (std::strcmp(msg, "transport_play") == 0)
@@ -1803,7 +1803,7 @@ protected:
             }
 
             if (kIsPatchbay)
-                patchbayRefresh(false);
+                patchbayRefresh(true, false, false);
         }
         else
         {

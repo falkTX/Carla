@@ -19,7 +19,7 @@
 
 #ifdef HAVE_LIBLO
 
-#include "CarlaEngine.hpp"
+#include "CarlaEngineInternal.hpp"
 #include "CarlaPlugin.hpp"
 #include "CarlaMIDI.h"
 
@@ -241,6 +241,9 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP,
 
                 fEngine->callback(false, true, ENGINE_CALLBACK_PLUGIN_ADDED, i, 0, 0, 0, 0.0f, plugin->getName());
             }
+
+            const bool usingExternalPatchbay = false;
+            fEngine->patchbayRefresh(false, true, fEngine->pData->graph.isUsingExternal());
         }
     }
 
@@ -288,15 +291,6 @@ int CarlaEngineOsc::handleMsgControl(const char* const method,
         return 0;
     }
 
-    carla_stdout("OSC control for '%s'", method);
-
-//     "patchbay_refresh",
-//     "transport_play",
-//     "transport_pause",
-//     "transport_relocate",
-//     "transport_bpm",
-
-
     /**/ if (std::strcmp(method, "clear_engine_xruns") == 0)
     {
         fEngine->clearXruns();
@@ -305,8 +299,6 @@ int CarlaEngineOsc::handleMsgControl(const char* const method,
     {
         fEngine->setActionCanceled(true);
     }
-//                       "patchbay_connect",
-//                       "patchbay_disconnect",
     else if (std::strcmp(method, "patchbay_connect") == 0)
     {
         CARLA_SAFE_ASSERT_INT_RETURN(argc == 4, argc, 0);
@@ -348,7 +340,7 @@ int CarlaEngineOsc::handleMsgControl(const char* const method,
         CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
 
         const int32_t i = argv[0]->i;
-        fEngine->patchbayRefresh(i != 0);
+        fEngine->patchbayRefresh(false, true, i != 0);
     }
     else if (std::strcmp(method, "transport_play") == 0)
     {
@@ -395,14 +387,76 @@ int CarlaEngineOsc::handleMsgControl(const char* const method,
 
         fEngine->transportRelocate(frame);
     }
+    // TODO add plugin
+    else if (std::strcmp(method, "remove_plugin") == 0)
+    {
+        CARLA_SAFE_ASSERT_INT_RETURN(argc == 1, argc, 0);
+        CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
 
-//                       #"add_plugin",
-//                       "remove_plugin",
-//                       "remove_all_plugins",
-//                       "rename_plugin",
-//                       "clone_plugin",
-//                       "replace_plugin",
-//                       "switch_plugins",
+        const int32_t i = argv[0]->i;
+        CARLA_SAFE_ASSERT_RETURN(i >= 0, 0);
+
+        fEngine->removePlugin(static_cast<uint32_t>(i));
+    }
+    else if (std::strcmp(method, "remove_all_plugins") == 0)
+    {
+        CARLA_SAFE_ASSERT_INT_RETURN(argc == 0, argc, 0);
+
+        fEngine->removeAllPlugins();
+    }
+    else if (std::strcmp(method, "rename_plugin") == 0)
+    {
+        CARLA_SAFE_ASSERT_INT_RETURN(argc == 2, argc, 0);
+        CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
+        CARLA_SAFE_ASSERT_RETURN(types[1] == 's', 0);
+
+        const int32_t i = argv[0]->i;
+        CARLA_SAFE_ASSERT_RETURN(i >= 0, 0);
+
+        const char* const s = &argv[0]->s;
+        CARLA_SAFE_ASSERT_RETURN(s != nullptr && s[0] != '\0', 0);
+
+        fEngine->renamePlugin(static_cast<uint32_t>(i), s);
+    }
+    else if (std::strcmp(method, "clone_plugin") == 0)
+    {
+        CARLA_SAFE_ASSERT_INT_RETURN(argc == 1, argc, 0);
+        CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
+
+        const int32_t i = argv[0]->i;
+        CARLA_SAFE_ASSERT_RETURN(i >= 0, 0);
+
+        fEngine->clonePlugin(static_cast<uint32_t>(i));
+    }
+    else if (std::strcmp(method, "replace_plugin") == 0)
+    {
+        CARLA_SAFE_ASSERT_INT_RETURN(argc == 1, argc, 0);
+        CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
+
+        const int32_t i = argv[0]->i;
+        CARLA_SAFE_ASSERT_RETURN(i >= 0, 0);
+
+        fEngine->replacePlugin(static_cast<uint32_t>(i));
+    }
+    else if (std::strcmp(method, "switch_plugins") == 0)
+    {
+        CARLA_SAFE_ASSERT_INT_RETURN(argc == 2, argc, 0);
+        CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
+        CARLA_SAFE_ASSERT_RETURN(types[1] == 'i', 0);
+
+        const int32_t i0 = argv[0]->i;
+        CARLA_SAFE_ASSERT_RETURN(i0 >= 0, 0);
+
+        const int32_t i1 = argv[0]->i;
+        CARLA_SAFE_ASSERT_RETURN(i1 >= 0, 0);
+
+        fEngine->switchPlugins(static_cast<uint32_t>(i0), static_cast<uint32_t>(i1));
+    }
+    else
+    {
+        carla_stderr2("Unhandled OSC control for '%s'", method);
+    }
+
     return 0;
 }
 

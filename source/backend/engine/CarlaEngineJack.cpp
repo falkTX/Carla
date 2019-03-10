@@ -961,7 +961,7 @@ public:
             fTimebaseMaster = false;
 
         if (opts.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
-            initJackPatchbay(jackClientName);
+            initJackPatchbay(true, false, jackClientName);
 
         jackbridge_set_client_registration_callback(fClient, carla_jack_client_registration_callback, this);
         jackbridge_set_port_registration_callback(fClient, carla_jack_port_registration_callback, this);
@@ -986,7 +986,7 @@ public:
             else
             {
                 pData->graph.create(2, 2);
-                patchbayRefresh(false);
+                patchbayRefresh(true, false, false);
             }
         }
 
@@ -1477,7 +1477,7 @@ public:
         return true;
     }
 
-    bool patchbayRefresh(const bool external) override
+    bool patchbayRefresh(const bool sendHost, const bool sendOsc, const bool external) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
 
@@ -1487,7 +1487,7 @@ public:
             pData->graph.setUsingExternal(external);
 
             if (! external)
-                return CarlaEngine::patchbayRefresh(false);
+                return CarlaEngine::patchbayRefresh(sendHost, sendOsc, false);
         }
 
         fUsedGroups.clear();
@@ -1495,8 +1495,7 @@ public:
         fUsedConnections.clear();
         fNewGroups.clear();
 
-        initJackPatchbay(jackbridge_get_client_name(fClient));
-
+        initJackPatchbay(sendHost, sendOsc, jackbridge_get_client_name(fClient));
         return true;
     }
 
@@ -2024,7 +2023,7 @@ protected:
                 fUsedGroups.list.append(groupNameToId);
             }
 
-            addPatchbayJackPort(groupId, jackPort, shortPortName, fullPortName, jackPortFlags);
+            addPatchbayJackPort(true, true, groupId, jackPort, shortPortName, fullPortName, jackPortFlags);
         }
         else
         {
@@ -2296,7 +2295,7 @@ private:
         return false;
     }
 
-    void initJackPatchbay(const char* const ourName)
+    void initJackPatchbay(const bool sendHost, const bool sendOsc, const char* const ourName)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY || fExternalPatchbay,);
         CARLA_SAFE_ASSERT_RETURN(ourName != nullptr && ourName[0] != '\0',);
@@ -2310,7 +2309,7 @@ private:
             GroupNameToId groupNameToId;
             groupNameToId.setData(++fUsedGroups.lastId, ourName);
 
-            callback(true, true,
+            callback(sendHost, sendOsc,
                      ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
                      groupNameToId.group,
                      PATCHBAY_ICON_CARLA,
@@ -2362,7 +2361,7 @@ private:
                     GroupNameToId groupNameToId;
                     groupNameToId.setData(groupId, groupName);
 
-                    callback(true, true,
+                    callback(sendHost, sendOsc,
                              ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
                              groupNameToId.group,
                              icon,
@@ -2372,7 +2371,7 @@ private:
                     fUsedGroups.list.append(groupNameToId);
                 }
 
-                addPatchbayJackPort(groupId, jackPort, shortPortName, fullPortName, jackPortFlags);
+                addPatchbayJackPort(sendHost, sendOsc, groupId, jackPort, shortPortName, fullPortName, jackPortFlags);
             }
 
             jackbridge_free(ports);
@@ -2414,7 +2413,7 @@ private:
                         ConnectionToId connectionToId;
                         connectionToId.setData(++fUsedConnections.lastId, thisPort.group, thisPort.port, targetPort.group, targetPort.port);
 
-                        callback(true, true,
+                        callback(sendHost, sendOsc,
                                  ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
                                  connectionToId.id,
                                  0, 0, 0, 0.0f,
@@ -2430,7 +2429,9 @@ private:
         }
     }
 
-    void addPatchbayJackPort(const uint groupId, const jack_port_t* const jackPort, const char* const shortPortName, const char* const fullPortName, const int jackPortFlags)
+    void addPatchbayJackPort(const bool sendHost, const bool sendOsc,
+                             const uint groupId, const jack_port_t* const jackPort,
+                             const char* const shortPortName, const char* const fullPortName, const int jackPortFlags)
     {
         bool portIsInput = (jackPortFlags & JackPortIsInput);
         bool portIsAudio = (std::strcmp(jackbridge_port_type(jackPort), JACK_DEFAULT_AUDIO_TYPE) == 0);
@@ -2468,7 +2469,7 @@ private:
         PortNameToId portNameToId;
         portNameToId.setData(groupId, ++fUsedPorts.lastId, shortPortName, fullPortName);
 
-        callback(true, true,
+        callback(sendHost, sendOsc,
                  ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                  portNameToId.group,
                  static_cast<int>(portNameToId.port),

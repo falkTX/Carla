@@ -447,6 +447,7 @@ class HostWindowOSC(HostWindow):
         self.killTimers()
         self.unregister()
         self.removeAllPlugins()
+        patchcanvas.clear()
 
         self.ui.act_file_refresh.setEnabled(False)
 
@@ -559,6 +560,7 @@ class HostWindowOSC(HostWindow):
         #self.host.lo_server_tcp.free()
 
         self.removeAllPlugins()
+        patchcanvas.clear()
 
         self.host.lo_server_tcp = CarlaControlServerTCP(self.host)
         self.host.lo_server_udp = CarlaControlServerUDP(self.host)

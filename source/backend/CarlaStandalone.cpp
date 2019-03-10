@@ -923,7 +923,7 @@ bool carla_patchbay_refresh(bool external)
 
     carla_debug("carla_patchbay_refresh(%s)", bool2str(external));
 
-    return gStandalone.engine->patchbayRefresh(external);
+    return gStandalone.engine->patchbayRefresh(true, false, external);
 }
 
 // --------------------------------------------------------------------------------------------------------------------

@@ -1037,7 +1037,7 @@ public:
     /*!
      * Force the engine to resend all patchbay clients, ports and connections again.
      */
-    virtual bool patchbayRefresh(const bool external);
+    virtual bool patchbayRefresh(const bool sendHost, const bool sendOsc, const bool external);
 #endif
 
     // -------------------------------------------------------------------
@@ -1167,6 +1167,7 @@ protected:
      * Some internal classes read directly from pData or call protected functions.
      */
     friend class CarlaEngineThread;
+    friend class CarlaEngineOsc;
     friend class CarlaPluginInstance;
     friend class EngineInternalGraph;
     friend class PendingRtEventsRunner;
