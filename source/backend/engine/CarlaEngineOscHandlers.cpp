@@ -242,7 +242,6 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP,
                 fEngine->callback(false, true, ENGINE_CALLBACK_PLUGIN_ADDED, i, 0, 0, 0, 0.0f, plugin->getName());
             }
 
-            const bool usingExternalPatchbay = false;
             fEngine->patchbayRefresh(false, true, fEngine->pData->graph.isUsingExternal());
         }
     }
