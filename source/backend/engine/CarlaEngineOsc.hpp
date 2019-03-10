@@ -95,10 +95,14 @@ public:
     void sendCallback(const EngineCallbackOpcode action, const uint pluginId,
                       const int value1, const int value2, const int value3,
                       const float valuef, const char* const valueStr) const noexcept;
-    void sendPluginInit(const uint pluginId, const char* const pluginName) const noexcept;
     void sendPluginInfo(const CarlaPlugin* const plugin) const noexcept;
     void sendPluginPortCount(const CarlaPlugin* const plugin) const noexcept;
-    void sendPluginParameterInfo(const CarlaPlugin* const plugin, const uint32_t parameterId) const noexcept;
+    void sendPluginParameterInfo(const CarlaPlugin* const plugin, const uint32_t index) const noexcept;
+    void sendPluginDataCount(const CarlaPlugin* const plugin) const noexcept;
+    void sendPluginProgramCount(const CarlaPlugin* const plugin) const noexcept;
+    void sendPluginProgram(const CarlaPlugin* const plugin, const uint32_t index) const noexcept;
+    void sendPluginMidiProgram(const CarlaPlugin* const plugin, const uint32_t index) const noexcept;
+    void sendPluginCustomData(const CarlaPlugin* const plugin, const uint32_t index) const noexcept;
     void sendPluginInternalParameterValues(const CarlaPlugin* const plugin) const noexcept;
     void sendPing() const noexcept;
     void sendExit() const noexcept;

@@ -900,6 +900,7 @@ typedef enum {
 
     /*!
      * Engine started.
+     * @a pluginId How many plugins are known to be running
      * @a value1   Process mode
      * @a value2   Transport mode
      * @a value3   Buffer size

@@ -1365,17 +1365,19 @@ void CarlaEngine::callback(const bool sendHost, const bool sendOsc,
                 CarlaPlugin* const plugin = pData->plugins[pluginId].plugin;
                 CARLA_SAFE_ASSERT_BREAK(plugin != nullptr);
 
-#if 0
-                pData->engine->oscSend_control_set_midi_program_count(pData->id, count);
+                pData->osc.sendPluginProgramCount(plugin);
 
-                for (uint32_t i=0; i < count; ++i)
-                    pData->engine->oscSend_control_set_midi_program_data(pData->id, i, pData->midiprog.data[i].bank, pData->midiprog.data[i].program, pData->midiprog.data[i].name);
+                if (const uint32_t count = plugin->getProgramCount())
+                {
+                    for (uint32_t i=0; i<count; ++i)
+                      pData->osc.sendPluginProgram(plugin, i);
+                }
 
-                pData->engine->oscSend_control_set_program_count(pData->id, newCount);
-
-                for (uint32_t i=0; i < newCount; ++i)
-                    pData->engine->oscSend_control_set_program_name(pData->id, i, pData->prog.names[i]);
-#endif
+                if (const uint32_t count = plugin->getMidiProgramCount())
+                {
+                    for (uint32_t i=0; i<count; ++i)
+                      pData->osc.sendPluginMidiProgram(plugin, i);
+                }
                 break;
             }
 
@@ -1385,14 +1387,32 @@ void CarlaEngine::callback(const bool sendHost, const bool sendOsc,
                 CarlaPlugin* const plugin = pData->plugins[pluginId].plugin;
                 CARLA_SAFE_ASSERT_BREAK(plugin != nullptr);
 
-                pData->osc.sendPluginInit(pluginId, plugin->getName());
                 pData->osc.sendPluginInfo(plugin);
                 pData->osc.sendPluginPortCount(plugin);
+                pData->osc.sendPluginDataCount(plugin);
 
                 if (const uint32_t count = plugin->getParameterCount())
                 {
                     for (uint32_t i=0; i<count; ++i)
                       pData->osc.sendPluginParameterInfo(plugin, i);
+                }
+
+                if (const uint32_t count = plugin->getProgramCount())
+                {
+                    for (uint32_t i=0; i<count; ++i)
+                      pData->osc.sendPluginProgram(plugin, i);
+                }
+
+                if (const uint32_t count = plugin->getMidiProgramCount())
+                {
+                    for (uint32_t i=0; i<count; ++i)
+                      pData->osc.sendPluginMidiProgram(plugin, i);
+                }
+
+                if (const uint32_t count = plugin->getCustomDataCount())
+                {
+                    for (uint32_t i=0; i<count; ++i)
+                      pData->osc.sendPluginCustomData(plugin, i);
                 }
 
                 pData->osc.sendPluginInternalParameterValues(plugin);

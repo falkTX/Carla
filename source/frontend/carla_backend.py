@@ -661,6 +661,7 @@ ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED = 27
 ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED = 28
 
 # Engine started.
+# @a pluginId How many plugins are known to be running
 # @a value1   Process mode
 # @a value2   Transport mode
 # @a value3   Buffer size
@@ -3415,7 +3416,7 @@ class CarlaHostPlugin(CarlaHostMeta):
 
         # add placeholders
         for x in range(count):
-            self.fPluginsInfo[pluginId].customData.append(PyCustomData)
+            self.fPluginsInfo[pluginId].customData.append(PyCustomData.copy())
 
     def _set_parameterInfo(self, pluginId, paramIndex, info):
         if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
@@ -3477,21 +3478,38 @@ class CarlaHostPlugin(CarlaHostMeta):
         self.fPluginsInfo[pluginIdB] = tmp
 
     def _setViaCallback(self, action, pluginId, value1, value2, value3, valuef, valueStr):
-        if action == ENGINE_CALLBACK_PLUGIN_RENAMED:
+        if action == ENGINE_CALLBACK_ENGINE_STARTED:
+            self._allocateAsNeeded(pluginId)
+            self.fBufferSize = value3
+            self.fSampleRate = valuef
+
+        elif ENGINE_CALLBACK_BUFFER_SIZE_CHANGED:
+            self.fBufferSize = value1
+
+        elif ENGINE_CALLBACK_SAMPLE_RATE_CHANGED:
+            self.fSampleRate = valuef
+
+        elif action == ENGINE_CALLBACK_PLUGIN_RENAMED:
             self._set_pluginName(pluginId, valueStr)
+
         elif action == ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
             if value1 < 0:
                 self._set_internalValue(pluginId, value1, valuef)
             else:
                 self._set_parameterValue(pluginId, value1, valuef)
+
         elif action == ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
             self._set_parameterDefault(pluginId, value1, valuef)
+
         elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
             self._set_parameterMidiCC(pluginId, value1, value2)
+
         elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
             self._set_parameterMidiChannel(pluginId, value1, value2)
+
         elif action == ENGINE_CALLBACK_PROGRAM_CHANGED:
             self._set_currentProgram(pluginId, value1)
+
         elif action == ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED:
             self._set_currentMidiProgram(pluginId, value1)
 

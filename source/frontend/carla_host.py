@@ -895,8 +895,8 @@ class HostWindow(QMainWindow):
     # --------------------------------------------------------------------------------------------------------
     # Engine (host callbacks)
 
-    @pyqtSlot(int, int, int, float, str)
-    def slot_handleEngineStartedCallback(self, processMode, transportMode, bufferSize, sampleRate, driverName):
+    @pyqtSlot(int, int, int, int, float, str)
+    def slot_handleEngineStartedCallback(self, pluginCount, processMode, transportMode, bufferSize, sampleRate, driverName):
         self.ui.menu_PluginMacros.setEnabled(True)
         self.ui.menu_Canvas.setEnabled(True)
         self.ui.w_transport.setEnabled(True)
@@ -2663,7 +2663,7 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valuef, value
     elif action == ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED:
         host.PatchbayConnectionRemovedCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_ENGINE_STARTED:
-        host.EngineStartedCallback.emit(value1, value2, value3, valuef, valueStr)
+        host.EngineStartedCallback.emit(pluginId, value1, value2, value3, valuef, valueStr)
     elif action == ENGINE_CALLBACK_ENGINE_STOPPED:
         host.EngineStoppedCallback.emit()
     elif action == ENGINE_CALLBACK_PROCESS_MODE_CHANGED:

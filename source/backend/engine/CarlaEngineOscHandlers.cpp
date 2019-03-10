@@ -227,7 +227,8 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP,
             const EngineOptions& opts(fEngine->getOptions());
 
             fEngine->callback(false, true,
-                              ENGINE_CALLBACK_ENGINE_STARTED, 0,
+                              ENGINE_CALLBACK_ENGINE_STARTED,
+                              fEngine->getCurrentPluginCount(),
                               opts.processMode,
                               opts.transportMode,
                               static_cast<int>(fEngine->getBufferSize()),
@@ -243,38 +244,6 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP,
             }
 
             fEngine->patchbayRefresh(false, true, fEngine->pData->graph.isUsingExternalOSC());
-
-#if 0
-void CarlaPlugin::registerToOscClient() noexcept
-{
-    // Programs
-    if (const uint32_t count = std::min<uint32_t>(pData->prog.count, 50U))
-    {
-        pData->engine->oscSend_control_set_program_count(pData->id, count);
-
-        for (uint32_t i=0; i < count; ++i)
-            pData->engine->oscSend_control_set_program_name(pData->id, i, pData->prog.names[i]);
-
-//         pData->engine->oscSend_control_set_current_program(pData->id, pData->prog.current);
-    }
-
-    // MIDI Programs
-    if (const uint32_t count = std::min<uint32_t>(pData->midiprog.count, 50U))
-    {
-        pData->engine->oscSend_control_set_midi_program_count(pData->id, count);
-
-        for (uint32_t i=0; i < count; ++i)
-        {
-            const MidiProgramData& mpData(pData->midiprog.data[i]);
-
-            pData->engine->oscSend_control_set_midi_program_data(pData->id, i, mpData.bank, mpData.program, mpData.name);
-        }
-
-//         pData->engine->oscSend_control_set_current_midi_program(pData->id, pData->midiprog.current);
-    }
-}
-#endif
-
         }
     }
 
@@ -502,7 +471,7 @@ int CarlaEngineOsc::handleMsgControl(const char* const method,
         const int32_t i = argv[0]->i;
         CARLA_SAFE_ASSERT_RETURN(i >= 0, 0);
 
-        const char* const s = &argv[0]->s;
+        const char* const s = &argv[1]->s;
         CARLA_SAFE_ASSERT_RETURN(s != nullptr && s[0] != '\0', 0);
 
         fEngine->renamePlugin(static_cast<uint32_t>(i), s);
@@ -536,7 +505,7 @@ int CarlaEngineOsc::handleMsgControl(const char* const method,
         const int32_t i0 = argv[0]->i;
         CARLA_SAFE_ASSERT_RETURN(i0 >= 0, 0);
 
-        const int32_t i1 = argv[0]->i;
+        const int32_t i1 = argv[1]->i;
         CARLA_SAFE_ASSERT_RETURN(i1 >= 0, 0);
 
         fEngine->switchPlugins(static_cast<uint32_t>(i0), static_cast<uint32_t>(i1));

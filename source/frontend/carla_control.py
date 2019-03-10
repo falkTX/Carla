@@ -165,6 +165,9 @@ class CarlaControlServerTCP(Server):
     def __init__(self, host):
         Server.__init__(self, proto=LO_TCP)
 
+        if False:
+            host = CarlaHostPlugin()
+
         self.host = host
 
     def idle(self):
@@ -183,27 +186,13 @@ class CarlaControlServerTCP(Server):
         self.host._setViaCallback(action, pluginId, value1, value2, value3, valuef, valueStr)
         engineCallback(self.host, action, pluginId, value1, value2, value3, valuef, valueStr)
 
-    @make_method('/ctrl/init', 'is') # FIXME set name in add method
-    def carla_init(self, path, args):
-        self.fReceivedMsgs = True
-        pluginId, pluginName = args
-        self.host._add(pluginId)
-        self.host._set_pluginInfoUpdate(pluginId, {'name': pluginName})
-
-    @make_method('/ctrl/ports', 'iiiiiiii')
-    def carla_ports(self, path, args):
-        self.fReceivedMsgs = True
-        pluginId, audioIns, audioOuts, midiIns, midiOuts, paramIns, paramOuts, paramTotal = args
-        self.host._set_audioCountInfo(pluginId, {'ins': audioIns, 'outs': audioOuts})
-        self.host._set_midiCountInfo(pluginId, {'ins': midiOuts, 'outs': midiOuts})
-        self.host._set_parameterCountInfo(pluginId, paramTotal, {'ins': paramIns, 'outs': paramOuts})
-
-    @make_method('/ctrl/info', 'iiiihssss')
+    @make_method('/ctrl/info', 'iiiihiisssssss')
     def carla_info(self, path, args):
         self.fReceivedMsgs = True
-        pluginId, type_, category, hints, uniqueId, realName, label, maker, copyright = args
-        optsAvail = optsEnabled = 0x0 # FIXME
-        filename = name = iconName = "" # FIXME
+        (
+          pluginId, type_, category, hints, uniqueId, optsAvail, optsEnabled,
+          name, filename, iconName, realName, label, maker, copyright,
+        ) = args
 
         hints &= ~PLUGIN_HAS_CUSTOM_UI
 
@@ -215,7 +204,7 @@ class CarlaControlServerTCP(Server):
             'optionsEnabled': optsEnabled,
             'uniqueId': uniqueId,
             'filename': filename,
-            #'name':  name, # FIXME
+            'name':  name,
             'label': label,
             'maker': maker,
             'copyright': copyright,
@@ -224,6 +213,14 @@ class CarlaControlServerTCP(Server):
 
         self.host._set_pluginInfoUpdate(pluginId, pinfo)
         self.host._set_pluginRealName(pluginId, realName)
+
+    @make_method('/ctrl/ports', 'iiiiiiii')
+    def carla_ports(self, path, args):
+        self.fReceivedMsgs = True
+        pluginId, audioIns, audioOuts, midiIns, midiOuts, paramIns, paramOuts, paramTotal = args
+        self.host._set_audioCountInfo(pluginId, {'ins': audioIns, 'outs': audioOuts})
+        self.host._set_midiCountInfo(pluginId, {'ins': midiOuts, 'outs': midiOuts})
+        self.host._set_parameterCountInfo(pluginId, paramTotal, {'ins': paramIns, 'outs': paramOuts})
 
     @make_method('/ctrl/param', 'iiiiiissfffffff')
     def carla_param(self, path, args):
@@ -265,6 +262,40 @@ class CarlaControlServerTCP(Server):
 
         self.host._set_parameterValue(pluginId, paramId, value)
 
+    @make_method('/ctrl/count', 'iiiiii')
+    def carla_count(self, path, args):
+        self.fReceivedMsgs = True
+        pluginId, pcount, mpcount, cdcount, cp, cmp = args
+        self.host._set_programCount(pluginId, pcount)
+        self.host._set_midiProgramCount(pluginId, mpcount)
+        self.host._set_customDataCount(pluginId, cdcount)
+        self.host._set_pluginInfoUpdate(pluginId, { 'programCurrent': cp, 'midiProgramCurrent': cmp })
+
+    @make_method('/ctrl/pcount', 'iii')
+    def carla_pcount(self, path, args):
+        self.fReceivedMsgs = True
+        pluginId, pcount, mpcount = args
+        self.host._set_programCount(pluginId, pcount)
+        self.host._set_midiProgramCount(pluginId, mpcount)
+
+    @make_method('/ctrl/prog', 'iis')
+    def carla_prog(self, path, args):
+        self.fReceivedMsgs = True
+        pluginId, progId, progName = args
+        self.host._set_programName(pluginId, progId, progName)
+
+    @make_method('/ctrl/mprog', 'iiiis')
+    def carla_mprog(self, path, args):
+        self.fReceivedMsgs = True
+        pluginId, midiProgId, bank, program, name = args
+        self.host._set_midiProgramData(pluginId, midiProgId, {'bank': bank, 'program': program, 'name': name})
+
+    @make_method('/ctrl/cdata', 'iisss')
+    def carla_cdata(self, path, args):
+        self.fReceivedMsgs = True
+        pluginId, index, type_, key, value = args
+        self.host._set_customData(pluginId, index, { 'type': type_, 'key': key, 'value': value })
+
     @make_method('/ctrl/iparams', 'ifffffff')
     def carla_iparams(self, path, args):
         self.fReceivedMsgs = True
@@ -276,36 +307,6 @@ class CarlaControlServerTCP(Server):
         self.host._set_internalValue(pluginId, PARAMETER_BALANCE_RIGHT, balRight)
         self.host._set_internalValue(pluginId, PARAMETER_PANNING, pan)
         self.host._set_internalValue(pluginId, PARAMETER_CTRL_CHANNEL, ctrlChan)
-
-    #@make_method('/ctrl/set_program_count', 'ii')
-    #def set_program_count_callback(self, path, args):
-        #print(path, args)
-        #self.fReceivedMsgs = True
-        #pluginId, count = args
-        #self.host._set_programCount(pluginId, count)
-
-    #@make_method('/ctrl/set_midi_program_count', 'ii')
-    #def set_midi_program_count_callback(self, path, args):
-        #print(path, args)
-        #self.fReceivedMsgs = True
-        #pluginId, count = args
-        #self.host._set_midiProgramCount(pluginId, count)
-
-    #@make_method('/ctrl/set_program_name', 'iis')
-    #def set_program_name_callback(self, path, args):
-        #print(path, args)
-        #self.fReceivedMsgs = True
-        #pluginId, progId, progName = args
-        #self.host._set_programName(pluginId, progId, progName)
-
-    #@make_method('/ctrl/set_midi_program_data', 'iiiis')
-    #def set_midi_program_data_callback(self, path, args):
-        #print(path, args)
-        #self.fReceivedMsgs = True
-        #pluginId, midiProgId, bank, program, name = args
-        #self.host._set_midiProgramData(pluginId, midiProgId, {'bank': bank, 'program': program, 'name': name})
-
-    #@make_method('/note_on', 'iiii')
 
     @make_method('/ctrl/exit', '')
     def carla_exit(self, path, args):
@@ -331,6 +332,9 @@ class CarlaControlServerTCP(Server):
 class CarlaControlServerUDP(Server):
     def __init__(self, host):
         Server.__init__(self, proto=LO_UDP)
+
+        if False:
+            host = CarlaHostPlugin()
 
         self.host = host
 

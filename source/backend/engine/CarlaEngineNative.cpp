@@ -1787,7 +1787,7 @@ protected:
             uiServerInfo();
             uiServerOptions();
             uiServerCallback(ENGINE_CALLBACK_ENGINE_STARTED,
-                             0,
+                             pData->curPluginCount,
                              pData->options.processMode,
                              pData->options.transportMode,
                              static_cast<int>(pData->bufferSize),
