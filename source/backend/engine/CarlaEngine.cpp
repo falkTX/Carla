@@ -2640,7 +2640,6 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         {
             CarlaString sourcePort, targetPort;
-            const bool isUsingExternal(pData->graph.isUsingExternal());
 
             for (XmlElement* patchElem = elem->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
             {
@@ -2664,7 +2663,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                 }
 
                 if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
-                    restorePatchbayConnection(false, sourcePort, targetPort, !isUsingExternal);
+                    restorePatchbayConnection(false, sourcePort, targetPort);
             }
 
             callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
@@ -2697,8 +2696,6 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
     // plus external connections too
     if (loadExternalConnections)
     {
-        const bool isUsingExternal = pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY ||
-                                     pData->graph.isUsingExternal();
         const bool loadingAsExternal = pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY &&
                                        hasInternalConnections;
 
@@ -2742,7 +2739,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                 }
 
                 if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
-                    restorePatchbayConnection(loadingAsExternal, sourcePort, targetPort, isUsingExternal);
+                    restorePatchbayConnection(loadingAsExternal, sourcePort, targetPort);
             }
             break;
         }

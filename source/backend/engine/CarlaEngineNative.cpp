@@ -215,25 +215,29 @@ protected:
         }
         else if (std::strcmp(msg, "patchbay_connect") == 0)
         {
+            bool external;
             uint32_t groupA, portA, groupB, portB;
 
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(external), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(groupA), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(portA), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(groupB), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(portB), true);
 
             try {
-                ok = fEngine->patchbayConnect(groupA, portA, groupB, portB);
+                ok = fEngine->patchbayConnect(external, groupA, portA, groupB, portB);
             } CARLA_SAFE_EXCEPTION("patchbayConnect");
         }
         else if (std::strcmp(msg, "patchbay_disconnect") == 0)
         {
+            bool external;
             uint32_t connectionId;
 
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(external), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(connectionId), true);
 
             try {
-                ok = fEngine->patchbayDisconnect(connectionId);
+                ok = fEngine->patchbayDisconnect(external, connectionId);
             } CARLA_SAFE_EXCEPTION("patchbayDisconnect");
         }
         else if (std::strcmp(msg, "patchbay_refresh") == 0)

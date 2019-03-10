@@ -1481,14 +1481,14 @@ class CarlaHostMeta(object):
     # @param portIdB  Input port
     # @see ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED
     @abstractmethod
-    def patchbay_connect(self, groupIdA, portIdA, groupIdB, portIdB):
+    def patchbay_connect(self, external, groupIdA, portIdA, groupIdB, portIdB):
         raise NotImplementedError
 
     # Disconnect two patchbay ports.
     # @param connectionId Connection Id
     # @see ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED
     @abstractmethod
-    def patchbay_disconnect(self, connectionId):
+    def patchbay_disconnect(self, external, connectionId):
         raise NotImplementedError
 
     # Force the engine to resend all patchbay clients, ports and connections again.
@@ -2083,10 +2083,10 @@ class CarlaHostNull(CarlaHostMeta):
     def clear_project_filename(self):
         return
 
-    def patchbay_connect(self, groupIdA, portIdA, groupIdB, portIdB):
+    def patchbay_connect(self, external, groupIdA, portIdA, groupIdB, portIdB):
         return False
 
-    def patchbay_disconnect(self, connectionId):
+    def patchbay_disconnect(self, external, connectionId):
         return False
 
     def patchbay_refresh(self, external):
@@ -2380,10 +2380,10 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_clear_project_filename.argtypes = None
         self.lib.carla_clear_project_filename.restype = None
 
-        self.lib.carla_patchbay_connect.argtypes = [c_uint, c_uint, c_uint, c_uint]
+        self.lib.carla_patchbay_connect.argtypes = [c_bool, c_uint, c_uint, c_uint, c_uint]
         self.lib.carla_patchbay_connect.restype = c_bool
 
-        self.lib.carla_patchbay_disconnect.argtypes = [c_uint]
+        self.lib.carla_patchbay_disconnect.argtypes = [c_bool, c_uint]
         self.lib.carla_patchbay_disconnect.restype = c_bool
 
         self.lib.carla_patchbay_refresh.argtypes = [c_bool]
@@ -2669,11 +2669,11 @@ class CarlaHostDLL(CarlaHostMeta):
     def clear_project_filename(self):
         self.lib.carla_clear_project_filename()
 
-    def patchbay_connect(self, groupIdA, portIdA, groupIdB, portIdB):
-        return bool(self.lib.carla_patchbay_connect(groupIdA, portIdA, groupIdB, portIdB))
+    def patchbay_connect(self, external, groupIdA, portIdA, groupIdB, portIdB):
+        return bool(self.lib.carla_patchbay_connect(external, groupIdA, portIdA, groupIdB, portIdB))
 
-    def patchbay_disconnect(self, connectionId):
-        return bool(self.lib.carla_patchbay_disconnect(connectionId))
+    def patchbay_disconnect(self, external, connectionId):
+        return bool(self.lib.carla_patchbay_disconnect(external, connectionId))
 
     def patchbay_refresh(self, external):
         return bool(self.lib.carla_patchbay_refresh(external))
@@ -3027,11 +3027,11 @@ class CarlaHostPlugin(CarlaHostMeta):
     def clear_project_filename(self):
         return self.sendMsgAndSetError(["clear_project_filename"])
 
-    def patchbay_connect(self, groupIdA, portIdA, groupIdB, portIdB):
-        return self.sendMsgAndSetError(["patchbay_connect", groupIdA, portIdA, groupIdB, portIdB])
+    def patchbay_connect(self, external, groupIdA, portIdA, groupIdB, portIdB):
+        return self.sendMsgAndSetError(["patchbay_connect", external, groupIdA, portIdA, groupIdB, portIdB])
 
-    def patchbay_disconnect(self, connectionId):
-        return self.sendMsgAndSetError(["patchbay_disconnect", connectionId])
+    def patchbay_disconnect(self, external, connectionId):
+        return self.sendMsgAndSetError(["patchbay_disconnect", external, connectionId])
 
     def patchbay_refresh(self, external):
         return self.sendMsgAndSetError(["patchbay_refresh", external])

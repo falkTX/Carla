@@ -450,14 +450,14 @@ CARLA_EXPORT void carla_clear_project_filename();
  * @param portIdB  Input port
  * @see ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED
  */
-CARLA_EXPORT bool carla_patchbay_connect(uint groupIdA, uint portIdA, uint groupIdB, uint portIdB);
+CARLA_EXPORT bool carla_patchbay_connect(bool external, uint groupIdA, uint portIdA, uint groupIdB, uint portIdB);
 
 /*!
  * Disconnect two patchbay ports.
  * @param connectionId Connection Id
  * @see ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED
  */
-CARLA_EXPORT bool carla_patchbay_disconnect(uint connectionId);
+CARLA_EXPORT bool carla_patchbay_disconnect(bool external, uint connectionId);
 
 /*!
  * Force the engine to resend all patchbay clients, ports and connections again.

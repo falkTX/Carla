@@ -98,8 +98,10 @@ public:
     void removePlugin(CarlaPlugin* const plugin);
     void removeAllPlugins();
 
-    bool isUsingExternal() const noexcept;
-    void setUsingExternal(const bool usingExternal) noexcept;
+    bool isUsingExternalHost() const noexcept;
+    bool isUsingExternalOSC() const noexcept;
+    void setUsingExternalHost(const bool usingExternal) noexcept;
+    void setUsingExternalOSC(const bool usingExternal) noexcept;
 
 private:
     bool fIsRack;

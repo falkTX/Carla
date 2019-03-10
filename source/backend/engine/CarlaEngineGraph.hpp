@@ -84,9 +84,13 @@ struct ExternalGraph {
     ExternalGraph(CarlaEngine* const engine) noexcept;
 
     void clear() noexcept;
-    bool connect(const uint groupA, const uint portA, const uint groupB, const uint portB, const bool sendCallback) noexcept;
-    bool disconnect(const uint connectionId) noexcept;
-    void refresh(const bool sendHost, const bool sendOsc, const char* const deviceName);
+
+    bool connect(const bool sendHost, const bool sendOSC,
+                 const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept;
+    bool disconnect(const bool sendHost, const bool sendOSC,
+                    const uint connectionId) noexcept;
+    void refresh(const bool sendHost, const bool sendOSC,
+                 const char* const deviceName);
 
     const char* const* getConnections() const noexcept;
     bool getGroupAndPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const noexcept;
@@ -130,7 +134,7 @@ struct RackGraph {
 
     bool connect(const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept;
     bool disconnect(const uint connectionId) noexcept;
-    void refresh(const bool sendHost, const bool sendOsc, const char* const deviceName);
+    void refresh(const bool sendHost, const bool sendOsc, const bool ignored, const char* const deviceName);
 
     const char* const* getConnections() const noexcept;
     bool getGroupAndPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const noexcept;
@@ -157,7 +161,8 @@ public:
     const uint32_t inputs;
     const uint32_t outputs;
     mutable CharStringListPtr retCon;
-    bool usingExternal;
+    bool usingExternalHost;
+    bool usingExternalOSC;
 
     ExternalGraph extGraph;
 
@@ -174,10 +179,10 @@ public:
     void removePlugin(CarlaPlugin* const plugin);
     void removeAllPlugins();
 
-    bool connect(const bool external, const uint groupA, const uint portA, const uint groupB, const uint portB, const bool sendCallback);
-    bool disconnect(const uint connectionId);
+    bool connect(const bool external, const uint groupA, const uint portA, const uint groupB, const uint portB);
+    bool disconnect(const bool external, const uint connectionId);
     void disconnectInternalGroup(const uint groupId) noexcept;
-    void refresh(const bool sendHost, const bool sendOsc, const char* const deviceName);
+    void refresh(const bool sendHost, const bool sendOsc, const bool external, const char* const deviceName);
 
     const char* const* getConnections(const bool external) const;
     bool getGroupAndPortIdFromFullName(const bool external, const char* const fullPortName, uint& groupId, uint& portId) const;

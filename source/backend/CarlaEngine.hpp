@@ -1027,12 +1027,14 @@ public:
     /*!
      * Connect two patchbay ports.
      */
-    virtual bool patchbayConnect(const uint groupA, const uint portA, const uint groupB, const uint portB);
+    virtual bool patchbayConnect(const bool external,
+                                 const uint groupA, const uint portA,
+                                 const uint groupB, const uint portB);
 
     /*!
      * Remove a patchbay connection.
      */
-    virtual bool patchbayDisconnect(const uint connectionId);
+    virtual bool patchbayDisconnect(const bool external, const uint connectionId);
 
     /*!
      * Force the engine to resend all patchbay clients, ports and connections again.
@@ -1221,7 +1223,9 @@ protected:
      * Do not free returned data.
      */
     virtual const char* const* getPatchbayConnections(const bool external) const;
-    virtual void restorePatchbayConnection(const bool external, const char* const sourcePort, const char* const targetPort, const bool sendCallback);
+    virtual void restorePatchbayConnection(const bool external,
+                                           const char* const sourcePort,
+                                           const char* const targetPort);
 #endif
 
     // -------------------------------------------------------------------

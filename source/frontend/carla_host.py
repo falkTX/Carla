@@ -2531,13 +2531,13 @@ def canvasCallback(action, value1, value2, valueStr):
     elif action == patchcanvas.ACTION_PORTS_CONNECT:
         gOut, pOut, gIn, pIn = [int(i) for i in valueStr.split(":")]
 
-        if not host.patchbay_connect(gOut, pOut, gIn, pIn):
+        if not host.patchbay_connect(gCarla.gui.fExternalPatchbay, gOut, pOut, gIn, pIn):
             print("Connection failed:", host.get_last_error())
 
     elif action == patchcanvas.ACTION_PORTS_DISCONNECT:
         connectionId = value1
 
-        if not host.patchbay_disconnect(connectionId):
+        if not host.patchbay_disconnect(gCarla.gui.fExternalPatchbay, connectionId):
             print("Disconnect failed:", host.get_last_error())
 
     elif action == patchcanvas.ACTION_PLUGIN_CLONE:

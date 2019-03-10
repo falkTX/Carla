@@ -899,22 +899,23 @@ void carla_clear_project_filename()
 
 // --------------------------------------------------------------------------------------------------------------------
 
-bool carla_patchbay_connect(uint groupIdA, uint portIdA, uint groupIdB, uint portIdB)
+bool carla_patchbay_connect(bool external, uint groupIdA, uint portIdA, uint groupIdB, uint portIdB)
 {
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(gStandalone.engine != nullptr, "Engine is not initialized", false);
 
-    carla_debug("carla_patchbay_connect(%u, %u, %u, %u)", groupIdA, portIdA, groupIdB, portIdB);
+    carla_debug("carla_patchbay_connect(%s, %u, %u, %u, %u)",
+                bool2str(external), groupIdA, portIdA, groupIdB, portIdB);
 
-    return gStandalone.engine->patchbayConnect(groupIdA, portIdA, groupIdB, portIdB);
+    return gStandalone.engine->patchbayConnect(external, groupIdA, portIdA, groupIdB, portIdB);
 }
 
-bool carla_patchbay_disconnect(uint connectionId)
+bool carla_patchbay_disconnect(bool external, uint connectionId)
 {
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(gStandalone.engine != nullptr, "Engine is not initialized", false);
 
-    carla_debug("carla_patchbay_disconnect(%i)", connectionId);
+    carla_debug("carla_patchbay_disconnect(%s, %i)", bool2str(external), connectionId);
 
-    return gStandalone.engine->patchbayDisconnect(connectionId);
+    return gStandalone.engine->patchbayDisconnect(external, connectionId);
 }
 
 bool carla_patchbay_refresh(bool external)

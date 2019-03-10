@@ -242,7 +242,7 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP,
                 fEngine->callback(false, true, ENGINE_CALLBACK_PLUGIN_ADDED, i, 0, 0, 0, 0.0f, plugin->getName());
             }
 
-            fEngine->patchbayRefresh(false, true, fEngine->pData->graph.isUsingExternal());
+            fEngine->patchbayRefresh(false, true, fEngine->pData->graph.isUsingExternalOSC());
 
 #if 0
 void CarlaPlugin::registerToOscClient() noexcept
@@ -332,14 +332,14 @@ int CarlaEngineOsc::handleMsgControl(const char* const method,
     }
     else if (std::strcmp(method, "patchbay_connect") == 0)
     {
-        CARLA_SAFE_ASSERT_INT_RETURN(argc == 4, argc, 0);
+        CARLA_SAFE_ASSERT_INT_RETURN(argc == 5, argc, 0);
         CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
         CARLA_SAFE_ASSERT_RETURN(types[1] == 'i', 0);
         CARLA_SAFE_ASSERT_RETURN(types[2] == 'i', 0);
         CARLA_SAFE_ASSERT_RETURN(types[3] == 'i', 0);
+        CARLA_SAFE_ASSERT_RETURN(types[4] == 'i', 0);
 
-        const int32_t i0 = argv[0]->i;
-        CARLA_SAFE_ASSERT_RETURN(i0 >= 0, 0);
+        const bool ext = argv[0]->i != 0;
 
         const int32_t i1 = argv[1]->i;
         CARLA_SAFE_ASSERT_RETURN(i1 >= 0, 0);
@@ -350,28 +350,35 @@ int CarlaEngineOsc::handleMsgControl(const char* const method,
         const int32_t i3 = argv[3]->i;
         CARLA_SAFE_ASSERT_RETURN(i3 >= 0, 0);
 
-        fEngine->patchbayConnect(static_cast<uint32_t>(i0),
+        const int32_t i4 = argv[4]->i;
+        CARLA_SAFE_ASSERT_RETURN(i4 >= 0, 0);
+
+        fEngine->patchbayConnect(ext,
                                  static_cast<uint32_t>(i1),
                                  static_cast<uint32_t>(i2),
-                                 static_cast<uint32_t>(i3));
+                                 static_cast<uint32_t>(i3),
+                                 static_cast<uint32_t>(i4));
     }
     else if (std::strcmp(method, "patchbay_disconnect") == 0)
     {
-        CARLA_SAFE_ASSERT_INT_RETURN(argc == 1, argc, 0);
+        CARLA_SAFE_ASSERT_INT_RETURN(argc == 2, argc, 0);
         CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
+        CARLA_SAFE_ASSERT_RETURN(types[1] == 'i', 0);
 
-        const int32_t i = argv[0]->i;
-        CARLA_SAFE_ASSERT_RETURN(i >= 0, 0);
+        const bool ext = argv[0]->i != 0;
 
-        fEngine->patchbayDisconnect(static_cast<uint32_t>(i));
+        const int32_t id = argv[1]->i;
+        CARLA_SAFE_ASSERT_RETURN(id >= 0, 0);
+
+        fEngine->patchbayDisconnect(ext, static_cast<uint32_t>(id));
     }
     else if (std::strcmp(method, "patchbay_refresh") == 0)
     {
         CARLA_SAFE_ASSERT_INT_RETURN(argc == 1, argc, 0);
         CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
 
-        const int32_t i = argv[0]->i;
-        fEngine->patchbayRefresh(false, true, i != 0);
+        const bool ext = argv[0]->i != 0;
+        fEngine->patchbayRefresh(false, true, ext);
     }
     else if (std::strcmp(method, "transport_play") == 0)
     {

@@ -463,7 +463,7 @@ public:
     // Patchbay
 
     template<class Graph>
-    bool refreshExternalGraphPorts(Graph* const graph, const bool sendHost, const bool sendOsc)
+    bool refreshExternalGraphPorts(Graph* const graph, const bool sendHost, const bool sendOSC)
     {
         CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
 
@@ -533,8 +533,8 @@ public:
         // ---------------------------------------------------------------
         // now refresh
 
-        if (sendHost || sendOsc)
-            graph->refresh(sendHost, sendOsc, fDeviceName.buffer());
+        if (sendHost || sendOSC)
+            graph->refresh(sendHost, sendOSC, true, fDeviceName.buffer());
 
         // ---------------------------------------------------------------
         // add midi connections
@@ -556,7 +556,7 @@ public:
 
             extGraph.connections.list.append(connectionToId);
 
-            callback(sendHost, sendOsc,
+            callback(sendHost, sendOSC,
                       ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
                       connectionToId.id,
                       0, 0, 0, 0.0f,
@@ -582,7 +582,7 @@ public:
 
             extGraph.connections.list.append(connectionToId);
 
-            callback(sendHost, sendOsc,
+            callback(sendHost, sendOSC,
                       ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
                       connectionToId.id,
                       0, 0, 0, 0.0f,
@@ -594,19 +594,22 @@ public:
         return true;
     }
 
-    bool patchbayRefresh(const bool sendHost, const bool sendOsc, const bool external) override
+    bool patchbayRefresh(const bool sendHost, const bool sendOSC, const bool external) override
     {
         CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(), false);
 
         if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-            return refreshExternalGraphPorts<RackGraph>(pData->graph.getRackGraph(), sendHost, sendOsc);
+            return refreshExternalGraphPorts<RackGraph>(pData->graph.getRackGraph(), sendHost, sendOSC);
 
-        pData->graph.setUsingExternal(external);
+        if (sendHost)
+            pData->graph.setUsingExternalHost(external);
+        if (sendOSC)
+            pData->graph.setUsingExternalOSC(external);
 
         if (external)
-            return refreshExternalGraphPorts<PatchbayGraph>(pData->graph.getPatchbayGraph(), sendHost, sendOsc);
+            return refreshExternalGraphPorts<PatchbayGraph>(pData->graph.getPatchbayGraph(), sendHost, sendOSC);
 
-        return CarlaEngine::patchbayRefresh(sendHost, sendOsc, false);
+        return CarlaEngine::patchbayRefresh(sendHost, sendOSC, false);
     }
 
     // -------------------------------------------------------------------

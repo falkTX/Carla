@@ -805,7 +805,8 @@ public:
           CarlaThread("CarlaEngineJackCallbacks"),
 #endif
           fClient(nullptr),
-          fExternalPatchbay(true),
+          fExternalPatchbayHost(true),
+          fExternalPatchbayOsc(true),
           fFreewheel(false),
 #ifdef BUILD_BRIDGE
           fIsRunning(false)
@@ -885,8 +886,9 @@ public:
         CARLA_SAFE_ASSERT_RETURN(jackbridge_is_ok(), false);
         carla_debug("CarlaEngineJack::init(\"%s\")", clientName);
 
-        fFreewheel        = false;
-        fExternalPatchbay = true;
+        fFreewheel = false;
+        fExternalPatchbayHost = true;
+        fExternalPatchbayOsc  = true;
 
         CarlaString truncatedClientName(clientName);
         truncatedClientName.truncate(getMaxClientNameSize());
@@ -986,6 +988,8 @@ public:
             else
             {
                 pData->graph.create(2, 2);
+                // pData->graph.setUsingExternalHost(true);
+                // pData->graph.setUsingExternalOSC(true);
                 patchbayRefresh(true, false, false);
             }
         }
@@ -1362,7 +1366,7 @@ public:
                             if (connectionToId.groupA != groupId && connectionToId.groupB != groupId)
                                 continue;
 
-                            callback(true, true,
+                            callback(fExternalPatchbayHost, fExternalPatchbayOsc,
                                      ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED,
                                      connectionToId.id,
                                      0, 0, 0, 0.0f, nullptr);
@@ -1377,7 +1381,7 @@ public:
                         if (portNameToId.group != groupId)
                             continue;
 
-                        callback(true, true,
+                        callback(fExternalPatchbayHost, fExternalPatchbayOsc,
                                  ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
                                  portNameToId.group,
                                  static_cast<int>(portNameToId.port),
@@ -1412,12 +1416,13 @@ public:
     // -------------------------------------------------------------------
     // Patchbay
 
-    bool patchbayConnect(const uint groupA, const uint portA, const uint groupB, const uint portB) override
+    bool patchbayConnect(const bool external,
+                         const uint groupA, const uint portA, const uint groupB, const uint portB) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
 
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! fExternalPatchbay)
-            return CarlaEngine::patchbayConnect(groupA, portA, groupB, portB);
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! external)
+            return CarlaEngine::patchbayConnect(false, groupA, portA, groupB, portB);
 
         const char* const fullPortNameA = fUsedPorts.getFullPortName(groupA, portA);
         CARLA_SAFE_ASSERT_RETURN(fullPortNameA != nullptr && fullPortNameA[0] != '\0', false);
@@ -1434,12 +1439,12 @@ public:
         return true;
     }
 
-    bool patchbayDisconnect(const uint connectionId) override
+    bool patchbayDisconnect(const bool external, const uint connectionId) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
 
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! fExternalPatchbay)
-            return CarlaEngine::patchbayDisconnect(connectionId);
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! external)
+            return CarlaEngine::patchbayDisconnect(false, connectionId);
 
         ConnectionToId connectionToId = { 0, 0, 0, 0, 0 };
 
@@ -1477,17 +1482,25 @@ public:
         return true;
     }
 
-    bool patchbayRefresh(const bool sendHost, const bool sendOsc, const bool external) override
+    bool patchbayRefresh(const bool sendHost, const bool sendOSC, const bool external) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
 
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         {
-            fExternalPatchbay = external;
-            pData->graph.setUsingExternal(external);
+            if (sendHost)
+            {
+                fExternalPatchbayHost = external;
+                pData->graph.setUsingExternalHost(external);
+            }
+            if (sendOSC)
+            {
+                fExternalPatchbayOsc = external;
+                pData->graph.setUsingExternalOSC(external);
+            }
 
             if (! external)
-                return CarlaEngine::patchbayRefresh(sendHost, sendOsc, false);
+                return CarlaEngine::patchbayRefresh(sendHost, sendOSC, false);
         }
 
         fUsedGroups.clear();
@@ -1495,7 +1508,7 @@ public:
         fUsedConnections.clear();
         fNewGroups.clear();
 
-        initJackPatchbay(sendHost, sendOsc, jackbridge_get_client_name(fClient));
+        initJackPatchbay(sendHost, sendOSC, jackbridge_get_client_name(fClient));
         return true;
     }
 
@@ -1619,15 +1632,16 @@ public:
         return fRetConns;
     }
 
-    void restorePatchbayConnection(const bool external, const char* const connSource, const char* const connTarget, const bool sendCallback) override
+    void restorePatchbayConnection(const bool external, const char* const connSource, const char* const connTarget) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(connSource != nullptr && connSource[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(connTarget != nullptr && connTarget[0] != '\0',);
-        carla_debug("CarlaEngineJack::restorePatchbayConnection(\"%s\", \"%s\")", connSource, connTarget);
+        carla_debug("CarlaEngineJack::restorePatchbayConnection(%s, \"%s\", \"%s\")",
+                    bool2str(external), connSource, connTarget);
 
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! external)
-            return CarlaEngine::restorePatchbayConnection(external, connSource, connTarget, sendCallback);
+            return CarlaEngine::restorePatchbayConnection(external, connSource, connTarget);
 
         if (const jack_port_t* const port = jackbridge_port_by_name(fClient, connSource))
         {
@@ -1961,7 +1975,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
 
         // ignore this if on internal patchbay mode
-        if (! fExternalPatchbay) return;
+        if (! (fExternalPatchbayHost || (fExternalPatchbayOsc && pData->osc.isControlRegisteredForTCP()))) return;
 
         // do nothing on client registration, wait for first port
         if (reg) return;
@@ -1974,14 +1988,16 @@ protected:
         GroupNameToId groupNameToId;
         groupNameToId.setData(groupId, name);
 
-        callback(true, true, ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED, groupNameToId.group, 0, 0, 0, 0.0f, nullptr);
+        callback(fExternalPatchbayHost, fExternalPatchbayOsc,
+                 ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED, groupNameToId.group, 0, 0, 0, 0.0f, nullptr);
+
         fUsedGroups.list.removeOne(groupNameToId);
     }
 
     void handleJackPortRegistrationCallback(const jack_port_id_t port, const bool reg)
     {
         // ignore this if on internal patchbay mode
-        if (! fExternalPatchbay) return;
+        if (! (fExternalPatchbayHost || (fExternalPatchbayOsc && pData->osc.isControlRegisteredForTCP()))) return;
 
         const jack_port_t* const jackPort(jackbridge_port_by_id(fClient, port));
         CARLA_SAFE_ASSERT_RETURN(jackPort != nullptr,);
@@ -2011,7 +2027,7 @@ protected:
                 GroupNameToId groupNameToId;
                 groupNameToId.setData(groupId, groupName);
 
-                callback(true, true,
+                callback(fExternalPatchbayHost, fExternalPatchbayOsc,
                          ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
                          groupNameToId.group,
                          (jackPortFlags & JackPortIsPhysical) ? PATCHBAY_ICON_HARDWARE : PATCHBAY_ICON_APPLICATION,
@@ -2023,7 +2039,8 @@ protected:
                 fUsedGroups.list.append(groupNameToId);
             }
 
-            addPatchbayJackPort(true, true, groupId, jackPort, shortPortName, fullPortName, jackPortFlags);
+            addPatchbayJackPort(fExternalPatchbayHost, fExternalPatchbayOsc,
+                                groupId, jackPort, shortPortName, fullPortName, jackPortFlags);
         }
         else
         {
@@ -2033,7 +2050,7 @@ protected:
                      See the comment on CarlaEngineJack::renamePlugin() for more information. */
             if (portNameToId.group <= 0 || portNameToId.port <= 0) return;
 
-            callback(true, true,
+            callback(fExternalPatchbayHost, fExternalPatchbayOsc,
                      ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
                      portNameToId.group,
                      static_cast<int>(portNameToId.port),
@@ -2045,7 +2062,7 @@ protected:
     void handleJackPortConnectCallback(const jack_port_id_t a, const jack_port_id_t b, const bool connect)
     {
         // ignore this if on internal patchbay mode
-        if (! fExternalPatchbay) return;
+        if (! (fExternalPatchbayHost || (fExternalPatchbayOsc && pData->osc.isControlRegisteredForTCP()))) return;
 
         const jack_port_t* const jackPortA(jackbridge_port_by_id(fClient, a));
         CARLA_SAFE_ASSERT_RETURN(jackPortA != nullptr,);
@@ -2076,7 +2093,7 @@ protected:
             ConnectionToId connectionToId;
             connectionToId.setData(++fUsedConnections.lastId, portNameToIdA.group, portNameToIdA.port, portNameToIdB.group, portNameToIdB.port);
 
-            callback(true, true,
+            callback(fExternalPatchbayHost, fExternalPatchbayOsc,
                      ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
                      connectionToId.id,
                      0, 0, 0, 0.0f,
@@ -2107,7 +2124,7 @@ protected:
             }
 
             if (found) {
-                callback(true, true,
+                callback(fExternalPatchbayHost, fExternalPatchbayOsc,
                          ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED,
                          connectionToId.id,
                          0, 0, 0, 0.0f, nullptr);
@@ -2118,7 +2135,7 @@ protected:
     void handleJackPortRenameCallback(const jack_port_id_t port, const char* const oldFullName, const char* const newFullName)
     {
         // ignore this if on internal patchbay mode
-        if (! fExternalPatchbay) return;
+        if (! (fExternalPatchbayHost || (fExternalPatchbayOsc && pData->osc.isControlRegisteredForTCP()))) return;
 
         CARLA_SAFE_ASSERT_RETURN(oldFullName != nullptr && oldFullName[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(newFullName != nullptr && newFullName[0] != '\0',);
@@ -2150,7 +2167,7 @@ protected:
                 CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group == groupId);
 
                 portNameToId.rename(shortPortName, newFullName);
-                callback(true, true,
+                callback(fExternalPatchbayHost, fExternalPatchbayOsc,
                          ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED,
                          portNameToId.group,
                          static_cast<int>(portNameToId.port),
@@ -2212,7 +2229,8 @@ protected:
 
 private:
     jack_client_t* fClient;
-    bool fExternalPatchbay;
+    bool fExternalPatchbayHost;
+    bool fExternalPatchbayOsc;
     bool fFreewheel;
 
     // -------------------------------------------------------------------
@@ -2295,9 +2313,10 @@ private:
         return false;
     }
 
-    void initJackPatchbay(const bool sendHost, const bool sendOsc, const char* const ourName)
+    void initJackPatchbay(const bool sendHost, const bool sendOSC, const char* const ourName)
     {
-        CARLA_SAFE_ASSERT_RETURN(pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY || fExternalPatchbay,);
+        CARLA_SAFE_ASSERT_RETURN(pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY ||
+                                 (fExternalPatchbayHost && sendHost) || (fExternalPatchbayOsc && sendOSC),);
         CARLA_SAFE_ASSERT_RETURN(ourName != nullptr && ourName[0] != '\0',);
 
         CarlaStringList parsedGroups;
@@ -2309,7 +2328,7 @@ private:
             GroupNameToId groupNameToId;
             groupNameToId.setData(++fUsedGroups.lastId, ourName);
 
-            callback(sendHost, sendOsc,
+            callback(sendHost, sendOSC,
                      ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
                      groupNameToId.group,
                      PATCHBAY_ICON_CARLA,
@@ -2361,7 +2380,7 @@ private:
                     GroupNameToId groupNameToId;
                     groupNameToId.setData(groupId, groupName);
 
-                    callback(sendHost, sendOsc,
+                    callback(sendHost, sendOSC,
                              ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
                              groupNameToId.group,
                              icon,
@@ -2371,7 +2390,7 @@ private:
                     fUsedGroups.list.append(groupNameToId);
                 }
 
-                addPatchbayJackPort(sendHost, sendOsc, groupId, jackPort, shortPortName, fullPortName, jackPortFlags);
+                addPatchbayJackPort(sendHost, sendOSC, groupId, jackPort, shortPortName, fullPortName, jackPortFlags);
             }
 
             jackbridge_free(ports);
@@ -2413,7 +2432,7 @@ private:
                         ConnectionToId connectionToId;
                         connectionToId.setData(++fUsedConnections.lastId, thisPort.group, thisPort.port, targetPort.group, targetPort.port);
 
-                        callback(sendHost, sendOsc,
+                        callback(sendHost, sendOSC,
                                  ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
                                  connectionToId.id,
                                  0, 0, 0, 0.0f,
@@ -2429,7 +2448,7 @@ private:
         }
     }
 
-    void addPatchbayJackPort(const bool sendHost, const bool sendOsc,
+    void addPatchbayJackPort(const bool sendHost, const bool sendOSC,
                              const uint groupId, const jack_port_t* const jackPort,
                              const char* const shortPortName, const char* const fullPortName, const int jackPortFlags)
     {
@@ -2469,7 +2488,7 @@ private:
         PortNameToId portNameToId;
         portNameToId.setData(groupId, ++fUsedPorts.lastId, shortPortName, fullPortName);
 
-        callback(sendHost, sendOsc,
+        callback(sendHost, sendOSC,
                  ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                  portNameToId.group,
                  static_cast<int>(portNameToId.port),
@@ -2642,7 +2661,7 @@ private:
                 PatchbayIcon icon = PATCHBAY_ICON_PLUGIN;
 
                 if (findPluginIdAndIcon(groupName, pluginId, icon)) {
-                    callback(true, true,
+                    callback(fExternalPatchbayHost, fExternalPatchbayOsc,
                              ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED,
                              groupId,
                              icon,
