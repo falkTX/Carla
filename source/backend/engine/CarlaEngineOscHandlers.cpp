@@ -386,7 +386,58 @@ int CarlaEngineOsc::handleMsgControl(const char* const method,
 
         fEngine->transportRelocate(frame);
     }
-    // TODO add plugin
+    else if (std::strcmp(method, "add_plugin") == 0)
+    {
+        CARLA_SAFE_ASSERT_INT_RETURN(argc == 7, argc, 0);
+        CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
+        CARLA_SAFE_ASSERT_RETURN(types[1] == 'i', 0);
+        CARLA_SAFE_ASSERT_RETURN(types[2] == 's', 0);
+        CARLA_SAFE_ASSERT_RETURN(types[3] == 's', 0);
+        CARLA_SAFE_ASSERT_RETURN(types[4] == 's', 0);
+        CARLA_SAFE_ASSERT_RETURN(types[6] == 'i', 0);
+
+        const int32_t btype = argv[0]->i;
+        CARLA_SAFE_ASSERT_RETURN(btype >= 0, 0);
+
+        const int32_t ptype = argv[1]->i;
+        CARLA_SAFE_ASSERT_RETURN(ptype >= 0, 0);
+
+        const char* filename = &argv[2]->s;
+
+        if (filename != nullptr && std::strcmp(filename, "(null)") == 0)
+            filename = nullptr;
+
+        const char* name = &argv[3]->s;
+
+        if (name != nullptr && std::strcmp(name, "(null)") == 0)
+            name = nullptr;
+
+        const char* const label = &argv[4]->s;
+        CARLA_SAFE_ASSERT_RETURN(label != nullptr && label[0] != '\0', 0);
+
+        int64_t uniqueId;
+
+        /**/ if (types[5] == 'i')
+        {
+            uniqueId = argv[5]->i;
+        }
+        else if (types[5] == 'h')
+        {
+            uniqueId = argv[5]->h;
+        }
+        else
+        {
+            carla_stderr2("Wrong OSC type used for '%s' uniqueId", method);
+            return 0;
+        }
+
+        const int32_t options = argv[6]->i;
+        CARLA_SAFE_ASSERT_RETURN(options >= 0, 0);
+
+        fEngine->addPlugin(static_cast<BinaryType>(btype),
+                           static_cast<PluginType>(ptype),
+                           filename, name, label, uniqueId, nullptr, static_cast<uint32_t>(options));
+    }
     else if (std::strcmp(method, "remove_plugin") == 0)
     {
         CARLA_SAFE_ASSERT_INT_RETURN(argc == 1, argc, 0);

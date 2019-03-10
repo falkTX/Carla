@@ -3061,7 +3061,11 @@ class CarlaHostPlugin(CarlaHostMeta):
         return self.fMaxPluginNumber
 
     def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr, options):
-        return self.sendMsgAndSetError(["add_plugin", btype, ptype, filename, name, label, uniqueId, options])
+        return self.sendMsgAndSetError(["add_plugin",
+                                        btype, ptype,
+                                        filename or "(null)",
+                                        name or "(null)",
+                                        label, uniqueId, options])
 
     def remove_plugin(self, pluginId):
         return self.sendMsgAndSetError(["remove_plugin", pluginId])

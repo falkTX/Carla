@@ -212,22 +212,11 @@ class HostWindow(QMainWindow):
             if self.host.isControl:
                 self.ui.act_file_new.setVisible(False)
                 self.ui.act_file_open.setVisible(False)
-                self.ui.act_file_save.setVisible(False)
                 self.ui.act_file_save_as.setVisible(False)
-                self.ui.act_plugin_add.setVisible(False)
-                self.ui.act_plugin_add2.setVisible(False)
-                self.ui.act_plugin_add_jack.setVisible(False)
-                self.ui.act_plugin_remove_all.setVisible(False)
-                self.ui.act_add_jack.setVisible(False)
-                self.ui.menu_Plugin.setEnabled(False)
-                self.ui.menu_Plugin.setVisible(False)
-                self.ui.menu_Plugin.menuAction().setVisible(False)
                 self.ui.tabUtils.removeTab(0)
-                #self.ui.tw_statusbar.setEnabled(False)
-                #self.ui.tw_statusbar.setVisible(False)
+                self.ui.tabWidget.removeTab(2)
             else:
                 self.ui.act_file_save_as.setText(self.tr("Export as..."))
-                self.ui.tabWidget.removeTab(2)
 
         else:
             self.ui.act_engine_start.setEnabled(True)
