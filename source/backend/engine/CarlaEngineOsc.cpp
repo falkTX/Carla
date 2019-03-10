@@ -176,11 +176,6 @@ void CarlaEngineOsc::idle() const noexcept
 
 void CarlaEngineOsc::close() noexcept
 {
-    CARLA_SAFE_ASSERT(fName.isNotEmpty());
-    CARLA_SAFE_ASSERT(fServerPathTCP.isNotEmpty());
-    CARLA_SAFE_ASSERT(fServerPathUDP.isNotEmpty());
-    CARLA_SAFE_ASSERT(fServerTCP != nullptr);
-    CARLA_SAFE_ASSERT(fServerUDP != nullptr);
     carla_debug("CarlaEngineOsc::close()");
 
     if (fControlDataTCP.target != nullptr)
