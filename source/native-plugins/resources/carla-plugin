@@ -74,6 +74,9 @@ class PluginHost(CarlaHostQtPlugin):
     def set_engine_about_to_close(self):
         return True
 
+    def get_host_osc_url_tcp(self):
+        return self.tr("(OSC TCP port not provided in Plugin version)")
+
 # ------------------------------------------------------------------------------------------------------------
 # Main Window
 

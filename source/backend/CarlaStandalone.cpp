@@ -2080,7 +2080,7 @@ const char* carla_get_host_osc_url_tcp()
     if (path != nullptr && path[0] != '\0')
         return path;
 
-    static const char* const notAvailable = "OSC TCP port not available";
+    static const char* const notAvailable = "(OSC TCP port not available)";
     return notAvailable;
 #else
     return gNullCharPtr;
@@ -2104,7 +2104,7 @@ const char* carla_get_host_osc_url_udp()
     if (path != nullptr && path[0] != '\0')
         return path;
 
-    static const char* const notAvailable = "OSC UDP port not available";
+    static const char* const notAvailable = "(OSC UDP port not available)";
     return notAvailable;
 #else
     return gNullCharPtr;
