@@ -284,6 +284,7 @@ int CarlaEngineOsc::handleMsgControl(const char* const method,
     carla_debug("CarlaEngineOsc::handleMsgControl()");
     CARLA_SAFE_ASSERT_RETURN(method != nullptr && method[0] != '\0', 0);
     CARLA_SAFE_ASSERT_RETURN(types != nullptr, 0);
+    CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
 
     if (fControlDataTCP.owner == nullptr)
     {
@@ -291,230 +292,247 @@ int CarlaEngineOsc::handleMsgControl(const char* const method,
         return 0;
     }
 
+    const int32_t messageId = argv[0]->i;
+    bool ok;
+
+#define CARLA_SAFE_ASSERT_RETURN_OSC_ERR(cond) \
+    if (! (cond)) { carla_safe_assert(#cond, __FILE__, __LINE__); sendResponse(messageId, #cond); return 0; }
+
     /**/ if (std::strcmp(method, "clear_engine_xruns") == 0)
     {
+        ok = true;
         fEngine->clearXruns();
     }
     else if (std::strcmp(method, "cancel_engine_action") == 0)
     {
+        ok = true;
         fEngine->setActionCanceled(true);
     }
     else if (std::strcmp(method, "patchbay_connect") == 0)
     {
-        CARLA_SAFE_ASSERT_INT_RETURN(argc == 5, argc, 0);
-        CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
-        CARLA_SAFE_ASSERT_RETURN(types[1] == 'i', 0);
-        CARLA_SAFE_ASSERT_RETURN(types[2] == 'i', 0);
-        CARLA_SAFE_ASSERT_RETURN(types[3] == 'i', 0);
-        CARLA_SAFE_ASSERT_RETURN(types[4] == 'i', 0);
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(argc == 6);
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[1] == 'i');
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[2] == 'i');
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[3] == 'i');
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[4] == 'i');
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[5] == 'i');
 
-        const bool ext = argv[0]->i != 0;
+        const bool external = argv[1]->i != 0;
 
-        const int32_t i1 = argv[1]->i;
-        CARLA_SAFE_ASSERT_RETURN(i1 >= 0, 0);
+        const int32_t groupA = argv[2]->i;
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(groupA >= 0);
 
-        const int32_t i2 = argv[2]->i;
-        CARLA_SAFE_ASSERT_RETURN(i2 >= 0, 0);
+        const int32_t portA = argv[3]->i;
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(portA >= 0);
 
-        const int32_t i3 = argv[3]->i;
-        CARLA_SAFE_ASSERT_RETURN(i3 >= 0, 0);
+        const int32_t groupB = argv[4]->i;
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(groupB >= 0);
 
-        const int32_t i4 = argv[4]->i;
-        CARLA_SAFE_ASSERT_RETURN(i4 >= 0, 0);
+        const int32_t portB = argv[5]->i;
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(portB >= 0);
 
-        fEngine->patchbayConnect(ext,
-                                 static_cast<uint32_t>(i1),
-                                 static_cast<uint32_t>(i2),
-                                 static_cast<uint32_t>(i3),
-                                 static_cast<uint32_t>(i4));
+        ok = fEngine->patchbayConnect(external,
+                                      static_cast<uint32_t>(groupA),
+                                      static_cast<uint32_t>(portA),
+                                      static_cast<uint32_t>(groupB),
+                                      static_cast<uint32_t>(portB));
     }
     else if (std::strcmp(method, "patchbay_disconnect") == 0)
     {
-        CARLA_SAFE_ASSERT_INT_RETURN(argc == 2, argc, 0);
-        CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
-        CARLA_SAFE_ASSERT_RETURN(types[1] == 'i', 0);
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(argc == 3);
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[1] == 'i');
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[2] == 'i');
 
-        const bool ext = argv[0]->i != 0;
+        const bool external = argv[1]->i != 0;
 
-        const int32_t id = argv[1]->i;
-        CARLA_SAFE_ASSERT_RETURN(id >= 0, 0);
+        const int32_t connectionId = argv[2]->i;
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(connectionId >= 0);
 
-        fEngine->patchbayDisconnect(ext, static_cast<uint32_t>(id));
+        ok = fEngine->patchbayDisconnect(external, static_cast<uint32_t>(connectionId));
     }
     else if (std::strcmp(method, "patchbay_refresh") == 0)
     {
-        CARLA_SAFE_ASSERT_INT_RETURN(argc == 1, argc, 0);
-        CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(argc == 2);
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[1] == 'i');
 
-        const bool ext = argv[0]->i != 0;
-        fEngine->patchbayRefresh(false, true, ext);
+        const bool external = argv[1]->i != 0;
+
+        ok = fEngine->patchbayRefresh(false, true, external);
     }
     else if (std::strcmp(method, "transport_play") == 0)
     {
-        CARLA_SAFE_ASSERT_INT_RETURN(argc == 0, argc, 0);
+        ok = true;
         fEngine->transportPlay();
     }
     else if (std::strcmp(method, "transport_pause") == 0)
     {
-        CARLA_SAFE_ASSERT_INT_RETURN(argc == 0, argc, 0);
+        ok = true;
         fEngine->transportPause();
     }
     else if (std::strcmp(method, "transport_bpm") == 0)
     {
-        CARLA_SAFE_ASSERT_INT_RETURN(argc == 1, argc, 0);
-        CARLA_SAFE_ASSERT_RETURN(types[0] == 'f', 0);
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(argc == 2);
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[1] == 'f');
 
-        const double f = argv[0]->f;
-        CARLA_SAFE_ASSERT_RETURN(f >= 0.0, 0);
+        const double bpm = argv[1]->f;
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(bpm >= 0.0);
 
-        fEngine->transportBPM(f);
+        ok = true;
+        fEngine->transportBPM(bpm);
     }
     else if (std::strcmp(method, "transport_relocate") == 0)
     {
-        CARLA_SAFE_ASSERT_INT_RETURN(argc == 1, argc, 0);
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(argc == 2);
+
         uint64_t frame;
 
-        /**/ if (types[0] == 'i')
+        /**/ if (types[1] == 'i')
         {
-            const int32_t i = argv[0]->i;
-            CARLA_SAFE_ASSERT_RETURN(i >= 0, 0);
+            const int32_t i = argv[1]->i;
+            CARLA_SAFE_ASSERT_RETURN_OSC_ERR(i >= 0);
             frame = static_cast<uint64_t>(i);
         }
-        else if (types[0] == 'h')
+        else if (types[1] == 'h')
         {
-            const int64_t h = argv[0]->h;
-            CARLA_SAFE_ASSERT_RETURN(h >= 0, 0);
+            const int64_t h = argv[1]->h;
+            CARLA_SAFE_ASSERT_RETURN_OSC_ERR(h >= 0);
             frame = static_cast<uint64_t>(h);
         }
         else
         {
             carla_stderr2("Wrong OSC type used for '%s'", method);
+            sendResponse(messageId, "Wrong OSC type");
             return 0;
         }
 
+        ok = true;
         fEngine->transportRelocate(frame);
     }
     else if (std::strcmp(method, "add_plugin") == 0)
     {
-        CARLA_SAFE_ASSERT_INT_RETURN(argc == 7, argc, 0);
-        CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
-        CARLA_SAFE_ASSERT_RETURN(types[1] == 'i', 0);
-        CARLA_SAFE_ASSERT_RETURN(types[2] == 's', 0);
-        CARLA_SAFE_ASSERT_RETURN(types[3] == 's', 0);
-        CARLA_SAFE_ASSERT_RETURN(types[4] == 's', 0);
-        CARLA_SAFE_ASSERT_RETURN(types[6] == 'i', 0);
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(argc == 8);
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[1] == 'i');
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[2] == 'i');
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[3] == 's');
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[4] == 's');
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[5] == 's');
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[7] == 'i');
 
-        const int32_t btype = argv[0]->i;
-        CARLA_SAFE_ASSERT_RETURN(btype >= 0, 0);
+        const int32_t btype = argv[1]->i;
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(btype >= 0);
 
-        const int32_t ptype = argv[1]->i;
-        CARLA_SAFE_ASSERT_RETURN(ptype >= 0, 0);
+        const int32_t ptype = argv[2]->i;
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(ptype >= 0);
 
-        const char* filename = &argv[2]->s;
+        const char* filename = &argv[3]->s;
 
         if (filename != nullptr && std::strcmp(filename, "(null)") == 0)
             filename = nullptr;
 
-        const char* name = &argv[3]->s;
+        const char* name = &argv[4]->s;
 
         if (name != nullptr && std::strcmp(name, "(null)") == 0)
             name = nullptr;
 
-        const char* const label = &argv[4]->s;
-        CARLA_SAFE_ASSERT_RETURN(label != nullptr && label[0] != '\0', 0);
+        const char* const label = &argv[5]->s;
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(label != nullptr && label[0] != '\0');
 
         int64_t uniqueId;
 
-        /**/ if (types[5] == 'i')
+        /**/ if (types[6] == 'i')
         {
-            uniqueId = argv[5]->i;
+            uniqueId = argv[6]->i;
         }
-        else if (types[5] == 'h')
+        else if (types[6] == 'h')
         {
-            uniqueId = argv[5]->h;
+            uniqueId = argv[6]->h;
         }
         else
         {
             carla_stderr2("Wrong OSC type used for '%s' uniqueId", method);
+            sendResponse(messageId, "Wrong OSC type");
             return 0;
         }
 
-        const int32_t options = argv[6]->i;
-        CARLA_SAFE_ASSERT_RETURN(options >= 0, 0);
+        const int32_t options = argv[7]->i;
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(options >= 0);
 
-        fEngine->addPlugin(static_cast<BinaryType>(btype),
-                           static_cast<PluginType>(ptype),
-                           filename, name, label, uniqueId, nullptr, static_cast<uint32_t>(options));
+        ok = fEngine->addPlugin(static_cast<BinaryType>(btype),
+                                static_cast<PluginType>(ptype),
+                                filename, name, label, uniqueId, nullptr, static_cast<uint32_t>(options));
     }
     else if (std::strcmp(method, "remove_plugin") == 0)
     {
-        CARLA_SAFE_ASSERT_INT_RETURN(argc == 1, argc, 0);
-        CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(argc == 2);
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[1] == 'i');
 
-        const int32_t i = argv[0]->i;
-        CARLA_SAFE_ASSERT_RETURN(i >= 0, 0);
+        const int32_t id = argv[1]->i;
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(id >= 0);
 
-        fEngine->removePlugin(static_cast<uint32_t>(i));
+        ok = fEngine->removePlugin(static_cast<uint32_t>(id));
     }
     else if (std::strcmp(method, "remove_all_plugins") == 0)
     {
-        CARLA_SAFE_ASSERT_INT_RETURN(argc == 0, argc, 0);
-
-        fEngine->removeAllPlugins();
+        ok = fEngine->removeAllPlugins();
     }
     else if (std::strcmp(method, "rename_plugin") == 0)
     {
-        CARLA_SAFE_ASSERT_INT_RETURN(argc == 2, argc, 0);
-        CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
-        CARLA_SAFE_ASSERT_RETURN(types[1] == 's', 0);
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(argc == 3);
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[1] == 'i');
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[2] == 's');
 
-        const int32_t i = argv[0]->i;
-        CARLA_SAFE_ASSERT_RETURN(i >= 0, 0);
+        const int32_t id = argv[1]->i;
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(id >= 0);
 
-        const char* const s = &argv[1]->s;
-        CARLA_SAFE_ASSERT_RETURN(s != nullptr && s[0] != '\0', 0);
+        const char* const newName = &argv[2]->s;
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(newName != nullptr && newName[0] != '\0');
 
-        fEngine->renamePlugin(static_cast<uint32_t>(i), s);
+        ok = fEngine->renamePlugin(static_cast<uint32_t>(id), newName);
     }
     else if (std::strcmp(method, "clone_plugin") == 0)
     {
-        CARLA_SAFE_ASSERT_INT_RETURN(argc == 1, argc, 0);
-        CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(argc == 2);
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[1] == 'i');
 
-        const int32_t i = argv[0]->i;
-        CARLA_SAFE_ASSERT_RETURN(i >= 0, 0);
+        const int32_t id = argv[1]->i;
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(id >= 0);
 
-        fEngine->clonePlugin(static_cast<uint32_t>(i));
+        ok = fEngine->clonePlugin(static_cast<uint32_t>(id));
     }
     else if (std::strcmp(method, "replace_plugin") == 0)
     {
-        CARLA_SAFE_ASSERT_INT_RETURN(argc == 1, argc, 0);
-        CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(argc == 2);
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[1] == 'i');
 
-        const int32_t i = argv[0]->i;
-        CARLA_SAFE_ASSERT_RETURN(i >= 0, 0);
+        const int32_t id = argv[1]->i;
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(id >= 0);
 
-        fEngine->replacePlugin(static_cast<uint32_t>(i));
+        ok = fEngine->replacePlugin(static_cast<uint32_t>(id));
     }
     else if (std::strcmp(method, "switch_plugins") == 0)
     {
-        CARLA_SAFE_ASSERT_INT_RETURN(argc == 2, argc, 0);
-        CARLA_SAFE_ASSERT_RETURN(types[0] == 'i', 0);
-        CARLA_SAFE_ASSERT_RETURN(types[1] == 'i', 0);
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(argc == 3);
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[1] == 'i');
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[2] == 'i');
 
-        const int32_t i0 = argv[0]->i;
-        CARLA_SAFE_ASSERT_RETURN(i0 >= 0, 0);
+        const int32_t idA = argv[1]->i;
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(idA >= 0);
 
-        const int32_t i1 = argv[1]->i;
-        CARLA_SAFE_ASSERT_RETURN(i1 >= 0, 0);
+        const int32_t idB = argv[2]->i;
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(idB >= 0);
 
-        fEngine->switchPlugins(static_cast<uint32_t>(i0), static_cast<uint32_t>(i1));
+        ok = fEngine->switchPlugins(static_cast<uint32_t>(idA), static_cast<uint32_t>(idB));
     }
     else
     {
         carla_stderr2("Unhandled OSC control for '%s'", method);
+        sendResponse(messageId, "Unhandled OSC control method");
+        return 0;
     }
 
+#undef CARLA_SAFE_ASSERT_RETURN_OSC_ERR
+
+    sendResponse(messageId, ok ? "" : fEngine->getLastError());
     return 0;
 }
 

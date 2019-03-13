@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla Backend code (OSC stuff)
-# Copyright (C) 2011-2015 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -15,6 +15,11 @@
 # GNU General Public License for more details.
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Imports (Global)
+
+from PyQt5.QtCore import QEventLoop
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -50,6 +55,10 @@ class CarlaHostOSC(CarlaHostQtPlugin):
         self.lo_target_udp = None
         self.lo_target_tcp_name = ""
         self.lo_target_udp_name = ""
+
+        self.lastMessageId = 1
+        self.pendingMessages = []
+        self.responses = {}
 
     # -------------------------------------------------------------------
 
@@ -97,6 +106,7 @@ class CarlaHostOSC(CarlaHostQtPlugin):
                       #"save_plugin_state",
                       ):
             path = "/ctrl/" + method
+            needResp = True
 
         elif method in (#"set_option",
                         "set_active",
@@ -118,10 +128,12 @@ class CarlaHostOSC(CarlaHostQtPlugin):
                         #"randomize_parameters",
                         ):
             pluginId = lines.pop(0)
+            needResp = False
             path = "/%s/%i/%s" % (self.lo_target_tcp_name, pluginId, method)
 
         elif method == "send_midi_note":
             pluginId = lines.pop(0)
+            needResp = False
             channel, note, velocity = lines
 
             if velocity:
@@ -133,11 +145,35 @@ class CarlaHostOSC(CarlaHostQtPlugin):
         else:
             return self.printAndReturnError("invalid method '%s'" % method)
 
+        if len(self.pendingMessages) != 0:
+            return self.printAndReturnError("A previous operation is still pending, please wait")
+
         args = [int(line) if isinstance(line, bool) else line for line in lines]
         #print(path, args)
 
-        lo_send(self.lo_target_tcp, path, *args)
-        return True
+        if not needResp:
+            lo_send(self.lo_target_tcp, path, *args)
+            return True
+
+        messageId = self.lastMessageId
+        self.lastMessageId += 1
+        self.pendingMessages.append(messageId)
+
+        lo_send(self.lo_target_tcp, path, messageId, *args)
+
+        while messageId in self.pendingMessages:
+            QApplication.processEvents(QEventLoop.AllEvents, 100)
+
+        error = self.responses.pop(messageId)
+
+        if not error:
+            return True
+
+        self.fLastError = error
+        return False
+
+    def sendMsgAndSetError(self, lines):
+        return self.sendMsg(lines)
 
     # -------------------------------------------------------------------
 
@@ -166,7 +202,7 @@ class CarlaControlServerTCP(Server):
         Server.__init__(self, proto=LO_TCP)
 
         if False:
-            host = CarlaHostPlugin()
+            host = CarlaHostOSC()
 
         self.host = host
 
@@ -308,6 +344,13 @@ class CarlaControlServerTCP(Server):
         self.host._set_internalValue(pluginId, PARAMETER_PANNING, pan)
         self.host._set_internalValue(pluginId, PARAMETER_CTRL_CHANNEL, ctrlChan)
 
+    @make_method('/ctrl/resp', 'is')
+    def carla_resp(self, path, args):
+        self.fReceivedMsgs = True
+        messageId, error = args
+        self.host.responses[messageId] = error
+        self.host.pendingMessages.remove(messageId)
+
     @make_method('/ctrl/exit', '')
     def carla_exit(self, path, args):
         self.fReceivedMsgs = True
@@ -411,12 +454,10 @@ class HostWindowOSC(HostWindow):
             lo_target_tcp = Address(self.fOscAddressTCP)
             lo_server_tcp = CarlaControlServerTCP(self.host)
             lo_send(lo_target_tcp, "/register", lo_server_tcp.getFullURL())
-            print(lo_server_tcp.getFullURL())
 
             lo_target_udp = Address(self.fOscAddressUDP)
             lo_server_udp = CarlaControlServerUDP(self.host)
             lo_send(lo_target_udp, "/register", lo_server_udp.getFullURL())
-            print(lo_server_udp.getFullURL())
 
         except AddressError as e:
             err = e

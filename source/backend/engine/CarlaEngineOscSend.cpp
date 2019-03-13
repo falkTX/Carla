@@ -271,58 +271,6 @@ void CarlaEngineOsc::sendPluginInternalParameterValues(const CarlaPlugin* const 
                );
 }
 
-#if 0
-void CarlaEngineOsc::sendset_program_count(const uint pluginId, const uint32_t count) const noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
-    CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
-    carla_debug("CarlaEngineOsc::sendset_program_count(%i, %i)", pluginId, count);
-
-    char targetPath[std::strlen(fControlDataTCP.path)+19];
-    std::strcpy(targetPath, fControlDataTCP.path);
-    std::strcat(targetPath, "/set_program_count");
-    try_lo_send(fControlDataTCP.target, targetPath, "ii", static_cast<int32_t>(pluginId), static_cast<int32_t>(count));
-}
-
-void CarlaEngineOsc::sendset_midi_program_count(const uint pluginId, const uint32_t count) const noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
-    CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
-    carla_debug("CarlaEngineOsc::sendset_midi_program_count(%i, %i)", pluginId, count);
-
-    char targetPath[std::strlen(fControlDataTCP.path)+24];
-    std::strcpy(targetPath, fControlDataTCP.path);
-    std::strcat(targetPath, "/set_midi_program_count");
-    try_lo_send(fControlDataTCP.target, targetPath, "ii", static_cast<int32_t>(pluginId), static_cast<int32_t>(count));
-}
-
-void CarlaEngineOsc::sendset_program_name(const uint pluginId, const uint32_t index, const char* const name) const noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
-    CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(name != nullptr,);
-    carla_debug("CarlaEngineOsc::sendset_program_name(%i, %i, \"%s\")", pluginId, index, name);
-
-    char targetPath[std::strlen(fControlDataTCP.path)+18];
-    std::strcpy(targetPath, fControlDataTCP.path);
-    std::strcat(targetPath, "/set_program_name");
-    try_lo_send(fControlDataTCP.target, targetPath, "iis", static_cast<int32_t>(pluginId), static_cast<int32_t>(index), name);
-}
-
-void CarlaEngineOsc::sendset_midi_program_data(const uint pluginId, const uint32_t index, const uint32_t bank, const uint32_t program, const char* const name) const noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
-    CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(name != nullptr,);
-    carla_debug("CarlaEngineOsc::sendset_midi_program_data(%i, %i, %i, %i, \"%s\")", pluginId, index, bank, program, name);
-
-    char targetPath[std::strlen(fControlDataTCP.path)+23];
-    std::strcpy(targetPath, fControlDataTCP.path);
-    std::strcat(targetPath, "/set_midi_program_data");
-    try_lo_send(fControlDataTCP.target, targetPath, "iiiis", static_cast<int32_t>(pluginId), static_cast<int32_t>(index), static_cast<int32_t>(bank), static_cast<int32_t>(program), name);
-}
-#endif
-
 // -----------------------------------------------------------------------
 
 void CarlaEngineOsc::sendPing() const noexcept
@@ -334,6 +282,18 @@ void CarlaEngineOsc::sendPing() const noexcept
     std::strcpy(targetPath, fControlDataTCP.path);
     std::strcat(targetPath, "/ping");
     try_lo_send(fControlDataTCP.target, targetPath, "");
+}
+
+void CarlaEngineOsc::sendResponse(const int messageId, const char* const error) const noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
+    carla_debug("CarlaEngineOsc::sendExit()");
+
+    char targetPath[std::strlen(fControlDataTCP.path)+6];
+    std::strcpy(targetPath, fControlDataTCP.path);
+    std::strcat(targetPath, "/resp");
+    try_lo_send(fControlDataTCP.target, targetPath, "is", messageId, error);
 }
 
 void CarlaEngineOsc::sendExit() const noexcept

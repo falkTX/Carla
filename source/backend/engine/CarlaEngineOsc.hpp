@@ -105,6 +105,7 @@ public:
     void sendPluginCustomData(const CarlaPlugin* const plugin, const uint32_t index) const noexcept;
     void sendPluginInternalParameterValues(const CarlaPlugin* const plugin) const noexcept;
     void sendPing() const noexcept;
+    void sendResponse(const int messageId, const char* const error) const noexcept;
     void sendExit() const noexcept;
 
     // -------------------------------------------------------------------
