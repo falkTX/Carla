@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -16,10 +16,13 @@
  */
 
 #include "carla-vst.hpp"
-#include "ui_launcher.cpp"
-#include "ui_launcher_res.cpp"
 
-#include "CarlaDefines.h"
+#ifndef CARLA_OS_LINUX
+# include "ui_launcher.cpp"
+# include "ui_launcher_res.cpp"
+#endif
+
+#include <cstring>
 
 #ifdef __WINE__
 __cdecl static intptr_t cvst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt)

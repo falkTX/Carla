@@ -84,7 +84,9 @@ public:
           fMidiEventCount(0),
           fTimeInfo(),
           fVstRect(),
+#ifndef CARLA_OS_LINUX
           fUiLauncher(nullptr),
+#endif
           fHostType(kHostTypeNull),
           fMidiOutEvents(),
 #ifdef USING_JUCE
@@ -133,8 +135,13 @@ public:
 
         fVstRect.top    = 0;
         fVstRect.left   = 0;
+#ifdef CARLA_OS_LINUX
+        fVstRect.bottom = 712;
+        fVstRect.right  = 1024;
+#else
         fVstRect.bottom = ui_launcher_res::carla_uiHeight;
         fVstRect.right  = ui_launcher_res::carla_uiWidth;
+#endif
 
         init();
     }
@@ -288,8 +295,23 @@ public:
         case effEditOpen:
             if (fDescriptor->ui_show != nullptr)
             {
+#ifdef CARLA_OS_LINUX
+                char strBuf[0xff+1];
+                std::snprintf(strBuf, 0xff, P_INTPTR, (intptr_t)ptr);
+                strBuf[0xff] = '\0';
+
+                // set CARLA_PLUGIN_EMBED_WINID for external process
+                carla_setenv("CARLA_PLUGIN_EMBED_WINID", strBuf);
+
+                // show UI now
+                fDescriptor->ui_show(fHandle, true);
+
+                // reset CARLA_PLUGIN_EMBED_WINID just in case
+                carla_setenv("CARLA_PLUGIN_EMBED_WINID", "0");
+#else
                 destoryUILauncher(fUiLauncher);
                 fUiLauncher = createUILauncher((intptr_t)ptr, fDescriptor, fHandle);
+#endif
                 ret = 1;
             }
             break;
@@ -297,20 +319,23 @@ public:
         case effEditClose:
             if (fDescriptor->ui_show != nullptr)
             {
+#ifdef CARLA_OS_LINUX
+                fDescriptor->ui_show(fHandle, false);
+#else
                 destoryUILauncher(fUiLauncher);
                 fUiLauncher = nullptr;
+#endif
                 ret = 1;
             }
             break;
 
         case effEditIdle:
+#ifndef CARLA_OS_LINUX
             if (fUiLauncher != nullptr)
-            {
                 idleUILauncher(fUiLauncher);
-
-                if (fDescriptor->ui_idle != nullptr)
-                    fDescriptor->ui_idle(fHandle);
-            }
+#endif
+            if (fDescriptor->ui_idle != nullptr)
+                fDescriptor->ui_idle(fHandle);
             break;
 
         case effGetChunk:
@@ -604,8 +629,10 @@ private:
     NativeTimeInfo  fTimeInfo;
     ERect           fVstRect;
 
+#ifndef CARLA_OS_LINUX
     // UI button
     CarlaUILauncher* fUiLauncher;
+#endif
 
     // Host data
     enum HostType {

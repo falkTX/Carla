@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -15,11 +15,15 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include "CarlaDefines.h"
 #include "CarlaNative.h"
 #include "vestige/vestige.h"
-#include "ui_launcher_res.hpp"
 
+#ifndef CARLA_OS_LINUX
+# include "ui_launcher_res.hpp"
 struct CarlaUILauncher;
+#endif
+
 class NativePlugin;
 
 struct VstObject {
@@ -27,11 +31,13 @@ struct VstObject {
     NativePlugin* plugin;
 };
 
+#ifndef CARLA_OS_LINUX
 CarlaUILauncher* createUILauncher(const intptr_t winId,
                                   const NativePluginDescriptor* const d,
                                   const NativePluginHandle h);
 void idleUILauncher(CarlaUILauncher* const ui);
 void destoryUILauncher(CarlaUILauncher* const ui);
+#endif
 
 const AEffect* VSTPluginMainInit(AEffect* const effect);
 intptr_t VSTAudioMaster(AEffect*, int32_t, int32_t, intptr_t, void*, float);

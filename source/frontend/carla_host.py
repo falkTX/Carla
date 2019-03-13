@@ -208,15 +208,18 @@ class HostWindow(QMainWindow):
             self.ui.menu_Engine.setEnabled(False)
             self.ui.menu_Engine.setVisible(False)
             self.ui.menu_Engine.menuAction().setVisible(False)
+            self.ui.tabWidget.removeTab(2)
 
             if self.host.isControl:
                 self.ui.act_file_new.setVisible(False)
                 self.ui.act_file_open.setVisible(False)
                 self.ui.act_file_save_as.setVisible(False)
                 self.ui.tabUtils.removeTab(0)
-                self.ui.tabWidget.removeTab(2)
             else:
                 self.ui.act_file_save_as.setText(self.tr("Export as..."))
+
+                if not withCanvas:
+                    self.ui.tabWidget.tabBar().hide()
 
         else:
             self.ui.act_engine_start.setEnabled(True)
@@ -2333,7 +2336,7 @@ class HostWindow(QMainWindow):
         self.ui.pb_dsp_load.setValue(int(load))
 
     def getAndRefreshRuntimeInfo(self):
-        if not self.isVisible():
+        if not self.ui.pb_dsp_load.isVisible():
             return
         if not self.host.is_engine_running():
             return
