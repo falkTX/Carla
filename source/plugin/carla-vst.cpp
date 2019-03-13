@@ -84,7 +84,7 @@ public:
           fMidiEventCount(0),
           fTimeInfo(),
           fVstRect(),
-#ifndef CARLA_OS_LINUX
+#ifndef HAVE_X11
           fUiLauncher(nullptr),
 #endif
           fHostType(kHostTypeNull),
@@ -135,7 +135,7 @@ public:
 
         fVstRect.top    = 0;
         fVstRect.left   = 0;
-#ifdef CARLA_OS_LINUX
+#ifdef HAVE_X11
         fVstRect.bottom = 712;
         fVstRect.right  = 1024;
 #else
@@ -295,7 +295,7 @@ public:
         case effEditOpen:
             if (fDescriptor->ui_show != nullptr)
             {
-#ifdef CARLA_OS_LINUX
+#ifdef HAVE_X11
                 char strBuf[0xff+1];
                 std::snprintf(strBuf, 0xff, P_INTPTR, (intptr_t)ptr);
                 strBuf[0xff] = '\0';
@@ -319,7 +319,7 @@ public:
         case effEditClose:
             if (fDescriptor->ui_show != nullptr)
             {
-#ifdef CARLA_OS_LINUX
+#ifdef HAVE_X11
                 fDescriptor->ui_show(fHandle, false);
 #else
                 destoryUILauncher(fUiLauncher);
@@ -330,7 +330,7 @@ public:
             break;
 
         case effEditIdle:
-#ifndef CARLA_OS_LINUX
+#ifndef HAVE_X11
             if (fUiLauncher != nullptr)
                 idleUILauncher(fUiLauncher);
 #endif
@@ -629,7 +629,7 @@ private:
     NativeTimeInfo  fTimeInfo;
     ERect           fVstRect;
 
-#ifndef CARLA_OS_LINUX
+#ifndef HAVE_X11
     // UI button
     CarlaUILauncher* fUiLauncher;
 #endif

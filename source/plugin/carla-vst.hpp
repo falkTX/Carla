@@ -19,7 +19,7 @@
 #include "CarlaNative.h"
 #include "vestige/vestige.h"
 
-#ifndef CARLA_OS_LINUX
+#ifndef HAVE_X11
 # include "ui_launcher_res.hpp"
 struct CarlaUILauncher;
 #endif
@@ -31,7 +31,7 @@ struct VstObject {
     NativePlugin* plugin;
 };
 
-#ifndef CARLA_OS_LINUX
+#ifndef HAVE_X11
 CarlaUILauncher* createUILauncher(const intptr_t winId,
                                   const NativePluginDescriptor* const d,
                                   const NativePluginHandle h);

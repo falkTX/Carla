@@ -1827,7 +1827,7 @@ class HostWindow(QMainWindow):
     # Transport
 
     def refreshTransport(self, forced = False):
-        if not self.isVisible():
+        if not self.ui.l_transport_time.isVisible():
             return
         if self.fSampleRate == 0.0 or not self.host.is_engine_running():
             return

@@ -20,7 +20,7 @@
 # Imports (Global)
 
 from PyQt5.QtGui import QKeySequence, QMouseEvent
-from PyQt5.QtWidgets import QHBoxLayout
+from PyQt5.QtWidgets import QSplitter
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
@@ -466,7 +466,15 @@ class CarlaEmbedW(QEmbedWidget):
         if self.host.processMode == ENGINE_PROCESS_MODE_PATCHBAY:
             self.addLine()
 
-        self.addWidget(self.gui.centralWidget())
+        self.fCentralSplitter = QSplitter(self)
+        policy = self.fCentralSplitter.sizePolicy()
+        policy.setVerticalStretch(1)
+        self.fCentralSplitter.setSizePolicy(policy)
+
+        self.addCentralWidget(self.gui.ui.dockWidget)
+        self.addCentralWidget(self.gui.centralWidget())
+        self.fLayout.addWidget(self.fCentralSplitter)
+
         self.finalSetup(self.gui, winId)
 
     def addShortcutActions(self, actions):
@@ -477,6 +485,10 @@ class CarlaEmbedW(QEmbedWidget):
     def addWidget(self, widget):
         widget.setParent(self)
         self.fLayout.addWidget(widget)
+
+    def addCentralWidget(self, widget):
+        widget.setParent(self)
+        self.fCentralSplitter.addWidget(widget)
 
     def addLine(self):
         line = QFrame(self)
