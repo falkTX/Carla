@@ -235,6 +235,15 @@ class CarlaUtils(object):
         self.lib.carla_cocoa_get_window.argtypes = [c_uintptr]
         self.lib.carla_cocoa_get_window.restype = c_int
 
+        self.lib.carla_x11_reparent_window.argtypes = [c_uintptr, c_uintptr]
+        self.lib.carla_x11_reparent_window.restype = None
+
+        self.lib.carla_x11_move_window.argtypes = [c_uintptr, c_int, c_int]
+        self.lib.carla_x11_move_window.restype = None
+
+        self.lib.carla_x11_get_window_pos.argtypes = [c_uintptr]
+        self.lib.carla_x11_get_window_pos.restype = POINTER(c_int)
+
         # use _putenv on windows
         if not WINDOWS:
             self.msvcrt = None
@@ -347,5 +356,15 @@ class CarlaUtils(object):
 
     def cocoa_get_window(self, winId):
         return self.lib.carla_cocoa_get_window(winId)
+
+    def x11_reparent_window(self, winId1, winId2):
+        self.lib.carla_x11_reparent_window(winId1, winId2)
+
+    def x11_move_window(self, winId, x, y):
+        self.lib.carla_x11_move_window(winId, x, y)
+
+    def x11_get_window_pos(self, winId):
+        data = self.lib.carla_x11_get_window_pos(winId)
+        return tuple(int(data[i]) for i in range(4))
 
 # ------------------------------------------------------------------------------------------------------------

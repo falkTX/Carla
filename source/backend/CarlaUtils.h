@@ -128,7 +128,7 @@ typedef struct _CarlaCachedPluginInfo {
 
 } CarlaCachedPluginInfo;
 
-/* ------------------------------------------------------------------------------------------------------------
+/* --------------------------------------------------------------------------------------------------------------------
  * get stuff */
 
 /*!
@@ -164,7 +164,7 @@ CARLA_EXPORT uint carla_get_cached_plugin_count(PluginType ptype, const char* pl
  */
 CARLA_EXPORT const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginType ptype, uint index);
 
-/* ------------------------------------------------------------------------------------------------------------
+/* --------------------------------------------------------------------------------------------------------------------
  * set stuff */
 
 /*!
@@ -182,7 +182,7 @@ CARLA_EXPORT void carla_fputs(bool err, const char* string);
  */
 CARLA_EXPORT void carla_set_process_name(const char* name);
 
-/* ------------------------------------------------------------------------------------------------------------
+/* --------------------------------------------------------------------------------------------------------------------
  * pipes */
 
 /*!
@@ -241,7 +241,7 @@ CARLA_EXPORT bool carla_pipe_client_flush_and_unlock(CarlaPipeClientHandle handl
 CARLA_EXPORT void carla_pipe_client_destroy(CarlaPipeClientHandle handle);
 
 #ifndef CARLA_HOST_H_INCLUDED
-/* ------------------------------------------------------------------------------------------------------------
+/* --------------------------------------------------------------------------------------------------------------------
  * info about current library */
 
 /*!
@@ -255,12 +255,18 @@ CARLA_EXPORT const char* carla_get_library_filename();
 CARLA_EXPORT const char* carla_get_library_folder();
 #endif
 
-// -------------------------------------------------------------------------------------------------------------------
-// TESTING
+/* --------------------------------------------------------------------------------------------------------------------
+ * window control */
 
 CARLA_EXPORT int carla_cocoa_get_window(void* nsViewPtr);
 
-// -------------------------------------------------------------------------------------------------------------------
+CARLA_EXPORT void carla_x11_reparent_window(uintptr_t winId1, uintptr_t winId2);
+
+CARLA_EXPORT void carla_x11_move_window(uintptr_t winId, int x, int y);
+
+CARLA_EXPORT int* carla_x11_get_window_pos(uintptr_t winId);
+
+/* ----------------------------------------------------------------------------------------------------------------- */
 
 /** @} */
 
