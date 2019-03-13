@@ -19,9 +19,9 @@ $ make install PREFIX=/usr DESTDIR=./test-dir
 
 ## BUILD DEPENDENCIES
 
-There are no required build dependencies.
+There are no required build dependencies. The default build is probably not what you want though.
 
-But if you want the frontend (which is likely), you will need PyQt5 (python3 version).
+If you want the frontend (which is likely), you will need PyQt5 (python3 version).
 
 You likely will also want:
 
@@ -57,7 +57,7 @@ $ make features
 To find out which dependencies are missing.
 
 
-Under Debian based systems, you can use this command to install all dependencies:
+Under Debian based systems, you can use this command to install everything:
 ```
 sudo apt install python3-pyqt5.qtsvg python3-rdflib pyqt5-dev-tools \
   libmagic-dev liblo-dev libasound2-dev libpulse-dev libx11-dev \
@@ -71,7 +71,7 @@ sudo dnf install python3-qt5-devel python3-rdflib \
   gtk2-devel gtk3-devel qt4-devel qt5-devel fluidsynth-devel libsndfile-devel
 ```
 
-## BUILD BRIDGES
+## BUILD BRIDGES (Experimental)
 
 Carla can make use of plugin bridges to load additional plugin types.
 
@@ -101,3 +101,6 @@ To finalize, we build the wine<->native bridges using winegcc:
 make wine32
 make wine64
 ```
+
+Then install or run Carla locally as usual.<br/>
+Don't forget to enable experimental options and plugin bridges in Carla settings to actually be able to use them.
