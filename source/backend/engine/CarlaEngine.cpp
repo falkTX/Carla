@@ -646,7 +646,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
         callback(true, true, ENGINE_CALLBACK_PLUGIN_ADDED, id, 0, 0, 0, 0.0f, plugin->getName());
 
         if (getType() != kEngineTypeBridge)
-            plugin->setActive(true, false, true);
+            plugin->setActive(true, true, true);
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
