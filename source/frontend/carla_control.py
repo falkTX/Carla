@@ -556,7 +556,7 @@ class HostWindowOSC(HostWindow):
     # --------------------------------------------------------------------------------------------------------
 
     def removeAllPlugins(self):
-        self.host.fPluginsInfo = []
+        self.host.fPluginsInfo = {}
         HostWindow.removeAllPlugins(self)
 
     # --------------------------------------------------------------------------------------------------------
@@ -630,6 +630,13 @@ class HostWindowOSC(HostWindow):
         except:
             self.disconnectOsc()
             return
+
+    # --------------------------------------------------------------------------------------------------------
+
+    @pyqtSlot()
+    def slot_handleSIGTERM(self):
+        print("Got SIGTERM -> Closing now")
+        self.close()
 
     @pyqtSlot()
     def slot_handleQuitCallback(self):

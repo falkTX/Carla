@@ -2905,28 +2905,30 @@ class CarlaHostDLL(CarlaHostMeta):
 # Helper object for CarlaHostPlugin
 
 class PluginStoreInfo(object):
-    __slots__ = [
-        'pluginInfo',
-        'pluginRealName',
-        'internalValues',
-        'audioCountInfo',
-        'midiCountInfo',
-        'parameterCount',
-        'parameterCountInfo',
-        'parameterInfo',
-        'parameterData',
-        'parameterRanges',
-        'parameterValues',
-        'programCount',
-        'programCurrent',
-        'programNames',
-        'midiProgramCount',
-        'midiProgramCurrent',
-        'midiProgramData',
-        'customDataCount',
-        'customData',
-        'peaks'
-    ]
+    def __init__(self):
+        self.clear()
+
+    def clear(self):
+        self.pluginInfo     = PyCarlaPluginInfo.copy()
+        self.pluginRealName = ""
+        self.internalValues = [0.0, 1.0, 1.0, -1.0, 1.0, 0.0, -1.0]
+        self.audioCountInfo = PyCarlaPortCountInfo.copy()
+        self.midiCountInfo  = PyCarlaPortCountInfo.copy()
+        self.parameterCount = 0
+        self.parameterCountInfo = PyCarlaPortCountInfo.copy()
+        self.parameterInfo   = []
+        self.parameterData   = []
+        self.parameterRanges = []
+        self.parameterValues = []
+        self.programCount   = 0
+        self.programCurrent = -1
+        self.programNames   = []
+        self.midiProgramCount   = 0
+        self.midiProgramCurrent = -1
+        self.midiProgramData    = []
+        self.customDataCount = 0
+        self.customData      = []
+        self.peaks = [0.0, 0.0, 0.0, 0.0]
 
 # ------------------------------------------------------------------------------------------------------------
 # Carla Host object for plugins (using pipes)
@@ -2945,7 +2947,8 @@ class CarlaHostPlugin(CarlaHostMeta):
         self.fLastError       = ""
 
         # plugin info
-        self.fPluginsInfo = []
+        self.fPluginsInfo = {}
+        self.fFallbackPluginInfo = PyCarlaPluginInfo.copy()
 
         # runtime engine info
         self.fRuntimeEngineInfo = {
@@ -3104,37 +3107,40 @@ class CarlaHostPlugin(CarlaHostMeta):
         return False
 
     def get_plugin_info(self, pluginId):
-        return self.fPluginsInfo[pluginId].pluginInfo
+        return self.fPluginsInfo.get(pluginId, self.fFallbackPluginInfo).pluginInfo
 
     def get_audio_port_count_info(self, pluginId):
-        return self.fPluginsInfo[pluginId].audioCountInfo
+        return self.fPluginsInfo.get(pluginId, self.fFallbackPluginInfo).audioCountInfo
 
     def get_midi_port_count_info(self, pluginId):
-        return self.fPluginsInfo[pluginId].midiCountInfo
+        return self.fPluginsInfo.get(pluginId, self.fFallbackPluginInfo).midiCountInfo
 
     def get_parameter_count_info(self, pluginId):
-        return self.fPluginsInfo[pluginId].parameterCountInfo
+        return self.fPluginsInfo.get(pluginId, self.fFallbackPluginInfo).parameterCountInfo
 
     def get_parameter_info(self, pluginId, parameterId):
-        return self.fPluginsInfo[pluginId].parameterInfo[parameterId]
+        return self.fPluginsInfo.get(pluginId, self.fFallbackPluginInfo).parameterInfo[parameterId]
 
     def get_parameter_scalepoint_info(self, pluginId, parameterId, scalePointId):
         return PyCarlaScalePointInfo
 
     def get_parameter_data(self, pluginId, parameterId):
-        return self.fPluginsInfo[pluginId].parameterData[parameterId]
+        return self.fPluginsInfo.get(pluginId, self.fFallbackPluginInfo).parameterData[parameterId]
 
     def get_parameter_ranges(self, pluginId, parameterId):
-        return self.fPluginsInfo[pluginId].parameterRanges[parameterId]
+        return self.fPluginsInfo.get(pluginId, self.fFallbackPluginInfo).parameterRanges[parameterId]
 
     def get_midi_program_data(self, pluginId, midiProgramId):
-        return self.fPluginsInfo[pluginId].midiProgramData[midiProgramId]
+        return self.fPluginsInfo.get(pluginId, self.fFallbackPluginInfo).midiProgramData[midiProgramId]
 
     def get_custom_data(self, pluginId, customDataId):
-        return self.fPluginsInfo[pluginId].customData[customDataId]
+        return self.fPluginsInfo.get(pluginId, self.fFallbackPluginInfo).customData[customDataId]
 
     def get_custom_data_value(self, pluginId, type_, key):
-        for customData in self.fPluginsInfo[pluginId].customData:
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            return ""
+        for customData in plugin.customData:
             if customData['type'] == type_ and customData['key'] == key:
                 return customData['value']
         return ""
@@ -3143,16 +3149,16 @@ class CarlaHostPlugin(CarlaHostMeta):
         return ""
 
     def get_parameter_count(self, pluginId):
-        return self.fPluginsInfo[pluginId].parameterCount
+        return self.fPluginsInfo.get(pluginId, self.fFallbackPluginInfo).parameterCount
 
     def get_program_count(self, pluginId):
-        return self.fPluginsInfo[pluginId].programCount
+        return self.fPluginsInfo.get(pluginId, self.fFallbackPluginInfo).programCount
 
     def get_midi_program_count(self, pluginId):
-        return self.fPluginsInfo[pluginId].midiProgramCount
+        return self.fPluginsInfo.get(pluginId, self.fFallbackPluginInfo).midiProgramCount
 
     def get_custom_data_count(self, pluginId):
-        return self.fPluginsInfo[pluginId].customDataCount
+        return self.fPluginsInfo.get(pluginId, self.fFallbackPluginInfo).customDataCount
 
     def get_parameter_text(self, pluginId, parameterId):
         return ""
@@ -3164,13 +3170,13 @@ class CarlaHostPlugin(CarlaHostMeta):
         return self.fPluginsInfo[pluginId].midiProgramData[midiProgramId]['label']
 
     def get_real_plugin_name(self, pluginId):
-        return self.fPluginsInfo[pluginId].pluginRealName
+        return self.fPluginsInfo.get(pluginId, self.fFallbackPluginInfo).pluginRealName
 
     def get_current_program_index(self, pluginId):
-        return self.fPluginsInfo[pluginId].programCurrent
+        return self.fPluginsInfo.get(pluginId, self.fFallbackPluginInfo).programCurrent
 
     def get_current_midi_program_index(self, pluginId):
-        return self.fPluginsInfo[pluginId].midiProgramCurrent
+        return self.fPluginsInfo.get(pluginId, self.fFallbackPluginInfo).midiProgramCurrent
 
     def get_default_parameter_value(self, pluginId, parameterId):
         return self.fPluginsInfo[pluginId].parameterRanges[parameterId]['def']
@@ -3309,168 +3315,244 @@ class CarlaHostPlugin(CarlaHostMeta):
         }
 
     def _add(self, pluginId):
-        if len(self.fPluginsInfo) != pluginId:
-            self._reset_info(self.fPluginsInfo[pluginId])
-            return
-
-        info = PluginStoreInfo()
-        self._reset_info(info)
-        self.fPluginsInfo.append(info)
+        self.fPluginsInfo[pluginId] = PluginStoreInfo()
 
     def _allocateAsNeeded(self, pluginId):
         if pluginId < len(self.fPluginsInfo):
             return
 
-        for i in range(pluginId + 1 - len(self.fPluginsInfo)):
-            info = PluginStoreInfo()
-            self._reset_info(info)
-            self.fPluginsInfo.append(info)
-
-    def _reset_info(self, info):
-        info.pluginInfo     = PyCarlaPluginInfo.copy()
-        info.pluginRealName = ""
-        info.internalValues = [0.0, 1.0, 1.0, -1.0, 1.0, 0.0, -1.0]
-        info.audioCountInfo = PyCarlaPortCountInfo.copy()
-        info.midiCountInfo  = PyCarlaPortCountInfo.copy()
-        info.parameterCount = 0
-        info.parameterCountInfo = PyCarlaPortCountInfo.copy()
-        info.parameterInfo   = []
-        info.parameterData   = []
-        info.parameterRanges = []
-        info.parameterValues = []
-        info.programCount   = 0
-        info.programCurrent = -1
-        info.programNames   = []
-        info.midiProgramCount   = 0
-        info.midiProgramCurrent = -1
-        info.midiProgramData    = []
-        info.customDataCount = 0
-        info.customData      = []
-        info.peaks = [0.0, 0.0, 0.0, 0.0]
+        for id in range(len(self.fPluginsInfo), pluginId+1):
+            self.fPluginsInfo[id] = PluginStoreInfo()
 
     def _set_pluginInfo(self, pluginId, info):
-        self.fPluginsInfo[pluginId].pluginInfo = info
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_pluginInfo failed for", pluginId)
+            return
+        plugin.pluginInfo = info
 
     def _set_pluginInfoUpdate(self, pluginId, info):
-        self.fPluginsInfo[pluginId].pluginInfo.update(info)
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_pluginInfoUpdate failed for", pluginId)
+            return
+        plugin.pluginInfo.update(info)
 
     def _set_pluginName(self, pluginId, name):
-        self.fPluginsInfo[pluginId].pluginInfo['name'] = name
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_pluginName failed for", pluginId)
+            return
+        plugin.pluginInfo['name'] = name
 
     def _set_pluginRealName(self, pluginId, realName):
-        self.fPluginsInfo[pluginId].pluginRealName = realName
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_pluginRealName failed for", pluginId)
+            return
+        plugin.pluginRealName = realName
 
     def _set_internalValue(self, pluginId, paramIndex, value):
-        if pluginId < len(self.fPluginsInfo) and PARAMETER_NULL > paramIndex > PARAMETER_MAX:
-            self.fPluginsInfo[pluginId].internalValues[abs(paramIndex)-2] = float(value)
+        pluginInfo = self.fPluginsInfo.get(pluginId, None)
+        if pluginInfo is None:
+            print("_set_internalValue failed for", pluginId)
+            return
+        if PARAMETER_NULL > paramIndex > PARAMETER_MAX:
+            pluginInfo.internalValues[abs(paramIndex)-2] = float(value)
+        else:
+            print("_set_internalValue failed for", pluginId, "with param", paramIndex)
 
     def _set_audioCountInfo(self, pluginId, info):
-        #self._allocateAsNeeded(pluginId)
-        self.fPluginsInfo[pluginId].audioCountInfo = info
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_audioCountInfo failed for", pluginId)
+            return
+        plugin.audioCountInfo = info
 
     def _set_midiCountInfo(self, pluginId, info):
-        self.fPluginsInfo[pluginId].midiCountInfo = info
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_midiCountInfo failed for", pluginId)
+            return
+        plugin.midiCountInfo = info
 
     def _set_parameterCountInfo(self, pluginId, count, info):
-        self.fPluginsInfo[pluginId].parameterCount = count
-        self.fPluginsInfo[pluginId].parameterCountInfo = info
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_parameterCountInfo failed for", pluginId)
+            return
+
+        plugin.parameterCount = count
+        plugin.parameterCountInfo = info
 
         # clear
-        self.fPluginsInfo[pluginId].parameterInfo  = []
-        self.fPluginsInfo[pluginId].parameterData  = []
-        self.fPluginsInfo[pluginId].parameterRanges = []
-        self.fPluginsInfo[pluginId].parameterValues = []
+        plugin.parameterInfo  = []
+        plugin.parameterData  = []
+        plugin.parameterRanges = []
+        plugin.parameterValues = []
 
         # add placeholders
         for x in range(count):
-            self.fPluginsInfo[pluginId].parameterInfo.append(PyCarlaParameterInfo.copy())
-            self.fPluginsInfo[pluginId].parameterData.append(PyParameterData.copy())
-            self.fPluginsInfo[pluginId].parameterRanges.append(PyParameterRanges.copy())
-            self.fPluginsInfo[pluginId].parameterValues.append(0.0)
+            plugin.parameterInfo.append(PyCarlaParameterInfo.copy())
+            plugin.parameterData.append(PyParameterData.copy())
+            plugin.parameterRanges.append(PyParameterRanges.copy())
+            plugin.parameterValues.append(0.0)
 
     def _set_programCount(self, pluginId, count):
-        self.fPluginsInfo[pluginId].programCount = count
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_internalValue failed for", pluginId)
+            return
 
-        # clear
-        self.fPluginsInfo[pluginId].programNames = []
-
-        # add placeholders
-        for x in range(count):
-            self.fPluginsInfo[pluginId].programNames.append("")
+        plugin.programCount = count
+        plugin.programNames = ["" for x in range(count)]
 
     def _set_midiProgramCount(self, pluginId, count):
-        self.fPluginsInfo[pluginId].midiProgramCount = count
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_internalValue failed for", pluginId)
+            return
 
-        # clear
-        self.fPluginsInfo[pluginId].midiProgramData = []
-
-        # add placeholders
-        for x in range(count):
-            self.fPluginsInfo[pluginId].midiProgramData.append(PyMidiProgramData.copy())
+        plugin.midiProgramCount = count
+        plugin.midiProgramData = [PyMidiProgramData.copy() for x in range(count)]
 
     def _set_customDataCount(self, pluginId, count):
-        self.fPluginsInfo[pluginId].customDataCount = count
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_internalValue failed for", pluginId)
+            return
 
-        # clear
-        self.fPluginsInfo[pluginId].customData = []
-
-        # add placeholders
-        for x in range(count):
-            self.fPluginsInfo[pluginId].customData.append(PyCustomData.copy())
+        plugin.customDataCount = count
+        plugin.customData = [PyCustomData.copy() for x in range(count)]
 
     def _set_parameterInfo(self, pluginId, paramIndex, info):
-        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
-            self.fPluginsInfo[pluginId].parameterInfo[paramIndex] = info
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_parameterInfo failed for", pluginId)
+            return
+        if paramIndex < plugin.parameterCount:
+            plugin.parameterInfo[paramIndex] = info
+        else:
+            print("_set_parameterInfo failed for", pluginId, "and index", paramIndex)
 
     def _set_parameterData(self, pluginId, paramIndex, data):
-        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
-            self.fPluginsInfo[pluginId].parameterData[paramIndex] = data
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_parameterData failed for", pluginId)
+            return
+        if paramIndex < plugin.parameterCount:
+            plugin.parameterData[paramIndex] = data
+        else:
+            print("_set_parameterData failed for", pluginId, "and index", paramIndex)
 
     def _set_parameterRanges(self, pluginId, paramIndex, ranges):
-        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
-            self.fPluginsInfo[pluginId].parameterRanges[paramIndex] = ranges
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_parameterRanges failed for", pluginId)
+            return
+        if paramIndex < plugin.parameterCount:
+            plugin.parameterRanges[paramIndex] = ranges
+        else:
+            print("_set_parameterRanges failed for", pluginId, "and index", paramIndex)
 
     def _set_parameterRangesUpdate(self, pluginId, paramIndex, ranges):
-        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
-            self.fPluginsInfo[pluginId].parameterRanges[paramIndex].update(ranges)
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_parameterRangesUpdate failed for", pluginId)
+            return
+        if paramIndex < plugin.parameterCount:
+            plugin.parameterRanges[paramIndex].update(ranges)
+        else:
+            print("_set_parameterRangesUpdate failed for", pluginId, "and index", paramIndex)
 
     def _set_parameterValue(self, pluginId, paramIndex, value):
-        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
-            self.fPluginsInfo[pluginId].parameterValues[paramIndex] = value
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_parameterValue failed for", pluginId)
+            return
+        if paramIndex < plugin.parameterCount:
+            plugin.parameterValues[paramIndex] = value
+        else:
+            print("_set_parameterValue failed for", pluginId, "and index", paramIndex)
 
     def _set_parameterDefault(self, pluginId, paramIndex, value):
-        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
-            self.fPluginsInfo[pluginId].parameterRanges[paramIndex]['def'] = value
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_parameterDefault failed for", pluginId)
+            return
+        if paramIndex < plugin.parameterCount:
+            plugin.parameterRanges[paramIndex]['def'] = value
+        else:
+            print("_set_parameterDefault failed for", pluginId, "and index", paramIndex)
 
     def _set_parameterMidiChannel(self, pluginId, paramIndex, channel):
-        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
-            self.fPluginsInfo[pluginId].parameterData[paramIndex]['midiChannel'] = channel
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_parameterMidiChannel failed for", pluginId)
+            return
+        if paramIndex < plugin.parameterCount:
+            plugin.parameterData[paramIndex]['midiChannel'] = channel
+        else:
+            print("_set_parameterMidiChannel failed for", pluginId, "and index", paramIndex)
 
     def _set_parameterMidiCC(self, pluginId, paramIndex, cc):
-        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
-            self.fPluginsInfo[pluginId].parameterData[paramIndex]['midiCC'] = cc
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_parameterMidiCC failed for", pluginId)
+            return
+        if paramIndex < plugin.parameterCount:
+            plugin.parameterData[paramIndex]['midiCC'] = cc
+        else:
+            print("_set_parameterMidiCC failed for", pluginId, "and index", paramIndex)
 
     def _set_currentProgram(self, pluginId, pIndex):
-        self.fPluginsInfo[pluginId].programCurrent = pIndex
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_currentProgram failed for", pluginId)
+            return
+        plugin.programCurrent = pIndex
 
     def _set_currentMidiProgram(self, pluginId, mpIndex):
-        self.fPluginsInfo[pluginId].midiProgramCurrent = mpIndex
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_currentMidiProgram failed for", pluginId)
+            return
+        plugin.midiProgramCurrent = mpIndex
 
     def _set_programName(self, pluginId, pIndex, name):
-        if pIndex < self.fPluginsInfo[pluginId].programCount:
-            self.fPluginsInfo[pluginId].programNames[pIndex] = name
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_programName failed for", pluginId)
+            return
+        if pIndex < plugin.programCount:
+            plugin.programNames[pIndex] = name
+        else:
+            print("_set_programName failed for", pluginId, "and index", pIndex)
 
     def _set_midiProgramData(self, pluginId, mpIndex, data):
-        if mpIndex < self.fPluginsInfo[pluginId].midiProgramCount:
-            self.fPluginsInfo[pluginId].midiProgramData[mpIndex] = data
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_midiProgramData failed for", pluginId)
+            return
+        if mpIndex < plugin.midiProgramCount:
+            plugin.midiProgramData[mpIndex] = data
+        else:
+            print("_set_midiProgramData failed for", pluginId, "and index", mpIndex)
 
     def _set_customData(self, pluginId, cdIndex, data):
-        if cdIndex < self.fPluginsInfo[pluginId].customDataCount:
-            self.fPluginsInfo[pluginId].customData[cdIndex] = data
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_customData failed for", pluginId)
+            return
+        if cdIndex < plugin.customDataCount:
+            plugin.customData[cdIndex] = data
+        else:
+            print("_set_customData failed for", pluginId, "and index", cdIndex)
 
     def _set_peaks(self, pluginId, in1, in2, out1, out2):
-        if pluginId < len(self.fPluginsInfo):
-            self.fPluginsInfo[pluginId].peaks = [in1, in2, out1, out2]
+        pluginInfo = self.fPluginsInfo.get(pluginId, None)
+        if pluginInfo is not None:
+            pluginInfo.peaks = [in1, in2, out1, out2]
 
     def _switchPlugins(self, pluginIdA, pluginIdB):
         tmp = self.fPluginsInfo[pluginIdA]
