@@ -62,6 +62,7 @@ ui_*.py
 
 # Binaries
 carla-bridge-qtcreator
+carla-bridge-arm32
 carla-bridge-native
 carla-bridge-posix32
 carla-bridge-posix64
@@ -78,6 +79,7 @@ carla-bridge-vst2-x11
 
 carla-discovery-qtcreator
 carla-discovery-native
+carla-discovery-arm32
 carla-discovery-posix32
 carla-discovery-posix64
 
