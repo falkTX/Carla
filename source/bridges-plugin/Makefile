@@ -34,10 +34,12 @@ BUILD_CXX_FLAGS += -I$(CWD)/backend/engine -I$(CWD)/backend/plugin
 
 32BIT_FLAGS += -DBUILD_BRIDGE_ALTERNATIVE_ARCH
 64BIT_FLAGS += -DBUILD_BRIDGE_ALTERNATIVE_ARCH
+ARM32_FLAGS += -DBUILD_BRIDGE_ALTERNATIVE_ARCH
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 LIBS_native   = $(MODULEDIR)/jackbridge.a
+LIBS_arm32    = $(MODULEDIR)/jackbridge.arm32.a
 LIBS_posix32  = $(MODULEDIR)/jackbridge.posix32.a
 LIBS_posix64  = $(MODULEDIR)/jackbridge.posix64.a
 ifeq ($(BUILDING_FOR_WINDOWS),true)
@@ -50,6 +52,7 @@ endif
 LINK_FLAGS   += $(JACKBRIDGE_LIBS)
 
 LIBS_native  += $(MODULEDIR)/lilv.a
+LIBS_arm32   += $(MODULEDIR)/lilv.arm32.a
 LIBS_posix32 += $(MODULEDIR)/lilv.posix32.a
 LIBS_posix64 += $(MODULEDIR)/lilv.posix64.a
 LIBS_win32   += $(MODULEDIR)/lilv.win32.a
@@ -57,6 +60,7 @@ LIBS_win64   += $(MODULEDIR)/lilv.win64.a
 LINK_FLAGS   += $(LILV_LIBS)
 
 LIBS_native  += $(MODULEDIR)/rtmempool.a
+LIBS_arm32   += $(MODULEDIR)/rtmempool.arm32.a
 LIBS_posix32 += $(MODULEDIR)/rtmempool.posix32.a
 LIBS_posix64 += $(MODULEDIR)/rtmempool.posix64.a
 LIBS_win32   += $(MODULEDIR)/rtmempool.win32.a
@@ -64,6 +68,7 @@ LIBS_win64   += $(MODULEDIR)/rtmempool.win64.a
 LINK_FLAGS   += $(RTMEMPOOL_LIBS)
 
 LIBS_native  += $(MODULEDIR)/water.a
+LIBS_arm32   += $(MODULEDIR)/water.arm32.a
 LIBS_posix32 += $(MODULEDIR)/water.posix32.a
 LIBS_posix64 += $(MODULEDIR)/water.posix64.a
 LIBS_win32   += $(MODULEDIR)/water.win32.a
@@ -211,6 +216,7 @@ OBJS_arch = \
 	$(OBJDIR)/CarlaPluginJuce.cpp.arch.o \
 	$(OBJDIR)/CarlaStandalone.cpp.arch.o
 
+OBJS_arm32   = $(OBJS_arch:%.arch.o=%.arm32.o)
 OBJS_posix32 = $(OBJS_arch:%.arch.o=%.posix32.o)
 OBJS_posix64 = $(OBJS_arch:%.arch.o=%.posix64.o)
 OBJS_win32   = $(OBJS_arch:%.arch.o=%.win32.o)
@@ -235,6 +241,7 @@ debug:
 # ----------------------------------------------------------------------------------------------------------------------
 
 native:  $(BINDIR)/$(MODULENAME)-native$(APP_EXT) $(BINDIR)/$(MODULENAME)-lv2$(LIB_EXT)
+arm32:   $(BINDIR)/$(MODULENAME)-arm32
 posix32: $(BINDIR)/$(MODULENAME)-posix32
 posix64: $(BINDIR)/$(MODULENAME)-posix64
 win32:   $(BINDIR)/$(MODULENAME)-win32.exe
@@ -252,6 +259,11 @@ $(BINDIR)/$(MODULENAME)-lv2$(LIB_EXT): $(OBJS_lv2) $(LIBS_native)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2$(LIB_EXT)"
 	@$(CXX) $(OBJS_lv2) $(LIBS_START) $(LIBS_native) $(LIBS_END) $(SHARED) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
+
+$(BINDIR)/$(MODULENAME)-arm32: $(OBJS_arm32) $(LIBS_arm32)
+	-@mkdir -p $(BINDIR)
+	@echo "Linking $(MODULENAME)-arm32"
+	@$(CXX) $(OBJS_arm32) $(LIBS_START) $(LIBS_arm32) $(LIBS_END) $(LINK_FLAGS) $(ARM32_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-posix32: $(OBJS_posix32) $(LIBS_posix32)
 	-@mkdir -p $(BINDIR)
@@ -322,6 +334,29 @@ $(OBJDIR)/CarlaEng%.cpp.o: $(CWD)/backend/engine/CarlaEng%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaEng$*.cpp (bridge)"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
+
+# ----------------------------------------------------------------------------------------------------------------------
+# arm32
+
+$(OBJDIR)/CarlaBridgePlugin.cpp.arm32.o: CarlaBridgePlugin.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (arm32 bridge)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(ARM32_FLAGS) -c -o $@
+
+$(OBJDIR)/CarlaStandalone.cpp.arm32.o: $(CWD)/backend/CarlaStandalone.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaStandalone.cpp (arm32 bridge)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(ARM32_FLAGS) -c -o $@
+
+$(OBJDIR)/CarlaEng%.cpp.arm32.o: $(CWD)/backend/engine/CarlaEng%.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaEng$*.cpp (arm32 bridge)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(ARM32_FLAGS) -c -o $@
+
+$(OBJDIR)/CarlaPlug%.cpp.arm32.o: $(CWD)/backend/plugin/CarlaPlug%.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaPlug$*.cpp (arm32 bridge)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(ARM32_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------
 # posix32
@@ -462,6 +497,7 @@ $(OBJDIR)/CarlaStandalone.cpp.win64.o: $(CWD)/backend/CarlaStandalone.cpp
 # ----------------------------------------------------------------------------------------------------------------------
 
 -include $(OBJS_lv2:%.o=%.d)
+-include $(OBJS_arm32:%.o=%.d)
 -include $(OBJS_posix32:%.o=%.d)
 -include $(OBJS_posix64:%.o=%.d)
 -include $(OBJS_win32:%.o=%.d)

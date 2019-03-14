@@ -105,6 +105,13 @@ $(MODULEDIR)/theme.qt4.a: .FORCE
 $(MODULEDIR)/theme.qt5.a: .FORCE
 	@$(MAKE) -C source/theme qt5
 
+$(MODULEDIR)/%.arm32.a: .FORCE
+ifneq ($(WIN32),true)
+	@$(MAKE) -C source/modules/$* arm32
+else
+	$(error Trying to build ARM binaries with a Windows toolchain, this cannot work)
+endif
+
 $(MODULEDIR)/%.posix32.a: .FORCE
 ifneq ($(WIN32),true)
 	@$(MAKE) -C source/modules/$* posix32
@@ -217,6 +224,18 @@ bin/carla-plugin:
 		--file-reference-choice=runtime \
 		-o ./$@ \
 		./source/native-plugins/resources/carla-plugin
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Binaries (arm32)
+
+LIBS_ARM32  = $(MODULEDIR)/jackbridge.arm32.a
+LIBS_ARM32 += $(MODULEDIR)/lilv.arm32.a
+LIBS_ARM32 += $(MODULEDIR)/rtmempool.arm32.a
+LIBS_ARM32 += $(MODULEDIR)/water.arm32.a
+
+arm32: $(LIBS_ARM32)
+	$(MAKE) -C source/bridges-plugin arm32
+	$(MAKE) -C source/discovery arm32
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Binaries (posix32)

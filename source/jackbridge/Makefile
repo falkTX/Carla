@@ -38,6 +38,7 @@ endif
 # ----------------------------------------------------------------------------------------------------------------------------
 
 OBJS          = $(OBJDIR)/JackBridge1.cpp.o          $(OBJDIR)/JackBridge2.cpp.o
+OBJS_arm32    = $(OBJDIR)/JackBridge1.cpp.arm32.o    $(OBJDIR)/JackBridge2.cpp.arm32.o
 OBJS_posix32  = $(OBJDIR)/JackBridge1.cpp.posix32.o  $(OBJDIR)/JackBridge2.cpp.posix32.o
 OBJS_posix64  = $(OBJDIR)/JackBridge1.cpp.posix64.o  $(OBJDIR)/JackBridge2.cpp.posix64.o
 OBJS_win32    = $(OBJDIR)/JackBridge1.cpp.win32.o    $(OBJDIR)/JackBridge2.cpp.win32.o
@@ -66,6 +67,7 @@ win64e:   $(MODULEDIR)/$(MODULENAME).win64e.a
 wine32:
 wine64:
 else
+arm32:    $(MODULEDIR)/$(MODULENAME).arm32.a
 posix32:  $(MODULEDIR)/$(MODULENAME).posix32.a
 posix64:  $(MODULEDIR)/$(MODULENAME).posix64.a
 posix32e: $(MODULEDIR)/$(MODULENAME).posix32e.a
@@ -91,6 +93,12 @@ debug:
 $(MODULEDIR)/$(MODULENAME).a: $(OBJS)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).a"
+	@rm -f $@
+	@$(AR) crs $@ $^
+
+$(MODULEDIR)/$(MODULENAME).arm32.a: $(OBJS_arm32)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating $(MODULENAME).arm32.a"
 	@rm -f $@
 	@$(AR) crs $@ $^
 
@@ -182,6 +190,11 @@ $(OBJDIR)/JackBridgeExport.cpp.%64e.o: JackBridgeExport.cpp
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
+$(OBJDIR)/%.cpp.arm32.o: %.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (arm32)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(ARM32_FLAGS) -c -o $@
+
 $(OBJDIR)/%.cpp.posix32.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (posix32)"
@@ -215,6 +228,7 @@ $(OBJDIR)/%.cpp.wine64.o: %.cpp
 # ----------------------------------------------------------------------------------------------------------------------------
 
 -include $(OBJS:%.o=%.d)
+-include $(OBJS_arm32:%.o=%.d)
 -include $(OBJS_posix32:%.o=%.d)
 -include $(OBJS_posix32e:%.o=%.d)
 -include $(OBJS_posix64:%.o=%.d)

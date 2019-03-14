@@ -15,6 +15,7 @@ BUILD_C_FLAGS += $(RTMEMPOOL_FLAGS)
 # ----------------------------------------------------------------------------------------------------------------------------
 
 OBJS         = $(OBJDIR)/$(MODULENAME).c.o
+OBJS_arm32   = $(OBJDIR)/$(MODULENAME).c.arm32.o
 OBJS_posix32 = $(OBJDIR)/$(MODULENAME).c.posix32.o
 OBJS_posix64 = $(OBJDIR)/$(MODULENAME).c.posix64.o
 OBJS_win32   = $(OBJDIR)/$(MODULENAME).c.win32.o
@@ -23,6 +24,7 @@ OBJS_win64   = $(OBJDIR)/$(MODULENAME).c.win64.o
 # ----------------------------------------------------------------------------------------------------------------------------
 
 all:     $(MODULEDIR)/$(MODULENAME).a
+arm32:   $(MODULEDIR)/$(MODULENAME).arm32.a
 posix32: $(MODULEDIR)/$(MODULENAME).posix32.a
 posix64: $(MODULEDIR)/$(MODULENAME).posix64.a
 win32:   $(MODULEDIR)/$(MODULENAME).win32.a
@@ -41,6 +43,12 @@ debug:
 $(MODULEDIR)/$(MODULENAME).a: $(OBJS)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).a"
+	@rm -f $@
+	@$(AR) crs $@ $^
+
+$(MODULEDIR)/$(MODULENAME).arm32.a: $(OBJS_arm32)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating $(MODULENAME).arm32.a"
 	@rm -f $@
 	@$(AR) crs $@ $^
 
@@ -85,9 +93,15 @@ $(OBJDIR)/$(MODULENAME).c.%64.o: $(MODULENAME).c
 	@echo "Compiling $< (64bit)"
 	@$(CC) $< $(BUILD_C_FLAGS) $(64BIT_FLAGS) -c -o $@
 
+$(OBJDIR)/$(MODULENAME).c.arm32.o: $(MODULENAME).c
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (ARM32)"
+	@$(CC) $< $(BUILD_C_FLAGS) $(ARM32_FLAGS) -c -o $@
+
 # ----------------------------------------------------------------------------------------------------------------------------
 
 -include $(OBJS:%.o=%.d)
+-include $(OBJS_arm32:%.o=%.d)
 -include $(OBJS_posix32:%.o=%.d)
 -include $(OBJS_posix64:%.o=%.d)
 -include $(OBJS_win32:%.o=%.d)

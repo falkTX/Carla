@@ -22,6 +22,7 @@ BUILD_C_FLAGS += $(LILV_FLAGS) -Iconfig -w
 # ----------------------------------------------------------------------------------------------------------------------------
 
 OBJS         = $(OBJDIR)/serd.c.o         $(OBJDIR)/sord.c.o         $(OBJDIR)/sratom.c.o         $(OBJDIR)/lilv.c.o
+OBJS_arm32   = $(OBJDIR)/serd.c.arm32.o   $(OBJDIR)/sord.c.arm32.o   $(OBJDIR)/sratom.c.arm32.o   $(OBJDIR)/lilv.c.arm32.o
 OBJS_posix32 = $(OBJDIR)/serd.c.posix32.o $(OBJDIR)/sord.c.posix32.o $(OBJDIR)/sratom.c.posix32.o $(OBJDIR)/lilv.c.posix32.o
 OBJS_posix64 = $(OBJDIR)/serd.c.posix64.o $(OBJDIR)/sord.c.posix64.o $(OBJDIR)/sratom.c.posix64.o $(OBJDIR)/lilv.c.posix64.o
 OBJS_win32   = $(OBJDIR)/serd.c.win32.o   $(OBJDIR)/sord.c.win32.o   $(OBJDIR)/sratom.c.win32.o   $(OBJDIR)/lilv.c.win32.o
@@ -30,6 +31,7 @@ OBJS_win64   = $(OBJDIR)/serd.c.win64.o   $(OBJDIR)/sord.c.win64.o   $(OBJDIR)/s
 # ----------------------------------------------------------------------------------------------------------------------------
 
 all:     $(MODULEDIR)/$(MODULENAME).a
+arm32:   $(MODULEDIR)/$(MODULENAME).arm32.a
 posix32: $(MODULEDIR)/$(MODULENAME).posix32.a
 posix64: $(MODULEDIR)/$(MODULENAME).posix64.a
 win32:   $(MODULEDIR)/$(MODULENAME).win32.a
@@ -48,6 +50,12 @@ debug:
 $(MODULEDIR)/$(MODULENAME).a: $(OBJS)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).a"
+	@rm -f $@
+	@$(AR) crs $@ $^
+
+$(MODULEDIR)/$(MODULENAME).arm32.a: $(OBJS_arm32)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating $(MODULENAME).arm32.a"
 	@rm -f $@
 	@$(AR) crs $@ $^
 
@@ -92,6 +100,11 @@ $(OBJDIR)/serd.c.%64.o: serd.c
 	@echo "Compiling $< (64bit)"
 	@$(CC) $< $(BUILD_C_FLAGS) -Iserd-$(SERD_VERSION) $(64BIT_FLAGS) -c -o $@
 
+$(OBJDIR)/serd.c.arm32.o: serd.c
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (ARM32)"
+	@$(CC) $< $(BUILD_C_FLAGS) -Iserd-$(SERD_VERSION) $(ARM32_FLAGS) -c -o $@
+
 # ----------------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/sord.c.o: sord.c
@@ -108,6 +121,11 @@ $(OBJDIR)/sord.c.%64.o: sord.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (64bit)"
 	@$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src $(64BIT_FLAGS) -c -o $@
+
+$(OBJDIR)/sord.c.arm32.o: sord.c
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (ARM32)"
+	@$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src $(ARM32_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -126,6 +144,11 @@ $(OBJDIR)/sratom.c.%64.o: sratom.c
 	@echo "Compiling $< (64bit)"
 	@$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) $(64BIT_FLAGS) -c -o $@
 
+$(OBJDIR)/sratom.c.arm32.o: sratom.c
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (ARM32)"
+	@$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) $(ARM32_FLAGS) -c -o $@
+
 # ----------------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/lilv.c.o: lilv.c
@@ -143,9 +166,15 @@ $(OBJDIR)/lilv.c.%64.o: lilv.c
 	@echo "Compiling $< (64bit)"
 	@$(CC) $< $(BUILD_C_FLAGS) -Ililv-$(LILV_VERSION) -Ililv-$(LILV_VERSION)/src $(64BIT_FLAGS) -c -o $@
 
+$(OBJDIR)/lilv.c.arm32.o: lilv.c
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (ARM32)"
+	@$(CC) $< $(BUILD_C_FLAGS) -Ililv-$(LILV_VERSION) -Ililv-$(LILV_VERSION)/src $(ARM32_FLAGS) -c -o $@
+
 # ----------------------------------------------------------------------------------------------------------------------------
 
 -include $(OBJS:%.o=%.d)
+-include $(OBJS_arm32:%.o=%.d)
 -include $(OBJS_posix32:%.o=%.d)
 -include $(OBJS_posix64:%.o=%.d)
 -include $(OBJS_win32:%.o=%.d)

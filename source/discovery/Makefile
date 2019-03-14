@@ -40,6 +40,7 @@ endif
 
 32BIT_FLAGS += -DBUILD_BRIDGE -DBUILD_BRIDGE_ALTERNATIVE_ARCH
 64BIT_FLAGS += -DBUILD_BRIDGE -DBUILD_BRIDGE_ALTERNATIVE_ARCH
+ARM32_FLAGS += -DBUILD_BRIDGE -DBUILD_BRIDGE_ALTERNATIVE_ARCH
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -54,6 +55,7 @@ endif
 # ----------------------------------------------------------------------------------------------------------------------------
 
 LIBS_native   = $(MODULEDIR)/lilv.a
+LIBS_arm32    = $(MODULEDIR)/lilv.arm32.a
 LIBS_posix32  = $(MODULEDIR)/lilv.posix32.a
 LIBS_posix64  = $(MODULEDIR)/lilv.posix64.a
 LIBS_win32    = $(MODULEDIR)/lilv.win32.a
@@ -126,6 +128,7 @@ endif # USING_JUCE
 # ----------------------------------------------------------------------------------------------------------------------------
 
 OBJS_native  = $(OBJDIR)/$(MODULENAME).cpp.o
+OBJS_arm32   = $(OBJDIR)/$(MODULENAME).cpp.arm32.o
 OBJS_posix32 = $(OBJDIR)/$(MODULENAME).cpp.posix32.o
 OBJS_posix64 = $(OBJDIR)/$(MODULENAME).cpp.posix64.o
 OBJS_win32   = $(OBJDIR)/$(MODULENAME).cpp.win32.o
@@ -146,6 +149,7 @@ debug:
 # ----------------------------------------------------------------------------------------------------------------------------
 
 native:  $(BINDIR)/$(MODULENAME)-native$(APP_EXT)
+arm32:   $(BINDIR)/$(MODULENAME)-arm32
 posix32: $(BINDIR)/$(MODULENAME)-posix32
 posix64: $(BINDIR)/$(MODULENAME)-posix64
 win32:   $(BINDIR)/$(MODULENAME)-win32.exe
@@ -165,6 +169,11 @@ $(BINDIR)/$(MODULENAME)-native.exe: $(OBJS_native) $(LIBS_native)
 	@echo "Symlinking $(MODULENAME)-win$(winv).exe"
 	@rm -f $(BINDIR)/$(MODULENAME)-win$(winv).exe
 	@ln -s $(MODULENAME)-native.exe $(BINDIR)/$(MODULENAME)-win$(winv).exe
+
+$(BINDIR)/$(MODULENAME)-arm32: $(OBJS_arm32) $(LIBS_arm32)
+	-@mkdir -p $(BINDIR)
+	@echo "Linking $(MODULENAME)-posix32"
+	@$(CXX) $< $(LIBS_START) $(LIBS_arm32) $(LIBS_END) $(LINK_FLAGS) $(ARM32_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-posix32: $(OBJS_posix32) $(LIBS_posix32)
 	-@mkdir -p $(BINDIR)
@@ -203,9 +212,15 @@ $(OBJDIR)/$(MODULENAME).cpp.%64.o: $(MODULENAME).cpp
 	@echo "Compiling $< (64bit)"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
+$(OBJDIR)/$(MODULENAME).cpp.arm32.o: $(MODULENAME).cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (ARM32)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(ARM32_FLAGS) -c -o $@
+
 # ----------------------------------------------------------------------------------------------------------------------------
 
 -include $(OBJS_native:%.o=%.d)
+-include $(OBJS_arm32:%.o=%.d)
 -include $(OBJS_posix32:%.o=%.d)
 -include $(OBJS_posix64:%.o=%.d)
 -include $(OBJS_win32:%.o=%.d)

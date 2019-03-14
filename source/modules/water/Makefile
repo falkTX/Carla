@@ -22,6 +22,7 @@ OBJS_posix64 = $(OBJDIR)/$(MODULENAME).mm.posix64.o
 else
 OBJS         = $(OBJDIR)/$(MODULENAME).cpp.o
 OBJS_files   = $(OBJDIR)/$(MODULENAME).cpp.files.o
+OBJS_arm32   = $(OBJDIR)/$(MODULENAME).cpp.arm32.o
 OBJS_posix32 = $(OBJDIR)/$(MODULENAME).cpp.posix32.o
 OBJS_posix64 = $(OBJDIR)/$(MODULENAME).cpp.posix64.o
 endif
@@ -31,6 +32,7 @@ OBJS_win64   = $(OBJDIR)/$(MODULENAME).cpp.win64.o
 # ----------------------------------------------------------------------------------------------------------------------------
 
 all:     $(MODULEDIR)/$(MODULENAME).a $(MODULEDIR)/$(MODULENAME).files.a
+arm32:   $(MODULEDIR)/$(MODULENAME).arm32.a
 posix32: $(MODULEDIR)/$(MODULENAME).posix32.a
 posix64: $(MODULEDIR)/$(MODULENAME).posix64.a
 win32:   $(MODULEDIR)/$(MODULENAME).win32.a
@@ -55,6 +57,12 @@ $(MODULEDIR)/$(MODULENAME).a: $(OBJS)
 $(MODULEDIR)/$(MODULENAME).files.a: $(OBJS_files)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).files.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
+
+$(MODULEDIR)/$(MODULENAME).arm32.a: $(OBJS_arm32)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating $(MODULENAME).arm32.a"
 	@rm -f $@
 	@$(AR) crs $@ $^
 
@@ -104,6 +112,11 @@ $(OBJDIR)/$(MODULENAME).cpp.%64.o: $(MODULENAME).cpp
 	@echo "Compiling $< (64bit)"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
+$(OBJDIR)/$(MODULENAME).cpp.arm32.o: $(MODULENAME).cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (ARM32)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(ARM32_FLAGS) -c -o $@
+
 # ----------------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/$(MODULENAME).mm.o: $(MODULENAME).mm $(MODULENAME).cpp
@@ -130,6 +143,7 @@ $(OBJDIR)/$(MODULENAME).mm.%64.o: $(MODULENAME).cpp
 
 -include $(OBJS:%.o=%.d)
 -include $(OBJS_files:%.o=%.d)
+-include $(OBJS_arm32:%.o=%.d)
 -include $(OBJS_posix32:%.o=%.d)
 -include $(OBJS_posix64:%.o=%.d)
 -include $(OBJS_win32:%.o=%.d)
