@@ -520,8 +520,7 @@ bool carla_engine_close()
     const ThreadSafeFFTW::Deinitializer tsfftwde(sThreadSafeFFTW);
 #endif
 
-    ScopedPointer<CarlaEngine> engine(gStandalone.engine);
-    gStandalone.engine = nullptr;
+    CarlaEngine* const engine = gStandalone.engine;
 
     engine->setAboutToClose();
     engine->removeAllPlugins();
@@ -533,11 +532,14 @@ bool carla_engine_close()
 
 #ifndef BUILD_BRIDGE
     gStandalone.logThread.stop();
-# ifdef USING_JUCE
-    juce::shutdownJuce_GUI();
-# endif
 #endif
 
+    gStandalone.engine = nullptr;
+    delete engine;
+
+#ifdef USING_JUCE
+    juce::shutdownJuce_GUI();
+#endif
     return closed;
 }
 

@@ -881,8 +881,7 @@ public:
 
     bool init(const char* const clientName) override
     {
-        CARLA_SAFE_ASSERT_RETURN(fClient == nullptr, false);
-        CARLA_SAFE_ASSERT_RETURN(clientName != nullptr && clientName[0] != '\0', false);
+        CARLA_SAFE_ASSERT_RETURN(fClient == nullptr || (clientName != nullptr && clientName[0] != '\0'), false);
         CARLA_SAFE_ASSERT_RETURN(jackbridge_is_ok(), false);
         carla_debug("CarlaEngineJack::init(\"%s\")", clientName);
 
@@ -890,8 +889,13 @@ public:
         fExternalPatchbayHost = true;
         fExternalPatchbayOsc  = true;
 
-        CarlaString truncatedClientName(clientName);
-        truncatedClientName.truncate(getMaxClientNameSize());
+        CarlaString truncatedClientName;
+
+        if (fClient == nullptr && clientName != nullptr)
+        {
+            truncatedClientName = clientName;
+            truncatedClientName.truncate(getMaxClientNameSize());
+        }
 
 #ifdef BUILD_BRIDGE
         fIsRunning = true;
@@ -923,7 +927,8 @@ public:
 
         return true;
 #else
-        fClient = jackbridge_client_open(truncatedClientName, JackNullOption, nullptr);
+        if (fClient == nullptr && clientName != nullptr)
+            fClient = jackbridge_client_open(truncatedClientName, JackNullOption, nullptr);
 
         if (fClient == nullptr)
         {
@@ -1059,6 +1064,12 @@ public:
         setLastError("Failed to activate the JACK client");
         return false;
 #endif
+    }
+
+    bool initInternal(jack_client_t* const client)
+    {
+        fClient = client;
+        return init(nullptr);
     }
 
     bool close() override
@@ -2885,3 +2896,85 @@ CarlaEngine* CarlaEngine::newJack()
 // -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
+
+// -----------------------------------------------------------------------
+// internal jack client
+
+CARLA_EXPORT
+int jack_initialize (jack_client_t *client, const char *load_init);
+
+CARLA_EXPORT
+void jack_finish(void *arg);
+
+// -----------------------------------------------------------------------
+
+CARLA_EXPORT
+int jack_initialize(jack_client_t* const client, const char* const load_init)
+{
+    CARLA_BACKEND_USE_NAMESPACE
+
+    EngineProcessMode mode;
+    if (load_init != nullptr && std::strcmp(load_init, "rack") == 0)
+        mode = ENGINE_PROCESS_MODE_CONTINUOUS_RACK;
+    else
+        mode = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS;
+
+#if 0 //def USING_JUCE
+    juce::initialiseJuce_GUI();
+#endif
+
+    CarlaEngineJack* const engine = new CarlaEngineJack();
+
+    engine->setOption(ENGINE_OPTION_FORCE_STEREO, 1, nullptr);
+    engine->setOption(ENGINE_OPTION_AUDIO_DEVICE, 0, "Auto-Connect ON");
+    engine->setOption(ENGINE_OPTION_OSC_ENABLED,  1, nullptr);
+    engine->setOption(ENGINE_OPTION_OSC_PORT_TCP, 22752, nullptr);
+    engine->setOption(ENGINE_OPTION_OSC_PORT_UDP, 22752, nullptr);
+
+    engine->setOption(ENGINE_OPTION_PROCESS_MODE, mode, nullptr);
+    engine->setOption(ENGINE_OPTION_TRANSPORT_MODE, ENGINE_TRANSPORT_MODE_JACK, nullptr);
+
+    // FIXME
+    engine->setOption(ENGINE_OPTION_PATH_BINARIES, 0, "");
+    engine->setOption(ENGINE_OPTION_PATH_RESOURCES, 0, "");
+
+    if (engine->initInternal(client))
+    {
+#if 0 //def CARLA_OS_UNIX
+        sThreadSafeFFTW.init();
+#endif
+        return 0;
+    }
+    else
+    {
+        delete engine;
+#if 0 //def USING_JUCE
+        juce::shutdownJuce_GUI();
+#endif
+        return 1;
+    }
+}
+
+CARLA_EXPORT
+void jack_finish(void *arg)
+{
+    CARLA_BACKEND_USE_NAMESPACE
+
+    CarlaEngineJack* const engine = (CarlaEngineJack*)arg;;
+    CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
+
+#if 0 //def CARLA_OS_UNIX
+    const ThreadSafeFFTW::Deinitializer tsfftwde(sThreadSafeFFTW);
+#endif
+
+    engine->setAboutToClose();
+    engine->removeAllPlugins();
+    engine->close();
+    delete engine;
+
+#if 0 //def USING_JUCE
+    juce::shutdownJuce_GUI();
+#endif
+}
+
+// -----------------------------------------------------------------------
