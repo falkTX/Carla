@@ -242,6 +242,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         if self.fPeaksOutputCount > 2:
             self.fPeaksOutputCount = 2
 
+        self.fAdjustViewableKnobCountScheduled = False
+
         # used during testing
         self.fIdleTimerId = 0
 
@@ -557,14 +559,11 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         if self.w_knobs_left is not None:
             parameterCount = self.host.get_parameter_count(self.fPluginId)
 
-            if "calf" in self.fSkinStyle:
-                maxWidgets = 7
-            else:
-                maxWidgets = 8
-
             index = 0
+            layout = self.w_knobs_left.layout()
             for i in range(parameterCount):
-                if index >= maxWidgets:
+                # 50 should be enough for everybody, right?
+                if index >= 50:
                     break
 
                 paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
@@ -600,7 +599,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
                 index += 1
                 self.fParameterList.append([i, widget])
-                self.w_knobs_left.layout().addWidget(widget)
+                layout.addWidget(widget)
 
         if self.w_knobs_right is not None and (self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET) != 0:
             widget = PixmapDial(self, PARAMETER_DRYWET)
@@ -629,10 +628,16 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             paramWidget.blockSignals(True)
             paramWidget.setValue(self.host.get_internal_parameter_value(self.fPluginId, paramIndex))
             paramWidget.blockSignals(False)
+            if paramIndex >= 0:
+                paramWidget.hide()
 
         # -------------------------------------------------------------
 
         self.setWindowTitle(self.fPluginInfo['name'])
+
+        if not self.fAdjustViewableKnobCountScheduled:
+            self.fAdjustViewableKnobCountScheduled = True
+            QTimer.singleShot(1, self.adjustViewableKnobCount)
 
     #------------------------------------------------------------------
 
@@ -1377,6 +1382,35 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
     #------------------------------------------------------------------
 
+    def adjustViewableKnobCount(self):
+        # FIXME Object already destroyed, but timer still kicked in
+        if self is None:
+            return
+
+        self.fAdjustViewableKnobCountScheduled = False
+
+        if self.w_knobs_left is None:
+            return
+
+        for index, widget in self.fParameterList:
+            if index < 0 or not widget.isVisible():
+                break
+            widget.hide()
+
+        prevWidth = 0
+        for index, widget in self.fParameterList:
+            if index < 0:
+                break
+
+            widget.show()
+            newWidth = self.w_knobs_left.width()
+
+            if newWidth == prevWidth:
+                widget.hide()
+                break
+
+            prevWidth = newWidth
+
     def testTimer(self):
         self.fIdleTimerId = self.startTimer(25)
 
@@ -1396,6 +1430,12 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             self.host.engine_close()
 
         QFrame.closeEvent(self, event)
+
+    def resizeEvent(self, event):
+        if not self.fAdjustViewableKnobCountScheduled:
+            self.fAdjustViewableKnobCountScheduled = True
+            QTimer.singleShot(100, self.adjustViewableKnobCount)
+        QFrame.resizeEvent(self, event)
 
     def timerEvent(self, event):
         if event.timerId() == self.fIdleTimerId:

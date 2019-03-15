@@ -114,7 +114,7 @@
            <string/>
           </property>
           <property name="icon">
-           <iconset resource="../resources.qrc">
+           <iconset>
             <normaloff>:/bitmaps/button_gui.png</normaloff>:/bitmaps/button_gui.png</iconset>
           </property>
           <property name="iconSize">
@@ -149,7 +149,7 @@
            <string/>
           </property>
           <property name="icon">
-           <iconset resource="../resources.qrc">
+           <iconset>
             <normaloff>:/bitmaps/button_edit.png</normaloff>:/bitmaps/button_edit.png</iconset>
           </property>
           <property name="iconSize">
@@ -426,6 +426,12 @@
      </property>
      <item>
       <widget class="QWidget" name="w_knobs_left" native="true">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <layout class="QHBoxLayout" name="horizontalLayout_3">
         <property name="margin">
          <number>0</number>
@@ -449,7 +455,19 @@
      <item>
       <widget class="QWidget" name="w_knobs_right" native="true">
        <layout class="QHBoxLayout" name="horizontalLayout_2">
-        <property name="margin">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>12</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
          <number>0</number>
         </property>
        </layout>
