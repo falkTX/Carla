@@ -637,8 +637,16 @@ int main(int argc, char* argv[])
             const char* const lastError(carla_get_last_error());
             carla_stderr("Plugin failed to load, error was:\n%s", lastError);
 
-            //if (useBridge)
-            //    bridge.sendOscBridgeError(lastError);
+            if (useBridge)
+            {
+                // do a single idle so that we can send error message to server
+                gIdle();
+
+#ifdef CARLA_OS_UNIX
+                // kill ourselves now if we can't load plugin in bridge mode
+                ::kill(::getpid(), SIGKILL);
+#endif
+            }
         }
     }
 

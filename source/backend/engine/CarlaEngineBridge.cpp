@@ -264,7 +264,22 @@ public:
     void idle() noexcept override
     {
         CarlaPlugin* const plugin(pData->plugins[0].plugin);
-        CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
+        if (plugin == nullptr)
+        {
+            if (const uint32_t length = static_cast<uint32_t>(pData->lastError.length()))
+            {
+                const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
+                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerError);
+                fShmNonRtServerControl.writeUInt(length);
+                fShmNonRtServerControl.writeCustomData(pData->lastError.buffer(), length);
+                fShmNonRtServerControl.commitWrite();
+            }
+
+            signalThreadShouldExit();
+            callback(true, true, ENGINE_CALLBACK_QUIT, 0, 0, 0, 0, 0.0f, nullptr);
+            return;
+        }
 
         const bool wasFirstIdle(fFirstIdle);
 
