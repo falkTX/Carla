@@ -1,5 +1,5 @@
 diff --git a/RtAudio.cpp b/RtAudio.cpp
-index 2ac2179..27a0c83 100644
+index 2ac2179..5fce9b2 100644
 --- a/RtAudio.cpp
 +++ b/RtAudio.cpp
 @@ -76,7 +76,7 @@ const unsigned int RtApi::SAMPLE_RATES[] = {
@@ -156,7 +156,8 @@ index 2ac2179..27a0c83 100644
  {
 -  RtAudio::DeviceInfo info;
 -  info.probed = false;
--
++  static RtAudio::DeviceInfo devInfo[3];
+ 
 -  jack_options_t options = (jack_options_t) ( JackNoStartServer ); //JackNullOption
 -  jack_status_t *status = NULL;
 -  jack_client_t *client = jack_client_open( "RtApiJackInfo", options, status );
@@ -200,8 +201,7 @@ index 2ac2179..27a0c83 100644
 -
 -  info.preferredSampleRate = jack_get_sample_rate( client );
 -  info.sampleRates.push_back( info.preferredSampleRate );
-+  static RtAudio::DeviceInfo devInfo[3];
- 
+-
 -  // Count the available ports containing the client name as device
 -  // channels.  Jack "input ports" equal RtAudio output channels.
 -  unsigned int nChannels = 0;
@@ -706,7 +706,18 @@ index 2ac2179..27a0c83 100644
    if ( nBuffers < 2 ) nBuffers = 3;
  
    // Check the lower range of the user-specified buffer size and set
-@@ -8012,12 +7898,14 @@ static void *alsaCallbackHandler( void *ptr )
+@@ -6795,7 +6681,9 @@ unsigned int RtApiAlsa :: getDeviceCount( void )
+       nDevices++;
+     }
+   nextcard:
+-    snd_ctl_close( handle );
++    if (result == 0) {
++      snd_ctl_close( handle );
++    }
+     snd_card_next( &card );
+   }
+ 
+@@ -8012,12 +7900,14 @@ static void *alsaCallbackHandler( void *ptr )
    }
  
    pthread_exit( NULL );
@@ -722,7 +733,7 @@ index 2ac2179..27a0c83 100644
  
  // Code written by Peter Meerwald, pmeerw@pmeerw.net
  // and Tristan Matthews.
-@@ -8092,6 +7980,8 @@ static void *pulseaudio_callback( void * user )
+@@ -8092,6 +7982,8 @@ static void *pulseaudio_callback( void * user )
    }
  
    pthread_exit( NULL );
@@ -731,7 +742,7 @@ index 2ac2179..27a0c83 100644
  }
  
  void RtApiPulse::closeStream( void )
-@@ -8502,7 +8392,7 @@ bool RtApiPulse::probeDeviceOpen( unsigned int device, StreamMode mode,
+@@ -8502,7 +8394,7 @@ bool RtApiPulse::probeDeviceOpen( unsigned int device, StreamMode mode,
    return FAILURE;
  }
  
@@ -740,7 +751,7 @@ index 2ac2179..27a0c83 100644
  #endif
  
  #if defined(__LINUX_OSS__)
-@@ -9446,6 +9336,8 @@ static void *ossCallbackHandler( void *ptr )
+@@ -9446,6 +9338,8 @@ static void *ossCallbackHandler( void *ptr )
    }
  
    pthread_exit( NULL );
