@@ -288,7 +288,7 @@ void CarlaEngineOsc::sendResponse(const int messageId, const char* const error) 
 {
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
-    carla_debug("CarlaEngineOsc::sendExit()");
+    carla_debug("CarlaEngineOsc::sendResponse()");
 
     char targetPath[std::strlen(fControlDataTCP.path)+6];
     std::strcpy(targetPath, fControlDataTCP.path);
@@ -314,7 +314,6 @@ void CarlaEngineOsc::sendRuntimeInfo() const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fControlDataUDP.path != nullptr && fControlDataUDP.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(fControlDataUDP.target != nullptr,);
-    carla_debug("CarlaEngineOsc::sendRuntimeInfo()");
 
     const EngineTimeInfo timeInfo(fEngine->getTimeInfo());
 

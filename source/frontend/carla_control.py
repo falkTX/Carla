@@ -43,6 +43,10 @@ from liblo import (
 from random import random
 
 # ------------------------------------------------------------------------------------------------------------
+
+DEBUG = False
+
+# ------------------------------------------------------------------------------------------------------------
 # Host OSC object
 
 class CarlaHostOSC(CarlaHostQtPlugin):
@@ -217,6 +221,7 @@ class CarlaControlServerTCP(Server):
 
     @make_method('/ctrl/cb', 'iiiiifs')
     def carla_cb(self, path, args):
+        if DEBUG: print(path, args)
         self.fReceivedMsgs = True
         action, pluginId, value1, value2, value3, valuef, valueStr = args
         self.host._setViaCallback(action, pluginId, value1, value2, value3, valuef, valueStr)
@@ -224,6 +229,7 @@ class CarlaControlServerTCP(Server):
 
     @make_method('/ctrl/info', 'iiiihiisssssss')
     def carla_info(self, path, args):
+        if DEBUG: print(path, args)
         self.fReceivedMsgs = True
         (
           pluginId, type_, category, hints, uniqueId, optsAvail, optsEnabled,
@@ -252,6 +258,7 @@ class CarlaControlServerTCP(Server):
 
     @make_method('/ctrl/ports', 'iiiiiiii')
     def carla_ports(self, path, args):
+        if DEBUG: print(path, args)
         self.fReceivedMsgs = True
         pluginId, audioIns, audioOuts, midiIns, midiOuts, paramIns, paramOuts, paramTotal = args
         self.host._set_audioCountInfo(pluginId, {'ins': audioIns, 'outs': audioOuts})
@@ -260,6 +267,7 @@ class CarlaControlServerTCP(Server):
 
     @make_method('/ctrl/param', 'iiiiiissfffffff')
     def carla_param(self, path, args):
+        if DEBUG: print(path, args)
         self.fReceivedMsgs = True
         (
           pluginId, paramId, type_, hints, midiChan, midiCC, name, unit,
@@ -300,6 +308,7 @@ class CarlaControlServerTCP(Server):
 
     @make_method('/ctrl/count', 'iiiiii')
     def carla_count(self, path, args):
+        if DEBUG: print(path, args)
         self.fReceivedMsgs = True
         pluginId, pcount, mpcount, cdcount, cp, cmp = args
         self.host._set_programCount(pluginId, pcount)
@@ -309,6 +318,7 @@ class CarlaControlServerTCP(Server):
 
     @make_method('/ctrl/pcount', 'iii')
     def carla_pcount(self, path, args):
+        if DEBUG: print(path, args)
         self.fReceivedMsgs = True
         pluginId, pcount, mpcount = args
         self.host._set_programCount(pluginId, pcount)
@@ -316,24 +326,28 @@ class CarlaControlServerTCP(Server):
 
     @make_method('/ctrl/prog', 'iis')
     def carla_prog(self, path, args):
+        if DEBUG: print(path, args)
         self.fReceivedMsgs = True
         pluginId, progId, progName = args
         self.host._set_programName(pluginId, progId, progName)
 
     @make_method('/ctrl/mprog', 'iiiis')
     def carla_mprog(self, path, args):
+        if DEBUG: print(path, args)
         self.fReceivedMsgs = True
         pluginId, midiProgId, bank, program, name = args
         self.host._set_midiProgramData(pluginId, midiProgId, {'bank': bank, 'program': program, 'name': name})
 
     @make_method('/ctrl/cdata', 'iisss')
     def carla_cdata(self, path, args):
+        if DEBUG: print(path, args)
         self.fReceivedMsgs = True
         pluginId, index, type_, key, value = args
         self.host._set_customData(pluginId, index, { 'type': type_, 'key': key, 'value': value })
 
     @make_method('/ctrl/iparams', 'ifffffff')
     def carla_iparams(self, path, args):
+        if DEBUG: print(path, args)
         self.fReceivedMsgs = True
         pluginId, active, drywet, volume, balLeft, balRight, pan, ctrlChan = args
         self.host._set_internalValue(pluginId, PARAMETER_ACTIVE, active)
@@ -346,6 +360,7 @@ class CarlaControlServerTCP(Server):
 
     @make_method('/ctrl/resp', 'is')
     def carla_resp(self, path, args):
+        if DEBUG: print(path, args)
         self.fReceivedMsgs = True
         messageId, error = args
         self.host.responses[messageId] = error
@@ -353,12 +368,14 @@ class CarlaControlServerTCP(Server):
 
     @make_method('/ctrl/exit', '')
     def carla_exit(self, path, args):
+        if DEBUG: print(path, args)
         self.fReceivedMsgs = True
         #self.host.lo_target_tcp = None
         self.host.QuitCallback.emit()
 
     @make_method('/ctrl/exit-error', 's')
     def carla_exit_error(self, path, args):
+        if DEBUG: print(path, args)
         self.fReceivedMsgs = True
         error, = args
         self.host.lo_target_tcp = None

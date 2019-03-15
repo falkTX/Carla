@@ -821,7 +821,8 @@ public:
           fPatchbayProcThreadProtectionMutex(),
           fRetConns(),
           fPostPonedEvents(),
-          fPostPonedEventsMutex()
+          fPostPonedEventsMutex(),
+          fIsInternalClient(false)
 #endif
     {
         carla_debug("CarlaEngineJack::CarlaEngineJack()");
@@ -881,7 +882,7 @@ public:
 
     bool init(const char* const clientName) override
     {
-        CARLA_SAFE_ASSERT_RETURN(fClient == nullptr || (clientName != nullptr && clientName[0] != '\0'), false);
+        CARLA_SAFE_ASSERT_RETURN(fClient != nullptr || (clientName != nullptr && clientName[0] != '\0'), false);
         CARLA_SAFE_ASSERT_RETURN(jackbridge_is_ok(), false);
         carla_debug("CarlaEngineJack::init(\"%s\")", clientName);
 
@@ -1066,11 +1067,15 @@ public:
 #endif
     }
 
+#ifndef BUILD_BRIDGE
     bool initInternal(jack_client_t* const client)
     {
         fClient = client;
+        fIsInternalClient = true;
+
         return init(nullptr);
     }
+#endif
 
     bool close() override
     {
@@ -1496,6 +1501,7 @@ public:
     bool patchbayRefresh(const bool sendHost, const bool sendOSC, const bool external) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
+        carla_debug("patchbayRefresh(%s, %s, %s)", bool2str(sendHost), bool2str(sendOSC), bool2str(external));
 
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         {
@@ -2366,8 +2372,10 @@ private:
         }
 
         // query all jack ports
-        if (const char** const ports = jackbridge_get_ports(fClient, nullptr, nullptr, 0))
         {
+            const char** const ports = jackbridge_get_ports(fClient, nullptr, nullptr, 0);
+            CARLA_SAFE_ASSERT_RETURN(ports != nullptr,);
+
             for (int i=0; ports[i] != nullptr; ++i)
             {
                 const char* const fullPortName(ports[i]);
@@ -2617,6 +2625,8 @@ private:
     LinkedList<PostPonedJackEvent> fPostPonedEvents;
     CarlaMutex fPostPonedEventsMutex;
 
+    bool fIsInternalClient;
+
     void postPoneJackCallback(const PostPonedJackEvent& ev)
     {
         const CarlaMutexLocker cml(fPostPonedEventsMutex);
@@ -2633,6 +2643,9 @@ private:
 
         for (; ! shouldThreadExit();)
         {
+            if (fIsInternalClient)
+                idle();
+
             {
                 const CarlaMutexLocker cml(fPostPonedEventsMutex);
 
@@ -2648,7 +2661,7 @@ private:
 
             if (events.count() == 0 && newPlugins.count() == 0)
             {
-                carla_msleep(200);
+                carla_msleep(fIsInternalClient ? 10 : 200);
                 continue;
             }
 
@@ -2897,6 +2910,7 @@ CarlaEngine* CarlaEngine::newJack()
 
 CARLA_BACKEND_END_NAMESPACE
 
+#ifndef BUILD_BRIDGE
 // -----------------------------------------------------------------------
 // internal jack client
 
@@ -2943,6 +2957,7 @@ int jack_initialize(jack_client_t* const client, const char* const load_init)
 #if 0 //def CARLA_OS_UNIX
         sThreadSafeFFTW.init();
 #endif
+
         return 0;
     }
     else
@@ -2978,3 +2993,4 @@ void jack_finish(void *arg)
 }
 
 // -----------------------------------------------------------------------
+#endif

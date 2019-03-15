@@ -418,11 +418,23 @@ int CarlaEngineOsc::handleMsgControl(const char* const method,
         CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[5] == 's');
         CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[7] == 'i');
 
-        const int32_t btype = argv[1]->i;
+        int32_t btype = argv[1]->i;
         CARLA_SAFE_ASSERT_RETURN_OSC_ERR(btype >= 0);
 
         const int32_t ptype = argv[2]->i;
         CARLA_SAFE_ASSERT_RETURN_OSC_ERR(ptype >= 0);
+
+        // Force binary type to be native in some cases
+        switch (ptype)
+        {
+        case PLUGIN_INTERNAL:
+        case PLUGIN_LV2:
+        case PLUGIN_SF2:
+        case PLUGIN_SFZ:
+        case PLUGIN_JACK:
+            btype = BINARY_NATIVE;
+            break;
+        }
 
         const char* filename = &argv[3]->s;
 

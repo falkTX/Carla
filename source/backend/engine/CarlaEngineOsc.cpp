@@ -110,6 +110,7 @@ void CarlaEngineOsc::init(const char* const name, int tcpPort, int udpPort) noex
         }
 
         lo_server_add_method(fServerTCP, nullptr, nullptr, osc_message_handler_TCP, this);
+        carla_debug("OSC TCP server running and listening at %s", fServerPathTCP.buffer());
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -142,6 +143,7 @@ void CarlaEngineOsc::init(const char* const name, int tcpPort, int udpPort) noex
         }
 
         lo_server_add_method(fServerUDP, nullptr, nullptr, osc_message_handler_UDP, this);
+        carla_debug("OSC UDP server running and listening at %s", fServerPathUDP.buffer());
     }
 
     // ----------------------------------------------------------------------------------------------------------------

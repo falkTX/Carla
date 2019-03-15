@@ -912,11 +912,13 @@ class HostWindow(QMainWindow):
             self.ui.act_canvas_show_internal.setVisible(True)
             self.ui.act_canvas_show_external.setChecked(False)
             self.ui.act_canvas_show_external.setVisible(True)
+            self.fExternalPatchbay = False
         else:
             self.ui.act_canvas_show_internal.setChecked(False)
             self.ui.act_canvas_show_internal.setVisible(False)
-            self.ui.act_canvas_show_external.setChecked(False)
+            self.ui.act_canvas_show_external.setChecked(True)
             self.ui.act_canvas_show_external.setVisible(False)
+            self.fExternalPatchbay = True
 
         self.ui.act_canvas_show_internal.blockSignals(False)
         self.ui.act_canvas_show_external.blockSignals(False)
