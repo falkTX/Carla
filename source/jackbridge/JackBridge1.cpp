@@ -29,6 +29,7 @@
 # define JACKSYM_API
 #endif
 
+#include <cerrno>
 #include "CarlaLibUtils.hpp"
 
 // -----------------------------------------------------------------------------
@@ -1537,7 +1538,10 @@ bool jackbridge_connect(jack_client_t* client, const char* source_port, const ch
     return (jack_connect(client, source_port, destination_port) == 0);
 #else
     if (getBridgeInstance().connect_ptr != nullptr)
-        return (getBridgeInstance().connect_ptr(client, source_port, destination_port) == 0);
+    {
+        const int ret = getBridgeInstance().connect_ptr(client, source_port, destination_port);
+        return ret == 0 || ret == EEXIST;
+    }
 #endif
     return false;
 }
