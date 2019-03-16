@@ -148,6 +148,7 @@ class HostWindow(QMainWindow):
         self.fSampleRate         = 0.0
         self.fOscAddressTCP      = ""
         self.fOscAddressUDP      = ""
+        self.fOscReportedHost    = ""
 
         if MACOS:
             self.fMacClosingHelper = True

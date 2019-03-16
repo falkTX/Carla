@@ -2948,7 +2948,7 @@ class CarlaHostPlugin(CarlaHostMeta):
 
         # plugin info
         self.fPluginsInfo = {}
-        self.fFallbackPluginInfo = PyCarlaPluginInfo.copy()
+        self.fFallbackPluginInfo = PluginStoreInfo()
 
         # runtime engine info
         self.fRuntimeEngineInfo = {

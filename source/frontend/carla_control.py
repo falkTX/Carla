@@ -24,6 +24,8 @@ from PyQt5.QtCore import QEventLoop
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
+import ui_carla_osc_connect
+
 from carla_host import *
 
 # ------------------------------------------------------------------------------------------------------------
@@ -46,6 +48,112 @@ from random import random
 
 DEBUG = False
 
+# ----------------------------------------------------------------------------------------------------------------------
+# OSC connect Dialog
+
+class ConnectDialog(QDialog):
+    def __init__(self, parent):
+        QDialog.__init__(self, parent)
+        self.ui = ui_carla_osc_connect.Ui_Dialog()
+        self.ui.setupUi(self)
+
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+
+        # Mke PlainTextEdit background the same color as the window background
+        palette = self.ui.te_reported_hint.palette()
+        palette.setColor(QPalette.Base, palette.color(QPalette.Background))
+        self.ui.te_reported_hint.setPalette(palette)
+
+        # -------------------------------------------------------------------------------------------------------------
+        # Load settings
+
+        self.loadSettings()
+
+        # -------------------------------------------------------------------------------------------------------------
+        # Set-up connections
+
+        self.finished.connect(self.slot_saveSettings)
+        self.ui.rb_reported_auto.clicked.connect(self.slot_reportedAutoClicked)
+        self.ui.rb_reported_custom.clicked.connect(self.slot_reportedCustomClicked)
+        self.ui.le_host.textChanged.connect(self.slot_hostChanged)
+        self.ui.le_reported_host.textChanged.connect(self.slot_reportedHostChanged)
+
+    # -----------------------------------------------------------------------------------------------------------------
+
+    def getResult(self):
+        return (self.ui.le_host.text(),
+                self.ui.le_reported_host.text() if self.ui.rb_reported_custom.isChecked() else "",
+                self.ui.sb_tcp_port.value(),
+                self.ui.sb_udp_port.value())
+
+    def checkIfButtonBoxShouldBeEnabled(self, host, reportedHostAutomatic, reportedHost):
+        enabled = len(host) > 0
+
+        if enabled and not reportedHostAutomatic:
+            enabled = len(reportedHost) > 0
+
+        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(enabled)
+
+    def loadSettings(self):
+        settings = QSettings("falkTX", "CarlaOSCConnect")
+
+        if settings.value("ReportedHostAutomatic", True, type=bool):
+            self.ui.rb_reported_custom.setChecked(False)
+            self.ui.rb_reported_auto.setChecked(True)
+        else:
+            self.ui.rb_reported_auto.setChecked(False)
+            self.ui.rb_reported_custom.setChecked(True)
+
+        self.ui.le_host.setText(settings.value("Host", "127.0.0.1", type=str))
+        self.ui.le_reported_host.setText(settings.value("ReportedHost", "", type=str))
+        self.ui.sb_tcp_port.setValue(settings.value("TCPPort", CARLA_DEFAULT_OSC_TCP_PORT_NUMBER, type=int))
+        self.ui.sb_udp_port.setValue(settings.value("UDPPort", CARLA_DEFAULT_OSC_UDP_PORT_NUMBER, type=int))
+
+        self.checkIfButtonBoxShouldBeEnabled(self.ui.le_host.text(),
+                                             self.ui.rb_reported_auto.isChecked(),
+                                             self.ui.le_reported_host.text())
+
+    # ------------------------------------------------------------------------------------------------------------------
+
+    @pyqtSlot(bool)
+    def slot_reportedAutoClicked(self, clicked):
+        self.checkIfButtonBoxShouldBeEnabled(self.ui.le_host.text(),
+                                             clicked,
+                                             self.ui.le_reported_host.text())
+
+    @pyqtSlot(bool)
+    def slot_reportedCustomClicked(self, clicked):
+        self.checkIfButtonBoxShouldBeEnabled(self.ui.le_host.text(),
+                                             not clicked,
+                                             self.ui.le_reported_host.text())
+
+    @pyqtSlot(str)
+    def slot_hostChanged(self, text):
+        self.checkIfButtonBoxShouldBeEnabled(text,
+                                             self.ui.rb_reported_auto.isChecked(),
+                                             self.ui.le_reported_host.text())
+
+    @pyqtSlot(str)
+    def slot_reportedHostChanged(self, text):
+        self.checkIfButtonBoxShouldBeEnabled(self.ui.le_host.text(),
+                                             self.ui.rb_reported_auto.isChecked(),
+                                             text)
+
+    @pyqtSlot()
+    def slot_saveSettings(self):
+        settings = QSettings("falkTX", "CarlaOSCConnect")
+        settings.setValue("Host", self.ui.le_host.text())
+        settings.setValue("ReportedHost", self.ui.le_reported_host.text())
+        settings.setValue("TCPPort", self.ui.sb_tcp_port.value())
+        settings.setValue("UDPPort", self.ui.sb_udp_port.value())
+        settings.setValue("ReportedHostAutomatic", self.ui.rb_reported_auto.isChecked())
+
+    # ------------------------------------------------------------------------------------------------------------------
+
+    def done(self, r):
+        QDialog.done(self, r)
+        self.close()
+
 # ------------------------------------------------------------------------------------------------------------
 # Host OSC object
 
@@ -60,11 +168,14 @@ class CarlaHostOSC(CarlaHostQtPlugin):
         self.lo_target_tcp_name = ""
         self.lo_target_udp_name = ""
 
+        self.resetPendingMessages()
+
+    # -------------------------------------------------------------------
+
+    def resetPendingMessages(self):
         self.lastMessageId = 1
         self.pendingMessages = []
         self.responses = {}
-
-    # -------------------------------------------------------------------
 
     def printAndReturnError(self, error):
         print(error)
@@ -78,7 +189,6 @@ class CarlaHostOSC(CarlaHostQtPlugin):
         method = lines.pop(0)
 
         if method == "set_engine_option":
-            print(method, lines)
             return True
 
         if self.lo_target_tcp is None:
@@ -182,11 +292,9 @@ class CarlaHostOSC(CarlaHostQtPlugin):
     # -------------------------------------------------------------------
 
     def engine_init(self, driverName, clientName):
-        print("engine_init", self.lo_target_tcp is not None)
         return self.lo_target_tcp is not None
 
     def engine_close(self):
-        print("engine_close")
         return True
 
     def engine_idle(self):
@@ -202,13 +310,14 @@ class CarlaHostOSC(CarlaHostQtPlugin):
 # OSC Control server
 
 class CarlaControlServerTCP(Server):
-    def __init__(self, host):
+    def __init__(self, host, rhost):
         Server.__init__(self, proto=LO_TCP)
 
         if False:
             host = CarlaHostOSC()
 
         self.host = host
+        self.rhost = rhost
 
     def idle(self):
         self.fReceivedMsgs = False
@@ -217,6 +326,8 @@ class CarlaControlServerTCP(Server):
             pass
 
     def getFullURL(self):
+        if self.rhost:
+            return "osc.tcp://%s:%i/ctrl" % (self.rhost, self.get_port())
         return "%sctrl" % self.get_url()
 
     @make_method('/ctrl/cb', 'iiiiifs')
@@ -390,13 +501,14 @@ class CarlaControlServerTCP(Server):
 # ---------------------------------------------------------------------------------------------------------------------
 
 class CarlaControlServerUDP(Server):
-    def __init__(self, host):
+    def __init__(self, host, rhost):
         Server.__init__(self, proto=LO_UDP)
 
         if False:
-            host = CarlaHostPlugin()
+            host = CarlaHostOSC()
 
         self.host = host
+        self.rhost = rhost
 
     def idle(self):
         self.fReceivedMsgs = False
@@ -405,6 +517,8 @@ class CarlaControlServerUDP(Server):
             pass
 
     def getFullURL(self):
+        if self.rhost:
+            return "osc.udp://%s:%i/ctrl" % (self.rhost, self.get_port())
         return "%sctrl" % self.get_url()
 
     @make_method('/ctrl/runtime', 'fiihiiif')
@@ -441,7 +555,7 @@ class HostWindowOSC(HostWindow):
 
         if False:
             # kdevelop likes this :)
-            host = CarlaHostPlugin()
+            host = CarlaHostOSC()
             self.host = host
 
         # ----------------------------------------------------------------------------------------------------
@@ -456,11 +570,13 @@ class HostWindowOSC(HostWindow):
         if oscAddr:
             QTimer.singleShot(0, self.connectOsc)
 
-    def connectOsc(self, addrTCP = None, addrUDP = None):
+    def connectOsc(self, addrTCP = None, addrUDP = None, rhost = None):
         if addrTCP is not None:
             self.fOscAddressTCP = addrTCP
         if addrUDP is not None:
             self.fOscAddressUDP = addrUDP
+        if rhost is not None:
+            self.fOscReportedHost = rhost
 
         lo_target_tcp_name = self.fOscAddressTCP.rsplit("/", 1)[-1]
         lo_target_udp_name = self.fOscAddressUDP.rsplit("/", 1)[-1]
@@ -469,11 +585,11 @@ class HostWindowOSC(HostWindow):
 
         try:
             lo_target_tcp = Address(self.fOscAddressTCP)
-            lo_server_tcp = CarlaControlServerTCP(self.host)
+            lo_server_tcp = CarlaControlServerTCP(self.host, self.fOscReportedHost)
             lo_send(lo_target_tcp, "/register", lo_server_tcp.getFullURL())
 
             lo_target_udp = Address(self.fOscAddressUDP)
-            lo_server_udp = CarlaControlServerUDP(self.host)
+            lo_server_udp = CarlaControlServerUDP(self.host, self.fOscReportedHost)
             lo_send(lo_target_udp, "/register", lo_server_udp.getFullURL())
 
         except AddressError as e:
@@ -582,6 +698,7 @@ class HostWindowOSC(HostWindow):
         settings = HostWindow.loadSettings(self, firstTime)
         self.fOscAddressTCP = settings.value("RemoteAddressTCP", "osc.tcp://127.0.0.1:22752/Carla", type=str)
         self.fOscAddressUDP = settings.value("RemoteAddressUDP", "osc.udp://127.0.0.1:22752/Carla", type=str)
+        self.fOscReportedHost = settings.value("RemoteReportedHost", "", type=str)
 
     def saveSettings(self):
         settings = HostWindow.saveSettings(self)
@@ -589,31 +706,24 @@ class HostWindowOSC(HostWindow):
             settings.setValue("RemoteAddressTCP", self.fOscAddressTCP)
         if self.fOscAddressUDP:
             settings.setValue("RemoteAddressUDP", self.fOscAddressUDP)
+        if self.fOscReportedHost:
+            settings.setValue("RemoteReportedHost", self.fOscReportedHost)
 
     # --------------------------------------------------------------------------------------------------------
 
     @pyqtSlot()
     def slot_fileConnect(self):
-        dialog = QInputDialog(self)
-        dialog.setInputMode(QInputDialog.TextInput)
-        dialog.setLabelText(self.tr("Address:"))
-        dialog.setTextValue(self.fOscAddressTCP or "osc.tcp://127.0.0.1:22752/Carla")
-        dialog.setWindowTitle(self.tr("Carla Control - Connect"))
-        dialog.resize(400,1)
+        dialog = ConnectDialog(self)
 
-        ok = dialog.exec_()
-        addr = dialog.textValue().strip()
-        del dialog
+        if not dialog.exec_():
+            return
 
-        if not ok:
-            return
-        if not addr:
-            return
+        host, rhost, tcpPort, udpPort = dialog.getResult()
 
         self.disconnectOsc()
-
-        if addr:
-            self.connectOsc(addr.replace("osc.udp:", "osc.tcp:"), addr.replace("osc.tcp:", "osc.udp:"))
+        self.connectOsc("osc.tcp://%s:%i/Carla" % (host, tcpPort),
+                        "osc.udp://%s:%i/Carla" % (host, udpPort),
+                        rhost)
 
     @pyqtSlot()
     def slot_fileRefresh(self):
@@ -633,8 +743,8 @@ class HostWindowOSC(HostWindow):
         self.removeAllPlugins()
         patchcanvas.clear()
 
-        self.host.lo_server_tcp = CarlaControlServerTCP(self.host)
-        self.host.lo_server_udp = CarlaControlServerUDP(self.host)
+        self.host.lo_server_tcp = CarlaControlServerTCP(self.host, self.fOscReportedHost)
+        self.host.lo_server_udp = CarlaControlServerUDP(self.host, self.fOscReportedHost)
 
         try:
             lo_send(self.host.lo_target_tcp, "/register", self.host.lo_server_tcp.getFullURL())
@@ -653,6 +763,7 @@ class HostWindowOSC(HostWindow):
     @pyqtSlot()
     def slot_handleSIGTERM(self):
         print("Got SIGTERM -> Closing now")
+        self.host.pendingMessages = []
         self.close()
 
     @pyqtSlot()

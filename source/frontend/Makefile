@@ -30,6 +30,7 @@ UIs = \
 	ui_carla_database.py \
 	ui_carla_edit.py \
 	ui_carla_host.py \
+	ui_carla_osc_connect.py \
 	ui_carla_parameter.py \
 	ui_carla_plugin_calf.py \
 	ui_carla_plugin_classic.py \
@@ -68,6 +69,7 @@ RES = \
 	$(BINDIR)/resources/ui_carla_database.py \
 	$(BINDIR)/resources/ui_carla_edit.py \
 	$(BINDIR)/resources/ui_carla_host.py \
+	$(BINDIR)/resources/ui_carla_osc_connect.py \
 	$(BINDIR)/resources/ui_carla_parameter.py \
 	$(BINDIR)/resources/ui_carla_plugin_calf.py \
 	$(BINDIR)/resources/ui_carla_plugin_classic.py \
