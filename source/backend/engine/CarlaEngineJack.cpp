@@ -27,6 +27,23 @@
 
 #include "jackey.h"
 
+#ifdef USING_JUCE
+# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Weffc++"
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
+#  pragma GCC diagnostic ignored "-Wundef"
+# endif
+
+# include "AppConfig.h"
+# include "juce_events/juce_events.h"
+
+# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+#  pragma GCC diagnostic pop
+# endif
+#endif
+
 #ifdef __SSE2_MATH__
 # include <xmmintrin.h>
 #endif
@@ -2920,6 +2937,11 @@ int jack_initialize (jack_client_t *client, const char *load_init);
 CARLA_EXPORT
 void jack_finish(void *arg);
 
+#ifdef CARLA_OS_UNIX
+# include "ThreadSafeFFTW.hpp"
+static ThreadSafeFFTW sThreadSafeFFTW;
+#endif
+
 // -----------------------------------------------------------------------
 
 CARLA_EXPORT
@@ -2933,7 +2955,7 @@ int jack_initialize(jack_client_t* const client, const char* const load_init)
     else
         mode = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS;
 
-#if 0 //def USING_JUCE
+#ifdef USING_JUCE
     juce::initialiseJuce_GUI();
 #endif
 
@@ -2954,7 +2976,7 @@ int jack_initialize(jack_client_t* const client, const char* const load_init)
 
     if (engine->initInternal(client))
     {
-#if 0 //def CARLA_OS_UNIX
+#ifdef CARLA_OS_UNIX
         sThreadSafeFFTW.init();
 #endif
 
@@ -2963,7 +2985,7 @@ int jack_initialize(jack_client_t* const client, const char* const load_init)
     else
     {
         delete engine;
-#if 0 //def USING_JUCE
+#ifdef USING_JUCE
         juce::shutdownJuce_GUI();
 #endif
         return 1;
@@ -2978,7 +3000,7 @@ void jack_finish(void *arg)
     CarlaEngineJack* const engine = (CarlaEngineJack*)arg;;
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
 
-#if 0 //def CARLA_OS_UNIX
+#ifdef CARLA_OS_UNIX
     const ThreadSafeFFTW::Deinitializer tsfftwde(sThreadSafeFFTW);
 #endif
 
@@ -2987,7 +3009,7 @@ void jack_finish(void *arg)
     engine->close();
     delete engine;
 
-#if 0 //def USING_JUCE
+#ifdef USING_JUCE
     juce::shutdownJuce_GUI();
 #endif
 }

@@ -26,10 +26,7 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBase64Utils.hpp"
-
-#ifdef CARLA_OS_UNIX
-# include "CarlaLibUtils.hpp"
-#endif
+#include "ThreadSafeFFTW.hpp"
 
 #ifdef BUILD_BRIDGE
 # include "water/files/File.h"
@@ -107,102 +104,6 @@ struct CarlaBackendStandalone {
 CarlaBackendStandalone gStandalone;
 
 #ifdef CARLA_OS_UNIX
-// --------------------------------------------------------------------------------------------------------------------
-// Thread-safe fftw
-
-typedef void (*void_func)(void);
-
-class ThreadSafeFFTW
-{
-public:
-    struct Deinitializer {
-        Deinitializer(ThreadSafeFFTW& s)
-            : tsfftw(s) {}
-
-        ~Deinitializer()
-        {
-            tsfftw.deinit();
-        }
-
-        ThreadSafeFFTW& tsfftw;
-    };
-
-    ThreadSafeFFTW()
-        : initialized(false),
-          libfftw3(nullptr),
-          libfftw3f(nullptr),
-          libfftw3l(nullptr),
-          libfftw3q(nullptr) {}
-
-    ~ThreadSafeFFTW()
-    {
-        CARLA_SAFE_ASSERT(libfftw3 == nullptr);
-    }
-
-    void init()
-    {
-        if (initialized)
-            return;
-        initialized = true;
-
-        if ((libfftw3 = lib_open("libfftw3_threads.so.3")) != nullptr)
-            if (const void_func func = lib_symbol<void_func>(libfftw3, "fftw_make_planner_thread_safe"))
-                func();
-
-        if ((libfftw3f = lib_open("libfftw3f_threads.so.3")) != nullptr)
-            if (const void_func func = lib_symbol<void_func>(libfftw3f, "fftwf_make_planner_thread_safe"))
-                func();
-
-        if ((libfftw3l = lib_open("libfftw3l_threads.so.3")) != nullptr)
-            if (const void_func func = lib_symbol<void_func>(libfftw3l, "fftwl_make_planner_thread_safe"))
-                func();
-
-        if ((libfftw3q = lib_open("libfftw3q_threads.so.3")) != nullptr)
-            if (const void_func func = lib_symbol<void_func>(libfftw3q, "fftwq_make_planner_thread_safe"))
-                func();
-    }
-
-    void deinit()
-    {
-        if (! initialized)
-            return;
-        initialized = false;
-
-        if (libfftw3 != nullptr)
-        {
-            lib_close(libfftw3);
-            libfftw3 = nullptr;
-        }
-
-        if (libfftw3f != nullptr)
-        {
-            lib_close(libfftw3f);
-            libfftw3f = nullptr;
-        }
-
-        if (libfftw3l != nullptr)
-        {
-            lib_close(libfftw3l);
-            libfftw3l = nullptr;
-        }
-
-        if (libfftw3q != nullptr)
-        {
-            lib_close(libfftw3q);
-            libfftw3q = nullptr;
-        }
-    }
-
-private:
-    bool initialized;
-    lib_t libfftw3;
-    lib_t libfftw3f;
-    lib_t libfftw3l;
-    lib_t libfftw3q;
-
-    CARLA_DECLARE_NON_COPY_CLASS(ThreadSafeFFTW)
-};
-
 static ThreadSafeFFTW sThreadSafeFFTW;
 #endif
 
