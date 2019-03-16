@@ -231,6 +231,7 @@ endif
 
 HAVE_FFMPEG     = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
 HAVE_FLUIDSYNTH = $(shell pkg-config --atleast-version=1.1.7 fluidsynth && echo true)
+HAVE_JACK       = $(shell pkg-config --exists jack && echo true)
 HAVE_LIBLO      = $(shell pkg-config --exists liblo && echo true)
 HAVE_QT4        = $(shell pkg-config --exists QtCore QtGui && echo true)
 HAVE_QT5        = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
@@ -510,6 +511,10 @@ RTAUDIO_FLAGS   += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_WASAPI__
 RTAUDIO_LIBS    += -ldsound -luuid -lksuser -lwinmm
 RTMIDI_FLAGS    += -D__WINDOWS_MM__
 endif
+endif
+
+ifeq ($(HAVE_JACK),true)
+JACK_LIBDIR = $(shell pkg-config --variable=libdir jack)/jack
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

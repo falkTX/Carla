@@ -394,6 +394,11 @@ else
 endif
 	install -d $(DESTDIR)$(LIBDIR)/pkgconfig
 	install -d $(DESTDIR)$(INCLUDEDIR)/carla/includes
+ifeq ($(LINUX),true)
+ifeq ($(HAVE_JACK),true)
+	install -d $(DESTDIR)$(JACK_LIBDIR)
+endif
+endif
 
 ifeq ($(HAVE_PYQT),true)
 	# Create directories (gui)
@@ -433,7 +438,14 @@ endif
 		$(DESTDIR)$(LIBDIR)/carla
 
 ifeq ($(LINUX),true)
-	# Install libjack
+ifeq ($(HAVE_JACK),true)
+	# Install internal jack client
+	ln -sf \
+		$(LIBDIR)/carla/libcarla_standalone2.so \
+		$(DESTDIR)$(JACK_LIBDIR)/carla.so
+endif
+
+	# Install custom libjack
 	install -m 755 \
 		bin/jack/libjack.so.0 \
 		$(DESTDIR)$(LIBDIR)/carla/jack
