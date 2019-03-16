@@ -96,6 +96,30 @@ class CanvasObject(QObject):
                 CanvasRemoveItemFX(item)
 
     @pyqtSlot()
+    def PortContextMenuConnect(self):
+        try:
+            sources, targets = self.sender().data()
+        except:
+            return
+
+        for port_type in (PORT_TYPE_AUDIO_JACK, PORT_TYPE_MIDI_JACK, PORT_TYPE_MIDI_ALSA):
+            source_ports = sources[port_type]
+            target_ports = targets[port_type]
+
+            source_ports_len = len(source_ports)
+            target_ports_len = len(target_ports)
+
+            if source_ports_len == 0 or target_ports_len == 0:
+                continue
+
+            for i in range(min(source_ports_len, target_ports_len)):
+                data = "%i:%i:%i:%i" % (source_ports[i][0],
+                                        source_ports[i][1],
+                                        target_ports[i][0],
+                                        target_ports[i][1])
+                CanvasCallback(ACTION_PORTS_CONNECT, 0, 0, data)
+
+    @pyqtSlot()
     def PortContextMenuDisconnect(self):
         try:
             connectionId = int(self.sender().data())

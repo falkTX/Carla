@@ -344,8 +344,67 @@ class CanvasBox(QGraphicsItem):
 
     def contextMenuEvent(self, event):
         event.accept()
-
         menu = QMenu()
+
+        # Conenct menu stuff
+        connMenu = QMenu("Connect", menu)
+
+        our_port_types = []
+        our_port_outs = {
+            PORT_TYPE_AUDIO_JACK: [],
+            PORT_TYPE_MIDI_JACK: [],
+            PORT_TYPE_MIDI_ALSA: [],
+        }
+        for port in canvas.port_list:
+            if port.group_id != self.m_group_id:
+                continue
+            if port.port_mode != PORT_MODE_OUTPUT:
+                continue
+            if port.port_id not in self.m_port_list_ids:
+                continue
+            if port.port_type not in our_port_types:
+                our_port_types.append(port.port_type)
+            our_port_outs[port.port_type].append((port.group_id, port.port_id))
+
+        if len(our_port_types) != 0:
+            act_x_conn = None
+            for group in canvas.group_list:
+                if self.m_group_id == group.group_id:
+                    continue
+
+                has_ports = False
+                target_ports = {
+                    PORT_TYPE_AUDIO_JACK: [],
+                    PORT_TYPE_MIDI_JACK: [],
+                    PORT_TYPE_MIDI_ALSA: [],
+                }
+
+                for port in canvas.port_list:
+                    if port.group_id != group.group_id:
+                        continue
+                    if port.port_mode != PORT_MODE_INPUT:
+                        continue
+                    if port.port_type not in our_port_types:
+                        continue
+                    has_ports = True
+                    target_ports[port.port_type].append((port.group_id, port.port_id))
+
+                if not has_ports:
+                    continue
+
+                act_x_conn = connMenu.addAction(group.group_name)
+                act_x_conn.setData((our_port_outs, target_ports))
+                act_x_conn.triggered.connect(canvas.qobject.PortContextMenuConnect)
+
+            if act_x_conn is None:
+                act_x_disc = connMenu.addAction("Nothing to connect to")
+                act_x_disc.setEnabled(False)
+
+        else:
+            act_x_disc = connMenu.addAction("No output ports")
+            act_x_disc.setEnabled(False)
+
+        # Disconnect menu stuff
         discMenu = QMenu("Disconnect", menu)
 
         conn_list = []
@@ -367,6 +426,7 @@ class CanvasBox(QGraphicsItem):
             act_x_disc = discMenu.addAction("No connections")
             act_x_disc.setEnabled(False)
 
+        menu.addMenu(connMenu)
         menu.addMenu(discMenu)
         act_x_disc_all = menu.addAction("Disconnect &All")
         act_x_sep1 = menu.addSeparator()
