@@ -83,6 +83,7 @@ class CanvasBox(QGraphicsItem):
         # plugin Id, < 0 if invalid
         self.m_plugin_id = -1
         self.m_plugin_ui = False
+        self.m_plugin_inline = False
 
         # Base Variables
         self.p_width = 50
@@ -157,9 +158,10 @@ class CanvasBox(QGraphicsItem):
     def getPortList(self):
         return self.m_port_list_ids
 
-    def setAsPlugin(self, plugin_id, hasUi):
+    def setAsPlugin(self, plugin_id, hasUI, hasInlineDisplay):
         self.m_plugin_id = plugin_id
-        self.m_plugin_ui = hasUi
+        self.m_plugin_ui = hasUI
+        self.m_plugin_inline = hasInlineDisplay
 
     def setIcon(self, icon):
         if self.icon_svg is not None:

@@ -154,6 +154,7 @@ class group_dict_t(object):
         'icon',
         'plugin_id',
         'plugin_ui',
+        'plugin_inline',
         'widgets'
     ]
 

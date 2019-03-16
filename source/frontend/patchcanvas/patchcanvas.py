@@ -292,6 +292,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
     group_dict.icon = icon
     group_dict.plugin_id = -1
     group_dict.plugin_ui = False
+    group_dict.plugin_inline = False
     group_dict.widgets = [group_box, None]
 
     if split == SPLIT_YES:
@@ -412,6 +413,7 @@ def splitGroup(group_id):
     group_icon = ICON_APPLICATION
     plugin_id = -1
     plugin_ui = False
+    plugin_inline = False
     ports_data = []
     conns_data = []
 
@@ -427,6 +429,7 @@ def splitGroup(group_id):
             group_icon = group.icon
             plugin_id = group.plugin_id
             plugin_ui = group.plugin_ui
+            plugin_inline = group.plugin_inline
             break
 
     if not item:
@@ -471,7 +474,7 @@ def splitGroup(group_id):
     addGroup(group_id, group_name, SPLIT_YES, group_icon)
 
     if plugin_id >= 0:
-        setGroupAsPlugin(group_id, plugin_id, plugin_ui)
+        setGroupAsPlugin(group_id, plugin_id, plugin_ui, plugin_inline)
 
     for port in ports_data:
         addPort(group_id, port.port_id, port.port_name, port.port_mode, port.port_type, port.is_alternate)
@@ -491,6 +494,7 @@ def joinGroup(group_id):
     group_icon = ICON_APPLICATION
     plugin_id = -1
     plugin_ui = False
+    plugin_inline = False
     ports_data = []
     conns_data = []
 
@@ -507,6 +511,7 @@ def joinGroup(group_id):
             group_icon = group.icon
             plugin_id = group.plugin_id
             plugin_ui = group.plugin_ui
+            plugin_inline = group.plugin_inline
             break
 
     # FIXME
@@ -557,7 +562,7 @@ def joinGroup(group_id):
     addGroup(group_id, group_name, SPLIT_NO, group_icon)
 
     if plugin_id >= 0:
-        setGroupAsPlugin(group_id, plugin_id, plugin_ui)
+        setGroupAsPlugin(group_id, plugin_id, plugin_ui, plugin_inline)
 
     for port in ports_data:
         addPort(group_id, port.port_id, port.port_name, port.port_mode, port.port_type, port.is_alternate)
@@ -666,22 +671,24 @@ def setGroupIcon(group_id, icon):
 
     qCritical("PatchCanvas::setGroupIcon(%i, %s) - unable to find group to change icon" % (group_id, icon2str(icon)))
 
-def setGroupAsPlugin(group_id, plugin_id, hasUi):
+def setGroupAsPlugin(group_id, plugin_id, hasUI, hasInlineDisplay):
     if canvas.debug:
-        print("PatchCanvas::setGroupAsPlugin(%i, %i, %s)" % (group_id, plugin_id, bool2str(hasUi)))
+        print("PatchCanvas::setGroupAsPlugin(%i, %i, %s, %s)" % (
+              group_id, plugin_id, bool2str(hasUI), bool2str(hasInlineDisplay)))
 
     for group in canvas.group_list:
         if group.group_id == group_id:
             group.plugin_id = plugin_id
-            group.plugin_ui = hasUi
-            group.widgets[0].setAsPlugin(plugin_id, hasUi)
+            group.plugin_ui = hasUI
+            group.plugin_inline = hasInlineDisplay
+            group.widgets[0].setAsPlugin(plugin_id, hasUI, hasInlineDisplay)
 
             if group.split and group.widgets[1]:
-                group.widgets[1].setAsPlugin(plugin_id, hasUi)
+                group.widgets[1].setAsPlugin(plugin_id, hasUI, hasInlineDisplay)
             return
 
-    qCritical("PatchCanvas::setGroupAsPlugin(%i, %i, %s) - unable to find group to set as plugin" % (
-              group_id, plugin_id, bool2str(hasUi)))
+    qCritical("PatchCanvas::setGroupAsPlugin(%i, %i, %s, %s) - unable to find group to set as plugin" % (
+              group_id, plugin_id, bool2str(hasUI), bool2str(hasInlineDisplay)))
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -921,11 +928,14 @@ def handleAllPluginsRemoved():
 
         group.plugin_id = -1
         group.plugin_ui = False
+        group.plugin_inline = False
         group.widgets[0].m_plugin_id = -1
         group.widgets[0].m_plugin_ui = False
+        group.widgets[0].m_plugin_inline = False
 
         if group.split and group.widgets[1]:
             group.widgets[1].m_plugin_id = -1
             group.widgets[1].m_plugin_ui = False
+            group.widgets[1].m_plugin_inline = False
 
 # ------------------------------------------------------------------------------------------------------------

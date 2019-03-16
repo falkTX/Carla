@@ -2979,7 +2979,6 @@ int jack_initialize(jack_client_t* const client, const char* const load_init)
 #ifdef CARLA_OS_UNIX
         sThreadSafeFFTW.init();
 #endif
-
         return 0;
     }
     else

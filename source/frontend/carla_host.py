@@ -1506,10 +1506,13 @@ class HostWindow(QMainWindow):
 
         if pluginId == MAIN_CARLA_PLUGIN_ID:
             hasCustomUI = False
+            hasInlineDisplay = False
         else:
-            hasCustomUI = bool(self.host.get_plugin_info(pluginId)['hints'] & PLUGIN_HAS_CUSTOM_UI)
+            hints = self.host.get_plugin_info(pluginId)['hints']
+            hasCustomUI = bool(hints & PLUGIN_HAS_CUSTOM_UI)
+            hasInlineDisplay = bool(hints & PLUGIN_HAS_INLINE_DISPLAY)
 
-        patchcanvas.setGroupAsPlugin(clientId, pluginId, hasCustomUI)
+        patchcanvas.setGroupAsPlugin(clientId, pluginId, hasCustomUI, hasInlineDisplay)
 
     @pyqtSlot(int)
     def slot_handlePatchbayClientRemovedCallback(self, clientId):
@@ -1547,10 +1550,13 @@ class HostWindow(QMainWindow):
 
         if pluginId == MAIN_CARLA_PLUGIN_ID:
             hasCustomUI = False
+            hasInlineDisplay = False
         else:
-            hasCustomUI = bool(self.host.get_plugin_info(pluginId)['hints'] & PLUGIN_HAS_CUSTOM_UI)
+            hints = self.host.get_plugin_info(pluginId)['hints']
+            hasCustomUI = bool(hints & PLUGIN_HAS_CUSTOM_UI)
+            hasInlineDisplay = bool(hints & PLUGIN_HAS_INLINE_DISPLAY)
 
-        patchcanvas.setGroupAsPlugin(clientId, pluginId, hasCustomUI)
+        patchcanvas.setGroupAsPlugin(clientId, pluginId, hasCustomUI, hasInlineDisplay)
 
     @pyqtSlot(int, int, int, str)
     def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portFlags, portName):
