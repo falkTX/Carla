@@ -119,6 +119,14 @@ class CanvasObject(QObject):
                                         target_ports[i][1])
                 CanvasCallback(ACTION_PORTS_CONNECT, 0, 0, data)
 
+            if source_ports_len == 1 and target_ports_len > 1:
+                for i in range(1, target_ports_len):
+                    data = "%i:%i:%i:%i" % (source_ports[0][0],
+                                            source_ports[0][1],
+                                            target_ports[i][0],
+                                            target_ports[i][1])
+                    CanvasCallback(ACTION_PORTS_CONNECT, 0, 0, data)
+
     @pyqtSlot()
     def PortContextMenuDisconnect(self):
         try:
