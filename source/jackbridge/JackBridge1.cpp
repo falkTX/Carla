@@ -407,7 +407,7 @@ struct JackBridge {
         }
         else
         {
-            fprintf(stdout, "%s loaded sucessfully!\n", filename);
+            fprintf(stdout, "%s loaded successfully!\n", filename);
         }
 
         #define JOIN(a, b) a ## b

@@ -181,7 +181,7 @@ public:
             if (File(gProjectFilename).existsAsFile())
             {
                 if (carla_load_plugin_state(0, gProjectFilename.toRawUTF8()))
-                    carla_stdout("Plugin state loaded sucessfully");
+                    carla_stdout("Plugin state loaded successfully");
                 else
                     carla_stderr("Plugin state load failed, error was:\n%s", carla_get_last_error());
             }

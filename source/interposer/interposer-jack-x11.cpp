@@ -342,7 +342,7 @@ int XNextEvent(Display* display, XEvent* event)
         gInterposedCallback(1, nullptr);
 
     event->type = 0;
-    carla_stdout("XNextEvent close event catched, hiding UI instead");
+    carla_stdout("XNextEvent close event caught, hiding UI instead");
     return real_XUnmapWindow(display, gCurrentlyMappedWindow);
 }
 
