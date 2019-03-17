@@ -64,6 +64,7 @@ typedef int            (JACKSYM_API *jacksym_client_close)(jack_client_t*);
 typedef int   (JACKSYM_API *jacksym_client_name_size)(void);
 typedef char* (JACKSYM_API *jacksym_get_client_name)(jack_client_t*);
 
+typedef char* (JACKSYM_API *jacksym_client_get_uuid)(jack_client_t*);
 typedef char* (JACKSYM_API *jacksym_get_uuid_for_client_name)(jack_client_t*, const char*);
 typedef char* (JACKSYM_API *jacksym_get_client_name_by_uuid)(jack_client_t*, const char*);
 
@@ -187,6 +188,7 @@ struct JackBridge {
     jacksym_client_name_size client_name_size_ptr;
     jacksym_get_client_name get_client_name_ptr;
 
+    jacksym_client_get_uuid client_get_uuid_ptr;
     jacksym_get_uuid_for_client_name get_uuid_for_client_name_ptr;
     jacksym_get_client_name_by_uuid get_client_name_by_uuid_ptr;
 
@@ -301,6 +303,7 @@ struct JackBridge {
           client_close_ptr(nullptr),
           client_name_size_ptr(nullptr),
           get_client_name_ptr(nullptr),
+          client_get_uuid_ptr(nullptr),
           get_uuid_for_client_name_ptr(nullptr),
           get_client_name_by_uuid_ptr(nullptr),
           activate_ptr(nullptr),
@@ -422,6 +425,7 @@ struct JackBridge {
         LIB_SYMBOL(client_name_size)
         LIB_SYMBOL(get_client_name)
 
+        LIB_SYMBOL(client_get_uuid)
         LIB_SYMBOL(get_uuid_for_client_name)
         LIB_SYMBOL(get_client_name_by_uuid)
 
@@ -872,6 +876,18 @@ char* jackbridge_get_client_name(jack_client_t* client)
 }
 
 // -----------------------------------------------------------------------------
+
+char* jackbridge_client_get_uuid(jack_client_t* client)
+{
+#if defined(JACKBRIDGE_DUMMY)
+#elif defined(JACKBRIDGE_DIRECT)
+    return jack_client_get_uuid(client);
+#else
+    if (const jacksym_client_get_uuid func = getBridgeInstance().client_get_uuid_ptr)
+        return func(client);
+#endif
+    return nullptr;
+}
 
 char* jackbridge_get_uuid_for_client_name(jack_client_t* client, const char* name)
 {

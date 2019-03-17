@@ -27,6 +27,7 @@ typedef jack_client_t* (JACKBRIDGE_API *jackbridgesym_client_open)(const char*, 
 typedef bool           (JACKBRIDGE_API *jackbridgesym_client_close)(jack_client_t*);
 typedef int   (JACKBRIDGE_API *jackbridgesym_client_name_size)(void);
 typedef char* (JACKBRIDGE_API *jackbridgesym_get_client_name)(jack_client_t*);
+typedef char* (JACKBRIDGE_API *jackbridgesym_client_get_uuid)(jack_client_t*);
 typedef char* (JACKBRIDGE_API *jackbridgesym_get_uuid_for_client_name)(jack_client_t*, const char*);
 typedef char* (JACKBRIDGE_API *jackbridgesym_get_client_name_by_uuid)(jack_client_t*, const char*);
 typedef bool (JACKBRIDGE_API *jackbridgesym_activate)(jack_client_t*);
@@ -133,6 +134,7 @@ struct _JackBridgeExportedFunctions {
     jackbridgesym_client_close client_close_ptr;
     jackbridgesym_client_name_size client_name_size_ptr;
     jackbridgesym_get_client_name get_client_name_ptr;
+    jackbridgesym_client_get_uuid client_get_uuid_ptr;
     jackbridgesym_get_uuid_for_client_name get_uuid_for_client_name_ptr;
     jackbridgesym_get_client_name_by_uuid get_client_name_by_uuid_ptr;
     jackbridgesym_activate activate_ptr;
