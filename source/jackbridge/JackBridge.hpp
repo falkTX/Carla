@@ -293,6 +293,7 @@ JACKBRIDGE_API bool           jackbridge_client_close(jack_client_t* client);
 JACKBRIDGE_API int   jackbridge_client_name_size();
 JACKBRIDGE_API char* jackbridge_get_client_name(jack_client_t* client);
 
+JACKBRIDGE_API char* jackbridge_client_get_uuid(jack_client_t* client);
 JACKBRIDGE_API char* jackbridge_get_uuid_for_client_name(jack_client_t* client, const char* name);
 JACKBRIDGE_API char* jackbridge_get_client_name_by_uuid(jack_client_t* client, const char* uuid);
 

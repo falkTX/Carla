@@ -128,6 +128,11 @@ char* jackbridge_get_client_name(jack_client_t* client)
     return getBridgeInstance().get_client_name_ptr(client);
 }
 
+char* jackbridge_client_get_uuid(jack_client_t* client)
+{
+    return getBridgeInstance().client_get_uuid_ptr(client);
+}
+
 char* jackbridge_get_uuid_for_client_name(jack_client_t* client, const char* name)
 {
     return getBridgeInstance().get_uuid_for_client_name_ptr(client, name);

@@ -44,6 +44,7 @@ const JackBridgeExportedFunctions* JACKBRIDGE_API jackbridge_get_exported_functi
     funcs.client_close_ptr                     = jackbridge_client_close;
     funcs.client_name_size_ptr                 = jackbridge_client_name_size;
     funcs.get_client_name_ptr                  = jackbridge_get_client_name;
+    funcs.client_get_uuid_ptr                  = jackbridge_client_get_uuid;
     funcs.get_uuid_for_client_name_ptr         = jackbridge_get_uuid_for_client_name;
     funcs.get_client_name_by_uuid_ptr          = jackbridge_get_client_name_by_uuid;
     funcs.activate_ptr                         = jackbridge_activate;
