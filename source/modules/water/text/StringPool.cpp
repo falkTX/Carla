@@ -146,7 +146,7 @@ String StringPool::getPooledString (const String& newString)
 void StringPool::garbageCollectIfNeeded()
 {
     if (strings.size() > minNumberOfStringsForGarbageCollection
-         && Time::getApproximateMillisecondCounter() > lastGarbageCollectionTime + garbageCollectionInterval)
+         && Time::getMillisecondCounter() > lastGarbageCollectionTime + garbageCollectionInterval)
         garbageCollect();
 }
 
@@ -158,7 +158,7 @@ void StringPool::garbageCollect()
         if (strings.getReference(i).getReferenceCount() == 1)
             strings.remove (i);
 
-    lastGarbageCollectionTime = Time::getApproximateMillisecondCounter();
+    lastGarbageCollectionTime = Time::getMillisecondCounter();
 }
 
 StringPool& StringPool::getGlobalPool() noexcept

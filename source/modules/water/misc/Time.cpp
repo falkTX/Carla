@@ -81,7 +81,11 @@ static uint32 water_millisecondsSinceStartup() noexcept
     return (uint32) timeGetTime();
 #else
     timespec t;
+# ifdef CLOCK_MONOTONIC_RAW
+    clock_gettime (CLOCK_MONOTONIC_RAW, &t);
+# else
     clock_gettime (CLOCK_MONOTONIC, &t);
+# endif
 
     return (uint32) (t.tv_sec * 1000 + t.tv_nsec / 1000000);
 #endif
@@ -144,12 +148,6 @@ uint32 Time::getMillisecondCounter() noexcept
     }
 
     return now;
-}
-
-uint32 Time::getApproximateMillisecondCounter() noexcept
-{
-    const uint32 t = TimeHelpers::lastMSCounterValue.get();
-    return t == 0 ? getMillisecondCounter() : t;
 }
 
 }
