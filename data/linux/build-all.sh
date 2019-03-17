@@ -24,7 +24,8 @@ cd $(dirname $0)
 source common.env
 
 CHROOT_CARLA_DIR="/tmp/carla-src"
-PKG_FOLDER="Carla_2.0-RC3-linux"
+PKG_FOLDER="Carla_2.0-RC4-linux"
+PKGS_NUM="20190227"
 
 # ---------------------------------------------------------------------------------------------------------------------
 # function to remove old stuff
@@ -138,11 +139,11 @@ if [ ! -f /tmp/setup-aria2 ]; then
 fi
 
 if [ ! -d ${CHROOT_CARLA_DIR} ]; then
-  git clone --depth=1 git://github.com/falkTX/Carla ${CHROOT_CARLA_DIR}
+  git clone --depth=1 -b master git://github.com/falkTX/Carla ${CHROOT_CARLA_DIR}
 fi
 
 if [ ! -f ${CHROOT_CARLA_DIR}/source/native-plugins/external/README.md ]; then
-  git clone --depth=1 git://github.com/falkTX/Carla-Plugins ${CHROOT_CARLA_DIR}/source/native-plugins/external
+  git clone --depth=1 -b master git://github.com/falkTX/Carla-Plugins ${CHROOT_CARLA_DIR}/source/native-plugins/external
 fi
 
 cd ${CHROOT_CARLA_DIR}
@@ -268,10 +269,10 @@ download_carla_extras()
 {
 
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
-CARLA_VER="1.9.13+git20190112"
-WINBR_VER="1.9.13+git20190112"
-WINE32_VER="1.9.11+git20180916"
-WINE64_VER="1.9.11.git20180916"
+CARLA_VER="1.9.14+git20190227"
+WINBR_VER="1.9.14+git20190227"
+WINE32_VER="1.9.14+git20190227"
+WINE64_VER="1.9.14.git20190227"
 
 cat <<EOF | sudo chroot ${CHROOT_DIR}
 set -e
@@ -309,12 +310,12 @@ if [ ! -f carla-pkgs${PKGS_NUM}/extrated ]; then
   cd ..
 fi
 
-if [ ! -f extra-bins/carla-bridge-win32.exe ]; then
-    mkdir -p extra-bins
-    cp carla-pkgs${PKGS_NUM}/usr/lib/carla/*.exe  extra-bins/
-    cp carla-pkgs${PKGS_NUM}/usr/lib/carla/*.dll  extra-bins/
-    cp carla-pkgs${PKGS_NUM}/usr/lib/carla/*-gtk3 extra-bins/
-    cp carla-pkgs${PKGS_NUM}/usr/lib/carla/*-qt5  extra-bins/
+if [ ! -f extra-bins${PKGS_NUM}/carla-bridge-win32.exe ]; then
+    mkdir -p extra-bins${PKGS_NUM}
+    cp carla-pkgs${PKGS_NUM}/usr/lib/carla/*.exe  extra-bins${PKGS_NUM}/
+    cp carla-pkgs${PKGS_NUM}/usr/lib/carla/*.dll  extra-bins${PKGS_NUM}/
+    cp carla-pkgs${PKGS_NUM}/usr/lib/carla/*-gtk3 extra-bins${PKGS_NUM}/
+    cp carla-pkgs${PKGS_NUM}/usr/lib/carla/*-qt5  extra-bins${PKGS_NUM}/
 fi
 
 EOF
@@ -364,7 +365,7 @@ mkdir build-carla/resources
 mkdir build-carla/src
 mkdir build-carla/src/widgets
 
-cp      extra-bins/*                               build-carla/
+cp      extra-bins${PKGS_NUM}/*                    build-carla/
 cp -r  ./tmp-install/usr/lib/carla/*               build-carla/
 cp -LR ./tmp-install/usr/share/carla/resources/*   build-carla/resources/
 cp     ./tmp-install/usr/share/carla/carla         build-carla/src/
@@ -428,7 +429,7 @@ cp -LR ./tmp-install/usr/lib/lv2/carla.lv2 build-lv2/
 rm -r  build-lv2/carla.lv2/resources
 cp -LR build-carla/resources build-lv2/carla.lv2/
 cp     build-carla/magic.mgc build-lv2/carla.lv2/
-cp     extra-bins/* build-lv2/carla.lv2/
+cp     extra-bins${PKGS_NUM}/* build-lv2/carla.lv2/
 rm     build-lv2/carla.lv2/resources/*carla*.so build-lv2/carla.lv2/resources/carla-plugin-patchbay
 ln -s  ../libcarla_utils.so build-lv2/carla.lv2/resources/
 ln -s carla-plugin build-lv2/carla.lv2/resources/carla-plugin-patchbay
@@ -438,7 +439,7 @@ cp -LR ./tmp-install/usr/lib/vst/carla.vst build-vst/
 rm -r  build-vst/carla.vst/resources
 cp -LR build-carla/resources build-vst/carla.vst/
 cp     build-carla/magic.mgc build-vst/carla.vst/
-cp     extra-bins/* build-vst/carla.vst/
+cp     extra-bins${PKGS_NUM}/* build-vst/carla.vst/
 rm     build-vst/carla.vst/resources/*carla*.so build-vst/carla.vst/resources/carla-plugin-patchbay
 ln -s  ../libcarla_utils.so build-vst/carla.vst/resources/
 ln -s carla-plugin build-vst/carla.vst/resources/carla-plugin-patchbay
