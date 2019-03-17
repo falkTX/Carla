@@ -785,6 +785,11 @@ bool CarlaPlugin::ProtectedData::libClose() noexcept
     return ret;
 }
 
+void CarlaPlugin::ProtectedData::setCanDeleteLib(const bool canDelete) noexcept
+{
+    sLibCounter.setCanDelete(lib, canDelete);
+}
+
 bool CarlaPlugin::ProtectedData::uiLibOpen(const char* const fname, const bool canDelete) noexcept
 {
     uiLib = sLibCounter.open(fname, canDelete);

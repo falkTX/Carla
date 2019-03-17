@@ -370,6 +370,7 @@ struct CarlaPlugin::ProtectedData {
 
     bool libOpen(const char* const filename) noexcept;
     bool libClose() noexcept;
+    void setCanDeleteLib(const bool canDelete) noexcept;
 
     bool uiLibOpen(const char* const filename, const bool canDelete) noexcept;
     bool uiLibClose() noexcept;

@@ -593,6 +593,8 @@ public:
     {
         carla_debug("CarlaPluginLV2::~CarlaPluginLV2()");
 
+        fInlineDisplayNeedsRedraw = false;
+
         // close UI
         if (fUI.type != UI::TYPE_NULL)
         {
@@ -1694,16 +1696,24 @@ public:
 
         if (fInlineDisplayNeedsRedraw)
         {
-            const int64_t timeNow = water::Time::currentTimeMillis();
+            // TESTING
+            CARLA_SAFE_ASSERT(pData->enabled)
+            CARLA_SAFE_ASSERT(!pData->engine->isAboutToClose());
+            CARLA_SAFE_ASSERT(pData->client->isActive());
 
-            if (timeNow - fInlineDisplayLastRedrawTime > (1000 / 30))
+            if (pData->enabled && !pData->engine->isAboutToClose() && pData->client->isActive())
             {
-                fInlineDisplayNeedsRedraw = false;
-                fInlineDisplayLastRedrawTime = timeNow;
-                pData->engine->callback(true, true,
-                                        ENGINE_CALLBACK_INLINE_DISPLAY_REDRAW,
-                                        pData->id,
-                                        0, 0, 0, 0.0f, nullptr);
+                const int64_t timeNow = water::Time::currentTimeMillis();
+
+                if (timeNow - fInlineDisplayLastRedrawTime > (1000 / 30))
+                {
+                    fInlineDisplayNeedsRedraw = false;
+                    fInlineDisplayLastRedrawTime = timeNow;
+                    pData->engine->callback(true, true,
+                                            ENGINE_CALLBACK_INLINE_DISPLAY_REDRAW,
+                                            pData->id,
+                                            0, 0, 0, 0.0f, nullptr);
+                }
             }
         }
 
@@ -4717,9 +4727,14 @@ public:
             if (fExt.inlineDisplay != nullptr)
             {
                 if (fExt.inlineDisplay->render != nullptr)
+                {
                     pData->hints |= PLUGIN_HAS_INLINE_DISPLAY;
+                    pData->setCanDeleteLib(false);
+                }
                 else
+                {
                     fExt.inlineDisplay = nullptr;
+                }
             }
         }
 
@@ -5437,7 +5452,13 @@ public:
         }
 
         // ---------------------------------------------------------------
-        // get info
+        // set icon
+
+        if (std::strncmp(fDescriptor->URI, "http://distrho.sf.net/", 22) == 0)
+            pData->iconName = carla_strdup_safe("distrho");
+
+        // ---------------------------------------------------------------
+        // set info
 
         if (name != nullptr && name[0] != '\0')
             pData->name = pData->engine->getUniquePluginName(name);
