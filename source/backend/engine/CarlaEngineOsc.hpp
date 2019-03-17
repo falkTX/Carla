@@ -67,12 +67,12 @@ public:
 
     // -------------------------------------------------------------------
 
-    const char* getServerPathTCP() const noexcept
+    const CarlaString& getServerPathTCP() const noexcept
     {
         return fServerPathTCP;
     }
 
-    const char* getServerPathUDP() const noexcept
+    const CarlaString& getServerPathUDP() const noexcept
     {
         return fServerPathUDP;
     }
