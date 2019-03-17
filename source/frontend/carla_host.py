@@ -2202,7 +2202,9 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot(int)
     def slot_handleInlineDisplayRedrawCallback(self, pluginId):
-        patchcanvas.redrawPluginGroup(pluginId)
+        # FIXME
+        if self.fIdleTimerSlow != 0 and self.fIdleTimerFast != 0 and pluginId < self.fPluginCount and not self.fIsProjectLoading:
+            patchcanvas.redrawPluginGroup(pluginId)
 
     # --------------------------------------------------------------------------------------------------------
 
