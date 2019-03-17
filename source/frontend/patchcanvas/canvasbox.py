@@ -165,6 +165,7 @@ class CanvasBox(QGraphicsItem):
         self.m_plugin_id = plugin_id
         self.m_plugin_ui = hasUI
         self.m_plugin_inline = hasInlineDisplay
+        self.update()
 
     def setIcon(self, icon):
         if self.icon_svg is not None:
