@@ -91,7 +91,7 @@ public:
             }
         }
 
-        const lib_t libPtr(lib_open(filename));
+        const lib_t libPtr = lib_open(filename);
 
         if (libPtr == nullptr)
         {
@@ -156,6 +156,27 @@ public:
 
         carla_safe_assert("invalid lib pointer", __FILE__, __LINE__);
         return false;
+    }
+
+    void setCanDelete(const lib_t libPtr, const bool canDelete)
+    {
+        CARLA_SAFE_ASSERT_RETURN(libPtr != nullptr,);
+
+        const CarlaMutexLocker cml(fMutex);
+
+        for (LinkedList<Lib>::Itenerator it = fLibs.begin2(); it.valid(); it.next())
+        {
+            static Lib libFallback = { nullptr, nullptr, 0, false };
+
+            Lib& lib(it.getValue(libFallback));
+            CARLA_SAFE_ASSERT_CONTINUE(lib.lib != nullptr);
+
+            if (lib.lib != libPtr)
+                continue;
+
+            lib.canDelete = canDelete;
+            return;
+        }
     }
 
 private:
