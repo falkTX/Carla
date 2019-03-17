@@ -1551,7 +1551,7 @@ class HostWindow(QMainWindow):
 
         if pluginId == MAIN_CARLA_PLUGIN_ID:
             hasCustomUI = False
-            hasInlineDisplay = 69 #False
+            hasInlineDisplay = False
         else:
             hints = self.host.get_plugin_info(pluginId)['hints']
             hasCustomUI = bool(hints & PLUGIN_HAS_CUSTOM_UI)
