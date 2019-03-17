@@ -58,6 +58,24 @@ CARLA_BACKEND_START_NAMESPACE
 class CarlaEngineJack;
 class CarlaEngineJackClient;
 
+#ifndef BUILD_BRIDGE
+// FIXME temporary function while jack2 client uuids are broken
+static int buggy_jack2_uuid_parse(const char* b, jack_uuid_t* u)
+{
+    if (sscanf (b, P_UINT64, u) == 1) {
+
+        if (*u < (0x1LL << 32)) {
+            // FIXME: bug in jack2, client bit not set
+            *u = (0x2LU << 32) | *u;
+        }
+
+        return 0;
+    }
+
+    return -1;
+}
+#endif
+
 // -----------------------------------------------------------------------
 // Fallback data
 
@@ -834,7 +852,6 @@ public:
           fUsedGroups(),
           fUsedPorts(),
           fUsedConnections(),
-          fNewGroups(),
           fPatchbayProcThreadProtectionMutex(),
           fRetConns(),
           fPostPonedEvents(),
@@ -860,7 +877,6 @@ public:
         fUsedGroups.clear();
         fUsedPorts.clear();
         fUsedConnections.clear();
-        fNewGroups.clear();
         CARLA_SAFE_ASSERT(fPostPonedEvents.count() == 0);
 #endif
     }
@@ -1017,6 +1033,25 @@ public:
             }
         }
 
+        if (const char* const uuidchar = jackbridge_client_get_uuid(fClient))
+        {
+            jack_uuid_t uuid;
+
+            if (buggy_jack2_uuid_parse(uuidchar, &uuid) == 0)
+            {
+                const CarlaString& tcp(pData->osc.getServerPathTCP());
+                const CarlaString& udp(pData->osc.getServerPathUDP());
+
+                if (tcp.isNotEmpty())
+                    jackbridge_set_property(fClient, uuid,
+                                            "https://kx.studio/ns/carla/osc-tcp", tcp.buffer(), "text/plain");
+
+                if (tcp.isNotEmpty())
+                    jackbridge_set_property(fClient, uuid,
+                                            "https://kx.studio/ns/carla/osc-udp", udp.buffer(), "text/plain");
+            }
+        }
+
         if (jackbridge_activate(fClient))
         {
             if (opts.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
@@ -1028,14 +1063,16 @@ public:
                     std::getenv("NSM_URL") == nullptr)
                 {
                     char strBuf[STR_MAX];
-                    strBuf[STR_MAX-1] = '\0';
 
                     if (jackbridge_port_by_name(fClient, "system:capture_1") != nullptr)
                     {
-                        std::snprintf(strBuf, STR_MAX-2, "%s:audio-in1", jackClientName);
+                        std::snprintf(strBuf, STR_MAX, "%s:audio-in1", jackClientName);
+                        strBuf[STR_MAX-1] = '\0';
+
                         jackbridge_connect(fClient, "system:capture_1", strBuf);
 
-                        std::snprintf(strBuf, STR_MAX-2, "%s:audio-in2", jackClientName);
+                        std::snprintf(strBuf, STR_MAX, "%s:audio-in2", jackClientName);
+                        strBuf[STR_MAX-1] = '\0';
 
                         if (jackbridge_port_by_name(fClient, "system:capture_2") != nullptr)
                             jackbridge_connect(fClient, "system:capture_2", strBuf);
@@ -1045,10 +1082,13 @@ public:
 
                     if (jackbridge_port_by_name(fClient, "system:playback_1") != nullptr)
                     {
-                        std::snprintf(strBuf, STR_MAX-2, "%s:audio-out1", jackClientName);
+                        std::snprintf(strBuf, STR_MAX, "%s:audio-out1", jackClientName);
+                        strBuf[STR_MAX-1] = '\0';
+
                         jackbridge_connect(fClient, strBuf, "system:playback_1");
 
-                        std::snprintf(strBuf, STR_MAX-2, "%s:audio-out2", jackClientName);
+                        std::snprintf(strBuf, STR_MAX, "%s:audio-out2", jackClientName);
+                        strBuf[STR_MAX-1] = '\0';
 
                         if (jackbridge_port_by_name(fClient, "system:playback_2") != nullptr)
                             jackbridge_connect(fClient, strBuf, "system:playback_2");
@@ -1119,7 +1159,6 @@ public:
         fUsedGroups.clear();
         fUsedPorts.clear();
         fUsedConnections.clear();
-        fNewGroups.clear();
         fPostPonedEvents.clear();
 
         // clear rack/patchbay stuff
@@ -1273,6 +1312,29 @@ public:
             jackbridge_set_latency_callback(client, carla_jack_latency_callback_plugin, plugin);
             jackbridge_set_process_callback(client, carla_jack_process_callback_plugin, plugin);
             jackbridge_on_shutdown(client, carla_jack_shutdown_callback_plugin, plugin);
+
+            if (const char* const uuidchar = jackbridge_client_get_uuid(client))
+            {
+                jack_uuid_t uuid;
+
+                if (buggy_jack2_uuid_parse(uuidchar, &uuid) == 0)
+                {
+                    char strBufId[24];
+                    std::snprintf(strBufId, 24, "%u", plugin->getId());
+                    strBufId[23] = '\0';
+
+                    jackbridge_set_property(client, uuid,
+                                            "https://kx.studio/ns/carla/plugin-id",
+                                            strBufId,
+                                            "http://www.w3.org/2001/XMLSchema#integer");
+
+                    if (const char* const pluginIcon = plugin->getIconName())
+                        jackbridge_set_property(client, uuid,
+                                                "https://kx.studio/ns/carla/plugin-icon",
+                                                pluginIcon,
+                                                "text/plain");
+                }
+            }
 #else
             fClient = client;
             pData->bufferSize = jackbridge_get_buffer_size(client);
@@ -1540,7 +1602,6 @@ public:
         fUsedGroups.clear();
         fUsedPorts.clear();
         fUsedConnections.clear();
-        fNewGroups.clear();
 
         initJackPatchbay(sendHost, sendOSC, jackbridge_get_client_name(fClient));
         return true;
@@ -2069,15 +2130,19 @@ protected:
                 GroupNameToId groupNameToId;
                 groupNameToId.setData(groupId, groupName);
 
+                int pluginId = -1;
+                PatchbayIcon icon = (jackPortFlags & JackPortIsPhysical) ? PATCHBAY_ICON_HARDWARE : PATCHBAY_ICON_APPLICATION;
+
+                findPluginIdAndIcon(groupName, pluginId, icon);
+
                 callback(fExternalPatchbayHost, fExternalPatchbayOsc,
                          ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
                          groupNameToId.group,
-                         (jackPortFlags & JackPortIsPhysical) ? PATCHBAY_ICON_HARDWARE : PATCHBAY_ICON_APPLICATION,
-                         -1,
+                         icon,
+                         pluginId,
                          0, 0.0f,
                          groupNameToId.name);
 
-                fNewGroups.append(groupId);
                 fUsedGroups.list.append(groupNameToId);
             }
 
@@ -2307,60 +2372,65 @@ private:
     PatchbayGroupList      fUsedGroups;
     PatchbayPortList       fUsedPorts;
     PatchbayConnectionList fUsedConnections;
-    LinkedList<uint>       fNewGroups;
     CarlaMutex             fPatchbayProcThreadProtectionMutex;
 
     mutable CharStringListPtr fRetConns;
 
-    bool findPluginIdAndIcon(const char* const clientName, int& pluginId, PatchbayIcon& icon) noexcept
+    void findPluginIdAndIcon(const char* const clientName, int& pluginId, PatchbayIcon& icon) const noexcept
     {
         carla_debug("CarlaEngineJack::findPluginIdAndIcon(\"%s\", ...)", clientName);
 
         // TODO - this currently only works in multi-client mode
         if (pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
-            return false;
+            return;
 
-        for (uint i=0; i < pData->curPluginCount; ++i)
+        const char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, clientName);
+        CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr && uuidstr[0] != '\0',);
+
+        jack_uuid_t uuid;
+        CARLA_SAFE_ASSERT_RETURN(buggy_jack2_uuid_parse(uuidstr, &uuid) == 0,);
+
         {
-            CarlaPlugin* const plugin(pData->plugins[i].plugin);
+            char* value = nullptr;
+            char* type = nullptr;
 
-            if (plugin == nullptr || ! plugin->isEnabled())
-                continue;
+            if (! jackbridge_get_property(uuid, "https://kx.studio/ns/carla/plugin-id", &value, &type))
+                return;
 
-            const CarlaEngineJackClient* const engineClient((const CarlaEngineJackClient*)plugin->getEngineClient());
-            CARLA_SAFE_ASSERT_CONTINUE(engineClient != nullptr);
+            CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0',);
+            CARLA_SAFE_ASSERT_RETURN(value != nullptr && value[0] != '\0',);
+            CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, "http://www.w3.org/2001/XMLSchema#integer") == 0,);
 
-            const char* const engineClientName(engineClient->getJackClientName());
-            CARLA_SAFE_ASSERT_CONTINUE(engineClientName != nullptr && engineClientName[0] != '\0');
-
-            if (std::strcmp(clientName, engineClientName) != 0)
-                continue;
-
-            pluginId = static_cast<int>(i);
+            pluginId = std::atoi(value);
             icon     = PATCHBAY_ICON_PLUGIN;
-
-            if (const char* const pluginIcon = plugin->getIconName())
-            {
-                if (pluginIcon[0] == '\0')
-                    pass();
-                else if (std::strcmp(pluginIcon, "app") == 0 || std::strcmp(pluginIcon, "application") == 0)
-                    icon = PATCHBAY_ICON_APPLICATION;
-                else if (std::strcmp(pluginIcon, "plugin") == 0)
-                    icon = PATCHBAY_ICON_PLUGIN;
-                else if (std::strcmp(pluginIcon, "hardware") == 0)
-                    icon = PATCHBAY_ICON_HARDWARE;
-                else if (std::strcmp(pluginIcon, "carla") == 0)
-                    icon = PATCHBAY_ICON_CARLA;
-                else if (std::strcmp(pluginIcon, "distrho") == 0)
-                    icon = PATCHBAY_ICON_DISTRHO;
-                else if (std::strcmp(pluginIcon, "file") == 0)
-                    icon = PATCHBAY_ICON_FILE;
-            }
-
-            return true;
         }
 
-        return false;
+        {
+            char* value = nullptr;
+            char* type = nullptr;
+
+            if (! jackbridge_get_property(uuid, "https://kx.studio/ns/carla/plugin-icon", &value, &type))
+                return;
+
+            CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0',);
+            CARLA_SAFE_ASSERT_RETURN(value != nullptr && value[0] != '\0',);
+            CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, "text/plain") == 0,);
+
+            /**/ if (std::strcmp(value, "app") == 0)
+                icon = PATCHBAY_ICON_APPLICATION;
+            else if (std::strcmp(value, "application") == 0)
+                icon = PATCHBAY_ICON_APPLICATION;
+            else if (std::strcmp(value, "plugin") == 0)
+                icon = PATCHBAY_ICON_PLUGIN;
+            else if (std::strcmp(value, "hardware") == 0)
+                icon = PATCHBAY_ICON_HARDWARE;
+            else if (std::strcmp(value, "carla") == 0)
+                icon = PATCHBAY_ICON_CARLA;
+            else if (std::strcmp(value, "distrho") == 0)
+                icon = PATCHBAY_ICON_DISTRHO;
+            else if (std::strcmp(value, "file") == 0)
+                icon = PATCHBAY_ICON_FILE;
+        }
     }
 
     void initJackPatchbay(const bool sendHost, const bool sendOSC, const char* const ourName)
@@ -2424,13 +2494,13 @@ private:
                     groupId = ++fUsedGroups.lastId;
                     parsedGroups.append(groupName);
 
+                    GroupNameToId groupNameToId;
+                    groupNameToId.setData(groupId, groupName);
+
                     int pluginId = -1;
                     PatchbayIcon icon = (jackPortFlags & JackPortIsPhysical) ? PATCHBAY_ICON_HARDWARE : PATCHBAY_ICON_APPLICATION;
 
                     findPluginIdAndIcon(groupName, pluginId, icon);
-
-                    GroupNameToId groupNameToId;
-                    groupNameToId.setData(groupId, groupName);
 
                     callback(sendHost, sendOSC,
                              ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
@@ -2653,7 +2723,6 @@ private:
     void run() override
     {
         LinkedList<PostPonedJackEvent> events;
-        LinkedList<uint> newPlugins;
 
         PostPonedJackEvent nullEvent;
         carla_zeroStruct(nullEvent);
@@ -2668,17 +2737,14 @@ private:
 
                 if (fPostPonedEvents.count() > 0)
                     fPostPonedEvents.moveTo(events);
-
-                if (fNewGroups.count() > 0)
-                    fNewGroups.moveTo(newPlugins);
             }
 
             if (fClient == nullptr)
                 break;
 
-            if (events.count() == 0 && newPlugins.count() == 0)
+            if (events.count() == 0)
             {
-                carla_msleep(fIsInternalClient ? 10 : 200);
+                carla_msleep(fIsInternalClient ? 50 : 200);
                 continue;
             }
 
@@ -2706,33 +2772,10 @@ private:
                 }
             }
 
-            for (LinkedList<uint>::Itenerator it = newPlugins.begin2(); it.valid(); it.next())
-            {
-                const uint groupId(it.getValue(0));
-                CARLA_SAFE_ASSERT_CONTINUE(groupId > 0);
-
-                const char* const groupName(fUsedGroups.getGroupName(groupId));
-                CARLA_SAFE_ASSERT_CONTINUE(groupName != nullptr && groupName[0] != '\0');
-
-                int pluginId = -1;
-                PatchbayIcon icon = PATCHBAY_ICON_PLUGIN;
-
-                if (findPluginIdAndIcon(groupName, pluginId, icon)) {
-                    callback(fExternalPatchbayHost, fExternalPatchbayOsc,
-                             ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED,
-                             groupId,
-                             icon,
-                             pluginId,
-                             0, 0.0f, nullptr);
-                }
-            }
-
             events.clear();
-            newPlugins.clear();
         }
 
         events.clear();
-        newPlugins.clear();
     }
 #endif //  BUILD_BRIDGE
 
