@@ -2524,13 +2524,24 @@ public:
         // ---------------------------------------------------------------
         // set icon
 
-        if (std::strcmp(fDescriptor->label, "audiofile") == 0)
+        /**/ if (std::strcmp(fDescriptor->label, "audiofile") == 0)
             pData->iconName = carla_strdup_safe("file");
         else if (std::strcmp(fDescriptor->label, "midifile") == 0)
             pData->iconName = carla_strdup_safe("file");
 
+        else if (std::strcmp(fDescriptor->label, "3bandeq") == 0)
+            pData->iconName = carla_strdup_safe("distrho");
+        else if (std::strcmp(fDescriptor->label, "3bandsplitter") == 0)
+            pData->iconName = carla_strdup_safe("distrho");
+        else if (std::strcmp(fDescriptor->label, "kars") == 0)
+            pData->iconName = carla_strdup_safe("distrho");
+        else if (std::strcmp(fDescriptor->label, "nekobi") == 0)
+            pData->iconName = carla_strdup_safe("distrho");
+        else if (std::strcmp(fDescriptor->label, "pingpongpan") == 0)
+            pData->iconName = carla_strdup_safe("distrho");
+
         // ---------------------------------------------------------------
-        // get info
+        // set info
 
         if (name != nullptr && name[0] != '\0')
             pData->name = pData->engine->getUniquePluginName(name);

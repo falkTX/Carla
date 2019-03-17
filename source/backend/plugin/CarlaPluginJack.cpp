@@ -1523,6 +1523,11 @@ public:
             setupUniqueProjectID();
 
         // ---------------------------------------------------------------
+        // set icon
+
+        pData->iconName = carla_strdup_safe("application");
+
+        // ---------------------------------------------------------------
         // set info
 
         pData->filename = carla_strdup(filename);
