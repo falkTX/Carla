@@ -526,6 +526,7 @@ class HostWindow(QMainWindow):
         host.InfoCallback.connect(self.slot_handleInfoCallback)
         host.ErrorCallback.connect(self.slot_handleErrorCallback)
         host.QuitCallback.connect(self.slot_handleQuitCallback)
+        host.InlineDisplayRedrawCallback.connect(self.slot_handleInlineDisplayRedrawCallback)
 
         # ----------------------------------------------------------------------------------------------------
         # Final setup
@@ -1550,7 +1551,7 @@ class HostWindow(QMainWindow):
 
         if pluginId == MAIN_CARLA_PLUGIN_ID:
             hasCustomUI = False
-            hasInlineDisplay = False
+            hasInlineDisplay = 69 #False
         else:
             hints = self.host.get_plugin_info(pluginId)['hints']
             hasCustomUI = bool(hints & PLUGIN_HAS_CUSTOM_UI)
@@ -2199,6 +2200,10 @@ class HostWindow(QMainWindow):
         self.removeAllPlugins()
         self.projectLoadingFinished()
 
+    @pyqtSlot(int)
+    def slot_handleInlineDisplayRedrawCallback(self, pluginId):
+        patchcanvas.redrawPluginGroup(pluginId)
+
     # --------------------------------------------------------------------------------------------------------
 
     @pyqtSlot()
@@ -2597,6 +2602,13 @@ def canvasCallback(action, value1, value2, valueStr):
     elif action == patchcanvas.ACTION_BG_RIGHT_CLICK:
         gCarla.gui.showPluginActionsMenu()
 
+    elif action == patchcanvas.ACTION_INLINE_DISPLAY:
+        # FIXME
+        if gCarla.gui.fPluginCount == 0: return
+        pluginId = value1
+        width, height = [int(v) for v in valueStr.split(":")]
+        return host.render_inline_display(pluginId, width, height)
+
 # ------------------------------------------------------------------------------------------------------------
 # Engine callback
 
@@ -2700,6 +2712,10 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valuef, value
         host.ErrorCallback.emit(valueStr)
     elif action == ENGINE_CALLBACK_QUIT:
         host.QuitCallback.emit()
+    elif action == ENGINE_CALLBACK_INLINE_DISPLAY_REDRAW:
+        host.InlineDisplayRedrawCallback.emit(pluginId)
+    else:
+        print("unhandled action", action)
 
 # ------------------------------------------------------------------------------------------------------------
 # File callback

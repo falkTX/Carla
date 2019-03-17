@@ -37,6 +37,7 @@ extern "C" {
 }
 
 #include "water/files/File.h"
+#include "water/misc/Time.h"
 
 #include <string>
 #include <vector>
@@ -528,6 +529,8 @@ public:
           fParamBuffers(nullptr),
           fNeedsFixedBuffers(false),
           fNeedsUiClose(false),
+          fInlineDisplayNeedsRedraw(false),
+          fInlineDisplayLastRedrawTime(0),
           fLatencyIndex(-1),
           fStrictBounds(-1),
           fAtomBufferEvIn(),
@@ -1689,6 +1692,21 @@ public:
             }
         }
 
+        if (fInlineDisplayNeedsRedraw)
+        {
+            const int64_t timeNow = water::Time::currentTimeMillis();
+
+            if (timeNow - fInlineDisplayLastRedrawTime > (1000 / 30))
+            {
+                fInlineDisplayNeedsRedraw = false;
+                fInlineDisplayLastRedrawTime = timeNow;
+                pData->engine->callback(true, true,
+                                        ENGINE_CALLBACK_INLINE_DISPLAY_REDRAW,
+                                        pData->id,
+                                        0, 0, 0, 0.0f, nullptr);
+            }
+        }
+
         CarlaPlugin::idle();
     }
 
@@ -2698,7 +2716,7 @@ public:
             pData->options &= ~PLUGIN_OPTION_FORCE_STEREO;
 
         // plugin hints
-        pData->hints = 0x0;
+        pData->hints = (pData->hints & PLUGIN_HAS_INLINE_DISPLAY) ? PLUGIN_HAS_INLINE_DISPLAY : 0;
 
         if (isRealtimeSafe())
             pData->hints |= PLUGIN_IS_RTSAFE;
@@ -4677,8 +4695,11 @@ public:
             if (pData->hints & PLUGIN_HAS_EXTENSION_WORKER)
                 fExt.worker = (const LV2_Worker_Interface*)fDescriptor->extension_data(LV2_WORKER__interface);
 
-            if (pData->hints & PLUGIN_HAS_EXTENSION_INLINE_DISPLAY)
+            // FIXME
+            // if (pData->hints & PLUGIN_HAS_EXTENSION_INLINE_DISPLAY)
+            {
                 fExt.inlineDisplay = (const LV2_Inline_Display_Interface*)fDescriptor->extension_data(LV2_INLINEDISPLAY__interface);
+            }
 
             // check if invalid
             if (fExt.options != nullptr && fExt.options->get == nullptr  && fExt.options->set == nullptr)
@@ -4997,7 +5018,7 @@ public:
 
     void handleInlineDisplayQueueRedraw()
     {
-        // TODO
+        fInlineDisplayNeedsRedraw = true;
     }
 
     LV2_Inline_Display_Image_Surface* renderInlineDisplay(int width, int height)
@@ -6121,6 +6142,8 @@ private:
 
     bool    fNeedsFixedBuffers;
     bool    fNeedsUiClose;
+    bool    fInlineDisplayNeedsRedraw;
+    int64_t fInlineDisplayLastRedrawTime;
     int32_t fLatencyIndex; // -1 if invalid
     int     fStrictBounds; // -1 unsupported, 0 optional, 1 required
 

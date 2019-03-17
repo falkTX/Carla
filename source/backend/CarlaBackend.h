@@ -988,7 +988,13 @@ typedef enum {
     /*!
      * The engine has crashed or malfunctioned and will no longer work.
      */
-    ENGINE_CALLBACK_QUIT = 41
+    ENGINE_CALLBACK_QUIT = 41,
+
+    /*!
+     * A plugin requested for its inline display to be redrawn.
+     * @a pluginId Plugin Id to redraw
+     */
+    ENGINE_CALLBACK_INLINE_DISPLAY_REDRAW = 42,
 
 } EngineCallbackOpcode;
 

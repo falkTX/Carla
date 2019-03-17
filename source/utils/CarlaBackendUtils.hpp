@@ -284,6 +284,8 @@ const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode) noexcept
         return "ENGINE_CALLBACK_ERROR";
     case ENGINE_CALLBACK_QUIT:
         return "ENGINE_CALLBACK_QUIT";
+    case ENGINE_CALLBACK_INLINE_DISPLAY_REDRAW:
+        return "ENGINE_CALLBACK_INLINE_DISPLAY_REDRAW";
     }
 
     carla_stderr("CarlaBackend::EngineCallbackOpcode2Str(%i) - invalid opcode", opcode);

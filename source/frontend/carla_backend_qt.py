@@ -72,6 +72,7 @@ class CarlaHostSignals(QObject):
     InfoCallback = pyqtSignal(str)
     ErrorCallback = pyqtSignal(str)
     QuitCallback = pyqtSignal()
+    InlineDisplayRedrawCallback = pyqtSignal(int)
 
 # ------------------------------------------------------------------------------------------------------------
 # Carla Host object (dummy/null, does nothing)

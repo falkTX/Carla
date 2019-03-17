@@ -690,6 +690,18 @@ def setGroupAsPlugin(group_id, plugin_id, hasUI, hasInlineDisplay):
     qCritical("PatchCanvas::setGroupAsPlugin(%i, %i, %s, %s) - unable to find group to set as plugin" % (
               group_id, plugin_id, bool2str(hasUI), bool2str(hasInlineDisplay)))
 
+def redrawPluginGroup(plugin_id):
+    for group in canvas.group_list:
+        if group.plugin_id == plugin_id:
+            group.widgets[0].update()
+
+            if group.split and group.widgets[1]:
+                group.widgets[1].update()
+
+            return
+
+    qCritical("PatchCanvas::redrawPluginGroup(%i) - unable to find group" % plugin_id)
+
 # ------------------------------------------------------------------------------------------------------------
 
 def addPort(group_id, port_id, port_name, port_mode, port_type, is_alternate=False):

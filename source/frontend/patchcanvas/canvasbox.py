@@ -20,7 +20,7 @@
 # Imports (Global)
 
 from PyQt5.QtCore import qCritical, Qt, QPointF, QRectF, QTimer
-from PyQt5.QtGui import QCursor, QFont, QFontMetrics, QLinearGradient, QPainter, QPen
+from PyQt5.QtGui import QCursor, QFont, QFontMetrics, QImage, QLinearGradient, QPainter, QPen
 from PyQt5.QtWidgets import QGraphicsItem, QMenu
 
 # ------------------------------------------------------------------------------------------------------------
@@ -44,6 +44,7 @@ from . import (
     ACTION_GROUP_SPLIT,
     ACTION_GROUP_RENAME,
     ACTION_PORTS_DISCONNECT,
+    ACTION_INLINE_DISPLAY,
     EYECANDY_FULL,
     PORT_MODE_NULL,
     PORT_MODE_INPUT,
@@ -87,6 +88,8 @@ class CanvasBox(QGraphicsItem):
 
         # Base Variables
         self.p_width = 50
+        self.p_width_in = 0
+        self.p_width_out = 0
         self.p_height = canvas.theme.box_header_height + canvas.theme.box_header_spacing + 1
 
         self.m_last_pos = QPointF()
@@ -259,7 +262,7 @@ class CanvasBox(QGraphicsItem):
 
         # Check Text Name size
         app_name_size = QFontMetrics(self.m_font_name).width(self.m_group_name) + 30
-        self.p_width = max(50, app_name_size)
+        self.p_width = max(200 if self.m_plugin_inline else 50, app_name_size)
 
         # Get Port List
         port_list = []
@@ -269,6 +272,8 @@ class CanvasBox(QGraphicsItem):
 
         if len(port_list) == 0:
             self.p_height = canvas.theme.box_header_height
+            self.p_width_in = 0
+            self.p_width_out = 0
         else:
             max_in_width = max_out_width = 0
             port_spacing = canvas.theme.port_height + canvas.theme.port_spacing
@@ -303,7 +308,12 @@ class CanvasBox(QGraphicsItem):
                         port.widget.setY(last_out_pos)
                         last_out_pos += port_spacing
 
-            self.p_width = max(self.p_width, 30 + max_in_width + max_out_width)
+            self.p_width = max(self.p_width, (100 if self.m_plugin_inline else 30) + max_in_width + max_out_width)
+            self.p_width_in = max_in_width
+            self.p_width_out = max_out_width
+
+            #if self.m_plugin_inline:
+                #self.p_width += 10
 
             # Horizontal ports re-positioning
             inX = canvas.theme.port_offset
@@ -608,6 +618,19 @@ class CanvasBox(QGraphicsItem):
 
         rect.adjust(lineHinting, lineHinting, -lineHinting, -lineHinting)
         painter.drawRect(rect)
+
+        # Draw plugin inline display if supported
+        if self.m_plugin_id >= 0 and self.m_plugin_id <= MAX_PLUGIN_ID_ALLOWED and self.m_plugin_inline:
+            size = "%i:%i" % (self.p_width - self.p_width_in - self.p_width_out - 16,
+                              self.p_height - canvas.theme.box_header_height)
+            data = canvas.callback(ACTION_INLINE_DISPLAY, self.m_plugin_id, 0, size)
+            if data is not None:
+                image = QImage(data['data'], data['width'], data['height'], data['stride'], QImage.Format_ARGB32)
+                painter.drawImage(self.p_width_in + 7,
+                                  canvas.theme.box_header_height
+                                  + (self.p_height - canvas.theme.box_header_height) / 2
+                                  - data['height'] / 2 - 1,
+                                  image)
 
         # Draw pixmap header
         rect.setHeight(canvas.theme.box_header_height)

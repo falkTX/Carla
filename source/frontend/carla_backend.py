@@ -22,6 +22,8 @@
 from abc import ABCMeta, abstractmethod
 from ctypes import *
 from platform import architecture
+from sip import voidptr
+from struct import pack
 from sys import platform, maxsize
 
 # ------------------------------------------------------------------------------------------------------------
@@ -725,6 +727,10 @@ ENGINE_CALLBACK_ERROR = 40
 
 # The engine has crashed or malfunctioned and will no longer work.
 ENGINE_CALLBACK_QUIT = 41
+
+# A plugin requested for its inline display to be redrawn.
+# @a pluginId Plugin Id to redraw
+ENGINE_CALLBACK_INLINE_DISPLAY_REDRAW = 42
 
 # ------------------------------------------------------------------------------------------------------------
 # NSM Callback Opcode
@@ -2818,7 +2824,20 @@ class CarlaHostDLL(CarlaHostMeta):
         return float(self.lib.carla_get_output_peak_value(pluginId, isLeft))
 
     def render_inline_display(self, pluginId, width, height):
-        return structToDict(self.lib.carla_render_inline_display(pluginId, width, height))
+        ptr = self.lib.carla_render_inline_display(pluginId, width, height)
+        if not ptr or not ptr.contents:
+            return None
+        contents = ptr.contents
+        datalen = contents.height * contents.stride
+        unpacked = tuple(contents.data[i] for i in range(datalen))
+        packed = pack("%iB" % datalen, *unpacked)
+        data = {
+            'data': voidptr(packed),
+            'width': contents.width,
+            'height': contents.height,
+            'stride': contents.stride,
+        }
+        return data
 
     def set_option(self, pluginId, option, yesNo):
         self.lib.carla_set_option(pluginId, option, yesNo)
