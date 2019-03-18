@@ -912,7 +912,7 @@ def redrawPluginGroup(plugin_id):
     group = canvas.group_plugin_map.get(plugin_id, None)
 
     if group is None:
-        qCritical("PatchCanvas::redrawPluginGroup(%i) - unable to find group" % plugin_id)
+        #qCritical("PatchCanvas::redrawPluginGroup(%i) - unable to find group" % plugin_id)
         return
 
     group.widgets[0].update()

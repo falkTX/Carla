@@ -2455,7 +2455,7 @@ private:
                      ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
                      groupNameToId.group,
                      PATCHBAY_ICON_CARLA,
-                     -1,
+                     MAIN_CARLA_PLUGIN_ID,
                      0, 0.0f,
                      groupNameToId.name);
             fUsedGroups.list.append(groupNameToId);
