@@ -1278,6 +1278,9 @@ class HostWindow(QMainWindow):
         if pluginId in self.fSelectedPlugins:
             self.clearSideStuff()
 
+        if self.fPluginCount == 0:
+            return
+
         pitem = self.getPluginItem(pluginId)
 
         self.fPluginCount -= 1

@@ -66,7 +66,8 @@ static int buggy_jack2_uuid_parse(const char* b, jack_uuid_t* u)
 
         if (*u < (0x1LLU << 32)) {
             // FIXME: bug in jack2, client bit not set
-            *u = (0x2LLU << 32) | *u;
+            // *u = (0x2LLU << 32) | *u;
+            return -1;
         }
 
         return 0;

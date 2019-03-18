@@ -227,6 +227,7 @@ def clear():
     canvas.group_list = []
     canvas.port_list = []
     canvas.connection_list = []
+    canvas.group_plugin_map = {}
 
     canvas.scene.clearSelection()
 
@@ -381,6 +382,7 @@ def removeGroup(group_id):
                 del item
 
             canvas.group_list.remove(group)
+            canvas.group_plugin_map.pop(group.plugin_id, None)
 
             QTimer.singleShot(0, canvas.scene.update)
             return
@@ -685,22 +687,12 @@ def setGroupAsPlugin(group_id, plugin_id, hasUI, hasInlineDisplay):
 
             if group.split and group.widgets[1]:
                 group.widgets[1].setAsPlugin(plugin_id, hasUI, hasInlineDisplay)
+
+            canvas.group_plugin_map[plugin_id] = group
             return
 
     qCritical("PatchCanvas::setGroupAsPlugin(%i, %i, %s, %s) - unable to find group to set as plugin" % (
               group_id, plugin_id, bool2str(hasUI), bool2str(hasInlineDisplay)))
-
-def redrawPluginGroup(plugin_id):
-    for group in canvas.group_list:
-        if group.plugin_id == plugin_id:
-            group.widgets[0].update()
-
-            if group.split and group.widgets[1]:
-                group.widgets[1].update()
-
-            return
-
-    qCritical("PatchCanvas::redrawPluginGroup(%i) - unable to find group" % plugin_id)
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -916,9 +908,36 @@ def updateZValues():
 
 # ------------------------------------------------------------------------------------------------------------
 
+def redrawPluginGroup(plugin_id):
+    group = canvas.group_plugin_map.get(plugin_id, None)
+
+    if group is None:
+        qCritical("PatchCanvas::redrawPluginGroup(%i) - unable to find group" % plugin_id)
+        return
+
+    group.widgets[0].update()
+
+    if group.split and group.widgets[1]:
+        group.widgets[1].update()
+
 def handlePluginRemoved(plugin_id):
     if canvas.debug:
         print("PatchCanvas::handlePluginRemoved(%i)" % plugin_id)
+
+    group = canvas.group_plugin_map.pop(plugin_id, None)
+
+    if group is not None:
+        group.plugin_id = -1
+        group.plugin_ui = False
+        group.plugin_inline = False
+        group.widgets[0].m_plugin_id = -1
+        group.widgets[0].m_plugin_ui = False
+        group.widgets[0].m_plugin_inline = False
+
+        if group.split and group.widgets[1]:
+            group.widgets[1].m_plugin_id = -1
+            group.widgets[1].m_plugin_ui = False
+            group.widgets[1].m_plugin_inline = False
 
     for group in canvas.group_list:
         if group.plugin_id < plugin_id or group.plugin_id > MAX_PLUGIN_ID_ALLOWED:
@@ -930,11 +949,17 @@ def handlePluginRemoved(plugin_id):
         if group.split and group.widgets[1]:
             group.widgets[1].m_plugin_id -= 1
 
+        canvas.group_plugin_map[plugin_id] = group
+
 def handleAllPluginsRemoved():
     if canvas.debug:
         print("PatchCanvas::handleAllPluginsRemoved()")
 
+    canvas.group_plugin_map = {}
+
     for group in canvas.group_list:
+        if group.plugin_id < 0:
+            continue
         if group.plugin_id > MAX_PLUGIN_ID_ALLOWED:
             continue
 

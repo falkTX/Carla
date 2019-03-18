@@ -132,6 +132,7 @@ class Canvas(object):
         self.port_list = []
         self.connection_list = []
         self.animation_list = []
+        self.group_plugin_map = {}
 
         self.callback = self.callback
         self.debug = False
