@@ -30,7 +30,7 @@ import os
 import sys
 
 from PyQt5.Qt import PYQT_VERSION_STR
-from PyQt5.QtCore import qFatal, qVersion, qWarning, QDir
+from PyQt5.QtCore import qFatal, QT_VERSION_STR, qWarning, QDir
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
 
@@ -626,7 +626,7 @@ def handleInitialCommandLineArguments(file):
 
             print("Using Carla version %s" % VERSION)
             print("  Python version: %s" % sys.version.split(" ",1)[0])
-            print("  Qt version:     %s" % qVersion())
+            print("  Qt version:     %s" % QT_VERSION_STR)
             print("  PyQt version:   %s" % PYQT_VERSION_STR)
             print("  Binary dir:     %s" % pathBinaries)
             print("  Resources dir:  %s" % pathResources)

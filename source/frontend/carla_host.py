@@ -2785,7 +2785,7 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError, HostClass = No
 
     print("Carla %s started, status:" % VERSION)
     print("  Python version: %s" % sys.version.split(" ",1)[0])
-    print("  Qt version:     %s" % qVersion())
+    print("  Qt version:     %s" % QT_VERSION_STR)
     print("  PyQt version:   %s" % PYQT_VERSION_STR)
     print("  Binary dir:     %s" % pathBinaries)
     print("  Resources dir:  %s" % pathResources)

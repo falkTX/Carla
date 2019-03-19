@@ -19,7 +19,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt5.QtCore import Qt, QCoreApplication, QSettings
+from PyQt5.QtCore import QT_VERSION, Qt, QCoreApplication, QSettings
 from PyQt5.QtGui import QColor, QPalette
 from PyQt5.QtWidgets import QApplication
 
@@ -223,10 +223,12 @@ class CarlaApplication(object):
             return
 
         if appName.lower() == "carla-control":
-            self.fApp.setDesktopFileName("carla-control")
+            if QT_VERSION >= 0x50700:
+                self.fApp.setDesktopFileName("carla-control")
             self.fApp.setWindowIcon(QIcon(":/scalable/carla-control.svg"))
         else:
-            self.fApp.setDesktopFileName("carla")
+            if QT_VERSION >= 0x50700:
+                self.fApp.setDesktopFileName("carla")
             self.fApp.setWindowIcon(QIcon(":/scalable/carla.svg"))
 
     def exec_(self):
