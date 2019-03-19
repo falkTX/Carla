@@ -223,8 +223,10 @@ class CarlaApplication(object):
             return
 
         if appName.lower() == "carla-control":
+            self.fApp.setDesktopFileName("carla-control")
             self.fApp.setWindowIcon(QIcon(":/scalable/carla-control.svg"))
         else:
+            self.fApp.setDesktopFileName("carla")
             self.fApp.setWindowIcon(QIcon(":/scalable/carla.svg"))
 
     def exec_(self):
