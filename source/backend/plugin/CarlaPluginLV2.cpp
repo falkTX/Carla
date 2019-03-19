@@ -1512,6 +1512,11 @@ public:
 
                     fPipeServer.flushMessages();
                 }
+
+#ifndef BUILD_BRIDGE
+                if (fUI.rdfDescriptor->Type == LV2_UI_MOD)
+                    pData->tryTransient();
+#endif
             }
             else
             {
@@ -4640,6 +4645,9 @@ public:
         case LV2_UI_X11:
             bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-lv2-x11";
             break;
+        case LV2_UI_MOD:
+            bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-lv2-modgui";
+            break;
 #if 0
         case LV2_UI_EXTERNAL:
         case LV2_UI_OLD_EXTERNAL:
@@ -5691,8 +5699,8 @@ public:
         // ---------------------------------------------------------------
         // find the most appropriate ui
 
-        int eQt4, eQt5, eGtk2, eGtk3, eCocoa, eWindows, eX11, iCocoa, iWindows, iX11, iExt, iFinal;
-        eQt4 = eQt5 = eGtk2 = eGtk3 = eCocoa = eWindows = eX11 = iCocoa = iWindows = iX11 = iExt = iFinal = -1;
+        int eQt4, eQt5, eGtk2, eGtk3, eCocoa, eWindows, eX11, eMod, iCocoa, iWindows, iX11, iExt, iFinal;
+        eQt4 = eQt5 = eGtk2 = eGtk3 = eCocoa = eWindows = eX11 = eMod = iCocoa = iWindows = iX11 = iExt = iFinal = -1;
 
 #if defined(LV2_UIS_ONLY_BRIDGES)
         const bool preferUiBridges = true;
@@ -5749,6 +5757,9 @@ public:
             case LV2_UI_EXTERNAL:
             case LV2_UI_OLD_EXTERNAL:
                 iExt = ii;
+                break;
+            case LV2_UI_MOD:
+                eMod = ii;
                 break;
             default:
                 break;
@@ -5816,8 +5827,14 @@ public:
 
             if (iFinal < 0)
             {
-                carla_stderr("Failed to find an appropriate LV2 UI for this plugin");
-                return;
+                if (eMod < 0)
+                {
+                    carla_stderr("Failed to find an appropriate LV2 UI for this plugin");
+                    return;
+                }
+
+                // use MODGUI as last resort
+                iFinal = eMod;
             }
         }
 
@@ -5867,7 +5884,8 @@ public:
              iFinal == eGtk3    ||
              iFinal == eCocoa   ||
              iFinal == eWindows ||
-             iFinal == eX11)
+             iFinal == eX11     ||
+             iFinal == eMod)
 #ifdef BUILD_BRIDGE
             && ! hasShowInterface
 #endif
@@ -5891,7 +5909,7 @@ public:
                 return;
             }
 
-            if (iFinal == eQt4 || iFinal == eQt5 || iFinal == eGtk2 || iFinal == eGtk3)
+            if (iFinal == eQt4 || iFinal == eQt5 || iFinal == eGtk2 || iFinal == eGtk3 || iFinal == eMod)
             {
                 carla_stderr2("Failed to find UI bridge binary for '%s', cannot use UI", pData->name);
                 fUI.rdfDescriptor = nullptr;

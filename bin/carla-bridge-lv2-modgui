@@ -1,0 +1,6 @@
+#!/bin/bash
+
+ASPATH=$(readlink -f $0)
+BINDIR=$(dirname $ASPATH)
+
+exec python3 $BINDIR/../source/frontend/carla_modgui.py "$@"

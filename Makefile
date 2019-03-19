@@ -522,6 +522,14 @@ ifeq ($(HAVE_LIBLO),true)
 		$(DESTDIR)$(BINDIR)/carla-control
 endif
 
+	# Install the real modgui bridge
+	install -m 755 \
+		data/carla-bridge-lv2-modgui \
+		$(DESTDIR)$(LIBDIR)/carla
+
+	sed $(SED_ARGS) 's?X-PREFIX-X?$(PREFIX)?' \
+		$(DESTDIR)$(LIBDIR)/carla/carla-bridge-lv2-modgui
+
 	# Install frontend
 	install -m 644 \
 		source/frontend/carla \
@@ -592,6 +600,7 @@ endif
 	install -m 644 resources/scalable/carla-control.svg $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
 
 	# Install resources (re-use python files)
+	$(LINK) ../modgui                      $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../patchcanvas                 $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../widgets                     $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_app.py                $(DESTDIR)$(DATADIR)/carla/resources
@@ -689,6 +698,16 @@ ifeq ($(HAVE_PYQT),true)
 	$(LINK) ../../carla/styles $(DESTDIR)$(LIBDIR)/vst/carla.vst/styles
 endif
 endif
+
+	# -------------------------------------------------------------------------------------------------------------
+
+ifneq ($(HAVE_PYQT),true)
+	# Remove gui files for non-gui build
+	rm $(DESTDIR)$(LIBDIR)/carla/carla-bridge-lv2-modgui
+	rm $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/carla-bridge-lv2-modgui
+endif
+
+# ---------------------------------------------------------------------------------------------------------------------
 
 ifneq ($(EXTERNAL_PLUGINS),true)
 install_external_plugins:

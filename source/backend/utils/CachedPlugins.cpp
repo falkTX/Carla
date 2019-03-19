@@ -187,7 +187,7 @@ static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2Worl
 
     info.hints = 0x0;
 
-    if (lilvPlugin.get_uis().size() > 0)
+    if (lilvPlugin.get_uis().size() > 0 || lilvPlugin.get_modgui_resources_directory().as_uri() != nullptr)
         info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
 
     {
