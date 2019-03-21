@@ -1,5 +1,7 @@
 #!/bin/bash
 
+VERSION="2.0.0"
+
 # ---------------------------------------------------------------------------------------------------------------------
 # check input
 
@@ -33,7 +35,7 @@ fi
 
 source data/windows/common.env
 
-PKG_FOLDER="Carla_2.0-RC4-win${ARCH}"
+PKG_FOLDER="Carla_${VERSION}-win${ARCH}"
 
 export WIN32=true
 
