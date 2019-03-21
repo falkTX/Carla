@@ -17,10 +17,8 @@
 
 #include "carla-vst.hpp"
 
-#ifndef CARLA_OS_LINUX
-# include "ui_launcher.cpp"
-# include "ui_launcher_res.cpp"
-#endif
+#include "ui_launcher.cpp"
+#include "ui_launcher_res.cpp"
 
 #include <cstring>
 

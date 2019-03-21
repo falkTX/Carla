@@ -331,15 +331,10 @@ public:
 
     // -------------------------------------------------------------------
 
-    const char* renamePlugin(const uint id, const char* const newName) override
+    void touchPluginParameter(const uint id, const uint32_t parameterId, const bool touch) noexcept override
     {
-        if (const char* const retName = CarlaEngine::renamePlugin(id, newName))
-        {
-            uiServerCallback(ENGINE_CALLBACK_PLUGIN_RENAMED, id, 0, 0, 0, 0.0f, retName);
-            return retName;
-        }
-
-        return nullptr;
+        carla_stdout("engineNative touchPluginParameter %u %u %s", id, parameterId, bool2str(touch));
+        setParameterTouchFromUI(id, parameterId, touch);
     }
 
     // -------------------------------------------------------------------
@@ -351,6 +346,15 @@ public:
 
         fParameters[index] = value;
         pHost->ui_parameter_changed(pHost->handle, index, value);
+    }
+
+    void setParameterTouchFromUI(const uint32_t pluginId, const uint32_t index, const bool touch)
+    {
+        if (pluginId != 0)
+            return;
+
+        carla_stdout("engineNative setParameterTouchFromUI %u %u %s", pluginId,index, bool2str(touch));
+        pHost->ui_parameter_touch(pHost->handle, index, touch);
     }
 
     void reloadFromUI()
@@ -1927,8 +1931,7 @@ bool CarlaEngineNativeUI::msgReceived(const char*const msg) noexcept
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(newName), true);
 
-        // TODO
-        /*const char* name =*/ fEngine->renamePlugin(pluginId, newName);
+        ok = fEngine->renamePlugin(pluginId, newName);
 
         delete[] newName;
     }
@@ -2118,6 +2121,18 @@ bool CarlaEngineNativeUI::msgReceived(const char*const msg) noexcept
 
         if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
             plugin->setParameterMidiCC(parameterId, static_cast<int16_t>(cc), true, false);
+    }
+    else if (std::strcmp(msg, "set_parameter_touch") == 0)
+    {
+        uint32_t pluginId, parameterId;
+        bool touching;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(parameterId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(touching), true);
+
+        if (fEngine->getPlugin(pluginId) != nullptr)
+            fEngine->setParameterTouchFromUI(pluginId, parameterId, touching);
     }
     else if (std::strcmp(msg, "set_program") == 0)
     {

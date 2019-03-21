@@ -1159,8 +1159,19 @@ protected:
         pData->engine->callback(true, true, ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0, 0.0f, nullptr);
     }
 
-    void audioProcessorParameterChangeGestureBegin(juce::AudioProcessor*, int) override {}
-    void audioProcessorParameterChangeGestureEnd(juce::AudioProcessor*, int) override {}
+    void audioProcessorParameterChangeGestureBegin(juce::AudioProcessor*, int index) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(index >= 0,);
+
+        pData->engine->touchPluginParameter(pData->id, static_cast<uint32_t>(index), true);
+    }
+
+    void audioProcessorParameterChangeGestureEnd(juce::AudioProcessor*, int index) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(index >= 0,);
+
+        pData->engine->touchPluginParameter(pData->id, static_cast<uint32_t>(index), false);
+    }
 
     bool getCurrentPosition(CurrentPositionInfo& result) override
     {

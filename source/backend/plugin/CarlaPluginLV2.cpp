@@ -615,6 +615,9 @@ public:
                 if (fFeatures[kFeatureIdUiResize] != nullptr && fFeatures[kFeatureIdUiResize]->data != nullptr)
                     delete (LV2UI_Resize*)fFeatures[kFeatureIdUiResize]->data;
 
+                if (fFeatures[kFeatureIdUiTouch] != nullptr && fFeatures[kFeatureIdUiTouch]->data != nullptr)
+                    delete (LV2UI_Touch*)fFeatures[kFeatureIdUiTouch]->data;
+
                 if (fFeatures[kFeatureIdExternalUi] != nullptr && fFeatures[kFeatureIdExternalUi]->data != nullptr)
                     delete (LV2_External_UI_Host*)fFeatures[kFeatureIdExternalUi]->data;
 
@@ -5109,6 +5112,25 @@ public:
         return 0;
     }
 
+    void handleUITouch(const uint32_t rindex, const bool touch)
+    {
+        carla_stdout("CarlaPluginLV2::handleUITouch(%u, %s)", rindex, bool2str(touch));
+
+        uint32_t index = LV2UI_INVALID_PORT_INDEX;
+
+        for (uint32_t i=0; i < pData->param.count; ++i)
+        {
+            if (pData->param.data[i].rindex != static_cast<int32_t>(rindex))
+                continue;
+            index = i;
+            break;
+        }
+
+        CARLA_SAFE_ASSERT_RETURN(index != LV2UI_INVALID_PORT_INDEX,);
+
+        pData->engine->touchPluginParameter(pData->id, index, touch);
+    }
+
     void handleUIWrite(const uint32_t rindex, const uint32_t bufferSize, const uint32_t format, const void* const buffer)
     {
         CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
@@ -6048,6 +6070,10 @@ public:
         uiResizeFt->handle                = this;
         uiResizeFt->ui_resize             = carla_lv2_ui_resize;
 
+        LV2UI_Touch* const uiTouchFt      = new LV2UI_Touch;
+        uiTouchFt->handle                 = this;
+        uiTouchFt->touch                  = carla_lv2_ui_touch;
+
         LV2_External_UI_Host* const uiExternalHostFt = new LV2_External_UI_Host;
         uiExternalHostFt->ui_closed                  = carla_lv2_external_ui_closed;
         uiExternalHostFt->plugin_human_id            = fLv2Options.windowTitle;
@@ -6092,7 +6118,7 @@ public:
         fFeatures[kFeatureIdUiResize]->data      = uiResizeFt;
 
         fFeatures[kFeatureIdUiTouch]->URI        = LV2_UI__touch;
-        fFeatures[kFeatureIdUiTouch]->data       = nullptr;
+        fFeatures[kFeatureIdUiTouch]->data       = uiTouchFt;
 
         fFeatures[kFeatureIdExternalUi]->URI     = LV2_EXTERNAL_UI__Host;
         fFeatures[kFeatureIdExternalUi]->data    = uiExternalHostFt;
@@ -6768,6 +6794,17 @@ private:
         carla_debug("carla_lv2_ui_resize(%p, %i, %i)", handle, width, height);
 
         return ((CarlaPluginLV2*)handle)->handleUIResize(width, height);
+    }
+
+    // -------------------------------------------------------------------
+    // UI Touch Feature
+
+    static void carla_lv2_ui_touch(LV2UI_Feature_Handle handle, uint32_t port_index, bool touch)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
+        carla_debug("carla_lv2_ui_touch(%p, %u, %s)", handle, port_index, bool2str(touch));
+
+        ((CarlaPluginLV2*)handle)->handleUITouch(port_index, touch);
     }
 
     // -------------------------------------------------------------------

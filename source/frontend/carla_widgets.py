@@ -293,6 +293,7 @@ class PluginParameter(QWidget):
         self.ui.sb_channel.customContextMenuRequested.connect(self.slot_channelSpinboxCustomMenu)
         self.ui.sb_control.valueChanged.connect(self.slot_controlSpinboxChanged)
         self.ui.sb_channel.valueChanged.connect(self.slot_channelSpinboxChanged)
+        self.ui.widget.dragStateChanged.connect(self.slot_parameterDragStateChanged)
 
         # -------------------------------------------------------------
 
@@ -382,6 +383,10 @@ class PluginParameter(QWidget):
     def slot_channelSpinboxChanged(self, channel):
         self.fMidiChannel = channel
         self.midiChannelChanged.emit(self.fParameterId, channel)
+
+    @pyqtSlot(bool)
+    def slot_parameterDragStateChanged(self, touch):
+        self.host.set_parameter_touch(self.fPluginId, self.fParameterId, touch)
 
     def _textCallBack(self):
         return self.host.get_parameter_text(self.fPluginId, self.fParameterId)

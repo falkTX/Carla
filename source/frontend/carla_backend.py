@@ -1904,6 +1904,15 @@ class CarlaHostMeta(object):
     def set_parameter_midi_cc(self, pluginId, parameterId, cc):
         raise NotImplementedError
 
+    # Change a plugin's parameter in drag/touch mode state.
+    # Usually happens from a UI when the user is moving a parameter with a mouse or similar input.
+    # @param pluginId    Plugin
+    # @param parameterId Parameter index
+    # @param touch       New state
+    @abstractmethod
+    def set_parameter_touch(self, pluginId, parameterId, touch):
+        raise NotImplementedError
+
     # Change a plugin's current program.
     # @param pluginId  Plugin
     # @param programId New program
@@ -2133,7 +2142,7 @@ class CarlaHostNull(CarlaHostMeta):
         return False
 
     def rename_plugin(self, pluginId, newName):
-        return ""
+        return False
 
     def clone_plugin(self, pluginId):
         return False
@@ -2268,6 +2277,9 @@ class CarlaHostNull(CarlaHostMeta):
         return
 
     def set_parameter_midi_cc(self, pluginId, parameterId, cc):
+        return
+
+    def set_parameter_touch(self, pluginId, parameterId, touch):
         return
 
     def set_program(self, pluginId, programId):
@@ -2430,7 +2442,7 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_remove_all_plugins.restype = c_bool
 
         self.lib.carla_rename_plugin.argtypes = [c_uint, c_char_p]
-        self.lib.carla_rename_plugin.restype = c_char_p
+        self.lib.carla_rename_plugin.restype = c_bool
 
         self.lib.carla_clone_plugin.argtypes = [c_uint]
         self.lib.carla_clone_plugin.restype = c_bool
@@ -2566,6 +2578,9 @@ class CarlaHostDLL(CarlaHostMeta):
 
         self.lib.carla_set_parameter_midi_cc.argtypes = [c_uint, c_uint32, c_int16]
         self.lib.carla_set_parameter_midi_cc.restype = None
+
+        self.lib.carla_set_parameter_touch.argtypes = [c_uint, c_uint32, c_bool]
+        self.lib.carla_set_parameter_touch.restype = None
 
         self.lib.carla_set_program.argtypes = [c_uint, c_uint32]
         self.lib.carla_set_program.restype = None
@@ -2722,7 +2737,7 @@ class CarlaHostDLL(CarlaHostMeta):
         return bool(self.lib.carla_remove_all_plugins())
 
     def rename_plugin(self, pluginId, newName):
-        return charPtrToString(self.lib.carla_rename_plugin(pluginId, newName.encode("utf-8")))
+        return bool(self.lib.carla_rename_plugin(pluginId, newName.encode("utf-8")))
 
     def clone_plugin(self, pluginId):
         return bool(self.lib.carla_clone_plugin(pluginId))
@@ -2871,6 +2886,9 @@ class CarlaHostDLL(CarlaHostMeta):
 
     def set_parameter_midi_cc(self, pluginId, parameterId, cc):
         self.lib.carla_set_parameter_midi_cc(pluginId, parameterId, cc)
+
+    def set_parameter_touch(self, pluginId, parameterId, touch):
+        self.lib.carla_set_parameter_touch(pluginId, parameterId, touch)
 
     def set_program(self, pluginId, programId):
         self.lib.carla_set_program(pluginId, programId)
@@ -3097,11 +3115,7 @@ class CarlaHostPlugin(CarlaHostMeta):
         return self.sendMsgAndSetError(["remove_all_plugins"])
 
     def rename_plugin(self, pluginId, newName):
-        if self.sendMsg(["rename_plugin", pluginId, newName]):
-            return newName
-
-        self.fLastError = "Communication error with backend"
-        return ""
+        return self.sendMsgAndSetError(["rename_plugin", pluginId, newName])
 
     def clone_plugin(self, pluginId):
         return self.sendMsgAndSetError(["clone_plugin", pluginId])
@@ -3262,6 +3276,9 @@ class CarlaHostPlugin(CarlaHostMeta):
     def set_parameter_midi_cc(self, pluginId, parameterId, cc):
         self.sendMsg(["set_parameter_midi_cc", pluginId, parameterId, cc])
         self.fPluginsInfo[pluginId].parameterData[parameterId]['midiCC'] = cc
+
+    def set_parameter_touch(self, pluginId, parameterId, touch):
+        self.sendMsg(["set_parameter_touch", pluginId, parameterId, touch])
 
     def set_program(self, pluginId, programId):
         self.sendMsg(["set_program", pluginId, programId])

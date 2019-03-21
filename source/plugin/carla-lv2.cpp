@@ -94,6 +94,7 @@ public:
         fHost.get_time_info          = host_get_time_info;
         fHost.write_midi_event       = host_write_midi_event;
         fHost.ui_parameter_changed   = host_ui_parameter_changed;
+        fHost.ui_parameter_touch     = host_ui_parameter_touch;
         fHost.ui_custom_data_changed = host_ui_custom_data_changed;
         fHost.ui_closed              = host_ui_closed;
         fHost.ui_open_file           = host_ui_open_file;
@@ -492,6 +493,11 @@ public:
                 fUI.host = (const LV2_External_UI_Host*)features[i]->data;
                 break;
             }
+            if (std::strcmp(features[i]->URI, LV2_UI__touch) == 0)
+            {
+                fUI.touch = (const LV2UI_Touch*)features[i]->data;
+                break;
+            }
         }
 
         if (fUI.host != nullptr)
@@ -648,6 +654,12 @@ protected:
             fUI.writeFunction(fUI.controller, index+fPorts.indexOffset, sizeof(float), 0, &value);
     }
 
+    void handleUiParameterTouch(const uint32_t index, const bool touch) const
+    {
+        if (fUI.touch != nullptr && fUI.touch->touch != nullptr)
+            fUI.touch->touch(fUI.touch->handle, index+fPorts.indexOffset, touch);
+    }
+
     void handleUiCustomDataChanged(const char* const key, const char* const value) const
     {
         carla_stdout("TODO: handleUiCustomDataChanged %s %s", key, value);
@@ -668,6 +680,7 @@ protected:
             fUI.host->ui_closed(fUI.controller);
 
         fUI.host = nullptr;
+        fUI.touch = nullptr;
         fUI.writeFunction = nullptr;
         fUI.controller = nullptr;
     }
@@ -782,6 +795,11 @@ private:
     static void host_ui_parameter_changed(NativeHostHandle handle, uint32_t index, float value)
     {
         handlePtr->handleUiParameterChanged(index, value);
+    }
+
+    static void host_ui_parameter_touch(NativeHostHandle handle, uint32_t index, bool touch)
+    {
+        handlePtr->handleUiParameterTouch(index, touch);
     }
 
     static void host_ui_custom_data_changed(NativeHostHandle handle, const char* key, const char* value)

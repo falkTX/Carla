@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugin API (C++)
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -111,6 +111,13 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
 
         pHost->ui_parameter_changed(pHost->handle, index, value);
+    }
+
+    void uiParameterTouch(const uint32_t index, const bool touch) const
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+
+        pHost->ui_parameter_touch(pHost->handle, index, touch);
     }
 
     void uiMidiProgramChanged(const uint8_t channel, const uint32_t bank, const uint32_t program) const

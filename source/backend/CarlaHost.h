@@ -542,7 +542,7 @@ CARLA_EXPORT bool carla_remove_all_plugins();
  * @param pluginId Plugin to rename
  * @param newName  New plugin name
  */
-CARLA_EXPORT const char* carla_rename_plugin(uint pluginId, const char* newName);
+CARLA_EXPORT bool carla_rename_plugin(uint pluginId, const char* newName);
 
 /*!
  * Clone a plugin.
@@ -879,6 +879,15 @@ CARLA_EXPORT void carla_set_parameter_midi_channel(uint pluginId, uint32_t param
  * @param cc          New MIDI cc
  */
 CARLA_EXPORT void carla_set_parameter_midi_cc(uint pluginId, uint32_t parameterId, int16_t cc);
+
+/*!
+ * Change a plugin's parameter in drag/touch mode state.
+ * Usually happens from a UI when the user is moving a parameter with a mouse or similar input.
+ * @param pluginId    Plugin
+ * @param parameterId Parameter index
+ * @param touch       New state
+ */
+CARLA_EXPORT void carla_set_parameter_touch(uint pluginId, uint32_t parameterId, bool touch);
 #endif
 
 /*!

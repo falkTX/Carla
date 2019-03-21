@@ -198,6 +198,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     hostDesc.get_time_info    = nullptr;
     hostDesc.write_midi_event = nullptr;
     hostDesc.ui_parameter_changed    = nullptr;
+    hostDesc.ui_parameter_touch      = nullptr;
     hostDesc.ui_midi_program_changed = nullptr;
     hostDesc.ui_custom_data_changed  = nullptr;
     hostDesc.ui_closed               = nullptr;

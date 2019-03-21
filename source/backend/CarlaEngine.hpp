@@ -862,7 +862,7 @@ public:
      * Returned variable must be deleted if non-null.
      * @see ENGINE_CALLBACK_PLUGIN_RENAMED
      */
-    virtual const char* renamePlugin(const uint id, const char* const newName);
+    virtual bool renamePlugin(const uint id, const char* const newName);
 
     /*!
      * Clone plugin with id @a id.
@@ -880,6 +880,15 @@ public:
      * Switch plugins with id @a idA and @a idB.
      */
     bool switchPlugins(const uint idA, const uint idB) noexcept;
+
+    /*!
+     * Set a plugin's parameter in drag/touch mode.
+     * Usually happens from a UI when the user is moving a parameter with a mouse or similar input.
+     *
+     * @param parameterId The parameter to update
+     * @param touch The new state for the parameter
+     */
+    virtual void touchPluginParameter(const uint id, const uint32_t parameterId, const bool touch) noexcept;
 #endif
 
     /*!

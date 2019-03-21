@@ -954,10 +954,10 @@ bool carla_remove_all_plugins()
 }
 
 #ifndef BUILD_BRIDGE
-const char* carla_rename_plugin(uint pluginId, const char* newName)
+bool carla_rename_plugin(uint pluginId, const char* newName)
 {
-    CARLA_SAFE_ASSERT_RETURN(newName != nullptr && newName[0] != '\0', nullptr);
-    CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(gStandalone.engine != nullptr, "Engine is not initialized", nullptr);
+    CARLA_SAFE_ASSERT_RETURN(newName != nullptr && newName[0] != '\0', false);
+    CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(gStandalone.engine != nullptr, "Engine is not initialized", false);
 
     carla_debug("carla_rename_plugin(%i, \"%s\")", pluginId, newName);
 
@@ -1811,6 +1811,14 @@ void carla_set_parameter_midi_cc(uint pluginId, uint32_t parameterId, int16_t cc
     CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
 
     return plugin->setParameterMidiCC(parameterId, cc, true, false);
+}
+
+void carla_set_parameter_touch(uint pluginId, uint32_t parameterId, bool touch)
+{
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+
+    carla_debug("carla_set_parameter_touch(%i, %i, %s)", pluginId, parameterId, bool2str(touch));
+    return gStandalone.engine->touchPluginParameter(pluginId, parameterId, touch);
 }
 #endif
 

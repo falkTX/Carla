@@ -107,6 +107,7 @@ class CustomInputDialog(QDialog):
 
 class ParamProgressBar(QProgressBar):
     # signals
+    dragStateChanged = pyqtSignal(bool)
     valueChanged = pyqtSignal(float)
 
     def __init__(self, parent):
@@ -217,6 +218,7 @@ class ParamProgressBar(QProgressBar):
         if event.button() == Qt.LeftButton:
             self.handleMouseEventPos(event.pos())
             self.fLeftClickDown = True
+            self.dragStateChanged.emit(True)
         else:
             self.fLeftClickDown = False
 
@@ -236,6 +238,7 @@ class ParamProgressBar(QProgressBar):
             return
 
         self.fLeftClickDown = False
+        self.dragStateChanged.emit(False)
         QProgressBar.mouseReleaseEvent(self, event)
 
     def paintEvent(self, event):
@@ -292,6 +295,8 @@ class ParamSpinBox(QAbstractSpinBox):
 
         self.customContextMenuRequested.connect(self.slot_showCustomMenu)
         self.fBar.valueChanged.connect(self.slot_progressBarValueChanged)
+
+        self.dragStateChanged = self.fBar.dragStateChanged
 
         QTimer.singleShot(0, self.slot_updateProgressBarGeometry)
 

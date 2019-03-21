@@ -752,30 +752,32 @@ bool CarlaEngine::removeAllPlugins()
 }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-const char* CarlaEngine::renamePlugin(const uint id, const char* const newName)
+bool CarlaEngine::renamePlugin(const uint id, const char* const newName)
 {
-    CARLA_SAFE_ASSERT_RETURN_ERRN(pData->isIdling == 0, "An operation is still being processed, please wait for it to finish");
-    CARLA_SAFE_ASSERT_RETURN_ERRN(pData->plugins != nullptr, "Invalid engine internal data");
-    CARLA_SAFE_ASSERT_RETURN_ERRN(pData->curPluginCount != 0, "Invalid engine internal data");
-    CARLA_SAFE_ASSERT_RETURN_ERRN(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data");
-    CARLA_SAFE_ASSERT_RETURN_ERRN(id < pData->curPluginCount, "Invalid plugin Id");
-    CARLA_SAFE_ASSERT_RETURN_ERRN(newName != nullptr && newName[0] != '\0', "Invalid plugin name");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->isIdling == 0, "An operation is still being processed, please wait for it to finish");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->curPluginCount != 0, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERR(id < pData->curPluginCount, "Invalid plugin Id");
+    CARLA_SAFE_ASSERT_RETURN_ERR(newName != nullptr && newName[0] != '\0', "Invalid plugin name");
     carla_debug("CarlaEngine::renamePlugin(%i, \"%s\")", id, newName);
 
     CarlaPlugin* const plugin(pData->plugins[id].plugin);
-    CARLA_SAFE_ASSERT_RETURN_ERRN(plugin != nullptr, "Could not find plugin to rename");
-    CARLA_SAFE_ASSERT_RETURN_ERRN(plugin->getId() == id, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERR(plugin != nullptr, "Could not find plugin to rename");
+    CARLA_SAFE_ASSERT_RETURN_ERR(plugin->getId() == id, "Invalid engine internal data");
 
     const char* const uniqueName(getUniquePluginName(newName));
-    CARLA_SAFE_ASSERT_RETURN_ERRN(uniqueName != nullptr, "Unable to get new unique plugin name");
+    CARLA_SAFE_ASSERT_RETURN_ERR(uniqueName != nullptr, "Unable to get new unique plugin name");
 
     plugin->setName(uniqueName);
 
     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         pData->graph.renamePlugin(plugin, uniqueName);
 
+    callback(true, true, ENGINE_CALLBACK_PLUGIN_RENAMED, id, 0, 0, 0, 0.0f, uniqueName);
+
     delete[] uniqueName;
-    return plugin->getName();
+    return true;
 }
 
 bool CarlaEngine::clonePlugin(const uint id)
@@ -874,6 +876,10 @@ bool CarlaEngine::switchPlugins(const uint idA, const uint idB) noexcept
     */
 
     return true;
+}
+
+void CarlaEngine::touchPluginParameter(const uint, const uint32_t, const bool) noexcept
+{
 }
 #endif
 

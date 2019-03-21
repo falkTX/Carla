@@ -1357,7 +1357,7 @@ public:
     }
 
 #ifndef BUILD_BRIDGE
-    const char* renamePlugin(const uint id, const char* const newName) override
+    bool renamePlugin(const uint id, const char* const newName) override
     {
         if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
             pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
@@ -1365,14 +1365,14 @@ public:
             return CarlaEngine::renamePlugin(id, newName);
         }
 
-        CARLA_SAFE_ASSERT_RETURN(pData->plugins != nullptr, nullptr);
-        CARLA_SAFE_ASSERT_RETURN(pData->curPluginCount != 0, nullptr);
-        CARLA_SAFE_ASSERT_RETURN(id < pData->curPluginCount, nullptr);
-        CARLA_SAFE_ASSERT_RETURN(newName != nullptr && newName[0] != '\0', nullptr);
+        CARLA_SAFE_ASSERT_RETURN(pData->plugins != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(pData->curPluginCount != 0, false);
+        CARLA_SAFE_ASSERT_RETURN(id < pData->curPluginCount, false);
+        CARLA_SAFE_ASSERT_RETURN(newName != nullptr && newName[0] != '\0', false);
 
         CarlaPlugin* const plugin(pData->plugins[id].plugin);
-        CARLA_SAFE_ASSERT_RETURN_ERRN(plugin != nullptr, "Could not find plugin to rename");
-        CARLA_SAFE_ASSERT_RETURN_ERRN(plugin->getId() == id, "Invalid engine internal data");
+        CARLA_SAFE_ASSERT_RETURN_ERR(plugin != nullptr, "Could not find plugin to rename");
+        CARLA_SAFE_ASSERT_RETURN_ERR(plugin->getId() == id, "Invalid engine internal data");
 
         // before we stop the engine thread we might need to get the plugin data
         const bool needsReinit = (pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS);
@@ -1395,7 +1395,7 @@ public:
         if (uniqueName.isEmpty())
         {
             setLastError("Failed to request new unique plugin name");
-            return nullptr;
+            return false;
         }
 
         const ScopedThreadStopper sts(this);
@@ -1408,7 +1408,7 @@ public:
             if (! client->renameInSingleClient(uniqueName))
             {
                 setLastError("Failed to rename some JACK ports, does your JACK version support proper port renaming?");
-                return nullptr;
+                return false;
             }
         }
         // rename in multiple client mode
@@ -1493,7 +1493,7 @@ public:
             else
             {
                 setLastError("Failed to create new JACK client");
-                return nullptr;
+                return false;
             }
         }
 
@@ -1508,7 +1508,7 @@ public:
             plugin->setEnabled(true);
         }
 
-        return plugin->getName();
+        return true;
     }
 
     // -------------------------------------------------------------------

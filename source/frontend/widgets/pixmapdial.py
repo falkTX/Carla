@@ -52,6 +52,7 @@ class PixmapDial(QDial):
     MODE_LINEAR = 1
 
     # signals
+    dragStateChanged = pyqtSignal(bool)
     realValueChanged = pyqtSignal(float)
 
     def __init__(self, parent, index=0):
@@ -305,6 +306,7 @@ class PixmapDial(QDial):
             self.fIsPressed = True
             self.fLastDragPos = event.pos()
             self.fLastDragValue = self.fRealValue
+            self.dragStateChanged.emit(True)
 
     def mouseMoveEvent(self, event):
         if self.fDialMode == self.MODE_DEFAULT:
@@ -334,6 +336,7 @@ class PixmapDial(QDial):
 
         if self.fIsPressed:
             self.fIsPressed = False
+            self.dragStateChanged.emit(False)
 
     def paintEvent(self, event):
         painter = QPainter(self)

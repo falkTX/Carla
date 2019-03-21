@@ -98,9 +98,9 @@ public:
     // ---------------------------------------------
 
 protected:
-    void handleEditParameter(const uint32_t, const bool)
+    void handleEditParameter(const uint32_t index, const bool touch)
     {
-        // TODO
+        fHost->ui_parameter_touch(fHost->handle, rindex, touch);
     }
 
     void handleSetParameterValue(const uint32_t rindex, const float value)

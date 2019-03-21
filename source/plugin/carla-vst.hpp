@@ -15,11 +15,14 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#ifndef CARLA_VST_HPP_INCLUDED
+#define CARLA_VST_HPP_INCLUDED
+
 #include "CarlaDefines.h"
 #include "CarlaNative.h"
 #include "vestige/vestige.h"
 
-# include "ui_launcher_res.hpp"
+#include "ui_launcher_res.hpp"
 struct CarlaUILauncher;
 
 class NativePlugin;
@@ -44,3 +47,5 @@ float vst_getParameterCallback(AEffect* effect, int32_t index);
 void vst_setParameterCallback(AEffect* effect, int32_t index, float value);
 void vst_processCallback(AEffect* effect, float** inputs, float** outputs, int32_t sampleFrames);
 void vst_processReplacingCallback(AEffect* effect, float** inputs, float** outputs, int32_t sampleFrames);
+
+#endif // CARLA_VST_HPP_INCLUDED

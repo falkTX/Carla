@@ -1137,6 +1137,7 @@ public:
             handleUiHide();
 
         fUI.host = nullptr;
+        fUI.touch = nullptr;
         fUI.writeFunction = nullptr;
         fUI.controller = nullptr;
     }
@@ -1535,12 +1536,14 @@ protected:
 
     struct UI {
         const LV2_External_UI_Host* host;
+        const LV2UI_Touch* touch;
         LV2UI_Write_Function writeFunction;
         LV2UI_Controller controller;
         bool isVisible;
 
         UI()
             : host(nullptr),
+              touch(nullptr),
               writeFunction(nullptr),
               controller(nullptr),
               isVisible(false) {}

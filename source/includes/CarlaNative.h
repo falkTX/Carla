@@ -192,6 +192,7 @@ typedef struct {
     bool                  (*write_midi_event)(NativeHostHandle handle, const NativeMidiEvent* event);
 
     void (*ui_parameter_changed)(NativeHostHandle handle, uint32_t index, float value);
+    void (*ui_parameter_touch)(NativeHostHandle handle, uint32_t index, bool touch);
     void (*ui_midi_program_changed)(NativeHostHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
     void (*ui_custom_data_changed)(NativeHostHandle handle, const char* key, const char* value);
     void (*ui_closed)(NativeHostHandle handle);

@@ -131,14 +131,15 @@ public:
         fHost.get_time_info          = host_get_time_info;
         fHost.write_midi_event       = host_write_midi_event;
         fHost.ui_parameter_changed   = host_ui_parameter_changed;
+        fHost.ui_parameter_touch     = host_ui_parameter_touch;
         fHost.ui_custom_data_changed = host_ui_custom_data_changed;
         fHost.ui_closed              = host_ui_closed;
         fHost.ui_open_file           = host_ui_open_file;
         fHost.ui_save_file           = host_ui_save_file;
         fHost.dispatcher             = host_dispatcher;
 
-        fVstRect.top    = 0;
-        fVstRect.left   = 0;
+        fVstRect.top  = 0;
+        fVstRect.left = 0;
 
         if (kIsUsingUILauncher)
         {
@@ -406,8 +407,12 @@ public:
         case effEditOpen:
             if (fDescriptor->ui_show != nullptr)
             {
-#ifdef HAVE_X11
-                if (! kIsUsingUILauncher)
+                if (kIsUsingUILauncher)
+                {
+                    destoryUILauncher(fUiLauncher);
+                    fUiLauncher = createUILauncher((intptr_t)ptr, fDescriptor, fHandle);
+                }
+                else
                 {
                     char strBuf[0xff+1];
                     std::snprintf(strBuf, 0xff, P_INTPTR, (intptr_t)ptr);
@@ -422,12 +427,6 @@ public:
                     // reset CARLA_PLUGIN_EMBED_WINID just in case
                     carla_setenv("CARLA_PLUGIN_EMBED_WINID", "0");
                 }
-                else
-#endif
-                {
-                    destoryUILauncher(fUiLauncher);
-                    fUiLauncher = createUILauncher((intptr_t)ptr, fDescriptor, fHandle);
-                }
                 ret = 1;
             }
             break;
@@ -435,16 +434,14 @@ public:
         case effEditClose:
             if (fDescriptor->ui_show != nullptr)
             {
-#ifdef HAVE_X11
-                if (! kIsUsingUILauncher)
-                {
-                    fDescriptor->ui_show(fHandle, false);
-                }
-                else
-#endif
+                if (kIsUsingUILauncher)
                 {
                     destoryUILauncher(fUiLauncher);
                     fUiLauncher = nullptr;
+                }
+                else
+                {
+                    fDescriptor->ui_show(fHandle, false);
                 }
                 ret = 1;
             }
@@ -726,6 +723,12 @@ protected:
         hostCallback(audioMasterAutomate, static_cast<int32_t>(index), 0, nullptr, normalizedValue);
     }
 
+    void handleUiParameterTouch(const uint32_t index, const bool touch) const
+    {
+        carla_stdout("VST handleUiParameterTouch %u %s", index, bool2str(touch));
+        hostCallback(touch ? audioMasterBeginEdit : audioMasterEndEdit, static_cast<int32_t>(index));
+    }
+
     void handleUiCustomDataChanged(const char* const /*key*/, const char* const /*value*/) const
     {
     }
@@ -875,6 +878,11 @@ private:
     static void host_ui_parameter_changed(NativeHostHandle handle, uint32_t index, float value)
     {
         handlePtr->handleUiParameterChanged(index, value);
+    }
+
+    static void host_ui_parameter_touch(NativeHostHandle handle, uint32_t index, bool touch)
+    {
+        handlePtr->handleUiParameterTouch(index, touch);
     }
 
     static void host_ui_custom_data_changed(NativeHostHandle handle, const char* key, const char* value)

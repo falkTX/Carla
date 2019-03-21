@@ -2197,8 +2197,15 @@ protected:
             break;
 
         case audioMasterBeginEdit:
+            CARLA_SAFE_ASSERT_BREAK(index > 0);
+            carla_stdout("audioMasterBeginEdit %i", index);
+            pData->engine->touchPluginParameter(pData->id, static_cast<uint32_t>(index), true);
+            break;
+
         case audioMasterEndEdit:
-            // TODO
+            CARLA_SAFE_ASSERT_BREAK(index > 0);
+            carla_stdout("audioMasterEndEdit %i", index);
+            pData->engine->touchPluginParameter(pData->id, static_cast<uint32_t>(index), false);
             break;
 
         case audioMasterOpenFileSelector:

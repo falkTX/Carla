@@ -279,6 +279,7 @@ public:
         fHost.get_time_info          = carla_host_get_time_info;
         fHost.write_midi_event       = carla_host_write_midi_event;
         fHost.ui_parameter_changed   = carla_host_ui_parameter_changed;
+        fHost.ui_parameter_touch     = carla_host_ui_parameter_touch;
         fHost.ui_custom_data_changed = carla_host_ui_custom_data_changed;
         fHost.ui_closed              = carla_host_ui_closed;
         fHost.ui_open_file           = carla_host_ui_open_file;
@@ -2393,6 +2394,12 @@ protected:
         setParameterValue(index, value, false, true, true);
     }
 
+    void handleUiParameterTouch(const uint32_t index, const bool touch) const
+    {
+        carla_stdout("pluginNative handleUiParameterTouch %u %s", index, bool2str(touch));
+        pData->engine->touchPluginParameter(pData->id, index, touch);
+    }
+
     void handleUiCustomDataChanged(const char* const key, const char* const value)
     {
         setCustomData(CUSTOM_DATA_TYPE_STRING, key, value, false);
@@ -2694,6 +2701,11 @@ private:
     static void carla_host_ui_parameter_changed(NativeHostHandle handle, uint32_t index, float value)
     {
         handlePtr->handleUiParameterChanged(index, value);
+    }
+
+    static void carla_host_ui_parameter_touch(NativeHostHandle handle, uint32_t index, bool touch)
+    {
+        handlePtr->handleUiParameterTouch(index, touch);
     }
 
     static void carla_host_ui_custom_data_changed(NativeHostHandle handle, const char* key, const char* value)

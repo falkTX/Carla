@@ -624,6 +624,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         for paramIndex, paramWidget in self.fParameterList:
             paramWidget.setContextMenuPolicy(Qt.CustomContextMenu)
             paramWidget.customContextMenuRequested.connect(self.slot_knobCustomMenu)
+            paramWidget.dragStateChanged.connect(self.slot_parameterDragStateChanged)
             paramWidget.realValueChanged.connect(self.slot_parameterValueChanged)
             paramWidget.blockSignals(True)
             paramWidget.setValue(self.host.get_internal_parameter_value(self.fPluginId, paramIndex))
@@ -796,8 +797,6 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
                                    self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
             return
-
-        self.setName(newName)
 
     def showReplaceDialog(self):
         data = gCarla.gui.showAddPluginDialog()
@@ -1359,6 +1358,13 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                                     self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
     #------------------------------------------------------------------
+
+    @pyqtSlot(bool)
+    def slot_parameterDragStateChanged(self, touch):
+        index = self.sender().getIndex()
+
+        if index >= 0:
+            self.host.set_parameter_touch(self.fPluginId, index, touch)
 
     @pyqtSlot(float)
     def slot_parameterValueChanged(self, value):
