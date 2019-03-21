@@ -58,25 +58,6 @@ CARLA_BACKEND_START_NAMESPACE
 class CarlaEngineJack;
 class CarlaEngineJackClient;
 
-#ifndef BUILD_BRIDGE
-// FIXME temporary function while jack2 client uuids are broken
-static int buggy_jack2_uuid_parse(const char* b, jack_uuid_t* u)
-{
-    if (sscanf (b, P_UINT64, u) == 1) {
-
-        if (*u < (0x1LLU << 32)) {
-            // FIXME: bug in jack2, client bit not set
-            // *u = (0x2LLU << 32) | *u;
-            return -1;
-        }
-
-        return 0;
-    }
-
-    return -1;
-}
-#endif
-
 // -----------------------------------------------------------------------
 // Fallback data
 
@@ -1038,7 +1019,7 @@ public:
         {
             jack_uuid_t uuid;
 
-            if (buggy_jack2_uuid_parse(uuidchar, &uuid) == 0)
+            if (jackbridge_uuid_parse(uuidchar, &uuid))
             {
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
                 const CarlaString& tcp(pData->osc.getServerPathTCP());
@@ -1320,7 +1301,7 @@ public:
             {
                 jack_uuid_t uuid;
 
-                if (buggy_jack2_uuid_parse(uuidchar, &uuid) == 0)
+                if (jackbridge_uuid_parse(uuidchar, &uuid))
                 {
                     char strBufId[24];
                     std::snprintf(strBufId, 24, "%u", plugin->getId());
@@ -2391,7 +2372,7 @@ private:
         CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr && uuidstr[0] != '\0',);
 
         jack_uuid_t uuid;
-        CARLA_SAFE_ASSERT_RETURN(buggy_jack2_uuid_parse(uuidstr, &uuid) == 0,);
+        CARLA_SAFE_ASSERT_RETURN(jackbridge_uuid_parse(uuidstr, &uuid),);
 
         {
             char* value = nullptr;
