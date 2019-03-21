@@ -4597,6 +4597,11 @@ public:
         if (std::strstr(rdfUI->URI, "http://calf.sourceforge.net/plugins/gui/") != nullptr)
             return pData->engine->getOptions().preferUiBridges;
 
+        // LSP-Plugins UIs make heavy use of URIDs, for which carla right now is very slow
+        // FIXME after some optimization, remove this
+        if (std::strstr(rdfUI->URI, "http://lsp-plug.in/ui/lv2/") != nullptr)
+            return false;
+
         return true;
 #else
         return false;
