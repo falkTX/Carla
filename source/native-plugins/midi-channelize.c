@@ -113,7 +113,9 @@ static void midichannelize_set_parameter_value(NativePluginHandle handle, uint32
     }
 }
 
-static void midichannelize_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
+static void midichannelize_process(NativePluginHandle handle,
+                                   const float** inBuffer, float** outBuffer, uint32_t frames,
+                                   const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
 {
     const NativeHostDescriptor* const host = handlePtr->host;
     const int channel = handlePtr->channel;

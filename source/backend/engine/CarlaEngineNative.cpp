@@ -65,6 +65,9 @@ using water::XmlElement;
 
 CARLA_BACKEND_START_NAMESPACE
 
+static const uint32_t kNumInParams = 100;
+static const uint32_t kNumOutParams = 110;
+
 // -----------------------------------------------------------------------
 
 #ifdef USE_JUCE_MESSAGE_THREAD
@@ -126,10 +129,12 @@ private:
 
 // -----------------------------------------------------------------------
 
+class CarlaEngineNative;
+
 class CarlaEngineNativeUI : public CarlaExternalUI
 {
 public:
-    CarlaEngineNativeUI(CarlaEngine* const engine)
+    CarlaEngineNativeUI(CarlaEngineNative* const engine)
         : fEngine(engine)
     {
         carla_debug("CarlaEngineNativeUI::CarlaEngineNativeUI(%p)", engine);
@@ -141,531 +146,13 @@ public:
     }
 
 protected:
-    bool msgReceived(const char* const msg) noexcept override
-    {
-        if (CarlaExternalUI::msgReceived(msg))
-            return true;
-
-        bool ok = true;
-
-        if (std::strcmp(msg, "set_engine_option") == 0)
-        {
-            uint32_t option;
-            int32_t value;
-            const char* valueStr = nullptr;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(option), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(value), true);
-            readNextLineAsString(valueStr); // can be null
-
-            try {
-                fEngine->setOption(static_cast<EngineOption>(option), value, valueStr);
-            } CARLA_SAFE_EXCEPTION("setOption");
-
-            if (valueStr != nullptr)
-                delete[] valueStr;
-        }
-        else if (std::strcmp(msg, "clear_engine_xruns") == 0)
-        {
-            fEngine->clearXruns();
-        }
-        else if (std::strcmp(msg, "cancel_engine_action") == 0)
-        {
-            fEngine->setActionCanceled(true);
-        }
-        else if (std::strcmp(msg, "load_file") == 0)
-        {
-            const char* filename;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename), true);
-
-            try {
-                ok = fEngine->loadFile(filename);
-            } CARLA_SAFE_EXCEPTION("loadFile");
-
-            delete[] filename;
-        }
-        else if (std::strcmp(msg, "load_project") == 0)
-        {
-            const char* filename;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename), true);
-
-            try {
-                ok = fEngine->loadProject(filename, true);
-            } CARLA_SAFE_EXCEPTION("loadProject");
-
-            delete[] filename;
-        }
-        else if (std::strcmp(msg, "save_project") == 0)
-        {
-            const char* filename;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename), true);
-
-            try {
-                ok = fEngine->saveProject(filename, true);
-            } CARLA_SAFE_EXCEPTION("saveProject");
-
-            delete[] filename;
-        }
-        else if (std::strcmp(msg, "clear_project_filename") == 0)
-        {
-            fEngine->clearCurrentProjectFilename();
-        }
-        else if (std::strcmp(msg, "patchbay_connect") == 0)
-        {
-            bool external;
-            uint32_t groupA, portA, groupB, portB;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(external), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(groupA), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(portA), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(groupB), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(portB), true);
-
-            try {
-                ok = fEngine->patchbayConnect(external, groupA, portA, groupB, portB);
-            } CARLA_SAFE_EXCEPTION("patchbayConnect");
-        }
-        else if (std::strcmp(msg, "patchbay_disconnect") == 0)
-        {
-            bool external;
-            uint32_t connectionId;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(external), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(connectionId), true);
-
-            try {
-                ok = fEngine->patchbayDisconnect(external, connectionId);
-            } CARLA_SAFE_EXCEPTION("patchbayDisconnect");
-        }
-        else if (std::strcmp(msg, "patchbay_refresh") == 0)
-        {
-            bool external;
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(external), true);
-
-            try {
-                ok = fEngine->patchbayRefresh(true, false, external);
-            } CARLA_SAFE_EXCEPTION("patchbayRefresh");
-        }
-        else if (std::strcmp(msg, "transport_play") == 0)
-        {
-            fEngine->transportPlay();
-        }
-        else if (std::strcmp(msg, "transport_pause") == 0)
-        {
-            fEngine->transportPause();
-        }
-        else if (std::strcmp(msg, "transport_bpm") == 0)
-        {
-            double bpm;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsDouble(bpm), true);
-
-            fEngine->transportBPM(bpm);
-        }
-        else if (std::strcmp(msg, "transport_relocate") == 0)
-        {
-            uint64_t frame;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsULong(frame), true);
-
-            fEngine->transportRelocate(frame);
-        }
-        else if (std::strcmp(msg, "add_plugin") == 0)
-        {
-            uint32_t btype, ptype;
-            const char* filename = nullptr;
-            const char* name;
-            const char* label;
-            int64_t uniqueId;
-            uint options;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(btype), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(ptype), true);
-            readNextLineAsString(filename); // can be null
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(name), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(label), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsLong(uniqueId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(options), true);
-
-            if (filename != nullptr && std::strcmp(filename, "(null)") == 0)
-            {
-                delete[] filename;
-                filename = nullptr;
-            }
-
-            if (std::strcmp(name, "(null)") == 0)
-            {
-                delete[] name;
-                name = nullptr;
-            }
-
-            ok = fEngine->addPlugin(static_cast<BinaryType>(btype), static_cast<PluginType>(ptype),
-                                    filename, name, label, uniqueId, nullptr, options);
-
-            if (filename != nullptr)
-                delete[] filename;
-            if (name != nullptr)
-                delete[] name;
-            delete[] label;
-        }
-        else if (std::strcmp(msg, "remove_plugin") == 0)
-        {
-            uint32_t pluginId;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-
-            ok = fEngine->removePlugin(pluginId);
-        }
-        else if (std::strcmp(msg, "remove_all_plugins") == 0)
-        {
-            ok = fEngine->removeAllPlugins();
-        }
-        else if (std::strcmp(msg, "rename_plugin") == 0)
-        {
-            uint32_t pluginId;
-            const char* newName;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(newName), true);
-
-            // TODO
-            /*const char* name =*/ fEngine->renamePlugin(pluginId, newName);
-
-            delete[] newName;
-        }
-        else if (std::strcmp(msg, "clone_plugin") == 0)
-        {
-            uint32_t pluginId;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-
-            ok = fEngine->clonePlugin(pluginId);
-        }
-        else if (std::strcmp(msg, "replace_plugin") == 0)
-        {
-            uint32_t pluginId;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-
-            ok = fEngine->replacePlugin(pluginId);
-        }
-        else if (std::strcmp(msg, "switch_plugins") == 0)
-        {
-            uint32_t pluginIdA, pluginIdB;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginIdA), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginIdB), true);
-
-            ok = fEngine->switchPlugins(pluginIdA, pluginIdB);
-        }
-        else if (std::strcmp(msg, "load_plugin_state") == 0)
-        {
-            uint32_t pluginId;
-            const char* filename;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename), true);
-
-            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-                plugin->loadStateFromFile(filename);
-
-            delete[] filename;
-        }
-        else if (std::strcmp(msg, "save_plugin_state") == 0)
-        {
-            uint32_t pluginId;
-            const char* filename;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename), true);
-
-            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-                plugin->saveStateToFile(filename);
-
-            delete[] filename;
-        }
-        else if (std::strcmp(msg, "set_option") == 0)
-        {
-            uint32_t pluginId, option;
-            bool yesNo;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(option), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(yesNo), true);
-
-            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-                plugin->setOption(option, yesNo, false);
-        }
-        else if (std::strcmp(msg, "set_active") == 0)
-        {
-            uint32_t pluginId;
-            bool onOff;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(onOff), true);
-
-            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-                plugin->setActive(onOff, true, false);
-        }
-        else if (std::strcmp(msg, "set_drywet") == 0)
-        {
-            uint32_t pluginId;
-            float value;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(value), true);
-
-            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-                plugin->setDryWet(value, true, false);
-        }
-        else if (std::strcmp(msg, "set_volume") == 0)
-        {
-            uint32_t pluginId;
-            float value;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(value), true);
-
-            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-                plugin->setVolume(value, true, false);
-        }
-        else if (std::strcmp(msg, "set_balance_left") == 0)
-        {
-            uint32_t pluginId;
-            float value;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(value), true);
-
-            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-                plugin->setBalanceLeft(value, true, false);
-        }
-        else if (std::strcmp(msg, "set_balance_right") == 0)
-        {
-            uint32_t pluginId;
-            float value;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(value), true);
-
-            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-                plugin->setBalanceRight(value, true, false);
-        }
-        else if (std::strcmp(msg, "set_panning") == 0)
-        {
-            uint32_t pluginId;
-            float value;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(value), true);
-
-            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-                plugin->setPanning(value, true, false);
-        }
-        else if (std::strcmp(msg, "set_ctrl_channel") == 0)
-        {
-            uint32_t pluginId;
-            int32_t channel;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(channel), true);
-            CARLA_SAFE_ASSERT_RETURN(channel >= -1 && channel < MAX_MIDI_CHANNELS, true);
-
-            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-                plugin->setCtrlChannel(int8_t(channel), true, false);
-        }
-        else if (std::strcmp(msg, "set_parameter_value") == 0)
-        {
-            uint32_t pluginId, parameterId;
-            float value;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(parameterId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(value), true);
-
-            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-                plugin->setParameterValue(parameterId, value, true, true, false);
-        }
-        else if (std::strcmp(msg, "set_parameter_midi_channel") == 0)
-        {
-            uint32_t pluginId, parameterId, channel;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(parameterId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(channel), true);
-            CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, true);
-
-            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-                plugin->setParameterMidiChannel(parameterId, static_cast<uint8_t>(channel), true, false);
-        }
-        else if (std::strcmp(msg, "set_parameter_midi_cc") == 0)
-        {
-            uint32_t pluginId, parameterId;
-            int32_t cc;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(parameterId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(cc), true);
-            CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc < MAX_MIDI_CONTROL, true);
-
-            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-                plugin->setParameterMidiCC(parameterId, static_cast<int16_t>(cc), true, false);
-        }
-        else if (std::strcmp(msg, "set_program") == 0)
-        {
-            uint32_t pluginId;
-            int32_t index;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(index), true);
-
-            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-            {
-                plugin->setProgram(index, true, true, false);
-                _updateParamValues(plugin, pluginId);
-            }
-        }
-        else if (std::strcmp(msg, "set_midi_program") == 0)
-        {
-            uint32_t pluginId;
-            int32_t index;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(index), true);
-
-            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-            {
-                plugin->setMidiProgram(index, true, true, false);
-                _updateParamValues(plugin, pluginId);
-            }
-        }
-        else if (std::strcmp(msg, "set_custom_data") == 0)
-        {
-            uint32_t pluginId;
-            const char* type;
-            const char* key;
-            const char* value;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(type), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(key), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(value), true);
-
-            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-                plugin->setCustomData(type, key, value, true);
-
-            delete[] type;
-            delete[] key;
-            delete[] value;
-        }
-        else if (std::strcmp(msg, "set_chunk_data") == 0)
-        {
-            uint32_t pluginId;
-            const char* cdata;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(cdata), true);
-
-            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-            {
-                std::vector<uint8_t> chunk(carla_getChunkFromBase64String(cdata));
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-                plugin->setChunkData(chunk.data(), chunk.size());
-#else
-                plugin->setChunkData(&chunk.front(), chunk.size());
-#endif
-            }
-
-            delete[] cdata;
-        }
-        else if (std::strcmp(msg, "prepare_for_save") == 0)
-        {
-            uint32_t pluginId;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-
-            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-                plugin->prepareForSave();
-        }
-        else if (std::strcmp(msg, "reset_parameters") == 0)
-        {
-            uint32_t pluginId;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-
-            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-                plugin->resetParameters();
-        }
-        else if (std::strcmp(msg, "randomize_parameters") == 0)
-        {
-            uint32_t pluginId;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-
-            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-                plugin->randomizeParameters();
-        }
-        else if (std::strcmp(msg, "send_midi_note") == 0)
-        {
-            uint32_t pluginId, channel, note, velocity;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(channel), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(note), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(velocity), true);
-            CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, true);
-            CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_VALUE, true);
-            CARLA_SAFE_ASSERT_RETURN(velocity < MAX_MIDI_VALUE, true);
-
-            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-                plugin->sendMidiSingleNote(static_cast<uint8_t>(channel), static_cast<uint8_t>(note), static_cast<uint8_t>(velocity), true, true, false);
-        }
-        else if (std::strcmp(msg, "show_custom_ui") == 0)
-        {
-            uint32_t pluginId;
-            bool yesNo;
-
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(yesNo), true);
-
-            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-                plugin->showCustomUI(yesNo);
-        }
-        else
-        {
-            carla_stderr("CarlaEngineNativeUI::msgReceived : %s", msg);
-            return false;
-        }
-
-        if (! ok)
-        {
-            const CarlaMutexLocker cml(getPipeLock());
-
-            if (writeMessage("error\n", 6) && writeAndFixMessage(fEngine->getLastError()))
-                flushMessages();
-        }
-
-        return true;
-    }
+    bool msgReceived(const char* const msg) noexcept override;
 
 private:
-    CarlaEngine* const fEngine;
+    CarlaEngineNative* const fEngine;
 
-    void _updateParamValues(CarlaPlugin* const plugin, const uint32_t pluginId) const noexcept
-    {
-        for (uint32_t i=0, count=plugin->getParameterCount(); i<count; ++i) {
-            fEngine->callback(true, true,
-                              ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
-                              pluginId,
-                              static_cast<int>(i),
-                              0, 0,
-                              plugin->getParameterValue(i),
-                              nullptr);
-        }
-    }
+    void _updateParamValues(CarlaPlugin* const plugin, const uint32_t pluginId,
+                            const bool sendCallback, const bool sendPluginHost) const noexcept;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineNativeUI)
 };
@@ -693,6 +180,8 @@ public:
           fOptionsForced(false)
     {
         carla_debug("CarlaEngineNative::CarlaEngineNative()");
+
+        carla_zeroFloats(fParameters, kNumInParams+kNumOutParams);
 
 #ifdef USE_JUCE_MESSAGE_THREAD
         if (kNeedsJuceMsgThread)
@@ -771,7 +260,6 @@ public:
         carla_debug("CarlaEngineNative::~CarlaEngineNative() - END");
     }
 
-protected:
     // -------------------------------------
     // CarlaEngine virtual calls
 
@@ -854,6 +342,24 @@ protected:
         return nullptr;
     }
 
+    // -------------------------------------------------------------------
+
+    void setParameterValueFromUI(const uint32_t pluginId, const uint32_t index, const float value)
+    {
+        if (pluginId != 0)
+            return;
+
+        fParameters[index] = value;
+        pHost->ui_parameter_changed(pHost->handle, index, value);
+    }
+
+    void reloadFromUI()
+    {
+        carla_zeroFloats(fParameters, kNumInParams+kNumOutParams);
+        pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_RELOAD_ALL, 0, 0, nullptr, 0.0f);
+    }
+
+protected:
     // -------------------------------------------------------------------
 
     void bufferSizeChanged(const uint32_t newBufferSize)
@@ -1438,19 +944,20 @@ protected:
         if (CarlaPlugin* const plugin = _getFirstPlugin())
             return plugin->getParameterCount();
 
-        return 0;
+        return kNumInParams + kNumOutParams;
     }
 
     const NativeParameter* getParameterInfo(const uint32_t index) const
     {
+        static NativeParameter param;
+
+        static char strBufName[STR_MAX+1];
+        static char strBufUnit[STR_MAX+1];
+
         if (CarlaPlugin* const plugin = _getFirstPlugin())
         {
             if (index < plugin->getParameterCount())
             {
-                static NativeParameter param;
-                static char strBufName[STR_MAX+1];
-                static char strBufUnit[STR_MAX+1];
-
                 const ParameterData& paramData(plugin->getParameterData(index));
                 const ParameterRanges& paramRanges(plugin->getParameterRanges(index));
 
@@ -1496,7 +1003,19 @@ protected:
             }
         }
 
-        return nullptr;
+        param.hints = index < kNumInParams ? static_cast<NativeParameterHints>(0x0) : NATIVE_PARAMETER_IS_OUTPUT;
+        param.name  = "Unused";
+        param.unit  = "";
+        param.ranges.def = 0.0f;
+        param.ranges.min = 0.0f;
+        param.ranges.max = 1.0f;
+        param.ranges.step = 0.01f;
+        param.ranges.stepSmall = 0.001f;
+        param.ranges.stepLarge = 0.1f;
+        param.scalePointCount = 0;
+        param.scalePoints = nullptr;
+
+        return &param;
     }
 
     float getParameterValue(const uint32_t index) const
@@ -1507,7 +1026,7 @@ protected:
                 return plugin->getParameterValue(index);
         }
 
-        return 0.0f;
+        return fParameters[index];
     }
 
     // -------------------------------------------------------------------
@@ -1552,8 +1071,10 @@ protected:
         if (CarlaPlugin* const plugin = _getFirstPlugin())
         {
             if (index < plugin->getParameterCount())
-                plugin->setParameterValue(index, value, false, false, false);
+                plugin->setParameterValueRT(index, value);
         }
+
+        fParameters[index] = value;
     }
 
     void setMidiProgram(const uint8_t, const uint32_t bank, const uint32_t program)
@@ -1600,7 +1121,7 @@ protected:
         //runPendingRtEvents();
     }
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames,
+    void process(const float** const inBuffer, float** const outBuffer, const uint32_t frames,
                  const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount)
     {
         if (frames > pData->bufferSize)
@@ -1867,6 +1388,17 @@ protected:
         }
     }
 
+    void uiSetParameterValue(const uint32_t index, const float value)
+    {
+        carla_stdout("uiSetParameterValue(%d, %f)", index, static_cast<double>(value));
+
+        if (CarlaPlugin* const plugin = _getFirstPlugin())
+        {
+            if (index < plugin->getParameterCount())
+                plugin->uiParameterChange(index, value);
+        }
+    }
+
     void idlePipe()
     {
         if (! fUiServer.isPipeRunning())
@@ -2079,6 +1611,11 @@ public:
         handlePtr->uiIdle();
     }
 
+    static void _ui_set_parameter_value(NativePluginHandle handle, uint32_t index, float value)
+    {
+        handlePtr->uiSetParameterValue(index, value);
+    }
+
     static void _activate(NativePluginHandle handle)
     {
         handlePtr->activate();
@@ -2089,7 +1626,9 @@ public:
         handlePtr->deactivate();
     }
 
-    static void _process(NativePluginHandle handle, float** inBuffer, float** outBuffer, const uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
+    static void _process(NativePluginHandle handle,
+                         const float** inBuffer, float** outBuffer, const uint32_t frames,
+                         const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
     {
         handlePtr->process(inBuffer, outBuffer, frames, midiEvents, midiEventCount);
     }
@@ -2104,7 +1643,8 @@ public:
         handlePtr->setState(data);
     }
 
-    static intptr_t _dispatcher(NativePluginHandle handle, NativePluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt)
+    static intptr_t _dispatcher(NativePluginHandle handle,
+                                NativePluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt)
     {
         switch(opcode)
         {
@@ -2169,6 +1709,8 @@ private:
     bool fIsActive, fIsRunning;
     CarlaEngineNativeUI fUiServer;
 
+    float fParameters[kNumInParams+kNumOutParams];
+
     bool fOptionsForced;
 
     CarlaPlugin* _getFirstPlugin() const noexcept
@@ -2189,6 +1731,564 @@ private:
 
 // -----------------------------------------------------------------------
 
+bool CarlaEngineNativeUI::msgReceived(const char*const msg) noexcept
+{
+    if (CarlaExternalUI::msgReceived(msg))
+        return true;
+
+    bool ok = true;
+
+    if (std::strcmp(msg, "set_engine_option") == 0)
+    {
+        uint32_t option;
+        int32_t value;
+        const char* valueStr = nullptr;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(option), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(value), true);
+        readNextLineAsString(valueStr); // can be null
+
+        try {
+            fEngine->setOption(static_cast<EngineOption>(option), value, valueStr);
+        } CARLA_SAFE_EXCEPTION("setOption");
+
+        if (valueStr != nullptr)
+            delete[] valueStr;
+    }
+    else if (std::strcmp(msg, "clear_engine_xruns") == 0)
+    {
+        fEngine->clearXruns();
+    }
+    else if (std::strcmp(msg, "cancel_engine_action") == 0)
+    {
+        fEngine->setActionCanceled(true);
+    }
+    else if (std::strcmp(msg, "load_file") == 0)
+    {
+        const char* filename;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename), true);
+
+        try {
+            ok = fEngine->loadFile(filename);
+        } CARLA_SAFE_EXCEPTION("loadFile");
+
+        delete[] filename;
+    }
+    else if (std::strcmp(msg, "load_project") == 0)
+    {
+        const char* filename;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename), true);
+
+        try {
+            ok = fEngine->loadProject(filename, true);
+        } CARLA_SAFE_EXCEPTION("loadProject");
+
+        delete[] filename;
+    }
+    else if (std::strcmp(msg, "save_project") == 0)
+    {
+        const char* filename;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename), true);
+
+        try {
+            ok = fEngine->saveProject(filename, true);
+        } CARLA_SAFE_EXCEPTION("saveProject");
+
+        delete[] filename;
+    }
+    else if (std::strcmp(msg, "clear_project_filename") == 0)
+    {
+        fEngine->clearCurrentProjectFilename();
+    }
+    else if (std::strcmp(msg, "patchbay_connect") == 0)
+    {
+        bool external;
+        uint32_t groupA, portA, groupB, portB;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(external), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(groupA), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(portA), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(groupB), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(portB), true);
+
+        try {
+            ok = fEngine->patchbayConnect(external, groupA, portA, groupB, portB);
+        } CARLA_SAFE_EXCEPTION("patchbayConnect");
+    }
+    else if (std::strcmp(msg, "patchbay_disconnect") == 0)
+    {
+        bool external;
+        uint32_t connectionId;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(external), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(connectionId), true);
+
+        try {
+            ok = fEngine->patchbayDisconnect(external, connectionId);
+        } CARLA_SAFE_EXCEPTION("patchbayDisconnect");
+    }
+    else if (std::strcmp(msg, "patchbay_refresh") == 0)
+    {
+        bool external;
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(external), true);
+
+        try {
+            ok = fEngine->patchbayRefresh(true, false, external);
+        } CARLA_SAFE_EXCEPTION("patchbayRefresh");
+    }
+    else if (std::strcmp(msg, "transport_play") == 0)
+    {
+        fEngine->transportPlay();
+    }
+    else if (std::strcmp(msg, "transport_pause") == 0)
+    {
+        fEngine->transportPause();
+    }
+    else if (std::strcmp(msg, "transport_bpm") == 0)
+    {
+        double bpm;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsDouble(bpm), true);
+
+        fEngine->transportBPM(bpm);
+    }
+    else if (std::strcmp(msg, "transport_relocate") == 0)
+    {
+        uint64_t frame;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsULong(frame), true);
+
+        fEngine->transportRelocate(frame);
+    }
+    else if (std::strcmp(msg, "add_plugin") == 0)
+    {
+        uint32_t btype, ptype;
+        const char* filename = nullptr;
+        const char* name;
+        const char* label;
+        int64_t uniqueId;
+        uint options;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(btype), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(ptype), true);
+        readNextLineAsString(filename); // can be null
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(name), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(label), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsLong(uniqueId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(options), true);
+
+        if (filename != nullptr && std::strcmp(filename, "(null)") == 0)
+        {
+            delete[] filename;
+            filename = nullptr;
+        }
+
+        if (std::strcmp(name, "(null)") == 0)
+        {
+            delete[] name;
+            name = nullptr;
+        }
+
+        ok = fEngine->addPlugin(static_cast<BinaryType>(btype), static_cast<PluginType>(ptype),
+                                filename, name, label, uniqueId, nullptr, options);
+
+        if (filename != nullptr)
+            delete[] filename;
+        if (name != nullptr)
+            delete[] name;
+        delete[] label;
+
+        fEngine->reloadFromUI();
+    }
+    else if (std::strcmp(msg, "remove_plugin") == 0)
+    {
+        uint32_t pluginId;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+
+        ok = fEngine->removePlugin(pluginId);
+
+        if (pluginId == 0)
+            fEngine->reloadFromUI();
+    }
+    else if (std::strcmp(msg, "remove_all_plugins") == 0)
+    {
+        ok = fEngine->removeAllPlugins();
+        fEngine->reloadFromUI();
+    }
+    else if (std::strcmp(msg, "rename_plugin") == 0)
+    {
+        uint32_t pluginId;
+        const char* newName;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(newName), true);
+
+        // TODO
+        /*const char* name =*/ fEngine->renamePlugin(pluginId, newName);
+
+        delete[] newName;
+    }
+    else if (std::strcmp(msg, "clone_plugin") == 0)
+    {
+        uint32_t pluginId;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+
+        ok = fEngine->clonePlugin(pluginId);
+    }
+    else if (std::strcmp(msg, "replace_plugin") == 0)
+    {
+        uint32_t pluginId;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+
+        ok = fEngine->replacePlugin(pluginId);
+    }
+    else if (std::strcmp(msg, "switch_plugins") == 0)
+    {
+        uint32_t pluginIdA, pluginIdB;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginIdA), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginIdB), true);
+
+        ok = fEngine->switchPlugins(pluginIdA, pluginIdB);
+
+        if (pluginIdA == 0 || pluginIdB == 0)
+            fEngine->reloadFromUI();
+    }
+    else if (std::strcmp(msg, "load_plugin_state") == 0)
+    {
+        uint32_t pluginId;
+        const char* filename;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename), true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+        {
+            plugin->loadStateFromFile(filename);
+            _updateParamValues(plugin, pluginId, false, true);
+        }
+
+        delete[] filename;
+    }
+    else if (std::strcmp(msg, "save_plugin_state") == 0)
+    {
+        uint32_t pluginId;
+        const char* filename;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename), true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+            plugin->saveStateToFile(filename);
+
+        delete[] filename;
+    }
+    else if (std::strcmp(msg, "set_option") == 0)
+    {
+        uint32_t pluginId, option;
+        bool yesNo;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(option), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(yesNo), true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+            plugin->setOption(option, yesNo, false);
+    }
+    else if (std::strcmp(msg, "set_active") == 0)
+    {
+        uint32_t pluginId;
+        bool onOff;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(onOff), true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+            plugin->setActive(onOff, true, false);
+    }
+    else if (std::strcmp(msg, "set_drywet") == 0)
+    {
+        uint32_t pluginId;
+        float value;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(value), true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+            plugin->setDryWet(value, true, false);
+    }
+    else if (std::strcmp(msg, "set_volume") == 0)
+    {
+        uint32_t pluginId;
+        float value;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(value), true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+            plugin->setVolume(value, true, false);
+    }
+    else if (std::strcmp(msg, "set_balance_left") == 0)
+    {
+        uint32_t pluginId;
+        float value;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(value), true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+            plugin->setBalanceLeft(value, true, false);
+    }
+    else if (std::strcmp(msg, "set_balance_right") == 0)
+    {
+        uint32_t pluginId;
+        float value;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(value), true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+            plugin->setBalanceRight(value, true, false);
+    }
+    else if (std::strcmp(msg, "set_panning") == 0)
+    {
+        uint32_t pluginId;
+        float value;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(value), true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+            plugin->setPanning(value, true, false);
+    }
+    else if (std::strcmp(msg, "set_ctrl_channel") == 0)
+    {
+        uint32_t pluginId;
+        int32_t channel;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(channel), true);
+        CARLA_SAFE_ASSERT_RETURN(channel >= -1 && channel < MAX_MIDI_CHANNELS, true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+            plugin->setCtrlChannel(int8_t(channel), true, false);
+    }
+    else if (std::strcmp(msg, "set_parameter_value") == 0)
+    {
+        uint32_t pluginId, parameterId;
+        float value;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(parameterId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(value), true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+        {
+            plugin->setParameterValue(parameterId, value, true, true, false);
+            fEngine->setParameterValueFromUI(pluginId, parameterId, value);
+        }
+    }
+    else if (std::strcmp(msg, "set_parameter_midi_channel") == 0)
+    {
+        uint32_t pluginId, parameterId, channel;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(parameterId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(channel), true);
+        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+            plugin->setParameterMidiChannel(parameterId, static_cast<uint8_t>(channel), true, false);
+    }
+    else if (std::strcmp(msg, "set_parameter_midi_cc") == 0)
+    {
+        uint32_t pluginId, parameterId;
+        int32_t cc;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(parameterId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(cc), true);
+        CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc < MAX_MIDI_CONTROL, true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+            plugin->setParameterMidiCC(parameterId, static_cast<int16_t>(cc), true, false);
+    }
+    else if (std::strcmp(msg, "set_program") == 0)
+    {
+        uint32_t pluginId;
+        int32_t index;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(index), true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+        {
+            plugin->setProgram(index, true, true, false);
+            _updateParamValues(plugin, pluginId, true, true);
+        }
+    }
+    else if (std::strcmp(msg, "set_midi_program") == 0)
+    {
+        uint32_t pluginId;
+        int32_t index;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(index), true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+        {
+            plugin->setMidiProgram(index, true, true, false);
+            _updateParamValues(plugin, pluginId, true, true);
+        }
+    }
+    else if (std::strcmp(msg, "set_custom_data") == 0)
+    {
+        uint32_t pluginId;
+        const char* type;
+        const char* key;
+        const char* value;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(type), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(key), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(value), true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+            plugin->setCustomData(type, key, value, true);
+
+        delete[] type;
+        delete[] key;
+        delete[] value;
+    }
+    else if (std::strcmp(msg, "set_chunk_data") == 0)
+    {
+        uint32_t pluginId;
+        const char* cdata;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(cdata), true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+        {
+            std::vector<uint8_t> chunk(carla_getChunkFromBase64String(cdata));
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+            plugin->setChunkData(chunk.data(), chunk.size());
+#else
+            plugin->setChunkData(&chunk.front(), chunk.size());
+#endif
+            _updateParamValues(plugin, pluginId, false, true);
+        }
+
+        delete[] cdata;
+    }
+    else if (std::strcmp(msg, "prepare_for_save") == 0)
+    {
+        uint32_t pluginId;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+            plugin->prepareForSave();
+    }
+    else if (std::strcmp(msg, "reset_parameters") == 0)
+    {
+        uint32_t pluginId;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+        {
+            plugin->resetParameters();
+            _updateParamValues(plugin, pluginId, false, true);
+        }
+    }
+    else if (std::strcmp(msg, "randomize_parameters") == 0)
+    {
+        uint32_t pluginId;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+        {
+            plugin->randomizeParameters();
+            _updateParamValues(plugin, pluginId, false, true);
+        }
+    }
+    else if (std::strcmp(msg, "send_midi_note") == 0)
+    {
+        uint32_t pluginId, channel, note, velocity;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(channel), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(note), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(velocity), true);
+        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, true);
+        CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_VALUE, true);
+        CARLA_SAFE_ASSERT_RETURN(velocity < MAX_MIDI_VALUE, true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+            plugin->sendMidiSingleNote(static_cast<uint8_t>(channel), static_cast<uint8_t>(note), static_cast<uint8_t>(velocity), true, true, false);
+    }
+    else if (std::strcmp(msg, "show_custom_ui") == 0)
+    {
+        uint32_t pluginId;
+        bool yesNo;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(yesNo), true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+            plugin->showCustomUI(yesNo);
+    }
+    else
+    {
+        carla_stderr("CarlaEngineNativeUI::msgReceived : %s", msg);
+        return false;
+    }
+
+    if (! ok)
+    {
+        const CarlaMutexLocker cml(getPipeLock());
+
+        if (writeMessage("error\n", 6) && writeAndFixMessage(fEngine->getLastError()))
+            flushMessages();
+    }
+
+    return true;
+}
+
+void CarlaEngineNativeUI::_updateParamValues(CarlaPlugin* const plugin, const uint32_t pluginId,
+                                             const bool sendCallback, const bool sendPluginHost) const noexcept
+{
+    float value;
+
+    for (uint32_t i=0, count=plugin->getParameterCount(); i<count; ++i) {
+        value = plugin->getParameterValue(i);
+
+        if (sendCallback) {
+            fEngine->callback(true, true,
+                              ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+                              pluginId,
+                              static_cast<int>(i),
+                              0, 0,
+                              value,
+                              nullptr);
+        }
+
+        if (sendPluginHost) {
+            fEngine->setParameterValueFromUI(pluginId, i, value);
+        }
+    }
+}
+
+// -----------------------------------------------------------------------
+
 static const NativePluginDescriptor carlaRackDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
@@ -2201,8 +2301,8 @@ static const NativePluginDescriptor carlaRackDesc = {
     /* audioOuts */ 2,
     /* midiIns   */ 1,
     /* midiOuts  */ 1,
-    /* paramIns  */ 0,
-    /* paramOuts */ 0,
+    /* paramIns  */ kNumInParams,
+    /* paramOuts */ kNumOutParams,
     /* name      */ "Carla-Rack",
     /* label     */ "carlarack",
     /* maker     */ "falkTX",
@@ -2219,7 +2319,7 @@ static const NativePluginDescriptor carlaRackDesc = {
     /* _set_custom_data        */ nullptr,
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
-    /* _ui_set_parameter_value */ nullptr,
+    CarlaEngineNative::_ui_set_parameter_value,
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,
@@ -2242,8 +2342,8 @@ static const NativePluginDescriptor carlaRackNoMidiOutDesc = {
     /* audioOuts */ 2,
     /* midiIns   */ 1,
     /* midiOuts  */ 0,
-    /* paramIns  */ 0,
-    /* paramOuts */ 0,
+    /* paramIns  */ kNumInParams,
+    /* paramOuts */ kNumOutParams,
     /* name      */ "Carla-Rack (no midi out)",
     /* label     */ "carlarack-nomidiout",
     /* maker     */ "falkTX",
@@ -2283,8 +2383,8 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
     /* audioOuts */ 2,
     /* midiIns   */ 1,
     /* midiOuts  */ 1,
-    /* paramIns  */ 0,
-    /* paramOuts */ 0,
+    /* paramIns  */ kNumInParams,
+    /* paramOuts */ kNumOutParams,
     /* name      */ "Carla-Patchbay",
     /* label     */ "carlapatchbay",
     /* maker     */ "falkTX",
@@ -2324,8 +2424,8 @@ static const NativePluginDescriptor carlaPatchbay3sDesc = {
     /* audioOuts */ 2,
     /* midiIns   */ 1,
     /* midiOuts  */ 1,
-    /* paramIns  */ 0,
-    /* paramOuts */ 0,
+    /* paramIns  */ kNumInParams,
+    /* paramOuts */ kNumOutParams,
     /* name      */ "Carla-Patchbay (sidechain)",
     /* label     */ "carlapatchbay3s",
     /* maker     */ "falkTX",
@@ -2365,8 +2465,8 @@ static const NativePluginDescriptor carlaPatchbay16Desc = {
     /* audioOuts */ 16,
     /* midiIns   */ 1,
     /* midiOuts  */ 1,
-    /* paramIns  */ 0,
-    /* paramOuts */ 0,
+    /* paramIns  */ kNumInParams,
+    /* paramOuts */ kNumOutParams,
     /* name      */ "Carla-Patchbay (16chan)",
     /* label     */ "carlapatchbay16",
     /* maker     */ "falkTX",
@@ -2406,8 +2506,8 @@ static const NativePluginDescriptor carlaPatchbay32Desc = {
     /* audioOuts */ 32,
     /* midiIns   */ 1,
     /* midiOuts  */ 1,
-    /* paramIns  */ 0,
-    /* paramOuts */ 0,
+    /* paramIns  */ kNumInParams,
+    /* paramOuts */ kNumOutParams,
     /* name      */ "Carla-Patchbay (32chan)",
     /* label     */ "carlapatchbay32",
     /* maker     */ "falkTX",

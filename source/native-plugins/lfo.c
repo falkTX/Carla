@@ -205,7 +205,9 @@ static void lfo_set_parameter_value(NativePluginHandle handle, uint32_t index, f
     }
 }
 
-static void lfo_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
+static void lfo_process(NativePluginHandle handle,
+                        const float** inBuffer, float** outBuffer, uint32_t frames,
+                        const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
 {
     const NativeHostDescriptor* const host     = handlePtr->host;
     const NativeTimeInfo*       const timeInfo = host->get_time_info(host->handle);

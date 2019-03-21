@@ -2058,17 +2058,19 @@ public:
 
         if (fHandle2 == nullptr)
         {
-            fDescriptor->process(fHandle, fAudioInBuffers, fAudioOutBuffers, frames, fMidiInEvents, fMidiEventInCount);
+            fDescriptor->process(fHandle,
+                                 const_cast<const float**>(fAudioInBuffers), fAudioOutBuffers, frames,
+                                 fMidiInEvents, fMidiEventInCount);
         }
         else
         {
             fDescriptor->process(fHandle,
-                                 (pData->audioIn.count > 0) ? &fAudioInBuffers[0] : nullptr,
+                                 (pData->audioIn.count > 0) ? const_cast<const float**>(&fAudioInBuffers[0]) : nullptr,
                                  (pData->audioOut.count > 0) ? &fAudioOutBuffers[0] : nullptr,
                                  frames, fMidiInEvents, fMidiEventInCount);
 
             fDescriptor->process(fHandle2,
-                                 (pData->audioIn.count > 0) ? &fAudioInBuffers[1] : nullptr,
+                                 (pData->audioIn.count > 0) ? const_cast<const float**>(&fAudioInBuffers[1]) : nullptr,
                                  (pData->audioOut.count > 0) ? &fAudioOutBuffers[1] : nullptr,
                                  frames, fMidiInEvents, fMidiEventInCount);
         }

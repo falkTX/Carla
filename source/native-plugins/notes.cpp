@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -83,7 +83,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(float**, float**, const uint32_t, const NativeMidiEvent* const, const uint32_t) override
+    void process(const float**, float**, const uint32_t, const NativeMidiEvent* const, const uint32_t) override
     {
     }
 

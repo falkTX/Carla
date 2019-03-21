@@ -287,10 +287,7 @@ public:
             }
         }
 
-        // FIXME
-        fDescriptor->process(fHandle,
-                             const_cast<float**>(fPorts.audioIns), fPorts.audioOuts, frames,
-                             fMidiEvents, fMidiEventCount);
+        fDescriptor->process(fHandle, fPorts.audioIns, fPorts.audioOuts, frames, fMidiEvents, fMidiEventCount);
 
         if (fWorkerUISignal == -1 && fPorts.hasUI)
         {

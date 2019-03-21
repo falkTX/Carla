@@ -19,10 +19,8 @@
 #include "CarlaNative.h"
 #include "vestige/vestige.h"
 
-#ifndef HAVE_X11
 # include "ui_launcher_res.hpp"
 struct CarlaUILauncher;
-#endif
 
 class NativePlugin;
 
@@ -31,16 +29,15 @@ struct VstObject {
     NativePlugin* plugin;
 };
 
-#ifndef HAVE_X11
 CarlaUILauncher* createUILauncher(const intptr_t winId,
                                   const NativePluginDescriptor* const d,
                                   const NativePluginHandle h);
 void idleUILauncher(CarlaUILauncher* const ui);
 void destoryUILauncher(CarlaUILauncher* const ui);
-#endif
 
 const AEffect* VSTPluginMainInit(AEffect* const effect);
 intptr_t VSTAudioMaster(AEffect*, int32_t, int32_t, intptr_t, void*, float);
+bool isUsingUILauncher();
 
 intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt);
 float vst_getParameterCallback(AEffect* effect, int32_t index);

@@ -63,7 +63,10 @@ static double   d_lastSampleRate = 0.0;
 
 static const int32_t kBaseUniqueID = CCONST('C', 'r', 'l', 'a');
 static const int32_t kShellUniqueID = CCONST('C', 'r', 'l', 's');
+static const int32_t kNumParameters = 100;
 static const int32_t kVstMidiEventSize = static_cast<int32_t>(sizeof(VstMidiEvent));
+
+static const bool kIsUsingUILauncher = isUsingUILauncher();
 
 // --------------------------------------------------------------------------------------------------------------------
 // Carla Internal Plugin API exposed as VST plugin
@@ -84,9 +87,7 @@ public:
           fMidiEventCount(0),
           fTimeInfo(),
           fVstRect(),
-#ifndef HAVE_X11
           fUiLauncher(nullptr),
-#endif
           fHostType(kHostTypeNull),
           fMidiOutEvents(),
 #ifdef USING_JUCE
@@ -97,6 +98,9 @@ public:
         fHost.handle      = this;
         fHost.uiName      = carla_strdup("CarlaVST");
         fHost.uiParentId  = 0;
+
+        std::memset(fProgramName, 0, sizeof(fProgramName));
+        std::strcpy(fProgramName, "Default");
 
         // find resource dir
         using water::File;
@@ -135,13 +139,17 @@ public:
 
         fVstRect.top    = 0;
         fVstRect.left   = 0;
-#ifdef HAVE_X11
-        fVstRect.bottom = 712;
-        fVstRect.right  = 1024;
-#else
-        fVstRect.bottom = ui_launcher_res::carla_uiHeight;
-        fVstRect.right  = ui_launcher_res::carla_uiWidth;
-#endif
+
+        if (kIsUsingUILauncher)
+        {
+            fVstRect.bottom = ui_launcher_res::carla_uiHeight;
+            fVstRect.right  = ui_launcher_res::carla_uiWidth;
+        }
+        else
+        {
+            fVstRect.bottom = 712;
+            fVstRect.right  = 1024;
+        }
 
         init();
     }
@@ -205,7 +213,8 @@ public:
 
     // -------------------------------------------------------------------
 
-    intptr_t vst_dispatcher(const int32_t opcode, const int32_t /*index*/, const intptr_t value, void* const ptr, const float opt)
+    intptr_t vst_dispatcher(const int32_t opcode,
+                            const int32_t index, const intptr_t value, void* const ptr, const float opt)
     {
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, 0);
 
@@ -213,6 +222,108 @@ public:
 
         switch (opcode)
         {
+        case effGetProgram:
+            return 0;
+
+        case effSetProgramName:
+            if (char* const programName = (char*)ptr)
+            {
+                std::strncpy(fProgramName, programName, 32);
+                return 1;
+            }
+            break;
+
+        case effGetProgramName:
+            if (char* const programName = (char*)ptr)
+            {
+                std::strncpy(programName, fProgramName, 24);
+                return 1;
+            }
+            break;
+
+        case effGetProgramNameIndexed:
+            if (char* const programName = (char*)ptr)
+            {
+                std::strncpy(programName, fProgramName, 24);
+                return 1;
+            }
+            break;
+
+        case effGetParamDisplay:
+            CARLA_SAFE_ASSERT_RETURN(index >= 0 && index < kNumParameters, 0);
+
+            if (char* const cptr = (char*)ptr)
+            {
+                const uint32_t uindex = static_cast<uint32_t>(index);
+                CARLA_SAFE_ASSERT_RETURN(uindex < fDescriptor->paramIns, 0);
+
+                const NativeParameter* const param = fDescriptor->get_parameter_info(fHandle, uindex);
+                CARLA_SAFE_ASSERT_RETURN(param != nullptr, 0);
+
+                float paramValue = fDescriptor->get_parameter_value(fHandle, uindex);
+
+                if (param->hints & NATIVE_PARAMETER_IS_BOOLEAN)
+                {
+                    const NativeParameterRanges& ranges(param->ranges);
+                    const float midRange = ranges.min + (ranges.max - ranges.min) / 2.0f;
+
+                    paramValue = paramValue > midRange ? ranges.max : ranges.min;
+                }
+                else if (param->hints & NATIVE_PARAMETER_IS_INTEGER)
+                {
+                    paramValue = std::round(paramValue);
+                }
+
+                for (uint32_t i = 0; i < param->scalePointCount; ++i)
+                {
+                    const NativeParameterScalePoint& scalePoint(param->scalePoints[uindex]);
+
+                    if (carla_isNotEqual(paramValue, scalePoint.value))
+                        continue;
+
+                    std::strncpy(cptr, scalePoint.label, 23);
+                    cptr[23] = '\0';
+                    return 1;
+                }
+
+                if (param->hints & NATIVE_PARAMETER_IS_INTEGER)
+                {
+                    std::snprintf(cptr, 23, "%d%s%s",
+                                  static_cast<int>(paramValue),
+                                  param->unit != nullptr && param->unit[0] != '\0' ? " " : "",
+                                  param->unit != nullptr ? param->unit : "");
+                    cptr[23] = '\0';
+                }
+                else
+                {
+                    std::snprintf(cptr, 23, "%f%s%s",
+                                  static_cast<double>(paramValue),
+                                  param->unit != nullptr && param->unit[0] != '\0' ? " " : "",
+                                  param->unit != nullptr ? param->unit : "");
+                    cptr[23] = '\0';
+                }
+
+                return 1;
+            }
+            break;
+
+        case effGetParamName:
+            CARLA_SAFE_ASSERT_RETURN(index >= 0 && index < kNumParameters, 0);
+
+            if (char* const cptr = (char*)ptr)
+            {
+                const uint32_t uindex = static_cast<uint32_t>(index);
+                CARLA_SAFE_ASSERT_RETURN(uindex < fDescriptor->paramIns, 0);
+
+                const NativeParameter* const param = fDescriptor->get_parameter_info(fHandle, uindex);
+                CARLA_SAFE_ASSERT_RETURN(param != nullptr, 0);
+
+                std::strncpy(cptr, param->name, 15);
+                cptr[15] = '\0';
+                return 1;
+            }
+            return 0;
+
         case effSetSampleRate:
             CARLA_SAFE_ASSERT_RETURN(opt > 0.0f, 0);
 
@@ -296,22 +407,27 @@ public:
             if (fDescriptor->ui_show != nullptr)
             {
 #ifdef HAVE_X11
-                char strBuf[0xff+1];
-                std::snprintf(strBuf, 0xff, P_INTPTR, (intptr_t)ptr);
-                strBuf[0xff] = '\0';
+                if (! kIsUsingUILauncher)
+                {
+                    char strBuf[0xff+1];
+                    std::snprintf(strBuf, 0xff, P_INTPTR, (intptr_t)ptr);
+                    strBuf[0xff] = '\0';
 
-                // set CARLA_PLUGIN_EMBED_WINID for external process
-                carla_setenv("CARLA_PLUGIN_EMBED_WINID", strBuf);
+                    // set CARLA_PLUGIN_EMBED_WINID for external process
+                    carla_setenv("CARLA_PLUGIN_EMBED_WINID", strBuf);
 
-                // show UI now
-                fDescriptor->ui_show(fHandle, true);
+                    // show UI now
+                    fDescriptor->ui_show(fHandle, true);
 
-                // reset CARLA_PLUGIN_EMBED_WINID just in case
-                carla_setenv("CARLA_PLUGIN_EMBED_WINID", "0");
-#else
-                destoryUILauncher(fUiLauncher);
-                fUiLauncher = createUILauncher((intptr_t)ptr, fDescriptor, fHandle);
+                    // reset CARLA_PLUGIN_EMBED_WINID just in case
+                    carla_setenv("CARLA_PLUGIN_EMBED_WINID", "0");
+                }
+                else
 #endif
+                {
+                    destoryUILauncher(fUiLauncher);
+                    fUiLauncher = createUILauncher((intptr_t)ptr, fDescriptor, fHandle);
+                }
                 ret = 1;
             }
             break;
@@ -320,20 +436,23 @@ public:
             if (fDescriptor->ui_show != nullptr)
             {
 #ifdef HAVE_X11
-                fDescriptor->ui_show(fHandle, false);
-#else
-                destoryUILauncher(fUiLauncher);
-                fUiLauncher = nullptr;
+                if (! kIsUsingUILauncher)
+                {
+                    fDescriptor->ui_show(fHandle, false);
+                }
+                else
 #endif
+                {
+                    destoryUILauncher(fUiLauncher);
+                    fUiLauncher = nullptr;
+                }
                 ret = 1;
             }
             break;
 
         case effEditIdle:
-#ifndef HAVE_X11
             if (fUiLauncher != nullptr)
                 idleUILauncher(fUiLauncher);
-#endif
             if (fDescriptor->ui_idle != nullptr)
                 fDescriptor->ui_idle(fHandle);
             break;
@@ -402,6 +521,10 @@ public:
             }
             break;
 
+        case effCanBeAutomated:
+            ret = 1;
+            break;
+
         case effCanDo:
             if (const char* const canDo = (const char*)ptr)
             {
@@ -426,13 +549,46 @@ public:
         return ret;
     }
 
-    float vst_getParameter(const int32_t /*index*/)
+    float vst_getParameter(const int32_t index)
     {
-        return 0.0f;
+        CARLA_SAFE_ASSERT_RETURN(index >= 0, 0.0f);
+
+        const uint32_t uindex = static_cast<uint32_t>(index);
+        CARLA_SAFE_ASSERT_RETURN(uindex < fDescriptor->paramIns, 0.0f);
+
+        const NativeParameter* const param = fDescriptor->get_parameter_info(fHandle, uindex);
+        CARLA_SAFE_ASSERT_RETURN(param != nullptr, 0);
+
+        const float realValue = fDescriptor->get_parameter_value(fHandle, uindex);
+
+        return (realValue - param->ranges.min) / (param->ranges.max - param->ranges.min);
     }
 
-    void vst_setParameter(const int32_t /*index*/, const float /*value*/)
+    void vst_setParameter(const int32_t index, const float value)
     {
+        CARLA_SAFE_ASSERT_RETURN(index >= 0,);
+
+        const uint32_t uindex = static_cast<uint32_t>(index);
+        CARLA_SAFE_ASSERT_RETURN(uindex < fDescriptor->paramIns,);
+
+        const NativeParameter* const param = fDescriptor->get_parameter_info(fHandle, uindex);
+        CARLA_SAFE_ASSERT_RETURN(param != nullptr,);
+
+        float realValue;
+
+        if (param->hints & NATIVE_PARAMETER_IS_BOOLEAN)
+        {
+            realValue = value > 0.5f ? param->ranges.max : param->ranges.min;
+        }
+        else
+        {
+            realValue = param->ranges.min + ((param->ranges.max - param->ranges.min) * value);
+
+            if (param->hints & NATIVE_PARAMETER_IS_INTEGER)
+                realValue = std::round(realValue);
+        }
+
+        fDescriptor->set_parameter_value(fHandle, uindex, realValue);
     }
 
     void vst_processReplacing(const float** const inputs, float** const outputs, const int32_t sampleFrames)
@@ -464,7 +620,7 @@ public:
             vst_dispatcher(effMainsChanged, 0, 1, nullptr, 0.0f);
         }
 
-        static const int kWantVstTimeFlags(kVstTransportPlaying|kVstPpqPosValid|kVstTempoValid|kVstTimeSigValid);
+        static const int kWantVstTimeFlags = kVstTransportPlaying|kVstPpqPosValid|kVstTempoValid|kVstTimeSigValid;
 
         if (const VstTimeInfo* const vstTimeInfo = (const VstTimeInfo*)hostCallback(audioMasterGetTime, 0, kWantVstTimeFlags))
         {
@@ -518,7 +674,9 @@ public:
 
         if (fHandle != nullptr)
             // FIXME
-            fDescriptor->process(fHandle, const_cast<float**>(inputs), outputs, static_cast<uint32_t>(sampleFrames), fMidiEvents, fMidiEventCount);
+            fDescriptor->process(fHandle,
+                                 inputs, outputs, static_cast<uint32_t>(sampleFrames),
+                                 fMidiEvents, fMidiEventCount);
 
         fMidiEventCount = 0;
 
@@ -558,8 +716,14 @@ protected:
         return true;
     }
 
-    void handleUiParameterChanged(const uint32_t /*index*/, const float /*value*/) const
+    void handleUiParameterChanged(const uint32_t index, const float value) const
     {
+        const NativeParameter* const param = fDescriptor->get_parameter_info(fHandle, index);
+        CARLA_SAFE_ASSERT_RETURN(param != nullptr,);
+
+        const float normalizedValue = (value - param->ranges.min) / (param->ranges.max - param->ranges.min);
+
+        hostCallback(audioMasterAutomate, static_cast<int32_t>(index), 0, nullptr, normalizedValue);
     }
 
     void handleUiCustomDataChanged(const char* const /*key*/, const char* const /*value*/) const
@@ -593,9 +757,12 @@ protected:
         case NATIVE_HOST_OPCODE_UPDATE_MIDI_PROGRAM:
         case NATIVE_HOST_OPCODE_RELOAD_PARAMETERS:
         case NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS:
-        case NATIVE_HOST_OPCODE_RELOAD_ALL:
         case NATIVE_HOST_OPCODE_UI_UNAVAILABLE:
         case NATIVE_HOST_OPCODE_INTERNAL_PLUGIN:
+            break;
+
+        case NATIVE_HOST_OPCODE_RELOAD_ALL:
+            hostCallback(audioMasterUpdateDisplay);
             break;
 
         case NATIVE_HOST_OPCODE_HOST_IDLE:
@@ -626,13 +793,12 @@ private:
     bool            fIsActive;
     uint32_t        fMidiEventCount;
     NativeMidiEvent fMidiEvents[kMaxMidiEvents];
+    char            fProgramName[32+1];
     NativeTimeInfo  fTimeInfo;
     ERect           fVstRect;
 
-#ifndef HAVE_X11
     // UI button
     CarlaUILauncher* fUiLauncher;
-#endif
 
     // Host data
     enum HostType {
@@ -647,7 +813,7 @@ private:
                           const int32_t index = 0,
                           const intptr_t value = 0,
                           void* const ptr = nullptr,
-                          const float opt = 0.0f)
+                          const float opt = 0.0f) const
     {
         return VSTAudioMaster(fEffect, opcode, index, value, ptr, opt);
     }
@@ -821,8 +987,8 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
             CARLA_SAFE_ASSERT_RETURN(pluginDesc != nullptr, 0);
 
            #ifdef CARLA_VST_SHELL
-            effect->numParams   = 0;
-            effect->numPrograms = 0;
+            effect->numPrograms = 1;
+            effect->numParams   = static_cast<int>(pluginDesc->paramIns);
             effect->numInputs   = static_cast<int>(pluginDesc->audioIns);
             effect->numOutputs  = static_cast<int>(pluginDesc->audioOuts);
 
@@ -1079,20 +1245,19 @@ const AEffect* VSTPluginMainInit(AEffect* const effect)
    #endif
 
     // plugin fields
-    effect->numParams   = 0;
-    effect->numPrograms = 0;
-#if defined(CARLA_VST_SHELL)
-    effect->numInputs   = 0;
-    effect->numOutputs  = 0;
-#elif defined(CARLA_PLUGIN_32CH)
+#ifndef CARLA_VST_SHELL
+    effect->numParams   = kNumParameters;
+    effect->numPrograms = 1;
+# if defined(CARLA_PLUGIN_32CH)
     effect->numInputs   = 32;
     effect->numOutputs  = 32;
-#elif defined(CARLA_PLUGIN_16CH)
+# elif defined(CARLA_PLUGIN_16CH)
     effect->numInputs   = 16;
     effect->numOutputs  = 16;
-#else
+# else
     effect->numInputs   = 2;
     effect->numOutputs  = 2;
+# endif
 #endif
 
     // plugin flags

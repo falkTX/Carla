@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -154,7 +154,8 @@ protected:
         fOutRight = 0.0f;
     }
 
-    void process(float** inputs, float**, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
+    void process(const float** inputs, float**, const uint32_t frames,
+                 const NativeMidiEvent* const, const uint32_t) override
     {
         fOutLeft  = carla_findMaxNormalizedFloat(inputs[0], frames);
         fOutRight = carla_findMaxNormalizedFloat(inputs[1], frames);

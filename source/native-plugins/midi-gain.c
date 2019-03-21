@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -168,7 +168,9 @@ static void midigain_set_parameter_value(NativePluginHandle handle, uint32_t ind
     }
 }
 
-static void midigain_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
+static void midigain_process(NativePluginHandle handle,
+                             const float** inBuffer, float** outBuffer, uint32_t frames,
+                             const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
 {
     const NativeHostDescriptor* const host = handlePtr->host;
     const float gain           = handlePtr->gain;

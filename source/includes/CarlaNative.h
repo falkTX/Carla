@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugin API
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -199,7 +199,8 @@ typedef struct {
     const char* (*ui_open_file)(NativeHostHandle handle, bool isDir, const char* title, const char* filter);
     const char* (*ui_save_file)(NativeHostHandle handle, bool isDir, const char* title, const char* filter);
 
-    intptr_t (*dispatcher)(NativeHostHandle handle, NativeHostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt);
+    intptr_t (*dispatcher)(NativeHostHandle handle,
+                           NativeHostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt);
 
 } NativeHostDescriptor;
 
@@ -244,12 +245,15 @@ typedef struct _NativePluginDescriptor {
 
     void (*activate)(NativePluginHandle handle);
     void (*deactivate)(NativePluginHandle handle);
-    void (*process)(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount);
+    void (*process)(NativePluginHandle handle,
+                    const float** inBuffer, float** outBuffer, uint32_t frames,
+                    const NativeMidiEvent* midiEvents, uint32_t midiEventCount);
 
     char* (*get_state)(NativePluginHandle handle);
     void  (*set_state)(NativePluginHandle handle, const char* data);
 
-    intptr_t (*dispatcher)(NativePluginHandle handle, NativePluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt);
+    intptr_t (*dispatcher)(NativePluginHandle handle,
+                           NativePluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt);
 
 } NativePluginDescriptor;
 

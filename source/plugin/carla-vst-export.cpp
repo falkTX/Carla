@@ -101,3 +101,12 @@ intptr_t VSTAudioMaster(AEffect* effect, int32_t opcode, int32_t index, intptr_t
     const audioMasterCallback audioMaster = (audioMasterCallback)((VstObject*)effect->object)->audioMaster;
     return audioMaster(effect, opcode, index, value, ptr, opt);
 }
+
+bool isUsingUILauncher()
+{
+#ifdef CARLA_OS_LINUX
+    return false;
+#else
+    return true;
+#endif
+}

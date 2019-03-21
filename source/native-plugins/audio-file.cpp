@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -118,7 +118,8 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(float**, float** const outBuffer, const uint32_t frames, const NativeMidiEvent*, uint32_t) override
+    void process(const float**, float** const outBuffer, const uint32_t frames,
+                 const NativeMidiEvent*, uint32_t) override
     {
         const NativeTimeInfo* const timePos(getTimeInfo());
 

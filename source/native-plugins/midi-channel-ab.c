@@ -106,7 +106,9 @@ static void midichanab_set_parameter_value(NativePluginHandle handle, uint32_t i
     handlePtr->channels[index] = (value >= 0.5f);
 }
 
-static void midichanab_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
+static void midichanab_process(NativePluginHandle handle,
+                               const float** inBuffer, float** outBuffer, uint32_t frames,
+                               const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
 {
     const NativeHostDescriptor* const host     = handlePtr->host;
     const bool*                 const channels = handlePtr->channels;

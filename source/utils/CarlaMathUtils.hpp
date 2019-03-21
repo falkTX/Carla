@@ -204,7 +204,7 @@ void carla_zeroFloats(float floats[], const std::size_t count) noexcept
  * Find the highest absolute and normalized value within a float array.
  */
 static inline
-float carla_findMaxNormalizedFloat(float floats[], const std::size_t count)
+float carla_findMaxNormalizedFloat(const float floats[], const std::size_t count)
 {
     CARLA_SAFE_ASSERT_RETURN(floats != nullptr, 0.0f);
     CARLA_SAFE_ASSERT_RETURN(count > 0, 0.0f);

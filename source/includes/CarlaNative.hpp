@@ -282,7 +282,8 @@ protected:
 
     virtual void deactivate() {}
 
-    virtual void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) = 0;
+    virtual void process(const float** const inBuffer, float** const outBuffer, const uint32_t frames,
+                         const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) = 0;
 
     // -------------------------------------------------------------------
     // Plugin UI calls
@@ -454,7 +455,9 @@ public:
         handlePtr->deactivate();
     }
 
-    static void _process(NativePluginHandle handle, float** inBuffer, float** outBuffer, const uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
+    static void _process(NativePluginHandle handle,
+                         const float** inBuffer, float** outBuffer, const uint32_t frames,
+                         const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
     {
         handlePtr->process(inBuffer, outBuffer, frames, midiEvents, midiEventCount);
     }
@@ -469,7 +472,8 @@ public:
         handlePtr->setState(data);
     }
 
-    static intptr_t _dispatcher(NativePluginHandle handle, NativePluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt)
+    static intptr_t _dispatcher(NativePluginHandle handle,
+                                NativePluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt)
     {
         switch(opcode)
         {
