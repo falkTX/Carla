@@ -442,6 +442,7 @@ ifeq ($(HAVE_PYQT),true)
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
 	install -d $(DESTDIR)$(DATADIR)/mime/packages
 	install -d $(DESTDIR)$(DATADIR)/carla/resources
+	install -d $(DESTDIR)$(DATADIR)/carla/resources/translations
 	install -d $(DESTDIR)$(DATADIR)/carla/modgui
 	install -d $(DESTDIR)$(DATADIR)/carla/patchcanvas
 	install -d $(DESTDIR)$(DATADIR)/carla/widgets
@@ -683,6 +684,11 @@ endif
 	$(LINK) ../ui_carla_settings_driver.py $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_inputdialog_value.py     $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_midipattern.py           $(DESTDIR)$(DATADIR)/carla/resources
+
+	# Install translations
+	$(foreach l,$(I18N_LANGUAGES),install -m 644 \
+		source/frontend/translations/carla_$(l).qm \
+		$(DESTDIR)$(DATADIR)/carla/resources/translations/;)
 endif # HAVE_PYQT
 
 	# -------------------------------------------------------------------------------------------------------------
