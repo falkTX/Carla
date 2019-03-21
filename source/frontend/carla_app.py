@@ -30,7 +30,7 @@ from ctypes import CDLL, RTLD_GLOBAL
 # ------------------------------------------------------------------------------------------------------------
 # Imports (PyQt5)
 
-from PyQt5.QtCore import QT_VERSION, Qt, QCoreApplication
+from PyQt5.QtCore import QT_VERSION, Qt, QCoreApplication, QLibraryInfo, QLocale, QSettings, QTranslator
 from PyQt5.QtGui import QColor, QIcon, QPalette
 from PyQt5.QtWidgets import QApplication
 
@@ -76,6 +76,22 @@ class CarlaApplication():
         # If style is not available we can still fake it
         else:
             stylesDir = ""
+
+        # Set up translations
+        currentLocale = QLocale()
+        appTranslator = QTranslator()
+        sysTranslator = None
+        pathTranslations = os.path.join(pathResources, "translations")
+        if appTranslator.load(currentLocale, "carla", "_", pathTranslations):
+            sysTranslator = QTranslator()
+            pathSysTranslations = pathTranslations
+            if not sysTranslator.load(currentLocale, "qt", "_", pathSysTranslations):
+                pathSysTranslations = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
+                sysTranslator.load(currentLocale, "qt", "_", pathSysTranslations)
+        else:
+            appTranslator = None
+        self.fAppTranslator = appTranslator
+        self.fSysTranslator = sysTranslator
 
         # base settings
         settings    = QSafeSettings("falkTX", appName)
@@ -137,6 +153,10 @@ class CarlaApplication():
         self.fApp.setApplicationName(appName)
         self.fApp.setApplicationVersion(VERSION)
         self.fApp.setOrganizationName("falkTX")
+
+        if self.fAppTranslator is not None:
+            self.fApp.installTranslator(self.fAppTranslator)
+            self.fApp.installTranslator(self.fSysTranslator)
 
         if gCarla.nogui:
             return
