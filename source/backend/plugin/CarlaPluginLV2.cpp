@@ -5114,7 +5114,7 @@ public:
 
     void handleUITouch(const uint32_t rindex, const bool touch)
     {
-        carla_stdout("CarlaPluginLV2::handleUITouch(%u, %s)", rindex, bool2str(touch));
+        carla_debug("CarlaPluginLV2::handleUITouch(%u, %s)", rindex, bool2str(touch));
 
         uint32_t index = LV2UI_INVALID_PORT_INDEX;
 

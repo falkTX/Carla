@@ -256,6 +256,17 @@ public:
         return "Bridge";
     }
 
+    void touchPluginParameter(const uint id, const uint32_t parameterId, const bool touch) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(id == 0,);
+
+        const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
+        fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerParameterTouch);
+        fShmNonRtServerControl.writeUInt(parameterId);
+        fShmNonRtServerControl.writeBool(touch);
+        fShmNonRtServerControl.commitWrite();
+    }
+
     CarlaEngineClient* addClient(CarlaPlugin* const) override
     {
         return new CarlaEngineBridgeClient(*this, this);

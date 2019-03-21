@@ -333,7 +333,6 @@ public:
 
     void touchPluginParameter(const uint id, const uint32_t parameterId, const bool touch) noexcept override
     {
-        carla_stdout("engineNative touchPluginParameter %u %u %s", id, parameterId, bool2str(touch));
         setParameterTouchFromUI(id, parameterId, touch);
     }
 
@@ -353,7 +352,6 @@ public:
         if (pluginId != 0)
             return;
 
-        carla_stdout("engineNative setParameterTouchFromUI %u %u %s", pluginId,index, bool2str(touch));
         pHost->ui_parameter_touch(pHost->handle, index, touch);
     }
 
@@ -1394,8 +1392,6 @@ protected:
 
     void uiSetParameterValue(const uint32_t index, const float value)
     {
-        carla_stdout("uiSetParameterValue(%d, %f)", index, static_cast<double>(value));
-
         if (CarlaPlugin* const plugin = _getFirstPlugin())
         {
             if (index < plugin->getParameterCount())

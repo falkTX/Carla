@@ -1,6 +1,6 @@
 /*
  * Carla Bridge utils
- * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -163,6 +163,8 @@ const char* PluginBridgeNonRtServerOpcode2str(const PluginBridgeNonRtServerOpcod
         return "kPluginBridgeNonRtServerParameterValue";
     case kPluginBridgeNonRtServerParameterValue2:
         return "kPluginBridgeNonRtServerParameterValue2";
+    case kPluginBridgeNonRtServerParameterTouch:
+        return "kPluginBridgeNonRtServerParameterTouch";
     case kPluginBridgeNonRtServerDefaultValue:
         return "kPluginBridgeNonRtServerDefaultValue";
     case kPluginBridgeNonRtServerCurrentProgram:

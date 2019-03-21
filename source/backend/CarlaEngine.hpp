@@ -880,6 +880,7 @@ public:
      * Switch plugins with id @a idA and @a idB.
      */
     bool switchPlugins(const uint idA, const uint idB) noexcept;
+#endif
 
     /*!
      * Set a plugin's parameter in drag/touch mode.
@@ -889,7 +890,6 @@ public:
      * @param touch The new state for the parameter
      */
     virtual void touchPluginParameter(const uint id, const uint32_t parameterId, const bool touch) noexcept;
-#endif
 
     /*!
      * Get plugin with id @a id.

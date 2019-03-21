@@ -725,7 +725,6 @@ protected:
 
     void handleUiParameterTouch(const uint32_t index, const bool touch) const
     {
-        carla_stdout("VST handleUiParameterTouch %u %s", index, bool2str(touch));
         hostCallback(touch ? audioMasterBeginEdit : audioMasterEndEdit, static_cast<int32_t>(index));
     }
 

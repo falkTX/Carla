@@ -1,6 +1,6 @@
 /*
  * Carla Bridge definitions
- * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
 
 #include "CarlaRingBuffer.hpp"
 
-#define CARLA_PLUGIN_BRIDGE_API_VERSION 5
+#define CARLA_PLUGIN_BRIDGE_API_VERSION 6
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -90,6 +90,7 @@ enum PluginBridgeNonRtServerOpcode {
     kPluginBridgeNonRtServerParameterRanges,    // uint/index, float/def, float/min, float/max, float/step, float/stepSmall, float/stepLarge
     kPluginBridgeNonRtServerParameterValue,     // uint/index, float/value
     kPluginBridgeNonRtServerParameterValue2,    // uint/index, float/value (used for init/output parameters only, don't resend values)
+    kPluginBridgeNonRtServerParameterTouch,     // uint/index, bool/touch
     kPluginBridgeNonRtServerDefaultValue,       // uint/index, float/value
     kPluginBridgeNonRtServerCurrentProgram,     // int/index
     kPluginBridgeNonRtServerCurrentMidiProgram, // int/index

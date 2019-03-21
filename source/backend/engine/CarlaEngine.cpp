@@ -877,11 +877,11 @@ bool CarlaEngine::switchPlugins(const uint idA, const uint idB) noexcept
 
     return true;
 }
+#endif
 
 void CarlaEngine::touchPluginParameter(const uint, const uint32_t, const bool) noexcept
 {
 }
-#endif
 
 CarlaPlugin* CarlaEngine::getPlugin(const uint id) const noexcept
 {
