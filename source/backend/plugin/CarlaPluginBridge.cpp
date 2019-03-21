@@ -2063,6 +2063,14 @@ public:
                 }
             }   break;
 
+            case kPluginBridgeNonRtServerParameterTouch: {
+                // uint/index, bool/touch
+                const uint32_t index = fShmNonRtServerControl.readUInt();
+                const bool     touch = fShmNonRtServerControl.readBool();
+
+                (void)index; (void)touch; // unused
+            }   break;
+
             case kPluginBridgeNonRtServerDefaultValue: {
                 // uint/index, float/value
                 const uint32_t index = fShmNonRtServerControl.readUInt();

@@ -1153,6 +1153,7 @@ public:
             case kPluginBridgeNonRtServerParameterRanges:
             case kPluginBridgeNonRtServerParameterValue:
             case kPluginBridgeNonRtServerParameterValue2:
+            case kPluginBridgeNonRtServerParameterTouch:
             case kPluginBridgeNonRtServerDefaultValue:
             case kPluginBridgeNonRtServerCurrentProgram:
             case kPluginBridgeNonRtServerCurrentMidiProgram:

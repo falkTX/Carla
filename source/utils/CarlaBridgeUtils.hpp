@@ -163,6 +163,8 @@ const char* PluginBridgeNonRtServerOpcode2str(const PluginBridgeNonRtServerOpcod
         return "kPluginBridgeNonRtServerParameterValue";
     case kPluginBridgeNonRtServerParameterValue2:
         return "kPluginBridgeNonRtServerParameterValue2";
+    case kPluginBridgeNonRtServerParameterTouch:
+        return "kPluginBridgeNonRtServerParameterTouch";
     case kPluginBridgeNonRtServerDefaultValue:
         return "kPluginBridgeNonRtServerDefaultValue";
     case kPluginBridgeNonRtServerCurrentProgram:
