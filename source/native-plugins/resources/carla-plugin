@@ -494,7 +494,7 @@ class CarlaEmbedW(QEmbedWidget):
         self.host = host
         self.fWinId = winId
         self.fWidget = self.getWidget()
-        self.fWidget.setFixedSize(740, 512)
+        self.fWidget.setFixedSize(1024, 712)
 
         self.fLayout = QVBoxLayout(self.fWidget)
         self.fLayout.setContentsMargins(0, 0, 0, 0)

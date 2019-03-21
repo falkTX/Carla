@@ -105,8 +105,8 @@ public:
 
         fVstRect.top    = 0;
         fVstRect.left   = 0;
-        fVstRect.bottom = 512;
-        fVstRect.right  = 740;
+        fVstRect.bottom = 712;
+        fVstRect.right  = 1024;
 
         init();
     }
