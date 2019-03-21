@@ -51,6 +51,9 @@ qrc_resources.cpp
 *_rc.py
 ui_*.py
 
+# Translation files
+*.qm
+
 # Misc files
 *.aria2
 *.deb
