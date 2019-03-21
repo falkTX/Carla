@@ -143,6 +143,11 @@ char* jackbridge_get_client_name_by_uuid(jack_client_t* client, const char* uuid
     return getBridgeInstance().get_client_name_by_uuid_ptr(client, uuid);
 }
 
+bool jackbridge_uuid_parse(const char* buf, jack_uuid_t* uuid)
+{
+    return getBridgeInstance().uuid_parse_ptr(buf, uuid);
+}
+
 bool jackbridge_activate(jack_client_t* client)
 {
     return getBridgeInstance().activate_ptr(client);
