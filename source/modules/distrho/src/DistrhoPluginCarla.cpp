@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -98,7 +98,7 @@ public:
     // ---------------------------------------------
 
 protected:
-    void handleEditParameter(const uint32_t index, const bool touch)
+    void handleEditParameter(const uint32_t rindex, const bool touch)
     {
         fHost->ui_parameter_touch(fHost->handle, rindex, touch);
     }
@@ -360,7 +360,8 @@ protected:
     }
 
 #if DISTRHO_PLUGIN_WANT_MIDI_INPUT
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
+    void process(const float** const inBuffer, float** const outBuffer, const uint32_t frames,
+                 const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
         MidiEvent realMidiEvents[midiEventCount];
 
@@ -381,12 +382,13 @@ protected:
             realMidiEvent.dataExt = nullptr;
         }
 
-        fPlugin.run(const_cast<const float**>(inBuffer), outBuffer, frames, realMidiEvents, midiEventCount);
+        fPlugin.run(inBuffer, outBuffer, frames, realMidiEvents, midiEventCount);
     }
 #else
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
+    void process(const float** const inBuffer, float** const outBuffer, const uint32_t frames,
+                 const NativeMidiEvent* const, const uint32_t) override
     {
-        fPlugin.run(const_cast<const float**>(inBuffer), outBuffer, frames);
+        fPlugin.run(inBuffer, outBuffer, frames);
     }
 #endif
 
