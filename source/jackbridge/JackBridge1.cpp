@@ -68,6 +68,8 @@ typedef char* (JACKSYM_API *jacksym_client_get_uuid)(jack_client_t*);
 typedef char* (JACKSYM_API *jacksym_get_uuid_for_client_name)(jack_client_t*, const char*);
 typedef char* (JACKSYM_API *jacksym_get_client_name_by_uuid)(jack_client_t*, const char*);
 
+typedef int (JACKBRIDGE_API *jacksym_uuid_parse)(const char*, jack_uuid_t*);
+
 typedef int (JACKSYM_API *jacksym_activate)(jack_client_t*);
 typedef int (JACKSYM_API *jacksym_deactivate)(jack_client_t*);
 typedef int (JACKSYM_API *jacksym_is_realtime)(jack_client_t*);
@@ -192,6 +194,8 @@ struct JackBridge {
     jacksym_get_uuid_for_client_name get_uuid_for_client_name_ptr;
     jacksym_get_client_name_by_uuid get_client_name_by_uuid_ptr;
 
+    jacksym_uuid_parse uuid_parse_ptr;
+
     jacksym_activate activate_ptr;
     jacksym_deactivate deactivate_ptr;
     jacksym_is_realtime is_realtime_ptr;
@@ -306,6 +310,7 @@ struct JackBridge {
           client_get_uuid_ptr(nullptr),
           get_uuid_for_client_name_ptr(nullptr),
           get_client_name_by_uuid_ptr(nullptr),
+          uuid_parse_ptr(nullptr),
           activate_ptr(nullptr),
           deactivate_ptr(nullptr),
           is_realtime_ptr(nullptr),
@@ -428,6 +433,8 @@ struct JackBridge {
         LIB_SYMBOL(client_get_uuid)
         LIB_SYMBOL(get_uuid_for_client_name)
         LIB_SYMBOL(get_client_name_by_uuid)
+
+        LIB_SYMBOL(uuid_parse)
 
         LIB_SYMBOL(activate)
         LIB_SYMBOL(deactivate)
@@ -911,6 +918,20 @@ char* jackbridge_get_client_name_by_uuid(jack_client_t* client, const char* uuid
         return getBridgeInstance().get_client_name_by_uuid_ptr(client, uuid);
 #endif
     return nullptr;
+}
+
+// -----------------------------------------------------------------------------
+
+bool jackbridge_uuid_parse(const char* buf, jack_uuid_t* uuid)
+{
+#if defined(JACKBRIDGE_DUMMY)
+#elif defined(JACKBRIDGE_DIRECT)
+    return (jack_uuid_parse(buf, uuid) == 0);
+#else
+    if (const jacksym_uuid_parse func = getBridgeInstance().uuid_parse_ptr)
+        return (func(buf, uuid) == 0);
+#endif
+    return false;
 }
 
 // -----------------------------------------------------------------------------

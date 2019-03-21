@@ -30,6 +30,7 @@ typedef char* (JACKBRIDGE_API *jackbridgesym_get_client_name)(jack_client_t*);
 typedef char* (JACKBRIDGE_API *jackbridgesym_client_get_uuid)(jack_client_t*);
 typedef char* (JACKBRIDGE_API *jackbridgesym_get_uuid_for_client_name)(jack_client_t*, const char*);
 typedef char* (JACKBRIDGE_API *jackbridgesym_get_client_name_by_uuid)(jack_client_t*, const char*);
+typedef bool (JACKBRIDGE_API *jackbridgesym_uuid_parse)(const char*, jack_uuid_t*);
 typedef bool (JACKBRIDGE_API *jackbridgesym_activate)(jack_client_t*);
 typedef bool (JACKBRIDGE_API *jackbridgesym_deactivate)(jack_client_t*);
 typedef bool (JACKBRIDGE_API *jackbridgesym_is_realtime)(jack_client_t*);
@@ -137,6 +138,7 @@ struct _JackBridgeExportedFunctions {
     jackbridgesym_client_get_uuid client_get_uuid_ptr;
     jackbridgesym_get_uuid_for_client_name get_uuid_for_client_name_ptr;
     jackbridgesym_get_client_name_by_uuid get_client_name_by_uuid_ptr;
+    jackbridgesym_uuid_parse uuid_parse_ptr;
     jackbridgesym_activate activate_ptr;
     jackbridgesym_deactivate deactivate_ptr;
     jackbridgesym_is_realtime is_realtime_ptr;

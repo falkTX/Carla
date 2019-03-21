@@ -47,6 +47,7 @@ const JackBridgeExportedFunctions* JACKBRIDGE_API jackbridge_get_exported_functi
     funcs.client_get_uuid_ptr                  = jackbridge_client_get_uuid;
     funcs.get_uuid_for_client_name_ptr         = jackbridge_get_uuid_for_client_name;
     funcs.get_client_name_by_uuid_ptr          = jackbridge_get_client_name_by_uuid;
+    funcs.uuid_parse_ptr                       = jackbridge_uuid_parse;
     funcs.activate_ptr                         = jackbridge_activate;
     funcs.deactivate_ptr                       = jackbridge_deactivate;
     funcs.is_realtime_ptr                      = jackbridge_is_realtime;

@@ -297,6 +297,8 @@ JACKBRIDGE_API char* jackbridge_client_get_uuid(jack_client_t* client);
 JACKBRIDGE_API char* jackbridge_get_uuid_for_client_name(jack_client_t* client, const char* name);
 JACKBRIDGE_API char* jackbridge_get_client_name_by_uuid(jack_client_t* client, const char* uuid);
 
+JACKBRIDGE_API bool jackbridge_uuid_parse(const char* buf, jack_uuid_t* uuid);
+
 JACKBRIDGE_API bool jackbridge_activate(jack_client_t* client);
 JACKBRIDGE_API bool jackbridge_deactivate(jack_client_t* client);
 JACKBRIDGE_API bool jackbridge_is_realtime(jack_client_t* client);
