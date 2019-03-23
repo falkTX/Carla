@@ -6,7 +6,7 @@
 #include "../../../../source/includes/CarlaDefines.h"
 
 #define SFX_APP_MININAME_TITLE "CarlaControl"
-#define SFX_APP_MININAME_LCASE "carlacontrol"
+#define SFX_APP_MININAME_LCASE "carla-control"
 
 #define SFX_APP_BANNER  SFX_APP_MININAME_TITLE " self-contained executable " CARLA_VERSION_STRING ", based on UnZipSFX."
 
