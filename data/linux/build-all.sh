@@ -269,10 +269,10 @@ download_carla_extras()
 {
 
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
-CARLA_VER="2.0.0"
-WINBR_VER="2.0.0"
-WINE32_VER="1.9.14+git20190227"
-WINE64_VER="1.9.14.git20190227"
+CARLA_VER="2.0.0+git20190322"
+WINBR_VER="2.1~alpha2+git20190321"
+WINE32_VER="2.1~alpha2+git20190321"
+WINE64_VER="2.1~alpha2+git20190321"
 
 cat <<EOF | sudo chroot ${CHROOT_DIR}
 set -e
