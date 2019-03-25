@@ -3,53 +3,50 @@
         <file>16x16/carla.png</file>
         <file>16x16/carla-control.png</file>
 
-        <file>16x16/application-exit.png</file>
-        <file>16x16/arrow-right.png</file>
-        <file>16x16/configure.png</file>
-        <file>16x16/dialog-cancel.png</file>
-        <file>16x16/dialog-error.png</file>
-        <file>16x16/dialog-information.png</file>
-        <file>16x16/dialog-ok-apply.png</file>
-        <file>16x16/dialog-warning.png</file>
-        <file>16x16/document-new.png</file>
-        <file>16x16/document-open.png</file>
-        <file>16x16/document-print.png</file>
-        <file>16x16/document-save.png</file>
-        <file>16x16/document-save-as.png</file>
-        <file>16x16/edit-delete.png</file>
-        <file>16x16/edit-rename.png</file>
-        <file>16x16/list-add.png</file>
-        <file>16x16/list-remove.png</file>
-        <file>16x16/media-playback-pause.png</file>
-        <file>16x16/media-playback-start.png</file>
-        <file>16x16/media-playback-stop.png</file>
-        <file>16x16/media-seek-backward.png</file>
-        <file>16x16/media-seek-forward.png</file>
-        <file>16x16/network-connect.png</file>
-        <file>16x16/view-refresh.png</file>
-        <file>16x16/view-sort-ascending.png</file>
-        <file>16x16/window-close.png</file>
-        <file>16x16/zoom-fit-best.png</file>
-        <file>16x16/zoom-in.png</file>
-        <file>16x16/zoom-original.png</file>
-        <file>16x16/zoom-out.png</file>
+        <file>16x16/application-exit.svgz</file>
+        <file>16x16/arrow-right.svgz</file>
+        <file>16x16/configure.svgz</file>
+        <file>16x16/dialog-cancel.svgz</file>
+        <file>16x16/dialog-error.svgz</file>
+        <file>16x16/dialog-information.svgz</file>
+        <file>16x16/dialog-ok-apply.svgz</file>
+        <file>16x16/dialog-warning.svgz</file>
+        <file>16x16/document-new.svgz</file>
+        <file>16x16/document-open.svgz</file>
+        <file>16x16/document-save.svgz</file>
+        <file>16x16/document-save-as.svgz</file>
+        <file>16x16/edit-delete.svgz</file>
+        <file>16x16/edit-rename.svgz</file>
+        <file>16x16/list-add.svgz</file>
+        <file>16x16/list-remove.svgz</file>
+        <file>16x16/media-playback-pause.svgz</file>
+        <file>16x16/media-playback-start.svgz</file>
+        <file>16x16/media-playback-stop.svgz</file>
+        <file>16x16/media-seek-backward.svgz</file>
+        <file>16x16/media-seek-forward.svgz</file>
+        <file>16x16/network-connect.svgz</file>
+        <file>16x16/view-refresh.svgz</file>
+        <file>16x16/view-sort-ascending.svgz</file>
+        <file>16x16/window-close.svgz</file>
+        <file>16x16/zoom-fit-best.svgz</file>
+        <file>16x16/zoom-in.svgz</file>
+        <file>16x16/zoom-original.svgz</file>
+        <file>16x16/zoom-out.svgz</file>
 
         <file>48x48/carla.png</file>
         <file>48x48/carla-control.png</file>
 
         <file>48x48/canvas.png</file>
-        <file>48x48/folder.png</file>
         <file>48x48/jack.png</file>
         <file>48x48/juce.png</file>
-        <file>48x48/osc.png</file>
-        <file>48x48/warning.png</file>
-        <file>48x48/wine.png</file>
-
-        <file>48x48/carla.png</file>
-        <file>48x48/carla-control.png</file>
 
         <file>scalable/carla.svg</file>
         <file>scalable/carla-control.svg</file>
+        
+        <file>scalable/folder.svgz</file>
+        <file>scalable/osc.svgz</file>
+        <file>scalable/warning.svgz</file>
+        <file>scalable/wine.svgz</file>
 
         <file>bitmaps/carla_about_black.png</file>
         <file>bitmaps/carla_about_white.png</file>

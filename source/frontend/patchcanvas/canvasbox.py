@@ -121,7 +121,9 @@ class CanvasBox(QGraphicsItem):
             self.icon_svg = None
 
         # Shadow
-        if options.eyecandy:
+        # FIXME FX on top of graphic items make them lose high-dpi
+        # See https://bugreports.qt.io/browse/QTBUG-65035
+        if options.eyecandy and canvas.scene.getDevicePixelRatioF() == 1.0:
             self.shadow = CanvasBoxShadow(self.toGraphicsObject())
             self.shadow.setFakeParent(self)
             self.setGraphicsEffect(self.shadow)
@@ -622,16 +624,18 @@ class CanvasBox(QGraphicsItem):
 
         # Draw plugin inline display if supported
         if self.m_plugin_id >= 0 and self.m_plugin_id <= MAX_PLUGIN_ID_ALLOWED and self.m_plugin_inline:
-            size = "%i:%i" % (self.p_width - self.p_width_in - self.p_width_out - 16,
-                              self.p_height - canvas.theme.box_header_height)
+            inwidth = self.p_width - self.p_width_in - self.p_width_out - 16
+            inheight = self.p_height - canvas.theme.box_header_height
+            scaling = canvas.scene.getScaleFactor() * canvas.scene.getDevicePixelRatioF()
+            size = "%i:%i" % (int(inwidth*scaling), int(inheight*scaling))
             data = canvas.callback(ACTION_INLINE_DISPLAY, self.m_plugin_id, 0, size)
             if data is not None:
                 image = QImage(data['data'], data['width'], data['height'], data['stride'], QImage.Format_ARGB32)
-                painter.drawImage(self.p_width_in + 7,
-                                  canvas.theme.box_header_height
-                                  + (self.p_height - canvas.theme.box_header_height) / 2
-                                  - data['height'] / 2 - 1,
-                                  image)
+                srcx = self.p_width_in + 7
+                srcy = int(canvas.theme.box_header_height
+                           + (self.p_height - canvas.theme.box_header_height) / 2
+                           - data['height'] / 2 / scaling - 1)
+                painter.drawImage(QRectF(srcx, srcy, inwidth, inheight), image)
 
         # Draw pixmap header
         rect.setHeight(canvas.theme.box_header_height)

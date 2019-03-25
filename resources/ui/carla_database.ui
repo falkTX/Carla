@@ -46,7 +46,7 @@
        </property>
        <property name="icon">
         <iconset resource="../resources.qrc">
-         <normaloff>:/16x16/view-refresh.png</normaloff>:/16x16/view-refresh.png</iconset>
+         <normaloff>:/16x16/view-refresh.svgz</normaloff>:/16x16/view-refresh.svgz</iconset>
        </property>
       </widget>
      </item>
@@ -390,7 +390,7 @@
        </property>
        <property name="icon">
         <iconset resource="../resources.qrc">
-         <normaloff>:/16x16/list-add.png</normaloff>:/16x16/list-add.png</iconset>
+         <normaloff>:/16x16/list-add.svgz</normaloff>:/16x16/list-add.svgz</iconset>
        </property>
       </widget>
      </item>
@@ -401,7 +401,7 @@
        </property>
        <property name="icon">
         <iconset resource="../resources.qrc">
-         <normaloff>:/16x16/dialog-cancel.png</normaloff>:/16x16/dialog-cancel.png</iconset>
+         <normaloff>:/16x16/dialog-cancel.svgz</normaloff>:/16x16/dialog-cancel.svgz</iconset>
        </property>
       </widget>
      </item>

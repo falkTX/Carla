@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>567</width>
-    <height>326</height>
+    <width>686</width>
+    <height>330</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -242,15 +242,18 @@
            <widget class="QLabel" name="ico_native">
             <property name="maximumSize">
              <size>
-              <width>22</width>
-              <height>16777215</height>
+              <width>16</width>
+              <height>16</height>
              </size>
             </property>
             <property name="text">
              <string/>
             </property>
             <property name="pixmap">
-             <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
+             <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.svgz</pixmap>
+            </property>
+            <property name="scaledContents">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -258,15 +261,18 @@
            <widget class="QLabel" name="ico_posix32">
             <property name="maximumSize">
              <size>
-              <width>22</width>
-              <height>16777215</height>
+              <width>16</width>
+              <height>16</height>
              </size>
             </property>
             <property name="text">
              <string/>
             </property>
             <property name="pixmap">
-             <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
+             <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.svgz</pixmap>
+            </property>
+            <property name="scaledContents">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -293,11 +299,20 @@
           </item>
           <item row="2" column="0">
            <widget class="QLabel" name="ico_posix64">
+            <property name="maximumSize">
+             <size>
+              <width>16</width>
+              <height>16</height>
+             </size>
+            </property>
             <property name="text">
              <string/>
             </property>
             <property name="pixmap">
-             <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
+             <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.svgz</pixmap>
+            </property>
+            <property name="scaledContents">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -305,15 +320,18 @@
            <widget class="QLabel" name="ico_rdflib">
             <property name="maximumSize">
              <size>
-              <width>22</width>
-              <height>16777215</height>
+              <width>16</width>
+              <height>16</height>
              </size>
             </property>
             <property name="text">
              <string/>
             </property>
             <property name="pixmap">
-             <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
+             <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.svgz</pixmap>
+            </property>
+            <property name="scaledContents">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -328,25 +346,37 @@
            <widget class="QLabel" name="ico_win32">
             <property name="maximumSize">
              <size>
-              <width>22</width>
-              <height>16777215</height>
+              <width>16</width>
+              <height>16</height>
              </size>
             </property>
             <property name="text">
              <string/>
             </property>
             <property name="pixmap">
-             <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
+             <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.svgz</pixmap>
+            </property>
+            <property name="scaledContents">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
           <item row="4" column="0">
            <widget class="QLabel" name="ico_win64">
+            <property name="maximumSize">
+             <size>
+              <width>16</width>
+              <height>16</height>
+             </size>
+            </property>
             <property name="text">
              <string/>
             </property>
             <property name="pixmap">
-             <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
+             <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.svgz</pixmap>
+            </property>
+            <property name="scaledContents">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -480,7 +510,7 @@ You can disable these checks to get a faster scanning time (at your own risk).</
        </property>
        <property name="icon">
         <iconset resource="../resources.qrc">
-         <normaloff>:/16x16/arrow-right.png</normaloff>:/16x16/arrow-right.png</iconset>
+         <normaloff>:/16x16/arrow-right.svgz</normaloff>:/16x16/arrow-right.svgz</iconset>
        </property>
       </widget>
      </item>
@@ -498,7 +528,7 @@ You can disable these checks to get a faster scanning time (at your own risk).</
        </property>
        <property name="icon">
         <iconset resource="../resources.qrc">
-         <normaloff>:/16x16/window-close.png</normaloff>:/16x16/window-close.png</iconset>
+         <normaloff>:/16x16/window-close.svgz</normaloff>:/16x16/window-close.svgz</iconset>
        </property>
       </widget>
      </item>

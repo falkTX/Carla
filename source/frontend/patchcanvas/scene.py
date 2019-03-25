@@ -70,6 +70,7 @@ class PatchScene(QGraphicsScene):
         self.m_mid_button_down = False
         self.m_pointer_border = QRectF(0.0, 0.0, 1.0, 1.0)
         self.m_scale_min = 0.1
+        self.m_scale_max = 4.0
 
         self.m_rubberband = RubberbandRect(self)
         self.m_rubberband_selection = False
@@ -84,6 +85,12 @@ class PatchScene(QGraphicsScene):
 
         self.selectionChanged.connect(self.slot_selectionChanged)
 
+    def getDevicePixelRatioF(self):
+        return self.m_view.devicePixelRatioF()
+
+    def getScaleFactor(self):
+        return self.m_view.transform().m11()
+
     def fixScaleFactor(self, transform=None):
         fix, set_view = False, False
         if not transform:
@@ -92,10 +99,10 @@ class PatchScene(QGraphicsScene):
             transform = view.transform()
 
         scale = transform.m11()
-        if scale > 3.0:
+        if scale > self.m_scale_max:
             fix = True
             transform.reset()
-            transform.scale(3.0, 3.0)
+            transform.scale(self.m_scale_max, self.m_scale_max)
         elif scale < self.m_scale_min:
             fix = True
             transform.reset()
@@ -156,8 +163,11 @@ class PatchScene(QGraphicsScene):
     def zoom_in(self):
         view = self.m_view
         transform = view.transform()
-        if transform.m11() < 3.0:
+        if transform.m11() < self.m_scale_max:
             transform.scale(1.2, 1.2)
+            if transform.m11() > self.m_scale_max:
+                transform.reset()
+                transform.scale(self.m_scale_max, self.m_scale_max)
             view.setTransform(transform)
         self.scaleChanged.emit(transform.m11())
 
@@ -166,6 +176,9 @@ class PatchScene(QGraphicsScene):
         transform = view.transform()
         if transform.m11() > self.m_scale_min:
             transform.scale(0.833333333333333, 0.833333333333333)
+            if transform.m11() < self.m_scale_min:
+                transform.reset()
+                transform.scale(self.m_scale_min, self.m_scale_min)
             view.setTransform(transform)
         self.scaleChanged.emit(transform.m11())
 
@@ -370,7 +383,7 @@ class PatchScene(QGraphicsScene):
         transform = self.m_view.transform()
         scale = transform.m11()
 
-        if (delta > 0 and scale < 3.0) or (delta < 0 and scale > self.m_scale_min):
+        if (delta > 0 and scale < self.m_scale_max) or (delta < 0 and scale > self.m_scale_min):
             factor = 1.41 ** (delta / 240.0)
             transform.scale(factor, factor)
             self.fixScaleFactor(transform)

@@ -129,7 +129,7 @@
         <string/>
        </property>
        <property name="pixmap">
-        <pixmap resource="../resources.qrc">:/16x16/dialog-information.png</pixmap>
+        <pixmap resource="../resources.qrc">:/16x16/dialog-information.svgz</pixmap>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>

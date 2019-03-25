@@ -496,7 +496,7 @@
             <enum>Qt::PlainText</enum>
            </property>
            <property name="pixmap">
-            <pixmap resource="../resources.qrc">:/48x48/carla.png</pixmap>
+            <pixmap resource="../resources.qrc">:/scalable/carla.svg</pixmap>
            </property>
           </widget>
          </item>
@@ -521,7 +521,7 @@
             <enum>Qt::PlainText</enum>
            </property>
            <property name="pixmap">
-            <pixmap resource="../resources.qrc">:/48x48/carla-control.png</pixmap>
+            <pixmap resource="../resources.qrc">:/scalable/carla-control.svg</pixmap>
            </property>
           </widget>
          </item>

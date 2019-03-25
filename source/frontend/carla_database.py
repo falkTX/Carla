@@ -23,6 +23,7 @@ from copy import deepcopy
 from subprocess import Popen, PIPE
 
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QEventLoop, QThread, QSettings
+from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QDialog, QDialogButtonBox, QTableWidgetItem
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -997,8 +998,8 @@ class PluginRefreshW(QDialog):
         hasWin64   = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-win64.exe"))
 
         self.fThread  = SearchPluginsThread(self, host.pathBinaries)
-        self.fIconYes = getIcon("dialog-ok-apply").pixmap(16, 16)
-        self.fIconNo  = getIcon("dialog-error").pixmap(16, 16)
+        self.fIconYes = QPixmap(":/16x16/dialog-ok-apply.svgz")
+        self.fIconNo  = QPixmap(":/16x16/dialog-error.svgz")
 
         # -------------------------------------------------------------------------------------------------------------
         # Set-up GUI

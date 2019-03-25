@@ -209,6 +209,10 @@ class CarlaApplication(object):
         if MACOS:
             QApplication.setAttribute(Qt.AA_DontShowIconsInMenus)
 
+        if QT_VERSION >= 0x50600:
+            QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+            QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
+
         args = sys.argv[:]
 
         if WINDOWS:

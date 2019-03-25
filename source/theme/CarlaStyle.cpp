@@ -1,7 +1,7 @@
 /*
  * Carla Style, based on Qt5 fusion style
  * Copyright (C) 2012 Digia Plc and/or its subsidiary(-ies)
- * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1051,20 +1051,34 @@ void CarlaStyle::drawPrimitive(PrimitiveElement elem,
             painter->translate(0.5, 0.5);
             rect = rect.adjusted(0, 0, -1, -1);
 
-            QColor pressedColor = mergedColors(option->palette.base().color(), option->palette.foreground().color(), 85);
+            const QColor& baseColor = option->palette.base().color();
+
+            QColor pressedColor = mergedColors(baseColor, option->palette.foreground().color(), 85);
             painter->setBrush(Qt::NoBrush);
 
             // Gradient fill
             QLinearGradient gradient(rect.topLeft(), rect.bottomLeft());
-            gradient.setColorAt(0, (state & State_Sunken) ? pressedColor : option->palette.base().color().darker(115));
-            gradient.setColorAt(0.15, (state & State_Sunken) ? pressedColor : option->palette.base().color());
-            gradient.setColorAt(1, (state & State_Sunken) ? pressedColor : option->palette.base().color());
+
+            if (state & State_Sunken)
+            {
+                gradient.setColorAt(0, pressedColor);
+                gradient.setColorAt(0.15, pressedColor);
+                gradient.setColorAt(1, pressedColor);
+            }
+            else
+            {
+                gradient.setColorAt(0, baseColor.blackF() > 0.4 ? baseColor.lighter(115) : baseColor.darker(115));
+                gradient.setColorAt(0.15, baseColor);
+                gradient.setColorAt(1, baseColor);
+            }
 
             painter->setBrush((state & State_Sunken) ? QBrush(pressedColor) : gradient);
-            painter->setPen(QPen(outline.lighter(110), 1));
 
             if (option->state & State_HasFocus && option->state & State_KeyboardFocusChange)
                 painter->setPen(QPen(highlightedOutline, 1));
+            else
+                painter->setPen(QPen(outline.lighter(110), 1));
+
             painter->drawRect(rect);
 
             QColor checkMarkColor = option->palette.text().color().darker(120);
@@ -1282,11 +1296,9 @@ void CarlaStyle::drawPrimitive(PrimitiveElement elem,
         break;
     case PE_PanelMenu: {
         painter->save();
-        QColor menuBackground = option->palette.base().color().lighter(108);
+        const QBrush menuBackground = option->palette.base().color().lighter(108);
         QColor borderColor(32, 32, 32);
-        painter->setPen(borderColor);
-        painter->setBrush(menuBackground);
-        painter->drawRect(option->rect.adjusted(0, 0, -1, -1));
+        qDrawPlainRect(painter, option->rect, borderColor, 1, &menuBackground);
         painter->restore();
     }
         break;
@@ -1846,13 +1858,7 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                 QRect r = option->rect;
                 painter->fillRect(r, highlight);
                 painter->setPen(QPen(highlightOutline, 0));
-                const QLine lines[4] = {
-                    QLine(QPoint(r.left() + 1, r.bottom()), QPoint(r.right() - 1, r.bottom())),
-                    QLine(QPoint(r.left() + 1, r.top()), QPoint(r.right() - 1, r.top())),
-                    QLine(QPoint(r.left(), r.top()), QPoint(r.left(), r.bottom())),
-                    QLine(QPoint(r.right() , r.top()), QPoint(r.right(), r.bottom())),
-                };
-                painter->drawLines(lines, 4);
+                painter->drawRect(QRectF(r).adjusted(0.5, 0.5, -0.5, -0.5));
             }
             bool checkable = menuItem->checkType != QStyleOptionMenuItem::NotCheckable;
             bool checked = menuItem->checked;
@@ -1927,8 +1933,13 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                 else
                     pixmap = menuItem->icon.pixmap(iconSize, mode);
 
-                int pixw = pixmap.width();
-                int pixh = pixmap.height();
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+                const qreal pixw = static_cast<qreal>(pixmap.width()) / pixmap.devicePixelRatioF();
+                const qreal pixh = static_cast<qreal>(pixmap.height()) / pixmap.devicePixelRatioF();
+#else
+                const int pixw = pixmap.width();
+                const int pixh = pixmap.height();
+#endif
 
                 QRect pmr(0, 0, pixw, pixh);
                 pmr.moveCenter(vCheckRect.center());
@@ -2058,8 +2069,13 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                     state = QIcon::On;
 
                 QPixmap pixmap = button->icon.pixmap(button->iconSize, mode, state);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+                int w = pixmap.width() / pixmap.devicePixelRatio();
+                int h = pixmap.height() / pixmap.devicePixelRatio();
+#else
                 int w = pixmap.width();
                 int h = pixmap.height();
+#endif
 
                 if (!button->text.isEmpty())
                     w += button->fontMetrics.boundingRect(option->rect, tf, button->text).width() + 2;
@@ -2067,15 +2083,20 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                 point = QPoint(ir.x() + ir.width() / 2 - w / 2,
                                ir.y() + ir.height() / 2 - h / 2);
 
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+                w = pixmap.width() / pixmap.devicePixelRatio();
+#else
+#endif
+
                 if (button->direction == Qt::RightToLeft)
-                    point.rx() += pixmap.width();
+                    point.rx() += w;
 
                 painter->drawPixmap(visualPos(button->direction, button->rect, point), pixmap);
 
                 if (button->direction == Qt::RightToLeft)
                     ir.translate(-point.x() - 2, 0);
                 else
-                    ir.translate(point.x() + pixmap.width(), 0);
+                    ir.translate(point.x() + w, 0);
 
                 // left-align text if there is
                 if (!button->text.isEmpty())
@@ -2860,7 +2881,7 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
 
                 QColor subtleEdge = alphaOutline;
                 subtleEdge.setAlpha(40);
-                painter->setPen(Qt::NoPen);
+                painter->setPen(subtleEdge);
                 painter->setBrush(Qt::NoBrush);
                 painter->save();
                 painter->setClipRect(scrollBarGroove.adjusted(1, 0, -1, -3));
@@ -3830,6 +3851,60 @@ QRect CarlaStyle::subControlRect(ComplexControl control, const QStyleOptionCompl
     }
 
     return rect;
+}
+
+/*!
+  \reimp
+*/
+QPixmap CarlaStyle::standardPixmap(StandardPixmap standardPixmap, const QStyleOption* opt, const QWidget* widget) const
+{
+#if 0 // ndef QT_NO_IMAGEFORMAT_XPM
+    switch (standardPixmap) {
+    case SP_TitleBarNormalButton:
+        return QPixmap((const char **)dock_widget_restore_xpm);
+    case SP_TitleBarMinButton:
+        return QPixmap((const char **)workspace_minimize);
+    case SP_TitleBarCloseButton:
+    case SP_DockWidgetCloseButton:
+        return QPixmap((const char **)dock_widget_close_xpm);
+    default:
+        break;
+    }
+#endif //QT_NO_IMAGEFORMAT_XPM
+
+    QPixmap pixmap = QCommonStyle::standardPixmap(standardPixmap, opt, widget);
+
+    if(!pixmap.isNull())
+        return pixmap;
+
+#if 0 // ndef QT_NO_IMAGEFORMAT_XPM
+    switch (standardPixmap) {
+    case SP_TitleBarMenuButton:
+        return QPixmap(qt_menu_xpm);
+    case SP_TitleBarShadeButton:
+        return QPixmap(qt_shade_xpm);
+    case SP_TitleBarUnshadeButton:
+        return QPixmap(qt_unshade_xpm);
+    case SP_TitleBarMaxButton:
+        return QPixmap(qt_maximize_xpm);
+    case SP_TitleBarCloseButton:
+        return QPixmap(qt_close_xpm);
+    case SP_TitleBarContextHelpButton:
+        return QPixmap(qt_help_xpm);
+    case SP_MessageBoxInformation:
+        return QPixmap(information_xpm);
+    case SP_MessageBoxWarning:
+        return QPixmap(warning_xpm);
+    case SP_MessageBoxCritical:
+        return QPixmap(critical_xpm);
+    case SP_MessageBoxQuestion:
+        return QPixmap(question_xpm);
+    default:
+        break;
+    }
+#endif //QT_NO_IMAGEFORMAT_XPM
+
+    return QPixmap();
 }
 
 /*!
