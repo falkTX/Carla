@@ -1051,20 +1051,34 @@ void CarlaStyle::drawPrimitive(PrimitiveElement elem,
             painter->translate(0.5, 0.5);
             rect = rect.adjusted(0, 0, -1, -1);
 
-            QColor pressedColor = mergedColors(option->palette.base().color(), option->palette.foreground().color(), 85);
+            const QColor& baseColor = option->palette.base().color();
+
+            QColor pressedColor = mergedColors(baseColor, option->palette.foreground().color(), 85);
             painter->setBrush(Qt::NoBrush);
 
             // Gradient fill
             QLinearGradient gradient(rect.topLeft(), rect.bottomLeft());
-            gradient.setColorAt(0, (state & State_Sunken) ? pressedColor : option->palette.base().color().darker(115));
-            gradient.setColorAt(0.15, (state & State_Sunken) ? pressedColor : option->palette.base().color());
-            gradient.setColorAt(1, (state & State_Sunken) ? pressedColor : option->palette.base().color());
+
+            if (state & State_Sunken)
+            {
+                gradient.setColorAt(0, pressedColor);
+                gradient.setColorAt(0.15, pressedColor);
+                gradient.setColorAt(1, pressedColor);
+            }
+            else
+            {
+                gradient.setColorAt(0, baseColor.blackF() > 0.4 ? baseColor.lighter(115) : baseColor.darker(115));
+                gradient.setColorAt(0.15, baseColor);
+                gradient.setColorAt(1, baseColor);
+            }
 
             painter->setBrush((state & State_Sunken) ? QBrush(pressedColor) : gradient);
-            painter->setPen(QPen(outline.lighter(110), 1));
 
             if (option->state & State_HasFocus && option->state & State_KeyboardFocusChange)
                 painter->setPen(QPen(highlightedOutline, 1));
+            else
+                painter->setPen(QPen(outline.lighter(110), 1));
+
             painter->drawRect(rect);
 
             QColor checkMarkColor = option->palette.text().color().darker(120);

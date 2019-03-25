@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>686</width>
-    <height>342</height>
+    <height>330</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -242,8 +242,8 @@
            <widget class="QLabel" name="ico_native">
             <property name="maximumSize">
              <size>
-              <width>22</width>
-              <height>22</height>
+              <width>16</width>
+              <height>16</height>
              </size>
             </property>
             <property name="text">
@@ -261,8 +261,8 @@
            <widget class="QLabel" name="ico_posix32">
             <property name="maximumSize">
              <size>
-              <width>22</width>
-              <height>22</height>
+              <width>16</width>
+              <height>16</height>
              </size>
             </property>
             <property name="text">
@@ -301,8 +301,8 @@
            <widget class="QLabel" name="ico_posix64">
             <property name="maximumSize">
              <size>
-              <width>22</width>
-              <height>22</height>
+              <width>16</width>
+              <height>16</height>
              </size>
             </property>
             <property name="text">
@@ -320,8 +320,8 @@
            <widget class="QLabel" name="ico_rdflib">
             <property name="maximumSize">
              <size>
-              <width>22</width>
-              <height>22</height>
+              <width>16</width>
+              <height>16</height>
              </size>
             </property>
             <property name="text">
@@ -346,8 +346,8 @@
            <widget class="QLabel" name="ico_win32">
             <property name="maximumSize">
              <size>
-              <width>22</width>
-              <height>22</height>
+              <width>16</width>
+              <height>16</height>
              </size>
             </property>
             <property name="text">
@@ -365,8 +365,8 @@
            <widget class="QLabel" name="ico_win64">
             <property name="maximumSize">
              <size>
-              <width>22</width>
-              <height>22</height>
+              <width>16</width>
+              <height>16</height>
              </size>
             </property>
             <property name="text">
