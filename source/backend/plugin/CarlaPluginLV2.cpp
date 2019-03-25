@@ -377,7 +377,7 @@ struct CarlaPluginLV2Options {
         LV2_Options_Option& optUiScale(opts[UiScale]);
         optUiScale.context = LV2_OPTIONS_INSTANCE;
         optUiScale.subject = 0;
-        optUiScale.key     = kUridParamSampleRate;
+        optUiScale.key     = kUridCarlaUiScale;
         optUiScale.size    = sizeof(float);
         optUiScale.type    = kUridAtomFloat;
         optUiScale.value   = &uiScale;
