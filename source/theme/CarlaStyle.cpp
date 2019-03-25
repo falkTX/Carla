@@ -1,7 +1,7 @@
 /*
  * Carla Style, based on Qt5 fusion style
  * Copyright (C) 2012 Digia Plc and/or its subsidiary(-ies)
- * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -2058,8 +2058,15 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                     state = QIcon::On;
 
                 QPixmap pixmap = button->icon.pixmap(button->iconSize, mode, state);
-                int w = pixmap.width();
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+                const qreal pw = static_cast<qreal>(pixmap.width()) / pixmap.devicePixelRatioF();
+                qreal w = pw;
+                qreal h = static_cast<qreal>(pixmap.height()) / pixmap.devicePixelRatioF();
+#else
+                const int pw = pixmap.width();
+                int w = pw;
                 int h = pixmap.height();
+#endif
 
                 if (!button->text.isEmpty())
                     w += button->fontMetrics.boundingRect(option->rect, tf, button->text).width() + 2;
@@ -2068,14 +2075,14 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                                ir.y() + ir.height() / 2 - h / 2);
 
                 if (button->direction == Qt::RightToLeft)
-                    point.rx() += pixmap.width();
+                    point.rx() += pw;
 
                 painter->drawPixmap(visualPos(button->direction, button->rect, point), pixmap);
 
                 if (button->direction == Qt::RightToLeft)
                     ir.translate(-point.x() - 2, 0);
                 else
-                    ir.translate(point.x() + pixmap.width(), 0);
+                    ir.translate(point.x() + pw, 0);
 
                 // left-align text if there is
                 if (!button->text.isEmpty())
@@ -3830,6 +3837,60 @@ QRect CarlaStyle::subControlRect(ComplexControl control, const QStyleOptionCompl
     }
 
     return rect;
+}
+
+/*!
+  \reimp
+*/
+QPixmap CarlaStyle::standardPixmap(StandardPixmap standardPixmap, const QStyleOption* opt, const QWidget* widget) const
+{
+#if 0 // ndef QT_NO_IMAGEFORMAT_XPM
+    switch (standardPixmap) {
+    case SP_TitleBarNormalButton:
+        return QPixmap((const char **)dock_widget_restore_xpm);
+    case SP_TitleBarMinButton:
+        return QPixmap((const char **)workspace_minimize);
+    case SP_TitleBarCloseButton:
+    case SP_DockWidgetCloseButton:
+        return QPixmap((const char **)dock_widget_close_xpm);
+    default:
+        break;
+    }
+#endif //QT_NO_IMAGEFORMAT_XPM
+
+    QPixmap pixmap = QCommonStyle::standardPixmap(standardPixmap, opt, widget);
+
+    if(!pixmap.isNull())
+        return pixmap;
+
+#if 0 // ndef QT_NO_IMAGEFORMAT_XPM
+    switch (standardPixmap) {
+    case SP_TitleBarMenuButton:
+        return QPixmap(qt_menu_xpm);
+    case SP_TitleBarShadeButton:
+        return QPixmap(qt_shade_xpm);
+    case SP_TitleBarUnshadeButton:
+        return QPixmap(qt_unshade_xpm);
+    case SP_TitleBarMaxButton:
+        return QPixmap(qt_maximize_xpm);
+    case SP_TitleBarCloseButton:
+        return QPixmap(qt_close_xpm);
+    case SP_TitleBarContextHelpButton:
+        return QPixmap(qt_help_xpm);
+    case SP_MessageBoxInformation:
+        return QPixmap(information_xpm);
+    case SP_MessageBoxWarning:
+        return QPixmap(warning_xpm);
+    case SP_MessageBoxCritical:
+        return QPixmap(critical_xpm);
+    case SP_MessageBoxQuestion:
+        return QPixmap(question_xpm);
+    default:
+        break;
+    }
+#endif //QT_NO_IMAGEFORMAT_XPM
+
+    return QPixmap();
 }
 
 /*!

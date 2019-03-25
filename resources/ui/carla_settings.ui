@@ -1065,7 +1065,7 @@
               <string/>
              </property>
              <property name="pixmap">
-              <pixmap resource="../resources.qrc">:/16x16/dialog-information.png</pixmap>
+              <pixmap resource="../resources.qrc">:/16x16/dialog-information.svgz</pixmap>
              </property>
              <property name="alignment">
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1239,7 +1239,7 @@
                  <string/>
                 </property>
                 <property name="pixmap">
-                 <pixmap resource="../resources.qrc">:/16x16/dialog-information.png</pixmap>
+                 <pixmap resource="../resources.qrc">:/16x16/dialog-information.svgz</pixmap>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1421,7 +1421,7 @@
                  <string/>
                 </property>
                 <property name="pixmap">
-                 <pixmap resource="../resources.qrc">:/16x16/dialog-information.png</pixmap>
+                 <pixmap resource="../resources.qrc">:/16x16/dialog-information.svgz</pixmap>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1496,7 +1496,7 @@
               <string/>
              </property>
              <property name="pixmap">
-              <pixmap resource="../resources.qrc">:/16x16/dialog-information.png</pixmap>
+              <pixmap resource="../resources.qrc">:/16x16/dialog-information.svgz</pixmap>
              </property>
              <property name="alignment">
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1552,7 +1552,7 @@
               <string/>
              </property>
              <property name="pixmap">
-              <pixmap resource="../resources.qrc">:/16x16/dialog-warning.png</pixmap>
+              <pixmap resource="../resources.qrc">:/16x16/dialog-warning.svgz</pixmap>
              </property>
              <property name="alignment">
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1770,7 +1770,7 @@
                   <string/>
                  </property>
                  <property name="pixmap">
-                  <pixmap resource="../resources.qrc">:/16x16/dialog-information.png</pixmap>
+                  <pixmap resource="../resources.qrc">:/16x16/dialog-information.svgz</pixmap>
                  </property>
                  <property name="alignment">
                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1849,7 +1849,7 @@
                </property>
                <property name="icon">
                 <iconset resource="../resources.qrc">
-                 <normaloff>:/16x16/list-add.png</normaloff>:/16x16/list-add.png</iconset>
+                 <normaloff>:/16x16/list-add.svgz</normaloff>:/16x16/list-add.svgz</iconset>
                </property>
               </widget>
              </item>
@@ -1860,7 +1860,7 @@
                </property>
                <property name="icon">
                 <iconset resource="../resources.qrc">
-                 <normaloff>:/16x16/list-remove.png</normaloff>:/16x16/list-remove.png</iconset>
+                 <normaloff>:/16x16/list-remove.svgz</normaloff>:/16x16/list-remove.svgz</iconset>
                </property>
               </widget>
              </item>
@@ -1887,7 +1887,7 @@
                </property>
                <property name="icon">
                 <iconset resource="../resources.qrc">
-                 <normaloff>:/16x16/edit-rename.png</normaloff>:/16x16/edit-rename.png</iconset>
+                 <normaloff>:/16x16/edit-rename.svgz</normaloff>:/16x16/edit-rename.svgz</iconset>
                </property>
               </widget>
              </item>

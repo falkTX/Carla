@@ -570,7 +570,7 @@
               </property>
               <property name="icon">
                <iconset resource="../resources.qrc">
-                <normaloff>:/16x16/list-add.png</normaloff>:/16x16/list-add.png</iconset>
+                <normaloff>:/16x16/list-add.svgz</normaloff>:/16x16/list-add.svgz</iconset>
               </property>
              </widget>
             </item>
@@ -584,7 +584,7 @@
               </property>
               <property name="icon">
                <iconset resource="../resources.qrc">
-                <normaloff>:/16x16/list-remove.png</normaloff>:/16x16/list-remove.png</iconset>
+                <normaloff>:/16x16/list-remove.svgz</normaloff>:/16x16/list-remove.svgz</iconset>
               </property>
              </widget>
             </item>
@@ -623,7 +623,7 @@
                </property>
                <property name="icon">
                 <iconset resource="../resources.qrc">
-                 <normaloff>:/16x16/media-playback-start.png</normaloff>:/16x16/media-playback-start.png</iconset>
+                 <normaloff>:/16x16/media-playback-start.svgz</normaloff>:/16x16/media-playback-start.svgz</iconset>
                </property>
                <property name="checkable">
                 <bool>true</bool>
@@ -637,7 +637,7 @@
                </property>
                <property name="icon">
                 <iconset resource="../resources.qrc">
-                 <normaloff>:/16x16/media-playback-stop.png</normaloff>:/16x16/media-playback-stop.png</iconset>
+                 <normaloff>:/16x16/media-playback-stop.svgz</normaloff>:/16x16/media-playback-stop.svgz</iconset>
                </property>
               </widget>
              </item>
@@ -648,7 +648,7 @@
                </property>
                <property name="icon">
                 <iconset resource="../resources.qrc">
-                 <normaloff>:/16x16/media-seek-backward.png</normaloff>:/16x16/media-seek-backward.png</iconset>
+                 <normaloff>:/16x16/media-seek-backward.svgz</normaloff>:/16x16/media-seek-backward.svgz</iconset>
                </property>
                <property name="autoRepeat">
                 <bool>true</bool>
@@ -662,7 +662,7 @@
                </property>
                <property name="icon">
                 <iconset resource="../resources.qrc">
-                 <normaloff>:/16x16/media-seek-forward.png</normaloff>:/16x16/media-seek-forward.png</iconset>
+                 <normaloff>:/16x16/media-seek-forward.svgz</normaloff>:/16x16/media-seek-forward.svgz</iconset>
                </property>
                <property name="autoRepeat">
                 <bool>true</bool>
@@ -946,7 +946,7 @@
   <action name="act_file_new">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/document-new.png</normaloff>:/16x16/document-new.png</iconset>
+     <normaloff>:/16x16/document-new.svgz</normaloff>:/16x16/document-new.svgz</iconset>
    </property>
    <property name="text">
     <string>&amp;New</string>
@@ -958,7 +958,7 @@
   <action name="act_file_open">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/document-open.png</normaloff>:/16x16/document-open.png</iconset>
+     <normaloff>:/16x16/document-open.svgz</normaloff>:/16x16/document-open.svgz</iconset>
    </property>
    <property name="text">
     <string>&amp;Open...</string>
@@ -976,7 +976,7 @@
   <action name="act_file_save">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/document-save.png</normaloff>:/16x16/document-save.png</iconset>
+     <normaloff>:/16x16/document-save.svgz</normaloff>:/16x16/document-save.svgz</iconset>
    </property>
    <property name="text">
     <string>&amp;Save</string>
@@ -988,7 +988,7 @@
   <action name="act_file_save_as">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/document-save-as.png</normaloff>:/16x16/document-save-as.png</iconset>
+     <normaloff>:/16x16/document-save-as.svgz</normaloff>:/16x16/document-save-as.svgz</iconset>
    </property>
    <property name="text">
     <string>Save &amp;As...</string>
@@ -1006,7 +1006,7 @@
   <action name="act_file_quit">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/application-exit.png</normaloff>:/16x16/application-exit.png</iconset>
+     <normaloff>:/16x16/application-exit.svgz</normaloff>:/16x16/application-exit.svgz</iconset>
    </property>
    <property name="text">
     <string>&amp;Quit</string>
@@ -1018,7 +1018,7 @@
   <action name="act_engine_start">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/media-playback-start.png</normaloff>:/16x16/media-playback-start.png</iconset>
+     <normaloff>:/16x16/media-playback-start.svgz</normaloff>:/16x16/media-playback-start.svgz</iconset>
    </property>
    <property name="text">
     <string>&amp;Start</string>
@@ -1030,7 +1030,7 @@
   <action name="act_engine_stop">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/media-playback-stop.png</normaloff>:/16x16/media-playback-stop.png</iconset>
+     <normaloff>:/16x16/media-playback-stop.svgz</normaloff>:/16x16/media-playback-stop.svgz</iconset>
    </property>
    <property name="text">
     <string>St&amp;op</string>
@@ -1042,7 +1042,7 @@
   <action name="act_plugin_add">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/list-add.png</normaloff>:/16x16/list-add.png</iconset>
+     <normaloff>:/16x16/list-add.svgz</normaloff>:/16x16/list-add.svgz</iconset>
    </property>
    <property name="text">
     <string>&amp;Add Plugin...</string>
@@ -1054,7 +1054,7 @@
   <action name="act_plugin_add2">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/list-add.png</normaloff>:/16x16/list-add.png</iconset>
+     <normaloff>:/16x16/list-add.svgz</normaloff>:/16x16/list-add.svgz</iconset>
    </property>
    <property name="text">
     <string>Add Plugin...</string>
@@ -1069,7 +1069,7 @@
   <action name="act_plugin_remove_all">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/edit-delete.png</normaloff>:/16x16/edit-delete.png</iconset>
+     <normaloff>:/16x16/edit-delete.svgz</normaloff>:/16x16/edit-delete.svgz</iconset>
    </property>
    <property name="text">
     <string>&amp;Remove All</string>
@@ -1113,7 +1113,7 @@
   <action name="act_plugins_panic">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/dialog-warning.png</normaloff>:/16x16/dialog-warning.png</iconset>
+     <normaloff>:/16x16/dialog-warning.svgz</normaloff>:/16x16/dialog-warning.svgz</iconset>
    </property>
    <property name="text">
     <string>Panic</string>
@@ -1125,7 +1125,7 @@
    </property>
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/media-playback-start.png</normaloff>:/16x16/media-playback-start.png</iconset>
+     <normaloff>:/16x16/media-playback-start.svgz</normaloff>:/16x16/media-playback-start.svgz</iconset>
    </property>
    <property name="text">
     <string>&amp;Play</string>
@@ -1137,7 +1137,7 @@
   <action name="act_transport_stop">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/media-playback-stop.png</normaloff>:/16x16/media-playback-stop.png</iconset>
+     <normaloff>:/16x16/media-playback-stop.svgz</normaloff>:/16x16/media-playback-stop.svgz</iconset>
    </property>
    <property name="text">
     <string>&amp;Stop</string>
@@ -1149,7 +1149,7 @@
   <action name="act_transport_backwards">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/media-seek-backward.png</normaloff>:/16x16/media-seek-backward.png</iconset>
+     <normaloff>:/16x16/media-seek-backward.svgz</normaloff>:/16x16/media-seek-backward.svgz</iconset>
    </property>
    <property name="text">
     <string>&amp;Backwards</string>
@@ -1161,7 +1161,7 @@
   <action name="act_transport_forwards">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/media-seek-forward.png</normaloff>:/16x16/media-seek-forward.png</iconset>
+     <normaloff>:/16x16/media-seek-forward.svgz</normaloff>:/16x16/media-seek-forward.svgz</iconset>
    </property>
    <property name="text">
     <string>&amp;Forwards</string>
@@ -1173,7 +1173,7 @@
   <action name="act_canvas_arrange">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/view-sort-ascending.png</normaloff>:/16x16/view-sort-ascending.png</iconset>
+     <normaloff>:/16x16/view-sort-ascending.svgz</normaloff>:/16x16/view-sort-ascending.svgz</iconset>
    </property>
    <property name="text">
     <string>&amp;Arrange</string>
@@ -1185,22 +1185,13 @@
   <action name="act_canvas_refresh">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/view-refresh.png</normaloff>:/16x16/view-refresh.png</iconset>
+     <normaloff>:/16x16/view-refresh.svgz</normaloff>:/16x16/view-refresh.svgz</iconset>
    </property>
    <property name="text">
     <string>&amp;Refresh</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+R</string>
-   </property>
-  </action>
-  <action name="act_canvas_print">
-   <property name="icon">
-    <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/document-print.png</normaloff>:/16x16/document-print.png</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;Print...</string>
    </property>
   </action>
   <action name="act_canvas_save_image">
@@ -1211,7 +1202,7 @@
   <action name="act_canvas_zoom_fit">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/zoom-fit-best.png</normaloff>:/16x16/zoom-fit-best.png</iconset>
+     <normaloff>:/16x16/zoom-fit-best.svgz</normaloff>:/16x16/zoom-fit-best.svgz</iconset>
    </property>
    <property name="text">
     <string>Auto-Fit</string>
@@ -1223,7 +1214,7 @@
   <action name="act_canvas_zoom_in">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/zoom-in.png</normaloff>:/16x16/zoom-in.png</iconset>
+     <normaloff>:/16x16/zoom-in.svgz</normaloff>:/16x16/zoom-in.svgz</iconset>
    </property>
    <property name="text">
     <string>Zoom In</string>
@@ -1235,7 +1226,7 @@
   <action name="act_canvas_zoom_out">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/zoom-out.png</normaloff>:/16x16/zoom-out.png</iconset>
+     <normaloff>:/16x16/zoom-out.svgz</normaloff>:/16x16/zoom-out.svgz</iconset>
    </property>
    <property name="text">
     <string>Zoom Out</string>
@@ -1247,7 +1238,7 @@
   <action name="act_canvas_zoom_100">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/zoom-original.png</normaloff>:/16x16/zoom-original.png</iconset>
+     <normaloff>:/16x16/zoom-original.svgz</normaloff>:/16x16/zoom-original.svgz</iconset>
    </property>
    <property name="text">
     <string>Zoom 100%</string>
@@ -1267,7 +1258,7 @@
   <action name="act_settings_configure">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/configure.png</normaloff>:/16x16/configure.png</iconset>
+     <normaloff>:/16x16/configure.svgz</normaloff>:/16x16/configure.svgz</iconset>
    </property>
    <property name="text">
     <string>&amp;Configure Carla</string>
@@ -1339,7 +1330,7 @@
   <action name="act_file_connect">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/network-connect.png</normaloff>:/16x16/network-connect.png</iconset>
+     <normaloff>:/16x16/network-connect.svgz</normaloff>:/16x16/network-connect.svgz</iconset>
    </property>
    <property name="text">
     <string>&amp;Connect...</string>
@@ -1348,7 +1339,7 @@
   <action name="act_file_refresh">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/view-refresh.png</normaloff>:/16x16/view-refresh.png</iconset>
+     <normaloff>:/16x16/view-refresh.svgz</normaloff>:/16x16/view-refresh.svgz</iconset>
    </property>
    <property name="text">
     <string>&amp;Refresh</string>
@@ -1392,7 +1383,7 @@
   <action name="act_add_jack">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/list-add.png</normaloff>:/16x16/list-add.png</iconset>
+     <normaloff>:/16x16/list-add.svgz</normaloff>:/16x16/list-add.svgz</iconset>
    </property>
    <property name="text">
     <string>Add &amp;JACK Application</string>
@@ -1407,7 +1398,7 @@
   <action name="act_plugin_add_jack">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/list-add.png</normaloff>:/16x16/list-add.png</iconset>
+     <normaloff>:/16x16/list-add.svgz</normaloff>:/16x16/list-add.svgz</iconset>
    </property>
    <property name="text">
     <string>Add &amp;JACK Application...</string>
