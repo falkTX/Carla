@@ -5549,6 +5549,8 @@ public:
 
         fLv2Options.sequenceSize = static_cast<int>(eventBufferSize);
 
+        fLv2Options.uiScale = pData->engine->getOptions().uiScale;
+
         // ---------------------------------------------------------------
         // initialize features (part 1)
 
