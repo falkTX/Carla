@@ -1665,8 +1665,10 @@ float carla_get_output_peak_value(uint pluginId, bool isLeft)
 
 CARLA_BACKEND_START_NAMESPACE
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 // defined in CarlaPluginInternal.cpp
 const void* carla_render_inline_display_internal(CarlaPlugin* plugin, uint32_t  width, uint32_t height);
+#endif
 
 // defined in CarlaPluginLV2.cpp
 const void* carla_render_inline_display_lv2(CarlaPlugin* plugin, uint32_t width, uint32_t height);
@@ -1684,8 +1686,10 @@ const CarlaInlineDisplayImageSurface* carla_render_inline_display(uint pluginId,
 
     switch (plugin->getType())
     {
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     case CB::PLUGIN_INTERNAL:
         return (const CarlaInlineDisplayImageSurface*)CB::carla_render_inline_display_internal(plugin, width, height);
+#endif
     case CB::PLUGIN_LV2:
         return (const CarlaInlineDisplayImageSurface*)CB::carla_render_inline_display_lv2(plugin, width, height);
     default:
