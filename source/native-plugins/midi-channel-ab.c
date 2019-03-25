@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
  * Copyright (C) 2018 Milk Brewster <code@milkmiruku.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -198,7 +198,9 @@ static const NativePluginDescriptor midichanabDesc = {
     .get_state = NULL,
     .set_state = NULL,
 
-    .dispatcher = NULL
+    .dispatcher = NULL,
+
+    .render_inline_display = NULL
 };
 
 // -----------------------------------------------------------------------

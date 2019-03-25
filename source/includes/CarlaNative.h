@@ -63,7 +63,8 @@ typedef enum {
     NATIVE_PLUGIN_USES_PANNING         = 1 <<  8, /** uses stereo balance if unset (default) */
     NATIVE_PLUGIN_USES_STATE           = 1 <<  9,
     NATIVE_PLUGIN_USES_TIME            = 1 << 10,
-    NATIVE_PLUGIN_USES_PARENT_ID       = 1 << 11  /** can set transient hint to parent       */
+    NATIVE_PLUGIN_USES_PARENT_ID       = 1 << 11, /** can set transient hint to parent       */
+    NATIVE_PLUGIN_HAS_INLINE_DISPLAY   = 1 << 12
 } NativePluginHints;
 
 typedef enum {
@@ -106,7 +107,9 @@ typedef enum {
     NATIVE_HOST_OPCODE_RELOAD_ALL            = 5, /** nothing                                           */
     NATIVE_HOST_OPCODE_UI_UNAVAILABLE        = 6, /** nothing                                           */
     NATIVE_HOST_OPCODE_HOST_IDLE             = 7, /** nothing                                           */
-    NATIVE_HOST_OPCODE_INTERNAL_PLUGIN       = 8  /** nothing                                           */
+    NATIVE_HOST_OPCODE_INTERNAL_PLUGIN       = 8, /** nothing                                           */
+    NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY  = 9, /** nothing                                           */
+    NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER    = 10 /** uses index, value as bool                         */
 } NativeHostDispatcherOpcode;
 
 /* ------------------------------------------------------------------------------------------------------------
@@ -175,6 +178,13 @@ typedef struct {
     NativeTimeInfoBBT bbt;
 } NativeTimeInfo;
 
+typedef struct {
+    unsigned char* data;
+    int width;
+    int height;
+    int stride;
+} NativeInlineDisplayImageSurface;
+
 /* ------------------------------------------------------------------------------------------------------------
  * HostDescriptor */
 
@@ -192,7 +202,6 @@ typedef struct {
     bool                  (*write_midi_event)(NativeHostHandle handle, const NativeMidiEvent* event);
 
     void (*ui_parameter_changed)(NativeHostHandle handle, uint32_t index, float value);
-    void (*ui_parameter_touch)(NativeHostHandle handle, uint32_t index, bool touch);
     void (*ui_midi_program_changed)(NativeHostHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
     void (*ui_custom_data_changed)(NativeHostHandle handle, const char* key, const char* value);
     void (*ui_closed)(NativeHostHandle handle);
@@ -255,6 +264,9 @@ typedef struct _NativePluginDescriptor {
 
     intptr_t (*dispatcher)(NativePluginHandle handle,
                            NativePluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt);
+
+    const NativeInlineDisplayImageSurface* (*render_inline_display)(NativePluginHandle handle,
+                                                                    uint32_t width, uint32_t height);
 
 } NativePluginDescriptor;
 

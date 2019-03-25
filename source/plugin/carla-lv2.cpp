@@ -94,7 +94,6 @@ public:
         fHost.get_time_info          = host_get_time_info;
         fHost.write_midi_event       = host_write_midi_event;
         fHost.ui_parameter_changed   = host_ui_parameter_changed;
-        fHost.ui_parameter_touch     = host_ui_parameter_touch;
         fHost.ui_custom_data_changed = host_ui_custom_data_changed;
         fHost.ui_closed              = host_ui_closed;
         fHost.ui_open_file           = host_ui_open_file;
@@ -713,10 +712,17 @@ protected:
         case NATIVE_HOST_OPCODE_RELOAD_ALL:
         case NATIVE_HOST_OPCODE_HOST_IDLE:
         case NATIVE_HOST_OPCODE_INTERNAL_PLUGIN:
+        case NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY:
             // nothing
             break;
+
         case NATIVE_HOST_OPCODE_UI_UNAVAILABLE:
             handleUiClosed();
+            break;
+
+        case NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER:
+            CARLA_SAFE_ASSERT_RETURN(index >= 0, 0);
+            handleUiParameterTouch(static_cast<uint32_t>(index), value != 0);
             break;
         }
 

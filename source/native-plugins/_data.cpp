@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -24,7 +24,8 @@
     nullptr, nullptr, nullptr, nullptr, nullptr, \
     nullptr, nullptr, nullptr, nullptr, nullptr, \
     nullptr, nullptr, nullptr, nullptr, nullptr, \
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr
+    nullptr, nullptr, nullptr, nullptr, nullptr, \
+    nullptr, nullptr
 
 static const NativePluginDescriptor sNativePluginDescriptors[] = {
 

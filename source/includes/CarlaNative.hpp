@@ -117,7 +117,11 @@ protected:
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
 
-        pHost->ui_parameter_touch(pHost->handle, index, touch);
+        pHost->dispatcher(pHost->handle,
+                          NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER,
+                          static_cast<int32_t>(index),
+                          touch ? 1 : 0,
+                          nullptr, 0.0f);
     }
 
     void uiMidiProgramChanged(const uint8_t channel, const uint32_t bank, const uint32_t program) const
@@ -376,6 +380,13 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(uiName != nullptr && uiName[0] != '\0',);
     }
 
+    virtual const NativeInlineDisplayImageSurface* renderInlineDisplay(const uint32_t width, const uint32_t height)
+    {
+        CARLA_SAFE_ASSERT_RETURN(width > 0 && height > 0, nullptr);
+
+        return nullptr;
+    }
+
     // -------------------------------------------------------------------
 
 private:
@@ -511,6 +522,11 @@ public:
         (void)index;
     }
 
+    static const NativeInlineDisplayImageSurface* _render_inline_display(NativePluginHandle handle, uint32_t width, uint32_t height)
+    {
+        return handlePtr->renderInlineDisplay(width, height);
+    }
+
     #undef handlePtr
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NativePluginClass)
@@ -553,7 +569,8 @@ public:                                                                      \
     ClassName::_process,                \
     ClassName::_get_state,              \
     ClassName::_set_state,              \
-    ClassName::_dispatcher
+    ClassName::_dispatcher,             \
+    ClassName::_render_inline_display
 
 // -----------------------------------------------------------------------
 

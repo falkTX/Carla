@@ -352,7 +352,11 @@ public:
         if (pluginId != 0)
             return;
 
-        pHost->ui_parameter_touch(pHost->handle, index, touch);
+        pHost->dispatcher(pHost->handle,
+                          NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER,
+                          static_cast<int32_t>(index),
+                          touch ? 1 : 0,
+                          nullptr, 0.0f);
     }
 
     void reloadFromUI()
@@ -2338,7 +2342,8 @@ static const NativePluginDescriptor carlaRackDesc = {
     CarlaEngineNative::_process,
     CarlaEngineNative::_get_state,
     CarlaEngineNative::_set_state,
-    CarlaEngineNative::_dispatcher
+    CarlaEngineNative::_dispatcher,
+    /* _render_inline_dsplay */ nullptr
 };
 
 static const NativePluginDescriptor carlaRackNoMidiOutDesc = {
@@ -2379,7 +2384,8 @@ static const NativePluginDescriptor carlaRackNoMidiOutDesc = {
     CarlaEngineNative::_process,
     CarlaEngineNative::_get_state,
     CarlaEngineNative::_set_state,
-    CarlaEngineNative::_dispatcher
+    CarlaEngineNative::_dispatcher,
+    /* _render_inline_dsplay */ nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbayDesc = {
@@ -2420,7 +2426,8 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
     CarlaEngineNative::_process,
     CarlaEngineNative::_get_state,
     CarlaEngineNative::_set_state,
-    CarlaEngineNative::_dispatcher
+    CarlaEngineNative::_dispatcher,
+    /* _render_inline_dsplay */ nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbay3sDesc = {
@@ -2461,7 +2468,8 @@ static const NativePluginDescriptor carlaPatchbay3sDesc = {
     CarlaEngineNative::_process,
     CarlaEngineNative::_get_state,
     CarlaEngineNative::_set_state,
-    CarlaEngineNative::_dispatcher
+    CarlaEngineNative::_dispatcher,
+    /* _render_inline_dsplay */ nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbay16Desc = {
@@ -2502,7 +2510,8 @@ static const NativePluginDescriptor carlaPatchbay16Desc = {
     CarlaEngineNative::_process,
     CarlaEngineNative::_get_state,
     CarlaEngineNative::_set_state,
-    CarlaEngineNative::_dispatcher
+    CarlaEngineNative::_dispatcher,
+    /* _render_inline_dsplay */ nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbay32Desc = {
@@ -2543,7 +2552,8 @@ static const NativePluginDescriptor carlaPatchbay32Desc = {
     CarlaEngineNative::_process,
     CarlaEngineNative::_get_state,
     CarlaEngineNative::_set_state,
-    CarlaEngineNative::_dispatcher
+    CarlaEngineNative::_dispatcher,
+    /* _render_inline_dsplay */ nullptr
 };
 
 CARLA_BACKEND_END_NAMESPACE

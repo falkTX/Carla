@@ -81,7 +81,6 @@ int main()
         nullptr, // write_midi_event
 
         nullptr, // ui_parameter_changed
-        nullptr, // ui_parameter_touch
         nullptr, // ui_midi_program_changed
         nullptr, // ui_custom_data_changed
         nullptr, // ui_closed

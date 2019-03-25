@@ -89,7 +89,9 @@ static const NativePluginDescriptor bypassDesc = {
     .get_state = NULL,
     .set_state = NULL,
 
-    .dispatcher = NULL
+    .dispatcher = NULL,
+
+    .render_inline_display = NULL
 };
 
 // -----------------------------------------------------------------------

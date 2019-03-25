@@ -251,6 +251,7 @@ public:
           fIsOffline(false),
           fIsUiAvailable(false),
           fIsUiVisible(false),
+          fInlineDisplayNeedsRedraw(false),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
           fMidiEventInCount(0),
@@ -279,7 +280,6 @@ public:
         fHost.get_time_info          = carla_host_get_time_info;
         fHost.write_midi_event       = carla_host_write_midi_event;
         fHost.ui_parameter_changed   = carla_host_ui_parameter_changed;
-        fHost.ui_parameter_touch     = carla_host_ui_parameter_touch;
         fHost.ui_custom_data_changed = carla_host_ui_custom_data_changed;
         fHost.ui_closed              = carla_host_ui_closed;
         fHost.ui_open_file           = carla_host_ui_open_file;
@@ -2394,11 +2394,6 @@ protected:
         setParameterValue(index, value, false, true, true);
     }
 
-    void handleUiParameterTouch(const uint32_t index, const bool touch) const
-    {
-        pData->engine->touchPluginParameter(pData->id, index, touch);
-    }
-
     void handleUiCustomDataChanged(const char* const key, const char* const value)
     {
         setCustomData(CUSTOM_DATA_TYPE_STRING, key, value, false);
@@ -2460,13 +2455,18 @@ protected:
         case NATIVE_HOST_OPCODE_INTERNAL_PLUGIN:
             ret = 1;
             break;
+        case NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY:
+            fInlineDisplayNeedsRedraw = true;
+            break;
+        case NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER:
+            CARLA_SAFE_ASSERT_RETURN(index >= 0, 0);
+            pData->engine->touchPluginParameter(pData->id, static_cast<uint32_t>(index), value != 0);
+            break;
         }
 
         return ret;
 
         // unused for now
-        (void)index;
-        (void)value;
         (void)ptr;
         (void)opt;
     }
@@ -2651,6 +2651,7 @@ private:
     bool fIsOffline;
     bool fIsUiAvailable;
     bool fIsUiVisible;
+    bool fInlineDisplayNeedsRedraw;
 
     float**         fAudioInBuffers;
     float**         fAudioOutBuffers;
@@ -2700,11 +2701,6 @@ private:
     static void carla_host_ui_parameter_changed(NativeHostHandle handle, uint32_t index, float value)
     {
         handlePtr->handleUiParameterChanged(index, value);
-    }
-
-    static void carla_host_ui_parameter_touch(NativeHostHandle handle, uint32_t index, bool touch)
-    {
-        handlePtr->handleUiParameterTouch(index, touch);
     }
 
     static void carla_host_ui_custom_data_changed(NativeHostHandle handle, const char* key, const char* value)
