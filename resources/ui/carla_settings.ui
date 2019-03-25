@@ -332,8 +332,14 @@
                  <string/>
                 </property>
                 <property name="icon">
-                 <iconset>
-                  <normaloff>:/16x16/document-open.png</normaloff>:/16x16/document-open.png</iconset>
+                 <iconset resource="../resources.qrc">
+                  <normaloff>:/16x16/document-open.svgz</normaloff>:/16x16/document-open.svgz</iconset>
+                </property>
+                <property name="iconSize">
+                 <size>
+                  <width>16</width>
+                  <height>16</height>
+                 </size>
                 </property>
                </widget>
               </item>

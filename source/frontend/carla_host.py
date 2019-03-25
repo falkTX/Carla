@@ -24,7 +24,7 @@ import json
 from PyQt5.Qt import PYQT_VERSION
 from PyQt5.QtCore import qCritical, QEventLoop, QFileInfo, QModelIndex, QPointF, QTimer, QEvent
 from PyQt5.QtGui import QImage, QPalette, QBrush
-from PyQt5.QtWidgets import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QMainWindow
+from PyQt5.QtWidgets import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QGraphicsView, QMainWindow
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -401,7 +401,14 @@ class HostWindow(QMainWindow):
         if withCanvas:
             self.scene = patchcanvas.PatchScene(self, self.ui.graphicsView)
             self.ui.graphicsView.setScene(self.scene)
-            self.ui.graphicsView.setRenderHint(QPainter.Antialiasing, bool(self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING] == patchcanvas.ANTIALIASING_FULL))
+            self.ui.graphicsView.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
+
+            if self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING] != patchcanvas.ANTIALIASING_NONE:
+                self.ui.graphicsView.setRenderHint(QPainter.Antialiasing, True)
+
+                if self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING] != patchcanvas.ANTIALIASING_FULL:
+                    self.ui.graphicsView.setRenderHint(QPainter.SmoothPixmapTransform, True)
+                    self.ui.graphicsView.setRenderHint(QPainter.TextAntialiasing, True)
 
             if self.fSavedSettings[CARLA_KEY_CANVAS_USE_OPENGL] and hasGL:
                 self.ui.glView = QGLWidget(self)
@@ -1854,12 +1861,12 @@ class HostWindow(QMainWindow):
 
         if playing != self.fLastTransportState or forced:
             if playing:
-                icon = getIcon("media-playback-pause")
+                icon = QIcon(":/16x16/media-playback-pause.svgz")
                 self.ui.b_transport_play.setChecked(True)
                 self.ui.b_transport_play.setIcon(icon)
                 #self.ui.b_transport_play.setText(self.tr("&Pause"))
             else:
-                icon = getIcon("media-playback-start")
+                icon = QIcon(":/16x16/media-playback-start.svgz")
                 self.ui.b_transport_play.setChecked(False)
                 self.ui.b_transport_play.setIcon(icon)
                 #self.ui.b_play.setText(self.tr("&Play"))

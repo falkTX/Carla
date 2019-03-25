@@ -85,6 +85,9 @@ class PatchScene(QGraphicsScene):
 
         self.selectionChanged.connect(self.slot_selectionChanged)
 
+    def getDevicePixelRatioF(self):
+        return self.m_view.devicePixelRatioF()
+
     def getScaleFactor(self):
         return self.m_view.transform().m11()
 

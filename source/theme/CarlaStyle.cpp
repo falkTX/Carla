@@ -1296,11 +1296,9 @@ void CarlaStyle::drawPrimitive(PrimitiveElement elem,
         break;
     case PE_PanelMenu: {
         painter->save();
-        QColor menuBackground = option->palette.base().color().lighter(108);
+        const QBrush menuBackground = option->palette.base().color().lighter(108);
         QColor borderColor(32, 32, 32);
-        painter->setPen(borderColor);
-        painter->setBrush(menuBackground);
-        painter->drawRect(option->rect.adjusted(0, 0, -1, -1));
+        qDrawPlainRect(painter, option->rect, borderColor, 1, &menuBackground);
         painter->restore();
     }
         break;
@@ -1860,13 +1858,7 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                 QRect r = option->rect;
                 painter->fillRect(r, highlight);
                 painter->setPen(QPen(highlightOutline, 0));
-                const QLine lines[4] = {
-                    QLine(QPoint(r.left() + 1, r.bottom()), QPoint(r.right() - 1, r.bottom())),
-                    QLine(QPoint(r.left() + 1, r.top()), QPoint(r.right() - 1, r.top())),
-                    QLine(QPoint(r.left(), r.top()), QPoint(r.left(), r.bottom())),
-                    QLine(QPoint(r.right() , r.top()), QPoint(r.right(), r.bottom())),
-                };
-                painter->drawLines(lines, 4);
+                painter->drawRect(QRectF(r).adjusted(0.5, 0.5, -0.5, -0.5));
             }
             bool checkable = menuItem->checkType != QStyleOptionMenuItem::NotCheckable;
             bool checked = menuItem->checked;
@@ -1941,7 +1933,7 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                 else
                     pixmap = menuItem->icon.pixmap(iconSize, mode);
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
                 const qreal pixw = static_cast<qreal>(pixmap.width()) / pixmap.devicePixelRatioF();
                 const qreal pixh = static_cast<qreal>(pixmap.height()) / pixmap.devicePixelRatioF();
 #else
@@ -2077,13 +2069,11 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                     state = QIcon::On;
 
                 QPixmap pixmap = button->icon.pixmap(button->iconSize, mode, state);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-                const qreal pw = static_cast<qreal>(pixmap.width()) / pixmap.devicePixelRatioF();
-                qreal w = pw;
-                qreal h = static_cast<qreal>(pixmap.height()) / pixmap.devicePixelRatioF();
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+                int w = pixmap.width() / pixmap.devicePixelRatio();
+                int h = pixmap.height() / pixmap.devicePixelRatio();
 #else
-                const int pw = pixmap.width();
-                int w = pw;
+                int w = pixmap.width();
                 int h = pixmap.height();
 #endif
 
@@ -2093,15 +2083,20 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                 point = QPoint(ir.x() + ir.width() / 2 - w / 2,
                                ir.y() + ir.height() / 2 - h / 2);
 
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+                w = pixmap.width() / pixmap.devicePixelRatio();
+#else
+#endif
+
                 if (button->direction == Qt::RightToLeft)
-                    point.rx() += pw;
+                    point.rx() += w;
 
                 painter->drawPixmap(visualPos(button->direction, button->rect, point), pixmap);
 
                 if (button->direction == Qt::RightToLeft)
                     ir.translate(-point.x() - 2, 0);
                 else
-                    ir.translate(point.x() + pw, 0);
+                    ir.translate(point.x() + w, 0);
 
                 // left-align text if there is
                 if (!button->text.isEmpty())
@@ -2886,7 +2881,7 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
 
                 QColor subtleEdge = alphaOutline;
                 subtleEdge.setAlpha(40);
-                painter->setPen(Qt::NoPen);
+                painter->setPen(subtleEdge);
                 painter->setBrush(Qt::NoBrush);
                 painter->save();
                 painter->setClipRect(scrollBarGroove.adjusted(1, 0, -1, -3));
