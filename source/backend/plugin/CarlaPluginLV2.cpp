@@ -5068,13 +5068,13 @@ public:
         fInlineDisplayNeedsRedraw = true;
     }
 
-    LV2_Inline_Display_Image_Surface* renderInlineDisplay(int width, int height)
+    const LV2_Inline_Display_Image_Surface* renderInlineDisplay(const uint32_t width, const uint32_t height)
     {
         CARLA_SAFE_ASSERT_RETURN(fExt.inlineDisplay != nullptr && fExt.inlineDisplay->render != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(width > 0, nullptr);
         CARLA_SAFE_ASSERT_RETURN(height > 0, nullptr);
 
-        return fExt.inlineDisplay->render(fHandle, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+        return fExt.inlineDisplay->render(fHandle, width, height);
     }
 
     // -------------------------------------------------------------------
@@ -6980,9 +6980,9 @@ CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
 }
 
 // used in CarlaStandalone.cpp
-void* carla_render_inline_display_lv2(CarlaPlugin* plugin, int width, int height);
+const void* carla_render_inline_display_lv2(CarlaPlugin* plugin, uint32_t width, uint32_t height);
 
-void* carla_render_inline_display_lv2(CarlaPlugin* plugin, int width, int height)
+const void* carla_render_inline_display_lv2(CarlaPlugin* plugin, uint32_t width, uint32_t height)
 {
     CarlaPluginLV2* const lv2Plugin = (CarlaPluginLV2*)plugin;
 

@@ -89,9 +89,9 @@ typedef struct {
 	 * @param h the max available height
 	 * @return pointer to a LV2_Inline_Display_Image_Surface or NULL
 	 */
-	LV2_Inline_Display_Image_Surface* (*render)(
-	                                   LV2_Handle instance,
-	                                   uint32_t w, uint32_t h);
+	const LV2_Inline_Display_Image_Surface* (*render)(
+	                                         LV2_Handle instance,
+	                                         uint32_t w, uint32_t h);
 } LV2_Inline_Display_Interface;
 
 #ifdef __cplusplus

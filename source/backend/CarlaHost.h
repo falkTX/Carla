@@ -794,7 +794,7 @@ CARLA_EXPORT float carla_get_output_peak_value(uint pluginId, bool isLeft);
  * Render a plugin's inline display.
  * @param pluginId Plugin
  */
-CARLA_EXPORT CarlaInlineDisplayImageSurface* carla_render_inline_display(uint pluginId, int width, int height);
+CARLA_EXPORT const CarlaInlineDisplayImageSurface* carla_render_inline_display(uint pluginId, uint32_t width, uint32_t height);
 
 /*!
  * Enable or disable a plugin.

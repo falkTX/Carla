@@ -1665,12 +1665,15 @@ float carla_get_output_peak_value(uint pluginId, bool isLeft)
 
 CARLA_BACKEND_START_NAMESPACE
 
+// defined in CarlaPluginInternal.cpp
+const void* carla_render_inline_display_internal(CarlaPlugin* plugin, uint32_t  width, uint32_t height);
+
 // defined in CarlaPluginLV2.cpp
-void* carla_render_inline_display_lv2(CarlaPlugin* plugin, int width, int height);
+const void* carla_render_inline_display_lv2(CarlaPlugin* plugin, uint32_t width, uint32_t height);
 
 CARLA_BACKEND_END_NAMESPACE
 
-CarlaInlineDisplayImageSurface* carla_render_inline_display(uint pluginId, int width, int height)
+const CarlaInlineDisplayImageSurface* carla_render_inline_display(uint pluginId, uint32_t width, uint32_t height)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, nullptr);
 
@@ -1678,9 +1681,16 @@ CarlaInlineDisplayImageSurface* carla_render_inline_display(uint pluginId, int w
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, nullptr);
 
     carla_debug("carla_render_inline_display(%i, %i, %i)", pluginId, width, height);
-    CARLA_SAFE_ASSERT_RETURN(plugin->getType() == CB::PLUGIN_LV2, nullptr);
 
-    return (CarlaInlineDisplayImageSurface*)CB::carla_render_inline_display_lv2(plugin, width, height);
+    switch (plugin->getType())
+    {
+    case CB::PLUGIN_INTERNAL:
+        return (const CarlaInlineDisplayImageSurface*)CB::carla_render_inline_display_internal(plugin, width, height);
+    case CB::PLUGIN_LV2:
+        return (const CarlaInlineDisplayImageSurface*)CB::carla_render_inline_display_lv2(plugin, width, height);
+    default:
+        return nullptr;
+    }
 }
 
 // --------------------------------------------------------------------------------------------------------------------

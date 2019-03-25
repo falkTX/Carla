@@ -1295,6 +1295,8 @@ public:
             pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
         if (fDescriptor->hints & NATIVE_PLUGIN_USES_MULTI_PROGS)
             pData->hints |= PLUGIN_USES_MULTI_PROGS;
+        if (fDescriptor->hints & NATIVE_PLUGIN_HAS_INLINE_DISPLAY)
+            pData->hints |= PLUGIN_HAS_INLINE_DISPLAY;
 
         // extra plugin hints
         pData->extraHints = 0x0;
@@ -2363,6 +2365,18 @@ public:
 
     // -------------------------------------------------------------------
 
+    const NativeInlineDisplayImageSurface* renderInlineDisplay(const uint32_t width, const uint32_t height)
+    {
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->hints & NATIVE_PLUGIN_HAS_INLINE_DISPLAY, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->render_inline_display, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(width > 0, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(height > 0, nullptr);
+
+        return fDescriptor->render_inline_display(fHandle, width, height);
+    }
+
+    // -------------------------------------------------------------------
+
 protected:
     const NativeTimeInfo* handleGetTimeInfo() const noexcept
     {
@@ -2748,6 +2762,16 @@ CarlaPlugin* CarlaPlugin::newNative(const Initializer& init)
     }
 
     return plugin;
+}
+
+// used in CarlaStandalone.cpp
+const void* carla_render_inline_display_internal(CarlaPlugin* plugin, uint32_t width, uint32_t height);
+
+const void* carla_render_inline_display_internal(CarlaPlugin* plugin, uint32_t  width, uint32_t height)
+{
+    CarlaPluginNative* const nativePlugin = (CarlaPluginNative*)plugin;
+
+    return nativePlugin->renderInlineDisplay(width, height);
 }
 
 // -----------------------------------------------------------------------
