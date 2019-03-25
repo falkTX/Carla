@@ -228,17 +228,21 @@ bool CarlaBridgeFormat::msgReceived(const char* const msg) noexcept
     {
         double sampleRate;
         bool useTheme, useThemeColors;
+        float uiScale;
         const char* windowTitle;
         uint64_t transientWindowId;
 
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsDouble(sampleRate), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(uiScale), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(useTheme), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(useThemeColors), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(windowTitle), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsULong(transientWindowId), true);
 
         fGotOptions = true;
-        uiOptionsChanged(sampleRate, useTheme, useThemeColors, windowTitle, static_cast<uintptr_t>(transientWindowId));
+        uiOptionsChanged(sampleRate, uiScale,
+                         useTheme, useThemeColors,
+                         windowTitle, static_cast<uintptr_t>(transientWindowId));
 
         delete[] windowTitle;
         return true;

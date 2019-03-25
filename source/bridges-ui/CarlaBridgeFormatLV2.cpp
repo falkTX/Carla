@@ -140,14 +140,12 @@ struct Lv2PluginOptions {
     float sampleRate;
     int64_t transientWinId;
     float uiScale;
-    const char* windowTitle;
     LV2_Options_Option opts[Count];
 
     Lv2PluginOptions() noexcept
         : sampleRate(static_cast<float>(gInitialSampleRate)),
           transientWinId(0),
-          uiScale(1.0f),
-          windowTitle(kNullWindowTitle)
+          uiScale(1.0f)
     {
         LV2_Options_Option& optSampleRate(opts[SampleRate]);
         optSampleRate.context = LV2_OPTIONS_INSTANCE;
@@ -600,9 +598,17 @@ public:
         fCustomURIDs.push_back(uri);
     }
 
-    void uiOptionsChanged(const double sampleRate, const bool useTheme, const bool useThemeColors, const char* const windowTitle, uintptr_t transientWindowId) override
+    void uiOptionsChanged(const double sampleRate, const float uiScale,
+                          const bool useTheme, const bool useThemeColors,
+                          const char* const windowTitle, const uintptr_t transientWindowId) override
     {
-        carla_debug("CarlaLv2Client::uiOptionsChanged(%g, %s, %s, \"%s\", " P_UINTPTR ")", sampleRate, bool2str(useTheme), bool2str(useThemeColors), windowTitle, transientWindowId);
+        carla_debug("CarlaLv2Client::uiOptionsChanged(%f, %f, %s, %s, \"%s\", " P_UINTPTR ")",
+                    sampleRate, static_cast<double>(uiScale),
+                    bool2str(useTheme), bool2str(useThemeColors),
+                    windowTitle, transientWindowId);
+
+        // ------------------------------------------------------------------------------------------------------------
+        // sample rate
 
         const float sampleRatef = static_cast<float>(sampleRate);
 
@@ -627,23 +633,33 @@ public:
             }
         }
 
-        if (fLv2Options.windowTitle != nullptr && fLv2Options.windowTitle != kNullWindowTitle)
-            delete[] fLv2Options.windowTitle;
+        // ------------------------------------------------------------------------------------------------------------
+        // ui scale
+
+        fLv2Options.uiScale = uiScale;
+
+        // ------------------------------------------------------------------------------------------------------------
+        // window title
+
+        if (windowTitle != nullptr)
+            fUiOptions.windowTitle = windowTitle;
+        else
+            fUiOptions.windowTitle.clear();
+
+        fLv2Options.opts[Lv2PluginOptions::WindowTitle].size  = static_cast<uint32_t>(fUiOptions.windowTitle.length());
+        fLv2Options.opts[Lv2PluginOptions::WindowTitle].value = fUiOptions.windowTitle.buffer();
+
+        // ------------------------------------------------------------------------------------------------------------
+        // transient win id
 
         fLv2Options.transientWinId = static_cast<int64_t>(transientWindowId);
-        fLv2Options.windowTitle    = carla_strdup_safe(windowTitle);
-
-        if (fLv2Options.windowTitle == nullptr)
-            fLv2Options.windowTitle = kNullWindowTitle;
-        else
-            fUiOptions.windowTitle = fLv2Options.windowTitle;
-
-        fLv2Options.opts[Lv2PluginOptions::WindowTitle].size  = (uint32_t)std::strlen(fLv2Options.windowTitle);
-        fLv2Options.opts[Lv2PluginOptions::WindowTitle].value = fLv2Options.windowTitle;
-
-        fUiOptions.useTheme          = useTheme;
-        fUiOptions.useThemeColors    = useThemeColors;
         fUiOptions.transientWindowId = transientWindowId;
+
+        // ------------------------------------------------------------------------------------------------------------
+        // other
+
+        fUiOptions.useTheme       = useTheme;
+        fUiOptions.useThemeColors = useThemeColors;
     }
 
     void uiResized(const uint width, const uint height) override

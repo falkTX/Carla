@@ -69,7 +69,9 @@ protected:
     virtual void dspAtomReceived(const uint32_t index, const LV2_Atom* const atom) = 0;
     virtual void dspURIDReceived(const LV2_URID urid, const char* const uri) = 0;
 
-    virtual void uiOptionsChanged(const double sampleRate, const bool useTheme, const bool useThemeColors, const char* const windowTitle, uintptr_t transientWindowId) = 0;
+    virtual void uiOptionsChanged(const double sampleRate, const float uiScale,
+                                  const bool useTheme, const bool useThemeColors,
+                                  const char* const windowTitle, const uintptr_t transientWindowId) = 0;
 
 public:
     // ---------------------------------------------------------------------

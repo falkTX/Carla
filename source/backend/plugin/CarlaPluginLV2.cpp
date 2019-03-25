@@ -1489,6 +1489,10 @@ public:
                     if (! fPipeServer.writeMessage(tmpBuf))
                         return;
 
+                    std::snprintf(tmpBuf, 0xff, "%f\n", static_cast<double>(pData->engine->getOptions().uiScale));
+                    if (! fPipeServer.writeMessage(tmpBuf))
+                        return;
+
                     std::snprintf(tmpBuf, 0xff, "%s\n", bool2str(true)); // useTheme
                     if (! fPipeServer.writeMessage(tmpBuf))
                         return;

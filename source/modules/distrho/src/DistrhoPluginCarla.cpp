@@ -100,7 +100,11 @@ public:
 protected:
     void handleEditParameter(const uint32_t rindex, const bool touch)
     {
-        fHost->ui_parameter_touch(fHost->handle, rindex, touch);
+        pHost->dispatcher(pHost->handle,
+                          NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER,
+                          static_cast<int32_t>(rindex),
+                          touch ? 1 : 0,
+                          nullptr, 0.0f);
     }
 
     void handleSetParameterValue(const uint32_t rindex, const float value)
