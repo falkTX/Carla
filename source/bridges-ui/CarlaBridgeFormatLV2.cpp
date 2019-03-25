@@ -97,6 +97,7 @@ enum CarlaLv2URIDs {
     kUridCarlaAtomWorkerIn,
     kUridCarlaAtomWorkerResp,
     kUridCarlaTransientWindowId,
+    kUridCarlaUiScale,
     kUridCount
 };
 
@@ -130,6 +131,7 @@ struct Lv2PluginOptions {
     enum OptIndex {
         SampleRate,
         TransientWinId,
+        UiScale,
         WindowTitle,
         Null,
         Count
@@ -137,12 +139,14 @@ struct Lv2PluginOptions {
 
     float sampleRate;
     int64_t transientWinId;
+    float uiScale;
     const char* windowTitle;
     LV2_Options_Option opts[Count];
 
     Lv2PluginOptions() noexcept
         : sampleRate(static_cast<float>(gInitialSampleRate)),
           transientWinId(0),
+          uiScale(1.0f),
           windowTitle(kNullWindowTitle)
     {
         LV2_Options_Option& optSampleRate(opts[SampleRate]);
@@ -152,6 +156,14 @@ struct Lv2PluginOptions {
         optSampleRate.size    = sizeof(float);
         optSampleRate.type    = kUridAtomFloat;
         optSampleRate.value   = &sampleRate;
+
+        LV2_Options_Option& optUiScale(opts[UiScale]);
+        optUiScale.context = LV2_OPTIONS_INSTANCE;
+        optUiScale.subject = 0;
+        optUiScale.key     = kUridParamSampleRate;
+        optUiScale.size    = sizeof(float);
+        optUiScale.type    = kUridCarlaUiScale;
+        optUiScale.value   = &uiScale;
 
         LV2_Options_Option& optTransientWinId(opts[TransientWinId]);
         optTransientWinId.context = LV2_OPTIONS_INSTANCE;

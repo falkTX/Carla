@@ -337,6 +337,8 @@ const char* EngineOption2Str(const EngineOption option) noexcept
         return "ENGINE_OPTION_PATH_RESOURCES";
     case ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR:
         return "ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR";
+    case ENGINE_OPTION_FRONTEND_UI_SCALE:
+        return "ENGINE_OPTION_FRONTEND_UI_SCALE";
     case ENGINE_OPTION_FRONTEND_WIN_ID:
         return "ENGINE_OPTION_FRONTEND_WIN_ID";
 #if !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) && !defined(CARLA_OS_WIN)

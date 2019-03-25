@@ -862,29 +862,32 @@ ENGINE_OPTION_PATH_RESOURCES = 18
 # @note: Linux only
 ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 19
 
+# Set UI scaling used in frontend, so backend can do the same for plugin UIs.
+ENGINE_OPTION_FRONTEND_UI_SCALE = 20
+
 # Set frontend winId, used to define as parent window for plugin UIs.
-ENGINE_OPTION_FRONTEND_WIN_ID = 20
+ENGINE_OPTION_FRONTEND_WIN_ID = 21
 
 # Set path to wine executable.
-ENGINE_OPTION_WINE_EXECUTABLE = 21
+ENGINE_OPTION_WINE_EXECUTABLE = 22
 
 # Enable automatic wineprefix detection.
-ENGINE_OPTION_WINE_AUTO_PREFIX = 22
+ENGINE_OPTION_WINE_AUTO_PREFIX = 23
 
 # Fallback wineprefix to use if automatic detection fails or is disabled, and WINEPREFIX is not set.
-ENGINE_OPTION_WINE_FALLBACK_PREFIX = 23
+ENGINE_OPTION_WINE_FALLBACK_PREFIX = 24
 
 # Enable realtime priority for Wine application and server threads.
-ENGINE_OPTION_WINE_RT_PRIO_ENABLED = 24
+ENGINE_OPTION_WINE_RT_PRIO_ENABLED = 25
 
 # Base realtime priority for Wine threads.
-ENGINE_OPTION_WINE_BASE_RT_PRIO = 25
+ENGINE_OPTION_WINE_BASE_RT_PRIO = 26
 
 # Wine server realtime priority.
-ENGINE_OPTION_WINE_SERVER_RT_PRIO = 26
+ENGINE_OPTION_WINE_SERVER_RT_PRIO = 27
 
 # Capture console output into debug callbacks
-ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 27
+ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 28
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine Process Mode

@@ -2329,6 +2329,8 @@ class HostWindow(QMainWindow):
         self.refreshTransport(True)
         QMainWindow.showEvent(self, event)
 
+        self.host.set_engine_option(ENGINE_OPTION_FRONTEND_UI_SCALE, int(self.devicePixelRatioF() * 1000), "")
+
         # set our gui as parent for all plugins UIs
         if self.host.manageUIs and not (self.host.isControl or self.host.isPlugin):
             if MACOS:

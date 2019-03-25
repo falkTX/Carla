@@ -228,6 +228,7 @@ struct CARLA_API EngineOptions {
     bool preferPluginBridges;
     bool preferUiBridges;
     bool uisAlwaysOnTop;
+    float uiScale;
 
     uint maxParameters;
     uint uiBridgesTimeout;

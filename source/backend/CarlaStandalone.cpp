@@ -286,6 +286,8 @@ static void carla_engine_init_common(CarlaEngine* const engine)
 
     engine->setOption(CB::ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR,    gStandalone.engineOptions.preventBadBehaviour ? 1 : 0,  nullptr);
 
+    engine->setOption(CB::ENGINE_OPTION_FRONTEND_UI_SCALE, static_cast<int>(gStandalone.engineOptions.uiScale * 1000.0f), nullptr);
+
     if (gStandalone.engineOptions.frontendWinId != 0)
     {
         char strBuf[STR_MAX+1];
@@ -688,6 +690,11 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
     case CB::ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR:
         CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
         gStandalone.engineOptions.preventBadBehaviour = (value != 0);
+        break;
+
+    case CB::ENGINE_OPTION_FRONTEND_UI_SCALE:
+        CARLA_SAFE_ASSERT_RETURN(value > 0,);
+        gStandalone.engineOptions.uiScale = static_cast<float>(value) / 1000;
         break;
 
     case CB::ENGINE_OPTION_FRONTEND_WIN_ID: {

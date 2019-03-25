@@ -191,6 +191,7 @@ EngineOptions::EngineOptions() noexcept
       preferUiBridges(true),
 #endif
       uisAlwaysOnTop(true),
+      uiScale(1.0f),
       maxParameters(MAX_DEFAULT_PARAMETERS),
       uiBridgesTimeout(4000),
       audioBufferSize(512),

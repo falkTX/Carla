@@ -137,6 +137,7 @@ enum CarlaLv2URIDs {
     kUridCarlaAtomWorkerIn,
     kUridCarlaAtomWorkerResp,
     kUridCarlaTransientWindowId,
+    kUridCarlaUiScale,
     kUridCount
 };
 
@@ -315,6 +316,7 @@ struct CarlaPluginLV2Options {
         SequenceSize,
         SampleRate,
         TransientWinId,
+        UiScale,
         WindowTitle,
         Null,
         Count
@@ -326,6 +328,7 @@ struct CarlaPluginLV2Options {
     int sequenceSize;
     float sampleRate;
     int64_t transientWinId;
+    float uiScale;
     const char* windowTitle;
     LV2_Options_Option opts[Count];
 
@@ -336,6 +339,7 @@ struct CarlaPluginLV2Options {
           sequenceSize(MAX_DEFAULT_BUFFER_SIZE),
           sampleRate(0.0),
           transientWinId(0),
+          uiScale(1.0f),
           windowTitle(nullptr)
     {
         LV2_Options_Option& optMaxBlockLenth(opts[MaxBlockLenth]);
@@ -369,6 +373,14 @@ struct CarlaPluginLV2Options {
         optSequenceSize.size    = sizeof(int);
         optSequenceSize.type    = kUridAtomInt;
         optSequenceSize.value   = &sequenceSize;
+
+        LV2_Options_Option& optUiScale(opts[UiScale]);
+        optUiScale.context = LV2_OPTIONS_INSTANCE;
+        optUiScale.subject = 0;
+        optUiScale.key     = kUridParamSampleRate;
+        optUiScale.size    = sizeof(float);
+        optUiScale.type    = kUridAtomFloat;
+        optUiScale.value   = &uiScale;
 
         LV2_Options_Option& optSampleRate(opts[SampleRate]);
         optSampleRate.context = LV2_OPTIONS_INSTANCE;
@@ -6604,6 +6616,8 @@ private:
             return kUridCarlaAtomWorkerResp;
         if (std::strcmp(uri, LV2_KXSTUDIO_PROPERTIES__TransientWindowId) == 0)
             return kUridCarlaTransientWindowId;
+        if (std::strcmp(uri, "urn:carla:scale") == 0)
+            return kUridCarlaUiScale;
 
         // Custom plugin types
         return ((CarlaPluginLV2*)handle)->getCustomURID(uri);
@@ -6732,6 +6746,8 @@ private:
             return URI_CARLA_ATOM_WORKER_RESP;
         case kUridCarlaTransientWindowId:
             return LV2_KXSTUDIO_PROPERTIES__TransientWindowId;
+        case kUridCarlaUiScale:
+            return "urn:carla:scale";
         }
 
         // Custom plugin types

@@ -1790,6 +1790,11 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
 #endif
     }   break;
 
+    case ENGINE_OPTION_FRONTEND_UI_SCALE:
+        CARLA_SAFE_ASSERT_RETURN(value > 0,);
+        pData->options.uiScale = static_cast<float>(value) / 1000;
+        break;
+
     case ENGINE_OPTION_FRONTEND_WIN_ID: {
         CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
         const long long winId(std::strtoll(valueStr, nullptr, 16));
