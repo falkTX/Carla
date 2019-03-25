@@ -37,18 +37,16 @@
         <file>48x48/carla-control.png</file>
 
         <file>48x48/canvas.png</file>
-        <file>48x48/folder.png</file>
         <file>48x48/jack.png</file>
         <file>48x48/juce.png</file>
-        <file>48x48/osc.png</file>
-        <file>48x48/warning.png</file>
-        <file>48x48/wine.png</file>
-
-        <file>48x48/carla.png</file>
-        <file>48x48/carla-control.png</file>
 
         <file>scalable/carla.svg</file>
         <file>scalable/carla-control.svg</file>
+        
+        <file>scalable/folder.svgz</file>
+        <file>scalable/osc.svgz</file>
+        <file>scalable/warning.svgz</file>
+        <file>scalable/wine.svgz</file>
 
         <file>bitmaps/carla_about_black.png</file>
         <file>bitmaps/carla_about_white.png</file>

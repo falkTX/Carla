@@ -1927,8 +1927,13 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                 else
                     pixmap = menuItem->icon.pixmap(iconSize, mode);
 
-                int pixw = pixmap.width();
-                int pixh = pixmap.height();
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+                const qreal pixw = static_cast<qreal>(pixmap.width()) / pixmap.devicePixelRatioF();
+                const qreal pixh = static_cast<qreal>(pixmap.height()) / pixmap.devicePixelRatioF();
+#else
+                const int pixw = pixmap.width();
+                const int pixh = pixmap.height();
+#endif
 
                 QRect pmr(0, 0, pixw, pixh);
                 pmr.moveCenter(vCheckRect.center());

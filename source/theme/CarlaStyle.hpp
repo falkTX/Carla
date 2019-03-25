@@ -32,12 +32,12 @@
 #  pragma clang diagnostic push
 #  pragma clang diagnostic ignored "-Wdeprecated-register"
 # endif
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# if defined(__GNUC__) && __GNUC__ >= 8
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wclass-memaccess"
 # endif
 # include <QtGui/QCommonStyle>
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# if defined(__GNUC__) && __GNUC__ >= 8
 #  pragma GCC diagnostic pop
 # endif
 # ifdef __clang__

@@ -118,7 +118,7 @@
         </property>
         <property name="icon">
          <iconset resource="../resources.qrc">
-          <normaloff>:/48x48/carla.png</normaloff>:/48x48/carla.png</iconset>
+          <normaloff>:/scalable/carla.svg</normaloff>:/scalable/carla.svg</iconset>
         </property>
         <property name="flags">
          <set>ItemIsSelectable|ItemIsEnabled</set>
@@ -178,7 +178,7 @@
         </property>
         <property name="icon">
          <iconset resource="../resources.qrc">
-          <normaloff>:/48x48/osc.png</normaloff>:/48x48/osc.png</iconset>
+          <normaloff>:/scalable/osc.svgz</normaloff>:/scalable/osc.svgz</iconset>
         </property>
         <property name="flags">
          <set>ItemIsSelectable|ItemIsEnabled</set>
@@ -196,7 +196,7 @@
         </property>
         <property name="icon">
          <iconset resource="../resources.qrc">
-          <normaloff>:/48x48/folder.png</normaloff>:/48x48/folder.png</iconset>
+          <normaloff>:/scalable/folder.svgz</normaloff>:/scalable/folder.svgz</iconset>
         </property>
         <property name="flags">
          <set>ItemIsSelectable|ItemIsEnabled</set>
@@ -214,7 +214,7 @@
         </property>
         <property name="icon">
          <iconset resource="../resources.qrc">
-          <normaloff>:/48x48/wine.png</normaloff>:/48x48/wine.png</iconset>
+          <normaloff>:/scalable/wine.svgz</normaloff>:/scalable/wine.svgz</iconset>
         </property>
         <property name="flags">
          <set>ItemIsSelectable|ItemIsEnabled</set>
@@ -232,7 +232,7 @@
         </property>
         <property name="icon">
          <iconset resource="../resources.qrc">
-          <normaloff>:/48x48/warning.png</normaloff>:/48x48/warning.png</iconset>
+          <normaloff>:/scalable/warning.svgz</normaloff>:/scalable/warning.svgz</iconset>
         </property>
         <property name="flags">
          <set>ItemIsSelectable|ItemIsEnabled</set>
@@ -280,11 +280,20 @@
            </item>
            <item>
             <widget class="QLabel" name="label_icon_main">
+             <property name="maximumSize">
+              <size>
+               <width>48</width>
+               <height>48</height>
+              </size>
+             </property>
              <property name="text">
               <string notr="true"/>
              </property>
              <property name="pixmap">
-              <pixmap resource="../resources.qrc">:/48x48/carla.png</pixmap>
+              <pixmap resource="../resources.qrc">:/scalable/carla.svg</pixmap>
+             </property>
+             <property name="scaledContents">
+              <bool>true</bool>
              </property>
              <property name="alignment">
               <set>Qt::AlignHCenter|Qt::AlignTop</set>
@@ -323,7 +332,7 @@
                  <string/>
                 </property>
                 <property name="icon">
-                 <iconset resource="../resources.qrc">
+                 <iconset>
                   <normaloff>:/16x16/document-open.png</normaloff>:/16x16/document-open.png</iconset>
                 </property>
                </widget>
@@ -1067,6 +1076,9 @@
              <property name="pixmap">
               <pixmap resource="../resources.qrc">:/16x16/dialog-information.svgz</pixmap>
              </property>
+             <property name="scaledContents">
+              <bool>true</bool>
+             </property>
              <property name="alignment">
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
              </property>
@@ -1141,11 +1153,20 @@
            </item>
            <item>
             <widget class="QLabel" name="label_icon_engine_5">
+             <property name="maximumSize">
+              <size>
+               <width>48</width>
+               <height>48</height>
+              </size>
+             </property>
              <property name="text">
               <string notr="true"/>
              </property>
              <property name="pixmap">
-              <pixmap resource="../resources.qrc">:/48x48/jack.png</pixmap>
+              <pixmap resource="../resources.qrc">:/scalable/osc.svgz</pixmap>
+             </property>
+             <property name="scaledContents">
+              <bool>true</bool>
              </property>
              <property name="alignment">
               <set>Qt::AlignHCenter|Qt::AlignTop</set>
@@ -1240,6 +1261,9 @@
                 </property>
                 <property name="pixmap">
                  <pixmap resource="../resources.qrc">:/16x16/dialog-information.svgz</pixmap>
+                </property>
+                <property name="scaledContents">
+                 <bool>true</bool>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1423,6 +1447,9 @@
                 <property name="pixmap">
                  <pixmap resource="../resources.qrc">:/16x16/dialog-information.svgz</pixmap>
                 </property>
+                <property name="scaledContents">
+                 <bool>true</bool>
+                </property>
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
@@ -1497,6 +1524,9 @@
              </property>
              <property name="pixmap">
               <pixmap resource="../resources.qrc">:/16x16/dialog-information.svgz</pixmap>
+             </property>
+             <property name="scaledContents">
+              <bool>true</bool>
              </property>
              <property name="alignment">
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1633,14 +1663,26 @@
            </item>
            <item>
             <widget class="QLabel" name="label_19">
+             <property name="maximumSize">
+              <size>
+               <width>48</width>
+               <height>48</height>
+              </size>
+             </property>
              <property name="text">
               <string notr="true"/>
              </property>
              <property name="pixmap">
-              <pixmap resource="../resources.qrc">:/48x48/folder.png</pixmap>
+              <pixmap resource="../resources.qrc">:/scalable/folder.svgz</pixmap>
+             </property>
+             <property name="scaledContents">
+              <bool>true</bool>
              </property>
              <property name="alignment">
               <set>Qt::AlignHCenter|Qt::AlignTop</set>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
@@ -1771,6 +1813,9 @@
                  </property>
                  <property name="pixmap">
                   <pixmap resource="../resources.qrc">:/16x16/dialog-information.svgz</pixmap>
+                 </property>
+                 <property name="scaledContents">
+                  <bool>true</bool>
                  </property>
                  <property name="alignment">
                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1941,12 +1986,21 @@
             </spacer>
            </item>
            <item>
-            <widget class="QLabel" name="label_icon_engine_4">
+            <widget class="QLabel" name="label_icon_wine">
+             <property name="maximumSize">
+              <size>
+               <width>48</width>
+               <height>48</height>
+              </size>
+             </property>
              <property name="text">
               <string notr="true"/>
              </property>
              <property name="pixmap">
-              <pixmap resource="../resources.qrc">:/48x48/wine.png</pixmap>
+              <pixmap resource="../resources.qrc">:/scalable/wine.svgz</pixmap>
+             </property>
+             <property name="scaledContents">
+              <bool>true</bool>
              </property>
              <property name="alignment">
               <set>Qt::AlignHCenter|Qt::AlignTop</set>
@@ -2147,7 +2201,10 @@
               <string/>
              </property>
              <property name="pixmap">
-              <pixmap resource="../resources.qrc">:/16x16/dialog-information.png</pixmap>
+              <pixmap resource="../resources.qrc">:/16x16/dialog-information.svgz</pixmap>
+             </property>
+             <property name="scaledContents">
+              <bool>true</bool>
              </property>
              <property name="alignment">
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -2235,12 +2292,21 @@
             </spacer>
            </item>
            <item>
-            <widget class="QLabel" name="label_icon_engine_2">
+            <widget class="QLabel" name="label_icon_experimental">
+             <property name="maximumSize">
+              <size>
+               <width>48</width>
+               <height>48</height>
+              </size>
+             </property>
              <property name="text">
               <string notr="true"/>
              </property>
              <property name="pixmap">
-              <pixmap resource="../resources.qrc">:/48x48/warning.png</pixmap>
+              <pixmap resource="../resources.qrc">:/scalable/warning.svgz</pixmap>
+             </property>
+             <property name="scaledContents">
+              <bool>true</bool>
              </property>
              <property name="alignment">
               <set>Qt::AlignHCenter|Qt::AlignTop</set>
@@ -2276,10 +2342,16 @@
               <string/>
              </property>
              <property name="pixmap">
-              <pixmap resource="../resources.qrc">:/16x16/dialog-warning.png</pixmap>
+              <pixmap resource="../resources.qrc">:/16x16/dialog-warning.svgz</pixmap>
+             </property>
+             <property name="scaledContents">
+              <bool>true</bool>
              </property>
              <property name="alignment">
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
