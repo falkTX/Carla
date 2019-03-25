@@ -21,6 +21,7 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaNative.h"
 
+#include "water/misc/Time.h"
 #include "water/text/StringArray.h"
 
 using water::jmax;
@@ -252,6 +253,7 @@ public:
           fIsUiAvailable(false),
           fIsUiVisible(false),
           fInlineDisplayNeedsRedraw(false),
+          fInlineDisplayLastRedrawTime(0),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
           fMidiEventInCount(0),
@@ -290,6 +292,8 @@ public:
     ~CarlaPluginNative() override
     {
         carla_debug("CarlaPluginNative::~CarlaPluginNative()");
+
+        fInlineDisplayNeedsRedraw = false;
 
         // close UI
         if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
@@ -912,6 +916,32 @@ public:
         {
             for (uint32_t i=0; i < pData->param.count; ++i)
                 fDescriptor->ui_set_parameter_value(fHandle, i, fDescriptor->get_parameter_value(fHandle, i));
+        }
+    }
+
+    void idle() override
+    {
+        if (fInlineDisplayNeedsRedraw)
+        {
+            // TESTING
+            CARLA_SAFE_ASSERT(pData->enabled)
+            CARLA_SAFE_ASSERT(!pData->engine->isAboutToClose());
+            CARLA_SAFE_ASSERT(pData->client->isActive());
+
+            if (pData->enabled && !pData->engine->isAboutToClose() && pData->client->isActive())
+            {
+                const int64_t timeNow = water::Time::currentTimeMillis();
+
+                if (timeNow - fInlineDisplayLastRedrawTime > (1000 / 30))
+                {
+                    fInlineDisplayNeedsRedraw = false;
+                    fInlineDisplayLastRedrawTime = timeNow;
+                    pData->engine->callback(true, true,
+                                            ENGINE_CALLBACK_INLINE_DISPLAY_REDRAW,
+                                            pData->id,
+                                            0, 0, 0, 0.0f, nullptr);
+                }
+            }
         }
     }
 
@@ -2666,6 +2696,7 @@ private:
     bool fIsUiAvailable;
     bool fIsUiVisible;
     bool fInlineDisplayNeedsRedraw;
+    int64_t fInlineDisplayLastRedrawTime;
 
     float**         fAudioInBuffers;
     float**         fAudioOutBuffers;

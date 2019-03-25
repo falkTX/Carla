@@ -4737,11 +4737,8 @@ public:
             if (pData->hints & PLUGIN_HAS_EXTENSION_WORKER)
                 fExt.worker = (const LV2_Worker_Interface*)fDescriptor->extension_data(LV2_WORKER__interface);
 
-            // FIXME
-            // if (pData->hints & PLUGIN_HAS_EXTENSION_INLINE_DISPLAY)
-            {
+            if (pData->hints & PLUGIN_HAS_EXTENSION_INLINE_DISPLAY)
                 fExt.inlineDisplay = (const LV2_Inline_Display_Interface*)fDescriptor->extension_data(LV2_INLINEDISPLAY__interface);
-            }
 
             // check if invalid
             if (fExt.options != nullptr && fExt.options->get == nullptr  && fExt.options->set == nullptr)

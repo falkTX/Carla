@@ -159,6 +159,37 @@ protected:
     {
         fOutLeft  = carla_findMaxNormalizedFloat(inputs[0], frames);
         fOutRight = carla_findMaxNormalizedFloat(inputs[1], frames);
+
+        hostQueueDrawInlineDisplay();
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin dispatcher calls
+
+    const NativeInlineDisplayImageSurface* renderInlineDisplay(const uint32_t width, const uint32_t height) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(width > 0 && height > 0, nullptr);
+
+#if 0
+        static unsigned char data[0xffff];
+
+        for (uint i=0; i < 0xffff-4; i+=4)
+        {
+            data[i+0] = 200;
+            data[i+1] = 0;
+            data[i+2] = 0;
+            data[i+3] = 255;
+        }
+
+        static const NativeInlineDisplayImageSurface nidims = {
+            data, (int)width, (int)height, (int)width * 4,
+        };
+
+        carla_stdout("rendering bigmeter %u %u | %i %i %i %i", width, height, data[0], data[1], data[2], data[3]);
+        return &nidims;
+#else
+        return nullptr;
+#endif
     }
 
 private:

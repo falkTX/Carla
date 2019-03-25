@@ -100,7 +100,7 @@ public:
 protected:
     void handleEditParameter(const uint32_t rindex, const bool touch)
     {
-        pHost->dispatcher(pHost->handle,
+        fHost->dispatcher(fHost->handle,
                           NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER,
                           static_cast<int32_t>(rindex),
                           touch ? 1 : 0,
