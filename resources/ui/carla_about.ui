@@ -371,7 +371,10 @@
             <enum>Qt::PlainText</enum>
            </property>
            <property name="pixmap">
-            <pixmap resource="../resources.qrc">:/48x48/folder.png</pixmap>
+            <pixmap resource="../resources.qrc">:/scalable/folder.svgz</pixmap>
+           </property>
+           <property name="scaledContents">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -396,7 +399,10 @@
             <enum>Qt::PlainText</enum>
            </property>
            <property name="pixmap">
-            <pixmap resource="../resources.qrc">:/48x48/warning.png</pixmap>
+            <pixmap resource="../resources.qrc">:/scalable/warning.svgz</pixmap>
+           </property>
+           <property name="scaledContents">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -421,7 +427,10 @@
             <enum>Qt::PlainText</enum>
            </property>
            <property name="pixmap">
-            <pixmap resource="../resources.qrc">:/48x48/wine.png</pixmap>
+            <pixmap resource="../resources.qrc">:/scalable/wine.svgz</pixmap>
+           </property>
+           <property name="scaledContents">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -498,6 +507,9 @@
            <property name="pixmap">
             <pixmap resource="../resources.qrc">:/scalable/carla.svg</pixmap>
            </property>
+           <property name="scaledContents">
+            <bool>true</bool>
+           </property>
           </widget>
          </item>
          <item>
@@ -522,6 +534,9 @@
            </property>
            <property name="pixmap">
             <pixmap resource="../resources.qrc">:/scalable/carla-control.svg</pixmap>
+           </property>
+           <property name="scaledContents">
+            <bool>true</bool>
            </property>
           </widget>
          </item>

@@ -22,7 +22,7 @@
 import json
 
 from PyQt5.Qt import PYQT_VERSION
-from PyQt5.QtCore import qCritical, QEventLoop, QFileInfo, QModelIndex, QPointF, QTimer, QEvent
+from PyQt5.QtCore import QT_VERSION, qCritical, QEventLoop, QFileInfo, QModelIndex, QPointF, QTimer, QEvent
 from PyQt5.QtGui import QImage, QPalette, QBrush
 from PyQt5.QtWidgets import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QGraphicsView, QMainWindow
 
@@ -2329,7 +2329,8 @@ class HostWindow(QMainWindow):
         self.refreshTransport(True)
         QMainWindow.showEvent(self, event)
 
-        self.host.set_engine_option(ENGINE_OPTION_FRONTEND_UI_SCALE, int(self.devicePixelRatioF() * 1000), "")
+        if QT_VERSION >= 0x50600:
+            self.host.set_engine_option(ENGINE_OPTION_FRONTEND_UI_SCALE, int(self.devicePixelRatioF() * 1000), "")
 
         # set our gui as parent for all plugins UIs
         if self.host.manageUIs and not (self.host.isControl or self.host.isPlugin):

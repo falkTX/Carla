@@ -1934,8 +1934,8 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                     pixmap = menuItem->icon.pixmap(iconSize, mode);
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
-                const qreal pixw = static_cast<qreal>(pixmap.width()) / pixmap.devicePixelRatioF();
-                const qreal pixh = static_cast<qreal>(pixmap.height()) / pixmap.devicePixelRatioF();
+                const int pixw = pixmap.width() / pixmap.devicePixelRatioF();
+                const int pixh = pixmap.height() / pixmap.devicePixelRatioF();
 #else
                 const int pixw = pixmap.width();
                 const int pixh = pixmap.height();
@@ -2086,6 +2086,7 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
                 w = pixmap.width() / pixmap.devicePixelRatio();
 #else
+                w = pixmap.width();
 #endif
 
                 if (button->direction == Qt::RightToLeft)

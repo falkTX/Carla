@@ -21,7 +21,7 @@
 
 from math import floor
 
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, qFatal, Qt, QPointF, QRectF
+from PyQt5.QtCore import QT_VERSION, pyqtSignal, pyqtSlot, qFatal, Qt, QPointF, QRectF
 from PyQt5.QtGui import QCursor, QPixmap, QPolygonF
 from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsScene
 
@@ -86,6 +86,9 @@ class PatchScene(QGraphicsScene):
         self.selectionChanged.connect(self.slot_selectionChanged)
 
     def getDevicePixelRatioF(self):
+        if QT_VERSION < 0x50600:
+            return 1.0
+
         return self.m_view.devicePixelRatioF()
 
     def getScaleFactor(self):
