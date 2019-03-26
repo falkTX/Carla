@@ -4705,22 +4705,27 @@ public:
         fExt.worker   = nullptr;
         fExt.inlineDisplay = nullptr;
 
+        carla_stdout("Plugin has %u extensions", fRdfDescriptor->ExtensionCount);
+
         for (uint32_t i=0; i < fRdfDescriptor->ExtensionCount; ++i)
         {
-            CARLA_SAFE_ASSERT_CONTINUE(fRdfDescriptor->Extensions[i] != nullptr);
+            const char* const extension = fRdfDescriptor->Extensions[i];
+            CARLA_SAFE_ASSERT_CONTINUE(extension != nullptr);
 
-            if (std::strcmp(fRdfDescriptor->Extensions[i], LV2_OPTIONS__interface) == 0)
+            carla_stdout("Extension %u/%u %s", i+1, fRdfDescriptor->ExtensionCount, extension);
+
+            /**/ if (std::strcmp(extension, LV2_OPTIONS__interface) == 0)
                 pData->hints |= PLUGIN_HAS_EXTENSION_OPTIONS;
-            else if (std::strcmp(fRdfDescriptor->Extensions[i], LV2_PROGRAMS__Interface) == 0)
+            else if (std::strcmp(extension, LV2_PROGRAMS__Interface) == 0)
                 pData->hints |= PLUGIN_HAS_EXTENSION_PROGRAMS;
-            else if (std::strcmp(fRdfDescriptor->Extensions[i], LV2_STATE__interface) == 0)
+            else if (std::strcmp(extension, LV2_STATE__interface) == 0)
                 pData->hints |= PLUGIN_HAS_EXTENSION_STATE;
-            else if (std::strcmp(fRdfDescriptor->Extensions[i], LV2_WORKER__interface) == 0)
+            else if (std::strcmp(extension, LV2_WORKER__interface) == 0)
                 pData->hints |= PLUGIN_HAS_EXTENSION_WORKER;
-            else if (std::strcmp(fRdfDescriptor->Extensions[i], LV2_INLINEDISPLAY__interface) == 0)
+            else if (std::strcmp(extension, LV2_INLINEDISPLAY__interface) == 0)
                 pData->hints |= PLUGIN_HAS_EXTENSION_INLINE_DISPLAY;
             else
-                carla_stdout("Plugin has non-supported extension: '%s'", fRdfDescriptor->Extensions[i]);
+                carla_stdout("Plugin has non-supported extension: '%s'", extension);
         }
 
         if (fDescriptor->extension_data != nullptr)
