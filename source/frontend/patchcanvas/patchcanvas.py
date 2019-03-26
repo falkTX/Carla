@@ -932,12 +932,12 @@ def handlePluginRemoved(plugin_id):
         group.plugin_inline = False
         group.widgets[0].m_plugin_id = -1
         group.widgets[0].m_plugin_ui = False
-        group.widgets[0].m_plugin_inline = False
+        group.widgets[0].m_plugin_inline = CanvasBox.INLINE_DISPLAY_DISABLED
 
         if group.split and group.widgets[1]:
             group.widgets[1].m_plugin_id = -1
             group.widgets[1].m_plugin_ui = False
-            group.widgets[1].m_plugin_inline = False
+            group.widgets[1].m_plugin_inline = CanvasBox.INLINE_DISPLAY_DISABLED
 
     for group in canvas.group_list:
         if group.plugin_id < plugin_id or group.plugin_id > MAX_PLUGIN_ID_ALLOWED:
@@ -968,11 +968,11 @@ def handleAllPluginsRemoved():
         group.plugin_inline = False
         group.widgets[0].m_plugin_id = -1
         group.widgets[0].m_plugin_ui = False
-        group.widgets[0].m_plugin_inline = False
+        group.widgets[0].m_plugin_inline = CanvasBox.INLINE_DISPLAY_DISABLED
 
         if group.split and group.widgets[1]:
             group.widgets[1].m_plugin_id = -1
             group.widgets[1].m_plugin_ui = False
-            group.widgets[1].m_plugin_inline = False
+            group.widgets[1].m_plugin_inline = CanvasBox.INLINE_DISPLAY_DISABLED
 
 # ------------------------------------------------------------------------------------------------------------

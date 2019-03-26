@@ -1337,13 +1337,14 @@ class HostWindow(QMainWindow):
         pOptions.auto_select_items = self.fSavedSettings[CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS]
         pOptions.use_bezier_lines  = self.fSavedSettings[CARLA_KEY_CANVAS_USE_BEZIER_LINES]
         pOptions.antialiasing      = self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING]
+        pOptions.inline_displays   = self.fSavedSettings[CARLA_KEY_CANVAS_INLINE_DISPLAYS]
 
         if self.fSavedSettings[CARLA_KEY_CANVAS_FANCY_EYE_CANDY]:
-            pOptions.eyecandy      = patchcanvas.EYECANDY_FULL
+            pOptions.eyecandy = patchcanvas.EYECANDY_FULL
         elif self.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY]:
-            pOptions.eyecandy      = patchcanvas.EYECANDY_SMALL
+            pOptions.eyecandy = patchcanvas.EYECANDY_SMALL
         else:
-            pOptions.eyecandy      = patchcanvas.EYECANDY_NONE
+            pOptions.eyecandy = patchcanvas.EYECANDY_NONE
 
         pFeatures = patchcanvas.features_t()
         pFeatures.group_info   = False
@@ -1702,6 +1703,7 @@ class HostWindow(QMainWindow):
             CARLA_KEY_CANVAS_USE_OPENGL:        settings.value(CARLA_KEY_CANVAS_USE_OPENGL,        CARLA_DEFAULT_CANVAS_USE_OPENGL,        type=bool),
             CARLA_KEY_CANVAS_ANTIALIASING:      settings.value(CARLA_KEY_CANVAS_ANTIALIASING,      CARLA_DEFAULT_CANVAS_ANTIALIASING,      type=int),
             CARLA_KEY_CANVAS_HQ_ANTIALIASING:   settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING,   CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING,   type=bool),
+            CARLA_KEY_CANVAS_INLINE_DISPLAYS:   settings.value(CARLA_KEY_CANVAS_INLINE_DISPLAYS,   CARLA_DEFAULT_CANVAS_INLINE_DISPLAYS,   type=bool),
             CARLA_KEY_CUSTOM_PAINTING:         (settings.value(CARLA_KEY_MAIN_USE_PRO_THEME,    True,   type=bool) and
                                                 settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, "Black", type=str).lower() == "black"),
         }

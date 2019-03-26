@@ -376,6 +376,7 @@ class CarlaSettingsW(QDialog):
         self.ui.cb_canvas_use_opengl.setChecked(settings.value(CARLA_KEY_CANVAS_USE_OPENGL, CARLA_DEFAULT_CANVAS_USE_OPENGL, type=bool) and self.ui.cb_canvas_use_opengl.isEnabled())
         self.ui.cb_canvas_render_aa.setCheckState(settings.value(CARLA_KEY_CANVAS_ANTIALIASING, CARLA_DEFAULT_CANVAS_ANTIALIASING, type=int))
         self.ui.cb_canvas_render_hq_aa.setChecked(settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING, CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING, type=bool) and self.ui.cb_canvas_render_hq_aa.isEnabled())
+        self.ui.cb_canvas_inline_displays.setChecked(settings.value(CARLA_KEY_CANVAS_INLINE_DISPLAYS, CARLA_DEFAULT_CANVAS_INLINE_DISPLAYS, type=bool))
 
         # ----------------------------------------------------------------------------------------------------
 
@@ -599,6 +600,7 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_CANVAS_USE_OPENGL,        self.ui.cb_canvas_use_opengl.isChecked())
         settings.setValue(CARLA_KEY_CANVAS_HQ_ANTIALIASING,   self.ui.cb_canvas_render_hq_aa.isChecked())
         settings.setValue(CARLA_KEY_CANVAS_ANTIALIASING,      self.ui.cb_canvas_render_aa.checkState()) # 0, 1, 2 match their enum variants
+        settings.setValue(CARLA_KEY_CANVAS_INLINE_DISPLAYS,   self.ui.cb_canvas_inline_displays.isChecked())
 
         # ----------------------------------------------------------------------------------------------------
 
@@ -901,6 +903,7 @@ class CarlaSettingsW(QDialog):
         self.ui.cb_canvas_fancy_eyecandy.setChecked(CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY)
         self.ui.cb_canvas_use_opengl.setChecked(CARLA_DEFAULT_CANVAS_USE_OPENGL and self.ui.cb_canvas_use_opengl.isEnabled())
         self.ui.cb_canvas_render_hq_aa.setChecked(CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING and self.ui.cb_canvas_render_hq_aa.isEnabled())
+        self.ui.cb_canvas_inline_displays.setChecked(CARLA_DEFAULT_CANVAS_INLINE_DISPLAYS)
         self.ui.ch_engine_force_stereo.setChecked(CARLA_DEFAULT_FORCE_STEREO)
         self.ui.ch_engine_prefer_plugin_bridges.setChecked(CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES)
 
@@ -933,16 +936,19 @@ class CarlaSettingsW(QDialog):
     @pyqtSlot(bool)
     def slot_canvasEyeCandyToggled(self, toggled):
         if not toggled:
+            # disable fancy eyecandy too
             self.ui.cb_canvas_fancy_eyecandy.setChecked(False)
 
     @pyqtSlot(bool)
     def slot_canvasFancyEyeCandyToggled(self, toggled):
         if toggled:
+            # make sure normal eyecandy is enabled too
             self.ui.cb_canvas_eyecandy.setChecked(True)
 
     @pyqtSlot(bool)
     def slot_canvasOpenGLToggled(self, toggled):
         if not toggled:
+            # uncheck GL specific option
             self.ui.cb_canvas_render_hq_aa.setChecked(False)
 
     # --------------------------------------------------------------------------------------------------------

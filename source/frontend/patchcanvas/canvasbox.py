@@ -73,6 +73,10 @@ class cb_line_t(object):
 # ------------------------------------------------------------------------------------------------------------
 
 class CanvasBox(QGraphicsItem):
+    INLINE_DISPLAY_DISABLED = 0
+    INLINE_DISPLAY_ENABLED  = 1
+    INLINE_DISPLAY_CACHED   = 2
+
     def __init__(self, group_id, group_name, icon, parent=None):
         QGraphicsItem.__init__(self)
         self.setParentItem(parent)
@@ -84,7 +88,7 @@ class CanvasBox(QGraphicsItem):
         # plugin Id, < 0 if invalid
         self.m_plugin_id = -1
         self.m_plugin_ui = False
-        self.m_plugin_inline = False
+        self.m_plugin_inline = self.INLINE_DISPLAY_DISABLED
 
         # Base Variables
         self.p_width = 50
@@ -99,6 +103,7 @@ class CanvasBox(QGraphicsItem):
         self.m_cursor_moving = False
         self.m_forced_split = False
         self.m_mouse_down = False
+        self.m_inline_image = None
 
         self.m_port_list_ids = []
         self.m_connection_lines = []
@@ -163,10 +168,17 @@ class CanvasBox(QGraphicsItem):
     def getPortList(self):
         return self.m_port_list_ids
 
+    def redrawInlineDisplay(self):
+        if self.m_plugin_inline == self.INLINE_DISPLAY_CACHED:
+            self.m_plugin_inline = self.INLINE_DISPLAY_ENABLED
+
     def setAsPlugin(self, plugin_id, hasUI, hasInlineDisplay):
+        if hasInlineDisplay and not options.inline_displays:
+            hasInlineDisplay = False
+
         self.m_plugin_id = plugin_id
         self.m_plugin_ui = hasUI
-        self.m_plugin_inline = hasInlineDisplay
+        self.m_plugin_inline = self.INLINE_DISPLAY_ENABLED if hasInlineDisplay else self.INLINE_DISPLAY_DISABLED
         self.update()
 
     def setIcon(self, icon):
@@ -265,7 +277,7 @@ class CanvasBox(QGraphicsItem):
 
         # Check Text Name size
         app_name_size = QFontMetrics(self.m_font_name).width(self.m_group_name) + 30
-        self.p_width = max(200 if self.m_plugin_inline else 50, app_name_size)
+        self.p_width = max(200 if self.m_plugin_inline != self.INLINE_DISPLAY_DISABLED else 50, app_name_size)
 
         # Get Port List
         port_list = []
@@ -311,7 +323,7 @@ class CanvasBox(QGraphicsItem):
                         port.widget.setY(last_out_pos)
                         last_out_pos += port_spacing
 
-            self.p_width = max(self.p_width, (100 if self.m_plugin_inline else 30) + max_in_width + max_out_width)
+            self.p_width = max(self.p_width, (100 if self.m_plugin_inline != self.INLINE_DISPLAY_DISABLED else 30) + max_in_width + max_out_width)
             self.p_width_in = max_in_width
             self.p_width_out = max_out_width
 
@@ -623,19 +635,7 @@ class CanvasBox(QGraphicsItem):
         painter.drawRect(rect)
 
         # Draw plugin inline display if supported
-        if self.m_plugin_id >= 0 and self.m_plugin_id <= MAX_PLUGIN_ID_ALLOWED and self.m_plugin_inline:
-            inwidth = self.p_width - self.p_width_in - self.p_width_out - 16
-            inheight = self.p_height - canvas.theme.box_header_height
-            scaling = canvas.scene.getScaleFactor() * canvas.scene.getDevicePixelRatioF()
-            size = "%i:%i" % (int(inwidth*scaling), int(inheight*scaling))
-            data = canvas.callback(ACTION_INLINE_DISPLAY, self.m_plugin_id, 0, size)
-            if data is not None:
-                image = QImage(data['data'], data['width'], data['height'], data['stride'], QImage.Format_ARGB32)
-                srcx = self.p_width_in + 7
-                srcy = int(canvas.theme.box_header_height
-                           + (self.p_height - canvas.theme.box_header_height) / 2
-                           - data['height'] / 2 / scaling - 1)
-                painter.drawImage(QRectF(srcx, srcy, inwidth, inheight), image)
+        self.paintInlineDisplay(painter)
 
         # Draw pixmap header
         rect.setHeight(canvas.theme.box_header_height)
@@ -670,5 +670,28 @@ class CanvasBox(QGraphicsItem):
         self.repaintLines()
 
         painter.restore()
+
+    def paintInlineDisplay(self, painter):
+        if self.m_plugin_id < 0 or self.m_plugin_id > MAX_PLUGIN_ID_ALLOWED:
+            return
+        if self.m_plugin_inline == self.INLINE_DISPLAY_DISABLED:
+            return
+        if not options.inline_displays:
+            return
+
+        if self.m_plugin_inline == self.INLINE_DISPLAY_ENABLED:
+            inwidth = self.p_width - self.p_width_in - self.p_width_out - 16
+            inheight = self.p_height - canvas.theme.box_header_height
+            scaling = canvas.scene.getScaleFactor() * canvas.scene.getDevicePixelRatioF()
+            size = "%i:%i" % (int(inwidth*scaling), int(inheight*scaling))
+            data = canvas.callback(ACTION_INLINE_DISPLAY, self.m_plugin_id, 0, size)
+            self.m_inline_image = QImage(data['data'], data['width'], data['height'], data['stride'], QImage.Format_ARGB32)
+            #self.m_plugin_inline = self.INLINE_DISPLAY_CACHED
+
+        srcx = self.p_width_in + 7
+        srcy = int(canvas.theme.box_header_height
+                  + (self.p_height - canvas.theme.box_header_height) / 2
+                  - data['height'] / 2 / scaling - 1)
+        painter.drawImage(QRectF(srcx, srcy, inwidth, inheight), self.m_inline_image)
 
 # ------------------------------------------------------------------------------------------------------------

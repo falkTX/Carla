@@ -2460,6 +2460,13 @@
               </property>
              </widget>
             </item>
+            <item>
+             <widget class="QCheckBox" name="cb_canvas_inline_displays">
+              <property name="text">
+               <string>Render Ardour-style &quot;Inline Displays&quot;</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </item>

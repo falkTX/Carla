@@ -107,7 +107,8 @@ class options_t(object):
         'auto_select_items',
         'use_bezier_lines',
         'antialiasing',
-        'eyecandy'
+        'eyecandy',
+        'inline_displays'
     ]
 
 # Canvas features
@@ -255,6 +256,7 @@ options.auto_select_items = False
 options.use_bezier_lines  = True
 options.antialiasing      = ANTIALIASING_SMALL
 options.eyecandy          = EYECANDY_SMALL
+options.inline_displays   = False
 
 features = features_t()
 features.group_info   = False
@@ -272,6 +274,7 @@ def setOptions(new_options):
     options.use_bezier_lines  = new_options.use_bezier_lines
     options.antialiasing      = new_options.antialiasing
     options.eyecandy          = new_options.eyecandy
+    options.inline_displays   = new_options.inline_displays
 
 def setFeatures(new_features):
     if canvas.initiated: return
