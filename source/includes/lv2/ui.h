@@ -60,6 +60,7 @@
 #define LV2_UI__floatProtocol    LV2_UI_PREFIX "floatProtocol"     ///< http://lv2plug.in/ns/extensions/ui#floatProtocol
 #define LV2_UI__peakProtocol     LV2_UI_PREFIX "peakProtocol"      ///< http://lv2plug.in/ns/extensions/ui#peakProtocol
 #define LV2_UI__resize           LV2_UI_PREFIX "resize"            ///< http://lv2plug.in/ns/extensions/ui#resize
+#define LV2_UI__scaleFactor      LV2_UI_PREFIX "scaleFactor"       ///< http://lv2plug.in/ns/extensions/ui#scaleFactor
 #define LV2_UI__showInterface    LV2_UI_PREFIX "showInterface"     ///< http://lv2plug.in/ns/extensions/ui#showInterface
 #define LV2_UI__touch            LV2_UI_PREFIX "touch"             ///< http://lv2plug.in/ns/extensions/ui#touch
 #define LV2_UI__ui               LV2_UI_PREFIX "ui"                ///< http://lv2plug.in/ns/extensions/ui#ui

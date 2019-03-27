@@ -133,11 +133,11 @@ enum CarlaLv2URIDs {
     kUridTimeTicksPerBeat,
     kUridMidiEvent,
     kUridParamSampleRate,
+    kUridScaleFactor,
     kUridWindowTitle,
     kUridCarlaAtomWorkerIn,
     kUridCarlaAtomWorkerResp,
     kUridCarlaTransientWindowId,
-    kUridCarlaUiScale,
     kUridCount
 };
 
@@ -316,7 +316,7 @@ struct CarlaPluginLV2Options {
         SequenceSize,
         SampleRate,
         TransientWinId,
-        UiScale,
+        ScaleFactor,
         WindowTitle,
         Null,
         Count
@@ -374,13 +374,13 @@ struct CarlaPluginLV2Options {
         optSequenceSize.type    = kUridAtomInt;
         optSequenceSize.value   = &sequenceSize;
 
-        LV2_Options_Option& optUiScale(opts[UiScale]);
-        optUiScale.context = LV2_OPTIONS_INSTANCE;
-        optUiScale.subject = 0;
-        optUiScale.key     = kUridCarlaUiScale;
-        optUiScale.size    = sizeof(float);
-        optUiScale.type    = kUridAtomFloat;
-        optUiScale.value   = &uiScale;
+        LV2_Options_Option& optScaleFactor(opts[ScaleFactor]);
+        optScaleFactor.context = LV2_OPTIONS_INSTANCE;
+        optScaleFactor.subject = 0;
+        optScaleFactor.key     = kUridScaleFactor;
+        optScaleFactor.size    = sizeof(float);
+        optScaleFactor.type    = kUridAtomFloat;
+        optScaleFactor.value   = &uiScale;
 
         LV2_Options_Option& optSampleRate(opts[SampleRate]);
         optSampleRate.context = LV2_OPTIONS_INSTANCE;
@@ -6610,6 +6610,8 @@ private:
             return kUridMidiEvent;
         if (std::strcmp(uri, LV2_PARAMETERS__sampleRate) == 0)
             return kUridParamSampleRate;
+        if (std::strcmp(uri, LV2_UI__scaleFactor) == 0)
+            return kUridScaleFactor;
         if (std::strcmp(uri, LV2_UI__windowTitle) == 0)
             return kUridWindowTitle;
 
@@ -6620,8 +6622,6 @@ private:
             return kUridCarlaAtomWorkerResp;
         if (std::strcmp(uri, LV2_KXSTUDIO_PROPERTIES__TransientWindowId) == 0)
             return kUridCarlaTransientWindowId;
-        if (std::strcmp(uri, "urn:carla:scale") == 0)
-            return kUridCarlaUiScale;
 
         // Custom plugin types
         return ((CarlaPluginLV2*)handle)->getCustomURID(uri);
@@ -6740,6 +6740,8 @@ private:
             return LV2_MIDI__MidiEvent;
         case kUridParamSampleRate:
             return LV2_PARAMETERS__sampleRate;
+        case kUridScaleFactor:
+            return LV2_UI__scaleFactor;
         case kUridWindowTitle:
             return LV2_UI__windowTitle;
 
@@ -6750,8 +6752,6 @@ private:
             return URI_CARLA_ATOM_WORKER_RESP;
         case kUridCarlaTransientWindowId:
             return LV2_KXSTUDIO_PROPERTIES__TransientWindowId;
-        case kUridCarlaUiScale:
-            return "urn:carla:scale";
         }
 
         // Custom plugin types
