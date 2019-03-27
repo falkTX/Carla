@@ -401,19 +401,11 @@ class HostWindow(QMainWindow):
         if withCanvas:
             self.scene = patchcanvas.PatchScene(self, self.ui.graphicsView)
             self.ui.graphicsView.setScene(self.scene)
-            self.ui.graphicsView.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
-
-            if self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING] != patchcanvas.ANTIALIASING_NONE:
-                self.ui.graphicsView.setRenderHint(QPainter.Antialiasing, True)
-
-                if self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING] != patchcanvas.ANTIALIASING_FULL:
-                    self.ui.graphicsView.setRenderHint(QPainter.SmoothPixmapTransform, True)
-                    self.ui.graphicsView.setRenderHint(QPainter.TextAntialiasing, True)
+            #self.ui.graphicsView.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
 
             if self.fSavedSettings[CARLA_KEY_CANVAS_USE_OPENGL] and hasGL:
                 self.ui.glView = QGLWidget(self)
                 self.ui.graphicsView.setViewport(self.ui.glView)
-                self.ui.graphicsView.setRenderHint(QPainter.HighQualityAntialiasing, self.fSavedSettings[CARLA_KEY_CANVAS_HQ_ANTIALIASING])
 
             self.setupCanvas()
 
@@ -1372,6 +1364,19 @@ class HostWindow(QMainWindow):
 
         self.ui.miniCanvasPreview.setViewTheme(patchcanvas.canvas.theme.canvas_bg, patchcanvas.canvas.theme.rubberband_brush, patchcanvas.canvas.theme.rubberband_pen.color())
         self.ui.miniCanvasPreview.init(self.scene, self.fCanvasWidth, self.fCanvasHeight, self.fSavedSettings[CARLA_KEY_CUSTOM_PAINTING])
+
+        if self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING] != patchcanvas.ANTIALIASING_NONE:
+            self.ui.graphicsView.setRenderHint(QPainter.Antialiasing, True)
+
+            fullAA = self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING] == patchcanvas.ANTIALIASING_FULL
+            self.ui.graphicsView.setRenderHint(QPainter.SmoothPixmapTransform, fullAA)
+            self.ui.graphicsView.setRenderHint(QPainter.TextAntialiasing, fullAA)
+
+            if self.fSavedSettings[CARLA_KEY_CANVAS_USE_OPENGL] and hasGL:
+                self.ui.graphicsView.setRenderHint(QPainter.HighQualityAntialiasing, self.fSavedSettings[CARLA_KEY_CANVAS_HQ_ANTIALIASING])
+
+        else:
+            self.ui.graphicsView.setRenderHint(QPainter.Antialiasing, False)
 
     def updateCanvasInitialPos(self):
         x = self.ui.graphicsView.horizontalScrollBar().value() + self.width()/4

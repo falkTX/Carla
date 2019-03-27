@@ -22,8 +22,6 @@
 from abc import ABCMeta, abstractmethod
 from ctypes import *
 from platform import architecture
-from sip import voidptr
-from struct import pack
 from sys import platform, maxsize
 
 # ------------------------------------------------------------------------------------------------------------
@@ -2847,10 +2845,9 @@ class CarlaHostDLL(CarlaHostMeta):
             return None
         contents = ptr.contents
         datalen = contents.height * contents.stride
-        unpacked = tuple(contents.data[i] for i in range(datalen))
-        packed = pack("%iB" % datalen, *unpacked)
+        databuf = tuple(contents.data[i] for i in range(datalen))
         data = {
-            'data': voidptr(packed),
+            'data': databuf,
             'width': contents.width,
             'height': contents.height,
             'stride': contents.stride,

@@ -4705,14 +4705,10 @@ public:
         fExt.worker   = nullptr;
         fExt.inlineDisplay = nullptr;
 
-        carla_stdout("Plugin has %u extensions", fRdfDescriptor->ExtensionCount);
-
         for (uint32_t i=0; i < fRdfDescriptor->ExtensionCount; ++i)
         {
             const char* const extension = fRdfDescriptor->Extensions[i];
             CARLA_SAFE_ASSERT_CONTINUE(extension != nullptr);
-
-            carla_stdout("Extension %u/%u %s", i+1, fRdfDescriptor->ExtensionCount, extension);
 
             /**/ if (std::strcmp(extension, LV2_OPTIONS__interface) == 0)
                 pData->hints |= PLUGIN_HAS_EXTENSION_OPTIONS;

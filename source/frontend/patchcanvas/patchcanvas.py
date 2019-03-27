@@ -915,10 +915,10 @@ def redrawPluginGroup(plugin_id):
         #qCritical("PatchCanvas::redrawPluginGroup(%i) - unable to find group" % plugin_id)
         return
 
-    group.widgets[0].update()
+    group.widgets[0].redrawInlineDisplay()
 
     if group.split and group.widgets[1]:
-        group.widgets[1].update()
+        group.widgets[1].redrawInlineDisplay()
 
 def handlePluginRemoved(plugin_id):
     if canvas.debug:
@@ -930,14 +930,10 @@ def handlePluginRemoved(plugin_id):
         group.plugin_id = -1
         group.plugin_ui = False
         group.plugin_inline = False
-        group.widgets[0].m_plugin_id = -1
-        group.widgets[0].m_plugin_ui = False
-        group.widgets[0].m_plugin_inline = CanvasBox.INLINE_DISPLAY_DISABLED
+        group.widgets[0].removeAsPlugin()
 
         if group.split and group.widgets[1]:
-            group.widgets[1].m_plugin_id = -1
-            group.widgets[1].m_plugin_ui = False
-            group.widgets[1].m_plugin_inline = CanvasBox.INLINE_DISPLAY_DISABLED
+            group.widgets[1].removeAsPlugin()
 
     for group in canvas.group_list:
         if group.plugin_id < plugin_id or group.plugin_id > MAX_PLUGIN_ID_ALLOWED:
@@ -966,13 +962,9 @@ def handleAllPluginsRemoved():
         group.plugin_id = -1
         group.plugin_ui = False
         group.plugin_inline = False
-        group.widgets[0].m_plugin_id = -1
-        group.widgets[0].m_plugin_ui = False
-        group.widgets[0].m_plugin_inline = CanvasBox.INLINE_DISPLAY_DISABLED
+        group.widgets[0].removeAsPlugin()
 
         if group.split and group.widgets[1]:
-            group.widgets[1].m_plugin_id = -1
-            group.widgets[1].m_plugin_ui = False
-            group.widgets[1].m_plugin_inline = CanvasBox.INLINE_DISPLAY_DISABLED
+            group.widgets[1].removeAsPlugin()
 
 # ------------------------------------------------------------------------------------------------------------

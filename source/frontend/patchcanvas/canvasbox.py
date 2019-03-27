@@ -19,6 +19,9 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
+from sip import voidptr
+from struct import pack
+
 from PyQt5.QtCore import qCritical, Qt, QPointF, QRectF, QTimer
 from PyQt5.QtGui import QCursor, QFont, QFontMetrics, QImage, QLinearGradient, QPainter, QPen
 from PyQt5.QtWidgets import QGraphicsItem, QMenu
@@ -103,7 +106,9 @@ class CanvasBox(QGraphicsItem):
         self.m_cursor_moving = False
         self.m_forced_split = False
         self.m_mouse_down = False
+        self.m_inline_data = None
         self.m_inline_image = None
+        self.m_inline_scaling = 1.0
 
         self.m_port_list_ids = []
         self.m_connection_lines = []
@@ -171,10 +176,27 @@ class CanvasBox(QGraphicsItem):
     def redrawInlineDisplay(self):
         if self.m_plugin_inline == self.INLINE_DISPLAY_CACHED:
             self.m_plugin_inline = self.INLINE_DISPLAY_ENABLED
+            self.update()
+
+    def removeAsPlugin(self):
+        #del self.m_inline_image
+        #self.m_inline_data = None
+        #self.m_inline_image = None
+        #self.m_inline_scaling = 1.0
+
+        self.m_plugin_id = -1
+        self.m_plugin_ui = False
+        #self.m_plugin_inline = self.INLINE_DISPLAY_DISABLED
 
     def setAsPlugin(self, plugin_id, hasUI, hasInlineDisplay):
         if hasInlineDisplay and not options.inline_displays:
             hasInlineDisplay = False
+
+        if not hasInlineDisplay:
+            del self.m_inline_image
+            self.m_inline_data = None
+            self.m_inline_image = None
+            self.m_inline_scaling = 1.0
 
         self.m_plugin_id = plugin_id
         self.m_plugin_ui = hasUI
@@ -672,26 +694,41 @@ class CanvasBox(QGraphicsItem):
         painter.restore()
 
     def paintInlineDisplay(self, painter):
-        if self.m_plugin_id < 0 or self.m_plugin_id > MAX_PLUGIN_ID_ALLOWED:
-            return
         if self.m_plugin_inline == self.INLINE_DISPLAY_DISABLED:
             return
         if not options.inline_displays:
             return
 
-        if self.m_plugin_inline == self.INLINE_DISPLAY_ENABLED:
-            inwidth = self.p_width - self.p_width_in - self.p_width_out - 16
-            inheight = self.p_height - canvas.theme.box_header_height
-            scaling = canvas.scene.getScaleFactor() * canvas.scene.getDevicePixelRatioF()
+        inwidth  = self.p_width - self.p_width_in - self.p_width_out - 16
+        inheight = self.p_height - canvas.theme.box_header_height - canvas.theme.box_header_spacing - canvas.theme.port_spacing - 3
+        scaling  = canvas.scene.getScaleFactor() * canvas.scene.getDevicePixelRatioF()
+
+        if self.m_plugin_id >= 0 and self.m_plugin_id <= MAX_PLUGIN_ID_ALLOWED and (
+           self.m_plugin_inline == self.INLINE_DISPLAY_ENABLED or self.m_inline_scaling != scaling):
             size = "%i:%i" % (int(inwidth*scaling), int(inheight*scaling))
             data = canvas.callback(ACTION_INLINE_DISPLAY, self.m_plugin_id, 0, size)
-            self.m_inline_image = QImage(data['data'], data['width'], data['height'], data['stride'], QImage.Format_ARGB32)
-            #self.m_plugin_inline = self.INLINE_DISPLAY_CACHED
+            if data is None:
+                return
+
+            # invalidate old image first
+            del self.m_inline_image
+
+            self.m_inline_data = pack("%iB" % (data['height'] * data['stride']), *data['data'])
+            self.m_inline_image = QImage(voidptr(self.m_inline_data), data['width'], data['height'], data['stride'], QImage.Format_ARGB32)
+            self.m_inline_scaling = scaling
+            self.m_plugin_inline = self.INLINE_DISPLAY_CACHED
+
+        if self.m_inline_image is None:
+            print("ERROR: inline display image is None for", self.m_plugin_id, self.m_group_name)
+            return
 
         srcx = self.p_width_in + 7
-        srcy = int(canvas.theme.box_header_height
-                  + (self.p_height - canvas.theme.box_header_height) / 2
-                  - data['height'] / 2 / scaling - 1)
-        painter.drawImage(QRectF(srcx, srcy, inwidth, inheight), self.m_inline_image)
+        srcy = int(canvas.theme.box_header_height + canvas.theme.box_header_spacing + 1
+                   + (inheight - self.m_inline_image.height() / scaling) / 2)
+        # FIXME vertical center inline displays
+        #+ (inheight - self.m_inline_image.height() / scaling) / 2)
+        painter.drawImage(QRectF(srcx, srcy,
+                                 self.m_inline_image.width() / scaling,
+                                 self.m_inline_image.height() / scaling), self.m_inline_image)
 
 # ------------------------------------------------------------------------------------------------------------
