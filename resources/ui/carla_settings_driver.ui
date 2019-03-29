@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>320</width>
-    <height>175</height>
+    <height>205</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -130,6 +130,9 @@
        </property>
        <property name="pixmap">
         <pixmap resource="../resources.qrc">:/16x16/dialog-information.svgz</pixmap>
+       </property>
+       <property name="scaledContents">
+        <bool>true</bool>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
