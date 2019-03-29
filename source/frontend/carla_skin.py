@@ -276,6 +276,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         self.w_knobs_left  = None
         self.w_knobs_right = None
+        self.spacer_knobs  = None
 
         # -------------------------------------------------------------
         # Set-up connections
@@ -591,6 +592,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 widget.setLabel(paramName)
                 widget.setMinimum(paramRanges['min'])
                 widget.setMaximum(paramRanges['max'])
+                widget.hide()
 
                 if isInteger:
                     widget.setPrecision(paramRanges['max']-paramRanges['min'], True)
@@ -629,8 +631,6 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             paramWidget.blockSignals(True)
             paramWidget.setValue(self.host.get_internal_parameter_value(self.fPluginId, paramIndex))
             paramWidget.blockSignals(False)
-            if paramIndex >= 0:
-                paramWidget.hide()
 
         # -------------------------------------------------------------
 
@@ -638,7 +638,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         if not self.fAdjustViewableKnobCountScheduled:
             self.fAdjustViewableKnobCountScheduled = True
-            QTimer.singleShot(1, self.adjustViewableKnobCount)
+            QTimer.singleShot(5, self.adjustViewableKnobCount)
 
     #------------------------------------------------------------------
 
@@ -1389,33 +1389,35 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
     #------------------------------------------------------------------
 
     def adjustViewableKnobCount(self):
-        # FIXME Object already destroyed, but timer still kicked in
-        if self is None:
+        if self.w_knobs_left is None or self.spacer_knobs is None:
             return
 
-        self.fAdjustViewableKnobCountScheduled = False
+        curWidth = 2
+        maxWidth = self.w_knobs_left.width() + self.spacer_knobs.geometry().width() + 2
 
-        if self.w_knobs_left is None:
-            return
-
-        for index, widget in self.fParameterList:
-            if index < 0 or not widget.isVisible():
-                break
-            widget.hide()
-
-        prevWidth = 0
-        for index, widget in self.fParameterList:
+        plen = len(self.fParameterList)
+        for i in range(plen):
+            index, widget = self.fParameterList[i]
             if index < 0:
                 break
 
-            widget.show()
-            newWidth = self.w_knobs_left.width()
+            curWidth += widget.width() + 4
 
-            if newWidth == prevWidth:
-                widget.hide()
-                break
+            if curWidth + widget.width() * 2 + 8 < maxWidth:
+                #if not widget.isVisible():
+                widget.show()
+                continue
 
-            prevWidth = newWidth
+            for i2 in range(i, plen):
+                index2, widget2 = self.fParameterList[i2]
+                if index2 < 0:
+                    break
+                #if widget2.isVisible():
+                widget2.hide()
+
+            break
+
+        self.fAdjustViewableKnobCountScheduled = False
 
     def testTimer(self):
         self.fIdleTimerId = self.startTimer(25)
@@ -1529,7 +1531,8 @@ class PluginSlot_Calf(AbstractPluginSlot):
         self.peak_in  = self.ui.peak_in
         self.peak_out = self.ui.peak_out
 
-        self.w_knobs_left  = self.ui.w_knobs
+        self.w_knobs_left = self.ui.w_knobs
+        self.spacer_knobs = self.ui.layout_bottom.itemAt(1).spacerItem()
 
         self.ready()
 
@@ -1711,6 +1714,7 @@ class PluginSlot_Default(AbstractPluginSlot):
 
         self.w_knobs_left  = self.ui.w_knobs_left
         self.w_knobs_right = self.ui.w_knobs_right
+        self.spacer_knobs  = self.ui.layout_bottom.itemAt(1).spacerItem()
 
         self.ready()
 
@@ -1800,6 +1804,7 @@ class PluginSlot_Presets(AbstractPluginSlot):
         else:
             self.w_knobs_left  = self.ui.w_knobs_left
             self.w_knobs_right = self.ui.w_knobs_right
+            self.spacer_knobs  = self.ui.layout_bottom.itemAt(1).spacerItem()
 
         self.ready()
 
@@ -1903,6 +1908,7 @@ class PluginSlot_Presets(AbstractPluginSlot):
             widget.setCustomPaintColor(QColor(83, 173, 10))
             widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_COLOR)
             widget.forceWhiteLabelGradientText()
+            widget.hide()
 
             if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
                 widget.setEnabled(False)
