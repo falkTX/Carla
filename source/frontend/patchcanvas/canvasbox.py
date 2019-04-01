@@ -722,13 +722,12 @@ class CanvasBox(QGraphicsItem):
             print("ERROR: inline display image is None for", self.m_plugin_id, self.m_group_name)
             return
 
-        srcx = self.p_width_in + 7
-        srcy = int(canvas.theme.box_header_height + canvas.theme.box_header_spacing + 1
-                   + (inheight - self.m_inline_image.height() / scaling) / 2)
-        # FIXME vertical center inline displays
-        #+ (inheight - self.m_inline_image.height() / scaling) / 2)
-        painter.drawImage(QRectF(srcx, srcy,
-                                 self.m_inline_image.width() / scaling,
-                                 self.m_inline_image.height() / scaling), self.m_inline_image)
+        swidth = self.m_inline_image.width() / scaling
+        sheight = self.m_inline_image.height() / scaling
+
+        srcx = int(self.p_width_in + (self.p_width - self.p_width_in - self.p_width_out) / 2 - swidth / 2)
+        srcy = int(canvas.theme.box_header_height + canvas.theme.box_header_spacing + 1 + (inheight - sheight) / 2)
+
+        painter.drawImage(QRectF(srcx, srcy, swidth, sheight), self.m_inline_image)
 
 # ------------------------------------------------------------------------------------------------------------
