@@ -64,7 +64,7 @@ struct AudioFilePool {
         CARLA_ASSERT(startFrame == 0);
         CARLA_ASSERT(size == 0);
 
-        size = srate * 8;
+        size = srate * 60; // buffer of 60 secs
         sampleRate = srate;
 
         buffer[0] = new float[size];
@@ -268,21 +268,34 @@ public:
         }
     }
 
-    void tryPutData(AudioFilePool& pool)
+    bool tryPutData(AudioFilePool& pool, const uint32_t framePos, const uint32_t frames)
     {
-        CARLA_SAFE_ASSERT_RETURN(pool.size == fPool.size,);
+        CARLA_SAFE_ASSERT_RETURN(pool.size == fPool.size, false);
 
         if (! fMutex.tryLock())
-            return;
+            return false;
 
         //if (pool.startFrame != fPool.startFrame || pool.buffer[0] != fPool.buffer[0] || pool.buffer[1] != fPool.buffer[1])
         {
             pool.startFrame = fPool.startFrame;
-            carla_copyFloats(pool.buffer[0], fPool.buffer[0], fPool.size);
-            carla_copyFloats(pool.buffer[1], fPool.buffer[1], fPool.size);
+
+            (void)frames;
+            if (frames == 0)
+            {
+                carla_copyFloats(pool.buffer[0], fPool.buffer[0], fPool.size);
+                carla_copyFloats(pool.buffer[1], fPool.buffer[1], fPool.size);
+            }
+            else
+            {
+                CARLA_SAFE_ASSERT_UINT2_RETURN(framePos + frames < fPool.size, framePos, fPool.size, false);
+
+                carla_copyFloats(pool.buffer[0] + framePos, fPool.buffer[0] + framePos, frames);
+                carla_copyFloats(pool.buffer[1] + framePos, fPool.buffer[1] + framePos, frames);
+            }
         }
 
         fMutex.unlock();
+        return true;
     }
 
     void readPoll()
@@ -417,8 +430,8 @@ protected:
 
             if (fNeedsRead || lastFrame < fPool.startFrame || (lastFrame - fPool.startFrame >= fPool.size*3/4 && loopedFrame < fMaxPlayerFrame))
                 readPoll();
-            else
-                carla_msleep(50);
+
+            carla_msleep(50);
         }
     }
 

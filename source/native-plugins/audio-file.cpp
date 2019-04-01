@@ -149,8 +149,6 @@ protected:
             return;
         }
 
-        fThread.tryPutData(fPool);
-
         // out of reach
         if (timePos->frame + frames < fPool.startFrame || (timePos->frame >= fMaxFrame && !fLoopMode))
         {
@@ -169,26 +167,30 @@ protected:
         }
 
         const uint32_t poolSize = fPool.size;
-        int64_t poolFrame = static_cast<uint32_t>(timePos->frame - fPool.startFrame);
         float* const bufferL = fPool.buffer[0];
         float* const bufferR = fPool.buffer[1];
 
-        for (uint32_t i=0; i < frames; ++i, ++poolFrame)
-        {
-            if (poolFrame >= 0 && poolFrame < poolSize)
-            {
-                out1[i] = bufferL[poolFrame];
-                out2[i] = bufferR[poolFrame];
+        int64_t poolFrame = static_cast<int64_t>(timePos->frame - fPool.startFrame);
 
-                // reset
-                bufferL[poolFrame] = 0.0f;
-                bufferR[poolFrame] = 0.0f;
-            }
-            else
+        if (poolFrame >= 0 && poolFrame < poolSize && fThread.tryPutData(fPool, static_cast<uint32_t>(poolFrame), frames))
+        {
+            const uint32_t framesToCopy = std::min(frames, static_cast<uint32_t>(poolSize - poolFrame));
+            carla_copyFloats(out1, bufferL + poolFrame, framesToCopy);
+            carla_copyFloats(out2, bufferR + poolFrame, framesToCopy);
+
+            if (const uint32_t remainingFrames = frames - framesToCopy)
             {
-                out1[i] = 0.0f;
-                out2[i] = 0.0f;
+                carla_zeroFloats(out1 + framesToCopy, remainingFrames);
+                carla_zeroFloats(out2 + framesToCopy, remainingFrames);
             }
+
+            carla_zeroFloats(bufferL + poolFrame, framesToCopy);
+            carla_zeroFloats(bufferR + poolFrame, framesToCopy);
+        }
+        else
+        {
+            carla_zeroFloats(out1, frames);
+            carla_zeroFloats(out2, frames);
         }
 
         fLastFrame = timePos->frame;
