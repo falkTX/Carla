@@ -34,7 +34,8 @@ public:
           fColor(1),
           fStyle(1),
           fOutLeft(0.0f),
-          fOutRight(0.0f) {}
+          fOutRight(0.0f),
+          fInlineDisplay() {}
 
 protected:
     // -------------------------------------------------------------------
@@ -160,41 +161,167 @@ protected:
         fOutLeft  = carla_findMaxNormalizedFloat(inputs[0], frames);
         fOutRight = carla_findMaxNormalizedFloat(inputs[1], frames);
 
-        hostQueueDrawInlineDisplay();
+        bool needsInlineRender = false;
+
+        if (carla_isNotEqual(fOutLeft, fInlineDisplay.lastLeft))
+        {
+            fInlineDisplay.lastLeft = fOutLeft;
+            needsInlineRender = true;
+        }
+
+        if (carla_isNotEqual(fOutRight, fInlineDisplay.lastRight))
+        {
+            fInlineDisplay.lastRight = fOutRight;
+            needsInlineRender = true;
+        }
+
+        if (needsInlineRender && ! fInlineDisplay.pending)
+            hostQueueDrawInlineDisplay();
     }
 
     // -------------------------------------------------------------------
     // Plugin dispatcher calls
 
-    const NativeInlineDisplayImageSurface* renderInlineDisplay(const uint32_t width, const uint32_t height) override
+    const NativeInlineDisplayImageSurface* renderInlineDisplay(const uint32_t width_, const uint32_t height) override
     {
-        CARLA_SAFE_ASSERT_RETURN(width > 0 && height > 0, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(width_ > 0 && height > 0, nullptr);
 
-#if 0
-        static unsigned char data[0xffff];
+        const uint32_t width = width_ < height ? width_ : height;
+        const size_t stride = width * 4;
+        const size_t dataSize = stride * height;
 
-        for (uint i=0; i < 0xffff-4; i+=4)
+        if (fInlineDisplay.size < dataSize || fInlineDisplay.data == nullptr)
         {
-            data[i+0] = 200;
-            data[i+1] = 0;
-            data[i+2] = 0;
-            data[i+3] = 255;
+            fInlineDisplay.size = dataSize;
+
+            delete[] fInlineDisplay.data;
+            fInlineDisplay.data = new uchar[dataSize];
+        }
+
+        uchar* const data = fInlineDisplay.data;
+        std::memset(data, 0, fInlineDisplay.size);
+
+        const uint heightValueLeft = static_cast<uint>(fInlineDisplay.lastLeft * static_cast<float>(height));
+        const uint heightValueRight = static_cast<uint>(fInlineDisplay.lastRight * static_cast<float>(height));
+
+        for (uint h=0; h < height; ++h)
+        {
+            for (uint w=0; w < width; ++w)
+            {
+//                 data[h * stride + w * 4 + 0] = 0;
+//                 data[h * stride + w * 4 + 1] = 255;
+//                 data[h * stride + w * 4 + 2] = 0;
+                data[h * stride + w * 4 + 3] = 160;
+            }
+        }
+
+        for (uint h=0; h < heightValueLeft; ++h)
+        {
+            const uint h2 = height - h - 1;
+
+            for (uint w=0; w < width / 2; ++w)
+            {
+                data[h2 * stride + w * 4 + 0] = 200;
+                data[h2 * stride + w * 4 + 1] = 0;
+                data[h2 * stride + w * 4 + 2] = 0;
+                data[h2 * stride + w * 4 + 3] = 255;
+            }
+        }
+
+        for (uint h=0; h < heightValueRight; ++h)
+        {
+            const uint h2 = height - h - 1;
+
+            for (uint w=width / 2; w < width; ++w)
+            {
+                data[h2 * stride + w * 4 + 0] = 200;
+                data[h2 * stride + w * 4 + 1] = 0;
+                data[h2 * stride + w * 4 + 2] = 0;
+                data[h2 * stride + w * 4 + 3] = 255;
+            }
+        }
+
+        // draw 1px border
+        for (uint w=0; w < width; ++w)
+        {
+//             data[w * 4 + 0] = 0;
+//             data[w * 4 + 1] = 0;
+//             data[w * 4 + 2] = 255;
+              data[w * 4 + 3] = 120;
+
+//             data[(height - 1) * stride + w * 4 + 0] = 0;
+//             data[(height - 1) * stride + w * 4 + 1] = 0;
+//             data[(height - 1) * stride + w * 4 + 2] = 255;
+            data[(height - 1) * stride + w * 4 + 3] = 120;
+        }
+
+        for (uint h=0; h < height; ++h)
+        {
+//             data[h * stride + 0] = 0;
+//             data[h * stride + 1] = 0;
+//             data[h * stride + 2] = 255;
+            data[h * stride + 3] = 120;
+
+            data[h * stride + (width / 2) * 4 + 0] = 0;
+            data[h * stride + (width / 2) * 4 + 1] = 0;
+            data[h * stride + (width / 2) * 4 + 2] = 0;
+            data[h * stride + (width / 2) * 4 + 3] = 160;
+
+//             data[h * stride + (width - 1) * 4 + 0] = 0;
+//             data[h * stride + (width - 1) * 4 + 1] = 0;
+//             data[h * stride + (width - 1) * 4 + 2] = 255;
+            data[h * stride + (width - 1) * 4 + 3] = 120;
         }
 
         static const NativeInlineDisplayImageSurface nidims = {
-            data, (int)width, (int)height, (int)width * 4,
+            data,
+            static_cast<int>(width),
+            static_cast<int>(height),
+            static_cast<int>(stride),
         };
 
-        carla_stdout("rendering bigmeter %u %u | %i %i %i %i", width, height, data[0], data[1], data[2], data[3]);
+        static uint lastWidth = 0;
+
+        if (width != lastWidth)
+        {
+            carla_stdout("rendering at %u", width);
+            lastWidth = width;
+        }
+
+        fInlineDisplay.pending = false;
         return &nidims;
-#else
-        return nullptr;
-#endif
     }
 
 private:
     int fColor, fStyle;
     float fOutLeft, fOutRight;
+
+    struct InlineDisplay {
+        uchar* data;
+        size_t size;
+        float lastLeft;
+        float lastRight;
+        bool pending;
+
+        InlineDisplay()
+            : data(nullptr),
+              size(0),
+              lastLeft(0.0f),
+              lastRight(0.0f),
+              pending(false) {}
+
+        ~InlineDisplay()
+        {
+            if (data != nullptr)
+            {
+                delete[] data;
+                data = nullptr;
+            }
+        }
+
+        CARLA_DECLARE_NON_COPY_STRUCT(InlineDisplay)
+        CARLA_PREVENT_HEAP_ALLOCATION
+    } fInlineDisplay;
 
     PluginClassEND(BigMeterPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BigMeterPlugin)
