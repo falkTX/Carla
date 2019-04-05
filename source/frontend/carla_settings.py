@@ -376,6 +376,7 @@ class CarlaSettingsW(QDialog):
         self.ui.cb_canvas_use_opengl.setChecked(settings.value(CARLA_KEY_CANVAS_USE_OPENGL, CARLA_DEFAULT_CANVAS_USE_OPENGL, type=bool) and self.ui.cb_canvas_use_opengl.isEnabled())
         self.ui.cb_canvas_render_aa.setCheckState(settings.value(CARLA_KEY_CANVAS_ANTIALIASING, CARLA_DEFAULT_CANVAS_ANTIALIASING, type=int))
         self.ui.cb_canvas_render_hq_aa.setChecked(settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING, CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING, type=bool) and self.ui.cb_canvas_render_hq_aa.isEnabled())
+        self.ui.cb_canvas_full_repaints.setChecked(settings.value(CARLA_KEY_CANVAS_FULL_REPAINTS, CARLA_DEFAULT_CANVAS_FULL_REPAINTS, type=bool))
         self.ui.cb_canvas_inline_displays.setChecked(settings.value(CARLA_KEY_CANVAS_INLINE_DISPLAYS, CARLA_DEFAULT_CANVAS_INLINE_DISPLAYS, type=bool))
 
         # ----------------------------------------------------------------------------------------------------
@@ -600,6 +601,7 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_CANVAS_USE_OPENGL,        self.ui.cb_canvas_use_opengl.isChecked())
         settings.setValue(CARLA_KEY_CANVAS_HQ_ANTIALIASING,   self.ui.cb_canvas_render_hq_aa.isChecked())
         settings.setValue(CARLA_KEY_CANVAS_ANTIALIASING,      self.ui.cb_canvas_render_aa.checkState()) # 0, 1, 2 match their enum variants
+        settings.setValue(CARLA_KEY_CANVAS_FULL_REPAINTS,     self.ui.cb_canvas_full_repaints.isChecked())
         settings.setValue(CARLA_KEY_CANVAS_INLINE_DISPLAYS,   self.ui.cb_canvas_inline_displays.isChecked())
 
         # ----------------------------------------------------------------------------------------------------
@@ -758,6 +760,7 @@ class CarlaSettingsW(QDialog):
             self.ui.cb_canvas_auto_select.setChecked(CARLA_DEFAULT_CANVAS_AUTO_SELECT_ITEMS)
             self.ui.cb_canvas_eyecandy.setChecked(CARLA_DEFAULT_CANVAS_EYE_CANDY)
             self.ui.cb_canvas_render_aa.setCheckState(Qt.PartiallyChecked) # CARLA_DEFAULT_CANVAS_ANTIALIASING
+            self.ui.cb_canvas_full_repaints.setChecked(CARLA_DEFAULT_CANVAS_FULL_REPAINTS)
 
         # ----------------------------------------------------------------------------------------------------
         # Engine

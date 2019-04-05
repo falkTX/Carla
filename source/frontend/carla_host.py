@@ -401,7 +401,6 @@ class HostWindow(QMainWindow):
         if withCanvas:
             self.scene = patchcanvas.PatchScene(self, self.ui.graphicsView)
             self.ui.graphicsView.setScene(self.scene)
-            #self.ui.graphicsView.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
 
             if self.fSavedSettings[CARLA_KEY_CANVAS_USE_OPENGL] and hasGL:
                 self.ui.glView = QGLWidget(self)
@@ -1378,6 +1377,11 @@ class HostWindow(QMainWindow):
         else:
             self.ui.graphicsView.setRenderHint(QPainter.Antialiasing, False)
 
+        if self.fSavedSettings[CARLA_KEY_CANVAS_FULL_REPAINTS]:
+            self.ui.graphicsView.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
+        else:
+            self.ui.graphicsView.setViewportUpdateMode(QGraphicsView.MinimalViewportUpdate)
+
     def updateCanvasInitialPos(self):
         x = self.ui.graphicsView.horizontalScrollBar().value() + self.width()/4
         y = self.ui.graphicsView.verticalScrollBar().value() + self.height()/4
@@ -1708,6 +1712,7 @@ class HostWindow(QMainWindow):
             CARLA_KEY_CANVAS_USE_OPENGL:        settings.value(CARLA_KEY_CANVAS_USE_OPENGL,        CARLA_DEFAULT_CANVAS_USE_OPENGL,        type=bool),
             CARLA_KEY_CANVAS_ANTIALIASING:      settings.value(CARLA_KEY_CANVAS_ANTIALIASING,      CARLA_DEFAULT_CANVAS_ANTIALIASING,      type=int),
             CARLA_KEY_CANVAS_HQ_ANTIALIASING:   settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING,   CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING,   type=bool),
+            CARLA_KEY_CANVAS_FULL_REPAINTS:     settings.value(CARLA_KEY_CANVAS_FULL_REPAINTS,     CARLA_DEFAULT_CANVAS_FULL_REPAINTS,     type=bool),
             CARLA_KEY_CANVAS_INLINE_DISPLAYS:   settings.value(CARLA_KEY_CANVAS_INLINE_DISPLAYS,   CARLA_DEFAULT_CANVAS_INLINE_DISPLAYS,   type=bool),
             CARLA_KEY_CUSTOM_PAINTING:         (settings.value(CARLA_KEY_MAIN_USE_PRO_THEME,    True,   type=bool) and
                                                 settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, "Black", type=str).lower() == "black"),

@@ -723,10 +723,17 @@
             <item>
              <widget class="QCheckBox" name="cb_canvas_render_aa">
               <property name="text">
-               <string>Antialiasing</string>
+               <string>Anti-Aliasing</string>
               </property>
               <property name="tristate">
                <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="cb_canvas_full_repaints">
+              <property name="text">
+               <string>Full canvas repaints (slower, but prevents drawing issues)</string>
               </property>
              </widget>
             </item>
@@ -2459,7 +2466,7 @@
                <bool>false</bool>
               </property>
               <property name="text">
-               <string>High Quality Antiliasing (OpenGL only)</string>
+               <string>High Quality Anti-Aliasing (OpenGL only)</string>
               </property>
              </widget>
             </item>
