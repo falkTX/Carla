@@ -279,7 +279,6 @@ public:
         {
             pool.startFrame = fPool.startFrame;
 
-            (void)frames;
             if (frames == 0)
             {
                 carla_copyFloats(pool.buffer[0], fPool.buffer[0], fPool.size);
@@ -402,13 +401,8 @@ public:
                 {
                     carla_debug("read break, not enough space");
 
-                    // FIXME use carla_zeroFloats
-                    for (; i < fPool.size; ++i)
-                    {
-                        fPool.buffer[0][i] = 0.0f;
-                        fPool.buffer[1][i] = 0.0f;
-                    }
-
+                    carla_zeroFloats(fPool.buffer[0] + i, fPool.size - i);
+                    carla_zeroFloats(fPool.buffer[1] + i, fPool.size - i);
                     break;
                 }
 
