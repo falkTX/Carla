@@ -512,7 +512,8 @@ bool CarlaJackAppClient::handleRtData()
                         JackClientState* const jclient(it.getValue(nullptr));
                         CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
 
-                        jclient->bufferSizeCb(fServer.bufferSize, jclient->bufferSizeCbPtr);
+                        if (jclient->bufferSizeCb != nullptr)
+                            jclient->bufferSizeCb(fServer.bufferSize, jclient->bufferSizeCbPtr);
                     }
 
                     delete[] fAudioTmpBuf;
@@ -536,16 +537,31 @@ bool CarlaJackAppClient::handleRtData()
                     JackClientState* const jclient(it.getValue(nullptr));
                     CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
 
-                    jclient->sampleRateCb(static_cast<uint32_t>(fServer.sampleRate), jclient->sampleRateCbPtr);
+                    if (jclient->sampleRateCb != nullptr)
+                        jclient->sampleRateCb(static_cast<uint32_t>(fServer.sampleRate), jclient->sampleRateCbPtr);
                 }
             }
         }   break;
 
-        case kPluginBridgeRtClientSetOnline:
-            // TODO inform changes
-            fIsOffline = fShmRtClientControl.readBool();
-            //offlineModeChanged(fIsOffline);
-            break;
+        case kPluginBridgeRtClientSetOnline: {
+            const bool offline = fShmRtClientControl.readBool();
+
+            if (fIsOffline != offline)
+            {
+                const CarlaMutexLocker cml(fRealtimeThreadMutex);
+
+                fIsOffline = offline;
+
+                for (LinkedList<JackClientState*>::Itenerator it = fClients.begin2(); it.valid(); it.next())
+                {
+                    JackClientState* const jclient(it.getValue(nullptr));
+                    CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
+
+                    if (jclient->freewheelCb != nullptr)
+                        jclient->freewheelCb(offline ? 1 : 0, jclient->freewheelCbPtr);
+                }
+            }
+        }   break;
 
         case kPluginBridgeRtClientControlEventParameter:
         case kPluginBridgeRtClientControlEventMidiBank:
@@ -593,8 +609,7 @@ bool CarlaJackAppClient::handleRtData()
 
             // TODO tell client of xrun in case buffersize does not match
 
-            // FIXME - lock if offline
-            const CarlaMutexTryLocker cmtl(fRealtimeThreadMutex);
+            const CarlaMutexTryLocker cmtl(fRealtimeThreadMutex, fIsOffline);
 
             if (cmtl.wasLocked())
             {

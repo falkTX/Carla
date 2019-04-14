@@ -66,9 +66,9 @@ public:
     /*
      * Lock the mutex.
      */
-    void lock() const noexcept
+    bool lock() const noexcept
     {
-        pthread_mutex_lock(&fMutex);
+        return (pthread_mutex_lock(&fMutex) == 0);
     }
 
     /*
@@ -143,12 +143,12 @@ public:
     /*
      * Lock the mutex.
      */
-    void lock() const noexcept
+    bool lock() const noexcept
     {
 #ifdef CARLA_OS_WIN
-        EnterCriticalSection(&fSection);
+        return (EnterCriticalSection(&fSection) != FALSE);
 #else
-        pthread_mutex_lock(&fMutex);
+        return (pthread_mutex_lock(&fMutex) == 0);
 #endif
     }
 
@@ -303,6 +303,10 @@ public:
     CarlaScopeTryLocker(const Mutex& mutex) noexcept
         : fMutex(mutex),
           fLocked(mutex.tryLock()) {}
+
+    CarlaScopeTryLocker(const Mutex& mutex, const bool forceLock) noexcept
+        : fMutex(mutex),
+          fLocked(forceLock ? mutex.lock() : mutex.tryLock()) {}
 
     ~CarlaScopeTryLocker() noexcept
     {
