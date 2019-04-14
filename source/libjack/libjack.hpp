@@ -192,6 +192,9 @@ struct JackClientState {
     JackSyncCallback syncCb;
     void* syncCbPtr;
 
+    JackThreadInitCallback threadInitCb;
+    void* threadInitCbPtr;
+
     JackClientState(const JackServerState& s, const char* const n)
         : server(s),
           mutex(),
@@ -216,7 +219,9 @@ struct JackClientState {
           sampleRateCb(nullptr),
           sampleRateCbPtr(nullptr),
           syncCb(nullptr),
-          syncCbPtr(nullptr) {}
+          syncCbPtr(nullptr),
+          threadInitCb(nullptr),
+          threadInitCbPtr(nullptr) {}
 
     ~JackClientState()
     {

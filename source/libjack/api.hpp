@@ -19,7 +19,7 @@
 #define CARLA_LIBJACK_API_H_INCLUDED
 
 #include "CarlaLibJackHints.h"
-#include "jackbridge/JackBridge.hpp"
+#include "../jackbridge/JackBridge.hpp"
 
 #include <pthread.h>
 
@@ -213,7 +213,7 @@ void jack_set_transport_info(jack_client_t*, void*);
 
 #define JACK_UUID_SIZE 36
 #define JACK_UUID_STRING_SIZE (JACK_UUID_SIZE+1) /* includes trailing null */
-// #define JACK_UUID_EMPTY_INITIALIZER 0
+#define JACK_UUID_EMPTY_INITIALIZER 0
 
 jack_uuid_t jack_client_uuid_generate();
 jack_uuid_t jack_port_uuid_generate(uint32_t port_id);

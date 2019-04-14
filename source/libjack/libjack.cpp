@@ -25,12 +25,22 @@
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-typedef int (*CarlaInterposedCallback)(int, void*);
-
 CARLA_EXPORT
 int jack_carla_interposed_action(uint, uint, void*)
 {
-    carla_stderr2("Non-export jack_carla_interposed_action called, this should not happen!!");
+    static bool printWarning = true;
+
+    if (printWarning)
+    {
+        printWarning = false;
+        carla_stderr2("Non-exported jack_carla_interposed_action called, this should not happen!!");
+        carla_stderr("Printing some info:");
+        carla_stderr("\tLD_LIBRARY_PATH: '%s'", std::getenv("LD_LIBRARY_PATH"));
+        carla_stderr("\tLD_PRELOAD:      '%s'", std::getenv("LD_PRELOAD"));
+        std::fflush(stderr);
+    }
+
+    // ::kill(::getpid(), SIGKILL);
     return 1337;
 }
 
@@ -111,10 +121,12 @@ class CarlaJackAppClient : public CarlaJackRealtimeThread::Callback,
 public:
     JackServerState fServer;
     LinkedList<JackClientState*> fClients;
+    LinkedList<JackClientState*> fNewClients;
 
     CarlaJackAppClient()
         : fServer(this),
           fClients(),
+          fNewClients(),
           fShmAudioPool(),
           fShmRtClientControl(),
           fShmNonRtClientControl(),
@@ -133,6 +145,9 @@ public:
           fRealtimeThread(this),
           fNonRealtimeThread(this),
           fRealtimeThreadMutex()
+#ifdef DEBUG
+          ,leakDetector_CarlaJackAppClient()
+#endif
     {
         carla_debug("CarlaJackAppClient::CarlaJackAppClient()");
 
@@ -172,8 +187,13 @@ public:
         fSessionManager = static_cast<uint>(libjackSetup[4] - '0');
         fSetupHints     = static_cast<uint>(libjackSetup[5] - '0');
 
-        jack_carla_interposed_action(LIBJACK_INTERPOSER_ACTION_SET_HINTS_AND_CALLBACK, fSetupHints, (void*)carla_interposed_callback);
-        jack_carla_interposed_action(LIBJACK_INTERPOSER_ACTION_SET_SESSION_MANAGER, fSessionManager, nullptr);
+        jack_carla_interposed_action(LIBJACK_INTERPOSER_ACTION_SET_HINTS_AND_CALLBACK,
+                                     fSetupHints,
+                                     (void*)carla_interposed_callback);
+
+        jack_carla_interposed_action(LIBJACK_INTERPOSER_ACTION_SET_SESSION_MANAGER,
+                                     fSessionManager,
+                                     nullptr);
 
         fNonRealtimeThread.startThread(false);
     }
@@ -223,6 +243,11 @@ public:
 
         if (! fClients.append(jclient))
             return false;
+        if (! fNewClients.append(jclient))
+        {
+            fClients.removeOne(jclient);
+            return false;
+        }
 
         jclient->activated = true;
         jclient->deactivated = false;
@@ -252,7 +277,7 @@ public:
 
         switch (cb_action)
         {
-        case 1: {
+        case LIBJACK_INTERPOSER_CALLBACK_UI_HIDE: {
             const CarlaMutexLocker cml(fShmNonRtServerControl.mutex);
             fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerUiClosed);
             fShmNonRtServerControl.commitWrite();
@@ -457,6 +482,20 @@ void CarlaJackAppClient::clearSharedMemory() noexcept
 
 bool CarlaJackAppClient::handleRtData()
 {
+    if (fNewClients.count() != 0)
+    {
+        for (LinkedList<JackClientState*>::Itenerator it = fNewClients.begin2(); it.valid(); it.next())
+        {
+            JackClientState* const jclient(it.getValue(nullptr));
+            CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
+
+            if (jclient->threadInitCb != nullptr)
+                jclient->threadInitCb(jclient->threadInitCbPtr);
+        }
+
+        fNewClients.clear();
+    }
+
     const BridgeRtClientControl::WaitHelper helper(fShmRtClientControl);
 
     if (! helper.ok)

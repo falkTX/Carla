@@ -49,6 +49,13 @@ enum InterposerAction {
     LIBJACK_INTERPOSER_ACTION_CLOSE_EVERYTHING,
 };
 
+enum InterposerCallbacks {
+    LIBJACK_INTERPOSER_CALLBACK_NONE = 0,
+    LIBJACK_INTERPOSER_CALLBACK_UI_HIDE,
+};
+
+typedef int (*CarlaInterposedCallback)(int, void*);
+
 int jack_carla_interposed_action(uint action, uint value, void* ptr);
 
 #ifdef __cplusplus

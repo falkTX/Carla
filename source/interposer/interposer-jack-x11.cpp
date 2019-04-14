@@ -64,7 +64,6 @@ struct ScopedLibOpen {
 
 typedef int (*XWindowFunc)(Display*, Window);
 typedef int (*XNextEventFunc)(Display*, XEvent*);
-typedef int (*CarlaInterposedCallback)(int, void*);
 
 // --------------------------------------------------------------------------------------------------------------------
 // Current state
@@ -312,7 +311,7 @@ int XUnmapWindow(Display* display, Window window)
         gCurrentWindowVisible   = false;
 
         if (gInterposedCallback != nullptr)
-            gInterposedCallback(1, nullptr);
+            gInterposedCallback(LIBJACK_INTERPOSER_CALLBACK_UI_HIDE, nullptr);
     }
 
     return real_XUnmapWindow(display, window);
@@ -344,7 +343,7 @@ int XNextEvent(Display* display, XEvent* event)
     gCurrentWindowMapped = false;
 
     if (gInterposedCallback != nullptr)
-        gInterposedCallback(1, nullptr);
+        gInterposedCallback(LIBJACK_INTERPOSER_CALLBACK_UI_HIDE, nullptr);
 
     event->type = 0;
     carla_stdout("XNextEvent close event catched, hiding UI instead");

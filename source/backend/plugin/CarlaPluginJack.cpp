@@ -294,11 +294,11 @@ protected:
 
             const ScopedEngineEnvironmentLocker _seel(kEngine);
 
+            const ScopedEnvVar sev2("LD_LIBRARY_PATH", libjackdir.buffer());
+            const ScopedEnvVar sev1("LD_PRELOAD", ldpreload.isNotEmpty() ? ldpreload.buffer() : nullptr);
 #ifdef HAVE_LIBLO
             const ScopedEnvVar sev3("NSM_URL", lo_server_get_url(fOscServer));
 #endif
-            const ScopedEnvVar sev2("LD_LIBRARY_PATH", libjackdir.buffer());
-            const ScopedEnvVar sev1("LD_PRELOAD", ldpreload.isNotEmpty() ? ldpreload.buffer() : nullptr);
 
             if (kPlugin->getHints() & PLUGIN_HAS_CUSTOM_UI)
                 carla_setenv("CARLA_FRONTEND_WIN_ID", winIdStr);
