@@ -1489,6 +1489,7 @@ public:
             plugin->setEnabled(true);
         }
 
+        callback(true, true, ENGINE_CALLBACK_PLUGIN_RENAMED, id, 0, 0, 0, 0.0f, uniqueName);
         return true;
     }
 
