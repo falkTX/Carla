@@ -1,6 +1,6 @@
 /*
  * Carla String List
- * Copyright (C) 2014-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -277,6 +277,23 @@ public:
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, nullptr);
 
         return data->value;
+    }
+
+    // -------------------------------------------------------------------
+
+    const char* getAndRemoveFirst() noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(fCount > 0, nullptr);
+
+        const Data* const data = list_entry_const(fQueue.next, Data, siblings);
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr, nullptr);
+
+        const char* const ret = data->value;
+
+        Itenerator it = begin2();
+        LinkedList<const char*>::remove(it);
+
+        return ret;
     }
 
     // -------------------------------------------------------------------

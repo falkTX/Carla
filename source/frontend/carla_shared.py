@@ -393,19 +393,21 @@ elif HAIKU:
     splitter = ":"
 
     DEFAULT_LADSPA_PATH  = HOME + "/.ladspa"
-    DEFAULT_LADSPA_PATH += ":/boot/common/add-ons/ladspa"
+    DEFAULT_LADSPA_PATH += ":/system/add-ons/media/ladspaplugins"
+    DEFAULT_LADSPA_PATH += ":/system/lib/ladspa"
 
     DEFAULT_DSSI_PATH    = HOME + "/.dssi"
-    DEFAULT_DSSI_PATH   += ":/boot/common/add-ons/dssi"
+    DEFAULT_DSSI_PATH   += ":/system/add-ons/media/dssiplugins"
+    DEFAULT_DSSI_PATH   += ":/system/lib/dssi"
 
     DEFAULT_LV2_PATH     = HOME + "/.lv2"
-    DEFAULT_LV2_PATH    += ":/boot/common/add-ons/lv2"
+    DEFAULT_LV2_PATH    += ":/system/add-ons/media/lv2plugins"
 
     DEFAULT_VST2_PATH    = HOME + "/.vst"
-    DEFAULT_VST2_PATH   += ":/boot/common/add-ons/vst"
+    DEFAULT_VST2_PATH   += ":/system/add-ons/media/vstplugins"
 
     DEFAULT_VST3_PATH    = HOME + "/.vst3"
-    DEFAULT_VST3_PATH   += ":/boot/common/add-ons/vst3"
+    DEFAULT_VST3_PATH   += ":/system/add-ons/media/vst3plugins"
 
 elif MACOS:
     splitter = ":"

@@ -131,7 +131,7 @@ void osc_send_control(const CarlaOscData& oscData, const int32_t index, const fl
     CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr && oscData.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(index != -1,); // -1 == PARAMETER_NULL
-    carla_debug("osc_send_control(path:\"%s\", %i, %f)", oscData.path, index, value);
+    carla_debug("osc_send_control(path:\"%s\", %i, %f)", oscData.path, index, static_cast<double>(value));
 
     char targetPath[std::strlen(oscData.path)+9];
     std::strcpy(targetPath, oscData.path);
@@ -212,7 +212,7 @@ void osc_send_sample_rate(const CarlaOscData& oscData, const float sampleRate) n
     CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr && oscData.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(sampleRate > 0.0f,);
-    carla_debug("osc_send_sample_rate(path:\"%s\", %f)", oscData.path, sampleRate);
+    carla_debug("osc_send_sample_rate(path:\"%s\", %f)", oscData.path, static_cast<double>(sampleRate));
 
     char targetPath[std::strlen(oscData.path)+13];
     std::strcpy(targetPath, oscData.path);

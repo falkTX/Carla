@@ -25,7 +25,7 @@
 #if defined(__APPLE__)
  #define LILV_DEFAULT_LV2_PATH "~/Library/Audio/Plug-Ins/LV2:/Library/Audio/Plug-Ins/LV2"
 #elif defined(__HAIKU__)
- #define LILV_DEFAULT_LV2_PATH "~/.lv2:/boot/common/add-ons/lv2"
+ #define LILV_DEFAULT_LV2_PATH "~/.lv2:/system/add-ons/media/lv2plugins"
 #elif defined(__WIN32__)
  #define LILV_DEFAULT_LV2_PATH "%APPDATA%\\LV2;%COMMONPROGRAMFILES%\\LV2"
 #else

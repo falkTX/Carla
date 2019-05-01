@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,6 +19,11 @@
 
 #include "CarlaPipeUtils.hpp"
 
+#ifdef CARLA_OS_HAIKU
+# include "CarlaStringList.hpp"
+# define CARLA_PIPE_WITHOUT_CALLBACK
+#endif
+
 namespace CB = CarlaBackend;
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -30,6 +35,10 @@ public:
         : CarlaPipeClient(),
           fCallbackFunc(callbackFunc),
           fCallbackPtr(callbackPtr),
+#ifdef CARLA_PIPE_WITHOUT_CALLBACK
+          fMsgsReceived(),
+          fLastMsgReceived(nullptr),
+#endif
           fLastReadLine(nullptr)
     {
         CARLA_SAFE_ASSERT(fCallbackFunc != nullptr);
@@ -42,10 +51,42 @@ public:
             delete[] fLastReadLine;
             fLastReadLine = nullptr;
         }
+#ifdef CARLA_PIPE_WITHOUT_CALLBACK
+        if (fLastMsgReceived != nullptr)
+        {
+            delete[] fLastMsgReceived;
+            fLastMsgReceived = nullptr;
+        }
+#endif
+    }
+
+    const char* idlePipeAndReturnMessage()
+    {
+        CarlaPipeClient::idlePipe();
+
+#ifdef CARLA_PIPE_WITHOUT_CALLBACK
+        if (fMsgsReceived.count() == 0)
+            return nullptr;
+
+        delete[] fLastMsgReceived;
+        fLastMsgReceived = fMsgsReceived.getAndRemoveFirst();
+        return fLastMsgReceived;
+#else
+        return nullptr;
+#endif
     }
 
     const char* readlineblock(const uint timeout) noexcept
     {
+#ifdef CARLA_PIPE_WITHOUT_CALLBACK
+        if (fMsgsReceived.count() != 0)
+        {
+            delete[] fLastMsgReceived;
+            fLastMsgReceived = fMsgsReceived.getAndRemoveFirst();
+            return fLastMsgReceived;
+        }
+#endif
+
         delete[] fLastReadLine;
         fLastReadLine = CarlaPipeClient::_readlineblock(timeout);
         return fLastReadLine;
@@ -53,12 +94,16 @@ public:
 
     bool msgReceived(const char* const msg) noexcept override
     {
+#ifdef CARLA_PIPE_WITHOUT_CALLBACK
+        fMsgsReceived.append(msg);
+#else
         if (fCallbackFunc != nullptr)
         {
             try {
                 fCallbackFunc(fCallbackPtr, msg);
             } CARLA_SAFE_EXCEPTION("msgReceived");
         }
+#endif
 
         return true;
     }
@@ -66,6 +111,10 @@ public:
 private:
     const CarlaPipeCallbackFunc fCallbackFunc;
     void* const fCallbackPtr;
+#ifdef CARLA_PIPE_WITHOUT_CALLBACK
+    CarlaStringList fMsgsReceived;
+    const char* fLastMsgReceived;
+#endif
     const char* fLastReadLine;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ExposedCarlaPipeClient)
@@ -86,11 +135,11 @@ CarlaPipeClientHandle carla_pipe_client_new(const char* argv[], CarlaPipeCallbac
     return pipe;
 }
 
-void carla_pipe_client_idle(CarlaPipeClientHandle handle)
+const char* carla_pipe_client_idle(CarlaPipeClientHandle handle)
 {
-    CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
 
-    ((ExposedCarlaPipeClient*)handle)->idlePipe();
+    return ((ExposedCarlaPipeClient*)handle)->idlePipeAndReturnMessage();
 }
 
 bool carla_pipe_client_is_running(CarlaPipeClientHandle handle)

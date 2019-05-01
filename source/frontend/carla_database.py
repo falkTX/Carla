@@ -68,13 +68,15 @@ if haveLRDF and readEnvVars:
 # ---------------------------------------------------------------------------------------------------------------------
 # Plugin Query (helper functions)
 
-def findBinaries(binPath, OS):
+def findBinaries(binPath, pluginType, OS):
     binaries = []
 
-    if OS == "WINDOWS":
-        extensions = (".dll",)
+    if OS == "HAIKU":
+        extensions = ("") if pluginType == PLUGIN_VST2 else (".so",)
     elif OS == "MACOS":
         extensions = (".dylib", ".so")
+    elif OS == "WINDOWS":
+        extensions = (".dll",)
     else:
         extensions = (".so",)
 
@@ -715,7 +717,7 @@ class SearchPluginsThread(QThread):
         del settings
 
         for iPATH in LADSPA_PATH:
-            binaries = findBinaries(iPATH, OS)
+            binaries = findBinaries(iPATH, PLUGIN_LADSPA, OS)
             for binary in binaries:
                 if binary not in ladspaBinaries:
                     ladspaBinaries.append(binary)
@@ -751,7 +753,7 @@ class SearchPluginsThread(QThread):
         del settings
 
         for iPATH in DSSI_PATH:
-            binaries = findBinaries(iPATH, OS)
+            binaries = findBinaries(iPATH, PLUGIN_DSSI, OS)
             for binary in binaries:
                 if binary not in dssiBinaries:
                     dssiBinaries.append(binary)
@@ -793,7 +795,7 @@ class SearchPluginsThread(QThread):
             if MACOS and not isWine:
                 binaries = findMacVSTBundles(iPATH, False)
             else:
-                binaries = findBinaries(iPATH, OS)
+                binaries = findBinaries(iPATH, PLUGIN_VST2, OS)
             for binary in binaries:
                 if binary not in vst2Binaries:
                     vst2Binaries.append(binary)
