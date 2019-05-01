@@ -349,11 +349,13 @@ private:
         // ptr must not be null
         CARLA_SAFE_ASSERT_RETURN(ptr != nullptr,);
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // pluginId must be 0 (first), except for patchbay things
         if (action < CarlaBackend::ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED ||
             action > CarlaBackend::ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED) {
             CARLA_SAFE_ASSERT_UINT_RETURN(pluginId == 0, pluginId,);
         }
+#endif
 
         return ((CarlaBridgePlugin*)ptr)->handleCallback(action, value1, value2, value3, valuef, valueStr);
     }
