@@ -1138,7 +1138,7 @@ CarlaEngine* CarlaEngine::newRtAudio(const AudioApi api)
 {
     initRtAudioAPIsIfNeeded();
 
-    RtAudio::Api rtApi(RtAudio::UNSPECIFIED);
+    RtAudio::Api rtApi = RtAudio::UNSPECIFIED;
 
     switch (api)
     {

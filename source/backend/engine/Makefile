@@ -20,6 +20,7 @@ OBJS = \
 	$(OBJDIR)/CarlaEngine.cpp.o \
 	$(OBJDIR)/CarlaEngineClient.cpp.o \
 	$(OBJDIR)/CarlaEngineData.cpp.o \
+	$(OBJDIR)/CarlaEngineDummy.cpp.o \
 	$(OBJDIR)/CarlaEngineGraph.cpp.o \
 	$(OBJDIR)/CarlaEngineInternal.cpp.o \
 	$(OBJDIR)/CarlaEnginePorts.cpp.o \

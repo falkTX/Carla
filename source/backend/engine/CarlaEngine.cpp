@@ -198,6 +198,9 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
     CARLA_SAFE_ASSERT_RETURN(driverName != nullptr && driverName[0] != '\0', nullptr);
     carla_debug("CarlaEngine::newDriverByName(\"%s\")", driverName);
 
+    if (std::strcmp(driverName, "Dummy") == 0)
+        return newDummy();
+
     if (std::strcmp(driverName, "JACK") == 0)
         return newJack();
 
@@ -226,8 +229,6 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
     // -------------------------------------------------------------------
     // common
 
-    if (std::strcmp(driverName, "Dummy") == 0)
-        return newRtAudio(AUDIO_API_NULL);
     if (std::strncmp(driverName, "JACK ", 5) == 0)
         return newRtAudio(AUDIO_API_JACK);
     if (std::strcmp(driverName, "OSS") == 0)

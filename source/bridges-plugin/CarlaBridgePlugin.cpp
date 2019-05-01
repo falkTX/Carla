@@ -212,9 +212,21 @@ public:
         carla_set_engine_callback(callback, this);
 
         if (useBridge)
-            carla_engine_init_bridge(audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName, clientName);
+        {
+            carla_engine_init_bridge(audioPoolBaseName,
+                                     rtClientBaseName,
+                                     nonRtClientBaseName,
+                                     nonRtServerBaseName,
+                                     clientName);
+        }
+        else if (std::getenv("CARLA_BRIDGE_DUMMY") != nullptr)
+        {
+            carla_engine_init("Dummy", clientName);
+        }
         else
+        {
             carla_engine_init("JACK", clientName);
+        }
 
         fEngine = carla_get_engine();
     }
@@ -333,8 +345,15 @@ private:
         carla_debug("CarlaBridgePlugin::callback(%p, %i:%s, %i, %i, %i, %i, %f, \"%s\")",
                     ptr, action, EngineCallbackOpcode2Str(action),
                     pluginId, value1, value2, value3, valuef, valueStr);
+
+        // ptr must not be null
         CARLA_SAFE_ASSERT_RETURN(ptr != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(pluginId == 0,);
+
+        // pluginId must be 0 (first), except for patchbay things
+        if (action < CarlaBackend::ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED ||
+            action > CarlaBackend::ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED) {
+            CARLA_SAFE_ASSERT_UINT_RETURN(pluginId == 0, pluginId,);
+        }
 
         return ((CarlaBridgePlugin*)ptr)->handleCallback(action, value1, value2, value3, valuef, valueStr);
     }

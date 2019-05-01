@@ -35,7 +35,7 @@ protected:
     /*
      * Constructor.
      */
-    CarlaThread(const char* const threadName = nullptr) noexcept
+    CarlaThread(const char* const threadName) noexcept
         : fLock(),
           fSignal(),
           fName(threadName),
@@ -301,7 +301,8 @@ private:
      */
     void _runEntryPoint() noexcept
     {
-        setCurrentThreadName(fName);
+        if (fName.isNotEmpty())
+            setCurrentThreadName(fName);
 
         // report ready
         fSignal.signal();

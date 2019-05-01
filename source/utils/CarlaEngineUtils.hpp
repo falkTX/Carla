@@ -50,6 +50,8 @@ const char* EngineType2Str(const EngineType type) noexcept
         return "kEngineTypePlugin";
     case kEngineTypeBridge:
         return "kEngineTypeBridge";
+    case kEngineTypeDummy:
+        return "kEngineTypeDummy";
     }
 
     carla_stderr("CarlaBackend::EngineType2Str(%i) - invalid type", type);

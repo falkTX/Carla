@@ -69,7 +69,12 @@ enum EngineType {
     /*!
      * Bridge engine type, used in BridgePlugin class.
      */
-    kEngineTypeBridge = 5
+    kEngineTypeBridge = 5,
+
+    /*!
+     * Dummy engine type, does not send audio or MIDI anywhere.
+     */
+    kEngineTypeDummy = 6,
 };
 
 /*!
@@ -1262,6 +1267,9 @@ public:
 
     // -------------------------------------------------------------------
     // Engine initializers
+
+    // Dummy
+    static CarlaEngine* newDummy();
 
     // JACK
     static CarlaEngine* newJack();

@@ -338,8 +338,20 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     gStandalone.engine = engine;
 
 #ifdef BUILD_BRIDGE
-    engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,          CB::ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, nullptr);
-    engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE,        CB::ENGINE_TRANSPORT_MODE_JACK,           nullptr);
+    if (std::getenv("CARLA_BRIDGE_DUMMY") != nullptr)
+    {
+        // engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,      CB::ENGINE_PROCESS_MODE_PATCHBAY,         nullptr);
+        engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,      CB::ENGINE_PROCESS_MODE_CONTINUOUS_RACK,  nullptr);
+        engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE,    CB::ENGINE_TRANSPORT_MODE_INTERNAL,       nullptr);
+
+        engine->setOption(CB::ENGINE_OPTION_AUDIO_BUFFER_SIZE, 4096, nullptr);
+        engine->setOption(CB::ENGINE_OPTION_AUDIO_SAMPLE_RATE, 48000, nullptr);
+    }
+    else
+    {
+        engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,      CB::ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, nullptr);
+        engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE,    CB::ENGINE_TRANSPORT_MODE_JACK,           nullptr);
+    }
     engine->setOption(CB::ENGINE_OPTION_FORCE_STEREO,          false,                                    nullptr);
     engine->setOption(CB::ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, false,                                    nullptr);
     engine->setOption(CB::ENGINE_OPTION_PREFER_UI_BRIDGES,     false,                                    nullptr);
