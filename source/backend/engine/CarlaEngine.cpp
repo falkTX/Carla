@@ -198,11 +198,13 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
     CARLA_SAFE_ASSERT_RETURN(driverName != nullptr && driverName[0] != '\0', nullptr);
     carla_debug("CarlaEngine::newDriverByName(\"%s\")", driverName);
 
-    if (std::strcmp(driverName, "Dummy") == 0)
-        return newDummy();
-
     if (std::strcmp(driverName, "JACK") == 0)
         return newJack();
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    if (std::strcmp(driverName, "Dummy") == 0)
+        return newDummy();
+#endif
 
 #ifndef BUILD_BRIDGE
 # ifdef USING_JUCE

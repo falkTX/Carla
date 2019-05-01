@@ -1268,11 +1268,13 @@ public:
     // -------------------------------------------------------------------
     // Engine initializers
 
-    // Dummy
-    static CarlaEngine* newDummy();
-
     // JACK
     static CarlaEngine* newJack();
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    // Dummy
+    static CarlaEngine* newDummy();
+#endif
 
 #ifdef BUILD_BRIDGE
     // Bridge

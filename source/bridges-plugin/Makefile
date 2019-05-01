@@ -200,7 +200,6 @@ OBJS_arch = \
 	$(OBJDIR)/CarlaEngine.cpp.arch.o \
 	$(OBJDIR)/CarlaEngineClient.cpp.arch.o \
 	$(OBJDIR)/CarlaEngineData.cpp.arch.o \
-	$(OBJDIR)/CarlaEngineDummy.cpp.arch.o \
 	$(OBJDIR)/CarlaEngineInternal.cpp.arch.o \
 	$(OBJDIR)/CarlaEnginePorts.cpp.arch.o \
 	$(OBJDIR)/CarlaEngineThread.cpp.arch.o \
