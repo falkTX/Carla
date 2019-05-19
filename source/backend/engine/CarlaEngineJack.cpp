@@ -2999,8 +2999,8 @@ int jack_initialize(jack_client_t* const client, const char* const load_init)
     engine->setOption(ENGINE_OPTION_TRANSPORT_MODE, ENGINE_TRANSPORT_MODE_JACK, nullptr);
 
     // FIXME
-    engine->setOption(ENGINE_OPTION_PATH_BINARIES, 0, "");
-    engine->setOption(ENGINE_OPTION_PATH_RESOURCES, 0, "");
+    engine->setOption(ENGINE_OPTION_PATH_BINARIES, 0, "/usr/lib/carla");
+    engine->setOption(ENGINE_OPTION_PATH_RESOURCES, 0, "/usr/share/resources");
 
     if (engine->initInternal(client))
     {
