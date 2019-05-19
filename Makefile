@@ -445,10 +445,12 @@ ifeq ($(HAVE_JACK),true)
 		$(DESTDIR)$(JACK_LIBDIR)/carla.so
 endif
 
+ifneq ($(JACKBRIDGE_DIRECT),true)
 	# Install custom libjack
 	install -m 755 \
 		bin/jack/libjack.so.0 \
 		$(DESTDIR)$(LIBDIR)/carla/jack
+endif
 endif
 
 	# Install pkg-config files

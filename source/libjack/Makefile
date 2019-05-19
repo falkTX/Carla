@@ -28,6 +28,12 @@ LINK_FLAGS      += -lpthread -lrt
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(LINUX),true)
+ifneq ($(JACKBRIDGE_DIRECT),true)
+CAN_BUILD_LIBJACK=true
+endif
+endif
+
+ifeq ($(CAN_BUILD_LIBJACK),true)
 OBJS = \
 	$(OBJDIR)/libjack.cpp.o \
 	$(OBJDIR)/libjack_base.cpp.o \

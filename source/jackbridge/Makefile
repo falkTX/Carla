@@ -17,6 +17,11 @@ WINE_32BIT_FLAGS = $(32BIT_FLAGS)
 WINE_64BIT_FLAGS = $(64BIT_FLAGS)
 WINE_LINK_FLAGS  = $(LINK_FLAGS) $(LIBDL_LIBS) -lpthread -lstdc++
 
+ifeq ($(JACKBRIDGE_DIRECT),true)
+BUILD_CXX_FLAGS += $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags jack) -DJACKBRIDGE_DIRECT
+LINK_FLAGS      += $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs jack)
+endif
+
 ifneq ($(MACOS),true)
 WINE_32BIT_FLAGS += -I/usr/include/wine/wine/windows
 WINE_32BIT_FLAGS += -L/usr/lib32/wine
