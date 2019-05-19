@@ -97,6 +97,13 @@ $(OBJDIR)/CarlaEngineNative.cpp.exp.o: CarlaEngineNative.cpp
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_EXPORT -c -o $@
 endif
 
+ifeq ($(JACKBRIDGE_DIRECT),true)
+$(OBJDIR)/CarlaEngineJack.cpp.o: CarlaEngineJack.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaEngineJack.cpp"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(JACK_FLAGS) -c -o $@
+endif
+
 $(OBJDIR)/%.cpp.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"

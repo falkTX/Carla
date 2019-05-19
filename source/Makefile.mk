@@ -237,6 +237,14 @@ HAVE_QT4        = $(shell pkg-config --exists QtCore QtGui && echo true)
 HAVE_QT5        = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
 HAVE_SNDFILE    = $(shell pkg-config --exists sndfile && echo true)
 
+ifeq ($(JACKBRIDGE_DIRECT),true)
+ifeq ($(HAVE_JACK),true)
+BASE_FLAGS += -DJACKBRIDGE_DIRECT
+else
+$(error jackbridge direct mode requested, but jack not available)
+endif
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Check for optional libs (special non-pkgconfig tests)
 
@@ -396,6 +404,12 @@ FLUIDSYNTH_FLAGS = $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags fluidsynth)
 FLUIDSYNTH_LIBS  = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs fluidsynth)
 endif
 
+ifeq ($(HAVE_JACK),true)
+JACK_FLAGS  = $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags jack)
+JACK_LIBS   = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs jack)
+JACK_LIBDIR = $(shell pkg-config --variable=libdir jack)/jack
+endif
+
 ifeq ($(HAVE_SNDFILE),true)
 SNDFILE_FLAGS = $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags sndfile)
 SNDFILE_LIBS  = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs sndfile)
@@ -511,10 +525,6 @@ RTAUDIO_FLAGS   += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_WASAPI__
 RTAUDIO_LIBS    += -ldsound -luuid -lksuser -lwinmm
 RTMIDI_FLAGS    += -D__WINDOWS_MM__
 endif
-endif
-
-ifeq ($(HAVE_JACK),true)
-JACK_LIBDIR = $(shell pkg-config --variable=libdir jack)/jack
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

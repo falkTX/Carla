@@ -18,8 +18,8 @@ WINE_64BIT_FLAGS = $(64BIT_FLAGS)
 WINE_LINK_FLAGS  = $(LINK_FLAGS) $(LIBDL_LIBS) -lpthread -lstdc++
 
 ifeq ($(JACKBRIDGE_DIRECT),true)
-BUILD_CXX_FLAGS += $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags jack) -DJACKBRIDGE_DIRECT
-LINK_FLAGS      += $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs jack)
+BUILD_CXX_FLAGS += $(JACK_FLAGS) -DJACKBRIDGE_DIRECT
+LINK_FLAGS      += $(JACK_LIBS)
 endif
 
 ifneq ($(MACOS),true)

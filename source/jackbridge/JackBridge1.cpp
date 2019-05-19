@@ -1639,7 +1639,7 @@ uint32_t jackbridge_port_type_get_buffer_size(jack_client_t* client, const char*
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
-    return jack_port_type_get_buffer_size(client, port_type);
+    return static_cast<uint32_t>(jack_port_type_get_buffer_size(client, port_type));
 #else
     if (getBridgeInstance().port_type_get_buffer_size_ptr != nullptr)
         return static_cast<uint32_t>(getBridgeInstance().port_type_get_buffer_size_ptr(client, port_type));

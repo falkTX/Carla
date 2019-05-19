@@ -84,6 +84,10 @@ STANDALONE_LINK_FLAGS += $(RTAUDIO_LIBS)
 STANDALONE_LINK_FLAGS += $(RTMIDI_LIBS)
 endif
 
+ifeq ($(JACKBRIDGE_DIRECT),true)
+STANDALONE_LINK_FLAGS += $(JACK_LIBS)
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 all: $(TARGETS)

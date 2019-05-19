@@ -133,6 +133,10 @@ LINK_FLAGS   += $(JUCE_GUI_EXTRA_LIBS)
 endif
 endif
 
+ifeq ($(JACKBRIDGE_DIRECT),true)
+LINK_FLAGS += $(JACK_LIBS)
+endif
+
 LINK_FLAGS += $(X11_LIBS)
 
 # ---------------------------------------------------------------------------------------------------------------------
