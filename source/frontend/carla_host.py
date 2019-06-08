@@ -999,7 +999,7 @@ class HostWindow(QMainWindow):
 
         if started:
             self.fCancelableActionBox = QMessageBox(self)
-            self.fCancelableActionBox.setIcon(QMessageBox.Critical)
+            self.fCancelableActionBox.setIcon(QMessageBox.Information)
             self.fCancelableActionBox.setWindowTitle(self.tr("Action in progress"))
             self.fCancelableActionBox.setText(action)
             self.fCancelableActionBox.setInformativeText(self.tr("An action is in progress, please wait..."))
