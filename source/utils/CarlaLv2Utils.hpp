@@ -569,6 +569,7 @@ public:
           fBufferSize(0),
           fSampleRate(sampleRate),
           fUridMap(nullptr),
+          fUridUnmap(nullptr),
           fWorker(nullptr),
           fTimeInfo(),
           fLastPositionData(),
@@ -660,6 +661,7 @@ public:
         fUridMap = uridMap;
         fURIs.map(uridMap);
 
+        fUridUnmap = uridUnmap;
         fWorker = worker;
 
         clearTimeData();
@@ -1175,6 +1177,7 @@ protected:
 
     // LV2 host features
     const LV2_URID_Map* fUridMap;
+    const LV2_URID_Unmap* fUridUnmap;
     const LV2_Worker_Schedule* fWorker;
 
     // Time info stuff
@@ -1475,9 +1478,15 @@ protected:
         LV2_URID atomFloat;
         LV2_URID atomInt;
         LV2_URID atomLong;
+        LV2_URID atomPath;
         LV2_URID atomSequence;
         LV2_URID atomString;
+        LV2_URID atomURID;
+        LV2_URID carlaFile;
         LV2_URID midiEvent;
+        LV2_URID patchProperty;
+        LV2_URID patchSet;
+        LV2_URID patchValue;
         LV2_URID timePos;
         LV2_URID timeBar;
         LV2_URID timeBarBeat;
@@ -1496,9 +1505,15 @@ protected:
               atomFloat(0),
               atomInt(0),
               atomLong(0),
+              atomPath(0),
               atomSequence(0),
               atomString(0),
+              atomURID(0),
+              carlaFile(0),
               midiEvent(0),
+              patchProperty(0),
+              patchSet(0),
+              patchValue(0),
               timePos(0),
               timeBar(0),
               timeBarBeat(0),
@@ -1518,9 +1533,15 @@ protected:
             atomFloat          = uridMap->map(uridMap->handle, LV2_ATOM__Float);
             atomInt            = uridMap->map(uridMap->handle, LV2_ATOM__Int);
             atomLong           = uridMap->map(uridMap->handle, LV2_ATOM__Long);
+            atomPath           = uridMap->map(uridMap->handle, LV2_ATOM__Path);
             atomSequence       = uridMap->map(uridMap->handle, LV2_ATOM__Sequence);
             atomString         = uridMap->map(uridMap->handle, LV2_ATOM__String);
+            atomURID           = uridMap->map(uridMap->handle, LV2_ATOM__URID);
+            carlaFile          = uridMap->map(uridMap->handle, "http://kxstudio.sf.net/carla/file");
             midiEvent          = uridMap->map(uridMap->handle, LV2_MIDI__MidiEvent);
+            patchProperty      = uridMap->map(uridMap->handle, LV2_PATCH__property);
+            patchSet           = uridMap->map(uridMap->handle, LV2_PATCH__Set);
+            patchValue         = uridMap->map(uridMap->handle, LV2_PATCH__value);
             timePos            = uridMap->map(uridMap->handle, LV2_TIME__Position);
             timeBar            = uridMap->map(uridMap->handle, LV2_TIME__bar);
             timeBarBeat        = uridMap->map(uridMap->handle, LV2_TIME__barBeat);

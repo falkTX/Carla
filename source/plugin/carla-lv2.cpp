@@ -71,6 +71,7 @@ public:
 #ifdef USING_JUCE
           fJuceInitialiser(),
 #endif
+          fLoadedFile(),
           fWorkerUISignal(0)
     {
         carla_zeroStruct(fHost);
@@ -244,6 +245,8 @@ public:
 
                     if (event->body.type == fURIs.uiEvents && fWorkerUISignal != -1)
                     {
+                        CARLA_SAFE_ASSERT_CONTINUE((fDescriptor->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE) == 0);
+
                         if (fWorker != nullptr)
                         {
                             // worker is supported by the host, we can continue
@@ -257,6 +260,34 @@ public:
                             // worker is not supported, cancel
                             fWorkerUISignal = -1;
                         }
+                        continue;
+                    }
+
+                    if (event->body.type == fURIs.atomObject)
+                    {
+                        const LV2_Atom_Object* const obj = (const LV2_Atom_Object*)(&event->body);
+
+                        if (obj->body.otype == fURIs.patchSet) {
+                            // Get property URI.
+                            const LV2_Atom* property = NULL;
+                            lv2_atom_object_get(obj, fURIs.patchProperty, &property, 0);
+                            CARLA_SAFE_ASSERT_CONTINUE(property != nullptr);
+                            CARLA_SAFE_ASSERT_CONTINUE(property->type == fURIs.atomURID);
+                            CARLA_SAFE_ASSERT_CONTINUE(((const LV2_Atom_URID*)property)->body == fURIs.carlaFile);
+
+                            // Get value.
+                            const LV2_Atom* fileobj = NULL;
+                            lv2_atom_object_get(obj, fURIs.patchValue, &fileobj, 0);
+                            CARLA_SAFE_ASSERT_CONTINUE(fileobj != nullptr);
+                            CARLA_SAFE_ASSERT_CONTINUE(fileobj->type == fURIs.atomPath);
+
+                            const char* const filepath((const char*)(fileobj + 1));
+
+                            fWorker->schedule_work(fWorker->handle,
+                                                   static_cast<uint32_t>(std::strlen(filepath) + 1U),
+                                                   filepath);
+                        }
+
                         continue;
                     }
 
@@ -366,6 +397,17 @@ public:
     LV2_State_Status lv2_save(const LV2_State_Store_Function store, const LV2_State_Handle handle,
                               const uint32_t /*flags*/, const LV2_Feature* const* const /*features*/) const
     {
+        if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE)
+        {
+            store(handle,
+                  fUridMap->map(fUridMap->handle, "http://kxstudio.sf.net/ns/carla/file"),
+                  fLoadedFile.buffer(),
+                  fLoadedFile.length()+1,
+                  fURIs.atomPath,
+                  LV2_STATE_IS_POD);
+            return LV2_STATE_SUCCESS;
+        }
+
         if ((fDescriptor->hints & NATIVE_PLUGIN_USES_STATE) == 0 || fDescriptor->get_state == nullptr)
             return LV2_STATE_ERR_NO_FEATURE;
 
@@ -380,13 +422,31 @@ public:
     }
 
     LV2_State_Status lv2_restore(const LV2_State_Retrieve_Function retrieve, const LV2_State_Handle handle,
-                                 uint32_t flags, const LV2_Feature* const* const /*features*/) const
+                                 uint32_t flags, const LV2_Feature* const* const /*features*/)
     {
+        size_t   size = 0;
+        uint32_t type = 0;
+
+        if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE)
+        {
+            size = type = 0;
+            const void* const data = retrieve(handle,
+                                              fUridMap->map(fUridMap->handle, "http://kxstudio.sf.net/ns/carla/file"),
+                                              &size, &type, &flags);
+
+            CARLA_SAFE_ASSERT_RETURN(type == fURIs.atomPath, LV2_STATE_ERR_UNKNOWN);
+
+            const char* const filename = (const char*)data;
+
+            fLoadedFile = filename;
+            fDescriptor->set_custom_data(fHandle, "file", filename);
+            return LV2_STATE_SUCCESS;
+        }
+
         if ((fDescriptor->hints & NATIVE_PLUGIN_USES_STATE) == 0 || fDescriptor->set_state == nullptr)
             return LV2_STATE_ERR_NO_FEATURE;
 
-        size_t   size = 0;
-        uint32_t type = 0;
+        size = type = 0;
         const void* const data = retrieve(handle, fUridMap->map(fUridMap->handle, "http://kxstudio.sf.net/ns/carla/chunk"), &size, &type, &flags);
 
         if (size == 0)
@@ -408,6 +468,13 @@ public:
     LV2_Worker_Status lv2_work(LV2_Worker_Respond_Function, LV2_Worker_Respond_Handle, uint32_t, const void* data)
     {
         const char* const msg = (const char*)data;
+
+        if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE)
+        {
+            fLoadedFile = msg;
+            fDescriptor->set_custom_data(fHandle, "file", msg);
+            return LV2_WORKER_SUCCESS;
+        }
 
         /**/ if (std::strncmp(msg, "control ", 8) == 0)
         {
@@ -767,6 +834,7 @@ private:
     juce::SharedResourcePointer<juce::ScopedJuceInitialiser_GUI> fJuceInitialiser;
 #endif
 
+    CarlaString fLoadedFile;
     int fWorkerUISignal;
 
     // -------------------------------------------------------------------

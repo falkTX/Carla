@@ -24,6 +24,7 @@
 #include "lv2/midi.h"
 #include "lv2/options.h"
 #include "lv2/parameters.h"
+#include "lv2/patch.h"
 #include "lv2/port-props.h"
 #include "lv2/state.h"
 #include "lv2/time.h"
@@ -111,6 +112,7 @@ static void writeManifestFile(PluginListManager& plm)
     // -------------------------------------------------------------------
     // Header
 
+    text += "@prefix atom: <" LV2_ATOM_PREFIX "> .\n";
     text += "@prefix lv2:  <" LV2_CORE_PREFIX "> .\n";
     text += "@prefix opts: <" LV2_OPTIONS_PREFIX "> .\n";
     text += "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n";
@@ -157,6 +159,15 @@ static void writeManifestFile(PluginListManager& plm)
     text += "                      <" LV2_PROGRAMS__UIInterface "> .\n";
 #  endif
 #endif
+
+    // -------------------------------------------------------------------
+    // File handling
+
+    text += "<http://kxstudio.sf.net/carla/file>\n";
+    text += "    a lv2:Parameter ;\n";
+    text += "    rdfs:label \"file\" ;\n";
+    text += "    rdfs:range atom:Path .\n";
+    text += "\n";
 
     // -------------------------------------------------------------------
     // Write file now
@@ -216,15 +227,16 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     // -------------------------------------------------------------------
     // Header
 
-    text += "@prefix atom: <" LV2_ATOM_PREFIX "> .\n";
-    text += "@prefix doap: <http://usefulinc.com/ns/doap#> .\n";
-    text += "@prefix foaf: <http://xmlns.com/foaf/0.1/> .\n";
-    text += "@prefix lv2:  <" LV2_CORE_PREFIX "> .\n";
-    text += "@prefix opts: <" LV2_OPTIONS_PREFIX "> .\n";
-    text += "@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n";
-    text += "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n";
-    text += "@prefix ui:   <" LV2_UI_PREFIX "> .\n";
-    text += "@prefix unit: <" LV2_UNITS_PREFIX "> .\n";
+    text += "@prefix atom:  <" LV2_ATOM_PREFIX "> .\n";
+    text += "@prefix doap:  <http://usefulinc.com/ns/doap#> .\n";
+    text += "@prefix foaf:  <http://xmlns.com/foaf/0.1/> .\n";
+    text += "@prefix lv2:   <" LV2_CORE_PREFIX "> .\n";
+    text += "@prefix opts:  <" LV2_OPTIONS_PREFIX "> .\n";
+    text += "@prefix patch: <" LV2_PATCH_PREFIX "> .\n";
+    text += "@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n";
+    text += "@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .\n";
+    text += "@prefix ui:    <" LV2_UI_PREFIX "> .\n";
+    text += "@prefix unit:  <" LV2_UNITS_PREFIX "> .\n";
     text += "\n";
 
     // -------------------------------------------------------------------
@@ -287,7 +299,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
 
     text += "    lv2:extensionData <" LV2_OPTIONS__interface "> ;\n";
 
-    if (pluginDesc->hints & NATIVE_PLUGIN_USES_STATE)
+    if ((pluginDesc->hints & NATIVE_PLUGIN_USES_STATE) || (pluginDesc->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE))
         text += "    lv2:extensionData <" LV2_STATE__interface "> ;\n";
 
     if (pluginDesc->category != NATIVE_PLUGIN_CATEGORY_SYNTH)
@@ -310,7 +322,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     // UIs
 
 #ifdef HAVE_PYQT
-    if (pluginDesc->hints & NATIVE_PLUGIN_HAS_UI)
+    if ((pluginDesc->hints & NATIVE_PLUGIN_HAS_UI) != 0 && (pluginDesc->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE) == 0)
     {
         text += "    ui:ui <http://kxstudio.sf.net/carla/ui-ext> ;\n";
         text += "\n";
@@ -320,7 +332,8 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     // -------------------------------------------------------------------
     // First input MIDI/Time/UI port
 
-    const bool hasEventInPort  = (pluginDesc->hints & NATIVE_PLUGIN_USES_TIME) != 0 || (pluginDesc->hints & NATIVE_PLUGIN_HAS_UI) != 0;
+    const bool hasEventInPort = (pluginDesc->hints & NATIVE_PLUGIN_USES_TIME) != 0
+                             || (pluginDesc->hints & NATIVE_PLUGIN_HAS_UI) != 0;
 
     if (pluginDesc->midiIns > 0 || hasEventInPort)
     {
@@ -374,6 +387,9 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
 
         text += "    ] ;\n\n";
     }
+
+    if (pluginDesc->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE)
+        text += "    patch:writable <http://kxstudio.sf.net/carla/file> ;\n\n";
 
     // -------------------------------------------------------------------
     // MIDI inputs

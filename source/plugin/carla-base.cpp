@@ -59,8 +59,10 @@ struct PluginListManager {
                 std::strcmp(desc->label, "carlapatchbay3s" ) == 0 ||
                 std::strcmp(desc->label, "carlapatchbay16" ) == 0 ||
                 std::strcmp(desc->label, "carlapatchbay32" ) == 0 ||
-                std::strcmp(desc->label, "bigmeter"        ) == 0 /*||
-                std::strcmp(desc->label, "notes"           ) == 0*/)
+                std::strcmp(desc->label, "bigmeter"        ) == 0 ||
+                /*std::strcmp(desc->label, "notes"           ) == 0*/
+                std::strcmp(desc->label, "audiofile"       ) == 0 ||
+                std::strcmp(desc->label, "midifile"        ) == 0)
             {
                 descs.append(desc);
             }
