@@ -10,7 +10,7 @@ export CXX=clang++
 
 export MACOS="true"
 
-if [ $(clang -v  2>&1 | sed -n 's/.*version \([0-9]\).*/\1/p') -lt 9 ]; then
+if [ $(clang -v  2>&1 | grep version | cut -d' ' -f4 | cut -d'.' -f1) -lt 9 ]; then
   export MACOS_OLD="true"
 fi
 

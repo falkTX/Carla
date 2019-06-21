@@ -489,7 +489,7 @@ fi
 
 if [ ! -f sip-${SIP_VERSION}/build-done ]; then
   cd sip-${SIP_VERSION}
-  python3 configure.py
+  python3 configure.py --sip-module PyQt5.sip
   make ${MAKE_ARGS}
   make install
   touch build-done
@@ -506,7 +506,7 @@ fi
 
 if [ ! -f PyQt5_gpl-${PYQT5_VERSION}/build-done ]; then
   cd PyQt5_gpl-${PYQT5_VERSION}
-  python3 configure.py --confirm-license -c
+  python3 configure.py --concatenate --confirm-license -c
   make ${MAKE_ARGS}
   make install
   touch build-done

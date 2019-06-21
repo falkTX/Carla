@@ -107,7 +107,8 @@ BASE_OPTS  = -O3 -ffast-math -mtune=generic -msse -msse2 -mfpmath=sse -fdata-sec
 
 ifeq ($(MACOS),true)
 # MacOS linker flags
-LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,-dead_strip -Wl,-dead_strip_dylibs
+BASE_FLAGS += -Wno-deprecated-declarations
+LINK_OPTS   = -fdata-sections -ffunction-sections -Wl,-dead_strip -Wl,-dead_strip_dylibs
 else
 # Common linker flags
 LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-O1 -Wl,--as-needed
