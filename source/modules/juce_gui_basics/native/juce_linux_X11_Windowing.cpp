@@ -1903,6 +1903,9 @@ public:
         ScopedXLock xlock (display);
         XGetInputFocus (display, &focusedWindow, &revert);
 
+        if (focusedWindow == PointerRoot)
+            return false;
+
         return isParentWindowOf (focusedWindow);
     }
 
