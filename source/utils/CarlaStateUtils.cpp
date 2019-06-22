@@ -304,7 +304,7 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                     type = xmlSafeStringCharDup(text, false);
                 else if (tag == "Name")
                     name = xmlSafeStringCharDup(text, false);
-                else if (tag == "Label" || tag == "URI" || tag == "Setup")
+                else if (tag == "Label" || tag == "URI" || tag == "Identifier" || tag == "Setup")
                     label = xmlSafeStringCharDup(text, false);
                 else if (tag == "Binary" || tag == "Filename")
                     binary = xmlSafeStringCharDup(text, false);
