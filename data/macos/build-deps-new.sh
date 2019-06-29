@@ -367,7 +367,7 @@ export MAKE=/usr/bin/make
 # qt5-base download
 
 if [ ! -d qtbase-everywhere-src-${QT5_VERSION} ]; then
-  #curl -L http://download.qt.io/archive/qt/${QT5_MVERSION}/${QT5_VERSION}/submodules/qtbase-everywhere-src-${QT5_VERSION}.tar.xz -o qtbase-everywhere-src-${QT5_VERSION}.tar.xz
+  curl -L http://download.qt.io/archive/qt/${QT5_MVERSION}/${QT5_VERSION}/submodules/qtbase-everywhere-src-${QT5_VERSION}.tar.xz -o qtbase-everywhere-src-${QT5_VERSION}.tar.xz
   /opt/local/bin/7z x qtbase-everywhere-src-${QT5_VERSION}.tar.xz
   /opt/local/bin/7z x qtbase-everywhere-src-${QT5_VERSION}.tar
 fi
@@ -378,16 +378,7 @@ fi
 if [ ! -f qtbase-everywhere-src-${QT5_VERSION}/build-done ]; then
   cd qtbase-everywhere-src-${QT5_VERSION}
   if [ ! -f configured ]; then
-    #if [ ! -f carla-patched ]; then
-      #sed -i -e "s|PNG_WARNINGS_SUPPORTED|PNG_WARNINGS_NOT_SUPPORTED|" src/3rdparty/libpng/pnglibconf.h
-      #sed -i -e "s|AWK=.*|AWK=/opt/local/bin/gawk|" configure
-      #sed -i -e "s|/usr/bin/xcrun -find xcrun|true|" configure
-      #sed -i -e "s|/usr/bin/xcrun -find xcrun|echo hello|" mkspecs/features/mac/default_pre.prf
-      #patch -p1 -i ../patches/qt55-newosx-fix.patch
-      #touch carla-patched
-    #fi
     chmod +x configure
-    #chmod -R 777 config.tests/unix/
     ./configure -release -shared -opensource -confirm-license -platform macx-clang -framework \
                 -prefix ${PREFIX} -plugindir ${PREFIX}/lib/qt5/plugins -headerdir ${PREFIX}/include/qt5 \
                 -pkg-config -force-pkg-config -strip \
@@ -411,16 +402,6 @@ if [ ! -f qtbase-everywhere-src-${QT5_VERSION}/build-done ]; then
   fi
   make ${MAKE_ARGS}
   make install
-  #ln -s ${PREFIX}/lib/QtCore.framework/Headers    ${PREFIX}/include/qt5/QtCore
-  #ln -s ${PREFIX}/lib/QtGui.framework/Headers     ${PREFIX}/include/qt5/QtGui
-  #ln -s ${PREFIX}/lib/QtWidgets.framework/Headers ${PREFIX}/include/qt5/QtWidgets
-  #sed -i -e "s/ -lqtpcre/ /" ${PREFIX}/lib/pkgconfig/Qt5Core.pc
-  #sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Core.pc
-  #sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Core.pc
-  #sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Gui.pc
-  #sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Gui.pc
-  #sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Widgets.pc
-  #sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Widgets.pc
   touch build-done
   cd ..
 fi
@@ -513,8 +494,6 @@ if [ ! -f PyQt5_gpl-${PYQT5_VERSION}/build-done ]; then
   cd ..
 fi
 
-exit 0
-
 # ---------------------------------------------------------------------------------------------------------------------
 # pyliblo
 
@@ -525,12 +504,18 @@ fi
 
 if [ ! -f pyliblo-${PYLIBLO_VERSION}/build-done ]; then
   cd pyliblo-${PYLIBLO_VERSION}
+  if [ ! -f patched ]; then
+    patch -p1 -i ../patches/pyliblo-python3.7.patch
+    touch patched
+  fi
   env CFLAGS="${CFLAGS} -I${TARGETDIR}/carla64/include" LDFLAGS="${LDFLAGS} -L${TARGETDIR}/carla64/lib" \
   python3 setup.py build
   python3 setup.py install --prefix=${PREFIX}
   touch build-done
   cd ..
 fi
+
+exit 0
 
 # ---------------------------------------------------------------------------------------------------------------------
 # cxfreeze
