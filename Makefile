@@ -197,11 +197,9 @@ nuitka: bin/carla bin/carla-rack bin/carla-plugin
 
 bin/carla:
 	python3 -m nuitka \
-		-j 8 \
-		--recurse-all \
+		-j 4 \
 		--python-flag -O --warn-unusual-code --warn-implicit-exceptions \
-		--recurse-not-to=PyQt5 \
-		--file-reference-choice=runtime \
+		--follow-imports \
 		-o ./$@ \
 		./source/frontend/carla
 

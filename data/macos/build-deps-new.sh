@@ -515,19 +515,16 @@ if [ ! -f pyliblo-${PYLIBLO_VERSION}/build-done ]; then
   cd ..
 fi
 
-exit 0
-
 # ---------------------------------------------------------------------------------------------------------------------
-# cxfreeze
+# nuitka
 
-if [ ! -d cx_Freeze-${CXFREEZE_VERSION} ]; then
-  /opt/local/bin/aria2c https://github.com/anthony-tuininga/cx_Freeze/archive/${CXFREEZE_VERSION}.tar.gz
-  tar -xf cx_Freeze-${CXFREEZE_VERSION}.tar.gz
+if [ ! -d Nuitka-${NUITKA_VERSION} ]; then
+  /opt/local/bin/aria2c http://nuitka.net/releases/Nuitka-${NUITKA_VERSION}.tar.gz
+  tar -xf Nuitka-${NUITKA_VERSION}.tar.gz
 fi
 
-if [ ! -f cx_Freeze-${CXFREEZE_VERSION}/build-done ]; then
-  cd cx_Freeze-${CXFREEZE_VERSION}
-  sed -i -e 's/"python%s.%s"/"python%s.%sm"/' setup.py
+if [ ! -f Nuitka-${NUITKA_VERSION}/build-done ]; then
+  cd Nuitka-${NUITKA_VERSION}
   python3 setup.py build
   python3 setup.py install --prefix=${PREFIX}
   touch build-done

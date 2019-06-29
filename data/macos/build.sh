@@ -15,13 +15,13 @@ fi
 # ---------------------------------------------------------------------------------------------------------------------
 # set variables
 
-PKG_FOLDER="Carla_2.0-RC4-macos"
+PKG_FOLDER="Carla_2.1a1-macos"
 
 source data/macos/common.env
 
 export MACOS="true"
 
-if [ $(clang -v  2>&1 | sed -n 's/.*version \([0-9]\).*/\1/p') -lt 9 ]; then
+if [ $(clang -v  2>&1 | grep version | cut -d' ' -f4 | cut -d'.' -f1) -lt 9 ]; then
   export MACOS_OLD="true"
 fi
 
@@ -40,7 +40,7 @@ export LDFLAGS="-L${TARGETDIR}/carla64/lib -m64"
 export PATH=${TARGETDIR}/carla/bin:${TARGETDIR}/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=${TARGETDIR}/carla/lib/pkgconfig:${TARGETDIR}/carla64/lib/pkgconfig
 
-make ${MAKE_ARGS}
+make USING_JUCE=true ${MAKE_ARGS}
 
 ##############################################################################################
 # Build 32bit bridges
@@ -52,7 +52,8 @@ export LDFLAGS="-L${TARGETDIR}/carla32/lib -m32"
 export PATH=${TARGETDIR}/carla32/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=${TARGETDIR}/carla32/lib/pkgconfig
 
-make posix32 ${MAKE_ARGS}
+# FIXME install old xcode in new macos
+# make USING_JUCE=true posix32 ${MAKE_ARGS}
 
 ##############################################################################################
 # Build Mac App
