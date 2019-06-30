@@ -61,11 +61,11 @@ fi
 # create chroots
 
 if [ ! -d ${TARGETDIR}/chroot32 ]; then
-    sudo debootstrap --arch=i386 lucid ${TARGETDIR}/chroot32 http://old-releases.ubuntu.com/ubuntu/
+    sudo debootstrap --no-check-gpg --arch=i386 lucid ${TARGETDIR}/chroot32 http://old-releases.ubuntu.com/ubuntu/
 fi
 
 if [ ! -d ${TARGETDIR}/chroot64 ]; then
-    sudo debootstrap --arch=amd64 lucid ${TARGETDIR}/chroot64 http://old-releases.ubuntu.com/ubuntu/
+    sudo debootstrap --no-check-gpg --arch=amd64 lucid ${TARGETDIR}/chroot64 http://old-releases.ubuntu.com/ubuntu/
 fi
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -200,7 +200,6 @@ ${CHROOT_CARLA_DIR}/data/linux/build-deps.sh ${ARCH}
 
 if [ ! -f /tmp/setup-repo-packages-extra2 ]; then
   apt-get install -y --no-install-recommends libasound2-dev libgtk2.0-dev libqt4-dev libx11-dev
-  apt-get install -y --no-install-recommends pyqt4-dev-tools python3-pyqt4.qtopengl python3-liblo python3-sip
   apt-get install -y cx-freeze-python3 zip
   apt-get clean
   touch /tmp/setup-repo-packages-extra2
@@ -215,6 +214,8 @@ chroot_build_deps
 
 export ARCH=64
 chroot_build_deps
+
+exit 0
 
 # ---------------------------------------------------------------------------------------------------------------------
 # build carla
