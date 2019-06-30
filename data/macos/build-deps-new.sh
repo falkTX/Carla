@@ -453,12 +453,15 @@ fi
 if [ ! -f Python-${PYTHON_VERSION}/build-done ]; then
   cd Python-${PYTHON_VERSION}
   sed -i -e "s/#zlib zlibmodule.c/zlib zlibmodule.c/" Modules/Setup.dist
-  ./configure --prefix=${PREFIX} --enable-optimizations
+  ./configure --prefix=${PREFIX} --enable-optimizations --enable-shared
   make
   make install
   touch build-done
   cd ..
 fi
+
+# --enable-shared
+# ar -d /Users/falktx/builds/carla/lib/python3.7/config-3.7m-darwin/libpython3.7m.a main.o
 
 # ---------------------------------------------------------------------------------------------------------------------
 # sip
