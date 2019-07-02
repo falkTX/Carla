@@ -258,6 +258,17 @@ private:
 
 // -------------------------------------------------------------------------
 
+CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeFormat* const format)
+{
+    return new CarlaBridgeToolkitQt(format);
+}
+
+// -------------------------------------------------------------------------
+
+CARLA_BRIDGE_UI_END_NAMESPACE
+
+// -------------------------------------------------------------------------
+
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
@@ -272,17 +283,6 @@ private:
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 # pragma GCC diagnostic pop
 #endif
-
-// -------------------------------------------------------------------------
-
-CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeFormat* const format)
-{
-    return new CarlaBridgeToolkitQt(format);
-}
-
-// -------------------------------------------------------------------------
-
-CARLA_BRIDGE_UI_END_NAMESPACE
 
 // -------------------------------------------------------------------------
 
