@@ -58,7 +58,7 @@ typedef void (JACKSYM_API *JackSymPropertyChangeCallback)(jack_uuid_t, const cha
 typedef void        (JACKSYM_API *jacksym_get_version)(int*, int*, int*, int*);
 typedef const char* (JACKSYM_API *jacksym_get_version_string)(void);
 
-typedef jack_client_t* (JACKSYM_API *jacksym_client_open)(const char*, jack_options_t, jack_status_t*);
+typedef jack_client_t* (JACKSYM_API *jacksym_client_open)(const char*, jack_options_t, jack_status_t*, ...);
 typedef int            (JACKSYM_API *jacksym_client_close)(jack_client_t*);
 
 typedef int   (JACKSYM_API *jacksym_client_name_size)(void);
