@@ -183,10 +183,13 @@ BASE_FLAGS += -Wstrict-aliasing -fstrict-aliasing
 BASE_FLAGS += -Wstrict-overflow -fstrict-overflow
 BASE_FLAGS += -Wduplicated-branches -Wduplicated-cond  -Wnull-dereference
 CFLAGS     += -Winit-self -Wjump-misses-init -Wmissing-prototypes -Wnested-externs -Wstrict-prototypes -Wwrite-strings
-CXXFLAGS   += -Wc++0x-compat -Wc++11-compat -Weffc++
+CXXFLAGS   += -Wc++0x-compat -Wc++11-compat
 CXXFLAGS   += -Wnon-virtual-dtor -Woverloaded-virtual
 # CXXFLAGS   += -Wold-style-cast -Wuseless-cast
 CXXFLAGS   += -Wzero-as-null-pointer-constant
+ifneq ($(DEBUG),true)
+CXXFLAGS   += -Weffc++
+endif
 ifeq ($(LINUX),true)
 BASE_FLAGS += -isystem /opt/kxstudio/include
 endif
