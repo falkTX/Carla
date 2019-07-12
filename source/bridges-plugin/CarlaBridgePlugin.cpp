@@ -344,7 +344,7 @@ private:
     {
         carla_debug("CarlaBridgePlugin::callback(%p, %i:%s, %i, %i, %i, %i, %f, \"%s\")",
                     ptr, action, EngineCallbackOpcode2Str(action),
-                    pluginId, value1, value2, value3, valuef, valueStr);
+                    pluginId, value1, value2, value3, static_cast<double>(valuef), valueStr);
 
         // ptr must not be null
         CARLA_SAFE_ASSERT_RETURN(ptr != nullptr,);

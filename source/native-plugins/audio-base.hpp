@@ -338,7 +338,9 @@ public:
         carla_zeroFloats(fPollTempData, fPollTempSize);
 
         {
-            carla_debug("R: poll data - reading at %li:%02li", readFrame/fPool.sampleRate/60, (readFrame/fPool.sampleRate) % 60);
+            carla_debug("R: poll data - reading at %li:%02li",
+                        readFrame/static_cast<int32_t>(fPool.sampleRate)/60,
+                        (readFrame/static_cast<int32_t>(fPool.sampleRate)) % 60);
 
             ad_seek(fFilePtr, readFrame);
             size_t i = 0;

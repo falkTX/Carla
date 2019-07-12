@@ -363,7 +363,7 @@ protected:
 
 #ifdef DEBUG
         carla_stdout("Playing at %f :: %03X:%03i:%03i",
-                     float(double(midiEvent.time)*fTicksPerFrame),
+                     static_cast<double>(midiEvent.time)*fTicksPerFrame,
                      midiEvent.data[0], midiEvent.data[1], midiEvent.data[2]);
 #endif
 

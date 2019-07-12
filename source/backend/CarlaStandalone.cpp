@@ -1730,7 +1730,7 @@ void carla_set_drywet(uint pluginId, float value)
     CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
 
-    carla_debug("carla_set_drywet(%i, %f)", pluginId, value);
+    carla_debug("carla_set_drywet(%i, %f)", pluginId, static_cast<double>(value));
     return plugin->setDryWet(value, true, false);
 }
 
@@ -1741,7 +1741,7 @@ void carla_set_volume(uint pluginId, float value)
     CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
 
-    carla_debug("carla_set_volume(%i, %f)", pluginId, value);
+    carla_debug("carla_set_volume(%i, %f)", pluginId, static_cast<double>(value));
     return plugin->setVolume(value, true, false);
 }
 
@@ -1752,7 +1752,7 @@ void carla_set_balance_left(uint pluginId, float value)
     CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
 
-    carla_debug("carla_set_balance_left(%i, %f)", pluginId, value);
+    carla_debug("carla_set_balance_left(%i, %f)", pluginId, static_cast<double>(value));
     return plugin->setBalanceLeft(value, true, false);
 }
 
@@ -1763,7 +1763,7 @@ void carla_set_balance_right(uint pluginId, float value)
     CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
 
-    carla_debug("carla_set_balance_right(%i, %f)", pluginId, value);
+    carla_debug("carla_set_balance_right(%i, %f)", pluginId, static_cast<double>(value));
     return plugin->setBalanceRight(value, true, false);
 }
 
@@ -1774,7 +1774,7 @@ void carla_set_panning(uint pluginId, float value)
     CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
 
-    carla_debug("carla_set_panning(%i, %f)", pluginId, value);
+    carla_debug("carla_set_panning(%i, %f)", pluginId, static_cast<double>(value));
     return plugin->setPanning(value, true, false);
 }
 
@@ -1811,7 +1811,7 @@ void carla_set_parameter_value(uint pluginId, uint32_t parameterId, float value)
     CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
 
-    carla_debug("carla_set_parameter_value(%i, %i, %f)", pluginId, parameterId, value);
+    carla_debug("carla_set_parameter_value(%i, %i, %f)", pluginId, parameterId, static_cast<double>(value));
     CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
 
     return plugin->setParameterValue(parameterId, value, true, true, false);

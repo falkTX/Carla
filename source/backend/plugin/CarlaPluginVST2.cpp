@@ -1847,7 +1847,8 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, 0);
 #ifdef DEBUG
         if (opcode != effIdle && opcode != effEditIdle && opcode != effProcessEvents)
-            carla_debug("CarlaPluginVST2::dispatcher(%02i:%s, %i, " P_INTPTR ", %p, %f)", opcode, vstEffectOpcode2str(opcode), index, value, ptr, opt);
+            carla_debug("CarlaPluginVST2::dispatcher(%02i:%s, %i, " P_INTPTR ", %p, %f)",
+                        opcode, vstEffectOpcode2str(opcode), index, value, ptr, static_cast<double>(opt));
 #endif
 
         try {
@@ -1859,7 +1860,8 @@ protected:
     {
 #ifdef DEBUG
         if (opcode != audioMasterGetTime)
-            carla_debug("CarlaPluginVST2::handleAudioMasterCallback(%02i:%s, %i, " P_INTPTR ", %p, %f)", opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
+            carla_debug("CarlaPluginVST2::handleAudioMasterCallback(%02i:%s, %i, " P_INTPTR ", %p, %f)",
+                        opcode, vstMasterOpcode2str(opcode), index, value, ptr, static_cast<double>(opt));
 #endif
 
         intptr_t ret = 0;
@@ -2229,7 +2231,8 @@ protected:
 #endif
 
         default:
-            carla_debug("CarlaPluginVST2::handleAudioMasterCallback(%02i:%s, %i, " P_INTPTR ", %p, %f) UNDEF", opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
+            carla_debug("CarlaPluginVST2::handleAudioMasterCallback(%02i:%s, %i, " P_INTPTR ", %p, %f) UNDEF",
+                        opcode, vstMasterOpcode2str(opcode), index, value, ptr, static_cast<double>(opt));
             break;
         }
 
@@ -2632,7 +2635,8 @@ private:
     {
 #if defined(DEBUG) && ! defined(CARLA_OS_WIN)
         if (opcode != audioMasterGetTime && opcode != audioMasterProcessEvents && opcode != audioMasterGetCurrentProcessLevel && opcode != audioMasterGetOutputLatency)
-            carla_debug("carla_vst_audioMasterCallback(%p, %02i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
+            carla_debug("carla_vst_audioMasterCallback(%p, %02i:%s, %i, " P_INTPTR ", %p, %f)",
+                        effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, static_cast<double>(opt));
 #endif
 
         switch (opcode)

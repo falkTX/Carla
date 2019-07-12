@@ -1312,10 +1312,12 @@ void CarlaEngine::callback(const bool sendHost, const bool sendOsc,
 #ifdef DEBUG
     if (pData->isIdling)
         carla_stdout("CarlaEngine::callback [while idling] (%i:%s, %i, %i, %i, %i, %f, \"%s\")",
-                     action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valuef, valueStr);
+                     action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3,
+                     static_cast<double>(valuef), valueStr);
     else if (action != ENGINE_CALLBACK_IDLE && action != ENGINE_CALLBACK_NOTE_ON && action != ENGINE_CALLBACK_NOTE_OFF)
         carla_debug("CarlaEngine::callback(%i:%s, %i, %i, %i, %i, %f, \"%s\")",
-                    action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valuef, valueStr);
+                    action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3,
+                    static_cast<double>(valuef), valueStr);
 #endif
 
     if (sendHost && pData->callback != nullptr)
