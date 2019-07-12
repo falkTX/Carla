@@ -185,7 +185,6 @@
 
 /* Define CARLA_SAFE_EXCEPTION */
 #define CARLA_SAFE_EXCEPTION(msg)             catch(...) { carla_safe_exception(msg, __FILE__, __LINE__); }
-
 #define CARLA_SAFE_EXCEPTION_BREAK(msg)       catch(...) { carla_safe_exception(msg, __FILE__, __LINE__); break; }
 #define CARLA_SAFE_EXCEPTION_CONTINUE(msg)    catch(...) { carla_safe_exception(msg, __FILE__, __LINE__); continue; }
 #define CARLA_SAFE_EXCEPTION_RETURN(msg, ret) catch(...) { carla_safe_exception(msg, __FILE__, __LINE__); return ret; }

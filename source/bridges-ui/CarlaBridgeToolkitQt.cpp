@@ -256,12 +256,6 @@ private:
 #endif
 };
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-# include "CarlaBridgeToolkitQt5.moc"
-#else
-# include "CarlaBridgeToolkitQt4.moc"
-#endif
-
 // -------------------------------------------------------------------------
 
 CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeFormat* const format)
@@ -275,13 +269,17 @@ CARLA_BRIDGE_UI_END_NAMESPACE
 
 // -------------------------------------------------------------------------
 
+CARLA_BRIDGE_UI_USE_NAMESPACE
+
 // missing declaration
 int qInitResources();
 int qCleanupResources();
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+# include "CarlaBridgeToolkitQt5.moc"
 # include "resources.qt5.cpp"
 #else
+# include "CarlaBridgeToolkitQt4.moc"
 # include "resources.qt4.cpp"
 #endif
 
