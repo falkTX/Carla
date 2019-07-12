@@ -66,7 +66,7 @@ using water::XmlElement;
 CARLA_BACKEND_START_NAMESPACE
 
 static const uint32_t kNumInParams = 100;
-static const uint32_t kNumOutParams = 110;
+static const uint32_t kNumOutParams = 10;
 
 // -----------------------------------------------------------------------
 
@@ -947,9 +947,6 @@ protected:
 
     uint32_t getParameterCount() const
     {
-        if (CarlaPlugin* const plugin = _getFirstPlugin())
-            return plugin->getParameterCount();
-
         return kNumInParams + kNumOutParams;
     }
 
