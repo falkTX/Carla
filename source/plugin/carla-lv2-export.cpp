@@ -545,8 +545,9 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     // -------------------------------------------------------------------
     // Parameters
 
-    const uint32_t paramCount((pluginHandle != nullptr && pluginDesc->get_parameter_count != nullptr) ? pluginDesc->get_parameter_count(pluginHandle) : 0);
-
+    const uint32_t paramCount = (pluginHandle != nullptr && pluginDesc->get_parameter_count != nullptr)
+                              ? pluginDesc->get_parameter_count(pluginHandle)
+                              : 0;
     if (paramCount > 0)
     {
         CARLA_SAFE_ASSERT_RETURN(pluginDesc->get_parameter_info != nullptr,)

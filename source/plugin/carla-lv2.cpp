@@ -147,7 +147,8 @@ public:
         if (fDescriptor->get_parameter_count != nullptr &&
             fDescriptor->get_parameter_info  != nullptr &&
             fDescriptor->get_parameter_value != nullptr &&
-            fDescriptor->set_parameter_value != nullptr)
+            fDescriptor->set_parameter_value != nullptr &&
+            std::strncmp(fDescriptor->label, "carla", 5) != 0)
         {
             fPorts.numParams = fDescriptor->get_parameter_count(fHandle);
         }
