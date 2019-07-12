@@ -62,9 +62,13 @@ static uint32_t d_lastBufferSize = 0;
 static double   d_lastSampleRate = 0.0;
 
 static const int32_t kBaseUniqueID = CCONST('C', 'r', 'l', 'a');
-static const int32_t kShellUniqueID = CCONST('C', 'r', 'l', 's');
-static const int32_t kNumParameters = 100;
 static const int32_t kVstMidiEventSize = static_cast<int32_t>(sizeof(VstMidiEvent));
+
+#ifdef CARLA_VST_SHELL
+static const int32_t kShellUniqueID = CCONST('C', 'r', 'l', 's');
+#else
+static const int32_t kNumParameters = 100;
+#endif
 
 static const bool kIsUsingUILauncher = isUsingUILauncher();
 
@@ -250,7 +254,10 @@ public:
             break;
 
         case effGetParamDisplay:
-            CARLA_SAFE_ASSERT_RETURN(index >= 0 && index < kNumParameters, 0);
+            CARLA_SAFE_ASSERT_RETURN(index >= 0, 0);
+#ifndef CARLA_VST_SHELL
+            CARLA_SAFE_ASSERT_RETURN(index < kNumParameters, 0);
+#endif
 
             if (char* const cptr = (char*)ptr)
             {
@@ -308,7 +315,10 @@ public:
             break;
 
         case effGetParamName:
-            CARLA_SAFE_ASSERT_RETURN(index >= 0 && index < kNumParameters, 0);
+            CARLA_SAFE_ASSERT_RETURN(index >= 0, 0);
+#ifndef CARLA_VST_SHELL
+            CARLA_SAFE_ASSERT_RETURN(index < kNumParameters, 0);
+#endif
 
             if (char* const cptr = (char*)ptr)
             {
