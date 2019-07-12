@@ -31,6 +31,7 @@ from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsScene
 from . import (
     canvas,
     CanvasBoxType,
+    CanvasIconType,
     CanvasPortType,
     CanvasLineType,
     CanvasBezierLineType,
@@ -295,7 +296,9 @@ class PatchScene(QGraphicsScene):
         if self.m_mouse_down_init:
             self.m_mouse_down_init = False
             topmost = self.itemAt(event.scenePos(), self.m_view.transform())
-            self.m_mouse_rubberband = not (topmost and topmost.type() in [CanvasBoxType, CanvasPortType])
+            self.m_mouse_rubberband = not (topmost and topmost.type() in [CanvasBoxType,
+                                                                          CanvasIconType,
+                                                                          CanvasPortType])
 
         if self.m_mouse_rubberband:
             event.accept()
