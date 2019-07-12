@@ -452,6 +452,7 @@ else:
 
     DEFAULT_SF2_PATH     = HOME + "/.sounds/sf2"
     DEFAULT_SF2_PATH    += ":/usr/share/sounds/sf2"
+    DEFAULT_SF2_PATH    += ":/usr/share/soundfonts"
 
     DEFAULT_SFZ_PATH     = HOME + "/.sounds/sfz"
     DEFAULT_SFZ_PATH    += ":/usr/share/sounds/sfz"
