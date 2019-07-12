@@ -81,7 +81,7 @@ def findBinaries(binPath, pluginType, OS):
         extensions = (".so",)
 
     for root, dirs, files in os.walk(binPath):
-        for name in [name for name in files if name.lower().endswith(extensions)]:
+        for name in tuple(name for name in files if name.lower().endswith(extensions)):
             binaries.append(os.path.join(root, name))
 
     return binaries
@@ -90,7 +90,7 @@ def findVST3Binaries(binPath):
     binaries = []
 
     for root, dirs, files in os.walk(binPath):
-        for name in [name for name in files if name.lower().endswith(".vst3")]:
+        for name in tuple(name for name in files if name.lower().endswith(".vst3")):
             binaries.append(os.path.join(root, name))
 
     return binaries
@@ -111,7 +111,7 @@ def findMacVSTBundles(bundlePath, isVST3):
 
     for root, dirs, files in os.walk(bundlePath, followlinks=True):
         #if root == bundlePath: continue # FIXME
-        for name in [name for name in dirs if name.lower().endswith(extension)]:
+        for name in tuple(name for name in dirs if name.lower().endswith(extension)):
             bundles.append(os.path.join(root, name))
 
     return bundles
@@ -125,7 +125,7 @@ def findFilenames(filePath, stype):
         return []
 
     for root, dirs, files in os.walk(filePath):
-        for name in [name for name in files if name.lower().endswith(extensions)]:
+        for name in tuple(name for name in files if name.lower().endswith(extensions)):
             filenames.append(os.path.join(root, name))
 
     return filenames

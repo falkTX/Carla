@@ -697,7 +697,7 @@ def recheck_all_plugins(qobject, startValue, percentValue, curValue):
     # Get all RDF files
     for PATH in LADSPA_RDF_PATH:
         for root, dirs, files in os.walk(PATH):
-            for filename in [filename for filename in files if filename.lower().endswith(rdfExtensions)]:
+            for filename in tuple(filename for filename in files if filename.lower().endswith(rdfExtensions)):
                 rdfFiles.append(os.path.join(root, filename))
 
     # Parse all RDF files

@@ -1362,7 +1362,7 @@ class PatchScene(QGraphicsScene):
 
             items = self.items(self.m_pointer_border)
             for item in items:
-                if item and item.type() in [CanvasLineType, CanvasBezierLineType]:
+                if item and item.type() in (CanvasLineType, CanvasBezierLineType):
                     item.triggerDisconnect()
         QGraphicsScene.mousePressEvent(self, event)
 
@@ -1392,7 +1392,7 @@ class PatchScene(QGraphicsScene):
             trail = QPolygonF([event.scenePos(), event.lastScenePos(), event.scenePos()])
             items = self.items(trail)
             for item in items:
-                if item and item.type() in [CanvasLineType, CanvasBezierLineType]:
+                if item and item.type() in (CanvasLineType, CanvasBezierLineType):
                     item.triggerDisconnect()
 
         QGraphicsScene.mouseMoveEvent(self, event)
