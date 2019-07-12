@@ -1869,7 +1869,7 @@ public:
 
                     for (uint32_t k=0; k < frames; ++k)
                     {
-                        if (k < pData->latency.frames)
+                        if (k < pData->latency.frames && pData->latency.buffers != nullptr)
                             bufValue = pData->latency.buffers[c][k];
                         else if (pData->latency.frames < frames)
                             bufValue = fAudioInBuffers[c][k-pData->latency.frames];
@@ -1923,9 +1923,10 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Save latency values for next callback
 
-        if (const uint32_t latframes = pData->latency.frames)
+        if (pData->latency.frames != 0 && pData->latency.buffers != nullptr)
         {
             CARLA_SAFE_ASSERT(timeOffset == 0);
+            const uint32_t latframes = pData->latency.frames;
 
             if (latframes <= frames)
             {
@@ -1934,7 +1935,7 @@ public:
             }
             else
             {
-                const uint32_t diff = pData->latency.frames-frames;
+                const uint32_t diff = latframes - frames;
 
                 for (uint32_t i=0, k; i<pData->audioIn.count; ++i)
                 {
