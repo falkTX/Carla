@@ -25,6 +25,7 @@ TARGETS = $(MODULEDIR)/$(MODULENAME).a
 OBJS = \
 	$(OBJDIR)/_all.c.o \
 	$(OBJDIR)/_data.cpp.o \
+	$(OBJDIR)/audio-gain.c.o \
 	$(OBJDIR)/bypass.c.o \
 	$(OBJDIR)/lfo.c.o \
 	$(OBJDIR)/midi-channel-filter.c.o \

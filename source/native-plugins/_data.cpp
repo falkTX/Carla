@@ -33,6 +33,38 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
 // Simple plugins
 
 {
+    /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
+    /* hints     */ NATIVE_PLUGIN_IS_RTSAFE,
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
+    /* audioIns  */ 1,
+    /* audioOuts */ 1,
+    /* midiIns   */ 0,
+    /* midiOuts  */ 0,
+    /* paramIns  */ 1,
+    /* paramOuts */ 0,
+    /* name      */ "Audio Gain (Mono)",
+    /* label     */ "audiogain",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    DESCFUNCS
+},
+{
+    /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
+    /* hints     */ NATIVE_PLUGIN_IS_RTSAFE,
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
+    /* audioIns  */ 2,
+    /* audioOuts */ 2,
+    /* midiIns   */ 0,
+    /* midiOuts  */ 0,
+    /* paramIns  */ 3,
+    /* paramOuts */ 0,
+    /* name      */ "Audio Gain (Stereo)",
+    /* label     */ "audiogain_s",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    DESCFUNCS
+},
+{
     /* category  */ NATIVE_PLUGIN_CATEGORY_NONE,
     /* hints     */ NATIVE_PLUGIN_IS_RTSAFE,
     /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,

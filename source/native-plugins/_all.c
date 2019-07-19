@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,6 +21,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 // Simple plugins
+extern void carla_register_native_plugin_audiogain(void);
 extern void carla_register_native_plugin_bypass(void);
 extern void carla_register_native_plugin_lfo(void);
 extern void carla_register_native_plugin_midichanfilter(void);
@@ -57,6 +58,7 @@ void carla_register_all_native_external_plugins(void);
 void carla_register_all_native_plugins(void)
 {
     // Simple plugins
+    carla_register_native_plugin_audiogain();
     carla_register_native_plugin_bypass();
     carla_register_native_plugin_lfo();
     carla_register_native_plugin_midichanfilter();
@@ -85,7 +87,7 @@ void carla_register_all_native_plugins(void)
 #endif // HAVE_PYQT
 
 #ifdef HAVE_EXTERNAL_PLUGINS
-    // Experimental plugins
+    // External plugins
     carla_register_all_native_external_plugins();
 #endif
 }
