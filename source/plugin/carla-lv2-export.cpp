@@ -445,8 +445,8 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
         {
             if (pluginDesc->midiOuts > 1)
             {
-                text += "        lv2:symbol \"lv2_midi_out_" + String(portIndex+1) + "\" ;\n";
-                text += "        lv2:name \"MIDI Output #" + String(portIndex+1) + "\" ;\n";
+                text += "        lv2:symbol \"lv2_midi_out_1\" ;\n";
+                text += "        lv2:name \"MIDI Output #1\" ;\n";
             }
             else
             {
