@@ -657,11 +657,11 @@ ifeq ($(LINUX),true)
 	$(LINK) ../../carla/jack $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/jack
 endif
 
+ifeq ($(HAVE_PYQT),true)
 	# Link resources for lv2 plugin
 	rm -rf $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/resources
 	$(LINK) ../../../share/carla/resources $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/resources
 
-ifeq ($(HAVE_PYQT),true)
 	# Link styles for lv2 plugin
 	rm -rf $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/styles
 	$(LINK) ../../carla/styles $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/styles
