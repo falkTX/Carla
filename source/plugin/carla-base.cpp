@@ -45,13 +45,17 @@ struct PluginListManager {
         {
             const NativePluginDescriptor* const desc(carla_getNativePluginDescriptor(i));
 
-            if (std::strcmp(desc->label, "lfo"             ) == 0 ||
-                std::strcmp(desc->label, "midichanfilter"  ) == 0 ||
+            if (std::strcmp(desc->label, "audiofile"       ) == 0 ||
+                std::strcmp(desc->label, "audiogain"       ) == 0 ||
+                std::strcmp(desc->label, "audiogain_s"     ) == 0 ||
+                std::strcmp(desc->label, "lfo"             ) == 0 ||
                 std::strcmp(desc->label, "midichanab"      ) == 0 ||
+                std::strcmp(desc->label, "midichanfilter"  ) == 0 ||
+                std::strcmp(desc->label, "midichannelize"  ) == 0 ||
+                std::strcmp(desc->label, "midifile"        ) == 0 ||
                 std::strcmp(desc->label, "midigain"        ) == 0 ||
                 std::strcmp(desc->label, "midijoin"        ) == 0 ||
                 std::strcmp(desc->label, "midisplit"       ) == 0 ||
-                std::strcmp(desc->label, "midithrough"     ) == 0 ||
                 std::strcmp(desc->label, "miditranspose"   ) == 0 ||
                 std::strcmp(desc->label, "midipattern"     ) == 0 ||
                 std::strcmp(desc->label, "carlarack"       ) == 0 ||
@@ -59,10 +63,8 @@ struct PluginListManager {
                 std::strcmp(desc->label, "carlapatchbay3s" ) == 0 ||
                 std::strcmp(desc->label, "carlapatchbay16" ) == 0 ||
                 std::strcmp(desc->label, "carlapatchbay32" ) == 0 ||
-                std::strcmp(desc->label, "bigmeter"        ) == 0 ||
-                /*std::strcmp(desc->label, "notes"           ) == 0*/
-                std::strcmp(desc->label, "audiofile"       ) == 0 ||
-                std::strcmp(desc->label, "midifile"        ) == 0)
+                std::strcmp(desc->label, "bigmeter"        ) == 0
+                /*std::strcmp(desc->label, "notes"           ) == 0*/)
             {
                 descs.append(desc);
             }

@@ -24,14 +24,14 @@
 extern void carla_register_native_plugin_audiogain(void);
 extern void carla_register_native_plugin_bypass(void);
 extern void carla_register_native_plugin_lfo(void);
-extern void carla_register_native_plugin_midichanfilter(void);
 extern void carla_register_native_plugin_midichanab(void);
+extern void carla_register_native_plugin_midichanfilter(void);
+extern void carla_register_native_plugin_midichannelize(void);
 extern void carla_register_native_plugin_midigain(void);
 extern void carla_register_native_plugin_midijoin(void);
 extern void carla_register_native_plugin_midisplit(void);
 extern void carla_register_native_plugin_midithrough(void);
 extern void carla_register_native_plugin_miditranspose(void);
-extern void carla_register_native_plugin_midichannelize(void);
 
 // Audio file
 extern void carla_register_native_plugin_audiofile(void);
@@ -61,14 +61,14 @@ void carla_register_all_native_plugins(void)
     carla_register_native_plugin_audiogain();
     carla_register_native_plugin_bypass();
     carla_register_native_plugin_lfo();
-    carla_register_native_plugin_midichanfilter();
     carla_register_native_plugin_midichanab();
+    carla_register_native_plugin_midichannelize();
+    carla_register_native_plugin_midichanfilter();
     carla_register_native_plugin_midigain();
     carla_register_native_plugin_midijoin();
     carla_register_native_plugin_midisplit();
     carla_register_native_plugin_midithrough();
     carla_register_native_plugin_miditranspose();
-    carla_register_native_plugin_midichannelize();
 
     // Audio file
     carla_register_native_plugin_audiofile();
