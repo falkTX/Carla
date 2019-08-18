@@ -763,14 +763,10 @@ ifneq ($(WIN32),true)
 else
 	@printf -- "LV2 plugin:    $(ANS_NO)  $(mZ)Not available for Windows$(mE)\n"
 endif
-ifeq ($(LINUX),true)
-ifeq ($(HAVE_X11),true)
+ifneq ($(HAIKU),true)
 	@printf -- "VST plugin:    $(ANS_YES)\n"
-else # HAVE_X11
-	@printf -- "VST plugin:    $(ANS_NO)  $(mS)X11 missing$(mE)\n"
-endif
-else # LINUX
-	@printf -- "VST plugin:    $(ANS_NO)  $(mZ)Linux only$(mE)\n"
+else
+	@printf -- "VST plugin:    $(ANS_NO)  $(mZ)Not available for Haiku$(mE)\n"
 endif
 else
 	@printf -- "Front-End:     $(ANS_NO)  $(mS)Missing PyQt$(mE)\n"
