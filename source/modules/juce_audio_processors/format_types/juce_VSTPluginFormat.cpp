@@ -1220,7 +1220,7 @@ struct VSTPluginInstance     : public AudioPluginInstance,
             for (int i = 0; i < fxbSwap (prog->numParams); ++i)
                 setParameter (i, fxbSwapFloat (prog->params[i]));
         }
-        else if (compareMagic (set->fxMagic, "FBCh"))
+        else if (compareMagic (set->fxMagic, "FBCh") || compareMagic (set->fxMagic, "FJuc"))
         {
             // non-preset chunk
             auto cset = (const fxChunkSet*) data;
@@ -1268,7 +1268,7 @@ struct VSTPluginInstance     : public AudioPluginInstance,
                 auto set = (fxChunkSet*) dest.getData();
                 set->chunkMagic = fxbName ("CcnK");
                 set->byteSize = 0;
-                set->fxMagic = fxbName ("FBCh");
+                set->fxMagic = fxbName ("FJuc");
                 set->version = fxbSwap (fxbVersionNum);
                 set->fxID = fxbSwap (getUID());
                 set->fxVersion = fxbSwap (getVersionNumber());
