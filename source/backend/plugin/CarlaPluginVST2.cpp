@@ -2540,9 +2540,11 @@ private:
 
         const int32_t* const set = (const int32_t*)data;
 
+        if (set[1] != 0)
+            return false;
         if (! compareMagic(set[0], "CcnK"))
             return false;
-        if (! compareMagic(set[2], "FBCh"))
+        if (! compareMagic(set[2], "FBCh") && ! compareMagic(set[2], "FJuc"))
             return false;
         if (fxbSwap(set[3]) > 1)
             return false;
