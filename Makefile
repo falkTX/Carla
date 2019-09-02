@@ -394,7 +394,9 @@ endif
 	install -d $(DESTDIR)$(INCLUDEDIR)/carla/includes
 ifeq ($(LINUX),true)
 ifeq ($(HAVE_JACK),true)
+ifeq ($(JACKBRIDGE_DIRECT),true)
 	install -d $(DESTDIR)$(JACK_LIBDIR)
+endif
 endif
 endif
 
@@ -437,10 +439,12 @@ endif
 
 ifeq ($(LINUX),true)
 ifeq ($(HAVE_JACK),true)
+ifeq ($(JACKBRIDGE_DIRECT),true)
 	# Install internal jack client
 	ln -sf \
 		$(LIBDIR)/carla/libcarla_standalone2.so \
 		$(DESTDIR)$(JACK_LIBDIR)/carla.so
+endif
 endif
 
 ifneq ($(JACKBRIDGE_DIRECT),true)

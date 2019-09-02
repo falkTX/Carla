@@ -2955,7 +2955,7 @@ CarlaEngine* CarlaEngine::newJack()
 
 CARLA_BACKEND_END_NAMESPACE
 
-#ifndef BUILD_BRIDGE
+#if defined(JACKBRIDGE_DIRECT) && !defined(BUILD_BRIDGE)
 // -----------------------------------------------------------------------
 // internal jack client
 
@@ -3042,4 +3042,4 @@ void jack_finish(void *arg)
 }
 
 // -----------------------------------------------------------------------
-#endif
+#endif // defined(JACKBRIDGE_DIRECT) && !defined(BUILD_BRIDGE)
