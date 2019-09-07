@@ -75,6 +75,7 @@ struct PluginListManager {
         descs.append(carla_get_native_patchbay_plugin());
         descs.append(carla_get_native_patchbay16_plugin());
         descs.append(carla_get_native_patchbay32_plugin());
+        descs.append(carla_get_native_patchbay64_plugin());
 #endif
     }
 

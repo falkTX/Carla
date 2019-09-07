@@ -2648,7 +2648,7 @@ const NativePluginDescriptor* carla_get_native_patchbay32_plugin()
 const NativePluginDescriptor* carla_get_native_patchbay64_plugin()
 {
     CARLA_BACKEND_USE_NAMESPACE;
-    return &carlaPatchbay32Desc;
+    return &carlaPatchbay64Desc;
 }
 
 // -----------------------------------------------------------------------
