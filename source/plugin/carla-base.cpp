@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -63,6 +63,7 @@ struct PluginListManager {
                 std::strcmp(desc->label, "carlapatchbay3s" ) == 0 ||
                 std::strcmp(desc->label, "carlapatchbay16" ) == 0 ||
                 std::strcmp(desc->label, "carlapatchbay32" ) == 0 ||
+                std::strcmp(desc->label, "carlapatchbay64" ) == 0 ||
                 std::strcmp(desc->label, "bigmeter"        ) == 0
                 /*std::strcmp(desc->label, "notes"           ) == 0*/)
             {

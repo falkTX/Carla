@@ -417,6 +417,26 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
+{
+    /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
+                                                  |NATIVE_PLUGIN_USES_STATE
+                                                  |NATIVE_PLUGIN_USES_TIME),
+    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
+    /* audioIns  */ 64,
+    /* audioOuts */ 64,
+    /* midiIns   */ 1,
+    /* midiOuts  */ 1,
+    /* paramIns  */ 100,
+    /* paramOuts */ 10,
+    /* name      */ "Carla-Patchbay (64chan)",
+    /* label     */ "carlapatchbay64",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    DESCFUNCS
+},
 #endif
 
 // --------------------------------------------------------------------------------------------------------------------

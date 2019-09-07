@@ -26,9 +26,9 @@
   #ifndef CARLA_PLUGIN_PATCHBAY
     #error CARLA_PLUGIN_PATCHBAY undefined
   #endif
-  #if defined(CARLA_PLUGIN_32CH) || defined(CARLA_PLUGIN_16CH)
+  #if defined(CARLA_PLUGIN_64CH) || defined(CARLA_PLUGIN_32CH) || defined(CARLA_PLUGIN_16CH)
     #if ! CARLA_PLUGIN_SYNTH
-      #error CARLA_PLUGIN_16/32CH requires CARLA_PLUGIN_SYNTH
+      #error CARLA_PLUGIN_16/32/64CH requires CARLA_PLUGIN_SYNTH
     #endif
   #endif
 #endif
@@ -980,7 +980,9 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
 
            #else // CARLA_VST_SHELL
 
-           #  if defined(CARLA_PLUGIN_32CH)
+           #  if defined(CARLA_PLUGIN_64CH)
+            const char* const pluginLabel = "carlapatchbay64";
+           #  elif defined(CARLA_PLUGIN_32CH)
             const char* const pluginLabel = "carlapatchbay32";
            #  elif defined(CARLA_PLUGIN_16CH)
             const char* const pluginLabel = "carlapatchbay16";
@@ -1088,6 +1090,8 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
             {
                 std::strncpy(cptr, "Carla-VstShell", 32);
             }
+           #elif defined(CARLA_PLUGIN_64CH)
+            std::strncpy(cptr, "Carla-Patchbay64", 32);
            #elif defined(CARLA_PLUGIN_32CH)
             std::strncpy(cptr, "Carla-Patchbay32", 32);
            #elif defined(CARLA_PLUGIN_16CH)
@@ -1138,6 +1142,8 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
             {
                 std::strncpy(cptr, "CarlaVstShell", 32);
             }
+           #elif defined(CARLA_PLUGIN_64CH)
+            std::strncpy(cptr, "CarlaPatchbay64", 32);
            #elif defined(CARLA_PLUGIN_32CH)
             std::strncpy(cptr, "CarlaPatchbay32", 32);
            #elif defined(CARLA_PLUGIN_16CH)
@@ -1245,6 +1251,8 @@ const AEffect* VSTPluginMainInit(AEffect* const effect)
         effect->uniqueID = static_cast<int>(uniqueID);
     else
         effect->uniqueID = kShellUniqueID;
+   #elif defined(CARLA_PLUGIN_64CH)
+    effect->uniqueID = kBaseUniqueID+7;
    #elif defined(CARLA_PLUGIN_32CH)
     effect->uniqueID = kBaseUniqueID+6;
    #elif defined(CARLA_PLUGIN_16CH)
@@ -1267,7 +1275,10 @@ const AEffect* VSTPluginMainInit(AEffect* const effect)
 #ifndef CARLA_VST_SHELL
     effect->numParams   = kNumParameters;
     effect->numPrograms = 1;
-# if defined(CARLA_PLUGIN_32CH)
+# if defined(CARLA_PLUGIN_64CH)
+    effect->numInputs   = 64;
+    effect->numOutputs  = 64;
+# elif defined(CARLA_PLUGIN_32CH)
     effect->numInputs   = 32;
     effect->numOutputs  = 32;
 # elif defined(CARLA_PLUGIN_16CH)
