@@ -346,7 +346,7 @@ int XNextEvent(Display* display, XEvent* event)
         gInterposedCallback(LIBJACK_INTERPOSER_CALLBACK_UI_HIDE, nullptr);
 
     event->type = 0;
-    carla_stdout("XNextEvent close event catched, hiding UI instead");
+    carla_stdout("XNextEvent close event caught, hiding UI instead");
     return real_XUnmapWindow(display, gCurrentlyMappedWindow);
 }
 

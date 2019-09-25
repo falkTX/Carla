@@ -128,7 +128,7 @@ typedef struct _CarlaPluginInfo {
 
     /*!
      * Plugin unique Id.
-     * This Id is dependant on the plugin type and may sometimes be 0.
+     * This Id is dependent on the plugin type and may sometimes be 0.
      */
     int64_t uniqueId;
 

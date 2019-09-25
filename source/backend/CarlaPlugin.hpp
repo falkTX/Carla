@@ -584,7 +584,7 @@ public:
      * If @a key already exists, its current value will be swapped with @a value.
      *
      * @param type Type of data used in @a value.
-     * @param key A key identifing this data set.
+     * @param key A key identifying this data set.
      * @param value The value of the data set, of type @a type.
      * @param sendGui Send message change to plugin's custom GUI, if any
      *

@@ -155,7 +155,7 @@ MAX_PATCHBAY_PLUGINS = 255
 MAX_DEFAULT_PARAMETERS = 200
 
 # The "plugin Id" for the global Carla instance.
-# Curently only used for audio peaks.
+# Currently only used for audio peaks.
 MAIN_CARLA_PLUGIN_ID = 0xFFFF
 
 # ------------------------------------------------------------------------------------------------------------
@@ -471,7 +471,7 @@ PARAMETER_UNKNOWN = 0
 # Input parameter.
 PARAMETER_INPUT = 1
 
-# Ouput parameter.
+# Output parameter.
 PARAMETER_OUTPUT = 2
 
 # ------------------------------------------------------------------------------------------------------------
@@ -1212,7 +1212,7 @@ class CarlaPluginInfo(Structure):
         ("iconName", c_char_p),
 
         # Plugin unique Id.
-        # This Id is dependant on the plugin type and may sometimes be 0.
+        # This Id is dependent on the plugin type and may sometimes be 0.
         ("uniqueId", c_int64)
     ]
 

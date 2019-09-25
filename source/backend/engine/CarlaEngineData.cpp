@@ -412,7 +412,7 @@ bool EngineTimeInfo::compareIgnoringRollingFrames(const EngineTimeInfo& timeInfo
     if (frame > timeInfo.frame)
         return false;
 
-    // not playing, so dont bother checking transport
+    // not playing, so don't bother checking transport
     // assume frame changed, likely playback has stopped
     if (! playing)
         return false;

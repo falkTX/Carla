@@ -233,7 +233,7 @@ class CanvasPort(QGraphicsItem):
                     hover_group_id = self.m_hover_item.getGroupId()
                     hover_port_id = self.m_hover_item.getPortId()
 
-                    # FIXME clean ths big if stuff
+                    # FIXME clean this big if stuff
                     if (
                         (connection.group_out_id == self.m_group_id and
                          connection.port_out_id == self.m_port_id and

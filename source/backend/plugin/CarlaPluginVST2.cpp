@@ -2717,7 +2717,7 @@ private:
             return kVstLangEnglish;
         }
 
-        // Check if 'resvd1' points to us, otherwise register ourselfs if possible
+        // Check if 'resvd1' points to us, otherwise register ourselves if possible
         CarlaPluginVST2* self = nullptr;
 
         if (effect != nullptr)

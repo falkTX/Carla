@@ -89,7 +89,7 @@ jack_midi_data_t* jack_midi_event_reserve(void* buf, jack_nframes_t frame, size_
     CARLA_SAFE_ASSERT_RETURN(jbasebuf->isValid, nullptr);
     CARLA_SAFE_ASSERT_RETURN(size < JackMidiPortBufferBase::kMaxEventSize, nullptr);
 
-    // broken jack applicatons, wow...
+    // broken jack applications, wow...
     if (size == 0)
         return nullptr;
 
@@ -117,7 +117,7 @@ int jack_midi_event_write(void* buf, jack_nframes_t frame, const jack_midi_data_
     CARLA_SAFE_ASSERT_RETURN(jbasebuf->isValid, EINVAL);
     CARLA_SAFE_ASSERT_RETURN(size < JackMidiPortBufferBase::kMaxEventSize, ENOBUFS);
 
-    // broken jack applicatons, wow...
+    // broken jack applications, wow...
     if (size == 0)
         return EINVAL;
 
