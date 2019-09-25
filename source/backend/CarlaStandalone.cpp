@@ -333,7 +333,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 #endif
 
     CarlaEngine* const engine = CarlaEngine::newDriverByName(driverName);
-    CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(engine != nullptr, "The seleted audio driver is not available", false);
+    CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(engine != nullptr, "The selected audio driver is not available", false);
 
     gStandalone.engine = engine;
 
@@ -404,7 +404,7 @@ bool carla_engine_init_bridge(const char audioBaseName[6+1], const char rtClient
                                                              nonRtClientBaseName,
                                                              nonRtServerBaseName));
 
-    CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(engine != nullptr, "The seleted audio driver is not available", false);
+    CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(engine != nullptr, "The selected audio driver is not available", false);
 
     engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,   CB::ENGINE_PROCESS_MODE_BRIDGE,   nullptr);
     engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE, CB::ENGINE_TRANSPORT_MODE_BRIDGE, nullptr);

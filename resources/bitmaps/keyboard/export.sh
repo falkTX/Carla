@@ -35,7 +35,7 @@ done
 # pngcrush creates the dir given for -d, if necessary.
 pngcrush -c 2 -reduce -d crushed white_*.png
 
-# Optimze transparent images, keeping their alpha channels:
+# Optimize transparent images, keeping their alpha channels:
 pngcrush -c 6 -reduce -d crushed black_*.png
 
 # Cleanup:

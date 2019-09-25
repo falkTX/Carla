@@ -423,7 +423,7 @@ def splitGroup(group_id):
     for group in canvas.group_list:
         if group.group_id == group_id:
             if group.split:
-                qCritical("PatchCanvas::splitGroup(%i) - group is already splitted" % group_id)
+                qCritical("PatchCanvas::splitGroup(%i) - group is already split" % group_id)
                 return
 
             item = group.widgets[0]
@@ -472,7 +472,7 @@ def splitGroup(group_id):
 
     removeGroup(group_id)
 
-    # Step 3 - Re-create Item, now splitted
+    # Step 3 - Re-create Item, now split
     addGroup(group_id, group_name, SPLIT_YES, group_icon)
 
     if plugin_id >= 0:
@@ -504,7 +504,7 @@ def joinGroup(group_id):
     for group in canvas.group_list:
         if group.group_id == group_id:
             if not group.split:
-                qCritical("PatchCanvas::joinGroup(%i) - group is not splitted" % group_id)
+                qCritical("PatchCanvas::joinGroup(%i) - group is not split" % group_id)
                 return
 
             item = group.widgets[0]
