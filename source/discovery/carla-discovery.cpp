@@ -1023,9 +1023,7 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
 
     if (effect->uniqueID == 0)
     {
-        DISCOVERY_OUT("error", "Plugin doesn't have an Unique ID");
-        effect->dispatcher(effect, effClose, 0, 0, nullptr, 0.0f);
-        return;
+        DISCOVERY_OUT("warning", "Plugin doesn't have an Unique ID when first loaded");
     }
 
     effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effIdentify), 0, 0, nullptr, 0.0f);
@@ -1040,6 +1038,14 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
         effect->dispatcher(effect, effSetProgram, 0, 0, nullptr, 0.0f);
 
     const bool isShell  = (effect->dispatcher(effect, effGetPlugCategory, 0, 0, nullptr, 0.0f) == kPlugCategShell);
+
+    if (effect->uniqueID == 0 && !isShell)
+    {
+        DISCOVERY_OUT("error", "Plugin doesn't have an Unique ID after being open");
+        effect->dispatcher(effect, effClose, 0, 0, nullptr, 0.0f);
+        return;
+    }
+
     gVstCurrentUniqueId =  effect->uniqueID;
 
     char strBuf[STR_MAX+1];
