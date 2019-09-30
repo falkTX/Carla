@@ -23,9 +23,15 @@
 #include <QtCore/QTimerEvent>
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+# ifdef BRIDGE_QT4
+#  error Wrong includes for this bridge!
+# endif
 # include <QtWidgets/QApplication>
 # include <QtWidgets/QMainWindow>
 #else
+# ifdef BRIDGE_QT5
+#  error Wrong includes for this bridge!
+# endif
 # include <QtGui/QApplication>
 # include <QtGui/QMainWindow>
 # ifdef HAVE_X11

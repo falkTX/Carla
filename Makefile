@@ -78,6 +78,9 @@ ALL_LIBS += $(3RD_LIBS)
 
 3rd: $(3RD_LIBS)
 	@$(MAKE) -C source/theme
+ifeq ($(HAVE_QT4),true)
+	@$(MAKE) -C source/bridges-ui ui_lv2-qt4
+endif
 
 libs: $(ALL_LIBS)
 
