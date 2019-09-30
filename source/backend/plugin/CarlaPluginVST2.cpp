@@ -2396,7 +2396,7 @@ public:
 
         const bool isShell = (dispatcher(effGetPlugCategory) == kPlugCategShell);
 
-        if (sCurrentUniqueId == 0 && isShell)
+        if (uniqueId == 0 && isShell)
         {
             char strBuf[STR_MAX+1];
             carla_zeroChars(strBuf, STR_MAX+1);
@@ -2423,7 +2423,7 @@ public:
             dispatcher(effOpen);
         }
 
-        if (sCurrentUniqueId == 0 && !isShell)
+        if (fEffect->uniqueID == 0 && !isShell)
         {
             dispatcher(effClose);
             fEffect = nullptr;
