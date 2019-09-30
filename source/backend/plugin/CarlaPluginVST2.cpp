@@ -2394,6 +2394,43 @@ public:
         dispatcher(effSetBlockSize, 0, iBufferSize);
         dispatcher(effOpen);
 
+        const bool isShell = (dispatcher(effGetPlugCategory) == kPlugCategShell);
+
+        if (sCurrentUniqueId == 0 && isShell)
+        {
+            char strBuf[STR_MAX+1];
+            carla_zeroChars(strBuf, STR_MAX+1);
+
+            sCurrentUniqueId = dispatcher(effShellGetNextPlugin, 0, 0, strBuf);
+
+            dispatcher(effClose);
+            fEffect = nullptr;
+
+            sLastCarlaPluginVST2 = this;
+
+            try {
+                fEffect = vstFn(carla_vst_audioMasterCallback);
+            } CARLA_SAFE_EXCEPTION_RETURN("Vst init", false);
+
+            sLastCarlaPluginVST2 = nullptr;
+            sCurrentUniqueId     = 0;
+
+            dispatcher(effIdentify);
+            dispatcher(effSetProcessPrecision, 0, kVstProcessPrecision32);
+            dispatcher(effSetBlockSizeAndSampleRate, 0, iBufferSize, nullptr, fSampleRate);
+            dispatcher(effSetSampleRate, 0, 0, nullptr, fSampleRate);
+            dispatcher(effSetBlockSize, 0, iBufferSize);
+            dispatcher(effOpen);
+        }
+
+        if (sCurrentUniqueId == 0 && !isShell)
+        {
+            dispatcher(effClose);
+            fEffect = nullptr;
+            pData->engine->setLastError("Plugin is not valid (no unique ID after being open)");
+            return false;
+        }
+
         // ---------------------------------------------------------------
         // get info
 

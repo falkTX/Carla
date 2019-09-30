@@ -1037,7 +1037,7 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
     if (effect->numPrograms > 0)
         effect->dispatcher(effect, effSetProgram, 0, 0, nullptr, 0.0f);
 
-    const bool isShell  = (effect->dispatcher(effect, effGetPlugCategory, 0, 0, nullptr, 0.0f) == kPlugCategShell);
+    const bool isShell = (effect->dispatcher(effect, effGetPlugCategory, 0, 0, nullptr, 0.0f) == kPlugCategShell);
 
     if (effect->uniqueID == 0 && !isShell)
     {
