@@ -1423,9 +1423,9 @@ bool AudioProcessorGraph::isConnectionLegal (const Connection* const c) const
 
     return source != nullptr
         && dest != nullptr
-        && (c->sourceChannelIndex != midiChannelIndex ? isPositiveAndBelow (c->sourceChannelIndex, source->processor->getTotalNumOutputChannels(c->channelType))
+        && (c->sourceChannelIndex != midiChannelIndex ? (c->sourceChannelIndex < source->processor->getTotalNumOutputChannels(c->channelType))
                                                       : source->processor->producesMidi())
-        && (c->destChannelIndex   != midiChannelIndex ? isPositiveAndBelow (c->destChannelIndex, dest->processor->getTotalNumInputChannels(c->channelType))
+        && (c->destChannelIndex   != midiChannelIndex ? (c->destChannelIndex < dest->processor->getTotalNumInputChannels(c->channelType))
                                                       : dest->processor->acceptsMidi());
 }
 
