@@ -1120,37 +1120,55 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
 // -----------------------------------------------------------------------
 // Patchbay Graph stuff
 
-static const uint32_t kAudioInputPortOffset  = MAX_PATCHBAY_PLUGINS*1;
-static const uint32_t kAudioOutputPortOffset = MAX_PATCHBAY_PLUGINS*2;
-static const uint32_t kMidiInputPortOffset   = MAX_PATCHBAY_PLUGINS*3;
-static const uint32_t kMidiOutputPortOffset  = MAX_PATCHBAY_PLUGINS*3+1;
-
-static const uint kMidiChannelIndex = static_cast<uint>(AudioProcessorGraph::midiChannelIndex);
+static const uint32_t kMaxPortsPerPlugin     = 255;
+static const uint32_t kAudioInputPortOffset  = kMaxPortsPerPlugin*1;
+static const uint32_t kAudioOutputPortOffset = kMaxPortsPerPlugin*2;
+static const uint32_t kCVInputPortOffset     = kMaxPortsPerPlugin*3;
+static const uint32_t kCVOutputPortOffset    = kMaxPortsPerPlugin*4;
+static const uint32_t kMidiInputPortOffset   = kMaxPortsPerPlugin*5;
+static const uint32_t kMidiOutputPortOffset  = kMaxPortsPerPlugin*6;
+static const uint32_t kMaxPortOffset         = kMaxPortsPerPlugin*7;
 
 static inline
-bool adjustPatchbayPortIdForWater(uint& portId)
+bool adjustPatchbayPortIdForWater(AudioProcessor::ChannelType& channelType, uint& portId)
 {
     CARLA_SAFE_ASSERT_RETURN(portId >= kAudioInputPortOffset, false);
-    CARLA_SAFE_ASSERT_RETURN(portId <= kMidiOutputPortOffset, false);
+    CARLA_SAFE_ASSERT_RETURN(portId < kMaxPortOffset, false);
 
-    if (portId == kMidiInputPortOffset)
+    if (portId >= kMidiOutputPortOffset)
     {
-        portId = kMidiChannelIndex;
+        portId -= kMidiOutputPortOffset;
+        channelType = AudioProcessor::ChannelTypeMIDI;
         return true;
     }
-    if (portId == kMidiOutputPortOffset)
+    if (portId >= kMidiInputPortOffset)
     {
-        portId = kMidiChannelIndex;
+        portId -= kMidiInputPortOffset;
+        channelType = AudioProcessor::ChannelTypeMIDI;
+        return true;
+    }
+    if (portId >= kCVOutputPortOffset)
+    {
+        portId -= kCVOutputPortOffset;
+        channelType = AudioProcessor::ChannelTypeCV;
+        return true;
+    }
+    if (portId >= kCVInputPortOffset)
+    {
+        portId -= kCVInputPortOffset;
+        channelType = AudioProcessor::ChannelTypeCV;
         return true;
     }
     if (portId >= kAudioOutputPortOffset)
     {
         portId -= kAudioOutputPortOffset;
+        channelType = AudioProcessor::ChannelTypeAudio;
         return true;
     }
     if (portId >= kAudioInputPortOffset)
     {
         portId -= kAudioInputPortOffset;
+        channelType = AudioProcessor::ChannelTypeAudio;
         return true;
     }
 
@@ -1162,27 +1180,45 @@ const String getProcessorFullPortName(AudioProcessor* const proc, const uint32_t
 {
     CARLA_SAFE_ASSERT_RETURN(proc != nullptr, String());
     CARLA_SAFE_ASSERT_RETURN(portId >= kAudioInputPortOffset, String());
-    CARLA_SAFE_ASSERT_RETURN(portId <= kMidiOutputPortOffset, String());
+    CARLA_SAFE_ASSERT_RETURN(portId < kMaxPortOffset, String());
 
     String fullPortName(proc->getName());
 
-    if (portId == kMidiOutputPortOffset)
+    /**/ if (portId >= kMidiOutputPortOffset)
     {
-        fullPortName += ":events-out";
+        CARLA_SAFE_ASSERT_RETURN(proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeMIDI) > 0, String());
+        fullPortName += ":" + proc->getOutputChannelName(AudioProcessor::ChannelTypeMIDI,
+                                                         portId-kMidiOutputPortOffset);
     }
-    else if (portId == kMidiInputPortOffset)
+    else if (portId >= kMidiInputPortOffset)
     {
-        fullPortName += ":events-in";
+        CARLA_SAFE_ASSERT_RETURN(proc->getTotalNumInputChannels(AudioProcessor::ChannelTypeMIDI) > 0, String());
+        fullPortName += ":" + proc->getInputChannelName(AudioProcessor::ChannelTypeMIDI,
+                                                        portId-kMidiInputPortOffset);
+    }
+    else if (portId >= kCVOutputPortOffset)
+    {
+        CARLA_SAFE_ASSERT_RETURN(proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeCV) > 0, String());
+        fullPortName += ":" + proc->getOutputChannelName(AudioProcessor::ChannelTypeCV,
+                                                         portId-kCVOutputPortOffset);
+    }
+    else if (portId >= kCVInputPortOffset)
+    {
+        CARLA_SAFE_ASSERT_RETURN(proc->getTotalNumInputChannels(AudioProcessor::ChannelTypeCV) > 0, String());
+        fullPortName += ":" + proc->getInputChannelName(AudioProcessor::ChannelTypeCV,
+                                                        portId-kCVInputPortOffset);
     }
     else if (portId >= kAudioOutputPortOffset)
     {
-        CARLA_SAFE_ASSERT_RETURN(proc->getTotalNumOutputChannels() > 0, String());
-        fullPortName += ":" + proc->getOutputChannelName(static_cast<int>(portId-kAudioOutputPortOffset));
+        CARLA_SAFE_ASSERT_RETURN(proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeAudio) > 0, String());
+        fullPortName += ":" + proc->getOutputChannelName(AudioProcessor::ChannelTypeAudio,
+                                                         portId-kAudioOutputPortOffset);
     }
     else if (portId >= kAudioInputPortOffset)
     {
-        CARLA_SAFE_ASSERT_RETURN(proc->getTotalNumInputChannels() > 0, String());
-        fullPortName += ":" + proc->getInputChannelName(static_cast<int>(portId-kAudioInputPortOffset));
+        CARLA_SAFE_ASSERT_RETURN(proc->getTotalNumInputChannels(AudioProcessor::ChannelTypeAudio) > 0, String());
+        fullPortName += ":" + proc->getInputChannelName(AudioProcessor::ChannelTypeAudio,
+                                                        portId-kAudioInputPortOffset);
     }
     else
     {
@@ -1207,48 +1243,70 @@ void addNodeToPatchbay(const bool sendHost, const bool sendOSC, CarlaEngine* con
                      0, 0.0f,
                      proc->getName().toRawUTF8());
 
-    for (int i=0, numInputs=proc->getTotalNumInputChannels(); i<numInputs; ++i)
+    for (uint i=0, numInputs=proc->getTotalNumInputChannels(AudioProcessor::ChannelTypeAudio); i<numInputs; ++i)
     {
         engine->callback(sendHost, sendOSC,
                          ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                          groupId,
-                         static_cast<int>(kAudioInputPortOffset)+i,
+                         static_cast<int>(kAudioInputPortOffset+i),
                          PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT,
                          0, 0.0f,
-                         proc->getInputChannelName(i).toRawUTF8());
+                         proc->getInputChannelName(AudioProcessor::ChannelTypeAudio, i).toRawUTF8());
     }
 
-    for (int i=0, numOutputs=proc->getTotalNumOutputChannels(); i<numOutputs; ++i)
+    for (uint i=0, numOutputs=proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeAudio); i<numOutputs; ++i)
     {
         engine->callback(sendHost, sendOSC,
                          ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                          groupId,
-                         static_cast<int>(kAudioOutputPortOffset)+i,
+                         static_cast<int>(kAudioOutputPortOffset+i),
                          PATCHBAY_PORT_TYPE_AUDIO,
                          0, 0.0f,
-                         proc->getOutputChannelName(i).toRawUTF8());
+                         proc->getOutputChannelName(AudioProcessor::ChannelTypeAudio, i).toRawUTF8());
     }
 
-    if (proc->acceptsMidi())
+    for (uint i=0, numInputs=proc->getTotalNumInputChannels(AudioProcessor::ChannelTypeCV); i<numInputs; ++i)
     {
         engine->callback(sendHost, sendOSC,
                          ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                          groupId,
-                         static_cast<int>(kMidiInputPortOffset),
+                         static_cast<int>(kCVInputPortOffset+i),
+                         PATCHBAY_PORT_TYPE_CV|PATCHBAY_PORT_IS_INPUT,
+                         0, 0.0f,
+                         proc->getInputChannelName(AudioProcessor::ChannelTypeCV, i).toRawUTF8());
+    }
+
+    for (uint i=0, numOutputs=proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeCV); i<numOutputs; ++i)
+    {
+        engine->callback(sendHost, sendOSC,
+                         ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
+                         groupId,
+                         static_cast<int>(kCVOutputPortOffset+i),
+                         PATCHBAY_PORT_TYPE_CV,
+                         0, 0.0f,
+                         proc->getOutputChannelName(AudioProcessor::ChannelTypeCV, i).toRawUTF8());
+    }
+
+    for (uint i=0, numInputs=proc->getTotalNumInputChannels(AudioProcessor::ChannelTypeMIDI); i<numInputs; ++i)
+    {
+        engine->callback(sendHost, sendOSC,
+                         ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
+                         groupId,
+                         static_cast<int>(kMidiInputPortOffset+i),
                          PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT,
                          0, 0.0f,
-                         "events-in");
+                         proc->getInputChannelName(AudioProcessor::ChannelTypeMIDI, i).toRawUTF8());
     }
 
-    if (proc->producesMidi())
+    for (uint i=0, numOutputs=proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeMIDI); i<numOutputs; ++i)
     {
         engine->callback(sendHost, sendOSC,
                          ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                          groupId,
-                         static_cast<int>(kMidiOutputPortOffset),
+                         static_cast<int>(kMidiOutputPortOffset+i),
                          PATCHBAY_PORT_TYPE_MIDI,
                          0, 0.0f,
-                         "events-out");
+                         proc->getOutputChannelName(AudioProcessor::ChannelTypeMIDI, i).toRawUTF8());
     }
 }
 
@@ -1259,40 +1317,59 @@ void removeNodeFromPatchbay(const bool sendHost, const bool sendOSC, CarlaEngine
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(proc != nullptr,);
 
-    for (int i=0, numInputs=proc->getTotalNumInputChannels(); i<numInputs; ++i)
+    for (uint i=0, numInputs=proc->getTotalNumInputChannels(AudioProcessor::ChannelTypeAudio); i<numInputs; ++i)
     {
         engine->callback(sendHost, sendOSC,
                          ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
                          groupId,
-                         static_cast<int>(kAudioInputPortOffset)+i,
+                         static_cast<int>(kAudioInputPortOffset+i),
                          0, 0, 0.0f, nullptr);
     }
 
-    for (int i=0, numOutputs=proc->getTotalNumOutputChannels(); i<numOutputs; ++i)
+    for (uint i=0, numOutputs=proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeAudio); i<numOutputs; ++i)
     {
         engine->callback(sendHost, sendOSC,
                          ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
                          groupId,
-                         static_cast<int>(kAudioOutputPortOffset)+i,
+                         static_cast<int>(kAudioOutputPortOffset+i),
                          0, 0, 0.0f,
                          nullptr);
     }
 
-    if (proc->acceptsMidi())
+    for (uint i=0, numInputs=proc->getTotalNumInputChannels(AudioProcessor::ChannelTypeCV); i<numInputs; ++i)
     {
         engine->callback(sendHost, sendOSC,
                          ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
                          groupId,
-                         static_cast<int>(kMidiInputPortOffset),
+                         static_cast<int>(kCVInputPortOffset+i),
                          0, 0, 0.0f, nullptr);
     }
 
-    if (proc->producesMidi())
+    for (uint i=0, numOutputs=proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeCV); i<numOutputs; ++i)
     {
         engine->callback(sendHost, sendOSC,
                          ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
                          groupId,
-                         static_cast<int>(kMidiOutputPortOffset),
+                         static_cast<int>(kCVOutputPortOffset+i),
+                         0, 0, 0.0f,
+                         nullptr);
+    }
+
+    for (uint i=0, numInputs=proc->getTotalNumInputChannels(AudioProcessor::ChannelTypeMIDI); i<numInputs; ++i)
+    {
+        engine->callback(sendHost, sendOSC,
+                         ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
+                         groupId,
+                         static_cast<int>(kMidiInputPortOffset+i),
+                         0, 0, 0.0f, nullptr);
+    }
+
+    for (uint i=0, numOutputs=proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeMIDI); i<numOutputs; ++i)
+    {
+        engine->callback(sendHost, sendOSC,
+                         ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
+                         groupId,
+                         static_cast<int>(kMidiOutputPortOffset+i),
                          0, 0, 0.0f, nullptr);
     }
 
@@ -1311,8 +1388,12 @@ public:
         : kEngine(engine),
           fPlugin(plugin)
     {
-        setPlayConfigDetails(static_cast<int>(fPlugin->getAudioInCount()),
-                             static_cast<int>(fPlugin->getAudioOutCount()),
+        setPlayConfigDetails(fPlugin->getAudioInCount(),
+                             fPlugin->getAudioOutCount(),
+                             fPlugin->getCVInCount(),
+                             fPlugin->getCVOutCount(),
+                             jmax(fPlugin->getMidiInCount(), acceptsMidi() ? 1U : 0U),
+                             jmax(fPlugin->getMidiOutCount(), producesMidi() ? 1U : 0U),
                              getSampleRate(), getBlockSize());
     }
 
@@ -1332,11 +1413,20 @@ public:
         return fPlugin->getName();
     }
 
-    void processBlock(AudioSampleBuffer& audio, MidiBuffer& midi) override
+    void processBlock(AudioSampleBuffer&, MidiBuffer&) override
+    {
+        carla_stderr2("CarlaPluginInstance::processBlock called, this is wrong!");
+    }
+
+    void processBlockWithCV(AudioSampleBuffer& audio,
+                            const AudioSampleBuffer& cvIn,
+                            AudioSampleBuffer& cvOut,
+                            MidiBuffer& midi) override
     {
         if (fPlugin == nullptr || ! fPlugin->isEnabled() || ! fPlugin->tryLock(kEngine->isOffline()))
         {
             audio.clear();
+            cvOut.clear();
             midi.clear();
             return;
         }
@@ -1354,38 +1444,64 @@ public:
 
         fPlugin->initBuffers();
 
-        // TODO - CV support
+        const uint32_t numSamples   = audio.getNumSamples();
+        const uint32_t numAudioChan = audio.getNumChannels();
+        const uint32_t numCVInChan  = cvIn.getNumChannels();
+        const uint32_t numCVOutChan = cvOut.getNumChannels();
 
-        const uint32_t numSamples(static_cast<uint32_t>(audio.getNumSamples()));
-
-        if (const uint32_t numChan = audio.getNumChannels())
+        if (numAudioChan+numCVInChan+numCVOutChan == 0)
         {
-            const uint32_t numChanu = jmin(numChan, 2U);
+            // nothing to process
+            fPlugin->process(nullptr, nullptr, nullptr, nullptr, numSamples);
+        }
+        else if (numAudioChan != 0)
+        {
+            // processing audio, include code for peaks
+            const uint32_t numChan2 = jmin(numAudioChan, 2U);
 
             if (fPlugin->getAudioInCount() == 0)
                 audio.clear();
 
-            float* audioBuffers[numChan];
+            float* audioBuffers[numAudioChan];
+            float* cvOutBuffers[numCVOutChan];
+            const float* cvInBuffers[numCVInChan];
 
-            for (uint32_t i=0; i<numChan; ++i)
+            for (uint32_t i=0; i<numAudioChan; ++i)
                 audioBuffers[i] = audio.getWritePointer(i);
+            for (uint32_t i=0; i<numCVOutChan; ++i)
+                cvOutBuffers[i] = cvOut.getWritePointer(i);
+            for (uint32_t i=0; i<numCVInChan; ++i)
+                cvInBuffers[i] = cvIn.getReadPointer(i);
 
             float inPeaks[2] = { 0.0f };
             float outPeaks[2] = { 0.0f };
 
-            for (uint32_t i=0, count=jmin(fPlugin->getAudioInCount(), numChanu); i<count; ++i)
+            for (uint32_t i=0, count=jmin(fPlugin->getAudioInCount(), numChan2); i<count; ++i)
                 inPeaks[i] = carla_findMaxNormalizedFloat(audioBuffers[i], numSamples);
 
-            fPlugin->process(const_cast<const float**>(audioBuffers), audioBuffers, nullptr, nullptr, numSamples);
+            fPlugin->process(const_cast<const float**>(audioBuffers), audioBuffers,
+                             cvInBuffers, cvOutBuffers,
+                             numSamples);
 
-            for (uint32_t i=0, count=jmin(fPlugin->getAudioOutCount(), numChanu); i<count; ++i)
+            for (uint32_t i=0, count=jmin(fPlugin->getAudioOutCount(), numChan2); i<count; ++i)
                 outPeaks[i] = carla_findMaxNormalizedFloat(audioBuffers[i], numSamples);
 
             kEngine->setPluginPeaksRT(fPlugin->getId(), inPeaks, outPeaks);
         }
         else
         {
-            fPlugin->process(nullptr, nullptr, nullptr, nullptr, numSamples);
+            // processing CV only, skip audiopeaks
+            float* cvOutBuffers[numCVOutChan];
+            const float* cvInBuffers[numCVInChan];
+
+            for (uint32_t i=0; i<numCVOutChan; ++i)
+                cvOutBuffers[i] = cvOut.getWritePointer(i);
+            for (uint32_t i=0; i<numCVInChan; ++i)
+                cvInBuffers[i] = cvIn.getReadPointer(i);
+
+            fPlugin->process(nullptr, nullptr,
+                             cvInBuffers, cvOutBuffers,
+                             numSamples);
         }
 
         midi.clear();
@@ -1402,24 +1518,44 @@ public:
         fPlugin->unlock();
     }
 
-    const String getInputChannelName(int i)  const override
+    const String getInputChannelName(ChannelType t, uint i) const override
     {
-        CARLA_SAFE_ASSERT_RETURN(i >= 0, String());
         CarlaEngineClient* const client(fPlugin->getEngineClient());
-        return client->getAudioPortName(true, static_cast<uint>(i));
+
+        switch (t)
+        {
+        case ChannelTypeAudio:
+            return client->getAudioPortName(true, i);
+        case ChannelTypeCV:
+            return client->getCVPortName(true, i);
+        case ChannelTypeMIDI:
+            return client->getEventPortName(true, i);
+        }
+
+        return String();
     }
 
-    const String getOutputChannelName(int i) const override
+    const String getOutputChannelName(ChannelType t, uint i) const override
     {
-        CARLA_SAFE_ASSERT_RETURN(i >= 0, String());
         CarlaEngineClient* const client(fPlugin->getEngineClient());
-        return client->getAudioPortName(false, static_cast<uint>(i));
+
+        switch (t)
+        {
+        case ChannelTypeAudio:
+            return client->getAudioPortName(false, i);
+        case ChannelTypeCV:
+            return client->getCVPortName(false, i);
+        case ChannelTypeMIDI:
+            return client->getEventPortName(false, i);
+        }
+
+        return String();
     }
 
     void prepareToPlay(double, int) override {}
     void releaseResources() override {}
 
-    bool acceptsMidi()  const override { return fPlugin->getDefaultEventInPort()  != nullptr; }
+    bool acceptsMidi()  const override { return fPlugin->getDefaultEventInPort() != nullptr; }
     bool producesMidi() const override { return fPlugin->getDefaultEventOutPort() != nullptr; }
 
 private:
@@ -1440,15 +1576,17 @@ public:
           inputNames(),
           outputNames() {}
 
-    const String getInputChannelName (int index) const override
+    const String getInputChannelName (ChannelType, uint _index) const override
     {
+        const int index = static_cast<int>(_index); // FIXME
         if (index < inputNames.size())
             return inputNames[index];
         return String("Playback ") + String(index+1);
     }
 
-    const String getOutputChannelName (int index) const override
+    const String getOutputChannelName (ChannelType, uint _index) const override
     {
+        const int index = static_cast<int>(_index); // FIXME
         if (index < outputNames.size())
             return outputNames[index];
         return String("Capture ") + String(index+1);
@@ -1484,7 +1622,7 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
     const uint32_t bufferSize(engine->getBufferSize());
     const double   sampleRate(engine->getSampleRate());
 
-    graph.setPlayConfigDetails(static_cast<int>(inputs), static_cast<int>(outputs), sampleRate, static_cast<int>(bufferSize));
+    graph.setPlayConfigDetails(inputs, outputs, 0, 0, 1, 1, sampleRate, static_cast<int>(bufferSize));
     graph.prepareToPlay(sampleRate, static_cast<int>(bufferSize));
 
     audioBuffer.setSize(jmax(inputs, outputs), bufferSize);
@@ -1731,12 +1869,13 @@ bool PatchbayGraph::connect(const bool external,
     uint adjustedPortA = portA;
     uint adjustedPortB = portB;
 
-    if (! adjustPatchbayPortIdForWater(adjustedPortA))
+    AudioProcessor::ChannelType channelType;
+    if (! adjustPatchbayPortIdForWater(channelType, adjustedPortA))
         return false;
-    if (! adjustPatchbayPortIdForWater(adjustedPortB))
+    if (! adjustPatchbayPortIdForWater(channelType, adjustedPortB))
         return false;
 
-    if (! graph.addConnection(groupA, static_cast<int>(adjustedPortA), groupB, static_cast<int>(adjustedPortB)))
+    if (! graph.addConnection(channelType, groupA, adjustedPortA, groupB, adjustedPortB))
     {
         kEngine->setLastError("Failed from water");
         return false;
@@ -1777,13 +1916,15 @@ bool PatchbayGraph::disconnect(const bool external, const uint connectionId)
         uint adjustedPortA = connectionToId.portA;
         uint adjustedPortB = connectionToId.portB;
 
-        if (! adjustPatchbayPortIdForWater(adjustedPortA))
+        AudioProcessor::ChannelType channelType;
+        if (! adjustPatchbayPortIdForWater(channelType, adjustedPortA))
             return false;
-        if (! adjustPatchbayPortIdForWater(adjustedPortB))
+        if (! adjustPatchbayPortIdForWater(channelType, adjustedPortB))
             return false;
 
-        if (! graph.removeConnection(connectionToId.groupA, static_cast<int>(adjustedPortA),
-                                     connectionToId.groupB, static_cast<int>(adjustedPortB)))
+        if (! graph.removeConnection(channelType,
+                                     connectionToId.groupA, adjustedPortA,
+                                     connectionToId.groupB, adjustedPortB))
             return false;
 
         kEngine->callback(!usingExternalHost, !usingExternalOSC,
@@ -1816,6 +1957,7 @@ void PatchbayGraph::disconnectInternalGroup(const uint groupId) noexcept
         uint adjustedPortA = connectionToId.portA;
         uint adjustedPortB = connectionToId.portB;
 
+        AudioProcessor::ChannelType channelType;
         if (! adjustPatchbayPortIdForWater(adjustedPortA))
             return false;
         if (! adjustPatchbayPortIdForWater(adjustedPortB))
@@ -1869,24 +2011,28 @@ void PatchbayGraph::refresh(const bool sendHost, const bool sendOSC, const bool 
     {
         const AudioProcessorGraph::Connection* const conn(graph.getConnection(i));
         CARLA_SAFE_ASSERT_CONTINUE(conn != nullptr);
-        CARLA_SAFE_ASSERT_CONTINUE(conn->sourceChannelIndex >= 0);
-        CARLA_SAFE_ASSERT_CONTINUE(conn->destChannelIndex >= 0);
 
         const uint groupA = conn->sourceNodeId;
         const uint groupB = conn->destNodeId;
 
-        uint portA = static_cast<uint>(conn->sourceChannelIndex);
-        uint portB = static_cast<uint>(conn->destChannelIndex);
+        uint portA = conn->sourceChannelIndex;
+        uint portB = conn->destChannelIndex;
 
-        if (portA == kMidiChannelIndex)
-            portA  = kMidiOutputPortOffset;
-        else
+        switch (conn->channelType)
+        {
+        case AudioProcessor::ChannelTypeAudio:
             portA += kAudioOutputPortOffset;
-
-        if (portB == kMidiChannelIndex)
-            portB  = kMidiInputPortOffset;
-        else
             portB += kAudioInputPortOffset;
+            break;
+        case AudioProcessor::ChannelTypeCV:
+            portA += kCVOutputPortOffset;
+            portB += kCVInputPortOffset;
+            break;
+        case AudioProcessor::ChannelTypeMIDI:
+            portA += kMidiOutputPortOffset;
+            portB += kMidiInputPortOffset;
+            break;
+        }
 
         ConnectionToId connectionToId;
         connectionToId.setData(++connections.lastId, groupA, portA, groupB, portB);
@@ -1971,33 +2117,57 @@ bool PatchbayGraph::getGroupAndPortIdFromFullName(const bool external, const cha
 
         groupId = node->nodeId;
 
-        if (portName == "events-in")
+        for (uint j=0, numInputs=proc->getTotalNumInputChannels(AudioProcessor::ChannelTypeAudio); j<numInputs; ++j)
         {
-            portId = kMidiInputPortOffset;
-            return true;
-        }
-
-        if (portName == "events-out")
-        {
-            portId = kMidiOutputPortOffset;
-            return true;
-        }
-
-        for (int j=0, numInputs=proc->getTotalNumInputChannels(); j<numInputs; ++j)
-        {
-            if (proc->getInputChannelName(j) != portName)
+            if (proc->getInputChannelName(AudioProcessor::ChannelTypeAudio, j) != portName)
                 continue;
 
-            portId = kAudioInputPortOffset+static_cast<uint>(j);
+            portId = kAudioInputPortOffset+j;
             return true;
         }
 
-        for (int j=0, numOutputs=proc->getTotalNumOutputChannels(); j<numOutputs; ++j)
+        for (uint j=0, numOutputs=proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeAudio); j<numOutputs; ++j)
         {
-            if (proc->getOutputChannelName(j) != portName)
+            if (proc->getOutputChannelName(AudioProcessor::ChannelTypeAudio, j) != portName)
                 continue;
 
-            portId = kAudioOutputPortOffset+static_cast<uint>(j);
+            portId = kAudioOutputPortOffset+j;
+            return true;
+        }
+
+        for (uint j=0, numInputs=proc->getTotalNumInputChannels(AudioProcessor::ChannelTypeCV); j<numInputs; ++j)
+        {
+            if (proc->getInputChannelName(AudioProcessor::ChannelTypeCV, j) != portName)
+                continue;
+
+            portId = kCVInputPortOffset+j;
+            return true;
+        }
+
+        for (uint j=0, numOutputs=proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeCV); j<numOutputs; ++j)
+        {
+            if (proc->getOutputChannelName(AudioProcessor::ChannelTypeCV, j) != portName)
+                continue;
+
+            portId = kCVOutputPortOffset+j;
+            return true;
+        }
+
+        for (uint j=0, numInputs=proc->getTotalNumInputChannels(AudioProcessor::ChannelTypeMIDI); j<numInputs; ++j)
+        {
+            if (proc->getInputChannelName(AudioProcessor::ChannelTypeMIDI, j) != portName)
+                continue;
+
+            portId = kMidiInputPortOffset+j;
+            return true;
+        }
+
+        for (uint j=0, numOutputs=proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeMIDI); j<numOutputs; ++j)
+        {
+            if (proc->getOutputChannelName(AudioProcessor::ChannelTypeMIDI, j) != portName)
+                continue;
+
+            portId = kMidiOutputPortOffset+j;
             return true;
         }
     }

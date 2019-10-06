@@ -109,10 +109,14 @@ public:
     {
     public:
         //==============================================================================
-        Connection (uint32 sourceNodeId, int sourceChannelIndex,
-                    uint32 destNodeId, int destChannelIndex) noexcept;
+        Connection (ChannelType channelType,
+                    uint32 sourceNodeId, uint sourceChannelIndex,
+                    uint32 destNodeId, uint destChannelIndex) noexcept;
 
         //==============================================================================
+        /** Defines the connection type. */
+        ChannelType channelType;
+
         /** The ID number of the node which is the input source for this connection.
             @see AudioProcessorGraph::getNodeForId
         */
@@ -125,7 +129,7 @@ public:
             it is referring to the source node's midi output. Otherwise, it is the zero-based
             index of an audio output channel in the source node.
         */
-        int sourceChannelIndex;
+        uint sourceChannelIndex;
 
         /** The ID number of the node which is the destination for this connection.
             @see AudioProcessorGraph::getNodeForId
@@ -139,7 +143,7 @@ public:
             it is referring to the destination node's midi input. Otherwise, it is the zero-based
             index of an audio input channel in the destination node.
         */
-        int destChannelIndex;
+        uint destChannelIndex;
     };
 
     //==============================================================================
@@ -198,10 +202,11 @@ public:
     /** Searches for a connection between some specified channels.
         If no such connection is found, this returns nullptr.
     */
-    const Connection* getConnectionBetween (uint32 sourceNodeId,
-                                            int sourceChannelIndex,
+    const Connection* getConnectionBetween (ChannelType channelType,
+                                            uint32 sourceNodeId,
+                                            uint sourceChannelIndex,
                                             uint32 destNodeId,
-                                            int destChannelIndex) const;
+                                            uint destChannelIndex) const;
 
     /** Returns true if there is a connection between any of the channels of
         two specified nodes.
@@ -210,16 +215,18 @@ public:
                       uint32 possibleDestNodeId) const;
 
     /** Returns true if it would be legal to connect the specified points. */
-    bool canConnect (uint32 sourceNodeId, int sourceChannelIndex,
-                     uint32 destNodeId, int destChannelIndex) const;
+    bool canConnect (ChannelType channelType,
+                     uint32 sourceNodeId, uint sourceChannelIndex,
+                     uint32 destNodeId, uint destChannelIndex) const;
 
     /** Attempts to connect two specified channels of two nodes.
 
         If this isn't allowed (e.g. because you're trying to connect a midi channel
         to an audio one or other such nonsense), then it'll return false.
     */
-    bool addConnection (uint32 sourceNodeId, int sourceChannelIndex,
-                        uint32 destNodeId, int destChannelIndex);
+    bool addConnection (ChannelType channelType,
+                        uint32 sourceNodeId, uint sourceChannelIndex,
+                        uint32 destNodeId, uint destChannelIndex);
 
     /** Deletes the connection with the specified index. */
     void removeConnection (int index);
@@ -227,8 +234,9 @@ public:
     /** Deletes any connection between two specified points.
         Returns true if a connection was actually deleted.
     */
-    bool removeConnection (uint32 sourceNodeId, int sourceChannelIndex,
-                           uint32 destNodeId, int destChannelIndex);
+    bool removeConnection (ChannelType channelType,
+                           uint32 sourceNodeId, uint sourceChannelIndex,
+                           uint32 destNodeId, uint destChannelIndex);
 
     /** Removes all connections from the specified node. */
     bool disconnectNode (uint32 nodeId);
@@ -253,7 +261,7 @@ public:
         This is used as a channel index value if you want to refer to the midi input
         or output instead of an audio channel.
     */
-    static const int midiChannelIndex;
+    static const uint midiChannelIndex;
 
 
     //==============================================================================
@@ -286,9 +294,10 @@ public:
             midiInputNode,      /**< In this mode, the processor has a midi output which
                                      delivers the same midi data that is arriving at its
                                      parent graph. */
-            midiOutputNode      /**< In this mode, the processor has a midi input and
+            midiOutputNode,     /**< In this mode, the processor has a midi input and
                                      any data sent to it will be passed out of the parent
                                      graph. */
+            cvInputNode, cvOutputNode,
         };
 
         //==============================================================================
@@ -337,6 +346,10 @@ public:
     void prepareToPlay (double, int) override;
     void releaseResources() override;
     void processBlock (AudioSampleBuffer&,  MidiBuffer&) override;
+    void processBlockWithCV (AudioSampleBuffer& buffer,
+                             const AudioSampleBuffer& cvInBuffer,
+                             AudioSampleBuffer& cvOutBuffer,
+                             MidiBuffer& midiMessages) override;
 
     void reset() override;
     void setNonRealtime (bool) noexcept override;

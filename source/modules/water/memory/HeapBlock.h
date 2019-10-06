@@ -121,6 +121,12 @@ public:
     */
     inline ElementType* getData() const noexcept                            { return data; }
 
+    /** Returns a raw pointer to the allocated data.
+        This may be a null pointer if the data hasn't yet been allocated, or if it has been
+        freed by calling the free() method.
+    */
+    inline const ElementType* getConstData() const noexcept                 { return data; }
+
     /** Returns a void pointer to the allocated data.
         This may be a null pointer if the data hasn't yet been allocated, or if it has been
         freed by calling the free() method.

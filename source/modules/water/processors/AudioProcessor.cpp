@@ -24,8 +24,12 @@ namespace water {
 
 AudioProcessor::AudioProcessor()
 {
-    cachedTotalIns  = 0;
-    cachedTotalOuts = 0;
+    numAudioIns = 0;
+    numAudioOuts = 0;
+    numCVIns = 0;
+    numCVOuts = 0;
+    numMIDIIns = 0;
+    numMIDIOuts = 0;
 
     currentSampleRate = 0;
     blockSize = 0;
@@ -40,13 +44,21 @@ AudioProcessor::~AudioProcessor()
 }
 
 //==============================================================================
-void AudioProcessor::setPlayConfigDetails (const int newNumIns,
-                                           const int newNumOuts,
+void AudioProcessor::setPlayConfigDetails (const uint newNumIns,
+                                           const uint newNumOuts,
+                                           const uint newNumCVIns,
+                                           const uint newNumCVOuts,
+                                           const uint newNumMIDIIns,
+                                           const uint newNumMIDIOuts,
                                            const double newSampleRate,
                                            const int newBlockSize)
 {
-    cachedTotalIns = newNumIns;
-    cachedTotalOuts = newNumOuts;
+    numAudioIns = newNumIns;
+    numAudioOuts = newNumOuts;
+    numCVIns = newNumCVIns;
+    numCVOuts = newNumCVOuts;
+    numMIDIIns = newNumMIDIIns;
+    numMIDIOuts = newNumMIDIOuts;
     setRateAndBufferSizeDetails (newSampleRate, newBlockSize);
 }
 
@@ -78,8 +90,55 @@ void AudioProcessor::reset() {}
 
 void AudioProcessor::processBlockBypassed (AudioSampleBuffer& buffer, MidiBuffer&)
 {
-    for (int ch = getTotalNumInputChannels(); ch < getTotalNumOutputChannels(); ++ch)
+    for (uint ch = getTotalNumInputChannels(ChannelTypeAudio); ch < getTotalNumOutputChannels(ChannelTypeAudio); ++ch)
         buffer.clear (ch, 0, buffer.getNumSamples());
+}
+
+void AudioProcessor::processBlockWithCV (AudioSampleBuffer& audioBuffer,
+                                         const AudioSampleBuffer&, AudioSampleBuffer&,
+                                         MidiBuffer& midiMessages)
+{
+    processBlock (audioBuffer, midiMessages);
+}
+
+uint AudioProcessor::getTotalNumInputChannels(ChannelType t) const noexcept
+{
+    switch (t)
+    {
+    case ChannelTypeAudio:
+        return numAudioIns;
+    case ChannelTypeCV:
+        return numCVIns;
+    case ChannelTypeMIDI:
+        return numMIDIIns;
+    }
+
+    return 0;
+}
+
+uint AudioProcessor::getTotalNumOutputChannels(ChannelType t) const noexcept
+{
+    switch (t)
+    {
+    case ChannelTypeAudio:
+        return numAudioOuts;
+    case ChannelTypeCV:
+        return numCVOuts;
+    case ChannelTypeMIDI:
+        return numMIDIOuts;
+    }
+
+    return 0;
+}
+
+const String AudioProcessor::getInputChannelName(ChannelType t, uint) const
+{
+    return t == ChannelTypeMIDI ? "events-in" : "";
+}
+
+const String AudioProcessor::getOutputChannelName(ChannelType t, uint) const
+{
+    return t == ChannelTypeMIDI ? "events-out" : "";
 }
 
 }

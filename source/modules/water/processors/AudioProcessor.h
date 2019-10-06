@@ -55,6 +55,12 @@ protected:
     AudioProcessor();
 
 public:
+    enum ChannelType {
+        ChannelTypeAudio,
+        ChannelTypeCV,
+        ChannelTypeMIDI,
+    };
+
     //==============================================================================
     /** Destructor. */
     virtual ~AudioProcessor();
@@ -152,6 +158,11 @@ public:
     virtual void processBlock (AudioSampleBuffer& buffer,
                                MidiBuffer& midiMessages) = 0;
 
+    virtual void processBlockWithCV (AudioSampleBuffer& audioBuffer,
+                                     const AudioSampleBuffer& cvInBuffer,
+                                     AudioSampleBuffer& cvOutBuffer,
+                                     MidiBuffer& midiMessages);
+
     /** Renders the next block when the processor is being bypassed.
 
         The default implementation of this method will pass-through any incoming audio, but
@@ -165,33 +176,11 @@ public:
                                        MidiBuffer& midiMessages);
 
     //==============================================================================
-    /** Returns the total number of input channels.
+    /** Returns the total number of input channels. */
+    uint getTotalNumInputChannels(ChannelType t) const noexcept;
 
-        This method will return the total number of input channels by accumulating
-        the number of channels on each input bus. The number of channels of the
-        buffer passed to your processBlock callback will be equivalent to either
-        getTotalNumInputChannels or getTotalNumOutputChannels - which ever
-        is greater.
-
-        Note that getTotalNumInputChannels is equivalent to
-        getMainBusNumInputChannels if your processor does not have any sidechains
-        or aux buses.
-     */
-    int getTotalNumInputChannels()  const noexcept              { return cachedTotalIns; }
-
-    /** Returns the total number of output channels.
-
-        This method will return the total number of output channels by accumulating
-        the number of channels on each output bus. The number of channels of the
-        buffer passed to your processBlock callback will be equivalent to either
-        getTotalNumInputChannels or getTotalNumOutputChannels - which ever
-        is greater.
-
-        Note that getTotalNumOutputChannels is equivalent to
-        getMainBusNumOutputChannels if your processor does not have any sidechains
-        or aux buses.
-     */
-    int getTotalNumOutputChannels() const noexcept              { return cachedTotalOuts; }
+    /** Returns the total number of output channels. */
+    uint getTotalNumOutputChannels(ChannelType t) const noexcept;
 
     //==============================================================================
     /** Returns the current sample rate.
@@ -238,11 +227,8 @@ public:
     /** Returns true if the processor supports MPE. */
     virtual bool supportsMPE() const                            { return false; }
 
-    /** Returns true if this is a midi effect plug-in and does no audio processing. */
-    virtual bool isMidiEffect() const                           { return false; }
-
-    virtual const String getInputChannelName  (int) const { return String(); }
-    virtual const String getOutputChannelName (int) const { return String(); }
+    virtual const String getInputChannelName  (ChannelType, uint) const;
+    virtual const String getOutputChannelName (ChannelType, uint) const;
 
     //==============================================================================
     /** This returns a critical section that will automatically be locked while the host
@@ -322,7 +308,10 @@ public:
     /** This is called by the processor to specify its details before being played. Use this
         version of the function if you are not interested in any sidechain and/or aux buses
         and do not care about the layout of channels. Otherwise use setRateAndBufferSizeDetails.*/
-    void setPlayConfigDetails (int numIns, int numOuts, double sampleRate, int blockSize);
+    void setPlayConfigDetails (uint numAudioIns, uint numAudioOuts,
+                               uint numCVIns, uint numCVOuts,
+                               uint numMIDIIns, uint numMIDIOuts,
+                               double sampleRate, int blockSize);
 
     /** This is called by the processor to specify its details before being played. You
         should call this function after having informed the processor about the channel
@@ -339,10 +328,9 @@ private:
     bool suspended, nonRealtime;
     CarlaRecursiveMutex callbackLock;
 
-    String cachedInputSpeakerArrString;
-    String cachedOutputSpeakerArrString;
-
-    int cachedTotalIns, cachedTotalOuts;
+    uint numAudioIns, numAudioOuts;
+    uint numCVIns, numCVOuts;
+    uint numMIDIIns, numMIDIOuts;
 
     CARLA_DECLARE_NON_COPY_CLASS (AudioProcessor)
 };
