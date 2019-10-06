@@ -64,7 +64,7 @@ os.environ['MOD_DEVICE_WEBSERVER_PORT'] = PORT
 # ------------------------------------------------------------------------------------------------------------
 # Imports (MOD)
 
-from mod.utils import get_plugin_info, get_plugin_gui, get_plugin_gui_mini, init as lv2_init
+from modtools.utils import get_plugin_info, get_plugin_gui, get_plugin_gui_mini
 
 # ------------------------------------------------------------------------------------------------------------
 # MOD related classes

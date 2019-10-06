@@ -36,7 +36,7 @@ from .webserver import WebServerThread, PORT
 # ------------------------------------------------------------------------------------------------------------
 # Imports (MOD)
 
-from mod.utils import get_plugin_info, init as lv2_init
+from modtools.utils import get_plugin_info, init as lv2_init
 
 # ------------------------------------------------------------------------------------------------------------
 # Host Window
@@ -316,6 +316,7 @@ class HostWindow(QMainWindow):
 
         elif msg == "uiOptions":
             sampleRate     = float(self.readlineblock())
+            uiScale        = float(self.readlineblock())
             useTheme       = bool(self.readlineblock() == "true")
             useThemeColors = bool(self.readlineblock() == "true")
             windowTitle    = self.readlineblock()
