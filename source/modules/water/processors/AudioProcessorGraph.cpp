@@ -226,10 +226,10 @@ private:
 struct ProcessBufferOp   : public AudioGraphRenderingOp<ProcessBufferOp>
 {
     ProcessBufferOp (const AudioProcessorGraph::Node::Ptr& n,
-                     const Array<int>& audioChannelsUsed,
+                     const Array<uint>& audioChannelsUsed,
                      const uint totalNumChans,
-                     const Array<int>& cvInChannelsUsed,
-                     const Array<int>& cvOutChannelsUsed,
+                     const Array<uint>& cvInChannelsUsed,
+                     const Array<uint>& cvOutChannelsUsed,
                      const int midiBuffer)
         : node (n),
           processor (n->getProcessor()),
@@ -296,9 +296,9 @@ struct ProcessBufferOp   : public AudioGraphRenderingOp<ProcessBufferOp>
     AudioProcessor* const processor;
 
 private:
-    Array<int> audioChannelsToUse;
-    Array<int> cvInChannelsToUse;
-    Array<int> cvOutChannelsToUse;
+    Array<uint> audioChannelsToUse;
+    Array<uint> cvInChannelsToUse;
+    Array<uint> cvOutChannelsToUse;
     HeapBlock<float*> audioChannels;
     HeapBlock<float*> cvInChannels;
     HeapBlock<float*> cvOutChannels;
@@ -349,7 +349,7 @@ private:
     //==============================================================================
     AudioProcessorGraph& graph;
     const Array<AudioProcessorGraph::Node*>& orderedNodes;
-    Array<int> audioChannels, cvChannels;
+    Array<uint> audioChannels, cvChannels;
     Array<uint32> audioNodeIds, cvNodeIds, midiNodeIds;
 
     enum { freeNodeID = 0xffffffff, zeroNodeID = 0xfffffffe };
@@ -404,7 +404,7 @@ private:
         const uint numCVOuts = processor.getTotalNumOutputChannels(AudioProcessor::ChannelTypeCV);
         const uint totalAudioChans = jmax (numAudioIns, numAudioOuts);
 
-        Array<int> audioChannelsToUse, cvInChannelsToUse, cvOutChannelsToUse;
+        Array<uint> audioChannelsToUse, cvInChannelsToUse, cvOutChannelsToUse;
         int midiBufferToUse = -1;
 
         int maxLatency = getInputLatencyForNode (node.nodeId);
@@ -413,7 +413,7 @@ private:
         {
             // get a list of all the inputs to this node
             Array<uint32> sourceNodes;
-            Array<int> sourceOutputChans;
+            Array<uint> sourceOutputChans;
 
             for (int i = graph.getNumConnections(); --i >= 0;)
             {
@@ -449,7 +449,7 @@ private:
             {
                 // channel with a straightforward single input..
                 const uint32 srcNode = sourceNodes.getUnchecked(0);
-                const int srcChan = sourceOutputChans.getUnchecked(0);
+                const uint srcChan = sourceOutputChans.getUnchecked(0);
 
                 bufIndex = getBufferContaining (AudioProcessor::ChannelTypeAudio, srcNode, srcChan);
 
@@ -580,7 +580,7 @@ private:
         for (uint outputChan = numAudioIns; outputChan < numAudioOuts; ++outputChan)
         {
             const int bufIndex = getFreeBuffer (AudioProcessor::ChannelTypeAudio);
-            CARLA_SAFE_ASSERT_CONTINUE (bufIndex != 0);
+            CARLA_SAFE_ASSERT_CONTINUE (bufIndex > 0);
             audioChannelsToUse.add (bufIndex);
 
             markBufferAsContaining (AudioProcessor::ChannelTypeAudio, bufIndex, node.nodeId, outputChan);
@@ -590,7 +590,7 @@ private:
         {
             // get a list of all the inputs to this node
             Array<uint32> sourceNodes;
-            Array<int> sourceOutputChans;
+            Array<uint> sourceOutputChans;
 
             for (int i = graph.getNumConnections(); --i >= 0;)
             {
@@ -618,7 +618,7 @@ private:
             {
                 // channel with a straightforward single input..
                 const uint32 srcNode = sourceNodes.getUnchecked(0);
-                const int srcChan = sourceOutputChans.getUnchecked(0);
+                const uint srcChan = sourceOutputChans.getUnchecked(0);
 
                 bufIndex = getBufferContaining (AudioProcessor::ChannelTypeCV, srcNode, srcChan);
 
@@ -697,7 +697,7 @@ private:
         for (uint outputChan = 0; outputChan < numCVOuts; ++outputChan)
         {
             const int bufIndex = getFreeBuffer (AudioProcessor::ChannelTypeCV);
-            CARLA_SAFE_ASSERT_CONTINUE (bufIndex != 0);
+            CARLA_SAFE_ASSERT_CONTINUE (bufIndex > 0);
             cvOutChannelsToUse.add (bufIndex);
             markBufferAsContaining (AudioProcessor::ChannelTypeCV, bufIndex, node.nodeId, outputChan);
         }
@@ -862,7 +862,7 @@ private:
 
     int getBufferContaining (const AudioProcessor::ChannelType channelType,
                              const uint32 nodeId,
-                             const int outputChannel) const noexcept
+                             const uint outputChannel) const noexcept
     {
         switch (channelType)
         {
