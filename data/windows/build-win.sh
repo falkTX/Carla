@@ -7,13 +7,8 @@ ARCH="${1}"
 ARCH_PREFIX="${1}"
 
 if [ x"${ARCH}" != x"32" ] && [ x"${ARCH}" != x"32nosse" ] && [ x"${ARCH}" != x"64" ]; then
-  echo "usage: $0 32|nonosse|64"
+  echo "usage: $0 32|32nonosse|64"
   exit 1
-fi
-
-if [ x"${ARCH}" = x"32nosse" ]; then
-  ARCH="32"
-  MAKE_ARGS="NOOPT=true"
 fi
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -33,8 +28,12 @@ fi
 
 source data/windows/common.env
 
-MAKE_ARGS="${MAKE_ARGS} HAVE_QT4=false HAVE_QT5=false HAVE_PYQT5=true HAVE_FFMPEG=false HAVE_PROJECTM=false"
-MAKE_ARGS="${MAKE_ARGS} BUILDING_FOR_WINDOWS=true"
+if [ x"${ARCH}" = x"32nosse" ]; then
+  ARCH="32"
+  MAKE_ARGS="${MAKE_ARGS} NOOPT=true"
+fi
+
+MAKE_ARGS="${MAKE_ARGS} BUILDING_FOR_WINDOWS=true HAVE_PYQT5=true"
 
 export WIN32=true
 
@@ -54,8 +53,10 @@ local _ARCH_PREFIX="${2}"
 local _MINGW_PREFIX="${3}-w64-mingw32"
 
 export PREFIX=${TARGETDIR}/carla-w${_ARCH_PREFIX}
-export PATH=/opt/mingw${_ARCH}/bin:${PREFIX}/bin/usr/sbin:/usr/bin:/sbin:/bin
-export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
+export MSYS2_PREFIX="${TARGETDIR}/msys2-${CPUARCH}/mingw${ARCH}"
+
+export PATH=${PREFIX}/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig:${MSYS2_PREFIX}/lib/pkgconfig
 
 export AR=${_MINGW_PREFIX}-ar
 export CC=${_MINGW_PREFIX}-gcc
@@ -64,10 +65,13 @@ export STRIP=${_MINGW_PREFIX}-strip
 export WINDRES=${_MINGW_PREFIX}-windres
 
 export CFLAGS="-DPTW32_STATIC_LIB -DFLUIDSYNTH_NOT_A_DLL"
-export CFLAGS="${CFLAGS} -I${PREFIX}/include -I/opt/mingw${_ARCH}/include -I/opt/mingw${_ARCH}/${_MINGW_PREFIX}/include"
+export CFLAGS="${CFLAGS} -I${PREFIX}/include"
 export CXXFLAGS="${CFLAGS}"
-export LDFLAGS="-L${PREFIX}/lib -L/opt/mingw${_ARCH}/lib -L/opt/mingw${_ARCH}/${_MINGW_PREFIX}/lib"
+export LDFLAGS="-L${PREFIX}/lib"
 
+export MOC_QT5="wine ${MSYS2_PREFIX}/bin/moc.exe"
+export RCC_QT5="wine ${MSYS2_PREFIX}/bin/rcc.exe"
+export UIC_QT5="wine ${MSYS2_PREFIX}/bin/uic.exe"
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -77,11 +81,11 @@ export_vars "${ARCH}" "${ARCH_PREFIX}" "${CPUARCH}"
 export WINEARCH=win${ARCH}
 export WINEDEBUG=-all
 export WINEPREFIX=~/.winepy3_x${ARCH}
-export PYTHON_EXE="wine C:\\\\Python34\\\\python.exe"
+export PYTHON_EXE="wine ${MSYS2_PREFIX}/bin/python.exe"
 
-export CXFREEZE="$PYTHON_EXE C:\\\\Python34\\\\Scripts\\\\cxfreeze"
+# export CXFREEZE="$PYTHON_EXE C:\\\\Python34\\\\Scripts\\\\cxfreeze"
+export PYRCC="$PYTHON_EXE -m PyQt5.pyrcc_main"
 export PYUIC="$PYTHON_EXE -m PyQt5.uic.pyuic"
-export PYRCC="wine C:\\\\Python34\\\\Lib\\\\site-packages\\\\PyQt5\\\\pyrcc5.exe"
 
 make ${MAKE_ARGS}
 
