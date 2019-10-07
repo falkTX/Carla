@@ -1231,7 +1231,7 @@ AudioProcessorGraph::Node* AudioProcessorGraph::addNode (AudioProcessor* const n
 
     for (int i = nodes.size(); --i >= 0;)
     {
-        CARLA_SAFE_ASSERT_RETURN(nodes.getUnchecked(i)->getProcessor() != newProcessor, nullptr);
+        CARLA_SAFE_ASSERT_RETURN (nodes.getUnchecked(i)->getProcessor() != newProcessor, nullptr);
     }
 
     if (nodeId == 0)
@@ -1241,7 +1241,7 @@ AudioProcessorGraph::Node* AudioProcessorGraph::addNode (AudioProcessor* const n
     else
     {
         // you can't add a node with an id that already exists in the graph..
-        wassert (getNodeForId (nodeId) == nullptr);
+        CARLA_SAFE_ASSERT_RETURN (getNodeForId (nodeId) == nullptr, nullptr);
         removeNode (nodeId);
 
         if (nodeId > lastNodeId)
@@ -1416,7 +1416,7 @@ bool AudioProcessorGraph::disconnectNode (const uint32 nodeId)
 
 bool AudioProcessorGraph::isConnectionLegal (const Connection* const c) const
 {
-    wassert (c != nullptr);
+    CARLA_SAFE_ASSERT_RETURN (c != nullptr, false);
 
     const Node* const source = getNodeForId (c->sourceNodeId);
     const Node* const dest   = getNodeForId (c->destNodeId);
