@@ -218,6 +218,11 @@ HAVE_HYLIA = true
 endif
 endif
 
+# FIXME make mingw compatible
+# ifeq ($(WIN32),true)
+# HAVE_HYLIA = true
+# endif
+
 ifeq ($(MACOS_OR_WIN32),true)
 HAVE_DGL   = true
 else
