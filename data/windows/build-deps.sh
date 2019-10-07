@@ -113,8 +113,6 @@ export CXX=${MINGW_PREFIX}-g++
 export STRIP=${MINGW_PREFIX}-strip
 export WINDRES=${MINGW_PREFIX}-windres
 
-export PATH=/opt/mingw${ARCH}/${MINGW_PREFIX}/bin:/opt/mingw${ARCH}/bin:${PATH}
-
 if [ -z "${NOSSE}" ]; then
 export CFLAGS="-O3 -mtune=generic -msse -msse2 -mfpmath=sse -mstackrealign -fvisibility=hidden -fdata-sections -ffunction-sections"
 else

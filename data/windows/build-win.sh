@@ -52,11 +52,11 @@ local _ARCH="${1}"
 local _ARCH_PREFIX="${2}"
 local _MINGW_PREFIX="${3}-w64-mingw32"
 
-export PREFIX=${TARGETDIR}/carla-w${_ARCH_PREFIX}
-export MSYS2_PREFIX="${TARGETDIR}/msys2-${CPUARCH}/mingw${ARCH}"
+export DEPS_PREFIX=${TARGETDIR}/carla-w${ARCH_PREFIX}
+export MSYS2_PREFIX=${TARGETDIR}/msys2-${CPUARCH}/mingw${ARCH}
 
-export PATH=${PREFIX}/bin:/usr/sbin:/usr/bin:/sbin:/bin
-export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig:${MSYS2_PREFIX}/lib/pkgconfig
+export PATH=${DEPS_PREFIX}/bin:/opt/wine-staging/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PKG_CONFIG_PATH=${DEPS_PREFIX}/lib/pkgconfig:${MSYS2_PREFIX}/lib/pkgconfig
 
 export AR=${_MINGW_PREFIX}-ar
 export CC=${_MINGW_PREFIX}-gcc
@@ -65,9 +65,9 @@ export STRIP=${_MINGW_PREFIX}-strip
 export WINDRES=${_MINGW_PREFIX}-windres
 
 export CFLAGS="-DPTW32_STATIC_LIB -DFLUIDSYNTH_NOT_A_DLL"
-export CFLAGS="${CFLAGS} -I${PREFIX}/include"
+export CFLAGS="${CFLAGS} -I${DEPS_PREFIX}/include"
 export CXXFLAGS="${CFLAGS}"
-export LDFLAGS="-L${PREFIX}/lib"
+export LDFLAGS="-L${DEPS_PREFIX}/lib"
 
 export MOC_QT5="wine ${MSYS2_PREFIX}/bin/moc.exe"
 export RCC_QT5="wine ${MSYS2_PREFIX}/bin/rcc.exe"
@@ -82,8 +82,8 @@ export WINEARCH=win${ARCH}
 export WINEDEBUG=-all
 export WINEPREFIX=~/.winepy3_x${ARCH}
 export PYTHON_EXE="wine ${MSYS2_PREFIX}/bin/python.exe"
-export PYRCC="$PYTHON_EXE -m PyQt5.pyrcc_main"
-export PYUIC="$PYTHON_EXE -m PyQt5.uic.pyuic"
+export PYRCC="${PYTHON_EXE} -m PyQt5.pyrcc_main"
+export PYUIC="${PYTHON_EXE} -m PyQt5.uic.pyuic"
 
 make ${MAKE_ARGS}
 
@@ -94,4 +94,6 @@ fi
 
 # Testing:
 echo "export WINEPREFIX=~/.winepy3_x${ARCH}"
-echo "$PYTHON_EXE ./source/frontend/carla"
+echo "/opt/wine-staging/bin/${PYTHON_EXE} ./source/frontend/carla"
+
+# ---------------------------------------------------------------------------------------------------------------------
