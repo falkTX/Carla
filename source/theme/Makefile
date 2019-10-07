@@ -11,7 +11,7 @@ include ../modules/Makefile.mk
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(WIN32),true)
-NON_STATIC_LINK_FLAGS = $(shell echo $(LINK_FLAGS) | awk 'sub(" -static","")')
+NON_STATIC_LINK_FLAGS = $(shell echo $(LINK_FLAGS) | awk 'sub(" -static","")') -static-libgcc
 else
 NON_STATIC_LINK_FLAGS = $(LINK_FLAGS)
 endif
@@ -118,7 +118,7 @@ $(MODULEDIR)/$(MODULENAME).qt5.a: $(FILES_qt5) $(OBJS_qt5)
 $(BINDIR)/styles/carlastyle.dll: $(FILES_qt5) $(OBJS_qt5_shared)
 	-@mkdir -p $(BINDIR)/styles
 	@echo "Linking carlastyle.dll"
-	@$(CXX) $(OBJS_qt5_shared) $(QT5_LINK_FLAGS) -luuid -lwinspool -lgdi32 -limm32 -lole32 -lshell32 -lws2_32 -shared -o $@
+	@$(CXX) $(OBJS_qt5_shared) $(QT5_LINK_FLAGS) -shared -o $@
 
 $(BINDIR)/styles/carlastyle.dylib: $(FILES_qt5) $(OBJS_qt5_shared)
 	-@mkdir -p $(BINDIR)/styles

@@ -42,12 +42,16 @@ class CarlaApplication(object):
 
         # Needed for local wine build
         if WINDOWS and CWD.endswith(("frontend", "resources")) and os.getenv("CXFREEZE") is None:
-            QApplication.addLibraryPath("H:\\builds\\msys2-i686\\mingw32\\share\\qt5\\plugins")
+            if kIs64bit:
+                path = "H:\\builds\\msys2-x86_64\\mingw64\\share\\qt5\\plugins"
+            else:
+                path = "H:\\builds\\msys2-i686\\mingw32\\share\\qt5\\plugins"
+            QApplication.addLibraryPath(path)
 
         # Use binary dir as library path
         if os.path.exists(pathBinaries):
             QApplication.addLibraryPath(pathBinaries)
-            stylesDir = pathBinaries if not WINDOWS else "" # FIXME
+            stylesDir = pathBinaries
 
         # If style is not available we can still fake it
         else:
@@ -71,6 +75,13 @@ class CarlaApplication(object):
             return
 
         self.fApp.setStyle("carla" if stylesDir else "fusion")
+
+        if WINDOWS:
+            carlastyle = os.path.join(pathBinaries, "styles", "carlastyle.dll")
+            self._stylelib = CDLL(carlastyle, RTLD_GLOBAL)
+            self._stylelib.set_qt_app_style.argtypes = None
+            self._stylelib.set_qt_app_style.restype = None
+            self._stylelib.set_qt_app_style()
 
         # set palette
         proThemeColor = settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, CARLA_DEFAULT_MAIN_PRO_THEME_COLOR, type=str).lower()
