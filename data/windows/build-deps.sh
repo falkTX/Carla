@@ -116,9 +116,9 @@ export WINDRES=${MINGW_PREFIX}-windres
 export PATH=/opt/mingw${ARCH}/${MINGW_PREFIX}/bin:/opt/mingw${ARCH}/bin:${PATH}
 
 if [ -z "${NOSSE}" ]; then
-export CFLAGS="-O3 -mtune=generic -msse -msse2 -mfpmath=sse -fvisibility=hidden -fdata-sections -ffunction-sections"
+export CFLAGS="-O3 -mtune=generic -msse -msse2 -mfpmath=sse -mstackrealign -fvisibility=hidden -fdata-sections -ffunction-sections"
 else
-export CFLAGS="-O2 -fvisibility=hidden -fdata-sections -ffunction-sections"
+export CFLAGS="-O2 -mstackrealign -fvisibility=hidden -fdata-sections -ffunction-sections"
 fi
 
 export CFLAGS="${CFLAGS} -DNDEBUG -DPTW32_STATIC_LIB -DFLUIDSYNTH_NOT_A_DLL -I${PREFIX}/include -I/opt/mingw${ARCH}/include"
@@ -303,10 +303,7 @@ fi
 
 if [ ! -d mxml-${MXML_VERSION} ]; then
   wget -c https://github.com/michaelrsweet/mxml/releases/download/v${MXML_VERSION}/mxml-${MXML_VERSION}.tar.gz -O mxml-${MXML_VERSION}.tar.gz
-  mkdir mxml-${MXML_VERSION}
-  cd mxml-${MXML_VERSION}
-  tar -xf ../mxml-${MXML_VERSION}.tar.gz
-  cd ..
+  tar -xf mxml-${MXML_VERSION}.tar.gz
 fi
 
 if [ ! -f mxml-${MXML_VERSION}/build-done ]; then
