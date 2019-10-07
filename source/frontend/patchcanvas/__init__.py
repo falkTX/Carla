@@ -144,7 +144,7 @@ class Canvas(object):
         self.size_rect = QRectF()
 
     def callback(self, action, value1, value2, value_str):
-        print("Canvas::callback({}, {}, {}, {})".fmt(action, value1, value2, value_str))
+        print("Canvas::callback({}, {}, {}, {})".format(action, value1, value2, value_str))
 
 # ------------------------------------------------------------------------------------------------------------
 

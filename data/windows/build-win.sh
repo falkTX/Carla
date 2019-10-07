@@ -82,8 +82,6 @@ export WINEARCH=win${ARCH}
 export WINEDEBUG=-all
 export WINEPREFIX=~/.winepy3_x${ARCH}
 export PYTHON_EXE="wine ${MSYS2_PREFIX}/bin/python.exe"
-
-# export CXFREEZE="$PYTHON_EXE C:\\\\Python34\\\\Scripts\\\\cxfreeze"
 export PYRCC="$PYTHON_EXE -m PyQt5.pyrcc_main"
 export PYUIC="$PYTHON_EXE -m PyQt5.uic.pyuic"
 

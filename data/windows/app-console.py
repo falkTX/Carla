@@ -14,12 +14,12 @@ from carla_host import VERSION
 # ------------------------------------------------------------------------------------------------------------
 
 options = {
-  "icon": ".\\resources\\ico\\carla.ico",
+  #"icon": ".\\resources\\ico\\carla.ico",
   "packages": [],
-  "includes": ["re", "sip", "subprocess", "inspect"],
+  "includes": ["re", "subprocess", "inspect"],
   "build_exe": ".\\data\\windows\\Carla\\",
   "optimize": True,
-  "compressed": True
+  #"compressed": True
 }
 
 setup(name = "Carla",

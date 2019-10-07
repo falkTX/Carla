@@ -37,17 +37,17 @@ class CarlaApplication(object):
         pathBinaries, pathResources = getPaths(libPrefix)
 
         # Needed for MacOS and Windows
-        if os.path.exists(CWD) and (MACOS or WINDOWS):
-            QApplication.addLibraryPath(CWD)
+        #if os.path.exists(CWD) and (MACOS or WINDOWS):
+            #QApplication.addLibraryPath(CWD)
 
         # Needed for local wine build
         if WINDOWS and CWD.endswith(("frontend", "resources")) and os.getenv("CXFREEZE") is None:
             QApplication.addLibraryPath("H:\\builds\\msys2-i686\\mingw32\\share\\qt5\\plugins")
 
-        # Use binary dir as library path (except in Windows)
-        if os.path.exists(pathBinaries) and not WINDOWS:
+        # Use binary dir as library path
+        if os.path.exists(pathBinaries):
             QApplication.addLibraryPath(pathBinaries)
-            stylesDir = pathBinaries
+            stylesDir = pathBinaries if not WINDOWS else "" # FIXME
 
         # If style is not available we can still fake it
         else:

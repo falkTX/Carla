@@ -154,7 +154,6 @@ PyPluginInfo = {
     'parameters.outs': 0
 }
 
-global gDiscoveryProcess
 gDiscoveryProcess = None
 
 def findWinePrefix(filename, recursionLimit = 10):

@@ -331,7 +331,6 @@ def get_c_unit_type(value):
 # ------------------------------------------------------------------------------------------------------------
 #  Global objects
 
-global LADSPA_RDF_PATH, LADSPA_Plugins
 LADSPA_RDF_PATH = ("/usr/share/ladspa/rdf", "/usr/local/share/ladspa/rdf")
 LADSPA_Plugins  = []
 

@@ -117,9 +117,11 @@ pushd "${PKGDIR}"
 # wget -c http://repo.msys2.org/mingw/i686/mingw-w64-i686-libwebp-1.0.3-1-any.pkg.tar.xz
 # wget -c http://repo.msys2.org/mingw/i686/mingw-w64-i686-libxml2-2.9.9-2-any.pkg.tar.xz
 # wget -c http://repo.msys2.org/mingw/i686/mingw-w64-i686-libxslt-1.1.33-1-any.pkg.tar.xz
-wget -c http://repo.msys2.org/mingw/i686/mingw-w64-i686-xz-5.2.4-1-any.pkg.tar.xz
-wget -c http://repo.msys2.org/mingw/i686/mingw-w64-i686-jasper-2.0.16-1-any.pkg.tar.xz
-wget -c http://repo.msys2.org/mingw/i686/mingw-w64-i686-libtiff-4.0.9-2-any.pkg.tar.xz
+# wget -c http://repo.msys2.org/mingw/i686/mingw-w64-i686-xz-5.2.4-1-any.pkg.tar.xz
+# wget -c http://repo.msys2.org/mingw/i686/mingw-w64-i686-jasper-2.0.16-1-any.pkg.tar.xz
+# wget -c http://repo.msys2.org/mingw/i686/mingw-w64-i686-libtiff-4.0.9-2-any.pkg.tar.xz
+# wget -c http://repo.msys2.org/mingw/i686/mingw-w64-i686-python3-nuitka-0.6.4-1-any.pkg.tar.xz
+wget -c http://repo.msys2.org/mingw/i686/mingw-w64-i686-python3-cx_Freeze-5.1.1-3-any.pkg.tar.xz
 
 # wget -c 
 
@@ -168,9 +170,11 @@ pushd "${TARGETDIR}/msys2-${CPUARCH}"
 # tar xf "${PKGDIR}/mingw-w64-i686-libwebp-1.0.3-1-any.pkg.tar.xz"
 # tar xf "${PKGDIR}/mingw-w64-i686-libxml2-2.9.9-2-any.pkg.tar.xz"
 # tar xf "${PKGDIR}/mingw-w64-i686-libxslt-1.1.33-1-any.pkg.tar.xz"
-tar xf "${PKGDIR}/mingw-w64-i686-xz-5.2.4-1-any.pkg.tar.xz"
-tar xf "${PKGDIR}/mingw-w64-i686-jasper-2.0.16-1-any.pkg.tar.xz"
-tar xf "${PKGDIR}/mingw-w64-i686-libtiff-4.0.9-2-any.pkg.tar.xz"
+# tar xf "${PKGDIR}/mingw-w64-i686-xz-5.2.4-1-any.pkg.tar.xz"
+# tar xf "${PKGDIR}/mingw-w64-i686-jasper-2.0.16-1-any.pkg.tar.xz"
+# tar xf "${PKGDIR}/mingw-w64-i686-libtiff-4.0.9-2-any.pkg.tar.xz"
+# tar xf "${PKGDIR}/mingw-w64-i686-python3-nuitka-0.6.4-1-any.pkg.tar.xz"
+tar xf "${PKGDIR}/mingw-w64-i686-python3-cx_Freeze-5.1.1-3-any.pkg.tar.xz"
 
 # tar xf "${PKGDIR}/"
 
