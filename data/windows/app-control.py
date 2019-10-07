@@ -13,23 +13,26 @@ from carla_host import VERSION
 
 # ------------------------------------------------------------------------------------------------------------
 
-name = "bigmeter-ui"
-
-# ------------------------------------------------------------------------------------------------------------
-
 options = {
-  "icon": ".\\resources\\ico\\carla.ico",
-  "packages": [],
-  "includes": ["re", "sip", "subprocess", "inspect"],
-  "build_exe": ".\\data\\windows\\%s\\" % name,
-  "optimize": False,
-  "compressed": False
+  "zip_include_packages": ["*"],
+  "zip_exclude_packages": ["PyQt5"],
+  "replace_paths": [["*",".\\lib\\"]],
+  "build_exe": ".\\CarlaControl\\",
+  "optimize": True,
 }
 
-setup(name = name,
+exe_options = {
+  "script": "..\\..\\source\\frontend\\carla-control",
+  "icon": "..\\..\\resources\\ico\\carla-control.ico",
+  "copyright": "Copyright (C) 2011-2019 Filipe Coelho",
+  "base": "Win32GUI",
+  "targetName": "CarlaControl.exe",
+}
+
+setup(name = "CarlaControl",
       version = VERSION,
-      description = name,
+      description = "Carla Remote Control",
       options = {"build_exe": options},
-      executables = [Executable(".\\bin\\resources\\%s.pyw" % name, base="Win32GUI")])
+      executables = [Executable(**exe_options)])
 
 # ------------------------------------------------------------------------------------------------------------

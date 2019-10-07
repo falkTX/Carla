@@ -37,8 +37,8 @@ class CarlaApplication(object):
         pathBinaries, pathResources = getPaths(libPrefix)
 
         # Needed for MacOS and Windows
-        #if os.path.exists(CWD) and (MACOS or WINDOWS):
-            #QApplication.addLibraryPath(CWD)
+        if os.path.exists(CWD) and (MACOS or WINDOWS):
+            QApplication.addLibraryPath(CWD)
 
         # Needed for local wine build
         if WINDOWS and CWD.endswith(("frontend", "resources")) and os.getenv("CXFREEZE") is None:

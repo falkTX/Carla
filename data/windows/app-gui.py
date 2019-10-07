@@ -14,18 +14,25 @@ from carla_host import VERSION
 # ------------------------------------------------------------------------------------------------------------
 
 options = {
-  #"icon": ".\\resources\\ico\\carla.ico",
-  "packages": [],
-  "includes": ["re", "subprocess", "inspect"],
-  "build_exe": ".\\data\\windows\\Carla\\",
+  "zip_include_packages": ["*"],
+  "zip_exclude_packages": ["PyQt5"],
+  "replace_paths": [["*",".\\lib\\"]],
+  "build_exe": ".\\Carla\\",
   "optimize": True,
-  #"compressed": True
+}
+
+exe_options = {
+  "script": "..\\..\\source\\frontend\\carla",
+  "icon": "..\\..\\resources\\ico\\carla.ico",
+  "copyright": "Copyright (C) 2011-2019 Filipe Coelho",
+  "base": "Win32GUI",
+  "targetName": "Carla.exe",
 }
 
 setup(name = "Carla",
       version = VERSION,
       description = "Carla Plugin Host",
       options = {"build_exe": options},
-      executables = [Executable(".\\source\\frontend\\Carla.pyw", base="Win32GUI")])
+      executables = [Executable(**exe_options)])
 
 # ------------------------------------------------------------------------------------------------------------
