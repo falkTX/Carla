@@ -249,7 +249,9 @@ void CarlaEngineOsc::sendPluginInternalParameterValues(const CarlaPlugin* const 
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
     carla_debug("CarlaEngineOsc::sendPluginInternalParameterValues(%p)", plugin);
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
     static_assert(PARAMETER_ACTIVE == -2 && PARAMETER_MAX == -9, "Incorrect data");
+#endif
 
     double iparams[7];
 

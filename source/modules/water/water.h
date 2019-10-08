@@ -40,7 +40,7 @@
 #endif
 
 #ifdef __clang__
- #if __has_feature (cxx_rvalue_references)
+ #if __has_feature (cxx_implicit_moves) && __clang_major__ >= 9
   #define WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS 1
  #endif
 

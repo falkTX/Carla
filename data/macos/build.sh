@@ -23,6 +23,9 @@ export MACOS="true"
 
 if [ $(clang -v  2>&1 | grep version | cut -d' ' -f4 | cut -d'.' -f1) -lt 9 ]; then
   export MACOS_OLD="true"
+  export USING_JUCE="false"
+else
+  export USING_JUCE="true"
 fi
 
 export CC=clang
@@ -40,7 +43,7 @@ export LDFLAGS="-L${TARGETDIR}/carla64/lib -m64"
 export PATH=${TARGETDIR}/carla/bin:${TARGETDIR}/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=${TARGETDIR}/carla/lib/pkgconfig:${TARGETDIR}/carla64/lib/pkgconfig
 
-make USING_JUCE=true ${MAKE_ARGS}
+make USING_JUCE=${USING_JUCE} ${MAKE_ARGS}
 
 ##############################################################################################
 # Build 32bit bridges
@@ -53,7 +56,9 @@ export PATH=${TARGETDIR}/carla32/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bi
 export PKG_CONFIG_PATH=${TARGETDIR}/carla32/lib/pkgconfig
 
 # FIXME install old xcode in new macos
-# make USING_JUCE=true posix32 ${MAKE_ARGS}
+if [ MACOS_OLD = "true" ]; then
+  make USING_JUCE=${USING_JUCE} posix32 ${MAKE_ARGS}
+fi
 
 ##############################################################################################
 # Build Mac App
