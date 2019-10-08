@@ -18,7 +18,7 @@
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Config)
-
+import sys
 from carla_config import *
 
 # ------------------------------------------------------------------------------------------------------------
@@ -134,11 +134,12 @@ class features_t(object):
 CanvasBoxType           = QGraphicsItem.UserType + 1
 CanvasIconType          = QGraphicsItem.UserType + 2
 CanvasPortType          = QGraphicsItem.UserType + 3
-CanvasLineType          = QGraphicsItem.UserType + 4
-CanvasBezierLineType    = QGraphicsItem.UserType + 5
-CanvasLineMovType       = QGraphicsItem.UserType + 6
-CanvasBezierLineMovType = QGraphicsItem.UserType + 7
-CanvasRubberbandType    = QGraphicsItem.UserType + 8
+CanvasStereoPairType    = QGraphicsItem.UserType + 4
+CanvasLineType          = QGraphicsItem.UserType + 5
+CanvasBezierLineType    = QGraphicsItem.UserType + 6
+CanvasLineMovType       = QGraphicsItem.UserType + 7
+CanvasBezierLineMovType = QGraphicsItem.UserType + 8
+CanvasRubberbandType    = QGraphicsItem.UserType + 9
 
 # object lists
 class group_dict_t(object):
@@ -159,9 +160,36 @@ class port_dict_t(object):
         'port_name',
         'port_mode',
         'port_type',
+        'pair_id',
         'is_alternate',
         'widget'
     ]
+
+class force_mono_dict_t(object):
+    __slots__ = [
+        'port_id',
+        'port_mode',
+        'full_port_name'
+    ]
+    
+class pair_dict_t(object):
+    __slots__ = [
+        'pair_id',
+        'group_id',
+        'port_mode',
+        'port_type',
+        'port_id_list',
+        'widget'
+    ]
+
+class saved_pair_dict_t(object):
+    __slots__ = [
+        'port_mode',
+        'group_name',
+        'port_id_list',
+        'port_name_list'
+    ]
+ 
 
 class connection_dict_t(object):
     __slots__ = [
@@ -191,6 +219,9 @@ class Canvas(object):
         'size_rect',
         'group_list',
         'port_list',
+        'force_mono_list',
+        'pair_list',
+        'saved_pair_list',
         'connection_list',
         'animation_list',
         'qobject',
@@ -239,6 +270,17 @@ class CanvasObject(QObject):
             return
 
         CanvasCallback(ACTION_PORTS_DISCONNECT, connectionId, 0, "")
+        
+    @pyqtSlot()
+    def SetasStereoWith(self):
+        try:
+            all_data = self.sender().data()
+        except:
+            return
+        
+        port_widget = all_data[0]
+        port_id = all_data[1]
+        port_widget.SetAsStereo(port_id)
 
 # Global objects
 canvas = Canvas()
@@ -248,6 +290,9 @@ canvas.theme      = None
 canvas.initiated  = False
 canvas.group_list = []
 canvas.port_list  = []
+canvas.pair_list  = []
+canvas.force_mono_list = []
+canvas.saved_pair_list = []
 canvas.connection_list = []
 canvas.animation_list  = []
 
@@ -663,7 +708,7 @@ def splitGroup(group_id):
         setGroupAsPlugin(group_id, plugin_id, plugin_ui)
 
     for port in ports_data:
-        addPort(group_id, port.port_id, port.port_name, port.port_mode, port.port_type, port.is_alternate)
+        addPort(group_id, port.port_id, port.port_name, port.port_mode, port.port_type, port.pair_id, port.is_alternate)
 
     for conn in conns_data:
         connectPorts(conn.connection_id, conn.group_out_id, conn.port_out_id, conn.group_in_id, conn.port_in_id)
@@ -749,7 +794,7 @@ def joinGroup(group_id):
         setGroupAsPlugin(group_id, plugin_id, plugin_ui)
 
     for port in ports_data:
-        addPort(group_id, port.port_id, port.port_name, port.port_mode, port.port_type, port.is_alternate)
+        addPort(group_id, port.port_id, port.port_name, port.port_mode, port.port_type, port.pair_id, port.is_alternate)
 
     for conn in conns_data:
         connectPorts(conn.connection_id, conn.group_out_id, conn.port_out_id, conn.group_in_id, conn.port_in_id)
@@ -865,7 +910,7 @@ def setGroupAsPlugin(group_id, plugin_id, hasUi):
 
     qCritical("PatchCanvas::setGroupAsPlugin(%i, %i, %s) - unable to find group to set as plugin" % (group_id, plugin_id, bool2str(hasUi)))
 
-def addPort(group_id, port_id, port_name, port_mode, port_type, is_alternate=False):
+def addPort(group_id, port_id, port_name, port_mode, port_type, pair_id, is_alternate=False):
     if canvas.debug:
         print("PatchCanvas::addPort(%i, %i, %s, %s, %s, %s)" % (group_id, port_id, port_name.encode(), port_mode2str(port_mode), port_type2str(port_type), bool2str(is_alternate)))
 
@@ -884,7 +929,7 @@ def addPort(group_id, port_id, port_name, port_mode, port_type, is_alternate=Fal
             else:
                 n = 0
             box_widget  = group.widgets[n]
-            port_widget = box_widget.addPortFromGroup(port_id, port_mode, port_type, port_name, is_alternate)
+            port_widget = box_widget.addPortFromGroup(port_id, port_mode, port_type, port_name, pair_id, is_alternate)
             break
 
     if not (box_widget and port_widget):
@@ -897,6 +942,7 @@ def addPort(group_id, port_id, port_name, port_mode, port_type, is_alternate=Fal
     port_dict.port_name = port_name
     port_dict.port_mode = port_mode
     port_dict.port_type = port_type
+    port_dict.pair_id   = pair_id
     port_dict.is_alternate = is_alternate
     port_dict.widget = port_widget
     canvas.port_list.append(port_dict)
@@ -1093,6 +1139,16 @@ def handleAllPluginsRemoved():
             group.widgets[1].m_plugin_ui = False
 
 # Extra Internal functions
+def CanvasGetGroupName(group_id):
+    if canvas.debug:
+        qDebug("PatchCanvas::CanvasGetGroupName(%i)" % group_id)
+
+    for group in canvas.group_list:
+        if group.group_id == group_id:
+            return group.group_name
+
+    qCritical("PatchCanvas::CanvasGetGroupName(%i) - unable to find group" % group_id)
+    return ""
 
 def CanvasGetNewGroupPos(horizontal):
     if canvas.debug:
@@ -1134,6 +1190,427 @@ def CanvasGetFullPortName(group_id, port_id):
 
     qCritical("PatchCanvas::CanvasGetFullPortName(%i, %i) - unable to find port" % (group_id, port_id))
     return ""
+
+def CanvasIsPortMonoForced(port_id, port_mode, full_port_name):
+    for forced_port in canvas.force_mono_list:
+        if forced_port.port_id == port_id:
+            return True
+        elif (forced_port.port_mode == port_mode and
+              forced_port.full_port_name == full_port_name):
+            return True
+        
+    if canvas.settings.value("ForcedMonoPorts/%s" % full_port_name, PORT_MODE_NULL, type=int) == port_mode:
+        return True
+    
+    return False
+
+def CanvasGetNewPairPortIdList(group_id, port_id, port_name, port_mode, port_type):
+    pair_port_id_list = []
+    port_cousin_list  = []
+    group_name = CanvasGetGroupName(group_id)
+    
+    if port_type != PORT_TYPE_AUDIO_JACK:
+        return
+    
+    #get port_cousin_list, ports able to be in the same pair than pair_id
+    for port in canvas.port_list:
+        if port.group_id == group_id and port.port_mode == port_mode and port.port_type == port_type:
+            if port.port_id != port_id:
+                port_cousin_list.append(port)
+            
+    if len(port_cousin_list) < 1:
+        return
+    
+    #check in canvas.saved_pair_list if a pair shall be added
+    for saved_pair in canvas.saved_pair_list:
+        mv_after_port_list = []
+        n = 0
+        #if port to add is the last of saved pair
+        if len(saved_pair.port_id_list) >= 2 and port_id == saved_pair.port_id_list[-1]:
+            for port in port_cousin_list:
+                if port.port_id == saved_pair.port_id_list[n]:
+                    n += 1
+                    pair_port_id_list.append(port.port_id)
+                elif n > 0:
+                    mv_after_port_list.append(port)
+            if len(saved_pair.port_id_list) == n+1:
+                #re-order canvas.port_list to get ports between the paired ports after the pair
+                for port in mv_after_port_list:
+                    canvas.port_list.remove(port)
+                    canvas.port_list.append(port)
+                
+                #add port to add to pair_port_id_list and send pair_port_id_list to addPort()
+                pair_port_id_list.append(port_id)
+                return pair_port_id_list
+            break
+        
+        elif (saved_pair.group_name == group_name and
+              saved_pair.port_mode  == port_mode  and
+              len(saved_pair.port_name_list) >= 2 and 
+              port_name == saved_pair.port_name_list[-1]):
+                for port in port_cousin_list:
+                    if len(saved_pair.port_name_list) > n and port.port_name == saved_pair.port_name_list[n]:
+                        n += 1
+                        pair_port_id_list.append(port.port_id)
+                    elif n > 0:
+                        mv_after_port_list.append(port)
+                if len(saved_pair.port_id_list) == n+1:
+                    for port in mv_after_port_list:
+                        canvas.port_list.remove(port)
+                        canvas.port_list.append(port)
+                    pair_port_id_list.append(port_id)
+                    return pair_port_id_list
+                break
+            
+    pair_port_id_list = []
+    
+    #check in config_file if a pair shall be added
+    canvas.settings.beginGroup("CanvasPairs")
+    all_pair_nums = canvas.settings.childKeys()
+    canvas.settings.endGroup()
+    
+    for pair_num_name in all_pair_nums:
+        pair_tab = canvas.settings.value("CanvasPairs/%s" % pair_num_name, [])
+        if (pair_tab.__class__() == [] and
+            len(pair_tab) >= 4 and
+            group_name == pair_tab[0] and
+            port_mode  == int(pair_tab[1]) and
+            port_name  == pair_tab[-1]):
+                port_name_list = pair_tab[2:]
+                mv_after_port_list = []
+                n = 0
+                for port in port_cousin_list:
+                    if len(port_name_list) > n and port.port_name == port_name_list[n]:
+                        n += 1
+                        pair_port_id_list.append(port.port_id)
+                    elif n > 0:
+                        mv_after_port_list.append(port)
+                if len(port_name_list) == n+1:
+                    pair_port_id_list.append(port_id)
+                    for port in mv_after_port_list:
+                        canvas.port_list.remove(port)
+                        canvas.port_list.append(port)
+                    return pair_port_id_list
+                break
+        
+    #make stereo_detection
+    if options.stereo_detection:
+        if len(port_name) < 1:
+            return
+        
+        #if port_cousin_list[-1].pair_id:
+            #return
+        
+        may_match_list   = []
+        
+        #check if port to add has been forced as mono
+        if CanvasIsPortMonoForced(port_id, port_mode, group_name + ':' + port_name):
+            return
+        
+        #check if possibly left port has been forced as mono
+        if CanvasIsPortMonoForced(port_cousin_list[-1].port_id, 
+                                  port_cousin_list[-1].port_mode, 
+                                  group_name + ':' + port_cousin_list[-1].port_name):
+            return
+
+        #if Port ends with digit
+        if port_name[-1].isdigit():
+            BasePort = port_name[:-1]
+            InNum    = port_name[-1]
+
+            while BasePort[-1].isdigit():
+                InNum = BasePort[-1] + InNum
+                BasePort = BasePort[:-1]
+            
+            #if Port ends with Ldigits or Rdigits
+            if BasePort.endswith('R'):
+                may_match_list.append(BasePort[:-1] + 'L' + InNum)
+            else:
+                may_match_list.append(BasePort + str(int(InNum) -1))
+                
+                if int(InNum) == 1 or int(InNum) == 2:
+                    if BasePort.endswith(' ') or BasePort.endswith('_'):
+                        may_match_list.append(BasePort[:-1])
+                    else:
+                        may_match_list.append(BasePort)
+                        
+        else:
+            
+            #Port ends with 'R'
+            if port_name.endswith('R'):
+                may_match_list.append(port_name[:-1] + 'L')
+                if len(port_name) >= 2:
+                    if port_name[-2] == ' ':
+                        may_match_list.append(port_name[:-2])
+                    else:
+                        may_match_list.append(port_name[:-1])
+            
+            #Port ends with 'right'
+            elif port_name.endswith('right'):
+                may_match_list.append(port_name[:-5] + 'left')
+            
+            #Port ends with 'Right'
+            elif port_name.endswith('Right'):
+                may_match_list.append(port_name[:-5] + 'Left')
+                
+            elif port_name.endswith('(Right)'):
+                may_match_list.append(port_name[:-7] + '(Left)')
+                
+            elif port_name.endswith('.r'):
+                may_match_list.append(port_name[:-2] + '.l')
+                
+            for x in 'out', 'Out', 'output', 'Output', 'in', 'In', 'input', 'Input', 'audio input', 'audio output':
+                if port_name.endswith('R ' + x):
+                    may_match_list.append('L ' + x)
+                elif port_name.endswith('right ' + x):
+                    may_match_list.append('left ' + x)
+                elif port_name.endswith('Right ' + x):
+                    may_match_list.append('Left ' + x)
+                    
+        #for may_match in may_match_list:
+            #if port_cousin_list[-1].port_name == may_match:
+                #return [ port_cousin_list[-1].port_id, port_id ]
+                
+        for may_match in may_match_list:
+            for port in port_cousin_list:
+                if port.port_name == may_match:
+                    if port.pair_id == None:
+                        if port == port_cousin_list[-1]:
+                            return [ port.port_id, port_id ]
+                        else:
+                            last_port = canvas.port_list[-1]
+                            canvas.port_list = canvas.port_list[:-1]
+                            index = canvas.port_list.index(port)
+                            canvas.port_list.insert(index+1, last_port)
+                            return [ port.port_id, port_id ]
+                            
+        
+def CanvasAddPair(group_id, port_mode, port_type, port_id_list):
+    box_widget  = None
+    pair_widget = None
+    pair_id = 0
+    
+    #if port in port_id_list is currently in a pair, then remove this pair. 
+    for port in canvas.port_list:
+        if port.port_id in port_id_list:
+            if port.pair_id:
+                if canvas.debug:
+                    qDebug("PatchCanvas::CanvasAddPair RemoveAPair(%i:%i)" % (port.pair_id, port.port_id))
+                CanvasRemovePair(port.pair_id)
+                break
+    
+    #get new pair_id
+    pair_list_ids = []
+    for pair in canvas.pair_list:
+        pair_list_ids.append(pair.pair_id)
+        
+    pair_list_ids.sort()
+    
+    if len(pair_list_ids) == 0:
+        pair_id = 1
+    else:
+        pair_id = pair_list_ids[-1] +1
+    
+    if canvas.debug:
+        qDebug("PatchCanvas::CanvasAddPair(%i)" % pair_id)
+    
+    #add pair widget
+    for group in canvas.group_list:
+        if group.group_id == group_id:
+            if group.split and group.widgets[0].getSplittedMode() != port_mode and group.widgets[1]:
+                n = 1
+            else:
+                n = 0
+            box_widget  = group.widgets[n]
+            pair_widget = box_widget.addPairFromGroup(pair_id, port_mode, port_type, port_id_list)
+            break
+    
+    pair_dict = pair_dict_t()
+    pair_dict.pair_id      = pair_id
+    pair_dict.group_id     = group_id
+    pair_dict.port_mode    = port_mode
+    pair_dict.port_type    = port_type
+    pair_dict.port_id_list = port_id_list
+    pair_dict.widget       = pair_widget
+    canvas.pair_list.append(pair_dict)
+    
+    zpair = pair_widget.zValue()
+    
+    for port in canvas.port_list:
+        if port.port_id in port_id_list:
+            port.pair_id = pair_id
+            port.widget.setPairId(pair_id)
+            port.widget.setZValue(zpair +1)
+    box_widget.updatePositions()
+
+    QTimer.singleShot(0, canvas.scene.update)
+
+def CanvasRemovePair(pair_id):
+    if canvas.debug:
+        qDebug("PatchCanvas::CanvasRemovePair(%i)" % pair_id)
+
+    for pair in canvas.pair_list:
+        if pair.pair_id == pair_id:
+            for port in canvas.port_list:
+                if port.port_id in pair.port_id_list:
+                    port.pair_id = None
+                    port.widget.setPairId(None)
+            
+            item = pair.widget
+            item.parentItem().updatePositions()
+            canvas.scene.removeItem(item)
+            del item
+
+            canvas.pair_list.remove(pair)
+            
+            QTimer.singleShot(0, canvas.scene.update)
+            return
+
+    qCritical("PatchCanvas::CanvasRemovePair(%i) - Unable to find pair to remove" % pair_id)
+    
+def CanvasGetPortsOfPairList(pair_id):
+    for pair in canvas.pair_list:
+        if pair.pair_id == pair_id:
+            return pair.port_id_list
+    qCritical("PatchCanvas::CanvasGetPortsOfPairList(%i) - unable to find pair" % pair_id)
+
+def CanvasGetPortPositionAndPairLenght(port_id, pair_id):
+    if pair_id:
+        for pair in canvas.pair_list:
+            if pair.pair_id == pair_id:
+                if port_id in pair.port_id_list:
+                    return ( pair.port_id_list.index(port_id), len(pair.port_id_list) )
+    return ( None, 0 )
+                
+def CanvasGetPairName(ports_ids_list):
+    ports_names = []
+    
+    for port in canvas.port_list:
+        if port.port_id in ports_ids_list:
+            ports_names.append(port.port_name)
+    
+    if len(ports_names) < 2:
+        return ''
+    
+    pair_name_ends = ( ' ', '_', '.', '-', '#', ':', 'out', 'in', 'Out', 'In', 'Output', 'Input', 'output', 'input' )
+    
+    #set pair name
+    pair_name = ''
+    checkCharacter = True
+    
+    for c in ports_names[0]:        
+        for eachname in ports_names:
+            if not eachname.startswith(pair_name + c):
+                checkCharacter = False
+                break
+        if not checkCharacter:
+            break
+        pair_name += c
+    
+    #reduce pair name until it ends with one of the characters in pair_name_ends
+    check = False
+    while not check:
+        for x in pair_name_ends:
+            if pair_name.endswith(x):
+                check = True
+                break
+        
+        if len(pair_name) == 0 or pair_name in ports_names:
+                check = True
+            
+        if not check:
+            pair_name = pair_name[:-1]
+    
+    return pair_name
+        
+def CanvasGetPortPrintName(port_id, pair_id):
+    for pair in canvas.pair_list:
+        if pair.pair_id == pair_id:
+            pair_name = CanvasGetPairName(pair.port_id_list)
+            for port in canvas.port_list:
+                if port.port_id == port_id:
+                    return port.port_name.replace(pair_name, '', 1)
+
+def CanvasGetPairFullName(pair_id):
+    for pair in canvas.pair_list:
+        if pair.pair_id == pair_id:
+            group_name       = CanvasGetGroupName(pair.group_id)
+            
+            endofname = ''
+            for port_id in pair.port_id_list:
+                endofname += CanvasGetPortPrintName(port_id, pair.pair_id) + '/'
+            pair_name = CanvasGetPairName(pair.port_id_list)
+            
+            return group_name + ':' + pair_name + ' ' + endofname[:-1]
+
+def CanvasSplitPair(pair_id):
+    pair_port_id_list = CanvasGetPortsOfPairList(pair_id)
+    pair_ports_names = []
+    
+    for port in canvas.port_list:
+        if port.port_id in pair_port_id_list:
+            pair_ports_names.append(port.port_name)
+            #full_port_name = CanvasGetFullPortName(port.port_id)
+            group_name = CanvasGetGroupName(port.group_id)
+            if options.stereo_detection:
+                canvas.settings.setValue("ForcedMonoPorts/%s:%s" % (group_name, port.port_name), port.port_mode)
+            canvas.callback(ACTION_SAVE_MONO_PORT, port.port_id, port.port_mode, group_name + ':' + port.port_name)
+            
+            canvas.settings.beginGroup("CanvasPairs")
+            all_pair_nums = canvas.settings.childKeys()
+            canvas.settings.endGroup()
+            
+            for pair_num_name in all_pair_nums:
+                pair_tab = canvas.settings.value("CanvasPairs/%s" % pair_num_name, [])
+                if (len(pair_tab) >= 3 and 
+                    group_name == pair_tab[0] and 
+                    port.port_mode == int(pair_tab[1]) and 
+                    port.port_name in pair_tab[2:]):
+                        canvas.settings.remove("CanvasPairs/%s" % pair_num_name)
+                        break
+                
+    CanvasRemovePair(pair_id)
+    
+def CanvasGetPairName(ports_ids_list):
+    ports_names = []
+    
+    for port in canvas.port_list:
+        if port.port_id in ports_ids_list:
+            ports_names.append(port.port_name)
+    
+    if len(ports_names) < 2:
+        return ''
+    
+    pair_name_ends = ( ' ', '_', '.', '-', '#', ':', 'out', 'in', 'Out', 'In', 'Output', 'Input', 'output', 'input' )
+    
+    #set pair name
+    pair_name = ''
+    checkCharacter = True
+    
+    for c in ports_names[0]:        
+        for eachname in ports_names:
+            if not eachname.startswith(pair_name + c):
+                checkCharacter = False
+                break
+        if not checkCharacter:
+            break
+        pair_name += c
+    
+    #reduce pair name until it ends with one of the characters in pair_name_ends
+    check = False
+    while not check:
+        for x in pair_name_ends:
+            if pair_name.endswith(x):
+                check = True
+                break
+        
+        if len(pair_name) == 0 or pair_name in ports_names:
+                check = True
+            
+        if not check:
+            pair_name = pair_name[:-1]
+    
+    return pair_name
 
 def CanvasGetPortConnectionList(group_id, port_id):
     if canvas.debug:
@@ -1833,7 +2310,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
 # canvasport.cpp
 
 class CanvasPort(QGraphicsItem):
-    def __init__(self, group_id, port_id, port_name, port_mode, port_type, is_alternate, parent):
+    def __init__(self, group_id, port_id, port_name, port_mode, port_type, pair_id, is_alternate, parent):
         QGraphicsItem.__init__(self, parent)
 
         # Save Variables, useful for later
@@ -1842,6 +2319,7 @@ class CanvasPort(QGraphicsItem):
         self.m_port_mode = port_mode
         self.m_port_type = port_type
         self.m_port_name = port_name
+        self.m_pair_id   = pair_id
         self.m_is_alternate = is_alternate
 
         # Base Variables
@@ -1895,7 +2373,11 @@ class CanvasPort(QGraphicsItem):
     def setPortType(self, port_type):
         self.m_port_type = port_type
         self.update()
-
+    
+    def setPairId(self, pair_id):
+        self.m_pair_id = pair_id
+        self.update()
+    
     def setPortName(self, port_name):
         if QFontMetrics(self.m_port_font).width(port_name) < QFontMetrics(self.m_port_font).width(self.m_port_name):
             QTimer.singleShot(0, canvas.scene.update)
@@ -1910,6 +2392,40 @@ class CanvasPort(QGraphicsItem):
         self.m_port_width = port_width
         self.update()
 
+    def SetAsStereo(self, port_id):
+        port_id_list = []
+        for port in canvas.port_list:
+            if port.port_id in (self.m_port_id, port_id):
+                port_id_list.append(port.port_id)
+        
+        CanvasAddPair(self.m_group_id, self.m_port_mode, self.m_port_type, port_id_list )
+        group_name = CanvasGetGroupName(self.m_group_id)
+        port_name_list = []
+        
+        # get new pair_num
+        canvas.settings.beginGroup("CanvasPairs")
+        all_pair_nums = canvas.settings.childKeys()
+        canvas.settings.endGroup()
+        
+        n = 1
+        new_pair_num_name = 'Pair_' + str(n)
+        while new_pair_num_name in all_pair_nums:
+            n +=1
+            new_pair_num_name = 'Pair_' + str(n)
+            
+        port_name_list = []
+        for port in canvas.port_list:
+            if port.port_id in port_id_list:
+                port_name_list.append(port.port_name)
+                canvas.settings.remove("ForcedMonoPorts/%s:%s" % (group_name, port.port_name))
+                
+        pair_tab = [ group_name, self.m_port_mode ] + port_name_list
+        canvas.settings.setValue("CanvasPairs/%s" % new_pair_num_name, pair_tab)
+        
+        #canvas.callback(ACTION_SAVE_PAIR, port_id_list.copy(), (self.m_port_mode, group_name, port_name_list), '')
+        
+        self.parentItem().updatePositions()
+        
     def type(self):
         return CanvasPortType
 
@@ -2024,8 +2540,11 @@ class CanvasPort(QGraphicsItem):
         QGraphicsItem.mouseReleaseEvent(self, event)
 
     def contextMenuEvent(self, event):
+        print('fkokof')
+        sys.stderr.write('zeofko\n')
         event.accept()
-
+        print('ckeor')
+        sys.stderr.write('zeofzefko\n')
         canvas.scene.clearSelection()
         self.setSelected(True)
 
@@ -2046,6 +2565,36 @@ class CanvasPort(QGraphicsItem):
         menu.addMenu(discMenu)
         act_x_disc_all = menu.addAction("Disconnect &All")
         act_x_sep_1 = menu.addSeparator()
+        
+        if self.m_port_type == PORT_TYPE_AUDIO_JACK and not self.m_pair_id:
+            StereoMenu = QMenu('Set as Stereo with', menu)
+            menu.addMenu(StereoMenu)
+            
+            #get list of available mono ports settables as stereo with port
+            port_cousin_list = []
+            for port in canvas.port_list:
+                if port.port_type == PORT_TYPE_AUDIO_JACK and port.group_id == self.m_group_id and port.port_mode == self.m_port_mode:
+                    port_cousin_list.append(port.port_id)
+            
+            selfport_index = port_cousin_list.index(self.m_port_id)
+            stereo_able_ids_list = []
+            if selfport_index > 0:
+                stereo_able_ids_list.append(port_cousin_list[selfport_index -1])
+            if selfport_index < len(port_cousin_list) -1:
+                stereo_able_ids_list.append(port_cousin_list[selfport_index +1])
+                
+            at_least_one = False
+            for port in canvas.port_list:
+                if port.port_id in stereo_able_ids_list and not port.pair_id:
+                    act_x_setasstereo = StereoMenu.addAction(port.port_name)
+                    act_x_setasstereo.setData([self, port.port_id])
+                    act_x_setasstereo.triggered.connect(canvas.qobject.SetasStereoWith)
+                    at_least_one = True
+                    
+            if not at_least_one:
+                act_x_setasstereo = StereoMenu.addAction('no available mono port')
+                act_x_setasstereo.setEnabled(False)
+        
         act_x_info = menu.addAction("Get &Info")
         act_x_rename = menu.addAction("&Rename")
 
@@ -2201,6 +2750,613 @@ class CanvasPort(QGraphicsItem):
 
         painter.restore()
 
+
+class CanvasStereoPair(QGraphicsItem):
+    def __init__(self, pair_id, port_mode, port_type, port_id_list, parent):
+        QGraphicsItem.__init__(self, parent)
+
+        # Save Variables, useful for later
+        self.m_pair_id    = pair_id
+        self.m_port_mode  = port_mode
+        self.m_port_type  = port_type
+        self.m_port_id_list = port_id_list
+        
+        # Base Variables
+        self.m_pair_width  = 15
+        self.m_pair_height = canvas.theme.port_height
+        self.m_pair_font = QFont(canvas.theme.port_font_name, canvas.theme.port_font_size, canvas.theme.port_font_state)
+
+        self.m_line_mov_list = []
+        self.m_r_click_conn = None
+        self.m_r_click_time = 0
+        self.m_dotcon_list = []
+        self.m_hover_item = None
+        self.m_last_selected_state = False
+
+        self.m_mouse_down = False
+        self.m_cursor_moving = False
+        self.setFlags(QGraphicsItem.ItemIsSelectable)
+      
+    def getPairId(self):
+        return self.m_pair_id
+
+    def getPortMode(self):
+        return self.m_port_mode
+
+    def getPortType(self):
+        return self.m_port_type
+        
+    def getPairWidth(self):
+        return self.m_pair_width
+
+    def getPairHeight(self):
+        return self.m_port_height
+    
+    def getPortsList(self):
+        return self.m_port_id_list
+        
+    def setPortMode(self, port_mode):
+        self.m_port_mode = port_mode
+        self.update()
+
+    def type(self):
+        return CanvasStereoPairType
+
+    def setPairWidth(self, pair_width):
+        if pair_width < self.m_pair_width:
+            QTimer.singleShot(0, canvas.scene.update)
+
+        self.m_pair_width = pair_width
+        self.update()
+
+    def SplitToMonos(self):
+        groupItem = self.parentItem()
+        CanvasSplitPair(self.m_pair_id)
+        groupItem.updatePositions()
+        
+    def ConnectToHover(self):
+        if self.m_hover_item:
+            if self.m_hover_item.type() == CanvasPortType:
+                hover_port_id_list = [ self.m_hover_item.getPortId() ]
+            elif self.m_hover_item.type() == CanvasStereoPairType:
+                hover_port_id_list = self.m_hover_item.getPortsList()
+                
+            con_list = []
+            ports_connected_list = []
+                
+            for portself_id in self.m_port_id_list:
+                for porthover_id in hover_port_id_list:
+                    for connection in canvas.connection_list:
+                        if ( (connection.port_out_id == portself_id and connection.port_in_id == porthover_id) or
+                             (connection.port_out_id == porthover_id and connection.port_in_id == portself_id) ):
+                            
+                            if ( (self.m_port_id_list.index(portself_id) % len(hover_port_id_list)) ==
+                                (hover_port_id_list.index(porthover_id) % len(self.m_port_id_list)) ):
+                                con_list.append(connection)
+                                ports_connected_list.append([portself_id, porthover_id])
+                            else:
+                                canvas.callback(ACTION_PORTS_DISCONNECT, connection.connection_id, 0, "")
+                                
+            maxpair = len(hover_port_id_list) if len(hover_port_id_list) > len(self.m_port_id_list) else len(self.m_port_id_list)
+            
+            if len(con_list) == maxpair:
+                for connection in con_list:
+                    canvas.callback(ACTION_PORTS_DISCONNECT, connection.connection_id, 0, "")
+            else:
+                for portself_id in self.m_port_id_list:
+                    for porthover_id in hover_port_id_list:
+                        if ((self.m_port_id_list.index(portself_id) % len(hover_port_id_list)) == 
+                            (hover_port_id_list.index(porthover_id) % len(self.m_port_id_list))):
+                            if not [portself_id, porthover_id] in ports_connected_list:
+                                if self.m_port_mode == PORT_MODE_OUTPUT:
+                                    canvas.callback(ACTION_PORTS_CONNECT, portself_id, porthover_id, "")
+                                else:
+                                    canvas.callback(ACTION_PORTS_CONNECT, porthover_id, portself_id, "")
+                    
+    def resetDotLines(self):
+        for connection in self.m_dotcon_list:
+            if connection.widget.isReadyToDisc():
+                connection.widget.setReadyToDisc(False)
+                connection.widget.updateLineGradient()
+                
+        for line_mov in self.m_line_mov_list:
+            line_mov.setReadyToDisc(False)
+   
+    def resetLineMovPositions(self):
+        for line_mov in self.m_line_mov_list:
+            if self.m_line_mov_list.index(line_mov) < len(self.m_port_id_list):
+                line_mov.setPortPosInPairTo(line_mov.m_port_posinpair)
+                line_mov.setPairLenghtTo(line_mov.m_pair_lenght)
+            else:
+                line_mov.deleteFromScene()
+        self.m_line_mov_list = self.m_line_mov_list[:len(self.m_port_id_list)]
+                
+            
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.m_hover_item = None
+            self.m_mouse_down = True
+            self.m_cursor_moving = False
+            
+        elif event.button() == Qt.RightButton:
+            if canvas.is_line_mov:
+                if self.m_hover_item:
+                    self.ConnectToHover()
+                    self.m_r_click_conn = self.m_hover_item
+                    self.m_r_click_time = time.time()
+                    
+                    for line_mov in self.m_line_mov_list:
+                        line_mov.toggleReadyToDisc()
+                        line_mov.updateLinePos(event.scenePos())
+                        
+        QGraphicsItem.mousePressEvent(self, event)
+
+    def mouseMoveEvent(self, event):
+        if self.m_mouse_down:
+            if not self.m_cursor_moving:
+                self.setCursor(QCursor(Qt.CrossCursor))
+                self.m_cursor_moving = True
+
+                for connection in canvas.connection_list:
+                    if connection.port_out_id in self.m_port_id_list or connection.port_in_id in self.m_port_id_list:
+                        connection.widget.setLocked(True)
+
+            if not self.m_line_mov_list:
+                self.m_r_click_conn = None
+                canvas.last_z_value += 1
+                self.setZValue(canvas.last_z_value)
+                canvas.last_z_value += 1
+                for port in canvas.port_list:
+                    if port.port_id in self.m_port_id_list:
+                        port.widget.setZValue(canvas.last_z_value)
+                
+                for port in canvas.port_list:
+                    if (not port.port_id in self.m_port_id_list and
+                        (port.port_type != self.m_port_type or 
+                        port.port_mode == self.m_port_mode)):
+                        port.widget.setOpacity(0.35)
+                for pair in canvas.pair_list:
+                    if (pair.pair_id != self.m_pair_id and
+                        (pair.port_type != self.m_port_type or
+                        pair.port_mode == self.m_port_mode)):
+                        pair.widget.setOpacity(0.35)
+                
+                for port_id in self.m_port_id_list:
+                    pppl = CanvasGetPortPositionAndPairLenght(port_id, self.m_pair_id)
+                    port_posinpair, pair_lenght = pppl[0], pppl[1]
+                    
+                    if options.use_bezier_lines:
+                        line_mov  = CanvasBezierLineMov(self.m_port_mode, self.m_port_type, port_posinpair, pair_lenght, self)
+                    else:
+                        line_mov  = CanvasLineMov(self.m_port_mode, self.m_port_type, port_posinpair, pair_lenght, self)
+                    #line_mov.setZValue(canvas.last_z_value)
+                    self.m_line_mov_list.append(line_mov)
+                
+                canvas.is_line_mov = True
+                canvas.last_z_value += 1
+                self.parentItem().setZValue(canvas.last_z_value)
+                
+                #print('dessine des lignes')
+                print(canvas.last_z_value, self.zValue(), self.parentItem().zValue())
+
+            item = None
+            items = canvas.scene.items(event.scenePos(), Qt.ContainsItemShape, Qt.AscendingOrder)
+            for i in range(len(items)):
+                if items[i].type() == CanvasPortType or items[i].type() == CanvasStereoPairType:
+                    if items[i] != self:
+                        if not item:
+                            item = items[i]
+                        elif items[i].parentItem().zValue() > item.parentItem().zValue():
+                            item = items[i]
+
+            if self.m_hover_item and self.m_hover_item != item:
+                self.m_hover_item.setSelected(False)
+
+            if item:
+                
+                if item.getPortMode() != self.m_port_mode and item.getPortType() == self.m_port_type:
+                    item.setSelected(True)
+                    if item.type() == CanvasPortType:
+                        if self.m_hover_item != item:
+                            print(item.zValue(), item.parentItem().zValue())
+                            self.m_hover_item = item
+                            self.resetDotLines()
+                            self.resetLineMovPositions()
+                            for line_mov in self.m_line_mov_list:
+                                line_mov.setPortPosInPairTo(PORT_IN_PAIR_POSITION_MONO)
+                            
+                            self.m_dotcon_list = []
+                            for port_id in self.m_port_id_list:
+                                for connection in canvas.connection_list:
+                                    if ( (connection.port_out_id == self.m_hover_item.getPortId() and connection.port_in_id == port_id) or
+                                        (connection.port_out_id == port_id and connection.port_in_id == self.m_hover_item.getPortId()) ):
+                                        self.m_dotcon_list.append(connection)
+                                        
+                            if len(self.m_dotcon_list) == len(self.m_port_id_list):
+                                for connection in self.m_dotcon_list:
+                                    connection.widget.setReadyToDisc(True)
+                                    connection.widget.updateLineGradient()
+                                for line_mov in self.m_line_mov_list:
+                                    line_mov.setReadyToDisc(True)
+                                    
+                    elif item.type() == CanvasStereoPairType:
+                        if self.m_hover_item != item:
+                            print(item.zValue(), item.parentItem().zValue())
+                            self.m_hover_item = item
+                            self.resetDotLines()
+                            self.resetLineMovPositions()
+                            
+                            if len(self.m_hover_item.m_port_id_list) <= len(self.m_line_mov_list):
+                                for line_mov in self.m_line_mov_list:
+                                    line_mov.setPortPosInPairTo(line_mov.m_port_posinpair % len(self.m_hover_item.m_port_id_list))
+                                    line_mov.setPairLenghtTo(len(self.m_hover_item.m_port_id_list))
+                            else:
+                                
+                                for line_mov in self.m_line_mov_list:
+                                    line_mov.setPairLenghtTo(len(self.m_hover_item.m_port_id_list))
+                                
+                                #create new lines when line is hover a biggest pair
+                                for x in range(len(self.m_port_id_list), len(self.m_hover_item.m_port_id_list)):
+                                    port_posinpair = x % len(self.m_port_id_list)
+                                    pair_lenght = len(self.m_port_id_list)
+                                    if options.use_bezier_lines:
+                                        line_mov  = CanvasBezierLineMov(self.m_port_mode, self.m_port_type, port_posinpair, pair_lenght, self)
+                                    else:
+                                        line_mov  = CanvasLineMov(self.m_port_mode, self.m_port_type, port_posinpair, pair_lenght, self)
+                                        
+                                    line_mov.setPortPosInPairTo(x)
+                                    line_mov.setPairLenghtTo(len(self.m_hover_item.m_port_id_list))
+                                    self.m_line_mov_list.append(line_mov)
+                            
+                            self.m_dotcon_list = []
+                            symetric_con_list = []
+                            for portself_id in self.m_port_id_list:
+                                for porthover_id in self.m_hover_item.getPortsList():
+                                    for connection in canvas.connection_list:
+                                        if ( (connection.port_out_id == portself_id and connection.port_in_id == porthover_id) or
+                                        (connection.port_out_id == porthover_id and connection.port_in_id == portself_id) ):
+                                            if (self.m_port_id_list.index(portself_id) % len(self.m_hover_item.getPortsList())) == (self.m_hover_item.m_port_id_list.index(porthover_id) % len(self.m_port_id_list)):
+                                                self.m_dotcon_list.append(connection)
+                                                symetric_con_list.append(connection)
+                                            else:
+                                                self.m_dotcon_list.append(connection)
+                                                connection.widget.setReadyToDisc(True)
+                                                connection.widget.updateLineGradient()
+                            
+                            if len(self.m_port_id_list) >= len(self.m_hover_item.getPortsList()):
+                                biggest_list = self.m_port_id_list
+                            else: 
+                                biggest_list = self.m_hover_item.getPortsList()
+                                
+                            if len(symetric_con_list) == len(biggest_list):
+                                for connection in self.m_dotcon_list:
+                                    connection.widget.setReadyToDisc(True)
+                                    connection.widget.updateLineGradient()
+                                for line_mov in self.m_line_mov_list:
+                                    line_mov.setReadyToDisc(True)
+                        
+                else:
+                    self.m_hover_item = None
+                    self.m_r_click_conn = None
+                    self.resetDotLines()
+                    self.resetLineMovPositions()
+                    for port_id in self.m_port_id_list:
+                        port_posinpair = self.m_port_id_list.index(port_id)
+                        self.m_line_mov_list[port_posinpair].setPortPosInPairTo(port_posinpair)
+                    
+            else:
+                if self.m_hover_item:
+                    self.m_hover_item = None
+                    self.m_r_click_conn = None
+                    self.resetDotLines()
+                    self.resetLineMovPositions()
+                    for port_id in self.m_port_id_list:
+                        port_posinpair = self.m_port_id_list.index(port_id)
+                        self.m_line_mov_list[port_posinpair].setPortPosInPairTo(port_posinpair)
+            
+            for line_mov in self.m_line_mov_list:
+                line_mov.updateLinePos(event.scenePos())
+            return event.accept()
+
+        QGraphicsItem.mouseMoveEvent(self, event)
+        
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            if self.m_mouse_down:
+                
+                for line_mov in self.m_line_mov_list:
+                    line_mov.deleteFromScene()
+                self.m_line_mov_list.clear()
+                
+                for port in canvas.port_list:
+                    port.widget.setOpacity(1)
+                
+                for pair in canvas.pair_list:
+                    pair.widget.setOpacity(1)
+
+                for connection in canvas.connection_list:
+                    if connection.port_out_id in self.m_port_id_list or connection.port_in_id in self.m_port_id_list:
+                        connection.widget.setLocked(False)
+                if self.m_hover_item:  
+                    if self.m_r_click_conn != self.m_hover_item:
+                        if time.time() > self.m_r_click_time + 0.3:
+                            self.ConnectToHover()
+                        
+                    canvas.scene.clearSelection()
+                else:
+                    if self.m_r_click_conn:
+                        canvas.scene.clearSelection()
+
+            if self.m_cursor_moving:
+                self.setCursor(QCursor(Qt.ArrowCursor))
+
+            self.m_hover_item = None
+            self.m_mouse_down = False
+            self.m_cursor_moving = False
+            canvas.is_line_mov = False
+        QGraphicsItem.mouseReleaseEvent(self, event)
+
+        
+    def contextMenuEvent(self, event):
+        if canvas.is_line_mov:
+            return event.ignore()
+        
+        canvas.scene.clearSelection()
+        self.setSelected(True)
+        
+        menu = QMenu()
+        discMenu = QMenu("Disconnect", menu)
+        
+        #get all connected ports and all connected groups
+        all_connected_ports_ids = []
+        group_ids_list = []
+        for selfport_id in self.m_port_id_list:
+            con_list = CanvasGetPortConnectionList(selfport_id)
+            for con_id in con_list:
+                port_id = CanvasGetConnectedPort(con_id, selfport_id)
+                for port in canvas.port_list:
+                    if port.port_id == port_id:
+                        if not port.group_id in group_ids_list:
+                            group_ids_list.append(port.group_id)
+                                
+                if not port_id in all_connected_ports_ids:
+                    all_connected_ports_ids.append(port_id)
+                    
+        #Display 'no connection' action in disconnect menu
+        if len(all_connected_ports_ids) == 0:
+            action_noconnection = discMenu.addAction('no connection')
+            action_noconnection.setEnabled(False)
+            
+        #check each group to get no trouble with ports in the same pair which could have non-consecutive port ids
+        for group_id in group_ids_list:
+            #get a list of connected port from this group
+            gr_port_ids_list = []
+            for port in canvas.port_list:
+                if port.group_id == group_id:
+                    if port.port_id in all_connected_ports_ids:
+                        if not port.port_id in gr_port_ids_list:
+                            gr_port_ids_list.append(port.port_id)
+            
+            pair_list_ids = []
+            pair_dirty_connect_list = [] #is used to display individual ports of pair or not
+            last_is_dirty_pair = False #is used to display menu separator or not
+            
+            #create action for each port of this group connected to the box
+            for port in canvas.port_list:
+                if port.port_id in gr_port_ids_list:
+                    
+                    #get port connection list
+                    port_con_list = []
+                    for connection in canvas.connection_list:
+                        if ( (connection.port_out_id in self.m_port_id_list and connection.port_in_id == port.port_id) or
+                            (connection.port_out_id == port.port_id and connection.port_in_id in self.m_port_id_list) ):
+                            port_con_list.append(connection.connection_id)
+                    
+                    if port.pair_id:
+                        port_alone_connected = False
+                        
+                        if not port.pair_id in pair_list_ids:
+                            pair_list_ids.append(port.pair_id)
+                            
+                            for pair in canvas.pair_list:
+                                if pair.pair_id == port.pair_id:
+                                    
+                                    #count ports from pair connected to the box
+                                    c = 0
+                                    for p in pair.port_id_list:
+                                        if p in all_connected_ports_ids:
+                                            c += 1
+                                    
+                                    if c == 1:
+                                        port_alone_connected = True
+                                    
+                                    #Set disconnect port action if port is the only one of the pair connected to the box
+                                    if port_alone_connected:
+                                        if last_is_dirty_pair:
+                                            discMenu.addSeparator()
+                                            last_is_dirty_pair = False
+                                            
+                                        full_port_name = CanvasGetFullPortName(port.port_id)
+                                        act_x_disc_port = discMenu.addAction(full_port_name)
+                                        act_x_disc_port.setData(port_con_list)
+                                        act_x_disc_port.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
+                                        
+                                        
+                                    else:
+                                        #get pair connection list
+                                        pair_con_list = []
+                                        for connection in canvas.connection_list:
+                                            if (connection.port_out_id in self.m_port_id_list and connection.port_in_id in pair.port_id_list or
+                                                connection.port_out_id in pair.port_id_list and connection.port_in_id in self.m_port_id_list):
+                                                pair_con_list.append(connection.connection_id)
+                                                if connection.port_out_id in self.m_port_id_list:
+                                                    if (self.m_port_id_list.index(connection.port_out_id) % len(pair.port_id_list) !=
+                                                        pair.port_id_list.index(connection.port_in_id) % len(self.m_port_id_list) ):
+                                                        pair_dirty_connect_list.append(pair.pair_id)
+                                                else:
+                                                    if (self.m_port_id_list.index(connection.port_in_id) % len(pair.port_id_list) !=
+                                                        pair.port_id_list.index(connection.port_out_id) % len(self.m_port_id_list) ):
+                                                        pair_dirty_connect_list.append(pair.pair_id)
+                                                                                                              
+                                        if pair.pair_id in pair_dirty_connect_list:
+                                            discMenu.addSeparator()
+                                            last_is_dirty_pair = True
+                                        elif last_is_dirty_pair:
+                                            discMenu.addSeparator()
+                                            last_is_dirty_pair = False
+                                            
+                                        
+                                        #set pair action in submenu
+                                        pair_print_name = CanvasGetPairFullName(pair.pair_id)
+                                        act_x_disc_pair = discMenu.addAction(pair_print_name)        
+                                        act_x_disc_pair.setData(pair_con_list)
+                                        act_x_disc_pair.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
+                                        
+                                    
+                        #set port action in submenu (if port is in a pair and isn't the only one connected to the box) 
+                        if not port_alone_connected and port.pair_id in pair_dirty_connect_list:
+                            port_print_name = CanvasGetPortPrintName(port.port_id, port.pair_id)
+                            act_x_disc_port = discMenu.addAction('  → ' + port_print_name)
+                            act_x_disc_port.setData(port_con_list)
+                            act_x_disc_port.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
+                        
+                    else:
+                        if last_is_dirty_pair:
+                            discMenu.addSeparator()
+                            last_is_dirty_pair = False
+                            
+                        #set port action in submenu (if port is not in a pair) 
+                        full_port_name = CanvasGetFullPortName(port.port_id)
+                        act_x_disc_port = discMenu.addAction(full_port_name)
+                        act_x_disc_port.setData(port_con_list)
+                        act_x_disc_port.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
+                
+                
+        menu.addMenu(discMenu)
+        act_x_disc_allthepair = menu.addAction("Disconnect &All")
+        act_x_sep_1 = menu.addSeparator()
+        act_x_setasmono = menu.addAction('Split to Monos')
+
+        act_selected = menu.exec_(event.screenPos())
+        
+        if act_selected == act_x_disc_allthepair:
+            for connection in canvas.connection_list:
+                if connection.port_out_id in self.m_port_id_list or connection.port_in_id in self.m_port_id_list:
+                    canvas.callback(ACTION_PORTS_DISCONNECT, connection.connection_id, 0, "")
+            
+        elif act_selected == act_x_setasmono:
+            self.SplitToMonos()
+            
+        event.accept()
+            
+    def boundingRect(self):
+        self.m_pair_width = self.getPairWidth()
+        if self.m_port_mode == PORT_MODE_INPUT:
+            return QRectF(canvas.theme.port_in_pair_width, 0, self.m_pair_width + 12 - canvas.theme.port_in_pair_width, canvas.theme.port_height * len(self.m_port_id_list))
+        else:
+            return QRectF(0, 0, self.m_pair_width + 12 - canvas.theme.port_in_pair_width, canvas.theme.port_height * len(self.m_port_id_list))
+
+    def paint(self, painter, option, widget):
+        painter.save()
+        painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing == ANTIALIASING_FULL))
+        poly_locx = [0, 0, 0, 0, 0, 0]
+        
+        if self.m_port_mode == PORT_MODE_INPUT:
+            
+            port_width = canvas.theme.port_in_pair_width
+            
+            for port in canvas.port_list:
+                if port.port_id in self.m_port_id_list:
+                    port_print_name = CanvasGetPortPrintName(port.port_id, self.m_pair_id)
+                    port_in_p_width = QFontMetrics(self.m_pair_font).width(port_print_name) + 3
+                    if port_in_p_width > port_width:
+                        port_width = port_in_p_width
+
+            text_pos = QPointF(port_width + 3, canvas.theme.port_text_ypos + (canvas.theme.port_height * (len(self.m_port_id_list) -1)/2))
+
+            if canvas.theme.port_mode == Theme.THEME_PORT_POLYGON:
+                poly_locx[0] = canvas.theme.port_in_pair_width
+                poly_locx[1] = self.m_pair_width + 5
+                poly_locx[2] = self.m_pair_width + 12
+                poly_locx[3] = self.m_pair_width + 5
+                poly_locx[4] = canvas.theme.port_in_pair_width
+            elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE:
+                poly_locx[0] = canvas.theme.port_in_pair_width
+                poly_locx[1] = self.m_pair_width + 5
+                poly_locx[2] = self.m_pair_width + 5
+                poly_locx[3] = self.m_pair_width + 5
+                poly_locx[4] = canvas.theme.port_in_pair_width
+            else:
+                qCritical("PatchCanvas::CanvasStereoPair.paint() - invalid theme port mode '%s'" % canvas.theme.port_mode)
+                return
+
+        elif self.m_port_mode == PORT_MODE_OUTPUT:
+            text_pos = QPointF(9, canvas.theme.port_text_ypos + (canvas.theme.port_height * (len(self.m_port_id_list) -1)/2))
+
+            if canvas.theme.port_mode == Theme.THEME_PORT_POLYGON:
+                poly_locx[0] = self.m_pair_width + 12 - canvas.theme.port_in_pair_width
+                poly_locx[1] = 7
+                poly_locx[2] = 0
+                poly_locx[3] = 7
+                poly_locx[4] = self.m_pair_width + 12 - canvas.theme.port_in_pair_width
+            elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE:
+                poly_locx[0] = self.m_pair_width + 12 - canvas.theme.port_in_pair_width
+                poly_locx[1] = 5
+                poly_locx[2] = 5
+                poly_locx[3] = 5
+                poly_locx[4] = self.m_pair_width + 12 - canvas.theme.port_in_pair_width
+            else:
+                qCritical("PatchCanvas::CanvasStereoPair.paint() - invalid theme port mode '%s'" % canvas.theme.port_mode)
+                return
+
+        else:
+            qCritical("PatchCanvas::CanvasStereoPair.paint() - invalid port mode '%s'" % port_mode2str(self.m_port_mode))
+            return
+
+        poly_pen = canvas.theme.pair_audio_jack_pen_sel  if self.isSelected() else canvas.theme.pair_audio_jack_pen
+        text_pen = canvas.theme.port_audio_jack_text_sel if self.isSelected() else canvas.theme.port_audio_jack_text
+        
+        if self.m_port_mode == PORT_MODE_OUTPUT:
+            real_pair_width = self.m_pair_width - canvas.theme.port_in_pair_width
+            pair_gradient = QLinearGradient(real_pair_width -40, 0, real_pair_width, 0)
+            pair_gradient.setColorAt(0, canvas.theme.port_audio_jack_bg_sel if self.isSelected() else canvas.theme.port_audio_jack_bg)
+            pair_gradient.setColorAt(1, canvas.theme.pair_audio_jack_bg_sel if self.isSelected() else canvas.theme.pair_audio_jack_bg)
+        else:
+            pair_gradient = QLinearGradient(canvas.theme.port_in_pair_width, 0, canvas.theme.port_in_pair_width + 40, 0)
+            pair_gradient.setColorAt(0, canvas.theme.pair_audio_jack_bg_sel if self.isSelected() else canvas.theme.pair_audio_jack_bg)
+            pair_gradient.setColorAt(1, canvas.theme.port_audio_jack_bg_sel if self.isSelected() else canvas.theme.port_audio_jack_bg)
+            
+        
+        polygon  = QPolygonF()
+        polygon += QPointF(poly_locx[0], 0)
+        polygon += QPointF(poly_locx[1], 0)
+        polygon += QPointF(poly_locx[2], float(canvas.theme.port_height / 2) )
+        polygon += QPointF(poly_locx[2], float(canvas.theme.port_height * (len(self.m_port_id_list) - 1/2)) )
+        polygon += QPointF(poly_locx[3], canvas.theme.port_height * len(self.m_port_id_list))
+        polygon += QPointF(poly_locx[4], canvas.theme.port_height * len(self.m_port_id_list))
+            
+        if canvas.theme.port_bg_pixmap:
+            portRect = polygon.boundingRect()
+            portPos  = portRect.topLeft()
+            painter.drawTiledPixmap(portRect, canvas.theme.port_bg_pixmap, portPos)
+        else:
+            painter.setBrush(pair_gradient)
+
+        painter.setPen(poly_pen)
+        painter.drawPolygon(polygon)
+
+        painter.setPen(text_pen)
+        painter.setFont(self.m_pair_font)
+        pair_name = CanvasGetPairName(self.m_port_id_list)
+        painter.drawText(text_pos, pair_name)
+
+        #if self.isSelected() != self.m_last_selected_state:
+            #CanvasUpdateSelectedLines()
+                    
+        self.m_last_selected_state = self.isSelected()
+
+        painter.restore()
+
 # ------------------------------------------------------------------------------
 # canvasbox.cpp
 
@@ -2316,14 +3472,14 @@ class CanvasBox(QGraphicsItem):
         if self.shadow:
             self.shadow.setOpacity(opacity)
 
-    def addPortFromGroup(self, port_id, port_mode, port_type, port_name, is_alternate):
+    def addPortFromGroup(self, port_id, port_mode, port_type, port_name, pair_id, is_alternate):
         if len(self.m_port_list_ids) == 0:
             if options.auto_hide_groups:
                 if options.eyecandy == EYECANDY_FULL:
                     CanvasItemFX(self, True, False)
                 self.setVisible(True)
 
-        new_widget = CanvasPort(self.m_group_id, port_id, port_name, port_mode, port_type, is_alternate, self)
+        new_widget = CanvasPort(self.m_group_id, port_id, port_name, port_mode, port_type, pair_id, is_alternate, self)
 
         port_dict = port_dict_t()
         port_dict.group_id = self.m_group_id
@@ -2354,7 +3510,14 @@ class CanvasBox(QGraphicsItem):
                     CanvasItemFX(self, False, False)
                 else:
                     self.setVisible(False)
-
+    
+    def addPairFromGroup(self, pair_id, port_mode, port_type, port_id_list):
+        new_widget = CanvasStereoPair(pair_id, port_mode, port_type, port_id_list, self)
+        return new_widget
+    
+    def removePairFromGroup(self, pair_id):
+        self.updatePositions()
+    
     def addLineFromGroup(self, line, connection_id):
         new_cbline = cb_line_t()
         new_cbline.line = line
