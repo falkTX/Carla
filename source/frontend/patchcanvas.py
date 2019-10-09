@@ -24,7 +24,7 @@ from carla_config import *
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from math import floor
+from math import floor, log
 
 if config_UseQt5:
     from PyQt5.QtCore import pyqtSignal, pyqtSlot, qCritical, qFatal, qWarning, Qt, QObject
@@ -2002,10 +2002,17 @@ class CanvasLine(QGraphicsLineItem):
 
         self.m_locked = False
         self.m_lineSelected = False
+        self.m_ready_to_disc = False
 
         self.setGraphicsEffect(None)
         self.updateLinePos()
-
+    
+    def isReadyToDisc(self):
+        return self.m_ready_to_disc
+    
+    def setReadyToDisc(self, yesno):
+        self.m_ready_to_disc = yesno
+    
     def isLocked(self):
         return self.m_locked
 
@@ -2036,12 +2043,44 @@ class CanvasLine(QGraphicsLineItem):
 
     def updateLinePos(self):
         if self.item1.getPortMode() == PORT_MODE_OUTPUT:
-            rect1 = self.item1.sceneBoundingRect()
-            rect2 = self.item2.sceneBoundingRect()
-            line = QLineF(rect1.right(),
-                          rect1.top() + float(canvas.theme.port_height)/2,
-                          rect2.left(),
-                          rect2.top() + float(canvas.theme.port_height)/2)
+            pppl1 = CanvasGetPortPositionAndPairLenght(self.item1.getPortId(), self.item1.getPairId())
+            port_posinpair1, pair_lenght1 = pppl1[0], pppl1[1]
+            
+            if pair_lenght1:
+                if pair_lenght1 > 2:
+                    phi = 0.75
+                else:
+                    phi = 0.62
+            
+            if pair_lenght1 > 1:
+                first_old_y = canvas.theme.port_height * phi
+                last_old_y  = canvas.theme.port_height * (pair_lenght1 - phi)
+                delta = (last_old_y - first_old_y) / (pair_lenght1 -1)
+                Y1 = first_old_y + (port_posinpair1 * delta) - (canvas.theme.port_height * port_posinpair1)
+            else:
+                Y1 = canvas.theme.port_height / 2
+                
+            pppl2 = CanvasGetPortPositionAndPairLenght(self.item2.getPortId(), self.item2.getPairId())
+            port_posinpair2, pair_lenght2 = pppl2[0], pppl2[1]
+            
+            if pair_lenght2:
+                if pair_lenght2 > 2:
+                    phi = 0.75
+                else:
+                    phi = 0.62
+            
+            if pair_lenght2 > 1:
+                first_old_y = canvas.theme.port_height * phi
+                last_old_y  = canvas.theme.port_height * (pair_lenght2 - phi)
+                delta = (last_old_y - first_old_y) / (pair_lenght2 -1)
+                Y2 = first_old_y + (port_posinpair2 * delta) - (canvas.theme.port_height * port_posinpair2)
+            else:
+                Y2 = canvas.theme.port_height / 2
+            
+            line = QLineF(self.item1.scenePos().x() + self.item1.getPortWidth() + 12,
+                          self.item1.scenePos().y() + Y1,
+                          self.item2.scenePos().x(),
+                          self.item2.scenePos().y() + Y2)
             self.setLine(line)
 
             self.m_lineSelected = False
@@ -2102,11 +2141,19 @@ class CanvasBezierLine(QGraphicsPathItem):
 
         self.m_locked = False
         self.m_lineSelected = False
+        self.m_ready_to_disc = False
 
         self.setBrush(QColor(0, 0, 0, 0))
         self.setGraphicsEffect(None)
         self.updateLinePos()
-
+    
+    
+    def isReadyToDisc(self):
+        return self.m_ready_to_disc
+    
+    def setReadyToDisc(self, yesno):
+        self.m_ready_to_disc = yesno
+    
     def isLocked(self):
         return self.m_locked
 
@@ -2137,21 +2184,94 @@ class CanvasBezierLine(QGraphicsPathItem):
 
     def updateLinePos(self):
         if self.item1.getPortMode() == PORT_MODE_OUTPUT:
-            rect1 = self.item1.sceneBoundingRect()
-            rect2 = self.item2.sceneBoundingRect()
+            item1_x = self.item1.scenePos().x() + self.item1.getPortWidth() + 12
+            
+            pppl1 = CanvasGetPortPositionAndPairLenght(self.item1.getPortId(), self.item1.getPairId())
+            port_posinpair1, pair_lenght1 = pppl1[0], pppl1[1]
+            
+            if pair_lenght1 > 2:
+                phi = 0.75
+            else:
+                phi = 0.62
+            
+            if pair_lenght1 > 1:
+                first_old_y = canvas.theme.port_height * phi
+                last_old_y  = canvas.theme.port_height * (pair_lenght1 - phi)
+                delta = (last_old_y - first_old_y) / (pair_lenght1 -1)
+                old_y1 = first_old_y + (port_posinpair1 * delta) - (canvas.theme.port_height * port_posinpair1)
+            else:
+                old_y1 = canvas.theme.port_height / 2
+            
+            item1_y = self.item1.scenePos().y() + old_y1
+            
+            
+            item2_x = self.item2.scenePos().x()
+            
+            pppl2 = CanvasGetPortPositionAndPairLenght(self.item2.getPortId(), self.item2.getPairId())
+            port_posinpair2, pair_lenght2 = pppl2[0], pppl2[1]
+            
+            if pair_lenght2 > 2:
+                phi = 0.75
+            else:
+                phi = 0.62
+            
+            
+            if pair_lenght2 > 1:
+                first_old_y = canvas.theme.port_height * phi
+                last_old_y  = canvas.theme.port_height * (pair_lenght2 - phi)
+                delta = (last_old_y - first_old_y) / (pair_lenght2 -1)
+                old_y2 = first_old_y + (port_posinpair2 * delta) - (canvas.theme.port_height * port_posinpair2)
+            else:
+                old_y2 = canvas.theme.port_height / 2
+                
+            item2_y = self.item2.scenePos().y() + old_y2
 
-            item1_x = rect1.right()
-            item2_x = rect2.left()
-            item1_y = rect1.top() + float(canvas.theme.port_height)/2
-            item2_y = rect2.top() + float(canvas.theme.port_height)/2
-            item1_new_x = item1_x + abs(item1_x - item2_x) / 2
-            item2_new_x = item2_x - abs(item1_x - item2_x) / 2
+            item1_mid_x = abs(item1_x - item2_x) / 2
+            item1_new_x = item1_x + item1_mid_x
 
+            item2_mid_x = abs(item1_x - item2_x) / 2
+            item2_new_x = item2_x - item2_mid_x
+            
+            if 0 == 0:
+                item1_new_y, item2_new_y = item1_y, item2_y
+                addLine = False
+                
+                diffxy = abs(item1_y - item2_y) - 1 * (abs(item1_x - item2_x))
+                if diffxy > 0:
+                    if abs(item1_y - item2_y) > 50:
+                        item1_new_x += abs(diffxy)
+                        item2_new_x -= abs(diffxy)
+
+                    if abs(item1_y - item2_y) > 50:
+                        while abs(item1_new_x - item2_x) < 50:
+                            item1_new_x += 10
+                            item2_new_x -= 10
+                    
+                    
+                    
+                if item1_x - item2_x > 0:
+                    if item1_new_x - item1_x < 80:
+                        item1_new_x = item1_x + 80
+                        item2_new_x = item2_x - 80
+                    elif item1_new_x - item1_x > 300:
+                        item1_new_x = item1_x + 300
+                        item2_new_x = item2_x - 300
+                        
+                    #correction de la ligne droite
+                    diff_y = abs(item1_y - item2_y)
+                    if diff_y <= 200:
+                        if diff_y < 5:
+                            diff_y = 5
+                        item1_new_y -= 50 / (log(diff_y) *log(diff_y))
+                        item2_new_y += 50 / (log(diff_y) * log(diff_y))
+            
             path = QPainterPath(QPointF(item1_x, item1_y))
-            path.cubicTo(item1_new_x, item1_y, item2_new_x, item2_y, item2_x, item2_y)
+            path.cubicTo(item1_new_x, item1_new_y, item2_new_x, item2_new_y, item2_x, item2_y)
+            #path.cubicTo(item1_new_x, item1_y, item2_new_x, item2_y, item2_x, item2_y)
             self.setPath(path)
 
             self.m_lineSelected = False
+            #self.setOpacity(0.)
             self.updateLineGradient()
 
     def type(self):
@@ -2207,7 +2327,12 @@ class CanvasLineMov(QGraphicsLineItem):
 
         self.m_port_mode = port_mode
         self.m_port_type = port_type
-
+        self.m_port_posinpair    = port_posinpair
+        self.m_port_posinpair_to = port_posinpair
+        self.m_pair_lenght       = pair_lenght
+        self.m_pair_lenght_to    = pair_lenght
+        self.m_ready_to_disc  = False
+        
         # Port position doesn't change while moving around line
         self.p_lineX = self.scenePos().x()
         self.p_lineY = self.scenePos().y()
@@ -2224,22 +2349,85 @@ class CanvasLineMov(QGraphicsLineItem):
         else:
             qWarning("PatchCanvas::CanvasLineMov(%s, %s, %s) - invalid port type" % (port_mode2str(port_mode), port_type2str(port_type), parent))
             pen = QPen(Qt.black)
-
+        
         self.setPen(pen)
-
+    
+    def setPortPosInPairTo(self, port_posinpair_to):
+        self.m_port_posinpair_to = port_posinpair_to
+        
+    def setPairLenghtTo(self, pair_lenght):
+        self.m_pair_lenght_to = pair_lenght
+    
+    def isReadyToDisc(self):
+        return self.m_ready_to_disc
+    
+    def setReadyToDisc(self, yesno):
+        self.m_ready_to_disc = yesno
+    
     def updateLinePos(self, scenePos):
+        if self.m_ready_to_disc:
+            if self.m_port_type == PORT_TYPE_AUDIO_JACK:
+                pen = QPen(canvas.theme.line_audio_jack, 2, Qt.DotLine)
+            elif self.m_port_type == PORT_TYPE_MIDI_JACK:
+                pen = QPen(canvas.theme.line_midi_jack, 2, Qt.DotLine)
+            elif self.m_port_type == PORT_TYPE_MIDI_A2J:
+                pen = QPen(canvas.theme.line_midi_a2j, 2, Qt.DotLine)
+            elif self.m_port_type == PORT_TYPE_MIDI_ALSA:
+                pen = QPen(canvas.theme.line_midi_alsa, 2, Qt.DotLine)
+            else:
+                qWarning("PatchCanvas::CanvasBezierLineMov(%s, %s, %s) - invalid port type" % (port_mode2str(port_mode), port_type2str(port_type), parent))
+                pen = QPen(Qt.black)
+        else:
+            if self.m_port_type == PORT_TYPE_AUDIO_JACK:
+                pen = QPen(canvas.theme.line_audio_jack, 2)
+            elif self.m_port_type == PORT_TYPE_MIDI_JACK:
+                pen = QPen(canvas.theme.line_midi_jack, 2)
+            elif self.m_port_type == PORT_TYPE_MIDI_A2J:
+                pen = QPen(canvas.theme.line_midi_a2j, 2)
+            elif self.m_port_type == PORT_TYPE_MIDI_ALSA:
+                pen = QPen(canvas.theme.line_midi_alsa, 2)
+            else:
+                qWarning("PatchCanvas::CanvasBezierLineMov(%s, %s, %s) - invalid port type" % (port_mode2str(port_mode), port_type2str(port_type), parent))
+                pen = QPen(Qt.black)
+        self.setPen(pen)
+        
+        phi = 0.75 if self.m_pair_lenght > 2 else 0.62
+        phito = 0.75 if self.m_pair_lenght_to > 2 else 0.62
+        
         item_pos = [0, 0]
 
         if self.m_port_mode == PORT_MODE_INPUT:
             item_pos[0] = 0
-            item_pos[1] = float(canvas.theme.port_height)/2
         elif self.m_port_mode == PORT_MODE_OUTPUT:
             item_pos[0] = self.p_width + 12
-            item_pos[1] = float(canvas.theme.port_height)/2
         else:
             return
-
-        line = QLineF(item_pos[0], item_pos[1], scenePos.x() - self.p_lineX, scenePos.y() - self.p_lineY)
+        
+        if self.parentItem().type() == CanvasPortType:
+            if self.m_pair_lenght:
+                first_old_y = canvas.theme.port_height * phi
+                last_old_y  = canvas.theme.port_height * (self.m_pair_lenght - phi)
+                delta = (last_old_y - first_old_y) / (self.m_pair_lenght -1)
+                item_pos[1] = first_old_y + (self.m_port_posinpair * delta) - (canvas.theme.port_height * self.m_port_posinpair)
+            else:
+                item_pos[1] = float(canvas.theme.port_height)/2
+        
+        elif self.parentItem().type() == CanvasStereoPairType:
+            first_old_y = canvas.theme.port_height * phi
+            last_old_y  = canvas.theme.port_height * (self.m_pair_lenght - phi)
+            delta = (last_old_y - first_old_y) / (self.m_pair_lenght -1)
+            item_pos[1] = first_old_y + (self.m_port_posinpair * delta)
+            
+        if self.m_port_posinpair_to == PORT_IN_PAIR_POSITION_MONO:
+                mouse_y_offset = 0
+        else:
+            first_new_y = canvas.theme.port_height * phito
+            last_new_y  = canvas.theme.port_height * (self.m_pair_lenght_to - phito)
+            delta = (last_new_y - first_new_y) / (self.m_pair_lenght_to -1)
+            new_y1 = first_new_y + (self.m_port_posinpair_to * delta)
+            mouse_y_offset = new_y1 - ( (last_new_y - first_new_y) / 2 ) - (canvas.theme.port_height * phito)
+        
+        line = QLineF(item_pos[0], item_pos[1], scenePos.x() - self.p_lineX, scenePos.y() - self.p_lineY + mouse_y_offset)
         self.setLine(line)
 
     def type(self):
@@ -2267,7 +2455,12 @@ class CanvasBezierLineMov(QGraphicsPathItem):
 
         self.m_port_mode = port_mode
         self.m_port_type = port_type
-
+        self.m_port_posinpair    = port_posinpair
+        self.m_port_posinpair_to = port_posinpair
+        self.m_pair_lenght       = pair_lenght
+        self.m_pair_lenght_to    = pair_lenght
+        self.m_ready_to_disc = False
+        
         # Port position doesn't change while moving around line
         self.p_itemX = self.scenePos().x()
         self.p_itemY = self.scenePos().y()
@@ -2290,30 +2483,123 @@ class CanvasBezierLineMov(QGraphicsPathItem):
     
     def setPortPosInPairTo(self, port_posinpair_to):
         self.m_port_posinpair_to = port_posinpair_to
+        
+    def setPairLenghtTo(self, pair_lenght):
+        self.m_pair_lenght_to = pair_lenght
+    
+    def isReadyToDisc(self):
+        return self.m_ready_to_disc
+    
+    def setReadyToDisc(self, yesno):
+        self.m_ready_to_disc = yesno
+    
+    def setPortPosInPairTo(self, port_posinpair_to):
+        self.m_port_posinpair_to = port_posinpair_to
       
     def setPairLenghtTo(self, pair_lenght):
         self.m_pair_lenght_to = pair_lenght
     
     def updateLinePos(self, scenePos):
-        if self.m_port_mode == PORT_MODE_INPUT:
-            old_x = 0
-            old_y = float(canvas.theme.port_height)/2
-            mid_x = abs(scenePos.x() - self.p_itemX) / 2
-            new_x = old_x - mid_x
-        elif self.m_port_mode == PORT_MODE_OUTPUT:
-            old_x = self.p_width + 12
-            old_y = float(canvas.theme.port_height)/2
-            mid_x = abs(scenePos.x() - (self.p_itemX + old_x)) / 2
-            new_x = old_x + mid_x
+        if self.m_ready_to_disc:
+            if self.m_port_type == PORT_TYPE_AUDIO_JACK:
+                pen = QPen(canvas.theme.line_audio_jack, 2, Qt.DotLine)
+            elif self.m_port_type == PORT_TYPE_MIDI_JACK:
+                pen = QPen(canvas.theme.line_midi_jack, 2, Qt.DotLine)
+            elif self.m_port_type == PORT_TYPE_MIDI_A2J:
+                pen = QPen(canvas.theme.line_midi_a2j, 2, Qt.DotLine)
+            elif self.m_port_type == PORT_TYPE_MIDI_ALSA:
+                pen = QPen(canvas.theme.line_midi_alsa, 2, Qt.DotLine)
+            else:
+                qWarning("PatchCanvas::CanvasBezierLineMov(%s, %s, %s) - invalid port type" % (port_mode2str(port_mode), port_type2str(port_type), parent))
+                pen = QPen(Qt.black)
         else:
-            return
+            if self.m_port_type == PORT_TYPE_AUDIO_JACK:
+                pen = QPen(canvas.theme.line_audio_jack, 2)
+            elif self.m_port_type == PORT_TYPE_MIDI_JACK:
+                pen = QPen(canvas.theme.line_midi_jack, 2)
+            elif self.m_port_type == PORT_TYPE_MIDI_A2J:
+                pen = QPen(canvas.theme.line_midi_a2j, 2)
+            elif self.m_port_type == PORT_TYPE_MIDI_ALSA:
+                pen = QPen(canvas.theme.line_midi_alsa, 2)
+            else:
+                qWarning("PatchCanvas::CanvasBezierLineMov(%s, %s, %s) - invalid port type" % (port_mode2str(port_mode), port_type2str(port_type), parent))
+                pen = QPen(Qt.black)
+        self.setPen(pen)
+        
+        phi = 0.75 if self.m_pair_lenght > 2 else 0.62
+        phito = 0.75 if self.m_pair_lenght_to > 2 else 0.62
+                
+        if self.parentItem().type() == CanvasPortType:
+            if self.m_pair_lenght > 1:
+                first_old_y = canvas.theme.port_height * phi
+                last_old_y  = canvas.theme.port_height * (self.m_pair_lenght - phi)
+                delta = (last_old_y - first_old_y) / (self.m_pair_lenght -1)
+                old_y = first_old_y + (self.m_port_posinpair * delta) - (canvas.theme.port_height * self.m_port_posinpair)
+            else:
+                old_y = canvas.theme.port_height / 2
+                
+            if self.m_port_posinpair_to == PORT_IN_PAIR_POSITION_MONO:
+                new_y = 0
+            else:
+                first_new_y = canvas.theme.port_height * phito
+                last_new_y  = canvas.theme.port_height * (self.m_pair_lenght_to - phito)
+                delta = (last_new_y - first_new_y) / (self.m_pair_lenght_to -1)
+                new_y1 = first_new_y + (self.m_port_posinpair_to * delta)
+                new_y = new_y1 - ( (last_new_y - first_new_y) / 2 ) - (canvas.theme.port_height * phito)
+                
+                
+            if self.m_port_mode == PORT_MODE_INPUT:
+                old_x = 0
+                mid_x = abs(scenePos.x() - self.p_itemX) / 2
+                new_x = old_x - mid_x
+            elif self.m_port_mode == PORT_MODE_OUTPUT:
+                old_x = self.p_width + 12
+                mid_x = abs(scenePos.x() - (self.p_itemX + old_x)) / 2
+                new_x = old_x + mid_x
+            else:
+                return
 
-        final_x = scenePos.x() - self.p_itemX
-        final_y = scenePos.y() - self.p_itemY
+            final_x = scenePos.x() - self.p_itemX
+            final_y = scenePos.y() - self.p_itemY + new_y
 
-        path = QPainterPath(QPointF(old_x, old_y))
-        path.cubicTo(new_x, old_y, new_x, final_y, final_x, final_y)
-        self.setPath(path)
+            path = QPainterPath(QPointF(old_x, old_y))
+            path.cubicTo(new_x, old_y, new_x, final_y, final_x, final_y)
+            self.setPath(path)
+            
+        elif self.parentItem().type() == CanvasStereoPairType:
+            first_old_y = canvas.theme.port_height * phi
+            last_old_y  = canvas.theme.port_height * (self.m_pair_lenght - phi)
+            delta = (last_old_y - first_old_y) / (self.m_pair_lenght -1)
+            old_y = first_old_y + (self.m_port_posinpair * delta)
+            
+            if self.m_port_posinpair_to == PORT_IN_PAIR_POSITION_MONO:
+                new_y = 0
+            elif self.m_port_posinpair_to == self.m_port_posinpair and self.m_pair_lenght == self.m_pair_lenght_to:
+                new_y = old_y - ( (last_old_y - first_old_y) / 2 ) - (canvas.theme.port_height * phi)
+            else:
+                first_new_y = canvas.theme.port_height * phito
+                last_new_y  = canvas.theme.port_height * (self.m_pair_lenght_to - phito)
+                delta = (last_new_y - first_new_y) / (self.m_pair_lenght_to -1)
+                new_y1 = first_new_y + (self.m_port_posinpair_to * delta)
+                new_y = new_y1 - ( (last_new_y - first_new_y) / 2 ) - (canvas.theme.port_height * phito)
+            
+            if self.m_port_mode == PORT_MODE_INPUT:
+                old_x = 0
+                mid_x = abs(scenePos.x() - self.p_itemX) / 2
+                new_x = old_x - mid_x
+            elif self.m_port_mode == PORT_MODE_OUTPUT:
+                old_x = self.p_width + 12
+                mid_x = abs(scenePos.x() - (self.p_itemX + old_x)) / 2
+                new_x = old_x + mid_x
+            else:
+                return
+            
+            final_x = scenePos.x() - self.p_itemX - 1
+            final_y = scenePos.y() - self.p_itemY + new_y
+
+            path = QPainterPath(QPointF(old_x, old_y))
+            path.cubicTo(new_x, old_y, new_x, final_y, final_x, final_y)
+            self.setPath(path)
 
     def type(self):
         return CanvasBezierLineMovType
@@ -2374,7 +2660,10 @@ class CanvasPort(QGraphicsItem):
 
     def getPortName(self):
         return self.m_port_name
-
+    
+    def getPairId(self):
+        return self.m_pair_id
+    
     def getFullPortName(self):
         return self.parentItem().getGroupName() + ":" + self.m_port_name
 
@@ -2565,11 +2854,7 @@ class CanvasPort(QGraphicsItem):
         QGraphicsItem.mouseReleaseEvent(self, event)
 
     def contextMenuEvent(self, event):
-        print('fkokof')
-        sys.stderr.write('zeofko\n')
         event.accept()
-        print('ckeor')
-        sys.stderr.write('zeofzefko\n')
         canvas.scene.clearSelection()
         self.setSelected(True)
 
@@ -2887,7 +3172,21 @@ class CanvasStereoPair(QGraphicsItem):
                 
             con_list = []
             ports_connected_list = []
-                
+            
+            for port in canvas.port_list:
+                if port.port_id == hover_port_id_list[0]:
+                    hover_port_group_id = port.group_id
+                    break
+            else:
+                return
+            
+            for port in canvas.port_list:
+                if port.port_id in self.m_port_id_list:
+                    selfgroup_id = port.group_id
+                    break
+            else:
+                return
+            
             for portself_id in self.m_port_id_list:
                 for porthover_id in hover_port_id_list:
                     for connection in canvas.connection_list:
@@ -2913,9 +3212,10 @@ class CanvasStereoPair(QGraphicsItem):
                             (hover_port_id_list.index(porthover_id) % len(self.m_port_id_list))):
                             if not [portself_id, porthover_id] in ports_connected_list:
                                 if self.m_port_mode == PORT_MODE_OUTPUT:
-                                    canvas.callback(ACTION_PORTS_CONNECT, portself_id, porthover_id, "")
+                                    conn = "%i:%i:%i:%i" % (selfgroup_id, portself_id, hover_port_group_id, porthover_id)
                                 else:
-                                    canvas.callback(ACTION_PORTS_CONNECT, porthover_id, portself_id, "")
+                                    conn = "%i:%i:%i:%i" % (hover_port_group_id, porthover_id, selfgroup_id, portself_id)
+                                canvas.callback(ACTION_PORTS_CONNECT, 0, 0, conn)
                     
     def resetDotLines(self):
         for connection in self.m_dotcon_list:
@@ -2949,8 +3249,8 @@ class CanvasStereoPair(QGraphicsItem):
             if canvas.is_line_mov:
                 if self.m_hover_item:
                     self.ConnectToHover()
-                    self.m_r_click_conn = self.m_hover_item
-                    self.m_r_click_time = time.time()
+                    #self.m_r_click_conn = self.m_hover_item
+                    #self.m_r_click_time = time.time()
                     
                     for line_mov in self.m_line_mov_list:
                         line_mov.toggleReadyToDisc()
@@ -3144,9 +3444,9 @@ class CanvasStereoPair(QGraphicsItem):
                     if connection.port_out_id in self.m_port_id_list or connection.port_in_id in self.m_port_id_list:
                         connection.widget.setLocked(False)
                 if self.m_hover_item:  
-                    if self.m_r_click_conn != self.m_hover_item:
-                        if time.time() > self.m_r_click_time + 0.3:
-                            self.ConnectToHover()
+                    #if self.m_r_click_conn != self.m_hover_item:
+                        #if time.time() > self.m_r_click_time + 0.3:
+                    self.ConnectToHover()
                         
                     canvas.scene.clearSelection()
                 else:
