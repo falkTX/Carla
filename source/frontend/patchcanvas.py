@@ -2769,7 +2769,23 @@ class CanvasPort(QGraphicsItem):
 
         painter.setPen(text_pen)
         painter.setFont(self.m_port_font)
-        painter.drawText(text_pos, self.m_port_name)
+        
+        if self.m_pair_id:
+            print_name = CanvasGetPortPrintName(self.m_port_id, self.m_pair_id)
+            print_name_size = QFontMetrics(self.m_port_font).width(print_name)    
+            if self.m_port_mode == PORT_MODE_OUTPUT:
+                
+                text_pos = QPointF(self.m_port_width + 9 - print_name_size, canvas.theme.port_text_ypos) 
+
+            if print_name_size > (canvas.theme.port_in_pair_width - 6):
+                painter.setPen(QPen(poly_color, 3))
+                painter.drawLine(poly_locx[5], 3, poly_locx[5], canvas.theme.port_height - 3)
+                painter.setPen(text_pen)
+                painter.setFont(self.m_port_font)
+            painter.drawText(text_pos, print_name)
+            
+        else:
+            painter.drawText(text_pos, self.m_port_name)
 
         if self.isSelected() != self.m_last_selected_state:
             for connection in canvas.connection_list:
@@ -2806,7 +2822,10 @@ class CanvasStereoPair(QGraphicsItem):
         # Base Variables
         self.m_pair_width  = 15
         self.m_pair_height = canvas.theme.port_height
-        self.m_pair_font = QFont(canvas.theme.port_font_name, canvas.theme.port_font_size, canvas.theme.port_font_state)
+        self.m_pair_font = QFont()
+        self.m_pair_font.setFamily(canvas.theme.port_font_name)
+        self.m_pair_font.setPixelSize(canvas.theme.port_font_size)
+        self.m_pair_font.setWeight(canvas.theme.port_font_state)
 
         self.m_line_mov_list = []
         self.m_r_click_conn = None
@@ -3321,8 +3340,7 @@ class CanvasStereoPair(QGraphicsItem):
                 if port.port_id in self.m_port_id_list:
                     port_print_name = CanvasGetPortPrintName(port.port_id, self.m_pair_id)
                     port_in_p_width = QFontMetrics(self.m_pair_font).width(port_print_name) + 3
-                    if port_in_p_width > port_width:
-                        port_width = port_in_p_width
+                    port_width = max(port_width, port_in_p_width)
 
             text_pos = QPointF(port_width + 3, canvas.theme.port_text_ypos + (canvas.theme.port_height * (len(self.m_port_id_list) -1)/2))
 
@@ -3384,8 +3402,8 @@ class CanvasStereoPair(QGraphicsItem):
         polygon += QPointF(poly_locx[1], lineHinting)
         polygon += QPointF(poly_locx[2], float(canvas.theme.port_height / 2) )
         polygon += QPointF(poly_locx[2], float(canvas.theme.port_height * (len(self.m_port_id_list) - 1/2)) )
-        polygon += QPointF(poly_locx[3], canvas.theme.port_height * len(self.m_port_id_list))
-        polygon += QPointF(poly_locx[4], canvas.theme.port_height * len(self.m_port_id_list))
+        polygon += QPointF(poly_locx[3], canvas.theme.port_height * len(self.m_port_id_list) + lineHinting)
+        polygon += QPointF(poly_locx[4], canvas.theme.port_height * len(self.m_port_id_list) + lineHinting)
             
         if canvas.theme.port_bg_pixmap:
             portRect = polygon.boundingRect()
