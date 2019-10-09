@@ -66,6 +66,10 @@ PORT_TYPE_MIDI_JACK  = 2
 PORT_TYPE_MIDI_ALSA  = 3
 PORT_TYPE_PARAMETER  = 4
 
+#Port Stereo position
+PORT_IN_PAIR_POSITION_MONO  = None
+PORT_IN_PAIR_POSITION_LEFT  = 0
+
 # Callback Action
 ACTION_GROUP_INFO       =  0 # group_id, N, N
 ACTION_GROUP_RENAME     =  1 # group_id, N, N
@@ -217,6 +221,7 @@ class Canvas(object):
         'last_connection_id',
         'initial_pos',
         'size_rect',
+        'is_line_mov',
         'group_list',
         'port_list',
         'force_mono_list',
@@ -1384,7 +1389,6 @@ def CanvasGetNewPairPortIdList(group_id, port_id, port_name, port_mode, port_typ
                             canvas.port_list.insert(index+1, last_port)
                             return [ port.port_id, port_id ]
                             
-        
 def CanvasAddPair(group_id, port_mode, port_type, port_id_list):
     box_widget  = None
     pair_widget = None
@@ -1787,6 +1791,8 @@ class PatchScene(QGraphicsScene):
                 if item.type() == CanvasBoxType:
                     group_item = item
                 elif item.type() == CanvasPortType:
+                    group_item = item.parentItem()
+                elif item.type() == CanvasStereoPairType:
                     group_item = item.parentItem()
                 #elif item.type() in (CanvasLineType, CanvasBezierLineType, CanvasLineMovType, CanvasBezierLineMovType):
                     #plugin_list = []
@@ -2244,12 +2250,18 @@ class CanvasLineMov(QGraphicsLineItem):
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing))
         QGraphicsLineItem.paint(self, painter, option, widget)
         painter.restore()
+        
+    def setPortPosInPairTo(self, port_posinpair_to):
+        self.m_port_posinpair_to = port_posinpair_to
+        
+    def setPairLenghtTo(self, pair_lenght):
+        self.m_pair_lenght_to = pair_lenght
 
 # ------------------------------------------------------------------------------
 # canvasbezierlinemov.cpp
 
 class CanvasBezierLineMov(QGraphicsPathItem):
-    def __init__(self, port_mode, port_type, parent):
+    def __init__(self, port_mode, port_type, port_posinpair, pair_lenght, parent):
         QGraphicsPathItem.__init__(self)
         self.setParentItem(parent)
 
@@ -2275,7 +2287,13 @@ class CanvasBezierLineMov(QGraphicsPathItem):
 
         self.setBrush(QColor(0, 0, 0, 0))
         self.setPen(pen)
-
+    
+    def setPortPosInPairTo(self, port_posinpair_to):
+        self.m_port_posinpair_to = port_posinpair_to
+      
+    def setPairLenghtTo(self, pair_lenght):
+        self.m_pair_lenght_to = pair_lenght
+    
     def updateLinePos(self, scenePos):
         if self.m_port_mode == PORT_MODE_INPUT:
             old_x = 0
@@ -2330,7 +2348,7 @@ class CanvasPort(QGraphicsItem):
         self.m_port_font.setPixelSize(canvas.theme.port_font_size)
         self.m_port_font.setWeight(canvas.theme.port_font_state)
 
-        self.m_line_mov = None
+        self.m_line_mov_list = []
         self.m_hover_item = None
         self.m_last_selected_state = False
 
@@ -2408,10 +2426,10 @@ class CanvasPort(QGraphicsItem):
         canvas.settings.endGroup()
         
         n = 1
-        new_pair_num_name = 'Pair_' + str(n)
+        new_pair_num_name = 'Pair_%i' % n
         while new_pair_num_name in all_pair_nums:
             n +=1
-            new_pair_num_name = 'Pair_' + str(n)
+            new_pair_num_name = 'Pair_%i' % n
             
         port_name_list = []
         for port in canvas.port_list:
@@ -2456,16 +2474,20 @@ class CanvasPort(QGraphicsItem):
                         (connection.group_in_id  == self.m_group_id and connection.port_in_id  == self.m_port_id)):
                         connection.widget.setLocked(True)
 
-            if not self.m_line_mov:
-                if options.use_bezier_lines:
-                    self.m_line_mov = CanvasBezierLineMov(self.m_port_mode, self.m_port_type, self)
-                else:
-                    self.m_line_mov = CanvasLineMov(self.m_port_mode, self.m_port_type, self)
-
-                canvas.last_z_value += 1
-                self.m_line_mov.setZValue(canvas.last_z_value)
-                canvas.last_z_value += 1
-                self.parentItem().setZValue(canvas.last_z_value)
+            port_posinpair, pair_lenght = CanvasGetPortPositionAndPairLenght(self.m_port_id, self.m_pair_id)
+            
+            if options.use_bezier_lines:
+                line_mov = CanvasBezierLineMov(self.m_port_mode, self.m_port_type, port_posinpair, pair_lenght, self)
+            else:
+                line_mov = CanvasLineMov(self.m_port_mode, self.m_port_type, port_posinpair, pair_lenght, self)
+            
+            line_mov.setPortPosInPairTo(PORT_IN_PAIR_POSITION_MONO)
+            self.m_line_mov_list.append(line_mov)
+            canvas.is_line_mov = True
+            canvas.last_z_value += 1
+            line_mov.setZValue(canvas.last_z_value)
+            canvas.last_z_value += 1
+            self.parentItem().setZValue(canvas.last_z_value)
 
             item = None
             items = canvas.scene.items(event.scenePos(), Qt.ContainsItemShape, Qt.AscendingOrder)
@@ -2488,19 +2510,22 @@ class CanvasPort(QGraphicsItem):
                     self.m_hover_item = None
             else:
                 self.m_hover_item = None
-
-            self.m_line_mov.updateLinePos(event.scenePos())
+            
+            for line_mov in self.m_line_mov_list:
+                line_mov.updateLinePos(event.scenePos())
+            
             return event.accept()
 
         QGraphicsItem.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
         if self.m_mouse_down:
-            if self.m_line_mov is not None:
-                item = self.m_line_mov
-                self.m_line_mov = None
-                canvas.scene.removeItem(item)
-                del item
+            if self.m_line_mov_list:
+                for line_mov in self.m_line_mov_list:
+                    item = line_mov
+                    canvas.scene.removeItem(item)
+                    del item
+                self.m_line_mov_list.clear()
 
             for connection in canvas.connection_list:
                 if ((connection.group_out_id == self.m_group_id and connection.port_out_id == self.m_port_id) or
@@ -2620,7 +2645,14 @@ class CanvasPort(QGraphicsItem):
             canvas.callback(ACTION_PORT_RENAME, self.m_group_id, self.m_port_id, "")
 
     def boundingRect(self):
-        return QRectF(0, 0, self.m_port_width + 12, self.m_port_height)
+        if self.m_pair_id:
+            if self.m_port_mode == PORT_MODE_INPUT:
+                return QRectF(0, 0, canvas.theme.port_in_pair_width, self.m_port_height)
+            else:
+                return QRectF(self.m_port_width +12 - canvas.theme.port_in_pair_width,
+                              0, canvas.theme.port_in_pair_width, self.m_port_height)
+        else:
+            return QRectF(0, 0, self.m_port_width + 12, self.m_port_height)
 
     def paint(self, painter, option, widget):
         painter.save()
@@ -2630,7 +2662,7 @@ class CanvasPort(QGraphicsItem):
         # but this needs some code rearrangement
         lineHinting = canvas.theme.port_audio_jack_pen.widthF() / 2
 
-        poly_locx = [0, 0, 0, 0, 0]
+        poly_locx = [0, 0, 0, 0, 0, 0]
         poly_corner_xhinting = (float(canvas.theme.port_height)/2) % floor(float(canvas.theme.port_height)/2)
         if poly_corner_xhinting == 0:
             poly_corner_xhinting = 0.5 * (1 - 7 / (float(canvas.theme.port_height)/2))
@@ -2644,12 +2676,14 @@ class CanvasPort(QGraphicsItem):
                 poly_locx[2] = self.m_port_width + 12 - poly_corner_xhinting
                 poly_locx[3] = self.m_port_width + 5 - lineHinting
                 poly_locx[4] = lineHinting
+                poly_locx[5] = canvas.theme.port_in_pair_width + lineHinting
             elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE:
                 poly_locx[0] = lineHinting
                 poly_locx[1] = self.m_port_width + 5 - lineHinting
                 poly_locx[2] = self.m_port_width + 5 - lineHinting
                 poly_locx[3] = self.m_port_width + 5 - lineHinting
                 poly_locx[4] = lineHinting
+                poly_locx[5] = canvas.theme.port_in_pair_width + lineHinting
             else:
                 qCritical("PatchCanvas::CanvasPort.paint() - invalid theme port mode '%s'" % canvas.theme.port_mode)
                 return
@@ -2663,12 +2697,13 @@ class CanvasPort(QGraphicsItem):
                 poly_locx[2] = 0 + poly_corner_xhinting
                 poly_locx[3] = 7 + lineHinting
                 poly_locx[4] = self.m_port_width + 12 - lineHinting
+                poly_locx[5] = self.m_port_width + 12 - canvas.theme.port_in_pair_width - lineHinting
             elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE:
                 poly_locx[0] = self.m_port_width + 12 - lineHinting
                 poly_locx[1] = 5 + lineHinting
                 poly_locx[2] = 5 + lineHinting
                 poly_locx[3] = 5 + lineHinting
-                poly_locx[4] = self.m_port_width + 12 - lineHinting
+                poly_locx[4] = self.m_port_width + 12 -canvas.theme.port_in_pair_width - lineHinting
             else:
                 qCritical("PatchCanvas::CanvasPort.paint() - invalid theme port mode '%s'" % canvas.theme.port_mode)
                 return
@@ -2706,14 +2741,21 @@ class CanvasPort(QGraphicsItem):
             #poly_pen.setColor(poly_pen.color().darker(110))
             #text_pen.setColor(text_pen.color()) #.darker(150))
             #conn_pen.setColor(conn_pen.color()) #.darker(150))
-
+        
         polygon  = QPolygonF()
-        polygon += QPointF(poly_locx[0], lineHinting)
-        polygon += QPointF(poly_locx[1], lineHinting)
-        polygon += QPointF(poly_locx[2], float(canvas.theme.port_height)/2)
-        polygon += QPointF(poly_locx[3], canvas.theme.port_height - lineHinting)
-        polygon += QPointF(poly_locx[4], canvas.theme.port_height - lineHinting)
-        polygon += QPointF(poly_locx[0], lineHinting)
+        
+        if self.m_pair_id:
+            polygon += QPointF(poly_locx[0] , lineHinting)
+            polygon += QPointF(poly_locx[5] , lineHinting)
+            polygon += QPointF(poly_locx[5], canvas.theme.port_height + lineHinting)
+            polygon += QPointF(poly_locx[0], canvas.theme.port_height + lineHinting)
+        else:
+            polygon += QPointF(poly_locx[0], lineHinting)
+            polygon += QPointF(poly_locx[1], lineHinting)
+            polygon += QPointF(poly_locx[2], float(canvas.theme.port_height)/2)
+            polygon += QPointF(poly_locx[3], canvas.theme.port_height - lineHinting)
+            polygon += QPointF(poly_locx[4], canvas.theme.port_height - lineHinting)
+            polygon += QPointF(poly_locx[0], lineHinting)
 
         if canvas.theme.port_bg_pixmap:
             portRect = polygon.boundingRect()
@@ -2785,7 +2827,10 @@ class CanvasStereoPair(QGraphicsItem):
 
     def getPortType(self):
         return self.m_port_type
-        
+    
+    def getPortWidth(self):
+        return self.m_pair_width
+    
     def getPairWidth(self):
         return self.m_pair_width
 
@@ -2868,7 +2913,10 @@ class CanvasStereoPair(QGraphicsItem):
                 line_mov.setPortPosInPairTo(line_mov.m_port_posinpair)
                 line_mov.setPairLenghtTo(line_mov.m_pair_lenght)
             else:
-                line_mov.deleteFromScene()
+                item = line_mov
+                canvas.scene.removeItem(item)
+                del item
+                
         self.m_line_mov_list = self.m_line_mov_list[:len(self.m_port_id_list)]
                 
             
@@ -2910,20 +2958,20 @@ class CanvasStereoPair(QGraphicsItem):
                     if port.port_id in self.m_port_id_list:
                         port.widget.setZValue(canvas.last_z_value)
                 
-                for port in canvas.port_list:
-                    if (not port.port_id in self.m_port_id_list and
-                        (port.port_type != self.m_port_type or 
-                        port.port_mode == self.m_port_mode)):
-                        port.widget.setOpacity(0.35)
-                for pair in canvas.pair_list:
-                    if (pair.pair_id != self.m_pair_id and
-                        (pair.port_type != self.m_port_type or
-                        pair.port_mode == self.m_port_mode)):
-                        pair.widget.setOpacity(0.35)
+                #for port in canvas.port_list:
+                    #if (not port.port_id in self.m_port_id_list and
+                        #(port.port_type != self.m_port_type or 
+                        #port.port_mode == self.m_port_mode)):
+                        #port.widget.setOpacity(0.35)
+                        
+                #for pair in canvas.pair_list:
+                    #if (pair.pair_id != self.m_pair_id and
+                        #(pair.port_type != self.m_port_type or
+                        #pair.port_mode == self.m_port_mode)):
+                        #pair.widget.setOpacity(0.35)
                 
                 for port_id in self.m_port_id_list:
-                    pppl = CanvasGetPortPositionAndPairLenght(port_id, self.m_pair_id)
-                    port_posinpair, pair_lenght = pppl[0], pppl[1]
+                    port_posinpair, pair_lenght = CanvasGetPortPositionAndPairLenght(port_id, self.m_pair_id)
                     
                     if options.use_bezier_lines:
                         line_mov  = CanvasBezierLineMov(self.m_port_mode, self.m_port_type, port_posinpair, pair_lenght, self)
@@ -2935,9 +2983,6 @@ class CanvasStereoPair(QGraphicsItem):
                 canvas.is_line_mov = True
                 canvas.last_z_value += 1
                 self.parentItem().setZValue(canvas.last_z_value)
-                
-                #print('dessine des lignes')
-                print(canvas.last_z_value, self.zValue(), self.parentItem().zValue())
 
             item = None
             items = canvas.scene.items(event.scenePos(), Qt.ContainsItemShape, Qt.AscendingOrder)
@@ -3065,7 +3110,9 @@ class CanvasStereoPair(QGraphicsItem):
             if self.m_mouse_down:
                 
                 for line_mov in self.m_line_mov_list:
-                    line_mov.deleteFromScene()
+                    item = line_mov
+                    canvas.scene.removeItem(item)
+                    del item
                 self.m_line_mov_list.clear()
                 
                 for port in canvas.port_list:
@@ -3259,10 +3306,15 @@ class CanvasStereoPair(QGraphicsItem):
     def paint(self, painter, option, widget):
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing == ANTIALIASING_FULL))
-        poly_locx = [0, 0, 0, 0, 0, 0]
+        
+        lineHinting = canvas.theme.port_audio_jack_pen.widthF() / 2
+
+        poly_locx = [0, 0, 0, 0, 0]
+        poly_corner_xhinting = (float(canvas.theme.port_height)/2) % floor(float(canvas.theme.port_height)/2)
+        if poly_corner_xhinting == 0:
+            poly_corner_xhinting = 0.5 * (1 - 7 / (float(canvas.theme.port_height)/2))
         
         if self.m_port_mode == PORT_MODE_INPUT:
-            
             port_width = canvas.theme.port_in_pair_width
             
             for port in canvas.port_list:
@@ -3275,17 +3327,17 @@ class CanvasStereoPair(QGraphicsItem):
             text_pos = QPointF(port_width + 3, canvas.theme.port_text_ypos + (canvas.theme.port_height * (len(self.m_port_id_list) -1)/2))
 
             if canvas.theme.port_mode == Theme.THEME_PORT_POLYGON:
-                poly_locx[0] = canvas.theme.port_in_pair_width
-                poly_locx[1] = self.m_pair_width + 5
-                poly_locx[2] = self.m_pair_width + 12
-                poly_locx[3] = self.m_pair_width + 5
-                poly_locx[4] = canvas.theme.port_in_pair_width
+                poly_locx[0] = canvas.theme.port_in_pair_width - lineHinting
+                poly_locx[1] = self.m_pair_width + 5 + lineHinting
+                poly_locx[2] = self.m_pair_width + 12 + lineHinting
+                poly_locx[3] = self.m_pair_width + 5 + lineHinting
+                poly_locx[4] = canvas.theme.port_in_pair_width - lineHinting
             elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE:
-                poly_locx[0] = canvas.theme.port_in_pair_width
-                poly_locx[1] = self.m_pair_width + 5
-                poly_locx[2] = self.m_pair_width + 5
-                poly_locx[3] = self.m_pair_width + 5
-                poly_locx[4] = canvas.theme.port_in_pair_width
+                poly_locx[0] = canvas.theme.port_in_pair_width - lineHinting
+                poly_locx[1] = self.m_pair_width + 5 + lineHinting
+                poly_locx[2] = self.m_pair_width + 5 + lineHinting
+                poly_locx[3] = self.m_pair_width + 5 + lineHinting
+                poly_locx[4] = canvas.theme.port_in_pair_width - lineHinting
             else:
                 qCritical("PatchCanvas::CanvasStereoPair.paint() - invalid theme port mode '%s'" % canvas.theme.port_mode)
                 return
@@ -3294,17 +3346,17 @@ class CanvasStereoPair(QGraphicsItem):
             text_pos = QPointF(9, canvas.theme.port_text_ypos + (canvas.theme.port_height * (len(self.m_port_id_list) -1)/2))
 
             if canvas.theme.port_mode == Theme.THEME_PORT_POLYGON:
-                poly_locx[0] = self.m_pair_width + 12 - canvas.theme.port_in_pair_width
-                poly_locx[1] = 7
-                poly_locx[2] = 0
-                poly_locx[3] = 7
-                poly_locx[4] = self.m_pair_width + 12 - canvas.theme.port_in_pair_width
+                poly_locx[0] = self.m_pair_width + 12 - canvas.theme.port_in_pair_width - lineHinting
+                poly_locx[1] = 7 + lineHinting
+                poly_locx[2] = 0 + lineHinting
+                poly_locx[3] = 7 + lineHinting
+                poly_locx[4] = self.m_pair_width + 12 - canvas.theme.port_in_pair_width - lineHinting
             elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE:
-                poly_locx[0] = self.m_pair_width + 12 - canvas.theme.port_in_pair_width
-                poly_locx[1] = 5
-                poly_locx[2] = 5
-                poly_locx[3] = 5
-                poly_locx[4] = self.m_pair_width + 12 - canvas.theme.port_in_pair_width
+                poly_locx[0] = self.m_pair_width + 12 - canvas.theme.port_in_pair_width - lineHinting
+                poly_locx[1] = 5 + lineHinting
+                poly_locx[2] = 5 + lineHinting
+                poly_locx[3] = 5 + lineHinting
+                poly_locx[4] = self.m_pair_width + 12 - canvas.theme.port_in_pair_width - lineHinting
             else:
                 qCritical("PatchCanvas::CanvasStereoPair.paint() - invalid theme port mode '%s'" % canvas.theme.port_mode)
                 return
@@ -3328,8 +3380,8 @@ class CanvasStereoPair(QGraphicsItem):
             
         
         polygon  = QPolygonF()
-        polygon += QPointF(poly_locx[0], 0)
-        polygon += QPointF(poly_locx[1], 0)
+        polygon += QPointF(poly_locx[0], lineHinting)
+        polygon += QPointF(poly_locx[1], lineHinting)
         polygon += QPointF(poly_locx[2], float(canvas.theme.port_height / 2) )
         polygon += QPointF(poly_locx[2], float(canvas.theme.port_height * (len(self.m_port_id_list) - 1/2)) )
         polygon += QPointF(poly_locx[3], canvas.theme.port_height * len(self.m_port_id_list))
@@ -3567,6 +3619,12 @@ class CanvasBox(QGraphicsItem):
         for port in canvas.port_list:
             if port.group_id == self.m_group_id and port.port_id in self.m_port_list_ids:
                 port_list.append(port)
+                
+        ## Get Pair List
+        #pair_list = []
+        #for pair in canvas.pair_list:
+            #if pair.group_id == self.m_group_id and pair.port_id_list[0] in self.m_port_list_ids:
+                #pair_list.append(pair)
 
         if len(port_list) == 0:
             self.p_height = canvas.theme.box_header_height
@@ -3578,14 +3636,32 @@ class CanvasBox(QGraphicsItem):
             port_types   = [PORT_TYPE_AUDIO_JACK, PORT_TYPE_MIDI_JACK, PORT_TYPE_MIDI_ALSA, PORT_TYPE_PARAMETER]
             last_in_type = last_out_type = PORT_TYPE_NULL
             last_in_pos  = last_out_pos  = canvas.theme.box_header_height + canvas.theme.box_header_spacing
+            last_of_pair = True
 
             for port_type in port_types:
                 for port in port_list:
                     if port.port_type != port_type:
                         continue
-
+                    
+                    last_of_pair = True
+                    if port.pair_id:
+                        for pair in canvas.pair_list:
+                            if pair.group_id == self.m_group_id and port.port_id in pair.port_id_list:
+                                if pair.port_id_list[-1] != port.port_id:
+                                    last_of_pair = False
+                                    break
+                    
                     size = QFontMetrics(self.m_font_port).width(port.port_name)
-
+                    if port.pair_id:
+                        size = 0
+                        totsize = QFontMetrics(self.m_font_port).width(port.port_name) + 3
+                        for pair in canvas.pair_list:
+                            if pair.pair_id == port.pair_id:
+                                pair_name = CanvasGetPairName(pair.port_id_list)
+                                size = QFontMetrics(self.m_font_port).width(pair_name) + canvas.theme.port_in_pair_width
+                                break
+                        size = max(size, totsize)
+                    
                     if port.port_mode == PORT_MODE_INPUT:
                         max_in_width = max( max_in_width, size )
                         if port.port_type != last_in_type:
@@ -3593,7 +3669,16 @@ class CanvasBox(QGraphicsItem):
                                 last_in_pos += canvas.theme.port_spacingT
                             last_in_type = port.port_type
                         port.widget.setY(last_in_pos)
-                        last_in_pos += port_spacing
+                        
+                        for pair in canvas.pair_list:
+                            if pair.group_id == self.m_group_id and pair.port_id_list[0] == port.port_id:
+                                pair.widget.setY(last_in_pos)
+                                break
+                        
+                        if last_of_pair:
+                            last_in_pos += port_spacing
+                        else:
+                            last_in_pos += canvas.theme.port_height
 
                     elif port.port_mode == PORT_MODE_OUTPUT:
                         max_out_width = max( max_out_width, size )
@@ -3602,22 +3687,53 @@ class CanvasBox(QGraphicsItem):
                                 last_out_pos += canvas.theme.port_spacingT
                             last_out_type = port.port_type
                         port.widget.setY(last_out_pos)
-                        last_out_pos += port_spacing
+                        
+                        for pair in canvas.pair_list:
+                            if pair.group_id == self.m_group_id and pair.port_id_list[0] == port.port_id:
+                                pair.widget.setY(last_out_pos)
+                                break
+                        
+                        if last_of_pair:
+                            last_out_pos += port_spacing
+                        else:
+                            last_out_pos += canvas.theme.port_height
 
             self.p_width = max(self.p_width, 30 + max_in_width + max_out_width)
 
             # Horizontal ports re-positioning
             inX = 1 + canvas.theme.port_offset
             outX = self.p_width - max_out_width - canvas.theme.port_offset - 13
+            out_in_pairX = self.p_width - canvas.theme.port_offset - 13 - canvas.theme.port_in_pair_width
+            
             for port_type in port_types:
                 for port in port_list:
                     if port.port_mode == PORT_MODE_INPUT:
                         port.widget.setX(inX)
-                        port.widget.setPortWidth(max_in_width)
+                        if port.pair_id:
+                            port.widget.setPortWidth(canvas.theme.port_in_pair_width)
+                            
+                            for pair in canvas.pair_list:
+                                if pair.group_id == self.m_group_id and pair.port_id_list[0] == port.port_id:
+                                    pair.widget.setPairWidth(max_in_width)
+                                    pair.widget.setX(canvas.theme.port_offset +1)
+                                    break
+                            
+                        else:
+                            port.widget.setPortWidth(max_in_width)
 
                     elif port.port_mode == PORT_MODE_OUTPUT:
-                        port.widget.setX(outX)
-                        port.widget.setPortWidth(max_out_width)
+                        if port.pair_id:
+                            port.widget.setX(out_in_pairX)
+                            port.widget.setPortWidth(canvas.theme.port_in_pair_width)
+                            
+                            for pair in canvas.pair_list:
+                                if pair.group_id == self.m_group_id and pair.port_id_list[0] == port.port_id:
+                                    pair.widget.setX(outX)
+                                    pair.widget.setPairWidth(max_out_width)
+                                    break
+                        else:
+                            port.widget.setX(outX)
+                            port.widget.setPortWidth(max_out_width)
 
             self.p_height  = max(last_in_pos, last_out_pos)
             self.p_height += max(canvas.theme.port_spacing, canvas.theme.port_spacingT) - canvas.theme.port_spacing
