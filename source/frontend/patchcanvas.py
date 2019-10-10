@@ -955,7 +955,12 @@ def addPort(group_id, port_id, port_name, port_mode, port_type, is_alternate=Fal
     canvas.port_list.append(port_dict)
 
     box_widget.updatePositions()
-
+    
+    pair_port_id_list = CanvasGetNewPairPortIdList(group_id, port_id, port_name, port_mode, port_type)
+    if pair_port_id_list:
+        CanvasAddPair(group_id, port_mode, port_type, pair_port_id_list)
+    box_widget.updatePositions()
+    
     if options.eyecandy == EYECANDY_FULL:
         return CanvasItemFX(port_widget, True, False)
 
@@ -967,6 +972,8 @@ def removePort(group_id, port_id):
 
     for port in canvas.port_list:
         if port.group_id == group_id and port.port_id == port_id:
+            if port.pair_id:
+                CanvasRemovePair(port.pair_id)
             item = port.widget
             item.parentItem().removePortFromGroup(port_id)
             canvas.scene.removeItem(item)
@@ -1301,7 +1308,8 @@ def CanvasGetNewPairPortIdList(group_id, port_id, port_name, port_mode, port_typ
                 break
         
     #make stereo_detection
-    if options.stereo_detection:
+    #if options.stereo_detection:
+    if 0 == 1:
         if len(port_name) < 1:
             return
         
