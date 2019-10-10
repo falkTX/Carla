@@ -715,7 +715,7 @@ def splitGroup(group_id):
         setGroupAsPlugin(group_id, plugin_id, plugin_ui)
 
     for port in ports_data:
-        addPort(group_id, port.port_id, port.port_name, port.port_mode, port.port_type, port.pair_id, port.is_alternate)
+        addPort(group_id, port.port_id, port.port_name, port.port_mode, port.port_type, port.is_alternate)
 
     for conn in conns_data:
         connectPorts(conn.connection_id, conn.group_out_id, conn.port_out_id, conn.group_in_id, conn.port_in_id)
@@ -2650,7 +2650,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
 # canvasport.cpp
 
 class CanvasPort(QGraphicsItem):
-    def __init__(self, group_id, port_id, port_name, port_mode, port_type, pair_id, is_alternate, parent):
+    def __init__(self, group_id, port_id, port_name, port_mode, port_type, is_alternate, parent):
         QGraphicsItem.__init__(self, parent)
 
         # Save Variables, useful for later
@@ -2659,7 +2659,7 @@ class CanvasPort(QGraphicsItem):
         self.m_port_mode = port_mode
         self.m_port_type = port_type
         self.m_port_name = port_name
-        self.m_pair_id   = pair_id
+        self.m_pair_id   = None
         self.m_is_alternate = is_alternate
 
         # Base Variables
@@ -4020,7 +4020,7 @@ class CanvasBox(QGraphicsItem):
                     CanvasItemFX(self, True, False)
                 self.setVisible(True)
 
-        new_widget = CanvasPort(self.m_group_id, port_id, port_name, port_mode, port_type, pair_id, is_alternate, self)
+        new_widget = CanvasPort(self.m_group_id, port_id, port_name, port_mode, port_type, is_alternate, self)
 
         port_dict = port_dict_t()
         port_dict.group_id = self.m_group_id
