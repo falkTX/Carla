@@ -1304,7 +1304,7 @@ public:
                             fShmRtClientControl.writeByte(3); // size
                             fShmRtClientControl.writeByte(uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT)));
                             fShmRtClientControl.writeByte(MIDI_CONTROL_BANK_SELECT__LSB);
-                            fShmRtClientControl.writeByte(event.ctrl.param);
+                            fShmRtClientControl.writeByte(uint8_t(event.ctrl.param));
                             fShmRtClientControl.commitWrite();
                         }
                         break;
