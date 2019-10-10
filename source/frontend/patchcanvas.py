@@ -801,7 +801,7 @@ def joinGroup(group_id):
         setGroupAsPlugin(group_id, plugin_id, plugin_ui)
 
     for port in ports_data:
-        addPort(group_id, port.port_id, port.port_name, port.port_mode, port.port_type, port.pair_id, port.is_alternate)
+        addPort(group_id, port.port_id, port.port_name, port.port_mode, port.port_type, port.is_alternate)
 
     for conn in conns_data:
         connectPorts(conn.connection_id, conn.group_out_id, conn.port_out_id, conn.group_in_id, conn.port_in_id)
@@ -917,7 +917,7 @@ def setGroupAsPlugin(group_id, plugin_id, hasUi):
 
     qCritical("PatchCanvas::setGroupAsPlugin(%i, %i, %s) - unable to find group to set as plugin" % (group_id, plugin_id, bool2str(hasUi)))
 
-def addPort(group_id, port_id, port_name, port_mode, port_type, pair_id, is_alternate=False):
+def addPort(group_id, port_id, port_name, port_mode, port_type, is_alternate=False):
     if canvas.debug:
         print("PatchCanvas::addPort(%i, %i, %s, %s, %s, %s)" % (group_id, port_id, port_name.encode(), port_mode2str(port_mode), port_type2str(port_type), bool2str(is_alternate)))
 
@@ -936,7 +936,7 @@ def addPort(group_id, port_id, port_name, port_mode, port_type, pair_id, is_alte
             else:
                 n = 0
             box_widget  = group.widgets[n]
-            port_widget = box_widget.addPortFromGroup(port_id, port_mode, port_type, port_name, pair_id, is_alternate)
+            port_widget = box_widget.addPortFromGroup(port_id, port_mode, port_type, port_name, is_alternate)
             break
 
     if not (box_widget and port_widget):
@@ -949,7 +949,7 @@ def addPort(group_id, port_id, port_name, port_mode, port_type, pair_id, is_alte
     port_dict.port_name = port_name
     port_dict.port_mode = port_mode
     port_dict.port_type = port_type
-    port_dict.pair_id   = pair_id
+    port_dict.pair_id   = None
     port_dict.is_alternate = is_alternate
     port_dict.widget = port_widget
     canvas.port_list.append(port_dict)
@@ -4013,7 +4013,7 @@ class CanvasBox(QGraphicsItem):
         if self.shadow:
             self.shadow.setOpacity(opacity)
 
-    def addPortFromGroup(self, port_id, port_mode, port_type, port_name, pair_id, is_alternate):
+    def addPortFromGroup(self, port_id, port_mode, port_type, port_name, is_alternate):
         if len(self.m_port_list_ids) == 0:
             if options.auto_hide_groups:
                 if options.eyecandy == EYECANDY_FULL:
