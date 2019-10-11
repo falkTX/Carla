@@ -21,7 +21,11 @@
 
 import json
 
-from PyQt5.Qt import PYQT_VERSION
+try:
+    from PyQt5.Qt import PYQT_VERSION
+except ImportError:
+    PYQT_VERSION = 0x50600
+
 from PyQt5.QtCore import QT_VERSION, qCritical, QEventLoop, QFileInfo, QModelIndex, QPointF, QTimer, QEvent
 from PyQt5.QtGui import QImage, QPalette, QBrush
 from PyQt5.QtWidgets import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QGraphicsView, QMainWindow
