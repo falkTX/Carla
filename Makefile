@@ -414,6 +414,7 @@ ifeq ($(HAVE_PYQT),true)
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
 	install -d $(DESTDIR)$(DATADIR)/mime/packages
 	install -d $(DESTDIR)$(DATADIR)/carla/resources
+	install -d $(DESTDIR)$(DATADIR)/carla/modgui
 	install -d $(DESTDIR)$(DATADIR)/carla/patchcanvas
 	install -d $(DESTDIR)$(DATADIR)/carla/widgets
 endif
@@ -547,6 +548,10 @@ endif
 		source/frontend/carla-rack \
 		source/frontend/*.py \
 		$(DESTDIR)$(DATADIR)/carla/
+
+	install -m 644 \
+		source/frontend/modgui/*.py \
+		$(DESTDIR)$(DATADIR)/carla/modgui/
 
 	install -m 644 \
 		source/frontend/patchcanvas/*.py \
