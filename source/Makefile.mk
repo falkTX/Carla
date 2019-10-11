@@ -318,8 +318,9 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Set PyQt tools, part2
 
-PYUIC ?= pyuic5
-PYRCC ?= pyrcc5
+PYRCC ?= $(PYRCC5)
+PYUIC ?= $(PYUIC5)
+
 ifeq ($(HAVE_QT5),true)
 HAVE_THEME = true
 endif
