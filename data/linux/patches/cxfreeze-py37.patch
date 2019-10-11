@@ -1,0 +1,33 @@
+From 76542754e01d2d4b21c6744c563dda8d5c72b3b2 Mon Sep 17 00:00:00 2001
+From: egormartiniuc <egor.martiniuc@gmail.com>
+Date: Tue, 3 Jul 2018 16:38:06 +0200
+Subject: [PATCH] Update freezer.py
+
+python 3.7.0 64Bit
+---
+ cx_Freeze/freezer.py | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/cx_Freeze/freezer.py b/cx_Freeze/freezer.py
+index 27a78c2..cfcc3b4 100644
+--- a/cx_Freeze/freezer.py
++++ b/cx_Freeze/freezer.py
+@@ -555,10 +555,16 @@ def _WriteModules(self, fileName, finder):
+             # the file is up to date so we can safely set this value to zero
+             if module.code is not None:
+                 if module.file is not None and os.path.exists(module.file):
+-                    mtime = os.stat(module.file).st_mtime
++                    stat = os.stat(module.file)
++                    mtime = stat.st_mtime
++                    size = stat.st_size & 0xFFFFFFFF
+                 else:
+                     mtime = time.time()
+-                header = magic + struct.pack("<ii", int(mtime), 0)
++                    size = 0
++                if sys.version_info[:2] == (3, 7):
++                    header = magic + struct.pack("<iii", 0, int(mtime), size)
++                else:
++                    header = magic + struct.pack("<ii", int(mtime), size)
+                 data = header + marshal.dumps(module.code)
+ 
+             # if the module should be written to the file system, do so
