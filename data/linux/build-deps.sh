@@ -258,10 +258,7 @@ fi
 
 if [ ! -d mxml-${MXML_VERSION} ]; then
   aria2c https://github.com/michaelrsweet/mxml/releases/download/v${MXML_VERSION}/mxml-${MXML_VERSION}.tar.gz
-  mkdir mxml-${MXML_VERSION}
-  cd mxml-${MXML_VERSION}
-  tar -xf ../mxml-${MXML_VERSION}.tar.gz
-  cd ..
+  tar -xf mxml-${MXML_VERSION}.tar.gz
 fi
 
 if [ ! -f mxml-${MXML_VERSION}/build-done ]; then

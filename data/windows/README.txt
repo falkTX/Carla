@@ -27,4 +27,4 @@ For the LV2 plugin, create the "C:\Program Files\Common Files\LV2" folder (if it
 For the VST2 plugin, create the "C:\Program Files\Common Files\VST2" folder (if it does not exist yet), then copy Carla.vst into it and restart your VST2 host.
 
 For a complete and updated description of Carla, please check:
-http://kxstudio.linuxaudio.org/carla
+https://kx.studio/carla

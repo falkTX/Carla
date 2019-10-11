@@ -87,7 +87,7 @@ export_vars "${ARCH}" "${ARCH_PREFIX}" "${CPUARCH}"
 
 cd data/windows/
 
-rm -rf Carla Carla.lv2 Carla.vst
+rm -rf Carla Carla.lv2 Carla.vst CarlaControl
 
 # ---------------------------------------------------------------------------------------------------------------------
 # freeze carla (console and gui)
@@ -187,6 +187,20 @@ mkdir -p Carla/styles
 cp ../../bin/styles/carlastyle.dll Carla/styles/
 
 # ---------------------------------------------------------------------------------------------------------------------
+# also for CarlaControl
+
+cp ../../bin/libcarla_utils.dll CarlaControl/
+
+mkdir -p CarlaControl/imageformats
+cp ${MSYS2_PREFIX}/share/qt5/plugins/imageformats/qsvg.dll CarlaControl/imageformats/
+
+mkdir -p CarlaControl/platforms
+cp ${MSYS2_PREFIX}/share/qt5/plugins/platforms/qwindows.dll CarlaControl/platforms/
+
+mkdir -p CarlaControl/styles
+cp ../../bin/styles/carlastyle.dll CarlaControl/styles/
+
+# ---------------------------------------------------------------------------------------------------------------------
 # prepare lv2 bundle
 
 mkdir -p Carla.lv2
@@ -234,7 +248,7 @@ cat unzipfx-carla/unzipfx2cat.exe Carla.zip > Carla.exe
 chmod +x Carla.exe
 
 rm -f CarlaControl.exe
-cat unzipfx-carla/unzipfx2cat.exe CarlaControl.zip > CarlaControl.exe
+cat unzipfx-carla-control/unzipfx2cat.exe CarlaControl.zip > CarlaControl.exe
 chmod +x CarlaControl.exe
 
 # Cleanup

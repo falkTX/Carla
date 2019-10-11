@@ -21,6 +21,7 @@
 
 import json
 
+# This fails in some configurations, assume >= 5.6.0 in that case
 try:
     from PyQt5.Qt import PYQT_VERSION
 except ImportError:
