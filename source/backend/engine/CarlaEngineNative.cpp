@@ -322,10 +322,61 @@ public:
     {
         CarlaEngine::callback(sendHost, sendOsc, action, pluginId, value1, value2, value3, valuef, valueStr);
 
-        if (action == ENGINE_CALLBACK_IDLE && ! pData->aboutToClose) {
-            pHost->dispatcher(pHost->handle,
+        // TODO?
+        // We currently only have params from the first plugin.
+        if (pluginId != 0) { return; }
+
+        switch (action) {
+            // TODO
+            // NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER
+            // NATIVE_HOST_OPCODE_INTERNAL_PLUGIN
+            case ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
+            case ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
+                pHost->dispatcher(pHost->handle,
+                              NATIVE_HOST_OPCODE_UPDATE_MIDI_PROGRAM,
+                              value1, value2, nullptr, 0.0f);
+                break;
+            case ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
+                pHost->dispatcher(pHost->handle,
+                              NATIVE_HOST_OPCODE_UPDATE_PARAMETER,
+                              value1, 0, nullptr, valuef);
+                break;
+            case ENGINE_CALLBACK_RELOAD_PARAMETERS:
+                pHost->dispatcher(pHost->handle,
+                              NATIVE_HOST_OPCODE_RELOAD_PARAMETERS,
+                              0, 0, nullptr, 0.0f);
+                break;
+            case ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED:
+                pHost->dispatcher(pHost->handle,
+                              NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS,
+                              value1, value2, nullptr, 0.0f);
+                break;
+            case ENGINE_CALLBACK_RELOAD_ALL:
+                pHost->dispatcher(pHost->handle,
+                              NATIVE_HOST_OPCODE_RELOAD_ALL,
+                              0, 0, nullptr, 0.0f);
+                break;
+            case ENGINE_CALLBACK_UI_STATE_CHANGED:
+                if (value1 == -1) {
+                    pHost->dispatcher(pHost->handle,
+                              NATIVE_HOST_OPCODE_UI_UNAVAILABLE,
+                              0, 0, nullptr, 0.0f);
+                } 
+                break;
+            case ENGINE_CALLBACK_IDLE:
+                if (!pData->aboutToClose) {
+                    pHost->dispatcher(pHost->handle,
                               NATIVE_HOST_OPCODE_HOST_IDLE,
                               0, 0, nullptr, 0.0f);
+                }
+                break;
+            case ENGINE_CALLBACK_INLINE_DISPLAY_REDRAW:
+                pHost->dispatcher(pHost->handle,
+                              NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY,
+                              0, 0, nullptr, 0.0f);
+                break;
+
+            default: break;
         }
     }
 
