@@ -19,13 +19,16 @@
 #include "CarlaMIDI.h"
 #include "CarlaUtils.hpp"
 
-#undef DESCFUNCS
-#define DESCFUNCS \
+#undef DESCFUNCS_WITHCV
+#undef DESCFUNCS_WITHOUTCV
+#define DESCFUNCS_WITHCV \
     nullptr, nullptr, nullptr, nullptr, nullptr, \
     nullptr, nullptr, nullptr, nullptr, nullptr, \
     nullptr, nullptr, nullptr, nullptr, nullptr, \
     nullptr, nullptr, nullptr, nullptr, nullptr, \
     nullptr, nullptr
+#define DESCFUNCS_WITHOUTCV \
+    DESCFUNCS_WITHCV, 0, 0
 
 static const NativePluginDescriptor sNativePluginDescriptors[] = {
 
@@ -46,7 +49,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "audiogain",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
@@ -62,7 +65,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "audiogain_s",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_NONE,
@@ -78,7 +81,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "bypass",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
@@ -94,7 +97,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "lfo",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
@@ -110,7 +113,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "midichanfilter",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
@@ -126,7 +129,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "midichanab",
     /* maker     */ "Milk Brewster",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
@@ -142,7 +145,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "midigain",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
@@ -158,7 +161,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "midijoin",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
@@ -174,7 +177,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "midisplit",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
@@ -190,7 +193,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "midithrough",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
@@ -206,7 +209,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "miditranspose",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
@@ -222,7 +225,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "midichannelize",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -245,7 +248,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "audiofile",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -269,7 +272,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "midifile",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 #ifdef HAVE_PYQT
 {
@@ -289,7 +292,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "midipattern",
     /* maker     */ "falkTX, tatch",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 #endif
 
@@ -315,7 +318,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "carlarack",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
@@ -335,7 +338,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "carlarack-nomidiout",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
@@ -355,7 +358,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "carlapatchbay",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
@@ -375,7 +378,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "carlapatchbay3s",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
@@ -395,7 +398,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "carlapatchbay16",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
@@ -415,7 +418,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "carlapatchbay32",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
@@ -435,7 +438,30 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "carlapatchbay64",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
+},
+{
+    /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
+                                                  |NATIVE_PLUGIN_USES_CONTROL_VOLTAGE
+                                                  |NATIVE_PLUGIN_USES_STATE
+                                                  |NATIVE_PLUGIN_USES_TIME),
+    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
+    /* audioIns  */ 2,
+    /* audioOuts */ 2,
+    /* midiIns   */ 1,
+    /* midiOuts  */ 1,
+    /* paramIns  */ 100,
+    /* paramOuts */ 10,
+    /* name      */ "Carla-Patchbay (CV)",
+    /* label     */ "carlapatchbaycv",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    DESCFUNCS_WITHCV,
+    /* cvIns     */ 5,
+    /* cvOuts    */ 5,
 },
 #endif
 
@@ -459,7 +485,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "bigmeter",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
@@ -476,7 +502,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "notes",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
+    DESCFUNCS_WITHOUTCV
 },
 #endif
 
@@ -487,7 +513,8 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
 
 };
 
-#undef DESCFUNCS
+#undef DESCFUNCS_WITHCV
+#undef DESCFUNCS_WITHOUTCV
 
 // --------------------------------------------------------------------------------------------------------------------
 

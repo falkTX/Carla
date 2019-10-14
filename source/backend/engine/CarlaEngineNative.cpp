@@ -163,7 +163,8 @@ class CarlaEngineNative : public CarlaEngine
 {
 public:
     CarlaEngineNative(const NativeHostDescriptor* const host, const bool isPatchbay, const bool withMidiOut,
-                      const uint32_t inChan = 2, uint32_t outChan = 2)
+                      const uint32_t inChan = 2, uint32_t outChan = 2,
+                      const uint32_t cvIns = 0, const uint32_t cvOuts = 0)
         : CarlaEngine(),
           pHost(host),
 #ifdef USE_JUCE_MESSAGE_THREAD
@@ -211,7 +212,7 @@ public:
             pData->options.preferPluginBridges = false;
             pData->options.preferUiBridges     = false;
             init("Carla-Patchbay");
-            pData->graph.create(inChan, outChan);
+            pData->graph.create(inChan, outChan, cvIns, cvOuts);
         }
         else
         {
@@ -223,7 +224,7 @@ public:
             pData->options.preferPluginBridges = false;
             pData->options.preferUiBridges     = false;
             init("Carla-Rack");
-            pData->graph.create(0, 0); // FIXME?
+            pData->graph.create(0, 0, 0, 0); // FIXME?
         }
 
         if (pData->options.resourceDir != nullptr)
@@ -1567,6 +1568,11 @@ public:
         return new CarlaEngineNative(host, true, true, 64, 64);
     }
 
+    static NativePluginHandle _instantiatePatchbayCV(const NativeHostDescriptor* host)
+    {
+        return new CarlaEngineNative(host, true, true, 2, 2, 5, 5);
+    }
+
     static void _cleanup(NativePluginHandle handle)
     {
         delete handlePtr;
@@ -2345,7 +2351,9 @@ static const NativePluginDescriptor carlaRackDesc = {
     CarlaEngineNative::_get_state,
     CarlaEngineNative::_set_state,
     CarlaEngineNative::_dispatcher,
-    /* _render_inline_dsplay */ nullptr
+    /* _render_inline_dsplay */ nullptr,
+    /* cvIns  */ 0,
+    /* cvOuts */ 0
 };
 
 static const NativePluginDescriptor carlaRackNoMidiOutDesc = {
@@ -2387,7 +2395,9 @@ static const NativePluginDescriptor carlaRackNoMidiOutDesc = {
     CarlaEngineNative::_get_state,
     CarlaEngineNative::_set_state,
     CarlaEngineNative::_dispatcher,
-    /* _render_inline_dsplay */ nullptr
+    /* _render_inline_dsplay */ nullptr,
+    /* cvIns  */ 0,
+    /* cvOuts */ 0
 };
 
 static const NativePluginDescriptor carlaPatchbayDesc = {
@@ -2429,7 +2439,9 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
     CarlaEngineNative::_get_state,
     CarlaEngineNative::_set_state,
     CarlaEngineNative::_dispatcher,
-    /* _render_inline_dsplay */ nullptr
+    /* _render_inline_dsplay */ nullptr,
+    /* cvIns  */ 0,
+    /* cvOuts */ 0
 };
 
 static const NativePluginDescriptor carlaPatchbay3sDesc = {
@@ -2471,7 +2483,9 @@ static const NativePluginDescriptor carlaPatchbay3sDesc = {
     CarlaEngineNative::_get_state,
     CarlaEngineNative::_set_state,
     CarlaEngineNative::_dispatcher,
-    /* _render_inline_dsplay */ nullptr
+    /* _render_inline_dsplay */ nullptr,
+    /* cvIns  */ 0,
+    /* cvOuts */ 0
 };
 
 static const NativePluginDescriptor carlaPatchbay16Desc = {
@@ -2513,7 +2527,9 @@ static const NativePluginDescriptor carlaPatchbay16Desc = {
     CarlaEngineNative::_get_state,
     CarlaEngineNative::_set_state,
     CarlaEngineNative::_dispatcher,
-    /* _render_inline_dsplay */ nullptr
+    /* _render_inline_dsplay */ nullptr,
+    /* cvIns  */ 0,
+    /* cvOuts */ 0
 };
 
 static const NativePluginDescriptor carlaPatchbay32Desc = {
@@ -2555,7 +2571,9 @@ static const NativePluginDescriptor carlaPatchbay32Desc = {
     CarlaEngineNative::_get_state,
     CarlaEngineNative::_set_state,
     CarlaEngineNative::_dispatcher,
-    /* _render_inline_dsplay */ nullptr
+    /* _render_inline_dsplay */ nullptr,
+    /* cvIns  */ 0,
+    /* cvOuts */ 0
 };
 
 static const NativePluginDescriptor carlaPatchbay64Desc = {
@@ -2597,7 +2615,54 @@ static const NativePluginDescriptor carlaPatchbay64Desc = {
     CarlaEngineNative::_get_state,
     CarlaEngineNative::_set_state,
     CarlaEngineNative::_dispatcher,
-    /* _render_inline_dsplay */ nullptr
+    /* _render_inline_dsplay */ nullptr,
+    /* cvIns  */ 0,
+    /* cvOuts */ 0
+};
+
+static const NativePluginDescriptor carlaPatchbayCVDesc = {
+    /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
+                                                  |NATIVE_PLUGIN_USES_CONTROL_VOLTAGE
+                                                  |NATIVE_PLUGIN_USES_STATE
+                                                  |NATIVE_PLUGIN_USES_TIME),
+    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
+    /* audioIns  */ 2,
+    /* audioOuts */ 2,
+    /* midiIns   */ 1,
+    /* midiOuts  */ 1,
+    /* paramIns  */ kNumInParams,
+    /* paramOuts */ kNumOutParams,
+    /* name      */ "Carla-Patchbay (CV)",
+    /* label     */ "carlapatchbaycv",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    CarlaEngineNative::_instantiatePatchbayCV,
+    CarlaEngineNative::_cleanup,
+    CarlaEngineNative::_get_parameter_count,
+    CarlaEngineNative::_get_parameter_info,
+    CarlaEngineNative::_get_parameter_value,
+    CarlaEngineNative::_get_midi_program_count,
+    CarlaEngineNative::_get_midi_program_info,
+    CarlaEngineNative::_set_parameter_value,
+    CarlaEngineNative::_set_midi_program,
+    /* _set_custom_data        */ nullptr,
+    CarlaEngineNative::_ui_show,
+    CarlaEngineNative::_ui_idle,
+    /* _ui_set_parameter_value */ nullptr,
+    /* _ui_set_midi_program    */ nullptr,
+    /* _ui_set_custom_data     */ nullptr,
+    CarlaEngineNative::_activate,
+    CarlaEngineNative::_deactivate,
+    CarlaEngineNative::_process,
+    CarlaEngineNative::_get_state,
+    CarlaEngineNative::_set_state,
+    CarlaEngineNative::_dispatcher,
+    /* _render_inline_dsplay */ nullptr,
+    /* cvIns  */ 5,
+    /* cvOuts */ 5
 };
 
 CARLA_BACKEND_END_NAMESPACE
@@ -2617,6 +2682,7 @@ void carla_register_native_plugin_carla()
     carla_register_native_plugin(&carlaPatchbay16Desc);
     carla_register_native_plugin(&carlaPatchbay32Desc);
     carla_register_native_plugin(&carlaPatchbay64Desc);
+    carla_register_native_plugin(&carlaPatchbayCVDesc);
 }
 
 // -----------------------------------------------------------------------
@@ -2649,6 +2715,12 @@ const NativePluginDescriptor* carla_get_native_patchbay64_plugin()
 {
     CARLA_BACKEND_USE_NAMESPACE;
     return &carlaPatchbay64Desc;
+}
+
+const NativePluginDescriptor* carla_get_native_patchbay_cv_plugin()
+{
+    CARLA_BACKEND_USE_NAMESPACE;
+    return &carlaPatchbayCVDesc;
 }
 
 // -----------------------------------------------------------------------

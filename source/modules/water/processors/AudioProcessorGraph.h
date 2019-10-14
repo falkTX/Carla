@@ -318,12 +318,12 @@ public:
         ~AudioGraphIOProcessor();
 
         const String getName() const override;
-#if 0
-        void fillInPluginDescription (PluginDescription&) const override;
-#endif
         void prepareToPlay (double newSampleRate, int estimatedSamplesPerBlock) override;
         void releaseResources() override;
-        void processBlock (AudioSampleBuffer&, MidiBuffer&) override;
+        void processBlockWithCV (AudioSampleBuffer& audioBuffer,
+                                 const AudioSampleBuffer& cvInBuffer,
+                                 AudioSampleBuffer& cvOutBuffer,
+                                 MidiBuffer& midiMessages) override;
 
         bool acceptsMidi() const override;
         bool producesMidi() const override;
@@ -336,7 +336,11 @@ public:
         AudioProcessorGraph* graph;
 
         //==============================================================================
-        void processAudio (AudioSampleBuffer& buffer, MidiBuffer& midiMessages);
+        //void processAudio (AudioSampleBuffer& buffer, MidiBuffer& midiMessages);
+        void processAudioAndCV (AudioSampleBuffer& audioBuffer,
+                                const AudioSampleBuffer& cvInBuffer,
+                                AudioSampleBuffer& cvOutBuffer,
+                                MidiBuffer& midiMessages);
 
         CARLA_DECLARE_NON_COPY_CLASS (AudioGraphIOProcessor)
     };
@@ -345,8 +349,8 @@ public:
     const String getName() const override;
     void prepareToPlay (double, int) override;
     void releaseResources() override;
-    void processBlock (AudioSampleBuffer&,  MidiBuffer&) override;
-    void processBlockWithCV (AudioSampleBuffer& buffer,
+    //void processBlock (AudioSampleBuffer&,  MidiBuffer&) override;
+    void processBlockWithCV (AudioSampleBuffer& audioBuffer,
                              const AudioSampleBuffer& cvInBuffer,
                              AudioSampleBuffer& cvOutBuffer,
                              MidiBuffer& midiMessages) override;
@@ -362,7 +366,11 @@ public:
 
 private:
     //==============================================================================
-    void processAudio (AudioSampleBuffer& buffer, MidiBuffer& midiMessages);
+    // void processAudio (AudioSampleBuffer& audioBuffer, MidiBuffer& midiMessages);
+    void processAudioAndCV (AudioSampleBuffer& audioBuffer,
+                            const AudioSampleBuffer& cvInBuffer,
+                            AudioSampleBuffer& cvOutBuffer,
+                            MidiBuffer& midiMessages);
 
     //==============================================================================
     ReferenceCountedArray<Node> nodes;
@@ -373,7 +381,7 @@ private:
 
     friend class AudioGraphIOProcessor;
     struct AudioProcessorGraphBufferHelpers;
-    ScopedPointer<AudioProcessorGraphBufferHelpers> audioBuffers;
+    ScopedPointer<AudioProcessorGraphBufferHelpers> audioAndCVBuffers;
 
     MidiBuffer* currentMidiInputBuffer;
     MidiBuffer currentMidiOutputBuffer;

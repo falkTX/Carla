@@ -108,6 +108,8 @@ static void print_cached_plugin(const CarlaCachedPluginInfo* const pinfo)
     DISCOVERY_OUT("label", pinfo->label);
     DISCOVERY_OUT("audio.ins", pinfo->audioIns);
     DISCOVERY_OUT("audio.outs", pinfo->audioOuts);
+    DISCOVERY_OUT("cv.ins", pinfo->cvIns);
+    DISCOVERY_OUT("cv.outs", pinfo->cvOuts);
     DISCOVERY_OUT("midi.ins", pinfo->midiIns);
     DISCOVERY_OUT("midi.outs", pinfo->midiOuts);
     DISCOVERY_OUT("parameters.ins", pinfo->parameterIns);

@@ -577,7 +577,8 @@ public:                                                                      \
     ClassName::_get_state,              \
     ClassName::_set_state,              \
     ClassName::_dispatcher,             \
-    ClassName::_render_inline_display
+    ClassName::_render_inline_display,  \
+    0, 0
 
 // -----------------------------------------------------------------------
 

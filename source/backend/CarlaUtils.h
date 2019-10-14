@@ -79,6 +79,16 @@ typedef struct _CarlaCachedPluginInfo {
     uint32_t audioOuts;
 
     /*!
+     * Number of CV inputs.
+     */
+    uint32_t cvIns;
+
+    /*!
+     * Number of CV outputs.
+     */
+    uint32_t cvOuts;
+
+    /*!
      * Number of MIDI inputs.
      */
     uint32_t midiIns;

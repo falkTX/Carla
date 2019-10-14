@@ -117,6 +117,12 @@ class CarlaCachedPluginInfo(Structure):
         # Number of audio outputs.
         ("audioOuts", c_uint32),
 
+        # Number of CV inputs.
+        ("cvIns", c_uint32),
+
+        # Number of CV outputs.
+        ("cvOuts", c_uint32),
+
         # Number of MIDI inputs.
         ("midiIns", c_uint32),
 
@@ -152,6 +158,8 @@ PyCarlaCachedPluginInfo = {
     'hints': 0x0,
     'audioIns': 0,
     'audioOuts': 0,
+    'cvIns': 0,
+    'cvOuts': 0,
     'midiIns': 0,
     'midiOuts': 0,
     'parameterIns': 0,

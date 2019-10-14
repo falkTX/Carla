@@ -254,8 +254,8 @@ public:
           fIsUiVisible(false),
           fInlineDisplayNeedsRedraw(false),
           fInlineDisplayLastRedrawTime(0),
-          fAudioInBuffers(nullptr),
-          fAudioOutBuffers(nullptr),
+          fAudioAndCvInBuffers(nullptr),
+          fAudioAndCvOutBuffers(nullptr),
           fMidiEventInCount(0),
           fMidiEventOutCount(0),
           fCurBufferSize(engine->getBufferSize()),
@@ -421,8 +421,8 @@ public:
         if ((fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS) == 0x0)
             options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-        // can't disable forced stereo if enabled in the engine
-        if (pData->engine->getOptions().forceStereo)
+        // can't disable forced stereo if enabled in the engine, or using CV
+        if (pData->engine->getOptions().forceStereo || pData->cvIn.count != 0 || pData->cvOut.count != 0)
             pass();
         // if inputs or outputs are just 1, then yes we can force stereo
         else if (pData->audioIn.count == 1 || pData->audioOut.count == 1 || fHandle2 != nullptr)
@@ -978,7 +978,7 @@ public:
 
         const float sampleRate((float)pData->engine->getSampleRate());
 
-        uint32_t aIns, aOuts, mIns, mOuts, params, j;
+        uint32_t aIns, aOuts, cvIns, cvOuts, mIns, mOuts, params, j;
 
         bool forcedStereoIn, forcedStereoOut;
         forcedStereoIn = forcedStereoOut = false;
@@ -988,6 +988,8 @@ public:
 
         aIns   = fDescriptor->audioIns;
         aOuts  = fDescriptor->audioOuts;
+        cvIns  = fDescriptor->cvIns;
+        cvOuts = fDescriptor->cvOuts;
         mIns   = fDescriptor->midiIns;
         mOuts  = fDescriptor->midiOuts;
         params = (fDescriptor->get_parameter_count != nullptr && fDescriptor->get_parameter_info != nullptr) ? fDescriptor->get_parameter_count(fHandle) : 0;
@@ -1016,20 +1018,34 @@ public:
         if (aIns > 0)
         {
             pData->audioIn.createNew(aIns);
-            fAudioInBuffers = new float*[aIns];
-
-            for (uint32_t i=0; i < aIns; ++i)
-                fAudioInBuffers[i] = nullptr;
         }
 
         if (aOuts > 0)
         {
             pData->audioOut.createNew(aOuts);
-            fAudioOutBuffers = new float*[aOuts];
             needsCtrlIn = true;
+        }
 
-            for (uint32_t i=0; i < aOuts; ++i)
-                fAudioOutBuffers[i] = nullptr;
+        if (cvIns > 0)
+        {
+            pData->cvIn.createNew(cvIns);
+        }
+
+        if (cvOuts > 0)
+        {
+            pData->cvOut.createNew(cvOuts);
+        }
+
+        if (const uint32_t acIns = aIns + cvIns)
+        {
+            fAudioAndCvInBuffers = new float*[acIns];
+            carla_zeroPointers(fAudioAndCvInBuffers, acIns);
+        }
+
+        if (const uint32_t acOuts = aOuts + cvOuts)
+        {
+            fAudioAndCvOutBuffers = new float*[acOuts];
+            carla_zeroPointers(fAudioAndCvOutBuffers, acOuts);
         }
 
         if (mIns > 0)
@@ -1116,6 +1132,56 @@ public:
                 pData->audioOut.ports[1].rindex = j;
                 break;
             }
+        }
+
+        // CV Ins
+        for (j=0; j < cvIns; ++j)
+        {
+            portName.clear();
+
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
+            {
+                portName  = pData->name;
+                portName += ":";
+            }
+
+            if (cvIns > 1)
+            {
+                portName += "cv_input_";
+                portName += CarlaString(j+1);
+            }
+            else
+                portName += "cv_input";
+
+            portName.truncate(portNameSize);
+
+            pData->cvIn.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, true, j);
+            pData->cvIn.ports[j].rindex = j;
+        }
+
+        // CV Outs
+        for (j=0; j < cvOuts; ++j)
+        {
+            portName.clear();
+
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
+            {
+                portName  = pData->name;
+                portName += ":";
+            }
+
+            if (cvOuts > 1)
+            {
+                portName += "cv_output_";
+                portName += CarlaString(j+1);
+            }
+            else
+                portName += "cv_output";
+
+            portName.truncate(portNameSize);
+
+            pData->cvOut.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, false, j);
+            pData->cvOut.ports[j].rindex = j;
         }
 
         // MIDI Input (only if multiple)
@@ -1514,7 +1580,8 @@ public:
         return kNullEngineEvent;
     }
 
-    void process(const float** const audioIn, float** const audioOut, const float** const, float** const, const uint32_t frames) override
+    void process(const float** const audioIn, float** const audioOut,
+                 const float** const cvIn, float** const cvOut, const uint32_t frames) override
     {
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -1524,6 +1591,8 @@ public:
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
                 carla_zeroFloats(audioOut[i], frames);
+            for (uint32_t i=0; i < pData->cvOut.count; ++i)
+                carla_zeroFloats(cvOut[i], frames);
             return;
         }
 
@@ -1697,7 +1766,7 @@ public:
 
                 if (sampleAccurate && eventTime > timeOffset)
                 {
-                    if (processSingle(audioIn, audioOut, eventTime - timeOffset, timeOffset))
+                    if (processSingle(audioIn, audioOut, cvIn, cvOut, eventTime - timeOffset, timeOffset))
                     {
                         startTime  = 0;
                         timeOffset = eventTime;
@@ -2005,7 +2074,7 @@ public:
             pData->postRtEvents.trySplice();
 
             if (frames > timeOffset)
-                processSingle(audioIn, audioOut, frames - timeOffset, timeOffset);
+                processSingle(audioIn, audioOut, cvIn, cvOut, frames - timeOffset, timeOffset);
 
         } // End of Event Input and Processing
 
@@ -2014,7 +2083,7 @@ public:
 
         else
         {
-            processSingle(audioIn, audioOut, frames, 0);
+            processSingle(audioIn, audioOut, cvIn, cvOut, frames, 0);
 
         } // End of Plugin processing (no events)
 
@@ -2044,17 +2113,23 @@ public:
 #endif
     }
 
-    bool processSingle(const float** const audioIn, float** const audioOut, const uint32_t frames, const uint32_t timeOffset)
+    bool processSingle(const float** const audioIn, float** const audioOut,
+                       const float** const cvIn, float** const cvOut,
+                       const uint32_t frames, const uint32_t timeOffset)
     {
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
 
-        if (pData->audioIn.count > 0)
-        {
+        if (pData->audioIn.count > 0) {
             CARLA_SAFE_ASSERT_RETURN(audioIn != nullptr, false);
         }
-        if (pData->audioOut.count > 0)
-        {
+        if (pData->audioOut.count > 0) {
             CARLA_SAFE_ASSERT_RETURN(audioOut != nullptr, false);
+        }
+        if (pData->cvIn.count > 0) {
+            CARLA_SAFE_ASSERT_RETURN(cvIn != nullptr, false);
+        }
+        if (pData->cvOut.count > 0) {
+            CARLA_SAFE_ASSERT_RETURN(cvOut != nullptr, false);
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -2071,6 +2146,11 @@ public:
                 for (uint32_t k=0; k < frames; ++k)
                     audioOut[i][k+timeOffset] = 0.0f;
             }
+            for (uint32_t i=0; i < pData->cvOut.count; ++i)
+            {
+                for (uint32_t k=0; k < frames; ++k)
+                    cvOut[i][k+timeOffset] = 0.0f;
+            }
 
             return false;
         }
@@ -2078,11 +2158,17 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Set audio buffers
 
-        for (uint32_t i=0; i < pData->audioIn.count; ++i)
-            carla_copyFloats(fAudioInBuffers[i], audioIn[i]+timeOffset, frames);
+        {
+            for (uint32_t i=0; i < pData->audioIn.count; ++i)
+                carla_copyFloats(fAudioAndCvInBuffers[i], audioIn[i]+timeOffset, frames);
+            for (uint32_t i=0; i < pData->cvIn.count; ++i)
+                carla_copyFloats(fAudioAndCvInBuffers[pData->audioIn.count+i], cvIn[i]+timeOffset, frames);
 
-        for (uint32_t i=0; i < pData->audioOut.count; ++i)
-            carla_zeroFloats(fAudioOutBuffers[i], frames);
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
+                carla_zeroFloats(fAudioAndCvOutBuffers[i], frames);
+            for (uint32_t i=0; i < pData->cvOut.count; ++i)
+                carla_zeroFloats(fAudioAndCvOutBuffers[pData->audioOut.count+i], frames);
+        }
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
@@ -2092,19 +2178,19 @@ public:
         if (fHandle2 == nullptr)
         {
             fDescriptor->process(fHandle,
-                                 const_cast<const float**>(fAudioInBuffers), fAudioOutBuffers, frames,
+                                 const_cast<const float**>(fAudioAndCvInBuffers), fAudioAndCvOutBuffers, frames,
                                  fMidiInEvents, fMidiEventInCount);
         }
         else
         {
             fDescriptor->process(fHandle,
-                                 (pData->audioIn.count > 0) ? const_cast<const float**>(&fAudioInBuffers[0]) : nullptr,
-                                 (pData->audioOut.count > 0) ? &fAudioOutBuffers[0] : nullptr,
+                                 (fAudioAndCvInBuffers != nullptr)  ? const_cast<const float**>(&fAudioAndCvInBuffers[0]) : nullptr,
+                                 (fAudioAndCvOutBuffers != nullptr) ? &fAudioAndCvOutBuffers[0] : nullptr,
                                  frames, fMidiInEvents, fMidiEventInCount);
 
             fDescriptor->process(fHandle2,
-                                 (pData->audioIn.count > 0) ? const_cast<const float**>(&fAudioInBuffers[1]) : nullptr,
-                                 (pData->audioOut.count > 0) ? &fAudioOutBuffers[1] : nullptr,
+                                 (fAudioAndCvInBuffers != nullptr)  ? const_cast<const float**>(&fAudioAndCvInBuffers[1]) : nullptr,
+                                 (fAudioAndCvOutBuffers != nullptr) ? &fAudioAndCvOutBuffers[1] : nullptr,
                                  frames, fMidiInEvents, fMidiEventInCount);
         }
 
@@ -2113,6 +2199,7 @@ public:
         if (fTimeInfo.playing)
             fTimeInfo.frame += frames;
 
+        uint32_t i=0;
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
@@ -2124,15 +2211,15 @@ public:
             bool isPair;
             float bufValue, oldBufLeft[doBalance ? frames : 1];
 
-            for (uint32_t i=0; i < pData->audioOut.count; ++i)
+            for (; i < pData->audioOut.count; ++i)
             {
                 // Dry/Wet
                 if (doDryWet)
                 {
                     for (uint32_t k=0; k < frames; ++k)
                     {
-                        bufValue = fAudioInBuffers[(pData->audioIn.count == 1) ? 0 : i][k];
-                        fAudioOutBuffers[i][k] = (fAudioOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
+                        bufValue = fAudioAndCvInBuffers[(pData->audioIn.count == 1) ? 0 : i][k];
+                        fAudioAndCvOutBuffers[i][k] = (fAudioAndCvOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
                     }
                 }
 
@@ -2144,7 +2231,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-                        carla_copyFloats(oldBufLeft, fAudioOutBuffers[i], frames);
+                        carla_copyFloats(oldBufLeft, fAudioAndCvOutBuffers[i], frames);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
@@ -2155,14 +2242,14 @@ public:
                         if (isPair)
                         {
                             // left
-                            fAudioOutBuffers[i][k]  = oldBufLeft[k]            * (1.0f - balRangeL);
-                            fAudioOutBuffers[i][k] += fAudioOutBuffers[i+1][k] * (1.0f - balRangeR);
+                            fAudioAndCvOutBuffers[i][k]  = oldBufLeft[k]            * (1.0f - balRangeL);
+                            fAudioAndCvOutBuffers[i][k] += fAudioAndCvOutBuffers[i+1][k] * (1.0f - balRangeR);
                         }
                         else
                         {
                             // right
-                            fAudioOutBuffers[i][k]  = fAudioOutBuffers[i][k] * balRangeR;
-                            fAudioOutBuffers[i][k] += oldBufLeft[k]          * balRangeL;
+                            fAudioAndCvOutBuffers[i][k]  = fAudioAndCvOutBuffers[i][k] * balRangeR;
+                            fAudioAndCvOutBuffers[i][k] += oldBufLeft[k]          * balRangeL;
                         }
                     }
                 }
@@ -2170,18 +2257,24 @@ public:
                 // Volume (and buffer copy)
                 {
                     for (uint32_t k=0; k < frames; ++k)
-                        audioOut[i][k+timeOffset] = fAudioOutBuffers[i][k] * pData->postProc.volume;
+                        audioOut[i][k+timeOffset] = fAudioAndCvOutBuffers[i][k] * pData->postProc.volume;
                 }
             }
 
         } // End of Post-processing
 #else
-        for (uint32_t i=0; i < pData->audioOut.count; ++i)
+        for (; i < pData->audioOut.count; ++i)
         {
             for (uint32_t k=0; k < frames; ++k)
-                audioOut[i][k+timeOffset] = fAudioOutBuffers[i][k];
+                audioOut[i][k+timeOffset] = fAudioAndCvOutBuffers[i][k];
         }
 #endif
+        // CV stuff too
+        for (; i < pData->cvOut.count; ++i)
+        {
+            for (uint32_t k=0; k < frames; ++k)
+                cvOut[i][k+timeOffset] = fAudioAndCvOutBuffers[pData->audioOut.count+i][k];
+        }
 
         // --------------------------------------------------------------------------------------------------------
         // MIDI Output
@@ -2211,18 +2304,18 @@ public:
         CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
         carla_debug("CarlaPluginNative::bufferSizeChanged(%i)", newBufferSize);
 
-        for (uint32_t i=0; i < pData->audioIn.count; ++i)
+        for (uint32_t i=0; i < (pData->audioIn.count+pData->cvIn.count); ++i)
         {
-            if (fAudioInBuffers[i] != nullptr)
-                delete[] fAudioInBuffers[i];
-            fAudioInBuffers[i] = new float[newBufferSize];
+            if (fAudioAndCvInBuffers[i] != nullptr)
+                delete[] fAudioAndCvInBuffers[i];
+            fAudioAndCvInBuffers[i] = new float[newBufferSize];
         }
 
-        for (uint32_t i=0; i < pData->audioOut.count; ++i)
+        for (uint32_t i=0; i < (pData->audioOut.count+pData->cvOut.count); ++i)
         {
-            if (fAudioOutBuffers[i] != nullptr)
-                delete[] fAudioOutBuffers[i];
-            fAudioOutBuffers[i] = new float[newBufferSize];
+            if (fAudioAndCvOutBuffers[i] != nullptr)
+                delete[] fAudioAndCvOutBuffers[i];
+            fAudioAndCvOutBuffers[i] = new float[newBufferSize];
         }
 
         if (fCurBufferSize == newBufferSize)
@@ -2289,34 +2382,34 @@ public:
     {
         carla_debug("CarlaPluginNative::clearBuffers() - start");
 
-        if (fAudioInBuffers != nullptr)
+        if (fAudioAndCvInBuffers != nullptr)
         {
-            for (uint32_t i=0; i < pData->audioIn.count; ++i)
+            for (uint32_t i=0; i < (pData->audioIn.count+pData->cvIn.count); ++i)
             {
-                if (fAudioInBuffers[i] != nullptr)
+                if (fAudioAndCvInBuffers[i] != nullptr)
                 {
-                    delete[] fAudioInBuffers[i];
-                    fAudioInBuffers[i] = nullptr;
+                    delete[] fAudioAndCvInBuffers[i];
+                    fAudioAndCvInBuffers[i] = nullptr;
                 }
             }
 
-            delete[] fAudioInBuffers;
-            fAudioInBuffers = nullptr;
+            delete[] fAudioAndCvInBuffers;
+            fAudioAndCvInBuffers = nullptr;
         }
 
-        if (fAudioOutBuffers != nullptr)
+        if (fAudioAndCvOutBuffers != nullptr)
         {
-            for (uint32_t i=0; i < pData->audioOut.count; ++i)
+            for (uint32_t i=0; i < (pData->audioOut.count+pData->cvOut.count); ++i)
             {
-                if (fAudioOutBuffers[i] != nullptr)
+                if (fAudioAndCvOutBuffers[i] != nullptr)
                 {
-                    delete[] fAudioOutBuffers[i];
-                    fAudioOutBuffers[i] = nullptr;
+                    delete[] fAudioAndCvOutBuffers[i];
+                    fAudioAndCvOutBuffers[i] = nullptr;
                 }
             }
 
-            delete[] fAudioOutBuffers;
-            fAudioOutBuffers = nullptr;
+            delete[] fAudioAndCvOutBuffers;
+            fAudioAndCvOutBuffers = nullptr;
         }
 
         if (fMidiIn.count > 1)
@@ -2699,8 +2792,8 @@ private:
     bool fInlineDisplayNeedsRedraw;
     int64_t fInlineDisplayLastRedrawTime;
 
-    float**         fAudioInBuffers;
-    float**         fAudioOutBuffers;
+    float**         fAudioAndCvInBuffers;
+    float**         fAudioAndCvOutBuffers;
     uint32_t        fMidiEventInCount;
     uint32_t        fMidiEventOutCount;
     NativeMidiEvent fMidiInEvents[kPluginMaxMidiEvents];

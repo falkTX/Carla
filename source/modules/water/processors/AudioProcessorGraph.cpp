@@ -1158,7 +1158,8 @@ void AudioProcessorGraph::Node::setParentGraph (AudioProcessorGraph* const graph
 struct AudioProcessorGraph::AudioProcessorGraphBufferHelpers
 {
     AudioProcessorGraphBufferHelpers() noexcept
-        : currentAudioInputBuffer (nullptr) {}
+        : currentAudioInputBuffer (nullptr),
+          currentCVInputBuffer (nullptr) {}
 
     void setRenderingBufferSize (int newNumAudioChannels, int newNumCVChannels, int newNumSamples) noexcept
     {
@@ -1173,26 +1174,32 @@ struct AudioProcessorGraph::AudioProcessorGraphBufferHelpers
     {
         renderingAudioBuffers.setSize (1, 1);
         currentAudioInputBuffer = nullptr;
+        currentCVInputBuffer = nullptr;
         currentAudioOutputBuffer.setSize (1, 1);
+        currentCVOutputBuffer.setSize (1, 1);
 
         renderingCVBuffers.setSize (1, 1);
     }
 
-    void prepareInOutBuffers(int newNumChannels, int newNumSamples) noexcept
+    void prepareInOutBuffers (int newNumAudioChannels, int newNumCVChannels, int newNumSamples) noexcept
     {
         currentAudioInputBuffer = nullptr;
-        currentAudioOutputBuffer.setSize (newNumChannels, newNumSamples);
+        currentCVInputBuffer = nullptr;
+        currentAudioOutputBuffer.setSize (newNumAudioChannels, newNumSamples);
+        currentCVOutputBuffer.setSize (newNumCVChannels, newNumSamples);
     }
 
-    AudioSampleBuffer  renderingAudioBuffers;
-    AudioSampleBuffer  renderingCVBuffers;
-    AudioSampleBuffer* currentAudioInputBuffer;
-    AudioSampleBuffer  currentAudioOutputBuffer;
+    AudioSampleBuffer        renderingAudioBuffers;
+    AudioSampleBuffer        renderingCVBuffers;
+    AudioSampleBuffer*       currentAudioInputBuffer;
+    const AudioSampleBuffer* currentCVInputBuffer;
+    AudioSampleBuffer        currentAudioOutputBuffer;
+    AudioSampleBuffer        currentCVOutputBuffer;
 };
 
 //==============================================================================
 AudioProcessorGraph::AudioProcessorGraph()
-    : lastNodeId (0), audioBuffers (new AudioProcessorGraphBufferHelpers),
+    : lastNodeId (0), audioAndCVBuffers (new AudioProcessorGraphBufferHelpers),
       currentMidiInputBuffer (nullptr), isPrepared (false), needsReorder (false)
 {
 }
@@ -1525,9 +1532,9 @@ void AudioProcessorGraph::buildRenderingSequence()
         // swap over to the new rendering sequence..
         const CarlaRecursiveMutexLocker cml (getCallbackLock());
 
-        audioBuffers->setRenderingBufferSize (numAudioRenderingBuffersNeeded,
-                                              numCVRenderingBuffersNeeded,
-                                              getBlockSize());
+        audioAndCVBuffers->setRenderingBufferSize (numAudioRenderingBuffersNeeded,
+                                                   numCVRenderingBuffersNeeded,
+                                                   getBlockSize());
 
         for (int i = static_cast<int>(midiBuffers.size()); --i >= 0;)
             midiBuffers.getUnchecked(i)->clear();
@@ -1547,7 +1554,9 @@ void AudioProcessorGraph::prepareToPlay (double sampleRate, int estimatedSamples
 {
     setRateAndBufferSizeDetails(sampleRate, estimatedSamplesPerBlock);
 
-    audioBuffers->prepareInOutBuffers(jmax(1U, getTotalNumOutputChannels(AudioProcessor::ChannelTypeAudio)), estimatedSamplesPerBlock);
+    audioAndCVBuffers->prepareInOutBuffers(jmax(1U, getTotalNumOutputChannels(AudioProcessor::ChannelTypeAudio)),
+                                           jmax(1U, getTotalNumOutputChannels(AudioProcessor::ChannelTypeCV)),
+                                           estimatedSamplesPerBlock);
 
     currentMidiInputBuffer = nullptr;
     currentMidiOutputBuffer.clear();
@@ -1565,7 +1574,7 @@ void AudioProcessorGraph::releaseResources()
     for (int i = 0; i < nodes.size(); ++i)
         nodes.getUnchecked(i)->unprepare();
 
-    audioBuffers->release();
+    audioAndCVBuffers->release();
     midiBuffers.clear();
 
     currentMidiInputBuffer = nullptr;
@@ -1590,23 +1599,24 @@ void AudioProcessorGraph::setNonRealtime (bool isProcessingNonRealtime) noexcept
         nodes.getUnchecked(i)->getProcessor()->setNonRealtime (isProcessingNonRealtime);
 }
 
-void AudioProcessorGraph::processAudio (AudioSampleBuffer& buffer, MidiBuffer& midiMessages)
+/*
+void AudioProcessorGraph::processAudio (AudioSampleBuffer& audioBuffer, MidiBuffer& midiMessages)
 {
-    AudioSampleBuffer*& currentAudioInputBuffer  = audioBuffers->currentAudioInputBuffer;
-    AudioSampleBuffer&  currentAudioOutputBuffer = audioBuffers->currentAudioOutputBuffer;
-    AudioSampleBuffer&  renderingAudioBuffers    = audioBuffers->renderingAudioBuffers;
-    AudioSampleBuffer&  renderingCVBuffers    = audioBuffers->renderingCVBuffers;
+    AudioSampleBuffer*& currentAudioInputBuffer  = audioAndCVBuffers->currentAudioInputBuffer;
+    AudioSampleBuffer&  currentAudioOutputBuffer = audioAndCVBuffers->currentAudioOutputBuffer;
+    AudioSampleBuffer&  renderingAudioBuffers    = audioAndCVBuffers->renderingAudioBuffers;
+    AudioSampleBuffer&  renderingCVBuffers       = audioAndCVBuffers->renderingCVBuffers;
 
-    const int numSamples = buffer.getNumSamples();
+    const int numSamples = audioBuffer.getNumSamples();
 
-    if (! audioBuffers->currentAudioOutputBuffer.setSizeRT(numSamples))
+    if (! audioAndCVBuffers->currentAudioOutputBuffer.setSizeRT(numSamples))
         return;
-    if (! audioBuffers->renderingAudioBuffers.setSizeRT(numSamples))
+    if (! audioAndCVBuffers->renderingAudioBuffers.setSizeRT(numSamples))
         return;
-    if (! audioBuffers->renderingCVBuffers.setSizeRT(numSamples))
+    if (! audioAndCVBuffers->renderingCVBuffers.setSizeRT(numSamples))
         return;
 
-    currentAudioInputBuffer = &buffer;
+    currentAudioInputBuffer = &audioBuffer;
     currentAudioOutputBuffer.clear();
     currentMidiInputBuffer = &midiMessages;
     currentMidiOutputBuffer.clear();
@@ -1619,27 +1629,78 @@ void AudioProcessorGraph::processAudio (AudioSampleBuffer& buffer, MidiBuffer& m
         op->perform (renderingAudioBuffers, renderingCVBuffers, midiBuffers, numSamples);
     }
 
-    for (uint32_t i = 0; i < buffer.getNumChannels(); ++i)
-        buffer.copyFrom (i, 0, currentAudioOutputBuffer, i, 0, numSamples);
+    for (uint32_t i = 0; i < audioBuffer.getNumChannels(); ++i)
+        audioBuffer.copyFrom (i, 0, currentAudioOutputBuffer, i, 0, numSamples);
 
     midiMessages.clear();
-    midiMessages.addEvents (currentMidiOutputBuffer, 0, buffer.getNumSamples(), 0);
+    midiMessages.addEvents (currentMidiOutputBuffer, 0, audioBuffer.getNumSamples(), 0);
+}
+*/
+
+void AudioProcessorGraph::processAudioAndCV (AudioSampleBuffer& audioBuffer,
+                                             const AudioSampleBuffer& cvInBuffer,
+                                             AudioSampleBuffer& cvOutBuffer,
+                                             MidiBuffer& midiMessages)
+{
+    AudioSampleBuffer*&       currentAudioInputBuffer  = audioAndCVBuffers->currentAudioInputBuffer;
+    const AudioSampleBuffer*& currentCVInputBuffer     = audioAndCVBuffers->currentCVInputBuffer;
+    AudioSampleBuffer&        currentAudioOutputBuffer = audioAndCVBuffers->currentAudioOutputBuffer;
+    AudioSampleBuffer&        currentCVOutputBuffer    = audioAndCVBuffers->currentCVOutputBuffer;
+    AudioSampleBuffer&        renderingAudioBuffers    = audioAndCVBuffers->renderingAudioBuffers;
+    AudioSampleBuffer&        renderingCVBuffers       = audioAndCVBuffers->renderingCVBuffers;
+
+    const int numSamples = audioBuffer.getNumSamples();
+
+    if (! audioAndCVBuffers->currentAudioOutputBuffer.setSizeRT(numSamples))
+        return;
+    if (! audioAndCVBuffers->currentCVOutputBuffer.setSizeRT(numSamples))
+        return;
+    if (! audioAndCVBuffers->renderingAudioBuffers.setSizeRT(numSamples))
+        return;
+    if (! audioAndCVBuffers->renderingCVBuffers.setSizeRT(numSamples))
+        return;
+
+    currentAudioInputBuffer = &audioBuffer;
+    currentCVInputBuffer = &cvInBuffer;
+    currentAudioOutputBuffer.clear();
+    currentCVOutputBuffer.clear();
+    currentMidiInputBuffer = &midiMessages;
+    currentMidiOutputBuffer.clear();
+
+    for (int i = 0; i < renderingOps.size(); ++i)
+    {
+        GraphRenderingOps::AudioGraphRenderingOpBase* const op
+            = (GraphRenderingOps::AudioGraphRenderingOpBase*) renderingOps.getUnchecked(i);
+
+        op->perform (renderingAudioBuffers, renderingCVBuffers, midiBuffers, numSamples);
+    }
+
+    for (uint32_t i = 0; i < audioBuffer.getNumChannels(); ++i)
+        audioBuffer.copyFrom (i, 0, currentAudioOutputBuffer, i, 0, numSamples);
+
+    for (uint32_t i = 0; i < cvOutBuffer.getNumChannels(); ++i)
+        cvOutBuffer.copyFrom (i, 0, currentCVOutputBuffer, i, 0, numSamples);
+
+    midiMessages.clear();
+    midiMessages.addEvents (currentMidiOutputBuffer, 0, audioBuffer.getNumSamples(), 0);
 }
 
 bool AudioProcessorGraph::acceptsMidi() const                       { return true; }
 bool AudioProcessorGraph::producesMidi() const                      { return true; }
 
+/*
 void AudioProcessorGraph::processBlock (AudioSampleBuffer& buffer, MidiBuffer& midiMessages)
 {
     processAudio (buffer, midiMessages);
 }
+*/
 
-void AudioProcessorGraph::processBlockWithCV (AudioSampleBuffer& buffer,
-                                              const AudioSampleBuffer&,
-                                              AudioSampleBuffer&,
+void AudioProcessorGraph::processBlockWithCV (AudioSampleBuffer& audioBuffer,
+                                              const AudioSampleBuffer& cvInBuffer,
+                                              AudioSampleBuffer& cvOutBuffer,
                                               MidiBuffer& midiMessages)
 {
-    processAudio (buffer, midiMessages);
+    processAudioAndCV (audioBuffer, cvInBuffer, cvOutBuffer, midiMessages);
 }
 
 void AudioProcessorGraph::reorderNowIfNeeded()
@@ -1691,25 +1752,24 @@ void AudioProcessorGraph::AudioGraphIOProcessor::releaseResources()
 {
 }
 
-void AudioProcessorGraph::AudioGraphIOProcessor::processAudio (AudioSampleBuffer& buffer,
-                                                               MidiBuffer& midiMessages)
+void AudioProcessorGraph::AudioGraphIOProcessor::processAudioAndCV (AudioSampleBuffer& audioBuffer,
+                                                                    const AudioSampleBuffer& cvInBuffer,
+                                                                    AudioSampleBuffer& cvOutBuffer,
+                                                                    MidiBuffer& midiMessages)
 {
     CARLA_SAFE_ASSERT_RETURN(graph != nullptr,);
-
-    AudioSampleBuffer*& currentAudioInputBuffer =
-        graph->audioBuffers->currentAudioInputBuffer;
-
-    AudioSampleBuffer&  currentAudioOutputBuffer =
-        graph->audioBuffers->currentAudioOutputBuffer;
 
     switch (type)
     {
         case audioOutputNode:
         {
+            AudioSampleBuffer&  currentAudioOutputBuffer =
+                graph->audioAndCVBuffers->currentAudioOutputBuffer;
+
             for (int i = jmin (currentAudioOutputBuffer.getNumChannels(),
-                               buffer.getNumChannels()); --i >= 0;)
+                               audioBuffer.getNumChannels()); --i >= 0;)
             {
-                currentAudioOutputBuffer.addFrom (i, 0, buffer, i, 0, buffer.getNumSamples());
+                currentAudioOutputBuffer.addFrom (i, 0, audioBuffer, i, 0, audioBuffer.getNumSamples());
             }
 
             break;
@@ -1717,21 +1777,52 @@ void AudioProcessorGraph::AudioGraphIOProcessor::processAudio (AudioSampleBuffer
 
         case audioInputNode:
         {
+            AudioSampleBuffer*& currentAudioInputBuffer =
+                graph->audioAndCVBuffers->currentAudioInputBuffer;
+
             for (int i = jmin (currentAudioInputBuffer->getNumChannels(),
-                               buffer.getNumChannels()); --i >= 0;)
+                               audioBuffer.getNumChannels()); --i >= 0;)
             {
-                buffer.copyFrom (i, 0, *currentAudioInputBuffer, i, 0, buffer.getNumSamples());
+                audioBuffer.copyFrom (i, 0, *currentAudioInputBuffer, i, 0, audioBuffer.getNumSamples());
+            }
+
+            break;
+        }
+
+        case cvOutputNode:
+        {
+            AudioSampleBuffer&  currentCVOutputBuffer =
+                graph->audioAndCVBuffers->currentCVOutputBuffer;
+
+            for (int i = jmin (currentCVOutputBuffer.getNumChannels(),
+                               cvInBuffer.getNumChannels()); --i >= 0;)
+            {
+                currentCVOutputBuffer.addFrom (i, 0, cvInBuffer, i, 0, cvInBuffer.getNumSamples());
+            }
+
+            break;
+        }
+
+        case cvInputNode:
+        {
+            const AudioSampleBuffer*& currentCVInputBuffer =
+                graph->audioAndCVBuffers->currentCVInputBuffer;
+
+            for (int i = jmin (currentCVInputBuffer->getNumChannels(),
+                               cvOutBuffer.getNumChannels()); --i >= 0;)
+            {
+                cvOutBuffer.copyFrom (i, 0, *currentCVInputBuffer, i, 0, cvOutBuffer.getNumSamples());
             }
 
             break;
         }
 
         case midiOutputNode:
-            graph->currentMidiOutputBuffer.addEvents (midiMessages, 0, buffer.getNumSamples(), 0);
+            graph->currentMidiOutputBuffer.addEvents (midiMessages, 0, audioBuffer.getNumSamples(), 0);
             break;
 
         case midiInputNode:
-            midiMessages.addEvents (*graph->currentMidiInputBuffer, 0, buffer.getNumSamples(), 0);
+            midiMessages.addEvents (*graph->currentMidiInputBuffer, 0, audioBuffer.getNumSamples(), 0);
             break;
 
         default:
@@ -1739,10 +1830,12 @@ void AudioProcessorGraph::AudioGraphIOProcessor::processAudio (AudioSampleBuffer
     }
 }
 
-void AudioProcessorGraph::AudioGraphIOProcessor::processBlock (AudioSampleBuffer& buffer,
-                                                               MidiBuffer& midiMessages)
+void AudioProcessorGraph::AudioGraphIOProcessor::processBlockWithCV (AudioSampleBuffer& audioBuffer,
+                                                                     const AudioSampleBuffer& cvInBuffer,
+                                                                     AudioSampleBuffer& cvOutBuffer,
+                                                                     MidiBuffer& midiMessages)
 {
-    processAudio (buffer, midiMessages);
+    processAudioAndCV (audioBuffer, cvInBuffer, cvOutBuffer, midiMessages);
 }
 
 bool AudioProcessorGraph::AudioGraphIOProcessor::acceptsMidi() const

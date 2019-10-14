@@ -1413,11 +1413,6 @@ public:
         return fPlugin->getName();
     }
 
-    void processBlock(AudioSampleBuffer&, MidiBuffer&) override
-    {
-        carla_stderr2("CarlaPluginInstance::processBlock called, this is wrong!");
-    }
-
     void processBlockWithCV(AudioSampleBuffer& audio,
                             const AudioSampleBuffer& cvIn,
                             AudioSampleBuffer& cvOut,
@@ -1605,14 +1600,20 @@ private:
     StringArray outputNames;
 };
 
-PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, const uint32_t outs)
+PatchbayGraph::PatchbayGraph(CarlaEngine* const engine,
+                             const uint32_t audioIns, const uint32_t audioOuts,
+                             const uint32_t cvIns, const uint32_t cvOuts)
     : CarlaThread("PatchbayReorderThread"),
       connections(),
       graph(),
       audioBuffer(),
+      cvInBuffer(),
+      cvOutBuffer(),
       midiBuffer(),
-      inputs(carla_fixedValue(0U, 64U, ins)),
-      outputs(carla_fixedValue(0U, 64U, outs)),
+      numAudioIns(carla_fixedValue(0U, 64U, audioIns)),
+      numAudioOuts(carla_fixedValue(0U, 64U, audioOuts)),
+      numCVIns(carla_fixedValue(0U, 8U, cvIns)),
+      numCVOuts(carla_fixedValue(0U, 8U, cvOuts)),
       retCon(),
       usingExternalHost(false),
       usingExternalOSC(false),
@@ -1622,17 +1623,22 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
     const uint32_t bufferSize(engine->getBufferSize());
     const double   sampleRate(engine->getSampleRate());
 
-    graph.setPlayConfigDetails(inputs, outputs, 0, 0, 1, 1, sampleRate, static_cast<int>(bufferSize));
+    graph.setPlayConfigDetails(numAudioIns, numAudioOuts,
+                               numCVIns, numCVOuts,
+                               1, 1,
+                               sampleRate, static_cast<int>(bufferSize));
     graph.prepareToPlay(sampleRate, static_cast<int>(bufferSize));
 
-    audioBuffer.setSize(jmax(inputs, outputs), bufferSize);
+    audioBuffer.setSize(jmax(numAudioIns, numAudioOuts), bufferSize);
+    cvInBuffer.setSize(numCVIns, bufferSize);
+    cvOutBuffer.setSize(numCVOuts, bufferSize);
 
     midiBuffer.ensureSize(kMaxEngineEventInternalCount*2);
     midiBuffer.clear();
 
     StringArray channelNames;
 
-    switch (inputs)
+    switch (numAudioIns)
     {
     case 2:
         channelNames.add("Left");
@@ -1645,6 +1651,7 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
         break;
     }
 
+    if (numAudioIns != 0)
     {
         NamedAudioGraphIOProcessor* const proc(
             new NamedAudioGraphIOProcessor(NamedAudioGraphIOProcessor::audioInputNode));
@@ -1659,6 +1666,7 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
         node->properties.set("isOSC", false);
     }
 
+    if (numAudioOuts != 0)
     {
         NamedAudioGraphIOProcessor* const proc(
             new NamedAudioGraphIOProcessor(NamedAudioGraphIOProcessor::audioOutputNode));
@@ -1669,6 +1677,36 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
         node->properties.set("isOutput", false);
         node->properties.set("isAudio", true);
         node->properties.set("isCV", false);
+        node->properties.set("isMIDI", false);
+        node->properties.set("isOSC", false);
+    }
+
+    if (numCVIns != 0)
+    {
+        NamedAudioGraphIOProcessor* const proc(
+            new NamedAudioGraphIOProcessor(NamedAudioGraphIOProcessor::cvInputNode));
+        // proc->setNames(false, channelNames);
+
+        AudioProcessorGraph::Node* const node(graph.addNode(proc));
+        node->properties.set("isPlugin", false);
+        node->properties.set("isOutput", false);
+        node->properties.set("isAudio", false);
+        node->properties.set("isCV", true);
+        node->properties.set("isMIDI", false);
+        node->properties.set("isOSC", false);
+    }
+
+    if (numCVOuts != 0)
+    {
+        NamedAudioGraphIOProcessor* const proc(
+            new NamedAudioGraphIOProcessor(NamedAudioGraphIOProcessor::cvOutputNode));
+        // proc->setNames(true, channelNames);
+
+        AudioProcessorGraph::Node* const node(graph.addNode(proc));
+        node->properties.set("isPlugin", false);
+        node->properties.set("isOutput", false);
+        node->properties.set("isAudio", false);
+        node->properties.set("isCV", true);
         node->properties.set("isMIDI", false);
         node->properties.set("isOSC", false);
     }
@@ -1710,6 +1748,8 @@ PatchbayGraph::~PatchbayGraph()
     graph.releaseResources();
     graph.clear();
     audioBuffer.clear();
+    cvInBuffer.clear();
+    cvOutBuffer.clear();
 }
 
 void PatchbayGraph::setBufferSize(const uint32_t bufferSize)
@@ -1719,6 +1759,8 @@ void PatchbayGraph::setBufferSize(const uint32_t bufferSize)
     graph.releaseResources();
     graph.prepareToPlay(kEngine->getSampleRate(), static_cast<int>(bufferSize));
     audioBuffer.setSize(audioBuffer.getNumChannels(), bufferSize);
+    cvInBuffer.setSize(numCVIns, bufferSize);
+    cvOutBuffer.setSize(numCVOuts, bufferSize);
 }
 
 void PatchbayGraph::setSampleRate(const double sampleRate)
@@ -2175,7 +2217,10 @@ bool PatchbayGraph::getGroupAndPortIdFromFullName(const bool external, const cha
     return false;
 }
 
-void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const uint32_t frames)
+void PatchbayGraph::process(CarlaEngine::ProtectedData* const data,
+                            const float* const* const inBuf,
+                            float* const* const outBuf,
+                            const uint32_t frames)
 {
     CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(data->events.in != nullptr,);
@@ -2188,29 +2233,48 @@ void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float*
         fillWaterMidiBufferFromEngineEvents(midiBuffer, data->events.in);
     }
 
-    // set audio buffer size, needed for water internals
+    // set audio and cv buffer size, needed for water internals
     if (! audioBuffer.setSizeRT(frames))
         return;
+    if (! cvInBuffer.setSizeRT(frames))
+        return;
+    if (! cvOutBuffer.setSizeRT(frames))
+        return;
 
-    // put carla audio in water buffer
+    // put carla audio and cv in water buffer
     {
         uint32_t i=0;
 
-        for (; i < inputs; ++i)
+        for (; i < numAudioIns; ++i) {
+            CARLA_SAFE_ASSERT_BREAK(inBuf[i]);
             audioBuffer.copyFrom(i, 0, inBuf[i], frames);
+        }
+
+        for (uint32_t j=0; j < numCVIns; ++j, ++i) {
+            CARLA_SAFE_ASSERT_BREAK(inBuf[i]);
+            cvInBuffer.copyFrom(j, 0, inBuf[i], frames);
+        }
 
         // clear remaining channels
-        for (const uint32_t count=audioBuffer.getNumChannels(); i<count; ++i)
-            audioBuffer.clear(i, 0, frames);
+        for (uint32_t j=numAudioIns, count=audioBuffer.getNumChannels(); j < count; ++j)
+            audioBuffer.clear(j, 0, frames);
+
+        for (uint32_t j=0; j < numCVOuts; ++j)
+            cvOutBuffer.clear(j, 0, frames);
     }
 
     // ready to go!
-    graph.processBlock(audioBuffer, midiBuffer);
+    graph.processBlockWithCV(audioBuffer, cvInBuffer, cvOutBuffer, midiBuffer);
 
-    // put water audio in carla buffer
+    // put water audio and cv in carla buffer
     {
-        for (uint32_t i=0; i < outputs; ++i)
+        uint32_t i=0;
+
+        for (; i < numAudioOuts; ++i)
             carla_copyFloats(outBuf[i], audioBuffer.getReadPointer(i), frames);
+
+        for (uint32_t j=0; j < numCVOuts; ++j, ++i)
+            carla_copyFloats(outBuf[i], cvOutBuffer.getReadPointer(j), frames);
     }
 
     // put water events in carla buffer
@@ -2245,19 +2309,20 @@ EngineInternalGraph::~EngineInternalGraph() noexcept
     CARLA_SAFE_ASSERT(fRack == nullptr);
 }
 
-void EngineInternalGraph::create(const uint32_t inputs, const uint32_t outputs)
+void EngineInternalGraph::create(const uint32_t audioIns, const uint32_t audioOuts,
+                                 const uint32_t cvIns, const uint32_t cvOuts)
 {
     fIsRack = (kEngine->getOptions().processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK);
 
     if (fIsRack)
     {
         CARLA_SAFE_ASSERT_RETURN(fRack == nullptr,);
-        fRack = new RackGraph(kEngine, inputs, outputs);
+        fRack = new RackGraph(kEngine, audioIns, audioOuts);
     }
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay == nullptr,);
-        fPatchbay = new PatchbayGraph(kEngine, inputs, outputs);
+        fPatchbay = new PatchbayGraph(kEngine, audioIns, audioOuts, cvIns, cvOuts);
     }
 
     fIsReady = true;

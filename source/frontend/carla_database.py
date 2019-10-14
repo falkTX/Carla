@@ -133,7 +133,7 @@ def findFilenames(filePath, stype):
 # ---------------------------------------------------------------------------------------------------------------------
 # Plugin Query
 
-PLUGIN_QUERY_API_VERSION = 8
+PLUGIN_QUERY_API_VERSION = 9
 
 PyPluginInfo = {
     'API': PLUGIN_QUERY_API_VERSION,
@@ -148,6 +148,8 @@ PyPluginInfo = {
     'uniqueId': 0,
     'audio.ins': 0,
     'audio.outs': 0,
+    'cv.ins': 0,
+    'cv.outs': 0,
     'midi.ins': 0,
     'midi.outs': 0,
     'parameters.ins': 0,
@@ -285,6 +287,10 @@ def runCarlaDiscovery(itype, stype, filename, tool, wineSettings=None):
                 if value.isdigit(): pinfo['audio.ins'] = int(value)
             elif prop == "audio.outs":
                 if value.isdigit(): pinfo['audio.outs'] = int(value)
+            elif prop == "cv.ins":
+                if value.isdigit(): pinfo['cv.ins'] = int(value)
+            elif prop == "cv.outs":
+                if value.isdigit(): pinfo['cv.outs'] = int(value)
             elif prop == "midi.ins":
                 if value.isdigit(): pinfo['midi.ins'] = int(value)
             elif prop == "midi.outs":
@@ -328,6 +334,9 @@ def checkPluginCached(desc, ptype):
 
     pinfo['audio.ins']  = desc['audioIns']
     pinfo['audio.outs'] = desc['audioOuts']
+
+    pinfo['cv.ins']  = desc['cvIns']
+    pinfo['cv.outs'] = desc['cvOuts']
 
     pinfo['midi.ins']   = desc['midiIns']
     pinfo['midi.outs']  = desc['midiOuts']

@@ -58,6 +58,11 @@ CARLA_EXPORT const NativePluginDescriptor* carla_get_native_patchbay32_plugin();
  */
 CARLA_EXPORT const NativePluginDescriptor* carla_get_native_patchbay64_plugin();
 
+/*!
+ * Get the native plugin descriptor for the carla-patchbay-cv plugin.
+ */
+CARLA_EXPORT const NativePluginDescriptor* carla_get_native_patchbay_cv_plugin();
+
 #ifdef __cplusplus
 /*!
  * Get the internal CarlaEngine instance.

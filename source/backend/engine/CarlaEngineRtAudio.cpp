@@ -332,7 +332,7 @@ public:
         if (fAudioOutCount > 0)
             fAudioIntBufOut = new float[fAudioOutCount*bufferFrames];
 
-        pData->graph.create(fAudioInCount, fAudioOutCount);
+        pData->graph.create(fAudioInCount, fAudioOutCount, 0, 0);
 
         try {
             fAudio.startStream();

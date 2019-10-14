@@ -63,6 +63,8 @@ _CarlaCachedPluginInfo::_CarlaCachedPluginInfo() noexcept
       hints(0x0),
       audioIns(0),
       audioOuts(0),
+      cvIns(0),
+      cvOuts(0),
       midiIns(0),
       midiOuts(0),
       parameterIns(0),
@@ -119,6 +121,8 @@ static const CarlaCachedPluginInfo* get_cached_plugin_internal(const NativePlugi
     info.valid         = true;
     info.audioIns      = desc.audioIns;
     info.audioOuts     = desc.audioOuts;
+    info.cvIns         = desc.cvIns;
+    info.cvOuts        = desc.cvOuts;
     info.midiIns       = desc.midiIns;
     info.midiOuts      = desc.midiOuts;
     info.parameterIns  = desc.paramIns;
@@ -336,6 +340,8 @@ static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2Worl
 
     info.audioIns      = 0;
     info.audioOuts     = 0;
+    info.cvIns         = 0;
+    info.cvOuts        = 0;
     info.midiIns       = 0;
     info.midiOuts      = 0;
     info.parameterIns  = 0;
@@ -429,6 +435,10 @@ static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2Worl
         }
         else if (lilvPort.is_a(lv2World.port_cv))
         {
+            if (isInput)
+                ++(info.cvIns);
+            else
+                ++(info.cvOuts);
         }
         else if (lilvPort.is_a(lv2World.port_atom))
         {
@@ -527,6 +537,8 @@ static const CarlaCachedPluginInfo* get_cached_plugin_au(const juce::String plug
 
     info.audioIns  = static_cast<uint32_t>(desc->numInputChannels);
     info.audioOuts = static_cast<uint32_t>(desc->numOutputChannels);
+    info.cvIns     = 0;
+    info.cvOuts    = 0;
     info.midiIns   = desc->isInstrument ? 1 : 0;
     info.midiOuts  = 0;
     info.parameterIns  = 0;
@@ -565,6 +577,8 @@ static const CarlaCachedPluginInfo* get_cached_plugin_sfz(const File file)
     info.valid         = true;
     info.audioIns      = 0;
     info.audioOuts     = 2;
+    info.cvIns         = 0;
+    info.cvOuts        = 0;
     info.midiIns       = 1;
     info.midiOuts      = 0;
     info.parameterIns  = 0;

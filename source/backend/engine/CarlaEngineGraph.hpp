@@ -157,16 +157,22 @@ public:
     PatchbayConnectionList connections;
     AudioProcessorGraph graph;
     AudioSampleBuffer audioBuffer;
+    AudioSampleBuffer cvInBuffer;
+    AudioSampleBuffer cvOutBuffer;
     MidiBuffer midiBuffer;
-    const uint32_t inputs;
-    const uint32_t outputs;
+    const uint32_t numAudioIns;
+    const uint32_t numAudioOuts;
+    const uint32_t numCVIns;
+    const uint32_t numCVOuts;
     mutable CharStringListPtr retCon;
     bool usingExternalHost;
     bool usingExternalOSC;
 
     ExternalGraph extGraph;
 
-    PatchbayGraph(CarlaEngine* const engine, const uint32_t inputs, const uint32_t outputs);
+    PatchbayGraph(CarlaEngine* const engine,
+                  const uint32_t audioIns, const uint32_t audioOuts,
+                  const uint32_t cvIns, const uint32_t cvOuts);
     ~PatchbayGraph();
 
     void setBufferSize(const uint32_t bufferSize);
@@ -187,7 +193,10 @@ public:
     const char* const* getConnections(const bool external) const;
     bool getGroupAndPortIdFromFullName(const bool external, const char* const fullPortName, uint& groupId, uint& portId) const;
 
-    void process(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const uint32_t frames);
+    void process(CarlaEngine::ProtectedData* const data,
+                 const float* const* const inBuf,
+                 float* const* const outBuf,
+                 const uint32_t frames);
 
 private:
     void run() override;
