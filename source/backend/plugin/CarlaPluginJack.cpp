@@ -143,14 +143,12 @@ protected:
 
     void maybeOpenFirstTime()
     {
-        if (fProject.path.isNotEmpty())
-            return;
         if (fSetupLabel.length() <= 6)
             return;
 
-        if (fProject.init(kEngine->getCurrentProjectFilename(), &fSetupLabel[6]))
+        if (fProject.path.isNotEmpty() || fProject.init(kEngine->getCurrentProjectFilename(), &fSetupLabel[6]))
         {
-            carla_stdout("Sending first open signal %s %s %s",
+            carla_stdout("Sending open signal %s %s %s",
                          fProject.path.buffer(), fProject.display.buffer(), fProject.clientName.buffer());
 
             lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/open", "sss",
