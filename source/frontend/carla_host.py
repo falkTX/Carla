@@ -519,7 +519,11 @@ class HostWindow(QMainWindow):
         host.PatchbayClientDataChangedCallback.connect(self.slot_handlePatchbayClientDataChangedCallback)
         host.PatchbayPortAddedCallback.connect(self.slot_handlePatchbayPortAddedCallback)
         host.PatchbayPortRemovedCallback.connect(self.slot_handlePatchbayPortRemovedCallback)
-        host.PatchbayPortRenamedCallback.connect(self.slot_handlePatchbayPortRenamedCallback)
+        host.PatchbayPortChangedCallback.connect(self.slot_handlePatchbayPortChangedCallback)
+        host.PatchbayPortGroupAddedCallback.connect(self.slot_handlePatchbayPortGroupAddedCallback)
+        host.PatchbayPortGroupRemovedCallback.connect(self.slot_handlePatchbayPortGroupRemovedCallback)
+        host.PatchbayPortGroupChangedCallback.connect(self.slot_handlePatchbayPortGroupChangedCallback)
+
         host.PatchbayConnectionAddedCallback.connect(self.slot_handlePatchbayConnectionAddedCallback)
         host.PatchbayConnectionRemovedCallback.connect(self.slot_handlePatchbayConnectionRemovedCallback)
 
@@ -1584,8 +1588,8 @@ class HostWindow(QMainWindow):
 
         patchcanvas.setGroupAsPlugin(clientId, pluginId, hasCustomUI, hasInlineDisplay)
 
-    @pyqtSlot(int, int, int, str)
-    def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portFlags, portName):
+    @pyqtSlot(int, int, int, int, str)
+    def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portFlags, portGroupId, portName):
         if portFlags & PATCHBAY_PORT_IS_INPUT:
             portMode = patchcanvas.PORT_MODE_INPUT
         else:
@@ -1612,10 +1616,25 @@ class HostWindow(QMainWindow):
         patchcanvas.removePort(groupId, portId)
         self.updateMiniCanvasLater()
 
-    @pyqtSlot(int, int, str)
-    def slot_handlePatchbayPortRenamedCallback(self, groupId, portId, newPortName):
+    @pyqtSlot(int, int, int, int, str)
+    def slot_handlePatchbayPortChangedCallback(self, groupId, portId, portFlags, portGroupId, newPortName):
         patchcanvas.renamePort(groupId, portId, newPortName)
         self.updateMiniCanvasLater()
+
+    @pyqtSlot(int, int, int, str)
+    def slot_handlePatchbayPortGroupAddedCallback(self, groupId, portId, portGroupId, newPortName):
+        # TODO
+        pass
+
+    @pyqtSlot(int, int)
+    def slot_handlePatchbayPortGroupRemovedCallback(self, groupId, portId):
+        # TODO
+        pass
+
+    @pyqtSlot(int, int, int, str)
+    def slot_handlePatchbayPortGroupChangedCallback(self, groupId, portId, portGroupId, newPortName):
+        # TODO
+        pass
 
     @pyqtSlot(int, int, int, int, int)
     def slot_handlePatchbayConnectionAddedCallback(self, connectionId, groupOutId, portOutId, groupInId, portInId):
@@ -2710,11 +2729,17 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valuef, value
     elif action == ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED:
         host.PatchbayClientDataChangedCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_PATCHBAY_PORT_ADDED:
-        host.PatchbayPortAddedCallback.emit(pluginId, value1, value2, valueStr)
+        host.PatchbayPortAddedCallback.emit(pluginId, value1, value2, value3, valueStr)
     elif action == ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED:
         host.PatchbayPortRemovedCallback.emit(pluginId, value1)
-    elif action == ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED:
-        host.PatchbayPortRenamedCallback.emit(pluginId, value1, valueStr)
+    elif action == ENGINE_CALLBACK_PATCHBAY_PORT_CHANGED:
+        host.PatchbayPortChangedCallback.emit(pluginId, value1, value2, value3, valueStr)
+    elif action == ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_ADDED:
+        host.PatchbayPortGroupAddedCallback.emit(pluginId, value1, value2, valueStr)
+    elif action == ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_REMOVED:
+        host.PatchbayPortGroupRemovedCallback.emit(pluginId, value1)
+    elif action == ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_CHANGED:
+        host.PatchbayPortGroupChangedCallback.emit(pluginId, value1, value2, valueStr)
     elif action == ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED:
         gOut, pOut, gIn, pIn = [int(i) for i in valueStr.split(":")] # FIXME
         host.PatchbayConnectionAddedCallback.emit(pluginId, gOut, pOut, gIn, pIn)

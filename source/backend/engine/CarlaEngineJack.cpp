@@ -2268,7 +2268,7 @@ protected:
 
                 portNameToId.rename(shortPortName, newFullName);
                 callback(fExternalPatchbayHost, fExternalPatchbayOsc,
-                         ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED,
+                         ENGINE_CALLBACK_PATCHBAY_PORT_CHANGED,
                          portNameToId.group,
                          static_cast<int>(portNameToId.port),
                          0, 0, 0.0f,

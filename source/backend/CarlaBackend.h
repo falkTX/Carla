@@ -355,6 +355,40 @@ static const uint PATCHBAY_PORT_TYPE_OSC = 0x10;
 
 /** @} */
 
+/** @} */
+
+/* ------------------------------------------------------------------------------------------------------------
+ * Patchbay Port Group Hints */
+
+/*!
+ * @defgroup PatchbayPortGroupHints Patchbay Port Group Hints
+ *
+ * Various patchbay port group hints.
+ * @{
+ */
+
+/*!
+ * Indicates that this group should be considered the "main" input.
+ */
+static const uint PATCHBAY_PORT_GROUP_MAIN_INPUT = 0x01;
+
+/*!
+ * Indicates that this group should be considered the "main" output.
+ */
+static const uint PATCHBAY_PORT_GROUP_MAIN_OUTPUT = 0x02;
+
+/*!
+ * A stereo port group, where the 1st port is left and the 2nd is right.
+ */
+static const uint PATCHBAY_PORT_GROUP_STEREO = 0x04;
+
+/*!
+ * A mid-side stereo group, where the 1st port is center and the 2nd is side.
+ */
+static const uint PATCHBAY_PORT_GROUP_MID_SIDE = 0x08;
+
+/** @} */
+
 /* ------------------------------------------------------------------------------------------------------------
  * Custom Data Types */
 
@@ -864,6 +898,7 @@ typedef enum {
      * @a pluginId Client Id
      * @a value1   Port Id
      * @a value2   Port hints
+     * @a value3   Port group Id (0 for none)
      * @a valueStr Port name
      * @see PatchbayPortHints
      */
@@ -877,12 +912,14 @@ typedef enum {
     ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED = 25,
 
     /*!
-     * A patchbay port has been renamed.
+     * A patchbay port has changed (like the name or group Id).
      * @a pluginId Client Id
      * @a value1   Port Id
-     * @a valueStr New port name
+     * @a value2   Port hints
+     * @a value3   Port group Id (0 for none)
+     * @a valueStr Port name
      */
-    ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED = 26,
+    ENGINE_CALLBACK_PATCHBAY_PORT_CHANGED = 26,
 
     /*!
      * A patchbay connection has been added.
@@ -995,6 +1032,33 @@ typedef enum {
      * @a pluginId Plugin Id to redraw
      */
     ENGINE_CALLBACK_INLINE_DISPLAY_REDRAW = 42,
+
+    /*!
+     * A patchbay port group has been added.
+     * @a pluginId Client Id
+     * @a value1   Group Id (unique value within this client)
+     * @a value2   Group hints
+     * @a valueStr Group name
+     * @see PatchbayPortGroupHints
+     */
+    ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_ADDED = 43,
+
+    /*!
+     * A patchbay port group has been removed.
+     * @a pluginId Client Id
+     * @a value1   Group Id
+     */
+    ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_REMOVED = 44,
+
+    /*!
+     * A patchbay port group has changed.
+     * @a pluginId Client Id
+     * @a value1   Group Id
+     * @a value2   Group hints
+     * @a valueStr Group name
+     * @see PatchbayPortGroupHints
+     */
+    ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_CHANGED = 45,
 
 } EngineCallbackOpcode;
 
