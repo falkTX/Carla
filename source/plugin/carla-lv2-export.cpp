@@ -543,6 +543,44 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     }
 
     // -------------------------------------------------------------------
+    // CV inputs
+
+    for (uint32_t i=0; i < pluginDesc->cvIns; ++i)
+    {
+        if (i == 0)
+            text += "    lv2:port [\n";
+
+        text += "        a lv2:InputPort, lv2:CVPort ;\n";
+        text += "        lv2:index " + String(portIndex++) + " ;\n";
+        text += "        lv2:symbol \"lv2_cv_in_" + String(i+1) + "\" ;\n";
+        text += "        lv2:name \"CV Input " + String(i+1) + "\" ;\n";
+
+        if (i+1 == pluginDesc->cvIns)
+            text += "    ] ;\n\n";
+        else
+            text += "    ] , [\n";
+    }
+
+    // -------------------------------------------------------------------
+    // CV outputs
+
+    for (uint32_t i=0; i < pluginDesc->cvOuts; ++i)
+    {
+        if (i == 0)
+            text += "    lv2:port [\n";
+
+        text += "        a lv2:OutputPort, lv2:CVPort ;\n";
+        text += "        lv2:index " + String(portIndex++) + " ;\n";
+        text += "        lv2:symbol \"lv2_cv_out_" + String(i+1) + "\" ;\n";
+        text += "        lv2:name \"CV Output " + String(i+1) + "\" ;\n";
+
+        if (i+1 == pluginDesc->cvOuts)
+            text += "    ] ;\n\n";
+        else
+            text += "    ] , [\n";
+    }
+
+    // -------------------------------------------------------------------
     // Parameters
 
     const uint32_t paramCount = (pluginHandle != nullptr && pluginDesc->get_parameter_count != nullptr)

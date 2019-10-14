@@ -1236,6 +1236,8 @@ protected:
         uint32_t indexOffset;
         uint32_t numAudioIns;
         uint32_t numAudioOuts;
+        uint32_t numCVIns;
+        uint32_t numCVOuts;
         uint32_t numMidiIns;
         uint32_t numMidiOuts;
         uint32_t numParams;
@@ -1246,8 +1248,8 @@ protected:
         const LV2_Atom_Sequence** eventsIn;
         /* */ LV2_Atom_Sequence** eventsOut;
         /* */ EventsOutData*      eventsOutData;
-        const float** audioIns;
-        /* */ float** audioOuts;
+        const float** audioCVIns;
+        /* */ float** audioCVOuts;
         /* */ float*  freewheel;
 
         // cached parameter values
@@ -1259,6 +1261,8 @@ protected:
             : indexOffset(0),
               numAudioIns(0),
               numAudioOuts(0),
+              numCVIns(0),
+              numCVOuts(0),
               numMidiIns(0),
               numMidiOuts(0),
               numParams(0),
@@ -1267,8 +1271,8 @@ protected:
               eventsIn(nullptr),
               eventsOut(nullptr),
               eventsOutData(nullptr),
-              audioIns(nullptr),
-              audioOuts(nullptr),
+              audioCVIns(nullptr),
+              audioCVOuts(nullptr),
               freewheel(nullptr),
               paramsLast(nullptr),
               paramsPtr(nullptr),
@@ -1294,16 +1298,16 @@ protected:
                 eventsOutData = nullptr;
             }
 
-            if (audioIns != nullptr)
+            if (audioCVIns != nullptr)
             {
-                delete[] audioIns;
-                audioIns = nullptr;
+                delete[] audioCVIns;
+                audioCVIns = nullptr;
             }
 
-            if (audioOuts != nullptr)
+            if (audioCVOuts != nullptr)
             {
-                delete[] audioOuts;
-                audioOuts = nullptr;
+                delete[] audioCVOuts;
+                audioCVOuts = nullptr;
             }
 
             if (paramsLast != nullptr)
@@ -1355,20 +1359,16 @@ protected:
                 eventsOut[0] = nullptr;
             }
 
-            if (numAudioIns > 0)
+            if (const uint32_t numAudioCVIns = numAudioIns+numCVIns)
             {
-                audioIns = new const float*[numAudioIns];
-
-                for (uint32_t i=0; i < numAudioIns; ++i)
-                    audioIns[i] = nullptr;
+                audioCVIns = new const float*[numAudioCVIns];
+                carla_zeroPointers(audioCVIns, numAudioCVIns);
             }
 
-            if (numAudioOuts > 0)
+            if (const uint32_t numAudioCVOuts = numAudioOuts+numCVOuts)
             {
-                audioOuts = new float*[numAudioOuts];
-
-                for (uint32_t i=0; i < numAudioOuts; ++i)
-                    audioOuts[i] = nullptr;
+                audioCVOuts = new float*[numAudioCVOuts];
+                carla_zeroPointers(audioCVOuts, numAudioCVOuts);
             }
 
             if (numParams > 0)
@@ -1384,7 +1384,7 @@ protected:
                 // NOTE: need to be filled in by the parent class
             }
 
-            indexOffset  = numAudioIns + numAudioOuts;
+            indexOffset  = numAudioIns + numAudioOuts + numCVIns + numCVOuts;
             // 1 event port for time or ui if no midi input is used
             indexOffset += numMidiIns > 0 ? numMidiIns : ((usesTime || hasUI) ? 1 : 0);
             // 1 event port for ui if no midi output is used
@@ -1443,7 +1443,7 @@ protected:
             {
                 if (port == index++)
                 {
-                    audioIns[i] = (float*)dataLocation;
+                    audioCVIns[i] = (const float*)dataLocation;
                     return;
                 }
             }
@@ -1452,7 +1452,25 @@ protected:
             {
                 if (port == index++)
                 {
-                    audioOuts[i] = (float*)dataLocation;
+                    audioCVOuts[i] = (float*)dataLocation;
+                    return;
+                }
+            }
+
+            for (uint32_t i=0; i < numCVIns; ++i)
+            {
+                if (port == index++)
+                {
+                    audioCVIns[numAudioIns+i] = (const float*)dataLocation;
+                    return;
+                }
+            }
+
+            for (uint32_t i=0; i < numCVOuts; ++i)
+            {
+                if (port == index++)
+                {
+                    audioCVOuts[numAudioOuts+i] = (float*)dataLocation;
                     return;
                 }
             }

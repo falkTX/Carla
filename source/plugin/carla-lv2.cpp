@@ -141,6 +141,8 @@ public:
         fPorts.usesTime     = fDescriptor->hints & NATIVE_PLUGIN_USES_TIME;
         fPorts.numAudioIns  = fDescriptor->audioIns;
         fPorts.numAudioOuts = fDescriptor->audioOuts;
+        fPorts.numCVIns     = fDescriptor->cvIns;
+        fPorts.numCVOuts    = fDescriptor->cvOuts;
         fPorts.numMidiIns   = fDescriptor->midiIns;
         fPorts.numMidiOuts  = fDescriptor->midiOuts;
 
@@ -319,7 +321,7 @@ public:
             }
         }
 
-        fDescriptor->process(fHandle, fPorts.audioIns, fPorts.audioOuts, frames, fMidiEvents, fMidiEventCount);
+        fDescriptor->process(fHandle, fPorts.audioCVIns, fPorts.audioCVOuts, frames, fMidiEvents, fMidiEventCount);
 
         if (fWorkerUISignal == -1 && fPorts.hasUI)
         {

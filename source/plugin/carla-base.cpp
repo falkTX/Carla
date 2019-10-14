@@ -64,6 +64,7 @@ struct PluginListManager {
                 std::strcmp(desc->label, "carlapatchbay16" ) == 0 ||
                 std::strcmp(desc->label, "carlapatchbay32" ) == 0 ||
                 std::strcmp(desc->label, "carlapatchbay64" ) == 0 ||
+                std::strcmp(desc->label, "carlapatchbaycv" ) == 0 ||
                 std::strcmp(desc->label, "bigmeter"        ) == 0
                 /*std::strcmp(desc->label, "notes"           ) == 0*/)
             {

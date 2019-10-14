@@ -125,6 +125,8 @@ public:
         fPorts.usesTime     = true;
         fPorts.numAudioIns  = fPlugin->getAudioInCount();
         fPorts.numAudioOuts = fPlugin->getAudioOutCount();
+        fPorts.numCVIns     = fPlugin->getCVInCount();
+        fPorts.numCVOuts    = fPlugin->getCVOutCount();
         fPorts.numMidiIns   = fPlugin->getMidiInCount();
         fPorts.numMidiOuts  = fPlugin->getMidiOutCount();
         fPorts.numParams    = fPlugin->getParameterCount();
@@ -221,7 +223,11 @@ public:
         if (fPlugin->tryLock(fIsOffline))
         {
             fPlugin->initBuffers();
-            fPlugin->process(fPorts.audioIns, fPorts.audioOuts, nullptr, nullptr, frames);
+            fPlugin->process(fPorts.audioCVIns,
+                             fPorts.audioCVOuts,
+                             fPorts.audioCVIns + fPorts.numAudioIns,
+                             fPorts.audioCVOuts + fPorts.numAudioOuts,
+                             frames);
             fPlugin->unlock();
 
             if (fPorts.numMidiOuts > 0)
@@ -285,7 +291,9 @@ public:
         else
         {
             for (uint32_t i=0; i<fPorts.numAudioOuts; ++i)
-                carla_zeroFloats(fPorts.audioOuts[i], frames);
+                carla_zeroFloats(fPorts.audioCVOuts[i], frames);
+            for (uint32_t i=0; i<fPorts.numCVOuts; ++i)
+                carla_zeroFloats(fPorts.audioCVOuts[fPorts.numAudioOuts+i], frames);
         }
 
         lv2_post_run(frames);
