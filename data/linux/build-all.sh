@@ -46,12 +46,12 @@ if [ -d ${TARGETDIR}/chroot64 ]; then
 fi
 
 if [ -d ${TARGETDIR}/chroot32 ]; then
-    sudo mv ${TARGETDIR}/chroot32 ${TARGETDIR}/chroot32-deleteme
+    sudo mv ${TARGETDIR}/chroot32 ${TARGETDIR}/chroot32-deleteme2
     sudo rm -rf ${TARGETDIR}/chroot32-deleteme || true
 fi
 
 if [ -d ${TARGETDIR}/chroot64 ]; then
-    sudo mv ${TARGETDIR}/chroot64 ${TARGETDIR}/chroot64-deleteme
+    sudo mv ${TARGETDIR}/chroot64 ${TARGETDIR}/chroot64-deleteme2
     sudo rm -rf ${TARGETDIR}/chroot64-deleteme || true
 fi
 
@@ -471,9 +471,9 @@ EOF
 # ---------------------------------------------------------------------------------------------------------------------
 # create chroots
 
-if [ ! -d ${TARGETDIR}/chroot32 ]; then
-    sudo debootstrap --no-check-gpg --arch=i386 lucid ${TARGETDIR}/chroot32 http://old-releases.ubuntu.com/ubuntu/
-fi
+# if [ ! -d ${TARGETDIR}/chroot32 ]; then
+#     sudo debootstrap --no-check-gpg --arch=i386 lucid ${TARGETDIR}/chroot32 http://old-releases.ubuntu.com/ubuntu/
+# fi
 
 if [ ! -d ${TARGETDIR}/chroot64 ]; then
     sudo debootstrap --no-check-gpg --arch=amd64 lucid ${TARGETDIR}/chroot64 http://old-releases.ubuntu.com/ubuntu/

@@ -28,8 +28,6 @@ rm -rf Python-*
 rm -rf PyQt-*
 rm -rf PyQt5_*
 rm -rf pyliblo-*
-rm -rf qtbase-*
-rm -rf qtsvg-*
 rm -rf sip-*
 
 }
@@ -47,16 +45,13 @@ export PREFIX=${TARGETDIR}/carla${ARCH}
 export PATH=${PREFIX}/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 
-# ---------------------------------------------------------------------------------------------------------------------
-# with visibility
-
-export CFLAGS="-O3 -mtune=generic -msse -msse2 -mfpmath=sse"
-export CFLAGS="${CFLAGS} -fPIC -DPIC -DNDEBUG -I${PREFIX}/include -m${ARCH}"
+export CFLAGS="-O3 -mtune=generic -msse -msse2 -mfpmath=sse -fPIC -DPIC -DNDEBUG -m${ARCH}"
 export CXXFLAGS="${CFLAGS}"
-
-export LDFLAGS="-L${PREFIX}/lib -m${ARCH} -Wl,-O1"
+export LDFLAGS="-m${ARCH} -Wl,-O1"
 
 # TODO build libffi statically
+
+cleanup
 
 # ---------------------------------------------------------------------------------------------------------------------
 # python
@@ -74,99 +69,6 @@ if [ ! -f Python-${PYTHON_VERSION}/build-done ]; then
   touch build-done
   cd ..
 fi
-
-# ---------------------------------------------------------------------------------------------------------------------
-# cxfreeze
-
-if [ ! -d cx_Freeze-${CXFREEZE_VERSION} ]; then
-  aria2c https://github.com/anthony-tuininga/cx_Freeze/archive/${CXFREEZE_VERSION}.tar.gz
-  tar -xf cx_Freeze-${CXFREEZE_VERSION}.tar.gz
-fi
-
-if [ ! -f cx_Freeze-${CXFREEZE_VERSION}/build-done ]; then
-  cd cx_Freeze-${CXFREEZE_VERSION}
-  python3 setup.py build
-  python3 setup.py install --prefix=${PREFIX}
-  touch build-done
-  cd ..
-fi
-
-# ---------------------------------------------------------------------------------------------------------------------
-# without visibility
-
-export CFLAGS="${CFLAGS} -fvisibility=hidden -fdata-sections -ffunction-sections"
-export CXXFLAGS="${CFLAGS} -fvisibility-inlines-hidden"
-
-export LDFLAGS="${LDFLAGS} -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,--as-needed -Wl,--strip-all -Wl,--no-undefined"
-
-# ---------------------------------------------------------------------------------------------------------------------
-# qt
-
-if [ ! -d qtbase-opensource-src-${QT5_VERSION} ]; then
-  aria2c http://download.qt.io/archive/qt/${QT5_MVERSION}/${QT5_VERSION}/submodules/qtbase-opensource-src-${QT5_VERSION}.tar.xz
-  tar xf qtbase-opensource-src-${QT5_VERSION}.tar.xz
-fi
-
-if [ ! -f qtbase-opensource-src-${QT5_VERSION}/build-done ]; then
-  cd qtbase-opensource-src-${QT5_VERSION}
-  if [ ! -f configured ]; then
-    ./configure -release -strip -silent \
-      -sse2 \
-      -no-sse3 -no-ssse3 -no-sse4.1 -no-sse4.2 \
-      -no-avx -no-avx2 -no-avx512 \
-      -prefix ${PREFIX} \
-      -opensource -confirm-license \
-      -optimize-size -optimized-qmake \
-      -qt-freetype \
-      -qt-harfbuzz \
-      -qt-libjpeg \
-      -qt-libpng \
-      -qt-pcre \
-      -qt-sqlite \
-      -qt-xcb \
-      -qt-zlib \
-      -opengl desktop \
-      -no-cups \
-      -no-gtk \
-      -no-icu \
-      -no-openssl \
-      -make libs \
-      -make tools \
-      -nomake examples \
-      -nomake tests
-    touch configured
-  fi
-  make ${MAKE_ARGS}
-  make install
-  touch build-done
-  cd ..
-fi
-
-# ---------------------------------------------------------------------------------------------------------------------
-# qt5-svg
-
-if [ ! -d qtsvg-opensource-src-${QT5_VERSION} ]; then
-  aria2c http://download.qt.io/archive/qt/${QT5_MVERSION}/${QT5_VERSION}/submodules/qtsvg-opensource-src-${QT5_VERSION}.tar.xz
-  tar xf qtsvg-opensource-src-${QT5_VERSION}.tar.xz
-fi
-
-if [ ! -f qtsvg-opensource-src-${QT5_VERSION}/build-done ]; then
-  cd qtsvg-opensource-src-${QT5_VERSION}
-  qmake
-  make ${MAKE_ARGS}
-  make install
-  touch build-done
-  cd ..
-fi
-
-# ---------------------------------------------------------------------------------------------------------------------
-# with visibility
-
-export CFLAGS="-O3 -mtune=generic -msse -msse2 -mfpmath=sse"
-export CFLAGS="${CFLAGS} -fPIC -DPIC -DNDEBUG -I${PREFIX}/include -m${ARCH}"
-export CXXFLAGS="${CFLAGS}"
-
-export LDFLAGS="-L${PREFIX}/lib -m${ARCH} -Wl,-O1"
 
 # ---------------------------------------------------------------------------------------------------------------------
 # sip
@@ -224,6 +126,22 @@ if [ ! -f pyliblo-${PYLIBLO_VERSION}/build-done ]; then
 fi
 
 }
+
+# ---------------------------------------------------------------------------------------------------------------------
+# cxfreeze
+
+if [ ! -d cx_Freeze-${CXFREEZE_VERSION} ]; then
+  aria2c https://github.com/anthony-tuininga/cx_Freeze/archive/${CXFREEZE_VERSION}.tar.gz
+  tar -xf cx_Freeze-${CXFREEZE_VERSION}.tar.gz
+fi
+
+if [ ! -f cx_Freeze-${CXFREEZE_VERSION}/build-done ]; then
+  cd cx_Freeze-${CXFREEZE_VERSION}
+  python3 setup.py build
+  python3 setup.py install --prefix=${PREFIX}
+  touch build-done
+  cd ..
+fi
 
 # ---------------------------------------------------------------------------------------------------------------------
 # build base libs
