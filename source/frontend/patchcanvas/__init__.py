@@ -91,11 +91,12 @@ EYECANDY_FULL  = 2
 CanvasBoxType           = QGraphicsItem.UserType + 1
 CanvasIconType          = QGraphicsItem.UserType + 2
 CanvasPortType          = QGraphicsItem.UserType + 3
-CanvasLineType          = QGraphicsItem.UserType + 4
-CanvasBezierLineType    = QGraphicsItem.UserType + 5
-CanvasLineMovType       = QGraphicsItem.UserType + 6
-CanvasBezierLineMovType = QGraphicsItem.UserType + 7
-CanvasRubberbandType    = QGraphicsItem.UserType + 8
+CanvasPortGroupType     = QGraphicsItem.UserType + 4
+CanvasLineType          = QGraphicsItem.UserType + 5
+CanvasBezierLineType    = QGraphicsItem.UserType + 6
+CanvasLineMovType       = QGraphicsItem.UserType + 7
+CanvasBezierLineMovType = QGraphicsItem.UserType + 8
+CanvasRubberbandType    = QGraphicsItem.UserType + 9
 
 # ------------------------------------------------------------------------------------------------------------
 
