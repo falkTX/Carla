@@ -53,11 +53,19 @@ class CanvasBezierLine(QGraphicsPathItem):
 
         self.m_locked = False
         self.m_lineSelected = False
+        self.m_ready_to_disc = False
 
         self.setBrush(QColor(0, 0, 0, 0))
         self.setGraphicsEffect(None)
         self.updateLinePos()
-
+    
+    
+    def isReadyToDisc(self):
+        return self.m_ready_to_disc
+    
+    def setReadyToDisc(self, yesno):
+        self.m_ready_to_disc = yesno
+    
     def isLocked(self):
         return self.m_locked
 
@@ -67,12 +75,11 @@ class CanvasBezierLine(QGraphicsPathItem):
     def isLineSelected(self):
         return self.m_lineSelected
 
-    def updateLineSelected(self):
+    def setLineSelected(self, yesno):
         if self.m_locked:
             return
 
-        yesno = self.item1.isSelected() or self.item2.isSelected()
-        if yesno != self.m_lineSelected and options.eyecandy == EYECANDY_FULL:
+        if options.eyecandy == EYECANDY_FULL:
             if yesno:
                 self.setGraphicsEffect(CanvasPortGlow(self.item1.getPortType(), self.toGraphicsObject()))
             else:
@@ -89,17 +96,85 @@ class CanvasBezierLine(QGraphicsPathItem):
 
     def updateLinePos(self):
         if self.item1.getPortMode() == PORT_MODE_OUTPUT:
-            rect1 = self.item1.sceneBoundingRect()
-            rect2 = self.item2.sceneBoundingRect()
+            item1_x = self.item1.scenePos().x() + self.item1.getPortWidth() + 12
+            
+            port_posinport_group1, port_group_lenght1 = CanvasGetPortPositionAndPortGroupLenght(self.item1.getPortId(), self.item1.getPortGroupId())
+            
+            if port_group_lenght1 > 2:
+                phi = 0.75
+            else:
+                phi = 0.62
+            
+            if port_group_lenght1 > 1:
+                first_old_y = canvas.theme.port_height * phi
+                last_old_y  = canvas.theme.port_height * (port_group_lenght1 - phi)
+                delta = (last_old_y - first_old_y) / (port_group_lenght1 -1)
+                old_y1 = first_old_y + (port_posinport_group1 * delta) - (canvas.theme.port_height * port_posinport_group1)
+            else:
+                old_y1 = canvas.theme.port_height / 2
+            
+            item1_y = self.item1.scenePos().y() + old_y1
+            
+            item2_x = self.item2.scenePos().x()
+            
+            port_posinport_group2, port_group_lenght2 = CanvasGetPortPositionAndPortGroupLenght(self.item2.getPortId(), self.item2.getPortGroupId())
+            
+            if port_group_lenght2 > 2:
+                phi = 0.75
+            else:
+                phi = 0.62
+            
+            if port_group_lenght2 > 1:
+                first_old_y = canvas.theme.port_height * phi
+                last_old_y  = canvas.theme.port_height * (port_group_lenght2 - phi)
+                delta = (last_old_y - first_old_y) / (port_group_lenght2 -1)
+                old_y2 = first_old_y + (port_posinport_group2 * delta) - (canvas.theme.port_height * port_posinport_group2)
+            else:
+                old_y2 = canvas.theme.port_height / 2
+                
+            item2_y = self.item2.scenePos().y() + old_y2
 
-            item1_x = rect1.right()
-            item2_x = rect2.left()
-            item1_y = rect1.top() + float(canvas.theme.port_height)/2
-            item2_y = rect2.top() + float(canvas.theme.port_height)/2
-            item1_new_x = item1_x + abs(item1_x - item2_x) / 2
-            item2_new_x = item2_x - abs(item1_x - item2_x) / 2
+            item1_mid_x = abs(item1_x - item2_x) / 2
+            item1_new_x = item1_x + item1_mid_x
 
+            item2_mid_x = abs(item1_x - item2_x) / 2
+            item2_new_x = item2_x - item2_mid_x
+            
+            #if 0 == 0:
+                #item1_new_y, item2_new_y = item1_y, item2_y
+                #addLine = False
+                
+                #diffxy = abs(item1_y - item2_y) - 1 * (abs(item1_x - item2_x))
+                #if diffxy > 0:
+                    #if abs(item1_y - item2_y) > 50:
+                        #item1_new_x += abs(diffxy)
+                        #item2_new_x -= abs(diffxy)
+
+                    #if abs(item1_y - item2_y) > 50:
+                        #while abs(item1_new_x - item2_x) < 50:
+                            #item1_new_x += 10
+                            #item2_new_x -= 10
+                    
+                    
+                    
+                #if item1_x - item2_x > 0:
+                    #if item1_new_x - item1_x < 80:
+                        #item1_new_x = item1_x + 80
+                        #item2_new_x = item2_x - 80
+                    #elif item1_new_x - item1_x > 300:
+                        #item1_new_x = item1_x + 300
+                        #item2_new_x = item2_x - 300
+                        
+                    ##correction de la ligne droite
+                    #diff_y = abs(item1_y - item2_y)
+                    #if diff_y <= 200:
+                        #if diff_y < 5:
+                            #diff_y = 5
+                        #item1_new_y -= 50 / (log(diff_y) *log(diff_y))
+                        #item2_new_y += 50 / (log(diff_y) * log(diff_y))
+            
             path = QPainterPath(QPointF(item1_x, item1_y))
+            #path.cubicTo(item1_new_x, item1_new_y, item2_new_x, item2_new_y, item2_x, item2_y)
             path.cubicTo(item1_new_x, item1_y, item2_new_x, item2_y, item2_x, item2_y)
             self.setPath(path)
 

@@ -53,10 +53,17 @@ class CanvasLine(QGraphicsLineItem):
 
         self.m_locked = False
         self.m_lineSelected = False
+        self.m_ready_to_disc = False
 
         self.setGraphicsEffect(None)
         self.updateLinePos()
-
+    
+    def isReadyToDisc(self):
+        return self.m_ready_to_disc
+    
+    def setReadyToDisc(self, yesno):
+        self.m_ready_to_disc = yesno
+    
     def isLocked(self):
         return self.m_locked
 
@@ -66,12 +73,11 @@ class CanvasLine(QGraphicsLineItem):
     def isLineSelected(self):
         return self.m_lineSelected
 
-    def updateLineSelected(self):
+    def setLineSelected(self, yesno):
         if self.m_locked:
             return
 
-        yesno = self.item1.isSelected() or self.item2.isSelected()
-        if yesno != self.m_lineSelected and options.eyecandy == EYECANDY_FULL:
+        if options.eyecandy == EYECANDY_FULL:
             if yesno:
                 self.setGraphicsEffect(CanvasPortGlow(self.item1.getPortType(), self.toGraphicsObject()))
             else:
@@ -88,12 +94,44 @@ class CanvasLine(QGraphicsLineItem):
 
     def updateLinePos(self):
         if self.item1.getPortMode() == PORT_MODE_OUTPUT:
-            rect1 = self.item1.sceneBoundingRect()
-            rect2 = self.item2.sceneBoundingRect()
-            line = QLineF(rect1.right(),
-                          rect1.top() + float(canvas.theme.port_height)/2,
-                          rect2.left(),
-                          rect2.top() + float(canvas.theme.port_height)/2)
+            pppl1 = CanvasGetPortPositionAndPortGroupLenght(self.item1.getPortId(), self.item1.getPortGroupId())
+            port_posinport_group1, port_group_lenght1 = pppl1[0], pppl1[1]
+            
+            if port_group_lenght1:
+                if port_group_lenght1 > 2:
+                    phi = 0.75
+                else:
+                    phi = 0.62
+            
+            if port_group_lenght1 > 1:
+                first_old_y = canvas.theme.port_height * phi
+                last_old_y  = canvas.theme.port_height * (port_group_lenght1 - phi)
+                delta = (last_old_y - first_old_y) / (port_group_lenght1 -1)
+                Y1 = first_old_y + (port_posinport_group1 * delta) - (canvas.theme.port_height * port_posinport_group1)
+            else:
+                Y1 = canvas.theme.port_height / 2
+                
+            pppl2 = CanvasGetPortPositionAndPortGroupLenght(self.item2.getPortId(), self.item2.getPortGroupId())
+            port_posinport_group2, port_group_lenght2 = pppl2[0], pppl2[1]
+            
+            if port_group_lenght2:
+                if port_group_lenght2 > 2:
+                    phi = 0.75
+                else:
+                    phi = 0.62
+            
+            if port_group_lenght2 > 1:
+                first_old_y = canvas.theme.port_height * phi
+                last_old_y  = canvas.theme.port_height * (port_group_lenght2 - phi)
+                delta = (last_old_y - first_old_y) / (port_group_lenght2 -1)
+                Y2 = first_old_y + (port_posinport_group2 * delta) - (canvas.theme.port_height * port_posinport_group2)
+            else:
+                Y2 = canvas.theme.port_height / 2
+            
+            line = QLineF(self.item1.scenePos().x() + self.item1.getPortWidth() + 12,
+                          self.item1.scenePos().y() + Y1,
+                          self.item2.scenePos().x(),
+                          self.item2.scenePos().y() + Y2)
             self.setLine(line)
 
             self.m_lineSelected = False
