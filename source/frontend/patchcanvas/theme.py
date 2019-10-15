@@ -96,6 +96,11 @@ class Theme(object):
             self.port_midi_alsa_bg_sel = QColor(64 + 50, 112 + 50, 18 + 50)
             self.port_parameter_bg = QColor(101, 47, 16)
             self.port_parameter_bg_sel = QColor(101 + 50, 47 + 50, 16 + 50)
+            
+            self.port_group_audio_jack_pen = QPen(QColor(63, 90, 126), 1)
+            self.port_group_audio_jack_pen_sel = QPen(QColor(63 + 30, 90 + 30, 126 + 30), 1)
+            self.port_group_audio_jack_bg = QColor(26, 45, 71)
+            self.port_group_audio_jack_bg_sel = QColor(27 + 50, 47 + 50, 75 + 50)
 
             self.port_audio_jack_text = self.port_text
             self.port_audio_jack_text_sel = self.port_text
@@ -105,7 +110,8 @@ class Theme(object):
             self.port_midi_alsa_text_sel = self.port_text
             self.port_parameter_text = self.port_text
             self.port_parameter_text_sel = self.port_text
-
+            
+            self.port_in_port_group_width = 18
             self.port_height = 16
             self.port_offset = 0
             self.port_spacing = 2
@@ -178,6 +184,11 @@ class Theme(object):
             self.port_midi_alsa_bg_sel = QColor(64 + 50, 112 + 50, 18 + 50)
             self.port_parameter_bg = QColor(101, 47, 16)
             self.port_parameter_bg_sel = QColor(101 + 50, 47 + 50, 16 + 50)
+            
+            self.port_group_audio_jack_pen = QPen(QColor(63, 90, 126), 1)
+            self.port_group_audio_jack_pen_sel = QPen(QColor(63 + 30, 90 + 30, 126 + 30), 1)
+            self.port_group_audio_jack_bg = QColor(27, 47, 75)
+            self.port_group_audio_jack_bg_sel = QColor(27 + 50, 47 + 50, 75 + 50)
 
             self.port_audio_jack_text = self.port_text
             self.port_audio_jack_text_sel = self.port_text
@@ -187,7 +198,8 @@ class Theme(object):
             self.port_midi_alsa_text_sel = self.port_text
             self.port_parameter_text = self.port_text
             self.port_parameter_text_sel = self.port_text
-
+            
+            self.port_in_port_group_width = 15
             self.port_height = 12
             self.port_offset = 0
             self.port_spacing = 1
@@ -260,6 +272,11 @@ class Theme(object):
             self.port_midi_alsa_bg_sel = QColor(64 + 50, 112 + 50, 18 + 50)
             self.port_parameter_bg = QColor(101, 47, 16)
             self.port_parameter_bg_sel = QColor(101 + 50, 47 + 50, 16 + 50)
+            
+            self.port_group_audio_jack_pen = QPen(QColor(103, 130, 166), 2)
+            self.port_group_audio_jack_pen_sel = QPen(QColor(103 + 136, 190 + 130, 226 + 130), 1)
+            self.port_group_audio_jack_bg = QColor(0, 0, 120)
+            self.port_group_audio_jack_bg_sel = QColor(0 + 150, 0 + 150, 120 + 150)
 
             self.port_audio_jack_text = self.port_text
             self.port_audio_jack_text_sel = self.port_text
@@ -269,7 +286,8 @@ class Theme(object):
             self.port_midi_alsa_text_sel = self.port_text
             self.port_parameter_text = self.port_text
             self.port_parameter_text_sel = self.port_text
-
+            
+            self.port_in_port_group_width = 18
             self.port_height = 16
             self.port_offset = 0
             self.port_spacing = 2
@@ -342,6 +360,11 @@ class Theme(object):
             self.port_midi_alsa_bg_sel = QColor(255, 0, 0)
             self.port_parameter_bg = QColor(101, 47, 17)
             self.port_parameter_bg_sel = QColor(255, 0, 0)
+            
+            self.port_group_audio_jack_pen = QPen(QColor(35, 61, 99), 0)
+            self.port_group_audio_jack_pen_sel = QPen(QColor(255, 0, 0), 0)
+            self.port_group_audio_jack_bg = QColor(27, 47, 75)
+            self.port_group_audio_jack_bg_sel = QColor(255, 0, 0)
 
             self.port_audio_jack_text = self.port_text
             self.port_audio_jack_text_sel = self.port_text
@@ -351,7 +374,8 @@ class Theme(object):
             self.port_midi_alsa_text_sel = self.port_text
             self.port_parameter_text = self.port_text
             self.port_parameter_text_sel = self.port_text
-
+            
+            self.port_in_port_group_width = 18
             self.port_height = 14
             self.port_offset = 0
             self.port_spacing = 1
@@ -427,7 +451,12 @@ class Theme(object):
             self.port_midi_alsa_bg_sel = selPortBG
             self.port_parameter_bg = normalPortBG
             self.port_parameter_bg_sel = selPortBG
-
+            
+            self.port_group_audio_jack_pen = QPen(selPortBG, 2)
+            self.port_group_audio_jack_pen_sel = QPen(QColor(1, 230, 238), 1)
+            self.port_group_audio_jack_bg = normalPortBG
+            self.port_group_audio_jack_bg_sel = selPortBG
+            
             self.port_audio_jack_text = self.port_text
             self.port_audio_jack_text_sel = self.port_audio_jack_pen_sel
             self.port_midi_jack_text = self.port_text
@@ -438,6 +467,7 @@ class Theme(object):
             self.port_parameter_text_sel = self.port_parameter_pen_sel
 
             # missing, ports 2
+            self.port_in_port_group_width = 18
             self.port_height = 21
             self.port_offset = 1
             self.port_spacing = 3
