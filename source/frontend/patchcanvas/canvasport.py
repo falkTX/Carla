@@ -35,6 +35,7 @@ from . import (
     port_mode2str,
     port_type2str,
     CanvasPortType,
+    CanvasPortGroupType,
     ANTIALIASING_FULL,
     ACTION_PORT_INFO,
     ACTION_PORT_RENAME,
@@ -153,7 +154,7 @@ class CanvasPort(QGraphicsItem):
             if self.m_line_mov_list.index(line_mov) > 0:
                 canvas.scene.removeItem(line_mov)
             else:
-                line_mov.setPortPosInPortGroupTo(PORT_IN_PORT_GROUP_POSITION_MONO)
+                line_mov.setPortPosInPortGroupTo(0)
         self.m_line_mov_list = self.m_line_mov_list[:1]
     
     def resetDotLines(self):
@@ -365,13 +366,16 @@ class CanvasPort(QGraphicsItem):
                         self.deleteLine2()
                         self.resetDotLines()
                         
+                        hover_port_id = self.m_hover_item.getPortId()
+                        hover_group_id = self.m_hover_item.getGroupId()
+                        
                         for connection in canvas.connection_list:
                             if ((connection.group_out_id == self.m_group_id
                                      and connection.port_out_id == self.m_port_id 
                                      and connection.group_in_id == hover_group_id
-                                     and connection.port_in_id == port_id) 
+                                     and connection.port_in_id == hover_port_id) 
                                     or (connection.group_out_id == hover_group_id
-                                        and connection.port_out_id == port_id
+                                        and connection.port_out_id == hover_port_id
                                         and connection.group_in_id == self.m_group_id
                                         and connection.port_in_id == self.m_port_id)):
                                 for line_mov in self.m_line_mov_list:
@@ -517,7 +521,7 @@ class CanvasPort(QGraphicsItem):
                 (connection.group_in_id == self.m_group_id and
                 connection.port_in_id == self.m_port_id)
                 ):
-                connection.widget.updateLineSelected()
+                connection.widget.setLineSelected(yesno)
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemSelectedHasChanged:

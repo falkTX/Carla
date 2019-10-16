@@ -138,7 +138,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
             else:
                 old_y = canvas.theme.port_height / 2
                 
-            if self.m_port_posinport_group_to == PORT_IN_PORT_GROUP_POSITION_MONO:
+            if self.m_port_posinport_group_to == 0:
                 new_y = 0
             else:
                 first_new_y = canvas.theme.port_height * phito
@@ -172,9 +172,10 @@ class CanvasBezierLineMov(QGraphicsPathItem):
             delta = (last_old_y - first_old_y) / (self.m_port_group_lenght -1)
             old_y = first_old_y + (self.m_port_posinport_group * delta)
             
-            if self.m_port_posinport_group_to == PORT_IN_PORT_GROUP_POSITION_MONO:
+            if self.m_port_posinport_group_to == 0:
                 new_y = 0
-            elif self.m_port_posinport_group_to == self.m_port_posinport_group and self.m_port_group_lenght == self.m_port_group_lenght_to:
+            elif (self.m_port_posinport_group_to == self.m_port_posinport_group
+                    and self.m_port_group_lenght == self.m_port_group_lenght_to):
                 new_y = old_y - ( (last_old_y - first_old_y) / 2 ) - (canvas.theme.port_height * phi)
             else:
                 first_new_y = canvas.theme.port_height * phito
