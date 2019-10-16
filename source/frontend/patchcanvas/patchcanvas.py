@@ -31,6 +31,7 @@ from . import (
     options,
     group_dict_t,
     port_dict_t,
+    port_group_dict_t,
     connection_dict_t,
     bool2str,
     icon2str,
@@ -57,6 +58,7 @@ from .canvasbezierline import CanvasBezierLine
 from .canvasline import CanvasLine
 from .theme import Theme, getDefaultTheme, getThemeName
 from .utils import CanvasCallback, CanvasGetNewGroupPos, CanvasItemFX, CanvasRemoveItemFX
+from .utils import CanvasGetPortGroupPosition
 
 # FIXME
 from . import *
@@ -226,6 +228,7 @@ def clear():
 
     canvas.group_list = []
     canvas.port_list = []
+    canvas.port_group_list = []
     canvas.connection_list = []
     canvas.group_plugin_map = {}
 
@@ -448,6 +451,7 @@ def splitGroup(group_id):
             port_dict.port_name = port.port_name
             port_dict.port_mode = port.port_mode
             port_dict.port_type = port.port_type
+            port_dict.port_group_id = port.port_group_id
             port_dict.is_alternate = port.is_alternate
             port_dict.widget = None
             ports_data.append(port_dict)
@@ -536,6 +540,7 @@ def joinGroup(group_id):
             port_dict.port_name = port.port_name
             port_dict.port_mode = port.port_mode
             port_dict.port_type = port.port_type
+            port_dict.port_group_id = port.port_group_id
             port_dict.is_alternate = port.is_alternate
             port_dict.widget = None
             ports_data.append(port_dict)
@@ -696,7 +701,7 @@ def setGroupAsPlugin(group_id, plugin_id, hasUI, hasInlineDisplay):
 
 # ------------------------------------------------------------------------------------------------------------
 
-def addPort(group_id, port_id, port_name, port_mode, port_type, is_alternate=False):
+def addPort(group_id, port_id, port_name, port_mode, port_type, port_group_id, is_alternate=False):
     if canvas.debug:
         print("PatchCanvas::addPort(%i, %i, %s, %s, %s, %s)" % (
               group_id, port_id, port_name.encode(),
@@ -718,7 +723,9 @@ def addPort(group_id, port_id, port_name, port_mode, port_type, is_alternate=Fal
             else:
                 n = 0
             box_widget = group.widgets[n]
-            port_widget = box_widget.addPortFromGroup(port_id, port_mode, port_type, port_name, is_alternate)
+            port_widget = box_widget.addPortFromGroup(
+                port_id, port_mode, port_type,
+                port_name, port_group_id, is_alternate)
             break
 
     if not (box_widget and port_widget):
@@ -732,6 +739,7 @@ def addPort(group_id, port_id, port_name, port_mode, port_type, is_alternate=Fal
     port_dict.port_name = port_name
     port_dict.port_mode = port_mode
     port_dict.port_type = port_type
+    port_dict.port_group_id = port_group_id
     port_dict.is_alternate = is_alternate
     port_dict.widget = port_widget
     canvas.port_list.append(port_dict)
@@ -807,7 +815,7 @@ def connectPorts(connection_id, group_out_id, port_out_id, group_in_id, port_in_
     connection_dict.port_in_id = port_in_id
     connection_dict.group_out_id = group_out_id
     connection_dict.port_out_id = port_out_id
-
+    
     if options.use_bezier_lines:
         connection_dict.widget = CanvasBezierLine(port_out, port_in, None)
     else:

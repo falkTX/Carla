@@ -39,6 +39,7 @@ from . import (
     PORT_TYPE_PARAMETER,
 )
 
+from .utils import CanvasGetPortGroupPosition
 from .canvasportglow import CanvasPortGlow
 
 # ------------------------------------------------------------------------------------------------------------
@@ -98,18 +99,20 @@ class CanvasBezierLine(QGraphicsPathItem):
         if self.item1.getPortMode() == PORT_MODE_OUTPUT:
             item1_x = self.item1.scenePos().x() + self.item1.getPortWidth() + 12
             
-            port_posinport_group1, port_group_lenght1 = CanvasGetPortPositionAndPortGroupLenght(self.item1.getPortId(), self.item1.getPortGroupId())
+            port_pos_1, port_group_len_1 = CanvasGetPortGroupPosition(
+                            self.item1.getGroupId(), self.item1.getPortId(),
+                            self.item1.getPortGroupId())
             
-            if port_group_lenght1 > 2:
+            if port_group_len_1 > 2:
                 phi = 0.75
             else:
                 phi = 0.62
             
-            if port_group_lenght1 > 1:
+            if port_group_len_1 > 1:
                 first_old_y = canvas.theme.port_height * phi
-                last_old_y  = canvas.theme.port_height * (port_group_lenght1 - phi)
-                delta = (last_old_y - first_old_y) / (port_group_lenght1 -1)
-                old_y1 = first_old_y + (port_posinport_group1 * delta) - (canvas.theme.port_height * port_posinport_group1)
+                last_old_y = canvas.theme.port_height * (port_group_len_1 - phi)
+                delta = (last_old_y - first_old_y) / (port_group_len_1 -1)
+                old_y1 = first_old_y + (port_pos_1 * delta) - (canvas.theme.port_height * port_pos_1)
             else:
                 old_y1 = canvas.theme.port_height / 2
             
@@ -117,18 +120,20 @@ class CanvasBezierLine(QGraphicsPathItem):
             
             item2_x = self.item2.scenePos().x()
             
-            port_posinport_group2, port_group_lenght2 = CanvasGetPortPositionAndPortGroupLenght(self.item2.getPortId(), self.item2.getPortGroupId())
+            port_pos_2, port_group_len_2 = CanvasGetPortGroupPosition(
+                            self.item2.getGroupId(), self.item2.getPortId(),
+                            self.item2.getPortGroupId())
             
-            if port_group_lenght2 > 2:
+            if port_group_len_2 > 2:
                 phi = 0.75
             else:
                 phi = 0.62
             
-            if port_group_lenght2 > 1:
+            if port_group_len_2 > 1:
                 first_old_y = canvas.theme.port_height * phi
-                last_old_y  = canvas.theme.port_height * (port_group_lenght2 - phi)
-                delta = (last_old_y - first_old_y) / (port_group_lenght2 -1)
-                old_y2 = first_old_y + (port_posinport_group2 * delta) - (canvas.theme.port_height * port_posinport_group2)
+                last_old_y  = canvas.theme.port_height * (port_group_len_2 - phi)
+                delta = (last_old_y - first_old_y) / (port_group_len_2 -1)
+                old_y2 = first_old_y + (port_pos_2 * delta) - (canvas.theme.port_height * port_pos_2)
             else:
                 old_y2 = canvas.theme.port_height / 2
                 

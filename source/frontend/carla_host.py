@@ -1607,8 +1607,8 @@ class HostWindow(QMainWindow):
         else:
             portType    = patchcanvas.PORT_TYPE_NULL
             isAlternate = False
-
-        patchcanvas.addPort(clientId, portId, portName, portMode, portType, isAlternate)
+        print('addPort', portId, portGroupId)
+        patchcanvas.addPort(clientId, portId, portName, portMode, portType, portGroupId, isAlternate)
         self.updateMiniCanvasLater()
 
     @pyqtSlot(int, int)

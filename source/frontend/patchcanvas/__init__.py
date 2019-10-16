@@ -132,6 +132,7 @@ class Canvas(object):
 
         self.group_list = []
         self.port_list = []
+        self.port_group_list = []
         self.connection_list = []
         self.animation_list = []
         self.group_plugin_map = {}
@@ -143,6 +144,8 @@ class Canvas(object):
         self.last_connection_id = 0
         self.initial_pos = QPointF(0, 0)
         self.size_rect = QRectF()
+        
+        self.is_line_mov = False
 
     def callback(self, action, value1, value2, value_str):
         print("Canvas::callback({}, {}, {}, {})".format(action, value1, value2, value_str))
@@ -169,7 +172,18 @@ class port_dict_t(object):
         'port_name',
         'port_mode',
         'port_type',
+        'port_group_id',
         'is_alternate',
+        'widget'
+    ]
+
+class port_group_dict_t(object):
+    __slots__ = [
+        'port_group_id',
+        'group_id',
+        'port_mode',
+        'port_type',
+        'port_id_list',
         'widget'
     ]
 
