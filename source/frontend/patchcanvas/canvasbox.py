@@ -668,7 +668,6 @@ class CanvasBox(QGraphicsItem):
         QGraphicsItem.mouseDoubleClickEvent(self, event)
 
     def mousePressEvent(self, event):
-        print('press dans la canvas')
         canvas.last_z_value += 1
         self.setZValue(canvas.last_z_value)
         self.resetLinesZValue()

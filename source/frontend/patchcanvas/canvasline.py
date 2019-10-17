@@ -94,37 +94,33 @@ class CanvasLine(QGraphicsLineItem):
 
     def updateLinePos(self):
         if self.item1.getPortMode() == PORT_MODE_OUTPUT:
-            pppl1 = CanvasGetPortPositionAndPortGroupLenght(self.item1.getPortId(), self.item1.getPortGroupId())
-            port_posinport_group1, port_group_lenght1 = pppl1[0], pppl1[1]
+            port_pos_1, port_group_len_1 = self.item1.getPortGroupPosition()
             
-            if port_group_lenght1:
-                if port_group_lenght1 > 2:
-                    phi = 0.75
-                else:
-                    phi = 0.62
+            if port_group_len_1 > 2:
+                phi = 0.75
+            else:
+                phi = 0.62
             
-            if port_group_lenght1 > 1:
+            if port_group_len_1 > 1:
                 first_old_y = canvas.theme.port_height * phi
-                last_old_y  = canvas.theme.port_height * (port_group_lenght1 - phi)
-                delta = (last_old_y - first_old_y) / (port_group_lenght1 -1)
-                Y1 = first_old_y + (port_posinport_group1 * delta) - (canvas.theme.port_height * port_posinport_group1)
+                last_old_y  = canvas.theme.port_height * (port_group_len_1 - phi)
+                delta = (last_old_y - first_old_y) / (port_group_len_1 -1)
+                Y1 = first_old_y + (port_pos_1 * delta) - (canvas.theme.port_height * port_pos_1)
             else:
                 Y1 = canvas.theme.port_height / 2
                 
-            pppl2 = CanvasGetPortPositionAndPortGroupLenght(self.item2.getPortId(), self.item2.getPortGroupId())
-            port_posinport_group2, port_group_lenght2 = pppl2[0], pppl2[1]
+            port_pos_2, port_group_len_2 = self.item2.getPortGroupPosition()
             
-            if port_group_lenght2:
-                if port_group_lenght2 > 2:
-                    phi = 0.75
-                else:
-                    phi = 0.62
+            if port_group_len_2 > 2:
+                phi = 0.75
+            else:
+                phi = 0.62
             
-            if port_group_lenght2 > 1:
+            if port_group_len_2 > 1:
                 first_old_y = canvas.theme.port_height * phi
-                last_old_y  = canvas.theme.port_height * (port_group_lenght2 - phi)
-                delta = (last_old_y - first_old_y) / (port_group_lenght2 -1)
-                Y2 = first_old_y + (port_posinport_group2 * delta) - (canvas.theme.port_height * port_posinport_group2)
+                last_old_y  = canvas.theme.port_height * (port_group_len_2 - phi)
+                delta = (last_old_y - first_old_y) / (port_group_len_2 -1)
+                Y2 = first_old_y + (port_pos_2 * delta) - (canvas.theme.port_height * port_pos_2)
             else:
                 Y2 = canvas.theme.port_height / 2
             

@@ -223,7 +223,6 @@ class CanvasPortGroup(QGraphicsItem):
         
         self.m_line_mov_list = self.m_line_mov_list[:self.getPortLength()]
                 
-            
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.m_hover_item = None
@@ -346,7 +345,7 @@ class CanvasPortGroup(QGraphicsItem):
                                         line_mov.setDestinationPortGroupPosition(
                                             i, self.m_hover_item.getPortLength())
                                     else:
-                                        port_posinport_group = x % len(self.m_port_id_list)
+                                        port_posinport_group = i % len(self.m_port_id_list)
                                         if options.use_bezier_lines:
                                             line_mov  = CanvasBezierLineMov(
                                                 self.m_port_mode,

@@ -77,12 +77,6 @@ class CanvasLineMov(QGraphicsLineItem):
         pen.setCapStyle(Qt.RoundCap)
         pen.setWidthF(pen.widthF() + 0.00001)
         self.setPen(pen)
-
-    def setPortPosInPortGroupTo(self, port_posinport_group_to):
-        self.m_port_posinport_group_to = port_posinport_group_to
-        
-    def setPortGroupLenghtTo(self, port_group_lenght):
-        self.m_port_group_lenght_to = port_group_lenght
     
     def isReadyToDisc(self):
         return self.m_ready_to_disc
@@ -92,6 +86,10 @@ class CanvasLineMov(QGraphicsLineItem):
     
     def toggleReadyToDisc(self):
         self.m_ready_to_disc = not bool(self.m_ready_to_disc)
+    
+    def setDestinationPortGroupPosition(self, port_pos, port_group_len):
+        self.m_port_posinport_group_to = port_pos
+        self.m_port_group_lenght_to = port_group_len
     
     def updateLinePos(self, scenePos):
         if self.m_ready_to_disc:
@@ -133,7 +131,7 @@ class CanvasLineMov(QGraphicsLineItem):
             return
         
         if self.parentItem().type() == CanvasPortType:
-            if self.m_port_group_lenght:
+            if self.m_port_group_lenght > 1:
                 first_old_y = canvas.theme.port_height * phi
                 last_old_y  = canvas.theme.port_height * (self.m_port_group_lenght - phi)
                 delta = (last_old_y - first_old_y) / (self.m_port_group_lenght -1)
@@ -147,8 +145,8 @@ class CanvasLineMov(QGraphicsLineItem):
             delta = (last_old_y - first_old_y) / (self.m_port_group_lenght -1)
             item_pos[1] = first_old_y + (self.m_port_posinport_group * delta)
             
-        if self.m_port_posinport_group_to == None:
-                mouse_y_offset = 0
+        if self.m_port_group_lenght_to == 1:
+            mouse_y_offset = 0
         else:
             first_new_y = canvas.theme.port_height * phito
             last_new_y  = canvas.theme.port_height * (self.m_port_group_lenght_to - phito)

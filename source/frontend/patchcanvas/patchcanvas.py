@@ -745,17 +745,13 @@ def addPort(group_id, port_id, port_name, port_mode, port_type, port_group_id, i
         return
 
     if port_group_id:
-        print('youp', port_id, group_id, port_group_id)
         for port_group in canvas.port_group_list:
-            print('yupin', port_group.group_id, port_group.port_group_id)
             if (port_group.group_id == group_id
                     and port_group.port_group_id == port_group_id):
-                print('youpi')
                 if not port_id in port_group.port_id_list:
                     port_group.port_id_list.append(port_id)
                 
                 if len(port_group.port_id_list) >= 2:
-                    print('youpi2')
                     for port in canvas.port_list:
                         if (port.group_id == group_id
                                 and port.port_id in port_group.port_id_list):
@@ -764,13 +760,11 @@ def addPort(group_id, port_id, port_name, port_mode, port_type, port_group_id, i
                                 port.widget.setPortGroupId(port_group_id)
                     
                     if port_group.widget is None:
-                        print('youpi22')
                         port_group.widget = box_widget.addPortGroupFromGroup(
                                         port_group_id, port_mode, port_type,
                                         port_group.port_id_list)
                 else:
                     port_group_id = 0
-                    print('port_group_id passe à 0')
                 break
         else:
             port_group_id = 0

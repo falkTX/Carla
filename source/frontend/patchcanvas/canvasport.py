@@ -123,6 +123,10 @@ class CanvasPort(QGraphicsItem):
     def getPortHeight(self):
         return self.m_port_height
 
+    def getPortGroupPosition(self):
+        return CanvasGetPortGroupPosition(self.m_group_id, self.m_port_id,
+                                          self.m_port_group_id)
+    
     def setPortMode(self, port_mode):
         self.m_port_mode = port_mode
         self.update()
