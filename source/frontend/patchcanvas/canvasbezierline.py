@@ -99,14 +99,9 @@ class CanvasBezierLine(QGraphicsPathItem):
         if self.item1.getPortMode() == PORT_MODE_OUTPUT:
             item1_x = self.item1.scenePos().x() + self.item1.getPortWidth() + 12
             
-            port_pos_1, port_group_len_1 = CanvasGetPortGroupPosition(
-                            self.item1.getGroupId(), self.item1.getPortId(),
-                            self.item1.getPortGroupId())
+            port_pos_1, port_group_len_1 = self.item1.getPortGroupPosition()
             
-            if port_group_len_1 > 2:
-                phi = 0.75
-            else:
-                phi = 0.62
+            phi = 0.75 if port_group_len_1 > 2 else 0.62
             
             if port_group_len_1 > 1:
                 first_old_y = canvas.theme.port_height * phi
@@ -120,14 +115,9 @@ class CanvasBezierLine(QGraphicsPathItem):
             
             item2_x = self.item2.scenePos().x()
             
-            port_pos_2, port_group_len_2 = CanvasGetPortGroupPosition(
-                            self.item2.getGroupId(), self.item2.getPortId(),
-                            self.item2.getPortGroupId())
+            port_pos_2, port_group_len_2 = self.item2.getPortGroupPosition()
             
-            if port_group_len_2 > 2:
-                phi = 0.75
-            else:
-                phi = 0.62
+            phi = 0.75 if port_group_len_1 > 2 else 0.62
             
             if port_group_len_2 > 1:
                 first_old_y = canvas.theme.port_height * phi

@@ -426,9 +426,11 @@ class CanvasBox(QGraphicsItem):
                             port.widget.setPortWidth(canvas.theme.port_in_port_group_width)
                             
                             for port_group in canvas.port_group_list:
-                                if port_group.group_id == self.m_group_id and port_group.port_id_list[0] == port.port_id:
-                                    port_group.widget.setPortGroupWidth(max_in_width)
-                                    port_group.widget.setX(canvas.theme.port_offset +1)
+                                if (port_group.group_id == self.m_group_id
+                                        and port_group.port_id_list[0] == port.port_id):
+                                    if port_group.widget:
+                                        port_group.widget.setPortGroupWidth(max_in_width)
+                                        port_group.widget.setX(canvas.theme.port_offset +1)
                                     break
                             
                         else:
@@ -440,9 +442,11 @@ class CanvasBox(QGraphicsItem):
                             port.widget.setPortWidth(canvas.theme.port_in_port_group_width)
                             
                             for port_group in canvas.port_group_list:
-                                if port_group.group_id == self.m_group_id and port_group.port_id_list[0] == port.port_id:
-                                    port_group.widget.setX(outX)
-                                    port_group.widget.setPortGroupWidth(max_out_width)
+                                if (port_group.group_id == self.m_group_id
+                                        and port_group.port_id_list[0] == port.port_id):
+                                    if port_group.widget:
+                                        port_group.widget.setX(outX)
+                                        port_group.widget.setPortGroupWidth(max_out_width)
                                     break
                         else:
                             port.widget.setX(outX)
