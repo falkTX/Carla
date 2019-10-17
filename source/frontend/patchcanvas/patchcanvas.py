@@ -137,6 +137,17 @@ class CanvasObject(QObject):
             return
 
         CanvasCallback(ACTION_PORTS_DISCONNECT, connectionId, 0, "")
+    
+    @pyqtSlot()
+    def SetasStereoWith(self):
+        try:
+            all_data = self.sender().data()
+        except:
+            return
+        
+        port_widget = all_data[0]
+        port_id = all_data[1]
+        port_widget.SetAsStereo(port_id)
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -733,6 +744,37 @@ def addPort(group_id, port_id, port_name, port_mode, port_type, port_group_id, i
                   group_id, port_id, port_name.encode(), port_mode2str(port_mode), port_type2str(port_type)))
         return
 
+    if port_group_id:
+        print('youp', port_id, group_id, port_group_id)
+        for port_group in canvas.port_group_list:
+            print('yupin', port_group.group_id, port_group.port_group_id)
+            if (port_group.group_id == group_id
+                    and port_group.port_group_id == port_group_id):
+                print('youpi')
+                if not port_id in port_group.port_id_list:
+                    port_group.port_id_list.append(port_id)
+                
+                if len(port_group.port_id_list) >= 2:
+                    print('youpi2')
+                    for port in canvas.port_list:
+                        if (port.group_id == group_id
+                                and port.port_id in port_group.port_id_list):
+                            port.port_group_id = port_group_id
+                            if port.widget:
+                                port.widget.setPortGroupId(port_group_id)
+                    
+                    if port_group.widget is None:
+                        print('youpi22')
+                        port_group.widget = box_widget.addPortGroupFromGroup(
+                                        port_group_id, port_mode, port_type,
+                                        port_group.port_id_list)
+                else:
+                    port_group_id = 0
+                    print('port_group_id passe à 0')
+                break
+        else:
+            port_group_id = 0
+    
     port_dict = port_dict_t()
     port_dict.group_id = group_id
     port_dict.port_id = port_id
@@ -784,6 +826,67 @@ def renamePort(group_id, port_id, new_port_name):
 
     qCritical("PatchCanvas::renamePort(%i, %i, %s) - Unable to find port to rename" % (
               group_id, port_id, new_port_name.encode()))
+
+def addPortGroup(group_id, port_group_id, port_mode, port_type):
+    if canvas.debug:
+        print("PatchCanvas::addPortGroup(%i, %i)" % (group_id, port_group_id))
+        
+    for port_group in canvas.port_group_list:
+        if port_group.group_id == group_id and port_group.port_group_id == port_group_id:
+            qWarning("PatchCanvas::addPortGroup(%i, %i) - port already exists" % (
+                     group_id, port_group_id))
+            return
+        
+    #box_widget = None
+    #port_widget = None
+    
+    #for group in canvas.group_list:
+        #if group.group_id == group_id:
+            #if group.split and group.widgets[0].getSplittedMode() != port_mode and group.widgets[1]:
+                #n = 1
+            #else:
+                #n = 0
+            #box_widget = group.widgets[n]
+            ##port_widget = box_widget.addPortGroupFromGroup(
+                ##port_group_id, port_mode, port_group_id)
+            #break
+
+    #if not box_widget:
+        #qCritical("PatchCanvas::addPortGroup(%i, %i, %s) - Unable to find parent group" % (
+                  #group_id, port_group_id, port_mode2str(port_mode)))
+        #return
+    
+    #port_id_list = []
+    
+    #for port in canvas.port_list:
+        #if (port.group_id == group_id
+                #and port.port_mode == port_mode
+                #and port.port_type == port_type
+                #and port.port_group_id == port_group_id):
+            #port_id_list.append(port.port_id)
+    
+    port_group_dict = port_group_dict_t()
+    port_group_dict.group_id = group_id
+    port_group_dict.port_group_id = port_group_id
+    port_group_dict.port_mode = port_mode
+    port_group_dict.port_type = port_type
+    port_group_dict.port_id_list = []
+    port_group_dict.widget = None
+    canvas.port_group_list.append(port_group_dict)
+    
+    #if len(port_id_list) < 2:
+        #return
+    
+    #port_group_dict.widget = box_widget.addPortGroupFromGroup(
+            #port_group_id, port_mode, port_type, port_id_list)
+
+    #box_widget.updatePositions()
+
+    #if options.eyecandy == EYECANDY_FULL:
+        #CanvasItemFX(port_widget, True, False)
+        #return
+
+    #QTimer.singleShot(0, canvas.scene.update)
 
 def connectPorts(connection_id, group_out_id, port_out_id, group_in_id, port_in_id):
     if canvas.debug:

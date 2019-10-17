@@ -22,7 +22,8 @@
 from math import floor
 
 from PyQt5.QtCore import qCritical, Qt, QLineF, QPointF, QRectF, QTimer
-from PyQt5.QtGui import QCursor, QFont, QFontMetrics, QPainter, QPainterPath, QPen, QPolygonF
+from PyQt5.QtGui import (QCursor, QFont, QFontMetrics, QPainter, QPainterPath,
+                         QPen, QPolygonF, QLinearGradient)
 from PyQt5.QtWidgets import QGraphicsItem, QMenu
 
 # ------------------------------------------------------------------------------------------------------------
@@ -35,6 +36,7 @@ from . import (
     port_mode2str,
     port_type2str,
     CanvasPortType,
+    CanvasPortGroupType,
     ANTIALIASING_FULL,
     ACTION_PORT_INFO,
     ACTION_PORT_RENAME,
@@ -51,14 +53,17 @@ from . import (
 from .canvasbezierlinemov import CanvasBezierLineMov
 from .canvaslinemov import CanvasLineMov
 from .theme import Theme
-from .utils import CanvasGetFullPortName, CanvasGetPortConnectionList, CanvasGetPortGroupPosition
+from .utils import (CanvasGetFullPortName, CanvasGetPortConnectionList,
+                    CanvasGetPortGroupPosition, CanvasGetPortPrintName,
+                    CanvasGetPortGroupName, CanvasGetPortGroupFullName, 
+                    CanvasUpdateSelectedLines)
 
 # ------------------------------------------------------------------------------------------------------------
 
 
 
 class CanvasPortGroup(QGraphicsItem):
-    def __init__(self, port_group_id, port_mode, port_type, port_id_list, parent):
+    def __init__(self, group_id, port_group_id, port_mode, port_type, port_id_list, parent):
         QGraphicsItem.__init__(self)
         self.setParentItem(parent)
 
@@ -67,7 +72,7 @@ class CanvasPortGroup(QGraphicsItem):
         self.m_port_mode  = port_mode
         self.m_port_type  = port_type
         self.m_port_id_list = port_id_list
-        self.m_group_id = parent.getGroupId()
+        self.m_group_id = group_id
         
         # Base Variables
         self.m_port_group_width  = 15
@@ -111,7 +116,10 @@ class CanvasPortGroup(QGraphicsItem):
     
     def getPortsList(self):
         return self.m_port_id_list
-        
+    
+    def getPortLength(self):
+        return len(self.m_port_id_list)
+    
     def setPortMode(self, port_mode):
         self.m_port_mode = port_mode
         self.update()
@@ -128,7 +136,7 @@ class CanvasPortGroup(QGraphicsItem):
 
     def SplitToMonos(self):
         groupItem = self.parentItem()
-        CanvasSplitPortGroup(self.m_port_group_id)
+        #CanvasSplitPortGroup(self.m_port_group_id)
         groupItem.updatePositions()
         
     def ConnectToHover(self):
@@ -195,16 +203,25 @@ class CanvasPortGroup(QGraphicsItem):
             line_mov.setReadyToDisc(False)
    
     def resetLineMovPositions(self):
-        for line_mov in self.m_line_mov_list:
-            if self.m_line_mov_list.index(line_mov) < len(self.m_port_id_list):
-                line_mov.setPortPosInPortGroupTo(line_mov.m_port_posinport_group)
-                line_mov.setPortGroupLenghtTo(line_mov.m_port_group_lenght)
+        for i in range(len(self.m_line_mov_list)):
+            line_mov = self.m_line_mov_list[i]
+            if i < self.getPortLength():
+                line_mov.setDestinationPortGroupPosition(i, self.getPortLength())
             else:
                 item = line_mov
                 canvas.scene.removeItem(item)
                 del item
-                
-        self.m_line_mov_list = self.m_line_mov_list[:len(self.m_port_id_list)]
+        
+        while len(self.m_line_mov_list) < self.getPortLength():
+            if options.use_bezier_lines:
+                line_mov = CanvasBezierLineMov(self.m_port_mode, self.m_port_type,
+                                               len(self.m_line_mov_list), self.getPortLength(), self)
+            else:
+                line_mov = CanvasLineMov(self.m_port_mode, self.m_port_type,
+                            len(self.m_line_mov_list), self.getPortLength(), self)
+            self.m_line_mov_list.append(line_mov)
+        
+        self.m_line_mov_list = self.m_line_mov_list[:self.getPortLength()]
                 
             
     def mousePressEvent(self, event):
@@ -212,7 +229,6 @@ class CanvasPortGroup(QGraphicsItem):
             self.m_hover_item = None
             self.m_mouse_down = True
             self.m_cursor_moving = False
-            
         #elif event.button() == Qt.RightButton:
             #if canvas.is_line_mov:
                 #if self.m_hover_item:
@@ -242,7 +258,8 @@ class CanvasPortGroup(QGraphicsItem):
                 self.setZValue(canvas.last_z_value)
                 canvas.last_z_value += 1
                 for port in canvas.port_list:
-                    if port.port_id in self.m_port_id_list:
+                    if (port.group_id == self.m_group_id
+                            and port.port_id in self.m_port_id_list):
                         port.widget.setZValue(canvas.last_z_value)
                 
                 #for port in canvas.port_list:
@@ -256,15 +273,14 @@ class CanvasPortGroup(QGraphicsItem):
                         #(port_group.port_type != self.m_port_type or
                         #port_group.port_mode == self.m_port_mode)):
                         #port_group.widget.setOpacity(0.35)
-                
-                for port_id in self.m_port_id_list:
-                    port_posinport_group, port_group_lenght = CanvasGetPortPositionAndPortGroupLenght(port_id, self.m_port_group_id)
-                    
+                for i in range(len(self.m_port_id_list)):
                     if options.use_bezier_lines:
-                        line_mov  = CanvasBezierLineMov(self.m_port_mode, self.m_port_type, port_posinport_group, port_group_lenght, self)
+                        line_mov  = CanvasBezierLineMov(self.m_port_mode, 
+                            self.m_port_type, i, len(self.m_port_id_list), self)
                     else:
-                        line_mov  = CanvasLineMov(self.m_port_mode, self.m_port_type, port_posinport_group, port_group_lenght, self)
-                    #line_mov.setZValue(canvas.last_z_value)
+                        line_mov  = CanvasLineMov(self.m_port_mode, 
+                            self.m_port_type, i, len(self.m_port_id_list), self)
+                        
                     self.m_line_mov_list.append(line_mov)
                 
                 canvas.is_line_mov = True
@@ -285,7 +301,6 @@ class CanvasPortGroup(QGraphicsItem):
                 self.m_hover_item.setSelected(False)
 
             if item:
-                
                 if item.getPortMode() != self.m_port_mode and item.getPortType() == self.m_port_type:
                     item.setSelected(True)
                     if item.type() == CanvasPortType:
@@ -294,7 +309,7 @@ class CanvasPortGroup(QGraphicsItem):
                             self.resetDotLines()
                             self.resetLineMovPositions()
                             for line_mov in self.m_line_mov_list:
-                                line_mov.setPortPosInPortGroupTo(PORT_IN_PORT_GROUP_POSITION_MONO)
+                                line_mov.setDestinationPortGroupPosition(0, 1)
                             
                             self.m_dotcon_list = []
                             for port_id in self.m_port_id_list:
@@ -316,27 +331,41 @@ class CanvasPortGroup(QGraphicsItem):
                             self.resetDotLines()
                             self.resetLineMovPositions()
                             
-                            if len(self.m_hover_item.m_port_id_list) <= len(self.m_line_mov_list):
-                                for line_mov in self.m_line_mov_list:
-                                    line_mov.setPortPosInPortGroupTo(line_mov.m_port_posinport_group % len(self.m_hover_item.m_port_id_list))
-                                    line_mov.setPortGroupLenghtTo(len(self.m_hover_item.m_port_id_list))
+                            if self.m_hover_item.getPortLength() <= len(self.m_line_mov_list):
+                                for i in range(len(self.m_line_mov_list)):
+                                    line_mov = self.m_line_mov_list[i]
+                                    line_mov.setDestinationPortGroupPosition(
+                                        i % self.m_hover_item.getPortLength(),
+                                        self.m_hover_item.getPortLength())
                             else:
+                                start_n_linemov = len(self.m_line_mov_list)
                                 
-                                for line_mov in self.m_line_mov_list:
-                                    line_mov.setPortGroupLenghtTo(len(self.m_hover_item.m_port_id_list))
-                                
-                                #create new lines when line is hover a biggest port_group
-                                for x in range(len(self.m_port_id_list), len(self.m_hover_item.m_port_id_list)):
-                                    port_posinport_group = x % len(self.m_port_id_list)
-                                    port_group_lenght = len(self.m_port_id_list)
-                                    if options.use_bezier_lines:
-                                        line_mov  = CanvasBezierLineMov(self.m_port_mode, self.m_port_type, port_posinport_group, port_group_lenght, self)
+                                for i in range(self.m_hover_item.getPortLength()):
+                                    if i < start_n_linemov:
+                                        line_mov = self.m_line_mov_list[i]
+                                        line_mov.setDestinationPortGroupPosition(
+                                            i, self.m_hover_item.getPortLength())
                                     else:
-                                        line_mov  = CanvasLineMov(self.m_port_mode, self.m_port_type, port_posinport_group, port_group_lenght, self)
+                                        port_posinport_group = x % len(self.m_port_id_list)
+                                        if options.use_bezier_lines:
+                                            line_mov  = CanvasBezierLineMov(
+                                                self.m_port_mode,
+                                                self.m_port_type,
+                                                port_posinport_group,
+                                                self.m_hover_item.getPortLength(),
+                                                self)
+                                        else:
+                                            line_mov  = CanvasLineMov(
+                                                self.m_port_mode, 
+                                                self.m_port_type,
+                                                port_posinport_group,
+                                                self.m_hover_item.getPortLength(),
+                                                self)
+                                            
+                                        line_mov.setDestinationPortGroupPosition(
+                                            i, self.m_hover_item.getPortLength())
                                         
-                                    line_mov.setPortPosInPortGroupTo(x)
-                                    line_mov.setPortGroupLenghtTo(len(self.m_hover_item.m_port_id_list))
-                                    self.m_line_mov_list.append(line_mov)
+                                        self.m_line_mov_list.append(line_mov)
                             
                             self.m_dotcon_list = []
                             symetric_con_list = []
@@ -370,9 +399,6 @@ class CanvasPortGroup(QGraphicsItem):
                     self.m_r_click_conn = None
                     self.resetDotLines()
                     self.resetLineMovPositions()
-                    for port_id in self.m_port_id_list:
-                        port_posinport_group = self.m_port_id_list.index(port_id)
-                        self.m_line_mov_list[port_posinport_group].setPortPosInPortGroupTo(port_posinport_group)
                     
             else:
                 if self.m_hover_item:
@@ -380,9 +406,6 @@ class CanvasPortGroup(QGraphicsItem):
                     self.m_r_click_conn = None
                     self.resetDotLines()
                     self.resetLineMovPositions()
-                    for port_id in self.m_port_id_list:
-                        port_posinport_group = self.m_port_id_list.index(port_id)
-                        self.m_line_mov_list[port_posinport_group].setPortPosInPortGroupTo(port_posinport_group)
             
             for line_mov in self.m_line_mov_list:
                 line_mov.updateLinePos(event.scenePos())
@@ -507,7 +530,7 @@ class CanvasPortGroup(QGraphicsItem):
                                             discMenu.addSeparator()
                                             last_is_dirty_port_group = False
                                             
-                                        full_port_name = CanvasGetFullPortName(port.port_id)
+                                        full_port_name = CanvasGetFullPortName(port.group_id, port.port_id)
                                         act_x_disc_port = discMenu.addAction(full_port_name)
                                         act_x_disc_port.setData(port_con_list)
                                         act_x_disc_port.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
@@ -538,7 +561,8 @@ class CanvasPortGroup(QGraphicsItem):
                                             
                                         
                                         #set port_group action in submenu
-                                        port_group_print_name = CanvasGetPortGroupFullName(port_group.port_group_id)
+                                        port_group_print_name = CanvasGetPortGroupFullName(
+                                             port_group.group_id, port_group.port_group_id)
                                         act_x_disc_port_group = discMenu.addAction(port_group_print_name)        
                                         act_x_disc_port_group.setData(port_group_con_list)
                                         act_x_disc_port_group.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
@@ -546,7 +570,8 @@ class CanvasPortGroup(QGraphicsItem):
                                     
                         #set port action in submenu (if port is in a port_group and isn't the only one connected to the box) 
                         if not port_alone_connected and port.port_group_id in port_group_dirty_connect_list:
-                            port_print_name = CanvasGetPortPrintName(port.port_id, port.port_group_id)
+                            port_print_name = CanvasGetPortPrintName(
+                                port.group_id, port.port_id, port.port_group_id)
                             act_x_disc_port = discMenu.addAction('  → ' + port_print_name)
                             act_x_disc_port.setData(port_con_list)
                             act_x_disc_port.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
@@ -603,7 +628,8 @@ class CanvasPortGroup(QGraphicsItem):
             
             for port in canvas.port_list:
                 if port.port_id in self.m_port_id_list:
-                    port_print_name = CanvasGetPortPrintName(port.port_id, self.m_port_group_id)
+                    port_print_name = CanvasGetPortPrintName(port.group_id, 
+                                        port.port_id, self.m_port_group_id)
                     port_in_p_width = QFontMetrics(self.m_port_group_font).width(port_print_name) + 3
                     port_width = max(port_width, port_in_p_width)
 
@@ -682,7 +708,8 @@ class CanvasPortGroup(QGraphicsItem):
 
         painter.setPen(text_pen)
         painter.setFont(self.m_port_group_font)
-        port_group_name = CanvasGetPortGroupName(self.m_port_id_list)
+        port_group_name = CanvasGetPortGroupName(self.m_group_id,
+                                                 self.m_port_id_list)
         painter.drawText(text_pos, port_group_name)
 
         if self.isSelected() != self.m_last_selected_state:

@@ -87,6 +87,10 @@ def CanvasGetPortGroupPosition(group_id, port_id, port_group_id):
     if port_group_id < 0:
         return (0, 1)
     
+    #print('eokfc', group_id, port_id, port_group_id)
+    #for port_group in canvas.port_group_list:
+        #print(port_group.group_id, port_group.port_group_id, port_group.port_id_list)
+    
     for port_group in canvas.port_group_list:
         if (port_group.group_id == group_id
                 and port_group.port_group_id == port_group_id):
@@ -147,6 +151,55 @@ def CanvasGetPortPrintName(group_id, port_id, port_group_id):
             for port in canvas.port_list:
                 if port.group_id == group_id and port.port_id == port_id:
                     return port.port_name.replace(port_group_name, '', 1)
+
+def CanvasGetPortGroupFullName(group_id, port_group_id):
+    for port_group in canvas.port_group_list:
+        if (port_group.group_id == group_id
+                and port_group.port_group_id == port_group_id):
+            group_name = CanvasGetGroupName(port_group.group_id)
+            
+            endofname = ''
+            for port_id in port_group.port_id_list:
+                endofname += "%s/" % CanvasGetPortPrintName(group_id, port_id,
+                                                     port_group.port_group_id)
+            port_group_name = CanvasGetPortGroupName(group_id, 
+                                                     port_group.port_id_list)
+            
+            return "%s:%s %s" % (group_name, port_group_name, endofname[:-1])
+    
+    return ""
+
+def CanvasUpdateSelectedLines():
+    sel_con_list = []
+    upper_line_z_value = 0
+    
+    for connection in canvas.connection_list:
+        line_z_value = connection.widget.zValue()
+        if int(line_z_value) != line_z_value:
+            connection.widget.setZValue(int(line_z_value))
+        if int(line_z_value) > upper_line_z_value:
+            upper_line_z_value = int(line_z_value)
+    
+    for port in canvas.port_list:
+        if port.widget.isSelected():
+            for connection in canvas.connection_list:
+                if connection.port_out_id == port.port_id or connection.port_in_id == port.port_id:
+                    sel_con_list.append(connection)
+    
+    for port_group in canvas.port_group_list:
+        if port_group.widget.isSelected():
+            for connection in canvas.connection_list:
+                if connection.port_out_id in port_group.port_id_list or connection.port_in_id in port_group.port_id_list:
+                    sel_con_list.append(connection)
+                    
+    for connection in canvas.connection_list:
+        if connection in sel_con_list:
+            connection.widget.setZValue(upper_line_z_value + 0.1)
+            connection.widget.setLineSelected(True)
+        else:
+            connection.widget.setLineSelected(False)
+    
+    del sel_con_list
 
 def CanvasCallback(action, value1, value2, value_str):
     if canvas.debug:

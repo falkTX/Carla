@@ -33,6 +33,7 @@ from . import (
     CanvasBoxType,
     CanvasIconType,
     CanvasPortType,
+    CanvasPortGroupType,
     CanvasLineType,
     CanvasBezierLineType,
     CanvasRubberbandType,
@@ -298,7 +299,8 @@ class PatchScene(QGraphicsScene):
             topmost = self.itemAt(event.scenePos(), self.m_view.transform())
             self.m_mouse_rubberband = not (topmost and topmost.type() in (CanvasBoxType,
                                                                           CanvasIconType,
-                                                                          CanvasPortType))
+                                                                          CanvasPortType,
+                                                                          CanvasPortGroupType))
 
         if self.m_mouse_rubberband:
             event.accept()

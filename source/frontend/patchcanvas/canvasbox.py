@@ -63,11 +63,13 @@ from . import (
 from .canvasboxshadow import CanvasBoxShadow
 from .canvasicon import CanvasIcon
 from .canvasport import CanvasPort
+from .canvasportgroup import CanvasPortGroup
 from .theme import Theme
 from .utils import (CanvasItemFX,
                     CanvasGetFullPortName, 
                     CanvasGetPortConnectionList,
-                    CanvasGetPortGroupName)
+                    CanvasGetPortGroupName,
+                    CanvasGetPortGroupPosition)
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -263,7 +265,13 @@ class CanvasBox(QGraphicsItem):
                     CanvasItemFX(self, False, False)
                 else:
                     self.setVisible(False)
-
+    
+    def addPortGroupFromGroup(self, port_group_id, port_mode, port_type, port_id_list):
+        new_widget = CanvasPortGroup(self.m_group_id, port_group_id, port_mode, 
+                                     port_type, port_id_list, self)
+        
+        return new_widget
+    
     def addLineFromGroup(self, line, connection_id):
         new_cbline = cb_line_t(line, connection_id)
         self.m_connection_lines.append(new_cbline)
@@ -332,21 +340,26 @@ class CanvasBox(QGraphicsItem):
                     if port.port_type != port_type:
                         continue
                     
-                    last_of_port_group = True
-                    if port.port_group_id:
-                        for port_group in canvas.port_group_list:
-                            if port_group.group_id == self.m_group_id and port.port_id in port_group.port_id_list:
-                                if port_group.port_id_list[-1] != port.port_id:
-                                    last_of_port_group = False
-                                    break
+                    port_pos, pg_len = CanvasGetPortGroupPosition(self.m_group_id,
+                                                port.port_id, port.port_group_id)
+                    first_of_port_group = bool(port_pos == 0)
+                    last_of_port_group = bool(port_pos+1 == pg_len)
+                    
+                    #if port.port_group_id:
+                        #for port_group in canvas.port_group_list:
+                            #if port_group.group_id == self.m_group_id and port.port_id in port_group.port_id_list:
+                                #if port_group.port_id_list[-1] != port.port_id:
+                                    #last_of_port_group = False
+                                    #break
                     
                     size = QFontMetrics(self.m_font_port).width(port.port_name)
                     if port.port_group_id:
                         size = 0
                         totsize = QFontMetrics(self.m_font_port).width(port.port_name) + 3
+                        # FIXME
                         for port_group in canvas.port_group_list:
                             if port_group.port_group_id == port.port_group_id:
-                                port_group_name = CanvasGetPortGroupName(port_group.port_id_list)
+                                port_group_name = CanvasGetPortGroupName(self.m_group_id, port_group.port_id_list)
                                 size = QFontMetrics(self.m_font_port).width(port_group_name) + canvas.theme.port_in_port_group_width
                                 break
                         size = max(size, totsize)
@@ -359,10 +372,13 @@ class CanvasBox(QGraphicsItem):
                             last_in_type = port.port_type
                         port.widget.setY(last_in_pos)
                         
-                        for port_group in canvas.port_group_list:
-                            if port_group.group_id == self.m_group_id and port_group.port_id_list[0] == port.port_id:
-                                port_group.widget.setY(last_in_pos)
-                                break
+                        if port.port_group_id and first_of_port_group:
+                            for port_group in canvas.port_group_list:
+                                if (port_group.group_id == self.m_group_id
+                                        and port_group.port_group_id == port.port_group_id):
+                                    if port_group.widget:
+                                        port_group.widget.setY(last_in_pos)
+                                    break
                         
                         if last_of_port_group:
                             last_in_pos += port_spacing
@@ -377,10 +393,13 @@ class CanvasBox(QGraphicsItem):
                             last_out_type = port.port_type
                         port.widget.setY(last_out_pos)
                         
-                        for port_group in canvas.port_group_list:
-                            if port_group.group_id == self.m_group_id and port_group.port_id_list[0] == port.port_id:
-                                port_group.widget.setY(last_out_pos)
-                                break
+                        if port.port_group_id and first_of_port_group:
+                            for port_group in canvas.port_group_list:
+                                if (port_group.group_id == self.m_group_id
+                                        and port_group.port_group_id == port.port_group_id):
+                                    if port_group.widget:
+                                        port_group.widget.setY(last_out_pos)
+                                    break
                         
                         if last_of_port_group:
                             last_out_pos += port_spacing
@@ -649,6 +668,7 @@ class CanvasBox(QGraphicsItem):
         QGraphicsItem.mouseDoubleClickEvent(self, event)
 
     def mousePressEvent(self, event):
+        print('press dans la canvas')
         canvas.last_z_value += 1
         self.setZValue(canvas.last_z_value)
         self.resetLinesZValue()

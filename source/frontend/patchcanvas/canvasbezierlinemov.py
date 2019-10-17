@@ -51,10 +51,10 @@ class CanvasBezierLineMov(QGraphicsPathItem):
 
         self.m_port_mode = port_mode
         self.m_port_type = port_type
-        self.m_port_posinport_group    = port_posinport_group
+        self.m_port_posinport_group = port_posinport_group
         self.m_port_posinport_group_to = port_posinport_group
-        self.m_port_group_lenght       = port_group_lenght
-        self.m_port_group_lenght_to    = port_group_lenght
+        self.m_port_group_lenght = port_group_lenght
+        self.m_port_group_lenght_to = port_group_lenght
         self.m_ready_to_disc = False
         
         # Port position doesn't change while moving around line
@@ -99,6 +99,10 @@ class CanvasBezierLineMov(QGraphicsPathItem):
     def setPortGroupLenghtTo(self, port_group_lenght):
         self.m_port_group_lenght_to = port_group_lenght
     
+    def setDestinationPortGroupPosition(self, port_pos, port_group_len):
+        self.m_port_posinport_group_to = port_pos
+        self.m_port_group_lenght_to = port_group_len
+    
     def updateLinePos(self, scenePos):
         if self.m_ready_to_disc:
             if self.m_port_type == PORT_TYPE_AUDIO_JACK:
@@ -138,7 +142,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
             else:
                 old_y = canvas.theme.port_height / 2
                 
-            if self.m_port_posinport_group_to == 0:
+            if self.m_port_group_lenght_to == 1:
                 new_y = 0
             else:
                 first_new_y = canvas.theme.port_height * phito
@@ -172,7 +176,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
             delta = (last_old_y - first_old_y) / (self.m_port_group_lenght -1)
             old_y = first_old_y + (self.m_port_posinport_group * delta)
             
-            if self.m_port_posinport_group_to == 0:
+            if self.m_port_group_lenght_to == 1:
                 new_y = 0
             elif (self.m_port_posinport_group_to == self.m_port_posinport_group
                     and self.m_port_group_lenght == self.m_port_group_lenght_to):
