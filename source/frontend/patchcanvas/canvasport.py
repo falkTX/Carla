@@ -445,38 +445,7 @@ class CanvasPort(QGraphicsItem):
                     connection.widget.setLocked(False)
 
             if self.m_hover_item:
-<<<<<<< HEAD
                 self.connectToHover()
-=======
-                # TODO: a better way to check already existing connection
-                for connection in canvas.connection_list:
-                    hover_group_id = self.m_hover_item.getGroupId()
-                    hover_port_id = self.m_hover_item.getPortId()
-
-                    # FIXME clean this big if stuff
-                    if (
-                        (connection.group_out_id == self.m_group_id and
-                         connection.port_out_id == self.m_port_id and
-                         connection.group_in_id == hover_group_id and
-                         connection.port_in_id == hover_port_id)
-                        or
-                        (connection.group_out_id == hover_group_id and
-                         connection.port_out_id == hover_port_id and
-                         connection.group_in_id == self.m_group_id and
-                         connection.port_in_id == self.m_port_id)
-                       ):
-                        canvas.callback(ACTION_PORTS_DISCONNECT, connection.connection_id, 0, "")
-                        break
-                else:
-                    if self.m_port_mode == PORT_MODE_OUTPUT:
-                        conn = "%i:%i:%i:%i" % (self.m_group_id, self.m_port_id,
-                                                self.m_hover_item.getGroupId(), self.m_hover_item.getPortId())
-                        canvas.callback(ACTION_PORTS_CONNECT, 0, 0, conn)
-                    else:
-                        conn = "%i:%i:%i:%i" % (self.m_hover_item.getGroupId(),
-                                                self.m_hover_item.getPortId(), self.m_group_id, self.m_port_id)
-                        canvas.callback(ACTION_PORTS_CONNECT, 0, 0, conn)
->>>>>>> develop
 
                 canvas.scene.clearSelection()
 
