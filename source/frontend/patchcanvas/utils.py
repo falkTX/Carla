@@ -156,7 +156,13 @@ def CanvasGetPortGroupFullName(group_id, portgrp_id):
     for portgrp in canvas.portgrp_list:
         if (portgrp.group_id == group_id
                 and portgrp.portgrp_id == portgrp_id):
-            group_name = CanvasGetGroupName(portgrp.group_id)
+            group_name = ""
+            for group in canvas.group_list:
+                if group.group_id == group_id:
+                    group_name = group.name
+                    break
+            else:
+                return ""
             
             endofname = ''
             for port_id in portgrp.port_id_list:

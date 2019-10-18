@@ -102,7 +102,8 @@ class CanvasLineMov(QGraphicsLineItem):
             elif self.m_port_type == PORT_TYPE_PARAMETER:
                 pen = QPen(canvas.theme.line_parameter, 2, Qt.DotLine)
             else:
-                qWarning("PatchCanvas::CanvasBezierLineMov(%s, %s, %s) - invalid port type" % (port_mode2str(port_mode), port_type2str(port_type), parent))
+                qWarning("PatchCanvas::CanvasBezierLineMov(%s, %s) - invalid port type"
+                         % (port_mode2str(self.m_port_mode), port_type2str(self.m_port_type)))
                 pen = QPen(Qt.black)
         else:
             if self.m_port_type == PORT_TYPE_AUDIO_JACK:
@@ -114,7 +115,8 @@ class CanvasLineMov(QGraphicsLineItem):
             elif self.m_port_type == PORT_TYPE_PARAMETER:
                 pen = QPen(canvas.theme.line_parameter, 2)
             else:
-                qWarning("PatchCanvas::CanvasBezierLineMov(%s, %s, %s) - invalid port type" % (port_mode2str(port_mode), port_type2str(port_type), parent))
+                qWarning("PatchCanvas::CanvasBezierLineMov(%s, %s) - invalid port type"
+                         % (port_mode2str(self.m_port_mode), port_type2str(self.m_port_type)))
                 pen = QPen(Qt.black)
         self.setPen(pen)
         
