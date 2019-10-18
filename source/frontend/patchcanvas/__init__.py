@@ -45,22 +45,24 @@ PORT_TYPE_MIDI_ALSA  = 3
 PORT_TYPE_PARAMETER  = 4
 
 # Callback Action
-ACTION_GROUP_INFO       =  0 # group_id, N, N
-ACTION_GROUP_RENAME     =  1 # group_id, N, N
-ACTION_GROUP_SPLIT      =  2 # group_id, N, N
-ACTION_GROUP_JOIN       =  3 # group_id, N, N
-ACTION_PORT_INFO        =  4 # group_id, port_id, N
-ACTION_PORT_RENAME      =  5 # group_id, port_id, N
-ACTION_PORTS_CONNECT    =  6 # N, N, "outG:outP:inG:inP"
-ACTION_PORTS_DISCONNECT =  7 # conn_id, N, N
-ACTION_PLUGIN_CLONE     =  8 # plugin_id, N, N
-ACTION_PLUGIN_EDIT      =  9 # plugin_id, N, N
-ACTION_PLUGIN_RENAME    = 10 # plugin_id, N, N
-ACTION_PLUGIN_REPLACE   = 11 # plugin_id, N, N
-ACTION_PLUGIN_REMOVE    = 12 # plugin_id, N, N
-ACTION_PLUGIN_SHOW_UI   = 13 # plugin_id, N, N
-ACTION_BG_RIGHT_CLICK   = 14 # N, N, N
-ACTION_INLINE_DISPLAY   = 15 # plugin_id, N, N
+ACTION_GROUP_INFO        =  0 # group_id, N, N
+ACTION_GROUP_RENAME      =  1 # group_id, N, N
+ACTION_GROUP_SPLIT       =  2 # group_id, N, N
+ACTION_GROUP_JOIN        =  3 # group_id, N, N
+ACTION_PORT_GROUP_ADD    =  4 # N, N, "gId:pgId:pMode:pType:portId1:portId2"
+ACTION_PORT_GROUP_REMOVE =  5 # group_id, portgrp_id, N
+ACTION_PORT_INFO         =  6 # group_id, port_id, N
+ACTION_PORT_RENAME       =  7 # group_id, port_id, N
+ACTION_PORTS_CONNECT     =  8 # N, N, "outG:outP:inG:inP"
+ACTION_PORTS_DISCONNECT  =  9 # conn_id, N, N
+ACTION_PLUGIN_CLONE      = 10 # plugin_id, N, N
+ACTION_PLUGIN_EDIT       = 11 # plugin_id, N, N
+ACTION_PLUGIN_RENAME     = 12 # plugin_id, N, N
+ACTION_PLUGIN_REPLACE    = 13 # plugin_id, N, N
+ACTION_PLUGIN_REMOVE     = 14 # plugin_id, N, N
+ACTION_PLUGIN_SHOW_UI    = 15 # plugin_id, N, N
+ACTION_BG_RIGHT_CLICK    = 16 # N, N, N
+ACTION_INLINE_DISPLAY    = 17 # plugin_id, N, N
 
 # Icon
 ICON_APPLICATION = 0

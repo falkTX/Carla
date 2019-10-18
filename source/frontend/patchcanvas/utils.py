@@ -159,7 +159,7 @@ def CanvasGetPortGroupFullName(group_id, portgrp_id):
             group_name = ""
             for group in canvas.group_list:
                 if group.group_id == group_id:
-                    group_name = group.name
+                    group_name = group.group_name
                     break
             else:
                 return ""

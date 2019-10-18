@@ -38,6 +38,7 @@ from . import (
     CanvasPortType,
     CanvasPortGroupType,
     ANTIALIASING_FULL,
+    ACTION_PORT_GROUP_REMOVE,
     ACTION_PORT_INFO,
     ACTION_PORT_RENAME,
     ACTION_PORTS_CONNECT,
@@ -56,7 +57,7 @@ from .theme import Theme
 from .utils import (CanvasGetFullPortName, CanvasGetPortConnectionList,
                     CanvasGetPortGroupPosition, CanvasGetPortPrintName,
                     CanvasGetPortGroupName, CanvasGetPortGroupFullName, 
-                    CanvasUpdateSelectedLines)
+                    CanvasUpdateSelectedLines, CanvasCallback)
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -135,9 +136,7 @@ class CanvasPortGroup(QGraphicsItem):
         self.update()
 
     def SplitToMonos(self):
-        groupItem = self.parentItem()
-        #CanvasSplitPortGroup(self.m_portgrp_id)
-        groupItem.updatePositions()
+        CanvasCallback(ACTION_PORT_GROUP_REMOVE, self.m_group_id, self.m_portgrp_id, "")
         
     def ConnectToHover(self):
         if self.m_hover_item:
@@ -256,22 +255,12 @@ class CanvasPortGroup(QGraphicsItem):
                 canvas.last_z_value += 1
                 self.setZValue(canvas.last_z_value)
                 canvas.last_z_value += 1
+                
                 for port in canvas.port_list:
                     if (port.group_id == self.m_group_id
                             and port.port_id in self.m_port_id_list):
                         port.widget.setZValue(canvas.last_z_value)
-                
-                #for port in canvas.port_list:
-                    #if (not port.port_id in self.m_port_id_list and
-                        #(port.port_type != self.m_port_type or 
-                        #port.port_mode == self.m_port_mode)):
-                        #port.widget.setOpacity(0.35)
                         
-                #for portgrp in canvas.portgrp_list:
-                    #if (portgrp.portgrp_id != self.m_portgrp_id and
-                        #(portgrp.port_type != self.m_port_type or
-                        #portgrp.port_mode == self.m_port_mode)):
-                        #portgrp.widget.setOpacity(0.35)
                 for i in range(len(self.m_port_id_list)):
                     if options.use_bezier_lines:
                         line_mov  = CanvasBezierLineMov(self.m_port_mode, 

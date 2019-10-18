@@ -794,14 +794,15 @@ def removePort(group_id, port_id):
 
     qCritical("PatchCanvas::removePort(%i, %i) - Unable to find port to remove" % (group_id, port_id))
 
-def changePortProperties(group_id, port_id, port_flags, portgrp_id, new_port_name):
+def changePortProperties(group_id, port_id, portgrp_id, new_port_name):
     if canvas.debug:
         print("PatchCanvas::renamePort(%i, %i, %s)" % (group_id, port_id, new_port_name.encode()))
 
     for port in canvas.port_list:
         if port.group_id == group_id and port.port_id == port_id:
-            port.port_name = new_port_name
-            port.widget.setPortName(new_port_name)
+            if new_port_name != port.port_name:
+                port.port_name = new_port_name
+                port.widget.setPortName(new_port_name)
             
             if portgrp_id != port.portgrp_id:
                 if port.portgrp_id:
@@ -817,6 +818,21 @@ def changePortProperties(group_id, port_id, port_flags, portgrp_id, new_port_nam
 
     qCritical("PatchCanvas::renamePort(%i, %i, %s) - Unable to find port to rename" % (
               group_id, port_id, new_port_name.encode()))
+
+def addPortToPortGroup(group_id, port_id, portgrp_id):
+    for port in canvas.port_list:
+        if port.group_id == group_id and port.port_id == port_id:
+            if portgrp_id != port.portgrp_id:
+                if port.portgrp_id:
+                    CanvasRemovePortFromPortGroup(group_id, port_id,
+                                                  port.portgrp_id)
+                if portgrp_id:
+                    CanvasAddPortToPortGroup(group_id, port_id, portgrp_id)
+            
+            port.widget.parentItem().updatePositions()
+
+            QTimer.singleShot(0, canvas.scene.update)
+            return
 
 def addPortGroup(group_id, portgrp_id, port_mode, port_type):
     if canvas.debug:
@@ -841,6 +857,8 @@ def removePortGroup(group_id, portgrp_id):
     if canvas.debug:
         print("PatchCanvas::removePortGroup(%i, %i)" % (group_id, portgrp_id))
     
+    box_widget = None
+    
     for portgrp in canvas.portgrp_list:
         if (portgrp.group_id == group_id
                 and portgrp.portgrp_id == portgrp_id):
@@ -849,6 +867,7 @@ def removePortGroup(group_id, portgrp_id):
                     port.portgrp_id = 0
                     if port.widget:
                         port.widget.setPortGroupId(0)
+                        box_widget = port.widget.parentItem()
                         
             portgrp.port_id_list.clear()
             
@@ -864,6 +883,9 @@ def removePortGroup(group_id, portgrp_id):
         return
     
     canvas.portgrp_list.remove(portgrp)
+    if box_widget:
+        box_widget.updatePositions()
+    
     QTimer.singleShot(0, canvas.scene.update)
 
 def connectPorts(connection_id, group_out_id, port_out_id, group_in_id, port_in_id):

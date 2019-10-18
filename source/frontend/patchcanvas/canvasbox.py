@@ -427,6 +427,7 @@ class CanvasBox(QGraphicsItem):
                             
                             for portgrp in canvas.portgrp_list:
                                 if (portgrp.group_id == self.m_group_id
+                                        and portgrp.port_id_list
                                         and portgrp.port_id_list[0] == port.port_id):
                                     if portgrp.widget:
                                         portgrp.widget.setPortGroupWidth(max_in_width)
@@ -443,6 +444,7 @@ class CanvasBox(QGraphicsItem):
                             
                             for portgrp in canvas.portgrp_list:
                                 if (portgrp.group_id == self.m_group_id
+                                        and portgrp.port_id_list
                                         and portgrp.port_id_list[0] == port.port_id):
                                     if portgrp.widget:
                                         portgrp.widget.setX(outX)

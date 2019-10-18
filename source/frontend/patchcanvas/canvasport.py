@@ -37,6 +37,7 @@ from . import (
     CanvasPortType,
     CanvasPortGroupType,
     ANTIALIASING_FULL,
+    ACTION_PORT_GROUP_ADD,
     ACTION_PORT_INFO,
     ACTION_PORT_RENAME,
     ACTION_PORTS_CONNECT,
@@ -56,7 +57,8 @@ from .utils import (
     CanvasGetFullPortName,
     CanvasGetPortConnectionList,
     CanvasGetPortGroupPosition,
-    CanvasGetPortPrintName)
+    CanvasGetPortPrintName,
+    CanvasCallback)
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -181,9 +183,17 @@ class CanvasPort(QGraphicsItem):
             if port.port_id in (self.m_port_id, port_id):
                 port_id_list.append(port.port_id)
         
-        CanvasAddPortGroup(self.m_group_id, self.m_port_mode, self.m_port_type, port_id_list )
-        group_name = CanvasGetGroupName(self.m_group_id)
-        port_name_list = []
+        # get non used portgrp_id
+        new_portgrp_id = int(0x010000)
+        for portgrp in canvas.portgrp_list:
+            new_portgrp_id = max(new_portgrp_id, portgrp.portgrp_id)
+        
+        new_portgrp_id += 1
+        data = "%i:%i:%i:%i:%i:%i" % (self.m_group_id, new_portgrp_id,
+                                      self.m_port_mode, self.m_port_type,
+                                      port_id_list[0], port_id_list[1])
+        
+        CanvasCallback(ACTION_PORT_GROUP_ADD, 0, 0, data)
         
         # get new portgrp_num
         canvas.settings.beginGroup("CanvasPortGroups")
@@ -195,7 +205,14 @@ class CanvasPort(QGraphicsItem):
         while new_portgrp_num_name in all_portgrp_nums:
             n +=1
             new_portgrp_num_name = 'PortGroup_%i' % n
-            
+        
+        for group in canvas.group_list:
+            if group.group_id == self.m_group_id:
+                group_name = group.group_name
+                break
+        else:
+            return
+        
         port_name_list = []
         for port in canvas.port_list:
             if port.port_id in port_id_list:
@@ -205,9 +222,7 @@ class CanvasPort(QGraphicsItem):
         portgrp_tab = [ group_name, self.m_port_mode ] + port_name_list
         canvas.settings.setValue("CanvasPortGroups/%s" % new_portgrp_num_name, portgrp_tab)
         
-        #canvas.callback(ACTION_SAVE_PORT_GROUP, port_id_list.copy(), (self.m_port_mode, group_name, port_name_list), '')
-        
-        self.parentItem().updatePositions()
+        #self.parentItem().updatePositions()
     
     def connectToHover(self):
         if self.m_hover_item:
