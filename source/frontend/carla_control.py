@@ -59,7 +59,7 @@ class ConnectDialog(QDialog):
 
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
-        # Mke PlainTextEdit background the same color as the window background
+        # Make PlainTextEdit background the same color as the window background
         palette = self.ui.te_reported_hint.palette()
         palette.setColor(QPalette.Base, palette.color(QPalette.Background))
         self.ui.te_reported_hint.setPalette(palette)

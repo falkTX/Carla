@@ -1286,10 +1286,31 @@ public:
                             fShmRtClientControl.writeUShort(event.ctrl.param);
                             fShmRtClientControl.commitWrite();
                         }
+                        else if ((pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) != 0)
+                        {
+                            // VST2's that use banks usually require both a MSB bank message and a LSB bank message. The MSB bank message can just be 0
+                            fShmRtClientControl.writeOpcode(kPluginBridgeRtClientMidiEvent);
+                            fShmRtClientControl.writeUInt(event.time);
+                            fShmRtClientControl.writeByte(0); // port
+                            fShmRtClientControl.writeByte(3); // size
+                            fShmRtClientControl.writeByte(uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT)));
+                            fShmRtClientControl.writeByte(MIDI_CONTROL_BANK_SELECT);
+                            fShmRtClientControl.writeByte(0);
+                            fShmRtClientControl.commitWrite();
+
+                            fShmRtClientControl.writeOpcode(kPluginBridgeRtClientMidiEvent);
+                            fShmRtClientControl.writeUInt(event.time);
+                            fShmRtClientControl.writeByte(0); // port
+                            fShmRtClientControl.writeByte(3); // size
+                            fShmRtClientControl.writeByte(uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT)));
+                            fShmRtClientControl.writeByte(MIDI_CONTROL_BANK_SELECT__LSB);
+                            fShmRtClientControl.writeByte(uint8_t(event.ctrl.param));
+                            fShmRtClientControl.commitWrite();
+                        }
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
-                        if (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
+                        if (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES || pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
                         {
                             fShmRtClientControl.writeOpcode(kPluginBridgeRtClientControlEventMidiProgram);
                             fShmRtClientControl.writeUInt(event.time);

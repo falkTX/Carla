@@ -587,7 +587,7 @@ protected:
 /*!
  * Carla Engine client.
  * Each plugin requires one client from the engine (created via CarlaEngine::addClient()).
- * @note This is a virtual class, some engine types provide custom funtionality.
+ * @note This is a virtual class, some engine types provide custom functionality.
  */
 class CARLA_API CarlaEngineClient
 {
@@ -768,7 +768,7 @@ public:
 
     /*!
      * Initialize/start the engine, using @a clientName.
-     * When the engine is intialized, you need to call idle() at regular intervals.
+     * When the engine is initialized, you need to call idle() at regular intervals.
      */
     virtual bool init(const char* const clientName) = 0;
 
@@ -971,7 +971,7 @@ public:
     const char* getName() const noexcept;
 
     /*!
-     * Get the current engine proccess mode.
+     * Get the current engine process mode.
      */
     EngineProcessMode getProccessMode() const noexcept;
 

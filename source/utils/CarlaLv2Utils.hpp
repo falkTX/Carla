@@ -1926,7 +1926,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                     rdfPort->Types |= LV2_PORT_DATA_MIDI_EVENT;
                 }
                 else
-                    carla_stderr("lv2_rdf_new(\"%s\") - port '%s' is of unkown data type", uri, rdfPort->Name);
+                    carla_stderr("lv2_rdf_new(\"%s\") - port '%s' is of unknown data type", uri, rdfPort->Name);
             }
 
             // --------------------------------------------------------------------------------------------------------

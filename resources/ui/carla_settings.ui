@@ -2076,7 +2076,7 @@
             <item row="2" column="0" colspan="2">
              <widget class="QLabel" name="label_30">
               <property name="text">
-               <string>Note: WINEPREFIX env var is prefered over this fallback</string>
+               <string>Note: WINEPREFIX env var is preferred over this fallback</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignCenter</set>

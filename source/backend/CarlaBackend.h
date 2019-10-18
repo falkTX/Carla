@@ -74,7 +74,7 @@ static const uint MAX_DEFAULT_PARAMETERS = 200;
 
 /*!
  * The "plugin Id" for the global Carla instance.
- * Curently only used for audio peaks.
+ * Currently only used for audio peaks.
  */
 static const uint MAIN_CARLA_PLUGIN_ID = 0xFFFF;
 
@@ -632,7 +632,7 @@ typedef enum {
     PARAMETER_INPUT = 1,
 
     /*!
-     * Ouput parameter.
+     * Output parameter.
      */
     PARAMETER_OUTPUT = 2
 

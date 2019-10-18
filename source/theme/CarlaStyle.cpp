@@ -1355,7 +1355,7 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
         break;
     case CE_Splitter:
     {
-        // Dont draw handle for single pixel splitters
+        // Don't draw handle for single pixel splitters
         if (option->rect.width() > 1 && option->rect.height() > 1) {
             //draw grips
             if (option->state & State_Horizontal) {
@@ -3047,7 +3047,7 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
                     buttonOption.QStyleOption::operator=(*comboBox);
                     buttonOption.rect = rect;
                     buttonOption.state = (comboBox->state & (State_Enabled | State_MouseOver | State_HasFocus))
-                            | State_KeyboardFocusChange; // Allways show hig
+                            | State_KeyboardFocusChange; // Always show hig
 
                     if (sunken) {
                         buttonOption.state |= State_Sunken;

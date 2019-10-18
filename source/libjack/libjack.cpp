@@ -665,7 +665,7 @@ bool CarlaJackAppClient::handleRtData()
 
                 if (! fClients.isEmpty())
                 {
-                    // save tranport for all clients
+                    // save transport for all clients
                     const BridgeTimeInfo& bridgeTimeInfo(fShmRtClientControl.data->timeInfo);
 
                     fServer.playing        = bridgeTimeInfo.playing;
@@ -755,7 +755,7 @@ bool CarlaJackAppClient::handleRtData()
                             // location to start of audio outputs
                             float* const fdataCopyOuts = fdataCopy;
 
-                            // set audio ouputs
+                            // set audio outputs
                             i = 0;
                             for (LinkedList<JackPortState*>::Itenerator it2 = jclient->audioOuts.begin2(); it2.valid(); it2.next())
                             {

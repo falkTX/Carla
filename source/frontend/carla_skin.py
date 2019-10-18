@@ -41,8 +41,8 @@ from widgets.pixmapdial import PixmapDial
 
 # Base is a QFrame (NoFrame, Plain, 0-size lines), with "PluginWidget" as object name.
 # Spacing of the top-most layout must be 1px.
-# Top and bottom margins must be 3px (can be splitted between different qt layouts).
-# Left and right margins must be 6px (can be splitted between different qt layouts).
+# Top and bottom margins must be 3px (can be split between different Qt layouts).
+# Left and right margins must be 6px (can be split between different Qt layouts).
 # If the left or right side has built-in margins, say a transparent png border,
 # those margins must be taken into consideration.
 #
