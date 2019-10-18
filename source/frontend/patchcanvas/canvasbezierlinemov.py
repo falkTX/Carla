@@ -45,16 +45,16 @@ from . import (
 # ------------------------------------------------------------------------------------------------------------
 
 class CanvasBezierLineMov(QGraphicsPathItem):
-    def __init__(self, port_mode, port_type, port_posinport_group, port_group_lenght, parent):
+    def __init__(self, port_mode, port_type, port_posinportgrp, portgrp_lenght, parent):
         QGraphicsPathItem.__init__(self)
         self.setParentItem(parent)
 
         self.m_port_mode = port_mode
         self.m_port_type = port_type
-        self.m_port_posinport_group = port_posinport_group
-        self.m_port_posinport_group_to = port_posinport_group
-        self.m_port_group_lenght = port_group_lenght
-        self.m_port_group_lenght_to = port_group_lenght
+        self.m_port_posinportgrp = port_posinportgrp
+        self.m_port_posinportgrp_to = port_posinportgrp
+        self.m_portgrp_lenght = portgrp_lenght
+        self.m_portgrp_lenght_to = portgrp_lenght
         self.m_ready_to_disc = False
         
         # Port position doesn't change while moving around line
@@ -78,11 +78,11 @@ class CanvasBezierLineMov(QGraphicsPathItem):
         pen.setWidthF(pen.widthF() + 0.00001)
         self.setPen(pen)
     
-    def setPortPosInPortGroupTo(self, port_posinport_group_to):
-        self.m_port_posinport_group_to = port_posinport_group_to
+    def setPortPosInPortGroupTo(self, port_posinportgrp_to):
+        self.m_port_posinportgrp_to = port_posinportgrp_to
         
-    def setPortGroupLenghtTo(self, port_group_lenght):
-        self.m_port_group_lenght_to = port_group_lenght
+    def setPortGroupLenghtTo(self, portgrp_lenght):
+        self.m_portgrp_lenght_to = portgrp_lenght
     
     def isReadyToDisc(self):
         return self.m_ready_to_disc
@@ -93,15 +93,15 @@ class CanvasBezierLineMov(QGraphicsPathItem):
     def toggleReadyToDisc(self):
         self.m_ready_to_disc = not bool(self.m_ready_to_disc)
     
-    def setPortPosInPortGroupTo(self, port_posinport_group_to):
-        self.m_port_posinport_group_to = port_posinport_group_to
+    def setPortPosInPortGroupTo(self, port_posinportgrp_to):
+        self.m_port_posinportgrp_to = port_posinportgrp_to
       
-    def setPortGroupLenghtTo(self, port_group_lenght):
-        self.m_port_group_lenght_to = port_group_lenght
+    def setPortGroupLenghtTo(self, portgrp_lenght):
+        self.m_portgrp_lenght_to = portgrp_lenght
     
-    def setDestinationPortGroupPosition(self, port_pos, port_group_len):
-        self.m_port_posinport_group_to = port_pos
-        self.m_port_group_lenght_to = port_group_len
+    def setDestinationPortGroupPosition(self, port_pos, portgrp_len):
+        self.m_port_posinportgrp_to = port_pos
+        self.m_portgrp_lenght_to = portgrp_len
     
     def updateLinePos(self, scenePos):
         if self.m_ready_to_disc:
@@ -130,25 +130,25 @@ class CanvasBezierLineMov(QGraphicsPathItem):
                 pen = QPen(Qt.black)
         self.setPen(pen)
         
-        phi = 0.75 if self.m_port_group_lenght > 2 else 0.62
-        phito = 0.75 if self.m_port_group_lenght_to > 2 else 0.62
+        phi = 0.75 if self.m_portgrp_lenght > 2 else 0.62
+        phito = 0.75 if self.m_portgrp_lenght_to > 2 else 0.62
                 
         if self.parentItem().type() == CanvasPortType:
-            if self.m_port_group_lenght > 1:
+            if self.m_portgrp_lenght > 1:
                 first_old_y = canvas.theme.port_height * phi
-                last_old_y  = canvas.theme.port_height * (self.m_port_group_lenght - phi)
-                delta = (last_old_y - first_old_y) / (self.m_port_group_lenght -1)
-                old_y = first_old_y + (self.m_port_posinport_group * delta) - (canvas.theme.port_height * self.m_port_posinport_group)
+                last_old_y  = canvas.theme.port_height * (self.m_portgrp_lenght - phi)
+                delta = (last_old_y - first_old_y) / (self.m_portgrp_lenght -1)
+                old_y = first_old_y + (self.m_port_posinportgrp * delta) - (canvas.theme.port_height * self.m_port_posinportgrp)
             else:
                 old_y = canvas.theme.port_height / 2
                 
-            if self.m_port_group_lenght_to == 1:
+            if self.m_portgrp_lenght_to == 1:
                 new_y = 0
             else:
                 first_new_y = canvas.theme.port_height * phito
-                last_new_y  = canvas.theme.port_height * (self.m_port_group_lenght_to - phito)
-                delta = (last_new_y - first_new_y) / (self.m_port_group_lenght_to -1)
-                new_y1 = first_new_y + (self.m_port_posinport_group_to * delta)
+                last_new_y  = canvas.theme.port_height * (self.m_portgrp_lenght_to - phito)
+                delta = (last_new_y - first_new_y) / (self.m_portgrp_lenght_to -1)
+                new_y1 = first_new_y + (self.m_port_posinportgrp_to * delta)
                 new_y = new_y1 - ( (last_new_y - first_new_y) / 2 ) - (canvas.theme.port_height * phito)
                 
                 
@@ -172,20 +172,20 @@ class CanvasBezierLineMov(QGraphicsPathItem):
             
         elif self.parentItem().type() == CanvasPortGroupType:
             first_old_y = canvas.theme.port_height * phi
-            last_old_y  = canvas.theme.port_height * (self.m_port_group_lenght - phi)
-            delta = (last_old_y - first_old_y) / (self.m_port_group_lenght -1)
-            old_y = first_old_y + (self.m_port_posinport_group * delta)
+            last_old_y  = canvas.theme.port_height * (self.m_portgrp_lenght - phi)
+            delta = (last_old_y - first_old_y) / (self.m_portgrp_lenght -1)
+            old_y = first_old_y + (self.m_port_posinportgrp * delta)
             
-            if self.m_port_group_lenght_to == 1:
+            if self.m_portgrp_lenght_to == 1:
                 new_y = 0
-            elif (self.m_port_posinport_group_to == self.m_port_posinport_group
-                    and self.m_port_group_lenght == self.m_port_group_lenght_to):
+            elif (self.m_port_posinportgrp_to == self.m_port_posinportgrp
+                    and self.m_portgrp_lenght == self.m_portgrp_lenght_to):
                 new_y = old_y - ( (last_old_y - first_old_y) / 2 ) - (canvas.theme.port_height * phi)
             else:
                 first_new_y = canvas.theme.port_height * phito
-                last_new_y  = canvas.theme.port_height * (self.m_port_group_lenght_to - phito)
-                delta = (last_new_y - first_new_y) / (self.m_port_group_lenght_to -1)
-                new_y1 = first_new_y + (self.m_port_posinport_group_to * delta)
+                last_new_y  = canvas.theme.port_height * (self.m_portgrp_lenght_to - phito)
+                delta = (last_new_y - first_new_y) / (self.m_portgrp_lenght_to -1)
+                new_y1 = first_new_y + (self.m_port_posinportgrp_to * delta)
                 new_y = new_y1 - ( (last_new_y - first_new_y) / 2 ) - (canvas.theme.port_height * phito)
             
             if self.m_port_mode == PORT_MODE_INPUT:

@@ -94,32 +94,32 @@ class CanvasLine(QGraphicsLineItem):
 
     def updateLinePos(self):
         if self.item1.getPortMode() == PORT_MODE_OUTPUT:
-            port_pos_1, port_group_len_1 = self.item1.getPortGroupPosition()
+            port_pos_1, portgrp_len_1 = self.item1.getPortGroupPosition()
             
-            if port_group_len_1 > 2:
+            if portgrp_len_1 > 2:
                 phi = 0.75
             else:
                 phi = 0.62
             
-            if port_group_len_1 > 1:
+            if portgrp_len_1 > 1:
                 first_old_y = canvas.theme.port_height * phi
-                last_old_y  = canvas.theme.port_height * (port_group_len_1 - phi)
-                delta = (last_old_y - first_old_y) / (port_group_len_1 -1)
+                last_old_y  = canvas.theme.port_height * (portgrp_len_1 - phi)
+                delta = (last_old_y - first_old_y) / (portgrp_len_1 -1)
                 Y1 = first_old_y + (port_pos_1 * delta) - (canvas.theme.port_height * port_pos_1)
             else:
                 Y1 = canvas.theme.port_height / 2
                 
-            port_pos_2, port_group_len_2 = self.item2.getPortGroupPosition()
+            port_pos_2, portgrp_len_2 = self.item2.getPortGroupPosition()
             
-            if port_group_len_2 > 2:
+            if portgrp_len_2 > 2:
                 phi = 0.75
             else:
                 phi = 0.62
             
-            if port_group_len_2 > 1:
+            if portgrp_len_2 > 1:
                 first_old_y = canvas.theme.port_height * phi
-                last_old_y  = canvas.theme.port_height * (port_group_len_2 - phi)
-                delta = (last_old_y - first_old_y) / (port_group_len_2 -1)
+                last_old_y  = canvas.theme.port_height * (portgrp_len_2 - phi)
+                delta = (last_old_y - first_old_y) / (portgrp_len_2 -1)
                 Y2 = first_old_y + (port_pos_2 * delta) - (canvas.theme.port_height * port_pos_2)
             else:
                 Y2 = canvas.theme.port_height / 2

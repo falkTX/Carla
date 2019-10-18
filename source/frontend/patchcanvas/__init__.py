@@ -132,7 +132,7 @@ class Canvas(object):
 
         self.group_list = []
         self.port_list = []
-        self.port_group_list = []
+        self.portgrp_list = []
         self.connection_list = []
         self.animation_list = []
         self.group_plugin_map = {}
@@ -172,14 +172,14 @@ class port_dict_t(object):
         'port_name',
         'port_mode',
         'port_type',
-        'port_group_id',
+        'portgrp_id',
         'is_alternate',
         'widget'
     ]
 
-class port_group_dict_t(object):
+class portgrp_dict_t(object):
     __slots__ = [
-        'port_group_id',
+        'portgrp_id',
         'group_id',
         'port_mode',
         'port_type',

@@ -45,16 +45,16 @@ from . import (
 # ------------------------------------------------------------------------------------------------------------
 
 class CanvasLineMov(QGraphicsLineItem):
-    def __init__(self, port_mode, port_type, port_posinport_group, port_group_lenght, parent):
+    def __init__(self, port_mode, port_type, port_posinportgrp, portgrp_lenght, parent):
         QGraphicsLineItem.__init__(self)
         self.setParentItem(parent)
 
         self.m_port_mode = port_mode
         self.m_port_type = port_type
-        self.m_port_posinport_group    = port_posinport_group
-        self.m_port_posinport_group_to = port_posinport_group
-        self.m_port_group_lenght       = port_group_lenght
-        self.m_port_group_lenght_to    = port_group_lenght
+        self.m_port_posinportgrp    = port_posinportgrp
+        self.m_port_posinportgrp_to = port_posinportgrp
+        self.m_portgrp_lenght       = portgrp_lenght
+        self.m_portgrp_lenght_to    = portgrp_lenght
         self.m_ready_to_disc  = False
         
         # Port position doesn't change while moving around line
@@ -87,9 +87,9 @@ class CanvasLineMov(QGraphicsLineItem):
     def toggleReadyToDisc(self):
         self.m_ready_to_disc = not bool(self.m_ready_to_disc)
     
-    def setDestinationPortGroupPosition(self, port_pos, port_group_len):
-        self.m_port_posinport_group_to = port_pos
-        self.m_port_group_lenght_to = port_group_len
+    def setDestinationPortGroupPosition(self, port_pos, portgrp_len):
+        self.m_port_posinportgrp_to = port_pos
+        self.m_portgrp_lenght_to = portgrp_len
     
     def updateLinePos(self, scenePos):
         if self.m_ready_to_disc:
@@ -118,8 +118,8 @@ class CanvasLineMov(QGraphicsLineItem):
                 pen = QPen(Qt.black)
         self.setPen(pen)
         
-        phi = 0.75 if self.m_port_group_lenght > 2 else 0.62
-        phito = 0.75 if self.m_port_group_lenght_to > 2 else 0.62
+        phi = 0.75 if self.m_portgrp_lenght > 2 else 0.62
+        phito = 0.75 if self.m_portgrp_lenght_to > 2 else 0.62
         
         item_pos = [0, 0]
 
@@ -131,27 +131,27 @@ class CanvasLineMov(QGraphicsLineItem):
             return
         
         if self.parentItem().type() == CanvasPortType:
-            if self.m_port_group_lenght > 1:
+            if self.m_portgrp_lenght > 1:
                 first_old_y = canvas.theme.port_height * phi
-                last_old_y  = canvas.theme.port_height * (self.m_port_group_lenght - phi)
-                delta = (last_old_y - first_old_y) / (self.m_port_group_lenght -1)
-                item_pos[1] = first_old_y + (self.m_port_posinport_group * delta) - (canvas.theme.port_height * self.m_port_posinport_group)
+                last_old_y  = canvas.theme.port_height * (self.m_portgrp_lenght - phi)
+                delta = (last_old_y - first_old_y) / (self.m_portgrp_lenght -1)
+                item_pos[1] = first_old_y + (self.m_port_posinportgrp * delta) - (canvas.theme.port_height * self.m_port_posinportgrp)
             else:
                 item_pos[1] = float(canvas.theme.port_height)/2
         
         elif self.parentItem().type() == CanvasPortGroupType:
             first_old_y = canvas.theme.port_height * phi
-            last_old_y  = canvas.theme.port_height * (self.m_port_group_lenght - phi)
-            delta = (last_old_y - first_old_y) / (self.m_port_group_lenght -1)
-            item_pos[1] = first_old_y + (self.m_port_posinport_group * delta)
+            last_old_y  = canvas.theme.port_height * (self.m_portgrp_lenght - phi)
+            delta = (last_old_y - first_old_y) / (self.m_portgrp_lenght -1)
+            item_pos[1] = first_old_y + (self.m_port_posinportgrp * delta)
             
-        if self.m_port_group_lenght_to == 1:
+        if self.m_portgrp_lenght_to == 1:
             mouse_y_offset = 0
         else:
             first_new_y = canvas.theme.port_height * phito
-            last_new_y  = canvas.theme.port_height * (self.m_port_group_lenght_to - phito)
-            delta = (last_new_y - first_new_y) / (self.m_port_group_lenght_to -1)
-            new_y1 = first_new_y + (self.m_port_posinport_group_to * delta)
+            last_new_y  = canvas.theme.port_height * (self.m_portgrp_lenght_to - phito)
+            delta = (last_new_y - first_new_y) / (self.m_portgrp_lenght_to -1)
+            new_y1 = first_new_y + (self.m_port_posinportgrp_to * delta)
             mouse_y_offset = new_y1 - ( (last_new_y - first_new_y) / 2 ) - (canvas.theme.port_height * phito)
         
         line = QLineF(item_pos[0], item_pos[1], scenePos.x() - self.p_lineX, scenePos.y() - self.p_lineY + mouse_y_offset)
@@ -166,10 +166,10 @@ class CanvasLineMov(QGraphicsLineItem):
         QGraphicsLineItem.paint(self, painter, option, widget)
         painter.restore()
         
-    def setPortPosInPortGroupTo(self, port_posinport_group_to):
-        self.m_port_posinport_group_to = port_posinport_group_to
+    def setPortPosInPortGroupTo(self, port_posinportgrp_to):
+        self.m_port_posinportgrp_to = port_posinportgrp_to
         
-    def setPortGroupLenghtTo(self, port_group_lenght):
-        self.m_port_group_lenght_to = port_group_lenght
+    def setPortGroupLenghtTo(self, portgrp_lenght):
+        self.m_portgrp_lenght_to = portgrp_lenght
 
 # ------------------------------------------------------------------------------------------------------------

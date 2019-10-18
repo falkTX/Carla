@@ -225,7 +225,7 @@ class CanvasBox(QGraphicsItem):
             self.shadow.setOpacity(opacity)
 
     def addPortFromGroup(self, port_id, port_mode, port_type, 
-                         port_name, port_group_id, is_alternate):
+                         port_name, portgrp_id, is_alternate):
         if len(self.m_port_list_ids) == 0:
             if options.auto_hide_groups:
                 if options.eyecandy == EYECANDY_FULL:
@@ -233,7 +233,7 @@ class CanvasBox(QGraphicsItem):
                 self.setVisible(True)
 
         new_widget = CanvasPort(self.m_group_id, port_id, port_name, port_mode, 
-                                port_type, port_group_id, is_alternate, self)
+                                port_type, portgrp_id, is_alternate, self)
 
         port_dict = port_dict_t()
         port_dict.group_id = self.m_group_id
@@ -241,7 +241,7 @@ class CanvasBox(QGraphicsItem):
         port_dict.port_name = port_name
         port_dict.port_mode = port_mode
         port_dict.port_type = port_type
-        port_dict.port_group_id = port_group_id
+        port_dict.portgrp_id = portgrp_id
         port_dict.is_alternate = is_alternate
         port_dict.widget = new_widget
 
@@ -266,8 +266,8 @@ class CanvasBox(QGraphicsItem):
                 else:
                     self.setVisible(False)
     
-    def addPortGroupFromGroup(self, port_group_id, port_mode, port_type, port_id_list):
-        new_widget = CanvasPortGroup(self.m_group_id, port_group_id, port_mode, 
+    def addPortGroupFromGroup(self, portgrp_id, port_mode, port_type, port_id_list):
+        new_widget = CanvasPortGroup(self.m_group_id, portgrp_id, port_mode, 
                                      port_type, port_id_list, self)
         
         return new_widget
@@ -333,7 +333,7 @@ class CanvasBox(QGraphicsItem):
             port_types = [PORT_TYPE_AUDIO_JACK, PORT_TYPE_MIDI_JACK, PORT_TYPE_MIDI_ALSA, PORT_TYPE_PARAMETER]
             last_in_type = last_out_type = PORT_TYPE_NULL
             last_in_pos = last_out_pos = canvas.theme.box_header_height + canvas.theme.box_header_spacing
-            last_of_port_group = True
+            last_of_portgrp = True
             
             for port_type in port_types:
                 for port in port_list:
@@ -341,26 +341,26 @@ class CanvasBox(QGraphicsItem):
                         continue
                     
                     port_pos, pg_len = CanvasGetPortGroupPosition(self.m_group_id,
-                                                port.port_id, port.port_group_id)
-                    first_of_port_group = bool(port_pos == 0)
-                    last_of_port_group = bool(port_pos+1 == pg_len)
+                                                port.port_id, port.portgrp_id)
+                    first_of_portgrp = bool(port_pos == 0)
+                    last_of_portgrp = bool(port_pos+1 == pg_len)
                     
-                    #if port.port_group_id:
-                        #for port_group in canvas.port_group_list:
-                            #if port_group.group_id == self.m_group_id and port.port_id in port_group.port_id_list:
-                                #if port_group.port_id_list[-1] != port.port_id:
-                                    #last_of_port_group = False
+                    #if port.portgrp_id:
+                        #for portgrp in canvas.portgrp_list:
+                            #if portgrp.group_id == self.m_group_id and port.port_id in portgrp.port_id_list:
+                                #if portgrp.port_id_list[-1] != port.port_id:
+                                    #last_of_portgrp = False
                                     #break
                     
                     size = QFontMetrics(self.m_font_port).width(port.port_name)
-                    if port.port_group_id:
+                    if port.portgrp_id:
                         size = 0
                         totsize = QFontMetrics(self.m_font_port).width(port.port_name) + 3
                         # FIXME
-                        for port_group in canvas.port_group_list:
-                            if port_group.port_group_id == port.port_group_id:
-                                port_group_name = CanvasGetPortGroupName(self.m_group_id, port_group.port_id_list)
-                                size = QFontMetrics(self.m_font_port).width(port_group_name) + canvas.theme.port_in_port_group_width
+                        for portgrp in canvas.portgrp_list:
+                            if portgrp.portgrp_id == port.portgrp_id:
+                                portgrp_name = CanvasGetPortGroupName(self.m_group_id, portgrp.port_id_list)
+                                size = QFontMetrics(self.m_font_port).width(portgrp_name) + canvas.theme.port_in_portgrp_width
                                 break
                         size = max(size, totsize)
                     
@@ -372,15 +372,15 @@ class CanvasBox(QGraphicsItem):
                             last_in_type = port.port_type
                         port.widget.setY(last_in_pos)
                         
-                        if port.port_group_id and first_of_port_group:
-                            for port_group in canvas.port_group_list:
-                                if (port_group.group_id == self.m_group_id
-                                        and port_group.port_group_id == port.port_group_id):
-                                    if port_group.widget:
-                                        port_group.widget.setY(last_in_pos)
+                        if port.portgrp_id and first_of_portgrp:
+                            for portgrp in canvas.portgrp_list:
+                                if (portgrp.group_id == self.m_group_id
+                                        and portgrp.portgrp_id == port.portgrp_id):
+                                    if portgrp.widget:
+                                        portgrp.widget.setY(last_in_pos)
                                     break
                         
-                        if last_of_port_group:
+                        if last_of_portgrp:
                             last_in_pos += port_spacing
                         else:
                             last_in_pos += canvas.theme.port_height
@@ -393,15 +393,15 @@ class CanvasBox(QGraphicsItem):
                             last_out_type = port.port_type
                         port.widget.setY(last_out_pos)
                         
-                        if port.port_group_id and first_of_port_group:
-                            for port_group in canvas.port_group_list:
-                                if (port_group.group_id == self.m_group_id
-                                        and port_group.port_group_id == port.port_group_id):
-                                    if port_group.widget:
-                                        port_group.widget.setY(last_out_pos)
+                        if port.portgrp_id and first_of_portgrp:
+                            for portgrp in canvas.portgrp_list:
+                                if (portgrp.group_id == self.m_group_id
+                                        and portgrp.portgrp_id == port.portgrp_id):
+                                    if portgrp.widget:
+                                        portgrp.widget.setY(last_out_pos)
                                     break
                         
-                        if last_of_port_group:
+                        if last_of_portgrp:
                             last_out_pos += port_spacing
                         else:
                             last_out_pos += canvas.theme.port_height
@@ -416,37 +416,37 @@ class CanvasBox(QGraphicsItem):
             # Horizontal ports re-positioning
             inX = canvas.theme.port_offset
             outX = self.p_width - max_out_width - canvas.theme.port_offset - 12
-            out_in_port_groupX = self.p_width - canvas.theme.port_offset - 12 - canvas.theme.port_in_port_group_width
+            out_in_portgrpX = self.p_width - canvas.theme.port_offset - 12 - canvas.theme.port_in_portgrp_width
             
             for port_type in port_types:
                 for port in port_list:
                     if port.port_mode == PORT_MODE_INPUT:
                         port.widget.setX(inX)
-                        if port.port_group_id:
-                            port.widget.setPortWidth(canvas.theme.port_in_port_group_width)
+                        if port.portgrp_id:
+                            port.widget.setPortWidth(canvas.theme.port_in_portgrp_width)
                             
-                            for port_group in canvas.port_group_list:
-                                if (port_group.group_id == self.m_group_id
-                                        and port_group.port_id_list[0] == port.port_id):
-                                    if port_group.widget:
-                                        port_group.widget.setPortGroupWidth(max_in_width)
-                                        port_group.widget.setX(canvas.theme.port_offset +1)
+                            for portgrp in canvas.portgrp_list:
+                                if (portgrp.group_id == self.m_group_id
+                                        and portgrp.port_id_list[0] == port.port_id):
+                                    if portgrp.widget:
+                                        portgrp.widget.setPortGroupWidth(max_in_width)
+                                        portgrp.widget.setX(canvas.theme.port_offset +1)
                                     break
                             
                         else:
                             port.widget.setPortWidth(max_in_width)
 
                     elif port.port_mode == PORT_MODE_OUTPUT:
-                        if port.port_group_id:
-                            port.widget.setX(out_in_port_groupX)
-                            port.widget.setPortWidth(canvas.theme.port_in_port_group_width)
+                        if port.portgrp_id:
+                            port.widget.setX(out_in_portgrpX)
+                            port.widget.setPortWidth(canvas.theme.port_in_portgrp_width)
                             
-                            for port_group in canvas.port_group_list:
-                                if (port_group.group_id == self.m_group_id
-                                        and port_group.port_id_list[0] == port.port_id):
-                                    if port_group.widget:
-                                        port_group.widget.setX(outX)
-                                        port_group.widget.setPortGroupWidth(max_out_width)
+                            for portgrp in canvas.portgrp_list:
+                                if (portgrp.group_id == self.m_group_id
+                                        and portgrp.port_id_list[0] == port.port_id):
+                                    if portgrp.widget:
+                                        portgrp.widget.setX(outX)
+                                        portgrp.widget.setPortGroupWidth(max_out_width)
                                     break
                         else:
                             port.widget.setX(outX)

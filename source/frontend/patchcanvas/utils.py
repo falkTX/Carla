@@ -83,20 +83,20 @@ def CanvasGetPortConnectionList(group_id, port_id):
 
     return conn_list
 
-def CanvasGetPortGroupPosition(group_id, port_id, port_group_id):
-    if port_group_id < 0:
+def CanvasGetPortGroupPosition(group_id, port_id, portgrp_id):
+    if portgrp_id < 0:
         return (0, 1)
     
-    #print('eokfc', group_id, port_id, port_group_id)
-    #for port_group in canvas.port_group_list:
-        #print(port_group.group_id, port_group.port_group_id, port_group.port_id_list)
+    #print('eokfc', group_id, port_id, portgrp_id)
+    #for portgrp in canvas.portgrp_list:
+        #print(portgrp.group_id, portgrp.portgrp_id, portgrp.port_id_list)
     
-    for port_group in canvas.port_group_list:
-        if (port_group.group_id == group_id
-                and port_group.port_group_id == port_group_id):
-            for i in range(len(port_group.port_id_list)):
-                if port_id == port_group.port_id_list[i]:
-                    return (i, len(port_group.port_id_list))
+    for portgrp in canvas.portgrp_list:
+        if (portgrp.group_id == group_id
+                and portgrp.portgrp_id == portgrp_id):
+            for i in range(len(portgrp.port_id_list)):
+                if port_id == portgrp.port_id_list[i]:
+                    return (i, len(portgrp.port_id_list))
     return (0, 1)
 
 def CanvasGetPortGroupName(group_id, ports_ids_list):
@@ -109,139 +109,139 @@ def CanvasGetPortGroupName(group_id, ports_ids_list):
     if len(ports_names) < 2:
         return ''
     
-    port_group_name_ends = ( ' ', '_', '.', '-', '#', ':', 'out', 'in', 'Out',
+    portgrp_name_ends = ( ' ', '_', '.', '-', '#', ':', 'out', 'in', 'Out',
                             'In', 'Output', 'Input', 'output', 'input' )
     
-    # set port_group name
-    port_group_name = ''
+    # set portgrp name
+    portgrp_name = ''
     checkCharacter = True
     
     for c in ports_names[0]:        
         for eachname in ports_names:
-            if not eachname.startswith(port_group_name + c):
+            if not eachname.startswith(portgrp_name + c):
                 checkCharacter = False
                 break
         if not checkCharacter:
             break
-        port_group_name += c
+        portgrp_name += c
     
-    # reduce port_group name until it ends with one of the characters
-    # in port_group_name_ends
+    # reduce portgrp name until it ends with one of the characters
+    # in portgrp_name_ends
     check = False
     while not check:
-        for x in port_group_name_ends:
-            if port_group_name.endswith(x):
+        for x in portgrp_name_ends:
+            if portgrp_name.endswith(x):
                 check = True
                 break
         
-        if len(port_group_name) == 0 or port_group_name in ports_names:
+        if len(portgrp_name) == 0 or portgrp_name in ports_names:
                 check = True
             
         if not check:
-            port_group_name = port_group_name[:-1]
+            portgrp_name = portgrp_name[:-1]
     
-    return port_group_name
+    return portgrp_name
 
-def CanvasGetPortPrintName(group_id, port_id, port_group_id):
-    for port_group in canvas.port_group_list:
-        if (port_group.group_id == group_id
-                and port_group.port_group_id == port_group_id):
-            port_group_name = CanvasGetPortGroupName(group_id,
-                                                     port_group.port_id_list)
+def CanvasGetPortPrintName(group_id, port_id, portgrp_id):
+    for portgrp in canvas.portgrp_list:
+        if (portgrp.group_id == group_id
+                and portgrp.portgrp_id == portgrp_id):
+            portgrp_name = CanvasGetPortGroupName(group_id,
+                                                     portgrp.port_id_list)
             for port in canvas.port_list:
                 if port.group_id == group_id and port.port_id == port_id:
-                    return port.port_name.replace(port_group_name, '', 1)
+                    return port.port_name.replace(portgrp_name, '', 1)
 
-def CanvasGetPortGroupFullName(group_id, port_group_id):
-    for port_group in canvas.port_group_list:
-        if (port_group.group_id == group_id
-                and port_group.port_group_id == port_group_id):
-            group_name = CanvasGetGroupName(port_group.group_id)
+def CanvasGetPortGroupFullName(group_id, portgrp_id):
+    for portgrp in canvas.portgrp_list:
+        if (portgrp.group_id == group_id
+                and portgrp.portgrp_id == portgrp_id):
+            group_name = CanvasGetGroupName(portgrp.group_id)
             
             endofname = ''
-            for port_id in port_group.port_id_list:
+            for port_id in portgrp.port_id_list:
                 endofname += "%s/" % CanvasGetPortPrintName(group_id, port_id,
-                                                     port_group.port_group_id)
-            port_group_name = CanvasGetPortGroupName(group_id, 
-                                                     port_group.port_id_list)
+                                                     portgrp.portgrp_id)
+            portgrp_name = CanvasGetPortGroupName(group_id, 
+                                                     portgrp.port_id_list)
             
-            return "%s:%s %s" % (group_name, port_group_name, endofname[:-1])
+            return "%s:%s %s" % (group_name, portgrp_name, endofname[:-1])
     
     return ""
 
-def CanvasAddPortToPortGroup(group_id, port_id, port_group_id):
-    # returns the port_group_id if port_group is active, else 0
-    for port_group in canvas.port_group_list:
-        if (port_group.group_id == group_id
-                and port_group.port_group_id == port_group_id):
-            if not port_id in port_group.port_id_list:
-                port_group.port_id_list.append(port_id)
+def CanvasAddPortToPortGroup(group_id, port_id, portgrp_id):
+    # returns the portgrp_id if portgrp is active, else 0
+    for portgrp in canvas.portgrp_list:
+        if (portgrp.group_id == group_id
+                and portgrp.portgrp_id == portgrp_id):
+            if not port_id in portgrp.port_id_list:
+                portgrp.port_id_list.append(port_id)
                 
-            if len(port_group.port_id_list) >= 2:
+            if len(portgrp.port_id_list) >= 2:
                 box_widget = None
                 
                 for port in canvas.port_list:
                     if (port.group_id == group_id
-                            and port.port_id in port_group.port_id_list):
-                        port.port_group_id = port_group_id
+                            and port.port_id in portgrp.port_id_list):
+                        port.portgrp_id = portgrp_id
                         if port.widget:
-                            port.widget.setPortGroupId(port_group_id)
+                            port.widget.setPortGroupId(portgrp_id)
                             box_widget = port.widget.parentItem()
                             
-                if box_widget and port_group.widget is None:
-                    port_group.widget = box_widget.addPortGroupFromGroup(
-                            port_group_id, port_group.port_mode, 
-                            port_group.port_type, port_group.port_id_list)
+                if box_widget and portgrp.widget is None:
+                    portgrp.widget = box_widget.addPortGroupFromGroup(
+                            portgrp_id, portgrp.port_mode, 
+                            portgrp.port_type, portgrp.port_id_list)
                     
-                    # Put ports widget ahead the port_group widget
+                    # Put ports widget ahead the portgrp widget
                     for port in canvas.port_list:
                         if (port.group_id == group_id
-                            and port.port_id in port_group.port_id_list):
+                            and port.port_id in portgrp.port_id_list):
                                 if port.widget:
                                     canvas.last_z_value += 1
                                     port.widget.setZValue(canvas.last_z_value)
             else:
-                port_group_id = 0
+                portgrp_id = 0
             
-            return port_group_id
+            return portgrp_id
     return 0
     
-def CanvasRemovePortFromPortGroup(group_id, port_id, port_group_id):
-    for port_group in canvas.port_group_list:
-        if (port_group.group_id == group_id
-            and port_group.port_group_id == port_group_id):
-            # clear the port_group when removing one port from it
+def CanvasRemovePortFromPortGroup(group_id, port_id, portgrp_id):
+    for portgrp in canvas.portgrp_list:
+        if (portgrp.group_id == group_id
+            and portgrp.portgrp_id == portgrp_id):
+            # clear the portgrp when removing one port from it
             for port in canvas.port_list:
                 if (port.group_id == group_id
-                        and port.port_id in port_group.port_id_list):
-                    port.port_group_id = 0
+                        and port.port_id in portgrp.port_id_list):
+                    port.portgrp_id = 0
                     if port.widget:
                         port.widget.setPortGroupId(0)
                 
-            item = port_group.widget
+            item = portgrp.widget
             if item:
                 canvas.scene.removeItem(item)
                 del item
-            port_group.widget = None
+            portgrp.widget = None
             
-            port_group.port_id_list.clear()
+            portgrp.port_id_list.clear()
             
-            #if port_id in port_group.port_id_list:
-                #port_group.port_id_list.remove(port_id)
+            #if port_id in portgrp.port_id_list:
+                #portgrp.port_id_list.remove(port_id)
                 
-            #if len(port_group.port_id_list) < 2:
+            #if len(portgrp.port_id_list) < 2:
                 #for port in canvas.port_list:
                     #if (port.group_id == group_id
-                            #and port.port_id in port_group.port_id_list):
-                        #port.port_group_id = 0
+                            #and port.port_id in portgrp.port_id_list):
+                        #port.portgrp_id = 0
                         #if port.widget:
                             #port.widget.setPortGroupId(0)
                 
-                #item = port_group.widget
+                #item = portgrp.widget
                 #if item:
                     #canvas.scene.removeItem(item)
                     #del item
-                #port_group.widget = None
+                #portgrp.widget = None
             break
 
 def CanvasUpdateSelectedLines():
@@ -261,10 +261,10 @@ def CanvasUpdateSelectedLines():
                 if connection.port_out_id == port.port_id or connection.port_in_id == port.port_id:
                     sel_con_list.append(connection)
     
-    for port_group in canvas.port_group_list:
-        if port_group.widget.isSelected():
+    for portgrp in canvas.portgrp_list:
+        if portgrp.widget.isSelected():
             for connection in canvas.connection_list:
-                if connection.port_out_id in port_group.port_id_list or connection.port_in_id in port_group.port_id_list:
+                if connection.port_out_id in portgrp.port_id_list or connection.port_in_id in portgrp.port_id_list:
                     sel_con_list.append(connection)
                     
     for connection in canvas.connection_list:
