@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <ableton/platforms/asio/AsioService.hpp>
+#include <ableton/platforms/asio/AsioWrapper.hpp>
 #include <ableton/util/Injected.hpp>
 
 namespace ableton
@@ -29,7 +29,7 @@ namespace discovery
 
 inline asio::ip::udp::endpoint multicastEndpoint()
 {
-  return {asio::ip::address::from_string("224.76.78.75"), 20808};
+  return {asio::ip::address_v4::from_string("224.76.78.75"), 20808};
 }
 
 // Type tags for dispatching between unicast and multicast packets

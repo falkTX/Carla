@@ -2,7 +2,7 @@
 // execution_context.hpp
 // ~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -34,7 +34,7 @@ template <typename Service> Service& use_service(execution_context&);
 template <typename Service> Service& use_service(io_context&);
 template <typename Service> void add_service(execution_context&, Service*);
 template <typename Service> bool has_service(execution_context&);
-#endif // !defined(ASIO_NO_DEPRECATED)
+#endif // !defined(GENERATING_DOCUMENTATION)
 
 namespace detail { class service_registry; }
 
@@ -109,13 +109,14 @@ public:
   class id;
   class service;
 
-protected:
+public:
   /// Constructor.
   ASIO_DECL execution_context();
 
   /// Destructor.
   ASIO_DECL ~execution_context();
 
+protected:
   /// Shuts down all services in the context.
   /**
    * This function is implemented as follows:

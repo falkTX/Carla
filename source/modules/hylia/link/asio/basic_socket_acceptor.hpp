@@ -2,7 +2,7 @@
 // basic_socket_acceptor.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -16,18 +16,41 @@
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
-#include "asio/basic_io_object.hpp"
 #include "asio/basic_socket.hpp"
 #include "asio/detail/handler_type_requirements.hpp"
+#include "asio/detail/io_object_impl.hpp"
+#include "asio/detail/non_const_lvalue.hpp"
 #include "asio/detail/throw_error.hpp"
 #include "asio/detail/type_traits.hpp"
 #include "asio/error.hpp"
-#include "asio/socket_acceptor_service.hpp"
+#include "asio/execution_context.hpp"
+#include "asio/executor.hpp"
 #include "asio/socket_base.hpp"
+
+#if defined(ASIO_WINDOWS_RUNTIME)
+# include "asio/detail/null_socket_service.hpp"
+#elif defined(ASIO_HAS_IOCP)
+# include "asio/detail/win_iocp_socket_service.hpp"
+#else
+# include "asio/detail/reactive_socket_service.hpp"
+#endif
+
+#if defined(ASIO_HAS_MOVE)
+# include <utility>
+#endif // defined(ASIO_HAS_MOVE)
 
 #include "asio/detail/push_options.hpp"
 
 namespace asio {
+
+#if !defined(ASIO_BASIC_SOCKET_ACCEPTOR_FWD_DECL)
+#define ASIO_BASIC_SOCKET_ACCEPTOR_FWD_DECL
+
+// Forward declaration with defaulted arguments.
+template <typename Protocol, typename Executor = executor>
+class basic_socket_acceptor;
+
+#endif // !defined(ASIO_BASIC_SOCKET_ACCEPTOR_FWD_DECL)
 
 /// Provides the ability to accept new connections.
 /**
@@ -41,7 +64,7 @@ namespace asio {
  * @par Example
  * Opening a socket acceptor with the SO_REUSEADDR option enabled:
  * @code
- * asio::ip::tcp::acceptor acceptor(io_context);
+ * asio::ip::tcp::acceptor acceptor(my_context);
  * asio::ip::tcp::endpoint endpoint(asio::ip::tcp::v4(), port);
  * acceptor.open(endpoint.protocol());
  * acceptor.set_option(asio::ip::tcp::acceptor::reuse_address(true));
@@ -49,15 +72,27 @@ namespace asio {
  * acceptor.listen();
  * @endcode
  */
-template <typename Protocol,
-    typename SocketAcceptorService = socket_acceptor_service<Protocol> >
+template <typename Protocol, typename Executor>
 class basic_socket_acceptor
-  : public basic_io_object<SocketAcceptorService>,
-    public socket_base
+  : public socket_base
 {
 public:
+  /// The type of the executor associated with the object.
+  typedef Executor executor_type;
+
   /// The native representation of an acceptor.
-  typedef typename SocketAcceptorService::native_handle_type native_handle_type;
+#if defined(GENERATING_DOCUMENTATION)
+  typedef implementation_defined native_handle_type;
+#elif defined(ASIO_WINDOWS_RUNTIME)
+  typedef typename detail::null_socket_service<
+    Protocol>::native_handle_type native_handle_type;
+#elif defined(ASIO_HAS_IOCP)
+  typedef typename detail::win_iocp_socket_service<
+    Protocol>::native_handle_type native_handle_type;
+#else
+  typedef typename detail::reactive_socket_service<
+    Protocol>::native_handle_type native_handle_type;
+#endif
 
   /// The protocol type.
   typedef Protocol protocol_type;
@@ -71,12 +106,31 @@ public:
    * connections. The open() function must be called before the acceptor can
    * accept new socket connections.
    *
-   * @param io_context The io_context object that the acceptor will use to
+   * @param ex The I/O executor that the acceptor will use, by default, to
    * dispatch handlers for any asynchronous operations performed on the
    * acceptor.
    */
-  explicit basic_socket_acceptor(asio::io_context& io_context)
-    : basic_io_object<SocketAcceptorService>(io_context)
+  explicit basic_socket_acceptor(const executor_type& ex)
+    : impl_(ex)
+  {
+  }
+
+  /// Construct an acceptor without opening it.
+  /**
+   * This constructor creates an acceptor without opening it to listen for new
+   * connections. The open() function must be called before the acceptor can
+   * accept new socket connections.
+   *
+   * @param context An execution context which provides the I/O executor that
+   * the acceptor will use, by default, to dispatch handlers for any
+   * asynchronous operations performed on the acceptor.
+   */
+  template <typename ExecutionContext>
+  explicit basic_socket_acceptor(ExecutionContext& context,
+      typename enable_if<
+        is_convertible<ExecutionContext&, execution_context&>::value
+      >::type* = 0)
+    : impl_(context)
   {
   }
 
@@ -84,7 +138,7 @@ public:
   /**
    * This constructor creates an acceptor and automatically opens it.
    *
-   * @param io_context The io_context object that the acceptor will use to
+   * @param ex The I/O executor that the acceptor will use, by default, to
    * dispatch handlers for any asynchronous operations performed on the
    * acceptor.
    *
@@ -92,12 +146,36 @@ public:
    *
    * @throws asio::system_error Thrown on failure.
    */
-  basic_socket_acceptor(asio::io_context& io_context,
-      const protocol_type& protocol)
-    : basic_io_object<SocketAcceptorService>(io_context)
+  basic_socket_acceptor(const executor_type& ex, const protocol_type& protocol)
+    : impl_(ex)
   {
     asio::error_code ec;
-    this->get_service().open(this->get_implementation(), protocol, ec);
+    impl_.get_service().open(impl_.get_implementation(), protocol, ec);
+    asio::detail::throw_error(ec, "open");
+  }
+
+  /// Construct an open acceptor.
+  /**
+   * This constructor creates an acceptor and automatically opens it.
+   *
+   * @param context An execution context which provides the I/O executor that
+   * the acceptor will use, by default, to dispatch handlers for any
+   * asynchronous operations performed on the acceptor.
+   *
+   * @param protocol An object specifying protocol parameters to be used.
+   *
+   * @throws asio::system_error Thrown on failure.
+   */
+  template <typename ExecutionContext>
+  basic_socket_acceptor(ExecutionContext& context,
+      const protocol_type& protocol,
+      typename enable_if<
+        is_convertible<ExecutionContext&, execution_context&>::value
+      >::type* = 0)
+    : impl_(context)
+  {
+    asio::error_code ec;
+    impl_.get_service().open(impl_.get_implementation(), protocol, ec);
     asio::detail::throw_error(ec, "open");
   }
 
@@ -106,7 +184,7 @@ public:
    * This constructor creates an acceptor and automatically opens it to listen
    * for new connections on the specified endpoint.
    *
-   * @param io_context The io_context object that the acceptor will use to
+   * @param ex The I/O executor that the acceptor will use, by default, to
    * dispatch handlers for any asynchronous operations performed on the
    * acceptor.
    *
@@ -120,32 +198,84 @@ public:
    *
    * @note This constructor is equivalent to the following code:
    * @code
-   * basic_socket_acceptor<Protocol> acceptor(io_context);
+   * basic_socket_acceptor<Protocol> acceptor(my_context);
    * acceptor.open(endpoint.protocol());
    * if (reuse_addr)
    *   acceptor.set_option(socket_base::reuse_address(true));
    * acceptor.bind(endpoint);
-   * acceptor.listen(listen_backlog);
+   * acceptor.listen();
    * @endcode
    */
-  basic_socket_acceptor(asio::io_context& io_context,
+  basic_socket_acceptor(const executor_type& ex,
       const endpoint_type& endpoint, bool reuse_addr = true)
-    : basic_io_object<SocketAcceptorService>(io_context)
+    : impl_(ex)
   {
     asio::error_code ec;
     const protocol_type protocol = endpoint.protocol();
-    this->get_service().open(this->get_implementation(), protocol, ec);
+    impl_.get_service().open(impl_.get_implementation(), protocol, ec);
     asio::detail::throw_error(ec, "open");
     if (reuse_addr)
     {
-      this->get_service().set_option(this->get_implementation(),
+      impl_.get_service().set_option(impl_.get_implementation(),
           socket_base::reuse_address(true), ec);
       asio::detail::throw_error(ec, "set_option");
     }
-    this->get_service().bind(this->get_implementation(), endpoint, ec);
+    impl_.get_service().bind(impl_.get_implementation(), endpoint, ec);
     asio::detail::throw_error(ec, "bind");
-    this->get_service().listen(this->get_implementation(),
-        socket_base::max_connections, ec);
+    impl_.get_service().listen(impl_.get_implementation(),
+        socket_base::max_listen_connections, ec);
+    asio::detail::throw_error(ec, "listen");
+  }
+
+  /// Construct an acceptor opened on the given endpoint.
+  /**
+   * This constructor creates an acceptor and automatically opens it to listen
+   * for new connections on the specified endpoint.
+   *
+   * @param context An execution context which provides the I/O executor that
+   * the acceptor will use, by default, to dispatch handlers for any
+   * asynchronous operations performed on the acceptor.
+   *
+   * @param endpoint An endpoint on the local machine on which the acceptor
+   * will listen for new connections.
+   *
+   * @param reuse_addr Whether the constructor should set the socket option
+   * socket_base::reuse_address.
+   *
+   * @throws asio::system_error Thrown on failure.
+   *
+   * @note This constructor is equivalent to the following code:
+   * @code
+   * basic_socket_acceptor<Protocol> acceptor(my_context);
+   * acceptor.open(endpoint.protocol());
+   * if (reuse_addr)
+   *   acceptor.set_option(socket_base::reuse_address(true));
+   * acceptor.bind(endpoint);
+   * acceptor.listen();
+   * @endcode
+   */
+  template <typename ExecutionContext>
+  basic_socket_acceptor(ExecutionContext& context,
+      const endpoint_type& endpoint, bool reuse_addr = true,
+      typename enable_if<
+        is_convertible<ExecutionContext&, execution_context&>::value
+      >::type* = 0)
+    : impl_(context)
+  {
+    asio::error_code ec;
+    const protocol_type protocol = endpoint.protocol();
+    impl_.get_service().open(impl_.get_implementation(), protocol, ec);
+    asio::detail::throw_error(ec, "open");
+    if (reuse_addr)
+    {
+      impl_.get_service().set_option(impl_.get_implementation(),
+          socket_base::reuse_address(true), ec);
+      asio::detail::throw_error(ec, "set_option");
+    }
+    impl_.get_service().bind(impl_.get_implementation(), endpoint, ec);
+    asio::detail::throw_error(ec, "bind");
+    impl_.get_service().listen(impl_.get_implementation(),
+        socket_base::max_listen_connections, ec);
     asio::detail::throw_error(ec, "listen");
   }
 
@@ -154,7 +284,7 @@ public:
    * This constructor creates an acceptor object to hold an existing native
    * acceptor.
    *
-   * @param io_context The io_context object that the acceptor will use to
+   * @param ex The I/O executor that the acceptor will use, by default, to
    * dispatch handlers for any asynchronous operations performed on the
    * acceptor.
    *
@@ -164,12 +294,41 @@ public:
    *
    * @throws asio::system_error Thrown on failure.
    */
-  basic_socket_acceptor(asio::io_context& io_context,
+  basic_socket_acceptor(const executor_type& ex,
       const protocol_type& protocol, const native_handle_type& native_acceptor)
-    : basic_io_object<SocketAcceptorService>(io_context)
+    : impl_(ex)
   {
     asio::error_code ec;
-    this->get_service().assign(this->get_implementation(),
+    impl_.get_service().assign(impl_.get_implementation(),
+        protocol, native_acceptor, ec);
+    asio::detail::throw_error(ec, "assign");
+  }
+
+  /// Construct a basic_socket_acceptor on an existing native acceptor.
+  /**
+   * This constructor creates an acceptor object to hold an existing native
+   * acceptor.
+   *
+   * @param context An execution context which provides the I/O executor that
+   * the acceptor will use, by default, to dispatch handlers for any
+   * asynchronous operations performed on the acceptor.
+   *
+   * @param protocol An object specifying protocol parameters to be used.
+   *
+   * @param native_acceptor A native acceptor.
+   *
+   * @throws asio::system_error Thrown on failure.
+   */
+  template <typename ExecutionContext>
+  basic_socket_acceptor(ExecutionContext& context,
+      const protocol_type& protocol, const native_handle_type& native_acceptor,
+      typename enable_if<
+        is_convertible<ExecutionContext&, execution_context&>::value
+      >::type* = 0)
+    : impl_(context)
+  {
+    asio::error_code ec;
+    impl_.get_service().assign(impl_.get_implementation(),
         protocol, native_acceptor, ec);
     asio::detail::throw_error(ec, "assign");
   }
@@ -183,11 +342,11 @@ public:
    * will occur.
    *
    * @note Following the move, the moved-from object is in the same state as if
-   * constructed using the @c basic_socket_acceptor(io_context&) constructor.
+   * constructed using the @c basic_socket_acceptor(const executor_type&)
+   * constructor.
    */
   basic_socket_acceptor(basic_socket_acceptor&& other)
-    : basic_io_object<SocketAcceptorService>(
-        ASIO_MOVE_CAST(basic_socket_acceptor)(other))
+    : impl_(std::move(other.impl_))
   {
   }
 
@@ -199,17 +358,17 @@ public:
    * will occur.
    *
    * @note Following the move, the moved-from object is in the same state as if
-   * constructed using the @c basic_socket_acceptor(io_context&) constructor.
+   * constructed using the @c basic_socket_acceptor(const executor_type&)
+   * constructor.
    */
   basic_socket_acceptor& operator=(basic_socket_acceptor&& other)
   {
-    basic_io_object<SocketAcceptorService>::operator=(
-        ASIO_MOVE_CAST(basic_socket_acceptor)(other));
+    impl_ = std::move(other.impl_);
     return *this;
   }
 
   // All socket acceptors have access to each other's implementations.
-  template <typename Protocol1, typename SocketAcceptorService1>
+  template <typename Protocol1, typename Executor1>
   friend class basic_socket_acceptor;
 
   /// Move-construct a basic_socket_acceptor from an acceptor of another
@@ -221,17 +380,17 @@ public:
    * will occur.
    *
    * @note Following the move, the moved-from object is in the same state as if
-   * constructed using the @c basic_socket(io_context&) constructor.
+   * constructed using the @c basic_socket_acceptor(const executor_type&)
+   * constructor.
    */
-  template <typename Protocol1, typename SocketAcceptorService1>
-  basic_socket_acceptor(
-      basic_socket_acceptor<Protocol1, SocketAcceptorService1>&& other,
-      typename enable_if<is_convertible<Protocol1, Protocol>::value>::type* = 0)
-    : basic_io_object<SocketAcceptorService>(
-        other.get_service().get_io_context())
+  template <typename Protocol1, typename Executor1>
+  basic_socket_acceptor(basic_socket_acceptor<Protocol1, Executor1>&& other,
+      typename enable_if<
+        is_convertible<Protocol1, Protocol>::value
+          && is_convertible<Executor1, Executor>::value
+      >::type* = 0)
+    : impl_(std::move(other.impl_))
   {
-    this->get_service().template converting_move_construct<Protocol1>(
-        this->get_implementation(), other.get_implementation());
   }
 
   /// Move-assign a basic_socket_acceptor from an acceptor of another protocol
@@ -243,20 +402,37 @@ public:
    * will occur.
    *
    * @note Following the move, the moved-from object is in the same state as if
-   * constructed using the @c basic_socket(io_context&) constructor.
+   * constructed using the @c basic_socket_acceptor(const executor_type&)
+   * constructor.
    */
-  template <typename Protocol1, typename SocketAcceptorService1>
-  typename enable_if<is_convertible<Protocol1, Protocol>::value,
-      basic_socket_acceptor>::type& operator=(
-        basic_socket_acceptor<Protocol1, SocketAcceptorService1>&& other)
+  template <typename Protocol1, typename Executor1>
+  typename enable_if<
+    is_convertible<Protocol1, Protocol>::value
+      && is_convertible<Executor1, Executor>::value,
+    basic_socket_acceptor&
+  >::type operator=(basic_socket_acceptor<Protocol1, Executor1>&& other)
   {
-    basic_socket_acceptor tmp(ASIO_MOVE_CAST2(basic_socket_acceptor<
-            Protocol1, SocketAcceptorService1>)(other));
-    basic_io_object<SocketAcceptorService>::operator=(
-        ASIO_MOVE_CAST(basic_socket_acceptor)(tmp));
+    basic_socket_acceptor tmp(std::move(other));
+    impl_ = std::move(tmp.impl_);
     return *this;
   }
 #endif // defined(ASIO_HAS_MOVE) || defined(GENERATING_DOCUMENTATION)
+
+  /// Destroys the acceptor.
+  /**
+   * This function destroys the acceptor, cancelling any outstanding
+   * asynchronous operations associated with the acceptor as if by calling
+   * @c cancel.
+   */
+  ~basic_socket_acceptor()
+  {
+  }
+
+  /// Get the executor associated with the object.
+  executor_type get_executor() ASIO_NOEXCEPT
+  {
+    return impl_.get_executor();
+  }
 
   /// Open the acceptor using the specified protocol.
   /**
@@ -269,14 +445,14 @@ public:
    *
    * @par Example
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * acceptor.open(asio::ip::tcp::v4());
    * @endcode
    */
   void open(const protocol_type& protocol = protocol_type())
   {
     asio::error_code ec;
-    this->get_service().open(this->get_implementation(), protocol, ec);
+    impl_.get_service().open(impl_.get_implementation(), protocol, ec);
     asio::detail::throw_error(ec, "open");
   }
 
@@ -291,7 +467,7 @@ public:
    *
    * @par Example
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * asio::error_code ec;
    * acceptor.open(asio::ip::tcp::v4(), ec);
    * if (ec)
@@ -300,10 +476,11 @@ public:
    * }
    * @endcode
    */
-  asio::error_code open(const protocol_type& protocol,
+  ASIO_SYNC_OP_VOID open(const protocol_type& protocol,
       asio::error_code& ec)
   {
-    return this->get_service().open(this->get_implementation(), protocol, ec);
+    impl_.get_service().open(impl_.get_implementation(), protocol, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Assigns an existing native acceptor to the acceptor.
@@ -320,7 +497,7 @@ public:
       const native_handle_type& native_acceptor)
   {
     asio::error_code ec;
-    this->get_service().assign(this->get_implementation(),
+    impl_.get_service().assign(impl_.get_implementation(),
         protocol, native_acceptor, ec);
     asio::detail::throw_error(ec, "assign");
   }
@@ -335,17 +512,18 @@ public:
    *
    * @param ec Set to indicate what error occurred, if any.
    */
-  asio::error_code assign(const protocol_type& protocol,
+  ASIO_SYNC_OP_VOID assign(const protocol_type& protocol,
       const native_handle_type& native_acceptor, asio::error_code& ec)
   {
-    return this->get_service().assign(this->get_implementation(),
+    impl_.get_service().assign(impl_.get_implementation(),
         protocol, native_acceptor, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Determine whether the acceptor is open.
   bool is_open() const
   {
-    return this->get_service().is_open(this->get_implementation());
+    return impl_.get_service().is_open(impl_.get_implementation());
   }
 
   /// Bind the acceptor to the given local endpoint.
@@ -360,7 +538,7 @@ public:
    *
    * @par Example
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * asio::ip::tcp::endpoint endpoint(asio::ip::tcp::v4(), 12345);
    * acceptor.open(endpoint.protocol());
    * acceptor.bind(endpoint);
@@ -369,7 +547,7 @@ public:
   void bind(const endpoint_type& endpoint)
   {
     asio::error_code ec;
-    this->get_service().bind(this->get_implementation(), endpoint, ec);
+    impl_.get_service().bind(impl_.get_implementation(), endpoint, ec);
     asio::detail::throw_error(ec, "bind");
   }
 
@@ -385,7 +563,7 @@ public:
    *
    * @par Example
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * asio::ip::tcp::endpoint endpoint(asio::ip::tcp::v4(), 12345);
    * acceptor.open(endpoint.protocol());
    * asio::error_code ec;
@@ -396,10 +574,11 @@ public:
    * }
    * @endcode
    */
-  asio::error_code bind(const endpoint_type& endpoint,
+  ASIO_SYNC_OP_VOID bind(const endpoint_type& endpoint,
       asio::error_code& ec)
   {
-    return this->get_service().bind(this->get_implementation(), endpoint, ec);
+    impl_.get_service().bind(impl_.get_implementation(), endpoint, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Place the acceptor into the state where it will listen for new
@@ -412,10 +591,10 @@ public:
    *
    * @throws asio::system_error Thrown on failure.
    */
-  void listen(int backlog = socket_base::max_connections)
+  void listen(int backlog = socket_base::max_listen_connections)
   {
     asio::error_code ec;
-    this->get_service().listen(this->get_implementation(), backlog, ec);
+    impl_.get_service().listen(impl_.get_implementation(), backlog, ec);
     asio::detail::throw_error(ec, "listen");
   }
 
@@ -431,19 +610,20 @@ public:
    *
    * @par Example
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * asio::error_code ec;
-   * acceptor.listen(asio::socket_base::max_connections, ec);
+   * acceptor.listen(asio::socket_base::max_listen_connections, ec);
    * if (ec)
    * {
    *   // An error occurred.
    * }
    * @endcode
    */
-  asio::error_code listen(int backlog, asio::error_code& ec)
+  ASIO_SYNC_OP_VOID listen(int backlog, asio::error_code& ec)
   {
-    return this->get_service().listen(this->get_implementation(), backlog, ec);
+    impl_.get_service().listen(impl_.get_implementation(), backlog, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Close the acceptor.
@@ -459,7 +639,7 @@ public:
   void close()
   {
     asio::error_code ec;
-    this->get_service().close(this->get_implementation(), ec);
+    impl_.get_service().close(impl_.get_implementation(), ec);
     asio::detail::throw_error(ec, "close");
   }
 
@@ -475,7 +655,7 @@ public:
    *
    * @par Example
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * asio::error_code ec;
    * acceptor.close(ec);
@@ -485,9 +665,62 @@ public:
    * }
    * @endcode
    */
-  asio::error_code close(asio::error_code& ec)
+  ASIO_SYNC_OP_VOID close(asio::error_code& ec)
   {
-    return this->get_service().close(this->get_implementation(), ec);
+    impl_.get_service().close(impl_.get_implementation(), ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
+  }
+
+  /// Release ownership of the underlying native acceptor.
+  /**
+   * This function causes all outstanding asynchronous accept operations to
+   * finish immediately, and the handlers for cancelled operations will be
+   * passed the asio::error::operation_aborted error. Ownership of the
+   * native acceptor is then transferred to the caller.
+   *
+   * @throws asio::system_error Thrown on failure.
+   *
+   * @note This function is unsupported on Windows versions prior to Windows
+   * 8.1, and will fail with asio::error::operation_not_supported on
+   * these platforms.
+   */
+#if defined(ASIO_MSVC) && (ASIO_MSVC >= 1400) \
+  && (!defined(_WIN32_WINNT) || _WIN32_WINNT < 0x0603)
+  __declspec(deprecated("This function always fails with "
+        "operation_not_supported when used on Windows versions "
+        "prior to Windows 8.1."))
+#endif
+  native_handle_type release()
+  {
+    asio::error_code ec;
+    native_handle_type s = impl_.get_service().release(
+        impl_.get_implementation(), ec);
+    asio::detail::throw_error(ec, "release");
+    return s;
+  }
+
+  /// Release ownership of the underlying native acceptor.
+  /**
+   * This function causes all outstanding asynchronous accept operations to
+   * finish immediately, and the handlers for cancelled operations will be
+   * passed the asio::error::operation_aborted error. Ownership of the
+   * native acceptor is then transferred to the caller.
+   *
+   * @param ec Set to indicate what error occurred, if any.
+   *
+   * @note This function is unsupported on Windows versions prior to Windows
+   * 8.1, and will fail with asio::error::operation_not_supported on
+   * these platforms.
+   */
+#if defined(ASIO_MSVC) && (ASIO_MSVC >= 1400) \
+  && (!defined(_WIN32_WINNT) || _WIN32_WINNT < 0x0603)
+  __declspec(deprecated("This function always fails with "
+        "operation_not_supported when used on Windows versions "
+        "prior to Windows 8.1."))
+#endif
+  native_handle_type release(asio::error_code& ec)
+  {
+    return impl_.get_service().release(impl_.get_implementation(), ec);
   }
 
   /// Get the native acceptor representation.
@@ -498,7 +731,7 @@ public:
    */
   native_handle_type native_handle()
   {
-    return this->get_service().native_handle(this->get_implementation());
+    return impl_.get_service().native_handle(impl_.get_implementation());
   }
 
   /// Cancel all asynchronous operations associated with the acceptor.
@@ -512,7 +745,7 @@ public:
   void cancel()
   {
     asio::error_code ec;
-    this->get_service().cancel(this->get_implementation(), ec);
+    impl_.get_service().cancel(impl_.get_implementation(), ec);
     asio::detail::throw_error(ec, "cancel");
   }
 
@@ -524,9 +757,10 @@ public:
    *
    * @param ec Set to indicate what error occurred, if any.
    */
-  asio::error_code cancel(asio::error_code& ec)
+  ASIO_SYNC_OP_VOID cancel(asio::error_code& ec)
   {
-    return this->get_service().cancel(this->get_implementation(), ec);
+    impl_.get_service().cancel(impl_.get_implementation(), ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Set an option on the acceptor.
@@ -544,7 +778,7 @@ public:
    * @par Example
    * Setting the SOL_SOCKET/SO_REUSEADDR option:
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * asio::ip::tcp::acceptor::reuse_address option(true);
    * acceptor.set_option(option);
@@ -554,7 +788,7 @@ public:
   void set_option(const SettableSocketOption& option)
   {
     asio::error_code ec;
-    this->get_service().set_option(this->get_implementation(), option, ec);
+    impl_.get_service().set_option(impl_.get_implementation(), option, ec);
     asio::detail::throw_error(ec, "set_option");
   }
 
@@ -573,7 +807,7 @@ public:
    * @par Example
    * Setting the SOL_SOCKET/SO_REUSEADDR option:
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * asio::ip::tcp::acceptor::reuse_address option(true);
    * asio::error_code ec;
@@ -585,11 +819,11 @@ public:
    * @endcode
    */
   template <typename SettableSocketOption>
-  asio::error_code set_option(const SettableSocketOption& option,
+  ASIO_SYNC_OP_VOID set_option(const SettableSocketOption& option,
       asio::error_code& ec)
   {
-    return this->get_service().set_option(
-        this->get_implementation(), option, ec);
+    impl_.get_service().set_option(impl_.get_implementation(), option, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Get an option from the acceptor.
@@ -607,7 +841,7 @@ public:
    * @par Example
    * Getting the value of the SOL_SOCKET/SO_REUSEADDR option:
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * asio::ip::tcp::acceptor::reuse_address option;
    * acceptor.get_option(option);
@@ -615,10 +849,10 @@ public:
    * @endcode
    */
   template <typename GettableSocketOption>
-  void get_option(GettableSocketOption& option)
+  void get_option(GettableSocketOption& option) const
   {
     asio::error_code ec;
-    this->get_service().get_option(this->get_implementation(), option, ec);
+    impl_.get_service().get_option(impl_.get_implementation(), option, ec);
     asio::detail::throw_error(ec, "get_option");
   }
 
@@ -637,7 +871,7 @@ public:
    * @par Example
    * Getting the value of the SOL_SOCKET/SO_REUSEADDR option:
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * asio::ip::tcp::acceptor::reuse_address option;
    * asio::error_code ec;
@@ -650,11 +884,11 @@ public:
    * @endcode
    */
   template <typename GettableSocketOption>
-  asio::error_code get_option(GettableSocketOption& option,
-      asio::error_code& ec)
+  ASIO_SYNC_OP_VOID get_option(GettableSocketOption& option,
+      asio::error_code& ec) const
   {
-    return this->get_service().get_option(
-        this->get_implementation(), option, ec);
+    impl_.get_service().get_option(impl_.get_implementation(), option, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Perform an IO control command on the acceptor.
@@ -671,7 +905,7 @@ public:
    * @par Example
    * Getting the number of bytes ready to read:
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * asio::ip::tcp::acceptor::non_blocking_io command(true);
    * socket.io_control(command);
@@ -681,7 +915,7 @@ public:
   void io_control(IoControlCommand& command)
   {
     asio::error_code ec;
-    this->get_service().io_control(this->get_implementation(), command, ec);
+    impl_.get_service().io_control(impl_.get_implementation(), command, ec);
     asio::detail::throw_error(ec, "io_control");
   }
 
@@ -699,7 +933,7 @@ public:
    * @par Example
    * Getting the number of bytes ready to read:
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * asio::ip::tcp::acceptor::non_blocking_io command(true);
    * asio::error_code ec;
@@ -711,11 +945,11 @@ public:
    * @endcode
    */
   template <typename IoControlCommand>
-  asio::error_code io_control(IoControlCommand& command,
+  ASIO_SYNC_OP_VOID io_control(IoControlCommand& command,
       asio::error_code& ec)
   {
-    return this->get_service().io_control(
-        this->get_implementation(), command, ec);
+    impl_.get_service().io_control(impl_.get_implementation(), command, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Gets the non-blocking mode of the acceptor.
@@ -731,7 +965,7 @@ public:
    */
   bool non_blocking() const
   {
-    return this->get_service().non_blocking(this->get_implementation());
+    return impl_.get_service().non_blocking(impl_.get_implementation());
   }
 
   /// Sets the non-blocking mode of the acceptor.
@@ -750,7 +984,7 @@ public:
   void non_blocking(bool mode)
   {
     asio::error_code ec;
-    this->get_service().non_blocking(this->get_implementation(), mode, ec);
+    impl_.get_service().non_blocking(impl_.get_implementation(), mode, ec);
     asio::detail::throw_error(ec, "non_blocking");
   }
 
@@ -767,11 +1001,11 @@ public:
    * operations. Asynchronous operations will never fail with the error
    * asio::error::would_block.
    */
-  asio::error_code non_blocking(
+  ASIO_SYNC_OP_VOID non_blocking(
       bool mode, asio::error_code& ec)
   {
-    return this->get_service().non_blocking(
-        this->get_implementation(), mode, ec);
+    impl_.get_service().non_blocking(impl_.get_implementation(), mode, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Gets the non-blocking mode of the native acceptor implementation.
@@ -790,7 +1024,7 @@ public:
    */
   bool native_non_blocking() const
   {
-    return this->get_service().native_non_blocking(this->get_implementation());
+    return impl_.get_service().native_non_blocking(impl_.get_implementation());
   }
 
   /// Sets the non-blocking mode of the native acceptor implementation.
@@ -811,8 +1045,8 @@ public:
   void native_non_blocking(bool mode)
   {
     asio::error_code ec;
-    this->get_service().native_non_blocking(
-        this->get_implementation(), mode, ec);
+    impl_.get_service().native_non_blocking(
+        impl_.get_implementation(), mode, ec);
     asio::detail::throw_error(ec, "native_non_blocking");
   }
 
@@ -831,11 +1065,12 @@ public:
    * function fails with asio::error::invalid_argument, as the
    * combination does not make sense.
    */
-  asio::error_code native_non_blocking(
+  ASIO_SYNC_OP_VOID native_non_blocking(
       bool mode, asio::error_code& ec)
   {
-    return this->get_service().native_non_blocking(
-        this->get_implementation(), mode, ec);
+    impl_.get_service().native_non_blocking(
+        impl_.get_implementation(), mode, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Get the local endpoint of the acceptor.
@@ -848,7 +1083,7 @@ public:
    *
    * @par Example
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * asio::ip::tcp::endpoint endpoint = acceptor.local_endpoint();
    * @endcode
@@ -856,8 +1091,8 @@ public:
   endpoint_type local_endpoint() const
   {
     asio::error_code ec;
-    endpoint_type ep = this->get_service().local_endpoint(
-        this->get_implementation(), ec);
+    endpoint_type ep = impl_.get_service().local_endpoint(
+        impl_.get_implementation(), ec);
     asio::detail::throw_error(ec, "local_endpoint");
     return ep;
   }
@@ -874,7 +1109,7 @@ public:
    *
    * @par Example
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * asio::error_code ec;
    * asio::ip::tcp::endpoint endpoint = acceptor.local_endpoint(ec);
@@ -886,7 +1121,7 @@ public:
    */
   endpoint_type local_endpoint(asio::error_code& ec) const
   {
-    return this->get_service().local_endpoint(this->get_implementation(), ec);
+    return impl_.get_service().local_endpoint(impl_.get_implementation(), ec);
   }
 
   /// Wait for the acceptor to become ready to read, ready to write, or to have
@@ -900,7 +1135,7 @@ public:
    * @par Example
    * Waiting for an acceptor to become readable.
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * acceptor.wait(asio::ip::tcp::acceptor::wait_read);
    * @endcode
@@ -908,7 +1143,7 @@ public:
   void wait(wait_type w)
   {
     asio::error_code ec;
-    this->get_service().wait(this->get_implementation(), w, ec);
+    impl_.get_service().wait(impl_.get_implementation(), w, ec);
     asio::detail::throw_error(ec, "wait");
   }
 
@@ -925,15 +1160,16 @@ public:
    * @par Example
    * Waiting for an acceptor to become readable.
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * asio::error_code ec;
    * acceptor.wait(asio::ip::tcp::acceptor::wait_read, ec);
    * @endcode
    */
-  asio::error_code wait(wait_type w, asio::error_code& ec)
+  ASIO_SYNC_OP_VOID wait(wait_type w, asio::error_code& ec)
   {
-    return this->get_service().wait(this->get_implementation(), w, ec);
+    impl_.get_service().wait(impl_.get_implementation(), w, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Asynchronously wait for the acceptor to become ready to read, ready to
@@ -951,9 +1187,9 @@ public:
    *   const asio::error_code& error // Result of operation
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
-   * not, the handler will not be invoked from within this function. Invocation
-   * of the handler will be performed in a manner equivalent to using
-   * asio::io_context::post().
+   * not, the handler will not be invoked from within this function. On
+   * immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
    *
    * @par Example
    * @code
@@ -967,7 +1203,7 @@ public:
    *
    * ...
    *
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * acceptor.async_wait(
    *     asio::ip::tcp::acceptor::wait_read,
@@ -979,14 +1215,11 @@ public:
       void (asio::error_code))
   async_wait(wait_type w, ASIO_MOVE_ARG(WaitHandler) handler)
   {
-    // If you get an error on the following line it means that your handler does
-    // not meet the documented type requirements for a WaitHandler.
-    ASIO_WAIT_HANDLER_CHECK(WaitHandler, handler) type_check;
-
-    return this->get_service().async_wait(this->get_implementation(),
-        w, ASIO_MOVE_CAST(WaitHandler)(handler));
+    return async_initiate<WaitHandler, void (asio::error_code)>(
+        initiate_async_wait(), handler, this, w);
   }
 
+#if !defined(ASIO_NO_EXTENSIONS)
   /// Accept a new connection.
   /**
    * This function is used to accept a new connection from a peer into the
@@ -999,18 +1232,20 @@ public:
    *
    * @par Example
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
-   * asio::ip::tcp::socket socket(io_context);
+   * asio::ip::tcp::socket socket(my_context);
    * acceptor.accept(socket);
    * @endcode
    */
-  template <typename Protocol1, typename SocketService>
-  void accept(basic_socket<Protocol1, SocketService>& peer,
-      typename enable_if<is_convertible<Protocol, Protocol1>::value>::type* = 0)
+  template <typename Protocol1, typename Executor1>
+  void accept(basic_socket<Protocol1, Executor1>& peer,
+      typename enable_if<
+        is_convertible<Protocol, Protocol1>::value
+      >::type* = 0)
   {
     asio::error_code ec;
-    this->get_service().accept(this->get_implementation(),
+    impl_.get_service().accept(impl_.get_implementation(),
         peer, static_cast<endpoint_type*>(0), ec);
     asio::detail::throw_error(ec, "accept");
   }
@@ -1027,9 +1262,9 @@ public:
    *
    * @par Example
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
-   * asio::ip::tcp::socket socket(io_context);
+   * asio::ip::tcp::socket socket(my_context);
    * asio::error_code ec;
    * acceptor.accept(socket, ec);
    * if (ec)
@@ -1038,14 +1273,16 @@ public:
    * }
    * @endcode
    */
-  template <typename Protocol1, typename SocketService>
-  asio::error_code accept(
-      basic_socket<Protocol1, SocketService>& peer,
-      asio::error_code& ec,
-      typename enable_if<is_convertible<Protocol, Protocol1>::value>::type* = 0)
+  template <typename Protocol1, typename Executor1>
+  ASIO_SYNC_OP_VOID accept(
+      basic_socket<Protocol1, Executor1>& peer, asio::error_code& ec,
+      typename enable_if<
+        is_convertible<Protocol, Protocol1>::value
+      >::type* = 0)
   {
-    return this->get_service().accept(this->get_implementation(),
+    impl_.get_service().accept(impl_.get_implementation(),
         peer, static_cast<endpoint_type*>(0), ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Start an asynchronous accept.
@@ -1064,9 +1301,9 @@ public:
    *   const asio::error_code& error // Result of operation.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
-   * not, the handler will not be invoked from within this function. Invocation
-   * of the handler will be performed in a manner equivalent to using
-   * asio::io_context::post().
+   * not, the handler will not be invoked from within this function. On
+   * immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
    *
    * @par Example
    * @code
@@ -1080,26 +1317,24 @@ public:
    *
    * ...
    *
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
-   * asio::ip::tcp::socket socket(io_context);
+   * asio::ip::tcp::socket socket(my_context);
    * acceptor.async_accept(socket, accept_handler);
    * @endcode
    */
-  template <typename Protocol1, typename SocketService, typename AcceptHandler>
+  template <typename Protocol1, typename Executor1, typename AcceptHandler>
   ASIO_INITFN_RESULT_TYPE(AcceptHandler,
       void (asio::error_code))
-  async_accept(basic_socket<Protocol1, SocketService>& peer,
+  async_accept(basic_socket<Protocol1, Executor1>& peer,
       ASIO_MOVE_ARG(AcceptHandler) handler,
-      typename enable_if<is_convertible<Protocol, Protocol1>::value>::type* = 0)
+      typename enable_if<
+        is_convertible<Protocol, Protocol1>::value
+      >::type* = 0)
   {
-    // If you get an error on the following line it means that your handler does
-    // not meet the documented type requirements for a AcceptHandler.
-    ASIO_ACCEPT_HANDLER_CHECK(AcceptHandler, handler) type_check;
-
-    return this->get_service().async_accept(this->get_implementation(),
-        peer, static_cast<endpoint_type*>(0),
-        ASIO_MOVE_CAST(AcceptHandler)(handler));
+    return async_initiate<AcceptHandler, void (asio::error_code)>(
+        initiate_async_accept(), handler, this,
+        &peer, static_cast<endpoint_type*>(0));
   }
 
   /// Accept a new connection and obtain the endpoint of the peer
@@ -1118,19 +1353,19 @@ public:
    *
    * @par Example
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
-   * asio::ip::tcp::socket socket(io_context);
+   * asio::ip::tcp::socket socket(my_context);
    * asio::ip::tcp::endpoint endpoint;
    * acceptor.accept(socket, endpoint);
    * @endcode
    */
-  template <typename SocketService>
-  void accept(basic_socket<protocol_type, SocketService>& peer,
+  template <typename Executor1>
+  void accept(basic_socket<protocol_type, Executor1>& peer,
       endpoint_type& peer_endpoint)
   {
     asio::error_code ec;
-    this->get_service().accept(this->get_implementation(),
+    impl_.get_service().accept(impl_.get_implementation(),
         peer, &peer_endpoint, ec);
     asio::detail::throw_error(ec, "accept");
   }
@@ -1151,9 +1386,9 @@ public:
    *
    * @par Example
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
-   * asio::ip::tcp::socket socket(io_context);
+   * asio::ip::tcp::socket socket(my_context);
    * asio::ip::tcp::endpoint endpoint;
    * asio::error_code ec;
    * acceptor.accept(socket, endpoint, ec);
@@ -1163,13 +1398,13 @@ public:
    * }
    * @endcode
    */
-  template <typename SocketService>
-  asio::error_code accept(
-      basic_socket<protocol_type, SocketService>& peer,
+  template <typename Executor1>
+  ASIO_SYNC_OP_VOID accept(basic_socket<protocol_type, Executor1>& peer,
       endpoint_type& peer_endpoint, asio::error_code& ec)
   {
-    return this->get_service().accept(
-        this->get_implementation(), peer, &peer_endpoint, ec);
+    impl_.get_service().accept(
+        impl_.get_implementation(), peer, &peer_endpoint, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Start an asynchronous accept.
@@ -1194,23 +1429,20 @@ public:
    *   const asio::error_code& error // Result of operation.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
-   * not, the handler will not be invoked from within this function. Invocation
-   * of the handler will be performed in a manner equivalent to using
-   * asio::io_context::post().
+   * not, the handler will not be invoked from within this function. On
+   * immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
    */
-  template <typename SocketService, typename AcceptHandler>
+  template <typename Executor1, typename AcceptHandler>
   ASIO_INITFN_RESULT_TYPE(AcceptHandler,
       void (asio::error_code))
-  async_accept(basic_socket<protocol_type, SocketService>& peer,
+  async_accept(basic_socket<protocol_type, Executor1>& peer,
       endpoint_type& peer_endpoint, ASIO_MOVE_ARG(AcceptHandler) handler)
   {
-    // If you get an error on the following line it means that your handler does
-    // not meet the documented type requirements for a AcceptHandler.
-    ASIO_ACCEPT_HANDLER_CHECK(AcceptHandler, handler) type_check;
-
-    return this->get_service().async_accept(this->get_implementation(), peer,
-        &peer_endpoint, ASIO_MOVE_CAST(AcceptHandler)(handler));
+    return async_initiate<AcceptHandler, void (asio::error_code)>(
+        initiate_async_accept(), handler, this, &peer, &peer_endpoint);
   }
+#endif // !defined(ASIO_NO_EXTENSIONS)
 
 #if defined(ASIO_HAS_MOVE) || defined(GENERATING_DOCUMENTATION)
   /// Accept a new connection.
@@ -1228,7 +1460,7 @@ public:
    *
    * @par Example
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * asio::ip::tcp::socket socket(acceptor.accept());
    * @endcode
@@ -1236,9 +1468,8 @@ public:
   typename Protocol::socket accept()
   {
     asio::error_code ec;
-    typename Protocol::socket peer(
-        this->get_service().accept(
-          this->get_implementation(), 0, 0, ec));
+    typename Protocol::socket peer(impl_.get_executor());
+    impl_.get_service().accept(impl_.get_implementation(), peer, 0, ec);
     asio::detail::throw_error(ec, "accept");
     return peer;
   }
@@ -1259,7 +1490,7 @@ public:
    *
    * @par Example
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * asio::ip::tcp::socket socket(acceptor.accept(ec));
    * if (ec)
@@ -1270,7 +1501,9 @@ public:
    */
   typename Protocol::socket accept(asio::error_code& ec)
   {
-    return this->get_service().accept(this->get_implementation(), 0, 0, ec);
+    typename Protocol::socket peer(impl_.get_executor());
+    impl_.get_service().accept(impl_.get_implementation(), peer, 0, ec);
+    return peer;
   }
 
   /// Start an asynchronous accept.
@@ -1289,9 +1522,9 @@ public:
    *   typename Protocol::socket peer // On success, the newly accepted socket.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
-   * not, the handler will not be invoked from within this function. Invocation
-   * of the handler will be performed in a manner equivalent to using
-   * asio::io_context::post().
+   * not, the handler will not be invoked from within this function. On
+   * immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
    *
    * @par Example
    * @code
@@ -1306,7 +1539,7 @@ public:
    *
    * ...
    *
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * acceptor.async_accept(accept_handler);
    * @endcode
@@ -1316,15 +1549,11 @@ public:
       void (asio::error_code, typename Protocol::socket))
   async_accept(ASIO_MOVE_ARG(MoveAcceptHandler) handler)
   {
-    // If you get an error on the following line it means that your handler does
-    // not meet the documented type requirements for a MoveAcceptHandler.
-    ASIO_MOVE_ACCEPT_HANDLER_CHECK(MoveAcceptHandler,
-        handler, typename Protocol::socket) type_check;
-
-    return this->get_service().async_accept(
-        this->get_implementation(), static_cast<asio::io_context*>(0),
-        static_cast<endpoint_type*>(0),
-        ASIO_MOVE_CAST(MoveAcceptHandler)(handler));
+    return async_initiate<MoveAcceptHandler,
+      void (asio::error_code, typename Protocol::socket)>(
+        initiate_async_move_accept(), handler, this,
+        impl_.get_executor(), static_cast<endpoint_type*>(0),
+        static_cast<typename Protocol::socket*>(0));
   }
 
   /// Accept a new connection.
@@ -1336,8 +1565,8 @@ public:
    * This overload requires that the Protocol template parameter satisfy the
    * AcceptableProtocol type requirements.
    *
-   * @param io_context The io_context object to be used for the newly accepted
-   * socket.
+   * @param ex The I/O executor object to be used for the newly
+   * accepted socket.
    *
    * @returns A socket object representing the newly accepted connection.
    *
@@ -1345,17 +1574,22 @@ public:
    *
    * @par Example
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * asio::ip::tcp::socket socket(acceptor.accept());
    * @endcode
    */
-  typename Protocol::socket accept(asio::io_context& io_context)
+  template <typename Executor1>
+  typename Protocol::socket::template rebind_executor<Executor1>::other
+  accept(const Executor1& ex,
+      typename enable_if<
+        is_executor<Executor1>::value
+      >::type* = 0)
   {
     asio::error_code ec;
-    typename Protocol::socket peer(
-        this->get_service().accept(this->get_implementation(),
-          &io_context, static_cast<endpoint_type*>(0), ec));
+    typename Protocol::socket::template
+      rebind_executor<Executor1>::other peer(ex);
+    impl_.get_service().accept(impl_.get_implementation(), peer, 0, ec);
     asio::detail::throw_error(ec, "accept");
     return peer;
   }
@@ -1369,7 +1603,46 @@ public:
    * This overload requires that the Protocol template parameter satisfy the
    * AcceptableProtocol type requirements.
    *
-   * @param io_context The io_context object to be used for the newly accepted
+   * @param context The I/O execution context object to be used for the newly
+   * accepted socket.
+   *
+   * @returns A socket object representing the newly accepted connection.
+   *
+   * @throws asio::system_error Thrown on failure.
+   *
+   * @par Example
+   * @code
+   * asio::ip::tcp::acceptor acceptor(my_context);
+   * ...
+   * asio::ip::tcp::socket socket(acceptor.accept());
+   * @endcode
+   */
+  template <typename ExecutionContext>
+  typename Protocol::socket::template rebind_executor<
+      typename ExecutionContext::executor_type>::other
+  accept(ExecutionContext& context,
+      typename enable_if<
+        is_convertible<ExecutionContext&, execution_context&>::value
+      >::type* = 0)
+  {
+    asio::error_code ec;
+    typename Protocol::socket::template rebind_executor<
+        typename ExecutionContext::executor_type>::other peer(context);
+    impl_.get_service().accept(impl_.get_implementation(), peer, 0, ec);
+    asio::detail::throw_error(ec, "accept");
+    return peer;
+  }
+
+  /// Accept a new connection.
+  /**
+   * This function is used to accept a new connection from a peer. The function
+   * call will block until a new connection has been accepted successfully or
+   * an error occurs.
+   *
+   * This overload requires that the Protocol template parameter satisfy the
+   * AcceptableProtocol type requirements.
+   *
+   * @param ex The I/O executor object to be used for the newly accepted
    * socket.
    *
    * @param ec Set to indicate what error occurred, if any.
@@ -1379,20 +1652,68 @@ public:
    *
    * @par Example
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
-   * asio::ip::tcp::socket socket(acceptor.accept(io_context2, ec));
+   * asio::ip::tcp::socket socket(acceptor.accept(my_context2, ec));
    * if (ec)
    * {
    *   // An error occurred.
    * }
    * @endcode
    */
-  typename Protocol::socket accept(
-      asio::io_context& io_context, asio::error_code& ec)
+  template <typename Executor1>
+  typename Protocol::socket::template rebind_executor<Executor1>::other
+  accept(const Executor1& ex, asio::error_code& ec,
+      typename enable_if<
+        is_executor<Executor1>::value
+      >::type* = 0)
   {
-    return this->get_service().accept(this->get_implementation(),
-        &io_context, static_cast<endpoint_type*>(0), ec);
+    typename Protocol::socket::template
+      rebind_executor<Executor1>::other peer(ex);
+    impl_.get_service().accept(impl_.get_implementation(), peer, 0, ec);
+    return peer;
+  }
+
+  /// Accept a new connection.
+  /**
+   * This function is used to accept a new connection from a peer. The function
+   * call will block until a new connection has been accepted successfully or
+   * an error occurs.
+   *
+   * This overload requires that the Protocol template parameter satisfy the
+   * AcceptableProtocol type requirements.
+   *
+   * @param context The I/O execution context object to be used for the newly
+   * accepted socket.
+   *
+   * @param ec Set to indicate what error occurred, if any.
+   *
+   * @returns On success, a socket object representing the newly accepted
+   * connection. On error, a socket object where is_open() is false.
+   *
+   * @par Example
+   * @code
+   * asio::ip::tcp::acceptor acceptor(my_context);
+   * ...
+   * asio::ip::tcp::socket socket(acceptor.accept(my_context2, ec));
+   * if (ec)
+   * {
+   *   // An error occurred.
+   * }
+   * @endcode
+   */
+  template <typename ExecutionContext>
+  typename Protocol::socket::template rebind_executor<
+      typename ExecutionContext::executor_type>::other
+  accept(ExecutionContext& context, asio::error_code& ec,
+      typename enable_if<
+        is_convertible<ExecutionContext&, execution_context&>::value
+      >::type* = 0)
+  {
+    typename Protocol::socket::template rebind_executor<
+        typename ExecutionContext::executor_type>::other peer(context);
+    impl_.get_service().accept(impl_.get_implementation(), peer, 0, ec);
+    return peer;
   }
 
   /// Start an asynchronous accept.
@@ -1403,7 +1724,7 @@ public:
    * This overload requires that the Protocol template parameter satisfy the
    * AcceptableProtocol type requirements.
    *
-   * @param io_context The io_context object to be used for the newly accepted
+   * @param ex The I/O executor object to be used for the newly accepted
    * socket.
    *
    * @param handler The handler to be called when the accept operation
@@ -1411,12 +1732,13 @@ public:
    * signature of the handler must be:
    * @code void handler(
    *   const asio::error_code& error, // Result of operation.
-   *   typename Protocol::socket peer // On success, the newly accepted socket.
+   *   typename Protocol::socket::template rebind_executor<
+   *     Executor1>::other peer // On success, the newly accepted socket.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
-   * not, the handler will not be invoked from within this function. Invocation
-   * of the handler will be performed in a manner equivalent to using
-   * asio::io_context::post().
+   * not, the handler will not be invoked from within this function. On
+   * immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
    *
    * @par Example
    * @code
@@ -1431,25 +1753,94 @@ public:
    *
    * ...
    *
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
-   * acceptor.async_accept(io_context2, accept_handler);
+   * acceptor.async_accept(my_context2, accept_handler);
    * @endcode
    */
-  template <typename MoveAcceptHandler>
+  template <typename Executor1, typename MoveAcceptHandler>
   ASIO_INITFN_RESULT_TYPE(MoveAcceptHandler,
-      void (asio::error_code, typename Protocol::socket))
-  async_accept(asio::io_context& io_context,
-      ASIO_MOVE_ARG(MoveAcceptHandler) handler)
+      void (asio::error_code,
+        typename Protocol::socket::template rebind_executor<
+          Executor1>::other))
+  async_accept(const Executor1& ex,
+      ASIO_MOVE_ARG(MoveAcceptHandler) handler,
+      typename enable_if<
+        is_executor<Executor1>::value
+      >::type* = 0)
   {
-    // If you get an error on the following line it means that your handler does
-    // not meet the documented type requirements for a MoveAcceptHandler.
-    ASIO_MOVE_ACCEPT_HANDLER_CHECK(MoveAcceptHandler,
-        handler, typename Protocol::socket) type_check;
+    typedef typename Protocol::socket::template rebind_executor<
+      Executor1>::other other_socket_type;
 
-    return this->get_service().async_accept(this->get_implementation(),
-        &io_context, static_cast<endpoint_type*>(0),
-        ASIO_MOVE_CAST(MoveAcceptHandler)(handler));
+    return async_initiate<MoveAcceptHandler,
+      void (asio::error_code, other_socket_type)>(
+        initiate_async_move_accept(), handler, this,
+        ex, static_cast<endpoint_type*>(0),
+        static_cast<other_socket_type*>(0));
+  }
+
+  /// Start an asynchronous accept.
+  /**
+   * This function is used to asynchronously accept a new connection. The
+   * function call always returns immediately.
+   *
+   * This overload requires that the Protocol template parameter satisfy the
+   * AcceptableProtocol type requirements.
+   *
+   * @param context The I/O execution context object to be used for the newly
+   * accepted socket.
+   *
+   * @param handler The handler to be called when the accept operation
+   * completes. Copies will be made of the handler as required. The function
+   * signature of the handler must be:
+   * @code void handler(
+   *   const asio::error_code& error, // Result of operation.
+   *   typename Protocol::socket::template rebind_executor<
+   *     typename ExecutionContext::executor_type>::other peer
+   *       // On success, the newly accepted socket.
+   * ); @endcode
+   * Regardless of whether the asynchronous operation completes immediately or
+   * not, the handler will not be invoked from within this function. On
+   * immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
+   *
+   * @par Example
+   * @code
+   * void accept_handler(const asio::error_code& error,
+   *     asio::ip::tcp::socket peer)
+   * {
+   *   if (!error)
+   *   {
+   *     // Accept succeeded.
+   *   }
+   * }
+   *
+   * ...
+   *
+   * asio::ip::tcp::acceptor acceptor(my_context);
+   * ...
+   * acceptor.async_accept(my_context2, accept_handler);
+   * @endcode
+   */
+  template <typename ExecutionContext, typename MoveAcceptHandler>
+  ASIO_INITFN_RESULT_TYPE(MoveAcceptHandler,
+      void (asio::error_code,
+        typename Protocol::socket::template rebind_executor<
+          typename ExecutionContext::executor_type>::other))
+  async_accept(ExecutionContext& context,
+      ASIO_MOVE_ARG(MoveAcceptHandler) handler,
+      typename enable_if<
+        is_convertible<ExecutionContext&, execution_context&>::value
+      >::type* = 0)
+  {
+    typedef typename Protocol::socket::template rebind_executor<
+      typename ExecutionContext::executor_type>::other other_socket_type;
+
+    return async_initiate<MoveAcceptHandler,
+      void (asio::error_code, other_socket_type)>(
+        initiate_async_move_accept(), handler, this,
+        context.get_executor(), static_cast<endpoint_type*>(0),
+        static_cast<other_socket_type*>(0));
   }
 
   /// Accept a new connection.
@@ -1470,7 +1861,7 @@ public:
    *
    * @par Example
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * asio::ip::tcp::endpoint endpoint;
    * asio::ip::tcp::socket socket(acceptor.accept(endpoint));
@@ -1479,9 +1870,9 @@ public:
   typename Protocol::socket accept(endpoint_type& peer_endpoint)
   {
     asio::error_code ec;
-    typename Protocol::socket peer(
-        this->get_service().accept(this->get_implementation(),
-          static_cast<asio::io_context*>(0), &peer_endpoint, ec));
+    typename Protocol::socket peer(impl_.get_executor());
+    impl_.get_service().accept(impl_.get_implementation(),
+        peer, &peer_endpoint, ec);
     asio::detail::throw_error(ec, "accept");
     return peer;
   }
@@ -1505,7 +1896,7 @@ public:
    *
    * @par Example
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * asio::ip::tcp::endpoint endpoint;
    * asio::ip::tcp::socket socket(acceptor.accept(endpoint, ec));
@@ -1518,8 +1909,10 @@ public:
   typename Protocol::socket accept(
       endpoint_type& peer_endpoint, asio::error_code& ec)
   {
-    return this->get_service().accept(this->get_implementation(),
-        static_cast<asio::io_context*>(0), &peer_endpoint, ec);
+    typename Protocol::socket peer(impl_.get_executor());
+    impl_.get_service().accept(impl_.get_implementation(),
+        peer, &peer_endpoint, ec);
+    return peer;
   }
 
   /// Start an asynchronous accept.
@@ -1543,9 +1936,9 @@ public:
    *   typename Protocol::socket peer // On success, the newly accepted socket.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
-   * not, the handler will not be invoked from within this function. Invocation
-   * of the handler will be performed in a manner equivalent to using
-   * asio::io_context::post().
+   * not, the handler will not be invoked from within this function. On
+   * immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
    *
    * @par Example
    * @code
@@ -1560,7 +1953,7 @@ public:
    *
    * ...
    *
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * asio::ip::tcp::endpoint endpoint;
    * acceptor.async_accept(endpoint, accept_handler);
@@ -1572,14 +1965,11 @@ public:
   async_accept(endpoint_type& peer_endpoint,
       ASIO_MOVE_ARG(MoveAcceptHandler) handler)
   {
-    // If you get an error on the following line it means that your handler does
-    // not meet the documented type requirements for a MoveAcceptHandler.
-    ASIO_MOVE_ACCEPT_HANDLER_CHECK(MoveAcceptHandler,
-        handler, typename Protocol::socket) type_check;
-
-    return this->get_service().async_accept(this->get_implementation(),
-        static_cast<asio::io_context*>(0), &peer_endpoint,
-        ASIO_MOVE_CAST(MoveAcceptHandler)(handler));
+    return async_initiate<MoveAcceptHandler,
+      void (asio::error_code, typename Protocol::socket)>(
+        initiate_async_move_accept(), handler, this,
+        impl_.get_executor(), &peer_endpoint,
+        static_cast<typename Protocol::socket*>(0));
   }
 
   /// Accept a new connection.
@@ -1591,7 +1981,7 @@ public:
    * This overload requires that the Protocol template parameter satisfy the
    * AcceptableProtocol type requirements.
    *
-   * @param io_context The io_context object to be used for the newly accepted
+   * @param ex The I/O executor object to be used for the newly accepted
    * socket.
    *
    * @param peer_endpoint An endpoint object into which the endpoint of the
@@ -1603,20 +1993,25 @@ public:
    *
    * @par Example
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * asio::ip::tcp::endpoint endpoint;
    * asio::ip::tcp::socket socket(
-   *     acceptor.accept(io_context2, endpoint));
+   *     acceptor.accept(my_context2, endpoint));
    * @endcode
    */
-  typename Protocol::socket accept(
-      asio::io_context& io_context, endpoint_type& peer_endpoint)
+  template <typename Executor1>
+  typename Protocol::socket::template rebind_executor<Executor1>::other
+  accept(const Executor1& ex, endpoint_type& peer_endpoint,
+      typename enable_if<
+        is_executor<Executor1>::value
+      >::type* = 0)
   {
     asio::error_code ec;
-    typename Protocol::socket peer(
-        this->get_service().accept(this->get_implementation(),
-          &io_context, &peer_endpoint, ec));
+    typename Protocol::socket::template
+        rebind_executor<Executor1>::other peer(ex);
+    impl_.get_service().accept(impl_.get_implementation(),
+        peer, &peer_endpoint, ec);
     asio::detail::throw_error(ec, "accept");
     return peer;
   }
@@ -1630,7 +2025,52 @@ public:
    * This overload requires that the Protocol template parameter satisfy the
    * AcceptableProtocol type requirements.
    *
-   * @param io_context The io_context object to be used for the newly accepted
+   * @param context The I/O execution context object to be used for the newly
+   * accepted socket.
+   *
+   * @param peer_endpoint An endpoint object into which the endpoint of the
+   * remote peer will be written.
+   *
+   * @returns A socket object representing the newly accepted connection.
+   *
+   * @throws asio::system_error Thrown on failure.
+   *
+   * @par Example
+   * @code
+   * asio::ip::tcp::acceptor acceptor(my_context);
+   * ...
+   * asio::ip::tcp::endpoint endpoint;
+   * asio::ip::tcp::socket socket(
+   *     acceptor.accept(my_context2, endpoint));
+   * @endcode
+   */
+  template <typename ExecutionContext>
+  typename Protocol::socket::template rebind_executor<
+      typename ExecutionContext::executor_type>::other
+  accept(ExecutionContext& context, endpoint_type& peer_endpoint,
+      typename enable_if<
+        is_convertible<ExecutionContext&, execution_context&>::value
+      >::type* = 0)
+  {
+    asio::error_code ec;
+    typename Protocol::socket::template rebind_executor<
+        typename ExecutionContext::executor_type>::other peer(context);
+    impl_.get_service().accept(impl_.get_implementation(),
+        peer, &peer_endpoint, ec);
+    asio::detail::throw_error(ec, "accept");
+    return peer;
+  }
+
+  /// Accept a new connection.
+  /**
+   * This function is used to accept a new connection from a peer. The function
+   * call will block until a new connection has been accepted successfully or
+   * an error occurs.
+   *
+   * This overload requires that the Protocol template parameter satisfy the
+   * AcceptableProtocol type requirements.
+   *
+   * @param ex The I/O executor object to be used for the newly accepted
    * socket.
    *
    * @param peer_endpoint An endpoint object into which the endpoint of the
@@ -1643,22 +2083,79 @@ public:
    *
    * @par Example
    * @code
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * asio::ip::tcp::endpoint endpoint;
    * asio::ip::tcp::socket socket(
-   *     acceptor.accept(io_context2, endpoint, ec));
+   *     acceptor.accept(my_context2, endpoint, ec));
    * if (ec)
    * {
    *   // An error occurred.
    * }
    * @endcode
    */
-  typename Protocol::socket accept(asio::io_context& io_context,
-      endpoint_type& peer_endpoint, asio::error_code& ec)
+  template <typename Executor1>
+  typename Protocol::socket::template rebind_executor<Executor1>::other
+  accept(const executor_type& ex,
+      endpoint_type& peer_endpoint, asio::error_code& ec,
+      typename enable_if<
+        is_executor<Executor1>::value
+      >::type* = 0)
   {
-    return this->get_service().accept(this->get_implementation(),
-        &io_context, &peer_endpoint, ec);
+    typename Protocol::socket::template
+      rebind_executor<Executor1>::other peer(ex);
+    impl_.get_service().accept(impl_.get_implementation(),
+        peer, &peer_endpoint, ec);
+    return peer;
+  }
+
+  /// Accept a new connection.
+  /**
+   * This function is used to accept a new connection from a peer. The function
+   * call will block until a new connection has been accepted successfully or
+   * an error occurs.
+   *
+   * This overload requires that the Protocol template parameter satisfy the
+   * AcceptableProtocol type requirements.
+   *
+   * @param context The I/O execution context object to be used for the newly
+   * accepted socket.
+   *
+   * @param peer_endpoint An endpoint object into which the endpoint of the
+   * remote peer will be written.
+   *
+   * @param ec Set to indicate what error occurred, if any.
+   *
+   * @returns On success, a socket object representing the newly accepted
+   * connection. On error, a socket object where is_open() is false.
+   *
+   * @par Example
+   * @code
+   * asio::ip::tcp::acceptor acceptor(my_context);
+   * ...
+   * asio::ip::tcp::endpoint endpoint;
+   * asio::ip::tcp::socket socket(
+   *     acceptor.accept(my_context2, endpoint, ec));
+   * if (ec)
+   * {
+   *   // An error occurred.
+   * }
+   * @endcode
+   */
+  template <typename ExecutionContext>
+  typename Protocol::socket::template rebind_executor<
+      typename ExecutionContext::executor_type>::other
+  accept(ExecutionContext& context,
+      endpoint_type& peer_endpoint, asio::error_code& ec,
+      typename enable_if<
+        is_convertible<ExecutionContext&, execution_context&>::value
+      >::type* = 0)
+  {
+    typename Protocol::socket::template rebind_executor<
+        typename ExecutionContext::executor_type>::other peer(context);
+    impl_.get_service().accept(impl_.get_implementation(),
+        peer, &peer_endpoint, ec);
+    return peer;
   }
 
   /// Start an asynchronous accept.
@@ -1669,7 +2166,7 @@ public:
    * This overload requires that the Protocol template parameter satisfy the
    * AcceptableProtocol type requirements.
    *
-   * @param io_context The io_context object to be used for the newly accepted
+   * @param ex The I/O executor object to be used for the newly accepted
    * socket.
    *
    * @param peer_endpoint An endpoint object into which the endpoint of the
@@ -1682,12 +2179,13 @@ public:
    * signature of the handler must be:
    * @code void handler(
    *   const asio::error_code& error, // Result of operation.
-   *   typename Protocol::socket peer // On success, the newly accepted socket.
+   *   typename Protocol::socket::template rebind_executor<
+   *     Executor1>::other peer // On success, the newly accepted socket.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
-   * not, the handler will not be invoked from within this function. Invocation
-   * of the handler will be performed in a manner equivalent to using
-   * asio::io_context::post().
+   * not, the handler will not be invoked from within this function. On
+   * immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
    *
    * @par Example
    * @code
@@ -1702,29 +2200,175 @@ public:
    *
    * ...
    *
-   * asio::ip::tcp::acceptor acceptor(io_context);
+   * asio::ip::tcp::acceptor acceptor(my_context);
    * ...
    * asio::ip::tcp::endpoint endpoint;
-   * acceptor.async_accept(io_context2, endpoint, accept_handler);
+   * acceptor.async_accept(my_context2, endpoint, accept_handler);
    * @endcode
    */
-  template <typename MoveAcceptHandler>
+  template <typename Executor1, typename MoveAcceptHandler>
   ASIO_INITFN_RESULT_TYPE(MoveAcceptHandler,
-      void (asio::error_code, typename Protocol::socket))
-  async_accept(asio::io_context& io_context,
-      endpoint_type& peer_endpoint,
-      ASIO_MOVE_ARG(MoveAcceptHandler) handler)
+      void (asio::error_code,
+        typename Protocol::socket::template rebind_executor<
+          Executor1>::other))
+  async_accept(const Executor1& ex, endpoint_type& peer_endpoint,
+      ASIO_MOVE_ARG(MoveAcceptHandler) handler,
+      typename enable_if<
+        is_executor<Executor1>::value
+      >::type* = 0)
   {
-    // If you get an error on the following line it means that your handler does
-    // not meet the documented type requirements for a MoveAcceptHandler.
-    ASIO_MOVE_ACCEPT_HANDLER_CHECK(MoveAcceptHandler,
-        handler, typename Protocol::socket) type_check;
+    typedef typename Protocol::socket::template rebind_executor<
+      Executor1>::other other_socket_type;
 
-    return this->get_service().async_accept(
-        this->get_implementation(), &io_context, &peer_endpoint,
-        ASIO_MOVE_CAST(MoveAcceptHandler)(handler));
+    return async_initiate<MoveAcceptHandler,
+      void (asio::error_code, other_socket_type)>(
+        initiate_async_move_accept(), handler, this,
+        ex, &peer_endpoint,
+        static_cast<other_socket_type*>(0));
+  }
+
+  /// Start an asynchronous accept.
+  /**
+   * This function is used to asynchronously accept a new connection. The
+   * function call always returns immediately.
+   *
+   * This overload requires that the Protocol template parameter satisfy the
+   * AcceptableProtocol type requirements.
+   *
+   * @param context The I/O execution context object to be used for the newly
+   * accepted socket.
+   *
+   * @param peer_endpoint An endpoint object into which the endpoint of the
+   * remote peer will be written. Ownership of the peer_endpoint object is
+   * retained by the caller, which must guarantee that it is valid until the
+   * handler is called.
+   *
+   * @param handler The handler to be called when the accept operation
+   * completes. Copies will be made of the handler as required. The function
+   * signature of the handler must be:
+   * @code void handler(
+   *   const asio::error_code& error, // Result of operation.
+   *   typename Protocol::socket::template rebind_executor<
+   *     typename ExecutionContext::executor_type>::other peer
+   *       // On success, the newly accepted socket.
+   * ); @endcode
+   * Regardless of whether the asynchronous operation completes immediately or
+   * not, the handler will not be invoked from within this function. On
+   * immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
+   *
+   * @par Example
+   * @code
+   * void accept_handler(const asio::error_code& error,
+   *     asio::ip::tcp::socket peer)
+   * {
+   *   if (!error)
+   *   {
+   *     // Accept succeeded.
+   *   }
+   * }
+   *
+   * ...
+   *
+   * asio::ip::tcp::acceptor acceptor(my_context);
+   * ...
+   * asio::ip::tcp::endpoint endpoint;
+   * acceptor.async_accept(my_context2, endpoint, accept_handler);
+   * @endcode
+   */
+  template <typename ExecutionContext, typename MoveAcceptHandler>
+  ASIO_INITFN_RESULT_TYPE(MoveAcceptHandler,
+      void (asio::error_code,
+        typename Protocol::socket::template rebind_executor<
+          typename ExecutionContext::executor_type>::other))
+  async_accept(ExecutionContext& context,
+      endpoint_type& peer_endpoint,
+      ASIO_MOVE_ARG(MoveAcceptHandler) handler,
+      typename enable_if<
+        is_convertible<ExecutionContext&, execution_context&>::value
+      >::type* = 0)
+  {
+    typedef typename Protocol::socket::template rebind_executor<
+      typename ExecutionContext::executor_type>::other other_socket_type;
+
+    return async_initiate<MoveAcceptHandler,
+      void (asio::error_code, other_socket_type)>(
+        initiate_async_move_accept(), handler, this,
+        context.get_executor(), &peer_endpoint,
+        static_cast<other_socket_type*>(0));
   }
 #endif // defined(ASIO_HAS_MOVE) || defined(GENERATING_DOCUMENTATION)
+
+private:
+  // Disallow copying and assignment.
+  basic_socket_acceptor(const basic_socket_acceptor&) ASIO_DELETED;
+  basic_socket_acceptor& operator=(
+      const basic_socket_acceptor&) ASIO_DELETED;
+
+  struct initiate_async_wait
+  {
+    template <typename WaitHandler>
+    void operator()(ASIO_MOVE_ARG(WaitHandler) handler,
+        basic_socket_acceptor* self, wait_type w) const
+    {
+      // If you get an error on the following line it means that your handler
+      // does not meet the documented type requirements for a WaitHandler.
+      ASIO_WAIT_HANDLER_CHECK(WaitHandler, handler) type_check;
+
+      detail::non_const_lvalue<WaitHandler> handler2(handler);
+      self->impl_.get_service().async_wait(
+          self->impl_.get_implementation(), w, handler2.value,
+          self->impl_.get_implementation_executor());
+    }
+  };
+
+  struct initiate_async_accept
+  {
+    template <typename AcceptHandler, typename Protocol1, typename Executor1>
+    void operator()(ASIO_MOVE_ARG(AcceptHandler) handler,
+        basic_socket_acceptor* self, basic_socket<Protocol1, Executor1>* peer,
+        endpoint_type* peer_endpoint) const
+    {
+      // If you get an error on the following line it means that your handler
+      // does not meet the documented type requirements for a AcceptHandler.
+      ASIO_ACCEPT_HANDLER_CHECK(AcceptHandler, handler) type_check;
+
+      detail::non_const_lvalue<AcceptHandler> handler2(handler);
+      self->impl_.get_service().async_accept(
+          self->impl_.get_implementation(), *peer, peer_endpoint,
+          handler2.value, self->impl_.get_implementation_executor());
+    }
+  };
+
+  struct initiate_async_move_accept
+  {
+    template <typename MoveAcceptHandler, typename Executor1, typename Socket>
+    void operator()(ASIO_MOVE_ARG(MoveAcceptHandler) handler,
+        basic_socket_acceptor* self, const Executor1& peer_ex,
+        endpoint_type* peer_endpoint, Socket*) const
+    {
+      // If you get an error on the following line it means that your handler
+      // does not meet the documented type requirements for a MoveAcceptHandler.
+      ASIO_MOVE_ACCEPT_HANDLER_CHECK(
+          MoveAcceptHandler, handler, Socket) type_check;
+
+      detail::non_const_lvalue<MoveAcceptHandler> handler2(handler);
+      self->impl_.get_service().async_move_accept(
+          self->impl_.get_implementation(), peer_ex, peer_endpoint,
+          handler2.value, self->impl_.get_implementation_executor());
+    }
+  };
+
+#if defined(ASIO_WINDOWS_RUNTIME)
+  detail::io_object_impl<
+    detail::null_socket_service<Protocol>, Executor> impl_;
+#elif defined(ASIO_HAS_IOCP)
+  detail::io_object_impl<
+    detail::win_iocp_socket_service<Protocol>, Executor> impl_;
+#else
+  detail::io_object_impl<
+    detail::reactive_socket_service<Protocol>, Executor> impl_;
+#endif
 };
 
 } // namespace asio

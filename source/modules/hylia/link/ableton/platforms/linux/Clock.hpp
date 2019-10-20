@@ -49,17 +49,7 @@ public:
 };
 
 using ClockMonotonic = Clock<CLOCK_MONOTONIC>;
-#ifdef CLOCK_MONOTONIC_RAW
 using ClockMonotonicRaw = Clock<CLOCK_MONOTONIC_RAW>;
-#endif
-
-/* Warning: the realtime clock can be subject to time change.
- * One of the hard requirements of Ableton Link is that the clock must be
- * monotonic.
- * Only use the Realtime Clock if you can't use the monotonic ones, and
- * beware that things might go wrong if time jumps.
- */
-using ClockRealtime = Clock<CLOCK_REALTIME>;
 
 } // namespace linux
 } // namespace platforms

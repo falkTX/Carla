@@ -159,8 +159,9 @@ private:
         range.first->measurement = move(measurement);
         // If session times too close - fall back to session id order
         const auto ghostDiff = newGhost - curGhost;
-        if (ghostDiff > SESSION_EPS || (std::abs(ghostDiff.count()) < SESSION_EPS.count()
-                                         && id < mCurrent.sessionId))
+        if (ghostDiff > SESSION_EPS
+            || (std::abs(ghostDiff.count()) < SESSION_EPS.count()
+                 && id < mCurrent.sessionId))
         {
           // The new session wins, switch over to it
           auto current = mCurrent;

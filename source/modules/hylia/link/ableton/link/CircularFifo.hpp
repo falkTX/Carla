@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <ableton/link/Optional.hpp>
 #include <array>
 #include <atomic>
 #include <cassert>
@@ -34,12 +35,6 @@ template <typename Type, std::size_t size>
 class CircularFifo
 {
 public:
-  struct PoppedItem
-  {
-    Type item;
-    bool valid;
-  };
-
   CircularFifo()
     : tail(0)
     , head(0)
@@ -60,32 +55,17 @@ public:
     return false;
   }
 
-  PoppedItem pop()
+  Optional<Type> pop()
   {
     const auto currentHead = head.load();
     if (currentHead == tail.load())
     {
-      return {Type{}, false};
+      return {};
     }
 
     auto item = data[currentHead];
     head.store(nextIndex(currentHead));
-    return {std::move(item), true};
-  }
-
-  PoppedItem clearAndPopLast()
-  {
-    auto hasData = false;
-    auto currentHead = head.load();
-    while (currentHead != tail.load())
-    {
-      currentHead = nextIndex(currentHead);
-      hasData = true;
-    }
-
-    auto item = data[previousIndex(currentHead)];
-    head.store(currentHead);
-    return {std::move(item), hasData};
+    return Optional<Type>{std::move(item)};
   }
 
   bool isEmpty() const
@@ -109,5 +89,5 @@ private:
   std::array<Type, size + 1> data;
 };
 
-} // link
-} // ableton
+} // namespace link
+} // namespace ableton

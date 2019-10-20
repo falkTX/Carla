@@ -21,7 +21,6 @@
 
 #include <ableton/discovery/UdpMessenger.hpp>
 #include <ableton/discovery/v1/Messages.hpp>
-#include <ableton/platforms/asio/AsioService.hpp>
 #include <ableton/util/SafeAsyncHandler.hpp>
 #include <memory>
 
@@ -216,11 +215,10 @@ PeerGateway<Messenger, PeerObserver, IoContext> makePeerGateway(
 
 // IpV4 gateway types
 template <typename StateQuery, typename IoContext>
-using IpV4Messenger =
-  UdpMessenger<IpV4Interface<typename util::Injected<IoContext>::type&,
-                 v1::kMaxMessageSize>,
-    StateQuery,
-    IoContext>;
+using IpV4Messenger = UdpMessenger<
+  IpV4Interface<typename util::Injected<IoContext>::type&, v1::kMaxMessageSize>,
+  StateQuery,
+  IoContext>;
 
 template <typename PeerObserver, typename StateQuery, typename IoContext>
 using IpV4Gateway =

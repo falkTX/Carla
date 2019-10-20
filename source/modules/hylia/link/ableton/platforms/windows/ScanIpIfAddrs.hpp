@@ -93,7 +93,7 @@ private:
   IP_ADAPTER_ADDRESSES* adapter;
 };
 
-} // detail
+} // namespace detail
 
 struct ScanIpIfAddrs
 {

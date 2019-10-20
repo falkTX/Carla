@@ -2,7 +2,7 @@
 // thread_pool.hpp
 // ~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -20,7 +20,6 @@
 #include "asio/detail/scheduler.hpp"
 #include "asio/detail/thread_group.hpp"
 #include "asio/execution_context.hpp"
-#include "asio/is_executor.hpp"
 
 #include "asio/detail/push_options.hpp"
 
@@ -30,6 +29,36 @@ namespace asio {
 /**
  * The thread pool class is an execution context where functions are permitted
  * to run on one of a fixed number of threads.
+ *
+ * @par Submitting tasks to the pool
+ *
+ * To submit functions to the thread_pool, use the @ref asio::dispatch,
+ * @ref asio::post or @ref asio::defer free functions.
+ *
+ * For example:
+ *
+ * @code void my_task()
+ * {
+ *   ...
+ * }
+ *
+ * ...
+ *
+ * // Launch the pool with four threads.
+ * asio::thread_pool pool(4);
+ *
+ * // Submit a function to the pool.
+ * asio::post(pool, my_task);
+ *
+ * // Submit a lambda object to the pool.
+ * asio::post(pool,
+ *     []()
+ *     {
+ *       ...
+ *     });
+ *
+ * // Wait for all tasks in the pool to complete.
+ * pool.join(); @endcode
  */
 class thread_pool
   : public execution_context
@@ -70,6 +99,9 @@ public:
 private:
   friend class executor_type;
   struct thread_function;
+
+  // Helper function to create the underlying scheduler.
+  ASIO_DECL detail::scheduler& add_scheduler(detail::scheduler* s);
 
   // The underlying scheduler.
   detail::scheduler& scheduler_;
@@ -190,10 +222,6 @@ private:
   // The underlying thread pool.
   thread_pool& pool_;
 };
-
-#if !defined(GENERATING_DOCUMENTATION)
-template <> struct is_executor<thread_pool::executor_type> : true_type {};
-#endif // !defined(GENERATING_DOCUMENTATION)
 
 } // namespace asio
 

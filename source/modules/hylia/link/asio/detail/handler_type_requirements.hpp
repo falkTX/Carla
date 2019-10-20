@@ -2,7 +2,7 @@
 // detail/handler_type_requirements.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -50,20 +50,8 @@
 #endif // !defined(ASIO_DISABLE_HANDLER_TYPE_REQUIREMENTS)
 
 #if defined(ASIO_ENABLE_HANDLER_TYPE_REQUIREMENTS)
-# include "asio/handler_type.hpp"
+# include "asio/async_result.hpp"
 #endif // defined(ASIO_ENABLE_HANDLER_TYPE_REQUIREMENTS)
-
-// Newer gcc, clang need special treatment to suppress unused typedef warnings.
-#if defined(__clang__) && (__clang_major__ >= 7)
-# define ASIO_UNUSED_TYPEDEF __attribute__((__unused__))
-#elif defined(__GNUC__)
-# if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 8)) || (__GNUC__ > 4)
-#  define ASIO_UNUSED_TYPEDEF __attribute__((__unused__))
-# endif // ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 8)) || (__GNUC__ > 4)
-#endif // defined(__GNUC__)
-#if !defined(ASIO_UNUSED_TYPEDEF)
-# define ASIO_UNUSED_TYPEDEF
-#endif // !defined(ASIO_UNUSED_TYPEDEF)
 
 namespace asio {
 namespace detail {
@@ -139,7 +127,7 @@ struct handler_type_requirements
 {
 };
 
-#define ASIO_COMPLETION_HANDLER_CHECK( \
+#define ASIO_LEGACY_COMPLETION_HANDLER_CHECK( \
     handler_type, handler) \
   \
   typedef ASIO_HANDLER_TYPE(handler_type, \
@@ -504,7 +492,7 @@ struct handler_type_requirements
 
 #else // !defined(ASIO_ENABLE_HANDLER_TYPE_REQUIREMENTS)
 
-#define ASIO_COMPLETION_HANDLER_CHECK( \
+#define ASIO_LEGACY_COMPLETION_HANDLER_CHECK( \
     handler_type, handler) \
   typedef int ASIO_UNUSED_TYPEDEF
 
@@ -518,6 +506,10 @@ struct handler_type_requirements
 
 #define ASIO_ACCEPT_HANDLER_CHECK( \
     handler_type, handler) \
+  typedef int ASIO_UNUSED_TYPEDEF
+
+#define ASIO_MOVE_ACCEPT_HANDLER_CHECK( \
+    handler_type, handler, socket_type) \
   typedef int ASIO_UNUSED_TYPEDEF
 
 #define ASIO_CONNECT_HANDLER_CHECK( \

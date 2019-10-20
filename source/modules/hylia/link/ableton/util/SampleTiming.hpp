@@ -48,5 +48,5 @@ struct SampleTiming
   double mSampleRate;
 };
 
-} // util
-} // ableton
+} // namespace util
+} // namespace ableton

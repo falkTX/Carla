@@ -20,13 +20,12 @@
 #pragma once
 
 #include <ableton/discovery/Payload.hpp>
-#include <ableton/discovery/Socket.hpp>
 #include <ableton/link/PayloadEntries.hpp>
 #include <ableton/link/PeerState.hpp>
 #include <ableton/link/SessionId.hpp>
 #include <ableton/link/v1/Messages.hpp>
-#include <ableton/platforms/asio/AsioService.hpp>
 #include <ableton/util/Injected.hpp>
+#include <ableton/util/SafeAsyncHandler.hpp>
 #include <chrono>
 #include <memory>
 
@@ -35,83 +34,57 @@ namespace ableton
 namespace link
 {
 
-template <typename IoService, typename Clock, typename Socket, typename Log>
+template <typename Clock, typename IoContext>
 struct Measurement
 {
   using Point = std::pair<double, double>;
   using Callback = std::function<void(std::vector<Point>)>;
   using Micros = std::chrono::microseconds;
-  using Timer = typename IoService::Timer;
 
   static const std::size_t kNumberDataPoints = 100;
   static const std::size_t kNumberMeasurements = 5;
-
-  Measurement() = default;
 
   Measurement(const PeerState& state,
     Callback callback,
     asio::ip::address_v4 address,
     Clock clock,
-    util::Injected<Log> log)
-    : mpIo(new IoService{})
-    , mpImpl(std::make_shared<Impl>(*mpIo,
-        std::move(state),
+    IoContext io)
+    : mIo(std::move(io))
+    , mpImpl(std::make_shared<Impl>(std::move(state),
         std::move(callback),
         std::move(address),
         std::move(clock),
-        std::move(log)))
+        mIo))
   {
     mpImpl->listen();
   }
 
-  Measurement(Measurement&& rhs)
-    : mpIo(std::move(rhs.mpIo))
-    , mpImpl(std::move(rhs.mpImpl))
-  {
-  }
-
-  ~Measurement()
-  {
-    postImplDestruction();
-  }
-
-  Measurement& operator=(Measurement&& rhs)
-  {
-    postImplDestruction();
-    mpIo = std::move(rhs.mpIo);
-    mpImpl = std::move(rhs.mpImpl);
-    return *this;
-  }
-
-  void postImplDestruction()
-  {
-    // Post destruction of the impl object into the io thread if valid
-    if (mpIo)
-    {
-      mpIo->post(ImplDeleter{*this});
-    }
-  }
+  Measurement(const Measurement&) = delete;
+  Measurement& operator=(Measurement&) = delete;
+  Measurement(const Measurement&&) = delete;
+  Measurement& operator=(Measurement&&) = delete;
 
   struct Impl : std::enable_shared_from_this<Impl>
   {
-    Impl(IoService& io,
-      const PeerState& state,
+    using Socket = typename IoContext::template Socket<v1::kMaxMessageSize>;
+    using Timer = typename IoContext::Timer;
+    using Log = typename IoContext::Log;
+
+    Impl(const PeerState& state,
       Callback callback,
       asio::ip::address_v4 address,
       Clock clock,
-      util::Injected<Log> log)
-      : mpSocket(std::make_shared<Socket>(io))
+      IoContext& io)
+      : mSocket(io.template openUnicastSocket<v1::kMaxMessageSize>(address))
       , mSessionId(state.nodeState.sessionId)
       , mEndpoint(state.endpoint)
       , mCallback(std::move(callback))
       , mClock(std::move(clock))
-      , mTimer(util::injectVal(io.makeTimer()))
+      , mTimer(io.makeTimer())
       , mMeasurementsStarted(0)
-      , mLog(std::move(log))
+      , mLog(channel(io.log(), "Measurement on gateway@" + address.to_string()))
       , mSuccess(false)
     {
-      configureUnicastSocket(*mpSocket, address);
-
       const auto ht = HostTime{mClock.micros()};
       sendPing(mEndpoint, discovery::makePayload(ht));
       resetTimer();
@@ -119,9 +92,9 @@ struct Measurement
 
     void resetTimer()
     {
-      mTimer->cancel();
-      mTimer->expires_from_now(std::chrono::milliseconds(50));
-      mTimer->async_wait([this](const typename Timer::ErrorCode e) {
+      mTimer.cancel();
+      mTimer.expires_from_now(std::chrono::milliseconds(50));
+      mTimer.async_wait([this](const typename Timer::ErrorCode e) {
         if (!e)
         {
           if (mMeasurementsStarted < kNumberMeasurements)
@@ -141,7 +114,7 @@ struct Measurement
 
     void listen()
     {
-      mpSocket->receive(util::makeAsyncSafe(this->shared_from_this()));
+      mSocket.receive(util::makeAsyncSafe(this->shared_from_this()));
     }
 
     // Operator to handle incoming messages on the interface
@@ -156,7 +129,7 @@ struct Measurement
 
       if (header.messageType == v1::kPong)
       {
-        debug(*mLog) << "Received Pong message from " << from;
+        debug(mLog) << "Received Pong message from " << from;
 
         // parse for all entries
         SessionId sessionId{};
@@ -175,7 +148,7 @@ struct Measurement
         }
         catch (const std::runtime_error& err)
         {
-          warning(*mLog) << "Failed parsing payload, caught exception: " << err.what();
+          warning(mLog) << "Failed parsing payload, caught exception: " << err.what();
           listen();
           return;
         }
@@ -215,7 +188,7 @@ struct Measurement
       }
       else
       {
-        debug(*mLog) << "Received invalid message from " << from;
+        debug(mLog) << "Received invalid message from " << from;
         listen();
       }
     }
@@ -230,40 +203,40 @@ struct Measurement
 
       try
       {
-        mpSocket->send(buffer.data(), numBytes, to);
+        mSocket.send(buffer.data(), numBytes, to);
       }
       catch (const std::runtime_error& err)
       {
-        info(*mLog) << "Failed to send Ping to " << to.address().to_string() << ": "
-                    << err.what();
+        info(mLog) << "Failed to send Ping to " << to.address().to_string() << ": "
+                   << err.what();
       }
     }
 
     void finish()
     {
-      mTimer->cancel();
+      mTimer.cancel();
       mCallback(std::move(mData));
       mData = {};
       mSuccess = true;
-      debug(*mLog) << "Measuring " << mEndpoint << " done.";
+      debug(mLog) << "Measuring " << mEndpoint << " done.";
     }
 
     void fail()
     {
       mCallback(std::vector<Point>{});
       mData = {};
-      debug(*mLog) << "Measuring " << mEndpoint << " failed.";
+      debug(mLog) << "Measuring " << mEndpoint << " failed.";
     }
 
-    std::shared_ptr<Socket> mpSocket;
+    Socket mSocket;
     SessionId mSessionId;
     asio::ip::udp::endpoint mEndpoint;
     std::vector<std::pair<double, double>> mData;
     Callback mCallback;
     Clock mClock;
-    util::Injected<typename IoService::Timer> mTimer;
+    Timer mTimer;
     std::size_t mMeasurementsStarted;
-    util::Injected<Log> mLog;
+    Log mLog;
     bool mSuccess;
   };
 
@@ -288,7 +261,7 @@ struct Measurement
     std::shared_ptr<Impl> mpImpl;
   };
 
-  std::unique_ptr<IoService> mpIo;
+  IoContext mIo;
   std::shared_ptr<Impl> mpImpl;
 };
 

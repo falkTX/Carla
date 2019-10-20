@@ -2,7 +2,7 @@
 // detail/win_iocp_io_context.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -48,7 +48,10 @@ public:
   // Constructor. Specifies a concurrency hint that is passed through to the
   // underlying I/O completion port.
   ASIO_DECL win_iocp_io_context(asio::execution_context& ctx,
-      int concurrency_hint = -1);
+      int concurrency_hint = -1, bool own_thread = true);
+
+  // Destructor.
+  ASIO_DECL ~win_iocp_io_context();
 
   // Destroy all user-defined handler objects owned by the service.
   ASIO_DECL void shutdown();
@@ -67,6 +70,9 @@ public:
 
   // Run until stopped or one operation is performed.
   ASIO_DECL size_t run_one(asio::error_code& ec);
+
+  // Run until timeout, interrupted, or one operation is performed.
+  ASIO_DECL size_t wait_one(long usec, asio::error_code& ec);
 
   // Poll for operations without blocking.
   ASIO_DECL size_t poll(asio::error_code& ec);
@@ -197,6 +203,12 @@ public:
       typename timer_queue<Time_Traits>::per_timer_data& to,
       typename timer_queue<Time_Traits>::per_timer_data& from);
 
+  // Get the concurrency hint that was used to initialise the io_context.
+  int concurrency_hint() const
+  {
+    return concurrency_hint_;
+  }
+
 private:
 #if defined(WINVER) && (WINVER < 0x0500)
   typedef DWORD dword_ptr_t;
@@ -209,7 +221,7 @@ private:
   // Dequeues at most one operation from the I/O completion port, and then
   // executes it. Returns the number of operations that were dequeued (i.e.
   // either 0 or 1).
-  ASIO_DECL size_t do_one(bool block, asio::error_code& ec);
+  ASIO_DECL size_t do_one(DWORD msec, asio::error_code& ec);
 
   // Helper to calculate the GetQueuedCompletionStatus timeout.
   ASIO_DECL static DWORD get_gqcs_timeout();
@@ -278,6 +290,10 @@ private:
   // Timeout to use with GetQueuedCompletionStatus.
   const DWORD gqcs_timeout_;
 
+  // Helper class to run the scheduler in its own thread.
+  struct thread_function;
+  friend struct thread_function;
+
   // Function object for processing timeouts in a background thread.
   struct timer_thread_function;
   friend struct timer_thread_function;
@@ -299,6 +315,12 @@ private:
 
   // The operations that are ready to dispatch.
   op_queue<win_iocp_operation> completed_ops_;
+
+  // The concurrency hint used to initialise the io_context.
+  const int concurrency_hint_;
+
+  // The thread that is running the io_context.
+  scoped_ptr<thread> thread_;
 };
 
 } // namespace detail

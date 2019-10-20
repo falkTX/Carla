@@ -67,7 +67,7 @@ private:
   struct ifaddrs* interfaces = NULL;
 };
 
-} // detail
+} // namespace detail
 
 
 // Posix implementation of ip interface address scanner

@@ -19,13 +19,27 @@
 
 #pragma once
 
-// Make sure to define this before <cmath> is included for Windows
+#ifdef LINK_PLATFORM_WINDOWS
 #define _USE_MATH_DEFINES
+#include "mingw-std-threads/mingw.condition_variable.h"
+#include "mingw-std-threads/mingw.mutex.h"
+#include "mingw-std-threads/mingw.thread.h"
+#if __BIG_ENDIAN__
+# define htonll(x) (x)
+# define ntohll(x) (x)
+#else
+# define htonll(x) ((uint64_t)htonl(((x) & 0xFFFFFFFF) << 32) | htonl((x) >> 32))
+# define ntohll(x) ((uint64_t)ntohl(((x) & 0xFFFFFFFF) << 32) | ntohl((x) >> 32))
+#endif
+#endif
+
+#include <cmath>
+
 #include "ableton/Link.hpp"
-#include <mutex>
 
 struct LinkTimeInfo {
     double beatsPerBar, beatsPerMinute, beat, phase;
+    bool playing;
 };
 
 namespace ableton
@@ -37,10 +51,15 @@ class AudioEngine
 {
 public:
   AudioEngine(Link& link);
+  void startPlaying();
+  void stopPlaying();
+  bool isPlaying() const;
   double beatTime() const;
   void setTempo(double tempo);
   double quantum() const;
   void setQuantum(double quantum);
+  bool isStartStopSyncEnabled() const;
+  void setStartStopSyncEnabled(bool enabled);
 
   void timelineCallback(const std::chrono::microseconds hostTime, LinkTimeInfo* const info);
 
@@ -48,14 +67,18 @@ private:
   struct EngineData
   {
     double requestedTempo;
-    bool resetBeatTime;
+    bool requestStart;
+    bool requestStop;
     double quantum;
+    bool startStopSyncOn;
   };
 
   EngineData pullEngineData();
 
   Link& mLink;
   EngineData mSharedEngineData;
+  EngineData mLockfreeEngineData;
+  bool mIsPlaying;
   std::mutex mEngineDataGuard;
 };
 

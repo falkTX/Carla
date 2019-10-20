@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include <ableton/discovery/Socket.hpp>
 #include <ableton/link/GhostXForm.hpp>
 #include <ableton/link/Kalman.hpp>
 #include <ableton/link/LinearRegression.hpp>
@@ -28,48 +27,34 @@
 #include <ableton/link/PingResponder.hpp>
 #include <ableton/link/SessionId.hpp>
 #include <ableton/link/v1/Messages.hpp>
-#include <ableton/platforms/asio/AsioService.hpp>
-#include <ableton/util/Log.hpp>
 #include <map>
 #include <memory>
-#include <thread>
 
 namespace ableton
 {
 namespace link
 {
 
-template <typename Clock, typename Log>
+template <typename Clock, typename IoContext>
 class MeasurementService
 {
 public:
+  using IoType = util::Injected<IoContext>;
   using Point = std::pair<double, double>;
-
-  using MeasurementInstance = Measurement<platforms::asio::AsioService,
-    Clock,
-    discovery::Socket<v1::kMaxMessageSize>,
-    Log>;
-
-  using MeasurementServicePingResponder = PingResponder<platforms::asio::AsioService&,
-    Clock,
-    discovery::Socket<v1::kMaxMessageSize>,
-    Log>;
-
-  static const std::size_t kNumberThreads = 1;
+  using MeasurementInstance = Measurement<Clock, IoContext>;
 
   MeasurementService(asio::ip::address_v4 address,
     SessionId sessionId,
     GhostXForm ghostXForm,
     Clock clock,
-    util::Injected<Log> log)
+    IoType io)
     : mClock(std::move(clock))
-    , mLog(std::move(log))
+    , mIo(std::move(io))
     , mPingResponder(std::move(address),
         std::move(sessionId),
         std::move(ghostXForm),
-        util::injectRef(mIo),
         mClock,
-        mLog)
+        util::injectRef(*mIo))
   {
   }
 
@@ -78,10 +63,10 @@ public:
 
   ~MeasurementService()
   {
-    // Clear the measurement map in the io service so that whatever
+    // Clear the measurement map in the IoContext so that whatever
     // cleanup code executes in response to the destruction of the
-    // measurement objects still have access to the io service
-    mIo.post([this] { mMeasurementMap.clear(); });
+    // measurement objects still have access to the IoContext.
+    mIo->async([this] { mMeasurementMap.clear(); });
   }
 
   void updateNodeState(const SessionId& sessionId, const GhostXForm& xform)
@@ -100,19 +85,22 @@ public:
   {
     using namespace std;
 
-    mIo.post([this, state, handler] {
+    mIo->async([this, state, handler] {
       const auto nodeId = state.nodeState.nodeId;
       auto addr = mPingResponder.endpoint().address().to_v4();
       auto callback = CompletionCallback<Handler>{*this, nodeId, handler};
 
       try
       {
+
         mMeasurementMap[nodeId] =
-          MeasurementInstance{state, move(callback), move(addr), mClock, mLog};
+          std::unique_ptr<MeasurementInstance>(new MeasurementInstance{
+            state, move(callback), move(addr), mClock, mIo->clone()});
       }
       catch (const runtime_error& err)
       {
-        info(*mLog) << "Failed to measure. Reason: " << err.what();
+        info(mIo->log()) << "gateway@" + addr.to_string()
+                         << " Failed to measure. Reason: " << err.what();
         handler(GhostXForm{});
       }
     });
@@ -142,14 +130,14 @@ private:
       using namespace std;
       using std::chrono::microseconds;
 
-      // Post this to the measurement service's io service so that we
+      // Post this to the measurement service's IoContext so that we
       // don't delete the measurement object in its stack. Capture all
       // needed data separately from this, since this object may be
       // gone by the time the block gets executed.
       auto nodeId = mNodeId;
       auto handler = mHandler;
-      auto& measurementMap = mService.mMeasurementMap;
-      mService.mIo.post([nodeId, handler, &measurementMap, data] {
+      auto& measurementMap = mMeasurementService.mMeasurementMap;
+      mMeasurementService.mIo->async([nodeId, handler, &measurementMap, data] {
         const auto it = measurementMap.find(nodeId);
         if (it != measurementMap.end())
         {
@@ -166,20 +154,19 @@ private:
       });
     }
 
-    MeasurementService& mService;
+    MeasurementService& mMeasurementService;
     NodeId mNodeId;
     Handler mHandler;
   };
 
-  // Make sure the measurement map outlives the io service so that the rest of
+  // Make sure the measurement map outlives the IoContext so that the rest of
   // the members are guaranteed to be valid when any final handlers
   // are begin run.
-  using MeasurementMap = std::map<NodeId, MeasurementInstance>;
+  using MeasurementMap = std::map<NodeId, std::unique_ptr<MeasurementInstance>>;
   MeasurementMap mMeasurementMap;
   Clock mClock;
-  util::Injected<Log> mLog;
-  platforms::asio::AsioService mIo;
-  MeasurementServicePingResponder mPingResponder;
+  IoType mIo;
+  PingResponder<Clock, IoContext> mPingResponder;
 };
 
 } // namespace link

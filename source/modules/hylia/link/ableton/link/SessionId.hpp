@@ -33,10 +33,8 @@ using SessionId = NodeId;
 // A payload entry indicating membership in a particular session
 struct SessionMembership
 {
-  enum
-  {
-    key = 'sess'
-  };
+  static const std::int32_t key = 'sess';
+  static_assert(key == 0x73657373, "Unexpected byte order");
 
   // Model the NetworkByteStreamSerializable concept
   friend std::uint32_t sizeInByteStream(const SessionMembership& sm)

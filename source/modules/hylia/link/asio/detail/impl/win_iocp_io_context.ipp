@@ -2,7 +2,7 @@
 // detail/impl/win_iocp_io_context.ipp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -24,6 +24,7 @@
 #include "asio/detail/handler_alloc_helpers.hpp"
 #include "asio/detail/handler_invoke_helpers.hpp"
 #include "asio/detail/limits.hpp"
+#include "asio/detail/thread.hpp"
 #include "asio/detail/throw_error.hpp"
 #include "asio/detail/win_iocp_io_context.hpp"
 
@@ -31,6 +32,22 @@
 
 namespace asio {
 namespace detail {
+
+struct win_iocp_io_context::thread_function
+{
+  explicit thread_function(win_iocp_io_context* s)
+    : this_(s)
+  {
+  }
+
+  void operator()()
+  {
+    asio::error_code ec;
+    this_->run(ec);
+  }
+
+  win_iocp_io_context* this_;
+};
 
 struct win_iocp_io_context::work_finished_on_block_exit
 {
@@ -62,7 +79,7 @@ struct win_iocp_io_context::timer_thread_function
 };
 
 win_iocp_io_context::win_iocp_io_context(
-    asio::execution_context& ctx, int concurrency_hint)
+    asio::execution_context& ctx, int concurrency_hint, bool own_thread)
   : execution_context_service_base<win_iocp_io_context>(ctx),
     iocp_(),
     outstanding_work_(0),
@@ -70,7 +87,8 @@ win_iocp_io_context::win_iocp_io_context(
     stop_event_posted_(0),
     shutdown_(0),
     gqcs_timeout_(get_gqcs_timeout()),
-    dispatch_required_(0)
+    dispatch_required_(0),
+    concurrency_hint_(concurrency_hint)
 {
   ASIO_HANDLER_TRACKING_INIT;
 
@@ -83,6 +101,21 @@ win_iocp_io_context::win_iocp_io_context(
         asio::error::get_system_category());
     asio::detail::throw_error(ec, "iocp");
   }
+
+  if (own_thread)
+  {
+    ::InterlockedIncrement(&outstanding_work_);
+    thread_.reset(new asio::detail::thread(thread_function(this)));
+  }
+}
+
+win_iocp_io_context::~win_iocp_io_context()
+{
+  if (thread_.get())
+  {
+    thread_->join();
+    thread_.reset();
+  }
 }
 
 void win_iocp_io_context::shutdown()
@@ -94,6 +127,13 @@ void win_iocp_io_context::shutdown()
     LARGE_INTEGER timeout;
     timeout.QuadPart = 1;
     ::SetWaitableTimer(waitable_timer_.handle, &timeout, 1, 0, 0, FALSE);
+  }
+
+  if (thread_.get())
+  {
+    thread_->join();
+    thread_.reset();
+    ::InterlockedDecrement(&outstanding_work_);
   }
 
   while (::InterlockedExchangeAdd(&outstanding_work_, 0) > 0)
@@ -158,7 +198,7 @@ size_t win_iocp_io_context::run(asio::error_code& ec)
   thread_call_stack::context ctx(this, this_thread);
 
   size_t n = 0;
-  while (do_one(true, ec))
+  while (do_one(INFINITE, ec))
     if (n != (std::numeric_limits<size_t>::max)())
       ++n;
   return n;
@@ -176,7 +216,22 @@ size_t win_iocp_io_context::run_one(asio::error_code& ec)
   win_iocp_thread_info this_thread;
   thread_call_stack::context ctx(this, this_thread);
 
-  return do_one(true, ec);
+  return do_one(INFINITE, ec);
+}
+
+size_t win_iocp_io_context::wait_one(long usec, asio::error_code& ec)
+{
+  if (::InterlockedExchangeAdd(&outstanding_work_, 0) == 0)
+  {
+    stop();
+    ec = asio::error_code();
+    return 0;
+  }
+
+  win_iocp_thread_info this_thread;
+  thread_call_stack::context ctx(this, this_thread);
+
+  return do_one(usec < 0 ? INFINITE : ((usec - 1) / 1000 + 1), ec);
 }
 
 size_t win_iocp_io_context::poll(asio::error_code& ec)
@@ -192,7 +247,7 @@ size_t win_iocp_io_context::poll(asio::error_code& ec)
   thread_call_stack::context ctx(this, this_thread);
 
   size_t n = 0;
-  while (do_one(false, ec))
+  while (do_one(0, ec))
     if (n != (std::numeric_limits<size_t>::max)())
       ++n;
   return n;
@@ -210,7 +265,7 @@ size_t win_iocp_io_context::poll_one(asio::error_code& ec)
   win_iocp_thread_info this_thread;
   thread_call_stack::context ctx(this, this_thread);
 
-  return do_one(false, ec);
+  return do_one(0, ec);
 }
 
 void win_iocp_io_context::stop()
@@ -339,7 +394,7 @@ void win_iocp_io_context::on_completion(win_iocp_operation* op,
   }
 }
 
-size_t win_iocp_io_context::do_one(bool block, asio::error_code& ec)
+size_t win_iocp_io_context::do_one(DWORD msec, asio::error_code& ec)
 {
   for (;;)
   {
@@ -361,8 +416,9 @@ size_t win_iocp_io_context::do_one(bool block, asio::error_code& ec)
     dword_ptr_t completion_key = 0;
     LPOVERLAPPED overlapped = 0;
     ::SetLastError(0);
-    BOOL ok = ::GetQueuedCompletionStatus(iocp_.handle, &bytes_transferred,
-        &completion_key, &overlapped, block ? gqcs_timeout_ : 0);
+    BOOL ok = ::GetQueuedCompletionStatus(iocp_.handle,
+        &bytes_transferred, &completion_key, &overlapped,
+        msec < gqcs_timeout_ ? msec : gqcs_timeout_);
     DWORD last_error = ::GetLastError();
 
     if (overlapped)
@@ -413,8 +469,9 @@ size_t win_iocp_io_context::do_one(bool block, asio::error_code& ec)
         return 0;
       }
 
-      // If we're not polling we need to keep going until we get a real handler.
-      if (block)
+      // If we're waiting indefinitely we need to keep going until we get a
+      // real handler.
+      if (msec == INFINITE)
         continue;
 
       ec = asio::error_code();

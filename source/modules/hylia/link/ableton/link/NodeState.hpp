@@ -22,6 +22,7 @@
 #include <ableton/discovery/Payload.hpp>
 #include <ableton/link/NodeId.hpp>
 #include <ableton/link/SessionId.hpp>
+#include <ableton/link/StartStopState.hpp>
 #include <ableton/link/Timeline.hpp>
 
 namespace ableton
@@ -31,7 +32,8 @@ namespace link
 
 struct NodeState
 {
-  using Payload = decltype(discovery::makePayload(Timeline{}, SessionMembership{}));
+  using Payload =
+    decltype(discovery::makePayload(Timeline{}, SessionMembership{}, StartStopState{}));
 
   NodeId ident() const
   {
@@ -40,29 +42,34 @@ struct NodeState
 
   friend bool operator==(const NodeState& lhs, const NodeState& rhs)
   {
-    return std::tie(lhs.nodeId, lhs.sessionId, lhs.timeline)
-           == std::tie(rhs.nodeId, rhs.sessionId, rhs.timeline);
+    return std::tie(lhs.nodeId, lhs.sessionId, lhs.timeline, lhs.startStopState)
+           == std::tie(rhs.nodeId, rhs.sessionId, rhs.timeline, rhs.startStopState);
   }
 
   friend Payload toPayload(const NodeState& state)
   {
-    return discovery::makePayload(state.timeline, SessionMembership{state.sessionId});
+    return discovery::makePayload(
+      state.timeline, SessionMembership{state.sessionId}, state.startStopState);
   }
 
   template <typename It>
-  static NodeState fromPayload(NodeId id, It begin, It end)
+  static NodeState fromPayload(NodeId nodeId, It begin, It end)
   {
     using namespace std;
-    auto state = NodeState{move(id), {}, {}};
-    discovery::parsePayload<Timeline, SessionMembership>(move(begin), move(end),
-      [&state](Timeline tl) { state.timeline = move(tl); },
-      [&state](SessionMembership sm) { state.sessionId = move(sm.sessionId); });
-    return state;
+    auto nodeState = NodeState{move(nodeId), {}, {}, {}};
+    discovery::parsePayload<Timeline, SessionMembership, StartStopState>(move(begin),
+      move(end), [&nodeState](Timeline tl) { nodeState.timeline = move(tl); },
+      [&nodeState](SessionMembership membership) {
+        nodeState.sessionId = move(membership.sessionId);
+      },
+      [&nodeState](StartStopState ststst) { nodeState.startStopState = move(ststst); });
+    return nodeState;
   }
 
   NodeId nodeId;
   SessionId sessionId;
   Timeline timeline;
+  StartStopState startStopState;
 };
 
 } // namespace link

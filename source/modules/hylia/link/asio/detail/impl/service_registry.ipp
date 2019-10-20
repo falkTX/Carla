@@ -2,7 +2,7 @@
 // detail/impl/service_registry.ipp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -84,7 +84,7 @@ void service_registry::notify_fork(execution_context::fork_event fork_ev)
       services[i - 1]->notify_fork(fork_ev);
 }
 
-void service_registry::init_key(execution_context::service::key& key,
+void service_registry::init_key_from_id(execution_context::service::key& key,
     const execution_context::id& id)
 {
   key.type_info_ = 0;

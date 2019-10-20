@@ -32,13 +32,20 @@ namespace ableton
 /*! @class Link
  *  @brief Class that represents a participant in a Link session.
  *
- *  @discussion Each Link instance has its own beat timeline that
- *  starts running from beat 0 at the initial tempo when
- *  constructed. A Link instance is initially disabled after
- *  construction, which means that it will not communicate on the
- *  network. Once enabled, a Link instance initiates network
- *  communication in an effort to discover other peers. When peers are
- *  discovered, they immediately become part of a shared Link session.
+ *  @discussion Each Link instance has its own session state which
+ *  represents a beat timeline and a transport start/stop state. The
+ *  timeline starts running from beat 0 at the initial tempo when
+ *  constructed. The timeline always advances at a speed defined by
+ *  its current tempo, even if transport is stopped. Synchronizing to the
+ *  transport start/stop state of Link is optional for every peer.
+ *  The transport start/stop state is only shared with other peers when
+ *  start/stop synchronization is enabled.
+ *
+ *  A Link instance is initially disabled after construction, which
+ *  means that it will not communicate on the network. Once enabled,
+ *  a Link instance initiates network communication in an effort to
+ *  discover other peers. When peers are discovered, they immediately
+ *  become part of a shared Link session.
  *
  *  Each method of the Link type documents its thread-safety and
  *  realtime-safety properties. When a method is marked thread-safe,
@@ -47,31 +54,31 @@ namespace ableton
  *  it does not block and is appropriate for use in the thread that
  *  performs audio IO.
  *
- *  Link provides one Timeline capture/commit method pair for use in the
- *  audio thread and one for all other application contexts. In
- *  general, modifying the Link timeline should be done in the audio
+ *  Link provides one session state capture/commit method pair for use
+ *  in the audio thread and one for all other application contexts. In
+ *  general, modifying the session state should be done in the audio
  *  thread for the most accurate timing results. The ability to modify
- *  the Link timeline from application threads should only be used in
+ *  the session state from application threads should only be used in
  *  cases where an application's audio thread is not actively running
- *  or if it doesn't generate audio at all. Modifying the Link
- *  timeline from both the audio thread and an application thread
- *  concurrently is not advised and will potentially lead to
- *  unexpected behavior.
+ *  or if it doesn't generate audio at all. Modifying the Link session
+ *  state from both the audio thread and an application thread
+ *  concurrently is not advised and will potentially lead to unexpected
+ *  behavior.
  */
-template <typename Clock>
-class BasicLink
+class Link
 {
 public:
-  class Timeline;
+  using Clock = link::platform::Clock;
+  class SessionState;
 
   /*! @brief Construct with an initial tempo. */
-  BasicLink(double bpm);
+  Link(double bpm);
 
   /*! @brief Link instances cannot be copied or moved */
-  BasicLink(const BasicLink<Clock>&) = delete;
-  BasicLink& operator=(const BasicLink<Clock>&) = delete;
-  BasicLink(BasicLink<Clock>&&) = delete;
-  BasicLink& operator=(BasicLink<Clock>&&) = delete;
+  Link(const Link&) = delete;
+  Link& operator=(const Link&) = delete;
+  Link(Link&&) = delete;
+  Link& operator=(Link&&) = delete;
 
   /*! @brief Is Link currently enabled?
    *  Thread-safe: yes
@@ -84,6 +91,18 @@ public:
    *  Realtime-safe: no
    */
   void enable(bool bEnable);
+
+  /*! @brief: Is start/stop synchronization enabled?
+   *  Thread-safe: yes
+   *  Realtime-safe: no
+   */
+  bool isStartStopSyncEnabled() const;
+
+  /*! @brief: Enable start/stop synchronization.
+   *  Thread-safe: yes
+   *  Realtime-safe: no
+   */
+  void enableStartStopSync(bool bEnable);
 
   /*! @brief How many peers are currently connected in a Link session?
    *  Thread-safe: yes
@@ -116,6 +135,19 @@ public:
   template <typename Callback>
   void setTempoCallback(Callback callback);
 
+  /*! brief: Register a callback to be notified when the state of
+   *  start/stop isPlaying changes.
+   *  Thread-safe: yes
+   *  Realtime-safe: no
+   *
+   *  @discussion The callback is invoked on a Link-managed thread.
+   *
+   *  @param callback The callback signature is:
+   *  void (bool isPlaying)
+   */
+  template <typename Callback>
+  void setStartStopCallback(Callback callback);
+
   /*! @brief The clock used by Link.
    *  Thread-safe: yes
    *  Realtime-safe: yes
@@ -130,69 +162,81 @@ public:
    */
   Clock clock() const;
 
-  /*! @brief Capture the current Link timeline from the audio thread.
+  /*! @brief Capture the current Link Session State from the audio thread.
    *  Thread-safe: no
    *  Realtime-safe: yes
    *
    *  @discussion This method should ONLY be called in the audio thread
    *  and must not be accessed from any other threads. The returned
-   *  Timeline stores a snapshot of the current Link state, so it
+   *  object stores a snapshot of the current Link Session State, so it
    *  should be captured and used in a local scope. Storing the
-   *  Timeline for later use in a different context is not advised
-   *  because it will provide an outdated view on the Link state.
+   *  Session State for later use in a different context is not advised
+   *  because it will provide an outdated view.
    */
-  Timeline captureAudioTimeline() const;
+  SessionState captureAudioSessionState() const;
 
-  /*! @brief Commit the given timeline to the Link session from the
+  /*! @brief Commit the given Session State to the Link session from the
    *  audio thread.
    *  Thread-safe: no
    *  Realtime-safe: yes
    *
    *  @discussion This method should ONLY be called in the audio
-   *  thread. The given timeline will replace the current Link
-   *  timeline. Modifications to the session based on the new timeline
-   *  will be communicated to other peers in the session.
+   *  thread. The given Session State will replace the current Link
+   *  state. Modifications will be communicated to other peers in the
+   *  session.
    */
-  void commitAudioTimeline(Timeline timeline);
+  void commitAudioSessionState(SessionState state);
 
-  /*! @brief Capture the current Link timeline from an application
+  /*! @brief Capture the current Link Session State from an application
    *  thread.
    *  Thread-safe: yes
    *  Realtime-safe: no
    *
-   *  @discussion Provides a mechanism for capturing the Link timeline
-   *  from an application thread (other than the audio thread). The
-   *  returned Timeline stores a snapshot of the current Link state,
-   *  so it should be captured and used in a local scope. Storing the
-   *  Timeline for later use in a different context is not advised
-   *  because it will provide an outdated view on the Link state.
+   *  @discussion Provides a mechanism for capturing the Link Session
+   *  State from an application thread (other than the audio thread).
+   *  The returned Session State stores a snapshot of the current Link
+   *  state, so it should be captured and used in a local scope.
+   *  Storing the it for later use in a different context is not
+   *  advised because it will provide an outdated view.
    */
-  Timeline captureAppTimeline() const;
+  SessionState captureAppSessionState() const;
 
-  /*! @brief Commit the given timeline to the Link session from an
+  /*! @brief Commit the given Session State to the Link session from an
    *  application thread.
    *  Thread-safe: yes
    *  Realtime-safe: no
    *
-   *  @discussion The given timeline will replace the current Link
-   *  timeline. Modifications to the session based on the new timeline
-   *  will be communicated to other peers in the session.
+   *  @discussion The given Session State will replace the current Link
+   *  Session State. Modifications of the Session State will be
+   *  communicated to other peers in the session.
    */
-  void commitAppTimeline(Timeline timeline);
+  void commitAppSessionState(SessionState state);
 
-  /*! @class Timeline
-   *  @brief Representation of a mapping between time and beats for
-   *  varying quanta.
+  /*! @class SessionState
+   *  @brief Representation of a timeline and the start/stop state
    *
-   *  @discussion A Timeline object is intended for use in a local
-   *  scope within a single thread - none of its methods are
-   *  thread-safe. All of its methods are non-blocking, so it is safe
-   *  to use from a realtime thread.
+   *  @discussion A SessionState object is intended for use in a local scope within
+   *  a single thread - none of its methods are thread-safe. All of its methods are
+   *  non-blocking, so it is safe to use from a realtime thread.
+   *  It provides functions to observe and manipulate the timeline and start/stop
+   *  state.
+   *
+   *  The timeline is a representation of a mapping between time and beats for varying
+   *  quanta.
+   *  The start/stop state represents the user intention to start or stop transport at
+   *  a specific time. Start stop synchronization is an optional feature that allows to
+   *  share the user request to start or stop transport between a subgroup of peers in
+   *  a Link session. When observing a change of start/stop state, audio playback of a
+   *  peer should be started or stopped the same way it would have happened if the user
+   *  had requested that change at the according time locally. The start/stop state can
+   *  only be changed by the user. This means that the current local start/stop state
+   *  persists when joining or leaving a Link session. After joining a Link session
+   *  start/stop change requests will be communicated to all connected peers.
    */
-  class Timeline
+  class SessionState
   {
   public:
-    Timeline(const link::Timeline timeline, const bool bRespectQuantum);
+    SessionState(const link::ApiState state, const bool bRespectQuantum);
 
     /*! @brief: The tempo of the timeline, in bpm */
     double tempo() const;
@@ -286,29 +330,45 @@ public:
      */
     void forceBeatAtTime(double beat, std::chrono::microseconds time, double quantum);
 
-  private:
-    friend BasicLink<Clock>;
+    /*! @brief: Set if transport should be playing or stopped, taking effect
+     *  at the given time.
+     */
+    void setIsPlaying(bool isPlaying, std::chrono::microseconds time);
 
-    link::Timeline mOriginalTimeline;
+    /*! @brief: Is transport playing? */
+    bool isPlaying() const;
+
+    /*! @brief: Get the time at which a transport start/stop occurs */
+    std::chrono::microseconds timeForIsPlaying() const;
+
+    /*! @brief: Convenience function to attempt to map the given beat to the time
+     *  when transport is starting to play in context of the given quantum.
+     *  This function evaluates to a no-op if isPlaying() equals false.
+     */
+    void requestBeatAtStartPlayingTime(double beat, double quantum);
+
+    /*! @brief: Convenience function to start or stop transport at a given time and
+     *  attempt to map the given beat to this time in context of the given quantum.
+     */
+    void setIsPlayingAndRequestBeatAtTime(
+      bool isPlaying, std::chrono::microseconds time, double beat, double quantum);
+
+  private:
+    friend Link;
+    link::ApiState mOriginalState;
+    link::ApiState mState;
     bool mbRespectQuantum;
-    link::Timeline mTimeline;
   };
 
 private:
-  using Controller = ableton::link::Controller<link::PeerCountCallback,
-    link::TempoCallback,
-    Clock,
-    link::platform::IoContext>;
-
   std::mutex mCallbackMutex;
   link::PeerCountCallback mPeerCountCallback;
   link::TempoCallback mTempoCallback;
+  link::StartStopStateCallback mStartStopCallback;
   Clock mClock;
-  Controller mController;
+  link::platform::Controller mController;
 };
 
-using Link = BasicLink<link::platform::Clock>;
-
-} // ableton
+} // namespace ableton
 
 #include <ableton/Link.ipp>
