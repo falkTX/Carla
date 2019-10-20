@@ -448,6 +448,10 @@ else:
     DEFAULT_VST2_PATH   += ":/usr/lib/vst"
     DEFAULT_VST2_PATH   += ":/usr/local/lib/vst"
 
+    DEFAULT_VST2_PATH   += HOME + "/.lxvst"
+    DEFAULT_VST2_PATH   += ":/usr/lib/lxvst"
+    DEFAULT_VST2_PATH   += ":/usr/local/lib/lxvst"
+
     DEFAULT_VST3_PATH    = HOME + "/.vst3"
     DEFAULT_VST3_PATH   += ":/usr/lib/vst3"
     DEFAULT_VST3_PATH   += ":/usr/local/lib/vst3"
