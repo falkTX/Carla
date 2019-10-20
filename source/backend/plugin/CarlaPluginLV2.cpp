@@ -4722,7 +4722,23 @@ public:
             else if (std::strcmp(extension, LV2_INLINEDISPLAY__interface) == 0)
                 pData->hints |= PLUGIN_HAS_EXTENSION_INLINE_DISPLAY;
             else
-                carla_stdout("Plugin has non-supported extension: '%s'", extension);
+                carla_stdout("Plugin '%s' has non-supported extension: '%s'", fRdfDescriptor->URI, extension);
+        }
+
+        // Fix for broken plugins, nasty!
+        for (uint32_t i=0; i < fRdfDescriptor->FeatureCount; ++i)
+        {
+            const LV2_RDF_Feature& feature(fRdfDescriptor->Features[i]);
+
+            if (std::strcmp(feature.URI, LV2_INLINEDISPLAY__queue_draw) == 0)
+            {
+                if (pData->hints & PLUGIN_HAS_EXTENSION_INLINE_DISPLAY)
+                    break;
+
+                carla_stdout("Plugin '%s' uses inline-display but does not set extension data, nasty!", fRdfDescriptor->URI);
+                pData->hints |= PLUGIN_HAS_EXTENSION_INLINE_DISPLAY;
+                break;
+            }
         }
 
         if (fDescriptor->extension_data != nullptr)

@@ -111,6 +111,8 @@ static const CarlaCachedPluginInfo* get_cached_plugin_internal(const NativePlugi
         info.hints |= CB::PLUGIN_IS_SYNTH;
     if (desc.hints & NATIVE_PLUGIN_HAS_UI)
         info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
+    if (desc.hints & NATIVE_PLUGIN_HAS_INLINE_DISPLAY)
+        info.hints |= CB::PLUGIN_HAS_INLINE_DISPLAY;
     if (desc.hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS)
         info.hints |= CB::PLUGIN_NEEDS_FIXED_BUFFERS;
     if (desc.hints & NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD)
@@ -229,9 +231,13 @@ static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2Worl
             const char* const featureURI(lilvFeatureNode.as_uri());
             CARLA_SAFE_ASSERT_CONTINUE(featureURI != nullptr);
 
-            if (std::strcmp(featureURI, LV2_CORE__hardRTCapable) == 0)
+            /**/ if (std::strcmp(featureURI, LV2_CORE__hardRTCapable) == 0)
             {
                 info.hints |= CB::PLUGIN_IS_RTSAFE;
+            }
+            else if (std::strcmp(featureURI, LV2_INLINEDISPLAY__queue_draw) == 0)
+            {
+                info.hints |= CB::PLUGIN_HAS_INLINE_DISPLAY;
             }
             else if (std::strcmp(featureURI, LV2_DATA_ACCESS_URI) == 0
                   || std::strcmp(featureURI, LV2_INSTANCE_ACCESS_URI) == 0)

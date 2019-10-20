@@ -133,7 +133,7 @@ def findFilenames(filePath, stype):
 # ---------------------------------------------------------------------------------------------------------------------
 # Plugin Query
 
-PLUGIN_QUERY_API_VERSION = 9
+PLUGIN_QUERY_API_VERSION = 10
 
 PyPluginInfo = {
     'API': PLUGIN_QUERY_API_VERSION,
@@ -1469,7 +1469,9 @@ class PluginDatabaseW(QDialog):
         self.ui.ch_bridged.clicked.connect(self.slot_checkFilters)
         self.ui.ch_bridged_wine.clicked.connect(self.slot_checkFilters)
         self.ui.ch_rtsafe.clicked.connect(self.slot_checkFilters)
+        self.ui.ch_cv.clicked.connect(self.slot_checkFilters)
         self.ui.ch_gui.clicked.connect(self.slot_checkFilters)
+        self.ui.ch_inline_display.clicked.connect(self.slot_checkFilters)
         self.ui.ch_stereo.clicked.connect(self.slot_checkFilters)
 
         # ----------------------------------------------------------------------------------------------------
@@ -1531,7 +1533,9 @@ class PluginDatabaseW(QDialog):
         settings.setValue("PluginDatabase/ShowBridged", self.ui.ch_bridged.isChecked())
         settings.setValue("PluginDatabase/ShowBridgedWine", self.ui.ch_bridged_wine.isChecked())
         settings.setValue("PluginDatabase/ShowRtSafe", self.ui.ch_rtsafe.isChecked())
+        settings.setValue("PluginDatabase/ShowHasCV", self.ui.ch_cv.isChecked())
         settings.setValue("PluginDatabase/ShowHasGUI", self.ui.ch_gui.isChecked())
+        settings.setValue("PluginDatabase/ShowHasInlineDisplay", self.ui.ch_inline_display.isChecked())
         settings.setValue("PluginDatabase/ShowStereoOnly", self.ui.ch_stereo.isChecked())
         settings.setValue("PluginDatabase/SearchText", self.ui.lineEdit.text())
 
@@ -1556,7 +1560,9 @@ class PluginDatabaseW(QDialog):
         self.ui.ch_bridged.setChecked(settings.value("PluginDatabase/ShowBridged", True, type=bool))
         self.ui.ch_bridged_wine.setChecked(settings.value("PluginDatabase/ShowBridgedWine", True, type=bool))
         self.ui.ch_rtsafe.setChecked(settings.value("PluginDatabase/ShowRtSafe", False, type=bool))
+        self.ui.ch_cv.setChecked(settings.value("PluginDatabase/ShowHasCV", False, type=bool))
         self.ui.ch_gui.setChecked(settings.value("PluginDatabase/ShowHasGUI", False, type=bool))
+        self.ui.ch_inline_display.setChecked(settings.value("PluginDatabase/ShowHasInlineDisplay", False, type=bool))
         self.ui.ch_stereo.setChecked(settings.value("PluginDatabase/ShowStereoOnly", False, type=bool))
         self.ui.lineEdit.setText(settings.value("PluginDatabase/SearchText", "", type=str))
 
@@ -1592,7 +1598,9 @@ class PluginDatabaseW(QDialog):
         hideBridgedWine = not self.ui.ch_bridged_wine.isChecked()
 
         hideNonRtSafe = self.ui.ch_rtsafe.isChecked()
+        hideNonCV     = self.ui.ch_cv.isChecked()
         hideNonGui    = self.ui.ch_gui.isChecked()
+        hideNonIDisp  = self.ui.ch_inline_display.isChecked()
         hideNonStereo = self.ui.ch_stereo.isChecked()
 
         if HAIKU or LINUX or MACOS:
@@ -1611,6 +1619,8 @@ class PluginDatabaseW(QDialog):
             plugin = self.ui.tableWidget.item(i, 0).data(Qt.UserRole)
             aIns   = plugin['audio.ins']
             aOuts  = plugin['audio.outs']
+            cvIns  = plugin['cv.ins']
+            cvOuts = plugin['cv.outs']
             mIns   = plugin['midi.ins']
             mOuts  = plugin['midi.outs']
             ptype  = self.ui.tableWidget.item(i, 12).text()
@@ -1622,7 +1632,9 @@ class PluginDatabaseW(QDialog):
             isNative = bool(plugin['build'] == BINARY_NATIVE)
             isRtSafe = bool(plugin['hints'] & PLUGIN_IS_RTSAFE)
             isStereo = bool(aIns == 2 and aOuts == 2) or (isSynth and aOuts == 2)
+            hasCV    = bool(cvIns + cvOuts > 0)
             hasGui   = bool(plugin['hints'] & PLUGIN_HAS_CUSTOM_UI)
+            hasIDisp = bool(plugin['hints'] & PLUGIN_HAS_INLINE_DISPLAY)
 
             isBridged = bool(not isNative and plugin['build'] in nativeBins)
             isBridgedWine = bool(not isNative and plugin['build'] in wineBins)
@@ -1659,7 +1671,11 @@ class PluginDatabaseW(QDialog):
                 self.ui.tableWidget.hideRow(i)
             elif hideNonRtSafe and not isRtSafe:
                 self.ui.tableWidget.hideRow(i)
+            elif hideNonCV and not hasCV:
+                self.ui.tableWidget.hideRow(i)
             elif hideNonGui and not hasGui:
+                self.ui.tableWidget.hideRow(i)
+            elif hideNonIDisp and not hasIDisp:
                 self.ui.tableWidget.hideRow(i)
             elif hideNonStereo and not isStereo:
                 self.ui.tableWidget.hideRow(i)
