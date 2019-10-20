@@ -29,6 +29,7 @@
 *.vst3
 
 # Binary dir
+bin/carla.lv2/carla-bridge-*
 bin/jack/
 bin/styles/
 build/
@@ -90,13 +91,6 @@ zynaddsubfx-ui
 
 stoat-output.png
 
-data/macos/*-svn/
-data/windows/Carla
-data/windows/CarlaControl
-data/windows/Carla-*-win32/
-data/windows/Carla-*-win64/
-data/windows/Carla.lv2/
-data/windows/Carla_*
 source/tests/ansi-pedantic-test_*
 source/tests/CachedPlugins
 source/tests/CarlaRingBuffer
@@ -157,7 +151,15 @@ data/linux/*.*/
 
 data/macos/*.gz
 data/macos/*.tgz
+data/macos/*-svn/
 data/macos/*.*/
 data/macos/Carla/
+
+data/windows/Carla
+data/windows/CarlaControl
+data/windows/Carla-*-win32/
+data/windows/Carla-*-win64/
+data/windows/Carla.lv2/
+data/windows/Carla_*
 
 data/windows/python/
