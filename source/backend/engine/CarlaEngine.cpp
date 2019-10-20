@@ -227,6 +227,8 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
         return newJuce(AUDIO_API_ASIO);
     if (std::strcmp(driverName, "DirectSound") == 0)
         return newJuce(AUDIO_API_DIRECTSOUND);
+    if (std::strcmp(driverName, "WASAPI") == 0 || std::strcmp(driverName, "Windows Audio") == 0)
+        return newJuce(AUDIO_API_WASAPI);
 # else
     // -------------------------------------------------------------------
     // common

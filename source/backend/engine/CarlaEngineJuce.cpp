@@ -88,6 +88,14 @@ struct JuceCleanup : public juce::DeletedAtShutdown {
 // -------------------------------------------------------------------------------------------------------------------
 // Cleanup
 
+struct AudioIODeviceTypeComparator
+{
+    static int compareElements (const juce::AudioIODeviceType* d1, const juce::AudioIODeviceType* d2) noexcept
+    {
+        return d1->getTypeName().compareNatural (d2->getTypeName());
+    }
+};
+
 static void initJuceDevicesIfNeeded()
 {
     static juce::AudioDeviceManager sDeviceManager;
@@ -110,6 +118,9 @@ static void initJuceDevicesIfNeeded()
             break;
         }
     }
+
+    AudioIODeviceTypeComparator comp;
+    gDeviceTypes.sort(comp);
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -831,7 +842,6 @@ CarlaEngine* CarlaEngine::newJuce(const AudioApi api)
     case AUDIO_API_NULL:
     case AUDIO_API_OSS:
     case AUDIO_API_PULSEAUDIO:
-    case AUDIO_API_WASAPI:
         break;
     case AUDIO_API_JACK:
         juceApi = "JACK";
@@ -847,6 +857,9 @@ CarlaEngine* CarlaEngine::newJuce(const AudioApi api)
         break;
     case AUDIO_API_DIRECTSOUND:
         juceApi = "DirectSound";
+        break;
+    case AUDIO_API_WASAPI:
+        juceApi = "Windows Audio";
         break;
     }
 
