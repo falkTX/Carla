@@ -95,6 +95,8 @@ data/windows/Carla
 data/windows/CarlaControl
 data/windows/Carla-*-win32/
 data/windows/Carla-*-win64/
+data/windows/Carla.lv2/
+data/windows/Carla_*
 source/tests/ansi-pedantic-test_*
 source/tests/CachedPlugins
 source/tests/CarlaRingBuffer

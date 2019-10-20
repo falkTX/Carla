@@ -16,6 +16,38 @@ cd $(dirname $0)
 source common.env
 
 # ---------------------------------------------------------------------------------------------------------------------
+# function to remove old stuff
+
+cleanup_prefix()
+{
+
+rm -rf ${TARGETDIR}/msys2-i686 ${TARGETDIR}/msys2-x86_64
+rm -rf python-pkgs-*
+
+}
+
+cleanup_pkgs()
+{
+
+rm -rf Carla
+rm -rf Carla.exe
+rm -rf Carla.lv2
+rm -rf Carla.vst
+rm -rf Carla_*
+rm -rf pyliblo-*
+
+}
+
+cleanup()
+{
+
+cleanup_prefix
+cleanup_pkgs
+exit 0
+
+}
+
+# ---------------------------------------------------------------------------------------------------------------------
 # function to download python stuff from msys2
 
 download_python()
@@ -206,10 +238,12 @@ export ARCH=32
 export ARCH_PREFIX=32nosse
 download_python
 build_python
+cleanup_pkgs
 
 export ARCH=64
 export ARCH_PREFIX=64
 download_python
 build_python
+cleanup_pkgs
 
 # ---------------------------------------------------------------------------------------------------------------------
