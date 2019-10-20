@@ -23,6 +23,26 @@
 
 #include <QtCore/QHash>
 
+static inline
+const QColor& qt_palette_bg_color(const QPalette& pal)
+{
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 13, 0))
+    return pal.window().color();
+#else
+    return pal.background().color();
+#endif
+}
+
+static inline
+const QColor& qt_palette_fg_color(const QPalette& pal)
+{
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 13, 0))
+    return pal.windowText().color();
+#else
+    return pal.foreground().color();
+#endif
+}
+
 class QStyleAnimation;
 
 class CarlaStylePrivate : public QObject
@@ -95,7 +115,7 @@ public:
     {
         if (! pal.window().texture().isNull())
             return QColor(0, 0, 0, 160);
-        const QColor& col = pal.background().color();
+        const QColor& col = qt_palette_bg_color(pal);
         return col.blackF() > 0.4 ? col.lighter(160) : col.darker(140);
     }
 
