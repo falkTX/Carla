@@ -133,7 +133,7 @@ def findFilenames(filePath, stype):
 # ---------------------------------------------------------------------------------------------------------------------
 # Plugin Query
 
-PLUGIN_QUERY_API_VERSION = 10
+PLUGIN_QUERY_API_VERSION = 11
 
 PyPluginInfo = {
     'API': PLUGIN_QUERY_API_VERSION,
@@ -1698,9 +1698,8 @@ class PluginDatabaseW(QDialog):
     # --------------------------------------------------------------------------------------------------------
 
     def _addPluginToTable(self, plugin, ptype):
-        if plugin['API'] != PLUGIN_QUERY_API_VERSION and ptype == self.tr("Internal"):
+        if plugin['API'] != PLUGIN_QUERY_API_VERSION:
             return
-
         if ptype in (self.tr("Internal"), "LV2", "SF2", "SFZ"):
             plugin['build'] = BINARY_NATIVE
 
