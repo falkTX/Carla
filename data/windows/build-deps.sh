@@ -282,7 +282,7 @@ fi
 if [ ! -f fluidsynth-${FLUIDSYNTH_VERSION}/build-done ]; then
   cd fluidsynth-${FLUIDSYNTH_VERSION}
   if [ ! -f patched ]; then
-    patch -p1 -i ../../patches/fluidsynth-skip-drivers-build.patch
+    patch -p1 -i ../patches/fluidsynth-skip-drivers-build.patch
     touch patched
   fi
   cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_SHARED_LIBS=OFF \
