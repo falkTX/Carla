@@ -133,11 +133,15 @@ class CanvasObject(QObject):
     @pyqtSlot()
     def PortContextMenuDisconnect(self):
         try:
-            connectionId = int(self.sender().data())
+            con_ids_list = list(self.sender().data())
         except:
             return
-
-        CanvasCallback(ACTION_PORTS_DISCONNECT, connectionId, 0, "")
+        
+        for connectionId in con_ids_list:
+            if type(connectionId) != int:
+                continue
+            
+            CanvasCallback(ACTION_PORTS_DISCONNECT, connectionId, 0, "")
     
     @pyqtSlot()
     def SetasStereoWith(self):

@@ -57,8 +57,7 @@ from .theme import Theme
 from .utils import (CanvasGetFullPortName, CanvasGetPortConnectionList,
                     CanvasGetPortGroupPosition, CanvasGetPortPrintName,
                     CanvasGetPortGroupName, CanvasGetPortGroupFullName, 
-                    CanvasUpdateSelectedLines, CanvasConnectionMatches,
-                    CanvasConnectionConcerns,
+                    CanvasConnectionMatches, CanvasConnectionConcerns,
                     CanvasCallback)
 
 # ------------------------------------------------------------------------------------------------------------
@@ -205,12 +204,20 @@ class CanvasPortGroup(QGraphicsItem):
         
         self.m_line_mov_list = self.m_line_mov_list[:self.getPortLength()]
                 
+    def hoverEnterEvent(self, event):
+        if options.auto_select_items:
+            self.setSelected(True)
+        QGraphicsItem.hoverEnterEvent(self, event)
+
+    def hoverLeaveEvent(self, event):
+        if options.auto_select_items:
+            self.setSelected(False)
+        QGraphicsItem.hoverLeaveEvent(self, event)
+
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self.m_hover_item = None
-            self.m_mouse_down = True
-            self.m_cursor_moving = False
-                        
+        self.m_hover_item = None
+        self.m_mouse_down = bool(event.button() == Qt.LeftButton)
+        self.m_cursor_moving = False
         QGraphicsItem.mousePressEvent(self, event)
 
     def mouseMoveEvent(self, event):
@@ -362,136 +369,146 @@ class CanvasPortGroup(QGraphicsItem):
         
         menu = QMenu()
         discMenu = QMenu("Disconnect", menu)
-        
-        # get all connected ports and all connected groups
-        all_connected_ports_ids = []
-        group_ids_list = []
-        for selfport_id in self.m_port_id_list:
-            con_list = CanvasGetPortConnectionList(self.m_group_id, selfport_id)
-            for con_id, group_id, port_id in con_list:
-                for port in canvas.port_list:
-                    if port.port_id == port_id:
-                        if not port.group_id in group_ids_list:
-                            group_ids_list.append(port.group_id)
-                                
-                if not port_id in all_connected_ports_ids:
-                    all_connected_ports_ids.append(port_id)
                     
         # Display 'no connection' action in disconnect menu
-        if len(all_connected_ports_ids) == 0:
+        for connection in canvas.connection_list:
+            if CanvasConnectionConcerns(connection, 
+                        self.m_group_id, self.m_port_id_list):
+                break
+        else:
             action_noconnection = discMenu.addAction('no connection')
             action_noconnection.setEnabled(False)
         
-        for group_id in group_ids_list:
-            #get a list of connected port from this group
-            gr_port_ids_list = []
-            for port in canvas.port_list:
-                if port.group_id == group_id:
-                    if port.port_id in all_connected_ports_ids:
-                        if not port.port_id in gr_port_ids_list:
-                            gr_port_ids_list.append(port.port_id)
-            
+        last_is_dirty_portgrp = False # used to display menu separator or not
+        
+        for group in canvas.group_list:
+            all_connected_ports_ids = []
             portgrp_list_ids = []
-            portgrp_dirty_connect_list = [] #is used to display individual ports of portgrp or not
-            last_is_dirty_portgrp = False #is used to display menu separator or not
+            portgrp_dirty_connect_list = []
             
-            #create action for each port of this group connected to the box
-            for port in canvas.port_list:
-                if port.port_id in gr_port_ids_list:
+            for connection in canvas.connection_list:
+                if CanvasConnectionConcerns(connection, 
+                                    self.m_group_id, self.m_port_id_list):
+                    port_id = None
                     
-                    #get port connection list
-                    port_con_list = []
-                    for connection in canvas.connection_list:
+                    if (self.m_port_mode == PORT_MODE_INPUT
+                        and connection.group_out_id == group.group_id):
+                            port_id = connection.port_out_id
+                    elif (self.m_port_mode == PORT_MODE_OUTPUT
+                          and connection.group_in_id == group.group_id):
+                            port_id = connection.port_in_id
+                            
+                    if port_id is None:
+                        continue
+                    
+                    if not port_id in all_connected_ports_ids:
+                        all_connected_ports_ids.append(port_id)
+            
+            for port in canvas.port_list:
+                if port.group_id != group.group_id:
+                    continue
+                
+                if not port.port_id in all_connected_ports_ids:
+                    continue
+                
+                port_con_list = []
+                for connection in canvas.connection_list:
                         if CanvasConnectionMatches(connection, 
                                         self.m_group_id, self.m_port_id_list,
                                         port.group_id, [port.port_id]):
                             port_con_list.append(connection.connection_id)
-                    
-                    if port.portgrp_id:
-                        port_alone_connected = False
-                        
-                        if not port.portgrp_id in portgrp_list_ids:
-                            portgrp_list_ids.append(port.portgrp_id)
-                            
-                            for portgrp in canvas.portgrp_list:
-                                if portgrp.portgrp_id == port.portgrp_id:
-                                    # count ports from portgrp connected to the box
-                                    c = 0
-                                    for p in portgrp.port_id_list:
-                                        if p in all_connected_ports_ids:
-                                            c += 1
-                                    
-                                    if c == 1:
-                                        port_alone_connected = True
-                                    
-                                    # Set disconnect port action
-                                    # if port is the only one of the portgrp connected to the box
-                                    if port_alone_connected:
-                                        if last_is_dirty_portgrp:
-                                            discMenu.addSeparator()
-                                            last_is_dirty_portgrp = False
-                                            
-                                        full_port_name = CanvasGetFullPortName(
-                                                    port.group_id, port.port_id)
-                                        act_x_disc_port = discMenu.addAction(full_port_name)
-                                        act_x_disc_port.setData(port_con_list)
-                                        act_x_disc_port.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
-                                        
-                                        
-                                    else:
-                                        #get portgrp connection list
-                                        portgrp_con_list = []
-                                        for connection in canvas.connection_list:
-                                            if CanvasConnectionMatches(connection, 
-                                                            self.m_group_id, self.m_port_id_list,
-                                                            portgrp.group_id, portgrp.port_id_list):
-                                                portgrp_con_list.append(connection.connection_id)
-                                                
-                                                if connection.port_out_id in self.m_port_id_list:
-                                                    if (self.m_port_id_list.index(connection.port_out_id) % len(portgrp.port_id_list) !=
-                                                        portgrp.port_id_list.index(connection.port_in_id) % len(self.m_port_id_list) ):
-                                                        portgrp_dirty_connect_list.append(portgrp.portgrp_id)
-                                                else:
-                                                    if (self.m_port_id_list.index(connection.port_in_id) % len(portgrp.port_id_list) !=
-                                                        portgrp.port_id_list.index(connection.port_out_id) % len(self.m_port_id_list) ):
-                                                        portgrp_dirty_connect_list.append(portgrp.portgrp_id)
-                                                                                                              
-                                        if portgrp.portgrp_id in portgrp_dirty_connect_list:
-                                            discMenu.addSeparator()
-                                            last_is_dirty_portgrp = True
-                                        elif last_is_dirty_portgrp:
-                                            discMenu.addSeparator()
-                                            last_is_dirty_portgrp = False
-                                            
-                                        
-                                        #set portgrp action in submenu
-                                        portgrp_print_name = CanvasGetPortGroupFullName(
-                                             portgrp.group_id, portgrp.portgrp_id)
-                                        act_x_disc_portgrp = discMenu.addAction(portgrp_print_name)        
-                                        act_x_disc_portgrp.setData(portgrp_con_list)
-                                        act_x_disc_portgrp.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
-                                        
-                                    
-                        # set port action in submenu
-                        # if port is in a portgrp and isn't the only one connected to the box 
-                        if not port_alone_connected and port.portgrp_id in portgrp_dirty_connect_list:
-                            port_print_name = CanvasGetPortPrintName(
-                                port.group_id, port.port_id, port.portgrp_id)
-                            act_x_disc_port = discMenu.addAction('  → ' + port_print_name)
-                            act_x_disc_port.setData(port_con_list)
-                            act_x_disc_port.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
-                        
-                    else:
-                        if last_is_dirty_portgrp:
-                            discMenu.addSeparator()
-                            last_is_dirty_portgrp = False
-                            
-                        # set port action in submenu (if port is not in a portgrp) 
-                        full_port_name = CanvasGetFullPortName(port.group_id, port.port_id)
-                        act_x_disc_port = discMenu.addAction(full_port_name)
-                        act_x_disc_port.setData(port_con_list)
-                        act_x_disc_port.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
                 
+                if not port.portgrp_id:
+                    if last_is_dirty_portgrp:
+                        discMenu.addSeparator()
+                        last_is_dirty_portgrp = False
+                        
+                    # set port action in submenu (port is not in a portgrp) 
+                    full_port_name = CanvasGetFullPortName(port.group_id, port.port_id)
+                    act_x_disc_port = discMenu.addAction(full_port_name)
+                    act_x_disc_port.setData(port_con_list)
+                    act_x_disc_port.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
+                    continue
+
+                port_alone_connected = False
+                
+                if not port.portgrp_id in portgrp_list_ids:
+                    portgrp_list_ids.append(port.portgrp_id)
+                    
+                    for portgrp in canvas.portgrp_list:
+                        if portgrp.group_id != group.group_id:
+                            continue
+                        
+                        if portgrp.portgrp_id != port.portgrp_id:
+                            continue
+                        
+                        # count ports from portgrp connected to this widget
+                        c = 0
+                        for p in portgrp.port_id_list:
+                            if p in all_connected_ports_ids:
+                                c += 1
+                        
+                        if c == 1:
+                            port_alone_connected = True
+                        
+                        # Set disconnect port action
+                        # if port is the only one of the portgrp connected to this widget
+                        if port_alone_connected:
+                            if last_is_dirty_portgrp:
+                                discMenu.addSeparator()
+                                last_is_dirty_portgrp = False
+                                
+                            full_port_name = CanvasGetFullPortName(
+                                        port.group_id, port.port_id)
+                            act_x_disc_port = discMenu.addAction(full_port_name)
+                            act_x_disc_port.setData(port_con_list)
+                            act_x_disc_port.triggered.connect(
+                                canvas.qobject.PortContextMenuDisconnect)
+                        
+                        else:
+                            # get portgrp connection list
+                            portgrp_con_list = []
+                            for connection in canvas.connection_list:
+                                if CanvasConnectionMatches(connection, 
+                                                self.m_group_id, self.m_port_id_list,
+                                                portgrp.group_id, portgrp.port_id_list):
+                                    portgrp_con_list.append(connection.connection_id)
+                                    
+                                    if self.m_port_mode == PORT_MODE_OUTPUT:
+                                        if (self.m_port_id_list.index(connection.port_out_id)
+                                              % len(portgrp.port_id_list)
+                                            != portgrp.port_id_list.index(connection.port_in_id)
+                                                % len(self.m_port_id_list) ):
+                                            portgrp_dirty_connect_list.append(portgrp.portgrp_id)
+                                    else:
+                                        if (self.m_port_id_list.index(connection.port_in_id)
+                                              % len(portgrp.port_id_list)
+                                            != portgrp.port_id_list.index(connection.port_out_id)
+                                                % len(self.m_port_id_list) ):
+                                            portgrp_dirty_connect_list.append(portgrp.portgrp_id)
+                                                                                                    
+                            if portgrp.portgrp_id in portgrp_dirty_connect_list:
+                                discMenu.addSeparator()
+                                last_is_dirty_portgrp = True
+                            elif last_is_dirty_portgrp:
+                                discMenu.addSeparator()
+                                last_is_dirty_portgrp = False
+                            
+                            #set portgrp action in submenu
+                            portgrp_print_name = CanvasGetPortGroupFullName(
+                                    portgrp.group_id, portgrp.portgrp_id)
+                            act_x_disc_portgrp = discMenu.addAction(portgrp_print_name)        
+                            act_x_disc_portgrp.setData(portgrp_con_list)
+                            act_x_disc_portgrp.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
+                                
+                # set port action in submenu
+                # if port is in a portgrp and isn't the only one connected to the box 
+                if not port_alone_connected and port.portgrp_id in portgrp_dirty_connect_list:
+                    port_print_name = CanvasGetPortPrintName(
+                        port.group_id, port.port_id, port.portgrp_id)
+                    act_x_disc_port = discMenu.addAction('  → ' + port_print_name)
+                    act_x_disc_port.setData(port_con_list)
+                    act_x_disc_port.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
                 
         menu.addMenu(discMenu)
         act_x_disc_alltheportgrp = menu.addAction("Disconnect &All")
@@ -619,7 +636,9 @@ class CanvasPortGroup(QGraphicsItem):
         painter.drawText(text_pos, portgrp_name)
 
         if self.isSelected() != self.m_last_selected_state:
-            CanvasUpdateSelectedLines()
+            for connection in canvas.connection_list:
+                if CanvasConnectionConcerns(connection, self.m_group_id, self.m_port_id_list):
+                    connection.widget.setLineSelected(self.isSelected())
                     
         self.m_last_selected_state = self.isSelected()
 

@@ -206,6 +206,33 @@ def CanvasAddPortToPortGroup(group_id, port_id, portgrp_id):
                                 if port.widget:
                                     canvas.last_z_value += 1
                                     port.widget.setZValue(canvas.last_z_value)
+                
+                # place well the ports of portgrp one after the other
+                # in canvas port list
+                indexes = []
+                first_found = False
+                first_i = 0
+                
+                for i in range(len(canvas.port_list)):
+                    port = canvas.port_list[i]
+                    if (port.group_id == group_id
+                            and port.portgrp_id == portgrp_id):
+                        if not first_found:
+                            first_i = i
+                            first_found = True
+                        else:
+                            indexes.append(i)
+                
+                if first_found:
+                    grouped_port_list = []
+                    indexes.reverse()
+                    
+                    for i in indexes:
+                        grouped_port_list.append(canvas.port_list.pop(i))
+                    
+                    for j in range(len(grouped_port_list)):
+                        port = grouped_port_list[j]
+                        canvas.port_list.insert(first_i + j + 1, port) 
             else:
                 portgrp_id = 0
             
@@ -257,39 +284,7 @@ def CanvasConnectionConcerns(connection, group_id, port_ids_list):
               return True
     else:
         return False
-
-def CanvasUpdateSelectedLines():
-    sel_con_list = []
-    upper_line_z_value = 0
-    
-    for connection in canvas.connection_list:
-        line_z_value = connection.widget.zValue()
-        if int(line_z_value) != line_z_value:
-            connection.widget.setZValue(int(line_z_value))
-        if int(line_z_value) > upper_line_z_value:
-            upper_line_z_value = int(line_z_value)
-    
-    for port in canvas.port_list:
-        if port.widget.isSelected():
-            for connection in canvas.connection_list:
-                if connection.port_out_id == port.port_id or connection.port_in_id == port.port_id:
-                    sel_con_list.append(connection)
-    
-    for portgrp in canvas.portgrp_list:
-        if portgrp.widget.isSelected():
-            for connection in canvas.connection_list:
-                if connection.port_out_id in portgrp.port_id_list or connection.port_in_id in portgrp.port_id_list:
-                    sel_con_list.append(connection)
-                    
-    for connection in canvas.connection_list:
-        if connection in sel_con_list:
-            connection.widget.setZValue(upper_line_z_value + 0.1)
-            connection.widget.setLineSelected(True)
-        else:
-            connection.widget.setLineSelected(False)
-    
-    del sel_con_list
-
+            
 def CanvasCallback(action, value1, value2, value_str):
     if canvas.debug:
         print("PatchCanvas::CanvasCallback(%i, %i, %i, %s)" % (action, value1, value2, value_str.encode()))
