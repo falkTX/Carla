@@ -944,7 +944,7 @@ public:
         return true;
 #else
         if (fClient == nullptr && clientName != nullptr)
-            fClient = jackbridge_client_open(truncatedClientName, JackNullOption, nullptr);
+            fClient = jackbridge_client_open(truncatedClientName, JackNoStartServer, nullptr);
 
         if (fClient == nullptr)
         {
@@ -1292,7 +1292,7 @@ public:
         else if (pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
 #endif
         {
-            client = jackbridge_client_open(plugin->getName(), JackNullOption, nullptr);
+            client = jackbridge_client_open(plugin->getName(), JackNoStartServer, nullptr);
 
             CARLA_SAFE_ASSERT_RETURN(client != nullptr, nullptr);
 
@@ -1408,7 +1408,7 @@ public:
             CarlaEngineJackClient* const client((CarlaEngineJackClient*)plugin->getEngineClient());
 
             // we should not be able to do this, jack really needs to allow client rename
-            if (jack_client_t* const jackClient = jackbridge_client_open(uniqueName, JackNullOption, nullptr))
+            if (jack_client_t* const jackClient = jackbridge_client_open(uniqueName, JackNoStartServer, nullptr))
             {
                 // get new client name
                 uniqueName = jackbridge_get_client_name(jackClient);
