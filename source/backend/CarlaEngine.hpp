@@ -733,6 +733,12 @@ public:
     static const EngineDriverDeviceInfo* getDriverDeviceInfo(const uint index, const char* const driverName);
 
     /*!
+     * Show a device custom control panel.
+     * @see ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL
+     */
+    static bool showDriverDeviceControlPanel(const uint index, const char* const deviceName);
+
+    /*!
      * Create a new engine, using driver @a driverName.
      * Returned value must be deleted when no longer needed.
      * @note This only initializes engine data, it doesn't actually start the engine.
@@ -830,6 +836,11 @@ public:
      * Clear the xrun count.
      */
     virtual void clearXruns() const noexcept;
+
+    /*!
+     * Show the custom control panel for the current engine device.
+     */
+    virtual bool showDeviceControlPanel() const noexcept;
 
     // -------------------------------------------------------------------
     // Plugin management
@@ -948,12 +959,6 @@ public:
 
     // -------------------------------------------------------------------
     // Information (base)
-
-    /*!
-     * Get the current engine driver hints.
-     * @see EngineDriverHints
-     */
-    uint getHints() const noexcept;
 
     /*!
      * Get the current buffer size.
@@ -1290,6 +1295,7 @@ public:
     static const char*        getJuceApiName(const uint index);
     static const char* const* getJuceApiDeviceNames(const uint index);
     static const EngineDriverDeviceInfo* getJuceDeviceInfo(const uint index, const char* const deviceName);
+    static bool               showJuceDeviceControlPanel(const uint index, const char* const deviceName);
 # else
     // RtAudio
     static CarlaEngine*       newRtAudio(const AudioApi api);

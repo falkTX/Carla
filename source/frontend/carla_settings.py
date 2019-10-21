@@ -82,6 +82,7 @@ class DriverSettingsW(QDialog):
         # Set-up connections
 
         self.accepted.connect(self.slot_saveSettings)
+        self.ui.b_panel.clicked.connect(self.slot_showDevicePanel)
         self.ui.cb_device.currentIndexChanged.connect(self.slot_updateDeviceInfo)
 
         # ----------------------------------------------------------------------------------------------------
@@ -140,6 +141,10 @@ class DriverSettingsW(QDialog):
     # --------------------------------------------------------------------------------------------------------
 
     @pyqtSlot()
+    def slot_showDevicePanel(self):
+        self.host.show_engine_driver_device_control_panel(self.fDriverIndex, self.ui.cb_device.currentText())
+
+    @pyqtSlot()
     def slot_updateDeviceInfo(self):
         deviceName = self.ui.cb_device.currentText()
 
@@ -158,6 +163,11 @@ class DriverSettingsW(QDialog):
             self.ui.cb_triple_buffer.setEnabled(True)
         else:
             self.ui.cb_triple_buffer.setEnabled(False)
+
+        if driverDeviceHints & ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL:
+            self.ui.b_panel.setEnabled(True)
+        else:
+            self.ui.b_panel.setEnabled(False)
 
         if len(self.fBufferSizes) > 0:
             for bsize in self.fBufferSizes:
@@ -182,6 +192,107 @@ class DriverSettingsW(QDialog):
         else:
             self.ui.cb_samplerate.addItem(self.AUTOMATIC_OPTION)
             self.ui.cb_samplerate.setCurrentIndex(0)
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def done(self, r):
+        QDialog.done(self, r)
+        self.close()
+
+# ------------------------------------------------------------------------------------------------------------
+# Runtime Driver Settings
+
+class RuntimeDriverSettingsW(QDialog):
+    def __init__(self, parent, host):
+        QDialog.__init__(self, parent)
+        self.host = host
+        self.ui = ui_carla_settings_driver.Ui_DriverSettingsW()
+        self.ui.setupUi(self)
+
+        if False:
+            # kdevelop likes this :)
+            host = CarlaHostNull()
+            self.host = host
+
+        driverDeviceInfo = host.get_runtime_engine_driver_device_info()
+
+        # ----------------------------------------------------------------------------------------------------
+        # Set-up GUI
+
+        self.ui.cb_device.setEnabled(False)
+        self.ui.cb_device.clear()
+        self.ui.cb_buffersize.clear()
+        self.ui.cb_samplerate.clear()
+        self.ui.cb_triple_buffer.hide()
+        self.ui.ico_restart.hide()
+        self.ui.label_restart.hide()
+
+        self.adjustSize()
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+        #self.setFixedSize(self.size())
+
+        # ----------------------------------------------------------------------------------------------------
+        # Load runtime settings
+
+        self.ui.cb_device.addItem(driverDeviceInfo['name'])
+        self.ui.cb_device.setCurrentIndex(0)
+
+        if len(driverDeviceInfo['bufferSizes']) > 0:
+            for bsize in driverDeviceInfo['bufferSizes']:
+                sbsize = str(bsize)
+                self.ui.cb_buffersize.addItem(sbsize)
+
+                if driverDeviceInfo['bufferSize'] == bsize:
+                    self.ui.cb_buffersize.setCurrentIndex(self.ui.cb_buffersize.count()-1)
+
+        else:
+            self.ui.cb_buffersize.addItem(DriverSettingsW.AUTOMATIC_OPTION)
+            self.ui.cb_buffersize.setCurrentIndex(0)
+
+        if (driverDeviceInfo['hints'] & ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE) == 0x0:
+            self.ui.cb_buffersize.setEnabled(False)
+
+        if len(driverDeviceInfo['sampleRates']) > 0:
+            for srate in driverDeviceInfo['sampleRates']:
+                ssrate = str(int(srate))
+                self.ui.cb_samplerate.addItem(ssrate)
+
+                if driverDeviceInfo['sampleRate'] == srate:
+                    self.ui.cb_samplerate.setCurrentIndex(self.ui.cb_samplerate.count()-1)
+
+        else:
+            self.ui.cb_samplerate.addItem(DriverSettingsW.AUTOMATIC_OPTION)
+            self.ui.cb_samplerate.setCurrentIndex(0)
+
+        if (driverDeviceInfo['hints'] & ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE) == 0x0:
+            self.ui.cb_samplerate.setEnabled(False)
+
+        if (driverDeviceInfo['hints'] & ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL) == 0x0:
+            self.ui.b_panel.setEnabled(False)
+
+        # ----------------------------------------------------------------------------------------------------
+        # Set-up connections
+
+        self.ui.b_panel.clicked.connect(self.slot_showDevicePanel)
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def getValues(self):
+        bufferSize = self.ui.cb_buffersize.currentText()
+        sampleRate = self.ui.cb_samplerate.currentText()
+
+        if bufferSize == self.AUTOMATIC_OPTION:
+            bufferSize = "0"
+        if sampleRate == self.AUTOMATIC_OPTION:
+            sampleRate = "0"
+
+        return (int(bufferSize), int(sampleRate))
+
+    # --------------------------------------------------------------------------------------------------------
+
+    @pyqtSlot()
+    def slot_showDevicePanel(self):
+        self.host.show_engine_device_control_panel()
 
     # --------------------------------------------------------------------------------------------------------
 

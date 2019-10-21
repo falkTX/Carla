@@ -231,7 +231,6 @@ struct CarlaEngine::ProtectedData {
     CarlaString currentProjectFilename;
 #endif
 
-    uint     hints;
     uint32_t bufferSize;
     double   sampleRate;
 

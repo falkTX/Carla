@@ -352,6 +352,13 @@ public:
         pData->xruns = xruns > 0 ? static_cast<uint32_t>(xruns) : 0;
     }
 
+    bool showDeviceControlPanel() const noexcept override
+    {
+        try {
+            return fDevice->showControlPanel();
+        } CARLA_SAFE_EXCEPTION_RETURN("showDeviceControlPanel", false);
+    }
+
     // -------------------------------------------------------------------
     // Patchbay
 
@@ -1008,6 +1015,23 @@ const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const uint uindex, 
     }
 
     return &devInfo;
+}
+
+bool CarlaEngine::showJuceDeviceControlPanel(const uint uindex, const char* const deviceName)
+{
+    const int index(static_cast<int>(uindex));
+
+    CARLA_SAFE_ASSERT_RETURN(index < gDeviceTypes.size(), false);
+
+    juce::AudioIODeviceType* const deviceType(gDeviceTypes[index]);
+    CARLA_SAFE_ASSERT_RETURN(deviceType != nullptr, false);
+
+    deviceType->scanForDevices();
+
+    ScopedPointer<juce::AudioIODevice> device(deviceType->createDevice(deviceName, deviceName));
+    CARLA_SAFE_ASSERT_RETURN(device != nullptr, false);
+
+    return device->showControlPanel();
 }
 
 // -----------------------------------------

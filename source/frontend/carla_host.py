@@ -423,13 +423,12 @@ class HostWindow(QMainWindow):
 
         self.ui.act_engine_start.triggered.connect(self.slot_engineStart)
         self.ui.act_engine_stop.triggered.connect(self.slot_engineStop)
+        self.ui.act_engine_panic.triggered.connect(self.slot_pluginsDisable)
+        self.ui.act_engine_config.triggered.connect(self.slot_engineConfig)
 
         self.ui.act_plugin_add.triggered.connect(self.slot_pluginAdd)
-        self.ui.act_plugin_add2.triggered.connect(self.slot_pluginAdd)
-        self.ui.act_plugin_remove_all.triggered.connect(self.slot_confirmRemoveAll)
-
-        self.ui.act_add_jack.triggered.connect(self.slot_jackAppAdd)
         self.ui.act_plugin_add_jack.triggered.connect(self.slot_jackAppAdd)
+        self.ui.act_plugin_remove_all.triggered.connect(self.slot_confirmRemoveAll)
 
         self.ui.act_plugins_enable.triggered.connect(self.slot_pluginsEnable)
         self.ui.act_plugins_disable.triggered.connect(self.slot_pluginsDisable)
@@ -440,7 +439,6 @@ class HostWindow(QMainWindow):
         self.ui.act_plugins_center.triggered.connect(self.slot_pluginsCenter)
         self.ui.act_plugins_compact.triggered.connect(self.slot_pluginsCompact)
         self.ui.act_plugins_expand.triggered.connect(self.slot_pluginsExpand)
-        self.ui.act_plugins_panic.triggered.connect(self.slot_pluginsDisable)
 
         self.ui.act_settings_show_toolbar.toggled.connect(self.slot_showToolbar)
         self.ui.act_settings_show_meters.toggled.connect(self.slot_showCanvasMeters)
@@ -867,6 +865,17 @@ class HostWindow(QMainWindow):
                 return False
 
         return self.slot_engineStopTryAgain()
+
+    @pyqtSlot()
+    def slot_engineConfig(self):
+        dialog = RuntimeDriverSettingsW(self.fParentOrSelf, self.host)
+
+        if not dialog.exec_():
+            return
+
+        if not self.host.is_engine_running():
+            QMessageBox.warning(self, self.tr("Warning"), self.tr("Engine was stopped while configuring settings, all changes have been ignored"))
+            return
 
     @pyqtSlot()
     def slot_engineStopTryAgain(self):
@@ -1746,10 +1755,8 @@ class HostWindow(QMainWindow):
 
         if self.host.experimental:
             visible = settings2.value(CARLA_KEY_EXPERIMENTAL_JACK_APPS, CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS, type=bool)
-            self.ui.act_add_jack.setVisible(visible)
             self.ui.act_plugin_add_jack.setVisible(visible)
         else:
-            self.ui.act_add_jack.setVisible(False)
             self.ui.act_plugin_add_jack.setVisible(False)
 
         self.fMiniCanvasUpdateTimeout = 1000 if self.fSavedSettings[CARLA_KEY_CANVAS_FANCY_EYE_CANDY] else 0
