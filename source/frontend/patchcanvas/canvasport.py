@@ -315,7 +315,6 @@ class CanvasPort(QGraphicsItem):
             
             #line_mov.setDestinationPortGroupPosition(0, 1)
             self.m_line_mov_list.append(line_mov)
-            canvas.is_line_mov = True
             line_mov.setZValue(canvas.last_z_value)
             canvas.last_z_value += 1
             self.parentItem().setZValue(canvas.last_z_value)

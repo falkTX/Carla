@@ -227,16 +227,6 @@ class CanvasPortGroup(QGraphicsItem):
             self.m_hover_item = None
             self.m_mouse_down = True
             self.m_cursor_moving = False
-        #elif event.button() == Qt.RightButton:
-            #if canvas.is_line_mov:
-                #if self.m_hover_item:
-                    #self.ConnectToHover()
-                    ##self.m_r_click_conn = self.m_hover_item
-                    ##self.m_r_click_time = time.time()
-                    
-                    #for line_mov in self.m_line_mov_list:
-                        #line_mov.toggleReadyToDisc()
-                        #line_mov.updateLinePos(event.scenePos())
                         
         QGraphicsItem.mousePressEvent(self, event)
 
@@ -271,7 +261,6 @@ class CanvasPortGroup(QGraphicsItem):
                         
                     self.m_line_mov_list.append(line_mov)
                 
-                canvas.is_line_mov = True
                 canvas.last_z_value += 1
                 self.parentItem().setZValue(canvas.last_z_value)
 
@@ -436,14 +425,10 @@ class CanvasPortGroup(QGraphicsItem):
             self.m_hover_item = None
             self.m_mouse_down = False
             self.m_cursor_moving = False
-            canvas.is_line_mov = False
         QGraphicsItem.mouseReleaseEvent(self, event)
 
         
     def contextMenuEvent(self, event):
-        if canvas.is_line_mov:
-            return event.ignore()
-        
         canvas.scene.clearSelection()
         self.setSelected(True)
         

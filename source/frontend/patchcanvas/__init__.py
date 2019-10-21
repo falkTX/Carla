@@ -146,8 +146,6 @@ class Canvas(object):
         self.last_connection_id = 0
         self.initial_pos = QPointF(0, 0)
         self.size_rect = QRectF()
-        
-        self.is_line_mov = False
 
     def callback(self, action, value1, value2, value_str):
         print("Canvas::callback({}, {}, {}, {})".format(action, value1, value2, value_str))
