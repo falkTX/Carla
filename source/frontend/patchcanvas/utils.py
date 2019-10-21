@@ -87,10 +87,6 @@ def CanvasGetPortGroupPosition(group_id, port_id, portgrp_id):
     if portgrp_id < 0:
         return (0, 1)
     
-    #print('eokfc', group_id, port_id, portgrp_id)
-    #for portgrp in canvas.portgrp_list:
-        #print(portgrp.group_id, portgrp.portgrp_id, portgrp.port_id_list)
-    
     for portgrp in canvas.portgrp_list:
         if (portgrp.group_id == group_id
                 and portgrp.portgrp_id == portgrp_id):
@@ -232,7 +228,7 @@ def CanvasAddPortToPortGroup(group_id, port_id, portgrp_id):
                     
                     for j in range(len(grouped_port_list)):
                         port = grouped_port_list[j]
-                        canvas.port_list.insert(first_i + j + 1, port) 
+                        canvas.port_list.insert(first_i + j + 1, port)
             else:
                 portgrp_id = 0
             

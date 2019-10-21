@@ -752,20 +752,20 @@ def addPort(group_id, port_id, port_name, port_mode, port_type, portgrp_id, is_a
                   group_id, port_id, port_name.encode(), port_mode2str(port_mode), port_type2str(port_type)))
         return
 
-    if portgrp_id:
-        portgrp_id = CanvasAddPortToPortGroup(group_id, port_id,
-                                                 portgrp_id)        
-        
     port_dict = port_dict_t()
     port_dict.group_id = group_id
     port_dict.port_id = port_id
     port_dict.port_name = port_name
     port_dict.port_mode = port_mode
     port_dict.port_type = port_type
-    port_dict.portgrp_id = portgrp_id
+    port_dict.portgrp_id = 0
     port_dict.is_alternate = is_alternate
     port_dict.widget = port_widget
     canvas.port_list.append(port_dict)
+    
+    if portgrp_id:
+        port_dict.portgrp_id = CanvasAddPortToPortGroup(group_id, port_id,
+                                                 portgrp_id)
     
     canvas.last_z_value += 1
     port_widget.setZValue(canvas.last_z_value)
@@ -844,7 +844,7 @@ def addPortGroup(group_id, portgrp_id, port_mode, port_type):
         
     for portgrp in canvas.portgrp_list:
         if portgrp.group_id == group_id and portgrp.portgrp_id == portgrp_id:
-            qWarning("PatchCanvas::addPortGroup(%i, %i) - port already exists" % (
+            qWarning("PatchCanvas::addPortGroup(%i, %i) - port group already exists" % (
                      group_id, portgrp_id))
             return
         
