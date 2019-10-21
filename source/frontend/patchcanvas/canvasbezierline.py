@@ -67,7 +67,7 @@ class CanvasBezierLine(QGraphicsPathItem):
 
     def isLineSelected(self):
         return self.m_lineSelected
-    
+
     def updateLineSelected(self):
         if self.m_locked:
             return
@@ -78,7 +78,7 @@ class CanvasBezierLine(QGraphicsPathItem):
                 self.setGraphicsEffect(CanvasPortGlow(self.item1.getPortType(), self.toGraphicsObject()))
             else:
                 self.setGraphicsEffect(None)
-        
+
         self.m_lineSelected = yesno
         self.updateLineGradient()
 
