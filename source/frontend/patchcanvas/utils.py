@@ -231,24 +231,32 @@ def CanvasRemovePortFromPortGroup(group_id, port_id, portgrp_id):
             portgrp.widget = None
             
             portgrp.port_id_list.clear()
-            
-            #if port_id in portgrp.port_id_list:
-                #portgrp.port_id_list.remove(port_id)
-                
-            #if len(portgrp.port_id_list) < 2:
-                #for port in canvas.port_list:
-                    #if (port.group_id == group_id
-                            #and port.port_id in portgrp.port_id_list):
-                        #port.portgrp_id = 0
-                        #if port.widget:
-                            #port.widget.setPortGroupId(0)
-                
-                #item = portgrp.widget
-                #if item:
-                    #canvas.scene.removeItem(item)
-                    #del item
-                #portgrp.widget = None
             break
+
+def CanvasConnectionMatches(connection, group_id_1, port_ids_list_1,
+                            group_id_2, port_ids_list_2):
+    if (connection.group_in_id == group_id_1
+        and connection.port_in_id in port_ids_list_1
+        and connection.group_out_id == group_id_2
+        and connection.port_out_id in port_ids_list_2):
+            return True
+    elif (connection.group_in_id == group_id_2
+          and connection.port_in_id in port_ids_list_2
+          and connection.group_out_id == group_id_1
+          and connection.port_out_id in port_ids_list_1):
+            return True
+    else:
+        return False
+
+def CanvasConnectionConcerns(connection, group_id, port_ids_list):
+    if (connection.group_in_id == group_id
+        and connection.port_in_id in port_ids_list):
+            return True
+    elif (connection.group_out_id == group_id
+          and connection.port_out_id in port_ids_list):
+              return True
+    else:
+        return False
 
 def CanvasUpdateSelectedLines():
     sel_con_list = []

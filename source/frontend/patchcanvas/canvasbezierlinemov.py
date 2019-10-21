@@ -55,7 +55,6 @@ class CanvasBezierLineMov(QGraphicsPathItem):
         self.m_port_posinportgrp_to = port_posinportgrp
         self.m_portgrp_lenght = portgrp_lenght
         self.m_portgrp_lenght_to = portgrp_lenght
-        self.m_ready_to_disc = False
         
         # Port position doesn't change while moving around line
         self.p_itemX = self.scenePos().x()
@@ -78,48 +77,11 @@ class CanvasBezierLineMov(QGraphicsPathItem):
         pen.setWidthF(pen.widthF() + 0.00001)
         self.setPen(pen)
     
-    def isReadyToDisc(self):
-        return self.m_ready_to_disc
-    
-    def setReadyToDisc(self, yesno):
-        self.m_ready_to_disc = yesno
-    
-    def toggleReadyToDisc(self):
-        self.m_ready_to_disc = not bool(self.m_ready_to_disc)
-    
     def setDestinationPortGroupPosition(self, port_pos, portgrp_len):
         self.m_port_posinportgrp_to = port_pos
         self.m_portgrp_lenght_to = portgrp_len
     
     def updateLinePos(self, scenePos):
-        if self.m_ready_to_disc:
-            if self.m_port_type == PORT_TYPE_AUDIO_JACK:
-                pen = QPen(canvas.theme.line_audio_jack, 2, Qt.DotLine)
-            elif self.m_port_type == PORT_TYPE_MIDI_JACK:
-                pen = QPen(canvas.theme.line_midi_jack, 2, Qt.DotLine)
-            elif self.m_port_type == PORT_TYPE_MIDI_ALSA:
-                pen = QPen(canvas.theme.line_midi_alsa, 2, Qt.DotLine)
-            elif self.m_port_type == PORT_TYPE_PARAMETER:
-                pen = QPen(canvas.theme.line_parameter, 2, Qt.DotLine)
-            else:
-                qWarning("PatchCanvas::CanvasBezierLineMov(%s, %s, %s) - invalid port type"
-                         % (port_mode2str(self.m_port_mode), port_type2str(self.m_port_type)))
-                pen = QPen(Qt.black)
-        else:
-            if self.m_port_type == PORT_TYPE_AUDIO_JACK:
-                pen = QPen(canvas.theme.line_audio_jack, 2)
-            elif self.m_port_type == PORT_TYPE_MIDI_JACK:
-                pen = QPen(canvas.theme.line_midi_jack, 2)
-            elif self.m_port_type == PORT_TYPE_MIDI_ALSA:
-                pen = QPen(canvas.theme.line_midi_alsa, 2)
-            elif self.m_port_type == PORT_TYPE_PARAMETER:
-                pen = QPen(canvas.theme.line_parameter, 2)
-            else:
-                qWarning("PatchCanvas::CanvasBezierLineMov(%s, %s, %s) - invalid port type"
-                         % (port_mode2str(self.m_port_mode), port_type2str(self.m_port_type)))
-                pen = QPen(Qt.black)
-        self.setPen(pen)
-        
         phi = 0.75 if self.m_portgrp_lenght > 2 else 0.62
         phito = 0.75 if self.m_portgrp_lenght_to > 2 else 0.62
                 
@@ -141,7 +103,6 @@ class CanvasBezierLineMov(QGraphicsPathItem):
                 new_y1 = first_new_y + (self.m_port_posinportgrp_to * delta)
                 new_y = new_y1 - ( (last_new_y - first_new_y) / 2 ) - (canvas.theme.port_height * phito)
                 
-                
             if self.m_port_mode == PORT_MODE_INPUT:
                 old_x = 0
                 mid_x = abs(scenePos.x() - self.p_itemX) / 2
@@ -152,13 +113,6 @@ class CanvasBezierLineMov(QGraphicsPathItem):
                 new_x = old_x + mid_x
             else:
                 return
-
-            final_x = scenePos.x() - self.p_itemX
-            final_y = scenePos.y() - self.p_itemY + new_y
-
-            path = QPainterPath(QPointF(old_x, old_y))
-            path.cubicTo(new_x, old_y, new_x, final_y, final_x, final_y)
-            self.setPath(path)
             
         elif self.parentItem().type() == CanvasPortGroupType:
             first_old_y = canvas.theme.port_height * phi
@@ -189,12 +143,12 @@ class CanvasBezierLineMov(QGraphicsPathItem):
             else:
                 return
             
-            final_x = scenePos.x() - self.p_itemX - 1
-            final_y = scenePos.y() - self.p_itemY + new_y
+        final_x = scenePos.x() - self.p_itemX
+        final_y = scenePos.y() - self.p_itemY + new_y
 
-            path = QPainterPath(QPointF(old_x, old_y))
-            path.cubicTo(new_x, old_y, new_x, final_y, final_x, final_y)
-            self.setPath(path)
+        path = QPainterPath(QPointF(old_x, old_y))
+        path.cubicTo(new_x, old_y, new_x, final_y, final_x, final_y)
+        self.setPath(path)
 
     def type(self):
         return CanvasBezierLineMovType
