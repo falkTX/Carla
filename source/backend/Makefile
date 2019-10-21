@@ -56,7 +56,8 @@ endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-STANDALONE_LINK_FLAGS  = $(JACKBRIDGE_LIBS)
+STANDALONE_LINK_FLAGS  = $(HYLIA_LIBS)
+STANDALONE_LINK_FLAGS += $(JACKBRIDGE_LIBS)
 STANDALONE_LINK_FLAGS += $(LILV_LIBS)
 STANDALONE_LINK_FLAGS += $(NATIVE_PLUGINS_LIBS)
 STANDALONE_LINK_FLAGS += $(RTMEMPOOL_LIBS)

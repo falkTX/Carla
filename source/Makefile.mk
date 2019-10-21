@@ -521,6 +521,7 @@ endif
 
 ifeq ($(WIN32),true)
 HYLIA_FLAGS      = -DLINK_PLATFORM_WINDOWS=1
+HYLIA_LIBS       = -liphlpapi
 JACKBRIDGE_LIBS  = -lpthread
 LILV_LIBS        = -lm
 RTMEMPOOL_LIBS   = -lpthread

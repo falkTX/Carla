@@ -82,7 +82,8 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Link flags
 
-NATIVE_LINK_FLAGS  = $(LINK_FLAGS)
+NATIVE_LINK_FLAGS  = $(HYLIA_LIBS)
+NATIVE_LINK_FLAGS += $(LINK_FLAGS)
 NATIVE_LINK_FLAGS += $(JACKBRIDGE_LIBS)
 NATIVE_LINK_FLAGS += $(LILV_LIBS)
 NATIVE_LINK_FLAGS += $(RTMEMPOOL_LIBS)
