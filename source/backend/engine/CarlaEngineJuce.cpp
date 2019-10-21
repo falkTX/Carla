@@ -352,6 +352,69 @@ public:
         pData->xruns = xruns > 0 ? static_cast<uint32_t>(xruns) : 0;
     }
 
+    bool setBufferSizeAndSampleRate(const uint bufferSize, const double sampleRate) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fDevice != nullptr, false);
+
+        juce::StringArray inputNames(fDevice->getInputChannelNames());
+        juce::StringArray outputNames(fDevice->getOutputChannelNames());
+
+        if (inputNames.size() < 0 || outputNames.size() <= 0)
+        {
+            setLastError("Selected device does not have any outputs");
+            return false;
+        }
+
+        juce::BigInteger inputChannels;
+        inputChannels.setRange(0, inputNames.size(), true);
+
+        juce::BigInteger outputChannels;
+        outputChannels.setRange(0, outputNames.size(), true);
+
+        // stop stream first
+        if (fDevice->isPlaying())
+            fDevice->stop();
+        if (fDevice->isOpen())
+            fDevice->close();
+
+        juce::String error = fDevice->open(inputChannels, outputChannels, sampleRate, static_cast<int>(bufferSize));
+
+        if (error.isNotEmpty())
+        {
+            setLastError(error.toUTF8());
+
+            // try to roll back
+            error = fDevice->open(inputChannels, outputChannels, pData->sampleRate, static_cast<int>(pData->bufferSize));
+
+            // if we failed, we are screwed...
+            if (error.isNotEmpty())
+            {
+                fDevice = nullptr;
+                close();
+            }
+
+            return false;
+        }
+
+        const uint32_t newBufferSize = static_cast<uint32_t>(fDevice->getCurrentBufferSizeSamples());
+        const double   newSampleRate = fDevice->getCurrentSampleRate();
+
+        if (carla_isNotEqual(pData->sampleRate, newSampleRate))
+        {
+            pData->sampleRate = newSampleRate;
+            sampleRateChanged(newSampleRate);
+        }
+
+        if (pData->bufferSize != newBufferSize)
+        {
+            pData->bufferSize = newBufferSize;
+            bufferSizeChanged(newBufferSize);
+        }
+
+        fDevice->start(this);
+        return true;
+    }
+
     bool showDeviceControlPanel() const noexcept override
     {
         try {

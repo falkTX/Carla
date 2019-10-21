@@ -281,9 +281,9 @@ class RuntimeDriverSettingsW(QDialog):
         bufferSize = self.ui.cb_buffersize.currentText()
         sampleRate = self.ui.cb_samplerate.currentText()
 
-        if bufferSize == self.AUTOMATIC_OPTION:
+        if bufferSize == DriverSettingsW.AUTOMATIC_OPTION:
             bufferSize = "0"
-        if sampleRate == self.AUTOMATIC_OPTION:
+        if sampleRate == DriverSettingsW.AUTOMATIC_OPTION:
             sampleRate = "0"
 
         return (int(bufferSize), int(sampleRate))

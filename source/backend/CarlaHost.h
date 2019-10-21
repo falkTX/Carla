@@ -428,7 +428,15 @@ CARLA_EXPORT const CarlaRuntimeEngineInfo* carla_get_runtime_engine_info();
 CARLA_EXPORT const CarlaRuntimeEngineDriverDeviceInfo* carla_get_runtime_engine_driver_device_info();
 
 /*!
+ * Dynamically change buffer size and/or sample rate while engine is running.
+ * @see ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE
+ * @see ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE
+ */
+CARLA_EXPORT bool carla_set_engine_buffer_size_and_sample_rate(uint bufferSize, double sampleRate);
+
+/*!
  * Show the custom control panel for the current engine device.
+ * @see ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL
  */
 CARLA_EXPORT bool carla_show_engine_device_control_panel();
 

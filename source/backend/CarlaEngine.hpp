@@ -838,7 +838,15 @@ public:
     virtual void clearXruns() const noexcept;
 
     /*!
+     * Dynamically change buffer size and/or sample rate while engine is running.
+     * @see ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE
+     * @see ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE
+     */
+    virtual bool setBufferSizeAndSampleRate(const uint bufferSize, const double sampleRate);
+
+    /*!
      * Show the custom control panel for the current engine device.
+     * @see ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL
      */
     virtual bool showDeviceControlPanel() const noexcept;
 

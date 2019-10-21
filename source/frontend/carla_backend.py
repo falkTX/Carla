@@ -1508,7 +1508,14 @@ class CarlaHostMeta(object):
     def get_runtime_engine_driver_device_info(self):
         raise NotImplementedError
 
+    # Dynamically change buffer size and/or sample rate while engine is running.
+    # @see ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE
+    # @see ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE
+    def set_engine_buffer_size_and_sample_rate(self, bufferSize, sampleRate):
+        raise NotImplementedError
+
     # Show the custom control panel for the current engine device.
+    # @see ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL
     def show_engine_device_control_panel(self):
         raise NotImplementedError
 
@@ -2168,6 +2175,9 @@ class CarlaHostNull(CarlaHostMeta):
     def get_runtime_engine_driver_device_info(self):
         return PyCarlaRuntimeEngineDriverDeviceInfo
 
+    def set_engine_buffer_size_and_sample_rate(self, bufferSize, sampleRate):
+        return False
+
     def show_engine_device_control_panel(self):
         return False
 
@@ -2477,6 +2487,9 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_get_runtime_engine_driver_device_info.argtypes = None
         self.lib.carla_get_runtime_engine_driver_device_info.restype = POINTER(CarlaRuntimeEngineDriverDeviceInfo)
 
+        self.lib.carla_set_engine_buffer_size_and_sample_rate.argtypes = [c_uint, c_double]
+        self.lib.carla_set_engine_buffer_size_and_sample_rate.restype = c_bool
+
         self.lib.carla_show_engine_device_control_panel.argtypes = None
         self.lib.carla_show_engine_device_control_panel.restype = c_bool
 
@@ -2775,6 +2788,9 @@ class CarlaHostDLL(CarlaHostMeta):
 
     def get_runtime_engine_driver_device_info(self):
         return structToDict(self.lib.carla_get_runtime_engine_driver_device_info().contents)
+
+    def set_engine_buffer_size_and_sample_rate(self, bufferSize, sampleRate):
+        return bool(self.lib.carla_set_engine_buffer_size_and_sample_rate(bufferSize, sampleRate))
 
     def show_engine_device_control_panel(self):
         return bool(self.lib.carla_show_engine_device_control_panel())
@@ -3165,6 +3181,9 @@ class CarlaHostPlugin(CarlaHostMeta):
 
     def get_runtime_engine_driver_device_info(self):
         return PyCarlaRuntimeEngineDriverDeviceInfo
+
+    def set_engine_buffer_size_and_sample_rate(self, bufferSize, sampleRate):
+        return False
 
     def show_engine_device_control_panel(self):
         return False

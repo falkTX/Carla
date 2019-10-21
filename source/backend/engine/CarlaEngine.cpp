@@ -410,6 +410,11 @@ bool CarlaEngine::showDeviceControlPanel() const noexcept
     return false;
 }
 
+bool CarlaEngine::setBufferSizeAndSampleRate(const uint, const double)
+{
+    return false;
+}
+
 // -----------------------------------------------------------------------
 // Plugin management
 

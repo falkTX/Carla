@@ -877,6 +877,9 @@ class HostWindow(QMainWindow):
             QMessageBox.warning(self, self.tr("Warning"), self.tr("Engine was stopped while configuring settings, all changes have been ignored"))
             return
 
+        bufferSize, sampleRate = dialog.getValues()
+        self.host.set_engine_buffer_size_and_sample_rate(bufferSize, sampleRate)
+
     @pyqtSlot()
     def slot_engineStopTryAgain(self):
         if self.host.is_engine_running() and not self.host.set_engine_about_to_close():

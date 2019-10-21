@@ -541,6 +541,14 @@ const CarlaRuntimeEngineDriverDeviceInfo* carla_get_runtime_engine_driver_device
     return &retInfo;
 }
 
+bool carla_set_engine_buffer_size_and_sample_rate(uint bufferSize, double sampleRate)
+{
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, false);
+    carla_debug("carla_set_engine_buffer_size_and_sample_rate(%u, %f)", bufferSize, sampleRate);
+
+    return gStandalone.engine->setBufferSizeAndSampleRate(bufferSize, sampleRate);
+}
+
 bool carla_show_engine_device_control_panel()
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, false);

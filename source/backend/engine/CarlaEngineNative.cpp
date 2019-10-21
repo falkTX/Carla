@@ -2738,6 +2738,7 @@ uint               CarlaEngine::getJuceApiCount()                 { return 0;   
 const char*        CarlaEngine::getJuceApiName(const uint)        { return nullptr; }
 const char* const* CarlaEngine::getJuceApiDeviceNames(const uint) { return nullptr; }
 const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const uint, const char* const) { return nullptr; }
+bool               CarlaEngine::showJuceDeviceControlPanel(const uint, const char* const)   { return false; }
 # else
 CarlaEngine*       CarlaEngine::newRtAudio(const AudioApi)           { return nullptr; }
 uint               CarlaEngine::getRtAudioApiCount()                 { return 0;       }

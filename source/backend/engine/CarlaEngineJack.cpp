@@ -1191,6 +1191,16 @@ public:
     }
 #endif
 
+    bool setBufferSizeAndSampleRate(const uint bufferSize, const double sampleRate) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(carla_isEqual(pData->sampleRate, sampleRate), false);
+        CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
+
+        try {
+            return jackbridge_set_buffer_size(fClient, bufferSize);
+        } CARLA_SAFE_EXCEPTION_RETURN("setBufferSizeAndSampleRate", false);
+    }
+
     EngineTimeInfo getTimeInfo() const noexcept override
     {
         if (pData->options.transportMode != ENGINE_TRANSPORT_MODE_JACK)
