@@ -11,12 +11,11 @@ include ../Makefile.mk
 # ---------------------------------------------------------------------------------------------------------------------
 
 BUILD_CXX_FLAGS += $(HYLIA_FLAGS) -I$(CWD) -Ilink
-BUILD_CXX_FLAGS += -Wno-multichar
+BUILD_CXX_FLAGS += -Wno-missing-field-initializers -Wno-multichar
 BUILD_CXX_FLAGS += -Wno-unknown-pragmas
 # -Wno-unused-parameter
 # -Wno-unused-variable
 # -Wno-uninitialized
-# -Wno-missing-field-initializers
 
 # ---------------------------------------------------------------------------------------------------------------------
 
