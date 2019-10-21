@@ -1622,7 +1622,7 @@ class HostWindow(QMainWindow):
         self.updateMiniCanvasLater()
 
     @pyqtSlot(int, int, int, str)
-    def slot_handlePatchbayPortGroupAddedCallback(self, groupId, portFlags, portGroupId, newPortName):
+    def slot_handlePatchbayPortGroupAddedCallback(self, groupId, portGroupFlags, portGroupId, newPortName):
         if portFlags & PATCHBAY_PORT_IS_INPUT:
             portMode = patchcanvas.PORT_MODE_INPUT
         else:
