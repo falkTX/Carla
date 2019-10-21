@@ -90,7 +90,6 @@ class CanvasPort(QGraphicsItem):
         self.m_line_mov_list = []
         self.m_dotcon_list = []
         self.m_hover_item = None
-        self.m_last_selected_state = False
 
         self.m_mouse_down = False
         self.m_cursor_moving = False
@@ -119,7 +118,7 @@ class CanvasPort(QGraphicsItem):
         return self.m_portgrp_id
     
     def getFullPortName(self):
-        return self.parentItem().getGroupName() + ":" + self.m_port_name
+        return "%s:%s" % (self.parentItem().getGroupName(), self.m_port_name)
 
     def getPortWidth(self):
         return self.m_port_width
@@ -186,33 +185,6 @@ class CanvasPort(QGraphicsItem):
                                       port_id_list[0], port_id_list[1])
         
         CanvasCallback(ACTION_PORT_GROUP_ADD, 0, 0, data)
-        
-        # get new portgrp_num
-        canvas.settings.beginGroup("CanvasPortGroups")
-        all_portgrp_nums = canvas.settings.childKeys()
-        canvas.settings.endGroup()
-        
-        n = 1
-        new_portgrp_num_name = 'PortGroup_%i' % n
-        while new_portgrp_num_name in all_portgrp_nums:
-            n +=1
-            new_portgrp_num_name = 'PortGroup_%i' % n
-        
-        for group in canvas.group_list:
-            if group.group_id == self.m_group_id:
-                group_name = group.group_name
-                break
-        else:
-            return
-        
-        port_name_list = []
-        for port in canvas.port_list:
-            if port.port_id in port_id_list:
-                port_name_list.append(port.port_name)
-                canvas.settings.remove("ForcedMonoPorts/%s:%s" % (group_name, port.port_name))
-                
-        portgrp_tab = [ group_name, self.m_port_mode ] + port_name_list
-        canvas.settings.setValue("CanvasPortGroups/%s" % new_portgrp_num_name, portgrp_tab)
     
     def connectToHover(self):
         if self.m_hover_item:
@@ -296,7 +268,8 @@ class CanvasPort(QGraphicsItem):
 
         item = None
         items = canvas.scene.items(event.scenePos(), Qt.ContainsItemShape, Qt.AscendingOrder)
-
+        
+        #for i in range(len(items)):
         for _, itemx in enumerate(items):
             if not itemx.type() in (CanvasPortType, CanvasPortGroupType):
                 continue
@@ -458,6 +431,7 @@ class CanvasPort(QGraphicsItem):
             canvas.callback(ACTION_PORT_RENAME, self.m_group_id, self.m_port_id, "")
             
     def setPortSelected(self, yesno):
+        print('ofko')
         for connection in canvas.connection_list:
             if CanvasConnectionConcerns(connection,
                             self.m_group_id, [self.m_port_id]):
@@ -465,6 +439,7 @@ class CanvasPort(QGraphicsItem):
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemSelectedHasChanged:
+            print('oroor')
             self.setPortSelected(value)
         return QGraphicsItem.itemChange(self, change, value)
 
@@ -650,11 +625,6 @@ class CanvasPort(QGraphicsItem):
         else:
             painter.drawText(text_pos, self.m_port_name)
 
-        if self.isSelected() != self.m_last_selected_state:
-            for connection in canvas.connection_list:
-                if CanvasConnectionConcerns(connection, self.m_group_id, [self.m_port_id]):
-                    connection.widget.updateLineSelected()
-
         if canvas.theme.idx == Theme.THEME_OOSTUDIO and canvas.theme.port_bg_pixmap:
             painter.setPen(Qt.NoPen)
             painter.setBrush(conn_pen.brush())
@@ -665,8 +635,6 @@ class CanvasPort(QGraphicsItem):
                 connRect = QRectF(QPointF(portRect.right()-2, portRect.top()), QSizeF(2, portRect.height()))
 
             painter.drawRect(connRect)
-
-        self.m_last_selected_state = self.isSelected()
 
         painter.restore()
 

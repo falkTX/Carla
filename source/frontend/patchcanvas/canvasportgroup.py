@@ -86,7 +86,6 @@ class CanvasPortGroup(QGraphicsItem):
 
         self.m_line_mov_list = []
         self.m_hover_item = None
-        self.m_last_selected_state = False
 
         self.m_mouse_down = False
         self.m_cursor_moving = False
@@ -527,7 +526,18 @@ class CanvasPortGroup(QGraphicsItem):
             self.SplitToMonos()
             
         event.accept()
-            
+    
+    def setPortGroupSelected(self, yesno):
+        for connection in canvas.connection_list:
+            if CanvasConnectionConcerns(connection,
+                            self.m_group_id, self.m_port_id_list):
+                connection.widget.updateLineSelected()
+
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemSelectedHasChanged:
+            self.setPortGroupSelected(value)
+        return QGraphicsItem.itemChange(self, change, value)
+    
     def boundingRect(self):
         self.m_portgrp_width = self.getPortGroupWidth()
         if self.m_port_mode == PORT_MODE_INPUT:
@@ -634,13 +644,6 @@ class CanvasPortGroup(QGraphicsItem):
         portgrp_name = CanvasGetPortGroupName(self.m_group_id,
                                                  self.m_port_id_list)
         painter.drawText(text_pos, portgrp_name)
-
-        if self.isSelected() != self.m_last_selected_state:
-            for connection in canvas.connection_list:
-                if CanvasConnectionConcerns(connection, self.m_group_id, self.m_port_id_list):
-                    connection.widget.updateLineSelected()
-                    
-        self.m_last_selected_state = self.isSelected()
 
         painter.restore()
  
