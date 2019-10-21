@@ -76,7 +76,7 @@ class CanvasLine(QGraphicsLineItem):
                 self.setGraphicsEffect(CanvasPortGlow(self.item1.getPortType(), self.toGraphicsObject()))
             else:
                 self.setGraphicsEffect(None)
-        
+
         self.m_lineSelected = yesno
         self.updateLineGradient()
 
