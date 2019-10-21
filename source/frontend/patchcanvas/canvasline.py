@@ -56,7 +56,7 @@ class CanvasLine(QGraphicsLineItem):
 
         self.setGraphicsEffect(None)
         self.updateLinePos()
-    
+
     def isLocked(self):
         return self.m_locked
 
@@ -65,7 +65,7 @@ class CanvasLine(QGraphicsLineItem):
 
     def isLineSelected(self):
         return self.m_lineSelected
-    
+
     def updateLineSelected(self):
         if self.m_locked:
             return
@@ -77,19 +77,6 @@ class CanvasLine(QGraphicsLineItem):
             else:
                 self.setGraphicsEffect(None)
         
-        self.m_lineSelected = yesno
-        self.updateLineGradient()
-    
-    def setLineSelected(self, yesno):
-        if self.m_locked:
-            return
-
-        if options.eyecandy == EYECANDY_FULL:
-            if yesno:
-                self.setGraphicsEffect(CanvasPortGlow(self.item1.getPortType(), self.toGraphicsObject()))
-            else:
-                self.setGraphicsEffect(None)
-
         self.m_lineSelected = yesno
         self.updateLineGradient()
 

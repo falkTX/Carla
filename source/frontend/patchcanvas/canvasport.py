@@ -461,7 +461,7 @@ class CanvasPort(QGraphicsItem):
         for connection in canvas.connection_list:
             if CanvasConnectionConcerns(connection,
                             self.m_group_id, [self.m_port_id]):
-                connection.widget.setLineSelected(yesno)
+                connection.widget.updateLineSelected()
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemSelectedHasChanged:
@@ -653,7 +653,7 @@ class CanvasPort(QGraphicsItem):
         if self.isSelected() != self.m_last_selected_state:
             for connection in canvas.connection_list:
                 if CanvasConnectionConcerns(connection, self.m_group_id, [self.m_port_id]):
-                    connection.widget.setLineSelected(self.isSelected())
+                    connection.widget.updateLineSelected()
 
         if canvas.theme.idx == Theme.THEME_OOSTUDIO and canvas.theme.port_bg_pixmap:
             painter.setPen(Qt.NoPen)

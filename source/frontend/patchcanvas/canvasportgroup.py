@@ -638,7 +638,7 @@ class CanvasPortGroup(QGraphicsItem):
         if self.isSelected() != self.m_last_selected_state:
             for connection in canvas.connection_list:
                 if CanvasConnectionConcerns(connection, self.m_group_id, self.m_port_id_list):
-                    connection.widget.setLineSelected(self.isSelected())
+                    connection.widget.updateLineSelected()
                     
         self.m_last_selected_state = self.isSelected()
 

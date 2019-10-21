@@ -81,19 +81,6 @@ class CanvasBezierLine(QGraphicsPathItem):
         
         self.m_lineSelected = yesno
         self.updateLineGradient()
-    
-    def setLineSelected(self, yesno):
-        if self.m_locked:
-            return
-
-        if options.eyecandy == EYECANDY_FULL:
-            if yesno:
-                self.setGraphicsEffect(CanvasPortGlow(self.item1.getPortType(), self.toGraphicsObject()))
-            else:
-                self.setGraphicsEffect(None)
-
-        self.m_lineSelected = yesno
-        self.updateLineGradient()
 
     def triggerDisconnect(self):
         for connection in canvas.connection_list:

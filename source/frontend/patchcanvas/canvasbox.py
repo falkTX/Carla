@@ -345,13 +345,6 @@ class CanvasBox(QGraphicsItem):
                     first_of_portgrp = bool(port_pos == 0)
                     last_of_portgrp = bool(port_pos+1 == pg_len)
                     
-                    #if port.portgrp_id:
-                        #for portgrp in canvas.portgrp_list:
-                            #if portgrp.group_id == self.m_group_id and port.port_id in portgrp.port_id_list:
-                                #if portgrp.port_id_list[-1] != port.port_id:
-                                    #last_of_portgrp = False
-                                    #break
-                    
                     size = QFontMetrics(self.m_font_port).width(port.port_name)
                     if port.portgrp_id:
                         size = 0
