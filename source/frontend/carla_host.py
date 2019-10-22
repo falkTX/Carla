@@ -131,7 +131,9 @@ class HostWindow(QMainWindow):
 
         # ----------------------------------------------------------------------------------------------------
         # Internal stuff
-
+        
+        self.fCtrlDown = False
+        
         self.fIdleTimerNull = self.startTimer(1000) # keep application signals alive
         self.fIdleTimerFast = 0
         self.fIdleTimerSlow = 0
@@ -2472,6 +2474,19 @@ class HostWindow(QMainWindow):
             self.idleSlow()
 
         QMainWindow.timerEvent(self, event)
+        
+    def isCtrlPressed(self):
+        return self.fCtrlDown
+    
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Control:
+            self.fCtrlDown = True
+        QMainWindow.keyPressEvent(self, event)
+        
+    def keyReleaseEvent(self, event):
+        if event.key() == Qt.Key_Control:
+            self.fCtrlDown = False
+        QMainWindow.keyReleaseEvent(self, event)
 
     # --------------------------------------------------------------------------------------------------------
     # color/style change event

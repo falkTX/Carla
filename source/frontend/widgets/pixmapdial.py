@@ -19,13 +19,15 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from math import cos, floor, pi, sin
+from math import cos, floor, pi, sin, degrees, atan
 
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QEvent, QPointF, QRectF, QTimer, QSize
 from PyQt5.QtGui import QColor, QConicalGradient, QFont, QFontMetrics
 from PyQt5.QtGui import QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
 from PyQt5.QtWidgets import QDial
 
+# needed for ctrl pressed
+from carla_shared import gCarla
 # ------------------------------------------------------------------------------------------------------------
 # Widget Class
 
@@ -62,10 +64,19 @@ class PixmapDial(QDial):
 
         self.fMinimum   = 0.0
         self.fMaximum   = 1.0
+        self.fStep      = 0.05
+        self.fStepSmall = 0.005
         self.fRealValue = 0.0
         self.fPrecision = 10000
         self.fIsInteger = False
-
+        
+        self.scalePointsValueList = ()
+        self.fUseScalePoints = False
+        self.keepRealValue = False
+        
+        self.fMouseDown = False
+        self.fLastMousePosition = None
+        
         self.fIsHovered = False
         self.fIsPressed = False
         self.fHoverStep = self.HOVER_MIN
@@ -239,10 +250,25 @@ class PixmapDial(QDial):
 
     def setMaximum(self, value):
         self.fMaximum = value
-
+    
+    def setSteps(self, step, stepSmall):
+        self.fStep = max(step, (self.fMaximum - self.fMinimum)/127 )
+        self.fStepSmall = min(self.fStep, stepSmall)
+        if stepSmall < (self.fStep / 10):
+            self.stepSmall = self.fStep / 10
+            
+        # only for up and down keys
+        singleStep = int((self.fStep * 10000) / (self.fMaximum - self.fMinimum))
+        self.setSingleStep(singleStep)
+        
+    def setScalePoints(self, scalePointsValueList):
+        if len(scalePointsValueList) >= 2:
+            self.scalePointsValueList = tuple(scalePointsValueList)
+            self.fUseScalePoints = True
+    
     def setValue(self, value, emitSignal=False):
-        if self.fRealValue == value:
-            return
+        #if self.fRealValue == value:
+            #return
 
         if value <= self.fMinimum:
             qtValue = 0
@@ -266,7 +292,11 @@ class PixmapDial(QDial):
 
     @pyqtSlot(int)
     def slot_valueChanged(self, value):
-        self.fRealValue = float(value)/self.fPrecision * (self.fMaximum - self.fMinimum) + self.fMinimum
+        if self.keepRealValue:
+            self.keepRealValue = False
+        else:
+            self.fRealValue = float(value)/10000.0 * (self.fMaximum - self.fMinimum) + self.fMinimum
+            
         self.realValueChanged.emit(self.fRealValue)
 
     @pyqtSlot()
@@ -278,6 +308,123 @@ class PixmapDial(QDial):
 
     def sizeHint(self):
         return QSize(self.fPixmapBaseSize, self.fPixmapBaseSize)
+
+    def wheelEvent(self, event):
+        next_fValue = self.fRealValue
+
+        if self.fUseScalePoints:
+            if event.angleDelta().y() > 0:
+                for scalePointValue in self.scalePointValueList:
+                    if scalePointValue > self.fRealValue:
+                        next_fValue = scalePointValue
+                        break
+                else:
+                    next_fValue = self.scalePointValueList[-1]
+            else:
+                for scalePointValue in self.scalePointValueList:
+                    if scalePointValue >= self.fRealValue:
+                        break
+                    next_fValue = scalePointValue
+
+        else:
+            step = self.fStepSmall if gCarla.gui.isCtrlPressed() else self.fStep
+
+            if event.angleDelta().y() > 0:
+                next_fValue += step
+
+                #go to 0 if 0 is on the way
+                if self.fRealValue < 0 and next_fValue > 0:
+                    next_fValue = 0
+
+                if next_fValue > self.fMaximum:
+                    next_fValue = self.fMaximum
+            else:
+                next_fValue -= step
+
+                #go to 0 if 0 is on the way
+                if self.fRealValue > 0 and next_fValue < 0:
+                    next_fValue = 0
+
+                if next_fValue < self.fMinimum:
+                    next_fValue = self.fMinimum
+
+        #prevent pyqt slot to change self.fRealValue one more time after self.setValue()
+        self.keepRealValue = True                
+        self.setValue(next_fValue)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.fMouseDown = True
+
+    def mouseMoveEvent(self, event):
+        if self.fMouseDown:
+            if not self.fLastMousePosition:
+                self.fLastMousePosition = event.y()
+            currentPos = event.y()
+
+            delta = ( -(currentPos - self.fLastMousePosition) * (self.fMaximum - self.fMinimum))/100
+            next_fValue = self.fRealValue + delta
+
+            if next_fValue < self.fMinimum:
+                next_fValue = self.fMinimum
+            elif next_fValue > self.fMaximum:
+                next_fValue = self.fMaximum
+            self.setValue(next_fValue)
+
+            self.fLastMousePosition = currentPos
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.fMouseDown = False
+            self.fLastMousePosition = None
+
+            #make little circle go to value for parameter with scall points 
+            if self.fUseScalePoints and not self.fRealValue in self.scalePointValueList:
+                tmpValue = self.fMinimum
+                delta = 0
+                for scalePointValue in self.scalePointValueList:
+                    if scalePointValue > self.fRealValue:
+                        if abs(scalePointValue - self.fRealValue) < delta:
+                            tmpValue = scalePointValue
+                        break
+                    tmpValue = scalePointValue
+                    delta = abs(scalePointValue - self.fRealValue)
+                self.setValue(tmpValue)
+
+        else:
+            QDial.mouseReleaseEvent(self, event)
+
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            #make x and y be 0 at center of button
+            x = event.x() - (self.fPixmapBaseSize/2)
+            y = event.y() - (self.fPixmapBaseSize/2)
+            angle = 0
+
+            if x == 0:
+                angle = 0
+            elif y == 0 and x < 0:
+                angle = -90
+            elif y == 0 and x > 0:
+                angle = 90
+            elif x < 0 and y < 0:
+                angle = - abs(degrees(atan(x/y)))
+            elif x < 0 and y > 0:
+                angle = - abs(degrees(atan(y/x))) - 90
+            elif x > 0 and y < 0:
+                angle = abs(degrees(atan(x/y)))
+            elif x > 0 and y > 0:
+                angle = abs(degrees(atan(y/x))) + 90
+
+            middlevalue = ((self.fMaximum - self.fMinimum)/2) + self.fMinimum
+            next_fValue = middlevalue + (self.fMaximum -middlevalue)*(angle/126)
+            if next_fValue > self.fMaximum:
+                next_fValue = self.fMaximum
+            elif next_fValue < self.fMinimum:
+                next_fValue = self.fMinimum
+
+            self.setValue(next_fValue)
+            self.fMouseDown = True
 
     def changeEvent(self, event):
         QDial.changeEvent(self, event)
@@ -357,6 +504,23 @@ class PixmapDial(QDial):
 
         if self.isEnabled():
             normValue = float(self.fRealValue - self.fMinimum) / float(self.fMaximum - self.fMinimum)
+            normValueCircle = normValue
+
+            if self.fUseScalePoints:
+                if  self.fRealValue in self.scalePointValueList:
+                    tmpValue = self.fRealValue
+                else:
+                    tmpValue = self.fMinimum
+                    delta = 0
+                    for scalePointValue in self.scalePointValueList:
+                        if scalePointValue > self.fRealValue:
+                            if abs(scalePointValue - self.fRealValue) < delta:
+                                tmpValue = scalePointValue
+                            break
+                        tmpValue = scalePointValue
+                        delta = abs(scalePointValue - self.fRealValue)
+
+                normValueCircle = float(tmpValue - self.fMinimum) / float(self.fMaximum - self.fMinimum)
             target    = QRectF(0.0, 0.0, self.fPixmapBaseSize, self.fPixmapBaseSize)
 
             curLayer = int((self.fPixmapLayersCount - 1) * normValue)
@@ -388,7 +552,7 @@ class PixmapDial(QDial):
 
                 # draw arc
                 startAngle = 216*16
-                spanAngle  = -252*16*normValue
+                spanAngle  = -252*16*normValueCircle
 
                 if self.fCustomPaintMode == self.CUSTOM_PAINT_MODE_CARLA_WET:
                     painter.setBrush(colorBlue)

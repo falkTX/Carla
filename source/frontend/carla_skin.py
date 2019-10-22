@@ -587,11 +587,18 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                     continue
 
                 paramName = getParameterShortName(paramInfo['name'])
+                
+                scalePointValueList = []
+                for j in range(paramInfo['scalePointCount']):
+                    scalePointValueList.append(self.host.get_parameter_scalepoint_info(self.fPluginId, i, j)['value'])
+                scalePointValueList.sort()
 
                 widget = PixmapDial(self, i)
                 widget.setLabel(paramName)
                 widget.setMinimum(paramRanges['min'])
                 widget.setMaximum(paramRanges['max'])
+                widget.setSteps(paramRanges['step'], paramRanges['stepSmall'])
+                widget.setScalePoints(scalePointValueList)
                 widget.hide()
 
                 if isInteger:
@@ -1834,6 +1841,11 @@ class PluginSlot_Presets(AbstractPluginSlot):
 
             if paramName.startswith("unused"):
                 continue
+            
+            scalePointValueList = []
+            for j in range(paramInfo['scalePointCount']):
+                scalePointValueList.append(self.host.get_parameter_scalepoint_info(self.fPluginId, i, j)['value'])
+            scalePointValueList.sort()
 
             # real zyn fx plugins
             if self.fPluginInfo['label'] == "zynalienwah":
@@ -1904,6 +1916,8 @@ class PluginSlot_Presets(AbstractPluginSlot):
             widget.setLabel(paramName)
             widget.setMinimum(paramRanges['min'])
             widget.setMaximum(paramRanges['max'])
+            widget.setSteps(paramRanges['step'], paramRanges['stepSmall'])
+            widget.setScalePoints(scalePointValueList)
             widget.setPixmap(3)
             widget.setCustomPaintColor(QColor(83, 173, 10))
             widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_COLOR)
