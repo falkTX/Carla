@@ -345,79 +345,79 @@ class PixmapDial(QDial):
                     
         self.setValue(next_fValue, True)
 
-    def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self.fMouseDown = True
+    #def mousePressEvent(self, event):
+        #if event.button() == Qt.LeftButton:
+            #self.fMouseDown = True
 
-    def mouseMoveEvent(self, event):
-        if self.fMouseDown:
-            if not self.fLastMousePosition:
-                self.fLastMousePosition = event.y()
-            currentPos = event.y()
+    #def mouseMoveEvent(self, event):
+        #if self.fMouseDown:
+            #if not self.fLastMousePosition:
+                #self.fLastMousePosition = event.y()
+            #currentPos = event.y()
 
-            delta = ( -(currentPos - self.fLastMousePosition) * (self.fMaximum - self.fMinimum))/100
-            next_fValue = self.fRealValue + delta
+            #delta = ( -(currentPos - self.fLastMousePosition) * (self.fMaximum - self.fMinimum))/100
+            #next_fValue = self.fRealValue + delta
 
-            if next_fValue < self.fMinimum:
-                next_fValue = self.fMinimum
-            elif next_fValue > self.fMaximum:
-                next_fValue = self.fMaximum
-            self.setValue(next_fValue)
+            #if next_fValue < self.fMinimum:
+                #next_fValue = self.fMinimum
+            #elif next_fValue > self.fMaximum:
+                #next_fValue = self.fMaximum
+            #self.setValue(next_fValue)
 
-            self.fLastMousePosition = currentPos
+            #self.fLastMousePosition = currentPos
 
-    def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self.fMouseDown = False
-            self.fLastMousePosition = None
+    #def mouseReleaseEvent(self, event):
+        #if event.button() == Qt.LeftButton:
+            #self.fMouseDown = False
+            #self.fLastMousePosition = None
 
-            #make little circle go to value for parameter with scall points 
-            if self.fUseScalePoints and not self.fRealValue in self.scalePointValueList:
-                tmpValue = self.fMinimum
-                delta = 0
-                for scalePointValue in self.scalePointValueList:
-                    if scalePointValue > self.fRealValue:
-                        if abs(scalePointValue - self.fRealValue) < delta:
-                            tmpValue = scalePointValue
-                        break
-                    tmpValue = scalePointValue
-                    delta = abs(scalePointValue - self.fRealValue)
-                self.setValue(tmpValue)
+            ##make little circle go to value for parameter with scall points 
+            #if self.fUseScalePoints and not self.fRealValue in self.scalePointValueList:
+                #tmpValue = self.fMinimum
+                #delta = 0
+                #for scalePointValue in self.scalePointValueList:
+                    #if scalePointValue > self.fRealValue:
+                        #if abs(scalePointValue - self.fRealValue) < delta:
+                            #tmpValue = scalePointValue
+                        #break
+                    #tmpValue = scalePointValue
+                    #delta = abs(scalePointValue - self.fRealValue)
+                #self.setValue(tmpValue)
 
-        else:
-            QDial.mouseReleaseEvent(self, event)
+        #else:
+            #QDial.mouseReleaseEvent(self, event)
 
-    def mouseDoubleClickEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            #make x and y be 0 at center of button
-            x = event.x() - (self.fPixmapBaseSize/2)
-            y = event.y() - (self.fPixmapBaseSize/2)
-            angle = 0
+    #def mouseDoubleClickEvent(self, event):
+        #if event.button() == Qt.LeftButton:
+            ##make x and y be 0 at center of button
+            #x = event.x() - (self.fPixmapBaseSize/2)
+            #y = event.y() - (self.fPixmapBaseSize/2)
+            #angle = 0
 
-            if x == 0:
-                angle = 0
-            elif y == 0 and x < 0:
-                angle = -90
-            elif y == 0 and x > 0:
-                angle = 90
-            elif x < 0 and y < 0:
-                angle = - abs(degrees(atan(x/y)))
-            elif x < 0 and y > 0:
-                angle = - abs(degrees(atan(y/x))) - 90
-            elif x > 0 and y < 0:
-                angle = abs(degrees(atan(x/y)))
-            elif x > 0 and y > 0:
-                angle = abs(degrees(atan(y/x))) + 90
+            #if x == 0:
+                #angle = 0
+            #elif y == 0 and x < 0:
+                #angle = -90
+            #elif y == 0 and x > 0:
+                #angle = 90
+            #elif x < 0 and y < 0:
+                #angle = - abs(degrees(atan(x/y)))
+            #elif x < 0 and y > 0:
+                #angle = - abs(degrees(atan(y/x))) - 90
+            #elif x > 0 and y < 0:
+                #angle = abs(degrees(atan(x/y)))
+            #elif x > 0 and y > 0:
+                #angle = abs(degrees(atan(y/x))) + 90
 
-            middlevalue = ((self.fMaximum - self.fMinimum)/2) + self.fMinimum
-            next_fValue = middlevalue + (self.fMaximum -middlevalue)*(angle/126)
-            if next_fValue > self.fMaximum:
-                next_fValue = self.fMaximum
-            elif next_fValue < self.fMinimum:
-                next_fValue = self.fMinimum
+            #middlevalue = ((self.fMaximum - self.fMinimum)/2) + self.fMinimum
+            #next_fValue = middlevalue + (self.fMaximum -middlevalue)*(angle/126)
+            #if next_fValue > self.fMaximum:
+                #next_fValue = self.fMaximum
+            #elif next_fValue < self.fMinimum:
+                #next_fValue = self.fMinimum
 
-            self.setValue(next_fValue)
-            self.fMouseDown = True
+            #self.setValue(next_fValue)
+            #self.fMouseDown = True
 
     def changeEvent(self, event):
         QDial.changeEvent(self, event)
