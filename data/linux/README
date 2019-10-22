@@ -23,7 +23,7 @@ In experimental phase / work in progress:
 * Plugin bridge support (such as running 32bit plugins on a 64bit Carla, or Windows plugins on Linux)
 * Run JACK applications as audio plugins
 
-Carla is also available as an LV2 and VST plugin for Linux.
+Carla is also available as an LV2 and VST2 plugin for Linux.
 
 For a complete and updated description of Carla, please check:
-http://kxstudio.linuxaudio.org/carla
+https://kx.studio/carla

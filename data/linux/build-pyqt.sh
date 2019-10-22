@@ -51,8 +51,6 @@ export LDFLAGS="-m${ARCH} -Wl,-O1"
 
 # TODO build libffi statically
 
-cleanup
-
 # ---------------------------------------------------------------------------------------------------------------------
 # python
 
@@ -105,29 +103,6 @@ if [ ! -f PyQt5_gpl-${PYQT5_VERSION}/build-done ]; then
 fi
 
 # ---------------------------------------------------------------------------------------------------------------------
-# pyliblo
-
-if [ ! -d pyliblo-${PYLIBLO_VERSION} ]; then
-  aria2c http://das.nasophon.de/download/pyliblo-${PYLIBLO_VERSION}.tar.gz
-  tar -xf pyliblo-${PYLIBLO_VERSION}.tar.gz
-fi
-
-if [ ! -f pyliblo-${PYLIBLO_VERSION}/build-done ]; then
-  cd pyliblo-${PYLIBLO_VERSION}
-  if [ ! -f patched ]; then
-    ls ../../macos/patches
-    patch -p1 -i ../../macos/patches/pyliblo-python3.7.patch
-    touch patched
-  fi
-  python3 setup.py build
-  python3 setup.py install --prefix=${PREFIX}
-  touch build-done
-  cd ..
-fi
-
-}
-
-# ---------------------------------------------------------------------------------------------------------------------
 # cxfreeze
 
 if [ ! -d cx_Freeze-${CXFREEZE_VERSION} ]; then
@@ -142,6 +117,30 @@ if [ ! -f cx_Freeze-${CXFREEZE_VERSION}/build-done ]; then
   touch build-done
   cd ..
 fi
+
+# ---------------------------------------------------------------------------------------------------------------------
+# pyliblo (needs to be last as it modifies CFLAGS)
+
+if [ ! -d pyliblo-${PYLIBLO_VERSION} ]; then
+  aria2c http://das.nasophon.de/download/pyliblo-${PYLIBLO_VERSION}.tar.gz
+  tar -xf pyliblo-${PYLIBLO_VERSION}.tar.gz
+fi
+
+if [ ! -f pyliblo-${PYLIBLO_VERSION}/build-done ]; then
+  cd pyliblo-${PYLIBLO_VERSION}
+  if [ ! -f patched ]; then
+    ls ../../macos/patches
+    patch -p1 -i ../../macos/patches/pyliblo-python3.7.patch
+    touch patched
+  fi
+  export CFLAGS="${CFLAGS} -I${PREFIX}/include -L${PREFIX}/lib"
+  python3 setup.py build
+  python3 setup.py install --prefix=${PREFIX}
+  touch build-done
+  cd ..
+fi
+
+}
 
 # ---------------------------------------------------------------------------------------------------------------------
 # build base libs
