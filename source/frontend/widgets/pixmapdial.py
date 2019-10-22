@@ -69,10 +69,9 @@ class PixmapDial(QDial):
         self.fRealValue = 0.0
         self.fPrecision = 10000
         self.fIsInteger = False
-        
+
         self.scalePointsValueList = ()
         self.fUseScalePoints = False
-        self.keepRealValue = False
         
         self.fMouseDown = False
         self.fLastMousePosition = None
@@ -250,7 +249,7 @@ class PixmapDial(QDial):
 
     def setMaximum(self, value):
         self.fMaximum = value
-    
+
     def setSteps(self, step, stepSmall):
         self.fStep = max(step, (self.fMaximum - self.fMinimum)/127 )
         self.fStepSmall = min(self.fStep, stepSmall)
@@ -267,8 +266,8 @@ class PixmapDial(QDial):
             self.fUseScalePoints = True
     
     def setValue(self, value, emitSignal=False):
-        #if self.fRealValue == value:
-            #return
+        if self.fRealValue == value:
+            return
 
         if value <= self.fMinimum:
             qtValue = 0
@@ -281,7 +280,7 @@ class PixmapDial(QDial):
         else:
             qtValue = round(float(value - self.fMinimum) / float(self.fMaximum - self.fMinimum) * self.fPrecision)
             self.fRealValue = value
-
+        
         # Block change signal, we'll handle it ourselves
         self.blockSignals(True)
         QDial.setValue(self, qtValue)
@@ -292,11 +291,7 @@ class PixmapDial(QDial):
 
     @pyqtSlot(int)
     def slot_valueChanged(self, value):
-        if self.keepRealValue:
-            self.keepRealValue = False
-        else:
-            self.fRealValue = float(value)/10000.0 * (self.fMaximum - self.fMinimum) + self.fMinimum
-            
+        self.fRealValue = float(value)/10000.0 * (self.fMaximum - self.fMinimum) + self.fMinimum
         self.realValueChanged.emit(self.fRealValue)
 
     @pyqtSlot()
@@ -347,10 +342,8 @@ class PixmapDial(QDial):
 
                 if next_fValue < self.fMinimum:
                     next_fValue = self.fMinimum
-
-        #prevent pyqt slot to change self.fRealValue one more time after self.setValue()
-        self.keepRealValue = True                
-        self.setValue(next_fValue)
+                    
+        self.setValue(next_fValue, True)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
