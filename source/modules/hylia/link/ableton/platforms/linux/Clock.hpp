@@ -49,7 +49,9 @@ public:
 };
 
 using ClockMonotonic = Clock<CLOCK_MONOTONIC>;
+#ifdef CLOCK_MONOTONIC_RAW
 using ClockMonotonicRaw = Clock<CLOCK_MONOTONIC_RAW>;
+#endif
 
 } // namespace linux
 } // namespace platforms
