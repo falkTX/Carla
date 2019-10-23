@@ -271,18 +271,18 @@ if [ ! -f carla-pkgs${PKGS_NUM}/extracted ]; then
   cd carla-pkgs${PKGS_NUM}
   ar x carla-bridge-win32_${CARLA_GIT_VER}_i386.deb
   tar xf data.tar.xz
-  rm control.tar.xz data.tar.xz
+  rm control.tar.xz data.tar.xz debian-binary
   if [ x"${ARCH}" != x"32" ]; then
     ar x carla-bridge-win64_${CARLA_GIT_VER}_amd64.deb
     tar xf data.tar.xz
-    rm control.tar.xz data.tar.xz
+    rm control.tar.xz data.tar.xz debian-binary
     ar x carla-git_${CARLA_GIT_VER}_amd64.deb
     tar xf data.tar.xz
-    rm control.tar.xz data.tar.xz
+    rm control.tar.xz data.tar.xz debian-binary
   else
     ar x carla-git_${CARLA_GIT_VER}_i386.deb
     tar xf data.tar.xz
-    rm control.tar.xz data.tar.xz
+    rm control.tar.xz data.tar.xz debian-binary
   fi
   touch extracted
   cd ..
