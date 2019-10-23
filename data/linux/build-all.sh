@@ -396,7 +396,7 @@ rm -r build-carla/lib/_lib build-carla/lib/library-*.zip
 mv build-carla/{bigmeter-ui,midipattern-ui,notes-ui,carla-plugin} build-carla/resources/
 rm build-carla/carla-plugin-patchbay
 
-# symlink for carla-plugin-patchbay and libray.zip
+# symlink for carla-plugin-patchbay, lib and styles
 pushd build-carla/resources
 rm carla-plugin-patchbay
 ln -s carla-plugin carla-plugin-patchbay
