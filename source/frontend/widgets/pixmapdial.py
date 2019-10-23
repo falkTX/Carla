@@ -277,7 +277,7 @@ class PixmapDial(QDial):
         else:
             qtValue = round(float(value - self.fMinimum) / float(self.fMaximum - self.fMinimum) * self.fPrecision)
             self.fRealValue = value
-        
+
         # Block change signal, we'll handle it ourselves
         self.blockSignals(True)
         QDial.setValue(self, qtValue)
@@ -288,7 +288,7 @@ class PixmapDial(QDial):
 
     @pyqtSlot(int)
     def slot_valueChanged(self, value):
-        self.fRealValue = float(value)/10000.0 * (self.fMaximum - self.fMinimum) + self.fMinimum
+        self.fRealValue = float(value)/self.fPrecision * (self.fMaximum - self.fMinimum) + self.fMinimum
         self.realValueChanged.emit(self.fRealValue)
 
     @pyqtSlot()
