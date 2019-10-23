@@ -551,7 +551,12 @@ typedef enum {
     /*!
      * JACK application.
      */
-    PLUGIN_JACK = 10
+    PLUGIN_JACK = 10,
+
+    /*!
+     * VCV (Rack) module.
+     */
+    PLUGIN_VCV = 11
 
 } PluginType;
 

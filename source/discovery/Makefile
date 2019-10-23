@@ -62,6 +62,9 @@ LIBS_win32    = $(MODULEDIR)/lilv.win32.a
 LIBS_win64    = $(MODULEDIR)/lilv.win64.a
 LINK_FLAGS   += $(LILV_LIBS)
 
+LIBS_native  += $(MODULEDIR)/vcv.a
+LINK_FLAGS   += $(VCV_LIBS)
+
 LIBS_native  += $(MODULEDIR)/water.files.a
 LINK_FLAGS   += $(WATER_LIBS)
 
@@ -160,7 +163,7 @@ win64:   $(BINDIR)/$(MODULENAME)-win64.exe
 $(BINDIR)/$(MODULENAME)-native: $(OBJS_native) $(LIBS_native)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-native"
-	@$(CXX) $< $(LIBS_START) $(LIBS_native) $(LIBS_END) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
+	$(CXX) $< $(LIBS_START) $(LIBS_native) $(LIBS_END) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-native.exe: $(OBJS_native) $(LIBS_native)
 	-@mkdir -p $(BINDIR)

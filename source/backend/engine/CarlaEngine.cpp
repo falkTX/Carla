@@ -607,6 +607,9 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
         case PLUGIN_JACK:
             plugin = CarlaPlugin::newJackApp(initializer);
             break;
+
+        case PLUGIN_VCV:
+            break;
 #else
         case PLUGIN_INTERNAL:
         case PLUGIN_SF2:

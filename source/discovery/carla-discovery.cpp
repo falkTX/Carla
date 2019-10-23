@@ -55,6 +55,7 @@
 # include "water/text/StringArray.h"
 # include "CarlaDssiUtils.cpp"
 # include "../backend/utils/CachedPlugins.cpp"
+# include "vcv/vcv.h"
 #else
 # include "CarlaDssiUtils.hpp"
 #endif
@@ -1519,6 +1520,19 @@ static void do_fluidsynth_check(const char* const filename, const bool doInit)
 #endif
 }
 
+static void do_vcv_check(lib_t& libHandle, const char* const /*filename*/, const bool /*doInit*/)
+{
+//     DSSI_Descriptor_Function descFn = lib_symbol<DSSI_Descriptor_Function>(libHandle, "dssi_descriptor");
+
+//     if (descFn == nullptr)
+//     {
+//         DISCOVERY_OUT("error", "Not a DSSI plugin");
+//         return;
+//     }
+
+    print_plugin_details();
+}
+
 // ------------------------------ main entry point ------------------------------
 
 int main(int argc, char* argv[])
@@ -1544,6 +1558,7 @@ int main(int argc, char* argv[])
     case PLUGIN_LADSPA:
     case PLUGIN_DSSI:
     case PLUGIN_VST2:
+//     case PLUGIN_VCV:
         openLib = true;
     default:
         break;
@@ -1662,6 +1677,10 @@ int main(int argc, char* argv[])
 
     case PLUGIN_SF2:
         do_fluidsynth_check(filename, doInit);
+        break;
+
+    case PLUGIN_VCV:
+        do_vcv_check(handle, filename, doInit);
         break;
 
     default:
