@@ -1964,9 +1964,11 @@ class JackApplicationW(QDialog):
     UI_SESSION_LADISH = 1
     UI_SESSION_NSM    = 2
 
-    FLAG_CONTROL_WINDOW        = 0x01
-    FLAG_CAPTURE_FIRST_WINDOW  = 0x02
-    FLAG_BUFFERS_ADDITION_MODE = 0x10
+    FLAG_CONTROL_WINDOW              = 0x01
+    FLAG_CAPTURE_FIRST_WINDOW        = 0x02
+    FLAG_BUFFERS_ADDITION_MODE       = 0x10
+    FLAG_MIDI_OUTPUT_CHANNEL_MIXDOWN = 0x20
+    FLAG_EXTERNAL_START              = 0x40
 
     def __init__(self, parent, host):
         QDialog.__init__(self, parent)
@@ -2015,6 +2017,8 @@ class JackApplicationW(QDialog):
             flags |= self.FLAG_CAPTURE_FIRST_WINDOW
         if self.ui.cb_buffers_addition_mode.isChecked():
             flags |= self.FLAG_BUFFERS_ADDITION_MODE
+        if self.ui.cb_external_start.isChecked():
+            flags |= self.FLAG_EXTERNAL_START
 
         baseIntVal = ord('0')
         labelSetup = "%s%s%s%s%s%s" % (chr(baseIntVal+self.ui.sb_audio_ins.value()),

@@ -126,6 +126,40 @@ public:
     }
 #endif
 
+    char* getEnvVarsToExport()
+    {
+        const EngineOptions& options(kEngine->getOptions());
+        CarlaString binaryDir(options.binaryDir);
+#ifdef HAVE_LIBLO
+        const int sessionManager = fSetupLabel[4] - '0';
+#endif
+
+        CarlaString ret;
+        ret += "export LD_LIBRARY_PATH=" + binaryDir + "/jack\n";
+#ifdef HAVE_X11
+        ret += "export LD_PRELOAD=" + binaryDir + "/libcarla_interposer-jack-x11.so\n";
+#endif
+#ifdef HAVE_LIBLO
+        if (sessionManager == LIBJACK_SESSION_MANAGER_NSM)
+        {
+            for (int i=50; fOscServer == nullptr && --i>=0;)
+                carla_msleep(100);
+
+            ret += "export NSM_URL=";
+            ret += lo_server_get_url(fOscServer);
+            ret += "\n";
+        }
+#endif
+
+        if (kPlugin->getHints() & PLUGIN_HAS_CUSTOM_UI)
+            ret += "export CARLA_FRONTEND_WIN_ID=" + CarlaString(options.frontendWinId) + "\n";
+
+        ret += "export CARLA_LIBJACK_SETUP=" + fSetupLabel + "\n";
+        ret += "export CARLA_SHM_IDS=" + fShmIds + "\n";
+
+        return ret.releaseBufferPointer();
+    }
+
 protected:
 #ifdef HAVE_LIBLO
     static void _osc_error_handler(int num, const char* msg, const char* path)
@@ -250,31 +284,32 @@ protected:
         }
 #endif
 
-        if (fProcess == nullptr)
+        const bool externalProcess = (fSetupLabel[5] - '0') & LIBJACK_FLAG_EXTERNAL_START;
+
+        if (! externalProcess)
         {
-            fProcess = new ChildProcess();
-        }
-        else if (fProcess->isRunning())
-        {
-            carla_stderr("CarlaPluginJackThread::run() - already running");
-        }
+            if (fProcess == nullptr)
+            {
+                fProcess = new ChildProcess();
+            }
+            else if (fProcess->isRunning())
+            {
+                carla_stderr("CarlaPluginJackThread::run() - already running");
+            }
 
-        String name(kPlugin->getName());
-        String filename(kPlugin->getFilename());
+            String name(kPlugin->getName());
+            String filename(kPlugin->getFilename());
 
-        if (name.isEmpty())
-            name = "(none)";
+            if (name.isEmpty())
+                name = "(none)";
 
-        CARLA_SAFE_ASSERT_RETURN(filename.isNotEmpty(),);
+            CARLA_SAFE_ASSERT_RETURN(filename.isNotEmpty(),);
 
-        StringArray arguments;
+            StringArray arguments;
 
-        // binary
-        arguments.addTokens(filename, true);
+            // binary
+            arguments.addTokens(filename, true);
 
-        bool started;
-
-        {
             const EngineOptions& options(kEngine->getOptions());
 
             char winIdStr[STR_MAX+1];
@@ -287,7 +322,7 @@ protected:
             CarlaString ldpreload;
 #ifdef HAVE_X11
             ldpreload = (CarlaString(options.binaryDir)
-                      + "/libcarla_interposer-jack-x11.so");
+                    + "/libcarla_interposer-jack-x11.so");
 #endif
 
             const ScopedEngineEnvironmentLocker _seel(kEngine);
@@ -306,17 +341,15 @@ protected:
             carla_setenv("CARLA_LIBJACK_SETUP", fSetupLabel.buffer());
             carla_setenv("CARLA_SHM_IDS", fShmIds.buffer());
 
-            started = fProcess->start(arguments);
+            if (! fProcess->start(arguments))
+            {
+                carla_stdout("failed!");
+                fProcess = nullptr;
+                return;
+            }
         }
 
-        if (! started)
-        {
-            carla_stdout("failed!");
-            fProcess = nullptr;
-            return;
-        }
-
-        for (; fProcess->isRunning() && ! shouldThreadExit();)
+        for (; (externalProcess || fProcess->isRunning()) && ! shouldThreadExit();)
         {
 #ifdef HAVE_LIBLO
             if (sessionManager == LIBJACK_SESSION_MANAGER_NSM)
@@ -344,32 +377,35 @@ protected:
         }
 #endif
 
-        // we only get here if bridge crashed or thread asked to exit
-        if (fProcess->isRunning() && shouldThreadExit())
+        if (! externalProcess)
         {
-            fProcess->waitForProcessToFinish(2000);
-
-            if (fProcess->isRunning())
+            // we only get here if bridge crashed or thread asked to exit
+            if (fProcess->isRunning() && shouldThreadExit())
             {
-                carla_stdout("CarlaPluginJackThread::run() - application refused to close, force kill now");
-                fProcess->kill();
+                fProcess->waitForProcessToFinish(2000);
+
+                if (fProcess->isRunning())
+                {
+                    carla_stdout("CarlaPluginJackThread::run() - application refused to close, force kill now");
+                    fProcess->kill();
+                }
             }
-        }
-        else
-        {
-            // forced quit, may have crashed
-            if (fProcess->getExitCode() != 0 /*|| fProcess->exitStatus() == QProcess::CrashExit*/)
+            else
             {
-                carla_stderr("CarlaPluginJackThread::run() - application crashed");
+                // forced quit, may have crashed
+                if (fProcess->getExitCode() != 0 /*|| fProcess->exitStatus() == QProcess::CrashExit*/)
+                {
+                    carla_stderr("CarlaPluginJackThread::run() - application crashed");
 
-                CarlaString errorString("Plugin '" + CarlaString(kPlugin->getName()) + "' has crashed!\n"
-                                        "Saving now will lose its current settings.\n"
-                                        "Please remove this plugin, and not rely on it from this point.");
-                kEngine->callback(true, true,
-                                  ENGINE_CALLBACK_ERROR,
-                                  kPlugin->getId(),
-                                  0, 0, 0, 0.0f,
-                                  errorString);
+                    CarlaString errorString("Plugin '" + CarlaString(kPlugin->getName()) + "' has crashed!\n"
+                                            "Saving now will lose its current settings.\n"
+                                            "Please remove this plugin, and not rely on it from this point.");
+                    kEngine->callback(true, true,
+                                    ENGINE_CALLBACK_ERROR,
+                                    kPlugin->getId(),
+                                    0, 0, 0, 0.0f,
+                                    errorString);
+                }
             }
         }
 
@@ -437,6 +473,7 @@ public:
           fProcCanceled(false),
           fBufferSize(engine->getBufferSize()),
           fProcWaitTime(0),
+          fSetupHints(0x0),
           fBridgeThread(engine, this),
           fShmAudioPool(),
           fShmRtClientControl(),
@@ -1574,7 +1611,7 @@ public:
         // ---------------------------------------------------------------
         // setup hints and options
 
-        const int setupHints = label[5] - '0';
+        fSetupHints = static_cast<uint>(label[5] - '0');
 
         // FIXME dryWet broken
         pData->hints  = PLUGIN_IS_BRIDGE | PLUGIN_OPTION_FIXED_BUFFERS;
@@ -1583,7 +1620,7 @@ public:
 #endif
         //fInfo.optionsAvailable = optionAv;
 
-        if (setupHints & LIBJACK_FLAG_CONTROL_WINDOW)
+        if (fSetupHints & LIBJACK_FLAG_CONTROL_WINDOW)
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
 
         // ---------------------------------------------------------------
@@ -1629,6 +1666,7 @@ private:
     bool fProcCanceled;
     uint fBufferSize;
     uint fProcWaitTime;
+    uint fSetupHints;
 
     CarlaPluginJackThread fBridgeThread;
 
@@ -1780,15 +1818,34 @@ private:
         const bool needsCancelableAction = ! pData->engine->isLoadingProject();
         const bool needsEngineIdle = pData->engine->getType() != kEngineTypePlugin;
 
+        CarlaString actionName;
+
         if (needsCancelableAction)
         {
+            if (fSetupHints & LIBJACK_FLAG_EXTERNAL_START)
+            {
+                const EngineOptions& options(pData->engine->getOptions());
+                CarlaString binaryDir(options.binaryDir);
+
+                char* const hwVars = fBridgeThread.getEnvVarsToExport();
+
+                actionName  = "Waiting for external JACK application start, please use the following environment variables:\n";
+                actionName += hwVars;
+
+                delete[] hwVars;
+            }
+            else
+            {
+                actionName = "Loading JACK application";
+            }
+
             pData->engine->setActionCanceled(false);
             pData->engine->callback(true, true,
                                     ENGINE_CALLBACK_CANCELABLE_ACTION,
                                     pData->id,
                                     1,
                                     0, 0, 0.0f,
-                                    "Loading JACK application");
+                                    actionName.buffer());
         }
 
         for (;fBridgeThread.isThreadRunning();)
@@ -1815,7 +1872,7 @@ private:
                                     pData->id,
                                     0,
                                     0, 0, 0.0f,
-                                    "Loading JACK application");
+                                    actionName.buffer());
         }
 
         if (fInitError || ! fInitiated)

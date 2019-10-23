@@ -597,6 +597,19 @@ public:
         return carla_strdup_safe(fBuffer);
     }
 
+    /*
+     * Release the buffer pointer while clearing this string.
+     * This allows to keep a pointer to the buffer after this object is deleted.
+     */
+    char* releaseBufferPointer() noexcept
+    {
+        char* ret = fBufferLen > 0 ? fBuffer : nullptr;
+        fBuffer = _null();
+        fBufferLen = 0;
+        fBufferAlloc = false;
+        return ret;
+    }
+
     // -------------------------------------------------------------------
     // base64 stuff, based on http://www.adp-gmbh.ch/cpp/common/base64.html
     // Copyright (C) 2004-2008 René Nyffenegger

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>496</width>
-    <height>438</height>
+    <width>540</width>
+    <height>514</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -488,10 +488,17 @@
         </property>
        </spacer>
       </item>
-      <item row="1" column="1">
+      <item row="2" column="1">
        <widget class="QCheckBox" name="cb_buffers_addition_mode">
         <property name="text">
          <string>Use previous client output buffer as input for the next client</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QCheckBox" name="cb_external_start">
+        <property name="text">
+         <string>Wait for external application start (Advanced)</string>
         </property>
        </widget>
       </item>
