@@ -672,6 +672,8 @@ bool CarlaJackAppClient::handleRtData()
                     fServer.position.frame = static_cast<jack_nframes_t>(bridgeTimeInfo.frame);
                     fServer.position.usecs = bridgeTimeInfo.usecs;
 
+                    fServer.position.frame_rate = static_cast<jack_nframes_t>(fServer.sampleRate);
+
                     if (bridgeTimeInfo.validFlags & kPluginBridgeTimeInfoValidBBT)
                     {
                         fServer.position.valid = JackPositionBBT;
