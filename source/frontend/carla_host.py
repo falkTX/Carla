@@ -141,6 +141,7 @@ class HostWindow(QMainWindow):
 
         self.fPluginCount = 0
         self.fPluginList  = []
+        self.fFavoritePlugins = []
 
         self.fProjectFilename  = ""
         self.fIsProjectLoading = False
@@ -1068,8 +1069,12 @@ class HostWindow(QMainWindow):
 
     def showAddPluginDialog(self):
         dialog = PluginDatabaseW(self.fParentOrSelf, self.host)
+        ret = dialog.exec_()
 
-        if not dialog.exec_():
+        if dialog.fFavoritePluginsChanged:
+            self.fFavoritePlugins = dialog.fFavoritePlugins
+
+        if not ret:
             return
 
         if not self.host.is_engine_running():
@@ -1098,11 +1103,35 @@ class HostWindow(QMainWindow):
         return dialog.getCommandAndFlags()
 
     @pyqtSlot()
+    def slot_favoritePluginAdd(self):
+        plugin = self.sender().data()
+
+        if plugin is None:
+            return
+
+        if not self.host.add_plugin(plugin['build'], plugin['type'], plugin['filename'], None,
+                                    plugin['label'], plugin['uniqueId'], None, 0x0):
+            CustomMessageBox(self,
+                             QMessageBox.Critical,
+                             self.tr("Error"),
+                             self.tr("Failed to load plugin"),
+                             self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+
+    @pyqtSlot()
     def showPluginActionsMenu(self):
         menu = QMenu(self)
 
         menu.addSection("Plugins")
         menu.addAction(self.ui.act_plugin_add)
+
+        if len(self.fFavoritePlugins) != 0:
+            fmenu = QMenu("Add from favorites", self)
+            for p in self.fFavoritePlugins:
+                act = fmenu.addAction(p['name'])
+                act.setData(p)
+                act.triggered.connect(self.slot_favoritePluginAdd)
+            menu.addMenu(fmenu)
+
         menu.addAction(self.ui.act_plugin_remove_all)
 
         menu.addSection("All plugins (macros)")
@@ -1730,6 +1759,9 @@ class HostWindow(QMainWindow):
             self.ui.scrollArea.setVisible(showKeyboard)
 
             QTimer.singleShot(100, self.slot_restoreCanvasScrollbarValues)
+
+            settingsDBf = QSettings("falkTX", "CarlaDatabase2")
+            self.fFavoritePlugins = settingsDBf.value("PluginDatabase/Favorites", [], type=list)
 
         # TODO - complete this
 
