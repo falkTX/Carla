@@ -1415,6 +1415,7 @@ class PluginDatabaseW(QDialog):
 
         self.ui.b_add.setEnabled(False)
         self.addAction(self.ui.act_focus_search)
+        self.ui.act_focus_search.triggered.connect(self.focusSearchField)
 
         if BINARY_NATIVE in (BINARY_POSIX32, BINARY_WIN32):
             self.ui.ch_bridged.setText(self.tr("Bridged (64bit)"))
@@ -1501,7 +1502,7 @@ class PluginDatabaseW(QDialog):
         # Post-connect setup
 
         self._reAddPlugins()
-        self.ui.lineEdit.setFocus()
+        self.focusSearchField()
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -2085,12 +2086,16 @@ class PluginDatabaseW(QDialog):
     # --------------------------------------------------------------------------------------------------------
 
     def showEvent(self, event):
-        self.ui.lineEdit.setFocus()
+        self.focusSearchField()
         QDialog.showEvent(self, event)
 
     def done(self, r):
         QDialog.done(self, r)
         self.close()
+
+    def focusSearchField(self):
+        self.ui.lineEdit.setFocus()
+        self.ui.lineEdit.selectAll()
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Jack Application Dialog
