@@ -1414,6 +1414,7 @@ class PluginDatabaseW(QDialog):
         # Set-up GUI
 
         self.ui.b_add.setEnabled(False)
+        self.addAction(self.ui.act_focus_search)
 
         if BINARY_NATIVE in (BINARY_POSIX32, BINARY_WIN32):
             self.ui.ch_bridged.setText(self.tr("Bridged (64bit)"))
@@ -2083,9 +2084,9 @@ class PluginDatabaseW(QDialog):
 
     # --------------------------------------------------------------------------------------------------------
 
-    def showEvent(self):
+    def showEvent(self, event):
         self.ui.lineEdit.setFocus()
-        QDialog.showEvent(self)
+        QDialog.showEvent(self, event)
 
     def done(self, r):
         QDialog.done(self, r)
