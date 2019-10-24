@@ -2083,6 +2083,10 @@ class PluginDatabaseW(QDialog):
 
     # --------------------------------------------------------------------------------------------------------
 
+    def showEvent(self):
+        self.ui.lineEdit.setFocus()
+        QDialog.showEvent(self)
+
     def done(self, r):
         QDialog.done(self, r)
         self.close()
