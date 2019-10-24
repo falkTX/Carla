@@ -31,6 +31,8 @@
 
 #ifdef HAVE_LIBLO
 # include "CarlaOscUtils.hpp"
+#else
+# warning No liblo support, NSM (session state) will not be available
 #endif
 
 #include "water/files/File.h"
