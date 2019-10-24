@@ -933,14 +933,16 @@ bool CarlaJackAppClient::handleRtData()
                         if (doMidiChanMixdown)
                         {
                             uint32_t time;
-                            uint8_t size, *midiDataPtr = fShmRtClientControl.data->midiOut;
+                            uint8_t size, *midiDataPtr;
                             uint8_t tmp[kBridgeBaseMidiOutHeaderSize + JackMidiPortBufferBase::kMaxEventSize];
                             bool wasSorted = true;
 
                             for (; wasSorted;)
                             {
-                                uint8_t prevSize, *prevData = midiDataPtr;
+                                midiDataPtr = fShmRtClientControl.data->midiOut;
+                                uint8_t* prevData = midiDataPtr;
                                 uint32_t prevTime = *(uint32_t*)midiDataPtr;
+                                uint8_t prevSize = *(midiDataPtr + 5);
                                 wasSorted = false;
 
                                 for (;;)
