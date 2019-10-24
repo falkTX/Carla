@@ -108,8 +108,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>119</width>
-        <height>124</height>
+        <width>164</width>
+        <height>164</height>
        </rect>
       </property>
       <attribute name="label">
@@ -164,8 +164,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>131</width>
-        <height>96</height>
+        <width>164</width>
+        <height>136</height>
        </rect>
       </property>
       <attribute name="label">
@@ -357,7 +357,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton">
+      <widget class="QPushButton" name="b_clear_filters">
        <property name="text">
         <string>Clear filters</string>
        </property>
@@ -800,7 +800,7 @@
   <tabstop>b_add</tabstop>
   <tabstop>b_cancel</tabstop>
   <tabstop>b_refresh</tabstop>
-  <tabstop>pushButton</tabstop>
+  <tabstop>b_clear_filters</tabstop>
   <tabstop>ch_internal</tabstop>
   <tabstop>ch_ladspa</tabstop>
   <tabstop>ch_dssi</tabstop>

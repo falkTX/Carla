@@ -1465,14 +1465,11 @@ class PluginDatabaseW(QDialog):
         self.ui.b_add.clicked.connect(self.slot_addPlugin)
         self.ui.b_cancel.clicked.connect(self.reject)
         self.ui.b_refresh.clicked.connect(self.slot_refreshPlugins)
+        self.ui.b_clear_filters.clicked.connect(self.slot_clearFilters)
         self.ui.lineEdit.textChanged.connect(self.slot_checkFilters)
         self.ui.tableWidget.currentCellChanged.connect(self.slot_checkPlugin)
         self.ui.tableWidget.cellDoubleClicked.connect(self.slot_addPlugin)
 
-        self.ui.ch_effects.clicked.connect(self.slot_checkFilters)
-        self.ui.ch_instruments.clicked.connect(self.slot_checkFilters)
-        self.ui.ch_midi.clicked.connect(self.slot_checkFilters)
-        self.ui.ch_other.clicked.connect(self.slot_checkFilters)
         self.ui.ch_internal.clicked.connect(self.slot_checkFilters)
         self.ui.ch_ladspa.clicked.connect(self.slot_checkFilters)
         self.ui.ch_dssi.clicked.connect(self.slot_checkFilters)
@@ -1481,6 +1478,10 @@ class PluginDatabaseW(QDialog):
         self.ui.ch_vst3.clicked.connect(self.slot_checkFilters)
         self.ui.ch_au.clicked.connect(self.slot_checkFilters)
         self.ui.ch_kits.clicked.connect(self.slot_checkFilters)
+        self.ui.ch_effects.clicked.connect(self.slot_checkFilters)
+        self.ui.ch_instruments.clicked.connect(self.slot_checkFilters)
+        self.ui.ch_midi.clicked.connect(self.slot_checkFilters)
+        self.ui.ch_other.clicked.connect(self.slot_checkFilters)
         self.ui.ch_native.clicked.connect(self.slot_checkFilters)
         self.ui.ch_bridged.clicked.connect(self.slot_checkFilters)
         self.ui.ch_bridged_wine.clicked.connect(self.slot_checkFilters)
@@ -1588,6 +1589,41 @@ class PluginDatabaseW(QDialog):
 
             if self.fRealParent:
                 self.fRealParent.setLoadRDFsNeeded()
+
+    @pyqtSlot()
+    def slot_clearFilters(self):
+        self.blockSignals(True)
+
+        self.ui.ch_internal.setChecked(True)
+        self.ui.ch_ladspa.setChecked(True)
+        self.ui.ch_dssi.setChecked(True)
+        self.ui.ch_lv2.setChecked(True)
+        self.ui.ch_vst.setChecked(True)
+        self.ui.ch_kits.setChecked(True)
+
+        self.ui.ch_instruments.setChecked(True)
+        self.ui.ch_effects.setChecked(True)
+        self.ui.ch_midi.setChecked(True)
+        self.ui.ch_other.setChecked(True)
+
+        self.ui.ch_native.setChecked(True)
+        self.ui.ch_bridged.setChecked(False)
+        self.ui.ch_bridged_wine.setChecked(False)
+
+        self.ui.ch_rtsafe.setChecked(False)
+        self.ui.ch_stereo.setChecked(False)
+        self.ui.ch_cv.setChecked(False)
+        self.ui.ch_gui.setChecked(False)
+        self.ui.ch_inline_display.setChecked(False)
+
+        if self.ui.ch_vst3.isEnabled():
+            self.ui.ch_vst3.setChecked(True)
+        if self.ui.ch_au.isEnabled():
+            self.ui.ch_au.setChecked(True)
+
+        self.blockSignals(False)
+
+        self._checkFilters()
 
     # --------------------------------------------------------------------------------------------------------
 
