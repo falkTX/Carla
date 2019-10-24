@@ -219,7 +219,6 @@ class RuntimeDriverSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Set-up GUI
 
-        self.ui.cb_device.setEnabled(False)
         self.ui.cb_device.clear()
         self.ui.cb_buffersize.clear()
         self.ui.cb_samplerate.clear()
@@ -227,15 +226,30 @@ class RuntimeDriverSettingsW(QDialog):
         self.ui.ico_restart.hide()
         self.ui.label_restart.hide()
 
+        self.ui.layout_triple_buffer.takeAt(2)
+        self.ui.layout_triple_buffer.takeAt(1)
+        self.ui.layout_triple_buffer.takeAt(0)
+        self.ui.verticalLayout.removeItem(self.ui.layout_triple_buffer)
+
+        self.ui.layout_restart.takeAt(3)
+        self.ui.layout_restart.takeAt(2)
+        self.ui.layout_restart.takeAt(1)
+        self.ui.layout_restart.takeAt(0)
+        self.ui.verticalLayout.removeItem(self.ui.layout_restart)
+
         self.adjustSize()
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
-        #self.setFixedSize(self.size())
 
         # ----------------------------------------------------------------------------------------------------
         # Load runtime settings
 
-        self.ui.cb_device.addItem(driverDeviceInfo['name'])
-        self.ui.cb_device.setCurrentIndex(0)
+        if host.is_engine_running():
+            self.ui.cb_device.addItem(driverDeviceInfo['name'])
+            self.ui.cb_device.setCurrentIndex(0)
+            self.ui.cb_device.setEnabled(False)
+        else:
+            self.ui.cb_device.addItem(driverDeviceInfo['name'])
+            self.ui.cb_device.setCurrentIndex(0)
 
         if len(driverDeviceInfo['bufferSizes']) > 0:
             for bsize in driverDeviceInfo['bufferSizes']:
@@ -278,15 +292,16 @@ class RuntimeDriverSettingsW(QDialog):
     # --------------------------------------------------------------------------------------------------------
 
     def getValues(self):
-        bufferSize = self.ui.cb_buffersize.currentText()
-        sampleRate = self.ui.cb_samplerate.currentText()
+        audioDevice = self.ui.cb_buffersize.currentText()
+        bufferSize  = self.ui.cb_buffersize.currentText()
+        sampleRate  = self.ui.cb_samplerate.currentText()
 
         if bufferSize == DriverSettingsW.AUTOMATIC_OPTION:
             bufferSize = "0"
         if sampleRate == DriverSettingsW.AUTOMATIC_OPTION:
             sampleRate = "0"
 
-        return (int(bufferSize), int(sampleRate))
+        return (audioDevice, int(bufferSize), int(sampleRate))
 
     # --------------------------------------------------------------------------------------------------------
 

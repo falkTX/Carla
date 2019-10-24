@@ -327,6 +327,8 @@ const char* EngineOption2Str(const EngineOption option) noexcept
         return "ENGINE_OPTION_AUDIO_SAMPLE_RATE";
     case ENGINE_OPTION_AUDIO_TRIPLE_BUFFER:
         return "ENGINE_OPTION_AUDIO_TRIPLE_BUFFER";
+    case ENGINE_OPTION_AUDIO_DRIVER:
+        return "ENGINE_OPTION_AUDIO_DRIVER";
     case ENGINE_OPTION_AUDIO_DEVICE:
         return "ENGINE_OPTION_AUDIO_DEVICE";
     case ENGINE_OPTION_OSC_ENABLED:

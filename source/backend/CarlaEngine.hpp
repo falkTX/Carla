@@ -240,6 +240,7 @@ struct CARLA_API EngineOptions {
     uint audioBufferSize;
     uint audioSampleRate;
     bool audioTripleBuffer;
+    const char* audioDriver;
     const char* audioDevice;
 
 #ifndef BUILD_BRIDGE

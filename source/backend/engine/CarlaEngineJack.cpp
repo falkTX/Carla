@@ -3000,6 +3000,7 @@ int jack_initialize(jack_client_t* const client, const char* const load_init)
     CarlaEngineJack* const engine = new CarlaEngineJack();
 
     engine->setOption(ENGINE_OPTION_FORCE_STEREO, 1, nullptr);
+    engine->setOption(ENGINE_OPTION_AUDIO_DRIVER, 0, "JACK");
     engine->setOption(ENGINE_OPTION_AUDIO_DEVICE, 0, "Auto-Connect ON");
     engine->setOption(ENGINE_OPTION_OSC_ENABLED,  1, nullptr);
     engine->setOption(ENGINE_OPTION_OSC_PORT_TCP, 22752, nullptr);

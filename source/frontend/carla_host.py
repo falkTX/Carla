@@ -876,12 +876,14 @@ class HostWindow(QMainWindow):
         if not dialog.exec_():
             return
 
-        if not self.host.is_engine_running():
-            QMessageBox.warning(self, self.tr("Warning"), self.tr("Engine was stopped while configuring settings, all changes have been ignored"))
-            return
+        audioDevice, bufferSize, sampleRate = dialog.getValues()
 
-        bufferSize, sampleRate = dialog.getValues()
-        self.host.set_engine_buffer_size_and_sample_rate(bufferSize, sampleRate)
+        if self.host.is_engine_running():
+            self.host.set_engine_buffer_size_and_sample_rate(bufferSize, sampleRate)
+        else:
+            self.host.set_engine_option(ENGINE_OPTION_AUDIO_DEVICE, 0, audioDevice)
+            self.host.set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, bufferSize, "")
+            self.host.set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, sampleRate, "")
 
     @pyqtSlot()
     def slot_engineStopTryAgain(self):
@@ -3198,6 +3200,7 @@ def setEngineSettings(host):
 
     # Only setup audio things if engine is not running
     if not host.is_engine_running():
+        host.set_engine_option(ENGINE_OPTION_AUDIO_DRIVER, 0, audioDriver)
         host.set_engine_option(ENGINE_OPTION_AUDIO_DEVICE, 0, audioDevice)
 
         if not audioDriver.startswith("JACK"):

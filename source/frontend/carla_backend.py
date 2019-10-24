@@ -861,71 +861,75 @@ ENGINE_OPTION_AUDIO_SAMPLE_RATE = 10
 # Default is false.
 ENGINE_OPTION_AUDIO_TRIPLE_BUFFER = 11
 
+# Audio driver.
+# Default dppends on platform.
+ENGINE_OPTION_AUDIO_DRIVER = 12
+
 # Audio device (within a driver).
 # Default unset.
-ENGINE_OPTION_AUDIO_DEVICE = 12
+ENGINE_OPTION_AUDIO_DEVICE = 13
 
 # Wherever to enable OSC support in the engine.
-ENGINE_OPTION_OSC_ENABLED = 13
+ENGINE_OPTION_OSC_ENABLED = 14
 
 # The network TCP port to use for OSC.
 # A value of 0 means use a random port.
 # A value of < 0 means to not enable the TCP port for OSC.
 # @note Valid ports begin at 1024 and end at 32767 (inclusive)
-ENGINE_OPTION_OSC_PORT_TCP = 14
+ENGINE_OPTION_OSC_PORT_TCP = 15
 
 # The network UDP port to use for OSC.
 # A value of 0 means use a random port.
 # A value of < 0 means to not enable the UDP port for OSC.
 # @note Disabling this option prevents DSSI UIs from working!
 # @note Valid ports begin at 1024 and end at 32767 (inclusive)
-ENGINE_OPTION_OSC_PORT_UDP = 15
+ENGINE_OPTION_OSC_PORT_UDP = 16
 
 # Set path used for a specific plugin type.
 # Uses value as the plugin format, valueStr as actual path.
 # @see PluginType
-ENGINE_OPTION_PLUGIN_PATH = 16
+ENGINE_OPTION_PLUGIN_PATH = 17
 
 # Set path to the binary files.
 # Default unset.
 # @note Must be set for plugin and UI bridges to work
-ENGINE_OPTION_PATH_BINARIES = 17
+ENGINE_OPTION_PATH_BINARIES = 18
 
 # Set path to the resource files.
 # Default unset.
 # @note Must be set for some internal plugins to work
-ENGINE_OPTION_PATH_RESOURCES = 18
+ENGINE_OPTION_PATH_RESOURCES = 19
 
 # Prevent bad plugin and UI behaviour.
 # @note: Linux only
-ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 19
+ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 20
 
 # Set UI scaling used in frontend, so backend can do the same for plugin UIs.
-ENGINE_OPTION_FRONTEND_UI_SCALE = 20
+ENGINE_OPTION_FRONTEND_UI_SCALE = 21
 
 # Set frontend winId, used to define as parent window for plugin UIs.
-ENGINE_OPTION_FRONTEND_WIN_ID = 21
+ENGINE_OPTION_FRONTEND_WIN_ID = 22
 
 # Set path to wine executable.
-ENGINE_OPTION_WINE_EXECUTABLE = 22
+ENGINE_OPTION_WINE_EXECUTABLE = 23
 
 # Enable automatic wineprefix detection.
-ENGINE_OPTION_WINE_AUTO_PREFIX = 23
+ENGINE_OPTION_WINE_AUTO_PREFIX = 24
 
 # Fallback wineprefix to use if automatic detection fails or is disabled, and WINEPREFIX is not set.
-ENGINE_OPTION_WINE_FALLBACK_PREFIX = 24
+ENGINE_OPTION_WINE_FALLBACK_PREFIX = 25
 
 # Enable realtime priority for Wine application and server threads.
-ENGINE_OPTION_WINE_RT_PRIO_ENABLED = 25
+ENGINE_OPTION_WINE_RT_PRIO_ENABLED = 26
 
 # Base realtime priority for Wine threads.
-ENGINE_OPTION_WINE_BASE_RT_PRIO = 26
+ENGINE_OPTION_WINE_BASE_RT_PRIO = 27
 
 # Wine server realtime priority.
-ENGINE_OPTION_WINE_SERVER_RT_PRIO = 27
+ENGINE_OPTION_WINE_SERVER_RT_PRIO = 28
 
 # Capture console output into debug callbacks
-ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 28
+ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 29
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine Process Mode

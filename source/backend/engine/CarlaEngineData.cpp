@@ -197,6 +197,7 @@ EngineOptions::EngineOptions() noexcept
       audioBufferSize(512),
       audioSampleRate(44100),
       audioTripleBuffer(false),
+      audioDriver(nullptr),
       audioDevice(nullptr),
 #ifndef BUILD_BRIDGE
 # ifdef CARLA_OS_WIN
@@ -226,6 +227,12 @@ EngineOptions::EngineOptions() noexcept
 
 EngineOptions::~EngineOptions() noexcept
 {
+    if (audioDriver != nullptr)
+    {
+        delete[] audioDriver;
+        audioDriver = nullptr;
+    }
+
     if (audioDevice != nullptr)
     {
         delete[] audioDevice;

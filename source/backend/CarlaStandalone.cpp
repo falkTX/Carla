@@ -255,6 +255,9 @@ static void carla_engine_init_common(CarlaEngine* const engine)
     engine->setOption(CB::ENGINE_OPTION_AUDIO_SAMPLE_RATE,     static_cast<int>(gStandalone.engineOptions.audioSampleRate),  nullptr);
     engine->setOption(CB::ENGINE_OPTION_AUDIO_TRIPLE_BUFFER,   gStandalone.engineOptions.audioTripleBuffer   ? 1 : 0,        nullptr);
 
+    if (gStandalone.engineOptions.audioDriver != nullptr)
+        engine->setOption(CB::ENGINE_OPTION_AUDIO_DRIVER,      0, gStandalone.engineOptions.audioDriver);
+
     if (gStandalone.engineOptions.audioDevice != nullptr)
         engine->setOption(CB::ENGINE_OPTION_AUDIO_DEVICE,      0, gStandalone.engineOptions.audioDevice);
 
@@ -498,6 +501,7 @@ const CarlaRuntimeEngineInfo* carla_get_runtime_engine_info()
     return &retInfo;
 }
 
+#ifndef BUILD_BRIDGE
 const CarlaRuntimeEngineDriverDeviceInfo* carla_get_runtime_engine_driver_device_info()
 {
     static CarlaRuntimeEngineDriverDeviceInfo retInfo;
@@ -510,8 +514,27 @@ const CarlaRuntimeEngineDriverDeviceInfo* carla_get_runtime_engine_driver_device
     retInfo.sampleRate = 0.0;
     retInfo.sampleRates = nullptr;
 
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &retInfo);
-    const char* const audioDriver = gStandalone.engine->getCurrentDriverName();
+    const char* audioDriver;
+    const char* audioDevice;
+
+    if (CarlaEngine* const engine = gStandalone.engine)
+    {
+        audioDriver = engine->getCurrentDriverName();
+        audioDevice = engine->getOptions().audioDevice;
+
+        retInfo.bufferSize = engine->getBufferSize();
+        retInfo.sampleRate = engine->getSampleRate();
+    }
+    else
+    {
+        audioDriver = gStandalone.engineOptions.audioDriver;
+        audioDevice = gStandalone.engineOptions.audioDevice;
+
+        retInfo.bufferSize = gStandalone.engineOptions.audioBufferSize;
+        retInfo.sampleRate = gStandalone.engineOptions.audioSampleRate;
+    }
+    CARLA_SAFE_ASSERT_RETURN(audioDriver != nullptr, &retInfo);
+    CARLA_SAFE_ASSERT_RETURN(audioDevice != nullptr, &retInfo);
 
     uint index = 0;
     uint count = CarlaEngine::getDriverCount();
@@ -525,17 +548,12 @@ const CarlaRuntimeEngineDriverDeviceInfo* carla_get_runtime_engine_driver_device
     }
     CARLA_SAFE_ASSERT_RETURN(index != count, &retInfo);
 
-    const EngineOptions& options(gStandalone.engine->getOptions());
-    const char* const audioDevice = options.audioDevice;
-
     const EngineDriverDeviceInfo* const devInfo = CarlaEngine::getDriverDeviceInfo(index, audioDevice);
     CARLA_SAFE_ASSERT_RETURN(devInfo != nullptr, &retInfo);
 
     retInfo.name        = audioDevice;
     retInfo.hints       = devInfo->hints;
-    retInfo.bufferSize  = gStandalone.engine->getBufferSize();
     retInfo.bufferSizes = devInfo->bufferSizes;
-    retInfo.sampleRate  = gStandalone.engine->getSampleRate();
     retInfo.sampleRates = devInfo->sampleRates;
 
     return &retInfo;
@@ -556,6 +574,7 @@ bool carla_show_engine_device_control_panel()
 
     return gStandalone.engine->showDeviceControlPanel();
 }
+#endif
 
 void carla_clear_engine_xruns()
 {
@@ -674,6 +693,15 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
     case CB::ENGINE_OPTION_AUDIO_TRIPLE_BUFFER:
         CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
         gStandalone.engineOptions.audioTripleBuffer = (value != 0);
+        break;
+
+    case CB::ENGINE_OPTION_AUDIO_DRIVER:
+        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr,);
+
+        if (gStandalone.engineOptions.audioDriver != nullptr)
+            delete[] gStandalone.engineOptions.audioDriver;
+
+        gStandalone.engineOptions.audioDriver = carla_strdup_safe(valueStr);
         break;
 
     case CB::ENGINE_OPTION_AUDIO_DEVICE:

@@ -1604,6 +1604,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         {
         case ENGINE_OPTION_PROCESS_MODE:
         case ENGINE_OPTION_AUDIO_TRIPLE_BUFFER:
+        case ENGINE_OPTION_AUDIO_DRIVER:
         case ENGINE_OPTION_AUDIO_DEVICE:
             return carla_stderr("CarlaEngine::setOption(%i:%s, %i, \"%s\") - Cannot set this option while engine is running!",
                                 option, EngineOption2Str(option), value, valueStr);
@@ -1694,6 +1695,15 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
     case ENGINE_OPTION_AUDIO_TRIPLE_BUFFER:
         CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
         pData->options.audioTripleBuffer = (value != 0);
+        break;
+
+    case ENGINE_OPTION_AUDIO_DRIVER:
+        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr,);
+
+        if (pData->options.audioDriver != nullptr)
+            delete[] pData->options.audioDriver;
+
+        pData->options.audioDriver = carla_strdup_safe(valueStr);
         break;
 
     case ENGINE_OPTION_AUDIO_DEVICE:
