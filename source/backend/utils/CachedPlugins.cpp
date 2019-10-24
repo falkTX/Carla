@@ -154,6 +154,18 @@ static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2Worl
 
         suri = lilvPlugin.get_uri().as_uri();
 
+        if (char* const bundle = lilv_file_uri_parse(lilvPlugin.get_bundle_uri().as_uri(), nullptr))
+        {
+            File fbundle(bundle);
+            lilv_free(bundle);
+
+            suri = (fbundle.getFileName() + CARLA_OS_SEP).toRawUTF8() + suri;
+        }
+        else
+        {
+            suri = CARLA_OS_SEP_STR + suri;
+        }
+
 #if 0 // def HAVE_FLUIDSYNTH
         // If we have fluidsynth support built-in, loading these plugins will lead to issues
         if (suri == "urn:ardour:a-fluidsynth")

@@ -34,6 +34,7 @@ import ui_carla_database
 import ui_carla_refresh
 
 from carla_shared import *
+from carla_utils import getPluginTypeAsString
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Try Import LADSPA-RDF
@@ -338,13 +339,16 @@ def checkPluginCached(desc, ptype):
     pinfo['cv.ins']  = desc['cvIns']
     pinfo['cv.outs'] = desc['cvOuts']
 
-    pinfo['midi.ins']   = desc['midiIns']
-    pinfo['midi.outs']  = desc['midiOuts']
+    pinfo['midi.ins']  = desc['midiIns']
+    pinfo['midi.outs'] = desc['midiOuts']
 
     pinfo['parameters.ins']  = desc['parameterIns']
     pinfo['parameters.outs'] = desc['parameterOuts']
 
-    if ptype == PLUGIN_SFZ:
+    if ptype == PLUGIN_LV2:
+        pinfo['filename'], pinfo['label'] = pinfo['label'].split('/',1)
+
+    elif ptype == PLUGIN_SFZ:
         pinfo['filename'] = pinfo['label']
         pinfo['label']    = pinfo['name']
 
@@ -1376,6 +1380,11 @@ class PluginRefreshW(QDialog):
 # Plugin Database Dialog
 
 class PluginDatabaseW(QDialog):
+    TABLEWIDGET_ITEM_NAME   = 0
+    TABLEWIDGET_ITEM_LABEL  = 1
+    TABLEWIDGET_ITEM_MAKER  = 2
+    TABLEWIDGET_ITEM_BINARY = 3
+
     def __init__(self, parent, host):
         QDialog.__init__(self, parent)
         self.host = host
@@ -1393,6 +1402,10 @@ class PluginDatabaseW(QDialog):
         self.fLastTableIndex = 0
         self.fRetPlugin  = None
         self.fRealParent = parent
+
+        self.fTrYes    = self.tr("Yes")
+        self.fTrNo     = self.tr("No")
+        self.fTrNative = self.tr("Native")
 
         # ----------------------------------------------------------------------------------------------------
         # Set-up GUI
@@ -1413,6 +1426,10 @@ class PluginDatabaseW(QDialog):
             self.ui.ch_au.setEnabled(False)
             self.ui.ch_au.setVisible(False)
 
+        self.ui.tab_info.tabBar().hide()
+        self.ui.tab_reqs.tabBar().hide()
+        # FIXME, why /2 needed?
+        self.ui.tab_info.setMinimumWidth(self.ui.la_id.width()/2 + self.ui.l_id.fontMetrics().width("9999999999") + 6*3)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
         # ----------------------------------------------------------------------------------------------------
@@ -1448,7 +1465,6 @@ class PluginDatabaseW(QDialog):
         self.ui.b_add.clicked.connect(self.slot_addPlugin)
         self.ui.b_cancel.clicked.connect(self.reject)
         self.ui.b_refresh.clicked.connect(self.slot_refreshPlugins)
-        self.ui.tb_filters.clicked.connect(self.slot_maybeShowFilters)
         self.ui.lineEdit.textChanged.connect(self.slot_checkFilters)
         self.ui.tableWidget.currentCellChanged.connect(self.slot_checkPlugin)
         self.ui.tableWidget.cellDoubleClicked.connect(self.slot_addPlugin)
@@ -1484,22 +1500,85 @@ class PluginDatabaseW(QDialog):
     @pyqtSlot()
     def slot_addPlugin(self):
         if self.ui.tableWidget.currentRow() >= 0:
-            self.fRetPlugin = self.ui.tableWidget.item(self.ui.tableWidget.currentRow(), 0).data(Qt.UserRole)
+            self.fRetPlugin = self.ui.tableWidget.item(self.ui.tableWidget.currentRow(), 0).data(Qt.UserRole+1)
             self.accept()
         else:
             self.reject()
 
     @pyqtSlot(int)
     def slot_checkPlugin(self, row):
-        self.ui.b_add.setEnabled(row >= 0)
+        if row >= 0:
+            self.ui.b_add.setEnabled(True)
+            plugin = self.ui.tableWidget.item(self.ui.tableWidget.currentRow(), 0).data(Qt.UserRole+1)
+
+            isSynth  = bool(plugin['hints'] & PLUGIN_IS_SYNTH)
+            isEffect = bool(plugin['audio.ins'] > 0 < plugin['audio.outs'] and not isSynth)
+            isMidi   = bool(plugin['audio.ins'] == 0 and plugin['audio.outs'] == 0 and plugin['midi.ins'] > 0 < plugin['midi.outs'])
+            isKit    = bool(plugin['type'] in (PLUGIN_SF2, PLUGIN_SFZ))
+            isOther  = bool(not (isEffect or isSynth or isMidi or isKit))
+
+            if isSynth:
+                ptype = "Instrument"
+            elif isEffect:
+                ptype = "Effect"
+            elif isMidi:
+                ptype = "MIDI Plugin"
+            else:
+                ptype = "Other"
+
+            if plugin['build'] == BINARY_NATIVE:
+                parch = self.fTrNative
+            elif plugin['build'] == BINARY_POSIX32:
+                parch = "posix32"
+            elif plugin['build'] == BINARY_POSIX64:
+                parch = "posix64"
+            elif plugin['build'] == BINARY_WIN32:
+                parch = "win32"
+            elif plugin['build'] == BINARY_WIN64:
+                parch = "win64"
+            elif plugin['build'] == BINARY_OTHER:
+                parch = self.tr("Other")
+            elif plugin['build'] == BINARY_WIN32:
+                parch = self.tr("Unknown")
+
+            self.ui.l_format.setText(getPluginTypeAsString(plugin['type']))
+            self.ui.l_type.setText(ptype)
+            self.ui.l_arch.setText(parch)
+            self.ui.l_id.setText(str(plugin['uniqueId']))
+            self.ui.l_ains.setText(str(plugin['audio.ins']))
+            self.ui.l_aouts.setText(str(plugin['audio.outs']))
+            self.ui.l_cvins.setText(str(plugin['cv.ins']))
+            self.ui.l_cvouts.setText(str(plugin['cv.outs']))
+            self.ui.l_mins.setText(str(plugin['midi.ins']))
+            self.ui.l_mouts.setText(str(plugin['midi.outs']))
+            self.ui.l_pins.setText(str(plugin['parameters.ins']))
+            self.ui.l_pouts.setText(str(plugin['parameters.outs']))
+            self.ui.l_gui.setText(self.fTrYes if plugin['hints'] & PLUGIN_HAS_CUSTOM_UI else self.fTrNo)
+            self.ui.l_idisp.setText(self.fTrYes if plugin['hints'] & PLUGIN_HAS_INLINE_DISPLAY else self.fTrNo)
+            self.ui.l_bridged.setText(self.fTrYes if plugin['hints'] & PLUGIN_IS_BRIDGE else self.fTrNo)
+            self.ui.l_synth.setText(self.fTrYes if isSynth else self.fTrNo)
+        else:
+            self.ui.b_add.setEnabled(False)
+            self.ui.l_format.setText("---")
+            self.ui.l_type.setText("---")
+            self.ui.l_arch.setText("---")
+            self.ui.l_id.setText("---")
+            self.ui.l_ains.setText("---")
+            self.ui.l_aouts.setText("---")
+            self.ui.l_cvins.setText("---")
+            self.ui.l_cvouts.setText("---")
+            self.ui.l_mins.setText("---")
+            self.ui.l_mouts.setText("---")
+            self.ui.l_pins.setText("---")
+            self.ui.l_pouts.setText("---")
+            self.ui.l_gui.setText("---")
+            self.ui.l_idisp.setText("---")
+            self.ui.l_bridged.setText("---")
+            self.ui.l_synth.setText("---")
 
     @pyqtSlot()
     def slot_checkFilters(self):
         self._checkFilters()
-
-    @pyqtSlot()
-    def slot_maybeShowFilters(self):
-        self._showFilters(not self.ui.frame.isVisible())
 
     @pyqtSlot()
     def slot_refreshPlugins(self):
@@ -1516,7 +1595,6 @@ class PluginDatabaseW(QDialog):
         settings = QSettings("falkTX", "CarlaDatabase2")
         settings.setValue("PluginDatabase/Geometry", self.saveGeometry())
         settings.setValue("PluginDatabase/TableGeometry_5", self.ui.tableWidget.horizontalHeader().saveState())
-        settings.setValue("PluginDatabase/ShowFilters", (self.ui.tb_filters.arrowType() == Qt.UpArrow))
         settings.setValue("PluginDatabase/ShowEffects", self.ui.ch_effects.isChecked())
         settings.setValue("PluginDatabase/ShowInstruments", self.ui.ch_instruments.isChecked())
         settings.setValue("PluginDatabase/ShowMIDI", self.ui.ch_midi.isChecked())
@@ -1572,8 +1650,6 @@ class PluginDatabaseW(QDialog):
         else:
             self.ui.tableWidget.sortByColumn(0, Qt.AscendingOrder)
 
-        self._showFilters(settings.value("PluginDatabase/ShowFilters", False, type=bool))
-
     # --------------------------------------------------------------------------------------------------------
 
     def _checkFilters(self):
@@ -1616,25 +1692,27 @@ class PluginDatabaseW(QDialog):
         rowCount = self.ui.tableWidget.rowCount()
 
         for i in range(self.fLastTableIndex):
-            plugin = self.ui.tableWidget.item(i, 0).data(Qt.UserRole)
+            plugin = self.ui.tableWidget.item(i, 0).data(Qt.UserRole+1)
+            ptext  = self.ui.tableWidget.item(i, 0).data(Qt.UserRole+2)
             aIns   = plugin['audio.ins']
             aOuts  = plugin['audio.outs']
             cvIns  = plugin['cv.ins']
             cvOuts = plugin['cv.outs']
             mIns   = plugin['midi.ins']
             mOuts  = plugin['midi.outs']
-            ptype  = self.ui.tableWidget.item(i, 12).text()
-            isSynth  = bool(plugin['hints'] & PLUGIN_IS_SYNTH)
+            phints = plugin['hints']
+            ptype  = plugin['type']
+            isSynth  = bool(phints & PLUGIN_IS_SYNTH)
             isEffect = bool(aIns > 0 < aOuts and not isSynth)
             isMidi   = bool(aIns == 0 and aOuts == 0 and mIns > 0 < mOuts)
-            isKit    = bool(ptype in ("SF2", "SFZ"))
+            isKit    = bool(ptype in (PLUGIN_SF2, PLUGIN_SFZ))
             isOther  = bool(not (isEffect or isSynth or isMidi or isKit))
             isNative = bool(plugin['build'] == BINARY_NATIVE)
-            isRtSafe = bool(plugin['hints'] & PLUGIN_IS_RTSAFE)
+            isRtSafe = bool(phints & PLUGIN_IS_RTSAFE)
             isStereo = bool(aIns == 2 and aOuts == 2) or (isSynth and aOuts == 2)
             hasCV    = bool(cvIns + cvOuts > 0)
-            hasGui   = bool(plugin['hints'] & PLUGIN_HAS_CUSTOM_UI)
-            hasIDisp = bool(plugin['hints'] & PLUGIN_HAS_INLINE_DISPLAY)
+            hasGui   = bool(phints & PLUGIN_HAS_CUSTOM_UI)
+            hasIDisp = bool(phints & PLUGIN_HAS_INLINE_DISPLAY)
 
             isBridged = bool(not isNative and plugin['build'] in nativeBins)
             isBridgedWine = bool(not isNative and plugin['build'] in wineBins)
@@ -1649,19 +1727,19 @@ class PluginDatabaseW(QDialog):
                 self.ui.tableWidget.hideRow(i)
             elif hideKits and isKit:
                 self.ui.tableWidget.hideRow(i)
-            elif hideInternal and ptype == self.tr("Internal"):
+            elif hideInternal and ptype == PLUGIN_INTERNAL:
                 self.ui.tableWidget.hideRow(i)
-            elif hideLadspa and ptype == "LADSPA":
+            elif hideLadspa and ptype == PLUGIN_LADSPA:
                 self.ui.tableWidget.hideRow(i)
-            elif hideDssi and ptype == "DSSI":
+            elif hideDssi and ptype == PLUGIN_DSSI:
                 self.ui.tableWidget.hideRow(i)
-            elif hideLV2 and ptype == "LV2":
+            elif hideLV2 and ptype == PLUGIN_LV2:
                 self.ui.tableWidget.hideRow(i)
-            elif hideVST2 and ptype == "VST2":
+            elif hideVST2 and ptype == PLUGIN_VST2:
                 self.ui.tableWidget.hideRow(i)
-            elif hideVST3 and ptype == "VST3":
+            elif hideVST3 and ptype == PLUGIN_VST3:
                 self.ui.tableWidget.hideRow(i)
-            elif hideAU and ptype == "AU":
+            elif hideAU and ptype == PLUGIN_AU:
                 self.ui.tableWidget.hideRow(i)
             elif hideNative and isNative:
                 self.ui.tableWidget.hideRow(i)
@@ -1679,21 +1757,10 @@ class PluginDatabaseW(QDialog):
                 self.ui.tableWidget.hideRow(i)
             elif hideNonStereo and not isStereo:
                 self.ui.tableWidget.hideRow(i)
-            elif (text and not (
-                  text in self.ui.tableWidget.item(i, 0).text().lower() or
-                  text in self.ui.tableWidget.item(i, 1).text().lower() or
-                  text in self.ui.tableWidget.item(i, 2).text().lower() or
-                  text in self.ui.tableWidget.item(i, 3).text().lower() or
-                  text in self.ui.tableWidget.item(i, 13).text().lower())):
+            elif text and text not in ptext:
                 self.ui.tableWidget.hideRow(i)
             else:
                 self.ui.tableWidget.showRow(i)
-
-    # --------------------------------------------------------------------------------------------------------
-
-    def _showFilters(self, yesNo):
-        self.ui.tb_filters.setArrowType(Qt.UpArrow if yesNo else Qt.DownArrow)
-        self.ui.frame.setVisible(yesNo)
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -1705,45 +1772,13 @@ class PluginDatabaseW(QDialog):
 
         index = self.fLastTableIndex
 
-        if plugin['build'] == BINARY_NATIVE:
-            bridgeText = self.tr("No")
-
-        else:
-            if WINDOWS:
-                if plugin['build'] == BINARY_WIN32:
-                    typeText = "32bit"
-                elif plugin['build'] == BINARY_WIN64:
-                    typeText = "64bit"
-                else:
-                    typeText = self.tr("Unknown")
-            else:
-                if plugin['build'] == BINARY_POSIX32:
-                    typeText = "32bit"
-                elif plugin['build'] == BINARY_POSIX64:
-                    typeText = "64bit"
-                elif plugin['build'] == BINARY_WIN32:
-                    typeText = "Windows 32bit"
-                elif plugin['build'] == BINARY_WIN64:
-                    typeText = "Windows 64bit"
-                else:
-                    typeText = self.tr("Unknown")
-
-            bridgeText = self.tr("Yes (%s)" % typeText)
-
-        self.ui.tableWidget.setItem(index, 0, QTableWidgetItem(str(plugin['name'])))
-        self.ui.tableWidget.setItem(index, 1, QTableWidgetItem(str(plugin['label'])))
-        self.ui.tableWidget.setItem(index, 2, QTableWidgetItem(str(plugin['maker'])))
-        self.ui.tableWidget.setItem(index, 3, QTableWidgetItem(str(plugin['uniqueId'])))
-        self.ui.tableWidget.setItem(index, 4, QTableWidgetItem(str(plugin['audio.ins'])))
-        self.ui.tableWidget.setItem(index, 5, QTableWidgetItem(str(plugin['audio.outs'])))
-        self.ui.tableWidget.setItem(index, 6, QTableWidgetItem(str(plugin['parameters.ins'])))
-        self.ui.tableWidget.setItem(index, 7, QTableWidgetItem(str(plugin['parameters.outs'])))
-        self.ui.tableWidget.setItem(index, 9, QTableWidgetItem(self.tr("Yes") if (plugin['hints'] & PLUGIN_HAS_CUSTOM_UI) else self.tr("No")))
-        self.ui.tableWidget.setItem(index, 10, QTableWidgetItem(self.tr("Yes") if (plugin['hints'] & PLUGIN_IS_SYNTH) else self.tr("No")))
-        self.ui.tableWidget.setItem(index, 11, QTableWidgetItem(bridgeText))
-        self.ui.tableWidget.setItem(index, 12, QTableWidgetItem(ptype))
-        self.ui.tableWidget.setItem(index, 13, QTableWidgetItem(str(plugin['filename'])))
-        self.ui.tableWidget.item(index, 0).setData(Qt.UserRole, plugin)
+        pluginText = plugin['name']+plugin['label']+plugin['maker']+plugin['filename']
+        self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_NAME, QTableWidgetItem(plugin['name']))
+        self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_LABEL, QTableWidgetItem(plugin['label']))
+        self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_MAKER, QTableWidgetItem(plugin['maker']))
+        self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_BINARY, QTableWidgetItem(os.path.basename(plugin['filename'])))
+        self.ui.tableWidget.item(index, 0).setData(Qt.UserRole+1, plugin)
+        self.ui.tableWidget.item(index, 0).setData(Qt.UserRole+2, pluginText)
 
         self.fLastTableIndex += 1
 
@@ -1943,6 +1978,7 @@ class PluginDatabaseW(QDialog):
 
         self.ui.tableWidget.setSortingEnabled(True)
         self._checkFilters()
+        self.slot_checkPlugin(self.ui.tableWidget.currentRow())
 
     # --------------------------------------------------------------------------------------------------------
 
