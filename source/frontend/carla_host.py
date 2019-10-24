@@ -141,6 +141,8 @@ class HostWindow(QMainWindow):
 
         self.fPluginCount = 0
         self.fPluginList  = []
+
+        self.fPluginDatabaseDialog = None
         self.fFavoritePlugins = []
 
         self.fProjectFilename  = ""
@@ -1068,7 +1070,10 @@ class HostWindow(QMainWindow):
     # Plugins (menu actions)
 
     def showAddPluginDialog(self):
-        dialog = PluginDatabaseW(self.fParentOrSelf, self.host)
+        if self.fPluginDatabaseDialog is None:
+            self.fPluginDatabaseDialog = PluginDatabaseW(self.fParentOrSelf, self.host)
+        dialog = self.fPluginDatabaseDialog
+
         ret = dialog.exec_()
 
         if dialog.fFavoritePluginsChanged:
