@@ -108,8 +108,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>164</width>
-        <height>164</height>
+        <width>119</width>
+        <height>124</height>
        </rect>
       </property>
       <attribute name="label">
@@ -164,8 +164,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>164</width>
-        <height>136</height>
+        <width>131</width>
+        <height>96</height>
        </rect>
       </property>
       <attribute name="label">
@@ -796,9 +796,33 @@
  </widget>
  <tabstops>
   <tabstop>lineEdit</tabstop>
-  <tabstop>b_add</tabstop>
-  <tabstop>b_refresh</tabstop>
   <tabstop>tableWidget</tabstop>
+  <tabstop>b_add</tabstop>
+  <tabstop>b_cancel</tabstop>
+  <tabstop>b_refresh</tabstop>
+  <tabstop>pushButton</tabstop>
+  <tabstop>ch_internal</tabstop>
+  <tabstop>ch_ladspa</tabstop>
+  <tabstop>ch_dssi</tabstop>
+  <tabstop>ch_lv2</tabstop>
+  <tabstop>ch_vst</tabstop>
+  <tabstop>ch_vst3</tabstop>
+  <tabstop>ch_au</tabstop>
+  <tabstop>ch_kits</tabstop>
+  <tabstop>ch_effects</tabstop>
+  <tabstop>ch_instruments</tabstop>
+  <tabstop>ch_midi</tabstop>
+  <tabstop>ch_other</tabstop>
+  <tabstop>ch_native</tabstop>
+  <tabstop>ch_bridged</tabstop>
+  <tabstop>ch_bridged_wine</tabstop>
+  <tabstop>ch_inline_display</tabstop>
+  <tabstop>ch_stereo</tabstop>
+  <tabstop>ch_rtsafe</tabstop>
+  <tabstop>ch_gui</tabstop>
+  <tabstop>ch_cv</tabstop>
+  <tabstop>tab_reqs</tabstop>
+  <tabstop>tab_info</tabstop>
  </tabstops>
  <resources>
   <include location="../resources.qrc"/>

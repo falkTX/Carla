@@ -1494,6 +1494,7 @@ class PluginDatabaseW(QDialog):
         # Post-connect setup
 
         self._reAddPlugins()
+        self.ui.lineEdit.setFocus()
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -1772,7 +1773,7 @@ class PluginDatabaseW(QDialog):
 
         index = self.fLastTableIndex
 
-        pluginText = plugin['name']+plugin['label']+plugin['maker']+plugin['filename']
+        pluginText = (plugin['name']+plugin['label']+plugin['maker']+plugin['filename']).lower()
         self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_NAME, QTableWidgetItem(plugin['name']))
         self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_LABEL, QTableWidgetItem(plugin['label']))
         self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_MAKER, QTableWidgetItem(plugin['maker']))
