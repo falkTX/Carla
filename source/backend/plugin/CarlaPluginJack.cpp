@@ -286,7 +286,8 @@ protected:
         }
 #endif
 
-        const bool externalProcess = (fSetupLabel[5] - '0') & LIBJACK_FLAG_EXTERNAL_START;
+        const bool externalProcess = ((fSetupLabel[5] - '0') & LIBJACK_FLAG_EXTERNAL_START)
+                                   && ! kEngine->isLoadingProject();
 
         if (! externalProcess)
         {

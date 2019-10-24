@@ -2017,6 +2017,8 @@ class JackApplicationW(QDialog):
             flags |= self.FLAG_CAPTURE_FIRST_WINDOW
         if self.ui.cb_buffers_addition_mode.isChecked():
             flags |= self.FLAG_BUFFERS_ADDITION_MODE
+        if self.ui.cb_out_midi_mixdown.isChecked():
+            flags |= self.FLAG_MIDI_OUTPUT_CHANNEL_MIXDOWN
         if self.ui.cb_external_start.isChecked():
             flags |= self.FLAG_EXTERNAL_START
 
@@ -2058,6 +2060,8 @@ class JackApplicationW(QDialog):
         self.ui.sb_midi_ins.setValue(settings.value("NumMidiIns", 0, type=int))
         self.ui.sb_midi_outs.setValue(settings.value("NumMidiOuts", 0, type=int))
         self.ui.cb_manage_window.setChecked(settings.value("ManageWindow", True, type=bool))
+        self.ui.cb_capture_first_window.setChecked(settings.value("CaptureFirstWindow", False, type=bool))
+        self.ui.cb_out_midi_mixdown.setChecked(settings.value("MidiOutMixdown", False, type=bool))
 
         self.checkIfButtonBoxShouldBeEnabled(self.ui.cb_session_mgr.currentIndex(),
                                              self.ui.le_command.text())
@@ -2083,6 +2087,8 @@ class JackApplicationW(QDialog):
         settings.setValue("NumMidiIns", self.ui.sb_midi_ins.value())
         settings.setValue("NumMidiOuts", self.ui.sb_midi_outs.value())
         settings.setValue("ManageWindow", self.ui.cb_manage_window.isChecked())
+        settings.setValue("CaptureFirstWindow", self.ui.cb_capture_first_window.isChecked())
+        settings.setValue("MidiOutMixdown", self.ui.cb_out_midi_mixdown.isChecked())
 
     # -----------------------------------------------------------------------------------------------------------------
 
