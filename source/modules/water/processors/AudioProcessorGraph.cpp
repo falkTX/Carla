@@ -23,8 +23,6 @@
 
 namespace water {
 
-const uint AudioProcessorGraph::midiChannelIndex = 0x4000;
-
 //==============================================================================
 namespace GraphRenderingOps
 {
@@ -461,7 +459,8 @@ private:
                 }
 
                 if (inputChan < numAudioOuts
-                     && isBufferNeededLater (ourRenderingIndex,
+                     && isBufferNeededLater (AudioProcessor::ChannelTypeAudio,
+                                             ourRenderingIndex,
                                              inputChan,
                                              srcNode, srcChan))
                 {
@@ -493,7 +492,8 @@ private:
                                                                     sourceOutputChans.getUnchecked(i));
 
                     if (sourceBufIndex >= 0
-                        && ! isBufferNeededLater (ourRenderingIndex,
+                        && ! isBufferNeededLater (AudioProcessor::ChannelTypeAudio,
+                                                  ourRenderingIndex,
                                                   inputChan,
                                                   sourceNodes.getUnchecked(i),
                                                   sourceOutputChans.getUnchecked(i)))
@@ -549,7 +549,8 @@ private:
 
                             if (nodeDelay < maxLatency)
                             {
-                                if (! isBufferNeededLater (ourRenderingIndex, inputChan,
+                                if (! isBufferNeededLater (AudioProcessor::ChannelTypeAudio,
+                                                           ourRenderingIndex, inputChan,
                                                            sourceNodes.getUnchecked(j),
                                                            sourceOutputChans.getUnchecked(j)))
                                 {
@@ -727,13 +728,11 @@ private:
             midiBufferToUse = getBufferContaining (AudioProcessor::ChannelTypeMIDI,
                                                    midiSourceNodes.getUnchecked(0),
                                                    0);
-
             if (midiBufferToUse >= 0)
             {
-                if (isBufferNeededLater (ourRenderingIndex,
-                                         AudioProcessorGraph::midiChannelIndex,
-                                         midiSourceNodes.getUnchecked(0),
-                                         AudioProcessorGraph::midiChannelIndex))
+                if (isBufferNeededLater (AudioProcessor::ChannelTypeMIDI,
+                                         ourRenderingIndex, 0,
+                                         midiSourceNodes.getUnchecked(0), 0))
                 {
                     // can't mess up this channel because it's needed later by another node, so we
                     // need to use a copy of it..
@@ -760,10 +759,9 @@ private:
                                                                 0);
 
                 if (sourceBufIndex >= 0
-                     && ! isBufferNeededLater (ourRenderingIndex,
-                                               AudioProcessorGraph::midiChannelIndex,
-                                               midiSourceNodes.getUnchecked(i),
-                                               AudioProcessorGraph::midiChannelIndex))
+                     && ! isBufferNeededLater (AudioProcessor::ChannelTypeMIDI,
+                                               ourRenderingIndex, 0,
+                                               midiSourceNodes.getUnchecked(i), 0))
                 {
                     // we've found one of our input buffers that can be re-used..
                     reusableInputIndex = i;
@@ -880,8 +878,10 @@ private:
 
         case AudioProcessor::ChannelTypeMIDI:
             for (int i = midiNodeIds.size(); --i >= 0;)
+            {
                 if (midiNodeIds.getUnchecked(i) == nodeId)
                     return i;
+            }
             break;
         }
 
@@ -893,7 +893,8 @@ private:
         for (int i = 0; i < audioNodeIds.size(); ++i)
         {
             if (isNodeBusy (audioNodeIds.getUnchecked(i))
-                 && ! isBufferNeededLater (stepIndex, -1,
+                 && ! isBufferNeededLater (AudioProcessor::ChannelTypeAudio,
+                                           stepIndex, -1,
                                            audioNodeIds.getUnchecked(i),
                                            audioChannels.getUnchecked(i)))
             {
@@ -906,16 +907,17 @@ private:
         for (int i = 0; i < midiNodeIds.size(); ++i)
         {
             if (isNodeBusy (midiNodeIds.getUnchecked(i))
-                 && ! isBufferNeededLater (stepIndex, -1,
-                                           midiNodeIds.getUnchecked(i),
-                                           AudioProcessorGraph::midiChannelIndex))
+                 && ! isBufferNeededLater (AudioProcessor::ChannelTypeMIDI,
+                                           stepIndex, -1,
+                                           midiNodeIds.getUnchecked(i), 0))
             {
                 midiNodeIds.set (i, (uint32) freeNodeID);
             }
         }
     }
 
-    bool isBufferNeededLater (int stepIndexToSearchFrom,
+    bool isBufferNeededLater (const AudioProcessor::ChannelType channelType,
+                              int stepIndexToSearchFrom,
                               uint inputChannelOfIndexToIgnore,
                               const uint32 nodeId,
                               const uint outputChanIndex) const
@@ -924,23 +926,12 @@ private:
         {
             const AudioProcessorGraph::Node* const node = (const AudioProcessorGraph::Node*) orderedNodes.getUnchecked (stepIndexToSearchFrom);
 
-            if (outputChanIndex == AudioProcessorGraph::midiChannelIndex)
-            {
-                if (inputChannelOfIndexToIgnore != AudioProcessorGraph::midiChannelIndex
-                     && graph.getConnectionBetween (AudioProcessor::ChannelTypeAudio,
-                                                    nodeId, AudioProcessorGraph::midiChannelIndex,
-                                                    node->nodeId, AudioProcessorGraph::midiChannelIndex) != nullptr)
+            for (uint i = 0; i < node->getProcessor()->getTotalNumInputChannels(channelType); ++i)
+                if (i != inputChannelOfIndexToIgnore
+                        && graph.getConnectionBetween (channelType,
+                                                       nodeId, outputChanIndex,
+                                                       node->nodeId, i) != nullptr)
                     return true;
-            }
-            else
-            {
-                for (uint i = 0; i < node->getProcessor()->getTotalNumInputChannels(AudioProcessor::ChannelTypeAudio); ++i)
-                    if (i != inputChannelOfIndexToIgnore
-                         && graph.getConnectionBetween (AudioProcessor::ChannelTypeAudio,
-                                                        nodeId, outputChanIndex,
-                                                        node->nodeId, i) != nullptr)
-                        return true;
-            }
 
             inputChannelOfIndexToIgnore = (uint)-1;
             ++stepIndexToSearchFrom;
@@ -1329,21 +1320,19 @@ bool AudioProcessorGraph::canConnect (ChannelType ct,
 {
     if (sourceNodeId == destNodeId)
         return false;
-    if ((destChannelIndex == midiChannelIndex) != (sourceChannelIndex == midiChannelIndex))
-        return false;
 
     const Node* const source = getNodeForId (sourceNodeId);
 
     if (source == nullptr
-         || (sourceChannelIndex != midiChannelIndex && sourceChannelIndex >= source->processor->getTotalNumOutputChannels(ct))
-         || (sourceChannelIndex == midiChannelIndex && ! source->processor->producesMidi()))
+         || (ct != ChannelTypeMIDI && sourceChannelIndex >= source->processor->getTotalNumOutputChannels(ct))
+         || (ct == ChannelTypeMIDI && ! source->processor->producesMidi()))
         return false;
 
     const Node* const dest = getNodeForId (destNodeId);
 
     if (dest == nullptr
-         || (destChannelIndex != midiChannelIndex && destChannelIndex >= dest->processor->getTotalNumInputChannels(ct))
-         || (destChannelIndex == midiChannelIndex && ! dest->processor->acceptsMidi()))
+         || (ct != ChannelTypeMIDI && destChannelIndex >= dest->processor->getTotalNumInputChannels(ct))
+         || (ct == ChannelTypeMIDI && ! dest->processor->acceptsMidi()))
         return false;
 
     return getConnectionBetween (ct,
@@ -1430,10 +1419,10 @@ bool AudioProcessorGraph::isConnectionLegal (const Connection* const c) const
 
     return source != nullptr
         && dest != nullptr
-        && (c->sourceChannelIndex != midiChannelIndex ? (c->sourceChannelIndex < source->processor->getTotalNumOutputChannels(c->channelType))
-                                                      : source->processor->producesMidi())
-        && (c->destChannelIndex   != midiChannelIndex ? (c->destChannelIndex < dest->processor->getTotalNumInputChannels(c->channelType))
-                                                      : dest->processor->acceptsMidi());
+        && (c->channelType != ChannelTypeMIDI ? (c->sourceChannelIndex < source->processor->getTotalNumOutputChannels(c->channelType))
+                                              : source->processor->producesMidi())
+        && (c->channelType != ChannelTypeMIDI ? (c->destChannelIndex < dest->processor->getTotalNumInputChannels(c->channelType))
+                                              : dest->processor->acceptsMidi());
 }
 
 bool AudioProcessorGraph::removeIllegalConnections()
