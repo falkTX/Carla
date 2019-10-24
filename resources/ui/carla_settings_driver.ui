@@ -37,7 +37,7 @@
      </property>
      <property name="sizeHint" stdset="0">
       <size>
-       <width>40</width>
+       <width>20</width>
        <height>1</height>
       </size>
      </property>
@@ -45,9 +45,6 @@
    </item>
    <item row="1" column="2">
     <widget class="QComboBox" name="cb_buffersize"/>
-   </item>
-   <item row="0" column="2">
-    <widget class="QComboBox" name="cb_device"/>
    </item>
    <item row="3" column="1" colspan="3">
     <widget class="QCheckBox" name="cb_triple_buffer">
@@ -66,7 +63,7 @@
      </property>
      <property name="sizeHint" stdset="0">
       <size>
-       <width>40</width>
+       <width>20</width>
        <height>1</height>
       </size>
      </property>
@@ -102,7 +99,7 @@
      </property>
      <property name="sizeHint" stdset="0">
       <size>
-       <width>40</width>
+       <width>20</width>
        <height>1</height>
       </size>
      </property>
@@ -177,7 +174,17 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="3" colspan="2">
+   <item row="4" column="1" colspan="3">
+    <widget class="QPushButton" name="b_panel">
+     <property name="text">
+      <string>Show Driver Control Panel</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="2">
+    <widget class="QComboBox" name="cb_device"/>
+   </item>
+   <item row="1" column="3">
     <spacer name="horizontalSpacer">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -192,13 +199,6 @@
       </size>
      </property>
     </spacer>
-   </item>
-   <item row="4" column="1" colspan="3">
-    <widget class="QPushButton" name="b_panel">
-     <property name="text">
-      <string>Show Driver Control Panel</string>
-     </property>
-    </widget>
    </item>
   </layout>
  </widget>

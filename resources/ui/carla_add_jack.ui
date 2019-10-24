@@ -476,7 +476,7 @@
       <item row="4" column="1">
        <widget class="QCheckBox" name="cb_external_start">
         <property name="text">
-         <string>Wait for external application start (Advanced)</string>
+         <string>Wait for external application start (Advanced, for Debug only)</string>
         </property>
        </widget>
       </item>
@@ -526,10 +526,10 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="1">
+      <item row="1" column="1">
        <widget class="QCheckBox" name="cb_out_midi_mixdown">
         <property name="text">
-         <string>Use single MIDI output, setting MIDI channel as port index</string>
+         <string>Simulate 16 JACK MIDI outputs, with MIDI channel as port index</string>
         </property>
        </widget>
       </item>
