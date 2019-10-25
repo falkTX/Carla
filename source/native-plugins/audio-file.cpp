@@ -352,10 +352,18 @@ private:
 
         InlineDisplay()
             : NativeInlineDisplayImageSurfaceCompat(),
+#ifdef CARLA_PROPER_CPP11_SUPPORT
               lastValuesL{0.0f},
               lastValuesR{0.0f},
+#endif
               writtenValues(0),
-              pending(false) {}
+              pending(false)
+        {
+#ifndef CARLA_PROPER_CPP11_SUPPORT
+            carla_zeroFloats(lastValuesL, 32);
+            carla_zeroFloats(lastValuesR, 32);
+#endif
+        }
 
         ~InlineDisplay()
         {
