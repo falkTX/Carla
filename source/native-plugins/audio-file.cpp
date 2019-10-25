@@ -34,7 +34,8 @@ public:
           fLastFrame(0),
           fMaxFrame(0),
           fPool(),
-          fThread(this, static_cast<uint32_t>(getSampleRate()))
+          fThread(this, static_cast<uint32_t>(getSampleRate())),
+          fInlineDisplay()
     {
         fPool.create(static_cast<uint32_t>(getSampleRate()));
     }
@@ -186,6 +187,19 @@ protected:
 
             carla_zeroFloats(bufferL + poolFrame, framesToCopy);
             carla_zeroFloats(bufferR + poolFrame, framesToCopy);
+
+            if (fInlineDisplay.writtenValues < 32)
+            {
+                fInlineDisplay.lastValuesL[fInlineDisplay.writtenValues] = carla_findMaxNormalizedFloat(out1, frames);
+                fInlineDisplay.lastValuesR[fInlineDisplay.writtenValues] = carla_findMaxNormalizedFloat(out2, frames);
+                ++fInlineDisplay.writtenValues;
+            }
+
+            if (! fInlineDisplay.pending)
+            {
+                fInlineDisplay.pending = true;
+                hostQueueDrawInlineDisplay();
+            }
         }
         else
         {
@@ -210,6 +224,116 @@ protected:
         uiClosed();
     }
 
+    // -------------------------------------------------------------------
+    // Plugin dispatcher calls
+
+    const NativeInlineDisplayImageSurface* renderInlineDisplay(const uint32_t width, const uint32_t height) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(width > 0 && height > 0, nullptr);
+
+        /* NOTE the code is this function is not optimized, still learning my way through pixels...
+         */
+        const size_t stride = width * 4;
+        const size_t dataSize = stride * height;
+        const uint pxToMove = fInlineDisplay.writtenValues;
+
+        uchar* data = fInlineDisplay.idisp.data;
+
+        if (fInlineDisplay.dataSize != dataSize || data == nullptr)
+        {
+            delete[] data;
+            data = new uchar[dataSize];
+            std::memset(data, 0, dataSize);
+            fInlineDisplay.idisp.data = data;
+            fInlineDisplay.dataSize = dataSize;
+        }
+        else if (pxToMove != 0)
+        {
+            // shift all previous values to the left
+            for (uint w=0; w < width - pxToMove; ++w)
+                for (uint h=0; h < height; ++h)
+                    std::memmove(&data[h * stride + w * 4], &data[h * stride + (w+pxToMove) * 4], 4);
+        }
+
+        fInlineDisplay.idisp.width  = static_cast<int>(width);
+        fInlineDisplay.idisp.height = static_cast<int>(height);
+        fInlineDisplay.idisp.stride = static_cast<int>(stride);
+
+        const uint h2 = height / 2;
+
+        // clear current line
+        for (uint w=width-pxToMove; w < width; ++w)
+            for (uint h=0; h < height; ++h)
+                memset(&data[h * stride + w * 4], 0, 4);
+
+        // draw upper/left
+        for (uint i=0; i < pxToMove; ++i)
+        {
+            const float valueL = fInlineDisplay.lastValuesL[i];
+            const float valueR = fInlineDisplay.lastValuesR[i];
+
+            const uint h2L = static_cast<uint>(valueL * (float)h2);
+            const uint h2R = static_cast<uint>(valueR * (float)h2);
+            const uint w   = width - pxToMove + i;
+
+            for (uint h=0; h < h2L; ++h)
+            {
+                // -30dB
+                //if (valueL < 0.032f)
+                //    continue;
+
+                data[(h2 - h) * stride + w * 4 + 3] = 160;
+
+                // -12dB
+                if (valueL < 0.25f)
+                {
+                    data[(h2 - h) * stride + w * 4 + 1] = 255;
+                }
+                // -3dB
+                else if (valueL < 0.70f)
+                {
+                    data[(h2 - h) * stride + w * 4 + 2] = 255;
+                    data[(h2 - h) * stride + w * 4 + 1] = 255;
+                }
+                else
+                {
+                    data[(h2 - h) * stride + w * 4 + 2] = 255;
+                }
+            }
+
+            for (uint h=0; h < h2R; ++h)
+            {
+                // -30dB
+                //if (valueR < 0.032f)
+                //    continue;
+
+                data[(h2 + h) * stride + w * 4 + 3] = 160;
+
+                // -12dB
+                if (valueR < 0.25f)
+                {
+                    data[(h2 + h) * stride + w * 4 + 1] = 255;
+                }
+                // -3dB
+                else if (valueR < 0.70f)
+                {
+                    data[(h2 + h) * stride + w * 4 + 2] = 255;
+                    data[(h2 + h) * stride + w * 4 + 1] = 255;
+                }
+                else
+                {
+                    data[(h2 + h) * stride + w * 4 + 2] = 255;
+                }
+            }
+        }
+
+        fInlineDisplay.writtenValues = 0;
+        fInlineDisplay.pending = false;
+        return &fInlineDisplay.idisp;
+    }
+
+    // -------------------------------------------------------------------
+
 private:
     bool fLoopMode;
     bool fDoProcess;
@@ -219,6 +343,35 @@ private:
 
     AudioFilePool   fPool;
     AudioFileThread fThread;
+
+    struct InlineDisplay {
+        NativeInlineDisplayImageSurface idisp;
+        size_t dataSize;
+        float lastValuesL[32];
+        float lastValuesR[32];
+        volatile uint8_t writtenValues;
+        volatile bool pending;
+
+        InlineDisplay()
+            : idisp{},
+              dataSize(0),
+              lastValuesL{0.0f},
+              lastValuesR{0.0f},
+              writtenValues(0),
+              pending(false) {}
+
+        ~InlineDisplay()
+        {
+            if (idisp.data != nullptr)
+            {
+                delete[] idisp.data;
+                idisp.data = nullptr;
+            }
+        }
+
+        CARLA_DECLARE_NON_COPY_STRUCT(InlineDisplay)
+        CARLA_PREVENT_HEAP_ALLOCATION
+    } fInlineDisplay;
 
     void loadFilename(const char* const filename)
     {
@@ -256,6 +409,7 @@ private:
 static const NativePluginDescriptor audiofileDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_HAS_INLINE_DISPLAY
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE
                                                   |NATIVE_PLUGIN_USES_TIME),
