@@ -542,6 +542,23 @@ public:
 
 /**@}*/
 
+// ---------------------------------------------------------------------------------------------------------------------
+// -Weffc++ compat ext widget
+
+extern "C" {
+
+typedef struct _NativeInlineDisplayImageSurfaceCompat {
+    unsigned char* data;
+    int width, height, stride;
+    size_t dataSize;
+
+  _NativeInlineDisplayImageSurfaceCompat() noexcept
+      : data(nullptr), width(0), height(0), stride(0), dataSize(0) {}
+
+} NativeInlineDisplayImageSurfaceCompat;
+
+}
+
 // -----------------------------------------------------------------------
 
 #define PluginClassEND(ClassName)                                            \

@@ -237,14 +237,14 @@ protected:
         const size_t dataSize = stride * height;
         const uint pxToMove = fInlineDisplay.writtenValues;
 
-        uchar* data = fInlineDisplay.idisp.data;
+        uchar* data = fInlineDisplay.data;
 
         if (fInlineDisplay.dataSize != dataSize || data == nullptr)
         {
             delete[] data;
             data = new uchar[dataSize];
             std::memset(data, 0, dataSize);
-            fInlineDisplay.idisp.data = data;
+            fInlineDisplay.data = data;
             fInlineDisplay.dataSize = dataSize;
         }
         else if (pxToMove != 0)
@@ -255,9 +255,9 @@ protected:
                     std::memmove(&data[h * stride + w * 4], &data[h * stride + (w+pxToMove) * 4], 4);
         }
 
-        fInlineDisplay.idisp.width  = static_cast<int>(width);
-        fInlineDisplay.idisp.height = static_cast<int>(height);
-        fInlineDisplay.idisp.stride = static_cast<int>(stride);
+        fInlineDisplay.width  = static_cast<int>(width);
+        fInlineDisplay.height = static_cast<int>(height);
+        fInlineDisplay.stride = static_cast<int>(stride);
 
         const uint h2 = height / 2;
 
@@ -329,7 +329,7 @@ protected:
 
         fInlineDisplay.writtenValues = 0;
         fInlineDisplay.pending = false;
-        return &fInlineDisplay.idisp;
+        return (NativeInlineDisplayImageSurface*)(NativeInlineDisplayImageSurfaceCompat*)&fInlineDisplay;
     }
 
     // -------------------------------------------------------------------
@@ -344,17 +344,14 @@ private:
     AudioFilePool   fPool;
     AudioFileThread fThread;
 
-    struct InlineDisplay {
-        NativeInlineDisplayImageSurface idisp;
-        size_t dataSize;
+    struct InlineDisplay : NativeInlineDisplayImageSurfaceCompat {
         float lastValuesL[32];
         float lastValuesR[32];
         volatile uint8_t writtenValues;
         volatile bool pending;
 
         InlineDisplay()
-            : idisp{},
-              dataSize(0),
+            : NativeInlineDisplayImageSurfaceCompat(),
               lastValuesL{0.0f},
               lastValuesR{0.0f},
               writtenValues(0),
@@ -362,10 +359,10 @@ private:
 
         ~InlineDisplay()
         {
-            if (idisp.data != nullptr)
+            if (data != nullptr)
             {
-                delete[] idisp.data;
-                idisp.data = nullptr;
+                delete[] data;
+                data = nullptr;
             }
         }
 
