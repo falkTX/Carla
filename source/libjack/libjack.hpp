@@ -276,6 +276,7 @@ struct JackServerState {
 
     bool playing;
     jack_position_t position;
+    jack_nframes_t monotonic_frame;
 
     JackServerState(CarlaJackAppClient* const app)
         : jackAppPtr(app),
@@ -286,7 +287,8 @@ struct JackServerState {
           numMidiIns(0),
           numMidiOuts(0),
           playing(false),
-          position()
+          position(),
+          monotonic_frame(0)
     {
         carla_zeroStruct(position);
     }

@@ -979,6 +979,7 @@ bool CarlaJackAppClient::handleRtData()
             {
                 carla_stderr2("CarlaJackAppClient: fRealtimeThreadMutex tryLock failed");
             }
+            fServer.monotonic_frame += frames;
             break;
         }
 

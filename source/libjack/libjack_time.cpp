@@ -37,7 +37,7 @@ jack_nframes_t jack_frame_time(const jack_client_t* client)
     const JackClientState* const jclient = (const JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
 
-    // FIXME
+    // FIXME this is wrong
     return static_cast<jack_nframes_t>(jclient->server.position.usecs);
 }
 
@@ -47,15 +47,32 @@ jack_nframes_t jack_last_frame_time(const jack_client_t* client)
     const JackClientState* const jclient = (const JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
 
-    // FIXME
-    return static_cast<jack_nframes_t>(jclient->server.position.usecs);
+    return static_cast<jack_nframes_t>(jclient->server.monotonic_frame);
 }
 
-// int jack_get_cycle_times(const jack_client_t *client,
-//                         jack_nframes_t *current_frames,
-//                         jack_time_t    *current_usecs,
-//                         jack_time_t    *next_usecs,
-//                         float          *period_usecs) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+int jack_get_cycle_times(const jack_client_t *client,
+                         jack_nframes_t *current_frames,
+                         jack_time_t    *current_usecs,
+                         jack_time_t    *next_usecs,
+                         float          *period_usecs)
+{
+    const JackClientState* const jclient = (const JackClientState*)client;
+    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
+
+    /* current_frames: the frame time counter at the start of the current cycle, same as jack_last_frame_time().
+     * current_usecs:  the microseconds time at the start of the current cycle.
+     * next_usecs:     the microseconds time of the start of the next next cycle as computed by the DLL.
+     * period_usecs:   the current best estimate of the period time in microseconds.
+     */
+    const double _period_usecs = static_cast<double>(jclient->server.bufferSize) / jclient->server.sampleRate;
+
+    *current_frames = jclient->server.monotonic_frame;
+    *current_usecs = jclient->server.position.usecs;
+    *next_usecs = jclient->server.position.usecs + static_cast<jack_time_t>(_period_usecs + 0.5);
+    *period_usecs = static_cast<float>(_period_usecs);
+    return 0;
+}
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -81,7 +98,11 @@ CARLA_EXPORT
 jack_time_t jack_get_time(void)
 {
     timespec t;
+#ifdef CLOCK_MONOTONIC_RAW
+    clock_gettime(CLOCK_MONOTONIC_RAW, &t);
+#else
     clock_gettime(CLOCK_MONOTONIC, &t);
+#endif
     return static_cast<jack_time_t>(t.tv_sec * 1000000 + t.tv_nsec / 1000);
 }
 
