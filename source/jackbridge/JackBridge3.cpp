@@ -128,6 +128,7 @@ const JackBridgeExportedFunctions* JACKBRIDGE_API jackbridge_get_exported_functi
     funcs.remove_properties_ptr                = jackbridge_remove_properties;
     funcs.remove_all_properties_ptr            = jackbridge_remove_all_properties;
     funcs.set_property_change_callback_ptr     = jackbridge_set_property_change_callback;
+    funcs.jacksym_get_video_image_size_ptr     = jackbridge_get_video_image_size;
     funcs.sem_init_ptr                         = jackbridge_sem_init;
     funcs.sem_destroy_ptr                      = jackbridge_sem_destroy;
     funcs.sem_connect_ptr                      = jackbridge_sem_connect;

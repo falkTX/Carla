@@ -40,7 +40,8 @@ OBJS = \
 	$(OBJDIR)/bigmeter.cpp.o \
 	$(OBJDIR)/midi-file.cpp.o \
 	$(OBJDIR)/midi-pattern.cpp.o \
-	$(OBJDIR)/notes.cpp.o
+	$(OBJDIR)/notes.cpp.o \
+	$(OBJDIR)/video.cpp.o
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Include external plugins, if present

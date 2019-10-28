@@ -46,6 +46,7 @@ from . import (
     PORT_TYPE_MIDI_ALSA,
     PORT_TYPE_MIDI_JACK,
     PORT_TYPE_PARAMETER,
+    PORT_TYPE_VIDEO,
 )
 
 from .canvasbezierlinemov import CanvasBezierLineMov
@@ -364,6 +365,11 @@ class CanvasPort(QGraphicsItem):
             poly_pen = theme.port_parameter_pen_sel  if selected else theme.port_parameter_pen
             text_pen = theme.port_parameter_text_sel if selected else theme.port_parameter_text
             conn_pen = QPen(theme.port_parameter_pen_sel)
+        elif self.m_port_type == PORT_TYPE_VIDEO:
+            poly_color = theme.port_video_bg_sel if selected else theme.port_video_bg
+            poly_pen = theme.port_video_pen_sel  if selected else theme.port_video_pen
+            text_pen = theme.port_video_text_sel if selected else theme.port_video_text
+            conn_pen = QPen(theme.port_video_pen_sel)
         else:
             qCritical("PatchCanvas::CanvasPort.paint() - invalid port type '%s'" % port_type2str(self.m_port_type))
             return

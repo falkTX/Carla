@@ -111,6 +111,7 @@ typedef bool (JACKBRIDGE_API *jackbridgesym_remove_property)(jack_client_t*, jac
 typedef int  (JACKBRIDGE_API *jackbridgesym_remove_properties)(jack_client_t*, jack_uuid_t);
 typedef bool (JACKBRIDGE_API *jackbridgesym_remove_all_properties)(jack_client_t*);
 typedef bool (JACKBRIDGE_API *jackbridgesym_set_property_change_callback)(jack_client_t*, JackPropertyChangeCallback, void*);
+typedef bool (JACKBRIDGE_API *jackbridgesym_get_video_image_size)(jack_client_t*, jack_video_image_size_t*);
 typedef bool (JACKBRIDGE_API *jackbridgesym_sem_init)(void*);
 typedef void (JACKBRIDGE_API *jackbridgesym_sem_destroy)(void*);
 typedef bool (JACKBRIDGE_API *jackbridgesym_sem_connect)(void*);
@@ -220,6 +221,7 @@ struct _JackBridgeExportedFunctions {
     jackbridgesym_remove_properties remove_properties_ptr;
     jackbridgesym_remove_all_properties remove_all_properties_ptr;
     jackbridgesym_set_property_change_callback set_property_change_callback_ptr;
+    jackbridgesym_get_video_image_size jacksym_get_video_image_size_ptr;
     jackbridgesym_sem_init sem_init_ptr;
     jackbridgesym_sem_destroy sem_destroy_ptr;
     jackbridgesym_sem_connect sem_connect_ptr;

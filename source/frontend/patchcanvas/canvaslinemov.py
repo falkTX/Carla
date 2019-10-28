@@ -38,6 +38,7 @@ from . import (
     PORT_TYPE_MIDI_ALSA,
     PORT_TYPE_MIDI_JACK,
     PORT_TYPE_PARAMETER,
+    PORT_TYPE_VIDEO,
 )
 
 # ------------------------------------------------------------------------------------------------------------
@@ -63,6 +64,8 @@ class CanvasLineMov(QGraphicsLineItem):
             pen = QPen(canvas.theme.line_midi_alsa, 2)
         elif port_type == PORT_TYPE_PARAMETER:
             pen = QPen(canvas.theme.line_parameter, 2)
+        elif port_type == PORT_TYPE_VIDEO:
+            pen = QPen(canvas.theme.line_video, 2)
         else:
             qWarning("PatchCanvas::CanvasLineMov({}, {}, {}) - invalid port type".format(
                      port_mode2str(port_mode), port_type2str(port_type), parent))

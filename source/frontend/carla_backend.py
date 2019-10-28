@@ -314,6 +314,9 @@ PATCHBAY_PORT_TYPE_MIDI = 0x08
 # Patchbay port is of OSC type.
 PATCHBAY_PORT_TYPE_OSC = 0x10
 
+# Patchbay port is of Video type.
+PATCHBAY_PORT_TYPE_VIDEO = 0x20
+
 # ------------------------------------------------------------------------------------------------------------
 # Patchbay Port Group Hints
 # Various patchbay port group hints.

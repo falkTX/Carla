@@ -158,6 +158,26 @@ struct PluginEventData {
 
 // -----------------------------------------------------------------------
 
+struct PluginVideoPort {
+    uint32_t rindex;
+    CarlaEngineVideoPort* port;
+};
+
+struct PluginVideoData {
+    uint32_t count;
+    PluginVideoPort* ports;
+
+    PluginVideoData() noexcept;
+    ~PluginVideoData() noexcept;
+    void createNew(const uint32_t newCount);
+    void clear() noexcept;
+    void initBuffers() const noexcept;
+
+    CARLA_DECLARE_NON_COPY_STRUCT(PluginVideoData)
+};
+
+// -----------------------------------------------------------------------
+
 struct PluginParameterData {
     uint32_t count;
     ParameterData* data;
@@ -245,6 +265,8 @@ struct CarlaPlugin::ProtectedData {
     PluginAudioData audioOut;
     PluginCVData cvIn;
     PluginCVData cvOut;
+    PluginVideoData videoIn;
+    PluginVideoData videoOut;
     PluginEventData event;
     PluginParameterData param;
     PluginProgramData prog;

@@ -69,12 +69,14 @@ static const EngineEvent kFallbackJackEngineEvent = { kEngineEventTypeNull, 0, 0
 class CarlaEngineJackAudioPort;
 class CarlaEngineJackCVPort;
 class CarlaEngineJackEventPort;
+class CarlaEngineJackVideoPort;
 
 struct JackPortDeletionCallback {
     virtual ~JackPortDeletionCallback() noexcept {}
     virtual void jackAudioPortDeleted(CarlaEngineJackAudioPort* const) noexcept = 0;
     virtual void jackCVPortDeleted(CarlaEngineJackCVPort* const) noexcept = 0;
     virtual void jackEventPortDeleted(CarlaEngineJackEventPort* const) noexcept = 0;
+    virtual void jackVideoPortDeleted(CarlaEngineJackVideoPort* const) noexcept = 0;
 };
 
 // -----------------------------------------------------------------------
@@ -454,6 +456,98 @@ private:
 };
 
 // -----------------------------------------------------------------------
+// Carla Engine JACK-Video port
+
+class CarlaEngineJackVideoPort : public CarlaEngineVideoPort
+{
+public:
+    CarlaEngineJackVideoPort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset, jack_client_t* const jackClient, jack_port_t* const jackPort, JackPortDeletionCallback* const delCallback) noexcept
+        : CarlaEngineVideoPort(client, isInputPort, indexOffset),
+          fJackClient(jackClient),
+          fJackPort(jackPort),
+          kDeletionCallback(delCallback)
+    {
+        carla_debug("CarlaEngineJackVideoPort::CarlaEngineJackVideoPort(%s, %p, %p)", bool2str(isInputPort), jackClient, jackPort);
+
+        switch (kClient.getEngine().getProccessMode())
+        {
+        case ENGINE_PROCESS_MODE_SINGLE_CLIENT:
+        case ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
+            CARLA_SAFE_ASSERT_RETURN(jackClient != nullptr && jackPort != nullptr,);
+#ifndef BUILD_BRIDGE
+            if (const jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
+                jackbridge_set_property(jackClient, uuid, JACKEY_SIGNAL_TYPE, "Video", "text/plain");
+#endif
+            break;
+
+        default:
+            CARLA_SAFE_ASSERT(jackClient == nullptr && jackPort == nullptr);
+            break;
+        }
+    }
+
+    ~CarlaEngineJackVideoPort() noexcept override
+    {
+        carla_debug("CarlaEngineJackVideoPort::~CarlaEngineJackVideoPort()");
+
+        if (fJackClient != nullptr && fJackPort != nullptr)
+        {
+#ifndef BUILD_BRIDGE
+            try {
+                if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort))
+                    jackbridge_remove_property(fJackClient, uuid, JACKEY_SIGNAL_TYPE);
+            } CARLA_SAFE_EXCEPTION("CV port remove meta type");
+#endif
+
+            try {
+                jackbridge_port_unregister(fJackClient, fJackPort);
+            } CARLA_SAFE_EXCEPTION("CV port unregister");
+
+            fJackClient = nullptr;
+            fJackPort   = nullptr;
+        }
+
+        if (kDeletionCallback != nullptr)
+            kDeletionCallback->jackVideoPortDeleted(this);
+    }
+
+    void initBuffer() noexcept override
+    {
+        if (fJackPort == nullptr)
+            return CarlaEngineVideoPort::initBuffer();
+
+        const uint32_t bufferSize(kClient.getEngine().getBufferSize());
+
+        try {
+            fBuffer = (float*)jackbridge_port_get_buffer(fJackPort, bufferSize);
+        }
+        catch(...) {
+            fBuffer = nullptr;
+            return;
+        }
+
+        if (! kIsInput)
+            carla_zeroFloats(fBuffer, bufferSize);
+    }
+
+    void invalidate() noexcept
+    {
+        fJackClient = nullptr;
+        fJackPort   = nullptr;
+    }
+
+private:
+    jack_client_t* fJackClient;
+    jack_port_t*   fJackPort;
+
+    JackPortDeletionCallback* const kDeletionCallback;
+
+    friend class CarlaEngineJackClient;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJackVideoPort)
+};
+
+// -----------------------------------------------------------------------
 // Jack Engine client
 
 class CarlaEngineJackClient : public CarlaEngineClient,
@@ -467,6 +561,7 @@ public:
           fAudioPorts(),
           fCVPorts(),
           fEventPorts(),
+          fVideoPorts(),
           fPreRenameMutex(),
           fPreRenameConnections()
     {
@@ -593,6 +688,9 @@ public:
             case kEnginePortTypeEvent:
                 jackPort = jackbridge_port_register(fJackClient, realName, JACK_DEFAULT_MIDI_TYPE, isInput ? JackPortIsInput : JackPortIsOutput, 0);
                 break;
+            case kEnginePortTypeVideo:
+                jackPort = jackbridge_port_register(fJackClient, realName, JACK_DEFAULT_VIDEO_TYPE, isInput ? JackPortIsInput : JackPortIsOutput, 0);
+                break;
             }
 
             CARLA_SAFE_ASSERT_RETURN(jackPort != nullptr, nullptr);
@@ -622,6 +720,13 @@ public:
             if (realName != name) delete[] realName;
             CarlaEngineJackEventPort* const enginePort(new CarlaEngineJackEventPort(*this, isInput, indexOffset, fJackClient, jackPort, this));
             fEventPorts.append(enginePort);
+            return enginePort;
+        }
+        case kEnginePortTypeVideo: {
+            _addEventPortName(isInput, realName);
+            if (realName != name) delete[] realName;
+            CarlaEngineJackVideoPort* const enginePort(new CarlaEngineJackVideoPort(*this, isInput, indexOffset, fJackClient, jackPort, this));
+            fVideoPorts.append(enginePort);
             return enginePort;
         }
         }
@@ -656,6 +761,14 @@ public:
             port->invalidate();
         }
 
+        for (LinkedList<CarlaEngineJackVideoPort*>::Itenerator it = fVideoPorts.begin2(); it.valid(); it.next())
+        {
+            CarlaEngineJackVideoPort* const port(it.getValue(nullptr));
+            CARLA_SAFE_ASSERT_CONTINUE(port != nullptr);
+
+            port->invalidate();
+        }
+
         fJackClient = nullptr;
         CarlaEngineClient::deactivate();
     }
@@ -684,13 +797,19 @@ public:
         fEventPorts.removeAll(port);
     }
 
+    void jackVideoPortDeleted(CarlaEngineJackVideoPort* const port) noexcept override
+    {
+        fVideoPorts.removeAll(port);
+    }
+
     bool renameInSingleClient(const CarlaString& newClientName)
     {
         const CarlaString clientNamePrefix(newClientName + ":");
 
         return _renamePorts(fAudioPorts, clientNamePrefix) &&
                _renamePorts(fCVPorts,    clientNamePrefix) &&
-               _renamePorts(fEventPorts, clientNamePrefix);
+               _renamePorts(fEventPorts, clientNamePrefix) &&
+               _renamePorts(fVideoPorts, clientNamePrefix);
     }
 
     void closeForRename(jack_client_t* const newClient, const CarlaString& newClientName) noexcept
@@ -710,6 +829,7 @@ public:
                     _savePortsConnections(fAudioPorts, clientNamePrefix);
                     _savePortsConnections(fCVPorts,    clientNamePrefix);
                     _savePortsConnections(fEventPorts, clientNamePrefix);
+                    _savePortsConnections(fVideoPorts, clientNamePrefix);
                 }
 
                 try {
@@ -727,6 +847,7 @@ public:
         fAudioPorts.clear();
         fCVPorts.clear();
         fEventPorts.clear();
+        fVideoPorts.clear();
         _clearPorts();
 
         fJackClient = newClient;
@@ -739,6 +860,7 @@ private:
     LinkedList<CarlaEngineJackAudioPort*> fAudioPorts;
     LinkedList<CarlaEngineJackCVPort*>    fCVPorts;
     LinkedList<CarlaEngineJackEventPort*> fEventPorts;
+    LinkedList<CarlaEngineJackVideoPort*> fVideoPorts;
 
     CarlaMutex      fPreRenameMutex;
     CarlaStringList fPreRenameConnections;
@@ -2501,7 +2623,7 @@ private:
                              ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
                              groupNameToId.group,
                              icon,
-                             pluginId,
+                             groupName.startsWith("Video") ? 0 : pluginId,
                              0, 0.0f,
                              groupNameToId.name);
                     fUsedGroups.list.append(groupNameToId);
@@ -2572,6 +2694,7 @@ private:
         bool portIsInput = (jackPortFlags & JackPortIsInput);
         bool portIsAudio = (std::strcmp(jackbridge_port_type(jackPort), JACK_DEFAULT_AUDIO_TYPE) == 0);
         bool portIsMIDI  = (std::strcmp(jackbridge_port_type(jackPort), JACK_DEFAULT_MIDI_TYPE) == 0);
+        bool portIsVideo = (std::strcmp(jackbridge_port_type(jackPort), JACK_DEFAULT_VIDEO_TYPE) == 0);
         bool portIsCV    = false;
         bool portIsOSC   = false;
 
@@ -2601,6 +2724,8 @@ private:
             canvasPortFlags |= PATCHBAY_PORT_TYPE_AUDIO;
         else if (portIsMIDI)
             canvasPortFlags |= PATCHBAY_PORT_TYPE_MIDI;
+        else if (portIsVideo)
+            canvasPortFlags |= PATCHBAY_PORT_TYPE_VIDEO;
 
         PortNameToId portNameToId;
         portNameToId.setData(groupId, ++fUsedPorts.lastId, shortPortName, fullPortName);
@@ -2624,11 +2749,15 @@ private:
         const uint32_t audioOutCount(plugin->getAudioOutCount());
         const uint32_t cvInCount(plugin->getCVInCount());
         const uint32_t cvOutCount(plugin->getCVOutCount());
+        const uint32_t videoInCount(plugin->getVideoInCount());
+        const uint32_t videoOutCount(plugin->getVideoOutCount());
 
         const float* audioIn[audioInCount];
         /* */ float* audioOut[audioOutCount];
         const float* cvIn[cvInCount];
         /* */ float* cvOut[cvOutCount];
+        const float* videoIn[videoInCount];
+        /* */ float* videoOut[videoOutCount];
 
         for (uint32_t i=0; i < audioInCount; ++i)
         {
@@ -2654,6 +2783,18 @@ private:
             cvOut[i] = port->getBuffer();
         }
 
+        for (uint32_t i=0; i < videoInCount; ++i)
+        {
+            CarlaEngineVideoPort* const port(plugin->getVideoInPort(i));
+            videoIn[i] = port->getBuffer();
+        }
+
+        for (uint32_t i=0; i < videoOutCount; ++i)
+        {
+            CarlaEngineVideoPort* const port(plugin->getVideoOutPort(i));
+            videoOut[i] = port->getBuffer();
+        }
+
         float inPeaks[2] = { 0.0f };
         float outPeaks[2] = { 0.0f };
 
@@ -2668,7 +2809,7 @@ private:
             }
         }
 
-        plugin->process(audioIn, audioOut, cvIn, cvOut, nframes);
+        plugin->processWithVideo(audioIn, audioOut, cvIn, cvOut, videoIn, videoOut, nframes);
 
         for (uint32_t i=0; i < audioOutCount && i < 2; ++i)
         {

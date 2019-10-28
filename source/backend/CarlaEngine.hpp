@@ -102,7 +102,13 @@ enum EnginePortType {
      * Event port type (Control or MIDI).
      * @see CarlaEngineEventPort
      */
-    kEnginePortTypeEvent = 3
+    kEnginePortTypeEvent = 3,
+
+    /*!
+     * Video port type.
+     * @see CarlaEngineVideoPort
+     */
+    kEnginePortTypeVideo = 4,
 };
 
 /*!
@@ -495,6 +501,53 @@ protected:
 };
 
 /*!
+ * Carla Engine Video port.
+ */
+class CARLA_API CarlaEngineVideoPort : public CarlaEnginePort
+{
+public:
+    /*!
+     * The constructor.
+     * All constructor parameters are constant and will never change in the lifetime of the port.
+     */
+    CarlaEngineVideoPort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset) noexcept;
+
+    /*!
+     * The destructor.
+     */
+    ~CarlaEngineVideoPort() noexcept override;
+
+    /*!
+     * Get the type of the port, in this case kEnginePortTypeCV.
+     */
+    EnginePortType getType() const noexcept final
+    {
+        return kEnginePortTypeVideo;
+    }
+
+    /*!
+     * Initialize the port's internal buffer.
+     */
+    void initBuffer() noexcept override;
+
+    /*!
+     * Direct access to the port's CV buffer.
+     * May be null.
+     */
+    float* getBuffer() const noexcept
+    {
+        return fBuffer;
+    }
+
+#ifndef DOXYGEN
+protected:
+    float* fBuffer;
+
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineVideoPort)
+#endif
+};
+
+/*!
  * Carla Engine Event port.
  */
 class CARLA_API CarlaEngineEventPort : public CarlaEnginePort
@@ -670,6 +723,11 @@ public:
      */
     const char* getEventPortName(const bool isInput, const uint index) const noexcept;
 
+    /*!
+     * Get a video port name.
+     */
+    const char* getVideoPortName(const bool isInput, const uint index) const noexcept;
+
 #ifndef DOXYGEN
 protected:
     /*!
@@ -681,6 +739,7 @@ protected:
     void _addAudioPortName(const bool, const char* const);
     void _addCVPortName(const bool, const char* const);
     void _addEventPortName(const bool, const char* const);
+    void _addVideoPortName(const bool, const char* const);
     const char* _getUniquePortName(const char* const);
     void _clearPorts();
 

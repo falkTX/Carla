@@ -37,6 +37,8 @@ struct CarlaEngineClient::ProtectedData {
     CarlaStringList cvOutList;
     CarlaStringList eventInList;
     CarlaStringList eventOutList;
+    CarlaStringList videoInList;
+    CarlaStringList videoOutList;
 
     ProtectedData(const CarlaEngine& eng) noexcept
         :  engine(eng),
@@ -47,7 +49,9 @@ struct CarlaEngineClient::ProtectedData {
            cvInList(),
            cvOutList(),
            eventInList(),
-           eventOutList() {}
+           eventOutList(),
+           videoInList(),
+           videoOutList() {}
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     ProtectedData() = delete;
@@ -123,6 +127,9 @@ CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const
     case kEnginePortTypeEvent:
         _addEventPortName(isInput, name);
         return new CarlaEngineEventPort(*this, isInput, indexOffset);
+    case kEnginePortTypeVideo:
+        _addEventPortName(isInput, name);
+        return new CarlaEngineVideoPort(*this, isInput, indexOffset);
     }
 
     carla_stderr("CarlaEngineClient::addPort(%i, \"%s\", %s) - invalid type", portType, name, bool2str(isInput));
@@ -163,6 +170,14 @@ const char* CarlaEngineClient::getEventPortName(const bool isInput, const uint i
     return portList.getAt(index);
 }
 
+const char* CarlaEngineClient::getVideoPortName(const bool isInput, const uint index) const noexcept
+{
+    CarlaStringList& portList(isInput ? pData->videoInList : pData->videoOutList);
+    CARLA_SAFE_ASSERT_RETURN(index < portList.count(), nullptr);
+
+    return portList.getAt(index);
+}
+
 void CarlaEngineClient::_addAudioPortName(const bool isInput, const char* const name)
 {
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
@@ -184,6 +199,14 @@ void CarlaEngineClient::_addEventPortName(const bool isInput, const char* const 
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
 
     CarlaStringList& portList(isInput ? pData->eventInList : pData->eventOutList);
+    portList.append(name);
+}
+
+void CarlaEngineClient::_addVideoPortName(const bool isInput, const char* const name)
+{
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
+
+    CarlaStringList& portList(isInput ? pData->videoInList : pData->videoOutList);
     portList.append(name);
 }
 
@@ -259,6 +282,8 @@ const char* CarlaEngineClient::_getUniquePortName(const char* const name)
     getUniquePortName(sname, pData->cvOutList);
     getUniquePortName(sname, pData->eventInList);
     getUniquePortName(sname, pData->eventOutList);
+    getUniquePortName(sname, pData->videoInList);
+    getUniquePortName(sname, pData->videoOutList);
 
     return sname.dup();
 }
@@ -271,6 +296,8 @@ void CarlaEngineClient::_clearPorts()
     pData->cvOutList.clear();
     pData->eventInList.clear();
     pData->eventOutList.clear();
+    pData->videoInList.clear();
+    pData->videoOutList.clear();
 }
 
 // -----------------------------------------------------------------------

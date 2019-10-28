@@ -57,6 +57,7 @@ from . import (
     PORT_TYPE_MIDI_ALSA,
     PORT_TYPE_MIDI_JACK,
     PORT_TYPE_PARAMETER,
+    PORT_TYPE_VIDEO,
     MAX_PLUGIN_ID_ALLOWED,
 )
 
@@ -316,7 +317,7 @@ class CanvasBox(QGraphicsItem):
             port_spacing = canvas.theme.port_height + canvas.theme.port_spacing
 
             # Get Max Box Width, vertical ports re-positioning
-            port_types = [PORT_TYPE_AUDIO_JACK, PORT_TYPE_MIDI_JACK, PORT_TYPE_MIDI_ALSA, PORT_TYPE_PARAMETER]
+            port_types = [PORT_TYPE_AUDIO_JACK, PORT_TYPE_MIDI_JACK, PORT_TYPE_MIDI_ALSA, PORT_TYPE_PARAMETER, PORT_TYPE_VIDEO]
             last_in_type = last_out_type = PORT_TYPE_NULL
             last_in_pos = last_out_pos = canvas.theme.box_header_height + canvas.theme.box_header_spacing
 
@@ -369,6 +370,10 @@ class CanvasBox(QGraphicsItem):
             self.p_height += max(canvas.theme.port_spacing, canvas.theme.port_spacingT) - canvas.theme.port_spacing
             self.p_height += canvas.theme.box_pen.widthF()
 
+            if any(port for port in port_list if port.port_type == PORT_TYPE_VIDEO and port.port_mode == PORT_MODE_INPUT):
+                self.p_width  += 320
+                self.p_height += 240
+
         self.repaintLines(True)
         self.update()
 
@@ -403,6 +408,7 @@ class CanvasBox(QGraphicsItem):
             PORT_TYPE_AUDIO_JACK: [],
             PORT_TYPE_MIDI_JACK: [],
             PORT_TYPE_MIDI_ALSA: [],
+            PORT_TYPE_VIDEO: [],
         }
         for port in canvas.port_list:
             if port.group_id != self.m_group_id:
@@ -426,6 +432,7 @@ class CanvasBox(QGraphicsItem):
                     PORT_TYPE_AUDIO_JACK: [],
                     PORT_TYPE_MIDI_JACK: [],
                     PORT_TYPE_MIDI_ALSA: [],
+                    PORT_TYPE_VIDEO: [],
                 }
 
                 for port in canvas.port_list:
@@ -706,6 +713,7 @@ class CanvasBox(QGraphicsItem):
         if self.m_plugin_id >= 0 and self.m_plugin_id <= MAX_PLUGIN_ID_ALLOWED and (
            self.m_plugin_inline == self.INLINE_DISPLAY_ENABLED or self.m_inline_scaling != scaling):
             size = "%i:%i" % (int(inwidth*scaling), int(inheight*scaling))
+            print(size)
             data = canvas.callback(ACTION_INLINE_DISPLAY, self.m_plugin_id, 0, size)
             if data is None:
                 return

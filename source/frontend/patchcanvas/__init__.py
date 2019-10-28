@@ -43,6 +43,7 @@ PORT_TYPE_AUDIO_JACK = 1
 PORT_TYPE_MIDI_JACK  = 2
 PORT_TYPE_MIDI_ALSA  = 3
 PORT_TYPE_PARAMETER  = 4
+PORT_TYPE_VIDEO      = 5
 
 # Callback Action
 ACTION_GROUP_INFO       =  0 # group_id, N, N
@@ -215,6 +216,8 @@ def port_type2str(port_type):
         return "PORT_TYPE_MIDI_ALSA"
     elif port_type == PORT_TYPE_PARAMETER:
         return "PORT_TYPE_MIDI_PARAMETER"
+    elif port_type == PORT_TYPE_VIDEO:
+        return "PORT_TYPE_VIDEO"
     else:
         return "PORT_TYPE_???"
 

@@ -47,6 +47,7 @@ CARLA_BACKEND_START_NAMESPACE
 class CarlaEngineAudioPort;
 class CarlaEngineCVPort;
 class CarlaEngineEventPort;
+class CarlaEngineVideoPort;
 class CarlaEngineBridge;
 struct CarlaStateSave;
 
@@ -189,6 +190,16 @@ public:
      * Get the number of MIDI outputs.
      */
     virtual uint32_t getMidiOutCount() const noexcept;
+
+    /*!
+     * Get the number of Video inputs.
+     */
+    uint32_t getVideoInCount() const noexcept;
+
+    /*!
+     * Get the number of Video outputs.
+     */
+    uint32_t getVideoOutCount() const noexcept;
 
     /*!
      * Get the number of parameters.
@@ -675,6 +686,14 @@ public:
                          const float** const cvIn, float** const cvOut, const uint32_t frames) = 0;
 
     /*!
+     * Plugin process call, with video.
+     */
+    virtual void processWithVideo(const float** const audioIn, float** const audioOut,
+                                  const float** const cvIn, float** const cvOut,
+                                  const float** const videoIn, float** const videoOut,
+                                  const uint32_t frames);
+
+    /*!
      * Tell the plugin the current buffer size changed.
      */
     virtual void bufferSizeChanged(const uint32_t newBufferSize);
@@ -833,6 +852,16 @@ public:
      * Get a plugin's CV output port.
      */
     CarlaEngineCVPort* getCVOutPort(const uint32_t index) const noexcept;
+
+    /*!
+     * Get a plugin's Video input port.
+     */
+    CarlaEngineVideoPort* getVideoInPort(const uint32_t index) const noexcept;
+
+    /*!
+     * Get a plugin's Video output port.
+     */
+    CarlaEngineVideoPort* getVideoOutPort(const uint32_t index) const noexcept;
 
     /*!
      * Get the plugin's default event input port.

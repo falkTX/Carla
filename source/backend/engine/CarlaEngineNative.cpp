@@ -2352,8 +2352,10 @@ static const NativePluginDescriptor carlaRackDesc = {
     CarlaEngineNative::_set_state,
     CarlaEngineNative::_dispatcher,
     /* _render_inline_dsplay */ nullptr,
-    /* cvIns  */ 0,
-    /* cvOuts */ 0
+    /* cvIns     */ 0,
+    /* cvOuts    */ 0,
+    /* videoIns  */ 0,
+    /* videoOuts */ 0
 };
 
 static const NativePluginDescriptor carlaRackNoMidiOutDesc = {
@@ -2396,8 +2398,10 @@ static const NativePluginDescriptor carlaRackNoMidiOutDesc = {
     CarlaEngineNative::_set_state,
     CarlaEngineNative::_dispatcher,
     /* _render_inline_dsplay */ nullptr,
-    /* cvIns  */ 0,
-    /* cvOuts */ 0
+    /* cvIns     */ 0,
+    /* cvOuts    */ 0,
+    /* videoIns  */ 0,
+    /* videoOuts */ 0
 };
 
 static const NativePluginDescriptor carlaPatchbayDesc = {
@@ -2440,8 +2444,10 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
     CarlaEngineNative::_set_state,
     CarlaEngineNative::_dispatcher,
     /* _render_inline_dsplay */ nullptr,
-    /* cvIns  */ 0,
-    /* cvOuts */ 0
+    /* cvIns     */ 0,
+    /* cvOuts    */ 0,
+    /* videoIns  */ 0,
+    /* videoOuts */ 0
 };
 
 static const NativePluginDescriptor carlaPatchbay3sDesc = {
@@ -2484,8 +2490,10 @@ static const NativePluginDescriptor carlaPatchbay3sDesc = {
     CarlaEngineNative::_set_state,
     CarlaEngineNative::_dispatcher,
     /* _render_inline_dsplay */ nullptr,
-    /* cvIns  */ 0,
-    /* cvOuts */ 0
+    /* cvIns     */ 0,
+    /* cvOuts    */ 0,
+    /* videoIns  */ 0,
+    /* videoOuts */ 0
 };
 
 static const NativePluginDescriptor carlaPatchbay16Desc = {
@@ -2528,8 +2536,10 @@ static const NativePluginDescriptor carlaPatchbay16Desc = {
     CarlaEngineNative::_set_state,
     CarlaEngineNative::_dispatcher,
     /* _render_inline_dsplay */ nullptr,
-    /* cvIns  */ 0,
-    /* cvOuts */ 0
+    /* cvIns     */ 0,
+    /* cvOuts    */ 0,
+    /* videoIns  */ 0,
+    /* videoOuts */ 0
 };
 
 static const NativePluginDescriptor carlaPatchbay32Desc = {
@@ -2572,8 +2582,10 @@ static const NativePluginDescriptor carlaPatchbay32Desc = {
     CarlaEngineNative::_set_state,
     CarlaEngineNative::_dispatcher,
     /* _render_inline_dsplay */ nullptr,
-    /* cvIns  */ 0,
-    /* cvOuts */ 0
+    /* cvIns     */ 0,
+    /* cvOuts    */ 0,
+    /* videoIns  */ 0,
+    /* videoOuts */ 0
 };
 
 static const NativePluginDescriptor carlaPatchbay64Desc = {
@@ -2616,8 +2628,10 @@ static const NativePluginDescriptor carlaPatchbay64Desc = {
     CarlaEngineNative::_set_state,
     CarlaEngineNative::_dispatcher,
     /* _render_inline_dsplay */ nullptr,
-    /* cvIns  */ 0,
-    /* cvOuts */ 0
+    /* cvIns     */ 0,
+    /* cvOuts    */ 0,
+    /* videoIns  */ 0,
+    /* videoOuts */ 0
 };
 
 static const NativePluginDescriptor carlaPatchbayCVDesc = {
@@ -2661,8 +2675,10 @@ static const NativePluginDescriptor carlaPatchbayCVDesc = {
     CarlaEngineNative::_set_state,
     CarlaEngineNative::_dispatcher,
     /* _render_inline_dsplay */ nullptr,
-    /* cvIns  */ 5,
-    /* cvOuts */ 5
+    /* cvIns     */ 5,
+    /* cvOuts    */ 5,
+    /* videoIns  */ 0,
+    /* videoOuts */ 0
 };
 
 CARLA_BACKEND_END_NAMESPACE

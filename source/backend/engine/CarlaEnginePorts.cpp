@@ -293,5 +293,24 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
 }
 
 // -----------------------------------------------------------------------
+// Carla Engine Video port
+
+CarlaEngineVideoPort::CarlaEngineVideoPort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset) noexcept
+    : CarlaEnginePort(client, isInputPort, indexOffset),
+      fBuffer(nullptr)
+{
+    carla_debug("CarlaEngineVideoPort::CarlaEngineVideoPort(%s)", bool2str(isInputPort));
+}
+
+CarlaEngineVideoPort::~CarlaEngineVideoPort() noexcept
+{
+    carla_debug("CarlaEngineVideoPort::~CarlaEngineVideoPort()");
+}
+
+void CarlaEngineVideoPort::initBuffer() noexcept
+{
+}
+
+// -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE

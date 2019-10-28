@@ -169,6 +169,8 @@ typedef int  (JACKSYM_API *jacksym_remove_properties)(jack_client_t*, jack_uuid_
 typedef int  (JACKSYM_API *jacksym_remove_all_properties)(jack_client_t*);
 typedef int  (JACKSYM_API *jacksym_set_property_change_callback)(jack_client_t*, JackSymPropertyChangeCallback, void*);
 
+typedef int  (JACKSYM_API *jacksym_get_video_image_size)(jack_client_t*, jack_video_image_size_t*);
+
 #ifdef __WINE__
 typedef int  (JACKSYM_API *jacksym_thread_creator_t)(pthread_t*, const pthread_attr_t*, void *(*)(void*), void*);
 typedef void (JACKSYM_API *jacksym_set_thread_creator)(jacksym_thread_creator_t);
@@ -295,6 +297,8 @@ struct JackBridge {
     jacksym_remove_all_properties remove_all_properties_ptr;
     jacksym_set_property_change_callback set_property_change_callback_ptr;
 
+    jacksym_get_video_image_size get_video_image_size_ptr;
+
 #ifdef __WINE__
     jacksym_set_thread_creator set_thread_creator_ptr;
 #endif
@@ -391,7 +395,8 @@ struct JackBridge {
           remove_property_ptr(nullptr),
           remove_properties_ptr(nullptr),
           remove_all_properties_ptr(nullptr),
-          set_property_change_callback_ptr(nullptr)
+          set_property_change_callback_ptr(nullptr),
+          get_video_image_size_ptr(nullptr)
 #ifdef __WINE__
         , set_thread_creator_ptr(nullptr)
 #endif
@@ -532,6 +537,8 @@ struct JackBridge {
         LIB_SYMBOL(remove_properties)
         LIB_SYMBOL(remove_all_properties)
         LIB_SYMBOL(set_property_change_callback)
+
+        LIB_SYMBOL(get_video_image_size)
 
 #ifdef __WINE__
         LIB_SYMBOL(set_thread_creator)
@@ -2057,6 +2064,18 @@ bool jackbridge_set_property_change_callback(jack_client_t* client, JackProperty
         return (getBridgeInstance().set_property_change_callback_ptr(client, callback, arg) == 0);
 # endif
     }
+#endif
+    return false;
+}
+
+bool jackbridge_get_video_image_size(jack_client_t* client, jack_video_image_size_t* vis)
+{
+#if defined(JACKBRIDGE_DUMMY)
+#elif defined(JACKBRIDGE_DIRECT)
+    return (jack_get_video_image_size(client) == 0);
+#else
+    if (getBridgeInstance().get_video_image_size_ptr != nullptr)
+        return (getBridgeInstance().get_video_image_size_ptr(client, vis) == 0);
 #endif
     return false;
 }

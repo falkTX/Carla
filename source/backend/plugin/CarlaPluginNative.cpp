@@ -254,8 +254,8 @@ public:
           fIsUiVisible(false),
           fInlineDisplayNeedsRedraw(false),
           fInlineDisplayLastRedrawTime(0),
-          fAudioAndCvInBuffers(nullptr),
-          fAudioAndCvOutBuffers(nullptr),
+          fAllInBuffers(nullptr),
+          fAllOutBuffers(nullptr),
           fMidiEventInCount(0),
           fMidiEventOutCount(0),
           fCurBufferSize(engine->getBufferSize()),
@@ -421,8 +421,8 @@ public:
         if ((fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS) == 0x0)
             options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-        // can't disable forced stereo if enabled in the engine, or using CV
-        if (pData->engine->getOptions().forceStereo || pData->cvIn.count != 0 || pData->cvOut.count != 0)
+        // can't disable forced stereo if enabled in the engine, or using CV or Video
+        if (pData->engine->getOptions().forceStereo || (pData->cvIn.count+pData->cvOut.count+pData->videoIn.count+pData->videoOut.count) != 0)
             pass();
         // if inputs or outputs are just 1, then yes we can force stereo
         else if (pData->audioIn.count == 1 || pData->audioOut.count == 1 || fHandle2 != nullptr)
@@ -978,7 +978,7 @@ public:
 
         const float sampleRate((float)pData->engine->getSampleRate());
 
-        uint32_t aIns, aOuts, cvIns, cvOuts, mIns, mOuts, params, j;
+        uint32_t aIns, aOuts, cvIns, cvOuts, mIns, mOuts, vIns, vOuts, params, j;
 
         bool forcedStereoIn, forcedStereoOut;
         forcedStereoIn = forcedStereoOut = false;
@@ -992,6 +992,8 @@ public:
         cvOuts = fDescriptor->cvOuts;
         mIns   = fDescriptor->midiIns;
         mOuts  = fDescriptor->midiOuts;
+        vIns   = fDescriptor->videoIns;
+        vOuts  = fDescriptor->videoOuts;
         params = (fDescriptor->get_parameter_count != nullptr && fDescriptor->get_parameter_info != nullptr) ? fDescriptor->get_parameter_count(fHandle) : 0;
 
         if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && (aIns == 1 || aOuts == 1) && mIns <= 1 && mOuts <= 1)
@@ -1036,16 +1038,26 @@ public:
             pData->cvOut.createNew(cvOuts);
         }
 
-        if (const uint32_t acIns = aIns + cvIns)
+        if (vIns > 0)
         {
-            fAudioAndCvInBuffers = new float*[acIns];
-            carla_zeroPointers(fAudioAndCvInBuffers, acIns);
+            pData->videoIn.createNew(vIns);
         }
 
-        if (const uint32_t acOuts = aOuts + cvOuts)
+        if (vOuts > 0)
         {
-            fAudioAndCvOutBuffers = new float*[acOuts];
-            carla_zeroPointers(fAudioAndCvOutBuffers, acOuts);
+            pData->videoOut.createNew(vOuts);
+        }
+
+        if (const uint32_t acvIns = aIns + cvIns + vIns)
+        {
+            fAllInBuffers = new float*[acvIns];
+            carla_zeroPointers(fAllInBuffers, acvIns);
+        }
+
+        if (const uint32_t acvOuts = aOuts + cvOuts + vOuts)
+        {
+            fAllOutBuffers = new float*[acvOuts];
+            carla_zeroPointers(fAllOutBuffers, acvOuts);
         }
 
         if (mIns > 0)
@@ -1230,6 +1242,56 @@ public:
             }
 
             pData->event.portOut = fMidiOut.ports[0];
+        }
+
+        // Video Ins
+        for (j=0; j < vIns; ++j)
+        {
+            portName.clear();
+
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
+            {
+                portName  = pData->name;
+                portName += ":";
+            }
+
+            if (vIns > 1)
+            {
+                portName += "video_input_";
+                portName += CarlaString(j+1);
+            }
+            else
+                portName += "video_input";
+
+            portName.truncate(portNameSize);
+
+            pData->videoIn.ports[j].port   = (CarlaEngineVideoPort*)pData->client->addPort(kEnginePortTypeVideo, portName, true, j);
+            pData->videoIn.ports[j].rindex = j;
+        }
+
+        // Video Outs
+        for (j=0; j < vOuts; ++j)
+        {
+            portName.clear();
+
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
+            {
+                portName  = pData->name;
+                portName += ":";
+            }
+
+            if (vOuts > 1)
+            {
+                portName += "video_output_";
+                portName += CarlaString(j+1);
+            }
+            else
+                portName += "video_output";
+
+            portName.truncate(portNameSize);
+
+            pData->videoOut.ports[j].port   = (CarlaEngineVideoPort*)pData->client->addPort(kEnginePortTypeVideo, portName, false, j);
+            pData->videoOut.ports[j].rindex = j;
         }
 
         for (j=0; j < params; ++j)
@@ -1581,7 +1643,16 @@ public:
     }
 
     void process(const float** const audioIn, float** const audioOut,
-                 const float** const cvIn, float** const cvOut, const uint32_t frames) override
+                 const float** const cvIn, float** const cvOut,
+                 const uint32_t frames) override
+    {
+        processWithVideo(audioIn, audioOut, cvIn, cvOut, nullptr, nullptr, frames);
+    }
+
+    void processWithVideo(const float** const audioIn, float** const audioOut,
+                          const float** const cvIn, float** const cvOut,
+                          const float** const videoIn, float** const videoOut,
+                          const uint32_t frames) override
     {
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -1593,6 +1664,8 @@ public:
                 carla_zeroFloats(audioOut[i], frames);
             for (uint32_t i=0; i < pData->cvOut.count; ++i)
                 carla_zeroFloats(cvOut[i], frames);
+            for (uint32_t i=0; i < pData->videoOut.count; ++i)
+                carla_zeroFloats(videoOut[i], frames); // FIXME
             return;
         }
 
@@ -1766,7 +1839,7 @@ public:
 
                 if (sampleAccurate && eventTime > timeOffset)
                 {
-                    if (processSingle(audioIn, audioOut, cvIn, cvOut, eventTime - timeOffset, timeOffset))
+                    if (processSingle(audioIn, audioOut, cvIn, cvOut, videoIn, videoOut, eventTime - timeOffset, timeOffset))
                     {
                         startTime  = 0;
                         timeOffset = eventTime;
@@ -2074,7 +2147,7 @@ public:
             pData->postRtEvents.trySplice();
 
             if (frames > timeOffset)
-                processSingle(audioIn, audioOut, cvIn, cvOut, frames - timeOffset, timeOffset);
+                processSingle(audioIn, audioOut, cvIn, cvOut, videoIn, videoOut, frames - timeOffset, timeOffset);
 
         } // End of Event Input and Processing
 
@@ -2083,7 +2156,7 @@ public:
 
         else
         {
-            processSingle(audioIn, audioOut, cvIn, cvOut, frames, 0);
+            processSingle(audioIn, audioOut, cvIn, cvOut, videoIn, videoOut, frames, 0);
 
         } // End of Plugin processing (no events)
 
@@ -2115,6 +2188,7 @@ public:
 
     bool processSingle(const float** const audioIn, float** const audioOut,
                        const float** const cvIn, float** const cvOut,
+                       const float** const videoIn, float** const videoOut,
                        const uint32_t frames, const uint32_t timeOffset)
     {
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
@@ -2130,6 +2204,14 @@ public:
         }
         if (pData->cvOut.count > 0) {
             CARLA_SAFE_ASSERT_RETURN(cvOut != nullptr, false);
+        }
+        if (pData->videoIn.count > 0) {
+            CARLA_SAFE_ASSERT_RETURN(timeOffset == 0, false);
+            CARLA_SAFE_ASSERT_RETURN(videoIn != nullptr, false);
+        }
+        if (pData->videoOut.count > 0) {
+            CARLA_SAFE_ASSERT_RETURN(timeOffset == 0, false);
+            CARLA_SAFE_ASSERT_RETURN(videoOut != nullptr, false);
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -2151,6 +2233,8 @@ public:
                 for (uint32_t k=0; k < frames; ++k)
                     cvOut[i][k+timeOffset] = 0.0f;
             }
+            for (uint32_t i=0; i < pData->videoOut.count; ++i)
+                carla_zeroFloats(videoOut[i], frames); // FIXME
 
             return false;
         }
@@ -2160,14 +2244,18 @@ public:
 
         {
             for (uint32_t i=0; i < pData->audioIn.count; ++i)
-                carla_copyFloats(fAudioAndCvInBuffers[i], audioIn[i]+timeOffset, frames);
+                carla_copyFloats(fAllInBuffers[i], audioIn[i]+timeOffset, frames);
             for (uint32_t i=0; i < pData->cvIn.count; ++i)
-                carla_copyFloats(fAudioAndCvInBuffers[pData->audioIn.count+i], cvIn[i]+timeOffset, frames);
+                carla_copyFloats(fAllInBuffers[pData->audioIn.count+i], cvIn[i]+timeOffset, frames);
+            for (uint32_t i=0; i < pData->videoIn.count; ++i)
+                carla_copyFloats(fAllInBuffers[pData->audioIn.count+pData->cvIn.count+i], videoIn[i], 320*240*4); // FIXME
 
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                carla_zeroFloats(fAudioAndCvOutBuffers[i], frames);
+                carla_zeroFloats(fAllOutBuffers[i], frames);
             for (uint32_t i=0; i < pData->cvOut.count; ++i)
-                carla_zeroFloats(fAudioAndCvOutBuffers[pData->audioOut.count+i], frames);
+                carla_zeroFloats(fAllOutBuffers[pData->audioOut.count+i], frames);
+            for (uint32_t i=0; i < pData->videoOut.count; ++i)
+                carla_zeroFloats(fAllOutBuffers[pData->audioOut.count+pData->cvOut.count+i], frames); // FIXME
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -2178,19 +2266,19 @@ public:
         if (fHandle2 == nullptr)
         {
             fDescriptor->process(fHandle,
-                                 const_cast<const float**>(fAudioAndCvInBuffers), fAudioAndCvOutBuffers, frames,
+                                 const_cast<const float**>(fAllInBuffers), fAllOutBuffers, frames,
                                  fMidiInEvents, fMidiEventInCount);
         }
         else
         {
             fDescriptor->process(fHandle,
-                                 (fAudioAndCvInBuffers != nullptr)  ? const_cast<const float**>(&fAudioAndCvInBuffers[0]) : nullptr,
-                                 (fAudioAndCvOutBuffers != nullptr) ? &fAudioAndCvOutBuffers[0] : nullptr,
+                                 (fAllInBuffers != nullptr)  ? const_cast<const float**>(&fAllInBuffers[0]) : nullptr,
+                                 (fAllOutBuffers != nullptr) ? &fAllOutBuffers[0] : nullptr,
                                  frames, fMidiInEvents, fMidiEventInCount);
 
             fDescriptor->process(fHandle2,
-                                 (fAudioAndCvInBuffers != nullptr)  ? const_cast<const float**>(&fAudioAndCvInBuffers[1]) : nullptr,
-                                 (fAudioAndCvOutBuffers != nullptr) ? &fAudioAndCvOutBuffers[1] : nullptr,
+                                 (fAllInBuffers != nullptr)  ? const_cast<const float**>(&fAllInBuffers[1]) : nullptr,
+                                 (fAllOutBuffers != nullptr) ? &fAllOutBuffers[1] : nullptr,
                                  frames, fMidiInEvents, fMidiEventInCount);
         }
 
@@ -2218,8 +2306,8 @@ public:
                 {
                     for (uint32_t k=0; k < frames; ++k)
                     {
-                        bufValue = fAudioAndCvInBuffers[(pData->audioIn.count == 1) ? 0 : i][k];
-                        fAudioAndCvOutBuffers[i][k] = (fAudioAndCvOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
+                        bufValue = fAllInBuffers[(pData->audioIn.count == 1) ? 0 : i][k];
+                        fAllOutBuffers[i][k] = (fAllOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
                     }
                 }
 
@@ -2231,7 +2319,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-                        carla_copyFloats(oldBufLeft, fAudioAndCvOutBuffers[i], frames);
+                        carla_copyFloats(oldBufLeft, fAllOutBuffers[i], frames);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
@@ -2242,14 +2330,14 @@ public:
                         if (isPair)
                         {
                             // left
-                            fAudioAndCvOutBuffers[i][k]  = oldBufLeft[k]            * (1.0f - balRangeL);
-                            fAudioAndCvOutBuffers[i][k] += fAudioAndCvOutBuffers[i+1][k] * (1.0f - balRangeR);
+                            fAllOutBuffers[i][k]  = oldBufLeft[k]            * (1.0f - balRangeL);
+                            fAllOutBuffers[i][k] += fAllOutBuffers[i+1][k] * (1.0f - balRangeR);
                         }
                         else
                         {
                             // right
-                            fAudioAndCvOutBuffers[i][k]  = fAudioAndCvOutBuffers[i][k] * balRangeR;
-                            fAudioAndCvOutBuffers[i][k] += oldBufLeft[k]          * balRangeL;
+                            fAllOutBuffers[i][k]  = fAllOutBuffers[i][k] * balRangeR;
+                            fAllOutBuffers[i][k] += oldBufLeft[k]          * balRangeL;
                         }
                     }
                 }
@@ -2257,7 +2345,7 @@ public:
                 // Volume (and buffer copy)
                 {
                     for (uint32_t k=0; k < frames; ++k)
-                        audioOut[i][k+timeOffset] = fAudioAndCvOutBuffers[i][k] * pData->postProc.volume;
+                        audioOut[i][k+timeOffset] = fAllOutBuffers[i][k] * pData->postProc.volume;
                 }
             }
 
@@ -2266,14 +2354,19 @@ public:
         for (; i < pData->audioOut.count; ++i)
         {
             for (uint32_t k=0; k < frames; ++k)
-                audioOut[i][k+timeOffset] = fAudioAndCvOutBuffers[i][k];
+                audioOut[i][k+timeOffset] = fAllOutBuffers[i][k];
         }
 #endif
         // CV stuff too
         for (; i < pData->cvOut.count; ++i)
         {
             for (uint32_t k=0; k < frames; ++k)
-                cvOut[i][k+timeOffset] = fAudioAndCvOutBuffers[pData->audioOut.count+i][k];
+                cvOut[i][k+timeOffset] = fAllOutBuffers[pData->audioOut.count+i][k];
+        }
+        // Video stuff too
+        for (; i < pData->videoOut.count; ++i)
+        {
+            carla_copyFloats(cvOut[i], fAllOutBuffers[pData->audioOut.count+pData->cvOut.count+i], frames); // FIXME
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -2306,16 +2399,23 @@ public:
 
         for (uint32_t i=0; i < (pData->audioIn.count+pData->cvIn.count); ++i)
         {
-            if (fAudioAndCvInBuffers[i] != nullptr)
-                delete[] fAudioAndCvInBuffers[i];
-            fAudioAndCvInBuffers[i] = new float[newBufferSize];
+            if (fAllInBuffers[i] != nullptr)
+                delete[] fAllInBuffers[i];
+            fAllInBuffers[i] = new float[newBufferSize];
+        }
+        for (uint32_t i=0; i < pData->videoIn.count; ++i)
+        {
+            const uint32_t j = pData->audioIn.count+pData->cvIn.count+i;
+            if (fAllInBuffers[j] != nullptr)
+                delete[] fAllInBuffers[j];
+            fAllInBuffers[j] = new float[320*240*4];
         }
 
-        for (uint32_t i=0; i < (pData->audioOut.count+pData->cvOut.count); ++i)
+        for (uint32_t i=0; i < (pData->audioOut.count+pData->cvOut.count+pData->videoOut.count); ++i)
         {
-            if (fAudioAndCvOutBuffers[i] != nullptr)
-                delete[] fAudioAndCvOutBuffers[i];
-            fAudioAndCvOutBuffers[i] = new float[newBufferSize];
+            if (fAllOutBuffers[i] != nullptr)
+                delete[] fAllOutBuffers[i];
+            fAllOutBuffers[i] = new float[newBufferSize];
         }
 
         if (fCurBufferSize == newBufferSize)
@@ -2382,34 +2482,34 @@ public:
     {
         carla_debug("CarlaPluginNative::clearBuffers() - start");
 
-        if (fAudioAndCvInBuffers != nullptr)
+        if (fAllInBuffers != nullptr)
         {
-            for (uint32_t i=0; i < (pData->audioIn.count+pData->cvIn.count); ++i)
+            for (uint32_t i=0; i < (pData->audioIn.count+pData->cvIn.count+pData->videoIn.count); ++i)
             {
-                if (fAudioAndCvInBuffers[i] != nullptr)
+                if (fAllInBuffers[i] != nullptr)
                 {
-                    delete[] fAudioAndCvInBuffers[i];
-                    fAudioAndCvInBuffers[i] = nullptr;
+                    delete[] fAllInBuffers[i];
+                    fAllInBuffers[i] = nullptr;
                 }
             }
 
-            delete[] fAudioAndCvInBuffers;
-            fAudioAndCvInBuffers = nullptr;
+            delete[] fAllInBuffers;
+            fAllInBuffers = nullptr;
         }
 
-        if (fAudioAndCvOutBuffers != nullptr)
+        if (fAllOutBuffers != nullptr)
         {
-            for (uint32_t i=0; i < (pData->audioOut.count+pData->cvOut.count); ++i)
+            for (uint32_t i=0; i < (pData->audioOut.count+pData->cvOut.count+pData->videoOut.count); ++i)
             {
-                if (fAudioAndCvOutBuffers[i] != nullptr)
+                if (fAllOutBuffers[i] != nullptr)
                 {
-                    delete[] fAudioAndCvOutBuffers[i];
-                    fAudioAndCvOutBuffers[i] = nullptr;
+                    delete[] fAllOutBuffers[i];
+                    fAllOutBuffers[i] = nullptr;
                 }
             }
 
-            delete[] fAudioAndCvOutBuffers;
-            fAudioAndCvOutBuffers = nullptr;
+            delete[] fAllOutBuffers;
+            fAllOutBuffers = nullptr;
         }
 
         if (fMidiIn.count > 1)
@@ -2599,6 +2699,9 @@ protected:
         case NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER:
             CARLA_SAFE_ASSERT_RETURN(index >= 0, 0);
             pData->engine->touchPluginParameter(pData->id, static_cast<uint32_t>(index), value != 0);
+            break;
+        case NATIVE_HOST_OPCODE_GET_VIDEO_IMAGE_SIZE:
+            // TODO
             break;
         }
 
@@ -2792,8 +2895,8 @@ private:
     bool fInlineDisplayNeedsRedraw;
     int64_t fInlineDisplayLastRedrawTime;
 
-    float**         fAudioAndCvInBuffers;
-    float**         fAudioAndCvOutBuffers;
+    float**         fAllInBuffers;
+    float**         fAllOutBuffers;
     uint32_t        fMidiEventInCount;
     uint32_t        fMidiEventOutCount;
     NativeMidiEvent fMidiInEvents[kPluginMaxMidiEvents];

@@ -572,7 +572,7 @@ public:                                                                      \
         delete (ClassName*)handle;                                           \
     }
 
-#define PluginDescriptorFILL(ClassName) \
+#define PluginDescriptorFILL_WITHCV(ClassName) \
     ClassName::_instantiate,            \
     ClassName::_cleanup,                \
     ClassName::_get_parameter_count,    \
@@ -594,8 +594,11 @@ public:                                                                      \
     ClassName::_get_state,              \
     ClassName::_set_state,              \
     ClassName::_dispatcher,             \
-    ClassName::_render_inline_display,  \
-    0, 0
+    ClassName::_render_inline_display
+
+#define PluginDescriptorFILL(ClassName)     \
+    PluginDescriptorFILL_WITHCV(ClassName), \
+    0, 0, 0, 0
 
 // -----------------------------------------------------------------------
 

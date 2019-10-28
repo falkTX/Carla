@@ -175,6 +175,60 @@ void PluginEventData::initBuffers() const noexcept
 }
 
 // -----------------------------------------------------------------------
+// PluginVideoData
+
+PluginVideoData::PluginVideoData() noexcept
+    : count(0),
+      ports(nullptr) {}
+
+PluginVideoData::~PluginVideoData() noexcept
+{
+    CARLA_SAFE_ASSERT_INT(count == 0, count);
+    CARLA_SAFE_ASSERT(ports == nullptr);
+}
+
+void PluginVideoData::createNew(const uint32_t newCount)
+{
+    CARLA_SAFE_ASSERT_INT(count == 0, count);
+    CARLA_SAFE_ASSERT_RETURN(ports == nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
+
+    ports = new PluginVideoPort[newCount];
+    carla_zeroStructs(ports, newCount);
+
+    count = newCount;
+}
+
+void PluginVideoData::clear() noexcept
+{
+    if (ports != nullptr)
+    {
+        for (uint32_t i=0; i < count; ++i)
+        {
+            if (ports[i].port != nullptr)
+            {
+                delete ports[i].port;
+                ports[i].port = nullptr;
+            }
+        }
+
+        delete[] ports;
+        ports = nullptr;
+    }
+
+    count = 0;
+}
+
+void PluginVideoData::initBuffers() const noexcept
+{
+    for (uint32_t i=0; i < count; ++i)
+    {
+        if (ports[i].port != nullptr)
+            ports[i].port->initBuffer();
+    }
+}
+
+// -----------------------------------------------------------------------
 // PluginParameterData
 
 PluginParameterData::PluginParameterData() noexcept
@@ -614,6 +668,8 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
       audioOut(),
       cvIn(),
       cvOut(),
+      videoIn(),
+      videoOut(),
       event(),
       param(),
       prog(),
@@ -732,6 +788,8 @@ void CarlaPlugin::ProtectedData::clearBuffers() noexcept
     audioOut.clear();
     cvIn.clear();
     cvOut.clear();
+    videoIn.clear();
+    videoOut.clear();
     param.clear();
     event.clear();
 #ifndef BUILD_BRIDGE

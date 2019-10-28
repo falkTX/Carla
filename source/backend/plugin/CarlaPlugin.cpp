@@ -201,6 +201,16 @@ uint32_t CarlaPlugin::getMidiOutCount() const noexcept
     return (pData->extraHints & PLUGIN_EXTRA_HINT_HAS_MIDI_OUT) ? 1 : 0;
 }
 
+uint32_t CarlaPlugin::getVideoInCount() const noexcept
+{
+    return pData->videoIn.count;
+}
+
+uint32_t CarlaPlugin::getVideoOutCount() const noexcept
+{
+    return pData->videoOut.count;
+}
+
 uint32_t CarlaPlugin::getParameterCount() const noexcept
 {
     return pData->param.count;
@@ -1870,6 +1880,14 @@ void CarlaPlugin::deactivate() noexcept
     CARLA_SAFE_ASSERT(pData->active);
 }
 
+void CarlaPlugin::processWithVideo(const float** const audioIn, float** const audioOut,
+                                   const float** const cvIn, float** const cvOut,
+                                   const float** const, float** const,
+                                   const uint32_t frames)
+{
+    process(audioIn, audioOut, cvIn, cvOut, frames);
+}
+
 void CarlaPlugin::bufferSizeChanged(const uint32_t)
 {
 }
@@ -2116,6 +2134,8 @@ void CarlaPlugin::initBuffers() const noexcept
     pData->audioOut.initBuffers();
     pData->cvIn.initBuffers();
     pData->cvOut.initBuffers();
+    pData->videoIn.initBuffers();
+    pData->videoOut.initBuffers();
     pData->event.initBuffers();
 }
 
@@ -2334,6 +2354,16 @@ CarlaEngineCVPort* CarlaPlugin::getCVInPort(const uint32_t index) const noexcept
 CarlaEngineCVPort* CarlaPlugin::getCVOutPort(const uint32_t index) const noexcept
 {
     return pData->cvOut.ports[index].port;
+}
+
+CarlaEngineVideoPort* CarlaPlugin::getVideoInPort(const uint32_t index) const noexcept
+{
+    return pData->videoIn.ports[index].port;
+}
+
+CarlaEngineVideoPort* CarlaPlugin::getVideoOutPort(const uint32_t index) const noexcept
+{
+    return pData->videoOut.ports[index].port;
 }
 
 CarlaEngineEventPort* CarlaPlugin::getDefaultEventInPort() const noexcept

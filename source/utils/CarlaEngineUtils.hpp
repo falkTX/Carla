@@ -71,6 +71,8 @@ const char* EnginePortType2Str(const EnginePortType type) noexcept
         return "kEnginePortTypeCV";
     case kEnginePortTypeEvent:
         return "kEnginePortTypeEvent";
+    case kEnginePortTypeVideo:
+        return "kEnginePortTypeVideo";
     }
 
     carla_stderr("CarlaBackend::EnginePortType2Str(%i) - invalid type", type);

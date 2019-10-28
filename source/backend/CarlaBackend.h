@@ -353,6 +353,11 @@ static const uint PATCHBAY_PORT_TYPE_MIDI = 0x08;
  */
 static const uint PATCHBAY_PORT_TYPE_OSC = 0x10;
 
+/*!
+ * Patchbay port is of Video type.
+ */
+static const uint PATCHBAY_PORT_TYPE_VIDEO = 0x20;
+
 /** @} */
 
 /* ------------------------------------------------------------------------------------------------------------

@@ -772,6 +772,7 @@ protected:
         case NATIVE_HOST_OPCODE_UI_UNAVAILABLE:
         case NATIVE_HOST_OPCODE_INTERNAL_PLUGIN:
         case NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY:
+        case NATIVE_HOST_OPCODE_GET_VIDEO_IMAGE_SIZE:
             // nothing
             break;
 

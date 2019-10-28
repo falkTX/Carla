@@ -65,7 +65,8 @@ typedef enum {
     NATIVE_PLUGIN_USES_TIME            = 1 << 10,
     NATIVE_PLUGIN_USES_PARENT_ID       = 1 << 11, /** can set transient hint to parent       */
     NATIVE_PLUGIN_HAS_INLINE_DISPLAY   = 1 << 12,
-    NATIVE_PLUGIN_USES_CONTROL_VOLTAGE = 1 << 13
+    NATIVE_PLUGIN_USES_CONTROL_VOLTAGE = 1 << 13,
+    NATIVE_PLUGIN_USES_VIDEO           = 1 << 14
 } NativePluginHints;
 
 typedef enum {
@@ -100,17 +101,18 @@ typedef enum {
 } NativePluginDispatcherOpcode;
 
 typedef enum {
-    NATIVE_HOST_OPCODE_NULL                  = 0, /** nothing                                           */
-    NATIVE_HOST_OPCODE_UPDATE_PARAMETER      = 1, /** uses index, -1 for all                            */
-    NATIVE_HOST_OPCODE_UPDATE_MIDI_PROGRAM   = 2, /** uses index, -1 for all; may use value for channel */
-    NATIVE_HOST_OPCODE_RELOAD_PARAMETERS     = 3, /** nothing                                           */
-    NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS  = 4, /** nothing                                           */
-    NATIVE_HOST_OPCODE_RELOAD_ALL            = 5, /** nothing                                           */
-    NATIVE_HOST_OPCODE_UI_UNAVAILABLE        = 6, /** nothing                                           */
-    NATIVE_HOST_OPCODE_HOST_IDLE             = 7, /** nothing                                           */
-    NATIVE_HOST_OPCODE_INTERNAL_PLUGIN       = 8, /** nothing                                           */
-    NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY  = 9, /** nothing                                           */
-    NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER    = 10 /** uses index, value as bool                         */
+    NATIVE_HOST_OPCODE_NULL                  = 0,  /** nothing                                           */
+    NATIVE_HOST_OPCODE_UPDATE_PARAMETER      = 1,  /** uses index, -1 for all                            */
+    NATIVE_HOST_OPCODE_UPDATE_MIDI_PROGRAM   = 2,  /** uses index, -1 for all; may use value for channel */
+    NATIVE_HOST_OPCODE_RELOAD_PARAMETERS     = 3,  /** nothing                                           */
+    NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS  = 4,  /** nothing                                           */
+    NATIVE_HOST_OPCODE_RELOAD_ALL            = 5,  /** nothing                                           */
+    NATIVE_HOST_OPCODE_UI_UNAVAILABLE        = 6,  /** nothing                                           */
+    NATIVE_HOST_OPCODE_HOST_IDLE             = 7,  /** nothing                                           */
+    NATIVE_HOST_OPCODE_INTERNAL_PLUGIN       = 8,  /** nothing                                           */
+    NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY  = 9,  /** nothing                                           */
+    NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER    = 10, /** uses index, value as bool                         */
+    NATIVE_HOST_OPCODE_GET_VIDEO_IMAGE_SIZE  = 11  /** uses ptr as NativeVideoImageSize*                 */
 } NativeHostDispatcherOpcode;
 
 /* ------------------------------------------------------------------------------------------------------------
@@ -173,10 +175,17 @@ typedef struct {
 } NativeTimeInfoBBT;
 
 typedef struct {
+    bool valid;
+
+    int32_t offset;
+} NativeTimeInfoVideo;
+
+typedef struct {
     bool playing;
     uint64_t frame;
     uint64_t usecs;
     NativeTimeInfoBBT bbt;
+    NativeTimeInfoVideo video;
 } NativeTimeInfo;
 
 typedef struct {
@@ -185,6 +194,12 @@ typedef struct {
     int height;
     int stride;
 } NativeInlineDisplayImageSurface;
+
+typedef struct {
+    uint32_t width;
+    uint32_t height;
+    uint32_t stride;
+} NativeVideoImageSize;
 
 /* ------------------------------------------------------------------------------------------------------------
  * HostDescriptor */
@@ -269,9 +284,11 @@ typedef struct _NativePluginDescriptor {
     const NativeInlineDisplayImageSurface* (*render_inline_display)(NativePluginHandle handle,
                                                                     uint32_t width, uint32_t height);
 
-    // placed at the end for backwards compatibility. only valid if NATIVE_PLUGIN_USES_CONTROL_VOLTAGE is set
+    // placed at the end for backwards compatibility. only valid if NATIVE_PLUGIN_USES_[CONTROL_VOLTAGE/VIDEO] is set
     const uint32_t cvIns;
     const uint32_t cvOuts;
+    const uint32_t videoIns;
+    const uint32_t videoOuts;
 
 } NativePluginDescriptor;
 

@@ -460,6 +460,20 @@ class Theme(object):
             self.rubberband_pen = QPen(QColor(1, 230, 238), 2, Qt.SolidLine)
             self.rubberband_brush = QColor(90, 90, 90, 100)
 
+        # FIXME
+        self.port_video_bg = QColor(200, 0, 200)
+        self.port_video_bg_sel = QColor(200 + 50, 0 + 50, 200 + 50)
+
+        self.port_video_pen = QPen(QColor(200, 0, 200), 1)
+        self.port_video_pen_sel = QPen(QColor(200 + 30, 0 + 30, 200 + 30), 1)
+
+        self.port_video_text = self.port_text
+        self.port_video_text_sel = self.port_text
+
+        self.line_video = QColor(200, 0, 200)
+        self.line_video_sel = QColor(200, 125, 200)
+        self.line_video_glow = QColor(200, 0, 200)
+
 # ------------------------------------------------------------------------------------------------------------
 
 def getDefaultTheme():

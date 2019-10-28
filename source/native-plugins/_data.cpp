@@ -28,7 +28,7 @@
     nullptr, nullptr, nullptr, nullptr, nullptr, \
     nullptr, nullptr
 #define DESCFUNCS_WITHOUTCV \
-    DESCFUNCS_WITHCV, 0, 0
+    DESCFUNCS_WITHCV, 0, 0, 0, 0
 
 static const NativePluginDescriptor sNativePluginDescriptors[] = {
 
@@ -226,6 +226,30 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS_WITHOUTCV
+},
+{
+    /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_HAS_INLINE_DISPLAY
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
+                                                  |NATIVE_PLUGIN_USES_VIDEO),
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
+    /* audioIns  */ 0,
+    /* audioOuts */ 0,
+    /* midiIns   */ 0,
+    /* midiOuts  */ 0,
+    /* paramIns  */ 0,
+    /* paramOuts */ 0,
+    /* name      */ "Video",
+    /* label     */ "video",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    DESCFUNCS_WITHCV,
+    /* cvIns     */ 0,
+    /* cvOuts    */ 0,
+    /* videoIns  */ 1,
+    /* videoOuts */ 0,
 },
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -463,6 +487,8 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     DESCFUNCS_WITHCV,
     /* cvIns     */ 5,
     /* cvOuts    */ 5,
+    /* videoIns  */ 0,
+    /* videoOuts */ 0,
 },
 #endif
 

@@ -86,6 +86,7 @@
 
 #define JACK_DEFAULT_AUDIO_TYPE "32 bit float mono audio"
 #define JACK_DEFAULT_MIDI_TYPE  "8 bit raw midi"
+#define JACK_DEFAULT_VIDEO_TYPE "32 bit float RGBA video"
 
 #define JACK_MAX_FRAMES (4294967295U)
 
@@ -251,6 +252,12 @@ typedef struct {
     uint32_t         property_size;
 } jack_description_t;
 
+typedef struct {
+    uint32_t width;
+    uint32_t height;
+    uint32_t stride;
+} jack_video_image_size_t;
+
 typedef struct _jack_port jack_port_t;
 typedef struct _jack_client jack_client_t;
 typedef struct _jack_midi_event jack_midi_event_t;
@@ -397,6 +404,8 @@ JACKBRIDGE_API bool jackbridge_remove_property(jack_client_t* client, jack_uuid_
 JACKBRIDGE_API int  jackbridge_remove_properties(jack_client_t* client, jack_uuid_t subject);
 JACKBRIDGE_API bool jackbridge_remove_all_properties(jack_client_t* client);
 JACKBRIDGE_API bool jackbridge_set_property_change_callback(jack_client_t* client, JackPropertyChangeCallback callback, void* arg);
+
+JACKBRIDGE_API bool jackbridge_get_video_image_size(jack_client_t* client, jack_video_image_size_t* vis);
 
 JACKBRIDGE_API bool jackbridge_sem_init(void* sem) noexcept;
 JACKBRIDGE_API void jackbridge_sem_destroy(void* sem) noexcept;
