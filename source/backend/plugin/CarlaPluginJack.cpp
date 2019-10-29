@@ -572,25 +572,27 @@ public:
         return fInfo.optionsAvailable;
     }
 
-    void getLabel(char* const strBuf) const noexcept override
+    bool getLabel(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, fInfo.setupLabel, STR_MAX);
+        return true;
     }
 
-    void getMaker(char* const strBuf) const noexcept override
+    bool getMaker(char* const) const noexcept override
     {
-        nullStrBuf(strBuf);
+        return false;
     }
 
-    void getCopyright(char* const strBuf) const noexcept override
+    bool getCopyright(char* const) const noexcept override
     {
-        nullStrBuf(strBuf);
+        return false;
     }
 
-    void getRealName(char* const strBuf) const noexcept override
+    bool getRealName(char* const strBuf) const noexcept override
     {
         // FIXME
         std::strncpy(strBuf, "Carla's libjack", STR_MAX);
+        return true;
     }
 
     // -------------------------------------------------------------------

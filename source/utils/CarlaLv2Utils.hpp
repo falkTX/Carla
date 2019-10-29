@@ -19,6 +19,7 @@
 #define CARLA_LV2_UTILS_HPP_INCLUDED
 
 #include "CarlaMathUtils.hpp"
+#include "CarlaStringList.hpp"
 
 #ifndef nullptr
 # undef NULL
@@ -248,6 +249,7 @@ public:
 
     Lilv::Node patch_writable;
     Lilv::Node parameter;
+    Lilv::Node pg_group;
 
     Lilv::Node preset_preset;
 
@@ -383,6 +385,7 @@ public:
 
           patch_writable     (new_uri(LV2_PATCH__writable)),
           parameter          (new_uri(LV2_CORE__Parameter)),
+          pg_group           (new_uri(LV2_PORT_GROUPS__group)),
 
           preset_preset      (new_uri(LV2_PRESETS__Preset)),
 
@@ -1643,6 +1646,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
     Lilv::Plugin lilvPlugin(cPlugin);
     LV2_RDF_Descriptor* const rdfDescriptor(new LV2_RDF_Descriptor());
 
+    CarlaStringList portGroups(false); // does not allocate own elements
+
     // ----------------------------------------------------------------------------------------------------------------
     // Set Plugin Type
     {
@@ -1827,6 +1832,19 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
 
                 if (const char* const symbol = lilv_node_as_string(lilvPort.get_symbol()))
                     rdfPort->Symbol = carla_strdup(symbol);
+
+                if (LilvNode* const commentNode = lilvPort.get(lv2World.rdfs_comment.me))
+                {
+                    rdfPort->Comment = carla_strdup(lilv_node_as_string(commentNode));
+                    lilv_node_free(commentNode);
+                }
+
+                if (LilvNode* const groupNode = lilvPort.get(lv2World.pg_group.me))
+                {
+                    rdfPort->GroupURI = carla_strdup(lilv_node_as_uri(groupNode));
+                    lilv_node_free(groupNode);
+                    portGroups.appendUnique(rdfPort->GroupURI);
+                }
             }
 
             // --------------------------------------------------------------------------------------------------------
@@ -2358,8 +2376,16 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 if (LilvNode* const commentNode = lilv_world_get(lv2World.me, patchWritableNode,
                                                                  lv2World.rdfs_comment.me, nullptr))
                 {
-                    rdfParam.Comment = carla_strdup(lilv_node_as_string(commentNode));
+                    rdfParam.Comment = carla_strdup_safe(lilv_node_as_string(commentNode));
                     lilv_node_free(commentNode);
+                }
+
+                if (LilvNode* const groupNode = lilv_world_get(lv2World.me, patchWritableNode,
+                                                               lv2World.pg_group.me, nullptr))
+                {
+                    rdfParam.GroupURI = carla_strdup_safe(lilv_node_as_uri(groupNode));
+                    lilv_node_free(groupNode);
+                    portGroups.appendUnique(rdfParam.GroupURI);
                 }
 
                 // ----------------------------------------------------------------------------------------------------
@@ -2495,6 +2521,26 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
         }
 
         lilv_nodes_free(const_cast<LilvNodes*>(patchWritableNodes.me));
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // Set Plugin Port Groups
+
+    if (const size_t portGroupCount = portGroups.count())
+    {
+        rdfDescriptor->PortGroupCount = static_cast<uint32_t>(portGroupCount);
+        rdfDescriptor->PortGroups = new LV2_RDF_PortGroup[portGroupCount];
+
+        std::size_t i=0;
+        for (LinkedList<const char*>::Itenerator it = portGroups.begin2(); it.valid(); it.next(), ++i)
+        {
+            LV2_RDF_PortGroup& portGroup(rdfDescriptor->PortGroups[i]);
+
+            portGroup.URI = portGroups.getAt(i);
+
+            // TODO
+            portGroup.Label = carla_strdup_safe("test 1");
+        }
     }
 
     // ----------------------------------------------------------------------------------------------------------------

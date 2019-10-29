@@ -1246,6 +1246,12 @@ class CarlaParameterInfo(Structure):
         # Parameter unit.
         ("unit", c_char_p),
 
+        # Parameter comment / documentation.
+        ("comment", c_char_p),
+
+        # Parameter group name.
+        ("groupName", c_char_p),
+
         # Number of scale points.
         # @see CarlaScalePointInfo
         ("scalePointCount", c_uint32)
@@ -1360,6 +1366,8 @@ PyCarlaParameterInfo = {
     'name': "",
     'symbol': "",
     'unit': "",
+    'comment': "",
+    'groupName': "",
     'scalePointCount': 0,
 }
 

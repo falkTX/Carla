@@ -478,64 +478,64 @@ public:
         return 0.0f;
     }
 
-    void getLabel(char* const strBuf) const noexcept override
+    bool getLabel(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
 
         if (fDescriptor->label != nullptr)
         {
             std::strncpy(strBuf, fDescriptor->label, STR_MAX);
-            return;
+            return true;
         }
 
-        CarlaPlugin::getLabel(strBuf);
+        return CarlaPlugin::getLabel(strBuf);
     }
 
-    void getMaker(char* const strBuf) const noexcept override
+    bool getMaker(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
 
         if (fDescriptor->maker != nullptr)
         {
             std::strncpy(strBuf, fDescriptor->maker, STR_MAX);
-            return;
+            return true;
         }
 
-        CarlaPlugin::getMaker(strBuf);
+        return CarlaPlugin::getMaker(strBuf);
     }
 
-    void getCopyright(char* const strBuf) const noexcept override
+    bool getCopyright(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
 
         if (fDescriptor->copyright != nullptr)
         {
             std::strncpy(strBuf, fDescriptor->copyright, STR_MAX);
-            return;
+            return true;
         }
 
-        CarlaPlugin::getCopyright(strBuf);
+        return CarlaPlugin::getCopyright(strBuf);
     }
 
-    void getRealName(char* const strBuf) const noexcept override
+    bool getRealName(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
 
         if (fDescriptor->name != nullptr)
         {
             std::strncpy(strBuf, fDescriptor->name, STR_MAX);
-            return;
+            return true;
         }
 
-        CarlaPlugin::getRealName(strBuf);
+        return CarlaPlugin::getRealName(strBuf);
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_info != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_info != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         // FIXME - try
         if (const NativeParameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
@@ -543,7 +543,7 @@ public:
             if (param->name != nullptr)
             {
                 std::strncpy(strBuf, param->name, STR_MAX);
-                return;
+                return true;
             }
 
             carla_safe_assert("param->name != nullptr", __FILE__, __LINE__);
@@ -551,15 +551,15 @@ public:
         }
 
         carla_safe_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
-        CarlaPlugin::getParameterName(parameterId, strBuf);
+        return CarlaPlugin::getParameterName(parameterId, strBuf);
     }
 
-    void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_info != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_info != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         // FIXME - try
         if (const NativeParameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
@@ -567,34 +567,34 @@ public:
             if (param->unit != nullptr)
             {
                 std::strncpy(strBuf, param->unit, STR_MAX);
-                return;
+                return true;
             }
 
             return CarlaPlugin::getParameterUnit(parameterId, strBuf);
         }
 
         carla_safe_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
-        CarlaPlugin::getParameterUnit(parameterId, strBuf);
+        return CarlaPlugin::getParameterUnit(parameterId, strBuf);
     }
 
-    void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept override
+    bool getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_info != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_info != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         // FIXME - try
         if (const NativeParameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
         {
-            CARLA_SAFE_ASSERT_RETURN(scalePointId < param->scalePointCount,);
+            CARLA_SAFE_ASSERT_RETURN(scalePointId < param->scalePointCount, false);
 
             const NativeParameterScalePoint* scalePoint(&param->scalePoints[scalePointId]);
 
             if (scalePoint->label != nullptr)
             {
                 std::strncpy(strBuf, scalePoint->label, STR_MAX);
-                return;
+                return true;
             }
 
             carla_safe_assert("scalePoint->label != nullptr", __FILE__, __LINE__);
@@ -602,7 +602,7 @@ public:
         }
 
         carla_safe_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
-        CarlaPlugin::getParameterScalePointLabel(parameterId, scalePointId, strBuf);
+        return CarlaPlugin::getParameterScalePointLabel(parameterId, scalePointId, strBuf);
     }
 
     // -------------------------------------------------------------------

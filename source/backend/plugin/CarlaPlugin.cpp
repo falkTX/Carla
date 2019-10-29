@@ -300,58 +300,81 @@ float CarlaPlugin::getParameterScalePointValue(const uint32_t parameterId, const
     return 0.0f;
 }
 
-void CarlaPlugin::getLabel(char* const strBuf) const noexcept
+bool CarlaPlugin::getLabel(char* const strBuf) const noexcept
 {
     strBuf[0] = '\0';
+    return false;
 }
 
-void CarlaPlugin::getMaker(char* const strBuf) const noexcept
+bool CarlaPlugin::getMaker(char* const strBuf) const noexcept
 {
     strBuf[0] = '\0';
+    return false;
 }
 
-void CarlaPlugin::getCopyright(char* const strBuf) const noexcept
+bool CarlaPlugin::getCopyright(char* const strBuf) const noexcept
 {
     strBuf[0] = '\0';
+    return false;
 }
 
-void CarlaPlugin::getRealName(char* const strBuf) const noexcept
+bool CarlaPlugin::getRealName(char* const strBuf) const noexcept
 {
     strBuf[0] = '\0';
+    return false;
 }
 
-void CarlaPlugin::getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept
+bool CarlaPlugin::getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(),);
+    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(), false);
     CARLA_SAFE_ASSERT(false); // this should never happen
     strBuf[0] = '\0';
+    return false;
 }
 
-void CarlaPlugin::getParameterSymbol(const uint32_t parameterId, char* const strBuf) const noexcept
+bool CarlaPlugin::getParameterSymbol(const uint32_t parameterId, char* const strBuf) const noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(),);
+    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(), false);
     strBuf[0] = '\0';
+    return false;
 }
 
-void CarlaPlugin::getParameterText(const uint32_t parameterId, char* const strBuf) noexcept
+bool CarlaPlugin::getParameterText(const uint32_t parameterId, char* const strBuf) noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(),);
+    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(), false);
     CARLA_SAFE_ASSERT(false); // this should never happen
     strBuf[0] = '\0';
+    return false;
 }
 
-void CarlaPlugin::getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept
+bool CarlaPlugin::getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(),);
+    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(), false);
     strBuf[0] = '\0';
+    return false;
 }
 
-void CarlaPlugin::getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept
+bool CarlaPlugin::getParameterComment(const uint32_t parameterId, char* const strBuf) const noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(),);
-    CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId),);
+    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(), false);
+    strBuf[0] = '\0';
+    return false;
+}
+
+bool CarlaPlugin::getParameterGroupName(const uint32_t parameterId, char* const strBuf) const noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(), false);
+    strBuf[0] = '\0';
+    return false;
+}
+
+bool CarlaPlugin::getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(), false);
+    CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId), false);
     CARLA_SAFE_ASSERT(false); // this should never happen
     strBuf[0] = '\0';
+    return false;
 }
 
 float CarlaPlugin::getInternalParameterValue(const int32_t parameterId) const noexcept
@@ -382,18 +405,20 @@ float CarlaPlugin::getInternalParameterValue(const int32_t parameterId) const no
     return getParameterValue(static_cast<uint32_t>(parameterId));
 }
 
-void CarlaPlugin::getProgramName(const uint32_t index, char* const strBuf) const noexcept
+bool CarlaPlugin::getProgramName(const uint32_t index, char* const strBuf) const noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(index < pData->prog.count,);
-    CARLA_SAFE_ASSERT_RETURN(pData->prog.names[index] != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(index < pData->prog.count, false);
+    CARLA_SAFE_ASSERT_RETURN(pData->prog.names[index] != nullptr, false);
     std::strncpy(strBuf, pData->prog.names[index], STR_MAX);
+    return false;
 }
 
-void CarlaPlugin::getMidiProgramName(const uint32_t index, char* const strBuf) const noexcept
+bool CarlaPlugin::getMidiProgramName(const uint32_t index, char* const strBuf) const noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count,);
-    CARLA_SAFE_ASSERT_RETURN(pData->midiprog.data[index].name != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count, false);
+    CARLA_SAFE_ASSERT_RETURN(pData->midiprog.data[index].name != nullptr, false);
     std::strncpy(strBuf, pData->midiprog.data[index].name, STR_MAX);
+    return false;
 }
 
 void CarlaPlugin::getParameterCountInfo(uint32_t& ins, uint32_t& outs) const noexcept

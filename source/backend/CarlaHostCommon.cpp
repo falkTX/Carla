@@ -66,6 +66,8 @@ _CarlaParameterInfo::_CarlaParameterInfo() noexcept
     : name(gNullCharPtr),
       symbol(gNullCharPtr),
       unit(gNullCharPtr),
+      comment(gNullCharPtr),
+      groupName(gNullCharPtr),
       scalePointCount(0) {}
 
 _CarlaParameterInfo::~_CarlaParameterInfo() noexcept
@@ -76,6 +78,10 @@ _CarlaParameterInfo::~_CarlaParameterInfo() noexcept
         delete[] symbol;
     if (unit != gNullCharPtr)
         delete[] unit;
+    if (comment != gNullCharPtr)
+        delete[] comment;
+    if (groupName != gNullCharPtr)
+        delete[] groupName;
 }
 
 _CarlaScalePointInfo::_CarlaScalePointInfo() noexcept

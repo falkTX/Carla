@@ -468,68 +468,69 @@ public:
         return fParamBuffers[parameterId];
     }
 
-    void getLabel(char* const strBuf) const noexcept override
+    bool getLabel(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor        != nullptr, nullStrBuf(strBuf));
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor->Label != nullptr, nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->Label != nullptr, false);
 
         std::strncpy(strBuf, fDescriptor->Label, STR_MAX);
+        return true;
     }
 
-    void getMaker(char* const strBuf) const noexcept override
+    bool getMaker(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor        != nullptr, nullStrBuf(strBuf));
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor->Maker != nullptr, nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->Maker != nullptr, false);
 
         std::strncpy(strBuf, fDescriptor->Maker, STR_MAX);
+        return true;
     }
 
-    void getCopyright(char* const strBuf) const noexcept override
+    bool getCopyright(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor            != nullptr, nullStrBuf(strBuf));
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor->Copyright != nullptr, nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->Copyright != nullptr, false);
 
         std::strncpy(strBuf, fDescriptor->Copyright, STR_MAX);
+        return true;
     }
 
-    void getRealName(char* const strBuf) const noexcept override
+    bool getRealName(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor       != nullptr, nullStrBuf(strBuf));
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor->Name != nullptr, nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->Name != nullptr, false);
 
         std::strncpy(strBuf, fDescriptor->Name, STR_MAX);
+        return true;
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,           nullStrBuf(strBuf));
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
-        CARLA_SAFE_ASSERT_RETURN(rindex >= 0,                                           nullStrBuf(strBuf));
-        CARLA_SAFE_ASSERT_RETURN(rindex < static_cast<int32_t>(fDescriptor->PortCount), nullStrBuf(strBuf));
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor->PortNames[rindex] != nullptr,             nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0, false);
+        CARLA_SAFE_ASSERT_RETURN(rindex < static_cast<int32_t>(fDescriptor->PortCount), false);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->PortNames[rindex] != nullptr, false);
 
-        if (getSeparatedParameterNameOrUnit(fDescriptor->PortNames[rindex], strBuf, true))
-            return;
+        if (! getSeparatedParameterNameOrUnit(fDescriptor->PortNames[rindex], strBuf, true))
+            std::strncpy(strBuf, fDescriptor->PortNames[rindex], STR_MAX);
 
-        std::strncpy(strBuf, fDescriptor->PortNames[rindex], STR_MAX);
+        return true;
     }
 
-    void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
-        CARLA_SAFE_ASSERT_RETURN(rindex >= 0, nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0, false);
 
-        CARLA_SAFE_ASSERT_RETURN(rindex < static_cast<int32_t>(fDescriptor->PortCount), nullStrBuf(strBuf));
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor->PortNames[rindex] != nullptr,             nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(rindex < static_cast<int32_t>(fDescriptor->PortCount), false);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->PortNames[rindex] != nullptr, false);
 
-        if (getSeparatedParameterNameOrUnit(fDescriptor->PortNames[rindex], strBuf, false))
-            return;
-
-        nullStrBuf(strBuf);
+        return getSeparatedParameterNameOrUnit(fDescriptor->PortNames[rindex], strBuf, false);
     }
 
     // -------------------------------------------------------------------

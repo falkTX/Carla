@@ -276,39 +276,42 @@ public:
         return fEffect->getParameter(fEffect, static_cast<int32_t>(parameterId));
     }
 
-    void getLabel(char* const strBuf) const noexcept override
+    bool getLabel(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, false);
 
         strBuf[0] = '\0';
         dispatcher(effGetProductString, 0, 0, strBuf);
+        return true;
     }
 
-    void getMaker(char* const strBuf) const noexcept override
+    bool getMaker(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, false);
 
         strBuf[0] = '\0';
         dispatcher(effGetVendorString, 0, 0, strBuf);
+        return true;
     }
 
-    void getCopyright(char* const strBuf) const noexcept override
+    bool getCopyright(char* const strBuf) const noexcept override
     {
-        getMaker(strBuf);
+        return getMaker(strBuf);
     }
 
-    void getRealName(char* const strBuf) const noexcept override
+    bool getRealName(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, false);
 
         strBuf[0] = '\0';
         dispatcher(effGetEffectName, 0, 0, strBuf);
+        return true;
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         strBuf[0] = '\0';
 
@@ -319,32 +322,36 @@ public:
         {
             std::strncpy(strBuf, prop.label, 64);
             strBuf[64] = '\0';
-            return;
+            return true;
         }
 
         strBuf[0] = '\0';
         dispatcher(effGetParamName, static_cast<int32_t>(parameterId), 0, strBuf);
+        return true;
     }
 
-    void getParameterText(const uint32_t parameterId, char* const strBuf) noexcept override
+    bool getParameterText(const uint32_t parameterId, char* const strBuf) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         strBuf[0] = '\0';
         dispatcher(effGetParamDisplay, static_cast<int32_t>(parameterId), 0, strBuf);
 
         if (strBuf[0] == '\0')
             std::snprintf(strBuf, STR_MAX, "%f", static_cast<double>(getParameterValue(parameterId)));
+
+        return true;
     }
 
-    void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         strBuf[0] = '\0';
         dispatcher(effGetParamLabel, static_cast<int32_t>(parameterId), 0, strBuf);
+        return true;
     }
 
     // -------------------------------------------------------------------

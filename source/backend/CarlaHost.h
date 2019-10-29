@@ -183,6 +183,16 @@ typedef struct _CarlaParameterInfo {
     const char* unit;
 
     /*!
+     * Parameter comment / documentation.
+     */
+    const char* comment;
+
+    /*!
+     * Parameter group name.
+     */
+    const char* groupName;
+
+    /*!
      * Number of scale points.
      * @see CarlaScalePointInfo
      */

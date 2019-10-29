@@ -296,50 +296,60 @@ public:
     /*!
      * Get the plugin's label (URI for LV2 plugins).
      */
-    virtual void getLabel(char* const strBuf) const noexcept;
+    virtual bool getLabel(char* const strBuf) const noexcept;
 
     /*!
      * Get the plugin's maker.
      */
-    virtual void getMaker(char* const strBuf) const noexcept;
+    virtual bool getMaker(char* const strBuf) const noexcept;
 
     /*!
      * Get the plugin's copyright/license.
      */
-    virtual void getCopyright(char* const strBuf) const noexcept;
+    virtual bool getCopyright(char* const strBuf) const noexcept;
 
     /*!
      * Get the plugin's (real) name.
      *
      * @see getName() and setName()
      */
-    virtual void getRealName(char* const strBuf) const noexcept;
+    virtual bool getRealName(char* const strBuf) const noexcept;
 
     /*!
      * Get the name of the parameter @a parameterId.
      */
-    virtual void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept;
+    virtual bool getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept;
 
     /*!
      * Get the symbol of the parameter @a parameterId.
      */
-    virtual void getParameterSymbol(const uint32_t parameterId, char* const strBuf) const noexcept;
+    virtual bool getParameterSymbol(const uint32_t parameterId, char* const strBuf) const noexcept;
 
     /*!
      * Get the custom text of the parameter @a parameterId.
      * @see PARAMETER_USES_CUSTOM_TEXT
      */
-    virtual void getParameterText(const uint32_t parameterId, char* const strBuf) noexcept;
+    virtual bool getParameterText(const uint32_t parameterId, char* const strBuf) noexcept;
 
     /*!
      * Get the unit of the parameter @a parameterId.
      */
-    virtual void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept;
+    virtual bool getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept;
+
+    /*!
+     * Get the comment (documentation) of the parameter @a parameterId.
+     */
+    virtual bool getParameterComment(const uint32_t parameterId, char* const strBuf) const noexcept;
+
+    /*!
+     * Get the group name of the parameter @a parameterId.
+     */
+    virtual bool getParameterGroupName(const uint32_t parameterId, char* const strBuf) const noexcept;
 
     /*!
      * Get the scalepoint @a scalePointId label of the parameter @a parameterId.
      */
-    virtual void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept;
+    virtual bool getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept;
 
     /*!
      * Get the current parameter value of @a parameterId.
@@ -351,14 +361,14 @@ public:
     /*!
      * Get the name of the program at @a index.
      */
-    void getProgramName(const uint32_t index, char* const strBuf) const noexcept;
+    bool getProgramName(const uint32_t index, char* const strBuf) const noexcept;
 
     /*!
      * Get the name of the MIDI program at @a index.
      *
      * @see getMidiProgramInfo()
      */
-    void getMidiProgramName(const uint32_t index, char* const strBuf) const noexcept;
+    bool getMidiProgramName(const uint32_t index, char* const strBuf) const noexcept;
 
     /*!
      * Get information about the plugin's parameter count.

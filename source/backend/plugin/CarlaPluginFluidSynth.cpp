@@ -227,106 +227,108 @@ public:
         }
     }
 
-    void getLabel(char* const strBuf) const noexcept override
+    bool getLabel(char* const strBuf) const noexcept override
     {
         if (fLabel != nullptr)
         {
             std::strncpy(strBuf, fLabel, STR_MAX);
-            return;
+            return true;
         }
 
-        CarlaPlugin::getLabel(strBuf);
+        return CarlaPlugin::getLabel(strBuf);
     }
 
-    void getMaker(char* const strBuf) const noexcept override
+    bool getMaker(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, "FluidSynth SF2 engine", STR_MAX);
+        return true;
     }
 
-    void getCopyright(char* const strBuf) const noexcept override
+    bool getCopyright(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, "GNU GPL v2+", STR_MAX);
+        return true;
     }
 
-    void getRealName(char* const strBuf) const noexcept override
+    bool getRealName(char* const strBuf) const noexcept override
     {
-        getLabel(strBuf);
+        return getLabel(strBuf);
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         switch (parameterId)
         {
         case FluidSynthReverbOnOff:
             std::strncpy(strBuf, "Reverb On/Off", STR_MAX);
-            return;
+            return true;
         case FluidSynthReverbRoomSize:
             std::strncpy(strBuf, "Reverb Room Size", STR_MAX);
-            return;
+            return true;
         case FluidSynthReverbDamp:
             std::strncpy(strBuf, "Reverb Damp", STR_MAX);
-            return;
+            return true;
         case FluidSynthReverbLevel:
             std::strncpy(strBuf, "Reverb Level", STR_MAX);
-            return;
+            return true;
         case FluidSynthReverbWidth:
             std::strncpy(strBuf, "Reverb Width", STR_MAX);
-            return;
+            return true;
         case FluidSynthChorusOnOff:
             std::strncpy(strBuf, "Chorus On/Off", STR_MAX);
-            return;
+            return true;
         case FluidSynthChorusNr:
             std::strncpy(strBuf, "Chorus Voice Count", STR_MAX);
-            return;
+            return true;
         case FluidSynthChorusLevel:
             std::strncpy(strBuf, "Chorus Level", STR_MAX);
-            return;
+            return true;
         case FluidSynthChorusSpeedHz:
             std::strncpy(strBuf, "Chorus Speed", STR_MAX);
-            return;
+            return true;
         case FluidSynthChorusDepthMs:
             std::strncpy(strBuf, "Chorus Depth", STR_MAX);
-            return;
+            return true;
         case FluidSynthChorusType:
             std::strncpy(strBuf, "Chorus Type", STR_MAX);
-            return;
+            return true;
         case FluidSynthPolyphony:
             std::strncpy(strBuf, "Polyphony", STR_MAX);
-            return;
+            return true;
         case FluidSynthInterpolation:
             std::strncpy(strBuf, "Interpolation", STR_MAX);
-            return;
+            return true;
         case FluidSynthVoiceCount:
             std::strncpy(strBuf, "Voice Count", STR_MAX);
-            return;
+            return true;
         }
 
-        CarlaPlugin::getParameterName(parameterId, strBuf);
+        return CarlaPlugin::getParameterName(parameterId, strBuf);
     }
 
-    void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         switch (parameterId)
         {
         case FluidSynthChorusSpeedHz:
             std::strncpy(strBuf, "Hz", STR_MAX);
-            return;
+            return true;
         case FluidSynthChorusDepthMs:
             std::strncpy(strBuf, "ms", STR_MAX);
-            return;
+            return true;
         }
 
-        CarlaPlugin::getParameterUnit(parameterId, strBuf);
+        return CarlaPlugin::getParameterUnit(parameterId, strBuf);
     }
 
-    void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept override
+    bool getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
-        CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId),);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+        CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId), false);
 
         switch (parameterId)
         {
@@ -335,10 +337,10 @@ public:
             {
             case 0:
                 std::strncpy(strBuf, "Sine wave", STR_MAX);
-                return;
+                return true;
             case 1:
                 std::strncpy(strBuf, "Triangle wave", STR_MAX);
-                return;
+                return true;
             }
             break;
         case FluidSynthInterpolation:
@@ -346,21 +348,21 @@ public:
             {
             case 0:
                 std::strncpy(strBuf, "None", STR_MAX);
-                return;
+                return true;
             case 1:
                 std::strncpy(strBuf, "Straight-line", STR_MAX);
-                return;
+                return true;
             case 2:
                 std::strncpy(strBuf, "Fourth-order", STR_MAX);
-                return;
+                return true;
             case 3:
                 std::strncpy(strBuf, "Seventh-order", STR_MAX);
-                return;
+                return true;
             }
             break;
         }
 
-        CarlaPlugin::getParameterScalePointLabel(parameterId, scalePointId, strBuf);
+        return CarlaPlugin::getParameterScalePointLabel(parameterId, scalePointId, strBuf);
     }
 
     // -------------------------------------------------------------------

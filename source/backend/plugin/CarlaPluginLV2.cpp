@@ -934,55 +934,65 @@ public:
         return 0.0f;
     }
 
-    void getLabel(char* const strBuf) const noexcept override
+    bool getLabel(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor->URI != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor->URI != nullptr, false);
 
         std::strncpy(strBuf, fRdfDescriptor->URI, STR_MAX);
+        return true;
     }
 
-    void getMaker(char* const strBuf) const noexcept override
+    bool getMaker(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr, false);
 
         if (fRdfDescriptor->Author != nullptr)
+        {
             std::strncpy(strBuf, fRdfDescriptor->Author, STR_MAX);
-        else
-            CarlaPlugin::getMaker(strBuf);
+            return true;
+        }
+
+        return false;
     }
 
-    void getCopyright(char* const strBuf) const noexcept override
+    bool getCopyright(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr, false);
 
         if (fRdfDescriptor->License != nullptr)
+        {
             std::strncpy(strBuf, fRdfDescriptor->License, STR_MAX);
-        else
-            CarlaPlugin::getCopyright(strBuf);
+            return true;
+        }
+
+        return false;
     }
 
-    void getRealName(char* const strBuf) const noexcept override
+    bool getRealName(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr, false);
 
         if (fRdfDescriptor->Name != nullptr)
+        {
             std::strncpy(strBuf, fRdfDescriptor->Name, STR_MAX);
-        else
-            CarlaPlugin::getRealName(strBuf);
+            return true;
+        }
+
+        return false;
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         int32_t rindex = pData->param.data[parameterId].rindex;
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
             std::strncpy(strBuf, fRdfDescriptor->Ports[rindex].Name, STR_MAX);
-            return;
+            return true;
         }
 
         rindex -= static_cast<int32_t>(fRdfDescriptor->PortCount);
@@ -990,23 +1000,23 @@ public:
         if (rindex < static_cast<int32_t>(fRdfDescriptor->ParameterCount))
         {
             std::strncpy(strBuf, fRdfDescriptor->Parameters[rindex].Label, STR_MAX);
-            return;
+            return true;
         }
 
-        CarlaPlugin::getParameterName(parameterId, strBuf);
+        return CarlaPlugin::getParameterName(parameterId, strBuf);
     }
 
-    void getParameterSymbol(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterSymbol(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         int32_t rindex = pData->param.data[parameterId].rindex;
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
             std::strncpy(strBuf, fRdfDescriptor->Ports[rindex].Symbol, STR_MAX);
-            return;
+            return true;
         }
 
         rindex -= static_cast<int32_t>(fRdfDescriptor->PortCount);
@@ -1014,16 +1024,16 @@ public:
         if (rindex < static_cast<int32_t>(fRdfDescriptor->ParameterCount))
         {
             std::strncpy(strBuf, fRdfDescriptor->Parameters[rindex].URI, STR_MAX);
-            return;
+            return true;
         }
 
-        CarlaPlugin::getParameterSymbol(parameterId, strBuf);
+        return CarlaPlugin::getParameterSymbol(parameterId, strBuf);
     }
 
-    void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         LV2_RDF_PortUnit* portUnit = nullptr;
 
@@ -1048,7 +1058,7 @@ public:
             if (LV2_HAVE_PORT_UNIT_SYMBOL(portUnit->Hints) && portUnit->Symbol != nullptr)
             {
                 std::strncpy(strBuf, portUnit->Symbol, STR_MAX);
-                return;
+                return true;
             }
 
             if (LV2_HAVE_PORT_UNIT_UNIT(portUnit->Hints))
@@ -1057,105 +1067,176 @@ public:
                 {
                 case LV2_PORT_UNIT_BAR:
                     std::strncpy(strBuf, "bars", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_BEAT:
                     std::strncpy(strBuf, "beats", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_BPM:
                     std::strncpy(strBuf, "BPM", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_CENT:
                     std::strncpy(strBuf, "ct", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_CM:
                     std::strncpy(strBuf, "cm", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_COEF:
                     std::strncpy(strBuf, "(coef)", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_DB:
                     std::strncpy(strBuf, "dB", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_DEGREE:
                     std::strncpy(strBuf, "deg", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_FRAME:
                     std::strncpy(strBuf, "frames", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_HZ:
                     std::strncpy(strBuf, "Hz", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_INCH:
                     std::strncpy(strBuf, "in", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_KHZ:
                     std::strncpy(strBuf, "kHz", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_KM:
                     std::strncpy(strBuf, "km", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_M:
                     std::strncpy(strBuf, "m", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_MHZ:
                     std::strncpy(strBuf, "MHz", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_MIDINOTE:
                     std::strncpy(strBuf, "note", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_MILE:
                     std::strncpy(strBuf, "mi", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_MIN:
                     std::strncpy(strBuf, "min", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_MM:
                     std::strncpy(strBuf, "mm", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_MS:
                     std::strncpy(strBuf, "ms", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_OCT:
                     std::strncpy(strBuf, "oct", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_PC:
                     std::strncpy(strBuf, "%", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_S:
                     std::strncpy(strBuf, "s", STR_MAX);
-                    return;
+                    return true;
                 case LV2_PORT_UNIT_SEMITONE:
                     std::strncpy(strBuf, "semi", STR_MAX);
-                    return;
+                    return true;
                 }
             }
         }
 
-        CarlaPlugin::getParameterUnit(parameterId, strBuf);
+        return CarlaPlugin::getParameterUnit(parameterId, strBuf);
     }
 
-    void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept override
+    bool getParameterComment(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+
+        int32_t rindex = pData->param.data[parameterId].rindex;
+
+        if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
+        {
+            if (const char* const comment = fRdfDescriptor->Ports[rindex].Comment)
+            {
+                std::strncpy(strBuf, comment, STR_MAX);
+                return true;
+            }
+            return false;
+        }
+
+        rindex -= static_cast<int32_t>(fRdfDescriptor->PortCount);
+
+        if (rindex < static_cast<int32_t>(fRdfDescriptor->ParameterCount))
+        {
+            if (const char* const comment = fRdfDescriptor->Parameters[rindex].Comment)
+            {
+                std::strncpy(strBuf, comment, STR_MAX);
+                return true;
+            }
+            return false;
+        }
+
+        return CarlaPlugin::getParameterComment(parameterId, strBuf);
+    }
+
+    bool getParameterGroupName(const uint32_t parameterId, char* const strBuf) const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+
+        int32_t rindex = pData->param.data[parameterId].rindex;
+        const char* uri = nullptr;
+
+        if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
+        {
+            uri = fRdfDescriptor->Ports[rindex].GroupURI;
+        }
+        else
+        {
+            rindex -= static_cast<int32_t>(fRdfDescriptor->PortCount);
+
+            if (rindex < static_cast<int32_t>(fRdfDescriptor->ParameterCount))
+                uri = fRdfDescriptor->Parameters[rindex].GroupURI;
+        }
+
+        if (uri == nullptr)
+            return false;
+
+        for (uint32_t i=0; i<fRdfDescriptor->PortGroupCount; ++i)
+        {
+            if (std::strcmp(fRdfDescriptor->PortGroups[i].URI, uri) == 0)
+            {
+                if (const char* const label = fRdfDescriptor->PortGroups[i].Label)
+                {
+                    std::strncpy(strBuf, label, STR_MAX);
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    bool getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
             const LV2_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
-            CARLA_SAFE_ASSERT_RETURN(scalePointId < port->ScalePointCount,);
+            CARLA_SAFE_ASSERT_RETURN(scalePointId < port->ScalePointCount, false);
 
             const LV2_RDF_PortScalePoint* const portScalePoint(&port->ScalePoints[scalePointId]);
 
             if (portScalePoint->Label != nullptr)
             {
                 std::strncpy(strBuf, portScalePoint->Label, STR_MAX);
-                return;
+                return true;
             }
         }
 
-        CarlaPlugin::getParameterScalePointLabel(parameterId, scalePointId, strBuf);
+        return CarlaPlugin::getParameterScalePointLabel(parameterId, scalePointId, strBuf);
     }
 
     // -------------------------------------------------------------------

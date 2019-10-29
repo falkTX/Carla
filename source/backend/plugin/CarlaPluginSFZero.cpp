@@ -136,43 +136,46 @@ public:
         return fNumVoices;
     }
 
-    void getLabel(char* const strBuf) const noexcept override
+    bool getLabel(char* const strBuf) const noexcept override
     {
         if (fLabel != nullptr)
         {
             std::strncpy(strBuf, fLabel, STR_MAX);
-            return;
+            return true;
         }
 
-        CarlaPlugin::getLabel(strBuf);
+        return CarlaPlugin::getLabel(strBuf);
     }
 
-    void getMaker(char* const strBuf) const noexcept override
+    bool getMaker(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, "SFZero engine", STR_MAX);
+        return true;
     }
 
-    void getCopyright(char* const strBuf) const noexcept override
+    bool getCopyright(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, "ISC", STR_MAX);
+        return true;
     }
 
-    void getRealName(char* const strBuf) const noexcept override
+    bool getRealName(char* const strBuf) const noexcept override
     {
         if (fRealName != nullptr)
         {
             std::strncpy(strBuf, fRealName, STR_MAX);
-            return;
+            return true;
         }
 
-        CarlaPlugin::getRealName(strBuf);
+        return CarlaPlugin::getRealName(strBuf);
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId == 0,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId == 0, false);
 
         std::strncpy(strBuf, "Voice Count", STR_MAX);
+        return true;
     }
 
     // -------------------------------------------------------------------

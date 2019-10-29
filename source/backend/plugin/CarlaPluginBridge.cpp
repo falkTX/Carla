@@ -530,37 +530,42 @@ public:
         return fParams[parameterId].value;
     }
 
-    void getLabel(char* const strBuf) const noexcept override
+    bool getLabel(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, fInfo.label, STR_MAX);
+        return true;
     }
 
-    void getMaker(char* const strBuf) const noexcept override
+    bool getMaker(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, fInfo.maker, STR_MAX);
+        return true;
     }
 
-    void getCopyright(char* const strBuf) const noexcept override
+    bool getCopyright(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, fInfo.copyright, STR_MAX);
+        return true;
     }
 
-    void getRealName(char* const strBuf) const noexcept override
+    bool getRealName(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, fInfo.name, STR_MAX);
+        return true;
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         std::strncpy(strBuf, fParams[parameterId].name.buffer(), STR_MAX);
+        return true;
     }
 
-    void getParameterText(const uint32_t parameterId, char* const strBuf) noexcept override
+    bool getParameterText(const uint32_t parameterId, char* const strBuf) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
-        CARLA_SAFE_ASSERT_RETURN(! fReceivingParamText.isCurrentlyWaitingData(), nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+        CARLA_SAFE_ASSERT_RETURN(! fReceivingParamText.isCurrentlyWaitingData(), false);
 
         const int32_t parameterIdi = static_cast<int32_t>(parameterId);
         fReceivingParamText.setTargetData(parameterIdi, strBuf);
@@ -573,22 +578,27 @@ public:
             fShmNonRtClientControl.commitWrite();
         }
 
-        if (! waitForParameterText())
-            std::snprintf(strBuf, STR_MAX, "%f", static_cast<double>(fParams[parameterId].value));
+        if (waitForParameterText())
+            return true;
+
+        std::snprintf(strBuf, STR_MAX, "%f", static_cast<double>(fParams[parameterId].value));
+        return false;
     }
 
-    void getParameterSymbol(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterSymbol(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         std::strncpy(strBuf, fParams[parameterId].symbol.buffer(), STR_MAX);
+        return true;
     }
 
-    void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         std::strncpy(strBuf, fParams[parameterId].unit.buffer(), STR_MAX);
+        return true;
     }
 
     // -------------------------------------------------------------------

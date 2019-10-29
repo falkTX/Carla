@@ -1300,6 +1300,18 @@ const CarlaParameterInfo* carla_get_parameter_info(uint pluginId, uint32_t param
         retInfo.unit = gNullCharPtr;
     }
 
+    if (retInfo.comment != gNullCharPtr)
+    {
+        delete[] retInfo.comment;
+        retInfo.comment = gNullCharPtr;
+    }
+
+    if (retInfo.groupName != gNullCharPtr)
+    {
+        delete[] retInfo.groupName;
+        retInfo.groupName = gNullCharPtr;
+    }
+
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &retInfo);
 
     CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
@@ -1308,24 +1320,45 @@ const CarlaParameterInfo* carla_get_parameter_info(uint pluginId, uint32_t param
     carla_debug("carla_get_parameter_info(%i, %i)", pluginId, parameterId);
 
     char strBuf[STR_MAX+1];
+    carla_zeroChars(strBuf, STR_MAX+1);
 
     retInfo.scalePointCount = plugin->getParameterScalePointCount(parameterId);
 
-    carla_zeroChars(strBuf, STR_MAX+1);
-    plugin->getParameterName(parameterId, strBuf);
-    retInfo.name = carla_strdup_safe(strBuf);
+    if (plugin->getParameterName(parameterId, strBuf))
+    {
+        retInfo.name = carla_strdup_safe(strBuf);
+        carla_zeroChars(strBuf, STR_MAX+1);
+    }
 
-    carla_zeroChars(strBuf, STR_MAX+1);
-    plugin->getParameterSymbol(parameterId, strBuf);
-    retInfo.symbol = carla_strdup_safe(strBuf);
+    if (plugin->getParameterSymbol(parameterId, strBuf))
+    {
+        retInfo.symbol = carla_strdup_safe(strBuf);
+        carla_zeroChars(strBuf, STR_MAX+1);
+    }
 
-    carla_zeroChars(strBuf, STR_MAX+1);
-    plugin->getParameterUnit(parameterId, strBuf);
-    retInfo.unit = carla_strdup_safe(strBuf);
+    if (plugin->getParameterUnit(parameterId, strBuf))
+    {
+        retInfo.unit = carla_strdup_safe(strBuf);
+        carla_zeroChars(strBuf, STR_MAX+1);
+    }
+
+    if (plugin->getParameterComment(parameterId, strBuf))
+    {
+        retInfo.comment = carla_strdup_safe(strBuf);
+        carla_zeroChars(strBuf, STR_MAX+1);
+    }
+
+    if (plugin->getParameterGroupName(parameterId, strBuf))
+    {
+        retInfo.groupName = carla_strdup_safe(strBuf);
+        carla_zeroChars(strBuf, STR_MAX+1);
+    }
 
     checkStringPtr(retInfo.name);
     checkStringPtr(retInfo.symbol);
     checkStringPtr(retInfo.unit);
+    checkStringPtr(retInfo.comment);
+    checkStringPtr(retInfo.groupName);
 
     return &retInfo;
 }
@@ -1358,8 +1391,8 @@ const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(uint pluginId, ui
     retInfo.value = plugin->getParameterScalePointValue(parameterId, scalePointId);
 
     carla_zeroChars(strBuf, STR_MAX+1);
-    plugin->getParameterScalePointLabel(parameterId, scalePointId, strBuf);
-    retInfo.label = carla_strdup_safe(strBuf);
+    if (plugin->getParameterScalePointLabel(parameterId, scalePointId, strBuf))
+        retInfo.label = carla_strdup_safe(strBuf);
 
     checkStringPtr(retInfo.label);
 

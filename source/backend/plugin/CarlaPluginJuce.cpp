@@ -201,51 +201,58 @@ public:
         return fInstance->getParameter(static_cast<int>(parameterId));
     }
 
-    void getLabel(char* const strBuf) const noexcept override
+    bool getLabel(char* const strBuf) const noexcept override
     {
         if (fDesc.pluginFormatName == "AU" || fDesc.pluginFormatName == "AudioUnit")
             std::strncpy(strBuf, fDesc.fileOrIdentifier.toRawUTF8(), STR_MAX);
         else
             std::strncpy(strBuf, fDesc.name.toRawUTF8(), STR_MAX);
+
+        return true;
     }
 
-    void getMaker(char* const strBuf) const noexcept override
+    bool getMaker(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, fDesc.manufacturerName.toRawUTF8(), STR_MAX);
+        return true;
     }
 
-    void getCopyright(char* const strBuf) const noexcept override
+    bool getCopyright(char* const strBuf) const noexcept override
     {
-        getMaker(strBuf);
+        return getMaker(strBuf);
     }
 
-    void getRealName(char* const strBuf) const noexcept override
+    bool getRealName(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, fDesc.descriptiveName.toRawUTF8(), STR_MAX);
+        return true;
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
-        CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+        CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr, false);
 
         std::strncpy(strBuf, fInstance->getParameterName(static_cast<int>(parameterId), STR_MAX).toRawUTF8(), STR_MAX);
+        return true;
     }
 
-    void getParameterText(const uint32_t parameterId, char* const strBuf) noexcept override
+    bool getParameterText(const uint32_t parameterId, char* const strBuf) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
-        CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+        CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr, false);
 
         std::strncpy(strBuf, fInstance->getParameterText(static_cast<int>(parameterId), STR_MAX).toRawUTF8(), STR_MAX);
+        return true;
     }
 
-    void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
-        CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+        CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr, false);
 
         std::strncpy(strBuf, fInstance->getParameterLabel(static_cast<int>(parameterId)).toRawUTF8(), STR_MAX);
+        return true;
     }
 
     // -------------------------------------------------------------------

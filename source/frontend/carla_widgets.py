@@ -21,7 +21,7 @@
 
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QSettings, QTimer
 from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath, QPalette, QPixmap
-from PyQt5.QtWidgets import QDialog, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QDialog, QInputDialog, QLineEdit, QMenu, QScrollArea, QVBoxLayout, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -435,9 +435,6 @@ class PluginEditParentMeta():
 # Plugin Editor (Built-in)
 
 class PluginEdit(QDialog):
-    # settings
-    kParamsPerPage = 17
-
     # signals
     SIGTERM = pyqtSignal()
     SIGUSR1 = pyqtSignal()
@@ -720,18 +717,6 @@ class PluginEdit(QDialog):
         if not self.ui.scrollArea.isEnabled():
             self.resize(self.width(), self.height()-self.ui.scrollArea.height())
 
-        # FIXME: See if this is still needed
-        # Workaround for a Qt4 bug, see https://bugreports.qt-project.org/browse/QTBUG-7792
-        if LINUX: QTimer.singleShot(0, self.slot_fixNameWordWrap)
-
-    @pyqtSlot()
-    def slot_fixNameWordWrap(self):
-        if self.ui.tabWidget.count() > 0:
-            self.ui.tabWidget.setCurrentIndex(1)
-        self.adjustSize()
-        self.ui.tabWidget.setCurrentIndex(0)
-        self.setMinimumSize(self.width(), self.height())
-
     #------------------------------------------------------------------
 
     def reloadInfo(self):
@@ -893,11 +878,6 @@ class PluginEdit(QDialog):
 
                 paramInputList.append(parameter)
 
-                if len(paramInputList) == self.kParamsPerPage:
-                    paramInputListFull.append((paramInputList, paramInputWidth))
-                    paramInputList  = []
-                    paramInputWidth = 0
-
             else:
                 paramOutputWidthTMP = self.fontMetrics().width(parameter['name'])
 
@@ -906,19 +886,8 @@ class PluginEdit(QDialog):
 
                 paramOutputList.append(parameter)
 
-                if len(paramOutputList) == self.kParamsPerPage:
-                    paramOutputListFull.append((paramOutputList, paramOutputWidth))
-                    paramOutputList  = []
-                    paramOutputWidth = 0
-
-        # for i in range(parameterCount)
-        else:
-            # Final page width values
-            if 0 < len(paramInputList) < self.kParamsPerPage:
-                paramInputListFull.append((paramInputList, paramInputWidth))
-
-            if 0 < len(paramOutputList) < self.kParamsPerPage:
-                paramOutputListFull.append((paramOutputList, paramOutputWidth))
+        paramInputListFull.append((paramInputList, paramInputWidth))
+        paramOutputListFull.append((paramOutputList, paramOutputWidth))
 
         # Create parameter tabs + widgets
         self._createParameterWidgets(PARAMETER_INPUT,  paramInputListFull,  self.tr("Parameters"))
@@ -1490,21 +1459,27 @@ class PluginEdit(QDialog):
     #------------------------------------------------------------------
 
     def _createParameterWidgets(self, paramType, paramListFull, tabPageName):
-        i = 1
         for paramList, width in paramListFull:
             if len(paramList) == 0:
                 break
 
-            tabIndex         = self.ui.tabWidget.count()
-            tabPageContainer = QWidget(self.ui.tabWidget)
-            tabPageLayout    = QVBoxLayout(tabPageContainer)
-            tabPageLayout.setSpacing(1)
-            tabPageContainer.setLayout(tabPageLayout)
+            tabIndex = self.ui.tabWidget.count()
+
+            tabPageLayout = QVBoxLayout(self.ui.tabWidget)
+            tabPageLayout.setSpacing(0)
+
+            scrollArea = QScrollArea(self.ui.tabWidget)
+            scrollArea.setWidgetResizable(True)
+            scrollArea.setFrameStyle(0)
+
+            scrollAreaWidget = QWidget(scrollArea)
+            scrollAreaLayout = QVBoxLayout(scrollAreaWidget)
+            scrollAreaLayout.setSpacing(1)
 
             for paramInfo in paramList:
-                paramWidget = PluginParameter(tabPageContainer, self.host, paramInfo, self.fPluginId, tabIndex)
+                paramWidget = PluginParameter(scrollAreaWidget, self.host, paramInfo, self.fPluginId, tabIndex)
                 paramWidget.setLabelWidth(width)
-                tabPageLayout.addWidget(paramWidget)
+                scrollAreaLayout.addWidget(paramWidget)
 
                 self.fParameterList.append((paramType, paramInfo['index'], paramWidget))
 
@@ -1514,10 +1489,12 @@ class PluginEdit(QDialog):
                 paramWidget.midiControlChanged.connect(self.slot_parameterMidiControlChanged)
                 paramWidget.midiChannelChanged.connect(self.slot_parameterMidiChannelChanged)
 
-            tabPageLayout.addStretch()
+            scrollAreaLayout.addStretch()
 
-            self.ui.tabWidget.addTab(tabPageContainer, "%s (%i)" % (tabPageName, i))
-            i += 1
+            scrollArea.setWidget(scrollAreaWidget)
+            tabPageLayout.addWidget(scrollArea)
+
+            self.ui.tabWidget.addTab(scrollArea, tabPageName)
 
             if paramType == PARAMETER_INPUT:
                 self.ui.tabWidget.setTabIcon(tabIndex, self.fTabIconOff)
