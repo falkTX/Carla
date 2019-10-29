@@ -33,6 +33,7 @@ import ui_carla_parameter
 
 from carla_shared import *
 from carla_utils import *
+from widgets.collapsablewidget import CollapsibleBox
 from widgets.paramspinbox import CustomInputDialog
 from widgets.pixmapkeyboard import PixmapKeyboardHArea
 
@@ -1493,8 +1494,8 @@ class PluginEdit(QDialog):
                     groupSymbol, groupName = groupName.split(":",1)
                     groupLayout, groupWidget = groupWidgets.get(groupSymbol, (None, None))
                     if groupLayout is None:
-                        groupWidget = QGroupBox(groupName, scrollAreaWidget)
-                        groupLayout = QVBoxLayout(groupWidget)
+                        groupWidget = CollapsibleBox(groupName, scrollAreaWidget)
+                        groupLayout = groupWidget.getContentLayout()
                         groupWidget.setPalette(palette2)
                         scrollAreaLayout.addWidget(groupWidget)
                         groupWidgets[groupSymbol] = (groupLayout, groupWidget)
