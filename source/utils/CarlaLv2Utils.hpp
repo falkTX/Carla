@@ -2539,7 +2539,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
             portGroup.URI = portGroups.getAt(i);
 
             // TODO
-            portGroup.Label = carla_strdup_safe("test 1");
+            portGroup.Label = carla_strdup_safe(CarlaString(1001+i));
         }
     }
 

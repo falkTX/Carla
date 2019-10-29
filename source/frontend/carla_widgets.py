@@ -21,7 +21,7 @@
 
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QSettings, QTimer
 from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath, QPalette, QPixmap
-from PyQt5.QtWidgets import QDialog, QInputDialog, QLineEdit, QMenu, QScrollArea, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QDialog, QGroupBox, QInputDialog, QLineEdit, QMenu, QScrollArea, QVBoxLayout, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -854,6 +854,9 @@ class PluginEdit(QDialog):
                 'midiCC':    paramData['midiCC'],
                 'midiChannel': paramData['midiChannel']+1,
 
+                'comment':   paramInfo['comment'],
+                'groupName': paramInfo['groupName'],
+
                 'current': paramValue
             }
 
@@ -1459,27 +1462,49 @@ class PluginEdit(QDialog):
     #------------------------------------------------------------------
 
     def _createParameterWidgets(self, paramType, paramListFull, tabPageName):
+        groupWidgets = {}
+
         for paramList, width in paramListFull:
             if len(paramList) == 0:
                 break
 
             tabIndex = self.ui.tabWidget.count()
 
-            tabPageLayout = QVBoxLayout(self.ui.tabWidget)
-            tabPageLayout.setSpacing(0)
-
             scrollArea = QScrollArea(self.ui.tabWidget)
             scrollArea.setWidgetResizable(True)
             scrollArea.setFrameStyle(0)
+
+            # FIXME
+            color1 = self.ui.tabWidget.palette().color(QPalette.Button).lighter(124)
+            color2 = self.ui.tabWidget.palette().color(QPalette.Button)
+            palette1 = scrollArea.palette()
+            palette1.setColor(QPalette.Background, color1)
+            palette2 = scrollArea.palette()
+            palette2.setColor(QPalette.Background, color1)
+            scrollArea.setPalette(palette1)
 
             scrollAreaWidget = QWidget(scrollArea)
             scrollAreaLayout = QVBoxLayout(scrollAreaWidget)
             scrollAreaLayout.setSpacing(1)
 
             for paramInfo in paramList:
-                paramWidget = PluginParameter(scrollAreaWidget, self.host, paramInfo, self.fPluginId, tabIndex)
+                groupName = paramInfo['groupName']
+
+                if groupName:
+                    groupLayout, groupWidget = groupWidgets.get(groupName, (None, None))
+                    if groupLayout is None:
+                        groupWidget  = QGroupBox(groupName, scrollAreaWidget)
+                        groupLayout  = QVBoxLayout(groupWidget)
+                        groupWidget.setPalette(palette2)
+                        scrollAreaLayout.addWidget(groupWidget)
+                        groupWidgets[groupName] = (groupLayout, groupWidget)
+                else:
+                    groupLayout = scrollAreaLayout
+                    groupWidget = scrollAreaWidget
+
+                paramWidget = PluginParameter(groupWidget, self.host, paramInfo, self.fPluginId, tabIndex)
                 paramWidget.setLabelWidth(width)
-                scrollAreaLayout.addWidget(paramWidget)
+                groupLayout.addWidget(paramWidget)
 
                 self.fParameterList.append((paramType, paramInfo['index'], paramWidget))
 
@@ -1492,7 +1517,6 @@ class PluginEdit(QDialog):
             scrollAreaLayout.addStretch()
 
             scrollArea.setWidget(scrollAreaWidget)
-            tabPageLayout.addWidget(scrollArea)
 
             self.ui.tabWidget.addTab(scrollArea, tabPageName)
 
