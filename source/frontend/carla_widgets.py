@@ -1489,15 +1489,15 @@ class PluginEdit(QDialog):
 
             for paramInfo in paramList:
                 groupName = paramInfo['groupName']
-
                 if groupName:
-                    groupLayout, groupWidget = groupWidgets.get(groupName, (None, None))
+                    groupSymbol, groupName = groupName.split(":",1)
+                    groupLayout, groupWidget = groupWidgets.get(groupSymbol, (None, None))
                     if groupLayout is None:
-                        groupWidget  = QGroupBox(groupName, scrollAreaWidget)
-                        groupLayout  = QVBoxLayout(groupWidget)
+                        groupWidget = QGroupBox(groupName, scrollAreaWidget)
+                        groupLayout = QVBoxLayout(groupWidget)
                         groupWidget.setPalette(palette2)
                         scrollAreaLayout.addWidget(groupWidget)
-                        groupWidgets[groupName] = (groupLayout, groupWidget)
+                        groupWidgets[groupSymbol] = (groupLayout, groupWidget)
                 else:
                     groupLayout = scrollAreaLayout
                     groupWidget = scrollAreaWidget

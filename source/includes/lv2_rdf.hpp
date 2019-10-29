@@ -465,20 +465,20 @@ struct LV2_RDF_Port {
 // Port
 struct LV2_RDF_PortGroup {
     LV2_URI URI; // shared value, do not deallocate
-    const char* Label;
+    const char* Name;
     const char* Symbol;
 
     LV2_RDF_PortGroup() noexcept
         : URI(nullptr),
-          Label(nullptr),
+          Name(nullptr),
           Symbol(nullptr) {}
 
     ~LV2_RDF_PortGroup() noexcept
     {
-        if (Label != nullptr)
+        if (Name != nullptr)
         {
-            delete[] Label;
-            Label = nullptr;
+            delete[] Name;
+            Name = nullptr;
         }
         if (Symbol != nullptr)
         {

@@ -343,6 +343,7 @@ public:
 
     /*!
      * Get the group name of the parameter @a parameterId.
+     * @note The group name is prefixed by a unique symbol and ":".
      */
     virtual bool getParameterGroupName(const uint32_t parameterId, char* const strBuf) const noexcept;
 

@@ -188,7 +188,7 @@ typedef struct _CarlaParameterInfo {
     const char* comment;
 
     /*!
-     * Parameter group name.
+     * Parameter group name, prefixed by a unique symbol and ":".
      */
     const char* groupName;
 

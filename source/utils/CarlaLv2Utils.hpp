@@ -247,12 +247,11 @@ public:
     Lilv::Node atom_sequence;
     Lilv::Node atom_supports;
 
+    Lilv::Node lv2_name;
+    Lilv::Node lv2_symbol;
     Lilv::Node patch_writable;
-    Lilv::Node parameter;
     Lilv::Node pg_group;
-
     Lilv::Node preset_preset;
-
     Lilv::Node state_state;
 
     Lilv::Node ui_portIndex;
@@ -383,12 +382,11 @@ public:
           atom_sequence      (new_uri(LV2_ATOM__Sequence)),
           atom_supports      (new_uri(LV2_ATOM__supports)),
 
+          lv2_name           (new_uri(LV2_CORE__name)),
+          lv2_symbol         (new_uri(LV2_CORE__symbol)),
           patch_writable     (new_uri(LV2_PATCH__writable)),
-          parameter          (new_uri(LV2_CORE__Parameter)),
           pg_group           (new_uri(LV2_PORT_GROUPS__group)),
-
           preset_preset      (new_uri(LV2_PRESETS__Preset)),
-
           state_state        (new_uri(LV2_STATE__state)),
 
           ui_portIndex       (new_uri(LV2_UI__portIndex)),
@@ -1646,7 +1644,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
     Lilv::Plugin lilvPlugin(cPlugin);
     LV2_RDF_Descriptor* const rdfDescriptor(new LV2_RDF_Descriptor());
 
-    CarlaStringList portGroups(false); // does not allocate own elements
+    CarlaStringList portGroupURIs(false); // does not allocate own elements
+    LinkedList<LilvNode*> portGroupNodes;
 
     // ----------------------------------------------------------------------------------------------------------------
     // Set Plugin Type
@@ -1842,8 +1841,11 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 if (LilvNode* const groupNode = lilvPort.get(lv2World.pg_group.me))
                 {
                     rdfPort->GroupURI = carla_strdup(lilv_node_as_uri(groupNode));
-                    lilv_node_free(groupNode);
-                    portGroups.appendUnique(rdfPort->GroupURI);
+
+                    if (portGroupURIs.appendUnique(rdfPort->GroupURI))
+                        portGroupNodes.append(groupNode);
+                    else
+                        lilv_node_free(groupNode);
                 }
             }
 
@@ -2384,8 +2386,11 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                                                                lv2World.pg_group.me, nullptr))
                 {
                     rdfParam.GroupURI = carla_strdup_safe(lilv_node_as_uri(groupNode));
-                    lilv_node_free(groupNode);
-                    portGroups.appendUnique(rdfParam.GroupURI);
+
+                    if (portGroupURIs.appendUnique(rdfParam.GroupURI))
+                        portGroupNodes.append(groupNode);
+                    else
+                        lilv_node_free(groupNode);
                 }
 
                 // ----------------------------------------------------------------------------------------------------
@@ -2526,21 +2531,44 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
     // ----------------------------------------------------------------------------------------------------------------
     // Set Plugin Port Groups
 
-    if (const size_t portGroupCount = portGroups.count())
+    if (const size_t portGroupCount = portGroupURIs.count())
     {
-        rdfDescriptor->PortGroupCount = static_cast<uint32_t>(portGroupCount);
         rdfDescriptor->PortGroups = new LV2_RDF_PortGroup[portGroupCount];
 
-        std::size_t i=0;
-        for (LinkedList<const char*>::Itenerator it = portGroups.begin2(); it.valid(); it.next(), ++i)
+        uint32_t count = 0;
+        CarlaStringList::Itenerator itu = portGroupURIs.begin2();
+        LinkedList<LilvNode*>::Itenerator itn = portGroupNodes.begin2();
+        for (; itu.valid() && itn.valid(); itu.next(), itn.next())
         {
-            LV2_RDF_PortGroup& portGroup(rdfDescriptor->PortGroups[i]);
+            const char* const portGroupURI = itu.getValue(nullptr);
+            CARLA_SAFE_ASSERT_CONTINUE(portGroupURI != nullptr);
 
-            portGroup.URI = portGroups.getAt(i);
+            LilvNode* const portGroupNode = itn.getValue(nullptr);
+            CARLA_SAFE_ASSERT_CONTINUE(portGroupNode != nullptr);
 
-            // TODO
-            portGroup.Label = carla_strdup_safe(CarlaString(1001+i));
+            LV2_RDF_PortGroup& portGroup(rdfDescriptor->PortGroups[count]);
+            portGroup.URI = portGroupURI;
+
+            if (LilvNode* const portGroupNameNode = lilv_world_get(lv2World.me, portGroupNode,
+                                                                   lv2World.lv2_name.me, nullptr))
+            {
+                portGroup.Name = carla_strdup_safe(lilv_node_as_string(portGroupNameNode));
+                lilv_node_free(portGroupNameNode);
+            }
+
+            if (LilvNode* const portGroupSymbolNode = lilv_world_get(lv2World.me, portGroupNode,
+                                                                     lv2World.lv2_symbol.me, nullptr))
+            {
+                portGroup.Symbol = carla_strdup_safe(lilv_node_as_string(portGroupSymbolNode));
+                lilv_node_free(portGroupSymbolNode);
+            }
+
+            ++count;
+            lilv_node_free(portGroupNode);
         }
+
+        rdfDescriptor->PortGroupCount = count;
+        portGroupNodes.clear();
     }
 
     // ----------------------------------------------------------------------------------------------------------------

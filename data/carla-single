@@ -96,7 +96,7 @@ if len(sys.argv) == arg:
 # --------------------------------------------------------------------------------------------------------
 # Set format
 
-if sys.argv[arg] in ("internal", "ladspa", "dssi", "lv2", "vst", "vst2", "gig", "sf2", "sfz"):
+if sys.argv[arg] in ("internal", "ladspa", "dssi", "lv2", "vst", "vst2", "vst3", "au", "gig", "sf2", "sfz"):
     FORMAT = sys.argv[arg]
     arg += 1
 

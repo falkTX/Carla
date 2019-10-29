@@ -1203,9 +1203,12 @@ public:
         {
             if (std::strcmp(fRdfDescriptor->PortGroups[i].URI, uri) == 0)
             {
-                if (const char* const label = fRdfDescriptor->PortGroups[i].Label)
+                const char* const name   = fRdfDescriptor->PortGroups[i].Name;
+                const char* const symbol = fRdfDescriptor->PortGroups[i].Symbol;
+
+                if (name != nullptr && symbol != nullptr)
                 {
-                    std::strncpy(strBuf, label, STR_MAX);
+                    std::snprintf(strBuf, STR_MAX, "%s:%s", symbol, name);
                     return true;
                 }
                 return false;
