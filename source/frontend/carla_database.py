@@ -447,7 +447,7 @@ class SearchPluginsThread(QThread):
         self.fCheckDSSI   = dssi
         self.fCheckLV2    = lv2
         self.fCheckVST2   = vst2
-        self.fCheckVST3   = vst3 and (MACOS or WINDOWS)
+        self.fCheckVST3   = vst3 and (LINUX or MACOS or WINDOWS)
         self.fCheckAU     = au and MACOS
         self.fCheckSF2    = sf2
         self.fCheckSFZ    = sfz
