@@ -252,6 +252,10 @@ class PluginParameter(QWidget):
         self.ui.widget.setStepLarge(pInfo['stepLarge'])
         self.ui.widget.setScalePoints(pInfo['scalePoints'], bool(pHints & PARAMETER_USES_SCALEPOINTS))
 
+        if pInfo['comment']:
+            self.ui.label.setToolTip(pInfo['comment'])
+            self.ui.widget.setToolTip(pInfo['comment'])
+
         if pType == PARAMETER_INPUT:
             if not pHints & PARAMETER_IS_ENABLED:
                 self.ui.label.setEnabled(False)
