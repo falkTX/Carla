@@ -350,7 +350,11 @@
    <item row="0" column="0" colspan="3">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QLineEdit" name="lineEdit"/>
+      <widget class="QLineEdit" name="lineEdit">
+       <property name="clearButtonEnabled">
+        <bool>true</bool>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QPushButton" name="b_refresh">
@@ -366,7 +370,7 @@
      <item>
       <widget class="QPushButton" name="b_clear_filters">
        <property name="text">
-        <string>Clear filters</string>
+        <string>Reset filters</string>
        </property>
        <property name="icon">
         <iconset resource="../resources.qrc">
