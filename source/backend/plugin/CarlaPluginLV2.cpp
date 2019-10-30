@@ -988,6 +988,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         int32_t rindex = pData->param.data[parameterId].rindex;
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0, false);
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
@@ -1012,6 +1013,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         int32_t rindex = pData->param.data[parameterId].rindex;
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0, false);
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
@@ -1038,6 +1040,7 @@ public:
         LV2_RDF_PortUnit* portUnit = nullptr;
 
         int32_t rindex = pData->param.data[parameterId].rindex;
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0, false);
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
@@ -1150,6 +1153,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         int32_t rindex = pData->param.data[parameterId].rindex;
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0, false);
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
@@ -1182,6 +1186,8 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         int32_t rindex = pData->param.data[parameterId].rindex;
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0, false);
+
         const char* uri = nullptr;
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
@@ -1224,6 +1230,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0, false);
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
