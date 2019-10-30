@@ -1479,18 +1479,16 @@ class PluginEdit(QDialog):
             scrollArea.setWidgetResizable(True)
             scrollArea.setFrameStyle(0)
 
-            # FIXME
-            color1 = self.ui.tabWidget.palette().color(QPalette.Button).lighter(124)
-            color2 = self.ui.tabWidget.palette().color(QPalette.Button)
             palette1 = scrollArea.palette()
-            palette1.setColor(QPalette.Background, color1)
-            palette2 = scrollArea.palette()
-            palette2.setColor(QPalette.Background, color1)
+            palette1.setColor(QPalette.Background, Qt.transparent)
             scrollArea.setPalette(palette1)
+
+            palette2 = scrollArea.palette()
+            palette2.setColor(QPalette.Background, palette2.color(QPalette.Button))
 
             scrollAreaWidget = QWidget(scrollArea)
             scrollAreaLayout = QVBoxLayout(scrollAreaWidget)
-            scrollAreaLayout.setSpacing(1)
+            scrollAreaLayout.setSpacing(3)
 
             for paramInfo in paramList:
                 groupName = paramInfo['groupName']
