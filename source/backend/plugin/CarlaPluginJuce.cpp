@@ -1229,8 +1229,8 @@ public:
             return false;
         }
 
-        // AU and VST3 require label
-        if (std::strcmp(format, "AU") == 0 || std::strcmp(format, "VST3") == 0)
+        // AU requires label
+        if (std::strcmp(format, "AU") == 0)
         {
             if (label == nullptr || label[0] == '\0')
             {
