@@ -36,7 +36,7 @@ class CollapsibleBox(QGroupBox):
         self.toggle_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.toggle_button.setStyleSheet("border: none;")
         self.toggle_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        self.toggle_button.setArrowType(Qt.RightArrow)
+        self.toggle_button.setArrowType(Qt.DownArrow)
         self.toggle_button.toggled.connect(self.toolButtonPressed)
 
         self.content_area   = QWidget(self)
@@ -53,7 +53,7 @@ class CollapsibleBox(QGroupBox):
     @pyqtSlot(bool)
     def toolButtonPressed(self, toggled):
         self.content_area.setVisible(toggled)
-        self.toggle_button.setArrowType(Qt.RightArrow if toggled else Qt.DownArrow)
+        self.toggle_button.setArrowType(Qt.DownArrow if toggled else Qt.RightArrow)
 
     def getContentLayout(self):
         return self.content_layout
