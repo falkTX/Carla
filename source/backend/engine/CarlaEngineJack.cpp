@@ -96,7 +96,7 @@ public:
         case ENGINE_PROCESS_MODE_SINGLE_CLIENT:
         case ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
             CARLA_SAFE_ASSERT_RETURN(jackClient != nullptr && jackPort != nullptr,);
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             if (const jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
                 jackbridge_set_property(jackClient, uuid, JACKEY_SIGNAL_TYPE, "AUDIO", "text/plain");
 #endif
@@ -114,7 +114,7 @@ public:
 
         if (fJackClient != nullptr && fJackPort != nullptr)
         {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             try {
                 if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort))
                     jackbridge_remove_property(fJackClient, uuid, JACKEY_SIGNAL_TYPE);
@@ -158,6 +158,16 @@ public:
         fJackPort   = nullptr;
     }
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    void setMetaData(const char* const key, const char* const value, const char* const type) override
+    {
+        try {
+            if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort))
+                jackbridge_set_property(fJackClient, uuid, key, value, type);
+        } CARLA_SAFE_EXCEPTION("Port setMetaData");
+    }
+#endif
+
 private:
     jack_client_t* fJackClient;
     jack_port_t*   fJackPort;
@@ -188,7 +198,7 @@ public:
         case ENGINE_PROCESS_MODE_SINGLE_CLIENT:
         case ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
             CARLA_SAFE_ASSERT_RETURN(jackClient != nullptr && jackPort != nullptr,);
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             if (const jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
                 jackbridge_set_property(jackClient, uuid, JACKEY_SIGNAL_TYPE, "CV", "text/plain");
 #endif
@@ -206,7 +216,7 @@ public:
 
         if (fJackClient != nullptr && fJackPort != nullptr)
         {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             try {
                 if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort))
                     jackbridge_remove_property(fJackClient, uuid, JACKEY_SIGNAL_TYPE);
@@ -249,6 +259,16 @@ public:
         fJackClient = nullptr;
         fJackPort   = nullptr;
     }
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    void setMetaData(const char* const key, const char* const value, const char* const type) override
+    {
+        try {
+            if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort))
+                jackbridge_set_property(fJackClient, uuid, key, value, type);
+        } CARLA_SAFE_EXCEPTION("Port setMetaData");
+    }
+#endif
 
 private:
     jack_client_t* fJackClient;
@@ -438,6 +458,16 @@ public:
         fJackClient = nullptr;
         fJackPort   = nullptr;
     }
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    void setMetaData(const char* const key, const char* const value, const char* const type) override
+    {
+        try {
+            if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort))
+                jackbridge_set_property(fJackClient, uuid, key, value, type);
+        } CARLA_SAFE_EXCEPTION("Port setMetaData");
+    }
+#endif
 
 private:
     jack_client_t* fJackClient;

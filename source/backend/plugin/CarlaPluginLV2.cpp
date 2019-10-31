@@ -68,6 +68,7 @@ const uint PLUGIN_HAS_EXTENSION_PROGRAMS       = 0x02000;
 const uint PLUGIN_HAS_EXTENSION_STATE          = 0x04000;
 const uint PLUGIN_HAS_EXTENSION_WORKER         = 0x08000;
 const uint PLUGIN_HAS_EXTENSION_INLINE_DISPLAY = 0x10000;
+const uint PLUGIN_HAS_EXTENSION_MIDNAM         = 0x20000;
 
 // Extra Parameter Hints
 const uint PARAMETER_IS_STRICT_BOUNDS = 0x1000;
@@ -165,6 +166,7 @@ enum CarlaLv2Features {
     kFeatureIdUridUnmap,
     kFeatureIdWorker,
     kFeatureIdInlineDisplay,
+    kFeatureIdMidnam,
     kFeatureCountPlugin,
     // UI features
     kFeatureIdUiDataAccess = kFeatureCountPlugin,
@@ -2835,6 +2837,17 @@ public:
         if (fEventsOut.ctrl != nullptr && fEventsOut.ctrl->port == nullptr)
             fEventsOut.ctrl->port = pData->event.portOut;
 
+        if (fEventsIn.ctrl != nullptr && fExt.midnam != nullptr)
+        {
+            if (char* const midnam = fExt.midnam->midnam(fHandle))
+            {
+                fEventsIn.ctrl->port->setMetaData("http://www.midi.org/dtds/MIDINameDocument10.dtd",
+                                                    midnam, "text/xml");
+                if (fExt.midnam->free != nullptr)
+                    fExt.midnam->free(midnam);
+            }
+        }
+
         if (forcedStereoIn || forcedStereoOut)
             pData->options |= PLUGIN_OPTION_FORCE_STEREO;
         else
@@ -4812,6 +4825,8 @@ public:
                 pData->hints |= PLUGIN_HAS_EXTENSION_WORKER;
             else if (std::strcmp(extension, LV2_INLINEDISPLAY__interface) == 0)
                 pData->hints |= PLUGIN_HAS_EXTENSION_INLINE_DISPLAY;
+            else if (std::strcmp(extension, LV2_MIDNAM__interface) == 0)
+                pData->hints |= PLUGIN_HAS_EXTENSION_MIDNAM;
             else
                 carla_stdout("Plugin '%s' has non-supported extension: '%s'", fRdfDescriptor->URI, extension);
         }
@@ -4828,7 +4843,14 @@ public:
 
                 carla_stdout("Plugin '%s' uses inline-display but does not set extension data, nasty!", fRdfDescriptor->URI);
                 pData->hints |= PLUGIN_HAS_EXTENSION_INLINE_DISPLAY;
-                break;
+            }
+            else if (std::strcmp(feature.URI, LV2_MIDNAM__update) == 0)
+            {
+                if (pData->hints & PLUGIN_HAS_EXTENSION_MIDNAM)
+                    break;
+
+                carla_stdout("Plugin '%s' uses midnam but does not set extension data, nasty!", fRdfDescriptor->URI);
+                pData->hints |= PLUGIN_HAS_EXTENSION_MIDNAM;
             }
         }
 
@@ -4848,6 +4870,9 @@ public:
 
             if (pData->hints & PLUGIN_HAS_EXTENSION_INLINE_DISPLAY)
                 fExt.inlineDisplay = (const LV2_Inline_Display_Interface*)fDescriptor->extension_data(LV2_INLINEDISPLAY__interface);
+
+            if (pData->hints & PLUGIN_HAS_EXTENSION_MIDNAM)
+                fExt.midnam = (const LV2_Midnam_Interface*)fDescriptor->extension_data(LV2_MIDNAM__interface);
 
             // check if invalid
             if (fExt.options != nullptr && fExt.options->get == nullptr  && fExt.options->set == nullptr)
@@ -4874,6 +4899,9 @@ public:
                     fExt.inlineDisplay = nullptr;
                 }
             }
+
+            if (fExt.midnam != nullptr && fExt.midnam->midnam == nullptr)
+                fExt.midnam = nullptr;
         }
 
         CARLA_SAFE_ASSERT_RETURN(fLatencyIndex == -1,);
@@ -5181,6 +5209,24 @@ public:
         CARLA_SAFE_ASSERT_RETURN(height > 0, nullptr);
 
         return fExt.inlineDisplay->render(fHandle, width, height);
+    }
+
+    // -------------------------------------------------------------------
+
+    void handleMidnamUpdate()
+    {
+        CARLA_SAFE_ASSERT_RETURN(fExt.midnam != nullptr,);
+
+        if (fEventsIn.ctrl == nullptr)
+            return;
+
+        char* const midnam = fExt.midnam->midnam(fHandle);
+        CARLA_SAFE_ASSERT_RETURN(midnam != nullptr,);
+
+        fEventsIn.ctrl->port->setMetaData("http://www.midi.org/dtds/MIDINameDocument10.dtd", midnam, "text/xml");
+
+        if (fExt.midnam->free != nullptr)
+            fExt.midnam->free(midnam);
     }
 
     // -------------------------------------------------------------------
@@ -5717,6 +5763,10 @@ public:
         inlineDisplay->handle                   = this;
         inlineDisplay->queue_draw               = carla_lv2_inline_display_queue_draw;
 
+        LV2_Midnam* const midnam = new LV2_Midnam;
+        midnam->handle = this;
+        midnam->update = carla_lv2_midnam_update;
+
         // ---------------------------------------------------------------
         // initialize features (part 2)
 
@@ -5787,6 +5837,9 @@ public:
 
         fFeatures[kFeatureIdInlineDisplay]->URI  = LV2_INLINEDISPLAY__queue_draw;
         fFeatures[kFeatureIdInlineDisplay]->data = inlineDisplay;
+
+        fFeatures[kFeatureIdMidnam]->URI  = LV2_MIDNAM__update;
+        fFeatures[kFeatureIdMidnam]->data = midnam;
 
         // ---------------------------------------------------------------
         // initialize plugin
@@ -6368,6 +6421,7 @@ private:
         const LV2_State_Interface* state;
         const LV2_Worker_Interface* worker;
         const LV2_Inline_Display_Interface* inlineDisplay;
+        const LV2_Midnam_Interface* midnam;
         const LV2_Programs_Interface* programs;
         const LV2UI_Idle_Interface* uiidle;
         const LV2UI_Show_Interface* uishow;
@@ -6379,6 +6433,7 @@ private:
               state(nullptr),
               worker(nullptr),
               inlineDisplay(nullptr),
+              midnam(nullptr),
               programs(nullptr),
               uiidle(nullptr),
               uishow(nullptr),
@@ -6894,6 +6949,17 @@ private:
         // carla_debug("carla_lv2_inline_display_queue_draw(%p)", handle);
 
         ((CarlaPluginLV2*)handle)->handleInlineDisplayQueueRedraw();
+    }
+
+    // -------------------------------------------------------------------
+    // Midnam Feature
+
+    static void carla_lv2_midnam_update(LV2_Midnam_Handle handle)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
+        carla_stdout("carla_lv2_midnam_update(%p)", handle);
+
+        ((CarlaPluginLV2*)handle)->handleMidnamUpdate();
     }
 
     // -------------------------------------------------------------------

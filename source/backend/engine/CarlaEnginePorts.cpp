@@ -42,6 +42,10 @@ CarlaEnginePort::~CarlaEnginePort() noexcept
     carla_debug("CarlaEnginePort::~CarlaEnginePort()");
 }
 
+void CarlaEnginePort::setMetaData(const char*, const char*, const char*)
+{
+}
+
 // -----------------------------------------------------------------------
 // Carla Engine Audio port
 

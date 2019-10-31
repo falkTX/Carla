@@ -47,6 +47,7 @@
 #include "lv2/log.h"
 // logger
 #include "lv2/midi.h"
+#include "lv2/midnam.h"
 // morph
 #include "lv2/options.h"
 #include "lv2/parameters.h"
