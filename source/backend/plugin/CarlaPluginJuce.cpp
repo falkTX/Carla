@@ -284,20 +284,26 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
 
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
-        fInstance->setParameter(static_cast<int>(parameterId), value);
+
+        try {
+            fInstance->setParameter(static_cast<int>(parameterId), value);
+        } CARLA_SAFE_EXCEPTION("setParameter");
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setParameterValueRT(const uint32_t parameterId, const float value) noexcept override
+    void setParameterValueRT(const uint32_t parameterId, const float value, const bool sendCallbackLater) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
 
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
-        fInstance->setParameter(static_cast<int>(parameterId), value);
 
-        CarlaPlugin::setParameterValueRT(parameterId, fixedValue);
+        try {
+            fInstance->setParameter(static_cast<int>(parameterId), value);
+        } CARLA_SAFE_EXCEPTION("setParameter");
+
+        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, sendCallbackLater);
     }
 
     void setChunkData(const void* const data, const std::size_t dataSize) override
@@ -362,7 +368,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(index < pData->prog.count,);
 
         try {
-            fInstance->setCurrentProgram(index);
+            fInstance->setCurrentProgram(static_cast<int32_t>(index));
         } CARLA_SAFE_EXCEPTION("setCurrentProgram");
 
         CarlaPlugin::setProgramRT(index, sendCallbackLater);
