@@ -571,12 +571,12 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
             std::snprintf(tmpBuf, STR_MAX, "%f:%f:%f:%f:%f:%f\n",
-                         static_cast<double>(paramRanges.def),
-                         static_cast<double>(paramRanges.min),
-                         static_cast<double>(paramRanges.max),
-                         static_cast<double>(paramRanges.step),
-                         static_cast<double>(paramRanges.stepSmall),
-                         static_cast<double>(paramRanges.stepLarge));
+                          static_cast<double>(paramRanges.def),
+                          static_cast<double>(paramRanges.min),
+                          static_cast<double>(paramRanges.max),
+                          static_cast<double>(paramRanges.step),
+                          static_cast<double>(paramRanges.stepSmall),
+                          static_cast<double>(paramRanges.stepLarge));
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
             std::snprintf(tmpBuf, STR_MAX, "PARAMVAL_%i:%i\n", pluginId, i);
@@ -1042,7 +1042,10 @@ protected:
         if (CarlaPlugin* const plugin = _getFirstPlugin())
         {
             if (index < plugin->getParameterCount())
-                plugin->setParameterValueRT(index, value);
+            {
+                const float rvalue = plugin->getParameterRanges(index).getUnnormalizedValue(value);
+                plugin->setParameterValueRT(index, rvalue, false);
+            }
         }
 
         fParameters[index] = value;

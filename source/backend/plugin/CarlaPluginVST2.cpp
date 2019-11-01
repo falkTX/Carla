@@ -388,7 +388,7 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setParameterValueRT(const uint32_t parameterId, const float value) noexcept override
+    void setParameterValueRT(const uint32_t parameterId, const float value, const bool sendCallbackLater) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
@@ -396,7 +396,7 @@ public:
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
         fEffect->setParameter(fEffect, static_cast<int32_t>(parameterId), fixedValue);
 
-        CarlaPlugin::setParameterValueRT(parameterId, fixedValue);
+        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, sendCallbackLater);
     }
 
     void setChunkData(const void* const data, const std::size_t dataSize) override
@@ -459,7 +459,7 @@ public:
         CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback, doingInit);
     }
 
-    void setProgramRT(const uint32_t uindex) noexcept override
+    void setProgramRT(const uint32_t uindex, const bool sendCallbackLater) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(uindex < pData->prog.count,);
@@ -476,7 +476,7 @@ public:
             dispatcher(effEndSetProgram);
         } CARLA_SAFE_EXCEPTION("effEndSetProgram");
 
-        CarlaPlugin::setProgramRT(uindex);
+        CarlaPlugin::setProgramRT(uindex, sendCallbackLater);
     }
 
     // -------------------------------------------------------------------
@@ -1310,13 +1310,13 @@ public:
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) != 0)
                             {
                                 value = ctrlEvent.value;
-                                setDryWetRT(value);
+                                setDryWetRT(value, true);
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
-                                setVolumeRT(value);
+                                setVolumeRT(value, true);
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
@@ -1340,8 +1340,8 @@ public:
                                     right = 1.0f;
                                 }
 
-                                setBalanceLeftRT(left);
-                                setBalanceRightRT(right);
+                                setBalanceLeftRT(left, true);
+                                setBalanceRightRT(right, true);
                             }
                         }
 #endif
@@ -1375,7 +1375,7 @@ public:
                                     value = std::rint(value);
                             }
 
-                            setParameterValueRT(k, value);
+                            setParameterValueRT(k, value, true);
                         }
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_CONTROL)
@@ -1428,7 +1428,7 @@ public:
                         {
                             if (ctrlEvent.param < pData->prog.count)
                             {
-                                setProgramRT(ctrlEvent.param);
+                                setProgramRT(ctrlEvent.param, true);
                                 break;
                             }
                         }
@@ -1533,6 +1533,7 @@ public:
                     if (status == MIDI_STATUS_NOTE_ON)
                     {
                         pData->postponeRtEvent(kPluginPostRtEventNoteOn,
+                                               true,
                                                event.channel,
                                                midiEvent.data[1],
                                                midiEvent.data[2],
@@ -1541,6 +1542,7 @@ public:
                     else if (status == MIDI_STATUS_NOTE_OFF)
                     {
                         pData->postponeRtEvent(kPluginPostRtEventNoteOff,
+                                               true,
                                                event.channel,
                                                midiEvent.data[1],
                                                0, 0.0f);
@@ -1911,19 +1913,19 @@ protected:
             else if (pthread_equal(thisThread, fProcThread))
             {
                 CARLA_SAFE_ASSERT(fIsProcessing);
-                pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 1, 0, fixedValue);
+                pData->postponeRtEvent(kPluginPostRtEventParameterChange, true, index, 0, 0, fixedValue);
             }
             // Called from effSetChunk or effSetProgram
             else if (pthread_equal(thisThread, fChangingValuesThread))
             {
                 carla_debug("audioMasterAutomate called while setting state");
-                pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 1, 0, fixedValue);
+                pData->postponeRtEvent(kPluginPostRtEventParameterChange, true, index, 0, 0, fixedValue);
             }
             // Called from effIdle
             else if (pthread_equal(thisThread, fIdleThread))
             {
                 carla_debug("audioMasterAutomate called from idle thread");
-                pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 1, 0, fixedValue);
+                pData->postponeRtEvent(kPluginPostRtEventParameterChange, true, index, 0, 0, fixedValue);
             }
             // Called from UI?
             else if (fUI.isVisible)

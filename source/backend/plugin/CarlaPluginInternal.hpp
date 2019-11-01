@@ -74,7 +74,7 @@ enum SpecialParameterType {
 enum PluginPostRtEventType {
     kPluginPostRtEventNull = 0,
     kPluginPostRtEventDebug,
-    kPluginPostRtEventParameterChange,   // param, SP (*), unused, value (SP: if 1 report to Callback and OSC)
+    kPluginPostRtEventParameterChange,   // param, (unused), (unused), value
     kPluginPostRtEventProgramChange,     // index
     kPluginPostRtEventMidiProgramChange, // index
     kPluginPostRtEventNoteOn,            // channel, note, velo
@@ -87,6 +87,7 @@ enum PluginPostRtEventType {
  */
 struct PluginPostRtEvent {
     PluginPostRtEventType type;
+    bool sendCallback;
     int32_t value1;
     int32_t value2;
     int32_t value3;
@@ -360,6 +361,7 @@ struct CarlaPlugin::ProtectedData {
 
     void postponeRtEvent(const PluginPostRtEvent& rtEvent) noexcept;
     void postponeRtEvent(const PluginPostRtEventType type,
+                         const bool sendCallbackLater,
                          const int32_t value1, const int32_t value2, const int32_t value3,
                          const float valuef) noexcept;
 

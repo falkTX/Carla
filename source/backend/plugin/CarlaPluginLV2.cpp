@@ -1365,14 +1365,14 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setParameterValueRT(const uint32_t parameterId, const float value) noexcept override
+    void setParameterValueRT(const uint32_t parameterId, const float value, const bool sendCallbackLater) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fParamBuffers != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
         const float fixedValue = setParamterValueCommon(parameterId, value);
 
-        CarlaPlugin::setParameterValueRT(parameterId, fixedValue);
+        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, sendCallbackLater);
     }
 
     void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui) override
@@ -1455,7 +1455,7 @@ public:
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback, doingInit);
     }
 
-    void setMidiProgramRT(const uint32_t uindex) noexcept override
+    void setMidiProgramRT(const uint32_t uindex, const bool sendCallbackLater) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(uindex < pData->midiprog.count,);
@@ -1477,7 +1477,7 @@ public:
             }
         }
 
-        CarlaPlugin::setMidiProgramRT(uindex);
+        CarlaPlugin::setMidiProgramRT(uindex, sendCallbackLater);
     }
 
     // -------------------------------------------------------------------
@@ -3342,6 +3342,7 @@ public:
 
                 if (doPostRt)
                     pData->postponeRtEvent(kPluginPostRtEventParameterChange,
+                                           true,
                                            static_cast<int32_t>(k),
                                            0,
                                            0,
@@ -3604,13 +3605,13 @@ public:
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) != 0)
                             {
                                 value = ctrlEvent.value;
-                                setDryWetRT(value);
+                                setDryWetRT(value, true);
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
-                                setVolumeRT(value);
+                                setVolumeRT(value, true);
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
@@ -3634,8 +3635,8 @@ public:
                                     right = 1.0f;
                                 }
 
-                                setBalanceLeftRT(left);
-                                setBalanceRightRT(right);
+                                setBalanceLeftRT(left, true);
+                                setBalanceRightRT(right, true);
                             }
                         }
 #endif
@@ -3669,7 +3670,7 @@ public:
                                     value = std::rint(value);
                             }
 
-                            setParameterValueRT(k, value);
+                            setParameterValueRT(k, value, true);
                         }
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_CONTROL)
@@ -3731,7 +3732,7 @@ public:
                                 {
                                     if (pData->midiprog.data[k].bank == nextBankId && pData->midiprog.data[k].program == nextProgramId)
                                     {
-                                        setMidiProgramRT(k);
+                                        setMidiProgramRT(k, true);
                                         break;
                                     }
                                 }
@@ -3849,6 +3850,7 @@ public:
                     if (status == MIDI_STATUS_NOTE_ON)
                     {
                         pData->postponeRtEvent(kPluginPostRtEventNoteOn,
+                                               true,
                                                event.channel,
                                                midiData[1],
                                                midiData[2],
@@ -3857,6 +3859,7 @@ public:
                     else if (status == MIDI_STATUS_NOTE_OFF)
                     {
                         pData->postponeRtEvent(kPluginPostRtEventNoteOff,
+                                               true,
                                                event.channel,
                                                midiData[1],
                                                0, 0.0f);
@@ -4139,6 +4142,7 @@ public:
                 {
                     fParamBuffers[k] = pData->param.ranges[k].def;
                     pData->postponeRtEvent(kPluginPostRtEventParameterChange,
+                                           true,
                                            static_cast<int32_t>(k),
                                            1, 0,
                                            fParamBuffers[k]);
@@ -4411,6 +4415,7 @@ public:
 
             fParamBuffers[k] = sampleRatef;
             pData->postponeRtEvent(kPluginPostRtEventParameterChange,
+                                   true,
                                    static_cast<int32_t>(k),
                                    0,
                                    0,
@@ -4429,6 +4434,7 @@ public:
             {
                 fParamBuffers[k] = isOffline ? pData->param.ranges[k].max : pData->param.ranges[k].min;
                 pData->postponeRtEvent(kPluginPostRtEventParameterChange,
+                                       true,
                                        static_cast<int32_t>(k),
                                        0,
                                        0,
@@ -5459,7 +5465,7 @@ public:
         {
             if (pData->param.data[i].rindex == rindex)
             {
-                setParameterValueRT(i, paramValue);
+                setParameterValueRT(i, paramValue, true);
                 break;
             }
         }

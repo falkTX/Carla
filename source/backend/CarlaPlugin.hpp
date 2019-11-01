@@ -542,11 +542,11 @@ public:
     /*!
      * Overloaded functions, to be called from within RT context only.
      */
-    void setDryWetRT(const float value) noexcept;
-    void setVolumeRT(const float value) noexcept;
-    void setBalanceLeftRT(const float value) noexcept;
-    void setBalanceRightRT(const float value) noexcept;
-    void setPanningRT(const float value) noexcept;
+    void setDryWetRT(const float value, const bool sendCallbackLater) noexcept;
+    void setVolumeRT(const float value, const bool sendCallbackLater) noexcept;
+    void setBalanceLeftRT(const float value, const bool sendCallbackLater) noexcept;
+    void setBalanceRightRT(const float value, const bool sendCallbackLater) noexcept;
+    void setPanningRT(const float value, const bool sendCallbackLater) noexcept;
 #endif // ! BUILD_BRIDGE_ALTERNATIVE_ARCH
 
     /*!
@@ -576,7 +576,7 @@ public:
     /*!
      * Overloaded function, to be called from within RT context only.
      */
-    virtual void setParameterValueRT(const uint32_t parameterId, const float value) noexcept;
+    virtual void setParameterValueRT(const uint32_t parameterId, const float value, const bool sendCallbackLater) noexcept;
 
     /*!
      * Set a plugin's parameter value, including internal parameters.
@@ -660,8 +660,8 @@ public:
     /*!
      * Overloaded functions, to be called from within RT context only.
      */
-    virtual void setProgramRT(const uint32_t index) noexcept;
-    virtual void setMidiProgramRT(const uint32_t index) noexcept;
+    virtual void setProgramRT(const uint32_t index, const bool sendCallbackLater) noexcept;
+    virtual void setMidiProgramRT(const uint32_t index, const bool sendCallbackLater) noexcept;
 
     // -------------------------------------------------------------------
     // Plugin state

@@ -409,11 +409,11 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setParameterValueRT(const uint32_t parameterId, const float value) noexcept override
+    void setParameterValueRT(const uint32_t parameterId, const float value, const bool sendCallbackLater) noexcept override
     {
         const float fixedValue = setParameterValueInFluidSynth(parameterId, value);
 
-        CarlaPlugin::setParameterValueRT(parameterId, fixedValue);
+        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, sendCallbackLater);
     }
 
     float setParameterValueInFluidSynth(const uint32_t parameterId, const float value) noexcept
@@ -564,7 +564,7 @@ public:
     }
 
     // FIXME: this is never used
-    void setMidiProgramRT(const uint32_t uindex) noexcept override
+    void setMidiProgramRT(const uint32_t uindex, const bool sendCallbackLater) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fSynth != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(uindex < pData->midiprog.count,);
@@ -581,7 +581,7 @@ public:
             fCurMidiProgs[pData->ctrlChannel] = static_cast<int32_t>(uindex);
         }
 
-        CarlaPlugin::setMidiProgramRT(uindex);
+        CarlaPlugin::setMidiProgramRT(uindex, sendCallbackLater);
     }
 
     // -------------------------------------------------------------------
@@ -1198,13 +1198,13 @@ public:
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) != 0)
                             {
                                 value = ctrlEvent.value;
-                                setDryWetRT(value);
+                                setDryWetRT(value, true);
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
-                                setVolumeRT(value);
+                                setVolumeRT(value, true);
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
@@ -1228,8 +1228,8 @@ public:
                                     right = 1.0f;
                                 }
 
-                                setBalanceLeftRT(left);
-                                setBalanceRightRT(right);
+                                setBalanceLeftRT(left, true);
+                                setBalanceRightRT(right, true);
                             }
                         }
 #endif
@@ -1262,7 +1262,7 @@ public:
                                     value = std::rint(value);
                             }
 
-                            setParameterValueRT(k, value);
+                            setParameterValueRT(k, value, true);
                         }
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_CONTROL)
@@ -1294,6 +1294,7 @@ public:
                                     if (event.channel == pData->ctrlChannel)
                                     {
                                         pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange,
+                                                               true,
                                                                static_cast<int32_t>(k),
                                                                0, 0, 0.0f);
                                     }
@@ -1347,7 +1348,7 @@ public:
 
                         fluid_synth_noteoff(fSynth, event.channel, note);
 
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, event.channel, note, 0, 0.0f);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, true, event.channel, note, 0, 0.0f);
                         break;
                     }
 
@@ -1357,7 +1358,7 @@ public:
 
                         fluid_synth_noteon(fSynth, event.channel, note, velo);
 
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, event.channel, note, velo, 0.0f);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, true, event.channel, note, velo, 0.0f);
                         break;
                     }
 

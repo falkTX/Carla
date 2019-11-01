@@ -688,7 +688,7 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setParameterValueRT(const uint32_t parameterId, const float value) noexcept override
+    void setParameterValueRT(const uint32_t parameterId, const float value, const bool sendCallbackLater) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fDescriptor->set_parameter_value != nullptr,);
@@ -703,7 +703,7 @@ public:
         if (fHandle2 != nullptr)
             fDescriptor->set_parameter_value(fHandle2, parameterId, fixedValue);
 
-        CarlaPlugin::setParameterValueRT(parameterId, fixedValue);
+        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, sendCallbackLater);
     }
 
     void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui) override
@@ -826,7 +826,7 @@ public:
     }
 
     // FIXME: this is never used
-    void setMidiProgramRT(const uint32_t index) noexcept override
+    void setMidiProgramRT(const uint32_t index, const bool sendCallbackLater) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
@@ -834,7 +834,7 @@ public:
 
         // TODO, put into check below
         if ((pData->hints & PLUGIN_IS_SYNTH) != 0 && (pData->ctrlChannel < 0 || pData->ctrlChannel >= MAX_MIDI_CHANNELS))
-           return CarlaPlugin::setMidiProgramRT(index);
+           return CarlaPlugin::setMidiProgramRT(index, sendCallbackLater);
 
         const uint8_t  channel = uint8_t((pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS) ? pData->ctrlChannel : 0);
         const uint32_t bank    = pData->midiprog.data[index].bank;
@@ -853,7 +853,7 @@ public:
 
         fCurMidiProgs[channel] = static_cast<int32_t>(index);
 
-        CarlaPlugin::setMidiProgramRT(index);
+        CarlaPlugin::setMidiProgramRT(index, sendCallbackLater);
     }
 
     // -------------------------------------------------------------------
@@ -1816,13 +1816,13 @@ public:
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) > 0)
                             {
                                 value = ctrlEvent.value;
-                                setDryWetRT(value);
+                                setDryWetRT(value, true);
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) > 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
-                                setVolumeRT(value);
+                                setVolumeRT(value, true);
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) > 0)
@@ -1846,8 +1846,8 @@ public:
                                     right = 1.0f;
                                 }
 
-                                setBalanceLeftRT(left);
-                                setBalanceRightRT(right);
+                                setBalanceLeftRT(left, true);
+                                setBalanceRightRT(right, true);
                             }
                         }
 #endif
@@ -1880,7 +1880,7 @@ public:
                                     value = std::rint(value);
                             }
 
-                            setParameterValueRT(k, value);
+                            setParameterValueRT(k, value, true);
                         }
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_CONTROL)
@@ -1944,6 +1944,7 @@ public:
                                         if (event.channel == pData->ctrlChannel)
                                         {
                                             pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange,
+                                                                   true,
                                                                    static_cast<int32_t>(k),
                                                                    0, 0, 0.0f);
                                         }
@@ -2055,6 +2056,7 @@ public:
                     if (status == MIDI_STATUS_NOTE_ON)
                     {
                         pData->postponeRtEvent(kPluginPostRtEventNoteOn,
+                                               true,
                                                event.channel,
                                                midiEvent.data[1],
                                                midiEvent.data[2],
@@ -2063,6 +2065,7 @@ public:
                     else if (status == MIDI_STATUS_NOTE_OFF)
                     {
                         pData->postponeRtEvent(kPluginPostRtEventNoteOff,
+                                               true,
                                                event.channel,
                                                midiEvent.data[1],
                                                0, 0.0f);
