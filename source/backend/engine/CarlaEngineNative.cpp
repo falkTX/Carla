@@ -379,10 +379,10 @@ protected:
 
             if (fUiServer.writeAndFixMessage("buffer-size"))
             {
-                char tmpBuf[STR_MAX];
-                carla_zeroChars(tmpBuf, STR_MAX);
+                char tmpBuf[STR_MAX+1];
+                carla_zeroChars(tmpBuf, STR_MAX+1);
 
-                std::sprintf(tmpBuf, "%i\n", newBufferSize);
+                std::snprintf(tmpBuf, STR_MAX, "%i\n", newBufferSize);
 
                 if (fUiServer.writeMessage(tmpBuf))
                     fUiServer.flushMessages();
@@ -403,12 +403,12 @@ protected:
 
             if (fUiServer.writeAndFixMessage("sample-rate"))
             {
-                char tmpBuf[STR_MAX];
-                carla_zeroChars(tmpBuf, STR_MAX);
+                char tmpBuf[STR_MAX+1];
+                carla_zeroChars(tmpBuf, STR_MAX+1);
 
                 {
                     const CarlaScopedLocale csl;
-                    std::sprintf(tmpBuf, "%f\n", newSampleRate);
+                    std::snprintf(tmpBuf, STR_MAX, "%f\n", newSampleRate);
                 }
 
                 if (fUiServer.writeMessage(tmpBuf))
@@ -431,13 +431,13 @@ protected:
 
         const uint pluginId(plugin->getId());
 
-        std::sprintf(tmpBuf, "PLUGIN_INFO_%i\n", pluginId);
+        std::snprintf(tmpBuf, STR_MAX, "PLUGIN_INFO_%i\n", pluginId);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-        std::sprintf(tmpBuf, "%i:%i:%i:" P_INT64 ":%i:%i\n",
-                     plugin->getType(), plugin->getCategory(),
-                     plugin->getHints(), plugin->getUniqueId(),
-                     plugin->getOptionsAvailable(), plugin->getOptionsEnabled());
+        std::snprintf(tmpBuf, STR_MAX, "%i:%i:%i:" P_INT64 ":%i:%i\n",
+                      plugin->getType(), plugin->getCategory(),
+                      plugin->getHints(), plugin->getUniqueId(),
+                      plugin->getOptionsAvailable(), plugin->getOptionsEnabled());
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
         if (const char* const filename = plugin->getFilename())
@@ -472,40 +472,32 @@ protected:
 
         if (plugin->getRealName(tmpBuf)) {
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(tmpBuf),);
-        }
-        else
-        {
+        } else {
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeEmptyMessage(),);
         }
 
         if (plugin->getLabel(tmpBuf)) {
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(tmpBuf),);
-        }
-        else
-        {
+        } else {
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeEmptyMessage(),);
         }
 
         if (plugin->getMaker(tmpBuf)) {
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(tmpBuf),);
-        }
-        else
-        {
+        } else {
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeEmptyMessage(),);
         }
 
         if (plugin->getCopyright(tmpBuf)) {
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(tmpBuf),);
-        }
-        else
-        {
+        } else {
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeEmptyMessage(),);
         }
 
-        std::sprintf(tmpBuf, "AUDIO_COUNT_%i:%i:%i\n", pluginId, plugin->getAudioInCount(), plugin->getAudioOutCount());
+        std::snprintf(tmpBuf, STR_MAX, "AUDIO_COUNT_%i:%i:%i\n", pluginId, plugin->getAudioInCount(), plugin->getAudioOutCount());
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-        std::sprintf(tmpBuf, "MIDI_COUNT_%i:%i:%i\n", pluginId, plugin->getMidiInCount(), plugin->getMidiOutCount());
+        std::snprintf(tmpBuf, STR_MAX, "MIDI_COUNT_%i:%i:%i\n", pluginId, plugin->getMidiInCount(), plugin->getMidiOutCount());
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
         fUiServer.flushMessages();
@@ -523,10 +515,10 @@ protected:
 
         for (int32_t i=PARAMETER_ACTIVE; i>PARAMETER_MAX; --i)
         {
-            std::sprintf(tmpBuf, "PARAMVAL_%i:%i\n", pluginId, i);
+            std::snprintf(tmpBuf, STR_MAX, "PARAMVAL_%i:%i\n", pluginId, i);
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-            std::sprintf(tmpBuf, "%f\n", static_cast<double>(plugin->getInternalParameterValue(i)));
+            std::snprintf(tmpBuf, STR_MAX, "%f\n", static_cast<double>(plugin->getInternalParameterValue(i)));
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
             fUiServer.flushMessages();
@@ -536,7 +528,7 @@ protected:
         plugin->getParameterCountInfo(ins, outs);
         count = plugin->getParameterCount();
 
-        std::sprintf(tmpBuf, "PARAMETER_COUNT_%i:%i:%i:%i\n", pluginId, ins, outs, count);
+        std::snprintf(tmpBuf, STR_MAX, "PARAMETER_COUNT_%i:%i:%i:%i\n", pluginId, ins, outs, count);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
         for (uint32_t i=0; i<count; ++i)
@@ -544,10 +536,11 @@ protected:
             const ParameterData& paramData(plugin->getParameterData(i));
             const ParameterRanges& paramRanges(plugin->getParameterRanges(i));
 
-            std::sprintf(tmpBuf, "PARAMETER_DATA_%i:%i\n", pluginId, i);
+            std::snprintf(tmpBuf, STR_MAX, "PARAMETER_DATA_%i:%i\n", pluginId, i);
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-            std::sprintf(tmpBuf, "%i:%i:%i:%i\n", paramData.type, paramData.hints, paramData.midiChannel, paramData.midiCC);
+            std::snprintf(tmpBuf, STR_MAX, "%i:%i:%i:%i\n", paramData.type, paramData.hints,
+                                                            paramData.midiChannel, paramData.midiCC);
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
             if (plugin->getParameterName(i, tmpBuf)) {
@@ -574,10 +567,10 @@ protected:
                 CARLA_SAFE_ASSERT_RETURN(fUiServer.writeEmptyMessage(),);
             }
 
-            std::sprintf(tmpBuf, "PARAMETER_RANGES_%i:%i\n", pluginId, i);
+            std::snprintf(tmpBuf, STR_MAX, "PARAMETER_RANGES_%i:%i\n", pluginId, i);
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-            std::sprintf(tmpBuf, "%f:%f:%f:%f:%f:%f\n",
+            std::snprintf(tmpBuf, STR_MAX, "%f:%f:%f:%f:%f:%f\n",
                          static_cast<double>(paramRanges.def),
                          static_cast<double>(paramRanges.min),
                          static_cast<double>(paramRanges.max),
@@ -586,10 +579,10 @@ protected:
                          static_cast<double>(paramRanges.stepLarge));
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-            std::sprintf(tmpBuf, "PARAMVAL_%i:%i\n", pluginId, i);
+            std::snprintf(tmpBuf, STR_MAX, "PARAMVAL_%i:%i\n", pluginId, i);
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-            std::sprintf(tmpBuf, "%f\n", static_cast<double>(plugin->getParameterValue(i)));
+            std::snprintf(tmpBuf, STR_MAX, "%f\n", static_cast<double>(plugin->getParameterValue(i)));
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         }
 
@@ -606,12 +599,12 @@ protected:
         const uint pluginId(plugin->getId());
 
         uint32_t count = plugin->getProgramCount();
-        std::sprintf(tmpBuf, "PROGRAM_COUNT_%i:%i:%i\n", pluginId, count, plugin->getCurrentProgram());
+        std::snprintf(tmpBuf, STR_MAX, "PROGRAM_COUNT_%i:%i:%i\n", pluginId, count, plugin->getCurrentProgram());
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
         for (uint32_t i=0; i<count; ++i)
         {
-            std::sprintf(tmpBuf, "PROGRAM_NAME_%i:%i\n", pluginId, i);
+            std::snprintf(tmpBuf, STR_MAX, "PROGRAM_NAME_%i:%i\n", pluginId, i);
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
             if (plugin->getProgramName(i, tmpBuf)) {
@@ -624,7 +617,7 @@ protected:
         fUiServer.flushMessages();
 
         count = plugin->getMidiProgramCount();
-        std::sprintf(tmpBuf, "MIDI_PROGRAM_COUNT_%i:%i:%i\n", pluginId, count, plugin->getCurrentMidiProgram());
+        std::snprintf(tmpBuf, STR_MAX, "MIDI_PROGRAM_COUNT_%i:%i:%i\n", pluginId, count, plugin->getCurrentMidiProgram());
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
         for (uint32_t i=0; i<count; ++i)
@@ -654,7 +647,7 @@ protected:
         const uint pluginId(plugin->getId());
 
         uint32_t count = plugin->getCustomDataCount();
-        std::sprintf(tmpBuf, "CUSTOM_DATA_COUNT_%i:%i\n", pluginId, count);
+        std::snprintf(tmpBuf, STR_MAX, "CUSTOM_DATA_COUNT_%i:%i\n", pluginId, count);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
         for (uint32_t i=0; i<count; ++i)
@@ -665,15 +658,11 @@ protected:
             if (std::strcmp(customData.type, CUSTOM_DATA_TYPE_PROPERTY) != 0)
                 continue;
 
-            std::sprintf(tmpBuf, "CUSTOM_DATA_%i:%i\n", pluginId, i);
+            std::snprintf(tmpBuf, STR_MAX, "CUSTOM_DATA_%i:%i\n", pluginId, i);
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
-
-            if (! fUiServer.writeAndFixMessage(customData.type))
-                return;
-            if (! fUiServer.writeAndFixMessage(customData.key))
-                return;
-            if (! fUiServer.writeAndFixMessage(customData.value))
-                return;
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(customData.type),);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(customData.key),);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(customData.value),);
         }
 
         fUiServer.flushMessages();
@@ -750,29 +739,29 @@ protected:
             break;
         }
 
-        char tmpBuf[STR_MAX];
-        carla_zeroChars(tmpBuf, STR_MAX);
+        char tmpBuf[STR_MAX+1];
+        carla_zeroChars(tmpBuf, STR_MAX+1);
 
         const CarlaMutexLocker cml(fUiServer.getPipeLock());
 
-        std::sprintf(tmpBuf, "ENGINE_CALLBACK_%i\n", int(action));
+        std::snprintf(tmpBuf, STR_MAX, "ENGINE_CALLBACK_%i\n", int(action));
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-        std::sprintf(tmpBuf, "%u\n", pluginId);
+        std::snprintf(tmpBuf, STR_MAX, "%u\n", pluginId);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-        std::sprintf(tmpBuf, "%i\n", value1);
+        std::snprintf(tmpBuf, STR_MAX, "%i\n", value1);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-        std::sprintf(tmpBuf, "%i\n", value2);
+        std::snprintf(tmpBuf, STR_MAX, "%i\n", value2);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-        std::sprintf(tmpBuf, "%i\n", value3);
+        std::snprintf(tmpBuf, STR_MAX, "%i\n", value3);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
         {
             const CarlaScopedLocale csl;
-            std::sprintf(tmpBuf, "%f\n", static_cast<double>(valuef));
+            std::snprintf(tmpBuf, STR_MAX, "%f\n", static_cast<double>(valuef));
         }
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
@@ -819,17 +808,17 @@ protected:
 #endif
 
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("max-plugin-number\n"),);
-        std::sprintf(tmpBuf, "%i\n", pData->maxPluginNumber);
+        std::snprintf(tmpBuf, STR_MAX, "%i\n", pData->maxPluginNumber);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("buffer-size\n"),);
-        std::sprintf(tmpBuf, "%i\n", pData->bufferSize);
+        std::snprintf(tmpBuf, STR_MAX, "%i\n", pData->bufferSize);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("sample-rate\n"),);
         {
             const CarlaScopedLocale csl;
-            std::sprintf(tmpBuf, "%f\n", pData->sampleRate);
+            std::snprintf(tmpBuf, STR_MAX, "%f\n", pData->sampleRate);
         }
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
@@ -850,83 +839,69 @@ protected:
         const char* const optionsForcedStr(fOptionsForced ? "true\n" : "false\n");
         const std::size_t optionsForcedStrSize(fOptionsForced ? 5 : 6);
 
-        std::sprintf(tmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PROCESS_MODE);
+        std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PROCESS_MODE);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
-        if (! fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize))
-            return;
-        std::sprintf(tmpBuf, "%i\n", options.processMode);
-        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
-        fUiServer.flushMessages();
-
-        std::sprintf(tmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_TRANSPORT_MODE);
-        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
-        if (! fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize))
-            return;
-        std::sprintf(tmpBuf, "%i\n", options.transportMode);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
+        std::snprintf(tmpBuf, STR_MAX, "%i\n", options.processMode);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         fUiServer.flushMessages();
 
-        std::sprintf(tmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_FORCE_STEREO);
+        std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_TRANSPORT_MODE);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
-        if (! fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize))
-            return;
-        if (! fUiServer.writeMessage(options.forceStereo ? "true\n" : "false\n"))
-            return;
-        fUiServer.flushMessages();
-
-        std::sprintf(tmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PREFER_PLUGIN_BRIDGES);
-        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
-        if (! fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize))
-            return;
-        if (! fUiServer.writeMessage(options.preferPluginBridges ? "true\n" : "false\n"))
-            return;
-        fUiServer.flushMessages();
-
-        std::sprintf(tmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PREFER_UI_BRIDGES);
-        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
-        if (! fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize))
-            return;
-        if (! fUiServer.writeMessage(options.preferUiBridges ? "true\n" : "false\n"))
-            return;
-        fUiServer.flushMessages();
-
-        std::sprintf(tmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_UIS_ALWAYS_ON_TOP);
-        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
-        if (! fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize))
-            return;
-        if (! fUiServer.writeMessage(options.uisAlwaysOnTop ? "true\n" : "false\n"))
-            return;
-        fUiServer.flushMessages();
-
-        std::sprintf(tmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_MAX_PARAMETERS);
-        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
-        if (! fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize))
-            return;
-        std::sprintf(tmpBuf, "%i\n", options.maxParameters);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
+        std::snprintf(tmpBuf, STR_MAX, "%i\n", options.transportMode);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         fUiServer.flushMessages();
 
-        std::sprintf(tmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_UI_BRIDGES_TIMEOUT);
+        std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_FORCE_STEREO);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
-        if (! fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize))
-            return;
-        std::sprintf(tmpBuf, "%i\n", options.uiBridgesTimeout);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(options.forceStereo ? "true\n" : "false\n"),);
+        fUiServer.flushMessages();
+
+        std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PREFER_PLUGIN_BRIDGES);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(options.preferPluginBridges ? "true\n" : "false\n"),);
+        fUiServer.flushMessages();
+
+        std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PREFER_UI_BRIDGES);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(options.preferUiBridges ? "true\n" : "false\n"),);
+        fUiServer.flushMessages();
+
+        std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_UIS_ALWAYS_ON_TOP);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(options.uisAlwaysOnTop ? "true\n" : "false\n"),);
+        fUiServer.flushMessages();
+
+        std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_MAX_PARAMETERS);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
+        std::snprintf(tmpBuf, STR_MAX, "%i\n", options.maxParameters);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         fUiServer.flushMessages();
 
-        std::sprintf(tmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PATH_BINARIES);
+        std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_UI_BRIDGES_TIMEOUT);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
-        if (! fUiServer.writeMessage("true\n", 5))
-            return;
-        std::sprintf(tmpBuf, "%s\n", options.binaryDir);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
+        std::snprintf(tmpBuf, STR_MAX, "%i\n", options.uiBridgesTimeout);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         fUiServer.flushMessages();
 
-        std::sprintf(tmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PATH_RESOURCES);
+        std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PATH_BINARIES);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
-        if (! fUiServer.writeMessage("true\n", 5))
-            return;
-        std::sprintf(tmpBuf, "%s\n", options.resourceDir);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("true\n", 5),);
+        std::snprintf(tmpBuf, STR_MAX, "%s\n", options.binaryDir);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+        fUiServer.flushMessages();
+
+        std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PATH_RESOURCES);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("true\n", 5),);
+        std::snprintf(tmpBuf, STR_MAX, "%s\n", options.resourceDir);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         fUiServer.flushMessages();
     }
@@ -945,6 +920,8 @@ protected:
 
         static char strBufName[STR_MAX+1];
         static char strBufUnit[STR_MAX+1];
+        carla_zeroChars(strBufName, STR_MAX+1);
+        carla_zeroChars(strBufUnit, STR_MAX+1);
 
         if (CarlaPlugin* const plugin = _getFirstPlugin())
         {
@@ -954,9 +931,9 @@ protected:
                 const ParameterRanges& paramRanges(plugin->getParameterRanges(index));
 
                 if (! plugin->getParameterName(index, strBufName))
-                    carla_zeroChars(strBufName, STR_MAX+1);
+                    strBufName[0] = '\0';
                 if (! plugin->getParameterUnit(index, strBufUnit))
-                    carla_zeroChars(strBufUnit, STR_MAX+1);
+                    strBufUnit[0] = '\0';
 
                 uint hints = 0x0;
 
@@ -1398,8 +1375,8 @@ protected:
 
         fUiServer.idlePipe();
 
-        char tmpBuf[STR_MAX];
-        carla_zeroChars(tmpBuf, STR_MAX);
+        char tmpBuf[STR_MAX+1];
+        carla_zeroChars(tmpBuf, STR_MAX+1);
 
         const CarlaMutexLocker cml(fUiServer.getPipeLock());
         const CarlaScopedLocale csl;
@@ -1408,41 +1385,33 @@ protected:
         // ------------------------------------------------------------------------------------------------------------
         // send engine info
 
-        if (! fUiServer.writeAndFixMessage("runtime-info"))
-            return;
-        std::sprintf(tmpBuf, "%f:0\n", static_cast<double>(getDSPLoad()));
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage("runtime-info"),);
+        std::snprintf(tmpBuf, STR_MAX, "%f:0\n", static_cast<double>(getDSPLoad()));
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
         fUiServer.flushMessages();
 
         // ------------------------------------------------------------------------------------------------------------
         // send transport
 
-        if (! fUiServer.writeAndFixMessage("transport"))
-            return;
-        if (! fUiServer.writeMessage(timeInfo.playing ? "true\n" : "false\n"))
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage("transport"),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(timeInfo.playing ? "true\n" : "false\n"),);
 
         if (timeInfo.bbt.valid)
         {
-            std::sprintf(tmpBuf, P_UINT64 ":%i:%i:%i\n",
-                         timeInfo.frame, timeInfo.bbt.bar, timeInfo.bbt.beat, static_cast<int>(timeInfo.bbt.tick + 0.5));
-            if (! fUiServer.writeMessage(tmpBuf))
-                return;
-
-            std::sprintf(tmpBuf, "%f\n", timeInfo.bbt.beatsPerMinute);
-            if (! fUiServer.writeMessage(tmpBuf))
-                return;
+            std::snprintf(tmpBuf, STR_MAX, P_UINT64 ":%i:%i:%i\n", timeInfo.frame,
+                                                                   timeInfo.bbt.bar,
+                                                                   timeInfo.bbt.beat,
+                                                                   static_cast<int>(timeInfo.bbt.tick + 0.5));
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+            std::snprintf(tmpBuf, STR_MAX, "%f\n", timeInfo.bbt.beatsPerMinute);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         }
         else
         {
-            std::sprintf(tmpBuf, P_UINT64 ":0:0:0\n", timeInfo.frame);
-            if (! fUiServer.writeMessage(tmpBuf))
-                return;
-
-            if (! fUiServer.writeMessage("0.0\n"))
-                return;
+            std::snprintf(tmpBuf, STR_MAX, P_UINT64 ":0:0:0\n", timeInfo.frame);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("0.0\n"),);
         }
 
         fUiServer.flushMessages();
@@ -1455,17 +1424,14 @@ protected:
             const EnginePluginData& plugData(pData->plugins[i]);
             const CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
-            std::sprintf(tmpBuf, "PEAKS_%i\n", i);
-            if (! fUiServer.writeMessage(tmpBuf))
-                return;
-
-            std::sprintf(tmpBuf, "%f:%f:%f:%f\n",
-                         static_cast<double>(plugData.peaks[0]),
-                         static_cast<double>(plugData.peaks[1]),
-                         static_cast<double>(plugData.peaks[2]),
-                         static_cast<double>(plugData.peaks[3]));
-            if (! fUiServer.writeMessage(tmpBuf))
-                return;
+            std::snprintf(tmpBuf, STR_MAX, "PEAKS_%i\n", i);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+            std::snprintf(tmpBuf, STR_MAX, "%f:%f:%f:%f\n",
+                          static_cast<double>(plugData.peaks[0]),
+                          static_cast<double>(plugData.peaks[1]),
+                          static_cast<double>(plugData.peaks[2]),
+                          static_cast<double>(plugData.peaks[3]));
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
             fUiServer.flushMessages();
 
@@ -1474,13 +1440,10 @@ protected:
                 if (! plugin->isParameterOutput(j))
                     continue;
 
-                std::sprintf(tmpBuf, "PARAMVAL_%i:%i\n", i, j);
-                if (! fUiServer.writeMessage(tmpBuf))
-                    return;
-
-                std::sprintf(tmpBuf, "%f\n", static_cast<double>(plugin->getParameterValue(j)));
-                if (! fUiServer.writeMessage(tmpBuf))
-                    return;
+                std::snprintf(tmpBuf, STR_MAX, "PARAMVAL_%i:%i\n", i, j);
+                CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+                std::snprintf(tmpBuf, STR_MAX, "%f\n", static_cast<double>(plugin->getParameterValue(j)));
+                CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
                 fUiServer.flushMessages();
             }

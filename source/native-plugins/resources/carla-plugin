@@ -281,13 +281,15 @@ class CarlaMiniW(ExternalUI, HostWindow):
             paramType, paramHints, midiChannel, midiCC = [int(i) for i in self.readlineblock().split(":")]
             paramName = self.readlineblock().replace("\r", "\n")
             paramUnit = self.readlineblock().replace("\r", "\n")
+            paramComment = self.readlineblock().replace("\r", "\n")
+            paramGroupName = self.readlineblock().replace("\r", "\n")
 
             paramInfo = {
                 'name': paramName,
                 'symbol': "",
                 'unit': paramUnit,
-                'comment': paramUnit,
-                'groupName': paramUnit,
+                'comment': paramComment,
+                'groupName': paramGroupName,
                 'scalePointCount': 0,
             }
             self.host._set_parameterInfo(pluginId, paramId, paramInfo)
