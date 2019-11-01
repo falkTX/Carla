@@ -70,8 +70,8 @@ enum ExternalGraphConnectionType {
 struct ExternalGraphPorts {
     LinkedList<PortNameToId> ins;
     LinkedList<PortNameToId> outs;
-    const char* getName(const bool isInput, const uint portId) const noexcept;
-    uint getPortId(const bool isInput, const char portName[], bool* const ok = nullptr) const noexcept;
+    const char* getName(bool isInput, uint portId) const noexcept;
+    uint getPortId(bool isInput, const char portName[], bool* ok = nullptr) const noexcept;
     ExternalGraphPorts() noexcept;
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(ExternalGraphPorts)
@@ -81,19 +81,19 @@ struct ExternalGraph {
     PatchbayConnectionList connections;
     ExternalGraphPorts audioPorts, midiPorts;
     mutable CharStringListPtr retCon;
-    ExternalGraph(CarlaEngine* const engine) noexcept;
+    ExternalGraph(CarlaEngine* engine) noexcept;
 
     void clear() noexcept;
 
-    bool connect(const bool sendHost, const bool sendOSC,
-                 const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept;
-    bool disconnect(const bool sendHost, const bool sendOSC,
-                    const uint connectionId) noexcept;
-    void refresh(const bool sendHost, const bool sendOSC,
-                 const char* const deviceName);
+    bool connect(bool sendHost, bool sendOSC,
+                 uint groupA, uint portA, uint groupB, uint portB) noexcept;
+    bool disconnect(bool sendHost, bool sendOSC,
+                    uint connectionId) noexcept;
+    void refresh(bool sendHost, bool sendOSC,
+                 const char* deviceName);
 
     const char* const* getConnections() const noexcept;
-    bool getGroupAndPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const noexcept;
+    bool getGroupAndPortIdFromFullName(const char* fullPortName, uint& groupId, uint& portId) const noexcept;
 
     CarlaEngine* const kEngine;
     CARLA_PREVENT_HEAP_ALLOCATION
@@ -121,29 +121,29 @@ struct RackGraph {
         float* unusedBuf;
         Buffers() noexcept;
         ~Buffers() noexcept;
-        void setBufferSize(const uint32_t bufferSize, const bool createBuffers) noexcept;
+        void setBufferSize(uint32_t bufferSize, bool createBuffers) noexcept;
         CARLA_PREVENT_HEAP_ALLOCATION
         CARLA_DECLARE_NON_COPY_CLASS(Buffers)
     } audioBuffers;
 
-    RackGraph(CarlaEngine* const engine, const uint32_t inputs, const uint32_t outputs) noexcept;
+    RackGraph(CarlaEngine* engine, uint32_t inputs, uint32_t outputs) noexcept;
     ~RackGraph() noexcept;
 
-    void setBufferSize(const uint32_t bufferSize) noexcept;
-    void setOffline(const bool offline) noexcept;
+    void setBufferSize(uint32_t bufferSize) noexcept;
+    void setOffline(bool offline) noexcept;
 
-    bool connect(const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept;
-    bool disconnect(const uint connectionId) noexcept;
-    void refresh(const bool sendHost, const bool sendOsc, const bool ignored, const char* const deviceName);
+    bool connect(uint groupA, uint portA, uint groupB, uint portB) noexcept;
+    bool disconnect(uint connectionId) noexcept;
+    void refresh(bool sendHost, bool sendOsc, bool ignored, const char* deviceName);
 
     const char* const* getConnections() const noexcept;
-    bool getGroupAndPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const noexcept;
+    bool getGroupAndPortIdFromFullName(const char* fullPortName, uint& groupId, uint& portId) const noexcept;
 
     // the base, where plugins run
-    void process(CarlaEngine::ProtectedData* const data, const float* inBuf[2], float* outBuf[2], const uint32_t frames);
+    void process(CarlaEngine::ProtectedData* data, const float* inBuf[2], float* outBuf[2], uint32_t frames);
 
     // extended, will call process() in the middle
-    void processHelper(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const uint32_t frames);
+    void processHelper(CarlaEngine::ProtectedData* data, const float* const* inBuf, float* const* outBuf, uint32_t frames);
 
     CarlaEngine* const kEngine;
     CARLA_DECLARE_NON_COPY_CLASS(RackGraph)
@@ -170,33 +170,33 @@ public:
 
     ExternalGraph extGraph;
 
-    PatchbayGraph(CarlaEngine* const engine,
-                  const uint32_t audioIns, const uint32_t audioOuts,
-                  const uint32_t cvIns, const uint32_t cvOuts);
+    PatchbayGraph(CarlaEngine* engine,
+                  uint32_t audioIns, uint32_t audioOuts,
+                  uint32_t cvIns, uint32_t cvOuts);
     ~PatchbayGraph();
 
-    void setBufferSize(const uint32_t bufferSize);
-    void setSampleRate(const double sampleRate);
-    void setOffline(const bool offline);
+    void setBufferSize(uint32_t bufferSize);
+    void setSampleRate(double sampleRate);
+    void setOffline(bool offline);
 
-    void addPlugin(CarlaPlugin* const plugin);
-    void replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* const newPlugin);
-    void renamePlugin(CarlaPlugin* const plugin, const char* const newName);
-    void removePlugin(CarlaPlugin* const plugin);
+    void addPlugin(CarlaPlugin* plugin);
+    void replacePlugin(CarlaPlugin* oldPlugin, CarlaPlugin* newPlugin);
+    void renamePlugin(CarlaPlugin* plugin, const char* newName);
+    void removePlugin(CarlaPlugin* plugin);
     void removeAllPlugins();
 
-    bool connect(const bool external, const uint groupA, const uint portA, const uint groupB, const uint portB);
-    bool disconnect(const bool external, const uint connectionId);
-    void disconnectInternalGroup(const uint groupId) noexcept;
-    void refresh(const bool sendHost, const bool sendOsc, const bool external, const char* const deviceName);
+    bool connect(bool external, uint groupA, uint portA, uint groupB, uint portB);
+    bool disconnect(bool external, uint connectionId);
+    void disconnectInternalGroup(uint groupId) noexcept;
+    void refresh(bool sendHost, bool sendOsc, bool external, const char* deviceName);
 
-    const char* const* getConnections(const bool external) const;
-    bool getGroupAndPortIdFromFullName(const bool external, const char* const fullPortName, uint& groupId, uint& portId) const;
+    const char* const* getConnections(bool external) const;
+    bool getGroupAndPortIdFromFullName(bool external, const char* fullPortName, uint& groupId, uint& portId) const;
 
-    void process(CarlaEngine::ProtectedData* const data,
-                 const float* const* const inBuf,
-                 float* const* const outBuf,
-                 const uint32_t frames);
+    void process(CarlaEngine::ProtectedData* data,
+                 const float* const* inBuf,
+                 float* const* outBuf,
+                 uint32_t frames);
 
 private:
     void run() override;

@@ -244,7 +244,7 @@ void PluginParameterData::clear() noexcept
     count = 0;
 }
 
-float PluginParameterData::getFixedValue(const uint32_t parameterId, const float& value) const noexcept
+float PluginParameterData::getFixedValue(const uint32_t parameterId, float value) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < count, 0.0f);
 

@@ -29,7 +29,7 @@ CARLA_BACKEND_START_NAMESPACE
 class CarlaEngineThread : public CarlaThread
 {
 public:
-    CarlaEngineThread(CarlaEngine* const engine) noexcept;
+    CarlaEngineThread(CarlaEngine* engine) noexcept;
     ~CarlaEngineThread() noexcept override;
 
 protected:
