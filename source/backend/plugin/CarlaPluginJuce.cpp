@@ -356,6 +356,18 @@ public:
         CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback, doingInit);
     }
 
+    void setProgramRT(const uint32_t index, const bool sendCallbackLater) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(index < pData->prog.count,);
+
+        try {
+            fInstance->setCurrentProgram(index);
+        } CARLA_SAFE_EXCEPTION("setCurrentProgram");
+
+        CarlaPlugin::setProgramRT(index, sendCallbackLater);
+    }
+
     // -------------------------------------------------------------------
     // Set ui stuff
 
@@ -922,7 +934,7 @@ public:
                         {
                             if (ctrlEvent.param < pData->prog.count)
                             {
-                                setProgramRT(ctrlEvent.param);
+                                setProgramRT(ctrlEvent.param, true);
                             }
                         }
                         else if ((pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) != 0)
