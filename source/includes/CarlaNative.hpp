@@ -300,8 +300,8 @@ protected:
 
     virtual void deactivate() {}
 
-    virtual void process(const float** const inBuffer, float** const outBuffer, const uint32_t frames,
-                         const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) = 0;
+    virtual void process(const float** inBuffer, float** outBuffer, uint32_t frames,
+                         const NativeMidiEvent* midiEvents, uint32_t midiEventCount) = 0;
 
     // -------------------------------------------------------------------
     // Plugin UI calls
