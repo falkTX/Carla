@@ -925,6 +925,14 @@ bool CarlaPipeCommon::writeAndFixMessage(const char* const msg) const noexcept
     return _writeMsgBuffer(fixedMsg, size+1);
 }
 
+bool CarlaPipeCommon::writeEmptyMessage() const noexcept
+{
+    if (pData->pipeClosed)
+        return false;
+
+    return _writeMsgBuffer("\n", 1);
+}
+
 bool CarlaPipeCommon::flushMessages() const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->pipeSend != INVALID_PIPE_VALUE, false);

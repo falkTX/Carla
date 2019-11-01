@@ -286,6 +286,8 @@ class CarlaMiniW(ExternalUI, HostWindow):
                 'name': paramName,
                 'symbol': "",
                 'unit': paramUnit,
+                'comment': paramUnit,
+                'groupName': paramUnit,
                 'scalePointCount': 0,
             }
             self.host._set_parameterInfo(pluginId, paramId, paramInfo)

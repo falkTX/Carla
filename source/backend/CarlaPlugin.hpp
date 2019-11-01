@@ -296,16 +296,19 @@ public:
     /*!
      * Get the plugin's label (URI for LV2 plugins).
      */
+    __attribute__((warn_unused_result))
     virtual bool getLabel(char* const strBuf) const noexcept;
 
     /*!
      * Get the plugin's maker.
      */
+    __attribute__((warn_unused_result))
     virtual bool getMaker(char* const strBuf) const noexcept;
 
     /*!
      * Get the plugin's copyright/license.
      */
+    __attribute__((warn_unused_result))
     virtual bool getCopyright(char* const strBuf) const noexcept;
 
     /*!
@@ -313,43 +316,51 @@ public:
      *
      * @see getName() and setName()
      */
+    __attribute__((warn_unused_result))
     virtual bool getRealName(char* const strBuf) const noexcept;
 
     /*!
      * Get the name of the parameter @a parameterId.
      */
+    __attribute__((warn_unused_result))
     virtual bool getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept;
 
     /*!
      * Get the symbol of the parameter @a parameterId.
      */
+    __attribute__((warn_unused_result))
     virtual bool getParameterSymbol(const uint32_t parameterId, char* const strBuf) const noexcept;
 
     /*!
      * Get the custom text of the parameter @a parameterId.
      * @see PARAMETER_USES_CUSTOM_TEXT
      */
+    __attribute__((warn_unused_result))
     virtual bool getParameterText(const uint32_t parameterId, char* const strBuf) noexcept;
 
     /*!
      * Get the unit of the parameter @a parameterId.
      */
+    __attribute__((warn_unused_result))
     virtual bool getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept;
 
     /*!
      * Get the comment (documentation) of the parameter @a parameterId.
      */
+    __attribute__((warn_unused_result))
     virtual bool getParameterComment(const uint32_t parameterId, char* const strBuf) const noexcept;
 
     /*!
      * Get the group name of the parameter @a parameterId.
      * @note The group name is prefixed by a unique symbol and ":".
      */
+    __attribute__((warn_unused_result))
     virtual bool getParameterGroupName(const uint32_t parameterId, char* const strBuf) const noexcept;
 
     /*!
      * Get the scalepoint @a scalePointId label of the parameter @a parameterId.
      */
+    __attribute__((warn_unused_result))
     virtual bool getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept;
 
     /*!
@@ -362,6 +373,7 @@ public:
     /*!
      * Get the name of the program at @a index.
      */
+    __attribute__((warn_unused_result))
     bool getProgramName(const uint32_t index, char* const strBuf) const noexcept;
 
     /*!
@@ -369,6 +381,7 @@ public:
      *
      * @see getMidiProgramInfo()
      */
+    __attribute__((warn_unused_result))
     bool getMidiProgramName(const uint32_t index, char* const strBuf) const noexcept;
 
     /*!

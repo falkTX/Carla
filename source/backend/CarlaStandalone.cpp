@@ -1190,6 +1190,7 @@ const CarlaPluginInfo* carla_get_plugin_info(uint pluginId)
     carla_debug("carla_get_plugin_info(%i)", pluginId);
 
     char strBuf[STR_MAX+1];
+    carla_zeroChars(strBuf, STR_MAX+1);
 
     retInfo.type     = plugin->getType();
     retInfo.category = plugin->getCategory();
@@ -1202,17 +1203,12 @@ const CarlaPluginInfo* carla_get_plugin_info(uint pluginId)
     retInfo.optionsAvailable = plugin->getOptionsAvailable();
     retInfo.optionsEnabled   = plugin->getOptionsEnabled();
 
-    carla_zeroChars(strBuf, STR_MAX+1);
-    plugin->getLabel(strBuf);
-    retInfo.label = carla_strdup_safe(strBuf);
-
-    carla_zeroChars(strBuf, STR_MAX+1);
-    plugin->getMaker(strBuf);
-    retInfo.maker = carla_strdup_safe(strBuf);
-
-    carla_zeroChars(strBuf, STR_MAX+1);
-    plugin->getCopyright(strBuf);
-    retInfo.copyright = carla_strdup_safe(strBuf);
+    if (plugin->getLabel(strBuf))
+        retInfo.label = carla_strdup_safe(strBuf);
+    if (plugin->getMaker(strBuf))
+        retInfo.maker = carla_strdup_safe(strBuf);
+    if (plugin->getCopyright(strBuf))
+        retInfo.copyright = carla_strdup_safe(strBuf);
 
     checkStringPtr(retInfo.filename);
     checkStringPtr(retInfo.name);
@@ -1656,7 +1652,9 @@ const char* carla_get_parameter_text(uint pluginId, uint32_t parameterId)
     static char textBuf[STR_MAX+1];
     carla_zeroChars(textBuf, STR_MAX+1);
 
-    plugin->getParameterText(parameterId, textBuf);
+    if (! plugin->getParameterText(parameterId, textBuf))
+        textBuf[0] = '\0';
+
     return textBuf;
 }
 
@@ -1673,7 +1671,9 @@ const char* carla_get_program_name(uint pluginId, uint32_t programId)
     static char programName[STR_MAX+1];
     carla_zeroChars(programName, STR_MAX+1);
 
-    plugin->getProgramName(programId, programName);
+    if (! plugin->getProgramName(programId, programName))
+        programName[0] = '\0';
+
     return programName;
 }
 
@@ -1690,7 +1690,9 @@ const char* carla_get_midi_program_name(uint pluginId, uint32_t midiProgramId)
     static char midiProgramName[STR_MAX+1];
     carla_zeroChars(midiProgramName, STR_MAX+1);
 
-    plugin->getMidiProgramName(midiProgramId, midiProgramName);
+    if (! plugin->getMidiProgramName(midiProgramId, midiProgramName))
+        midiProgramName[0] = '\0';
+
     return midiProgramName;
 }
 
@@ -1705,7 +1707,9 @@ const char* carla_get_real_plugin_name(uint pluginId)
     static char realPluginName[STR_MAX+1];
     carla_zeroChars(realPluginName, STR_MAX+1);
 
-    plugin->getRealName(realPluginName);
+    if (! plugin->getRealName(realPluginName))
+        realPluginName[0] = '\0';
+
     return realPluginName;
 }
 

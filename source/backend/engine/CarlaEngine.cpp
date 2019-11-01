@@ -839,7 +839,9 @@ bool CarlaEngine::clonePlugin(const uint id)
 
     char label[STR_MAX+1];
     carla_zeroChars(label, STR_MAX+1);
-    plugin->getLabel(label);
+
+    if (! plugin->getLabel(label))
+        label[0] = '\0';
 
     const uint pluginCountBefore(pData->curPluginCount);
 
@@ -2094,6 +2096,7 @@ void CarlaEngine::saveProjectInternal(water::MemoryOutputStream& outStream) cons
     }
 
     char strBuf[STR_MAX+1];
+    carla_zeroChars(strBuf, STR_MAX+1);
 
     for (uint i=0; i < pData->curPluginCount; ++i)
     {
@@ -2106,10 +2109,7 @@ void CarlaEngine::saveProjectInternal(water::MemoryOutputStream& outStream) cons
 
             outPlugin << "\n";
 
-            strBuf[0] = '\0';
-            plugin->getRealName(strBuf);
-
-            if (strBuf[0] != '\0')
+            if (plugin->getRealName(strBuf))
                 outPlugin << " <!-- " << xmlSafeString(strBuf, true) << " -->\n";
 
             outPlugin << " <Plugin>\n";

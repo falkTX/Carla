@@ -165,6 +165,11 @@ public:
     bool writeAndFixMessage(const char* const msg) const noexcept;
 
     /*!
+     * Write an empty message, which means a single '\n'.
+     */
+    bool writeEmptyMessage() const noexcept;
+
+    /*!
      * Flush all messages currently in cache.
      */
     bool flushMessages() const noexcept;

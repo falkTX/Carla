@@ -476,7 +476,8 @@ void CarlaPlugin::randomizeParameters() noexcept
         if ((paramData.hints & PARAMETER_IS_ENABLED) == 0)
             continue;
 
-        getParameterName(i, strBuf);
+        if (! getParameterName(i, strBuf))
+            strBuf[0] = '\0';
 
         if (std::strstr(strBuf, "olume") != nullptr)
             continue;
@@ -513,11 +514,13 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
     const PluginType pluginType(getType());
 
     char strBuf[STR_MAX+1];
+    carla_zeroChars(strBuf, STR_MAX+1);
 
     // ---------------------------------------------------------------
     // Basic info
 
-    getLabel(strBuf);
+    if (! getLabel(strBuf))
+        strBuf[0] = '\0';
 
     pData->stateSave.type     = carla_strdup(getPluginTypeAsString(pluginType));
     pData->stateSave.name     = carla_strdup(pData->name);
@@ -608,10 +611,12 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
         stateParameter->midiChannel = paramData.midiChannel;
 #endif
 
-        getParameterName(i, strBuf);
+        if (! getParameterName(i, strBuf))
+            strBuf[0] = '\0';
         stateParameter->name = carla_strdup(strBuf);
 
-        getParameterSymbol(i, strBuf);
+        if (! getParameterSymbol(i, strBuf))
+            strBuf[0] = '\0';
         stateParameter->symbol = carla_strdup(strBuf);;
 
         if (! dummy)
@@ -650,10 +655,11 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
 
 void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 {
-    char strBuf[STR_MAX+1];
     const bool usesMultiProgs(pData->hints & PLUGIN_USES_MULTI_PROGS);
-
     const PluginType pluginType(getType());
+
+    char strBuf[STR_MAX+1];
+    carla_zeroChars(strBuf, STR_MAX+1);
 
     // ---------------------------------------------------------------
     // Part 1 - PRE-set custom data (only those which reload programs)
@@ -695,10 +701,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
         {
             for (uint32_t i=0; i < pData->prog.count; ++i)
             {
-                strBuf[0] = '\0';
-                getProgramName(i, strBuf);
-
-                if (strBuf[0] != '\0' && std::strcmp(stateSave.currentProgramName, strBuf) == 0)
+                if (getProgramName(i, strBuf) && std::strcmp(stateSave.currentProgramName, strBuf) == 0)
                 {
                     programId = static_cast<int32_t>(i);
                     break;
@@ -726,10 +729,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     {
         for (uint32_t i=0; i < pData->param.count; ++i)
         {
-            strBuf[0] = '\0';
-            getParameterSymbol(i, strBuf);
-
-            if (strBuf[0] != '\0')
+            if (getParameterSymbol(i, strBuf))
             {
                 ParamSymbol* const paramSymbol(new ParamSymbol(i, strBuf));
                 paramSymbols.append(paramSymbol);
@@ -1167,7 +1167,8 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
 
         char strBufName[STR_MAX+1];
         char strBufSymbol[STR_MAX+1];
-        strBufName[STR_MAX] = strBufSymbol[STR_MAX] = '\0';
+        carla_zeroChars(strBufName, STR_MAX+1);
+        carla_zeroChars(strBufSymbol, STR_MAX+1);
 
         for (uint32_t i=0; i<pData->param.count; ++i)
         {
@@ -1191,9 +1192,10 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
 
             // TODO logarithmic, enabled (not on gui), automable, samplerate, scalepoints
 
-            strBufName[0] = strBufSymbol[0] = '\0';
-            getParameterName(i, strBufName);
-            getParameterSymbol(i, strBufSymbol);
+            if (! getParameterName(i, strBufName))
+                strBufName[0] = '\0';
+            if (! getParameterSymbol(i, strBufSymbol))
+                strBufSymbol[0] = '\0';
 
             if (strBufSymbol[0] == '\0')
             {
@@ -1211,10 +1213,7 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
             }
 
             if (uniqueSymbolNames.contains(strBufSymbol))
-            {
                 std::snprintf(strBufSymbol, STR_MAX, "clv2_param_%d", i+1);
-                strBufSymbol[STR_MAX] = '\0';
-            }
 
             mainStream << "        lv2:index " << portIndexNum << " ;\n";
             mainStream << "        lv2:symbol \"" << strBufSymbol << "\" ;\n";
@@ -1228,9 +1227,11 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
             mainStream << "    ] ;\n";
         }
 
-        char strBuf[STR_MAX];
-        getMaker(strBuf);
-        strBuf[STR_MAX-1] = '\0';
+        char strBuf[STR_MAX+1];
+        carla_zeroChars(strBuf, STR_MAX+1);
+
+        if (! getMaker(strBuf))
+            strBuf[0] = '\0';
 
         mainStream << "    rdfs:comment \"Plugin generated using Carla LV2 export.\" ;\n";
         mainStream << "    doap:name \"\"\"" << getName() << "\"\"\" ;\n";
