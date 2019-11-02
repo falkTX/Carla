@@ -34,16 +34,13 @@ public:
           fLastFrame(0),
           fMaxFrame(0),
           fPool(),
-          fThread(this, static_cast<uint32_t>(getSampleRate())),
-          fInlineDisplay()
-    {
-        fPool.create(static_cast<uint32_t>(getSampleRate()));
-    }
+          fThread(this),
+          fInlineDisplay() {}
 
     ~AudioFilePlugin() override
     {
-        fPool.destroy();
         fThread.stopNow();
+        fPool.destroy();
     }
 
     uint64_t getLastFrame() const override
@@ -140,58 +137,29 @@ protected:
         if (! timePos->playing)
         {
             //carla_stderr("P: not playing");
-            fLastFrame = timePos->frame;
-
             if (timePos->frame == 0 && fLastFrame > 0)
                 fThread.setNeedsRead();
 
+            fLastFrame = timePos->frame;
             carla_zeroFloats(out1, frames);
             carla_zeroFloats(out2, frames);
             return;
         }
 
         // out of reach
-        if (timePos->frame + frames < fPool.startFrame || (timePos->frame >= fMaxFrame && !fLoopMode))
+        if ((timePos->frame < fPool.startFrame || timePos->frame >= fMaxFrame) && !fLoopMode)
         {
-            if (fLoopMode) {
-                carla_stderr("P: out of reach");
-            }
-
-            fLastFrame = timePos->frame;
-
-            if (timePos->frame + frames < fPool.startFrame)
+            if (timePos->frame < fPool.startFrame)
                 fThread.setNeedsRead();
 
+            fLastFrame = timePos->frame;
             carla_zeroFloats(out1, frames);
             carla_zeroFloats(out2, frames);
-            return;
-        }
-
-        const uint32_t poolSize = fPool.size;
-        float* const bufferL = fPool.buffer[0];
-        float* const bufferR = fPool.buffer[1];
-
-        int64_t poolFrame = static_cast<int64_t>(timePos->frame - fPool.startFrame);
-
-        if (poolFrame >= 0 && poolFrame < poolSize && fThread.tryPutData(fPool, static_cast<uint32_t>(poolFrame), frames))
-        {
-            const uint32_t framesToCopy = std::min(frames, static_cast<uint32_t>(poolSize - poolFrame));
-            carla_copyFloats(out1, bufferL + poolFrame, framesToCopy);
-            carla_copyFloats(out2, bufferR + poolFrame, framesToCopy);
-
-            if (const uint32_t remainingFrames = frames - framesToCopy)
-            {
-                carla_zeroFloats(out1 + framesToCopy, remainingFrames);
-                carla_zeroFloats(out2 + framesToCopy, remainingFrames);
-            }
-
-            carla_zeroFloats(bufferL + poolFrame, framesToCopy);
-            carla_zeroFloats(bufferR + poolFrame, framesToCopy);
 
             if (fInlineDisplay.writtenValues < 32)
             {
-                fInlineDisplay.lastValuesL[fInlineDisplay.writtenValues] = carla_findMaxNormalizedFloat(out1, frames);
-                fInlineDisplay.lastValuesR[fInlineDisplay.writtenValues] = carla_findMaxNormalizedFloat(out2, frames);
+                fInlineDisplay.lastValuesL[fInlineDisplay.writtenValues] = 0.0f;
+                fInlineDisplay.lastValuesR[fInlineDisplay.writtenValues] = 0.0f;
                 ++fInlineDisplay.writtenValues;
             }
 
@@ -200,11 +168,73 @@ protected:
                 fInlineDisplay.pending = true;
                 hostQueueDrawInlineDisplay();
             }
+            return;
+        }
+
+        if (fThread.isEntireFileLoaded())
+        {
+            // NOTE: timePos->frame is always < fMaxFrame (or looping)
+            uint32_t targetStartFrame = static_cast<uint32_t>(fLoopMode ? timePos->frame % fMaxFrame : timePos->frame);
+
+            for (uint32_t framesDone=0, framesToDo=frames, remainingFrames; framesDone < frames;)
+            {
+                if (targetStartFrame + framesToDo <= fMaxFrame)
+                {
+                    // everything fits together
+                    carla_copyFloats(out1+framesDone, fPool.buffer[0]+targetStartFrame, framesToDo);
+                    carla_copyFloats(out2+framesDone, fPool.buffer[1]+targetStartFrame, framesToDo);
+                    break;
+                }
+
+                remainingFrames = std::min(fMaxFrame - targetStartFrame, framesToDo);
+                carla_copyFloats(out1+framesDone, fPool.buffer[0]+targetStartFrame, remainingFrames);
+                carla_copyFloats(out2+framesDone, fPool.buffer[1]+targetStartFrame, remainingFrames);
+                framesDone += remainingFrames;
+                framesToDo -= remainingFrames;
+
+                if (! fLoopMode)
+                {
+                    // not looping, stop here
+                    if (framesToDo != 0)
+                    {
+                        carla_zeroFloats(out1+framesDone, framesToDo);
+                        carla_zeroFloats(out2+framesDone, framesToDo);
+                    }
+                    break;
+                }
+
+                // reset for next loop
+                targetStartFrame = 0;
+            }
         }
         else
         {
-            carla_zeroFloats(out1, frames);
-            carla_zeroFloats(out2, frames);
+            // NOTE: timePos->frame is always >= fPool.startFrame
+            const uint64_t poolStartFrame = timePos->frame - fThread.getPoolStartFrame();
+
+            if (fThread.tryPutData(fPool, poolStartFrame, frames))
+            {
+                carla_copyFloats(out1, fPool.buffer[0]+poolStartFrame, frames);
+                carla_copyFloats(out2, fPool.buffer[1]+poolStartFrame, frames);
+            }
+            else
+            {
+                carla_zeroFloats(out1, frames);
+                carla_zeroFloats(out2, frames);
+            }
+        }
+
+        if (fInlineDisplay.writtenValues < 32)
+        {
+            fInlineDisplay.lastValuesL[fInlineDisplay.writtenValues] = carla_findMaxNormalizedFloat(out1, frames);
+            fInlineDisplay.lastValuesR[fInlineDisplay.writtenValues] = carla_findMaxNormalizedFloat(out2, frames);
+            ++fInlineDisplay.writtenValues;
+        }
+
+        if (! fInlineDisplay.pending)
+        {
+            fInlineDisplay.pending = true;
+            hostQueueDrawInlineDisplay();
         }
 
         fLastFrame = timePos->frame;
@@ -338,7 +368,7 @@ private:
     bool fLoopMode;
     bool fDoProcess;
 
-    uint64_t fLastFrame;
+    volatile uint64_t fLastFrame;
     uint32_t fMaxFrame;
 
     AudioFilePool   fPool;
@@ -384,6 +414,7 @@ private:
         carla_debug("AudioFilePlugin::loadFilename(\"%s\")", filename);
 
         fThread.stopNow();
+        fPool.destroy();
 
         if (filename == nullptr || *filename == '\0')
         {
@@ -392,10 +423,16 @@ private:
             return;
         }
 
-        if (fThread.loadFilename(filename))
+        if (fThread.loadFilename(filename, static_cast<uint32_t>(getSampleRate())))
         {
-            fThread.startNow();
+            fPool.create(fThread.getPoolNumFrames());
             fMaxFrame = fThread.getMaxFrame();
+
+            if (fThread.isEntireFileLoaded())
+                fThread.putAllData(fPool);
+            else
+                fThread.startNow();
+
             fDoProcess = true;
         }
         else

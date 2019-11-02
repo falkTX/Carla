@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -29,21 +29,18 @@ typedef struct adinfo ADInfo;
 
 struct AudioFilePool {
     float*   buffer[2];
-    uint64_t startFrame;
-    uint32_t sampleRate;
-    uint32_t size;
+    uint32_t numFrames;
+    volatile uint64_t startFrame;
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-    AudioFilePool()
+    AudioFilePool() noexcept
         : buffer{nullptr},
-          startFrame(0),
-          sampleRate(0),
-          size(0) {}
+          numFrames(0),
+          startFrame(0) {}
 #else
-    AudioFilePool()
-        : startFrame(0),
-          sampleRate(0),
-          size(0)
+    AudioFilePool() noexcept
+        : numFrames(0),
+          startFrame(0)
     {
         buffer[0] = buffer[1] = nullptr;
     }
@@ -51,34 +48,25 @@ struct AudioFilePool {
 
     ~AudioFilePool()
     {
-        CARLA_ASSERT(buffer[0] == nullptr);
-        CARLA_ASSERT(buffer[1] == nullptr);
-        CARLA_ASSERT(startFrame == 0);
-        CARLA_ASSERT(size == 0);
+        destroy();
     }
 
-    void create(const uint32_t srate)
+    void create(const uint32_t desiredNumFrames)
     {
         CARLA_ASSERT(buffer[0] == nullptr);
         CARLA_ASSERT(buffer[1] == nullptr);
         CARLA_ASSERT(startFrame == 0);
-        CARLA_ASSERT(size == 0);
+        CARLA_ASSERT(numFrames == 0);
 
-        size = srate * 60; // buffer of 60 secs
-        sampleRate = srate;
-
-        buffer[0] = new float[size];
-        buffer[1] = new float[size];
+        numFrames = desiredNumFrames;
+        buffer[0] = new float[numFrames];
+        buffer[1] = new float[numFrames];
 
         reset();
     }
 
-    void destroy()
+    void destroy() noexcept
     {
-        CARLA_ASSERT(buffer[0] != nullptr);
-        CARLA_ASSERT(buffer[1] != nullptr);
-        CARLA_ASSERT(size != 0);
-
         if (buffer[0] != nullptr)
         {
             delete[] buffer[0];
@@ -92,16 +80,18 @@ struct AudioFilePool {
         }
 
         startFrame = 0;
-        size = 0;
+        numFrames = 0;
     }
 
-    void reset()
+    void reset() noexcept
     {
         startFrame = 0;
-        CARLA_SAFE_ASSERT_RETURN(size != 0,);
 
-        carla_zeroFloats(buffer[0], size);
-        carla_zeroFloats(buffer[1], size);
+        if (numFrames != 0)
+        {
+            carla_zeroFloats(buffer[0], numFrames);
+            carla_zeroFloats(buffer[1], numFrames);
+        }
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(AudioFilePool)
@@ -117,15 +107,16 @@ public:
 class AudioFileThread : public CarlaThread
 {
 public:
-    AudioFileThread(AbstractAudioPlayer* const player, const uint32_t sampleRate)
+    AudioFileThread(AbstractAudioPlayer* const player)
         : CarlaThread("AudioFileThread"),
           kPlayer(player),
+          fEntireFileLoaded(false),
           fLoopingMode(true),
           fNeedsRead(false),
           fQuitNow(true),
           fFilePtr(nullptr),
           fFileNfo(),
-          fMaxPlayerFrame(0),
+          fNumFileFrames(0),
           fPollTempData(nullptr),
           fPollTempSize(0),
           fPool(),
@@ -142,14 +133,19 @@ public:
         }
 
         ad_clear_nfo(&fFileNfo);
-
-        fPool.create(sampleRate);
     }
 
     ~AudioFileThread() override
     {
         CARLA_ASSERT(fQuitNow);
         CARLA_ASSERT(! isThreadRunning());
+
+        cleanup();
+    }
+
+    void cleanup()
+    {
+        fEntireFileLoaded = false;
 
         if (fFilePtr != nullptr)
         {
@@ -169,6 +165,9 @@ public:
 
     void startNow()
     {
+        if (fPollTempData == nullptr)
+            return;
+
         fNeedsRead = true;
         fQuitNow = false;
         startThread();
@@ -185,9 +184,24 @@ public:
         fPool.reset();
     }
 
+    bool isEntireFileLoaded() const noexcept
+    {
+        return fEntireFileLoaded;
+    }
+
     uint32_t getMaxFrame() const noexcept
     {
-        return fMaxPlayerFrame;
+        return fNumFileFrames;
+    }
+
+    uint64_t getPoolStartFrame() const noexcept
+    {
+        return fPool.startFrame;
+    }
+
+    uint32_t getPoolNumFrames() const noexcept
+    {
+        return fPool.numFrames;
     }
 
     void setLoopingMode(const bool on) noexcept
@@ -200,27 +214,12 @@ public:
         fNeedsRead = true;
     }
 
-    bool loadFilename(const char* const filename)
+    bool loadFilename(const char* const filename, const uint32_t sampleRate)
     {
         CARLA_SAFE_ASSERT_RETURN(! isThreadRunning(), false);
         CARLA_SAFE_ASSERT_RETURN(filename != nullptr && *filename != '\0', false);
 
-        fPool.startFrame = 0;
-
-        // clear old data
-        if (fFilePtr != nullptr)
-        {
-            ad_close(fFilePtr);
-            fFilePtr = nullptr;
-        }
-        if (fPollTempData != nullptr)
-        {
-            delete[] fPollTempData;
-            fPollTempData = nullptr;
-            fPollTempSize = 0;
-            fMaxPlayerFrame = 0;
-        }
-
+        cleanup();
         ad_clear_nfo(&fFileNfo);
 
         // open new
@@ -241,19 +240,36 @@ public:
         if ((fFileNfo.channels == 1 || fFileNfo.channels == 2) && fFileNfo.frames > 0)
         {
             // valid
-            const size_t pollTempSize = std::min(static_cast<uint>(fFileNfo.frames),
-                                                 fPool.size * fFileNfo.channels);
+            const uint32_t fileNumFrames = static_cast<uint32_t>(fFileNfo.frames);
+            const uint32_t poolNumFrames = sampleRate * 5;
 
-            try {
-                fPollTempData = new float[pollTempSize];
-            } catch (...) {
+            if (fileNumFrames <= poolNumFrames)
+            {
+                // entire file fits in a small pool, lets read it now
+                fPool.create(fileNumFrames);
+                readEntireFileIntoPool();
                 ad_close(fFilePtr);
                 fFilePtr = nullptr;
-                return false;
+            }
+            else
+            {
+                // file is too big for our audio pool, we need an extra buffer
+                fPool.create(poolNumFrames);
+
+                const size_t pollTempSize = poolNumFrames * fFileNfo.channels;
+
+                try {
+                    fPollTempData = new float[pollTempSize];
+                } catch (...) {
+                    ad_close(fFilePtr);
+                    fFilePtr = nullptr;
+                    return false;
+                }
+
+                fPollTempSize = pollTempSize;
             }
 
-            fMaxPlayerFrame = static_cast<uint32_t>(fFileNfo.frames/fFileNfo.channels);
-            fPollTempSize = pollTempSize;
+            fNumFileFrames = fileNumFrames;
 
             readPoll();
             return true;
@@ -268,60 +284,120 @@ public:
         }
     }
 
-    bool tryPutData(AudioFilePool& pool, const uint32_t framePos, const uint32_t frames)
+    void putAllData(AudioFilePool& pool)
     {
-        CARLA_SAFE_ASSERT_RETURN(pool.size == fPool.size, false);
+        CARLA_SAFE_ASSERT_RETURN(pool.numFrames == fPool.numFrames,);
 
-        if (! fMutex.tryLock())
+        const CarlaMutexLocker cml(fMutex);
+
+        pool.startFrame = fPool.startFrame;
+        carla_copyFloats(pool.buffer[0], fPool.buffer[0], fPool.numFrames);
+        carla_copyFloats(pool.buffer[1], fPool.buffer[1], fPool.numFrames);
+    }
+
+    bool tryPutData(AudioFilePool& pool, const uint64_t framePos, const uint32_t frames)
+    {
+        CARLA_SAFE_ASSERT_RETURN(pool.numFrames == fPool.numFrames, false);
+
+        if (framePos >= fPool.numFrames)
             return false;
 
-        //if (pool.startFrame != fPool.startFrame || pool.buffer[0] != fPool.buffer[0] || pool.buffer[1] != fPool.buffer[1])
+        const CarlaMutexLocker cml(fMutex);
+        /*
+        const CarlaMutexTryLocker cmtl(fMutex);
+        if (! cmtl.wasLocked())
+            return false;
+        */
+
+        pool.startFrame = fPool.startFrame;
+
+        carla_copyFloats(pool.buffer[0] + framePos, fPool.buffer[0] + framePos, frames);
+        carla_copyFloats(pool.buffer[1] + framePos, fPool.buffer[1] + framePos, frames);
+
+        return true;
+    }
+
+    void readEntireFileIntoPool()
+    {
+        CARLA_SAFE_ASSERT_RETURN(fPool.numFrames > 0,);
+
+        const uint numChannels = fFileNfo.channels;
+        const size_t bufferSize = fPool.numFrames * numChannels;
+        float* const buffer = (float*)std::malloc(bufferSize*sizeof(float));
+        CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
+
+        carla_zeroFloats(buffer, bufferSize);
+
+        ad_seek(fFilePtr, 0);
+        ssize_t rv = ad_read(fFilePtr, buffer, bufferSize);
+        CARLA_SAFE_ASSERT_INT2_RETURN(rv == static_cast<ssize_t>(bufferSize),
+                                      static_cast<int>(rv),
+                                      static_cast<int>(bufferSize),
+                                      std::free(buffer));
+
         {
-            pool.startFrame = fPool.startFrame;
+            // lock, and put data asap
+            const CarlaMutexLocker cml(fMutex);
 
-            if (frames == 0)
+            for (ssize_t i=0, j=0; j < rv; ++j)
             {
-                carla_copyFloats(pool.buffer[0], fPool.buffer[0], fPool.size);
-                carla_copyFloats(pool.buffer[1], fPool.buffer[1], fPool.size);
-            }
-            else
-            {
-                CARLA_SAFE_ASSERT_UINT2_RETURN(framePos + frames < fPool.size, framePos, fPool.size, false);
-
-                carla_copyFloats(pool.buffer[0] + framePos, fPool.buffer[0] + framePos, frames);
-                carla_copyFloats(pool.buffer[1] + framePos, fPool.buffer[1] + framePos, frames);
+                if (numChannels == 1)
+                {
+                    fPool.buffer[0][i] = buffer[j];
+                    fPool.buffer[1][i] = buffer[j];
+                    ++i;
+                }
+                else
+                {
+                    if (j % 2 == 0)
+                    {
+                        fPool.buffer[0][i] = buffer[j];
+                    }
+                    else
+                    {
+                        fPool.buffer[1][i] = buffer[j];
+                        ++i;
+                    }
+                }
             }
         }
 
-        fMutex.unlock();
-        return true;
+        std::free(buffer);
+
+        fEntireFileLoaded = true;
     }
 
     void readPoll()
     {
-        if (fFileNfo.frames <= 0 || fFilePtr == nullptr)
+        if (fNumFileFrames == 0 || fFileNfo.channels == 0 || fFilePtr == nullptr)
         {
-            carla_stderr("R: no song loaded");
+            carla_debug("R: no song loaded");
+            fNeedsRead = false;
+            return;
+        }
+        if (fPollTempData == nullptr)
+        {
+            carla_debug("R: nothing to poll");
             fNeedsRead = false;
             return;
         }
 
-        const uint64_t lastFrame = kPlayer->getLastFrame();
-        int32_t readFrameCheck;
+        uint64_t lastFrame = kPlayer->getLastFrame();
+        int64_t readFrameCheck;
 
-        if (lastFrame >= static_cast<uint64_t>(fFileNfo.frames))
+        if (lastFrame >= fNumFileFrames)
         {
             if (fLoopingMode)
             {
-                const uint64_t readFrameCheckLoop = lastFrame % fMaxPlayerFrame;
+                const uint64_t readFrameCheckLoop = lastFrame % fNumFileFrames;
                 CARLA_SAFE_ASSERT_RETURN(readFrameCheckLoop < INT32_MAX,);
 
                 carla_debug("R: transport out of bounds for loop");
-                readFrameCheck = static_cast<int32_t>(readFrameCheckLoop);
+                readFrameCheck = static_cast<int64_t>(readFrameCheckLoop);
             }
             else
             {
-                carla_stderr("R: transport out of bounds");
+                carla_debug("R: transport out of bounds");
                 fNeedsRead = false;
                 return;
             }
@@ -329,18 +405,20 @@ public:
         else
         {
             CARLA_SAFE_ASSERT_RETURN(lastFrame < INT32_MAX,);
-            readFrameCheck = static_cast<int32_t>(lastFrame);
+            readFrameCheck = static_cast<int64_t>(lastFrame);
         }
 
-        const int32_t readFrame = readFrameCheck;
+        const int64_t readFrame = readFrameCheck;
 
         // temp data buffer
         carla_zeroFloats(fPollTempData, fPollTempSize);
 
         {
-            carla_debug("R: poll data - reading at %li:%02li",
-                        readFrame/static_cast<int32_t>(fPool.sampleRate)/60,
-                        (readFrame/static_cast<int32_t>(fPool.sampleRate)) % 60);
+#if 0
+            const int32_t sampleRate = 44100;
+            carla_debug("R: poll data - reading at frame %li, time %li:%02li, lastFrame %li",
+                        readFrame, readFrame/sampleRate/60, (readFrame/sampleRate) % 60, lastFrame);
+#endif
 
             ad_seek(fFilePtr, readFrame);
             size_t i = 0;
@@ -368,7 +446,7 @@ public:
             const CarlaMutexLocker cml(fMutex);
 
             do {
-                for (; i < fPool.size && j < rv; ++j)
+                for (; i < fPool.numFrames && j < rv; ++j)
                 {
                     if (fFileNfo.channels == 1)
                     {
@@ -390,7 +468,7 @@ public:
                     }
                 }
 
-                if (i >= fPool.size)
+                if (i >= fPool.numFrames)
                     break;
 
                 if (rv == fFileNfo.frames)
@@ -403,12 +481,12 @@ public:
                 {
                     carla_debug("read break, not enough space");
 
-                    carla_zeroFloats(fPool.buffer[0] + i, fPool.size - i);
-                    carla_zeroFloats(fPool.buffer[1] + i, fPool.size - i);
+                    carla_zeroFloats(fPool.buffer[0] + i, fPool.numFrames - i);
+                    carla_zeroFloats(fPool.buffer[1] + i, fPool.numFrames - i);
                     break;
                 }
 
-            } while (i < fPool.size);
+            } while (i < fPool.numFrames);
 
             fPool.startFrame = lastFrame;
         }
@@ -419,12 +497,14 @@ public:
 protected:
     void run() override
     {
+        const uint64_t numFramesNearEnd = fPool.numFrames*3/4;
+        uint64_t lastFrame;
+
         while (! fQuitNow)
         {
-            const uint64_t lastFrame = kPlayer->getLastFrame();
-            const uint64_t loopedFrame = fLoopingMode ? lastFrame % fMaxPlayerFrame : lastFrame;
+            lastFrame = kPlayer->getLastFrame();
 
-            if (fNeedsRead || lastFrame < fPool.startFrame || (lastFrame - fPool.startFrame >= fPool.size*3/4 && loopedFrame < fMaxPlayerFrame))
+            if (fNeedsRead || lastFrame < fPool.startFrame || lastFrame - fPool.startFrame >= numFramesNearEnd)
                 readPoll();
 
             carla_msleep(50);
@@ -434,14 +514,15 @@ protected:
 private:
     AbstractAudioPlayer* const kPlayer;
 
+    bool fEntireFileLoaded;
     bool fLoopingMode;
-    bool fNeedsRead;
-    bool fQuitNow;
+    volatile bool fNeedsRead;
+    volatile bool fQuitNow;
 
     void*  fFilePtr;
     ADInfo fFileNfo;
 
-    uint32_t fMaxPlayerFrame;
+    uint32_t fNumFileFrames;
 
     float* fPollTempData;
     size_t fPollTempSize;
