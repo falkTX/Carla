@@ -135,7 +135,7 @@ class MidiPatternW(ExternalUI, QMainWindow):
         try:
            timesig = tuple(map(float, sigtext.split('/')))
         except ValueError:
-            pass
+            return
 
         if len(timesig) != 2:
             return
@@ -225,15 +225,15 @@ class MidiPatternW(ExternalUI, QMainWindow):
         msg = data[0]
         if msg == "midievent-add":
             note, start, length, vel = data[1:5]
-            note_start = start * 60. / self.fTransportInfo["bpm"] * self.TICKS_PER_BEAT
-            note_stop = note_start + length * 60. / self.fTransportInfo["bpm"] * 4. * self.fTimeSignature[0] / self.fTimeSignature[1] * self.TICKS_PER_BEAT
+            note_start = start * self.TICKS_PER_BEAT
+            note_stop = note_start + length * 4. * self.fTimeSignature[0] / self.fTimeSignature[1] * self.TICKS_PER_BEAT
             self.send([msg, note_start, 3, MIDI_STATUS_NOTE_ON, note, vel])
             self.send([msg, note_stop, 3, MIDI_STATUS_NOTE_OFF, note, vel])
 
         elif msg == "midievent-remove":
             note, start, length, vel = data[1:5]
-            note_start = start * 60. / self.fTransportInfo["bpm"] * self.TICKS_PER_BEAT # 4. / self.fTransportInfo["sigDenom"] * self.TICKS_PER_BEAT
-            note_stop = note_start + length * 60. / self.fTransportInfo["bpm"] * 4. * self.fTimeSignature[0] / self.fTimeSignature[1] * self.TICKS_PER_BEAT
+            note_start = start * self.TICKS_PER_BEAT
+            note_stop = note_start + length * 4. * self.fTimeSignature[0] / self.fTimeSignature[1] * self.TICKS_PER_BEAT
             self.send([msg, note_start, 3, MIDI_STATUS_NOTE_ON, note, vel])
             self.send([msg, note_stop, 3, MIDI_STATUS_NOTE_OFF, note, vel])
 

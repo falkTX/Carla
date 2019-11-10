@@ -189,20 +189,7 @@ protected:
         switch (index)
         {
         case kParameterTimeSig:
-            /**/ if (value > 4.5f)
-                fTimeSigNum = 6;
-            else if (value > 3.5f)
-                fTimeSigNum = 5;
-            else if (value > 2.5f)
-                fTimeSigNum = 4;
-            /* FIXME
-            else if (value > 2.5f)
-                fTimeSigNum = 3;
-            */
-            else if (value > 1.5f)
-                fTimeSigNum = 2;
-            else
-                fTimeSigNum = 1;
+            fTimeSigNum = static_cast<int>(value + 1.5f);
             // fall through
         case kParameterMeasures:
             fMaxTicks = TICKS_PER_BEAT * fTimeSigNum * static_cast<double>(fParameters[kParameterMeasures]);
