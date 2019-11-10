@@ -42,7 +42,7 @@ from externalui import ExternalUI
 # ------------------------------------------------------------------------------------------------------------
 
 class MidiPatternW(ExternalUI, QMainWindow):
-    PPQ = 48.0
+    TICKS_PER_BEAT = 48
 
     def __init__(self):
         ExternalUI.__init__(self)
@@ -54,6 +54,7 @@ class MidiPatternW(ExternalUI, QMainWindow):
         # to be filled with note-on events, while waiting for their matching note-off
         self.fPendingNoteOns = [] # (channel, note, velocity, time)
 
+        self.fTimeSignature = (4,4)
         self.fTransportInfo = {
             "playing": False,
             "frame": 0,
@@ -61,8 +62,6 @@ class MidiPatternW(ExternalUI, QMainWindow):
             "beat": 0,
             "tick": 0,
             "bpm": 120.0,
-            "sigNum": 4.0,
-            "sigDenom": 4.0
         }
 
         self.ui.act_edit_insert.triggered.connect(self.slot_editInsertMode)
@@ -79,7 +78,7 @@ class MidiPatternW(ExternalUI, QMainWindow):
         self.ui.defaultLengthBox.currentIndexChanged[int].connect(self.slot_paramChanged)
         self.ui.quantizeBox.currentIndexChanged[int].connect(self.slot_paramChanged)
 
-        self.ui.timeSigBox.currentIndexChanged[str].connect(self.ui.piano.setTimeSig)
+        self.ui.timeSigBox.currentIndexChanged[str].connect(self.slot_setTimeSignature)
         self.ui.measureBox.currentIndexChanged[str].connect(self.ui.piano.setMeasures)
         self.ui.defaultLengthBox.currentIndexChanged[str].connect(self.ui.piano.setDefaultLength)
         self.ui.quantizeBox.currentIndexChanged[str].connect(self.ui.piano.setGridDiv)
@@ -132,6 +131,18 @@ class MidiPatternW(ExternalUI, QMainWindow):
 
         self.sendControl(param, index)
 
+    def slot_setTimeSignature(self, sigtext):
+        try:
+           timesig = tuple(map(float, sigtext.split('/')))
+        except ValueError:
+            pass
+
+        if len(timesig) != 2:
+            return
+
+        self.fTimeSignature = timesig
+        self.ui.piano.setTimeSig(timesig)
+
     # -------------------------------------------------------------------
     # DSP Callbacks
 
@@ -139,13 +150,28 @@ class MidiPatternW(ExternalUI, QMainWindow):
         value = int(value)
 
         if index == 0: # TimeSig
+            self.ui.timeSigBox.blockSignals(True)
             self.ui.timeSigBox.setCurrentIndex(value)
+            self.slot_setTimeSignature(self.ui.timeSigBox.currentText())
+            self.ui.timeSigBox.blockSignals(False)
+
         elif index == 1: # Measures
+            self.ui.measureBox.blockSignals(True)
             self.ui.measureBox.setCurrentIndex(value-1)
+            self.ui.piano.setMeasures(self.ui.measureBox.currentText())
+            self.ui.measureBox.blockSignals(False)
+
         elif index == 2: # DefLength
+            self.ui.defaultLengthBox.blockSignals(True)
             self.ui.defaultLengthBox.setCurrentIndex(value)
+            self.ui.piano.setDefaultLength(self.ui.defaultLengthBox.currentText())
+            self.ui.defaultLengthBox.blockSignals(False)
+
         elif index == 3: # Quantize
+            self.ui.quantizeBox.blockSignals(True)
             self.ui.quantizeBox.setCurrentIndex(value)
+            self.ui.piano.setQuantize(self.ui.quantizeBox.currentText())
+            self.ui.quantizeBox.blockSignals(False)
 
     def dspStateChanged(self, key, value):
         pass
@@ -193,21 +219,21 @@ class MidiPatternW(ExternalUI, QMainWindow):
     # Custom callback
 
     def updateMeasureBox(self, index):
-        self.measureBox.setCurrentIndex(index-1)
+        self.ui.measureBox.setCurrentIndex(index-1)
 
     def sendMsg(self, data):
         msg = data[0]
-        if msg == "midievent-remove":
+        if msg == "midievent-add":
             note, start, length, vel = data[1:5]
-            note_start = start * 60. / self.fTransportInfo["bpm"] * 4. / self.fTransportInfo["sigDenom"] * self.PPQ
-            note_stop = note_start + length * 60. / self.fTransportInfo["bpm"] * 4. * self.fTransportInfo["sigNum"] / self.fTransportInfo["sigDenom"] * self.PPQ
+            note_start = start * 60. / self.fTransportInfo["bpm"] * self.TICKS_PER_BEAT
+            note_stop = note_start + length * 60. / self.fTransportInfo["bpm"] * 4. * self.fTimeSignature[0] / self.fTimeSignature[1] * self.TICKS_PER_BEAT
             self.send([msg, note_start, 3, MIDI_STATUS_NOTE_ON, note, vel])
             self.send([msg, note_stop, 3, MIDI_STATUS_NOTE_OFF, note, vel])
 
-        elif msg == "midievent-add":
+        elif msg == "midievent-remove":
             note, start, length, vel = data[1:5]
-            note_start = start * 60. / self.fTransportInfo["bpm"] * self.PPQ
-            note_stop = note_start + length * 60. / self.fTransportInfo["bpm"] * 4. * self.fTransportInfo["sigNum"] / self.fTransportInfo["sigDenom"] * self.PPQ
+            note_start = start * 60. / self.fTransportInfo["bpm"] * self.TICKS_PER_BEAT # 4. / self.fTransportInfo["sigDenom"] * self.TICKS_PER_BEAT
+            note_stop = note_start + length * 60. / self.fTransportInfo["bpm"] * 4. * self.fTimeSignature[0] / self.fTimeSignature[1] * self.TICKS_PER_BEAT
             self.send([msg, note_start, 3, MIDI_STATUS_NOTE_ON, note, vel])
             self.send([msg, note_stop, 3, MIDI_STATUS_NOTE_OFF, note, vel])
 
@@ -222,20 +248,14 @@ class MidiPatternW(ExternalUI, QMainWindow):
             # adds single midi event
             time = int(self.readlineblock())
             size = int(self.readlineblock())
-            data = []
-
-            for x in range(size):
-                data.append(int(self.readlineblock()))
+            data = tuple(int(self.readlineblock()) for x in range(size))
 
             self.handleMidiEvent(time, size, data)
 
         elif msg == "transport":
-            playing = bool(self.readlineblock() == "true")
-            frame, bar, beat, tick = [int(i) for i in self.readlineblock().split(":")]
-            bpm, sigNum, sigDenom = [float(i) for i in self.readlineblock().split(":")]
-
-            if beat != self.fTransportInfo["beat"]:
-                print(beat)
+            playing, frame, bar, beat, tick = tuple(int(i) for i in self.readlineblock().split(":"))
+            bpm = float(self.readlineblock())
+            playing = bool(int(playing))
 
             old_frame = self.fTransportInfo['frame']
 
@@ -246,12 +266,18 @@ class MidiPatternW(ExternalUI, QMainWindow):
                 "beat": beat,
                 "tick": tick,
                 "bpm": bpm,
-                "sigNum": sigNum,
-                "sigDenom": sigDenom
+                "ticksPerBeat": self.TICKS_PER_BEAT,
             }
 
             if old_frame != frame:
                 self.ui.piano.movePlayHead(self.fTransportInfo)
+
+        elif msg == "parameters":
+            timesig, measures, deflength, quantize = tuple(int(i) for i in self.readlineblock().split(":"))
+            self.dspParameterChanged(0, timesig)
+            self.dspParameterChanged(1, measures)
+            self.dspParameterChanged(2, deflength)
+            self.dspParameterChanged(3, quantize)
 
         else:
             ExternalUI.msgCallback(self, msg)
@@ -260,16 +286,11 @@ class MidiPatternW(ExternalUI, QMainWindow):
     # Internal stuff
 
     def handleMidiEvent(self, time, size, data):
-        #print("Got MIDI Event on UI", time, size, data)
-
-        # NOTE: for now time comes in frames, which might not be desirable
-        #       we'll convert it to a smaller value for now (seconds)
-        #       later on we can have time as PPQ or similar
-
-        time /= self.PPQ
+        #print("handleMidiEvent", time, size, data)
 
         status  = MIDI_GET_STATUS_FROM_DATA(data)
         channel = MIDI_GET_CHANNEL_FROM_DATA(data)
+
         if status == MIDI_STATUS_NOTE_ON:
             note = data[1]
             velo = data[2]
@@ -279,26 +300,27 @@ class MidiPatternW(ExternalUI, QMainWindow):
 
         elif status == MIDI_STATUS_NOTE_OFF:
             note = data[1]
-            velo = data[2]
 
             # find previous note-on that matches this note and channel
             for noteOnMsg in self.fPendingNoteOns:
-                channel_, note_, velo_, time_ = noteOnMsg
+                on_channel, on_note, on_velo, on_time = noteOnMsg
 
-                if channel_ != channel:
+                if on_channel != channel:
                     continue
-                if note_ != note:
+                if on_note != note:
                     continue
 
                 # found it
-                #print("{} {} {} {}\n".format(note, time_, time-time_, velo_))
-                start = time_ / 60. * self.fTransportInfo["bpm"] / 4. * self.fTransportInfo["sigDenom"]
-                length = (time - time_) / 60. * self.fTransportInfo["bpm"] / 4. / self.fTransportInfo["sigNum"] * self.fTransportInfo["sigDenom"]
-                self.ui.piano.drawNote(note, start, length, velo_)
-
-                # remove from list
                 self.fPendingNoteOns.remove(noteOnMsg)
                 break
+
+            else:
+                return
+
+            self.ui.piano.drawNote(note,
+                                   on_time/self.TICKS_PER_BEAT,
+                                   (time-on_time)/self.TICKS_PER_BEAT/self.fTimeSignature[0], on_velo)
+
 
 #--------------- main ------------------
 if __name__ == '__main__':

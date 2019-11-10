@@ -291,7 +291,7 @@ public:
         if (fData.count() == 0)
             return nullptr;
 
-        char* const data((char*)std::calloc(1, fData.count()*maxMsgSize));
+        char* const data((char*)std::calloc(1, fData.count()*maxMsgSize+1));
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, nullptr);
 
         char* dataWrtn = data;
