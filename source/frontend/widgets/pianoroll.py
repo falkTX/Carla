@@ -762,10 +762,10 @@ class PianoRoll(QGraphicsScene):
         if self.snap_value:
             pos_x = int(round((pos_x - self.piano_width) / self.snap_value)) \
                     * self.snap_value + self.piano_width
-        if pos_y:
+        if pos_y is not None:
             pos_y = int((pos_y - self.header_height) / self.note_height) \
                     * self.note_height + self.header_height
-        return (pos_x, pos_y) if pos_y else pos_x
+        return (pos_x, pos_y) if pos_y is not None else pos_x
 
     def adjust_note_vel(self, event):
         m_pos = event.scenePos()
