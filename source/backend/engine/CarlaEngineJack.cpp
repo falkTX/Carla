@@ -1219,7 +1219,6 @@ public:
 
         return jackbridge_cpu_load(fClient);
     }
-#endif
 
     void callback(const bool sendHost, const bool sendOsc,
                   const EngineCallbackOpcode action, const uint pluginId,
@@ -1234,6 +1233,7 @@ public:
 
         CarlaEngine::callback(sendHost, sendOsc, action, pluginId, value1, value2, value3, valuef, valueStr);
     }
+#endif
 
     bool setBufferSizeAndSampleRate(const uint bufferSize, const double sampleRate) override
     {
