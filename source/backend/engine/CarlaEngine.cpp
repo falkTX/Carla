@@ -1536,6 +1536,8 @@ void CarlaEngine::transportPause() noexcept
 
 void CarlaEngine::transportBPM(const double bpm) noexcept
 {
+    CARLA_SAFE_ASSERT_RETURN(bpm >= 20.0,)
+
     try {
         pData->time.setBPM(bpm);
     } CARLA_SAFE_EXCEPTION("CarlaEngine::transportBPM");

@@ -838,7 +838,8 @@ class HostWindow(QMainWindow):
                 settings = QSettings()
                 lastBpm  = settings.value("LastBPM", 120.0, type=float)
                 del settings
-                self.host.transport_bpm(lastBpm)
+                if lastBpm >= 20.0:
+                    self.host.transport_bpm(lastBpm)
             return
 
         elif firstInit:
