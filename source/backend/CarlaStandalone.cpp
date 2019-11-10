@@ -629,9 +629,12 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
     case CB::ENGINE_OPTION_TRANSPORT_MODE:
         CARLA_SAFE_ASSERT_RETURN(value >= CB::ENGINE_TRANSPORT_MODE_DISABLED && value <= CB::ENGINE_TRANSPORT_MODE_BRIDGE,);
 
-        if (value != CB::ENGINE_TRANSPORT_MODE_JACK)
+        // jack transport cannot be disabled in multi-client
+        if (gStandalone.engineOptions.processMode == CB::ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS
+            && value != CB::ENGINE_TRANSPORT_MODE_JACK)
         {
-            // jack transport cannot be disabled in multi-client
+            gStandalone.engineOptions.transportMode = CB::ENGINE_TRANSPORT_MODE_JACK;
+
             if (gStandalone.engineCallback != nullptr)
                 gStandalone.engineCallback(gStandalone.engineCallbackPtr,
                                            CB::ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED,
@@ -639,9 +642,11 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
                                            CB::ENGINE_TRANSPORT_MODE_JACK,
                                            0, 0, 0.0f,
                                            gStandalone.engineOptions.transportExtra);
-            CARLA_SAFE_ASSERT_RETURN(gStandalone.engineOptions.processMode != CB::ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS,);
         }
-        gStandalone.engineOptions.transportMode = static_cast<CB::EngineTransportMode>(value);
+        else
+        {
+            gStandalone.engineOptions.transportMode = static_cast<CB::EngineTransportMode>(value);
+        }
 
         delete[] gStandalone.engineOptions.transportExtra;
         if (value != CB::ENGINE_TRANSPORT_MODE_DISABLED && valueStr != nullptr)
