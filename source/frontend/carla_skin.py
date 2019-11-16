@@ -1980,48 +1980,49 @@ def getColorAndSkinStyle(host, pluginId):
     else:
         progCount = host.get_midi_program_count(pluginId)
 
-    color = getColorFromCategory(pluginInfo['category'])
+    colorCategory = getColorFromCategory(pluginInfo['category'])
+    colorNone     = (0,0,0)
 
     # Samplers
     if pluginInfo['type'] == PLUGIN_SF2:
-        return (color, "sf2")
+        return (colorCategory, "sf2")
     if pluginInfo['type'] == PLUGIN_SFZ:
-        return (color, "sfz")
+        return (colorCategory, "sfz")
 
     # Calf
     if pluginName.split(" ", 1)[0].lower() == "calf":
-        return (color, "calf_black" if "mono" in pluginLabel else "calf_blue")
+        return (colorNone, "calf_black" if "mono" in pluginLabel else "calf_blue")
 
     # OpenAV
     if pluginMaker == "OpenAV Productions":
-        return (color, "openav-old")
+        return (colorNone, "openav-old")
     if pluginMaker == "OpenAV":
-        return (color, "openav")
+        return (colorNone, "openav")
 
     # ZynFX
     if pluginInfo['type'] == PLUGIN_INTERNAL:
         if pluginLabel.startswith("zyn") and pluginInfo['category'] != PLUGIN_CATEGORY_SYNTH:
-            return (color, "zynfx")
+            return (colorNone, "zynfx")
 
     if pluginInfo['type'] == PLUGIN_LADSPA:
         if pluginLabel.startswith("zyn") and pluginMaker.startswith("Josep Andreu"):
-            return (color, "zynfx")
+            return (colorNone, "zynfx")
 
     if pluginInfo['type'] == PLUGIN_LV2:
         if pluginLabel.startswith("http://kxstudio.sf.net/carla/plugins/zyn") and pluginName != "ZynAddSubFX":
-            return (color, "zynfx")
+            return (colorNone, "zynfx")
 
     # Presets
     if progCount > 1 and (pluginInfo['hints'] & PLUGIN_USES_MULTI_PROGS) == 0:
         if pluginInfo['type'] in (PLUGIN_VST2, PLUGIN_VST3, PLUGIN_AU):
-            return (color, "presets")
-        return (color, "mpresets")
+            return (colorCategory, "presets")
+        return (colorCategory, "mpresets")
 
     # DISTRHO Plugins (needs to be last)
     if pluginMaker.startswith("falkTX, ") or pluginMaker == "DISTRHO" or pluginLabel.startswith("http://distrho.sf.net/plugins/"):
-        return (color, pluginLabel.replace("http://distrho.sf.net/plugins/",""))
+        return (colorNone, pluginLabel.replace("http://distrho.sf.net/plugins/",""))
 
-    return (color, "default")
+    return (colorCategory, "default")
 
 def createPluginSlot(parent, host, pluginId, options):
     skinColor, skinStyle = getColorAndSkinStyle(host, pluginId)
