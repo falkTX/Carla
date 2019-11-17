@@ -155,6 +155,7 @@ TARGETS += \
 endif
 
 ifneq ($(HAIKU),true)
+ifeq ($(HAVE_DGL),true)
 ifeq ($(HAVE_PYQT),true)
 TARGETS += \
 	$(BINDIR)/CarlaRack$(LIB_EXT) \
@@ -166,6 +167,7 @@ TARGETS += \
 	$(BINDIR)/CarlaPatchbayFX$(LIB_EXT) \
 	$(BINDIR)/CarlaVstShell$(LIB_EXT) \
 	$(BINDIR)/CarlaVstFxShell$(LIB_EXT)
+endif
 endif
 endif
 
