@@ -47,7 +47,7 @@ namespace water {
 class SpinLock
 {
 public:
-    inline SpinLock() noexcept {}
+    inline SpinLock() noexcept : lock() {}
     inline ~SpinLock() noexcept {}
 
     /** Acquires the lock.

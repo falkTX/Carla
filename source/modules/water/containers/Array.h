@@ -373,7 +373,7 @@ public:
     */
     bool add (const ElementType& newElement) noexcept
     {
-        if (! data.ensureAllocatedSize (numUsed + 1))
+        if (! data.ensureAllocatedSize (static_cast<size_t>(numUsed + 1)))
             return false;
 
         new (data.elements + numUsed++) ElementType (newElement);

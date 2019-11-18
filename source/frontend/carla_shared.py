@@ -222,6 +222,9 @@ CARLA_KEY_OSC_UDP_PORT_ENABLED = "OSC/UDPEnabled"
 CARLA_KEY_OSC_UDP_PORT_NUMBER  = "OSC/UDPNumber"
 CARLA_KEY_OSC_UDP_PORT_RANDOM  = "OSC/UDPRandom"
 
+CARLA_KEY_PATHS_AUDIO = "Paths/Audio"
+CARLA_KEY_PATHS_MIDI  = "Paths/MIDI"
+
 CARLA_KEY_PATHS_LADSPA = "Paths/LADSPA"
 CARLA_KEY_PATHS_DSSI   = "Paths/DSSI"
 CARLA_KEY_PATHS_LV2    = "Paths/LV2"
@@ -303,7 +306,7 @@ if CARLA_DEFAULT_AUDIO_DRIVER == "JACK":
 else:
     CARLA_DEFAULT_PROCESS_MODE   = ENGINE_PROCESS_MODE_PATCHBAY
     CARLA_DEFAULT_TRANSPORT_MODE = ENGINE_TRANSPORT_MODE_INTERNAL
-    
+
 # OSC
 CARLA_DEFAULT_OSC_ENABLED = not WINDOWS
 CARLA_DEFAULT_OSC_TCP_PORT_ENABLED = True
@@ -328,6 +331,12 @@ CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS             = False
 CARLA_DEFAULT_EXPERIMENTAL_LV2_EXPORT            = False
 CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR = False
 CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL       = False
+
+# ------------------------------------------------------------------------------------------------------------
+# Default File Folders
+
+CARLA_DEFAULT_FILE_PATH_AUDIO = []
+CARLA_DEFAULT_FILE_PATH_MIDI  = []
 
 # ------------------------------------------------------------------------------------------------------------
 # Default Plugin Folders (get)

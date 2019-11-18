@@ -3102,6 +3102,15 @@ def setEngineSettings(host):
     setHostSettings(host)
 
     # --------------------------------------------------------------------------------------------------------
+    # file paths
+
+    FILE_PATH_AUDIO = toList(settings.value(CARLA_KEY_PATHS_AUDIO, CARLA_DEFAULT_FILE_PATH_AUDIO))
+    FILE_PATH_MIDI  = toList(settings.value(CARLA_KEY_PATHS_MIDI,  CARLA_DEFAULT_FILE_PATH_MIDI))
+
+    host.set_engine_option(ENGINE_OPTION_FILE_PATH, FILE_AUDIO, splitter.join(FILE_PATH_AUDIO))
+    host.set_engine_option(ENGINE_OPTION_FILE_PATH, FILE_MIDI,  splitter.join(FILE_PATH_MIDI))
+
+    # --------------------------------------------------------------------------------------------------------
     # plugin paths
 
     LADSPA_PATH = toList(settings.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH))

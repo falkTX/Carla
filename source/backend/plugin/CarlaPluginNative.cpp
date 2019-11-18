@@ -252,6 +252,7 @@ public:
           fIsOffline(false),
           fIsUiAvailable(false),
           fIsUiVisible(false),
+          fNeedsIdle(false),
           fInlineDisplayNeedsRedraw(false),
           fInlineDisplayLastRedrawTime(0),
           fAudioAndCvInBuffers(nullptr),
@@ -921,6 +922,12 @@ public:
 
     void idle() override
     {
+        if (fNeedsIdle)
+        {
+            fNeedsIdle = false;
+            fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_IDLE, 0, 0, nullptr, 0.0f);
+        }
+
         if (fInlineDisplayNeedsRedraw)
         {
             // TESTING
@@ -2555,7 +2562,8 @@ protected:
         return pData->engine->runFileCallback(FILE_CALLBACK_SAVE, isDir, title, filter);
     }
 
-    intptr_t handleDispatcher(const NativeHostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
+    intptr_t handleDispatcher(const NativeHostDispatcherOpcode opcode,
+                              const int32_t index, const intptr_t value, void* const ptr, const float opt)
     {
         carla_debug("CarlaPluginNative::handleDispatcher(%i, %i, " P_INTPTR ", %p, %f)",
                     opcode, index, value, ptr, static_cast<double>(opt));
@@ -2603,12 +2611,26 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(index >= 0, 0);
             pData->engine->touchPluginParameter(pData->id, static_cast<uint32_t>(index), value != 0);
             break;
+        case NATIVE_HOST_OPCODE_REQUEST_IDLE:
+            fNeedsIdle = true;
+            break;
+        case NATIVE_HOST_OPCODE_GET_FILE_PATH:
+            CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, 0);
+            {
+                const EngineOptions& opts(pData->engine->getOptions());
+                const char* const filetype = (const char*)ptr;
+
+                if (std::strcmp(filetype, "audio") == 0)
+                    return static_cast<intptr_t>((uintptr_t)opts.pathAudio);
+                if (std::strcmp(filetype, "midi") == 0)
+                    return static_cast<intptr_t>((uintptr_t)opts.pathMIDI);
+            }
+            break;
         }
 
         return ret;
 
         // unused for now
-        (void)ptr;
         (void)opt;
     }
 
@@ -2792,6 +2814,8 @@ private:
     bool fIsOffline;
     bool fIsUiAvailable;
     bool fIsUiVisible;
+    volatile bool fNeedsIdle;
+
     bool fInlineDisplayNeedsRedraw;
     int64_t fInlineDisplayLastRedrawTime;
 

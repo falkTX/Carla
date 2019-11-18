@@ -489,6 +489,30 @@ typedef enum {
 } BinaryType;
 
 /* ------------------------------------------------------------------------------------------------------------
+ * File Type */
+
+/*!
+ * File type.
+ */
+typedef enum {
+    /*!
+     * Null file type.
+     */
+    FILE_NONE = 0,
+
+    /*!
+     * Audio file.
+     */
+    FILE_AUDIO = 1,
+
+    /*!
+     * MIDI file.
+     */
+    FILE_MIDI = 2
+
+} FileType;
+
+/* ------------------------------------------------------------------------------------------------------------
  * Plugin Type */
 
 /*!
@@ -1234,78 +1258,84 @@ typedef enum {
     ENGINE_OPTION_OSC_PORT_UDP = 16,
 
     /*!
+     * Set path used for a specific file type.
+     * Uses value as the file format, valueStr as actual path.
+     */
+    ENGINE_OPTION_FILE_PATH = 17,
+
+    /*!
      * Set path used for a specific plugin type.
      * Uses value as the plugin format, valueStr as actual path.
      * @see PluginType
      */
-    ENGINE_OPTION_PLUGIN_PATH = 17,
+    ENGINE_OPTION_PLUGIN_PATH = 18,
 
     /*!
      * Set path to the binary files.
      * Default unset.
      * @note Must be set for plugin and UI bridges to work
      */
-    ENGINE_OPTION_PATH_BINARIES = 18,
+    ENGINE_OPTION_PATH_BINARIES = 19,
 
     /*!
      * Set path to the resource files.
      * Default unset.
      * @note Must be set for some internal plugins to work
      */
-    ENGINE_OPTION_PATH_RESOURCES = 19,
+    ENGINE_OPTION_PATH_RESOURCES = 20,
 
     /*!
      * Prevent bad plugin and UI behaviour.
      * @note: Linux only
      */
-    ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 20,
+    ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 21,
 
     /*!
      * Set UI scaling used in frontend, so backend can do the same for plugin UIs.
      */
-    ENGINE_OPTION_FRONTEND_UI_SCALE = 21,
+    ENGINE_OPTION_FRONTEND_UI_SCALE = 22,
 
     /*!
      * Set frontend winId, used to define as parent window for plugin UIs.
      */
-    ENGINE_OPTION_FRONTEND_WIN_ID = 22,
+    ENGINE_OPTION_FRONTEND_WIN_ID = 23,
 
 #if !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) && !defined(CARLA_OS_WIN)
     /*!
      * Set path to wine executable.
      */
-    ENGINE_OPTION_WINE_EXECUTABLE = 23,
+    ENGINE_OPTION_WINE_EXECUTABLE = 24,
 
     /*!
      * Enable automatic wineprefix detection.
      */
-    ENGINE_OPTION_WINE_AUTO_PREFIX = 24,
+    ENGINE_OPTION_WINE_AUTO_PREFIX = 25,
 
     /*!
      * Fallback wineprefix to use if automatic detection fails or is disabled, and WINEPREFIX is not set.
      */
-    ENGINE_OPTION_WINE_FALLBACK_PREFIX = 25,
+    ENGINE_OPTION_WINE_FALLBACK_PREFIX = 26,
 
     /*!
      * Enable realtime priority for Wine application and server threads.
      */
-    ENGINE_OPTION_WINE_RT_PRIO_ENABLED = 26,
+    ENGINE_OPTION_WINE_RT_PRIO_ENABLED = 27,
 
     /*!
      * Base realtime priority for Wine threads.
      */
-    ENGINE_OPTION_WINE_BASE_RT_PRIO = 27,
+    ENGINE_OPTION_WINE_BASE_RT_PRIO = 28,
 
     /*!
      * Wine server realtime priority.
      */
-    ENGINE_OPTION_WINE_SERVER_RT_PRIO = 28,
+    ENGINE_OPTION_WINE_SERVER_RT_PRIO = 29,
 #endif
 
     /*!
      * Capture console output into debug callbacks.
      */
-    ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 29
+    ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 30
 
 } EngineOption;
 

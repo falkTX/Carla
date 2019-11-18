@@ -1636,6 +1636,9 @@ public:
             CarlaEngineNative* const engine = handlePtr;
             return (intptr_t)(CarlaEngine*)engine;
         }
+        case NATIVE_PLUGIN_OPCODE_IDLE:
+            //handlePtr->idle();
+            return 0;
         }
 
         return 0;

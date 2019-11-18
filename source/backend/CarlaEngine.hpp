@@ -249,6 +249,9 @@ struct CARLA_API EngineOptions {
     int oscPortUDP;
 #endif
 
+    const char* pathAudio;
+    const char* pathMIDI;
+
     const char* pathLADSPA;
     const char* pathDSSI;
     const char* pathLV2;

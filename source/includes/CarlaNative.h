@@ -65,7 +65,8 @@ typedef enum {
     NATIVE_PLUGIN_USES_TIME            = 1 << 10,
     NATIVE_PLUGIN_USES_PARENT_ID       = 1 << 11, /** can set transient hint to parent       */
     NATIVE_PLUGIN_HAS_INLINE_DISPLAY   = 1 << 12,
-    NATIVE_PLUGIN_USES_CONTROL_VOLTAGE = 1 << 13
+    NATIVE_PLUGIN_USES_CONTROL_VOLTAGE = 1 << 13,
+    NATIVE_PLUGIN_REQUESTS_IDLE        = 1 << 15,
 } NativePluginHints;
 
 typedef enum {
@@ -96,21 +97,24 @@ typedef enum {
     NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED = 2, /** uses opt                 */
     NATIVE_PLUGIN_OPCODE_OFFLINE_CHANGED     = 3, /** uses value (0=off, 1=on) */
     NATIVE_PLUGIN_OPCODE_UI_NAME_CHANGED     = 4, /** uses ptr                 */
-    NATIVE_PLUGIN_OPCODE_GET_INTERNAL_HANDLE = 5  /** nothing                  */
+    NATIVE_PLUGIN_OPCODE_GET_INTERNAL_HANDLE = 5, /** nothing                  */
+    NATIVE_PLUGIN_OPCODE_IDLE                = 6  /** nothing                  */
 } NativePluginDispatcherOpcode;
 
 typedef enum {
-    NATIVE_HOST_OPCODE_NULL                  = 0, /** nothing                                           */
-    NATIVE_HOST_OPCODE_UPDATE_PARAMETER      = 1, /** uses index, -1 for all                            */
-    NATIVE_HOST_OPCODE_UPDATE_MIDI_PROGRAM   = 2, /** uses index, -1 for all; may use value for channel */
-    NATIVE_HOST_OPCODE_RELOAD_PARAMETERS     = 3, /** nothing                                           */
-    NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS  = 4, /** nothing                                           */
-    NATIVE_HOST_OPCODE_RELOAD_ALL            = 5, /** nothing                                           */
-    NATIVE_HOST_OPCODE_UI_UNAVAILABLE        = 6, /** nothing                                           */
-    NATIVE_HOST_OPCODE_HOST_IDLE             = 7, /** nothing                                           */
-    NATIVE_HOST_OPCODE_INTERNAL_PLUGIN       = 8, /** nothing                                           */
-    NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY  = 9, /** nothing                                           */
-    NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER    = 10 /** uses index, value as bool                         */
+    NATIVE_HOST_OPCODE_NULL                  = 0,  /** nothing                                           */
+    NATIVE_HOST_OPCODE_UPDATE_PARAMETER      = 1,  /** uses index, -1 for all                            */
+    NATIVE_HOST_OPCODE_UPDATE_MIDI_PROGRAM   = 2,  /** uses index, -1 for all; may use value for channel */
+    NATIVE_HOST_OPCODE_RELOAD_PARAMETERS     = 3,  /** nothing                                           */
+    NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS  = 4,  /** nothing                                           */
+    NATIVE_HOST_OPCODE_RELOAD_ALL            = 5,  /** nothing                                           */
+    NATIVE_HOST_OPCODE_UI_UNAVAILABLE        = 6,  /** nothing                                           */
+    NATIVE_HOST_OPCODE_HOST_IDLE             = 7,  /** nothing                                           */
+    NATIVE_HOST_OPCODE_INTERNAL_PLUGIN       = 8,  /** nothing                                           */
+    NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY  = 9,  /** nothing                                           */
+    NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER    = 10, /** uses index, value as bool                         */
+    NATIVE_HOST_OPCODE_REQUEST_IDLE          = 11, /** nothing                                           */
+    NATIVE_HOST_OPCODE_GET_FILE_PATH         = 12  /** uses ptr as string for file type                  */
 } NativeHostDispatcherOpcode;
 
 /* ------------------------------------------------------------------------------------------------------------

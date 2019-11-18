@@ -1740,6 +1740,34 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
 #endif
         break;
 
+    case ENGINE_OPTION_FILE_PATH:
+        CARLA_SAFE_ASSERT_RETURN(value > FILE_NONE,);
+        CARLA_SAFE_ASSERT_RETURN(value <= FILE_MIDI,);
+
+        switch (value)
+        {
+        case FILE_AUDIO:
+            if (pData->options.pathAudio != nullptr)
+                delete[] pData->options.pathAudio;
+            if (valueStr != nullptr)
+                pData->options.pathAudio = carla_strdup_safe(valueStr);
+            else
+                pData->options.pathAudio = nullptr;
+            break;
+        case FILE_MIDI:
+            if (pData->options.pathMIDI != nullptr)
+                delete[] pData->options.pathMIDI;
+            if (valueStr != nullptr)
+                pData->options.pathMIDI = carla_strdup_safe(valueStr);
+            else
+                pData->options.pathMIDI = nullptr;
+            break;
+        default:
+            return carla_stderr("CarlaEngine::setOption(%i:%s, %i, \"%s\") - Invalid file type",
+                                option, EngineOption2Str(option), value, valueStr);
+            break;
+        }
+        break;
     case ENGINE_OPTION_PLUGIN_PATH:
         CARLA_SAFE_ASSERT_RETURN(value > PLUGIN_NONE,);
         CARLA_SAFE_ASSERT_RETURN(value <= PLUGIN_SFZ,);
@@ -1803,7 +1831,8 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
                 pData->options.pathSFZ = nullptr;
             break;
         default:
-            return carla_stderr("CarlaEngine::setOption(%i:%s, %i, \"%s\") - Invalid plugin type", option, EngineOption2Str(option), value, valueStr);
+            return carla_stderr("CarlaEngine::setOption(%i:%s, %i, \"%s\") - Invalid plugin type",
+                                option, EngineOption2Str(option), value, valueStr);
             break;
         }
         break;

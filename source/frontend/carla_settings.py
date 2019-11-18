@@ -324,19 +324,24 @@ class CarlaSettingsW(QDialog):
     TAB_INDEX_CANVAS       = 1
     TAB_INDEX_ENGINE       = 2
     TAB_INDEX_OSC          = 3
-    TAB_INDEX_PATHS        = 4
-    TAB_INDEX_WINE         = 5
-    TAB_INDEX_EXPERIMENTAL = 6
-    TAB_INDEX_NONE         = 7
+    TAB_INDEX_FILEPATHS    = 4
+    TAB_INDEX_PLUGINPATHS  = 5
+    TAB_INDEX_WINE         = 6
+    TAB_INDEX_EXPERIMENTAL = 7
+    TAB_INDEX_NONE         = 8
 
-    # Path indexes
-    PATH_INDEX_LADSPA = 0
-    PATH_INDEX_DSSI   = 1
-    PATH_INDEX_LV2    = 2
-    PATH_INDEX_VST2   = 3
-    PATH_INDEX_VST3   = 4
-    PATH_INDEX_SF2    = 5
-    PATH_INDEX_SFZ    = 6
+    # File Path indexes
+    FILEPATH_INDEX_AUDIO = 0
+    FILEPATH_INDEX_MIDI  = 1
+
+    # Plugin Path indexes
+    PLUGINPATH_INDEX_LADSPA = 0
+    PLUGINPATH_INDEX_DSSI   = 1
+    PLUGINPATH_INDEX_LV2    = 2
+    PLUGINPATH_INDEX_VST2   = 3
+    PLUGINPATH_INDEX_VST3   = 4
+    PLUGINPATH_INDEX_SF2    = 5
+    PLUGINPATH_INDEX_SFZ    = 6
 
     # Single and Multiple client mode is only for JACK,
     # but we still want to match QComboBox index to backend defines,
@@ -377,7 +382,8 @@ class CarlaSettingsW(QDialog):
 
         if host.isControl:
             self.ui.lw_page.hideRow(self.TAB_INDEX_ENGINE)
-            self.ui.lw_page.hideRow(self.TAB_INDEX_PATHS)
+            self.ui.lw_page.hideRow(self.TAB_INDEX_FILEPATHS)
+            self.ui.lw_page.hideRow(self.TAB_INDEX_PLUGINPATHS)
             self.ui.ch_exp_export_lv2.hide()
             self.ui.group_experimental_engine.hide()
 
@@ -450,6 +456,13 @@ class CarlaSettingsW(QDialog):
         self.ui.lw_sf2.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_sfz.currentRowChanged.connect(self.slot_pluginPathRowChanged)
 
+        self.ui.b_filepaths_add.clicked.connect(self.slot_addFilePath)
+        self.ui.b_filepaths_remove.clicked.connect(self.slot_removeFilePath)
+        self.ui.b_filepaths_change.clicked.connect(self.slot_changeFilePath)
+        self.ui.cb_filepaths.currentIndexChanged.connect(self.slot_filePathTabChanged)
+        self.ui.lw_files_audio.currentRowChanged.connect(self.slot_filePathRowChanged)
+        self.ui.lw_files_midi.currentRowChanged.connect(self.slot_filePathRowChanged)
+
         self.ui.ch_main_experimental.toggled.connect(self.slot_enableExperimental)
         self.ui.ch_exp_wine_bridges.toggled.connect(self.slot_enableWineBridges)
         self.ui.cb_exp_plugin_bridges.toggled.connect(self.slot_pluginBridgesToggled)
@@ -468,7 +481,13 @@ class CarlaSettingsW(QDialog):
         self.ui.lw_sf2.setCurrentRow(0)
         self.ui.lw_sfz.setCurrentRow(0)
 
+        self.ui.lw_files_audio.setCurrentRow(0)
+        self.ui.lw_files_midi.setCurrentRow(0)
+
         self.ui.lw_page.setCurrentCell(0, 0)
+
+        self.slot_filePathTabChanged(0)
+        self.slot_pluginPathTabChanged(0)
 
         self.adjustSize()
 
@@ -602,7 +621,24 @@ class CarlaSettingsW(QDialog):
             self.ui.rb_osc_udp_port_specific.setChecked(True)
 
         # ----------------------------------------------------------------------------------------------------
-        # Paths
+        # File Paths
+
+        audioPaths = toList(settings.value(CARLA_KEY_PATHS_AUDIO, CARLA_DEFAULT_FILE_PATH_AUDIO))
+        midiPaths  = toList(settings.value(CARLA_KEY_PATHS_MIDI,  CARLA_DEFAULT_FILE_PATH_MIDI))
+
+        audioPaths.sort()
+        midiPaths.sort()
+
+        for audioPath in audioPaths:
+            if not audioPath: continue
+            self.ui.lw_files_audio.addItem(audioPath)
+
+        for midiPath in midiPaths:
+            if not midiPath: continue
+            self.ui.lw_files_midi.addItem(midiPath)
+
+        # ----------------------------------------------------------------------------------------------------
+        # Plugin Paths
 
         ladspas = toList(settings.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH))
         dssis   = toList(settings.value(CARLA_KEY_PATHS_DSSI,   CARLA_DEFAULT_DSSI_PATH))
@@ -794,7 +830,25 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_OSC_UDP_PORT_NUMBER,  self.ui.sb_osc_udp_port_number.value())
 
         # ----------------------------------------------------------------------------------------------------
-        # Paths
+        # File Paths
+
+        audioPaths = []
+        midiPaths  = []
+
+        for i in range(self.ui.lw_files_audio.count()):
+            audioPaths.append(self.ui.lw_files_audio.item(i).text())
+
+        for i in range(self.ui.lw_files_midi.count()):
+            midiPaths.append(self.ui.lw_files_midi.item(i).text())
+
+        self.host.set_engine_option(ENGINE_OPTION_FILE_PATH, FILE_AUDIO, splitter.join(audioPaths))
+        self.host.set_engine_option(ENGINE_OPTION_FILE_PATH, FILE_MIDI,  splitter.join(midiPaths))
+
+        settings.setValue(CARLA_KEY_PATHS_AUDIO, audioPaths)
+        settings.setValue(CARLA_KEY_PATHS_MIDI,  midiPaths)
+
+        # ----------------------------------------------------------------------------------------------------
+        # Plugin Paths
 
         ladspas = []
         dssis   = []
@@ -934,12 +988,24 @@ class CarlaSettingsW(QDialog):
                 self.ui.rb_osc_udp_port_specific.setChecked(True)
 
         # ----------------------------------------------------------------------------------------------------
-        # Paths
+        # Plugin Paths
 
-        elif currentRow == self.TAB_INDEX_PATHS:
+        elif currentRow == self.TAB_INDEX_FILEPATHS:
+            curIndex = self.ui.tw_filepaths.currentIndex()
+
+            if curIndex == self.FILEPATH_INDEX_AUDIO:
+                self.ui.lw_files_audio.clear()
+
+            elif curIndex == self.FILEPATH_INDEX_MIDI:
+                self.ui.lw_files_midi.clear()
+
+        # ----------------------------------------------------------------------------------------------------
+        # Plugin Paths
+
+        elif currentRow == self.TAB_INDEX_PLUGINPATHS:
             curIndex = self.ui.tw_paths.currentIndex()
 
-            if curIndex == self.PATH_INDEX_LADSPA:
+            if curIndex == self.PLUGINPATH_INDEX_LADSPA:
                 paths = CARLA_DEFAULT_LADSPA_PATH
                 paths.sort()
                 self.ui.lw_ladspa.clear()
@@ -948,7 +1014,7 @@ class CarlaSettingsW(QDialog):
                     if not path: continue
                     self.ui.lw_ladspa.addItem(path)
 
-            elif curIndex == self.PATH_INDEX_DSSI:
+            elif curIndex == self.PLUGINPATH_INDEX_DSSI:
                 paths = CARLA_DEFAULT_DSSI_PATH
                 paths.sort()
                 self.ui.lw_dssi.clear()
@@ -957,7 +1023,7 @@ class CarlaSettingsW(QDialog):
                     if not path: continue
                     self.ui.lw_dssi.addItem(path)
 
-            elif curIndex == self.PATH_INDEX_LV2:
+            elif curIndex == self.PLUGINPATH_INDEX_LV2:
                 paths = CARLA_DEFAULT_LV2_PATH
                 paths.sort()
                 self.ui.lw_lv2.clear()
@@ -966,7 +1032,7 @@ class CarlaSettingsW(QDialog):
                     if not path: continue
                     self.ui.lw_lv2.addItem(path)
 
-            elif curIndex == self.PATH_INDEX_VST2:
+            elif curIndex == self.PLUGINPATH_INDEX_VST2:
                 paths = CARLA_DEFAULT_VST2_PATH
                 paths.sort()
                 self.ui.lw_vst.clear()
@@ -975,7 +1041,7 @@ class CarlaSettingsW(QDialog):
                     if not path: continue
                     self.ui.lw_vst.addItem(path)
 
-            elif curIndex == self.PATH_INDEX_VST3:
+            elif curIndex == self.PLUGINPATH_INDEX_VST3:
                 paths = CARLA_DEFAULT_VST3_PATH
                 paths.sort()
                 self.ui.lw_vst3.clear()
@@ -984,7 +1050,7 @@ class CarlaSettingsW(QDialog):
                     if not path: continue
                     self.ui.lw_vst3.addItem(path)
 
-            elif curIndex == self.PATH_INDEX_SF2:
+            elif curIndex == self.PLUGINPATH_INDEX_SF2:
                 paths = CARLA_DEFAULT_SF2_PATH
                 paths.sort()
                 self.ui.lw_sf2.clear()
@@ -993,7 +1059,7 @@ class CarlaSettingsW(QDialog):
                     if not path: continue
                     self.ui.lw_sf2.addItem(path)
 
-            elif curIndex == self.PATH_INDEX_SFZ:
+            elif curIndex == self.PLUGINPATH_INDEX_SFZ:
                 paths = CARLA_DEFAULT_SFZ_PATH
                 paths.sort()
                 self.ui.lw_sfz.clear()
@@ -1113,57 +1179,57 @@ class CarlaSettingsW(QDialog):
 
         curIndex = self.ui.tw_paths.currentIndex()
 
-        if curIndex == self.PATH_INDEX_LADSPA:
+        if curIndex == self.PLUGINPATH_INDEX_LADSPA:
             self.ui.lw_ladspa.addItem(newPath)
-        elif curIndex == self.PATH_INDEX_DSSI:
+        elif curIndex == self.PLUGINPATH_INDEX_DSSI:
             self.ui.lw_dssi.addItem(newPath)
-        elif curIndex == self.PATH_INDEX_LV2:
+        elif curIndex == self.PLUGINPATH_INDEX_LV2:
             self.ui.lw_lv2.addItem(newPath)
-        elif curIndex == self.PATH_INDEX_VST2:
+        elif curIndex == self.PLUGINPATH_INDEX_VST2:
             self.ui.lw_vst.addItem(newPath)
-        elif curIndex == self.PATH_INDEX_VST3:
+        elif curIndex == self.PLUGINPATH_INDEX_VST3:
             self.ui.lw_vst3.addItem(newPath)
-        elif curIndex == self.PATH_INDEX_SF2:
+        elif curIndex == self.PLUGINPATH_INDEX_SF2:
             self.ui.lw_sf2.addItem(newPath)
-        elif curIndex == self.PATH_INDEX_SFZ:
+        elif curIndex == self.PLUGINPATH_INDEX_SFZ:
             self.ui.lw_sfz.addItem(newPath)
 
     @pyqtSlot()
     def slot_removePluginPath(self):
         curIndex = self.ui.tw_paths.currentIndex()
 
-        if curIndex == self.PATH_INDEX_LADSPA:
+        if curIndex == self.PLUGINPATH_INDEX_LADSPA:
             self.ui.lw_ladspa.takeItem(self.ui.lw_ladspa.currentRow())
-        elif curIndex == self.PATH_INDEX_DSSI:
+        elif curIndex == self.PLUGINPATH_INDEX_DSSI:
             self.ui.lw_dssi.takeItem(self.ui.lw_dssi.currentRow())
-        elif curIndex == self.PATH_INDEX_LV2:
+        elif curIndex == self.PLUGINPATH_INDEX_LV2:
             self.ui.lw_lv2.takeItem(self.ui.lw_lv2.currentRow())
-        elif curIndex == self.PATH_INDEX_VST2:
+        elif curIndex == self.PLUGINPATH_INDEX_VST2:
             self.ui.lw_vst.takeItem(self.ui.lw_vst.currentRow())
-        elif curIndex == self.PATH_INDEX_VST3:
+        elif curIndex == self.PLUGINPATH_INDEX_VST3:
             self.ui.lw_vst3.takeItem(self.ui.lw_vst3.currentRow())
-        elif curIndex == self.PATH_INDEX_SF2:
+        elif curIndex == self.PLUGINPATH_INDEX_SF2:
             self.ui.lw_sf2.takeItem(self.ui.lw_sf2.currentRow())
-        elif curIndex == self.PATH_INDEX_SFZ:
+        elif curIndex == self.PLUGINPATH_INDEX_SFZ:
             self.ui.lw_sfz.takeItem(self.ui.lw_sfz.currentRow())
 
     @pyqtSlot()
     def slot_changePluginPath(self):
         curIndex = self.ui.tw_paths.currentIndex()
 
-        if curIndex == self.PATH_INDEX_LADSPA:
+        if curIndex == self.PLUGINPATH_INDEX_LADSPA:
             currentPath = self.ui.lw_ladspa.currentItem().text()
-        elif curIndex == self.PATH_INDEX_DSSI:
+        elif curIndex == self.PLUGINPATH_INDEX_DSSI:
             currentPath = self.ui.lw_dssi.currentItem().text()
-        elif curIndex == self.PATH_INDEX_LV2:
+        elif curIndex == self.PLUGINPATH_INDEX_LV2:
             currentPath = self.ui.lw_lv2.currentItem().text()
-        elif curIndex == self.PATH_INDEX_VST2:
+        elif curIndex == self.PLUGINPATH_INDEX_VST2:
             currentPath = self.ui.lw_vst.currentItem().text()
-        elif curIndex == self.PATH_INDEX_VST3:
+        elif curIndex == self.PLUGINPATH_INDEX_VST3:
             currentPath = self.ui.lw_vst3.currentItem().text()
-        elif curIndex == self.PATH_INDEX_SF2:
+        elif curIndex == self.PLUGINPATH_INDEX_SF2:
             currentPath = self.ui.lw_sf2.currentItem().text()
-        elif curIndex == self.PATH_INDEX_SFZ:
+        elif curIndex == self.PLUGINPATH_INDEX_SFZ:
             currentPath = self.ui.lw_sfz.currentItem().text()
         else:
             currentPath = ""
@@ -1173,38 +1239,38 @@ class CarlaSettingsW(QDialog):
         if not newPath:
             return
 
-        if curIndex == self.PATH_INDEX_LADSPA:
+        if curIndex == self.PLUGINPATH_INDEX_LADSPA:
             self.ui.lw_ladspa.currentItem().setText(newPath)
-        elif curIndex == self.PATH_INDEX_DSSI:
+        elif curIndex == self.PLUGINPATH_INDEX_DSSI:
             self.ui.lw_dssi.currentItem().setText(newPath)
-        elif curIndex == self.PATH_INDEX_LV2:
+        elif curIndex == self.PLUGINPATH_INDEX_LV2:
             self.ui.lw_lv2.currentItem().setText(newPath)
-        elif curIndex == self.PATH_INDEX_VST2:
+        elif curIndex == self.PLUGINPATH_INDEX_VST2:
             self.ui.lw_vst.currentItem().setText(newPath)
-        elif curIndex == self.PATH_INDEX_VST3:
+        elif curIndex == self.PLUGINPATH_INDEX_VST3:
             self.ui.lw_vst3.currentItem().setText(newPath)
-        elif curIndex == self.PATH_INDEX_SF2:
+        elif curIndex == self.PLUGINPATH_INDEX_SF2:
             self.ui.lw_sf2.currentItem().setText(newPath)
-        elif curIndex == self.PATH_INDEX_SFZ:
+        elif curIndex == self.PLUGINPATH_INDEX_SFZ:
             self.ui.lw_sfz.currentItem().setText(newPath)
 
     # --------------------------------------------------------------------------------------------------------
 
     @pyqtSlot(int)
     def slot_pluginPathTabChanged(self, index):
-        if index == self.PATH_INDEX_LADSPA:
+        if index == self.PLUGINPATH_INDEX_LADSPA:
             row = self.ui.lw_ladspa.currentRow()
-        elif index == self.PATH_INDEX_DSSI:
+        elif index == self.PLUGINPATH_INDEX_DSSI:
             row = self.ui.lw_dssi.currentRow()
-        elif index == self.PATH_INDEX_LV2:
+        elif index == self.PLUGINPATH_INDEX_LV2:
             row = self.ui.lw_lv2.currentRow()
-        elif index == self.PATH_INDEX_VST2:
+        elif index == self.PLUGINPATH_INDEX_VST2:
             row = self.ui.lw_vst.currentRow()
-        elif index == self.PATH_INDEX_VST3:
+        elif index == self.PLUGINPATH_INDEX_VST3:
             row = self.ui.lw_vst3.currentRow()
-        elif index == self.PATH_INDEX_SF2:
+        elif index == self.PLUGINPATH_INDEX_SF2:
             row = self.ui.lw_sf2.currentRow()
-        elif index == self.PATH_INDEX_SFZ:
+        elif index == self.PLUGINPATH_INDEX_SFZ:
             row = self.ui.lw_sfz.currentRow()
         else:
             row = -1
@@ -1218,6 +1284,73 @@ class CarlaSettingsW(QDialog):
         check = bool(row >= 0)
         self.ui.b_paths_remove.setEnabled(check)
         self.ui.b_paths_change.setEnabled(check)
+
+    # --------------------------------------------------------------------------------------------------------
+
+    @pyqtSlot()
+    def slot_addFilePath(self):
+        newPath = QFileDialog.getExistingDirectory(self, self.tr("Add Path"), "", QFileDialog.ShowDirsOnly)
+
+        if not newPath:
+            return
+
+        curIndex = self.ui.tw_filepaths.currentIndex()
+
+        if curIndex == self.FILEPATH_INDEX_AUDIO:
+            self.ui.lw_files_audio.addItem(newPath)
+        elif curIndex == self.FILEPATH_INDEX_MIDI:
+            self.ui.lw_files_midi.addItem(newPath)
+
+    @pyqtSlot()
+    def slot_removeFilePath(self):
+        curIndex = self.ui.tw_filepaths.currentIndex()
+
+        if curIndex == self.FILEPATH_INDEX_AUDIO:
+            self.ui.lw_files_audio.takeItem(self.ui.lw_files_audio.currentRow())
+        elif curIndex == self.FILEPATH_INDEX_MIDI:
+            self.ui.lw_files_midi.takeItem(self.ui.lw_files_midi.currentRow())
+
+    @pyqtSlot()
+    def slot_changeFilePath(self):
+        curIndex = self.ui.tw_filepaths.currentIndex()
+
+        if curIndex == self.FILEPATH_INDEX_AUDIO:
+            currentPath = self.ui.lw_files_audio.currentItem().text()
+        elif curIndex == self.FILEPATH_INDEX_MIDI:
+            currentPath = self.ui.lw_files_midi.currentItem().text()
+        else:
+            currentPath = ""
+
+        newPath = QFileDialog.getExistingDirectory(self, self.tr("Add Path"), currentPath, QFileDialog.ShowDirsOnly)
+
+        if not newPath:
+            return
+
+        if curIndex == self.FILEPATH_INDEX_AUDIO:
+            self.ui.lw_files_audio.currentItem().setText(newPath)
+        elif curIndex == self.FILEPATH_INDEX_MIDI:
+            self.ui.lw_files_midi.currentItem().setText(newPath)
+
+    # --------------------------------------------------------------------------------------------------------
+
+    @pyqtSlot(int)
+    def slot_filePathTabChanged(self, index):
+        if index == self.FILEPATH_INDEX_AUDIO:
+            row = self.ui.lw_files_audio.currentRow()
+        elif index == self.FILEPATH_INDEX_MIDI:
+            row = self.ui.lw_files_midi.currentRow()
+        else:
+            row = -1
+
+        check = bool(row >= 0)
+        self.ui.b_filepaths_remove.setEnabled(check)
+        self.ui.b_filepaths_change.setEnabled(check)
+
+    @pyqtSlot(int)
+    def slot_filePathRowChanged(self, row):
+        check = bool(row >= 0)
+        self.ui.b_filepaths_remove.setEnabled(check)
+        self.ui.b_filepaths_change.setEnabled(check)
 
     # --------------------------------------------------------------------------------------------------------
 

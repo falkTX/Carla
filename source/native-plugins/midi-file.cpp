@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaNative.hpp"
+#include "CarlaNativePrograms.hpp"
 #include "midi-base.hpp"
 
 #include "water/files/FileInputStream.h"
@@ -23,15 +23,16 @@
 
 // -----------------------------------------------------------------------
 
-class MidiFilePlugin : public NativePluginClass,
+class MidiFilePlugin : public NativePluginWithMidiPrograms<FileMIDI>,
                        public AbstractMidiPlayer
 {
 public:
     MidiFilePlugin(const NativeHostDescriptor* const host)
-        : NativePluginClass(host),
+        : NativePluginWithMidiPrograms(host, fPrograms, 0),
           fMidiOut(this),
           fNeedsAllNotesOff(false),
-          fWasPlayingBefore(false) {}
+          fWasPlayingBefore(false),
+          fPrograms(hostGetFilePath("midi"), "*.mid;*.midi") {}
 
 protected:
     // -------------------------------------------------------------------
@@ -51,7 +52,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(const float**, float**, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
+    void process2(const float**, float**, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
     {
         const NativeTimeInfo* const timePos(getTimeInfo());
 
@@ -116,6 +117,11 @@ protected:
         fMidiOut.setState(data);
     }
 
+    void setStateFromFile(const char* const filename) override
+    {
+        _loadMidiFile(filename);
+    }
+
     // -------------------------------------------------------------------
     // AbstractMidiPlayer calls
 
@@ -140,6 +146,7 @@ private:
     MidiPattern fMidiOut;
     bool fNeedsAllNotesOff;
     bool fWasPlayingBefore;
+    NativeMidiPrograms fPrograms;
 
     void _loadMidiFile(const char* const filename)
     {
@@ -223,6 +230,7 @@ static const NativePluginDescriptor midifileDesc = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE
+                                                  |NATIVE_PLUGIN_REQUESTS_IDLE
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,

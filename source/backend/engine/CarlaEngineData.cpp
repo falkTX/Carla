@@ -208,6 +208,8 @@ EngineOptions::EngineOptions() noexcept
       oscPortTCP(22752),
       oscPortUDP(22752),
 #endif
+      pathAudio(nullptr),
+      pathMIDI(nullptr),
       pathLADSPA(nullptr),
       pathDSSI(nullptr),
       pathLV2(nullptr),
@@ -232,61 +234,61 @@ EngineOptions::~EngineOptions() noexcept
         delete[] audioDriver;
         audioDriver = nullptr;
     }
-
     if (audioDevice != nullptr)
     {
         delete[] audioDevice;
         audioDevice = nullptr;
     }
-
+    if (pathAudio != nullptr)
+    {
+        delete[] pathAudio;
+        pathAudio = nullptr;
+    }
+    if (pathMIDI != nullptr)
+    {
+        delete[] pathMIDI;
+        pathMIDI = nullptr;
+    }
     if (pathLADSPA != nullptr)
     {
         delete[] pathLADSPA;
         pathLADSPA = nullptr;
     }
-
     if (pathDSSI != nullptr)
     {
         delete[] pathDSSI;
         pathDSSI = nullptr;
     }
-
     if (pathLV2 != nullptr)
     {
         delete[] pathLV2;
         pathLV2 = nullptr;
     }
-
     if (pathVST2 != nullptr)
     {
         delete[] pathVST2;
         pathVST2 = nullptr;
     }
-
     if (pathVST3 != nullptr)
     {
         delete[] pathVST3;
         pathVST3 = nullptr;
     }
-
     if (pathSF2 != nullptr)
     {
         delete[] pathSF2;
         pathSF2 = nullptr;
     }
-
     if (pathSFZ != nullptr)
     {
         delete[] pathSFZ;
         pathSFZ = nullptr;
     }
-
     if (binaryDir != nullptr)
     {
         delete[] binaryDir;
         binaryDir = nullptr;
     }
-
     if (resourceDir != nullptr)
     {
         delete[] resourceDir;

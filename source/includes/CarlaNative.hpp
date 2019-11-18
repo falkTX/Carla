@@ -27,7 +27,7 @@
  * @{
  */
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // Native Plugin Class
 
 class NativePluginClass
@@ -225,11 +225,29 @@ protected:
         pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_HOST_IDLE, 0, 0, nullptr, 0.0f);
     }
 
+    void hostRequestIdle() const
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+
+        pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_REQUEST_IDLE, 0, 0, nullptr, 0.0f);
+    }
+
     void hostQueueDrawInlineDisplay()
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
 
         pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY, 0, 0, nullptr, 0.0f);
+    }
+
+    const char* hostGetFilePath(const char* const filetype) const
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, nullptr);
+
+        return (const char*)(uintptr_t)pHost->dispatcher(pHost->handle,
+                                                         NATIVE_HOST_OPCODE_GET_FILE_PATH,
+                                                         0, 0,
+                                                         (void*)const_cast<char*>(filetype),
+                                                         0.0f);
     }
 
     // -------------------------------------------------------------------
@@ -394,6 +412,8 @@ protected:
         return nullptr;
     }
 
+    virtual void idle() {}
+
     // -------------------------------------------------------------------
 
 private:
@@ -521,6 +541,9 @@ public:
             return 0;
         case NATIVE_PLUGIN_OPCODE_GET_INTERNAL_HANDLE:
             return 0;
+        case NATIVE_PLUGIN_OPCODE_IDLE:
+            handlePtr->idle();
+            return 0;
         }
 
         return 0;
@@ -542,7 +565,7 @@ public:
 
 /**@}*/
 
-// ---------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // -Weffc++ compat ext widget
 
 extern "C" {
@@ -559,7 +582,7 @@ typedef struct _NativeInlineDisplayImageSurfaceCompat {
 
 }
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 #define PluginClassEND(ClassName)                                            \
 public:                                                                      \
@@ -597,6 +620,6 @@ public:                                                                      \
     ClassName::_render_inline_display,  \
     0, 0
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 #endif // CARLA_NATIVE_HPP_INCLUDED

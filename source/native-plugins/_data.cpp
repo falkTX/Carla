@@ -237,6 +237,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
                                                   |NATIVE_PLUGIN_HAS_INLINE_DISPLAY
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE
+                                                  |NATIVE_PLUGIN_REQUESTS_IDLE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ 0,
@@ -260,6 +261,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE
+                                                  |NATIVE_PLUGIN_REQUESTS_IDLE
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,

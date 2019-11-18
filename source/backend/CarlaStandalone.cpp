@@ -208,6 +208,12 @@ static void carla_engine_init_common(CarlaEngine* const engine)
     if (const char* const uiBridgesTimeout = std::getenv("ENGINE_OPTION_UI_BRIDGES_TIMEOUT"))
         engine->setOption(CB::ENGINE_OPTION_UI_BRIDGES_TIMEOUT, std::atoi(uiBridgesTimeout), nullptr);
 
+    if (const char* const pathAudio = std::getenv("ENGINE_OPTION_FILE_PATH_AUDIO"))
+        engine->setOption(CB::ENGINE_OPTION_FILE_PATH, CB::FILE_AUDIO, pathAudio);
+
+    if (const char* const pathMIDI = std::getenv("ENGINE_OPTION_FILE_PATH_MIDI"))
+        engine->setOption(CB::ENGINE_OPTION_FILE_PATH, CB::FILE_MIDI, pathMIDI);
+
     if (const char* const pathLADSPA = std::getenv("ENGINE_OPTION_PLUGIN_PATH_LADSPA"))
         engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_LADSPA, pathLADSPA);
 
@@ -264,6 +270,12 @@ static void carla_engine_init_common(CarlaEngine* const engine)
     engine->setOption(CB::ENGINE_OPTION_OSC_ENABLED,  gStandalone.engineOptions.oscEnabled, nullptr);
     engine->setOption(CB::ENGINE_OPTION_OSC_PORT_TCP, gStandalone.engineOptions.oscPortTCP, nullptr);
     engine->setOption(CB::ENGINE_OPTION_OSC_PORT_UDP, gStandalone.engineOptions.oscPortUDP, nullptr);
+
+    if (gStandalone.engineOptions.pathAudio != nullptr)
+        engine->setOption(CB::ENGINE_OPTION_FILE_PATH, CB::FILE_AUDIO, gStandalone.engineOptions.pathAudio);
+
+    if (gStandalone.engineOptions.pathMIDI != nullptr)
+        engine->setOption(CB::ENGINE_OPTION_FILE_PATH, CB::FILE_MIDI, gStandalone.engineOptions.pathMIDI);
 
     if (gStandalone.engineOptions.pathLADSPA != nullptr)
         engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_LADSPA, gStandalone.engineOptions.pathLADSPA);
@@ -731,6 +743,26 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
     case CB::ENGINE_OPTION_OSC_PORT_UDP:
         CARLA_SAFE_ASSERT_RETURN(value <= 0 || value >= 1024,);
         gStandalone.engineOptions.oscPortUDP = value;
+        break;
+
+    case CB::ENGINE_OPTION_FILE_PATH:
+        CARLA_SAFE_ASSERT_RETURN(value > CB::FILE_NONE,);
+        CARLA_SAFE_ASSERT_RETURN(value <= CB::FILE_MIDI,);
+        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr,);
+
+        switch (value)
+        {
+        case CB::FILE_AUDIO:
+            if (gStandalone.engineOptions.pathAudio != nullptr)
+                delete[] gStandalone.engineOptions.pathAudio;
+            gStandalone.engineOptions.pathAudio = carla_strdup_safe(valueStr);
+            break;
+        case CB::FILE_MIDI:
+            if (gStandalone.engineOptions.pathMIDI != nullptr)
+                delete[] gStandalone.engineOptions.pathMIDI;
+            gStandalone.engineOptions.pathMIDI = carla_strdup_safe(valueStr);
+            break;
+        }
         break;
 
     case CB::ENGINE_OPTION_PLUGIN_PATH:

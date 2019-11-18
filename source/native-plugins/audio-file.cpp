@@ -12,22 +12,35 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaNative.hpp"
+#include "CarlaNativePrograms.hpp"
 #include "CarlaString.hpp"
 
 #include "audio-base.hpp"
 
-#define PROGRAM_COUNT 16
+static const char* const audiofilesWildcard =
+#ifdef HAVE_SNDFILE
+  "*.aif;*.aifc;*.aiff;*.au;*.bwf;*.flac;*.htk;*.iff;*.mat4;*.mat5;*.oga;*.ogg;"
+  "*.paf;*.pvf;*.pvf5;*.sd2;*.sf;*.snd;*.svx;*.vcc;*.w64;*.wav;*.xi;"
+#endif
+#ifdef HAVE_FFMPEG
+  "*.3g2;*.3gp;*.aac;*.ac3;*.amr;*.ape;*.mp2;*.mp3;*.mpc;*.wma;"
+# ifndef HAVE_SNDFILE
+  "*.flac;*.oga;*.ogg;*.w64;*.wav;"
+# endif
+#endif
+;
 
-class AudioFilePlugin : public NativePluginClass,
+// -----------------------------------------------------------------------
+
+class AudioFilePlugin : public NativePluginWithMidiPrograms<FileAudio>,
                         public AbstractAudioPlayer
 {
 public:
     AudioFilePlugin(const NativeHostDescriptor* const host)
-        : NativePluginClass(host),
+        : NativePluginWithMidiPrograms(host, fPrograms, 2),
           AbstractAudioPlayer(),
           fLoopMode(true),
           fDoProcess(false),
@@ -35,6 +48,7 @@ public:
           fMaxFrame(0),
           fPool(),
           fThread(this),
+          fPrograms(hostGetFilePath("audio"), audiofilesWildcard),
           fInlineDisplay() {}
 
     ~AudioFilePlugin() override
@@ -116,8 +130,8 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(const float**, float** const outBuffer, const uint32_t frames,
-                 const NativeMidiEvent*, uint32_t) override
+    void process2(const float**, float** const outBuffer, const uint32_t frames,
+                  const NativeMidiEvent*, uint32_t) override
     {
         const NativeTimeInfo* const timePos(getTimeInfo());
 
@@ -255,6 +269,14 @@ protected:
     }
 
     // -------------------------------------------------------------------
+    // Plugin state calls
+
+    void setStateFromFile(const char* const filename) override
+    {
+        loadFilename(filename);
+    }
+
+    // -------------------------------------------------------------------
     // Plugin dispatcher calls
 
     const NativeInlineDisplayImageSurface* renderInlineDisplay(const uint32_t width, const uint32_t height) override
@@ -374,6 +396,8 @@ private:
     AudioFilePool   fPool;
     AudioFileThread fThread;
 
+    NativeMidiPrograms fPrograms;
+
     struct InlineDisplay : NativeInlineDisplayImageSurfaceCompat {
         float lastValuesL[32];
         float lastValuesR[32];
@@ -454,6 +478,7 @@ static const NativePluginDescriptor audiofileDesc = {
                                                   |NATIVE_PLUGIN_HAS_INLINE_DISPLAY
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE
+                                                  |NATIVE_PLUGIN_REQUESTS_IDLE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ 0,

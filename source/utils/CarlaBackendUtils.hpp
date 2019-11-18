@@ -80,6 +80,23 @@ const char* BinaryType2Str(const BinaryType type) noexcept
 }
 
 static inline
+const char* FileType2Str(const FileType type) noexcept
+{
+    switch (type)
+    {
+    case FILE_NONE:
+        return "FILE_NONE";
+    case FILE_AUDIO:
+        return "FILE_AUDIO";
+    case FILE_MIDI:
+        return "FILE_MIDI";
+    }
+
+    carla_stderr("CarlaBackend::FileType2Str(%i) - invalid type", type);
+    return nullptr;
+}
+
+static inline
 const char* PluginType2Str(const PluginType type) noexcept
 {
     switch (type)
@@ -337,6 +354,8 @@ const char* EngineOption2Str(const EngineOption option) noexcept
         return "ENGINE_OPTION_OSC_PORT_UDP";
     case ENGINE_OPTION_OSC_PORT_TCP:
         return "ENGINE_OPTION_OSC_PORT_TCP";
+    case ENGINE_OPTION_FILE_PATH:
+        return "ENGINE_OPTION_FILE_PATH";
     case ENGINE_OPTION_PLUGIN_PATH:
         return "ENGINE_OPTION_PLUGIN_PATH";
     case ENGINE_OPTION_PATH_BINARIES:
