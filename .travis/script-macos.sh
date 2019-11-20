@@ -3,7 +3,7 @@
 set -e
 
 # Preparation
-_FLAGS="-Wno-attributes -Wno-deprecated-declarations -Werror"
+_FLAGS="-Wno-attributes -Wno-deprecated-declarations -Werror -DBUILDING_FOR_CI"
 export CFLAGS="${_FLAGS}"
 export CXXFLAGS="${_FLAGS}"
 export MACOS_OLD=true

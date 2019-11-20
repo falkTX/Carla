@@ -83,7 +83,8 @@ template <FileType fileType>
 class NativePluginWithMidiPrograms : public NativePluginClass
 {
 public:
-    typedef SharedResourcePointer<NativePluginPresetManager<fileType>> NativeMidiPrograms;
+    typedef NativePluginPresetManager<fileType> NativePluginPresetManagerType;
+    typedef SharedResourcePointer<NativePluginPresetManagerType> NativeMidiPrograms;
 
     NativePluginWithMidiPrograms(const NativeHostDescriptor* const host,
                                  const NativeMidiPrograms& programs,

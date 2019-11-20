@@ -32,8 +32,10 @@ static const char* const audiofilesWildcard =
 # endif
 #endif
 #if !defined(HAVE_SNDFILE) && !defined(HAVE_FFMPEG)
-# warning sndfile and ffmpeg libraries missing, no audio file support will be available
 ""
+# ifndef BUILDING_FOR_CI
+#  warning sndfile and ffmpeg libraries missing, no audio file support will be available
+# endif
 #endif
 ;
 
