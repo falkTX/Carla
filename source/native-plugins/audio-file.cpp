@@ -46,7 +46,7 @@ class AudioFilePlugin : public NativePluginWithMidiPrograms<FileAudio>,
 {
 public:
     AudioFilePlugin(const NativeHostDescriptor* const host)
-        : NativePluginWithMidiPrograms(host, fPrograms, 2),
+        : NativePluginWithMidiPrograms<FileAudio>(host, fPrograms, 2),
           AbstractAudioPlayer(),
           fLoopMode(true),
           fDoProcess(false),

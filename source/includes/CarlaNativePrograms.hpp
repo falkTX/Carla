@@ -110,7 +110,7 @@ protected:
 
     uint32_t getMidiProgramCount() const override
     {
-        const NativePluginPresetManager<fileType>& pm(kPrograms.get());
+        const NativePluginPresetManagerType& pm(kPrograms.get());
         return static_cast<uint32_t>(pm.filenames.size());
     }
 
@@ -118,7 +118,7 @@ protected:
     {
         const int index = static_cast<int>(uindex);
 
-        const NativePluginPresetManager<fileType>& pm(kPrograms.get());
+        const NativePluginPresetManagerType& pm(kPrograms.get());
         CARLA_SAFE_ASSERT_RETURN(index < pm.filenames.size(), nullptr);
 
         fRetMidiProgramName = File(pm.filenames.strings.getUnchecked(index)).getFileNameWithoutExtension();
@@ -137,7 +137,7 @@ protected:
     {
         const int iprogram = static_cast<int>(program);
 
-        const NativePluginPresetManager<fileType>& pm(kPrograms.get());
+        const NativePluginPresetManagerType& pm(kPrograms.get());
         CARLA_SAFE_ASSERT_RETURN(iprogram < pm.filenames.size(),);
 
         const char* const filename(pm.filenames.strings.getUnchecked(iprogram).toRawUTF8());

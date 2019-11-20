@@ -28,7 +28,7 @@ class MidiFilePlugin : public NativePluginWithMidiPrograms<FileMIDI>,
 {
 public:
     MidiFilePlugin(const NativeHostDescriptor* const host)
-        : NativePluginWithMidiPrograms(host, fPrograms, 0),
+        : NativePluginWithMidiPrograms<FileMIDI>(host, fPrograms, 0),
           fMidiOut(this),
           fNeedsAllNotesOff(false),
           fWasPlayingBefore(false),
