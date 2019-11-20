@@ -20,7 +20,10 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+#include <math.h>
 
+#define MAX_CHANNELS 2
 // -----------------------------------------------------------------------
 
 typedef enum {
@@ -34,11 +37,20 @@ typedef enum {
     PARAM_COUNT_STEREO
 } AudioGainParams;
 
+typedef struct Filter {
+    float a0;
+    float b1;
+    float z1;
+}Filter;
+
 typedef struct {
+    const  NativeHostDescriptor* host;
+    Filter   *lowpass;
     float gain;
     bool isMono;
     bool applyLeft;
     bool applyRight;
+    float sampleRate;
 } AudioGainHandle;
 
 // -----------------------------------------------------------------------
@@ -50,10 +62,25 @@ static NativePluginHandle audiogain_instantiate(const NativeHostDescriptor* host
     if (handle == NULL)
         return NULL;
 
+    handle->lowpass = (Filter*)malloc(2*sizeof(Filter));
+
+    handle->host = host;
+    //const NativeHostDescriptor* const host = handle->host;
+
+    float sampleRate = host->get_sample_rate(host->handle);
+
     handle->gain = 1.0f;
     handle->isMono = isMono;
     handle->applyLeft = true;
     handle->applyRight = true;
+
+    for (unsigned filter = 0; filter < MAX_CHANNELS; filter++) {
+        float frequency = 440.0 / sampleRate; //440 is the cut-off frequency
+        handle->lowpass[filter].b1 = exp(-2.0 * M_PI * frequency);
+        handle->lowpass[filter].a0 = 1.0 - handle->lowpass[filter].b1;
+        handle->lowpass[filter].z1 = 0.0;
+    }
+
     return handle;
 
     // unused
@@ -161,7 +188,7 @@ static void audiogain_set_parameter_value(NativePluginHandle handle, uint32_t in
     }
 }
 
-static void handle_audio_buffers(const float* inBuffer, float* outBuffer, const float gain, const uint32_t frames)
+static void handle_audio_buffers(const float* inBuffer, float* outBuffer, Filter* lowpass, const float gain, const uint32_t frames)
 {
     /*
     if (gain == 0.0f)
@@ -176,8 +203,10 @@ static void handle_audio_buffers(const float* inBuffer, float* outBuffer, const 
     else
     */
     {
-        for (uint32_t i=0; i < frames; ++i)
-            *outBuffer++ = *inBuffer++ * gain;
+        for (uint32_t i=0; i < frames; ++i) {
+            lowpass->z1 = gain * lowpass->a0 + lowpass->z1 * lowpass->b1;
+            *outBuffer++ = *inBuffer++ * lowpass->z1;
+        }
     }
 }
 
@@ -190,10 +219,10 @@ static void audiogain_process(NativePluginHandle handle,
     const bool applyRight = handlePtr->applyRight;
     const bool isMono     = handlePtr->isMono;
 
-    handle_audio_buffers(inBuffer[0], outBuffer[0], (isMono || applyLeft) ? gain : 1.0f, frames);
+    handle_audio_buffers(inBuffer[0], outBuffer[0], &handlePtr->lowpass[0], (isMono || applyLeft) ? gain : 1.0f, frames);
 
     if (! isMono)
-        handle_audio_buffers(inBuffer[1], outBuffer[1], applyRight ? gain : 1.0f, frames);
+        handle_audio_buffers(inBuffer[1], outBuffer[1], &handlePtr->lowpass[1], applyRight ? gain : 1.0f, frames);
 
     return;
 
