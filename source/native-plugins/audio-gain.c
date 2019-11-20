@@ -75,7 +75,7 @@ static NativePluginHandle audiogain_instantiate(const NativeHostDescriptor* host
     handle->applyRight = true;
 
     for (unsigned filter = 0; filter < MAX_CHANNELS; filter++) {
-        float frequency = 440.0 / sampleRate; //440 is the cut-off frequency
+        float frequency = 30.0 / sampleRate;
         handle->lowpass[filter].b1 = exp(-2.0 * M_PI * frequency);
         handle->lowpass[filter].a0 = 1.0 - handle->lowpass[filter].b1;
         handle->lowpass[filter].z1 = 0.0;
