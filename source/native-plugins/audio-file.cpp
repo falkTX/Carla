@@ -31,6 +31,10 @@ static const char* const audiofilesWildcard =
   "*.flac;*.oga;*.ogg;*.w64;*.wav;"
 # endif
 #endif
+#if !defined(HAVE_SNDFILE) && !defined(HAVE_FFMPEG)
+# warning sndfile and ffmpeg libraries missing, no audio file support will be available
+""
+#endif
 ;
 
 // -----------------------------------------------------------------------

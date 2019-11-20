@@ -54,10 +54,9 @@ struct NativePluginPresetManager {
     NativePluginPresetManager(const char* const paths, const char* const wildcard)
         : filenames()
     {
-        CARLA_SAFE_ASSERT_RETURN(paths != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(wildcard != nullptr,);
 
-        if (paths[0] == '\0' || wildcard[0] == '\0')
+        if (paths == nullptr || paths[0] == '\0' || wildcard[0] == '\0')
             return;
 
         const StringArray splitPaths(StringArray::fromTokens(paths, CARLA_OS_SPLIT_STR, ""));
