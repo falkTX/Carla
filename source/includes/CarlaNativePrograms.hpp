@@ -47,7 +47,7 @@ enum FileType {
     FileMIDI,
 };
 
-template <FileType FileType>
+template <FileType fileType>
 struct NativePluginPresetManager {
     StringArray filenames;
 
@@ -79,11 +79,11 @@ struct NativePluginPresetManager {
 // -----------------------------------------------------------------------
 // Native Plugin with MIDI programs class
 
-template <FileType FileType>
+template <FileType fileType>
 class NativePluginWithMidiPrograms : public NativePluginClass
 {
 public:
-    typedef SharedResourcePointer<NativePluginPresetManager<FileType>> NativeMidiPrograms;
+    typedef SharedResourcePointer<NativePluginPresetManager<fileType>> NativeMidiPrograms;
 
     NativePluginWithMidiPrograms(const NativeHostDescriptor* const host,
                                  const NativeMidiPrograms& programs,
@@ -109,7 +109,7 @@ protected:
 
     uint32_t getMidiProgramCount() const override
     {
-        const NativePluginPresetManager<FileType>& pm(kPrograms.get());
+        const NativePluginPresetManager<fileType>& pm(kPrograms.get());
         return static_cast<uint32_t>(pm.filenames.size());
     }
 
@@ -117,7 +117,7 @@ protected:
     {
         const int index = static_cast<int>(uindex);
 
-        const NativePluginPresetManager<FileType>& pm(kPrograms.get());
+        const NativePluginPresetManager<fileType>& pm(kPrograms.get());
         CARLA_SAFE_ASSERT_RETURN(index < pm.filenames.size(), nullptr);
 
         fRetMidiProgramName = File(pm.filenames.strings.getUnchecked(index)).getFileNameWithoutExtension();
@@ -136,7 +136,7 @@ protected:
     {
         const int iprogram = static_cast<int>(program);
 
-        const NativePluginPresetManager<FileType>& pm(kPrograms.get());
+        const NativePluginPresetManager<fileType>& pm(kPrograms.get());
         CARLA_SAFE_ASSERT_RETURN(iprogram < pm.filenames.size(),);
 
         const char* const filename(pm.filenames.strings.getUnchecked(iprogram).toRawUTF8());
