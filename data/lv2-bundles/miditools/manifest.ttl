@@ -1,0 +1,37 @@
+@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<http://kxstudio.sf.net/carla/plugins/midichanab>
+    a lv2:Plugin ;
+    lv2:binary <carla.so> ;
+    rdfs:seeAlso <midichanab.ttl> .
+
+<http://kxstudio.sf.net/carla/plugins/midichannelize>
+    a lv2:Plugin ;
+    lv2:binary <carla.so> ;
+    rdfs:seeAlso <midichannelize.ttl> .
+
+<http://kxstudio.sf.net/carla/plugins/midichanfilter>
+    a lv2:Plugin ;
+    lv2:binary <carla.so> ;
+    rdfs:seeAlso <midichanfilter.ttl> .
+
+<http://kxstudio.sf.net/carla/plugins/midigain>
+    a lv2:Plugin ;
+    lv2:binary <carla.so> ;
+    rdfs:seeAlso <midigain.ttl> .
+
+<http://kxstudio.sf.net/carla/plugins/midijoin>
+    a lv2:Plugin ;
+    lv2:binary <carla.so> ;
+    rdfs:seeAlso <midijoin.ttl> .
+
+<http://kxstudio.sf.net/carla/plugins/midisplit>
+    a lv2:Plugin ;
+    lv2:binary <carla.so> ;
+    rdfs:seeAlso <midisplit.ttl> .
+
+<http://kxstudio.sf.net/carla/plugins/miditranspose>
+    a lv2:Plugin ;
+    lv2:binary <carla.so> ;
+    rdfs:seeAlso <miditranspose.ttl> .

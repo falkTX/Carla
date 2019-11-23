@@ -1,0 +1,71 @@
+@prefix atom:  <http://lv2plug.in/ns/ext/atom#> .
+@prefix doap:  <http://usefulinc.com/ns/doap#> .
+@prefix foaf:  <http://xmlns.com/foaf/0.1/> .
+@prefix lv2:   <http://lv2plug.in/ns/lv2core#> .
+@prefix opts:  <http://lv2plug.in/ns/ext/options#> .
+@prefix patch: <http://lv2plug.in/ns/ext/patch#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ui:    <http://lv2plug.in/ns/extensions/ui#> .
+@prefix unit:  <http://lv2plug.in/ns/extensions/units#> .
+
+<http://kxstudio.sf.net/carla/plugins/midichannelize>
+    a lv2:UtilityPlugin, lv2:Plugin ;
+
+    lv2:optionalFeature <http://lv2plug.in/ns/lv2core#hardRTCapable> ;
+
+    lv2:requiredFeature <http://lv2plug.in/ns/ext/buf-size#boundedBlockLength> ,
+                        <http://lv2plug.in/ns/ext/options#options> ,
+                        <http://lv2plug.in/ns/ext/urid#map> ;
+
+    lv2:extensionData <http://lv2plug.in/ns/ext/options#interface> ;
+    lv2:extensionData <http://kxstudio.sf.net/ns/lv2ext/programs#Interface> ;
+
+    opts:supportedOption <http://lv2plug.in/ns/ext/buf-size#nominalBlockLength> ,
+                         <http://lv2plug.in/ns/ext/buf-size#maxBlockLength> ,
+                         <http://lv2plug.in/ns/ext/parameters#sampleRate> ;
+
+    lv2:port [
+        a lv2:InputPort, atom:AtomPort ;
+        atom:bufferType atom:Sequence ;
+        atom:supports <http://lv2plug.in/ns/ext/midi#MidiEvent> ;
+        lv2:designation lv2:control ;
+        lv2:index 0 ;
+        lv2:symbol "lv2_midi_in" ;
+        lv2:name "MIDI Input" ;
+    ] ;
+
+    lv2:port [
+        a lv2:OutputPort, atom:AtomPort ;
+        atom:bufferType atom:Sequence ;
+        atom:supports <http://lv2plug.in/ns/ext/midi#MidiEvent> ;
+        lv2:index 1 ;
+        lv2:symbol "lv2_midi_out" ;
+        lv2:name "MIDI Output" ;
+    ] ;
+
+    lv2:port [
+        a lv2:InputPort, lv2:ControlPort ;
+        lv2:index 2 ;
+        lv2:symbol "lv2_freewheel" ;
+        lv2:name "Freewheel" ;
+        lv2:default 0.0 ;
+        lv2:minimum 0.0 ;
+        lv2:maximum 1.0 ;
+        lv2:designation <http://lv2plug.in/ns/lv2core#freeWheeling> ;
+        lv2:portProperty lv2:toggled, <http://lv2plug.in/ns/ext/port-props#notOnGUI> ;
+    ] ;
+
+    lv2:port [
+        a lv2:InputPort, lv2:ControlPort ;
+        lv2:index 3 ;
+        lv2:symbol "channel" ;
+        lv2:name "Channel" ;
+        lv2:default 1.000000 ;
+        lv2:minimum 1.000000 ;
+        lv2:maximum 16.000000 ;
+        lv2:portProperty lv2:integer ;
+    ] ;
+
+    doap:name "MIDI Channelize" ;
+    doap:maintainer [ foaf:name "falkTX" ] .

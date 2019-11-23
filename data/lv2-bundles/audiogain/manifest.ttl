@@ -1,0 +1,12 @@
+@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<http://kxstudio.sf.net/carla/plugins/audiogain>
+    a lv2:Plugin ;
+    lv2:binary <carla.so> ;
+    rdfs:seeAlso <audiogain.ttl> .
+
+<http://kxstudio.sf.net/carla/plugins/audiogain_s>
+    a lv2:Plugin ;
+    lv2:binary <carla.so> ;
+    rdfs:seeAlso <audiogain_s.ttl> .
