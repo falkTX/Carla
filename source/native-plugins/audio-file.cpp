@@ -20,42 +20,59 @@
 
 #include "audio-base.hpp"
 
+#ifdef HAVE_PYQT
 static const char* const audiofilesWildcard =
-#ifdef HAVE_SNDFILE
-  "*.aif;*.aifc;*.aiff;*.au;*.bwf;*.flac;*.htk;*.iff;*.mat4;*.mat5;*.oga;*.ogg;"
-  "*.paf;*.pvf;*.pvf5;*.sd2;*.sf;*.snd;*.svx;*.vcc;*.w64;*.wav;*.xi;"
-#endif
-#ifdef HAVE_FFMPEG
-  "*.3g2;*.3gp;*.aac;*.ac3;*.amr;*.ape;*.mp2;*.mp3;*.mpc;*.wma;"
-# ifndef HAVE_SNDFILE
-  "*.flac;*.oga;*.ogg;*.w64;*.wav;"
+# ifdef HAVE_SNDFILE
+    "*.aif;*.aifc;*.aiff;*.au;*.bwf;*.flac;*.htk;*.iff;*.mat4;*.mat5;*.oga;*.ogg;"
+    "*.paf;*.pvf;*.pvf5;*.sd2;*.sf;*.snd;*.svx;*.vcc;*.w64;*.wav;*.xi;"
 # endif
-#endif
-#if !defined(HAVE_SNDFILE) && !defined(HAVE_FFMPEG)
-""
-# ifndef BUILDING_FOR_CI
-#  warning sndfile and ffmpeg libraries missing, no audio file support will be available
+# ifdef HAVE_FFMPEG
+    "*.3g2;*.3gp;*.aac;*.ac3;*.amr;*.ape;*.mp2;*.mp3;*.mpc;*.wma;"
+#  ifndef HAVE_SNDFILE
+    "*.flac;*.oga;*.ogg;*.w64;*.wav;"
+#  endif
 # endif
-#endif
+# if !defined(HAVE_SNDFILE) && !defined(HAVE_FFMPEG)
+    ""
+#  ifndef BUILDING_FOR_CI
+#   warning sndfile and ffmpeg libraries missing, no audio file support will be available
+#  endif
+# endif
 ;
+#else
+# define process2 process
+#endif
 
 // -----------------------------------------------------------------------
 
+#ifdef HAVE_PYQT
 class AudioFilePlugin : public NativePluginWithMidiPrograms<FileAudio>,
                         public AbstractAudioPlayer
+#else
+class AudioFilePlugin : public NativePluginClass,
+                        public AbstractAudioPlayer
+#endif
 {
 public:
     AudioFilePlugin(const NativeHostDescriptor* const host)
+#ifdef HAVE_PYQT
         : NativePluginWithMidiPrograms<FileAudio>(host, fPrograms, 2),
+#else
+        : NativePluginClass(host),
+#endif
           AbstractAudioPlayer(),
           fLoopMode(true),
           fDoProcess(false),
           fLastFrame(0),
           fMaxFrame(0),
           fPool(),
-          fThread(this),
-          fPrograms(hostGetFilePath("audio"), audiofilesWildcard),
-          fInlineDisplay() {}
+          fThread(this)
+#ifdef HAVE_PYQT
+        , fPrograms(hostGetFilePath("audio"), audiofilesWildcard),
+          fInlineDisplay()
+#endif
+    {
+    }
 
     ~AudioFilePlugin() override
     {
@@ -176,6 +193,7 @@ protected:
             carla_zeroFloats(out1, frames);
             carla_zeroFloats(out2, frames);
 
+#ifdef HAVE_PYQT
             if (fInlineDisplay.writtenValues < 32)
             {
                 fInlineDisplay.lastValuesL[fInlineDisplay.writtenValues] = 0.0f;
@@ -188,6 +206,7 @@ protected:
                 fInlineDisplay.pending = true;
                 hostQueueDrawInlineDisplay();
             }
+#endif
             return;
         }
 
@@ -244,6 +263,7 @@ protected:
             }
         }
 
+#ifdef HAVE_PYQT
         if (fInlineDisplay.writtenValues < 32)
         {
             fInlineDisplay.lastValuesL[fInlineDisplay.writtenValues] = carla_findMaxNormalizedFloat(out1, frames);
@@ -256,6 +276,7 @@ protected:
             fInlineDisplay.pending = true;
             hostQueueDrawInlineDisplay();
         }
+#endif
 
         fLastFrame = timePos->frame;
     }
@@ -277,14 +298,17 @@ protected:
     // -------------------------------------------------------------------
     // Plugin state calls
 
+#ifdef HAVE_PYQT
     void setStateFromFile(const char* const filename) override
     {
         loadFilename(filename);
     }
+#endif
 
     // -------------------------------------------------------------------
     // Plugin dispatcher calls
 
+#ifdef HAVE_PYQT
     const NativeInlineDisplayImageSurface* renderInlineDisplay(const uint32_t width, const uint32_t height) override
     {
         CARLA_SAFE_ASSERT_RETURN(width > 0 && height > 0, nullptr);
@@ -389,6 +413,7 @@ protected:
         fInlineDisplay.pending = false;
         return (NativeInlineDisplayImageSurface*)(NativeInlineDisplayImageSurfaceCompat*)&fInlineDisplay;
     }
+#endif
 
     // -------------------------------------------------------------------
 
@@ -402,6 +427,7 @@ private:
     AudioFilePool   fPool;
     AudioFileThread fThread;
 
+#ifdef HAVE_PYQT
     NativeMidiPrograms fPrograms;
 
     struct InlineDisplay : NativeInlineDisplayImageSurfaceCompat {
@@ -412,17 +438,17 @@ private:
 
         InlineDisplay()
             : NativeInlineDisplayImageSurfaceCompat(),
-#ifdef CARLA_PROPER_CPP11_SUPPORT
+# ifdef CARLA_PROPER_CPP11_SUPPORT
               lastValuesL{0.0f},
               lastValuesR{0.0f},
-#endif
+# endif
               writtenValues(0),
               pending(false)
         {
-#ifndef CARLA_PROPER_CPP11_SUPPORT
+# ifndef CARLA_PROPER_CPP11_SUPPORT
             carla_zeroFloats(lastValuesL, 32);
             carla_zeroFloats(lastValuesR, 32);
-#endif
+# endif
         }
 
         ~InlineDisplay()
@@ -437,6 +463,7 @@ private:
         CARLA_DECLARE_NON_COPY_STRUCT(InlineDisplay)
         CARLA_PREVENT_HEAP_ALLOCATION
     } fInlineDisplay;
+#endif
 
     void loadFilename(const char* const filename)
     {
@@ -481,10 +508,12 @@ private:
 static const NativePluginDescriptor audiofileDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
-                                                  |NATIVE_PLUGIN_HAS_INLINE_DISPLAY
                                                   |NATIVE_PLUGIN_HAS_UI
-                                                  |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE
+#ifdef HAVE_PYQT
+                                                  |NATIVE_PLUGIN_HAS_INLINE_DISPLAY
                                                   |NATIVE_PLUGIN_REQUESTS_IDLE
+#endif
+                                                  |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ 0,
@@ -512,3 +541,7 @@ void carla_register_native_plugin_audiofile()
 }
 
 // -----------------------------------------------------------------------
+
+#ifndef HAVE_PYQT
+# undef process2
+#endif

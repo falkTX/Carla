@@ -21,18 +21,34 @@
 #include "water/files/FileInputStream.h"
 #include "water/midi/MidiFile.h"
 
+#ifndef HAVE_PYQT
+# define process2 process
+#endif
+
 // -----------------------------------------------------------------------
 
+#ifdef HAVE_PYQT
 class MidiFilePlugin : public NativePluginWithMidiPrograms<FileMIDI>,
+#else
+class MidiFilePlugin : public NativePluginClass,
+#endif
                        public AbstractMidiPlayer
 {
 public:
     MidiFilePlugin(const NativeHostDescriptor* const host)
+#ifdef HAVE_PYQT
         : NativePluginWithMidiPrograms<FileMIDI>(host, fPrograms, 0),
+#else
+        : NativePluginClass(host),
+#endif
           fMidiOut(this),
           fNeedsAllNotesOff(false),
-          fWasPlayingBefore(false),
-          fPrograms(hostGetFilePath("midi"), "*.mid;*.midi") {}
+          fWasPlayingBefore(false)
+#ifdef HAVE_PYQT
+        , fPrograms(hostGetFilePath("midi"), "*.mid;*.midi")
+#endif
+    {
+    }
 
 protected:
     // -------------------------------------------------------------------
@@ -117,10 +133,12 @@ protected:
         fMidiOut.setState(data);
     }
 
+#ifdef HAVE_PYQT
     void setStateFromFile(const char* const filename) override
     {
         _loadMidiFile(filename);
     }
+#endif
 
     // -------------------------------------------------------------------
     // AbstractMidiPlayer calls
@@ -146,7 +164,9 @@ private:
     MidiPattern fMidiOut;
     bool fNeedsAllNotesOff;
     bool fWasPlayingBefore;
+#ifdef HAVE_PYQT
     NativeMidiPrograms fPrograms;
+#endif
 
     void _loadMidiFile(const char* const filename)
     {
@@ -230,7 +250,9 @@ static const NativePluginDescriptor midifileDesc = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE
+#ifdef HAVE_PYQT
                                                   |NATIVE_PLUGIN_REQUESTS_IDLE
+#endif
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
@@ -259,3 +281,7 @@ void carla_register_native_plugin_midifile()
 }
 
 // -----------------------------------------------------------------------
+
+#ifndef HAVE_PYQT
+# undef process2
+#endif
