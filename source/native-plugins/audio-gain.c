@@ -18,12 +18,30 @@
 #include "CarlaNative.h"
 #include "CarlaMIDI.h"
 
+#include <math.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
-#include <math.h>
 
 #define MAX_CHANNELS 2
+
+// -----------------------------------------------------------------------
+
+typedef struct {
+    float a0, b1, z1;
+} Filter;
+
+static inline
+void set_filter_sample_rate(Filter* const filter, const float sampleRate)
+{
+    static const float M_PIf = (float)M_PI;
+    const float frequency = 30.0f / sampleRate;
+
+    filter->b1 = expf(-2.0f * M_PIf * frequency);
+    filter->a0 = 1.0f - filter->b1;
+    filter->z1 = 0.0f;
+}
+
 // -----------------------------------------------------------------------
 
 typedef enum {
@@ -37,15 +55,8 @@ typedef enum {
     PARAM_COUNT_STEREO
 } AudioGainParams;
 
-typedef struct Filter {
-    float a0;
-    float b1;
-    float z1;
-}Filter;
-
 typedef struct {
-    const  NativeHostDescriptor* host;
-    Filter   *lowpass;
+    Filter lowpass[MAX_CHANNELS];
     float gain;
     bool isMono;
     bool applyLeft;
@@ -62,29 +73,17 @@ static NativePluginHandle audiogain_instantiate(const NativeHostDescriptor* host
     if (handle == NULL)
         return NULL;
 
-    handle->lowpass = (Filter*)malloc(2*sizeof(Filter));
-
-    handle->host = host;
-    //const NativeHostDescriptor* const host = handle->host;
-
-    float sampleRate = host->get_sample_rate(host->handle);
-
     handle->gain = 1.0f;
     handle->isMono = isMono;
     handle->applyLeft = true;
     handle->applyRight = true;
 
-    for (unsigned filter = 0; filter < MAX_CHANNELS; filter++) {
-        float frequency = 30.0 / sampleRate;
-        handle->lowpass[filter].b1 = exp(-2.0 * M_PI * frequency);
-        handle->lowpass[filter].a0 = 1.0 - handle->lowpass[filter].b1;
-        handle->lowpass[filter].z1 = 0.0;
-    }
+    const float sampleRate = (float)host->get_sample_rate(host->handle);
+
+    for (unsigned i = 0; i < MAX_CHANNELS; ++i)
+        set_filter_sample_rate(&handle->lowpass[i], sampleRate);
 
     return handle;
-
-    // unused
-    (void)host;
 }
 
 static NativePluginHandle audiogain_instantiate_mono(const NativeHostDescriptor* host)
@@ -188,26 +187,19 @@ static void audiogain_set_parameter_value(NativePluginHandle handle, uint32_t in
     }
 }
 
-static void handle_audio_buffers(const float* inBuffer, float* outBuffer, Filter* lowpass, const float gain, const uint32_t frames)
+static inline
+void handle_audio_buffers(const float* inBuffer, float* outBuffer, Filter* const filter, const float gain, const uint32_t frames)
 {
-    /*
-    if (gain == 0.0f)
-    {
-        memset(outBuffer, 0, sizeof(float)*frames);
+    const float a0 = filter->a0;
+    const float b1 = filter->b1;
+    float z1 = filter->z1;
+
+    for (uint32_t i=0; i < frames; ++i) {
+        z1 = gain * a0 + z1 * b1;
+        *outBuffer++ = *inBuffer++ * z1;
     }
-    else if (gain == 1.0f)
-    {
-        if (outBuffer != inBuffer)
-            memcpy(outBuffer, inBuffer, sizeof(float)*frames);
-    }
-    else
-    */
-    {
-        for (uint32_t i=0; i < frames; ++i) {
-            lowpass->z1 = gain * lowpass->a0 + lowpass->z1 * lowpass->b1;
-            *outBuffer++ = *inBuffer++ * lowpass->z1;
-        }
-    }
+
+    filter->z1 = z1;
 }
 
 static void audiogain_process(NativePluginHandle handle,
@@ -229,6 +221,26 @@ static void audiogain_process(NativePluginHandle handle,
     // unused
     (void)midiEvents;
     (void)midiEventCount;
+}
+
+static intptr_t audiogain_dispatcher(NativePluginHandle handle, NativePluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt)
+{
+    switch (opcode)
+    {
+    case NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
+        for (unsigned i = 0; i < MAX_CHANNELS; ++i)
+            set_filter_sample_rate(&handlePtr->lowpass[i], opt);
+        break;
+    default:
+        break;
+    }
+
+    return 0;
+
+    // unused
+    (void)index;
+    (void)value;
+    (void)ptr;
 }
 
 // -----------------------------------------------------------------------
@@ -276,7 +288,7 @@ static const NativePluginDescriptor audiogainMonoDesc = {
     .get_state = NULL,
     .set_state = NULL,
 
-    .dispatcher = NULL,
+    .dispatcher = audiogain_dispatcher,
 
     .render_inline_display = NULL
 };
@@ -326,7 +338,7 @@ static const NativePluginDescriptor audiogainStereoDesc = {
     .get_state = NULL,
     .set_state = NULL,
 
-    .dispatcher = NULL,
+    .dispatcher = audiogain_dispatcher,
 
     .render_inline_display = NULL
 };
