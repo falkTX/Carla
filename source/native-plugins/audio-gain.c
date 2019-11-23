@@ -61,7 +61,6 @@ typedef struct {
     bool isMono;
     bool applyLeft;
     bool applyRight;
-    float sampleRate;
 } AudioGainHandle;
 
 // -----------------------------------------------------------------------
