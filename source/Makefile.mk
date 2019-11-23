@@ -539,6 +539,9 @@ endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
+AUDIO_DECODER_LIBS  = $(FFMPEG_LIBS)
+AUDIO_DECODER_LIBS += $(SNDFILE_LIBS)
+
 NATIVE_PLUGINS_LIBS += $(DGL_LIBS)
 NATIVE_PLUGINS_LIBS += $(FFMPEG_LIBS)
 NATIVE_PLUGINS_LIBS += $(SNDFILE_LIBS)

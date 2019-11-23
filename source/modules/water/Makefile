@@ -32,6 +32,7 @@ OBJS_win64   = $(OBJDIR)/$(MODULENAME).cpp.win64.o
 # ---------------------------------------------------------------------------------------------------------------------
 
 all:     $(MODULEDIR)/$(MODULENAME).a $(MODULEDIR)/$(MODULENAME).files.a
+files:   $(MODULEDIR)/$(MODULENAME).files.a
 arm32:   $(MODULEDIR)/$(MODULENAME).arm32.a
 posix32: $(MODULEDIR)/$(MODULENAME).posix32.a
 posix64: $(MODULEDIR)/$(MODULENAME).posix64.a

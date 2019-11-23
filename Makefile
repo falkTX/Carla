@@ -146,6 +146,9 @@ endif
 $(MODULEDIR)/dgl.wine.a: .FORCE
 	@$(MAKE) -C source/modules/dgl wine
 
+$(MODULEDIR)/water.files.a: .FORCE
+	@$(MAKE) -C source/modules/water files
+
 $(MODULEDIR)/%.a: .FORCE
 	@$(MAKE) -C source/modules/$*
 
@@ -175,6 +178,9 @@ endif
 
 libjack: libs
 	@$(MAKE) -C source/libjack
+
+lv2-bundles: $(MODULEDIR)/native-plugins.a $(MODULEDIR)/audio_decoder.a $(MODULEDIR)/water.a
+	@$(MAKE) -C source/plugin bundles
 
 plugin: backend bridges-plugin bridges-ui discovery
 	@$(MAKE) -C source/plugin
