@@ -17,15 +17,14 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 
 BINDIR    := $(CWD)/../bin
+DATADIR   := $(CWD)/../data
 
 ifeq ($(DEBUG),true)
 OBJDIR    := $(CWD)/../build/plugin/Debug
 MODULEDIR := $(CWD)/../build/modules/Debug
-NPOBJDIR  := $(CWD)/../build/native-plugins/Debug
 else
 OBJDIR    := $(CWD)/../build/plugin/Release
 MODULEDIR := $(CWD)/../build/modules/Release
-NPOBJDIR  := $(CWD)/../build/native-plugins/Release
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -188,8 +187,11 @@ endif
 BUNDLES = audiogain files miditools
 
 bundles: \
+	$(BINDIR)/carla-audiogain.lv2/manifest.ttl \
 	$(BINDIR)/carla-audiogain.lv2/carla$(LIB_EXT) \
+	$(BINDIR)/carla-files.lv2/manifest.ttl \
 	$(BINDIR)/carla-files.lv2/carla$(LIB_EXT) \
+	$(BINDIR)/carla-miditools.lv2/manifest.ttl \
 	$(BINDIR)/carla-miditools.lv2/carla$(LIB_EXT)
 
 BUNDLE_LIBS += $(MODULEDIR)/water.files.a
@@ -206,6 +208,7 @@ clean:
 	rm -f $(OBJDIR)/*.o $(TARGETS)
 	rm -f $(BINDIR)/carla.lv2/*.*
 	rm -f $(BINDIR)/carla-lv2-export$(APP_EXT)
+	rm -rf $(BINDIR)/carla-*.lv2
 
 debug:
 	$(MAKE) DEBUG=true
@@ -236,27 +239,21 @@ $(BINDIR)/carla.lv2/carla-ui$(LIB_EXT): $(OBJDIR)/carla-lv2-ui.cpp.o $(LIBS_ui)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-$(BINDIR)/carla-audiogain.lv2/carla$(LIB_EXT): $(OBJDIR)/carla-lv2-bundles.cpp.audiogain.o \
-$(NPOBJDIR)/audio-gain.c.o
+$(BINDIR)/carla-%.lv2/manifest.ttl: $(DATADIR)/lv2-bundles/%/*.ttl
+	-@mkdir -p $(shell dirname $@)
+	@cp -v $^ $(shell dirname $@)
+
+$(BINDIR)/carla-audiogain.lv2/carla$(LIB_EXT): $(OBJDIR)/carla-lv2-bundles.cpp.audiogain.o $(MODULEDIR)/native-plugins_audiogain.a
 	-@mkdir -p $(BINDIR)/carla-audiogain.lv2
 	@echo "Linking carla-audiogain.lv2/carla$(LIB_EXT)"
 	@$(CXX) $^ $(SHARED) $(SYMBOLS_LV2) $(BUNDLE_LIBS) $(LINK_FLAGS) -ldl -o $@
 
-$(BINDIR)/carla-files.lv2/carla$(LIB_EXT): $(OBJDIR)/carla-lv2-bundles.cpp.files.o \
-$(NPOBJDIR)/audio-file.cpp.o \
-$(NPOBJDIR)/midi-file.cpp.o
+$(BINDIR)/carla-files.lv2/carla$(LIB_EXT): $(OBJDIR)/carla-lv2-bundles.cpp.files.o $(MODULEDIR)/native-plugins_files.a
 	-@mkdir -p $(BINDIR)/carla-files.lv2
 	@echo "Linking carla-files.lv2/carla$(LIB_EXT)"
 	@$(CXX) $^ $(SHARED) $(SYMBOLS_LV2) $(BUNDLE_FILES_LIBS) $(LINK_FLAGS) -o $@
 
-$(BINDIR)/carla-miditools.lv2/carla$(LIB_EXT): $(OBJDIR)/carla-lv2-bundles.cpp.miditools.o \
-$(NPOBJDIR)/midi-channel-ab.c.o \
-$(NPOBJDIR)/midi-channel-filter.c.o \
-$(NPOBJDIR)/midi-channelize.c.o \
-$(NPOBJDIR)/midi-gain.c.o \
-$(NPOBJDIR)/midi-join.c.o \
-$(NPOBJDIR)/midi-split.c.o \
-$(NPOBJDIR)/midi-transpose.c.o
+$(BINDIR)/carla-miditools.lv2/carla$(LIB_EXT): $(OBJDIR)/carla-lv2-bundles.cpp.miditools.o $(MODULEDIR)/native-plugins_miditools.a
 	-@mkdir -p $(BINDIR)/carla-miditools.lv2
 	@echo "Linking carla-miditools.lv2/carla$(LIB_EXT)"
 	@$(CXX) $^ $(SHARED) $(SYMBOLS_LV2) $(BUNDLE_LIBS) $(LINK_FLAGS) -o $@

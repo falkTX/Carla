@@ -179,7 +179,10 @@ endif
 libjack: libs
 	@$(MAKE) -C source/libjack
 
-lv2-bundles: $(MODULEDIR)/native-plugins.a $(MODULEDIR)/audio_decoder.a $(MODULEDIR)/water.a
+lv2-bundles-dep: $(MODULEDIR)/audio_decoder.a $(MODULEDIR)/water.a
+	@$(MAKE) -C source/native-plugins bundles
+
+lv2-bundles: lv2-bundles-dep
 	@$(MAKE) -C source/plugin bundles
 
 plugin: backend bridges-plugin bridges-ui discovery
