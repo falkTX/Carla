@@ -533,7 +533,7 @@ public:
                     ERect* vstRect = nullptr;
                     dispatcher(effEditGetRect, 0, 0, &vstRect);
 
-                    if (vstRect != nullptr && !fUI.isResized)
+                    if (vstRect != nullptr)
                     {
                         const int width(vstRect->right - vstRect->left);
                         const int height(vstRect->bottom - vstRect->top);
@@ -541,7 +541,11 @@ public:
                         CARLA_SAFE_ASSERT_INT2(width > 1 && height > 1, width, height);
 
                         if (width > 1 && height > 1)
+                        {
+                            fUI.isBeingResized = true;
                             fUI.window->setSize(static_cast<uint>(width), static_cast<uint>(height), true);
+                            fUI.isBeingResized = false;
+                        }
                     }
                 }
                 else
@@ -550,7 +554,6 @@ public:
                     delete fUI.window;
                     fUI.window = nullptr;
                     fUI.isOpen = false;
-                    fUI.isResized = false;
                     fUI.isVisible = false;
 
                     carla_stderr2("Plugin refused to open its own UI");
@@ -2086,8 +2089,10 @@ protected:
             CARLA_SAFE_ASSERT_BREAK(fUI.window != nullptr);
             CARLA_SAFE_ASSERT_BREAK(index > 0);
             CARLA_SAFE_ASSERT_BREAK(value > 0);
-            fUI.isResized = true;
+            CARLA_SAFE_ASSERT_BREAK(!fUI.isBeingResized);
+            fUI.isBeingResized = true;
             fUI.window->setSize(static_cast<uint>(index), static_cast<uint>(value), true);
+            fUI.isBeingResized = false;
             ret = 1;
             break;
 
@@ -2578,14 +2583,14 @@ private:
     } fEvents;
 
     struct UI {
+        bool isBeingResized;
         bool isOpen;
-        bool isResized;
         bool isVisible;
         CarlaPluginUI* window;
 
         UI() noexcept
-            : isOpen(false),
-              isResized(false),
+            : isBeingResized(false),
+              isOpen(false),
               isVisible(false),
               window(nullptr) {}
 
