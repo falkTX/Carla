@@ -103,34 +103,34 @@ public:
     {
         if (fRdfDescriptor != nullptr)
         {
-            const LADSPA_PluginType category(fRdfDescriptor->Type);
+            const LADSPA_RDF_PluginType category = fRdfDescriptor->Type;
 
             // Specific Types
-            if (category & (LADSPA_PLUGIN_DELAY|LADSPA_PLUGIN_REVERB))
+            if (category & (LADSPA_RDF_PLUGIN_DELAY|LADSPA_RDF_PLUGIN_REVERB))
                 return PLUGIN_CATEGORY_DELAY;
-            if (category & (LADSPA_PLUGIN_PHASER|LADSPA_PLUGIN_FLANGER|LADSPA_PLUGIN_CHORUS))
+            if (category & (LADSPA_RDF_PLUGIN_PHASER|LADSPA_RDF_PLUGIN_FLANGER|LADSPA_RDF_PLUGIN_CHORUS))
                 return PLUGIN_CATEGORY_MODULATOR;
-            if (category & (LADSPA_PLUGIN_AMPLIFIER))
+            if (category & (LADSPA_RDF_PLUGIN_AMPLIFIER))
                 return PLUGIN_CATEGORY_DYNAMICS;
-            if (category & (LADSPA_PLUGIN_UTILITY|LADSPA_PLUGIN_SPECTRAL|LADSPA_PLUGIN_FREQUENCY_METER))
+            if (category & (LADSPA_RDF_PLUGIN_UTILITY|LADSPA_RDF_PLUGIN_SPECTRAL|LADSPA_RDF_PLUGIN_FREQUENCY_METER))
                 return PLUGIN_CATEGORY_UTILITY;
 
             // Pre-set LADSPA Types
-            if (LADSPA_IS_PLUGIN_DYNAMICS(category))
+            if (LADSPA_RDF_IS_PLUGIN_DYNAMICS(category))
                 return PLUGIN_CATEGORY_DYNAMICS;
-            if (LADSPA_IS_PLUGIN_AMPLITUDE(category))
+            if (LADSPA_RDF_IS_PLUGIN_AMPLITUDE(category))
                 return PLUGIN_CATEGORY_MODULATOR;
-            if (LADSPA_IS_PLUGIN_EQ(category))
+            if (LADSPA_RDF_IS_PLUGIN_EQ(category))
                 return PLUGIN_CATEGORY_EQ;
-            if (LADSPA_IS_PLUGIN_FILTER(category))
+            if (LADSPA_RDF_IS_PLUGIN_FILTER(category))
                 return PLUGIN_CATEGORY_FILTER;
-            if (LADSPA_IS_PLUGIN_FREQUENCY(category))
+            if (LADSPA_RDF_IS_PLUGIN_FREQUENCY(category))
                 return PLUGIN_CATEGORY_UTILITY;
-            if (LADSPA_IS_PLUGIN_SIMULATOR(category))
+            if (LADSPA_RDF_IS_PLUGIN_SIMULATOR(category))
                 return PLUGIN_CATEGORY_OTHER;
-            if (LADSPA_IS_PLUGIN_TIME(category))
+            if (LADSPA_RDF_IS_PLUGIN_TIME(category))
                 return PLUGIN_CATEGORY_DELAY;
-            if (LADSPA_IS_PLUGIN_GENERATOR(category))
+            if (LADSPA_RDF_IS_PLUGIN_GENERATOR(category))
                 return PLUGIN_CATEGORY_SYNTH;
         }
 
@@ -301,26 +301,26 @@ public:
         {
             const LADSPA_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
 
-            if (LADSPA_PORT_HAS_UNIT(port.Hints))
+            if (LADSPA_RDF_PORT_HAS_UNIT(port.Hints))
             {
                 switch (port.Unit)
                 {
-                case LADSPA_UNIT_DB:
+                case LADSPA_RDF_UNIT_DB:
                     std::strncpy(strBuf, "dB", STR_MAX);
                     return true;
-                case LADSPA_UNIT_COEF:
+                case LADSPA_RDF_UNIT_COEF:
                     std::strncpy(strBuf, "(coef)", STR_MAX);
                     return true;
-                case LADSPA_UNIT_HZ:
+                case LADSPA_RDF_UNIT_HZ:
                     std::strncpy(strBuf, "Hz", STR_MAX);
                     return true;
-                case LADSPA_UNIT_S:
+                case LADSPA_RDF_UNIT_S:
                     std::strncpy(strBuf, "s", STR_MAX);
                     return true;
-                case LADSPA_UNIT_MS:
+                case LADSPA_RDF_UNIT_MS:
                     std::strncpy(strBuf, "ms", STR_MAX);
                     return true;
-                case LADSPA_UNIT_MIN:
+                case LADSPA_RDF_UNIT_MIN:
                     std::strncpy(strBuf, "min", STR_MAX);
                     return true;
                 }
@@ -348,7 +348,7 @@ public:
 
         const LADSPA_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
 
-        if (! LADSPA_PORT_HAS_LABEL(port.Hints))
+        if (! LADSPA_RDF_PORT_HAS_LABEL(port.Hints))
             return false;
 
         CARLA_SAFE_ASSERT_RETURN(port.Label != nullptr, false);
@@ -621,7 +621,7 @@ public:
                 }
 
                 // default value
-                if (hasPortRDF && LADSPA_PORT_HAS_DEFAULT(fRdfDescriptor->Ports[i].Hints))
+                if (hasPortRDF && LADSPA_RDF_PORT_HAS_DEFAULT(fRdfDescriptor->Ports[i].Hints))
                     def = fRdfDescriptor->Ports[i].Default;
                 else
                     def = get_default_ladspa_port_value(portRangeHints.HintDescriptor, min, max);
