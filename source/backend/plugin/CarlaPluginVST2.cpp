@@ -533,7 +533,7 @@ public:
                     ERect* vstRect = nullptr;
                     dispatcher(effEditGetRect, 0, 0, &vstRect);
 
-                    if (vstRect != nullptr && !fUI.isResized)
+                    if (vstRect != nullptr)
                     {
                         const int width(vstRect->right - vstRect->left);
                         const int height(vstRect->bottom - vstRect->top);
@@ -2086,7 +2086,6 @@ protected:
             CARLA_SAFE_ASSERT_BREAK(fUI.window != nullptr);
             CARLA_SAFE_ASSERT_BREAK(index > 0);
             CARLA_SAFE_ASSERT_BREAK(value > 0);
-            fUI.isResized = true;
             fUI.window->setSize(static_cast<uint>(index), static_cast<uint>(value), true);
             ret = 1;
             break;
@@ -2579,13 +2578,11 @@ private:
 
     struct UI {
         bool isOpen;
-        bool isResized;
         bool isVisible;
         CarlaPluginUI* window;
 
         UI() noexcept
             : isOpen(false),
-              isResized(false),
               isVisible(false),
               window(nullptr) {}
 
