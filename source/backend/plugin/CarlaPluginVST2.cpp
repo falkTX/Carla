@@ -546,12 +546,8 @@ public:
                 }
                 else
                 {
-                    // NOTE: this code is never executed, due to a few broken VST UIs
                     delete fUI.window;
                     fUI.window = nullptr;
-                    fUI.isOpen = false;
-                    fUI.isResized = false;
-                    fUI.isVisible = false;
 
                     carla_stderr2("Plugin refused to open its own UI");
                     return pData->engine->callback(true, true,
