@@ -850,8 +850,8 @@ protected:
     // -------------------------------------
 
 private:
-    ScopedPointer<juce::AudioIODevice> fDevice;
-    juce::AudioIODeviceType* const     fDeviceType;
+    CarlaScopedPointer<juce::AudioIODevice> fDevice;
+    juce::AudioIODeviceType* const fDeviceType;
 
     struct RtMidiEvents {
         CarlaMutex mutex;
@@ -1019,7 +1019,7 @@ const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const uint uindex, 
 
     deviceType->scanForDevices();
 
-    ScopedPointer<juce::AudioIODevice> device(deviceType->createDevice(deviceName, deviceName));
+    CarlaScopedPointer<juce::AudioIODevice> device(deviceType->createDevice(deviceName, deviceName));
 
     if (device == nullptr)
         return nullptr;
@@ -1093,7 +1093,7 @@ bool CarlaEngine::showJuceDeviceControlPanel(const uint uindex, const char* cons
 
     deviceType->scanForDevices();
 
-    ScopedPointer<juce::AudioIODevice> device(deviceType->createDevice(deviceName, deviceName));
+    CarlaScopedPointer<juce::AudioIODevice> device(deviceType->createDevice(deviceName, deviceName));
     CARLA_SAFE_ASSERT_RETURN(device != nullptr, false);
 
     return device->showControlPanel();
