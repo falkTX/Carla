@@ -22,6 +22,7 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
+#include "CarlaScopeUtils.hpp"
 
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 # pragma GCC diagnostic push
@@ -925,7 +926,7 @@ public:
                         {
                             uint8_t midiData[3];
                             midiData[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
-                            midiData[1] = MIDI_CONTROL_BANK_SELECT; 
+                            midiData[1] = MIDI_CONTROL_BANK_SELECT;
                             midiData[2] = 0;
                             fMidiBuffer.addEvent(midiData, 3, static_cast<int>(event.time));
 
@@ -1369,7 +1370,7 @@ public:
                 pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
 
             if (options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
-                pData->options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;   
+                pData->options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
         }
 
         if (fInstance->getNumPrograms() > 1 && ((pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) == 0))
@@ -1389,7 +1390,7 @@ private:
     juce::MemoryBlock       fChunk;
     juce::String            fFormatName;
 
-    ScopedPointer<JucePluginWindow> fWindow;
+    CarlaScopedPointer<JucePluginWindow> fWindow;
 
     bool isJuceSaveFormat(const void* const data, const std::size_t dataSize)
     {
