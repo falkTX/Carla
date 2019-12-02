@@ -2,7 +2,7 @@
  * Carla misc utils based on Juce
  * Copyright (C) 2013 Raw Material Software Ltd.
  * Copyright (c) 2016 ROLI Ltd.
- * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -18,11 +18,6 @@
 
 #ifndef CARLA_JUCE_UTILS_HPP_INCLUDED
 #define CARLA_JUCE_UTILS_HPP_INCLUDED
-
-#define DISTRHO_LEAK_DETECTOR_HPP_INCLUDED
-#define DISTRHO_SCOPED_POINTER_HPP_INCLUDED
-#define DISTRHO_LEAK_DETECTOR CARLA_LEAK_DETECTOR
-#define DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR
 
 #include "CarlaUtils.hpp"
 
