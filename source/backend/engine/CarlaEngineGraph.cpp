@@ -20,7 +20,7 @@
 #include "CarlaPlugin.hpp"
 
 #include "CarlaMathUtils.hpp"
-#include "CarlaJuceUtils.hpp"
+#include "CarlaScopeUtils.hpp"
 
 #include "CarlaMIDI.h"
 
@@ -2354,7 +2354,7 @@ void EngineInternalGraph::destroy() noexcept
 
 void EngineInternalGraph::setBufferSize(const uint32_t bufferSize)
 {
-    ScopedValueSetter<bool> svs(fIsReady, false, true);
+    CarlaScopedValueSetter<volatile bool> svs(fIsReady, false, true);
 
     if (fIsRack)
     {
@@ -2370,7 +2370,7 @@ void EngineInternalGraph::setBufferSize(const uint32_t bufferSize)
 
 void EngineInternalGraph::setSampleRate(const double sampleRate)
 {
-    ScopedValueSetter<bool> svs(fIsReady, false, true);
+    CarlaScopedValueSetter<volatile bool> svs(fIsReady, false, true);
 
     if (fIsRack)
     {
@@ -2385,7 +2385,7 @@ void EngineInternalGraph::setSampleRate(const double sampleRate)
 
 void EngineInternalGraph::setOffline(const bool offline)
 {
-    ScopedValueSetter<bool> svs(fIsReady, false, true);
+    CarlaScopedValueSetter<volatile bool> svs(fIsReady, false, true);
 
     if (fIsRack)
     {

@@ -28,7 +28,7 @@
 
 #include "../text/StringArray.h"
 
-#include "CarlaJuceUtils.hpp"
+#include "CarlaScopeUtils.hpp"
 
 namespace water {
 
@@ -114,7 +114,7 @@ public:
 private:
     //==============================================================================
     class ActiveProcess;
-    ScopedPointer<ActiveProcess> activeProcess;
+    CarlaScopedPointer<ActiveProcess> activeProcess;
 
     CARLA_DECLARE_NON_COPY_CLASS (ChildProcess)
 };

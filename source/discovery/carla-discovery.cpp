@@ -719,7 +719,7 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
     for (int i=0, count=URIs.size(); i < count; ++i)
     {
         const char* const URI = URIs[i].toRawUTF8();
-        ScopedPointer<const LV2_RDF_Descriptor> rdfDescriptor(lv2_rdf_new(URI, false));
+        CarlaScopedPointer<const LV2_RDF_Descriptor> rdfDescriptor(lv2_rdf_new(URI, false));
 
         if (rdfDescriptor == nullptr || rdfDescriptor->URI == nullptr)
         {

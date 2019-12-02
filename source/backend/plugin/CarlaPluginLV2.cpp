@@ -28,6 +28,7 @@
 #include "CarlaEngineUtils.hpp"
 #include "CarlaPipeUtils.hpp"
 #include "CarlaPluginUI.hpp"
+#include "CarlaScopeUtils.hpp"
 #include "Lv2AtomRingBuffer.hpp"
 
 #include "../modules/lilv/config/lilv_config.h"
@@ -485,9 +486,9 @@ public:
         sampleRateStr[31] = '\0';
 
         const ScopedEngineEnvironmentLocker _seel(kEngine);
-        const ScopedEnvVar _sev1("LV2_PATH", kEngine->getOptions().pathLV2);
+        const CarlaScopedEnvVar _sev1("LV2_PATH", kEngine->getOptions().pathLV2);
 #ifdef CARLA_OS_LINUX
-        const ScopedEnvVar _sev2("LD_PRELOAD", nullptr);
+        const CarlaScopedEnvVar _sev2("LD_PRELOAD", nullptr);
 #endif
         carla_setenv("CARLA_SAMPLE_RATE", sampleRateStr);
 
@@ -4920,7 +4921,7 @@ public:
             if (! LV2_IS_PORT_CONTROL(portTypes))
                 continue;
 
-            const ScopedValueSetter<int32_t> svs(iCtrl, iCtrl, iCtrl+1);
+            const CarlaScopedValueSetter<int32_t> svs(iCtrl, iCtrl, iCtrl+1);
 
             if (! LV2_IS_PORT_OUTPUT(portTypes))
                 continue;

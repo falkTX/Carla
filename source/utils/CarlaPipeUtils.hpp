@@ -347,21 +347,5 @@ public:
 };
 
 // -----------------------------------------------------------------------
-// ScopedEnvVar class
-
-class ScopedEnvVar {
-public:
-    ScopedEnvVar(const char* const key, const char* const value) noexcept;
-    ~ScopedEnvVar() noexcept;
-
-private:
-    const char* fKey;
-    const char* fOrigValue;
-
-    CARLA_DECLARE_NON_COPY_CLASS(ScopedEnvVar)
-    CARLA_PREVENT_HEAP_ALLOCATION
-};
-
-// -----------------------------------------------------------------------
 
 #endif // CARLA_PIPE_UTILS_HPP_INCLUDED

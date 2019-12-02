@@ -19,8 +19,7 @@
 #define CARLA_STRING_HPP_INCLUDED
 
 #include "CarlaMathUtils.hpp"
-#include "CarlaJuceUtils.hpp"
-#include "CarlaScopedLocale.hpp"
+#include "CarlaScopeUtils.hpp"
 
 #include <algorithm>
 

@@ -22,11 +22,10 @@
 # define USE_JUCE_FOR_VST2
 #endif
 
-#ifndef USE_JUCE_FOR_VST2
-
+#include "CarlaMathUtils.hpp"
+#include "CarlaScopeUtils.hpp"
 #include "CarlaVstUtils.hpp"
 
-#include "CarlaMathUtils.hpp"
 #include "CarlaPluginUI.hpp"
 
 #ifdef CARLA_OS_MAC
@@ -419,7 +418,7 @@ public:
 
         {
             const ScopedSingleProcessLocker spl(this, true);
-            const ScopedValueSetter<pthread_t> svs(fChangingValuesThread, pthread_self(), kNullThread);
+            const CarlaScopedValueSetter<pthread_t> svs(fChangingValuesThread, pthread_self(), kNullThread);
 
             dispatcher(effSetChunk, 0 /* bank */, static_cast<intptr_t>(dataSize), fLastChunk);
         }
@@ -444,7 +443,7 @@ public:
 
             {
                 const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
-                const ScopedValueSetter<pthread_t> svs(fChangingValuesThread, pthread_self(), kNullThread);
+                const CarlaScopedValueSetter<pthread_t> svs(fChangingValuesThread, pthread_self(), kNullThread);
 
                 try {
                     dispatcher(effSetProgram, 0, index);
@@ -575,7 +574,7 @@ public:
     {
         if (fNeedIdle)
         {
-            const ScopedValueSetter<pthread_t> svs(fIdleThread, pthread_self(), kNullThread);
+            const CarlaScopedValueSetter<pthread_t> svs(fIdleThread, pthread_self(), kNullThread);
             dispatcher(effIdle);
         }
 
@@ -608,7 +607,7 @@ public:
 
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
-        const ScopedValueSetter<bool> svs(fIsInitializing, fIsInitializing, false);
+        const CarlaScopedValueSetter<bool> svs(fIsInitializing, fIsInitializing, false);
 
         if (pData->active)
             deactivate();
@@ -1092,7 +1091,7 @@ public:
 
     void process(const float** const audioIn, float** const audioOut, const float** const, float** const, const uint32_t frames) override
     {
-        const ScopedValueSetter<pthread_t> svs(fProcThread, pthread_self(), kNullThread);
+        const CarlaScopedValueSetter<pthread_t> svs(fProcThread, pthread_self(), kNullThread);
 
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -2767,8 +2766,6 @@ CarlaPluginVST2* CarlaPluginVST2::sLastCarlaPluginVST2 = nullptr;
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // USE_JUCE_FOR_VST2
-
 // -------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
@@ -2778,8 +2775,10 @@ CarlaPlugin* CarlaPlugin::newVST2(const Initializer& init)
     carla_debug("CarlaPlugin::newVST2({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.uniqueId);
 
 #ifdef USE_JUCE_FOR_VST2
-    return newJuce(init, "VST2");
-#else
+    if (std::getenv("CARLA_DO_NOT_USE_JUCE_FOR_VST2") == nullptr)
+        return newJuce(init, "VST2");
+#endif
+
     CarlaPluginVST2* const plugin(new CarlaPluginVST2(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name, init.uniqueId, init.options))
@@ -2789,7 +2788,6 @@ CarlaPlugin* CarlaPlugin::newVST2(const Initializer& init)
     }
 
     return plugin;
-#endif
 }
 
 // -------------------------------------------------------------------------------------------------------------------

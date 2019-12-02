@@ -21,7 +21,7 @@
 
 #include "CarlaLv2Utils.hpp"
 #include "CarlaPipeUtils.hpp"
-#include "CarlaScopedLocale.hpp"
+#include "CarlaScopeUtils.hpp"
 
 // --------------------------------------------------------------------------------------------------------------------
 

@@ -31,6 +31,7 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaPipeUtils.hpp"
 #include "CarlaProcessUtils.hpp"
+#include "CarlaScopeUtils.hpp"
 #include "CarlaStateUtils.hpp"
 #include "CarlaMIDI.h"
 
@@ -2301,7 +2302,7 @@ static String findBinaryInCustomPath(const char* const searchPath, const char* c
 
 bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
 {
-    ScopedPointer<XmlElement> xmlElement(xmlDoc.getDocumentElement(true));
+    CarlaScopedPointer<XmlElement> xmlElement(xmlDoc.getDocumentElement(true));
     CARLA_SAFE_ASSERT_RETURN_ERR(xmlElement != nullptr, "Failed to parse project file");
 
     const String& xmlType(xmlElement->getTagName());
@@ -2318,7 +2319,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
     callback(true, true, ENGINE_CALLBACK_CANCELABLE_ACTION, 0, 1, 0, 0, 0.0f, "Loading project");
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-    const ScopedValueSetter<bool> _svs2(pData->loadingProject, true, false);
+    const CarlaScopedValueSetter<bool> _svs2(pData->loadingProject, true, false);
 #endif
 
     // completely load file

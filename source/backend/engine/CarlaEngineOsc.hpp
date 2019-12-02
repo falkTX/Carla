@@ -23,6 +23,7 @@
 #ifdef HAVE_LIBLO
 
 #include "CarlaBackend.h"
+#include "CarlaJuceUtils.hpp"
 #include "CarlaOscUtils.hpp"
 #include "CarlaString.hpp"
 

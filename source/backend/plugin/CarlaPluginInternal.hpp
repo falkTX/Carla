@@ -20,6 +20,7 @@
 
 #include "CarlaPlugin.hpp"
 
+#include "CarlaJuceUtils.hpp"
 #include "CarlaLibUtils.hpp"
 #include "CarlaStateUtils.hpp"
 

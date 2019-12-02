@@ -1,5 +1,5 @@
 /*
- * Carla Plugin, DSSI implementation
+ * Carla Plugin, LADSPA/DSSI implementation
  * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -18,42 +18,45 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngineUtils.hpp"
 
+#include "CarlaLadspaUtils.hpp"
 #include "CarlaDssiUtils.hpp"
 #include "CarlaMathUtils.hpp"
 
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
 # include "CarlaOscUtils.hpp"
-# include "CarlaPipeUtils.hpp"
+# include "CarlaScopeUtils.hpp"
 # include "CarlaThread.hpp"
+# include "water/threads/ChildProcess.h"
+using water::ChildProcess;
 #endif
 
-#include "water/threads/ChildProcess.h"
-
-using water::ChildProcess;
 using water::String;
 using water::StringArray;
 
-#define CARLA_PLUGIN_DSSI_OSC_CHECK_OSC_TYPES(/* argc, types, */ argcToCompare, typesToCompare)                                 \
-    /* check argument count */                                                                                                  \
-    if (argc != argcToCompare)                                                                                                  \
-    {                                                                                                                           \
-        carla_stderr("CarlaPluginDSSI::%s() - argument count mismatch: %i != %i", __FUNCTION__, argc, argcToCompare);           \
-        return;                                                                                                                 \
-    }                                                                                                                           \
-    if (argc > 0)                                                                                                               \
-    {                                                                                                                           \
-        /* check for nullness */                                                                                                \
-        if (types == nullptr || typesToCompare == nullptr)                                                                      \
-        {                                                                                                                       \
-            carla_stderr("CarlaPluginDSSI::%s() - argument types are null", __FUNCTION__);                                      \
-            return;                                                                                                             \
-        }                                                                                                                       \
-        /* check argument types */                                                                                              \
-        if (std::strcmp(types, typesToCompare) != 0)                                                                            \
-        {                                                                                                                       \
-            carla_stderr("CarlaPluginDSSI::%s() - argument types mismatch: '%s' != '%s'", __FUNCTION__, types, typesToCompare); \
-            return;                                                                                                             \
-        }                                                                                                                       \
+#define CARLA_PLUGIN_DSSI_OSC_CHECK_OSC_TYPES(/* argc, types, */ argcToCompare, typesToCompare) \
+    /* check argument count */                                                                  \
+    if (argc != argcToCompare)                                                                  \
+    {                                                                                           \
+        carla_stderr("CarlaPluginLADSPADSSI::%s() - argument count mismatch: %i != %i",         \
+                     __FUNCTION__, argc, argcToCompare);                                        \
+        return;                                                                                 \
+    }                                                                                           \
+    if (argc > 0)                                                                               \
+    {                                                                                           \
+        /* check for nullness */                                                                \
+        if (types == nullptr || typesToCompare == nullptr)                                      \
+        {                                                                                       \
+            carla_stderr("CarlaPluginLADSPADSSI::%s() - argument types are null",               \
+                         __FUNCTION__);                                                         \
+            return;                                                                             \
+        }                                                                                       \
+        /* check argument types */                                                              \
+        if (std::strcmp(types, typesToCompare) != 0)                                            \
+        {                                                                                       \
+            carla_stderr("CarlaPluginLADSPADSSI::%s() - argument types mismatch: '%s' != '%s'", \
+                         __FUNCTION__, types, typesToCompare);                                  \
+            return;                                                                             \
+        }                                                                                       \
     }
 
 CARLA_BACKEND_START_NAMESPACE
@@ -100,7 +103,7 @@ public:
 
     void run()
     {
-        carla_stdout("DSSI UI thread started");
+        carla_stdout("LADSPA/DSSI UI thread started");
 
         if (fProcess == nullptr)
         {
@@ -175,8 +178,8 @@ public:
             }
 
             const ScopedEngineEnvironmentLocker _seel(kEngine);
-            const ScopedEnvVar _sev1("CARLA_ENGINE_OPTION_FRONTEND_WIN_ID", winIdStr[0] != '\0' ? winIdStr : nullptr);
-            const ScopedEnvVar _sev2("LD_PRELOAD", ldPreloadValue.isNotEmpty() ? ldPreloadValue.buffer() : nullptr);
+            const CarlaScopedEnvVar _sev1("CARLA_ENGINE_OPTION_FRONTEND_WIN_ID", winIdStr[0] != '\0' ? winIdStr : nullptr);
+            const CarlaScopedEnvVar _sev2("LD_PRELOAD", ldPreloadValue.isNotEmpty() ? ldPreloadValue.buffer() : nullptr);
 #endif // CARLA_OS_LINUX
 
             // start the DSSI UI application
@@ -229,7 +232,7 @@ public:
                           0,
                           0, 0, 0.0f, nullptr);
 
-        carla_stdout("DSSI UI thread finished");
+        carla_stdout("LADSPA/DSSI UI thread finished");
     }
 
 private:
@@ -239,8 +242,8 @@ private:
     CarlaString fBinary;
     CarlaString fLabel;
 
-    const CarlaOscData&         fOscData;
-    ScopedPointer<ChildProcess> fProcess;
+    const CarlaOscData& fOscData;
+    CarlaScopedPointer<ChildProcess> fProcess;
 
     bool waitForOscGuiShow()
     {
@@ -274,14 +277,15 @@ private:
 
 // -----------------------------------------------------
 
-class CarlaPluginDSSI : public CarlaPlugin
+class CarlaPluginLADSPADSSI : public CarlaPlugin
 {
 public:
-    CarlaPluginDSSI(CarlaEngine* const engine, const uint id) noexcept
+    CarlaPluginLADSPADSSI(CarlaEngine* const engine, const uint id) noexcept
         : CarlaPlugin(engine, id),
           fHandles(),
           fDescriptor(nullptr),
           fDssiDescriptor(nullptr),
+          fRdfDescriptor(nullptr),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
           fExtraStereoBuffer(),
@@ -297,14 +301,14 @@ public:
           fUiFilename(nullptr)
 #endif
     {
-        carla_debug("CarlaPluginDSSI::CarlaPluginDSSI(%p, %i)", engine, id);
+        carla_debug("CarlaPluginLADSPADSSI::CarlaPluginLADSPADSSI(%p, %i)", engine, id);
 
         carla_zeroPointers(fExtraStereoBuffer, 2);
     }
 
-    ~CarlaPluginDSSI() noexcept override
+    ~CarlaPluginLADSPADSSI() noexcept override
     {
-        carla_debug("CarlaPluginDSSI::~CarlaPluginDSSI()");
+        carla_debug("CarlaPluginLADSPADSSI::~CarlaPluginLADSPADSSI()");
 
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
         // close UI
@@ -340,13 +344,19 @@ public:
 
                     try {
                         fDescriptor->cleanup(handle);
-                    } CARLA_SAFE_EXCEPTION("LADSPA cleanup");
+                    } CARLA_SAFE_EXCEPTION("LADSPA/DSSI cleanup");
                 }
             }
 
             fHandles.clear();
             fDescriptor = nullptr;
             fDssiDescriptor = nullptr;
+        }
+
+        if (fRdfDescriptor != nullptr)
+        {
+            delete fRdfDescriptor;
+            fRdfDescriptor = nullptr;
         }
 
         clearBuffers();
@@ -357,15 +367,47 @@ public:
 
     PluginType getType() const noexcept override
     {
-        return PLUGIN_DSSI;
+        return fDssiDescriptor != nullptr ? PLUGIN_DSSI : PLUGIN_LADSPA;
     }
 
     PluginCategory getCategory() const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr, PLUGIN_CATEGORY_NONE);
+        if (fRdfDescriptor != nullptr)
+        {
+            const LADSPA_RDF_PluginType category = fRdfDescriptor->Type;
 
-        if (pData->audioIn.count == 0 && pData->audioOut.count > 0 && fDssiDescriptor->run_synth != nullptr)
-            return PLUGIN_CATEGORY_SYNTH;
+            // Specific Types
+            if (category & (LADSPA_RDF_PLUGIN_DELAY|LADSPA_RDF_PLUGIN_REVERB))
+                return PLUGIN_CATEGORY_DELAY;
+            if (category & (LADSPA_RDF_PLUGIN_PHASER|LADSPA_RDF_PLUGIN_FLANGER|LADSPA_RDF_PLUGIN_CHORUS))
+                return PLUGIN_CATEGORY_MODULATOR;
+            if (category & (LADSPA_RDF_PLUGIN_AMPLIFIER))
+                return PLUGIN_CATEGORY_DYNAMICS;
+            if (category & (LADSPA_RDF_PLUGIN_UTILITY|LADSPA_RDF_PLUGIN_SPECTRAL|LADSPA_RDF_PLUGIN_FREQUENCY_METER))
+                return PLUGIN_CATEGORY_UTILITY;
+
+            // Pre-set LADSPA Types
+            if (LADSPA_RDF_IS_PLUGIN_DYNAMICS(category))
+                return PLUGIN_CATEGORY_DYNAMICS;
+            if (LADSPA_RDF_IS_PLUGIN_AMPLITUDE(category))
+                return PLUGIN_CATEGORY_MODULATOR;
+            if (LADSPA_RDF_IS_PLUGIN_EQ(category))
+                return PLUGIN_CATEGORY_EQ;
+            if (LADSPA_RDF_IS_PLUGIN_FILTER(category))
+                return PLUGIN_CATEGORY_FILTER;
+            if (LADSPA_RDF_IS_PLUGIN_FREQUENCY(category))
+                return PLUGIN_CATEGORY_UTILITY;
+            if (LADSPA_RDF_IS_PLUGIN_SIMULATOR(category))
+                return PLUGIN_CATEGORY_OTHER;
+            if (LADSPA_RDF_IS_PLUGIN_TIME(category))
+                return PLUGIN_CATEGORY_DELAY;
+            if (LADSPA_RDF_IS_PLUGIN_GENERATOR(category))
+                return PLUGIN_CATEGORY_SYNTH;
+        }
+
+        if (fDssiDescriptor != nullptr && fDssiDescriptor->run_synth != nullptr)
+            if (pData->audioIn.count == 0 && pData->audioOut.count > 0)
+                return PLUGIN_CATEGORY_SYNTH;
 
         return CarlaPlugin::getCategory();
     }
@@ -391,7 +433,22 @@ public:
     // -------------------------------------------------------------------
     // Information (count)
 
-    // nothing
+    uint32_t getParameterScalePointCount(const uint32_t parameterId) const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0);
+
+        if (fRdfDescriptor == nullptr)
+            return 0;
+
+        const int32_t rindex(pData->param.data[parameterId].rindex);
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0, 0);
+
+        if (rindex >= static_cast<int32_t>(fRdfDescriptor->PortCount))
+            return 0;
+
+        const LADSPA_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
+        return static_cast<uint32_t>(port.ScalePointCount);
+    }
 
     // -------------------------------------------------------------------
     // Information (current data)
@@ -412,7 +469,7 @@ public:
 
         try {
             ret = fDssiDescriptor->get_custom_data(fHandles.getFirst(nullptr), dataPtr, &dataSize);
-        } CARLA_SAFE_EXCEPTION_RETURN("CarlaPluginDSSI::getChunkData", 0);
+        } CARLA_SAFE_EXCEPTION_RETURN("CarlaPluginLADSPADSSI::getChunkData", 0);
 
         return (ret != 0) ? dataSize : 0;
     }
@@ -422,8 +479,6 @@ public:
 
     uint getOptionsAvailable() const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr, 0x0);
-
         uint options = 0x0;
 
         // can't disable fixed buffers if using latency
@@ -437,19 +492,22 @@ public:
         else if (pData->audioIn.count == 1 || pData->audioOut.count == 1 || fForcedStereoIn || fForcedStereoOut)
             options |= PLUGIN_OPTION_FORCE_STEREO;
 
-        if (fDssiDescriptor->get_program != nullptr && fDssiDescriptor->select_program != nullptr)
-            options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-
-        if (fUsesCustomData)
-            options |= PLUGIN_OPTION_USE_CHUNKS;
-
-        if (fDssiDescriptor->run_synth != nullptr)
+        if (fDssiDescriptor != nullptr)
         {
-            options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
-            options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-            options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-            options |= PLUGIN_OPTION_SEND_PITCHBEND;
-            options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+            if (fDssiDescriptor->get_program != nullptr && fDssiDescriptor->select_program != nullptr)
+                options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+
+            if (fUsesCustomData)
+                options |= PLUGIN_OPTION_USE_CHUNKS;
+
+            if (fDssiDescriptor->run_synth != nullptr)
+            {
+                options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+                options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+                options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+                options |= PLUGIN_OPTION_SEND_PITCHBEND;
+                options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+            }
         }
 
         return options;
@@ -468,6 +526,22 @@ public:
         return fParamBuffers[parameterId];
     }
 
+    float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,        0.0f);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
+
+        const int32_t rindex(pData->param.data[parameterId].rindex);
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0,                                              0.0f);
+        CARLA_SAFE_ASSERT_RETURN(rindex < static_cast<int32_t>(fRdfDescriptor->PortCount), 0.0f);
+
+        const LADSPA_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
+        CARLA_SAFE_ASSERT_RETURN(scalePointId < port.ScalePointCount, 0.0f);
+
+        const LADSPA_RDF_ScalePoint& scalePoint(port.ScalePoints[scalePointId]);
+        return pData->param.ranges[parameterId].getFixedValue(scalePoint.Value);
+    }
+
     bool getLabel(char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
@@ -482,7 +556,11 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(fDescriptor->Maker != nullptr, false);
 
-        std::strncpy(strBuf, fDescriptor->Maker, STR_MAX);
+        if (fRdfDescriptor != nullptr && fRdfDescriptor->Creator != nullptr)
+            std::strncpy(strBuf, fRdfDescriptor->Creator, STR_MAX);
+        else
+            std::strncpy(strBuf, fDescriptor->Maker, STR_MAX);
+
         return true;
     }
 
@@ -500,7 +578,11 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(fDescriptor->Name != nullptr, false);
 
-        std::strncpy(strBuf, fDescriptor->Name, STR_MAX);
+        if (fRdfDescriptor != nullptr && fRdfDescriptor->Title != nullptr)
+            std::strncpy(strBuf, fRdfDescriptor->Title, STR_MAX);
+        else
+            std::strncpy(strBuf, fDescriptor->Name, STR_MAX);
+
         return true;
     }
 
@@ -527,10 +609,83 @@ public:
         const int32_t rindex(pData->param.data[parameterId].rindex);
         CARLA_SAFE_ASSERT_RETURN(rindex >= 0, false);
 
+        if (fRdfDescriptor != nullptr && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
+        {
+            const LADSPA_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
+
+            if (LADSPA_RDF_PORT_HAS_UNIT(port.Hints))
+            {
+                switch (port.Unit)
+                {
+                case LADSPA_RDF_UNIT_DB:
+                    std::strncpy(strBuf, "dB", STR_MAX);
+                    return true;
+                case LADSPA_RDF_UNIT_COEF:
+                    std::strncpy(strBuf, "(coef)", STR_MAX);
+                    return true;
+                case LADSPA_RDF_UNIT_HZ:
+                    std::strncpy(strBuf, "Hz", STR_MAX);
+                    return true;
+                case LADSPA_RDF_UNIT_S:
+                    std::strncpy(strBuf, "s", STR_MAX);
+                    return true;
+                case LADSPA_RDF_UNIT_MS:
+                    std::strncpy(strBuf, "ms", STR_MAX);
+                    return true;
+                case LADSPA_RDF_UNIT_MIN:
+                    std::strncpy(strBuf, "min", STR_MAX);
+                    return true;
+                }
+            }
+        }
+
         CARLA_SAFE_ASSERT_RETURN(rindex < static_cast<int32_t>(fDescriptor->PortCount), false);
         CARLA_SAFE_ASSERT_RETURN(fDescriptor->PortNames[rindex] != nullptr, false);
 
         return getSeparatedParameterNameOrUnit(fDescriptor->PortNames[rindex], strBuf, false);
+    }
+
+    bool getParameterSymbol(const uint32_t parameterId, char* const strBuf) const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+
+        if (fRdfDescriptor == nullptr)
+            return false;
+
+        const int32_t rindex(pData->param.data[parameterId].rindex);
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0, false);
+
+        if (rindex >= static_cast<int32_t>(fRdfDescriptor->PortCount))
+            return false;
+
+        const LADSPA_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
+
+        if (! LADSPA_RDF_PORT_HAS_LABEL(port.Hints))
+            return false;
+
+        CARLA_SAFE_ASSERT_RETURN(port.Label != nullptr, false);
+
+        std::strncpy(strBuf, port.Label, STR_MAX);
+        return true;
+    }
+
+    bool getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+
+        const int32_t rindex(pData->param.data[parameterId].rindex);
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0, false);
+        CARLA_SAFE_ASSERT_RETURN(rindex < static_cast<int32_t>(fRdfDescriptor->PortCount), false);
+
+        const LADSPA_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
+        CARLA_SAFE_ASSERT_RETURN(scalePointId < port.ScalePointCount, false);
+
+        const LADSPA_RDF_ScalePoint& scalePoint(port.ScalePoints[scalePointId]);
+        CARLA_SAFE_ASSERT_RETURN(scalePoint.Label != nullptr, false);
+
+        std::strncpy(strBuf, scalePoint.Label, STR_MAX);
+        return true;
     }
 
     // -------------------------------------------------------------------
@@ -581,13 +736,13 @@ public:
         CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
-        carla_debug("CarlaPluginDSSI::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
+        carla_debug("CarlaPluginLADSPADSSI::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
 
         if (std::strcmp(type, CUSTOM_DATA_TYPE_PROPERTY) == 0)
             return CarlaPlugin::setCustomData(type, key, value, sendGui);
 
         if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) != 0)
-            return carla_stderr2("CarlaPluginDSSI::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string",
+            return carla_stderr2("CarlaPluginLADSPADSSI::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string",
                                  type, key, value, bool2str(sendGui));
 
         if (fDssiDescriptor->configure != nullptr && fHandles.count() > 0)
@@ -599,7 +754,7 @@ public:
 
                 try {
                     fDssiDescriptor->configure(handle, key, value);
-                } CARLA_SAFE_EXCEPTION("DSSI setCustomData");
+                } CARLA_SAFE_EXCEPTION("LADSPA/DSSI setCustomData");
             }
         }
 
@@ -637,7 +792,7 @@ public:
 
                 try {
                     fDssiDescriptor->set_custom_data(handle, const_cast<void*>(data), static_cast<ulong>(dataSize));
-                } CARLA_SAFE_EXCEPTION("CarlaPluginDSSI::setChunkData");
+                } CARLA_SAFE_EXCEPTION("CarlaPluginLADSPADSSI::setChunkData");
             }
         }
 
@@ -684,7 +839,7 @@ public:
 
             try {
                 fDssiDescriptor->select_program(handle, bank, program);
-            } CARLA_SAFE_EXCEPTION("DSSI setMidiProgram")
+            } CARLA_SAFE_EXCEPTION("LADSPA/DSSI setMidiProgram")
         }
     }
 
@@ -724,9 +879,8 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandles.count() > 0,);
-        carla_debug("CarlaPluginDSSI::reload() - start");
+        carla_debug("CarlaPluginLADSPADSSI::reload() - start");
 
         const EngineProcessMode processMode(pData->engine->getProccessMode());
 
@@ -782,7 +936,7 @@ public:
             }
         }
 
-        if (fDssiDescriptor->run_synth != nullptr)
+        if (fDssiDescriptor != nullptr && fDssiDescriptor->run_synth != nullptr)
         {
             mIns = 1;
             needsCtrlIn = true;
@@ -822,6 +976,7 @@ public:
         {
             const LADSPA_PortDescriptor portType      = fDescriptor->PortDescriptors[i];
             const LADSPA_PortRangeHint portRangeHints = fDescriptor->PortRangeHints[i];
+            const bool hasPortRDF = (fRdfDescriptor != nullptr && i < fRdfDescriptor->PortCount);
 
             if (LADSPA_IS_PORT_AUDIO(portType))
             {
@@ -928,7 +1083,10 @@ public:
                 }
 
                 // default value
-                def = get_default_ladspa_port_value(portRangeHints.HintDescriptor, min, max);
+                if (hasPortRDF && LADSPA_RDF_PORT_HAS_DEFAULT(fRdfDescriptor->Ports[i].Hints))
+                    def = fRdfDescriptor->Ports[i].Default;
+                else
+                    def = get_default_ladspa_port_value(portRangeHints.HintDescriptor, min, max);
 
                 if (def < min)
                     def = min;
@@ -965,7 +1123,7 @@ public:
                     needsCtrlIn = true;
 
                     // MIDI CC value
-                    if (fDssiDescriptor->get_midi_controller_for_port != nullptr)
+                    if (fDssiDescriptor != nullptr && fDssiDescriptor->get_midi_controller_for_port != nullptr)
                     {
                         const int ctrl = fDssiDescriptor->get_midi_controller_for_port(fHandles.getFirst(nullptr), i);
                         if (DSSI_CONTROLLER_IS_SET(ctrl) && DSSI_IS_CC(ctrl))
@@ -1007,6 +1165,10 @@ public:
                 if (LADSPA_IS_HINT_LOGARITHMIC(portRangeHints.HintDescriptor))
                     pData->param.data[j].hints |= PARAMETER_IS_LOGARITHMIC;
 
+                // check for scalepoints, require at least 2 to make it useful
+                if (hasPortRDF && fRdfDescriptor->Ports[i].ScalePointCount >= 2)
+                    pData->param.data[j].hints |= PARAMETER_USES_SCALEPOINTS;
+
                 pData->param.ranges[j].min = min;
                 pData->param.ranges[j].max = max;
                 pData->param.ranges[j].def = def;
@@ -1024,7 +1186,7 @@ public:
 
                     try {
                         fDescriptor->connect_port(handle, i, &fParamBuffers[j]);
-                    } CARLA_SAFE_EXCEPTION("DSSI connect_port (parameter)");
+                    } CARLA_SAFE_EXCEPTION("LADSPA/DSSI connect_port (parameter)");
                 }
             }
             else
@@ -1039,7 +1201,7 @@ public:
 
                     try {
                         fDescriptor->connect_port(handle, i, nullptr);
-                    } CARLA_SAFE_EXCEPTION("DSSI connect_port (null)");
+                    } CARLA_SAFE_EXCEPTION("LADSPA/DSSI connect_port (null)");
                 }
             }
         }
@@ -1092,7 +1254,7 @@ public:
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
 #endif
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
             pData->hints |= PLUGIN_CAN_DRYWET;
 
@@ -1121,7 +1283,7 @@ public:
         if (pData->active)
             activate();
 
-        carla_debug("CarlaPluginDSSI::reload() - end");
+        carla_debug("CarlaPluginLADSPADSSI::reload() - end");
     }
 
     void findInitialLatencyValue(const uint32_t aIns, const uint32_t aOuts) const
@@ -1143,7 +1305,7 @@ public:
 
             try {
                 fDescriptor->connect_port(handle, pData->audioIn.ports[j].rindex, tmpIn[j]);
-            } CARLA_SAFE_EXCEPTION("DSSI connect_port (latency input)");
+            } CARLA_SAFE_EXCEPTION("LADSPA/DSSI connect_port (latency input)");
         }
 
         for (uint32_t j=0; j < aOuts; ++j)
@@ -1153,25 +1315,25 @@ public:
 
             try {
                 fDescriptor->connect_port(handle, pData->audioOut.ports[j].rindex, tmpOut[j]);
-            } CARLA_SAFE_EXCEPTION("DSSI connect_port (latency output)");
+            } CARLA_SAFE_EXCEPTION("LADSPA/DSSI connect_port (latency output)");
         }
 
         if (fDescriptor->activate != nullptr)
         {
             try {
                 fDescriptor->activate(handle);
-            } CARLA_SAFE_EXCEPTION("DSSI latency activate");
+            } CARLA_SAFE_EXCEPTION("LADSPA/DSSI latency activate");
         }
 
         try {
             fDescriptor->run(handle, 2);
-        } CARLA_SAFE_EXCEPTION("DSSI latency run");
+        } CARLA_SAFE_EXCEPTION("LADSPA/DSSI latency run");
 
         if (fDescriptor->deactivate != nullptr)
         {
             try {
                 fDescriptor->deactivate(handle);
-            } CARLA_SAFE_EXCEPTION("DSSI latency deactivate");
+            } CARLA_SAFE_EXCEPTION("LADSPA/DSSI latency deactivate");
         }
 
         // done, let's get the value
@@ -1186,7 +1348,7 @@ public:
 
     void reloadPrograms(const bool doInit) override
     {
-        carla_debug("CarlaPluginDSSI::reloadPrograms(%s)", bool2str(doInit));
+        carla_debug("CarlaPluginLADSPADSSI::reloadPrograms(%s)", bool2str(doInit));
 
         const LADSPA_Handle handle(fHandles.getFirst(nullptr));
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
@@ -1196,6 +1358,10 @@ public:
 
         // Delete old programs
         pData->midiprog.clear();
+
+        // nothing to do for simple LADSPA plugins (do we want to bother with lrdf presets?)
+        if (fDssiDescriptor == nullptr)
+            return;
 
         // Query new programs
         uint32_t newCount = 0;
@@ -1285,7 +1451,7 @@ public:
 
                 try {
                     fDescriptor->activate(handle);
-                } CARLA_SAFE_EXCEPTION("DSSI activate");
+                } CARLA_SAFE_EXCEPTION("LADSPA/DSSI activate");
             }
         }
     }
@@ -1303,7 +1469,7 @@ public:
 
                 try {
                     fDescriptor->deactivate(handle);
-                } CARLA_SAFE_EXCEPTION("DSSI deactivate");
+                } CARLA_SAFE_EXCEPTION("LADSPA/DSSI deactivate");
             }
         }
     }
@@ -1391,7 +1557,7 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             bool allNotesOffSent = false;
 #endif
             const bool isSampleAccurate = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
@@ -1450,7 +1616,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeParameter: {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                         // Control backend stuff
                         if (event.channel == pData->ctrlChannel)
                         {
@@ -1584,7 +1750,7 @@ public:
                     case kEngineControlEventTypeAllNotesOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
@@ -1821,17 +1987,17 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Run it
 
-            if (fDssiDescriptor->run_synth != nullptr)
+            if (fDssiDescriptor != nullptr && fDssiDescriptor->run_synth != nullptr)
             {
                 try {
                     fDssiDescriptor->run_synth(handle, frames, fMidiEvents, midiEventCount);
-                } CARLA_SAFE_EXCEPTION("DSSI run_synth");
+                } CARLA_SAFE_EXCEPTION("LADSPA/DSSI run_synth");
             }
             else
             {
                 try {
                     fDescriptor->run(handle, frames);
-                } CARLA_SAFE_EXCEPTION("DSSI run");
+                } CARLA_SAFE_EXCEPTION("LADSPA/DSSI run");
             }
 
             // ----------------------------------------------------------------------------------------------------
@@ -1849,7 +2015,7 @@ public:
             carla_copyFloats(fAudioOutBuffers[1], fExtraStereoBuffer[1], frames);
         }
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
 
@@ -1870,11 +2036,13 @@ public:
 
                     for (uint32_t k=0; k < frames; ++k)
                     {
+# ifndef BUILD_BRIDGE
                         if (k < pData->latency.frames && pData->latency.buffers != nullptr)
                             bufValue = pData->latency.buffers[c][k];
                         else if (pData->latency.frames < frames)
                             bufValue = fAudioInBuffers[c][k-pData->latency.frames];
                         else
+# endif
                             bufValue = fAudioInBuffers[c][k];
 
                         fAudioOutBuffers[i][k] = (fAudioOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
@@ -1921,6 +2089,7 @@ public:
 
         } // End of Post-processing
 
+# ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
         // Save latency values for next callback
 
@@ -1950,8 +2119,8 @@ public:
                 }
             }
         }
-
-#else // BUILD_BRIDGE
+# endif
+#else // BUILD_BRIDGE_ALTERNATIVE_ARCH
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
         {
             for (uint32_t k=0; k < frames; ++k)
@@ -1968,7 +2137,7 @@ public:
     void bufferSizeChanged(const uint32_t newBufferSize) override
     {
         CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
-        carla_debug("CarlaPluginDSSI::bufferSizeChanged(%i) - start", newBufferSize);
+        carla_debug("CarlaPluginLADSPADSSI::bufferSizeChanged(%i) - start", newBufferSize);
 
         for (uint32_t i=0; i < pData->audioIn.count; ++i)
         {
@@ -2010,13 +2179,13 @@ public:
 
         reconnectAudioPorts();
 
-        carla_debug("CarlaPluginDSSI::bufferSizeChanged(%i) - end", newBufferSize);
+        carla_debug("CarlaPluginLADSPADSSI::bufferSizeChanged(%i) - end", newBufferSize);
     }
 
     void sampleRateChanged(const double newSampleRate) override
     {
         CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
-        carla_debug("CarlaPluginDSSI::sampleRateChanged(%g) - start", newSampleRate);
+        carla_debug("CarlaPluginLADSPADSSI::sampleRateChanged(%g) - start", newSampleRate);
 
         // TODO - handle UI stuff
 
@@ -2034,7 +2203,7 @@ public:
 
                 try {
                     fDescriptor->cleanup(handle);
-                } CARLA_SAFE_EXCEPTION("LADSPA cleanup");
+                } CARLA_SAFE_EXCEPTION("LADSPA/DSSI cleanup");
             }
         }
 
@@ -2048,7 +2217,7 @@ public:
         if (pData->active)
             activate();
 
-        carla_debug("CarlaPluginDSSI::sampleRateChanged(%g) - end", newSampleRate);
+        carla_debug("CarlaPluginLADSPADSSI::sampleRateChanged(%g) - end", newSampleRate);
     }
 
     void reconnectAudioPorts() const noexcept
@@ -2059,14 +2228,14 @@ public:
             {
                 try {
                     fDescriptor->connect_port(handle, pData->audioIn.ports[0].rindex, fAudioInBuffers[0]);
-                } CARLA_SAFE_EXCEPTION("DSSI connect_port (forced stereo input, first)");
+                } CARLA_SAFE_EXCEPTION("LADSPA/DSSI connect_port (forced stereo input, first)");
             }
 
             if (LADSPA_Handle const handle = fHandles.getLast(nullptr))
             {
                 try {
                     fDescriptor->connect_port(handle, pData->audioIn.ports[1].rindex, fAudioInBuffers[1]);
-                } CARLA_SAFE_EXCEPTION("DSSI connect_port (forced stereo input, last)");
+                } CARLA_SAFE_EXCEPTION("LADSPA/DSSI connect_port (forced stereo input, last)");
             }
         }
         else
@@ -2080,7 +2249,7 @@ public:
                 {
                     try {
                         fDescriptor->connect_port(handle, pData->audioIn.ports[i].rindex, fAudioInBuffers[i]);
-                    } CARLA_SAFE_EXCEPTION("DSSI connect_port (audio input)");
+                    } CARLA_SAFE_EXCEPTION("LADSPA/DSSI connect_port (audio input)");
                 }
             }
         }
@@ -2091,14 +2260,14 @@ public:
             {
                 try {
                     fDescriptor->connect_port(handle, pData->audioOut.ports[0].rindex, fAudioOutBuffers[0]);
-                } CARLA_SAFE_EXCEPTION("DSSI connect_port (forced stereo output, first)");
+                } CARLA_SAFE_EXCEPTION("LADSPA/DSSI connect_port (forced stereo output, first)");
             }
 
             if (LADSPA_Handle const handle = fHandles.getLast(nullptr))
             {
                 try {
                     fDescriptor->connect_port(handle, pData->audioOut.ports[1].rindex, fAudioOutBuffers[1]);
-                } CARLA_SAFE_EXCEPTION("DSSI connect_port (forced stereo output, last)");
+                } CARLA_SAFE_EXCEPTION("LADSPA/DSSI connect_port (forced stereo output, last)");
             }
         }
         else
@@ -2112,7 +2281,7 @@ public:
                 {
                     try {
                         fDescriptor->connect_port(handle, pData->audioOut.ports[i].rindex, fAudioOutBuffers[i]);
-                    } CARLA_SAFE_EXCEPTION("DSSI connect_port (audio output)");
+                    } CARLA_SAFE_EXCEPTION("LADSPA/DSSI connect_port (audio output)");
                 }
             }
         }
@@ -2123,7 +2292,7 @@ public:
 
     void clearBuffers() noexcept override
     {
-        carla_debug("CarlaPluginDSSI::clearBuffers() - start");
+        carla_debug("CarlaPluginLADSPADSSI::clearBuffers() - start");
 
         if (fAudioInBuffers != nullptr)
         {
@@ -2175,7 +2344,7 @@ public:
 
         CarlaPlugin::clearBuffers();
 
-        carla_debug("CarlaPluginDSSI::clearBuffers() - end");
+        carla_debug("CarlaPluginLADSPADSSI::clearBuffers() - end");
     }
 
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
@@ -2223,12 +2392,12 @@ public:
         if (std::strcmp(method, "exiting") == 0)
             return handleOscMessageExiting();
 
-        carla_stdout("CarlaPluginDSSI::handleOscMessage() - unknown method '%s'", method);
+        carla_stdout("CarlaPluginLADSPADSSI::handleOscMessage() - unknown method '%s'", method);
     }
 
     void handleOscMessageConfigure(const int argc, const lo_arg* const* const argv, const char* const types)
     {
-        carla_debug("CarlaPluginDSSI::handleMsgConfigure()");
+        carla_debug("CarlaPluginLADSPADSSI::handleMsgConfigure()");
         CARLA_PLUGIN_DSSI_OSC_CHECK_OSC_TYPES(2, "ss");
 
         const char* const key   = (const char*)&argv[0]->s;
@@ -2239,7 +2408,7 @@ public:
 
     void handleOscMessageControl(const int argc, const lo_arg* const* const argv, const char* const types)
     {
-        carla_debug("CarlaPluginDSSI::handleMsgControl()");
+        carla_debug("CarlaPluginLADSPADSSI::handleMsgControl()");
         CARLA_PLUGIN_DSSI_OSC_CHECK_OSC_TYPES(2, "if");
 
         const int32_t rindex = argv[0]->i;
@@ -2250,7 +2419,7 @@ public:
 
     void handleOscMessageProgram(const int argc, const lo_arg* const* const argv, const char* const types)
     {
-        carla_debug("CarlaPluginDSSI::handleMsgProgram()");
+        carla_debug("CarlaPluginLADSPADSSI::handleMsgProgram()");
         CARLA_PLUGIN_DSSI_OSC_CHECK_OSC_TYPES(2, "ii");
 
         const int32_t bank    = argv[0]->i;
@@ -2264,12 +2433,12 @@ public:
 
     void handleOscMessageMIDI(const int argc, const lo_arg* const* const argv, const char* const types)
     {
-        carla_debug("CarlaPluginDSSI::handleMsgMidi()");
+        carla_debug("CarlaPluginLADSPADSSI::handleMsgMidi()");
         CARLA_PLUGIN_DSSI_OSC_CHECK_OSC_TYPES(1, "m");
 
         if (getMidiInCount() == 0)
         {
-            carla_stderr("CarlaPluginDSSI::handleMsgMidi() - received midi when plugin has no midi inputs");
+            carla_stderr("CarlaPluginLADSPADSSI::handleMsgMidi() - received midi when plugin has no midi inputs");
             return;
         }
 
@@ -2303,13 +2472,13 @@ public:
 
     void handleOscMessageUpdate(const int argc, const lo_arg* const* const argv, const char* const types, const lo_address source)
     {
-        carla_debug("CarlaPluginDSSI::handleMsgUpdate()");
+        carla_debug("CarlaPluginLADSPADSSI::handleMsgUpdate()");
         CARLA_PLUGIN_DSSI_OSC_CHECK_OSC_TYPES(1, "s");
 
         const char* const url = (const char*)&argv[0]->s;
 
         // FIXME - remove debug prints later
-        carla_stdout("CarlaPluginDSSI::updateOscData(%p, \"%s\")", source, url);
+        carla_stdout("CarlaPluginLADSPADSSI::updateOscData(%p, \"%s\")", source, url);
 
         fOscData.clear();
 
@@ -2362,12 +2531,12 @@ public:
             pData->transientTryCounter = 1;
 #endif
 
-        carla_stdout("CarlaPluginDSSI::updateOscData() - done");
+        carla_stdout("CarlaPluginLADSPADSSI::updateOscData() - done");
     }
 
     void handleOscMessageExiting()
     {
-        carla_debug("CarlaPluginDSSI::handleMsgExiting()");
+        carla_debug("CarlaPluginLADSPADSSI::handleMsgExiting()");
 
         // hide UI
         showCustomUI(false);
@@ -2447,7 +2616,22 @@ public:
 
     const void* getNativeDescriptor() const noexcept override
     {
-        return fDssiDescriptor;
+        return fDssiDescriptor != nullptr
+               ? (const void*)fDssiDescriptor
+               : (const void*)fDescriptor;
+    }
+
+    const void* getExtraStuff() const noexcept override
+    {
+        if (fDssiDescriptor != nullptr)
+        {
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
+            return fUiFilename;
+#else
+            return nullptr;
+#endif
+        }
+        return fRdfDescriptor;
     }
 
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
@@ -2455,16 +2639,97 @@ public:
     {
         return fThreadUI.getProcessId();
     }
-
-    const void* getExtraStuff() const noexcept override
-    {
-        return fUiFilename;
-    }
 #endif
 
     // -------------------------------------------------------------------
 
-    bool init(const char* const filename, const char* name, const char* const label, const uint options)
+    bool initLADSPA(const char* const filename, const char* name, const char* const label, const uint options,
+                    const LADSPA_RDF_Descriptor* const rdfDescriptor)
+    {
+        CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
+
+        // ---------------------------------------------------------------
+        // first checks
+
+        if (pData->client != nullptr)
+        {
+            pData->engine->setLastError("Plugin client is already registered");
+            return false;
+        }
+
+        if (filename == nullptr || filename[0] == '\0')
+        {
+            pData->engine->setLastError("null filename");
+            return false;
+        }
+
+        // ---------------------------------------------------------------
+        // open DLL
+
+        if (! pData->libOpen(filename))
+        {
+            pData->engine->setLastError(pData->libError(filename));
+            return false;
+        }
+
+        // ---------------------------------------------------------------
+        // get DLL main entry
+
+        const LADSPA_Descriptor_Function descFn = pData->libSymbol<LADSPA_Descriptor_Function>("ladspa_descriptor");
+
+        if (descFn == nullptr)
+        {
+            pData->engine->setLastError("Could not find the LASDPA Descriptor in the plugin library");
+            return false;
+        }
+
+        // ---------------------------------------------------------------
+        // get descriptor that matches label
+
+        // if label is null, get first valid plugin
+        const bool nullLabel = (label == nullptr || label[0] == '\0');
+
+        for (ulong d=0;; ++d)
+        {
+            try {
+                fDescriptor = descFn(d);
+            }
+            catch(...) {
+                carla_stderr2("Caught exception when trying to get LADSPA descriptor");
+                fDescriptor = nullptr;
+                break;
+            }
+
+            if (fDescriptor == nullptr)
+                break;
+
+            if (fDescriptor->Label == nullptr || fDescriptor->Label[0] == '\0')
+            {
+                carla_stderr2("WARNING - Got an invalid label, will not use this plugin");
+                fDescriptor = nullptr;
+                break;
+            }
+            if (fDescriptor->run == nullptr)
+            {
+                carla_stderr2("WARNING - Plugin has no run, cannot use it");
+                fDescriptor = nullptr;
+                break;
+            }
+
+            if (nullLabel || std::strcmp(fDescriptor->Label, label) == 0)
+                break;
+        }
+
+        if (fDescriptor == nullptr)
+        {
+            pData->engine->setLastError("Could not find the requested plugin label in the plugin library");
+            return false;
+        }
+
+        return init2(filename, name, options, rdfDescriptor);
+    }
+
+    bool initDSSI(const char* const filename, const char* name, const char* const label, const uint options)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -2566,6 +2831,12 @@ public:
             return false;
         }
 
+        return init2(filename, name, options, nullptr);
+    }
+
+    bool init2(const char* const filename, const char* name, const uint options,
+               const LADSPA_RDF_Descriptor* const rdfDescriptor)
+    {
         // ---------------------------------------------------------------
         // check for fixed buffer size requirement
 
@@ -2581,9 +2852,14 @@ public:
         // ---------------------------------------------------------------
         // get info
 
+        if (is_ladspa_rdf_descriptor_valid(rdfDescriptor, fDescriptor))
+            fRdfDescriptor = ladspa_rdf_dup(rdfDescriptor);
+
         if (name == nullptr || name[0] == '\0')
         {
-            if (fDescriptor->Name != nullptr && fDescriptor->Name[0] != '\0')
+            /**/ if (fRdfDescriptor != nullptr && fRdfDescriptor->Title != nullptr && fRdfDescriptor->Title[0] != '\0')
+                name = fRdfDescriptor->Title;
+            else if (fDescriptor->Name != nullptr && fDescriptor->Name[0] != '\0')
                 name = fDescriptor->Name;
             else
                 name = fDescriptor->Label;
@@ -2684,21 +2960,24 @@ public:
         else if (options & PLUGIN_OPTION_FORCE_STEREO)
             pData->options |= PLUGIN_OPTION_FORCE_STEREO;
 
-        if (fDssiDescriptor->get_program != nullptr && fDssiDescriptor->select_program != nullptr)
-            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-
-        if (fUsesCustomData)
-            pData->options |= PLUGIN_OPTION_USE_CHUNKS;
-
-        if (fDssiDescriptor->run_synth != nullptr)
+        if (fDssiDescriptor != nullptr)
         {
-            pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-            pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-            pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
-            pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+            if (fDssiDescriptor->get_program != nullptr && fDssiDescriptor->select_program != nullptr)
+                pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-            if (options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
-                pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+            if (fUsesCustomData)
+                pData->options |= PLUGIN_OPTION_USE_CHUNKS;
+
+            if (fDssiDescriptor->run_synth != nullptr)
+            {
+                pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+                pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+                pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+                pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+
+                if (options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+                    pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+            }
         }
 
         return true;
@@ -2707,9 +2986,10 @@ public:
     // -------------------------------------------------------------------
 
 private:
-    LinkedList<LADSPA_Handle> fHandles;
-    const LADSPA_Descriptor*  fDescriptor;
-    const DSSI_Descriptor*    fDssiDescriptor;
+    LinkedList<LADSPA_Handle>    fHandles;
+    const LADSPA_Descriptor*     fDescriptor;
+    const DSSI_Descriptor*       fDssiDescriptor;
+    const LADSPA_RDF_Descriptor* fRdfDescriptor;
 
     float** fAudioInBuffers;
     float** fAudioOutBuffers;
@@ -2738,7 +3018,7 @@ private:
 
         try {
             handle = fDescriptor->instantiate(fDescriptor, static_cast<ulong>(pData->engine->getSampleRate()));
-        } CARLA_SAFE_EXCEPTION_RETURN_ERR("LADSPA instantiate", "Plugin failed to initialize");
+        } CARLA_SAFE_EXCEPTION_RETURN_ERR("LADSPA/DSSI instantiate", "Plugin failed to initialize");
 
         for (uint32_t i=0, count=pData->param.count; i<count; ++i)
         {
@@ -2747,7 +3027,7 @@ private:
 
             try {
                 fDescriptor->connect_port(handle, static_cast<ulong>(rindex), &fParamBuffers[i]);
-            } CARLA_SAFE_EXCEPTION("LADSPA connect_port");
+            } CARLA_SAFE_EXCEPTION("LADSPA/DSSI connect_port");
         }
 
         if (fHandles.append(handle))
@@ -2755,7 +3035,7 @@ private:
 
         try {
             fDescriptor->cleanup(handle);
-        } CARLA_SAFE_EXCEPTION("LADSPA cleanup");
+        } CARLA_SAFE_EXCEPTION("LADSPA/DSSI cleanup");
 
         pData->engine->setLastError("Out of memory");
         return false;
@@ -2822,19 +3102,35 @@ private:
 
     // -------------------------------------------------------------------
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginDSSI)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginLADSPADSSI)
 };
 
 // -------------------------------------------------------------------------------------------------------------------
+
+CarlaPlugin* CarlaPlugin::newLADSPA(const Initializer& init, const LADSPA_RDF_Descriptor* const rdfDescriptor)
+{
+    carla_debug("CarlaPlugin::newLADSPA({%p, \"%s\", \"%s\", \"%s\", " P_INT64 ", %x}, %p)",
+                init.engine, init.filename, init.name, init.label, init.uniqueId, init.options, rdfDescriptor);
+
+    CarlaPluginLADSPADSSI* const plugin(new CarlaPluginLADSPADSSI(init.engine, init.id));
+
+    if (! plugin->initLADSPA(init.filename, init.name, init.label, init.options, rdfDescriptor))
+    {
+        delete plugin;
+        return nullptr;
+    }
+
+    return plugin;
+}
 
 CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newDSSI({%p, \"%s\", \"%s\", \"%s\", " P_INT64 ", %x})",
                 init.engine, init.filename, init.name, init.label, init.uniqueId, init.options);
 
-    CarlaPluginDSSI* const plugin(new CarlaPluginDSSI(init.engine, init.id));
+    CarlaPluginLADSPADSSI* const plugin(new CarlaPluginLADSPADSSI(init.engine, init.id));
 
-    if (! plugin->init(init.filename, init.name, init.label, init.options))
+    if (! plugin->initDSSI(init.filename, init.name, init.label, init.options))
     {
         delete plugin;
         return nullptr;

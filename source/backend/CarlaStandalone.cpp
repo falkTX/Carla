@@ -419,10 +419,10 @@ bool carla_engine_init_bridge(const char audioBaseName[6+1], const char rtClient
 
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(gStandalone.engine == nullptr, "Engine is already initialized", false);
 
-    ScopedPointer<CarlaEngine> engine(CarlaEngine::newBridge(audioBaseName,
-                                                             rtClientBaseName,
-                                                             nonRtClientBaseName,
-                                                             nonRtServerBaseName));
+    CarlaScopedPointer<CarlaEngine> engine(CarlaEngine::newBridge(audioBaseName,
+                                                                  rtClientBaseName,
+                                                                  nonRtClientBaseName,
+                                                                  nonRtServerBaseName));
 
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(engine != nullptr, "The selected audio driver is not available", false);
 

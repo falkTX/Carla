@@ -23,6 +23,7 @@
 #include "CarlaEngineUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaPipeUtils.hpp"
+#include "CarlaScopeUtils.hpp"
 #include "CarlaShmUtils.hpp"
 #include "CarlaThread.hpp"
 
@@ -202,8 +203,8 @@ protected:
             const ScopedEngineEnvironmentLocker _seel(kEngine);
 
 #ifdef CARLA_OS_LINUX
-            const ScopedEnvVar sev1("LD_LIBRARY_PATH", nullptr);
-            const ScopedEnvVar sev2("LD_PRELOAD", nullptr);
+            const CarlaScopedEnvVar sev1("LD_LIBRARY_PATH", nullptr);
+            const CarlaScopedEnvVar sev2("LD_PRELOAD", nullptr);
 #endif
 
             carla_setenv("ENGINE_OPTION_FORCE_STEREO",          bool2str(options.forceStereo));
@@ -367,7 +368,7 @@ private:
     String fWinePrefix;
 #endif
 
-    ScopedPointer<ChildProcess> fProcess;
+    CarlaScopedPointer<ChildProcess> fProcess;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginBridgeThread)
 };
@@ -2539,7 +2540,7 @@ private:
 
         void setReceivedData(const int32_t i, const char* const b, const uint blen) noexcept
         {
-            ScopedValueSetter<bool> svs(dataRecv, false, true);
+            CarlaScopedValueSetter<bool> svs(dataRecv, false, true);
 
             const CarlaMutexLocker cml(mutex);
 

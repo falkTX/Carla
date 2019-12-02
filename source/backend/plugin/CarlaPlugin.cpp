@@ -22,6 +22,7 @@
 #include "CarlaBase64Utils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaPluginUI.hpp"
+#include "CarlaScopeUtils.hpp"
 #include "CarlaStringList.hpp"
 
 #include <ctime>
@@ -955,7 +956,7 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN(file.existsAsFile(), false);
 
     XmlDocument xml(file);
-    ScopedPointer<XmlElement> xmlElement(xml.getDocumentElement(true));
+    CarlaScopedPointer<XmlElement> xmlElement(xml.getDocumentElement(true));
     CARLA_SAFE_ASSERT_RETURN(xmlElement != nullptr, false);
     CARLA_SAFE_ASSERT_RETURN(xmlElement->getTagName().equalsIgnoreCase("carla-preset"), false);
 

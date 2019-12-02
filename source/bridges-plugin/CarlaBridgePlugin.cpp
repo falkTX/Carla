@@ -23,6 +23,7 @@
 #include "CarlaHost.h"
 
 #include "CarlaBackendUtils.hpp"
+#include "CarlaJuceUtils.hpp"
 #include "CarlaMainLoop.hpp"
 #include "CarlaMIDI.h"
 

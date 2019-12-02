@@ -29,6 +29,8 @@
 #include "ReferenceCountedObject.h"
 #include "../threads/SpinLock.h"
 
+#include "CarlaScopeUtils.hpp"
+
 namespace water {
 
 //==============================================================================
@@ -142,7 +144,7 @@ private:
     struct SharedObjectHolder  : public ReferenceCountedObject
     {
         SpinLock lock;
-        ScopedPointer<SharedObjectType> sharedInstance;
+        CarlaScopedPointer<SharedObjectType> sharedInstance;
         int refCount;
     };
 

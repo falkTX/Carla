@@ -320,8 +320,8 @@ bool waitForClientConnect(const HANDLE pipe, const HANDLE event, const HANDLE pr
 static inline
 bool startProcess(const char* const argv[], pid_t& pidinst) noexcept
 {
-    const ScopedEnvVar sev1("LD_LIBRARY_PATH", nullptr);
-    const ScopedEnvVar sev2("LD_PRELOAD", nullptr);
+    const CarlaScopedEnvVar sev1("LD_LIBRARY_PATH", nullptr);
+    const CarlaScopedEnvVar sev2("LD_PRELOAD", nullptr);
 
     const pid_t ret = pidinst = vfork();
 
@@ -1839,54 +1839,6 @@ void CarlaPipeClient::writeExitingMessageAndWait() noexcept
     if (! pData->pipeClosed)
         carla_stderr2("writeExitingMessageAndWait pipe is still running!");
 }
-
-// -----------------------------------------------------------------------
-
-ScopedEnvVar::ScopedEnvVar(const char* const key, const char* const value) noexcept
-    : fKey(nullptr),
-      fOrigValue(nullptr)
-{
-    CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
-
-    fKey = carla_strdup_safe(key);
-    CARLA_SAFE_ASSERT_RETURN(fKey != nullptr,);
-
-    if (const char* const origValue = std::getenv(key))
-    {
-        fOrigValue = carla_strdup_safe(origValue);
-        CARLA_SAFE_ASSERT_RETURN(fOrigValue != nullptr,);
-    }
-
-    if (value != nullptr)
-        carla_setenv(key, value);
-    else if (fOrigValue != nullptr)
-        carla_unsetenv(key);
-}
-
-ScopedEnvVar::~ScopedEnvVar() noexcept
-{
-    bool hasOrigValue = false;
-
-    if (fOrigValue != nullptr)
-    {
-        hasOrigValue = true;
-
-        carla_setenv(fKey, fOrigValue);
-
-        delete[] fOrigValue;
-        fOrigValue = nullptr;
-    }
-
-    if (fKey != nullptr)
-    {
-        if (! hasOrigValue)
-            carla_unsetenv(fKey);
-
-        delete[] fKey;
-        fKey = nullptr;
-    }
-}
-
 
 // -----------------------------------------------------------------------
 

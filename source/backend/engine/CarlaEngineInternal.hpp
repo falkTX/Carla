@@ -105,7 +105,7 @@ public:
 
 private:
     bool fIsRack;
-    bool fIsReady;
+    volatile bool fIsReady;
 
     union {
         RackGraph*     fRack;

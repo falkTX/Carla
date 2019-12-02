@@ -26,6 +26,7 @@
 #include "CarlaEngineUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaPipeUtils.hpp"
+#include "CarlaScopeUtils.hpp"
 #include "CarlaShmUtils.hpp"
 #include "CarlaThread.hpp"
 
@@ -330,10 +331,10 @@ protected:
 
             const ScopedEngineEnvironmentLocker _seel(kEngine);
 
-            const ScopedEnvVar sev2("LD_LIBRARY_PATH", libjackdir.buffer());
-            const ScopedEnvVar sev1("LD_PRELOAD", ldpreload.isNotEmpty() ? ldpreload.buffer() : nullptr);
+            const CarlaScopedEnvVar sev2("LD_LIBRARY_PATH", libjackdir.buffer());
+            const CarlaScopedEnvVar sev1("LD_PRELOAD", ldpreload.isNotEmpty() ? ldpreload.buffer() : nullptr);
 #ifdef HAVE_LIBLO
-            const ScopedEnvVar sev3("NSM_URL", lo_server_get_url(fOscServer));
+            const CarlaScopedEnvVar sev3("NSM_URL", lo_server_get_url(fOscServer));
 #endif
 
             if (kPlugin->getHints() & PLUGIN_HAS_CUSTOM_UI)
@@ -457,7 +458,7 @@ private:
     } fProject;
 #endif
 
-    ScopedPointer<ChildProcess> fProcess;
+    CarlaScopedPointer<ChildProcess> fProcess;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginJackThread)
 };

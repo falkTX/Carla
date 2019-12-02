@@ -121,7 +121,7 @@ XmlElement* XmlDocument::getDocumentElement (const bool onlyReadOuterDocumentEle
 {
     if (originalText.isEmpty() && inputSource != nullptr)
     {
-        ScopedPointer<InputStream> in (inputSource->createInputStream());
+        CarlaScopedPointer<InputStream> in (inputSource->createInputStream());
 
         if (in != nullptr)
         {
@@ -160,7 +160,7 @@ String XmlDocument::getFileContents (const String& filename) const
 {
     if (inputSource != nullptr)
     {
-        const ScopedPointer<InputStream> in (inputSource->createInputStreamFor (filename.trim().unquoted()));
+        const CarlaScopedPointer<InputStream> in (inputSource->createInputStreamFor (filename.trim().unquoted()));
 
         if (in != nullptr)
             return in->readEntireStreamAsString();
@@ -206,7 +206,7 @@ XmlElement* XmlDocument::parseDocumentElement (String::CharPointerType textToPar
     {
         lastError.clear();
 
-        ScopedPointer<XmlElement> result (readNextElement (! onlyReadOuterDocumentElement));
+        CarlaScopedPointer<XmlElement> result (readNextElement (! onlyReadOuterDocumentElement));
 
         if (! errorOccurred)
             return result.release();

@@ -18,6 +18,7 @@
 #include "libjack.hpp"
 
 #include "CarlaThread.hpp"
+#include "CarlaJuceUtils.hpp"
 
 #include <signal.h>
 #include <sys/prctl.h>

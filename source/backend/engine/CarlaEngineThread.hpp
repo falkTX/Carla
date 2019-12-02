@@ -21,6 +21,8 @@
 #include "CarlaBackend.h"
 #include "CarlaThread.hpp"
 
+#include "CarlaJuceUtils.hpp"
+
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
