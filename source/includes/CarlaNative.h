@@ -270,6 +270,7 @@ typedef struct _NativePluginDescriptor {
     intptr_t (*dispatcher)(NativePluginHandle handle,
                            NativePluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt);
 
+    // placed at the end for backwards compatibility. only valid if NATIVE_PLUGIN_HAS_INLINE_DISPLAY is set
     const NativeInlineDisplayImageSurface* (*render_inline_display)(NativePluginHandle handle,
                                                                     uint32_t width, uint32_t height);
 
