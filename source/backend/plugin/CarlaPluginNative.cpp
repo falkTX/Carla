@@ -1086,7 +1086,11 @@ public:
                 portName += ":";
             }
 
-            if (aIns > 1 && ! forcedStereoIn)
+            if (fDescriptor->get_buffer_port_name != nullptr)
+            {
+                portName += fDescriptor->get_buffer_port_name(fHandle, forcedStereoIn ? 0 : j, false);
+            }
+            else if (aIns > 1 && ! forcedStereoIn)
             {
                 portName += "input_";
                 portName += CarlaString(j+1);
@@ -1119,7 +1123,11 @@ public:
                 portName += ":";
             }
 
-            if (aOuts > 1 && ! forcedStereoOut)
+            if (fDescriptor->get_buffer_port_name != nullptr)
+            {
+                portName += fDescriptor->get_buffer_port_name(fHandle, forcedStereoOut ? 0 : j, true);
+            }
+            else if (aOuts > 1 && ! forcedStereoOut)
             {
                 portName += "output_";
                 portName += CarlaString(j+1);
@@ -1152,7 +1160,11 @@ public:
                 portName += ":";
             }
 
-            if (cvIns > 1)
+            if (fDescriptor->get_buffer_port_name != nullptr)
+            {
+                portName += fDescriptor->get_buffer_port_name(fHandle, fDescriptor->audioIns + j, false);
+            }
+            else if (cvIns > 1)
             {
                 portName += "cv_input_";
                 portName += CarlaString(j+1);
@@ -1177,7 +1189,11 @@ public:
                 portName += ":";
             }
 
-            if (cvOuts > 1)
+            if (fDescriptor->get_buffer_port_name != nullptr)
+            {
+                portName += fDescriptor->get_buffer_port_name(fHandle, fDescriptor->audioOuts + j, true);
+            }
+            else if (cvOuts > 1)
             {
                 portName += "cv_output_";
                 portName += CarlaString(j+1);

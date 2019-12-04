@@ -28,7 +28,7 @@
     nullptr, nullptr, nullptr, nullptr, nullptr, \
     nullptr, nullptr
 #define DESCFUNCS_WITHOUTCV \
-    DESCFUNCS_WITHCV, 0, 0
+    DESCFUNCS_WITHCV, 0, 0, nullptr
 
 static const NativePluginDescriptor sNativePluginDescriptors[] = {
 
@@ -196,6 +196,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     DESCFUNCS_WITHCV,
     /* cvIns     */ 0,
     /* cvOuts    */ 3,
+    /* bufnamefn */ nullptr
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
@@ -483,6 +484,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     DESCFUNCS_WITHCV,
     /* cvIns     */ 5,
     /* cvOuts    */ 5,
+    /* bufnamefn */ nullptr
 },
 #endif
 

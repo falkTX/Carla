@@ -277,6 +277,7 @@ typedef struct _NativePluginDescriptor {
     // placed at the end for backwards compatibility. only valid if NATIVE_PLUGIN_USES_CONTROL_VOLTAGE is set
     const uint32_t cvIns;
     const uint32_t cvOuts;
+    const char* (*get_buffer_port_name)(NativePluginHandle handle, uint32_t index, bool isOutput);
 
 } NativePluginDescriptor;
 

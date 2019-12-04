@@ -179,6 +179,27 @@ static void midi2cv_set_parameter_value(NativePluginHandle handle, uint32_t inde
     handlePtr->params[index] = value;
 }
 
+static const char* midi2cv_get_buffer_port_name(NativePluginHandle handle, uint32_t index, bool isOutput)
+{
+    if (! isOutput)
+        return NULL;
+
+    switch (index)
+    {
+    case 0:
+        return "Pitch";
+    case 1:
+        return "Velocity";
+    case 2:
+        return "Trigger";
+    default:
+        return NULL;
+    }
+
+    // unused
+    (void)handle;
+}
+
 static void midi2cv_activate(NativePluginHandle handle)
 {
     panic(handlePtr);
@@ -333,6 +354,8 @@ static const NativePluginDescriptor midi2cvDesc = {
     .set_parameter_value = midi2cv_set_parameter_value,
     .set_midi_program    = NULL,
     .set_custom_data     = NULL,
+
+    .get_buffer_port_name = midi2cv_get_buffer_port_name,
 
     .ui_show = NULL,
     .ui_idle = NULL,
