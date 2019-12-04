@@ -532,6 +532,8 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
         case PLUGIN_AU:
             infoXml << "   <Identifier>" << xmlSafeString(label, true) << "</Identifier>\n";
             break;
+        case PLUGIN_DLS:
+        case PLUGIN_GIG:
         case PLUGIN_SF2:
             infoXml << "   <Filename>"   << xmlSafeString(binary, true) << "</Filename>\n";
             infoXml << "   <Label>"      << xmlSafeString(label, true)  << "</Label>\n";

@@ -563,19 +563,29 @@ typedef enum {
     PLUGIN_AU = 7,
 
     /*!
-     * SF2 file (SoundFont).
+     * DLS file.
      */
-    PLUGIN_SF2 = 8,
+    PLUGIN_DLS = 8,
+
+    /*!
+     * GIG file.
+     */
+    PLUGIN_GIG = 9,
+
+    /*!
+     * SF2/3 file (SoundFont).
+     */
+    PLUGIN_SF2 = 10,
 
     /*!
      * SFZ file.
      */
-    PLUGIN_SFZ = 9,
+    PLUGIN_SFZ = 11,
 
     /*!
      * JACK application.
      */
-    PLUGIN_JACK = 10
+    PLUGIN_JACK = 12
 
 } PluginType;
 

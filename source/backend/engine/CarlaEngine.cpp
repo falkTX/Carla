@@ -597,6 +597,8 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
             plugin = CarlaPlugin::newNative(initializer);
             break;
 
+        case PLUGIN_DLS:
+        case PLUGIN_GIG:
         case PLUGIN_SF2:
             use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
             plugin = CarlaPlugin::newFluidSynth(initializer, use16Outs);
