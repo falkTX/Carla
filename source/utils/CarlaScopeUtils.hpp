@@ -22,6 +22,7 @@
 
 #include "CarlaUtils.hpp"
 
+#include <algorithm>
 #include <clocale>
 
 // -----------------------------------------------------------------------
