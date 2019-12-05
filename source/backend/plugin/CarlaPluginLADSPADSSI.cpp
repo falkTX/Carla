@@ -2914,7 +2914,7 @@ public:
         // ---------------------------------------------------------------
         // check for custom data extension
 
-        if (fDssiDescriptor->configure != nullptr)
+        if (fDssiDescriptor != nullptr && fDssiDescriptor->configure != nullptr)
         {
             if (char* const error = fDssiDescriptor->configure(fHandles.getFirst(nullptr), DSSI_CUSTOMDATA_EXTENSION_KEY, ""))
             {
