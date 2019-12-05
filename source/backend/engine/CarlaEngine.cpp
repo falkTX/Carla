@@ -613,6 +613,8 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
             break;
 #else
         case PLUGIN_INTERNAL:
+        case PLUGIN_DLS:
+        case PLUGIN_GIG:
         case PLUGIN_SF2:
         case PLUGIN_SFZ:
         case PLUGIN_JACK:
