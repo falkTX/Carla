@@ -27,7 +27,6 @@
 #include "../streams/MemoryOutputStream.h"
 #include "../streams/OutputStream.h"
 #include "../text/NewLine.h"
-#include "../text/StringPool.h"
 
 namespace water {
 
@@ -82,19 +81,19 @@ XmlElement::XmlAttributeNode::XmlAttributeNode (String::CharPointerType nameStar
 
 //==============================================================================
 XmlElement::XmlElement (const String& tag)
-    : tagName (StringPool::getGlobalPool().getPooledString (tag))
+    : tagName (tag)
 {
     wassert (isValidXmlName (tagName));
 }
 
 XmlElement::XmlElement (const char* tag)
-    : tagName (StringPool::getGlobalPool().getPooledString (tag))
+    : tagName (tag)
 {
     wassert (isValidXmlName (tagName));
 }
 
 XmlElement::XmlElement (StringRef tag)
-    : tagName (StringPool::getGlobalPool().getPooledString (tag))
+    : tagName (tag)
 {
     wassert (isValidXmlName (tagName));
 }
@@ -106,7 +105,7 @@ XmlElement::XmlElement (const Identifier& tag)
 }
 
 XmlElement::XmlElement (String::CharPointerType tagNameStart, String::CharPointerType tagNameEnd)
-    : tagName (StringPool::getGlobalPool().getPooledString (tagNameStart, tagNameEnd))
+    : tagName (StartEndString (tagNameStart, tagNameEnd))
 {
     wassert (isValidXmlName (tagName));
 }
