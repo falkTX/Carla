@@ -1347,7 +1347,8 @@ protected:
         uint32_t rindex = index;
         if (CarlaPlugin* const plugin = _getPluginForParameterIndex(rindex))
         {
-            plugin->uiParameterChange(rindex, value);
+            if (plugin->getHints() & PLUGIN_HAS_CUSTOM_UI)
+                plugin->uiParameterChange(rindex, value);
 
             if (index >= kNumInParams || ! fUiServer.isPipeRunning())
                 return;
