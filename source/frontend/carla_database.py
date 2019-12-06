@@ -1785,7 +1785,7 @@ class PluginDatabaseW(QDialog):
             nativeBins = []
             wineBins   = []
 
-        rowCount = self.ui.tableWidget.rowCount()
+        self.ui.tableWidget.setRowCount(self.fLastTableIndex)
 
         for i in range(self.fLastTableIndex):
             plugin = self.ui.tableWidget.item(i, self.TABLEWIDGET_ITEM_NAME).data(Qt.UserRole+1)
