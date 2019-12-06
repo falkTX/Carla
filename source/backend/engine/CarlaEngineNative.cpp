@@ -323,10 +323,27 @@ public:
     {
         CarlaEngine::callback(sendHost, sendOsc, action, pluginId, value1, value2, value3, valuef, valueStr);
 
-        if (action == ENGINE_CALLBACK_IDLE && ! pData->aboutToClose) {
-            pHost->dispatcher(pHost->handle,
-                              NATIVE_HOST_OPCODE_HOST_IDLE,
-                              0, 0, nullptr, 0.0f);
+        switch (action)
+        {
+        case ENGINE_CALLBACK_IDLE:
+            if (! pData->aboutToClose)
+                pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_HOST_IDLE, 0, 0, nullptr, 0.0f);
+            break;
+
+        case ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
+            if (sendHost && value1 >= 0)
+            {
+                uint32_t rindex = static_cast<uint32_t>(value1);
+                if (_getRealIndexForPluginParameter(pluginId, rindex))
+                {
+                    fParameters[rindex] = valuef;
+                    pHost->ui_parameter_changed(pHost->handle, rindex, valuef);
+                }
+            }
+            break;
+
+        default:
+            break;
         }
     }
 
@@ -341,29 +358,31 @@ public:
 
     void setParameterValueFromUI(const uint32_t pluginId, const uint32_t index, const float value)
     {
-        if (pluginId != 0)
-            return;
-
-        fParameters[index] = value;
-        pHost->ui_parameter_changed(pHost->handle, index, value);
+        uint32_t rindex = index;
+        if (_getRealIndexForPluginParameter(pluginId, rindex))
+        {
+            fParameters[rindex] = value;
+            pHost->ui_parameter_changed(pHost->handle, rindex, value);
+        }
     }
 
-    void setParameterTouchFromUI(const uint32_t pluginId, const uint32_t index, const bool touch)
+    void setParameterTouchFromUI(const uint32_t pluginId, uint32_t index, const bool touch)
     {
-        if (pluginId != 0)
-            return;
-
-        pHost->dispatcher(pHost->handle,
-                          NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER,
-                          static_cast<int32_t>(index),
-                          touch ? 1 : 0,
-                          nullptr, 0.0f);
+        uint32_t rindex = index;
+        if (_getRealIndexForPluginParameter(pluginId, rindex))
+        {
+            pHost->dispatcher(pHost->handle,
+                              NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER,
+                              static_cast<int32_t>(rindex),
+                              touch ? 1 : 0,
+                              nullptr, 0.0f);
+        }
     }
 
     void reloadFromUI()
     {
         carla_zeroFloats(fParameters, kNumInParams+kNumOutParams);
-        pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_RELOAD_ALL, 0, 0, nullptr, 0.0f);
+        pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_RELOAD_PARAMETERS, 0, 0, nullptr, 0.0f);
     }
 
 protected:
@@ -515,7 +534,7 @@ protected:
 
         for (int32_t i=PARAMETER_ACTIVE; i>PARAMETER_MAX; --i)
         {
-            std::snprintf(tmpBuf, STR_MAX, "PARAMVAL_%i:%i\n", pluginId, i);
+            std::snprintf(tmpBuf, STR_MAX, "PARAMVAL_%u:%i\n", pluginId, i);
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
             std::snprintf(tmpBuf, STR_MAX, "%f\n", static_cast<double>(plugin->getInternalParameterValue(i)));
@@ -579,7 +598,7 @@ protected:
                           static_cast<double>(paramRanges.stepLarge));
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-            std::snprintf(tmpBuf, STR_MAX, "PARAMVAL_%i:%i\n", pluginId, i);
+            std::snprintf(tmpBuf, STR_MAX, "PARAMVAL_%u:%u\n", pluginId, i);
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
             std::snprintf(tmpBuf, STR_MAX, "%f\n", static_cast<double>(plugin->getParameterValue(i)));
@@ -923,55 +942,53 @@ protected:
         carla_zeroChars(strBufName, STR_MAX+1);
         carla_zeroChars(strBufUnit, STR_MAX+1);
 
-        if (CarlaPlugin* const plugin = _getFirstPlugin())
+        uint32_t rindex = index;
+        if (CarlaPlugin* const plugin = _getPluginForParameterIndex(rindex))
         {
-            if (index < plugin->getParameterCount())
+            const ParameterData& paramData(plugin->getParameterData(rindex));
+            const ParameterRanges& paramRanges(plugin->getParameterRanges(rindex));
+
+            if (! plugin->getParameterName(rindex, strBufName))
+                strBufName[0] = '\0';
+            if (! plugin->getParameterUnit(rindex, strBufUnit))
+                strBufUnit[0] = '\0';
+
+            uint hints = 0x0;
+
+            if (paramData.hints & PARAMETER_IS_BOOLEAN)
+                hints |= NATIVE_PARAMETER_IS_BOOLEAN;
+            if (paramData.hints & PARAMETER_IS_INTEGER)
+                hints |= NATIVE_PARAMETER_IS_INTEGER;
+            if (paramData.hints & PARAMETER_IS_LOGARITHMIC)
+                hints |= NATIVE_PARAMETER_IS_LOGARITHMIC;
+            if (paramData.hints & PARAMETER_IS_AUTOMABLE)
+                hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
+            if (paramData.hints & PARAMETER_USES_SAMPLERATE)
+                hints |= NATIVE_PARAMETER_USES_SAMPLE_RATE;
+            if (paramData.hints & PARAMETER_USES_SCALEPOINTS)
+                hints |= NATIVE_PARAMETER_USES_SCALEPOINTS;
+
+            if (paramData.type == PARAMETER_INPUT || paramData.type == PARAMETER_OUTPUT)
             {
-                const ParameterData& paramData(plugin->getParameterData(index));
-                const ParameterRanges& paramRanges(plugin->getParameterRanges(index));
-
-                if (! plugin->getParameterName(index, strBufName))
-                    strBufName[0] = '\0';
-                if (! plugin->getParameterUnit(index, strBufUnit))
-                    strBufUnit[0] = '\0';
-
-                uint hints = 0x0;
-
-                if (paramData.hints & PARAMETER_IS_BOOLEAN)
-                    hints |= NATIVE_PARAMETER_IS_BOOLEAN;
-                if (paramData.hints & PARAMETER_IS_INTEGER)
-                    hints |= NATIVE_PARAMETER_IS_INTEGER;
-                if (paramData.hints & PARAMETER_IS_LOGARITHMIC)
-                    hints |= NATIVE_PARAMETER_IS_LOGARITHMIC;
-                if (paramData.hints & PARAMETER_IS_AUTOMABLE)
-                    hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
-                if (paramData.hints & PARAMETER_USES_SAMPLERATE)
-                    hints |= NATIVE_PARAMETER_USES_SAMPLE_RATE;
-                if (paramData.hints & PARAMETER_USES_SCALEPOINTS)
-                    hints |= NATIVE_PARAMETER_USES_SCALEPOINTS;
-
-                if (paramData.type == PARAMETER_INPUT || paramData.type == PARAMETER_OUTPUT)
-                {
-                    if (paramData.hints & PARAMETER_IS_ENABLED)
-                        hints |= NATIVE_PARAMETER_IS_ENABLED;
-                    if (paramData.type == PARAMETER_OUTPUT)
-                        hints |= NATIVE_PARAMETER_IS_OUTPUT;
-                }
-
-                param.hints = static_cast<NativeParameterHints>(hints);
-                param.name  = strBufName;
-                param.unit  = strBufUnit;
-                param.ranges.def = paramRanges.def;
-                param.ranges.min = paramRanges.min;
-                param.ranges.max = paramRanges.max;
-                param.ranges.step = paramRanges.step;
-                param.ranges.stepSmall = paramRanges.stepSmall;
-                param.ranges.stepLarge = paramRanges.stepLarge;
-                param.scalePointCount = 0; // TODO
-                param.scalePoints = nullptr;
-
-                return &param;
+                if (paramData.hints & PARAMETER_IS_ENABLED)
+                    hints |= NATIVE_PARAMETER_IS_ENABLED;
+                if (paramData.type == PARAMETER_OUTPUT)
+                    hints |= NATIVE_PARAMETER_IS_OUTPUT;
             }
+
+            param.hints = static_cast<NativeParameterHints>(hints);
+            param.name  = strBufName;
+            param.unit  = strBufUnit;
+            param.ranges.def = paramRanges.def;
+            param.ranges.min = paramRanges.min;
+            param.ranges.max = paramRanges.max;
+            param.ranges.step = paramRanges.step;
+            param.ranges.stepSmall = paramRanges.stepSmall;
+            param.ranges.stepLarge = paramRanges.stepLarge;
+            param.scalePointCount = 0; // TODO
+            param.scalePoints = nullptr;
+
+            return &param;
         }
 
         param.hints = index < kNumInParams ? static_cast<NativeParameterHints>(0x0) : NATIVE_PARAMETER_IS_OUTPUT;
@@ -991,47 +1008,11 @@ protected:
 
     float getParameterValue(const uint32_t index) const
     {
-        if (CarlaPlugin* const plugin = _getFirstPlugin())
-        {
-            if (index < plugin->getParameterCount())
-                return plugin->getParameterValue(index);
-        }
+        uint32_t rindex = index;
+        if (CarlaPlugin* const plugin = _getPluginForParameterIndex(rindex))
+            return plugin->getParameterValue(rindex);
 
         return fParameters[index];
-    }
-
-    // -------------------------------------------------------------------
-    // Plugin midi-program calls
-
-    uint32_t getMidiProgramCount() const
-    {
-        if (CarlaPlugin* const plugin = _getFirstPlugin())
-            return plugin->getMidiProgramCount();
-
-        return 0;
-    }
-
-    const NativeMidiProgram* getMidiProgramInfo(const uint32_t index) const
-    {
-        if (CarlaPlugin* const plugin = _getFirstPlugin())
-        {
-            if (index < plugin->getMidiProgramCount())
-            {
-                static NativeMidiProgram midiProg;
-
-                {
-                    const MidiProgramData& midiProgData(plugin->getMidiProgramData(index));
-
-                    midiProg.bank    = midiProgData.bank;
-                    midiProg.program = midiProgData.program;
-                    midiProg.name    = midiProgData.name;
-                }
-
-                return &midiProg;
-            }
-        }
-
-        return nullptr;
     }
 
     // -------------------------------------------------------------------
@@ -1039,22 +1020,11 @@ protected:
 
     void setParameterValue(const uint32_t index, const float value)
     {
-        if (CarlaPlugin* const plugin = _getFirstPlugin())
-        {
-            if (index < plugin->getParameterCount())
-            {
-                const float rvalue = plugin->getParameterRanges(index).getUnnormalizedValue(value);
-                plugin->setParameterValueRT(index, rvalue, false);
-            }
-        }
+        uint32_t rindex = index;
+        if (CarlaPlugin* const plugin = _getPluginForParameterIndex(rindex))
+            plugin->setParameterValue(rindex, value, false, false, false);
 
         fParameters[index] = value;
-    }
-
-    void setMidiProgram(const uint8_t, const uint32_t bank, const uint32_t program)
-    {
-        if (CarlaPlugin* const plugin = _getFirstPlugin())
-            plugin->setMidiProgramById(bank, program, false, false, false);
     }
 
     // -------------------------------------------------------------------
@@ -1364,10 +1334,20 @@ protected:
 
     void uiSetParameterValue(const uint32_t index, const float value)
     {
-        if (CarlaPlugin* const plugin = _getFirstPlugin())
+        uint32_t rindex = index;
+        if (CarlaPlugin* const plugin = _getPluginForParameterIndex(rindex))
         {
-            if (index < plugin->getParameterCount())
-                plugin->uiParameterChange(index, value);
+            plugin->uiParameterChange(rindex, value);
+
+            if (index >= kNumInParams || ! fUiServer.isPipeRunning())
+                return;
+
+            uiServerCallback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+                             plugin->getId(),
+                             static_cast<int>(rindex),
+                             0, 0,
+                             value,
+                             nullptr);
         }
     }
 
@@ -1443,7 +1423,7 @@ protected:
                 if (! plugin->isParameterOutput(j))
                     continue;
 
-                std::snprintf(tmpBuf, STR_MAX, "PARAMVAL_%i:%i\n", i, j);
+                std::snprintf(tmpBuf, STR_MAX, "PARAMVAL_%u:%u\n", i, j);
                 CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
                 std::snprintf(tmpBuf, STR_MAX, "%f\n", static_cast<double>(plugin->getParameterValue(j)));
                 CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
@@ -1482,6 +1462,8 @@ protected:
         const String state(data);
         XmlDocument xml(state);
         loadProjectInternal(xml);
+
+        reloadFromUI();
     }
 
     // -------------------------------------------------------------------
@@ -1549,24 +1531,9 @@ public:
         return handlePtr->getParameterValue(index);
     }
 
-    static uint32_t _get_midi_program_count(NativePluginHandle handle)
-    {
-        return handlePtr->getMidiProgramCount();
-    }
-
-    static const NativeMidiProgram* _get_midi_program_info(NativePluginHandle handle, uint32_t index)
-    {
-        return handlePtr->getMidiProgramInfo(index);
-    }
-
     static void _set_parameter_value(NativePluginHandle handle, uint32_t index, float value)
     {
         handlePtr->setParameterValue(index, value);
-    }
-
-    static void _set_midi_program(NativePluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program)
-    {
-        handlePtr->setMidiProgram(channel, bank, program);
     }
 
     static void _ui_show(NativePluginHandle handle, bool show)
@@ -1684,17 +1651,53 @@ private:
 
     bool fOptionsForced;
 
-    CarlaPlugin* _getFirstPlugin() const noexcept
+    CarlaPlugin* _getPluginForParameterIndex(uint32_t& index) const noexcept
     {
         if (pData->curPluginCount == 0 || pData->plugins == nullptr)
             return nullptr;
 
-        CarlaPlugin* const plugin(pData->plugins[0].plugin);
+        CarlaPlugin* plugin;
 
-        if (plugin == nullptr || ! plugin->isEnabled())
-            return nullptr;
+        for (uint32_t i=0; i<pData->curPluginCount; ++i)
+        {
+            plugin = pData->plugins[i].plugin;
 
-        return pData->plugins[0].plugin;
+            if (plugin == nullptr || ! plugin->isEnabled())
+                break;
+
+            if (const uint32_t paramCount = plugin->getParameterCount())
+            {
+                if (index >= paramCount)
+                {
+                    index -= paramCount;
+                    continue;
+                }
+
+                return plugin;
+            }
+        }
+
+        return nullptr;
+    }
+
+    bool _getRealIndexForPluginParameter(const uint32_t pluginId, uint32_t& rindex) const noexcept
+    {
+        if (pData->curPluginCount == 0 || pluginId >= pData->curPluginCount || pData->plugins == nullptr)
+            return false;
+
+        CarlaPlugin* plugin;
+
+        for (uint32_t i=0; i<pluginId; ++i)
+        {
+            plugin = pData->plugins[i].plugin;
+
+            if (plugin == nullptr || ! plugin->isEnabled())
+                return false;
+
+            rindex += plugin->getParameterCount();
+        }
+
+        return true;
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineNative)
@@ -1881,9 +1884,7 @@ bool CarlaEngineNativeUI::msgReceived(const char*const msg) noexcept
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
 
         ok = fEngine->removePlugin(pluginId);
-
-        if (pluginId == 0)
-            fEngine->reloadFromUI();
+        fEngine->reloadFromUI();
     }
     else if (std::strcmp(msg, "remove_all_plugins") == 0)
     {
@@ -1926,9 +1927,7 @@ bool CarlaEngineNativeUI::msgReceived(const char*const msg) noexcept
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginIdB), true);
 
         ok = fEngine->switchPlugins(pluginIdA, pluginIdB);
-
-        if (pluginIdA == 0 || pluginIdB == 0)
-            fEngine->reloadFromUI();
+        fEngine->reloadFromUI();
     }
     else if (std::strcmp(msg, "load_plugin_state") == 0)
     {
@@ -2264,6 +2263,7 @@ void CarlaEngineNativeUI::_updateParamValues(CarlaPlugin* const plugin, const ui
         }
 
         if (sendPluginHost) {
+            carla_stdout("_updateParamValues");
             fEngine->setParameterValueFromUI(pluginId, i, value);
         }
     }
@@ -2294,10 +2294,10 @@ static const NativePluginDescriptor carlaRackDesc = {
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
-    CarlaEngineNative::_get_midi_program_count,
-    CarlaEngineNative::_get_midi_program_info,
+    /* _get_midi_program_count */ nullptr,
+    /* _get_midi_program_info  */ nullptr,
     CarlaEngineNative::_set_parameter_value,
-    CarlaEngineNative::_set_midi_program,
+    /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
@@ -2339,14 +2339,14 @@ static const NativePluginDescriptor carlaRackNoMidiOutDesc = {
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
-    CarlaEngineNative::_get_midi_program_count,
-    CarlaEngineNative::_get_midi_program_info,
+    /* _get_midi_program_count */ nullptr,
+    /* _get_midi_program_info  */ nullptr,
     CarlaEngineNative::_set_parameter_value,
-    CarlaEngineNative::_set_midi_program,
+    /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
-    /* _ui_set_parameter_value */ nullptr,
+    CarlaEngineNative::_ui_set_parameter_value,
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,
@@ -2384,14 +2384,14 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
-    CarlaEngineNative::_get_midi_program_count,
-    CarlaEngineNative::_get_midi_program_info,
+    /* _get_midi_program_count */ nullptr,
+    /* _get_midi_program_info  */ nullptr,
     CarlaEngineNative::_set_parameter_value,
-    CarlaEngineNative::_set_midi_program,
+    /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
-    /* _ui_set_parameter_value */ nullptr,
+    CarlaEngineNative::_ui_set_parameter_value,
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,
@@ -2429,14 +2429,14 @@ static const NativePluginDescriptor carlaPatchbay3sDesc = {
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
-    CarlaEngineNative::_get_midi_program_count,
-    CarlaEngineNative::_get_midi_program_info,
+    /* _get_midi_program_count */ nullptr,
+    /* _get_midi_program_info  */ nullptr,
     CarlaEngineNative::_set_parameter_value,
-    CarlaEngineNative::_set_midi_program,
+    /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
-    /* _ui_set_parameter_value */ nullptr,
+    CarlaEngineNative::_ui_set_parameter_value,
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,
@@ -2474,14 +2474,14 @@ static const NativePluginDescriptor carlaPatchbay16Desc = {
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
-    CarlaEngineNative::_get_midi_program_count,
-    CarlaEngineNative::_get_midi_program_info,
+    /* _get_midi_program_count */ nullptr,
+    /* _get_midi_program_info  */ nullptr,
     CarlaEngineNative::_set_parameter_value,
-    CarlaEngineNative::_set_midi_program,
+    /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
-    /* _ui_set_parameter_value */ nullptr,
+    CarlaEngineNative::_ui_set_parameter_value,
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,
@@ -2519,14 +2519,14 @@ static const NativePluginDescriptor carlaPatchbay32Desc = {
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
-    CarlaEngineNative::_get_midi_program_count,
-    CarlaEngineNative::_get_midi_program_info,
+    /* _get_midi_program_count */ nullptr,
+    /* _get_midi_program_info  */ nullptr,
     CarlaEngineNative::_set_parameter_value,
-    CarlaEngineNative::_set_midi_program,
+    /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
-    /* _ui_set_parameter_value */ nullptr,
+    CarlaEngineNative::_ui_set_parameter_value,
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,
@@ -2564,14 +2564,14 @@ static const NativePluginDescriptor carlaPatchbay64Desc = {
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
-    CarlaEngineNative::_get_midi_program_count,
-    CarlaEngineNative::_get_midi_program_info,
+    /* _get_midi_program_count */ nullptr,
+    /* _get_midi_program_info  */ nullptr,
     CarlaEngineNative::_set_parameter_value,
-    CarlaEngineNative::_set_midi_program,
+    /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
-    /* _ui_set_parameter_value */ nullptr,
+    CarlaEngineNative::_ui_set_parameter_value,
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,
@@ -2610,14 +2610,14 @@ static const NativePluginDescriptor carlaPatchbayCVDesc = {
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
-    CarlaEngineNative::_get_midi_program_count,
-    CarlaEngineNative::_get_midi_program_info,
+    /* _get_midi_program_count */ nullptr,
+    /* _get_midi_program_info  */ nullptr,
     CarlaEngineNative::_set_parameter_value,
-    CarlaEngineNative::_set_midi_program,
+    /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
-    /* _ui_set_parameter_value */ nullptr,
+    CarlaEngineNative::_ui_set_parameter_value,
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,

@@ -983,9 +983,7 @@ public:
 
         clearBuffers();
 
-        const float sampleRate((float)pData->engine->getSampleRate());
-
-        uint32_t aIns, aOuts, cvIns, cvOuts, mIns, mOuts, params, j;
+        uint32_t aIns, aOuts, cvIns, cvOuts, mIns, mOuts, j;
 
         bool forcedStereoIn, forcedStereoOut;
         forcedStereoIn = forcedStereoOut = false;
@@ -999,7 +997,6 @@ public:
         cvOuts = fDescriptor->cvOuts;
         mIns   = fDescriptor->midiIns;
         mOuts  = fDescriptor->midiOuts;
-        params = (fDescriptor->get_parameter_count != nullptr && fDescriptor->get_parameter_info != nullptr) ? fDescriptor->get_parameter_count(fHandle) : 0;
 
         if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && (aIns == 1 || aOuts == 1) && mIns <= 1 && mOuts <= 1)
         {
@@ -1065,11 +1062,6 @@ public:
         {
             fMidiOut.createNew(mOuts);
             needsCtrlOut = (mOuts == 1);
-        }
-
-        if (params > 0)
-        {
-            pData->param.createNew(params, true);
         }
 
         const uint portNameSize(pData->engine->getMaxPortNameSize());
@@ -1255,102 +1247,7 @@ public:
             pData->event.portOut = fMidiOut.ports[0];
         }
 
-        for (j=0; j < params; ++j)
-        {
-            const NativeParameter* const paramInfo(fDescriptor->get_parameter_info(fHandle, j));
-
-            CARLA_SAFE_ASSERT_CONTINUE(paramInfo != nullptr);
-
-            pData->param.data[j].type   = PARAMETER_UNKNOWN;
-            pData->param.data[j].index  = static_cast<int32_t>(j);
-            pData->param.data[j].rindex = static_cast<int32_t>(j);
-
-            float min, max, def, step, stepSmall, stepLarge;
-
-            // min value
-            min = paramInfo->ranges.min;
-
-            // max value
-            max = paramInfo->ranges.max;
-
-            if (min > max)
-                max = min;
-
-            if (carla_isEqual(min, max))
-            {
-                carla_stderr2("WARNING - Broken plugin parameter '%s': max == min", paramInfo->name);
-                max = min + 0.1f;
-            }
-
-            // default value
-            def = paramInfo->ranges.def;
-
-            if (def < min)
-                def = min;
-            else if (def > max)
-                def = max;
-
-            if (paramInfo->hints & NATIVE_PARAMETER_USES_SAMPLE_RATE)
-            {
-                min *= sampleRate;
-                max *= sampleRate;
-                def *= sampleRate;
-                pData->param.data[j].hints |= PARAMETER_USES_SAMPLERATE;
-            }
-
-            if (paramInfo->hints & NATIVE_PARAMETER_IS_BOOLEAN)
-            {
-                step = max - min;
-                stepSmall = step;
-                stepLarge = step;
-                pData->param.data[j].hints |= PARAMETER_IS_BOOLEAN;
-            }
-            else if (paramInfo->hints & NATIVE_PARAMETER_IS_INTEGER)
-            {
-                step = 1.0f;
-                stepSmall = 1.0f;
-                stepLarge = 10.0f;
-                pData->param.data[j].hints |= PARAMETER_IS_INTEGER;
-            }
-            else
-            {
-                float range = max - min;
-                step = range/100.0f;
-                stepSmall = range/1000.0f;
-                stepLarge = range/10.0f;
-            }
-
-            if (paramInfo->hints & NATIVE_PARAMETER_IS_OUTPUT)
-            {
-                pData->param.data[j].type = PARAMETER_OUTPUT;
-                needsCtrlOut = true;
-            }
-            else
-            {
-                pData->param.data[j].type = PARAMETER_INPUT;
-                needsCtrlIn = true;
-            }
-
-            // extra parameter hints
-            if (paramInfo->hints & NATIVE_PARAMETER_IS_ENABLED)
-                pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
-
-            if (paramInfo->hints & NATIVE_PARAMETER_IS_AUTOMABLE)
-                pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
-
-            if (paramInfo->hints & NATIVE_PARAMETER_IS_LOGARITHMIC)
-                pData->param.data[j].hints |= PARAMETER_IS_LOGARITHMIC;
-
-            if (paramInfo->hints & NATIVE_PARAMETER_USES_SCALEPOINTS)
-                pData->param.data[j].hints |= PARAMETER_USES_SCALEPOINTS;
-
-            pData->param.ranges[j].min = min;
-            pData->param.ranges[j].max = max;
-            pData->param.ranges[j].def = def;
-            pData->param.ranges[j].step = step;
-            pData->param.ranges[j].stepSmall = stepSmall;
-            pData->param.ranges[j].stepLarge = stepLarge;
-        }
+        reloadParameters(&needsCtrlIn, &needsCtrlOut);
 
         if (needsCtrlIn || mIns == 1)
         {
@@ -1427,6 +1324,124 @@ public:
             activate();
 
         carla_debug("CarlaPluginNative::reload() - end");
+    }
+
+    void reloadParameters(bool* const needsCtrlIn, bool* const needsCtrlOut)
+    {
+        carla_debug("CarlaPluginNative::reloadParameters() - start");
+
+        const float sampleRate = static_cast<float>(pData->engine->getSampleRate());
+        const uint32_t params = (fDescriptor->get_parameter_count != nullptr && fDescriptor->get_parameter_info != nullptr)
+                              ? fDescriptor->get_parameter_count(fHandle)
+                              : 0;
+
+        pData->param.clear();
+
+        if (params > 0)
+        {
+            pData->param.createNew(params, true);
+        }
+
+        for (uint32_t j=0; j < params; ++j)
+        {
+            const NativeParameter* const paramInfo(fDescriptor->get_parameter_info(fHandle, j));
+
+            CARLA_SAFE_ASSERT_CONTINUE(paramInfo != nullptr);
+
+            pData->param.data[j].type   = PARAMETER_UNKNOWN;
+            pData->param.data[j].index  = static_cast<int32_t>(j);
+            pData->param.data[j].rindex = static_cast<int32_t>(j);
+
+            float min, max, def, step, stepSmall, stepLarge;
+
+            // min value
+            min = paramInfo->ranges.min;
+
+            // max value
+            max = paramInfo->ranges.max;
+
+            if (min > max)
+                max = min;
+
+            if (carla_isEqual(min, max))
+            {
+                carla_stderr2("WARNING - Broken plugin parameter '%s': max == min", paramInfo->name);
+                max = min + 0.1f;
+            }
+
+            // default value
+            def = paramInfo->ranges.def;
+
+            if (def < min)
+                def = min;
+            else if (def > max)
+                def = max;
+
+            if (paramInfo->hints & NATIVE_PARAMETER_USES_SAMPLE_RATE)
+            {
+                min *= sampleRate;
+                max *= sampleRate;
+                def *= sampleRate;
+                pData->param.data[j].hints |= PARAMETER_USES_SAMPLERATE;
+            }
+
+            if (paramInfo->hints & NATIVE_PARAMETER_IS_BOOLEAN)
+            {
+                step = max - min;
+                stepSmall = step;
+                stepLarge = step;
+                pData->param.data[j].hints |= PARAMETER_IS_BOOLEAN;
+            }
+            else if (paramInfo->hints & NATIVE_PARAMETER_IS_INTEGER)
+            {
+                step = 1.0f;
+                stepSmall = 1.0f;
+                stepLarge = 10.0f;
+                pData->param.data[j].hints |= PARAMETER_IS_INTEGER;
+            }
+            else
+            {
+                float range = max - min;
+                step = range/100.0f;
+                stepSmall = range/1000.0f;
+                stepLarge = range/10.0f;
+            }
+
+            if (paramInfo->hints & NATIVE_PARAMETER_IS_OUTPUT)
+            {
+                pData->param.data[j].type = PARAMETER_OUTPUT;
+                if (needsCtrlOut != nullptr)
+                    *needsCtrlOut = true;
+            }
+            else
+            {
+                pData->param.data[j].type = PARAMETER_INPUT;
+                if (needsCtrlIn != nullptr)
+                    *needsCtrlIn = true;
+            }
+
+            // extra parameter hints
+            if (paramInfo->hints & NATIVE_PARAMETER_IS_ENABLED)
+                pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
+
+            if (paramInfo->hints & NATIVE_PARAMETER_IS_AUTOMABLE)
+                pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
+
+            if (paramInfo->hints & NATIVE_PARAMETER_IS_LOGARITHMIC)
+                pData->param.data[j].hints |= PARAMETER_IS_LOGARITHMIC;
+
+            if (paramInfo->hints & NATIVE_PARAMETER_USES_SCALEPOINTS)
+                pData->param.data[j].hints |= PARAMETER_USES_SCALEPOINTS;
+
+            pData->param.ranges[j].min = min;
+            pData->param.ranges[j].max = max;
+            pData->param.ranges[j].def = def;
+            pData->param.ranges[j].step = step;
+            pData->param.ranges[j].stepSmall = stepSmall;
+            pData->param.ranges[j].stepLarge = stepLarge;
+        }
+
+        carla_debug("CarlaPluginNative::reloadParameters() - end");
     }
 
     void reloadPrograms(const bool doInit) override
@@ -2599,8 +2614,8 @@ protected:
             pData->engine->callback(true, true, ENGINE_CALLBACK_UPDATE, pData->id, -1, 0, 0, 0.0f, nullptr);
             break;
         case NATIVE_HOST_OPCODE_RELOAD_PARAMETERS:
-            reload(); // FIXME
-            pData->engine->callback(true, true, ENGINE_CALLBACK_RELOAD_PARAMETERS, pData->id, -1, 0, 0, 0.0f, nullptr);
+            reloadParameters(nullptr, nullptr);
+            pData->engine->callback(true, true, ENGINE_CALLBACK_RELOAD_ALL, pData->id, -1, 0, 0, 0.0f, nullptr);
             break;
         case NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS:
             reloadPrograms(false);

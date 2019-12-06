@@ -34,7 +34,7 @@ public:
         : key(nullptr),
           origValue(nullptr)
     {
-        CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(envVar != nullptr && envVar[0] != '\0',);
 
         key = carla_strdup_safe(envVar);
         CARLA_SAFE_ASSERT_RETURN(key != nullptr,);
