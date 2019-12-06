@@ -146,6 +146,9 @@ typedef struct {
 
     uint32_t scalePointCount;
     const NativeParameterScalePoint* scalePoints;
+
+    const char* comment;
+    const char* groupName;
 } NativeParameter;
 
 typedef struct {

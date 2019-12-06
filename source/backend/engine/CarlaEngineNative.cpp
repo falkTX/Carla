@@ -939,8 +939,12 @@ protected:
 
         static char strBufName[STR_MAX+1];
         static char strBufUnit[STR_MAX+1];
+        static char strBufComment[STR_MAX+1];
+        static char strBufGroupName[STR_MAX+1];
         carla_zeroChars(strBufName, STR_MAX+1);
         carla_zeroChars(strBufUnit, STR_MAX+1);
+        carla_zeroChars(strBufComment, STR_MAX+1);
+        carla_zeroChars(strBufGroupName, STR_MAX+1);
 
         uint32_t rindex = index;
         if (CarlaPlugin* const plugin = _getPluginForParameterIndex(rindex))
@@ -952,6 +956,10 @@ protected:
                 strBufName[0] = '\0';
             if (! plugin->getParameterUnit(rindex, strBufUnit))
                 strBufUnit[0] = '\0';
+            if (! plugin->getParameterComment(rindex, strBufComment))
+                strBufComment[0] = '\0';
+            if (! plugin->getParameterGroupName(rindex, strBufGroupName))
+                std::snprintf(strBufGroupName, STR_MAX, "%u:%s", plugin->getId(), plugin->getName());
 
             uint hints = 0x0;
 
@@ -979,6 +987,8 @@ protected:
             param.hints = static_cast<NativeParameterHints>(hints);
             param.name  = strBufName;
             param.unit  = strBufUnit;
+            param.comment = strBufComment;
+            param.groupName = strBufGroupName;
             param.ranges.def = paramRanges.def;
             param.ranges.min = paramRanges.min;
             param.ranges.max = paramRanges.max;
