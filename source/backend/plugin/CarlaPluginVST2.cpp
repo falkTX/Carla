@@ -22,6 +22,7 @@
 # define USE_JUCE_FOR_VST2
 #endif
 
+#include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaScopeUtils.hpp"
 #include "CarlaVstUtils.hpp"
@@ -2267,12 +2268,14 @@ protected:
 
     bool hasMidiInput() const noexcept
     {
-        return (canDo("receiveVstEvents") || canDo("receiveVstMidiEvent") || (fEffect->flags & effFlagsIsSynth) > 0 || (pData->hints & PLUGIN_WANTS_MIDI_INPUT));
+        return (fEffect->flags & effFlagsIsSynth) != 0 ||
+               (pData->hints & PLUGIN_WANTS_MIDI_INPUT) != 0 ||
+               canDo("receiveVstEvents") || canDo("receiveVstMidiEvent");
     }
 
     bool hasMidiOutput() const noexcept
     {
-        return (canDo("sendVstEvents") || canDo("sendVstMidiEvent"));
+        return canDo("sendVstEvents") || canDo("sendVstMidiEvent");
     }
 
     // -------------------------------------------------------------------
@@ -2500,28 +2503,29 @@ public:
 
         pData->options = 0x0;
 
-        if (pData->latency.frames != 0 || hasMidiOutput())
-            pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
-        else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
+        if (pData->latency.frames != 0 || hasMidiOutput() || isPluginOptionEnabled(options, PLUGIN_OPTION_FIXED_BUFFERS))
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-        if (fEffect->numPrograms > 1)
-            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        if (fEffect->numPrograms > 1 || hasMidiInput())
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_MAP_PROGRAM_CHANGES))
+                pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         if (fEffect->flags & effFlagsProgramChunks)
-            pData->options |= PLUGIN_OPTION_USE_CHUNKS;
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_USE_CHUNKS))
+                pData->options |= PLUGIN_OPTION_USE_CHUNKS;
 
         if (hasMidiInput())
         {
-            pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-            pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-            pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
-            pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-
-            if (options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CONTROL_CHANGES))
                 pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
-            if (options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
-                pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CHANNEL_PRESSURE))
+                pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH))
+                pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PITCHBEND))
+                pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_ALL_SOUND_OFF))
+                pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
         }
 
         return true;

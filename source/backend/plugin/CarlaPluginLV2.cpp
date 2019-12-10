@@ -24,6 +24,7 @@
 
 #include "CarlaLv2Utils.hpp"
 
+#include "CarlaBackendUtils.hpp"
 #include "CarlaBase64Utils.hpp"
 #include "CarlaEngineUtils.hpp"
 #include "CarlaPipeUtils.hpp"
@@ -5864,7 +5865,7 @@ public:
         recheckExtensions();
 
         // ---------------------------------------------------------------
-        // set default options
+        // set options
 
         pData->options = 0x0;
 
@@ -5880,19 +5881,25 @@ public:
 
         if (getMidiInCount() != 0)
         {
-            pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-            pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-            pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
-            pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-
-            if (options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CONTROL_CHANGES))
                 pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
-            if (options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CHANNEL_PRESSURE))
+                pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH))
+                pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PITCHBEND))
+                pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_ALL_SOUND_OFF))
+                pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PROGRAM_CHANGES))
                 pData->options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
         }
 
         if (fExt.programs != nullptr && (pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) == 0)
-            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        {
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_MAP_PROGRAM_CHANGES))
+                pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        }
 
         // ---------------------------------------------------------------
         // gui stuff

@@ -20,6 +20,7 @@
 
 #ifdef HAVE_FLUIDSYNTH
 
+#include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
 
 #include "water/text/StringArray.h"
@@ -1684,16 +1685,20 @@ public:
         }
 
         // ---------------------------------------------------------------
-        // set default options
+        // set options
 
-        pData->options  = 0x0;
-        pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-        pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-        pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
-        pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+        pData->options = 0x0;
 
-        if (options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CONTROL_CHANGES))
             pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CHANNEL_PRESSURE))
+            pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PITCHBEND))
+            pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_ALL_SOUND_OFF))
+            pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_MAP_PROGRAM_CHANGES))
+            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         return true;
     }

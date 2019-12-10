@@ -18,6 +18,7 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
+#include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaNative.h"
 
@@ -2831,7 +2832,7 @@ public:
         }
 
         // ---------------------------------------------------------------
-        // set default options
+        // set options
 
         bool hasMidiProgs = false;
 
@@ -2854,28 +2855,39 @@ public:
         else if (options & PLUGIN_OPTION_FORCE_STEREO)
             pData->options |= PLUGIN_OPTION_FORCE_STEREO;
 
-        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_CHANNEL_PRESSURE)
-            pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_NOTE_AFTERTOUCH)
-            pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_PITCHBEND)
-            pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
-        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_ALL_SOUND_OFF)
-            pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-
         if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_CONTROL_CHANGES)
-        {
-            if (options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CONTROL_CHANGES))
                 pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
-        }
+
+        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_CHANNEL_PRESSURE)
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CHANNEL_PRESSURE))
+                pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+
+        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_NOTE_AFTERTOUCH)
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH))
+                pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+
+        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_PITCHBEND)
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PITCHBEND))
+                pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+
+        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_ALL_SOUND_OFF)
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_ALL_SOUND_OFF))
+                pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
         if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_PROGRAM_CHANGES)
         {
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PROGRAM_CHANGES))
+                pData->options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
+
+            // makes no sense for a plugin to set program changes supported, but it has no midi programs
             CARLA_SAFE_ASSERT(! hasMidiProgs);
-            pData->options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
         }
         else if (hasMidiProgs)
-            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        {
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_MAP_PROGRAM_CHANGES))
+                pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        }
 
         return true;
     }

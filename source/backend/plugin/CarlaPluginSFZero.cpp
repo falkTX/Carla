@@ -16,6 +16,7 @@
  */
 
 #include "CarlaPluginInternal.hpp"
+#include "CarlaBackendUtils.hpp"
 #include "CarlaEngine.hpp"
 
 #include "sfzero/SFZero.h"
@@ -750,18 +751,22 @@ public:
         }
 
         // ---------------------------------------------------------------
-        // set default options
+        // set options
 
-        pData->options  = 0x0;
-        pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
-        pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-        pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-        pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
-        pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+        pData->options = 0x0;
+
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CONTROL_CHANGES))
+            pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CHANNEL_PRESSURE))
+            pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH))
+            pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PITCHBEND))
+            pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_ALL_SOUND_OFF))
+            pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
         return true;
-
-        (void)options;
     }
 
     // -------------------------------------------------------------------

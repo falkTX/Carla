@@ -2947,7 +2947,7 @@ public:
 #endif
 
         // ---------------------------------------------------------------
-        // set default options
+        // set options
 
         pData->options = 0x0;
 
