@@ -1118,7 +1118,7 @@ class HostWindow(QMainWindow):
             return
 
         if not self.host.add_plugin(plugin['build'], plugin['type'], plugin['filename'], None,
-                                    plugin['label'], plugin['uniqueId'], None, 0x0):
+                                    plugin['label'], plugin['uniqueId'], None, PLUGIN_OPTIONS_NULL):
             CustomMessageBox(self,
                              QMessageBox.Critical,
                              self.tr("Error"),
@@ -1168,8 +1168,9 @@ class HostWindow(QMainWindow):
 
         btype, ptype, filename, label, uniqueId, extraPtr = data
 
-        if not self.host.add_plugin(btype, ptype, filename, None, label, uniqueId, extraPtr, 0x0):
-            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"), self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+        if not self.host.add_plugin(btype, ptype, filename, None, label, uniqueId, extraPtr, PLUGIN_OPTIONS_NULL):
+            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"),
+                             self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
     @pyqtSlot()
     def slot_confirmRemoveAll(self):
@@ -1210,7 +1211,7 @@ class HostWindow(QMainWindow):
                                    self.tr("command is empty"), QMessageBox.Ok, QMessageBox.Ok)
             return
 
-        if not self.host.add_plugin(BINARY_NATIVE, PLUGIN_JACK, filename, name, label, 0, None, 0x0):
+        if not self.host.add_plugin(BINARY_NATIVE, PLUGIN_JACK, filename, name, label, 0, None, PLUGIN_OPTIONS_NULL):
             CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"),
                                    self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 

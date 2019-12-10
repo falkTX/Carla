@@ -197,6 +197,7 @@ static const uint PLUGIN_HAS_INLINE_DISPLAY = 0x800;
  * @defgroup PluginOptions Plugin Options
  *
  * Various plugin options.
+ * @note Do not modify these values, as they are saved as-is in project files.
  * @see CarlaPlugin::getOptionsAvailable(), CarlaPlugin::getOptionsEnabled(), carla_get_plugin_info() and carla_set_option()
  * @{
  */
@@ -251,6 +252,12 @@ static const uint PLUGIN_OPTION_SEND_ALL_SOUND_OFF = 0x100;
  * @note: This option conflicts with PLUGIN_OPTION_MAP_PROGRAM_CHANGES and cannot be used at the same time.
  */
 static const uint PLUGIN_OPTION_SEND_PROGRAM_CHANGES = 0x200;
+
+/*!
+ * Special flag to indicate that plugin options are not yet set.
+ * This flag exists because 0x0 as an option value is a valid one, so we need something else to indicate "null-ness".
+ */
+static const uint PLUGIN_OPTIONS_NULL = 0x10000;
 
 /** @} */
 

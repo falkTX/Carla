@@ -677,6 +677,18 @@ PluginCategory getPluginCategoryFromName(const char* const name) noexcept
 
 // -----------------------------------------------------------------------
 
+static inline
+bool isPluginOptionEnabled(const uint options, const uint option)
+{
+    if (options == PLUGIN_OPTIONS_NULL)
+        return true;
+    if (options & option)
+        return true;
+    return false;
+}
+
+// -----------------------------------------------------------------------
+
 CARLA_BACKEND_END_NAMESPACE
 
 #endif // CARLA_BACKEND_UTILS_HPP_INCLUDED

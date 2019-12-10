@@ -419,9 +419,14 @@ bool CarlaEngine::setBufferSizeAndSampleRate(const uint, const double)
 // -----------------------------------------------------------------------
 // Plugin management
 
-bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
-                            const char* const filename, const char* const name, const char* const label, const int64_t uniqueId,
-                            const void* const extra, const uint options)
+bool CarlaEngine::addPlugin(const BinaryType btype,
+                            const PluginType ptype,
+                            const char* const filename,
+                            const char* const name,
+                            const char* const label,
+                            const int64_t uniqueId,
+                            const void* const extra,
+                            const uint options)
 {
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->isIdling == 0, "An operation is still being processed, please wait for it to finish");
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -705,9 +710,14 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
     return true;
 }
 
-bool CarlaEngine::addPlugin(const PluginType ptype, const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const void* const extra)
+bool CarlaEngine::addPlugin(const PluginType ptype,
+                            const char* const filename,
+                            const char* const name,
+                            const char* const label,
+                            const int64_t uniqueId,
+                            const void* const extra)
 {
-    return addPlugin(BINARY_NATIVE, ptype, filename, name, label, uniqueId, extra, 0x0);
+    return addPlugin(BINARY_NATIVE, ptype, filename, name, label, uniqueId, extra, PLUGIN_OPTIONS_NULL);
 }
 
 bool CarlaEngine::removePlugin(const uint id)
@@ -1178,12 +1188,12 @@ bool CarlaEngine::loadFile(const char* const filename)
         return addPlugin(PLUGIN_VST2, filename, nullptr, nullptr, 0, nullptr);
 #else
     if (extension == "dll" || extension == "so")
-        return addPlugin(getBinaryTypeFromFile(filename), PLUGIN_VST2, filename, nullptr, nullptr, 0, nullptr, 0x0);
+        return addPlugin(getBinaryTypeFromFile(filename), PLUGIN_VST2, filename, nullptr, nullptr, 0, nullptr);
 #endif
 
 #if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
     if (extension == "vst3")
-        return addPlugin(getBinaryTypeFromFile(filename), PLUGIN_VST3, filename, nullptr, nullptr, 0, nullptr, 0x0);
+        return addPlugin(getBinaryTypeFromFile(filename), PLUGIN_VST3, filename, nullptr, nullptr, 0, nullptr);
 #endif
 
     // -------------------------------------------------------------------
@@ -2323,7 +2333,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
     callback(true, true, ENGINE_CALLBACK_CANCELABLE_ACTION, 0, 1, 0, 0, 0.0f, "Loading project");
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-    const CarlaScopedValueSetter<bool> _svs2(pData->loadingProject, true, false);
+    const CarlaScopedValueSetter<bool> csvs(pData->loadingProject, true, false);
 #endif
 
     // completely load file

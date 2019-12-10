@@ -868,10 +868,10 @@ public:
      */
     bool addPlugin(BinaryType btype, PluginType ptype,
                    const char* filename, const char* name, const char* label, int64_t uniqueId,
-                   const void* extra, uint options);
+                   const void* extra, uint options = PLUGIN_OPTIONS_NULL);
 
     /*!
-     * Add new plugin, using native binary type and default options.
+     * Add new plugin, using native binary type.
      * @see ENGINE_CALLBACK_PLUGIN_ADDED
      */
     bool addPlugin(PluginType ptype,

@@ -18,6 +18,7 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngineUtils.hpp"
 
+#include "CarlaBackendUtils.hpp"
 #include "CarlaLadspaUtils.hpp"
 #include "CarlaDssiUtils.hpp"
 #include "CarlaMathUtils.hpp"
@@ -2963,20 +2964,25 @@ public:
         if (fDssiDescriptor != nullptr)
         {
             if (fDssiDescriptor->get_program != nullptr && fDssiDescriptor->select_program != nullptr)
-                pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+                if (isPluginOptionEnabled(options, PLUGIN_OPTION_MAP_PROGRAM_CHANGES))
+                    pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
             if (fUsesCustomData)
-                pData->options |= PLUGIN_OPTION_USE_CHUNKS;
+                if (isPluginOptionEnabled(options, PLUGIN_OPTION_USE_CHUNKS))
+                    pData->options |= PLUGIN_OPTION_USE_CHUNKS;
 
             if (fDssiDescriptor->run_synth != nullptr)
             {
-                pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-                pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-                pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
-                pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-
-                if (options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+                if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CONTROL_CHANGES))
                     pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+                if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CHANNEL_PRESSURE))
+                    pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+                if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH))
+                    pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+                if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PITCHBEND))
+                    pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+                if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_ALL_SOUND_OFF))
+                    pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
             }
         }
 
