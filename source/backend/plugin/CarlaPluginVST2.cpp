@@ -2506,10 +2506,6 @@ public:
         if (pData->latency.frames != 0 || hasMidiOutput() || isPluginOptionEnabled(options, PLUGIN_OPTION_FIXED_BUFFERS))
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-        if (fEffect->numPrograms > 1 || hasMidiInput())
-            if (isPluginOptionEnabled(options, PLUGIN_OPTION_MAP_PROGRAM_CHANGES))
-                pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-
         if (fEffect->flags & effFlagsProgramChunks)
             if (isPluginOptionEnabled(options, PLUGIN_OPTION_USE_CHUNKS))
                 pData->options |= PLUGIN_OPTION_USE_CHUNKS;
@@ -2526,7 +2522,13 @@ public:
                 pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
             if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_ALL_SOUND_OFF))
                 pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PROGRAM_CHANGES))
+                pData->options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
         }
+
+        if (fEffect->numPrograms > 1 && (pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) == 0)
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_MAP_PROGRAM_CHANGES))
+                pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         return true;
     }
