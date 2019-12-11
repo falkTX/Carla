@@ -2798,6 +2798,30 @@ public:
             portName.truncate(portNameSize);
 
             pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
+
+            for (uint32_t i=0; i < params; ++i)
+            {
+                const int32_t rindex = pData->param.data[i].rindex;
+                CARLA_SAFE_ASSERT_CONTINUE(rindex >= 0 && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount));
+
+                if (pData->param.data[i].type != PARAMETER_INPUT)
+                    continue;
+                if (fRdfDescriptor->Ports[rindex].Name == nullptr || fRdfDescriptor->Ports[rindex].Name[0] == '\0')
+                    continue;
+
+                portName = fRdfDescriptor->Ports[rindex].Name;
+                portName.truncate(portNameSize);
+
+                // Parameter as CV
+                CarlaEngineCVPort* const cvPort =
+                    (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, true, i);
+
+                if (true)
+                    cvPort->setRange(0.0f, 3.0f + (float)i);
+                else
+                    cvPort->setRange(pData->param.ranges[i].min, pData->param.ranges[i].max);
+                pData->event.portIn->addCVSource(cvPort, i);
+            }
         }
 
         if (needsCtrlOut)
@@ -2844,7 +2868,7 @@ public:
             if (char* const midnam = fExt.midnam->midnam(fHandle))
             {
                 fEventsIn.ctrl->port->setMetaData("http://www.midi.org/dtds/MIDINameDocument10.dtd",
-                                                    midnam, "text/xml");
+                                                  midnam, "text/xml");
                 if (fExt.midnam->free != nullptr)
                     fExt.midnam->free(midnam);
             }
@@ -3498,6 +3522,19 @@ public:
             } // End of MIDI Input (External)
 
             // ----------------------------------------------------------------------------------------------------
+            // CV Control Input
+
+            for (uint32_t i=0, j=0; i < pData->param.count; ++i)
+            {
+                if (pData->param.data[i].type != PARAMETER_INPUT)
+                    continue;
+
+                const uint32_t cvIndex = j++;
+
+                pData->event.portIn->mixWithCvBuffer(cvIn[pData->cvIn.count + cvIndex], frames, i);
+            }
+
+            // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -3598,12 +3635,37 @@ public:
                         break;
 
                     case kEngineControlEventTypeParameter: {
+                        float value;
+
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+                        // via CV
+                        if (event.channel == 0xFF)
+                        {
+                            const uint32_t k = ctrlEvent.param;
+                            CARLA_SAFE_ASSERT_CONTINUE(k < pData->param.count);
+
+                            if (pData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
+                            {
+                                value = (ctrlEvent.value < 0.5f) ? pData->param.ranges[k].min : pData->param.ranges[k].max;
+                            }
+                            else
+                            {
+                                if (pData->param.data[k].hints & PARAMETER_IS_LOGARITHMIC)
+                                    value = pData->param.ranges[k].getUnnormalizedLogValue(ctrlEvent.value);
+                                else
+                                    value = pData->param.ranges[k].getUnnormalizedValue(ctrlEvent.value);
+
+                                if (pData->param.data[k].hints & PARAMETER_IS_INTEGER)
+                                    value = std::rint(value);
+                            }
+
+                            setParameterValueRT(k, value, true);
+                            continue;
+                        }
+
                         // Control backend stuff
                         if (event.channel == pData->ctrlChannel)
                         {
-                            float value;
-
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) != 0)
                             {
                                 value = ctrlEvent.value;
@@ -3654,8 +3716,6 @@ public:
                                 continue;
                             if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
-
-                            float value;
 
                             if (pData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
                             {

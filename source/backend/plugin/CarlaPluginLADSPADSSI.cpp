@@ -1239,7 +1239,7 @@ public:
                 CarlaEngineCVPort* const cvPort =
                     (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, true, i);
                 cvPort->setRange(pData->param.ranges[i].min, pData->param.ranges[i].max);
-                pData->event.portIn->addCVSource(cvPort);
+                pData->event.portIn->addCVSource(cvPort, i);
             }
         }
 

@@ -28,6 +28,7 @@ CARLA_BACKEND_START_NAMESPACE
 // Fallback data
 
 static const EngineEvent kFallbackEngineEvent = { kEngineEventTypeNull, 0, 0, {{ kEngineControlEventTypeNull, 0, 0.0f }} };
+static CarlaEngineEventCV kFallbackEngineEventCV = { nullptr, (uint32_t)-1, 0.0f };
 
 // -----------------------------------------------------------------------
 // Carla Engine port (Abstract)
@@ -112,6 +113,34 @@ void CarlaEngineCVPort::setRange(const float min, const float max) noexcept
 // -----------------------------------------------------------------------
 // Carla Engine Event port
 
+CarlaEngineEventPort::ProtectedData::ProtectedData(const EngineProcessMode pm) noexcept
+  : buffer(nullptr),
+    processMode(pm),
+    cvs()
+{
+    if (processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+    {
+        buffer = new EngineEvent[kMaxEngineEventInternalCount];
+        carla_zeroStructs(buffer, kMaxEngineEventInternalCount);
+    }
+}
+
+CarlaEngineEventPort::ProtectedData::~ProtectedData() noexcept
+{
+    for (LinkedList<CarlaEngineEventCV>::Itenerator it = cvs.begin2(); it.valid(); it.next())
+        delete it.getValue(kFallbackEngineEventCV).cvPort;
+
+    cvs.clear();
+
+    if (processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+    {
+        CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
+
+        delete[] buffer;
+        buffer = nullptr;
+    }
+}
+
 CarlaEngineEventPort::CarlaEngineEventPort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset) noexcept
     : CarlaEnginePort(client, isInputPort, indexOffset),
       pData(new ProtectedData(client.getEngine().getProccessMode()))
@@ -125,27 +154,31 @@ CarlaEngineEventPort::~CarlaEngineEventPort() noexcept
     delete pData;
 }
 
-void CarlaEngineEventPort::addCVSource(CarlaEngineCVPort* const port) noexcept
+void CarlaEngineEventPort::addCVSource(CarlaEngineCVPort* const port, const uint32_t portIndexOffset) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(port != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(port->isInput(),);
     carla_debug("CarlaEngineEventPort::addCVSource(%p)", port);
 
-    const CarlaEngineEventCV ecv { port, 0.0f, port->getIndexOffset() };
+    const CarlaEngineEventCV ecv { port, portIndexOffset, 0.0f };
     pData->cvs.append(ecv);
 }
 
-void CarlaEngineEventPort::removeCVSource(CarlaEngineCVPort* const port) noexcept
+void CarlaEngineEventPort::removeCVSource(const uint32_t portIndexOffset) noexcept
 {
-    carla_debug("CarlaEngineEventPort::removeCVSource(%p)", port);
+    carla_debug("CarlaEngineEventPort::removeCVSource(%u)", portIndexOffset);
 
-    // pData->cvPorts.removeOne(port);
-    // TODO
-    return;
-    (void)port;
+    for (LinkedList<CarlaEngineEventCV>::Itenerator it = pData->cvs.begin2(); it.valid(); it.next())
+    {
+        CarlaEngineEventCV& ecv(it.getValue(kFallbackEngineEventCV));
+
+        if (ecv.indexOffset == portIndexOffset)
+        {
+            pData->cvs.remove(it);
+            break;
+        }
+    }
 }
-
-static CarlaEngineEventCV kFallbackEngineEventCV = { nullptr, 0.0f, (uint32_t)-1 };
 
 void CarlaEngineEventPort::mixWithCvBuffer(const float* const buffer,
                                            const uint32_t frames,
@@ -177,7 +210,7 @@ void CarlaEngineEventPort::mixWithCvBuffer(const float* const buffer,
         float previousValue = ecv.previousValue;
         ecv.cvPort->getRange(min, max);
 
-        for (uint32_t i=0; i<frames; ++i)
+        for (uint32_t i=0; i<frames; i+=32)
         {
             v = buffer[i];
 
@@ -185,7 +218,7 @@ void CarlaEngineEventPort::mixWithCvBuffer(const float* const buffer,
             {
                 previousValue = v;
 
-                EngineEvent& event(pData->buffer[i++]);
+                EngineEvent& event(pData->buffer[eventIndex++]);
 
                 event.type    = kEngineEventTypeControl;
                 event.time    = i;

@@ -553,12 +553,12 @@ public:
     /*!
      * Add a CV port as a source of events.
      */
-    void addCVSource(CarlaEngineCVPort* port) noexcept;
+    void addCVSource(CarlaEngineCVPort* port, uint32_t portIndexOffset) noexcept;
 
     /*!
      * Remove a CV port as a source of events.
      */
-    void removeCVSource(CarlaEngineCVPort* port) noexcept;
+    void removeCVSource(uint32_t portIndexOffset) noexcept;
 
     /*!
      * Remove a CV port as a source of events.

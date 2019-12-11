@@ -214,8 +214,8 @@ struct EnginePluginData {
 
 struct CarlaEngineEventCV {
     CarlaEngineCVPort* cvPort;
-    float previousValue;
     uint32_t indexOffset;
+    float previousValue;
 };
 
 struct CarlaEngineEventPort::ProtectedData {
@@ -223,30 +223,8 @@ struct CarlaEngineEventPort::ProtectedData {
     const EngineProcessMode processMode;
     LinkedList<CarlaEngineEventCV> cvs;
 
-    ProtectedData(const EngineProcessMode pm) noexcept
-      : buffer(nullptr),
-        processMode(pm),
-        cvs()
-    {
-        if (processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-        {
-            buffer = new EngineEvent[kMaxEngineEventInternalCount];
-            carla_zeroStructs(buffer, kMaxEngineEventInternalCount);
-        }
-    }
-
-    ~ProtectedData() noexcept
-    {
-        cvs.clear();
-
-        if (processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-        {
-            CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
-
-            delete[] buffer;
-            buffer = nullptr;
-        }
-    }
+    ProtectedData(const EngineProcessMode pm) noexcept;
+    ~ProtectedData() noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(ProtectedData)
 };
