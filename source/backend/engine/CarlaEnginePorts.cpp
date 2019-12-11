@@ -20,6 +20,8 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
 
+#include "lv2/lv2.h"
+
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
@@ -71,7 +73,9 @@ void CarlaEngineAudioPort::initBuffer() noexcept
 
 CarlaEngineCVPort::CarlaEngineCVPort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset) noexcept
     : CarlaEnginePort(client, isInputPort, indexOffset),
-      fBuffer(nullptr)
+      fBuffer(nullptr),
+      fMinimum(-1.0f),
+      fMaximum(1.0f)
 {
     carla_debug("CarlaEngineCVPort::CarlaEngineCVPort(%s)", bool2str(isInputPort));
 }
@@ -83,6 +87,26 @@ CarlaEngineCVPort::~CarlaEngineCVPort() noexcept
 
 void CarlaEngineCVPort::initBuffer() noexcept
 {
+}
+
+void CarlaEngineCVPort::setRange(const float min, const float max) noexcept
+{
+    fMinimum = min;
+    fMaximum = max;
+
+    char strBufMin[STR_MAX];
+    char strBufMax[STR_MAX];
+    carla_zeroChars(strBufMin, STR_MAX);
+    carla_zeroChars(strBufMax, STR_MAX);
+
+    {
+        const CarlaScopedLocale csl;
+        std::snprintf(strBufMin, STR_MAX-1, "%f", static_cast<double>(min));
+        std::snprintf(strBufMax, STR_MAX-1, "%f", static_cast<double>(max));
+    }
+
+    setMetaData(LV2_CORE__minimum, strBufMin, "");
+    setMetaData(LV2_CORE__maximum, strBufMax, "");
 }
 
 // -----------------------------------------------------------------------
@@ -107,7 +131,7 @@ void CarlaEngineEventPort::addCVSource(CarlaEngineCVPort* const port) noexcept
     CARLA_SAFE_ASSERT_RETURN(port->isInput(),);
     carla_debug("CarlaEngineEventPort::addCVSource(%p)", port);
 
-    const CarlaEngineEventCV ecv { port, 0.0f };
+    const CarlaEngineEventCV ecv { port, 0.0f, port->getIndexOffset() };
     pData->cvs.append(ecv);
 }
 
@@ -121,17 +145,69 @@ void CarlaEngineEventPort::removeCVSource(CarlaEngineCVPort* const port) noexcep
     (void)port;
 }
 
+static CarlaEngineEventCV kFallbackEngineEventCV = { nullptr, 0.0f, (uint32_t)-1 };
+
+void CarlaEngineEventPort::mixWithCvBuffer(const float* const buffer,
+                                           const uint32_t frames,
+                                           const uint32_t indexOffset) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->buffer != nullptr,)
+    CARLA_SAFE_ASSERT_RETURN(kIsInput,);
+
+    uint32_t eventIndex = 0;
+    float v, min, max;
+
+    for (; eventIndex < kMaxEngineEventInternalCount; ++eventIndex)
+    {
+        if (pData->buffer[eventIndex].type == kEngineEventTypeNull)
+            break;
+    }
+
+    if (eventIndex == kMaxEngineEventInternalCount)
+        return;
+
+    for (LinkedList<CarlaEngineEventCV>::Itenerator it = pData->cvs.begin2(); it.valid(); it.next())
+    {
+        CarlaEngineEventCV& ecv(it.getValue(kFallbackEngineEventCV));
+
+        if (ecv.indexOffset != indexOffset)
+            continue;
+        CARLA_SAFE_ASSERT_RETURN(ecv.cvPort != nullptr,);
+
+        float previousValue = ecv.previousValue;
+        ecv.cvPort->getRange(min, max);
+
+        for (uint32_t i=0; i<frames; ++i)
+        {
+            v = buffer[i];
+
+            if (carla_isNotEqual(v, previousValue))
+            {
+                previousValue = v;
+
+                EngineEvent& event(pData->buffer[i++]);
+
+                event.type    = kEngineEventTypeControl;
+                event.time    = i;
+                event.channel = 0xFF;
+
+                event.ctrl.type  = kEngineControlEventTypeParameter;
+                event.ctrl.param = static_cast<uint16_t>(indexOffset);
+                event.ctrl.value = carla_fixedValue(0.0f, 1.0f, (v - min) / (max - min));
+            }
+        }
+
+        ecv.previousValue = previousValue;
+        break;
+    }
+}
+
 void CarlaEngineEventPort::initBuffer() noexcept
 {
     if (pData->processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->processMode == ENGINE_PROCESS_MODE_BRIDGE)
         pData->buffer = kClient.getEngine().getInternalEventBuffer(kIsInput);
     else if (pData->processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! kIsInput)
         carla_zeroStructs(pData->buffer, kMaxEngineEventInternalCount);
-
-    for (LinkedList<CarlaEngineEventCV>::Itenerator it = pData->cvs.begin2(); it.valid(); it.next())
-    {
-        // TODO append events to buffer
-    }
 }
 
 uint32_t CarlaEngineEventPort::getEventCount() const noexcept

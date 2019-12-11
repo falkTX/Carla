@@ -215,6 +215,7 @@ struct EnginePluginData {
 struct CarlaEngineEventCV {
     CarlaEngineCVPort* cvPort;
     float previousValue;
+    uint32_t indexOffset;
 };
 
 struct CarlaEngineEventPort::ProtectedData {

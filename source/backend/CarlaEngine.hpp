@@ -386,6 +386,14 @@ public:
     }
 
     /*!
+     * Get the index offset as passed in the constructor.
+     */
+    uint32_t getIndexOffset() const noexcept
+    {
+        return kIndexOffset;
+    }
+
+    /*!
      * Get this ports' engine client.
      */
     const CarlaEngineClient& getEngineClient() const noexcept
@@ -494,9 +502,24 @@ public:
         return fBuffer;
     }
 
+    /*!
+     * Get min/max range for this CV port.
+     */
+    void getRange(float& min, float& max) const noexcept
+    {
+        min = fMinimum;
+        max = fMaximum;
+    }
+
+    /*!
+     * Set min/max range for this CV port.
+     */
+    void setRange(float min, float max) noexcept;
+
 #ifndef DOXYGEN
 protected:
     float* fBuffer;
+    float fMinimum, fMaximum;
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineCVPort)
 #endif
@@ -536,6 +559,11 @@ public:
      * Remove a CV port as a source of events.
      */
     void removeCVSource(CarlaEngineCVPort* port) noexcept;
+
+    /*!
+     * Remove a CV port as a source of events.
+     */
+    void mixWithCvBuffer(const float* buffer, uint32_t frames, uint32_t indexOffset) noexcept;
 
     /*!
      * Initialize the port's internal buffer for @a engine.
