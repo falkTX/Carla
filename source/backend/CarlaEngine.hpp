@@ -528,6 +528,16 @@ public:
     }
 
     /*!
+     * Add a CV port as a source of events.
+     */
+    void addCVSource(CarlaEngineCVPort* port) noexcept;
+
+    /*!
+     * Remove a CV port as a source of events.
+     */
+    void removeCVSource(CarlaEngineCVPort* port) noexcept;
+
+    /*!
      * Initialize the port's internal buffer for @a engine.
      */
     void initBuffer() noexcept override;
@@ -583,8 +593,8 @@ public:
 
 #ifndef DOXYGEN
 protected:
-    EngineEvent* fBuffer;
-    const EngineProcessMode kProcessMode;
+    struct ProtectedData;
+    ProtectedData* const pData;
     friend class CarlaPluginInstance;
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineEventPort)

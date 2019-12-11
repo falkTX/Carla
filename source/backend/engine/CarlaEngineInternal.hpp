@@ -20,6 +20,7 @@
 
 #include "CarlaEngineThread.hpp"
 #include "CarlaEngineUtils.hpp"
+#include "LinkedList.hpp"
 
 #ifndef BUILD_BRIDGE
 # include "CarlaEngineOsc.hpp"
@@ -206,6 +207,47 @@ struct EngineNextAction {
 struct EnginePluginData {
     CarlaPlugin* plugin;
     float peaks[4];
+};
+
+// -----------------------------------------------------------------------
+// CarlaEngineEventPortProtectedData
+
+struct CarlaEngineEventCV {
+    CarlaEngineCVPort* cvPort;
+    float previousValue;
+};
+
+struct CarlaEngineEventPort::ProtectedData {
+    EngineEvent* buffer;
+    const EngineProcessMode processMode;
+    LinkedList<CarlaEngineEventCV> cvs;
+
+    ProtectedData(const EngineProcessMode pm) noexcept
+      : buffer(nullptr),
+        processMode(pm),
+        cvs()
+    {
+        if (processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        {
+            buffer = new EngineEvent[kMaxEngineEventInternalCount];
+            carla_zeroStructs(buffer, kMaxEngineEventInternalCount);
+        }
+    }
+
+    ~ProtectedData() noexcept
+    {
+        cvs.clear();
+
+        if (processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        {
+            CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
+
+            delete[] buffer;
+            buffer = nullptr;
+        }
+    }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(ProtectedData)
 };
 
 // -----------------------------------------------------------------------

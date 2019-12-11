@@ -1056,10 +1056,6 @@ public:
 
                 const char* const paramName(fDescriptor->PortNames[i] != nullptr ? fDescriptor->PortNames[i] : "unknown");
 
-                // CV stuff
-                portName = paramName;
-                portName.truncate(portNameSize);
-
                 float min, max, def, step, stepSmall, stepLarge;
 
                 // min value
@@ -1127,10 +1123,6 @@ public:
                     pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
                     needsCtrlIn = true;
 
-                    // Parameter as CV
-                    pData->param.cvPorts[j] = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, true, j);
-                    CARLA_SAFE_ASSERT(pData->param.cvPorts[j] != nullptr);
-
                     // MIDI CC value
                     if (fDssiDescriptor != nullptr && fDssiDescriptor->get_midi_controller_for_port != nullptr)
                     {
@@ -1146,9 +1138,6 @@ public:
                 else if (LADSPA_IS_PORT_OUTPUT(portType))
                 {
                     pData->param.data[j].type = PARAMETER_OUTPUT;
-
-                    // Parameter as CV
-                    pData->param.cvPorts[j] = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, false, j);
 
                     if (std::strcmp(paramName, "latency") == 0 || std::strcmp(paramName, "_latency") == 0)
                     {
@@ -1232,6 +1221,25 @@ public:
             portName.truncate(portNameSize);
 
             pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
+
+            for (uint32_t i=0; i < params; ++i)
+            {
+                const int32_t rindex = pData->param.data[i].rindex;
+                CARLA_SAFE_ASSERT_CONTINUE(rindex >= 0);
+
+                if (pData->param.data[i].type != PARAMETER_INPUT)
+                    continue;
+                if (fDescriptor->PortNames[rindex] == nullptr || fDescriptor->PortNames[rindex][0] == '\0')
+                    continue;
+
+                portName = fDescriptor->PortNames[rindex];
+                portName.truncate(portNameSize);
+
+                // Parameter as CV
+                CarlaEngineCVPort* const cvPort =
+                    (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, true, i);
+                pData->event.portIn->addCVSource(cvPort);
+            }
         }
 
         if (needsCtrlOut)

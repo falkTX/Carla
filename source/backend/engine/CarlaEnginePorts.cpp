@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -15,6 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include "CarlaEngineInternal.hpp"
 #include "CarlaEngineUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
@@ -89,50 +90,61 @@ void CarlaEngineCVPort::initBuffer() noexcept
 
 CarlaEngineEventPort::CarlaEngineEventPort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset) noexcept
     : CarlaEnginePort(client, isInputPort, indexOffset),
-      fBuffer(nullptr),
-      kProcessMode(client.getEngine().getProccessMode())
+      pData(new ProtectedData(client.getEngine().getProccessMode()))
 {
     carla_debug("CarlaEngineEventPort::CarlaEngineEventPort(%s)", bool2str(isInputPort));
-
-    if (kProcessMode == ENGINE_PROCESS_MODE_PATCHBAY)
-    {
-        fBuffer = new EngineEvent[kMaxEngineEventInternalCount];
-        carla_zeroStructs(fBuffer, kMaxEngineEventInternalCount);
-    }
 }
 
 CarlaEngineEventPort::~CarlaEngineEventPort() noexcept
 {
     carla_debug("CarlaEngineEventPort::~CarlaEngineEventPort()");
+    delete pData;
+}
 
-    if (kProcessMode == ENGINE_PROCESS_MODE_PATCHBAY)
-    {
-        CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
+void CarlaEngineEventPort::addCVSource(CarlaEngineCVPort* const port) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(port != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(port->isInput(),);
+    carla_debug("CarlaEngineEventPort::addCVSource(%p)", port);
 
-        delete[] fBuffer;
-        fBuffer = nullptr;
-    }
+    const CarlaEngineEventCV ecv { port, 0.0f };
+    pData->cvs.append(ecv);
+}
+
+void CarlaEngineEventPort::removeCVSource(CarlaEngineCVPort* const port) noexcept
+{
+    carla_debug("CarlaEngineEventPort::removeCVSource(%p)", port);
+
+    // pData->cvPorts.removeOne(port);
+    // TODO
+    return;
+    (void)port;
 }
 
 void CarlaEngineEventPort::initBuffer() noexcept
 {
-    if (kProcessMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || kProcessMode == ENGINE_PROCESS_MODE_BRIDGE)
-        fBuffer = kClient.getEngine().getInternalEventBuffer(kIsInput);
-    else if (kProcessMode == ENGINE_PROCESS_MODE_PATCHBAY && ! kIsInput)
-        carla_zeroStructs(fBuffer, kMaxEngineEventInternalCount);
+    if (pData->processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->processMode == ENGINE_PROCESS_MODE_BRIDGE)
+        pData->buffer = kClient.getEngine().getInternalEventBuffer(kIsInput);
+    else if (pData->processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! kIsInput)
+        carla_zeroStructs(pData->buffer, kMaxEngineEventInternalCount);
+
+    for (LinkedList<CarlaEngineEventCV>::Itenerator it = pData->cvs.begin2(); it.valid(); it.next())
+    {
+        // TODO append events to buffer
+    }
 }
 
 uint32_t CarlaEngineEventPort::getEventCount() const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(kIsInput, 0);
-    CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, 0);
-    CARLA_SAFE_ASSERT_RETURN(kProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && kProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, 0);
+    CARLA_SAFE_ASSERT_RETURN(pData->buffer != nullptr, 0);
+    CARLA_SAFE_ASSERT_RETURN(pData->processMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && pData->processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, 0);
 
     uint32_t i=0;
 
     for (; i < kMaxEngineEventInternalCount; ++i)
     {
-        if (fBuffer[i].type == kEngineEventTypeNull)
+        if (pData->buffer[i].type == kEngineEventTypeNull)
             break;
     }
 
@@ -142,16 +154,16 @@ uint32_t CarlaEngineEventPort::getEventCount() const noexcept
 const EngineEvent& CarlaEngineEventPort::getEvent(const uint32_t index) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(kIsInput, kFallbackEngineEvent);
-    CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, kFallbackEngineEvent);
-    CARLA_SAFE_ASSERT_RETURN(kProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && kProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, kFallbackEngineEvent);
+    CARLA_SAFE_ASSERT_RETURN(pData->buffer != nullptr, kFallbackEngineEvent);
+    CARLA_SAFE_ASSERT_RETURN(pData->processMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && pData->processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, kFallbackEngineEvent);
     CARLA_SAFE_ASSERT_RETURN(index < kMaxEngineEventInternalCount, kFallbackEngineEvent);
 
-    return fBuffer[index];
+    return pData->buffer[index];
 }
 
 const EngineEvent& CarlaEngineEventPort::getEventUnchecked(const uint32_t index) const noexcept
 {
-    return fBuffer[index];
+    return pData->buffer[index];
 }
 
 bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEvent& ctrl) noexcept
@@ -162,8 +174,8 @@ bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
 bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const float value) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(! kIsInput, false);
-    CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
-    CARLA_SAFE_ASSERT_RETURN(kProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && kProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, false);
+    CARLA_SAFE_ASSERT_RETURN(pData->buffer != nullptr, false);
+    CARLA_SAFE_ASSERT_RETURN(pData->processMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && pData->processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, false);
     CARLA_SAFE_ASSERT_RETURN(type != kEngineControlEventTypeNull, false);
     CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, false);
     CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.0f);
@@ -174,7 +186,7 @@ bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
 
     for (uint32_t i=0; i < kMaxEngineEventInternalCount; ++i)
     {
-        EngineEvent& event(fBuffer[i]);
+        EngineEvent& event(pData->buffer[i]);
 
         if (event.type != kEngineEventTypeNull)
             continue;
@@ -208,15 +220,15 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
 bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t size, const uint8_t* const data) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(! kIsInput, false);
-    CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
-    CARLA_SAFE_ASSERT_RETURN(kProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && kProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, false);
+    CARLA_SAFE_ASSERT_RETURN(pData->buffer != nullptr, false);
+    CARLA_SAFE_ASSERT_RETURN(pData->processMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && pData->processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, false);
     CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, false);
     CARLA_SAFE_ASSERT_RETURN(size > 0 && size <= EngineMidiEvent::kDataSize, false);
     CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
 
     for (uint32_t i=0; i < kMaxEngineEventInternalCount; ++i)
     {
-        EngineEvent& event(fBuffer[i]);
+        EngineEvent& event(pData->buffer[i]);
 
         if (event.type != kEngineEventTypeNull)
             continue;
