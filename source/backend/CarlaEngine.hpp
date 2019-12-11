@@ -664,6 +664,11 @@ public:
     EngineProcessMode getProcessMode() const noexcept;
 
     /*!
+     * Get port count for a type and mode.
+     */
+    uint getPortCount(EnginePortType portType, bool isInput) const noexcept;
+
+    /*!
      * Get an audio port name.
      */
     const char* getAudioPortName(bool isInput, uint index) const noexcept;

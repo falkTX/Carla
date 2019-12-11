@@ -165,6 +165,7 @@ struct PluginParameterData {
     ParameterData* data;
     ParameterRanges* ranges;
     SpecialParameterType* special;
+    CarlaEngineCVPort** cvPorts;
 
     PluginParameterData() noexcept;
     ~PluginParameterData() noexcept;

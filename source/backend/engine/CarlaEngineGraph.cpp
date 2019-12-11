@@ -1388,12 +1388,14 @@ public:
         : kEngine(engine),
           fPlugin(plugin)
     {
-        setPlayConfigDetails(fPlugin->getAudioInCount(),
-                             fPlugin->getAudioOutCount(),
-                             fPlugin->getCVInCount(),
-                             fPlugin->getCVOutCount(),
-                             jmax(fPlugin->getMidiInCount(), acceptsMidi() ? 1U : 0U),
-                             jmax(fPlugin->getMidiOutCount(), producesMidi() ? 1U : 0U),
+        CarlaEngineClient* const client = fPlugin->getEngineClient();
+
+        setPlayConfigDetails(client->getPortCount(kEnginePortTypeAudio, true),
+                             client->getPortCount(kEnginePortTypeAudio, false),
+                             client->getPortCount(kEnginePortTypeCV, true),
+                             client->getPortCount(kEnginePortTypeCV, false),
+                             client->getPortCount(kEnginePortTypeEvent, true),
+                             client->getPortCount(kEnginePortTypeEvent, false),
                              getSampleRate(), getBlockSize());
     }
 
@@ -1515,7 +1517,7 @@ public:
 
     const String getInputChannelName(ChannelType t, uint i) const override
     {
-        CarlaEngineClient* const client(fPlugin->getEngineClient());
+        CarlaEngineClient* const client = fPlugin->getEngineClient();
 
         switch (t)
         {

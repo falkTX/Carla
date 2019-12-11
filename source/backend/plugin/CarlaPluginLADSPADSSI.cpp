@@ -1056,6 +1056,10 @@ public:
 
                 const char* const paramName(fDescriptor->PortNames[i] != nullptr ? fDescriptor->PortNames[i] : "unknown");
 
+                // CV stuff
+                portName = paramName;
+                portName.truncate(portNameSize);
+
                 float min, max, def, step, stepSmall, stepLarge;
 
                 // min value
@@ -1123,6 +1127,10 @@ public:
                     pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
                     needsCtrlIn = true;
 
+                    // Parameter as CV
+                    pData->param.cvPorts[j] = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, true, j);
+                    CARLA_SAFE_ASSERT(pData->param.cvPorts[j] != nullptr);
+
                     // MIDI CC value
                     if (fDssiDescriptor != nullptr && fDssiDescriptor->get_midi_controller_for_port != nullptr)
                     {
@@ -1138,6 +1146,9 @@ public:
                 else if (LADSPA_IS_PORT_OUTPUT(portType))
                 {
                     pData->param.data[j].type = PARAMETER_OUTPUT;
+
+                    // Parameter as CV
+                    pData->param.cvPorts[j] = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, false, j);
 
                     if (std::strcmp(paramName, "latency") == 0 || std::strcmp(paramName, "_latency") == 0)
                     {

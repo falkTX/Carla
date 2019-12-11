@@ -181,7 +181,8 @@ PluginParameterData::PluginParameterData() noexcept
     : count(0),
       data(nullptr),
       ranges(nullptr),
-      special(nullptr) {}
+      special(nullptr),
+      cvPorts(nullptr) {}
 
 PluginParameterData::~PluginParameterData() noexcept
 {
@@ -189,6 +190,7 @@ PluginParameterData::~PluginParameterData() noexcept
     CARLA_SAFE_ASSERT(data == nullptr);
     CARLA_SAFE_ASSERT(ranges == nullptr);
     CARLA_SAFE_ASSERT(special == nullptr);
+    CARLA_SAFE_ASSERT(cvPorts == nullptr);
 }
 
 void PluginParameterData::createNew(const uint32_t newCount, const bool withSpecial)
@@ -197,6 +199,7 @@ void PluginParameterData::createNew(const uint32_t newCount, const bool withSpec
     CARLA_SAFE_ASSERT_RETURN(data == nullptr,);
     CARLA_SAFE_ASSERT_RETURN(ranges == nullptr,);
     CARLA_SAFE_ASSERT_RETURN(special == nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(cvPorts == nullptr,);
     CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
 
     data = new ParameterData[newCount];
@@ -217,6 +220,9 @@ void PluginParameterData::createNew(const uint32_t newCount, const bool withSpec
         special = new SpecialParameterType[newCount];
         carla_zeroStructs(special, newCount);
     }
+
+    cvPorts = new CarlaEngineCVPort*[newCount];
+    carla_zeroPointers(cvPorts, newCount);
 
     count = newCount;
 }
@@ -239,6 +245,12 @@ void PluginParameterData::clear() noexcept
     {
         delete[] special;
         special = nullptr;
+    }
+
+    if (cvPorts != nullptr)
+    {
+        delete[] cvPorts;
+        cvPorts = nullptr;
     }
 
     count = 0;

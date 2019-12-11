@@ -139,6 +139,28 @@ EngineProcessMode CarlaEngineClient::getProcessMode() const noexcept
     return pData->engine.getProccessMode();
 }
 
+uint CarlaEngineClient::getPortCount(const EnginePortType portType, const bool isInput) const noexcept
+{
+    size_t ret = 0;
+
+    switch (portType)
+    {
+    case kEnginePortTypeNull:
+        break;
+    case kEnginePortTypeAudio:
+        ret = isInput ? pData->audioInList.count() : pData->audioOutList.count();
+        break;
+    case kEnginePortTypeCV:
+        ret = isInput ? pData->cvInList.count() : pData->cvOutList.count();
+        break;
+    case kEnginePortTypeEvent:
+        ret = isInput ? pData->eventInList.count() : pData->eventOutList.count();
+        break;
+    }
+
+    return static_cast<uint>(ret);
+}
+
 const char* CarlaEngineClient::getAudioPortName(const bool isInput, const uint index) const noexcept
 {
     CarlaStringList& portList(isInput ? pData->audioInList : pData->audioOutList);
