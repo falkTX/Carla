@@ -561,14 +561,14 @@ public:
     void removeCVSource(uint32_t portIndexOffset) noexcept;
 
     /*!
-     * Remove a CV port as a source of events.
-     */
-    void mixWithCvBuffer(const float* buffer, uint32_t frames, uint32_t indexOffset) noexcept;
-
-    /*!
      * Initialize the port's internal buffer for @a engine.
      */
     void initBuffer() noexcept override;
+
+    /*!
+     * Remove a CV port as a source of events.
+     */
+    virtual void mixWithCvBuffer(const float* buffer, uint32_t frames, uint32_t indexOffset) noexcept;
 
     /*!
      * Get the number of events present in the buffer.

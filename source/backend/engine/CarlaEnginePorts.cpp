@@ -180,6 +180,14 @@ void CarlaEngineEventPort::removeCVSource(const uint32_t portIndexOffset) noexce
     }
 }
 
+void CarlaEngineEventPort::initBuffer() noexcept
+{
+    if (pData->processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->processMode == ENGINE_PROCESS_MODE_BRIDGE)
+        pData->buffer = kClient.getEngine().getInternalEventBuffer(kIsInput);
+    else if (pData->processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! kIsInput)
+        carla_zeroStructs(pData->buffer, kMaxEngineEventInternalCount);
+}
+
 void CarlaEngineEventPort::mixWithCvBuffer(const float* const buffer,
                                            const uint32_t frames,
                                            const uint32_t indexOffset) noexcept
@@ -233,14 +241,6 @@ void CarlaEngineEventPort::mixWithCvBuffer(const float* const buffer,
         ecv.previousValue = previousValue;
         break;
     }
-}
-
-void CarlaEngineEventPort::initBuffer() noexcept
-{
-    if (pData->processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->processMode == ENGINE_PROCESS_MODE_BRIDGE)
-        pData->buffer = kClient.getEngine().getInternalEventBuffer(kIsInput);
-    else if (pData->processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! kIsInput)
-        carla_zeroStructs(pData->buffer, kMaxEngineEventInternalCount);
 }
 
 uint32_t CarlaEngineEventPort::getEventCount() const noexcept
