@@ -2799,7 +2799,7 @@ public:
 
             pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
 
-            for (uint32_t i=0; i < params; ++i)
+            for (uint32_t i=0; i < params && i < 32; ++i)
             {
                 const int32_t rindex = pData->param.data[i].rindex;
                 CARLA_SAFE_ASSERT_CONTINUE(rindex >= 0 && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount));
@@ -2815,11 +2815,7 @@ public:
                 // Parameter as CV
                 CarlaEngineCVPort* const cvPort =
                     (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, true, i);
-
-                if (true)
-                    cvPort->setRange(0.0f, 3.0f + (float)i);
-                else
-                    cvPort->setRange(pData->param.ranges[i].min, pData->param.ranges[i].max);
+                cvPort->setRange(pData->param.ranges[i].min, pData->param.ranges[i].max);
                 pData->event.portIn->addCVSource(cvPort, i);
             }
         }
@@ -3524,13 +3520,12 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // CV Control Input
 
-            for (uint32_t i=0, j=0; i < pData->param.count; ++i)
+            for (uint32_t i=0, j=0; i < pData->param.count && i < 32; ++i)
             {
                 if (pData->param.data[i].type != PARAMETER_INPUT)
                     continue;
 
                 const uint32_t cvIndex = j++;
-
                 pData->event.portIn->mixWithCvBuffer(cvIn[pData->cvIn.count + cvIndex], frames, i);
             }
 
