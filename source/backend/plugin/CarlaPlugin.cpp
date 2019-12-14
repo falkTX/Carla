@@ -1311,7 +1311,7 @@ void CarlaPlugin::setName(const char* const newName)
 
 void CarlaPlugin::setOption(const uint option, const bool yesNo, const bool sendCallback)
 {
-    CARLA_SAFE_ASSERT_RETURN(getOptionsAvailable() & option,);
+    CARLA_SAFE_ASSERT_UINT2_RETURN(getOptionsAvailable() & option, getOptionsAvailable(), option,);
 
     if (yesNo)
         pData->options |= option;

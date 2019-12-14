@@ -2347,7 +2347,12 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool init(const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const char* const bridgeBinary)
+    bool init(const char* const filename,
+              const char* const name,
+              const char* const label,
+              const int64_t uniqueId,
+              const uint options,
+              const char* const bridgeBinary)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -2421,9 +2426,9 @@ public:
 
         if (fBridgeBinary.contains(".exe", true))
         {
-            const EngineOptions& options(pData->engine->getOptions());
+            const EngineOptions& engineOptions(pData->engine->getOptions());
 
-            if (options.wine.autoPrefix)
+            if (engineOptions.wine.autoPrefix)
                 fWinePrefix = findWinePrefix(pData->filename);
 
             if (fWinePrefix.isEmpty())
@@ -2432,8 +2437,8 @@ public:
 
                 if (envWinePrefix != nullptr && envWinePrefix[0] != '\0')
                     fWinePrefix = envWinePrefix;
-                else if (options.wine.fallbackPrefix != nullptr && options.wine.fallbackPrefix[0] != '\0')
-                    fWinePrefix = options.wine.fallbackPrefix;
+                else if (engineOptions.wine.fallbackPrefix != nullptr && engineOptions.wine.fallbackPrefix[0] != '\0')
+                    fWinePrefix = engineOptions.wine.fallbackPrefix;
                 else
                     fWinePrefix = File::getSpecialLocation(File::userHomeDirectory).getFullPathName() + "/.wine";
             }
@@ -2479,6 +2484,57 @@ public:
         {
             pData->engine->setLastError("Failed to register plugin client");
             return false;
+        }
+
+        // ---------------------------------------------------------------
+        // set options
+
+        pData->options = 0x0;
+
+        if ((fInfo.optionsAvailable & PLUGIN_OPTION_FIXED_BUFFERS) == 0x0)
+            pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
+         else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
+            pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
+
+        if (pData->engine->getOptions().forceStereo)
+        {
+            pData->options |= PLUGIN_OPTION_FORCE_STEREO;
+        }
+        else if (fInfo.optionsAvailable & PLUGIN_OPTION_FORCE_STEREO)
+        {
+            if (options & PLUGIN_OPTION_FORCE_STEREO)
+                pData->options |= PLUGIN_OPTION_FORCE_STEREO;
+        }
+
+        if (fInfo.optionsAvailable & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CONTROL_CHANGES))
+                pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+
+        if (fInfo.optionsAvailable & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE)
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CHANNEL_PRESSURE))
+                pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+
+        if (fInfo.optionsAvailable & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH)
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH))
+                pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+
+        if (fInfo.optionsAvailable & PLUGIN_OPTION_SEND_PITCHBEND)
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PITCHBEND))
+                pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+
+        if (fInfo.optionsAvailable & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_ALL_SOUND_OFF))
+                pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+
+        if (fInfo.optionsAvailable & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
+        {
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PROGRAM_CHANGES))
+                pData->options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
+        }
+        else if (fInfo.optionsAvailable & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
+        {
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_MAP_PROGRAM_CHANGES))
+                pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
         }
 
         return true;
@@ -2846,7 +2902,7 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
 
     CarlaPluginBridge* const plugin(new CarlaPluginBridge(init.engine, init.id, btype, ptype));
 
-    if (! plugin->init(init.filename, init.name, init.label, init.uniqueId, bridgeBinary))
+    if (! plugin->init(init.filename, init.name, init.label, init.uniqueId, init.options, bridgeBinary))
     {
         delete plugin;
         return nullptr;
