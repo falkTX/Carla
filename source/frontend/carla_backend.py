@@ -298,6 +298,9 @@ PARAMETER_USES_SCALEPOINTS = 0x200
 # @see carla_get_parameter_text()
 PARAMETER_USES_CUSTOM_TEXT = 0x400
 
+# Parameter can be turned into a CV control.
+PARAMETER_CAN_BE_CV_CONTROLLED = 0x800
+
 # ------------------------------------------------------------------------------------------------------------
 # Patchbay Port Hints
 # Various patchbay port hints.

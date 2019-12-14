@@ -163,6 +163,11 @@ enum EngineControlEventType {
     kEngineControlEventTypeAllNotesOff = 5
 };
 
+/*!
+ * Special value for EngineEvent channel field, indicating a non-midi parameter event.
+ */
+static const uint8_t kEngineEventNonMidiChannel = 0x30;
+
 // -----------------------------------------------------------------------
 
 /*!

@@ -1222,6 +1222,8 @@ public:
 
             pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
 
+#if 0
+            // Parameter as CV
             for (uint32_t i=0; i < params && i < 32; ++i)
             {
                 const int32_t rindex = pData->param.data[i].rindex;
@@ -1235,12 +1237,12 @@ public:
                 portName = fDescriptor->PortNames[rindex];
                 portName.truncate(portNameSize);
 
-                // Parameter as CV
                 CarlaEngineCVPort* const cvPort =
                     (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, true, i);
                 cvPort->setRange(pData->param.ranges[i].min, pData->param.ranges[i].max);
                 pData->event.portIn->addCVSource(cvPort, i);
             }
+#endif
         }
 
         if (needsCtrlOut)
@@ -1584,6 +1586,8 @@ public:
             {
                 if (pData->param.data[i].type != PARAMETER_INPUT)
                     continue;
+                if ((pData->param.data[i].hints & PARAMETER_IS_CV_CONTROLLED) == 0x0)
+                    continue;
 
                 const uint32_t cvIndex = j++;
                 pData->event.portIn->mixWithCvBuffer(cvIn[cvIndex], frames, i);
@@ -1654,8 +1658,8 @@ public:
                         float value;
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-                        // via CV
-                        if (event.channel == 0xFF)
+                        // non-midi
+                        if (event.channel == kEngineEventNonMidiChannel)
                         {
                             const uint32_t k = ctrlEvent.param;
                             CARLA_SAFE_ASSERT_CONTINUE(k < pData->param.count);

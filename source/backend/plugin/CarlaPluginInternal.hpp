@@ -46,6 +46,13 @@ CARLA_BACKEND_START_NAMESPACE
 const ushort kPluginMaxMidiEvents = 512;
 
 // -----------------------------------------------------------------------
+// Extra parameter hints, hidden from backend
+
+const uint PARAMETER_IS_CV_CONTROLLED = 0x1000;
+const uint PARAMETER_IS_STRICT_BOUNDS = 0x2000;
+const uint PARAMETER_IS_TRIGGER       = 0x4000;
+
+// -----------------------------------------------------------------------
 // Extra plugin hints, hidden from backend
 
 const uint PLUGIN_EXTRA_HINT_HAS_MIDI_IN  = 0x01;

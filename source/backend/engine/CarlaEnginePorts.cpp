@@ -255,7 +255,7 @@ void CarlaEngineEventPort::mixWithCvBuffer(const float* const buffer,
 
                 event.type    = kEngineEventTypeControl;
                 event.time    = i;
-                event.channel = 0xFF;
+                event.channel = kEngineEventNonMidiChannel;
 
                 event.ctrl.type  = kEngineControlEventTypeParameter;
                 event.ctrl.param = static_cast<uint16_t>(indexOffset);
