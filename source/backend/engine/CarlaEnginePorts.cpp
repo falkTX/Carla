@@ -115,6 +115,7 @@ void CarlaEngineCVPort::setRange(const float min, const float max) noexcept
 
 CarlaEngineEventPort::ProtectedData::ProtectedData(const EngineProcessMode pm) noexcept
   : buffer(nullptr),
+    needsBufferDeletion(false),
     processMode(pm),
     cvs()
 {
@@ -122,6 +123,7 @@ CarlaEngineEventPort::ProtectedData::ProtectedData(const EngineProcessMode pm) n
     {
         buffer = new EngineEvent[kMaxEngineEventInternalCount];
         carla_zeroStructs(buffer, kMaxEngineEventInternalCount);
+        needsBufferDeletion = true;
     }
 }
 
@@ -132,7 +134,7 @@ CarlaEngineEventPort::ProtectedData::~ProtectedData() noexcept
 
     cvs.clear();
 
-    if (processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+    if (needsBufferDeletion)
     {
         CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
 
@@ -154,17 +156,46 @@ CarlaEngineEventPort::~CarlaEngineEventPort() noexcept
     delete pData;
 }
 
-void CarlaEngineEventPort::addCVSource(CarlaEngineCVPort* const port, const uint32_t portIndexOffset) noexcept
+void CarlaEngineEventPort::initBuffer() noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(port != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(port->isInput(),);
+    if (pData->processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->processMode == ENGINE_PROCESS_MODE_BRIDGE)
+        pData->buffer = kClient.getEngine().getInternalEventBuffer(kIsInput);
+    else if (pData->processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! kIsInput)
+        carla_zeroStructs(pData->buffer, kMaxEngineEventInternalCount);
+
+    initCvBuffers();
+}
+
+uint32_t CarlaEngineEventPort::getCVSourceCount() const noexcept
+{
+    return static_cast<uint32_t>(pData->cvs.count());
+}
+
+CarlaEngineCVPort* CarlaEngineEventPort::getCVSourcePort(const uint32_t portIndexOffset) const noexcept
+{
+    const CarlaEngineEventCV& ecv(pData->cvs.getAt(portIndexOffset, kFallbackEngineEventCV));
+//     for (LinkedList<CarlaEngineEventCV>::Itenerator it = pData->cvs.begin2(); it.valid(); it.next())
+//     {
+//         const CarlaEngineEventCV& ecv(it.getValue(kFallbackEngineEventCV));
+
+//         if (ecv.indexOffset == portIndexOffset)
+            return ecv.cvPort;
+//     }
+
+//     return nullptr;
+}
+
+bool CarlaEngineEventPort::addCVSource(CarlaEngineCVPort* const port, const uint32_t portIndexOffset) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(port != nullptr, false);
+    CARLA_SAFE_ASSERT_RETURN(port->isInput(), false);
     carla_debug("CarlaEngineEventPort::addCVSource(%p)", port);
 
     const CarlaEngineEventCV ecv { port, portIndexOffset, 0.0f };
-    pData->cvs.append(ecv);
+    return pData->cvs.append(ecv);
 }
 
-void CarlaEngineEventPort::removeCVSource(const uint32_t portIndexOffset) noexcept
+bool CarlaEngineEventPort::removeCVSource(const uint32_t portIndexOffset) noexcept
 {
     carla_debug("CarlaEngineEventPort::removeCVSource(%u)", portIndexOffset);
 
@@ -175,17 +206,11 @@ void CarlaEngineEventPort::removeCVSource(const uint32_t portIndexOffset) noexce
         if (ecv.indexOffset == portIndexOffset)
         {
             pData->cvs.remove(it);
-            break;
+            return true;
         }
     }
-}
 
-void CarlaEngineEventPort::initBuffer() noexcept
-{
-    if (pData->processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->processMode == ENGINE_PROCESS_MODE_BRIDGE)
-        pData->buffer = kClient.getEngine().getInternalEventBuffer(kIsInput);
-    else if (pData->processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! kIsInput)
-        carla_zeroStructs(pData->buffer, kMaxEngineEventInternalCount);
+    return false;
 }
 
 void CarlaEngineEventPort::mixWithCvBuffer(const float* const buffer,
@@ -415,6 +440,17 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
 
     carla_stderr2("CarlaEngineEventPort::writeMidiEvent() - buffer full");
     return false;
+}
+
+void CarlaEngineEventPort::initCvBuffers() noexcept
+{
+    for (LinkedList<CarlaEngineEventCV>::Itenerator it = pData->cvs.begin2(); it.valid(); it.next())
+    {
+        CarlaEngineEventCV& ecv(it.getValue(kFallbackEngineEventCV));
+        CARLA_SAFE_ASSERT_CONTINUE(ecv.cvPort != nullptr);
+
+        ecv.cvPort->initBuffer();
+    }
 }
 
 // -----------------------------------------------------------------------

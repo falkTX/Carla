@@ -184,7 +184,7 @@ uint32_t CarlaPlugin::getAudioOutCount() const noexcept
 
 uint32_t CarlaPlugin::getCVInCount() const noexcept
 {
-    return pData->cvIn.count;
+    return pData->cvIn.count + (pData->event.portIn != nullptr ? pData->event.portIn->getCVSourceCount() : 0);
 }
 
 uint32_t CarlaPlugin::getCVOutCount() const noexcept
@@ -2365,9 +2365,15 @@ CarlaEngineAudioPort* CarlaPlugin::getAudioOutPort(const uint32_t index) const n
     return pData->audioOut.ports[index].port;
 }
 
-CarlaEngineCVPort* CarlaPlugin::getCVInPort(const uint32_t index) const noexcept
+CarlaEngineCVPort* CarlaPlugin::getCVInPort(uint32_t index) const noexcept
 {
-    return pData->cvIn.ports[index].port;
+    if (index < pData->cvIn.count)
+        return pData->cvIn.ports[index].port;
+
+    CARLA_SAFE_ASSERT_RETURN(pData->event.portIn != nullptr, nullptr);
+
+    index -= pData->cvIn.count;
+    return pData->event.portIn->getCVSourcePort(index);
 }
 
 CarlaEngineCVPort* CarlaPlugin::getCVOutPort(const uint32_t index) const noexcept

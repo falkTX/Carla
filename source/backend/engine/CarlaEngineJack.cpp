@@ -62,6 +62,7 @@ class CarlaEngineJackClient;
 // Fallback data
 
 static const EngineEvent kFallbackJackEngineEvent = { kEngineEventTypeNull, 0, 0, {{ kEngineControlEventTypeNull, 0, 0.0f }} };
+static CarlaEngineEventCV kFallbackEngineEventCV = { nullptr, (uint32_t)-1, 0.0f };
 
 // -----------------------------------------------------------------------
 // Carla Engine Port removal helper
@@ -292,6 +293,8 @@ public:
           fJackClient(jackClient),
           fJackPort(jackPort),
           fJackBuffer(nullptr),
+          fBufferMutex(),
+          fNumCvEvents(0),
           fRetEvent(kFallbackJackEngineEvent),
           kDeletionCallback(delCallback)
     {
@@ -332,6 +335,8 @@ public:
         if (fJackPort == nullptr)
             return CarlaEngineEventPort::initBuffer();
 
+        fNumCvEvents = 0;
+
         try {
             fJackBuffer = jackbridge_port_get_buffer(fJackPort, kClient.getEngine().getBufferSize());
         }
@@ -342,6 +347,116 @@ public:
 
         if (! kIsInput)
             jackbridge_midi_clear_buffer(fJackBuffer);
+
+        initCvBuffers();
+    }
+
+    bool addCVSource(CarlaEngineCVPort* const port, const uint32_t portIndexOffset) noexcept override
+    {
+        if (! CarlaEngineEventPort::addCVSource(port, portIndexOffset))
+            return false;
+        if (fJackPort == nullptr)
+            return true;
+
+        if (pData->cvs.count() != 1 || pData->needsBufferDeletion)
+            return true;
+        if (pData->processMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && pData->processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+            return true;
+
+        CARLA_SAFE_ASSERT_RETURN(pData->buffer == nullptr, true);
+
+        EngineEvent* const buffer = new EngineEvent[kMaxEngineEventInternalCount];
+        carla_zeroStructs(buffer, kMaxEngineEventInternalCount);
+
+        {
+            const CarlaMutexLocker cml(fBufferMutex);
+            pData->buffer = buffer;
+        }
+
+        pData->needsBufferDeletion = true;
+        return true;
+    }
+
+    bool removeCVSource(const uint32_t portIndexOffset) noexcept override
+    {
+        if (! CarlaEngineEventPort::removeCVSource(portIndexOffset))
+            return false;
+        if (fJackPort == nullptr)
+            return true;
+
+        if (pData->cvs.count() != 0 || ! pData->needsBufferDeletion)
+            return true;
+        if (pData->processMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && pData->processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+            return true;
+
+        EngineEvent* const buffer = pData->buffer;
+        CARLA_SAFE_ASSERT_RETURN(buffer != nullptr, true);
+
+        {
+            const CarlaMutexLocker cml(fBufferMutex);
+            pData->buffer = nullptr;
+        }
+
+        delete[] buffer;
+        pData->needsBufferDeletion = false;
+        return true;
+    }
+
+    void mixWithCvBuffer(const float* const buffer, const uint32_t frames, const uint32_t indexOffset) noexcept override
+    {
+        if (fJackPort == nullptr)
+            return CarlaEngineEventPort::mixWithCvBuffer(buffer, frames, indexOffset);
+
+        CARLA_SAFE_ASSERT_RETURN(fJackBuffer != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
+
+        const CarlaMutexLocker cml(fBufferMutex);
+
+        EngineEvent* const eventBuffer = pData->buffer;
+        CARLA_SAFE_ASSERT_RETURN(eventBuffer != nullptr,);
+
+        uint32_t eventIndex = 0;
+        float v, min, max;
+
+        for (LinkedList<CarlaEngineEventCV>::Itenerator it = pData->cvs.begin2(); it.valid(); it.next())
+        {
+            CarlaEngineEventCV& ecv(it.getValue(kFallbackEngineEventCV));
+
+            if (ecv.indexOffset != indexOffset)
+                continue;
+            CARLA_SAFE_ASSERT_RETURN(ecv.cvPort != nullptr,);
+
+            float previousValue = ecv.previousValue;
+            ecv.cvPort->getRange(min, max);
+
+            for (uint32_t i=0; i<1/*frames*/; i+=32)
+            {
+                v = buffer[i];
+
+                if (carla_isNotEqual(v, previousValue))
+                {
+                    previousValue = v;
+
+                    EngineEvent& event(eventBuffer[eventIndex++]);
+
+                    event.type    = kEngineEventTypeControl;
+                    event.time    = i;
+                    event.channel = 0xFF;
+
+                    event.ctrl.type  = kEngineControlEventTypeParameter;
+                    event.ctrl.param = static_cast<uint16_t>(indexOffset);
+                    event.ctrl.value = carla_fixedValue(0.0f, 1.0f, (v - min) / (max - min));
+                }
+            }
+
+            ecv.previousValue = previousValue;
+            break;
+        }
+
+        if (eventIndex != kMaxEngineEventInternalCount)
+            eventBuffer[eventIndex].type = kEngineEventTypeNull;
+
+        fNumCvEvents = eventIndex;
     }
 
     uint32_t getEventCount() const noexcept override
@@ -353,7 +468,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fJackBuffer != nullptr, 0);
 
         try {
-            return jackbridge_midi_get_event_count(fJackBuffer);
+            return fNumCvEvents + jackbridge_midi_get_event_count(fJackBuffer);
         } CARLA_SAFE_EXCEPTION_RETURN("jack_midi_get_event_count", 0);
     }
 
@@ -368,8 +483,18 @@ public:
         return getEventUnchecked(index);
     }
 
-    const EngineEvent& getEventUnchecked(const uint32_t index) const noexcept override
+    const EngineEvent& getEventUnchecked(uint32_t index) const noexcept override
     {
+        if (EngineEvent* const eventBuffer = pData->buffer)
+        {
+            const CarlaMutexLocker cml(fBufferMutex);
+
+            if (index < fNumCvEvents)
+                return pData->buffer[index];
+
+            index -= fNumCvEvents;
+        }
+
         jack_midi_event_t jackEvent;
 
         bool test = false;
@@ -473,6 +598,10 @@ private:
     jack_client_t* fJackClient;
     jack_port_t*   fJackPort;
     void*          fJackBuffer;
+
+    // protect races of pData->buffer usage
+    CarlaMutex fBufferMutex;
+    uint32_t fNumCvEvents;
 
     mutable EngineEvent fRetEvent;
 
@@ -2690,6 +2819,7 @@ private:
         {
             CarlaEngineCVPort* const port(plugin->getCVInPort(i));
             cvIn[i] = port->getBuffer();
+            CARLA_SAFE_ASSERT(cvIn[i] != nullptr);
         }
 
         for (uint32_t i=0; i < cvOutCount; ++i)

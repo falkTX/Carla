@@ -551,19 +551,29 @@ public:
     }
 
     /*!
+     * Initialize the port's internal buffer for @a engine.
+     */
+    void initBuffer() noexcept override;
+
+    /*!
+     * Get the number of CV event sources.
+     */
+    uint32_t getCVSourceCount() const noexcept;
+
+    /*!
+     * Get the CV event source port with a specific portIndexOffset.
+     */
+    CarlaEngineCVPort* getCVSourcePort(const uint32_t portIndexOffset) const noexcept;
+
+    /*!
      * Add a CV port as a source of events.
      */
-    void addCVSource(CarlaEngineCVPort* port, uint32_t portIndexOffset) noexcept;
+    virtual bool addCVSource(CarlaEngineCVPort* port, uint32_t portIndexOffset) noexcept;
 
     /*!
      * Remove a CV port as a source of events.
      */
-    void removeCVSource(uint32_t portIndexOffset) noexcept;
-
-    /*!
-     * Initialize the port's internal buffer for @a engine.
-     */
-    void initBuffer() noexcept override;
+    virtual bool removeCVSource(uint32_t portIndexOffset) noexcept;
 
     /*!
      * Remove a CV port as a source of events.
@@ -624,6 +634,8 @@ protected:
     struct ProtectedData;
     ProtectedData* const pData;
     friend class CarlaPluginInstance;
+
+    void initCvBuffers() noexcept;
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineEventPort)
 #endif

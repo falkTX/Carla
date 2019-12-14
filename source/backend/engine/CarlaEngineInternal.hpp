@@ -220,6 +220,7 @@ struct CarlaEngineEventCV {
 
 struct CarlaEngineEventPort::ProtectedData {
     EngineEvent* buffer;
+    bool needsBufferDeletion;
     const EngineProcessMode processMode;
     LinkedList<CarlaEngineEventCV> cvs;
 
