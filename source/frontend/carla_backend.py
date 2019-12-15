@@ -796,6 +796,12 @@ ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_REMOVED = 44
 # @see PatchbayPortGroupHints
 ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_CHANGED = 45
 
+# A parameter's CV controlled status has changed.
+# @a pluginId Plugin Id
+# @a value1   Parameter index
+# @a value2   New CV controlled status (boolean)
+ENGINE_CALLBACK_PARAMETER_CV_CONTROLLED_STATUS_CHANGED = 46
+
 # ------------------------------------------------------------------------------------------------------------
 # NSM Callback Opcode
 # NSM callback opcodes.
@@ -2030,6 +2036,14 @@ class CarlaHostMeta(object):
     def set_parameter_value(self, pluginId, parameterId, value):
         raise NotImplementedError
 
+    # Change a plugin's parameter cv controlled status.
+    # @param pluginId      Plugin
+    # @param parameterId   Parameter index
+    # @param cv_controlled New CV controlled Status
+    @abstractmethod
+    def set_parameter_cv_controlled(self, pluginId, parameterId, cv_controlled):
+        raise NotImplementedError
+
     # Change a plugin's parameter MIDI cc.
     # @param pluginId    Plugin
     # @param parameterId Parameter index
@@ -2427,6 +2441,9 @@ class CarlaHostNull(CarlaHostMeta):
     def set_parameter_value(self, pluginId, parameterId, value):
         return
 
+    def set_parameter_cv_controlled(self, pluginId, parameterId, cv_controlled):
+        return
+
     def set_parameter_midi_channel(self, pluginId, parameterId, channel):
         return
 
@@ -2738,6 +2755,9 @@ class CarlaHostDLL(CarlaHostMeta):
 
         self.lib.carla_set_parameter_value.argtypes = [c_uint, c_uint32, c_float]
         self.lib.carla_set_parameter_value.restype = None
+
+        self.lib.carla_set_parameter_cv_controlled.argtypes = [c_uint, c_uint32, c_bool]
+        self.lib.carla_set_parameter_cv_controlled.restype = None
 
         self.lib.carla_set_parameter_midi_channel.argtypes = [c_uint, c_uint32, c_uint8]
         self.lib.carla_set_parameter_midi_channel.restype = None
@@ -3057,6 +3077,9 @@ class CarlaHostDLL(CarlaHostMeta):
 
     def set_parameter_value(self, pluginId, parameterId, value):
         self.lib.carla_set_parameter_value(pluginId, parameterId, value)
+
+    def set_parameter_cv_controlled(self, pluginId, parameterId, cv_controlled):
+        self.lib.carla_set_parameter_cv_controlled(pluginId, parameterId, cv_controlled)
 
     def set_parameter_midi_channel(self, pluginId, parameterId, channel):
         self.lib.carla_set_parameter_midi_channel(pluginId, parameterId, channel)
@@ -3457,6 +3480,9 @@ class CarlaHostPlugin(CarlaHostMeta):
     def set_parameter_value(self, pluginId, parameterId, value):
         self.sendMsg(["set_parameter_value", pluginId, parameterId, value])
         self.fPluginsInfo[pluginId].parameterValues[parameterId] = value
+
+    def set_parameter_cv_controlled(self, pluginId, parameterId, cv_controlled):
+        self.sendMsg(["set_parameter_cv_controlled", pluginId, parameterId, cv_controlled])
 
     def set_parameter_midi_channel(self, pluginId, parameterId, channel):
         self.sendMsg(["set_parameter_midi_channel", pluginId, parameterId, channel])

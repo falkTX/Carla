@@ -1104,6 +1104,14 @@ typedef enum {
      */
     ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_CHANGED = 45,
 
+    /*!
+     * A parameter's CV controlled status has changed.
+     * @a pluginId Plugin Id
+     * @a value1   Parameter index
+     * @a value2   New CV controlled status (boolean)
+     */
+    ENGINE_CALLBACK_PARAMETER_CV_CONTROLLED_STATUS_CHANGED = 46,
+
 } EngineCallbackOpcode;
 
 /* ------------------------------------------------------------------------------------------------------------

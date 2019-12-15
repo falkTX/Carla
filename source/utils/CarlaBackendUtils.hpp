@@ -313,6 +313,8 @@ const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode) noexcept
         return "ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_REMOVED";
     case ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_CHANGED:
         return "ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_CHANGED";
+    case ENGINE_CALLBACK_PARAMETER_CV_CONTROLLED_STATUS_CHANGED:
+        return "ENGINE_CALLBACK_PARAMETER_CV_CONTROLLED_STATUS_CHANGED";
     }
 
     carla_stderr("CarlaBackend::EngineCallbackOpcode2Str(%i) - invalid opcode", opcode);

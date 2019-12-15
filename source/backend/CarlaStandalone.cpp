@@ -1984,6 +1984,19 @@ void carla_set_parameter_value(uint pluginId, uint32_t parameterId, float value)
 }
 
 #ifndef BUILD_BRIDGE
+void carla_set_parameter_cv_controlled(uint pluginId, uint32_t parameterId, bool cv_controlled)
+{
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
+    carla_debug("carla_set_parameter_cv_controlled(%u, %u, %s)", pluginId, parameterId, bool2str(cv_controlled));
+    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
+
+    return plugin->setParameterAsCvControl(parameterId, cv_controlled, true, false);
+}
+
 void carla_set_parameter_midi_channel(uint pluginId, uint32_t parameterId, uint8_t channel)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);

@@ -592,6 +592,11 @@ public:
     void setParameterValueByRealIndex(int32_t rindex, float value, bool sendGui, bool sendOsc, bool sendCallback) noexcept;
 
     /*!
+     * Change parameter's @a parameterId CV controlled status.
+     */
+    void setParameterAsCvControl(uint32_t parameterId, bool cv_controlled, bool sendOsc, bool sendCallback) noexcept;
+
+    /*!
      * Set parameter's @a parameterId MIDI channel to @a channel.
      * @a channel must be between 0 and 15.
      */

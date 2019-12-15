@@ -839,6 +839,7 @@ public:
 
             pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
             pData->param.data[j].hints |= PARAMETER_USES_CUSTOM_TEXT;
+            pData->param.data[j].hints |= PARAMETER_CAN_BE_CV_CONTROLLED;
 
             if ((pData->hints & PLUGIN_USES_OLD_VSTSDK) != 0 || dispatcher(effCanBeAutomated, ij) == 1)
                 pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
@@ -873,28 +874,6 @@ public:
             portName.truncate(portNameSize);
 
             pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
-
-#if 0
-            // Parameter as CV
-            char strBuf[STR_MAX];
-
-            for (uint32_t i=0; i < params && i < 32; ++i)
-            {
-                if (pData->param.data[i].type != PARAMETER_INPUT)
-                    continue;
-
-                carla_zeroChars(strBuf, STR_MAX);
-                dispatcher(effGetParamName, static_cast<int32_t>(i), 0, strBuf);
-
-                if (strBuf[0] == '\0')
-                    std::snprintf(strBuf, STR_MAX-1, "Parameter %u", i+1U);
-
-                CarlaEngineCVPort* const cvPort =
-                    (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, strBuf, true, i);
-                cvPort->setRange(pData->param.ranges[i].min, pData->param.ranges[i].max);
-                pData->event.portIn->addCVSource(cvPort, i);
-            }
-#endif
         }
 
         if (needsCtrlOut)

@@ -1121,6 +1121,7 @@ public:
                     pData->param.data[j].type   = PARAMETER_INPUT;
                     pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                     pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
+                    pData->param.data[j].hints |= PARAMETER_CAN_BE_CV_CONTROLLED;
                     needsCtrlIn = true;
 
                     // MIDI CC value
@@ -1221,28 +1222,6 @@ public:
             portName.truncate(portNameSize);
 
             pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
-
-#if 0
-            // Parameter as CV
-            for (uint32_t i=0; i < params && i < 32; ++i)
-            {
-                const int32_t rindex = pData->param.data[i].rindex;
-                CARLA_SAFE_ASSERT_CONTINUE(rindex >= 0);
-
-                if (pData->param.data[i].type != PARAMETER_INPUT)
-                    continue;
-                if (fDescriptor->PortNames[rindex] == nullptr || fDescriptor->PortNames[rindex][0] == '\0')
-                    continue;
-
-                portName = fDescriptor->PortNames[rindex];
-                portName.truncate(portNameSize);
-
-                CarlaEngineCVPort* const cvPort =
-                    (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, true, i);
-                cvPort->setRange(pData->param.ranges[i].min, pData->param.ranges[i].max);
-                pData->event.portIn->addCVSource(cvPort, i);
-            }
-#endif
         }
 
         if (needsCtrlOut)

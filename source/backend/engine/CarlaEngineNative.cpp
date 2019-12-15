@@ -2074,6 +2074,18 @@ bool CarlaEngineNativeUI::msgReceived(const char*const msg) noexcept
             fEngine->setParameterValueFromUI(pluginId, parameterId, value);
         }
     }
+    else if (std::strcmp(msg, "set_parameter_cv_controlled") == 0)
+    {
+        uint32_t pluginId, parameterId;
+        bool cv_controlled;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(parameterId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(cv_controlled), true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+            plugin->setParameterAsCvControl(parameterId, cv_controlled, true, false);
+    }
     else if (std::strcmp(msg, "set_parameter_midi_channel") == 0)
     {
         uint32_t pluginId, parameterId, channel;

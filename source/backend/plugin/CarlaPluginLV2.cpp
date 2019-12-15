@@ -2564,6 +2564,7 @@ public:
                     {
                         pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                         pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
+                        pData->param.data[j].hints |= PARAMETER_CAN_BE_CV_CONTROLLED;
                         needsCtrlIn = true;
                     }
 
@@ -2794,28 +2795,6 @@ public:
             portName.truncate(portNameSize);
 
             pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
-
-#if 0
-            // Parameter as CV
-            for (uint32_t i=0; i < params && i < 32; ++i)
-            {
-                const int32_t rindex = pData->param.data[i].rindex;
-                CARLA_SAFE_ASSERT_CONTINUE(rindex >= 0 && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount));
-
-                if (pData->param.data[i].type != PARAMETER_INPUT)
-                    continue;
-                if (fRdfDescriptor->Ports[rindex].Name == nullptr || fRdfDescriptor->Ports[rindex].Name[0] == '\0')
-                    continue;
-
-                portName = fRdfDescriptor->Ports[rindex].Name;
-                portName.truncate(portNameSize);
-
-                CarlaEngineCVPort* const cvPort =
-                    (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, true, i);
-                cvPort->setRange(pData->param.ranges[i].min, pData->param.ranges[i].max);
-                pData->event.portIn->addCVSource(cvPort, i);
-            }
-#endif
         }
 
         if (needsCtrlOut)
