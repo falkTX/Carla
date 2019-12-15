@@ -76,6 +76,7 @@ enum PluginBridgeNonRtClientOpcode {
     kPluginBridgeNonRtClientQuit,
     // stuff added in API 7
     kPluginBridgeNonRtClientSetParameterMappedRange, // uint, float, float
+    kPluginBridgeNonRtClientSetOptions,              // uint
 };
 
 // Client sends these to server during non-RT

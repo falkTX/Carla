@@ -1064,6 +1064,10 @@ bool CarlaJackAppClient::handleNonRtData()
             fShmNonRtClientControl.readBool();
             break;
 
+        case kPluginBridgeNonRtClientSetOptions:
+            fShmNonRtClientControl.readUInt();
+            break;
+
         case kPluginBridgeNonRtClientSetCtrlChannel:
             fShmNonRtClientControl.readShort();
             break;

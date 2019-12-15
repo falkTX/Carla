@@ -45,6 +45,16 @@ using water::Time;
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
+
+// just want to access private options...
+struct CarlaPlugin::ProtectedData {
+    CarlaEngine* const engine;
+    CarlaEngineClient* client;
+    uint id, hints, options;
+    // ...etc
+};
+
+// -----------------------------------------------------------------------
 // Bridge Engine client
 
 struct LatencyChangedCallback {
@@ -907,6 +917,14 @@ public:
 
                 if (plugin != nullptr && plugin->isEnabled())
                     plugin->setOption(option, yesNo, false);
+                break;
+            }
+
+            case kPluginBridgeNonRtClientSetOptions: {
+                const uint32_t options(fShmNonRtClientControl.readUInt());
+
+                if (plugin != nullptr)
+                    plugin->pData->options = options;
                 break;
             }
 

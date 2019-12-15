@@ -2630,6 +2630,16 @@ public:
                 pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
         }
 
+        // kPluginBridgeNonRtClientSetOptions was added in API 7
+        if (fBridgeVersion >= 7)
+        {
+            const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
+
+            fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientSetOptions);
+            fShmNonRtClientControl.writeUInt(pData->options);
+            fShmNonRtClientControl.commitWrite();
+        }
+
         return true;
     }
 
