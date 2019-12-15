@@ -455,19 +455,19 @@ public:
                         fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerParameterData2);
                         fShmNonRtServerControl.writeUInt(i);
 
-                        if (plugin->getParameterName(i, bufStr))
-                            bufStr[0] = '\0';
+                        if (! plugin->getParameterName(i, bufStr))
+                            std::snprintf(bufStr, STR_MAX, "Param %u", i+1);
                         bufStrSize = carla_fixedValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
                         fShmNonRtServerControl.writeUInt(bufStrSize);
                         fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
 
-                        if (plugin->getParameterSymbol(i, bufStr))
+                        if (! plugin->getParameterSymbol(i, bufStr))
                             bufStr[0] = '\0';
                         bufStrSize = carla_fixedValue(1U, 64U, static_cast<uint32_t>(std::strlen(bufStr)));
                         fShmNonRtServerControl.writeUInt(bufStrSize);
                         fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
 
-                        if (plugin->getParameterUnit(i, bufStr))
+                        if (! plugin->getParameterUnit(i, bufStr))
                             bufStr[0] = '\0';
                         bufStrSize = carla_fixedValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
                         fShmNonRtServerControl.writeUInt(bufStrSize);
