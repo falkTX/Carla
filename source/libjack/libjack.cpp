@@ -399,7 +399,7 @@ bool CarlaJackAppClient::initSharedMemmory()
     CARLA_SAFE_ASSERT_RETURN(opcode == kPluginBridgeNonRtClientVersion, false);
 
     const uint32_t apiVersion = fShmNonRtClientControl.readUInt();
-    CARLA_SAFE_ASSERT_RETURN(apiVersion == CARLA_PLUGIN_BRIDGE_API_VERSION, false);
+    CARLA_SAFE_ASSERT_RETURN(apiVersion == CARLA_PLUGIN_BRIDGE_API_VERSION_CURRENT, false);
 
     const uint32_t shmRtClientDataSize = fShmNonRtClientControl.readUInt();
     CARLA_SAFE_ASSERT_INT2(shmRtClientDataSize == sizeof(BridgeRtClientData), shmRtClientDataSize, sizeof(BridgeRtClientData));
@@ -1022,7 +1022,8 @@ bool CarlaJackAppClient::handleNonRtData()
 
         case kPluginBridgeNonRtClientVersion: {
             const uint apiVersion = fShmNonRtServerControl.readUInt();
-            CARLA_SAFE_ASSERT_UINT2(apiVersion == CARLA_PLUGIN_BRIDGE_API_VERSION, apiVersion, CARLA_PLUGIN_BRIDGE_API_VERSION);
+            CARLA_SAFE_ASSERT_UINT2(apiVersion == CARLA_PLUGIN_BRIDGE_API_VERSION_CURRENT,
+                                    apiVersion, CARLA_PLUGIN_BRIDGE_API_VERSION_CURRENT);
         }   break;
 
         case kPluginBridgeNonRtClientPing: {
@@ -1051,6 +1052,7 @@ bool CarlaJackAppClient::handleNonRtData()
         case kPluginBridgeNonRtClientSetParameterValue:
         case kPluginBridgeNonRtClientSetParameterMidiChannel:
         case kPluginBridgeNonRtClientSetParameterMidiCC:
+        case kPluginBridgeNonRtClientSetParameterMappedRange:
         case kPluginBridgeNonRtClientSetProgram:
         case kPluginBridgeNonRtClientSetMidiProgram:
         case kPluginBridgeNonRtClientSetCustomData:

@@ -609,6 +609,11 @@ public:
     virtual void setParameterMidiCC(uint32_t parameterId, int16_t cc, bool sendOsc, bool sendCallback) noexcept;
 
     /*!
+     * Set parameter's @a parameterId mapped range to @a minimum and @a maximum.
+     */
+    virtual void setParameterMappedRange(uint32_t parameterId, float minimum, float maximum, bool sendOsc, bool sendCallback) noexcept;
+
+    /*!
      * Add a custom data set.
      * If @a key already exists, its current value will be swapped with @a value.
      *

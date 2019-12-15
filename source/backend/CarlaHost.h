@@ -966,6 +966,15 @@ CARLA_EXPORT void carla_set_parameter_midi_channel(uint pluginId, uint32_t param
 CARLA_EXPORT void carla_set_parameter_midi_cc(uint pluginId, uint32_t parameterId, int16_t cc);
 
 /*!
+ * Change a plugin's parameter mapped range.
+ * @param pluginId    Plugin
+ * @param parameterId Parameter index
+ * @param minimum     New mapped minimum
+ * @param maximum     New mapped maximum
+ */
+CARLA_EXPORT void carla_set_parameter_mapped_range(uint pluginId, uint32_t parameterId, float minimum, float maximum);
+
+/*!
  * Change a plugin's parameter in drag/touch mode state.
  * Usually happens from a UI when the user is moving a parameter with a mouse or similar input.
  * @param pluginId    Plugin

@@ -45,7 +45,7 @@ CARLA_BACKEND_START_NAMESPACE
 // -------------------------------------------------------------------
 // Fallback data
 
-static const ParameterData   kParameterDataNull   = { PARAMETER_UNKNOWN, 0x0, PARAMETER_NULL, -1, -1, 0 };
+static const ParameterData   kParameterDataNull   = { PARAMETER_UNKNOWN, 0x0, PARAMETER_NULL, -1, -1, 0, 0.0f, 1.0f };
 static const ParameterRanges kParameterRangesNull = { 0.0f, 0.0f, 1.0f, 0.01f, 0.0001f, 0.1f };
 static const MidiProgramData kMidiProgramDataNull = { 0, 0, nullptr };
 
@@ -1754,6 +1754,32 @@ void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, const int16_t c
                             static_cast<int>(parameterId),
                             cc,
                             0, 0.0f, nullptr);
+#endif
+}
+
+void CarlaPlugin::setParameterMappedRange(const uint32_t parameterId, const float minimum, const float maximum, const bool sendOsc, const bool sendCallback) noexcept
+{
+    if (pData->engineBridged) {
+        CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
+    } else {
+        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
+    }
+    CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+
+    pData->param.data[parameterId].mappedMinimum = minimum;
+    pData->param.data[parameterId].mappedMaximum = maximum;
+
+    char strBuf[STR_MAX+1];
+    carla_zeroChars(strBuf, STR_MAX+1);
+    std::snprintf(strBuf, STR_MAX, "%f:%f", static_cast<double>(minimum), static_cast<double>(maximum));
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    pData->engine->callback(sendCallback, sendOsc,
+                            ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED,
+                            pData->id,
+                            static_cast<int>(parameterId),
+                            0, 0, 0.0f,
+                            strBuf);
 #endif
 }
 

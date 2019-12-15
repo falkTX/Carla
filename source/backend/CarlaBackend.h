@@ -1112,6 +1112,14 @@ typedef enum {
      */
     ENGINE_CALLBACK_PARAMETER_CV_CONTROLLED_STATUS_CHANGED = 46,
 
+    /*!
+     * A parameter's mapped range has changed.
+     * @a pluginId Plugin Id
+     * @a value1   Parameter index
+     * @a valueStr New mapped range as "%f:%f" syntax
+     */
+    ENGINE_CALLBACK_PARAMETER_MAPPED_RANGE_CHANGED = 47,
+
 } EngineCallbackOpcode;
 
 /* ------------------------------------------------------------------------------------------------------------
@@ -1569,6 +1577,16 @@ typedef struct {
      * Counts from 0 to 15.
      */
     uint8_t midiChannel;
+
+    /*!
+     * Minimum value that this parameter maps to.
+     */
+    float mappedMinimum;
+
+    /*!
+     * Maximum value that this parameter maps to.
+     */
+    float mappedMaximum;
 
 } ParameterData;
 

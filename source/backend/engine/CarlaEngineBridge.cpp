@@ -175,7 +175,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(opcode == kPluginBridgeNonRtClientVersion, false);
 
         const uint32_t apiVersion = fShmNonRtClientControl.readUInt();
-        CARLA_SAFE_ASSERT_RETURN(apiVersion == CARLA_PLUGIN_BRIDGE_API_VERSION, false);
+        CARLA_SAFE_ASSERT_RETURN(apiVersion >= CARLA_PLUGIN_BRIDGE_API_VERSION_MINIMUM, false);
 
         const uint32_t shmRtClientDataSize = fShmNonRtClientControl.readUInt();
         CARLA_SAFE_ASSERT_INT2(shmRtClientDataSize == sizeof(BridgeRtClientData), shmRtClientDataSize, sizeof(BridgeRtClientData));
@@ -212,7 +212,17 @@ public:
         {
             const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
 
-            fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerPong);
+            // kPluginBridgeNonRtServerVersion was added in API 7
+            if (apiVersion >= 7)
+            {
+                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerVersion);
+                fShmNonRtServerControl.writeUInt(CARLA_PLUGIN_BRIDGE_API_VERSION_CURRENT);
+            }
+            else
+            {
+                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerPong);
+            }
+
             fShmNonRtServerControl.commitWrite();
         }
 
@@ -734,7 +744,8 @@ public:
 
             case kPluginBridgeNonRtClientVersion: {
                 const uint apiVersion = fShmNonRtServerControl.readUInt();
-                CARLA_SAFE_ASSERT_UINT2(apiVersion == CARLA_PLUGIN_BRIDGE_API_VERSION, apiVersion, CARLA_PLUGIN_BRIDGE_API_VERSION);
+                CARLA_SAFE_ASSERT_UINT2(apiVersion >= CARLA_PLUGIN_BRIDGE_API_VERSION_MINIMUM,
+                                        apiVersion, CARLA_PLUGIN_BRIDGE_API_VERSION_MINIMUM);
             }   break;
 
             case kPluginBridgeNonRtClientPing: {
@@ -790,6 +801,16 @@ public:
 
                 if (plugin != nullptr && plugin->isEnabled())
                     plugin->setParameterMidiCC(index, cc, false, false);
+                break;
+            }
+
+            case kPluginBridgeNonRtClientSetParameterMappedRange: {
+                const uint32_t index   = fShmNonRtClientControl.readUInt();
+                const float    minimum = fShmNonRtClientControl.readFloat();
+                const float    maximum = fShmNonRtClientControl.readFloat();
+
+                if (plugin != nullptr && plugin->isEnabled())
+                    plugin->setParameterMappedRange(index, minimum, maximum, false, false);
                 break;
             }
 

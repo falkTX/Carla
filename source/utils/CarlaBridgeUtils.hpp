@@ -120,6 +120,8 @@ const char* PluginBridgeNonRtClientOpcode2str(const PluginBridgeNonRtClientOpcod
         return "kPluginBridgeNonRtClientUiNoteOff";
     case kPluginBridgeNonRtClientQuit:
         return "kPluginBridgeNonRtClientQuit";
+    case kPluginBridgeNonRtClientSetParameterMappedRange:
+        return "kPluginBridgeNonRtClientSetParameterMappedRange";
     }
 
     carla_stderr("CarlaBackend::PluginBridgeNonRtClientOpcode2str(%i) - invalid opcode", opcode);
@@ -191,6 +193,8 @@ const char* PluginBridgeNonRtServerOpcode2str(const PluginBridgeNonRtServerOpcod
         return "kPluginBridgeNonRtServerUiClosed";
     case kPluginBridgeNonRtServerError:
         return "kPluginBridgeNonRtServerError";
+    case kPluginBridgeNonRtServerVersion:
+        return "kPluginBridgeNonRtServerVersion";
     }
 
     carla_stderr("CarlaBackend::PluginBridgeNonRtServerOpcode2str%i) - invalid opcode", opcode);

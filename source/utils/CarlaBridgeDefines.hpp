@@ -20,7 +20,11 @@
 
 #include "CarlaRingBuffer.hpp"
 
-#define CARLA_PLUGIN_BRIDGE_API_VERSION 6
+// how much backwards compatible we are
+#define CARLA_PLUGIN_BRIDGE_API_VERSION_MINIMUM 6
+
+// current API version, bumped when something is added
+#define CARLA_PLUGIN_BRIDGE_API_VERSION_CURRENT 7
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -69,7 +73,9 @@ enum PluginBridgeNonRtClientOpcode {
     kPluginBridgeNonRtClientUiMidiProgramChange,     // uint
     kPluginBridgeNonRtClientUiNoteOn,                // byte, byte, byte
     kPluginBridgeNonRtClientUiNoteOff,               // byte, byte
-    kPluginBridgeNonRtClientQuit
+    kPluginBridgeNonRtClientQuit,
+    // stuff added in API 7
+    kPluginBridgeNonRtClientSetParameterMappedRange, // uint, float, float
 };
 
 // Client sends these to server during non-RT
@@ -103,7 +109,9 @@ enum PluginBridgeNonRtServerOpcode {
     kPluginBridgeNonRtServerReady,
     kPluginBridgeNonRtServerSaved,
     kPluginBridgeNonRtServerUiClosed,
-    kPluginBridgeNonRtServerError               // uint/size, str[]
+    kPluginBridgeNonRtServerError,              // uint/size, str[]
+    // stuff added in API 7
+    kPluginBridgeNonRtServerVersion             // uint
 };
 
 // used for kPluginBridgeNonRtServerPortName

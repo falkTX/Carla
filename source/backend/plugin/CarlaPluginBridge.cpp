@@ -382,6 +382,7 @@ public:
         : CarlaPlugin(engine, id),
           fBinaryType(btype),
           fPluginType(ptype),
+          fBridgeVersion(6), // before kPluginBridgeNonRtServerVersion was a thing, API was at 6
           fInitiated(false),
           fInitError(false),
           fSaved(true),
@@ -764,6 +765,26 @@ public:
         }
 
         CarlaPlugin::setParameterMidiCC(parameterId, cc, sendOsc, sendCallback);
+    }
+
+    void setParameterMappedRange(const uint32_t parameterId, const float minimum, const float maximum, const bool sendOsc, const bool sendCallback) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,);
+
+        // kPluginBridgeNonRtClientSetParameterMappedRange was added in API 7
+        if (fBridgeVersion >= 7)
+        {
+            const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
+
+            fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientSetParameterMappedRange);
+            fShmNonRtClientControl.writeUInt(parameterId);
+            fShmNonRtClientControl.writeFloat(minimum);
+            fShmNonRtClientControl.writeFloat(maximum);
+            fShmNonRtClientControl.commitWrite();
+        }
+
+        CarlaPlugin::setParameterMappedRange(parameterId, minimum, maximum, sendOsc, sendCallback);
     }
 
     void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool doingInit) noexcept override
@@ -1922,6 +1943,10 @@ public:
             case kPluginBridgeNonRtServerPong:
                 break;
 
+            case kPluginBridgeNonRtServerVersion:
+                fBridgeVersion = fShmNonRtServerControl.readUInt();
+                break;
+
             case kPluginBridgeNonRtServerPluginInfo1: {
                 // uint/category, uint/hints, uint/optionsAvailable, uint/optionsEnabled, long/uniqueId
                 const uint32_t category = fShmNonRtServerControl.readUInt();
@@ -2611,6 +2636,7 @@ public:
 private:
     const BinaryType fBinaryType;
     const PluginType fPluginType;
+    uint fBridgeVersion;
 
     bool fInitiated;
     bool fInitError;
@@ -2855,7 +2881,7 @@ private:
         fShmNonRtServerControl.clearData();
 
         fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientVersion);
-        fShmNonRtClientControl.writeUInt(CARLA_PLUGIN_BRIDGE_API_VERSION);
+        fShmNonRtClientControl.writeUInt(CARLA_PLUGIN_BRIDGE_API_VERSION_CURRENT);
 
         fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeRtClientData)));
         fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeNonRtClientData)));

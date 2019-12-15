@@ -1447,6 +1447,7 @@ public:
             case kPluginBridgeNonRtServerProgramName:
             case kPluginBridgeNonRtServerMidiProgramData:
             case kPluginBridgeNonRtServerSetCustomData:
+            case kPluginBridgeNonRtServerVersion:
                 break;
 
             case kPluginBridgeNonRtServerSetChunkDataFile:
@@ -1796,7 +1797,7 @@ private:
 
         // initial values
         fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientVersion);
-        fShmNonRtClientControl.writeUInt(CARLA_PLUGIN_BRIDGE_API_VERSION);
+        fShmNonRtClientControl.writeUInt(CARLA_PLUGIN_BRIDGE_API_VERSION_CURRENT);
 
         fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeRtClientData)));
         fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeNonRtClientData)));

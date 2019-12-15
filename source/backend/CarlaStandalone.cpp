@@ -2025,6 +2025,19 @@ void carla_set_parameter_midi_cc(uint pluginId, uint32_t parameterId, int16_t cc
     return plugin->setParameterMidiCC(parameterId, cc, true, false);
 }
 
+void carla_set_parameter_mapped_range(uint pluginId, uint32_t parameterId, float minimum, float maximum)
+{
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
+    carla_debug("carla_set_parameter_mapped_range(%i, %i, %f, %f)", pluginId, parameterId, static_cast<double>(minimum), static_cast<double>(maximum));
+    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
+
+    return plugin->setParameterMappedRange(parameterId, minimum, maximum, true, false);
+}
+
 void carla_set_parameter_touch(uint pluginId, uint32_t parameterId, bool touch)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
