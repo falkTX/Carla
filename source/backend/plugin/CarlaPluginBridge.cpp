@@ -1074,7 +1074,63 @@ public:
 
         // TODO - MIDI
 
-        // TODO - CV
+        // CV Ins
+        for (uint32_t j=0; j < fInfo.cvIns; ++j)
+        {
+            portName.clear();
+
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
+            {
+                portName  = pData->name;
+                portName += ":";
+            }
+
+            if (fInfo.cvInNames != nullptr && fInfo.cvInNames[j] != nullptr)
+            {
+                portName += fInfo.cvInNames[j];
+            }
+            else if (fInfo.cvIns > 1)
+            {
+                portName += "cv_input_";
+                portName += CarlaString(j+1);
+            }
+            else
+                portName += "cv_input";
+
+            portName.truncate(portNameSize);
+
+            pData->cvIn.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, true, j);
+            pData->cvIn.ports[j].rindex = j;
+        }
+
+        // CV Outs
+        for (uint32_t j=0; j < fInfo.cvOuts; ++j)
+        {
+            portName.clear();
+
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
+            {
+                portName  = pData->name;
+                portName += ":";
+            }
+
+            if (fInfo.cvOutNames != nullptr && fInfo.cvOutNames[j] != nullptr)
+            {
+                portName += fInfo.cvOutNames[j];
+            }
+            else if (fInfo.cvOuts > 1)
+            {
+                portName += "cv_output_";
+                portName += CarlaString(j+1);
+            }
+            else
+                portName += "cv_output";
+
+            portName.truncate(portNameSize);
+
+            pData->cvOut.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, false, j);
+            pData->cvOut.ports[j].rindex = j;
+        }
 
         if (needsCtrlIn)
         {
@@ -1165,7 +1221,11 @@ public:
         } CARLA_SAFE_EXCEPTION("deactivate - waitForClient");
     }
 
-    void process(const float** const audioIn, float** const audioOut, const float** const cvIn, float** const cvOut, const uint32_t frames) override
+    void process(const float** const audioIn,
+                 float** const audioOut,
+                 const float** const cvIn,
+                 float** const cvOut,
+                 const uint32_t frames) override
     {
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -1539,8 +1599,10 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Reset audio buffers
 
-        for (uint32_t i=0; i < fInfo.aIns; ++i)
+        for (uint32_t i=0; i < pData->audioIn.count; ++i)
             carla_copyFloats(fShmAudioPool.data + (i * fBufferSize), audioIn[i], frames);
+        for (uint32_t i=0; i < pData->cvIn.count; ++i)
+            carla_copyFloats(fShmAudioPool.data + ((pData->audioIn.count + pData->audioOut.count + i) * fBufferSize), cvIn[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
         // TimeInfo
@@ -1584,8 +1646,10 @@ public:
             return false;
         }
 
-        for (uint32_t i=0; i < fInfo.aOuts; ++i)
-            carla_copyFloats(audioOut[i], fShmAudioPool.data + ((i + fInfo.aIns) * fBufferSize), frames);
+        for (uint32_t i=0; i < pData->audioOut.count; ++i)
+            carla_copyFloats(audioOut[i], fShmAudioPool.data + ((pData->audioIn.count + i) * fBufferSize), frames);
+        for (uint32_t i=0; i < pData->cvOut.count; ++i)
+            carla_copyFloats(cvOut[i], fShmAudioPool.data + ((pData->audioIn.count + pData->audioOut.count + pData->cvIn.count + i) * fBufferSize), frames);
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // --------------------------------------------------------------------------------------------------------
@@ -2635,6 +2699,8 @@ private:
         CarlaString copyright;
         const char** aInNames;
         const char** aOutNames;
+        const char** cvInNames;
+        const char** cvOutNames;
         std::vector<uint8_t> chunk;
 
         Info()
@@ -2652,6 +2718,8 @@ private:
               copyright(),
               aInNames(nullptr),
               aOutNames(nullptr),
+              cvInNames(nullptr),
+              cvOutNames(nullptr),
               chunk() {}
 
         ~Info()
@@ -2683,7 +2751,29 @@ private:
                 aOutNames = nullptr;
             }
 
-            aIns = aOuts = 0;
+            if (cvInNames != nullptr)
+            {
+                CARLA_SAFE_ASSERT_INT(cvIns > 0, cvIns);
+
+                for (uint32_t i=0; i<cvIns; ++i)
+                    delete[] cvInNames[i];
+
+                delete[] cvInNames;
+                cvInNames = nullptr;
+            }
+
+            if (cvOutNames != nullptr)
+            {
+                CARLA_SAFE_ASSERT_INT(cvOuts > 0, cvOuts);
+
+                for (uint32_t i=0; i<cvOuts; ++i)
+                    delete[] cvOutNames[i];
+
+                delete[] cvOutNames;
+                cvOutNames = nullptr;
+            }
+
+            aIns = aOuts = cvIns = cvOuts = 0;
         }
 
         CARLA_DECLARE_NON_COPY_STRUCT(Info)
