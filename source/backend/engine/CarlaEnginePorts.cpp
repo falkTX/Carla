@@ -191,7 +191,7 @@ bool CarlaEngineEventPort::addCVSource(CarlaEngineCVPort* const port, const uint
     CARLA_SAFE_ASSERT_RETURN(port->isInput(), false);
     carla_debug("CarlaEngineEventPort::addCVSource(%p)", port);
 
-    const CarlaEngineEventCV ecv { port, portIndexOffset, 0.0f };
+    const CarlaEngineEventCV ecv = { port, portIndexOffset, 0.0f };
     return pData->cvs.append(ecv);
 }
 
