@@ -2557,7 +2557,7 @@ public:
 
         if ((fInfo.optionsAvailable & PLUGIN_OPTION_FIXED_BUFFERS) == 0x0)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
-         else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
+         else if (isPluginOptionEnabled(options, PLUGIN_OPTION_FIXED_BUFFERS))
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
         if (pData->engine->getOptions().forceStereo)
@@ -2569,6 +2569,10 @@ public:
             if (options & PLUGIN_OPTION_FORCE_STEREO)
                 pData->options |= PLUGIN_OPTION_FORCE_STEREO;
         }
+
+        if (fInfo.optionsAvailable & PLUGIN_OPTION_USE_CHUNKS)
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_USE_CHUNKS))
+                pData->options |= PLUGIN_OPTION_USE_CHUNKS;
 
         if (fInfo.optionsAvailable & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
             if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CONTROL_CHANGES))
