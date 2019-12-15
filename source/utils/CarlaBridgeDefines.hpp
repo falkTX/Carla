@@ -18,7 +18,7 @@
 #ifndef CARLA_BRIDGE_DEFINES_HPP_INCLUDED
 #define CARLA_BRIDGE_DEFINES_HPP_INCLUDED
 
-#include "CarlaRingBuffer.hpp"
+#include "CarlaDefines.h"
 
 // how much backwards compatible we are
 #define CARLA_PLUGIN_BRIDGE_API_VERSION_MINIMUM 6
@@ -154,30 +154,6 @@ struct BridgeTimeInfo {
     int32_t bar, beat;
     float beatsPerBar, beatType;
     double tick, barStartTick, ticksPerBeat, beatsPerMinute;
-};
-
-// -------------------------------------------------------------------------------------------------------------------
-
-static const std::size_t kBridgeRtClientDataMidiOutSize = 511*4;
-static const std::size_t kBridgeBaseMidiOutHeaderSize   = 6U /* time, port and size */;
-
-// Server => Client RT
-struct BridgeRtClientData {
-    BridgeSemaphore sem;
-    BridgeTimeInfo timeInfo;
-    SmallStackBuffer ringBuffer;
-    uint8_t midiOut[kBridgeRtClientDataMidiOutSize];
-    uint32_t procFlags;
-};
-
-// Server => Client Non-RT
-struct BridgeNonRtClientData {
-    BigStackBuffer ringBuffer;
-};
-
-// Client => Server Non-RT
-struct BridgeNonRtServerData {
-    HugeStackBuffer ringBuffer;
 };
 
 // -------------------------------------------------------------------------------------------------------------------

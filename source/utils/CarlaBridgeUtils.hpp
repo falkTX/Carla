@@ -20,6 +20,7 @@
 
 #include "CarlaBridgeDefines.hpp"
 #include "CarlaMutex.hpp"
+#include "CarlaRingBuffer.hpp"
 #include "CarlaString.hpp"
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -200,6 +201,30 @@ const char* PluginBridgeNonRtServerOpcode2str(const PluginBridgeNonRtServerOpcod
     carla_stderr("CarlaBackend::PluginBridgeNonRtServerOpcode2str%i) - invalid opcode", opcode);
     return nullptr;
 }
+
+// -------------------------------------------------------------------------------------------------------------------
+
+static const std::size_t kBridgeRtClientDataMidiOutSize = 511*4;
+static const std::size_t kBridgeBaseMidiOutHeaderSize   = 6U /* time, port and size */;
+
+// Server => Client RT
+struct BridgeRtClientData {
+    BridgeSemaphore sem;
+    BridgeTimeInfo timeInfo;
+    SmallStackBuffer ringBuffer;
+    uint8_t midiOut[kBridgeRtClientDataMidiOutSize];
+    uint32_t procFlags;
+};
+
+// Server => Client Non-RT
+struct BridgeNonRtClientData {
+    BigStackBuffer ringBuffer;
+};
+
+// Client => Server Non-RT
+struct BridgeNonRtServerData {
+    HugeStackBuffer ringBuffer;
+};
 
 // -------------------------------------------------------------------------------------------------------------------
 
