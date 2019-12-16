@@ -583,7 +583,7 @@ public:
         if (waitForParameterText())
             return true;
 
-        std::snprintf(strBuf, STR_MAX, "%f", static_cast<double>(fParams[parameterId].value));
+        std::snprintf(strBuf, STR_MAX, "%.12g", static_cast<double>(fParams[parameterId].value));
         return false;
     }
 

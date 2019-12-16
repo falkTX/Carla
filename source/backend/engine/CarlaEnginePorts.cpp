@@ -102,8 +102,8 @@ void CarlaEngineCVPort::setRange(const float min, const float max) noexcept
 
     {
         const CarlaScopedLocale csl;
-        std::snprintf(strBufMin, STR_MAX-1, "%f", static_cast<double>(min));
-        std::snprintf(strBufMax, STR_MAX-1, "%f", static_cast<double>(max));
+        std::snprintf(strBufMin, STR_MAX-1, "%.12g", static_cast<double>(min));
+        std::snprintf(strBufMax, STR_MAX-1, "%.12g", static_cast<double>(max));
     }
 
     setMetaData(LV2_CORE__minimum, strBufMin, "");

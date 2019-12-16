@@ -478,7 +478,7 @@ public:
         char sampleRateStr[32];
         {
             const CarlaScopedLocale csl;
-            std::snprintf(sampleRateStr, 31, "%f", kEngine->getSampleRate());
+            std::snprintf(sampleRateStr, 31, "%.12g", kEngine->getSampleRate());
         }
         sampleRateStr[31] = '\0';
 
@@ -1580,7 +1580,7 @@ public:
                     if (! fPipeServer.writeMessage(tmpBuf))
                         return;
 
-                    std::snprintf(tmpBuf, 0xff, "%f\n", static_cast<double>(pData->engine->getOptions().uiScale));
+                    std::snprintf(tmpBuf, 0xff, "%.12g\n", static_cast<double>(pData->engine->getOptions().uiScale));
                     if (! fPipeServer.writeMessage(tmpBuf))
                         return;
 
@@ -1611,7 +1611,7 @@ public:
                         if (! fPipeServer.writeMessage(tmpBuf))
                             return;
 
-                        std::snprintf(tmpBuf, 0xff, "%f\n", static_cast<double>(getParameterValue(i)));
+                        std::snprintf(tmpBuf, 0xff, "%.12g\n", static_cast<double>(getParameterValue(i)));
                         if (! fPipeServer.writeMessage(tmpBuf))
                             return;
                     }

@@ -139,7 +139,7 @@ public:
 
             {
                 const CarlaScopedLocale csl;
-                std::snprintf(msg, 127, "control %u %f", portIndex, static_cast<double>(*valuePtr));
+                std::snprintf(msg, 127, "control %u %.12g", portIndex, static_cast<double>(*valuePtr));
             }
 
             msg[127] = '\0';

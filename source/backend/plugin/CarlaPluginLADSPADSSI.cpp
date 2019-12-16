@@ -3111,25 +3111,25 @@ private:
     static bool _getSeparatedParameterNameOrUnitImpl(const char* const paramName, char* const strBuf,
                                                      const bool wantName, const bool useBracket) noexcept
     {
-        const char* const sepBracketStart(std::strstr(paramName, useBracket ? " [" : " ("));
+        const char* const sepBracketStart = std::strstr(paramName, useBracket ? " [" : " (");
 
         if (sepBracketStart == nullptr)
             return false;
 
-        const char* const sepBracketEnd(std::strstr(sepBracketStart, useBracket ? "]" : ")"));
+        const char* const sepBracketEnd = std::strstr(sepBracketStart, useBracket ? "]" : ")");
 
         if (sepBracketEnd == nullptr)
             return false;
 
-        const std::size_t unitSize(static_cast<std::size_t>(sepBracketEnd-sepBracketStart-2));
+        const std::size_t unitSize = static_cast<std::size_t>(sepBracketEnd-sepBracketStart-2);
 
         if (unitSize > 7) // very unlikely to have such big unit
             return false;
 
-        const std::size_t sepIndex(std::strlen(paramName)-unitSize-3);
+        const std::size_t sepIndex = std::strlen(paramName)-unitSize-3;
 
         // just in case
-        if (sepIndex+2 >= STR_MAX)
+        if (sepIndex > STR_MAX-3)
             return false;
 
         if (wantName)

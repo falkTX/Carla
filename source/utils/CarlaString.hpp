@@ -179,7 +179,7 @@ public:
 
         {
             const CarlaScopedLocale csl;
-            std::snprintf(strBuf, 0xff, "%f", static_cast<double>(value));
+            std::snprintf(strBuf, 0xff, "%.12g", static_cast<double>(value));
         }
 
         strBuf[0xff] = '\0';
@@ -199,7 +199,7 @@ public:
 
         {
             const CarlaScopedLocale csl;
-            std::snprintf(strBuf, 0xff, "%f", value);
+            std::snprintf(strBuf, 0xff, "%.24g", value);
         }
 
         strBuf[0xff] = '\0';

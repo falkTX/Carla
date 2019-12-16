@@ -427,7 +427,7 @@ protected:
 
                 {
                     const CarlaScopedLocale csl;
-                    std::snprintf(tmpBuf, STR_MAX, "%f\n", newSampleRate);
+                    std::snprintf(tmpBuf, STR_MAX, "%.12g\n", newSampleRate);
                 }
 
                 if (fUiServer.writeMessage(tmpBuf))
@@ -537,7 +537,7 @@ protected:
             std::snprintf(tmpBuf, STR_MAX, "PARAMVAL_%u:%i\n", pluginId, i);
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-            std::snprintf(tmpBuf, STR_MAX, "%f\n", static_cast<double>(plugin->getInternalParameterValue(i)));
+            std::snprintf(tmpBuf, STR_MAX, "%.12g\n", static_cast<double>(plugin->getInternalParameterValue(i)));
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
             fUiServer.flushMessages();
@@ -589,7 +589,7 @@ protected:
             std::snprintf(tmpBuf, STR_MAX, "PARAMETER_RANGES_%i:%i\n", pluginId, i);
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-            std::snprintf(tmpBuf, STR_MAX, "%f:%f:%f:%f:%f:%f\n",
+            std::snprintf(tmpBuf, STR_MAX, "%.12g:%.12g:%.12g:%.12g:%.12g:%.12g\n",
                           static_cast<double>(paramRanges.def),
                           static_cast<double>(paramRanges.min),
                           static_cast<double>(paramRanges.max),
@@ -601,7 +601,7 @@ protected:
             std::snprintf(tmpBuf, STR_MAX, "PARAMVAL_%u:%u\n", pluginId, i);
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-            std::snprintf(tmpBuf, STR_MAX, "%f\n", static_cast<double>(plugin->getParameterValue(i)));
+            std::snprintf(tmpBuf, STR_MAX, "%.12g\n", static_cast<double>(plugin->getParameterValue(i)));
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         }
 
@@ -780,7 +780,7 @@ protected:
 
         {
             const CarlaScopedLocale csl;
-            std::snprintf(tmpBuf, STR_MAX, "%f\n", static_cast<double>(valuef));
+            std::snprintf(tmpBuf, STR_MAX, "%.12g\n", static_cast<double>(valuef));
         }
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
@@ -837,7 +837,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("sample-rate\n"),);
         {
             const CarlaScopedLocale csl;
-            std::snprintf(tmpBuf, STR_MAX, "%f\n", pData->sampleRate);
+            std::snprintf(tmpBuf, STR_MAX, "%.12g\n", pData->sampleRate);
         }
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
@@ -1380,7 +1380,7 @@ protected:
         // send engine info
 
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage("runtime-info"),);
-        std::snprintf(tmpBuf, STR_MAX, "%f:0\n", static_cast<double>(getDSPLoad()));
+        std::snprintf(tmpBuf, STR_MAX, "%.12g:0\n", static_cast<double>(getDSPLoad()));
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
         fUiServer.flushMessages();
@@ -1398,7 +1398,7 @@ protected:
                                                                    timeInfo.bbt.beat,
                                                                    static_cast<int>(timeInfo.bbt.tick + 0.5));
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
-            std::snprintf(tmpBuf, STR_MAX, "%f\n", timeInfo.bbt.beatsPerMinute);
+            std::snprintf(tmpBuf, STR_MAX, "%.12g\n", timeInfo.bbt.beatsPerMinute);
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         }
         else
@@ -1420,7 +1420,7 @@ protected:
 
             std::snprintf(tmpBuf, STR_MAX, "PEAKS_%i\n", i);
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
-            std::snprintf(tmpBuf, STR_MAX, "%f:%f:%f:%f\n",
+            std::snprintf(tmpBuf, STR_MAX, "%.12g:%.12g:%.12g:%.12g\n",
                           static_cast<double>(plugData.peaks[0]),
                           static_cast<double>(plugData.peaks[1]),
                           static_cast<double>(plugData.peaks[2]),
@@ -1436,7 +1436,7 @@ protected:
 
                 std::snprintf(tmpBuf, STR_MAX, "PARAMVAL_%u:%u\n", i, j);
                 CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
-                std::snprintf(tmpBuf, STR_MAX, "%f\n", static_cast<double>(plugin->getParameterValue(j)));
+                std::snprintf(tmpBuf, STR_MAX, "%.12g\n", static_cast<double>(plugin->getParameterValue(j)));
                 CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
                 fUiServer.flushMessages();

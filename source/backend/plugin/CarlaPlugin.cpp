@@ -1771,7 +1771,7 @@ void CarlaPlugin::setParameterMappedRange(const uint32_t parameterId, const floa
 
     char strBuf[STR_MAX+1];
     carla_zeroChars(strBuf, STR_MAX+1);
-    std::snprintf(strBuf, STR_MAX, "%f:%f", static_cast<double>(minimum), static_cast<double>(maximum));
+    std::snprintf(strBuf, STR_MAX, "%.12g:%.12g", static_cast<double>(minimum), static_cast<double>(maximum));
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     pData->engine->callback(sendCallback, sendOsc,

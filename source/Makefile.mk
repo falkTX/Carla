@@ -180,7 +180,9 @@ BASE_FLAGS += -Wmissing-declarations -Wredundant-decls
 BASE_FLAGS += -Wshadow  -Wundef -Wuninitialized -Wunused
 BASE_FLAGS += -Wstrict-aliasing -fstrict-aliasing
 BASE_FLAGS += -Wstrict-overflow -fstrict-overflow
-BASE_FLAGS += -Wduplicated-branches -Wduplicated-cond  -Wnull-dereference
+BASE_FLAGS += -Wduplicated-branches -Wduplicated-cond -Wnull-dereference
+BASE_FLAGS += -Wformat-truncation=2 -Wformat-overflow=2
+BASE_FLAGS += -Wstringop-overflow=4 -Wstringop-truncation
 CFLAGS     += -Winit-self -Wjump-misses-init -Wmissing-prototypes -Wnested-externs -Wstrict-prototypes -Wwrite-strings
 CXXFLAGS   += -Wc++0x-compat -Wc++11-compat
 CXXFLAGS   += -Wnon-virtual-dtor -Woverloaded-virtual

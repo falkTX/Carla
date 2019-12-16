@@ -339,7 +339,7 @@ public:
         dispatcher(effGetParamDisplay, static_cast<int32_t>(parameterId), 0, strBuf);
 
         if (strBuf[0] == '\0')
-            std::snprintf(strBuf, STR_MAX, "%f", static_cast<double>(getParameterValue(parameterId)));
+            std::snprintf(strBuf, STR_MAX, "%.12g", static_cast<double>(getParameterValue(parameterId)));
 
         return true;
     }

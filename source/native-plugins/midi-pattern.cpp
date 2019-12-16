@@ -312,7 +312,7 @@ protected:
 
             {
                 const CarlaScopedLocale csl;
-                std::snprintf(strBuf, 0xff, "%f\n", beatsPerMinute);
+                std::snprintf(strBuf, 0xff, "%.12g\n", beatsPerMinute);
             }
 
             CARLA_SAFE_ASSERT_RETURN(writeMessage(strBuf),);

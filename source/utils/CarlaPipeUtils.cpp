@@ -984,7 +984,7 @@ void CarlaPipeCommon::writeControlMessage(const uint32_t index, const float valu
 
     {
         const CarlaScopedLocale csl;
-        std::snprintf(tmpBuf, 0xff, "%f\n", static_cast<double>(value));
+        std::snprintf(tmpBuf, 0xff, "%.12g\n", static_cast<double>(value));
     }
 
     if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
