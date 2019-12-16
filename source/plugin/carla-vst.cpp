@@ -240,7 +240,8 @@ public:
         case effGetProgramName:
             if (char* const programName = (char*)ptr)
             {
-                std::strncpy(programName, fProgramName, 24);
+                std::strncpy(programName, fProgramName, 23);
+                programName[23] = '\0';
                 return 1;
             }
             break;
@@ -248,7 +249,8 @@ public:
         case effGetProgramNameIndexed:
             if (char* const programName = (char*)ptr)
             {
-                std::strncpy(programName, fProgramName, 24);
+                std::strncpy(programName, fProgramName, 23);
+                programName[23] = '\0';
                 return 1;
             }
             break;
@@ -298,15 +300,15 @@ public:
                     std::snprintf(cptr, 23, "%d%s%s",
                                   static_cast<int>(paramValue),
                                   param->unit != nullptr && param->unit[0] != '\0' ? " " : "",
-                                  param->unit != nullptr ? param->unit : "");
+                                  param->unit != nullptr && param->unit[0] != '\0' ? param->unit : "");
                     cptr[23] = '\0';
                 }
                 else
                 {
-                    std::snprintf(cptr, 23, "%f%s%s",
+                    std::snprintf(cptr, 23, "%.12g%s%s",
                                   static_cast<double>(paramValue),
                                   param->unit != nullptr && param->unit[0] != '\0' ? " " : "",
-                                  param->unit != nullptr ? param->unit : "");
+                                  param->unit != nullptr && param->unit[0] != '\0' ? param->unit : "");
                     cptr[23] = '\0';
                 }
 
