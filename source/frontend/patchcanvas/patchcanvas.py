@@ -20,7 +20,7 @@
 # Imports (Global)
 
 from PyQt5.QtCore import pyqtSlot, qCritical, qFatal, qWarning, QObject
-from PyQt5.QtCore import QPointF, QRectF, QSettings, QTimer
+from PyQt5.QtCore import QPointF, QRectF, QTimer
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -61,6 +61,8 @@ from .utils import CanvasCallback, CanvasGetNewGroupPos, CanvasItemFX, CanvasRem
 # FIXME
 from . import *
 from .scene import PatchScene
+
+from carla_shared import QSafeSettings
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -176,7 +178,7 @@ def init(appName, scene, callback, debug=False):
     if not canvas.qobject:
         canvas.qobject = CanvasObject()
     if not canvas.settings:
-        canvas.settings = QSettings("falkTX", appName)
+        canvas.settings = QSafeSettings("falkTX", appName)
 
     if canvas.theme:
         del canvas.theme

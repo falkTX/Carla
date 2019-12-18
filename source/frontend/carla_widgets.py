@@ -19,7 +19,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QSettings, QTimer
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QTimer
 from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath, QPalette, QPixmap
 from PyQt5.QtWidgets import QDialog, QGroupBox, QInputDialog, QLineEdit, QMenu, QScrollArea, QVBoxLayout, QWidget
 

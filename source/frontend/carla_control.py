@@ -95,9 +95,9 @@ class ConnectDialog(QDialog):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(enabled)
 
     def loadSettings(self):
-        settings = QSettings("falkTX", "CarlaOSCConnect")
+        settings = QSafeSettings("falkTX", "CarlaOSCConnect")
 
-        if settings.value("ReportedHostAutomatic", True, type=bool):
+        if settings.value("ReportedHostAutomatic", True, bool):
             self.ui.rb_reported_custom.setChecked(False)
             self.ui.rb_reported_auto.setChecked(True)
         else:
@@ -141,7 +141,7 @@ class ConnectDialog(QDialog):
 
     @pyqtSlot()
     def slot_saveSettings(self):
-        settings = QSettings("falkTX", "CarlaOSCConnect")
+        settings = QSafeSettings("falkTX", "CarlaOSCConnect")
         settings.setValue("Host", self.ui.le_host.text())
         settings.setValue("ReportedHost", self.ui.le_reported_host.text())
         settings.setValue("TCPPort", self.ui.sb_tcp_port.value())

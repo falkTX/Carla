@@ -1730,7 +1730,9 @@ class HostWindow(QMainWindow):
         settings = QSafeSettings()
 
         if firstTime:
-            self.restoreGeometry(settings.value("Geometry", b"", QByteArray))
+            geometry = settings.value("Geometry", QByteArray(), QByteArray)
+            if not geometry.isNull():
+                self.restoreGeometry(geometry)
 
             showToolbar = settings.value("ShowToolbar", True, bool)
             self.ui.act_settings_show_toolbar.setChecked(showToolbar)

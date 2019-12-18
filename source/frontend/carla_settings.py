@@ -19,7 +19,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt5.QtCore import pyqtSlot, QByteArray, QDir, QSettings
+from PyQt5.QtCore import pyqtSlot, QByteArray, QDir
 from PyQt5.QtGui import QColor, QCursor, QPainter, QPainterPath
 from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 
@@ -88,12 +88,12 @@ class DriverSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
 
     def loadSettings(self):
-        settings = QSettings("falkTX", "Carla2")
+        settings = QSafeSettings("falkTX", "Carla2")
 
-        audioDevice       = settings.value("%s%s/Device"       % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), "",                                type=str)
-        audioBufferSize   = settings.value("%s%s/BufferSize"   % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), CARLA_DEFAULT_AUDIO_BUFFER_SIZE,   type=int)
-        audioSampleRate   = settings.value("%s%s/SampleRate"   % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), CARLA_DEFAULT_AUDIO_SAMPLE_RATE,   type=int)
-        audioTripleBuffer = settings.value("%s%s/TripleBuffer" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), CARLA_DEFAULT_AUDIO_TRIPLE_BUFFER, type=bool)
+        audioDevice       = settings.value("%s%s/Device"       % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), "",                                str)
+        audioBufferSize   = settings.value("%s%s/BufferSize"   % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), CARLA_DEFAULT_AUDIO_BUFFER_SIZE,   int)
+        audioSampleRate   = settings.value("%s%s/SampleRate"   % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), CARLA_DEFAULT_AUDIO_SAMPLE_RATE,   int)
+        audioTripleBuffer = settings.value("%s%s/TripleBuffer" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), CARLA_DEFAULT_AUDIO_TRIPLE_BUFFER, bool)
 
         if audioDevice and audioDevice in self.fDeviceNames:
             self.ui.cb_device.setCurrentIndex(self.fDeviceNames.index(audioDevice))
@@ -123,7 +123,7 @@ class DriverSettingsW(QDialog):
 
     @pyqtSlot()
     def slot_saveSettings(self):
-        settings = QSettings("falkTX", "Carla2")
+        settings = QSafeSettings("falkTX", "Carla2")
 
         bufferSize = self.ui.cb_buffersize.currentText()
         sampleRate = self.ui.cb_samplerate.currentText()
@@ -494,7 +494,7 @@ class CarlaSettingsW(QDialog):
     # --------------------------------------------------------------------------------------------------------
 
     def loadSettings(self):
-        settings = QSettings()
+        settings = QSafeSettings()
 
         # ----------------------------------------------------------------------------------------------------
         # Main
@@ -502,31 +502,31 @@ class CarlaSettingsW(QDialog):
         self.ui.ch_main_show_logs.setChecked(self.host.showLogs)
         self.ui.ch_engine_uis_always_on_top.setChecked(self.host.uisAlwaysOnTop)
 
-        self.ui.le_main_proj_folder.setText(settings.value(CARLA_KEY_MAIN_PROJECT_FOLDER, CARLA_DEFAULT_MAIN_PROJECT_FOLDER, type=str))
-        self.ui.ch_main_theme_pro.setChecked(settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, CARLA_DEFAULT_MAIN_USE_PRO_THEME, type=bool) and self.ui.group_main_theme.isEnabled())
-        self.ui.cb_main_theme_color.setCurrentIndex(self.ui.cb_main_theme_color.findText(settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, CARLA_DEFAULT_MAIN_PRO_THEME_COLOR, type=str)))
-        self.ui.sb_main_refresh_interval.setValue(settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL, CARLA_DEFAULT_MAIN_REFRESH_INTERVAL, type=int))
-        self.ui.ch_main_confirm_exit.setChecked(settings.value(CARLA_KEY_MAIN_CONFIRM_EXIT, CARLA_DEFAULT_MAIN_CONFIRM_EXIT, type=bool))
+        self.ui.le_main_proj_folder.setText(settings.value(CARLA_KEY_MAIN_PROJECT_FOLDER, CARLA_DEFAULT_MAIN_PROJECT_FOLDER, str))
+        self.ui.ch_main_theme_pro.setChecked(settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, CARLA_DEFAULT_MAIN_USE_PRO_THEME, bool) and self.ui.group_main_theme.isEnabled())
+        self.ui.cb_main_theme_color.setCurrentIndex(self.ui.cb_main_theme_color.findText(settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, CARLA_DEFAULT_MAIN_PRO_THEME_COLOR, str)))
+        self.ui.sb_main_refresh_interval.setValue(settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL, CARLA_DEFAULT_MAIN_REFRESH_INTERVAL, int))
+        self.ui.ch_main_confirm_exit.setChecked(settings.value(CARLA_KEY_MAIN_CONFIRM_EXIT, CARLA_DEFAULT_MAIN_CONFIRM_EXIT, bool))
 
         # ----------------------------------------------------------------------------------------------------
         # Canvas
 
-        self.ui.cb_canvas_theme.setCurrentIndex(self.ui.cb_canvas_theme.findText(settings.value(CARLA_KEY_CANVAS_THEME, CARLA_DEFAULT_CANVAS_THEME, type=str)))
-        self.ui.cb_canvas_size.setCurrentIndex(self.ui.cb_canvas_size.findText(settings.value(CARLA_KEY_CANVAS_SIZE, CARLA_DEFAULT_CANVAS_SIZE, type=str)))
-        self.ui.cb_canvas_bezier_lines.setChecked(settings.value(CARLA_KEY_CANVAS_USE_BEZIER_LINES, CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES, type=bool))
-        self.ui.cb_canvas_hide_groups.setChecked(settings.value(CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS, CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS, type=bool))
-        self.ui.cb_canvas_auto_select.setChecked(settings.value(CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS, CARLA_DEFAULT_CANVAS_AUTO_SELECT_ITEMS, type=bool))
-        self.ui.cb_canvas_eyecandy.setChecked(settings.value(CARLA_KEY_CANVAS_EYE_CANDY, CARLA_DEFAULT_CANVAS_EYE_CANDY, type=bool))
-        self.ui.cb_canvas_fancy_eyecandy.setChecked(settings.value(CARLA_KEY_CANVAS_FANCY_EYE_CANDY, CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY, type=bool))
-        self.ui.cb_canvas_use_opengl.setChecked(settings.value(CARLA_KEY_CANVAS_USE_OPENGL, CARLA_DEFAULT_CANVAS_USE_OPENGL, type=bool) and self.ui.cb_canvas_use_opengl.isEnabled())
-        self.ui.cb_canvas_render_aa.setCheckState(settings.value(CARLA_KEY_CANVAS_ANTIALIASING, CARLA_DEFAULT_CANVAS_ANTIALIASING, type=int))
-        self.ui.cb_canvas_render_hq_aa.setChecked(settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING, CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING, type=bool) and self.ui.cb_canvas_render_hq_aa.isEnabled())
-        self.ui.cb_canvas_full_repaints.setChecked(settings.value(CARLA_KEY_CANVAS_FULL_REPAINTS, CARLA_DEFAULT_CANVAS_FULL_REPAINTS, type=bool))
-        self.ui.cb_canvas_inline_displays.setChecked(settings.value(CARLA_KEY_CANVAS_INLINE_DISPLAYS, CARLA_DEFAULT_CANVAS_INLINE_DISPLAYS, type=bool))
+        self.ui.cb_canvas_theme.setCurrentIndex(self.ui.cb_canvas_theme.findText(settings.value(CARLA_KEY_CANVAS_THEME, CARLA_DEFAULT_CANVAS_THEME, str)))
+        self.ui.cb_canvas_size.setCurrentIndex(self.ui.cb_canvas_size.findText(settings.value(CARLA_KEY_CANVAS_SIZE, CARLA_DEFAULT_CANVAS_SIZE, str)))
+        self.ui.cb_canvas_bezier_lines.setChecked(settings.value(CARLA_KEY_CANVAS_USE_BEZIER_LINES, CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES, bool))
+        self.ui.cb_canvas_hide_groups.setChecked(settings.value(CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS, CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS, bool))
+        self.ui.cb_canvas_auto_select.setChecked(settings.value(CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS, CARLA_DEFAULT_CANVAS_AUTO_SELECT_ITEMS, bool))
+        self.ui.cb_canvas_eyecandy.setChecked(settings.value(CARLA_KEY_CANVAS_EYE_CANDY, CARLA_DEFAULT_CANVAS_EYE_CANDY, bool))
+        self.ui.cb_canvas_fancy_eyecandy.setChecked(settings.value(CARLA_KEY_CANVAS_FANCY_EYE_CANDY, CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY, bool))
+        self.ui.cb_canvas_use_opengl.setChecked(settings.value(CARLA_KEY_CANVAS_USE_OPENGL, CARLA_DEFAULT_CANVAS_USE_OPENGL, bool) and self.ui.cb_canvas_use_opengl.isEnabled())
+        self.ui.cb_canvas_render_aa.setCheckState(settings.value(CARLA_KEY_CANVAS_ANTIALIASING, CARLA_DEFAULT_CANVAS_ANTIALIASING, int))
+        self.ui.cb_canvas_render_hq_aa.setChecked(settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING, CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING, bool) and self.ui.cb_canvas_render_hq_aa.isEnabled())
+        self.ui.cb_canvas_full_repaints.setChecked(settings.value(CARLA_KEY_CANVAS_FULL_REPAINTS, CARLA_DEFAULT_CANVAS_FULL_REPAINTS, bool))
+        self.ui.cb_canvas_inline_displays.setChecked(settings.value(CARLA_KEY_CANVAS_INLINE_DISPLAYS, CARLA_DEFAULT_CANVAS_INLINE_DISPLAYS, bool))
 
         # ----------------------------------------------------------------------------------------------------
 
-        settings = QSettings("falkTX", "Carla2")
+        settings = QSafeSettings("falkTX", "Carla2")
 
         # ----------------------------------------------------------------------------------------------------
         # Main
@@ -550,7 +550,7 @@ class CarlaSettingsW(QDialog):
             audioDriver = self.host.audioDriverForced
             self.ui.cb_engine_audio_driver.setCurrentIndex(0)
         else:
-            audioDriver = settings.value(CARLA_KEY_ENGINE_AUDIO_DRIVER, CARLA_DEFAULT_AUDIO_DRIVER, type=str)
+            audioDriver = settings.value(CARLA_KEY_ENGINE_AUDIO_DRIVER, CARLA_DEFAULT_AUDIO_DRIVER, str)
 
             for i in range(self.ui.cb_engine_audio_driver.count()):
                 if self.ui.cb_engine_audio_driver.itemText(i) == audioDriver:
@@ -588,32 +588,32 @@ class CarlaSettingsW(QDialog):
 
         self.ui.ch_osc_enable.setChecked(settings.value(CARLA_KEY_OSC_ENABLED,
                                                         CARLA_DEFAULT_OSC_ENABLED,
-                                                        type=bool))
+                                                        bool))
 
         self.ui.group_osc_tcp_port.setChecked(settings.value(CARLA_KEY_OSC_TCP_PORT_ENABLED,
                                                              CARLA_DEFAULT_OSC_TCP_PORT_ENABLED,
-                                                             type=bool))
+                                                             bool))
 
         self.ui.group_osc_udp_port.setChecked(settings.value(CARLA_KEY_OSC_UDP_PORT_ENABLED,
                                                              CARLA_DEFAULT_OSC_UDP_PORT_ENABLED,
-                                                             type=bool))
+                                                             bool))
 
         self.ui.sb_osc_tcp_port_number.setValue(settings.value(CARLA_KEY_OSC_TCP_PORT_NUMBER,
                                                                CARLA_DEFAULT_OSC_TCP_PORT_NUMBER,
-                                                               type=int))
+                                                               int))
 
         self.ui.sb_osc_udp_port_number.setValue(settings.value(CARLA_KEY_OSC_UDP_PORT_NUMBER,
                                                                CARLA_DEFAULT_OSC_UDP_PORT_NUMBER,
-                                                               type=int))
+                                                               int))
 
-        if settings.value(CARLA_KEY_OSC_TCP_PORT_RANDOM, CARLA_DEFAULT_OSC_TCP_PORT_RANDOM, type=bool):
+        if settings.value(CARLA_KEY_OSC_TCP_PORT_RANDOM, CARLA_DEFAULT_OSC_TCP_PORT_RANDOM, bool):
             self.ui.rb_osc_tcp_port_specific.setChecked(False)
             self.ui.rb_osc_tcp_port_random.setChecked(True)
         else:
             self.ui.rb_osc_tcp_port_random.setChecked(False)
             self.ui.rb_osc_tcp_port_specific.setChecked(True)
 
-        if settings.value(CARLA_KEY_OSC_UDP_PORT_RANDOM, CARLA_DEFAULT_OSC_UDP_PORT_RANDOM, type=bool):
+        if settings.value(CARLA_KEY_OSC_UDP_PORT_RANDOM, CARLA_DEFAULT_OSC_UDP_PORT_RANDOM, bool):
             self.ui.rb_osc_udp_port_specific.setChecked(False)
             self.ui.rb_osc_udp_port_random.setChecked(True)
         else:
@@ -623,8 +623,8 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # File Paths
 
-        audioPaths = toList(settings.value(CARLA_KEY_PATHS_AUDIO, CARLA_DEFAULT_FILE_PATH_AUDIO))
-        midiPaths  = toList(settings.value(CARLA_KEY_PATHS_MIDI,  CARLA_DEFAULT_FILE_PATH_MIDI))
+        audioPaths = settings.value(CARLA_KEY_PATHS_AUDIO, CARLA_DEFAULT_FILE_PATH_AUDIO, list)
+        midiPaths  = settings.value(CARLA_KEY_PATHS_MIDI,  CARLA_DEFAULT_FILE_PATH_MIDI, list)
 
         audioPaths.sort()
         midiPaths.sort()
@@ -640,13 +640,13 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Plugin Paths
 
-        ladspas = toList(settings.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH))
-        dssis   = toList(settings.value(CARLA_KEY_PATHS_DSSI,   CARLA_DEFAULT_DSSI_PATH))
-        lv2s    = toList(settings.value(CARLA_KEY_PATHS_LV2,    CARLA_DEFAULT_LV2_PATH))
-        vst2s   = toList(settings.value(CARLA_KEY_PATHS_VST2,   CARLA_DEFAULT_VST2_PATH))
-        vst3s   = toList(settings.value(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH))
-        sf2s    = toList(settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH))
-        sfzs    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH))
+        ladspas = settings.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH, list)
+        dssis   = settings.value(CARLA_KEY_PATHS_DSSI,   CARLA_DEFAULT_DSSI_PATH, list)
+        lv2s    = settings.value(CARLA_KEY_PATHS_LV2,    CARLA_DEFAULT_LV2_PATH, list)
+        vst2s   = settings.value(CARLA_KEY_PATHS_VST2,   CARLA_DEFAULT_VST2_PATH, list)
+        vst3s   = settings.value(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH, list)
+        sf2s    = settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH, list)
+        sfzs    = settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH, list)
 
         ladspas.sort()
         dssis.sort()
@@ -689,52 +689,52 @@ class CarlaSettingsW(QDialog):
 
         self.ui.le_wine_exec.setText(settings.value(CARLA_KEY_WINE_EXECUTABLE,
                                                     CARLA_DEFAULT_WINE_EXECUTABLE,
-                                                    type=str))
+                                                    str))
 
         self.ui.cb_wine_prefix_detect.setChecked(settings.value(CARLA_KEY_WINE_AUTO_PREFIX,
                                                                 CARLA_DEFAULT_WINE_AUTO_PREFIX,
-                                                                 type=bool))
+                                                                 bool))
 
         self.ui.le_wine_prefix_fallback.setText(settings.value(CARLA_KEY_WINE_FALLBACK_PREFIX,
                                                                CARLA_DEFAULT_WINE_FALLBACK_PREFIX,
-                                                               type=str))
+                                                               str))
 
         self.ui.group_wine_realtime.setChecked(settings.value(CARLA_KEY_WINE_RT_PRIO_ENABLED,
                                                               CARLA_DEFAULT_WINE_RT_PRIO_ENABLED,
-                                                              type=bool))
+                                                              bool))
 
         self.ui.sb_wine_base_prio.setValue(settings.value(CARLA_KEY_WINE_BASE_RT_PRIO,
                                                           CARLA_DEFAULT_WINE_BASE_RT_PRIO,
-                                                          type=int))
+                                                          int))
 
         self.ui.sb_wine_server_prio.setValue(settings.value(CARLA_KEY_WINE_SERVER_RT_PRIO,
                                                             CARLA_DEFAULT_WINE_SERVER_RT_PRIO,
-                                                            type=int))
+                                                            int))
 
         # ----------------------------------------------------------------------------------------------------
         # Experimental
 
         self.ui.ch_exp_jack_apps.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_JACK_APPS,
                                                            CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS,
-                                                           type=bool))
+                                                           bool))
 
         self.ui.ch_exp_export_lv2.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_EXPORT_LV2,
                                                             CARLA_DEFAULT_EXPERIMENTAL_LV2_EXPORT,
-                                                            type=bool))
+                                                            bool))
 
         self.ui.ch_exp_load_lib_global.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL,
                                                                  CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL,
-                                                                 type=bool))
+                                                                 bool))
 
         self.ui.ch_exp_prevent_bad_behaviour.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR,
                                                                        CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR,
-                                                                       type=bool))
+                                                                       bool))
 
     # --------------------------------------------------------------------------------------------------------
 
     @pyqtSlot()
     def slot_saveSettings(self):
-        settings = QSettings()
+        settings = QSafeSettings()
 
         self.host.experimental = self.ui.ch_main_experimental.isChecked()
 
@@ -768,7 +768,7 @@ class CarlaSettingsW(QDialog):
 
         # ----------------------------------------------------------------------------------------------------
 
-        settings = QSettings("falkTX", "Carla2")
+        settings = QSafeSettings("falkTX", "Carla2")
 
         # ----------------------------------------------------------------------------------------------------
         # Main
