@@ -835,8 +835,8 @@ class HostWindow(QMainWindow):
 
         if self.host.engine_init(audioDriver, self.fClientName):
             if firstInit and not (self.host.isControl or self.host.isPlugin):
-                settings = QSettings()
-                lastBpm  = settings.value("LastBPM", 120.0, type=float)
+                settings = QSafeSettings()
+                lastBpm  = settings.value("LastBPM", 120.0, float)
                 del settings
                 if lastBpm >= 20.0:
                     self.host.transport_bpm(lastBpm)
@@ -1700,7 +1700,7 @@ class HostWindow(QMainWindow):
     # Settings
 
     def saveSettings(self):
-        settings = QSettings()
+        settings = QSafeSettings()
 
         settings.setValue("Geometry", self.saveGeometry())
         settings.setValue("ShowToolbar", self.ui.toolBar.isEnabled())
@@ -1727,12 +1727,12 @@ class HostWindow(QMainWindow):
         return settings
 
     def loadSettings(self, firstTime):
-        settings = QSettings()
+        settings = QSafeSettings()
 
         if firstTime:
-            self.restoreGeometry(settings.value("Geometry", b""))
+            self.restoreGeometry(settings.value("Geometry", b"", QByteArray))
 
-            showToolbar = settings.value("ShowToolbar", True, type=bool)
+            showToolbar = settings.value("ShowToolbar", True, bool)
             self.ui.act_settings_show_toolbar.setChecked(showToolbar)
             self.ui.toolBar.setEnabled(showToolbar)
             self.ui.toolBar.setVisible(showToolbar)
@@ -1742,11 +1742,11 @@ class HostWindow(QMainWindow):
             #else:
                 #self.ui.splitter.setSizes([210, 99999])
 
-            showSidePanel = settings.value("ShowSidePanel", True, type=bool) and not self.host.isControl
+            showSidePanel = settings.value("ShowSidePanel", True, bool) and not self.host.isControl
             self.ui.act_settings_show_side_panel.setChecked(showSidePanel)
             self.slot_showSidePanel(showSidePanel)
 
-            diskFolders = toList(settings.value("DiskFolders", [HOME]))
+            diskFolders = settings.value("DiskFolders", [HOME], list)
 
             self.ui.cb_disk.setItemData(0, HOME)
 
@@ -1755,50 +1755,50 @@ class HostWindow(QMainWindow):
                 folder = diskFolders[i]
                 self.ui.cb_disk.addItem(os.path.basename(folder), folder)
 
-            #if MACOS and not settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, type=bool):
+            #if MACOS and not settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, bool):
             #    self.setUnifiedTitleAndToolBarOnMac(True)
 
-            showMeters = settings.value("ShowMeters", True, type=bool)
+            showMeters = settings.value("ShowMeters", True, bool)
             self.ui.act_settings_show_meters.setChecked(showMeters)
             self.ui.peak_in.setVisible(showMeters)
             self.ui.peak_out.setVisible(showMeters)
 
-            showKeyboard = settings.value("ShowKeyboard", True, type=bool)
+            showKeyboard = settings.value("ShowKeyboard", True, bool)
             self.ui.act_settings_show_keyboard.setChecked(showKeyboard)
             self.ui.scrollArea.setVisible(showKeyboard)
 
-            QTimer.singleShot(100, self.slot_restoreCanvasScrollbarValues)
+            settingsDBf = QSafeSettings("falkTX", "CarlaDatabase2")
+            self.fFavoritePlugins = settingsDBf.value("PluginDatabase/Favorites", [], list)
 
-            settingsDBf = QSettings("falkTX", "CarlaDatabase2")
-            self.fFavoritePlugins = settingsDBf.value("PluginDatabase/Favorites", [], type=list)
+            QTimer.singleShot(100, self.slot_restoreCanvasScrollbarValues)
 
         # TODO - complete this
 
         self.fSavedSettings = {
-            CARLA_KEY_MAIN_PROJECT_FOLDER:      settings.value(CARLA_KEY_MAIN_PROJECT_FOLDER,      CARLA_DEFAULT_MAIN_PROJECT_FOLDER,      type=str),
-            CARLA_KEY_MAIN_CONFIRM_EXIT:        settings.value(CARLA_KEY_MAIN_CONFIRM_EXIT,        CARLA_DEFAULT_MAIN_CONFIRM_EXIT,        type=bool),
-            CARLA_KEY_MAIN_REFRESH_INTERVAL:    settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL,    CARLA_DEFAULT_MAIN_REFRESH_INTERVAL,    type=int),
-            CARLA_KEY_MAIN_EXPERIMENTAL:        settings.value(CARLA_KEY_MAIN_EXPERIMENTAL,        CARLA_DEFAULT_MAIN_EXPERIMENTAL,        type=bool),
-            CARLA_KEY_CANVAS_THEME:             settings.value(CARLA_KEY_CANVAS_THEME,             CARLA_DEFAULT_CANVAS_THEME,             type=str),
-            CARLA_KEY_CANVAS_SIZE:              settings.value(CARLA_KEY_CANVAS_SIZE,              CARLA_DEFAULT_CANVAS_SIZE,              type=str),
-            CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS:  settings.value(CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS,  CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS,  type=bool),
-            CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS: settings.value(CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS, CARLA_DEFAULT_CANVAS_AUTO_SELECT_ITEMS, type=bool),
-            CARLA_KEY_CANVAS_USE_BEZIER_LINES:  settings.value(CARLA_KEY_CANVAS_USE_BEZIER_LINES,  CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES,  type=bool),
-            CARLA_KEY_CANVAS_EYE_CANDY:         settings.value(CARLA_KEY_CANVAS_EYE_CANDY,         CARLA_DEFAULT_CANVAS_EYE_CANDY,         type=bool),
-            CARLA_KEY_CANVAS_FANCY_EYE_CANDY:   settings.value(CARLA_KEY_CANVAS_FANCY_EYE_CANDY,   CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY,   type=bool),
-            CARLA_KEY_CANVAS_USE_OPENGL:        settings.value(CARLA_KEY_CANVAS_USE_OPENGL,        CARLA_DEFAULT_CANVAS_USE_OPENGL,        type=bool),
-            CARLA_KEY_CANVAS_ANTIALIASING:      settings.value(CARLA_KEY_CANVAS_ANTIALIASING,      CARLA_DEFAULT_CANVAS_ANTIALIASING,      type=int),
-            CARLA_KEY_CANVAS_HQ_ANTIALIASING:   settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING,   CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING,   type=bool),
-            CARLA_KEY_CANVAS_FULL_REPAINTS:     settings.value(CARLA_KEY_CANVAS_FULL_REPAINTS,     CARLA_DEFAULT_CANVAS_FULL_REPAINTS,     type=bool),
-            CARLA_KEY_CANVAS_INLINE_DISPLAYS:   settings.value(CARLA_KEY_CANVAS_INLINE_DISPLAYS,   CARLA_DEFAULT_CANVAS_INLINE_DISPLAYS,   type=bool),
-            CARLA_KEY_CUSTOM_PAINTING:         (settings.value(CARLA_KEY_MAIN_USE_PRO_THEME,    True,   type=bool) and
-                                                settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, "Black", type=str).lower() == "black"),
+            CARLA_KEY_MAIN_PROJECT_FOLDER:      settings.value(CARLA_KEY_MAIN_PROJECT_FOLDER,      CARLA_DEFAULT_MAIN_PROJECT_FOLDER,      str),
+            CARLA_KEY_MAIN_CONFIRM_EXIT:        settings.value(CARLA_KEY_MAIN_CONFIRM_EXIT,        CARLA_DEFAULT_MAIN_CONFIRM_EXIT,        bool),
+            CARLA_KEY_MAIN_REFRESH_INTERVAL:    settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL,    CARLA_DEFAULT_MAIN_REFRESH_INTERVAL,    int),
+            CARLA_KEY_MAIN_EXPERIMENTAL:        settings.value(CARLA_KEY_MAIN_EXPERIMENTAL,        CARLA_DEFAULT_MAIN_EXPERIMENTAL,        bool),
+            CARLA_KEY_CANVAS_THEME:             settings.value(CARLA_KEY_CANVAS_THEME,             CARLA_DEFAULT_CANVAS_THEME,             str),
+            CARLA_KEY_CANVAS_SIZE:              settings.value(CARLA_KEY_CANVAS_SIZE,              CARLA_DEFAULT_CANVAS_SIZE,              str),
+            CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS:  settings.value(CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS,  CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS,  bool),
+            CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS: settings.value(CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS, CARLA_DEFAULT_CANVAS_AUTO_SELECT_ITEMS, bool),
+            CARLA_KEY_CANVAS_USE_BEZIER_LINES:  settings.value(CARLA_KEY_CANVAS_USE_BEZIER_LINES,  CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES,  bool),
+            CARLA_KEY_CANVAS_EYE_CANDY:         settings.value(CARLA_KEY_CANVAS_EYE_CANDY,         CARLA_DEFAULT_CANVAS_EYE_CANDY,         bool),
+            CARLA_KEY_CANVAS_FANCY_EYE_CANDY:   settings.value(CARLA_KEY_CANVAS_FANCY_EYE_CANDY,   CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY,   bool),
+            CARLA_KEY_CANVAS_USE_OPENGL:        settings.value(CARLA_KEY_CANVAS_USE_OPENGL,        CARLA_DEFAULT_CANVAS_USE_OPENGL,        bool),
+            CARLA_KEY_CANVAS_ANTIALIASING:      settings.value(CARLA_KEY_CANVAS_ANTIALIASING,      CARLA_DEFAULT_CANVAS_ANTIALIASING,      int),
+            CARLA_KEY_CANVAS_HQ_ANTIALIASING:   settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING,   CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING,   bool),
+            CARLA_KEY_CANVAS_FULL_REPAINTS:     settings.value(CARLA_KEY_CANVAS_FULL_REPAINTS,     CARLA_DEFAULT_CANVAS_FULL_REPAINTS,     bool),
+            CARLA_KEY_CANVAS_INLINE_DISPLAYS:   settings.value(CARLA_KEY_CANVAS_INLINE_DISPLAYS,   CARLA_DEFAULT_CANVAS_INLINE_DISPLAYS,   bool),
+            CARLA_KEY_CUSTOM_PAINTING:         (settings.value(CARLA_KEY_MAIN_USE_PRO_THEME,    True,   bool) and
+                                                settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, "Black", str).lower() == "black"),
         }
 
-        settings2 = QSettings("falkTX", "Carla2")
+        settings2 = QSafeSettings("falkTX", "Carla2")
 
         if self.host.experimental:
-            visible = settings2.value(CARLA_KEY_EXPERIMENTAL_JACK_APPS, CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS, type=bool)
+            visible = settings2.value(CARLA_KEY_EXPERIMENTAL_JACK_APPS, CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS, bool)
             self.ui.act_plugin_add_jack.setVisible(visible)
         else:
             self.ui.act_plugin_add_jack.setVisible(False)
@@ -1819,9 +1819,11 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_restoreCanvasScrollbarValues(self):
-        settings = QSettings()
-        self.ui.graphicsView.horizontalScrollBar().setValue(settings.value("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().maximum()/2, type=int))
-        self.ui.graphicsView.verticalScrollBar().setValue(settings.value("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().maximum()/2, type=int))
+        settings = QSafeSettings()
+        horiz = settings.value("HorizontalScrollBarValue", int(self.ui.graphicsView.horizontalScrollBar().maximum()/2), int)
+        vertc = settings.value("VerticalScrollBarValue", int(self.ui.graphicsView.verticalScrollBar().maximum()/2), int)
+        self.ui.graphicsView.horizontalScrollBar().setValue(horiz)
+        self.ui.graphicsView.verticalScrollBar().setValue(vertc)
 
     # --------------------------------------------------------------------------------------------------------
     # Settings (menu actions)
@@ -2520,7 +2522,7 @@ class HostWindow(QMainWindow):
     def changeEvent(self, event):
         if event.type() in (QEvent.PaletteChange, QEvent.StyleChange):
             self.updateStyle()
-        QWidget.changeEvent(self, event)
+        QMainWindow.changeEvent(self, event)
 
     def updateStyle(self):
         # Rack padding images setup
@@ -2858,16 +2860,6 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError, HostClass = No
     pathBinaries, pathResources = getPaths(libPrefix)
 
     # --------------------------------------------------------------------------------------------------------
-    # Check if we should open main lib as local or global
-
-    settings = QSettings("falkTX", "Carla2")
-
-    try:
-        loadGlobal = settings.value(CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL, CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL, type=bool)
-    except:
-        loadGlobal = CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL
-
-    # --------------------------------------------------------------------------------------------------------
     # Fail if binary dir is not found
 
     if not os.path.exists(pathBinaries):
@@ -2875,6 +2867,13 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError, HostClass = No
             QMessageBox.critical(None, "Error", "Failed to find the carla binaries, cannot continue")
             sys.exit(1)
         return
+
+    # --------------------------------------------------------------------------------------------------------
+    # Check if we should open main lib as local or global
+
+    settings = QSafeSettings("falkTX", "Carla2")
+
+    loadGlobal = settings.value(CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL, CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL, bool)
 
     # --------------------------------------------------------------------------------------------------------
     # Set Carla library name
@@ -2948,93 +2947,33 @@ def loadHostSettings(host):
     # kdevelop likes this :)
     if False: host = CarlaHostNull()
 
-    settings = QSettings("falkTX", "Carla2")
+    settings = QSafeSettings("falkTX", "Carla2")
 
-    try:
-        host.experimental = settings.value(CARLA_KEY_MAIN_EXPERIMENTAL, CARLA_DEFAULT_MAIN_EXPERIMENTAL, type=bool)
-    except:
-        host.experimental = CARLA_DEFAULT_MAIN_EXPERIMENTAL
-
-    try:
-        host.exportLV2 = settings.value(CARLA_KEY_EXPERIMENTAL_EXPORT_LV2, CARLA_DEFAULT_EXPERIMENTAL_LV2_EXPORT, type=bool)
-    except:
-        host.exportLV2 = CARLA_DEFAULT_EXPERIMENTAL_LV2_EXPORT
-
-    try:
-        host.manageUIs = settings.value(CARLA_KEY_ENGINE_MANAGE_UIS, CARLA_DEFAULT_MANAGE_UIS, type=bool)
-    except:
-        host.manageUIs = CARLA_DEFAULT_MANAGE_UIS
-
-    try:
-        host.maxParameters = settings.value(CARLA_KEY_ENGINE_MAX_PARAMETERS, CARLA_DEFAULT_MAX_PARAMETERS, type=int)
-    except:
-        host.maxParameters = CARLA_DEFAULT_MAX_PARAMETERS
-
-    try:
-        host.forceStereo = settings.value(CARLA_KEY_ENGINE_FORCE_STEREO, CARLA_DEFAULT_FORCE_STEREO, type=bool)
-    except:
-        host.forceStereo = CARLA_DEFAULT_FORCE_STEREO
-
-    try:
-        host.preferPluginBridges = settings.value(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES, type=bool)
-    except:
-        host.preferPluginBridges = CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES
-
-    try:
-        host.preferUIBridges = settings.value(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES, CARLA_DEFAULT_PREFER_UI_BRIDGES, type=bool)
-    except:
-        host.preferUIBridges = CARLA_DEFAULT_PREFER_UI_BRIDGES
-
-    try:
-        host.preventBadBehaviour = settings.value(CARLA_KEY_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR, CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR, type=bool)
-    except:
-        host.preventBadBehaviour = CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR
-
-    try:
-        host.showLogs = settings.value(CARLA_KEY_MAIN_SHOW_LOGS, CARLA_DEFAULT_MAIN_SHOW_LOGS, type=bool)
-    except:
-        host.showLogs = CARLA_DEFAULT_MAIN_SHOW_LOGS
-
-    try:
-        host.showPluginBridges = settings.value(CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES, CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES, type=bool)
-    except:
-        host.showPluginBridges = CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES
-
-    try:
-        host.showWineBridges = settings.value(CARLA_KEY_EXPERIMENTAL_WINE_BRIDGES, CARLA_DEFAULT_EXPERIMENTAL_WINE_BRIDGES, type=bool)
-    except:
-        host.showWineBridges = CARLA_DEFAULT_EXPERIMENTAL_WINE_BRIDGES
-
-    try:
-        host.uiBridgesTimeout = settings.value(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT, CARLA_DEFAULT_UI_BRIDGES_TIMEOUT, type=int)
-    except:
-        host.uiBridgesTimeout = CARLA_DEFAULT_UI_BRIDGES_TIMEOUT
-
-    try:
-        host.uisAlwaysOnTop = settings.value(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP, CARLA_DEFAULT_UIS_ALWAYS_ON_TOP, type=bool)
-    except:
-        host.uisAlwaysOnTop = CARLA_DEFAULT_UIS_ALWAYS_ON_TOP
+    host.experimental = settings.value(CARLA_KEY_MAIN_EXPERIMENTAL, CARLA_DEFAULT_MAIN_EXPERIMENTAL, bool)
+    host.exportLV2 = settings.value(CARLA_KEY_EXPERIMENTAL_EXPORT_LV2, CARLA_DEFAULT_EXPERIMENTAL_LV2_EXPORT, bool)
+    host.manageUIs = settings.value(CARLA_KEY_ENGINE_MANAGE_UIS, CARLA_DEFAULT_MANAGE_UIS, bool)
+    host.maxParameters = settings.value(CARLA_KEY_ENGINE_MAX_PARAMETERS, CARLA_DEFAULT_MAX_PARAMETERS, int)
+    host.forceStereo = settings.value(CARLA_KEY_ENGINE_FORCE_STEREO, CARLA_DEFAULT_FORCE_STEREO, bool)
+    host.preferPluginBridges = settings.value(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES, bool)
+    host.preferUIBridges = settings.value(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES, CARLA_DEFAULT_PREFER_UI_BRIDGES, bool)
+    host.preventBadBehaviour = settings.value(CARLA_KEY_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR, CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR, bool)
+    host.showLogs = settings.value(CARLA_KEY_MAIN_SHOW_LOGS, CARLA_DEFAULT_MAIN_SHOW_LOGS, bool)
+    host.showPluginBridges = settings.value(CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES, CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES, bool)
+    host.showWineBridges = settings.value(CARLA_KEY_EXPERIMENTAL_WINE_BRIDGES, CARLA_DEFAULT_EXPERIMENTAL_WINE_BRIDGES, bool)
+    host.uiBridgesTimeout = settings.value(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT, CARLA_DEFAULT_UI_BRIDGES_TIMEOUT, int)
+    host.uisAlwaysOnTop = settings.value(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP, CARLA_DEFAULT_UIS_ALWAYS_ON_TOP, bool)
 
     if host.isPlugin:
         return
 
-    try:
-        host.transportExtra = settings.value(CARLA_KEY_ENGINE_TRANSPORT_EXTRA, "", type=str)
-    except:
-        host.transportExtra = ""
+    host.transportExtra = settings.value(CARLA_KEY_ENGINE_TRANSPORT_EXTRA, "", str)
 
     # enums
     if host.audioDriverForced is None:
-        try:
-            host.transportMode = settings.value(CARLA_KEY_ENGINE_TRANSPORT_MODE, CARLA_DEFAULT_TRANSPORT_MODE, type=int)
-        except:
-            host.transportMode = CARLA_DEFAULT_TRANSPORT_MODE
+        host.transportMode = settings.value(CARLA_KEY_ENGINE_TRANSPORT_MODE, CARLA_DEFAULT_TRANSPORT_MODE, int)
 
     if not host.processModeForced:
-        try:
-            host.processMode = settings.value(CARLA_KEY_ENGINE_PROCESS_MODE, CARLA_DEFAULT_PROCESS_MODE, type=int)
-        except:
-            host.processMode = CARLA_DEFAULT_PROCESS_MODE
+        host.processMode = settings.value(CARLA_KEY_ENGINE_PROCESS_MODE, CARLA_DEFAULT_PROCESS_MODE, int)
 
     host.nextProcessMode = host.processMode
 
@@ -3095,7 +3034,7 @@ def setEngineSettings(host):
 
     # --------------------------------------------------------------------------------------------------------
 
-    settings = QSettings("falkTX", "Carla2")
+    settings = QSafeSettings("falkTX", "Carla2")
 
     # --------------------------------------------------------------------------------------------------------
     # main settings
@@ -3105,8 +3044,8 @@ def setEngineSettings(host):
     # --------------------------------------------------------------------------------------------------------
     # file paths
 
-    FILE_PATH_AUDIO = toList(settings.value(CARLA_KEY_PATHS_AUDIO, CARLA_DEFAULT_FILE_PATH_AUDIO))
-    FILE_PATH_MIDI  = toList(settings.value(CARLA_KEY_PATHS_MIDI,  CARLA_DEFAULT_FILE_PATH_MIDI))
+    FILE_PATH_AUDIO = settings.value(CARLA_KEY_PATHS_AUDIO, CARLA_DEFAULT_FILE_PATH_AUDIO, list)
+    FILE_PATH_MIDI  = settings.value(CARLA_KEY_PATHS_MIDI,  CARLA_DEFAULT_FILE_PATH_MIDI, list)
 
     host.set_engine_option(ENGINE_OPTION_FILE_PATH, FILE_AUDIO, splitter.join(FILE_PATH_AUDIO))
     host.set_engine_option(ENGINE_OPTION_FILE_PATH, FILE_MIDI,  splitter.join(FILE_PATH_MIDI))
@@ -3114,13 +3053,13 @@ def setEngineSettings(host):
     # --------------------------------------------------------------------------------------------------------
     # plugin paths
 
-    LADSPA_PATH = toList(settings.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH))
-    DSSI_PATH   = toList(settings.value(CARLA_KEY_PATHS_DSSI,   CARLA_DEFAULT_DSSI_PATH))
-    LV2_PATH    = toList(settings.value(CARLA_KEY_PATHS_LV2,    CARLA_DEFAULT_LV2_PATH))
-    VST2_PATH   = toList(settings.value(CARLA_KEY_PATHS_VST2,   CARLA_DEFAULT_VST2_PATH))
-    VST3_PATH   = toList(settings.value(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH))
-    SF2_PATH    = toList(settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH))
-    SFZ_PATH    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH))
+    LADSPA_PATH = settings.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH, list)
+    DSSI_PATH   = settings.value(CARLA_KEY_PATHS_DSSI,   CARLA_DEFAULT_DSSI_PATH, list)
+    LV2_PATH    = settings.value(CARLA_KEY_PATHS_LV2,    CARLA_DEFAULT_LV2_PATH, list)
+    VST2_PATH   = settings.value(CARLA_KEY_PATHS_VST2,   CARLA_DEFAULT_VST2_PATH, list)
+    VST3_PATH   = settings.value(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH, list)
+    SF2_PATH    = settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH, list)
+    SFZ_PATH    = settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH, list)
 
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LADSPA, splitter.join(LADSPA_PATH))
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_DSSI,   splitter.join(DSSI_PATH))
@@ -3139,21 +3078,21 @@ def setEngineSettings(host):
     # --------------------------------------------------------------------------------------------------------
     # osc settings
 
-    oscEnabled = settings.value(CARLA_KEY_OSC_ENABLED, CARLA_DEFAULT_OSC_ENABLED, type=bool)
+    oscEnabled = settings.value(CARLA_KEY_OSC_ENABLED, CARLA_DEFAULT_OSC_ENABLED, bool)
 
-    if not settings.value(CARLA_KEY_OSC_TCP_PORT_ENABLED, CARLA_DEFAULT_OSC_TCP_PORT_ENABLED, type=bool):
+    if not settings.value(CARLA_KEY_OSC_TCP_PORT_ENABLED, CARLA_DEFAULT_OSC_TCP_PORT_ENABLED, bool):
         portNumTCP = -1
-    elif settings.value(CARLA_KEY_OSC_TCP_PORT_RANDOM, CARLA_DEFAULT_OSC_TCP_PORT_RANDOM, type=bool):
+    elif settings.value(CARLA_KEY_OSC_TCP_PORT_RANDOM, CARLA_DEFAULT_OSC_TCP_PORT_RANDOM, bool):
         portNumTCP = 0
     else:
-        portNumTCP = settings.value(CARLA_KEY_OSC_TCP_PORT_NUMBER, CARLA_DEFAULT_OSC_TCP_PORT_NUMBER, type=int)
+        portNumTCP = settings.value(CARLA_KEY_OSC_TCP_PORT_NUMBER, CARLA_DEFAULT_OSC_TCP_PORT_NUMBER, int)
 
-    if not settings.value(CARLA_KEY_OSC_UDP_PORT_ENABLED, CARLA_DEFAULT_OSC_UDP_PORT_ENABLED, type=bool):
+    if not settings.value(CARLA_KEY_OSC_UDP_PORT_ENABLED, CARLA_DEFAULT_OSC_UDP_PORT_ENABLED, bool):
         portNumUDP = -1
-    elif settings.value(CARLA_KEY_OSC_UDP_PORT_RANDOM, CARLA_DEFAULT_OSC_UDP_PORT_RANDOM, type=bool):
+    elif settings.value(CARLA_KEY_OSC_UDP_PORT_RANDOM, CARLA_DEFAULT_OSC_UDP_PORT_RANDOM, bool):
         portNumUDP = 0
     else:
-        portNumUDP = settings.value(CARLA_KEY_OSC_UDP_PORT_NUMBER, CARLA_DEFAULT_OSC_UDP_PORT_NUMBER, type=int)
+        portNumUDP = settings.value(CARLA_KEY_OSC_UDP_PORT_NUMBER, CARLA_DEFAULT_OSC_UDP_PORT_NUMBER, int)
 
     host.set_engine_option(ENGINE_OPTION_OSC_ENABLED, 1 if oscEnabled else 0, "")
     host.set_engine_option(ENGINE_OPTION_OSC_PORT_TCP, portNumTCP, "")
@@ -3162,12 +3101,12 @@ def setEngineSettings(host):
     # --------------------------------------------------------------------------------------------------------
     # wine settings
 
-    optWineExecutable = settings.value(CARLA_KEY_WINE_EXECUTABLE, CARLA_DEFAULT_WINE_EXECUTABLE, type=str)
-    optWineAutoPrefix = settings.value(CARLA_KEY_WINE_AUTO_PREFIX, CARLA_DEFAULT_WINE_AUTO_PREFIX, type=bool)
-    optWineFallbackPrefix = settings.value(CARLA_KEY_WINE_FALLBACK_PREFIX, CARLA_DEFAULT_WINE_FALLBACK_PREFIX, type=str)
-    optWineRtPrioEnabled = settings.value(CARLA_KEY_WINE_RT_PRIO_ENABLED, CARLA_DEFAULT_WINE_RT_PRIO_ENABLED, type=bool)
-    optWineBaseRtPrio = settings.value(CARLA_KEY_WINE_BASE_RT_PRIO,   CARLA_DEFAULT_WINE_BASE_RT_PRIO, type=int)
-    optWineServerRtPrio = settings.value(CARLA_KEY_WINE_SERVER_RT_PRIO, CARLA_DEFAULT_WINE_SERVER_RT_PRIO, type=int)
+    optWineExecutable = settings.value(CARLA_KEY_WINE_EXECUTABLE, CARLA_DEFAULT_WINE_EXECUTABLE, str)
+    optWineAutoPrefix = settings.value(CARLA_KEY_WINE_AUTO_PREFIX, CARLA_DEFAULT_WINE_AUTO_PREFIX, bool)
+    optWineFallbackPrefix = settings.value(CARLA_KEY_WINE_FALLBACK_PREFIX, CARLA_DEFAULT_WINE_FALLBACK_PREFIX, str)
+    optWineRtPrioEnabled = settings.value(CARLA_KEY_WINE_RT_PRIO_ENABLED, CARLA_DEFAULT_WINE_RT_PRIO_ENABLED, bool)
+    optWineBaseRtPrio = settings.value(CARLA_KEY_WINE_BASE_RT_PRIO,   CARLA_DEFAULT_WINE_BASE_RT_PRIO, int)
+    optWineServerRtPrio = settings.value(CARLA_KEY_WINE_SERVER_RT_PRIO, CARLA_DEFAULT_WINE_SERVER_RT_PRIO, int)
 
     host.set_engine_option(ENGINE_OPTION_WINE_EXECUTABLE, 0, optWineExecutable)
     host.set_engine_option(ENGINE_OPTION_WINE_AUTO_PREFIX, 1 if optWineAutoPrefix else 0, "")
@@ -3184,28 +3123,28 @@ def setEngineSettings(host):
         audioDriver = host.audioDriverForced
     else:
         try:
-            audioDriver = settings.value(CARLA_KEY_ENGINE_AUDIO_DRIVER, CARLA_DEFAULT_AUDIO_DRIVER, type=str)
+            audioDriver = settings.value(CARLA_KEY_ENGINE_AUDIO_DRIVER, CARLA_DEFAULT_AUDIO_DRIVER, str)
         except:
             audioDriver = CARLA_DEFAULT_AUDIO_DRIVER
 
     # driver options
     try:
-        audioDevice = settings.value("%s%s/Device" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), "", type=str)
+        audioDevice = settings.value("%s%s/Device" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), "", str)
     except:
         audioDevice = ""
 
     try:
-        audioBufferSize = settings.value("%s%s/BufferSize" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_BUFFER_SIZE, type=int)
+        audioBufferSize = settings.value("%s%s/BufferSize" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_BUFFER_SIZE, int)
     except:
         audioBufferSize = CARLA_DEFAULT_AUDIO_BUFFER_SIZE
 
     try:
-        audioSampleRate = settings.value("%s%s/SampleRate" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_SAMPLE_RATE, type=int)
+        audioSampleRate = settings.value("%s%s/SampleRate" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_SAMPLE_RATE, int)
     except:
         audioSampleRate = CARLA_DEFAULT_AUDIO_SAMPLE_RATE
 
     try:
-        audioTripleBuffer = settings.value("%s%s/TripleBuffer" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_TRIPLE_BUFFER, type=int)
+        audioTripleBuffer = settings.value("%s%s/TripleBuffer" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_TRIPLE_BUFFER, int)
     except:
         audioTripleBuffer = CARLA_DEFAULT_AUDIO_TRIPLE_BUFFER
 

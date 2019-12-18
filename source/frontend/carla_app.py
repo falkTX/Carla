@@ -19,7 +19,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt5.QtCore import QT_VERSION, Qt, QCoreApplication, QSettings
+from PyQt5.QtCore import QT_VERSION, Qt, QCoreApplication
 from PyQt5.QtGui import QColor, QPalette
 from PyQt5.QtWidgets import QApplication
 
@@ -58,8 +58,8 @@ class CarlaApplication(object):
             stylesDir = ""
 
         # base settings
-        settings    = QSettings("falkTX", appName)
-        useProTheme = MACOS or settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, CARLA_DEFAULT_MAIN_USE_PRO_THEME, type=bool)
+        settings    = QSafeSettings("falkTX", appName)
+        useProTheme = MACOS or settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, CARLA_DEFAULT_MAIN_USE_PRO_THEME, bool)
 
         if not useProTheme:
             self.createApp(appName)
@@ -84,7 +84,7 @@ class CarlaApplication(object):
             self._stylelib.set_qt_app_style()
 
         # set palette
-        proThemeColor = settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, CARLA_DEFAULT_MAIN_PRO_THEME_COLOR, type=str).lower()
+        proThemeColor = settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, CARLA_DEFAULT_MAIN_PRO_THEME_COLOR, str).lower()
 
         if MACOS or proThemeColor == "black":
             self.fPalBlack = QPalette()

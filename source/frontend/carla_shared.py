@@ -30,7 +30,7 @@ import os
 import sys
 
 from PyQt5.Qt import PYQT_VERSION_STR
-from PyQt5.QtCore import qFatal, QT_VERSION_STR, qWarning, QDir
+from PyQt5.QtCore import qFatal, QT_VERSION_STR, qWarning, QDir, QSettings
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
 
@@ -753,7 +753,7 @@ def getAndSetPath(parent, lineEdit):
     return newPath
 
 # ------------------------------------------------------------------------------------------------------------
-# Custom MessageBox
+# Custom QMessageBox which resizes itself to fit text
 
 class QMessageBoxWithBetterWidth(QMessageBox):
     def __init__(self, parent):
@@ -773,6 +773,22 @@ class QMessageBoxWithBetterWidth(QMessageBox):
             self.layout().setColumnMinimumWidth(2, width + 12)
 
         QMessageBox.showEvent(self, event)
+
+# ------------------------------------------------------------------------------------------------------------
+# Safer QSettings class, which does not throw if type mismatches
+
+class QSafeSettings(QSettings):
+    def value(self, key, defaultValue, type):
+        if not isinstance(defaultValue, type):
+            print("QSafeSettings.value() - defaultValue type mismatch for key", key)
+
+        try:
+            return QSettings.value(self, key, defaultValue, type)
+        except:
+            return defaultValue
+
+# ------------------------------------------------------------------------------------------------------------
+# Custom MessageBox
 
 def CustomMessageBox(parent, icon, title, text,
                      extraText="",
