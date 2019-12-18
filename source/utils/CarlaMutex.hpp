@@ -146,7 +146,8 @@ public:
     bool lock() const noexcept
     {
 #ifdef CARLA_OS_WIN
-        return (EnterCriticalSection(&fSection) != FALSE);
+        EnterCriticalSection(&fSection);
+        return true;
 #else
         return (pthread_mutex_lock(&fMutex) == 0);
 #endif
