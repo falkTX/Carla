@@ -372,8 +372,10 @@ bool CarlaEngineCVSourcePorts::addCVSource(CarlaEngineCVPort* const port, const 
     if (! pData->cvs.add(ecv))
         return false;
 
+    /*
     if (pData->buffer == nullptr)
         pData->buffer = new EngineEvent[kMaxEngineEventInternalCount];
+    */
 
     return true;
 }
@@ -416,15 +418,20 @@ void CarlaEngineCVSourcePorts::initPortBuffers(const float* const* const buffers
 
     if (! crmtl.wasLocked())
         return;
-    if (pData->buffer == nullptr)
+
+    EngineEvent* const buffer = eventPort->fBuffer;
+    CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
+    /*
+    if (buffer == nullptr)
         return;
+    */
 
     uint32_t eventCount = 0;
     float v, min, max;
 
     for (; eventCount < kMaxEngineEventInternalCount; ++eventCount)
     {
-        if (pData->buffer[eventCount].type == kEngineEventTypeNull)
+        if (buffer[eventCount].type == kEngineEventTypeNull)
             break;
     }
 
@@ -447,7 +454,7 @@ void CarlaEngineCVSourcePorts::initPortBuffers(const float* const* const buffers
             {
                 previousValue = v;
 
-                EngineEvent& event(pData->buffer[eventCount++]);
+                EngineEvent& event(buffer[eventCount++]);
 
                 event.type    = kEngineEventTypeControl;
                 event.time    = frames-1U;

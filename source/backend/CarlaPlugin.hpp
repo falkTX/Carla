@@ -592,10 +592,12 @@ public:
      */
     void setParameterValueByRealIndex(int32_t rindex, float value, bool sendGui, bool sendOsc, bool sendCallback) noexcept;
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
      * Change parameter's @a parameterId CV controlled status.
      */
     void setParameterAsCvControl(uint32_t parameterId, bool cv_controlled, bool sendOsc, bool sendCallback) noexcept;
+#endif
 
     /*!
      * Set parameter's @a parameterId MIDI channel to @a channel.

@@ -614,6 +614,7 @@ protected:
     const EngineProcessMode kProcessMode;
     EngineEvent* fBuffer;
     friend class CarlaPluginInstance;
+    friend class CarlaEngineCVSourcePorts;
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineEventPort)
 #endif
@@ -726,11 +727,13 @@ public:
      */
     virtual CarlaEnginePort* addPort(EnginePortType portType, const char* name, bool isInput, uint32_t indexOffset);
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
      * Create an instance of CV source ports.
      * Must be called only once per client.
      */
     virtual CarlaEngineCVSourcePorts* createCVSourcePorts();
+#endif
 
     /*!
      * Get this client's engine.

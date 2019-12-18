@@ -2795,7 +2795,9 @@ public:
             portName.truncate(portNameSize);
 
             pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             pData->event.cvSourcePorts = pData->client->createCVSourcePorts();
+#endif
         }
 
         if (needsCtrlOut)
@@ -3512,8 +3514,10 @@ public:
             else
                 nextBankId = 0;
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             if (cvIn != nullptr && pData->event.cvSourcePorts != nullptr)
                 pData->event.cvSourcePorts->initPortBuffers(cvIn + pData->cvIn.count, frames, isSampleAccurate, pData->event.portIn);
+#endif
 
             const uint32_t numEvents = (fEventsIn.ctrl->port != nullptr) ? fEventsIn.ctrl->port->getEventCount() : 0;
 

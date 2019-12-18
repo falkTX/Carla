@@ -129,10 +129,12 @@ CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const
     return nullptr;
 }
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 CarlaEngineCVSourcePorts* CarlaEngineClient::createCVSourcePorts()
 {
     return new CarlaEngineCVSourcePorts();
 }
+#endif
 
 const CarlaEngine& CarlaEngineClient::getEngine() const noexcept
 {

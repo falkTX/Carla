@@ -142,14 +142,20 @@ void PluginCVData::initBuffers() const noexcept
 
 PluginEventData::PluginEventData() noexcept
     : portIn(nullptr),
-      portOut(nullptr),
-      cvSourcePorts(nullptr) {}
+      portOut(nullptr)
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    , cvSourcePorts(nullptr)
+#endif
+    {
+    }
 
 PluginEventData::~PluginEventData() noexcept
 {
     CARLA_SAFE_ASSERT(portIn == nullptr);
     CARLA_SAFE_ASSERT(portOut == nullptr);
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CARLA_SAFE_ASSERT(cvSourcePorts == nullptr);
+#endif
 }
 
 void PluginEventData::clear() noexcept
@@ -166,11 +172,13 @@ void PluginEventData::clear() noexcept
         portOut = nullptr;
     }
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (cvSourcePorts != nullptr)
     {
         delete cvSourcePorts;
         cvSourcePorts = nullptr;
     }
+#endif
 }
 
 void PluginEventData::initBuffers() const noexcept

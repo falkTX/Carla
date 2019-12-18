@@ -484,6 +484,7 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJackEventPort)
 };
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 // -----------------------------------------------------------------------
 // Jack Engine CV source ports
 
@@ -510,6 +511,7 @@ public:
         return pData->cvs[ioffset].cvPort;
     }
 };
+#endif
 
 // -----------------------------------------------------------------------
 // Jack Engine client
@@ -525,7 +527,9 @@ public:
           fAudioPorts(),
           fCVPorts(),
           fEventPorts(),
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
           fCVSourcePorts(),
+#endif
           fPreRenameMutex(),
           fPreRenameConnections()
     {
@@ -689,6 +693,7 @@ public:
         return nullptr;
     }
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CarlaEngineCVSourcePorts* createCVSourcePorts() override
     {
         return &fCVSourcePorts;
@@ -698,6 +703,7 @@ public:
     {
         return fCVSourcePorts;
     }
+#endif
 
     void invalidate() noexcept
     {
@@ -809,7 +815,9 @@ private:
     LinkedList<CarlaEngineJackCVPort*>    fCVPorts;
     LinkedList<CarlaEngineJackEventPort*> fEventPorts;
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CarlaEngineJackCVSourcePorts fCVSourcePorts;
+#endif
 
     CarlaMutex      fPreRenameMutex;
     CarlaStringList fPreRenameConnections;
@@ -2705,16 +2713,22 @@ private:
 
     void processPlugin(CarlaPlugin* const plugin, const uint32_t nframes)
     {
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         CarlaEngineJackClient* const client = (CarlaEngineJackClient*)plugin->getEngineClient();
         CarlaEngineJackCVSourcePorts& cvSourcePorts(client->getCVSourcePorts());
 
         const CarlaRecursiveMutexTryLocker crmtl(cvSourcePorts.getMutex(), fFreewheel);
+#endif
 
         const uint32_t audioInCount  = plugin->getAudioInCount();
         const uint32_t audioOutCount = plugin->getAudioOutCount();
         const uint32_t cvInCount     = plugin->getCVInCount();
         const uint32_t cvOutCount    = plugin->getCVOutCount();
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         const uint32_t cvsInCount    = crmtl.wasLocked() ? cvSourcePorts.getPortCount() : 0;
+#else
+        const uint32_t cvsInCount    = 0;
+#endif
 
         const float* audioIn[audioInCount];
         /* */ float* audioOut[audioOutCount];
@@ -2740,11 +2754,13 @@ private:
             CARLA_SAFE_ASSERT(cvIn[i] != nullptr);
         }
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         for (uint32_t i=cvInCount, j=0; j < cvsInCount; ++i, ++j)
         {
             if (CarlaEngineCVPort* const port = cvSourcePorts.getPort(j))
                 cvIn[i] = port->getBuffer();
         }
+#endif
 
         for (uint32_t i=0; i < cvOutCount; ++i)
         {

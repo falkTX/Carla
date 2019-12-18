@@ -1670,6 +1670,7 @@ void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float
     }
 }
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 void CarlaPlugin::setParameterAsCvControl(uint32_t parameterId, bool cv_controlled, bool sendOsc, bool sendCallback) noexcept
 {
     if (pData->engineBridged) {
@@ -1703,15 +1704,14 @@ void CarlaPlugin::setParameterAsCvControl(uint32_t parameterId, bool cv_controll
         pData->event.cvSourcePorts->removeCVSource(parameterId);
     }
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     pData->engine->callback(sendCallback, sendOsc,
                             ENGINE_CALLBACK_PARAMETER_CV_CONTROLLED_STATUS_CHANGED,
                             pData->id,
                             static_cast<int>(parameterId),
                             cv_controlled ? 1 : 0,
                             0, 0.0f, nullptr);
-#endif
 }
+#endif
 
 void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, const uint8_t channel, const bool sendOsc, const bool sendCallback) noexcept
 {

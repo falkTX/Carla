@@ -874,7 +874,9 @@ public:
             portName.truncate(portNameSize);
 
             pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             pData->event.cvSourcePorts = pData->client->createCVSourcePorts();
+#endif
         }
 
         if (needsCtrlOut)
@@ -1262,8 +1264,10 @@ public:
             uint32_t startTime  = 0;
             uint32_t timeOffset = 0;
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             if (cvIn != nullptr && pData->event.cvSourcePorts != nullptr)
                 pData->event.cvSourcePorts->initPortBuffers(cvIn, frames, isSampleAccurate, pData->event.portIn);
+#endif
 
             for (uint32_t i=0, numEvents = pData->event.portIn->getEventCount(); i < numEvents; ++i)
             {
@@ -1627,6 +1631,15 @@ public:
         } // End of MIDI Output
 
         fFirstActive = false;
+
+        // --------------------------------------------------------------------------------------------------------
+
+#ifdef BUILD_BRIDGE_ALTERNATIVE_ARCH
+        return;
+
+        // unused
+        (void)cvIn;
+#endif
     }
 
     bool processSingle(const float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
