@@ -2839,7 +2839,7 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_get_host_osc_url_udp.argtypes = None
         self.lib.carla_get_host_osc_url_udp.restype = c_char_p
 
-        self.lib.carla_nsm_init.argtypes = [c_int, c_char_p]
+        self.lib.carla_nsm_init.argtypes = [c_uint64, c_char_p]
         self.lib.carla_nsm_init.restype = c_bool
 
         self.lib.carla_nsm_ready.argtypes = [c_int]

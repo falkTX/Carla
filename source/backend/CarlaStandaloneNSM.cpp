@@ -88,7 +88,7 @@ public:
         }
     }
 
-    bool announce(const int pid, const char* const executableName)
+    bool announce(const uint64_t pid, const char* const executableName)
     {
         CARLA_SAFE_ASSERT_RETURN(pid != 0, false);
         CARLA_SAFE_ASSERT_RETURN(executableName != nullptr && executableName[0] != '\0', false);
@@ -635,7 +635,7 @@ private:
 
 // -------------------------------------------------------------------------------------------------------------------
 
-bool carla_nsm_init(int pid, const char* executableName)
+bool carla_nsm_init(uint64_t pid, const char* executableName)
 {
 #ifdef HAVE_LIBLO
     return CarlaNSM::getInstance().announce(pid, executableName);

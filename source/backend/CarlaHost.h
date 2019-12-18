@@ -1095,7 +1095,7 @@ CARLA_EXPORT const char* carla_get_library_folder();
  * Must be called as early as possible in the program's lifecycle.
  * Returns true if NSM is available and initialized correctly.
  */
-CARLA_EXPORT bool carla_nsm_init(int pid, const char* executableName);
+CARLA_EXPORT bool carla_nsm_init(uint64_t pid, const char* executableName);
 
 /*!
  * Respond to an NSM callback.
