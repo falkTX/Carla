@@ -421,6 +421,11 @@ JACK_LIBS   = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs jack)
 JACK_LIBDIR = $(shell pkg-config --variable=libdir jack)/jack
 endif
 
+ifeq ($(HAVE_QT5),true)
+QT5_FLAGS = $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags Qt5Core Qt5Gui Qt5Widgets)
+QT5_LIBS  = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs Qt5Core Qt5Gui Qt5Widgets)
+endif
+
 ifeq ($(HAVE_SNDFILE),true)
 SNDFILE_FLAGS = $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags sndfile)
 SNDFILE_LIBS  = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs sndfile)
