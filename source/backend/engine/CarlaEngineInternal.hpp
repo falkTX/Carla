@@ -28,6 +28,7 @@
 #endif
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+# include "water/containers/Array.h"
 # include "water/memory/Atomic.h"
 #endif
 
@@ -209,6 +210,7 @@ struct EnginePluginData {
     float peaks[4];
 };
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 // -----------------------------------------------------------------------
 // CarlaEngineEventPortProtectedData
 
@@ -218,17 +220,17 @@ struct CarlaEngineEventCV {
     float previousValue;
 };
 
-struct CarlaEngineEventPort::ProtectedData {
+struct CarlaEngineCVSourcePorts::ProtectedData {
+    CarlaRecursiveMutex rmutex;
     EngineEvent* buffer;
-    bool needsBufferDeletion;
-    const EngineProcessMode processMode;
-    LinkedList<CarlaEngineEventCV> cvs;
+    water::Array<CarlaEngineEventCV> cvs;
 
-    ProtectedData(const EngineProcessMode pm) noexcept;
-    ~ProtectedData() noexcept;
+    ProtectedData();
+    ~ProtectedData();
 
     CARLA_DECLARE_NON_COPY_STRUCT(ProtectedData)
 };
+#endif
 
 // -----------------------------------------------------------------------
 // CarlaEngineProtectedData

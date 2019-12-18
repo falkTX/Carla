@@ -184,7 +184,7 @@ uint32_t CarlaPlugin::getAudioOutCount() const noexcept
 
 uint32_t CarlaPlugin::getCVInCount() const noexcept
 {
-    return pData->cvIn.count + (pData->event.portIn != nullptr ? pData->event.portIn->getCVSourceCount() : 0);
+    return pData->cvIn.count;
 }
 
 uint32_t CarlaPlugin::getCVOutCount() const noexcept
@@ -1680,7 +1680,7 @@ void CarlaPlugin::setParameterAsCvControl(uint32_t parameterId, bool cv_controll
     CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
     CARLA_SAFE_ASSERT_RETURN(pData->param.data[parameterId].type == PARAMETER_INPUT,);
     CARLA_SAFE_ASSERT_RETURN(pData->param.data[parameterId].hints & PARAMETER_CAN_BE_CV_CONTROLLED,);
-    CARLA_SAFE_ASSERT_RETURN(pData->event.portIn != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pData->event.cvSourcePorts != nullptr,);
 
     if (cv_controlled)
     {
@@ -1696,11 +1696,11 @@ void CarlaPlugin::setParameterAsCvControl(uint32_t parameterId, bool cv_controll
         CarlaEngineCVPort* const cvPort =
             (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, strBuf, true, parameterId);
         cvPort->setRange(pData->param.ranges[parameterId].min, pData->param.ranges[parameterId].max);
-        pData->event.portIn->addCVSource(cvPort, parameterId);
+        pData->event.cvSourcePorts->addCVSource(cvPort, parameterId);
     }
     else
     {
-        pData->event.portIn->removeCVSource(parameterId);
+        pData->event.cvSourcePorts->removeCVSource(parameterId);
     }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -2434,15 +2434,9 @@ CarlaEngineAudioPort* CarlaPlugin::getAudioOutPort(const uint32_t index) const n
     return pData->audioOut.ports[index].port;
 }
 
-CarlaEngineCVPort* CarlaPlugin::getCVInPort(uint32_t index) const noexcept
+CarlaEngineCVPort* CarlaPlugin::getCVInPort(const uint32_t index) const noexcept
 {
-    if (index < pData->cvIn.count)
-        return pData->cvIn.ports[index].port;
-
-    CARLA_SAFE_ASSERT_RETURN(pData->event.portIn != nullptr, nullptr);
-
-    index -= pData->cvIn.count;
-    return pData->event.portIn->getCVSourcePort(index);
+    return pData->cvIn.ports[index].port;
 }
 
 CarlaEngineCVPort* CarlaPlugin::getCVOutPort(const uint32_t index) const noexcept

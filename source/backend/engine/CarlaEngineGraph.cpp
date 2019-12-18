@@ -1430,7 +1430,7 @@ public:
 
         if (CarlaEngineEventPort* const port = fPlugin->getDefaultEventInPort())
         {
-            EngineEvent* const engineEvents(port->pData->buffer);
+            EngineEvent* const engineEvents(port->fBuffer);
             CARLA_SAFE_ASSERT_RETURN(engineEvents != nullptr,);
 
             carla_zeroStructs(engineEvents, kMaxEngineEventInternalCount);
@@ -1505,7 +1505,7 @@ public:
 
         if (CarlaEngineEventPort* const port = fPlugin->getDefaultEventOutPort())
         {
-            /*const*/ EngineEvent* const engineEvents(port->pData->buffer);
+            /*const*/ EngineEvent* const engineEvents(port->fBuffer);
             CARLA_SAFE_ASSERT_RETURN(engineEvents != nullptr,);
 
             fillWaterMidiBufferFromEngineEvents(midi, engineEvents);

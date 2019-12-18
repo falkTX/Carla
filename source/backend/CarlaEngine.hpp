@@ -561,31 +561,6 @@ public:
     void initBuffer() noexcept override;
 
     /*!
-     * Get the number of CV event sources.
-     */
-    uint32_t getCVSourceCount() const noexcept;
-
-    /*!
-     * Get the CV event source port with a specific portIndexOffset.
-     */
-    CarlaEngineCVPort* getCVSourcePort(const uint32_t portIndexOffset) const noexcept;
-
-    /*!
-     * Add a CV port as a source of events.
-     */
-    virtual bool addCVSource(CarlaEngineCVPort* port, uint32_t portIndexOffset) noexcept;
-
-    /*!
-     * Remove a CV port as a source of events.
-     */
-    virtual bool removeCVSource(uint32_t portIndexOffset) noexcept;
-
-    /*!
-     * Remove a CV port as a source of events.
-     */
-    virtual void mixWithCvBuffer(const float* buffer, uint32_t frames, uint32_t indexOffset) noexcept;
-
-    /*!
      * Get the number of events present in the buffer.
      * @note You must only call this for input ports.
      */
@@ -636,13 +611,56 @@ public:
 
 #ifndef DOXYGEN
 protected:
+    const EngineProcessMode kProcessMode;
+    EngineEvent* fBuffer;
+    friend class CarlaPluginInstance;
+
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineEventPort)
+#endif
+};
+
+/*!
+ * Carla Engine Meta CV port.
+ * FIXME needs a better name...
+ */
+class CARLA_API CarlaEngineCVSourcePorts
+{
+public:
+    /*!
+     * The constructor.
+     * All constructor parameters are constant and will never change in the lifetime of the port.
+     */
+    CarlaEngineCVSourcePorts(/*const CarlaEngineClient& client*/);
+
+    /*!
+     * The destructor.
+     */
+    ~CarlaEngineCVSourcePorts();
+
+    /*!
+     * Add a CV port as a source of events.
+     */
+    bool addCVSource(CarlaEngineCVPort* port, uint32_t portIndexOffset);
+
+    /*!
+     * Remove a CV port as a source of events.
+     */
+    bool removeCVSource(uint32_t portIndexOffset) noexcept;
+
+    /*!
+     * Get events and add them to an event port.
+     * FIXME needs a better name...
+     */
+    void initPortBuffers(const float* const* buffers, uint32_t frames,
+                         bool sampleAccurate, CarlaEngineEventPort* eventPort);
+
+#ifndef DOXYGEN
+protected:
     struct ProtectedData;
     ProtectedData* const pData;
     friend class CarlaPluginInstance;
 
-    void initCvBuffers() noexcept;
-
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineEventPort)
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineCVSourcePorts)
 #endif
 };
 
@@ -707,6 +725,12 @@ public:
      * @note This function does nothing in rack processing mode since ports are static there.
      */
     virtual CarlaEnginePort* addPort(EnginePortType portType, const char* name, bool isInput, uint32_t indexOffset);
+
+    /*!
+     * Create an instance of CV source ports.
+     * Must be called only once per client.
+     */
+    virtual CarlaEngineCVSourcePorts* createCVSourcePorts();
 
     /*!
      * Get this client's engine.

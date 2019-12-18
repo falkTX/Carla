@@ -142,12 +142,14 @@ void PluginCVData::initBuffers() const noexcept
 
 PluginEventData::PluginEventData() noexcept
     : portIn(nullptr),
-      portOut(nullptr) {}
+      portOut(nullptr),
+      cvSourcePorts(nullptr) {}
 
 PluginEventData::~PluginEventData() noexcept
 {
     CARLA_SAFE_ASSERT(portIn == nullptr);
     CARLA_SAFE_ASSERT(portOut == nullptr);
+    CARLA_SAFE_ASSERT(cvSourcePorts == nullptr);
 }
 
 void PluginEventData::clear() noexcept
@@ -162,6 +164,12 @@ void PluginEventData::clear() noexcept
     {
         delete portOut;
         portOut = nullptr;
+    }
+
+    if (cvSourcePorts != nullptr)
+    {
+        delete cvSourcePorts;
+        cvSourcePorts = nullptr;
     }
 }
 

@@ -47,6 +47,7 @@ CARLA_BACKEND_START_NAMESPACE
 class CarlaEngineAudioPort;
 class CarlaEngineCVPort;
 class CarlaEngineEventPort;
+class CarlaEngineCVSourcePorts;
 class CarlaEngineBridge;
 struct CarlaStateSave;
 

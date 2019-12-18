@@ -129,6 +129,11 @@ CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const
     return nullptr;
 }
 
+CarlaEngineCVSourcePorts* CarlaEngineClient::createCVSourcePorts()
+{
+    return new CarlaEngineCVSourcePorts();
+}
+
 const CarlaEngine& CarlaEngineClient::getEngine() const noexcept
 {
     return pData->engine;

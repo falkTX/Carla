@@ -156,6 +156,7 @@ struct PluginCVData {
 struct PluginEventData {
     CarlaEngineEventPort* portIn;
     CarlaEngineEventPort* portOut;
+    CarlaEngineCVSourcePorts* cvSourcePorts;
 
     PluginEventData() noexcept;
     ~PluginEventData() noexcept;

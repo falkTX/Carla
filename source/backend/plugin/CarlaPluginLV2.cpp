@@ -2795,6 +2795,7 @@ public:
             portName.truncate(portNameSize);
 
             pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
+            pData->event.cvSourcePorts = pData->client->createCVSourcePorts();
         }
 
         if (needsCtrlOut)
@@ -3495,20 +3496,6 @@ public:
             } // End of MIDI Input (External)
 
             // ----------------------------------------------------------------------------------------------------
-            // CV Control Input
-
-            for (uint32_t i=0, j=0; i < pData->param.count && i < 32; ++i)
-            {
-                if (pData->param.data[i].type != PARAMETER_INPUT)
-                    continue;
-                if ((pData->param.data[i].hints & PARAMETER_IS_CV_CONTROLLED) == 0x0)
-                    continue;
-
-                const uint32_t cvIndex = j++;
-                pData->event.portIn->mixWithCvBuffer(cvIn[pData->cvIn.count + cvIndex], frames, i);
-            }
-
-            // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -3524,6 +3511,9 @@ public:
                 nextBankId = pData->midiprog.data[pData->midiprog.current].bank;
             else
                 nextBankId = 0;
+
+            if (cvIn != nullptr && pData->event.cvSourcePorts != nullptr)
+                pData->event.cvSourcePorts->initPortBuffers(cvIn + pData->cvIn.count, frames, isSampleAccurate, pData->event.portIn);
 
             const uint32_t numEvents = (fEventsIn.ctrl->port != nullptr) ? fEventsIn.ctrl->port->getEventCount() : 0;
 
