@@ -18,7 +18,7 @@
 #ifndef CARLA_SHARED_HPP_INCLUDED
 #define CARLA_SHARED_HPP_INCLUDED
 
-#include "../../utils/CarlaUtils.hpp"
+#include "../utils/CarlaUtils.hpp"
 
 //---------------------------------------------------------------------------------------------------------------------
 
@@ -32,6 +32,7 @@ class QMainWindow;
 //---------------------------------------------------------------------------------------------------------------------
 // Static MIDI CC list
 
+/*
 static const char* const* const MIDI_CC_LIST = {
     "0x01 Modulation",
     "0x02 Breath",
@@ -85,6 +86,7 @@ static const char* const* const MIDI_CC_LIST = {
     "0x5F FX 5 Depth [Phaser]",
     nullptr
 };
+*/
 
 //---------------------------------------------------------------------------------------------------------------------
 // Carla Settings keys

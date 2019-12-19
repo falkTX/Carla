@@ -29,6 +29,7 @@
 *.vst3
 
 # Binary dir
+bin/carla
 bin/carla.lv2/carla-bridge-*
 bin/jack/
 bin/styles/
@@ -48,7 +49,11 @@ qrc_resources.cpp
 
 # Python files
 *.pyc
+
+# Qt files
+*_rc.hpp
 *_rc.py
+ui_*.hpp
 ui_*.py
 
 # Misc files
