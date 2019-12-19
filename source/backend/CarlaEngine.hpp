@@ -646,7 +646,12 @@ public:
     /*!
      * Remove a CV port as a source of events.
      */
-    bool removeCVSource(uint32_t portIndexOffset) noexcept;
+    bool removeCVSource(uint32_t portIndexOffset);
+
+    /*!
+     * Set value range for a CV port.
+     */
+    bool setCVSourceRange(uint32_t portIndexOffset, float minimum, float maximum);
 
     /*!
      * Get events and add them to an event port.

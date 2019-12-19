@@ -223,6 +223,8 @@ void PluginParameterData::createNew(const uint32_t newCount, const bool withSpec
         data[i].index  = PARAMETER_NULL;
         data[i].rindex = PARAMETER_NULL;
         data[i].mappedControlIndex = CONTROL_INDEX_NONE;
+        data[i].mappedMinimum = -1.0f;
+        data[i].mappedMaximum = 1.0f;
     }
 
     ranges = new ParameterRanges[newCount];

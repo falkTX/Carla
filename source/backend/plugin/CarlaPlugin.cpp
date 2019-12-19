@@ -1723,7 +1723,7 @@ void CarlaPlugin::setParameterMappedControlIndex(const uint32_t parameterId, con
 
         CarlaEngineCVPort* const cvPort =
             (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, strBuf, true, parameterId);
-        cvPort->setRange(pData->param.ranges[parameterId].min, pData->param.ranges[parameterId].max);
+        cvPort->setRange(pData->param.data[parameterId].mappedMinimum, pData->param.data[parameterId].mappedMaximum);
         pData->event.cvSourcePorts->addCVSource(cvPort, parameterId);
     }
     else if (pData->param.data[parameterId].mappedControlIndex == CONTROL_INDEX_CV)
@@ -1760,6 +1760,9 @@ void CarlaPlugin::setParameterMappedRange(const uint32_t parameterId, const floa
 
     pData->param.data[parameterId].mappedMinimum = minimum;
     pData->param.data[parameterId].mappedMaximum = maximum;
+
+    if (pData->event.cvSourcePorts != nullptr && pData->param.data[parameterId].mappedControlIndex == CONTROL_INDEX_CV)
+        pData->event.cvSourcePorts->setCVSourceRange(parameterId, minimum, maximum);
 
     char strBuf[STR_MAX+1];
     carla_zeroChars(strBuf, STR_MAX+1);

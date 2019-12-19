@@ -132,6 +132,10 @@ CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 CarlaEngineCVSourcePorts* CarlaEngineClient::createCVSourcePorts()
 {
+    // AudioProcessorGraph::Node* const oldNode(graph.getNodeForId(oldPlugin->getPatchbayNodeId()));
+    // CARLA_SAFE_ASSERT_RETURN(oldNode != nullptr,);
+    // pData->engine.pData->graph;
+
     return new CarlaEngineCVSourcePorts();
 }
 #endif

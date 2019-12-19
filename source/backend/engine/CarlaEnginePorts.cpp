@@ -380,7 +380,7 @@ bool CarlaEngineCVSourcePorts::addCVSource(CarlaEngineCVPort* const port, const 
     return true;
 }
 
-bool CarlaEngineCVSourcePorts::removeCVSource(const uint32_t portIndexOffset) noexcept
+bool CarlaEngineCVSourcePorts::removeCVSource(const uint32_t portIndexOffset)
 {
     carla_debug("CarlaEngineCVSourcePorts::removeCVSource(%u)", portIndexOffset);
 
@@ -404,6 +404,25 @@ bool CarlaEngineCVSourcePorts::removeCVSource(const uint32_t portIndexOffset) no
     }
 
     return true;
+}
+
+bool CarlaEngineCVSourcePorts::setCVSourceRange(const uint32_t portIndexOffset, const float minimum, const float maximum)
+{
+    const CarlaRecursiveMutexLocker crml(pData->rmutex);
+
+    for (int i = pData->cvs.size(); --i >= 0;)
+    {
+        CarlaEngineEventCV& ecv(pData->cvs.getReference(i));
+
+        if (ecv.indexOffset == portIndexOffset)
+        {
+            CARLA_SAFE_ASSERT_RETURN(ecv.cvPort != nullptr, false);
+            ecv.cvPort->setRange(minimum, maximum);
+            return true;
+        }
+    }
+
+    return false;
 }
 
 void CarlaEngineCVSourcePorts::initPortBuffers(const float* const* const buffers,
