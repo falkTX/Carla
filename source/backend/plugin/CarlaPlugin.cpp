@@ -1708,6 +1708,7 @@ void CarlaPlugin::setParameterMappedControlIndex(const uint32_t parameterId, con
     if (pData->param.data[parameterId].mappedControlIndex == index)
         return;
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (index == CONTROL_INDEX_CV)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->event.cvSourcePorts != nullptr,);
@@ -1732,6 +1733,7 @@ void CarlaPlugin::setParameterMappedControlIndex(const uint32_t parameterId, con
 
         pData->event.cvSourcePorts->removeCVSource(parameterId);
     }
+#endif
 
     pData->param.data[parameterId].mappedControlIndex = index;
 
@@ -1761,6 +1763,7 @@ void CarlaPlugin::setParameterMappedRange(const uint32_t parameterId, const floa
     pData->param.data[parameterId].mappedMinimum = minimum;
     pData->param.data[parameterId].mappedMaximum = maximum;
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (pData->event.cvSourcePorts != nullptr && pData->param.data[parameterId].mappedControlIndex == CONTROL_INDEX_CV)
         pData->event.cvSourcePorts->setCVSourceRange(parameterId, minimum, maximum);
 
@@ -1768,7 +1771,6 @@ void CarlaPlugin::setParameterMappedRange(const uint32_t parameterId, const floa
     carla_zeroChars(strBuf, STR_MAX+1);
     std::snprintf(strBuf, STR_MAX, "%.12g:%.12g", static_cast<double>(minimum), static_cast<double>(maximum));
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     pData->engine->callback(sendCallback, sendOsc,
                             ENGINE_CALLBACK_PARAMETER_MAPPED_RANGE_CHANGED,
                             pData->id,

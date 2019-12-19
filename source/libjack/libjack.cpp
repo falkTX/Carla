@@ -1051,7 +1051,7 @@ bool CarlaJackAppClient::handleNonRtData()
 
         case kPluginBridgeNonRtClientSetParameterValue:
         case kPluginBridgeNonRtClientSetParameterMidiChannel:
-        case kPluginBridgeNonRtClientSetParameterMidiCC:
+        case kPluginBridgeNonRtClientSetParameterMappedControlIndex:
         case kPluginBridgeNonRtClientSetParameterMappedRange:
         case kPluginBridgeNonRtClientSetProgram:
         case kPluginBridgeNonRtClientSetMidiProgram:

@@ -465,7 +465,7 @@ public:
                         fShmNonRtServerControl.writeInt(paramData.rindex);
                         fShmNonRtServerControl.writeUInt(paramData.type);
                         fShmNonRtServerControl.writeUInt(paramData.hints);
-                        fShmNonRtServerControl.writeShort(paramData.midiCC);
+                        fShmNonRtServerControl.writeShort(paramData.mappedControlIndex);
                         fShmNonRtServerControl.commitWrite();
                     }
 
@@ -805,12 +805,12 @@ public:
                 break;
             }
 
-            case kPluginBridgeNonRtClientSetParameterMidiCC: {
+            case kPluginBridgeNonRtClientSetParameterMappedControlIndex: {
                 const uint32_t index(fShmNonRtClientControl.readUInt());
-                const int16_t  cc(fShmNonRtClientControl.readShort());
+                const int16_t  ctrl(fShmNonRtClientControl.readShort());
 
                 if (plugin != nullptr && plugin->isEnabled())
-                    plugin->setParameterMidiCC(index, cc, false, false);
+                    plugin->setParameterMappedControlIndex(index, ctrl, false, false);
                 break;
             }
 
