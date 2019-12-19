@@ -749,6 +749,37 @@ typedef enum {
 } InternalParameterIndex;
 
 /* ------------------------------------------------------------------------------------------------------------
+ * Special Mapped Control Index */
+
+/*!
+ * Specially designated mapped control indexes.
+ * Values between 0 and 119 (0x77) are reserved for MIDI CC, which uses direct values.
+ * @see ParameterData::mappedControlIndex
+ */
+typedef enum {
+    /*!
+     * Unused control index, meaning no mapping is enabled.
+     */
+    CONTROL_INDEX_NONE = -1,
+
+    /*!
+     * CV control index, meaning the parameter is exposed as CV port.
+     */
+    CONTROL_INDEX_CV = 130,
+
+    /*!
+     * Special value to indicate MIDI pitchbend.
+     */
+    CONTROL_INDEX_MIDI_PITCHBEND = 131,
+
+    /*!
+     * Highest index allowed for mappings.
+     */
+    CONTROL_INDEX_MAX_ALLOWED = CONTROL_INDEX_MIDI_PITCHBEND,
+
+} SpecialMappedControlIndex;
+
+/* ------------------------------------------------------------------------------------------------------------
  * Engine Callback Opcode */
 
 /*!
@@ -808,12 +839,12 @@ typedef enum {
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
-     * A parameter's MIDI CC has changed.
+     * A parameter's mapped control index has changed.
      * @a pluginId Plugin Id
      * @a value1   Parameter index
-     * @a value2   New MIDI CC
+     * @a value2   New control index
      */
-    ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED = 7,
+    ENGINE_CALLBACK_PARAMETER_MAPPED_CONTROL_INDEX_CHANGED = 7,
 
     /*!
      * A parameter's MIDI channel has changed.
@@ -1105,20 +1136,12 @@ typedef enum {
     ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_CHANGED = 45,
 
     /*!
-     * A parameter's CV controlled status has changed.
-     * @a pluginId Plugin Id
-     * @a value1   Parameter index
-     * @a value2   New CV controlled status (boolean)
-     */
-    ENGINE_CALLBACK_PARAMETER_CV_CONTROLLED_STATUS_CHANGED = 46,
-
-    /*!
      * A parameter's mapped range has changed.
      * @a pluginId Plugin Id
      * @a value1   Parameter index
      * @a valueStr New mapped range as "%f:%f" syntax
      */
-    ENGINE_CALLBACK_PARAMETER_MAPPED_RANGE_CHANGED = 47,
+    ENGINE_CALLBACK_PARAMETER_MAPPED_RANGE_CHANGED = 46,
 
 } EngineCallbackOpcode;
 
@@ -1566,17 +1589,16 @@ typedef struct {
     int32_t rindex;
 
     /*!
-     * Currently mapped MIDI CC.
-     * A value lower than 0 means invalid or unused.
-     * Maximum allowed value is 119 (0x77).
-     */
-    int16_t midiCC;
-
-    /*!
      * Currently mapped MIDI channel.
      * Counts from 0 to 15.
      */
     uint8_t midiChannel;
+
+    /*!
+     * Currently mapped index.
+     * @see SpecialMappedControlIndex
+     */
+    int16_t mappedControlIndex;
 
     /*!
      * Minimum value that this parameter maps to.

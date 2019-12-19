@@ -540,6 +540,22 @@ PARAMETER_CTRL_CHANNEL = -8
 PARAMETER_MAX = -9
 
 # ------------------------------------------------------------------------------------------------------------
+# Special Mapped Control Index
+
+# Specially designated mapped control indexes.
+# Values between 0 and 119 (0x77) are reserved for MIDI CC, which uses direct values.
+# @see ParameterData::mappedControlIndex
+
+# Unused control index, meaning no mapping is enabled.
+CONTROL_VALUE_NONE = -1
+
+# CV control index, meaning the parameter is exposed as CV port.
+CONTROL_VALUE_CV = 130
+
+# Special value to indicate MIDI pitchbend.
+CONTROL_VALUE_MIDI_PITCHBEND = 131
+
+# ------------------------------------------------------------------------------------------------------------
 # Engine Callback Opcode
 # Engine callback opcodes.
 # Front-ends must never block indefinitely during a callback.
@@ -580,11 +596,11 @@ ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED = 5
 # @a valuef   New default value
 ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED = 6
 
-# A parameter's MIDI CC has changed.
+# A parameter's mapped control index has changed.
 # @a pluginId Plugin Id
 # @a value1   Parameter index
-# @a value2   New MIDI CC
-ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED = 7
+# @a value2   New control index
+ENGINE_CALLBACK_PARAMETER_MAPPED_CONTROL_INDEX_CHANGED = 7
 
 # A parameter's MIDI channel has changed.
 # @a pluginId Plugin Id
@@ -796,17 +812,11 @@ ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_REMOVED = 44
 # @see PatchbayPortGroupHints
 ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_CHANGED = 45
 
-# A parameter's CV controlled status has changed.
-# @a pluginId Plugin Id
-# @a value1   Parameter index
-# @a value2   New CV controlled status (boolean)
-ENGINE_CALLBACK_PARAMETER_CV_CONTROLLED_STATUS_CHANGED = 46
-
 # A parameter's mapped range has changed.
 # @a pluginId Plugin Id
 # @a value1   Parameter index
 # @a valueStr New mapped range as "%f:%f" syntax
-ENGINE_CALLBACK_PARAMETER_MAPPED_RANGE_CHANGED = 47
+ENGINE_CALLBACK_PARAMETER_MAPPED_RANGE_CHANGED = 46
 
 # ------------------------------------------------------------------------------------------------------------
 # NSM Callback Opcode
@@ -1089,14 +1099,13 @@ class ParameterData(Structure):
         # Real index as seen by plugins.
         ("rindex", c_int32),
 
-        # Currently mapped MIDI CC.
-        # A value lower than 0 means invalid or unused.
-        # Maximum allowed value is 119 (0x77).
-        ("midiCC", c_int16),
-
         # Currently mapped MIDI channel.
         # Counts from 0 to 15.
         ("midiChannel", c_uint8),
+
+        # Currently mapped index.
+        # @see SpecialMappedControlIndex
+        ("mappedControlIndex", c_int16),
 
         # Minimum value that this parameter maps to.
         ("mappedMinimum", c_uint8),
@@ -1180,8 +1189,8 @@ PyParameterData = {
     'hints': 0x0,
     'index': PARAMETER_NULL,
     'rindex': -1,
-    'midiCC': -1,
     'midiChannel': 0,
+    'mappedControlIndex': CONTROL_VALUE_NONE,
     'mappedMinimum': 0.0,
     'mappedMaximum': 1.0,
 }
@@ -2050,15 +2059,7 @@ class CarlaHostMeta(object):
     def set_parameter_value(self, pluginId, parameterId, value):
         raise NotImplementedError
 
-    # Change a plugin's parameter cv controlled status.
-    # @param pluginId      Plugin
-    # @param parameterId   Parameter index
-    # @param cv_controlled New CV controlled Status
-    @abstractmethod
-    def set_parameter_cv_controlled(self, pluginId, parameterId, cv_controlled):
-        raise NotImplementedError
-
-    # Change a plugin's parameter MIDI cc.
+    # Change a plugin's parameter mapped control index.
     # @param pluginId    Plugin
     # @param parameterId Parameter index
     # @param cc          New MIDI cc
@@ -2069,9 +2070,9 @@ class CarlaHostMeta(object):
     # Change a plugin's parameter MIDI channel.
     # @param pluginId    Plugin
     # @param parameterId Parameter index
-    # @param channel     New MIDI channel
+    # @param channel     New control index
     @abstractmethod
-    def set_parameter_midi_cc(self, pluginId, parameterId, cc):
+    def set_parameter_mapped_control_index(self, pluginId, parameterId, index):
         raise NotImplementedError
 
     # Change a plugin's parameter mapped range.
@@ -2464,13 +2465,10 @@ class CarlaHostNull(CarlaHostMeta):
     def set_parameter_value(self, pluginId, parameterId, value):
         return
 
-    def set_parameter_cv_controlled(self, pluginId, parameterId, cv_controlled):
-        return
-
     def set_parameter_midi_channel(self, pluginId, parameterId, channel):
         return
 
-    def set_parameter_midi_cc(self, pluginId, parameterId, cc):
+    def set_parameter_mapped_control_index(self, pluginId, parameterId, index):
         return
 
     def set_parameter_mapped_range(self, pluginId, parameterId, minimum, maximum):
@@ -2782,14 +2780,11 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_set_parameter_value.argtypes = [c_uint, c_uint32, c_float]
         self.lib.carla_set_parameter_value.restype = None
 
-        self.lib.carla_set_parameter_cv_controlled.argtypes = [c_uint, c_uint32, c_bool]
-        self.lib.carla_set_parameter_cv_controlled.restype = None
-
         self.lib.carla_set_parameter_midi_channel.argtypes = [c_uint, c_uint32, c_uint8]
         self.lib.carla_set_parameter_midi_channel.restype = None
 
-        self.lib.carla_set_parameter_midi_cc.argtypes = [c_uint, c_uint32, c_int16]
-        self.lib.carla_set_parameter_midi_cc.restype = None
+        self.lib.carla_set_parameter_mapped_control_index.argtypes = [c_uint, c_uint32, c_int16]
+        self.lib.carla_set_parameter_mapped_control_index.restype = None
 
         self.lib.carla_set_parameter_mapped_range.argtypes = [c_uint, c_uint32, c_float, c_float]
         self.lib.carla_set_parameter_mapped_range.restype = None
@@ -3107,14 +3102,11 @@ class CarlaHostDLL(CarlaHostMeta):
     def set_parameter_value(self, pluginId, parameterId, value):
         self.lib.carla_set_parameter_value(pluginId, parameterId, value)
 
-    def set_parameter_cv_controlled(self, pluginId, parameterId, cv_controlled):
-        self.lib.carla_set_parameter_cv_controlled(pluginId, parameterId, cv_controlled)
-
     def set_parameter_midi_channel(self, pluginId, parameterId, channel):
         self.lib.carla_set_parameter_midi_channel(pluginId, parameterId, channel)
 
-    def set_parameter_midi_cc(self, pluginId, parameterId, cc):
-        self.lib.carla_set_parameter_midi_cc(pluginId, parameterId, cc)
+    def set_parameter_mapped_control_index(self, pluginId, parameterId, index):
+        self.lib.carla_set_parameter_mapped_control_index(pluginId, parameterId, index)
 
     def set_parameter_mapped_range(self, pluginId, parameterId, minimum, maximum):
         self.lib.carla_set_parameter_mapped_range(pluginId, parameterId, minimum, maximum)
@@ -3513,16 +3505,18 @@ class CarlaHostPlugin(CarlaHostMeta):
         self.sendMsg(["set_parameter_value", pluginId, parameterId, value])
         self.fPluginsInfo[pluginId].parameterValues[parameterId] = value
 
-    def set_parameter_cv_controlled(self, pluginId, parameterId, cv_controlled):
-        self.sendMsg(["set_parameter_cv_controlled", pluginId, parameterId, cv_controlled])
-
     def set_parameter_midi_channel(self, pluginId, parameterId, channel):
         self.sendMsg(["set_parameter_midi_channel", pluginId, parameterId, channel])
-        self.fPluginsInfo[pluginId].parameterData[parameterId]['midiCC'] = channel
+        self.fPluginsInfo[pluginId].parameterData[parameterId]['midiChannel'] = channel
 
-    def set_parameter_midi_cc(self, pluginId, parameterId, cc):
-        self.sendMsg(["set_parameter_midi_cc", pluginId, parameterId, cc])
-        self.fPluginsInfo[pluginId].parameterData[parameterId]['midiCC'] = cc
+    def set_parameter_mapped_control_index(self, pluginId, parameterId, index):
+        self.sendMsg(["set_parameter_mapped_control_index", pluginId, parameterId, index])
+        self.fPluginsInfo[pluginId].parameterData[parameterId]['mappedControlIndex'] = index
+
+    def set_parameter_mapped_range(self, pluginId, parameterId, minimum, maximum):
+        self.sendMsg(["set_parameter_mapped_range", pluginId, parameterId, minimum, maximum])
+        self.fPluginsInfo[pluginId].parameterData[parameterId]['mappedMinimum'] = minimum
+        self.fPluginsInfo[pluginId].parameterData[parameterId]['mappedMaximum'] = maximum
 
     def set_parameter_touch(self, pluginId, parameterId, touch):
         self.sendMsg(["set_parameter_touch", pluginId, parameterId, touch])
@@ -3768,25 +3762,15 @@ class CarlaHostPlugin(CarlaHostMeta):
         else:
             print("_set_parameterDefault failed for", pluginId, "and index", paramIndex)
 
-    def _set_parameterMidiChannel(self, pluginId, paramIndex, channel):
+    def _set_parameterMappedControlIndex(self, pluginId, paramIndex, index):
         plugin = self.fPluginsInfo.get(pluginId, None)
         if plugin is None:
-            print("_set_parameterMidiChannel failed for", pluginId)
+            print("_set_parameterMappedControlIndex failed for", pluginId)
             return
         if paramIndex < plugin.parameterCount:
-            plugin.parameterData[paramIndex]['midiChannel'] = channel
+            plugin.parameterData[paramIndex]['mappedControlIndex'] = index
         else:
-            print("_set_parameterMidiChannel failed for", pluginId, "and index", paramIndex)
-
-    def _set_parameterMidiCC(self, pluginId, paramIndex, cc):
-        plugin = self.fPluginsInfo.get(pluginId, None)
-        if plugin is None:
-            print("_set_parameterMidiCC failed for", pluginId)
-            return
-        if paramIndex < plugin.parameterCount:
-            plugin.parameterData[paramIndex]['midiCC'] = cc
-        else:
-            print("_set_parameterMidiCC failed for", pluginId, "and index", paramIndex)
+            print("_set_parameterMappedControlIndex failed for", pluginId, "and index", paramIndex)
 
     def _set_parameterMappedRange(self, pluginId, paramIndex, minimum, maximum):
         plugin = self.fPluginsInfo.get(pluginId, None)
@@ -3798,6 +3782,16 @@ class CarlaHostPlugin(CarlaHostMeta):
             plugin.parameterData[paramIndex]['mappedMaximum'] = maximum
         else:
             print("_set_parameterMappedRange failed for", pluginId, "and index", paramIndex)
+
+    def _set_parameterMidiChannel(self, pluginId, paramIndex, channel):
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_parameterMidiChannel failed for", pluginId)
+            return
+        if paramIndex < plugin.parameterCount:
+            plugin.parameterData[paramIndex]['midiChannel'] = channel
+        else:
+            print("_set_parameterMidiChannel failed for", pluginId, "and index", paramIndex)
 
     def _set_currentProgram(self, pluginId, pIndex):
         plugin = self.fPluginsInfo.get(pluginId, None)
@@ -3877,15 +3871,15 @@ class CarlaHostPlugin(CarlaHostMeta):
         elif action == ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
             self._set_parameterDefault(pluginId, value1, valuef)
 
-        elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
-            self._set_parameterMidiCC(pluginId, value1, value2)
-
-        elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
-            self._set_parameterMidiChannel(pluginId, value1, value2)
+        elif action == ENGINE_CALLBACK_PARAMETER_MAPPED_CONTROL_INDEX_CHANGED:
+            self._set_parameterMappedControlIndex(pluginId, value1, value2)
 
         elif action == ENGINE_CALLBACK_PARAMETER_MAPPED_RANGE_CHANGED:
             minimum, maximum = (float(i) for i in valueStr.split(":"))
             self._set_parameterMappedRange(pluginId, value1, minimum, maximum)
+
+        elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
+            self._set_parameterMidiChannel(pluginId, value1, value2)
 
         elif action == ENGINE_CALLBACK_PROGRAM_CHANGED:
             self._set_currentProgram(pluginId, value1)

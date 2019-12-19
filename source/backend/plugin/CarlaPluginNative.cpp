@@ -1941,7 +1941,7 @@ public:
                         {
                             if (pData->param.data[k].midiChannel != event.channel)
                                 continue;
-                            if (pData->param.data[k].midiCC != ctrlEvent.param)
+                            if (pData->param.data[k].mappedControlIndex != ctrlEvent.param)
                                 continue;
                             if (pData->param.data[k].type != PARAMETER_INPUT)
                                 continue;
@@ -2191,10 +2191,14 @@ public:
                 curValue = fDescriptor->get_parameter_value(fHandle, k);
                 pData->param.ranges[k].fixValue(curValue);
 
-                if (pData->param.data[k].midiCC > 0)
+                if (pData->param.data[k].mappedControlIndex > 0)
                 {
                     value = pData->param.ranges[k].getNormalizedValue(curValue);
-                    pData->event.portOut->writeControlEvent(0, pData->param.data[k].midiChannel, kEngineControlEventTypeParameter, static_cast<uint16_t>(pData->param.data[k].midiCC), value);
+                    pData->event.portOut->writeControlEvent(0,
+                                                            pData->param.data[k].midiChannel,
+                                                            kEngineControlEventTypeParameter,
+                                                            static_cast<uint16_t>(pData->param.data[k].mappedControlIndex),
+                                                            value);
                 }
             }
         } // End of Control Output

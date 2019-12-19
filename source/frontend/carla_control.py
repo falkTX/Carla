@@ -381,7 +381,7 @@ class CarlaControlServerTCP(Server):
         if DEBUG: print(path, args)
         self.fReceivedMsgs = True
         (
-          pluginId, paramId, type_, hints, midiChan, midiCC, name, unit,
+          pluginId, paramId, type_, hints, mappedControlIndex, midiChan, name, unit,
           def_, min_, max_, step, stepSmall, stepLarge, value
         ) = args
 
@@ -400,7 +400,7 @@ class CarlaControlServerTCP(Server):
             'hints': hints,
             'index': paramId,
             'rindex': -1,
-            'midiCC': midiCC,
+            'mappedControlIndex': mappedControlIndex,
             'midiChannel': midiChan,
         }
         self.host._set_parameterData(pluginId, paramId, paramData)

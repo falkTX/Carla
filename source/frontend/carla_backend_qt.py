@@ -38,7 +38,7 @@ class CarlaHostSignals(QObject):
     PluginUnavailableCallback = pyqtSignal(int, str)
     ParameterValueChangedCallback = pyqtSignal(int, int, float)
     ParameterDefaultChangedCallback = pyqtSignal(int, int, float)
-    ParameterMidiCcChangedCallback = pyqtSignal(int, int, int)
+    ParameterMappedControlIndexChangedCallback = pyqtSignal(int, int, int)
     ParameterMidiChannelChangedCallback = pyqtSignal(int, int, int)
     ProgramChangedCallback = pyqtSignal(int, int)
     MidiProgramChangedCallback = pyqtSignal(int, int)

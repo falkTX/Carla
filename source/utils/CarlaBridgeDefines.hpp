@@ -48,35 +48,35 @@ enum PluginBridgeRtClientOpcode {
 // Server sends these to client during non-RT
 enum PluginBridgeNonRtClientOpcode {
     kPluginBridgeNonRtClientNull = 0,
-    kPluginBridgeNonRtClientVersion,                 // uint
+    kPluginBridgeNonRtClientVersion,                        // uint
     kPluginBridgeNonRtClientPing,
-    kPluginBridgeNonRtClientPingOnOff,               // bool
+    kPluginBridgeNonRtClientPingOnOff,                      // bool
     kPluginBridgeNonRtClientActivate,
     kPluginBridgeNonRtClientDeactivate,
-    kPluginBridgeNonRtClientInitialSetup,            // uint, double
-    kPluginBridgeNonRtClientSetParameterValue,       // uint, float
-    kPluginBridgeNonRtClientSetParameterMidiChannel, // uint, byte
-    kPluginBridgeNonRtClientSetParameterMidiCC,      // uint, short
-    kPluginBridgeNonRtClientSetProgram,              // int
-    kPluginBridgeNonRtClientSetMidiProgram,          // int
-    kPluginBridgeNonRtClientSetCustomData,           // uint/size, str[], uint/size, str[], uint/size, str[]
-    kPluginBridgeNonRtClientSetChunkDataFile,        // uint/size, str[] (filename, base64 content)
-    kPluginBridgeNonRtClientSetCtrlChannel,          // short
-    kPluginBridgeNonRtClientSetOption,               // uint/option, bool
-    kPluginBridgeNonRtClientGetParameterText,        // uint
+    kPluginBridgeNonRtClientInitialSetup,                   // uint, double
+    kPluginBridgeNonRtClientSetParameterValue,              // uint, float
+    kPluginBridgeNonRtClientSetParameterMidiChannel,        // uint, byte
+    kPluginBridgeNonRtClientSetParameterMappedControlIndex, // uint, short
+    kPluginBridgeNonRtClientSetProgram,                     // int
+    kPluginBridgeNonRtClientSetMidiProgram,                 // int
+    kPluginBridgeNonRtClientSetCustomData,                  // uint/size, str[], uint/size, str[], uint/size, str[]
+    kPluginBridgeNonRtClientSetChunkDataFile,               // uint/size, str[] (filename, base64 content)
+    kPluginBridgeNonRtClientSetCtrlChannel,                 // short
+    kPluginBridgeNonRtClientSetOption,                      // uint/option, bool
+    kPluginBridgeNonRtClientGetParameterText,               // uint
     kPluginBridgeNonRtClientPrepareForSave,
     kPluginBridgeNonRtClientRestoreLV2State,
     kPluginBridgeNonRtClientShowUI,
     kPluginBridgeNonRtClientHideUI,
-    kPluginBridgeNonRtClientUiParameterChange,       // uint, float
-    kPluginBridgeNonRtClientUiProgramChange,         // uint
-    kPluginBridgeNonRtClientUiMidiProgramChange,     // uint
-    kPluginBridgeNonRtClientUiNoteOn,                // byte, byte, byte
-    kPluginBridgeNonRtClientUiNoteOff,               // byte, byte
+    kPluginBridgeNonRtClientUiParameterChange,              // uint, float
+    kPluginBridgeNonRtClientUiProgramChange,                // uint
+    kPluginBridgeNonRtClientUiMidiProgramChange,            // uint
+    kPluginBridgeNonRtClientUiNoteOn,                       // byte, byte, byte
+    kPluginBridgeNonRtClientUiNoteOff,                      // byte, byte
     kPluginBridgeNonRtClientQuit,
     // stuff added in API 7
-    kPluginBridgeNonRtClientSetParameterMappedRange, // uint, float, float
-    kPluginBridgeNonRtClientSetOptions,              // uint
+    kPluginBridgeNonRtClientSetParameterMappedRange,        // uint, float, float
+    kPluginBridgeNonRtClientSetOptions,                     // uint
 };
 
 // Client sends these to server during non-RT

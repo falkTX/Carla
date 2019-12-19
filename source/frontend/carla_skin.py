@@ -286,8 +286,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         host.PluginUnavailableCallback.connect(self.slot_handlePluginUnavailableCallback)
         host.ParameterValueChangedCallback.connect(self.slot_handleParameterValueChangedCallback)
         host.ParameterDefaultChangedCallback.connect(self.slot_handleParameterDefaultChangedCallback)
+        host.ParameterMappedControlIndexChangedCallback.connect(self.slot_handleParameterMappedControlIndexChangedCallback)
         host.ParameterMidiChannelChangedCallback.connect(self.slot_handleParameterMidiChannelChangedCallback)
-        host.ParameterMidiCcChangedCallback.connect(self.slot_handleParameterMidiCcChangedCallback)
         host.ProgramChangedCallback.connect(self.slot_handleProgramChangedCallback)
         host.MidiProgramChangedCallback.connect(self.slot_handleMidiProgramChangedCallback)
         host.OptionChangedCallback.connect(self.slot_handleOptionChangedCallback)
@@ -322,9 +322,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             self.setParameterDefault(index, value)
 
     @pyqtSlot(int, int, int)
-    def slot_handleParameterMidiCcChangedCallback(self, pluginId, index, cc):
+    def slot_handleParameterMappedControlIndexChangedCallback(self, pluginId, index, ctrl):
         if self.fPluginId == pluginId:
-            self.setParameterMidiControl(index, cc)
+            self.setParameterMappedControlIndex(index, ctrl)
 
     @pyqtSlot(int, int, int)
     def slot_handleParameterMidiChannelChangedCallback(self, pluginId, index, channel):
@@ -738,8 +738,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
     def setParameterDefault(self, parameterId, value):
         self.fEditDialog.setParameterDefault(parameterId, value)
 
-    def setParameterMidiControl(self, parameterId, control):
-        self.fEditDialog.setParameterMidiControl(parameterId, control)
+    def setParameterMappedControlIndex(self, parameterId, control):
+        self.fEditDialog.setParameterMappedControlIndex(parameterId, control)
 
     def setParameterMidiChannel(self, parameterId, channel):
         self.fEditDialog.setParameterMidiChannel(parameterId, channel)

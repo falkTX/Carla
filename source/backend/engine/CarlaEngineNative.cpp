@@ -559,7 +559,11 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
             std::snprintf(tmpBuf, STR_MAX, "%i:%i:%i:%i\n", paramData.type, paramData.hints,
-                                                            paramData.midiChannel, paramData.midiCC);
+                                                            paramData.mappedControlIndex, paramData.midiChannel);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+
+            std::snprintf(tmpBuf, STR_MAX, "%.12g:%.12g\n", static_cast<double>(paramData.mappedMinimum),
+                                                            static_cast<double>(paramData.mappedMaximum));
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
             if (plugin->getParameterName(i, tmpBuf)) {
@@ -2074,18 +2078,6 @@ bool CarlaEngineNativeUI::msgReceived(const char*const msg) noexcept
             fEngine->setParameterValueFromUI(pluginId, parameterId, value);
         }
     }
-    else if (std::strcmp(msg, "set_parameter_cv_controlled") == 0)
-    {
-        uint32_t pluginId, parameterId;
-        bool cv_controlled;
-
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(parameterId), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(cv_controlled), true);
-
-        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-            plugin->setParameterAsCvControl(parameterId, cv_controlled, true, false);
-    }
     else if (std::strcmp(msg, "set_parameter_midi_channel") == 0)
     {
         uint32_t pluginId, parameterId, channel;
@@ -2098,18 +2090,31 @@ bool CarlaEngineNativeUI::msgReceived(const char*const msg) noexcept
         if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
             plugin->setParameterMidiChannel(parameterId, static_cast<uint8_t>(channel), true, false);
     }
-    else if (std::strcmp(msg, "set_parameter_midi_cc") == 0)
+    else if (std::strcmp(msg, "set_parameter_mapped_control_index") == 0)
     {
         uint32_t pluginId, parameterId;
-        int32_t cc;
+        int32_t ctrl;
 
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(parameterId), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(cc), true);
-        CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc < MAX_MIDI_CONTROL, true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(ctrl), true);
+        CARLA_SAFE_ASSERT_RETURN(ctrl >= CONTROL_INDEX_NONE && ctrl <= CONTROL_INDEX_MAX_ALLOWED, true);
 
         if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-            plugin->setParameterMidiCC(parameterId, static_cast<int16_t>(cc), true, false);
+            plugin->setParameterMappedControlIndex(parameterId, static_cast<int16_t>(ctrl), true, false);
+    }
+    else if (std::strcmp(msg, "set_parameter_mapped_range") == 0)
+    {
+        uint32_t pluginId, parameterId;
+        float minimum, maximum;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(parameterId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(minimum), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(maximum), true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+            plugin->setParameterMappedRange(parameterId, minimum, maximum, true, false);
     }
     else if (std::strcmp(msg, "set_parameter_touch") == 0)
     {

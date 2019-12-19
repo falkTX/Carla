@@ -777,7 +777,7 @@ public:
             pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
-            pData->param.data[j].midiCC = MIDI_CONTROL_REVERB_SEND_LEVEL;
+            pData->param.data[j].mappedControlIndex = MIDI_CONTROL_REVERB_SEND_LEVEL;
             pData->param.ranges[j].min = 0.0f;
             pData->param.ranges[j].max = 1.0f;
             pData->param.ranges[j].def = sFluidDefaults[j];
@@ -1239,7 +1239,7 @@ public:
                         {
                             if (pData->param.data[k].midiChannel != event.channel)
                                 continue;
-                            if (pData->param.data[k].midiCC != ctrlEvent.param)
+                            if (pData->param.data[k].mappedControlIndex != ctrlEvent.param)
                                 continue;
                             if (pData->param.data[k].hints != PARAMETER_INPUT)
                                 continue;
@@ -1427,10 +1427,14 @@ public:
             fParamBuffers[k] = float(fluid_synth_get_active_voice_count(fSynth));
             pData->param.ranges[k].fixValue(fParamBuffers[k]);
 
-            if (pData->param.data[k].midiCC > 0)
+            if (pData->param.data[k].mappedControlIndex > 0)
             {
                 float value(pData->param.ranges[k].getNormalizedValue(fParamBuffers[k]));
-                pData->event.portOut->writeControlEvent(0, pData->param.data[k].midiChannel, kEngineControlEventTypeParameter, static_cast<uint16_t>(pData->param.data[k].midiCC), value);
+                pData->event.portOut->writeControlEvent(0,
+                                                        pData->param.data[k].midiChannel,
+                                                        kEngineControlEventTypeParameter,
+                                                        static_cast<uint16_t>(pData->param.data[k].mappedControlIndex),
+                                                        value);
             }
 
         } // End of Control Output

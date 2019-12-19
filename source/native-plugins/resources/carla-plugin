@@ -278,7 +278,8 @@ class CarlaMiniW(ExternalUI, HostWindow):
 
         elif msg.startswith("PARAMETER_DATA_"):
             pluginId, paramId = [int(i) for i in msg.replace("PARAMETER_DATA_", "").split(":")]
-            paramType, paramHints, midiChannel, midiCC = [int(i) for i in self.readlineblock().split(":")]
+            paramType, paramHints, mappedControlIndex, midiChannel = [int(i) for i in self.readlineblock().split(":")]
+            mappedMinimum, mappedMaximum = [float(i) for i in self.readlineblock().split(":")]
             paramName = self.readlineblock().replace("\r", "\n")
             paramUnit = self.readlineblock().replace("\r", "\n")
             paramComment = self.readlineblock().replace("\r", "\n")
@@ -299,8 +300,10 @@ class CarlaMiniW(ExternalUI, HostWindow):
                 'hints': paramHints,
                 'index': paramId,
                 'rindex': -1,
-                'midiCC': midiCC,
-                'midiChannel': midiChannel
+                'midiChannel': midiChannel,
+                'mappedControlIndex': mappedControlIndex,
+                'mappedMinimum': mappedMinimum,
+                'mappedMaximum': mappedMaximum,
             }
             self.host._set_parameterData(pluginId, paramId, paramData)
 

@@ -124,8 +124,8 @@ CarlaStateSave::Parameter::Parameter() noexcept
       symbol(nullptr),
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
       value(0.0f),
-      midiChannel(0),
-      midiCC(-1) {}
+      mappedControlIndex(CONTROL_INDEX_NONE),
+      midiChannel(0) {}
 #else
       value(0.0f) {}
 #endif
@@ -441,8 +441,14 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                         else if (pTag == "MidiCC")
                         {
                             const int cc(pText.getIntValue());
-                            if (cc >= -1 && cc < MAX_MIDI_CONTROL)
-                                stateParameter->midiCC = static_cast<int16_t>(cc);
+                            if (cc > 0 && cc < MAX_MIDI_CONTROL)
+                                stateParameter->mappedControlIndex = static_cast<int16_t>(cc);
+                        }
+                        else if (pTag == "MappedControlIndex")
+                        {
+                            const int ctrl(pText.getIntValue());
+                            if (ctrl > CONTROL_INDEX_NONE && ctrl <= CONTROL_INDEX_MAX_ALLOWED)
+                                stateParameter->mappedControlIndex = static_cast<int16_t>(ctrl);
                         }
 #endif
                     }
@@ -598,10 +604,18 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
             parameterXml << "    <Symbol>" << xmlSafeString(stateParameter->symbol, true) << "</Symbol>\n";
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-        if (stateParameter->midiCC > 0)
+        if (stateParameter->mappedControlIndex > CONTROL_INDEX_NONE && stateParameter->mappedControlIndex <= CONTROL_INDEX_MAX_ALLOWED)
         {
-            parameterXml << "    <MidiCC>"      << stateParameter->midiCC        << "</MidiCC>\n";
-            parameterXml << "    <MidiChannel>" << stateParameter->midiChannel+1 << "</MidiChannel>\n";
+            parameterXml << "    <MidiChannel>"   << stateParameter->midiChannel+1 << "</MidiChannel>\n";
+            /*
+            parameterXml << "    <MappedMinimum>" << stateParameter->mappedMinimum << "</MappedMinimum>\n";
+            parameterXml << "    <MappedMaximum>" << stateParameter->mappedMaximum << "</MappedMaximum>\n";
+            */
+            parameterXml << "    <MappedControlIndex>" << stateParameter->mappedControlIndex << "</MappedControlIndex>\n";
+
+            // backwards compatibility for older carla versions
+            if (stateParameter->mappedControlIndex > 0 && stateParameter->mappedControlIndex < MAX_MIDI_CONTROL)
+                parameterXml << "    <MidiCC>" << stateParameter->mappedControlIndex << "</MidiCC>\n";
         }
 #endif
 

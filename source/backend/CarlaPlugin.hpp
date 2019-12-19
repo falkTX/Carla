@@ -592,13 +592,6 @@ public:
      */
     void setParameterValueByRealIndex(int32_t rindex, float value, bool sendGui, bool sendOsc, bool sendCallback) noexcept;
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-    /*!
-     * Change parameter's @a parameterId CV controlled status.
-     */
-    void setParameterAsCvControl(uint32_t parameterId, bool cv_controlled, bool sendOsc, bool sendCallback) noexcept;
-#endif
-
     /*!
      * Set parameter's @a parameterId MIDI channel to @a channel.
      * @a channel must be between 0 and 15.
@@ -606,10 +599,10 @@ public:
     virtual void setParameterMidiChannel(uint32_t parameterId, uint8_t channel, bool sendOsc, bool sendCallback) noexcept;
 
     /*!
-     * Set parameter's @a parameterId MIDI CC to @a cc.
-     * @a cc must be between 0 and 119 (0x77), or -1 for invalid.
+     * Set parameter's @a parameterId mapped control index to @a index.
+     * @see ParameterData::mappedControlIndex
      */
-    virtual void setParameterMidiCC(uint32_t parameterId, int16_t cc, bool sendOsc, bool sendCallback) noexcept;
+    virtual void setParameterMappedControlIndex(uint32_t parameterId, int16_t index, bool sendOsc, bool sendCallback) noexcept;
 
     /*!
      * Set parameter's @a parameterId mapped range to @a minimum and @a maximum.

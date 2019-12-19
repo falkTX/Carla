@@ -749,22 +749,22 @@ public:
         CarlaPlugin::setParameterMidiChannel(parameterId, channel, sendOsc, sendCallback);
     }
 
-    void setParameterMidiCC(const uint32_t parameterId, const int16_t cc, const bool sendOsc, const bool sendCallback) noexcept override
+    void setParameterMappedControlIndex(const uint32_t parameterId, const int16_t index, const bool sendOsc, const bool sendCallback) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
-        CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc < MAX_MIDI_CONTROL,);
+        CARLA_SAFE_ASSERT_RETURN(index >= CONTROL_INDEX_NONE && index <= CONTROL_INDEX_MAX_ALLOWED,);
         CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,);
 
         {
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
 
-            fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientSetParameterMidiCC);
+            fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientSetParameterMappedControlIndex);
             fShmNonRtClientControl.writeUInt(parameterId);
-            fShmNonRtClientControl.writeShort(cc);
+            fShmNonRtClientControl.writeShort(index);
             fShmNonRtClientControl.commitWrite();
         }
 
-        CarlaPlugin::setParameterMidiCC(parameterId, cc, sendOsc, sendCallback);
+        CarlaPlugin::setParameterMappedControlIndex(parameterId, index, sendOsc, sendCallback);
     }
 
     void setParameterMappedRange(const uint32_t parameterId, const float minimum, const float maximum, const bool sendOsc, const bool sendCallback) noexcept override
@@ -1533,10 +1533,14 @@ public:
                 if (pData->param.data[k].type != PARAMETER_OUTPUT)
                     continue;
 
-                if (pData->param.data[k].midiCC > 0)
+                if (pData->param.data[k].mappedControlIndex > 0)
                 {
                     value = pData->param.ranges[k].getNormalizedValue(fParams[k].value);
-                    pData->event.portOut->writeControlEvent(0, pData->param.data[k].midiChannel, kEngineControlEventTypeParameter, static_cast<uint16_t>(pData->param.data[k].midiCC), value);
+                    pData->event.portOut->writeControlEvent(0,
+                                                            pData->param.data[k].midiChannel,
+                                                            kEngineControlEventTypeParameter,
+                                                            static_cast<uint16_t>(pData->param.data[k].mappedControlIndex),
+                                                            value);
                 }
             }
 
@@ -2117,9 +2121,9 @@ public:
                 const  int32_t rindex = fShmNonRtServerControl.readInt();
                 const uint32_t type   = fShmNonRtServerControl.readUInt();
                 const uint32_t hints  = fShmNonRtServerControl.readUInt();
-                const  int16_t midiCC = fShmNonRtServerControl.readShort();
+                const  int16_t ctrl   = fShmNonRtServerControl.readShort();
 
-                CARLA_SAFE_ASSERT_BREAK(midiCC >= -1 && midiCC < MAX_MIDI_CONTROL);
+                CARLA_SAFE_ASSERT_BREAK(ctrl >= CONTROL_INDEX_NONE && ctrl <= CONTROL_INDEX_MAX_ALLOWED);
                 CARLA_SAFE_ASSERT_INT2(index < pData->param.count, index, pData->param.count);
 
                 if (index < pData->param.count)
@@ -2128,7 +2132,7 @@ public:
                     pData->param.data[index].index  = static_cast<int32_t>(index);
                     pData->param.data[index].rindex = rindex;
                     pData->param.data[index].hints  = hints;
-                    pData->param.data[index].midiCC = midiCC;
+                    pData->param.data[index].mappedControlIndex = ctrl;
                 }
             }   break;
 

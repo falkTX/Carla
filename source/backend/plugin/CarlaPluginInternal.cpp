@@ -222,7 +222,7 @@ void PluginParameterData::createNew(const uint32_t newCount, const bool withSpec
     {
         data[i].index  = PARAMETER_NULL;
         data[i].rindex = PARAMETER_NULL;
-        data[i].midiCC = -1;
+        data[i].mappedControlIndex = CONTROL_INDEX_NONE;
     }
 
     ranges = new ParameterRanges[newCount];

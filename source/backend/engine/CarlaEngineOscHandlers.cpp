@@ -160,8 +160,10 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         return 0; //handleMsgSetControlChannel(plugin, argc, argv, types); // TODO
     if (std::strcmp(method, "set_parameter_value") == 0)
         return handleMsgSetParameterValue(plugin, argc, argv, types);
-    if (std::strcmp(method, "set_parameter_midi_cc") == 0)
-        return handleMsgSetParameterMidiCC(plugin, argc, argv, types);
+    if (std::strcmp(method, "set_parameter_mapped_control_index") == 0)
+        return handleMsgSetParameterMappedControlIndex(plugin, argc, argv, types);
+    if (std::strcmp(method, "set_parameter_mapped_range") == 0)
+        return handleMsgSetParameterMappedRange(plugin, argc, argv, types);
     if (std::strcmp(method, "set_parameter_midi_channel") == 0)
         return handleMsgSetParameterMidiChannel(plugin, argc, argv, types);
     if (std::strcmp(method, "set_program") == 0)
@@ -630,18 +632,33 @@ int CarlaEngineOsc::handleMsgSetParameterValue(CARLA_ENGINE_OSC_HANDLE_ARGS)
     return 0;
 }
 
-int CarlaEngineOsc::handleMsgSetParameterMidiCC(CARLA_ENGINE_OSC_HANDLE_ARGS)
+int CarlaEngineOsc::handleMsgSetParameterMappedControlIndex(CARLA_ENGINE_OSC_HANDLE_ARGS)
 {
-    carla_debug("CarlaEngineOsc::handleMsgSetParameterMidiCC()");
+    carla_debug("CarlaEngineOsc::handleMsgSetParameterMappedIndex()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "ii");
 
     const int32_t index = argv[0]->i;
-    const int32_t cc    = argv[1]->i;
+    const int32_t ctrl  = argv[1]->i;
 
     CARLA_SAFE_ASSERT_RETURN(index >= 0, 0);
-    CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc < MAX_MIDI_CONTROL, 0);
+    CARLA_SAFE_ASSERT_RETURN(ctrl >= CONTROL_INDEX_NONE && ctrl <= CONTROL_INDEX_MAX_ALLOWED, 0);
 
-    plugin->setParameterMidiCC(static_cast<uint32_t>(index), static_cast<int16_t>(cc), false, true);
+    plugin->setParameterMappedControlIndex(static_cast<uint32_t>(index), static_cast<int16_t>(ctrl), false, true);
+    return 0;
+}
+
+int CarlaEngineOsc::handleMsgSetParameterMappedRange(CARLA_ENGINE_OSC_HANDLE_ARGS)
+{
+    carla_debug("CarlaEngineOsc::handleMsgSetParameterMappedRange()");
+    CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "iff");
+
+    const int32_t index   = argv[0]->i;
+    const float   minimum = argv[1]->f;
+    const float   maximum = argv[2]->f;
+
+    CARLA_SAFE_ASSERT_RETURN(index >= 0, 0);
+
+    plugin->setParameterMappedRange(static_cast<uint32_t>(index), minimum, maximum, false, true);
     return 0;
 }
 

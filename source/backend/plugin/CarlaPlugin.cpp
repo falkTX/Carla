@@ -45,7 +45,7 @@ CARLA_BACKEND_START_NAMESPACE
 // -------------------------------------------------------------------
 // Fallback data
 
-static const ParameterData   kParameterDataNull   = { PARAMETER_UNKNOWN, 0x0, PARAMETER_NULL, -1, -1, 0, 0.0f, 1.0f };
+static const ParameterData   kParameterDataNull   = { PARAMETER_UNKNOWN, 0x0, PARAMETER_NULL, -1, 0, CONTROL_INDEX_NONE, 0.0f, 1.0f };
 static const ParameterRanges kParameterRangesNull = { 0.0f, 0.0f, 1.0f, 0.01f, 0.0001f, 0.1f };
 static const MidiProgramData kMidiProgramDataNull = { 0, 0, nullptr };
 
@@ -600,7 +600,7 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
 
         const bool dummy = paramData.type != PARAMETER_INPUT || usingChunk;
 
-        if (dummy && paramData.midiCC <= -1)
+        if (dummy && paramData.mappedControlIndex <= CONTROL_INDEX_NONE)
             continue;
 
         CarlaStateSave::Parameter* const stateParameter(new CarlaStateSave::Parameter());
@@ -608,8 +608,8 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
         stateParameter->dummy = dummy;
         stateParameter->index = paramData.index;
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-        stateParameter->midiCC      = paramData.midiCC;
-        stateParameter->midiChannel = paramData.midiChannel;
+        stateParameter->mappedControlIndex = paramData.mappedControlIndex;
+        stateParameter->midiChannel        = paramData.midiChannel;
 #endif
 
         if (! getParameterName(i, strBuf))
@@ -821,7 +821,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
             }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-            setParameterMidiCC(static_cast<uint32_t>(index), stateParameter->midiCC, true, true);
+            setParameterMappedControlIndex(static_cast<uint32_t>(index), stateParameter->mappedControlIndex, true, true);
             setParameterMidiChannel(static_cast<uint32_t>(index), stateParameter->midiChannel, true, true);
 #endif
         }
@@ -1670,8 +1670,7 @@ void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float
     }
 }
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-void CarlaPlugin::setParameterAsCvControl(uint32_t parameterId, bool cv_controlled, bool sendOsc, bool sendCallback) noexcept
+void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, const uint8_t channel, const bool sendOsc, const bool sendCallback) noexcept
 {
     if (pData->engineBridged) {
         CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
@@ -1679,12 +1678,40 @@ void CarlaPlugin::setParameterAsCvControl(uint32_t parameterId, bool cv_controll
         CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
     }
     CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
-    CARLA_SAFE_ASSERT_RETURN(pData->param.data[parameterId].type == PARAMETER_INPUT,);
-    CARLA_SAFE_ASSERT_RETURN(pData->param.data[parameterId].hints & PARAMETER_CAN_BE_CV_CONTROLLED,);
-    CARLA_SAFE_ASSERT_RETURN(pData->event.cvSourcePorts != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
 
-    if (cv_controlled)
+    if (pData->param.data[parameterId].midiChannel == channel)
+        return;
+
+    pData->param.data[parameterId].midiChannel = channel;
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    pData->engine->callback(sendCallback, sendOsc,
+                            ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED,
+                            pData->id,
+                            static_cast<int>(parameterId),
+                            channel,
+                            0, 0.0f, nullptr);
+#endif
+}
+
+void CarlaPlugin::setParameterMappedControlIndex(const uint32_t parameterId, const int16_t index, const bool sendOsc, const bool sendCallback) noexcept
+{
+    if (pData->engineBridged) {
+        CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
+    } else {
+        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
+    }
+    CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+    CARLA_SAFE_ASSERT_RETURN(index >= CONTROL_INDEX_NONE && index <= CONTROL_INDEX_MAX_ALLOWED,);
+
+    if (pData->param.data[parameterId].mappedControlIndex == index)
+        return;
+
+    if (index == CONTROL_INDEX_CV)
     {
+        CARLA_SAFE_ASSERT_RETURN(pData->event.cvSourcePorts != nullptr,);
+
         char strBuf[STR_MAX+1];
         carla_zeroChars(strBuf, STR_MAX+1);
         if (! getParameterName(parameterId, strBuf))
@@ -1699,60 +1726,21 @@ void CarlaPlugin::setParameterAsCvControl(uint32_t parameterId, bool cv_controll
         cvPort->setRange(pData->param.ranges[parameterId].min, pData->param.ranges[parameterId].max);
         pData->event.cvSourcePorts->addCVSource(cvPort, parameterId);
     }
-    else
+    else if (pData->param.data[parameterId].mappedControlIndex == CONTROL_INDEX_CV)
     {
+        CARLA_SAFE_ASSERT_RETURN(pData->event.cvSourcePorts != nullptr,);
+
         pData->event.cvSourcePorts->removeCVSource(parameterId);
     }
 
-    pData->engine->callback(sendCallback, sendOsc,
-                            ENGINE_CALLBACK_PARAMETER_CV_CONTROLLED_STATUS_CHANGED,
-                            pData->id,
-                            static_cast<int>(parameterId),
-                            cv_controlled ? 1 : 0,
-                            0, 0.0f, nullptr);
-}
-#endif
-
-void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, const uint8_t channel, const bool sendOsc, const bool sendCallback) noexcept
-{
-    if (pData->engineBridged) {
-        CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
-    } else {
-        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
-    }
-    CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
-    CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
-
-    pData->param.data[parameterId].midiChannel = channel;
+    pData->param.data[parameterId].mappedControlIndex = index;
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     pData->engine->callback(sendCallback, sendOsc,
-                            ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED,
+                            ENGINE_CALLBACK_PARAMETER_MAPPED_CONTROL_INDEX_CHANGED,
                             pData->id,
                             static_cast<int>(parameterId),
-                            channel,
-                            0, 0.0f, nullptr);
-#endif
-}
-
-void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, const int16_t cc, const bool sendOsc, const bool sendCallback) noexcept
-{
-    if (pData->engineBridged) {
-        CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
-    } else {
-        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
-    }
-    CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
-    CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc < MAX_MIDI_CONTROL,);
-
-    pData->param.data[parameterId].midiCC = cc;
-
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-    pData->engine->callback(sendCallback, sendOsc,
-                            ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED,
-                            pData->id,
-                            static_cast<int>(parameterId),
-                            cc,
+                            index,
                             0, 0.0f, nullptr);
 #endif
 }
@@ -1766,6 +1754,10 @@ void CarlaPlugin::setParameterMappedRange(const uint32_t parameterId, const floa
     }
     CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
+    if (carla_isEqual(pData->param.data[parameterId].mappedMinimum, minimum) &&
+        carla_isEqual(pData->param.data[parameterId].mappedMaximum, maximum))
+        return;
+
     pData->param.data[parameterId].mappedMinimum = minimum;
     pData->param.data[parameterId].mappedMaximum = maximum;
 
@@ -1775,7 +1767,7 @@ void CarlaPlugin::setParameterMappedRange(const uint32_t parameterId, const floa
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     pData->engine->callback(sendCallback, sendOsc,
-                            ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED,
+                            ENGINE_CALLBACK_PARAMETER_MAPPED_RANGE_CHANGED,
                             pData->id,
                             static_cast<int>(parameterId),
                             0, 0, 0.0f,

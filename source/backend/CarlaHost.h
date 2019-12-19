@@ -942,14 +942,6 @@ CARLA_EXPORT void carla_set_parameter_value(uint pluginId, uint32_t parameterId,
 
 #ifndef BUILD_BRIDGE
 /*!
- * Change a plugin's parameter cv controlled status.
- * @param pluginId      Plugin
- * @param parameterId   Parameter index
- * @param cv_controlled New CV controlled Status
- */
-CARLA_EXPORT void carla_set_parameter_cv_controlled(uint pluginId, uint32_t parameterId, bool cv_controlled);
-
-/*!
  * Change a plugin's parameter MIDI channel.
  * @param pluginId    Plugin
  * @param parameterId Parameter index
@@ -958,12 +950,12 @@ CARLA_EXPORT void carla_set_parameter_cv_controlled(uint pluginId, uint32_t para
 CARLA_EXPORT void carla_set_parameter_midi_channel(uint pluginId, uint32_t parameterId, uint8_t channel);
 
 /*!
- * Change a plugin's parameter MIDI cc.
+ * Change a plugin's parameter mapped control index.
  * @param pluginId    Plugin
  * @param parameterId Parameter index
- * @param cc          New MIDI cc
+ * @param cc          New control index
  */
-CARLA_EXPORT void carla_set_parameter_midi_cc(uint pluginId, uint32_t parameterId, int16_t cc);
+CARLA_EXPORT void carla_set_parameter_mapped_control_index(uint pluginId, uint32_t parameterId, int16_t index);
 
 /*!
  * Change a plugin's parameter mapped range.

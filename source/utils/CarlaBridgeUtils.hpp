@@ -85,8 +85,8 @@ const char* PluginBridgeNonRtClientOpcode2str(const PluginBridgeNonRtClientOpcod
         return "kPluginBridgeNonRtClientSetParameterValue";
     case kPluginBridgeNonRtClientSetParameterMidiChannel:
         return "kPluginBridgeNonRtClientSetParameterMidiChannel";
-    case kPluginBridgeNonRtClientSetParameterMidiCC:
-        return "kPluginBridgeNonRtClientSetParameterMidiCC";
+    case kPluginBridgeNonRtClientSetParameterMappedControlIndex:
+        return "kPluginBridgeNonRtClientSetParameterMappedControlIndex";
     case kPluginBridgeNonRtClientSetProgram:
         return "kPluginBridgeNonRtClientSetProgram";
     case kPluginBridgeNonRtClientSetMidiProgram:

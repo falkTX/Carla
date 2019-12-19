@@ -149,7 +149,7 @@ void CarlaEngineOsc::sendPluginParameterInfo(const CarlaPlugin* const plugin, co
     try_lo_send(fControlDataTCP.target, targetPath, "iiiiiissfffffff",
                 static_cast<int32_t>(plugin->getId()), static_cast<int32_t>(index),
                 static_cast<int32_t>(paramData.type), static_cast<int32_t>(paramData.hints),
-                static_cast<int32_t>(paramData.midiChannel), static_cast<int32_t>(paramData.midiCC),
+                static_cast<int32_t>(paramData.mappedControlIndex), static_cast<int32_t>(paramData.midiChannel),
                 bufName, bufUnit,
                 static_cast<double>(paramRanges.def),
                 static_cast<double>(paramRanges.min),

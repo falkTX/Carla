@@ -149,7 +149,8 @@ private:
     int handleMsgSetBalanceRight(CARLA_ENGINE_OSC_HANDLE_ARGS);
     int handleMsgSetPanning(CARLA_ENGINE_OSC_HANDLE_ARGS);
     int handleMsgSetParameterValue(CARLA_ENGINE_OSC_HANDLE_ARGS);
-    int handleMsgSetParameterMidiCC(CARLA_ENGINE_OSC_HANDLE_ARGS);
+    int handleMsgSetParameterMappedControlIndex(CARLA_ENGINE_OSC_HANDLE_ARGS);
+    int handleMsgSetParameterMappedRange(CARLA_ENGINE_OSC_HANDLE_ARGS);
     int handleMsgSetParameterMidiChannel(CARLA_ENGINE_OSC_HANDLE_ARGS);
     int handleMsgSetProgram(CARLA_ENGINE_OSC_HANDLE_ARGS);
     int handleMsgSetMidiProgram(CARLA_ENGINE_OSC_HANDLE_ARGS);

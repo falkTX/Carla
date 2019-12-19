@@ -1389,7 +1389,7 @@ public:
                         {
                             if (pData->param.data[k].midiChannel != event.channel)
                                 continue;
-                            if (pData->param.data[k].midiCC != ctrlEvent.param)
+                            if (pData->param.data[k].mappedControlIndex != ctrlEvent.param)
                                 continue;
                             if (pData->param.data[k].type != PARAMETER_INPUT)
                                 continue;

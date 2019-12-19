@@ -2574,7 +2574,7 @@ public:
                     if (LV2_IS_PORT_MIDI_MAP_CC(portMidiMap.Type))
                     {
                         if (portMidiMap.Number < MAX_MIDI_CONTROL && ! MIDI_IS_CONTROL_BANK_SELECT(portMidiMap.Number))
-                            pData->param.data[j].midiCC = static_cast<int16_t>(portMidiMap.Number);
+                            pData->param.data[j].mappedControlIndex = static_cast<int16_t>(portMidiMap.Number);
                     }
                 }
                 else if (LV2_IS_PORT_OUTPUT(portTypes))
@@ -3678,7 +3678,7 @@ public:
                         {
                             if (pData->param.data[k].midiChannel != event.channel)
                                 continue;
-                            if (pData->param.data[k].midiCC != ctrlEvent.param)
+                            if (pData->param.data[k].mappedControlIndex != ctrlEvent.param)
                                 continue;
                             if (pData->param.data[k].type != PARAMETER_INPUT)
                                 continue;
@@ -4039,10 +4039,10 @@ public:
                     // plugin is responsible to ensure correct bounds
                     pData->param.ranges[k].fixValue(fParamBuffers[k]);
 
-                if (pData->param.data[k].midiCC > 0)
+                if (pData->param.data[k].mappedControlIndex > 0)
                 {
                     channel = pData->param.data[k].midiChannel;
-                    param   = static_cast<uint16_t>(pData->param.data[k].midiCC);
+                    param   = static_cast<uint16_t>(pData->param.data[k].mappedControlIndex);
                     value   = pData->param.ranges[k].getNormalizedValue(fParamBuffers[k]);
                     pData->event.portOut->writeControlEvent(0, channel, kEngineControlEventTypeParameter, param, value);
                 }

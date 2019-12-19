@@ -1132,7 +1132,7 @@ public:
                         {
                             const int16_t cc = DSSI_CC_NUMBER(ctrl);
                             if (! MIDI_IS_CONTROL_BANK_SELECT(cc))
-                                pData->param.data[j].midiCC = cc;
+                                pData->param.data[j].mappedControlIndex = cc;
                         }
                     }
                 }
@@ -1702,7 +1702,7 @@ public:
                         {
                             if (pData->param.data[k].midiChannel != event.channel)
                                 continue;
-                            if (pData->param.data[k].midiCC != ctrlEvent.param)
+                            if (pData->param.data[k].mappedControlIndex != ctrlEvent.param)
                                 continue;
                             if (pData->param.data[k].type != PARAMETER_INPUT)
                                 continue;
@@ -1943,10 +1943,10 @@ public:
 
                 pData->param.ranges[k].fixValue(fParamBuffers[k]);
 
-                if (pData->param.data[k].midiCC > 0)
+                if (pData->param.data[k].mappedControlIndex > 0)
                 {
                     channel = pData->param.data[k].midiChannel;
-                    param   = static_cast<uint16_t>(pData->param.data[k].midiCC);
+                    param   = static_cast<uint16_t>(pData->param.data[k].mappedControlIndex);
                     value   = pData->param.ranges[k].getNormalizedValue(fParamBuffers[k]);
                     pData->event.portOut->writeControlEvent(0, channel, kEngineControlEventTypeParameter, param, value);
                 }

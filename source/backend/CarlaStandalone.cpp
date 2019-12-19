@@ -1443,8 +1443,10 @@ const ParameterData* carla_get_parameter_data(uint pluginId, uint32_t parameterI
     retParamData.hints       = 0x0;
     retParamData.index       = CB::PARAMETER_NULL;
     retParamData.rindex      = -1;
-    retParamData.midiCC      = -1;
     retParamData.midiChannel = 0;
+    retParamData.mappedControlIndex = CB::CONTROL_INDEX_NONE;
+    retParamData.mappedMinimum = 0.0f;
+    retParamData.mappedMaximum = 0.0f;
 
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &retParamData);
 
@@ -1459,8 +1461,10 @@ const ParameterData* carla_get_parameter_data(uint pluginId, uint32_t parameterI
     retParamData.hints       = pluginParamData.hints;
     retParamData.index       = pluginParamData.index;
     retParamData.rindex      = pluginParamData.rindex;
-    retParamData.midiCC      = pluginParamData.midiCC;
     retParamData.midiChannel = pluginParamData.midiChannel;
+    retParamData.mappedControlIndex = pluginParamData.mappedControlIndex;
+    retParamData.mappedMinimum = pluginParamData.mappedMinimum;
+    retParamData.mappedMaximum = pluginParamData.mappedMaximum;
     return &plugin->getParameterData(parameterId);
 }
 
@@ -1984,18 +1988,6 @@ void carla_set_parameter_value(uint pluginId, uint32_t parameterId, float value)
 }
 
 #ifndef BUILD_BRIDGE
-void carla_set_parameter_cv_controlled(uint pluginId, uint32_t parameterId, bool cv_controlled)
-{
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
-
-    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-
-    carla_debug("carla_set_parameter_cv_controlled(%u, %u, %s)", pluginId, parameterId, bool2str(cv_controlled));
-    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
-
-    return plugin->setParameterAsCvControl(parameterId, cv_controlled, true, false);
-}
 
 void carla_set_parameter_midi_channel(uint pluginId, uint32_t parameterId, uint8_t channel)
 {
@@ -2011,18 +2003,18 @@ void carla_set_parameter_midi_channel(uint pluginId, uint32_t parameterId, uint8
     return plugin->setParameterMidiChannel(parameterId, channel, true, false);
 }
 
-void carla_set_parameter_midi_cc(uint pluginId, uint32_t parameterId, int16_t cc)
+void carla_set_parameter_mapped_control_index(uint pluginId, uint32_t parameterId, int16_t index)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc < MAX_MIDI_CONTROL,);
+    CARLA_SAFE_ASSERT_RETURN(index >= CB::CONTROL_INDEX_NONE && index <= CB::CONTROL_INDEX_MAX_ALLOWED,);
 
     CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
 
-    carla_debug("carla_set_parameter_midi_cc(%i, %i, %i)", pluginId, parameterId, cc);
+    carla_debug("carla_set_parameter_mapped_control_index(%i, %i, %i)", pluginId, parameterId, cc);
     CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
 
-    return plugin->setParameterMidiCC(parameterId, cc, true, false);
+    return plugin->setParameterMappedControlIndex(parameterId, index, true, false);
 }
 
 void carla_set_parameter_mapped_range(uint pluginId, uint32_t parameterId, float minimum, float maximum)
