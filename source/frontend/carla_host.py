@@ -468,7 +468,7 @@ class HostWindow(QMainWindow):
 
         self.ui.b_xruns.clicked.connect(self.slot_xrunClear)
 
-        self.ui.listWidget.customContextMenuRequested.connect(self.showPluginActionsMenu)
+        self.ui.listWidget.customContextMenuRequested.connect(self.slot_showPluginActionsMenu)
 
         self.ui.keyboard.noteOn.connect(self.slot_noteOn)
         self.ui.keyboard.noteOff.connect(self.slot_noteOff)
@@ -1126,7 +1126,7 @@ class HostWindow(QMainWindow):
                              self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
     @pyqtSlot()
-    def showPluginActionsMenu(self):
+    def slot_showPluginActionsMenu(self):
         menu = QMenu(self)
 
         menu.addSection("Plugins")
@@ -2708,7 +2708,7 @@ def canvasCallback(action, value1, value2, valueStr):
             pwidget.showCustomUI()
 
     elif action == patchcanvas.ACTION_BG_RIGHT_CLICK:
-        gCarla.gui.showPluginActionsMenu()
+        gCarla.gui.slot_showPluginActionsMenu()
 
     elif action == patchcanvas.ACTION_INLINE_DISPLAY:
         # FIXME

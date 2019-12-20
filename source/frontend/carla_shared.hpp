@@ -251,7 +251,7 @@ static const char* const* const MIDI_CC_LIST = {
 // Wine
 #define CARLA_DEFAULT_WINE_EXECUTABLE      "wine"
 #define CARLA_DEFAULT_WINE_AUTO_PREFIX     true
-#define CARLA_DEFAULT_WINE_FALLBACK_PREFIX os.path.expanduser("~/.wine")
+#define CARLA_DEFAULT_WINE_FALLBACK_PREFIX QDir::homePath() + "/.wine"
 #define CARLA_DEFAULT_WINE_RT_PRIO_ENABLED true
 #define CARLA_DEFAULT_WINE_BASE_RT_PRIO    15
 #define CARLA_DEFAULT_WINE_SERVER_RT_PRIO  10
@@ -267,8 +267,8 @@ static const char* const* const MIDI_CC_LIST = {
 //---------------------------------------------------------------------------------------------------------------------
 // Default File Folders
 
-#define CARLA_DEFAULT_FILE_PATH_AUDIO []
-#define CARLA_DEFAULT_FILE_PATH_MIDI  []
+#define CARLA_DEFAULT_FILE_PATH_AUDIO {}
+#define CARLA_DEFAULT_FILE_PATH_MIDI  {}
 
 //---------------------------------------------------------------------------------------------------------------------
 // Default Plugin Folders (get)
@@ -281,7 +281,56 @@ static const char* const* const MIDI_CC_LIST = {
 #define DEFAULT_SF2_PATH    ""
 #define DEFAULT_SFZ_PATH    ""
 
-// TODO
+#ifdef CARLA_OS_WIN
+# define CARLA_PATH_SPLITTER ";"
+#else
+# define CARLA_PATH_SPLITTER ":"
+#endif
+
+//---------------------------------------------------------------------------------------------------------------------
+// Default Plugin Folders (set)
+
+/*
+readEnvVars = True
+
+if WINDOWS:
+    # Check if running Wine. If yes, ignore env vars
+    from winreg import ConnectRegistry, OpenKey, CloseKey, HKEY_CURRENT_USER
+    reg = ConnectRegistry(None, HKEY_CURRENT_USER)
+
+    try:
+        key = OpenKey(reg, r"SOFTWARE\Wine")
+        CloseKey(key)
+        del key
+        readEnvVars = False
+    except:
+        pass
+
+    CloseKey(reg)
+    del reg
+*/
+
+/*
+#ifndef CARLA_OS_WIN
+# define CARLA_DEFAULT_LADSPA_PATH = std::getenv("LADSPA_PATH", DEFAULT_LADSPA_PATH).split(CARLA_PATH_SPLITTER)
+# define CARLA_DEFAULT_DSSI_PATH   = std::getenv("DSSI_PATH",   DEFAULT_DSSI_PATH).split(CARLA_PATH_SPLITTER)
+# define CARLA_DEFAULT_LV2_PATH    = std::getenv("LV2_PATH",    DEFAULT_LV2_PATH).split(CARLA_PATH_SPLITTER)
+# define CARLA_DEFAULT_VST2_PATH   = std::getenv("VST_PATH",    DEFAULT_VST2_PATH).split(CARLA_PATH_SPLITTER)
+# define CARLA_DEFAULT_VST3_PATH   = std::getenv("VST3_PATH",   DEFAULT_VST3_PATH).split(CARLA_PATH_SPLITTER)
+# define CARLA_DEFAULT_SF2_PATH    = std::getenv("SF2_PATH",    DEFAULT_SF2_PATH).split(CARLA_PATH_SPLITTER)
+# define CARLA_DEFAULT_SFZ_PATH    = std::getenv("SFZ_PATH",    DEFAULT_SFZ_PATH).split(CARLA_PATH_SPLITTER)
+#else
+*/
+# define CARLA_DEFAULT_LADSPA_PATH QString(DEFAULT_LADSPA_PATH).split(CARLA_PATH_SPLITTER)
+# define CARLA_DEFAULT_DSSI_PATH   QString(DEFAULT_DSSI_PATH).split(CARLA_PATH_SPLITTER)
+# define CARLA_DEFAULT_LV2_PATH    QString(DEFAULT_LV2_PATH).split(CARLA_PATH_SPLITTER)
+# define CARLA_DEFAULT_VST2_PATH   QString(DEFAULT_VST2_PATH).split(CARLA_PATH_SPLITTER)
+# define CARLA_DEFAULT_VST3_PATH   QString(DEFAULT_VST3_PATH).split(CARLA_PATH_SPLITTER)
+# define CARLA_DEFAULT_SF2_PATH    QString(DEFAULT_SF2_PATH).split(CARLA_PATH_SPLITTER)
+# define CARLA_DEFAULT_SFZ_PATH    QString(DEFAULT_SFZ_PATH).split(CARLA_PATH_SPLITTER)
+/*
+#endif
+*/
 
 //---------------------------------------------------------------------------------------------------------------------
 // Global Carla object

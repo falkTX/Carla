@@ -272,15 +272,22 @@ void QMessageBoxWithBetterWidth::showEvent(QShowEvent* const event)
 bool QSafeSettings::valueBool(const QString key, const bool defaultValue) const
 {
     QVariant var(value(key, defaultValue));
+
+    if (var.isNull())
+        return defaultValue;
+
     CARLA_SAFE_ASSERT_RETURN(var.convert(QVariant::Bool), defaultValue);
 
     return var.isValid() ? var.toBool() : defaultValue;
 }
 
-
 Qt::CheckState QSafeSettings::valueCheckState(const QString key, const Qt::CheckState defaultValue) const
 {
     QVariant var(value(key, defaultValue));
+
+    if (var.isNull())
+        return defaultValue;
+
     CARLA_SAFE_ASSERT_RETURN(var.convert(QVariant::UInt), defaultValue);
 
     if (! var.isValid())
@@ -302,6 +309,10 @@ Qt::CheckState QSafeSettings::valueCheckState(const QString key, const Qt::Check
 uint QSafeSettings::valueUInt(const QString key, const uint defaultValue) const
 {
     QVariant var(value(key, defaultValue));
+
+    if (var.isNull())
+        return defaultValue;
+
     CARLA_SAFE_ASSERT_RETURN(var.convert(QVariant::UInt), defaultValue);
 
     return var.isValid() ? var.toUInt() : defaultValue;
@@ -310,6 +321,10 @@ uint QSafeSettings::valueUInt(const QString key, const uint defaultValue) const
 double QSafeSettings::valueDouble(const QString key, const double defaultValue) const
 {
     QVariant var(value(key, defaultValue));
+
+    if (var.isNull())
+        return defaultValue;
+
     CARLA_SAFE_ASSERT_RETURN(var.convert(QVariant::Double), defaultValue);
 
     return var.isValid() ? var.toDouble() : defaultValue;
@@ -318,6 +333,10 @@ double QSafeSettings::valueDouble(const QString key, const double defaultValue) 
 QString QSafeSettings::valueString(const QString key, const QString defaultValue) const
 {
     QVariant var(value(key, defaultValue));
+
+    if (var.isNull())
+        return defaultValue;
+
     CARLA_SAFE_ASSERT_RETURN(var.convert(QVariant::String), defaultValue);
 
     return var.isValid() ? var.toString() : defaultValue;
@@ -326,6 +345,10 @@ QString QSafeSettings::valueString(const QString key, const QString defaultValue
 QByteArray QSafeSettings::valueByteArray(const QString key, const QByteArray defaultValue) const
 {
     QVariant var(value(key, defaultValue));
+
+    if (var.isNull())
+        return defaultValue;
+
     CARLA_SAFE_ASSERT_RETURN(var.convert(QVariant::ByteArray), defaultValue);
 
     return var.isValid() ? var.toByteArray() : defaultValue;
@@ -334,6 +357,10 @@ QByteArray QSafeSettings::valueByteArray(const QString key, const QByteArray def
 QStringList QSafeSettings::valueStringList(const QString key, const QStringList defaultValue) const
 {
     QVariant var(value(key, defaultValue));
+
+    if (var.isNull())
+        return defaultValue;
+
     CARLA_SAFE_ASSERT_RETURN(var.convert(QVariant::StringList), defaultValue);
 
     return var.isValid() ? var.toStringList() : defaultValue;

@@ -109,22 +109,13 @@ private:
     PrivateData* const self;
 
     //-----------------------------------------------------------------------------------------------------------------
-    // Setup
-
-    void compactPlugin(uint pluginId);
-    void changePluginColor(uint pluginId, QString color, QString colorStr);
-    void changePluginSkin(uint pluginId, QString skin);
-    void switchPlugins(uint pluginIdA, uint pluginIdB);
-    void setLoadRDFsNeeded() noexcept;
-    void setProperWindowTitle();
-    void updateBufferSize(uint newBufferSize);
-    void updateSampleRate(double newSampleRate);
-
-    //-----------------------------------------------------------------------------------------------------------------
-    // Files
-
-    //-----------------------------------------------------------------------------------------------------------------
     // Files (menu actions)
+
+    Q_SLOT void slot_fileNew();
+    Q_SLOT void slot_fileOpen();
+    Q_SLOT void slot_fileSave(bool saveAs = false);
+    Q_SLOT void slot_fileSaveAs();
+    Q_SLOT void slot_loadProjectNow();
 
     //-----------------------------------------------------------------------------------------------------------------
     // Engine (menu actions)
@@ -133,46 +124,88 @@ private:
     Q_SLOT bool slot_engineStop(bool forced = false);
     Q_SLOT void slot_engineConfig();
     Q_SLOT bool slot_engineStopTryAgain();
-    void engineStopFinal();
 
     //-----------------------------------------------------------------------------------------------------------------
     // Engine (host callbacks)
 
     Q_SLOT void slot_handleEngineStartedCallback(uint pluginCount, int processMode, int transportMode, int bufferSize, float sampleRate, QString driverName);
     Q_SLOT void slot_handleEngineStoppedCallback();
-
-    //-----------------------------------------------------------------------------------------------------------------
-    // Plugins
+    Q_SLOT void slot_handleTransportModeChangedCallback(int transportMode, QString transportExtra);
+    Q_SLOT void slot_handleBufferSizeChangedCallback(int newBufferSize);
+    Q_SLOT void slot_handleSampleRateChangedCallback(double newSampleRate);
+    Q_SLOT void slot_handleCancelableActionCallback(int pluginId, bool started, QString action);
+    Q_SLOT void slot_canlableActionBoxClicked();
+    Q_SLOT void slot_handleProjectLoadFinishedCallback();
 
     //-----------------------------------------------------------------------------------------------------------------
     // Plugins (menu actions)
 
+    Q_SLOT void slot_favoritePluginAdd();
+    Q_SLOT void slot_showPluginActionsMenu();
+    Q_SLOT void slot_pluginAdd();
+    Q_SLOT void slot_confirmRemoveAll();
+    Q_SLOT void slot_jackAppAdd();
+
     //-----------------------------------------------------------------------------------------------------------------
     // Plugins (macros)
+
+    Q_SLOT void slot_pluginsEnable();
+    Q_SLOT void slot_pluginsDisable();
+    Q_SLOT void slot_pluginsVolume100();
+    Q_SLOT void slot_pluginsMute();
+    Q_SLOT void slot_pluginsWet100();
+    Q_SLOT void slot_pluginsBypass();
+    Q_SLOT void slot_pluginsCenter();
+    Q_SLOT void slot_pluginsCompact();
+    Q_SLOT void slot_pluginsExpand();
 
     //-----------------------------------------------------------------------------------------------------------------
     // Plugins (host callbacks)
 
-    //-----------------------------------------------------------------------------------------------------------------
-    // Canvas
+    Q_SLOT void slot_handlePluginAddedCallback(int pluginId, QString pluginName);
+    Q_SLOT void slot_handlePluginRemovedCallback(int pluginId);
 
     //-----------------------------------------------------------------------------------------------------------------
     // Canvas (menu actions)
 
+    Q_SLOT void slot_canvasShowInternal();
+    Q_SLOT void slot_canvasShowExternal();
+    Q_SLOT void slot_canvasArrange();
+    Q_SLOT void slot_canvasRefresh();
+    Q_SLOT void slot_canvasZoomFit();
+    Q_SLOT void slot_canvasZoomIn();
+    Q_SLOT void slot_canvasZoomOut();
+    Q_SLOT void slot_canvasZoomReset();
+    Q_SLOT void slot_canvasSaveImage();
+
     //-----------------------------------------------------------------------------------------------------------------
     // Canvas (canvas callbacks)
+
+    Q_SLOT void slot_canvasItemMoved(int group_id, int split_mode, QPointF pos);
+    Q_SLOT void slot_canvasSelectionChanged();
+    Q_SLOT void slot_canvasScaleChanged(double scale);
+    Q_SLOT void slot_canvasPluginSelected(QList<void*> pluginList);
 
     //-----------------------------------------------------------------------------------------------------------------
     // Canvas (host callbacks)
 
-    //-----------------------------------------------------------------------------------------------------------------
-    // Settings
-
-    void saveSettings();
-    void loadSettings(bool firstTime);
+    Q_SLOT void slot_handlePatchbayClientAddedCallback(int clientId, int clientIcon, int pluginId, QString clientName);
+    Q_SLOT void slot_handlePatchbayClientRemovedCallback(int clientId);
+    Q_SLOT void slot_handlePatchbayClientRenamedCallback(int clientId, QString newClientName);
+    Q_SLOT void slot_handlePatchbayClientDataChangedCallback(int clientId, int clientIcon, int pluginId);
+    Q_SLOT void slot_handlePatchbayPortAddedCallback(int clientId, int portId, int portFlags, int portGroupId, QString portName);
+    Q_SLOT void slot_handlePatchbayPortRemovedCallback(int groupId, int portId);
+    Q_SLOT void slot_handlePatchbayPortChangedCallback(int groupId, int portId, int portFlags, int portGroupId, QString newPortName);
+    Q_SLOT void slot_handlePatchbayPortGroupAddedCallback(int groupId, int portId, int portGroupId, QString newPortName);
+    Q_SLOT void slot_handlePatchbayPortGroupRemovedCallback(int groupId, int portId);
+    Q_SLOT void slot_handlePatchbayPortGroupChangedCallback(int groupId, int portId, int portGroupId, QString newPortName);
+    Q_SLOT void slot_handlePatchbayConnectionAddedCallback(int connectionId, int groupOutId, int portOutId, int groupInId, int portInId);
+    Q_SLOT void slot_handlePatchbayConnectionRemovedCallback(int connectionId, int portOutId, int portInId);
 
     //-----------------------------------------------------------------------------------------------------------------
     // Settings (helpers)
+
+    Q_SLOT void slot_restoreCanvasScrollbarValues();
 
     //-----------------------------------------------------------------------------------------------------------------
     // Settings (menu actions)
@@ -186,13 +219,17 @@ private:
     //-----------------------------------------------------------------------------------------------------------------
     // About (menu actions)
 
+    Q_SLOT void slot_aboutCarla();
+    Q_SLOT void slot_aboutJuce();
+    Q_SLOT void slot_aboutQt();
+
     //-----------------------------------------------------------------------------------------------------------------
     // Disk (menu actions)
 
-    //-----------------------------------------------------------------------------------------------------------------
-    // Transport
-
-    void refreshTransport(bool forced = false);
+    Q_SLOT void slot_diskFolderChanged(int index);
+    Q_SLOT void slot_diskFolderAdd();
+    Q_SLOT void slot_diskFolderRemove();
+    Q_SLOT void slot_fileTreeDoubleClicked(QModelIndex* modelIndex);
 
     //-----------------------------------------------------------------------------------------------------------------
     // Transport (menu actions)
@@ -213,65 +250,79 @@ private:
     //-----------------------------------------------------------------------------------------------------------------
     // Canvas scrollbars
 
+    Q_SLOT void slot_horizontalScrollBarChanged(int value);
+    Q_SLOT void slot_verticalScrollBarChanged(int value);
+
     //-----------------------------------------------------------------------------------------------------------------
     // Canvas keyboard
+
+    Q_SLOT void slot_noteOn(int note);
+    Q_SLOT void slot_noteOff(int note);
 
     //-----------------------------------------------------------------------------------------------------------------
     // Canvas keyboard (host callbacks)
 
+    Q_SLOT void slot_handleNoteOnCallback(int pluginId, int channel, int note, int velocity);
+    Q_SLOT void slot_handleNoteOffCallback(int pluginId, int channel, int note);
+
     //-----------------------------------------------------------------------------------------------------------------
+
+    Q_SLOT void slot_handleUpdateCallback(int pluginId);
 
     //-----------------------------------------------------------------------------------------------------------------
     // MiniCanvas stuff
 
-    //-----------------------------------------------------------------------------------------------------------------
-    // Timers
-
-    void startTimers();
-    void restartTimersIfNeeded();
-    void killTimers();
+    Q_SLOT void slot_miniCanvasCheckAll();
+    Q_SLOT void slot_miniCanvasCheckSize();
+    Q_SLOT void slot_miniCanvasMoved(qreal xp, qreal yp);
 
     //-----------------------------------------------------------------------------------------------------------------
     // Misc
 
-    //-----------------------------------------------------------------------------------------------------------------
+    Q_SLOT void slot_tabChanged(int index);
+    Q_SLOT void slot_handleReloadAllCallback(int pluginId);
 
     //-----------------------------------------------------------------------------------------------------------------
 
-    //-----------------------------------------------------------------------------------------------------------------
-
-    //-----------------------------------------------------------------------------------------------------------------
-    // Internal stuff
+    Q_SLOT void slot_handleNSMCallback(int opcode, int valueInt, QString valueStr);
 
     //-----------------------------------------------------------------------------------------------------------------
 
+    Q_SLOT void slot_handleDebugCallback(int pluginId, int value1, int value2, int value3, float valuef, QString valueStr);
+    Q_SLOT void slot_handleInfoCallback(QString info);
+    Q_SLOT void slot_handleErrorCallback(QString error);
+    Q_SLOT void slot_handleQuitCallback();
+    Q_SLOT void slot_handleInlineDisplayRedrawCallback(int pluginId);
+
     //-----------------------------------------------------------------------------------------------------------------
+
+    Q_SLOT void slot_handleSIGUSR1();
+    Q_SLOT void slot_handleSIGTERM();
 
     //-----------------------------------------------------------------------------------------------------------------
     // show/hide event
 
+    void showEvent(QShowEvent* event) override;
+    void hideEvent(QHideEvent* event) override;
+
     //-----------------------------------------------------------------------------------------------------------------
     // resize event
+
+    void resizeEvent(QResizeEvent* event) override;
 
     //-----------------------------------------------------------------------------------------------------------------
     // timer event
 
-    void refreshRuntimeInfo(float load, int xruns);
-    void getAndRefreshRuntimeInfo();
-    void idleFast();
-    void idleSlow();
     void timerEvent(QTimerEvent* event) override;
 
     //-----------------------------------------------------------------------------------------------------------------
     // color/style change event
 
     void changeEvent(QEvent* event) override;
-    void updateStyle();
 
     //-----------------------------------------------------------------------------------------------------------------
     // close event
 
-    bool shouldIgnoreClose();
     void closeEvent(QCloseEvent* event) override;
 
     //-----------------------------------------------------------------------------------------------------------------

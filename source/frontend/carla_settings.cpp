@@ -435,25 +435,25 @@ struct CarlaSettingsW::PrivateData {
             ui.ch_engine_uis_always_on_top->setChecked(host.uisAlwaysOnTop);
 
             ui.le_main_proj_folder->setText(settings.valueString(CARLA_KEY_MAIN_PROJECT_FOLDER,
-                                                                CARLA_DEFAULT_MAIN_PROJECT_FOLDER));
+                                                                 CARLA_DEFAULT_MAIN_PROJECT_FOLDER));
 
             ui.ch_main_theme_pro->setChecked(settings.valueBool(CARLA_KEY_MAIN_USE_PRO_THEME,
                                                                 CARLA_DEFAULT_MAIN_USE_PRO_THEME) && ui.group_main_theme->isEnabled());
 
             ui.cb_main_theme_color->setCurrentIndex(ui.cb_main_theme_color->findText(settings.valueString(CARLA_KEY_MAIN_PRO_THEME_COLOR,
-                                                                                                        CARLA_DEFAULT_MAIN_PRO_THEME_COLOR)));
+                                                                                                          CARLA_DEFAULT_MAIN_PRO_THEME_COLOR)));
 
             ui.sb_main_refresh_interval->setValue(settings.valueUInt(CARLA_KEY_MAIN_REFRESH_INTERVAL,
-                                                                    CARLA_DEFAULT_MAIN_REFRESH_INTERVAL));
+                                                                     CARLA_DEFAULT_MAIN_REFRESH_INTERVAL));
 
             ui.ch_main_confirm_exit->setChecked(settings.valueBool(CARLA_KEY_MAIN_CONFIRM_EXIT,
-                                                                CARLA_DEFAULT_MAIN_CONFIRM_EXIT));
+                                                                   CARLA_DEFAULT_MAIN_CONFIRM_EXIT));
 
             // --------------------------------------------------------------------------------------------------------
             // Canvas
 
             ui.cb_canvas_theme->setCurrentIndex(ui.cb_canvas_theme->findText(settings.valueString(CARLA_KEY_CANVAS_THEME,
-                                                                                                CARLA_DEFAULT_CANVAS_THEME)));
+                                                                                                  CARLA_DEFAULT_CANVAS_THEME)));
 
             ui.cb_canvas_size->setCurrentIndex(ui.cb_canvas_size->findText(settings.valueString(CARLA_KEY_CANVAS_SIZE,
                                                                                                 CARLA_DEFAULT_CANVAS_SIZE)));
@@ -468,22 +468,22 @@ struct CarlaSettingsW::PrivateData {
                                                                     CARLA_DEFAULT_CANVAS_AUTO_SELECT_ITEMS));
 
             ui.cb_canvas_eyecandy->setChecked(settings.valueBool(CARLA_KEY_CANVAS_EYE_CANDY,
-                                                                CARLA_DEFAULT_CANVAS_EYE_CANDY));
+                                                                 CARLA_DEFAULT_CANVAS_EYE_CANDY));
 
             ui.cb_canvas_fancy_eyecandy->setChecked(settings.valueBool(CARLA_KEY_CANVAS_FANCY_EYE_CANDY,
-                                                                    CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY));
+                                                                      CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY));
 
             ui.cb_canvas_use_opengl->setChecked(settings.valueBool(CARLA_KEY_CANVAS_USE_OPENGL,
-                                                                CARLA_DEFAULT_CANVAS_USE_OPENGL) && ui.cb_canvas_use_opengl->isEnabled());
+                                                                   CARLA_DEFAULT_CANVAS_USE_OPENGL) && ui.cb_canvas_use_opengl->isEnabled());
 
             ui.cb_canvas_render_aa->setCheckState(settings.valueCheckState(CARLA_KEY_CANVAS_ANTIALIASING,
-                                                                        CARLA_DEFAULT_CANVAS_ANTIALIASING));
+                                                                           CARLA_DEFAULT_CANVAS_ANTIALIASING));
 
             ui.cb_canvas_render_hq_aa->setChecked(settings.valueBool(CARLA_KEY_CANVAS_HQ_ANTIALIASING,
-                                                                    CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING) && ui.cb_canvas_render_hq_aa->isEnabled());
+                                                                     CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING) && ui.cb_canvas_render_hq_aa->isEnabled());
 
             ui.cb_canvas_full_repaints->setChecked(settings.valueBool(CARLA_KEY_CANVAS_FULL_REPAINTS,
-                                                                    CARLA_DEFAULT_CANVAS_FULL_REPAINTS));
+                                                                      CARLA_DEFAULT_CANVAS_FULL_REPAINTS));
 
             ui.cb_canvas_inline_displays->setChecked(settings.valueBool(CARLA_KEY_CANVAS_INLINE_DISPLAYS,
                                                                         CARLA_DEFAULT_CANVAS_INLINE_DISPLAYS));
@@ -606,117 +606,123 @@ struct CarlaSettingsW::PrivateData {
             ui.rb_osc_udp_port_specific->setChecked(true);
         }
 
-#if 0
         // ------------------------------------------------------------------------------------------------------------
         // File Paths
 
-        audioPaths = settings.value(CARLA_KEY_PATHS_AUDIO, CARLA_DEFAULT_FILE_PATH_AUDIO, list)
-        midiPaths  = settings.value(CARLA_KEY_PATHS_MIDI,  CARLA_DEFAULT_FILE_PATH_MIDI, list)
+        QStringList audioPaths = settings.valueStringList(CARLA_KEY_PATHS_AUDIO, CARLA_DEFAULT_FILE_PATH_AUDIO);
+        QStringList midiPaths  = settings.valueStringList(CARLA_KEY_PATHS_MIDI,  CARLA_DEFAULT_FILE_PATH_MIDI);
 
-        audioPaths.sort()
-        midiPaths.sort()
+        audioPaths.sort();
+        midiPaths.sort();
 
-        for audioPath in audioPaths:
-            if not audioPath: continue
-            ui.lw_files_audio.addItem(audioPath)
+        for (const QString& audioPath : audioPaths)
+        {
+            if (audioPath.isEmpty()) continue;
+            ui.lw_files_audio->addItem(audioPath);
+        }
 
-        for midiPath in midiPaths:
-            if not midiPath: continue
-            ui.lw_files_midi.addItem(midiPath)
+        for (const QString& midiPath : midiPaths)
+        {
+            if (midiPath.isEmpty()) continue;
+            ui.lw_files_midi->addItem(midiPath);
+        }
 
         // ------------------------------------------------------------------------------------------------------------
         // Plugin Paths
 
-        ladspas = settings.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH, list)
-        dssis   = settings.value(CARLA_KEY_PATHS_DSSI,   CARLA_DEFAULT_DSSI_PATH, list)
-        lv2s    = settings.value(CARLA_KEY_PATHS_LV2,    CARLA_DEFAULT_LV2_PATH, list)
-        vst2s   = settings.value(CARLA_KEY_PATHS_VST2,   CARLA_DEFAULT_VST2_PATH, list)
-        vst3s   = settings.value(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH, list)
-        sf2s    = settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH, list)
-        sfzs    = settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH, list)
+        QStringList ladspas = settings.valueStringList(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH);
+        QStringList dssis   = settings.valueStringList(CARLA_KEY_PATHS_DSSI,   CARLA_DEFAULT_DSSI_PATH);
+        QStringList lv2s    = settings.valueStringList(CARLA_KEY_PATHS_LV2,    CARLA_DEFAULT_LV2_PATH);
+        QStringList vst2s   = settings.valueStringList(CARLA_KEY_PATHS_VST2,   CARLA_DEFAULT_VST2_PATH);
+        QStringList vst3s   = settings.valueStringList(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH);
+        QStringList sf2s    = settings.valueStringList(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH);
+        QStringList sfzs    = settings.valueStringList(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH);
 
-        ladspas.sort()
-        dssis.sort()
-        lv2s.sort()
-        vst2s.sort()
-        vst3s.sort()
-        sf2s.sort()
-        sfzs.sort()
+        ladspas.sort();
+        dssis.sort();
+        lv2s.sort();
+        vst2s.sort();
+        vst3s.sort();
+        sf2s.sort();
+        sfzs.sort();
 
-        for ladspa in ladspas:
-            if not ladspa: continue
-            ui.lw_ladspa.addItem(ladspa)
+        for (const QString& ladspa : ladspas)
+        {
+            if (ladspa.isEmpty()) continue;
+            ui.lw_ladspa->addItem(ladspa);
+        }
 
-        for dssi in dssis:
-            if not dssi: continue
-            ui.lw_dssi.addItem(dssi)
+        for (const QString& dssi : dssis)
+        {
+            if (dssi.isEmpty()) continue;
+            ui.lw_dssi->addItem(dssi);
+        }
 
-        for lv2 in lv2s:
-            if not lv2: continue
-            ui.lw_lv2.addItem(lv2)
+        for (const QString& lv2 : lv2s)
+        {
+            if (lv2.isEmpty()) continue;
+            ui.lw_lv2->addItem(lv2);
+        }
 
-        for vst2 in vst2s:
-            if not vst2: continue
-            ui.lw_vst.addItem(vst2)
+        for (const QString& vst2 : vst2s)
+        {
+            if (vst2.isEmpty()) continue;
+            ui.lw_vst->addItem(vst2);
+        }
 
-        for vst3 in vst3s:
-            if not vst3: continue
-            ui.lw_vst3.addItem(vst3)
+        for (const QString& vst3 : vst3s)
+        {
+            if (vst3.isEmpty()) continue;
+            ui.lw_vst3->addItem(vst3);
+        }
 
-        for sf2 in sf2s:
-            if not sf2: continue
-            ui.lw_sf2.addItem(sf2)
+        for (const QString& sf2 : sf2s)
+        {
+            if (sf2.isEmpty()) continue;
+            ui.lw_sf2->addItem(sf2);
+        }
 
-        for sfz in sfzs:
-            if not sfz: continue
-            ui.lw_sfz.addItem(sfz)
+        for (const QString& sfz : sfzs)
+        {
+            if (sfz.isEmpty()) continue;
+            ui.lw_sfz->addItem(sfz);
+        }
 
         // ------------------------------------------------------------------------------------------------------------
         // Wine
 
-        ui.le_wine_exec.setText(settings.value(CARLA_KEY_WINE_EXECUTABLE,
-                                                    CARLA_DEFAULT_WINE_EXECUTABLE,
-                                                    str))
+        ui.le_wine_exec->setText(settings.valueString(CARLA_KEY_WINE_EXECUTABLE,
+                                                      CARLA_DEFAULT_WINE_EXECUTABLE));
 
-        ui.cb_wine_prefix_detect.setChecked(settings.value(CARLA_KEY_WINE_AUTO_PREFIX,
-                                                                CARLA_DEFAULT_WINE_AUTO_PREFIX,
-                                                                 bool))
+        ui.cb_wine_prefix_detect->setChecked(settings.valueBool(CARLA_KEY_WINE_AUTO_PREFIX,
+                                                                CARLA_DEFAULT_WINE_AUTO_PREFIX));
 
-        ui.le_wine_prefix_fallback.setText(settings.value(CARLA_KEY_WINE_FALLBACK_PREFIX,
-                                                               CARLA_DEFAULT_WINE_FALLBACK_PREFIX,
-                                                               str))
+        ui.le_wine_prefix_fallback->setText(settings.valueString(CARLA_KEY_WINE_FALLBACK_PREFIX,
+                                                                 CARLA_DEFAULT_WINE_FALLBACK_PREFIX));
 
-        ui.group_wine_realtime.setChecked(settings.value(CARLA_KEY_WINE_RT_PRIO_ENABLED,
-                                                              CARLA_DEFAULT_WINE_RT_PRIO_ENABLED,
-                                                              bool))
+        ui.group_wine_realtime->setChecked(settings.valueBool(CARLA_KEY_WINE_RT_PRIO_ENABLED,
+                                                              CARLA_DEFAULT_WINE_RT_PRIO_ENABLED));
 
-        ui.sb_wine_base_prio.setValue(settings.value(CARLA_KEY_WINE_BASE_RT_PRIO,
-                                                          CARLA_DEFAULT_WINE_BASE_RT_PRIO,
-                                                          int))
+        ui.sb_wine_base_prio->setValue(settings.valueUInt(CARLA_KEY_WINE_BASE_RT_PRIO,
+                                                          CARLA_DEFAULT_WINE_BASE_RT_PRIO));
 
-        ui.sb_wine_server_prio.setValue(settings.value(CARLA_KEY_WINE_SERVER_RT_PRIO,
-                                                            CARLA_DEFAULT_WINE_SERVER_RT_PRIO,
-                                                            int))
+        ui.sb_wine_server_prio->setValue(settings.valueUInt(CARLA_KEY_WINE_SERVER_RT_PRIO,
+                                                            CARLA_DEFAULT_WINE_SERVER_RT_PRIO));
 
         // ------------------------------------------------------------------------------------------------------------
         // Experimental
 
-        ui.ch_exp_jack_apps.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_JACK_APPS,
-                                                           CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS,
-                                                           bool))
+        ui.ch_exp_jack_apps->setChecked(settings.valueBool(CARLA_KEY_EXPERIMENTAL_JACK_APPS,
+                                                           CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS));
 
-        ui.ch_exp_export_lv2.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_EXPORT_LV2,
-                                                            CARLA_DEFAULT_EXPERIMENTAL_LV2_EXPORT,
-                                                            bool))
+        ui.ch_exp_export_lv2->setChecked(settings.valueBool(CARLA_KEY_EXPERIMENTAL_EXPORT_LV2,
+                                                            CARLA_DEFAULT_EXPERIMENTAL_LV2_EXPORT));
 
-        ui.ch_exp_load_lib_global.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL,
-                                                                 CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL,
-                                                                 bool))
+        ui.ch_exp_load_lib_global->setChecked(settings.valueBool(CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL,
+                                                                 CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL));
 
-        ui.ch_exp_prevent_bad_behaviour.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR,
-                                                                       CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR,
-                                                                       bool))
-#endif
+        ui.ch_exp_prevent_bad_behaviour->setChecked(settings.valueBool(CARLA_KEY_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR,
+                                                                       CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR));
     }
 
     void resetExperimentalSettings()
@@ -1261,41 +1267,3 @@ void CarlaSettingsW::slot_filePathRowChanged(const int row)
 }
 
 // --------------------------------------------------------------------------------------------------------------------
-// Main
-
-#include "carla_app.hpp"
-#include "carla_shared.hpp"
-
-int main(int argc, char* argv[])
-{
-    // ----------------------------------------------------------------------------------------------------------------
-    // Read CLI args
-
-    const QString initName(handleInitialCommandLineArguments(argc, argv));
-
-    // ----------------------------------------------------------------------------------------------------------------
-    // App initialization
-
-    const CarlaApplication app("Carla2-Settings", argc, argv);
-
-    // ----------------------------------------------------------------------------------------------------------------
-    // Init host backend
-
-    CarlaHost& host = initHost(initName, false, false, true);
-    loadHostSettings(host);
-
-    // ----------------------------------------------------------------------------------------------------------------
-    // Create GUI
-
-    CarlaSettingsW gui(nullptr, host, true, true);
-
-    // ----------------------------------------------------------------------------------------------------------------
-    // Show GUI
-
-    gui.show();
-
-    // ----------------------------------------------------------------------------------------------------------------
-    // App-Loop
-
-    return app.exec();
-}
