@@ -56,7 +56,7 @@ struct DriverSettingsW::PrivateData {
     QList<uint> fBufferSizes;
     QList<double> fSampleRates;
 
-    PrivateData(DriverSettingsW* const self, const uint driverIndex = 0, const QString driverName = "")
+    PrivateData(DriverSettingsW* const self, const uint driverIndex, const QString driverName)
         : ui(),
           fDriverIndex(driverIndex),
           fDriverName(driverName),
@@ -109,9 +109,9 @@ struct DriverSettingsW::PrivateData {
     }
 };
 
-DriverSettingsW::DriverSettingsW(QWidget* const parent)
+DriverSettingsW::DriverSettingsW(QWidget* const parent, const uint driverIndex, const QString driverName)
     : QDialog(parent),
-      self(new PrivateData(this))
+      self(new PrivateData(this, driverIndex, driverName))
 {
     // ----------------------------------------------------------------------------------------------------------------
     // Set-up GUI
@@ -404,9 +404,9 @@ enum PluginPathIndexes {
 };
 
 /*
- Single and Multiple client mode is only for JACK,
- but we still want to match QComboBox index to backend defines,
- so add +2 pos padding if driverName != "JACK".
+  Single and Multiple client mode is only for JACK,
+  but we still want to match QComboBox index to backend defines,
+  so add +2 pos padding if driverName != "JACK".
 */
 #define PROCESS_MODE_NON_JACK_PADDING 2
 
@@ -425,6 +425,21 @@ struct CarlaSettingsW::PrivateData {
 
     void resetExperimentalSettings()
     {
+        // Forever experimental
+        ui.cb_exp_plugin_bridges->setChecked(CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES);
+        ui.ch_exp_wine_bridges->setChecked(CARLA_DEFAULT_EXPERIMENTAL_WINE_BRIDGES);
+        ui.ch_exp_jack_apps->setChecked(CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS);
+        ui.ch_exp_export_lv2->setChecked(CARLA_DEFAULT_EXPERIMENTAL_LV2_EXPORT);
+        ui.ch_exp_load_lib_global->setChecked(CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL);
+        ui.ch_exp_prevent_bad_behaviour->setChecked(CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR);
+
+        // Temporary, until stable
+        ui.cb_canvas_fancy_eyecandy->setChecked(CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY);
+        ui.cb_canvas_use_opengl->setChecked(CARLA_DEFAULT_CANVAS_USE_OPENGL and ui.cb_canvas_use_opengl->isEnabled());
+        ui.cb_canvas_render_hq_aa->setChecked(CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING and ui.cb_canvas_render_hq_aa->isEnabled());
+        ui.cb_canvas_inline_displays->setChecked(CARLA_DEFAULT_CANVAS_INLINE_DISPLAYS);
+        ui.ch_engine_force_stereo->setChecked(CARLA_DEFAULT_FORCE_STEREO);
+        ui.ch_engine_prefer_plugin_bridges->setChecked(CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES);
     }
 };
 
@@ -576,10 +591,8 @@ CarlaSettingsW::CarlaSettingsW(QWidget* const parent, const CarlaHost& host, con
 
     self->ui.lw_page->setCurrentCell(0, 0);
 
-    /*
     slot_filePathTabChanged(0);
     slot_pluginPathTabChanged(0);
-    */
 
     adjustSize();
 }
@@ -598,7 +611,6 @@ void CarlaSettingsW::slot_saveSettings()
 void CarlaSettingsW::slot_resetSettings()
 {
 }
-
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -626,24 +638,32 @@ void CarlaSettingsW::slot_canvasOpenGLToggled(bool toggled)
 {
 }
 
-
 // --------------------------------------------------------------------------------------------------------------------
 
 void CarlaSettingsW::slot_getAndSetProjectPath()
 {
+    // FIXME?
+    getAndSetPath(this, self->ui.le_main_proj_folder);
 }
-
 
 // --------------------------------------------------------------------------------------------------------------------
 
 void CarlaSettingsW::slot_engineAudioDriverChanged()
 {
+    if (self->ui.cb_engine_audio_driver->currentText() == "JACK")
+        self->ui.sw_engine_process_mode->setCurrentIndex(0);
+    else
+        self->ui.sw_engine_process_mode->setCurrentIndex(1);
 }
 
 void CarlaSettingsW::slot_showAudioDriverSettings()
 {
-}
+    const int     driverIndex = self->ui.cb_engine_audio_driver->currentIndex();
+    const QString driverName  = self->ui.cb_engine_audio_driver->currentText();
+    CARLA_SAFE_ASSERT_RETURN(driverIndex >= 0,);
 
+    DriverSettingsW(this, static_cast<uint>(driverIndex), driverName).exec();
+}
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -659,7 +679,6 @@ void CarlaSettingsW::slot_changePluginPath()
 {
 }
 
-
 // --------------------------------------------------------------------------------------------------------------------
 
 void CarlaSettingsW::slot_pluginPathTabChanged(int index)
@@ -669,7 +688,6 @@ void CarlaSettingsW::slot_pluginPathTabChanged(int index)
 void CarlaSettingsW::slot_pluginPathRowChanged(int row)
 {
 }
-
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -685,7 +703,6 @@ void CarlaSettingsW::slot_changeFilePath()
 {
 }
 
-
 // --------------------------------------------------------------------------------------------------------------------
 
 void CarlaSettingsW::slot_filePathTabChanged(int index)
@@ -695,7 +712,6 @@ void CarlaSettingsW::slot_filePathTabChanged(int index)
 void CarlaSettingsW::slot_filePathRowChanged(int row)
 {
 }
-
 
 // --------------------------------------------------------------------------------------------------------------------
 // Main

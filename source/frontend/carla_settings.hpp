@@ -38,7 +38,7 @@ class DriverSettingsW : public QDialog
     Q_OBJECT
 
 public:
-    DriverSettingsW(QWidget* parent = nullptr);
+    DriverSettingsW(QWidget* parent, uint driverIndex, QString driverName);
     ~DriverSettingsW() override;
 
 private:
