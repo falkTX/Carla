@@ -97,6 +97,13 @@ static const char* const* const MIDI_CC_LIST = {
 */
 
 //---------------------------------------------------------------------------------------------------------------------
+// PatchCanvas defines
+
+// NOTE: must match Qt::CheckState and PatchCanvas API at the same time
+#define CANVAS_ANTIALIASING_SMALL Qt::PartiallyChecked
+#define CANVAS_EYECANDY_SMALL     Qt::PartiallyChecked
+
+//---------------------------------------------------------------------------------------------------------------------
 // Carla Settings keys
 
 #define CARLA_KEY_MAIN_PROJECT_FOLDER   "Main/ProjectFolder"   /* str  */
@@ -173,7 +180,7 @@ static const char* const* const MIDI_CC_LIST = {
 // Carla Settings defaults
 
 // Main
-#define CARLA_DEFAULT_MAIN_PROJECT_FOLDER   HOME
+#define CARLA_DEFAULT_MAIN_PROJECT_FOLDER   QDir::homePath()
 #define CARLA_DEFAULT_MAIN_USE_PRO_THEME    true
 #define CARLA_DEFAULT_MAIN_PRO_THEME_COLOR  "Black"
 #define CARLA_DEFAULT_MAIN_REFRESH_INTERVAL 20
@@ -229,7 +236,11 @@ static const char* const* const MIDI_CC_LIST = {
 // #endif
 
 // OSC
-#define CARLA_DEFAULT_OSC_ENABLED !(not WINDOWS)
+#ifdef CARLA_OS_WIN
+# define CARLA_DEFAULT_OSC_ENABLED false
+#else
+# define CARLA_DEFAULT_OSC_ENABLED true
+#endif
 #define CARLA_DEFAULT_OSC_TCP_PORT_ENABLED true
 #define CARLA_DEFAULT_OSC_TCP_PORT_NUMBER  22752
 #define CARLA_DEFAULT_OSC_TCP_PORT_RANDOM  false
@@ -395,6 +406,7 @@ public:
         : QSettings(organizationName, applicationName) {}
 
     bool valueBool(const QString key, const bool defaultValue) const;
+    Qt::CheckState valueCheckState(const QString key, const Qt::CheckState defaultValue) const;
     uint valueUInt(const QString key, const uint defaultValue) const;
     double valueDouble(const QString key, const double defaultValue) const;
     QString valueString(const QString key, const QString defaultValue) const;

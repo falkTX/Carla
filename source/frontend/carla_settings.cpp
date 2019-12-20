@@ -22,6 +22,8 @@
 
 #include <QtCore/QStringList>
 
+#include <QtWidgets/QFileDialog>
+
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Custom)
 
@@ -412,15 +414,309 @@ enum PluginPathIndexes {
 
 struct CarlaSettingsW::PrivateData {
     Ui::CarlaSettingsW ui;
+    const CarlaHost& host;
 
-    PrivateData(CarlaSettingsW* const self)
-        : ui()
+    PrivateData(CarlaSettingsW* const self, const CarlaHost& h)
+        : ui(),
+          host(h)
     {
         ui.setupUi(self);
     }
 
     void loadSettings()
     {
+        {
+            const QSafeSettings settings;
+
+            // --------------------------------------------------------------------------------------------------------
+            // Main
+
+            ui.ch_main_show_logs->setChecked(host.showLogs);
+            ui.ch_engine_uis_always_on_top->setChecked(host.uisAlwaysOnTop);
+
+            ui.le_main_proj_folder->setText(settings.valueString(CARLA_KEY_MAIN_PROJECT_FOLDER,
+                                                                CARLA_DEFAULT_MAIN_PROJECT_FOLDER));
+
+            ui.ch_main_theme_pro->setChecked(settings.valueBool(CARLA_KEY_MAIN_USE_PRO_THEME,
+                                                                CARLA_DEFAULT_MAIN_USE_PRO_THEME) && ui.group_main_theme->isEnabled());
+
+            ui.cb_main_theme_color->setCurrentIndex(ui.cb_main_theme_color->findText(settings.valueString(CARLA_KEY_MAIN_PRO_THEME_COLOR,
+                                                                                                        CARLA_DEFAULT_MAIN_PRO_THEME_COLOR)));
+
+            ui.sb_main_refresh_interval->setValue(settings.valueUInt(CARLA_KEY_MAIN_REFRESH_INTERVAL,
+                                                                    CARLA_DEFAULT_MAIN_REFRESH_INTERVAL));
+
+            ui.ch_main_confirm_exit->setChecked(settings.valueBool(CARLA_KEY_MAIN_CONFIRM_EXIT,
+                                                                CARLA_DEFAULT_MAIN_CONFIRM_EXIT));
+
+            // --------------------------------------------------------------------------------------------------------
+            // Canvas
+
+            ui.cb_canvas_theme->setCurrentIndex(ui.cb_canvas_theme->findText(settings.valueString(CARLA_KEY_CANVAS_THEME,
+                                                                                                CARLA_DEFAULT_CANVAS_THEME)));
+
+            ui.cb_canvas_size->setCurrentIndex(ui.cb_canvas_size->findText(settings.valueString(CARLA_KEY_CANVAS_SIZE,
+                                                                                                CARLA_DEFAULT_CANVAS_SIZE)));
+
+            ui.cb_canvas_bezier_lines->setChecked(settings.valueBool(CARLA_KEY_CANVAS_USE_BEZIER_LINES,
+                                                                    CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES));
+
+            ui.cb_canvas_hide_groups->setChecked(settings.valueBool(CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS,
+                                                                    CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS));
+
+            ui.cb_canvas_auto_select->setChecked(settings.valueBool(CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS,
+                                                                    CARLA_DEFAULT_CANVAS_AUTO_SELECT_ITEMS));
+
+            ui.cb_canvas_eyecandy->setChecked(settings.valueBool(CARLA_KEY_CANVAS_EYE_CANDY,
+                                                                CARLA_DEFAULT_CANVAS_EYE_CANDY));
+
+            ui.cb_canvas_fancy_eyecandy->setChecked(settings.valueBool(CARLA_KEY_CANVAS_FANCY_EYE_CANDY,
+                                                                    CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY));
+
+            ui.cb_canvas_use_opengl->setChecked(settings.valueBool(CARLA_KEY_CANVAS_USE_OPENGL,
+                                                                CARLA_DEFAULT_CANVAS_USE_OPENGL) && ui.cb_canvas_use_opengl->isEnabled());
+
+            ui.cb_canvas_render_aa->setCheckState(settings.valueCheckState(CARLA_KEY_CANVAS_ANTIALIASING,
+                                                                        CARLA_DEFAULT_CANVAS_ANTIALIASING));
+
+            ui.cb_canvas_render_hq_aa->setChecked(settings.valueBool(CARLA_KEY_CANVAS_HQ_ANTIALIASING,
+                                                                    CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING) && ui.cb_canvas_render_hq_aa->isEnabled());
+
+            ui.cb_canvas_full_repaints->setChecked(settings.valueBool(CARLA_KEY_CANVAS_FULL_REPAINTS,
+                                                                    CARLA_DEFAULT_CANVAS_FULL_REPAINTS));
+
+            ui.cb_canvas_inline_displays->setChecked(settings.valueBool(CARLA_KEY_CANVAS_INLINE_DISPLAYS,
+                                                                        CARLA_DEFAULT_CANVAS_INLINE_DISPLAYS));
+        }
+
+        // ------------------------------------------------------------------------------------------------------------
+
+        const QSafeSettings settings("falkTX", "Carla2");
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Main
+
+        ui.ch_main_experimental->setChecked(host.experimental);
+
+        if (! host.experimental)
+        {
+            ui.lw_page->hideRow(TAB_INDEX_EXPERIMENTAL);
+            ui.lw_page->hideRow(TAB_INDEX_WINE);
+        }
+        else if (! host.showWineBridges)
+        {
+            ui.lw_page->hideRow(TAB_INDEX_WINE);
+        }
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Engine
+
+        QString audioDriver;
+
+        if (host.isPlugin)
+        {
+            audioDriver = "Plugin";
+            ui.cb_engine_audio_driver->setCurrentIndex(0);
+        }
+        else if (host.audioDriverForced.isNotEmpty())
+        {
+            audioDriver = host.audioDriverForced;
+            ui.cb_engine_audio_driver->setCurrentIndex(0);
+        }
+        else
+        {
+            audioDriver = settings.valueString(CARLA_KEY_ENGINE_AUDIO_DRIVER, CARLA_DEFAULT_AUDIO_DRIVER);
+
+            bool found = false;
+            for (int i=0; i < ui.cb_engine_audio_driver->count(); ++i)
+            {
+                if (ui.cb_engine_audio_driver->itemText(i) == audioDriver)
+                {
+                    found = true;
+                    ui.cb_engine_audio_driver->setCurrentIndex(i);
+                    break;
+                }
+            }
+
+            if (! found)
+                ui.cb_engine_audio_driver->setCurrentIndex(-1);
+        }
+
+        if (audioDriver == "JACK")
+            ui.sw_engine_process_mode->setCurrentIndex(0);
+        else
+            ui.sw_engine_process_mode->setCurrentIndex(1);
+
+        ui.tb_engine_driver_config->setEnabled(host.audioDriverForced.isNotEmpty() && ! host.isPlugin);
+
+        ui.cb_engine_process_mode_jack->setCurrentIndex(host.nextProcessMode);
+
+        if (host.nextProcessMode >= PROCESS_MODE_NON_JACK_PADDING)
+            ui.cb_engine_process_mode_other->setCurrentIndex(host.nextProcessMode-PROCESS_MODE_NON_JACK_PADDING);
+        else
+            ui.cb_engine_process_mode_other->setCurrentIndex(0);
+
+        ui.sb_engine_max_params->setValue(host.maxParameters);
+        ui.ch_engine_manage_uis->setChecked(host.manageUIs);
+        ui.ch_engine_prefer_ui_bridges->setChecked(host.preferUIBridges);
+        ui.sb_engine_ui_bridges_timeout->setValue(host.uiBridgesTimeout);
+        ui.ch_engine_force_stereo->setChecked(host.forceStereo || ! ui.ch_engine_force_stereo->isEnabled());
+        ui.ch_engine_prefer_plugin_bridges->setChecked(host.preferPluginBridges);
+        ui.ch_exp_export_lv2->setChecked(host.exportLV2);
+        ui.cb_exp_plugin_bridges->setChecked(host.showPluginBridges);
+        ui.ch_exp_wine_bridges->setChecked(host.showWineBridges);
+
+        // ------------------------------------------------------------------------------------------------------------
+        // OSC
+
+        ui.ch_osc_enable->setChecked(settings.valueBool(CARLA_KEY_OSC_ENABLED,
+                                                        CARLA_DEFAULT_OSC_ENABLED));
+
+        ui.group_osc_tcp_port->setChecked(settings.valueBool(CARLA_KEY_OSC_TCP_PORT_ENABLED,
+                                                             CARLA_DEFAULT_OSC_TCP_PORT_ENABLED));
+
+        ui.group_osc_udp_port->setChecked(settings.valueBool(CARLA_KEY_OSC_UDP_PORT_ENABLED,
+                                                             CARLA_DEFAULT_OSC_UDP_PORT_ENABLED));
+
+        ui.sb_osc_tcp_port_number->setValue(settings.valueUInt(CARLA_KEY_OSC_TCP_PORT_NUMBER,
+                                                               CARLA_DEFAULT_OSC_TCP_PORT_NUMBER));
+
+        ui.sb_osc_udp_port_number->setValue(settings.valueUInt(CARLA_KEY_OSC_UDP_PORT_NUMBER,
+                                                               CARLA_DEFAULT_OSC_UDP_PORT_NUMBER));
+
+        if (settings.valueBool(CARLA_KEY_OSC_TCP_PORT_RANDOM, CARLA_DEFAULT_OSC_TCP_PORT_RANDOM))
+        {
+            ui.rb_osc_tcp_port_specific->setChecked(false);
+            ui.rb_osc_tcp_port_random->setChecked(true);
+        }
+        else
+        {
+            ui.rb_osc_tcp_port_random->setChecked(false);
+            ui.rb_osc_tcp_port_specific->setChecked(true);
+        }
+
+        if (settings.valueBool(CARLA_KEY_OSC_UDP_PORT_RANDOM, CARLA_DEFAULT_OSC_UDP_PORT_RANDOM))
+        {
+            ui.rb_osc_udp_port_specific->setChecked(false);
+            ui.rb_osc_udp_port_random->setChecked(true);
+        }
+        else
+        {
+            ui.rb_osc_udp_port_random->setChecked(false);
+            ui.rb_osc_udp_port_specific->setChecked(true);
+        }
+
+#if 0
+        // ------------------------------------------------------------------------------------------------------------
+        // File Paths
+
+        audioPaths = settings.value(CARLA_KEY_PATHS_AUDIO, CARLA_DEFAULT_FILE_PATH_AUDIO, list)
+        midiPaths  = settings.value(CARLA_KEY_PATHS_MIDI,  CARLA_DEFAULT_FILE_PATH_MIDI, list)
+
+        audioPaths.sort()
+        midiPaths.sort()
+
+        for audioPath in audioPaths:
+            if not audioPath: continue
+            ui.lw_files_audio.addItem(audioPath)
+
+        for midiPath in midiPaths:
+            if not midiPath: continue
+            ui.lw_files_midi.addItem(midiPath)
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Plugin Paths
+
+        ladspas = settings.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH, list)
+        dssis   = settings.value(CARLA_KEY_PATHS_DSSI,   CARLA_DEFAULT_DSSI_PATH, list)
+        lv2s    = settings.value(CARLA_KEY_PATHS_LV2,    CARLA_DEFAULT_LV2_PATH, list)
+        vst2s   = settings.value(CARLA_KEY_PATHS_VST2,   CARLA_DEFAULT_VST2_PATH, list)
+        vst3s   = settings.value(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH, list)
+        sf2s    = settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH, list)
+        sfzs    = settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH, list)
+
+        ladspas.sort()
+        dssis.sort()
+        lv2s.sort()
+        vst2s.sort()
+        vst3s.sort()
+        sf2s.sort()
+        sfzs.sort()
+
+        for ladspa in ladspas:
+            if not ladspa: continue
+            ui.lw_ladspa.addItem(ladspa)
+
+        for dssi in dssis:
+            if not dssi: continue
+            ui.lw_dssi.addItem(dssi)
+
+        for lv2 in lv2s:
+            if not lv2: continue
+            ui.lw_lv2.addItem(lv2)
+
+        for vst2 in vst2s:
+            if not vst2: continue
+            ui.lw_vst.addItem(vst2)
+
+        for vst3 in vst3s:
+            if not vst3: continue
+            ui.lw_vst3.addItem(vst3)
+
+        for sf2 in sf2s:
+            if not sf2: continue
+            ui.lw_sf2.addItem(sf2)
+
+        for sfz in sfzs:
+            if not sfz: continue
+            ui.lw_sfz.addItem(sfz)
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Wine
+
+        ui.le_wine_exec.setText(settings.value(CARLA_KEY_WINE_EXECUTABLE,
+                                                    CARLA_DEFAULT_WINE_EXECUTABLE,
+                                                    str))
+
+        ui.cb_wine_prefix_detect.setChecked(settings.value(CARLA_KEY_WINE_AUTO_PREFIX,
+                                                                CARLA_DEFAULT_WINE_AUTO_PREFIX,
+                                                                 bool))
+
+        ui.le_wine_prefix_fallback.setText(settings.value(CARLA_KEY_WINE_FALLBACK_PREFIX,
+                                                               CARLA_DEFAULT_WINE_FALLBACK_PREFIX,
+                                                               str))
+
+        ui.group_wine_realtime.setChecked(settings.value(CARLA_KEY_WINE_RT_PRIO_ENABLED,
+                                                              CARLA_DEFAULT_WINE_RT_PRIO_ENABLED,
+                                                              bool))
+
+        ui.sb_wine_base_prio.setValue(settings.value(CARLA_KEY_WINE_BASE_RT_PRIO,
+                                                          CARLA_DEFAULT_WINE_BASE_RT_PRIO,
+                                                          int))
+
+        ui.sb_wine_server_prio.setValue(settings.value(CARLA_KEY_WINE_SERVER_RT_PRIO,
+                                                            CARLA_DEFAULT_WINE_SERVER_RT_PRIO,
+                                                            int))
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Experimental
+
+        ui.ch_exp_jack_apps.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_JACK_APPS,
+                                                           CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS,
+                                                           bool))
+
+        ui.ch_exp_export_lv2.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_EXPORT_LV2,
+                                                            CARLA_DEFAULT_EXPERIMENTAL_LV2_EXPORT,
+                                                            bool))
+
+        ui.ch_exp_load_lib_global.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL,
+                                                                 CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL,
+                                                                 bool))
+
+        ui.ch_exp_prevent_bad_behaviour.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR,
+                                                                       CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR,
+                                                                       bool))
+#endif
     }
 
     void resetExperimentalSettings()
@@ -445,7 +741,7 @@ struct CarlaSettingsW::PrivateData {
 
 CarlaSettingsW::CarlaSettingsW(QWidget* const parent, const CarlaHost& host, const bool hasCanvas, const bool hasCanvasGL)
     : QDialog(parent),
-      self(new PrivateData(this))
+      self(new PrivateData(this, host))
 {
     // ----------------------------------------------------------------------------------------------------------------
     // Set-up GUI
@@ -614,28 +910,64 @@ void CarlaSettingsW::slot_resetSettings()
 
 // --------------------------------------------------------------------------------------------------------------------
 
-void CarlaSettingsW::slot_enableExperimental(bool toggled)
+void CarlaSettingsW::slot_enableExperimental(const bool toggled)
 {
+    if (toggled)
+    {
+        self->ui.lw_page->showRow(TAB_INDEX_EXPERIMENTAL);
+        if (self->ui.ch_exp_wine_bridges->isChecked() and not self->host.isControl)
+            self->ui.lw_page->showRow(TAB_INDEX_WINE);
+    }
+    else
+    {
+        self->ui.lw_page->hideRow(TAB_INDEX_EXPERIMENTAL);
+        self->ui.lw_page->hideRow(TAB_INDEX_WINE);
+    }
 }
 
-void CarlaSettingsW::slot_enableWineBridges(bool toggled)
+void CarlaSettingsW::slot_enableWineBridges(const bool toggled)
 {
+    if (toggled && ! self->host.isControl)
+        self->ui.lw_page->showRow(TAB_INDEX_WINE);
+    else
+        self->ui.lw_page->hideRow(TAB_INDEX_WINE);
 }
 
-void CarlaSettingsW::slot_pluginBridgesToggled(bool toggled)
+void CarlaSettingsW::slot_pluginBridgesToggled(const bool toggled)
 {
+    if (! toggled)
+    {
+        self->ui.ch_exp_wine_bridges->setChecked(false);
+        self->ui.ch_engine_prefer_plugin_bridges->setChecked(false);
+        self->ui.lw_page->hideRow(TAB_INDEX_WINE);
+    }
 }
 
-void CarlaSettingsW::slot_canvasEyeCandyToggled(bool toggled)
+void CarlaSettingsW::slot_canvasEyeCandyToggled(const bool toggled)
 {
+    if (! toggled)
+    {
+        // disable fancy eyecandy too
+        self->ui.cb_canvas_fancy_eyecandy->setChecked(false);
+    }
 }
 
-void CarlaSettingsW::slot_canvasFancyEyeCandyToggled(bool toggled)
+void CarlaSettingsW::slot_canvasFancyEyeCandyToggled(const bool toggled)
 {
+    if (! toggled)
+    {
+        // make sure normal eyecandy is enabled too
+        self->ui.cb_canvas_eyecandy->setChecked(true);
+    }
 }
 
-void CarlaSettingsW::slot_canvasOpenGLToggled(bool toggled)
+void CarlaSettingsW::slot_canvasOpenGLToggled(const bool toggled)
 {
+    if (! toggled)
+    {
+        // uncheck GL specific option
+        self->ui.cb_canvas_render_hq_aa->setChecked(false);
+    }
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -669,48 +1001,263 @@ void CarlaSettingsW::slot_showAudioDriverSettings()
 
 void CarlaSettingsW::slot_addPluginPath()
 {
+    const QString newPath = QFileDialog::getExistingDirectory(this, tr("Add Path"), "", QFileDialog::ShowDirsOnly);
+
+    if (newPath.isEmpty())
+        return;
+
+    switch (self->ui.tw_paths->currentIndex())
+    {
+    case PLUGINPATH_INDEX_LADSPA:
+        self->ui.lw_ladspa->addItem(newPath);
+        break;
+    case PLUGINPATH_INDEX_DSSI:
+        self->ui.lw_dssi->addItem(newPath);
+        break;
+    case PLUGINPATH_INDEX_LV2:
+        self->ui.lw_lv2->addItem(newPath);
+        break;
+    case PLUGINPATH_INDEX_VST2:
+        self->ui.lw_vst->addItem(newPath);
+        break;
+    case PLUGINPATH_INDEX_VST3:
+        self->ui.lw_vst3->addItem(newPath);
+        break;
+    case PLUGINPATH_INDEX_SF2:
+        self->ui.lw_sf2->addItem(newPath);
+        break;
+    case PLUGINPATH_INDEX_SFZ:
+        self->ui.lw_sfz->addItem(newPath);
+        break;
+    }
 }
 
 void CarlaSettingsW::slot_removePluginPath()
 {
+    switch (self->ui.tw_paths->currentIndex())
+    {
+    case PLUGINPATH_INDEX_LADSPA:
+        self->ui.lw_ladspa->takeItem(self->ui.lw_ladspa->currentRow());
+        break;
+    case PLUGINPATH_INDEX_DSSI:
+        self->ui.lw_dssi->takeItem(self->ui.lw_dssi->currentRow());
+        break;
+    case PLUGINPATH_INDEX_LV2:
+        self->ui.lw_lv2->takeItem(self->ui.lw_lv2->currentRow());
+        break;
+    case PLUGINPATH_INDEX_VST2:
+        self->ui.lw_vst->takeItem(self->ui.lw_vst->currentRow());
+        break;
+    case PLUGINPATH_INDEX_VST3:
+        self->ui.lw_vst3->takeItem(self->ui.lw_vst3->currentRow());
+        break;
+    case PLUGINPATH_INDEX_SF2:
+        self->ui.lw_sf2->takeItem(self->ui.lw_sf2->currentRow());
+        break;
+    case PLUGINPATH_INDEX_SFZ:
+        self->ui.lw_sfz->takeItem(self->ui.lw_sfz->currentRow());
+        break;
+    }
 }
 
 void CarlaSettingsW::slot_changePluginPath()
 {
+    const int curIndex = self->ui.tw_paths->currentIndex();
+
+    QString currentPath;
+
+    switch (curIndex)
+    {
+    case PLUGINPATH_INDEX_LADSPA:
+        currentPath = self->ui.lw_ladspa->currentItem()->text();
+        break;
+    case PLUGINPATH_INDEX_DSSI:
+        currentPath = self->ui.lw_dssi->currentItem()->text();
+        break;
+    case PLUGINPATH_INDEX_LV2:
+        currentPath = self->ui.lw_lv2->currentItem()->text();
+        break;
+    case PLUGINPATH_INDEX_VST2:
+        currentPath = self->ui.lw_vst->currentItem()->text();
+        break;
+    case PLUGINPATH_INDEX_VST3:
+        currentPath = self->ui.lw_vst3->currentItem()->text();
+        break;
+    case PLUGINPATH_INDEX_SF2:
+        currentPath = self->ui.lw_sf2->currentItem()->text();
+        break;
+    case PLUGINPATH_INDEX_SFZ:
+        currentPath = self->ui.lw_sfz->currentItem()->text();
+        break;
+    }
+
+    const QString newPath = QFileDialog::getExistingDirectory(this, tr("Add Path"), currentPath, QFileDialog::ShowDirsOnly);
+
+    if (newPath.isEmpty())
+        return;
+
+    switch (curIndex)
+    {
+    case PLUGINPATH_INDEX_LADSPA:
+        self->ui.lw_ladspa->currentItem()->setText(newPath);
+        break;
+    case PLUGINPATH_INDEX_DSSI:
+        self->ui.lw_dssi->currentItem()->setText(newPath);
+        break;
+    case PLUGINPATH_INDEX_LV2:
+        self->ui.lw_lv2->currentItem()->setText(newPath);
+        break;
+    case PLUGINPATH_INDEX_VST2:
+        self->ui.lw_vst->currentItem()->setText(newPath);
+        break;
+    case PLUGINPATH_INDEX_VST3:
+        self->ui.lw_vst3->currentItem()->setText(newPath);
+        break;
+    case PLUGINPATH_INDEX_SF2:
+        self->ui.lw_sf2->currentItem()->setText(newPath);
+        break;
+    case PLUGINPATH_INDEX_SFZ:
+        self->ui.lw_sfz->currentItem()->setText(newPath);
+        break;
+    }
 }
 
 // --------------------------------------------------------------------------------------------------------------------
 
-void CarlaSettingsW::slot_pluginPathTabChanged(int index)
+void CarlaSettingsW::slot_pluginPathTabChanged(const int index)
 {
+    int row;
+
+    switch (index)
+    {
+    case PLUGINPATH_INDEX_LADSPA:
+        row = self->ui.lw_ladspa->currentRow();
+        break;
+    case PLUGINPATH_INDEX_DSSI:
+        row = self->ui.lw_dssi->currentRow();
+        break;
+    case PLUGINPATH_INDEX_LV2:
+        row = self->ui.lw_lv2->currentRow();
+        break;
+    case PLUGINPATH_INDEX_VST2:
+        row = self->ui.lw_vst->currentRow();
+        break;
+    case PLUGINPATH_INDEX_VST3:
+        row = self->ui.lw_vst3->currentRow();
+        break;
+    case PLUGINPATH_INDEX_SF2:
+        row = self->ui.lw_sf2->currentRow();
+        break;
+    case PLUGINPATH_INDEX_SFZ:
+        row = self->ui.lw_sfz->currentRow();
+        break;
+    default:
+        row = -1;
+        break;
+    }
+
+    slot_pluginPathRowChanged(row);
 }
 
-void CarlaSettingsW::slot_pluginPathRowChanged(int row)
+void CarlaSettingsW::slot_pluginPathRowChanged(const int row)
 {
+    const bool check = bool(row >= 0);
+    self->ui.b_paths_remove->setEnabled(check);
+    self->ui.b_paths_change->setEnabled(check);
 }
 
 // --------------------------------------------------------------------------------------------------------------------
 
 void CarlaSettingsW::slot_addFilePath()
 {
+    const QString newPath = QFileDialog::getExistingDirectory(this, tr("Add Path"), "", QFileDialog::ShowDirsOnly);
+
+    if (newPath.isEmpty())
+        return;
+
+    switch (self->ui.tw_filepaths->currentIndex())
+    {
+    case FILEPATH_INDEX_AUDIO:
+        self->ui.lw_files_audio->addItem(newPath);
+        break;
+    case FILEPATH_INDEX_MIDI:
+        self->ui.lw_files_midi->addItem(newPath);
+        break;
+    }
 }
 
 void CarlaSettingsW::slot_removeFilePath()
 {
+    switch (self->ui.tw_filepaths->currentIndex())
+    {
+    case FILEPATH_INDEX_AUDIO:
+        self->ui.lw_files_audio->takeItem(self->ui.lw_files_audio->currentRow());
+        break;
+    case FILEPATH_INDEX_MIDI:
+        self->ui.lw_files_midi->takeItem(self->ui.lw_files_midi->currentRow());
+        break;
+    }
 }
 
 void CarlaSettingsW::slot_changeFilePath()
 {
+    const int curIndex = self->ui.tw_filepaths->currentIndex();
+
+    QString currentPath;
+
+    switch (curIndex)
+    {
+    case FILEPATH_INDEX_AUDIO:
+        currentPath = self->ui.lw_files_audio->currentItem()->text();
+        break;
+    case FILEPATH_INDEX_MIDI:
+        currentPath = self->ui.lw_files_midi->currentItem()->text();
+        break;
+    }
+
+    const QString newPath = QFileDialog::getExistingDirectory(this, tr("Add Path"), currentPath, QFileDialog::ShowDirsOnly);
+
+    if (newPath.isEmpty())
+        return;
+
+    switch (curIndex)
+    {
+    case FILEPATH_INDEX_AUDIO:
+        self->ui.lw_files_audio->currentItem()->setText(newPath);
+        break;
+    case FILEPATH_INDEX_MIDI:
+        self->ui.lw_files_midi->currentItem()->setText(newPath);
+        break;
+    }
 }
 
 // --------------------------------------------------------------------------------------------------------------------
 
-void CarlaSettingsW::slot_filePathTabChanged(int index)
+void CarlaSettingsW::slot_filePathTabChanged(const int index)
 {
+    int row;
+
+    switch (index)
+    {
+    case FILEPATH_INDEX_AUDIO:
+        row = self->ui.lw_files_audio->currentRow();
+        break;
+    case FILEPATH_INDEX_MIDI:
+        row = self->ui.lw_files_midi->currentRow();
+        break;
+    default:
+        row = -1;
+        break;
+    }
+
+    slot_filePathRowChanged(row);
 }
 
-void CarlaSettingsW::slot_filePathRowChanged(int row)
+void CarlaSettingsW::slot_filePathRowChanged(const int row)
 {
+    const bool check = bool(row >= 0);
+    self->ui.b_filepaths_remove->setEnabled(check);
+    self->ui.b_filepaths_change->setEnabled(check);
 }
 
 // --------------------------------------------------------------------------------------------------------------------

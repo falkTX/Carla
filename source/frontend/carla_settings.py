@@ -1275,9 +1275,7 @@ class CarlaSettingsW(QDialog):
         else:
             row = -1
 
-        check = bool(row >= 0)
-        self.ui.b_paths_remove.setEnabled(check)
-        self.ui.b_paths_change.setEnabled(check)
+        self.slot_pluginPathRowChanged(row)
 
     @pyqtSlot(int)
     def slot_pluginPathRowChanged(self, row):
@@ -1342,9 +1340,7 @@ class CarlaSettingsW(QDialog):
         else:
             row = -1
 
-        check = bool(row >= 0)
-        self.ui.b_filepaths_remove.setEnabled(check)
-        self.ui.b_filepaths_change.setEnabled(check)
+        self.slot_filePathRowChanged(row)
 
     @pyqtSlot(int)
     def slot_filePathRowChanged(self, row):

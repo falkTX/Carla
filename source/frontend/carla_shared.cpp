@@ -277,6 +277,28 @@ bool QSafeSettings::valueBool(const QString key, const bool defaultValue) const
     return var.isValid() ? var.toBool() : defaultValue;
 }
 
+
+Qt::CheckState QSafeSettings::valueCheckState(const QString key, const Qt::CheckState defaultValue) const
+{
+    QVariant var(value(key, defaultValue));
+    CARLA_SAFE_ASSERT_RETURN(var.convert(QVariant::UInt), defaultValue);
+
+    if (! var.isValid())
+        return defaultValue;
+
+    const uint value = var.toUInt();
+
+    switch (value)
+    {
+    case Qt::Unchecked:
+    case Qt::PartiallyChecked:
+    case Qt::Checked:
+        return static_cast<Qt::CheckState>(value);
+    default:
+        return defaultValue;
+    }
+}
+
 uint QSafeSettings::valueUInt(const QString key, const uint defaultValue) const
 {
     QVariant var(value(key, defaultValue));
