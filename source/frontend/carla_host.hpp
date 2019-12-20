@@ -26,17 +26,20 @@
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Custom)
 
-#include "shared.hpp"
+#include "carla_shared.hpp"
 
-#include "../../backend/CarlaBackend.h"
-#include "../../utils/CarlaJuceUtils.hpp"
+#include "CarlaBackend.h"
+#include "CarlaJuceUtils.hpp"
 
 CARLA_BACKEND_USE_NAMESPACE;
 
 //---------------------------------------------------------------------------------------------------------------------
 
-struct Host : public QObject
+class CarlaHost : public QObject
 {
+    Q_OBJECT
+
+public:
     // info about this host object
     bool isControl;
     bool isPlugin;
@@ -46,10 +49,10 @@ struct Host : public QObject
     // settings
     EngineProcessMode processMode;
     EngineTransportMode transportMode;
-    QString transportExtra;
+    QCarlaString transportExtra;
     EngineProcessMode nextProcessMode;
     bool processModeForced;
-    QString audioDriverForced;
+    QCarlaString audioDriverForced;
 
     // settings
     bool experimental;
@@ -70,12 +73,11 @@ struct Host : public QObject
     QString pathBinaries;
     QString pathResources;
 
-    Host();
+    CarlaHost();
 
     // Qt Stuff
     Q_SIGNAL void EngineStartedCallback(uint, int, int, int, float, QString);
     Q_SIGNAL void EngineStoppedCallback();
-    Q_OBJECT
 };
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -98,11 +100,11 @@ class CarlaHostWindow : public QMainWindow
 public:
     //-----------------------------------------------------------------------------------------------------------------
 
-    CarlaHostWindow(Host& host, const bool withCanvas, QWidget* const parent = nullptr);
+    CarlaHostWindow(CarlaHost& host, const bool withCanvas, QWidget* const parent = nullptr);
     ~CarlaHostWindow() override;
 
 private:
-    Host& host;
+    CarlaHost& host;
     struct PrivateData;
     PrivateData* const self;
 
@@ -258,7 +260,7 @@ private:
     void getAndRefreshRuntimeInfo();
     void idleFast();
     void idleSlow();
-    void timerEvent(QTimerEvent* event);
+    void timerEvent(QTimerEvent* event) override;
 
     //-----------------------------------------------------------------------------------------------------------------
     // color/style change event
@@ -274,18 +276,18 @@ private:
 
     //-----------------------------------------------------------------------------------------------------------------
 
-//     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaHostWindow)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaHostWindow)
 };
 
 //---------------------------------------------------------------------------------------------------------------------
 // Init host
 
-Host& initHost(const QString initName, const bool isControl, const bool isPlugin, const bool failError);
+CarlaHost& initHost(const QString initName, const bool isControl, const bool isPlugin, const bool failError);
 
 //---------------------------------------------------------------------------------------------------------------------
 // Load host settings
 
-void loadHostSettings(Host& host);
+void loadHostSettings(CarlaHost& host);
 
 //---------------------------------------------------------------------------------------------------------------------
 

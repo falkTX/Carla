@@ -28,6 +28,53 @@ BUILD_CXX_FLAGS += $(FLUIDSYNTH_FLAGS)
 BUILD_CXX_FLAGS += $(QT5_FLAGS)
 
 # ---------------------------------------------------------------------------------------------------------------------
+# mocs?
+
+MOCs = \
+	moc_carla_settings.cpp
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Resources
+
+RES = \
+	resources_rc.cpp \
+	resources_rc.py \
+	$(BINDIR)/resources/patchcanvas \
+	$(BINDIR)/resources/widgets \
+	$(BINDIR)/resources/carla_app.py \
+	$(BINDIR)/resources/carla_backend.py \
+	$(BINDIR)/resources/carla_backend_qt.py \
+	$(BINDIR)/resources/carla_control.py \
+	$(BINDIR)/resources/carla_database.py \
+	$(BINDIR)/resources/carla_host.py \
+	$(BINDIR)/resources/carla_modgui.py \
+	$(BINDIR)/resources/carla_settings.py \
+	$(BINDIR)/resources/carla_skin.py \
+	$(BINDIR)/resources/carla_shared.py \
+	$(BINDIR)/resources/carla_utils.py \
+	$(BINDIR)/resources/carla_widgets.py \
+	$(BINDIR)/resources/externalui.py \
+	$(BINDIR)/resources/resources_rc.py \
+	$(BINDIR)/resources/ui_carla_about.py \
+	$(BINDIR)/resources/ui_carla_about_juce.py \
+	$(BINDIR)/resources/ui_carla_add_jack.py \
+	$(BINDIR)/resources/ui_carla_database.py \
+	$(BINDIR)/resources/ui_carla_edit.py \
+	$(BINDIR)/resources/ui_carla_host.py \
+	$(BINDIR)/resources/ui_carla_osc_connect.py \
+	$(BINDIR)/resources/ui_carla_parameter.py \
+	$(BINDIR)/resources/ui_carla_plugin_calf.py \
+	$(BINDIR)/resources/ui_carla_plugin_classic.py \
+	$(BINDIR)/resources/ui_carla_plugin_compact.py \
+	$(BINDIR)/resources/ui_carla_plugin_default.py \
+	$(BINDIR)/resources/ui_carla_plugin_presets.py \
+	$(BINDIR)/resources/ui_carla_refresh.py \
+	$(BINDIR)/resources/ui_carla_settings.py \
+	$(BINDIR)/resources/ui_carla_settings_driver.py \
+	$(BINDIR)/resources/ui_inputdialog_value.py \
+	$(BINDIR)/resources/ui_midipattern.py
+
+# ---------------------------------------------------------------------------------------------------------------------
 # UI code
 
 UIs = \
@@ -67,47 +114,6 @@ UIs = \
 	ui_inputdialog_value.py \
 	ui_midipattern.hpp \
 	ui_midipattern.py
-
-# ---------------------------------------------------------------------------------------------------------------------
-# Resources
-
-RES = \
-	resources_rc.hpp \
-	resources_rc.py \
-	$(BINDIR)/resources/patchcanvas \
-	$(BINDIR)/resources/widgets \
-	$(BINDIR)/resources/carla_app.py \
-	$(BINDIR)/resources/carla_backend.py \
-	$(BINDIR)/resources/carla_backend_qt.py \
-	$(BINDIR)/resources/carla_control.py \
-	$(BINDIR)/resources/carla_database.py \
-	$(BINDIR)/resources/carla_host.py \
-	$(BINDIR)/resources/carla_modgui.py \
-	$(BINDIR)/resources/carla_settings.py \
-	$(BINDIR)/resources/carla_skin.py \
-	$(BINDIR)/resources/carla_shared.py \
-	$(BINDIR)/resources/carla_utils.py \
-	$(BINDIR)/resources/carla_widgets.py \
-	$(BINDIR)/resources/externalui.py \
-	$(BINDIR)/resources/resources_rc.py \
-	$(BINDIR)/resources/ui_carla_about.py \
-	$(BINDIR)/resources/ui_carla_about_juce.py \
-	$(BINDIR)/resources/ui_carla_add_jack.py \
-	$(BINDIR)/resources/ui_carla_database.py \
-	$(BINDIR)/resources/ui_carla_edit.py \
-	$(BINDIR)/resources/ui_carla_host.py \
-	$(BINDIR)/resources/ui_carla_osc_connect.py \
-	$(BINDIR)/resources/ui_carla_parameter.py \
-	$(BINDIR)/resources/ui_carla_plugin_calf.py \
-	$(BINDIR)/resources/ui_carla_plugin_classic.py \
-	$(BINDIR)/resources/ui_carla_plugin_compact.py \
-	$(BINDIR)/resources/ui_carla_plugin_default.py \
-	$(BINDIR)/resources/ui_carla_plugin_presets.py \
-	$(BINDIR)/resources/ui_carla_refresh.py \
-	$(BINDIR)/resources/ui_carla_settings.py \
-	$(BINDIR)/resources/ui_carla_settings_driver.py \
-	$(BINDIR)/resources/ui_inputdialog_value.py \
-	$(BINDIR)/resources/ui_midipattern.py
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -185,12 +191,25 @@ endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
+OBJS = \
+	$(OBJDIR)/carla_app.cpp.o \
+	$(OBJDIR)/carla_host.cpp.o \
+	$(OBJDIR)/carla_settings.cpp.o \
+	$(OBJDIR)/carla_shared.cpp.o \
+	$(OBJDIR)/patchcanvas/theme.cpp.o \
+	$(OBJDIR)/moc_carla_host.cpp.o \
+	$(OBJDIR)/moc_carla_settings.cpp.o \
+	$(OBJDIR)/resources_rc.cpp.o \
+	$(OBJDIR)/CarlaStandalone.cpp.o
+
+# ---------------------------------------------------------------------------------------------------------------------
+
 TARGETS = $(BINDIR)/carla
 TARGETS = carla
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-all: $(UIs) $(RES)
+all: $(MOCs) $(RES) $(UIs)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -200,10 +219,10 @@ carla: $(OBJS)
 	@echo "Linking carla"
 	$(CXX) $(OBJS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) -o $@
 
-carla_settings: $(OBJDIR)/carla_settings.cpp.o $(OBJDIR)/carla_app.cpp.o $(OBJDIR)/carla_shared.cpp.o
+carla_settings: $(OBJS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking carla"
-	$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) -o $@
+	$(CXX) $(OBJS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -216,10 +235,10 @@ ui_%.hpp: $(RESDIR)/ui/%.ui
 ui_%.py: $(RESDIR)/ui/%.ui
 	$(PYUIC) $< -o $@
 
-resources_rc.hpp: $(RESDIR)/resources.qrc $(RESDIR)/*/*.png $(RESDIR)/*/*.svg
+resources_rc.cpp: $(RESDIR)/resources.qrc $(RESDIR)/*/*.png $(RESDIR)/*/*.svg $(RESDIR)/*/*.svgz
 	$(RCC_QT5) $< -o $@
 
-resources_rc.py: $(RESDIR)/resources.qrc $(RESDIR)/*/*.png $(RESDIR)/*/*.svg
+resources_rc.py: $(RESDIR)/resources.qrc $(RESDIR)/*/*.png $(RESDIR)/*/*.svg $(RESDIR)/*/*.svgz
 	$(PYRCC) $< -o $@
 
 $(BINDIR)/resources/%: %
@@ -227,8 +246,8 @@ $(BINDIR)/resources/%: %
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-$(OBJDIR)/%.cpp.o: %.cpp $(UIs) $(RES)
-	-@mkdir -p $(OBJDIR)
+$(OBJDIR)/%.cpp.o: %.cpp $(UIs)
+	-@mkdir -p $(OBJDIR)/patchcanvas
 	@echo "Compiling $<"
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 

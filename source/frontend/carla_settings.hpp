@@ -21,11 +21,122 @@
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Global)
 
-// from PyQt5.QtCore import pyqtSlot, QByteArray, QDir
-// from PyQt5.QtGui import QColor, QCursor, QPainter, QPainterPath
-// from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
+#include <QtWidgets/QDialog>
 
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Custom)
+
+#include "CarlaJuceUtils.hpp"
+
+struct CarlaHost;
+
+// --------------------------------------------------------------------------------------------------------------------
+// Driver Settings
+
+class DriverSettingsW : public QDialog
+{
+    Q_OBJECT
+
+public:
+    DriverSettingsW(QWidget* parent = nullptr);
+    ~DriverSettingsW() override;
+
+private:
+    struct PrivateData;
+    PrivateData* const self;
+
+    Q_SLOT void slot_saveSettings();
+    Q_SLOT void slot_showDevicePanel();
+    Q_SLOT void slot_updateDeviceInfo();
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DriverSettingsW)
+};
+
+// --------------------------------------------------------------------------------------------------------------------
+// Runtime Driver Settings
+
+class RuntimeDriverSettingsW : public QDialog
+{
+    Q_OBJECT
+
+public:
+    RuntimeDriverSettingsW(QWidget* parent = nullptr);
+    ~RuntimeDriverSettingsW() override;
+
+    void getValues(QString& audioDevice, uint& bufferSize, double& sampleRate);
+
+private:
+    struct PrivateData;
+    PrivateData* const self;
+
+    Q_SLOT void slot_showDevicePanel();
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RuntimeDriverSettingsW)
+};
+
+// --------------------------------------------------------------------------------------------------------------------
+// Settings Dialog
+
+class CarlaSettingsW : public QDialog
+{
+    Q_OBJECT
+
+public:
+    CarlaSettingsW(QWidget* parent, const CarlaHost& host, bool hasCanvas, bool hasCanvasGL);
+    ~CarlaSettingsW() override;
+
+private:
+    struct PrivateData;
+    PrivateData* const self;
+
+    // ----------------------------------------------------------------------------------------------------------------
+
+    Q_SLOT void slot_saveSettings();
+    Q_SLOT void slot_resetSettings();
+
+    // ----------------------------------------------------------------------------------------------------------------
+
+    Q_SLOT void slot_enableExperimental(bool toggled);
+    Q_SLOT void slot_enableWineBridges(bool toggled);
+    Q_SLOT void slot_pluginBridgesToggled(bool toggled);
+    Q_SLOT void slot_canvasEyeCandyToggled(bool toggled);
+    Q_SLOT void slot_canvasFancyEyeCandyToggled(bool toggled);
+    Q_SLOT void slot_canvasOpenGLToggled(bool toggled);
+
+    // ----------------------------------------------------------------------------------------------------------------
+
+    Q_SLOT void slot_getAndSetProjectPath();
+
+    // ----------------------------------------------------------------------------------------------------------------
+
+    Q_SLOT void slot_engineAudioDriverChanged();
+    Q_SLOT void slot_showAudioDriverSettings();
+
+    // ----------------------------------------------------------------------------------------------------------------
+
+    Q_SLOT void slot_addPluginPath();
+    Q_SLOT void slot_removePluginPath();
+    Q_SLOT void slot_changePluginPath();
+
+    // ----------------------------------------------------------------------------------------------------------------
+
+    Q_SLOT void slot_pluginPathTabChanged(int index);
+    Q_SLOT void slot_pluginPathRowChanged(int row);
+
+    // ----------------------------------------------------------------------------------------------------------------
+
+    Q_SLOT void slot_addFilePath();
+    Q_SLOT void slot_removeFilePath();
+    Q_SLOT void slot_changeFilePath();
+
+    // ----------------------------------------------------------------------------------------------------------------
+
+    Q_SLOT void slot_filePathTabChanged(int index);
+    Q_SLOT void slot_filePathRowChanged(int row);
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaSettingsW)
+};
+
+//---------------------------------------------------------------------------------------------------------------------
 
 #endif // CARLA_SETTINGS_HPP_INCLUDED

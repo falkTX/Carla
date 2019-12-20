@@ -1,6 +1,6 @@
 /*
- * Carla plugin host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Carla application
+ * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -14,6 +14,8 @@
  *
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
+
+#include "carla_app.hpp"
 
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Global)
@@ -29,7 +31,6 @@
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Custom)
 
-#include "carla_app.hpp"
 #include "carla_shared.hpp"
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -45,7 +46,7 @@ CarlaApplication::CarlaApplication(const QString appName, int& argc, char* argv[
     if (os.path.exists(CWD))
         QApplication.addLibraryPath(CWD)
 
-    # Needed for local wine build
+    // Needed for local wine build
     if WINDOWS and CWD.endswith(("frontend", "resources")) and os.getenv("CXFREEZE") is None:
         if kIs64bit:
             path = "H:\\builds\\msys2-x86_64\\mingw64\\share\\qt5\\plugins"
@@ -159,7 +160,6 @@ CarlaApplication::CarlaApplication(const QString appName, int& argc, char* argv[
         palBlack.setColor(QPalette::Inactive, QPalette::LinkVisited, QColor(230, 100, 230));
         guiApp->setPalette(palBlack);
     }
-
     else if (proThemeColor == "blue")
     {
         QPalette palBlue;

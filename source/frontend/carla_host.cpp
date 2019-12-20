@@ -15,6 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include "carla_host.hpp"
+
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Global)
 
@@ -31,19 +33,20 @@
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Custom)
 
-#include "host.hpp"
 #include "ui_carla_host.hpp"
 
-#include "../../backend/CarlaHost.h"
-#include "../../backend/CarlaUtils.h"
-#include "../../utils/CarlaBackendUtils.hpp"
-#include "../../utils/CarlaMathUtils.hpp"
-#include "../../utils/CarlaString.hpp"
+#include "CarlaHost.h"
+#include "CarlaUtils.h"
+
+#include "CarlaBackendUtils.hpp"
+#include "CarlaMathUtils.hpp"
+#include "CarlaString.hpp"
 
 //---------------------------------------------------------------------------------------------------------------------
 
-Host::Host()
-    : isControl(false),
+CarlaHost::CarlaHost()
+    : QObject(),
+      isControl(false),
       isPlugin(false),
       isRemote(false),
       nsmOK(false),
@@ -160,9 +163,9 @@ struct CarlaHostWindow::PrivateData {
 };
 
 //---------------------------------------------------------------------------------------------------------------------
-// Host Window
+// Carla Host Window
 
-CarlaHostWindow::CarlaHostWindow(Host& h, const bool withCanvas, QWidget* const parent)
+CarlaHostWindow::CarlaHostWindow(CarlaHost& h, const bool withCanvas, QWidget* const parent)
     : QMainWindow(parent),
       host(h),
       self(new PrivateData(this, withCanvas))
@@ -1541,7 +1544,7 @@ void _engineCallback(void* const ptr, EngineCallbackOpcode action, uint pluginId
                  ptr, action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valuef, valueStr);
     */
 
-    Host* const host = (Host*)(ptr);
+    CarlaHost* const host = (CarlaHost*)(ptr);
     CARLA_SAFE_ASSERT_RETURN(host != nullptr,);
 
     switch (action)
@@ -1612,7 +1615,7 @@ static const char* _fileCallback(void*, const FileCallbackOpcode action, const b
 //---------------------------------------------------------------------------------------------------------------------
 // Init host
 
-Host& initHost(const QString /*initName*/, const bool isControl, const bool isPlugin, const bool failError)
+CarlaHost& initHost(const QString /*initName*/, const bool isControl, const bool isPlugin, const bool failError)
 {
     CarlaString pathBinaries, pathResources;
     // = getPaths(libPrefix)
@@ -1636,7 +1639,7 @@ Host& initHost(const QString /*initName*/, const bool isControl, const bool isPl
 //             host = CarlaHostQtNull()
     }
 
-    static Host host;
+    static CarlaHost host;
     host.isControl = isControl;
     host.isPlugin  = isPlugin;
 
@@ -1666,7 +1669,7 @@ Host& initHost(const QString /*initName*/, const bool isControl, const bool isPl
 //---------------------------------------------------------------------------------------------------------------------
 // Load host settings
 
-void loadHostSettings(Host& /*host*/)
+void loadHostSettings(CarlaHost& /*host*/)
 {
 }
 

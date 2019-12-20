@@ -51,7 +51,7 @@ qrc_resources.cpp
 *.pyc
 
 # Qt files
-*_rc.hpp
+*_rc.cpp
 *_rc.py
 ui_*.hpp
 ui_*.py

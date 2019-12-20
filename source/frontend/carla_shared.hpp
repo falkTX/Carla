@@ -18,16 +18,24 @@
 #ifndef CARLA_SHARED_HPP_INCLUDED
 #define CARLA_SHARED_HPP_INCLUDED
 
-#include "../utils/CarlaUtils.hpp"
-
 //---------------------------------------------------------------------------------------------------------------------
+// Imports (Global)
 
 #include <QtCore/QSettings>
 #include <QtCore/QStringList>
 
-#include <QtGui/QFontMetrics>
+#include <QtGui/QIcon>
 
+#include <QtWidgets/QMessageBox>
+
+class QFontMetrics;
+class QLineEdit;
 class QMainWindow;
+
+//---------------------------------------------------------------------------------------------------------------------
+// Imports (Custom)
+
+#include "CarlaDefines.h"
 
 //---------------------------------------------------------------------------------------------------------------------
 // Static MIDI CC list
@@ -246,6 +254,25 @@ static const char* const* const MIDI_CC_LIST = {
 #define CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL       false
 
 //---------------------------------------------------------------------------------------------------------------------
+// Default File Folders
+
+#define CARLA_DEFAULT_FILE_PATH_AUDIO []
+#define CARLA_DEFAULT_FILE_PATH_MIDI  []
+
+//---------------------------------------------------------------------------------------------------------------------
+// Default Plugin Folders (get)
+
+#define DEFAULT_LADSPA_PATH ""
+#define DEFAULT_DSSI_PATH   ""
+#define DEFAULT_LV2_PATH    ""
+#define DEFAULT_VST2_PATH   ""
+#define DEFAULT_VST3_PATH   ""
+#define DEFAULT_SF2_PATH    ""
+#define DEFAULT_SFZ_PATH    ""
+
+// TODO
+
+//---------------------------------------------------------------------------------------------------------------------
 // Global Carla object
 
 struct CarlaObject {
@@ -253,169 +280,68 @@ struct CarlaObject {
     bool nogui;       // Skip UI
     bool term;        // Terminated by OS signal
 
-    CarlaObject()
-        : gui(nullptr),
-          nogui(false),
-          term(false) {}
+    CarlaObject() noexcept;
 };
 
 extern CarlaObject gCarla;
 
 //---------------------------------------------------------------------------------------------------------------------
-// Signal handler
+// Set DLL_EXTENSION
 
-/*
-void signalHandler(const int sig)
-{
-    if (sig == SIGINT || sig == SIGTERM)
-    {
-        gCarla.term = true;
-        if (gCarla.gui != nullptr)
-            gCarla.gui.SIGTERM.emit();
-    }
-    else if (sig == SIGUSR1)
-    {
-        if (gCarla.gui != nullptr)
-            gCarla.gui.SIGUSR1.emit();
-    }
-}
-*/
+#if defined(CARLA_OS_WIN)
+# define DLL_EXTENSION "dll"
+#elif defined(CARLA_OS_MAC)
+# define DLL_EXTENSION "dylib"
+#else
+# define DLL_EXTENSION "so"
+#endif
 
-inline void setUpSignals()
-{
-    /*
-    signal(SIGINT,  signalHandler);
-    signal(SIGTERM, signalHandler);
-    signal(SIGUSR1, signalHandler);
-    */
-}
+//---------------------------------------------------------------------------------------------------------------------
+// Get Icon from user theme, using our own as backup (Oxygen)
+
+QIcon getIcon(QString icon, int size = 16);
 
 //---------------------------------------------------------------------------------------------------------------------
 // Handle some basic command-line arguments shared between all carla variants
 
-inline
-QString handleInitialCommandLineArguments(const int argc, char* argv[])
-{
-    static const QStringList listArgsNoGUI   = { "-n", "--n", "-no-gui", "--no-gui", "-nogui", "--nogui" };
-    static const QStringList listArgsHelp    = { "-h", "--h", "-help", "--help" };
-    static const QStringList listArgsVersion = { "-v", "--v", "-version", "--version" };
+QString handleInitialCommandLineArguments(const int argc, char* argv[]);
 
-    QString initName(argv[0]); // = os.path.basename(file) if (file is not None and os.path.dirname(file) in PATH) else sys.argv[0]
-    // libPrefix = None
-
-    for (int i=1; i<argc; ++i)
-    {
-        const QString arg(argv[i]);
-
-        if (arg.startsWith("--with-appname="))
-        {
-            // initName = os.path.basename(arg.replace("--with-appname=", ""));
-        }
-        else if (arg.startsWith("--with-libprefix=") || arg == "--gdb")
-        {
-            pass();
-        }
-        else if (listArgsNoGUI.contains(arg))
-        {
-            gCarla.nogui = true;
-        }
-        else if (listArgsHelp.contains(arg))
-        {
-            carla_stdout("Usage: %s [OPTION]... [FILE|URL]", initName);
-            carla_stdout("");
-            carla_stdout(" where FILE can be a Carla project or preset file to be loaded, or URL if using Carla-Control");
-            carla_stdout("");
-            carla_stdout(" and OPTION can be one or more of the following:");
-            carla_stdout("");
-            carla_stdout("    --gdb    \t Run Carla inside gdb.");
-            carla_stdout(" -n,--no-gui \t Run Carla headless, don't show UI.");
-            carla_stdout("");
-            carla_stdout(" -h,--help   \t Print this help text and exit.");
-            carla_stdout(" -v,--version\t Print version information and exit.");
-            carla_stdout("");
-
-            std::exit(0);
-        }
-        else if (listArgsVersion.contains(arg))
-        {
-            /*
-            QString pathBinaries, pathResources = getPaths();
-            */
-
-            carla_stdout("Using Carla version %s", CARLA_VERSION_STRING);
-            /*
-            carla_stdout("  Qt version:     %s", QT_VERSION_STR);
-            carla_stdout("  Binary dir:     %s", pathBinaries.toUtf8());
-            carla_stdout("  Resources dir:  %s", pathResources.toUtf8());
-            */
-
-            std::exit(0);
-        }
-    }
-
-    return initName;
-}
-
-#if 0
 //---------------------------------------------------------------------------------------------------------------------
-// Get Icon from user theme, using our own as backup (Oxygen)
+// Get initial project file (as passed in the command-line parameters)
 
-def getIcon(icon, size = 16):
-    return QIcon.fromTheme(icon, QIcon(":/%ix%i/%s.png" % (size, size, icon)))
+void getInitialProjectFile(void* app, bool skipExistCheck = false);
+
+//---------------------------------------------------------------------------------------------------------------------
+// Get paths (binaries, resources)
+
+void getPaths();
+
+//---------------------------------------------------------------------------------------------------------------------
+// Signal handler
+
+void setUpSignals();
 
 //---------------------------------------------------------------------------------------------------------------------
 // QLineEdit and QPushButton combo
 
-def getAndSetPath(parent, lineEdit):
-    newPath = QFileDialog.getExistingDirectory(parent, parent.tr("Set Path"), lineEdit.text(), QFileDialog.ShowDirsOnly)
-    if newPath:
-        lineEdit.setText(newPath)
-    return newPath
-#endif
+QString getAndSetPath(QWidget* parent, QLineEdit* lineEdit);
 
 //---------------------------------------------------------------------------------------------------------------------
-// Check if a string array contains a string
+// fill up a qlists from a C arrays
 
-static inline
-bool stringArrayContainsString(const char* const* const stringArray, const char* const string) noexcept
-{
-    for (uint i=0; stringArray[i] != nullptr; ++i)
-    {
-        if (std::strcmp(stringArray[i], string) == 0)
-            return true;
-    }
-
-    return false;
-}
-
-static inline
-void fillQStringListFromStringArray(QStringList& list, const char* const* const stringArray)
-{
-    uint count = 0;
-
-    // count number of strings first
-    for (; stringArray[count] != nullptr; ++count) {}
-
-    // allocate list
-    list.reserve(count);
-
-    // fill in strings
-    for (count = 0; stringArray[count] != nullptr; ++count)
-        list.replace(count, stringArray[count]);
-}
+void fillQStringListFromStringArray(QStringList& list, const char* const* const stringArray);
+void fillQDoubleListFromDoubleArray(QList<double>& list, const double* const doubleArray);
+void fillQUIntListFromUIntArray(QList<uint>& list, const uint* const uintArray);
 
 //---------------------------------------------------------------------------------------------------------------------
 // Backwards-compatible horizontalAdvance/width call, depending on qt version
 
-static inline
-int fontMetricsHorizontalAdvance(const QFontMetrics& fm, const QString& s)
-{
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
-    return fm.horizontalAdvance(s);
-#else
-    return fm.width(s);
-#endif
-}
+int fontMetricsHorizontalAdvance(const QFontMetrics& fm, const QString& s);
+
+//---------------------------------------------------------------------------------------------------------------------
+// Check if a string array contains a string
+
+bool stringArrayContainsString(const char* const* const stringArray, const char* const string) noexcept;
 
 //---------------------------------------------------------------------------------------------------------------------
 // Custom QString class with a few extra methods
@@ -423,13 +349,13 @@ int fontMetricsHorizontalAdvance(const QFontMetrics& fm, const QString& s)
 class QCarlaString : public QString
 {
 public:
-    QCarlaString()
+    inline QCarlaString()
         : QString() {}
 
-    QCarlaString(const char* const ch)
+    inline QCarlaString(const char* const ch)
         : QString(ch) {}
 
-    QCarlaString(const QString& s)
+    inline QCarlaString(const QString& s)
         : QString(s) {}
 
     inline bool isNotEmpty() const
@@ -443,29 +369,18 @@ public:
     }
 };
 
-#if 0
 //---------------------------------------------------------------------------------------------------------------------
 // Custom QMessageBox which resizes itself to fit text
 
-class QMessageBoxWithBetterWidth(QMessageBox):
-    def __init__(self, parent):
-        QMessageBox.__init__(self, parent)
+class QMessageBoxWithBetterWidth : public QMessageBox
+{
+public:
+    inline QMessageBoxWithBetterWidth(QWidget* const parent)
+        : QMessageBox(parent) {}
 
-    def showEvent(self, event):
-        fontMetrics = self.fontMetrics()
-
-        lines = self.text().strip().split("\n") + self.informativeText().strip().split("\n")
-
-        if len(lines) > 0:
-            width = 0
-
-            for line in lines:
-                width = max(fontMetrics.width(line), width)
-
-            self.layout().setColumnMinimumWidth(2, width + 12)
-
-        QMessageBox.showEvent(self, event)
-#endif
+protected:
+    void showEvent(QShowEvent* event);
+};
 
 //---------------------------------------------------------------------------------------------------------------------
 // Safer QSettings class, which does not throw if type mismatches
@@ -473,78 +388,27 @@ class QMessageBoxWithBetterWidth(QMessageBox):
 class QSafeSettings : public QSettings
 {
 public:
-    QSafeSettings()
+    inline QSafeSettings()
         : QSettings() {}
 
-    QSafeSettings(const QString organizationName, const QString applicationName)
+    inline QSafeSettings(const QString organizationName, const QString applicationName)
         : QSettings(organizationName, applicationName) {}
 
-    bool valueBool(const QString key, const bool defaultValue) const
-    {
-        QVariant var(value(key, defaultValue));
-        CARLA_SAFE_ASSERT_RETURN(var.convert(QVariant::Bool), defaultValue);
-
-        return var.isValid() ? var.toBool() : defaultValue;
-    }
-
-    uint valueUInt(const QString key, const uint defaultValue) const
-    {
-        QVariant var(value(key, defaultValue));
-        CARLA_SAFE_ASSERT_RETURN(var.convert(QVariant::UInt), defaultValue);
-
-        return var.isValid() ? var.toUInt() : defaultValue;
-    }
-
-    double valueDouble(const QString key, const double defaultValue) const
-    {
-        QVariant var(value(key, defaultValue));
-        CARLA_SAFE_ASSERT_RETURN(var.convert(QVariant::Double), defaultValue);
-
-        return var.isValid() ? var.toDouble() : defaultValue;
-    }
-
-    QString valueString(const QString key, const QString defaultValue) const
-    {
-        QVariant var(value(key, defaultValue));
-        CARLA_SAFE_ASSERT_RETURN(var.convert(QVariant::String), defaultValue);
-
-        return var.isValid() ? var.toString() : defaultValue;
-    }
-
-    QByteArray valueByteArray(const QString key, const QByteArray defaultValue = QByteArray()) const
-    {
-        QVariant var(value(key, defaultValue));
-        CARLA_SAFE_ASSERT_RETURN(var.convert(QVariant::ByteArray), defaultValue);
-
-        return var.isValid() ? var.toByteArray() : defaultValue;
-    }
-
-    QStringList valueStringList(const QString key, const QStringList defaultValue = QStringList()) const
-    {
-        QVariant var(value(key, defaultValue));
-        CARLA_SAFE_ASSERT_RETURN(var.convert(QVariant::StringList), defaultValue);
-
-        return var.isValid() ? var.toStringList() : defaultValue;
-    }
+    bool valueBool(const QString key, const bool defaultValue) const;
+    uint valueUInt(const QString key, const uint defaultValue) const;
+    double valueDouble(const QString key, const double defaultValue) const;
+    QString valueString(const QString key, const QString defaultValue) const;
+    QByteArray valueByteArray(const QString key, const QByteArray defaultValue = QByteArray()) const;
+    QStringList valueStringList(const QString key, const QStringList defaultValue = QStringList()) const;
 };
 
-#if 0
 //---------------------------------------------------------------------------------------------------------------------
 // Custom MessageBox
 
-def CustomMessageBox(parent, icon, title, text,
-                     extraText="",
-                     buttons=QMessageBox.Yes|QMessageBox.No,
-                     defButton=QMessageBox.No):
-    msgBox = QMessageBoxWithBetterWidth(parent)
-    msgBox.setIcon(icon)
-    msgBox.setWindowTitle(title)
-    msgBox.setText(text)
-    msgBox.setInformativeText(extraText)
-    msgBox.setStandardButtons(buttons)
-    msgBox.setDefaultButton(defButton)
-    return msgBox.exec_()
-#endif
+int CustomMessageBox(QWidget* parent, QMessageBox::Icon icon, QString title, QString text,
+                     QString extraText = "",
+                     QMessageBox::StandardButtons buttons = QMessageBox::Yes|QMessageBox::No,
+                     QMessageBox::StandardButton defButton = QMessageBox::No);
 
 //---------------------------------------------------------------------------------------------------------------------
 
