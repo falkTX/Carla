@@ -22,6 +22,7 @@
 // Imports (Global)
 
 #include <QtCore/QThread>
+
 #include <QtWidgets/QDialog>
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -39,7 +40,7 @@ class SearchPluginsThread : public QThread
     Q_OBJECT
 
 signals:
-    void pluginLook();
+    void pluginLook(float percent, QString plugin);
 
 public:
     SearchPluginsThread(QObject* parent, QString pathBinaries);
@@ -48,6 +49,9 @@ public:
 private:
     struct PrivateData;
     PrivateData* const self;
+
+protected:
+    void run() override;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SearchPluginsThread)
 };
@@ -60,7 +64,7 @@ class PluginRefreshW : public QDialog
     Q_OBJECT
 
 public:
-    PluginRefreshW(QWidget* parent);
+    PluginRefreshW(QWidget* parent, const CarlaHost& host);
     ~PluginRefreshW() override;
 
     void getValues(QString& audioDevice, uint& bufferSize, double& sampleRate);
@@ -80,6 +84,7 @@ private slots:
     void slot_handlePluginLook(float percent, QString plugin);
     void slot_handlePluginThreadFinished();
 
+private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginRefreshW)
 };
 
@@ -111,6 +116,7 @@ private slots:
     void slot_clearFilters();
     void slot_saveSettings();
 
+private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginDatabaseW)
 };
 
@@ -136,6 +142,7 @@ private slots:
     void slot_sessionManagerChanged(int index);
     void slot_saveSettings();
 
+private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(JackApplicationW)
 };
 

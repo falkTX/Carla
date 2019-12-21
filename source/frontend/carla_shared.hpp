@@ -379,7 +379,7 @@ QString getInitialProjectFile(bool skipExistCheck = false);
 //---------------------------------------------------------------------------------------------------------------------
 // Get paths (binaries, resources)
 
-void getPaths(QString& pathBinaries, QString& pathResources);
+bool getPaths(QString& pathBinaries, QString& pathResources);
 
 //---------------------------------------------------------------------------------------------------------------------
 // Signal handler

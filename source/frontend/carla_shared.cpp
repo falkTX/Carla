@@ -35,6 +35,7 @@
 
 #include "carla_host.hpp"
 
+#include "CarlaUtils.h"
 #include "CarlaMathUtils.hpp"
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -133,9 +134,40 @@ QString getInitialProjectFile(bool)
 //---------------------------------------------------------------------------------------------------------------------
 // Get paths (binaries, resources)
 
-void getPaths(QString& pathBinaries, QString& pathResources)
+bool getPaths(QString& pathBinaries, QString& pathResources)
 {
-    // TODO
+    const QString libFolder(carla_get_library_folder());
+
+    QDir dir(libFolder);
+
+    // FIXME need to completely rework this in C++ mode, so check if all cases are valid
+
+    if (libFolder.endsWith("bin"))
+    {
+        CARLA_SAFE_ASSERT_RETURN(dir.cd("resources"), false);
+        pathBinaries  = libFolder;
+        pathResources = dir.absolutePath();
+        return true;
+    }
+    else if (libFolder.endsWith("carla"))
+    {
+        for (int i=2; --i>=0;)
+        {
+            CARLA_SAFE_ASSERT_INT_RETURN(dir.cdUp(), i, false);
+            CARLA_SAFE_ASSERT_INT_RETURN(dir.cd("share"), i, false);
+
+            if (dir.exists())
+            {
+                CARLA_SAFE_ASSERT_INT_RETURN(dir.cd("carla"), i, false);
+                CARLA_SAFE_ASSERT_INT_RETURN(dir.cd("resources"), i, false);
+                pathBinaries  = libFolder;
+                pathResources = dir.absolutePath();
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

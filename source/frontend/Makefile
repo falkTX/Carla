@@ -198,6 +198,7 @@ OBJS = \
 	$(OBJDIR)/carla_shared.cpp.o \
 	$(OBJDIR)/carla_widgets.cpp.o \
 	$(OBJDIR)/patchcanvas/theme.cpp.o \
+	$(OBJDIR)/moc_carla_database.cpp.o \
 	$(OBJDIR)/moc_carla_host.cpp.o \
 	$(OBJDIR)/moc_carla_settings.cpp.o \
 	$(OBJDIR)/moc_carla_widgets.cpp.o \
@@ -282,5 +283,6 @@ debug:
 # ---------------------------------------------------------------------------------------------------------------------
 
 -include $(OBJS:%.o=%.d)
+-include $(OBJDIR)/carla_database_app.cpp.d
 
 # ---------------------------------------------------------------------------------------------------------------------
