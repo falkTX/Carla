@@ -17,7 +17,7 @@ make distclean >/dev/null
 make features
 
 # Build things that we skip strict tests for
-make 3rd
+make 3rd frontend
 make -C source/modules/water posix32
 
 # Build native stuff

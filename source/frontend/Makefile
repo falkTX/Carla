@@ -187,8 +187,9 @@ endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
+# 	$(OBJDIR)/carla.cpp.o \
+
 OBJS = \
-	$(OBJDIR)/carla.cpp.o \
 	$(OBJDIR)/carla_app.cpp.o \
 	$(OBJDIR)/carla_database.cpp.o \
 	$(OBJDIR)/carla_host.cpp.o \
@@ -207,12 +208,14 @@ OBJS = \
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-TARGETS = $(BINDIR)/carla
+# TARGETS = $(BINDIR)/carla
 # TARGETS = carla
+TARGETS = \
+	$(BINDIR)/carla_database
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-all: $(RES) $(UIs)
+all: $(RES) $(UIs) $(TARGETS)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -221,10 +224,10 @@ $(BINDIR)/carla: $(OBJS)
 	@echo "Linking carla"
 	$(CXX) $(OBJS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) -o $@
 
-carla_settings: $(OBJS)
+$(BINDIR)/carla_database: $(OBJS) $(OBJDIR)/carla_database_app.cpp.o
 	-@mkdir -p $(BINDIR)
-	@echo "Linking carla"
-	$(CXX) $(OBJS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) -o $@
+	@echo "Linking carla_database"
+	$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
