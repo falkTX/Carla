@@ -28,9 +28,9 @@
 
 #include <QtWidgets/QMessageBox>
 
+class CarlaHost;
 class QFontMetrics;
 class QLineEdit;
-class QMainWindow;
 
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Custom)
@@ -185,7 +185,11 @@ static const char* const* const MIDI_CC_LIST = {
 #define CARLA_DEFAULT_MAIN_PRO_THEME_COLOR  "Black"
 #define CARLA_DEFAULT_MAIN_REFRESH_INTERVAL 20
 #define CARLA_DEFAULT_MAIN_CONFIRM_EXIT     true
-#define CARLA_DEFAULT_MAIN_SHOW_LOGS        bool(not WINDOWS)
+#ifdef CARLA_OS_WIN
+# define CARLA_DEFAULT_MAIN_SHOW_LOGS       false
+#else
+# define CARLA_DEFAULT_MAIN_SHOW_LOGS       true
+#endif
 #define CARLA_DEFAULT_MAIN_EXPERIMENTAL     false
 
 // Canvas
@@ -336,9 +340,10 @@ if WINDOWS:
 // Global Carla object
 
 struct CarlaObject {
-    QMainWindow* gui; // Host Window
-    bool nogui;       // Skip UI
-    bool term;        // Terminated by OS signal
+    CarlaHost* host;
+    QWidget* gui;
+    bool nogui;      // Skip UI
+    bool term;       // Terminated by OS signal
 
     CarlaObject() noexcept;
 };
@@ -369,12 +374,12 @@ QString handleInitialCommandLineArguments(const int argc, char* argv[]);
 //---------------------------------------------------------------------------------------------------------------------
 // Get initial project file (as passed in the command-line parameters)
 
-void getInitialProjectFile(void* app, bool skipExistCheck = false);
+QString getInitialProjectFile(bool skipExistCheck = false);
 
 //---------------------------------------------------------------------------------------------------------------------
 // Get paths (binaries, resources)
 
-void getPaths();
+void getPaths(QString& pathBinaries, QString& pathResources);
 
 //---------------------------------------------------------------------------------------------------------------------
 // Signal handler
@@ -394,7 +399,7 @@ void fillQDoubleListFromDoubleArray(QList<double>& list, const double* const dou
 void fillQUIntListFromUIntArray(QList<uint>& list, const uint* const uintArray);
 
 //---------------------------------------------------------------------------------------------------------------------
-// Backwards-compatible horizontalAdvance/width call, depending on qt version
+// Backwards-compatible horizontalAdvance/width call, depending on Qt version
 
 int fontMetricsHorizontalAdvance(const QFontMetrics& fm, const QString& s);
 

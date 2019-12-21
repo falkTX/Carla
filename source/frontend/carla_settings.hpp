@@ -28,7 +28,7 @@
 
 #include "CarlaJuceUtils.hpp"
 
-struct CarlaHost;
+class CarlaHost;
 
 // --------------------------------------------------------------------------------------------------------------------
 // Driver Settings

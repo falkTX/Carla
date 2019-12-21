@@ -107,7 +107,7 @@ static BOOL WINAPI winSignalHandler(DWORD dwCtrlType) noexcept
 
 static void initSignalHandler()
 {
-#if defined(CARLA_OS_LINUX)
+#if defined(CARLA_OS_UNIX)
     struct sigaction sig;
     carla_zeroStruct(sig);
 

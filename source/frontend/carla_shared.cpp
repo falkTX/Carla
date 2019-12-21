@@ -26,8 +26,14 @@
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QLineEdit>
 
+#ifdef CARLA_OS_UNIX
+# include <signal.h>
+#endif
+
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Custom)
+
+#include "carla_host.hpp"
 
 #include "CarlaMathUtils.hpp"
 
@@ -35,7 +41,8 @@
 // Global Carla object
 
 CarlaObject::CarlaObject() noexcept
-    : gui(nullptr),
+    : host(nullptr),
+      gui(nullptr),
       nogui(false),
       term(false) {}
 
@@ -117,15 +124,16 @@ QString handleInitialCommandLineArguments(const int argc, char* argv[])
 //---------------------------------------------------------------------------------------------------------------------
 // Get initial project file (as passed in the command-line parameters)
 
-void getInitialProjectFile(void*, bool)
+QString getInitialProjectFile(bool)
 {
     // TODO
+    return "";
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 // Get paths (binaries, resources)
 
-void getPaths()
+void getPaths(QString& pathBinaries, QString& pathResources)
 {
     // TODO
 }
@@ -133,30 +141,49 @@ void getPaths()
 //---------------------------------------------------------------------------------------------------------------------
 // Signal handler
 
-/*
-void signalHandler(const int sig)
+static void signalHandler(const int sig)
 {
-    if (sig == SIGINT || sig == SIGTERM)
+    switch (sig)
     {
+    case SIGINT:
+    case SIGTERM:
         gCarla.term = true;
-        if (gCarla.gui != nullptr)
-            gCarla.gui.SIGTERM.emit();
-    }
-    else if (sig == SIGUSR1)
-    {
-        if (gCarla.gui != nullptr)
-            gCarla.gui.SIGUSR1.emit();
+        if (gCarla.host != nullptr)
+            emit gCarla.host->SignalTerminate();
+        break;
+    case SIGUSR1:
+        if (gCarla.host != nullptr)
+            emit gCarla.host->SignalSave();
+        break;
     }
 }
-*/
+
+#ifdef CARLA_OS_WIN
+static BOOL WINAPI winSignalHandler(DWORD dwCtrlType) noexcept
+{
+    if (dwCtrlType == CTRL_C_EVENT)
+    {
+        signalHandler(SIGINT);
+        return TRUE;
+    }
+    return FALSE;
+}
+#endif
 
 void setUpSignals()
 {
-    /*
-    signal(SIGINT,  signalHandler);
-    signal(SIGTERM, signalHandler);
-    signal(SIGUSR1, signalHandler);
-    */
+#if defined(CARLA_OS_UNIX)
+    struct sigaction sig;
+    carla_zeroStruct(sig);
+    sig.sa_handler = signalHandler;
+    sig.sa_flags   = SA_RESTART;
+    sigemptyset(&sig.sa_mask);
+    sigaction(SIGTERM, &sig, nullptr);
+    sigaction(SIGINT, &sig, nullptr);
+    sigaction(SIGUSR1, &sig, nullptr);
+#elif defined(CARLA_OS_WIN)
+    SetConsoleCtrlHandler(winSignalHandler, TRUE);
+#endif
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -219,7 +246,7 @@ void fillQUIntListFromUIntArray(QList<uint>& list, const uint* const uintArray)
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-// Backwards-compatible horizontalAdvance/width call, depending on qt version
+// Backwards-compatible horizontalAdvance/width call, depending on Qt version
 
 int fontMetricsHorizontalAdvance(const QFontMetrics& fm, const QString& s)
 {

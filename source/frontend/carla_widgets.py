@@ -170,8 +170,8 @@ class CarlaAboutW(QDialog):
         # adjust appropriately
         self.ui.tabWidget.setCurrentIndex(2)
         self.adjustSize()
-
         self.ui.tabWidget.setCurrentIndex(0)
+
         self.setFixedSize(self.size())
 
         flags  = self.windowFlags()
@@ -200,8 +200,13 @@ class JuceAboutW(QDialog):
         self.adjustSize()
         self.setFixedSize(self.size())
 
+        flags  = self.windowFlags()
+        flags &= ~Qt.WindowContextHelpButtonHint
+
         if WINDOWS:
-            self.setWindowFlags(self.windowFlags()|Qt.MSWindowsFixedSizeDialogHint)
+            flags |= Qt.MSWindowsFixedSizeDialogHint
+
+        self.setWindowFlags(flags)
 
     def done(self, r):
         QDialog.done(self, r)

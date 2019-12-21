@@ -20,6 +20,7 @@
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Global)
 
+#include <QtCore/QDir>
 #include <QtCore/QStringList>
 #include <QtCore/QTimer>
 
@@ -35,6 +36,10 @@
 
 #include "ui_carla_host.hpp"
 
+#include "carla_database.hpp"
+#include "carla_settings.hpp"
+#include "carla_skin.hpp"
+
 #include "CarlaHost.h"
 #include "CarlaUtils.h"
 
@@ -49,6 +54,13 @@ static QString fixLogText(QString text)
     //v , Qt::CaseSensitive
     return text.replace("\x1b[30;1m", "").replace("\x1b[31m", "").replace("\x1b[0m", "");
 }
+
+//---------------------------------------------------------------------------------------------------------------------
+// Session Management support
+
+static const char* const CARLA_CLIENT_NAME = getenv("CARLA_CLIENT_NAME");
+static const char* const LADISH_APP_NAME   = getenv("LADISH_APP_NAME");
+static const char* const NSM_URL           = getenv("NSM_URL");
 
 //---------------------------------------------------------------------------------------------------------------------
 
@@ -81,6 +93,13 @@ CarlaHost::CarlaHost()
       pathResources() {}
 
 //---------------------------------------------------------------------------------------------------------------------
+// Carla Host Window
+
+enum CustomActions {
+    CUSTOM_ACTION_NONE,
+    CUSTOM_ACTION_APP_CLOSE,
+    CUSTOM_ACTION_PROJECT_LOAD
+};
 
 struct CachedSavedSettings {
     uint _CARLA_KEY_MAIN_REFRESH_INTERVAL = 0;
@@ -89,51 +108,55 @@ struct CachedSavedSettings {
 };
 
 //---------------------------------------------------------------------------------------------------------------------
-// Host Private Data
 
 struct CarlaHostWindow::PrivateData {
     Ui::CarlaHostW ui;
-    const CarlaHost& host;
+    CarlaHost& host;
     CarlaHostWindow* const hostWindow;
 
-    int fIdleTimerNull = 0;
-    int fIdleTimerFast = 0;
-    int fIdleTimerSlow = 0;
+    //-----------------------------------------------------------------------------------------------------------------
+    // Internal stuff
 
-    bool fLadspaRdfNeedsUpdate = true;
-    QStringList fLadspaRdfList;
+    QWidget* const fParentOrSelf;
 
-    int fPluginCount = 0;
+    int fIdleTimerNull; // to keep application signals alive
+    int fIdleTimerFast;
+    int fIdleTimerSlow;
+
+    bool fLadspaRdfNeedsUpdate;
+    QList<void*> fLadspaRdfList;
+
+    int fPluginCount;
     QList<QWidget*> fPluginList;
 
-    void* fPluginDatabaseDialog = nullptr;
+    void* fPluginDatabaseDialog;
     QStringList fFavoritePlugins;
 
     QCarlaString fProjectFilename;
-    bool fIsProjectLoading = false;
-    bool fCurrentlyRemovingAllPlugins = false;
+    bool fIsProjectLoading;
+    bool fCurrentlyRemovingAllPlugins;
 
-    double fLastTransportBPM   = 0.0;
-    uint64_t fLastTransportFrame = 0;
-    bool fLastTransportState = false;
-    uint fBufferSize         = 0;
-    double fSampleRate       = 0.0;
+    double fLastTransportBPM;
+    uint64_t fLastTransportFrame;
+    bool fLastTransportState;
+    uint fBufferSize;
+    double fSampleRate;
     QCarlaString fOscAddressTCP;
     QCarlaString fOscAddressUDP;
     QCarlaString fOscReportedHost;
 
 #ifdef CARLA_OS_MAC
-    bool fMacClosingHelper = true;
+    bool fMacClosingHelper;
 #endif
 
     // CancelableActionCallback Box
-    void* fCancelableActionBox = nullptr;
+    void* fCancelableActionBox;
 
     // run a custom action after engine is properly closed
-    CustomActions fCustomStopAction = CUSTOM_ACTION_NONE;
+    CustomActions fCustomStopAction;
 
     // first attempt of auto-start engine doesn't show an error
-    bool fFirstEngineInit = true;
+    bool fFirstEngineInit;
 
     // to be filled with key-value pairs of current settings
     CachedSavedSettings fSavedSettings;
@@ -146,15 +169,15 @@ struct CarlaHostWindow::PrivateData {
 
     QImage fExportImage;
 
-    bool fPeaksCleared = true;
+    bool fPeaksCleared;
 
-    bool fExternalPatchbay = false;
+    bool fExternalPatchbay;
     QList<uint> fSelectedPlugins;
 
-    int fCanvasWidth  = 0;
-    int fCanvasHeight = 0;
-    int fMiniCanvasUpdateTimeout = 0;
-    bool fWithCanvas;
+    int fCanvasWidth;
+    int fCanvasHeight;
+    int fMiniCanvasUpdateTimeout;
+    const bool fWithCanvas;
 
     //-----------------------------------------------------------------------------------------------------------------
     // GUI stuff (disk)
@@ -164,14 +187,360 @@ struct CarlaHostWindow::PrivateData {
     //-----------------------------------------------------------------------------------------------------------------
 
     // CarlaHostWindow* hostWindow,
-    PrivateData(const CarlaHost& h, CarlaHostWindow* const hw, const bool withCanvas)
+    PrivateData(CarlaHostWindow* const hw, CarlaHost& h, const bool withCanvas)
         : ui(),
           host(h),
           hostWindow(hw),
+          // Internal stuff
+          fParentOrSelf(hw->parentWidget() != nullptr ? hw->parentWidget() : hw),
+          fIdleTimerNull(0),
+          fIdleTimerFast(0),
+          fIdleTimerSlow(0),
+          fLadspaRdfNeedsUpdate(true),
+          fLadspaRdfList(),
+          fPluginCount(0),
+          fPluginList(),
+          fPluginDatabaseDialog(nullptr),
+          fFavoritePlugins(),
+          fProjectFilename(),
+          fIsProjectLoading(false),
+          fCurrentlyRemovingAllPlugins(false),
+          fLastTransportBPM(0.0),
+          fLastTransportFrame(0),
+          fLastTransportState(false),
+          fBufferSize(0),
+          fSampleRate(0.0),
+          fOscAddressTCP(),
+          fOscAddressUDP(),
+          fOscReportedHost(),
+#ifdef CARLA_OS_MAC
+          fMacClosingHelper(true),
+#endif
+          fCancelableActionBox(nullptr),
+          fCustomStopAction(CUSTOM_ACTION_NONE),
+          fFirstEngineInit(true),
+          fSavedSettings(),
+          fClientName(),
+          fSessionManagerName(),
+          // Internal stuff (patchbay)
+          fExportImage(),
+          fPeaksCleared(true),
+          fExternalPatchbay(false),
+          fSelectedPlugins(),
+          fCanvasWidth(0),
+          fCanvasHeight(0),
+          fMiniCanvasUpdateTimeout(0),
           fWithCanvas(withCanvas),
+          // disk
           fDirModel(hostWindow)
     {
         ui.setupUi(hostWindow);
+
+        //-------------------------------------------------------------------------------------------------------------
+        // Internal stuff
+
+        if (host.isControl)
+        {
+            fClientName         = "Carla-Control";
+            fSessionManagerName = "Control";
+        }
+        else if (host.isPlugin)
+        {
+            fClientName         = "Carla-Plugin";
+            fSessionManagerName = "Plugin";
+        }
+        else if (LADISH_APP_NAME != nullptr)
+        {
+            fClientName         = LADISH_APP_NAME;
+            fSessionManagerName = "LADISH";
+        }
+        else if (NSM_URL != nullptr && host.nsmOK)
+        {
+            fClientName         = "Carla.tmp";
+            fSessionManagerName = "Non Session Manager TMP";
+        }
+        else
+        {
+            fClientName         = CARLA_CLIENT_NAME != nullptr ? CARLA_CLIENT_NAME : "Carla";
+            fSessionManagerName = "";
+        }
+
+        //-------------------------------------------------------------------------------------------------------------
+        // Set up GUI (engine stopped)
+
+        if (host.isPlugin || host.isControl)
+        {
+            ui.act_file_save->setVisible(false);
+            ui.act_engine_start->setEnabled(false);
+            ui.act_engine_start->setVisible(false);
+            ui.act_engine_stop->setEnabled(false);
+            ui.act_engine_stop->setVisible(false);
+            ui.menu_Engine->setEnabled(false);
+            ui.menu_Engine->setVisible(false);
+            if (QAction* const action = ui.menu_Engine->menuAction())
+                action->setVisible(false);
+            ui.tabWidget->removeTab(2);
+
+            if (host.isControl)
+            {
+                ui.act_file_new->setVisible(false);
+                ui.act_file_open->setVisible(false);
+                ui.act_file_save_as->setVisible(false);
+                ui.tabUtils->removeTab(0);
+            }
+            else
+            {
+                ui.act_file_save_as->setText(tr("Export as..."));
+
+                if (! withCanvas)
+                    if (QTabBar* const tabBar = ui.tabWidget->tabBar())
+                        tabBar->hide();
+            }
+        }
+        else
+        {
+            ui.act_engine_start->setEnabled(true);
+#ifdef CARLA_OS_WIN
+            ui.tabWidget->removeTab(2);
+#endif
+        }
+
+        if (host.isControl)
+        {
+            ui.act_file_refresh->setEnabled(false);
+        }
+        else
+        {
+            ui.act_file_connect->setEnabled(false);
+            ui.act_file_connect->setVisible(false);
+            ui.act_file_refresh->setEnabled(false);
+            ui.act_file_refresh->setVisible(false);
+        }
+
+        if (fSessionManagerName.isNotEmpty() && ! host.isPlugin)
+            ui.act_file_new->setEnabled(false);
+
+        ui.act_file_open->setEnabled(false);
+        ui.act_file_save->setEnabled(false);
+        ui.act_file_save_as->setEnabled(false);
+        ui.act_engine_stop->setEnabled(false);
+        ui.act_plugin_remove_all->setEnabled(false);
+
+        ui.act_canvas_show_internal->setChecked(false);
+        ui.act_canvas_show_internal->setVisible(false);
+        ui.act_canvas_show_external->setChecked(false);
+        ui.act_canvas_show_external->setVisible(false);
+
+        ui.menu_PluginMacros->setEnabled(false);
+        ui.menu_Canvas->setEnabled(false);
+
+        QWidget* const dockWidgetTitleBar = new QWidget(hostWindow);
+        ui.dockWidget->setTitleBarWidget(dockWidgetTitleBar);
+
+        if (! withCanvas)
+        {
+            ui.act_canvas_show_internal->setVisible(false);
+            ui.act_canvas_show_external->setVisible(false);
+            ui.act_canvas_arrange->setVisible(false);
+            ui.act_canvas_refresh->setVisible(false);
+            ui.act_canvas_save_image->setVisible(false);
+            ui.act_canvas_zoom_100->setVisible(false);
+            ui.act_canvas_zoom_fit->setVisible(false);
+            ui.act_canvas_zoom_in->setVisible(false);
+            ui.act_canvas_zoom_out->setVisible(false);
+            ui.act_settings_show_meters->setVisible(false);
+            ui.act_settings_show_keyboard->setVisible(false);
+            ui.menu_Canvas_Zoom->setEnabled(false);
+            ui.menu_Canvas_Zoom->setVisible(false);
+            if (QAction* const action = ui.menu_Canvas_Zoom->menuAction())
+                action->setVisible(false);
+            ui.menu_Canvas->setEnabled(false);
+            ui.menu_Canvas->setVisible(false);
+            if (QAction* const action = ui.menu_Canvas->menuAction())
+                action->setVisible(false);
+            ui.tw_miniCanvas->hide();
+            ui.tabWidget->removeTab(1);
+#ifdef CARLA_OS_WIN
+            ui.tabWidget->tabBar().hide()
+#endif
+        }
+
+        //-------------------------------------------------------------------------------------------------------------
+        // Set up GUI (disk)
+
+        const QString home(QDir::homePath());
+        fDirModel.setRootPath(home);
+
+        if (const char* const* const exts = carla_get_supported_file_extensions())
+        {
+            QStringList filters;
+            const QString prefix("*.");
+
+            for (uint i=0; exts[i] != nullptr; ++i)
+                filters.append(prefix + exts[i]);
+
+            fDirModel.setNameFilters(filters);
+        }
+
+        ui.fileTreeView->setModel(&fDirModel);
+        ui.fileTreeView->setRootIndex(fDirModel.index(home));
+        ui.fileTreeView->setColumnHidden(1, true);
+        ui.fileTreeView->setColumnHidden(2, true);
+        ui.fileTreeView->setColumnHidden(3, true);
+        ui.fileTreeView->setHeaderHidden(true);
+
+        //-------------------------------------------------------------------------------------------------------------
+        // Set up GUI (transport)
+
+        const QFontMetrics fontMetrics(ui.l_transport_bbt->fontMetrics());
+        int minValueWidth = fontMetricsHorizontalAdvance(fontMetrics, "000|00|0000");
+        int minLabelWidth = fontMetricsHorizontalAdvance(fontMetrics, ui.label_transport_frame->text());
+
+        int labelTimeWidth = fontMetricsHorizontalAdvance(fontMetrics, ui.label_transport_time->text());
+        int labelBBTWidth  = fontMetricsHorizontalAdvance(fontMetrics, ui.label_transport_bbt->text());
+
+        if (minLabelWidth < labelTimeWidth)
+            minLabelWidth = labelTimeWidth;
+        if (minLabelWidth < labelBBTWidth)
+            minLabelWidth = labelBBTWidth;
+
+        ui.label_transport_frame->setMinimumWidth(minLabelWidth + 3);
+        ui.label_transport_time->setMinimumWidth(minLabelWidth + 3);
+        ui.label_transport_bbt->setMinimumWidth(minLabelWidth + 3);
+
+        ui.l_transport_bbt->setMinimumWidth(minValueWidth + 3);
+        ui.l_transport_frame->setMinimumWidth(minValueWidth + 3);
+        ui.l_transport_time->setMinimumWidth(minValueWidth + 3);
+
+        if (host.isPlugin)
+        {
+            ui.b_transport_play->setEnabled(false);
+            ui.b_transport_stop->setEnabled(false);
+            ui.b_transport_backwards->setEnabled(false);
+            ui.b_transport_forwards->setEnabled(false);
+            ui.group_transport_controls->setEnabled(false);
+            ui.group_transport_controls->setVisible(false);
+            ui.cb_transport_link->setEnabled(false);
+            ui.cb_transport_link->setVisible(false);
+            ui.cb_transport_jack->setEnabled(false);
+            ui.cb_transport_jack->setVisible(false);
+            ui.dsb_transport_bpm->setEnabled(false);
+            ui.dsb_transport_bpm->setReadOnly(true);
+        }
+
+        ui.w_transport->setEnabled(false);
+
+        //-------------------------------------------------------------------------------------------------------------
+        // Set up GUI (rack)
+
+        // ui.listWidget->setHostAndParent(host, self);
+
+        if (QScrollBar* const sb = ui.listWidget->verticalScrollBar())
+        {
+            ui.rackScrollBar->setMinimum(sb->minimum());
+            ui.rackScrollBar->setMaximum(sb->maximum());
+            ui.rackScrollBar->setValue(sb->value());
+
+            /*
+            sb->rangeChanged.connect(ui.rackScrollBar.setRange);
+            sb->valueChanged.connect(ui.rackScrollBar.setValue);
+            ui.rackScrollBar->rangeChanged.connect(sb.setRange);
+            ui.rackScrollBar->valueChanged.connect(sb.setValue);
+            */
+        }
+
+        updateStyle();
+
+        ui.rack->setStyleSheet("  \
+        CarlaRackList#CarlaRackList { \
+            background-color: black;    \
+        }                             \
+        ");
+
+        //-------------------------------------------------------------------------------------------------------------
+        // Set up GUI (patchbay)
+
+        /*
+        ui.peak_in->setChannelCount(2);
+        ui.peak_in->setMeterColor(DigitalPeakMeter.COLOR_BLUE);
+        ui.peak_in->setMeterOrientation(DigitalPeakMeter.VERTICAL);
+        */
+        ui.peak_in->setFixedWidth(25);
+
+        /*
+        ui.peak_out->setChannelCount(2);
+        ui.peak_out->setMeterColor(DigitalPeakMeter.COLOR_GREEN);
+        ui.peak_out->setMeterOrientation(DigitalPeakMeter.VERTICAL);
+        */
+        ui.peak_out->setFixedWidth(25);
+
+        /*
+        ui.scrollArea = PixmapKeyboardHArea(ui.patchbay);
+        ui.keyboard   = ui.scrollArea.keyboard;
+        ui.patchbay.layout().addWidget(ui.scrollArea, 1, 0, 1, 0);
+
+        ui.scrollArea->setEnabled(false);
+
+        ui.miniCanvasPreview->setRealParent(self);
+        */
+        if (QTabBar* const tabBar = ui.tw_miniCanvas->tabBar())
+            tabBar->hide();
+
+        //-------------------------------------------------------------------------------------------------------------
+        // Set up GUI (special stuff for Mac OS)
+
+#ifdef CARLA_OS_MAC
+        ui.act_file_quit->setMenuRole(QAction::QuitRole);
+        ui.act_settings_configure->setMenuRole(QAction::PreferencesRole);
+        ui.act_help_about->setMenuRole(QAction::AboutRole);
+        ui.act_help_about_qt->setMenuRole(QAction::AboutQtRole);
+        ui.menu_Settings->setTitle("Panels");
+        if (QAction* const action = ui.menu_Help.menuAction())
+            action->setVisible(false);
+#endif
+
+        //-------------------------------------------------------------------------------------------------------------
+        // Load Settings
+
+        loadSettings(true);
+
+        //-------------------------------------------------------------------------------------------------------------
+        // Final setup
+
+        ui.text_logs->clear();
+        setProperWindowTitle();
+
+        // Disable non-supported features
+        const char* const* const features = carla_get_supported_features();
+
+        if (! stringArrayContainsString(features, "link"))
+        {
+            ui.cb_transport_link->setEnabled(false);
+            ui.cb_transport_link->setVisible(false);
+        }
+
+        if (! stringArrayContainsString(features, "juce"))
+        {
+            ui.act_help_about_juce->setEnabled(false);
+            ui.act_help_about_juce->setVisible(false);
+        }
+
+        // Plugin needs to have timers always running so it receives messages
+        if (host.isPlugin || host.isRemote)
+        {
+            startTimers();
+        }
+        // Load initial project file if set
+        else
+        {
+            /*
+            projectFile = getInitialProjectFile(QApplication.instance());
+
+            if (projectFile)
+                loadProjectLater(projectFile);
+            */
+        }
+
     }
 
     //-----------------------------------------------------------------------------------------------------------------
@@ -503,19 +872,18 @@ struct CarlaHostWindow::PrivateData {
             if (! geometry.isNull())
                 hostWindow->restoreGeometry(geometry);
 
-            const bool showToolbar = settings.valueBool("ShowToolbar", true);
-            ui.act_settings_show_toolbar->setChecked(showToolbar);
-            ui.toolBar->setEnabled(showToolbar);
-            ui.toolBar->setVisible(showToolbar);
-
             // if settings.contains("SplitterState"):
                 //ui.splitter.restoreState(settings.value("SplitterState", b""))
             //else:
                 //ui.splitter.setSizes([210, 99999])
 
-            const bool showSidePanel = settings.valueBool("ShowSidePanel", true) && ! host.isControl;
-            ui.act_settings_show_side_panel->setChecked(showSidePanel);
-            hostWindow->slot_showSidePanel(showSidePanel);
+            const bool toolbarVisible = settings.valueBool("ShowToolbar", true);
+            ui.act_settings_show_toolbar->setChecked(toolbarVisible);
+            showToolbar(toolbarVisible);
+
+            const bool sidePanelVisible = settings.valueBool("ShowSidePanel", true) && ! host.isControl;
+            ui.act_settings_show_side_panel->setChecked(sidePanelVisible);
+            showSidePanel(sidePanelVisible);
 
             QStringList diskFolders;
             diskFolders.append(QDir::homePath());
@@ -587,7 +955,7 @@ struct CarlaHostWindow::PrivateData {
         if (host.experimental)
         {
             const bool visible = settings2.valueBool(CARLA_KEY_EXPERIMENTAL_JACK_APPS,
-                                                    CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS);
+                                                     CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS);
             ui.act_plugin_add_jack->setVisible(visible);
         }
         else
@@ -597,9 +965,7 @@ struct CarlaHostWindow::PrivateData {
 
         fMiniCanvasUpdateTimeout = fSavedSettings._CARLA_KEY_CANVAS_FANCY_EYE_CANDY ? 1000 : 0;
 
-        /*
         setEngineSettings(host);
-        */
         restartTimersIfNeeded();
     }
 
@@ -607,6 +973,18 @@ struct CarlaHostWindow::PrivateData {
     {
         ui.group_transport_controls->setEnabled(enabled);
         ui.group_transport_settings->setEnabled(enabled);
+    }
+
+    void showSidePanel(const bool yesNo)
+    {
+        ui.dockWidget->setEnabled(yesNo);
+        ui.dockWidget->setVisible(yesNo);
+    }
+
+    void showToolbar(const bool yesNo)
+    {
+        ui.toolBar->setEnabled(yesNo);
+        ui.toolBar->setVisible(yesNo);
     }
 
     //-----------------------------------------------------------------------------------------------------------------
@@ -942,289 +1320,14 @@ struct CarlaHostWindow::PrivateData {
 };
 
 //---------------------------------------------------------------------------------------------------------------------
-// Carla Host Window
 
-CarlaHostWindow::CarlaHostWindow(CarlaHost& h, const bool withCanvas, QWidget* const parent)
+CarlaHostWindow::CarlaHostWindow(CarlaHost& host, const bool withCanvas, QWidget* const parent)
     : QMainWindow(parent),
-      host(h),
-      self(new PrivateData(h, this, withCanvas))
+      self(new PrivateData(this, host, withCanvas))
 {
     gCarla.gui = this;
 
-    static const char* const CARLA_CLIENT_NAME = getenv("CARLA_CLIENT_NAME");
-    static const char* const LADISH_APP_NAME   = getenv("LADISH_APP_NAME");
-    static const char* const NSM_URL           = getenv("NSM_URL");
-
-    //-----------------------------------------------------------------------------------------------------------------
-    // Internal stuff
-
-    // keep application signals alive
     self->fIdleTimerNull = startTimer(1000);
-
-    if (host.isControl)
-    {
-        self->fClientName         = "Carla-Control";
-        self->fSessionManagerName = "Control";
-    }
-    else if (host.isPlugin)
-    {
-        self->fClientName         = "Carla-Plugin";
-        self->fSessionManagerName = "Plugin";
-    }
-    else if (LADISH_APP_NAME != nullptr)
-    {
-        self->fClientName         = LADISH_APP_NAME;
-        self->fSessionManagerName = "LADISH";
-    }
-    else if (NSM_URL != nullptr && host.nsmOK)
-    {
-        self->fClientName         = "Carla.tmp";
-        self->fSessionManagerName = "Non Session Manager TMP";
-    }
-    else
-    {
-        self->fClientName         = CARLA_CLIENT_NAME != nullptr ? CARLA_CLIENT_NAME : "Carla";
-        self->fSessionManagerName = "";
-    }
-
-    //-----------------------------------------------------------------------------------------------------------------
-    // Set up GUI (engine stopped)
-
-    if (host.isPlugin || host.isControl)
-    {
-        self->ui.act_file_save->setVisible(false);
-        self->ui.act_engine_start->setEnabled(false);
-        self->ui.act_engine_start->setVisible(false);
-        self->ui.act_engine_stop->setEnabled(false);
-        self->ui.act_engine_stop->setVisible(false);
-        self->ui.menu_Engine->setEnabled(false);
-        self->ui.menu_Engine->setVisible(false);
-        if (QAction* const action = self->ui.menu_Engine->menuAction())
-            action->setVisible(false);
-        self->ui.tabWidget->removeTab(2);
-
-        if (host.isControl)
-        {
-            self->ui.act_file_new->setVisible(false);
-            self->ui.act_file_open->setVisible(false);
-            self->ui.act_file_save_as->setVisible(false);
-            self->ui.tabUtils->removeTab(0);
-        }
-        else
-        {
-            self->ui.act_file_save_as->setText(tr("Export as..."));
-
-            if (! withCanvas)
-                if (QTabBar* const tabBar = self->ui.tabWidget->tabBar())
-                    tabBar->hide();
-        }
-    }
-    else
-    {
-        self->ui.act_engine_start->setEnabled(true);
-#ifdef CARLA_OS_WIN
-        self->ui.tabWidget->removeTab(2);
-#endif
-    }
-
-    if (host.isControl)
-    {
-        self->ui.act_file_refresh->setEnabled(false);
-    }
-    else
-    {
-        self->ui.act_file_connect->setEnabled(false);
-        self->ui.act_file_connect->setVisible(false);
-        self->ui.act_file_refresh->setEnabled(false);
-        self->ui.act_file_refresh->setVisible(false);
-    }
-
-    if (self->fSessionManagerName.isNotEmpty() && ! host.isPlugin)
-        self->ui.act_file_new->setEnabled(false);
-
-    self->ui.act_file_open->setEnabled(false);
-    self->ui.act_file_save->setEnabled(false);
-    self->ui.act_file_save_as->setEnabled(false);
-    self->ui.act_engine_stop->setEnabled(false);
-    self->ui.act_plugin_remove_all->setEnabled(false);
-
-    self->ui.act_canvas_show_internal->setChecked(false);
-    self->ui.act_canvas_show_internal->setVisible(false);
-    self->ui.act_canvas_show_external->setChecked(false);
-    self->ui.act_canvas_show_external->setVisible(false);
-
-    self->ui.menu_PluginMacros->setEnabled(false);
-    self->ui.menu_Canvas->setEnabled(false);
-
-    QWidget* const dockWidgetTitleBar = new QWidget(this);
-    self->ui.dockWidget->setTitleBarWidget(dockWidgetTitleBar);
-
-    if (! withCanvas)
-    {
-        self->ui.act_canvas_show_internal->setVisible(false);
-        self->ui.act_canvas_show_external->setVisible(false);
-        self->ui.act_canvas_arrange->setVisible(false);
-        self->ui.act_canvas_refresh->setVisible(false);
-        self->ui.act_canvas_save_image->setVisible(false);
-        self->ui.act_canvas_zoom_100->setVisible(false);
-        self->ui.act_canvas_zoom_fit->setVisible(false);
-        self->ui.act_canvas_zoom_in->setVisible(false);
-        self->ui.act_canvas_zoom_out->setVisible(false);
-        self->ui.act_settings_show_meters->setVisible(false);
-        self->ui.act_settings_show_keyboard->setVisible(false);
-        self->ui.menu_Canvas_Zoom->setEnabled(false);
-        self->ui.menu_Canvas_Zoom->setVisible(false);
-        if (QAction* const action = self->ui.menu_Canvas_Zoom->menuAction())
-            action->setVisible(false);
-        self->ui.menu_Canvas->setEnabled(false);
-        self->ui.menu_Canvas->setVisible(false);
-        if (QAction* const action = self->ui.menu_Canvas->menuAction())
-            action->setVisible(false);
-        self->ui.tw_miniCanvas->hide();
-        self->ui.tabWidget->removeTab(1);
-#ifdef CARLA_OS_WIN
-        self->ui.tabWidget->tabBar().hide()
-#endif
-    }
-
-    //-----------------------------------------------------------------------------------------------------------------
-    // Set up GUI (disk)
-
-    const QString home(QDir::homePath());
-    self->fDirModel.setRootPath(home);
-
-    if (const char* const* const exts = carla_get_supported_file_extensions())
-    {
-        QStringList filters;
-        const QString prefix("*.");
-
-        for (uint i=0; exts[i] != nullptr; ++i)
-            filters.append(prefix + exts[i]);
-
-        self->fDirModel.setNameFilters(filters);
-    }
-
-    self->ui.fileTreeView->setModel(&self->fDirModel);
-    self->ui.fileTreeView->setRootIndex(self->fDirModel.index(home));
-    self->ui.fileTreeView->setColumnHidden(1, true);
-    self->ui.fileTreeView->setColumnHidden(2, true);
-    self->ui.fileTreeView->setColumnHidden(3, true);
-    self->ui.fileTreeView->setHeaderHidden(true);
-
-    //-----------------------------------------------------------------------------------------------------------------
-    // Set up GUI (transport)
-
-    const QFontMetrics fontMetrics(self->ui.l_transport_bbt->fontMetrics());
-    int minValueWidth = fontMetricsHorizontalAdvance(fontMetrics, "000|00|0000");
-    int minLabelWidth = fontMetricsHorizontalAdvance(fontMetrics, self->ui.label_transport_frame->text());
-
-    int labelTimeWidth = fontMetricsHorizontalAdvance(fontMetrics, self->ui.label_transport_time->text());
-    int labelBBTWidth  = fontMetricsHorizontalAdvance(fontMetrics, self->ui.label_transport_bbt->text());
-
-    if (minLabelWidth < labelTimeWidth)
-        minLabelWidth = labelTimeWidth;
-    if (minLabelWidth < labelBBTWidth)
-        minLabelWidth = labelBBTWidth;
-
-    self->ui.label_transport_frame->setMinimumWidth(minLabelWidth + 3);
-    self->ui.label_transport_time->setMinimumWidth(minLabelWidth + 3);
-    self->ui.label_transport_bbt->setMinimumWidth(minLabelWidth + 3);
-
-    self->ui.l_transport_bbt->setMinimumWidth(minValueWidth + 3);
-    self->ui.l_transport_frame->setMinimumWidth(minValueWidth + 3);
-    self->ui.l_transport_time->setMinimumWidth(minValueWidth + 3);
-
-    if (host.isPlugin)
-    {
-        self->ui.b_transport_play->setEnabled(false);
-        self->ui.b_transport_stop->setEnabled(false);
-        self->ui.b_transport_backwards->setEnabled(false);
-        self->ui.b_transport_forwards->setEnabled(false);
-        self->ui.group_transport_controls->setEnabled(false);
-        self->ui.group_transport_controls->setVisible(false);
-        self->ui.cb_transport_link->setEnabled(false);
-        self->ui.cb_transport_link->setVisible(false);
-        self->ui.cb_transport_jack->setEnabled(false);
-        self->ui.cb_transport_jack->setVisible(false);
-        self->ui.dsb_transport_bpm->setEnabled(false);
-        self->ui.dsb_transport_bpm->setReadOnly(true);
-    }
-
-    self->ui.w_transport->setEnabled(false);
-
-    //-----------------------------------------------------------------------------------------------------------------
-    // Set up GUI (rack)
-
-    // self->ui.listWidget->setHostAndParent(self->host, self);
-
-    if (QScrollBar* const sb = self->ui.listWidget->verticalScrollBar())
-    {
-        self->ui.rackScrollBar->setMinimum(sb->minimum());
-        self->ui.rackScrollBar->setMaximum(sb->maximum());
-        self->ui.rackScrollBar->setValue(sb->value());
-
-        /*
-        sb->rangeChanged.connect(self->ui.rackScrollBar.setRange);
-        sb->valueChanged.connect(self->ui.rackScrollBar.setValue);
-        self->ui.rackScrollBar->rangeChanged.connect(sb.setRange);
-        self->ui.rackScrollBar->valueChanged.connect(sb.setValue);
-        */
-    }
-
-    self->updateStyle();
-
-    self->ui.rack->setStyleSheet("  \
-      CarlaRackList#CarlaRackList { \
-        background-color: black;    \
-      }                             \
-    ");
-
-    //-----------------------------------------------------------------------------------------------------------------
-    // Set up GUI (patchbay)
-
-    /*
-    self->ui.peak_in->setChannelCount(2);
-    self->ui.peak_in->setMeterColor(DigitalPeakMeter.COLOR_BLUE);
-    self->ui.peak_in->setMeterOrientation(DigitalPeakMeter.VERTICAL);
-    */
-    self->ui.peak_in->setFixedWidth(25);
-
-    /*
-    self->ui.peak_out->setChannelCount(2);
-    self->ui.peak_out->setMeterColor(DigitalPeakMeter.COLOR_GREEN);
-    self->ui.peak_out->setMeterOrientation(DigitalPeakMeter.VERTICAL);
-    */
-    self->ui.peak_out->setFixedWidth(25);
-
-    /*
-    self->ui.scrollArea = PixmapKeyboardHArea(self->ui.patchbay);
-    self->ui.keyboard   = self->ui.scrollArea.keyboard;
-    self->ui.patchbay.layout().addWidget(self->ui.scrollArea, 1, 0, 1, 0);
-
-    self->ui.scrollArea->setEnabled(false);
-
-    self->ui.miniCanvasPreview->setRealParent(self);
-    */
-    if (QTabBar* const tabBar = self->ui.tw_miniCanvas->tabBar())
-        tabBar->hide();
-
-    //-----------------------------------------------------------------------------------------------------------------
-    // Set up GUI (special stuff for Mac OS)
-
-#ifdef CARLA_OS_MAC
-    self->ui.act_file_quit->setMenuRole(QAction::QuitRole);
-    self->ui.act_settings_configure->setMenuRole(QAction::PreferencesRole);
-    self->ui.act_help_about->setMenuRole(QAction::AboutRole);
-    self->ui.act_help_about_qt->setMenuRole(QAction::AboutQtRole);
-    self->ui.menu_Settings->setTitle("Panels");
-    if (QAction* const action = self->ui.menu_Help.menuAction())
-        action->setVisible(false);
-#endif
-
-    //-----------------------------------------------------------------------------------------------------------------
-    // Load Settings
-
-    self->loadSettings(true);
 
     //-----------------------------------------------------------------------------------------------------------------
     // Set-up Canvas
@@ -1250,6 +1353,45 @@ CarlaHostWindow::CarlaHostWindow(CarlaHost& h, const bool withCanvas, QWidget* c
 
     // TODO
 
+    connect(self->ui.act_file_new, SIGNAL(triggered()), SLOT(slot_fileNew()));
+    connect(self->ui.act_file_open, SIGNAL(triggered()), SLOT(slot_fileOpen()));
+    connect(self->ui.act_file_save, SIGNAL(triggered()), SLOT(slot_fileSave()));
+    connect(self->ui.act_file_save_as, SIGNAL(triggered()), SLOT(slot_fileSaveAs()));
+
+    connect(self->ui.act_engine_start, SIGNAL(triggered()), SLOT(slot_engineStart()));
+    connect(self->ui.act_engine_stop, SIGNAL(triggered()), SLOT(slot_engineStop()));
+    connect(self->ui.act_engine_panic, SIGNAL(triggered()), SLOT(slot_pluginsDisable()));
+    connect(self->ui.act_engine_config, SIGNAL(triggered()), SLOT(slot_engineConfig()));
+
+    connect(self->ui.act_plugin_add, SIGNAL(triggered()), SLOT(slot_pluginAdd()));
+    connect(self->ui.act_plugin_add_jack, SIGNAL(triggered()), SLOT(slot_jackAppAdd()));
+    connect(self->ui.act_plugin_remove_all, SIGNAL(triggered()), SLOT(slot_confirmRemoveAll()));
+
+    connect(self->ui.act_plugins_enable, SIGNAL(triggered()), SLOT(slot_pluginsEnable()));
+    connect(self->ui.act_plugins_disable, SIGNAL(triggered()), SLOT(slot_pluginsDisable()));
+    connect(self->ui.act_plugins_volume100, SIGNAL(triggered()), SLOT(slot_pluginsVolume100()));
+    connect(self->ui.act_plugins_mute, SIGNAL(triggered()), SLOT(slot_pluginsMute()));
+    connect(self->ui.act_plugins_wet100, SIGNAL(triggered()), SLOT(slot_pluginsWet100()));
+    connect(self->ui.act_plugins_bypass, SIGNAL(triggered()), SLOT(slot_pluginsBypass()));
+    connect(self->ui.act_plugins_center, SIGNAL(triggered()), SLOT(slot_pluginsCenter()));
+    connect(self->ui.act_plugins_compact, SIGNAL(triggered()), SLOT(slot_pluginsCompact()));
+    connect(self->ui.act_plugins_expand, SIGNAL(triggered()), SLOT(slot_pluginsExpand()));
+
+    connect(self->ui.act_settings_show_toolbar, SIGNAL(toggled(bool)), SLOT(slot_showToolbar(bool)));
+    connect(self->ui.act_settings_show_meters, SIGNAL(toggled(bool)), SLOT(slot_showCanvasMeters(bool)));
+    connect(self->ui.act_settings_show_keyboard, SIGNAL(toggled(bool)), SLOT(slot_showCanvasKeyboard(bool)));
+    connect(self->ui.act_settings_show_side_panel, SIGNAL(toggled(bool)), SLOT(slot_showSidePanel(bool)));
+    connect(self->ui.act_settings_configure, SIGNAL(triggered()), SLOT(slot_configureCarla()));
+
+    connect(self->ui.act_help_about, SIGNAL(triggered()), SLOT(slot_aboutCarla()));
+    connect(self->ui.act_help_about_juce, SIGNAL(triggered()), SLOT(slot_aboutJuce()));
+    connect(self->ui.act_help_about_qt, SIGNAL(triggered()), SLOT(slot_aboutQt()));
+
+    connect(self->ui.cb_disk, SIGNAL(currentIndexChanged(int)), SLOT(slot_diskFolderChanged(int)));
+    connect(self->ui.b_disk_add, SIGNAL(clicked()), SLOT(slot_diskFolderAdd()));
+    connect(self->ui.b_disk_remove, SIGNAL(clicked()), SLOT(slot_diskFolderRemove()));
+    connect(self->ui.fileTreeView, SIGNAL(doubleClicked(QModelIndex*)), SLOT(slot_fileTreeDoubleClicked(QModelIndex*)));
+
     connect(self->ui.b_transport_play, SIGNAL(clicked(bool)), SLOT(slot_transportPlayPause(bool)));
     connect(self->ui.b_transport_stop, SIGNAL(clicked()), SLOT(slot_transportStop()));
     connect(self->ui.b_transport_backwards, SIGNAL(clicked()), SLOT(slot_transportBackwards()));
@@ -1260,33 +1402,82 @@ CarlaHostWindow::CarlaHostWindow(CarlaHost& h, const bool withCanvas, QWidget* c
 
     connect(self->ui.b_xruns, SIGNAL(clicked()), SLOT(slot_xrunClear()));
 
+    connect(self->ui.listWidget, SIGNAL(customContextMenuRequested()), SLOT(slot_showPluginActionsMenu()));
+
+    /*
+    connect(self->ui.keyboard, SIGNAL(noteOn(int)), SLOT(slot_noteOn(int)));
+    connect(self->ui.keyboard, SIGNAL(noteOff(int)), SLOT(slot_noteOff(int)));
+    */
+
+    connect(self->ui.tabWidget, SIGNAL(currentChanged(int)), SLOT(slot_tabChanged(int)));
+
+    if (withCanvas)
+    {
+        connect(self->ui.act_canvas_show_internal, SIGNAL(triggered()), SLOT(slot_canvasShowInternal()));
+        connect(self->ui.act_canvas_show_external, SIGNAL(triggered()), SLOT(slot_canvasShowExternal()));
+        connect(self->ui.act_canvas_arrange, SIGNAL(triggered()), SLOT(slot_canvasArrange()));
+        connect(self->ui.act_canvas_refresh, SIGNAL(triggered()), SLOT(slot_canvasRefresh()));
+        connect(self->ui.act_canvas_zoom_fit, SIGNAL(triggered()), SLOT(slot_canvasZoomFit()));
+        connect(self->ui.act_canvas_zoom_in, SIGNAL(triggered()), SLOT(slot_canvasZoomIn()));
+        connect(self->ui.act_canvas_zoom_out, SIGNAL(triggered()), SLOT(slot_canvasZoomOut()));
+        connect(self->ui.act_canvas_zoom_100, SIGNAL(triggered()), SLOT(slot_canvasZoomReset()));
+        connect(self->ui.act_canvas_save_image, SIGNAL(triggered()), SLOT(slot_canvasSaveImage()));
+        self->ui.act_canvas_arrange->setEnabled(false); // TODO, later
+        connect(self->ui.graphicsView->horizontalScrollBar(), SIGNAL(valueChanged(int)), SLOT(slot_horizontalScrollBarChanged(int)));
+        connect(self->ui.graphicsView->verticalScrollBar(), SIGNAL(valueChanged(int)), SLOT(slot_verticalScrollBarChanged(int)));
+        /*
+        connect(self->ui.miniCanvasPreview, SIGNAL(miniCanvasMoved(qreal, qreal)), SLOT(slot_miniCanvasMoved(qreal, qreal)));
+        connect(self.scene, SIGNAL(scaleChanged()), SLOT(slot_canvasScaleChanged()));
+        connect(self.scene, SIGNAL(sceneGroupMoved()), SLOT(slot_canvasItemMoved()));
+        connect(self.scene, SIGNAL(pluginSelected()), SLOT(slot_canvasPluginSelected()));
+        connect(self.scene, SIGNAL(selectionChanged()), SLOT(slot_canvasSelectionChanged()));
+        */
+    }
+
+    connect(&host, SIGNAL(SIGUSR1()), SLOT(slot_handleSIGUSR1()));
+    connect(&host, SIGNAL(SIGTERM()), SLOT(slot_handleSIGTERM()));
+
     connect(&host, SIGNAL(EngineStartedCallback(uint, int, int, int, float, QString)), SLOT(slot_handleEngineStartedCallback(uint, int, int, int, float, QString)));
     connect(&host, SIGNAL(EngineStoppedCallback()), SLOT(slot_handleEngineStoppedCallback()));
+    connect(&host, SIGNAL(TransportModeChangedCallback()), SLOT(slot_handleTransportModeChangedCallback()));
+    connect(&host, SIGNAL(BufferSizeChangedCallback()), SLOT(slot_handleBufferSizeChangedCallback()));
+    connect(&host, SIGNAL(SampleRateChangedCallback()), SLOT(slot_handleSampleRateChangedCallback()));
+    connect(&host, SIGNAL(CancelableActionCallback()), SLOT(slot_handleCancelableActionCallback()));
+    connect(&host, SIGNAL(ProjectLoadFinishedCallback()), SLOT(slot_handleProjectLoadFinishedCallback()));
+
+    connect(&host, SIGNAL(PluginAddedCallback()), SLOT(slot_handlePluginAddedCallback()));
+    connect(&host, SIGNAL(PluginRemovedCallback()), SLOT(slot_handlePluginRemovedCallback()));
+    connect(&host, SIGNAL(ReloadAllCallback()), SLOT(slot_handleReloadAllCallback()));
+
+    connect(&host, SIGNAL(NoteOnCallback()), SLOT(slot_handleNoteOnCallback()));
+    connect(&host, SIGNAL(NoteOffCallback()), SLOT(slot_handleNoteOffCallback()));
+
+    connect(&host, SIGNAL(UpdateCallback()), SLOT(slot_handleUpdateCallback()));
+
+    connect(&host, SIGNAL(PatchbayClientAddedCallback()), SLOT(slot_handlePatchbayClientAddedCallback()));
+    connect(&host, SIGNAL(PatchbayClientRemovedCallback()), SLOT(slot_handlePatchbayClientRemovedCallback()));
+    connect(&host, SIGNAL(PatchbayClientRenamedCallback()), SLOT(slot_handlePatchbayClientRenamedCallback()));
+    connect(&host, SIGNAL(PatchbayClientDataChangedCallback()), SLOT(slot_handlePatchbayClientDataChangedCallback()));
+    connect(&host, SIGNAL(PatchbayPortAddedCallback()), SLOT(slot_handlePatchbayPortAddedCallback()));
+    connect(&host, SIGNAL(PatchbayPortRemovedCallback()), SLOT(slot_handlePatchbayPortRemovedCallback()));
+    connect(&host, SIGNAL(PatchbayPortChangedCallback()), SLOT(slot_handlePatchbayPortChangedCallback()));
+    connect(&host, SIGNAL(PatchbayPortGroupAddedCallback()), SLOT(slot_handlePatchbayPortGroupAddedCallback()));
+    connect(&host, SIGNAL(PatchbayPortGroupRemovedCallback()), SLOT(slot_handlePatchbayPortGroupRemovedCallback()));
+    connect(&host, SIGNAL(PatchbayPortGroupChangedCallback()), SLOT(slot_handlePatchbayPortGroupChangedCallback()));
+
+    connect(&host, SIGNAL(PatchbayConnectionAddedCallback()), SLOT(slot_handlePatchbayConnectionAddedCallback()));
+    connect(&host, SIGNAL(PatchbayConnectionRemovedCallback()), SLOT(slot_handlePatchbayConnectionRemovedCallback()));
+
+    connect(&host, SIGNAL(NSMCallback()), SLOT(slot_handleNSMCallback()));
+
+    connect(&host, SIGNAL(DebugCallback()), SLOT(slot_handleDebugCallback()));
+    connect(&host, SIGNAL(InfoCallback()), SLOT(slot_handleInfoCallback()));
+    connect(&host, SIGNAL(ErrorCallback()), SLOT(slot_handleErrorCallback()));
+    connect(&host, SIGNAL(QuitCallback()), SLOT(slot_handleQuitCallback()));
+    connect(&host, SIGNAL(InlineDisplayRedrawCallback()), SLOT(slot_handleInlineDisplayRedrawCallback()));
 
     //-----------------------------------------------------------------------------------------------------------------
     // Final setup
-
-    self->ui.text_logs->clear();
-    self->setProperWindowTitle();
-
-    // Disable non-supported features
-    const char* const* const features = carla_get_supported_features();
-
-    if (! stringArrayContainsString(features, "link"))
-    {
-        self->ui.cb_transport_link->setEnabled(false);
-        self->ui.cb_transport_link->setVisible(false);
-    }
-
-    if (! stringArrayContainsString(features, "juce"))
-    {
-        self->ui.act_help_about_juce->setEnabled(false);
-        self->ui.act_help_about_juce->setVisible(false);
-    }
-
-    // Plugin needs to have timers always running so it receives messages
-    if (host.isPlugin || host.isRemote)
-        self->startTimers();
 
     // Qt needs this so it properly creates & resizes the canvas
     self->ui.tabWidget->blockSignals(true);
@@ -1297,17 +1488,6 @@ CarlaHostWindow::CarlaHostWindow(CarlaHost& h, const bool withCanvas, QWidget* c
     // Start in patchbay tab if using forced patchbay mode
     if (host.processModeForced && host.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         self->ui.tabWidget->setCurrentIndex(1);
-
-    // Load initial project file if set
-    if (! (host.isControl || host.isPlugin))
-    {
-        /*
-        projectFile = getInitialProjectFile(QApplication.instance());
-
-        if (projectFile)
-            loadProjectLater(projectFile);
-        */
-    }
 
     // For NSM we wait for the open message
     if (NSM_URL != nullptr && host.nsmOK)
@@ -1323,6 +1503,136 @@ CarlaHostWindow::CarlaHostWindow(CarlaHost& h, const bool withCanvas, QWidget* c
 CarlaHostWindow::~CarlaHostWindow()
 {
     delete self;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+// Plugin Editor Parent
+
+void CarlaHostWindow::editDialogVisibilityChanged(int pluginId, bool visible)
+{
+}
+
+void CarlaHostWindow::editDialogPluginHintsChanged(int pluginId, int hints)
+{
+}
+
+void CarlaHostWindow::editDialogParameterValueChanged(int pluginId, int parameterId, float value)
+{
+}
+
+void CarlaHostWindow::editDialogProgramChanged(int pluginId, int index)
+{
+}
+
+void CarlaHostWindow::editDialogMidiProgramChanged(int pluginId, int index)
+{
+}
+
+void CarlaHostWindow::editDialogNotePressed(int pluginId, int note)
+{
+}
+
+void CarlaHostWindow::editDialogNoteReleased(int pluginId, int note)
+{
+}
+
+void CarlaHostWindow::editDialogMidiActivityChanged(int pluginId, bool onOff)
+{
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+// show/hide event
+
+void CarlaHostWindow::showEvent(QShowEvent* event)
+{
+    QMainWindow::showEvent(event);
+}
+
+void CarlaHostWindow::hideEvent(QHideEvent* event)
+{
+    QMainWindow::hideEvent(event);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+// resize event
+
+void CarlaHostWindow::resizeEvent(QResizeEvent* event)
+{
+    QMainWindow::resizeEvent(event);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+// timer event
+
+void CarlaHostWindow::timerEvent(QTimerEvent* const event)
+{
+    if (event->timerId() == self->fIdleTimerFast)
+        self->idleFast();
+
+    else if (event->timerId() == self->fIdleTimerSlow)
+        self->idleSlow();
+
+    QMainWindow::timerEvent(event);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+// color/style change event
+
+void CarlaHostWindow::changeEvent(QEvent* const event)
+{
+    switch (event->type())
+    {
+    case QEvent::PaletteChange:
+    case QEvent::StyleChange:
+        self->updateStyle();
+        break;
+    default:
+        break;
+    }
+
+    QMainWindow::changeEvent(event);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+// close event
+
+void CarlaHostWindow::closeEvent(QCloseEvent* const event)
+{
+    if (self->shouldIgnoreClose())
+    {
+        event->ignore();
+        return;
+    }
+
+#ifdef CARLA_OS_MAC
+    if (self->fMacClosingHelper && ! (self->host.isControl || self->host.isPlugin))
+    {
+        self->fCustomStopAction = CUSTOM_ACTION_APP_CLOSE;
+        self->fMacClosingHelper = false;
+        event->ignore();
+
+        for i in reversed(range(self->fPluginCount)):
+            carla_show_custom_ui(i, false);
+
+        QTimer::singleShot(100, SIGNAL(close()));
+        return;
+    }
+#endif
+
+    self->killTimers();
+    self->saveSettings();
+
+    if (carla_is_engine_running() && ! (self->host.isControl or self->host.isPlugin))
+    {
+        if (! slot_engineStop(true))
+        {
+            self->fCustomStopAction = CUSTOM_ACTION_APP_CLOSE;
+            event->ignore();
+            return;
+        }
+    }
+
+    QMainWindow::closeEvent(event);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -1353,18 +1663,15 @@ void CarlaHostWindow::slot_loadProjectNow()
 
 void CarlaHostWindow::slot_engineStart()
 {
-    /*
-    audioDriver = setEngineSettings(self->host)
-    */
-    const char* const audioDriver = "JACK";
+    const QString audioDriver = setEngineSettings(self->host);
     const bool firstInit = self->fFirstEngineInit;
 
     self->fFirstEngineInit = false;
     self->ui.text_logs->appendPlainText("======= Starting engine =======");
 
-    if (carla_engine_init(audioDriver, self->fClientName.toUtf8()))
+    if (carla_engine_init(audioDriver.toUtf8(), self->fClientName.toUtf8()))
     {
-        if (firstInit && ! (host.isControl or host.isPlugin))
+        if (firstInit && ! (self->host.isControl or self->host.isPlugin))
         {
             QSafeSettings settings;
             const double lastBpm = settings.valueDouble("LastBPM", 120.0);
@@ -1422,21 +1729,26 @@ bool CarlaHostWindow::slot_engineStop(const bool forced)
 
 void CarlaHostWindow::slot_engineConfig()
 {
-    /*
-    dialog = RuntimeDriverSettingsW(self->fParentOrSelf, self->host)
+    RuntimeDriverSettingsW dialog(self->fParentOrSelf);
 
-    if not dialog.exec_():
-        return
+    if (dialog.exec())
+        return;
 
-    audioDevice, bufferSize, sampleRate = dialog.getValues()
+    QString audioDevice;
+    uint bufferSize;
+    double sampleRate;
+    dialog.getValues(audioDevice, bufferSize, sampleRate);
 
-    if self->host.is_engine_running():
-        self->host.set_engine_buffer_size_and_sample_rate(bufferSize, sampleRate)
-    else:
-        self->host.set_engine_option(ENGINE_OPTION_AUDIO_DEVICE, 0, audioDevice)
-        self->host.set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, bufferSize, "")
-        self->host.set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, sampleRate, "")
-    */
+    if (carla_is_engine_running())
+    {
+        carla_set_engine_buffer_size_and_sample_rate(bufferSize, sampleRate);
+    }
+    else
+    {
+        carla_set_engine_option(ENGINE_OPTION_AUDIO_DEVICE, 0, audioDevice.toUtf8());
+        carla_set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, bufferSize, "");
+        carla_set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, sampleRate, "");
+    }
 }
 
 bool CarlaHostWindow::slot_engineStopTryAgain()
@@ -1463,7 +1775,7 @@ void CarlaHostWindow::slot_handleEngineStartedCallback(uint pluginCount, int pro
     self->ui.act_canvas_show_internal->blockSignals(true);
     self->ui.act_canvas_show_external->blockSignals(true);
 
-    if (processMode == ENGINE_PROCESS_MODE_PATCHBAY) // and not self->host.isPlugin:
+    if (processMode == ENGINE_PROCESS_MODE_PATCHBAY) // && ! self->host.isPlugin:
     {
         self->ui.act_canvas_show_internal->setChecked(true);
         self->ui.act_canvas_show_internal->setVisible(true);
@@ -1483,20 +1795,18 @@ void CarlaHostWindow::slot_handleEngineStartedCallback(uint pluginCount, int pro
     self->ui.act_canvas_show_internal->blockSignals(false);
     self->ui.act_canvas_show_external->blockSignals(false);
 
-    if (! (host.isControl or host.isPlugin))
+    if (! (self->host.isControl or self->host.isPlugin))
     {
-        /*
-        const bool canSave = (self->fProjectFilename.isNotEmpty() and os.path.exists(self->fProjectFilename)) or not self->fSessionManagerName;
+        const bool canSave = (self->fProjectFilename.isNotEmpty() && QFile(self->fProjectFilename).exists()) || self->fSessionManagerName.isEmpty();
         self->ui.act_file_save->setEnabled(canSave);
-        */
         self->ui.act_engine_start->setEnabled(false);
         self->ui.act_engine_stop->setEnabled(true);
     }
 
-    if (! host.isPlugin)
+    if (! self->host.isPlugin)
         self->enableTransport(transportMode != ENGINE_TRANSPORT_MODE_DISABLED);
 
-    if (host.isPlugin || self->fSessionManagerName.isEmpty())
+    if (self->host.isPlugin || self->fSessionManagerName.isEmpty())
     {
         self->ui.act_file_open->setEnabled(true);
         self->ui.act_file_save_as->setEnabled(true);
@@ -1506,7 +1816,7 @@ void CarlaHostWindow::slot_handleEngineStartedCallback(uint pluginCount, int pro
     self->ui.cb_transport_jack->setEnabled(driverName == "JACK" and processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS);
 
     if (self->ui.cb_transport_link->isEnabled())
-        self->ui.cb_transport_link->setChecked(host.transportExtra.contains(":link:"));
+        self->ui.cb_transport_link->setChecked(self->host.transportExtra.contains(":link:"));
 
     self->updateBufferSize(bufferSize);
     self->updateSampleRate(int(sampleRate));
@@ -1525,6 +1835,7 @@ void CarlaHostWindow::slot_handleEngineStoppedCallback()
     self->ui.text_logs->appendPlainText("======= Engine stopped ========");
 
     /*
+    // TODO
     patchcanvas.clear();
     */
     self->killTimers();
@@ -1537,14 +1848,14 @@ void CarlaHostWindow::slot_handleEngineStoppedCallback()
     self->ui.menu_Canvas->setEnabled(false);
     self->ui.w_transport->setEnabled(false);
 
-    if (! (host.isControl || host.isPlugin))
+    if (! (self->host.isControl || self->host.isPlugin))
     {
         self->ui.act_file_save->setEnabled(false);
         self->ui.act_engine_start->setEnabled(true);
         self->ui.act_engine_stop->setEnabled(false);
     }
 
-    if (host.isPlugin || self->fSessionManagerName.isEmpty())
+    if (self->host.isPlugin || self->fSessionManagerName.isEmpty())
     {
         self->ui.act_file_open->setEnabled(false);
         self->ui.act_file_save_as->setEnabled(false);
@@ -1769,51 +2080,48 @@ void CarlaHostWindow::slot_restoreCanvasScrollbarValues()
 
 void CarlaHostWindow::slot_showSidePanel(const bool yesNo)
 {
-    self->ui.dockWidget->setEnabled(yesNo);
-    self->ui.dockWidget->setVisible(yesNo);
+    self->showSidePanel(yesNo);
 }
 
 void CarlaHostWindow::slot_showToolbar(const bool yesNo)
 {
-    self->ui.toolBar->setEnabled(yesNo);
-    self->ui.toolBar->setVisible(yesNo);
+    self->showToolbar(yesNo);
 }
 
 void CarlaHostWindow::slot_showCanvasMeters(const bool yesNo)
 {
     self->ui.peak_in->setVisible(yesNo);
     self->ui.peak_out->setVisible(yesNo);
-    /*
-    QTimer::singleShot(0, slot_miniCanvasCheckAll);
-    */
+    QTimer::singleShot(0, this, SLOT(slot_miniCanvasCheckAll()));
 }
 
 void CarlaHostWindow::slot_showCanvasKeyboard(const bool yesNo)
 {
     /*
+    // TODO
     self->ui.scrollArea->setVisible(yesNo);
-    QTimer::singleShot(0, slot_miniCanvasCheckAll);
     */
+    QTimer::singleShot(0, this, SLOT(slot_miniCanvasCheckAll()));
 }
 
 void CarlaHostWindow::slot_configureCarla()
 {
-    /*
+    const bool hasGL = true;
     CarlaSettingsW dialog(self->fParentOrSelf, self->host, true, hasGL);
-    if not dialog.exec_():
-        return
-    */
+    if (! dialog.exec())
+        return;
 
     self->loadSettings(false);
 
     /*
+    // TODO
     patchcanvas.clear()
 
     setupCanvas();
-    slot_miniCanvasCheckAll();
     */
+    slot_miniCanvasCheckAll();
 
-    if (host.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK and host.isPlugin)
+    if (self->host.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && self->host.isPlugin)
         pass();
     else if (carla_is_engine_running())
         carla_patchbay_refresh(self->fExternalPatchbay);
@@ -1824,14 +2132,17 @@ void CarlaHostWindow::slot_configureCarla()
 
 void CarlaHostWindow::slot_aboutCarla()
 {
+    CarlaAboutW(self->fParentOrSelf, self->host).exec();
 }
 
 void CarlaHostWindow::slot_aboutJuce()
 {
+    JuceAboutW(self->fParentOrSelf).exec();
 }
 
 void CarlaHostWindow::slot_aboutQt()
 {
+    qApp->aboutQt();
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -1858,7 +2169,7 @@ void CarlaHostWindow::slot_fileTreeDoubleClicked(QModelIndex* modelIndex)
 
 void CarlaHostWindow::slot_transportPlayPause(const bool toggled)
 {
-    if (host.isPlugin || ! carla_is_engine_running())
+    if (self->host.isPlugin || ! carla_is_engine_running())
         return;
 
     if (toggled)
@@ -1871,7 +2182,7 @@ void CarlaHostWindow::slot_transportPlayPause(const bool toggled)
 
 void CarlaHostWindow::slot_transportStop()
 {
-    if (host.isPlugin || ! carla_is_engine_running())
+    if (self->host.isPlugin || ! carla_is_engine_running())
         return;
 
     carla_transport_pause();
@@ -1882,7 +2193,7 @@ void CarlaHostWindow::slot_transportStop()
 
 void CarlaHostWindow::slot_transportBackwards()
 {
-    if (host.isPlugin || ! carla_is_engine_running())
+    if (self->host.isPlugin || ! carla_is_engine_running())
         return;
 
     int64_t newFrame = carla_get_current_transport_frame() - 100000;
@@ -1900,7 +2211,7 @@ void CarlaHostWindow::slot_transportBpmChanged(const qreal newValue)
 
 void CarlaHostWindow::slot_transportForwards()
 {
-    if (carla_isZero(self->fSampleRate) || host.isPlugin || ! carla_is_engine_running())
+    if (carla_isZero(self->fSampleRate) || self->host.isPlugin || ! carla_is_engine_running())
         return;
 
     const int64_t newFrame = carla_get_current_transport_frame() + int(self->fSampleRate*2.5);
@@ -1911,8 +2222,8 @@ void CarlaHostWindow::slot_transportJackEnabled(const bool clicked)
 {
     if (! carla_is_engine_running())
         return;
-    host.transportMode = clicked ? ENGINE_TRANSPORT_MODE_JACK : ENGINE_TRANSPORT_MODE_INTERNAL;
-    carla_set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, host.transportMode, host.transportExtra.toUtf8());
+    self->host.transportMode = clicked ? ENGINE_TRANSPORT_MODE_JACK : ENGINE_TRANSPORT_MODE_INTERNAL;
+    carla_set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, self->host.transportMode, self->host.transportExtra.toUtf8());
 }
 
 void CarlaHostWindow::slot_transportLinkEnabled(const bool clicked)
@@ -1920,8 +2231,8 @@ void CarlaHostWindow::slot_transportLinkEnabled(const bool clicked)
     if (! carla_is_engine_running())
         return;
     const char* const extra = clicked ? ":link:" : "";
-    host.transportExtra = extra;
-    carla_set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, host.transportMode, host.transportExtra.toUtf8());
+    self->host.transportExtra = extra;
+    carla_set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, self->host.transportMode, self->host.transportExtra.toUtf8());
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -2037,104 +2348,22 @@ void CarlaHostWindow::slot_handleSIGTERM()
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-// show/hide event
+// Canvas callback
 
-void CarlaHostWindow::showEvent(QShowEvent* event)
+void _canvasCallback(void* const ptr, const int action, int value1, int value2, QString valueStr)
 {
-    QMainWindow::showEvent(event);
-}
+    CarlaHost* const host = (CarlaHost*)(ptr);
+    CARLA_SAFE_ASSERT_RETURN(host != nullptr,);
 
-void CarlaHostWindow::hideEvent(QHideEvent* event)
-{
-    QMainWindow::hideEvent(event);
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-// resize event
-
-void CarlaHostWindow::resizeEvent(QResizeEvent* event)
-{
-    QMainWindow::resizeEvent(event);
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-// timer event
-
-void CarlaHostWindow::timerEvent(QTimerEvent* const event)
-{
-    if (event->timerId() == self->fIdleTimerFast)
-        self->idleFast();
-
-    else if (event->timerId() == self->fIdleTimerSlow)
-        self->idleSlow();
-
-    QMainWindow::timerEvent(event);
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-// color/style change event
-
-void CarlaHostWindow::changeEvent(QEvent* const event)
-{
-    switch (event->type())
+    switch (action)
     {
-    case QEvent::PaletteChange:
-    case QEvent::StyleChange:
-        self->updateStyle();
-        break;
-    default:
-        break;
     }
-
-    QWidget::changeEvent(event);
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-// close event
-
-void CarlaHostWindow::closeEvent(QCloseEvent* const event)
-{
-    if (self->shouldIgnoreClose())
-    {
-        event->ignore();
-        return;
-    }
-
-#ifdef CARLA_OS_MAC
-    if (self->fMacClosingHelper && ! (host.isControl || host.isPlugin))
-    {
-        self->fCustomStopAction = CUSTOM_ACTION_APP_CLOSE;
-        self->fMacClosingHelper = false;
-        event->ignore();
-
-        for i in reversed(range(self->fPluginCount)):
-            carla_show_custom_ui(i, false);
-
-        QTimer::singleShot(100, SIGNAL(close()));
-        return;
-    }
-#endif
-
-    self->killTimers();
-    self->saveSettings();
-
-    if (carla_is_engine_running() && ! (host.isControl or host.isPlugin))
-    {
-        if (! slot_engineStop(true))
-        {
-            self->fCustomStopAction = CUSTOM_ACTION_APP_CLOSE;
-            event->ignore();
-            return;
-        }
-    }
-
-    QMainWindow::closeEvent(event);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 // Engine callback
 
-void _engineCallback(void* const ptr, EngineCallbackOpcode action, uint pluginId, int value1, int value2, int value3, float valuef, const char* const valueStr)
+void _engineCallback(void* const ptr, const EngineCallbackOpcode action, uint pluginId, int value1, int value2, int value3, float valuef, const char* const valueStr)
 {
     /*
     carla_stdout("_engineCallback(%p, %i:%s, %u, %i, %i, %i, %f, %s)",
@@ -2200,29 +2429,46 @@ static const char* _fileCallback(void*, const FileCallbackOpcode action, const b
     if (ret.isEmpty())
         return nullptr;
 
-    static const char* fileRet = nullptr;
+    static QByteArray byteRet;
+    byteRet = ret.toUtf8();
 
-    if (fileRet != nullptr)
-        delete[] fileRet;
-
-    fileRet = carla_strdup_safe(ret.toUtf8());
-    return fileRet;
+    return byteRet.constData();
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 // Init host
 
-CarlaHost& initHost(const QString /*initName*/, const bool isControl, const bool isPlugin, const bool failError)
+CarlaHost& initHost(const QString initName, const bool isControl, const bool isPlugin, const bool failError)
 {
-    CarlaString pathBinaries, pathResources;
-    // = getPaths(libPrefix)
+    QString pathBinaries, pathResources;
+    getPaths(pathBinaries, pathResources);
+
+    //-----------------------------------------------------------------------------------------------------------------
+    // Fail if binary dir is not found
+
+    if (! QDir(pathBinaries).exists())
+    {
+        if (failError)
+        {
+            QMessageBox::critical(nullptr, "Error", "Failed to find the carla binaries, cannot continue");
+            std::exit(1);
+        }
+        // FIXME?
+        // return;
+    }
 
     //-----------------------------------------------------------------------------------------------------------------
     // Print info
 
+    carla_stdout(QString("Carla %1 started, status:").arg(CARLA_VERSION_STRING).toUtf8());
+    carla_stdout(QString("  Qt version:     %1").arg(QT_VERSION_STR).toUtf8());
+    carla_stdout(QString("  Binary dir:     %1").arg(pathBinaries).toUtf8());
+    carla_stdout(QString("  Resources dir:  %1").arg(pathResources).toUtf8());
+
     // ----------------------------------------------------------------------------------------------------------------
     // Init host
 
+    // TODO
     if (failError)
     {
 //         # no try
@@ -2248,26 +2494,311 @@ CarlaHost& initHost(const QString /*initName*/, const bool isControl, const bool
     {
         host.pathBinaries  = pathBinaries;
         host.pathResources = pathResources;
-        carla_set_engine_option(ENGINE_OPTION_PATH_BINARIES,  0, pathBinaries);
-        carla_set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, pathResources);
+        carla_set_engine_option(ENGINE_OPTION_PATH_BINARIES, 0, pathBinaries.toUtf8());
+        carla_set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, pathResources.toUtf8());
 
-        /*
         if (! isControl)
-            host.nsmOK = carla_nsm_init(getpid(), initName);
-        */
+            host.nsmOK = carla_nsm_init(getpid(), initName.toUtf8());
     }
 
     // ----------------------------------------------------------------------------------------------------------------
     // Done
 
+    gCarla.host = &host;
     return host;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 // Load host settings
 
-void loadHostSettings(CarlaHost& /*host*/)
+void loadHostSettings(CarlaHost& host)
 {
+    const QSafeSettings settings("falkTX", "Carla2");
+
+    host.experimental = settings.valueBool(CARLA_KEY_MAIN_EXPERIMENTAL, CARLA_DEFAULT_MAIN_EXPERIMENTAL);
+    host.exportLV2 = settings.valueBool(CARLA_KEY_EXPERIMENTAL_EXPORT_LV2, CARLA_DEFAULT_EXPERIMENTAL_LV2_EXPORT);
+    host.manageUIs = settings.valueBool(CARLA_KEY_ENGINE_MANAGE_UIS, CARLA_DEFAULT_MANAGE_UIS);
+    host.maxParameters = settings.valueUInt(CARLA_KEY_ENGINE_MAX_PARAMETERS, CARLA_DEFAULT_MAX_PARAMETERS);
+    host.forceStereo = settings.valueBool(CARLA_KEY_ENGINE_FORCE_STEREO, CARLA_DEFAULT_FORCE_STEREO);
+    host.preferPluginBridges = settings.valueBool(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES);
+    host.preferUIBridges = settings.valueBool(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES, CARLA_DEFAULT_PREFER_UI_BRIDGES);
+    host.preventBadBehaviour = settings.valueBool(CARLA_KEY_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR, CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR);
+    host.showLogs = settings.valueBool(CARLA_KEY_MAIN_SHOW_LOGS, CARLA_DEFAULT_MAIN_SHOW_LOGS);
+    host.showPluginBridges = settings.valueBool(CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES, CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES);
+    host.showWineBridges = settings.valueBool(CARLA_KEY_EXPERIMENTAL_WINE_BRIDGES, CARLA_DEFAULT_EXPERIMENTAL_WINE_BRIDGES);
+    host.uiBridgesTimeout = settings.valueUInt(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT, CARLA_DEFAULT_UI_BRIDGES_TIMEOUT);
+    host.uisAlwaysOnTop = settings.valueBool(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP, CARLA_DEFAULT_UIS_ALWAYS_ON_TOP);
+
+    if (host.isPlugin)
+        return;
+
+    host.transportExtra = settings.valueString(CARLA_KEY_ENGINE_TRANSPORT_EXTRA, "");
+
+    // enums
+    /*
+    // TODO
+    if (host.audioDriverForced.isNotEmpty())
+        host.transportMode = settings.valueUInt(CARLA_KEY_ENGINE_TRANSPORT_MODE, CARLA_DEFAULT_TRANSPORT_MODE);
+
+    if (! host.processModeForced)
+        host.processMode = settings.valueUInt(CARLA_KEY_ENGINE_PROCESS_MODE, CARLA_DEFAULT_PROCESS_MODE);
+    */
+
+    host.nextProcessMode = host.processMode;
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // fix things if needed
+
+    if (host.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+    {
+        if (LADISH_APP_NAME)
+        {
+            carla_stdout("LADISH detected but using multiple clients (not allowed), forcing single client now");
+            host.nextProcessMode = host.processMode = ENGINE_PROCESS_MODE_SINGLE_CLIENT;
+        }
+        else
+        {
+            host.transportMode = ENGINE_TRANSPORT_MODE_JACK;
+        }
+    }
+
+    if (gCarla.nogui)
+        host.showLogs = false;
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // run headless host now if nogui option enabled
+
+    if (gCarla.nogui)
+        runHostWithoutUI(host);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+// Set host settings
+
+void setHostSettings(const CarlaHost& host)
+{
+    carla_set_engine_option(ENGINE_OPTION_FORCE_STEREO,          host.forceStereo,         "");
+    carla_set_engine_option(ENGINE_OPTION_MAX_PARAMETERS,        host.maxParameters,       "");
+    carla_set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, host.preferPluginBridges, "");
+    carla_set_engine_option(ENGINE_OPTION_PREFER_UI_BRIDGES,     host.preferUIBridges,     "");
+    carla_set_engine_option(ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR, host.preventBadBehaviour, "");
+    carla_set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    host.uiBridgesTimeout,    "");
+    carla_set_engine_option(ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     host.uisAlwaysOnTop,      "");
+
+    if (host.isPlugin || host.isRemote || carla_is_engine_running())
+        return;
+
+    carla_set_engine_option(ENGINE_OPTION_PROCESS_MODE,          host.nextProcessMode,     "");
+    carla_set_engine_option(ENGINE_OPTION_TRANSPORT_MODE,        host.transportMode,       host.transportExtra.toUtf8());
+    carla_set_engine_option(ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT,  host.showLogs,            "");
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+// Set Engine settings according to carla preferences. Returns selected audio driver.
+
+QString setEngineSettings(CarlaHost& host)
+{
+    //-----------------------------------------------------------------------------------------------------------------
+    // do nothing if control
+
+    if (host.isControl)
+        return "Control";
+
+    //-----------------------------------------------------------------------------------------------------------------
+
+    const QSafeSettings settings("falkTX", "Carla2");
+
+    //-----------------------------------------------------------------------------------------------------------------
+    // main settings
+
+    setHostSettings(host);
+
+    //-----------------------------------------------------------------------------------------------------------------
+    // file paths
+
+    QStringList FILE_PATH_AUDIO = settings.valueStringList(CARLA_KEY_PATHS_AUDIO, CARLA_DEFAULT_FILE_PATH_AUDIO);
+    QStringList FILE_PATH_MIDI  = settings.valueStringList(CARLA_KEY_PATHS_MIDI,  CARLA_DEFAULT_FILE_PATH_MIDI);
+
+    /*
+    // TODO
+    carla_set_engine_option(ENGINE_OPTION_FILE_PATH, FILE_AUDIO, splitter.join(FILE_PATH_AUDIO));
+    carla_set_engine_option(ENGINE_OPTION_FILE_PATH, FILE_MIDI,  splitter.join(FILE_PATH_MIDI));
+    */
+    // CARLA_PATH_SPLITTER
+
+    //-----------------------------------------------------------------------------------------------------------------
+    // plugin paths
+
+    QStringList LADSPA_PATH = settings.valueStringList(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH);
+    QStringList DSSI_PATH   = settings.valueStringList(CARLA_KEY_PATHS_DSSI,   CARLA_DEFAULT_DSSI_PATH);
+    QStringList LV2_PATH    = settings.valueStringList(CARLA_KEY_PATHS_LV2,    CARLA_DEFAULT_LV2_PATH);
+    QStringList VST2_PATH   = settings.valueStringList(CARLA_KEY_PATHS_VST2,   CARLA_DEFAULT_VST2_PATH);
+    QStringList VST3_PATH   = settings.valueStringList(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH);
+    QStringList SF2_PATH    = settings.valueStringList(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH);
+    QStringList SFZ_PATH    = settings.valueStringList(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH);
+
+    /*
+    // TODO
+    carla_set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LADSPA, splitter.join(LADSPA_PATH))
+    carla_set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_DSSI,   splitter.join(DSSI_PATH))
+    carla_set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2,    splitter.join(LV2_PATH))
+    carla_set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST2,   splitter.join(VST2_PATH))
+    carla_set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST3,   splitter.join(VST3_PATH))
+    carla_set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(SF2_PATH))
+    carla_set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(SFZ_PATH))
+    */
+
+    //-----------------------------------------------------------------------------------------------------------------
+    // don't continue if plugin
+
+    if (host.isPlugin)
+        return "Plugin";
+
+    //-----------------------------------------------------------------------------------------------------------------
+    // osc settings
+
+    const bool oscEnabled = settings.valueBool(CARLA_KEY_OSC_ENABLED, CARLA_DEFAULT_OSC_ENABLED);
+
+    int portNumTCP, portNumUDP;
+
+    if (! settings.valueBool(CARLA_KEY_OSC_TCP_PORT_ENABLED, CARLA_DEFAULT_OSC_TCP_PORT_ENABLED))
+        portNumTCP = -1;
+    else if (settings.valueBool(CARLA_KEY_OSC_TCP_PORT_RANDOM, CARLA_DEFAULT_OSC_TCP_PORT_RANDOM))
+        portNumTCP = 0;
+    else
+        portNumTCP = settings.valueUInt(CARLA_KEY_OSC_TCP_PORT_NUMBER, CARLA_DEFAULT_OSC_TCP_PORT_NUMBER);
+
+    if (! settings.valueBool(CARLA_KEY_OSC_UDP_PORT_ENABLED, CARLA_DEFAULT_OSC_UDP_PORT_ENABLED))
+        portNumUDP = -1;
+    else if (settings.valueBool(CARLA_KEY_OSC_UDP_PORT_RANDOM, CARLA_DEFAULT_OSC_UDP_PORT_RANDOM))
+        portNumUDP = 0;
+    else
+        portNumUDP = settings.valueUInt(CARLA_KEY_OSC_UDP_PORT_NUMBER, CARLA_DEFAULT_OSC_UDP_PORT_NUMBER);
+
+    carla_set_engine_option(ENGINE_OPTION_OSC_ENABLED, oscEnabled ? 1 : 0, "");
+    carla_set_engine_option(ENGINE_OPTION_OSC_PORT_TCP, portNumTCP, "");
+    carla_set_engine_option(ENGINE_OPTION_OSC_PORT_UDP, portNumUDP, "");
+
+    //-----------------------------------------------------------------------------------------------------------------
+    // wine settings
+
+    const QString optWineExecutable = settings.valueString(CARLA_KEY_WINE_EXECUTABLE, CARLA_DEFAULT_WINE_EXECUTABLE);
+    const bool optWineAutoPrefix = settings.valueBool(CARLA_KEY_WINE_AUTO_PREFIX, CARLA_DEFAULT_WINE_AUTO_PREFIX);
+    const QString optWineFallbackPrefix = settings.valueString(CARLA_KEY_WINE_FALLBACK_PREFIX, CARLA_DEFAULT_WINE_FALLBACK_PREFIX);
+    const bool optWineRtPrioEnabled = settings.valueBool(CARLA_KEY_WINE_RT_PRIO_ENABLED, CARLA_DEFAULT_WINE_RT_PRIO_ENABLED);
+    const uint optWineBaseRtPrio = settings.valueUInt(CARLA_KEY_WINE_BASE_RT_PRIO,   CARLA_DEFAULT_WINE_BASE_RT_PRIO);
+    const uint optWineServerRtPrio = settings.valueUInt(CARLA_KEY_WINE_SERVER_RT_PRIO, CARLA_DEFAULT_WINE_SERVER_RT_PRIO);
+
+    carla_set_engine_option(ENGINE_OPTION_WINE_EXECUTABLE, 0, optWineExecutable.toUtf8());
+    carla_set_engine_option(ENGINE_OPTION_WINE_AUTO_PREFIX, optWineAutoPrefix ? 1 : 0, "");
+    /*
+    // TODO
+    carla_set_engine_option(ENGINE_OPTION_WINE_FALLBACK_PREFIX, 0, os.path.expanduser(optWineFallbackPrefix));
+    */
+    carla_set_engine_option(ENGINE_OPTION_WINE_RT_PRIO_ENABLED, optWineRtPrioEnabled ? 1 : 0, "");
+    carla_set_engine_option(ENGINE_OPTION_WINE_BASE_RT_PRIO, optWineBaseRtPrio, "");
+    carla_set_engine_option(ENGINE_OPTION_WINE_SERVER_RT_PRIO, optWineServerRtPrio, "");
+
+    //-----------------------------------------------------------------------------------------------------------------
+    // driver and device settings
+
+    QString audioDriver;
+
+    // driver name
+    if (host.audioDriverForced.isNotEmpty())
+        audioDriver = host.audioDriverForced;
+    else
+        audioDriver = settings.valueString(CARLA_KEY_ENGINE_AUDIO_DRIVER, CARLA_DEFAULT_AUDIO_DRIVER);
+
+    // driver options
+    const QString prefix(QString("%1%2").arg(CARLA_KEY_ENGINE_DRIVER_PREFIX).arg(audioDriver));
+    const QString audioDevice = settings.valueString(QString("%1/Device").arg(prefix), "");
+    const uint audioBufferSize = settings.valueUInt(QString("%1/BufferSize").arg(prefix), CARLA_DEFAULT_AUDIO_BUFFER_SIZE);
+    const uint audioSampleRate = settings.valueUInt(QString("%1/SampleRate").arg(prefix), CARLA_DEFAULT_AUDIO_SAMPLE_RATE);
+    const bool audioTripleBuffer = settings.valueBool(QString("%1/TripleBuffer").arg(prefix), CARLA_DEFAULT_AUDIO_TRIPLE_BUFFER);
+
+    // Only setup audio things if engine is not running
+    if (! carla_is_engine_running())
+    {
+        carla_set_engine_option(ENGINE_OPTION_AUDIO_DRIVER, 0, audioDriver.toUtf8());
+        carla_set_engine_option(ENGINE_OPTION_AUDIO_DEVICE, 0, audioDevice.toUtf8());
+
+        if (! audioDriver.startsWith("JACK"))
+        {
+            carla_set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, audioBufferSize, "");
+            carla_set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, audioSampleRate, "");
+            carla_set_engine_option(ENGINE_OPTION_AUDIO_TRIPLE_BUFFER, audioTripleBuffer ? 1 : 0, "");
+        }
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------
+    // fix things if needed
+
+    if (audioDriver != "JACK" && host.transportMode == ENGINE_TRANSPORT_MODE_JACK)
+    {
+        host.transportMode = ENGINE_TRANSPORT_MODE_INTERNAL;
+        carla_set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, ENGINE_TRANSPORT_MODE_INTERNAL, host.transportExtra.toUtf8());
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------
+    // return selected driver name
+
+    return audioDriver;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+// Run Carla without showing UI
+
+void runHostWithoutUI(CarlaHost& host)
+{
+    //-----------------------------------------------------------------------------------------------------------------
+    // Some initial checks
+
+    if (! gCarla.nogui)
+        return;
+
+    const QString projectFile = getInitialProjectFile(true);
+
+    if (projectFile.isEmpty())
+    {
+        carla_stdout("Carla no-gui mode can only be used together with a project file.");
+        std::exit(1);
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------
+    // Init engine
+
+    const QString audioDriver = setEngineSettings(host);
+
+    if (! carla_engine_init(audioDriver.toUtf8(), "Carla"))
+    {
+        carla_stdout("Engine failed to initialize, possible reasons:\n%s", carla_get_last_error());
+        std::exit(1);
+    }
+
+    if (! carla_load_project(projectFile.toUtf8()))
+    {
+        carla_stdout("Failed to load selected project file, possible reasons:\n%s", carla_get_last_error());
+        carla_engine_close();
+        std::exit(1);
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------
+    // Idle
+
+    carla_stdout("Carla ready!");
+
+    while (carla_is_engine_running() && ! gCarla.term)
+    {
+        carla_engine_idle();
+        carla_msleep(33); // 30 Hz
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------
+    // Stop
+
+    carla_engine_close();
+    std::exit(0);
 }
 
 //---------------------------------------------------------------------------------------------------------------------

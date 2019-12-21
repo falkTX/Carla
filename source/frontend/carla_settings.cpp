@@ -908,10 +908,12 @@ CarlaSettingsW::~CarlaSettingsW()
 
 void CarlaSettingsW::slot_saveSettings()
 {
+    // TODO
 }
 
 void CarlaSettingsW::slot_resetSettings()
 {
+    // TODO
 }
 
 // --------------------------------------------------------------------------------------------------------------------

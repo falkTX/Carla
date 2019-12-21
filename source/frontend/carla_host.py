@@ -3130,25 +3130,10 @@ def setEngineSettings(host):
             audioDriver = CARLA_DEFAULT_AUDIO_DRIVER
 
     # driver options
-    try:
-        audioDevice = settings.value("%s%s/Device" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), "", str)
-    except:
-        audioDevice = ""
-
-    try:
-        audioBufferSize = settings.value("%s%s/BufferSize" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_BUFFER_SIZE, int)
-    except:
-        audioBufferSize = CARLA_DEFAULT_AUDIO_BUFFER_SIZE
-
-    try:
-        audioSampleRate = settings.value("%s%s/SampleRate" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_SAMPLE_RATE, int)
-    except:
-        audioSampleRate = CARLA_DEFAULT_AUDIO_SAMPLE_RATE
-
-    try:
-        audioTripleBuffer = settings.value("%s%s/TripleBuffer" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_TRIPLE_BUFFER, int)
-    except:
-        audioTripleBuffer = CARLA_DEFAULT_AUDIO_TRIPLE_BUFFER
+    audioDevice = settings.value("%s%s/Device" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), "", str)
+    audioBufferSize = settings.value("%s%s/BufferSize" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_BUFFER_SIZE, int)
+    audioSampleRate = settings.value("%s%s/SampleRate" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_SAMPLE_RATE, int)
+    audioTripleBuffer = settings.value("%s%s/TripleBuffer" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_TRIPLE_BUFFER, bool)
 
     # Only setup audio things if engine is not running
     if not host.is_engine_running():
@@ -3158,7 +3143,7 @@ def setEngineSettings(host):
         if not audioDriver.startswith("JACK"):
             host.set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, audioBufferSize, "")
             host.set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, audioSampleRate, "")
-            host.set_engine_option(ENGINE_OPTION_AUDIO_TRIPLE_BUFFER, audioTripleBuffer, "")
+            host.set_engine_option(ENGINE_OPTION_AUDIO_TRIPLE_BUFFER, 1 if audioTripleBuffer else 0, "")
 
     # --------------------------------------------------------------------------------------------------------
     # fix things if needed

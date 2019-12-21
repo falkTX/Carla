@@ -24,6 +24,8 @@ endif
 
 BUILD_CXX_FLAGS += -I. -I$(CWD) -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils
 BUILD_CXX_FLAGS += -DCARLA_SKIP_HOST_COMMON
+BUILD_CXX_FLAGS += -Wno-unused-parameter
+BUILD_CXX_FLAGS += -Wno-unused-variable
 BUILD_CXX_FLAGS += $(FLUIDSYNTH_FLAGS)
 BUILD_CXX_FLAGS += $(QT5_FLAGS)
 
@@ -188,12 +190,16 @@ endif
 OBJS = \
 	$(OBJDIR)/carla.cpp.o \
 	$(OBJDIR)/carla_app.cpp.o \
+	$(OBJDIR)/carla_database.cpp.o \
 	$(OBJDIR)/carla_host.cpp.o \
 	$(OBJDIR)/carla_settings.cpp.o \
+	$(OBJDIR)/carla_skin.cpp.o \
 	$(OBJDIR)/carla_shared.cpp.o \
+	$(OBJDIR)/carla_widgets.cpp.o \
 	$(OBJDIR)/patchcanvas/theme.cpp.o \
 	$(OBJDIR)/moc_carla_host.cpp.o \
 	$(OBJDIR)/moc_carla_settings.cpp.o \
+	$(OBJDIR)/moc_carla_widgets.cpp.o \
 	$(OBJDIR)/resources_rc.cpp.o \
 	$(OBJDIR)/CarlaStandalone.cpp.o \
 	$(OBJDIR)/CarlaStandaloneNSM.cpp.o \
@@ -202,7 +208,7 @@ OBJS = \
 # ---------------------------------------------------------------------------------------------------------------------
 
 TARGETS = $(BINDIR)/carla
-TARGETS = carla
+# TARGETS = carla
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -210,8 +216,7 @@ all: $(RES) $(UIs)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-# $(BINDIR)/
-carla: $(OBJS)
+$(BINDIR)/carla: $(OBJS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking carla"
 	$(CXX) $(OBJS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) -o $@
