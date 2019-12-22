@@ -84,7 +84,7 @@ static bool gIsInitiated = false;
 static volatile bool gCloseNow = false;
 static volatile bool gSaveNow  = false;
 
-#if defined(CARLA_OS_LINUX)
+#if defined(CARLA_OS_UNIX)
 static void closeSignalHandler(int) noexcept
 {
     gCloseNow = true;

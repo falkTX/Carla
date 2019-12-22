@@ -257,6 +257,7 @@ resources_rc.py: $(RESDIR)/resources.qrc $(RESDIR)/*/*.png $(RESDIR)/*/*.svg $(R
 	$(PYRCC) $< -o $@
 
 $(BINDIR)/resources/%: %
+	-@mkdir -p $(BINDIR)/resources
 	$(LINK) $(CURDIR)/$* $(BINDIR)/resources/
 
 # ---------------------------------------------------------------------------------------------------------------------
