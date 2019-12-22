@@ -20,11 +20,24 @@
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Global)
 
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wconversion"
+# pragma GCC diagnostic ignored "-Weffc++"
+# pragma GCC diagnostic ignored "-Wsign-conversion"
+#endif
+
 #include <QtGui/QFontMetrics>
 
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QLineEdit>
+
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
+
+//---------------------------------------------------------------------------------------------------------------------
 
 #ifdef CARLA_OS_UNIX
 # include <signal.h>
@@ -234,7 +247,7 @@ QString getAndSetPath(QWidget* const parent, QLineEdit* const lineEdit)
 
 void fillQStringListFromStringArray(QStringList& list, const char* const* const stringArray)
 {
-    uint count = 0;
+    int count = 0;
 
     // count number of strings first
     for (; stringArray[count] != nullptr; ++count) {}
@@ -249,7 +262,7 @@ void fillQStringListFromStringArray(QStringList& list, const char* const* const 
 
 void fillQDoubleListFromDoubleArray(QList<double>& list, const double* const doubleArray)
 {
-    uint count = 0;
+    int count = 0;
 
     // count number of strings first
     for (; carla_isNotZero(doubleArray[count]); ++count) {}
@@ -264,7 +277,7 @@ void fillQDoubleListFromDoubleArray(QList<double>& list, const double* const dou
 
 void fillQUIntListFromUIntArray(QList<uint>& list, const uint* const uintArray)
 {
-    uint count = 0;
+    int count = 0;
 
     // count number of strings first
     for (; uintArray[count] != 0; ++count) {}
@@ -301,6 +314,38 @@ bool stringArrayContainsString(const char* const* const stringArray, const char*
     }
 
     return false;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+// Get index of a QList<double> value
+
+int getIndexOfQDoubleListValue(const QList<double>& list, const double value)
+{
+    if (list.size() > 0)
+    {
+        for (QList<double>::const_iterator n = list.cbegin(), e = list.cend(); n != e; ++n)
+            if (carla_isEqual(*n, value))
+                return int(n - list.cbegin());
+    }
+
+    return -1;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+// Check if two QList<double> instances match
+
+bool isQDoubleListEqual(const QList<double>& list1, const QList<double>& list2)
+{
+    if (list1.size() != list2.size())
+        return false;
+    if (list1.isEmpty())
+        return true;
+
+    for (QList<double>::const_iterator l1n = list1.cbegin(), l2n = list2.cbegin(), l1e = list1.cend(); l1n != l1e; ++l1n, ++l2n)
+        if (carla_isNotEqual(*l1n, *l2n))
+            return false;
+
+    return true;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -363,6 +408,24 @@ Qt::CheckState QSafeSettings::valueCheckState(const QString key, const Qt::Check
     default:
         return defaultValue;
     }
+}
+
+int QSafeSettings::valueIntPositive(const QString key, const int defaultValue) const
+{
+    CARLA_SAFE_ASSERT_INT(defaultValue >= 0, defaultValue);
+
+    QVariant var(value(key, defaultValue));
+
+    if (var.isNull())
+        return defaultValue;
+
+    CARLA_SAFE_ASSERT_RETURN(var.convert(QVariant::Int), defaultValue);
+    CARLA_SAFE_ASSERT_RETURN(var.isValid(), defaultValue);
+
+    const int value = var.toInt();
+    CARLA_SAFE_ASSERT_RETURN(value >= 0, defaultValue);
+
+    return value;
 }
 
 uint QSafeSettings::valueUInt(const QString key, const uint defaultValue) const

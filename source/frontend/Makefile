@@ -229,12 +229,12 @@ all: $(TARGETS)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-$(BINDIR)/carla: $(OBJS)
+$(BINDIR)/carla: $(OBJS) $(OBJDIR)/carla.cpp.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking carla"
-	$(CXX) $(OBJS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) -o $@
+	$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) -o $@
 
-$(BINDIR)/carla_%: $(OBJS) $(OBJDIR)/carla_%_app.cpp.o
+$(BINDIR)/carla-%: $(OBJS) $(OBJDIR)/carla_%_app.cpp.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking carla_$*"
 	$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) -o $@

@@ -20,14 +20,31 @@
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Global)
 
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wconversion"
+# pragma GCC diagnostic ignored "-Weffc++"
+# pragma GCC diagnostic ignored "-Wsign-conversion"
+#endif
+
+//---------------------------------------------------------------------------------------------------------------------
+
 #include <QtWidgets/QDialog>
 
 //---------------------------------------------------------------------------------------------------------------------
-// Imports (Custom)
 
 #include "ui_carla_about.hpp"
 #include "ui_carla_about_juce.hpp"
 #include "ui_carla_parameter.hpp"
+
+//---------------------------------------------------------------------------------------------------------------------
+
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
+
+//---------------------------------------------------------------------------------------------------------------------
+// Imports (Custom)
 
 #include "carla_host.hpp"
 
@@ -163,6 +180,8 @@ struct CarlaAboutW::PrivateData {
         aboutWindow->adjustSize();
         ui.tabWidget->setCurrentIndex(0);
     }
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PrivateData)
 };
 
 CarlaAboutW::CarlaAboutW(QWidget* parent, const CarlaHost& host)
@@ -197,6 +216,8 @@ struct JuceAboutW::PrivateData {
 
         ui.l_text2->setText(tr("This program uses JUCE version %1.").arg(carla_get_juce_version()));
     }
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PrivateData)
 };
 
 JuceAboutW::JuceAboutW(QWidget* const parent)
@@ -243,6 +264,7 @@ struct PluginParameter::PrivateData {
     }
     */
 
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PrivateData)
 };
 
 PluginParameter::PluginParameter(QWidget* const parent, const CarlaHost& host)

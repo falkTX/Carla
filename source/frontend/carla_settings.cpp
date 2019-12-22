@@ -20,21 +20,38 @@
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Global)
 
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wconversion"
+# pragma GCC diagnostic ignored "-Weffc++"
+# pragma GCC diagnostic ignored "-Wsign-conversion"
+#endif
+
+// --------------------------------------------------------------------------------------------------------------------
+
 #include <QtCore/QStringList>
 
 #include <QtWidgets/QFileDialog>
 
-//---------------------------------------------------------------------------------------------------------------------
-// Imports (Custom)
+// --------------------------------------------------------------------------------------------------------------------
 
 #include "ui_carla_settings.hpp"
 #include "ui_carla_settings_driver.hpp"
+
+// --------------------------------------------------------------------------------------------------------------------
+
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
+
+//---------------------------------------------------------------------------------------------------------------------
+// Imports (Custom)
 
 #include "carla_host.hpp"
 #include "patchcanvas/theme.hpp"
 
 #include "CarlaHost.h"
-#include "CarlaUtils.hpp"
+#include "CarlaMathUtils.hpp"
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -101,14 +118,16 @@ struct DriverSettingsW::PrivateData {
             ui.cb_buffersize->setCurrentIndex(fBufferSizes.size()/2);
 
         if (audioSampleRate != 0 && fSampleRates.contains(audioSampleRate))
-            ui.cb_samplerate->setCurrentIndex(fSampleRates.indexOf(audioSampleRate));
-        else if (fSampleRates == SAMPLE_RATE_LIST)
-            ui.cb_samplerate->setCurrentIndex(SAMPLE_RATE_LIST.indexOf(CARLA_DEFAULT_AUDIO_SAMPLE_RATE));
+            ui.cb_samplerate->setCurrentIndex(getIndexOfQDoubleListValue(fSampleRates, audioSampleRate));
+        else if (isQDoubleListEqual(fSampleRates, SAMPLE_RATE_LIST))
+            ui.cb_samplerate->setCurrentIndex(getIndexOfQDoubleListValue(SAMPLE_RATE_LIST, CARLA_DEFAULT_AUDIO_SAMPLE_RATE));
         else
             ui.cb_samplerate->setCurrentIndex(fSampleRates.size()/2);
 
         ui.cb_triple_buffer->setChecked(audioTripleBuffer && ui.cb_triple_buffer->isEnabled());
     }
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PrivateData)
 };
 
 DriverSettingsW::DriverSettingsW(QWidget* const parent, const uint driverIndex, const QString driverName)
@@ -245,6 +264,8 @@ struct RuntimeDriverSettingsW::PrivateData {
     {
         ui.setupUi(self);
     }
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PrivateData)
 };
 
 RuntimeDriverSettingsW::RuntimeDriverSettingsW(QWidget* const parent)
@@ -325,7 +346,7 @@ RuntimeDriverSettingsW::RuntimeDriverSettingsW(QWidget* const parent)
             const QString ssrate(QString("%1").arg(srate));
             self->ui.cb_samplerate->addItem(ssrate);
 
-            if (driverDeviceInfo->sampleRate == srate)
+            if (carla_isEqual(driverDeviceInfo->sampleRate, srate))
                 self->ui.cb_samplerate->setCurrentIndex(self->ui.cb_samplerate->count()-1);
         }
     }
@@ -443,8 +464,8 @@ struct CarlaSettingsW::PrivateData {
             ui.cb_main_theme_color->setCurrentIndex(ui.cb_main_theme_color->findText(settings.valueString(CARLA_KEY_MAIN_PRO_THEME_COLOR,
                                                                                                           CARLA_DEFAULT_MAIN_PRO_THEME_COLOR)));
 
-            ui.sb_main_refresh_interval->setValue(settings.valueUInt(CARLA_KEY_MAIN_REFRESH_INTERVAL,
-                                                                     CARLA_DEFAULT_MAIN_REFRESH_INTERVAL));
+            ui.sb_main_refresh_interval->setValue(settings.valueIntPositive(CARLA_KEY_MAIN_REFRESH_INTERVAL,
+                                                                            CARLA_DEFAULT_MAIN_REFRESH_INTERVAL));
 
             ui.ch_main_confirm_exit->setChecked(settings.valueBool(CARLA_KEY_MAIN_CONFIRM_EXIT,
                                                                    CARLA_DEFAULT_MAIN_CONFIRM_EXIT));
@@ -556,7 +577,7 @@ struct CarlaSettingsW::PrivateData {
         else
             ui.cb_engine_process_mode_other->setCurrentIndex(0);
 
-        ui.sb_engine_max_params->setValue(host.maxParameters);
+        ui.sb_engine_max_params->setValue(static_cast<int>(host.maxParameters));
         ui.ch_engine_manage_uis->setChecked(host.manageUIs);
         ui.ch_engine_prefer_ui_bridges->setChecked(host.preferUIBridges);
         ui.sb_engine_ui_bridges_timeout->setValue(host.uiBridgesTimeout);
@@ -578,11 +599,11 @@ struct CarlaSettingsW::PrivateData {
         ui.group_osc_udp_port->setChecked(settings.valueBool(CARLA_KEY_OSC_UDP_PORT_ENABLED,
                                                              CARLA_DEFAULT_OSC_UDP_PORT_ENABLED));
 
-        ui.sb_osc_tcp_port_number->setValue(settings.valueUInt(CARLA_KEY_OSC_TCP_PORT_NUMBER,
-                                                               CARLA_DEFAULT_OSC_TCP_PORT_NUMBER));
+        ui.sb_osc_tcp_port_number->setValue(settings.valueIntPositive(CARLA_KEY_OSC_TCP_PORT_NUMBER,
+                                                                      CARLA_DEFAULT_OSC_TCP_PORT_NUMBER));
 
-        ui.sb_osc_udp_port_number->setValue(settings.valueUInt(CARLA_KEY_OSC_UDP_PORT_NUMBER,
-                                                               CARLA_DEFAULT_OSC_UDP_PORT_NUMBER));
+        ui.sb_osc_udp_port_number->setValue(settings.valueIntPositive(CARLA_KEY_OSC_UDP_PORT_NUMBER,
+                                                                      CARLA_DEFAULT_OSC_UDP_PORT_NUMBER));
 
         if (settings.valueBool(CARLA_KEY_OSC_TCP_PORT_RANDOM, CARLA_DEFAULT_OSC_TCP_PORT_RANDOM))
         {
@@ -703,11 +724,11 @@ struct CarlaSettingsW::PrivateData {
         ui.group_wine_realtime->setChecked(settings.valueBool(CARLA_KEY_WINE_RT_PRIO_ENABLED,
                                                               CARLA_DEFAULT_WINE_RT_PRIO_ENABLED));
 
-        ui.sb_wine_base_prio->setValue(settings.valueUInt(CARLA_KEY_WINE_BASE_RT_PRIO,
-                                                          CARLA_DEFAULT_WINE_BASE_RT_PRIO));
+        ui.sb_wine_base_prio->setValue(settings.valueIntPositive(CARLA_KEY_WINE_BASE_RT_PRIO,
+                                                                 CARLA_DEFAULT_WINE_BASE_RT_PRIO));
 
-        ui.sb_wine_server_prio->setValue(settings.valueUInt(CARLA_KEY_WINE_SERVER_RT_PRIO,
-                                                            CARLA_DEFAULT_WINE_SERVER_RT_PRIO));
+        ui.sb_wine_server_prio->setValue(settings.valueIntPositive(CARLA_KEY_WINE_SERVER_RT_PRIO,
+                                                                   CARLA_DEFAULT_WINE_SERVER_RT_PRIO));
 
         // ------------------------------------------------------------------------------------------------------------
         // Experimental

@@ -20,6 +20,13 @@
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Global)
 
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wconversion"
+# pragma GCC diagnostic ignored "-Weffc++"
+# pragma GCC diagnostic ignored "-Wsign-conversion"
+#endif
+
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
 
@@ -27,6 +34,10 @@
 #include <QtGui/QPalette>
 
 #include <QtWidgets/QApplication>
+
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
 
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Custom)
@@ -58,13 +69,11 @@ CarlaApplication::CarlaApplication(const QString appName, int& argc, char* argv[
     QCarlaString stylesDir;
 
     // Use binary dir as library path
-    /*
     if (QDir(pathBinaries).exists())
     {
         QApplication::addLibraryPath(pathBinaries);
         stylesDir = pathBinaries;
     }
-    */
 
     // base settings
     const QSafeSettings settings("falkTX", appName);

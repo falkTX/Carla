@@ -20,6 +20,16 @@
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Global)
 
+
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wconversion"
+# pragma GCC diagnostic ignored "-Weffc++"
+# pragma GCC diagnostic ignored "-Wsign-conversion"
+#endif
+
+//---------------------------------------------------------------------------------------------------------------------
+
 #include <QtCore/QDir>
 #include <QtCore/QStringList>
 #include <QtCore/QTimer>
@@ -32,9 +42,17 @@
 #include <QtWidgets/QMessageBox>
 
 //---------------------------------------------------------------------------------------------------------------------
-// Imports (Custom)
 
 #include "ui_carla_host.hpp"
+
+//---------------------------------------------------------------------------------------------------------------------
+
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
+
+//---------------------------------------------------------------------------------------------------------------------
+// Imports (Custom)
 
 #include "carla_database.hpp"
 #include "carla_settings.hpp"
@@ -48,12 +66,13 @@
 #include "CarlaString.hpp"
 
 // FIXME put in right place
-
+/*
 static QString fixLogText(QString text)
 {
     //v , Qt::CaseSensitive
     return text.replace("\x1b[30;1m", "").replace("\x1b[31m", "").replace("\x1b[0m", "");
 }
+*/
 
 //---------------------------------------------------------------------------------------------------------------------
 // Session Management support
@@ -102,7 +121,7 @@ enum CustomActions {
 };
 
 struct CachedSavedSettings {
-    uint _CARLA_KEY_MAIN_REFRESH_INTERVAL = 0;
+    int _CARLA_KEY_MAIN_REFRESH_INTERVAL = 0;
     bool _CARLA_KEY_MAIN_CONFIRM_EXIT = false;
     bool _CARLA_KEY_CANVAS_FANCY_EYE_CANDY = false;
 };
@@ -924,8 +943,8 @@ struct CarlaHostWindow::PrivateData {
         fSavedSettings._CARLA_KEY_MAIN_CONFIRM_EXIT = settings.valueBool(CARLA_KEY_MAIN_CONFIRM_EXIT,
                                                                          CARLA_DEFAULT_MAIN_CONFIRM_EXIT);
 
-        fSavedSettings._CARLA_KEY_MAIN_REFRESH_INTERVAL = settings.valueUInt(CARLA_KEY_MAIN_REFRESH_INTERVAL,
-                                                                             CARLA_DEFAULT_MAIN_REFRESH_INTERVAL);
+        fSavedSettings._CARLA_KEY_MAIN_REFRESH_INTERVAL = settings.valueIntPositive(CARLA_KEY_MAIN_REFRESH_INTERVAL,
+                                                                                    CARLA_DEFAULT_MAIN_REFRESH_INTERVAL);
 
         fSavedSettings._CARLA_KEY_CANVAS_FANCY_EYE_CANDY = settings.valueBool(CARLA_KEY_CANVAS_FANCY_EYE_CANDY,
                                                                               CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY);
@@ -1026,15 +1045,15 @@ struct CarlaHostWindow::PrivateData {
         {
             fLastTransportFrame = frame;
 
-            const uint32_t time = frame / fSampleRate;
-            const uint32_t secs =  time % 60;
-            const uint32_t mins = (time / 60) % 60;
-            const uint32_t hrs  = (time / 3600) % 60;
+            const uint64_t time = frame / static_cast<uint32_t>(fSampleRate);
+            const uint64_t secs =  time % 60;
+            const uint64_t mins = (time / 60) % 60;
+            const uint64_t hrs  = (time / 3600) % 60;
             ui.l_transport_time->setText(QString("%1:%2:%3").arg(hrs, 2, 10, QChar('0')).arg(mins, 2, 10, QChar('0')).arg(secs, 2, 10, QChar('0')));
 
-            const uint32_t frame1 =  frame % 1000;
-            const uint32_t frame2 = (frame / 1000) % 1000;
-            const uint32_t frame3 = (frame / 1000000) % 1000;
+            const uint64_t frame1 =  frame % 1000;
+            const uint64_t frame2 = (frame / 1000) % 1000;
+            const uint64_t frame3 = (frame / 1000000) % 1000;
             ui.l_transport_frame->setText(QString("%1'%2'%3").arg(frame3, 3, 10, QChar('0')).arg(frame2, 3, 10, QChar('0')).arg(frame1, 3, 10, QChar('0')));
 
             const int32_t bar  = timeInfo->bar;
@@ -1161,9 +1180,9 @@ struct CarlaHostWindow::PrivateData {
     //-----------------------------------------------------------------------------------------------------------------
     // timer event
 
-    void refreshRuntimeInfo(const float load, const int xruns)
+    void refreshRuntimeInfo(const float load, const uint xruns)
     {
-        const QString txt1(xruns >= 0 ? QString("%1").arg(xruns) : QString("--"));
+        const QString txt1(xruns == 0 ? QString("%1").arg(xruns) : QString("--"));
         const QString txt2(xruns == 1 ? "" : "s");
         ui.b_xruns->setText(QString("%1 Xrun%2").arg(txt1).arg(txt2));
         ui.pb_dsp_load->setValue(int(load));
@@ -1269,7 +1288,7 @@ struct CarlaHostWindow::PrivateData {
         QColor pad_color;
 
         if (carla_isNotZero(bg_value) && bg_value < min_value)
-            pad_color = bg_color.lighter(100*min_value/bg_value*value_fix);
+            pad_color = bg_color.lighter(static_cast<int>(100*min_value/bg_value*value_fix));
         else
             pad_color = QColor::fromHsvF(0.0, 0.0, min_value*value_fix);
 
@@ -1317,6 +1336,8 @@ struct CarlaHostWindow::PrivateData {
                                          QMessageBox::Yes|QMessageBox::No) == QMessageBox::No;
         return false;
     }
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PrivateData)
 };
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -1437,7 +1458,7 @@ CarlaHostWindow::CarlaHostWindow(CarlaHost& host, const bool withCanvas, QWidget
     connect(&host, SIGNAL(SIGUSR1()), SLOT(slot_handleSIGUSR1()));
     connect(&host, SIGNAL(SIGTERM()), SLOT(slot_handleSIGTERM()));
 
-    connect(&host, SIGNAL(EngineStartedCallback(uint, int, int, int, float, QString)), SLOT(slot_handleEngineStartedCallback(uint, int, int, int, float, QString)));
+    connect(&host, SIGNAL(EngineStartedCallback(uint, int, int, uint, float, QString)), SLOT(slot_handleEngineStartedCallback(uint, int, int, uint, float, QString)));
     connect(&host, SIGNAL(EngineStoppedCallback()), SLOT(slot_handleEngineStoppedCallback()));
     connect(&host, SIGNAL(TransportModeChangedCallback()), SLOT(slot_handleTransportModeChangedCallback()));
     connect(&host, SIGNAL(BufferSizeChangedCallback()), SLOT(slot_handleBufferSizeChangedCallback()));
@@ -1746,8 +1767,8 @@ void CarlaHostWindow::slot_engineConfig()
     else
     {
         carla_set_engine_option(ENGINE_OPTION_AUDIO_DEVICE, 0, audioDevice.toUtf8());
-        carla_set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, bufferSize, "");
-        carla_set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, sampleRate, "");
+        carla_set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, static_cast<int>(bufferSize), "");
+        carla_set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, static_cast<int>(sampleRate), "");
     }
 }
 
@@ -1766,7 +1787,7 @@ bool CarlaHostWindow::slot_engineStopTryAgain()
 //---------------------------------------------------------------------------------------------------------------------
 // Engine (host callbacks)
 
-void CarlaHostWindow::slot_handleEngineStartedCallback(uint pluginCount, int processMode, int transportMode, int bufferSize, float sampleRate, QString driverName)
+void CarlaHostWindow::slot_handleEngineStartedCallback(uint pluginCount, int processMode, int transportMode, uint bufferSize, float sampleRate, QString driverName)
 {
     self->ui.menu_PluginMacros->setEnabled(true);
     self->ui.menu_Canvas->setEnabled(true);
@@ -1819,7 +1840,7 @@ void CarlaHostWindow::slot_handleEngineStartedCallback(uint pluginCount, int pro
         self->ui.cb_transport_link->setChecked(self->host.transportExtra.contains(":link:"));
 
     self->updateBufferSize(bufferSize);
-    self->updateSampleRate(int(sampleRate));
+    self->updateSampleRate(sampleRate);
     self->refreshRuntimeInfo(0.0, 0);
     self->startTimers();
 
@@ -2196,9 +2217,11 @@ void CarlaHostWindow::slot_transportBackwards()
     if (self->host.isPlugin || ! carla_is_engine_running())
         return;
 
-    int64_t newFrame = carla_get_current_transport_frame() - 100000;
+    uint64_t newFrame = carla_get_current_transport_frame();
 
-    if (newFrame < 0)
+    if (newFrame > 100000)
+        newFrame -= 100000;
+    else
         newFrame = 0;
 
     carla_transport_relocate(newFrame);
@@ -2214,7 +2237,7 @@ void CarlaHostWindow::slot_transportForwards()
     if (carla_isZero(self->fSampleRate) || self->host.isPlugin || ! carla_is_engine_running())
         return;
 
-    const int64_t newFrame = carla_get_current_transport_frame() + int(self->fSampleRate*2.5);
+    const uint64_t newFrame = carla_get_current_transport_frame() + uint64_t(self->fSampleRate*2.5);
     carla_transport_relocate(newFrame);
 }
 
@@ -2350,7 +2373,8 @@ void CarlaHostWindow::slot_handleSIGTERM()
 //---------------------------------------------------------------------------------------------------------------------
 // Canvas callback
 
-void _canvasCallback(void* const ptr, const int action, int value1, int value2, QString valueStr)
+/*
+static void _canvasCallback(void* const ptr, const int action, int value1, int value2, QString valueStr)
 {
     CarlaHost* const host = (CarlaHost*)(ptr);
     CARLA_SAFE_ASSERT_RETURN(host != nullptr,);
@@ -2359,11 +2383,12 @@ void _canvasCallback(void* const ptr, const int action, int value1, int value2, 
     {
     }
 }
+*/
 
 //---------------------------------------------------------------------------------------------------------------------
 // Engine callback
 
-void _engineCallback(void* const ptr, const EngineCallbackOpcode action, uint pluginId, int value1, int value2, int value3, float valuef, const char* const valueStr)
+static void _engineCallback(void* const ptr, const EngineCallbackOpcode action, uint pluginId, int value1, int value2, int value3, float valuef, const char* const valueStr)
 {
     /*
     carla_stdout("_engineCallback(%p, %i:%s, %u, %i, %i, %i, %f, %s)",
@@ -2394,7 +2419,8 @@ void _engineCallback(void* const ptr, const EngineCallbackOpcode action, uint pl
     switch (action)
     {
     case ENGINE_CALLBACK_ENGINE_STARTED:
-        emit host->EngineStartedCallback(pluginId, value1, value2, value3, valuef, valueStr);
+        CARLA_SAFE_ASSERT_INT_RETURN(value3 >= 0, value3,);
+        emit host->EngineStartedCallback(pluginId, value1, value2, static_cast<uint>(value3), valuef, valueStr);
         break;
     case ENGINE_CALLBACK_ENGINE_STOPPED:
         emit host->EngineStoppedCallback();
@@ -2498,7 +2524,11 @@ CarlaHost& initHost(const QString initName, const bool isControl, const bool isP
         carla_set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, pathResources.toUtf8());
 
         if (! isControl)
-            host.nsmOK = carla_nsm_init(getpid(), initName.toUtf8());
+        {
+            const pid_t pid = getpid();
+            if (pid > 0)
+                host.nsmOK = carla_nsm_init(static_cast<uint64_t>(pid), initName.toUtf8());
+        }
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -2578,7 +2608,7 @@ void loadHostSettings(CarlaHost& host)
 void setHostSettings(const CarlaHost& host)
 {
     carla_set_engine_option(ENGINE_OPTION_FORCE_STEREO,          host.forceStereo,         "");
-    carla_set_engine_option(ENGINE_OPTION_MAX_PARAMETERS,        host.maxParameters,       "");
+    carla_set_engine_option(ENGINE_OPTION_MAX_PARAMETERS,        static_cast<int>(host.maxParameters), "");
     carla_set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, host.preferPluginBridges, "");
     carla_set_engine_option(ENGINE_OPTION_PREFER_UI_BRIDGES,     host.preferUIBridges,     "");
     carla_set_engine_option(ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR, host.preventBadBehaviour, "");
@@ -2666,14 +2696,14 @@ QString setEngineSettings(CarlaHost& host)
     else if (settings.valueBool(CARLA_KEY_OSC_TCP_PORT_RANDOM, CARLA_DEFAULT_OSC_TCP_PORT_RANDOM))
         portNumTCP = 0;
     else
-        portNumTCP = settings.valueUInt(CARLA_KEY_OSC_TCP_PORT_NUMBER, CARLA_DEFAULT_OSC_TCP_PORT_NUMBER);
+        portNumTCP = settings.valueIntPositive(CARLA_KEY_OSC_TCP_PORT_NUMBER, CARLA_DEFAULT_OSC_TCP_PORT_NUMBER);
 
     if (! settings.valueBool(CARLA_KEY_OSC_UDP_PORT_ENABLED, CARLA_DEFAULT_OSC_UDP_PORT_ENABLED))
         portNumUDP = -1;
     else if (settings.valueBool(CARLA_KEY_OSC_UDP_PORT_RANDOM, CARLA_DEFAULT_OSC_UDP_PORT_RANDOM))
         portNumUDP = 0;
     else
-        portNumUDP = settings.valueUInt(CARLA_KEY_OSC_UDP_PORT_NUMBER, CARLA_DEFAULT_OSC_UDP_PORT_NUMBER);
+        portNumUDP = settings.valueIntPositive(CARLA_KEY_OSC_UDP_PORT_NUMBER, CARLA_DEFAULT_OSC_UDP_PORT_NUMBER);
 
     carla_set_engine_option(ENGINE_OPTION_OSC_ENABLED, oscEnabled ? 1 : 0, "");
     carla_set_engine_option(ENGINE_OPTION_OSC_PORT_TCP, portNumTCP, "");
@@ -2686,8 +2716,8 @@ QString setEngineSettings(CarlaHost& host)
     const bool optWineAutoPrefix = settings.valueBool(CARLA_KEY_WINE_AUTO_PREFIX, CARLA_DEFAULT_WINE_AUTO_PREFIX);
     const QString optWineFallbackPrefix = settings.valueString(CARLA_KEY_WINE_FALLBACK_PREFIX, CARLA_DEFAULT_WINE_FALLBACK_PREFIX);
     const bool optWineRtPrioEnabled = settings.valueBool(CARLA_KEY_WINE_RT_PRIO_ENABLED, CARLA_DEFAULT_WINE_RT_PRIO_ENABLED);
-    const uint optWineBaseRtPrio = settings.valueUInt(CARLA_KEY_WINE_BASE_RT_PRIO,   CARLA_DEFAULT_WINE_BASE_RT_PRIO);
-    const uint optWineServerRtPrio = settings.valueUInt(CARLA_KEY_WINE_SERVER_RT_PRIO, CARLA_DEFAULT_WINE_SERVER_RT_PRIO);
+    const int optWineBaseRtPrio = settings.valueIntPositive(CARLA_KEY_WINE_BASE_RT_PRIO,   CARLA_DEFAULT_WINE_BASE_RT_PRIO);
+    const int optWineServerRtPrio = settings.valueIntPositive(CARLA_KEY_WINE_SERVER_RT_PRIO, CARLA_DEFAULT_WINE_SERVER_RT_PRIO);
 
     carla_set_engine_option(ENGINE_OPTION_WINE_EXECUTABLE, 0, optWineExecutable.toUtf8());
     carla_set_engine_option(ENGINE_OPTION_WINE_AUTO_PREFIX, optWineAutoPrefix ? 1 : 0, "");
@@ -2713,8 +2743,8 @@ QString setEngineSettings(CarlaHost& host)
     // driver options
     const QString prefix(QString("%1%2").arg(CARLA_KEY_ENGINE_DRIVER_PREFIX).arg(audioDriver));
     const QString audioDevice = settings.valueString(QString("%1/Device").arg(prefix), "");
-    const uint audioBufferSize = settings.valueUInt(QString("%1/BufferSize").arg(prefix), CARLA_DEFAULT_AUDIO_BUFFER_SIZE);
-    const uint audioSampleRate = settings.valueUInt(QString("%1/SampleRate").arg(prefix), CARLA_DEFAULT_AUDIO_SAMPLE_RATE);
+    const int audioBufferSize = settings.valueIntPositive(QString("%1/BufferSize").arg(prefix), CARLA_DEFAULT_AUDIO_BUFFER_SIZE);
+    const int audioSampleRate = settings.valueIntPositive(QString("%1/SampleRate").arg(prefix), CARLA_DEFAULT_AUDIO_SAMPLE_RATE);
     const bool audioTripleBuffer = settings.valueBool(QString("%1/TripleBuffer").arg(prefix), CARLA_DEFAULT_AUDIO_TRIPLE_BUFFER);
 
     // Only setup audio things if engine is not running

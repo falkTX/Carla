@@ -20,9 +20,20 @@
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Global)
 
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wconversion"
+# pragma GCC diagnostic ignored "-Weffc++"
+# pragma GCC diagnostic ignored "-Wsign-conversion"
+#endif
+
 #include <QtGui/QColor>
 #include <QtGui/QFont>
 #include <QtGui/QPen>
+
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
 
 //---------------------------------------------------------------------------------------------------------------------
 
@@ -54,7 +65,7 @@ struct Theme::PrivateData {
 
     // Ports
     QPen port_text;
-    int port_text_ypos = 12;
+    int port_text_ypos;
     // port_bg_pixmap = None;
     QString port_font_name;
     int port_font_size;
@@ -113,7 +124,71 @@ struct Theme::PrivateData {
     //-----------------------------------------------------------------------------------------------------------------
 
     PrivateData(const Theme::List id)
-        : idx(id)
+        : idx(id),
+          canvas_bg(),
+          box_pen(),
+          box_pen_sel(),
+          box_bg_1(),
+          box_bg_2(),
+          box_shadow(),
+          box_header_height(),
+          box_header_spacing(),
+          box_text(),
+          box_text_sel(),
+          box_text_ypos(),
+          box_font_name(),
+          box_font_size(),
+          box_font_state(),
+          box_bg_type(),
+          box_use_icon(),
+          port_text(),
+          port_text_ypos(),
+          port_font_name(),
+          port_font_size(),
+          port_font_state(),
+          port_mode(),
+          port_audio_jack_pen(),
+          port_audio_jack_pen_sel(),
+          port_midi_jack_pen(),
+          port_midi_jack_pen_sel(),
+          port_midi_alsa_pen(),
+          port_midi_alsa_pen_sel(),
+          port_parameter_pen(),
+          port_parameter_pen_sel(),
+          port_audio_jack_bg(),
+          port_audio_jack_bg_sel(),
+          port_midi_jack_bg(),
+          port_midi_jack_bg_sel(),
+          port_midi_alsa_bg(),
+          port_midi_alsa_bg_sel(),
+          port_parameter_bg(),
+          port_parameter_bg_sel(),
+          port_audio_jack_text(),
+          port_audio_jack_text_sel(),
+          port_midi_jack_text(),
+          port_midi_jack_text_sel(),
+          port_midi_alsa_text(),
+          port_midi_alsa_text_sel(),
+          port_parameter_text(),
+          port_parameter_text_sel(),
+          port_height(),
+          port_offset(),
+          port_spacing(),
+          port_spacingT(),
+          line_audio_jack(),
+          line_audio_jack_sel(),
+          line_audio_jack_glow(),
+          line_midi_jack(),
+          line_midi_jack_sel(),
+          line_midi_jack_glow(),
+          line_midi_alsa(),
+          line_midi_alsa_sel(),
+          line_midi_alsa_glow(),
+          line_parameter(),
+          line_parameter_sel(),
+          line_parameter_glow(),
+          rubberband_pen(),
+          rubberband_brush()
     {
         switch (idx)
         {
@@ -540,6 +615,8 @@ struct Theme::PrivateData {
             break;
         }
     }
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PrivateData)
 };
 
 //---------------------------------------------------------------------------------------------------------------------

@@ -21,7 +21,18 @@
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Global)
 
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wconversion"
+# pragma GCC diagnostic ignored "-Weffc++"
+# pragma GCC diagnostic ignored "-Wsign-conversion"
+#endif
+
 #include <QtWidgets/QMainWindow>
+
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
 
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Custom)
@@ -81,8 +92,11 @@ signals:
     void SignalSave();
 
     // Engine stuff
-    void EngineStartedCallback(uint, int, int, int, float, QString);
+    void EngineStartedCallback(uint, int, int, uint, float, QString);
     void EngineStoppedCallback();
+
+private:
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaHost)
 };
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -163,7 +177,7 @@ private slots:
     //-----------------------------------------------------------------------------------------------------------------
     // Engine (host callbacks)
 
-    void slot_handleEngineStartedCallback(uint pluginCount, int processMode, int transportMode, int bufferSize, float sampleRate, QString driverName);
+    void slot_handleEngineStartedCallback(uint pluginCount, int processMode, int transportMode, uint bufferSize, float sampleRate, QString driverName);
     void slot_handleEngineStoppedCallback();
     void slot_handleTransportModeChangedCallback(int transportMode, QString transportExtra);
     void slot_handleBufferSizeChangedCallback(int newBufferSize);

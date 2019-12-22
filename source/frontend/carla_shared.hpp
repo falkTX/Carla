@@ -21,12 +21,25 @@
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Global)
 
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wconversion"
+# pragma GCC diagnostic ignored "-Weffc++"
+# pragma GCC diagnostic ignored "-Wsign-conversion"
+#endif
+
 #include <QtCore/QSettings>
 #include <QtCore/QStringList>
 
 #include <QtGui/QIcon>
 
 #include <QtWidgets/QMessageBox>
+
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
+
+//---------------------------------------------------------------------------------------------------------------------
 
 class CarlaHost;
 class QFontMetrics;
@@ -409,6 +422,16 @@ int fontMetricsHorizontalAdvance(const QFontMetrics& fm, const QString& s);
 bool stringArrayContainsString(const char* const* const stringArray, const char* const string) noexcept;
 
 //---------------------------------------------------------------------------------------------------------------------
+// Get index of a QList<double> value
+
+int getIndexOfQDoubleListValue(const QList<double>& list, const double value);
+
+//---------------------------------------------------------------------------------------------------------------------
+// Check if two QList<double> instances match
+
+bool isQDoubleListEqual(const QList<double>& list1, const QList<double>& list2);
+
+//---------------------------------------------------------------------------------------------------------------------
 // Custom QString class with a few extra methods
 
 class QCarlaString : public QString
@@ -461,6 +484,7 @@ public:
 
     bool valueBool(const QString key, const bool defaultValue) const;
     Qt::CheckState valueCheckState(const QString key, const Qt::CheckState defaultValue) const;
+    int valueIntPositive(const QString key, const int defaultValue) const;
     uint valueUInt(const QString key, const uint defaultValue) const;
     double valueDouble(const QString key, const double defaultValue) const;
     QString valueString(const QString key, const QString defaultValue) const;

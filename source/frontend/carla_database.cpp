@@ -20,17 +20,34 @@
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Global)
 
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wconversion"
+# pragma GCC diagnostic ignored "-Weffc++"
+# pragma GCC diagnostic ignored "-Wsign-conversion"
+#endif
+
+//---------------------------------------------------------------------------------------------------------------------
+
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
 
 #include <QtWidgets/QPushButton>
 
 //---------------------------------------------------------------------------------------------------------------------
-// Imports (Custom)
 
 #include "ui_carla_add_jack.hpp"
 #include "ui_carla_database.hpp"
 #include "ui_carla_refresh.hpp"
+
+//---------------------------------------------------------------------------------------------------------------------
+
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
+
+//---------------------------------------------------------------------------------------------------------------------
+// Imports (Custom)
 
 #include "carla_host.hpp"
 
@@ -110,6 +127,8 @@ struct SearchPluginsThread::PrivateData {
           fSomethingChanged(false)
     {
     }
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PrivateData)
 };
 
 SearchPluginsThread::SearchPluginsThread(QObject* parent, const QString pathBinaries)
@@ -138,7 +157,8 @@ struct PluginRefreshW::PrivateData {
     QPixmap fIconNo;
 
     PrivateData(PluginRefreshW* const refreshDialog, const CarlaHost& host)
-        : fThread(refreshDialog, host.pathBinaries),
+        : ui(),
+          fThread(refreshDialog, host.pathBinaries),
           fIconYes(":/16x16/dialog-ok-apply.svgz"),
           fIconNo(":/16x16/dialog-error.svgz")
     {
@@ -157,6 +177,8 @@ struct PluginRefreshW::PrivateData {
     void loadSettings()
     {
     }
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PrivateData)
 };
 
 PluginRefreshW::PluginRefreshW(QWidget* const parent, const CarlaHost& host)
@@ -240,6 +262,8 @@ struct PluginDatabaseW::PrivateData {
     PrivateData(void*)
     {
     }
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PrivateData)
 };
 
 PluginDatabaseW::PluginDatabaseW(QWidget* parent, const CarlaHost& host, bool hasCanvas, bool hasCanvasGL)
@@ -342,11 +366,11 @@ struct JackApplicationW::PrivateData {
 
         ui.le_command->setText(settings.valueString("Command", ""));
         ui.le_name->setText(settings.valueString("Name", ""));
-        ui.sb_audio_ins->setValue(settings.valueUInt("NumAudioIns", 2));
-        ui.sb_audio_ins->setValue(settings.valueUInt("NumAudioIns", 2));
-        ui.sb_audio_outs->setValue(settings.valueUInt("NumAudioOuts", 2));
-        ui.sb_midi_ins->setValue(settings.valueUInt("NumMidiIns", 0));
-        ui.sb_midi_outs->setValue(settings.valueUInt("NumMidiOuts", 0));
+        ui.sb_audio_ins->setValue(settings.valueIntPositive("NumAudioIns", 2));
+        ui.sb_audio_ins->setValue(settings.valueIntPositive("NumAudioIns", 2));
+        ui.sb_audio_outs->setValue(settings.valueIntPositive("NumAudioOuts", 2));
+        ui.sb_midi_ins->setValue(settings.valueIntPositive("NumMidiIns", 0));
+        ui.sb_midi_outs->setValue(settings.valueIntPositive("NumMidiOuts", 0));
         ui.cb_manage_window->setChecked(settings.valueBool("ManageWindow", true));
         ui.cb_capture_first_window->setChecked(settings.valueBool("CaptureFirstWindow", false));
         ui.cb_out_midi_mixdown->setChecked(settings.valueBool("MidiOutMixdown", false));
@@ -368,6 +392,8 @@ struct JackApplicationW::PrivateData {
         settings.setValue("CaptureFirstWindow", ui.cb_capture_first_window->isChecked());
         settings.setValue("MidiOutMixdown", ui.cb_out_midi_mixdown->isChecked());
     }
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PrivateData)
 };
 
 JackApplicationW::JackApplicationW(QWidget* parent)
