@@ -378,6 +378,9 @@ distclean: clean
 	rm -f bin/*.exe bin/*.dll bin/*.dylib bin/*.so
 	rm -rf build build-lv2
 
+cpp:
+	$(MAKE) CPPMODE=true
+
 debug:
 	$(MAKE) DEBUG=true
 
@@ -509,6 +512,7 @@ endif
 	# -------------------------------------------------------------------------------------------------------------
 
 ifeq ($(HAVE_PYQT),true)
+ifeq ($(CPPMODE),true)
 	# Install script files (gui)
 	install -m 755 \
 		data/carla \
@@ -583,6 +587,7 @@ endif
 		bin/resources/carla-plugin-patchbay \
 		bin/resources/*-ui \
 		$(DESTDIR)$(DATADIR)/carla/resources
+endif # CPPMODE
 
 ifeq ($(HAVE_THEME),true)
 	# Install theme

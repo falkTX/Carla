@@ -128,6 +128,8 @@ source/dist/
 
 # python files in plugin resources dir
 bin/resources/*.py
+bin/resources/patchcanvas
+bin/resources/widgets
 source/native-plugins/resources/*.py
 
 # Other

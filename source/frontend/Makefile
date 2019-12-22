@@ -32,8 +32,11 @@ BUILD_CXX_FLAGS += $(QT5_FLAGS)
 # ---------------------------------------------------------------------------------------------------------------------
 # Resources
 
+ifeq ($(CPPMODE),true)
 RES = \
-	resources_rc.cpp \
+	resources_rc.cpp
+else
+RES = \
 	resources_rc.py \
 	$(BINDIR)/resources/patchcanvas \
 	$(BINDIR)/resources/widgets \
@@ -69,47 +72,52 @@ RES = \
 	$(BINDIR)/resources/ui_carla_settings_driver.py \
 	$(BINDIR)/resources/ui_inputdialog_value.py \
 	$(BINDIR)/resources/ui_midipattern.py
+endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 # UI code
 
+ifeq ($(CPPMODE),true)
 UIs = \
 	ui_carla_about.hpp \
-	ui_carla_about.py \
 	ui_carla_about_juce.hpp \
-	ui_carla_about_juce.py \
 	ui_carla_add_jack.hpp \
-	ui_carla_add_jack.py \
 	ui_carla_database.hpp \
-	ui_carla_database.py \
 	ui_carla_edit.hpp \
-	ui_carla_edit.py \
 	ui_carla_host.hpp \
-	ui_carla_host.py \
-	ui_carla_osc_connect.py \
 	ui_carla_osc_connect.hpp \
 	ui_carla_parameter.hpp \
-	ui_carla_parameter.py \
 	ui_carla_plugin_calf.hpp \
-	ui_carla_plugin_calf.py \
 	ui_carla_plugin_classic.hpp \
-	ui_carla_plugin_classic.py \
 	ui_carla_plugin_compact.hpp \
-	ui_carla_plugin_compact.py \
 	ui_carla_plugin_default.hpp \
-	ui_carla_plugin_default.py \
 	ui_carla_plugin_presets.hpp \
-	ui_carla_plugin_presets.py \
 	ui_carla_refresh.hpp \
-	ui_carla_refresh.py \
 	ui_carla_settings.hpp \
-	ui_carla_settings.py \
 	ui_carla_settings_driver.hpp \
-	ui_carla_settings_driver.py \
 	ui_inputdialog_value.hpp \
+	ui_midipattern.hpp
+else
+UIs = \
+	ui_carla_about.py \
+	ui_carla_about_juce.py \
+	ui_carla_add_jack.py \
+	ui_carla_database.py \
+	ui_carla_edit.py \
+	ui_carla_host.py \
+	ui_carla_osc_connect.py \
+	ui_carla_parameter.py \
+	ui_carla_plugin_calf.py \
+	ui_carla_plugin_classic.py \
+	ui_carla_plugin_compact.py \
+	ui_carla_plugin_default.py \
+	ui_carla_plugin_presets.py \
+	ui_carla_refresh.py \
+	ui_carla_settings.py \
+	ui_carla_settings_driver.py \
 	ui_inputdialog_value.py \
-	ui_midipattern.hpp \
 	ui_midipattern.py
+endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -187,8 +195,6 @@ endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-# 	$(OBJDIR)/carla.cpp.o \
-
 OBJS = \
 	$(OBJDIR)/carla_app.cpp.o \
 	$(OBJDIR)/carla_database.cpp.o \
@@ -209,14 +215,17 @@ OBJS = \
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-# TARGETS = $(BINDIR)/carla
-# TARGETS = carla
-TARGETS = \
-	$(BINDIR)/carla_database
+TARGETS = $(RES) $(UIs)
+
+ifeq ($(CPPMODE),true)
+TARGETS += $(BINDIR)/carla
+TARGETS += $(BINDIR)/carla-database
+TARGETS += $(BINDIR)/carla-settings
+endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-all: $(RES) $(UIs) $(TARGETS)
+all: $(TARGETS)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -225,9 +234,9 @@ $(BINDIR)/carla: $(OBJS)
 	@echo "Linking carla"
 	$(CXX) $(OBJS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) -o $@
 
-$(BINDIR)/carla_database: $(OBJS) $(OBJDIR)/carla_database_app.cpp.o
+$(BINDIR)/carla_%: $(OBJS) $(OBJDIR)/carla_%_app.cpp.o
 	-@mkdir -p $(BINDIR)
-	@echo "Linking carla_database"
+	@echo "Linking carla_$*"
 	$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -283,6 +292,8 @@ debug:
 # ---------------------------------------------------------------------------------------------------------------------
 
 -include $(OBJS:%.o=%.d)
+-include $(OBJDIR)/carla.cpp.d
 -include $(OBJDIR)/carla_database_app.cpp.d
+-include $(OBJDIR)/carla_settings_app.cpp.d
 
 # ---------------------------------------------------------------------------------------------------------------------
