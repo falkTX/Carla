@@ -237,19 +237,6 @@ struct CarlaEngineCVSourcePorts::ProtectedData {
 #endif
 
 // -----------------------------------------------------------------------
-
-class CarlaEngineClient2 : public CarlaEngineClient
-{
-public:
-    CarlaEngineClient2(const CarlaEngine& engine, EngineInternalGraph& egraph, CarlaPlugin* const plugin);
-    virtual ~CarlaEngineClient2() override;
-
-protected:
-    PatchbayGraph* getPatchbayGraph() const noexcept;
-    CarlaPlugin* getPlugin() const noexcept;
-};
-
-// -----------------------------------------------------------------------
 // CarlaEngineProtectedData
 
 struct CarlaEngine::ProtectedData {

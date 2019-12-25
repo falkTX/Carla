@@ -22,6 +22,7 @@
  * - something about the peaks?
  */
 
+#include "CarlaEngineClient.hpp"
 #include "CarlaEngineInternal.hpp"
 #include "CarlaPlugin.hpp"
 

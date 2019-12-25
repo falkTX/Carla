@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -15,78 +15,12 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include "CarlaEngineClient.hpp"
 #include "CarlaEngineUtils.hpp"
-#include "CarlaEngineInternal.hpp"
 
 #include "CarlaString.hpp"
-#include "CarlaStringList.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
-
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-// -----------------------------------------------------------------------
-// Carla Engine Meta CV port
-
-class CarlaEngineCVSourcePorts2 : public CarlaEngineCVSourcePorts
-{
-public:
-    CarlaEngineCVSourcePorts2()
-        : CarlaEngineCVSourcePorts()
-    {}
-
-    ~CarlaEngineCVSourcePorts2() override {}
-
-    void setGraphAndPlugin(PatchbayGraph* const graph, CarlaPlugin* const plugin) noexcept
-    {
-        pData->graph = graph;
-        pData->plugin = plugin;
-    }
-};
-#endif
-
-// -----------------------------------------------------------------------
-// Carla Engine client (Abstract)
-
-struct CarlaEngineClient::ProtectedData {
-    const CarlaEngine& engine;
-
-    bool     active;
-    uint32_t latency;
-
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-    CarlaEngineCVSourcePorts2 cvSourcePorts;
-    EngineInternalGraph& egraph;
-    CarlaPlugin* const plugin;
-#endif
-
-    CarlaStringList audioInList;
-    CarlaStringList audioOutList;
-    CarlaStringList cvInList;
-    CarlaStringList cvOutList;
-    CarlaStringList eventInList;
-    CarlaStringList eventOutList;
-
-    ProtectedData(const CarlaEngine& eng, EngineInternalGraph& eg, CarlaPlugin* const p) noexcept
-        :  engine(eng),
-           active(false),
-           latency(0),
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-           cvSourcePorts(),
-           egraph(eg),
-           plugin(p),
-#endif
-           audioInList(),
-           audioOutList(),
-           cvInList(),
-           cvOutList(),
-           eventInList(),
-           eventOutList() {}
-
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-    ProtectedData() = delete;
-    CARLA_DECLARE_NON_COPY_STRUCT(ProtectedData)
-#endif
-};
 
 CarlaEngineClient2::CarlaEngineClient2(const CarlaEngine& engine, EngineInternalGraph& egraph, CarlaPlugin* const plugin)
     : CarlaEngineClient(new ProtectedData(engine, egraph, plugin))
