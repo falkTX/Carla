@@ -624,35 +624,9 @@ struct Theme::PrivateData {
 Theme::Theme(const Theme::List idx)
     : self(new PrivateData(idx)) {}
 
-//---------------------------------------------------------------------------------------------------------------------
-
-Theme::List getDefaultTheme()
+Theme::~Theme()
 {
-    return Theme::THEME_MODERN_DARK;
-}
-
-const char* getThemeName(const Theme::List idx)
-{
-    switch (idx)
-    {
-    case Theme::THEME_MODERN_DARK:
-        return "Modern Dark";
-    case Theme::THEME_MODERN_DARK_TINY:
-        return "Modern Dark (Tiny)";
-    case Theme::THEME_MODERN_LIGHT:
-        return "Modern Light";
-    case Theme::THEME_CLASSIC_DARK:
-        return "Classic Dark";
-    case Theme::THEME_OOSTUDIO:
-        return "OpenOctave Studio";
-    default:
-        return "";
-    }
-}
-
-const char* getDefaultThemeName()
-{
-    return "Modern Dark";
+    delete self;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

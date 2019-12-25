@@ -62,9 +62,37 @@ private:
 
 //---------------------------------------------------------------------------------------------------------------------
 
-Theme::List getDefaultTheme();
-const char* getThemeName(Theme::List idx);
-const char* getDefaultThemeName();
+static inline
+Theme::List getDefaultTheme()
+{
+    return Theme::THEME_MODERN_DARK;
+}
+
+static inline
+const char* getDefaultThemeName()
+{
+    return "Modern Dark";
+}
+
+static inline
+const char* getThemeName(const Theme::List idx)
+{
+    switch (idx)
+    {
+    case Theme::THEME_MODERN_DARK:
+        return "Modern Dark";
+    case Theme::THEME_MODERN_DARK_TINY:
+        return "Modern Dark (Tiny)";
+    case Theme::THEME_MODERN_LIGHT:
+        return "Modern Light";
+    case Theme::THEME_CLASSIC_DARK:
+        return "Classic Dark";
+    case Theme::THEME_OOSTUDIO:
+        return "OpenOctave Studio";
+    default:
+        return "";
+    }
+}
 
 //---------------------------------------------------------------------------------------------------------------------
 
