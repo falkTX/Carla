@@ -1796,14 +1796,14 @@ void PatchbayGraph::setOffline(const bool offline)
     graph.setNonRealtime(offline);
 }
 
-AudioProcessorGraph::Node* PatchbayGraph::addPlugin(CarlaPlugin* const plugin, bool)
+void PatchbayGraph::addPlugin(CarlaPlugin* const plugin)
 {
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
     carla_debug("PatchbayGraph::addPlugin(%p)", plugin);
 
     CarlaPluginInstance* const instance(new CarlaPluginInstance(kEngine, plugin));
     AudioProcessorGraph::Node* const node(graph.addNode(instance));
-    CARLA_SAFE_ASSERT_RETURN(node != nullptr, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(node != nullptr,);
 
     const bool sendHost = !usingExternalHost;
     const bool sendOSC  = !usingExternalOSC;
@@ -1814,8 +1814,6 @@ AudioProcessorGraph::Node* PatchbayGraph::addPlugin(CarlaPlugin* const plugin, b
     node->properties.set("pluginId", static_cast<int>(plugin->getId()));
 
     addNodeToPatchbay(sendHost, sendOSC, kEngine, node->nodeId, static_cast<int>(plugin->getId()), instance);
-
-    return node;
 }
 
 void PatchbayGraph::replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* const newPlugin)
@@ -1872,6 +1870,9 @@ void PatchbayGraph::reconfigureForCV(CarlaPlugin* const plugin, const uint portI
 {
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
     carla_debug("PatchbayGraph::reconfigureForCV(%p, %u, %s)", plugin, portIndex, bool2str(added));
+
+    if (graph.isSuspended())
+        return;
 
     AudioProcessorGraph::Node* const node = graph.getNodeForId(plugin->getPatchbayNodeId());
     CARLA_SAFE_ASSERT_RETURN(node != nullptr,);
@@ -2517,10 +2518,10 @@ void EngineInternalGraph::processRack(CarlaEngine::ProtectedData* const data, co
 // -----------------------------------------------------------------------
 // used for internal patchbay mode
 
-water::AudioProcessorGraph::Node* EngineInternalGraph::addPlugin(CarlaPlugin* const plugin, bool x)
+void EngineInternalGraph::addPlugin(CarlaPlugin* const plugin)
 {
-    CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr, nullptr);
-    return fPatchbay->addPlugin(plugin, x);
+    CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
+    fPatchbay->addPlugin(plugin);
 }
 
 void EngineInternalGraph::replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* const newPlugin)

@@ -711,7 +711,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-            pData->graph.addPlugin(plugin, 1);
+            pData->graph.addPlugin(plugin);
 #endif
     }
 
@@ -2579,7 +2579,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                         callback(true, true, ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, 0, 0, 0, 0.0f, plugin->getName());
 
                         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-                            pData->graph.addPlugin(plugin, 1);
+                            pData->graph.addPlugin(plugin);
                     }
                     else
                     {
@@ -2722,7 +2722,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-                        pData->graph.addPlugin(plugin, 1);
+                        pData->graph.addPlugin(plugin);
 #endif
                 }
                 else

@@ -95,7 +95,7 @@ public:
     void processRack(CarlaEngine::ProtectedData* data, const float* inBuf[2], float* outBuf[2], uint32_t frames);
 
     // used for internal patchbay mode
-    water::AudioProcessorGraph::Node* addPlugin(CarlaPlugin* plugin, bool);
+    void addPlugin(CarlaPlugin* plugin);
     void replacePlugin(CarlaPlugin* oldPlugin, CarlaPlugin* newPlugin);
     void renamePlugin(CarlaPlugin* plugin, const char* newName);
     void removePlugin(CarlaPlugin* plugin);
