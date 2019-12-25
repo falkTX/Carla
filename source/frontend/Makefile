@@ -41,6 +41,7 @@ RES = \
 	$(BINDIR)/resources/modgui \
 	$(BINDIR)/resources/patchcanvas \
 	$(BINDIR)/resources/widgets \
+	$(BINDIR)/resources/zynaddsubfx \
 	$(BINDIR)/resources/bigmeter-ui \
 	$(BINDIR)/resources/carla-plugin \
 	$(BINDIR)/resources/carla-plugin-patchbay \
@@ -265,6 +266,10 @@ resources_rc.py: $(RESDIR)/resources.qrc $(RESDIR)/*/*.png $(RESDIR)/*/*.svg $(R
 $(BINDIR)/resources/%: %
 	-@mkdir -p $(BINDIR)/resources
 	$(LINK) $(CURDIR)/$* $(BINDIR)/resources/
+
+$(BINDIR)/resources/zynaddsubfx: ../native-plugins/resources/zynaddsubfx
+	-@mkdir -p $(BINDIR)/resources
+	$(LINK) $(CURDIR)/$< $(BINDIR)/resources/
 
 # ---------------------------------------------------------------------------------------------------------------------
 
