@@ -38,8 +38,12 @@ RES = \
 else
 RES = \
 	resources_rc.py \
+	$(BINDIR)/resources/modgui \
 	$(BINDIR)/resources/patchcanvas \
 	$(BINDIR)/resources/widgets \
+	$(BINDIR)/resources/bigmeter-ui \
+	$(BINDIR)/resources/carla-plugin \
+	$(BINDIR)/resources/carla-plugin-patchbay \
 	$(BINDIR)/resources/carla_app.py \
 	$(BINDIR)/resources/carla_backend.py \
 	$(BINDIR)/resources/carla_backend_qt.py \
@@ -53,6 +57,8 @@ RES = \
 	$(BINDIR)/resources/carla_utils.py \
 	$(BINDIR)/resources/carla_widgets.py \
 	$(BINDIR)/resources/externalui.py \
+	$(BINDIR)/resources/midipattern-ui \
+	$(BINDIR)/resources/notes-ui \
 	$(BINDIR)/resources/resources_rc.py \
 	$(BINDIR)/resources/ui_carla_about.py \
 	$(BINDIR)/resources/ui_carla_about_juce.py \
