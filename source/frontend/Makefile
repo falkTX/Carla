@@ -41,7 +41,6 @@ RES = \
 	$(BINDIR)/resources/modgui \
 	$(BINDIR)/resources/patchcanvas \
 	$(BINDIR)/resources/widgets \
-	$(BINDIR)/resources/zynaddsubfx \
 	$(BINDIR)/resources/bigmeter-ui \
 	$(BINDIR)/resources/carla-plugin \
 	$(BINDIR)/resources/carla-plugin-patchbay \
@@ -79,6 +78,14 @@ RES = \
 	$(BINDIR)/resources/ui_carla_settings_driver.py \
 	$(BINDIR)/resources/ui_inputdialog_value.py \
 	$(BINDIR)/resources/ui_midipattern.py
+endif
+
+ifneq ($(SKIP_ZYN_SYNTH),true)
+ifeq ($(HAVE_ZYN_UI_DEPS),true)
+RES += \
+	$(BINDIR)/resources/zynaddsubfx \
+	$(BINDIR)/resources/zynaddsubfx-ui
+endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -268,6 +275,10 @@ $(BINDIR)/resources/%: %
 	$(LINK) $(CURDIR)/$* $(BINDIR)/resources/
 
 $(BINDIR)/resources/zynaddsubfx: ../native-plugins/resources/zynaddsubfx
+	-@mkdir -p $(BINDIR)/resources
+	$(LINK) $(CURDIR)/$< $(BINDIR)/resources/
+
+$(BINDIR)/resources/zynaddsubfx-ui: ../native-plugins/resources/zynaddsubfx-ui
 	-@mkdir -p $(BINDIR)/resources
 	$(LINK) $(CURDIR)/$< $(BINDIR)/resources/
 
