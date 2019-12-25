@@ -28,6 +28,7 @@
 #endif
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+# include "water/processors/AudioProcessorGraph.h"
 # include "water/containers/Array.h"
 # include "water/memory/Atomic.h"
 #endif
@@ -94,7 +95,7 @@ public:
     void processRack(CarlaEngine::ProtectedData* data, const float* inBuf[2], float* outBuf[2], uint32_t frames);
 
     // used for internal patchbay mode
-    void addPlugin(CarlaPlugin* plugin);
+    water::AudioProcessorGraph::Node* addPlugin(CarlaPlugin* plugin, bool);
     void replacePlugin(CarlaPlugin* oldPlugin, CarlaPlugin* newPlugin);
     void renamePlugin(CarlaPlugin* plugin, const char* newName);
     void removePlugin(CarlaPlugin* plugin);
@@ -225,12 +226,28 @@ struct CarlaEngineCVSourcePorts::ProtectedData {
     EngineEvent* buffer;
     water::Array<CarlaEngineEventCV> cvs;
 
+    PatchbayGraph* graph;
+    CarlaPlugin* plugin;
+
     ProtectedData();
     ~ProtectedData();
 
     CARLA_DECLARE_NON_COPY_STRUCT(ProtectedData)
 };
 #endif
+
+// -----------------------------------------------------------------------
+
+class CarlaEngineClient2 : public CarlaEngineClient
+{
+public:
+    CarlaEngineClient2(const CarlaEngine& engine, EngineInternalGraph& egraph, CarlaPlugin* const plugin);
+    virtual ~CarlaEngineClient2() override;
+
+protected:
+    PatchbayGraph* getPatchbayGraph() const noexcept;
+    CarlaPlugin* getPlugin() const noexcept;
+};
 
 // -----------------------------------------------------------------------
 // CarlaEngineProtectedData

@@ -87,6 +87,7 @@ void AudioProcessor::suspendProcessing (const bool shouldBeSuspended)
 }
 
 void AudioProcessor::reset() {}
+void AudioProcessor::reconfigure() {}
 
 uint AudioProcessor::getTotalNumInputChannels(ChannelType t) const noexcept
 {

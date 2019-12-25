@@ -389,6 +389,7 @@ private:
     bool isPrepared, needsReorder;
     CarlaRecursiveMutex reorderMutex;
 
+public:
     void clearRenderingSequence();
     void buildRenderingSequence();
     bool isAnInputTo (uint32 possibleInputId, uint32 possibleDestinationId, int recursionCheck) const;

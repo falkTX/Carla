@@ -510,18 +510,24 @@ public:
         const int ioffset = static_cast<int>(portIndexOffset);
         return pData->cvs[ioffset].cvPort;
     }
+
+    void setGraphAndPlugin(PatchbayGraph* const graph, CarlaPlugin* const plugin) noexcept
+    {
+        pData->graph = graph;
+        pData->plugin = plugin;
+    }
 };
 #endif
 
 // -----------------------------------------------------------------------
 // Jack Engine client
 
-class CarlaEngineJackClient : public CarlaEngineClient,
+class CarlaEngineJackClient : public CarlaEngineClient2,
                               private JackPortDeletionCallback
 {
 public:
-    CarlaEngineJackClient(const CarlaEngine& engine, jack_client_t* const jackClient)
-        : CarlaEngineClient(engine),
+    CarlaEngineJackClient(const CarlaEngine& engine, EngineInternalGraph& egraph, CarlaPlugin* const plugin, jack_client_t* const jackClient)
+        : CarlaEngineClient2(engine, egraph, plugin),
           fJackClient(jackClient),
           fUseClient(engine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || engine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS),
           fAudioPorts(),
@@ -696,6 +702,7 @@ public:
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CarlaEngineCVSourcePorts* createCVSourcePorts() override
     {
+        fCVSourcePorts.setGraphAndPlugin(getPatchbayGraph(), getPlugin());
         return &fCVSourcePorts;
     }
 
@@ -1437,7 +1444,7 @@ public:
 #endif
         }
 
-        return new CarlaEngineJackClient(*this, client);
+        return new CarlaEngineJackClient(*this, pData->graph, plugin, client);
     }
 
 #ifndef BUILD_BRIDGE

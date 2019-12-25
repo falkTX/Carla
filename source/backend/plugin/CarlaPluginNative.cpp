@@ -1310,6 +1310,9 @@ public:
             portName.truncate(portNameSize);
 
             pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+            pData->event.cvSourcePorts = pData->client->createCVSourcePorts();
+#endif
         }
 
         if (needsCtrlOut || mOuts == 1)
@@ -1469,10 +1472,15 @@ public:
 
             // extra parameter hints
             if (paramInfo->hints & NATIVE_PARAMETER_IS_ENABLED)
+            {
                 pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
 
-            if (paramInfo->hints & NATIVE_PARAMETER_IS_AUTOMABLE)
-                pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
+                if (paramInfo->hints & NATIVE_PARAMETER_IS_AUTOMABLE)
+                {
+                    pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
+                    pData->param.data[j].hints |= PARAMETER_CAN_BE_CV_CONTROLLED;
+                }
+            }
 
             if (paramInfo->hints & NATIVE_PARAMETER_IS_LOGARITHMIC)
                 pData->param.data[j].hints |= PARAMETER_IS_LOGARITHMIC;
@@ -1821,7 +1829,7 @@ public:
 #ifndef BUILD_BRIDGE
             bool allNotesOffSent = false;
 #endif
-            bool sampleAccurate  = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
+            bool isSampleAccurate = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
             uint32_t startTime  = 0;
             uint32_t timeOffset = 0;
@@ -1831,6 +1839,11 @@ public:
                 nextBankId = pData->midiprog.data[pData->midiprog.current].bank;
             else
                 nextBankId = 0;
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+            if (cvIn != nullptr && pData->event.cvSourcePorts != nullptr)
+                pData->event.cvSourcePorts->initPortBuffers(cvIn + pData->cvIn.count, frames, isSampleAccurate, pData->event.portIn);
+#endif
 
             for (;;)
             {
@@ -1849,7 +1862,7 @@ public:
                     eventTime = timeOffset;
                 }
 
-                if (sampleAccurate && eventTime > timeOffset)
+                if (isSampleAccurate && eventTime > timeOffset)
                 {
                     if (processSingle(audioIn, audioOut, cvIn, cvOut, eventTime - timeOffset, timeOffset))
                     {
@@ -1976,7 +1989,7 @@ public:
                             NativeMidiEvent& nativeEvent(fMidiInEvents[fMidiEventInCount++]);
                             carla_zeroStruct(nativeEvent);
 
-                            nativeEvent.time    = sampleAccurate ? startTime : eventTime;
+                            nativeEvent.time    = isSampleAccurate ? startTime : eventTime;
                             nativeEvent.data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             nativeEvent.data[1] = uint8_t(ctrlEvent.param);
                             nativeEvent.data[2] = uint8_t(ctrlEvent.value*127.0f);
@@ -2000,7 +2013,7 @@ public:
                             NativeMidiEvent& nativeEvent(fMidiInEvents[fMidiEventInCount++]);
                             carla_zeroStruct(nativeEvent);
 
-                            nativeEvent.time    = sampleAccurate ? startTime : eventTime;
+                            nativeEvent.time    = isSampleAccurate ? startTime : eventTime;
                             nativeEvent.data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             nativeEvent.data[1] = MIDI_CONTROL_BANK_SELECT;
                             nativeEvent.data[2] = uint8_t(ctrlEvent.param);
@@ -2047,7 +2060,7 @@ public:
                             NativeMidiEvent& nativeEvent(fMidiInEvents[fMidiEventInCount++]);
                             carla_zeroStruct(nativeEvent);
 
-                            nativeEvent.time    = sampleAccurate ? startTime : eventTime;
+                            nativeEvent.time    = isSampleAccurate ? startTime : eventTime;
                             nativeEvent.data[0] = uint8_t(MIDI_STATUS_PROGRAM_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             nativeEvent.data[1] = uint8_t(ctrlEvent.param);
                             nativeEvent.size    = 2;
@@ -2063,7 +2076,7 @@ public:
                             NativeMidiEvent& nativeEvent(fMidiInEvents[fMidiEventInCount++]);
                             carla_zeroStruct(nativeEvent);
 
-                            nativeEvent.time    = sampleAccurate ? startTime : eventTime;
+                            nativeEvent.time    = isSampleAccurate ? startTime : eventTime;
                             nativeEvent.data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             nativeEvent.data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
                             nativeEvent.data[2] = 0;
@@ -2088,7 +2101,7 @@ public:
                             NativeMidiEvent& nativeEvent(fMidiInEvents[fMidiEventInCount++]);
                             carla_zeroStruct(nativeEvent);
 
-                            nativeEvent.time    = sampleAccurate ? startTime : eventTime;
+                            nativeEvent.time    = isSampleAccurate ? startTime : eventTime;
                             nativeEvent.data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             nativeEvent.data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
                             nativeEvent.data[2] = 0;
@@ -2130,7 +2143,7 @@ public:
                     carla_zeroStruct(nativeEvent);
 
                     nativeEvent.port = midiEvent.port;
-                    nativeEvent.time = sampleAccurate ? startTime : eventTime;
+                    nativeEvent.time = isSampleAccurate ? startTime : eventTime;
                     nativeEvent.size = midiEvent.size;
 
                     nativeEvent.data[0] = uint8_t(status | (event.channel & MIDI_CHANNEL_BIT));

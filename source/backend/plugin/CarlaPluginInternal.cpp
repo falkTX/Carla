@@ -173,11 +173,7 @@ void PluginEventData::clear() noexcept
     }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-    if (cvSourcePorts != nullptr)
-    {
-        delete cvSourcePorts;
-        cvSourcePorts = nullptr;
-    }
+    cvSourcePorts = nullptr;
 #endif
 }
 

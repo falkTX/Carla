@@ -179,9 +179,11 @@ public:
     void setSampleRate(double sampleRate);
     void setOffline(bool offline);
 
-    void addPlugin(CarlaPlugin* plugin);
+    AudioProcessorGraph::Node* addPlugin(CarlaPlugin* plugin, bool);
     void replacePlugin(CarlaPlugin* oldPlugin, CarlaPlugin* newPlugin);
     void renamePlugin(CarlaPlugin* plugin, const char* newName);
+    void reconfigureForCV(CarlaPlugin* const plugin, const uint portIndex, bool added);
+    void reconfigurePlugin(CarlaPlugin* plugin, bool portsAdded);
     void removePlugin(CarlaPlugin* plugin);
     void removeAllPlugins();
 

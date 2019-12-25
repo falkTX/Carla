@@ -1388,7 +1388,7 @@ public:
         : kEngine(engine),
           fPlugin(plugin)
     {
-        CarlaEngineClient* const client = fPlugin->getEngineClient();
+        CarlaEngineClient* const client = plugin->getEngineClient();
 
         setPlayConfigDetails(client->getPortCount(kEnginePortTypeAudio, true),
                              client->getPortCount(kEnginePortTypeAudio, false),
@@ -1401,6 +1401,24 @@ public:
 
     ~CarlaPluginInstance() override
     {
+    }
+
+    void reconfigure() override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+
+        CarlaEngineClient* const client = fPlugin->getEngineClient();
+        CARLA_SAFE_ASSERT_RETURN(client != nullptr,);
+
+        carla_stdout("reconfigure called");
+
+        setPlayConfigDetails(client->getPortCount(kEnginePortTypeAudio, true),
+                             client->getPortCount(kEnginePortTypeAudio, false),
+                             client->getPortCount(kEnginePortTypeCV, true),
+                             client->getPortCount(kEnginePortTypeCV, false),
+                             client->getPortCount(kEnginePortTypeEvent, true),
+                             client->getPortCount(kEnginePortTypeEvent, false),
+                             getSampleRate(), getBlockSize());
     }
 
     void invalidatePlugin() noexcept
@@ -1778,14 +1796,14 @@ void PatchbayGraph::setOffline(const bool offline)
     graph.setNonRealtime(offline);
 }
 
-void PatchbayGraph::addPlugin(CarlaPlugin* const plugin)
+AudioProcessorGraph::Node* PatchbayGraph::addPlugin(CarlaPlugin* const plugin, bool)
 {
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, nullptr);
     carla_debug("PatchbayGraph::addPlugin(%p)", plugin);
 
     CarlaPluginInstance* const instance(new CarlaPluginInstance(kEngine, plugin));
     AudioProcessorGraph::Node* const node(graph.addNode(instance));
-    CARLA_SAFE_ASSERT_RETURN(node != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(node != nullptr, nullptr);
 
     const bool sendHost = !usingExternalHost;
     const bool sendOSC  = !usingExternalOSC;
@@ -1796,6 +1814,8 @@ void PatchbayGraph::addPlugin(CarlaPlugin* const plugin)
     node->properties.set("pluginId", static_cast<int>(plugin->getId()));
 
     addNodeToPatchbay(sendHost, sendOSC, kEngine, node->nodeId, static_cast<int>(plugin->getId()), instance);
+
+    return node;
 }
 
 void PatchbayGraph::replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* const newPlugin)
@@ -1846,6 +1866,60 @@ void PatchbayGraph::renamePlugin(CarlaPlugin* const plugin, const char* const ne
                       node->nodeId,
                       0, 0, 0, 0.0f,
                       newName);
+}
+
+void PatchbayGraph::reconfigureForCV(CarlaPlugin* const plugin, const uint portIndex, bool added)
+{
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+    carla_debug("PatchbayGraph::reconfigureForCV(%p, %u, %s)", plugin, portIndex, bool2str(added));
+
+    AudioProcessorGraph::Node* const node = graph.getNodeForId(plugin->getPatchbayNodeId());
+    CARLA_SAFE_ASSERT_RETURN(node != nullptr,);
+
+    CarlaPluginInstance* const proc = dynamic_cast<CarlaPluginInstance*>(node->getProcessor());
+    CARLA_SAFE_ASSERT_RETURN(proc != nullptr,);
+
+    const bool sendHost = !usingExternalHost;
+    const bool sendOSC  = !usingExternalOSC;
+
+    const uint oldCvIn = proc->getTotalNumInputChannels(AudioProcessor::ChannelTypeCV);
+    const uint oldCvOut = proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeCV);
+
+    {
+        const CarlaRecursiveMutexLocker crml(graph.getCallbackLock());
+
+        proc->reconfigure();
+
+        graph.buildRenderingSequence();
+    }
+
+    const uint newCvIn = proc->getTotalNumInputChannels(AudioProcessor::ChannelTypeCV);
+    const uint newCvOut = proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeCV);
+
+    if (added)
+    {
+        CARLA_SAFE_ASSERT_UINT2_RETURN(newCvIn >= oldCvIn, newCvIn, oldCvIn,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(newCvOut >= oldCvOut, newCvOut, oldCvOut,);
+
+        kEngine->callback(sendHost, sendOSC,
+                          ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
+                          node->nodeId,
+                          static_cast<int>(kCVInputPortOffset + plugin->getCVInCount() + portIndex),
+                          PATCHBAY_PORT_TYPE_CV|PATCHBAY_PORT_IS_INPUT,
+                          0, 0.0f,
+                          proc->getInputChannelName(AudioProcessor::ChannelTypeCV, portIndex).toRawUTF8());
+    }
+    else
+    {
+        CARLA_SAFE_ASSERT_UINT2_RETURN(newCvIn <= oldCvIn, newCvIn, oldCvIn,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(newCvOut <= oldCvOut, newCvOut, oldCvOut,);
+
+        kEngine->callback(sendHost, sendOSC,
+                          ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
+                          node->nodeId,
+                          static_cast<int>(kCVInputPortOffset + plugin->getCVInCount() + portIndex),
+                          0, 0, 0.0f, nullptr);
+    }
 }
 
 void PatchbayGraph::removePlugin(CarlaPlugin* const plugin)
@@ -2443,10 +2517,10 @@ void EngineInternalGraph::processRack(CarlaEngine::ProtectedData* const data, co
 // -----------------------------------------------------------------------
 // used for internal patchbay mode
 
-void EngineInternalGraph::addPlugin(CarlaPlugin* const plugin)
+water::AudioProcessorGraph::Node* EngineInternalGraph::addPlugin(CarlaPlugin* const plugin, bool x)
 {
-    CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
-    fPatchbay->addPlugin(plugin);
+    CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr, nullptr);
+    return fPatchbay->addPlugin(plugin, x);
 }
 
 void EngineInternalGraph::replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* const newPlugin)

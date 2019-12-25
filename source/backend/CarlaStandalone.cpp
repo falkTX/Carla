@@ -2011,7 +2011,7 @@ void carla_set_parameter_mapped_control_index(uint pluginId, uint32_t parameterI
     CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
 
-    carla_debug("carla_set_parameter_mapped_control_index(%i, %i, %i)", pluginId, parameterId, cc);
+    carla_debug("carla_set_parameter_mapped_control_index(%i, %i, %i)", pluginId, parameterId, index);
     CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
 
     return plugin->setParameterMappedControlIndex(parameterId, index, true, false);

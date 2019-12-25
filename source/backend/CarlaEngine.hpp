@@ -361,7 +361,7 @@ class CARLA_API CarlaEnginePort
 {
 protected:
     /*!
-     * The constructor.
+     * The constructor, protected.
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
     CarlaEnginePort(const CarlaEngineClient& client, bool isInputPort, uint32_t indexOffset) noexcept;
@@ -626,17 +626,17 @@ protected:
  */
 class CARLA_API CarlaEngineCVSourcePorts
 {
-public:
+protected:
     /*!
-     * The constructor.
-     * All constructor parameters are constant and will never change in the lifetime of the port.
+     * The constructor, protected.
      */
-    CarlaEngineCVSourcePorts(/*const CarlaEngineClient& client*/);
+    CarlaEngineCVSourcePorts();
 
+public:
     /*!
      * The destructor.
      */
-    ~CarlaEngineCVSourcePorts();
+    virtual ~CarlaEngineCVSourcePorts();
 
     /*!
      * Add a CV port as a source of events.
@@ -664,7 +664,6 @@ public:
 protected:
     struct ProtectedData;
     ProtectedData* const pData;
-    friend class CarlaPluginInstance;
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineCVSourcePorts)
 #endif
@@ -680,13 +679,6 @@ protected:
 class CARLA_API CarlaEngineClient
 {
 public:
-    /*!
-     * The constructor, protected.
-     * All constructor parameters are constant and will never change in the lifetime of the client.
-     * Client starts in deactivated state.
-     */
-    CarlaEngineClient(const CarlaEngine& engine);
-
     /*!
      * The destructor.
      */
@@ -778,6 +770,12 @@ protected:
     struct ProtectedData;
     ProtectedData* const pData;
 
+    /*!
+     * The constructor, protected.
+     */
+    CarlaEngineClient(ProtectedData* pData);
+
+    /** internal */
     void _addAudioPortName(bool, const char*);
     void _addCVPortName(bool, const char*);
     void _addEventPortName(bool, const char*);

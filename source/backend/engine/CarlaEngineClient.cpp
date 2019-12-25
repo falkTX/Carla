@@ -16,11 +16,33 @@
  */
 
 #include "CarlaEngineUtils.hpp"
+#include "CarlaEngineInternal.hpp"
 
 #include "CarlaString.hpp"
 #include "CarlaStringList.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+// -----------------------------------------------------------------------
+// Carla Engine Meta CV port
+
+class CarlaEngineCVSourcePorts2 : public CarlaEngineCVSourcePorts
+{
+public:
+    CarlaEngineCVSourcePorts2()
+        : CarlaEngineCVSourcePorts()
+    {}
+
+    ~CarlaEngineCVSourcePorts2() override {}
+
+    void setGraphAndPlugin(PatchbayGraph* const graph, CarlaPlugin* const plugin) noexcept
+    {
+        pData->graph = graph;
+        pData->plugin = plugin;
+    }
+};
+#endif
 
 // -----------------------------------------------------------------------
 // Carla Engine client (Abstract)
@@ -31,6 +53,12 @@ struct CarlaEngineClient::ProtectedData {
     bool     active;
     uint32_t latency;
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    CarlaEngineCVSourcePorts2 cvSourcePorts;
+    EngineInternalGraph& egraph;
+    CarlaPlugin* const plugin;
+#endif
+
     CarlaStringList audioInList;
     CarlaStringList audioOutList;
     CarlaStringList cvInList;
@@ -38,10 +66,15 @@ struct CarlaEngineClient::ProtectedData {
     CarlaStringList eventInList;
     CarlaStringList eventOutList;
 
-    ProtectedData(const CarlaEngine& eng) noexcept
+    ProtectedData(const CarlaEngine& eng, EngineInternalGraph& eg, CarlaPlugin* const p) noexcept
         :  engine(eng),
            active(false),
            latency(0),
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+           cvSourcePorts(),
+           egraph(eg),
+           plugin(p),
+#endif
            audioInList(),
            audioOutList(),
            cvInList(),
@@ -55,8 +88,27 @@ struct CarlaEngineClient::ProtectedData {
 #endif
 };
 
-CarlaEngineClient::CarlaEngineClient(const CarlaEngine& engine)
-    : pData(new ProtectedData(engine))
+CarlaEngineClient2::CarlaEngineClient2(const CarlaEngine& engine, EngineInternalGraph& egraph, CarlaPlugin* const plugin)
+    : CarlaEngineClient(new ProtectedData(engine, egraph, plugin))
+{
+}
+
+CarlaEngineClient2::~CarlaEngineClient2()
+{
+}
+
+PatchbayGraph* CarlaEngineClient2::getPatchbayGraph() const noexcept
+{
+    return pData->egraph.getPatchbayGraph();
+}
+
+CarlaPlugin* CarlaEngineClient2::getPlugin() const noexcept
+{
+    return pData->plugin;
+}
+
+CarlaEngineClient::CarlaEngineClient(ProtectedData* const p)
+    : pData(p)
 {
     carla_debug("CarlaEngineClient::CarlaEngineClient()");
 }
@@ -132,11 +184,8 @@ CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 CarlaEngineCVSourcePorts* CarlaEngineClient::createCVSourcePorts()
 {
-    // AudioProcessorGraph::Node* const oldNode(graph.getNodeForId(oldPlugin->getPatchbayNodeId()));
-    // CARLA_SAFE_ASSERT_RETURN(oldNode != nullptr,);
-    // pData->engine.pData->graph;
-
-    return new CarlaEngineCVSourcePorts();
+    pData->cvSourcePorts.setGraphAndPlugin(pData->egraph.getPatchbayGraph(), pData->plugin);
+    return &pData->cvSourcePorts;
 }
 #endif
 
@@ -305,6 +354,11 @@ void CarlaEngineClient::_clearPorts()
     pData->eventInList.clear();
     pData->eventOutList.clear();
 }
+
+// void* CarlaEngineClient::_getNode() const noexcept
+// {
+//     return pData->node;
+// }
 
 // -----------------------------------------------------------------------
 

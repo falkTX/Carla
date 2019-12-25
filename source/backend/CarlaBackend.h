@@ -1833,6 +1833,7 @@ typedef struct {
 /* Forward declarations of commonly used Carla classes */
 class CarlaEngine;
 class CarlaEngineClient;
+class CarlaEngineCVSourcePorts;
 class CarlaPlugin;
 /* End namespace */
 CARLA_BACKEND_END_NAMESPACE

@@ -376,9 +376,9 @@ void CarlaEngine::idle() noexcept
 #endif
 }
 
-CarlaEngineClient* CarlaEngine::addClient(CarlaPlugin* const)
+CarlaEngineClient* CarlaEngine::addClient(CarlaPlugin* const plugin)
 {
-    return new CarlaEngineClient(*this);
+    return new CarlaEngineClient2(*this, pData->graph, plugin);
 }
 
 float CarlaEngine::getDSPLoad() const noexcept
@@ -703,7 +703,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-            pData->graph.addPlugin(plugin);
+            pData->graph.addPlugin(plugin, 1);
 #endif
     }
 
@@ -2571,7 +2571,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                         callback(true, true, ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, 0, 0, 0, 0.0f, plugin->getName());
 
                         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-                            pData->graph.addPlugin(plugin);
+                            pData->graph.addPlugin(plugin, 1);
                     }
                     else
                     {
@@ -2714,7 +2714,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-                        pData->graph.addPlugin(plugin);
+                        pData->graph.addPlugin(plugin, 1);
 #endif
                 }
                 else
