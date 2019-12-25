@@ -523,12 +523,17 @@ public:
 // -----------------------------------------------------------------------
 // Jack Engine client
 
-class CarlaEngineJackClient : public CarlaEngineClient2,
+class CarlaEngineJackClient : public CarlaEngineClientForSubclassing,
                               private JackPortDeletionCallback
 {
 public:
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CarlaEngineJackClient(const CarlaEngine& engine, EngineInternalGraph& egraph, CarlaPlugin* const plugin, jack_client_t* const jackClient)
-        : CarlaEngineClient2(engine, egraph, plugin),
+        : CarlaEngineClientForSubclassing(engine, egraph, plugin),
+#else
+    CarlaEngineJackClient(const CarlaEngine& engine, jack_client_t* const jackClient)
+        : CarlaEngineClientForSubclassing(engine),
+#endif
           fJackClient(jackClient),
           fUseClient(engine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || engine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS),
           fAudioPorts(),
@@ -1445,7 +1450,11 @@ public:
 #endif
         }
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         return new CarlaEngineJackClient(*this, pData->graph, plugin, client);
+#else
+        return new CarlaEngineJackClient(*this, client);
+#endif
     }
 
 #ifndef BUILD_BRIDGE

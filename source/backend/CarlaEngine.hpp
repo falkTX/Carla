@@ -230,9 +230,9 @@ struct CARLA_API EngineEvent {
  * Engine options.
  */
 struct CARLA_API EngineOptions {
-    EngineProcessMode   processMode;
+    EngineProcessMode processMode;
     EngineTransportMode transportMode;
-    const char*         transportExtra;
+    const char* transportExtra;
 
     bool forceStereo;
     bool preferPluginBridges;
@@ -620,18 +620,14 @@ protected:
 #endif
 };
 
+// -----------------------------------------------------------------------
+
 /*!
- * Carla Engine Meta CV port.
+ * Carla Engine Meta CV Port.
  * FIXME needs a better name...
  */
 class CARLA_API CarlaEngineCVSourcePorts
 {
-protected:
-    /*!
-     * The constructor, protected.
-     */
-    CarlaEngineCVSourcePorts();
-
 public:
     /*!
      * The destructor.
@@ -662,8 +658,14 @@ public:
 
 #ifndef DOXYGEN
 protected:
+    /** @internal */
     struct ProtectedData;
     ProtectedData* const pData;
+
+    /*!
+     * The constructor, protected.
+     */
+    CarlaEngineCVSourcePorts();
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineCVSourcePorts)
 #endif
@@ -672,7 +674,7 @@ protected:
 // -----------------------------------------------------------------------
 
 /*!
- * Carla Engine client.
+ * Carla Engine Client.
  * Each plugin requires one client from the engine (created via CarlaEngine::addClient()).
  * @note This is a virtual class, some engine types provide custom functionality.
  */
@@ -764,9 +766,7 @@ public:
 
 #ifndef DOXYGEN
 protected:
-    /*!
-     * Internal data, for CarlaEngineClient subclasses only.
-     */
+    /** @internal */
     struct ProtectedData;
     ProtectedData* const pData;
 

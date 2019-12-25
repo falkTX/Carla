@@ -19,35 +19,14 @@
 #define CARLA_ENGINE_CLIENT_HPP_INCLUDED
 
 #include "CarlaEngine.hpp"
-#include "CarlaEngineInternal.hpp"
+#include "CarlaEnginePorts.hpp"
 
 #include "CarlaStringList.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
-class EngineInternalGraph;
-class PatchbayGraph;
-
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 // -----------------------------------------------------------------------
-// Carla Engine Meta CV port
-
-class CarlaEngineCVSourcePorts2 : public CarlaEngineCVSourcePorts
-{
-public:
-    CarlaEngineCVSourcePorts2() : CarlaEngineCVSourcePorts() {}
-    ~CarlaEngineCVSourcePorts2() override {}
-
-    void setGraphAndPlugin(PatchbayGraph* const graph, CarlaPlugin* const plugin) noexcept
-    {
-        pData->graph = graph;
-        pData->plugin = plugin;
-    }
-};
-#endif
-
-// -----------------------------------------------------------------------
-// Carla Engine client (Abstract)
+// Carla Engine Client Protected Data
 
 struct CarlaEngineClient::ProtectedData {
     const CarlaEngine& engine;
@@ -56,7 +35,7 @@ struct CarlaEngineClient::ProtectedData {
     uint32_t latency;
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-    CarlaEngineCVSourcePorts2 cvSourcePorts;
+    CarlaEngineCVSourcePortsForStandalone cvSourcePorts;
     EngineInternalGraph& egraph;
     CarlaPlugin* const plugin;
 #endif
@@ -68,7 +47,11 @@ struct CarlaEngineClient::ProtectedData {
     CarlaStringList eventInList;
     CarlaStringList eventOutList;
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     ProtectedData(const CarlaEngine& eng, EngineInternalGraph& eg, CarlaPlugin* const p) noexcept
+#else
+    ProtectedData(const CarlaEngine& eng) noexcept
+#endif
         :  engine(eng),
            active(false),
            latency(0),
@@ -91,17 +74,50 @@ struct CarlaEngineClient::ProtectedData {
 };
 
 // -----------------------------------------------------------------------
+// Carla Engine Client
 
-class CarlaEngineClient2 : public CarlaEngineClient
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+class CarlaEngineClientForStandalone : public CarlaEngineClient
 {
 public:
-    CarlaEngineClient2(const CarlaEngine& engine, EngineInternalGraph& egraph, CarlaPlugin* const plugin);
-    virtual ~CarlaEngineClient2() override;
+    CarlaEngineClientForStandalone(const CarlaEngine& engine, EngineInternalGraph& egraph, CarlaPlugin* const plugin)
+        : CarlaEngineClient(new ProtectedData(engine, egraph, plugin)) {}
+
+    ~CarlaEngineClientForStandalone() override
+    {
+        delete pData;
+    }
 
 protected:
-    PatchbayGraph* getPatchbayGraph() const noexcept;
-    CarlaPlugin* getPlugin() const noexcept;
+    inline PatchbayGraph* getPatchbayGraph() const noexcept
+    {
+        return pData->egraph.getPatchbayGraph();
+    }
+
+    inline CarlaPlugin* getPlugin() const noexcept
+    {
+        return pData->plugin;
+    }
+
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineClientForStandalone)
 };
+typedef CarlaEngineClientForStandalone CarlaEngineClientForSubclassing;
+#else
+class CarlaEngineClientForBridge : public CarlaEngineClient
+{
+public:
+    CarlaEngineClientForBridge(const CarlaEngine& engine)
+        : CarlaEngineClient(new ProtectedData(engine)) {}
+
+    ~CarlaEngineClientForBridge() override
+    {
+        delete pData;
+    }
+
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineClientForBridge)
+};
+typedef CarlaEngineClientForBridge CarlaEngineClientForSubclassing;
+#endif
 
 // -----------------------------------------------------------------------
 

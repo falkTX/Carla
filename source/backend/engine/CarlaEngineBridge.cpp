@@ -19,7 +19,7 @@
 # error This file should not be compiled if not building bridge
 #endif
 
-#include "CarlaEngineInternal.hpp"
+#include "CarlaEngineClient.hpp"
 #include "CarlaPlugin.hpp"
 
 #include "CarlaBackendUtils.hpp"
@@ -62,12 +62,18 @@ struct LatencyChangedCallback {
     virtual void latencyChanged(const uint32_t samples) noexcept = 0;
 };
 
-class CarlaEngineBridgeClient : public CarlaEngineClient
+class CarlaEngineBridgeClient : public CarlaEngineClientForSubclassing
 {
 public:
-    CarlaEngineBridgeClient(const CarlaEngine& engine, LatencyChangedCallback* const cb)
-        : CarlaEngineClient(engine),
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    CarlaEngineBridgeClient(const CarlaEngine& engine, EngineInternalGraph& egraph, CarlaPlugin* const plugin, LatencyChangedCallback* const cb)
+        : CarlaEngineClientForSubclassing(engine, egraph, plugin),
           fLatencyCallback(cb) {}
+#else
+    CarlaEngineBridgeClient(const CarlaEngine& engine, LatencyChangedCallback* const cb)
+        : CarlaEngineClientForSubclassing(engine),
+          fLatencyCallback(cb) {}
+#endif
 
 protected:
     void setLatency(const uint32_t samples) noexcept override
@@ -287,9 +293,13 @@ public:
         fShmNonRtServerControl.commitWrite();
     }
 
-    CarlaEngineClient* addClient(CarlaPlugin* const) override
+    CarlaEngineClient* addClient(CarlaPlugin* const plugin) override
     {
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+        return new CarlaEngineBridgeClient(*this, pData->graph, plugin, this);
+#else
         return new CarlaEngineBridgeClient(*this, this);
+#endif
     }
 
     void idle() noexcept override

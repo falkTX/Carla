@@ -379,7 +379,14 @@ void CarlaEngine::idle() noexcept
 
 CarlaEngineClient* CarlaEngine::addClient(CarlaPlugin* const plugin)
 {
-    return new CarlaEngineClient2(*this, pData->graph, plugin);
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    return new CarlaEngineClientForStandalone(*this, pData->graph, plugin);
+#else
+    return new CarlaEngineClientForBridge(*this);
+
+    // unused
+    (void)plugin;
+#endif
 }
 
 float CarlaEngine::getDSPLoad() const noexcept

@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaEngineInternal.hpp"
+#include "CarlaEnginePorts.hpp"
 #include "CarlaEngineGraph.hpp"
 #include "CarlaEngineUtils.hpp"
 #include "CarlaMathUtils.hpp"
@@ -327,35 +327,6 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
 // -----------------------------------------------------------------------
 // Carla Engine Meta CV port
 
-CarlaEngineCVSourcePorts::ProtectedData::ProtectedData()
-  : rmutex(),
-    buffer(nullptr),
-    cvs(),
-    graph(nullptr),
-    plugin(nullptr)
-{
-}
-
-CarlaEngineCVSourcePorts::ProtectedData::~ProtectedData()
-{
-    const CarlaRecursiveMutexLocker crml(rmutex);
-
-    carla_stdout("CarlaEngineCVSourcePorts::ProtectedData::~ProtectedData size %i", cvs.size());
-
-    /*
-    for (int i = cvs.size(); --i >= 0;)
-        delete cvs[i].cvPort;
-    */
-
-    cvs.clear();
-
-    if (buffer != nullptr)
-    {
-        delete[] buffer;
-        buffer = nullptr;
-    }
-}
-
 CarlaEngineCVSourcePorts::CarlaEngineCVSourcePorts()
     : pData(new ProtectedData())
 {
@@ -382,7 +353,7 @@ bool CarlaEngineCVSourcePorts::addCVSource(CarlaEngineCVPort* const port, const 
             return false;
 
         if (pData->graph != nullptr && pData->plugin != nullptr)
-            pData->graph->reconfigureForCV(pData->plugin, pData->cvs.size()-1, true);
+            pData->graph->reconfigureForCV(pData->plugin, static_cast<uint>(pData->cvs.size()-1), true);
 
         /*
         if (pData->buffer == nullptr)
@@ -407,7 +378,7 @@ bool CarlaEngineCVSourcePorts::removeCVSource(const uint32_t portIndexOffset)
             if (ecv.indexOffset == portIndexOffset)
             {
                 if (pData->graph != nullptr && pData->plugin != nullptr)
-                    pData->graph->reconfigureForCV(pData->plugin, i, false);
+                    pData->graph->reconfigureForCV(pData->plugin, static_cast<uint>(i), false);
 
                 carla_stdout("found cv source to remove %u", portIndexOffset);
                 delete ecv.cvPort;

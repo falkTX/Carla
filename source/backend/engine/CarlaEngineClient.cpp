@@ -22,24 +22,8 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
-CarlaEngineClient2::CarlaEngineClient2(const CarlaEngine& engine, EngineInternalGraph& egraph, CarlaPlugin* const plugin)
-    : CarlaEngineClient(new ProtectedData(engine, egraph, plugin))
-{
-}
-
-CarlaEngineClient2::~CarlaEngineClient2()
-{
-}
-
-PatchbayGraph* CarlaEngineClient2::getPatchbayGraph() const noexcept
-{
-    return pData->egraph.getPatchbayGraph();
-}
-
-CarlaPlugin* CarlaEngineClient2::getPlugin() const noexcept
-{
-    return pData->plugin;
-}
+// -----------------------------------------------------------------------
+// Carla Engine Client
 
 CarlaEngineClient::CarlaEngineClient(ProtectedData* const p)
     : pData(p)
@@ -49,10 +33,7 @@ CarlaEngineClient::CarlaEngineClient(ProtectedData* const p)
 
 CarlaEngineClient::~CarlaEngineClient() noexcept
 {
-    CARLA_SAFE_ASSERT(! pData->active);
     carla_debug("CarlaEngineClient::~CarlaEngineClient()");
-
-    delete pData;
 }
 
 void CarlaEngineClient::activate() noexcept
@@ -288,11 +269,6 @@ void CarlaEngineClient::_clearPorts()
     pData->eventInList.clear();
     pData->eventOutList.clear();
 }
-
-// void* CarlaEngineClient::_getNode() const noexcept
-// {
-//     return pData->node;
-// }
 
 // -----------------------------------------------------------------------
 
