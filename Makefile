@@ -512,7 +512,7 @@ endif
 	# -------------------------------------------------------------------------------------------------------------
 
 ifeq ($(HAVE_PYQT),true)
-ifeq ($(CPPMODE),true)
+ifneq ($(CPPMODE),true)
 	# Install script files (gui)
 	install -m 755 \
 		data/carla \
