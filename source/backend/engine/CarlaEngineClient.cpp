@@ -75,7 +75,7 @@ void CarlaEngineClient::setLatency(const uint32_t samples) noexcept
 CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const char* const name, const bool isInput, const uint32_t indexOffset)
 {
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', nullptr);
-    carla_debug("CarlaEngineClient::addPort(%i:%s, \"%s\", %s)", portType, EnginePortType2Str(portType), name, bool2str(isInput));
+    carla_debug("CarlaEngineClient::addPort(%i:%s, \"%s\", %s, %u)", portType, EnginePortType2Str(portType), name, bool2str(isInput), indexOffset);
 
     switch (portType)
     {
@@ -94,6 +94,33 @@ CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const
 
     carla_stderr("CarlaEngineClient::addPort(%i, \"%s\", %s) - invalid type", portType, name, bool2str(isInput));
     return nullptr;
+}
+
+bool CarlaEngineClient::removePort(const EnginePortType portType, const char* const name, const bool isInput)
+{
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', false);
+    carla_debug("CarlaEngineClient::removePort(%i:%s, \"%s\", %s)", portType, EnginePortType2Str(portType), name, bool2str(isInput));
+
+    switch (portType)
+    {
+    case kEnginePortTypeNull:
+        break;
+    case kEnginePortTypeAudio: {
+        CarlaStringList& portList(isInput ? pData->audioInList : pData->audioOutList);
+        portList.append(name);
+        return portList.removeOne(name);
+    }
+    case kEnginePortTypeCV: {
+        CarlaStringList& portList(isInput ? pData->cvInList : pData->cvOutList);
+        return portList.removeOne(name);
+    }
+    case kEnginePortTypeEvent: {
+        CarlaStringList& portList(isInput ? pData->eventInList : pData->eventOutList);
+        return portList.removeOne(name);
+    }
+    }
+
+    return false;
 }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH

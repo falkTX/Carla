@@ -377,13 +377,14 @@ bool CarlaEngineCVSourcePorts::removeCVSource(const uint32_t portIndexOffset)
 
             if (ecv.indexOffset == portIndexOffset)
             {
+                delete ecv.cvPort;
+                pData->cvs.remove(i);
+
                 if (pData->graph != nullptr && pData->plugin != nullptr)
                     pData->graph->reconfigureForCV(pData->plugin, static_cast<uint>(i), false);
 
                 carla_stdout("found cv source to remove %u", portIndexOffset);
-                delete ecv.cvPort;
 
-                pData->cvs.remove(i);
                 return true;
             }
         }
@@ -432,14 +433,6 @@ void CarlaEngineCVSourcePorts::initPortBuffers(const float* const* const buffers
         return;
 
     const int numCVs = pData->cvs.size();
-
-    static int oldNumCVs = 0;
-
-    if (oldNumCVs != numCVs)
-    {
-            carla_stdout("initPortBuffers %i %i", numCVs, oldNumCVs);
-            oldNumCVs = numCVs;
-    }
 
     if (numCVs == 0)
         return;

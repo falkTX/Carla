@@ -1709,18 +1709,18 @@ void CarlaPlugin::setParameterMappedControlIndex(const uint32_t parameterId, con
         return;
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    char strBuf[STR_MAX+1];
+    carla_zeroChars(strBuf, STR_MAX+1);
+    if (! getParameterName(parameterId, strBuf))
+        std::snprintf(strBuf, STR_MAX, "Param %u", parameterId);
+
+    const uint portNameSize = pData->engine->getMaxPortNameSize();
+    if (portNameSize < STR_MAX)
+        strBuf[portNameSize] = '\0';
+
     if (index == CONTROL_INDEX_CV)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->event.cvSourcePorts != nullptr,);
-
-        char strBuf[STR_MAX+1];
-        carla_zeroChars(strBuf, STR_MAX+1);
-        if (! getParameterName(parameterId, strBuf))
-            std::snprintf(strBuf, STR_MAX, "Param %u", parameterId);
-
-        const uint portNameSize = pData->engine->getMaxPortNameSize();
-        if (portNameSize < STR_MAX)
-            strBuf[portNameSize] = '\0';
 
         CarlaEngineCVPort* const cvPort =
             (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, strBuf, true, parameterId);
@@ -1731,7 +1731,8 @@ void CarlaPlugin::setParameterMappedControlIndex(const uint32_t parameterId, con
     {
         CARLA_SAFE_ASSERT_RETURN(pData->event.cvSourcePorts != nullptr,);
 
-        pData->event.cvSourcePorts->removeCVSource(parameterId);
+        CARLA_SAFE_ASSERT(pData->client->removePort(kEnginePortTypeCV, strBuf, true));
+        CARLA_SAFE_ASSERT(pData->event.cvSourcePorts->removeCVSource(parameterId));
     }
 #endif
 

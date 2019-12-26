@@ -726,6 +726,11 @@ public:
      */
     virtual CarlaEnginePort* addPort(EnginePortType portType, const char* name, bool isInput, uint32_t indexOffset);
 
+    /*!
+     * Remove a previously added port via addPort().
+     */
+    virtual bool removePort(EnginePortType portType, const char* name, bool isInput);
+
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
      * Create an instance of CV source ports.

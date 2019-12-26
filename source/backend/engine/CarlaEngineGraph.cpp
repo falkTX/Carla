@@ -1871,9 +1871,6 @@ void PatchbayGraph::reconfigureForCV(CarlaPlugin* const plugin, const uint portI
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
     carla_debug("PatchbayGraph::reconfigureForCV(%p, %u, %s)", plugin, portIndex, bool2str(added));
 
-    if (graph.isSuspended())
-        return;
-
     AudioProcessorGraph::Node* const node = graph.getNodeForId(plugin->getPatchbayNodeId());
     CARLA_SAFE_ASSERT_RETURN(node != nullptr,);
 
@@ -1884,7 +1881,7 @@ void PatchbayGraph::reconfigureForCV(CarlaPlugin* const plugin, const uint portI
     const bool sendOSC  = !usingExternalOSC;
 
     const uint oldCvIn = proc->getTotalNumInputChannels(AudioProcessor::ChannelTypeCV);
-    const uint oldCvOut = proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeCV);
+    // const uint oldCvOut = proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeCV);
 
     {
         const CarlaRecursiveMutexLocker crml(graph.getCallbackLock());
@@ -1895,12 +1892,12 @@ void PatchbayGraph::reconfigureForCV(CarlaPlugin* const plugin, const uint portI
     }
 
     const uint newCvIn = proc->getTotalNumInputChannels(AudioProcessor::ChannelTypeCV);
-    const uint newCvOut = proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeCV);
+    // const uint newCvOut = proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeCV);
 
     if (added)
     {
-        CARLA_SAFE_ASSERT_UINT2_RETURN(newCvIn >= oldCvIn, newCvIn, oldCvIn,);
-        CARLA_SAFE_ASSERT_UINT2_RETURN(newCvOut >= oldCvOut, newCvOut, oldCvOut,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(newCvIn > oldCvIn, newCvIn, oldCvIn,);
+        // CARLA_SAFE_ASSERT_UINT2_RETURN(newCvOut >= oldCvOut, newCvOut, oldCvOut,);
 
         kEngine->callback(sendHost, sendOSC,
                           ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
@@ -1912,8 +1909,8 @@ void PatchbayGraph::reconfigureForCV(CarlaPlugin* const plugin, const uint portI
     }
     else
     {
-        CARLA_SAFE_ASSERT_UINT2_RETURN(newCvIn <= oldCvIn, newCvIn, oldCvIn,);
-        CARLA_SAFE_ASSERT_UINT2_RETURN(newCvOut <= oldCvOut, newCvOut, oldCvOut,);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(newCvIn < oldCvIn, newCvIn, oldCvIn,);
+        // CARLA_SAFE_ASSERT_UINT2_RETURN(newCvOut <= oldCvOut, newCvOut, oldCvOut,);
 
         kEngine->callback(sendHost, sendOSC,
                           ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
