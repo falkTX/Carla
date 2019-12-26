@@ -69,8 +69,6 @@ Identifier::Identifier (String::CharPointerType start, String::CharPointerType e
     wassert (start < end);
 }
 
-Identifier Identifier::null;
-
 bool Identifier::isValidIdentifier (const String& possibleIdentifier) noexcept
 {
     return possibleIdentifier.isNotEmpty()
