@@ -371,6 +371,7 @@ clean:
 	$(MAKE) clean -C source/modules
 	$(MAKE) clean -C source/native-plugins
 	$(MAKE) clean -C source/plugin
+	$(MAKE) clean -C source/tests
 	$(MAKE) clean -C source/theme
 	rm -f *~ source/*~
 
@@ -386,6 +387,9 @@ debug:
 
 doxygen:
 	$(MAKE) doxygen -C source/backend
+
+tests:
+	$(MAKE) -C source/tests
 
 stoat:
 	stoat --recursive ./build/ --suppression ./data/stoat-supression.txt --whitelist ./data/stoat-whitelist.txt --graph-view ./data/stoat-callgraph.png

@@ -29,6 +29,7 @@
 *.vst3
 
 # Binary dir
+bin/ansi-pedantic-test_*
 bin/carla
 bin/carla.lv2/carla-bridge-*
 bin/carla-database
