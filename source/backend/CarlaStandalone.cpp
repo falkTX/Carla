@@ -184,10 +184,10 @@ static void carla_engine_init_common(CarlaEngine* const engine)
     engine->setCallback(gStandalone.engineCallback, gStandalone.engineCallbackPtr);
     engine->setFileCallback(gStandalone.fileCallback, gStandalone.fileCallbackPtr);
 
-#ifdef BUILD_BRIDGE
     using water::File;
-    File waterBinaryDir(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory());
+    const File waterBinaryDir(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory());
 
+#ifdef BUILD_BRIDGE
     /*
     if (const char* const uisAlwaysOnTop = std::getenv("ENGINE_OPTION_FORCE_STEREO"))
         engine->setOption(CB::ENGINE_OPTION_FORCE_STEREO, (std::strcmp(uisAlwaysOnTop, "true") == 0) ? 1 : 0, nullptr);
@@ -299,7 +299,9 @@ static void carla_engine_init_common(CarlaEngine* const engine)
         engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_SFZ, gStandalone.engineOptions.pathSFZ);
 
     if (gStandalone.engineOptions.binaryDir != nullptr && gStandalone.engineOptions.binaryDir[0] != '\0')
-        engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,     0, gStandalone.engineOptions.binaryDir);
+        engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES, 0, gStandalone.engineOptions.binaryDir);
+    else
+        engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES, 0, waterBinaryDir.getFullPathName().toRawUTF8());
 
     if (gStandalone.engineOptions.resourceDir != nullptr && gStandalone.engineOptions.resourceDir[0] != '\0')
         engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES,    0, gStandalone.engineOptions.resourceDir);

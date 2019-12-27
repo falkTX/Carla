@@ -74,7 +74,7 @@ enum EngineType {
     /*!
      * Dummy engine type, does not send audio or MIDI anywhere.
      */
-    kEngineTypeDummy = 6,
+    kEngineTypeDummy = 6
 };
 
 /*!

@@ -775,7 +775,7 @@ typedef enum {
     /*!
      * Highest index allowed for mappings.
      */
-    CONTROL_INDEX_MAX_ALLOWED = CONTROL_INDEX_MIDI_PITCHBEND,
+    CONTROL_INDEX_MAX_ALLOWED = CONTROL_INDEX_MIDI_PITCHBEND
 
 } SpecialMappedControlIndex;
 
@@ -1141,7 +1141,7 @@ typedef enum {
      * @a value1   Parameter index
      * @a valueStr New mapped range as "%f:%f" syntax
      */
-    ENGINE_CALLBACK_PARAMETER_MAPPED_RANGE_CHANGED = 46,
+    ENGINE_CALLBACK_PARAMETER_MAPPED_RANGE_CHANGED = 46
 
 } EngineCallbackOpcode;
 
@@ -1196,7 +1196,7 @@ typedef enum {
     /*!
      * Hide-optional-gui message.
      */
-    NSM_CALLBACK_HIDE_OPTIONAL_GUI = 7,
+    NSM_CALLBACK_HIDE_OPTIONAL_GUI = 7
 
 } NsmCallbackOpcode;
 

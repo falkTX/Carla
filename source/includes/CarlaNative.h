@@ -66,7 +66,7 @@ typedef enum {
     NATIVE_PLUGIN_USES_PARENT_ID       = 1 << 11, /** can set transient hint to parent       */
     NATIVE_PLUGIN_HAS_INLINE_DISPLAY   = 1 << 12,
     NATIVE_PLUGIN_USES_CONTROL_VOLTAGE = 1 << 13,
-    NATIVE_PLUGIN_REQUESTS_IDLE        = 1 << 15,
+    NATIVE_PLUGIN_REQUESTS_IDLE        = 1 << 15
 } NativePluginHints;
 
 typedef enum {
@@ -273,11 +273,11 @@ typedef struct _NativePluginDescriptor {
     intptr_t (*dispatcher)(NativePluginHandle handle,
                            NativePluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt);
 
-    // placed at the end for backwards compatibility. only valid if NATIVE_PLUGIN_HAS_INLINE_DISPLAY is set
+    /* placed at the end for backwards compatibility. only valid if NATIVE_PLUGIN_HAS_INLINE_DISPLAY is set */
     const NativeInlineDisplayImageSurface* (*render_inline_display)(NativePluginHandle handle,
                                                                     uint32_t width, uint32_t height);
 
-    // placed at the end for backwards compatibility. only valid if NATIVE_PLUGIN_USES_CONTROL_VOLTAGE is set
+    /* placed at the end for backwards compatibility. only valid if NATIVE_PLUGIN_USES_CONTROL_VOLTAGE is set */
     const uint32_t cvIns;
     const uint32_t cvOuts;
     const char* (*get_buffer_port_name)(NativePluginHandle handle, uint32_t index, bool isOutput);

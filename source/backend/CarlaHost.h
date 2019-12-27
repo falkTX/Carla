@@ -356,7 +356,7 @@ typedef struct {
 /*!
  * Get how many engine drivers are available.
  */
-CARLA_EXPORT uint carla_get_engine_driver_count();
+CARLA_EXPORT uint carla_get_engine_driver_count(void);
 
 /*!
  * Get an engine driver name.
@@ -390,7 +390,7 @@ CARLA_EXPORT bool carla_show_engine_driver_device_control_panel(uint index, cons
  * Get the currently used engine, may be NULL.
  * @note C++ only
  */
-CARLA_EXPORT CarlaEngine* carla_get_engine();
+CARLA_EXPORT CarlaEngine* carla_get_engine(void);
 #endif
 
 /*!
@@ -414,29 +414,29 @@ CARLA_EXPORT bool carla_engine_init_bridge(const char audioBaseName[6+1], const 
  * This function always closes the engine even if it returns false.
  * In other words, even when something goes wrong when closing the engine it still be closed nonetheless.
  */
-CARLA_EXPORT bool carla_engine_close();
+CARLA_EXPORT bool carla_engine_close(void);
 
 /*!
  * Idle the engine.
  * Do not call this if the engine is not running.
  */
-CARLA_EXPORT void carla_engine_idle();
+CARLA_EXPORT void carla_engine_idle(void);
 
 /*!
  * Check if the engine is running.
  */
-CARLA_EXPORT bool carla_is_engine_running();
+CARLA_EXPORT bool carla_is_engine_running(void);
 
 /*!
  * Get information about the currently running engine.
  */
-CARLA_EXPORT const CarlaRuntimeEngineInfo* carla_get_runtime_engine_info();
+CARLA_EXPORT const CarlaRuntimeEngineInfo* carla_get_runtime_engine_info(void);
 
 #ifndef BUILD_BRIDGE
 /*!
  * Get information about the currently running engine driver device.
  */
-CARLA_EXPORT const CarlaRuntimeEngineDriverDeviceInfo* carla_get_runtime_engine_driver_device_info();
+CARLA_EXPORT const CarlaRuntimeEngineDriverDeviceInfo* carla_get_runtime_engine_driver_device_info(void);
 
 /*!
  * Dynamically change buffer size and/or sample rate while engine is running.
@@ -449,26 +449,26 @@ CARLA_EXPORT bool carla_set_engine_buffer_size_and_sample_rate(uint bufferSize, 
  * Show the custom control panel for the current engine device.
  * @see ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL
  */
-CARLA_EXPORT bool carla_show_engine_device_control_panel();
+CARLA_EXPORT bool carla_show_engine_device_control_panel(void);
 #endif
 
 /*!
  * Clear the xrun count on the engine, so that the next time carla_get_runtime_engine_info() is called, it returns 0.
  */
-CARLA_EXPORT void carla_clear_engine_xruns();
+CARLA_EXPORT void carla_clear_engine_xruns(void);
 
 /*!
  * Tell the engine to stop the current cancelable action.
  * @see ENGINE_CALLBACK_CANCELABLE_ACTION
  */
-CARLA_EXPORT void carla_cancel_engine_action();
+CARLA_EXPORT void carla_cancel_engine_action(void);
 
 /*!
  * Tell the engine it's about to close.
  * This is used to prevent the engine thread(s) from reactivating.
  * Returns true if there's no pending engine events.
  */
-CARLA_EXPORT bool carla_set_engine_about_to_close();
+CARLA_EXPORT bool carla_set_engine_about_to_close(void);
 
 /*!
  * Set the engine callback function.
@@ -517,7 +517,7 @@ CARLA_EXPORT bool carla_save_project(const char* filename);
 /*!
  * Clear the currently set project filename.
  */
-CARLA_EXPORT void carla_clear_project_filename();
+CARLA_EXPORT void carla_clear_project_filename(void);
 
 /*!
  * Connect two patchbay ports.
@@ -546,12 +546,12 @@ CARLA_EXPORT bool carla_patchbay_refresh(bool external);
 /*!
  * Start playback of the engine transport.
  */
-CARLA_EXPORT void carla_transport_play();
+CARLA_EXPORT void carla_transport_play(void);
 
 /*!
  * Pause the engine transport.
  */
-CARLA_EXPORT void carla_transport_pause();
+CARLA_EXPORT void carla_transport_pause(void);
 
 /*!
  * Set the engine transport bpm.
@@ -566,24 +566,24 @@ CARLA_EXPORT void carla_transport_relocate(uint64_t frame);
 /*!
  * Get the current transport frame.
  */
-CARLA_EXPORT uint64_t carla_get_current_transport_frame();
+CARLA_EXPORT uint64_t carla_get_current_transport_frame(void);
 
 /*!
  * Get the engine transport information.
  */
-CARLA_EXPORT const CarlaTransportInfo* carla_get_transport_info();
+CARLA_EXPORT const CarlaTransportInfo* carla_get_transport_info(void);
 #endif
 
 /*!
  * Current number of plugins loaded.
  */
-CARLA_EXPORT uint32_t carla_get_current_plugin_count();
+CARLA_EXPORT uint32_t carla_get_current_plugin_count(void);
 
 /*!
  * Maximum number of loadable plugins allowed.
  * Returns 0 if engine is not started.
  */
-CARLA_EXPORT uint32_t carla_get_max_plugin_number();
+CARLA_EXPORT uint32_t carla_get_max_plugin_number(void);
 
 /*!
  * Add a new plugin.
@@ -610,7 +610,7 @@ CARLA_EXPORT bool carla_remove_plugin(uint pluginId);
 /*!
  * Remove all plugins.
  */
-CARLA_EXPORT bool carla_remove_all_plugins();
+CARLA_EXPORT bool carla_remove_all_plugins(void);
 
 #ifndef BUILD_BRIDGE
 /*!
@@ -1050,37 +1050,37 @@ CARLA_EXPORT void carla_show_custom_ui(uint pluginId, bool yesNo);
 /*!
  * Get the current engine buffer size.
  */
-CARLA_EXPORT uint32_t carla_get_buffer_size();
+CARLA_EXPORT uint32_t carla_get_buffer_size(void);
 
 /*!
  * Get the current engine sample rate.
  */
-CARLA_EXPORT double carla_get_sample_rate();
+CARLA_EXPORT double carla_get_sample_rate(void);
 
 /*!
  * Get the last error.
  */
-CARLA_EXPORT const char* carla_get_last_error();
+CARLA_EXPORT const char* carla_get_last_error(void);
 
 /*!
  * Get the current engine OSC URL (TCP).
  */
-CARLA_EXPORT const char* carla_get_host_osc_url_tcp();
+CARLA_EXPORT const char* carla_get_host_osc_url_tcp(void);
 
 /*!
  * Get the current engine OSC URL (UDP).
  */
-CARLA_EXPORT const char* carla_get_host_osc_url_udp();
+CARLA_EXPORT const char* carla_get_host_osc_url_udp(void);
 
 /*!
  * Get the absolute filename of this carla library.
  */
-CARLA_EXPORT const char* carla_get_library_filename();
+CARLA_EXPORT const char* carla_get_library_filename(void);
 
 /*!
  * Get the folder where this carla library resides.
  */
-CARLA_EXPORT const char* carla_get_library_folder();
+CARLA_EXPORT const char* carla_get_library_folder(void);
 
 /*!
  * Initialize NSM (that is, announce ourselves to it).
