@@ -364,7 +364,7 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Set-up GUI
 
-        self.ui.lw_page.setFixedWidth(48 + 6*3 + self.ui.lw_page.fontMetrics().width("   Experimental   "))
+        self.ui.lw_page.setFixedWidth(48 + 6*3 + fontMetricsHorizontalAdvance(self.ui.lw_page.fontMetrics(), "Experimental"))
 
         for i in range(host.get_engine_driver_count()):
             self.ui.cb_engine_audio_driver.addItem(host.get_engine_driver_name(i))

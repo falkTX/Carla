@@ -1433,7 +1433,7 @@ class PluginDatabaseW(QDialog):
         self.ui.tab_info.tabBar().hide()
         self.ui.tab_reqs.tabBar().hide()
         # FIXME, why /2 needed?
-        self.ui.tab_info.setMinimumWidth(self.ui.la_id.width()/2 + self.ui.l_id.fontMetrics().width("9999999999") + 6*3)
+        self.ui.tab_info.setMinimumWidth(self.ui.la_id.width()/2 + fontMetricsHorizontalAdvance(self.ui.l_id.fontMetrics(), "9999999999") + 6*3)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
         # ----------------------------------------------------------------------------------------------------

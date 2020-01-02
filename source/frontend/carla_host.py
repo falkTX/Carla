@@ -307,11 +307,11 @@ class HostWindow(QMainWindow):
         # Set up GUI (transport)
 
         fontMetrics   = self.ui.l_transport_bbt.fontMetrics()
-        minValueWidth = fontMetrics.width("000|00|0000")
-        minLabelWidth = fontMetrics.width(self.ui.label_transport_frame.text())
+        minValueWidth = fontMetricsHorizontalAdvance(fontMetrics, "000|00|0000")
+        minLabelWidth = fontMetricsHorizontalAdvance(fontMetrics, self.ui.label_transport_frame.text())
 
-        labelTimeWidth = fontMetrics.width(self.ui.label_transport_time.text())
-        labelBBTWidth  = fontMetrics.width(self.ui.label_transport_bbt.text())
+        labelTimeWidth = fontMetricsHorizontalAdvance(fontMetrics, self.ui.label_transport_time.text())
+        labelBBTWidth  = fontMetricsHorizontalAdvance(fontMetrics, self.ui.label_transport_bbt.text())
 
         if minLabelWidth < labelTimeWidth:
             minLabelWidth = labelTimeWidth

@@ -30,7 +30,7 @@ import os
 import sys
 
 from PyQt5.Qt import PYQT_VERSION_STR
-from PyQt5.QtCore import qFatal, QT_VERSION_STR, qWarning, QDir, QSettings
+from PyQt5.QtCore import qFatal, QT_VERSION, QT_VERSION_STR, qWarning, QDir, QSettings
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
 
@@ -753,6 +753,14 @@ def getAndSetPath(parent, lineEdit):
     return newPath
 
 # ------------------------------------------------------------------------------------------------------------
+# Backwards-compatible horizontalAdvance/width call, depending on Qt version
+
+def fontMetricsHorizontalAdvance(fontMetrics, string):
+    if QT_VERSION >= 0x51100:
+        return fontMetrics.horizontalAdvance(string)
+    return fontMetrics.width(string)
+
+# ------------------------------------------------------------------------------------------------------------
 # Custom QMessageBox which resizes itself to fit text
 
 class QMessageBoxWithBetterWidth(QMessageBox):
@@ -768,7 +776,7 @@ class QMessageBoxWithBetterWidth(QMessageBox):
             width = 0
 
             for line in lines:
-                width = max(fontMetrics.width(line), width)
+                width = max(fontMetricsHorizontalAdvance(fontMetrics, line), width)
 
             self.layout().setColumnMinimumWidth(2, width + 12)
 
