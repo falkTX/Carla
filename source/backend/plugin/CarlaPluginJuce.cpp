@@ -128,7 +128,10 @@ public:
     {
         if (fDesc.isInstrument)
             return PLUGIN_CATEGORY_SYNTH;
-        return getPluginCategoryFromName(fDesc.category.toRawUTF8());
+
+        return getPluginCategoryFromName(fDesc.category.isNotEmpty()
+                                         ? fDesc.category.toRawUTF8()
+                                         : fDesc.name.toRawUTF8());
     }
 
     int64_t getUniqueId() const noexcept override
