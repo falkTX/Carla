@@ -1972,6 +1972,16 @@ protected:
                 carla_debug("audioMasterAutomate called from idle thread");
                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, true, index, 0, 0, fixedValue);
             }
+            // Called from main thread, why?
+            else if (pthread_equal(thisThread, fMainThread))
+            {
+                if (fFirstActive) {
+                    carla_stdout("audioMasterAutomate called while loading, nasty!");
+                } else {
+                    carla_debug("audioMasterAutomate called from main thread");
+                }
+                CarlaPlugin::setParameterValue(uindex, fixedValue, false, true, true);
+            }
             // Called from UI?
             else if (fUI.isVisible)
             {
