@@ -324,7 +324,7 @@ public:
             uint8_t* const dataCompat = (uint8_t*)std::malloc(dataSize + 160);
             CARLA_SAFE_ASSERT_RETURN(dataCompat != nullptr,);
 
-            carla_stdout("NOTE: Loading plugin state in Carla compatibiity mode");
+            carla_stdout("NOTE: Loading plugin state in Carla JUCE/VST2 compatibility mode");
             std::memset(dataCompat, 0, 160);
             std::memcpy(dataCompat+160, data, dataSize);
 
@@ -665,15 +665,17 @@ public:
         pData->prog.clear();
 
         // Query new programs
-        uint32_t newCount = (fInstance->getNumPrograms() > 0) ? static_cast<uint32_t>(fInstance->getNumPrograms()) : 0;
+        const uint32_t newCount = (fInstance->getNumPrograms() > 0)
+                                ? static_cast<uint32_t>(fInstance->getNumPrograms())
+                                : 0;
 
         if (newCount > 0)
         {
             pData->prog.createNew(newCount);
 
             // Update names
-            for (int i=0, count=fInstance->getNumPrograms(); i<count; ++i)
-                pData->prog.names[i] = carla_strdup(fInstance->getProgramName(i).toRawUTF8());
+            for (uint32_t i=0; i < newCount; ++i)
+                pData->prog.names[i] = carla_strdup(fInstance->getProgramName(static_cast<int>(i)).toRawUTF8());
         }
 
         if (doInit)

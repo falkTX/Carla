@@ -299,6 +299,9 @@ public:
         return new CarlaEngineBridgeClient(*this, pData->graph, plugin, this);
 #else
         return new CarlaEngineBridgeClient(*this, this);
+
+        // unused
+        (void)plugin;
 #endif
     }
 
@@ -549,7 +552,7 @@ public:
                     fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerProgramName);
                     fShmNonRtServerControl.writeUInt(i);
 
-                    if (plugin->getProgramName(i, bufStr))
+                    if (! plugin->getProgramName(i, bufStr))
                         bufStr[0] = '\0';
                     bufStrSize = carla_fixedValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
                     fShmNonRtServerControl.writeUInt(bufStrSize);
@@ -645,7 +648,7 @@ public:
     {
         CarlaEngine::callback(sendHost, sendOsc, action, pluginId, value1, value2, value3, valuef, valueStr);
 
-        if (fClosingDown)
+        if (fClosingDown || ! sendHost)
             return;
 
         switch (action)

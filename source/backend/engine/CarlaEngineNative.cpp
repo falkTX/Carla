@@ -746,6 +746,7 @@ protected:
 
         case ENGINE_CALLBACK_RELOAD_ALL:
         case ENGINE_CALLBACK_PLUGIN_ADDED:
+        case ENGINE_CALLBACK_PLUGIN_RENAMED:
             plugin = getPlugin(pluginId);
 
             if (plugin != nullptr && plugin->isEnabled())

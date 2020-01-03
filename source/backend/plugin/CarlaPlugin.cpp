@@ -411,7 +411,7 @@ bool CarlaPlugin::getProgramName(const uint32_t index, char* const strBuf) const
     CARLA_SAFE_ASSERT_RETURN(index < pData->prog.count, false);
     CARLA_SAFE_ASSERT_RETURN(pData->prog.names[index] != nullptr, false);
     std::strncpy(strBuf, pData->prog.names[index], STR_MAX);
-    return false;
+    return true;
 }
 
 bool CarlaPlugin::getMidiProgramName(const uint32_t index, char* const strBuf) const noexcept
@@ -419,7 +419,7 @@ bool CarlaPlugin::getMidiProgramName(const uint32_t index, char* const strBuf) c
     CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count, false);
     CARLA_SAFE_ASSERT_RETURN(pData->midiprog.data[index].name != nullptr, false);
     std::strncpy(strBuf, pData->midiprog.data[index].name, STR_MAX);
-    return false;
+    return true;
 }
 
 void CarlaPlugin::getParameterCountInfo(uint32_t& ins, uint32_t& outs) const noexcept

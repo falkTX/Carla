@@ -2075,7 +2075,7 @@ public:
                 pData->prog.clear();
 
                 if (const uint32_t count = fShmNonRtServerControl.readUInt())
-                    pData->prog.createNew(static_cast<uint32_t>(count));
+                    pData->prog.createNew(count);
 
             }   break;
 
@@ -2084,7 +2084,7 @@ public:
                 pData->midiprog.clear();
 
                 if (const uint32_t count = fShmNonRtServerControl.readUInt())
-                    pData->midiprog.createNew(static_cast<uint32_t>(count));
+                    pData->midiprog.createNew(count);
 
             }   break;
 

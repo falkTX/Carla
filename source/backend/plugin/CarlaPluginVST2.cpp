@@ -988,11 +988,11 @@ public:
             for (int32_t i=0; i < fEffect->numPrograms; ++i)
             {
                 char strBuf[STR_MAX+1] = { '\0' };
-                if (dispatcher(effGetProgramNameIndexed, i, 0, strBuf, 0.0f) != 1)
+                if (dispatcher(effGetProgramNameIndexed, i, 0, strBuf) != 1)
                 {
                     // program will be [re-]changed later
-                    dispatcher(effSetProgram, 0, i, nullptr, 0.0f);
-                    dispatcher(effGetProgramName, 0, 0, strBuf, 0.0f);
+                    dispatcher(effSetProgram, 0, i);
+                    dispatcher(effGetProgramName, 0, 0, strBuf);
                 }
                 pData->prog.names[i] = carla_strdup(strBuf);
             }
@@ -1003,7 +1003,7 @@ public:
             if (newCount > 0)
                 setProgram(0, false, false, false, true);
             else
-                dispatcher(effSetProgram);
+                dispatcher(effSetProgram, 0, 0);
         }
         else
         {
@@ -1048,7 +1048,7 @@ public:
             {
                 // Program was changed during update, re-set it
                 if (pData->prog.current >= 0)
-                    dispatcher(effSetProgram, 0, pData->prog.current, nullptr, 0.0f);
+                    dispatcher(effSetProgram, 0, pData->prog.current);
             }
 
             pData->engine->callback(true, true, ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0, 0.0f, nullptr);
@@ -2686,7 +2686,7 @@ private:
         if (static_cast<std::size_t>(chunkSize + 160) > dataSize)
             return false;
 
-        carla_stdout("NOTE: Loading plugin state in Juce compatibiity mode");
+        carla_stdout("NOTE: Loading plugin state in VST2/JUCE compatibility mode");
         setChunkData(&set[40], static_cast<std::size_t>(chunkSize));
         return true;
     }
