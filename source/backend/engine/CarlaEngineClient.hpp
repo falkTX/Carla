@@ -83,7 +83,7 @@ public:
     CarlaEngineClientForStandalone(const CarlaEngine& engine, EngineInternalGraph& egraph, CarlaPlugin* const plugin)
         : CarlaEngineClient(new ProtectedData(engine, egraph, plugin)) {}
 
-    ~CarlaEngineClientForStandalone() override
+    ~CarlaEngineClientForStandalone() noexcept override
     {
         delete pData;
     }
