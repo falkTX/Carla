@@ -166,7 +166,7 @@ bridges-ui: libs
 discovery: libs
 	@$(MAKE) -C source/discovery
 
-frontend:
+frontend: libs
 ifeq ($(HAVE_PYQT),true)
 	@$(MAKE) -C source/frontend
 endif
