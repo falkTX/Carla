@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla plugin database code
-# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -2112,16 +2112,15 @@ class JackApplicationW(QDialog):
     FLAG_MIDI_OUTPUT_CHANNEL_MIXDOWN = 0x20
     FLAG_EXTERNAL_START              = 0x40
 
-    def __init__(self, parent, host):
+    def __init__(self, parent, projectFilename):
         QDialog.__init__(self, parent)
-        self.host = host
         self.ui = ui_carla_add_jack.Ui_Dialog()
         self.ui.setupUi(self)
 
-        if False:
-            # kdevelop likes this :)
-            self.host = host = CarlaHostNull()
+        self.fProjectFilename = projectFilename
+        self.ui.group_error.setVisible(False)
 
+        self.adjustSize()
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
         # --------------------------------------------------------------------------------------------------------------
@@ -2175,10 +2174,23 @@ class JackApplicationW(QDialog):
 
     def checkIfButtonBoxShouldBeEnabled(self, index, text):
         enabled = len(text) > 0
+        showErr = ""
 
         # NSM applications must not be abstract or absolute paths, and must not contain arguments
         if enabled and index == self.UI_SESSION_NSM:
-            enabled = text[0] not in (".", "/") and " " not in text
+            if text[0] in (".", "/"):
+                showErr = self.tr("NSM applications cannot use abstract or absolute paths")
+            elif " " in text or ";" in text or "&" in text:
+                showErr = self.tr("NSM applications cannot use CLI arguments")
+            elif len(self.fProjectFilename) == 0:
+                showErr = self.tr("You need to save the current Carla project before NSM can be used")
+
+        if showErr:
+            enabled = False
+            self.ui.l_error.setText(showErr)
+            self.ui.group_error.setVisible(True)
+        else:
+            self.ui.group_error.setVisible(False)
 
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(enabled)
 

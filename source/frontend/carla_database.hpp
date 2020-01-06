@@ -139,7 +139,7 @@ class JackApplicationW : public QDialog
     Q_OBJECT
 
 public:
-    JackApplicationW(QWidget* parent);
+    JackApplicationW(QWidget* parent, const QString& projectFilename);
     ~JackApplicationW() override;
 
     void getCommandAndFlags(QString& command, QString& name, QString& labelSetup);

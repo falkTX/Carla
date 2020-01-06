@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla host code
-# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -1099,7 +1099,7 @@ class HostWindow(QMainWindow):
         return (btype, ptype, filename, label, uniqueId, extraPtr)
 
     def showAddJackAppDialog(self):
-        dialog = JackApplicationW(self.fParentOrSelf, self.host)
+        dialog = JackApplicationW(self.fParentOrSelf, self.fProjectFilename)
 
         if not dialog.exec_():
             return

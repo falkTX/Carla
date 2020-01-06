@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2015 ROLI Ltd.
-   Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2020 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the GNU
    General Public License as published by the Free Software Foundation;
@@ -1121,11 +1121,11 @@ void AudioProcessorGraph::Node::prepare (const double newSampleRate, const int n
 {
     if (! isPrepared)
     {
-        isPrepared = true;
         setParentGraph (graph);
 
         processor->setRateAndBufferSizeDetails (newSampleRate, newBlockSize);
         processor->prepareToPlay (newSampleRate, newBlockSize);
+        isPrepared = true;
     }
 }
 

@@ -1,6 +1,6 @@
 /*
  * Carla plugin database code
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -326,10 +326,15 @@ enum UiSessionManager {
 struct JackApplicationW::PrivateData {
     Ui::Dialog ui;
 
-    PrivateData(JackApplicationW* const dialog)
-        : ui()
+    const QString fProjectFilename;
+
+    PrivateData(JackApplicationW* const dialog, const QString& projectFilename)
+        : ui(),
+          fProjectFilename(projectFilename)
     {
         ui.setupUi(dialog);
+
+        ui.group_error->setVisible(false);
 
         // ------------------------------------------------------------------------------------------------------------
         // Load settings
@@ -342,10 +347,29 @@ struct JackApplicationW::PrivateData {
         static QList<QChar> badFirstChars = { '.', '/' };
 
         bool enabled = text.length() > 0;
+        QCarlaString showErr;
 
         // NSM applications must not be abstract or absolute paths, and must not contain arguments
         if (enabled && index == UI_SESSION_NSM)
-            enabled = ! (badFirstChars.contains(text[0]) || text.contains(' '));
+        {
+            if (badFirstChars.contains(text[0]))
+                showErr = tr("NSM applications cannot use abstract or absolute paths");
+            else if (text.contains(' ') || text.contains(';') || text.contains('&'))
+                showErr = tr("NSM applications cannot use CLI arguments");
+            else if (fProjectFilename.isEmpty())
+                showErr = tr("You need to save the current Carla project before NSM can be used");
+        }
+
+        if (showErr.isNotEmpty())
+        {
+            enabled = false;
+            ui.l_error->setText(showErr);
+            ui.group_error->setVisible(true);
+        }
+        else
+        {
+            ui.group_error->setVisible(false);
+        }
 
         if (QPushButton* const button = ui.buttonBox->button(QDialogButtonBox::Ok))
             button->setEnabled(enabled);
@@ -396,10 +420,11 @@ struct JackApplicationW::PrivateData {
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PrivateData)
 };
 
-JackApplicationW::JackApplicationW(QWidget* parent)
+JackApplicationW::JackApplicationW(QWidget* parent, const QString& projectFilename)
     : QDialog(parent),
-      self(new PrivateData(this))
+      self(new PrivateData(this, projectFilename))
 {
+    adjustSize();
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
     // ----------------------------------------------------------------------------------------------------------------
