@@ -99,7 +99,8 @@ CarlaHost::CarlaHost()
       exportLV2(false),
       forceStereo(false),
       manageUIs(false),
-      maxParameters(false),
+      maxParameters(0),
+      resetXruns(false),
       preferPluginBridges(false),
       preferUIBridges(false),
       preventBadBehaviour(false),
@@ -2549,6 +2550,7 @@ void loadHostSettings(CarlaHost& host)
     host.exportLV2 = settings.valueBool(CARLA_KEY_EXPERIMENTAL_EXPORT_LV2, CARLA_DEFAULT_EXPERIMENTAL_LV2_EXPORT);
     host.manageUIs = settings.valueBool(CARLA_KEY_ENGINE_MANAGE_UIS, CARLA_DEFAULT_MANAGE_UIS);
     host.maxParameters = settings.valueUInt(CARLA_KEY_ENGINE_MAX_PARAMETERS, CARLA_DEFAULT_MAX_PARAMETERS);
+    host.resetXruns = settings.valueBool(CARLA_KEY_ENGINE_RESET_XRUNS, CARLA_DEFAULT_RESET_XRUNS);
     host.forceStereo = settings.valueBool(CARLA_KEY_ENGINE_FORCE_STEREO, CARLA_DEFAULT_FORCE_STEREO);
     host.preferPluginBridges = settings.valueBool(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES);
     host.preferUIBridges = settings.valueBool(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES, CARLA_DEFAULT_PREFER_UI_BRIDGES);

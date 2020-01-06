@@ -235,6 +235,7 @@ struct CARLA_API EngineOptions {
     const char* transportExtra;
 
     bool forceStereo;
+    bool resetXruns;
     bool preferPluginBridges;
     bool preferUiBridges;
     bool uisAlwaysOnTop;

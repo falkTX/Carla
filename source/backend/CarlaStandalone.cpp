@@ -189,21 +189,24 @@ static void carla_engine_init_common(CarlaEngine* const engine)
 
 #ifdef BUILD_BRIDGE
     /*
-    if (const char* const uisAlwaysOnTop = std::getenv("ENGINE_OPTION_FORCE_STEREO"))
-        engine->setOption(CB::ENGINE_OPTION_FORCE_STEREO, (std::strcmp(uisAlwaysOnTop, "true") == 0) ? 1 : 0, nullptr);
+    if (const char* const forceStereo = std::getenv("ENGINE_OPTION_FORCE_STEREO"))
+        engine->setOption(CB::ENGINE_OPTION_FORCE_STEREO, (std::strcmp(forceStereo, "true") == 0) ? 1 : 0, nullptr);
 
-    if (const char* const uisAlwaysOnTop = std::getenv("ENGINE_OPTION_PREFER_PLUGIN_BRIDGES"))
-        engine->setOption(CB::ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, (std::strcmp(uisAlwaysOnTop, "true") == 0) ? 1 : 0, nullptr);
+    if (const char* const preferPluginBridges = std::getenv("ENGINE_OPTION_PREFER_PLUGIN_BRIDGES"))
+        engine->setOption(CB::ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, (std::strcmp(preferPluginBridges, "true") == 0) ? 1 : 0, nullptr);
 
-    if (const char* const uisAlwaysOnTop = std::getenv("ENGINE_OPTION_PREFER_UI_BRIDGES"))
-        engine->setOption(CB::ENGINE_OPTION_PREFER_UI_BRIDGES, (std::strcmp(uisAlwaysOnTop, "true") == 0) ? 1 : 0, nullptr);
+    if (const char* const preferUiBridges = std::getenv("ENGINE_OPTION_PREFER_UI_BRIDGES"))
+        engine->setOption(CB::ENGINE_OPTION_PREFER_UI_BRIDGES, (std::strcmp(preferUiBridges, "true") == 0) ? 1 : 0, nullptr);
     */
 
     if (const char* const uisAlwaysOnTop = std::getenv("ENGINE_OPTION_UIS_ALWAYS_ON_TOP"))
         engine->setOption(CB::ENGINE_OPTION_UIS_ALWAYS_ON_TOP, (std::strcmp(uisAlwaysOnTop, "true") == 0) ? 1 : 0, nullptr);
 
     if (const char* const maxParameters = std::getenv("ENGINE_OPTION_MAX_PARAMETERS"))
-        engine->setOption(CB::ENGINE_OPTION_MAX_PARAMETERS,     std::atoi(maxParameters), nullptr);
+        engine->setOption(CB::ENGINE_OPTION_MAX_PARAMETERS, std::atoi(maxParameters), nullptr);
+
+    if (const char* const resetXruns = std::getenv("ENGINE_OPTION_RESET_XRUNS"))
+        engine->setOption(CB::ENGINE_OPTION_RESET_XRUNS, (std::strcmp(resetXruns, "true") == 0) ? 1 : 0, nullptr);
 
     if (const char* const uiBridgesTimeout = std::getenv("ENGINE_OPTION_UI_BRIDGES_TIMEOUT"))
         engine->setOption(CB::ENGINE_OPTION_UI_BRIDGES_TIMEOUT, std::atoi(uiBridgesTimeout), nullptr);
@@ -236,14 +239,14 @@ static void carla_engine_init_common(CarlaEngine* const engine)
         engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_SFZ, pathSFZ);
 
     if (const char* const binaryDir = std::getenv("ENGINE_OPTION_PATH_BINARIES"))
-        engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,   0, binaryDir);
+        engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES, 0, binaryDir);
     else
-        engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,   0, waterBinaryDir.getFullPathName().toRawUTF8());
+        engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES, 0, waterBinaryDir.getFullPathName().toRawUTF8());
 
     if (const char* const resourceDir = std::getenv("ENGINE_OPTION_PATH_RESOURCES"))
-        engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES,  0, resourceDir);
+        engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES, 0, resourceDir);
     else
-        engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES,  0, waterBinaryDir.getChildFile("resources").getFullPathName().toRawUTF8());
+        engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES, 0, waterBinaryDir.getChildFile("resources").getFullPathName().toRawUTF8());
 
     if (const char* const preventBadBehaviour = std::getenv("ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR"))
         engine->setOption(CB::ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR, (std::strcmp(preventBadBehaviour, "true") == 0) ? 1 : 0, nullptr);
@@ -256,6 +259,7 @@ static void carla_engine_init_common(CarlaEngine* const engine)
     engine->setOption(CB::ENGINE_OPTION_PREFER_UI_BRIDGES,     gStandalone.engineOptions.preferUiBridges     ? 1 : 0,        nullptr);
     engine->setOption(CB::ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     gStandalone.engineOptions.uisAlwaysOnTop      ? 1 : 0,        nullptr);
     engine->setOption(CB::ENGINE_OPTION_MAX_PARAMETERS,        static_cast<int>(gStandalone.engineOptions.maxParameters),    nullptr);
+    engine->setOption(CB::ENGINE_OPTION_RESET_XRUNS,           gStandalone.engineOptions.resetXruns          ? 1 : 0,        nullptr);
     engine->setOption(CB::ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    static_cast<int>(gStandalone.engineOptions.uiBridgesTimeout), nullptr);
     engine->setOption(CB::ENGINE_OPTION_AUDIO_BUFFER_SIZE,     static_cast<int>(gStandalone.engineOptions.audioBufferSize),  nullptr);
     engine->setOption(CB::ENGINE_OPTION_AUDIO_SAMPLE_RATE,     static_cast<int>(gStandalone.engineOptions.audioSampleRate),  nullptr);
@@ -409,15 +413,19 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 }
 
 #ifdef BUILD_BRIDGE
-bool carla_engine_init_bridge(const char audioBaseName[6+1], const char rtClientBaseName[6+1], const char nonRtClientBaseName[6+1],
-                              const char nonRtServerBaseName[6+1], const char* clientName)
+bool carla_engine_init_bridge(const char audioBaseName[6+1],
+                              const char rtClientBaseName[6+1],
+                              const char nonRtClientBaseName[6+1],
+                              const char nonRtServerBaseName[6+1],
+                              const char* const clientName)
 {
     CARLA_SAFE_ASSERT_RETURN(audioBaseName != nullptr && audioBaseName[0] != '\0', false);
     CARLA_SAFE_ASSERT_RETURN(rtClientBaseName != nullptr && rtClientBaseName[0] != '\0', false);
     CARLA_SAFE_ASSERT_RETURN(nonRtClientBaseName != nullptr && nonRtClientBaseName[0] != '\0', false);
     CARLA_SAFE_ASSERT_RETURN(nonRtServerBaseName != nullptr && nonRtServerBaseName[0] != '\0', false);
     CARLA_SAFE_ASSERT_RETURN(clientName != nullptr && clientName[0] != '\0', false);
-    carla_debug("carla_engine_init_bridge(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\")", audioBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName, clientName);
+    carla_debug("carla_engine_init_bridge(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\")",
+                audioBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName, clientName);
 
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(gStandalone.engine == nullptr, "Engine is already initialized", false);
 
@@ -692,6 +700,11 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
     case CB::ENGINE_OPTION_MAX_PARAMETERS:
         CARLA_SAFE_ASSERT_RETURN(value >= 0,);
         gStandalone.engineOptions.maxParameters = static_cast<uint>(value);
+        break;
+
+    case CB::ENGINE_OPTION_RESET_XRUNS:
+        CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
+        gStandalone.engineOptions.resetXruns = (value != 0);
         break;
 
     case CB::ENGINE_OPTION_UI_BRIDGES_TIMEOUT:

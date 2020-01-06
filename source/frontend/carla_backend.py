@@ -893,95 +893,98 @@ ENGINE_OPTION_UIS_ALWAYS_ON_TOP = 6
 # Default is MAX_DEFAULT_PARAMETERS.
 ENGINE_OPTION_MAX_PARAMETERS = 7
 
+# Reset Xrun counter after project load.
+ENGINE_OPTION_RESET_XRUNS = 8
+
 # Timeout value for how much to wait for UI bridges to respond, in milliseconds.
 # Default is 4000 (4 seconds).
-ENGINE_OPTION_UI_BRIDGES_TIMEOUT = 8
+ENGINE_OPTION_UI_BRIDGES_TIMEOUT = 9
 
 # Audio buffer size.
 # Default is 512.
-ENGINE_OPTION_AUDIO_BUFFER_SIZE = 9
+ENGINE_OPTION_AUDIO_BUFFER_SIZE = 10
 
 # Audio sample rate.
 # Default is 44100.
-ENGINE_OPTION_AUDIO_SAMPLE_RATE = 10
+ENGINE_OPTION_AUDIO_SAMPLE_RATE = 11
 
 # Wherever to use 3 audio periods instead of the default 2.
 # Default is false.
-ENGINE_OPTION_AUDIO_TRIPLE_BUFFER = 11
+ENGINE_OPTION_AUDIO_TRIPLE_BUFFER = 12
 
 # Audio driver.
 # Default dppends on platform.
-ENGINE_OPTION_AUDIO_DRIVER = 12
+ENGINE_OPTION_AUDIO_DRIVER = 13
 
 # Audio device (within a driver).
 # Default unset.
-ENGINE_OPTION_AUDIO_DEVICE = 13
+ENGINE_OPTION_AUDIO_DEVICE = 14
 
 # Wherever to enable OSC support in the engine.
-ENGINE_OPTION_OSC_ENABLED = 14
+ENGINE_OPTION_OSC_ENABLED = 15
 
 # The network TCP port to use for OSC.
 # A value of 0 means use a random port.
 # A value of < 0 means to not enable the TCP port for OSC.
 # @note Valid ports begin at 1024 and end at 32767 (inclusive)
-ENGINE_OPTION_OSC_PORT_TCP = 15
+ENGINE_OPTION_OSC_PORT_TCP = 16
 
 # The network UDP port to use for OSC.
 # A value of 0 means use a random port.
 # A value of < 0 means to not enable the UDP port for OSC.
 # @note Disabling this option prevents DSSI UIs from working!
 # @note Valid ports begin at 1024 and end at 32767 (inclusive)
-ENGINE_OPTION_OSC_PORT_UDP = 16
+ENGINE_OPTION_OSC_PORT_UDP = 17
 
 # Set path used for a specific file type.
 # Uses value as the file format, valueStr as actual path.
-ENGINE_OPTION_FILE_PATH = 17
+ENGINE_OPTION_FILE_PATH = 18
 
 # Set path used for a specific plugin type.
 # Uses value as the plugin format, valueStr as actual path.
 # @see PluginType
-ENGINE_OPTION_PLUGIN_PATH = 18
+ENGINE_OPTION_PLUGIN_PATH = 19
 
 # Set path to the binary files.
 # Default unset.
 # @note Must be set for plugin and UI bridges to work
-ENGINE_OPTION_PATH_BINARIES = 19
+ENGINE_OPTION_PATH_BINARIES = 20
 
 # Set path to the resource files.
 # Default unset.
 # @note Must be set for some internal plugins to work
-ENGINE_OPTION_PATH_RESOURCES = 20
+ENGINE_OPTION_PATH_RESOURCES = 21
 
 # Prevent bad plugin and UI behaviour.
 # @note: Linux only
-ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 21
+ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 22
 
 # Set UI scaling used in frontend, so backend can do the same for plugin UIs.
-ENGINE_OPTION_FRONTEND_UI_SCALE = 22
+ENGINE_OPTION_FRONTEND_UI_SCALE = 23
 
 # Set frontend winId, used to define as parent window for plugin UIs.
-ENGINE_OPTION_FRONTEND_WIN_ID = 23
+ENGINE_OPTION_FRONTEND_WIN_ID = 24
 
 # Set path to wine executable.
-ENGINE_OPTION_WINE_EXECUTABLE = 24
+ENGINE_OPTION_WINE_EXECUTABLE = 25
 
 # Enable automatic wineprefix detection.
-ENGINE_OPTION_WINE_AUTO_PREFIX = 25
+ENGINE_OPTION_WINE_AUTO_PREFIX = 26
 
 # Fallback wineprefix to use if automatic detection fails or is disabled, and WINEPREFIX is not set.
-ENGINE_OPTION_WINE_FALLBACK_PREFIX = 26
+ENGINE_OPTION_WINE_FALLBACK_PREFIX = 27
 
 # Enable realtime priority for Wine application and server threads.
-ENGINE_OPTION_WINE_RT_PRIO_ENABLED = 27
+ENGINE_OPTION_WINE_RT_PRIO_ENABLED = 28
 
 # Base realtime priority for Wine threads.
-ENGINE_OPTION_WINE_BASE_RT_PRIO = 28
+ENGINE_OPTION_WINE_BASE_RT_PRIO = 29
 
 # Wine server realtime priority.
-ENGINE_OPTION_WINE_SERVER_RT_PRIO = 29
+ENGINE_OPTION_WINE_SERVER_RT_PRIO = 30
 
 # Capture console output into debug callbacks
-ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 30
+ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 31
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine Process Mode
@@ -1498,6 +1501,7 @@ class CarlaHostMeta(object):
         self.forceStereo         = False
         self.manageUIs           = False
         self.maxParameters       = 0
+        self.resetXruns          = False
         self.preferPluginBridges = False
         self.preferUIBridges     = False
         self.preventBadBehaviour = False

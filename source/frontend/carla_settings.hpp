@@ -93,7 +93,7 @@ class CarlaSettingsW : public QDialog
     Q_OBJECT
 
 public:
-    CarlaSettingsW(QWidget* parent, const CarlaHost& host, bool hasCanvas, bool hasCanvasGL);
+    CarlaSettingsW(QWidget* parent, CarlaHost& host, bool hasCanvas, bool hasCanvasGL);
     ~CarlaSettingsW() override;
 
 private:

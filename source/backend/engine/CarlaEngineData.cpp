@@ -184,6 +184,7 @@ EngineOptions::EngineOptions() noexcept
 #endif
       transportExtra(nullptr),
       forceStereo(false),
+      resetXruns(false),
       preferPluginBridges(false),
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
       preferUiBridges(false),

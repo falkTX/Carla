@@ -212,6 +212,7 @@ CARLA_KEY_ENGINE_PREFER_UI_BRIDGES     = "Engine/PreferUiBridges"     # bool
 CARLA_KEY_ENGINE_MANAGE_UIS            = "Engine/ManageUIs"           # bool
 CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP     = "Engine/UIsAlwaysOnTop"      # bool
 CARLA_KEY_ENGINE_MAX_PARAMETERS        = "Engine/MaxParameters"       # int
+CARLA_KEY_ENGINE_RESET_XRUNS           = "Engine/ResetXruns"          # bool
 CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT    = "Engine/UiBridgesTimeout"    # int
 
 CARLA_KEY_OSC_ENABLED          = "OSC/Enabled"
@@ -285,6 +286,7 @@ CARLA_DEFAULT_PREFER_UI_BRIDGES     = True
 CARLA_DEFAULT_MANAGE_UIS            = True
 CARLA_DEFAULT_UIS_ALWAYS_ON_TOP     = False
 CARLA_DEFAULT_MAX_PARAMETERS        = MAX_DEFAULT_PARAMETERS
+CARLA_DEFAULT_RESET_XRUNS           = False
 CARLA_DEFAULT_UI_BRIDGES_TIMEOUT    = 4000
 
 CARLA_DEFAULT_AUDIO_BUFFER_SIZE     = 512

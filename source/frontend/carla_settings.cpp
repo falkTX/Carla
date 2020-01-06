@@ -435,9 +435,9 @@ enum PluginPathIndexes {
 
 struct CarlaSettingsW::PrivateData {
     Ui::CarlaSettingsW ui;
-    const CarlaHost& host;
+    CarlaHost& host;
 
-    PrivateData(CarlaSettingsW* const self, const CarlaHost& h)
+    PrivateData(CarlaSettingsW* const self, CarlaHost& h)
         : ui(),
           host(h)
     {
@@ -578,6 +578,7 @@ struct CarlaSettingsW::PrivateData {
             ui.cb_engine_process_mode_other->setCurrentIndex(0);
 
         ui.sb_engine_max_params->setValue(static_cast<int>(host.maxParameters));
+        ui.cb_engine_reset_xruns->setChecked(host.resetXruns);
         ui.ch_engine_manage_uis->setChecked(host.manageUIs);
         ui.ch_engine_prefer_ui_bridges->setChecked(host.preferUIBridges);
         ui.sb_engine_ui_bridges_timeout->setValue(host.uiBridgesTimeout);
@@ -746,6 +747,429 @@ struct CarlaSettingsW::PrivateData {
                                                                        CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR));
     }
 
+    void saveSettings()
+    {
+        {
+            QSafeSettings settings;
+
+            host.experimental = ui.ch_main_experimental->isChecked();
+
+            if (! host.experimental)
+                resetExperimentalSettings();
+
+            // --------------------------------------------------------------------------------------------------------
+            // Main
+
+            settings.setValue(CARLA_KEY_MAIN_PROJECT_FOLDER,   ui.le_main_proj_folder->text());
+            settings.setValue(CARLA_KEY_MAIN_CONFIRM_EXIT,     ui.ch_main_confirm_exit->isChecked());
+            settings.setValue(CARLA_KEY_MAIN_USE_PRO_THEME,    ui.ch_main_theme_pro->isChecked());
+            settings.setValue(CARLA_KEY_MAIN_PRO_THEME_COLOR,  ui.cb_main_theme_color->currentText());
+            settings.setValue(CARLA_KEY_MAIN_REFRESH_INTERVAL, ui.sb_main_refresh_interval->value());
+
+            // --------------------------------------------------------------------------------------------------------
+            // Canvas
+
+            settings.setValue(CARLA_KEY_CANVAS_THEME,             ui.cb_canvas_theme->currentText());
+            settings.setValue(CARLA_KEY_CANVAS_SIZE,              ui.cb_canvas_size->currentText());
+            settings.setValue(CARLA_KEY_CANVAS_USE_BEZIER_LINES,  ui.cb_canvas_bezier_lines->isChecked());
+            settings.setValue(CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS,  ui.cb_canvas_hide_groups->isChecked());
+            settings.setValue(CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS, ui.cb_canvas_auto_select->isChecked());
+            settings.setValue(CARLA_KEY_CANVAS_EYE_CANDY,         ui.cb_canvas_eyecandy->isChecked());
+            settings.setValue(CARLA_KEY_CANVAS_FANCY_EYE_CANDY,   ui.cb_canvas_fancy_eyecandy->isChecked());
+            settings.setValue(CARLA_KEY_CANVAS_USE_OPENGL,        ui.cb_canvas_use_opengl->isChecked());
+            settings.setValue(CARLA_KEY_CANVAS_HQ_ANTIALIASING,   ui.cb_canvas_render_hq_aa->isChecked());
+            settings.setValue(CARLA_KEY_CANVAS_ANTIALIASING,      ui.cb_canvas_render_aa->checkState()); // 0, 1, 2 match their enum variants
+            settings.setValue(CARLA_KEY_CANVAS_FULL_REPAINTS,     ui.cb_canvas_full_repaints->isChecked());
+            settings.setValue(CARLA_KEY_CANVAS_INLINE_DISPLAYS,   ui.cb_canvas_inline_displays->isChecked());
+        }
+
+        // ------------------------------------------------------------------------------------------------------------
+
+        QSafeSettings settings("falkTX", "Carla2");
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Main
+
+        settings.setValue(CARLA_KEY_MAIN_EXPERIMENTAL, host.experimental);
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Engine
+
+        const QCarlaString audioDriver = ui.cb_engine_audio_driver->currentText();
+
+        if (audioDriver.isNotEmpty() && host.audioDriverForced.isEmpty() && ! host.isPlugin)
+            settings.setValue(CARLA_KEY_ENGINE_AUDIO_DRIVER, audioDriver);
+
+        if (! host.processModeForced)
+        {
+            // engine sends callback if processMode really changes
+            if (audioDriver == "JACK")
+                host.nextProcessMode = static_cast<EngineProcessMode>(ui.cb_engine_process_mode_jack->currentIndex());
+            else
+                host.nextProcessMode = static_cast<EngineProcessMode>(ui.cb_engine_process_mode_other->currentIndex() + PROCESS_MODE_NON_JACK_PADDING);
+
+            settings.setValue(CARLA_KEY_ENGINE_PROCESS_MODE, host.nextProcessMode);
+        }
+
+        host.exportLV2           = ui.ch_exp_export_lv2->isChecked();
+        host.forceStereo         = ui.ch_engine_force_stereo->isChecked();
+        host.resetXruns          = ui.cb_engine_reset_xruns->isChecked();
+        host.maxParameters       = static_cast<uint>(std::max(0, ui.sb_engine_max_params->value()));
+        host.manageUIs           = ui.ch_engine_manage_uis->isChecked();
+        host.preferPluginBridges = ui.ch_engine_prefer_plugin_bridges->isChecked();
+        host.preferUIBridges     = ui.ch_engine_prefer_ui_bridges->isChecked();
+        host.showLogs            = ui.ch_main_show_logs->isChecked();
+        host.showPluginBridges   = ui.cb_exp_plugin_bridges->isChecked();
+        host.showWineBridges     = ui.ch_exp_wine_bridges->isChecked();
+        host.uiBridgesTimeout    = ui.sb_engine_ui_bridges_timeout->value();
+        host.uisAlwaysOnTop      = ui.ch_engine_uis_always_on_top->isChecked();
+
+        if (ui.ch_engine_force_stereo->isEnabled())
+            settings.setValue(CARLA_KEY_ENGINE_FORCE_STEREO, host.forceStereo);
+
+        settings.setValue(CARLA_KEY_MAIN_SHOW_LOGS,               host.showLogs);
+        settings.setValue(CARLA_KEY_ENGINE_MAX_PARAMETERS,        host.maxParameters);
+        settings.setValue(CARLA_KEY_ENGINE_RESET_XRUNS,           host.resetXruns);
+        settings.setValue(CARLA_KEY_ENGINE_MANAGE_UIS,            host.manageUIs);
+        settings.setValue(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, host.preferPluginBridges);
+        settings.setValue(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES,     host.preferUIBridges);
+        settings.setValue(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT,    host.uiBridgesTimeout);
+        settings.setValue(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP,     host.uisAlwaysOnTop);
+        settings.setValue(CARLA_KEY_EXPERIMENTAL_EXPORT_LV2,      host.exportLV2);
+        settings.setValue(CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES,  host.showPluginBridges);
+        settings.setValue(CARLA_KEY_EXPERIMENTAL_WINE_BRIDGES,    host.showWineBridges);
+
+        // ------------------------------------------------------------------------------------------------------------
+        // OSC
+
+        settings.setValue(CARLA_KEY_OSC_ENABLED,          ui.ch_osc_enable->isChecked());
+        settings.setValue(CARLA_KEY_OSC_TCP_PORT_ENABLED, ui.group_osc_tcp_port->isChecked());
+        settings.setValue(CARLA_KEY_OSC_UDP_PORT_ENABLED, ui.group_osc_udp_port->isChecked());
+        settings.setValue(CARLA_KEY_OSC_TCP_PORT_RANDOM,  ui.rb_osc_tcp_port_random->isChecked());
+        settings.setValue(CARLA_KEY_OSC_UDP_PORT_RANDOM,  ui.rb_osc_udp_port_random->isChecked());
+        settings.setValue(CARLA_KEY_OSC_TCP_PORT_NUMBER,  ui.sb_osc_tcp_port_number->value());
+        settings.setValue(CARLA_KEY_OSC_UDP_PORT_NUMBER,  ui.sb_osc_udp_port_number->value());
+
+        // ------------------------------------------------------------------------------------------------------------
+        // File Paths
+
+        QStringList audioPaths;
+        QStringList midiPaths;
+
+        for (int i=0; i < ui.lw_files_audio->count(); ++i)
+            audioPaths.append(ui.lw_files_audio->item(i)->text());
+
+        for (int i=0; i < ui.lw_files_midi->count(); ++i)
+            midiPaths.append(ui.lw_files_midi->item(i)->text());
+
+        /* TODO
+        host.set_engine_option(ENGINE_OPTION_FILE_PATH, FILE_AUDIO, splitter.join(audioPaths));
+        host.set_engine_option(ENGINE_OPTION_FILE_PATH, FILE_MIDI,  splitter.join(midiPaths));
+        */
+
+        settings.setValue(CARLA_KEY_PATHS_AUDIO, audioPaths);
+        settings.setValue(CARLA_KEY_PATHS_MIDI, midiPaths);
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Plugin Paths
+
+        QStringList ladspas;
+        QStringList dssis;
+        QStringList lv2s;
+        QStringList vst2s;
+        QStringList vst3s;
+        QStringList sf2s;
+        QStringList sfzs;
+
+        for (int i=0; i < ui.lw_ladspa->count(); ++i)
+            ladspas.append(ui.lw_ladspa->item(i)->text());
+
+        for (int i=0; i < ui.lw_dssi->count(); ++i)
+            dssis.append(ui.lw_dssi->item(i)->text());
+
+        for (int i=0; i < ui.lw_lv2->count(); ++i)
+            lv2s.append(ui.lw_lv2->item(i)->text());
+
+        for (int i=0; i < ui.lw_vst->count(); ++i)
+            vst2s.append(ui.lw_vst->item(i)->text());
+
+        for (int i=0; i < ui.lw_vst3->count(); ++i)
+            vst3s.append(ui.lw_vst3->item(i)->text());
+
+        for (int i=0; i < ui.lw_sf2->count(); ++i)
+            sf2s.append(ui.lw_sf2->item(i)->text());
+
+        for (int i=0; i < ui.lw_sfz->count(); ++i)
+            sfzs.append(ui.lw_sfz->item(i)->text());
+
+        /* TODO
+        host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LADSPA, splitter.join(ladspas));
+        host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_DSSI,   splitter.join(dssis));
+        host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2,    splitter.join(lv2s));
+        host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST2,   splitter.join(vst2s));
+        host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST3,   splitter.join(vst3s));
+        host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(sf2s));
+        host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(sfzs));
+        */
+
+        settings.setValue(CARLA_KEY_PATHS_LADSPA, ladspas);
+        settings.setValue(CARLA_KEY_PATHS_DSSI, dssis);
+        settings.setValue(CARLA_KEY_PATHS_LV2, lv2s);
+        settings.setValue(CARLA_KEY_PATHS_VST2, vst2s);
+        settings.setValue(CARLA_KEY_PATHS_VST3, vst3s);
+        settings.setValue(CARLA_KEY_PATHS_SF2, sf2s);
+        settings.setValue(CARLA_KEY_PATHS_SFZ, sfzs);
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Wine
+
+        settings.setValue(CARLA_KEY_WINE_EXECUTABLE, ui.le_wine_exec->text());
+        settings.setValue(CARLA_KEY_WINE_AUTO_PREFIX, ui.cb_wine_prefix_detect->isChecked());
+        settings.setValue(CARLA_KEY_WINE_FALLBACK_PREFIX, ui.le_wine_prefix_fallback->text());
+        settings.setValue(CARLA_KEY_WINE_RT_PRIO_ENABLED, ui.group_wine_realtime->isChecked());
+        settings.setValue(CARLA_KEY_WINE_BASE_RT_PRIO, ui.sb_wine_base_prio->value());
+        settings.setValue(CARLA_KEY_WINE_SERVER_RT_PRIO, ui.sb_wine_server_prio->value());
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Experimental
+
+        settings.setValue(CARLA_KEY_EXPERIMENTAL_JACK_APPS, ui.ch_exp_jack_apps->isChecked());
+        settings.setValue(CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL, ui.ch_exp_load_lib_global->isChecked());
+        settings.setValue(CARLA_KEY_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR, ui.ch_exp_prevent_bad_behaviour->isChecked());
+    }
+
+    void resetSettings()
+    {
+        switch (ui.lw_page->currentRow())
+        {
+        // ------------------------------------------------------------------------------------------------------------
+        // Main
+
+        case TAB_INDEX_MAIN:
+            ui.le_main_proj_folder->setText(CARLA_DEFAULT_MAIN_PROJECT_FOLDER);
+            ui.ch_main_theme_pro->setChecked(CARLA_DEFAULT_MAIN_USE_PRO_THEME && ui.group_main_theme->isEnabled());
+            ui.cb_main_theme_color->setCurrentIndex(ui.cb_main_theme_color->findText(CARLA_DEFAULT_MAIN_PRO_THEME_COLOR));
+            ui.sb_main_refresh_interval->setValue(CARLA_DEFAULT_MAIN_REFRESH_INTERVAL);
+            ui.ch_main_confirm_exit->setChecked(CARLA_DEFAULT_MAIN_CONFIRM_EXIT);
+            ui.ch_main_show_logs->setChecked(CARLA_DEFAULT_MAIN_SHOW_LOGS);
+            break;
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Canvas
+
+        case TAB_INDEX_CANVAS:
+            ui.cb_canvas_theme->setCurrentIndex(ui.cb_canvas_theme->findText(CARLA_DEFAULT_CANVAS_THEME));
+            ui.cb_canvas_size->setCurrentIndex(ui.cb_canvas_size->findText(CARLA_DEFAULT_CANVAS_SIZE));
+            ui.cb_canvas_bezier_lines->setChecked(CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES);
+            ui.cb_canvas_hide_groups->setChecked(CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS);
+            ui.cb_canvas_auto_select->setChecked(CARLA_DEFAULT_CANVAS_AUTO_SELECT_ITEMS);
+            ui.cb_canvas_eyecandy->setChecked(CARLA_DEFAULT_CANVAS_EYE_CANDY);
+            ui.cb_canvas_render_aa->setCheckState(Qt::PartiallyChecked); // CARLA_DEFAULT_CANVAS_ANTIALIASING
+            ui.cb_canvas_full_repaints->setChecked(CARLA_DEFAULT_CANVAS_FULL_REPAINTS);
+            break;
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Engine
+
+        case TAB_INDEX_ENGINE:
+            if (! host.isPlugin)
+                ui.cb_engine_audio_driver->setCurrentIndex(0);
+
+            if (! host.processModeForced)
+            {
+                if (ui.cb_engine_audio_driver->currentText() == "JACK")
+                {
+                    ui.cb_engine_process_mode_jack->setCurrentIndex(CARLA_DEFAULT_PROCESS_MODE);
+                    ui.sw_engine_process_mode->setCurrentIndex(0); // show all modes
+                }
+                else
+                {
+                    ui.cb_engine_process_mode_other->setCurrentIndex(CARLA_DEFAULT_PROCESS_MODE-PROCESS_MODE_NON_JACK_PADDING);
+                    ui.sw_engine_process_mode->setCurrentIndex(1); // hide single+multi client modes
+                }
+            }
+
+            ui.sb_engine_max_params->setValue(CARLA_DEFAULT_MAX_PARAMETERS);
+            ui.cb_engine_reset_xruns->setChecked(CARLA_DEFAULT_RESET_XRUNS);
+            ui.ch_engine_uis_always_on_top->setChecked(CARLA_DEFAULT_UIS_ALWAYS_ON_TOP);
+            ui.ch_engine_prefer_ui_bridges->setChecked(CARLA_DEFAULT_PREFER_UI_BRIDGES);
+            ui.sb_engine_ui_bridges_timeout->setValue(CARLA_DEFAULT_UI_BRIDGES_TIMEOUT);
+            ui.ch_engine_manage_uis->setChecked(CARLA_DEFAULT_MANAGE_UIS);
+            break;
+
+        // ------------------------------------------------------------------------------------------------------------
+        // OSC
+
+        case TAB_INDEX_OSC:
+            ui.ch_osc_enable->setChecked(CARLA_DEFAULT_OSC_ENABLED);
+            ui.group_osc_tcp_port->setChecked(CARLA_DEFAULT_OSC_TCP_PORT_ENABLED);
+            ui.group_osc_udp_port->setChecked(CARLA_DEFAULT_OSC_UDP_PORT_ENABLED);
+            ui.sb_osc_tcp_port_number->setValue(CARLA_DEFAULT_OSC_TCP_PORT_NUMBER);
+            ui.sb_osc_udp_port_number->setValue(CARLA_DEFAULT_OSC_UDP_PORT_NUMBER);
+
+            if (CARLA_DEFAULT_OSC_TCP_PORT_RANDOM)
+            {
+                ui.rb_osc_tcp_port_specific->setChecked(false);
+                ui.rb_osc_tcp_port_random->setChecked(true);
+            }
+            else
+            {
+                ui.rb_osc_tcp_port_random->setChecked(false);
+                ui.rb_osc_tcp_port_specific->setChecked(true);
+            }
+
+            if (CARLA_DEFAULT_OSC_UDP_PORT_RANDOM)
+            {
+                ui.rb_osc_udp_port_specific->setChecked(false);
+                ui.rb_osc_udp_port_random->setChecked(true);
+            }
+            else
+            {
+                ui.rb_osc_udp_port_random->setChecked(false);
+                ui.rb_osc_udp_port_specific->setChecked(true);
+            }
+            break;
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Plugin Paths
+
+        case TAB_INDEX_FILEPATHS:
+            switch (ui.tw_filepaths->currentIndex())
+            {
+            case FILEPATH_INDEX_AUDIO:
+                ui.lw_files_audio->clear();
+                break;
+            case FILEPATH_INDEX_MIDI:
+                ui.lw_files_midi->clear();
+                break;
+            }
+            break;
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Plugin Paths
+
+        case TAB_INDEX_PLUGINPATHS:
+        {
+            QStringList paths;
+
+            switch (ui.tw_paths->currentIndex())
+            {
+            case PLUGINPATH_INDEX_LADSPA:
+                paths = CARLA_DEFAULT_LADSPA_PATH;
+                paths.sort();
+                ui.lw_ladspa->clear();
+
+                for (const auto& path : paths)
+                {
+                    if (path.isEmpty())
+                        continue;
+                    ui.lw_ladspa->addItem(path);
+                }
+                break;
+
+            case PLUGINPATH_INDEX_DSSI:
+                paths = CARLA_DEFAULT_DSSI_PATH;
+                paths.sort();
+                ui.lw_dssi->clear();
+
+                for (const auto& path : paths)
+                {
+                    if (path.isEmpty())
+                        continue;
+                    ui.lw_dssi->addItem(path);
+                }
+                break;
+
+            case PLUGINPATH_INDEX_LV2:
+                paths = CARLA_DEFAULT_LV2_PATH;
+                paths.sort();
+                ui.lw_lv2->clear();
+
+                for (const auto& path : paths)
+                {
+                    if (path.isEmpty())
+                        continue;
+                    ui.lw_lv2->addItem(path);
+                }
+                break;
+
+            case PLUGINPATH_INDEX_VST2:
+                paths = CARLA_DEFAULT_VST2_PATH;
+                paths.sort();
+                ui.lw_vst->clear();
+
+                for (const auto& path : paths)
+                {
+                    if (path.isEmpty())
+                        continue;
+                    ui.lw_vst->addItem(path);
+                }
+                break;
+
+            case PLUGINPATH_INDEX_VST3:
+                paths = CARLA_DEFAULT_VST3_PATH;
+                paths.sort();
+                ui.lw_vst3->clear();
+
+                for (const auto& path : paths)
+                {
+                    if (path.isEmpty())
+                        continue;
+                    ui.lw_vst3->addItem(path);
+                }
+                break;
+
+            case PLUGINPATH_INDEX_SF2:
+                paths = CARLA_DEFAULT_SF2_PATH;
+                paths.sort();
+                ui.lw_sf2->clear();
+
+                for (const auto& path : paths)
+                {
+                    if (path.isEmpty())
+                        continue;
+                    ui.lw_sf2->addItem(path);
+                }
+                break;
+
+            case PLUGINPATH_INDEX_SFZ:
+                paths = CARLA_DEFAULT_SFZ_PATH;
+                paths.sort();
+                ui.lw_sfz->clear();
+
+                for (const auto& path : paths)
+                {
+                    if (path.isEmpty())
+                        continue;
+                    ui.lw_sfz->addItem(path);
+                }
+                break;
+            }
+            break;
+        }
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Wine
+
+        case TAB_INDEX_WINE:
+            ui.le_wine_exec->setText(CARLA_DEFAULT_WINE_EXECUTABLE);
+            ui.cb_wine_prefix_detect->setChecked(CARLA_DEFAULT_WINE_AUTO_PREFIX);
+            ui.le_wine_prefix_fallback->setText(CARLA_DEFAULT_WINE_FALLBACK_PREFIX);
+            ui.group_wine_realtime->setChecked(CARLA_DEFAULT_WINE_RT_PRIO_ENABLED);
+            ui.sb_wine_base_prio->setValue(CARLA_DEFAULT_WINE_BASE_RT_PRIO);
+            ui.sb_wine_server_prio->setValue(CARLA_DEFAULT_WINE_SERVER_RT_PRIO);
+            break;
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Experimental
+
+        case TAB_INDEX_EXPERIMENTAL:
+            resetExperimentalSettings();
+            break;
+        }
+
+    }
+
     void resetExperimentalSettings()
     {
         // Forever experimental
@@ -766,7 +1190,7 @@ struct CarlaSettingsW::PrivateData {
     }
 };
 
-CarlaSettingsW::CarlaSettingsW(QWidget* const parent, const CarlaHost& host, const bool hasCanvas, const bool hasCanvasGL)
+CarlaSettingsW::CarlaSettingsW(QWidget* const parent, CarlaHost& host, const bool hasCanvas, const bool hasCanvasGL)
     : QDialog(parent),
       self(new PrivateData(this, host))
 {
@@ -929,12 +1353,12 @@ CarlaSettingsW::~CarlaSettingsW()
 
 void CarlaSettingsW::slot_saveSettings()
 {
-    // TODO
+    self->saveSettings();
 }
 
 void CarlaSettingsW::slot_resetSettings()
 {
-    // TODO
+    self->resetSettings();
 }
 
 // --------------------------------------------------------------------------------------------------------------------

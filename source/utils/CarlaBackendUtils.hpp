@@ -342,6 +342,8 @@ const char* EngineOption2Str(const EngineOption option) noexcept
         return "ENGINE_OPTION_UIS_ALWAYS_ON_TOP";
     case ENGINE_OPTION_MAX_PARAMETERS:
         return "ENGINE_OPTION_MAX_PARAMETERS";
+    case ENGINE_OPTION_RESET_XRUNS:
+        return "ENGINE_OPTION_RESET_XRUNS";
     case ENGINE_OPTION_UI_BRIDGES_TIMEOUT:
         return "ENGINE_OPTION_UI_BRIDGES_TIMEOUT";
     case ENGINE_OPTION_AUDIO_BUFFER_SIZE:

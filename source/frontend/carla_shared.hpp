@@ -151,6 +151,7 @@ static const char* const* const MIDI_CC_LIST = {
 #define CARLA_KEY_ENGINE_MANAGE_UIS            "Engine/ManageUIs"           /* bool */
 #define CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP     "Engine/UIsAlwaysOnTop"      /* bool */
 #define CARLA_KEY_ENGINE_MAX_PARAMETERS        "Engine/MaxParameters"       /* int  */
+#define CARLA_KEY_ENGINE_RESET_XRUNS           "Engine/ResetXruns"          /* bool */
 #define CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT    "Engine/UiBridgesTimeout"    /* int  */
 
 #define CARLA_KEY_OSC_ENABLED          "OSC/Enabled"
@@ -228,6 +229,7 @@ static const char* const* const MIDI_CC_LIST = {
 #define CARLA_DEFAULT_MANAGE_UIS            true
 #define CARLA_DEFAULT_UIS_ALWAYS_ON_TOP     false
 #define CARLA_DEFAULT_MAX_PARAMETERS        MAX_DEFAULT_PARAMETERS
+#define CARLA_DEFAULT_RESET_XRUNS           false
 #define CARLA_DEFAULT_UI_BRIDGES_TIMEOUT    4000
 
 #define CARLA_DEFAULT_AUDIO_BUFFER_SIZE     512

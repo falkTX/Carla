@@ -1704,6 +1704,11 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         pData->options.maxParameters = static_cast<uint>(value);
         break;
 
+    case ENGINE_OPTION_RESET_XRUNS:
+        CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
+        pData->options.resetXruns = (value != 0);
+        break;
+
     case ENGINE_OPTION_UI_BRIDGES_TIMEOUT:
         CARLA_SAFE_ASSERT_RETURN(value >= 0,);
         pData->options.uiBridgesTimeout = static_cast<uint>(value);
@@ -2880,6 +2885,9 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
         }
     }
 #endif
+
+    if (pData->options.resetXruns)
+        clearXruns();
 
     callback(true, true, ENGINE_CALLBACK_PROJECT_LOAD_FINISHED, 0, 0, 0, 0, 0.0f, nullptr);
     callback(true, true, ENGINE_CALLBACK_CANCELABLE_ACTION, 0, 0, 0, 0, 0.0f, "Loading project");

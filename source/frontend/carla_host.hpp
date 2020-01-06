@@ -72,6 +72,7 @@ public:
     bool forceStereo;
     bool manageUIs;
     uint maxParameters;
+    bool resetXruns;
     bool preferPluginBridges;
     bool preferUIBridges;
     bool preventBadBehaviour;

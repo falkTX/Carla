@@ -574,6 +574,7 @@ class CarlaSettingsW(QDialog):
             self.ui.cb_engine_process_mode_other.setCurrentIndex(0)
 
         self.ui.sb_engine_max_params.setValue(self.host.maxParameters)
+        self.ui.cb_engine_reset_xruns.setChecked(self.host.resetXruns)
         self.ui.ch_engine_manage_uis.setChecked(self.host.manageUIs)
         self.ui.ch_engine_prefer_ui_bridges.setChecked(self.host.preferUIBridges)
         self.ui.sb_engine_ui_bridges_timeout.setValue(self.host.uiBridgesTimeout)
@@ -794,6 +795,7 @@ class CarlaSettingsW(QDialog):
 
         self.host.exportLV2           = self.ui.ch_exp_export_lv2.isChecked()
         self.host.forceStereo         = self.ui.ch_engine_force_stereo.isChecked()
+        self.host.resetXruns          = self.ui.cb_engine_reset_xruns.isChecked()
         self.host.maxParameters       = self.ui.sb_engine_max_params.value()
         self.host.manageUIs           = self.ui.ch_engine_manage_uis.isChecked()
         self.host.preferPluginBridges = self.ui.ch_engine_prefer_plugin_bridges.isChecked()
@@ -809,6 +811,7 @@ class CarlaSettingsW(QDialog):
 
         settings.setValue(CARLA_KEY_MAIN_SHOW_LOGS,               self.host.showLogs)
         settings.setValue(CARLA_KEY_ENGINE_MAX_PARAMETERS,        self.host.maxParameters)
+        settings.setValue(CARLA_KEY_ENGINE_RESET_XRUNS,           self.host.resetXruns)
         settings.setValue(CARLA_KEY_ENGINE_MANAGE_UIS,            self.host.manageUIs)
         settings.setValue(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, self.host.preferPluginBridges)
         settings.setValue(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES,     self.host.preferUIBridges)
@@ -958,6 +961,7 @@ class CarlaSettingsW(QDialog):
                     self.ui.sw_engine_process_mode.setCurrentIndex(1) # hide single+multi client modes
 
             self.ui.sb_engine_max_params.setValue(CARLA_DEFAULT_MAX_PARAMETERS)
+            self.ui.cb_engine_reset_xruns.setChecked(CARLA_DEFAULT_RESET_XRUNS)
             self.ui.ch_engine_uis_always_on_top.setChecked(CARLA_DEFAULT_UIS_ALWAYS_ON_TOP)
             self.ui.ch_engine_prefer_ui_bridges.setChecked(CARLA_DEFAULT_PREFER_UI_BRIDGES)
             self.ui.sb_engine_ui_bridges_timeout.setValue(CARLA_DEFAULT_UI_BRIDGES_TIMEOUT)
