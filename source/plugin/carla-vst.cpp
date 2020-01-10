@@ -599,7 +599,8 @@ public:
         fDescriptor->set_parameter_value(fHandle, uindex, realValue);
     }
 
-    void vst_processReplacing(const float** const inputs, float** const outputs, const int32_t sampleFrames)
+    // FIXME for v3.0, use const for the input buffer
+    void vst_processReplacing(float** const inputs, float** const outputs, const int32_t sampleFrames)
     {
         if (sampleFrames <= 0)
             return;
@@ -681,7 +682,6 @@ public:
         fMidiOutEvents.numEvents = 0;
 
         if (fHandle != nullptr)
-            // FIXME
             fDescriptor->process(fHandle,
                                  inputs, outputs, static_cast<uint32_t>(sampleFrames),
                                  fMidiEvents, fMidiEventCount);
@@ -1232,13 +1232,13 @@ void vst_setParameterCallback(AEffect* effect, int32_t index, float value)
 void vst_processCallback(AEffect* effect, float** inputs, float** outputs, int32_t sampleFrames)
 {
     if (validPlugin)
-        pluginPtr->vst_processReplacing(const_cast<const float**>(inputs), outputs, sampleFrames);
+        pluginPtr->vst_processReplacing(inputs, outputs, sampleFrames);
 }
 
 void vst_processReplacingCallback(AEffect* effect, float** inputs, float** outputs, int32_t sampleFrames)
 {
     if (validPlugin)
-        pluginPtr->vst_processReplacing(const_cast<const float**>(inputs), outputs, sampleFrames);
+        pluginPtr->vst_processReplacing(inputs, outputs, sampleFrames);
 }
 
 #undef pluginPtr

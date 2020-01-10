@@ -757,7 +757,8 @@ public:
         } catch(...) {}
     }
 
-    void process(const float** const audioIn, float** const audioOut, const float** const, float** const, const uint32_t frames) override
+    void process(const float* const* const audioIn, float** const audioOut,
+                 const float* const*, float**, const uint32_t frames) override
     {
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -1079,7 +1080,7 @@ public:
         processSingle(audioIn, audioOut, frames);
     }
 
-    bool processSingle(const float** const inBuffer, float** const outBuffer, const uint32_t frames)
+    bool processSingle(const float* const* const inBuffer, float** const outBuffer, const uint32_t frames)
     {
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
 

@@ -1242,9 +1242,9 @@ public:
         } CARLA_SAFE_EXCEPTION("deactivate - waitForClient");
     }
 
-    void process(const float** const audioIn,
+    void process(const float* const* const audioIn,
                  float** const audioOut,
-                 const float** const cvIn,
+                 const float* const* const cvIn,
                  float** const cvOut,
                  const uint32_t frames) override
     {
@@ -1578,8 +1578,8 @@ public:
         } // End of Control and MIDI Output
     }
 
-    bool processSingle(const float** const audioIn, float** const audioOut,
-                       const float** const cvIn, float** const cvOut, const uint32_t frames)
+    bool processSingle(const float* const* const audioIn, float** const audioOut,
+                       const float* const* const cvIn, float** const cvOut, const uint32_t frames)
     {
         CARLA_SAFE_ASSERT_RETURN(! fTimedError, false);
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);

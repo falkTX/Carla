@@ -701,8 +701,8 @@ public:
     /*!
      * Plugin process call.
      */
-    virtual void process(const float** audioIn, float** audioOut,
-                         const float** cvIn, float** cvOut, uint32_t frames) = 0;
+    virtual void process(const float* const* audioIn, float** audioOut,
+                         const float* const* cvIn, float** cvOut, uint32_t frames) = 0;
 
     /*!
      * Tell the plugin the current buffer size changed.

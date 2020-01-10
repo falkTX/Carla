@@ -1673,8 +1673,8 @@ public:
         return kNullEngineEvent;
     }
 
-    void process(const float** const audioIn, float** const audioOut,
-                 const float** const cvIn, float** const cvOut, const uint32_t frames) override
+    void process(const float* const* const audioIn, float** const audioOut,
+                 const float* const* const cvIn, float** const cvOut, const uint32_t frames) override
     {
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -2218,8 +2218,8 @@ public:
 #endif
     }
 
-    bool processSingle(const float** const audioIn, float** const audioOut,
-                       const float** const cvIn, float** const cvOut,
+    bool processSingle(const float* const* const audioIn, float** const audioOut,
+                       const float* const* const cvIn, float** const cvOut,
                        const uint32_t frames, const uint32_t timeOffset)
     {
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);

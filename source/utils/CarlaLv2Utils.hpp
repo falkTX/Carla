@@ -1250,7 +1250,7 @@ protected:
         const LV2_Atom_Sequence** eventsIn;
         /* */ LV2_Atom_Sequence** eventsOut;
         /* */ EventsOutData*      eventsOutData;
-        const float** audioCVIns;
+        /* */ float** audioCVIns;
         /* */ float** audioCVOuts;
         /* */ float*  freewheel;
 
@@ -1363,7 +1363,7 @@ protected:
 
             if (const uint32_t numAudioCVIns = numAudioIns+numCVIns)
             {
-                audioCVIns = new const float*[numAudioCVIns];
+                audioCVIns = new float*[numAudioCVIns];
                 carla_zeroPointers(audioCVIns, numAudioCVIns);
             }
 
@@ -1445,7 +1445,7 @@ protected:
             {
                 if (port == index++)
                 {
-                    audioCVIns[i] = (const float*)dataLocation;
+                    audioCVIns[i] = (float*)dataLocation;
                     return;
                 }
             }
@@ -1463,7 +1463,7 @@ protected:
             {
                 if (port == index++)
                 {
-                    audioCVIns[numAudioIns+i] = (const float*)dataLocation;
+                    audioCVIns[numAudioIns+i] = (float*)dataLocation;
                     return;
                 }
             }

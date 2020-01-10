@@ -1076,7 +1076,8 @@ public:
     // -------------------------------------------------------------------
     // Plugin processing
 
-    void process(const float** const, float** const audioOut, const float** const, float** const, const uint32_t frames) override
+    void process(const float* const* const, float** const audioOut, 
+                 const float* const*, float**, const uint32_t frames) override
     {
         // --------------------------------------------------------------------------------------------------------
         // Check if active

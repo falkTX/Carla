@@ -1479,8 +1479,8 @@ public:
         }
     }
 
-    void process(const float** const audioIn, float** const audioOut,
-                 const float** const cvIn, float** const,
+    void process(const float* const* const audioIn, float** const audioOut,
+                 const float* const* const cvIn, float**,
                  const uint32_t frames) override
     {
         // --------------------------------------------------------------------------------------------------------
@@ -1961,7 +1961,7 @@ public:
 #endif
     }
 
-    bool processSingle(const float** const audioIn, float** const audioOut, const uint32_t frames,
+    bool processSingle(const float* const* const audioIn, float** const audioOut, const uint32_t frames,
                        const uint32_t timeOffset, const ulong midiEventCount)
     {
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
