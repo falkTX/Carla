@@ -68,7 +68,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process2(const float**, float**, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
+    void process2(const float* const*, float**, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
     {
         const NativeTimeInfo* const timePos(getTimeInfo());
 

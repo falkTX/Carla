@@ -83,7 +83,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(const float**, float**, const uint32_t, const NativeMidiEvent* const, const uint32_t) override
+    void process(const float* const*, float**, const uint32_t, const NativeMidiEvent* const, const uint32_t) override
     {
     }
 

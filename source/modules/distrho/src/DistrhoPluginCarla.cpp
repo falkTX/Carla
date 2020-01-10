@@ -364,7 +364,7 @@ protected:
     }
 
 #if DISTRHO_PLUGIN_WANT_MIDI_INPUT
-    void process(const float** const inBuffer, float** const outBuffer, const uint32_t frames,
+    void process(const float* const* const inBuffer, float** const outBuffer, const uint32_t frames,
                  const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
         MidiEvent realMidiEvents[midiEventCount];
@@ -389,7 +389,7 @@ protected:
         fPlugin.run(inBuffer, outBuffer, frames, realMidiEvents, midiEventCount);
     }
 #else
-    void process(const float** const inBuffer, float** const outBuffer, const uint32_t frames,
+    void process(const float* const* const inBuffer, float** const outBuffer, const uint32_t frames,
                  const NativeMidiEvent* const, const uint32_t) override
     {
         fPlugin.run(inBuffer, outBuffer, frames);

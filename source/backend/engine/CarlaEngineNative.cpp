@@ -1080,7 +1080,7 @@ protected:
         //runPendingRtEvents();
     }
 
-    void process(const float** const inBuffer, float** const outBuffer, const uint32_t frames,
+    void process(const float* const* const inBuffer, float** const outBuffer, const uint32_t frames,
                  const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount)
     {
         if (frames > pData->bufferSize)
@@ -1577,8 +1577,9 @@ public:
         handlePtr->deactivate();
     }
 
+    // FIXME for v3.0, use const for the input buffer
     static void _process(NativePluginHandle handle,
-                         const float** inBuffer, float** outBuffer, const uint32_t frames,
+                         float** inBuffer, float** outBuffer, const uint32_t frames,
                          const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
     {
         handlePtr->process(inBuffer, outBuffer, frames, midiEvents, midiEventCount);

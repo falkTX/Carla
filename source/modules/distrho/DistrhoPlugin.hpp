@@ -845,14 +845,14 @@ protected:
       Run/process function for plugins with MIDI input.
       @note Some parameters might be null if there are no audio inputs/outputs or MIDI events.
     */
-    virtual void run(const float** inputs, float** outputs, uint32_t frames,
+    virtual void run(const float* const* inputs, float** outputs, uint32_t frames,
                      const MidiEvent* midiEvents, uint32_t midiEventCount) = 0;
 #else
    /**
       Run/process function for plugins without MIDI input.
       @note Some parameters might be null if there are no audio inputs or outputs.
     */
-    virtual void run(const float** inputs, float** outputs, uint32_t frames) = 0;
+    virtual void run(const float* const* inputs, float** outputs, uint32_t frames) = 0;
 #endif
 
    /* --------------------------------------------------------------------------------------------------------

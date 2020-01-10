@@ -155,7 +155,7 @@ protected:
         fOutRight = 0.0f;
     }
 
-    void process(const float** inputs, float**, const uint32_t frames,
+    void process(const float* const* inputs, float**, const uint32_t frames,
                  const NativeMidiEvent* const, const uint32_t) override
     {
         fOutLeft  = carla_findMaxNormalizedFloat(inputs[0], frames);

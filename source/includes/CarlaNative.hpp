@@ -318,7 +318,7 @@ protected:
 
     virtual void deactivate() {}
 
-    virtual void process(const float** inBuffer, float** outBuffer, uint32_t frames,
+    virtual void process(const float* const* inBuffer, float** outBuffer, uint32_t frames,
                          const NativeMidiEvent* midiEvents, uint32_t midiEventCount) = 0;
 
     // -------------------------------------------------------------------
@@ -500,8 +500,9 @@ public:
         handlePtr->deactivate();
     }
 
+    // FIXME for v3.0, use const for the input buffer
     static void _process(NativePluginHandle handle,
-                         const float** inBuffer, float** outBuffer, const uint32_t frames,
+                         float** inBuffer, float** outBuffer, const uint32_t frames,
                          const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
     {
         handlePtr->process(inBuffer, outBuffer, frames, midiEvents, midiEventCount);

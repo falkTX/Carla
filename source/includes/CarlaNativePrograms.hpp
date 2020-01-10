@@ -102,7 +102,7 @@ protected:
     // New Plugin program calls
 
     virtual void setStateFromFile(const char* filename) = 0;
-    virtual void process2(const float** inBuffer, float** outBuffer, uint32_t frames,
+    virtual void process2(const float* const* inBuffer, float** outBuffer, uint32_t frames,
                           const NativeMidiEvent* midiEvents, uint32_t midiEventCount) = 0;
 
     // -------------------------------------------------------------------
@@ -158,7 +158,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(const float** const inBuffer, float** const outBuffer, uint32_t frames,
+    void process(const float* const* const inBuffer, float** const outBuffer, uint32_t frames,
                  const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
         const CarlaMutexTryLocker cmtl(fProgramChangeMutex, isOffline());

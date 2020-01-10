@@ -205,8 +205,9 @@ static void midi2cv_activate(NativePluginHandle handle)
     panic(handlePtr);
 }
 
+// FIXME for v3.0, use const for the input buffer
 static void midi2cv_process(NativePluginHandle handle,
-                                const float** inBuffer, float** outBuffer, uint32_t frames,
+                                float** inBuffer, float** outBuffer, uint32_t frames,
                                 const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
 {
     float* const pitch    = outBuffer[0];

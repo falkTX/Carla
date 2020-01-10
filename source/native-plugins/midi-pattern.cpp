@@ -200,7 +200,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(const float**, float**, const uint32_t frames,
+    void process(const float* const*, float**, const uint32_t frames,
                  const NativeMidiEvent* /*midiEvents*/, uint32_t /*midiEventCount*/) override
     {
         if (const NativeTimeInfo* const timeInfo = getTimeInfo())

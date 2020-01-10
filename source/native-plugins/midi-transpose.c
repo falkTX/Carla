@@ -130,8 +130,9 @@ static void miditranspose_set_parameter_value(NativePluginHandle handle, uint32_
     }
 }
 
+// FIXME for v3.0, use const for the input buffer
 static void miditranspose_process(NativePluginHandle handle,
-                                  const float** inBuffer, float** outBuffer, uint32_t frames,
+                                  float** inBuffer, float** outBuffer, uint32_t frames,
                                   const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
 {
     const NativeHostDescriptor* const host = handlePtr->host;

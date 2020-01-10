@@ -2283,18 +2283,18 @@ public:
         if (fHandle2 == nullptr)
         {
             fDescriptor->process(fHandle,
-                                 const_cast<const float**>(fAudioAndCvInBuffers), fAudioAndCvOutBuffers, frames,
+                                 fAudioAndCvInBuffers, fAudioAndCvOutBuffers, frames,
                                  fMidiInEvents, fMidiEventInCount);
         }
         else
         {
             fDescriptor->process(fHandle,
-                                 (fAudioAndCvInBuffers != nullptr)  ? const_cast<const float**>(&fAudioAndCvInBuffers[0]) : nullptr,
+                                 (fAudioAndCvInBuffers != nullptr)  ? &fAudioAndCvInBuffers[0]  : nullptr,
                                  (fAudioAndCvOutBuffers != nullptr) ? &fAudioAndCvOutBuffers[0] : nullptr,
                                  frames, fMidiInEvents, fMidiEventInCount);
 
             fDescriptor->process(fHandle2,
-                                 (fAudioAndCvInBuffers != nullptr)  ? const_cast<const float**>(&fAudioAndCvInBuffers[1]) : nullptr,
+                                 (fAudioAndCvInBuffers != nullptr)  ? &fAudioAndCvInBuffers[1]  : nullptr,
                                  (fAudioAndCvOutBuffers != nullptr) ? &fAudioAndCvOutBuffers[1] : nullptr,
                                  frames, fMidiInEvents, fMidiEventInCount);
         }

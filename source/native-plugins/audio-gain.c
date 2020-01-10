@@ -201,8 +201,9 @@ void handle_audio_buffers(const float* inBuffer, float* outBuffer, Filter* const
     filter->z1 = z1;
 }
 
+// FIXME for v3.0, use const for the input buffer
 static void audiogain_process(NativePluginHandle handle,
-                             const float** inBuffer, float** outBuffer, uint32_t frames,
+                             float** inBuffer, float** outBuffer, uint32_t frames,
                              const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
 {
     const float gain      = handlePtr->gain;
