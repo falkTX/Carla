@@ -46,8 +46,9 @@ static void midisplit_cleanup(NativePluginHandle handle)
     free(handlePtr);
 }
 
+// FIXME for v3.0, use const for the input buffer
 static void midisplit_process(NativePluginHandle handle,
-                              const float** inBuffer, float** outBuffer, uint32_t frames,
+                              float** inBuffer, float** outBuffer, uint32_t frames,
                               const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
 {
     const NativeHostDescriptor* const host = handlePtr->host;
@@ -92,6 +93,8 @@ static const NativePluginDescriptor midisplitDesc = {
     .supports  = NATIVE_PLUGIN_SUPPORTS_EVERYTHING,
     .audioIns  = 0,
     .audioOuts = 0,
+    .cvIns     = 0,
+    .cvOuts    = 0,
     .midiIns   = 1,
     .midiOuts  = MAX_MIDI_CHANNELS,
     .paramIns  = 0,

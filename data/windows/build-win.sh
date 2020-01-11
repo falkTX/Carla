@@ -33,7 +33,7 @@ if [ x"${ARCH}" = x"32nosse" ]; then
   MAKE_ARGS="${MAKE_ARGS} NOOPT=true"
 fi
 
-MAKE_ARGS="${MAKE_ARGS} BUILDING_FOR_WINDOWS=true HAVE_PYQT5=true USING_JUCE=true"
+MAKE_ARGS="${MAKE_ARGS} BUILDING_FOR_WINDOWS=true USING_JUCE=true"
 
 export WIN32=true
 
@@ -82,8 +82,8 @@ export WINEARCH=win${ARCH}
 export WINEDEBUG=-all
 export WINEPREFIX=~/.winepy3_x${ARCH}
 export PYTHON_EXE="wine ${MSYS2_PREFIX}/bin/python.exe"
-export PYRCC="${PYTHON_EXE} -m PyQt5.pyrcc_main"
-export PYUIC="${PYTHON_EXE} -m PyQt5.uic.pyuic"
+export PYRCC5="${PYTHON_EXE} -m PyQt5.pyrcc_main"
+export PYUIC5="${PYTHON_EXE} -m PyQt5.uic.pyuic"
 
 make ${MAKE_ARGS}
 

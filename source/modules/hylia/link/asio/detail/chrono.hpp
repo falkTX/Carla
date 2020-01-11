@@ -2,7 +2,7 @@
 // detail/chrono.hpp
 // ~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -38,11 +38,11 @@ using std::chrono::minutes;
 using std::chrono::hours;
 using std::chrono::time_point_cast;
 #if defined(ASIO_HAS_STD_CHRONO_MONOTONIC_CLOCK)
-typedef std::chrono::monotonic_clock system_clock;
+typedef std::chrono::monotonic_clock steady_clock;
 #else // defined(ASIO_HAS_STD_CHRONO_MONOTONIC_CLOCK)
-using std::chrono::system_clock;
-#endif // defined(ASIO_HAS_STD_CHRONO_MONOTONIC_CLOCK)
 using std::chrono::steady_clock;
+#endif // defined(ASIO_HAS_STD_CHRONO_MONOTONIC_CLOCK)
+using std::chrono::system_clock;
 using std::chrono::high_resolution_clock;
 #elif defined(ASIO_HAS_BOOST_CHRONO)
 using boost::chrono::duration;

@@ -26,18 +26,15 @@
  * which are specific to that library.
  */
 
-// Visual Studio
 #if defined(_MSC_VER)
-#pragma warning(push)
-// C4388: signed/unsigned mismatch
-#pragma warning(disable : 4388)
-// C4702: unreachable code
+#pragma warning(push, 0)
+#pragma warning(disable : 4242)
+#pragma warning(disable : 4244)
 #pragma warning(disable : 4702)
 #endif
 
 #include <catch.hpp>
 
-// Visual Studio
 #if defined(_MSC_VER)
 #pragma warning(pop)
 #endif

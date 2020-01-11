@@ -17,6 +17,7 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 
 BINDIR    := $(CWD)/../bin
+DATADIR   := $(CWD)/../data
 
 ifeq ($(DEBUG),true)
 OBJDIR    := $(CWD)/../build/plugin/Debug
@@ -82,7 +83,8 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Link flags
 
-NATIVE_LINK_FLAGS  = $(LINK_FLAGS)
+NATIVE_LINK_FLAGS  = $(HYLIA_LIBS)
+NATIVE_LINK_FLAGS += $(LINK_FLAGS)
 NATIVE_LINK_FLAGS += $(JACKBRIDGE_LIBS)
 NATIVE_LINK_FLAGS += $(LILV_LIBS)
 NATIVE_LINK_FLAGS += $(RTMEMPOOL_LIBS)
@@ -154,6 +156,7 @@ TARGETS += \
 endif
 
 ifneq ($(HAIKU),true)
+ifeq ($(HAVE_DGL),true)
 ifeq ($(HAVE_PYQT),true)
 TARGETS += \
 	$(BINDIR)/CarlaRack$(LIB_EXT) \
@@ -165,6 +168,7 @@ TARGETS += \
 	$(BINDIR)/CarlaPatchbayFX$(LIB_EXT) \
 	$(BINDIR)/CarlaVstShell$(LIB_EXT) \
 	$(BINDIR)/CarlaVstFxShell$(LIB_EXT)
+endif
 endif
 endif
 
@@ -180,10 +184,31 @@ endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
+BUNDLES = audiogain files miditools
+
+bundles: \
+	$(BINDIR)/carla-audiogain.lv2/manifest.ttl \
+	$(BINDIR)/carla-audiogain.lv2/carla$(LIB_EXT) \
+	$(BINDIR)/carla-files.lv2/manifest.ttl \
+	$(BINDIR)/carla-files.lv2/carla$(LIB_EXT) \
+	$(BINDIR)/carla-miditools.lv2/manifest.ttl \
+	$(BINDIR)/carla-miditools.lv2/carla$(LIB_EXT)
+
+BUNDLE_LIBS += $(MODULEDIR)/water.files.a
+BUNDLE_LIBS += $(WATER_LIBS)
+
+BUNDLE_FILES_LIBS += $(MODULEDIR)/audio_decoder.a
+BUNDLE_FILES_LIBS += $(MODULEDIR)/water.a
+BUNDLE_FILES_LIBS += $(AUDIO_DECODER_LIBS)
+BUNDLE_FILES_LIBS += $(WATER_LIBS)
+
+# ---------------------------------------------------------------------------------------------------------------------
+
 clean:
 	rm -f $(OBJDIR)/*.o $(TARGETS)
 	rm -f $(BINDIR)/carla.lv2/*.*
 	rm -f $(BINDIR)/carla-lv2-export$(APP_EXT)
+	rm -rf $(BINDIR)/carla-*.lv2
 
 debug:
 	$(MAKE) DEBUG=true
@@ -211,6 +236,27 @@ $(BINDIR)/carla.lv2/carla-ui$(LIB_EXT): $(OBJDIR)/carla-lv2-ui.cpp.o $(LIBS_ui)
 	-@mkdir -p $(BINDIR)/carla.lv2
 	@echo "Linking carla.lv2/carla-ui$(LIB_EXT)"
 	@$(CXX) $< $(LIBS_START) $(LIBS_ui) $(LIBS_END) $(SHARED) $(SYMBOLS_LV2_UI) $(NATIVE_LINK_FLAGS) -o $@
+
+# ---------------------------------------------------------------------------------------------------------------------
+
+$(BINDIR)/carla-%.lv2/manifest.ttl: $(DATADIR)/lv2-bundles/%/*.ttl
+	-@mkdir -p $(shell dirname $@)
+	@cp -v $^ $(shell dirname $@)
+
+$(BINDIR)/carla-audiogain.lv2/carla$(LIB_EXT): $(OBJDIR)/carla-lv2-bundles.cpp.audiogain.o $(MODULEDIR)/native-plugins_audiogain.a
+	-@mkdir -p $(BINDIR)/carla-audiogain.lv2
+	@echo "Linking carla-audiogain.lv2/carla$(LIB_EXT)"
+	@$(CXX) $^ $(SHARED) $(SYMBOLS_LV2) $(BUNDLE_LIBS) $(LINK_FLAGS) -ldl -o $@
+
+$(BINDIR)/carla-files.lv2/carla$(LIB_EXT): $(OBJDIR)/carla-lv2-bundles.cpp.files.o $(MODULEDIR)/native-plugins_files.a
+	-@mkdir -p $(BINDIR)/carla-files.lv2
+	@echo "Linking carla-files.lv2/carla$(LIB_EXT)"
+	@$(CXX) $^ $(SHARED) $(SYMBOLS_LV2) $(BUNDLE_FILES_LIBS) $(LINK_FLAGS) -o $@
+
+$(BINDIR)/carla-miditools.lv2/carla$(LIB_EXT): $(OBJDIR)/carla-lv2-bundles.cpp.miditools.o $(MODULEDIR)/native-plugins_miditools.a
+	-@mkdir -p $(BINDIR)/carla-miditools.lv2
+	@echo "Linking carla-miditools.lv2/carla$(LIB_EXT)"
+	@$(CXX) $^ $(SHARED) $(SYMBOLS_LV2) $(BUNDLE_LIBS) $(LINK_FLAGS) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -301,6 +347,23 @@ $(OBJDIR)/carla-lv2-ui.cpp.o: carla-lv2-ui.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+# ---------------------------------------------------------------------------------------------------------------------
+
+$(OBJDIR)/carla-lv2-bundles.cpp.audiogain.o: carla-lv2-bundles.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (audiogain)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_BUNDLE_TYPE=1 -c -o $@
+
+$(OBJDIR)/carla-lv2-bundles.cpp.files.o: carla-lv2-bundles.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (files)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_BUNDLE_TYPE=2 -c -o $@
+
+$(OBJDIR)/carla-lv2-bundles.cpp.miditools.o: carla-lv2-bundles.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (miditools)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_BUNDLE_TYPE=3 -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 

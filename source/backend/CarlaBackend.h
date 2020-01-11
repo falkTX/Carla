@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -74,7 +74,7 @@ static const uint MAX_DEFAULT_PARAMETERS = 200;
 
 /*!
  * The "plugin Id" for the global Carla instance.
- * Curently only used for audio peaks.
+ * Currently only used for audio peaks.
  */
 static const uint MAIN_CARLA_PLUGIN_ID = 0xFFFF;
 
@@ -197,6 +197,7 @@ static const uint PLUGIN_HAS_INLINE_DISPLAY = 0x800;
  * @defgroup PluginOptions Plugin Options
  *
  * Various plugin options.
+ * @note Do not modify these values, as they are saved as-is in project files.
  * @see CarlaPlugin::getOptionsAvailable(), CarlaPlugin::getOptionsEnabled(), carla_get_plugin_info() and carla_set_option()
  * @{
  */
@@ -251,6 +252,12 @@ static const uint PLUGIN_OPTION_SEND_ALL_SOUND_OFF = 0x100;
  * @note: This option conflicts with PLUGIN_OPTION_MAP_PROGRAM_CHANGES and cannot be used at the same time.
  */
 static const uint PLUGIN_OPTION_SEND_PROGRAM_CHANGES = 0x200;
+
+/*!
+ * Special flag to indicate that plugin options are not yet set.
+ * This flag exists because 0x0 as an option value is a valid one, so we need something else to indicate "null-ness".
+ */
+static const uint PLUGIN_OPTIONS_NULL = 0x10000;
 
 /** @} */
 
@@ -315,6 +322,11 @@ static const uint PARAMETER_USES_SCALEPOINTS = 0x200;
  */
 static const uint PARAMETER_USES_CUSTOM_TEXT = 0x400;
 
+/*!
+ * Parameter can be turned into a CV control.
+ */
+static const uint PARAMETER_CAN_BE_CV_CONTROLLED = 0x800;
+
 /** @} */
 
 /* ------------------------------------------------------------------------------------------------------------
@@ -352,6 +364,38 @@ static const uint PATCHBAY_PORT_TYPE_MIDI = 0x08;
  * Patchbay port is of OSC type.
  */
 static const uint PATCHBAY_PORT_TYPE_OSC = 0x10;
+
+/** @} */
+
+/* ------------------------------------------------------------------------------------------------------------
+ * Patchbay Port Group Hints */
+
+/*!
+ * @defgroup PatchbayPortGroupHints Patchbay Port Group Hints
+ *
+ * Various patchbay port group hints.
+ * @{
+ */
+
+/*!
+ * Indicates that this group should be considered the "main" input.
+ */
+static const uint PATCHBAY_PORT_GROUP_MAIN_INPUT = 0x01;
+
+/*!
+ * Indicates that this group should be considered the "main" output.
+ */
+static const uint PATCHBAY_PORT_GROUP_MAIN_OUTPUT = 0x02;
+
+/*!
+ * A stereo port group, where the 1st port is left and the 2nd is right.
+ */
+static const uint PATCHBAY_PORT_GROUP_STEREO = 0x04;
+
+/*!
+ * A mid-side stereo group, where the 1st port is center and the 2nd is side.
+ */
+static const uint PATCHBAY_PORT_GROUP_MID_SIDE = 0x08;
 
 /** @} */
 
@@ -457,6 +501,30 @@ typedef enum {
 } BinaryType;
 
 /* ------------------------------------------------------------------------------------------------------------
+ * File Type */
+
+/*!
+ * File type.
+ */
+typedef enum {
+    /*!
+     * Null file type.
+     */
+    FILE_NONE = 0,
+
+    /*!
+     * Audio file.
+     */
+    FILE_AUDIO = 1,
+
+    /*!
+     * MIDI file.
+     */
+    FILE_MIDI = 2
+
+} FileType;
+
+/* ------------------------------------------------------------------------------------------------------------
  * Plugin Type */
 
 /*!
@@ -507,19 +575,29 @@ typedef enum {
     PLUGIN_AU = 7,
 
     /*!
-     * SF2 file (SoundFont).
+     * DLS file.
      */
-    PLUGIN_SF2 = 8,
+    PLUGIN_DLS = 8,
+
+    /*!
+     * GIG file.
+     */
+    PLUGIN_GIG = 9,
+
+    /*!
+     * SF2/3 file (SoundFont).
+     */
+    PLUGIN_SF2 = 10,
 
     /*!
      * SFZ file.
      */
-    PLUGIN_SFZ = 9,
+    PLUGIN_SFZ = 11,
 
     /*!
      * JACK application.
      */
-    PLUGIN_JACK = 10
+    PLUGIN_JACK = 12
 
 } PluginType;
 
@@ -600,7 +678,7 @@ typedef enum {
     PARAMETER_INPUT = 1,
 
     /*!
-     * Ouput parameter.
+     * Output parameter.
      */
     PARAMETER_OUTPUT = 2
 
@@ -671,6 +749,37 @@ typedef enum {
 } InternalParameterIndex;
 
 /* ------------------------------------------------------------------------------------------------------------
+ * Special Mapped Control Index */
+
+/*!
+ * Specially designated mapped control indexes.
+ * Values between 0 and 119 (0x77) are reserved for MIDI CC, which uses direct values.
+ * @see ParameterData::mappedControlIndex
+ */
+typedef enum {
+    /*!
+     * Unused control index, meaning no mapping is enabled.
+     */
+    CONTROL_INDEX_NONE = -1,
+
+    /*!
+     * CV control index, meaning the parameter is exposed as CV port.
+     */
+    CONTROL_INDEX_CV = 130,
+
+    /*!
+     * Special value to indicate MIDI pitchbend.
+     */
+    CONTROL_INDEX_MIDI_PITCHBEND = 131,
+
+    /*!
+     * Highest index allowed for mappings.
+     */
+    CONTROL_INDEX_MAX_ALLOWED = CONTROL_INDEX_MIDI_PITCHBEND
+
+} SpecialMappedControlIndex;
+
+/* ------------------------------------------------------------------------------------------------------------
  * Engine Callback Opcode */
 
 /*!
@@ -730,12 +839,12 @@ typedef enum {
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
-     * A parameter's MIDI CC has changed.
+     * A parameter's mapped control index has changed.
      * @a pluginId Plugin Id
      * @a value1   Parameter index
-     * @a value2   New MIDI CC
+     * @a value2   New control index
      */
-    ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED = 7,
+    ENGINE_CALLBACK_PARAMETER_MAPPED_CONTROL_INDEX_CHANGED = 7,
 
     /*!
      * A parameter's MIDI channel has changed.
@@ -864,6 +973,7 @@ typedef enum {
      * @a pluginId Client Id
      * @a value1   Port Id
      * @a value2   Port hints
+     * @a value3   Port group Id (0 for none)
      * @a valueStr Port name
      * @see PatchbayPortHints
      */
@@ -877,12 +987,14 @@ typedef enum {
     ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED = 25,
 
     /*!
-     * A patchbay port has been renamed.
+     * A patchbay port has changed (like the name or group Id).
      * @a pluginId Client Id
      * @a value1   Port Id
-     * @a valueStr New port name
+     * @a value2   Port hints
+     * @a value3   Port group Id (0 for none)
+     * @a valueStr Port name
      */
-    ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED = 26,
+    ENGINE_CALLBACK_PATCHBAY_PORT_CHANGED = 26,
 
     /*!
      * A patchbay connection has been added.
@@ -996,6 +1108,41 @@ typedef enum {
      */
     ENGINE_CALLBACK_INLINE_DISPLAY_REDRAW = 42,
 
+    /*!
+     * A patchbay port group has been added.
+     * @a pluginId Client Id
+     * @a value1   Group Id (unique value within this client)
+     * @a value2   Group hints
+     * @a valueStr Group name
+     * @see PatchbayPortGroupHints
+     */
+    ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_ADDED = 43,
+
+    /*!
+     * A patchbay port group has been removed.
+     * @a pluginId Client Id
+     * @a value1   Group Id
+     */
+    ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_REMOVED = 44,
+
+    /*!
+     * A patchbay port group has changed.
+     * @a pluginId Client Id
+     * @a value1   Group Id
+     * @a value2   Group hints
+     * @a valueStr Group name
+     * @see PatchbayPortGroupHints
+     */
+    ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_CHANGED = 45,
+
+    /*!
+     * A parameter's mapped range has changed.
+     * @a pluginId Plugin Id
+     * @a value1   Parameter index
+     * @a valueStr New mapped range as "%f:%f" syntax
+     */
+    ENGINE_CALLBACK_PARAMETER_MAPPED_RANGE_CHANGED = 46
+
 } EngineCallbackOpcode;
 
 /* ------------------------------------------------------------------------------------------------------------
@@ -1049,7 +1196,7 @@ typedef enum {
     /*!
      * Hide-optional-gui message.
      */
-    NSM_CALLBACK_HIDE_OPTIONAL_GUI = 7,
+    NSM_CALLBACK_HIDE_OPTIONAL_GUI = 7
 
 } NsmCallbackOpcode;
 
@@ -1114,39 +1261,50 @@ typedef enum {
     ENGINE_OPTION_MAX_PARAMETERS = 7,
 
     /*!
+     * Reset Xrun counter after project load.
+     */
+    ENGINE_OPTION_RESET_XRUNS = 8,
+
+    /*!
      * Timeout value for how much to wait for UI bridges to respond, in milliseconds.
      * Default is 4000 (4 seconds).
      */
-    ENGINE_OPTION_UI_BRIDGES_TIMEOUT = 8,
+    ENGINE_OPTION_UI_BRIDGES_TIMEOUT = 9,
 
     /*!
      * Audio buffer size.
      * Default is 512.
      */
-    ENGINE_OPTION_AUDIO_BUFFER_SIZE = 9,
+    ENGINE_OPTION_AUDIO_BUFFER_SIZE = 10,
 
     /*!
      * Audio sample rate.
      * Default is 44100.
      */
-    ENGINE_OPTION_AUDIO_SAMPLE_RATE = 10,
+    ENGINE_OPTION_AUDIO_SAMPLE_RATE = 11,
 
     /*!
      * Wherever to use 3 audio periods instead of the default 2.
      * Default is false.
      */
-    ENGINE_OPTION_AUDIO_TRIPLE_BUFFER = 11,
+    ENGINE_OPTION_AUDIO_TRIPLE_BUFFER = 12,
+
+    /*!
+     * Audio driver.
+     * Default depends on platform.
+     */
+    ENGINE_OPTION_AUDIO_DRIVER = 13,
 
     /*!
      * Audio device (within a driver).
      * Default unset.
      */
-    ENGINE_OPTION_AUDIO_DEVICE = 12,
+    ENGINE_OPTION_AUDIO_DEVICE = 14,
 
     /*!
      * Wherever to enable OSC support in the engine.
      */
-    ENGINE_OPTION_OSC_ENABLED = 13,
+    ENGINE_OPTION_OSC_ENABLED = 15,
 
     /*!
      * The network TCP port to use for OSC.
@@ -1154,7 +1312,7 @@ typedef enum {
      * A value of < 0 means to not enable the TCP port for OSC.
      * @note Valid ports begin at 1024 and end at 32767 (inclusive)
      */
-    ENGINE_OPTION_OSC_PORT_TCP = 14,
+    ENGINE_OPTION_OSC_PORT_TCP = 16,
 
     /*!
      * The network UDP port to use for OSC.
@@ -1163,81 +1321,87 @@ typedef enum {
      * @note Disabling this option prevents DSSI UIs from working!
      * @note Valid ports begin at 1024 and end at 32767 (inclusive)
      */
-    ENGINE_OPTION_OSC_PORT_UDP = 15,
+    ENGINE_OPTION_OSC_PORT_UDP = 17,
+
+    /*!
+     * Set path used for a specific file type.
+     * Uses value as the file format, valueStr as actual path.
+     */
+    ENGINE_OPTION_FILE_PATH = 18,
 
     /*!
      * Set path used for a specific plugin type.
      * Uses value as the plugin format, valueStr as actual path.
      * @see PluginType
      */
-    ENGINE_OPTION_PLUGIN_PATH = 16,
+    ENGINE_OPTION_PLUGIN_PATH = 19,
 
     /*!
      * Set path to the binary files.
      * Default unset.
      * @note Must be set for plugin and UI bridges to work
      */
-    ENGINE_OPTION_PATH_BINARIES = 17,
+    ENGINE_OPTION_PATH_BINARIES = 20,
 
     /*!
      * Set path to the resource files.
      * Default unset.
      * @note Must be set for some internal plugins to work
      */
-    ENGINE_OPTION_PATH_RESOURCES = 18,
+    ENGINE_OPTION_PATH_RESOURCES = 21,
 
     /*!
      * Prevent bad plugin and UI behaviour.
      * @note: Linux only
      */
-    ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 19,
+    ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 22,
 
     /*!
      * Set UI scaling used in frontend, so backend can do the same for plugin UIs.
      */
-    ENGINE_OPTION_FRONTEND_UI_SCALE = 20,
+    ENGINE_OPTION_FRONTEND_UI_SCALE = 23,
 
     /*!
      * Set frontend winId, used to define as parent window for plugin UIs.
      */
-    ENGINE_OPTION_FRONTEND_WIN_ID = 21,
+    ENGINE_OPTION_FRONTEND_WIN_ID = 24,
 
 #if !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) && !defined(CARLA_OS_WIN)
     /*!
      * Set path to wine executable.
      */
-    ENGINE_OPTION_WINE_EXECUTABLE = 22,
+    ENGINE_OPTION_WINE_EXECUTABLE = 25,
 
     /*!
      * Enable automatic wineprefix detection.
      */
-    ENGINE_OPTION_WINE_AUTO_PREFIX = 23,
+    ENGINE_OPTION_WINE_AUTO_PREFIX = 26,
 
     /*!
      * Fallback wineprefix to use if automatic detection fails or is disabled, and WINEPREFIX is not set.
      */
-    ENGINE_OPTION_WINE_FALLBACK_PREFIX = 24,
+    ENGINE_OPTION_WINE_FALLBACK_PREFIX = 27,
 
     /*!
      * Enable realtime priority for Wine application and server threads.
      */
-    ENGINE_OPTION_WINE_RT_PRIO_ENABLED = 25,
+    ENGINE_OPTION_WINE_RT_PRIO_ENABLED = 28,
 
     /*!
      * Base realtime priority for Wine threads.
      */
-    ENGINE_OPTION_WINE_BASE_RT_PRIO = 26,
+    ENGINE_OPTION_WINE_BASE_RT_PRIO = 29,
 
     /*!
      * Wine server realtime priority.
      */
-    ENGINE_OPTION_WINE_SERVER_RT_PRIO = 27,
+    ENGINE_OPTION_WINE_SERVER_RT_PRIO = 30,
 #endif
 
     /*!
      * Capture console output into debug callbacks.
      */
-    ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 28
+    ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 31
 
 } EngineOption;
 
@@ -1430,17 +1594,26 @@ typedef struct {
     int32_t rindex;
 
     /*!
-     * Currently mapped MIDI CC.
-     * A value lower than 0 means invalid or unused.
-     * Maximum allowed value is 119 (0x77).
-     */
-    int16_t midiCC;
-
-    /*!
      * Currently mapped MIDI channel.
      * Counts from 0 to 15.
      */
     uint8_t midiChannel;
+
+    /*!
+     * Currently mapped index.
+     * @see SpecialMappedControlIndex
+     */
+    int16_t mappedControlIndex;
+
+    /*!
+     * Minimum value that this parameter maps to.
+     */
+    float mappedMinimum;
+
+    /*!
+     * Maximum value that this parameter maps to.
+     */
+    float mappedMaximum;
 
 } ParameterData;
 
@@ -1665,6 +1838,7 @@ typedef struct {
 /* Forward declarations of commonly used Carla classes */
 class CarlaEngine;
 class CarlaEngineClient;
+class CarlaEngineCVSourcePorts;
 class CarlaPlugin;
 /* End namespace */
 CARLA_BACKEND_END_NAMESPACE

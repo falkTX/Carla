@@ -35,8 +35,8 @@ struct CarlaStateSave {
         const char* symbol;
         float       value;
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+        int16_t     mappedControlIndex;
         uint8_t     midiChannel;
-        int16_t     midiCC;
 #endif
 
         Parameter() noexcept;

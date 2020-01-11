@@ -23,6 +23,7 @@
 #ifdef HAVE_LIBLO
 
 #include "CarlaBackend.h"
+#include "CarlaJuceUtils.hpp"
 #include "CarlaOscUtils.hpp"
 #include "CarlaString.hpp"
 
@@ -58,10 +59,10 @@ CARLA_BACKEND_START_NAMESPACE
 class CarlaEngineOsc
 {
 public:
-    CarlaEngineOsc(CarlaEngine* const engine) noexcept;
+    CarlaEngineOsc(CarlaEngine* engine) noexcept;
     ~CarlaEngineOsc() noexcept;
 
-    void init(const char* const name, int tcpPort, int udpPort) noexcept;
+    void init(const char* name, int tcpPort, int udpPort) noexcept;
     void idle() const noexcept;
     void close() noexcept;
 
@@ -92,28 +93,28 @@ public:
     // -------------------------------------------------------------------
     // TCP
 
-    void sendCallback(const EngineCallbackOpcode action, const uint pluginId,
-                      const int value1, const int value2, const int value3,
-                      const float valuef, const char* const valueStr) const noexcept;
-    void sendPluginInfo(const CarlaPlugin* const plugin) const noexcept;
-    void sendPluginPortCount(const CarlaPlugin* const plugin) const noexcept;
-    void sendPluginParameterInfo(const CarlaPlugin* const plugin, const uint32_t index) const noexcept;
-    void sendPluginDataCount(const CarlaPlugin* const plugin) const noexcept;
-    void sendPluginProgramCount(const CarlaPlugin* const plugin) const noexcept;
-    void sendPluginProgram(const CarlaPlugin* const plugin, const uint32_t index) const noexcept;
-    void sendPluginMidiProgram(const CarlaPlugin* const plugin, const uint32_t index) const noexcept;
-    void sendPluginCustomData(const CarlaPlugin* const plugin, const uint32_t index) const noexcept;
-    void sendPluginInternalParameterValues(const CarlaPlugin* const plugin) const noexcept;
+    void sendCallback(EngineCallbackOpcode action, uint pluginId,
+                      int value1, int value2, int value3,
+                      float valuef, const char* valueStr) const noexcept;
+    void sendPluginInfo(const CarlaPlugin* plugin) const noexcept;
+    void sendPluginPortCount(const CarlaPlugin* plugin) const noexcept;
+    void sendPluginParameterInfo(const CarlaPlugin* plugin, uint32_t index) const noexcept;
+    void sendPluginDataCount(const CarlaPlugin* plugin) const noexcept;
+    void sendPluginProgramCount(const CarlaPlugin* plugin) const noexcept;
+    void sendPluginProgram(const CarlaPlugin* plugin, uint32_t index) const noexcept;
+    void sendPluginMidiProgram(const CarlaPlugin* plugin, uint32_t index) const noexcept;
+    void sendPluginCustomData(const CarlaPlugin* plugin, uint32_t index) const noexcept;
+    void sendPluginInternalParameterValues(const CarlaPlugin* plugin) const noexcept;
     void sendPing() const noexcept;
-    void sendResponse(const int messageId, const char* const error) const noexcept;
+    void sendResponse(int messageId, const char* error) const noexcept;
     void sendExit() const noexcept;
 
     // -------------------------------------------------------------------
     // UDP
 
     void sendRuntimeInfo() const noexcept;
-    void sendParameterValue(const uint pluginId, const uint32_t index, const float value) const noexcept;
-    void sendPeaks(const uint pluginId, const float peaks[4]) const noexcept;
+    void sendParameterValue(uint pluginId, uint32_t index, float value) const noexcept;
+    void sendPeaks(uint pluginId, const float peaks[4]) const noexcept;
 
     // -------------------------------------------------------------------
 
@@ -132,13 +133,13 @@ private:
 
     // -------------------------------------------------------------------
 
-    int handleMessage(const bool isTCP, const char* const path,
-                      const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg);
+    int handleMessage(bool isTCP, const char* path,
+                      int argc, const lo_arg* const* argv, const char* types, lo_message msg);
 
-    int handleMsgRegister(const bool isTCP, const int argc, const lo_arg* const* const argv, const char* const types);
-    int handleMsgUnregister(const bool isTCP, const int argc, const lo_arg* const* const argv, const char* const types);
-    int handleMsgControl(const char* const method,
-                         const int argc, const lo_arg* const* const argv, const char* const types);
+    int handleMsgRegister(bool isTCP, int argc, const lo_arg* const* argv, const char* types);
+    int handleMsgUnregister(bool isTCP, int argc, const lo_arg* const* argv, const char* types);
+    int handleMsgControl(const char* method,
+                         int argc, const lo_arg* const* argv, const char* types);
 
     // Internal methods
     int handleMsgSetActive(CARLA_ENGINE_OSC_HANDLE_ARGS);
@@ -148,7 +149,8 @@ private:
     int handleMsgSetBalanceRight(CARLA_ENGINE_OSC_HANDLE_ARGS);
     int handleMsgSetPanning(CARLA_ENGINE_OSC_HANDLE_ARGS);
     int handleMsgSetParameterValue(CARLA_ENGINE_OSC_HANDLE_ARGS);
-    int handleMsgSetParameterMidiCC(CARLA_ENGINE_OSC_HANDLE_ARGS);
+    int handleMsgSetParameterMappedControlIndex(CARLA_ENGINE_OSC_HANDLE_ARGS);
+    int handleMsgSetParameterMappedRange(CARLA_ENGINE_OSC_HANDLE_ARGS);
     int handleMsgSetParameterMidiChannel(CARLA_ENGINE_OSC_HANDLE_ARGS);
     int handleMsgSetProgram(CARLA_ENGINE_OSC_HANDLE_ARGS);
     int handleMsgSetMidiProgram(CARLA_ENGINE_OSC_HANDLE_ARGS);

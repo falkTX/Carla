@@ -28,7 +28,7 @@
 
 #include "ArrayAllocationBase.h"
 
-#include "CarlaJuceUtils.hpp"
+#include "CarlaScopeUtils.hpp"
 
 namespace water {
 
@@ -391,7 +391,7 @@ public:
     {
         if (indexToChange >= 0)
         {
-            ScopedPointer<ObjectClass> toDelete;
+            CarlaScopedPointer<ObjectClass> toDelete;
 
             {
                 if (indexToChange < numUsed)
@@ -555,7 +555,7 @@ public:
     */
     void remove (const size_t indexToRemove, bool deleteObject = true)
     {
-        ScopedPointer<ObjectClass> toDelete;
+        CarlaScopedPointer<ObjectClass> toDelete;
 
         if (indexToRemove < numUsed)
         {

@@ -20,6 +20,7 @@
 
 #ifdef HAVE_FLUIDSYNTH
 
+#include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
 
 #include "water/text/StringArray.h"
@@ -227,106 +228,108 @@ public:
         }
     }
 
-    void getLabel(char* const strBuf) const noexcept override
+    bool getLabel(char* const strBuf) const noexcept override
     {
         if (fLabel != nullptr)
         {
             std::strncpy(strBuf, fLabel, STR_MAX);
-            return;
+            return true;
         }
 
-        CarlaPlugin::getLabel(strBuf);
+        return CarlaPlugin::getLabel(strBuf);
     }
 
-    void getMaker(char* const strBuf) const noexcept override
+    bool getMaker(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, "FluidSynth SF2 engine", STR_MAX);
+        return true;
     }
 
-    void getCopyright(char* const strBuf) const noexcept override
+    bool getCopyright(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, "GNU GPL v2+", STR_MAX);
+        return true;
     }
 
-    void getRealName(char* const strBuf) const noexcept override
+    bool getRealName(char* const strBuf) const noexcept override
     {
-        getLabel(strBuf);
+        return getLabel(strBuf);
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         switch (parameterId)
         {
         case FluidSynthReverbOnOff:
             std::strncpy(strBuf, "Reverb On/Off", STR_MAX);
-            return;
+            return true;
         case FluidSynthReverbRoomSize:
             std::strncpy(strBuf, "Reverb Room Size", STR_MAX);
-            return;
+            return true;
         case FluidSynthReverbDamp:
             std::strncpy(strBuf, "Reverb Damp", STR_MAX);
-            return;
+            return true;
         case FluidSynthReverbLevel:
             std::strncpy(strBuf, "Reverb Level", STR_MAX);
-            return;
+            return true;
         case FluidSynthReverbWidth:
             std::strncpy(strBuf, "Reverb Width", STR_MAX);
-            return;
+            return true;
         case FluidSynthChorusOnOff:
             std::strncpy(strBuf, "Chorus On/Off", STR_MAX);
-            return;
+            return true;
         case FluidSynthChorusNr:
             std::strncpy(strBuf, "Chorus Voice Count", STR_MAX);
-            return;
+            return true;
         case FluidSynthChorusLevel:
             std::strncpy(strBuf, "Chorus Level", STR_MAX);
-            return;
+            return true;
         case FluidSynthChorusSpeedHz:
             std::strncpy(strBuf, "Chorus Speed", STR_MAX);
-            return;
+            return true;
         case FluidSynthChorusDepthMs:
             std::strncpy(strBuf, "Chorus Depth", STR_MAX);
-            return;
+            return true;
         case FluidSynthChorusType:
             std::strncpy(strBuf, "Chorus Type", STR_MAX);
-            return;
+            return true;
         case FluidSynthPolyphony:
             std::strncpy(strBuf, "Polyphony", STR_MAX);
-            return;
+            return true;
         case FluidSynthInterpolation:
             std::strncpy(strBuf, "Interpolation", STR_MAX);
-            return;
+            return true;
         case FluidSynthVoiceCount:
             std::strncpy(strBuf, "Voice Count", STR_MAX);
-            return;
+            return true;
         }
 
-        CarlaPlugin::getParameterName(parameterId, strBuf);
+        return CarlaPlugin::getParameterName(parameterId, strBuf);
     }
 
-    void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         switch (parameterId)
         {
         case FluidSynthChorusSpeedHz:
             std::strncpy(strBuf, "Hz", STR_MAX);
-            return;
+            return true;
         case FluidSynthChorusDepthMs:
             std::strncpy(strBuf, "ms", STR_MAX);
-            return;
+            return true;
         }
 
-        CarlaPlugin::getParameterUnit(parameterId, strBuf);
+        return CarlaPlugin::getParameterUnit(parameterId, strBuf);
     }
 
-    void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept override
+    bool getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
-        CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId),);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+        CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId), false);
 
         switch (parameterId)
         {
@@ -335,10 +338,10 @@ public:
             {
             case 0:
                 std::strncpy(strBuf, "Sine wave", STR_MAX);
-                return;
+                return true;
             case 1:
                 std::strncpy(strBuf, "Triangle wave", STR_MAX);
-                return;
+                return true;
             }
             break;
         case FluidSynthInterpolation:
@@ -346,21 +349,21 @@ public:
             {
             case 0:
                 std::strncpy(strBuf, "None", STR_MAX);
-                return;
+                return true;
             case 1:
                 std::strncpy(strBuf, "Straight-line", STR_MAX);
-                return;
+                return true;
             case 2:
                 std::strncpy(strBuf, "Fourth-order", STR_MAX);
-                return;
+                return true;
             case 3:
                 std::strncpy(strBuf, "Seventh-order", STR_MAX);
-                return;
+                return true;
             }
             break;
         }
 
-        CarlaPlugin::getParameterScalePointLabel(parameterId, scalePointId, strBuf);
+        return CarlaPlugin::getParameterScalePointLabel(parameterId, scalePointId, strBuf);
     }
 
     // -------------------------------------------------------------------
@@ -407,11 +410,11 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setParameterValueRT(const uint32_t parameterId, const float value) noexcept override
+    void setParameterValueRT(const uint32_t parameterId, const float value, const bool sendCallbackLater) noexcept override
     {
         const float fixedValue = setParameterValueInFluidSynth(parameterId, value);
 
-        CarlaPlugin::setParameterValueRT(parameterId, fixedValue);
+        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, sendCallbackLater);
     }
 
     float setParameterValueInFluidSynth(const uint32_t parameterId, const float value) noexcept
@@ -562,7 +565,7 @@ public:
     }
 
     // FIXME: this is never used
-    void setMidiProgramRT(const uint32_t uindex) noexcept override
+    void setMidiProgramRT(const uint32_t uindex, const bool sendCallbackLater) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fSynth != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(uindex < pData->midiprog.count,);
@@ -579,7 +582,7 @@ public:
             fCurMidiProgs[pData->ctrlChannel] = static_cast<int32_t>(uindex);
         }
 
-        CarlaPlugin::setMidiProgramRT(uindex);
+        CarlaPlugin::setMidiProgramRT(uindex, sendCallbackLater);
     }
 
     // -------------------------------------------------------------------
@@ -774,7 +777,7 @@ public:
             pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
-            pData->param.data[j].midiCC = MIDI_CONTROL_REVERB_SEND_LEVEL;
+            pData->param.data[j].mappedControlIndex = MIDI_CONTROL_REVERB_SEND_LEVEL;
             pData->param.ranges[j].min = 0.0f;
             pData->param.ranges[j].max = 1.0f;
             pData->param.ranges[j].def = sFluidDefaults[j];
@@ -1073,7 +1076,8 @@ public:
     // -------------------------------------------------------------------
     // Plugin processing
 
-    void process(const float** const, float** const audioOut, const float** const, float** const, const uint32_t frames) override
+    void process(const float* const* const, float** const audioOut, 
+                 const float* const*, float**, const uint32_t frames) override
     {
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -1196,13 +1200,13 @@ public:
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) != 0)
                             {
                                 value = ctrlEvent.value;
-                                setDryWetRT(value);
+                                setDryWetRT(value, true);
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
-                                setVolumeRT(value);
+                                setVolumeRT(value, true);
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
@@ -1226,8 +1230,8 @@ public:
                                     right = 1.0f;
                                 }
 
-                                setBalanceLeftRT(left);
-                                setBalanceRightRT(right);
+                                setBalanceLeftRT(left, true);
+                                setBalanceRightRT(right, true);
                             }
                         }
 #endif
@@ -1236,7 +1240,7 @@ public:
                         {
                             if (pData->param.data[k].midiChannel != event.channel)
                                 continue;
-                            if (pData->param.data[k].midiCC != ctrlEvent.param)
+                            if (pData->param.data[k].mappedControlIndex != ctrlEvent.param)
                                 continue;
                             if (pData->param.data[k].hints != PARAMETER_INPUT)
                                 continue;
@@ -1260,7 +1264,7 @@ public:
                                     value = std::rint(value);
                             }
 
-                            setParameterValueRT(k, value);
+                            setParameterValueRT(k, value, true);
                         }
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_CONTROL)
@@ -1292,6 +1296,7 @@ public:
                                     if (event.channel == pData->ctrlChannel)
                                     {
                                         pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange,
+                                                               true,
                                                                static_cast<int32_t>(k),
                                                                0, 0, 0.0f);
                                     }
@@ -1345,7 +1350,7 @@ public:
 
                         fluid_synth_noteoff(fSynth, event.channel, note);
 
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, event.channel, note, 0, 0.0f);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, true, event.channel, note, 0, 0.0f);
                         break;
                     }
 
@@ -1355,7 +1360,7 @@ public:
 
                         fluid_synth_noteon(fSynth, event.channel, note, velo);
 
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, event.channel, note, velo, 0.0f);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, true, event.channel, note, velo, 0.0f);
                         break;
                     }
 
@@ -1423,10 +1428,14 @@ public:
             fParamBuffers[k] = float(fluid_synth_get_active_voice_count(fSynth));
             pData->param.ranges[k].fixValue(fParamBuffers[k]);
 
-            if (pData->param.data[k].midiCC > 0)
+            if (pData->param.data[k].mappedControlIndex > 0)
             {
                 float value(pData->param.ranges[k].getNormalizedValue(fParamBuffers[k]));
-                pData->event.portOut->writeControlEvent(0, pData->param.data[k].midiChannel, kEngineControlEventTypeParameter, static_cast<uint16_t>(pData->param.data[k].midiCC), value);
+                pData->event.portOut->writeControlEvent(0,
+                                                        pData->param.data[k].midiChannel,
+                                                        kEngineControlEventTypeParameter,
+                                                        static_cast<uint16_t>(pData->param.data[k].mappedControlIndex),
+                                                        value);
             }
 
         } // End of Control Output
@@ -1681,16 +1690,20 @@ public:
         }
 
         // ---------------------------------------------------------------
-        // set default options
+        // set options
 
-        pData->options  = 0x0;
-        pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-        pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-        pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
-        pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+        pData->options = 0x0;
 
-        if (options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CONTROL_CHANGES))
             pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CHANNEL_PRESSURE))
+            pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PITCHBEND))
+            pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_ALL_SOUND_OFF))
+            pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_MAP_PROGRAM_CHANGES))
+            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         return true;
     }

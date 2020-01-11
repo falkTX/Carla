@@ -20,6 +20,7 @@
 
 #include "CarlaBridgeDefines.hpp"
 #include "CarlaMutex.hpp"
+#include "CarlaRingBuffer.hpp"
 #include "CarlaString.hpp"
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -84,8 +85,8 @@ const char* PluginBridgeNonRtClientOpcode2str(const PluginBridgeNonRtClientOpcod
         return "kPluginBridgeNonRtClientSetParameterValue";
     case kPluginBridgeNonRtClientSetParameterMidiChannel:
         return "kPluginBridgeNonRtClientSetParameterMidiChannel";
-    case kPluginBridgeNonRtClientSetParameterMidiCC:
-        return "kPluginBridgeNonRtClientSetParameterMidiCC";
+    case kPluginBridgeNonRtClientSetParameterMappedControlIndex:
+        return "kPluginBridgeNonRtClientSetParameterMappedControlIndex";
     case kPluginBridgeNonRtClientSetProgram:
         return "kPluginBridgeNonRtClientSetProgram";
     case kPluginBridgeNonRtClientSetMidiProgram:
@@ -120,6 +121,10 @@ const char* PluginBridgeNonRtClientOpcode2str(const PluginBridgeNonRtClientOpcod
         return "kPluginBridgeNonRtClientUiNoteOff";
     case kPluginBridgeNonRtClientQuit:
         return "kPluginBridgeNonRtClientQuit";
+    case kPluginBridgeNonRtClientSetParameterMappedRange:
+        return "kPluginBridgeNonRtClientSetParameterMappedRange";
+    case kPluginBridgeNonRtClientSetOptions:
+        return "kPluginBridgeNonRtClientSetOptions";
     }
 
     carla_stderr("CarlaBackend::PluginBridgeNonRtClientOpcode2str(%i) - invalid opcode", opcode);
@@ -191,11 +196,37 @@ const char* PluginBridgeNonRtServerOpcode2str(const PluginBridgeNonRtServerOpcod
         return "kPluginBridgeNonRtServerUiClosed";
     case kPluginBridgeNonRtServerError:
         return "kPluginBridgeNonRtServerError";
+    case kPluginBridgeNonRtServerVersion:
+        return "kPluginBridgeNonRtServerVersion";
     }
 
     carla_stderr("CarlaBackend::PluginBridgeNonRtServerOpcode2str%i) - invalid opcode", opcode);
     return nullptr;
 }
+
+// -------------------------------------------------------------------------------------------------------------------
+
+static const std::size_t kBridgeRtClientDataMidiOutSize = 511*4;
+static const std::size_t kBridgeBaseMidiOutHeaderSize   = 6U /* time, port and size */;
+
+// Server => Client RT
+struct BridgeRtClientData {
+    BridgeSemaphore sem;
+    BridgeTimeInfo timeInfo;
+    SmallStackBuffer ringBuffer;
+    uint8_t midiOut[kBridgeRtClientDataMidiOutSize];
+    uint32_t procFlags;
+};
+
+// Server => Client Non-RT
+struct BridgeNonRtClientData {
+    BigStackBuffer ringBuffer;
+};
+
+// Client => Server Non-RT
+struct BridgeNonRtServerData {
+    HugeStackBuffer ringBuffer;
+};
 
 // -------------------------------------------------------------------------------------------------------------------
 

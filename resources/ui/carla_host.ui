@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1057</width>
+    <width>1045</width>
     <height>716</height>
    </rect>
   </property>
@@ -335,8 +335,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1057</width>
-     <height>20</height>
+     <width>1045</width>
+     <height>31</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -358,6 +358,9 @@
     </property>
     <addaction name="act_engine_start"/>
     <addaction name="act_engine_stop"/>
+    <addaction name="act_engine_panic"/>
+    <addaction name="separator"/>
+    <addaction name="act_engine_config"/>
    </widget>
    <widget class="QMenu" name="menu_Plugin">
     <property name="title">
@@ -462,10 +465,10 @@
    <addaction name="act_file_connect"/>
    <addaction name="act_file_refresh"/>
    <addaction name="separator"/>
-   <addaction name="act_plugin_add2"/>
-   <addaction name="act_add_jack"/>
+   <addaction name="act_plugin_add"/>
+   <addaction name="act_plugin_add_jack"/>
    <addaction name="act_plugin_remove_all"/>
-   <addaction name="act_plugins_panic"/>
+   <addaction name="act_engine_panic"/>
    <addaction name="separator"/>
    <addaction name="act_settings_configure"/>
   </widget>
@@ -1051,21 +1054,6 @@
     <string>Ctrl+A</string>
    </property>
   </action>
-  <action name="act_plugin_add2">
-   <property name="icon">
-    <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/list-add.svgz</normaloff>:/16x16/list-add.svgz</iconset>
-   </property>
-   <property name="text">
-    <string>Add Plugin...</string>
-   </property>
-   <property name="iconText">
-    <string>Add Plugin...</string>
-   </property>
-   <property name="toolTip">
-    <string>Add Plugin...</string>
-   </property>
-  </action>
   <action name="act_plugin_remove_all">
    <property name="icon">
     <iconset resource="../resources.qrc">
@@ -1108,15 +1096,6 @@
   <action name="act_plugins_center">
    <property name="text">
     <string>Center Balance</string>
-   </property>
-  </action>
-  <action name="act_plugins_panic">
-   <property name="icon">
-    <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/dialog-warning.svgz</normaloff>:/16x16/dialog-warning.svgz</iconset>
-   </property>
-   <property name="text">
-    <string>Panic</string>
    </property>
   </action>
   <action name="act_transport_play">
@@ -1380,21 +1359,6 @@
     <string>Perform secret 5</string>
    </property>
   </action>
-  <action name="act_add_jack">
-   <property name="icon">
-    <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/list-add.svgz</normaloff>:/16x16/list-add.svgz</iconset>
-   </property>
-   <property name="text">
-    <string>Add &amp;JACK Application</string>
-   </property>
-   <property name="iconText">
-    <string>Add JACK Application...</string>
-   </property>
-   <property name="toolTip">
-    <string>Add JACK Application...</string>
-   </property>
-  </action>
   <action name="act_plugin_add_jack">
    <property name="icon">
     <iconset resource="../resources.qrc">
@@ -1402,6 +1366,29 @@
    </property>
    <property name="text">
     <string>Add &amp;JACK Application...</string>
+   </property>
+  </action>
+  <action name="act_engine_config">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/configure.svgz</normaloff>:/16x16/configure.svgz</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Configure driver...</string>
+   </property>
+  </action>
+  <action name="act_engine_panic">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/dialog-warning.svgz</normaloff>:/16x16/dialog-warning.svgz</iconset>
+   </property>
+   <property name="text">
+    <string>Panic</string>
+   </property>
+  </action>
+  <action name="act_engine_panel">
+   <property name="text">
+    <string>Open custom driver panel...</string>
    </property>
   </action>
  </widget>

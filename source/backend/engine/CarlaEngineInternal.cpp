@@ -379,7 +379,6 @@ CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
       loadingProject(false),
       currentProjectFilename(),
 #endif
-      hints(0x0),
       bufferSize(0),
       sampleRate(0.0),
       aboutToClose(false),

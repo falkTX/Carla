@@ -552,7 +552,7 @@ public:
     }
 
 #if DISTRHO_PLUGIN_WANT_MIDI_INPUT
-    void run(const float** const inputs, float** const outputs, const uint32_t frames,
+    void run(const float* const* const inputs, float** const outputs, const uint32_t frames,
              const MidiEvent* const midiEvents, const uint32_t midiEventCount)
     {
         DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr,);
@@ -569,7 +569,7 @@ public:
         fData->isProcessing = false;
     }
 #else
-    void run(const float** const inputs, float** const outputs, const uint32_t frames)
+    void run(const float* const* const inputs, float** const outputs, const uint32_t frames)
     {
         DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr,);
         DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);

@@ -240,7 +240,8 @@ public:
         case effGetProgramName:
             if (char* const programName = (char*)ptr)
             {
-                std::strncpy(programName, fProgramName, 24);
+                std::strncpy(programName, fProgramName, 23);
+                programName[23] = '\0';
                 return 1;
             }
             break;
@@ -248,7 +249,8 @@ public:
         case effGetProgramNameIndexed:
             if (char* const programName = (char*)ptr)
             {
-                std::strncpy(programName, fProgramName, 24);
+                std::strncpy(programName, fProgramName, 23);
+                programName[23] = '\0';
                 return 1;
             }
             break;
@@ -298,15 +300,15 @@ public:
                     std::snprintf(cptr, 23, "%d%s%s",
                                   static_cast<int>(paramValue),
                                   param->unit != nullptr && param->unit[0] != '\0' ? " " : "",
-                                  param->unit != nullptr ? param->unit : "");
+                                  param->unit != nullptr && param->unit[0] != '\0' ? param->unit : "");
                     cptr[23] = '\0';
                 }
                 else
                 {
-                    std::snprintf(cptr, 23, "%f%s%s",
+                    std::snprintf(cptr, 23, "%.12g%s%s",
                                   static_cast<double>(paramValue),
                                   param->unit != nullptr && param->unit[0] != '\0' ? " " : "",
-                                  param->unit != nullptr ? param->unit : "");
+                                  param->unit != nullptr && param->unit[0] != '\0' ? param->unit : "");
                     cptr[23] = '\0';
                 }
 
@@ -597,7 +599,8 @@ public:
         fDescriptor->set_parameter_value(fHandle, uindex, realValue);
     }
 
-    void vst_processReplacing(const float** const inputs, float** const outputs, const int32_t sampleFrames)
+    // FIXME for v3.0, use const for the input buffer
+    void vst_processReplacing(float** const inputs, float** const outputs, const int32_t sampleFrames)
     {
         if (sampleFrames <= 0)
             return;
@@ -679,7 +682,6 @@ public:
         fMidiOutEvents.numEvents = 0;
 
         if (fHandle != nullptr)
-            // FIXME
             fDescriptor->process(fHandle,
                                  inputs, outputs, static_cast<uint32_t>(sampleFrames),
                                  fMidiEvents, fMidiEventCount);
@@ -772,6 +774,8 @@ protected:
         case NATIVE_HOST_OPCODE_UI_UNAVAILABLE:
         case NATIVE_HOST_OPCODE_INTERNAL_PLUGIN:
         case NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY:
+        case NATIVE_HOST_OPCODE_REQUEST_IDLE:
+        case NATIVE_HOST_OPCODE_GET_FILE_PATH:
             // nothing
             break;
 
@@ -1228,13 +1232,13 @@ void vst_setParameterCallback(AEffect* effect, int32_t index, float value)
 void vst_processCallback(AEffect* effect, float** inputs, float** outputs, int32_t sampleFrames)
 {
     if (validPlugin)
-        pluginPtr->vst_processReplacing(const_cast<const float**>(inputs), outputs, sampleFrames);
+        pluginPtr->vst_processReplacing(inputs, outputs, sampleFrames);
 }
 
 void vst_processReplacingCallback(AEffect* effect, float** inputs, float** outputs, int32_t sampleFrames)
 {
     if (validPlugin)
-        pluginPtr->vst_processReplacing(const_cast<const float**>(inputs), outputs, sampleFrames);
+        pluginPtr->vst_processReplacing(inputs, outputs, sampleFrames);
 }
 
 #undef pluginPtr

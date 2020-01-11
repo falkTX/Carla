@@ -23,35 +23,34 @@
 #include <ableton/link/PayloadEntries.hpp>
 #include <ableton/link/SessionId.hpp>
 #include <ableton/link/v1/Messages.hpp>
-#include <ableton/platforms/asio/AsioWrapper.hpp>
 #include <ableton/util/Injected.hpp>
 #include <ableton/util/SafeAsyncHandler.hpp>
 #include <chrono>
 #include <memory>
-#include <thread>
 
 namespace ableton
 {
 namespace link
 {
 
-template <typename Io, typename Clock, typename Socket, typename Log>
+template <typename Clock, typename IoContext>
 class PingResponder
 {
+  using IoType = util::Injected<IoContext&>;
+  using Socket = typename IoType::type::template Socket<v1::kMaxMessageSize>;
+
 public:
   PingResponder(asio::ip::address_v4 address,
     SessionId sessionId,
     GhostXForm ghostXForm,
-    util::Injected<Io> io,
     Clock clock,
-    util::Injected<Log> log)
-    : mIo(std::move(io))
-    , mpImpl(std::make_shared<Impl>(*mIo,
-        std::move(address),
+    IoType io)
+    : mIo(io)
+    , mpImpl(std::make_shared<Impl>(std::move(address),
         std::move(sessionId),
         std::move(ghostXForm),
         std::move(clock),
-        std::move(log)))
+        std::move(io)))
   {
     mpImpl->listen();
   }
@@ -61,16 +60,16 @@ public:
 
   ~PingResponder()
   {
-    // post the release of the impl object into the io service so that
+    // post the release of the impl object into the IoContext so that
     // it happens in the same thread as its handlers
     auto pImpl = mpImpl;
-    mIo->post([pImpl]() mutable { pImpl.reset(); });
+    mIo->async([pImpl]() mutable { pImpl.reset(); });
   }
 
   void updateNodeState(const SessionId& sessionId, const GhostXForm& xform)
   {
     auto pImpl = mpImpl;
-    mIo->post([pImpl, sessionId, xform] {
+    mIo->async([pImpl, sessionId, xform] {
       pImpl->mSessionId = std::move(sessionId);
       pImpl->mGhostXForm = std::move(xform);
     });
@@ -94,19 +93,17 @@ public:
 private:
   struct Impl : std::enable_shared_from_this<Impl>
   {
-    Impl(typename util::Injected<Io>::type& io,
-      asio::ip::address_v4 address,
+    Impl(asio::ip::address_v4 address,
       SessionId sessionId,
       GhostXForm ghostXForm,
       Clock clock,
-      util::Injected<Log> log)
+      IoType io)
       : mSessionId(std::move(sessionId))
       , mGhostXForm(std::move(ghostXForm))
       , mClock(std::move(clock))
-      , mLog(std::move(log))
-      , mSocket(io)
+      , mLog(channel(io->log(), "gateway@" + address.to_string()))
+      , mSocket(io->template openUnicastSocket<v1::kMaxMessageSize>(address))
     {
-      configureUnicastSocket(mSocket, address);
     }
 
     void listen()
@@ -131,7 +128,7 @@ private:
         sizeInByteStream(makePayload(HostTime{}, PrevGHostTime{}));
       if (header.messageType == v1::kPing && payloadSize <= maxPayloadSize)
       {
-        debug(*mLog) << "Received ping message from " << from;
+        debug(mLog) << " Received ping message from " << from;
 
         try
         {
@@ -139,12 +136,12 @@ private:
         }
         catch (const std::runtime_error& err)
         {
-          info(*mLog) << "Failed to send pong to " << from << ". Reason: " << err.what();
+          info(mLog) << " Failed to send pong to " << from << ". Reason: " << err.what();
         }
       }
       else
       {
-        info(*mLog) << "Received invalid Message from " << from << ".";
+        info(mLog) << " Received invalid Message from " << from << ".";
       }
       listen();
     }
@@ -173,11 +170,11 @@ private:
     SessionId mSessionId;
     GhostXForm mGhostXForm;
     Clock mClock;
-    util::Injected<Log> mLog;
+    typename IoType::type::Log mLog;
     Socket mSocket;
   };
 
-  util::Injected<Io> mIo;
+  IoType mIo;
   std::shared_ptr<Impl> mpImpl;
 };
 

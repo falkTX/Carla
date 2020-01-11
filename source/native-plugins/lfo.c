@@ -205,8 +205,9 @@ static void lfo_set_parameter_value(NativePluginHandle handle, uint32_t index, f
     }
 }
 
+// FIXME for v3.0, use const for the input buffer
 static void lfo_process(NativePluginHandle handle,
-                        const float** inBuffer, float** outBuffer, uint32_t frames,
+                        float** inBuffer, float** outBuffer, uint32_t frames,
                         const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
 {
     const NativeHostDescriptor* const host     = handlePtr->host;
@@ -272,6 +273,8 @@ static const NativePluginDescriptor lfoDesc = {
     .supports  = NATIVE_PLUGIN_SUPPORTS_NOTHING,
     .audioIns  = 0,
     .audioOuts = 0,
+    .cvIns     = 0,
+    .cvOuts    = 0,
     .midiIns   = 0,
     .midiOuts  = 0,
     .paramIns  = PARAM_COUNT-1,

@@ -19,29 +19,20 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Config)
 
-from carla_config import *
+from carla_shared import QSafeSettings
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 from math import floor
 
-if config_UseQt5:
-    from PyQt5.QtCore import pyqtSignal, pyqtSlot, qCritical, qFatal, qWarning, Qt, QObject
-    from PyQt5.QtCore import QAbstractAnimation, QLineF, QPointF, QRectF, QSizeF, QSettings, QTimer
-    from PyQt5.QtGui import QColor, QLinearGradient, QPen, QPolygonF, QPainter, QPainterPath
-    from PyQt5.QtGui import QCursor, QFont, QFontMetrics
-    from PyQt5.QtSvg import QGraphicsSvgItem, QSvgRenderer
-    from PyQt5.QtWidgets import QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem, QGraphicsRectItem
-    from PyQt5.QtWidgets import QGraphicsColorizeEffect, QGraphicsDropShadowEffect, QMenu
-else:
-    from PyQt4.QtCore import pyqtSignal, pyqtSlot, qCritical, qFatal, qWarning, Qt, QObject
-    from PyQt4.QtCore import QAbstractAnimation, QLineF, QPointF, QRectF, QSizeF, QSettings, QTimer
-    from PyQt4.QtGui import QColor, QLinearGradient, QPen, QPolygonF, QPainter, QPainterPath
-    from PyQt4.QtGui import QCursor, QFont, QFontMetrics
-    from PyQt4.QtGui import QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem, QGraphicsRectItem
-    from PyQt4.QtGui import QGraphicsColorizeEffect, QGraphicsDropShadowEffect, QMenu
-    from PyQt4.QtSvg import QGraphicsSvgItem, QSvgRenderer
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, qCritical, qFatal, qWarning, Qt, QObject
+from PyQt5.QtCore import QAbstractAnimation, QLineF, QPointF, QRectF, QSizeF, QTimer
+from PyQt5.QtGui import QColor, QLinearGradient, QPen, QPolygonF, QPainter, QPainterPath
+from PyQt5.QtGui import QCursor, QFont, QFontMetrics
+from PyQt5.QtSvg import QGraphicsSvgItem, QSvgRenderer
+from PyQt5.QtWidgets import QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem, QGraphicsRectItem
+from PyQt5.QtWidgets import QGraphicsColorizeEffect, QGraphicsDropShadowEffect, QMenu
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Theme)
@@ -322,13 +313,13 @@ def split2str(split):
 
 def getStoredCanvasPosition(key, fallback_pos):
     try:
-        return canvas.settings.value("CanvasPositions/" + key, fallback_pos, type=QPointF)
+        return canvas.settings.value("CanvasPositions/" + key, fallback_pos, QPointF)
     except:
         return fallback_pos
 
 def getStoredCanvasSplit(group_name, fallback_split_mode):
     try:
-        return canvas.settings.value("CanvasPositions/%s_SPLIT" % group_name, fallback_split_mode, type=int)
+        return canvas.settings.value("CanvasPositions/%s_SPLIT" % group_name, fallback_split_mode, int)
     except:
         return fallback_split_mode
 
@@ -372,7 +363,7 @@ def init(appName, scene, callback, debug=False):
     canvas.size_rect = QRectF()
 
     if not canvas.qobject:  canvas.qobject = CanvasObject()
-    if not canvas.settings: canvas.settings = QSettings("falkTX", appName)
+    if not canvas.settings: canvas.settings = QSafeSettings("falkTX", appName)
 
     if canvas.theme:
         del canvas.theme
@@ -608,7 +599,7 @@ def splitGroup(group_id):
     for group in canvas.group_list:
         if group.group_id == group_id:
             if group.split:
-                qCritical("PatchCanvas::splitGroup(%i) - group is already splitted" % group_id)
+                qCritical("PatchCanvas::splitGroup(%i) - group is already split" % group_id)
                 return
 
             item = group.widgets[0]
@@ -656,7 +647,7 @@ def splitGroup(group_id):
 
     removeGroup(group_id)
 
-    # Step 3 - Re-create Item, now splitted
+    # Step 3 - Re-create Item, now split
     addGroup(group_id, group_name, SPLIT_YES, group_icon)
 
     if plugin_id >= 0:
@@ -687,7 +678,7 @@ def joinGroup(group_id):
     for group in canvas.group_list:
         if group.group_id == group_id:
             if not group.split:
-                qCritical("PatchCanvas::joinGroup(%i) - group is not splitted" % group_id)
+                qCritical("PatchCanvas::joinGroup(%i) - group is not split" % group_id)
                 return
 
             item = group.widgets[0]

@@ -12,7 +12,7 @@
 #include "water/buffers/AudioSampleBuffer.h"
 #include "water/files/File.h"
 
-#include "CarlaJuceUtils.hpp"
+#include "CarlaScopeUtils.hpp"
 
 namespace sfzero
 {
@@ -42,7 +42,7 @@ public:
 
 private:
   water::File file_;
-  ScopedPointer<water::AudioSampleBuffer> buffer_;
+  CarlaScopedPointer<water::AudioSampleBuffer> buffer_;
   double sampleRate_;
   water::uint64 sampleLength_, loopStart_, loopEnd_;
 

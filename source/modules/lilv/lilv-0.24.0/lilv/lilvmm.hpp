@@ -187,6 +187,7 @@ struct Port {
 #define LILV_PORT_WRAP1(RT, name, T1, a1) \
 	inline RT name (T1 a1) { return lilv_port_ ## name (parent, me, a1); }
 
+	LILV_PORT_WRAP1(LilvNode*, get, LilvNode*, predicate);
 	LILV_PORT_WRAP1(LilvNodes*, get_value, LilvNode*, predicate);
 	LILV_PORT_WRAP0(LilvNodes*, get_properties)
 	LILV_PORT_WRAP1(bool, has_property, LilvNode*, property_uri);

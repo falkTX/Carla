@@ -19,7 +19,7 @@
 #define CARLA_BINARY_UTILS_HPP_INCLUDED
 
 #include "CarlaBackend.h"
-#include "CarlaUtils.hpp"
+#include "CarlaScopeUtils.hpp"
 
 #include "water/files/FileInputStream.h"
 
@@ -128,7 +128,7 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
     using water::File;
     using water::FileInputStream;
 
-    ScopedPointer<FileInputStream> stream(File(filename).createInputStream());
+    CarlaScopedPointer<FileInputStream> stream(File(filename).createInputStream());
     CARLA_SAFE_ASSERT_RETURN(stream != nullptr && ! stream->failedToOpen(), BINARY_NATIVE);
 
     // ----------------------------------------------------------------------------------------------------------------

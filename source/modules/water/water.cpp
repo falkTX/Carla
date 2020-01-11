@@ -77,7 +77,6 @@ BOOL WINAPI DllMain(HINSTANCE hInst, DWORD, LPVOID)
 #include "text/CharacterFunctions.cpp"
 #include "text/Identifier.cpp"
 #include "text/StringArray.cpp"
-#include "text/StringPool.cpp"
 #include "text/String.cpp"
 
 #include "threads/ChildProcess.cpp"

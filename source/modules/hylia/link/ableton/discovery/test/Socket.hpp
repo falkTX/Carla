@@ -53,7 +53,9 @@ public:
   void receive(Handler handler)
   {
     mCallback = [handler](const asio::ip::udp::endpoint& from,
-      const std::vector<uint8_t>& buffer) { handler(from, begin(buffer), end(buffer)); };
+                  const std::vector<uint8_t>& buffer) {
+      handler(from, begin(buffer), end(buffer));
+    };
   }
 
   template <typename It>

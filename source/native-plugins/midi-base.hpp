@@ -291,7 +291,7 @@ public:
         if (fData.count() == 0)
             return nullptr;
 
-        char* const data((char*)std::calloc(1, fData.count()*maxMsgSize));
+        char* const data((char*)std::calloc(1, fData.count()*maxMsgSize+1));
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, nullptr);
 
         char* dataWrtn = data;
@@ -302,7 +302,7 @@ public:
             const RawMidiEvent* const rawMidiEvent(it.getValue(nullptr));
             CARLA_SAFE_ASSERT_CONTINUE(rawMidiEvent != nullptr);
 
-            wrtn = std::snprintf(dataWrtn, maxTimeSize+4, P_INT64 ":%i:", rawMidiEvent->time, rawMidiEvent->size);
+            wrtn = std::snprintf(dataWrtn, maxTimeSize+6, P_UINT64 ":%u:", rawMidiEvent->time, rawMidiEvent->size);
             CARLA_SAFE_ASSERT_BREAK(wrtn > 0);
             dataWrtn += wrtn;
 

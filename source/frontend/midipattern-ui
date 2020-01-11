@@ -1,0 +1,335 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# A piano roll viewer/editor
+# Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2014-2015 Perry Nguyen
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of
+# the License, or any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# For a full copy of the GNU General Public License see the doc/GPL.txt file.
+
+# ------------------------------------------------------------------------------------------------------------
+# Imports (Global)
+
+from PyQt5.QtCore import pyqtSlot, Qt, QEvent
+from PyQt5.QtGui import QKeyEvent
+from PyQt5.QtWidgets import QMainWindow
+
+# ------------------------------------------------------------------------------------------------------------
+# Imports (Custom)
+
+from carla_shared import *
+from carla_utils import *
+from widgets.pianoroll import *
+
+import ui_midipattern
+
+# ------------------------------------------------------------------------------------------------------------
+# Imports (ExternalUI)
+
+from carla_app import CarlaApplication
+from externalui import ExternalUI
+
+# ------------------------------------------------------------------------------------------------------------
+
+class MidiPatternW(ExternalUI, QMainWindow):
+    TICKS_PER_BEAT = 48
+
+    def __init__(self):
+        ExternalUI.__init__(self)
+        QMainWindow.__init__(self)
+        self.ui = ui_midipattern.Ui_MidiPatternW()
+        self.ui.setupUi(self)
+        self.ui.piano = self.ui.graphicsView.piano
+
+        # to be filled with note-on events, while waiting for their matching note-off
+        self.fPendingNoteOns = [] # (channel, note, velocity, time)
+
+        self.fTimeSignature = (4,4)
+        self.fTransportInfo = {
+            "playing": False,
+            "frame": 0,
+            "bar": 0,
+            "beat": 0,
+            "tick": 0,
+            "bpm": 120.0,
+        }
+
+        self.ui.act_edit_insert.triggered.connect(self.slot_editInsertMode)
+        self.ui.act_edit_velocity.triggered.connect(self.slot_editVelocityMode)
+        self.ui.act_edit_select_all.triggered.connect(self.slot_editSelectAll)
+
+        self.ui.piano.midievent.connect(self.sendMsg)
+        self.ui.piano.measureupdate.connect(self.updateMeasureBox)
+        self.ui.piano.modeupdate.connect(self.ui.modeIndicator.changeMode)
+        self.ui.piano.modeupdate.connect(self.slot_modeChanged)
+
+        self.ui.timeSigBox.currentIndexChanged[int].connect(self.slot_paramChanged)
+        self.ui.measureBox.currentIndexChanged[int].connect(self.slot_paramChanged)
+        self.ui.defaultLengthBox.currentIndexChanged[int].connect(self.slot_paramChanged)
+        self.ui.quantizeBox.currentIndexChanged[int].connect(self.slot_paramChanged)
+
+        self.ui.timeSigBox.currentIndexChanged[str].connect(self.slot_setTimeSignature)
+        self.ui.measureBox.currentIndexChanged[str].connect(self.ui.piano.setMeasures)
+        self.ui.defaultLengthBox.currentIndexChanged[str].connect(self.ui.piano.setDefaultLength)
+        self.ui.quantizeBox.currentIndexChanged[str].connect(self.ui.piano.setGridDiv)
+        self.ui.hSlider.valueChanged.connect(self.ui.graphicsView.setZoomX)
+        self.ui.vSlider.valueChanged.connect(self.ui.graphicsView.setZoomY)
+
+        self.ui.graphicsView.setFocus()
+
+        self.fIdleTimer = self.startTimer(30)
+        self.setWindowTitle(self.fUiName)
+        self.ready()
+
+    def slot_editInsertMode(self):
+        ev = QKeyEvent(QEvent.User, Qt.Key_F, Qt.NoModifier)
+        self.ui.piano.keyPressEvent(ev)
+
+    def slot_editVelocityMode(self):
+        ev = QKeyEvent(QEvent.User, Qt.Key_D, Qt.NoModifier)
+        self.ui.piano.keyPressEvent(ev)
+
+    def slot_editSelectAll(self):
+        ev = QKeyEvent(QEvent.User, Qt.Key_A, Qt.NoModifier)
+        self.ui.piano.keyPressEvent(ev)
+
+    def slot_modeChanged(self, mode):
+        if mode == "insert_mode":
+            self.ui.act_edit_insert.setChecked(True)
+            self.ui.act_edit_velocity.setChecked(False)
+        elif mode == "velocity_mode":
+            self.ui.act_edit_insert.setChecked(False)
+            self.ui.act_edit_velocity.setChecked(True)
+        else:
+            self.ui.act_edit_insert.setChecked(False)
+            self.ui.act_edit_velocity.setChecked(False)
+
+    def slot_paramChanged(self, index):
+        sender = self.sender()
+
+        if sender == self.ui.timeSigBox:
+            param = 0
+        elif sender == self.ui.measureBox:
+            param = 1
+            index += 1
+        elif sender == self.ui.defaultLengthBox:
+            param = 2
+        elif sender == self.ui.quantizeBox:
+            param = 3
+        else:
+            return
+
+        self.sendControl(param, index)
+
+    def slot_setTimeSignature(self, sigtext):
+        try:
+           timesig = tuple(map(float, sigtext.split('/')))
+        except ValueError:
+            return
+
+        if len(timesig) != 2:
+            return
+
+        self.fTimeSignature = timesig
+        self.ui.piano.setTimeSig(timesig)
+
+    # -------------------------------------------------------------------
+    # DSP Callbacks
+
+    def dspParameterChanged(self, index, value):
+        value = int(value)
+
+        if index == 0: # TimeSig
+            self.ui.timeSigBox.blockSignals(True)
+            self.ui.timeSigBox.setCurrentIndex(value)
+            self.slot_setTimeSignature(self.ui.timeSigBox.currentText())
+            self.ui.timeSigBox.blockSignals(False)
+
+        elif index == 1: # Measures
+            self.ui.measureBox.blockSignals(True)
+            self.ui.measureBox.setCurrentIndex(value-1)
+            self.ui.piano.setMeasures(self.ui.measureBox.currentText())
+            self.ui.measureBox.blockSignals(False)
+
+        elif index == 2: # DefLength
+            self.ui.defaultLengthBox.blockSignals(True)
+            self.ui.defaultLengthBox.setCurrentIndex(value)
+            self.ui.piano.setDefaultLength(self.ui.defaultLengthBox.currentText())
+            self.ui.defaultLengthBox.blockSignals(False)
+
+        elif index == 3: # Quantize
+            self.ui.quantizeBox.blockSignals(True)
+            self.ui.quantizeBox.setCurrentIndex(value)
+            self.ui.piano.setQuantize(self.ui.quantizeBox.currentText())
+            self.ui.quantizeBox.blockSignals(False)
+
+    def dspStateChanged(self, key, value):
+        pass
+
+    # -------------------------------------------------------------------
+    # ExternalUI Callbacks
+
+    def uiShow(self):
+        self.show()
+
+    def uiFocus(self):
+        self.setWindowState((self.windowState() & ~Qt.WindowMinimized) | Qt.WindowActive)
+        self.show()
+
+        self.raise_()
+        self.activateWindow()
+
+    def uiHide(self):
+        self.hide()
+
+    def uiQuit(self):
+        self.closeExternalUI()
+        self.close()
+        app.quit()
+
+    def uiTitleChanged(self, uiTitle):
+        self.setWindowTitle(uiTitle)
+
+    # -------------------------------------------------------------------
+    # Qt events
+
+    def timerEvent(self, event):
+        if event.timerId() == self.fIdleTimer:
+            self.idleExternalUI()
+        QMainWindow.timerEvent(self, event)
+
+    def closeEvent(self, event):
+        self.closeExternalUI()
+        QMainWindow.closeEvent(self, event)
+
+        # there might be other qt windows open which will block the UI from quitting
+        app.quit()
+
+    # -------------------------------------------------------------------
+    # Custom callback
+
+    def updateMeasureBox(self, index):
+        self.ui.measureBox.setCurrentIndex(index-1)
+
+    def sendMsg(self, data):
+        msg = data[0]
+        if msg == "midievent-add":
+            note, start, length, vel = data[1:5]
+            note_start = start * self.TICKS_PER_BEAT
+            note_stop = note_start + length * 4. * self.fTimeSignature[0] / self.fTimeSignature[1] * self.TICKS_PER_BEAT
+            self.send([msg, note_start, 3, MIDI_STATUS_NOTE_ON, note, vel])
+            self.send([msg, note_stop, 3, MIDI_STATUS_NOTE_OFF, note, vel])
+
+        elif msg == "midievent-remove":
+            note, start, length, vel = data[1:5]
+            note_start = start * self.TICKS_PER_BEAT
+            note_stop = note_start + length * 4. * self.fTimeSignature[0] / self.fTimeSignature[1] * self.TICKS_PER_BEAT
+            self.send([msg, note_start, 3, MIDI_STATUS_NOTE_ON, note, vel])
+            self.send([msg, note_stop, 3, MIDI_STATUS_NOTE_OFF, note, vel])
+
+    def msgCallback(self, msg):
+        msg = charPtrToString(msg)
+
+        if msg == "midi-clear-all":
+            # clear all notes
+            self.ui.piano.clearNotes()
+
+        elif msg == "midievent-add":
+            # adds single midi event
+            time = int(self.readlineblock())
+            size = int(self.readlineblock())
+            data = tuple(int(self.readlineblock()) for x in range(size))
+
+            self.handleMidiEvent(time, size, data)
+
+        elif msg == "transport":
+            playing, frame, bar, beat, tick = tuple(int(i) for i in self.readlineblock().split(":"))
+            bpm = float(self.readlineblock())
+            playing = bool(int(playing))
+
+            old_frame = self.fTransportInfo['frame']
+
+            self.fTransportInfo = {
+                "playing": playing,
+                "frame": frame,
+                "bar": bar,
+                "beat": beat,
+                "tick": tick,
+                "bpm": bpm,
+                "ticksPerBeat": self.TICKS_PER_BEAT,
+            }
+
+            if old_frame != frame:
+                self.ui.piano.movePlayHead(self.fTransportInfo)
+
+        elif msg == "parameters":
+            timesig, measures, deflength, quantize = tuple(int(i) for i in self.readlineblock().split(":"))
+            self.dspParameterChanged(0, timesig)
+            self.dspParameterChanged(1, measures)
+            self.dspParameterChanged(2, deflength)
+            self.dspParameterChanged(3, quantize)
+
+        else:
+            ExternalUI.msgCallback(self, msg)
+
+    # -------------------------------------------------------------------
+    # Internal stuff
+
+    def handleMidiEvent(self, time, size, data):
+        #print("handleMidiEvent", time, size, data)
+
+        status  = MIDI_GET_STATUS_FROM_DATA(data)
+        channel = MIDI_GET_CHANNEL_FROM_DATA(data)
+
+        if status == MIDI_STATUS_NOTE_ON:
+            note = data[1]
+            velo = data[2]
+
+            # append (channel, note, velo, time) for later
+            self.fPendingNoteOns.append((channel, note, velo, time))
+
+        elif status == MIDI_STATUS_NOTE_OFF:
+            note = data[1]
+
+            # find previous note-on that matches this note and channel
+            for noteOnMsg in self.fPendingNoteOns:
+                on_channel, on_note, on_velo, on_time = noteOnMsg
+
+                if on_channel != channel:
+                    continue
+                if on_note != note:
+                    continue
+
+                # found it
+                self.fPendingNoteOns.remove(noteOnMsg)
+                break
+
+            else:
+                return
+
+            self.ui.piano.drawNote(note,
+                                   on_time/self.TICKS_PER_BEAT,
+                                   (time-on_time)/self.TICKS_PER_BEAT/self.fTimeSignature[0], on_velo)
+
+
+#--------------- main ------------------
+if __name__ == '__main__':
+    import resources_rc
+
+    pathBinaries, pathResources = getPaths()
+    gCarla.utils = CarlaUtils(os.path.join(pathBinaries, "libcarla_utils." + DLL_EXTENSION))
+    gCarla.utils.set_process_name("MidiPattern")
+
+    app = CarlaApplication("MidiPattern")
+    gui = MidiPatternW()
+    app.exit_exec()

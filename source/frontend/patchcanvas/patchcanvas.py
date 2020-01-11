@@ -20,7 +20,7 @@
 # Imports (Global)
 
 from PyQt5.QtCore import pyqtSlot, qCritical, qFatal, qWarning, QObject
-from PyQt5.QtCore import QPointF, QRectF, QSettings, QTimer
+from PyQt5.QtCore import QPointF, QRectF, QTimer
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -61,6 +61,8 @@ from .utils import CanvasCallback, CanvasGetNewGroupPos, CanvasItemFX, CanvasRem
 # FIXME
 from . import *
 from .scene import PatchScene
+
+from carla_shared import QSafeSettings
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -176,7 +178,7 @@ def init(appName, scene, callback, debug=False):
     if not canvas.qobject:
         canvas.qobject = CanvasObject()
     if not canvas.settings:
-        canvas.settings = QSettings("falkTX", appName)
+        canvas.settings = QSafeSettings("falkTX", appName)
 
     if canvas.theme:
         del canvas.theme
@@ -423,7 +425,7 @@ def splitGroup(group_id):
     for group in canvas.group_list:
         if group.group_id == group_id:
             if group.split:
-                qCritical("PatchCanvas::splitGroup(%i) - group is already splitted" % group_id)
+                qCritical("PatchCanvas::splitGroup(%i) - group is already split" % group_id)
                 return
 
             item = group.widgets[0]
@@ -472,7 +474,7 @@ def splitGroup(group_id):
 
     removeGroup(group_id)
 
-    # Step 3 - Re-create Item, now splitted
+    # Step 3 - Re-create Item, now split
     addGroup(group_id, group_name, SPLIT_YES, group_icon)
 
     if plugin_id >= 0:
@@ -504,7 +506,7 @@ def joinGroup(group_id):
     for group in canvas.group_list:
         if group.group_id == group_id:
             if not group.split:
-                qCritical("PatchCanvas::joinGroup(%i) - group is not splitted" % group_id)
+                qCritical("PatchCanvas::joinGroup(%i) - group is not split" % group_id)
                 return
 
             item = group.widgets[0]

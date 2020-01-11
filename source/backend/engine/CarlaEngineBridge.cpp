@@ -19,7 +19,7 @@
 # error This file should not be compiled if not building bridge
 #endif
 
-#include "CarlaEngineInternal.hpp"
+#include "CarlaEngineClient.hpp"
 #include "CarlaPlugin.hpp"
 
 #include "CarlaBackendUtils.hpp"
@@ -45,6 +45,16 @@ using water::Time;
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
+
+// just want to access private options...
+struct CarlaPlugin::ProtectedData {
+    CarlaEngine* const engine;
+    CarlaEngineClient* client;
+    uint id, hints, options;
+    // ...etc
+};
+
+// -----------------------------------------------------------------------
 // Bridge Engine client
 
 struct LatencyChangedCallback {
@@ -52,12 +62,18 @@ struct LatencyChangedCallback {
     virtual void latencyChanged(const uint32_t samples) noexcept = 0;
 };
 
-class CarlaEngineBridgeClient : public CarlaEngineClient
+class CarlaEngineBridgeClient : public CarlaEngineClientForSubclassing
 {
 public:
-    CarlaEngineBridgeClient(const CarlaEngine& engine, LatencyChangedCallback* const cb)
-        : CarlaEngineClient(engine),
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    CarlaEngineBridgeClient(const CarlaEngine& engine, EngineInternalGraph& egraph, CarlaPlugin* const plugin, LatencyChangedCallback* const cb)
+        : CarlaEngineClientForSubclassing(engine, egraph, plugin),
           fLatencyCallback(cb) {}
+#else
+    CarlaEngineBridgeClient(const CarlaEngine& engine, LatencyChangedCallback* const cb)
+        : CarlaEngineClientForSubclassing(engine),
+          fLatencyCallback(cb) {}
+#endif
 
 protected:
     void setLatency(const uint32_t samples) noexcept override
@@ -175,7 +191,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(opcode == kPluginBridgeNonRtClientVersion, false);
 
         const uint32_t apiVersion = fShmNonRtClientControl.readUInt();
-        CARLA_SAFE_ASSERT_RETURN(apiVersion == CARLA_PLUGIN_BRIDGE_API_VERSION, false);
+        CARLA_SAFE_ASSERT_RETURN(apiVersion >= CARLA_PLUGIN_BRIDGE_API_VERSION_MINIMUM, false);
 
         const uint32_t shmRtClientDataSize = fShmNonRtClientControl.readUInt();
         CARLA_SAFE_ASSERT_INT2(shmRtClientDataSize == sizeof(BridgeRtClientData), shmRtClientDataSize, sizeof(BridgeRtClientData));
@@ -212,7 +228,17 @@ public:
         {
             const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
 
-            fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerPong);
+            // kPluginBridgeNonRtServerVersion was added in API 7
+            if (apiVersion >= 7)
+            {
+                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerVersion);
+                fShmNonRtServerControl.writeUInt(CARLA_PLUGIN_BRIDGE_API_VERSION_CURRENT);
+            }
+            else
+            {
+                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerPong);
+            }
+
             fShmNonRtServerControl.commitWrite();
         }
 
@@ -267,9 +293,16 @@ public:
         fShmNonRtServerControl.commitWrite();
     }
 
-    CarlaEngineClient* addClient(CarlaPlugin* const) override
+    CarlaEngineClient* addClient(CarlaPlugin* const plugin) override
     {
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+        return new CarlaEngineBridgeClient(*this, pData->graph, plugin, this);
+#else
         return new CarlaEngineBridgeClient(*this, this);
+
+        // unused
+        (void)plugin;
+#endif
     }
 
     void idle() noexcept override
@@ -301,6 +334,8 @@ public:
             CARLA_SAFE_ASSERT(fLastPingTime > 0);
 
             char bufStr[STR_MAX+1];
+            carla_zeroChars(bufStr, STR_MAX+1);
+
             uint32_t bufStrSize;
 
             const CarlaEngineClient* const client(plugin->getEngineClient());
@@ -323,26 +358,26 @@ public:
                 // uint/size, str[] (realName), uint/size, str[] (label), uint/size, str[] (maker), uint/size, str[] (copyright)
                 fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerPluginInfo2);
 
-                carla_zeroChars(bufStr, STR_MAX);
-                plugin->getRealName(bufStr);
+                if (! plugin->getRealName(bufStr))
+                    bufStr[0] = '\0';
                 bufStrSize = carla_fixedValue(1U, 64U, static_cast<uint32_t>(std::strlen(bufStr)));
                 fShmNonRtServerControl.writeUInt(bufStrSize);
                 fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
 
-                carla_zeroChars(bufStr, STR_MAX);
-                plugin->getLabel(bufStr);
+                if (! plugin->getLabel(bufStr))
+                    bufStr[0] = '\0';
                 bufStrSize = carla_fixedValue(1U, 256U, static_cast<uint32_t>(std::strlen(bufStr)));
                 fShmNonRtServerControl.writeUInt(bufStrSize);
                 fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
 
-                carla_zeroChars(bufStr, STR_MAX);
-                plugin->getMaker(bufStr);
+                if (! plugin->getMaker(bufStr))
+                    bufStr[0] = '\0';
                 bufStrSize = carla_fixedValue(1U, 64U, static_cast<uint32_t>(std::strlen(bufStr)));
                 fShmNonRtServerControl.writeUInt(bufStrSize);
                 fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
 
-                carla_zeroChars(bufStr, STR_MAX);
-                plugin->getCopyright(bufStr);
+                if (! plugin->getCopyright(bufStr))
+                    bufStr[0] = '\0';
                 bufStrSize = carla_fixedValue(1U, 64U, static_cast<uint32_t>(std::strlen(bufStr)));
                 fShmNonRtServerControl.writeUInt(bufStrSize);
                 fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
@@ -443,7 +478,7 @@ public:
                         fShmNonRtServerControl.writeInt(paramData.rindex);
                         fShmNonRtServerControl.writeUInt(paramData.type);
                         fShmNonRtServerControl.writeUInt(paramData.hints);
-                        fShmNonRtServerControl.writeShort(paramData.midiCC);
+                        fShmNonRtServerControl.writeShort(paramData.mappedControlIndex);
                         fShmNonRtServerControl.commitWrite();
                     }
 
@@ -453,20 +488,20 @@ public:
                         fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerParameterData2);
                         fShmNonRtServerControl.writeUInt(i);
 
-                        carla_zeroChars(bufStr, STR_MAX);
-                        plugin->getParameterName(i, bufStr);
+                        if (! plugin->getParameterName(i, bufStr))
+                            std::snprintf(bufStr, STR_MAX, "Param %u", i+1);
                         bufStrSize = carla_fixedValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
                         fShmNonRtServerControl.writeUInt(bufStrSize);
                         fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
 
-                        carla_zeroChars(bufStr, STR_MAX);
-                        plugin->getParameterSymbol(i, bufStr);
+                        if (! plugin->getParameterSymbol(i, bufStr))
+                            bufStr[0] = '\0';
                         bufStrSize = carla_fixedValue(1U, 64U, static_cast<uint32_t>(std::strlen(bufStr)));
                         fShmNonRtServerControl.writeUInt(bufStrSize);
                         fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
 
-                        carla_zeroChars(bufStr, STR_MAX);
-                        plugin->getParameterUnit(i, bufStr);
+                        if (! plugin->getParameterUnit(i, bufStr))
+                            bufStr[0] = '\0';
                         bufStrSize = carla_fixedValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
                         fShmNonRtServerControl.writeUInt(bufStrSize);
                         fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
@@ -517,8 +552,8 @@ public:
                     fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerProgramName);
                     fShmNonRtServerControl.writeUInt(i);
 
-                    carla_zeroChars(bufStr, STR_MAX);
-                    plugin->getProgramName(i, bufStr);
+                    if (! plugin->getProgramName(i, bufStr))
+                        bufStr[0] = '\0';
                     bufStrSize = carla_fixedValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
                     fShmNonRtServerControl.writeUInt(bufStrSize);
                     fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
@@ -613,7 +648,7 @@ public:
     {
         CarlaEngine::callback(sendHost, sendOsc, action, pluginId, value1, value2, value3, valuef, valueStr);
 
-        if (fClosingDown)
+        if (fClosingDown || ! sendHost)
             return;
 
         switch (action)
@@ -732,7 +767,8 @@ public:
 
             case kPluginBridgeNonRtClientVersion: {
                 const uint apiVersion = fShmNonRtServerControl.readUInt();
-                CARLA_SAFE_ASSERT_UINT2(apiVersion == CARLA_PLUGIN_BRIDGE_API_VERSION, apiVersion, CARLA_PLUGIN_BRIDGE_API_VERSION);
+                CARLA_SAFE_ASSERT_UINT2(apiVersion >= CARLA_PLUGIN_BRIDGE_API_VERSION_MINIMUM,
+                                        apiVersion, CARLA_PLUGIN_BRIDGE_API_VERSION_MINIMUM);
             }   break;
 
             case kPluginBridgeNonRtClientPing: {
@@ -782,12 +818,22 @@ public:
                 break;
             }
 
-            case kPluginBridgeNonRtClientSetParameterMidiCC: {
+            case kPluginBridgeNonRtClientSetParameterMappedControlIndex: {
                 const uint32_t index(fShmNonRtClientControl.readUInt());
-                const int16_t  cc(fShmNonRtClientControl.readShort());
+                const int16_t  ctrl(fShmNonRtClientControl.readShort());
 
                 if (plugin != nullptr && plugin->isEnabled())
-                    plugin->setParameterMidiCC(index, cc, false, false);
+                    plugin->setParameterMappedControlIndex(index, ctrl, false, false);
+                break;
+            }
+
+            case kPluginBridgeNonRtClientSetParameterMappedRange: {
+                const uint32_t index   = fShmNonRtClientControl.readUInt();
+                const float    minimum = fShmNonRtClientControl.readFloat();
+                const float    maximum = fShmNonRtClientControl.readFloat();
+
+                if (plugin != nullptr && plugin->isEnabled())
+                    plugin->setParameterMappedRange(index, minimum, maximum, false, false);
                 break;
             }
 
@@ -887,22 +933,33 @@ public:
                 break;
             }
 
+            case kPluginBridgeNonRtClientSetOptions: {
+                const uint32_t options(fShmNonRtClientControl.readUInt());
+
+                if (plugin != nullptr)
+                    plugin->pData->options = options;
+                break;
+            }
+
             case kPluginBridgeNonRtClientGetParameterText: {
                 const int32_t index(fShmNonRtClientControl.readInt());
 
                 if (index >= 0 && plugin != nullptr && plugin->isEnabled())
                 {
-                    char strBuf[STR_MAX];
-                    plugin->getParameterText(static_cast<uint32_t>(index), strBuf);
-                    const uint32_t strBufLen = static_cast<uint32_t>(std::strlen(strBuf));
+                    char bufStr[STR_MAX+1];
+                    carla_zeroChars(bufStr, STR_MAX+1);
+                    if (! plugin->getParameterText(static_cast<uint32_t>(index), bufStr))
+                        bufStr[0] = '\0';
+
+                    const uint32_t bufStrLen = static_cast<uint32_t>(std::strlen(bufStr));
 
                     const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
 
                     fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerSetParameterText);
 
                     fShmNonRtServerControl.writeInt(index);
-                    fShmNonRtServerControl.writeUInt(strBufLen);
-                    fShmNonRtServerControl.writeCustomData(strBuf, strBufLen);
+                    fShmNonRtServerControl.writeUInt(bufStrLen);
+                    fShmNonRtServerControl.writeCustomData(bufStr, bufStrLen);
                     fShmNonRtServerControl.commitWrite();
 
                     fShmNonRtServerControl.waitIfDataIsReachingLimit();

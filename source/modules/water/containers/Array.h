@@ -52,7 +52,7 @@ namespace water {
 
     @see OwnedArray, ReferenceCountedArray, StringArray, CriticalSection
 */
-template <typename ElementType, int minimumAllocatedSize = 0>
+template <typename ElementType, size_t minimumAllocatedSize = 0>
 class Array
 {
 private:
@@ -373,7 +373,7 @@ public:
     */
     bool add (const ElementType& newElement) noexcept
     {
-        if (! data.ensureAllocatedSize (numUsed + 1))
+        if (! data.ensureAllocatedSize (static_cast<size_t>(numUsed + 1)))
             return false;
 
         new (data.elements + numUsed++) ElementType (newElement);
@@ -1089,7 +1089,7 @@ private:
         const int numberToShift = numUsed - indexToRemove;
 
         if (numberToShift > 0)
-            data.moveMemory (e, e + 1, numberToShift);
+            data.moveMemory (e, e + 1, static_cast<size_t>(numberToShift));
 
         minimiseStorageAfterRemoval();
     }
@@ -1102,8 +1102,12 @@ private:
 
     void minimiseStorageAfterRemoval()
     {
-        if (data.numAllocated > static_cast<size_t>(jmax (minimumAllocatedSize, numUsed * 2)))
-            data.shrinkToNoMoreThan (jmax (numUsed, jmax (minimumAllocatedSize, 64 / (int) sizeof (ElementType))));
+        CARLA_SAFE_ASSERT_RETURN(numUsed >= 0,);
+
+        const size_t snumUsed = static_cast<size_t>(numUsed);
+
+        if (data.numAllocated > jmax (minimumAllocatedSize, snumUsed * 2U))
+            data.shrinkToNoMoreThan (jmax (snumUsed, jmax (minimumAllocatedSize, 64U / sizeof (ElementType))));
     }
 };
 

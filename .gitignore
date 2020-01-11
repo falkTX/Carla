@@ -29,7 +29,13 @@
 *.vst3
 
 # Binary dir
+bin/ansi-pedantic-test_*
+bin/carla
+bin/carla.lv2/carla-bridge-*
+bin/carla-database
+bin/carla-settings
 bin/jack/
+bin/resources/
 bin/styles/
 build/
 
@@ -47,7 +53,11 @@ qrc_resources.cpp
 
 # Python files
 *.pyc
+
+# Qt files
+*_rc.cpp
 *_rc.py
+ui_*.hpp
 ui_*.py
 
 # Misc files
@@ -90,11 +100,6 @@ zynaddsubfx-ui
 
 stoat-output.png
 
-data/macos/*-svn/
-data/windows/Carla
-data/windows/CarlaControl
-data/windows/Carla-*-win32/
-data/windows/Carla-*-win64/
 source/tests/ansi-pedantic-test_*
 source/tests/CachedPlugins
 source/tests/CarlaRingBuffer
@@ -127,6 +132,8 @@ source/dist/
 
 # python files in plugin resources dir
 bin/resources/*.py
+bin/resources/patchcanvas
+bin/resources/widgets
 source/native-plugins/resources/*.py
 
 # Other
@@ -155,7 +162,15 @@ data/linux/*.*/
 
 data/macos/*.gz
 data/macos/*.tgz
+data/macos/*-svn/
 data/macos/*.*/
 data/macos/Carla/
+
+data/windows/Carla
+data/windows/CarlaControl
+data/windows/Carla-*-win32/
+data/windows/Carla-*-win64/
+data/windows/Carla.lv2/
+data/windows/Carla_*
 
 data/windows/python/

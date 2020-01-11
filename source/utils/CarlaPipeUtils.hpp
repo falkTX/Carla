@@ -165,6 +165,11 @@ public:
     bool writeAndFixMessage(const char* const msg) const noexcept;
 
     /*!
+     * Write an empty message, which means a single '\n'.
+     */
+    bool writeEmptyMessage() const noexcept;
+
+    /*!
      * Flush all messages currently in cache.
      */
     bool flushMessages() const noexcept;
@@ -339,22 +344,6 @@ public:
     void writeExitingMessageAndWait() noexcept;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPipeClient)
-};
-
-// -----------------------------------------------------------------------
-// ScopedEnvVar class
-
-class ScopedEnvVar {
-public:
-    ScopedEnvVar(const char* const key, const char* const value) noexcept;
-    ~ScopedEnvVar() noexcept;
-
-private:
-    const char* fKey;
-    const char* fOrigValue;
-
-    CARLA_DECLARE_NON_COPY_CLASS(ScopedEnvVar)
-    CARLA_PREVENT_HEAP_ALLOCATION
 };
 
 // -----------------------------------------------------------------------

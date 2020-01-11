@@ -404,6 +404,7 @@ struct LV2_RDF_Port {
     const char* Name;
     const char* Symbol;
     const char* Comment;
+    const char* GroupURI;
 
     LV2_RDF_PortMidiMap MidiMap;
     LV2_RDF_PortPoints Points;
@@ -421,6 +422,7 @@ struct LV2_RDF_Port {
           Name(nullptr),
           Symbol(nullptr),
           Comment(nullptr),
+          GroupURI(nullptr),
           MidiMap(),
           Points(),
           Unit(),
@@ -445,6 +447,11 @@ struct LV2_RDF_Port {
             delete[] Comment;
             Comment = nullptr;
         }
+        if (GroupURI != nullptr)
+        {
+            delete[] GroupURI;
+            GroupURI = nullptr;
+        }
         if (ScalePoints != nullptr)
         {
             delete[] ScalePoints;
@@ -455,6 +462,34 @@ struct LV2_RDF_Port {
     CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_Port)
 };
 
+// Port
+struct LV2_RDF_PortGroup {
+    LV2_URI URI; // shared value, do not deallocate
+    const char* Name;
+    const char* Symbol;
+
+    LV2_RDF_PortGroup() noexcept
+        : URI(nullptr),
+          Name(nullptr),
+          Symbol(nullptr) {}
+
+    ~LV2_RDF_PortGroup() noexcept
+    {
+        if (Name != nullptr)
+        {
+            delete[] Name;
+            Name = nullptr;
+        }
+        if (Symbol != nullptr)
+        {
+            delete[] Symbol;
+            Symbol = nullptr;
+        }
+    }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_PortGroup)
+};
+
 // Parameter
 struct LV2_RDF_Parameter {
     LV2_URI URI;
@@ -462,6 +497,7 @@ struct LV2_RDF_Parameter {
     bool Input;
     const char* Label;
     const char* Comment;
+    const char* GroupURI;
 
     LV2_RDF_PortMidiMap MidiMap;
     LV2_RDF_PortPoints Points;
@@ -473,6 +509,7 @@ struct LV2_RDF_Parameter {
           Input(true),
           Label(nullptr),
           Comment(nullptr),
+          GroupURI(nullptr),
           MidiMap(),
           Points(),
           Unit() {}
@@ -493,6 +530,11 @@ struct LV2_RDF_Parameter {
         {
             delete[] Comment;
             Comment = nullptr;
+        }
+        if (GroupURI != nullptr)
+        {
+            delete[] GroupURI;
+            GroupURI = nullptr;
         }
     }
 
@@ -656,6 +698,9 @@ struct LV2_RDF_Descriptor {
     uint32_t PortCount;
     LV2_RDF_Port* Ports;
 
+    uint32_t PortGroupCount;
+    LV2_RDF_PortGroup* PortGroups;
+
     uint32_t ParameterCount;
     LV2_RDF_Parameter* Parameters;
 
@@ -681,6 +726,8 @@ struct LV2_RDF_Descriptor {
           UniqueID(0),
           PortCount(0),
           Ports(nullptr),
+          PortGroupCount(0),
+          PortGroups(nullptr),
           ParameterCount(0),
           Parameters(nullptr),
           PresetCount(0),
@@ -731,6 +778,11 @@ struct LV2_RDF_Descriptor {
         {
             delete[] Ports;
             Ports = nullptr;
+        }
+        if (PortGroups != nullptr)
+        {
+            delete[] PortGroups;
+            PortGroups = nullptr;
         }
         if (Parameters != nullptr)
         {

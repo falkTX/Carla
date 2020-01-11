@@ -30,8 +30,9 @@ static NativePluginHandle bypass_instantiate(const NativeHostDescriptor* host)
     (void)host;
 }
 
+// FIXME for v3.0, use const for the input buffer
 static void bypass_process(NativePluginHandle handle,
-                           const float** inBuffer, float** outBuffer, uint32_t frames,
+                           float** inBuffer, float** outBuffer, uint32_t frames,
                            const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
 {
     if (outBuffer[0] != inBuffer[0])
@@ -52,6 +53,8 @@ static const NativePluginDescriptor bypassDesc = {
     .supports  = NATIVE_PLUGIN_SUPPORTS_NOTHING,
     .audioIns  = 1,
     .audioOuts = 1,
+    .cvIns     = 0,
+    .cvOuts    = 0,
     .midiIns   = 0,
     .midiOuts  = 0,
     .paramIns  = 0,

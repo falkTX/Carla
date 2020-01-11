@@ -80,6 +80,23 @@ const char* BinaryType2Str(const BinaryType type) noexcept
 }
 
 static inline
+const char* FileType2Str(const FileType type) noexcept
+{
+    switch (type)
+    {
+    case FILE_NONE:
+        return "FILE_NONE";
+    case FILE_AUDIO:
+        return "FILE_AUDIO";
+    case FILE_MIDI:
+        return "FILE_MIDI";
+    }
+
+    carla_stderr("CarlaBackend::FileType2Str(%i) - invalid type", type);
+    return nullptr;
+}
+
+static inline
 const char* PluginType2Str(const PluginType type) noexcept
 {
     switch (type)
@@ -100,6 +117,10 @@ const char* PluginType2Str(const PluginType type) noexcept
         return "PLUGIN_VST3";
     case PLUGIN_AU:
         return "PLUGIN_AU";
+    case PLUGIN_DLS:
+        return "PLUGIN_DLS";
+    case PLUGIN_GIG:
+        return "PLUGIN_GIG";
     case PLUGIN_SF2:
         return "PLUGIN_SF2";
     case PLUGIN_SFZ:
@@ -211,10 +232,10 @@ const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode) noexcept
     case ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
         return "ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED";
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    case ENGINE_CALLBACK_PARAMETER_MAPPED_CONTROL_INDEX_CHANGED:
+        return "ENGINE_CALLBACK_PARAMETER_MAPPED_CONTROL_INDEX_CHANGED";
     case ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
         return "ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED";
-    case ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
-        return "ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED";
     case ENGINE_CALLBACK_OPTION_CHANGED:
         return "ENGINE_CALLBACK_OPTION_CHANGED";
 #endif
@@ -251,8 +272,8 @@ const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode) noexcept
         return "ENGINE_CALLBACK_PATCHBAY_PORT_ADDED";
     case ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED:
         return "ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED";
-    case ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED:
-        return "ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED";
+    case ENGINE_CALLBACK_PATCHBAY_PORT_CHANGED:
+        return "ENGINE_CALLBACK_PATCHBAY_PORT_CHANGED";
     case ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED:
         return "ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED";
     case ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED:
@@ -286,6 +307,14 @@ const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode) noexcept
         return "ENGINE_CALLBACK_QUIT";
     case ENGINE_CALLBACK_INLINE_DISPLAY_REDRAW:
         return "ENGINE_CALLBACK_INLINE_DISPLAY_REDRAW";
+    case ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_ADDED:
+        return "ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_ADDED";
+    case ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_REMOVED:
+        return "ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_REMOVED";
+    case ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_CHANGED:
+        return "ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_CHANGED";
+    case ENGINE_CALLBACK_PARAMETER_MAPPED_RANGE_CHANGED:
+        return "ENGINE_CALLBACK_PARAMETER_MAPPED_RANGE_CHANGED";
     }
 
     carla_stderr("CarlaBackend::EngineCallbackOpcode2Str(%i) - invalid opcode", opcode);
@@ -313,6 +342,8 @@ const char* EngineOption2Str(const EngineOption option) noexcept
         return "ENGINE_OPTION_UIS_ALWAYS_ON_TOP";
     case ENGINE_OPTION_MAX_PARAMETERS:
         return "ENGINE_OPTION_MAX_PARAMETERS";
+    case ENGINE_OPTION_RESET_XRUNS:
+        return "ENGINE_OPTION_RESET_XRUNS";
     case ENGINE_OPTION_UI_BRIDGES_TIMEOUT:
         return "ENGINE_OPTION_UI_BRIDGES_TIMEOUT";
     case ENGINE_OPTION_AUDIO_BUFFER_SIZE:
@@ -321,6 +352,8 @@ const char* EngineOption2Str(const EngineOption option) noexcept
         return "ENGINE_OPTION_AUDIO_SAMPLE_RATE";
     case ENGINE_OPTION_AUDIO_TRIPLE_BUFFER:
         return "ENGINE_OPTION_AUDIO_TRIPLE_BUFFER";
+    case ENGINE_OPTION_AUDIO_DRIVER:
+        return "ENGINE_OPTION_AUDIO_DRIVER";
     case ENGINE_OPTION_AUDIO_DEVICE:
         return "ENGINE_OPTION_AUDIO_DEVICE";
     case ENGINE_OPTION_OSC_ENABLED:
@@ -329,6 +362,8 @@ const char* EngineOption2Str(const EngineOption option) noexcept
         return "ENGINE_OPTION_OSC_PORT_UDP";
     case ENGINE_OPTION_OSC_PORT_TCP:
         return "ENGINE_OPTION_OSC_PORT_TCP";
+    case ENGINE_OPTION_FILE_PATH:
+        return "ENGINE_OPTION_FILE_PATH";
     case ENGINE_OPTION_PLUGIN_PATH:
         return "ENGINE_OPTION_PLUGIN_PATH";
     case ENGINE_OPTION_PATH_BINARIES:
@@ -501,7 +536,11 @@ const char* getPluginTypeAsString(const PluginType type) noexcept
     case PLUGIN_VST3:
         return "VST3";
     case PLUGIN_AU:
-        return "AU";;
+        return "AU";
+    case PLUGIN_DLS:
+        return "DLS";
+    case PLUGIN_GIG:
+        return "GIG";
     case PLUGIN_SF2:
         return "SF2";
     case PLUGIN_SFZ:
@@ -543,7 +582,11 @@ PluginType getPluginTypeFromString(const char* const ctype) noexcept
         return PLUGIN_VST3;
     if (stype == "au" || stype == "audiounit")
         return PLUGIN_AU;
-    if (stype == "sf2")
+    if (stype == "dls")
+        return PLUGIN_DLS;
+    if (stype == "gig")
+        return PLUGIN_GIG;
+    if (stype == "sf2" || stype == "sf3")
         return PLUGIN_SF2;
     if (stype == "sfz")
         return PLUGIN_SFZ;
@@ -634,6 +677,18 @@ PluginCategory getPluginCategoryFromName(const char* const name) noexcept
         return PLUGIN_CATEGORY_UTILITY;
 
     return PLUGIN_CATEGORY_NONE;
+}
+
+// -----------------------------------------------------------------------
+
+static inline
+bool isPluginOptionEnabled(const uint options, const uint option)
+{
+    if (options == PLUGIN_OPTIONS_NULL)
+        return true;
+    if (options & option)
+        return true;
+    return false;
 }
 
 // -----------------------------------------------------------------------

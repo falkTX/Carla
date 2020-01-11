@@ -19,9 +19,14 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, qCritical, Qt, QPointF, QRectF, QTimer, QSettings, QSize
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, qCritical, Qt, QPointF, QRectF, QTimer, QSize
 from PyQt5.QtGui import QColor, QFont, QPainter, QPixmap
 from PyQt5.QtWidgets import QMenu, QScrollArea, QWidget
+
+# ------------------------------------------------------------------------------------------------------------
+# Imports (Custom)
+
+from carla_shared import QSafeSettings
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -217,17 +222,17 @@ class PixmapKeyboard(QWidget):
         if self.fInitalizing:
             return
 
-        settings = QSettings("falkTX", "CarlaKeyboard")
+        settings = QSafeSettings("falkTX", "CarlaKeyboard")
         settings.setValue("PcKeyboardLayout", self.fkPcKeyLayout)
         settings.setValue("PcKeyboardOffset", self.fPcKeybOffset)
         settings.setValue("HighlightColor", self.fHighlightColor)
         del settings
 
     def loadSettings(self):
-        settings = QSettings("falkTX", "CarlaKeyboard")
-        self.setPcKeyboardLayout(settings.value("PcKeyboardLayout", self.fkPcKeyLayout, type=str))
-        self.setPcKeyboardOffset(settings.value("PcKeyboardOffset", self.fPcKeybOffset, type=int))
-        self.setColor(settings.value("HighlightColor", self.fHighlightColor, type=str))
+        settings = QSafeSettings("falkTX", "CarlaKeyboard")
+        self.setPcKeyboardLayout(settings.value("PcKeyboardLayout", self.fkPcKeyLayout, str))
+        self.setPcKeyboardOffset(settings.value("PcKeyboardOffset", self.fPcKeybOffset, int))
+        self.setColor(settings.value("HighlightColor", self.fHighlightColor, str))
         del settings
 
     def allNotesOff(self, sendSignal=True):

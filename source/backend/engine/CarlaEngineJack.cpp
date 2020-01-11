@@ -15,6 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include "CarlaEngineClient.hpp"
 #include "CarlaEngineInternal.hpp"
 #include "CarlaPlugin.hpp"
 
@@ -62,6 +63,7 @@ class CarlaEngineJackClient;
 // Fallback data
 
 static const EngineEvent kFallbackJackEngineEvent = { kEngineEventTypeNull, 0, 0, {{ kEngineControlEventTypeNull, 0, 0.0f }} };
+//static CarlaEngineEventCV kFallbackEngineEventCV = { nullptr, (uint32_t)-1, 0.0f };
 
 // -----------------------------------------------------------------------
 // Carla Engine Port removal helper
@@ -96,7 +98,7 @@ public:
         case ENGINE_PROCESS_MODE_SINGLE_CLIENT:
         case ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
             CARLA_SAFE_ASSERT_RETURN(jackClient != nullptr && jackPort != nullptr,);
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             if (const jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
                 jackbridge_set_property(jackClient, uuid, JACKEY_SIGNAL_TYPE, "AUDIO", "text/plain");
 #endif
@@ -114,7 +116,7 @@ public:
 
         if (fJackClient != nullptr && fJackPort != nullptr)
         {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             try {
                 if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort))
                     jackbridge_remove_property(fJackClient, uuid, JACKEY_SIGNAL_TYPE);
@@ -158,6 +160,16 @@ public:
         fJackPort   = nullptr;
     }
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    void setMetaData(const char* const key, const char* const value, const char* const type) override
+    {
+        try {
+            if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort))
+                jackbridge_set_property(fJackClient, uuid, key, value, type);
+        } CARLA_SAFE_EXCEPTION("Port setMetaData");
+    }
+#endif
+
 private:
     jack_client_t* fJackClient;
     jack_port_t*   fJackPort;
@@ -188,7 +200,7 @@ public:
         case ENGINE_PROCESS_MODE_SINGLE_CLIENT:
         case ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
             CARLA_SAFE_ASSERT_RETURN(jackClient != nullptr && jackPort != nullptr,);
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             if (const jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
                 jackbridge_set_property(jackClient, uuid, JACKEY_SIGNAL_TYPE, "CV", "text/plain");
 #endif
@@ -206,7 +218,7 @@ public:
 
         if (fJackClient != nullptr && fJackPort != nullptr)
         {
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             try {
                 if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort))
                     jackbridge_remove_property(fJackClient, uuid, JACKEY_SIGNAL_TYPE);
@@ -249,6 +261,16 @@ public:
         fJackClient = nullptr;
         fJackPort   = nullptr;
     }
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    void setMetaData(const char* const key, const char* const value, const char* const type) override
+    {
+        try {
+            if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort))
+                jackbridge_set_property(fJackClient, uuid, key, value, type);
+        } CARLA_SAFE_EXCEPTION("Port setMetaData");
+    }
+#endif
 
 private:
     jack_client_t* fJackClient;
@@ -348,7 +370,7 @@ public:
         return getEventUnchecked(index);
     }
 
-    const EngineEvent& getEventUnchecked(const uint32_t index) const noexcept override
+    const EngineEvent& getEventUnchecked(uint32_t index) const noexcept override
     {
         jack_midi_event_t jackEvent;
 
@@ -439,6 +461,16 @@ public:
         fJackPort   = nullptr;
     }
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    void setMetaData(const char* const key, const char* const value, const char* const type) override
+    {
+        try {
+            if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort))
+                jackbridge_set_property(fJackClient, uuid, key, value, type);
+        } CARLA_SAFE_EXCEPTION("Port setMetaData");
+    }
+#endif
+
 private:
     jack_client_t* fJackClient;
     jack_port_t*   fJackPort;
@@ -453,20 +485,63 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJackEventPort)
 };
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+// -----------------------------------------------------------------------
+// Jack Engine CV source ports
+
+class CarlaEngineJackCVSourcePorts : public CarlaEngineCVSourcePorts
+{
+public:
+    CarlaEngineJackCVSourcePorts()
+        : CarlaEngineCVSourcePorts()
+    {}
+
+    CarlaRecursiveMutex& getMutex() noexcept
+    {
+        return pData->rmutex;
+    }
+
+    uint32_t getPortCount() const
+    {
+        return static_cast<uint32_t>(pData->cvs.size());
+    }
+
+    CarlaEngineCVPort* getPort(const uint32_t portIndexOffset) const
+    {
+        const int ioffset = static_cast<int>(portIndexOffset);
+        return pData->cvs[ioffset].cvPort;
+    }
+
+    void setGraphAndPlugin(PatchbayGraph* const graph, CarlaPlugin* const plugin) noexcept
+    {
+        pData->graph = graph;
+        pData->plugin = plugin;
+    }
+};
+#endif
+
 // -----------------------------------------------------------------------
 // Jack Engine client
 
-class CarlaEngineJackClient : public CarlaEngineClient,
+class CarlaEngineJackClient : public CarlaEngineClientForSubclassing,
                               private JackPortDeletionCallback
 {
 public:
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    CarlaEngineJackClient(const CarlaEngine& engine, EngineInternalGraph& egraph, CarlaPlugin* const plugin, jack_client_t* const jackClient)
+        : CarlaEngineClientForSubclassing(engine, egraph, plugin),
+#else
     CarlaEngineJackClient(const CarlaEngine& engine, jack_client_t* const jackClient)
-        : CarlaEngineClient(engine),
+        : CarlaEngineClientForSubclassing(engine),
+#endif
           fJackClient(jackClient),
           fUseClient(engine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || engine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS),
           fAudioPorts(),
           fCVPorts(),
           fEventPorts(),
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+          fCVSourcePorts(),
+#endif
           fPreRenameMutex(),
           fPreRenameConnections()
     {
@@ -630,6 +705,19 @@ public:
         return nullptr;
     }
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    CarlaEngineCVSourcePorts* createCVSourcePorts() override
+    {
+        fCVSourcePorts.setGraphAndPlugin(getPatchbayGraph(), getPlugin());
+        return &fCVSourcePorts;
+    }
+
+    CarlaEngineJackCVSourcePorts& getCVSourcePorts() noexcept
+    {
+        return fCVSourcePorts;
+    }
+#endif
+
     void invalidate() noexcept
     {
         for (LinkedList<CarlaEngineJackAudioPort*>::Itenerator it = fAudioPorts.begin2(); it.valid(); it.next())
@@ -739,6 +827,10 @@ private:
     LinkedList<CarlaEngineJackAudioPort*> fAudioPorts;
     LinkedList<CarlaEngineJackCVPort*>    fCVPorts;
     LinkedList<CarlaEngineJackEventPort*> fEventPorts;
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    CarlaEngineJackCVSourcePorts fCVSourcePorts;
+#endif
 
     CarlaMutex      fPreRenameMutex;
     CarlaStringList fPreRenameConnections;
@@ -944,7 +1036,7 @@ public:
         return true;
 #else
         if (fClient == nullptr && clientName != nullptr)
-            fClient = jackbridge_client_open(truncatedClientName, JackNullOption, nullptr);
+            fClient = jackbridge_client_open(truncatedClientName, JackNoStartServer, nullptr);
 
         if (fClient == nullptr)
         {
@@ -1004,11 +1096,11 @@ public:
             if (opts.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
             {
                 // FIXME?
-                pData->graph.create(0, 0);
+                pData->graph.create(0, 0, 0, 0);
             }
             else
             {
-                pData->graph.create(2, 2);
+                pData->graph.create(2, 2, 0, 0);
                 // pData->graph.setUsingExternalHost(true);
                 // pData->graph.setUsingExternalOSC(true);
                 patchbayRefresh(true, false, false);
@@ -1189,7 +1281,31 @@ public:
 
         return jackbridge_cpu_load(fClient);
     }
+
+    void callback(const bool sendHost, const bool sendOsc,
+                  const EngineCallbackOpcode action, const uint pluginId,
+                  const int value1, const int value2, const int value3,
+                  const float valuef, const char* const valueStr) noexcept override
+    {
+        if (action == ENGINE_CALLBACK_PROJECT_LOAD_FINISHED && fTimebaseMaster)
+        {
+            // project finished loading, need to set bpm here, so we force an update of timebase master
+            transportRelocate(pData->timeInfo.frame);
+        }
+
+        CarlaEngine::callback(sendHost, sendOsc, action, pluginId, value1, value2, value3, valuef, valueStr);
+    }
 #endif
+
+    bool setBufferSizeAndSampleRate(const uint bufferSize, const double sampleRate) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(carla_isEqual(pData->sampleRate, sampleRate), false);
+        CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
+
+        try {
+            return jackbridge_set_buffer_size(fClient, bufferSize);
+        } CARLA_SAFE_EXCEPTION_RETURN("setBufferSizeAndSampleRate", false);
+    }
 
     EngineTimeInfo getTimeInfo() const noexcept override
     {
@@ -1282,7 +1398,7 @@ public:
         else if (pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
 #endif
         {
-            client = jackbridge_client_open(plugin->getName(), JackNullOption, nullptr);
+            client = jackbridge_client_open(plugin->getName(), JackNoStartServer, nullptr);
 
             CARLA_SAFE_ASSERT_RETURN(client != nullptr, nullptr);
 
@@ -1334,7 +1450,11 @@ public:
 #endif
         }
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+        return new CarlaEngineJackClient(*this, pData->graph, plugin, client);
+#else
         return new CarlaEngineJackClient(*this, client);
+#endif
     }
 
 #ifndef BUILD_BRIDGE
@@ -1398,7 +1518,7 @@ public:
             CarlaEngineJackClient* const client((CarlaEngineJackClient*)plugin->getEngineClient());
 
             // we should not be able to do this, jack really needs to allow client rename
-            if (jack_client_t* const jackClient = jackbridge_client_open(uniqueName, JackNullOption, nullptr))
+            if (jack_client_t* const jackClient = jackbridge_client_open(uniqueName, JackNoStartServer, nullptr))
             {
                 // get new client name
                 uniqueName = jackbridge_get_client_name(jackClient);
@@ -2268,7 +2388,7 @@ protected:
 
                 portNameToId.rename(shortPortName, newFullName);
                 callback(fExternalPatchbayHost, fExternalPatchbayOsc,
-                         ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED,
+                         ENGINE_CALLBACK_PATCHBAY_PORT_CHANGED,
                          portNameToId.group,
                          static_cast<int>(portNameToId.port),
                          0, 0, 0.0f,
@@ -2610,14 +2730,26 @@ private:
 
     void processPlugin(CarlaPlugin* const plugin, const uint32_t nframes)
     {
-        const uint32_t audioInCount(plugin->getAudioInCount());
-        const uint32_t audioOutCount(plugin->getAudioOutCount());
-        const uint32_t cvInCount(plugin->getCVInCount());
-        const uint32_t cvOutCount(plugin->getCVOutCount());
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+        CarlaEngineJackClient* const client = (CarlaEngineJackClient*)plugin->getEngineClient();
+        CarlaEngineJackCVSourcePorts& cvSourcePorts(client->getCVSourcePorts());
+
+        const CarlaRecursiveMutexTryLocker crmtl(cvSourcePorts.getMutex(), fFreewheel);
+#endif
+
+        const uint32_t audioInCount  = plugin->getAudioInCount();
+        const uint32_t audioOutCount = plugin->getAudioOutCount();
+        const uint32_t cvInCount     = plugin->getCVInCount();
+        const uint32_t cvOutCount    = plugin->getCVOutCount();
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+        const uint32_t cvsInCount    = crmtl.wasLocked() ? cvSourcePorts.getPortCount() : 0;
+#else
+        const uint32_t cvsInCount    = 0;
+#endif
 
         const float* audioIn[audioInCount];
         /* */ float* audioOut[audioOutCount];
-        const float* cvIn[cvInCount];
+        const float* cvIn[cvInCount+cvsInCount];
         /* */ float* cvOut[cvOutCount];
 
         for (uint32_t i=0; i < audioInCount; ++i)
@@ -2636,7 +2768,16 @@ private:
         {
             CarlaEngineCVPort* const port(plugin->getCVInPort(i));
             cvIn[i] = port->getBuffer();
+            CARLA_SAFE_ASSERT(cvIn[i] != nullptr);
         }
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+        for (uint32_t i=cvInCount, j=0; j < cvsInCount; ++i, ++j)
+        {
+            if (CarlaEngineCVPort* const port = cvSourcePorts.getPort(j))
+                cvIn[i] = port->getBuffer();
+        }
+#endif
 
         for (uint32_t i=0; i < cvOutCount; ++i)
         {
@@ -2990,6 +3131,7 @@ int jack_initialize(jack_client_t* const client, const char* const load_init)
     CarlaEngineJack* const engine = new CarlaEngineJack();
 
     engine->setOption(ENGINE_OPTION_FORCE_STEREO, 1, nullptr);
+    engine->setOption(ENGINE_OPTION_AUDIO_DRIVER, 0, "JACK");
     engine->setOption(ENGINE_OPTION_AUDIO_DEVICE, 0, "Auto-Connect ON");
     engine->setOption(ENGINE_OPTION_OSC_ENABLED,  1, nullptr);
     engine->setOption(ENGINE_OPTION_OSC_PORT_TCP, 22752, nullptr);

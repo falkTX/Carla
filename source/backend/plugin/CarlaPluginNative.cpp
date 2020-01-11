@@ -18,6 +18,7 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
+#include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaNative.h"
 
@@ -252,10 +253,11 @@ public:
           fIsOffline(false),
           fIsUiAvailable(false),
           fIsUiVisible(false),
+          fNeedsIdle(false),
           fInlineDisplayNeedsRedraw(false),
           fInlineDisplayLastRedrawTime(0),
-          fAudioInBuffers(nullptr),
-          fAudioOutBuffers(nullptr),
+          fAudioAndCvInBuffers(nullptr),
+          fAudioAndCvOutBuffers(nullptr),
           fMidiEventInCount(0),
           fMidiEventOutCount(0),
           fCurBufferSize(engine->getBufferSize()),
@@ -421,8 +423,8 @@ public:
         if ((fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS) == 0x0)
             options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-        // can't disable forced stereo if enabled in the engine
-        if (pData->engine->getOptions().forceStereo)
+        // can't disable forced stereo if enabled in the engine, or using CV
+        if (pData->engine->getOptions().forceStereo || pData->cvIn.count != 0 || pData->cvOut.count != 0)
             pass();
         // if inputs or outputs are just 1, then yes we can force stereo
         else if (pData->audioIn.count == 1 || pData->audioOut.count == 1 || fHandle2 != nullptr)
@@ -478,64 +480,64 @@ public:
         return 0.0f;
     }
 
-    void getLabel(char* const strBuf) const noexcept override
+    bool getLabel(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
 
         if (fDescriptor->label != nullptr)
         {
             std::strncpy(strBuf, fDescriptor->label, STR_MAX);
-            return;
+            return true;
         }
 
-        CarlaPlugin::getLabel(strBuf);
+        return CarlaPlugin::getLabel(strBuf);
     }
 
-    void getMaker(char* const strBuf) const noexcept override
+    bool getMaker(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
 
         if (fDescriptor->maker != nullptr)
         {
             std::strncpy(strBuf, fDescriptor->maker, STR_MAX);
-            return;
+            return true;
         }
 
-        CarlaPlugin::getMaker(strBuf);
+        return CarlaPlugin::getMaker(strBuf);
     }
 
-    void getCopyright(char* const strBuf) const noexcept override
+    bool getCopyright(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
 
         if (fDescriptor->copyright != nullptr)
         {
             std::strncpy(strBuf, fDescriptor->copyright, STR_MAX);
-            return;
+            return true;
         }
 
-        CarlaPlugin::getCopyright(strBuf);
+        return CarlaPlugin::getCopyright(strBuf);
     }
 
-    void getRealName(char* const strBuf) const noexcept override
+    bool getRealName(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
 
         if (fDescriptor->name != nullptr)
         {
             std::strncpy(strBuf, fDescriptor->name, STR_MAX);
-            return;
+            return true;
         }
 
-        CarlaPlugin::getRealName(strBuf);
+        return CarlaPlugin::getRealName(strBuf);
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_info != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_info != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         // FIXME - try
         if (const NativeParameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
@@ -543,7 +545,7 @@ public:
             if (param->name != nullptr)
             {
                 std::strncpy(strBuf, param->name, STR_MAX);
-                return;
+                return true;
             }
 
             carla_safe_assert("param->name != nullptr", __FILE__, __LINE__);
@@ -551,15 +553,15 @@ public:
         }
 
         carla_safe_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
-        CarlaPlugin::getParameterName(parameterId, strBuf);
+        return CarlaPlugin::getParameterName(parameterId, strBuf);
     }
 
-    void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_info != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_info != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         // FIXME - try
         if (const NativeParameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
@@ -567,34 +569,80 @@ public:
             if (param->unit != nullptr)
             {
                 std::strncpy(strBuf, param->unit, STR_MAX);
-                return;
+                return true;
             }
 
             return CarlaPlugin::getParameterUnit(parameterId, strBuf);
         }
 
         carla_safe_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
-        CarlaPlugin::getParameterUnit(parameterId, strBuf);
+        return CarlaPlugin::getParameterUnit(parameterId, strBuf);
     }
 
-    void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept override
+    bool getParameterComment(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_info != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_info != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         // FIXME - try
         if (const NativeParameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
         {
-            CARLA_SAFE_ASSERT_RETURN(scalePointId < param->scalePointCount,);
+            if (param->comment != nullptr)
+            {
+                std::strncpy(strBuf, param->comment, STR_MAX);
+                return true;
+            }
+
+            return CarlaPlugin::getParameterComment(parameterId, strBuf);
+        }
+
+        carla_safe_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
+        return CarlaPlugin::getParameterComment(parameterId, strBuf);
+    }
+
+    bool getParameterGroupName(const uint32_t parameterId, char* const strBuf) const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_info != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+
+        // FIXME - try
+        if (const NativeParameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
+        {
+            if (param->groupName != nullptr)
+            {
+                std::strncpy(strBuf, param->groupName, STR_MAX);
+                return true;
+            }
+
+            return CarlaPlugin::getParameterGroupName(parameterId, strBuf);
+        }
+
+        carla_safe_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
+        return CarlaPlugin::getParameterGroupName(parameterId, strBuf);
+    }
+
+    bool getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_info != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+
+        // FIXME - try
+        if (const NativeParameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
+        {
+            CARLA_SAFE_ASSERT_RETURN(scalePointId < param->scalePointCount, false);
 
             const NativeParameterScalePoint* scalePoint(&param->scalePoints[scalePointId]);
 
             if (scalePoint->label != nullptr)
             {
                 std::strncpy(strBuf, scalePoint->label, STR_MAX);
-                return;
+                return true;
             }
 
             carla_safe_assert("scalePoint->label != nullptr", __FILE__, __LINE__);
@@ -602,7 +650,7 @@ public:
         }
 
         carla_safe_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
-        CarlaPlugin::getParameterScalePointLabel(parameterId, scalePointId, strBuf);
+        return CarlaPlugin::getParameterScalePointLabel(parameterId, scalePointId, strBuf);
     }
 
     // -------------------------------------------------------------------
@@ -688,7 +736,7 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setParameterValueRT(const uint32_t parameterId, const float value) noexcept override
+    void setParameterValueRT(const uint32_t parameterId, const float value, const bool sendCallbackLater) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fDescriptor->set_parameter_value != nullptr,);
@@ -703,7 +751,7 @@ public:
         if (fHandle2 != nullptr)
             fDescriptor->set_parameter_value(fHandle2, parameterId, fixedValue);
 
-        CarlaPlugin::setParameterValueRT(parameterId, fixedValue);
+        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, sendCallbackLater);
     }
 
     void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui) override
@@ -826,7 +874,7 @@ public:
     }
 
     // FIXME: this is never used
-    void setMidiProgramRT(const uint32_t index) noexcept override
+    void setMidiProgramRT(const uint32_t index, const bool sendCallbackLater) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
@@ -834,7 +882,7 @@ public:
 
         // TODO, put into check below
         if ((pData->hints & PLUGIN_IS_SYNTH) != 0 && (pData->ctrlChannel < 0 || pData->ctrlChannel >= MAX_MIDI_CHANNELS))
-           return CarlaPlugin::setMidiProgramRT(index);
+           return CarlaPlugin::setMidiProgramRT(index, sendCallbackLater);
 
         const uint8_t  channel = uint8_t((pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS) ? pData->ctrlChannel : 0);
         const uint32_t bank    = pData->midiprog.data[index].bank;
@@ -853,7 +901,7 @@ public:
 
         fCurMidiProgs[channel] = static_cast<int32_t>(index);
 
-        CarlaPlugin::setMidiProgramRT(index);
+        CarlaPlugin::setMidiProgramRT(index, sendCallbackLater);
     }
 
     // -------------------------------------------------------------------
@@ -921,6 +969,12 @@ public:
 
     void idle() override
     {
+        if (fNeedsIdle)
+        {
+            fNeedsIdle = false;
+            fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_IDLE, 0, 0, nullptr, 0.0f);
+        }
+
         if (fInlineDisplayNeedsRedraw)
         {
             // TESTING
@@ -976,9 +1030,7 @@ public:
 
         clearBuffers();
 
-        const float sampleRate((float)pData->engine->getSampleRate());
-
-        uint32_t aIns, aOuts, mIns, mOuts, params, j;
+        uint32_t aIns, aOuts, cvIns, cvOuts, mIns, mOuts, j;
 
         bool forcedStereoIn, forcedStereoOut;
         forcedStereoIn = forcedStereoOut = false;
@@ -988,9 +1040,10 @@ public:
 
         aIns   = fDescriptor->audioIns;
         aOuts  = fDescriptor->audioOuts;
+        cvIns  = fDescriptor->cvIns;
+        cvOuts = fDescriptor->cvOuts;
         mIns   = fDescriptor->midiIns;
         mOuts  = fDescriptor->midiOuts;
-        params = (fDescriptor->get_parameter_count != nullptr && fDescriptor->get_parameter_info != nullptr) ? fDescriptor->get_parameter_count(fHandle) : 0;
 
         if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && (aIns == 1 || aOuts == 1) && mIns <= 1 && mOuts <= 1)
         {
@@ -1016,20 +1069,34 @@ public:
         if (aIns > 0)
         {
             pData->audioIn.createNew(aIns);
-            fAudioInBuffers = new float*[aIns];
-
-            for (uint32_t i=0; i < aIns; ++i)
-                fAudioInBuffers[i] = nullptr;
         }
 
         if (aOuts > 0)
         {
             pData->audioOut.createNew(aOuts);
-            fAudioOutBuffers = new float*[aOuts];
             needsCtrlIn = true;
+        }
 
-            for (uint32_t i=0; i < aOuts; ++i)
-                fAudioOutBuffers[i] = nullptr;
+        if (cvIns > 0)
+        {
+            pData->cvIn.createNew(cvIns);
+        }
+
+        if (cvOuts > 0)
+        {
+            pData->cvOut.createNew(cvOuts);
+        }
+
+        if (const uint32_t acIns = aIns + cvIns)
+        {
+            fAudioAndCvInBuffers = new float*[acIns];
+            carla_zeroPointers(fAudioAndCvInBuffers, acIns);
+        }
+
+        if (const uint32_t acOuts = aOuts + cvOuts)
+        {
+            fAudioAndCvOutBuffers = new float*[acOuts];
+            carla_zeroPointers(fAudioAndCvOutBuffers, acOuts);
         }
 
         if (mIns > 0)
@@ -1042,11 +1109,6 @@ public:
         {
             fMidiOut.createNew(mOuts);
             needsCtrlOut = (mOuts == 1);
-        }
-
-        if (params > 0)
-        {
-            pData->param.createNew(params, true);
         }
 
         const uint portNameSize(pData->engine->getMaxPortNameSize());
@@ -1063,7 +1125,11 @@ public:
                 portName += ":";
             }
 
-            if (aIns > 1 && ! forcedStereoIn)
+            if (fDescriptor->get_buffer_port_name != nullptr)
+            {
+                portName += fDescriptor->get_buffer_port_name(fHandle, forcedStereoIn ? 0 : j, false);
+            }
+            else if (aIns > 1 && ! forcedStereoIn)
             {
                 portName += "input_";
                 portName += CarlaString(j+1);
@@ -1096,7 +1162,11 @@ public:
                 portName += ":";
             }
 
-            if (aOuts > 1 && ! forcedStereoOut)
+            if (fDescriptor->get_buffer_port_name != nullptr)
+            {
+                portName += fDescriptor->get_buffer_port_name(fHandle, forcedStereoOut ? 0 : j, true);
+            }
+            else if (aOuts > 1 && ! forcedStereoOut)
             {
                 portName += "output_";
                 portName += CarlaString(j+1);
@@ -1116,6 +1186,64 @@ public:
                 pData->audioOut.ports[1].rindex = j;
                 break;
             }
+        }
+
+        // CV Ins
+        for (j=0; j < cvIns; ++j)
+        {
+            portName.clear();
+
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
+            {
+                portName  = pData->name;
+                portName += ":";
+            }
+
+            if (fDescriptor->get_buffer_port_name != nullptr)
+            {
+                portName += fDescriptor->get_buffer_port_name(fHandle, fDescriptor->audioIns + j, false);
+            }
+            else if (cvIns > 1)
+            {
+                portName += "cv_input_";
+                portName += CarlaString(j+1);
+            }
+            else
+                portName += "cv_input";
+
+            portName.truncate(portNameSize);
+
+            pData->cvIn.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, true, j);
+            pData->cvIn.ports[j].rindex = j;
+        }
+
+        // CV Outs
+        for (j=0; j < cvOuts; ++j)
+        {
+            portName.clear();
+
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
+            {
+                portName  = pData->name;
+                portName += ":";
+            }
+
+            if (fDescriptor->get_buffer_port_name != nullptr)
+            {
+                portName += fDescriptor->get_buffer_port_name(fHandle, fDescriptor->audioOuts + j, true);
+            }
+            else if (cvOuts > 1)
+            {
+                portName += "cv_output_";
+                portName += CarlaString(j+1);
+            }
+            else
+                portName += "cv_output";
+
+            portName.truncate(portNameSize);
+
+            pData->cvOut.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, false, j);
+            pData->cvOut.ports[j].rindex = j;
         }
 
         // MIDI Input (only if multiple)
@@ -1166,7 +1294,105 @@ public:
             pData->event.portOut = fMidiOut.ports[0];
         }
 
-        for (j=0; j < params; ++j)
+        reloadParameters(&needsCtrlIn, &needsCtrlOut);
+
+        if (needsCtrlIn || mIns == 1)
+        {
+            portName.clear();
+
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
+            {
+                portName  = pData->name;
+                portName += ":";
+            }
+
+            portName += "events-in";
+            portName.truncate(portNameSize);
+
+            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+            pData->event.cvSourcePorts = pData->client->createCVSourcePorts();
+#endif
+        }
+
+        if (needsCtrlOut || mOuts == 1)
+        {
+            portName.clear();
+
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
+            {
+                portName  = pData->name;
+                portName += ":";
+            }
+
+            portName += "events-out";
+            portName.truncate(portNameSize);
+
+            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, 0);
+        }
+
+        if (forcedStereoIn || forcedStereoOut)
+            pData->options |= PLUGIN_OPTION_FORCE_STEREO;
+        else
+            pData->options &= ~PLUGIN_OPTION_FORCE_STEREO;
+
+        // plugin hints
+        pData->hints = 0x0;
+
+        if (aOuts > 0 && (aIns == aOuts || aIns == 1))
+            pData->hints |= PLUGIN_CAN_DRYWET;
+
+        if (aOuts > 0)
+            pData->hints |= PLUGIN_CAN_VOLUME;
+
+        if (aOuts >= 2 && aOuts % 2 == 0)
+            pData->hints |= PLUGIN_CAN_BALANCE;
+
+        // native plugin hints
+        if (fDescriptor->hints & NATIVE_PLUGIN_IS_RTSAFE)
+            pData->hints |= PLUGIN_IS_RTSAFE;
+        if (fDescriptor->hints & NATIVE_PLUGIN_IS_SYNTH)
+            pData->hints |= PLUGIN_IS_SYNTH;
+        if (fDescriptor->hints & NATIVE_PLUGIN_HAS_UI)
+            pData->hints |= PLUGIN_HAS_CUSTOM_UI;
+        if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS)
+            pData->hints |= PLUGIN_NEEDS_FIXED_BUFFERS;
+        if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD)
+            pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
+        if (fDescriptor->hints & NATIVE_PLUGIN_USES_MULTI_PROGS)
+            pData->hints |= PLUGIN_USES_MULTI_PROGS;
+        if (fDescriptor->hints & NATIVE_PLUGIN_HAS_INLINE_DISPLAY)
+            pData->hints |= PLUGIN_HAS_INLINE_DISPLAY;
+
+        // extra plugin hints
+        pData->extraHints = 0x0;
+
+        bufferSizeChanged(pData->engine->getBufferSize());
+        reloadPrograms(true);
+
+        if (pData->active)
+            activate();
+
+        carla_debug("CarlaPluginNative::reload() - end");
+    }
+
+    void reloadParameters(bool* const needsCtrlIn, bool* const needsCtrlOut)
+    {
+        carla_debug("CarlaPluginNative::reloadParameters() - start");
+
+        const float sampleRate = static_cast<float>(pData->engine->getSampleRate());
+        const uint32_t params = (fDescriptor->get_parameter_count != nullptr && fDescriptor->get_parameter_info != nullptr)
+                              ? fDescriptor->get_parameter_count(fHandle)
+                              : 0;
+
+        pData->param.clear();
+
+        if (params > 0)
+        {
+            pData->param.createNew(params, true);
+        }
+
+        for (uint32_t j=0; j < params; ++j)
         {
             const NativeParameter* const paramInfo(fDescriptor->get_parameter_info(fHandle, j));
 
@@ -1234,20 +1460,27 @@ public:
             if (paramInfo->hints & NATIVE_PARAMETER_IS_OUTPUT)
             {
                 pData->param.data[j].type = PARAMETER_OUTPUT;
-                needsCtrlOut = true;
+                if (needsCtrlOut != nullptr)
+                    *needsCtrlOut = true;
             }
             else
             {
                 pData->param.data[j].type = PARAMETER_INPUT;
-                needsCtrlIn = true;
+                if (needsCtrlIn != nullptr)
+                    *needsCtrlIn = true;
             }
 
             // extra parameter hints
             if (paramInfo->hints & NATIVE_PARAMETER_IS_ENABLED)
+            {
                 pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
 
-            if (paramInfo->hints & NATIVE_PARAMETER_IS_AUTOMABLE)
-                pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
+                if (paramInfo->hints & NATIVE_PARAMETER_IS_AUTOMABLE)
+                {
+                    pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
+                    pData->param.data[j].hints |= PARAMETER_CAN_BE_CV_CONTROLLED;
+                }
+            }
 
             if (paramInfo->hints & NATIVE_PARAMETER_IS_LOGARITHMIC)
                 pData->param.data[j].hints |= PARAMETER_IS_LOGARITHMIC;
@@ -1263,81 +1496,7 @@ public:
             pData->param.ranges[j].stepLarge = stepLarge;
         }
 
-        if (needsCtrlIn || mIns == 1)
-        {
-            portName.clear();
-
-            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
-            {
-                portName  = pData->name;
-                portName += ":";
-            }
-
-            portName += "events-in";
-            portName.truncate(portNameSize);
-
-            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
-        }
-
-        if (needsCtrlOut || mOuts == 1)
-        {
-            portName.clear();
-
-            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
-            {
-                portName  = pData->name;
-                portName += ":";
-            }
-
-            portName += "events-out";
-            portName.truncate(portNameSize);
-
-            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, 0);
-        }
-
-        if (forcedStereoIn || forcedStereoOut)
-            pData->options |= PLUGIN_OPTION_FORCE_STEREO;
-        else
-            pData->options &= ~PLUGIN_OPTION_FORCE_STEREO;
-
-        // plugin hints
-        pData->hints = 0x0;
-
-        if (aOuts > 0 && (aIns == aOuts || aIns == 1))
-            pData->hints |= PLUGIN_CAN_DRYWET;
-
-        if (aOuts > 0)
-            pData->hints |= PLUGIN_CAN_VOLUME;
-
-        if (aOuts >= 2 && aOuts % 2 == 0)
-            pData->hints |= PLUGIN_CAN_BALANCE;
-
-        // native plugin hints
-        if (fDescriptor->hints & NATIVE_PLUGIN_IS_RTSAFE)
-            pData->hints |= PLUGIN_IS_RTSAFE;
-        if (fDescriptor->hints & NATIVE_PLUGIN_IS_SYNTH)
-            pData->hints |= PLUGIN_IS_SYNTH;
-        if (fDescriptor->hints & NATIVE_PLUGIN_HAS_UI)
-            pData->hints |= PLUGIN_HAS_CUSTOM_UI;
-        if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS)
-            pData->hints |= PLUGIN_NEEDS_FIXED_BUFFERS;
-        if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD)
-            pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
-        if (fDescriptor->hints & NATIVE_PLUGIN_USES_MULTI_PROGS)
-            pData->hints |= PLUGIN_USES_MULTI_PROGS;
-        if (fDescriptor->hints & NATIVE_PLUGIN_HAS_INLINE_DISPLAY)
-            pData->hints |= PLUGIN_HAS_INLINE_DISPLAY;
-
-        // extra plugin hints
-        pData->extraHints = 0x0;
-
-        bufferSizeChanged(pData->engine->getBufferSize());
-        reloadPrograms(true);
-
-        if (pData->active)
-            activate();
-
-        carla_debug("CarlaPluginNative::reload() - end");
+        carla_debug("CarlaPluginNative::reloadParameters() - end");
     }
 
     void reloadPrograms(const bool doInit) override
@@ -1514,7 +1673,8 @@ public:
         return kNullEngineEvent;
     }
 
-    void process(const float** const audioIn, float** const audioOut, const float** const, float** const, const uint32_t frames) override
+    void process(const float* const* const audioIn, float** const audioOut,
+                 const float* const* const cvIn, float** const cvOut, const uint32_t frames) override
     {
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -1524,6 +1684,8 @@ public:
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
                 carla_zeroFloats(audioOut[i], frames);
+            for (uint32_t i=0; i < pData->cvOut.count; ++i)
+                carla_zeroFloats(cvOut[i], frames);
             return;
         }
 
@@ -1667,7 +1829,7 @@ public:
 #ifndef BUILD_BRIDGE
             bool allNotesOffSent = false;
 #endif
-            bool sampleAccurate  = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
+            bool isSampleAccurate = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
             uint32_t startTime  = 0;
             uint32_t timeOffset = 0;
@@ -1677,6 +1839,11 @@ public:
                 nextBankId = pData->midiprog.data[pData->midiprog.current].bank;
             else
                 nextBankId = 0;
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+            if (cvIn != nullptr && pData->event.cvSourcePorts != nullptr)
+                pData->event.cvSourcePorts->initPortBuffers(cvIn + pData->cvIn.count, frames, isSampleAccurate, pData->event.portIn);
+#endif
 
             for (;;)
             {
@@ -1695,9 +1862,9 @@ public:
                     eventTime = timeOffset;
                 }
 
-                if (sampleAccurate && eventTime > timeOffset)
+                if (isSampleAccurate && eventTime > timeOffset)
                 {
-                    if (processSingle(audioIn, audioOut, eventTime - timeOffset, timeOffset))
+                    if (processSingle(audioIn, audioOut, cvIn, cvOut, eventTime - timeOffset, timeOffset))
                     {
                         startTime  = 0;
                         timeOffset = eventTime;
@@ -1747,13 +1914,13 @@ public:
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) > 0)
                             {
                                 value = ctrlEvent.value;
-                                setDryWetRT(value);
+                                setDryWetRT(value, true);
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) > 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
-                                setVolumeRT(value);
+                                setVolumeRT(value, true);
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) > 0)
@@ -1777,8 +1944,8 @@ public:
                                     right = 1.0f;
                                 }
 
-                                setBalanceLeftRT(left);
-                                setBalanceRightRT(right);
+                                setBalanceLeftRT(left, true);
+                                setBalanceRightRT(right, true);
                             }
                         }
 #endif
@@ -1787,7 +1954,7 @@ public:
                         {
                             if (pData->param.data[k].midiChannel != event.channel)
                                 continue;
-                            if (pData->param.data[k].midiCC != ctrlEvent.param)
+                            if (pData->param.data[k].mappedControlIndex != ctrlEvent.param)
                                 continue;
                             if (pData->param.data[k].type != PARAMETER_INPUT)
                                 continue;
@@ -1811,7 +1978,7 @@ public:
                                     value = std::rint(value);
                             }
 
-                            setParameterValueRT(k, value);
+                            setParameterValueRT(k, value, true);
                         }
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_CONTROL)
@@ -1822,7 +1989,7 @@ public:
                             NativeMidiEvent& nativeEvent(fMidiInEvents[fMidiEventInCount++]);
                             carla_zeroStruct(nativeEvent);
 
-                            nativeEvent.time    = sampleAccurate ? startTime : eventTime;
+                            nativeEvent.time    = isSampleAccurate ? startTime : eventTime;
                             nativeEvent.data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             nativeEvent.data[1] = uint8_t(ctrlEvent.param);
                             nativeEvent.data[2] = uint8_t(ctrlEvent.value*127.0f);
@@ -1846,7 +2013,7 @@ public:
                             NativeMidiEvent& nativeEvent(fMidiInEvents[fMidiEventInCount++]);
                             carla_zeroStruct(nativeEvent);
 
-                            nativeEvent.time    = sampleAccurate ? startTime : eventTime;
+                            nativeEvent.time    = isSampleAccurate ? startTime : eventTime;
                             nativeEvent.data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             nativeEvent.data[1] = MIDI_CONTROL_BANK_SELECT;
                             nativeEvent.data[2] = uint8_t(ctrlEvent.param);
@@ -1875,6 +2042,7 @@ public:
                                         if (event.channel == pData->ctrlChannel)
                                         {
                                             pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange,
+                                                                   true,
                                                                    static_cast<int32_t>(k),
                                                                    0, 0, 0.0f);
                                         }
@@ -1892,7 +2060,7 @@ public:
                             NativeMidiEvent& nativeEvent(fMidiInEvents[fMidiEventInCount++]);
                             carla_zeroStruct(nativeEvent);
 
-                            nativeEvent.time    = sampleAccurate ? startTime : eventTime;
+                            nativeEvent.time    = isSampleAccurate ? startTime : eventTime;
                             nativeEvent.data[0] = uint8_t(MIDI_STATUS_PROGRAM_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             nativeEvent.data[1] = uint8_t(ctrlEvent.param);
                             nativeEvent.size    = 2;
@@ -1908,7 +2076,7 @@ public:
                             NativeMidiEvent& nativeEvent(fMidiInEvents[fMidiEventInCount++]);
                             carla_zeroStruct(nativeEvent);
 
-                            nativeEvent.time    = sampleAccurate ? startTime : eventTime;
+                            nativeEvent.time    = isSampleAccurate ? startTime : eventTime;
                             nativeEvent.data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             nativeEvent.data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
                             nativeEvent.data[2] = 0;
@@ -1933,7 +2101,7 @@ public:
                             NativeMidiEvent& nativeEvent(fMidiInEvents[fMidiEventInCount++]);
                             carla_zeroStruct(nativeEvent);
 
-                            nativeEvent.time    = sampleAccurate ? startTime : eventTime;
+                            nativeEvent.time    = isSampleAccurate ? startTime : eventTime;
                             nativeEvent.data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             nativeEvent.data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
                             nativeEvent.data[2] = 0;
@@ -1975,7 +2143,7 @@ public:
                     carla_zeroStruct(nativeEvent);
 
                     nativeEvent.port = midiEvent.port;
-                    nativeEvent.time = sampleAccurate ? startTime : eventTime;
+                    nativeEvent.time = isSampleAccurate ? startTime : eventTime;
                     nativeEvent.size = midiEvent.size;
 
                     nativeEvent.data[0] = uint8_t(status | (event.channel & MIDI_CHANNEL_BIT));
@@ -1986,6 +2154,7 @@ public:
                     if (status == MIDI_STATUS_NOTE_ON)
                     {
                         pData->postponeRtEvent(kPluginPostRtEventNoteOn,
+                                               true,
                                                event.channel,
                                                midiEvent.data[1],
                                                midiEvent.data[2],
@@ -1994,6 +2163,7 @@ public:
                     else if (status == MIDI_STATUS_NOTE_OFF)
                     {
                         pData->postponeRtEvent(kPluginPostRtEventNoteOff,
+                                               true,
                                                event.channel,
                                                midiEvent.data[1],
                                                0, 0.0f);
@@ -2005,7 +2175,7 @@ public:
             pData->postRtEvents.trySplice();
 
             if (frames > timeOffset)
-                processSingle(audioIn, audioOut, frames - timeOffset, timeOffset);
+                processSingle(audioIn, audioOut, cvIn, cvOut, frames - timeOffset, timeOffset);
 
         } // End of Event Input and Processing
 
@@ -2014,7 +2184,7 @@ public:
 
         else
         {
-            processSingle(audioIn, audioOut, frames, 0);
+            processSingle(audioIn, audioOut, cvIn, cvOut, frames, 0);
 
         } // End of Plugin processing (no events)
 
@@ -2034,27 +2204,37 @@ public:
                 curValue = fDescriptor->get_parameter_value(fHandle, k);
                 pData->param.ranges[k].fixValue(curValue);
 
-                if (pData->param.data[k].midiCC > 0)
+                if (pData->param.data[k].mappedControlIndex > 0)
                 {
                     value = pData->param.ranges[k].getNormalizedValue(curValue);
-                    pData->event.portOut->writeControlEvent(0, pData->param.data[k].midiChannel, kEngineControlEventTypeParameter, static_cast<uint16_t>(pData->param.data[k].midiCC), value);
+                    pData->event.portOut->writeControlEvent(0,
+                                                            pData->param.data[k].midiChannel,
+                                                            kEngineControlEventTypeParameter,
+                                                            static_cast<uint16_t>(pData->param.data[k].mappedControlIndex),
+                                                            value);
                 }
             }
         } // End of Control Output
 #endif
     }
 
-    bool processSingle(const float** const audioIn, float** const audioOut, const uint32_t frames, const uint32_t timeOffset)
+    bool processSingle(const float* const* const audioIn, float** const audioOut,
+                       const float* const* const cvIn, float** const cvOut,
+                       const uint32_t frames, const uint32_t timeOffset)
     {
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
 
-        if (pData->audioIn.count > 0)
-        {
+        if (pData->audioIn.count > 0) {
             CARLA_SAFE_ASSERT_RETURN(audioIn != nullptr, false);
         }
-        if (pData->audioOut.count > 0)
-        {
+        if (pData->audioOut.count > 0) {
             CARLA_SAFE_ASSERT_RETURN(audioOut != nullptr, false);
+        }
+        if (pData->cvIn.count > 0) {
+            CARLA_SAFE_ASSERT_RETURN(cvIn != nullptr, false);
+        }
+        if (pData->cvOut.count > 0) {
+            CARLA_SAFE_ASSERT_RETURN(cvOut != nullptr, false);
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -2071,6 +2251,11 @@ public:
                 for (uint32_t k=0; k < frames; ++k)
                     audioOut[i][k+timeOffset] = 0.0f;
             }
+            for (uint32_t i=0; i < pData->cvOut.count; ++i)
+            {
+                for (uint32_t k=0; k < frames; ++k)
+                    cvOut[i][k+timeOffset] = 0.0f;
+            }
 
             return false;
         }
@@ -2078,11 +2263,17 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Set audio buffers
 
-        for (uint32_t i=0; i < pData->audioIn.count; ++i)
-            carla_copyFloats(fAudioInBuffers[i], audioIn[i]+timeOffset, frames);
+        {
+            for (uint32_t i=0; i < pData->audioIn.count; ++i)
+                carla_copyFloats(fAudioAndCvInBuffers[i], audioIn[i]+timeOffset, frames);
+            for (uint32_t i=0; i < pData->cvIn.count; ++i)
+                carla_copyFloats(fAudioAndCvInBuffers[pData->audioIn.count+i], cvIn[i]+timeOffset, frames);
 
-        for (uint32_t i=0; i < pData->audioOut.count; ++i)
-            carla_zeroFloats(fAudioOutBuffers[i], frames);
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
+                carla_zeroFloats(fAudioAndCvOutBuffers[i], frames);
+            for (uint32_t i=0; i < pData->cvOut.count; ++i)
+                carla_zeroFloats(fAudioAndCvOutBuffers[pData->audioOut.count+i], frames);
+        }
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
@@ -2092,19 +2283,19 @@ public:
         if (fHandle2 == nullptr)
         {
             fDescriptor->process(fHandle,
-                                 const_cast<const float**>(fAudioInBuffers), fAudioOutBuffers, frames,
+                                 fAudioAndCvInBuffers, fAudioAndCvOutBuffers, frames,
                                  fMidiInEvents, fMidiEventInCount);
         }
         else
         {
             fDescriptor->process(fHandle,
-                                 (pData->audioIn.count > 0) ? const_cast<const float**>(&fAudioInBuffers[0]) : nullptr,
-                                 (pData->audioOut.count > 0) ? &fAudioOutBuffers[0] : nullptr,
+                                 (fAudioAndCvInBuffers != nullptr)  ? &fAudioAndCvInBuffers[0]  : nullptr,
+                                 (fAudioAndCvOutBuffers != nullptr) ? &fAudioAndCvOutBuffers[0] : nullptr,
                                  frames, fMidiInEvents, fMidiEventInCount);
 
             fDescriptor->process(fHandle2,
-                                 (pData->audioIn.count > 0) ? const_cast<const float**>(&fAudioInBuffers[1]) : nullptr,
-                                 (pData->audioOut.count > 0) ? &fAudioOutBuffers[1] : nullptr,
+                                 (fAudioAndCvInBuffers != nullptr)  ? &fAudioAndCvInBuffers[1]  : nullptr,
+                                 (fAudioAndCvOutBuffers != nullptr) ? &fAudioAndCvOutBuffers[1] : nullptr,
                                  frames, fMidiInEvents, fMidiEventInCount);
         }
 
@@ -2113,6 +2304,7 @@ public:
         if (fTimeInfo.playing)
             fTimeInfo.frame += frames;
 
+        uint32_t i=0;
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
@@ -2124,15 +2316,15 @@ public:
             bool isPair;
             float bufValue, oldBufLeft[doBalance ? frames : 1];
 
-            for (uint32_t i=0; i < pData->audioOut.count; ++i)
+            for (; i < pData->audioOut.count; ++i)
             {
                 // Dry/Wet
                 if (doDryWet)
                 {
                     for (uint32_t k=0; k < frames; ++k)
                     {
-                        bufValue = fAudioInBuffers[(pData->audioIn.count == 1) ? 0 : i][k];
-                        fAudioOutBuffers[i][k] = (fAudioOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
+                        bufValue = fAudioAndCvInBuffers[(pData->audioIn.count == 1) ? 0 : i][k];
+                        fAudioAndCvOutBuffers[i][k] = (fAudioAndCvOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
                     }
                 }
 
@@ -2144,7 +2336,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-                        carla_copyFloats(oldBufLeft, fAudioOutBuffers[i], frames);
+                        carla_copyFloats(oldBufLeft, fAudioAndCvOutBuffers[i], frames);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
@@ -2155,14 +2347,14 @@ public:
                         if (isPair)
                         {
                             // left
-                            fAudioOutBuffers[i][k]  = oldBufLeft[k]            * (1.0f - balRangeL);
-                            fAudioOutBuffers[i][k] += fAudioOutBuffers[i+1][k] * (1.0f - balRangeR);
+                            fAudioAndCvOutBuffers[i][k]  = oldBufLeft[k]            * (1.0f - balRangeL);
+                            fAudioAndCvOutBuffers[i][k] += fAudioAndCvOutBuffers[i+1][k] * (1.0f - balRangeR);
                         }
                         else
                         {
                             // right
-                            fAudioOutBuffers[i][k]  = fAudioOutBuffers[i][k] * balRangeR;
-                            fAudioOutBuffers[i][k] += oldBufLeft[k]          * balRangeL;
+                            fAudioAndCvOutBuffers[i][k]  = fAudioAndCvOutBuffers[i][k] * balRangeR;
+                            fAudioAndCvOutBuffers[i][k] += oldBufLeft[k]          * balRangeL;
                         }
                     }
                 }
@@ -2170,18 +2362,24 @@ public:
                 // Volume (and buffer copy)
                 {
                     for (uint32_t k=0; k < frames; ++k)
-                        audioOut[i][k+timeOffset] = fAudioOutBuffers[i][k] * pData->postProc.volume;
+                        audioOut[i][k+timeOffset] = fAudioAndCvOutBuffers[i][k] * pData->postProc.volume;
                 }
             }
 
         } // End of Post-processing
 #else
-        for (uint32_t i=0; i < pData->audioOut.count; ++i)
+        for (; i < pData->audioOut.count; ++i)
         {
             for (uint32_t k=0; k < frames; ++k)
-                audioOut[i][k+timeOffset] = fAudioOutBuffers[i][k];
+                audioOut[i][k+timeOffset] = fAudioAndCvOutBuffers[i][k];
         }
 #endif
+        // CV stuff too
+        for (; i < pData->cvOut.count; ++i)
+        {
+            for (uint32_t k=0; k < frames; ++k)
+                cvOut[i][k+timeOffset] = fAudioAndCvOutBuffers[pData->audioOut.count+i][k];
+        }
 
         // --------------------------------------------------------------------------------------------------------
         // MIDI Output
@@ -2211,18 +2409,18 @@ public:
         CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
         carla_debug("CarlaPluginNative::bufferSizeChanged(%i)", newBufferSize);
 
-        for (uint32_t i=0; i < pData->audioIn.count; ++i)
+        for (uint32_t i=0; i < (pData->audioIn.count+pData->cvIn.count); ++i)
         {
-            if (fAudioInBuffers[i] != nullptr)
-                delete[] fAudioInBuffers[i];
-            fAudioInBuffers[i] = new float[newBufferSize];
+            if (fAudioAndCvInBuffers[i] != nullptr)
+                delete[] fAudioAndCvInBuffers[i];
+            fAudioAndCvInBuffers[i] = new float[newBufferSize];
         }
 
-        for (uint32_t i=0; i < pData->audioOut.count; ++i)
+        for (uint32_t i=0; i < (pData->audioOut.count+pData->cvOut.count); ++i)
         {
-            if (fAudioOutBuffers[i] != nullptr)
-                delete[] fAudioOutBuffers[i];
-            fAudioOutBuffers[i] = new float[newBufferSize];
+            if (fAudioAndCvOutBuffers[i] != nullptr)
+                delete[] fAudioAndCvOutBuffers[i];
+            fAudioAndCvOutBuffers[i] = new float[newBufferSize];
         }
 
         if (fCurBufferSize == newBufferSize)
@@ -2289,34 +2487,34 @@ public:
     {
         carla_debug("CarlaPluginNative::clearBuffers() - start");
 
-        if (fAudioInBuffers != nullptr)
+        if (fAudioAndCvInBuffers != nullptr)
         {
-            for (uint32_t i=0; i < pData->audioIn.count; ++i)
+            for (uint32_t i=0; i < (pData->audioIn.count+pData->cvIn.count); ++i)
             {
-                if (fAudioInBuffers[i] != nullptr)
+                if (fAudioAndCvInBuffers[i] != nullptr)
                 {
-                    delete[] fAudioInBuffers[i];
-                    fAudioInBuffers[i] = nullptr;
+                    delete[] fAudioAndCvInBuffers[i];
+                    fAudioAndCvInBuffers[i] = nullptr;
                 }
             }
 
-            delete[] fAudioInBuffers;
-            fAudioInBuffers = nullptr;
+            delete[] fAudioAndCvInBuffers;
+            fAudioAndCvInBuffers = nullptr;
         }
 
-        if (fAudioOutBuffers != nullptr)
+        if (fAudioAndCvOutBuffers != nullptr)
         {
-            for (uint32_t i=0; i < pData->audioOut.count; ++i)
+            for (uint32_t i=0; i < (pData->audioOut.count+pData->cvOut.count); ++i)
             {
-                if (fAudioOutBuffers[i] != nullptr)
+                if (fAudioAndCvOutBuffers[i] != nullptr)
                 {
-                    delete[] fAudioOutBuffers[i];
-                    fAudioOutBuffers[i] = nullptr;
+                    delete[] fAudioAndCvOutBuffers[i];
+                    fAudioAndCvOutBuffers[i] = nullptr;
                 }
             }
 
-            delete[] fAudioOutBuffers;
-            fAudioOutBuffers = nullptr;
+            delete[] fAudioAndCvOutBuffers;
+            fAudioAndCvOutBuffers = nullptr;
         }
 
         if (fMidiIn.count > 1)
@@ -2459,7 +2657,8 @@ protected:
         return pData->engine->runFileCallback(FILE_CALLBACK_SAVE, isDir, title, filter);
     }
 
-    intptr_t handleDispatcher(const NativeHostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
+    intptr_t handleDispatcher(const NativeHostDispatcherOpcode opcode,
+                              const int32_t index, const intptr_t value, void* const ptr, const float opt)
     {
         carla_debug("CarlaPluginNative::handleDispatcher(%i, %i, " P_INTPTR ", %p, %f)",
                     opcode, index, value, ptr, static_cast<double>(opt));
@@ -2479,8 +2678,8 @@ protected:
             pData->engine->callback(true, true, ENGINE_CALLBACK_UPDATE, pData->id, -1, 0, 0, 0.0f, nullptr);
             break;
         case NATIVE_HOST_OPCODE_RELOAD_PARAMETERS:
-            reload(); // FIXME
-            pData->engine->callback(true, true, ENGINE_CALLBACK_RELOAD_PARAMETERS, pData->id, -1, 0, 0, 0.0f, nullptr);
+            reloadParameters(nullptr, nullptr);
+            pData->engine->callback(true, true, ENGINE_CALLBACK_RELOAD_ALL, pData->id, -1, 0, 0, 0.0f, nullptr);
             break;
         case NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS:
             reloadPrograms(false);
@@ -2507,12 +2706,26 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(index >= 0, 0);
             pData->engine->touchPluginParameter(pData->id, static_cast<uint32_t>(index), value != 0);
             break;
+        case NATIVE_HOST_OPCODE_REQUEST_IDLE:
+            fNeedsIdle = true;
+            break;
+        case NATIVE_HOST_OPCODE_GET_FILE_PATH:
+            CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, 0);
+            {
+                const EngineOptions& opts(pData->engine->getOptions());
+                const char* const filetype = (const char*)ptr;
+
+                if (std::strcmp(filetype, "audio") == 0)
+                    return static_cast<intptr_t>((uintptr_t)opts.pathAudio);
+                if (std::strcmp(filetype, "midi") == 0)
+                    return static_cast<intptr_t>((uintptr_t)opts.pathMIDI);
+            }
+            break;
         }
 
         return ret;
 
         // unused for now
-        (void)ptr;
         (void)opt;
     }
 
@@ -2636,7 +2849,7 @@ public:
         }
 
         // ---------------------------------------------------------------
-        // set default options
+        // set options
 
         bool hasMidiProgs = false;
 
@@ -2659,28 +2872,39 @@ public:
         else if (options & PLUGIN_OPTION_FORCE_STEREO)
             pData->options |= PLUGIN_OPTION_FORCE_STEREO;
 
-        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_CHANNEL_PRESSURE)
-            pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_NOTE_AFTERTOUCH)
-            pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_PITCHBEND)
-            pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
-        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_ALL_SOUND_OFF)
-            pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-
         if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_CONTROL_CHANGES)
-        {
-            if (options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CONTROL_CHANGES))
                 pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
-        }
+
+        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_CHANNEL_PRESSURE)
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CHANNEL_PRESSURE))
+                pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+
+        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_NOTE_AFTERTOUCH)
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH))
+                pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+
+        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_PITCHBEND)
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PITCHBEND))
+                pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+
+        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_ALL_SOUND_OFF)
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_ALL_SOUND_OFF))
+                pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
         if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_PROGRAM_CHANGES)
         {
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PROGRAM_CHANGES))
+                pData->options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
+
+            // makes no sense for a plugin to set program changes supported, but it has no midi programs
             CARLA_SAFE_ASSERT(! hasMidiProgs);
-            pData->options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
         }
         else if (hasMidiProgs)
-            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        {
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_MAP_PROGRAM_CHANGES))
+                pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        }
 
         return true;
     }
@@ -2696,11 +2920,13 @@ private:
     bool fIsOffline;
     bool fIsUiAvailable;
     bool fIsUiVisible;
+    volatile bool fNeedsIdle;
+
     bool fInlineDisplayNeedsRedraw;
     int64_t fInlineDisplayLastRedrawTime;
 
-    float**         fAudioInBuffers;
-    float**         fAudioOutBuffers;
+    float**         fAudioAndCvInBuffers;
+    float**         fAudioAndCvOutBuffers;
     uint32_t        fMidiEventInCount;
     uint32_t        fMidiEventOutCount;
     NativeMidiEvent fMidiInEvents[kPluginMaxMidiEvents];

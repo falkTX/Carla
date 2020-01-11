@@ -32,8 +32,6 @@
 #include "../misc/Time.h"
 #include "../text/StringArray.h"
 
-#include "CarlaJuceUtils.hpp"
-
 #ifdef CARLA_OS_WIN
 # include <shlobj.h>
 #else
@@ -702,7 +700,7 @@ File File::withFileExtension (StringRef newExtension) const
 //==============================================================================
 FileInputStream* File::createInputStream() const
 {
-    ScopedPointer<FileInputStream> fin (new FileInputStream (*this));
+    CarlaScopedPointer<FileInputStream> fin (new FileInputStream (*this));
 
     if (fin->openedOk())
         return fin.release();
@@ -712,7 +710,7 @@ FileInputStream* File::createInputStream() const
 
 FileOutputStream* File::createOutputStream (const size_t bufferSize) const
 {
-    ScopedPointer<FileOutputStream> out (new FileOutputStream (*this, bufferSize));
+    CarlaScopedPointer<FileOutputStream> out (new FileOutputStream (*this, bufferSize));
 
     return out->failedToOpen() ? nullptr
                                : out.release();

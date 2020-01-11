@@ -42,8 +42,8 @@ public:
   template <typename Callback, typename Tag>
   void receive(Callback callback, Tag tag)
   {
-    mCallback = [callback, tag](
-      const asio::ip::udp::endpoint& from, const std::vector<uint8_t>& buffer) {
+    mCallback = [callback, tag](const asio::ip::udp::endpoint& from,
+                  const std::vector<uint8_t>& buffer) {
       callback(tag, from, begin(buffer), end(buffer));
     };
   }

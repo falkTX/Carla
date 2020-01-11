@@ -320,8 +320,8 @@ bool waitForClientConnect(const HANDLE pipe, const HANDLE event, const HANDLE pr
 static inline
 bool startProcess(const char* const argv[], pid_t& pidinst) noexcept
 {
-    const ScopedEnvVar sev1("LD_LIBRARY_PATH", nullptr);
-    const ScopedEnvVar sev2("LD_PRELOAD", nullptr);
+    const CarlaScopedEnvVar sev1("LD_LIBRARY_PATH", nullptr);
+    const CarlaScopedEnvVar sev2("LD_PRELOAD", nullptr);
 
     const pid_t ret = pidinst = vfork();
 
@@ -925,6 +925,14 @@ bool CarlaPipeCommon::writeAndFixMessage(const char* const msg) const noexcept
     return _writeMsgBuffer(fixedMsg, size+1);
 }
 
+bool CarlaPipeCommon::writeEmptyMessage() const noexcept
+{
+    if (pData->pipeClosed)
+        return false;
+
+    return _writeMsgBuffer("\n", 1);
+}
+
 bool CarlaPipeCommon::flushMessages() const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->pipeSend != INVALID_PIPE_VALUE, false);
@@ -976,7 +984,7 @@ void CarlaPipeCommon::writeControlMessage(const uint32_t index, const float valu
 
     {
         const CarlaScopedLocale csl;
-        std::snprintf(tmpBuf, 0xff, "%f\n", static_cast<double>(value));
+        std::snprintf(tmpBuf, 0xff, "%.12g\n", static_cast<double>(value));
     }
 
     if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
@@ -1831,54 +1839,6 @@ void CarlaPipeClient::writeExitingMessageAndWait() noexcept
     if (! pData->pipeClosed)
         carla_stderr2("writeExitingMessageAndWait pipe is still running!");
 }
-
-// -----------------------------------------------------------------------
-
-ScopedEnvVar::ScopedEnvVar(const char* const key, const char* const value) noexcept
-    : fKey(nullptr),
-      fOrigValue(nullptr)
-{
-    CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
-
-    fKey = carla_strdup_safe(key);
-    CARLA_SAFE_ASSERT_RETURN(fKey != nullptr,);
-
-    if (const char* const origValue = std::getenv(key))
-    {
-        fOrigValue = carla_strdup_safe(origValue);
-        CARLA_SAFE_ASSERT_RETURN(fOrigValue != nullptr,);
-    }
-
-    if (value != nullptr)
-        carla_setenv(key, value);
-    else if (fOrigValue != nullptr)
-        carla_unsetenv(key);
-}
-
-ScopedEnvVar::~ScopedEnvVar() noexcept
-{
-    bool hasOrigValue = false;
-
-    if (fOrigValue != nullptr)
-    {
-        hasOrigValue = true;
-
-        carla_setenv(fKey, fOrigValue);
-
-        delete[] fOrigValue;
-        fOrigValue = nullptr;
-    }
-
-    if (fKey != nullptr)
-    {
-        if (! hasOrigValue)
-            carla_unsetenv(fKey);
-
-        delete[] fKey;
-        fKey = nullptr;
-    }
-}
-
 
 // -----------------------------------------------------------------------
 

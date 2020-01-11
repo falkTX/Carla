@@ -21,6 +21,7 @@
 
 #include <ableton/discovery/NetworkByteStreamSerializable.hpp>
 #include <cstdint>
+#include <tuple>
 #include <utility>
 
 namespace ableton
@@ -35,10 +36,8 @@ namespace test
 // A fixed-size entry type
 struct Foo
 {
-  enum
-  {
-    key = '_foo'
-  };
+  static const std::int32_t key = '_foo';
+  static_assert(key == 0x5f666f6f, "Unexpected byte order");
 
   std::int32_t fooVal;
 
@@ -66,10 +65,8 @@ struct Foo
 // A variable-size entry type
 struct Bar
 {
-  enum
-  {
-    key = '_bar'
-  };
+  static const std::int32_t key = '_bar';
+  static_assert(key == 0x5f626172, "Unexpected byte order");
 
   std::vector<std::uint64_t> barVals;
 
@@ -90,6 +87,44 @@ struct Bar
     auto result = Deserialize<decltype(barVals)>::fromNetworkByteStream(
       std::move(begin), std::move(end));
     return std::make_pair(Bar{std::move(result.first)}, std::move(result.second));
+  }
+};
+
+// An entry type with two vectors
+struct Foobar
+{
+  static const std::int32_t key = 'fbar';
+  static_assert(key == 0x66626172, "Unexpected byte order");
+
+  using FoobarVector = std::vector<std::uint64_t>;
+  using FoobarTuple = std::tuple<FoobarVector, FoobarVector>;
+
+  FoobarVector fooVals;
+  FoobarVector barVals;
+
+  friend std::uint32_t sizeInByteStream(const Foobar& foobar)
+  {
+    return discovery::sizeInByteStream(foobar.asTuple());
+  }
+
+  template <typename It>
+  friend It toNetworkByteStream(const Foobar& foobar, It out)
+  {
+    return discovery::toNetworkByteStream(foobar.asTuple(), out);
+  }
+
+  template <typename It>
+  static std::pair<Foobar, It> fromNetworkByteStream(It begin, It end)
+  {
+    const auto result =
+      Deserialize<FoobarTuple>::fromNetworkByteStream(std::move(begin), std::move(end));
+    const auto foobar = Foobar{std::get<0>(result.first), std::get<1>(result.first)};
+    return std::make_pair(std::move(foobar), std::move(result.second));
+  }
+
+  FoobarTuple asTuple() const
+  {
+    return std::make_tuple(fooVals, barVals);
   }
 };
 

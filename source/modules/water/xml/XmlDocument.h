@@ -28,7 +28,7 @@
 
 #include "../text/StringArray.h"
 
-#include "CarlaJuceUtils.hpp"
+#include "CarlaScopeUtils.hpp"
 
 namespace water {
 
@@ -158,7 +158,7 @@ private:
     String lastError, dtdText;
     StringArray tokenisedDTD;
     bool needToLoadDTD, ignoreEmptyTextElements;
-    ScopedPointer<FileInputSource> inputSource;
+    CarlaScopedPointer<FileInputSource> inputSource;
 
     XmlElement* parseDocumentElement (String::CharPointerType, bool outer);
     void setLastError (const String&, bool carryOn);

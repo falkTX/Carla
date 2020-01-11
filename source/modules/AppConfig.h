@@ -115,7 +115,11 @@
 /** Config: JUCE_WASAPI
     Enables WASAPI audio devices (Windows Vista and above).
 */
-#define JUCE_WASAPI 0
+#if defined(APPCONFIG_OS_WIN) && !defined(BUILDING_CARLA_NOOPT)
+ #define JUCE_WASAPI 1
+#else
+ #define JUCE_WASAPI 0
+#endif
 
 /** Config: JUCE_DIRECTSOUND
     Enables DirectSound audio (MS Windows only).

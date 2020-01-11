@@ -2,7 +2,7 @@
 // detail/variadic_templates.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -58,6 +58,20 @@
 # define ASIO_VARIADIC_BYVAL_ARGS_4 x1, x2, x3, x4
 # define ASIO_VARIADIC_BYVAL_ARGS_5 x1, x2, x3, x4, x5
 
+# define ASIO_VARIADIC_CONSTREF_PARAMS(n) \
+  ASIO_VARIADIC_CONSTREF_PARAMS_##n
+
+# define ASIO_VARIADIC_CONSTREF_PARAMS_1 \
+  const T1& x1
+# define ASIO_VARIADIC_CONSTREF_PARAMS_2 \
+  const T1& x1, const T2& x2
+# define ASIO_VARIADIC_CONSTREF_PARAMS_3 \
+  const T1& x1, const T2& x2, const T3& x3
+# define ASIO_VARIADIC_CONSTREF_PARAMS_4 \
+  const T1& x1, const T2& x2, const T3& x3, const T4& x4
+# define ASIO_VARIADIC_CONSTREF_PARAMS_5 \
+  const T1& x1, const T2& x2, const T3& x3, const T4& x4, const T5& x5
+
 # define ASIO_VARIADIC_MOVE_PARAMS(n) \
   ASIO_VARIADIC_MOVE_PARAMS_##n
 
@@ -93,6 +107,24 @@
   ASIO_MOVE_CAST(T1)(x1), ASIO_MOVE_CAST(T2)(x2), \
   ASIO_MOVE_CAST(T3)(x3), ASIO_MOVE_CAST(T4)(x4), \
   ASIO_MOVE_CAST(T5)(x5)
+
+# define ASIO_VARIADIC_DECAY(n) \
+  ASIO_VARIADIC_DECAY_##n
+
+# define ASIO_VARIADIC_DECAY_1 \
+  typename decay<T1>::type
+# define ASIO_VARIADIC_DECAY_2 \
+  typename decay<T1>::type, typename decay<T2>::type
+# define ASIO_VARIADIC_DECAY_3 \
+  typename decay<T1>::type, typename decay<T2>::type, \
+  typename decay<T3>::type
+# define ASIO_VARIADIC_DECAY_4 \
+  typename decay<T1>::type, typename decay<T2>::type, \
+  typename decay<T3>::type, typename decay<T4>::type
+# define ASIO_VARIADIC_DECAY_5 \
+  typename decay<T1>::type, typename decay<T2>::type, \
+  typename decay<T3>::type, typename decay<T4>::type, \
+  typename decay<T5>::type
 
 # define ASIO_VARIADIC_GENERATE(m) m(1) m(2) m(3) m(4) m(5)
 

@@ -38,14 +38,13 @@ public:
     NodeState nodeState,
     GhostXForm ghostXForm,
     Clock clock)
-    // TODO: Measurement should have an IoContext injected
-    : mIo(std::move(io)),
-      mMeasurement(addr,
+    : mIo(std::move(io))
+    , mMeasurement(addr,
         nodeState.sessionId,
         std::move(ghostXForm),
         std::move(clock),
-        util::injectVal(channel(mIo->log(), "gateway@" + addr.to_string()))),
-      mPeerGateway(discovery::makeIpV4Gateway(util::injectRef(*mIo),
+        util::injectVal(mIo->clone()))
+    , mPeerGateway(discovery::makeIpV4Gateway(util::injectRef(*mIo),
         std::move(addr),
         std::move(observer),
         PeerState{std::move(nodeState), mMeasurement.endpoint()}))
@@ -84,7 +83,7 @@ public:
 
 private:
   util::Injected<IoContext> mIo;
-  MeasurementService<Clock, typename util::Injected<IoContext>::type::Log> mMeasurement;
+  MeasurementService<Clock, typename std::remove_reference<IoContext>::type> mMeasurement;
   discovery::
     IpV4Gateway<PeerObserver, PeerState, typename util::Injected<IoContext>::type&>
       mPeerGateway;

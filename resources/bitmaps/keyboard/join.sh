@@ -1,5 +1,5 @@
 #! /bin/bash
-# Join images vertically, to create a sprite sheat.
+# Join images vertically, to create a sprite sheet.
 # Dependencies: Imagemagick (convert)
 
 convert white_bright_normal.png \

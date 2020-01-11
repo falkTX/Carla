@@ -2,7 +2,7 @@
 // detail/reactive_socket_accept_op.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -41,45 +41,52 @@ public:
       state_(state),
       peer_(peer),
       protocol_(protocol),
-      peer_endpoint_(peer_endpoint)
+      peer_endpoint_(peer_endpoint),
+      addrlen_(peer_endpoint ? peer_endpoint->capacity() : 0)
   {
   }
 
-  static bool do_perform(reactor_op* base)
+  static status do_perform(reactor_op* base)
   {
     reactive_socket_accept_op_base* o(
         static_cast<reactive_socket_accept_op_base*>(base));
 
-    std::size_t addrlen = o->peer_endpoint_ ? o->peer_endpoint_->capacity() : 0;
     socket_type new_socket = invalid_socket;
-    bool result = socket_ops::non_blocking_accept(o->socket_,
-          o->state_, o->peer_endpoint_ ? o->peer_endpoint_->data() : 0,
-          o->peer_endpoint_ ? &addrlen : 0, o->ec_, new_socket);
+    status result = socket_ops::non_blocking_accept(o->socket_,
+        o->state_, o->peer_endpoint_ ? o->peer_endpoint_->data() : 0,
+        o->peer_endpoint_ ? &o->addrlen_ : 0, o->ec_, new_socket)
+    ? done : not_done;
+    o->new_socket_.reset(new_socket);
 
     ASIO_HANDLER_REACTOR_OPERATION((*o, "non_blocking_accept", o->ec_));
 
-    // On success, assign new connection to peer socket object.
-    if (new_socket != invalid_socket)
-    {
-      socket_holder new_socket_holder(new_socket);
-      if (o->peer_endpoint_)
-        o->peer_endpoint_->resize(addrlen);
-      if (!o->peer_.assign(o->protocol_, new_socket, o->ec_))
-        new_socket_holder.release();
-    }
-
     return result;
+  }
+
+  void do_assign()
+  {
+    if (new_socket_.get() != invalid_socket)
+    {
+      if (peer_endpoint_)
+        peer_endpoint_->resize(addrlen_);
+      peer_.assign(protocol_, new_socket_.get(), ec_);
+      if (!ec_)
+        new_socket_.release();
+    }
   }
 
 private:
   socket_type socket_;
   socket_ops::state_type state_;
+  socket_holder new_socket_;
   Socket& peer_;
   Protocol protocol_;
   typename Protocol::endpoint* peer_endpoint_;
+  std::size_t addrlen_;
 };
 
-template <typename Socket, typename Protocol, typename Handler>
+template <typename Socket, typename Protocol,
+    typename Handler, typename IoExecutor>
 class reactive_socket_accept_op :
   public reactive_socket_accept_op_base<Socket, Protocol>
 {
@@ -88,12 +95,14 @@ public:
 
   reactive_socket_accept_op(socket_type socket,
       socket_ops::state_type state, Socket& peer, const Protocol& protocol,
-      typename Protocol::endpoint* peer_endpoint, Handler& handler)
+      typename Protocol::endpoint* peer_endpoint, Handler& handler,
+      const IoExecutor& io_ex)
     : reactive_socket_accept_op_base<Socket, Protocol>(socket, state, peer,
         protocol, peer_endpoint, &reactive_socket_accept_op::do_complete),
-      handler_(ASIO_MOVE_CAST(Handler)(handler))
+      handler_(ASIO_MOVE_CAST(Handler)(handler)),
+      io_executor_(io_ex)
   {
-    handler_work<Handler>::start(handler_);
+    handler_work<Handler, IoExecutor>::start(handler_, io_executor_);
   }
 
   static void do_complete(void* owner, operation* base,
@@ -103,7 +112,11 @@ public:
     // Take ownership of the handler object.
     reactive_socket_accept_op* o(static_cast<reactive_socket_accept_op*>(base));
     ptr p = { asio::detail::addressof(o->handler_), o, o };
-    handler_work<Handler> w(o->handler_);
+    handler_work<Handler, IoExecutor> w(o->handler_, o->io_executor_);
+
+    // On success, assign new connection to peer socket object.
+    if (owner)
+      o->do_assign();
 
     ASIO_HANDLER_COMPLETION((*o));
 
@@ -130,28 +143,34 @@ public:
 
 private:
   Handler handler_;
+  IoExecutor io_executor_;
 };
 
 #if defined(ASIO_HAS_MOVE)
 
-template <typename Protocol, typename Handler>
+template <typename Protocol, typename PeerIoExecutor,
+    typename Handler, typename IoExecutor>
 class reactive_socket_move_accept_op :
-  private Protocol::socket,
-  public reactive_socket_accept_op_base<typename Protocol::socket, Protocol>
+  private Protocol::socket::template rebind_executor<PeerIoExecutor>::other,
+  public reactive_socket_accept_op_base<
+    typename Protocol::socket::template rebind_executor<PeerIoExecutor>::other,
+    Protocol>
 {
 public:
   ASIO_DEFINE_HANDLER_PTR(reactive_socket_move_accept_op);
 
-  reactive_socket_move_accept_op(io_context& ioc, socket_type socket,
-      socket_ops::state_type state, const Protocol& protocol,
-      typename Protocol::endpoint* peer_endpoint, Handler& handler)
-    : Protocol::socket(ioc),
-      reactive_socket_accept_op_base<typename Protocol::socket, Protocol>(
+  reactive_socket_move_accept_op(const PeerIoExecutor& peer_io_ex,
+      socket_type socket, socket_ops::state_type state,
+      const Protocol& protocol, typename Protocol::endpoint* peer_endpoint,
+      Handler& handler, const IoExecutor& io_ex)
+    : peer_socket_type(peer_io_ex),
+      reactive_socket_accept_op_base<peer_socket_type, Protocol>(
         socket, state, *this, protocol, peer_endpoint,
         &reactive_socket_move_accept_op::do_complete),
-      handler_(ASIO_MOVE_CAST(Handler)(handler))
+      handler_(ASIO_MOVE_CAST(Handler)(handler)),
+      io_executor_(io_ex)
   {
-    handler_work<Handler>::start(handler_);
+    handler_work<Handler, IoExecutor>::start(handler_, io_executor_);
   }
 
   static void do_complete(void* owner, operation* base,
@@ -162,7 +181,11 @@ public:
     reactive_socket_move_accept_op* o(
         static_cast<reactive_socket_move_accept_op*>(base));
     ptr p = { asio::detail::addressof(o->handler_), o, o };
-    handler_work<Handler> w(o->handler_);
+    handler_work<Handler, IoExecutor> w(o->handler_, o->io_executor_);
+
+    // On success, assign new connection to peer socket object.
+    if (owner)
+      o->do_assign();
 
     ASIO_HANDLER_COMPLETION((*o));
 
@@ -173,9 +196,9 @@ public:
     // to ensure that any owning sub-object remains valid until after we have
     // deallocated the memory here.
     detail::move_binder2<Handler,
-      asio::error_code, typename Protocol::socket>
+      asio::error_code, peer_socket_type>
         handler(0, ASIO_MOVE_CAST(Handler)(o->handler_), o->ec_,
-          ASIO_MOVE_CAST(typename Protocol::socket)(*o));
+          ASIO_MOVE_CAST(peer_socket_type)(*o));
     p.h = asio::detail::addressof(handler.handler_);
     p.reset();
 
@@ -190,7 +213,11 @@ public:
   }
 
 private:
+  typedef typename Protocol::socket::template
+    rebind_executor<PeerIoExecutor>::other peer_socket_type;
+
   Handler handler_;
+  IoExecutor io_executor_;
 };
 
 #endif // defined(ASIO_HAS_MOVE)

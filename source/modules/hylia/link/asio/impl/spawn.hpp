@@ -2,7 +2,7 @@
 // impl/spawn.hpp
 // ~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -26,7 +26,7 @@
 #include "asio/detail/handler_invoke_helpers.hpp"
 #include "asio/detail/memory.hpp"
 #include "asio/detail/noncopyable.hpp"
-#include "asio/handler_type.hpp"
+#include "asio/detail/type_traits.hpp"
 #include "asio/system_error.hpp"
 
 #include "asio/detail/push_options.hpp"
@@ -146,101 +146,135 @@ namespace detail {
         function, this_handler->handler_);
   }
 
+  template <typename Handler, typename T>
+  class coro_async_result
+  {
+  public:
+    typedef coro_handler<Handler, T> completion_handler_type;
+    typedef T return_type;
+
+    explicit coro_async_result(completion_handler_type& h)
+      : handler_(h),
+        ca_(h.ca_),
+        ready_(2)
+    {
+      h.ready_ = &ready_;
+      out_ec_ = h.ec_;
+      if (!out_ec_) h.ec_ = &ec_;
+      h.value_ = &value_;
+    }
+
+    return_type get()
+    {
+      // Must not hold shared_ptr to coro while suspended.
+      handler_.coro_.reset();
+
+      if (--ready_ != 0)
+        ca_();
+      if (!out_ec_ && ec_) throw asio::system_error(ec_);
+      return ASIO_MOVE_CAST(return_type)(value_);
+    }
+
+  private:
+    completion_handler_type& handler_;
+    typename basic_yield_context<Handler>::caller_type& ca_;
+    atomic_count ready_;
+    asio::error_code* out_ec_;
+    asio::error_code ec_;
+    return_type value_;
+  };
+
+  template <typename Handler>
+  class coro_async_result<Handler, void>
+  {
+  public:
+    typedef coro_handler<Handler, void> completion_handler_type;
+    typedef void return_type;
+
+    explicit coro_async_result(completion_handler_type& h)
+      : handler_(h),
+        ca_(h.ca_),
+        ready_(2)
+    {
+      h.ready_ = &ready_;
+      out_ec_ = h.ec_;
+      if (!out_ec_) h.ec_ = &ec_;
+    }
+
+    void get()
+    {
+      // Must not hold shared_ptr to coro while suspended.
+      handler_.coro_.reset();
+
+      if (--ready_ != 0)
+        ca_();
+      if (!out_ec_ && ec_) throw asio::system_error(ec_);
+    }
+
+  private:
+    completion_handler_type& handler_;
+    typename basic_yield_context<Handler>::caller_type& ca_;
+    atomic_count ready_;
+    asio::error_code* out_ec_;
+    asio::error_code ec_;
+  };
+
 } // namespace detail
 
 #if !defined(GENERATING_DOCUMENTATION)
 
 template <typename Handler, typename ReturnType>
-struct handler_type<basic_yield_context<Handler>, ReturnType()>
+class async_result<basic_yield_context<Handler>, ReturnType()>
+  : public detail::coro_async_result<Handler, void>
 {
-  typedef detail::coro_handler<Handler, void> type;
+public:
+  explicit async_result(
+    typename detail::coro_async_result<Handler,
+      void>::completion_handler_type& h)
+    : detail::coro_async_result<Handler, void>(h)
+  {
+  }
 };
 
 template <typename Handler, typename ReturnType, typename Arg1>
-struct handler_type<basic_yield_context<Handler>, ReturnType(Arg1)>
+class async_result<basic_yield_context<Handler>, ReturnType(Arg1)>
+  : public detail::coro_async_result<Handler, typename decay<Arg1>::type>
 {
-  typedef detail::coro_handler<Handler, Arg1> type;
+public:
+  explicit async_result(
+    typename detail::coro_async_result<Handler,
+      typename decay<Arg1>::type>::completion_handler_type& h)
+    : detail::coro_async_result<Handler, typename decay<Arg1>::type>(h)
+  {
+  }
 };
 
 template <typename Handler, typename ReturnType>
-struct handler_type<basic_yield_context<Handler>,
+class async_result<basic_yield_context<Handler>,
     ReturnType(asio::error_code)>
+  : public detail::coro_async_result<Handler, void>
 {
-  typedef detail::coro_handler<Handler, void> type;
+public:
+  explicit async_result(
+    typename detail::coro_async_result<Handler,
+      void>::completion_handler_type& h)
+    : detail::coro_async_result<Handler, void>(h)
+  {
+  }
 };
 
 template <typename Handler, typename ReturnType, typename Arg2>
-struct handler_type<basic_yield_context<Handler>,
+class async_result<basic_yield_context<Handler>,
     ReturnType(asio::error_code, Arg2)>
-{
-  typedef detail::coro_handler<Handler, Arg2> type;
-};
-
-template <typename Handler, typename T>
-class async_result<detail::coro_handler<Handler, T> >
+  : public detail::coro_async_result<Handler, typename decay<Arg2>::type>
 {
 public:
-  typedef T type;
-
-  explicit async_result(detail::coro_handler<Handler, T>& h)
-    : handler_(h),
-      ca_(h.ca_),
-      ready_(2)
+  explicit async_result(
+    typename detail::coro_async_result<Handler,
+      typename decay<Arg2>::type>::completion_handler_type& h)
+    : detail::coro_async_result<Handler, typename decay<Arg2>::type>(h)
   {
-    h.ready_ = &ready_;
-    out_ec_ = h.ec_;
-    if (!out_ec_) h.ec_ = &ec_;
-    h.value_ = &value_;
   }
-
-  type get()
-  {
-    handler_.coro_.reset(); // Must not hold shared_ptr to coro while suspended.
-    if (--ready_ != 0)
-      ca_();
-    if (!out_ec_ && ec_) throw asio::system_error(ec_);
-    return ASIO_MOVE_CAST(type)(value_);
-  }
-
-private:
-  detail::coro_handler<Handler, T>& handler_;
-  typename basic_yield_context<Handler>::caller_type& ca_;
-  detail::atomic_count ready_;
-  asio::error_code* out_ec_;
-  asio::error_code ec_;
-  type value_;
-};
-
-template <typename Handler>
-class async_result<detail::coro_handler<Handler, void> >
-{
-public:
-  typedef void type;
-
-  explicit async_result(detail::coro_handler<Handler, void>& h)
-    : handler_(h),
-      ca_(h.ca_),
-      ready_(2)
-  {
-    h.ready_ = &ready_;
-    out_ec_ = h.ec_;
-    if (!out_ec_) h.ec_ = &ec_;
-  }
-
-  void get()
-  {
-    handler_.coro_.reset(); // Must not hold shared_ptr to coro while suspended.
-    if (--ready_ != 0)
-      ca_();
-    if (!out_ec_ && ec_) throw asio::system_error(ec_);
-  }
-
-private:
-  detail::coro_handler<Handler, void>& handler_;
-  typename basic_yield_context<Handler>::caller_type& ca_;
-  detail::atomic_count ready_;
-  asio::error_code* out_ec_;
-  asio::error_code ec_;
 };
 
 template <typename Handler, typename T, typename Allocator>
@@ -272,11 +306,12 @@ namespace detail {
   template <typename Handler, typename Function>
   struct spawn_data : private noncopyable
   {
-    spawn_data(ASIO_MOVE_ARG(Handler) handler,
-        bool call_handler, ASIO_MOVE_ARG(Function) function)
-      : handler_(ASIO_MOVE_CAST(Handler)(handler)),
+    template <typename Hand, typename Func>
+    spawn_data(ASIO_MOVE_ARG(Hand) handler,
+        bool call_handler, ASIO_MOVE_ARG(Func) function)
+      : handler_(ASIO_MOVE_CAST(Hand)(handler)),
         call_handler_(call_handler),
-        function_(ASIO_MOVE_CAST(Function)(function))
+        function_(ASIO_MOVE_CAST(Func)(function))
     {
     }
 
@@ -362,6 +397,7 @@ void spawn(ASIO_MOVE_ARG(Handler) handler,
       !is_convertible<Handler&, execution_context&>::value>::type*)
 {
   typedef typename decay<Handler>::type handler_type;
+  typedef typename decay<Function>::type function_type;
 
   typename associated_executor<handler_type>::type ex(
       (get_associated_executor)(handler));
@@ -369,9 +405,9 @@ void spawn(ASIO_MOVE_ARG(Handler) handler,
   typename associated_allocator<handler_type>::type a(
       (get_associated_allocator)(handler));
 
-  detail::spawn_helper<handler_type, Function> helper;
+  detail::spawn_helper<handler_type, function_type> helper;
   helper.data_.reset(
-      new detail::spawn_data<handler_type, Function>(
+      new detail::spawn_data<handler_type, function_type>(
         ASIO_MOVE_CAST(Handler)(handler), true,
         ASIO_MOVE_CAST(Function)(function)));
   helper.attributes_ = attributes;
@@ -384,6 +420,8 @@ void spawn(basic_yield_context<Handler> ctx,
     ASIO_MOVE_ARG(Function) function,
     const boost::coroutines::attributes& attributes)
 {
+  typedef typename decay<Function>::type function_type;
+
   Handler handler(ctx.handler_); // Explicit copy that might be moved from.
 
   typename associated_executor<Handler>::type ex(
@@ -392,9 +430,9 @@ void spawn(basic_yield_context<Handler> ctx,
   typename associated_allocator<Handler>::type a(
       (get_associated_allocator)(handler));
 
-  detail::spawn_helper<Handler, Function> helper;
+  detail::spawn_helper<Handler, function_type> helper;
   helper.data_.reset(
-      new detail::spawn_data<Handler, Function>(
+      new detail::spawn_data<Handler, function_type>(
         ASIO_MOVE_CAST(Handler)(handler), false,
         ASIO_MOVE_CAST(Function)(function)));
   helper.attributes_ = attributes;

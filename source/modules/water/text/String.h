@@ -1195,6 +1195,13 @@ OutputStream& operator<< (OutputStream& stream, const String& stringToWrite);
 /** Writes a string to an OutputStream as UTF8. */
 OutputStream& operator<< (OutputStream& stream, StringRef stringToWrite);
 
+//==============================================================================
+struct StartEndString {
+    StartEndString (String::CharPointerType s, String::CharPointerType e) noexcept : start (s), end (e) {}
+    operator String() const   { return String (start, end); }
+    String::CharPointerType start, end;
+};
+
 }
 
 #include "StringRef.h"

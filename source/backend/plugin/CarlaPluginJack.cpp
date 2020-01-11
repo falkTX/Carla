@@ -26,11 +26,14 @@
 #include "CarlaEngineUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaPipeUtils.hpp"
+#include "CarlaScopeUtils.hpp"
 #include "CarlaShmUtils.hpp"
 #include "CarlaThread.hpp"
 
 #ifdef HAVE_LIBLO
 # include "CarlaOscUtils.hpp"
+#else
+# warning No liblo support, NSM (session state) will not be available
 #endif
 
 #include "water/files/File.h"
@@ -126,6 +129,40 @@ public:
     }
 #endif
 
+    char* getEnvVarsToExport()
+    {
+        const EngineOptions& options(kEngine->getOptions());
+        CarlaString binaryDir(options.binaryDir);
+#ifdef HAVE_LIBLO
+        const int sessionManager = fSetupLabel[4] - '0';
+#endif
+
+        CarlaString ret;
+        ret += "export LD_LIBRARY_PATH=" + binaryDir + "/jack\n";
+#ifdef HAVE_X11
+        ret += "export LD_PRELOAD=" + binaryDir + "/libcarla_interposer-jack-x11.so\n";
+#endif
+#ifdef HAVE_LIBLO
+        if (sessionManager == LIBJACK_SESSION_MANAGER_NSM)
+        {
+            for (int i=50; fOscServer == nullptr && --i>=0;)
+                carla_msleep(100);
+
+            ret += "export NSM_URL=";
+            ret += lo_server_get_url(fOscServer);
+            ret += "\n";
+        }
+#endif
+
+        if (kPlugin->getHints() & PLUGIN_HAS_CUSTOM_UI)
+            ret += "export CARLA_FRONTEND_WIN_ID=" + CarlaString(options.frontendWinId) + "\n";
+
+        ret += "export CARLA_LIBJACK_SETUP=" + fSetupLabel + "\n";
+        ret += "export CARLA_SHM_IDS=" + fShmIds + "\n";
+
+        return ret.releaseBufferPointer();
+    }
+
 protected:
 #ifdef HAVE_LIBLO
     static void _osc_error_handler(int num, const char* msg, const char* path)
@@ -143,14 +180,12 @@ protected:
 
     void maybeOpenFirstTime()
     {
-        if (fProject.path.isNotEmpty())
-            return;
         if (fSetupLabel.length() <= 6)
             return;
 
-        if (fProject.init(kEngine->getCurrentProjectFilename(), &fSetupLabel[6]))
+        if (fProject.path.isNotEmpty() || fProject.init(kEngine->getCurrentProjectFilename(), &fSetupLabel[6]))
         {
-            carla_stdout("Sending first open signal %s %s %s",
+            carla_stdout("Sending open signal %s %s %s",
                          fProject.path.buffer(), fProject.display.buffer(), fProject.clientName.buffer());
 
             lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/open", "sss",
@@ -252,31 +287,33 @@ protected:
         }
 #endif
 
-        if (fProcess == nullptr)
+        const bool externalProcess = ((fSetupLabel[5] - '0') & LIBJACK_FLAG_EXTERNAL_START)
+                                   && ! kEngine->isLoadingProject();
+
+        if (! externalProcess)
         {
-            fProcess = new ChildProcess();
-        }
-        else if (fProcess->isRunning())
-        {
-            carla_stderr("CarlaPluginJackThread::run() - already running");
-        }
+            if (fProcess == nullptr)
+            {
+                fProcess = new ChildProcess();
+            }
+            else if (fProcess->isRunning())
+            {
+                carla_stderr("CarlaPluginJackThread::run() - already running");
+            }
 
-        String name(kPlugin->getName());
-        String filename(kPlugin->getFilename());
+            String name(kPlugin->getName());
+            String filename(kPlugin->getFilename());
 
-        if (name.isEmpty())
-            name = "(none)";
+            if (name.isEmpty())
+                name = "(none)";
 
-        CARLA_SAFE_ASSERT_RETURN(filename.isNotEmpty(),);
+            CARLA_SAFE_ASSERT_RETURN(filename.isNotEmpty(),);
 
-        StringArray arguments;
+            StringArray arguments;
 
-        // binary
-        arguments.addTokens(filename, true);
+            // binary
+            arguments.addTokens(filename, true);
 
-        bool started;
-
-        {
             const EngineOptions& options(kEngine->getOptions());
 
             char winIdStr[STR_MAX+1];
@@ -289,15 +326,15 @@ protected:
             CarlaString ldpreload;
 #ifdef HAVE_X11
             ldpreload = (CarlaString(options.binaryDir)
-                      + "/libcarla_interposer-jack-x11.so");
+                    + "/libcarla_interposer-jack-x11.so");
 #endif
 
             const ScopedEngineEnvironmentLocker _seel(kEngine);
 
-            const ScopedEnvVar sev2("LD_LIBRARY_PATH", libjackdir.buffer());
-            const ScopedEnvVar sev1("LD_PRELOAD", ldpreload.isNotEmpty() ? ldpreload.buffer() : nullptr);
+            const CarlaScopedEnvVar sev2("LD_LIBRARY_PATH", libjackdir.buffer());
+            const CarlaScopedEnvVar sev1("LD_PRELOAD", ldpreload.isNotEmpty() ? ldpreload.buffer() : nullptr);
 #ifdef HAVE_LIBLO
-            const ScopedEnvVar sev3("NSM_URL", lo_server_get_url(fOscServer));
+            const CarlaScopedEnvVar sev3("NSM_URL", lo_server_get_url(fOscServer));
 #endif
 
             if (kPlugin->getHints() & PLUGIN_HAS_CUSTOM_UI)
@@ -308,17 +345,15 @@ protected:
             carla_setenv("CARLA_LIBJACK_SETUP", fSetupLabel.buffer());
             carla_setenv("CARLA_SHM_IDS", fShmIds.buffer());
 
-            started = fProcess->start(arguments);
+            if (! fProcess->start(arguments))
+            {
+                carla_stdout("failed!");
+                fProcess = nullptr;
+                return;
+            }
         }
 
-        if (! started)
-        {
-            carla_stdout("failed!");
-            fProcess = nullptr;
-            return;
-        }
-
-        for (; fProcess->isRunning() && ! shouldThreadExit();)
+        for (; (externalProcess || fProcess->isRunning()) && ! shouldThreadExit();)
         {
 #ifdef HAVE_LIBLO
             if (sessionManager == LIBJACK_SESSION_MANAGER_NSM)
@@ -346,32 +381,35 @@ protected:
         }
 #endif
 
-        // we only get here if bridge crashed or thread asked to exit
-        if (fProcess->isRunning() && shouldThreadExit())
+        if (! externalProcess)
         {
-            fProcess->waitForProcessToFinish(2000);
-
-            if (fProcess->isRunning())
+            // we only get here if bridge crashed or thread asked to exit
+            if (fProcess->isRunning() && shouldThreadExit())
             {
-                carla_stdout("CarlaPluginJackThread::run() - application refused to close, force kill now");
-                fProcess->kill();
+                fProcess->waitForProcessToFinish(2000);
+
+                if (fProcess->isRunning())
+                {
+                    carla_stdout("CarlaPluginJackThread::run() - application refused to close, force kill now");
+                    fProcess->kill();
+                }
             }
-        }
-        else
-        {
-            // forced quit, may have crashed
-            if (fProcess->getExitCode() != 0 /*|| fProcess->exitStatus() == QProcess::CrashExit*/)
+            else
             {
-                carla_stderr("CarlaPluginJackThread::run() - application crashed");
+                // forced quit, may have crashed
+                if (fProcess->getExitCode() != 0 /*|| fProcess->exitStatus() == QProcess::CrashExit*/)
+                {
+                    carla_stderr("CarlaPluginJackThread::run() - application crashed");
 
-                CarlaString errorString("Plugin '" + CarlaString(kPlugin->getName()) + "' has crashed!\n"
-                                        "Saving now will lose its current settings.\n"
-                                        "Please remove this plugin, and not rely on it from this point.");
-                kEngine->callback(true, true,
-                                  ENGINE_CALLBACK_ERROR,
-                                  kPlugin->getId(),
-                                  0, 0, 0, 0.0f,
-                                  errorString);
+                    CarlaString errorString("Plugin '" + CarlaString(kPlugin->getName()) + "' has crashed!\n"
+                                            "Saving now will lose its current settings.\n"
+                                            "Please remove this plugin, and not rely on it from this point.");
+                    kEngine->callback(true, true,
+                                    ENGINE_CALLBACK_ERROR,
+                                    kPlugin->getId(),
+                                    0, 0, 0, 0.0f,
+                                    errorString);
+                }
             }
         }
 
@@ -420,7 +458,7 @@ private:
     } fProject;
 #endif
 
-    ScopedPointer<ChildProcess> fProcess;
+    CarlaScopedPointer<ChildProcess> fProcess;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginJackThread)
 };
@@ -439,6 +477,7 @@ public:
           fProcCanceled(false),
           fBufferSize(engine->getBufferSize()),
           fProcWaitTime(0),
+          fSetupHints(0x0),
           fBridgeThread(engine, this),
           fShmAudioPool(),
           fShmRtClientControl(),
@@ -534,25 +573,27 @@ public:
         return fInfo.optionsAvailable;
     }
 
-    void getLabel(char* const strBuf) const noexcept override
+    bool getLabel(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, fInfo.setupLabel, STR_MAX);
+        return true;
     }
 
-    void getMaker(char* const strBuf) const noexcept override
+    bool getMaker(char* const) const noexcept override
     {
-        nullStrBuf(strBuf);
+        return false;
     }
 
-    void getCopyright(char* const strBuf) const noexcept override
+    bool getCopyright(char* const) const noexcept override
     {
-        nullStrBuf(strBuf);
+        return false;
     }
 
-    void getRealName(char* const strBuf) const noexcept override
+    bool getRealName(char* const strBuf) const noexcept override
     {
         // FIXME
         std::strncpy(strBuf, "Carla's libjack", STR_MAX);
+        return true;
     }
 
     // -------------------------------------------------------------------
@@ -876,7 +917,8 @@ public:
         } CARLA_SAFE_EXCEPTION("deactivate - waitForClient");
     }
 
-    void process(const float** const audioIn, float** const audioOut, const float**, float**, const uint32_t frames) override
+    void process(const float* const* const audioIn, float** const audioOut, 
+                 const float* const*, float**, const uint32_t frames) override
     {
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -968,13 +1010,13 @@ public:
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) != 0)
                             {
                                 value = ctrlEvent.value;
-                                setDryWetRT(value);
+                                setDryWetRT(value, true);
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
-                                setVolumeRT(value);
+                                setVolumeRT(value, true);
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
@@ -998,8 +1040,8 @@ public:
                                     right = 1.0f;
                                 }
 
-                                setBalanceLeftRT(left);
-                                setBalanceRightRT(right);
+                                setBalanceLeftRT(left, true);
+                                setBalanceRightRT(right, true);
                             }
                         }
 #endif
@@ -1096,6 +1138,7 @@ public:
                     if (status == MIDI_STATUS_NOTE_ON)
                     {
                         pData->postponeRtEvent(kPluginPostRtEventNoteOn,
+                                               true,
                                                event.channel,
                                                midiData[1],
                                                midiData[2],
@@ -1104,6 +1147,7 @@ public:
                     else if (status == MIDI_STATUS_NOTE_OFF)
                     {
                         pData->postponeRtEvent(kPluginPostRtEventNoteOff,
+                                               true,
                                                event.channel,
                                                midiData[1],
                                                0, 0.0f);
@@ -1158,7 +1202,7 @@ public:
         } // End of Control and MIDI Output
     }
 
-    bool processSingle(const float** const audioIn, float** const audioOut, const uint32_t frames)
+    bool processSingle(const float* const* const audioIn, float** const audioOut, const uint32_t frames)
     {
         CARLA_SAFE_ASSERT_RETURN(! fTimedError, false);
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
@@ -1404,6 +1448,7 @@ public:
             case kPluginBridgeNonRtServerProgramName:
             case kPluginBridgeNonRtServerMidiProgramData:
             case kPluginBridgeNonRtServerSetCustomData:
+            case kPluginBridgeNonRtServerVersion:
                 break;
 
             case kPluginBridgeNonRtServerSetChunkDataFile:
@@ -1576,7 +1621,7 @@ public:
         // ---------------------------------------------------------------
         // setup hints and options
 
-        const int setupHints = label[5] - '0';
+        fSetupHints = static_cast<uint>(label[5] - '0');
 
         // FIXME dryWet broken
         pData->hints  = PLUGIN_IS_BRIDGE | PLUGIN_OPTION_FIXED_BUFFERS;
@@ -1585,7 +1630,7 @@ public:
 #endif
         //fInfo.optionsAvailable = optionAv;
 
-        if (setupHints & LIBJACK_FLAG_CONTROL_WINDOW)
+        if (fSetupHints & LIBJACK_FLAG_CONTROL_WINDOW)
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
 
         // ---------------------------------------------------------------
@@ -1631,6 +1676,7 @@ private:
     bool fProcCanceled;
     uint fBufferSize;
     uint fProcWaitTime;
+    uint fSetupHints;
 
     CarlaPluginJackThread fBridgeThread;
 
@@ -1752,7 +1798,7 @@ private:
 
         // initial values
         fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientVersion);
-        fShmNonRtClientControl.writeUInt(CARLA_PLUGIN_BRIDGE_API_VERSION);
+        fShmNonRtClientControl.writeUInt(CARLA_PLUGIN_BRIDGE_API_VERSION_CURRENT);
 
         fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeRtClientData)));
         fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeNonRtClientData)));
@@ -1782,15 +1828,34 @@ private:
         const bool needsCancelableAction = ! pData->engine->isLoadingProject();
         const bool needsEngineIdle = pData->engine->getType() != kEngineTypePlugin;
 
+        CarlaString actionName;
+
         if (needsCancelableAction)
         {
+            if (fSetupHints & LIBJACK_FLAG_EXTERNAL_START)
+            {
+                const EngineOptions& options(pData->engine->getOptions());
+                CarlaString binaryDir(options.binaryDir);
+
+                char* const hwVars = fBridgeThread.getEnvVarsToExport();
+
+                actionName  = "Waiting for external JACK application start, please use the following environment variables:\n";
+                actionName += hwVars;
+
+                delete[] hwVars;
+            }
+            else
+            {
+                actionName = "Loading JACK application";
+            }
+
             pData->engine->setActionCanceled(false);
             pData->engine->callback(true, true,
                                     ENGINE_CALLBACK_CANCELABLE_ACTION,
                                     pData->id,
                                     1,
                                     0, 0, 0.0f,
-                                    "Loading JACK application");
+                                    actionName.buffer());
         }
 
         for (;fBridgeThread.isThreadRunning();)
@@ -1817,7 +1882,7 @@ private:
                                     pData->id,
                                     0,
                                     0, 0, 0.0f,
-                                    "Loading JACK application");
+                                    actionName.buffer());
         }
 
         if (fInitError || ! fInitiated)

@@ -585,10 +585,6 @@ namespace EdgeTableFillers
             {
                 areRGBComponentsEqual = sourceColour.getRed() == sourceColour.getGreen()
                                             && sourceColour.getGreen() == sourceColour.getBlue();
-                filler[0].set (sourceColour);
-                filler[1].set (sourceColour);
-                filler[2].set (sourceColour);
-                filler[3].set (sourceColour);
             }
             else
             {
@@ -644,7 +640,6 @@ namespace EdgeTableFillers
         const Image::BitmapData& destData;
         PixelType* linePixels;
         PixelARGB sourceColour;
-        PixelRGB filler [4];
         bool areRGBComponentsEqual;
 
         forcedinline PixelType* getPixel (const int x) const noexcept
@@ -659,43 +654,8 @@ namespace EdgeTableFillers
 
         forcedinline void replaceLine (PixelRGB* dest, const PixelARGB colour, int width) const noexcept
         {
-            if (destData.pixelStride == sizeof (*dest))
-            {
-                if (areRGBComponentsEqual)  // if all the component values are the same, we can cheat..
-                {
-                    memset (dest, colour.getRed(), (size_t) width * 3);
-                }
-                else
-                {
-                    if (width >> 5)
-                    {
-                        const int* const intFiller = reinterpret_cast<const int*> (filler);
-
-                        while (width > 8 && (((pointer_sized_int) dest) & 7) != 0)
-                        {
-                            dest->set (colour);
-                            ++dest;
-                            --width;
-                        }
-
-                        while (width > 4)
-                        {
-                            int* d = reinterpret_cast<int*> (dest);
-                            *d++ = intFiller[0];
-                            *d++ = intFiller[1];
-                            *d++ = intFiller[2];
-                            dest = reinterpret_cast<PixelRGB*> (d);
-                            width -= 4;
-                        }
-                    }
-
-                    while (--width >= 0)
-                    {
-                        dest->set (colour);
-                        ++dest;
-                    }
-                }
-            }
+            if ((size_t) destData.pixelStride == sizeof (*dest) && areRGBComponentsEqual)
+                memset ((void*) dest, colour.getRed(), (size_t) width * 3);   // if all the component values are the same, we can cheat..
             else
             {
                 JUCE_PERFORM_PIXEL_OP_LOOP (set (colour))

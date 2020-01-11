@@ -96,5 +96,5 @@ inline std::chrono::microseconds fromPhaseEncodedBeats(
   return tl.fromBeats(tl.beatOrigin + originOffset + quantum - inversePhaseOffset);
 }
 
-} // link
-} // ableton
+} // namespace link
+} // namespace ableton

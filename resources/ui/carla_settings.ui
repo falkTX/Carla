@@ -88,7 +88,12 @@
        </row>
        <row>
         <property name="text">
-         <string>paths</string>
+         <string>file-paths</string>
+        </property>
+       </row>
+       <row>
+        <property name="text">
+         <string>plugin-paths</string>
         </property>
        </row>
        <row>
@@ -186,7 +191,7 @@
        </item>
        <item row="4" column="0">
         <property name="text">
-         <string>Paths</string>
+         <string>File Paths</string>
         </property>
         <property name="font">
          <font>
@@ -204,6 +209,24 @@
        </item>
        <item row="5" column="0">
         <property name="text">
+         <string>Plugin Paths</string>
+        </property>
+        <property name="font">
+         <font>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="icon">
+         <iconset resource="../resources.qrc">
+          <normaloff>:/scalable/folder.svgz</normaloff>:/scalable/folder.svgz</iconset>
+        </property>
+        <property name="flags">
+         <set>ItemIsSelectable|ItemIsEnabled</set>
+        </property>
+       </item>
+       <item row="6" column="0">
+        <property name="text">
          <string>Wine</string>
         </property>
         <property name="font">
@@ -220,7 +243,7 @@
          <set>ItemIsSelectable|ItemIsEnabled</set>
         </property>
        </item>
-       <item row="6" column="0">
+       <item row="7" column="0">
         <property name="text">
          <string>Experimental</string>
         </property>
@@ -962,6 +985,13 @@
               </property>
              </spacer>
             </item>
+            <item row="3" column="0" colspan="4">
+             <widget class="QCheckBox" name="cb_engine_reset_xruns">
+              <property name="text">
+               <string>Reset Xrun counter after project load</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </item>
@@ -1647,7 +1677,253 @@
         <zorder>group_osc_udp_port</zorder>
         <zorder>group_osc_core</zorder>
        </widget>
-       <widget class="QWidget" name="page_paths">
+       <widget class="QWidget" name="page_filepaths">
+        <layout class="QVBoxLayout" name="verticalLayout_30">
+         <property name="margin">
+          <number>2</number>
+         </property>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_8">
+           <item>
+            <widget class="QLabel" name="label_24">
+             <property name="text">
+              <string>&lt;b&gt;File Paths&lt;/b&gt;</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_10">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_31">
+             <property name="maximumSize">
+              <size>
+               <width>48</width>
+               <height>48</height>
+              </size>
+             </property>
+             <property name="text">
+              <string notr="true"/>
+             </property>
+             <property name="pixmap">
+              <pixmap resource="../resources.qrc">:/scalable/folder.svgz</pixmap>
+             </property>
+             <property name="scaledContents">
+              <bool>true</bool>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignHCenter|Qt::AlignTop</set>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_19">
+           <item>
+            <widget class="QComboBox" name="cb_filepaths">
+             <property name="minimumSize">
+              <size>
+               <width>120</width>
+               <height>0</height>
+              </size>
+             </property>
+             <item>
+              <property name="text">
+               <string>Audio</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>MIDI</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item>
+            <widget class="QStackedWidget" name="tw_filepaths_info">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="currentIndex">
+              <number>0</number>
+             </property>
+             <widget class="QWidget" name="tw_filepaths_info_audio">
+              <layout class="QHBoxLayout" name="horizontalLayout_20">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="margin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="label_12">
+                 <property name="text">
+                  <string>Used for the &quot;audiofile&quot; plugin</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="tw_filepaths_info_midi">
+              <layout class="QHBoxLayout" name="horizontalLayout_26">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="margin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="label_13">
+                 <property name="text">
+                  <string>Used for the &quot;midifile&quot; plugin</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_23">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_16">
+           <item>
+            <widget class="QStackedWidget" name="tw_filepaths">
+             <property name="currentIndex">
+              <number>0</number>
+             </property>
+             <widget class="QWidget" name="tw_filepaths_audio">
+              <layout class="QVBoxLayout" name="verticalLayout_18">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="margin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QListWidget" name="lw_files_audio"/>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="tw_filepaths_midi">
+              <layout class="QVBoxLayout" name="verticalLayout_23">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="margin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QListWidget" name="lw_files_midi"/>
+               </item>
+              </layout>
+             </widget>
+            </widget>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_29">
+             <item>
+              <widget class="QPushButton" name="b_filepaths_add">
+               <property name="text">
+                <string>Add...</string>
+               </property>
+               <property name="icon">
+                <iconset resource="../resources.qrc">
+                 <normaloff>:/16x16/list-add.svgz</normaloff>:/16x16/list-add.svgz</iconset>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="b_filepaths_remove">
+               <property name="text">
+                <string>Remove</string>
+               </property>
+               <property name="icon">
+                <iconset resource="../resources.qrc">
+                 <normaloff>:/16x16/list-remove.svgz</normaloff>:/16x16/list-remove.svgz</iconset>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="verticalSpacer_6">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeType">
+                <enum>QSizePolicy::Fixed</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="b_filepaths_change">
+               <property name="text">
+                <string>Change...</string>
+               </property>
+               <property name="icon">
+                <iconset resource="../resources.qrc">
+                 <normaloff>:/16x16/edit-rename.svgz</normaloff>:/16x16/edit-rename.svgz</iconset>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="verticalSpacer_8">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="page_pluginpaths">
         <layout class="QVBoxLayout" name="verticalLayout_19">
          <property name="margin">
           <number>2</number>
@@ -1657,7 +1933,7 @@
            <item>
             <widget class="QLabel" name="label_18">
              <property name="text">
-              <string>&lt;b&gt;Paths&lt;/b&gt;</string>
+              <string>&lt;b&gt;Plugin Paths&lt;/b&gt;</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -2076,7 +2352,7 @@
             <item row="2" column="0" colspan="2">
              <widget class="QLabel" name="label_30">
               <property name="text">
-               <string>Note: WINEPREFIX env var is prefered over this fallback</string>
+               <string>Note: WINEPREFIX env var is preferred over this fallback</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignCenter</set>
@@ -2746,6 +3022,38 @@ This mode is not available for VST plugins.</string>
     <hint type="destinationlabel">
      <x>467</x>
      <y>282</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cb_filepaths</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>tw_filepaths</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>258</x>
+     <y>79</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>350</x>
+     <y>312</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cb_filepaths</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>tw_filepaths_info</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>258</x>
+     <y>79</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>409</x>
+     <y>79</y>
     </hint>
    </hints>
   </connection>

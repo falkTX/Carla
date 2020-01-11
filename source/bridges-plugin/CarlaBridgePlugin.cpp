@@ -23,6 +23,7 @@
 #include "CarlaHost.h"
 
 #include "CarlaBackendUtils.hpp"
+#include "CarlaJuceUtils.hpp"
 #include "CarlaMainLoop.hpp"
 #include "CarlaMIDI.h"
 
@@ -83,7 +84,7 @@ static bool gIsInitiated = false;
 static volatile bool gCloseNow = false;
 static volatile bool gSaveNow  = false;
 
-#if defined(CARLA_OS_LINUX)
+#if defined(CARLA_OS_UNIX)
 static void closeSignalHandler(int) noexcept
 {
     gCloseNow = true;
@@ -106,7 +107,7 @@ static BOOL WINAPI winSignalHandler(DWORD dwCtrlType) noexcept
 
 static void initSignalHandler()
 {
-#if defined(CARLA_OS_LINUX)
+#if defined(CARLA_OS_UNIX)
     struct sigaction sig;
     carla_zeroStruct(sig);
 
@@ -265,7 +266,7 @@ public:
             if (File(gProjectFilename).existsAsFile())
             {
                 if (carla_load_plugin_state(0, gProjectFilename.toRawUTF8()))
-                    carla_stdout("Plugin state loaded sucessfully");
+                    carla_stdout("Plugin state loaded successfully");
                 else
                     carla_stderr("Plugin state load failed, error was:\n%s", carla_get_last_error());
             }
@@ -639,7 +640,6 @@ int main(int argc, char* argv[])
             if (! useBridge)
             {
                 carla_set_active(0, true);
-                carla_set_option(0, CarlaBackend::PLUGIN_OPTION_SEND_CONTROL_CHANGES, true);
 
                 if (const CarlaPluginInfo* const pluginInfo = carla_get_plugin_info(0))
                 {

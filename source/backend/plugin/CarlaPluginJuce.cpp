@@ -22,11 +22,11 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
+#include "CarlaScopeUtils.hpp"
 
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wcast-qual"
-# pragma GCC diagnostic ignored "-Wclass-memaccess"
 # pragma GCC diagnostic ignored "-Wconversion"
 # pragma GCC diagnostic ignored "-Wdouble-promotion"
 # pragma GCC diagnostic ignored "-Weffc++"
@@ -35,6 +35,9 @@
 # pragma GCC diagnostic ignored "-Wsign-conversion"
 # pragma GCC diagnostic ignored "-Wundef"
 # pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+# if __GNUC__ > 7
+#  pragma GCC diagnostic ignored "-Wclass-memaccess"
+# endif
 #endif
 
 #include "AppConfig.h"
@@ -125,7 +128,10 @@ public:
     {
         if (fDesc.isInstrument)
             return PLUGIN_CATEGORY_SYNTH;
-        return getPluginCategoryFromName(fDesc.category.toRawUTF8());
+
+        return getPluginCategoryFromName(fDesc.category.isNotEmpty()
+                                         ? fDesc.category.toRawUTF8()
+                                         : fDesc.name.toRawUTF8());
     }
 
     int64_t getUniqueId() const noexcept override
@@ -185,6 +191,7 @@ public:
             options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
             options |= PLUGIN_OPTION_SEND_PITCHBEND;
             options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+            options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
         }
 
         return options;
@@ -198,51 +205,58 @@ public:
         return fInstance->getParameter(static_cast<int>(parameterId));
     }
 
-    void getLabel(char* const strBuf) const noexcept override
+    bool getLabel(char* const strBuf) const noexcept override
     {
         if (fDesc.pluginFormatName == "AU" || fDesc.pluginFormatName == "AudioUnit")
             std::strncpy(strBuf, fDesc.fileOrIdentifier.toRawUTF8(), STR_MAX);
         else
             std::strncpy(strBuf, fDesc.name.toRawUTF8(), STR_MAX);
+
+        return true;
     }
 
-    void getMaker(char* const strBuf) const noexcept override
+    bool getMaker(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, fDesc.manufacturerName.toRawUTF8(), STR_MAX);
+        return true;
     }
 
-    void getCopyright(char* const strBuf) const noexcept override
+    bool getCopyright(char* const strBuf) const noexcept override
     {
-        getMaker(strBuf);
+        return getMaker(strBuf);
     }
 
-    void getRealName(char* const strBuf) const noexcept override
+    bool getRealName(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, fDesc.descriptiveName.toRawUTF8(), STR_MAX);
+        return true;
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
-        CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+        CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr, false);
 
         std::strncpy(strBuf, fInstance->getParameterName(static_cast<int>(parameterId), STR_MAX).toRawUTF8(), STR_MAX);
+        return true;
     }
 
-    void getParameterText(const uint32_t parameterId, char* const strBuf) noexcept override
+    bool getParameterText(const uint32_t parameterId, char* const strBuf) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
-        CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+        CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr, false);
 
         std::strncpy(strBuf, fInstance->getParameterText(static_cast<int>(parameterId), STR_MAX).toRawUTF8(), STR_MAX);
+        return true;
     }
 
-    void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
-        CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+        CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr, false);
 
         std::strncpy(strBuf, fInstance->getParameterLabel(static_cast<int>(parameterId)).toRawUTF8(), STR_MAX);
+        return true;
     }
 
     // -------------------------------------------------------------------
@@ -274,20 +288,26 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
 
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
-        fInstance->setParameter(static_cast<int>(parameterId), value);
+
+        try {
+            fInstance->setParameter(static_cast<int>(parameterId), value);
+        } CARLA_SAFE_EXCEPTION("setParameter");
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setParameterValueRT(const uint32_t parameterId, const float value) noexcept override
+    void setParameterValueRT(const uint32_t parameterId, const float value, const bool sendCallbackLater) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
 
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
-        fInstance->setParameter(static_cast<int>(parameterId), value);
 
-        CarlaPlugin::setParameterValueRT(parameterId, fixedValue);
+        try {
+            fInstance->setParameter(static_cast<int>(parameterId), value);
+        } CARLA_SAFE_EXCEPTION("setParameter");
+
+        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, sendCallbackLater);
     }
 
     void setChunkData(const void* const data, const std::size_t dataSize) override
@@ -307,7 +327,7 @@ public:
             uint8_t* const dataCompat = (uint8_t*)std::malloc(dataSize + 160);
             CARLA_SAFE_ASSERT_RETURN(dataCompat != nullptr,);
 
-            carla_stdout("NOTE: Loading plugin state in Carla compatibiity mode");
+            carla_stdout("NOTE: Loading plugin state in Carla JUCE/VST2 compatibility mode");
             std::memset(dataCompat, 0, 160);
             std::memcpy(dataCompat+160, data, dataSize);
 
@@ -344,6 +364,18 @@ public:
         }
 
         CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback, doingInit);
+    }
+
+    void setProgramRT(const uint32_t index, const bool sendCallbackLater) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(index < pData->prog.count,);
+
+        try {
+            fInstance->setCurrentProgram(static_cast<int32_t>(index));
+        } CARLA_SAFE_EXCEPTION("setCurrentProgram");
+
+        CarlaPlugin::setProgramRT(index, sendCallbackLater);
     }
 
     // -------------------------------------------------------------------
@@ -636,15 +668,17 @@ public:
         pData->prog.clear();
 
         // Query new programs
-        uint32_t newCount = (fInstance->getNumPrograms() > 0) ? static_cast<uint32_t>(fInstance->getNumPrograms()) : 0;
+        const uint32_t newCount = (fInstance->getNumPrograms() > 0)
+                                ? static_cast<uint32_t>(fInstance->getNumPrograms())
+                                : 0;
 
         if (newCount > 0)
         {
             pData->prog.createNew(newCount);
 
             // Update names
-            for (int i=0, count=fInstance->getNumPrograms(); i<count; ++i)
-                pData->prog.names[i] = carla_strdup(fInstance->getProgramName(i).toRawUTF8());
+            for (uint32_t i=0; i < newCount; ++i)
+                pData->prog.names[i] = carla_strdup(fInstance->getProgramName(static_cast<int>(i)).toRawUTF8());
         }
 
         if (doInit)
@@ -723,7 +757,8 @@ public:
         } catch(...) {}
     }
 
-    void process(const float** const audioIn, float** const audioOut, const float** const, float** const, const uint32_t frames) override
+    void process(const float* const* const audioIn, float** const audioOut,
+                 const float* const*, float**, const uint32_t frames) override
     {
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -811,13 +846,13 @@ public:
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) != 0)
                             {
                                 value = ctrlEvent.value;
-                                setDryWetRT(value);
+                                setDryWetRT(value, true);
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
-                                setVolumeRT(value);
+                                setVolumeRT(value, true);
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
@@ -841,8 +876,8 @@ public:
                                     right = 1.0f;
                                 }
 
-                                setBalanceLeftRT(left);
-                                setBalanceRightRT(right);
+                                setBalanceLeftRT(left, true);
+                                setBalanceRightRT(right, true);
                             }
                         }
 #endif
@@ -852,7 +887,7 @@ public:
                         {
                             if (pData->param.data[k].midiChannel != event.channel)
                                 continue;
-                            if (pData->param.data[k].midiCC != ctrlEvent.param)
+                            if (pData->param.data[k].mappedControlIndex != ctrlEvent.param)
                                 continue;
                             if (pData->param.data[k].type != PARAMETER_INPUT)
                                 continue;
@@ -876,7 +911,7 @@ public:
                                     value = std::rint(value);
                             }
 
-                            setParameterValueRT(k, value);
+                            setParameterValueRT(k, value, true);
                         }
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_CONTROL)
@@ -893,6 +928,18 @@ public:
                     } // case kEngineControlEventTypeParameter
 
                     case kEngineControlEventTypeMidiBank:
+                        if ((pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) != 0)
+                        {
+                            uint8_t midiData[3];
+                            midiData[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
+                            midiData[1] = MIDI_CONTROL_BANK_SELECT;
+                            midiData[2] = 0;
+                            fMidiBuffer.addEvent(midiData, 3, static_cast<int>(event.time));
+
+                            midiData[1] = MIDI_CONTROL_BANK_SELECT__LSB;
+                            midiData[2] = uint8_t(ctrlEvent.value*127.0f);
+                            fMidiBuffer.addEvent(midiData, 3, static_cast<int>(event.time));
+                        }
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
@@ -900,9 +947,15 @@ public:
                         {
                             if (ctrlEvent.param < pData->prog.count)
                             {
-                                setProgramRT(ctrlEvent.param);
-                                break;
+                                setProgramRT(ctrlEvent.param, true);
                             }
+                        }
+                        else if ((pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) != 0)
+                        {
+                            uint8_t midiData[3];
+                            midiData[0] = uint8_t(MIDI_STATUS_PROGRAM_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
+                            midiData[1] = uint8_t(ctrlEvent.value*127.0f);
+                            fMidiBuffer.addEvent(midiData, 2, static_cast<int>(event.time));
                         }
                         break;
 
@@ -971,6 +1024,7 @@ public:
                     if (status == MIDI_STATUS_NOTE_ON)
                     {
                         pData->postponeRtEvent(kPluginPostRtEventNoteOn,
+                                               true,
                                                event.channel,
                                                midiData[1],
                                                midiData[2],
@@ -979,6 +1033,7 @@ public:
                     else if (status == MIDI_STATUS_NOTE_OFF)
                     {
                         pData->postponeRtEvent(kPluginPostRtEventNoteOff,
+                                               true,
                                                event.channel,
                                                midiData[1],
                                                0, 0.0f);
@@ -1025,7 +1080,7 @@ public:
         processSingle(audioIn, audioOut, frames);
     }
 
-    bool processSingle(const float** const inBuffer, float** const outBuffer, const uint32_t frames)
+    bool processSingle(const float* const* const inBuffer, float** const outBuffer, const uint32_t frames)
     {
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
 
@@ -1201,8 +1256,8 @@ public:
             return false;
         }
 
-        // AU and VST3 require label
-        if (std::strcmp(format, "AU") == 0 || std::strcmp(format, "VST3") == 0)
+        // AU requires label
+        if (std::strcmp(format, "AU") == 0)
         {
             if (label == nullptr || label[0] == '\0')
             {
@@ -1304,24 +1359,32 @@ public:
         }
 
         // ---------------------------------------------------------------
-        // set default options
+        // set options
 
         pData->options  = 0x0;
         pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
         pData->options |= PLUGIN_OPTION_USE_CHUNKS;
 
-        if (fInstance->getNumPrograms() > 1)
-            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-
         if (fInstance->acceptsMidi())
         {
-            pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-            pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-            pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
-            pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-
-            if (options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CONTROL_CHANGES))
                 pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CHANNEL_PRESSURE))
+                pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH))
+                pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PITCHBEND))
+                pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_ALL_SOUND_OFF))
+                pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PROGRAM_CHANGES))
+                pData->options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
+        }
+
+        if (fInstance->getNumPrograms() > 1 && ((pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) == 0))
+        {
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_MAP_PROGRAM_CHANGES))
+                pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
         }
 
         return true;
@@ -1338,7 +1401,7 @@ private:
     juce::MemoryBlock       fChunk;
     juce::String            fFormatName;
 
-    ScopedPointer<JucePluginWindow> fWindow;
+    CarlaScopedPointer<JucePluginWindow> fWindow;
 
     bool isJuceSaveFormat(const void* const data, const std::size_t dataSize)
     {
@@ -1351,7 +1414,7 @@ private:
 
         if (! compareMagic(set[0], "CcnK"))
             return false;
-        if (! compareMagic(set[2], "FBCh"))
+        if (! compareMagic(set[2], "FBCh") && ! compareMagic(set[2], "FJuc"))
             return false;
         if (fxbSwap(set[3]) > 1)
             return false;

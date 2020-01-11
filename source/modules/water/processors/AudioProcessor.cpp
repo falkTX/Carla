@@ -87,19 +87,7 @@ void AudioProcessor::suspendProcessing (const bool shouldBeSuspended)
 }
 
 void AudioProcessor::reset() {}
-
-void AudioProcessor::processBlockBypassed (AudioSampleBuffer& buffer, MidiBuffer&)
-{
-    for (uint ch = getTotalNumInputChannels(ChannelTypeAudio); ch < getTotalNumOutputChannels(ChannelTypeAudio); ++ch)
-        buffer.clear (ch, 0, buffer.getNumSamples());
-}
-
-void AudioProcessor::processBlockWithCV (AudioSampleBuffer& audioBuffer,
-                                         const AudioSampleBuffer&, AudioSampleBuffer&,
-                                         MidiBuffer& midiMessages)
-{
-    processBlock (audioBuffer, midiMessages);
-}
+void AudioProcessor::reconfigure() {}
 
 uint AudioProcessor::getTotalNumInputChannels(ChannelType t) const noexcept
 {

@@ -24,7 +24,7 @@ cd $(dirname $0)
 source common.env
 
 CHROOT_CARLA_DIR="/tmp/carla-src"
-PKG_FOLDER="Carla_2.0-RC4-linux"
+PKG_FOLDER="Carla_2.1b1-linux"
 PKGS_NUM="20190227"
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -46,27 +46,16 @@ if [ -d ${TARGETDIR}/chroot64 ]; then
 fi
 
 if [ -d ${TARGETDIR}/chroot32 ]; then
-    sudo mv ${TARGETDIR}/chroot32 ${TARGETDIR}/chroot32-deleteme
+    sudo mv ${TARGETDIR}/chroot32 ${TARGETDIR}/chroot32-deleteme2
     sudo rm -rf ${TARGETDIR}/chroot32-deleteme || true
 fi
 
 if [ -d ${TARGETDIR}/chroot64 ]; then
-    sudo mv ${TARGETDIR}/chroot64 ${TARGETDIR}/chroot64-deleteme
+    sudo mv ${TARGETDIR}/chroot64 ${TARGETDIR}/chroot64-deleteme2
     sudo rm -rf ${TARGETDIR}/chroot64-deleteme || true
 fi
 
 }
-
-# ---------------------------------------------------------------------------------------------------------------------
-# create chroots
-
-if [ ! -d ${TARGETDIR}/chroot32 ]; then
-    sudo debootstrap --no-check-gpg --arch=i386 lucid ${TARGETDIR}/chroot32 http://old-releases.ubuntu.com/ubuntu/
-fi
-
-if [ ! -d ${TARGETDIR}/chroot64 ]; then
-    sudo debootstrap --no-check-gpg --arch=amd64 lucid ${TARGETDIR}/chroot64 http://old-releases.ubuntu.com/ubuntu/
-fi
 
 # ---------------------------------------------------------------------------------------------------------------------
 # setup chroots
@@ -139,11 +128,11 @@ if [ ! -f /tmp/setup-aria2 ]; then
 fi
 
 if [ ! -d ${CHROOT_CARLA_DIR} ]; then
-  git clone --depth=1 -b master git://github.com/falkTX/Carla ${CHROOT_CARLA_DIR}
+  git clone --depth=1 -b develop git://github.com/falkTX/Carla ${CHROOT_CARLA_DIR}
 fi
 
 if [ ! -f ${CHROOT_CARLA_DIR}/source/native-plugins/external/README.md ]; then
-  git clone --depth=1 -b master git://github.com/falkTX/Carla-Plugins ${CHROOT_CARLA_DIR}/source/native-plugins/external
+  git clone --depth=1 -b develop git://github.com/falkTX/Carla-Plugins ${CHROOT_CARLA_DIR}/source/native-plugins/external
 fi
 
 cd ${CHROOT_CARLA_DIR}
@@ -161,12 +150,6 @@ EOF
 
 }
 
-export ARCH=32
-chroot_setup
-
-export ARCH=64
-chroot_setup
-
 # ---------------------------------------------------------------------------------------------------------------------
 # build base libs
 
@@ -174,7 +157,7 @@ chroot_build_deps()
 {
 
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
-cp build-deps.sh common.env ${CHROOT_DIR}${CHROOT_CARLA_DIR}/data/linux/
+cp build-deps.sh build-pyqt.sh common.env ${CHROOT_DIR}${CHROOT_CARLA_DIR}/data/linux/
 sudo cp /etc/ca-certificates.conf ${CHROOT_DIR}/etc/
 sudo cp -r /usr/share/ca-certificates/* ${CHROOT_DIR}/usr/share/ca-certificates/
 
@@ -199,23 +182,18 @@ update-ca-certificates
 ${CHROOT_CARLA_DIR}/data/linux/build-deps.sh ${ARCH}
 
 if [ ! -f /tmp/setup-repo-packages-extra2 ]; then
-  apt-get install -y --no-install-recommends libasound2-dev libgtk2.0-dev libqt4-dev libx11-dev
-  apt-get install -y cx-freeze-python3 zip
+  apt-get install -y --no-install-recommends libdbus-1-dev libx11-dev libffi-static
   apt-get clean
   touch /tmp/setup-repo-packages-extra2
 fi
 
+${CHROOT_CARLA_DIR}/data/linux/build-pyqt.sh ${ARCH}
+
+apt-get install -y --no-install-recommends libasound2-dev libpulse-dev libgtk2.0-dev libqt4-dev qt4-dev-tools zip unzip
+
 EOF
 
 }
-
-export ARCH=32
-chroot_build_deps
-
-export ARCH=64
-chroot_build_deps
-
-exit 0
 
 # ---------------------------------------------------------------------------------------------------------------------
 # build carla
@@ -234,15 +212,19 @@ unset LC_TIME
 
 set -e
 
+export OLDPATH=\${PATH}
 export CFLAGS="-I${CHROOT_TARGET_DIR}/carla${ARCH}/include"
 export CXXFLAGS=${CFLAGS}
 export LDFLAGS="-L${CHROOT_TARGET_DIR}/carla${ARCH}/lib"
 export PKG_CONFIG_PATH=${CHROOT_TARGET_DIR}/carla${ARCH}/lib/pkgconfig
-export RCC_QT4=/usr/bin/rcc
 export LINUX=true
-export DEFAULT_QT=4
+export MOC_QT4=/usr/bin/moc-qt4
+export RCC_QT4=/usr/bin/rcc
+export PYRCC5=${CHROOT_TARGET_DIR}/carla${ARCH}/bin/pyrcc5
+export PYUIC5=${CHROOT_TARGET_DIR}/carla${ARCH}/bin/pyuic5
 
 cd ${CHROOT_CARLA_DIR}
+
 make ${MAKE_ARGS}
 
 if [ x"${ARCH}" != x"32" ]; then
@@ -257,12 +239,6 @@ EOF
 
 }
 
-export ARCH=32
-chroot_build_carla
-
-export ARCH=64
-chroot_build_carla
-
 # ---------------------------------------------------------------------------------------------------------------------
 # download carla extras
 
@@ -270,10 +246,7 @@ download_carla_extras()
 {
 
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
-CARLA_VER="1.9.14+git20190227"
-WINBR_VER="1.9.14+git20190227"
-WINE32_VER="1.9.14+git20190227"
-WINE64_VER="1.9.14.git20190227"
+CARLA_GIT_VER="2.1~alpha2+git20191016"
 
 cat <<EOF | sudo chroot ${CHROOT_DIR}
 set -e
@@ -283,31 +256,35 @@ cd ${CHROOT_CARLA_DIR}
 if [ ! -d carla-pkgs${PKGS_NUM} ]; then
   mkdir -p tmp-carla-pkgs
   cd tmp-carla-pkgs
-  wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win32_${WINBR_VER}_i386.deb
-  wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-wine32_${WINE32_VER}_i386.deb
+  wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win32_${CARLA_GIT_VER}_i386.deb
   if [ x"${ARCH}" != x"32" ]; then
-    aria2c https://github.com/KXStudio/Repository/releases/download/initial/carla-bridge-wine64_${WINE64_VER}_amd64.deb
-    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win64_${WINBR_VER}_amd64.deb
-    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-git_${CARLA_VER}_amd64.deb
+    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win64_${CARLA_GIT_VER}_amd64.deb
+    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-git_${CARLA_GIT_VER}_amd64.deb
   else
-    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-git_${CARLA_VER}_i386.deb
+    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-git_${CARLA_GIT_VER}_i386.deb
   fi
   cd ..
   mv tmp-carla-pkgs carla-pkgs${PKGS_NUM}
 fi
 
-if [ ! -f carla-pkgs${PKGS_NUM}/extrated ]; then
+if [ ! -f carla-pkgs${PKGS_NUM}/extracted ]; then
   cd carla-pkgs${PKGS_NUM}
-  dpkg -x carla-bridge-win32_${WINBR_VER}_i386.deb .
-  dpkg -x carla-bridge-wine32_${WINE32_VER}_i386.deb .
+  ar x carla-bridge-win32_${CARLA_GIT_VER}_i386.deb
+  tar xf data.tar.xz
+  rm control.tar.xz data.tar.xz debian-binary
   if [ x"${ARCH}" != x"32" ]; then
-    dpkg -x carla-bridge-win64_${WINBR_VER}_amd64.deb .
-    dpkg -x carla-bridge-wine64_${WINE64_VER}_amd64.deb .
-    dpkg -x carla-git_${CARLA_VER}_amd64.deb .
+    ar x carla-bridge-win64_${CARLA_GIT_VER}_amd64.deb
+    tar xf data.tar.xz
+    rm control.tar.xz data.tar.xz debian-binary
+    ar x carla-git_${CARLA_GIT_VER}_amd64.deb
+    tar xf data.tar.xz
+    rm control.tar.xz data.tar.xz debian-binary
   else
-    dpkg -x carla-git_${CARLA_VER}_i386.deb .
+    ar x carla-git_${CARLA_GIT_VER}_i386.deb
+    tar xf data.tar.xz
+    rm control.tar.xz data.tar.xz debian-binary
   fi
-  touch extrated
+  touch extracted
   cd ..
 fi
 
@@ -316,18 +293,11 @@ if [ ! -f extra-bins${PKGS_NUM}/carla-bridge-win32.exe ]; then
     cp carla-pkgs${PKGS_NUM}/usr/lib/carla/*.exe  extra-bins${PKGS_NUM}/
     cp carla-pkgs${PKGS_NUM}/usr/lib/carla/*.dll  extra-bins${PKGS_NUM}/
     cp carla-pkgs${PKGS_NUM}/usr/lib/carla/*-gtk3 extra-bins${PKGS_NUM}/
-    cp carla-pkgs${PKGS_NUM}/usr/lib/carla/*-qt5  extra-bins${PKGS_NUM}/
 fi
 
 EOF
 
 }
-
-export ARCH=32
-download_carla_extras
-
-export ARCH=64
-download_carla_extras
 
 # ---------------------------------------------------------------------------------------------------------------------
 # download carla extras
@@ -336,7 +306,7 @@ chroot_pack_carla()
 {
 
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
-CXFREEZE_FLAGS="--include-modules=re,sip,subprocess,inspect"
+CHROOT_TARGET_DIR=/root/builds
 
 cat <<EOF | sudo chroot ${CHROOT_DIR}
 export HOME=/root
@@ -347,10 +317,15 @@ unset LC_TIME
 set -e
 
 export PKG_CONFIG_PATH=${CHROOT_TARGET_DIR}/carla${ARCH}/lib/pkgconfig
+export PATH=${CHROOT_TARGET_DIR}/carla${ARCH}/bin:\${PATH}
+export LINUX=true
+export MOC_QT4=/usr/bin/moc-qt4
 export RCC_QT4=/usr/bin/rcc
-export LINUX="true"
+export PYRCC5=${CHROOT_TARGET_DIR}/carla${ARCH}/bin/pyrcc5
+export PYUIC5=${CHROOT_TARGET_DIR}/carla${ARCH}/bin/pyuic5
 
 cd ${CHROOT_CARLA_DIR}
+
 rm -rf ./tmp-install
 make ${MAKE_ARGS} install DESTDIR=./tmp-install PREFIX=/usr
 
@@ -360,70 +335,93 @@ make -C data/windows/unzipfx-carla-control -f Makefile.linux ${MAKE_ARGS}
 # ---------------------------------------------------------------------------------------------------------------------
 # Standalone
 
-rm -rf build-carla build-carla-control build-lv2 build-vst carla *.zip
+rm -rf build-carla build-carla-control build-lv2 build-vst carla carla-control *.zip
+
 mkdir build-carla
 mkdir build-carla/resources
 mkdir build-carla/src
+mkdir build-carla/src/modgui
+mkdir build-carla/src/patchcanvas
 mkdir build-carla/src/widgets
 
-cp      extra-bins${PKGS_NUM}/*                    build-carla/
-cp -r  ./tmp-install/usr/lib/carla/*               build-carla/
-cp -LR ./tmp-install/usr/share/carla/resources/*   build-carla/resources/
-cp     ./tmp-install/usr/share/carla/carla         build-carla/src/
-cp     ./tmp-install/usr/share/carla/carla-control build-carla/src/
-cp     ./tmp-install/usr/share/carla/*.py          build-carla/src/
-cp     ./tmp-install/usr/share/carla/widgets/*.py  build-carla/src/widgets/
+cp      extra-bins${PKGS_NUM}/*                       build-carla/
+cp -r  ./tmp-install/usr/lib/carla/*                  build-carla/
+cp -LR ./tmp-install/usr/share/carla/resources/*      build-carla/resources/
+cp     ./tmp-install/usr/share/carla/carla            build-carla/src/
+cp     ./tmp-install/usr/share/carla/carla-control    build-carla/src/
+cp     ./tmp-install/usr/share/carla/*.py             build-carla/src/
+cp     ./tmp-install/usr/share/carla/modgui/*.py      build-carla/src/modgui/
+cp     ./tmp-install/usr/share/carla/patchcanvas/*.py build-carla/src/patchcanvas/
+cp     ./tmp-install/usr/share/carla/widgets/*.py     build-carla/src/widgets/
 
-mv build-carla/resources/carla-plugin   build-carla/resources/carla-plugin.py
-mv build-carla/resources/bigmeter-ui    build-carla/resources/bigmeter-ui.py
-mv build-carla/resources/midipattern-ui build-carla/resources/midipattern-ui.py
-mv build-carla/resources/notes-ui       build-carla/resources/notes-ui.py
+export PYTHONPATH="./build-carla/src"
 
-cxfreeze-python3 ${CXFREEZE_FLAGS} build-carla/src/carla                   --target-dir=build-carla/
-cxfreeze-python3 ${CXFREEZE_FLAGS} build-carla/src/carla-control           --target-dir=build-carla-control/
-cxfreeze-python3 ${CXFREEZE_FLAGS} build-carla/resources/carla-plugin.py   --target-dir=build-carla/resources/
-cxfreeze-python3 ${CXFREEZE_FLAGS} build-carla/resources/bigmeter-ui.py    --target-dir=build-carla/resources/
-cxfreeze-python3 ${CXFREEZE_FLAGS} build-carla/resources/midipattern-ui.py --target-dir=build-carla/resources/
-cxfreeze-python3 ${CXFREEZE_FLAGS} build-carla/resources/notes-ui.py       --target-dir=build-carla/resources/
+# standalone
+python3 ./data/linux/app-carla.py build_exe
+mv build-carla/lib/library.zip build-carla/lib/library-carla.zip
 
-cp /usr/lib/libpython3.2mu.so.1.0 build-carla/
-cp /usr/lib/libffi.so.5           build-carla/
-cp /usr/lib/libssl.so.0.9.8       build-carla/
-cp /usr/lib/libcrypto.so.0.9.8    build-carla/
-cp /lib/libbz2.so.1.0             build-carla/
-cp /lib/libselinux.so.1           build-carla/
-cp /root/builds/carla${ARCH}/share/misc/magic.mgc build-carla/
+# plugins
+TARGET_NAME="bigmeter-ui" python3 ./data/linux/app-plugin.py build_exe
+mv build-carla/lib/library.zip build-carla/lib/library-bigmeter.zip
 
-cp /usr/lib/libpython3.2mu.so.1.0 build-carla-control/
-cp /usr/lib/libffi.so.5           build-carla-control/
-cp /usr/lib/libssl.so.0.9.8       build-carla-control/
-cp /usr/lib/libcrypto.so.0.9.8    build-carla-control/
-cp /lib/libbz2.so.1.0             build-carla-control/
-cp /lib/libselinux.so.1           build-carla-control/
+TARGET_NAME="midipattern-ui" python3 ./data/linux/app-plugin.py build_exe
+mv build-carla/lib/library.zip build-carla/lib/library-midipattern.zip
+
+TARGET_NAME="notes-ui" python3 ./data/linux/app-plugin.py build_exe
+mv build-carla/lib/library.zip build-carla/lib/library-notes.zip
+
+TARGET_NAME="carla-plugin" python3 ./data/linux/app-plugin.py build_exe
+mv build-carla/lib/library.zip build-carla/lib/library-carla-p1.zip
+
+TARGET_NAME="carla-plugin-patchbay" python3 ./data/linux/app-plugin.py build_exe
+mv build-carla/lib/library.zip build-carla/lib/library-carla-p2.zip
+
+# carla-control, no merge needed
+python3 ./data/linux/app-carla-control.py build_exe
+
+# merge library stuff into one
+mkdir build-carla/lib/_lib
+pushd build-carla/lib/_lib
+unzip -o ../library-bigmeter.zip
+unzip -o ../library-midipattern.zip
+unzip -o ../library-notes.zip
+unzip -o ../library-carla-p1.zip
+unzip -o ../library-carla-p2.zip
+unzip -o ../library-carla.zip
+zip -r -9 ../library.zip *
+popd
+rm -r build-carla/lib/_lib build-carla/lib/library-*.zip
+
+# move resource binaries into right dir
+mv build-carla/{bigmeter-ui,midipattern-ui,notes-ui,carla-plugin} build-carla/resources/
+rm build-carla/carla-plugin-patchbay
+
+# symlink for carla-plugin-patchbay, lib and styles
+pushd build-carla/resources
+rm carla-plugin-patchbay
+ln -s carla-plugin carla-plugin-patchbay
+ln -s ../lib .
+ln -s ../styles .
+popd
+
+# magic for filetype detection in carla
+cp ${CHROOT_TARGET_DIR}/carla${ARCH}/share/misc/magic.mgc build-carla/
+
+# binaries for carla-control
 cp build-carla/libcarla_utils.so  build-carla-control/
 cp -r build-carla/styles          build-carla-control/
 
-find build-carla -name "*.py" -delete
-find build-carla -name PyQt4.QtAssistant.so -delete
-find build-carla -name PyQt4.QtNetwork.so -delete
-find build-carla -name PyQt4.QtScript.so -delete
-find build-carla -name PyQt4.QtTest.so -delete
-find build-carla -name PyQt4.QtXml.so -delete
+# delete unneeded stuff
+find build-* -name "*.py" -delete
+find build-* -name "*.pyi" -delete
+find build-* -name "libQt*" -delete
+rm -f build-*/lib/PyQt5/{pylupdate,pyrcc}.so
+rm -f build-*/lib/PyQt5/{QtDBus,QtNetwork,QtPrintSupport,QtSql,QtTest,QtXml}.so
+rm -f build-carla/carla-bridge-lv2-modgui
+rm -f build-carla/libcarla_native-plugin.so
 rm -rf build-carla/src
-
-find build-carla-control -name "*.py" -delete
-find build-carla-control -name PyQt4.QtAssistant.so -delete
-find build-carla-control -name PyQt4.QtNetwork.so -delete
-find build-carla-control -name PyQt4.QtScript.so -delete
-find build-carla-control -name PyQt4.QtTest.so -delete
-find build-carla-control -name PyQt4.QtXml.so -delete
-rm -rf build-carla-control/src
-
-cd build-carla/resources/ && \
-  rm *.so* carla-plugin-patchbay && \
-  ln -s ../*.so* . && \
-  ln -s carla-plugin carla-plugin-patchbay && \
-cd ../..
+rm -rf build-*/lib/PyQt5/uic
+rmdir build-carla/resources/{modgui,patchcanvas,widgets}
 
 mkdir build-lv2
 cp -LR ./tmp-install/usr/lib/lv2/carla.lv2 build-lv2/
@@ -431,8 +429,10 @@ rm -r  build-lv2/carla.lv2/resources
 cp -LR build-carla/resources build-lv2/carla.lv2/
 cp     build-carla/magic.mgc build-lv2/carla.lv2/
 cp     extra-bins${PKGS_NUM}/* build-lv2/carla.lv2/
-rm     build-lv2/carla.lv2/resources/*carla*.so build-lv2/carla.lv2/resources/carla-plugin-patchbay
+rm     build-lv2/carla.lv2/resources/carla-plugin-patchbay
+rm -r  build-lv2/carla.lv2/resources/styles
 ln -s  ../libcarla_utils.so build-lv2/carla.lv2/resources/
+ln -s  ../styles            build-lv2/carla.lv2/resources/
 ln -s carla-plugin build-lv2/carla.lv2/resources/carla-plugin-patchbay
 
 mkdir build-vst
@@ -441,9 +441,14 @@ rm -r  build-vst/carla.vst/resources
 cp -LR build-carla/resources build-vst/carla.vst/
 cp     build-carla/magic.mgc build-vst/carla.vst/
 cp     extra-bins${PKGS_NUM}/* build-vst/carla.vst/
-rm     build-vst/carla.vst/resources/*carla*.so build-vst/carla.vst/resources/carla-plugin-patchbay
+rm     build-vst/carla.vst/resources/carla-plugin-patchbay
+rm -r  build-vst/carla.vst/resources/styles
 ln -s  ../libcarla_utils.so build-vst/carla.vst/resources/
+ln -s  ../styles            build-vst/carla.vst/resources/
 ln -s carla-plugin build-vst/carla.vst/resources/carla-plugin-patchbay
+
+rm build-{lv2,vst}/carla.*/carla-bridge-lv2-modgui
+rm build-{lv2,vst}/carla.*/libcarla_native-plugin.so
 
 mv build-carla carla
 zip --symlinks -r -9 carla.zip carla
@@ -461,13 +466,56 @@ rm -rf ${PKG_FOLDER}${ARCH}
 mkdir ${PKG_FOLDER}${ARCH}
 cp data/linux/README ${PKG_FOLDER}${ARCH}/
 mv Carla CarlaControl build-lv2/*.lv2 build-vst/*.vst ${PKG_FOLDER}${ARCH}/
+rmdir build-lv2 build-vst
 tar cJf ${PKG_FOLDER}${ARCH}.tar.xz ${PKG_FOLDER}${ARCH}
 mv ${PKG_FOLDER}${ARCH}.tar.xz /tmp/
-rmdir build-lv2 build-vst
 
 EOF
 
 }
+
+# ---------------------------------------------------------------------------------------------------------------------
+# cleanup here if needed
+
+# cleanup
+
+# ---------------------------------------------------------------------------------------------------------------------
+# create chroots
+
+if [ ! -d ${TARGETDIR}/chroot32 ]; then
+    sudo debootstrap --no-check-gpg --arch=i386 lucid ${TARGETDIR}/chroot32 http://old-releases.ubuntu.com/ubuntu/
+fi
+
+if [ ! -d ${TARGETDIR}/chroot64 ]; then
+    sudo debootstrap --no-check-gpg --arch=amd64 lucid ${TARGETDIR}/chroot64 http://old-releases.ubuntu.com/ubuntu/
+fi
+
+# ---------------------------------------------------------------------------------------------------------------------
+# run the functions
+
+export ARCH=32
+chroot_setup
+
+export ARCH=64
+chroot_setup
+
+export ARCH=32
+chroot_build_deps
+
+export ARCH=64
+chroot_build_deps
+
+export ARCH=32
+chroot_build_carla
+
+export ARCH=64
+chroot_build_carla
+
+export ARCH=32
+download_carla_extras
+
+export ARCH=64
+download_carla_extras
 
 export ARCH=32
 chroot_pack_carla

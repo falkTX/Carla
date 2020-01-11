@@ -26,7 +26,9 @@
 #include <ableton/link/GhostXForm.hpp>
 #include <ableton/link/NodeState.hpp>
 #include <ableton/link/Peers.hpp>
+#include <ableton/link/SessionState.hpp>
 #include <ableton/link/Sessions.hpp>
+#include <ableton/link/StartStopState.hpp>
 #include <mutex>
 
 namespace ableton
@@ -44,20 +46,79 @@ GhostXForm initXForm(const Clock& clock)
   return {1.0, -clock.micros()};
 }
 
+template <typename Clock>
+inline SessionState initSessionState(const Tempo tempo, const Clock& clock)
+{
+  using namespace std::chrono;
+  return {clampTempo(Timeline{tempo, Beats{0.}, microseconds{0}}),
+    StartStopState{false, Beats{0.}, microseconds{0}}, initXForm(clock)};
+}
+
+inline ClientState initClientState(const SessionState& sessionState)
+{
+  const auto hostTime = sessionState.ghostXForm.ghostToHost(std::chrono::microseconds{0});
+  return {
+    Timeline{sessionState.timeline.tempo, sessionState.timeline.beatOrigin, hostTime},
+    StartStopState{sessionState.startStopState.isPlaying,
+      sessionState.startStopState.beats, hostTime}};
+}
+
+inline RtClientState initRtClientState(const ClientState& clientState)
+{
+  using namespace std::chrono;
+  return {
+    clientState.timeline, clientState.startStopState, microseconds{0}, microseconds{0}};
+}
+
 // The timespan in which local modifications to the timeline will be
 // preferred over any modifications coming from the network.
 const auto kLocalModGracePeriod = std::chrono::milliseconds(1000);
 const auto kRtHandlerFallbackPeriod = kLocalModGracePeriod / 2;
+
+inline StartStopState selectPreferredStartStopState(
+  const StartStopState currentStartStopState, const StartStopState startStopState)
+{
+  return startStopState.timestamp > currentStartStopState.timestamp
+           ? startStopState
+           : currentStartStopState;
+}
+
+inline StartStopState mapStartStopStateFromSessionToClient(
+  const StartStopState& sessionStartStopState,
+  const Timeline& clientTimeline,
+  const Timeline& sessionTimeline,
+  const GhostXForm& xForm)
+{
+  const auto clientBeats = clientTimeline.toBeats(
+    xForm.ghostToHost(sessionTimeline.fromBeats(sessionStartStopState.beats)));
+  const auto clientTime = xForm.ghostToHost(sessionStartStopState.timestamp);
+  return StartStopState{sessionStartStopState.isPlaying, clientBeats, clientTime};
+}
+
+inline StartStopState mapStartStopStateFromClientToSession(
+  const StartStopState& clientStartStopState,
+  const Timeline& clientTimeline,
+  const Timeline& sessionTimeline,
+  const GhostXForm& xForm)
+{
+  const auto sessionBeats = sessionTimeline.toBeats(
+    xForm.hostToGhost(clientTimeline.fromBeats(clientStartStopState.beats)));
+  const auto sessionTime = xForm.hostToGhost(clientStartStopState.timestamp);
+  return StartStopState{clientStartStopState.isPlaying, sessionBeats, sessionTime};
+}
 
 } // namespace detail
 
 // function types corresponding to the Controller callback type params
 using PeerCountCallback = std::function<void(std::size_t)>;
 using TempoCallback = std::function<void(ableton::link::Tempo)>;
+using StartStopStateCallback = std::function<void(bool)>;
+
 
 // The main Link controller
 template <typename PeerCountCallback,
   typename TempoCallback,
+  typename StartStopStateCallback,
   typename Clock,
   typename IoContext>
 class Controller
@@ -66,33 +127,38 @@ public:
   Controller(Tempo tempo,
     PeerCountCallback peerCallback,
     TempoCallback tempoCallback,
+    StartStopStateCallback startStopStateCallback,
     Clock clock,
     util::Injected<IoContext> io)
     : mTempoCallback(std::move(tempoCallback))
+    , mStartStopStateCallback(std::move(startStopStateCallback))
     , mClock(std::move(clock))
     , mNodeId(NodeId::random())
     , mSessionId(mNodeId)
-    , mGhostXForm(detail::initXForm(mClock))
-    , mSessionTimeline(clampTempo({tempo, Beats{0.}, std::chrono::microseconds{0}}))
-    , mClientTimeline({mSessionTimeline.tempo, Beats{0.},
-        mGhostXForm.ghostToHost(std::chrono::microseconds{0})})
-    , mRtClientTimeline(mClientTimeline)
-    , mRtClientTimelineTimestamp(0)
+    , mSessionState(detail::initSessionState(tempo, mClock))
+    , mClientState(detail::initClientState(mSessionState))
+    , mLastIsPlayingForStartStopStateCallback(false)
+    , mRtClientState(detail::initRtClientState(mClientState))
+    , mHasPendingRtClientStates(false)
     , mSessionPeerCounter(*this, std::move(peerCallback))
     , mEnabled(false)
+    , mStartStopSyncEnabled(false)
     , mIo(std::move(io))
-    , mRtTimelineSetter(*this)
+    , mRtClientStateSetter(*this)
     , mPeers(util::injectRef(*mIo),
         std::ref(mSessionPeerCounter),
-        SessionTimelineCallback{*this})
-    , mSessions({mSessionId, mSessionTimeline, {mGhostXForm, mClock.micros()}},
+        SessionTimelineCallback{*this},
+        SessionStartStopStateCallback{*this})
+    , mSessions(
+        {mSessionId, mSessionState.timeline, {mSessionState.ghostXForm, mClock.micros()}},
         util::injectRef(mPeers),
         MeasurePeer{*this},
         JoinSessionCallback{*this},
         util::injectRef(*mIo),
         mClock)
-    , mDiscovery(
-        std::make_pair(NodeState{mNodeId, mSessionId, mSessionTimeline}, mGhostXForm),
+    , mDiscovery(std::make_pair(NodeState{mNodeId, mSessionId, mSessionState.timeline,
+                                  mSessionState.startStopState},
+                   mSessionState.ghostXForm),
         GatewayFactory{*this},
         util::injectVal(mIo->clone(UdpSendExceptionHandler{*this})))
   {
@@ -126,101 +192,185 @@ public:
     return mEnabled;
   }
 
+  void enableStartStopSync(const bool bEnable)
+  {
+    mStartStopSyncEnabled = bEnable;
+  }
+
+  bool isStartStopSyncEnabled() const
+  {
+    return mStartStopSyncEnabled;
+  }
+
   std::size_t numPeers() const
   {
     return mSessionPeerCounter.mSessionPeerCount;
   }
 
-  // Get the current Link timeline. Thread-safe but may block, so
+  // Get the current Link client state. Thread-safe but may block, so
   // it cannot be used from audio thread.
-  Timeline timeline() const
+  ClientState clientState() const
   {
-    std::lock_guard<std::mutex> lock(mClientTimelineGuard);
-    return mClientTimeline;
+    std::lock_guard<std::mutex> lock(mClientStateGuard);
+    return mClientState;
   }
 
-  // Set the timeline to be used, starting at the given
-  // time. Thread-safe but may block, so it cannot be used from audio thread.
-  void setTimeline(Timeline newTimeline, const std::chrono::microseconds atTime)
+  // Set the client state to be used, starting at the given time.
+  // Thread-safe but may block, so it cannot be used from audio thread.
+  void setClientState(IncomingClientState newClientState)
   {
-    newTimeline = clampTempo(newTimeline);
     {
-      std::lock_guard<std::mutex> lock(mClientTimelineGuard);
-      mClientTimeline = newTimeline;
-    }
-    mIo->async([this, newTimeline, atTime] {
-      handleTimelineFromClient(updateSessionTimelineFromClient(
-        mSessionTimeline, newTimeline, atTime, mGhostXForm));
-    });
-  }
-
-  // Non-blocking timeline access for a realtime context. NOT
-  // thread-safe. Must not be called from multiple threads
-  // concurrently and must not be called concurrently with setTimelineRtSafe.
-  Timeline timelineRtSafe() const
-  {
-    // Respect the session timing guard but don't block on it. If we
-    // can't access it because it's being modified we fall back to our
-    // cached version of the timeline.
-    const auto now = mClock.micros();
-    if (now - mRtClientTimelineTimestamp > detail::kLocalModGracePeriod
-        && !mRtTimelineSetter.hasPendingTimelines() && mSessionTimingGuard.try_lock())
-    {
-      const auto clientTimeline = updateClientTimelineFromSession(
-        mRtClientTimeline, mSessionTimeline, now, mGhostXForm);
-
-      mSessionTimingGuard.unlock();
-
-      if (clientTimeline != mRtClientTimeline)
+      std::lock_guard<std::mutex> lock(mClientStateGuard);
+      if (newClientState.timeline)
       {
-        mRtClientTimeline = clientTimeline;
+        *newClientState.timeline = clampTempo(*newClientState.timeline);
+        mClientState.timeline = *newClientState.timeline;
+      }
+      if (newClientState.startStopState)
+      {
+        // Prevent updating client start stop state with an outdated start stop state
+        *newClientState.startStopState = detail::selectPreferredStartStopState(
+          mClientState.startStopState, *newClientState.startStopState);
+        mClientState.startStopState = *newClientState.startStopState;
       }
     }
 
-    return mRtClientTimeline;
+    mIo->async([this, newClientState] { handleClientState(newClientState); });
+  }
+
+  // Non-blocking client state access for a realtime context. NOT
+  // thread-safe. Must not be called from multiple threads
+  // concurrently and must not be called concurrently with setClientStateRtSafe.
+  ClientState clientStateRtSafe() const
+  {
+    // Respect the session state guard and the client state guard but don't
+    // block on them. If we can't access one or both because of concurrent modification
+    // we fall back to our cached version of the timeline and/or start stop state.
+
+    if (!mHasPendingRtClientStates)
+    {
+      const auto now = mClock.micros();
+      const auto timelineGracePeriodOver =
+        now - mRtClientState.timelineTimestamp > detail::kLocalModGracePeriod;
+      const auto startStopStateGracePeriodOver =
+        now - mRtClientState.startStopStateTimestamp > detail::kLocalModGracePeriod;
+
+      if ((timelineGracePeriodOver || startStopStateGracePeriodOver)
+          && mClientStateGuard.try_lock())
+      {
+        const auto clientState = mClientState;
+        mClientStateGuard.unlock();
+
+        if (timelineGracePeriodOver && clientState.timeline != mRtClientState.timeline)
+        {
+          mRtClientState.timeline = clientState.timeline;
+        }
+
+        if (startStopStateGracePeriodOver
+            && clientState.startStopState != mRtClientState.startStopState)
+        {
+          mRtClientState.startStopState = clientState.startStopState;
+        }
+      }
+    }
+
+    return {mRtClientState.timeline, mRtClientState.startStopState};
   }
 
   // should only be called from the audio thread
-  void setTimelineRtSafe(Timeline newTimeline, const std::chrono::microseconds atTime)
+  void setClientStateRtSafe(IncomingClientState newClientState)
   {
-    newTimeline = clampTempo(newTimeline);
-
-    // This will fail in case the Fifo in the RtTimelineSetter is full. This indicates a
-    // very high rate of calls to the setter. In this case we ignore one value because we
-    // expect the setter to be called again soon.
-    if (mRtTimelineSetter.tryPush(newTimeline, atTime))
+    if (!newClientState.timeline && !newClientState.startStopState)
     {
-      // Cache the new timeline for serving back to the client
-      mRtClientTimeline = newTimeline;
-      mRtClientTimelineTimestamp =
-        isEnabled() ? mClock.micros() : std::chrono::microseconds(0);
+      return;
+    }
+
+    if (newClientState.timeline)
+    {
+      *newClientState.timeline = clampTempo(*newClientState.timeline);
+    }
+
+    if (newClientState.startStopState)
+    {
+      // Prevent updating client start stop state with an outdated start stop state
+      *newClientState.startStopState = detail::selectPreferredStartStopState(
+        mRtClientState.startStopState, *newClientState.startStopState);
+    }
+
+    // This flag ensures that mRtClientState is only updated after all incoming
+    // client states were processed
+    mHasPendingRtClientStates = true;
+    // This will fail in case the Fifo in the RtClientStateSetter is full. This indicates
+    // a very high rate of calls to the setter. In this case we ignore one value because
+    // we expect the setter to be called again soon.
+    if (mRtClientStateSetter.tryPush(newClientState))
+    {
+      const auto now = mClock.micros();
+      // Cache the new timeline and StartStopState for serving back to the client
+      if (newClientState.timeline)
+      {
+        // Cache the new timeline and StartStopState for serving back to the client
+        mRtClientState.timeline = *newClientState.timeline;
+        mRtClientState.timelineTimestamp = makeRtTimestamp(now);
+      }
+      if (newClientState.startStopState)
+      {
+        mRtClientState.startStopState = *newClientState.startStopState;
+        mRtClientState.startStopStateTimestamp = makeRtTimestamp(now);
+      }
     }
   }
 
 private:
+  std::chrono::microseconds makeRtTimestamp(const std::chrono::microseconds now) const
+  {
+    return isEnabled() ? now : std::chrono::microseconds(0);
+  }
+
+  void invokeStartStopStateCallbackIfChanged()
+  {
+    bool shouldInvokeCallback = false;
+    {
+      std::lock_guard<std::mutex> lock(mClientStateGuard);
+      shouldInvokeCallback =
+        mLastIsPlayingForStartStopStateCallback != mClientState.startStopState.isPlaying;
+      mLastIsPlayingForStartStopStateCallback = mClientState.startStopState.isPlaying;
+    }
+
+    if (shouldInvokeCallback)
+    {
+      mStartStopStateCallback(mLastIsPlayingForStartStopStateCallback);
+    }
+  }
+
+  void updateDiscovery()
+  {
+    // Push the change to the discovery service
+    mDiscovery.updateNodeState(
+      std::make_pair(NodeState{mNodeId, mSessionId, mSessionState.timeline,
+                       mSessionState.startStopState},
+        mSessionState.ghostXForm));
+  }
+
   void updateSessionTiming(const Timeline newTimeline, const GhostXForm newXForm)
   {
-    const auto oldTimeline = mSessionTimeline;
-    const auto oldXForm = mGhostXForm;
+    const auto oldTimeline = mSessionState.timeline;
+    const auto oldXForm = mSessionState.ghostXForm;
 
     if (oldTimeline != newTimeline || oldXForm != newXForm)
     {
       {
-        std::lock_guard<std::mutex> lock(mSessionTimingGuard);
-        mSessionTimeline = newTimeline;
-        mGhostXForm = newXForm;
+        std::lock_guard<std::mutex> lock(mSessionStateGuard);
+        mSessionState.timeline = newTimeline;
+        mSessionState.ghostXForm = newXForm;
       }
 
       // Update the client timeline based on the new session timing data
       {
-        std::lock_guard<std::mutex> lock(mClientTimelineGuard);
-        mClientTimeline = updateClientTimelineFromSession(
-          mClientTimeline, mSessionTimeline, mClock.micros(), mGhostXForm);
+        std::lock_guard<std::mutex> lock(mClientStateGuard);
+        mClientState.timeline = updateClientTimelineFromSession(mClientState.timeline,
+          mSessionState.timeline, mClock.micros(), mSessionState.ghostXForm);
       }
-
-      // Push the change to the discovery service
-      mDiscovery.updateNodeState(
-        std::make_pair(NodeState{mNodeId, mSessionId, newTimeline}, newXForm));
 
       if (oldTimeline.tempo != newTimeline.tempo)
       {
@@ -229,36 +379,126 @@ private:
     }
   }
 
-  void handleTimelineFromClient(Timeline tl)
-  {
-    mSessions.resetTimeline(tl);
-    mPeers.setSessionTimeline(mSessionId, tl);
-    updateSessionTiming(std::move(tl), mGhostXForm);
-  }
-
   void handleTimelineFromSession(SessionId id, Timeline timeline)
   {
     debug(mIo->log()) << "Received timeline with tempo: " << timeline.tempo.bpm()
                       << " for session: " << id;
-    updateSessionTiming(
-      mSessions.sawSessionTimeline(std::move(id), std::move(timeline)), mGhostXForm);
+    updateSessionTiming(mSessions.sawSessionTimeline(std::move(id), std::move(timeline)),
+      mSessionState.ghostXForm);
+    updateDiscovery();
   }
 
-  void handleRtTimeline(const Timeline timeline, const std::chrono::microseconds time)
+  void resetSessionStartStopState()
+  {
+    mSessionState.startStopState = StartStopState{};
+  }
+
+  void handleStartStopStateFromSession(SessionId sessionId, StartStopState startStopState)
+  {
+    debug(mIo->log()) << "Received start stop state. isPlaying: "
+                      << startStopState.isPlaying
+                      << ", beats: " << startStopState.beats.floating()
+                      << ", time: " << startStopState.timestamp.count()
+                      << " for session: " << sessionId;
+    if (sessionId == mSessionId
+        && startStopState.timestamp > mSessionState.startStopState.timestamp)
+    {
+      mSessionState.startStopState = startStopState;
+
+      // Always propagate the session start stop state so even a client that doesn't have
+      // the feature enabled can function as a relay.
+      updateDiscovery();
+
+      if (mStartStopSyncEnabled)
+      {
+        {
+          std::lock_guard<std::mutex> lock(mClientStateGuard);
+          mClientState.startStopState =
+            detail::mapStartStopStateFromSessionToClient(startStopState,
+              mClientState.timeline, mSessionState.timeline, mSessionState.ghostXForm);
+        }
+        invokeStartStopStateCallbackIfChanged();
+      }
+    }
+  }
+
+  void handleClientState(const IncomingClientState clientState)
+  {
+    auto mustUpdateDiscovery = false;
+
+    if (clientState.timeline)
+    {
+      auto sessionTimeline = updateSessionTimelineFromClient(mSessionState.timeline,
+        *clientState.timeline, clientState.timelineTimestamp, mSessionState.ghostXForm);
+
+      mSessions.resetTimeline(sessionTimeline);
+      mPeers.setSessionTimeline(mSessionId, sessionTimeline);
+      updateSessionTiming(std::move(sessionTimeline), mSessionState.ghostXForm);
+
+      mustUpdateDiscovery = true;
+    }
+
+    if (mStartStopSyncEnabled && clientState.startStopState)
+    {
+      // Prevent updating with an outdated start stop state
+      const auto newGhostTime =
+        mSessionState.ghostXForm.hostToGhost(clientState.startStopState->timestamp);
+      if (newGhostTime > mSessionState.startStopState.timestamp)
+      {
+        {
+          std::lock_guard<std::mutex> lock(mClientStateGuard);
+          mSessionState.startStopState =
+            detail::mapStartStopStateFromClientToSession(*clientState.startStopState,
+              mClientState.timeline, mSessionState.timeline, mSessionState.ghostXForm);
+          mClientState.startStopState = *clientState.startStopState;
+        }
+
+        mustUpdateDiscovery = true;
+      }
+    }
+
+    if (mustUpdateDiscovery)
+    {
+      updateDiscovery();
+    }
+
+    invokeStartStopStateCallbackIfChanged();
+  }
+
+  void handleRtClientState(IncomingClientState clientState)
   {
     {
-      std::lock_guard<std::mutex> lock(mClientTimelineGuard);
-      mClientTimeline = timeline;
+      std::lock_guard<std::mutex> lock(mClientStateGuard);
+      if (clientState.timeline)
+      {
+        mClientState.timeline = *clientState.timeline;
+      }
+      if (clientState.startStopState)
+      {
+        // Prevent updating client start stop state with an outdated start stop state
+        *clientState.startStopState = detail::selectPreferredStartStopState(
+          mClientState.startStopState, *clientState.startStopState);
+        mClientState.startStopState = *clientState.startStopState;
+      }
     }
-    handleTimelineFromClient(
-      updateSessionTimelineFromClient(mSessionTimeline, timeline, time, mGhostXForm));
+
+    handleClientState(clientState);
+    mHasPendingRtClientStates = false;
   }
 
   void joinSession(const Session& session)
   {
     const bool sessionIdChanged = mSessionId != session.sessionId;
     mSessionId = session.sessionId;
+
+    // Prevent passing the start stop state of the previous session to the new one.
+    if (sessionIdChanged)
+    {
+      resetSessionStartStopState();
+    }
+
     updateSessionTiming(session.timeline, session.measurement.xform);
+    updateDiscovery();
 
     if (sessionIdChanged)
     {
@@ -279,11 +519,14 @@ private:
     // the beat on the old session timeline corresponding to the
     // current host time and mapping it to the new ghost time
     // representation of the current host time.
-    const auto newTl = Timeline{mSessionTimeline.tempo,
-      mSessionTimeline.toBeats(mGhostXForm.hostToGhost(hostTime)),
+    const auto newTl = Timeline{mSessionState.timeline.tempo,
+      mSessionState.timeline.toBeats(mSessionState.ghostXForm.hostToGhost(hostTime)),
       xform.hostToGhost(hostTime)};
 
+    resetSessionStartStopState();
+
     updateSessionTiming(newTl, xform);
+    updateDiscovery();
 
     mSessions.resetSession({mNodeId, newTl, {xform, hostTime}});
     mPeers.resetPeers();
@@ -299,25 +542,22 @@ private:
     Controller& mController;
   };
 
-  struct RtTimelineSetter
+  struct RtClientStateSetter
   {
     using CallbackDispatcher =
       typename IoContext::template LockFreeCallbackDispatcher<std::function<void()>,
         std::chrono::milliseconds>;
-    using RtTimeline = std::pair<Timeline, std::chrono::microseconds>;
 
-    RtTimelineSetter(Controller& controller)
+    RtClientStateSetter(Controller& controller)
       : mController(controller)
-      , mHasPendingTimelines(false)
       , mCallbackDispatcher(
-          [this] { processPendingTimelines(); }, detail::kRtHandlerFallbackPeriod)
+          [this] { processPendingClientStates(); }, detail::kRtHandlerFallbackPeriod)
     {
     }
 
-    bool tryPush(const Timeline timeline, const std::chrono::microseconds time)
+    bool tryPush(const IncomingClientState clientState)
     {
-      mHasPendingTimelines = true;
-      const auto success = mFifo.push({timeline, time});
+      const auto success = mClientStateFifo.push(clientState);
       if (success)
       {
         mCallbackDispatcher.invoke();
@@ -325,32 +565,49 @@ private:
       return success;
     }
 
-    bool hasPendingTimelines() const
+  private:
+    IncomingClientState buildMergedPendingClientState()
     {
-      return mHasPendingTimelines;
+      auto clientState = IncomingClientState{};
+      while (const auto result = mClientStateFifo.pop())
+      {
+        if (result->timeline)
+        {
+          clientState.timeline = result->timeline;
+          clientState.timelineTimestamp = result->timelineTimestamp;
+        }
+        if (result->startStopState)
+        {
+          clientState.startStopState = result->startStopState;
+        }
+      }
+      return clientState;
     }
 
-  private:
-    void processPendingTimelines()
+    void processPendingClientStates()
     {
-      auto result = mFifo.clearAndPopLast();
-
-      if (result.valid)
-      {
-        auto timeline = std::move(result.item);
-        mController.mIo->async([this, timeline]() {
-          mController.handleRtTimeline(timeline.first, timeline.second);
-          mHasPendingTimelines = false;
-        });
-      }
+      const auto clientState = buildMergedPendingClientState();
+      mController.mIo->async(
+        [this, clientState]() { mController.handleRtClientState(clientState); });
     }
 
     Controller& mController;
     // Assuming a wake up time of one ms for the threads owned by the CallbackDispatcher
-    // and the ioService, buffering 16 timelines allows to set eight timelines per ms.
-    CircularFifo<RtTimeline, 16> mFifo;
-    std::atomic<bool> mHasPendingTimelines;
+    // and the ioService, buffering 16 client states allows to set eight client states
+    // per ms.
+    static const std::size_t kBufferSize = 16;
+    CircularFifo<IncomingClientState, kBufferSize> mClientStateFifo;
     CallbackDispatcher mCallbackDispatcher;
+  };
+
+  struct SessionStartStopStateCallback
+  {
+    void operator()(SessionId sessionId, StartStopState startStopState)
+    {
+      mController.handleStartStopStateFromSession(sessionId, startStopState);
+    }
+
+    Controller& mController;
   };
 
   struct SessionPeerCounter
@@ -423,8 +680,10 @@ private:
 
   using IoType = typename util::Injected<IoContext>::type;
 
-  using ControllerPeers =
-    Peers<IoType&, std::reference_wrapper<SessionPeerCounter>, SessionTimelineCallback>;
+  using ControllerPeers = Peers<IoType&,
+    std::reference_wrapper<SessionPeerCounter>,
+    SessionTimelineCallback,
+    SessionStartStopStateCallback>;
 
   using ControllerGateway =
     Gateway<typename ControllerPeers::GatewayObserver, Clock, IoType&>;
@@ -464,28 +723,30 @@ private:
   };
 
   TempoCallback mTempoCallback;
+  StartStopStateCallback mStartStopStateCallback;
   Clock mClock;
   NodeId mNodeId;
   SessionId mSessionId;
 
-  // Mutex that controls access to mGhostXForm and mSessionTimeline
-  mutable std::mutex mSessionTimingGuard;
-  GhostXForm mGhostXForm;
-  Timeline mSessionTimeline;
+  mutable std::mutex mSessionStateGuard;
+  SessionState mSessionState;
 
-  mutable std::mutex mClientTimelineGuard;
-  Timeline mClientTimeline;
+  mutable std::mutex mClientStateGuard;
+  ClientState mClientState;
+  bool mLastIsPlayingForStartStopStateCallback;
 
-  mutable Timeline mRtClientTimeline;
-  std::chrono::microseconds mRtClientTimelineTimestamp;
+  mutable RtClientState mRtClientState;
+  std::atomic<bool> mHasPendingRtClientStates;
 
   SessionPeerCounter mSessionPeerCounter;
 
   std::atomic<bool> mEnabled;
 
+  std::atomic<bool> mStartStopSyncEnabled;
+
   util::Injected<IoContext> mIo;
 
-  RtTimelineSetter mRtTimelineSetter;
+  RtClientStateSetter mRtClientStateSetter;
 
   ControllerPeers mPeers;
 

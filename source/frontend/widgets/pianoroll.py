@@ -332,7 +332,7 @@ class PianoRoll(QGraphicsScene):
         self.quantize_val = quantize_val
 
         ### dummy vars that will be changed
-        self.time_sig = 0
+        self.time_sig = (0,0)
         self.measure_width = 0
         self.num_measures = 0
         self.max_note_length = 0
@@ -343,8 +343,6 @@ class PianoRoll(QGraphicsScene):
         self.header = None
         self.play_head = None
 
-        self.setTimeSig(time_sig)
-        self.setMeasures(num_measures)
         self.setGridDiv()
         self.default_length = 1. / self.grid_div
 
@@ -352,47 +350,38 @@ class PianoRoll(QGraphicsScene):
     # -------------------------------------------------------------------------
     # Callbacks
 
-    def movePlayHead(self, transport_info):
-        # TODO: need conversion between frames and PPQ
-        x = 105. # works for 120bpm
-        total_duration = self.time_sig[0] * self.num_measures * x
-        pos = transport_info['frame'] / x
-        frac = (pos % total_duration) / total_duration
+    def movePlayHead(self, transportInfo):
+        ticksPerBeat = transportInfo['ticksPerBeat']
+        max_ticks = ticksPerBeat * self.time_sig[0] * self.num_measures
+        cur_tick = ticksPerBeat * self.time_sig[0] * transportInfo['bar'] + ticksPerBeat * transportInfo['beat'] + transportInfo['tick']
+        frac = (cur_tick % max_ticks) / max_ticks
         self.play_head.setPos(QPointF(frac * self.grid_width, 0))
 
     def setTimeSig(self, time_sig):
-        try:
-           new_time_sig = list(map(float, time_sig.split('/')))
-           if len(new_time_sig)==2:
-               self.time_sig = new_time_sig
-
-               self.measure_width = self.full_note_width * self.time_sig[0]/self.time_sig[1]
-               self.max_note_length = self.num_measures * self.time_sig[0]/self.time_sig[1]
-               self.grid_width = self.measure_width * self.num_measures
-               self.setGridDiv()
-        except ValueError:
-            pass
+        self.time_sig = time_sig
+        self.measure_width = self.full_note_width * self.time_sig[0]/self.time_sig[1]
+        self.max_note_length = self.num_measures * self.time_sig[0]/self.time_sig[1]
+        self.grid_width = self.measure_width * self.num_measures
+        self.setGridDiv()
 
     def setMeasures(self, measures):
-        try:
-            self.num_measures = float(measures)
-            self.max_note_length = self.num_measures * self.time_sig[0]/self.time_sig[1]
-            self.grid_width = self.measure_width * self.num_measures
-            self.refreshScene()
-        except:
-            pass
+        #try:
+        self.num_measures = float(measures)
+        self.max_note_length = self.num_measures * self.time_sig[0]/self.time_sig[1]
+        self.grid_width = self.measure_width * self.num_measures
+        self.refreshScene()
+        #except:
+            #pass
 
     def setDefaultLength(self, length):
-        try:
-            v = list(map(float, length.split('/')))
-            if len(v) < 3:
-                self.default_length = \
-                        v[0] if len(v)==1 else \
-                        v[0] / v[1]
-                pos = self.enforce_bounds(self.mousePos)
-                if self.insert_mode: self.makeGhostNote(pos.x(), pos.y())
-        except ValueError:
-            pass
+        v = list(map(float, length.split('/')))
+        if len(v) < 3:
+            self.default_length = \
+                    v[0] if len(v)==1 else \
+                    v[0] / v[1]
+            pos = self.enforce_bounds(self.mousePos)
+            if self.insert_mode:
+                self.makeGhostNote(pos.x(), pos.y())
 
     def setGridDiv(self, div=None):
         if not div: div = self.quantize_val
@@ -409,16 +398,13 @@ class PianoRoll(QGraphicsScene):
             pass
 
     def setQuantize(self, value):
-        try:
-            val = list(map(float, value.split('/')))
-            if len(val) == 1:
-                self.quantize(val[0])
-                self.quantize_val = value
-            elif len(val) == 2:
-                self.quantize(val[0] / val[1])
-                self.quantize_val = value
-        except ValueError:
-            pass
+        val = list(map(float, value.split('/')))
+        if len(val) == 1:
+            self.quantize(val[0])
+            self.quantize_val = value
+        elif len(val) == 2:
+            self.quantize(val[0] / val[1])
+            self.quantize_val = value
 
     # -------------------------------------------------------------------------
     # Event Callbacks
@@ -762,10 +748,10 @@ class PianoRoll(QGraphicsScene):
         if self.snap_value:
             pos_x = int(round((pos_x - self.piano_width) / self.snap_value)) \
                     * self.snap_value + self.piano_width
-        if pos_y:
+        if pos_y is not None:
             pos_y = int((pos_y - self.header_height) / self.note_height) \
                     * self.note_height + self.header_height
-        return (pos_x, pos_y) if pos_y else pos_x
+        return (pos_x, pos_y) if pos_y is not None else pos_x
 
     def adjust_note_vel(self, event):
         m_pos = event.scenePos()
@@ -851,10 +837,9 @@ class ModeIndicator(QWidget):
         self.mode = None
 
     def paintEvent(self, event):
-        painter = QPainter(self)
         event.accept()
 
-        painter.begin(self)
+        painter = QPainter(self)
 
         painter.setPen(QPen(QColor(0, 0, 0, 0)))
         if self.mode == 'velocity_mode':
@@ -864,9 +849,6 @@ class ModeIndicator(QWidget):
         else:
             painter.setBrush(QColor(0, 0, 0, 0))
         painter.drawRect(0, 0, 30, 20)
-
-        # FIXME
-        painter.end()
 
     def changeMode(self, new_mode):
         self.mode = new_mode

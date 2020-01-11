@@ -38,10 +38,8 @@ namespace link
 
 struct Timeline
 {
-  enum
-  {
-    key = 'tmln'
-  };
+  static const std::int32_t key = 'tmln';
+  static_assert(key == 0x746d6c6e, "Unexpected byte order");
 
   Beats toBeats(const std::chrono::microseconds time) const
   {

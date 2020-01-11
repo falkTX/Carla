@@ -19,6 +19,11 @@ BUILD_CXX_FLAGS += -I.. -I$(CWD)/modules
 
 TARGETS = $(MODULEDIR)/$(MODULENAME).a
 
+BUNDLES = \
+	$(MODULEDIR)/$(MODULENAME)_audiogain.a \
+	$(MODULEDIR)/$(MODULENAME)_files.a \
+	$(MODULEDIR)/$(MODULENAME)_miditools.a
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Set objects
 
@@ -34,6 +39,7 @@ OBJS = \
 	$(OBJDIR)/midi-gain.c.o \
 	$(OBJDIR)/midi-join.c.o \
 	$(OBJDIR)/midi-split.c.o \
+	$(OBJDIR)/midi-to-cv.c.o \
 	$(OBJDIR)/midi-through.c.o \
 	$(OBJDIR)/midi-transpose.c.o \
 	$(OBJDIR)/audio-file.cpp.o \
@@ -41,6 +47,22 @@ OBJS = \
 	$(OBJDIR)/midi-file.cpp.o \
 	$(OBJDIR)/midi-pattern.cpp.o \
 	$(OBJDIR)/notes.cpp.o
+
+OBJS_audiogain = \
+	$(OBJDIR)/audio-gain.c.o
+
+OBJS_files = \
+	$(OBJDIR)/audio-file.cpp.o \
+	$(OBJDIR)/midi-file.cpp.o
+
+OBJS_miditools = \
+	$(OBJDIR)/midi-channel-filter.c.o \
+	$(OBJDIR)/midi-channel-ab.c.o \
+	$(OBJDIR)/midi-channelize.c.o \
+	$(OBJDIR)/midi-gain.c.o \
+	$(OBJDIR)/midi-join.c.o \
+	$(OBJDIR)/midi-split.c.o \
+	$(OBJDIR)/midi-transpose.c.o
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Include external plugins, if present
@@ -56,6 +78,7 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 
 all: $(TARGETS)
+bundles: $(BUNDLES)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -70,6 +93,24 @@ debug:
 $(MODULEDIR)/$(MODULENAME).a: $(OBJS)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).a"
+	@rm -f $@
+	@$(AR) crs $@ $^
+
+$(MODULEDIR)/$(MODULENAME)_audiogain.a: $(OBJS_audiogain)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating $(MODULENAME)_audiogain.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
+
+$(MODULEDIR)/$(MODULENAME)_files.a: $(OBJS_files)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating $(MODULENAME)_files.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
+
+$(MODULEDIR)/$(MODULENAME)_miditools.a: $(OBJS_miditools)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating $(MODULENAME)_miditools.a"
 	@rm -f $@
 	@$(AR) crs $@ $^
 

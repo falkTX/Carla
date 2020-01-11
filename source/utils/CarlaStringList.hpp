@@ -156,11 +156,13 @@ private:
 class CarlaStringList : public LinkedList<const char*>
 {
 public:
-    CarlaStringList() noexcept
-        : LinkedList<const char*>() {}
+    CarlaStringList(bool allocateElements = true) noexcept
+        : LinkedList<const char*>(),
+          fAllocateElements(allocateElements) {}
 
     CarlaStringList(const CarlaStringList& list) noexcept
-        : LinkedList<const char*>()
+        : LinkedList<const char*>(),
+          fAllocateElements(list.fAllocateElements)
     {
         for (Itenerator it = list.begin2(); it.valid(); it.next())
             LinkedList<const char*>::append(carla_strdup_safe(it.getValue(nullptr)));
@@ -175,10 +177,13 @@ public:
 
     void clear() noexcept
     {
-        for (Itenerator it = begin2(); it.valid(); it.next())
+        if (fAllocateElements)
         {
-            if (const char* const string = it.getValue(nullptr))
-                delete[] string;
+            for (Itenerator it = begin2(); it.valid(); it.next())
+            {
+                if (const char* const string = it.getValue(nullptr))
+                    delete[] string;
+            }
         }
 
         LinkedList<const char*>::clear();
@@ -190,7 +195,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(string != nullptr, false);
 
-        if (const char* const stringDup = carla_strdup_safe(string))
+        if (const char* const stringDup = fAllocateElements ? carla_strdup_safe(string) : string)
         {
             if (LinkedList<const char*>::append(stringDup))
                 return true;
@@ -200,11 +205,21 @@ public:
         return false;
     }
 
+    bool appendUnique(const char* const string) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(string != nullptr, false);
+
+        if (contains(string))
+            return false;
+
+        return append(string);
+    }
+
     bool appendAt(const char* const string, const Itenerator& it) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(string != nullptr, false);
 
-        if (const char* const stringDup = carla_strdup_safe(string))
+        if (const char* const stringDup = fAllocateElements ? carla_strdup_safe(string) : string)
         {
             if (LinkedList<const char*>::appendAt(stringDup, it))
                 return true;
@@ -218,7 +233,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(string != nullptr, false);
 
-        if (const char* const stringDup = carla_strdup_safe(string))
+        if (const char* const stringDup = fAllocateElements ? carla_strdup_safe(string) : string)
         {
             if (LinkedList<const char*>::insert(stringDup))
                 return true;
@@ -232,7 +247,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(string != nullptr, false);
 
-        if (const char* const stringDup = carla_strdup_safe(string))
+        if (const char* const stringDup = fAllocateElements ? carla_strdup_safe(string) : string)
         {
             if (LinkedList<const char*>::insertAt(stringDup, it))
                 return true;
@@ -392,6 +407,8 @@ public:
 
     CarlaStringList& operator=(const char* const* const charStringList) noexcept
     {
+        CARLA_SAFE_ASSERT_RETURN(! fAllocateElements, *this);
+
         clear();
 
         CARLA_SAFE_ASSERT_RETURN(charStringList != nullptr, *this);
@@ -407,6 +424,8 @@ public:
 
     CarlaStringList& operator=(const CarlaStringList& list) noexcept
     {
+        CARLA_SAFE_ASSERT_RETURN(! fAllocateElements, *this);
+
         clear();
 
         for (Itenerator it = list.begin2(); it.valid(); it.next())
@@ -417,6 +436,9 @@ public:
 
         return *this;
     }
+
+private:
+    const bool fAllocateElements;
 
     CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
 };

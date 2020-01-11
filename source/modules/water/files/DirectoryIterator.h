@@ -29,7 +29,7 @@
 #include "File.h"
 #include "../text/StringArray.h"
 
-#include "CarlaJuceUtils.hpp"
+#include "CarlaScopeUtils.hpp"
 
 namespace water {
 
@@ -134,7 +134,7 @@ private:
 
     private:
         friend class DirectoryIterator;
-        ScopedPointer<Pimpl> pimpl;
+        CarlaScopedPointer<Pimpl> pimpl;
 
         CARLA_DECLARE_NON_COPY_CLASS (NativeIterator)
     };
@@ -147,7 +147,7 @@ private:
     const int whatToLookFor;
     const bool isRecursive;
     bool hasBeenAdvanced;
-    ScopedPointer<DirectoryIterator> subIterator;
+    CarlaScopedPointer<DirectoryIterator> subIterator;
     File currentFile;
 
     static StringArray parseWildcards (const String& pattern);

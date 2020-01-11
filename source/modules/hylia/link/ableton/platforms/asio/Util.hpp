@@ -38,6 +38,6 @@ AsioAddrType makeAddress(const char* pAddr)
   return AsioAddrType{bytes};
 }
 
-} // asio
-} // platforms
-} // ableton
+} // namespace asio
+} // namespace platforms
+} // namespace ableton

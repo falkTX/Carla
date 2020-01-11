@@ -1,6 +1,6 @@
 /*
  * ANSI pedantic test for the Carla Backend & Host API
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -17,8 +17,11 @@
 
 #include "CarlaBackend.h"
 #include "CarlaHost.h"
-#include "CarlaNative.h"
+#include "CarlaUtils.h"
+
 #include "CarlaMIDI.h"
+#include "CarlaNative.h"
+#include "CarlaNativePlugin.h"
 
 #ifdef __cplusplus
 # include "CarlaEngine.hpp"
@@ -33,6 +36,8 @@
 # include <assert.h>
 # include <stdio.h>
 #endif
+
+#define BOOLEAN_AS_STRING(cond) ((cond) ? "true" : "false")
 
 int main(int argc, char* argv[])
 {
@@ -53,27 +58,31 @@ int main(int argc, char* argv[])
     CarlaScalePointInfo j;
     CarlaTransportInfo k;
 
-    /*const char* licenseText;
-    const char* fileExtensions;*/
+    const char* licenseText;
+    const char* const* fileExtensions;
 
     uint l, count;
 
-    /*licenseText = carla_get_complete_license_text();
+    licenseText = carla_get_complete_license_text();
     printf("LICENSE:\n%s\n", licenseText);
 
     fileExtensions = carla_get_supported_file_extensions();
-    printf("FILE EXTENSIONS:\n%s\n", fileExtensions);*/
+    printf("FILE EXTENSIONS:\n ");
+    for (l=0; fileExtensions[l] != NULL; ++l)
+        printf(" %s", fileExtensions[l]);
+    printf("\n");
 
     count = carla_get_engine_driver_count();
     printf("DRIVER COUNT: %i\n", count);
 
     for (l=0; l < count; ++l)
     {
-        const char*        driverName;
+        const char* driverName;
         const char* const* driverDeviceNames;
-        uint m, count2;
+        const EngineDriverDeviceInfo* driverDeviceInfo;
+        uint m, m2, count2;
 
-        driverName        = carla_get_engine_driver_name(l);
+        driverName = carla_get_engine_driver_name(l);
         driverDeviceNames = carla_get_engine_driver_device_names(l);
         printf("DRIVER %i/%i: \"%s\" : DEVICES:\n", l+1, count, driverName);
 
@@ -83,11 +92,49 @@ int main(int argc, char* argv[])
 
         for (m = 0; m < count2; ++m)
         {
+            driverDeviceInfo = carla_get_engine_driver_device_info(l, driverDeviceNames[m]);
             printf("DRIVER DEVICE %i/%i: \"%s\"\n", m+1, count2, driverDeviceNames[m]);
+            printf("  Has control panel: %s\n", BOOLEAN_AS_STRING(driverDeviceInfo->hints & ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL));
+            printf("  Can triple buffer: %s\n", BOOLEAN_AS_STRING(driverDeviceInfo->hints & ENGINE_DRIVER_DEVICE_CAN_TRIPLE_BUFFER));
+            printf("  Variable buffer size: %s\n", BOOLEAN_AS_STRING(driverDeviceInfo->hints & ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE));
+            printf("  Variable sample rate: %s\n", BOOLEAN_AS_STRING(driverDeviceInfo->hints & ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE));
+
+            if (driverDeviceInfo->bufferSizes != NULL && driverDeviceInfo->bufferSizes[0] != 0)
+            {
+                printf("  Buffer sizes:");
+
+                m2 = 0;
+                while (driverDeviceInfo->bufferSizes[m2] != 0)
+                    printf(" %i", driverDeviceInfo->bufferSizes[m2++]);
+
+                printf("\n");
+            }
+            else
+            {
+                printf("  Buffer sizes: (null)\n");
+            }
+
+            if (driverDeviceInfo->sampleRates != NULL && driverDeviceInfo->sampleRates[0] > 0.1)
+            {
+                printf("  Sample rates:");
+
+                m2 = 0;
+                while (driverDeviceInfo->sampleRates[m2] > 0.1)
+                    printf(" %.1f", driverDeviceInfo->sampleRates[m2++]);
+
+                printf("\n");
+            }
+            else
+            {
+                printf("  Sample rates: (null)\n");
+            }
         }
     }
 
-    if (carla_engine_init("JACK", "ansi-test"))
+    carla_set_engine_option(ENGINE_OPTION_PROCESS_MODE, ENGINE_PROCESS_MODE_PATCHBAY, NULL);
+    carla_set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, ENGINE_TRANSPORT_MODE_INTERNAL, NULL);
+
+    if (carla_engine_init("Dummy", "ansi-test"))
     {
 #ifdef __cplusplus
         CarlaEngine* const engine(carla_get_engine());
@@ -101,7 +148,7 @@ int main(int argc, char* argv[])
             assert(plugin != nullptr);
             plugin->getId();
 #endif
-            carla_set_custom_data(0, CUSTOM_DATA_TYPE_STRING, "file", "/home/falktx/Music/test.wav");
+            /* carla_set_custom_data(0, CUSTOM_DATA_TYPE_STRING, "file", "/home/falktx/Music/test.wav"); */
             carla_transport_play();
         }
         else
@@ -118,7 +165,7 @@ int main(int argc, char* argv[])
     EngineControlEvent e1;
     EngineMidiEvent e2;
     EngineEvent e3;
-    e3.fillFromMidiData(0, nullptr);
+    e3.fillFromMidiData(0, nullptr, 0);
     EngineOptions e4;
     EngineTimeInfoBBT e5;
     EngineTimeInfo e6;

@@ -63,6 +63,8 @@ _CarlaCachedPluginInfo::_CarlaCachedPluginInfo() noexcept
       hints(0x0),
       audioIns(0),
       audioOuts(0),
+      cvIns(0),
+      cvOuts(0),
       midiIns(0),
       midiOuts(0),
       parameterIns(0),
@@ -109,6 +111,8 @@ static const CarlaCachedPluginInfo* get_cached_plugin_internal(const NativePlugi
         info.hints |= CB::PLUGIN_IS_SYNTH;
     if (desc.hints & NATIVE_PLUGIN_HAS_UI)
         info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
+    if (desc.hints & NATIVE_PLUGIN_HAS_INLINE_DISPLAY)
+        info.hints |= CB::PLUGIN_HAS_INLINE_DISPLAY;
     if (desc.hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS)
         info.hints |= CB::PLUGIN_NEEDS_FIXED_BUFFERS;
     if (desc.hints & NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD)
@@ -119,6 +123,8 @@ static const CarlaCachedPluginInfo* get_cached_plugin_internal(const NativePlugi
     info.valid         = true;
     info.audioIns      = desc.audioIns;
     info.audioOuts     = desc.audioOuts;
+    info.cvIns         = desc.cvIns;
+    info.cvOuts        = desc.cvOuts;
     info.midiIns       = desc.midiIns;
     info.midiOuts      = desc.midiOuts;
     info.parameterIns  = desc.paramIns;
@@ -147,6 +153,18 @@ static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2Worl
         suri.clear(); sname.clear(); smaker.clear(); slicense.clear();
 
         suri = lilvPlugin.get_uri().as_uri();
+
+        if (char* const bundle = lilv_file_uri_parse(lilvPlugin.get_bundle_uri().as_uri(), nullptr))
+        {
+            File fbundle(bundle);
+            lilv_free(bundle);
+
+            suri = (fbundle.getFileName() + CARLA_OS_SEP).toRawUTF8() + suri;
+        }
+        else
+        {
+            suri = CARLA_OS_SEP_STR + suri;
+        }
 
 #if 0 // def HAVE_FLUIDSYNTH
         // If we have fluidsynth support built-in, loading these plugins will lead to issues
@@ -225,9 +243,13 @@ static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2Worl
             const char* const featureURI(lilvFeatureNode.as_uri());
             CARLA_SAFE_ASSERT_CONTINUE(featureURI != nullptr);
 
-            if (std::strcmp(featureURI, LV2_CORE__hardRTCapable) == 0)
+            /**/ if (std::strcmp(featureURI, LV2_CORE__hardRTCapable) == 0)
             {
                 info.hints |= CB::PLUGIN_IS_RTSAFE;
+            }
+            else if (std::strcmp(featureURI, LV2_INLINEDISPLAY__queue_draw) == 0)
+            {
+                info.hints |= CB::PLUGIN_HAS_INLINE_DISPLAY;
             }
             else if (std::strcmp(featureURI, LV2_DATA_ACCESS_URI) == 0
                   || std::strcmp(featureURI, LV2_INSTANCE_ACCESS_URI) == 0)
@@ -336,6 +358,8 @@ static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2Worl
 
     info.audioIns      = 0;
     info.audioOuts     = 0;
+    info.cvIns         = 0;
+    info.cvOuts        = 0;
     info.midiIns       = 0;
     info.midiOuts      = 0;
     info.parameterIns  = 0;
@@ -429,6 +453,10 @@ static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2Worl
         }
         else if (lilvPort.is_a(lv2World.port_cv))
         {
+            if (isInput)
+                ++(info.cvIns);
+            else
+                ++(info.cvOuts);
         }
         else if (lilvPort.is_a(lv2World.port_atom))
         {
@@ -527,6 +555,8 @@ static const CarlaCachedPluginInfo* get_cached_plugin_au(const juce::String plug
 
     info.audioIns  = static_cast<uint32_t>(desc->numInputChannels);
     info.audioOuts = static_cast<uint32_t>(desc->numOutputChannels);
+    info.cvIns     = 0;
+    info.cvOuts    = 0;
     info.midiIns   = desc->isInstrument ? 1 : 0;
     info.midiOuts  = 0;
     info.parameterIns  = 0;
@@ -565,6 +595,8 @@ static const CarlaCachedPluginInfo* get_cached_plugin_sfz(const File file)
     info.valid         = true;
     info.audioIns      = 0;
     info.audioOuts     = 2;
+    info.cvIns         = 0;
+    info.cvOuts        = 0;
     info.midiIns       = 1;
     info.midiOuts      = 0;
     info.parameterIns  = 0;

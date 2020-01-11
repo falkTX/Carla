@@ -155,7 +155,7 @@ protected:
         fOutRight = 0.0f;
     }
 
-    void process(const float** inputs, float**, const uint32_t frames,
+    void process(const float* const* inputs, float**, const uint32_t frames,
                  const NativeMidiEvent* const, const uint32_t) override
     {
         fOutLeft  = carla_findMaxNormalizedFloat(inputs[0], frames);
@@ -176,7 +176,10 @@ protected:
         }
 
         if (needsInlineRender && ! fInlineDisplay.pending)
+        {
+            fInlineDisplay.pending = true;
             hostQueueDrawInlineDisplay();
+        }
     }
 
     // -------------------------------------------------------------------
@@ -190,16 +193,22 @@ protected:
         const size_t stride = width * 4;
         const size_t dataSize = stride * height;
 
-        if (fInlineDisplay.size < dataSize || fInlineDisplay.data == nullptr)
-        {
-            fInlineDisplay.size = dataSize;
+        uchar* data = fInlineDisplay.data;
 
-            delete[] fInlineDisplay.data;
-            fInlineDisplay.data = new uchar[dataSize];
+        if (fInlineDisplay.dataSize < dataSize || data == nullptr)
+        {
+            delete[] data;
+            data = new uchar[dataSize];
+            std::memset(data, 0, dataSize);
+            fInlineDisplay.data = data;
+            fInlineDisplay.dataSize = dataSize;
         }
 
-        uchar* const data = fInlineDisplay.data;
-        std::memset(data, 0, fInlineDisplay.size);
+        std::memset(data, 0, dataSize);
+
+        fInlineDisplay.width = static_cast<int>(width);
+        fInlineDisplay.height = static_cast<int>(height);
+        fInlineDisplay.stride = static_cast<int>(stride);
 
         const uint heightValueLeft = static_cast<uint>(fInlineDisplay.lastLeft * static_cast<float>(height));
         const uint heightValueRight = static_cast<uint>(fInlineDisplay.lastRight * static_cast<float>(height));
@@ -273,39 +282,21 @@ protected:
             data[h * stride + (width - 1) * 4 + 3] = 120;
         }
 
-        static const NativeInlineDisplayImageSurface nidims = {
-            data,
-            static_cast<int>(width),
-            static_cast<int>(height),
-            static_cast<int>(stride),
-        };
-
-        static uint lastWidth = 0;
-
-        if (width != lastWidth)
-        {
-            carla_stdout("rendering at %u", width);
-            lastWidth = width;
-        }
-
         fInlineDisplay.pending = false;
-        return &nidims;
+        return (NativeInlineDisplayImageSurface*)(NativeInlineDisplayImageSurfaceCompat*)&fInlineDisplay;
     }
 
 private:
     int fColor, fStyle;
     float fOutLeft, fOutRight;
 
-    struct InlineDisplay {
-        uchar* data;
-        size_t size;
+    struct InlineDisplay : NativeInlineDisplayImageSurfaceCompat {
         float lastLeft;
         float lastRight;
-        bool pending;
+        volatile bool pending;
 
         InlineDisplay()
-            : data(nullptr),
-              size(0),
+            : NativeInlineDisplayImageSurfaceCompat(),
               lastLeft(0.0f),
               lastRight(0.0f),
               pending(false) {}

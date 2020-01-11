@@ -2,7 +2,7 @@
 // impl/executor.hpp
 // ~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -17,7 +17,7 @@
 
 #include "asio/detail/config.hpp"
 #include "asio/detail/atomic_count.hpp"
-#include "asio/detail/executor_op.hpp"
+#include "asio/detail/executor_function.hpp"
 #include "asio/detail/global.hpp"
 #include "asio/detail/memory.hpp"
 #include "asio/detail/recycling_allocator.hpp"
@@ -39,42 +39,38 @@ public:
   template <typename F, typename Alloc>
   explicit function(F f, const Alloc& a)
   {
-    // Construct an allocator to be used for the operation.
-    typedef typename detail::get_recycling_allocator<Alloc>::type alloc_type;
-    alloc_type allocator(detail::get_recycling_allocator<Alloc>::get(a));
-
     // Allocate and construct an operation to wrap the function.
-    typedef detail::executor_op<F, alloc_type> op;
-    typename op::ptr p = { allocator, 0, 0 };
-    p.v = p.a.allocate(1);
-    op_ = new (p.v) op(f, allocator);
+    typedef detail::executor_function<F, Alloc> func_type;
+    typename func_type::ptr p = {
+      detail::addressof(a), func_type::ptr::allocate(a), 0 };
+    func_ = new (p.v) func_type(ASIO_MOVE_CAST(F)(f), a);
     p.v = 0;
   }
 
-  function(function&& other)
-    : op_(other.op_)
+  function(function&& other) ASIO_NOEXCEPT
+    : func_(other.func_)
   {
-    other.op_ = 0;
+    other.func_ = 0;
   }
 
   ~function()
   {
-    if (op_)
-      op_->destroy();
+    if (func_)
+      func_->destroy();
   }
 
   void operator()()
   {
-    if (op_)
+    if (func_)
     {
-      detail::scheduler_operation* op = op_;
-      op_ = 0;
-      op->complete(this, asio::error_code(), 0);
+      detail::executor_function_base* func = func_;
+      func_ = 0;
+      func->complete();
     }
   }
 
 private:
-  detail::scheduler_operation* op_;
+  detail::executor_function_base* func_;
 };
 
 #else // defined(ASIO_HAS_MOVE)
@@ -132,7 +128,7 @@ class executor::impl
   : public executor::impl_base
 {
 public:
-  typedef typename Allocator::template rebind<impl>::other allocator_type;
+  typedef ASIO_REBIND_ALLOC(Allocator, impl) allocator_type;
 
   static impl_base* create(const Executor& e, Allocator a = Allocator())
   {

@@ -32,13 +32,11 @@ struct VstObject {
     NativePlugin* plugin;
 };
 
-CarlaUILauncher* createUILauncher(const intptr_t winId,
-                                  const NativePluginDescriptor* const d,
-                                  const NativePluginHandle h);
-void idleUILauncher(CarlaUILauncher* const ui);
-void destoryUILauncher(CarlaUILauncher* const ui);
+CarlaUILauncher* createUILauncher(intptr_t winId, const NativePluginDescriptor* d, NativePluginHandle h);
+void idleUILauncher(CarlaUILauncher* ui);
+void destoryUILauncher(CarlaUILauncher* ui);
 
-const AEffect* VSTPluginMainInit(AEffect* const effect);
+const AEffect* VSTPluginMainInit(AEffect* effect);
 intptr_t VSTAudioMaster(AEffect*, int32_t, int32_t, intptr_t, void*, float);
 bool isUsingUILauncher();
 

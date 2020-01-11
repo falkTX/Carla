@@ -1,6 +1,6 @@
 /*
  * Carla Standalone
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -163,6 +163,11 @@ const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(uint index, co
     return &retDevInfo;
 }
 
+bool carla_show_engine_driver_device_control_panel(uint index, const char* name)
+{
+    return CarlaEngine::showDriverDeviceControlPanel(index, name);
+}
+
 // --------------------------------------------------------------------------------------------------------------------
 
 CarlaEngine* carla_get_engine()
@@ -179,29 +184,38 @@ static void carla_engine_init_common(CarlaEngine* const engine)
     engine->setCallback(gStandalone.engineCallback, gStandalone.engineCallbackPtr);
     engine->setFileCallback(gStandalone.fileCallback, gStandalone.fileCallbackPtr);
 
-#ifdef BUILD_BRIDGE
     using water::File;
-    File waterBinaryDir(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory());
+    const File waterBinaryDir(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory());
 
+#ifdef BUILD_BRIDGE
     /*
-    if (const char* const uisAlwaysOnTop = std::getenv("ENGINE_OPTION_FORCE_STEREO"))
-        engine->setOption(CB::ENGINE_OPTION_FORCE_STEREO, (std::strcmp(uisAlwaysOnTop, "true") == 0) ? 1 : 0, nullptr);
+    if (const char* const forceStereo = std::getenv("ENGINE_OPTION_FORCE_STEREO"))
+        engine->setOption(CB::ENGINE_OPTION_FORCE_STEREO, (std::strcmp(forceStereo, "true") == 0) ? 1 : 0, nullptr);
 
-    if (const char* const uisAlwaysOnTop = std::getenv("ENGINE_OPTION_PREFER_PLUGIN_BRIDGES"))
-        engine->setOption(CB::ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, (std::strcmp(uisAlwaysOnTop, "true") == 0) ? 1 : 0, nullptr);
+    if (const char* const preferPluginBridges = std::getenv("ENGINE_OPTION_PREFER_PLUGIN_BRIDGES"))
+        engine->setOption(CB::ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, (std::strcmp(preferPluginBridges, "true") == 0) ? 1 : 0, nullptr);
 
-    if (const char* const uisAlwaysOnTop = std::getenv("ENGINE_OPTION_PREFER_UI_BRIDGES"))
-        engine->setOption(CB::ENGINE_OPTION_PREFER_UI_BRIDGES, (std::strcmp(uisAlwaysOnTop, "true") == 0) ? 1 : 0, nullptr);
+    if (const char* const preferUiBridges = std::getenv("ENGINE_OPTION_PREFER_UI_BRIDGES"))
+        engine->setOption(CB::ENGINE_OPTION_PREFER_UI_BRIDGES, (std::strcmp(preferUiBridges, "true") == 0) ? 1 : 0, nullptr);
     */
 
     if (const char* const uisAlwaysOnTop = std::getenv("ENGINE_OPTION_UIS_ALWAYS_ON_TOP"))
         engine->setOption(CB::ENGINE_OPTION_UIS_ALWAYS_ON_TOP, (std::strcmp(uisAlwaysOnTop, "true") == 0) ? 1 : 0, nullptr);
 
     if (const char* const maxParameters = std::getenv("ENGINE_OPTION_MAX_PARAMETERS"))
-        engine->setOption(CB::ENGINE_OPTION_MAX_PARAMETERS,     std::atoi(maxParameters), nullptr);
+        engine->setOption(CB::ENGINE_OPTION_MAX_PARAMETERS, std::atoi(maxParameters), nullptr);
+
+    if (const char* const resetXruns = std::getenv("ENGINE_OPTION_RESET_XRUNS"))
+        engine->setOption(CB::ENGINE_OPTION_RESET_XRUNS, (std::strcmp(resetXruns, "true") == 0) ? 1 : 0, nullptr);
 
     if (const char* const uiBridgesTimeout = std::getenv("ENGINE_OPTION_UI_BRIDGES_TIMEOUT"))
         engine->setOption(CB::ENGINE_OPTION_UI_BRIDGES_TIMEOUT, std::atoi(uiBridgesTimeout), nullptr);
+
+    if (const char* const pathAudio = std::getenv("ENGINE_OPTION_FILE_PATH_AUDIO"))
+        engine->setOption(CB::ENGINE_OPTION_FILE_PATH, CB::FILE_AUDIO, pathAudio);
+
+    if (const char* const pathMIDI = std::getenv("ENGINE_OPTION_FILE_PATH_MIDI"))
+        engine->setOption(CB::ENGINE_OPTION_FILE_PATH, CB::FILE_MIDI, pathMIDI);
 
     if (const char* const pathLADSPA = std::getenv("ENGINE_OPTION_PLUGIN_PATH_LADSPA"))
         engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_LADSPA, pathLADSPA);
@@ -225,14 +239,14 @@ static void carla_engine_init_common(CarlaEngine* const engine)
         engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_SFZ, pathSFZ);
 
     if (const char* const binaryDir = std::getenv("ENGINE_OPTION_PATH_BINARIES"))
-        engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,   0, binaryDir);
+        engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES, 0, binaryDir);
     else
-        engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,   0, waterBinaryDir.getFullPathName().toRawUTF8());
+        engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES, 0, waterBinaryDir.getFullPathName().toRawUTF8());
 
     if (const char* const resourceDir = std::getenv("ENGINE_OPTION_PATH_RESOURCES"))
-        engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES,  0, resourceDir);
+        engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES, 0, resourceDir);
     else
-        engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES,  0, waterBinaryDir.getChildFile("resources").getFullPathName().toRawUTF8());
+        engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES, 0, waterBinaryDir.getChildFile("resources").getFullPathName().toRawUTF8());
 
     if (const char* const preventBadBehaviour = std::getenv("ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR"))
         engine->setOption(CB::ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR, (std::strcmp(preventBadBehaviour, "true") == 0) ? 1 : 0, nullptr);
@@ -245,10 +259,14 @@ static void carla_engine_init_common(CarlaEngine* const engine)
     engine->setOption(CB::ENGINE_OPTION_PREFER_UI_BRIDGES,     gStandalone.engineOptions.preferUiBridges     ? 1 : 0,        nullptr);
     engine->setOption(CB::ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     gStandalone.engineOptions.uisAlwaysOnTop      ? 1 : 0,        nullptr);
     engine->setOption(CB::ENGINE_OPTION_MAX_PARAMETERS,        static_cast<int>(gStandalone.engineOptions.maxParameters),    nullptr);
+    engine->setOption(CB::ENGINE_OPTION_RESET_XRUNS,           gStandalone.engineOptions.resetXruns          ? 1 : 0,        nullptr);
     engine->setOption(CB::ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    static_cast<int>(gStandalone.engineOptions.uiBridgesTimeout), nullptr);
     engine->setOption(CB::ENGINE_OPTION_AUDIO_BUFFER_SIZE,     static_cast<int>(gStandalone.engineOptions.audioBufferSize),  nullptr);
     engine->setOption(CB::ENGINE_OPTION_AUDIO_SAMPLE_RATE,     static_cast<int>(gStandalone.engineOptions.audioSampleRate),  nullptr);
     engine->setOption(CB::ENGINE_OPTION_AUDIO_TRIPLE_BUFFER,   gStandalone.engineOptions.audioTripleBuffer   ? 1 : 0,        nullptr);
+
+    if (gStandalone.engineOptions.audioDriver != nullptr)
+        engine->setOption(CB::ENGINE_OPTION_AUDIO_DRIVER,      0, gStandalone.engineOptions.audioDriver);
 
     if (gStandalone.engineOptions.audioDevice != nullptr)
         engine->setOption(CB::ENGINE_OPTION_AUDIO_DEVICE,      0, gStandalone.engineOptions.audioDevice);
@@ -256,6 +274,12 @@ static void carla_engine_init_common(CarlaEngine* const engine)
     engine->setOption(CB::ENGINE_OPTION_OSC_ENABLED,  gStandalone.engineOptions.oscEnabled, nullptr);
     engine->setOption(CB::ENGINE_OPTION_OSC_PORT_TCP, gStandalone.engineOptions.oscPortTCP, nullptr);
     engine->setOption(CB::ENGINE_OPTION_OSC_PORT_UDP, gStandalone.engineOptions.oscPortUDP, nullptr);
+
+    if (gStandalone.engineOptions.pathAudio != nullptr)
+        engine->setOption(CB::ENGINE_OPTION_FILE_PATH, CB::FILE_AUDIO, gStandalone.engineOptions.pathAudio);
+
+    if (gStandalone.engineOptions.pathMIDI != nullptr)
+        engine->setOption(CB::ENGINE_OPTION_FILE_PATH, CB::FILE_MIDI, gStandalone.engineOptions.pathMIDI);
 
     if (gStandalone.engineOptions.pathLADSPA != nullptr)
         engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_LADSPA, gStandalone.engineOptions.pathLADSPA);
@@ -279,7 +303,9 @@ static void carla_engine_init_common(CarlaEngine* const engine)
         engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_SFZ, gStandalone.engineOptions.pathSFZ);
 
     if (gStandalone.engineOptions.binaryDir != nullptr && gStandalone.engineOptions.binaryDir[0] != '\0')
-        engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,     0, gStandalone.engineOptions.binaryDir);
+        engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES, 0, gStandalone.engineOptions.binaryDir);
+    else
+        engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES, 0, waterBinaryDir.getFullPathName().toRawUTF8());
 
     if (gStandalone.engineOptions.resourceDir != nullptr && gStandalone.engineOptions.resourceDir[0] != '\0')
         engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES,    0, gStandalone.engineOptions.resourceDir);
@@ -333,7 +359,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 #endif
 
     CarlaEngine* const engine = CarlaEngine::newDriverByName(driverName);
-    CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(engine != nullptr, "The seleted audio driver is not available", false);
+    CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(engine != nullptr, "The selected audio driver is not available", false);
 
     gStandalone.engine = engine;
 
@@ -387,24 +413,28 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 }
 
 #ifdef BUILD_BRIDGE
-bool carla_engine_init_bridge(const char audioBaseName[6+1], const char rtClientBaseName[6+1], const char nonRtClientBaseName[6+1],
-                              const char nonRtServerBaseName[6+1], const char* clientName)
+bool carla_engine_init_bridge(const char audioBaseName[6+1],
+                              const char rtClientBaseName[6+1],
+                              const char nonRtClientBaseName[6+1],
+                              const char nonRtServerBaseName[6+1],
+                              const char* const clientName)
 {
     CARLA_SAFE_ASSERT_RETURN(audioBaseName != nullptr && audioBaseName[0] != '\0', false);
     CARLA_SAFE_ASSERT_RETURN(rtClientBaseName != nullptr && rtClientBaseName[0] != '\0', false);
     CARLA_SAFE_ASSERT_RETURN(nonRtClientBaseName != nullptr && nonRtClientBaseName[0] != '\0', false);
     CARLA_SAFE_ASSERT_RETURN(nonRtServerBaseName != nullptr && nonRtServerBaseName[0] != '\0', false);
     CARLA_SAFE_ASSERT_RETURN(clientName != nullptr && clientName[0] != '\0', false);
-    carla_debug("carla_engine_init_bridge(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\")", audioBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName, clientName);
+    carla_debug("carla_engine_init_bridge(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\")",
+                audioBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName, clientName);
 
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(gStandalone.engine == nullptr, "Engine is already initialized", false);
 
-    ScopedPointer<CarlaEngine> engine(CarlaEngine::newBridge(audioBaseName,
-                                                             rtClientBaseName,
-                                                             nonRtClientBaseName,
-                                                             nonRtServerBaseName));
+    CarlaScopedPointer<CarlaEngine> engine(CarlaEngine::newBridge(audioBaseName,
+                                                                  rtClientBaseName,
+                                                                  nonRtClientBaseName,
+                                                                  nonRtServerBaseName));
 
-    CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(engine != nullptr, "The seleted audio driver is not available", false);
+    CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(engine != nullptr, "The selected audio driver is not available", false);
 
     engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,   CB::ENGINE_PROCESS_MODE_BRIDGE,   nullptr);
     engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE, CB::ENGINE_TRANSPORT_MODE_BRIDGE, nullptr);
@@ -493,6 +523,81 @@ const CarlaRuntimeEngineInfo* carla_get_runtime_engine_info()
     return &retInfo;
 }
 
+#ifndef BUILD_BRIDGE
+const CarlaRuntimeEngineDriverDeviceInfo* carla_get_runtime_engine_driver_device_info()
+{
+    static CarlaRuntimeEngineDriverDeviceInfo retInfo;
+
+    // reset
+    retInfo.name = gNullCharPtr;
+    retInfo.hints = 0x0;
+    retInfo.bufferSize = 0;
+    retInfo.bufferSizes = nullptr;
+    retInfo.sampleRate = 0.0;
+    retInfo.sampleRates = nullptr;
+
+    const char* audioDriver;
+    const char* audioDevice;
+
+    if (CarlaEngine* const engine = gStandalone.engine)
+    {
+        audioDriver = engine->getCurrentDriverName();
+        audioDevice = engine->getOptions().audioDevice;
+
+        retInfo.bufferSize = engine->getBufferSize();
+        retInfo.sampleRate = engine->getSampleRate();
+    }
+    else
+    {
+        audioDriver = gStandalone.engineOptions.audioDriver;
+        audioDevice = gStandalone.engineOptions.audioDevice;
+
+        retInfo.bufferSize = gStandalone.engineOptions.audioBufferSize;
+        retInfo.sampleRate = gStandalone.engineOptions.audioSampleRate;
+    }
+    CARLA_SAFE_ASSERT_RETURN(audioDriver != nullptr, &retInfo);
+    CARLA_SAFE_ASSERT_RETURN(audioDevice != nullptr, &retInfo);
+
+    uint index = 0;
+    uint count = CarlaEngine::getDriverCount();
+    for (; index<count; ++index)
+    {
+        const char* const testDriverName = CarlaEngine::getDriverName(index);
+        CARLA_SAFE_ASSERT_CONTINUE(testDriverName != nullptr);
+
+        if (std::strcmp(testDriverName, audioDriver) == 0)
+            break;
+    }
+    CARLA_SAFE_ASSERT_RETURN(index != count, &retInfo);
+
+    const EngineDriverDeviceInfo* const devInfo = CarlaEngine::getDriverDeviceInfo(index, audioDevice);
+    CARLA_SAFE_ASSERT_RETURN(devInfo != nullptr, &retInfo);
+
+    retInfo.name        = audioDevice;
+    retInfo.hints       = devInfo->hints;
+    retInfo.bufferSizes = devInfo->bufferSizes;
+    retInfo.sampleRates = devInfo->sampleRates;
+
+    return &retInfo;
+}
+
+bool carla_set_engine_buffer_size_and_sample_rate(uint bufferSize, double sampleRate)
+{
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, false);
+    carla_debug("carla_set_engine_buffer_size_and_sample_rate(%u, %f)", bufferSize, sampleRate);
+
+    return gStandalone.engine->setBufferSizeAndSampleRate(bufferSize, sampleRate);
+}
+
+bool carla_show_engine_device_control_panel()
+{
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, false);
+    carla_debug("carla_show_engine_device_control_panel()");
+
+    return gStandalone.engine->showDeviceControlPanel();
+}
+#endif
+
 void carla_clear_engine_xruns()
 {
     if (gStandalone.engine != nullptr)
@@ -546,9 +651,12 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
     case CB::ENGINE_OPTION_TRANSPORT_MODE:
         CARLA_SAFE_ASSERT_RETURN(value >= CB::ENGINE_TRANSPORT_MODE_DISABLED && value <= CB::ENGINE_TRANSPORT_MODE_BRIDGE,);
 
-        if (value != CB::ENGINE_TRANSPORT_MODE_JACK)
+        // jack transport cannot be disabled in multi-client
+        if (gStandalone.engineOptions.processMode == CB::ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS
+            && value != CB::ENGINE_TRANSPORT_MODE_JACK)
         {
-            // jack transport cannot be disabled in multi-client
+            gStandalone.engineOptions.transportMode = CB::ENGINE_TRANSPORT_MODE_JACK;
+
             if (gStandalone.engineCallback != nullptr)
                 gStandalone.engineCallback(gStandalone.engineCallbackPtr,
                                            CB::ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED,
@@ -556,9 +664,11 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
                                            CB::ENGINE_TRANSPORT_MODE_JACK,
                                            0, 0, 0.0f,
                                            gStandalone.engineOptions.transportExtra);
-            CARLA_SAFE_ASSERT_RETURN(gStandalone.engineOptions.processMode != CB::ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS,);
         }
-        gStandalone.engineOptions.transportMode = static_cast<CB::EngineTransportMode>(value);
+        else
+        {
+            gStandalone.engineOptions.transportMode = static_cast<CB::EngineTransportMode>(value);
+        }
 
         delete[] gStandalone.engineOptions.transportExtra;
         if (value != CB::ENGINE_TRANSPORT_MODE_DISABLED && valueStr != nullptr)
@@ -592,6 +702,11 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
         gStandalone.engineOptions.maxParameters = static_cast<uint>(value);
         break;
 
+    case CB::ENGINE_OPTION_RESET_XRUNS:
+        CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
+        gStandalone.engineOptions.resetXruns = (value != 0);
+        break;
+
     case CB::ENGINE_OPTION_UI_BRIDGES_TIMEOUT:
         CARLA_SAFE_ASSERT_RETURN(value >= 0,);
         gStandalone.engineOptions.uiBridgesTimeout = static_cast<uint>(value);
@@ -610,6 +725,15 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
     case CB::ENGINE_OPTION_AUDIO_TRIPLE_BUFFER:
         CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
         gStandalone.engineOptions.audioTripleBuffer = (value != 0);
+        break;
+
+    case CB::ENGINE_OPTION_AUDIO_DRIVER:
+        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr,);
+
+        if (gStandalone.engineOptions.audioDriver != nullptr)
+            delete[] gStandalone.engineOptions.audioDriver;
+
+        gStandalone.engineOptions.audioDriver = carla_strdup_safe(valueStr);
         break;
 
     case CB::ENGINE_OPTION_AUDIO_DEVICE:
@@ -634,6 +758,26 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
     case CB::ENGINE_OPTION_OSC_PORT_UDP:
         CARLA_SAFE_ASSERT_RETURN(value <= 0 || value >= 1024,);
         gStandalone.engineOptions.oscPortUDP = value;
+        break;
+
+    case CB::ENGINE_OPTION_FILE_PATH:
+        CARLA_SAFE_ASSERT_RETURN(value > CB::FILE_NONE,);
+        CARLA_SAFE_ASSERT_RETURN(value <= CB::FILE_MIDI,);
+        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr,);
+
+        switch (value)
+        {
+        case CB::FILE_AUDIO:
+            if (gStandalone.engineOptions.pathAudio != nullptr)
+                delete[] gStandalone.engineOptions.pathAudio;
+            gStandalone.engineOptions.pathAudio = carla_strdup_safe(valueStr);
+            break;
+        case CB::FILE_MIDI:
+            if (gStandalone.engineOptions.pathMIDI != nullptr)
+                delete[] gStandalone.engineOptions.pathMIDI;
+            gStandalone.engineOptions.pathMIDI = carla_strdup_safe(valueStr);
+            break;
+        }
         break;
 
     case CB::ENGINE_OPTION_PLUGIN_PATH:
@@ -1098,6 +1242,7 @@ const CarlaPluginInfo* carla_get_plugin_info(uint pluginId)
     carla_debug("carla_get_plugin_info(%i)", pluginId);
 
     char strBuf[STR_MAX+1];
+    carla_zeroChars(strBuf, STR_MAX+1);
 
     retInfo.type     = plugin->getType();
     retInfo.category = plugin->getCategory();
@@ -1110,17 +1255,12 @@ const CarlaPluginInfo* carla_get_plugin_info(uint pluginId)
     retInfo.optionsAvailable = plugin->getOptionsAvailable();
     retInfo.optionsEnabled   = plugin->getOptionsEnabled();
 
-    carla_zeroChars(strBuf, STR_MAX+1);
-    plugin->getLabel(strBuf);
-    retInfo.label = carla_strdup_safe(strBuf);
-
-    carla_zeroChars(strBuf, STR_MAX+1);
-    plugin->getMaker(strBuf);
-    retInfo.maker = carla_strdup_safe(strBuf);
-
-    carla_zeroChars(strBuf, STR_MAX+1);
-    plugin->getCopyright(strBuf);
-    retInfo.copyright = carla_strdup_safe(strBuf);
+    if (plugin->getLabel(strBuf))
+        retInfo.label = carla_strdup_safe(strBuf);
+    if (plugin->getMaker(strBuf))
+        retInfo.maker = carla_strdup_safe(strBuf);
+    if (plugin->getCopyright(strBuf))
+        retInfo.copyright = carla_strdup_safe(strBuf);
 
     checkStringPtr(retInfo.filename);
     checkStringPtr(retInfo.name);
@@ -1208,6 +1348,18 @@ const CarlaParameterInfo* carla_get_parameter_info(uint pluginId, uint32_t param
         retInfo.unit = gNullCharPtr;
     }
 
+    if (retInfo.comment != gNullCharPtr)
+    {
+        delete[] retInfo.comment;
+        retInfo.comment = gNullCharPtr;
+    }
+
+    if (retInfo.groupName != gNullCharPtr)
+    {
+        delete[] retInfo.groupName;
+        retInfo.groupName = gNullCharPtr;
+    }
+
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &retInfo);
 
     CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
@@ -1216,24 +1368,45 @@ const CarlaParameterInfo* carla_get_parameter_info(uint pluginId, uint32_t param
     carla_debug("carla_get_parameter_info(%i, %i)", pluginId, parameterId);
 
     char strBuf[STR_MAX+1];
+    carla_zeroChars(strBuf, STR_MAX+1);
 
     retInfo.scalePointCount = plugin->getParameterScalePointCount(parameterId);
 
-    carla_zeroChars(strBuf, STR_MAX+1);
-    plugin->getParameterName(parameterId, strBuf);
-    retInfo.name = carla_strdup_safe(strBuf);
+    if (plugin->getParameterName(parameterId, strBuf))
+    {
+        retInfo.name = carla_strdup_safe(strBuf);
+        carla_zeroChars(strBuf, STR_MAX+1);
+    }
 
-    carla_zeroChars(strBuf, STR_MAX+1);
-    plugin->getParameterSymbol(parameterId, strBuf);
-    retInfo.symbol = carla_strdup_safe(strBuf);
+    if (plugin->getParameterSymbol(parameterId, strBuf))
+    {
+        retInfo.symbol = carla_strdup_safe(strBuf);
+        carla_zeroChars(strBuf, STR_MAX+1);
+    }
 
-    carla_zeroChars(strBuf, STR_MAX+1);
-    plugin->getParameterUnit(parameterId, strBuf);
-    retInfo.unit = carla_strdup_safe(strBuf);
+    if (plugin->getParameterUnit(parameterId, strBuf))
+    {
+        retInfo.unit = carla_strdup_safe(strBuf);
+        carla_zeroChars(strBuf, STR_MAX+1);
+    }
+
+    if (plugin->getParameterComment(parameterId, strBuf))
+    {
+        retInfo.comment = carla_strdup_safe(strBuf);
+        carla_zeroChars(strBuf, STR_MAX+1);
+    }
+
+    if (plugin->getParameterGroupName(parameterId, strBuf))
+    {
+        retInfo.groupName = carla_strdup_safe(strBuf);
+        carla_zeroChars(strBuf, STR_MAX+1);
+    }
 
     checkStringPtr(retInfo.name);
     checkStringPtr(retInfo.symbol);
     checkStringPtr(retInfo.unit);
+    checkStringPtr(retInfo.comment);
+    checkStringPtr(retInfo.groupName);
 
     return &retInfo;
 }
@@ -1266,8 +1439,8 @@ const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(uint pluginId, ui
     retInfo.value = plugin->getParameterScalePointValue(parameterId, scalePointId);
 
     carla_zeroChars(strBuf, STR_MAX+1);
-    plugin->getParameterScalePointLabel(parameterId, scalePointId, strBuf);
-    retInfo.label = carla_strdup_safe(strBuf);
+    if (plugin->getParameterScalePointLabel(parameterId, scalePointId, strBuf))
+        retInfo.label = carla_strdup_safe(strBuf);
 
     checkStringPtr(retInfo.label);
 
@@ -1285,8 +1458,10 @@ const ParameterData* carla_get_parameter_data(uint pluginId, uint32_t parameterI
     retParamData.hints       = 0x0;
     retParamData.index       = CB::PARAMETER_NULL;
     retParamData.rindex      = -1;
-    retParamData.midiCC      = -1;
     retParamData.midiChannel = 0;
+    retParamData.mappedControlIndex = CB::CONTROL_INDEX_NONE;
+    retParamData.mappedMinimum = 0.0f;
+    retParamData.mappedMaximum = 0.0f;
 
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &retParamData);
 
@@ -1301,8 +1476,10 @@ const ParameterData* carla_get_parameter_data(uint pluginId, uint32_t parameterI
     retParamData.hints       = pluginParamData.hints;
     retParamData.index       = pluginParamData.index;
     retParamData.rindex      = pluginParamData.rindex;
-    retParamData.midiCC      = pluginParamData.midiCC;
     retParamData.midiChannel = pluginParamData.midiChannel;
+    retParamData.mappedControlIndex = pluginParamData.mappedControlIndex;
+    retParamData.mappedMinimum = pluginParamData.mappedMinimum;
+    retParamData.mappedMaximum = pluginParamData.mappedMaximum;
     return &plugin->getParameterData(parameterId);
 }
 
@@ -1531,7 +1708,9 @@ const char* carla_get_parameter_text(uint pluginId, uint32_t parameterId)
     static char textBuf[STR_MAX+1];
     carla_zeroChars(textBuf, STR_MAX+1);
 
-    plugin->getParameterText(parameterId, textBuf);
+    if (! plugin->getParameterText(parameterId, textBuf))
+        textBuf[0] = '\0';
+
     return textBuf;
 }
 
@@ -1548,7 +1727,9 @@ const char* carla_get_program_name(uint pluginId, uint32_t programId)
     static char programName[STR_MAX+1];
     carla_zeroChars(programName, STR_MAX+1);
 
-    plugin->getProgramName(programId, programName);
+    if (! plugin->getProgramName(programId, programName))
+        programName[0] = '\0';
+
     return programName;
 }
 
@@ -1565,7 +1746,9 @@ const char* carla_get_midi_program_name(uint pluginId, uint32_t midiProgramId)
     static char midiProgramName[STR_MAX+1];
     carla_zeroChars(midiProgramName, STR_MAX+1);
 
-    plugin->getMidiProgramName(midiProgramId, midiProgramName);
+    if (! plugin->getMidiProgramName(midiProgramId, midiProgramName))
+        midiProgramName[0] = '\0';
+
     return midiProgramName;
 }
 
@@ -1580,7 +1763,9 @@ const char* carla_get_real_plugin_name(uint pluginId)
     static char realPluginName[STR_MAX+1];
     carla_zeroChars(realPluginName, STR_MAX+1);
 
-    plugin->getRealName(realPluginName);
+    if (! plugin->getRealName(realPluginName))
+        realPluginName[0] = '\0';
+
     return realPluginName;
 }
 
@@ -1818,6 +2003,7 @@ void carla_set_parameter_value(uint pluginId, uint32_t parameterId, float value)
 }
 
 #ifndef BUILD_BRIDGE
+
 void carla_set_parameter_midi_channel(uint pluginId, uint32_t parameterId, uint8_t channel)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
@@ -1832,18 +2018,31 @@ void carla_set_parameter_midi_channel(uint pluginId, uint32_t parameterId, uint8
     return plugin->setParameterMidiChannel(parameterId, channel, true, false);
 }
 
-void carla_set_parameter_midi_cc(uint pluginId, uint32_t parameterId, int16_t cc)
+void carla_set_parameter_mapped_control_index(uint pluginId, uint32_t parameterId, int16_t index)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc < MAX_MIDI_CONTROL,);
+    CARLA_SAFE_ASSERT_RETURN(index >= CB::CONTROL_INDEX_NONE && index <= CB::CONTROL_INDEX_MAX_ALLOWED,);
 
     CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
 
-    carla_debug("carla_set_parameter_midi_cc(%i, %i, %i)", pluginId, parameterId, cc);
+    carla_debug("carla_set_parameter_mapped_control_index(%i, %i, %i)", pluginId, parameterId, index);
     CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
 
-    return plugin->setParameterMidiCC(parameterId, cc, true, false);
+    return plugin->setParameterMappedControlIndex(parameterId, index, true, false);
+}
+
+void carla_set_parameter_mapped_range(uint pluginId, uint32_t parameterId, float minimum, float maximum)
+{
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+
+    CarlaPlugin* const plugin(gStandalone.engine->getPlugin(pluginId));
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
+    carla_debug("carla_set_parameter_mapped_range(%i, %i, %f, %f)", pluginId, parameterId, static_cast<double>(minimum), static_cast<double>(maximum));
+    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
+
+    return plugin->setParameterMappedRange(parameterId, minimum, maximum, true, false);
 }
 
 void carla_set_parameter_touch(uint pluginId, uint32_t parameterId, bool touch)

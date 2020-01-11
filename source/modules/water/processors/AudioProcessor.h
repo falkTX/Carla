@@ -154,26 +154,10 @@ public:
 
         @see AudiobusLayout::getBusBuffer
     */
-
-    virtual void processBlock (AudioSampleBuffer& buffer,
-                               MidiBuffer& midiMessages) = 0;
-
     virtual void processBlockWithCV (AudioSampleBuffer& audioBuffer,
                                      const AudioSampleBuffer& cvInBuffer,
                                      AudioSampleBuffer& cvOutBuffer,
-                                     MidiBuffer& midiMessages);
-
-    /** Renders the next block when the processor is being bypassed.
-
-        The default implementation of this method will pass-through any incoming audio, but
-        you may override this method e.g. to add latency compensation to the data to match
-        the processor's latency characteristics. This will avoid situations where bypassing
-        will shift the signal forward in time, possibly creating pre-echo effects and odd timings.
-        Another use for this method would be to cross-fade or morph between the wet (not bypassed)
-        and dry (bypassed) signals.
-    */
-    virtual void processBlockBypassed (AudioSampleBuffer& buffer,
-                                       MidiBuffer& midiMessages);
+                                     MidiBuffer& midiMessages) = 0;
 
     //==============================================================================
     /** Returns the total number of input channels. */
@@ -285,6 +269,13 @@ public:
         plugin that it should stop any tails or sounds that have been left running.
     */
     virtual void reset();
+
+    /** A plugin can override this to be told when it should reconfigure itself.
+
+        The default implementation does nothing, but a host may call this to tell the
+        plugin that it should call setPlayConfigDetails again.
+    */
+    virtual void reconfigure();
 
     //==============================================================================
     /** Returns true if the processor is being run in an offline mode for rendering.

@@ -51,6 +51,11 @@ struct PeerState
     return nodeState.timeline;
   }
 
+  StartStopState startStopState() const
+  {
+    return nodeState.startStopState;
+  }
+
   friend bool operator==(const PeerState& lhs, const PeerState& rhs)
   {
     return lhs.nodeState == rhs.nodeState && lhs.endpoint == rhs.endpoint;

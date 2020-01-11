@@ -82,10 +82,10 @@ public:
     ~Identifier() noexcept;
 
     /** Compares two identifiers. This is a very fast operation. */
-    inline bool operator== (const Identifier& other) const noexcept     { return name.getCharPointer() == other.name.getCharPointer(); }
+    inline bool operator== (const Identifier& other) const noexcept     { return name == other.name; }
 
     /** Compares two identifiers. This is a very fast operation. */
-    inline bool operator!= (const Identifier& other) const noexcept     { return name.getCharPointer() != other.name.getCharPointer(); }
+    inline bool operator!= (const Identifier& other) const noexcept     { return name != other.name; }
 
     /** Compares the identifier with a string. */
     inline bool operator== (StringRef other) const noexcept             { return name == other; }
@@ -108,12 +108,6 @@ public:
     /** Returns this identifier as a string. */
     const String& toString() const noexcept                             { return name; }
 
-    /** Returns this identifier's raw string pointer. */
-    operator String::CharPointerType() const noexcept                   { return name.getCharPointer(); }
-
-    /** Returns this identifier's raw string pointer. */
-    String::CharPointerType getCharPointer() const noexcept             { return name.getCharPointer(); }
-
     /** Returns this identifier as a StringRef. */
     operator StringRef() const noexcept                                 { return name; }
 
@@ -122,9 +116,6 @@ public:
 
     /** Returns true if this Identifier is null */
     bool isNull() const noexcept                                        { return name.isEmpty(); }
-
-    /** A null identifier. */
-    static Identifier null;
 
     /** Checks a given string for characters that might not be valid in an Identifier.
         Since Identifiers are used as a script variables and XML attributes, they should only contain

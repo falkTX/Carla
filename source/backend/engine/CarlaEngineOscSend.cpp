@@ -60,10 +60,14 @@ void CarlaEngineOsc::sendPluginInfo(const CarlaPlugin* const plugin) const noexc
     carla_zeroChars(bufMaker, STR_MAX+1);
     carla_zeroChars(bufCopyright, STR_MAX+1);
 
-    plugin->getRealName(bufRealName);
-    plugin->getLabel(bufLabel);
-    plugin->getMaker(bufMaker);
-    plugin->getCopyright(bufCopyright);
+    if (! plugin->getRealName(bufRealName))
+        bufRealName[0] = '\0';
+    if (! plugin->getLabel(bufLabel))
+        bufLabel[0] = '\0';
+    if (! plugin->getMaker(bufMaker))
+        bufMaker[0] = '\0';
+    if (! plugin->getCopyright(bufCopyright))
+        bufCopyright[0] = '\0';
 
     const char* name = plugin->getName();
     const char* filename = plugin->getFilename();
@@ -131,11 +135,13 @@ void CarlaEngineOsc::sendPluginParameterInfo(const CarlaPlugin* const plugin, co
     carla_zeroChars(bufName, STR_MAX+1);
     carla_zeroChars(bufUnit, STR_MAX+1);
 
+    if (! plugin->getParameterName(index, bufName))
+        bufName[0] = '\0';
+    if (! plugin->getParameterUnit(index, bufUnit))
+        bufUnit[0] = '\0';
+
     const ParameterData& paramData(plugin->getParameterData(index));
     const ParameterRanges& paramRanges(plugin->getParameterRanges(index));
-
-    plugin->getParameterName(index, bufName);
-    plugin->getParameterUnit(index, bufUnit);
 
     char targetPath[std::strlen(fControlDataTCP.path)+20];
     std::strcpy(targetPath, fControlDataTCP.path);
@@ -143,7 +149,7 @@ void CarlaEngineOsc::sendPluginParameterInfo(const CarlaPlugin* const plugin, co
     try_lo_send(fControlDataTCP.target, targetPath, "iiiiiissfffffff",
                 static_cast<int32_t>(plugin->getId()), static_cast<int32_t>(index),
                 static_cast<int32_t>(paramData.type), static_cast<int32_t>(paramData.hints),
-                static_cast<int32_t>(paramData.midiChannel), static_cast<int32_t>(paramData.midiCC),
+                static_cast<int32_t>(paramData.mappedControlIndex), static_cast<int32_t>(paramData.midiChannel),
                 bufName, bufUnit,
                 static_cast<double>(paramRanges.def),
                 static_cast<double>(paramRanges.min),
@@ -197,7 +203,8 @@ void CarlaEngineOsc::sendPluginProgram(const CarlaPlugin* const plugin, const ui
 
     char strBuf[STR_MAX+1];
     carla_zeroChars(strBuf, STR_MAX+1);
-    plugin->getProgramName(index, strBuf);
+    if (! plugin->getProgramName(index, strBuf))
+        strBuf[0] = '\0';
 
     char targetPath[std::strlen(fControlDataTCP.path)+6];
     std::strcpy(targetPath, fControlDataTCP.path);

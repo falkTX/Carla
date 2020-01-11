@@ -79,6 +79,16 @@ typedef struct _CarlaCachedPluginInfo {
     uint32_t audioOuts;
 
     /*!
+     * Number of CV inputs.
+     */
+    uint32_t cvIns;
+
+    /*!
+     * Number of CV outputs.
+     */
+    uint32_t cvOuts;
+
+    /*!
      * Number of MIDI inputs.
      */
     uint32_t midiIns;
@@ -135,22 +145,22 @@ typedef struct _CarlaCachedPluginInfo {
  * Get the complete license text of used third-party code and features.
  * Returned string is in basic html format.
  */
-CARLA_EXPORT const char* carla_get_complete_license_text();
+CARLA_EXPORT const char* carla_get_complete_license_text(void);
 
 /*!
  * Get the juce version used in the current Carla build.
  */
-CARLA_EXPORT const char* carla_get_juce_version();
+CARLA_EXPORT const char* carla_get_juce_version(void);
 
 /*!
  * Get the list of supported file extensions in carla_load_file().
  */
-CARLA_EXPORT const char* const* carla_get_supported_file_extensions();
+CARLA_EXPORT const char* const* carla_get_supported_file_extensions(void);
 
 /*!
  * Get the list of supported features in the current Carla build.
  */
-CARLA_EXPORT const char* const* carla_get_supported_features();
+CARLA_EXPORT const char* const* carla_get_supported_features(void);
 
 /*!
  * Get how many cached plugins are available.
@@ -247,12 +257,12 @@ CARLA_EXPORT void carla_pipe_client_destroy(CarlaPipeClientHandle handle);
 /*!
  * Get the absolute filename of this carla library.
  */
-CARLA_EXPORT const char* carla_get_library_filename();
+CARLA_EXPORT const char* carla_get_library_filename(void);
 
 /*!
  * Get the folder where this carla library resides.
  */
-CARLA_EXPORT const char* carla_get_library_folder();
+CARLA_EXPORT const char* carla_get_library_folder(void);
 #endif
 
 /* --------------------------------------------------------------------------------------------------------------------

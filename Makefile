@@ -146,6 +146,9 @@ endif
 $(MODULEDIR)/dgl.wine.a: .FORCE
 	@$(MAKE) -C source/modules/dgl wine
 
+$(MODULEDIR)/water.files.a: .FORCE
+	@$(MAKE) -C source/modules/water files
+
 $(MODULEDIR)/%.a: .FORCE
 	@$(MAKE) -C source/modules/$*
 
@@ -163,7 +166,7 @@ bridges-ui: libs
 discovery: libs
 	@$(MAKE) -C source/discovery
 
-frontend:
+frontend: libs
 ifeq ($(HAVE_PYQT),true)
 	@$(MAKE) -C source/frontend
 endif
@@ -175,6 +178,12 @@ endif
 
 libjack: libs
 	@$(MAKE) -C source/libjack
+
+lv2-bundles-dep: $(MODULEDIR)/audio_decoder.a $(MODULEDIR)/water.a
+	@$(MAKE) -C source/native-plugins bundles
+
+lv2-bundles: lv2-bundles-dep
+	@$(MAKE) -C source/plugin bundles
 
 plugin: backend bridges-plugin bridges-ui discovery
 	@$(MAKE) -C source/plugin
@@ -362,6 +371,7 @@ clean:
 	$(MAKE) clean -C source/modules
 	$(MAKE) clean -C source/native-plugins
 	$(MAKE) clean -C source/plugin
+	$(MAKE) clean -C source/tests
 	$(MAKE) clean -C source/theme
 	rm -f *~ source/*~
 
@@ -369,11 +379,17 @@ distclean: clean
 	rm -f bin/*.exe bin/*.dll bin/*.dylib bin/*.so
 	rm -rf build build-lv2
 
+cpp:
+	$(MAKE) CPPMODE=true
+
 debug:
 	$(MAKE) DEBUG=true
 
 doxygen:
 	$(MAKE) doxygen -C source/backend
+
+tests:
+	$(MAKE) -C source/tests
 
 stoat:
 	stoat --recursive ./build/ --suppression ./data/stoat-supression.txt --whitelist ./data/stoat-whitelist.txt --graph-view ./data/stoat-callgraph.png
@@ -414,6 +430,7 @@ ifeq ($(HAVE_PYQT),true)
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
 	install -d $(DESTDIR)$(DATADIR)/mime/packages
 	install -d $(DESTDIR)$(DATADIR)/carla/resources
+	install -d $(DESTDIR)$(DATADIR)/carla/modgui
 	install -d $(DESTDIR)$(DATADIR)/carla/patchcanvas
 	install -d $(DESTDIR)$(DATADIR)/carla/widgets
 endif
@@ -499,6 +516,7 @@ endif
 	# -------------------------------------------------------------------------------------------------------------
 
 ifeq ($(HAVE_PYQT),true)
+ifneq ($(CPPMODE),true)
 	# Install script files (gui)
 	install -m 755 \
 		data/carla \
@@ -549,6 +567,10 @@ endif
 		$(DESTDIR)$(DATADIR)/carla/
 
 	install -m 644 \
+		source/frontend/modgui/*.py \
+		$(DESTDIR)$(DATADIR)/carla/modgui/
+
+	install -m 644 \
 		source/frontend/patchcanvas/*.py \
 		$(DESTDIR)$(DATADIR)/carla/patchcanvas/
 
@@ -569,6 +591,7 @@ endif
 		bin/resources/carla-plugin-patchbay \
 		bin/resources/*-ui \
 		$(DESTDIR)$(DATADIR)/carla/resources
+endif # CPPMODE
 
 ifeq ($(HAVE_THEME),true)
 	# Install theme

@@ -2,7 +2,7 @@
 // bind_executor.hpp
 // ~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -18,9 +18,11 @@
 #include "asio/detail/config.hpp"
 #include "asio/detail/type_traits.hpp"
 #include "asio/detail/variadic_templates.hpp"
+#include "asio/associated_executor.hpp"
 #include "asio/associated_allocator.hpp"
 #include "asio/async_result.hpp"
-#include "asio/handler_type.hpp"
+#include "asio/execution_context.hpp"
+#include "asio/is_executor.hpp"
 #include "asio/uses_executor.hpp"
 
 #include "asio/detail/push_options.hpp"
@@ -166,27 +168,27 @@ class executor_binder_base<T, Executor, true>
 protected:
   template <typename E, typename U>
   executor_binder_base(ASIO_MOVE_ARG(E) e, ASIO_MOVE_ARG(U) u)
-    : Executor(ASIO_MOVE_CAST(E)(e)),
-      target_(executor_arg_t(), static_cast<const Executor&>(*this),
-          ASIO_MOVE_CAST(U)(u))
+    : executor_(ASIO_MOVE_CAST(E)(e)),
+      target_(executor_arg_t(), executor_, ASIO_MOVE_CAST(U)(u))
   {
   }
 
+  Executor executor_;
   T target_;
 };
 
 template <typename T, typename Executor>
 class executor_binder_base<T, Executor, false>
-  : protected Executor
 {
 protected:
   template <typename E, typename U>
   executor_binder_base(ASIO_MOVE_ARG(E) e, ASIO_MOVE_ARG(U) u)
-    : Executor(ASIO_MOVE_CAST(E)(e)),
+    : executor_(ASIO_MOVE_CAST(E)(e)),
       target_(ASIO_MOVE_CAST(U)(u))
   {
   }
 
+  Executor executor_;
   T target_;
 };
 
@@ -393,7 +395,7 @@ public:
   /// Obtain the associated executor.
   executor_type get_executor() const ASIO_NOEXCEPT
   {
-    return static_cast<const Executor&>(*this);
+    return this->executor_;
   }
 
 #if defined(GENERATING_DOCUMENTATION)
@@ -519,30 +521,30 @@ struct uses_executor<executor_binder<T, Executor>, Executor>
   : true_type {};
 
 template <typename T, typename Executor, typename Signature>
-struct handler_type<executor_binder<T, Executor>, Signature>
-{
-  typedef executor_binder<
-    typename handler_type<T, Signature>::type, Executor> type;
-};
-
-template <typename T, typename Executor>
-class async_result<executor_binder<T, Executor> >
+class async_result<executor_binder<T, Executor>, Signature>
 {
 public:
-  typedef typename async_result<T>::type type;
+  typedef executor_binder<
+    typename async_result<T, Signature>::completion_handler_type, Executor>
+      completion_handler_type;
+
+  typedef typename async_result<T, Signature>::return_type return_type;
 
   explicit async_result(executor_binder<T, Executor>& b)
     : target_(b.get())
   {
   }
 
-  type get()
+  return_type get()
   {
     return target_.get();
   }
 
 private:
-  async_result<T> target_;
+  async_result(const async_result&) ASIO_DELETED;
+  async_result& operator=(const async_result&) ASIO_DELETED;
+
+  async_result<T, Signature> target_;
 };
 
 template <typename T, typename Executor, typename Allocator>

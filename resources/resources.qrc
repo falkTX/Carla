@@ -5,6 +5,7 @@
 
         <file>16x16/application-exit.svgz</file>
         <file>16x16/arrow-right.svgz</file>
+        <file>16x16/bookmarks.svgz</file>
         <file>16x16/configure.svgz</file>
         <file>16x16/dialog-cancel.svgz</file>
         <file>16x16/dialog-error.svgz</file>
@@ -15,6 +16,7 @@
         <file>16x16/document-open.svgz</file>
         <file>16x16/document-save.svgz</file>
         <file>16x16/document-save-as.svgz</file>
+        <file>16x16/edit-clear.svgz</file>
         <file>16x16/edit-delete.svgz</file>
         <file>16x16/edit-rename.svgz</file>
         <file>16x16/list-add.svgz</file>

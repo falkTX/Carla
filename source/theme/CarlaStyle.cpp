@@ -62,6 +62,12 @@
 
 #include <cstdio>
 
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 13, 0))
+#define PIXMAPCACHE_VAR_PREFIX &
+#else
+#define PIXMAPCACHE_VAR_PREFIX
+#endif
+
 #define BEGIN_STYLE_PIXMAPCACHE(a) \
     QRect rect = option->rect; \
     QPixmap internalPixmapCache; \
@@ -70,7 +76,7 @@
     QString unique = uniqueName((a), option, option->rect.size()); \
     int txType = painter->deviceTransform().type() | painter->worldTransform().type(); \
     bool doPixmapCache = txType <= QTransform::TxTranslate; \
-    if (doPixmapCache && QPixmapCache::find(unique, internalPixmapCache)) { \
+    if (doPixmapCache && QPixmapCache::find(unique, PIXMAPCACHE_VAR_PREFIX internalPixmapCache)) { \
         painter->drawPixmap(option->rect.topLeft(), internalPixmapCache); \
     } else { \
         if (doPixmapCache) { \
@@ -167,6 +173,15 @@ inline int qt_div_255(int x)
 inline QPixmap styleCachePixmap(const QSize &size)
 {
     return QPixmap(size);
+}
+
+inline int fontMetricsHorizontalAdvance(const QFontMetrics& fm, const QString& s)
+{
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+    return fm.horizontalAdvance(s);
+#else
+    return fm.width(s);
+#endif
 }
 
 int calcBigLineSize(int radius)
@@ -389,7 +404,7 @@ static QPixmap colorizedImage(const QString &fileName, const QColor &color, int 
 {
     QString pixmapName = QLatin1String("$qt_ia-") % fileName % HexString<uint>(color.rgba()) % QString::number(rotation);
     QPixmap pixmap;
-    if (!QPixmapCache::find(pixmapName, pixmap)) {
+    if (!QPixmapCache::find(pixmapName, PIXMAPCACHE_VAR_PREFIX pixmap)) {
         QImage image(fileName);
 
         if (image.format() != QImage::Format_ARGB32_Premultiplied)
@@ -528,7 +543,6 @@ static void qt_fusion_draw_mdibutton(QPainter *painter, const QStyleOptionTitleB
     painter->drawPoint(tmp.right() - 1, tmp.bottom());
     painter->drawPoint(tmp.right() , tmp.bottom() - 1);
 }
-
 
 CarlaStyle::CarlaStyle()
     : QCommonStyle(),
@@ -824,7 +838,7 @@ void CarlaStyle::drawPrimitive(PrimitiveElement elem,
     {
         if (option->rect.width() <= 1 || option->rect.height() <= 1)
             break;
-        QColor arrowColor = option->palette.foreground().color();
+        QColor arrowColor = qt_palette_fg_color(option->palette);
         QPixmap arrow;
         int rotation = 0;
         switch (elem) {
@@ -873,7 +887,7 @@ void CarlaStyle::drawPrimitive(PrimitiveElement elem,
         if (const QStyleOptionHeader *header = qstyleoption_cast<const QStyleOptionHeader *>(option)) {
             QRect r = header->rect;
             QPixmap arrow;
-            QColor arrowColor = header->palette.foreground().color();
+            QColor arrowColor = qt_palette_fg_color(header->palette);
             QPoint offset = QPoint(0, -1);
 
             if (header->sortIndicator & QStyleOptionHeader::SortUp) {
@@ -905,7 +919,7 @@ void CarlaStyle::drawPrimitive(PrimitiveElement elem,
                               rect.bottomLeft().y() - margin,
                               rect.topLeft().x() + offset,
                               rect.topLeft().y() + margin);
-            painter->setPen(QPen(option->palette.background().color().lighter(110)));
+            painter->setPen(QPen(qt_palette_bg_color(option->palette).lighter(110)));
             painter->drawLine(rect.bottomLeft().x() + offset + 1,
                               rect.bottomLeft().y() - margin,
                               rect.topLeft().x() + offset + 1,
@@ -916,7 +930,7 @@ void CarlaStyle::drawPrimitive(PrimitiveElement elem,
                               rect.topLeft().y() + offset,
                               rect.topRight().x() - margin,
                               rect.topRight().y() + offset);
-            painter->setPen(QPen(option->palette.background().color().lighter(110)));
+            painter->setPen(QPen(qt_palette_bg_color(option->palette).lighter(110)));
             painter->drawLine(rect.topLeft().x() + margin ,
                               rect.topLeft().y() + offset + 1,
                               rect.topRight().x() - margin,
@@ -941,8 +955,8 @@ void CarlaStyle::drawPrimitive(PrimitiveElement elem,
     {
         painter->setPen(QPen(outline, 1));
         painter->drawRect(option->rect.adjusted(0, 0, -1, -1));
-        QColor frameLight = option->palette.background().color().lighter(160);
-        QColor frameShadow = option->palette.background().color().darker(110);
+        QColor frameLight = qt_palette_bg_color(option->palette).lighter(160);
+        QColor frameShadow = qt_palette_bg_color(option->palette).darker(110);
 
         //paint beveleffect
         QRect frame = option->rect.adjusted(1, 1, -1, -1);
@@ -960,14 +974,14 @@ void CarlaStyle::drawPrimitive(PrimitiveElement elem,
 
         painter->save();
     {
-        QColor softshadow = option->palette.background().color().darker(120);
+        QColor softshadow = qt_palette_bg_color(option->palette).darker(120);
 
         QRect rect= option->rect;
         painter->setPen(softshadow);
         painter->drawRect(option->rect.adjusted(0, 0, -1, -1));
         painter->setPen(QPen(option->palette.light(), 0));
         painter->drawLine(QPoint(rect.left() + 1, rect.top() + 1), QPoint(rect.left() + 1, rect.bottom() - 1));
-        painter->setPen(QPen(option->palette.background().color().darker(120), 0));
+        painter->setPen(QPen(qt_palette_bg_color(option->palette).darker(120), 0));
         painter->drawLine(QPoint(rect.left() + 1, rect.bottom() - 1), QPoint(rect.right() - 2, rect.bottom() - 1));
         painter->drawLine(QPoint(rect.right() - 1, rect.top() + 1), QPoint(rect.right() - 1, rect.bottom() - 1));
 
@@ -1006,7 +1020,7 @@ void CarlaStyle::drawPrimitive(PrimitiveElement elem,
         painter->setPen(QPen(option->palette.light(), 0));
         painter->drawLine(QPoint(rect.left() + 1, rect.top() + 1),
                           QPoint(rect.left() + 1, rect.bottom() - 1));
-        painter->setPen(QPen(option->palette.background().color().darker(120), 0));
+        painter->setPen(QPen(qt_palette_bg_color(option->palette).darker(120), 0));
         painter->drawLine(QPoint(rect.left() + 1, rect.bottom() - 1),
                           QPoint(rect.right() - 2, rect.bottom() - 1));
         painter->drawLine(QPoint(rect.right() - 1, rect.top() + 1),
@@ -1053,7 +1067,7 @@ void CarlaStyle::drawPrimitive(PrimitiveElement elem,
 
             const QColor& baseColor = option->palette.base().color();
 
-            QColor pressedColor = mergedColors(baseColor, option->palette.foreground().color(), 85);
+            QColor pressedColor = mergedColors(baseColor, qt_palette_fg_color(option->palette), 85);
             painter->setBrush(Qt::NoBrush);
 
             // Gradient fill
@@ -1115,12 +1129,12 @@ void CarlaStyle::drawPrimitive(PrimitiveElement elem,
     case PE_IndicatorRadioButton:
         painter->save();
     {
-        QColor pressedColor = mergedColors(option->palette.base().color(), option->palette.foreground().color(), 85);
+        QColor pressedColor = mergedColors(option->palette.base().color(), qt_palette_fg_color(option->palette), 85);
         painter->setBrush((state & State_Sunken) ? pressedColor : option->palette.base().color());
         painter->setRenderHint(QPainter::Antialiasing, true);
         QPainterPath circle;
         circle.addEllipse(rect.center() + QPoint(1.0, 1.0), 6.5, 6.5);
-        painter->setPen(QPen(option->palette.background().color().darker(150), 1));
+        painter->setPen(QPen(qt_palette_bg_color(option->palette).darker(150), 1));
         if (option->state & State_HasFocus && option->state & State_KeyboardFocusChange)
             painter->setPen(QPen(highlightedOutline, 1));
         painter->drawPath(circle);
@@ -1355,7 +1369,7 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
         break;
     case CE_Splitter:
     {
-        // Dont draw handle for single pixel splitters
+        // Don't draw handle for single pixel splitters
         if (option->rect.width() > 1 && option->rect.height() > 1) {
             //draw grips
             if (option->state & State_Horizontal) {
@@ -1577,7 +1591,7 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
             pixmapName += QString::number(- int(header->orientation));
 
             QPixmap cache;
-            if (!QPixmapCache::find(pixmapName, cache)) {
+            if (!QPixmapCache::find(pixmapName, PIXMAPCACHE_VAR_PREFIX cache)) {
                 cache = styleCachePixmap(rect.size());
                 cache.fill(Qt::transparent);
                 QRect pixmapRect(0, 0, rect.width(), rect.height());
@@ -1588,8 +1602,13 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                 gradientStopColor = buttonColor.darker(102);
                 QLinearGradient gradient(pixmapRect.topLeft(), pixmapRect.bottomLeft());
 
-                if (option->palette.background().gradient()) {
-                    gradient.setStops(option->palette.background().gradient()->stops());
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 13, 0))
+                const QGradient* gradientBrush = option->palette.window().gradient();
+#else
+                const QGradient* gradientBrush = option->palette.background().gradient();
+#endif
+                if (gradientBrush) {
+                    gradient.setStops(gradientBrush->stops());
                 } else {
                     QColor midColor1 = mergedColors(gradientStartColor, gradientStopColor, 60);
                     QColor midColor2 = mergedColors(gradientStartColor, gradientStopColor, 40);
@@ -1823,7 +1842,7 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
             }
             else
             {
-                QColor shadow = mergedColors(option->palette.background().color().darker(120),
+                QColor shadow = mergedColors(qt_palette_bg_color(option->palette).darker(120),
                                              outline.lighter(140), 60);
                 painter->setPen(QPen(shadow));
                 painter->drawLine(option->rect.bottomLeft(), option->rect.bottomRight());
@@ -1844,7 +1863,7 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                     proxy()->drawItemText(painter, menuItem->rect.adjusted(5, 0, -5, 0), Qt::AlignLeft | Qt::AlignVCenter,
                                           menuItem->palette, menuItem->state & State_Enabled, menuItem->text,
                                           QPalette::Text);
-                    w = menuItem->fontMetrics.width(menuItem->text) + 5;
+                    w = fontMetricsHorizontalAdvance(menuItem->fontMetrics, menuItem->text) + 5;
                 }
                 painter->setPen(highlight);
                 bool reverse = menuItem->direction == Qt::RightToLeft;
@@ -1947,7 +1966,7 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                 if (checkable && checked) {
                     QStyleOption opt = *option;
                     if (act) {
-                        QColor activeColor = mergedColors(option->palette.background().color(),
+                        QColor activeColor = mergedColors(qt_palette_bg_color(option->palette),
                                                           option->palette.highlight().color());
                         opt.palette.setBrush(QPalette::Button, activeColor);
                     }
@@ -2118,7 +2137,7 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
     {
         painter->fillRect(rect, option->palette.window());
         if (widget && qobject_cast<const QMainWindow *>(widget->parentWidget())) {
-            QColor shadow = mergedColors(option->palette.background().color().darker(120),
+            QColor shadow = mergedColors(qt_palette_bg_color(option->palette).darker(120),
                                          outline.lighter(140), 60);
             painter->setPen(QPen(shadow));
             painter->drawLine(option->rect.bottomLeft(), option->rect.bottomRight());
@@ -2318,7 +2337,7 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
         // ### backgroundrole/foregroundrole should be part of the style option
         alphaCornerColor = mergedColors(option->palette.color(widget->backgroundRole()), outline);
     } else {
-        alphaCornerColor = mergedColors(option->palette.background().color(), outline);
+        alphaCornerColor = mergedColors(qt_palette_bg_color(option->palette), outline);
     }
 
     switch (control) {
@@ -2372,7 +2391,7 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
         if (const QStyleOptionSpinBox *spinBox = qstyleoption_cast<const QStyleOptionSpinBox *>(option)) {
             QPixmap cache;
             QString pixmapName = uniqueName(QLatin1String("spinbox"), spinBox, spinBox->rect.size());
-            if (!QPixmapCache::find(pixmapName, cache)) {
+            if (!QPixmapCache::find(pixmapName, PIXMAPCACHE_VAR_PREFIX cache)) {
 
                 cache = styleCachePixmap(spinBox->rect.size());
                 cache.fill(Qt::transparent);
@@ -2381,7 +2400,7 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
                 QRect rect = pixmapRect;
                 QRect r = rect;
                 QPainter cachePainter(&cache);
-                QColor arrowColor = spinBox->palette.foreground().color();
+                QColor arrowColor = qt_palette_fg_color(spinBox->palette);
                 arrowColor.setAlpha(220);
 
                 const bool isEnabled = (spinBox->state & State_Enabled);
@@ -2591,13 +2610,13 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
             QColor highlight = option->palette.highlight().color();
 
             QColor titleBarFrameBorder(active ? highlight.darker(180): outline.darker(110));
-            QColor titleBarHighlight(active ? highlight.lighter(120): palette.background().color().lighter(120));
+            QColor titleBarHighlight(active ? highlight.lighter(120): qt_palette_bg_color(palette).lighter(120));
             QColor textColor(active ? 0xffffff : 0xff000000);
             QColor textAlphaColor(active ? 0xffffff : 0xff000000 );
 
             {
                 // Fill title bar gradient
-                QColor titlebarColor = QColor(active ? highlight: palette.background().color());
+                QColor titlebarColor = QColor(active ? highlight: qt_palette_bg_color(palette));
                 QLinearGradient gradient(option->rect.center().x(), option->rect.top(),
                                          option->rect.center().x(), option->rect.bottom());
 
@@ -2857,7 +2876,7 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
             QColor alphaOutline = outline;
             alphaOutline.setAlpha(180);
 
-            QColor arrowColor = option->palette.foreground().color();
+            QColor arrowColor = qt_palette_fg_color(option->palette);
             arrowColor.setAlpha(220);
 
             // Paint groove
@@ -3030,7 +3049,7 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
             if (isEnabled)
                 pixmapName += QLatin1String("-enabled");
 
-            if (!QPixmapCache::find(pixmapName, cache)) {
+            if (!QPixmapCache::find(pixmapName, PIXMAPCACHE_VAR_PREFIX cache)) {
                 cache = styleCachePixmap(comboBox->rect.size());
                 cache.fill(Qt::transparent);
                 QPainter cachePainter(&cache);
@@ -3047,7 +3066,7 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
                     buttonOption.QStyleOption::operator=(*comboBox);
                     buttonOption.rect = rect;
                     buttonOption.state = (comboBox->state & (State_Enabled | State_MouseOver | State_HasFocus))
-                            | State_KeyboardFocusChange; // Allways show hig
+                            | State_KeyboardFocusChange; // Always show hig
 
                     if (sunken) {
                         buttonOption.state |= State_Sunken;
@@ -3138,7 +3157,7 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
                 QRect pixmapRect(0, 0, groove.width(), groove.height());
 
                 // draw background groove
-                if (!QPixmapCache::find(groovePixmapName, cache)) {
+                if (!QPixmapCache::find(groovePixmapName, PIXMAPCACHE_VAR_PREFIX cache)) {
                     cache = styleCachePixmap(pixmapRect.size());
                     cache.fill(Qt::transparent);
                     QPainter groovePainter(&cache);
@@ -3166,7 +3185,7 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
                 // draw blue groove highlight
                 QRect clipRect;
                 groovePixmapName += QLatin1String("_blue");
-                if (!QPixmapCache::find(groovePixmapName, cache)) {
+                if (!QPixmapCache::find(groovePixmapName, PIXMAPCACHE_VAR_PREFIX cache)) {
                     cache = styleCachePixmap(pixmapRect.size());
                     cache.fill(Qt::transparent);
                     QPainter groovePainter(&cache);
@@ -3274,7 +3293,7 @@ void CarlaStyle::drawComplexControl(ComplexControl control, const QStyleOptionCo
             // draw handle
             if ((option->subControls & SC_SliderHandle) ) {
                 QString handlePixmapName = uniqueName(QLatin1String("slider_handle"), option, handle.size());
-                if (!QPixmapCache::find(handlePixmapName, cache)) {
+                if (!QPixmapCache::find(handlePixmapName, PIXMAPCACHE_VAR_PREFIX cache)) {
                     cache = styleCachePixmap(handle.size());
                     cache.fill(Qt::transparent);
                     QRect pixmapRect(0, 0, handle.width(), handle.height());
@@ -3495,7 +3514,7 @@ QSize CarlaStyle::sizeFromContents(ContentsType type, const QStyleOption* option
                 QFont fontBold = menuItem->font;
                 fontBold.setBold(true);
                 QFontMetrics fmBold(fontBold);
-                w += fmBold.width(menuItem->text) - fm.width(menuItem->text);
+                w += fontMetricsHorizontalAdvance(fmBold, menuItem->text) - fontMetricsHorizontalAdvance(fm, menuItem->text);
             }
             int checkcol = qMax<int>(maxpmw, CarlaStylePrivate::menuCheckMarkWidth); // Windows always shows a check column
             w += checkcol;
@@ -3945,7 +3964,7 @@ int CarlaStyle::styleHint(StyleHint hint, const QStyleOption* option, const QWid
         return 0;
 
     case SH_Table_GridLineColor:
-        return option ? option->palette.background().color().darker(120).rgb() : 0;
+        return option ? qt_palette_bg_color(option->palette).darker(120).rgb() : 0;
 
     case SH_MessageBox_TextInteractionFlags:
         return Qt::TextSelectableByMouse | Qt::LinksAccessibleByMouse;

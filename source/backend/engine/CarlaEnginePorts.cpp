@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -15,9 +15,13 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include "CarlaEnginePorts.hpp"
+#include "CarlaEngineGraph.hpp"
 #include "CarlaEngineUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
+
+#include "lv2/lv2.h"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -25,6 +29,7 @@ CARLA_BACKEND_START_NAMESPACE
 // Fallback data
 
 static const EngineEvent kFallbackEngineEvent = { kEngineEventTypeNull, 0, 0, {{ kEngineControlEventTypeNull, 0, 0.0f }} };
+//static CarlaEngineEventCV kFallbackEngineEventCV = { nullptr, (uint32_t)-1, 0.0f };
 
 // -----------------------------------------------------------------------
 // Carla Engine port (Abstract)
@@ -40,6 +45,10 @@ CarlaEnginePort::CarlaEnginePort(const CarlaEngineClient& client, const bool isI
 CarlaEnginePort::~CarlaEnginePort() noexcept
 {
     carla_debug("CarlaEnginePort::~CarlaEnginePort()");
+}
+
+void CarlaEnginePort::setMetaData(const char*, const char*, const char*)
+{
 }
 
 // -----------------------------------------------------------------------
@@ -66,7 +75,9 @@ void CarlaEngineAudioPort::initBuffer() noexcept
 
 CarlaEngineCVPort::CarlaEngineCVPort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset) noexcept
     : CarlaEnginePort(client, isInputPort, indexOffset),
-      fBuffer(nullptr)
+      fBuffer(nullptr),
+      fMinimum(-1.0f),
+      fMaximum(1.0f)
 {
     carla_debug("CarlaEngineCVPort::CarlaEngineCVPort(%s)", bool2str(isInputPort));
 }
@@ -80,13 +91,33 @@ void CarlaEngineCVPort::initBuffer() noexcept
 {
 }
 
+void CarlaEngineCVPort::setRange(const float min, const float max) noexcept
+{
+    fMinimum = min;
+    fMaximum = max;
+
+    char strBufMin[STR_MAX];
+    char strBufMax[STR_MAX];
+    carla_zeroChars(strBufMin, STR_MAX);
+    carla_zeroChars(strBufMax, STR_MAX);
+
+    {
+        const CarlaScopedLocale csl;
+        std::snprintf(strBufMin, STR_MAX-1, "%.12g", static_cast<double>(min));
+        std::snprintf(strBufMax, STR_MAX-1, "%.12g", static_cast<double>(max));
+    }
+
+    setMetaData(LV2_CORE__minimum, strBufMin, "");
+    setMetaData(LV2_CORE__maximum, strBufMax, "");
+}
+
 // -----------------------------------------------------------------------
 // Carla Engine Event port
 
 CarlaEngineEventPort::CarlaEngineEventPort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset) noexcept
     : CarlaEnginePort(client, isInputPort, indexOffset),
-      fBuffer(nullptr),
-      kProcessMode(client.getEngine().getProccessMode())
+      kProcessMode(client.getEngine().getProccessMode()),
+      fBuffer(nullptr)
 {
     carla_debug("CarlaEngineEventPort::CarlaEngineEventPort(%s)", bool2str(isInputPort));
 
@@ -291,6 +322,214 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
     carla_stderr2("CarlaEngineEventPort::writeMidiEvent() - buffer full");
     return false;
 }
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+// -----------------------------------------------------------------------
+// Carla Engine Meta CV port
+
+CarlaEngineCVSourcePorts::CarlaEngineCVSourcePorts()
+    : pData(new ProtectedData())
+{
+    carla_debug("CarlaEngineCVSourcePorts::CarlaEngineCVSourcePorts()");
+}
+
+CarlaEngineCVSourcePorts::~CarlaEngineCVSourcePorts()
+{
+    carla_debug("CarlaEngineCVSourcePorts::~CarlaEngineCVSourcePorts()");
+    delete pData;
+}
+
+bool CarlaEngineCVSourcePorts::addCVSource(CarlaEngineCVPort* const port, const uint32_t portIndexOffset)
+{
+    CARLA_SAFE_ASSERT_RETURN(port != nullptr, false);
+    CARLA_SAFE_ASSERT_RETURN(port->isInput(), false);
+    carla_debug("CarlaEngineCVSourcePorts::addCVSource(%p)", port);
+
+    {
+        const CarlaRecursiveMutexLocker crml(pData->rmutex);
+
+        const CarlaEngineEventCV ecv = { port, portIndexOffset, 0.0f };
+        if (! pData->cvs.add(ecv))
+            return false;
+
+        if (pData->graph != nullptr && pData->plugin != nullptr)
+            pData->graph->reconfigureForCV(pData->plugin, static_cast<uint>(pData->cvs.size()-1), true);
+
+        /*
+        if (pData->buffer == nullptr)
+            pData->buffer = new EngineEvent[kMaxEngineEventInternalCount];
+        */
+    }
+
+    return true;
+}
+
+bool CarlaEngineCVSourcePorts::removeCVSource(const uint32_t portIndexOffset)
+{
+    carla_debug("CarlaEngineCVSourcePorts::removeCVSource(%u)", portIndexOffset);
+
+    {
+        const CarlaRecursiveMutexLocker crml(pData->rmutex);
+
+        for (int i = pData->cvs.size(); --i >= 0;)
+        {
+            const CarlaEngineEventCV& ecv(pData->cvs[i]);
+
+            if (ecv.indexOffset == portIndexOffset)
+            {
+                delete ecv.cvPort;
+                pData->cvs.remove(i);
+
+                if (pData->graph != nullptr && pData->plugin != nullptr)
+                    pData->graph->reconfigureForCV(pData->plugin, static_cast<uint>(i), false);
+
+                carla_stdout("found cv source to remove %u", portIndexOffset);
+
+                return true;
+            }
+        }
+    }
+
+    if (pData->buffer != nullptr)
+    {
+        delete[] pData->buffer;
+        pData->buffer = nullptr;
+    }
+
+    carla_stdout("did NOT found cv source to remove %u", portIndexOffset);
+    return false;
+}
+
+bool CarlaEngineCVSourcePorts::setCVSourceRange(const uint32_t portIndexOffset, const float minimum, const float maximum)
+{
+    const CarlaRecursiveMutexLocker crml(pData->rmutex);
+
+    for (int i = pData->cvs.size(); --i >= 0;)
+    {
+        CarlaEngineEventCV& ecv(pData->cvs.getReference(i));
+
+        if (ecv.indexOffset == portIndexOffset)
+        {
+            CARLA_SAFE_ASSERT_RETURN(ecv.cvPort != nullptr, false);
+            ecv.cvPort->setRange(minimum, maximum);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void CarlaEngineCVSourcePorts::initPortBuffers(const float* const* const buffers,
+                                               const uint32_t frames,
+                                               const bool sampleAccurate,
+                                               CarlaEngineEventPort* const eventPort)
+{
+    CARLA_SAFE_ASSERT_RETURN(buffers != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(eventPort != nullptr,);
+
+    const CarlaRecursiveMutexTryLocker crmtl(pData->rmutex);
+
+    if (! crmtl.wasLocked())
+        return;
+
+    const int numCVs = pData->cvs.size();
+
+    if (numCVs == 0)
+        return;
+
+    EngineEvent* const buffer = eventPort->fBuffer;
+    CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
+    /*
+    if (buffer == nullptr)
+        return;
+    */
+
+    uint32_t eventCount = 0;
+    float v, min, max;
+
+    for (; eventCount < kMaxEngineEventInternalCount; ++eventCount)
+    {
+        if (buffer[eventCount].type == kEngineEventTypeNull)
+            break;
+    }
+
+    if (eventCount == kMaxEngineEventInternalCount)
+        return;
+
+    if (sampleAccurate || true)
+    {
+        for (int i = 0; i < numCVs && eventCount < kMaxEngineEventInternalCount; ++i)
+        {
+            CarlaEngineEventCV& ecv(pData->cvs.getReference(i));
+            CARLA_SAFE_ASSERT_CONTINUE(ecv.cvPort != nullptr);
+
+            float previousValue = ecv.previousValue;
+            ecv.cvPort->getRange(min, max);
+
+            v = buffers[i][frames-1U];
+
+            if (carla_isNotEqual(v, previousValue))
+            {
+                previousValue = v;
+
+                EngineEvent& event(buffer[eventCount++]);
+
+                event.type    = kEngineEventTypeControl;
+                event.time    = frames-1U;
+                event.channel = kEngineEventNonMidiChannel;
+
+                event.ctrl.type  = kEngineControlEventTypeParameter;
+                event.ctrl.param = static_cast<uint16_t>(i);
+                event.ctrl.value = carla_fixedValue(0.0f, 1.0f, (v - min) / (max - min));
+            }
+
+            ecv.previousValue = previousValue;
+        }
+    }
+}
+
+/*
+void CarlaEngineCVSourcePorts::mixWithCvBuffer(const float* const buffer,
+                                            const uint32_t frames,
+                                            const uint32_t indexOffset) noexcept
+{
+    for (LinkedList<CarlaEngineEventCV>::Itenerator it = pData->cvs.begin2(); it.valid(); it.next())
+    {
+        CarlaEngineEventCV& ecv(it.getValue(kFallbackEngineEventCV));
+
+        if (ecv.indexOffset != indexOffset)
+            continue;
+        CARLA_SAFE_ASSERT_RETURN(ecv.cvPort != nullptr,);
+
+        float previousValue = ecv.previousValue;
+        ecv.cvPort->getRange(min, max);
+
+        for (uint32_t i=0; i<frames; i+=32)
+        {
+            v = buffer[i];
+
+            if (carla_isNotEqual(v, previousValue))
+            {
+                previousValue = v;
+
+                EngineEvent& event(pData->buffer[eventIndex++]);
+
+                event.type    = kEngineEventTypeControl;
+                event.time    = i;
+                event.channel = kEngineEventNonMidiChannel;
+
+                event.ctrl.type  = kEngineControlEventTypeParameter;
+                event.ctrl.param = static_cast<uint16_t>(indexOffset);
+                event.ctrl.value = carla_fixedValue(0.0f, 1.0f, (v - min) / (max - min));
+            }
+        }
+
+        ecv.previousValue = previousValue;
+        break;
+    }
+}
+*/
+#endif
 
 // -----------------------------------------------------------------------
 

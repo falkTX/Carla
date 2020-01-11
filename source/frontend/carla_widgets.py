@@ -19,9 +19,9 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QSettings, QTimer
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QTimer
 from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath, QPalette, QPixmap
-from PyQt5.QtWidgets import QDialog, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QDialog, QGroupBox, QInputDialog, QLineEdit, QMenu, QScrollArea, QVBoxLayout, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -33,6 +33,7 @@ import ui_carla_parameter
 
 from carla_shared import *
 from carla_utils import *
+from widgets.collapsablewidget import CollapsibleBox
 from widgets.paramspinbox import CustomInputDialog
 from widgets.pixmapkeyboard import PixmapKeyboardHArea
 
@@ -67,7 +68,7 @@ class CarlaAboutW(QDialog):
         self.ui.l_about.setText(self.tr(""
                                      "<br>Version %s"
                                      "<br>Carla is a fully-featured audio plugin host%s.<br>"
-                                     "<br>Copyright (C) 2011-2019 falkTX<br>"
+                                     "<br>Copyright (C) 2011-2020 falkTX<br>"
                                      "" % (VERSION, extraInfo)))
 
         if self.ui.about.palette().color(QPalette.Background).blackF() < 0.5:
@@ -169,8 +170,8 @@ class CarlaAboutW(QDialog):
         # adjust appropriately
         self.ui.tabWidget.setCurrentIndex(2)
         self.adjustSize()
-
         self.ui.tabWidget.setCurrentIndex(0)
+
         self.setFixedSize(self.size())
 
         flags  = self.windowFlags()
@@ -199,8 +200,13 @@ class JuceAboutW(QDialog):
         self.adjustSize()
         self.setFixedSize(self.size())
 
+        flags  = self.windowFlags()
+        flags &= ~Qt.WindowContextHelpButtonHint
+
         if WINDOWS:
-            self.setWindowFlags(self.windowFlags()|Qt.MSWindowsFixedSizeDialogHint)
+            flags |= Qt.MSWindowsFixedSizeDialogHint
+
+        self.setWindowFlags(flags)
 
     def done(self, r):
         QDialog.done(self, r)
@@ -210,9 +216,9 @@ class JuceAboutW(QDialog):
 # Plugin Parameter
 
 class PluginParameter(QWidget):
-    midiControlChanged = pyqtSignal(int, int)
-    midiChannelChanged = pyqtSignal(int, int)
-    valueChanged       = pyqtSignal(int, float)
+    mappedControlChanged = pyqtSignal(int, int)
+    midiChannelChanged   = pyqtSignal(int, int)
+    valueChanged         = pyqtSignal(int, float)
 
     def __init__(self, parent, host, pInfo, pluginId, tabIndex):
         QWidget.__init__(self, parent)
@@ -228,7 +234,7 @@ class PluginParameter(QWidget):
         # -------------------------------------------------------------
         # Internal stuff
 
-        self.fMidiControl = -1
+        self.fMappedCtrl  = CONTROL_VALUE_NONE
         self.fMidiChannel = 1
         self.fParameterId = pInfo['index']
         self.fPluginId    = pluginId
@@ -251,28 +257,30 @@ class PluginParameter(QWidget):
         self.ui.widget.setStepLarge(pInfo['stepLarge'])
         self.ui.widget.setScalePoints(pInfo['scalePoints'], bool(pHints & PARAMETER_USES_SCALEPOINTS))
 
+        if pInfo['comment']:
+            self.ui.label.setToolTip(pInfo['comment'])
+            self.ui.widget.setToolTip(pInfo['comment'])
+
         if pType == PARAMETER_INPUT:
             if not pHints & PARAMETER_IS_ENABLED:
                 self.ui.label.setEnabled(False)
                 self.ui.widget.setEnabled(False)
                 self.ui.widget.setReadOnly(True)
-                self.ui.sb_control.setEnabled(False)
-                self.ui.sb_channel.setEnabled(False)
+                self.ui.tb_options.setEnabled(False)
 
             elif not pHints & PARAMETER_IS_AUTOMABLE:
-                self.ui.sb_control.setEnabled(False)
-                self.ui.sb_channel.setEnabled(False)
+                self.ui.tb_options.setEnabled(False)
 
             if pHints & PARAMETER_IS_READ_ONLY:
                 self.ui.widget.setReadOnly(True)
+                self.ui.tb_options.setEnabled(False)
 
         elif pType == PARAMETER_OUTPUT:
             self.ui.widget.setReadOnly(True)
 
         else:
             self.ui.widget.setVisible(False)
-            self.ui.sb_control.setVisible(False)
-            self.ui.sb_channel.setVisible(False)
+            self.ui.tb_options.setVisible(False)
 
         # Only set value after all hints are handled
         self.ui.widget.setValue(pInfo['current'])
@@ -283,16 +291,13 @@ class PluginParameter(QWidget):
         self.ui.widget.setValueCallback(self._valueCallBack)
         self.ui.widget.updateAll()
 
-        self.setMidiControl(pInfo['midiCC'])
+        self.setMappedControlIndex(pInfo['mappedControlIndex'])
         self.setMidiChannel(pInfo['midiChannel'])
 
         # -------------------------------------------------------------
         # Set-up connections
 
-        self.ui.sb_control.customContextMenuRequested.connect(self.slot_controlSpinboxCustomMenu)
-        self.ui.sb_channel.customContextMenuRequested.connect(self.slot_channelSpinboxCustomMenu)
-        self.ui.sb_control.valueChanged.connect(self.slot_controlSpinboxChanged)
-        self.ui.sb_channel.valueChanged.connect(self.slot_channelSpinboxChanged)
+        self.ui.tb_options.clicked.connect(self.slot_optionsCustomMenu)
         self.ui.widget.dragStateChanged.connect(self.slot_parameterDragStateChanged)
 
         # -------------------------------------------------------------
@@ -314,55 +319,91 @@ class PluginParameter(QWidget):
         self.ui.widget.setValue(value)
         self.ui.widget.blockSignals(False)
 
-    def setMidiControl(self, control):
-        self.fMidiControl = control
-        self.ui.sb_control.blockSignals(True)
-        self.ui.sb_control.setValue(control)
-        self.ui.sb_control.blockSignals(False)
+    def setMappedControlIndex(self, control):
+        self.fMappedCtrl = control
 
     def setMidiChannel(self, channel):
         self.fMidiChannel = channel
-        self.ui.sb_channel.blockSignals(True)
-        self.ui.sb_channel.setValue(channel)
-        self.ui.sb_channel.blockSignals(False)
 
     def setLabelWidth(self, width):
         self.ui.label.setFixedWidth(width)
 
     @pyqtSlot()
-    def slot_controlSpinboxCustomMenu(self):
+    def slot_optionsCustomMenu(self):
         menu = QMenu(self)
 
-        actNone = menu.addAction(self.tr("None"))
-
-        if self.fMidiControl == -1:
-            actNone.setCheckable(True)
-            actNone.setChecked(True)
-
-        for cc in MIDI_CC_LIST:
-            action = menu.addAction(cc)
-
-            if self.fMidiControl != -1 and int(cc.split(" ", 1)[0], 16) == self.fMidiControl:
-                action.setCheckable(True)
-                action.setChecked(True)
-
-        actSel = menu.exec_(QCursor.pos())
-
-        if not actSel:
-            pass
-        elif actSel == actNone:
-            self.ui.sb_control.setValue(-1)
+        if self.fMappedCtrl == CONTROL_VALUE_NONE:
+            title = self.tr("Unmapped")
+        elif self.fMappedCtrl == CONTROL_VALUE_CV:
+            title = self.tr("Exposed as CV")
         else:
-            selControlStr = actSel.text()
-            selControl    = int(selControlStr.split(" ", 1)[0].replace("&",""), 16)
-            self.ui.sb_control.setValue(selControl)
+            title = self.tr("Mapped to CC %i, channel %i" % (self.fMappedCtrl, self.fMidiChannel))
 
-    @pyqtSlot()
-    def slot_channelSpinboxCustomMenu(self):
-        menu = QMenu(self)
+        actTitle = menu.addAction(title)
+        actTitle.setEnabled(False)
 
+        menu.addSeparator()
+
+        actUnmap = menu.addAction(self.tr("Unmap"))
+
+        if self.fMappedCtrl == CONTROL_VALUE_NONE:
+            actUnmap.setCheckable(True)
+            actUnmap.setChecked(True)
+
+        menu.addSection("CV")
+
+        actCV = menu.addAction(self.tr("Expose as CV port"))
+
+        if self.fMappedCtrl == CONTROL_VALUE_CV:
+            actCV.setCheckable(True)
+            actCV.setChecked(True)
+
+        menu.addSection("MIDI")
+
+        menuMIDI = menu.addMenu(self.tr("MIDI Control"))
+
+        if self.fMappedCtrl not in (CONTROL_VALUE_NONE, CONTROL_VALUE_CV, CONTROL_VALUE_MIDI_PITCHBEND):
+            action = menuMIDI.menuAction()
+            action.setCheckable(True)
+            action.setChecked(True)
+
+        inlist = False
+        actCCs = []
+        for cc in MIDI_CC_LIST:
+            action = menuMIDI.addAction(cc)
+            actCCs.append(action)
+
+            if self.fMappedCtrl >= 0:
+                ccx = int(cc.split(" ", 1)[0], 16)
+
+                if ccx > self.fMappedCtrl and not inlist:
+                    inlist = True
+                    action = menuMIDI.addAction(self.tr("0x%x (Custom)" % self.fMappedCtrl))
+                    action.setCheckable(True)
+                    action.setChecked(True)
+                    actCCs.append(action)
+
+                elif ccx == self.fMappedCtrl:
+                    inlist = True
+                    action.setCheckable(True)
+                    action.setChecked(True)
+
+        # TODO
+        #menuMIDI.addAction(self.tr("Custom..."))
+
+        # TODO
+        #actPitchbend = menu.addAction(self.tr("MIDI Pitchbend"))
+
+        #if self.fMappedCtrl == CONTROL_VALUE_MIDI_PITCHBEND:
+            #actPitchbend.setCheckable(True)
+            #actPitchbend.setChecked(True)
+
+        menuChannel = menu.addMenu(self.tr("MIDI Channel"))
+
+        actChannels = []
         for i in range(1, 16+1):
-            action = menu.addAction("%i" % i)
+            action = menuChannel.addAction("%i" % i)
+            actChannels.append(action)
 
             if self.fMidiChannel == i:
                 action.setCheckable(True)
@@ -370,19 +411,28 @@ class PluginParameter(QWidget):
 
         actSel = menu.exec_(QCursor.pos())
 
-        if actSel:
-            selChannel = int(actSel.text())
-            self.ui.sb_channel.setValue(selChannel)
+        if not actSel:
+            return
 
-    @pyqtSlot(int)
-    def slot_controlSpinboxChanged(self, control):
-        self.fMidiControl = control
-        self.midiControlChanged.emit(self.fParameterId, control)
+        if actSel in actChannels:
+            channel = int(actSel.text())
+            self.fMidiChannel = channel
+            self.midiChannelChanged.emit(self.fParameterId, channel)
+            return
 
-    @pyqtSlot(int)
-    def slot_channelSpinboxChanged(self, channel):
-        self.fMidiChannel = channel
-        self.midiChannelChanged.emit(self.fParameterId, channel)
+        if actSel == actUnmap:
+            ctrl = CONTROL_VALUE_NONE
+        elif actSel == actCV:
+            ctrl = CONTROL_VALUE_CV
+        elif actSel in actCCs:
+            ctrl = int(actSel.text().split(" ", 1)[0].replace("&",""), 16)
+        #elif actSel in actPitchbend:
+            #ctrl = CONTROL_VALUE_MIDI_PITCHBEND
+        else:
+            return
+
+        self.fMappedCtrl = ctrl
+        self.mappedControlChanged.emit(self.fParameterId, ctrl)
 
     @pyqtSlot(bool)
     def slot_parameterDragStateChanged(self, touch):
@@ -435,9 +485,6 @@ class PluginEditParentMeta():
 # Plugin Editor (Built-in)
 
 class PluginEdit(QDialog):
-    # settings
-    kParamsPerPage = 17
-
     # signals
     SIGTERM = pyqtSignal()
     SIGUSR1 = pyqtSignal()
@@ -720,18 +767,6 @@ class PluginEdit(QDialog):
         if not self.ui.scrollArea.isEnabled():
             self.resize(self.width(), self.height()-self.ui.scrollArea.height())
 
-        # FIXME: See if this is still needed
-        # Workaround for a Qt4 bug, see https://bugreports.qt-project.org/browse/QTBUG-7792
-        if LINUX: QTimer.singleShot(0, self.slot_fixNameWordWrap)
-
-    @pyqtSlot()
-    def slot_fixNameWordWrap(self):
-        if self.ui.tabWidget.count() > 0:
-            self.ui.tabWidget.setCurrentIndex(1)
-        self.adjustSize()
-        self.ui.tabWidget.setCurrentIndex(0)
-        self.setMinimumSize(self.width(), self.height())
-
     #------------------------------------------------------------------
 
     def reloadInfo(self):
@@ -866,8 +901,11 @@ class PluginEdit(QDialog):
                 'step':    paramRanges['step'],
                 'stepSmall': paramRanges['stepSmall'],
                 'stepLarge': paramRanges['stepLarge'],
-                'midiCC':    paramData['midiCC'],
+                'mappedControlIndex': paramData['mappedControlIndex'],
                 'midiChannel': paramData['midiChannel']+1,
+
+                'comment':   paramInfo['comment'],
+                'groupName': paramInfo['groupName'],
 
                 'current': paramValue
             }
@@ -886,39 +924,23 @@ class PluginEdit(QDialog):
             # Get width values, in packs of 20
 
             if parameter['type'] == PARAMETER_INPUT:
-                paramInputWidthTMP = self.fontMetrics().width(parameter['name'])
+                paramInputWidthTMP = fontMetricsHorizontalAdvance(self.fontMetrics(), parameter['name'])
 
                 if paramInputWidthTMP > paramInputWidth:
                     paramInputWidth = paramInputWidthTMP
 
                 paramInputList.append(parameter)
 
-                if len(paramInputList) == self.kParamsPerPage:
-                    paramInputListFull.append((paramInputList, paramInputWidth))
-                    paramInputList  = []
-                    paramInputWidth = 0
-
             else:
-                paramOutputWidthTMP = self.fontMetrics().width(parameter['name'])
+                paramOutputWidthTMP = fontMetricsHorizontalAdvance(self.fontMetrics(), parameter['name'])
 
                 if paramOutputWidthTMP > paramOutputWidth:
                     paramOutputWidth = paramOutputWidthTMP
 
                 paramOutputList.append(parameter)
 
-                if len(paramOutputList) == self.kParamsPerPage:
-                    paramOutputListFull.append((paramOutputList, paramOutputWidth))
-                    paramOutputList  = []
-                    paramOutputWidth = 0
-
-        # for i in range(parameterCount)
-        else:
-            # Final page width values
-            if 0 < len(paramInputList) < self.kParamsPerPage:
-                paramInputListFull.append((paramInputList, paramInputWidth))
-
-            if 0 < len(paramOutputList) < self.kParamsPerPage:
-                paramOutputListFull.append((paramOutputList, paramOutputWidth))
+        paramInputListFull.append((paramInputList, paramInputWidth))
+        paramOutputListFull.append((paramOutputList, paramOutputWidth))
 
         # Create parameter tabs + widgets
         self._createParameterWidgets(PARAMETER_INPUT,  paramInputListFull,  self.tr("Parameters"))
@@ -1023,10 +1045,10 @@ class PluginEdit(QDialog):
                 paramWidget.setDefault(value)
                 break
 
-    def setParameterMidiControl(self, parameterId, control):
+    def setParameterMappedControlIndex(self, parameterId, control):
         for paramType, paramId, paramWidget in self.fParameterList:
             if paramId == parameterId:
-                paramWidget.setMidiControl(control)
+                paramWidget.setMappedControlIndex(control)
                 break
 
     def setParameterMidiChannel(self, parameterId, channel):
@@ -1333,8 +1355,8 @@ class PluginEdit(QDialog):
             self.fParent.editDialogParameterValueChanged(self.fPluginId, parameterId, value)
 
     @pyqtSlot(int, int)
-    def slot_parameterMidiControlChanged(self, parameterId, control):
-        self.host.set_parameter_midi_cc(self.fPluginId, parameterId, control)
+    def slot_parameterMappedControlChanged(self, parameterId, control):
+        self.host.set_parameter_mapped_control_index(self.fPluginId, parameterId, control)
 
     @pyqtSlot(int, int)
     def slot_parameterMidiChannelChanged(self, parameterId, channel):
@@ -1490,34 +1512,61 @@ class PluginEdit(QDialog):
     #------------------------------------------------------------------
 
     def _createParameterWidgets(self, paramType, paramListFull, tabPageName):
-        i = 1
+        groupWidgets = {}
+
         for paramList, width in paramListFull:
             if len(paramList) == 0:
                 break
 
-            tabIndex         = self.ui.tabWidget.count()
-            tabPageContainer = QWidget(self.ui.tabWidget)
-            tabPageLayout    = QVBoxLayout(tabPageContainer)
-            tabPageLayout.setSpacing(1)
-            tabPageContainer.setLayout(tabPageLayout)
+            tabIndex = self.ui.tabWidget.count()
+
+            scrollArea = QScrollArea(self.ui.tabWidget)
+            scrollArea.setWidgetResizable(True)
+            scrollArea.setFrameStyle(0)
+
+            palette1 = scrollArea.palette()
+            palette1.setColor(QPalette.Background, Qt.transparent)
+            scrollArea.setPalette(palette1)
+
+            palette2 = scrollArea.palette()
+            palette2.setColor(QPalette.Background, palette2.color(QPalette.Button))
+
+            scrollAreaWidget = QWidget(scrollArea)
+            scrollAreaLayout = QVBoxLayout(scrollAreaWidget)
+            scrollAreaLayout.setSpacing(3)
 
             for paramInfo in paramList:
-                paramWidget = PluginParameter(tabPageContainer, self.host, paramInfo, self.fPluginId, tabIndex)
+                groupName = paramInfo['groupName']
+                if groupName:
+                    groupSymbol, groupName = groupName.split(":",1)
+                    groupLayout, groupWidget = groupWidgets.get(groupSymbol, (None, None))
+                    if groupLayout is None:
+                        groupWidget = CollapsibleBox(groupName, scrollAreaWidget)
+                        groupLayout = groupWidget.getContentLayout()
+                        groupWidget.setPalette(palette2)
+                        scrollAreaLayout.addWidget(groupWidget)
+                        groupWidgets[groupSymbol] = (groupLayout, groupWidget)
+                else:
+                    groupLayout = scrollAreaLayout
+                    groupWidget = scrollAreaWidget
+
+                paramWidget = PluginParameter(groupWidget, self.host, paramInfo, self.fPluginId, tabIndex)
                 paramWidget.setLabelWidth(width)
-                tabPageLayout.addWidget(paramWidget)
+                groupLayout.addWidget(paramWidget)
 
                 self.fParameterList.append((paramType, paramInfo['index'], paramWidget))
 
                 if paramType == PARAMETER_INPUT:
                     paramWidget.valueChanged.connect(self.slot_parameterValueChanged)
 
-                paramWidget.midiControlChanged.connect(self.slot_parameterMidiControlChanged)
+                paramWidget.mappedControlChanged.connect(self.slot_parameterMappedControlChanged)
                 paramWidget.midiChannelChanged.connect(self.slot_parameterMidiChannelChanged)
 
-            tabPageLayout.addStretch()
+            scrollAreaLayout.addStretch()
 
-            self.ui.tabWidget.addTab(tabPageContainer, "%s (%i)" % (tabPageName, i))
-            i += 1
+            scrollArea.setWidget(scrollAreaWidget)
+
+            self.ui.tabWidget.addTab(scrollArea, tabPageName)
 
             if paramType == PARAMETER_INPUT:
                 self.ui.tabWidget.setTabIcon(tabIndex, self.fTabIconOff)

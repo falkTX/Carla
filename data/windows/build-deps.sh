@@ -28,6 +28,11 @@ rm -rf ${TARGETDIR}/carla-w32nosse ${TARGETDIR}/carla-w32 ${TARGETDIR}/carla-w64
 cleanup_pkgs()
 {
 
+rm -rf Carla
+rm -rf Carla.exe
+rm -rf Carla.lv2
+rm -rf Carla.vst
+rm -rf Carla_*
 rm -rf flac-*
 rm -rf fluidsynth-*
 rm -rf fftw-*
@@ -38,6 +43,7 @@ rm -rf libsndfile-*
 rm -rf libvorbis-*
 rm -rf mxml-*
 rm -rf pkg-config-*
+rm -rf pyliblo-*
 rm -rf zlib-*
 
 }
@@ -276,7 +282,7 @@ fi
 if [ ! -f fluidsynth-${FLUIDSYNTH_VERSION}/build-done ]; then
   cd fluidsynth-${FLUIDSYNTH_VERSION}
   if [ ! -f patched ]; then
-    patch -p1 -i ../../patches/fluidsynth-skip-drivers-build.patch
+    patch -p1 -i ../patches/fluidsynth-skip-drivers-build.patch
     touch patched
   fi
   cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_SHARED_LIBS=OFF \

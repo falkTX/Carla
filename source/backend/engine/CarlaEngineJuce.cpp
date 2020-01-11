@@ -25,7 +25,6 @@
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wcast-qual"
-# pragma GCC diagnostic ignored "-Wclass-memaccess"
 # pragma GCC diagnostic ignored "-Wconversion"
 # pragma GCC diagnostic ignored "-Wdouble-promotion"
 # pragma GCC diagnostic ignored "-Weffc++"
@@ -33,6 +32,9 @@
 # pragma GCC diagnostic ignored "-Wsign-conversion"
 # pragma GCC diagnostic ignored "-Wundef"
 # pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+# if __GNUC__ > 7
+#  pragma GCC diagnostic ignored "-Wclass-memaccess"
+# endif
 #endif
 
 #include "AppConfig.h"
@@ -88,6 +90,14 @@ struct JuceCleanup : public juce::DeletedAtShutdown {
 // -------------------------------------------------------------------------------------------------------------------
 // Cleanup
 
+struct AudioIODeviceTypeComparator
+{
+    static int compareElements (const juce::AudioIODeviceType* d1, const juce::AudioIODeviceType* d2) noexcept
+    {
+        return d1->getTypeName().compareNatural (d2->getTypeName());
+    }
+};
+
 static void initJuceDevicesIfNeeded()
 {
     static juce::AudioDeviceManager sDeviceManager;
@@ -110,6 +120,9 @@ static void initJuceDevicesIfNeeded()
             break;
         }
     }
+
+    AudioIODeviceTypeComparator comp;
+    gDeviceTypes.sort(comp);
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -218,7 +231,9 @@ public:
         pData->sampleRate = fDevice->getCurrentSampleRate();
         pData->initTime(pData->options.transportExtra);
 
-        pData->graph.create(static_cast<uint32_t>(inputNames.size()), static_cast<uint32_t>(outputNames.size()));
+        pData->graph.create(static_cast<uint32_t>(inputNames.size()),
+                            static_cast<uint32_t>(outputNames.size()),
+                            0, 0);
 
         fDevice->start(this);
 
@@ -337,6 +352,76 @@ public:
     {
         const int xruns = fDevice->getXRunCount();
         pData->xruns = xruns > 0 ? static_cast<uint32_t>(xruns) : 0;
+    }
+
+    bool setBufferSizeAndSampleRate(const uint bufferSize, const double sampleRate) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fDevice != nullptr, false);
+
+        juce::StringArray inputNames(fDevice->getInputChannelNames());
+        juce::StringArray outputNames(fDevice->getOutputChannelNames());
+
+        if (inputNames.size() < 0 || outputNames.size() <= 0)
+        {
+            setLastError("Selected device does not have any outputs");
+            return false;
+        }
+
+        juce::BigInteger inputChannels;
+        inputChannels.setRange(0, inputNames.size(), true);
+
+        juce::BigInteger outputChannels;
+        outputChannels.setRange(0, outputNames.size(), true);
+
+        // stop stream first
+        if (fDevice->isPlaying())
+            fDevice->stop();
+        if (fDevice->isOpen())
+            fDevice->close();
+
+        juce::String error = fDevice->open(inputChannels, outputChannels, sampleRate, static_cast<int>(bufferSize));
+
+        if (error.isNotEmpty())
+        {
+            setLastError(error.toUTF8());
+
+            // try to roll back
+            error = fDevice->open(inputChannels, outputChannels, pData->sampleRate, static_cast<int>(pData->bufferSize));
+
+            // if we failed, we are screwed...
+            if (error.isNotEmpty())
+            {
+                fDevice = nullptr;
+                close();
+            }
+
+            return false;
+        }
+
+        const uint32_t newBufferSize = static_cast<uint32_t>(fDevice->getCurrentBufferSizeSamples());
+        const double   newSampleRate = fDevice->getCurrentSampleRate();
+
+        if (carla_isNotEqual(pData->sampleRate, newSampleRate))
+        {
+            pData->sampleRate = newSampleRate;
+            sampleRateChanged(newSampleRate);
+        }
+
+        if (pData->bufferSize != newBufferSize)
+        {
+            pData->bufferSize = newBufferSize;
+            bufferSizeChanged(newBufferSize);
+        }
+
+        fDevice->start(this);
+        return true;
+    }
+
+    bool showDeviceControlPanel() const noexcept override
+    {
+        try {
+            return fDevice->showControlPanel();
+        } CARLA_SAFE_EXCEPTION_RETURN("showDeviceControlPanel", false);
     }
 
     // -------------------------------------------------------------------
@@ -765,8 +850,8 @@ protected:
     // -------------------------------------
 
 private:
-    ScopedPointer<juce::AudioIODevice> fDevice;
-    juce::AudioIODeviceType* const     fDeviceType;
+    CarlaScopedPointer<juce::AudioIODevice> fDevice;
+    juce::AudioIODeviceType* const fDeviceType;
 
     struct RtMidiEvents {
         CarlaMutex mutex;
@@ -829,7 +914,6 @@ CarlaEngine* CarlaEngine::newJuce(const AudioApi api)
     case AUDIO_API_NULL:
     case AUDIO_API_OSS:
     case AUDIO_API_PULSEAUDIO:
-    case AUDIO_API_WASAPI:
         break;
     case AUDIO_API_JACK:
         juceApi = "JACK";
@@ -845,6 +929,9 @@ CarlaEngine* CarlaEngine::newJuce(const AudioApi api)
         break;
     case AUDIO_API_DIRECTSOUND:
         juceApi = "DirectSound";
+        break;
+    case AUDIO_API_WASAPI:
+        juceApi = "Windows Audio";
         break;
     }
 
@@ -932,7 +1019,7 @@ const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const uint uindex, 
 
     deviceType->scanForDevices();
 
-    ScopedPointer<juce::AudioIODevice> device(deviceType->createDevice(deviceName, deviceName));
+    CarlaScopedPointer<juce::AudioIODevice> device(deviceType->createDevice(deviceName, deviceName));
 
     if (device == nullptr)
         return nullptr;
@@ -993,6 +1080,23 @@ const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const uint uindex, 
     }
 
     return &devInfo;
+}
+
+bool CarlaEngine::showJuceDeviceControlPanel(const uint uindex, const char* const deviceName)
+{
+    const int index(static_cast<int>(uindex));
+
+    CARLA_SAFE_ASSERT_RETURN(index < gDeviceTypes.size(), false);
+
+    juce::AudioIODeviceType* const deviceType(gDeviceTypes[index]);
+    CARLA_SAFE_ASSERT_RETURN(deviceType != nullptr, false);
+
+    deviceType->scanForDevices();
+
+    CarlaScopedPointer<juce::AudioIODevice> device(deviceType->createDevice(deviceName, deviceName));
+    CARLA_SAFE_ASSERT_RETURN(device != nullptr, false);
+
+    return device->showControlPanel();
 }
 
 // -----------------------------------------

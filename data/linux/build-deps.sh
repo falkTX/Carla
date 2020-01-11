@@ -33,6 +33,8 @@ rm -rf libogg-*
 rm -rf libsndfile-*
 rm -rf libvorbis-*
 rm -rf pkg-config-*
+rm -rf qtbase-*
+rm -rf qtsvg-*
 rm -rf zlib-*
 
 }
@@ -99,6 +101,66 @@ fi
 
 if [ x"${ARCH}" = x"32" ] && [ x"${TARGET}" != x"32" ]; then
   return
+fi
+
+# ---------------------------------------------------------------------------------------------------------------------
+# qt
+
+if [ ! -d qtbase-opensource-src-${QT5_VERSION} ]; then
+  aria2c http://download.qt.io/archive/qt/${QT5_MVERSION}/${QT5_VERSION}/submodules/qtbase-opensource-src-${QT5_VERSION}.tar.xz
+  tar xf qtbase-opensource-src-${QT5_VERSION}.tar.xz
+fi
+
+if [ ! -f qtbase-opensource-src-${QT5_VERSION}/build-done ]; then
+  cd qtbase-opensource-src-${QT5_VERSION}
+  if [ ! -f configured ]; then
+    ./configure -release -strip -silent \
+      -sse2 \
+      -no-sse3 -no-ssse3 -no-sse4.1 -no-sse4.2 \
+      -no-avx -no-avx2 -no-avx512 \
+      -prefix ${PREFIX} \
+      -opensource -confirm-license \
+      -optimize-size -optimized-qmake \
+      -qt-freetype \
+      -qt-harfbuzz \
+      -qt-libjpeg \
+      -qt-libpng \
+      -qt-pcre \
+      -qt-sqlite \
+      -qt-xcb \
+      -qt-zlib \
+      -opengl desktop \
+      -no-cups \
+      -no-gtk \
+      -no-icu \
+      -no-openssl \
+      -make libs \
+      -make tools \
+      -nomake examples \
+      -nomake tests
+    touch configured
+  fi
+  make ${MAKE_ARGS}
+  make install
+  touch build-done
+  cd ..
+fi
+
+# ---------------------------------------------------------------------------------------------------------------------
+# qt5-svg
+
+if [ ! -d qtsvg-opensource-src-${QT5_VERSION} ]; then
+  aria2c http://download.qt.io/archive/qt/${QT5_MVERSION}/${QT5_VERSION}/submodules/qtsvg-opensource-src-${QT5_VERSION}.tar.xz
+  tar xf qtsvg-opensource-src-${QT5_VERSION}.tar.xz
+fi
+
+if [ ! -f qtsvg-opensource-src-${QT5_VERSION}/build-done ]; then
+  cd qtsvg-opensource-src-${QT5_VERSION}
+  qmake
+  make ${MAKE_ARGS}
+  make install
+  touch build-done
+  cd ..
 fi
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -258,10 +320,7 @@ fi
 
 if [ ! -d mxml-${MXML_VERSION} ]; then
   aria2c https://github.com/michaelrsweet/mxml/releases/download/v${MXML_VERSION}/mxml-${MXML_VERSION}.tar.gz
-  mkdir mxml-${MXML_VERSION}
-  cd mxml-${MXML_VERSION}
-  tar -xf ../mxml-${MXML_VERSION}.tar.gz
-  cd ..
+  tar -xf mxml-${MXML_VERSION}.tar.gz
 fi
 
 if [ ! -f mxml-${MXML_VERSION}/build-done ]; then

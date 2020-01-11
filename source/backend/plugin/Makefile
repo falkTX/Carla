@@ -21,8 +21,7 @@ OBJS = \
 	$(OBJDIR)/CarlaPluginInternal.cpp.o \
 	$(OBJDIR)/CarlaPluginNative.cpp.o \
 	$(OBJDIR)/CarlaPluginBridge.cpp.o \
-	$(OBJDIR)/CarlaPluginLADSPA.cpp.o \
-	$(OBJDIR)/CarlaPluginDSSI.cpp.o \
+	$(OBJDIR)/CarlaPluginLADSPADSSI.cpp.o \
 	$(OBJDIR)/CarlaPluginLV2.cpp.o \
 	$(OBJDIR)/CarlaPluginVST2.cpp.o \
 	$(OBJDIR)/CarlaPluginVST3.cpp.o \

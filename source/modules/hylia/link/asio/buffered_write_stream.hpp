@@ -2,7 +2,7 @@
 // buffered_write_stream.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -25,7 +25,6 @@
 #include "asio/detail/noncopyable.hpp"
 #include "asio/detail/type_traits.hpp"
 #include "asio/error.hpp"
-#include "asio/io_context.hpp"
 #include "asio/write.hpp"
 
 #include "asio/detail/push_options.hpp"
@@ -105,22 +104,6 @@ public:
     return next_layer_.lowest_layer().get_executor();
   }
 
-#if !defined(ASIO_NO_DEPRECATED)
-  /// (Deprecated: Use get_executor().) Get the io_context associated with the
-  /// object.
-  asio::io_context& get_io_context()
-  {
-    return next_layer_.get_io_context();
-  }
-
-  /// (Deprecated: Use get_executor().) Get the io_context associated with the
-  /// object.
-  asio::io_context& get_io_service()
-  {
-    return next_layer_.get_io_service();
-  }
-#endif // !defined(ASIO_NO_DEPRECATED)
-
   /// Close the stream.
   void close()
   {
@@ -128,9 +111,10 @@ public:
   }
 
   /// Close the stream.
-  asio::error_code close(asio::error_code& ec)
+  ASIO_SYNC_OP_VOID close(asio::error_code& ec)
   {
-    return next_layer_.close(ec);
+    next_layer_.close(ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Flush all data from the buffer to the next layer. Returns the number of
@@ -193,14 +177,8 @@ public:
   async_read_some(const MutableBufferSequence& buffers,
       ASIO_MOVE_ARG(ReadHandler) handler)
   {
-    async_completion<ReadHandler,
-      void (asio::error_code, std::size_t)> init(handler);
-
-    next_layer_.async_read_some(buffers,
-        ASIO_MOVE_CAST(ASIO_HANDLER_TYPE(ReadHandler,
-            void (asio::error_code, std::size_t)))(init.handler));
-
-    return init.result.get();
+    return next_layer_.async_read_some(buffers,
+        ASIO_MOVE_CAST(ReadHandler)(handler));
   }
 
   /// Peek at the incoming data on the stream. Returns the number of bytes read.

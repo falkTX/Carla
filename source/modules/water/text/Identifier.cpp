@@ -24,7 +24,6 @@
 */
 
 #include "Identifier.h"
-#include "StringPool.h"
 
 namespace water {
 
@@ -50,27 +49,25 @@ Identifier& Identifier::operator= (const Identifier& other) noexcept
 }
 
 Identifier::Identifier (const String& nm)
-    : name (StringPool::getGlobalPool().getPooledString (nm))
+    : name (nm)
 {
     // An Identifier cannot be created from an empty string!
     wassert (nm.isNotEmpty());
 }
 
 Identifier::Identifier (const char* nm)
-    : name (StringPool::getGlobalPool().getPooledString (nm))
+    : name (nm)
 {
     // An Identifier cannot be created from an empty string!
     wassert (nm != nullptr && nm[0] != 0);
 }
 
 Identifier::Identifier (String::CharPointerType start, String::CharPointerType end)
-    : name (StringPool::getGlobalPool().getPooledString (start, end))
+    : name (StartEndString (start, end))
 {
     // An Identifier cannot be created from an empty string!
     wassert (start < end);
 }
-
-Identifier Identifier::null;
 
 bool Identifier::isValidIdentifier (const String& possibleIdentifier) noexcept
 {

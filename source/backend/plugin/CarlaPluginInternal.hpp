@@ -20,6 +20,7 @@
 
 #include "CarlaPlugin.hpp"
 
+#include "CarlaJuceUtils.hpp"
 #include "CarlaLibUtils.hpp"
 #include "CarlaStateUtils.hpp"
 
@@ -43,6 +44,13 @@ CARLA_BACKEND_START_NAMESPACE
 // Maximum pre-allocated events for some plugin types
 
 const ushort kPluginMaxMidiEvents = 512;
+
+// -----------------------------------------------------------------------
+// Extra parameter hints, hidden from backend
+
+const uint PARAMETER_IS_CV_CONTROLLED = 0x1000;
+const uint PARAMETER_IS_STRICT_BOUNDS = 0x2000;
+const uint PARAMETER_IS_TRIGGER       = 0x4000;
 
 // -----------------------------------------------------------------------
 // Extra plugin hints, hidden from backend
@@ -74,7 +82,7 @@ enum SpecialParameterType {
 enum PluginPostRtEventType {
     kPluginPostRtEventNull = 0,
     kPluginPostRtEventDebug,
-    kPluginPostRtEventParameterChange,   // param, SP (*), unused, value (SP: if 1 report to Callback and OSC)
+    kPluginPostRtEventParameterChange,   // param, (unused), (unused), value
     kPluginPostRtEventProgramChange,     // index
     kPluginPostRtEventMidiProgramChange, // index
     kPluginPostRtEventNoteOn,            // channel, note, velo
@@ -87,6 +95,7 @@ enum PluginPostRtEventType {
  */
 struct PluginPostRtEvent {
     PluginPostRtEventType type;
+    bool sendCallback;
     int32_t value1;
     int32_t value2;
     int32_t value3;
@@ -114,7 +123,7 @@ struct PluginAudioData {
 
     PluginAudioData() noexcept;
     ~PluginAudioData() noexcept;
-    void createNew(const uint32_t newCount);
+    void createNew(uint32_t newCount);
     void clear() noexcept;
     void initBuffers() const noexcept;
 
@@ -135,7 +144,7 @@ struct PluginCVData {
 
     PluginCVData() noexcept;
     ~PluginCVData() noexcept;
-    void createNew(const uint32_t newCount);
+    void createNew(uint32_t newCount);
     void clear() noexcept;
     void initBuffers() const noexcept;
 
@@ -147,6 +156,9 @@ struct PluginCVData {
 struct PluginEventData {
     CarlaEngineEventPort* portIn;
     CarlaEngineEventPort* portOut;
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    CarlaEngineCVSourcePorts* cvSourcePorts;
+#endif
 
     PluginEventData() noexcept;
     ~PluginEventData() noexcept;
@@ -166,9 +178,9 @@ struct PluginParameterData {
 
     PluginParameterData() noexcept;
     ~PluginParameterData() noexcept;
-    void createNew(const uint32_t newCount, const bool withSpecial);
+    void createNew(uint32_t newCount, bool withSpecial);
     void clear() noexcept;
-    float getFixedValue(const uint32_t parameterId, const float& value) const noexcept;
+    float getFixedValue(uint32_t parameterId, float value) const noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginParameterData)
 };
@@ -184,7 +196,7 @@ struct PluginProgramData {
 
     PluginProgramData() noexcept;
     ~PluginProgramData() noexcept;
-    void createNew(const uint32_t newCount);
+    void createNew(uint32_t newCount);
     void clear() noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginProgramData)
@@ -199,7 +211,7 @@ struct PluginMidiProgramData {
 
     PluginMidiProgramData() noexcept;
     ~PluginMidiProgramData() noexcept;
-    void createNew(const uint32_t newCount);
+    void createNew(uint32_t newCount);
     void clear() noexcept;
     const MidiProgramData& getCurrent() const noexcept;
 
@@ -281,7 +293,7 @@ struct CarlaPlugin::ProtectedData {
 #ifndef BUILD_BRIDGE
         ~Latency() noexcept;
         void clearBuffers() noexcept;
-        void recreateBuffers(const uint32_t newChannels, const uint32_t newFrames);
+        void recreateBuffers(uint32_t newChannels, uint32_t newFrames);
 #endif
 
         CARLA_DECLARE_NON_COPY_STRUCT(Latency)
@@ -347,7 +359,7 @@ struct CarlaPlugin::ProtectedData {
     } postProc;
 #endif
 
-    ProtectedData(CarlaEngine* const engine, const uint idx) noexcept;
+    ProtectedData(CarlaEngine* engine, uint idx) noexcept;
     ~ProtectedData() noexcept;
 
     // -------------------------------------------------------------------
@@ -359,30 +371,29 @@ struct CarlaPlugin::ProtectedData {
     // Post-poned events
 
     void postponeRtEvent(const PluginPostRtEvent& rtEvent) noexcept;
-    void postponeRtEvent(const PluginPostRtEventType type,
-                         const int32_t value1, const int32_t value2, const int32_t value3,
-                         const float valuef) noexcept;
+    void postponeRtEvent(PluginPostRtEventType type, bool sendCallbackLater,
+                         int32_t value1, int32_t value2, int32_t value3, float valuef) noexcept;
 
     // -------------------------------------------------------------------
     // Library functions
 
-    static const char* libError(const char* const filename) noexcept;
+    static const char* libError(const char* filename) noexcept;
 
-    bool libOpen(const char* const filename) noexcept;
+    bool libOpen(const char* filename) noexcept;
     bool libClose() noexcept;
-    void setCanDeleteLib(const bool canDelete) noexcept;
+    void setCanDeleteLib(bool canDelete) noexcept;
 
-    bool uiLibOpen(const char* const filename, const bool canDelete) noexcept;
+    bool uiLibOpen(const char* filename, bool canDelete) noexcept;
     bool uiLibClose() noexcept;
 
     template<typename Func>
-    Func libSymbol(const char* const symbol) const noexcept
+    Func libSymbol(const char* symbol) const noexcept
     {
         return lib_symbol<Func>(lib, symbol);
     }
 
     template<typename Func>
-    Func uiLibSymbol(const char* const symbol) const noexcept
+    Func uiLibSymbol(const char* symbol) const noexcept
     {
         return lib_symbol<Func>(uiLib, symbol);
     }
@@ -393,9 +404,9 @@ struct CarlaPlugin::ProtectedData {
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     void tryTransient() noexcept;
 #endif
-    void updateParameterValues(CarlaPlugin* const plugin,
-                               const bool sendCallback, const bool sendOsc, const bool useDefault) noexcept;
-    void updateDefaultParameterValues(CarlaPlugin* const plugin) noexcept;
+    void updateParameterValues(CarlaPlugin* plugin,
+                               bool sendCallback, bool sendOsc, bool useDefault) noexcept;
+    void updateDefaultParameterValues(CarlaPlugin* plugin) noexcept;
 
     // -------------------------------------------------------------------
 

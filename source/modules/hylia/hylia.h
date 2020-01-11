@@ -30,6 +30,7 @@ typedef struct _hylia_t hylia_t;
 
 typedef struct _hylia_time_info_t {
     double beatsPerBar, beatsPerMinute, beat, phase;
+    bool playing;
 } hylia_time_info_t;
 
 hylia_t* hylia_create(void);
@@ -38,6 +39,9 @@ void hylia_process(hylia_t* link, uint32_t frames, hylia_time_info_t* info);
 void hylia_set_beats_per_bar(hylia_t* link, double beatsPerBar);
 void hylia_set_beats_per_minute(hylia_t* link, double beatsPerMinute);
 void hylia_set_output_latency(hylia_t* link, uint32_t latency);
+void hylia_set_start_stop_sync_enabled(hylia_t* link, bool enabled);
+void hylia_start_playing(hylia_t* link);
+void hylia_stop_playing(hylia_t* link);
 void hylia_cleanup(hylia_t* link);
 
 #ifdef __cplusplus

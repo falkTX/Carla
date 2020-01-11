@@ -163,7 +163,8 @@ class CarlaEngineNative : public CarlaEngine
 {
 public:
     CarlaEngineNative(const NativeHostDescriptor* const host, const bool isPatchbay, const bool withMidiOut,
-                      const uint32_t inChan = 2, uint32_t outChan = 2)
+                      const uint32_t inChan = 2, uint32_t outChan = 2,
+                      const uint32_t cvIns = 0, const uint32_t cvOuts = 0)
         : CarlaEngine(),
           pHost(host),
 #ifdef USE_JUCE_MESSAGE_THREAD
@@ -211,7 +212,7 @@ public:
             pData->options.preferPluginBridges = false;
             pData->options.preferUiBridges     = false;
             init("Carla-Patchbay");
-            pData->graph.create(inChan, outChan);
+            pData->graph.create(inChan, outChan, cvIns, cvOuts);
         }
         else
         {
@@ -223,7 +224,7 @@ public:
             pData->options.preferPluginBridges = false;
             pData->options.preferUiBridges     = false;
             init("Carla-Rack");
-            pData->graph.create(0, 0); // FIXME?
+            pData->graph.create(0, 0, 0, 0); // FIXME?
         }
 
         if (pData->options.resourceDir != nullptr)
@@ -322,10 +323,27 @@ public:
     {
         CarlaEngine::callback(sendHost, sendOsc, action, pluginId, value1, value2, value3, valuef, valueStr);
 
-        if (action == ENGINE_CALLBACK_IDLE && ! pData->aboutToClose) {
-            pHost->dispatcher(pHost->handle,
-                              NATIVE_HOST_OPCODE_HOST_IDLE,
-                              0, 0, nullptr, 0.0f);
+        switch (action)
+        {
+        case ENGINE_CALLBACK_IDLE:
+            if (! pData->aboutToClose)
+                pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_HOST_IDLE, 0, 0, nullptr, 0.0f);
+            break;
+
+        case ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
+            if (sendHost && value1 >= 0)
+            {
+                uint32_t rindex = static_cast<uint32_t>(value1);
+                if (_getRealIndexForPluginParameter(pluginId, rindex))
+                {
+                    fParameters[rindex] = valuef;
+                    pHost->ui_parameter_changed(pHost->handle, rindex, valuef);
+                }
+            }
+            break;
+
+        default:
+            break;
         }
     }
 
@@ -340,29 +358,31 @@ public:
 
     void setParameterValueFromUI(const uint32_t pluginId, const uint32_t index, const float value)
     {
-        if (pluginId != 0)
-            return;
-
-        fParameters[index] = value;
-        pHost->ui_parameter_changed(pHost->handle, index, value);
+        uint32_t rindex = index;
+        if (_getRealIndexForPluginParameter(pluginId, rindex))
+        {
+            fParameters[rindex] = value;
+            pHost->ui_parameter_changed(pHost->handle, rindex, value);
+        }
     }
 
-    void setParameterTouchFromUI(const uint32_t pluginId, const uint32_t index, const bool touch)
+    void setParameterTouchFromUI(const uint32_t pluginId, uint32_t index, const bool touch)
     {
-        if (pluginId != 0)
-            return;
-
-        pHost->dispatcher(pHost->handle,
-                          NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER,
-                          static_cast<int32_t>(index),
-                          touch ? 1 : 0,
-                          nullptr, 0.0f);
+        uint32_t rindex = index;
+        if (_getRealIndexForPluginParameter(pluginId, rindex))
+        {
+            pHost->dispatcher(pHost->handle,
+                              NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER,
+                              static_cast<int32_t>(rindex),
+                              touch ? 1 : 0,
+                              nullptr, 0.0f);
+        }
     }
 
     void reloadFromUI()
     {
         carla_zeroFloats(fParameters, kNumInParams+kNumOutParams);
-        pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_RELOAD_ALL, 0, 0, nullptr, 0.0f);
+        pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_RELOAD_PARAMETERS, 0, 0, nullptr, 0.0f);
     }
 
 protected:
@@ -378,10 +398,10 @@ protected:
 
             if (fUiServer.writeAndFixMessage("buffer-size"))
             {
-                char tmpBuf[STR_MAX];
-                carla_zeroChars(tmpBuf, STR_MAX);
+                char tmpBuf[STR_MAX+1];
+                carla_zeroChars(tmpBuf, STR_MAX+1);
 
-                std::sprintf(tmpBuf, "%i\n", newBufferSize);
+                std::snprintf(tmpBuf, STR_MAX, "%i\n", newBufferSize);
 
                 if (fUiServer.writeMessage(tmpBuf))
                     fUiServer.flushMessages();
@@ -402,12 +422,12 @@ protected:
 
             if (fUiServer.writeAndFixMessage("sample-rate"))
             {
-                char tmpBuf[STR_MAX];
-                carla_zeroChars(tmpBuf, STR_MAX);
+                char tmpBuf[STR_MAX+1];
+                carla_zeroChars(tmpBuf, STR_MAX+1);
 
                 {
                     const CarlaScopedLocale csl;
-                    std::sprintf(tmpBuf, "%f\n", newSampleRate);
+                    std::snprintf(tmpBuf, STR_MAX, "%.12g\n", newSampleRate);
                 }
 
                 if (fUiServer.writeMessage(tmpBuf))
@@ -423,88 +443,89 @@ protected:
 
     void uiServerSendPluginInfo(CarlaPlugin* const plugin)
     {
-        char tmpBuf[STR_MAX];
-        carla_zeroChars(tmpBuf, STR_MAX);
+        char tmpBuf[STR_MAX+1];
+        carla_zeroChars(tmpBuf, STR_MAX+1);
 
         const CarlaMutexLocker cml(fUiServer.getPipeLock());
 
         const uint pluginId(plugin->getId());
 
-        std::sprintf(tmpBuf, "PLUGIN_INFO_%i\n", pluginId);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
+        std::snprintf(tmpBuf, STR_MAX, "PLUGIN_INFO_%i\n", pluginId);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-        std::sprintf(tmpBuf, "%i:%i:%i:" P_INT64 ":%i:%i\n", plugin->getType(), plugin->getCategory(), plugin->getHints(), plugin->getUniqueId(), plugin->getOptionsAvailable(), plugin->getOptionsEnabled());
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
+        std::snprintf(tmpBuf, STR_MAX, "%i:%i:%i:" P_INT64 ":%i:%i\n",
+                      plugin->getType(), plugin->getCategory(),
+                      plugin->getHints(), plugin->getUniqueId(),
+                      plugin->getOptionsAvailable(), plugin->getOptionsEnabled());
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
         if (const char* const filename = plugin->getFilename())
         {
-            std::sprintf(tmpBuf, "%s", filename);
-            if (! fUiServer.writeAndFixMessage(tmpBuf))
-                return;
+            std::snprintf(tmpBuf, STR_MAX, "%s", filename);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(tmpBuf),);
         }
         else
         {
-            if (! fUiServer.writeMessage("\n"))
-                return;
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeEmptyMessage(),);
         }
 
         if (const char* const name = plugin->getName())
         {
-            std::sprintf(tmpBuf, "%s", name);
-            if (! fUiServer.writeAndFixMessage(tmpBuf))
-                return;
+            std::snprintf(tmpBuf, STR_MAX, "%s", name);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(tmpBuf),);
         }
         else
         {
-            if (! fUiServer.writeMessage("\n"))
-                return;
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeEmptyMessage(),);
         }
 
         if (const char* const iconName = plugin->getIconName())
         {
-            std::sprintf(tmpBuf, "%s", iconName);
-            if (! fUiServer.writeAndFixMessage(tmpBuf))
-                return;
+            std::snprintf(tmpBuf, STR_MAX, "%s", iconName);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(tmpBuf),);
         }
         else
         {
-            if (! fUiServer.writeMessage("\n"))
-                return;
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeEmptyMessage(),);
         }
 
-        plugin->getRealName(tmpBuf);
-        if (! fUiServer.writeAndFixMessage(tmpBuf))
-            return;
+        if (plugin->getRealName(tmpBuf)) {
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(tmpBuf),);
+        } else {
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeEmptyMessage(),);
+        }
 
-        plugin->getLabel(tmpBuf);
-        if (! fUiServer.writeAndFixMessage(tmpBuf))
-            return;
+        if (plugin->getLabel(tmpBuf)) {
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(tmpBuf),);
+        } else {
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeEmptyMessage(),);
+        }
 
-        plugin->getMaker(tmpBuf);
-        if (! fUiServer.writeAndFixMessage(tmpBuf))
-            return;
+        if (plugin->getMaker(tmpBuf)) {
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(tmpBuf),);
+        } else {
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeEmptyMessage(),);
+        }
 
-        plugin->getCopyright(tmpBuf);
-        if (! fUiServer.writeAndFixMessage(tmpBuf))
-            return;
+        if (plugin->getCopyright(tmpBuf)) {
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(tmpBuf),);
+        } else {
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeEmptyMessage(),);
+        }
 
-        std::sprintf(tmpBuf, "AUDIO_COUNT_%i:%i:%i\n", pluginId, plugin->getAudioInCount(), plugin->getAudioOutCount());
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
+        std::snprintf(tmpBuf, STR_MAX, "AUDIO_COUNT_%i:%i:%i\n", pluginId, plugin->getAudioInCount(), plugin->getAudioOutCount());
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-        std::sprintf(tmpBuf, "MIDI_COUNT_%i:%i:%i\n", pluginId, plugin->getMidiInCount(), plugin->getMidiOutCount());
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
+        std::snprintf(tmpBuf, STR_MAX, "MIDI_COUNT_%i:%i:%i\n", pluginId, plugin->getMidiInCount(), plugin->getMidiOutCount());
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
         fUiServer.flushMessages();
     }
 
     void uiServerSendPluginParameters(CarlaPlugin* const plugin)
     {
-        char tmpBuf[STR_MAX];
-        carla_zeroChars(tmpBuf, STR_MAX);
+        char tmpBuf[STR_MAX+1];
+        carla_zeroChars(tmpBuf, STR_MAX+1);
 
         const CarlaMutexLocker cml(fUiServer.getPipeLock());
         const CarlaScopedLocale csl;
@@ -513,13 +534,11 @@ protected:
 
         for (int32_t i=PARAMETER_ACTIVE; i>PARAMETER_MAX; --i)
         {
-            std::sprintf(tmpBuf, "PARAMVAL_%i:%i\n", pluginId, i);
-            if (! fUiServer.writeMessage(tmpBuf))
-                return;
+            std::snprintf(tmpBuf, STR_MAX, "PARAMVAL_%u:%i\n", pluginId, i);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-            std::sprintf(tmpBuf, "%f\n", static_cast<double>(plugin->getInternalParameterValue(i)));
-            if (! fUiServer.writeMessage(tmpBuf))
-                return;
+            std::snprintf(tmpBuf, STR_MAX, "%.12g\n", static_cast<double>(plugin->getInternalParameterValue(i)));
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
             fUiServer.flushMessages();
         }
@@ -528,52 +547,66 @@ protected:
         plugin->getParameterCountInfo(ins, outs);
         count = plugin->getParameterCount();
 
-        std::sprintf(tmpBuf, "PARAMETER_COUNT_%i:%i:%i:%i\n", pluginId, ins, outs, count);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
+        std::snprintf(tmpBuf, STR_MAX, "PARAMETER_COUNT_%i:%i:%i:%i\n", pluginId, ins, outs, count);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
         for (uint32_t i=0; i<count; ++i)
         {
             const ParameterData& paramData(plugin->getParameterData(i));
             const ParameterRanges& paramRanges(plugin->getParameterRanges(i));
 
-            std::sprintf(tmpBuf, "PARAMETER_DATA_%i:%i\n", pluginId, i);
-            if (! fUiServer.writeMessage(tmpBuf))
-                return;
+            std::snprintf(tmpBuf, STR_MAX, "PARAMETER_DATA_%i:%i\n", pluginId, i);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-            std::sprintf(tmpBuf, "%i:%i:%i:%i\n", paramData.type, paramData.hints, paramData.midiChannel, paramData.midiCC);
-            if (! fUiServer.writeMessage(tmpBuf))
-                return;
+            std::snprintf(tmpBuf, STR_MAX, "%i:%i:%i:%i\n", paramData.type, paramData.hints,
+                                                            paramData.mappedControlIndex, paramData.midiChannel);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-            plugin->getParameterName(i, tmpBuf);
-            if (! fUiServer.writeAndFixMessage(tmpBuf))
-                return;
+            std::snprintf(tmpBuf, STR_MAX, "%.12g:%.12g\n", static_cast<double>(paramData.mappedMinimum),
+                                                            static_cast<double>(paramData.mappedMaximum));
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-            plugin->getParameterUnit(i, tmpBuf);
-            if (! fUiServer.writeAndFixMessage(tmpBuf))
-                return;
+            if (plugin->getParameterName(i, tmpBuf)) {
+                CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(tmpBuf),);
+            } else {
+                CARLA_SAFE_ASSERT_RETURN(fUiServer.writeEmptyMessage(),);
+            }
 
-            std::sprintf(tmpBuf, "PARAMETER_RANGES_%i:%i\n", pluginId, i);
-            if (! fUiServer.writeMessage(tmpBuf))
-                return;
+            if (plugin->getParameterUnit(i, tmpBuf)) {
+                CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(tmpBuf),);
+            } else {
+                CARLA_SAFE_ASSERT_RETURN(fUiServer.writeEmptyMessage(),);
+            }
 
-            std::sprintf(tmpBuf, "%f:%f:%f:%f:%f:%f\n",
-                         static_cast<double>(paramRanges.def),
-                         static_cast<double>(paramRanges.min),
-                         static_cast<double>(paramRanges.max),
-                         static_cast<double>(paramRanges.step),
-                         static_cast<double>(paramRanges.stepSmall),
-                         static_cast<double>(paramRanges.stepLarge));
-            if (! fUiServer.writeMessage(tmpBuf))
-                return;
+            if (plugin->getParameterComment(i, tmpBuf)) {
+                CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(tmpBuf),);
+            } else {
+                CARLA_SAFE_ASSERT_RETURN(fUiServer.writeEmptyMessage(),);
+            }
 
-            std::sprintf(tmpBuf, "PARAMVAL_%i:%i\n", pluginId, i);
-            if (! fUiServer.writeMessage(tmpBuf))
-                return;
+            if (plugin->getParameterGroupName(i, tmpBuf)) {
+                CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(tmpBuf),);
+            } else {
+                CARLA_SAFE_ASSERT_RETURN(fUiServer.writeEmptyMessage(),);
+            }
 
-            std::sprintf(tmpBuf, "%f\n", static_cast<double>(plugin->getParameterValue(i)));
-            if (! fUiServer.writeMessage(tmpBuf))
-                return;
+            std::snprintf(tmpBuf, STR_MAX, "PARAMETER_RANGES_%i:%i\n", pluginId, i);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+
+            std::snprintf(tmpBuf, STR_MAX, "%.12g:%.12g:%.12g:%.12g:%.12g:%.12g\n",
+                          static_cast<double>(paramRanges.def),
+                          static_cast<double>(paramRanges.min),
+                          static_cast<double>(paramRanges.max),
+                          static_cast<double>(paramRanges.step),
+                          static_cast<double>(paramRanges.stepSmall),
+                          static_cast<double>(paramRanges.stepLarge));
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+
+            std::snprintf(tmpBuf, STR_MAX, "PARAMVAL_%u:%u\n", pluginId, i);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+
+            std::snprintf(tmpBuf, STR_MAX, "%.12g\n", static_cast<double>(plugin->getParameterValue(i)));
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         }
 
         fUiServer.flushMessages();
@@ -581,51 +614,47 @@ protected:
 
     void uiServerSendPluginPrograms(CarlaPlugin* const plugin)
     {
-        char tmpBuf[STR_MAX];
-        carla_zeroChars(tmpBuf, STR_MAX);
+        char tmpBuf[STR_MAX+1];
+        carla_zeroChars(tmpBuf, STR_MAX+1);
 
         const CarlaMutexLocker cml(fUiServer.getPipeLock());
 
         const uint pluginId(plugin->getId());
 
         uint32_t count = plugin->getProgramCount();
-        std::sprintf(tmpBuf, "PROGRAM_COUNT_%i:%i:%i\n", pluginId, count, plugin->getCurrentProgram());
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
+        std::snprintf(tmpBuf, STR_MAX, "PROGRAM_COUNT_%i:%i:%i\n", pluginId, count, plugin->getCurrentProgram());
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
         for (uint32_t i=0; i<count; ++i)
         {
-            std::sprintf(tmpBuf, "PROGRAM_NAME_%i:%i\n", pluginId, i);
-            if (! fUiServer.writeMessage(tmpBuf))
-                return;
+            std::snprintf(tmpBuf, STR_MAX, "PROGRAM_NAME_%i:%i\n", pluginId, i);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-            plugin->getProgramName(i, tmpBuf);
-            if (! fUiServer.writeAndFixMessage(tmpBuf))
-                return;
+            if (plugin->getProgramName(i, tmpBuf)) {
+                CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(tmpBuf),);
+            } else {
+                CARLA_SAFE_ASSERT_RETURN(fUiServer.writeEmptyMessage(),);
+            }
         }
 
         fUiServer.flushMessages();
 
         count = plugin->getMidiProgramCount();
-        std::sprintf(tmpBuf, "MIDI_PROGRAM_COUNT_%i:%i:%i\n", pluginId, count, plugin->getCurrentMidiProgram());
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
+        std::snprintf(tmpBuf, STR_MAX, "MIDI_PROGRAM_COUNT_%i:%i:%i\n", pluginId, count, plugin->getCurrentMidiProgram());
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
         for (uint32_t i=0; i<count; ++i)
         {
-            std::sprintf(tmpBuf, "MIDI_PROGRAM_DATA_%i:%i\n", pluginId, i);
-            if (! fUiServer.writeMessage(tmpBuf))
-                return;
+            std::snprintf(tmpBuf, STR_MAX, "MIDI_PROGRAM_DATA_%i:%i\n", pluginId, i);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
             const MidiProgramData& mpData(plugin->getMidiProgramData(i));
 
-            std::sprintf(tmpBuf, "%i:%i\n", mpData.bank, mpData.program);
-            if (! fUiServer.writeMessage(tmpBuf))
-                return;
+            std::snprintf(tmpBuf, STR_MAX, "%i:%i\n", mpData.bank, mpData.program);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-            std::sprintf(tmpBuf, "%s", mpData.name);
-            if (! fUiServer.writeAndFixMessage(tmpBuf))
-                return;
+            std::snprintf(tmpBuf, STR_MAX, "%s", mpData.name);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(tmpBuf),);
         }
 
         fUiServer.flushMessages();
@@ -633,17 +662,16 @@ protected:
 
     void uiServerSendPluginProperties(CarlaPlugin* const plugin)
     {
-        char tmpBuf[STR_MAX];
-        carla_zeroChars(tmpBuf, STR_MAX);
+        char tmpBuf[STR_MAX+1];
+        carla_zeroChars(tmpBuf, STR_MAX+1);
 
         const CarlaMutexLocker cml(fUiServer.getPipeLock());
 
         const uint pluginId(plugin->getId());
 
         uint32_t count = plugin->getCustomDataCount();
-        std::sprintf(tmpBuf, "CUSTOM_DATA_COUNT_%i:%i\n", pluginId, count);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
+        std::snprintf(tmpBuf, STR_MAX, "CUSTOM_DATA_COUNT_%i:%i\n", pluginId, count);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
         for (uint32_t i=0; i<count; ++i)
         {
@@ -653,16 +681,11 @@ protected:
             if (std::strcmp(customData.type, CUSTOM_DATA_TYPE_PROPERTY) != 0)
                 continue;
 
-            std::sprintf(tmpBuf, "CUSTOM_DATA_%i:%i\n", pluginId, i);
-            if (! fUiServer.writeMessage(tmpBuf))
-                return;
-
-            if (! fUiServer.writeAndFixMessage(customData.type))
-                return;
-            if (! fUiServer.writeAndFixMessage(customData.key))
-                return;
-            if (! fUiServer.writeAndFixMessage(customData.value))
-                return;
+            std::snprintf(tmpBuf, STR_MAX, "CUSTOM_DATA_%i:%i\n", pluginId, i);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(customData.type),);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(customData.key),);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(customData.value),);
         }
 
         fUiServer.flushMessages();
@@ -723,6 +746,7 @@ protected:
 
         case ENGINE_CALLBACK_RELOAD_ALL:
         case ENGINE_CALLBACK_PLUGIN_ADDED:
+        case ENGINE_CALLBACK_PLUGIN_RENAMED:
             plugin = getPlugin(pluginId);
 
             if (plugin != nullptr && plugin->isEnabled())
@@ -739,34 +763,37 @@ protected:
             break;
         }
 
-        char tmpBuf[STR_MAX];
-        carla_zeroChars(tmpBuf, STR_MAX);
+        char tmpBuf[STR_MAX+1];
+        carla_zeroChars(tmpBuf, STR_MAX+1);
 
         const CarlaMutexLocker cml(fUiServer.getPipeLock());
 
-        std::sprintf(tmpBuf, "ENGINE_CALLBACK_%i\n", int(action));
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
-        std::sprintf(tmpBuf, "%u\n", pluginId);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
-        std::sprintf(tmpBuf, "%i\n", value1);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
-        std::sprintf(tmpBuf, "%i\n", value2);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
-        std::sprintf(tmpBuf, "%i\n", value3);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
+        std::snprintf(tmpBuf, STR_MAX, "ENGINE_CALLBACK_%i\n", int(action));
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+
+        std::snprintf(tmpBuf, STR_MAX, "%u\n", pluginId);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+
+        std::snprintf(tmpBuf, STR_MAX, "%i\n", value1);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+
+        std::snprintf(tmpBuf, STR_MAX, "%i\n", value2);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+
+        std::snprintf(tmpBuf, STR_MAX, "%i\n", value3);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+
         {
             const CarlaScopedLocale csl;
-            std::sprintf(tmpBuf, "%f\n", static_cast<double>(valuef));
+            std::snprintf(tmpBuf, STR_MAX, "%.12g\n", static_cast<double>(valuef));
         }
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
-        if (! fUiServer.writeAndFixMessage(valueStr != nullptr ? valueStr : ""))
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+
+        if (valueStr != nullptr) {
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(valueStr),);
+        } else {
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeEmptyMessage(),);
+        }
 
         fUiServer.flushMessages();
     }
@@ -793,40 +820,31 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fIsRunning,);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.isPipeRunning(),);
 
-        char tmpBuf[STR_MAX];
-        carla_zeroChars(tmpBuf, STR_MAX);
+        char tmpBuf[STR_MAX+1];
+        carla_zeroChars(tmpBuf, STR_MAX+1);
 
         const CarlaMutexLocker cml(fUiServer.getPipeLock());
 
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
-        if (! fUiServer.writeAndFixMessage("osc-urls"))
-            return;
-        if (! fUiServer.writeAndFixMessage(pData->osc.getServerPathTCP()))
-            return;
-        if (! fUiServer.writeAndFixMessage(pData->osc.getServerPathUDP()))
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("osc-urls\n"),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(pData->osc.getServerPathTCP()),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(pData->osc.getServerPathUDP()),);
 #endif
 
-        if (! fUiServer.writeAndFixMessage("max-plugin-number"))
-            return;
-        std::sprintf(tmpBuf, "%i\n", pData->maxPluginNumber);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("max-plugin-number\n"),);
+        std::snprintf(tmpBuf, STR_MAX, "%i\n", pData->maxPluginNumber);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-        if (! fUiServer.writeAndFixMessage("buffer-size"))
-            return;
-        std::sprintf(tmpBuf, "%i\n", pData->bufferSize);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("buffer-size\n"),);
+        std::snprintf(tmpBuf, STR_MAX, "%i\n", pData->bufferSize);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-        if (! fUiServer.writeAndFixMessage("sample-rate"))
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("sample-rate\n"),);
         {
             const CarlaScopedLocale csl;
-            std::sprintf(tmpBuf, "%f\n", pData->sampleRate);
+            std::snprintf(tmpBuf, STR_MAX, "%.12g\n", pData->sampleRate);
         }
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
         fUiServer.flushMessages();
     }
@@ -836,8 +854,8 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fIsRunning,);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.isPipeRunning(),);
 
-        char tmpBuf[STR_MAX];
-        carla_zeroChars(tmpBuf, STR_MAX);
+        char tmpBuf[STR_MAX+1];
+        carla_zeroChars(tmpBuf, STR_MAX+1);
 
         const EngineOptions& options(pData->options);
         const CarlaMutexLocker cml(fUiServer.getPipeLock());
@@ -845,100 +863,70 @@ protected:
         const char* const optionsForcedStr(fOptionsForced ? "true\n" : "false\n");
         const std::size_t optionsForcedStrSize(fOptionsForced ? 5 : 6);
 
-        std::sprintf(tmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PROCESS_MODE);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
-        if (! fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize))
-            return;
-        std::sprintf(tmpBuf, "%i\n", options.processMode);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
+        std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PROCESS_MODE);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
+        std::snprintf(tmpBuf, STR_MAX, "%i\n", options.processMode);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         fUiServer.flushMessages();
 
-        std::sprintf(tmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_TRANSPORT_MODE);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
-        if (! fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize))
-            return;
-        std::sprintf(tmpBuf, "%i\n", options.transportMode);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
+        std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_TRANSPORT_MODE);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
+        std::snprintf(tmpBuf, STR_MAX, "%i\n", options.transportMode);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         fUiServer.flushMessages();
 
-        std::sprintf(tmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_FORCE_STEREO);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
-        if (! fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize))
-            return;
-        if (! fUiServer.writeMessage(options.forceStereo ? "true\n" : "false\n"))
-            return;
+        std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_FORCE_STEREO);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(options.forceStereo ? "true\n" : "false\n"),);
         fUiServer.flushMessages();
 
-        std::sprintf(tmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PREFER_PLUGIN_BRIDGES);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
-        if (! fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize))
-            return;
-        if (! fUiServer.writeMessage(options.preferPluginBridges ? "true\n" : "false\n"))
-            return;
+        std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PREFER_PLUGIN_BRIDGES);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(options.preferPluginBridges ? "true\n" : "false\n"),);
         fUiServer.flushMessages();
 
-        std::sprintf(tmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PREFER_UI_BRIDGES);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
-        if (! fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize))
-            return;
-        if (! fUiServer.writeMessage(options.preferUiBridges ? "true\n" : "false\n"))
-            return;
+        std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PREFER_UI_BRIDGES);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(options.preferUiBridges ? "true\n" : "false\n"),);
         fUiServer.flushMessages();
 
-        std::sprintf(tmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_UIS_ALWAYS_ON_TOP);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
-        if (! fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize))
-            return;
-        if (! fUiServer.writeMessage(options.uisAlwaysOnTop ? "true\n" : "false\n"))
-            return;
+        std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_UIS_ALWAYS_ON_TOP);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(options.uisAlwaysOnTop ? "true\n" : "false\n"),);
         fUiServer.flushMessages();
 
-        std::sprintf(tmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_MAX_PARAMETERS);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
-        if (! fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize))
-            return;
-        std::sprintf(tmpBuf, "%i\n", options.maxParameters);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
+        std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_MAX_PARAMETERS);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
+        std::snprintf(tmpBuf, STR_MAX, "%i\n", options.maxParameters);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         fUiServer.flushMessages();
 
-        std::sprintf(tmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_UI_BRIDGES_TIMEOUT);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
-        if (! fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize))
-            return;
-        std::sprintf(tmpBuf, "%i\n", options.uiBridgesTimeout);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
+        std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_UI_BRIDGES_TIMEOUT);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
+        std::snprintf(tmpBuf, STR_MAX, "%i\n", options.uiBridgesTimeout);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         fUiServer.flushMessages();
 
-        std::sprintf(tmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PATH_BINARIES);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
-        if (! fUiServer.writeMessage("true\n", 5))
-            return;
-        std::sprintf(tmpBuf, "%s\n", options.binaryDir);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
+        std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PATH_BINARIES);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("true\n", 5),);
+        std::snprintf(tmpBuf, STR_MAX, "%s\n", options.binaryDir);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         fUiServer.flushMessages();
 
-        std::sprintf(tmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PATH_RESOURCES);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
-        if (! fUiServer.writeMessage("true\n", 5))
-            return;
-        std::sprintf(tmpBuf, "%s\n", options.resourceDir);
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
+        std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PATH_RESOURCES);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("true\n", 5),);
+        std::snprintf(tmpBuf, STR_MAX, "%s\n", options.resourceDir);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         fUiServer.flushMessages();
     }
 
@@ -956,54 +944,66 @@ protected:
 
         static char strBufName[STR_MAX+1];
         static char strBufUnit[STR_MAX+1];
+        static char strBufComment[STR_MAX+1];
+        static char strBufGroupName[STR_MAX+1];
+        carla_zeroChars(strBufName, STR_MAX+1);
+        carla_zeroChars(strBufUnit, STR_MAX+1);
+        carla_zeroChars(strBufComment, STR_MAX+1);
+        carla_zeroChars(strBufGroupName, STR_MAX+1);
 
-        if (CarlaPlugin* const plugin = _getFirstPlugin())
+        uint32_t rindex = index;
+        if (CarlaPlugin* const plugin = _getPluginForParameterIndex(rindex))
         {
-            if (index < plugin->getParameterCount())
+            const ParameterData& paramData(plugin->getParameterData(rindex));
+            const ParameterRanges& paramRanges(plugin->getParameterRanges(rindex));
+
+            if (! plugin->getParameterName(rindex, strBufName))
+                strBufName[0] = '\0';
+            if (! plugin->getParameterUnit(rindex, strBufUnit))
+                strBufUnit[0] = '\0';
+            if (! plugin->getParameterComment(rindex, strBufComment))
+                strBufComment[0] = '\0';
+            if (! plugin->getParameterGroupName(rindex, strBufGroupName))
+                std::snprintf(strBufGroupName, STR_MAX, "%u:%s", plugin->getId(), plugin->getName());
+
+            uint hints = 0x0;
+
+            if (paramData.hints & PARAMETER_IS_BOOLEAN)
+                hints |= NATIVE_PARAMETER_IS_BOOLEAN;
+            if (paramData.hints & PARAMETER_IS_INTEGER)
+                hints |= NATIVE_PARAMETER_IS_INTEGER;
+            if (paramData.hints & PARAMETER_IS_LOGARITHMIC)
+                hints |= NATIVE_PARAMETER_IS_LOGARITHMIC;
+            if (paramData.hints & PARAMETER_IS_AUTOMABLE)
+                hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
+            if (paramData.hints & PARAMETER_USES_SAMPLERATE)
+                hints |= NATIVE_PARAMETER_USES_SAMPLE_RATE;
+            if (paramData.hints & PARAMETER_USES_SCALEPOINTS)
+                hints |= NATIVE_PARAMETER_USES_SCALEPOINTS;
+
+            if (paramData.type == PARAMETER_INPUT || paramData.type == PARAMETER_OUTPUT)
             {
-                const ParameterData& paramData(plugin->getParameterData(index));
-                const ParameterRanges& paramRanges(plugin->getParameterRanges(index));
-
-                plugin->getParameterName(index, strBufName);
-                plugin->getParameterUnit(index, strBufUnit);
-
-                uint hints = 0x0;
-
-                if (paramData.hints & PARAMETER_IS_BOOLEAN)
-                    hints |= NATIVE_PARAMETER_IS_BOOLEAN;
-                if (paramData.hints & PARAMETER_IS_INTEGER)
-                    hints |= NATIVE_PARAMETER_IS_INTEGER;
-                if (paramData.hints & PARAMETER_IS_LOGARITHMIC)
-                    hints |= NATIVE_PARAMETER_IS_LOGARITHMIC;
-                if (paramData.hints & PARAMETER_IS_AUTOMABLE)
-                    hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
-                if (paramData.hints & PARAMETER_USES_SAMPLERATE)
-                    hints |= NATIVE_PARAMETER_USES_SAMPLE_RATE;
-                if (paramData.hints & PARAMETER_USES_SCALEPOINTS)
-                    hints |= NATIVE_PARAMETER_USES_SCALEPOINTS;
-
-                if (paramData.type == PARAMETER_INPUT || paramData.type == PARAMETER_OUTPUT)
-                {
-                    if (paramData.hints & PARAMETER_IS_ENABLED)
-                        hints |= NATIVE_PARAMETER_IS_ENABLED;
-                    if (paramData.type == PARAMETER_OUTPUT)
-                        hints |= NATIVE_PARAMETER_IS_OUTPUT;
-                }
-
-                param.hints = static_cast<NativeParameterHints>(hints);
-                param.name  = strBufName;
-                param.unit  = strBufUnit;
-                param.ranges.def = paramRanges.def;
-                param.ranges.min = paramRanges.min;
-                param.ranges.max = paramRanges.max;
-                param.ranges.step = paramRanges.step;
-                param.ranges.stepSmall = paramRanges.stepSmall;
-                param.ranges.stepLarge = paramRanges.stepLarge;
-                param.scalePointCount = 0; // TODO
-                param.scalePoints = nullptr;
-
-                return &param;
+                if (paramData.hints & PARAMETER_IS_ENABLED)
+                    hints |= NATIVE_PARAMETER_IS_ENABLED;
+                if (paramData.type == PARAMETER_OUTPUT)
+                    hints |= NATIVE_PARAMETER_IS_OUTPUT;
             }
+
+            param.hints = static_cast<NativeParameterHints>(hints);
+            param.name  = strBufName;
+            param.unit  = strBufUnit;
+            param.comment = strBufComment;
+            param.groupName = strBufGroupName;
+            param.ranges.def = paramRanges.def;
+            param.ranges.min = paramRanges.min;
+            param.ranges.max = paramRanges.max;
+            param.ranges.step = paramRanges.step;
+            param.ranges.stepSmall = paramRanges.stepSmall;
+            param.ranges.stepLarge = paramRanges.stepLarge;
+            param.scalePointCount = 0; // TODO
+            param.scalePoints = nullptr;
+
+            return &param;
         }
 
         param.hints = index < kNumInParams ? static_cast<NativeParameterHints>(0x0) : NATIVE_PARAMETER_IS_OUTPUT;
@@ -1023,47 +1023,11 @@ protected:
 
     float getParameterValue(const uint32_t index) const
     {
-        if (CarlaPlugin* const plugin = _getFirstPlugin())
-        {
-            if (index < plugin->getParameterCount())
-                return plugin->getParameterValue(index);
-        }
+        uint32_t rindex = index;
+        if (CarlaPlugin* const plugin = _getPluginForParameterIndex(rindex))
+            return plugin->getParameterValue(rindex);
 
         return fParameters[index];
-    }
-
-    // -------------------------------------------------------------------
-    // Plugin midi-program calls
-
-    uint32_t getMidiProgramCount() const
-    {
-        if (CarlaPlugin* const plugin = _getFirstPlugin())
-            return plugin->getMidiProgramCount();
-
-        return 0;
-    }
-
-    const NativeMidiProgram* getMidiProgramInfo(const uint32_t index) const
-    {
-        if (CarlaPlugin* const plugin = _getFirstPlugin())
-        {
-            if (index < plugin->getMidiProgramCount())
-            {
-                static NativeMidiProgram midiProg;
-
-                {
-                    const MidiProgramData& midiProgData(plugin->getMidiProgramData(index));
-
-                    midiProg.bank    = midiProgData.bank;
-                    midiProg.program = midiProgData.program;
-                    midiProg.name    = midiProgData.name;
-                }
-
-                return &midiProg;
-            }
-        }
-
-        return nullptr;
     }
 
     // -------------------------------------------------------------------
@@ -1071,19 +1035,11 @@ protected:
 
     void setParameterValue(const uint32_t index, const float value)
     {
-        if (CarlaPlugin* const plugin = _getFirstPlugin())
-        {
-            if (index < plugin->getParameterCount())
-                plugin->setParameterValueRT(index, value);
-        }
+        uint32_t rindex = index;
+        if (CarlaPlugin* const plugin = _getPluginForParameterIndex(rindex))
+            plugin->setParameterValue(rindex, value, false, false, false);
 
         fParameters[index] = value;
-    }
-
-    void setMidiProgram(const uint8_t, const uint32_t bank, const uint32_t program)
-    {
-        if (CarlaPlugin* const plugin = _getFirstPlugin())
-            plugin->setMidiProgramById(bank, program, false, false, false);
     }
 
     // -------------------------------------------------------------------
@@ -1124,7 +1080,7 @@ protected:
         //runPendingRtEvents();
     }
 
-    void process(const float** const inBuffer, float** const outBuffer, const uint32_t frames,
+    void process(const float* const* const inBuffer, float** const outBuffer, const uint32_t frames,
                  const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount)
     {
         if (frames > pData->bufferSize)
@@ -1393,10 +1349,21 @@ protected:
 
     void uiSetParameterValue(const uint32_t index, const float value)
     {
-        if (CarlaPlugin* const plugin = _getFirstPlugin())
+        uint32_t rindex = index;
+        if (CarlaPlugin* const plugin = _getPluginForParameterIndex(rindex))
         {
-            if (index < plugin->getParameterCount())
-                plugin->uiParameterChange(index, value);
+            if (plugin->getHints() & PLUGIN_HAS_CUSTOM_UI)
+                plugin->uiParameterChange(rindex, value);
+
+            if (index >= kNumInParams || ! fUiServer.isPipeRunning())
+                return;
+
+            uiServerCallback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+                             plugin->getId(),
+                             static_cast<int>(rindex),
+                             0, 0,
+                             value,
+                             nullptr);
         }
     }
 
@@ -1407,8 +1374,8 @@ protected:
 
         fUiServer.idlePipe();
 
-        char tmpBuf[STR_MAX];
-        carla_zeroChars(tmpBuf, STR_MAX);
+        char tmpBuf[STR_MAX+1];
+        carla_zeroChars(tmpBuf, STR_MAX+1);
 
         const CarlaMutexLocker cml(fUiServer.getPipeLock());
         const CarlaScopedLocale csl;
@@ -1417,41 +1384,33 @@ protected:
         // ------------------------------------------------------------------------------------------------------------
         // send engine info
 
-        if (! fUiServer.writeAndFixMessage("runtime-info"))
-            return;
-        std::sprintf(tmpBuf, "%f:0\n", static_cast<double>(getDSPLoad()));
-        if (! fUiServer.writeMessage(tmpBuf))
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage("runtime-info"),);
+        std::snprintf(tmpBuf, STR_MAX, "%.12g:0\n", static_cast<double>(getDSPLoad()));
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
         fUiServer.flushMessages();
 
         // ------------------------------------------------------------------------------------------------------------
         // send transport
 
-        if (! fUiServer.writeAndFixMessage("transport"))
-            return;
-        if (! fUiServer.writeMessage(timeInfo.playing ? "true\n" : "false\n"))
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage("transport"),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(timeInfo.playing ? "true\n" : "false\n"),);
 
         if (timeInfo.bbt.valid)
         {
-            std::sprintf(tmpBuf, P_UINT64 ":%i:%i:%i\n",
-                         timeInfo.frame, timeInfo.bbt.bar, timeInfo.bbt.beat, static_cast<int>(timeInfo.bbt.tick + 0.5));
-            if (! fUiServer.writeMessage(tmpBuf))
-                return;
-
-            std::sprintf(tmpBuf, "%f\n", timeInfo.bbt.beatsPerMinute);
-            if (! fUiServer.writeMessage(tmpBuf))
-                return;
+            std::snprintf(tmpBuf, STR_MAX, P_UINT64 ":%i:%i:%i\n", timeInfo.frame,
+                                                                   timeInfo.bbt.bar,
+                                                                   timeInfo.bbt.beat,
+                                                                   static_cast<int>(timeInfo.bbt.tick + 0.5));
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+            std::snprintf(tmpBuf, STR_MAX, "%.12g\n", timeInfo.bbt.beatsPerMinute);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         }
         else
         {
-            std::sprintf(tmpBuf, P_UINT64 ":0:0:0\n", timeInfo.frame);
-            if (! fUiServer.writeMessage(tmpBuf))
-                return;
-
-            if (! fUiServer.writeMessage("0.0\n"))
-                return;
+            std::snprintf(tmpBuf, STR_MAX, P_UINT64 ":0:0:0\n", timeInfo.frame);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("0.0\n"),);
         }
 
         fUiServer.flushMessages();
@@ -1464,17 +1423,14 @@ protected:
             const EnginePluginData& plugData(pData->plugins[i]);
             const CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
-            std::sprintf(tmpBuf, "PEAKS_%i\n", i);
-            if (! fUiServer.writeMessage(tmpBuf))
-                return;
-
-            std::sprintf(tmpBuf, "%f:%f:%f:%f\n",
-                         static_cast<double>(plugData.peaks[0]),
-                         static_cast<double>(plugData.peaks[1]),
-                         static_cast<double>(plugData.peaks[2]),
-                         static_cast<double>(plugData.peaks[3]));
-            if (! fUiServer.writeMessage(tmpBuf))
-                return;
+            std::snprintf(tmpBuf, STR_MAX, "PEAKS_%i\n", i);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+            std::snprintf(tmpBuf, STR_MAX, "%.12g:%.12g:%.12g:%.12g\n",
+                          static_cast<double>(plugData.peaks[0]),
+                          static_cast<double>(plugData.peaks[1]),
+                          static_cast<double>(plugData.peaks[2]),
+                          static_cast<double>(plugData.peaks[3]));
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
             fUiServer.flushMessages();
 
@@ -1483,13 +1439,10 @@ protected:
                 if (! plugin->isParameterOutput(j))
                     continue;
 
-                std::sprintf(tmpBuf, "PARAMVAL_%i:%i\n", i, j);
-                if (! fUiServer.writeMessage(tmpBuf))
-                    return;
-
-                std::sprintf(tmpBuf, "%f\n", static_cast<double>(plugin->getParameterValue(j)));
-                if (! fUiServer.writeMessage(tmpBuf))
-                    return;
+                std::snprintf(tmpBuf, STR_MAX, "PARAMVAL_%u:%u\n", i, j);
+                CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
+                std::snprintf(tmpBuf, STR_MAX, "%.12g\n", static_cast<double>(plugin->getParameterValue(j)));
+                CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
                 fUiServer.flushMessages();
             }
@@ -1525,6 +1478,8 @@ protected:
         const String state(data);
         XmlDocument xml(state);
         loadProjectInternal(xml);
+
+        reloadFromUI();
     }
 
     // -------------------------------------------------------------------
@@ -1567,6 +1522,11 @@ public:
         return new CarlaEngineNative(host, true, true, 64, 64);
     }
 
+    static NativePluginHandle _instantiatePatchbayCV(const NativeHostDescriptor* host)
+    {
+        return new CarlaEngineNative(host, true, true, 2, 2, 5, 5);
+    }
+
     static void _cleanup(NativePluginHandle handle)
     {
         delete handlePtr;
@@ -1587,24 +1547,9 @@ public:
         return handlePtr->getParameterValue(index);
     }
 
-    static uint32_t _get_midi_program_count(NativePluginHandle handle)
-    {
-        return handlePtr->getMidiProgramCount();
-    }
-
-    static const NativeMidiProgram* _get_midi_program_info(NativePluginHandle handle, uint32_t index)
-    {
-        return handlePtr->getMidiProgramInfo(index);
-    }
-
     static void _set_parameter_value(NativePluginHandle handle, uint32_t index, float value)
     {
         handlePtr->setParameterValue(index, value);
-    }
-
-    static void _set_midi_program(NativePluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program)
-    {
-        handlePtr->setMidiProgram(channel, bank, program);
     }
 
     static void _ui_show(NativePluginHandle handle, bool show)
@@ -1632,8 +1577,9 @@ public:
         handlePtr->deactivate();
     }
 
+    // FIXME for v3.0, use const for the input buffer
     static void _process(NativePluginHandle handle,
-                         const float** inBuffer, float** outBuffer, const uint32_t frames,
+                         float** inBuffer, float** outBuffer, const uint32_t frames,
                          const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
     {
         handlePtr->process(inBuffer, outBuffer, frames, midiEvents, midiEventCount);
@@ -1674,6 +1620,9 @@ public:
             CarlaEngineNative* const engine = handlePtr;
             return (intptr_t)(CarlaEngine*)engine;
         }
+        case NATIVE_PLUGIN_OPCODE_IDLE:
+            //handlePtr->idle();
+            return 0;
         }
 
         return 0;
@@ -1719,17 +1668,53 @@ private:
 
     bool fOptionsForced;
 
-    CarlaPlugin* _getFirstPlugin() const noexcept
+    CarlaPlugin* _getPluginForParameterIndex(uint32_t& index) const noexcept
     {
         if (pData->curPluginCount == 0 || pData->plugins == nullptr)
             return nullptr;
 
-        CarlaPlugin* const plugin(pData->plugins[0].plugin);
+        CarlaPlugin* plugin;
 
-        if (plugin == nullptr || ! plugin->isEnabled())
-            return nullptr;
+        for (uint32_t i=0; i<pData->curPluginCount; ++i)
+        {
+            plugin = pData->plugins[i].plugin;
 
-        return pData->plugins[0].plugin;
+            if (plugin == nullptr || ! plugin->isEnabled())
+                break;
+
+            if (const uint32_t paramCount = plugin->getParameterCount())
+            {
+                if (index >= paramCount)
+                {
+                    index -= paramCount;
+                    continue;
+                }
+
+                return plugin;
+            }
+        }
+
+        return nullptr;
+    }
+
+    bool _getRealIndexForPluginParameter(const uint32_t pluginId, uint32_t& rindex) const noexcept
+    {
+        if (pData->curPluginCount == 0 || pluginId >= pData->curPluginCount || pData->plugins == nullptr)
+            return false;
+
+        CarlaPlugin* plugin;
+
+        for (uint32_t i=0; i<pluginId; ++i)
+        {
+            plugin = pData->plugins[i].plugin;
+
+            if (plugin == nullptr || ! plugin->isEnabled())
+                return false;
+
+            rindex += plugin->getParameterCount();
+        }
+
+        return true;
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineNative)
@@ -1916,9 +1901,7 @@ bool CarlaEngineNativeUI::msgReceived(const char*const msg) noexcept
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
 
         ok = fEngine->removePlugin(pluginId);
-
-        if (pluginId == 0)
-            fEngine->reloadFromUI();
+        fEngine->reloadFromUI();
     }
     else if (std::strcmp(msg, "remove_all_plugins") == 0)
     {
@@ -1961,9 +1944,7 @@ bool CarlaEngineNativeUI::msgReceived(const char*const msg) noexcept
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginIdB), true);
 
         ok = fEngine->switchPlugins(pluginIdA, pluginIdB);
-
-        if (pluginIdA == 0 || pluginIdB == 0)
-            fEngine->reloadFromUI();
+        fEngine->reloadFromUI();
     }
     else if (std::strcmp(msg, "load_plugin_state") == 0)
     {
@@ -2111,18 +2092,31 @@ bool CarlaEngineNativeUI::msgReceived(const char*const msg) noexcept
         if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
             plugin->setParameterMidiChannel(parameterId, static_cast<uint8_t>(channel), true, false);
     }
-    else if (std::strcmp(msg, "set_parameter_midi_cc") == 0)
+    else if (std::strcmp(msg, "set_parameter_mapped_control_index") == 0)
     {
         uint32_t pluginId, parameterId;
-        int32_t cc;
+        int32_t ctrl;
 
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(parameterId), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(cc), true);
-        CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc < MAX_MIDI_CONTROL, true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(ctrl), true);
+        CARLA_SAFE_ASSERT_RETURN(ctrl >= CONTROL_INDEX_NONE && ctrl <= CONTROL_INDEX_MAX_ALLOWED, true);
 
         if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-            plugin->setParameterMidiCC(parameterId, static_cast<int16_t>(cc), true, false);
+            plugin->setParameterMappedControlIndex(parameterId, static_cast<int16_t>(ctrl), true, false);
+    }
+    else if (std::strcmp(msg, "set_parameter_mapped_range") == 0)
+    {
+        uint32_t pluginId, parameterId;
+        float minimum, maximum;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(parameterId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(minimum), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(maximum), true);
+
+        if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+            plugin->setParameterMappedRange(parameterId, minimum, maximum, true, false);
     }
     else if (std::strcmp(msg, "set_parameter_touch") == 0)
     {
@@ -2299,6 +2293,7 @@ void CarlaEngineNativeUI::_updateParamValues(CarlaPlugin* const plugin, const ui
         }
 
         if (sendPluginHost) {
+            carla_stdout("_updateParamValues");
             fEngine->setParameterValueFromUI(pluginId, i, value);
         }
     }
@@ -2329,10 +2324,10 @@ static const NativePluginDescriptor carlaRackDesc = {
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
-    CarlaEngineNative::_get_midi_program_count,
-    CarlaEngineNative::_get_midi_program_info,
+    /* _get_midi_program_count */ nullptr,
+    /* _get_midi_program_info  */ nullptr,
     CarlaEngineNative::_set_parameter_value,
-    CarlaEngineNative::_set_midi_program,
+    /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
@@ -2345,7 +2340,10 @@ static const NativePluginDescriptor carlaRackDesc = {
     CarlaEngineNative::_get_state,
     CarlaEngineNative::_set_state,
     CarlaEngineNative::_dispatcher,
-    /* _render_inline_dsplay */ nullptr
+    /* _render_inline_dsplay */ nullptr,
+    /* cvIns  */ 0,
+    /* cvOuts */ 0,
+    /* _get_buffer_port_name */ nullptr
 };
 
 static const NativePluginDescriptor carlaRackNoMidiOutDesc = {
@@ -2371,14 +2369,14 @@ static const NativePluginDescriptor carlaRackNoMidiOutDesc = {
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
-    CarlaEngineNative::_get_midi_program_count,
-    CarlaEngineNative::_get_midi_program_info,
+    /* _get_midi_program_count */ nullptr,
+    /* _get_midi_program_info  */ nullptr,
     CarlaEngineNative::_set_parameter_value,
-    CarlaEngineNative::_set_midi_program,
+    /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
-    /* _ui_set_parameter_value */ nullptr,
+    CarlaEngineNative::_ui_set_parameter_value,
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,
@@ -2387,7 +2385,10 @@ static const NativePluginDescriptor carlaRackNoMidiOutDesc = {
     CarlaEngineNative::_get_state,
     CarlaEngineNative::_set_state,
     CarlaEngineNative::_dispatcher,
-    /* _render_inline_dsplay */ nullptr
+    /* _render_inline_dsplay */ nullptr,
+    /* cvIns  */ 0,
+    /* cvOuts */ 0,
+    /* _get_buffer_port_name */ nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbayDesc = {
@@ -2413,14 +2414,14 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
-    CarlaEngineNative::_get_midi_program_count,
-    CarlaEngineNative::_get_midi_program_info,
+    /* _get_midi_program_count */ nullptr,
+    /* _get_midi_program_info  */ nullptr,
     CarlaEngineNative::_set_parameter_value,
-    CarlaEngineNative::_set_midi_program,
+    /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
-    /* _ui_set_parameter_value */ nullptr,
+    CarlaEngineNative::_ui_set_parameter_value,
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,
@@ -2429,7 +2430,10 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
     CarlaEngineNative::_get_state,
     CarlaEngineNative::_set_state,
     CarlaEngineNative::_dispatcher,
-    /* _render_inline_dsplay */ nullptr
+    /* _render_inline_dsplay */ nullptr,
+    /* cvIns  */ 0,
+    /* cvOuts */ 0,
+    /* _get_buffer_port_name */ nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbay3sDesc = {
@@ -2455,14 +2459,14 @@ static const NativePluginDescriptor carlaPatchbay3sDesc = {
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
-    CarlaEngineNative::_get_midi_program_count,
-    CarlaEngineNative::_get_midi_program_info,
+    /* _get_midi_program_count */ nullptr,
+    /* _get_midi_program_info  */ nullptr,
     CarlaEngineNative::_set_parameter_value,
-    CarlaEngineNative::_set_midi_program,
+    /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
-    /* _ui_set_parameter_value */ nullptr,
+    CarlaEngineNative::_ui_set_parameter_value,
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,
@@ -2471,7 +2475,10 @@ static const NativePluginDescriptor carlaPatchbay3sDesc = {
     CarlaEngineNative::_get_state,
     CarlaEngineNative::_set_state,
     CarlaEngineNative::_dispatcher,
-    /* _render_inline_dsplay */ nullptr
+    /* _render_inline_dsplay */ nullptr,
+    /* cvIns  */ 0,
+    /* cvOuts */ 0,
+    /* _get_buffer_port_name */ nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbay16Desc = {
@@ -2497,14 +2504,14 @@ static const NativePluginDescriptor carlaPatchbay16Desc = {
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
-    CarlaEngineNative::_get_midi_program_count,
-    CarlaEngineNative::_get_midi_program_info,
+    /* _get_midi_program_count */ nullptr,
+    /* _get_midi_program_info  */ nullptr,
     CarlaEngineNative::_set_parameter_value,
-    CarlaEngineNative::_set_midi_program,
+    /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
-    /* _ui_set_parameter_value */ nullptr,
+    CarlaEngineNative::_ui_set_parameter_value,
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,
@@ -2513,7 +2520,10 @@ static const NativePluginDescriptor carlaPatchbay16Desc = {
     CarlaEngineNative::_get_state,
     CarlaEngineNative::_set_state,
     CarlaEngineNative::_dispatcher,
-    /* _render_inline_dsplay */ nullptr
+    /* _render_inline_dsplay */ nullptr,
+    /* cvIns  */ 0,
+    /* cvOuts */ 0,
+    /* _get_buffer_port_name */ nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbay32Desc = {
@@ -2539,14 +2549,14 @@ static const NativePluginDescriptor carlaPatchbay32Desc = {
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
-    CarlaEngineNative::_get_midi_program_count,
-    CarlaEngineNative::_get_midi_program_info,
+    /* _get_midi_program_count */ nullptr,
+    /* _get_midi_program_info  */ nullptr,
     CarlaEngineNative::_set_parameter_value,
-    CarlaEngineNative::_set_midi_program,
+    /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
-    /* _ui_set_parameter_value */ nullptr,
+    CarlaEngineNative::_ui_set_parameter_value,
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,
@@ -2555,7 +2565,10 @@ static const NativePluginDescriptor carlaPatchbay32Desc = {
     CarlaEngineNative::_get_state,
     CarlaEngineNative::_set_state,
     CarlaEngineNative::_dispatcher,
-    /* _render_inline_dsplay */ nullptr
+    /* _render_inline_dsplay */ nullptr,
+    /* cvIns  */ 0,
+    /* cvOuts */ 0,
+    /* _get_buffer_port_name */ nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbay64Desc = {
@@ -2581,14 +2594,14 @@ static const NativePluginDescriptor carlaPatchbay64Desc = {
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
-    CarlaEngineNative::_get_midi_program_count,
-    CarlaEngineNative::_get_midi_program_info,
+    /* _get_midi_program_count */ nullptr,
+    /* _get_midi_program_info  */ nullptr,
     CarlaEngineNative::_set_parameter_value,
-    CarlaEngineNative::_set_midi_program,
+    /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
-    /* _ui_set_parameter_value */ nullptr,
+    CarlaEngineNative::_ui_set_parameter_value,
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,
@@ -2597,7 +2610,56 @@ static const NativePluginDescriptor carlaPatchbay64Desc = {
     CarlaEngineNative::_get_state,
     CarlaEngineNative::_set_state,
     CarlaEngineNative::_dispatcher,
-    /* _render_inline_dsplay */ nullptr
+    /* _render_inline_dsplay */ nullptr,
+    /* cvIns  */ 0,
+    /* cvOuts */ 0,
+    /* _get_buffer_port_name */ nullptr
+};
+
+static const NativePluginDescriptor carlaPatchbayCVDesc = {
+    /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
+                                                  |NATIVE_PLUGIN_USES_CONTROL_VOLTAGE
+                                                  |NATIVE_PLUGIN_USES_STATE
+                                                  |NATIVE_PLUGIN_USES_TIME),
+    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
+    /* audioIns  */ 2,
+    /* audioOuts */ 2,
+    /* midiIns   */ 1,
+    /* midiOuts  */ 1,
+    /* paramIns  */ kNumInParams,
+    /* paramOuts */ kNumOutParams,
+    /* name      */ "Carla-Patchbay (CV)",
+    /* label     */ "carlapatchbaycv",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    CarlaEngineNative::_instantiatePatchbayCV,
+    CarlaEngineNative::_cleanup,
+    CarlaEngineNative::_get_parameter_count,
+    CarlaEngineNative::_get_parameter_info,
+    CarlaEngineNative::_get_parameter_value,
+    /* _get_midi_program_count */ nullptr,
+    /* _get_midi_program_info  */ nullptr,
+    CarlaEngineNative::_set_parameter_value,
+    /* _set_midi_program       */ nullptr,
+    /* _set_custom_data        */ nullptr,
+    CarlaEngineNative::_ui_show,
+    CarlaEngineNative::_ui_idle,
+    CarlaEngineNative::_ui_set_parameter_value,
+    /* _ui_set_midi_program    */ nullptr,
+    /* _ui_set_custom_data     */ nullptr,
+    CarlaEngineNative::_activate,
+    CarlaEngineNative::_deactivate,
+    CarlaEngineNative::_process,
+    CarlaEngineNative::_get_state,
+    CarlaEngineNative::_set_state,
+    CarlaEngineNative::_dispatcher,
+    /* _render_inline_dsplay */ nullptr,
+    /* cvIns  */ 5,
+    /* cvOuts */ 5,
+    /* _get_buffer_port_name */ nullptr
 };
 
 CARLA_BACKEND_END_NAMESPACE
@@ -2617,6 +2679,7 @@ void carla_register_native_plugin_carla()
     carla_register_native_plugin(&carlaPatchbay16Desc);
     carla_register_native_plugin(&carlaPatchbay32Desc);
     carla_register_native_plugin(&carlaPatchbay64Desc);
+    carla_register_native_plugin(&carlaPatchbayCVDesc);
 }
 
 // -----------------------------------------------------------------------
@@ -2651,6 +2714,12 @@ const NativePluginDescriptor* carla_get_native_patchbay64_plugin()
     return &carlaPatchbay64Desc;
 }
 
+const NativePluginDescriptor* carla_get_native_patchbay_cv_plugin()
+{
+    CARLA_BACKEND_USE_NAMESPACE;
+    return &carlaPatchbayCVDesc;
+}
+
 // -----------------------------------------------------------------------
 // Extra stuff for linking purposes
 
@@ -2666,6 +2735,7 @@ uint               CarlaEngine::getJuceApiCount()                 { return 0;   
 const char*        CarlaEngine::getJuceApiName(const uint)        { return nullptr; }
 const char* const* CarlaEngine::getJuceApiDeviceNames(const uint) { return nullptr; }
 const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const uint, const char* const) { return nullptr; }
+bool               CarlaEngine::showJuceDeviceControlPanel(const uint, const char* const)   { return false; }
 # else
 CarlaEngine*       CarlaEngine::newRtAudio(const AudioApi)           { return nullptr; }
 uint               CarlaEngine::getRtAudioApiCount()                 { return 0;       }

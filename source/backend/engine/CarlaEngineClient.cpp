@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -15,58 +15,25 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include "CarlaEngineClient.hpp"
 #include "CarlaEngineUtils.hpp"
 
 #include "CarlaString.hpp"
-#include "CarlaStringList.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
-// Carla Engine client (Abstract)
+// Carla Engine Client
 
-struct CarlaEngineClient::ProtectedData {
-    const CarlaEngine& engine;
-
-    bool     active;
-    uint32_t latency;
-
-    CarlaStringList audioInList;
-    CarlaStringList audioOutList;
-    CarlaStringList cvInList;
-    CarlaStringList cvOutList;
-    CarlaStringList eventInList;
-    CarlaStringList eventOutList;
-
-    ProtectedData(const CarlaEngine& eng) noexcept
-        :  engine(eng),
-           active(false),
-           latency(0),
-           audioInList(),
-           audioOutList(),
-           cvInList(),
-           cvOutList(),
-           eventInList(),
-           eventOutList() {}
-
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-    ProtectedData() = delete;
-    CARLA_DECLARE_NON_COPY_STRUCT(ProtectedData)
-#endif
-};
-
-CarlaEngineClient::CarlaEngineClient(const CarlaEngine& engine)
-    : pData(new ProtectedData(engine))
+CarlaEngineClient::CarlaEngineClient(ProtectedData* const p)
+    : pData(p)
 {
     carla_debug("CarlaEngineClient::CarlaEngineClient()");
 }
 
 CarlaEngineClient::~CarlaEngineClient() noexcept
 {
-    CARLA_SAFE_ASSERT(! pData->active);
     carla_debug("CarlaEngineClient::~CarlaEngineClient()");
-
-    delete pData;
 }
 
 void CarlaEngineClient::activate() noexcept
@@ -108,7 +75,7 @@ void CarlaEngineClient::setLatency(const uint32_t samples) noexcept
 CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const char* const name, const bool isInput, const uint32_t indexOffset)
 {
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', nullptr);
-    carla_debug("CarlaEngineClient::addPort(%i:%s, \"%s\", %s)", portType, EnginePortType2Str(portType), name, bool2str(isInput));
+    carla_debug("CarlaEngineClient::addPort(%i:%s, \"%s\", %s, %u)", portType, EnginePortType2Str(portType), name, bool2str(isInput), indexOffset);
 
     switch (portType)
     {
@@ -129,6 +96,41 @@ CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const
     return nullptr;
 }
 
+bool CarlaEngineClient::removePort(const EnginePortType portType, const char* const name, const bool isInput)
+{
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', false);
+    carla_debug("CarlaEngineClient::removePort(%i:%s, \"%s\", %s)", portType, EnginePortType2Str(portType), name, bool2str(isInput));
+
+    switch (portType)
+    {
+    case kEnginePortTypeNull:
+        break;
+    case kEnginePortTypeAudio: {
+        CarlaStringList& portList(isInput ? pData->audioInList : pData->audioOutList);
+        portList.append(name);
+        return portList.removeOne(name);
+    }
+    case kEnginePortTypeCV: {
+        CarlaStringList& portList(isInput ? pData->cvInList : pData->cvOutList);
+        return portList.removeOne(name);
+    }
+    case kEnginePortTypeEvent: {
+        CarlaStringList& portList(isInput ? pData->eventInList : pData->eventOutList);
+        return portList.removeOne(name);
+    }
+    }
+
+    return false;
+}
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+CarlaEngineCVSourcePorts* CarlaEngineClient::createCVSourcePorts()
+{
+    pData->cvSourcePorts.setGraphAndPlugin(pData->egraph.getPatchbayGraph(), pData->plugin);
+    return &pData->cvSourcePorts;
+}
+#endif
+
 const CarlaEngine& CarlaEngineClient::getEngine() const noexcept
 {
     return pData->engine;
@@ -137,6 +139,28 @@ const CarlaEngine& CarlaEngineClient::getEngine() const noexcept
 EngineProcessMode CarlaEngineClient::getProcessMode() const noexcept
 {
     return pData->engine.getProccessMode();
+}
+
+uint CarlaEngineClient::getPortCount(const EnginePortType portType, const bool isInput) const noexcept
+{
+    size_t ret = 0;
+
+    switch (portType)
+    {
+    case kEnginePortTypeNull:
+        break;
+    case kEnginePortTypeAudio:
+        ret = isInput ? pData->audioInList.count() : pData->audioOutList.count();
+        break;
+    case kEnginePortTypeCV:
+        ret = isInput ? pData->cvInList.count() : pData->cvOutList.count();
+        break;
+    case kEnginePortTypeEvent:
+        ret = isInput ? pData->eventInList.count() : pData->eventOutList.count();
+        break;
+    }
+
+    return static_cast<uint>(ret);
 }
 
 const char* CarlaEngineClient::getAudioPortName(const bool isInput, const uint index) const noexcept

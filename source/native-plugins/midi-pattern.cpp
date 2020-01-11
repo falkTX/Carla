@@ -20,6 +20,9 @@
 
 #include "midi-base.hpp"
 
+// matches UI side
+#define TICKS_PER_BEAT 48
+
 // -----------------------------------------------------------------------
 
 class MidiPatternPlugin : public NativePluginAndUiClass,
@@ -52,7 +55,7 @@ public:
         fParameters[kParameterDefLength] = 4.0f;
         fParameters[kParameterQuantize]  = 4.0f;
 
-        fMaxTicks = 48.0 * fTimeSigNum * 4 /* kParameterMeasures */ / 2; // FIXME: why / 2 ?
+        fMaxTicks = TICKS_PER_BEAT * fTimeSigNum * 4 /* kParameterMeasures */;
     }
 
 protected:
@@ -186,23 +189,10 @@ protected:
         switch (index)
         {
         case kParameterTimeSig:
-            /**/ if (value > 4.5f)
-                fTimeSigNum = 6;
-            else if (value > 3.5f)
-                fTimeSigNum = 5;
-            else if (value > 2.5f)
-                fTimeSigNum = 4;
-            /* FIXME
-            else if (value > 2.5f)
-                fTimeSigNum = 3;
-            */
-            else if (value > 1.5f)
-                fTimeSigNum = 2;
-            else
-                fTimeSigNum = 1;
+            fTimeSigNum = static_cast<int>(value + 1.5f);
             // fall through
         case kParameterMeasures:
-            fMaxTicks = 48.0 * fTimeSigNum * static_cast<double>(fParameters[kParameterMeasures]) /2; // FIXME: why /2 ?
+            fMaxTicks = TICKS_PER_BEAT * fTimeSigNum * static_cast<double>(fParameters[kParameterMeasures]);
             break;
         }
     }
@@ -210,7 +200,8 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(const float**, float**, const uint32_t frames, const NativeMidiEvent*, uint32_t) override
+    void process(const float* const*, float**, const uint32_t frames,
+                 const NativeMidiEvent* /*midiEvents*/, uint32_t /*midiEventCount*/) override
     {
         if (const NativeTimeInfo* const timeInfo = getTimeInfo())
             fTimeInfo = *timeInfo;
@@ -247,12 +238,20 @@ protected:
             if (! fTimeInfo.bbt.valid)
                 fTimeInfo.bbt.beatsPerMinute = 120.0;
 
-            fTicksPerFrame = 48.0 / (60.0 / fTimeInfo.bbt.beatsPerMinute * getSampleRate());
+            fTicksPerFrame = TICKS_PER_BEAT / (60.0 / fTimeInfo.bbt.beatsPerMinute * getSampleRate());
 
             /* */ double playPos = fTicksPerFrame*static_cast<double>(fTimeInfo.frame);
             const double endPos  = playPos + fTicksPerFrame*static_cast<double>(frames);
 
-            const double loopedEndPos  = std::fmod(endPos, fMaxTicks);
+            const double loopedEndPos = std::fmod(endPos, fMaxTicks);
+
+            /*
+            for (uint32_t i=0; i<midiEventCount; ++i)
+            {
+                uint32_t pos = static_cast<uint32_t>(std::fmod(fTicksPerFrame * static_cast<double>(fTimeInfo.frame + midiEvents[i].time), fMaxTicks));
+                fMidiOut.addRaw(pos, midiEvents[i].data, midiEvents[i].size);
+            }
+            */
 
             for (; playPos < endPos; playPos += fMaxTicks)
             {
@@ -290,13 +289,12 @@ protected:
         if (isPipeRunning())
         {
             char strBuf[0xff+1];
-            strBuf[0xff] = '\0';
+            carla_zeroChars(strBuf, 0xff+1);
 
-            const double beatsPerBar    = fTimeInfo.bbt.valid ? static_cast<double>(fTimeInfo.bbt.beatsPerBar) : 4.0;
+            const double beatsPerBar    = fTimeSigNum;
             const double beatsPerMinute = fTimeInfo.bbt.valid ? fTimeInfo.bbt.beatsPerMinute : 120.0;
-            const float  beatType       = fTimeInfo.bbt.valid ? fTimeInfo.bbt.beatType : 4.0f;
 
-            const double ticksPerBeat  = 48.0;
+            const double ticksPerBeat  = TICKS_PER_BEAT;
             const double ticksPerFrame = ticksPerBeat / (60.0 / beatsPerMinute * getSampleRate());
             const double fullTicks     = static_cast<double>(ticksPerFrame * static_cast<long double>(fTimeInfo.frame));
             const double fullBeats     = fullTicks / ticksPerBeat;
@@ -307,24 +305,17 @@ protected:
 
             const CarlaMutexLocker cml(getPipeLock());
 
-            if (! writeAndFixMessage("transport"))
-                return;
-            if (! writeMessage(fTimeInfo.playing ? "true\n" : "false\n"))
-                return;
+            CARLA_SAFE_ASSERT_RETURN(writeMessage("transport\n"),);
 
-            std::sprintf(strBuf, P_UINT64 ":%i:%i:%i\n", fTimeInfo.frame, bar, beat, tick);
-            if (! writeMessage(strBuf))
-                return;
+            std::snprintf(strBuf, 0xff, "%i:" P_UINT64 ":%i:%i:%i\n", int(fTimeInfo.playing), fTimeInfo.frame, bar, beat, tick);
+            CARLA_SAFE_ASSERT_RETURN(writeMessage(strBuf),);
 
             {
                 const CarlaScopedLocale csl;
-                std::sprintf(strBuf, "%f:%f:%f\n",
-                             static_cast<double>(beatsPerMinute),
-                             static_cast<double>(beatsPerBar),
-                             static_cast<double>(beatType));
+                std::snprintf(strBuf, 0xff, "%.12g\n", beatsPerMinute);
             }
-            if (! writeMessage(strBuf))
-                return;
+
+            CARLA_SAFE_ASSERT_RETURN(writeMessage(strBuf),);
 
             flushMessages();
         }
@@ -402,7 +393,7 @@ protected:
                 data[i] = dvalue;
             }
 
-            fMidiOut.addRaw(time, data, size);
+            fMidiOut.addRaw(time /* * TICKS_PER_BEAT */, data, size);
 
             return true;
         }
@@ -424,7 +415,7 @@ protected:
                 data[i] = dvalue;
             }
 
-            fMidiOut.removeRaw(time, data, size);
+            fMidiOut.removeRaw(time /* * TICKS_PER_BEAT */, data, size);
 
             return true;
         }
@@ -450,12 +441,20 @@ private:
     void _sendEventsToUI() const noexcept
     {
         char strBuf[0xff+1];
-        strBuf[0xff] = '\0';
+        carla_zeroChars(strBuf, 0xff);
 
         const CarlaMutexLocker cml1(getPipeLock());
         const CarlaMutexLocker cml2(fMidiOut.getLock());
 
         writeMessage("midi-clear-all\n", 15);
+
+        writeMessage("parameters\n", 11);
+        std::snprintf(strBuf, 0xff, "%i:%i:%i:%i\n",
+                      static_cast<int>(fParameters[kParameterTimeSig]),
+                      static_cast<int>(fParameters[kParameterMeasures]),
+                      static_cast<int>(fParameters[kParameterDefLength]),
+                      static_cast<int>(fParameters[kParameterQuantize]));
+        writeMessage(strBuf);
 
         for (LinkedList<const RawMidiEvent*>::Itenerator it = fMidiOut.iteneratorBegin(); it.valid(); it.next())
         {

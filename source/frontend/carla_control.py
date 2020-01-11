@@ -59,7 +59,7 @@ class ConnectDialog(QDialog):
 
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
-        # Mke PlainTextEdit background the same color as the window background
+        # Make PlainTextEdit background the same color as the window background
         palette = self.ui.te_reported_hint.palette()
         palette.setColor(QPalette.Base, palette.color(QPalette.Background))
         self.ui.te_reported_hint.setPalette(palette)
@@ -95,9 +95,9 @@ class ConnectDialog(QDialog):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(enabled)
 
     def loadSettings(self):
-        settings = QSettings("falkTX", "CarlaOSCConnect")
+        settings = QSafeSettings("falkTX", "CarlaOSCConnect")
 
-        if settings.value("ReportedHostAutomatic", True, type=bool):
+        if settings.value("ReportedHostAutomatic", True, bool):
             self.ui.rb_reported_custom.setChecked(False)
             self.ui.rb_reported_auto.setChecked(True)
         else:
@@ -141,7 +141,7 @@ class ConnectDialog(QDialog):
 
     @pyqtSlot()
     def slot_saveSettings(self):
-        settings = QSettings("falkTX", "CarlaOSCConnect")
+        settings = QSafeSettings("falkTX", "CarlaOSCConnect")
         settings.setValue("Host", self.ui.le_host.text())
         settings.setValue("ReportedHost", self.ui.le_reported_host.text())
         settings.setValue("TCPPort", self.ui.sb_tcp_port.value())
@@ -381,7 +381,7 @@ class CarlaControlServerTCP(Server):
         if DEBUG: print(path, args)
         self.fReceivedMsgs = True
         (
-          pluginId, paramId, type_, hints, midiChan, midiCC, name, unit,
+          pluginId, paramId, type_, hints, mappedControlIndex, midiChan, name, unit,
           def_, min_, max_, step, stepSmall, stepLarge, value
         ) = args
 
@@ -400,7 +400,7 @@ class CarlaControlServerTCP(Server):
             'hints': hints,
             'index': paramId,
             'rindex': -1,
-            'midiCC': midiCC,
+            'mappedControlIndex': mappedControlIndex,
             'midiChannel': midiChan,
         }
         self.host._set_parameterData(pluginId, paramId, paramData)

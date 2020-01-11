@@ -2,7 +2,7 @@
 // impl/buffered_write_stream.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -21,6 +21,7 @@
 #include "asio/detail/handler_cont_helpers.hpp"
 #include "asio/detail/handler_invoke_helpers.hpp"
 #include "asio/detail/handler_type_requirements.hpp"
+#include "asio/detail/non_const_lvalue.hpp"
 
 #include "asio/detail/push_options.hpp"
 
@@ -123,6 +124,23 @@ namespace detail
     asio_handler_invoke_helpers::invoke(
         function, this_handler->handler_);
   }
+
+  struct initiate_async_buffered_flush
+  {
+    template <typename WriteHandler, typename Stream>
+    void operator()(ASIO_MOVE_ARG(WriteHandler) handler,
+        buffered_stream_storage* storage, Stream* next_layer) const
+    {
+      // If you get an error on the following line it means that your handler
+      // does not meet the documented type requirements for a WriteHandler.
+      ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
+
+      non_const_lvalue<WriteHandler> handler2(handler);
+      async_write(*next_layer, buffer(storage->data(), storage->size()),
+          buffered_flush_handler<typename decay<WriteHandler>::type>(
+            *storage, handler2.value));
+    }
+  };
 } // namespace detail
 
 #if !defined(GENERATING_DOCUMENTATION)
@@ -162,19 +180,10 @@ ASIO_INITFN_RESULT_TYPE(WriteHandler,
 buffered_write_stream<Stream>::async_flush(
     ASIO_MOVE_ARG(WriteHandler) handler)
 {
-  // If you get an error on the following line it means that your handler does
-  // not meet the documented type requirements for a WriteHandler.
-  ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
-
-  async_completion<WriteHandler,
-    void (asio::error_code, std::size_t)> init(handler);
-
-  async_write(next_layer_, buffer(storage_.data(), storage_.size()),
-      detail::buffered_flush_handler<ASIO_HANDLER_TYPE(
-        WriteHandler, void (asio::error_code, std::size_t))>(
-        storage_, init.handler));
-
-  return init.result.get();
+  return async_initiate<WriteHandler,
+    void (asio::error_code, std::size_t)>(
+      detail::initiate_async_buffered_flush(),
+      handler, &storage_, &next_layer_);
 }
 
 template <typename Stream>
@@ -182,7 +191,8 @@ template <typename ConstBufferSequence>
 std::size_t buffered_write_stream<Stream>::write_some(
     const ConstBufferSequence& buffers)
 {
-  if (asio::buffer_size(buffers) == 0)
+  using asio::buffer_size;
+  if (buffer_size(buffers) == 0)
     return 0;
 
   if (storage_.size() == storage_.capacity())
@@ -198,7 +208,8 @@ std::size_t buffered_write_stream<Stream>::write_some(
 {
   ec = asio::error_code();
 
-  if (asio::buffer_size(buffers) == 0)
+  using asio::buffer_size;
+  if (buffer_size(buffers) == 0)
     return 0;
 
   if (storage_.size() == storage_.capacity() && !flush(ec))
@@ -246,9 +257,10 @@ namespace detail
       }
       else
       {
+        using asio::buffer_size;
         std::size_t orig_size = storage_.size();
         std::size_t space_avail = storage_.capacity() - orig_size;
-        std::size_t bytes_avail = asio::buffer_size(buffers_);
+        std::size_t bytes_avail = buffer_size(buffers_);
         std::size_t length = bytes_avail < space_avail
           ? bytes_avail : space_avail;
         storage_.resize(orig_size + length);
@@ -310,6 +322,38 @@ namespace detail
     asio_handler_invoke_helpers::invoke(
         function, this_handler->handler_);
   }
+
+  struct initiate_async_buffered_write_some
+  {
+    template <typename WriteHandler, typename Stream,
+        typename ConstBufferSequence>
+    void operator()(ASIO_MOVE_ARG(WriteHandler) handler,
+        buffered_stream_storage* storage, Stream* next_layer,
+        const ConstBufferSequence& buffers) const
+    {
+      // If you get an error on the following line it means that your handler
+      // does not meet the documented type requirements for a WriteHandler.
+      ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
+
+      using asio::buffer_size;
+      non_const_lvalue<WriteHandler> handler2(handler);
+      if (buffer_size(buffers) == 0 || storage->size() < storage->capacity())
+      {
+        next_layer->async_write_some(ASIO_CONST_BUFFER(0, 0),
+            buffered_write_some_handler<ConstBufferSequence,
+              typename decay<WriteHandler>::type>(
+                *storage, buffers, handler2.value));
+      }
+      else
+      {
+        initiate_async_buffered_flush()(
+            buffered_write_some_handler<ConstBufferSequence,
+              typename decay<WriteHandler>::type>(
+                *storage, buffers, handler2.value),
+            storage, next_layer);
+      }
+    }
+  };
 } // namespace detail
 
 #if !defined(GENERATING_DOCUMENTATION)
@@ -358,31 +402,10 @@ buffered_write_stream<Stream>::async_write_some(
     const ConstBufferSequence& buffers,
     ASIO_MOVE_ARG(WriteHandler) handler)
 {
-  // If you get an error on the following line it means that your handler does
-  // not meet the documented type requirements for a WriteHandler.
-  ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
-
-  async_completion<WriteHandler,
-    void (asio::error_code, std::size_t)> init(handler);
-
-  if (asio::buffer_size(buffers) == 0
-      || storage_.size() < storage_.capacity())
-  {
-    next_layer_.async_write_some(asio::const_buffers_1(0, 0),
-        detail::buffered_write_some_handler<
-          ConstBufferSequence, ASIO_HANDLER_TYPE(
-            WriteHandler, void (asio::error_code, std::size_t))>(
-            storage_, buffers, init.handler));
-  }
-  else
-  {
-    this->async_flush(detail::buffered_write_some_handler<
-          ConstBufferSequence, ASIO_HANDLER_TYPE(
-            WriteHandler, void (asio::error_code, std::size_t))>(
-            storage_, buffers, init.handler));
-  }
-
-  return init.result.get();
+  return async_initiate<WriteHandler,
+    void (asio::error_code, std::size_t)>(
+      detail::initiate_async_buffered_write_some(),
+      handler, &storage_, &next_layer_, buffers);
 }
 
 template <typename Stream>
@@ -390,9 +413,10 @@ template <typename ConstBufferSequence>
 std::size_t buffered_write_stream<Stream>::copy(
     const ConstBufferSequence& buffers)
 {
+  using asio::buffer_size;
   std::size_t orig_size = storage_.size();
   std::size_t space_avail = storage_.capacity() - orig_size;
-  std::size_t bytes_avail = asio::buffer_size(buffers);
+  std::size_t bytes_avail = buffer_size(buffers);
   std::size_t length = bytes_avail < space_avail ? bytes_avail : space_avail;
   storage_.resize(orig_size + length);
   return asio::buffer_copy(

@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2019 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -28,6 +28,8 @@
 
 #include "ReferenceCountedObject.h"
 #include "../threads/SpinLock.h"
+
+#include "CarlaScopeUtils.hpp"
 
 namespace water {
 
@@ -94,11 +96,19 @@ public:
         then a shared object will be created automatically.
     */
     SharedResourcePointer()
+      : sharedObject(nullptr)
     {
         initialise();
     }
 
+    SharedResourcePointer(const char* const v1, const char* const v2)
+      : sharedObject(nullptr)
+    {
+        initialise_v2(v1, v2);
+    }
+
     SharedResourcePointer (const SharedResourcePointer&)
+      : sharedObject(nullptr)
     {
         initialise();
     }
@@ -134,13 +144,13 @@ private:
     struct SharedObjectHolder  : public ReferenceCountedObject
     {
         SpinLock lock;
-        ScopedPointer<SharedObjectType> sharedInstance;
+        CarlaScopedPointer<SharedObjectType> sharedInstance;
         int refCount;
     };
 
     static SharedObjectHolder& getSharedObjectHolder() noexcept
     {
-        static void* holder [(sizeof (SharedObjectHolder) + sizeof(void*) - 1) / sizeof(void*)] = { 0 };
+        static void* holder [(sizeof (SharedObjectHolder) + sizeof(void*) - 1) / sizeof(void*)] = { nullptr };
         return *reinterpret_cast<SharedObjectHolder*> (holder);
     }
 
@@ -153,6 +163,17 @@ private:
 
         if (++(holder.refCount) == 1)
             holder.sharedInstance = new SharedObjectType();
+
+        sharedObject = holder.sharedInstance;
+    }
+
+    void initialise_v2(const char* const v1, const char* const v2)
+    {
+        SharedObjectHolder& holder = getSharedObjectHolder();
+        const SpinLock::ScopedLockType sl (holder.lock);
+
+        if (++(holder.refCount) == 1)
+            holder.sharedInstance = new SharedObjectType(v1, v2);
 
         sharedObject = holder.sharedInstance;
     }

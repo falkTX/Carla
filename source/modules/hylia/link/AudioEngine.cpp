@@ -19,10 +19,6 @@
 
 #include "AudioEngine.hpp"
 
-// Make sure to define this before <cmath> is included for Windows
-#define _USE_MATH_DEFINES
-#include <cmath>
-
 namespace ableton
 {
 namespace link
@@ -30,19 +26,38 @@ namespace link
 
 AudioEngine::AudioEngine(Link& link)
   : mLink(link)
-  , mSharedEngineData({0., false, 4.})
+  , mSharedEngineData({0., false, false, 4., false})
+  , mLockfreeEngineData(mSharedEngineData)
+  , mIsPlaying(false)
 {
+}
+
+void AudioEngine::startPlaying()
+{
+  std::lock_guard<std::mutex> lock(mEngineDataGuard);
+  mSharedEngineData.requestStart = true;
+}
+
+void AudioEngine::stopPlaying()
+{
+  std::lock_guard<std::mutex> lock(mEngineDataGuard);
+  mSharedEngineData.requestStop = true;
+}
+
+bool AudioEngine::isPlaying() const
+{
+  return mLink.captureAppSessionState().isPlaying();
 }
 
 double AudioEngine::beatTime() const
 {
-  const auto timeline = mLink.captureAppTimeline();
-  return timeline.beatAtTime(mLink.clock().micros(), mSharedEngineData.quantum);
+  const auto sessionState = mLink.captureAppSessionState();
+  return sessionState.beatAtTime(mLink.clock().micros(), mSharedEngineData.quantum);
 }
 
 void AudioEngine::setTempo(double tempo)
 {
-  const std::lock_guard<std::mutex> lock(mEngineDataGuard);
+  std::lock_guard<std::mutex> lock(mEngineDataGuard);
   mSharedEngineData.requestedTempo = tempo;
 }
 
@@ -53,26 +68,38 @@ double AudioEngine::quantum() const
 
 void AudioEngine::setQuantum(double quantum)
 {
-  const std::lock_guard<std::mutex> lock(mEngineDataGuard);
+  std::lock_guard<std::mutex> lock(mEngineDataGuard);
   mSharedEngineData.quantum = quantum;
-  mSharedEngineData.resetBeatTime = true;
+}
+
+bool AudioEngine::isStartStopSyncEnabled() const
+{
+  return mLink.isStartStopSyncEnabled();
+}
+
+void AudioEngine::setStartStopSyncEnabled(const bool enabled)
+{
+  mLink.enableStartStopSync(enabled);
 }
 
 AudioEngine::EngineData AudioEngine::pullEngineData()
 {
   auto engineData = EngineData{};
-
   if (mEngineDataGuard.try_lock())
   {
     engineData.requestedTempo = mSharedEngineData.requestedTempo;
     mSharedEngineData.requestedTempo = 0;
+    engineData.requestStart = mSharedEngineData.requestStart;
+    mSharedEngineData.requestStart = false;
+    engineData.requestStop = mSharedEngineData.requestStop;
+    mSharedEngineData.requestStop = false;
 
-    engineData.resetBeatTime = mSharedEngineData.resetBeatTime;
-    engineData.quantum = mSharedEngineData.quantum;
-    mSharedEngineData.resetBeatTime = false;
+    mLockfreeEngineData.quantum = mSharedEngineData.quantum;
+    mLockfreeEngineData.startStopSyncOn = mSharedEngineData.startStopSyncOn;
 
     mEngineDataGuard.unlock();
   }
+  engineData.quantum = mLockfreeEngineData.quantum;
 
   return engineData;
 }
@@ -81,29 +108,44 @@ void AudioEngine::timelineCallback(const std::chrono::microseconds hostTime, Lin
 {
   const auto engineData = pullEngineData();
 
-  auto timeline = mLink.captureAudioTimeline();
+  auto sessionState = mLink.captureAudioSessionState();
 
-  if (engineData.resetBeatTime)
+  if (engineData.requestStart)
   {
-    // Reset the timeline so that beat 0 lands at the beginning of
-    // this buffer and clear the flag.
-    timeline.requestBeatAtTime(0, hostTime, engineData.quantum);
+    sessionState.setIsPlaying(true, hostTime);
+  }
+
+  if (engineData.requestStop)
+  {
+    sessionState.setIsPlaying(false, hostTime);
+  }
+
+  if (!mIsPlaying && sessionState.isPlaying())
+  {
+    // Reset the timeline so that beat 0 corresponds to the time when transport starts
+    sessionState.requestBeatAtStartPlayingTime(0, engineData.quantum);
+    mIsPlaying = true;
+  }
+  else if (mIsPlaying && !sessionState.isPlaying())
+  {
+    mIsPlaying = false;
   }
 
   if (engineData.requestedTempo > 0)
   {
     // Set the newly requested tempo from the beginning of this buffer
-    timeline.setTempo(engineData.requestedTempo, hostTime);
+    sessionState.setTempo(engineData.requestedTempo, hostTime);
   }
 
   // Timeline modifications are complete, commit the results
-  mLink.commitAudioTimeline(timeline);
+  mLink.commitAudioSessionState(sessionState);
 
-  // Save timeline info
+  // Save session state
   info->beatsPerBar    = engineData.quantum;
-  info->beatsPerMinute = timeline.tempo();
-  info->beat           = timeline.beatAtTime(hostTime, engineData.quantum);
-  info->phase          = timeline.phaseAtTime(hostTime, engineData.quantum);
+  info->beatsPerMinute = sessionState.tempo();
+  info->beat           = sessionState.beatAtTime(hostTime, engineData.quantum);
+  info->phase          = sessionState.phaseAtTime(hostTime, engineData.quantum);
+  info->playing        = mIsPlaying;
 }
 
 } // namespace link

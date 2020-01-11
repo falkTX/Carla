@@ -30,7 +30,7 @@ import os
 import sys
 
 from PyQt5.Qt import PYQT_VERSION_STR
-from PyQt5.QtCore import qFatal, QT_VERSION_STR, qWarning, QDir
+from PyQt5.QtCore import qFatal, QT_VERSION, QT_VERSION_STR, qWarning, QDir, QSettings
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
 
@@ -59,7 +59,7 @@ if WINDOWS:
 # ------------------------------------------------------------------------------------------------------------
 # Set Version
 
-VERSION = "2.0.90 (2.1-alpha2)"
+VERSION = "2.0.95 (2.1-beta1)"
 
 # ------------------------------------------------------------------------------------------------------------
 # Set TMP
@@ -212,6 +212,7 @@ CARLA_KEY_ENGINE_PREFER_UI_BRIDGES     = "Engine/PreferUiBridges"     # bool
 CARLA_KEY_ENGINE_MANAGE_UIS            = "Engine/ManageUIs"           # bool
 CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP     = "Engine/UIsAlwaysOnTop"      # bool
 CARLA_KEY_ENGINE_MAX_PARAMETERS        = "Engine/MaxParameters"       # int
+CARLA_KEY_ENGINE_RESET_XRUNS           = "Engine/ResetXruns"          # bool
 CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT    = "Engine/UiBridgesTimeout"    # int
 
 CARLA_KEY_OSC_ENABLED          = "OSC/Enabled"
@@ -221,6 +222,9 @@ CARLA_KEY_OSC_TCP_PORT_RANDOM  = "OSC/TCPRandom"
 CARLA_KEY_OSC_UDP_PORT_ENABLED = "OSC/UDPEnabled"
 CARLA_KEY_OSC_UDP_PORT_NUMBER  = "OSC/UDPNumber"
 CARLA_KEY_OSC_UDP_PORT_RANDOM  = "OSC/UDPRandom"
+
+CARLA_KEY_PATHS_AUDIO = "Paths/Audio"
+CARLA_KEY_PATHS_MIDI  = "Paths/MIDI"
 
 CARLA_KEY_PATHS_LADSPA = "Paths/LADSPA"
 CARLA_KEY_PATHS_DSSI   = "Paths/DSSI"
@@ -282,6 +286,7 @@ CARLA_DEFAULT_PREFER_UI_BRIDGES     = True
 CARLA_DEFAULT_MANAGE_UIS            = True
 CARLA_DEFAULT_UIS_ALWAYS_ON_TOP     = False
 CARLA_DEFAULT_MAX_PARAMETERS        = MAX_DEFAULT_PARAMETERS
+CARLA_DEFAULT_RESET_XRUNS           = False
 CARLA_DEFAULT_UI_BRIDGES_TIMEOUT    = 4000
 
 CARLA_DEFAULT_AUDIO_BUFFER_SIZE     = 512
@@ -303,7 +308,7 @@ if CARLA_DEFAULT_AUDIO_DRIVER == "JACK":
 else:
     CARLA_DEFAULT_PROCESS_MODE   = ENGINE_PROCESS_MODE_PATCHBAY
     CARLA_DEFAULT_TRANSPORT_MODE = ENGINE_TRANSPORT_MODE_INTERNAL
-    
+
 # OSC
 CARLA_DEFAULT_OSC_ENABLED = not WINDOWS
 CARLA_DEFAULT_OSC_TCP_PORT_ENABLED = True
@@ -328,6 +333,12 @@ CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS             = False
 CARLA_DEFAULT_EXPERIMENTAL_LV2_EXPORT            = False
 CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR = False
 CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL       = False
+
+# ------------------------------------------------------------------------------------------------------------
+# Default File Folders
+
+CARLA_DEFAULT_FILE_PATH_AUDIO = []
+CARLA_DEFAULT_FILE_PATH_MIDI  = []
 
 # ------------------------------------------------------------------------------------------------------------
 # Default Plugin Folders (get)
@@ -447,6 +458,10 @@ else:
     DEFAULT_VST2_PATH    = HOME + "/.vst"
     DEFAULT_VST2_PATH   += ":/usr/lib/vst"
     DEFAULT_VST2_PATH   += ":/usr/local/lib/vst"
+
+    DEFAULT_VST2_PATH   += HOME + "/.lxvst"
+    DEFAULT_VST2_PATH   += ":/usr/lib/lxvst"
+    DEFAULT_VST2_PATH   += ":/usr/local/lib/lxvst"
 
     DEFAULT_VST3_PATH    = HOME + "/.vst3"
     DEFAULT_VST3_PATH   += ":/usr/lib/vst3"
@@ -740,7 +755,15 @@ def getAndSetPath(parent, lineEdit):
     return newPath
 
 # ------------------------------------------------------------------------------------------------------------
-# Custom MessageBox
+# Backwards-compatible horizontalAdvance/width call, depending on Qt version
+
+def fontMetricsHorizontalAdvance(fontMetrics, string):
+    if QT_VERSION >= 0x51100:
+        return fontMetrics.horizontalAdvance(string)
+    return fontMetrics.width(string)
+
+# ------------------------------------------------------------------------------------------------------------
+# Custom QMessageBox which resizes itself to fit text
 
 class QMessageBoxWithBetterWidth(QMessageBox):
     def __init__(self, parent):
@@ -755,11 +778,27 @@ class QMessageBoxWithBetterWidth(QMessageBox):
             width = 0
 
             for line in lines:
-                width = max(fontMetrics.width(line), width)
+                width = max(fontMetricsHorizontalAdvance(fontMetrics, line), width)
 
             self.layout().setColumnMinimumWidth(2, width + 12)
 
         QMessageBox.showEvent(self, event)
+
+# ------------------------------------------------------------------------------------------------------------
+# Safer QSettings class, which does not throw if type mismatches
+
+class QSafeSettings(QSettings):
+    def value(self, key, defaultValue, type):
+        if not isinstance(defaultValue, type):
+            print("QSafeSettings.value() - defaultValue type mismatch for key", key)
+
+        try:
+            return QSettings.value(self, key, defaultValue, type)
+        except:
+            return defaultValue
+
+# ------------------------------------------------------------------------------------------------------------
+# Custom MessageBox
 
 def CustomMessageBox(parent, icon, title, text,
                      extraText="",

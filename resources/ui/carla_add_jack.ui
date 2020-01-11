@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>496</width>
-    <height>438</height>
+    <width>458</width>
+    <height>546</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QLabel" name="label_9">
+    <widget class="QLabel" name="l_note_features">
      <property name="text">
       <string>Note: Features not implemented yet are greyed out</string>
      </property>
@@ -54,7 +54,14 @@
        </widget>
       </item>
       <item row="0" column="2" colspan="2">
-       <widget class="QLineEdit" name="le_name"/>
+       <widget class="QLineEdit" name="le_name">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
       </item>
       <item row="0" column="4" rowspan="3">
        <spacer name="horizontalSpacer_3">
@@ -180,6 +187,22 @@
       <string>Setup</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
+      <item row="2" column="0">
+       <spacer name="horizontalSpacer_5">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>1</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
       <item row="0" column="1" colspan="8">
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
@@ -242,31 +265,14 @@
         </item>
        </layout>
       </item>
-      <item row="1" column="1" colspan="3">
-       <widget class="QCheckBox" name="cb_manage_window">
-        <property name="text">
-         <string>Take control of main application window</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <spacer name="horizontalSpacer_5">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeType">
-         <enum>QSizePolicy::Fixed</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>1</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
       <item row="2" column="1">
        <widget class="QLabel" name="label_3">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
          <string>Audio inputs:</string>
         </property>
@@ -287,9 +293,12 @@
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>1</width>
+          <width>20</width>
           <height>1</height>
          </size>
         </property>
@@ -313,9 +322,12 @@
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>1</width>
+          <width>20</width>
           <height>1</height>
          </size>
         </property>
@@ -369,6 +381,12 @@
       </item>
       <item row="3" column="1">
        <widget class="QLabel" name="label_4">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
          <string>Audio outputs:</string>
         </property>
@@ -389,9 +407,12 @@
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>1</width>
+          <width>20</width>
           <height>1</height>
          </size>
         </property>
@@ -402,9 +423,12 @@
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>1</width>
+          <width>20</width>
           <height>1</height>
          </size>
         </property>
@@ -440,15 +464,29 @@
         </property>
        </spacer>
       </item>
+      <item row="1" column="2" colspan="7">
+       <widget class="QCheckBox" name="cb_manage_window">
+        <property name="text">
+         <string>Take control of main application window</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox">
+    <widget class="QGroupBox" name="group_workarounds">
      <property name="title">
       <string>Workarounds</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
+      <item row="4" column="1">
+       <widget class="QCheckBox" name="cb_external_start">
+        <property name="text">
+         <string>Wait for external application start (Advanced, for Debug only)</string>
+        </property>
+       </widget>
+      </item>
       <item row="0" column="1">
        <widget class="QCheckBox" name="cb_capture_first_window">
         <property name="enabled">
@@ -488,15 +526,79 @@
         </property>
        </spacer>
       </item>
-      <item row="1" column="1">
+      <item row="2" column="1">
        <widget class="QCheckBox" name="cb_buffers_addition_mode">
         <property name="text">
          <string>Use previous client output buffer as input for the next client</string>
         </property>
        </widget>
       </item>
+      <item row="1" column="1">
+       <widget class="QCheckBox" name="cb_out_midi_mixdown">
+        <property name="text">
+         <string>Simulate 16 JACK MIDI outputs, with MIDI channel as port index</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
+   </item>
+   <item>
+    <widget class="QFrame" name="group_error">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_4">
+      <item>
+       <widget class="QLabel" name="ico_error">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>16</horstretch>
+          <verstretch>16</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16</width>
+          <height>16</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="pixmap">
+         <pixmap resource="../resources.qrc">:/16x16/dialog-cancel.svgz</pixmap>
+        </property>
+        <property name="scaledContents">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="l_error">
+        <property name="text">
+         <string>Error here</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">

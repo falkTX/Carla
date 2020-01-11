@@ -994,8 +994,8 @@ public:
           isStarted (false),
           currentBufferSizeSamples (0),
           currentSampleRate (0),
-          callback (nullptr),
-          deviceBecameInactive (false)
+          deviceBecameInactive (false),
+          callback (nullptr)
     {
     }
 
@@ -1716,9 +1716,7 @@ AudioIODeviceType* AudioIODeviceType::createAudioIODeviceType_WASAPI (bool exclu
         return nullptr;
    #endif
 
-    return SystemStats::getOperatingSystemType() >= SystemStats::WinVista
-                ? new WasapiClasses::WASAPIAudioIODeviceType (exclusiveMode)
-                : nullptr;
+    return new WasapiClasses::WASAPIAudioIODeviceType (exclusiveMode);
 }
 
 //==============================================================================

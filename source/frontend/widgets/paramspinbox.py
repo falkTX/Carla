@@ -441,6 +441,10 @@ class ParamSpinBox(QAbstractSpinBox):
 
         self.fBox.currentIndexChanged['QString'].connect(self.slot_comboBoxIndexChanged)
 
+    def setToolTip(self, text):
+        self.fBar.setToolTip(text)
+        QAbstractSpinBox.setToolTip(self, text)
+
     def stepBy(self, steps):
         if steps == 0 or self.fValue is None:
             return

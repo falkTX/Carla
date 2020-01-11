@@ -20,6 +20,7 @@
 
 #include "CarlaEngineThread.hpp"
 #include "CarlaEngineUtils.hpp"
+#include "LinkedList.hpp"
 
 #ifndef BUILD_BRIDGE
 # include "CarlaEngineOsc.hpp"
@@ -27,6 +28,8 @@
 #endif
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+# include "water/processors/AudioProcessorGraph.h"
+# include "water/containers/Array.h"
 # include "water/memory/Atomic.h"
 #endif
 
@@ -71,41 +74,41 @@ class PatchbayGraph;
 class EngineInternalGraph
 {
 public:
-    EngineInternalGraph(CarlaEngine* const engine) noexcept;
+    EngineInternalGraph(CarlaEngine* engine) noexcept;
     ~EngineInternalGraph() noexcept;
 
-    void create(const uint32_t inputs, const uint32_t outputs);
+    void create(uint32_t audioIns, uint32_t audioOuts, uint32_t cvIns, uint32_t cvOuts);
     void destroy() noexcept;
 
-    void setBufferSize(const uint32_t bufferSize);
-    void setSampleRate(const double sampleRate);
-    void setOffline(const bool offline);
+    void setBufferSize(uint32_t bufferSize);
+    void setSampleRate(double sampleRate);
+    void setOffline(bool offline);
 
     bool isReady() const noexcept;
 
     RackGraph*     getRackGraph() const noexcept;
     PatchbayGraph* getPatchbayGraph() const noexcept;
 
-    void process(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const uint32_t frames);
+    void process(CarlaEngine::ProtectedData* data, const float* const* inBuf, float* const* outBuf, uint32_t frames);
 
     // special direct process with connections already handled, used in JACK and Plugin
-    void processRack(CarlaEngine::ProtectedData* const data, const float* inBuf[2], float* outBuf[2], const uint32_t frames);
+    void processRack(CarlaEngine::ProtectedData* data, const float* inBuf[2], float* outBuf[2], uint32_t frames);
 
     // used for internal patchbay mode
-    void addPlugin(CarlaPlugin* const plugin);
-    void replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* const newPlugin);
-    void renamePlugin(CarlaPlugin* const plugin, const char* const newName);
-    void removePlugin(CarlaPlugin* const plugin);
+    void addPlugin(CarlaPlugin* plugin);
+    void replacePlugin(CarlaPlugin* oldPlugin, CarlaPlugin* newPlugin);
+    void renamePlugin(CarlaPlugin* plugin, const char* newName);
+    void removePlugin(CarlaPlugin* plugin);
     void removeAllPlugins();
 
     bool isUsingExternalHost() const noexcept;
     bool isUsingExternalOSC() const noexcept;
-    void setUsingExternalHost(const bool usingExternal) noexcept;
-    void setUsingExternalOSC(const bool usingExternal) noexcept;
+    void setUsingExternalHost(bool usingExternal) noexcept;
+    void setUsingExternalOSC(bool usingExternal) noexcept;
 
 private:
     bool fIsRack;
-    bool fIsReady;
+    volatile bool fIsReady;
 
     union {
         RackGraph*     fRack;
@@ -126,14 +129,14 @@ class EngineInternalTime {
 public:
     EngineInternalTime(EngineTimeInfo& timeInfo, const EngineTransportMode& transportMode) noexcept;
 
-    void init(const uint32_t bufferSize, double sampleRate);
-    void updateAudioValues(const uint32_t bufferSize, const double sampleRate);
+    void init(uint32_t bufferSize, double sampleRate);
+    void updateAudioValues(uint32_t bufferSize, double sampleRate);
 
-    void enableLink(const bool enable);
-    void setBPM(const double bpm);
+    void enableLink(bool enable);
+    void setBPM(double bpm);
     void setNeedsReset() noexcept;
     void pause() noexcept;
-    void relocate(const uint64_t frame) noexcept;
+    void relocate(uint64_t frame) noexcept;
 
 private:
     double beatsPerBar;
@@ -161,11 +164,11 @@ private:
     const EngineTransportMode& transportMode;
 
     friend class PendingRtEventsRunner;
-    void preProcess(const uint32_t numFrames);
-    void fillEngineTimeInfo(const uint32_t newFrames) noexcept;
+    void preProcess(uint32_t numFrames);
+    void fillEngineTimeInfo(uint32_t newFrames) noexcept;
 
     friend class CarlaEngineJack;
-    void fillJackTimeInfo(jack_position_t* const pos, const uint32_t newFrames) noexcept;
+    void fillJackTimeInfo(jack_position_t* pos, uint32_t newFrames) noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalTime)
 };
@@ -231,7 +234,6 @@ struct CarlaEngine::ProtectedData {
     CarlaString currentProjectFilename;
 #endif
 
-    uint     hints;
     uint32_t bufferSize;
     double   sampleRate;
 
@@ -265,20 +267,20 @@ struct CarlaEngine::ProtectedData {
 
     // -------------------------------------------------------------------
 
-    ProtectedData(CarlaEngine* const engine) noexcept;
+    ProtectedData(CarlaEngine* engine) noexcept;
     ~ProtectedData() noexcept;
 
     // -------------------------------------------------------------------
 
-    bool init(const char* const clientName);
+    bool init(const char* clientName);
     void close();
 
-    void initTime(const char* const features);
+    void initTime(const char* features);
 
     // -------------------------------------------------------------------
 
-    void doPluginRemove(const uint pluginId) noexcept;
-    void doPluginsSwitch(const uint idA, const uint idB) noexcept;
+    void doPluginRemove(uint pluginId) noexcept;
+    void doPluginsSwitch(uint idA, uint idB) noexcept;
     void doNextPluginAction() noexcept;
 
     // -------------------------------------------------------------------
@@ -294,9 +296,9 @@ struct CarlaEngine::ProtectedData {
 class PendingRtEventsRunner
 {
 public:
-    PendingRtEventsRunner(CarlaEngine* const engine,
-                          const uint32_t numFrames,
-                          const bool calcDSPLoad = false) noexcept;
+    PendingRtEventsRunner(CarlaEngine* engine,
+                          uint32_t numFrames,
+                          bool calcDSPLoad = false) noexcept;
     ~PendingRtEventsRunner() noexcept;
 
 private:
@@ -312,7 +314,7 @@ private:
 class ScopedActionLock
 {
 public:
-    ScopedActionLock(CarlaEngine* const engine, const EnginePostAction action, const uint pluginId, const uint value) noexcept;
+    ScopedActionLock(CarlaEngine* engine, EnginePostAction action, uint pluginId, uint value) noexcept;
     ~ScopedActionLock() noexcept;
 
 private:
@@ -327,7 +329,7 @@ private:
 class ScopedThreadStopper
 {
 public:
-    ScopedThreadStopper(CarlaEngine* const engine) noexcept;
+    ScopedThreadStopper(CarlaEngine* engine) noexcept;
     ~ScopedThreadStopper() noexcept;
 
 private:

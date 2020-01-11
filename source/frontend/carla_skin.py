@@ -41,8 +41,8 @@ from widgets.pixmapdial import PixmapDial
 
 # Base is a QFrame (NoFrame, Plain, 0-size lines), with "PluginWidget" as object name.
 # Spacing of the top-most layout must be 1px.
-# Top and bottom margins must be 3px (can be splitted between different qt layouts).
-# Left and right margins must be 6px (can be splitted between different qt layouts).
+# Top and bottom margins must be 3px (can be split between different Qt layouts).
+# Left and right margins must be 6px (can be split between different Qt layouts).
 # If the left or right side has built-in margins, say a transparent png border,
 # those margins must be taken into consideration.
 #
@@ -286,8 +286,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         host.PluginUnavailableCallback.connect(self.slot_handlePluginUnavailableCallback)
         host.ParameterValueChangedCallback.connect(self.slot_handleParameterValueChangedCallback)
         host.ParameterDefaultChangedCallback.connect(self.slot_handleParameterDefaultChangedCallback)
+        host.ParameterMappedControlIndexChangedCallback.connect(self.slot_handleParameterMappedControlIndexChangedCallback)
         host.ParameterMidiChannelChangedCallback.connect(self.slot_handleParameterMidiChannelChangedCallback)
-        host.ParameterMidiCcChangedCallback.connect(self.slot_handleParameterMidiCcChangedCallback)
         host.ProgramChangedCallback.connect(self.slot_handleProgramChangedCallback)
         host.MidiProgramChangedCallback.connect(self.slot_handleMidiProgramChangedCallback)
         host.OptionChangedCallback.connect(self.slot_handleOptionChangedCallback)
@@ -322,9 +322,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             self.setParameterDefault(index, value)
 
     @pyqtSlot(int, int, int)
-    def slot_handleParameterMidiCcChangedCallback(self, pluginId, index, cc):
+    def slot_handleParameterMappedControlIndexChangedCallback(self, pluginId, index, ctrl):
         if self.fPluginId == pluginId:
-            self.setParameterMidiControl(index, cc)
+            self.setParameterMappedControlIndex(index, ctrl)
 
     @pyqtSlot(int, int, int)
     def slot_handleParameterMidiChannelChangedCallback(self, pluginId, index, channel):
@@ -738,8 +738,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
     def setParameterDefault(self, parameterId, value):
         self.fEditDialog.setParameterDefault(parameterId, value)
 
-    def setParameterMidiControl(self, parameterId, control):
-        self.fEditDialog.setParameterMidiControl(parameterId, control)
+    def setParameterMappedControlIndex(self, parameterId, control):
+        self.fEditDialog.setParameterMappedControlIndex(parameterId, control)
 
     def setParameterMidiChannel(self, parameterId, channel):
         self.fEditDialog.setParameterMidiChannel(parameterId, channel)
@@ -810,7 +810,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to replace plugin"), self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
             return
 
-        ok = self.host.add_plugin(btype, ptype, filename, None, label, uniqueId, extraPtr, 0x0)
+        ok = self.host.add_plugin(btype, ptype, filename, None, label, uniqueId, extraPtr, PLUGIN_OPTIONS_NULL)
 
         self.host.replace_plugin(self.host.get_max_plugin_number())
 
@@ -1980,48 +1980,49 @@ def getColorAndSkinStyle(host, pluginId):
     else:
         progCount = host.get_midi_program_count(pluginId)
 
-    color = getColorFromCategory(pluginInfo['category'])
+    colorCategory = getColorFromCategory(pluginInfo['category'])
+    colorNone     = (0,0,0)
 
     # Samplers
     if pluginInfo['type'] == PLUGIN_SF2:
-        return (color, "sf2")
+        return (colorCategory, "sf2")
     if pluginInfo['type'] == PLUGIN_SFZ:
-        return (color, "sfz")
+        return (colorCategory, "sfz")
 
     # Calf
     if pluginName.split(" ", 1)[0].lower() == "calf":
-        return (color, "calf_black" if "mono" in pluginLabel else "calf_blue")
+        return (colorNone, "calf_black" if "mono" in pluginLabel else "calf_blue")
 
     # OpenAV
     if pluginMaker == "OpenAV Productions":
-        return (color, "openav-old")
+        return (colorNone, "openav-old")
     if pluginMaker == "OpenAV":
-        return (color, "openav")
+        return (colorNone, "openav")
 
     # ZynFX
     if pluginInfo['type'] == PLUGIN_INTERNAL:
         if pluginLabel.startswith("zyn") and pluginInfo['category'] != PLUGIN_CATEGORY_SYNTH:
-            return (color, "zynfx")
+            return (colorNone, "zynfx")
 
     if pluginInfo['type'] == PLUGIN_LADSPA:
         if pluginLabel.startswith("zyn") and pluginMaker.startswith("Josep Andreu"):
-            return (color, "zynfx")
+            return (colorNone, "zynfx")
 
     if pluginInfo['type'] == PLUGIN_LV2:
         if pluginLabel.startswith("http://kxstudio.sf.net/carla/plugins/zyn") and pluginName != "ZynAddSubFX":
-            return (color, "zynfx")
+            return (colorNone, "zynfx")
 
     # Presets
     if progCount > 1 and (pluginInfo['hints'] & PLUGIN_USES_MULTI_PROGS) == 0:
         if pluginInfo['type'] in (PLUGIN_VST2, PLUGIN_VST3, PLUGIN_AU):
-            return (color, "presets")
-        return (color, "mpresets")
+            return (colorCategory, "presets")
+        return (colorCategory, "mpresets")
 
     # DISTRHO Plugins (needs to be last)
     if pluginMaker.startswith("falkTX, ") or pluginMaker == "DISTRHO" or pluginLabel.startswith("http://distrho.sf.net/plugins/"):
-        return (color, pluginLabel.replace("http://distrho.sf.net/plugins/",""))
+        return (colorNone, pluginLabel.replace("http://distrho.sf.net/plugins/",""))
 
-    return (color, "default")
+    return (colorCategory, "default")
 
 def createPluginSlot(parent, host, pluginId, options):
     skinColor, skinStyle = getColorAndSkinStyle(host, pluginId)
@@ -2059,10 +2060,10 @@ if __name__ == '__main__':
     loadHostSettings(host)
 
     host.engine_init("JACK", "Carla-Widgets")
-    host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, "", "", "zynreverb", 0, None, 0x0)
-    #host.add_plugin(BINARY_NATIVE, PLUGIN_DSSI, "/usr/lib/dssi/karplong.so", "karplong", "karplong", 0, None, 0x0)
-    #host.add_plugin(BINARY_NATIVE, PLUGIN_LV2, "", "", "http://www.openavproductions.com/sorcer", 0, None, 0x0)
-    #host.add_plugin(BINARY_NATIVE, PLUGIN_LV2, "", "", "http://calf.sourceforge.net/plugins/Compressor", 0, None, 0x0)
+    host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, "", "", "zynreverb", 0, None, PLUGIN_OPTIONS_NULL)
+    #host.add_plugin(BINARY_NATIVE, PLUGIN_DSSI, "/usr/lib/dssi/karplong.so", "karplong", "karplong", 0, None, PLUGIN_OPTIONS_NULL)
+    #host.add_plugin(BINARY_NATIVE, PLUGIN_LV2, "", "", "http://www.openavproductions.com/sorcer", 0, None, PLUGIN_OPTIONS_NULL)
+    #host.add_plugin(BINARY_NATIVE, PLUGIN_LV2, "", "", "http://calf.sourceforge.net/plugins/Compressor", 0, None, PLUGIN_OPTIONS_NULL)
     host.set_active(0, True)
 
     #gui = createPluginSlot(None, host, 0, True)

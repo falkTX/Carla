@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla plugin database code
-# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -22,9 +22,9 @@
 from copy import deepcopy
 from subprocess import Popen, PIPE
 
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QEventLoop, QThread, QSettings
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QEventLoop, QThread
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QApplication, QDialog, QDialogButtonBox, QTableWidgetItem
+from PyQt5.QtWidgets import QApplication, QDialog, QDialogButtonBox, QHeaderView, QTableWidgetItem
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -34,6 +34,7 @@ import ui_carla_database
 import ui_carla_refresh
 
 from carla_shared import *
+from carla_utils import getPluginTypeAsString
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Try Import LADSPA-RDF
@@ -133,7 +134,7 @@ def findFilenames(filePath, stype):
 # ---------------------------------------------------------------------------------------------------------------------
 # Plugin Query
 
-PLUGIN_QUERY_API_VERSION = 8
+PLUGIN_QUERY_API_VERSION = 11
 
 PyPluginInfo = {
     'API': PLUGIN_QUERY_API_VERSION,
@@ -148,6 +149,8 @@ PyPluginInfo = {
     'uniqueId': 0,
     'audio.ins': 0,
     'audio.outs': 0,
+    'cv.ins': 0,
+    'cv.outs': 0,
     'midi.ins': 0,
     'midi.outs': 0,
     'parameters.ins': 0,
@@ -285,6 +288,10 @@ def runCarlaDiscovery(itype, stype, filename, tool, wineSettings=None):
                 if value.isdigit(): pinfo['audio.ins'] = int(value)
             elif prop == "audio.outs":
                 if value.isdigit(): pinfo['audio.outs'] = int(value)
+            elif prop == "cv.ins":
+                if value.isdigit(): pinfo['cv.ins'] = int(value)
+            elif prop == "cv.outs":
+                if value.isdigit(): pinfo['cv.outs'] = int(value)
             elif prop == "midi.ins":
                 if value.isdigit(): pinfo['midi.ins'] = int(value)
             elif prop == "midi.outs":
@@ -329,13 +336,19 @@ def checkPluginCached(desc, ptype):
     pinfo['audio.ins']  = desc['audioIns']
     pinfo['audio.outs'] = desc['audioOuts']
 
-    pinfo['midi.ins']   = desc['midiIns']
-    pinfo['midi.outs']  = desc['midiOuts']
+    pinfo['cv.ins']  = desc['cvIns']
+    pinfo['cv.outs'] = desc['cvOuts']
+
+    pinfo['midi.ins']  = desc['midiIns']
+    pinfo['midi.outs'] = desc['midiOuts']
 
     pinfo['parameters.ins']  = desc['parameterIns']
     pinfo['parameters.outs'] = desc['parameterOuts']
 
-    if ptype == PLUGIN_SFZ:
+    if ptype == PLUGIN_LV2:
+        pinfo['filename'], pinfo['label'] = pinfo['label'].split('/',1)
+
+    elif ptype == PLUGIN_SFZ:
         pinfo['filename'] = pinfo['label']
         pinfo['label']    = pinfo['name']
 
@@ -399,11 +412,11 @@ class SearchPluginsThread(QThread):
         else:
             toolNative = "carla-discovery-native"
 
-            settings = QSettings("falkTX", "Carla2")
+            settings = QSafeSettings("falkTX", "Carla2")
             self.fWineSettings = {
-                'executable'    : settings.value(CARLA_KEY_WINE_EXECUTABLE, CARLA_DEFAULT_WINE_EXECUTABLE, type=str),
-                'autoPrefix'    : settings.value(CARLA_KEY_WINE_AUTO_PREFIX, CARLA_DEFAULT_WINE_AUTO_PREFIX, type=bool),
-                'fallbackPrefix': settings.value(CARLA_KEY_WINE_FALLBACK_PREFIX, CARLA_DEFAULT_WINE_FALLBACK_PREFIX, type=str)
+                'executable'    : settings.value(CARLA_KEY_WINE_EXECUTABLE, CARLA_DEFAULT_WINE_EXECUTABLE, str),
+                'autoPrefix'    : settings.value(CARLA_KEY_WINE_AUTO_PREFIX, CARLA_DEFAULT_WINE_AUTO_PREFIX, bool),
+                'fallbackPrefix': settings.value(CARLA_KEY_WINE_FALLBACK_PREFIX, CARLA_DEFAULT_WINE_FALLBACK_PREFIX, str)
             }
             del settings
 
@@ -434,7 +447,7 @@ class SearchPluginsThread(QThread):
         self.fCheckDSSI   = dssi
         self.fCheckLV2    = lv2
         self.fCheckVST2   = vst2
-        self.fCheckVST3   = vst3 and (MACOS or WINDOWS)
+        self.fCheckVST3   = vst3 and (LINUX or MACOS or WINDOWS)
         self.fCheckAU     = au and MACOS
         self.fCheckSF2    = sf2
         self.fCheckSFZ    = sfz
@@ -443,7 +456,7 @@ class SearchPluginsThread(QThread):
         self.fContinueChecking = False
 
     def run(self):
-        settingsDB = QSettings("falkTX", "CarlaPlugins4")
+        settingsDB = QSafeSettings("falkTX", "CarlaPlugins4")
 
         self.fContinueChecking = True
         self.fCurCount = 0
@@ -691,8 +704,8 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
         if self.fCheckSF2:
-            settings = QSettings("falkTX", "Carla2")
-            SF2_PATH = toList(settings.value(CARLA_KEY_PATHS_SF2, CARLA_DEFAULT_SF2_PATH))
+            settings = QSafeSettings("falkTX", "Carla2")
+            SF2_PATH = settings.value(CARLA_KEY_PATHS_SF2, CARLA_DEFAULT_SF2_PATH, list)
             del settings
 
             kits = self._checkKIT(SF2_PATH, "sf2")
@@ -711,8 +724,8 @@ class SearchPluginsThread(QThread):
 
         self._pluginLook(self.fLastCheckValue, "LADSPA plugins...")
 
-        settings = QSettings("falkTX", "Carla2")
-        LADSPA_PATH = toList(settings.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH))
+        settings = QSafeSettings("falkTX", "Carla2")
+        LADSPA_PATH = settings.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH, list)
         del settings
 
         for iPATH in LADSPA_PATH:
@@ -747,8 +760,8 @@ class SearchPluginsThread(QThread):
 
         self._pluginLook(self.fLastCheckValue, "DSSI plugins...")
 
-        settings = QSettings("falkTX", "Carla2")
-        DSSI_PATH = toList(settings.value(CARLA_KEY_PATHS_DSSI, CARLA_DEFAULT_DSSI_PATH))
+        settings = QSafeSettings("falkTX", "Carla2")
+        DSSI_PATH = settings.value(CARLA_KEY_PATHS_DSSI, CARLA_DEFAULT_DSSI_PATH, list)
         del settings
 
         for iPATH in DSSI_PATH:
@@ -786,8 +799,8 @@ class SearchPluginsThread(QThread):
         else:
             self._pluginLook(self.fLastCheckValue, "VST2 plugins...")
 
-        settings = QSettings("falkTX", "Carla2")
-        VST2_PATH = toList(settings.value(CARLA_KEY_PATHS_VST2, CARLA_DEFAULT_VST2_PATH))
+        settings = QSafeSettings("falkTX", "Carla2")
+        VST2_PATH = settings.value(CARLA_KEY_PATHS_VST2, CARLA_DEFAULT_VST2_PATH, list)
         del settings
 
         for iPATH in VST2_PATH:
@@ -828,8 +841,8 @@ class SearchPluginsThread(QThread):
         else:
             self._pluginLook(self.fLastCheckValue, "VST2 plugins...")
 
-        settings = QSettings("falkTX", "Carla2")
-        VST3_PATH = toList(settings.value(CARLA_KEY_PATHS_VST3, CARLA_DEFAULT_VST3_PATH))
+        settings = QSafeSettings("falkTX", "Carla2")
+        VST3_PATH = settings.value(CARLA_KEY_PATHS_VST3, CARLA_DEFAULT_VST3_PATH, list)
         del settings
 
         for iPATH in VST3_PATH:
@@ -907,8 +920,8 @@ class SearchPluginsThread(QThread):
 
     def _checkCached(self, isLV2):
         if isLV2:
-            settings  = QSettings("falkTX", "Carla2")
-            PLUG_PATH = splitter.join(toList(settings.value(CARLA_KEY_PATHS_LV2, CARLA_DEFAULT_LV2_PATH)))
+            settings  = QSafeSettings("falkTX", "Carla2")
+            PLUG_PATH = splitter.join(settings.value(CARLA_KEY_PATHS_LV2, CARLA_DEFAULT_LV2_PATH, list))
             del settings
             PLUG_TEXT = "LV2"
             PLUG_TYPE = PLUGIN_LV2
@@ -943,8 +956,8 @@ class SearchPluginsThread(QThread):
         return plugins
 
     def _checkSfzCached(self):
-        settings  = QSettings("falkTX", "Carla2")
-        PLUG_PATH = splitter.join(toList(settings.value(CARLA_KEY_PATHS_SFZ, CARLA_DEFAULT_SFZ_PATH)))
+        settings  = QSafeSettings("falkTX", "Carla2")
+        PLUG_PATH = splitter.join(settings.value(CARLA_KEY_PATHS_SFZ, CARLA_DEFAULT_SFZ_PATH, list))
         del settings
 
         sfzKits = []
@@ -1202,57 +1215,57 @@ class PluginRefreshW(QDialog):
     # -----------------------------------------------------------------------------------------------------------------
 
     def loadSettings(self):
-        settings = QSettings("falkTX", "CarlaRefresh2")
+        settings = QSafeSettings("falkTX", "CarlaRefresh2")
 
-        check = settings.value("PluginDatabase/SearchLADSPA", True, type=bool) and self.ui.ch_ladspa.isEnabled()
+        check = settings.value("PluginDatabase/SearchLADSPA", True, bool) and self.ui.ch_ladspa.isEnabled()
         self.ui.ch_ladspa.setChecked(check)
 
-        check = settings.value("PluginDatabase/SearchDSSI", True, type=bool) and self.ui.ch_dssi.isEnabled()
+        check = settings.value("PluginDatabase/SearchDSSI", True, bool) and self.ui.ch_dssi.isEnabled()
         self.ui.ch_dssi.setChecked(check)
 
-        check = settings.value("PluginDatabase/SearchLV2", True, type=bool) and self.ui.ch_lv2.isEnabled()
+        check = settings.value("PluginDatabase/SearchLV2", True, bool) and self.ui.ch_lv2.isEnabled()
         self.ui.ch_lv2.setChecked(check)
 
-        check = settings.value("PluginDatabase/SearchVST2", True, type=bool) and self.ui.ch_vst.isEnabled()
+        check = settings.value("PluginDatabase/SearchVST2", True, bool) and self.ui.ch_vst.isEnabled()
         self.ui.ch_vst.setChecked(check)
 
-        check = settings.value("PluginDatabase/SearchVST3", True, type=bool) and self.ui.ch_vst3.isEnabled()
+        check = settings.value("PluginDatabase/SearchVST3", True, bool) and self.ui.ch_vst3.isEnabled()
         self.ui.ch_vst3.setChecked(check)
 
         if MACOS:
-            check = settings.value("PluginDatabase/SearchAU", True, type=bool) and self.ui.ch_au.isEnabled()
+            check = settings.value("PluginDatabase/SearchAU", True, bool) and self.ui.ch_au.isEnabled()
         else:
             check = False
         self.ui.ch_au.setChecked(check)
 
-        check = settings.value("PluginDatabase/SearchSF2", False, type=bool) and self.ui.ch_sf2.isEnabled()
+        check = settings.value("PluginDatabase/SearchSF2", False, bool) and self.ui.ch_sf2.isEnabled()
         self.ui.ch_sf2.setChecked(check)
 
-        check = settings.value("PluginDatabase/SearchSFZ", False, type=bool) and self.ui.ch_sfz.isEnabled()
+        check = settings.value("PluginDatabase/SearchSFZ", False, bool) and self.ui.ch_sfz.isEnabled()
         self.ui.ch_sfz.setChecked(check)
 
-        check = settings.value("PluginDatabase/SearchNative", True, type=bool) and self.ui.ch_native.isEnabled()
+        check = settings.value("PluginDatabase/SearchNative", True, bool) and self.ui.ch_native.isEnabled()
         self.ui.ch_native.setChecked(check)
 
-        check = settings.value("PluginDatabase/SearchPOSIX32", False, type=bool) and self.ui.ch_posix32.isEnabled()
+        check = settings.value("PluginDatabase/SearchPOSIX32", False, bool) and self.ui.ch_posix32.isEnabled()
         self.ui.ch_posix32.setChecked(check)
 
-        check = settings.value("PluginDatabase/SearchPOSIX64", False, type=bool) and self.ui.ch_posix64.isEnabled()
+        check = settings.value("PluginDatabase/SearchPOSIX64", False, bool) and self.ui.ch_posix64.isEnabled()
         self.ui.ch_posix64.setChecked(check)
 
-        check = settings.value("PluginDatabase/SearchWin32", False, type=bool) and self.ui.ch_win32.isEnabled()
+        check = settings.value("PluginDatabase/SearchWin32", False, bool) and self.ui.ch_win32.isEnabled()
         self.ui.ch_win32.setChecked(check)
 
-        check = settings.value("PluginDatabase/SearchWin64", False, type=bool) and self.ui.ch_win64.isEnabled()
+        check = settings.value("PluginDatabase/SearchWin64", False, bool) and self.ui.ch_win64.isEnabled()
         self.ui.ch_win64.setChecked(check)
 
-        self.ui.ch_do_checks.setChecked(settings.value("PluginDatabase/DoChecks", False, type=bool))
+        self.ui.ch_do_checks.setChecked(settings.value("PluginDatabase/DoChecks", False, bool))
 
     # -----------------------------------------------------------------------------------------------------------------
 
     @pyqtSlot()
     def slot_saveSettings(self):
-        settings = QSettings("falkTX", "CarlaRefresh2")
+        settings = QSafeSettings("falkTX", "CarlaRefresh2")
         settings.setValue("PluginDatabase/SearchLADSPA", self.ui.ch_ladspa.isChecked())
         settings.setValue("PluginDatabase/SearchDSSI", self.ui.ch_dssi.isChecked())
         settings.setValue("PluginDatabase/SearchLV2", self.ui.ch_lv2.isChecked())
@@ -1367,6 +1380,12 @@ class PluginRefreshW(QDialog):
 # Plugin Database Dialog
 
 class PluginDatabaseW(QDialog):
+    TABLEWIDGET_ITEM_FAVORITE = 0
+    TABLEWIDGET_ITEM_NAME     = 1
+    TABLEWIDGET_ITEM_LABEL    = 2
+    TABLEWIDGET_ITEM_MAKER    = 3
+    TABLEWIDGET_ITEM_BINARY   = 4
+
     def __init__(self, parent, host):
         QDialog.__init__(self, parent)
         self.host = host
@@ -1384,11 +1403,18 @@ class PluginDatabaseW(QDialog):
         self.fLastTableIndex = 0
         self.fRetPlugin  = None
         self.fRealParent = parent
+        self.fFavoritePlugins = []
+        self.fFavoritePluginsChanged = False
+
+        self.fTrYes    = self.tr("Yes")
+        self.fTrNo     = self.tr("No")
+        self.fTrNative = self.tr("Native")
 
         # ----------------------------------------------------------------------------------------------------
         # Set-up GUI
 
         self.ui.b_add.setEnabled(False)
+        self.addAction(self.ui.act_focus_search)
 
         if BINARY_NATIVE in (BINARY_POSIX32, BINARY_WIN32):
             self.ui.ch_bridged.setText(self.tr("Bridged (64bit)"))
@@ -1404,6 +1430,10 @@ class PluginDatabaseW(QDialog):
             self.ui.ch_au.setEnabled(False)
             self.ui.ch_au.setVisible(False)
 
+        self.ui.tab_info.tabBar().hide()
+        self.ui.tab_reqs.tabBar().hide()
+        # FIXME, why /2 needed?
+        self.ui.tab_info.setMinimumWidth(self.ui.la_id.width()/2 + fontMetricsHorizontalAdvance(self.ui.l_id.fontMetrics(), "9999999999") + 6*3)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
         # ----------------------------------------------------------------------------------------------------
@@ -1439,15 +1469,12 @@ class PluginDatabaseW(QDialog):
         self.ui.b_add.clicked.connect(self.slot_addPlugin)
         self.ui.b_cancel.clicked.connect(self.reject)
         self.ui.b_refresh.clicked.connect(self.slot_refreshPlugins)
-        self.ui.tb_filters.clicked.connect(self.slot_maybeShowFilters)
+        self.ui.b_clear_filters.clicked.connect(self.slot_clearFilters)
         self.ui.lineEdit.textChanged.connect(self.slot_checkFilters)
         self.ui.tableWidget.currentCellChanged.connect(self.slot_checkPlugin)
-        self.ui.tableWidget.cellDoubleClicked.connect(self.slot_addPlugin)
+        self.ui.tableWidget.cellClicked.connect(self.slot_cellClicked)
+        self.ui.tableWidget.cellDoubleClicked.connect(self.slot_cellDoubleClicked)
 
-        self.ui.ch_effects.clicked.connect(self.slot_checkFilters)
-        self.ui.ch_instruments.clicked.connect(self.slot_checkFilters)
-        self.ui.ch_midi.clicked.connect(self.slot_checkFilters)
-        self.ui.ch_other.clicked.connect(self.slot_checkFilters)
         self.ui.ch_internal.clicked.connect(self.slot_checkFilters)
         self.ui.ch_ladspa.clicked.connect(self.slot_checkFilters)
         self.ui.ch_dssi.clicked.connect(self.slot_checkFilters)
@@ -1456,39 +1483,135 @@ class PluginDatabaseW(QDialog):
         self.ui.ch_vst3.clicked.connect(self.slot_checkFilters)
         self.ui.ch_au.clicked.connect(self.slot_checkFilters)
         self.ui.ch_kits.clicked.connect(self.slot_checkFilters)
+        self.ui.ch_effects.clicked.connect(self.slot_checkFilters)
+        self.ui.ch_instruments.clicked.connect(self.slot_checkFilters)
+        self.ui.ch_midi.clicked.connect(self.slot_checkFilters)
+        self.ui.ch_other.clicked.connect(self.slot_checkFilters)
         self.ui.ch_native.clicked.connect(self.slot_checkFilters)
         self.ui.ch_bridged.clicked.connect(self.slot_checkFilters)
         self.ui.ch_bridged_wine.clicked.connect(self.slot_checkFilters)
+        self.ui.ch_favorites.clicked.connect(self.slot_checkFilters)
         self.ui.ch_rtsafe.clicked.connect(self.slot_checkFilters)
+        self.ui.ch_cv.clicked.connect(self.slot_checkFilters)
         self.ui.ch_gui.clicked.connect(self.slot_checkFilters)
+        self.ui.ch_inline_display.clicked.connect(self.slot_checkFilters)
         self.ui.ch_stereo.clicked.connect(self.slot_checkFilters)
 
         # ----------------------------------------------------------------------------------------------------
         # Post-connect setup
 
         self._reAddPlugins()
+        self.ui.lineEdit.setFocus()
 
     # --------------------------------------------------------------------------------------------------------
+
+    @pyqtSlot(int, int)
+    def slot_cellClicked(self, row, column):
+        if column == self.TABLEWIDGET_ITEM_FAVORITE:
+            widget = self.ui.tableWidget.item(row, self.TABLEWIDGET_ITEM_FAVORITE)
+            plugin = self.ui.tableWidget.item(row, self.TABLEWIDGET_ITEM_NAME).data(Qt.UserRole+1)
+            plugin = self._createFavoritePluginDict(plugin)
+
+            if widget.checkState() == Qt.Checked:
+                if not plugin in self.fFavoritePlugins:
+                    self.fFavoritePlugins.append(plugin)
+                    self.fFavoritePluginsChanged = True
+            else:
+                try:
+                    self.fFavoritePlugins.remove(plugin)
+                    self.fFavoritePluginsChanged = True
+                except ValueError:
+                    pass
+
+    @pyqtSlot(int, int)
+    def slot_cellDoubleClicked(self, row, column):
+        if column != self.TABLEWIDGET_ITEM_FAVORITE:
+            self.slot_addPlugin()
 
     @pyqtSlot()
     def slot_addPlugin(self):
         if self.ui.tableWidget.currentRow() >= 0:
-            self.fRetPlugin = self.ui.tableWidget.item(self.ui.tableWidget.currentRow(), 0).data(Qt.UserRole)
+            self.fRetPlugin = self.ui.tableWidget.item(self.ui.tableWidget.currentRow(),
+                                                       self.TABLEWIDGET_ITEM_NAME).data(Qt.UserRole+1)
             self.accept()
         else:
             self.reject()
 
     @pyqtSlot(int)
     def slot_checkPlugin(self, row):
-        self.ui.b_add.setEnabled(row >= 0)
+        if row >= 0:
+            self.ui.b_add.setEnabled(True)
+            plugin = self.ui.tableWidget.item(self.ui.tableWidget.currentRow(),
+                                              self.TABLEWIDGET_ITEM_NAME).data(Qt.UserRole+1)
+
+            isSynth  = bool(plugin['hints'] & PLUGIN_IS_SYNTH)
+            isEffect = bool(plugin['audio.ins'] > 0 < plugin['audio.outs'] and not isSynth)
+            isMidi   = bool(plugin['audio.ins'] == 0 and plugin['audio.outs'] == 0 and plugin['midi.ins'] > 0 < plugin['midi.outs'])
+            isKit    = bool(plugin['type'] in (PLUGIN_SF2, PLUGIN_SFZ))
+            isOther  = bool(not (isEffect or isSynth or isMidi or isKit))
+
+            if isSynth:
+                ptype = "Instrument"
+            elif isEffect:
+                ptype = "Effect"
+            elif isMidi:
+                ptype = "MIDI Plugin"
+            else:
+                ptype = "Other"
+
+            if plugin['build'] == BINARY_NATIVE:
+                parch = self.fTrNative
+            elif plugin['build'] == BINARY_POSIX32:
+                parch = "posix32"
+            elif plugin['build'] == BINARY_POSIX64:
+                parch = "posix64"
+            elif plugin['build'] == BINARY_WIN32:
+                parch = "win32"
+            elif plugin['build'] == BINARY_WIN64:
+                parch = "win64"
+            elif plugin['build'] == BINARY_OTHER:
+                parch = self.tr("Other")
+            elif plugin['build'] == BINARY_WIN32:
+                parch = self.tr("Unknown")
+
+            self.ui.l_format.setText(getPluginTypeAsString(plugin['type']))
+            self.ui.l_type.setText(ptype)
+            self.ui.l_arch.setText(parch)
+            self.ui.l_id.setText(str(plugin['uniqueId']))
+            self.ui.l_ains.setText(str(plugin['audio.ins']))
+            self.ui.l_aouts.setText(str(plugin['audio.outs']))
+            self.ui.l_cvins.setText(str(plugin['cv.ins']))
+            self.ui.l_cvouts.setText(str(plugin['cv.outs']))
+            self.ui.l_mins.setText(str(plugin['midi.ins']))
+            self.ui.l_mouts.setText(str(plugin['midi.outs']))
+            self.ui.l_pins.setText(str(plugin['parameters.ins']))
+            self.ui.l_pouts.setText(str(plugin['parameters.outs']))
+            self.ui.l_gui.setText(self.fTrYes if plugin['hints'] & PLUGIN_HAS_CUSTOM_UI else self.fTrNo)
+            self.ui.l_idisp.setText(self.fTrYes if plugin['hints'] & PLUGIN_HAS_INLINE_DISPLAY else self.fTrNo)
+            self.ui.l_bridged.setText(self.fTrYes if plugin['hints'] & PLUGIN_IS_BRIDGE else self.fTrNo)
+            self.ui.l_synth.setText(self.fTrYes if isSynth else self.fTrNo)
+        else:
+            self.ui.b_add.setEnabled(False)
+            self.ui.l_format.setText("---")
+            self.ui.l_type.setText("---")
+            self.ui.l_arch.setText("---")
+            self.ui.l_id.setText("---")
+            self.ui.l_ains.setText("---")
+            self.ui.l_aouts.setText("---")
+            self.ui.l_cvins.setText("---")
+            self.ui.l_cvouts.setText("---")
+            self.ui.l_mins.setText("---")
+            self.ui.l_mouts.setText("---")
+            self.ui.l_pins.setText("---")
+            self.ui.l_pouts.setText("---")
+            self.ui.l_gui.setText("---")
+            self.ui.l_idisp.setText("---")
+            self.ui.l_bridged.setText("---")
+            self.ui.l_synth.setText("---")
 
     @pyqtSlot()
     def slot_checkFilters(self):
         self._checkFilters()
-
-    @pyqtSlot()
-    def slot_maybeShowFilters(self):
-        self._showFilters(not self.ui.frame.isVisible())
 
     @pyqtSlot()
     def slot_refreshPlugins(self):
@@ -1498,14 +1621,51 @@ class PluginDatabaseW(QDialog):
             if self.fRealParent:
                 self.fRealParent.setLoadRDFsNeeded()
 
+    @pyqtSlot()
+    def slot_clearFilters(self):
+        self.blockSignals(True)
+
+        self.ui.ch_internal.setChecked(True)
+        self.ui.ch_ladspa.setChecked(True)
+        self.ui.ch_dssi.setChecked(True)
+        self.ui.ch_lv2.setChecked(True)
+        self.ui.ch_vst.setChecked(True)
+        self.ui.ch_kits.setChecked(True)
+
+        self.ui.ch_instruments.setChecked(True)
+        self.ui.ch_effects.setChecked(True)
+        self.ui.ch_midi.setChecked(True)
+        self.ui.ch_other.setChecked(True)
+
+        self.ui.ch_native.setChecked(True)
+        self.ui.ch_bridged.setChecked(False)
+        self.ui.ch_bridged_wine.setChecked(False)
+
+        self.ui.ch_favorites.setChecked(False)
+        self.ui.ch_rtsafe.setChecked(False)
+        self.ui.ch_stereo.setChecked(False)
+        self.ui.ch_cv.setChecked(False)
+        self.ui.ch_gui.setChecked(False)
+        self.ui.ch_inline_display.setChecked(False)
+
+        if self.ui.ch_vst3.isEnabled():
+            self.ui.ch_vst3.setChecked(True)
+        if self.ui.ch_au.isEnabled():
+            self.ui.ch_au.setChecked(True)
+
+        self.ui.lineEdit.clear()
+
+        self.blockSignals(False)
+
+        self._checkFilters()
+
     # --------------------------------------------------------------------------------------------------------
 
     @pyqtSlot()
     def slot_saveSettings(self):
-        settings = QSettings("falkTX", "CarlaDatabase2")
+        settings = QSafeSettings("falkTX", "CarlaDatabase2")
         settings.setValue("PluginDatabase/Geometry", self.saveGeometry())
-        settings.setValue("PluginDatabase/TableGeometry_5", self.ui.tableWidget.horizontalHeader().saveState())
-        settings.setValue("PluginDatabase/ShowFilters", (self.ui.tb_filters.arrowType() == Qt.UpArrow))
+        settings.setValue("PluginDatabase/TableGeometry_6", self.ui.tableWidget.horizontalHeader().saveState())
         settings.setValue("PluginDatabase/ShowEffects", self.ui.ch_effects.isChecked())
         settings.setValue("PluginDatabase/ShowInstruments", self.ui.ch_instruments.isChecked())
         settings.setValue("PluginDatabase/ShowMIDI", self.ui.ch_midi.isChecked())
@@ -1521,45 +1681,71 @@ class PluginDatabaseW(QDialog):
         settings.setValue("PluginDatabase/ShowNative", self.ui.ch_native.isChecked())
         settings.setValue("PluginDatabase/ShowBridged", self.ui.ch_bridged.isChecked())
         settings.setValue("PluginDatabase/ShowBridgedWine", self.ui.ch_bridged_wine.isChecked())
+        settings.setValue("PluginDatabase/ShowFavorites", self.ui.ch_favorites.isChecked())
         settings.setValue("PluginDatabase/ShowRtSafe", self.ui.ch_rtsafe.isChecked())
+        settings.setValue("PluginDatabase/ShowHasCV", self.ui.ch_cv.isChecked())
         settings.setValue("PluginDatabase/ShowHasGUI", self.ui.ch_gui.isChecked())
+        settings.setValue("PluginDatabase/ShowHasInlineDisplay", self.ui.ch_inline_display.isChecked())
         settings.setValue("PluginDatabase/ShowStereoOnly", self.ui.ch_stereo.isChecked())
         settings.setValue("PluginDatabase/SearchText", self.ui.lineEdit.text())
+
+        if self.fFavoritePluginsChanged:
+            settings.setValue("PluginDatabase/Favorites", self.fFavoritePlugins)
 
     # --------------------------------------------------------------------------------------------------------
 
     def loadSettings(self):
-        settings = QSettings("falkTX", "CarlaDatabase2")
-        self.restoreGeometry(settings.value("PluginDatabase/Geometry", b""))
-        self.ui.ch_effects.setChecked(settings.value("PluginDatabase/ShowEffects", True, type=bool))
-        self.ui.ch_instruments.setChecked(settings.value("PluginDatabase/ShowInstruments", True, type=bool))
-        self.ui.ch_midi.setChecked(settings.value("PluginDatabase/ShowMIDI", True, type=bool))
-        self.ui.ch_other.setChecked(settings.value("PluginDatabase/ShowOther", True, type=bool))
-        self.ui.ch_internal.setChecked(settings.value("PluginDatabase/ShowInternal", True, type=bool))
-        self.ui.ch_ladspa.setChecked(settings.value("PluginDatabase/ShowLADSPA", True, type=bool))
-        self.ui.ch_dssi.setChecked(settings.value("PluginDatabase/ShowDSSI", True, type=bool))
-        self.ui.ch_lv2.setChecked(settings.value("PluginDatabase/ShowLV2", True, type=bool))
-        self.ui.ch_vst.setChecked(settings.value("PluginDatabase/ShowVST2", True, type=bool))
-        self.ui.ch_vst3.setChecked(settings.value("PluginDatabase/ShowVST3", (MACOS or WINDOWS), type=bool))
-        self.ui.ch_au.setChecked(settings.value("PluginDatabase/ShowAU", MACOS, type=bool))
-        self.ui.ch_kits.setChecked(settings.value("PluginDatabase/ShowKits", True, type=bool))
-        self.ui.ch_native.setChecked(settings.value("PluginDatabase/ShowNative", True, type=bool))
-        self.ui.ch_bridged.setChecked(settings.value("PluginDatabase/ShowBridged", True, type=bool))
-        self.ui.ch_bridged_wine.setChecked(settings.value("PluginDatabase/ShowBridgedWine", True, type=bool))
-        self.ui.ch_rtsafe.setChecked(settings.value("PluginDatabase/ShowRtSafe", False, type=bool))
-        self.ui.ch_gui.setChecked(settings.value("PluginDatabase/ShowHasGUI", False, type=bool))
-        self.ui.ch_stereo.setChecked(settings.value("PluginDatabase/ShowStereoOnly", False, type=bool))
-        self.ui.lineEdit.setText(settings.value("PluginDatabase/SearchText", "", type=str))
+        settings = QSafeSettings("falkTX", "CarlaDatabase2")
+        self.fFavoritePlugins = settings.value("PluginDatabase/Favorites", [], list)
+        self.fFavoritePluginsChanged = False
 
-        tableGeometry = settings.value("PluginDatabase/TableGeometry_5")
-        if tableGeometry:
-            self.ui.tableWidget.horizontalHeader().restoreState(tableGeometry)
+        self.restoreGeometry(settings.value("PluginDatabase/Geometry", QByteArray(), QByteArray))
+        self.ui.ch_effects.setChecked(settings.value("PluginDatabase/ShowEffects", True, bool))
+        self.ui.ch_instruments.setChecked(settings.value("PluginDatabase/ShowInstruments", True, bool))
+        self.ui.ch_midi.setChecked(settings.value("PluginDatabase/ShowMIDI", True, bool))
+        self.ui.ch_other.setChecked(settings.value("PluginDatabase/ShowOther", True, bool))
+        self.ui.ch_internal.setChecked(settings.value("PluginDatabase/ShowInternal", True, bool))
+        self.ui.ch_ladspa.setChecked(settings.value("PluginDatabase/ShowLADSPA", True, bool))
+        self.ui.ch_dssi.setChecked(settings.value("PluginDatabase/ShowDSSI", True, bool))
+        self.ui.ch_lv2.setChecked(settings.value("PluginDatabase/ShowLV2", True, bool))
+        self.ui.ch_vst.setChecked(settings.value("PluginDatabase/ShowVST2", True, bool))
+        self.ui.ch_vst3.setChecked(settings.value("PluginDatabase/ShowVST3", (MACOS or WINDOWS), bool))
+        self.ui.ch_au.setChecked(settings.value("PluginDatabase/ShowAU", MACOS, bool))
+        self.ui.ch_kits.setChecked(settings.value("PluginDatabase/ShowKits", True, bool))
+        self.ui.ch_native.setChecked(settings.value("PluginDatabase/ShowNative", True, bool))
+        self.ui.ch_bridged.setChecked(settings.value("PluginDatabase/ShowBridged", True, bool))
+        self.ui.ch_bridged_wine.setChecked(settings.value("PluginDatabase/ShowBridgedWine", True, bool))
+        self.ui.ch_favorites.setChecked(settings.value("PluginDatabase/ShowFavorites", False, bool))
+        self.ui.ch_rtsafe.setChecked(settings.value("PluginDatabase/ShowRtSafe", False, bool))
+        self.ui.ch_cv.setChecked(settings.value("PluginDatabase/ShowHasCV", False, bool))
+        self.ui.ch_gui.setChecked(settings.value("PluginDatabase/ShowHasGUI", False, bool))
+        self.ui.ch_inline_display.setChecked(settings.value("PluginDatabase/ShowHasInlineDisplay", False, bool))
+        self.ui.ch_stereo.setChecked(settings.value("PluginDatabase/ShowStereoOnly", False, bool))
+        self.ui.lineEdit.setText(settings.value("PluginDatabase/SearchText", "", str))
+
+        tableGeometry = settings.value("PluginDatabase/TableGeometry_6", QByteArray(), QByteArray)
+        horizontalHeader = self.ui.tableWidget.horizontalHeader()
+        if not tableGeometry.isNull():
+            horizontalHeader.restoreState(tableGeometry)
         else:
-            self.ui.tableWidget.sortByColumn(0, Qt.AscendingOrder)
-
-        self._showFilters(settings.value("PluginDatabase/ShowFilters", False, type=bool))
+            horizontalHeader.setSectionResizeMode(self.TABLEWIDGET_ITEM_FAVORITE, QHeaderView.Fixed)
+            self.ui.tableWidget.setColumnWidth(self.TABLEWIDGET_ITEM_FAVORITE, 24)
+            self.ui.tableWidget.setColumnWidth(self.TABLEWIDGET_ITEM_NAME, 250)
+            self.ui.tableWidget.setColumnWidth(self.TABLEWIDGET_ITEM_LABEL, 200)
+            self.ui.tableWidget.setColumnWidth(self.TABLEWIDGET_ITEM_MAKER, 150)
+            self.ui.tableWidget.sortByColumn(self.TABLEWIDGET_ITEM_NAME, Qt.AscendingOrder)
 
     # --------------------------------------------------------------------------------------------------------
+
+    def _createFavoritePluginDict(self, plugin):
+        return {
+            'name'    : plugin['name'],
+            'build'   : plugin['build'],
+            'type'    : plugin['type'],
+            'filename': plugin['filename'],
+            'label'   : plugin['label'],
+            'uniqueId': plugin['uniqueId'],
+        }
 
     def _checkFilters(self):
         text = self.ui.lineEdit.text().lower()
@@ -1582,8 +1768,11 @@ class PluginDatabaseW(QDialog):
         hideBridged = not self.ui.ch_bridged.isChecked()
         hideBridgedWine = not self.ui.ch_bridged_wine.isChecked()
 
+        hideNonFavs   = self.ui.ch_favorites.isChecked()
         hideNonRtSafe = self.ui.ch_rtsafe.isChecked()
+        hideNonCV     = self.ui.ch_cv.isChecked()
         hideNonGui    = self.ui.ch_gui.isChecked()
+        hideNonIDisp  = self.ui.ch_inline_display.isChecked()
         hideNonStereo = self.ui.ch_stereo.isChecked()
 
         if HAIKU or LINUX or MACOS:
@@ -1596,24 +1785,30 @@ class PluginDatabaseW(QDialog):
             nativeBins = []
             wineBins   = []
 
-        rowCount = self.ui.tableWidget.rowCount()
+        self.ui.tableWidget.setRowCount(self.fLastTableIndex)
 
         for i in range(self.fLastTableIndex):
-            plugin = self.ui.tableWidget.item(i, 0).data(Qt.UserRole)
+            plugin = self.ui.tableWidget.item(i, self.TABLEWIDGET_ITEM_NAME).data(Qt.UserRole+1)
+            ptext  = self.ui.tableWidget.item(i, self.TABLEWIDGET_ITEM_NAME).data(Qt.UserRole+2)
             aIns   = plugin['audio.ins']
             aOuts  = plugin['audio.outs']
+            cvIns  = plugin['cv.ins']
+            cvOuts = plugin['cv.outs']
             mIns   = plugin['midi.ins']
             mOuts  = plugin['midi.outs']
-            ptype  = self.ui.tableWidget.item(i, 12).text()
-            isSynth  = bool(plugin['hints'] & PLUGIN_IS_SYNTH)
+            phints = plugin['hints']
+            ptype  = plugin['type']
+            isSynth  = bool(phints & PLUGIN_IS_SYNTH)
             isEffect = bool(aIns > 0 < aOuts and not isSynth)
             isMidi   = bool(aIns == 0 and aOuts == 0 and mIns > 0 < mOuts)
-            isKit    = bool(ptype in ("SF2", "SFZ"))
+            isKit    = bool(ptype in (PLUGIN_SF2, PLUGIN_SFZ))
             isOther  = bool(not (isEffect or isSynth or isMidi or isKit))
             isNative = bool(plugin['build'] == BINARY_NATIVE)
-            isRtSafe = bool(plugin['hints'] & PLUGIN_IS_RTSAFE)
+            isRtSafe = bool(phints & PLUGIN_IS_RTSAFE)
             isStereo = bool(aIns == 2 and aOuts == 2) or (isSynth and aOuts == 2)
-            hasGui   = bool(plugin['hints'] & PLUGIN_HAS_CUSTOM_UI)
+            hasCV    = bool(cvIns + cvOuts > 0)
+            hasGui   = bool(phints & PLUGIN_HAS_CUSTOM_UI)
+            hasIDisp = bool(phints & PLUGIN_HAS_INLINE_DISPLAY)
 
             isBridged = bool(not isNative and plugin['build'] in nativeBins)
             isBridgedWine = bool(not isNative and plugin['build'] in wineBins)
@@ -1628,19 +1823,19 @@ class PluginDatabaseW(QDialog):
                 self.ui.tableWidget.hideRow(i)
             elif hideKits and isKit:
                 self.ui.tableWidget.hideRow(i)
-            elif hideInternal and ptype == self.tr("Internal"):
+            elif hideInternal and ptype == PLUGIN_INTERNAL:
                 self.ui.tableWidget.hideRow(i)
-            elif hideLadspa and ptype == "LADSPA":
+            elif hideLadspa and ptype == PLUGIN_LADSPA:
                 self.ui.tableWidget.hideRow(i)
-            elif hideDssi and ptype == "DSSI":
+            elif hideDssi and ptype == PLUGIN_DSSI:
                 self.ui.tableWidget.hideRow(i)
-            elif hideLV2 and ptype == "LV2":
+            elif hideLV2 and ptype == PLUGIN_LV2:
                 self.ui.tableWidget.hideRow(i)
-            elif hideVST2 and ptype == "VST2":
+            elif hideVST2 and ptype == PLUGIN_VST2:
                 self.ui.tableWidget.hideRow(i)
-            elif hideVST3 and ptype == "VST3":
+            elif hideVST3 and ptype == PLUGIN_VST3:
                 self.ui.tableWidget.hideRow(i)
-            elif hideAU and ptype == "AU":
+            elif hideAU and ptype == PLUGIN_AU:
                 self.ui.tableWidget.hideRow(i)
             elif hideNative and isNative:
                 self.ui.tableWidget.hideRow(i)
@@ -1650,76 +1845,42 @@ class PluginDatabaseW(QDialog):
                 self.ui.tableWidget.hideRow(i)
             elif hideNonRtSafe and not isRtSafe:
                 self.ui.tableWidget.hideRow(i)
+            elif hideNonCV and not hasCV:
+                self.ui.tableWidget.hideRow(i)
             elif hideNonGui and not hasGui:
+                self.ui.tableWidget.hideRow(i)
+            elif hideNonIDisp and not hasIDisp:
                 self.ui.tableWidget.hideRow(i)
             elif hideNonStereo and not isStereo:
                 self.ui.tableWidget.hideRow(i)
-            elif (text and not (
-                  text in self.ui.tableWidget.item(i, 0).text().lower() or
-                  text in self.ui.tableWidget.item(i, 1).text().lower() or
-                  text in self.ui.tableWidget.item(i, 2).text().lower() or
-                  text in self.ui.tableWidget.item(i, 3).text().lower() or
-                  text in self.ui.tableWidget.item(i, 13).text().lower())):
+            elif text and not all(t in ptext for t in text.strip().split(' ')):
+                self.ui.tableWidget.hideRow(i)
+            elif hideNonFavs and self._createFavoritePluginDict(plugin) not in self.fFavoritePlugins:
                 self.ui.tableWidget.hideRow(i)
             else:
                 self.ui.tableWidget.showRow(i)
 
     # --------------------------------------------------------------------------------------------------------
 
-    def _showFilters(self, yesNo):
-        self.ui.tb_filters.setArrowType(Qt.UpArrow if yesNo else Qt.DownArrow)
-        self.ui.frame.setVisible(yesNo)
-
-    # --------------------------------------------------------------------------------------------------------
-
     def _addPluginToTable(self, plugin, ptype):
-        if plugin['API'] != PLUGIN_QUERY_API_VERSION and ptype == self.tr("Internal"):
+        if plugin['API'] != PLUGIN_QUERY_API_VERSION:
             return
-
         if ptype in (self.tr("Internal"), "LV2", "SF2", "SFZ"):
             plugin['build'] = BINARY_NATIVE
 
         index = self.fLastTableIndex
 
-        if plugin['build'] == BINARY_NATIVE:
-            bridgeText = self.tr("No")
+        favItem = QTableWidgetItem()
+        favItem.setCheckState(Qt.Checked if self._createFavoritePluginDict(plugin) in self.fFavoritePlugins else Qt.Unchecked)
 
-        else:
-            if WINDOWS:
-                if plugin['build'] == BINARY_WIN32:
-                    typeText = "32bit"
-                elif plugin['build'] == BINARY_WIN64:
-                    typeText = "64bit"
-                else:
-                    typeText = self.tr("Unknown")
-            else:
-                if plugin['build'] == BINARY_POSIX32:
-                    typeText = "32bit"
-                elif plugin['build'] == BINARY_POSIX64:
-                    typeText = "64bit"
-                elif plugin['build'] == BINARY_WIN32:
-                    typeText = "Windows 32bit"
-                elif plugin['build'] == BINARY_WIN64:
-                    typeText = "Windows 64bit"
-                else:
-                    typeText = self.tr("Unknown")
-
-            bridgeText = self.tr("Yes (%s)" % typeText)
-
-        self.ui.tableWidget.setItem(index, 0, QTableWidgetItem(str(plugin['name'])))
-        self.ui.tableWidget.setItem(index, 1, QTableWidgetItem(str(plugin['label'])))
-        self.ui.tableWidget.setItem(index, 2, QTableWidgetItem(str(plugin['maker'])))
-        self.ui.tableWidget.setItem(index, 3, QTableWidgetItem(str(plugin['uniqueId'])))
-        self.ui.tableWidget.setItem(index, 4, QTableWidgetItem(str(plugin['audio.ins'])))
-        self.ui.tableWidget.setItem(index, 5, QTableWidgetItem(str(plugin['audio.outs'])))
-        self.ui.tableWidget.setItem(index, 6, QTableWidgetItem(str(plugin['parameters.ins'])))
-        self.ui.tableWidget.setItem(index, 7, QTableWidgetItem(str(plugin['parameters.outs'])))
-        self.ui.tableWidget.setItem(index, 9, QTableWidgetItem(self.tr("Yes") if (plugin['hints'] & PLUGIN_HAS_CUSTOM_UI) else self.tr("No")))
-        self.ui.tableWidget.setItem(index, 10, QTableWidgetItem(self.tr("Yes") if (plugin['hints'] & PLUGIN_IS_SYNTH) else self.tr("No")))
-        self.ui.tableWidget.setItem(index, 11, QTableWidgetItem(bridgeText))
-        self.ui.tableWidget.setItem(index, 12, QTableWidgetItem(ptype))
-        self.ui.tableWidget.setItem(index, 13, QTableWidgetItem(str(plugin['filename'])))
-        self.ui.tableWidget.item(index, 0).setData(Qt.UserRole, plugin)
+        pluginText = (plugin['name']+plugin['label']+plugin['maker']+plugin['filename']).lower()
+        self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_FAVORITE, favItem)
+        self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_NAME, QTableWidgetItem(plugin['name']))
+        self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_LABEL, QTableWidgetItem(plugin['label']))
+        self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_MAKER, QTableWidgetItem(plugin['maker']))
+        self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_BINARY, QTableWidgetItem(os.path.basename(plugin['filename'])))
+        self.ui.tableWidget.item(index, self.TABLEWIDGET_ITEM_NAME).setData(Qt.UserRole+1, plugin)
+        self.ui.tableWidget.item(index, self.TABLEWIDGET_ITEM_NAME).setData(Qt.UserRole+2, pluginText)
 
         self.fLastTableIndex += 1
 
@@ -1741,8 +1902,8 @@ class PluginDatabaseW(QDialog):
         else:
             return 0
 
-        plugins     = toList(settingsDB.value("Plugins/" + ptypeStr, []))
-        pluginCount = settingsDB.value("PluginCount/" + ptypeStr, 0, type=int)
+        plugins     = settingsDB.value("Plugins/" + ptypeStr, [], list)
+        pluginCount = settingsDB.value("PluginCount/" + ptypeStr, 0, int)
 
         pluginCountNew = gCarla.utils.get_cached_plugin_count(ptype, path)
 
@@ -1777,7 +1938,7 @@ class PluginDatabaseW(QDialog):
         return pluginCount
 
     def _reAddPlugins(self):
-        settingsDB = QSettings("falkTX", "CarlaPlugins4")
+        settingsDB = QSafeSettings("falkTX", "CarlaPlugins4")
 
         for x in range(self.ui.tableWidget.rowCount()):
             self.ui.tableWidget.removeRow(0)
@@ -1785,8 +1946,8 @@ class PluginDatabaseW(QDialog):
         self.fLastTableIndex = 0
         self.ui.tableWidget.setSortingEnabled(False)
 
-        settings = QSettings("falkTX", "Carla2")
-        LV2_PATH = splitter.join(toList(settings.value(CARLA_KEY_PATHS_LV2, CARLA_DEFAULT_LV2_PATH)))
+        settings = QSafeSettings("falkTX", "Carla2")
+        LV2_PATH = splitter.join(settings.value(CARLA_KEY_PATHS_LV2, CARLA_DEFAULT_LV2_PATH, list))
         del settings
 
         # ----------------------------------------------------------------------------------------------------
@@ -1800,52 +1961,52 @@ class PluginDatabaseW(QDialog):
         # LADSPA
 
         ladspaPlugins  = []
-        ladspaPlugins += toList(settingsDB.value("Plugins/LADSPA_native", []))
-        ladspaPlugins += toList(settingsDB.value("Plugins/LADSPA_posix32", []))
-        ladspaPlugins += toList(settingsDB.value("Plugins/LADSPA_posix64", []))
-        ladspaPlugins += toList(settingsDB.value("Plugins/LADSPA_win32", []))
-        ladspaPlugins += toList(settingsDB.value("Plugins/LADSPA_win64", []))
+        ladspaPlugins += settingsDB.value("Plugins/LADSPA_native", [], list)
+        ladspaPlugins += settingsDB.value("Plugins/LADSPA_posix32", [], list)
+        ladspaPlugins += settingsDB.value("Plugins/LADSPA_posix64", [], list)
+        ladspaPlugins += settingsDB.value("Plugins/LADSPA_win32", [], list)
+        ladspaPlugins += settingsDB.value("Plugins/LADSPA_win64", [], list)
 
         # ----------------------------------------------------------------------------------------------------
         # DSSI
 
         dssiPlugins  = []
-        dssiPlugins += toList(settingsDB.value("Plugins/DSSI_native", []))
-        dssiPlugins += toList(settingsDB.value("Plugins/DSSI_posix32", []))
-        dssiPlugins += toList(settingsDB.value("Plugins/DSSI_posix64", []))
-        dssiPlugins += toList(settingsDB.value("Plugins/DSSI_win32", []))
-        dssiPlugins += toList(settingsDB.value("Plugins/DSSI_win64", []))
+        dssiPlugins += settingsDB.value("Plugins/DSSI_native", [], list)
+        dssiPlugins += settingsDB.value("Plugins/DSSI_posix32", [], list)
+        dssiPlugins += settingsDB.value("Plugins/DSSI_posix64", [], list)
+        dssiPlugins += settingsDB.value("Plugins/DSSI_win32", [], list)
+        dssiPlugins += settingsDB.value("Plugins/DSSI_win64", [], list)
 
         # ----------------------------------------------------------------------------------------------------
         # VST2
 
         vst2Plugins  = []
-        vst2Plugins += toList(settingsDB.value("Plugins/VST2_native", []))
-        vst2Plugins += toList(settingsDB.value("Plugins/VST2_posix32", []))
-        vst2Plugins += toList(settingsDB.value("Plugins/VST2_posix64", []))
-        vst2Plugins += toList(settingsDB.value("Plugins/VST2_win32", []))
-        vst2Plugins += toList(settingsDB.value("Plugins/VST2_win64", []))
+        vst2Plugins += settingsDB.value("Plugins/VST2_native", [], list)
+        vst2Plugins += settingsDB.value("Plugins/VST2_posix32", [], list)
+        vst2Plugins += settingsDB.value("Plugins/VST2_posix64", [], list)
+        vst2Plugins += settingsDB.value("Plugins/VST2_win32", [], list)
+        vst2Plugins += settingsDB.value("Plugins/VST2_win64", [], list)
 
         # ----------------------------------------------------------------------------------------------------
         # VST3
 
         vst3Plugins  = []
-        vst3Plugins += toList(settingsDB.value("Plugins/VST3_native", []))
-        vst3Plugins += toList(settingsDB.value("Plugins/VST3_posix32", []))
-        vst3Plugins += toList(settingsDB.value("Plugins/VST3_posix64", []))
-        vst3Plugins += toList(settingsDB.value("Plugins/VST3_win32", []))
-        vst3Plugins += toList(settingsDB.value("Plugins/VST3_win64", []))
+        vst3Plugins += settingsDB.value("Plugins/VST3_native", [], list)
+        vst3Plugins += settingsDB.value("Plugins/VST3_posix32", [], list)
+        vst3Plugins += settingsDB.value("Plugins/VST3_posix64", [], list)
+        vst3Plugins += settingsDB.value("Plugins/VST3_win32", [], list)
+        vst3Plugins += settingsDB.value("Plugins/VST3_win64", [], list)
 
         # ----------------------------------------------------------------------------------------------------
         # AU (extra non-cached)
 
-        auPlugins32 = toList(settingsDB.value("Plugins/AU_posix32", [])) if MACOS else []
+        auPlugins32 = settingsDB.value("Plugins/AU_posix32", [], list) if MACOS else []
 
         # ----------------------------------------------------------------------------------------------------
         # Kits
 
-        sf2s = toList(settingsDB.value("Plugins/SF2", []))
-        sfzs = toList(settingsDB.value("Plugins/SFZ", []))
+        sf2s = settingsDB.value("Plugins/SF2", [], list)
+        sfzs = settingsDB.value("Plugins/SFZ", [], list)
 
         # ----------------------------------------------------------------------------------------------------
         # count plugins first, so we can create rows in advance
@@ -1919,8 +2080,13 @@ class PluginDatabaseW(QDialog):
 
         self.ui.tableWidget.setSortingEnabled(True)
         self._checkFilters()
+        self.slot_checkPlugin(self.ui.tableWidget.currentRow())
 
     # --------------------------------------------------------------------------------------------------------
+
+    def showEvent(self, event):
+        self.ui.lineEdit.setFocus()
+        QDialog.showEvent(self, event)
 
     def done(self, r):
         QDialog.done(self, r)
@@ -1940,20 +2106,21 @@ class JackApplicationW(QDialog):
     UI_SESSION_LADISH = 1
     UI_SESSION_NSM    = 2
 
-    FLAG_CONTROL_WINDOW        = 0x01
-    FLAG_CAPTURE_FIRST_WINDOW  = 0x02
-    FLAG_BUFFERS_ADDITION_MODE = 0x10
+    FLAG_CONTROL_WINDOW              = 0x01
+    FLAG_CAPTURE_FIRST_WINDOW        = 0x02
+    FLAG_BUFFERS_ADDITION_MODE       = 0x10
+    FLAG_MIDI_OUTPUT_CHANNEL_MIXDOWN = 0x20
+    FLAG_EXTERNAL_START              = 0x40
 
-    def __init__(self, parent, host):
+    def __init__(self, parent, projectFilename):
         QDialog.__init__(self, parent)
-        self.host = host
         self.ui = ui_carla_add_jack.Ui_Dialog()
         self.ui.setupUi(self)
 
-        if False:
-            # kdevelop likes this :)
-            self.host = host = CarlaHostNull()
+        self.fProjectFilename = projectFilename
+        self.ui.group_error.setVisible(False)
 
+        self.adjustSize()
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
         # --------------------------------------------------------------------------------------------------------------
@@ -1991,6 +2158,10 @@ class JackApplicationW(QDialog):
             flags |= self.FLAG_CAPTURE_FIRST_WINDOW
         if self.ui.cb_buffers_addition_mode.isChecked():
             flags |= self.FLAG_BUFFERS_ADDITION_MODE
+        if self.ui.cb_out_midi_mixdown.isChecked():
+            flags |= self.FLAG_MIDI_OUTPUT_CHANNEL_MIXDOWN
+        if self.ui.cb_external_start.isChecked():
+            flags |= self.FLAG_EXTERNAL_START
 
         baseIntVal = ord('0')
         labelSetup = "%s%s%s%s%s%s" % (chr(baseIntVal+self.ui.sb_audio_ins.value()),
@@ -2003,17 +2174,30 @@ class JackApplicationW(QDialog):
 
     def checkIfButtonBoxShouldBeEnabled(self, index, text):
         enabled = len(text) > 0
+        showErr = ""
 
         # NSM applications must not be abstract or absolute paths, and must not contain arguments
         if enabled and index == self.UI_SESSION_NSM:
-            enabled = text[0] not in (".", "/") and " " not in text
+            if text[0] in (".", "/"):
+                showErr = self.tr("NSM applications cannot use abstract or absolute paths")
+            elif " " in text or ";" in text or "&" in text:
+                showErr = self.tr("NSM applications cannot use CLI arguments")
+            elif len(self.fProjectFilename) == 0:
+                showErr = self.tr("You need to save the current Carla project before NSM can be used")
+
+        if showErr:
+            enabled = False
+            self.ui.l_error.setText(showErr)
+            self.ui.group_error.setVisible(True)
+        else:
+            self.ui.group_error.setVisible(False)
 
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(enabled)
 
     def loadSettings(self):
-        settings = QSettings("falkTX", "CarlaAddJackApp")
+        settings = QSafeSettings("falkTX", "CarlaAddJackApp")
 
-        smName = settings.value("SessionManager", "", type=str)
+        smName = settings.value("SessionManager", "", str)
 
         if smName == "LADISH (SIGUSR1)":
             self.ui.cb_session_mgr.setCurrentIndex(self.UI_SESSION_LADISH)
@@ -2022,14 +2206,16 @@ class JackApplicationW(QDialog):
         else:
             self.ui.cb_session_mgr.setCurrentIndex(self.UI_SESSION_NONE)
 
-        self.ui.le_command.setText(settings.value("Command", "", type=str))
-        self.ui.le_name.setText(settings.value("Name", "", type=str))
-        self.ui.sb_audio_ins.setValue(settings.value("NumAudioIns", 2, type=int))
-        self.ui.sb_audio_ins.setValue(settings.value("NumAudioIns", 2, type=int))
-        self.ui.sb_audio_outs.setValue(settings.value("NumAudioOuts", 2, type=int))
-        self.ui.sb_midi_ins.setValue(settings.value("NumMidiIns", 0, type=int))
-        self.ui.sb_midi_outs.setValue(settings.value("NumMidiOuts", 0, type=int))
-        self.ui.cb_manage_window.setChecked(settings.value("ManageWindow", True, type=bool))
+        self.ui.le_command.setText(settings.value("Command", "", str))
+        self.ui.le_name.setText(settings.value("Name", "", str))
+        self.ui.sb_audio_ins.setValue(settings.value("NumAudioIns", 2, int))
+        self.ui.sb_audio_ins.setValue(settings.value("NumAudioIns", 2, int))
+        self.ui.sb_audio_outs.setValue(settings.value("NumAudioOuts", 2, int))
+        self.ui.sb_midi_ins.setValue(settings.value("NumMidiIns", 0, int))
+        self.ui.sb_midi_outs.setValue(settings.value("NumMidiOuts", 0, int))
+        self.ui.cb_manage_window.setChecked(settings.value("ManageWindow", True, bool))
+        self.ui.cb_capture_first_window.setChecked(settings.value("CaptureFirstWindow", False, bool))
+        self.ui.cb_out_midi_mixdown.setChecked(settings.value("MidiOutMixdown", False, bool))
 
         self.checkIfButtonBoxShouldBeEnabled(self.ui.cb_session_mgr.currentIndex(),
                                              self.ui.le_command.text())
@@ -2046,7 +2232,7 @@ class JackApplicationW(QDialog):
 
     @pyqtSlot()
     def slot_saveSettings(self):
-        settings = QSettings("falkTX", "CarlaAddJackApp")
+        settings = QSafeSettings("falkTX", "CarlaAddJackApp")
         settings.setValue("Command", self.ui.le_command.text())
         settings.setValue("Name", self.ui.le_name.text())
         settings.setValue("SessionManager", self.ui.cb_session_mgr.currentText())
@@ -2055,6 +2241,8 @@ class JackApplicationW(QDialog):
         settings.setValue("NumMidiIns", self.ui.sb_midi_ins.value())
         settings.setValue("NumMidiOuts", self.ui.sb_midi_outs.value())
         settings.setValue("ManageWindow", self.ui.cb_manage_window.isChecked())
+        settings.setValue("CaptureFirstWindow", self.ui.cb_capture_first_window.isChecked())
+        settings.setValue("MidiOutMixdown", self.ui.cb_out_midi_mixdown.isChecked())
 
     # -----------------------------------------------------------------------------------------------------------------
 

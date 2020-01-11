@@ -26,11 +26,13 @@ extern "C" {
 
 enum SetupHints {
     // Application Window management
-    LIBJACK_FLAG_CONTROL_WINDOW                      = 0x01,
-    LIBJACK_FLAG_CAPTURE_FIRST_WINDOW                = 0x02,
+    LIBJACK_FLAG_CONTROL_WINDOW              = 0x01,
+    LIBJACK_FLAG_CAPTURE_FIRST_WINDOW        = 0x02,
     // Audio/MIDI Buffers management
-    LIBJACK_FLAG_AUDIO_BUFFERS_ADDITION              = 0x10,
-    LIBJACK_FLAG_MIDI_OUTPUT_BUFFERS_CHANNEL_MIXDOWN = 0x20,
+    LIBJACK_FLAG_AUDIO_BUFFERS_ADDITION      = 0x10,
+    LIBJACK_FLAG_MIDI_OUTPUT_CHANNEL_MIXDOWN = 0x20,
+    // Developer options
+    LIBJACK_FLAG_EXTERNAL_START              = 0x40,
 };
 
 enum SessionManager {

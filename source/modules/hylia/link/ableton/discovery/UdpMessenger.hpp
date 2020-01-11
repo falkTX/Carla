@@ -169,7 +169,7 @@ private:
     void setReceiveHandler(Handler handler)
     {
       mPeerStateHandler = [handler](
-        PeerState<NodeState> state) { handler(std::move(state)); };
+                            PeerState<NodeState> state) { handler(std::move(state)); };
 
       mByeByeHandler = [handler](ByeBye<NodeId> byeBye) { handler(std::move(byeBye)); };
     }

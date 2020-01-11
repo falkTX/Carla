@@ -44,6 +44,7 @@ struct PluginListManager {
         for (std::size_t i=0, count = carla_getNativePluginCount(); i < count; ++i)
         {
             const NativePluginDescriptor* const desc(carla_getNativePluginDescriptor(i));
+            CARLA_SAFE_ASSERT_BREAK(desc != nullptr);
 
             if (std::strcmp(desc->label, "audiofile"       ) == 0 ||
                 std::strcmp(desc->label, "audiogain"       ) == 0 ||
@@ -64,6 +65,7 @@ struct PluginListManager {
                 std::strcmp(desc->label, "carlapatchbay16" ) == 0 ||
                 std::strcmp(desc->label, "carlapatchbay32" ) == 0 ||
                 std::strcmp(desc->label, "carlapatchbay64" ) == 0 ||
+                std::strcmp(desc->label, "carlapatchbaycv" ) == 0 ||
                 std::strcmp(desc->label, "bigmeter"        ) == 0
                 /*std::strcmp(desc->label, "notes"           ) == 0*/)
             {

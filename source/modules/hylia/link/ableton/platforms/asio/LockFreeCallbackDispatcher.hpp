@@ -85,5 +85,5 @@ private:
   std::thread mThread;
 };
 
-} // platforms
-} // ableton
+} // namespace platforms
+} // namespace ableton

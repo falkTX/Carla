@@ -2,7 +2,7 @@
 // basic_raw_socket.hpp
 // ~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -19,14 +19,23 @@
 #include <cstddef>
 #include "asio/basic_socket.hpp"
 #include "asio/detail/handler_type_requirements.hpp"
+#include "asio/detail/non_const_lvalue.hpp"
 #include "asio/detail/throw_error.hpp"
 #include "asio/detail/type_traits.hpp"
 #include "asio/error.hpp"
-#include "asio/raw_socket_service.hpp"
 
 #include "asio/detail/push_options.hpp"
 
 namespace asio {
+
+#if !defined(ASIO_BASIC_RAW_SOCKET_FWD_DECL)
+#define ASIO_BASIC_RAW_SOCKET_FWD_DECL
+
+// Forward declaration with defaulted arguments.
+template <typename Protocol, typename Executor = executor>
+class basic_raw_socket;
+
+#endif // !defined(ASIO_BASIC_RAW_SOCKET_FWD_DECL)
 
 /// Provides raw-oriented socket functionality.
 /**
@@ -37,14 +46,29 @@ namespace asio {
  * @e Distinct @e objects: Safe.@n
  * @e Shared @e objects: Unsafe.
  */
-template <typename Protocol,
-    typename RawSocketService = raw_socket_service<Protocol> >
+template <typename Protocol, typename Executor>
 class basic_raw_socket
-  : public basic_socket<Protocol, RawSocketService>
+  : public basic_socket<Protocol, Executor>
 {
 public:
+  /// The type of the executor associated with the object.
+  typedef Executor executor_type;
+
+  /// Rebinds the socket type to another executor.
+  template <typename Executor1>
+  struct rebind_executor
+  {
+    /// The socket type when rebound to the specified executor.
+    typedef basic_raw_socket<Protocol, Executor1> other;
+  };
+
   /// The native representation of a socket.
-  typedef typename RawSocketService::native_handle_type native_handle_type;
+#if defined(GENERATING_DOCUMENTATION)
+  typedef implementation_defined native_handle_type;
+#else
+  typedef typename basic_socket<Protocol,
+    Executor>::native_handle_type native_handle_type;
+#endif
 
   /// The protocol type.
   typedef Protocol protocol_type;
@@ -57,12 +81,29 @@ public:
    * This constructor creates a raw socket without opening it. The open()
    * function must be called before data can be sent or received on the socket.
    *
-   * @param io_context The io_context object that the raw socket will use
-   * to dispatch handlers for any asynchronous operations performed on the
-   * socket.
+   * @param ex The I/O executor that the socket will use, by default, to
+   * dispatch handlers for any asynchronous operations performed on the socket.
    */
-  explicit basic_raw_socket(asio::io_context& io_context)
-    : basic_socket<Protocol, RawSocketService>(io_context)
+  explicit basic_raw_socket(const executor_type& ex)
+    : basic_socket<Protocol, Executor>(ex)
+  {
+  }
+
+  /// Construct a basic_raw_socket without opening it.
+  /**
+   * This constructor creates a raw socket without opening it. The open()
+   * function must be called before data can be sent or received on the socket.
+   *
+   * @param context An execution context which provides the I/O executor that
+   * the socket will use, by default, to dispatch handlers for any asynchronous
+   * operations performed on the socket.
+   */
+  template <typename ExecutionContext>
+  explicit basic_raw_socket(ExecutionContext& context,
+      typename enable_if<
+        is_convertible<ExecutionContext&, execution_context&>::value
+      >::type* = 0)
+    : basic_socket<Protocol, Executor>(context)
   {
   }
 
@@ -70,17 +111,36 @@ public:
   /**
    * This constructor creates and opens a raw socket.
    *
-   * @param io_context The io_context object that the raw socket will use
-   * to dispatch handlers for any asynchronous operations performed on the
-   * socket.
+   * @param ex The I/O executor that the socket will use, by default, to
+   * dispatch handlers for any asynchronous operations performed on the socket.
    *
    * @param protocol An object specifying protocol parameters to be used.
    *
    * @throws asio::system_error Thrown on failure.
    */
-  basic_raw_socket(asio::io_context& io_context,
-      const protocol_type& protocol)
-    : basic_socket<Protocol, RawSocketService>(io_context, protocol)
+  basic_raw_socket(const executor_type& ex, const protocol_type& protocol)
+    : basic_socket<Protocol, Executor>(ex, protocol)
+  {
+  }
+
+  /// Construct and open a basic_raw_socket.
+  /**
+   * This constructor creates and opens a raw socket.
+   *
+   * @param context An execution context which provides the I/O executor that
+   * the socket will use, by default, to dispatch handlers for any asynchronous
+   * operations performed on the socket.
+   *
+   * @param protocol An object specifying protocol parameters to be used.
+   *
+   * @throws asio::system_error Thrown on failure.
+   */
+  template <typename ExecutionContext>
+  basic_raw_socket(ExecutionContext& context, const protocol_type& protocol,
+      typename enable_if<
+        is_convertible<ExecutionContext&, execution_context&>::value
+      >::type* = 0)
+    : basic_socket<Protocol, Executor>(context, protocol)
   {
   }
 
@@ -91,18 +151,41 @@ public:
    * to the specified endpoint on the local machine. The protocol used is the
    * protocol associated with the given endpoint.
    *
-   * @param io_context The io_context object that the raw socket will use
-   * to dispatch handlers for any asynchronous operations performed on the
-   * socket.
+   * @param ex The I/O executor that the socket will use, by default, to
+   * dispatch handlers for any asynchronous operations performed on the socket.
    *
    * @param endpoint An endpoint on the local machine to which the raw
    * socket will be bound.
    *
    * @throws asio::system_error Thrown on failure.
    */
-  basic_raw_socket(asio::io_context& io_context,
-      const endpoint_type& endpoint)
-    : basic_socket<Protocol, RawSocketService>(io_context, endpoint)
+  basic_raw_socket(const executor_type& ex, const endpoint_type& endpoint)
+    : basic_socket<Protocol, Executor>(ex, endpoint)
+  {
+  }
+
+  /// Construct a basic_raw_socket, opening it and binding it to the given
+  /// local endpoint.
+  /**
+   * This constructor creates a raw socket and automatically opens it bound
+   * to the specified endpoint on the local machine. The protocol used is the
+   * protocol associated with the given endpoint.
+   *
+   * @param context An execution context which provides the I/O executor that
+   * the socket will use, by default, to dispatch handlers for any asynchronous
+   * operations performed on the socket.
+   *
+   * @param endpoint An endpoint on the local machine to which the raw
+   * socket will be bound.
+   *
+   * @throws asio::system_error Thrown on failure.
+   */
+  template <typename ExecutionContext>
+  basic_raw_socket(ExecutionContext& context, const endpoint_type& endpoint,
+      typename enable_if<
+        is_convertible<ExecutionContext&, execution_context&>::value
+      >::type* = 0)
+    : basic_socket<Protocol, Executor>(context, endpoint)
   {
   }
 
@@ -111,9 +194,8 @@ public:
    * This constructor creates a raw socket object to hold an existing
    * native socket.
    *
-   * @param io_context The io_context object that the raw socket will use
-   * to dispatch handlers for any asynchronous operations performed on the
-   * socket.
+   * @param ex The I/O executor that the socket will use, by default, to
+   * dispatch handlers for any asynchronous operations performed on the socket.
    *
    * @param protocol An object specifying protocol parameters to be used.
    *
@@ -121,10 +203,34 @@ public:
    *
    * @throws asio::system_error Thrown on failure.
    */
-  basic_raw_socket(asio::io_context& io_context,
+  basic_raw_socket(const executor_type& ex,
       const protocol_type& protocol, const native_handle_type& native_socket)
-    : basic_socket<Protocol, RawSocketService>(
-        io_context, protocol, native_socket)
+    : basic_socket<Protocol, Executor>(ex, protocol, native_socket)
+  {
+  }
+
+  /// Construct a basic_raw_socket on an existing native socket.
+  /**
+   * This constructor creates a raw socket object to hold an existing
+   * native socket.
+   *
+   * @param context An execution context which provides the I/O executor that
+   * the socket will use, by default, to dispatch handlers for any asynchronous
+   * operations performed on the socket.
+   *
+   * @param protocol An object specifying protocol parameters to be used.
+   *
+   * @param native_socket The new underlying socket implementation.
+   *
+   * @throws asio::system_error Thrown on failure.
+   */
+  template <typename ExecutionContext>
+  basic_raw_socket(ExecutionContext& context,
+      const protocol_type& protocol, const native_handle_type& native_socket,
+      typename enable_if<
+        is_convertible<ExecutionContext&, execution_context&>::value
+      >::type* = 0)
+    : basic_socket<Protocol, Executor>(context, protocol, native_socket)
   {
   }
 
@@ -137,11 +243,11 @@ public:
    * will occur.
    *
    * @note Following the move, the moved-from object is in the same state as if
-   * constructed using the @c basic_raw_socket(io_context&) constructor.
+   * constructed using the @c basic_raw_socket(const executor_type&)
+   * constructor.
    */
   basic_raw_socket(basic_raw_socket&& other)
-    : basic_socket<Protocol, RawSocketService>(
-        ASIO_MOVE_CAST(basic_raw_socket)(other))
+    : basic_socket<Protocol, Executor>(std::move(other))
   {
   }
 
@@ -153,31 +259,34 @@ public:
    * will occur.
    *
    * @note Following the move, the moved-from object is in the same state as if
-   * constructed using the @c basic_raw_socket(io_context&) constructor.
+   * constructed using the @c basic_raw_socket(const executor_type&)
+   * constructor.
    */
   basic_raw_socket& operator=(basic_raw_socket&& other)
   {
-    basic_socket<Protocol, RawSocketService>::operator=(
-        ASIO_MOVE_CAST(basic_raw_socket)(other));
+    basic_socket<Protocol, Executor>::operator=(std::move(other));
     return *this;
   }
 
-  /// Move-construct a basic_raw_socket from a socket of another protocol type.
+  /// Move-construct a basic_raw_socket from a socket of another protocol
+  /// type.
   /**
    * This constructor moves a raw socket from one object to another.
    *
-   * @param other The other basic_raw_socket object from which the move will
-   * occur.
+   * @param other The other basic_raw_socket object from which the move
+   * will occur.
    *
    * @note Following the move, the moved-from object is in the same state as if
-   * constructed using the @c basic_raw_socket(io_context&) constructor.
+   * constructed using the @c basic_raw_socket(const executor_type&)
+   * constructor.
    */
-  template <typename Protocol1, typename RawSocketService1>
-  basic_raw_socket(basic_raw_socket<Protocol1, RawSocketService1>&& other,
-      typename enable_if<is_convertible<Protocol1, Protocol>::value>::type* = 0)
-    : basic_socket<Protocol, RawSocketService>(
-        ASIO_MOVE_CAST2(basic_raw_socket<
-          Protocol1, RawSocketService1>)(other))
+  template <typename Protocol1, typename Executor1>
+  basic_raw_socket(basic_raw_socket<Protocol1, Executor1>&& other,
+      typename enable_if<
+        is_convertible<Protocol1, Protocol>::value
+          && is_convertible<Executor1, Executor>::value
+      >::type* = 0)
+    : basic_socket<Protocol, Executor>(std::move(other))
   {
   }
 
@@ -189,19 +298,29 @@ public:
    * will occur.
    *
    * @note Following the move, the moved-from object is in the same state as if
-   * constructed using the @c basic_raw_socket(io_context&) constructor.
+   * constructed using the @c basic_raw_socket(const executor_type&)
+   * constructor.
    */
-  template <typename Protocol1, typename RawSocketService1>
-  typename enable_if<is_convertible<Protocol1, Protocol>::value,
-      basic_raw_socket>::type& operator=(
-        basic_raw_socket<Protocol1, RawSocketService1>&& other)
+  template <typename Protocol1, typename Executor1>
+  typename enable_if<
+    is_convertible<Protocol1, Protocol>::value
+      && is_convertible<Executor1, Executor>::value,
+    basic_raw_socket&
+  >::type operator=(basic_raw_socket<Protocol1, Executor1>&& other)
   {
-    basic_socket<Protocol, RawSocketService>::operator=(
-        ASIO_MOVE_CAST2(basic_raw_socket<
-          Protocol1, RawSocketService1>)(other));
+    basic_socket<Protocol, Executor>::operator=(std::move(other));
     return *this;
   }
 #endif // defined(ASIO_HAS_MOVE) || defined(GENERATING_DOCUMENTATION)
+
+  /// Destroys the socket.
+  /**
+   * This function destroys the socket, cancelling any outstanding asynchronous
+   * operations associated with the socket as if by calling @c cancel.
+   */
+  ~basic_raw_socket()
+  {
+  }
 
   /// Send some data on a connected socket.
   /**
@@ -228,8 +347,8 @@ public:
   std::size_t send(const ConstBufferSequence& buffers)
   {
     asio::error_code ec;
-    std::size_t s = this->get_service().send(
-        this->get_implementation(), buffers, 0, ec);
+    std::size_t s = this->impl_.get_service().send(
+        this->impl_.get_implementation(), buffers, 0, ec);
     asio::detail::throw_error(ec, "send");
     return s;
   }
@@ -255,8 +374,8 @@ public:
       socket_base::message_flags flags)
   {
     asio::error_code ec;
-    std::size_t s = this->get_service().send(
-        this->get_implementation(), buffers, flags, ec);
+    std::size_t s = this->impl_.get_service().send(
+        this->impl_.get_implementation(), buffers, flags, ec);
     asio::detail::throw_error(ec, "send");
     return s;
   }
@@ -281,8 +400,8 @@ public:
   std::size_t send(const ConstBufferSequence& buffers,
       socket_base::message_flags flags, asio::error_code& ec)
   {
-    return this->get_service().send(
-        this->get_implementation(), buffers, flags, ec);
+    return this->impl_.get_service().send(
+        this->impl_.get_implementation(), buffers, flags, ec);
   }
 
   /// Start an asynchronous send on a connected socket.
@@ -303,9 +422,9 @@ public:
    *   std::size_t bytes_transferred           // Number of bytes sent.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
-   * not, the handler will not be invoked from within this function. Invocation
-   * of the handler will be performed in a manner equivalent to using
-   * asio::io_context::post().
+   * not, the handler will not be invoked from within this function. On
+   * immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
    *
    * @note The async_send operation can only be used with a connected socket.
    * Use the async_send_to function to send data on an unconnected raw
@@ -326,12 +445,10 @@ public:
   async_send(const ConstBufferSequence& buffers,
       ASIO_MOVE_ARG(WriteHandler) handler)
   {
-    // If you get an error on the following line it means that your handler does
-    // not meet the documented type requirements for a WriteHandler.
-    ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
-
-    return this->get_service().async_send(this->get_implementation(),
-        buffers, 0, ASIO_MOVE_CAST(WriteHandler)(handler));
+    return async_initiate<WriteHandler,
+      void (asio::error_code, std::size_t)>(
+        initiate_async_send(), handler, this,
+        buffers, socket_base::message_flags(0));
   }
 
   /// Start an asynchronous send on a connected socket.
@@ -354,9 +471,9 @@ public:
    *   std::size_t bytes_transferred           // Number of bytes sent.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
-   * not, the handler will not be invoked from within this function. Invocation
-   * of the handler will be performed in a manner equivalent to using
-   * asio::io_context::post().
+   * not, the handler will not be invoked from within this function. On
+   * immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
    *
    * @note The async_send operation can only be used with a connected socket.
    * Use the async_send_to function to send data on an unconnected raw
@@ -369,12 +486,9 @@ public:
       socket_base::message_flags flags,
       ASIO_MOVE_ARG(WriteHandler) handler)
   {
-    // If you get an error on the following line it means that your handler does
-    // not meet the documented type requirements for a WriteHandler.
-    ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
-
-    return this->get_service().async_send(this->get_implementation(),
-        buffers, flags, ASIO_MOVE_CAST(WriteHandler)(handler));
+    return async_initiate<WriteHandler,
+      void (asio::error_code, std::size_t)>(
+        initiate_async_send(), handler, this, buffers, flags);
   }
 
   /// Send raw data to the specified endpoint.
@@ -407,8 +521,8 @@ public:
       const endpoint_type& destination)
   {
     asio::error_code ec;
-    std::size_t s = this->get_service().send_to(
-        this->get_implementation(), buffers, destination, 0, ec);
+    std::size_t s = this->impl_.get_service().send_to(
+        this->impl_.get_implementation(), buffers, destination, 0, ec);
     asio::detail::throw_error(ec, "send_to");
     return s;
   }
@@ -434,8 +548,8 @@ public:
       const endpoint_type& destination, socket_base::message_flags flags)
   {
     asio::error_code ec;
-    std::size_t s = this->get_service().send_to(
-        this->get_implementation(), buffers, destination, flags, ec);
+    std::size_t s = this->impl_.get_service().send_to(
+        this->impl_.get_implementation(), buffers, destination, flags, ec);
     asio::detail::throw_error(ec, "send_to");
     return s;
   }
@@ -461,7 +575,7 @@ public:
       const endpoint_type& destination, socket_base::message_flags flags,
       asio::error_code& ec)
   {
-    return this->get_service().send_to(this->get_implementation(),
+    return this->impl_.get_service().send_to(this->impl_.get_implementation(),
         buffers, destination, flags, ec);
   }
 
@@ -486,9 +600,9 @@ public:
    *   std::size_t bytes_transferred           // Number of bytes sent.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
-   * not, the handler will not be invoked from within this function. Invocation
-   * of the handler will be performed in a manner equivalent to using
-   * asio::io_context::post().
+   * not, the handler will not be invoked from within this function. On
+   * immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
    *
    * @par Example
    * To send a single data buffer use the @ref buffer function as follows:
@@ -509,12 +623,10 @@ public:
       const endpoint_type& destination,
       ASIO_MOVE_ARG(WriteHandler) handler)
   {
-    // If you get an error on the following line it means that your handler does
-    // not meet the documented type requirements for a WriteHandler.
-    ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
-
-    return this->get_service().async_send_to(this->get_implementation(),
-        buffers, destination, 0, ASIO_MOVE_CAST(WriteHandler)(handler));
+    return async_initiate<WriteHandler,
+      void (asio::error_code, std::size_t)>(
+        initiate_async_send_to(), handler, this, buffers,
+        destination, socket_base::message_flags(0));
   }
 
   /// Start an asynchronous send.
@@ -540,9 +652,9 @@ public:
    *   std::size_t bytes_transferred           // Number of bytes sent.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
-   * not, the handler will not be invoked from within this function. Invocation
-   * of the handler will be performed in a manner equivalent to using
-   * asio::io_context::post().
+   * not, the handler will not be invoked from within this function. On
+   * immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
    */
   template <typename ConstBufferSequence, typename WriteHandler>
   ASIO_INITFN_RESULT_TYPE(WriteHandler,
@@ -551,13 +663,9 @@ public:
       const endpoint_type& destination, socket_base::message_flags flags,
       ASIO_MOVE_ARG(WriteHandler) handler)
   {
-    // If you get an error on the following line it means that your handler does
-    // not meet the documented type requirements for a WriteHandler.
-    ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
-
-    return this->get_service().async_send_to(
-        this->get_implementation(), buffers, destination, flags,
-        ASIO_MOVE_CAST(WriteHandler)(handler));
+    return async_initiate<WriteHandler,
+      void (asio::error_code, std::size_t)>(
+        initiate_async_send_to(), handler, this, buffers, destination, flags);
   }
 
   /// Receive some data on a connected socket.
@@ -588,8 +696,8 @@ public:
   std::size_t receive(const MutableBufferSequence& buffers)
   {
     asio::error_code ec;
-    std::size_t s = this->get_service().receive(
-        this->get_implementation(), buffers, 0, ec);
+    std::size_t s = this->impl_.get_service().receive(
+        this->impl_.get_implementation(), buffers, 0, ec);
     asio::detail::throw_error(ec, "receive");
     return s;
   }
@@ -617,8 +725,8 @@ public:
       socket_base::message_flags flags)
   {
     asio::error_code ec;
-    std::size_t s = this->get_service().receive(
-        this->get_implementation(), buffers, flags, ec);
+    std::size_t s = this->impl_.get_service().receive(
+        this->impl_.get_implementation(), buffers, flags, ec);
     asio::detail::throw_error(ec, "receive");
     return s;
   }
@@ -645,8 +753,8 @@ public:
   std::size_t receive(const MutableBufferSequence& buffers,
       socket_base::message_flags flags, asio::error_code& ec)
   {
-    return this->get_service().receive(
-        this->get_implementation(), buffers, flags, ec);
+    return this->impl_.get_service().receive(
+        this->impl_.get_implementation(), buffers, flags, ec);
   }
 
   /// Start an asynchronous receive on a connected socket.
@@ -667,9 +775,9 @@ public:
    *   std::size_t bytes_transferred           // Number of bytes received.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
-   * not, the handler will not be invoked from within this function. Invocation
-   * of the handler will be performed in a manner equivalent to using
-   * asio::io_context::post().
+   * not, the handler will not be invoked from within this function. On
+   * immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
    *
    * @note The async_receive operation can only be used with a connected socket.
    * Use the async_receive_from function to receive data on an unconnected
@@ -691,12 +799,10 @@ public:
   async_receive(const MutableBufferSequence& buffers,
       ASIO_MOVE_ARG(ReadHandler) handler)
   {
-    // If you get an error on the following line it means that your handler does
-    // not meet the documented type requirements for a ReadHandler.
-    ASIO_READ_HANDLER_CHECK(ReadHandler, handler) type_check;
-
-    return this->get_service().async_receive(this->get_implementation(),
-        buffers, 0, ASIO_MOVE_CAST(ReadHandler)(handler));
+    return async_initiate<ReadHandler,
+      void (asio::error_code, std::size_t)>(
+        initiate_async_receive(), handler, this,
+        buffers, socket_base::message_flags(0));
   }
 
   /// Start an asynchronous receive on a connected socket.
@@ -719,9 +825,9 @@ public:
    *   std::size_t bytes_transferred           // Number of bytes received.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
-   * not, the handler will not be invoked from within this function. Invocation
-   * of the handler will be performed in a manner equivalent to using
-   * asio::io_context::post().
+   * not, the handler will not be invoked from within this function. On
+   * immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
    *
    * @note The async_receive operation can only be used with a connected socket.
    * Use the async_receive_from function to receive data on an unconnected
@@ -734,12 +840,9 @@ public:
       socket_base::message_flags flags,
       ASIO_MOVE_ARG(ReadHandler) handler)
   {
-    // If you get an error on the following line it means that your handler does
-    // not meet the documented type requirements for a ReadHandler.
-    ASIO_READ_HANDLER_CHECK(ReadHandler, handler) type_check;
-
-    return this->get_service().async_receive(this->get_implementation(),
-        buffers, flags, ASIO_MOVE_CAST(ReadHandler)(handler));
+    return async_initiate<ReadHandler,
+      void (asio::error_code, std::size_t)>(
+        initiate_async_receive(), handler, this, buffers, flags);
   }
 
   /// Receive raw data with the endpoint of the sender.
@@ -773,8 +876,8 @@ public:
       endpoint_type& sender_endpoint)
   {
     asio::error_code ec;
-    std::size_t s = this->get_service().receive_from(
-        this->get_implementation(), buffers, sender_endpoint, 0, ec);
+    std::size_t s = this->impl_.get_service().receive_from(
+        this->impl_.get_implementation(), buffers, sender_endpoint, 0, ec);
     asio::detail::throw_error(ec, "receive_from");
     return s;
   }
@@ -800,8 +903,8 @@ public:
       endpoint_type& sender_endpoint, socket_base::message_flags flags)
   {
     asio::error_code ec;
-    std::size_t s = this->get_service().receive_from(
-        this->get_implementation(), buffers, sender_endpoint, flags, ec);
+    std::size_t s = this->impl_.get_service().receive_from(
+        this->impl_.get_implementation(), buffers, sender_endpoint, flags, ec);
     asio::detail::throw_error(ec, "receive_from");
     return s;
   }
@@ -827,8 +930,8 @@ public:
       endpoint_type& sender_endpoint, socket_base::message_flags flags,
       asio::error_code& ec)
   {
-    return this->get_service().receive_from(this->get_implementation(),
-        buffers, sender_endpoint, flags, ec);
+    return this->impl_.get_service().receive_from(
+        this->impl_.get_implementation(), buffers, sender_endpoint, flags, ec);
   }
 
   /// Start an asynchronous receive.
@@ -854,9 +957,9 @@ public:
    *   std::size_t bytes_transferred           // Number of bytes received.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
-   * not, the handler will not be invoked from within this function. Invocation
-   * of the handler will be performed in a manner equivalent to using
-   * asio::io_context::post().
+   * not, the handler will not be invoked from within this function. On
+   * immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
    *
    * @par Example
    * To receive into a single data buffer use the @ref buffer function as
@@ -874,13 +977,10 @@ public:
       endpoint_type& sender_endpoint,
       ASIO_MOVE_ARG(ReadHandler) handler)
   {
-    // If you get an error on the following line it means that your handler does
-    // not meet the documented type requirements for a ReadHandler.
-    ASIO_READ_HANDLER_CHECK(ReadHandler, handler) type_check;
-
-    return this->get_service().async_receive_from(
-        this->get_implementation(), buffers, sender_endpoint, 0,
-        ASIO_MOVE_CAST(ReadHandler)(handler));
+    return async_initiate<ReadHandler,
+      void (asio::error_code, std::size_t)>(
+        initiate_async_receive_from(), handler, this, buffers,
+        &sender_endpoint, socket_base::message_flags(0));
   }
 
   /// Start an asynchronous receive.
@@ -908,9 +1008,9 @@ public:
    *   std::size_t bytes_transferred           // Number of bytes received.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
-   * not, the handler will not be invoked from within this function. Invocation
-   * of the handler will be performed in a manner equivalent to using
-   * asio::io_context::post().
+   * not, the handler will not be invoked from within this function. On
+   * immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
    */
   template <typename MutableBufferSequence, typename ReadHandler>
   ASIO_INITFN_RESULT_TYPE(ReadHandler,
@@ -919,14 +1019,85 @@ public:
       endpoint_type& sender_endpoint, socket_base::message_flags flags,
       ASIO_MOVE_ARG(ReadHandler) handler)
   {
-    // If you get an error on the following line it means that your handler does
-    // not meet the documented type requirements for a ReadHandler.
-    ASIO_READ_HANDLER_CHECK(ReadHandler, handler) type_check;
-
-    return this->get_service().async_receive_from(
-        this->get_implementation(), buffers, sender_endpoint, flags,
-        ASIO_MOVE_CAST(ReadHandler)(handler));
+    return async_initiate<ReadHandler,
+      void (asio::error_code, std::size_t)>(
+        initiate_async_receive_from(), handler,
+        this, buffers, &sender_endpoint, flags);
   }
+
+private:
+  struct initiate_async_send
+  {
+    template <typename WriteHandler, typename ConstBufferSequence>
+    void operator()(ASIO_MOVE_ARG(WriteHandler) handler,
+        basic_raw_socket* self, const ConstBufferSequence& buffers,
+        socket_base::message_flags flags) const
+    {
+      // If you get an error on the following line it means that your handler
+      // does not meet the documented type requirements for a WriteHandler.
+      ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
+
+      detail::non_const_lvalue<WriteHandler> handler2(handler);
+      self->impl_.get_service().async_send(
+          self->impl_.get_implementation(), buffers, flags,
+          handler2.value, self->impl_.get_implementation_executor());
+    }
+  };
+
+  struct initiate_async_send_to
+  {
+    template <typename WriteHandler, typename ConstBufferSequence>
+    void operator()(ASIO_MOVE_ARG(WriteHandler) handler,
+        basic_raw_socket* self, const ConstBufferSequence& buffers,
+        const endpoint_type& destination,
+        socket_base::message_flags flags) const
+    {
+      // If you get an error on the following line it means that your handler
+      // does not meet the documented type requirements for a WriteHandler.
+      ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
+
+      detail::non_const_lvalue<WriteHandler> handler2(handler);
+      self->impl_.get_service().async_send_to(
+          self->impl_.get_implementation(), buffers, destination, flags,
+          handler2.value, self->impl_.get_implementation_executor());
+    }
+  };
+
+  struct initiate_async_receive
+  {
+    template <typename ReadHandler, typename MutableBufferSequence>
+    void operator()(ASIO_MOVE_ARG(ReadHandler) handler,
+        basic_raw_socket* self, const MutableBufferSequence& buffers,
+        socket_base::message_flags flags) const
+    {
+      // If you get an error on the following line it means that your handler
+      // does not meet the documented type requirements for a ReadHandler.
+      ASIO_READ_HANDLER_CHECK(ReadHandler, handler) type_check;
+
+      detail::non_const_lvalue<ReadHandler> handler2(handler);
+      self->impl_.get_service().async_receive(
+          self->impl_.get_implementation(), buffers, flags,
+          handler2.value, self->impl_.get_implementation_executor());
+    }
+  };
+
+  struct initiate_async_receive_from
+  {
+    template <typename ReadHandler, typename MutableBufferSequence>
+    void operator()(ASIO_MOVE_ARG(ReadHandler) handler,
+        basic_raw_socket* self, const MutableBufferSequence& buffers,
+        endpoint_type* sender_endpoint, socket_base::message_flags flags) const
+    {
+      // If you get an error on the following line it means that your handler
+      // does not meet the documented type requirements for a ReadHandler.
+      ASIO_READ_HANDLER_CHECK(ReadHandler, handler) type_check;
+
+      detail::non_const_lvalue<ReadHandler> handler2(handler);
+      self->impl_.get_service().async_receive_from(
+          self->impl_.get_implementation(), buffers, *sender_endpoint, flags,
+          handler2.value, self->impl_.get_implementation_executor());
+    }
+  };
 };
 
 } // namespace asio

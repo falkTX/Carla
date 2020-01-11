@@ -143,12 +143,13 @@ public:
     /*
      * Lock the mutex.
      */
-    void lock() const noexcept
+    bool lock() const noexcept
     {
 #ifdef CARLA_OS_WIN
         EnterCriticalSection(&fSection);
+        return true;
 #else
-        pthread_mutex_lock(&fMutex);
+        return (pthread_mutex_lock(&fMutex) == 0);
 #endif
     }
 

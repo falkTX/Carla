@@ -2,7 +2,7 @@
 // ssl/detail/engine.hpp
 // ~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -93,7 +93,7 @@ public:
       asio::error_code& ec, std::size_t& bytes_transferred);
 
   // Get output data to be written to the transport.
-  ASIO_DECL asio::mutable_buffers_1 get_output(
+  ASIO_DECL asio::mutable_buffer get_output(
       const asio::mutable_buffer& data);
 
   // Put input data that was read from the transport.
@@ -115,9 +115,11 @@ private:
   ASIO_DECL static int verify_callback_function(
       int preverified, X509_STORE_CTX* ctx);
 
+#if (OPENSSL_VERSION_NUMBER < 0x10000000L)
   // The SSL_accept function may not be thread safe. This mutex is used to
   // protect all calls to the SSL_accept function.
   ASIO_DECL static asio::detail::static_mutex& accept_mutex();
+#endif // (OPENSSL_VERSION_NUMBER < 0x10000000L)
 
   // Perform one operation. Returns >= 0 on success or error, want_read if the
   // operation needs more input, or want_write if it needs to write some output

@@ -3,7 +3,7 @@
 set -e
 
 # Preparation
-_FLAGS="-DFLUIDSYNTH_NOT_A_DLL -DPTW32_STATIC_LIB -Werror"
+_FLAGS="-DFLUIDSYNTH_NOT_A_DLL -DPTW32_STATIC_LIB -Werror -DBUILDING_FOR_CI"
 _PREFIX=x86_64-w64-mingw32
 export AR=${_PREFIX}-ar
 export CC=${_PREFIX}-gcc

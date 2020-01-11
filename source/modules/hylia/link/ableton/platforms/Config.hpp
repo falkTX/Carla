@@ -22,15 +22,15 @@
 #include <ableton/link/Controller.hpp>
 #include <ableton/util/Log.hpp>
 
-#if LINK_PLATFORM_WINDOWS
+#if defined(LINK_PLATFORM_WINDOWS)
 #include <ableton/platforms/asio/Context.hpp>
 #include <ableton/platforms/windows/Clock.hpp>
 #include <ableton/platforms/windows/ScanIpIfAddrs.hpp>
-#elif LINK_PLATFORM_MACOSX
+#elif defined(LINK_PLATFORM_MACOSX)
 #include <ableton/platforms/asio/Context.hpp>
 #include <ableton/platforms/darwin/Clock.hpp>
 #include <ableton/platforms/posix/ScanIpIfAddrs.hpp>
-#elif LINK_PLATFORM_LINUX
+#elif defined(LINK_PLATFORM_LINUX)
 #include <ableton/platforms/asio/Context.hpp>
 #include <ableton/platforms/linux/Clock.hpp>
 #include <ableton/platforms/posix/ScanIpIfAddrs.hpp>
@@ -43,28 +43,25 @@ namespace link
 namespace platform
 {
 
-#if LINK_PLATFORM_WINDOWS
+#if defined(LINK_PLATFORM_WINDOWS)
 using Clock = platforms::windows::Clock;
 using IoContext =
   platforms::asio::Context<platforms::windows::ScanIpIfAddrs, util::NullLog>;
 
-#elif LINK_PLATFORM_MACOSX
+#elif defined(LINK_PLATFORM_MACOSX)
 using Clock = platforms::darwin::Clock;
 using IoContext =
   platforms::asio::Context<platforms::posix::ScanIpIfAddrs, util::NullLog>;
 
-#elif LINK_PLATFORM_LINUX
- #ifdef __ARM_ARCH_7A__
-using Clock = platforms::linux::ClockMonotonicRaw;
- #else
+#elif defined(LINK_PLATFORM_LINUX)
 using Clock = platforms::linux::ClockMonotonic;
- #endif
 using IoContext =
   platforms::asio::Context<platforms::posix::ScanIpIfAddrs, util::NullLog>;
 #endif
 
-using Controller = Controller<PeerCountCallback, TempoCallback, Clock, IoContext>;
+using Controller =
+  Controller<PeerCountCallback, TempoCallback, StartStopStateCallback, Clock, IoContext>;
 
-} // platform
-} // link
-} // ableton
+} // namespace platform
+} // namespace link
+} // namespace ableton

@@ -111,5 +111,5 @@ inline Timeline shiftClientTimeline(Timeline client, const Beats shift)
   return client;
 }
 
-} // link
-} // ableton
+} // namespace link
+} // namespace ableton

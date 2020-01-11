@@ -72,7 +72,7 @@ public:
         pData->sampleRate = pData->options.audioSampleRate;
         pData->initTime(pData->options.transportExtra);
 
-        pData->graph.create(2, 2);
+        pData->graph.create(2, 2, 0, 0);
 
         if (! startThread(true))
         {

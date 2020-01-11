@@ -142,12 +142,20 @@ void PluginCVData::initBuffers() const noexcept
 
 PluginEventData::PluginEventData() noexcept
     : portIn(nullptr),
-      portOut(nullptr) {}
+      portOut(nullptr)
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    , cvSourcePorts(nullptr)
+#endif
+    {
+    }
 
 PluginEventData::~PluginEventData() noexcept
 {
     CARLA_SAFE_ASSERT(portIn == nullptr);
     CARLA_SAFE_ASSERT(portOut == nullptr);
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    CARLA_SAFE_ASSERT(cvSourcePorts == nullptr);
+#endif
 }
 
 void PluginEventData::clear() noexcept
@@ -163,6 +171,10 @@ void PluginEventData::clear() noexcept
         delete portOut;
         portOut = nullptr;
     }
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    cvSourcePorts = nullptr;
+#endif
 }
 
 void PluginEventData::initBuffers() const noexcept
@@ -206,7 +218,9 @@ void PluginParameterData::createNew(const uint32_t newCount, const bool withSpec
     {
         data[i].index  = PARAMETER_NULL;
         data[i].rindex = PARAMETER_NULL;
-        data[i].midiCC = -1;
+        data[i].mappedControlIndex = CONTROL_INDEX_NONE;
+        data[i].mappedMinimum = -1.0f;
+        data[i].mappedMaximum = 1.0f;
     }
 
     ranges = new ParameterRanges[newCount];
@@ -244,7 +258,7 @@ void PluginParameterData::clear() noexcept
     count = 0;
 }
 
-float PluginParameterData::getFixedValue(const uint32_t parameterId, const float& value) const noexcept
+float PluginParameterData::getFixedValue(const uint32_t parameterId, float value) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < count, 0.0f);
 
@@ -750,6 +764,7 @@ void CarlaPlugin::ProtectedData::postponeRtEvent(const PluginPostRtEvent& rtEven
 }
 
 void CarlaPlugin::ProtectedData::postponeRtEvent(const PluginPostRtEventType type,
+                                                 const bool sendCallbackLater,
                                                  const int32_t value1,
                                                  const int32_t value2,
                                                  const int32_t value3,
@@ -757,7 +772,7 @@ void CarlaPlugin::ProtectedData::postponeRtEvent(const PluginPostRtEventType typ
 {
     CARLA_SAFE_ASSERT_RETURN(type != kPluginPostRtEventNull,);
 
-    PluginPostRtEvent rtEvent = { type, value1, value2, value3, valuef };
+    PluginPostRtEvent rtEvent = { type, sendCallbackLater, value1, value2, value3, valuef };
 
     postRtEvents.appendRT(rtEvent);
 }

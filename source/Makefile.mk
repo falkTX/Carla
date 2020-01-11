@@ -94,10 +94,9 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Set USING_JUCE
 
-# Not ready yet
-# ifeq ($(MACOS_OR_WIN32),true)
-# USING_JUCE=true
-# endif
+ifeq ($(MACOS_OR_WIN32),true)
+USING_JUCE=true
+endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Set build and link flags
@@ -119,7 +118,7 @@ endif
 
 ifeq ($(NOOPT),true)
 # No CPU-specific optimization flags
-BASE_OPTS  = -O2 -ffast-math -fdata-sections -ffunction-sections
+BASE_OPTS  = -O2 -ffast-math -fdata-sections -ffunction-sections -DBUILDING_CARLA_NOOPT
 endif
 
 ifeq ($(WIN32),true)
@@ -176,12 +175,14 @@ endif
 ifeq ($(TESTBUILD),true)
 BASE_FLAGS += -Werror -Wabi=98 -Wcast-qual -Wclobbered -Wconversion -Wdisabled-optimization
 BASE_FLAGS += -Wdouble-promotion -Wfloat-equal -Wlogical-op -Wpointer-arith -Wsign-conversion
-BASE_FLAGS += -Wformat=2 -Woverlength-strings -Wstringop-overflow=4 -Wstringop-truncation
+BASE_FLAGS += -Wformat=2 -Woverlength-strings
+BASE_FLAGS += -Wformat-truncation=2 -Wformat-overflow=2
+BASE_FLAGS += -Wstringop-overflow=4 -Wstringop-truncation
 BASE_FLAGS += -Wmissing-declarations -Wredundant-decls
 BASE_FLAGS += -Wshadow  -Wundef -Wuninitialized -Wunused
 BASE_FLAGS += -Wstrict-aliasing -fstrict-aliasing
 BASE_FLAGS += -Wstrict-overflow -fstrict-overflow
-BASE_FLAGS += -Wduplicated-branches -Wduplicated-cond  -Wnull-dereference
+BASE_FLAGS += -Wduplicated-branches -Wduplicated-cond -Wnull-dereference
 CFLAGS     += -Winit-self -Wjump-misses-init -Wmissing-prototypes -Wnested-externs -Wstrict-prototypes -Wwrite-strings
 CXXFLAGS   += -Wc++0x-compat -Wc++11-compat
 CXXFLAGS   += -Wnon-virtual-dtor -Woverloaded-virtual
@@ -218,10 +219,9 @@ HAVE_HYLIA = true
 endif
 endif
 
-# FIXME make mingw compatible
-# ifeq ($(WIN32),true)
-# HAVE_HYLIA = true
-# endif
+ifeq ($(WIN32),true)
+HAVE_HYLIA = true
+endif
 
 ifeq ($(MACOS_OR_WIN32),true)
 HAVE_DGL   = true
@@ -318,8 +318,9 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Set PyQt tools, part2
 
-PYUIC ?= pyuic5
-PYRCC ?= pyrcc5
+PYRCC ?= $(PYRCC5)
+PYUIC ?= $(PYUIC5)
+
 ifeq ($(HAVE_QT5),true)
 HAVE_THEME = true
 endif
@@ -418,6 +419,11 @@ ifeq ($(HAVE_JACK),true)
 JACK_FLAGS  = $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags jack)
 JACK_LIBS   = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs jack)
 JACK_LIBDIR = $(shell pkg-config --variable=libdir jack)/jack
+endif
+
+ifeq ($(HAVE_QT5),true)
+QT5_FLAGS = $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags Qt5Core Qt5Gui Qt5Widgets)
+QT5_LIBS  = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs Qt5Core Qt5Gui Qt5Widgets)
 endif
 
 ifeq ($(HAVE_SNDFILE),true)
@@ -521,6 +527,7 @@ endif
 
 ifeq ($(WIN32),true)
 HYLIA_FLAGS      = -DLINK_PLATFORM_WINDOWS=1
+HYLIA_LIBS       = -liphlpapi
 JACKBRIDGE_LIBS  = -lpthread
 LILV_LIBS        = -lm
 RTMEMPOOL_LIBS   = -lpthread
@@ -538,6 +545,9 @@ endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
+
+AUDIO_DECODER_LIBS  = $(FFMPEG_LIBS)
+AUDIO_DECODER_LIBS += $(SNDFILE_LIBS)
 
 NATIVE_PLUGINS_LIBS += $(DGL_LIBS)
 NATIVE_PLUGINS_LIBS += $(FFMPEG_LIBS)

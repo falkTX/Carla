@@ -18,6 +18,7 @@
 #include "libjack.hpp"
 
 #include "CarlaThread.hpp"
+#include "CarlaJuceUtils.hpp"
 
 #include <signal.h>
 #include <sys/prctl.h>
@@ -186,6 +187,9 @@ public:
 
         fSessionManager = static_cast<uint>(libjackSetup[4] - '0');
         fSetupHints     = static_cast<uint>(libjackSetup[5] - '0');
+
+        if (fSetupHints & LIBJACK_FLAG_MIDI_OUTPUT_CHANNEL_MIXDOWN)
+            fServer.numMidiOuts = 16;
 
         jack_carla_interposed_action(LIBJACK_INTERPOSER_ACTION_SET_HINTS_AND_CALLBACK,
                                      fSetupHints,
@@ -395,7 +399,7 @@ bool CarlaJackAppClient::initSharedMemmory()
     CARLA_SAFE_ASSERT_RETURN(opcode == kPluginBridgeNonRtClientVersion, false);
 
     const uint32_t apiVersion = fShmNonRtClientControl.readUInt();
-    CARLA_SAFE_ASSERT_RETURN(apiVersion == CARLA_PLUGIN_BRIDGE_API_VERSION, false);
+    CARLA_SAFE_ASSERT_RETURN(apiVersion == CARLA_PLUGIN_BRIDGE_API_VERSION_CURRENT, false);
 
     const uint32_t shmRtClientDataSize = fShmNonRtClientControl.readUInt();
     CARLA_SAFE_ASSERT_INT2(shmRtClientDataSize == sizeof(BridgeRtClientData), shmRtClientDataSize, sizeof(BridgeRtClientData));
@@ -655,7 +659,9 @@ bool CarlaJackAppClient::handleRtData()
                 CARLA_SAFE_ASSERT_BREAK(fShmAudioPool.data != nullptr);
 
                 // mixdown is default, do buffer addition (for multiple clients) if requested
-                const bool doBufferAddition = fSetupHints & 0x10;
+                const bool doBufferAddition  = fSetupHints & LIBJACK_FLAG_AUDIO_BUFFERS_ADDITION;
+                // mixdown midi outputs based on channel if requested
+                const bool doMidiChanMixdown = fSetupHints & LIBJACK_FLAG_MIDI_OUTPUT_CHANNEL_MIXDOWN;
 
                 // location to start of audio outputs (shm buffer)
                 float* const fdataRealOuts = fShmAudioPool.data+(fServer.bufferSize*fServer.numAudioIns);
@@ -665,12 +671,17 @@ bool CarlaJackAppClient::handleRtData()
 
                 if (! fClients.isEmpty())
                 {
-                    // save tranport for all clients
+                    // save transport for all clients
                     const BridgeTimeInfo& bridgeTimeInfo(fShmRtClientControl.data->timeInfo);
+
+                    const bool transportChanged = fServer.playing != bridgeTimeInfo.playing ||
+                                                  (bridgeTimeInfo.playing && fServer.position.frame + frames != bridgeTimeInfo.frame);
 
                     fServer.playing        = bridgeTimeInfo.playing;
                     fServer.position.frame = static_cast<jack_nframes_t>(bridgeTimeInfo.frame);
                     fServer.position.usecs = bridgeTimeInfo.usecs;
+
+                    fServer.position.frame_rate = static_cast<jack_nframes_t>(fServer.sampleRate);
 
                     if (bridgeTimeInfo.validFlags & kPluginBridgeTimeInfoValidBBT)
                     {
@@ -700,8 +711,7 @@ bool CarlaJackAppClient::handleRtData()
                         JackClientState* const jclient(it.getValue(nullptr));
                         CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
 
-                        // FIXME - lock if offline
-                        const CarlaMutexTryLocker cmtl2(jclient->mutex);
+                        const CarlaMutexTryLocker cmtl2(jclient->mutex, fIsOffline);
 
                         // check if we can process
                         if (cmtl2.wasNotLocked() || jclient->processCb == nullptr || ! jclient->activated)
@@ -714,6 +724,14 @@ bool CarlaJackAppClient::handleRtData()
                         }
                         else
                         {
+                            // report transport sync changes if needed
+                            if (transportChanged && jclient->syncCb != nullptr)
+                            {
+                                jclient->syncCb(fServer.playing ? JackTransportRolling : JackTransportStopped,
+                                                &fServer.position,
+                                                jclient->syncCbPtr);
+                            }
+
                             uint8_t i;
                             // direct access to shm buffer, used only for inputs
                             float* fdataReal = fShmAudioPool.data;
@@ -755,7 +773,7 @@ bool CarlaJackAppClient::handleRtData()
                             // location to start of audio outputs
                             float* const fdataCopyOuts = fdataCopy;
 
-                            // set audio ouputs
+                            // set audio outputs
                             i = 0;
                             for (LinkedList<JackPortState*>::Itenerator it2 = jclient->audioOuts.begin2(); it2.valid(); it2.next())
                             {
@@ -869,7 +887,7 @@ bool CarlaJackAppClient::handleRtData()
 
                 if (fServer.numMidiOuts > 0)
                 {
-                    uint8_t* midiData(fShmRtClientControl.data->midiOut);
+                    uint8_t* midiData = fShmRtClientControl.data->midiOut;
                     carla_zeroBytes(midiData, kBridgeBaseMidiOutHeaderSize);
                     std::size_t curMidiDataPos = 0;
 
@@ -884,12 +902,16 @@ bool CarlaJackAppClient::handleRtData()
                             if (curMidiDataPos + kBridgeBaseMidiOutHeaderSize + jmevent.size >= kBridgeRtClientDataMidiOutSize)
                                 break;
 
+                            if (doMidiChanMixdown && MIDI_IS_CHANNEL_MESSAGE(jmevent.buffer[0]))
+                                jmevent.buffer[0] = static_cast<jack_midi_data_t>(
+                                                    (jmevent.buffer[0] & MIDI_STATUS_BIT) | (i & MIDI_CHANNEL_BIT));
+
                             // set time
                             *(uint32_t*)midiData = jmevent.time;
                             midiData += 4;
 
                             // set port
-                            *midiData++ = i;
+                            *midiData++ = doMidiChanMixdown ? 0 : i;
 
                             // set size
                             *midiData++ = static_cast<uint8_t>(jmevent.size);
@@ -902,16 +924,63 @@ bool CarlaJackAppClient::handleRtData()
                         }
                     }
 
+                    // make last event null, so server stops when reaching it
                     if (curMidiDataPos != 0 &&
                         curMidiDataPos + kBridgeBaseMidiOutHeaderSize < kBridgeRtClientDataMidiOutSize)
+                    {
                         carla_zeroBytes(midiData, kBridgeBaseMidiOutHeaderSize);
 
+                        // sort events in case of mixdown
+                        if (doMidiChanMixdown)
+                        {
+                            uint32_t time;
+                            uint8_t size, *midiDataPtr;
+                            uint8_t tmp[kBridgeBaseMidiOutHeaderSize + JackMidiPortBufferBase::kMaxEventSize];
+                            bool wasSorted = true;
+
+                            for (; wasSorted;)
+                            {
+                                midiDataPtr = fShmRtClientControl.data->midiOut;
+                                uint8_t* prevData = midiDataPtr;
+                                uint32_t prevTime = *(uint32_t*)midiDataPtr;
+                                uint8_t prevSize = *(midiDataPtr + 5);
+                                wasSorted = false;
+
+                                for (;;)
+                                {
+                                    time = *(uint32_t*)midiDataPtr;
+                                    size = *(midiDataPtr + 5); // time and port
+
+                                    if (size == 0)
+                                        break;
+
+                                    if (prevTime > time)
+                                    {
+                                        // copy previous data to a temporary place
+                                        std::memcpy(tmp, prevData, kBridgeBaseMidiOutHeaderSize + prevSize);
+                                        // override previous data with new one (shifting left)
+                                        std::memcpy(prevData, midiDataPtr, kBridgeBaseMidiOutHeaderSize + size);
+                                        // override new data with old one
+                                        std::memcpy(midiDataPtr, tmp, kBridgeBaseMidiOutHeaderSize + prevSize);
+                                        // done swapping, flag it
+                                        wasSorted = true;
+                                    }
+
+                                    prevTime = time;
+                                    prevSize = size;
+                                    prevData = midiDataPtr;
+                                    midiDataPtr += 6 + size;
+                                }
+                            }
+                        }
+                    }
                 }
             }
             else
             {
                 carla_stderr2("CarlaJackAppClient: fRealtimeThreadMutex tryLock failed");
             }
+            fServer.monotonic_frame += frames;
             break;
         }
 
@@ -953,7 +1022,8 @@ bool CarlaJackAppClient::handleNonRtData()
 
         case kPluginBridgeNonRtClientVersion: {
             const uint apiVersion = fShmNonRtServerControl.readUInt();
-            CARLA_SAFE_ASSERT_UINT2(apiVersion == CARLA_PLUGIN_BRIDGE_API_VERSION, apiVersion, CARLA_PLUGIN_BRIDGE_API_VERSION);
+            CARLA_SAFE_ASSERT_UINT2(apiVersion == CARLA_PLUGIN_BRIDGE_API_VERSION_CURRENT,
+                                    apiVersion, CARLA_PLUGIN_BRIDGE_API_VERSION_CURRENT);
         }   break;
 
         case kPluginBridgeNonRtClientPing: {
@@ -981,7 +1051,8 @@ bool CarlaJackAppClient::handleNonRtData()
 
         case kPluginBridgeNonRtClientSetParameterValue:
         case kPluginBridgeNonRtClientSetParameterMidiChannel:
-        case kPluginBridgeNonRtClientSetParameterMidiCC:
+        case kPluginBridgeNonRtClientSetParameterMappedControlIndex:
+        case kPluginBridgeNonRtClientSetParameterMappedRange:
         case kPluginBridgeNonRtClientSetProgram:
         case kPluginBridgeNonRtClientSetMidiProgram:
         case kPluginBridgeNonRtClientSetCustomData:
@@ -991,6 +1062,10 @@ bool CarlaJackAppClient::handleNonRtData()
         case kPluginBridgeNonRtClientSetOption:
             fShmNonRtClientControl.readUInt();
             fShmNonRtClientControl.readBool();
+            break;
+
+        case kPluginBridgeNonRtClientSetOptions:
+            fShmNonRtClientControl.readUInt();
             break;
 
         case kPluginBridgeNonRtClientSetCtrlChannel:

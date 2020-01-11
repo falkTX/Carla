@@ -30,10 +30,8 @@ namespace link
 
 struct HostTime
 {
-  enum
-  {
-    key = '__ht'
-  };
+  static const std::int32_t key = '__ht';
+  static_assert(key == 0x5f5f6874, "Unexpected byte order");
 
   HostTime() = default;
 
@@ -66,12 +64,10 @@ struct HostTime
   std::chrono::microseconds time;
 };
 
-struct GHostTime : HostTime
+struct GHostTime
 {
-  enum
-  {
-    key = '__gt'
-  };
+  static const std::int32_t key = '__gt';
+  static_assert(key == 0x5f5f6774, "Unexpected byte order");
 
   GHostTime() = default;
 
@@ -106,10 +102,8 @@ struct GHostTime : HostTime
 
 struct PrevGHostTime
 {
-  enum
-  {
-    key = '_pgt'
-  };
+  static const std::int32_t key = '_pgt';
+  static_assert(key == 0x5f706774, "Unexpected byte order");
 
   PrevGHostTime() = default;
 

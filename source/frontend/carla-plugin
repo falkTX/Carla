@@ -1,0 +1,606 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# Carla plugin host (plugin UI)
+# Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of
+# the License, or any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# For a full copy of the GNU General Public License see the GPL.txt file
+
+# ------------------------------------------------------------------------------------------------------------
+# Imports (Global)
+
+from PyQt5.QtGui import QKeySequence, QMouseEvent
+from PyQt5.QtWidgets import QSplitter
+
+# ------------------------------------------------------------------------------------------------------------
+# Imports (Custom Stuff)
+
+from carla_host import *
+from externalui import ExternalUI
+
+# ------------------------------------------------------------------------------------------------------------
+# Host Plugin object
+
+class PluginHost(CarlaHostQtPlugin):
+    def __init__(self):
+        CarlaHostQtPlugin.__init__(self)
+
+        if False:
+            # kdevelop likes this :)
+            self.fExternalUI = ExternalUI()
+
+        # ---------------------------------------------------------------
+
+        self.fExternalUI = None
+
+    # -------------------------------------------------------------------
+
+    def setExternalUI(self, extUI):
+        self.fExternalUI = extUI
+
+    def sendMsg(self, lines):
+        if self.fExternalUI is None:
+            return False
+
+        return self.fExternalUI.send(lines)
+
+    # -------------------------------------------------------------------
+
+    def engine_init(self, driverName, clientName):
+        return True
+
+    def engine_close(self):
+        return True
+
+    def engine_idle(self):
+        self.fExternalUI.idleExternalUI()
+
+    def is_engine_running(self):
+        if self.fExternalUI is None:
+            return False
+
+        return self.fExternalUI.isRunning()
+
+    def set_engine_about_to_close(self):
+        return True
+
+    def get_host_osc_url_tcp(self):
+        return self.tr("(OSC TCP port not provided in Plugin version)")
+
+# ------------------------------------------------------------------------------------------------------------
+# Main Window
+
+class CarlaMiniW(ExternalUI, HostWindow):
+    def __init__(self, host, isPatchbay, parent=None):
+        ExternalUI.__init__(self)
+        HostWindow.__init__(self, host, isPatchbay, parent)
+
+        if False:
+            # kdevelop likes this :)
+            host = PluginHost()
+
+        self.host = host
+
+        host.setExternalUI(self)
+
+        self.fFirstInit = True
+
+        self.setWindowTitle(self.fUiName)
+        self.ready()
+
+    # Override this as it can be called from several places.
+    # We really need to close all UIs as events are driven by host idle which is only available when UI is visible
+    def closeExternalUI(self):
+        for i in reversed(range(self.fPluginCount)):
+            self.host.show_custom_ui(i, False)
+
+        ExternalUI.closeExternalUI(self)
+
+    # -------------------------------------------------------------------
+    # ExternalUI Callbacks
+
+    def uiShow(self):
+        if self.parent() is not None:
+            return
+        self.show()
+
+    def uiFocus(self):
+        if self.parent() is not None:
+            return
+
+        self.setWindowState((self.windowState() & ~Qt.WindowMinimized) | Qt.WindowActive)
+        self.show()
+
+        self.raise_()
+        self.activateWindow()
+
+    def uiHide(self):
+        if self.parent() is not None:
+            return
+        self.hide()
+
+    def uiQuit(self):
+        self.closeExternalUI()
+        self.close()
+
+        if self != gui:
+            gui.close()
+
+        # there might be other qt windows open which will block carla-plugin from quitting
+        app.quit()
+
+    def uiTitleChanged(self, uiTitle):
+        self.setWindowTitle(uiTitle)
+
+    # -------------------------------------------------------------------
+    # Qt events
+
+    def closeEvent(self, event):
+        self.closeExternalUI()
+        HostWindow.closeEvent(self, event)
+
+        # there might be other qt windows open which will block carla-plugin from quitting
+        app.quit()
+
+    # -------------------------------------------------------------------
+    # Custom callback
+
+    def msgCallback(self, msg):
+        try:
+            self.msgCallback2(msg)
+        except:
+            print("msgCallback error, skipped for", msg)
+
+    def msgCallback2(self, msg):
+        msg = charPtrToString(msg)
+
+        #if not msg:
+            #return
+
+        if msg == "runtime-info":
+            values = self.readlineblock().split(":")
+            load = float(values[0])
+            xruns = int(values[1])
+            self.host._set_runtime_info(load, xruns)
+
+        elif msg == "transport":
+            playing = bool(self.readlineblock() == "true")
+            frame, bar, beat, tick = [int(i) for i in self.readlineblock().split(":")]
+            bpm = float(self.readlineblock())
+            self.host._set_transport(playing, frame, bar, beat, tick, bpm)
+
+        elif msg.startswith("PEAKS_"):
+            pluginId = int(msg.replace("PEAKS_", ""))
+            in1, in2, out1, out2 = [float(i) for i in self.readlineblock().split(":")]
+            self.host._set_peaks(pluginId, in1, in2, out1, out2)
+
+        elif msg.startswith("PARAMVAL_"):
+            pluginId, paramId = [int(i) for i in msg.replace("PARAMVAL_", "").split(":")]
+            paramValue = float(self.readlineblock())
+            if paramId < 0:
+                self.host._set_internalValue(pluginId, paramId, paramValue)
+            else:
+                self.host._set_parameterValue(pluginId, paramId, paramValue)
+
+        elif msg.startswith("ENGINE_CALLBACK_"):
+            action   = int(msg.replace("ENGINE_CALLBACK_", ""))
+            pluginId = int(self.readlineblock())
+            value1   = int(self.readlineblock())
+            value2   = int(self.readlineblock())
+            value3   = int(self.readlineblock())
+            valuef   = float(self.readlineblock())
+            valueStr = self.readlineblock().replace("\r", "\n")
+
+            self.host._setViaCallback(action, pluginId, value1, value2, value3, valuef, valueStr)
+            engineCallback(self.host, action, pluginId, value1, value2, value3, valuef, valueStr)
+
+        elif msg.startswith("ENGINE_OPTION_"):
+            option = int(msg.replace("ENGINE_OPTION_", ""))
+            forced = bool(self.readlineblock() == "true")
+            value  = self.readlineblock()
+
+            if self.fFirstInit and not forced:
+                return
+
+            if option == ENGINE_OPTION_PROCESS_MODE:
+                self.host.processMode = int(value)
+            elif option == ENGINE_OPTION_TRANSPORT_MODE:
+                self.host.transportMode = int(value)
+            elif option == ENGINE_OPTION_FORCE_STEREO:
+                self.host.forceStereo = bool(value == "true")
+            elif option == ENGINE_OPTION_PREFER_PLUGIN_BRIDGES:
+                self.host.preferPluginBridges = bool(value == "true")
+            elif option == ENGINE_OPTION_PREFER_UI_BRIDGES:
+                self.host.preferUIBridges = bool(value == "true")
+            elif option == ENGINE_OPTION_UIS_ALWAYS_ON_TOP:
+                self.host.uisAlwaysOnTop = bool(value == "true")
+            elif option == ENGINE_OPTION_MAX_PARAMETERS:
+                self.host.maxParameters = int(value)
+            elif option == ENGINE_OPTION_UI_BRIDGES_TIMEOUT:
+                self.host.uiBridgesTimeout = int(value)
+            elif option == ENGINE_OPTION_PATH_BINARIES:
+                self.host.pathBinaries = value
+            elif option == ENGINE_OPTION_PATH_RESOURCES:
+                self.host.pathResources = value
+
+        elif msg.startswith("PLUGIN_INFO_"):
+            pluginId = int(msg.replace("PLUGIN_INFO_", ""))
+            self.host._add(pluginId)
+
+            type_, category, hints, uniqueId, optsAvail, optsEnabled = [int(i) for i in self.readlineblock().split(":")]
+            filename  = self.readlineblock().replace("\r", "\n")
+            name      = self.readlineblock().replace("\r", "\n")
+            iconName  = self.readlineblock().replace("\r", "\n")
+            realName  = self.readlineblock().replace("\r", "\n")
+            label     = self.readlineblock().replace("\r", "\n")
+            maker     = self.readlineblock().replace("\r", "\n")
+            copyright = self.readlineblock().replace("\r", "\n")
+
+            pinfo = {
+                'type': type_,
+                'category': category,
+                'hints': hints,
+                'optionsAvailable': optsAvail,
+                'optionsEnabled': optsEnabled,
+                'filename': filename,
+                'name':  name,
+                'label': label,
+                'maker': maker,
+                'copyright': copyright,
+                'iconName': iconName,
+                'patchbayClientId': 0,
+                'uniqueId': uniqueId
+            }
+            self.host._set_pluginInfo(pluginId, pinfo)
+            self.host._set_pluginRealName(pluginId, realName)
+
+        elif msg.startswith("AUDIO_COUNT_"):
+            pluginId, ins, outs = [int(i) for i in msg.replace("AUDIO_COUNT_", "").split(":")]
+            self.host._set_audioCountInfo(pluginId, {'ins': ins, 'outs': outs})
+
+        elif msg.startswith("MIDI_COUNT_"):
+            pluginId, ins, outs = [int(i) for i in msg.replace("MIDI_COUNT_", "").split(":")]
+            self.host._set_midiCountInfo(pluginId, {'ins': ins, 'outs': outs})
+
+        elif msg.startswith("PARAMETER_COUNT_"):
+            pluginId, ins, outs, count = [int(i) for i in msg.replace("PARAMETER_COUNT_", "").split(":")]
+            self.host._set_parameterCountInfo(pluginId, count, {'ins': ins, 'outs': outs})
+
+        elif msg.startswith("PARAMETER_DATA_"):
+            pluginId, paramId = [int(i) for i in msg.replace("PARAMETER_DATA_", "").split(":")]
+            paramType, paramHints, mappedControlIndex, midiChannel = [int(i) for i in self.readlineblock().split(":")]
+            mappedMinimum, mappedMaximum = [float(i) for i in self.readlineblock().split(":")]
+            paramName = self.readlineblock().replace("\r", "\n")
+            paramUnit = self.readlineblock().replace("\r", "\n")
+            paramComment = self.readlineblock().replace("\r", "\n")
+            paramGroupName = self.readlineblock().replace("\r", "\n")
+
+            paramInfo = {
+                'name': paramName,
+                'symbol': "",
+                'unit': paramUnit,
+                'comment': paramComment,
+                'groupName': paramGroupName,
+                'scalePointCount': 0,
+            }
+            self.host._set_parameterInfo(pluginId, paramId, paramInfo)
+
+            paramData = {
+                'type': paramType,
+                'hints': paramHints,
+                'index': paramId,
+                'rindex': -1,
+                'midiChannel': midiChannel,
+                'mappedControlIndex': mappedControlIndex,
+                'mappedMinimum': mappedMinimum,
+                'mappedMaximum': mappedMaximum,
+            }
+            self.host._set_parameterData(pluginId, paramId, paramData)
+
+        elif msg.startswith("PARAMETER_RANGES_"):
+            pluginId, paramId = [int(i) for i in msg.replace("PARAMETER_RANGES_", "").split(":")]
+            def_, min_, max_, step, stepSmall, stepLarge = [float(i) for i in self.readlineblock().split(":")]
+
+            paramRanges = {
+                'def': def_,
+                'min': min_,
+                'max': max_,
+                'step': step,
+                'stepSmall': stepSmall,
+                'stepLarge': stepLarge
+            }
+            self.host._set_parameterRanges(pluginId, paramId, paramRanges)
+
+        elif msg.startswith("PROGRAM_COUNT_"):
+            pluginId, count, current = [int(i) for i in msg.replace("PROGRAM_COUNT_", "").split(":")]
+            self.host._set_programCount(pluginId, count)
+            self.host._set_currentProgram(pluginId, current)
+
+        elif msg.startswith("PROGRAM_NAME_"):
+            pluginId, progId = [int(i) for i in msg.replace("PROGRAM_NAME_", "").split(":")]
+            progName = self.readlineblock().replace("\r", "\n")
+            self.host._set_programName(pluginId, progId, progName)
+
+        elif msg.startswith("MIDI_PROGRAM_COUNT_"):
+            pluginId, count, current = [int(i) for i in msg.replace("MIDI_PROGRAM_COUNT_", "").split(":")]
+            self.host._set_midiProgramCount(pluginId, count)
+            self.host._set_currentMidiProgram(pluginId, current)
+
+        elif msg.startswith("MIDI_PROGRAM_DATA_"):
+            pluginId, midiProgId = [int(i) for i in msg.replace("MIDI_PROGRAM_DATA_", "").split(":")]
+            bank, program = [int(i) for i in self.readlineblock().split(":")]
+            name = self.readlineblock().replace("\r", "\n")
+            self.host._set_midiProgramData(pluginId, midiProgId, {'bank': bank, 'program': program, 'name': name})
+
+        elif msg.startswith("CUSTOM_DATA_COUNT_"):
+            pluginId, count = [int(i) for i in msg.replace("CUSTOM_DATA_COUNT_", "").split(":")]
+            self.host._set_customDataCount(pluginId, count)
+
+        elif msg.startswith("CUSTOM_DATA_"):
+            pluginId, customDataId = [int(i) for i in msg.replace("CUSTOM_DATA_", "").split(":")]
+
+            type_ = self.readlineblock().replace("\r", "\n")
+            key   = self.readlineblock().replace("\r", "\n")
+            value = self.readlineblock().replace("\r", "\n")
+            self.host._set_customData(pluginId, customDataId, {'type': type_, 'key': key, 'value': value})
+
+        elif msg == "osc-urls":
+            tcp = self.readlineblock().replace("\r", "\n")
+            udp = self.readlineblock().replace("\r", "\n")
+            self.host.fOscTCP = tcp
+            self.host.fOscUDP = udp
+
+        elif msg == "max-plugin-number":
+            maxnum = int(self.readlineblock())
+            self.host.fMaxPluginNumber = maxnum
+
+        elif msg == "buffer-size":
+            bufsize = int(self.readlineblock())
+            self.host.fBufferSize = bufsize
+
+        elif msg == "sample-rate":
+            srate = float(self.readlineblock())
+            self.host.fSampleRate = srate
+
+        elif msg == "error":
+            error = self.readlineblock().replace("\r", "\n")
+            engineCallback(self.host, ENGINE_CALLBACK_ERROR, 0, 0, 0, 0, 0.0, error)
+
+        elif msg == "show":
+            self.fFirstInit = False
+            self.uiShow()
+
+        elif msg == "focus":
+            self.uiFocus()
+
+        elif msg == "hide":
+            self.uiHide()
+
+        elif msg == "quit":
+            self.fQuitReceived = True
+            self.uiQuit()
+
+        elif msg == "uiTitle":
+            uiTitle = self.readlineblock().replace("\r", "\n")
+            self.uiTitleChanged(uiTitle)
+
+        else:
+            print("unknown message: \"" + msg + "\"")
+
+# ------------------------------------------------------------------------------------------------------------
+# Embed Widget
+
+class QEmbedWidget(QWidget):
+    def __init__(self, winId):
+        QWidget.__init__(self)
+        self.setAttribute(Qt.WA_LayoutUsesWidgetRect)
+        self.move(0, 0)
+
+        self.fPos = (0, 0)
+        self.fWinId = 0
+
+    def finalSetup(self, gui, winId):
+        self.fWinId = int(self.winId())
+        gui.ui.centralwidget.installEventFilter(self)
+        gui.ui.menubar.installEventFilter(self)
+        gCarla.utils.x11_reparent_window(self.fWinId, winId)
+        self.show()
+
+    def fixPosition(self):
+        pos = gCarla.utils.x11_get_window_pos(self.fWinId)
+        if self.fPos == pos:
+            return
+        self.fPos = pos
+        self.move(pos[0], pos[1])
+        gCarla.utils.x11_move_window(self.fWinId, pos[2], pos[3])
+
+    def eventFilter(self, obj, ev):
+        if isinstance(ev, QMouseEvent):
+            self.fixPosition()
+        return False
+
+    def enterEvent(self, ev):
+        self.fixPosition()
+        QWidget.enterEvent(self, ev)
+
+# ------------------------------------------------------------------------------------------------------------
+# Embed plugin UI
+
+class CarlaEmbedW(QEmbedWidget):
+    def __init__(self, host, winId, isPatchbay):
+        QEmbedWidget.__init__(self, winId)
+
+        if False:
+            host = CarlaHostPlugin()
+
+        self.host = host
+        self.fWinId = winId
+        self.setFixedSize(1024, 712)
+
+        self.fLayout = QVBoxLayout(self)
+        self.fLayout.setContentsMargins(0, 0, 0, 0)
+        self.fLayout.setSpacing(0)
+        self.setLayout(self.fLayout)
+
+        self.gui = CarlaMiniW(host, isPatchbay, self)
+        self.gui.hide()
+
+        self.gui.ui.act_file_quit.setEnabled(False)
+        self.gui.ui.act_file_quit.setVisible(False)
+
+        self.fShortcutActions = []
+        self.addShortcutActions(self.gui.ui.menu_File.actions())
+        self.addShortcutActions(self.gui.ui.menu_Plugin.actions())
+        self.addShortcutActions(self.gui.ui.menu_PluginMacros.actions())
+        self.addShortcutActions(self.gui.ui.menu_Settings.actions())
+        self.addShortcutActions(self.gui.ui.menu_Help.actions())
+
+        if self.host.processMode == ENGINE_PROCESS_MODE_PATCHBAY:
+            self.addShortcutActions(self.gui.ui.menu_Canvas.actions())
+            self.addShortcutActions(self.gui.ui.menu_Canvas_Zoom.actions())
+
+        self.addWidget(self.gui.ui.menubar)
+        self.addLine()
+        self.addWidget(self.gui.ui.toolBar)
+
+        if self.host.processMode == ENGINE_PROCESS_MODE_PATCHBAY:
+            self.addLine()
+
+        self.fCentralSplitter = QSplitter(self)
+        policy = self.fCentralSplitter.sizePolicy()
+        policy.setVerticalStretch(1)
+        self.fCentralSplitter.setSizePolicy(policy)
+
+        self.addCentralWidget(self.gui.ui.dockWidget)
+        self.addCentralWidget(self.gui.centralWidget())
+        self.fLayout.addWidget(self.fCentralSplitter)
+
+        self.finalSetup(self.gui, winId)
+
+    def addShortcutActions(self, actions):
+        for action in actions:
+            if not action.shortcut().isEmpty():
+                self.fShortcutActions.append(action)
+
+    def addWidget(self, widget):
+        widget.setParent(self)
+        self.fLayout.addWidget(widget)
+
+    def addCentralWidget(self, widget):
+        widget.setParent(self)
+        self.fCentralSplitter.addWidget(widget)
+
+    def addLine(self):
+        line = QFrame(self)
+        line.setFrameShadow(QFrame.Sunken)
+        line.setFrameShape(QFrame.HLine)
+        line.setLineWidth(0)
+        line.setMidLineWidth(1)
+        self.fLayout.addWidget(line)
+
+    def keyPressEvent(self, event):
+        modifiers    = event.modifiers()
+        modifiersStr = ""
+
+        if modifiers & Qt.ShiftModifier:
+            modifiersStr += "Shift+"
+        if modifiers & Qt.ControlModifier:
+            modifiersStr += "Ctrl+"
+        if modifiers & Qt.AltModifier:
+            modifiersStr += "Alt+"
+        if modifiers & Qt.MetaModifier:
+            modifiersStr += "Meta+"
+
+        keyStr = QKeySequence(event.key()).toString()
+        keySeq = QKeySequence(modifiersStr + keyStr)
+
+        for action in self.fShortcutActions:
+            if not action.isEnabled():
+                continue
+            if keySeq.matches(action.shortcut()) != QKeySequence.ExactMatch:
+                continue
+            event.accept()
+            action.trigger()
+            return
+
+        QEmbedWidget.keyPressEvent(self, event)
+
+    def showEvent(self, event):
+        QEmbedWidget.showEvent(self, event)
+
+        # set our gui as parent for all plugins UIs
+        if self.host.manageUIs:
+            winIdStr = "%x" % self.fWinId
+            self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, winIdStr)
+
+    def hideEvent(self, event):
+        # disable parent
+        self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, "0")
+
+        QEmbedWidget.hideEvent(self, event)
+
+    def closeEvent(self, event):
+        self.gui.close()
+        self.gui.closeExternalUI()
+        QEmbedWidget.closeEvent(self, event)
+
+        # there might be other qt windows open which will block carla-plugin from quitting
+        app.quit()
+
+    def setLoadRDFsNeeded(self):
+        self.gui.setLoadRDFsNeeded()
+
+# ------------------------------------------------------------------------------------------------------------
+# Main
+
+if __name__ == '__main__':
+    # -------------------------------------------------------------
+    # App initialization
+
+    app = CarlaApplication("Carla2-Plugin")
+
+    # -------------------------------------------------------------
+    # Set-up custom signal handling
+
+    setUpSignals()
+
+    # -------------------------------------------------------------
+    # Init host backend
+
+    isPatchbay = sys.argv[0].rsplit(os.path.sep)[-1].lower().replace(".exe","") == "carla-plugin-patchbay"
+
+    host = initHost("Carla-Plugin", None, False, True, True, PluginHost)
+    host.processMode       = ENGINE_PROCESS_MODE_PATCHBAY if isPatchbay else ENGINE_PROCESS_MODE_CONTINUOUS_RACK
+    host.processModeForced = True
+    host.nextProcessMode   = host.processMode
+    loadHostSettings(host)
+
+    # -------------------------------------------------------------
+    # Create GUI
+
+    try:
+        winId = int(os.getenv("CARLA_PLUGIN_EMBED_WINID"))
+    except:
+        winId = 0
+
+    gCarla.utils.setenv("CARLA_PLUGIN_EMBED_WINID", "0")
+
+    if LINUX and winId != 0:
+        gui = CarlaEmbedW(host, winId, isPatchbay)
+    else:
+        gui = CarlaMiniW(host, isPatchbay)
+
+    # -------------------------------------------------------------
+    # App-Loop
+
+    app.exit_exec()

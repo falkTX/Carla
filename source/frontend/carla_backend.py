@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla Backend code
-# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -155,7 +155,7 @@ MAX_PATCHBAY_PLUGINS = 255
 MAX_DEFAULT_PARAMETERS = 200
 
 # The "plugin Id" for the global Carla instance.
-# Curently only used for audio peaks.
+# Currently only used for audio peaks.
 MAIN_CARLA_PLUGIN_ID = 0xFFFF
 
 # ------------------------------------------------------------------------------------------------------------
@@ -258,6 +258,10 @@ PLUGIN_OPTION_SEND_ALL_SOUND_OFF = 0x100
 # @note: This option conflicts with PLUGIN_OPTION_MAP_PROGRAM_CHANGES and cannot be used at the same time.
 PLUGIN_OPTION_SEND_PROGRAM_CHANGES = 0x200
 
+# Special flag to indicate that plugin options are not yet set.
+# This flag exists because 0x0 as an option value is a valid one, so we need something else to indicate "null-ness".
+PLUGIN_OPTIONS_NULL = 0x10000
+
 # ------------------------------------------------------------------------------------------------------------
 # Parameter Hints
 # Various parameter hints.
@@ -294,6 +298,9 @@ PARAMETER_USES_SCALEPOINTS = 0x200
 # @see carla_get_parameter_text()
 PARAMETER_USES_CUSTOM_TEXT = 0x400
 
+# Parameter can be turned into a CV control.
+PARAMETER_CAN_BE_CV_CONTROLLED = 0x800
+
 # ------------------------------------------------------------------------------------------------------------
 # Patchbay Port Hints
 # Various patchbay port hints.
@@ -313,6 +320,22 @@ PATCHBAY_PORT_TYPE_MIDI = 0x08
 
 # Patchbay port is of OSC type.
 PATCHBAY_PORT_TYPE_OSC = 0x10
+
+# ------------------------------------------------------------------------------------------------------------
+# Patchbay Port Group Hints
+# Various patchbay port group hints.
+
+# Indicates that this group should be considered the "main" input.
+PATCHBAY_PORT_GROUP_MAIN_INPUT = 0x01
+
+# Indicates that this group should be considered the "main" output.
+PATCHBAY_PORT_GROUP_MAIN_OUTPUT = 0x02
+
+# A stereo port group, where the 1st port is left and the 2nd is right.
+PATCHBAY_PORT_GROUP_STEREO = 0x04
+
+# A mid-side stereo group, where the 1st port is center and the 2nd is side.
+PATCHBAY_PORT_GROUP_MID_SIDE = 0x08
 
 # ------------------------------------------------------------------------------------------------------------
 # Custom Data Types
@@ -372,6 +395,19 @@ BINARY_WIN64 = 4
 BINARY_OTHER = 5
 
 # ------------------------------------------------------------------------------------------------------------
+# File Type
+# File type.
+
+# Null file type.
+FILE_NONE = 0
+
+# Audio file.
+FILE_AUDIO = 1
+
+# MIDI file.
+FILE_MIDI = 2
+
+# ------------------------------------------------------------------------------------------------------------
 # Plugin Type
 # Plugin type.
 # Some files are handled as if they were plugins.
@@ -402,14 +438,20 @@ PLUGIN_VST3 = 6
 # @note MacOS only
 PLUGIN_AU = 7
 
-# SF2 file (SoundFont).
-PLUGIN_SF2 = 8
+# DLS file.
+PLUGIN_DLS = 8
+
+# GIG file.
+PLUGIN_GIG = 9
+
+# SF2/3 file (SoundFont).
+PLUGIN_SF2 = 10
 
 # SFZ file.
-PLUGIN_SFZ = 9
+PLUGIN_SFZ = 11
 
 # JACK application.
-PLUGIN_JACK = 10
+PLUGIN_JACK = 12
 
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Category
@@ -455,7 +497,7 @@ PARAMETER_UNKNOWN = 0
 # Input parameter.
 PARAMETER_INPUT = 1
 
-# Ouput parameter.
+# Output parameter.
 PARAMETER_OUTPUT = 2
 
 # ------------------------------------------------------------------------------------------------------------
@@ -498,6 +540,22 @@ PARAMETER_CTRL_CHANNEL = -8
 PARAMETER_MAX = -9
 
 # ------------------------------------------------------------------------------------------------------------
+# Special Mapped Control Index
+
+# Specially designated mapped control indexes.
+# Values between 0 and 119 (0x77) are reserved for MIDI CC, which uses direct values.
+# @see ParameterData::mappedControlIndex
+
+# Unused control index, meaning no mapping is enabled.
+CONTROL_VALUE_NONE = -1
+
+# CV control index, meaning the parameter is exposed as CV port.
+CONTROL_VALUE_CV = 130
+
+# Special value to indicate MIDI pitchbend.
+CONTROL_VALUE_MIDI_PITCHBEND = 131
+
+# ------------------------------------------------------------------------------------------------------------
 # Engine Callback Opcode
 # Engine callback opcodes.
 # Front-ends must never block indefinitely during a callback.
@@ -538,11 +596,11 @@ ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED = 5
 # @a valuef   New default value
 ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED = 6
 
-# A parameter's MIDI CC has changed.
+# A parameter's mapped control index has changed.
 # @a pluginId Plugin Id
 # @a value1   Parameter index
-# @a value2   New MIDI CC
-ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED = 7
+# @a value2   New control index
+ENGINE_CALLBACK_PARAMETER_MAPPED_CONTROL_INDEX_CHANGED = 7
 
 # A parameter's MIDI channel has changed.
 # @a pluginId Plugin Id
@@ -636,6 +694,7 @@ ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED = 23
 # @a pluginId Client Id
 # @a value1   Port Id
 # @a value2   Port hints
+# @a value3   Port group Id (0 for none)
 # @a valueStr Port name
 # @see PatchbayPortHints
 ENGINE_CALLBACK_PATCHBAY_PORT_ADDED = 24
@@ -645,11 +704,13 @@ ENGINE_CALLBACK_PATCHBAY_PORT_ADDED = 24
 # @a value1   Port Id
 ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED = 25
 
-# A patchbay port has been renamed.
+# A patchbay port has changed (like the name or group Id).
 # @a pluginId Client Id
 # @a value1   Port Id
+# @a value2   Port hints
+# @a value3   Port group Id (0 for none)
 # @a valueStr New port name
-ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED = 26
+ENGINE_CALLBACK_PATCHBAY_PORT_CHANGED = 26
 
 # A patchbay connection has been added.
 # @a pluginId Connection Id
@@ -730,6 +791,33 @@ ENGINE_CALLBACK_QUIT = 41
 # @a pluginId Plugin Id to redraw
 ENGINE_CALLBACK_INLINE_DISPLAY_REDRAW = 42
 
+# A patchbay port group has been added.
+# @a pluginId Client Id
+# @a value1   Group Id (unique within this client)
+# @a value2   Group hints
+# @a valueStr Group name
+# @see PatchbayPortGroupHints
+ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_ADDED = 43
+
+# A patchbay port group has been removed.
+# @a pluginId Client Id
+# @a value1   Group Id (unique within this client)
+ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_REMOVED = 44
+
+# A patchbay port group has changed.
+# @a pluginId Client Id
+# @a value1   Group Id (unique within this client)
+# @a value2   Group hints
+# @a valueStr Group name
+# @see PatchbayPortGroupHints
+ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_CHANGED = 45
+
+# A parameter's mapped range has changed.
+# @a pluginId Plugin Id
+# @a value1   Parameter index
+# @a valueStr New mapped range as "%f:%f" syntax
+ENGINE_CALLBACK_PARAMETER_MAPPED_RANGE_CHANGED = 46
+
 # ------------------------------------------------------------------------------------------------------------
 # NSM Callback Opcode
 # NSM callback opcodes.
@@ -805,87 +893,98 @@ ENGINE_OPTION_UIS_ALWAYS_ON_TOP = 6
 # Default is MAX_DEFAULT_PARAMETERS.
 ENGINE_OPTION_MAX_PARAMETERS = 7
 
+# Reset Xrun counter after project load.
+ENGINE_OPTION_RESET_XRUNS = 8
+
 # Timeout value for how much to wait for UI bridges to respond, in milliseconds.
 # Default is 4000 (4 seconds).
-ENGINE_OPTION_UI_BRIDGES_TIMEOUT = 8
+ENGINE_OPTION_UI_BRIDGES_TIMEOUT = 9
 
 # Audio buffer size.
 # Default is 512.
-ENGINE_OPTION_AUDIO_BUFFER_SIZE = 9
+ENGINE_OPTION_AUDIO_BUFFER_SIZE = 10
 
 # Audio sample rate.
 # Default is 44100.
-ENGINE_OPTION_AUDIO_SAMPLE_RATE = 10
+ENGINE_OPTION_AUDIO_SAMPLE_RATE = 11
 
 # Wherever to use 3 audio periods instead of the default 2.
 # Default is false.
-ENGINE_OPTION_AUDIO_TRIPLE_BUFFER = 11
+ENGINE_OPTION_AUDIO_TRIPLE_BUFFER = 12
+
+# Audio driver.
+# Default dppends on platform.
+ENGINE_OPTION_AUDIO_DRIVER = 13
 
 # Audio device (within a driver).
 # Default unset.
-ENGINE_OPTION_AUDIO_DEVICE = 12
+ENGINE_OPTION_AUDIO_DEVICE = 14
 
 # Wherever to enable OSC support in the engine.
-ENGINE_OPTION_OSC_ENABLED = 13
+ENGINE_OPTION_OSC_ENABLED = 15
 
 # The network TCP port to use for OSC.
 # A value of 0 means use a random port.
 # A value of < 0 means to not enable the TCP port for OSC.
 # @note Valid ports begin at 1024 and end at 32767 (inclusive)
-ENGINE_OPTION_OSC_PORT_TCP = 14
+ENGINE_OPTION_OSC_PORT_TCP = 16
 
 # The network UDP port to use for OSC.
 # A value of 0 means use a random port.
 # A value of < 0 means to not enable the UDP port for OSC.
 # @note Disabling this option prevents DSSI UIs from working!
 # @note Valid ports begin at 1024 and end at 32767 (inclusive)
-ENGINE_OPTION_OSC_PORT_UDP = 15
+ENGINE_OPTION_OSC_PORT_UDP = 17
+
+# Set path used for a specific file type.
+# Uses value as the file format, valueStr as actual path.
+ENGINE_OPTION_FILE_PATH = 18
 
 # Set path used for a specific plugin type.
 # Uses value as the plugin format, valueStr as actual path.
 # @see PluginType
-ENGINE_OPTION_PLUGIN_PATH = 16
+ENGINE_OPTION_PLUGIN_PATH = 19
 
 # Set path to the binary files.
 # Default unset.
 # @note Must be set for plugin and UI bridges to work
-ENGINE_OPTION_PATH_BINARIES = 17
+ENGINE_OPTION_PATH_BINARIES = 20
 
 # Set path to the resource files.
 # Default unset.
 # @note Must be set for some internal plugins to work
-ENGINE_OPTION_PATH_RESOURCES = 18
+ENGINE_OPTION_PATH_RESOURCES = 21
 
 # Prevent bad plugin and UI behaviour.
 # @note: Linux only
-ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 19
+ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 22
 
 # Set UI scaling used in frontend, so backend can do the same for plugin UIs.
-ENGINE_OPTION_FRONTEND_UI_SCALE = 20
+ENGINE_OPTION_FRONTEND_UI_SCALE = 23
 
 # Set frontend winId, used to define as parent window for plugin UIs.
-ENGINE_OPTION_FRONTEND_WIN_ID = 21
+ENGINE_OPTION_FRONTEND_WIN_ID = 24
 
 # Set path to wine executable.
-ENGINE_OPTION_WINE_EXECUTABLE = 22
+ENGINE_OPTION_WINE_EXECUTABLE = 25
 
 # Enable automatic wineprefix detection.
-ENGINE_OPTION_WINE_AUTO_PREFIX = 23
+ENGINE_OPTION_WINE_AUTO_PREFIX = 26
 
 # Fallback wineprefix to use if automatic detection fails or is disabled, and WINEPREFIX is not set.
-ENGINE_OPTION_WINE_FALLBACK_PREFIX = 24
+ENGINE_OPTION_WINE_FALLBACK_PREFIX = 27
 
 # Enable realtime priority for Wine application and server threads.
-ENGINE_OPTION_WINE_RT_PRIO_ENABLED = 25
+ENGINE_OPTION_WINE_RT_PRIO_ENABLED = 28
 
 # Base realtime priority for Wine threads.
-ENGINE_OPTION_WINE_BASE_RT_PRIO = 26
+ENGINE_OPTION_WINE_BASE_RT_PRIO = 29
 
 # Wine server realtime priority.
-ENGINE_OPTION_WINE_SERVER_RT_PRIO = 27
+ENGINE_OPTION_WINE_SERVER_RT_PRIO = 30
 
 # Capture console output into debug callbacks
-ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 28
+ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 31
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine Process Mode
@@ -1003,14 +1102,19 @@ class ParameterData(Structure):
         # Real index as seen by plugins.
         ("rindex", c_int32),
 
-        # Currently mapped MIDI CC.
-        # A value lower than 0 means invalid or unused.
-        # Maximum allowed value is 119 (0x77).
-        ("midiCC", c_int16),
-
         # Currently mapped MIDI channel.
         # Counts from 0 to 15.
-        ("midiChannel", c_uint8)
+        ("midiChannel", c_uint8),
+
+        # Currently mapped index.
+        # @see SpecialMappedControlIndex
+        ("mappedControlIndex", c_int16),
+
+        # Minimum value that this parameter maps to.
+        ("mappedMinimum", c_uint8),
+
+        # Maximum value that this parameter maps to.
+        ("mappedMaximum", c_uint8)
     ]
 
 # Parameter ranges.
@@ -1088,8 +1192,10 @@ PyParameterData = {
     'hints': 0x0,
     'index': PARAMETER_NULL,
     'rindex': -1,
-    'midiCC': -1,
-    'midiChannel': 0
+    'midiChannel': 0,
+    'mappedControlIndex': CONTROL_VALUE_NONE,
+    'mappedMinimum': 0.0,
+    'mappedMaximum': 1.0,
 }
 
 # @see ParameterRanges
@@ -1172,7 +1278,7 @@ class CarlaPluginInfo(Structure):
         ("iconName", c_char_p),
 
         # Plugin unique Id.
-        # This Id is dependant on the plugin type and may sometimes be 0.
+        # This Id is dependent on the plugin type and may sometimes be 0.
         ("uniqueId", c_int64)
     ]
 
@@ -1201,6 +1307,12 @@ class CarlaParameterInfo(Structure):
 
         # Parameter unit.
         ("unit", c_char_p),
+
+        # Parameter comment / documentation.
+        ("comment", c_char_p),
+
+        # Parameter group name.
+        ("groupName", c_char_p),
 
         # Number of scale points.
         # @see CarlaScalePointInfo
@@ -1251,6 +1363,31 @@ class CarlaRuntimeEngineInfo(Structure):
         ("xruns", c_uint32)
     ]
 
+# Runtime engine driver device information.
+class CarlaRuntimeEngineDriverDeviceInfo(Structure):
+    _fields_ = [
+        # Name of the driver device.
+        ("name", c_char_p),
+
+        # This driver device hints.
+        # @see EngineDriverHints
+        ("hints", c_uint),
+
+        # Current buffer size.
+        ("bufferSize", c_uint32),
+
+        # Available buffer sizes.
+        # Terminated with 0.
+        ("bufferSizes", POINTER(c_uint32)),
+
+        # Current sample rate.
+        ("sampleRate", c_double),
+
+        # Available sample rates.
+        # Terminated with 0.0.
+        ("sampleRates", POINTER(c_double))
+    ]
+
 # Image data for LV2 inline display API.
 # raw image pixmap format is ARGB32,
 class CarlaInlineDisplayImageSurface(Structure):
@@ -1291,6 +1428,8 @@ PyCarlaParameterInfo = {
     'name': "",
     'symbol': "",
     'unit': "",
+    'comment': "",
+    'groupName': "",
     'scalePointCount': 0,
 }
 
@@ -1302,18 +1441,28 @@ PyCarlaScalePointInfo = {
 
 # @see CarlaTransportInfo
 PyCarlaTransportInfo = {
-    "playing": False,
-    "frame": 0,
-    "bar": 0,
-    "beat": 0,
-    "tick": 0,
-    "bpm": 0.0
+    'playing': False,
+    'frame': 0,
+    'bar': 0,
+    'beat': 0,
+    'tick': 0,
+    'bpm': 0.0
 }
 
 # @see CarlaRuntimeEngineInfo
 PyCarlaRuntimeEngineInfo = {
-    "load": 0.0,
-    "xruns": 0
+    'load': 0.0,
+    'xruns': 0
+}
+
+# @see CarlaRuntimeEngineDriverDeviceInfo
+PyCarlaRuntimeEngineDriverDeviceInfo = {
+    'name': "",
+    'hints': 0x0,
+    'bufferSize': 0,
+    'bufferSizes': [],
+    'sampleRate': 0.0,
+    'sampleRates': []
 }
 
 # ------------------------------------------------------------------------------------------------------------
@@ -1352,6 +1501,7 @@ class CarlaHostMeta(object):
         self.forceStereo         = False
         self.manageUIs           = False
         self.maxParameters       = 0
+        self.resetXruns          = False
         self.preferPluginBridges = False
         self.preferUIBridges     = False
         self.preventBadBehaviour = False
@@ -1389,6 +1539,14 @@ class CarlaHostMeta(object):
     def get_engine_driver_device_info(self, index, name):
         raise NotImplementedError
 
+    # Show a device custom control panel.
+    # @see ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL
+    # @param index Driver index
+    # @param name  Device name
+    @abstractmethod
+    def show_engine_driver_device_control_panel(self, index, name):
+        raise NotImplementedError
+
     # Initialize the engine.
     # Make sure to call carla_engine_idle() at regular intervals afterwards.
     # @param driverName Driver to use
@@ -1418,6 +1576,22 @@ class CarlaHostMeta(object):
     # Get information about the currently running engine.
     @abstractmethod
     def get_runtime_engine_info(self):
+        raise NotImplementedError
+
+    # Get information about the currently running engine driver device.
+    @abstractmethod
+    def get_runtime_engine_driver_device_info(self):
+        raise NotImplementedError
+
+    # Dynamically change buffer size and/or sample rate while engine is running.
+    # @see ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE
+    # @see ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE
+    def set_engine_buffer_size_and_sample_rate(self, bufferSize, sampleRate):
+        raise NotImplementedError
+
+    # Show the custom control panel for the current engine device.
+    # @see ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL
+    def show_engine_device_control_panel(self):
         raise NotImplementedError
 
     # Clear the xrun count on the engine, so that the next time carla_get_runtime_engine_info() is called, it returns 0.
@@ -1889,7 +2063,7 @@ class CarlaHostMeta(object):
     def set_parameter_value(self, pluginId, parameterId, value):
         raise NotImplementedError
 
-    # Change a plugin's parameter MIDI cc.
+    # Change a plugin's parameter mapped control index.
     # @param pluginId    Plugin
     # @param parameterId Parameter index
     # @param cc          New MIDI cc
@@ -1900,9 +2074,18 @@ class CarlaHostMeta(object):
     # Change a plugin's parameter MIDI channel.
     # @param pluginId    Plugin
     # @param parameterId Parameter index
-    # @param channel     New MIDI channel
+    # @param channel     New control index
     @abstractmethod
-    def set_parameter_midi_cc(self, pluginId, parameterId, cc):
+    def set_parameter_mapped_control_index(self, pluginId, parameterId, index):
+        raise NotImplementedError
+
+    # Change a plugin's parameter mapped range.
+    # @param pluginId    Plugin
+    # @param parameterId Parameter index
+    # @param minimum     New mapped minimum
+    # @param maximum     New mapped maximum
+    @abstractmethod
+    def set_parameter_mapped_range(self, pluginId, parameterId, minimum, maximum):
         raise NotImplementedError
 
     # Change a plugin's parameter in drag/touch mode state.
@@ -2043,6 +2226,9 @@ class CarlaHostNull(CarlaHostMeta):
     def get_engine_driver_device_info(self, index, name):
         return PyEngineDriverDeviceInfo
 
+    def show_engine_driver_device_control_panel(self, index, name):
+        return False
+
     def engine_init(self, driverName, clientName):
         self.fEngineRunning = True
         if self.fEngineCallback is not None:
@@ -2069,6 +2255,15 @@ class CarlaHostNull(CarlaHostMeta):
 
     def get_runtime_engine_info(self):
         return PyCarlaRuntimeEngineInfo
+
+    def get_runtime_engine_driver_device_info(self):
+        return PyCarlaRuntimeEngineDriverDeviceInfo
+
+    def set_engine_buffer_size_and_sample_rate(self, bufferSize, sampleRate):
+        return False
+
+    def show_engine_device_control_panel(self):
+        return False
 
     def clear_engine_xruns(self):
         return
@@ -2277,7 +2472,10 @@ class CarlaHostNull(CarlaHostMeta):
     def set_parameter_midi_channel(self, pluginId, parameterId, channel):
         return
 
-    def set_parameter_midi_cc(self, pluginId, parameterId, cc):
+    def set_parameter_mapped_control_index(self, pluginId, parameterId, index):
+        return
+
+    def set_parameter_mapped_range(self, pluginId, parameterId, minimum, maximum):
         return
 
     def set_parameter_touch(self, pluginId, parameterId, touch):
@@ -2355,6 +2553,9 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_get_engine_driver_device_info.argtypes = [c_uint, c_char_p]
         self.lib.carla_get_engine_driver_device_info.restype = POINTER(EngineDriverDeviceInfo)
 
+        self.lib.carla_show_engine_driver_device_control_panel.argtypes = [c_uint, c_char_p]
+        self.lib.carla_show_engine_driver_device_control_panel.restype = c_bool
+
         self.lib.carla_engine_init.argtypes = [c_char_p, c_char_p]
         self.lib.carla_engine_init.restype = c_bool
 
@@ -2369,6 +2570,15 @@ class CarlaHostDLL(CarlaHostMeta):
 
         self.lib.carla_get_runtime_engine_info.argtypes = None
         self.lib.carla_get_runtime_engine_info.restype = POINTER(CarlaRuntimeEngineInfo)
+
+        self.lib.carla_get_runtime_engine_driver_device_info.argtypes = None
+        self.lib.carla_get_runtime_engine_driver_device_info.restype = POINTER(CarlaRuntimeEngineDriverDeviceInfo)
+
+        self.lib.carla_set_engine_buffer_size_and_sample_rate.argtypes = [c_uint, c_double]
+        self.lib.carla_set_engine_buffer_size_and_sample_rate.restype = c_bool
+
+        self.lib.carla_show_engine_device_control_panel.argtypes = None
+        self.lib.carla_show_engine_device_control_panel.restype = c_bool
 
         self.lib.carla_clear_engine_xruns.argtypes = None
         self.lib.carla_clear_engine_xruns.restype = None
@@ -2577,8 +2787,11 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_set_parameter_midi_channel.argtypes = [c_uint, c_uint32, c_uint8]
         self.lib.carla_set_parameter_midi_channel.restype = None
 
-        self.lib.carla_set_parameter_midi_cc.argtypes = [c_uint, c_uint32, c_int16]
-        self.lib.carla_set_parameter_midi_cc.restype = None
+        self.lib.carla_set_parameter_mapped_control_index.argtypes = [c_uint, c_uint32, c_int16]
+        self.lib.carla_set_parameter_mapped_control_index.restype = None
+
+        self.lib.carla_set_parameter_mapped_range.argtypes = [c_uint, c_uint32, c_float, c_float]
+        self.lib.carla_set_parameter_mapped_range.restype = None
 
         self.lib.carla_set_parameter_touch.argtypes = [c_uint, c_uint32, c_bool]
         self.lib.carla_set_parameter_touch.restype = None
@@ -2625,7 +2838,7 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_get_host_osc_url_udp.argtypes = None
         self.lib.carla_get_host_osc_url_udp.restype = c_char_p
 
-        self.lib.carla_nsm_init.argtypes = [c_int, c_char_p]
+        self.lib.carla_nsm_init.argtypes = [c_uint64, c_char_p]
         self.lib.carla_nsm_init.restype = c_bool
 
         self.lib.carla_nsm_ready.argtypes = [c_int]
@@ -2645,6 +2858,9 @@ class CarlaHostDLL(CarlaHostMeta):
     def get_engine_driver_device_info(self, index, name):
         return structToDict(self.lib.carla_get_engine_driver_device_info(index, name.encode("utf-8")).contents)
 
+    def show_engine_driver_device_control_panel(self, index, name):
+        return bool(self.lib.carla_show_engine_driver_device_control_panel(index, name.encode("utf-8")))
+
     def engine_init(self, driverName, clientName):
         return bool(self.lib.carla_engine_init(driverName.encode("utf-8"), clientName.encode("utf-8")))
 
@@ -2660,11 +2876,20 @@ class CarlaHostDLL(CarlaHostMeta):
     def get_runtime_engine_info(self):
         return structToDict(self.lib.carla_get_runtime_engine_info().contents)
 
+    def get_runtime_engine_driver_device_info(self):
+        return structToDict(self.lib.carla_get_runtime_engine_driver_device_info().contents)
+
+    def set_engine_buffer_size_and_sample_rate(self, bufferSize, sampleRate):
+        return bool(self.lib.carla_set_engine_buffer_size_and_sample_rate(bufferSize, sampleRate))
+
+    def show_engine_device_control_panel(self):
+        return bool(self.lib.carla_show_engine_device_control_panel())
+
     def clear_engine_xruns(self):
-        return self.lib.carla_clear_engine_xruns()
+        self.lib.carla_clear_engine_xruns()
 
     def cancel_engine_action(self):
-        return self.lib.carla_cancel_engine_action()
+        self.lib.carla_cancel_engine_action()
 
     def set_engine_about_to_close(self):
         return bool(self.lib.carla_set_engine_about_to_close())
@@ -2884,8 +3109,11 @@ class CarlaHostDLL(CarlaHostMeta):
     def set_parameter_midi_channel(self, pluginId, parameterId, channel):
         self.lib.carla_set_parameter_midi_channel(pluginId, parameterId, channel)
 
-    def set_parameter_midi_cc(self, pluginId, parameterId, cc):
-        self.lib.carla_set_parameter_midi_cc(pluginId, parameterId, cc)
+    def set_parameter_mapped_control_index(self, pluginId, parameterId, index):
+        self.lib.carla_set_parameter_mapped_control_index(pluginId, parameterId, index)
+
+    def set_parameter_mapped_range(self, pluginId, parameterId, minimum, maximum):
+        self.lib.carla_set_parameter_mapped_range(pluginId, parameterId, minimum, maximum)
 
     def set_parameter_touch(self, pluginId, parameterId, touch):
         self.lib.carla_set_parameter_touch(pluginId, parameterId, touch)
@@ -3038,8 +3266,20 @@ class CarlaHostPlugin(CarlaHostMeta):
     def get_engine_driver_device_info(self, index, name):
         return PyEngineDriverDeviceInfo
 
+    def show_engine_driver_device_control_panel(self, index, name):
+        return False
+
     def get_runtime_engine_info(self):
         return self.fRuntimeEngineInfo
+
+    def get_runtime_engine_driver_device_info(self):
+        return PyCarlaRuntimeEngineDriverDeviceInfo
+
+    def set_engine_buffer_size_and_sample_rate(self, bufferSize, sampleRate):
+        return False
+
+    def show_engine_device_control_panel(self):
+        return False
 
     def clear_engine_xruns(self):
         self.sendMsg(["clear_engine_xruns"])
@@ -3271,11 +3511,16 @@ class CarlaHostPlugin(CarlaHostMeta):
 
     def set_parameter_midi_channel(self, pluginId, parameterId, channel):
         self.sendMsg(["set_parameter_midi_channel", pluginId, parameterId, channel])
-        self.fPluginsInfo[pluginId].parameterData[parameterId]['midiCC'] = channel
+        self.fPluginsInfo[pluginId].parameterData[parameterId]['midiChannel'] = channel
 
-    def set_parameter_midi_cc(self, pluginId, parameterId, cc):
-        self.sendMsg(["set_parameter_midi_cc", pluginId, parameterId, cc])
-        self.fPluginsInfo[pluginId].parameterData[parameterId]['midiCC'] = cc
+    def set_parameter_mapped_control_index(self, pluginId, parameterId, index):
+        self.sendMsg(["set_parameter_mapped_control_index", pluginId, parameterId, index])
+        self.fPluginsInfo[pluginId].parameterData[parameterId]['mappedControlIndex'] = index
+
+    def set_parameter_mapped_range(self, pluginId, parameterId, minimum, maximum):
+        self.sendMsg(["set_parameter_mapped_range", pluginId, parameterId, minimum, maximum])
+        self.fPluginsInfo[pluginId].parameterData[parameterId]['mappedMinimum'] = minimum
+        self.fPluginsInfo[pluginId].parameterData[parameterId]['mappedMaximum'] = maximum
 
     def set_parameter_touch(self, pluginId, parameterId, touch):
         self.sendMsg(["set_parameter_touch", pluginId, parameterId, touch])
@@ -3521,6 +3766,27 @@ class CarlaHostPlugin(CarlaHostMeta):
         else:
             print("_set_parameterDefault failed for", pluginId, "and index", paramIndex)
 
+    def _set_parameterMappedControlIndex(self, pluginId, paramIndex, index):
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_parameterMappedControlIndex failed for", pluginId)
+            return
+        if paramIndex < plugin.parameterCount:
+            plugin.parameterData[paramIndex]['mappedControlIndex'] = index
+        else:
+            print("_set_parameterMappedControlIndex failed for", pluginId, "and index", paramIndex)
+
+    def _set_parameterMappedRange(self, pluginId, paramIndex, minimum, maximum):
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_parameterMappedRange failed for", pluginId)
+            return
+        if paramIndex < plugin.parameterCount:
+            plugin.parameterData[paramIndex]['mappedMinimum'] = minimum
+            plugin.parameterData[paramIndex]['mappedMaximum'] = maximum
+        else:
+            print("_set_parameterMappedRange failed for", pluginId, "and index", paramIndex)
+
     def _set_parameterMidiChannel(self, pluginId, paramIndex, channel):
         plugin = self.fPluginsInfo.get(pluginId, None)
         if plugin is None:
@@ -3530,16 +3796,6 @@ class CarlaHostPlugin(CarlaHostMeta):
             plugin.parameterData[paramIndex]['midiChannel'] = channel
         else:
             print("_set_parameterMidiChannel failed for", pluginId, "and index", paramIndex)
-
-    def _set_parameterMidiCC(self, pluginId, paramIndex, cc):
-        plugin = self.fPluginsInfo.get(pluginId, None)
-        if plugin is None:
-            print("_set_parameterMidiCC failed for", pluginId)
-            return
-        if paramIndex < plugin.parameterCount:
-            plugin.parameterData[paramIndex]['midiCC'] = cc
-        else:
-            print("_set_parameterMidiCC failed for", pluginId, "and index", paramIndex)
 
     def _set_currentProgram(self, pluginId, pIndex):
         plugin = self.fPluginsInfo.get(pluginId, None)
@@ -3619,8 +3875,12 @@ class CarlaHostPlugin(CarlaHostMeta):
         elif action == ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
             self._set_parameterDefault(pluginId, value1, valuef)
 
-        elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
-            self._set_parameterMidiCC(pluginId, value1, value2)
+        elif action == ENGINE_CALLBACK_PARAMETER_MAPPED_CONTROL_INDEX_CHANGED:
+            self._set_parameterMappedControlIndex(pluginId, value1, value2)
+
+        elif action == ENGINE_CALLBACK_PARAMETER_MAPPED_RANGE_CHANGED:
+            minimum, maximum = (float(i) for i in valueStr.split(":"))
+            self._set_parameterMappedRange(pluginId, value1, minimum, maximum)
 
         elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
             self._set_parameterMidiChannel(pluginId, value1, value2)
