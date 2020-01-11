@@ -1,0 +1,118 @@
+diff --git a/src/gui/.obj/qcoregraphics.o b/src/gui/.obj/qcoregraphics.o
+index 00f0647..2d1b7da 100644
+Binary files a/src/gui/.obj/qcoregraphics.o and b/src/gui/.obj/qcoregraphics.o differ
+diff --git a/src/gui/painting/qcoregraphics.mm b/src/gui/painting/qcoregraphics.mm
+index c4fb8af..91875cd 100644
+--- a/src/gui/painting/qcoregraphics.mm
++++ b/src/gui/painting/qcoregraphics.mm
+@@ -47,6 +47,21 @@
+ #include <QtCore/qcoreapplication.h>
+ #include <QtCore/qoperatingsystemversion.h>
+ 
++@interface NSGraphicsContext (QtAdditions)
++
+++ (NSGraphicsContext *)qt_graphicsContextWithCGContext:(CGContextRef)graphicsPort flipped:(BOOL)initialFlippedState;
++
++@end
++
++@implementation NSGraphicsContext (QtAdditions)
++
+++ (NSGraphicsContext *)qt_graphicsContextWithCGContext:(CGContextRef)graphicsPort flipped:(BOOL)initialFlippedState
++{
++    return [self graphicsContextWithGraphicsPort:graphicsPort flipped:initialFlippedState];
++}
++
++@end
++
+ QT_BEGIN_NAMESPACE
+ 
+ // ---------------------- Images ----------------------
+@@ -147,7 +162,7 @@ QPixmap qt_mac_toQPixmap(const NSImage *image, const QSizeF &size)
+     QMacCGContext ctx(&pixmap);
+     if (!ctx)
+         return QPixmap();
+-    NSGraphicsContext *gc = [NSGraphicsContext graphicsContextWithCGContext:ctx flipped:YES];
++    NSGraphicsContext *gc = [NSGraphicsContext qt_graphicsContextWithCGContext:ctx flipped:YES];
+     if (!gc)
+         return QPixmap();
+     [NSGraphicsContext saveGraphicsState];
+diff --git a/src/plugins/platforms/cocoa/qcocoaintegration.mm b/src/plugins/platforms/cocoa/qcocoaintegration.mm
+index bac49cf..83b51cd 100644
+--- a/src/plugins/platforms/cocoa/qcocoaintegration.mm
++++ b/src/plugins/platforms/cocoa/qcocoaintegration.mm
+@@ -144,7 +144,7 @@ void QCocoaScreen::updateGeometry()
+     // The reference screen for the geometry is always the primary screen, but since
+     // we may be in the process of creating and registering the primary screen, we
+     // must special-case that and assign it direcly.
+-    QCocoaScreen *primaryScreen = (nsScreen == [[NSScreen screens] firstObject]) ?
++    QCocoaScreen *primaryScreen = (nsScreen == [[NSScreen screens] objectAtIndex:0]) ?
+         this : static_cast<QCocoaScreen*>(QGuiApplication::primaryScreen()->handle());
+ 
+     m_geometry = primaryScreen->mapFromNative(m_geometry).toRect();
+diff --git a/src/plugins/platforms/cocoa/qcocoawindow.mm b/src/plugins/platforms/cocoa/qcocoawindow.mm
+index 56eb291..5d63dea 100644
+--- a/src/plugins/platforms/cocoa/qcocoawindow.mm
++++ b/src/plugins/platforms/cocoa/qcocoawindow.mm
+@@ -858,12 +858,7 @@ void QCocoaWindow::setVisible(bool visible)
+             applyWindowState(window()->windowState());
+ 
+             if (window()->windowState() != Qt::WindowMinimized) {
+-                if ((window()->modality() == Qt::WindowModal
+-                     || window()->type() == Qt::Sheet)
+-                        && parentCocoaWindow) {
+-                    // show the window as a sheet
+-                    [parentCocoaWindow->m_nsWindow beginSheet:m_nsWindow completionHandler:nil];
+-                } else if (window()->modality() != Qt::NonModal) {
++                if (window()->modality() != Qt::NonModal) {
+                     // show the window as application modal
+                     QCocoaEventDispatcher *cocoaEventDispatcher = qobject_cast<QCocoaEventDispatcher *>(QGuiApplication::instance()->eventDispatcher());
+                     Q_ASSERT(cocoaEventDispatcher != 0);
+@@ -923,11 +918,6 @@ void QCocoaWindow::setVisible(bool visible)
+                 if (cocoaEventDispatcherPrivate)
+                     cocoaEventDispatcherPrivate->endModalSession(window());
+                 m_hasModalSession = false;
+-            } else {
+-                if ([m_nsWindow isSheet]) {
+-                    Q_ASSERT_X(parentCocoaWindow, "QCocoaWindow", "Window modal dialog has no transient parent.");
+-                    [parentCocoaWindow->m_nsWindow endSheet:m_nsWindow];
+-                }
+             }
+ 
+             hide();
+diff --git a/src/widgets/styles/qmacstyle_mac.mm b/src/widgets/styles/qmacstyle_mac.mm
+index e6436f8..db1878a 100644
+--- a/src/widgets/styles/qmacstyle_mac.mm
++++ b/src/widgets/styles/qmacstyle_mac.mm
+@@ -137,6 +137,21 @@
+ #include <qpa/qplatformtheme.h>
+ #include <QtGui/private/qcoregraphics_p.h>
+ 
++@interface NSGraphicsContext (QtAdditions)
++
+++ (NSGraphicsContext *)qt_graphicsContextWithCGContext:(CGContextRef)graphicsPort flipped:(BOOL)initialFlippedState;
++
++@end
++
++@implementation NSGraphicsContext (QtAdditions)
++
+++ (NSGraphicsContext *)qt_graphicsContextWithCGContext:(CGContextRef)graphicsPort flipped:(BOOL)initialFlippedState
++{
++    return [self graphicsContextWithGraphicsPort:graphicsPort flipped:initialFlippedState];
++}
++
++@end
++
+ QT_USE_NAMESPACE
+ 
+ static QWindow *qt_getWindow(const QWidget *widget)
+@@ -1036,8 +1051,8 @@ void QMacStylePrivate::drawFocusRing(QPainter *p, const QRect &targetRect, int h
+             CGContextSetAlpha(ctx, 0.5); // As applied to the stroke color below
+ 
+             [NSGraphicsContext saveGraphicsState];
+-            [NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithCGContext:ctx
+-                                                                                         flipped:NO]];
++            [NSGraphicsContext setCurrentContext:[NSGraphicsContext qt_graphicsContextWithCGContext:ctx
++                                                                                            flipped:NO]];
+             CGRect focusRingRect = CGRectMake(hMargin, vMargin, size, size);
+             NSBezierPath *focusRingPath;
+             if (radius > 0) {

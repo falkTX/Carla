@@ -40,12 +40,10 @@ rm -rf fftw-*
 rm -rf gettext-*
 rm -rf glib-*
 rm -rf libffi-*
-rm -rf libgig-*
 rm -rf liblo-*
 rm -rf libogg-*
 rm -rf libsndfile-*
 rm -rf libvorbis-*
-rm -rf linuxsampler-*
 rm -rf mxml-*
 rm -rf pkg-config-*
 rm -rf pyliblo-*
@@ -55,7 +53,6 @@ rm -rf qtsvg-*
 rm -rf sip-*
 rm -rf zlib-*
 rm -rf PaxHeaders.*
-exit 0
 
 }
 
@@ -294,10 +291,7 @@ fi
 
 if [ ! -d mxml-${MXML_VERSION} ]; then
   /opt/local/bin/aria2c https://github.com/michaelrsweet/mxml/releases/download/v${MXML_VERSION}/mxml-${MXML_VERSION}.tar.gz
-  mkdir mxml-${MXML_VERSION}
-  cd mxml-${MXML_VERSION}
-  tar -xf ../mxml-${MXML_VERSION}.tar.gz
-  cd ..
+  tar -xf mxml-${MXML_VERSION}.tar.gz
 fi
 
 if [ ! -f mxml-${MXML_VERSION}/build-done ]; then
@@ -340,8 +334,10 @@ fi
 # ---------------------------------------------------------------------------------------------------------------------
 # build base libs
 
-# export ARCH=32
-# build_base
+# cleanup
+
+export ARCH=32
+build_base
 
 export ARCH=64
 build_base
@@ -467,7 +463,7 @@ fi
 # sip
 
 if [ ! -d sip-${SIP_VERSION} ]; then
-  /opt/local/bin/aria2c http://sourceforge.net/projects/pyqt/files/sip/sip-${SIP_VERSION}/sip-${SIP_VERSION}.tar.gz
+  /opt/local/bin/aria2c https://www.riverbankcomputing.com/static/Downloads/sip/${SIP_VERSION}/sip-${SIP_VERSION}.tar.gz
   tar -xf sip-${SIP_VERSION}.tar.gz
 fi
 
@@ -484,7 +480,7 @@ fi
 # pyqt5
 
 if [ ! -d PyQt5_gpl-${PYQT5_VERSION} ]; then
-  /opt/local/bin/aria2c http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-${PYQT5_VERSION}/PyQt5_gpl-${PYQT5_VERSION}.tar.gz
+  /opt/local/bin/aria2c https://www.riverbankcomputing.com/static/Downloads/PyQt5/${PYQT5_VERSION}/PyQt5_gpl-${PYQT5_VERSION}.tar.gz
   tar -xf PyQt5_gpl-${PYQT5_VERSION}.tar.gz
 fi
 
@@ -512,6 +508,23 @@ if [ ! -f pyliblo-${PYLIBLO_VERSION}/build-done ]; then
     touch patched
   fi
   env CFLAGS="${CFLAGS} -I${TARGETDIR}/carla64/include" LDFLAGS="${LDFLAGS} -L${TARGETDIR}/carla64/lib" \
+  python3 setup.py build
+  python3 setup.py install --prefix=${PREFIX}
+  touch build-done
+  cd ..
+fi
+
+# ---------------------------------------------------------------------------------------------------------------------
+# cxfreeze
+
+if [ ! -d cx_Freeze-${CXFREEZE_VERSION} ]; then
+  /opt/local/bin/aria2c https://github.com/anthony-tuininga/cx_Freeze/archive/${CXFREEZE_VERSION}.tar.gz
+  tar -xf cx_Freeze-${CXFREEZE_VERSION}.tar.gz
+fi
+
+if [ ! -f cx_Freeze-${CXFREEZE_VERSION}/build-done ]; then
+  cd cx_Freeze-${CXFREEZE_VERSION}
+  sed -i -e 's/"python%s.%s"/"python%s.%sm"/' setup.py
   python3 setup.py build
   python3 setup.py install --prefix=${PREFIX}
   touch build-done

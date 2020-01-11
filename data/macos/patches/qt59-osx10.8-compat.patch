@@ -1,0 +1,401 @@
+diff --git a/mkspecs/common/clang-mac.conf b/mkspecs/common/clang-mac.conf
+index cbae2e62..dc4694fa 100644
+--- a/mkspecs/common/clang-mac.conf
++++ b/mkspecs/common/clang-mac.conf
+@@ -10,4 +10,5 @@ QMAKE_CXXFLAGS += -stdlib=libc++
+ QMAKE_LFLAGS   += -stdlib=libc++
+ QMAKE_AR_LTCG  = libtool -static -o
+ 
+-QMAKE_CFLAGS_APPLICATION_EXTENSION  = -fapplication-extension
++QMAKE_CFLAGS_APPLICATION_EXTENSION  =
++# -fapplication-extension
+diff --git a/src/corelib/global/qoperatingsystemversion_darwin.mm b/src/corelib/global/qoperatingsystemversion_darwin.mm
+index d8b927ff..9a690adc 100644
+--- a/src/corelib/global/qoperatingsystemversion_darwin.mm
++++ b/src/corelib/global/qoperatingsystemversion_darwin.mm
+@@ -40,16 +40,37 @@
+ #include "qoperatingsystemversion_p.h"
+ #import <Foundation/Foundation.h>
+ 
++typedef qint16 (*GestaltFunction)(quint32 selector, qint32 *response);
++
+ QT_BEGIN_NAMESPACE
+ 
+ QOperatingSystemVersion QOperatingSystemVersion::current()
+ {
+-    NSOperatingSystemVersion osv = NSProcessInfo.processInfo.operatingSystemVersion;
+     QOperatingSystemVersion v;
+     v.m_os = currentType();
+-    v.m_major = osv.majorVersion;
+-    v.m_minor = osv.minorVersion;
+-    v.m_micro = osv.patchVersion;
++    v.m_major = -1;
++    v.m_minor = -1;
++    v.m_micro = -1;
++    static GestaltFunction pGestalt = 0;
++    if (!pGestalt) {
++        CFBundleRef b = CFBundleGetBundleWithIdentifier(CFSTR("com.apple.CoreServices"));
++        pGestalt = reinterpret_cast<GestaltFunction>(CFBundleGetFunctionPointerForName(b,
++                                                     CFSTR("Gestalt")));
++    }
++    // Use temporary variables so we can return 0.0.0 (unknown version)
++    // in case of an error partway through determining the OS version
++    qint32 major = 0, minor = 0, patch = 0;
++    if (!pGestalt)
++        return v;
++    if (pGestalt('sys1', &major) != 0)
++        return v;
++    if (pGestalt('sys2', &minor) != 0)
++        return v;
++    if (pGestalt('sys3', &patch) != 0)
++        return v;
++    v.m_major = major;
++    v.m_minor = minor;
++    v.m_micro = patch;
+     return v;
+ }
+ 
+diff --git a/src/corelib/io/qfilesystemengine_unix.cpp b/src/corelib/io/qfilesystemengine_unix.cpp
+index 7fed54f7..bbf5e6d6 100644
+--- a/src/corelib/io/qfilesystemengine_unix.cpp
++++ b/src/corelib/io/qfilesystemengine_unix.cpp
+@@ -126,8 +126,11 @@ static bool isPackage(const QFileSystemMetaData &data, const QFileSystemEntry &e
+ 
+ #ifdef Q_OS_MACOS
+         // Find if an application other than Finder claims to know how to handle the package
+-        QCFType<CFURLRef> application = LSCopyDefaultApplicationURLForURL(url,
+-            kLSRolesEditor | kLSRolesViewer, nullptr);
++        QCFType<CFURLRef> application;
++        LSGetApplicationForURL(url,
++                               kLSRolesEditor|kLSRolesViewer,
++                               NULL,
++                               &application);
+ 
+         if (application) {
+             QCFType<CFBundleRef> bundle = CFBundleCreate(kCFAllocatorDefault, application);
+diff --git a/src/corelib/kernel/qcore_foundation.mm b/src/corelib/kernel/qcore_foundation.mm
+index 56eabc4b..c48a7979 100644
+--- a/src/corelib/kernel/qcore_foundation.mm
++++ b/src/corelib/kernel/qcore_foundation.mm
+@@ -46,7 +46,7 @@
+ #include <QtCore/qbytearray.h>
+ #include <QtCore/qrect.h>
+ 
+-#if QT_CONFIG(timezone) && !defined(QT_NO_SYSTEMLOCALE)
++#if 0
+ #include <QtCore/qtimezone.h>
+ #include <QtCore/private/qtimezoneprivate_p.h>
+ #include <QtCore/private/qcore_mac_p.h>
+@@ -433,7 +433,7 @@ NSDate *QDateTime::toNSDate() const
+ 
+ // ----------------------------------------------------------------------------
+ 
+-#if QT_CONFIG(timezone) && !defined(QT_NO_SYSTEMLOCALE)
++#if 0
+ /*!
+     \since 5.9
+ 
+diff --git a/src/corelib/tools/qtimezone.h b/src/corelib/tools/qtimezone.h
+index bd87139f..d154cbf9 100644
+--- a/src/corelib/tools/qtimezone.h
++++ b/src/corelib/tools/qtimezone.h
+@@ -47,7 +47,7 @@
+ 
+ QT_REQUIRE_CONFIG(timezone);
+ 
+-#if (defined(Q_OS_DARWIN) || defined(Q_QDOC)) && !defined(QT_NO_SYSTEMLOCALE)
++#if 0
+ Q_FORWARD_DECLARE_CF_TYPE(CFTimeZone);
+ Q_FORWARD_DECLARE_OBJC_CLASS(NSTimeZone);
+ #endif
+@@ -147,7 +147,7 @@ public:
+     static QList<QByteArray> windowsIdToIanaIds(const QByteArray &windowsId,
+                                                  QLocale::Country country);
+ 
+-#if (defined(Q_OS_DARWIN) || defined(Q_QDOC)) && !defined(QT_NO_SYSTEMLOCALE)
++#if 0
+     static QTimeZone fromCFTimeZone(CFTimeZoneRef timeZone);
+     CFTimeZoneRef toCFTimeZone() const Q_DECL_CF_RETURNS_RETAINED;
+     static QTimeZone fromNSTimeZone(const NSTimeZone *timeZone);
+diff --git a/src/platformsupport/fontdatabases/mac/qcoretextfontdatabase.mm b/src/platformsupport/fontdatabases/mac/qcoretextfontdatabase.mm
+index f8fe160e..3c350b3c 100644
+--- a/src/platformsupport/fontdatabases/mac/qcoretextfontdatabase.mm
++++ b/src/platformsupport/fontdatabases/mac/qcoretextfontdatabase.mm
+@@ -456,7 +456,6 @@ QFontEngine *QCoreTextFontDatabaseEngineFactory<QFontEngineFT>::fontEngine(const
+         return QFontEngineFT::create(*fontData, fontDef.pixelSize,
+             static_cast<QFont::HintingPreference>(fontDef.hintingPreference));
+     } else if (NSURL *url = descriptorAttribute<NSURL>(descriptor, kCTFontURLAttribute)) {
+-        Q_ASSERT(url.fileURL);
+         QFontEngine::FaceId faceId;
+         faceId.filename = QString::fromNSString(url.path).toUtf8();
+         return QFontEngineFT::create(fontDef, faceId);
+diff --git a/src/plugins/platforms/cocoa/qcocoamenu.mm b/src/plugins/platforms/cocoa/qcocoamenu.mm
+index e41c70b8..815028b7 100644
+--- a/src/plugins/platforms/cocoa/qcocoamenu.mm
++++ b/src/plugins/platforms/cocoa/qcocoamenu.mm
+@@ -329,13 +329,6 @@ void QCocoaMenu::insertMenuItem(QPlatformMenuItem *menuItem, QPlatformMenuItem *
+     }
+ 
+     insertNative(cocoaItem, beforeItem);
+-
+-    // Empty menus on a menubar are hidden by default. If the menu gets
+-    // added to the menubar before it contains any item, we need to sync.
+-    if (isVisible() && attachedItem().hidden) {
+-        if (auto *mb = qobject_cast<QCocoaMenuBar *>(menuParent()))
+-            mb->syncMenu(this);
+-    }
+ }
+ 
+ void QCocoaMenu::insertNative(QCocoaMenuItem *item, QCocoaMenuItem *beforeItem)
+diff --git a/src/plugins/platforms/cocoa/qcocoamenubar.mm b/src/plugins/platforms/cocoa/qcocoamenubar.mm
+index a4cd465d..06d63f7d 100644
+--- a/src/plugins/platforms/cocoa/qcocoamenubar.mm
++++ b/src/plugins/platforms/cocoa/qcocoamenubar.mm
+@@ -369,7 +369,7 @@ void QCocoaMenuBar::updateMenuBarImmediately()
+     QCocoaMenuLoader *loader = [QCocoaMenuLoader sharedMenuLoader];
+     [loader ensureAppMenuInMenu:mb->nsMenu()];
+ 
+-    NSMutableSet *mergedItems = [[NSMutableSet setWithCapacity:mb->merged().count()] retain];
++    NSMutableSet *mergedItems = [[NSMutableSet setWithCapacity:0] retain];
+     foreach (QCocoaMenuItem *m, mb->merged()) {
+         [mergedItems addObject:m->nsItem()];
+         m->syncMerged();
+diff --git a/src/plugins/platforms/cocoa/qcocoanativeinterface.mm b/src/plugins/platforms/cocoa/qcocoanativeinterface.mm
+index 5504c242..fa0b7f71 100644
+--- a/src/plugins/platforms/cocoa/qcocoanativeinterface.mm
++++ b/src/plugins/platforms/cocoa/qcocoanativeinterface.mm
+@@ -172,12 +172,11 @@ void *QCocoaNativeInterface::NSPrintInfoForPrintEngine(QPrintEngine *printEngine
+ 
+ QPixmap QCocoaNativeInterface::defaultBackgroundPixmapForQWizard()
+ {
++    QCFType<CFURLRef> url;
+     const int ExpectedImageWidth = 242;
+     const int ExpectedImageHeight = 414;
+-    QCFType<CFArrayRef> urls = LSCopyApplicationURLsForBundleIdentifier(
+-        CFSTR("com.apple.KeyboardSetupAssistant"), nullptr);
+-    if (urls && CFArrayGetCount(urls) > 0) {
+-        CFURLRef url = (CFURLRef)CFArrayGetValueAtIndex(urls, 0);
++    if (LSFindApplicationForInfo(kLSUnknownCreator, CFSTR("com.apple.KeyboardSetupAssistant"), 
++                                 0, 0, &url) == noErr) {
+         QCFType<CFBundleRef> bundle = CFBundleCreate(kCFAllocatorDefault, url);
+         if (bundle) {
+             url = CFBundleCopyResourceURL(bundle, CFSTR("Background"), CFSTR("png"), 0);
+diff --git a/src/plugins/platforms/cocoa/qcocoawindow.h b/src/plugins/platforms/cocoa/qcocoawindow.h
+index aa8fffdf..191553e6 100644
+--- a/src/plugins/platforms/cocoa/qcocoawindow.h
++++ b/src/plugins/platforms/cocoa/qcocoawindow.h
+@@ -316,6 +316,8 @@ public: // for QNSView
+     bool m_viewIsEmbedded; // true if the m_view is actually embedded in a "foreign" NSView hiearchy
+     bool m_viewIsToBeEmbedded; // true if the m_view is intended to be embedded in a "foreign" NSView hiearchy
+ 
++    QCocoaWindow *m_parentCocoaWindow;
++
+     Qt::WindowFlags m_windowFlags;
+     Qt::WindowState m_lastReportedWindowState;
+     Qt::WindowModality m_windowModality;
+diff --git a/src/plugins/platforms/cocoa/qcocoawindow.mm b/src/plugins/platforms/cocoa/qcocoawindow.mm
+index 86fd7b8a..c7aa5792 100644
+--- a/src/plugins/platforms/cocoa/qcocoawindow.mm
++++ b/src/plugins/platforms/cocoa/qcocoawindow.mm
+@@ -325,7 +325,7 @@ static void qt_closePopups()
+ + (void)applicationActivationChanged:(NSNotification*)notification
+ {
+     const id sender = self;
+-    NSEnumerator<NSWindow*> *windowEnumerator = nullptr;
++    NSEnumerator* windowEnumerator = nullptr;
+     NSApplication *application = [NSApplication sharedApplication];
+ 
+ #if QT_MACOS_PLATFORM_SDK_EQUAL_OR_ABOVE(__MAC_10_12)
+@@ -526,6 +526,7 @@ QCocoaWindow::QCocoaWindow(QWindow *tlw, WId nativeHandle)
+     , m_nsWindow(0)
+     , m_viewIsEmbedded(false)
+     , m_viewIsToBeEmbedded(false)
++    , m_parentCocoaWindow(0)
+     , m_lastReportedWindowState(Qt::WindowNoState)
+     , m_windowModality(Qt::NonModal)
+     , m_windowUnderMouse(false)
+@@ -594,10 +595,12 @@ QCocoaWindow::~QCocoaWindow()
+     [m_nsWindow makeFirstResponder:nil];
+     [m_nsWindow setContentView:nil];
+     [m_nsWindow.helper detachFromPlatformWindow];
+-    if (m_view.window.parentWindow)
+-        [m_view.window.parentWindow removeChildWindow:m_view.window];
+-    else if ([m_view superview])
++    if (m_view.window.parentWindow) {
++        if (m_parentCocoaWindow)
++            m_parentCocoaWindow->removeChildWindow(this);
++    } else if ([m_view superview]) {
+         [m_view removeFromSuperview];
++    }
+ 
+     removeMonitor();
+ 
+@@ -614,6 +617,7 @@ QCocoaWindow::~QCocoaWindow()
+ 
+     foreachChildNSWindow(^(QCocoaWindow *childWindow) {
+         [m_nsWindow removeChildWindow:childWindow->m_nsWindow];
++        childWindow->m_parentCocoaWindow = 0;
+     });
+ 
+     [m_view release];
+@@ -690,7 +694,7 @@ void QCocoaWindow::setCocoaGeometry(const QRect &rect)
+ 
+     if (isChildNSWindow()) {
+         QPlatformWindow::setGeometry(rect);
+-        NSWindow *parentNSWindow = m_view.window.parentWindow;
++        NSWindow *parentNSWindow = m_parentCocoaWindow->m_nsWindow;
+         NSRect parentWindowFrame = [parentNSWindow contentRectForFrameRect:parentNSWindow.frame];
+         clipWindow(parentWindowFrame);
+ 
+@@ -744,7 +748,7 @@ void QCocoaWindow::clipWindow(const NSRect &clipRect)
+             m_hiddenByClipping = false;
+             if (!m_hiddenByAncestor) {
+                 [m_nsWindow orderFront:nil];
+-                static_cast<QCocoaWindow *>(QPlatformWindow::parent())->reinsertChildWindow(this);
++                m_parentCocoaWindow->reinsertChildWindow(this);
+             }
+         }
+     }
+@@ -781,7 +785,7 @@ void QCocoaWindow::show(bool becauseOfAncestor)
+     if ([m_nsWindow isVisible])
+         return;
+ 
+-    if (m_view.window.parentWindow && !m_view.window.parentWindow.visible) {
++    if (m_parentCocoaWindow && ![m_parentCocoaWindow->m_nsWindow isVisible]) {
+         m_hiddenByAncestor = true; // Parent still hidden, don't show now
+     } else if ((becauseOfAncestor == m_hiddenByAncestor) // Was NEITHER explicitly hidden
+                && !m_hiddenByClipping) { // ... NOR clipped
+@@ -792,7 +796,7 @@ void QCocoaWindow::show(bool becauseOfAncestor)
+         if (!m_hiddenByClipping) { // setCocoaGeometry() can change the clipping status
+             [m_nsWindow orderFront:nil];
+             if (isChildNSWindow())
+-                static_cast<QCocoaWindow *>(QPlatformWindow::parent())->reinsertChildWindow(this);
++                m_parentCocoaWindow->reinsertChildWindow(this);
+             foreachChildNSWindow(^(QCocoaWindow *childWindow) {
+                 childWindow->show(true);
+             });
+@@ -1190,7 +1194,7 @@ void QCocoaWindow::raise()
+             // -[NSWindow orderFront:] doesn't work with attached windows.
+             // The only solution is to remove and add the child window.
+             // This will place it on top of all the other NSWindows.
+-            NSWindow *parentNSWindow = m_view.window.parentWindow;
++            NSWindow *parentNSWindow = m_parentCocoaWindow->m_nsWindow;
+             [parentNSWindow removeChildWindow:m_nsWindow];
+             [parentNSWindow addChildWindow:m_nsWindow ordered:NSWindowAbove];
+         } else {
+@@ -1226,7 +1230,7 @@ void QCocoaWindow::lower()
+             // The only solution is to remove and add all the child windows except this one.
+             // This will keep the current window at the bottom while adding the others on top of it,
+             // hopefully in the same order (this is not documented anywhere in the Cocoa documentation).
+-            NSWindow *parentNSWindow = m_view.window.parentWindow;
++            NSWindow *parentNSWindow = m_parentCocoaWindow->m_nsWindow;
+             NSArray *children = [parentNSWindow.childWindows copy];
+             for (NSWindow *child in children)
+                 if (m_nsWindow != child) {
+@@ -1698,14 +1702,15 @@ void QCocoaWindow::recreateWindowIfNeeded()
+ 
+     qCDebug(lcQpaCocoaWindow) << "Reconfiguring NSWindow due to" << recreateReason;
+ 
+-    QCocoaWindow *parentCocoaWindow = static_cast<QCocoaWindow *>(parentWindow);
++    // FIXME: Replace member with direct parentWindow usage (possibly cast)
++    m_parentCocoaWindow = static_cast<QCocoaWindow *>(parentWindow);
+ 
+     if (shouldBeChildNSWindow) {
+         QWindow *parentQWindow = parentWindow->window();
+         // Ensure that all parents in the hierarchy are also child NSWindows
+         if (!parentQWindow->property("_q_platform_MacUseNSWindow").toBool()) {
+             parentQWindow->setProperty("_q_platform_MacUseNSWindow", QVariant(true));
+-            parentCocoaWindow->recreateWindowIfNeeded();
++            m_parentCocoaWindow->recreateWindowIfNeeded();
+         }
+     }
+ 
+@@ -1713,8 +1718,8 @@ void QCocoaWindow::recreateWindowIfNeeded()
+     if ((isContentView() && !shouldBeContentView) || (recreateReason & PanelChanged)) {
+         qCDebug(lcQpaCocoaWindow) << "Getting rid of existing window" << m_nsWindow;
+         [m_nsWindow closeAndRelease];
+-        if (isChildNSWindow())
+-            [m_view.window.parentWindow removeChildWindow:m_view.window];
++        if (isChildNSWindow() && oldParentCocoaWindow)
++            oldParentCocoaWindow->removeChildWindow(this);
+         if (isContentView()) {
+             // We explicitly disassociate m_view from the window's contentView,
+             // as AppKit does not automatically do this in response to removing
+@@ -1730,9 +1735,9 @@ void QCocoaWindow::recreateWindowIfNeeded()
+         if (noPreviousWindow)
+             m_nsWindow = createNSWindow(shouldBeChildNSWindow, shouldBePanel);
+ 
+-        if (m_view.window.parentWindow) {
+-            if (!shouldBeChildNSWindow || (recreateReason & ParentChanged))
+-                [m_view.window.parentWindow removeChildWindow:m_view.window];
++        if (oldParentCocoaWindow) {
++            if (!shouldBeChildNSWindow || oldParentCocoaWindow != m_parentCocoaWindow)
++                oldParentCocoaWindow->removeChildWindow(this);
+             m_forwardWindow = oldParentCocoaWindow;
+         }
+ 
+@@ -1759,8 +1764,8 @@ void QCocoaWindow::recreateWindowIfNeeded()
+         setWindowState(window()->windowState());
+     } else if (shouldBeChildNSWindow) {
+         if (!m_hiddenByClipping) {
+-            [parentCocoaWindow->m_nsWindow addChildWindow:m_nsWindow ordered:NSWindowAbove];
+-            parentCocoaWindow->reinsertChildWindow(this);
++            [m_parentCocoaWindow->m_nsWindow addChildWindow:m_nsWindow ordered:NSWindowAbove];
++            m_parentCocoaWindow->reinsertChildWindow(this);
+         }
+ 
+         // Set properties after the window has been made a child NSWindow
+@@ -1771,7 +1776,7 @@ void QCocoaWindow::recreateWindowIfNeeded()
+         if ([m_view superview])
+             [m_view removeFromSuperview];
+ 
+-        [parentCocoaWindow->m_view addSubview:m_view];
++        [m_parentCocoaWindow->m_view addSubview:m_view];
+         QRect rect = windowGeometry();
+         // Prevent setting a (0,0) window size; causes opengl context
+         // "Invalid Drawable" warnings.
+@@ -1915,6 +1920,11 @@ bool QCocoaWindow::alwaysShowToolWindow() const
+     return qt_mac_resolveOption(false, window(), "_q_macAlwaysShowToolWindow", "");
+ }
+ 
++void QCocoaWindow::removeChildWindow(QCocoaWindow *child)
++{
++    [m_nsWindow removeChildWindow:child->m_nsWindow];
++}
++
+ void QCocoaWindow::removeMonitor()
+ {
+     if (!monitor)
+@@ -2046,12 +2056,14 @@ Qt::WindowState QCocoaWindow::windowState() const
+     // FIXME: Support compound states (Qt::WindowStates)
+ 
+     NSWindow *window = m_view.window;
++    /*
+     if (window.miniaturized)
+         return Qt::WindowMinimized;
++    */
+     if (window.qt_fullScreen)
+         return Qt::WindowFullScreen;
+-    if ((window.zoomed && !isTransitioningToFullScreen())
+-        || (m_lastReportedWindowState == Qt::WindowMaximized && isTransitioningToFullScreen()))
++    if (/*(window.zoomed && !isTransitioningToFullScreen())
++        ||*/ (m_lastReportedWindowState == Qt::WindowMaximized && isTransitioningToFullScreen()))
+         return Qt::WindowMaximized;
+ 
+     // Note: We do not report Qt::WindowActive, even if isActive()
+@@ -2181,7 +2193,6 @@ void QCocoaWindow::applyContentBorderThickness(NSWindow *window)
+     if (!m_drawContentBorderGradient) {
+         [window setStyleMask:[window styleMask] & ~NSTexturedBackgroundWindowMask];
+         [[[window contentView] superview] setNeedsDisplay:YES];
+-        window.titlebarAppearsTransparent = NO;
+         return;
+     }
+ 
+@@ -2206,7 +2217,6 @@ void QCocoaWindow::applyContentBorderThickness(NSWindow *window)
+     int effectiveBottomContentBorderThickness = m_bottomContentBorderThickness;
+ 
+     [window setStyleMask:[window styleMask] | NSTexturedBackgroundWindowMask];
+-    window.titlebarAppearsTransparent = YES;
+ 
+     [window setContentBorderThickness:effectiveTopContentBorderThickness forEdge:NSMaxYEdge];
+     [window setAutorecalculatesContentBorderThickness:NO forEdge:NSMaxYEdge];

@@ -52,7 +52,6 @@ rm -rf qtsvg-*
 rm -rf sip-*
 rm -rf zlib-*
 rm -rf PaxHeaders.*
-exit 0
 
 }
 
@@ -70,8 +69,8 @@ export PATH=${PREFIX}/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 
 export CFLAGS="-O3 -mtune=generic -msse -msse2 -mfpmath=sse -fvisibility=hidden -fdata-sections -ffunction-sections"
-export CFLAGS="${CFLAGS} -fPIC -DPIC -DNDEBUG -I${PREFIX}/include -m${ARCH}"
-export CXXFLAGS="${CFLAGS} -fvisibility-inlines-hidden"
+export CFLAGS="${CFLAGS} -fPIC -DPIC -DNDEBUG -I${PREFIX}/include -m${ARCH} -mmacosx-version-min=10.8"
+export CXXFLAGS="${CFLAGS} -fvisibility-inlines-hidden -stdlib=libc++"
 
 export LDFLAGS="-fdata-sections -ffunction-sections -Wl,-dead_strip -Wl,-dead_strip_dylibs"
 export LDFLAGS="${LDFLAGS} -L${PREFIX}/lib -m${ARCH}"
@@ -164,6 +163,7 @@ fi
 
 if [ ! -f libogg-${LIBOGG_VERSION}/build-done ]; then
   cd libogg-${LIBOGG_VERSION}
+  sed -i -e 's/__MACH__/__MACH_SKIP__/' include/ogg/os_types.h
   ./configure --enable-static --disable-shared --prefix=${PREFIX}
   make ${MAKE_ARGS}
   make install
@@ -291,10 +291,7 @@ fi
 
 if [ ! -d mxml-${MXML_VERSION} ]; then
   /opt/local/bin/aria2c https://github.com/michaelrsweet/mxml/releases/download/v${MXML_VERSION}/mxml-${MXML_VERSION}.tar.gz
-  mkdir mxml-${MXML_VERSION}
-  cd mxml-${MXML_VERSION}
-  tar -xf ../mxml-${MXML_VERSION}.tar.gz
-  cd ..
+  tar -xf mxml-${MXML_VERSION}.tar.gz
 fi
 
 if [ ! -f mxml-${MXML_VERSION}/build-done ]; then
@@ -337,6 +334,8 @@ fi
 # ---------------------------------------------------------------------------------------------------------------------
 # build base libs
 
+cleanup
+
 export ARCH=32
 build_base
 
@@ -351,14 +350,11 @@ export PATH=${PREFIX}/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 export PKG_CONFIG=${TARGETDIR}/carla64/bin/pkg-config
 
-export CFLAGS="-O3 -mtune=generic -msse -msse2 -mfpmath=sse -fPIC -DPIC -DNDEBUG -I${PREFIX}/include -m64"
-export CXXFLAGS=${CFLAGS}
-export LDFLAGS="-L${PREFIX}/lib -m64"
+export CFLAGS="-O3 -mtune=generic -msse -msse2 -mfpmath=sse -fPIC -DPIC -DNDEBUG -I${PREFIX}/include -m64 -mmacosx-version-min=10.8"
+export CXXFLAGS="${CFLAGS} -stdlib=libc++"
+export LDFLAGS="-L${PREFIX}/lib -m64 -stdlib=libc++"
 
 export MAKE=/usr/bin/make
-
-export CFG_ARCH=x86_64
-export QMAKESPEC=macx-clang
 
 # ---------------------------------------------------------------------------------------------------------------------
 # qt5-base download
@@ -376,16 +372,22 @@ if [ ! -f qtbase-opensource-src-${QT5_VERSION}/build-done ]; then
   cd qtbase-opensource-src-${QT5_VERSION}
   if [ ! -f configured ]; then
     if [ ! -f carla-patched ]; then
-      sed -i -e "s|PNG_WARNINGS_SUPPORTED|PNG_WARNINGS_NOT_SUPPORTED|" src/3rdparty/libpng/pnglibconf.h
-      sed -i -e "s|AWK=.*|AWK=/opt/local/bin/gawk|" configure
-      sed -i -e "s|/usr/bin/xcrun -find xcrun|true|" configure
-      sed -i -e "s|/usr/bin/xcrun -find xcrun|echo hello|" mkspecs/features/mac/default_pre.prf
-      patch -p1 -i ../patches/qt55-newosx-fix.patch
+      #sed -i -e "s|PNG_WARNINGS_SUPPORTED|PNG_WARNINGS_NOT_SUPPORTED|" src/3rdparty/libpng/pnglibconf.h
+      #sed -i -e "s|AWK=.*|AWK=/opt/local/bin/gawk|" configure
+      #sed -i -e "s|/usr/bin/xcrun -find xcrun|true|" configure
+      #sed -i -e "s|/usr/bin/xcrun -find xcrun|echo hello|" mkspecs/features/mac/default_pre.prf
+      #patch -p1 -i ../patches/qt55-newosx-fix.patch
+      #patch -p1 -i ../patches/qt56-cpp98-compat.patch
+      patch -p1 -i ../patches/qt59-osx10.8-compat.patch
+      patch -p1 -i ../patches/qt59-osx10.8-compat2.patch
+      patch -p1 -i ../patches/qt59-osx10.8-compat3.patch
+      sed -i -e "s/10.10/10.8/" mkspecs/macx-clang/qmake.conf
+      sed -i -e "s/ --sdk \$sdk / /" configure
+      sed -i -e "s/ --sdk \$\$sdk / /" mkspecs/features/mac/sdk.prf
       touch carla-patched
     fi
-    chmod +x configure
-    chmod -R 777 config.tests/unix/
-    ./configure -release -shared -opensource -confirm-license -force-pkg-config -platform macx-clang -framework \
+
+QT55_ARGS="./configure -release -shared -opensource -confirm-license -force-pkg-config -platform macx-clang -framework \
                 -prefix ${PREFIX} -plugindir ${PREFIX}/lib/qt5/plugins -headerdir ${PREFIX}/include/qt5 \
                 -qt-freetype -qt-libjpeg -qt-libpng -qt-pcre -opengl desktop -qpa cocoa \
                 -no-directfb -no-eglfs -no-kms -no-linuxfb -no-mtdev -no-xcb -no-xcb-xlib \
@@ -393,23 +395,7 @@ if [ ! -f qtbase-opensource-src-${QT5_VERSION}/build-done ]; then
                 -no-cups -no-dbus -no-evdev -no-fontconfig -no-harfbuzz -no-gif -no-glib -no-nis -no-openssl -no-pch -no-sql-ibase -no-sql-odbc \
                 -no-audio-backend -no-qml-debug -no-separate-debug-info -no-use-gold-linker \
                 -no-compile-examples -nomake examples -nomake tests -make libs -make tools
-    touch configured
-  fi
-  make ${MAKE_ARGS}
-  make install
-  ln -s ${PREFIX}/lib/QtCore.framework/Headers    ${PREFIX}/include/qt5/QtCore
-  ln -s ${PREFIX}/lib/QtGui.framework/Headers     ${PREFIX}/include/qt5/QtGui
-  ln -s ${PREFIX}/lib/QtWidgets.framework/Headers ${PREFIX}/include/qt5/QtWidgets
-  sed -i -e "s/ -lqtpcre/ /" ${PREFIX}/lib/pkgconfig/Qt5Core.pc
-  sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Core.pc
-  sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Core.pc
-  sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Gui.pc
-  sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Gui.pc
-  sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Widgets.pc
-  sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Widgets.pc
-  touch build-done
-  cd ..
-fi
+"
 
 QT56_ARGS="./configure -prefix ${PREFIX} -plugindir ${PREFIX}/lib/qt5/plugins -headerdir ${PREFIX}/include/qt5 \
                 -release -optimized-tools -opensource -confirm-license -c++std c++98 -no-qml-debug -platform macx-clang \
@@ -428,11 +414,11 @@ QT56_ARGS="./configure -prefix ${PREFIX} -plugindir ${PREFIX}/lib/qt5/plugins -h
                 -no-audio-backend -no-pch
 "
 
-QT59_ARGS="./configure -prefix ${PREFIX} -plugindir ${PREFIX}/lib/qt5/plugins -headerdir ${PREFIX}/include/qt5 \
-                -opensource -confirm-license -release -strip -shared -framework -platform macx-clang \
+QT59_ARGS="./configure -silent -prefix ${PREFIX} -plugindir ${PREFIX}/lib/qt5/plugins -headerdir ${PREFIX}/include/qt5 \
+                -opensource -confirm-license -release -strip -shared -platform macx-clang \
                 -sse2 -no-sse3 -no-ssse3 -no-sse4.1 -no-sse4.2 -no-avx -no-avx2 -no-avx512 \
                 -no-mips_dsp -no-mips_dspr2 \
-                -no-pch -pkg-config \
+                -no-pch -pkg-config -force-pkg-config \
                 -make libs -make tools \
                 -nomake examples -nomake tests \
                 -no-compile-examples \
@@ -447,6 +433,27 @@ QT59_ARGS="./configure -prefix ${PREFIX} -plugindir ${PREFIX}/lib/qt5/plugins -h
                 -no-gif -no-ico -qt-libpng -qt-libjpeg \
                 -qt-sqlite
 "
+
+    chmod +x configure
+    ${QT59_ARGS}
+    #chmod -R 777 config.tests/unix/
+    touch configured
+  fi
+  make ${MAKE_ARGS}
+  make install
+  #ln -s ${PREFIX}/lib/QtCore.framework/Headers    ${PREFIX}/include/qt5/QtCore
+  #ln -s ${PREFIX}/lib/QtGui.framework/Headers     ${PREFIX}/include/qt5/QtGui
+  #ln -s ${PREFIX}/lib/QtWidgets.framework/Headers ${PREFIX}/include/qt5/QtWidgets
+  #sed -i -e "s/ -lqtpcre/ /" ${PREFIX}/lib/pkgconfig/Qt5Core.pc
+  #sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Core.pc
+  #sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Core.pc
+  #sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Gui.pc
+  #sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Gui.pc
+  #sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Widgets.pc
+  #sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Widgets.pc
+  #touch build-done
+  cd ..
+fi
 
 # ---------------------------------------------------------------------------------------------------------------------
 # qt5-mac-extras
@@ -494,6 +501,7 @@ fi
 
 if [ ! -f Python-${PYTHON_VERSION}/build-done ]; then
   cd Python-${PYTHON_VERSION}
+  #sed -i -e "s/#zlib zlibmodule.c/zlib zlibmodule.c/" Modules/Setup.dist
   ./configure --prefix=${PREFIX}
   make
   make install
@@ -521,13 +529,13 @@ fi
 # ---------------------------------------------------------------------------------------------------------------------
 # pyqt5
 
-if [ ! -d PyQt-gpl-${PYQT5_VERSION} ]; then
-  /opt/local/bin/aria2c http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-${PYQT5_VERSION}/PyQt-gpl-${PYQT5_VERSION}.tar.gz
-  tar -xf PyQt-gpl-${PYQT5_VERSION}.tar.gz
+if [ ! -d PyQt5_gpl-${PYQT5_VERSION} ]; then
+  /opt/local/bin/aria2c http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-${PYQT5_VERSION}/PyQt5_gpl-${PYQT5_VERSION}.tar.gz
+  tar -xf PyQt5_gpl-${PYQT5_VERSION}.tar.gz
 fi
 
-if [ ! -f PyQt-gpl-${PYQT5_VERSION}/build-done ]; then
-  cd PyQt-gpl-${PYQT5_VERSION}
+if [ ! -f PyQt5_gpl-${PYQT5_VERSION}/build-done ]; then
+  cd PyQt5_gpl-${PYQT5_VERSION}
   python3 configure.py --confirm-license -c
   make ${MAKE_ARGS}
   make install
@@ -545,6 +553,10 @@ fi
 
 if [ ! -f pyliblo-${PYLIBLO_VERSION}/build-done ]; then
   cd pyliblo-${PYLIBLO_VERSION}
+  if [ ! -f patched ]; then
+    patch -p1 -i ../patches/pyliblo-python3.7.patch
+    touch patched
+  fi
   env CFLAGS="${CFLAGS} -I${TARGETDIR}/carla64/include" LDFLAGS="${LDFLAGS} -L${TARGETDIR}/carla64/lib" \
   python3 setup.py build
   python3 setup.py install --prefix=${PREFIX}
@@ -562,7 +574,7 @@ fi
 
 if [ ! -f cx_Freeze-${CXFREEZE_VERSION}/build-done ]; then
   cd cx_Freeze-${CXFREEZE_VERSION}
-  sed -i -e 's/"python%s.%s"/"python%s.%sm"/' setup.py
+  #sed -i -e 's/"python%s.%s"/"python%s.%sm"/' setup.py
   python3 setup.py build
   python3 setup.py install --prefix=${PREFIX}
   touch build-done

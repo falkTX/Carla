@@ -1,0 +1,248 @@
+diff --git a/src/plugins/platforms/cocoa/qcocoacolordialoghelper.mm b/src/plugins/platforms/cocoa/qcocoacolordialoghelper.mm
+index aa61245..2423378 100644
+--- a/src/plugins/platforms/cocoa/qcocoacolordialoghelper.mm
++++ b/src/plugins/platforms/cocoa/qcocoacolordialoghelper.mm
+@@ -78,7 +78,7 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSColorPanelDelegate);
+     mHelper = 0;
+     mStolenContentView = 0;
+     mPanelButtons = nil;
+-    mResultCode = NSModalResponseCancel;
++    mResultCode = NSCancelButton;
+     mDialogIsExecuting = false;
+     mResultSet = false;
+     mClosingDueToKnownButton = false;
+@@ -166,7 +166,7 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSColorPanelDelegate);
+     mClosingDueToKnownButton = true;
+     [mColorPanel close];
+     [self updateQtColor];
+-    [self finishOffWithCode:NSModalResponseOK];
++    [self finishOffWithCode:NSOKButton];
+ }
+ 
+ - (void)onCancelClicked
+@@ -175,7 +175,7 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSColorPanelDelegate);
+         mClosingDueToKnownButton = true;
+         [mColorPanel close];
+         mQtColor = QColor();
+-        [self finishOffWithCode:NSModalResponseCancel];
++        [self finishOffWithCode:NSCancelButton];
+     }
+ }
+ 
+@@ -236,12 +236,12 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSColorPanelDelegate);
+ 
+     [NSApp runModalForWindow:mColorPanel];
+     mDialogIsExecuting = false;
+-    return (mResultCode == NSModalResponseOK);
++    return (mResultCode == NSOKButton);
+ }
+ 
+ - (QPlatformDialogHelper::DialogCode)dialogResultCode
+ {
+-    return (mResultCode == NSModalResponseOK) ? QPlatformDialogHelper::Accepted : QPlatformDialogHelper::Rejected;
++    return (mResultCode == NSOKButton) ? QPlatformDialogHelper::Accepted : QPlatformDialogHelper::Rejected;
+ }
+ 
+ - (BOOL)windowShouldClose:(id)window
+@@ -250,7 +250,7 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSColorPanelDelegate);
+     if (!mPanelButtons)
+         [self updateQtColor];
+     if (mDialogIsExecuting) {
+-        [self finishOffWithCode:NSModalResponseCancel];
++        [self finishOffWithCode:NSCancelButton];
+     } else {
+         mResultSet = true;
+         if (mHelper)
+@@ -276,7 +276,7 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSColorPanelDelegate);
+         // This check will prevent any such recursion.
+         if (!mResultSet) {
+             mResultSet = true;
+-            if (mResultCode == NSModalResponseCancel) {
++            if (mResultCode == NSCancelButton) {
+                 emit mHelper->reject();
+             } else {
+                 emit mHelper->accept();
+diff --git a/src/plugins/platforms/cocoa/qcocoaeventdispatcher.mm b/src/plugins/platforms/cocoa/qcocoaeventdispatcher.mm
+index b22f1b1..d2dd645 100644
+--- a/src/plugins/platforms/cocoa/qcocoaeventdispatcher.mm
++++ b/src/plugins/platforms/cocoa/qcocoaeventdispatcher.mm
+@@ -401,7 +401,7 @@ bool QCocoaEventDispatcher::processEvents(QEventLoop::ProcessEventsFlags flags)
+             // [NSApp run], which is the normal code path for cocoa applications.
+             if (NSModalSession session = d->currentModalSession()) {
+                 QBoolBlocker execGuard(d->currentExecIsNSAppRun, false);
+-                while ([NSApp runModalSession:session] == NSModalResponseContinue && !d->interrupt) {
++                while ([NSApp runModalSession:session] == NSRunContinuesResponse && !d->interrupt) {
+                     qt_mac_waitForMoreEvents(NSModalPanelRunLoopMode);
+                     if (session != d->currentModalSessionCached) {
+                         // It's possible to release the current modal session
+@@ -445,7 +445,7 @@ bool QCocoaEventDispatcher::processEvents(QEventLoop::ProcessEventsFlags flags)
+                     if (flags & QEventLoop::WaitForMoreEvents)
+                         qt_mac_waitForMoreEvents(NSModalPanelRunLoopMode);
+                     NSInteger status = [NSApp runModalSession:session];
+-                    if (status != NSModalResponseContinue && session == d->currentModalSessionCached) {
++                    if (status != NSRunContinuesResponse && session == d->currentModalSessionCached) {
+                         // INVARIANT: Someone called [NSApp stopModal:] from outside the event
+                         // dispatcher (e.g to stop a native dialog). But that call wrongly stopped
+                         // 'session' as well. As a result, we need to restart all internal sessions:
+diff --git a/src/plugins/platforms/cocoa/qcocoafontdialoghelper.mm b/src/plugins/platforms/cocoa/qcocoafontdialoghelper.mm
+index 9a96895..b227794 100644
+--- a/src/plugins/platforms/cocoa/qcocoafontdialoghelper.mm
++++ b/src/plugins/platforms/cocoa/qcocoafontdialoghelper.mm
+@@ -104,7 +104,7 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSFontPanelDelegate);
+     mHelper = 0;
+     mStolenContentView = 0;
+     mPanelButtons = 0;
+-    mResultCode = NSModalResponseCancel;
++    mResultCode = NSCancelButton;
+     mDialogIsExecuting = false;
+     mResultSet = false;
+ 
+@@ -169,7 +169,7 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSFontPanelDelegate);
+ - (void)onOkClicked
+ {
+     [mFontPanel close];
+-    [self finishOffWithCode:NSModalResponseOK];
++    [self finishOffWithCode:NSOKButton];
+ }
+ 
+ - (void)onCancelClicked
+@@ -177,7 +177,7 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSFontPanelDelegate);
+     if (mPanelButtons) {
+         [mFontPanel close];
+         mQtFont = QFont();
+-        [self finishOffWithCode:NSModalResponseCancel];
++        [self finishOffWithCode:NSCancelButton];
+     }
+ }
+ 
+@@ -222,12 +222,12 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSFontPanelDelegate);
+ 
+     [NSApp runModalForWindow:mFontPanel];
+     mDialogIsExecuting = false;
+-    return (mResultCode == NSModalResponseOK);
++    return (mResultCode == NSOKButton);
+ }
+ 
+ - (QPlatformDialogHelper::DialogCode)dialogResultCode
+ {
+-    return (mResultCode == NSModalResponseOK) ? QPlatformDialogHelper::Accepted : QPlatformDialogHelper::Rejected;
++    return (mResultCode == NSOKButton) ? QPlatformDialogHelper::Accepted : QPlatformDialogHelper::Rejected;
+ }
+ 
+ - (BOOL)windowShouldClose:(id)window
+@@ -236,7 +236,7 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSFontPanelDelegate);
+     if (!mPanelButtons)
+         [self updateQtFont];
+     if (mDialogIsExecuting) {
+-        [self finishOffWithCode:NSModalResponseCancel];
++        [self finishOffWithCode:NSCancelButton];
+     } else {
+         mResultSet = true;
+         if (mHelper)
+@@ -262,7 +262,7 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSFontPanelDelegate);
+         // This check will prevent any such recursion.
+         if (!mResultSet) {
+             mResultSet = true;
+-            if (mResultCode == NSModalResponseCancel) {
++            if (mResultCode == NSCancelButton) {
+                 emit mHelper->reject();
+             } else {
+                 emit mHelper->accept();
+diff --git a/src/plugins/platforms/cocoa/qcocoawindow.h b/src/plugins/platforms/cocoa/qcocoawindow.h
+index 191553e..e6abf49 100644
+--- a/src/plugins/platforms/cocoa/qcocoawindow.h
++++ b/src/plugins/platforms/cocoa/qcocoawindow.h
+@@ -217,7 +217,9 @@ public:
+     Q_NOTIFICATION_HANDLER(NSWindowDidExitFullScreenNotification) void windowDidExitFullScreen();
+     Q_NOTIFICATION_HANDLER(NSWindowDidOrderOffScreenNotification) void windowDidOrderOffScreen();
+     Q_NOTIFICATION_HANDLER(NSWindowDidOrderOnScreenAndFinishAnimatingNotification) void windowDidOrderOnScreen();
++#if 0
+     Q_NOTIFICATION_HANDLER(NSWindowDidChangeOcclusionStateNotification) void windowDidChangeOcclusionState();
++#endif
+     Q_NOTIFICATION_HANDLER(NSWindowDidChangeScreenNotification) void windowDidChangeScreen();
+     Q_NOTIFICATION_HANDLER(NSWindowWillCloseNotification) void windowWillClose();
+ 
+diff --git a/src/plugins/platforms/cocoa/qcocoawindow.mm b/src/plugins/platforms/cocoa/qcocoawindow.mm
+index c7aa579..56eb291 100644
+--- a/src/plugins/platforms/cocoa/qcocoawindow.mm
++++ b/src/plugins/platforms/cocoa/qcocoawindow.mm
+@@ -1532,6 +1532,7 @@ void QCocoaWindow::windowDidOrderOnScreen()
+     exposeWindow();
+ }
+ 
++#if 0
+ void QCocoaWindow::windowDidChangeOcclusionState()
+ {
+     // Several unit tests expect paint and/or expose events for windows that are
+@@ -1547,6 +1548,7 @@ void QCocoaWindow::windowDidChangeOcclusionState()
+         }
+     }
+ }
++#endif
+ 
+ void QCocoaWindow::windowDidChangeScreen()
+ {
+diff --git a/src/printsupport/dialogs/qpagesetupdialog_mac.mm b/src/printsupport/dialogs/qpagesetupdialog_mac.mm
+index 1e39845..9305566 100644
+--- a/src/printsupport/dialogs/qpagesetupdialog_mac.mm
++++ b/src/printsupport/dialogs/qpagesetupdialog_mac.mm
+@@ -77,7 +77,7 @@ QT_USE_NAMESPACE
+     QPageSetupDialog *dialog = static_cast<QPageSetupDialog *>(contextInfo);
+     QPrinter *printer = dialog->printer();
+ 
+-    if (returnCode == NSModalResponseOK) {
++    if (returnCode == NSOKButton) {
+         PMPageFormat format = static_cast<PMPageFormat>([printInfo PMPageFormat]);
+         PMRect paperRect;
+         PMGetUnadjustedPaperRect(format, &paperRect);
+@@ -88,7 +88,7 @@ QT_USE_NAMESPACE
+         printer->printEngine()->setProperty(QPrintEngine::PPK_Orientation, orientation == kPMLandscape ? QPrinter::Landscape : QPrinter::Portrait);
+     }
+ 
+-    dialog->done((returnCode == NSModalResponseOK) ? QDialog::Accepted : QDialog::Rejected);
++    dialog->done((returnCode == NSOKButton) ? QDialog::Accepted : QDialog::Rejected);
+ }
+ @end
+ 
+diff --git a/src/printsupport/dialogs/qprintdialog_mac.mm b/src/printsupport/dialogs/qprintdialog_mac.mm
+index 8547799..f7bbb59 100644
+--- a/src/printsupport/dialogs/qprintdialog_mac.mm
++++ b/src/printsupport/dialogs/qprintdialog_mac.mm
+@@ -101,7 +101,7 @@ QT_USE_NAMESPACE
+     QPrintDialog *dialog = static_cast<QPrintDialog *>(contextInfo);
+     QPrinter *printer = dialog->printer();
+ 
+-    if (returnCode == NSModalResponseOK) {
++    if (returnCode == NSOKButton) {
+         PMPrintSession session = static_cast<PMPrintSession>([printInfo PMPrintSession]);
+         PMPrintSettings settings = static_cast<PMPrintSettings>([printInfo PMPrintSettings]);
+ 
+@@ -190,7 +190,7 @@ QT_USE_NAMESPACE
+         printer->setPageSize(pageSize);
+     printer->setOrientation(orientation == kPMLandscape ? QPrinter::Landscape : QPrinter::Portrait);
+ 
+-    dialog->done((returnCode == NSModalResponseOK) ? QDialog::Accepted : QDialog::Rejected);
++    dialog->done((returnCode == NSOKButton) ? QDialog::Accepted : QDialog::Rejected);
+ }
+ @end
+ 
+diff --git a/src/testlib/qtestcase.cpp b/src/testlib/qtestcase.cpp
+index 4c5c9e1..5b4a95e 100644
+--- a/src/testlib/qtestcase.cpp
++++ b/src/testlib/qtestcase.cpp
+@@ -147,6 +147,7 @@ static bool debuggerPresent()
+         return CFStringCompare(str1, str2, kCFCompareCaseInsensitive) == kCFCompareEqualTo;
+     };
+ 
++#if 0
+     // Check if there is an exception handler for the process:
+     mach_msg_type_number_t portCount = 0;
+     exception_mask_t masks[EXC_TYPES_COUNT];
+@@ -163,6 +164,7 @@ static bool debuggerPresent()
+             }
+         }
+     }
++#endif
+ 
+     // Ok, no debugger attached. So, let's see if CrashReporter will throw up a dialog. If so, we
+     // leave it to the OS to do the stack trace.
