@@ -334,7 +334,7 @@ fi
 # ---------------------------------------------------------------------------------------------------------------------
 # build base libs
 
-cleanup
+# cleanup
 
 export ARCH=32
 build_base
@@ -351,7 +351,7 @@ export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 export PKG_CONFIG=${TARGETDIR}/carla64/bin/pkg-config
 
 export CFLAGS="-O3 -mtune=generic -msse -msse2 -mfpmath=sse -fPIC -DPIC -DNDEBUG -I${PREFIX}/include -m64 -mmacosx-version-min=10.8"
-export CXXFLAGS="${CFLAGS} -stdlib=libc++"
+export CXXFLAGS="${CFLAGS} -std=gnu++11 -stdlib=libc++"
 export LDFLAGS="-L${PREFIX}/lib -m64 -stdlib=libc++"
 
 export MAKE=/usr/bin/make
@@ -441,9 +441,9 @@ QT59_ARGS="./configure -silent -prefix ${PREFIX} -plugindir ${PREFIX}/lib/qt5/pl
   fi
   make ${MAKE_ARGS}
   make install
-  #ln -s ${PREFIX}/lib/QtCore.framework/Headers    ${PREFIX}/include/qt5/QtCore
-  #ln -s ${PREFIX}/lib/QtGui.framework/Headers     ${PREFIX}/include/qt5/QtGui
-  #ln -s ${PREFIX}/lib/QtWidgets.framework/Headers ${PREFIX}/include/qt5/QtWidgets
+  ln -s ${PREFIX}/lib/QtCore.framework/Headers    ${PREFIX}/include/qt5/QtCore
+  ln -s ${PREFIX}/lib/QtGui.framework/Headers     ${PREFIX}/include/qt5/QtGui
+  ln -s ${PREFIX}/lib/QtWidgets.framework/Headers ${PREFIX}/include/qt5/QtWidgets
   #sed -i -e "s/ -lqtpcre/ /" ${PREFIX}/lib/pkgconfig/Qt5Core.pc
   #sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Core.pc
   #sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Core.pc
@@ -451,7 +451,7 @@ QT59_ARGS="./configure -silent -prefix ${PREFIX} -plugindir ${PREFIX}/lib/qt5/pl
   #sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Gui.pc
   #sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Widgets.pc
   #sed -i -e "s/ '/ /" ${PREFIX}/lib/pkgconfig/Qt5Widgets.pc
-  #touch build-done
+  touch build-done
   cd ..
 fi
 
@@ -501,8 +501,8 @@ fi
 
 if [ ! -f Python-${PYTHON_VERSION}/build-done ]; then
   cd Python-${PYTHON_VERSION}
-  #sed -i -e "s/#zlib zlibmodule.c/zlib zlibmodule.c/" Modules/Setup.dist
-  ./configure --prefix=${PREFIX}
+  sed -i -e "s/#zlib zlibmodule.c/zlib zlibmodule.c/" Modules/Setup.dist
+  ./configure --prefix=${PREFIX} --enable-shared
   make
   make install
   touch build-done
@@ -519,7 +519,7 @@ fi
 
 if [ ! -f sip-${SIP_VERSION}/build-done ]; then
   cd sip-${SIP_VERSION}
-  python3 configure.py
+  python3 configure.py # --sip-module PyQt5.sip
   make ${MAKE_ARGS}
   make install
   touch build-done
@@ -536,7 +536,7 @@ fi
 
 if [ ! -f PyQt5_gpl-${PYQT5_VERSION}/build-done ]; then
   cd PyQt5_gpl-${PYQT5_VERSION}
-  python3 configure.py --confirm-license -c
+  python3 configure.py --concatenate --confirm-license -c
   make ${MAKE_ARGS}
   make install
   touch build-done

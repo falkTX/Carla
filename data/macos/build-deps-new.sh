@@ -70,7 +70,7 @@ export PATH=${PREFIX}/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 
 export CFLAGS="-O3 -mtune=generic -msse -msse2 -mfpmath=sse -fvisibility=hidden -fdata-sections -ffunction-sections"
-export CFLAGS="${CFLAGS} -fPIC -DPIC -DNDEBUG -I${PREFIX}/include -m${ARCH} -mmacosx-version-min=10.7"
+export CFLAGS="${CFLAGS} -fPIC -DPIC -DNDEBUG -I${PREFIX}/include -m${ARCH} -mmacosx-version-min=10.8"
 export CXXFLAGS="${CFLAGS} -fvisibility-inlines-hidden -std=gnu++11 -stdlib=libc++"
 
 export LDFLAGS="-fdata-sections -ffunction-sections -Wl,-dead_strip -Wl,-dead_strip_dylibs"
@@ -164,6 +164,7 @@ fi
 
 if [ ! -f libogg-${LIBOGG_VERSION}/build-done ]; then
   cd libogg-${LIBOGG_VERSION}
+  sed -i -e 's/__MACH__/__MACH_SKIP__/' include/ogg/os_types.h
   ./configure --enable-static --disable-shared --prefix=${PREFIX}
   make ${MAKE_ARGS}
   make install
@@ -334,7 +335,7 @@ fi
 # ---------------------------------------------------------------------------------------------------------------------
 # build base libs
 
-# cleanup
+cleanup
 
 export ARCH=32
 build_base
@@ -350,14 +351,11 @@ export PATH=${PREFIX}/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 export PKG_CONFIG=${TARGETDIR}/carla64/bin/pkg-config
 
-export CFLAGS="-O3 -mtune=generic -msse -msse2 -mfpmath=sse -fPIC -DPIC -DNDEBUG -I${PREFIX}/include -m64"
-export CXXFLAGS=${CFLAGS}
-export LDFLAGS="-L${PREFIX}/lib -m64"
+export CFLAGS="-O3 -mtune=generic -msse -msse2 -mfpmath=sse -fPIC -DPIC -DNDEBUG -I${PREFIX}/include -m64 -mmacosx-version-min=10.8"
+export CXXFLAGS="${CFLAGS} -std=gnu++11 -stdlib=libc++"
+export LDFLAGS="-L${PREFIX}/lib -m64 -stdlib=libc++"
 
 export MAKE=/usr/bin/make
-
-#export CFG_ARCH=x86_64
-#export QMAKESPEC=macx-clang
 
 # ---------------------------------------------------------------------------------------------------------------------
 # qt5-base download
@@ -455,9 +453,6 @@ if [ ! -f Python-${PYTHON_VERSION}/build-done ]; then
   touch build-done
   cd ..
 fi
-
-# --enable-shared
-# ar -d /Users/falktx/builds/carla/lib/python3.7/config-3.7m-darwin/libpython3.7m.a main.o
 
 # ---------------------------------------------------------------------------------------------------------------------
 # sip

@@ -15,18 +15,18 @@ fi
 # ---------------------------------------------------------------------------------------------------------------------
 # set variables
 
-PKG_FOLDER="Carla_2.1a1-macos"
+PKG_FOLDER="Carla_2.1-RC1-macos"
 
 source data/macos/common.env
 
 export MACOS="true"
 
-if [ $(clang -v  2>&1 | grep version | cut -d' ' -f4 | cut -d'.' -f1) -lt 9 ]; then
-  export MACOS_OLD="true"
-  export USING_JUCE="false"
-else
-  export USING_JUCE="true"
-fi
+#if [ $(clang -v  2>&1 | grep version | cut -d' ' -f4 | cut -d'.' -f1) -lt 9 ]; then
+#  export MACOS_OLD="true"
+#  export USING_JUCE="false"
+#else
+export USING_JUCE="true"
+#fi
 
 export CC=clang
 export CXX=clang++
@@ -36,29 +36,33 @@ unset CPPFLAGS
 ##############################################################################################
 # Complete 64bit build
 
-export CFLAGS="-I${TARGETDIR}/carla64/include -m64"
-export CXXFLAGS="${CFLAGS}"
-export LDFLAGS="-L${TARGETDIR}/carla64/lib -m64"
+export CFLAGS="-I${TARGETDIR}/carla64/include -m64 -mmacosx-version-min=10.8"
+export CXXFLAGS="${CFLAGS} -stdlib=libc++"
+export LDFLAGS="-L${TARGETDIR}/carla64/lib -m64 -mmacosx-version-min=10.8"
 
 export PATH=${TARGETDIR}/carla/bin:${TARGETDIR}/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=${TARGETDIR}/carla/lib/pkgconfig:${TARGETDIR}/carla64/lib/pkgconfig
+
+export MOC_QT5=moc
+export RCC_QT5=rcc
+export UIC_QT5=uic
 
 make USING_JUCE=${USING_JUCE} ${MAKE_ARGS}
 
 ##############################################################################################
 # Build 32bit bridges
 
-export CFLAGS="-I${TARGETDIR}/carla32/include -m32"
-export CXXFLAGS="${CFLAGS}"
-export LDFLAGS="-L${TARGETDIR}/carla32/lib -m32"
+export CFLAGS="-I${TARGETDIR}/carla32/include -m32 -mmacosx-version-min=10.8"
+export CXXFLAGS="${CFLAGS} -stdlib=libc++"
+export LDFLAGS="-L${TARGETDIR}/carla32/lib -m32 -mmacosx-version-min=10.8"
 
 export PATH=${TARGETDIR}/carla32/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=${TARGETDIR}/carla32/lib/pkgconfig
 
 # FIXME install old xcode in new macos
-if [ MACOS_OLD = "true" ]; then
-  make USING_JUCE=${USING_JUCE} posix32 ${MAKE_ARGS}
-fi
+#if [ MACOS_OLD = "true" ]; then
+make USING_JUCE=${USING_JUCE} posix32 ${MAKE_ARGS}
+#fi
 
 ##############################################################################################
 # Build Mac App

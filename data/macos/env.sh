@@ -7,8 +7,8 @@ source data/macos/common.env
 
 export CC=clang
 export CXX=clang++
-export CFLAGS="-I${TARGETDIR}/carla64/include -m64 -stdlib=libc++ -mmacosx-version-min=10.8"
-export CXXFLAGS="${CFLAGS}"
+export CFLAGS="-I${TARGETDIR}/carla64/include -m64 -mmacosx-version-min=10.8"
+export CXXFLAGS="${CFLAGS} -stdlib=libc++"
 export LDFLAGS="-L${TARGETDIR}/carla64/lib -m64 -stdlib=libc++"
 unset CPPFLAGS
 
@@ -21,6 +21,6 @@ export MACOS="true"
 export PATH=${TARGETDIR}/carla/bin:${TARGETDIR}/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=${TARGETDIR}/carla/lib/pkgconfig:${TARGETDIR}/carla64/lib/pkgconfig
 
-#export DEFAULT_QT=5
-#export PYRCC5=$TARGETDIR/carla/bin/pyrcc5
-#export PYUIC5=$TARGETDIR/carla/bin/pyuic5
+export MOC_QT5=moc
+export RCC_QT5=rcc
+export UIC_QT5=uic

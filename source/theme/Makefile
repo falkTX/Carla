@@ -26,6 +26,16 @@ ifeq ($(HAVE_QT5),true)
 QT5_CXX_FLAGS  = $(BUILD_CXX_FLAGS) $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets)
 QT5_LINK_FLAGS = $(NON_STATIC_LINK_FLAGS) $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets)
 QT5_STYLES_DIR = $(shell pkg-config --variable=libdir Qt5Core)/qt5/plugins/styles
+else
+ifeq ($(MACOS),true)
+ifeq ($(HAVE_PYQT),true)
+HAVE_QT5=true
+MAC_BUILDS_PREFIX = ~/builds/carla
+QT5_CXX_FLAGS  = $(BUILD_CXX_FLAGS) -I $(MAC_BUILDS_PREFIX)/include/qt5
+QT5_LINK_FLAGS = $(NON_STATIC_LINK_FLAGS) -F $(MAC_BUILDS_PREFIX)/lib -framework QtCore -framework QtGui -framework QtWidgets
+QT5_STYLES_DIR = $(MAC_BUILDS_PREFIX)/lib/qt5/plugins/styles
+endif
+endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

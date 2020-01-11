@@ -323,6 +323,12 @@ PYUIC ?= $(PYUIC5)
 
 ifeq ($(HAVE_QT5),true)
 HAVE_THEME = true
+else
+ifeq ($(MACOS),true)
+ifeq ($(HAVE_PYQT),true)
+HAVE_THEME = true
+endif
+endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -517,6 +523,7 @@ JUCE_CORE_LIBS             = -framework AppKit
 JUCE_EVENTS_LIBS           = -framework AppKit
 JUCE_GRAPHICS_LIBS         = -framework Cocoa -framework QuartzCore
 JUCE_GUI_BASICS_LIBS       = -framework Cocoa
+JUCE_GUI_EXTRA_LIBS        = -framework IOKit
 else
 RTAUDIO_FLAGS   += -D__MACOSX_CORE__
 RTAUDIO_LIBS    += -framework CoreAudio
