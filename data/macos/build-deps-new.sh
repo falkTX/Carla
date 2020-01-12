@@ -70,7 +70,7 @@ export PATH=${PREFIX}/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 
 export CFLAGS="-O3 -mtune=generic -msse -msse2 -mfpmath=sse -fvisibility=hidden -fdata-sections -ffunction-sections"
-export CFLAGS="${CFLAGS} -fPIC -DPIC -DNDEBUG -I${PREFIX}/include -m${ARCH} -mmacosx-version-min=10.8"
+export CFLAGS="${CFLAGS} -fPIC -DPIC -DNDEBUG -I${PREFIX}/include -m${ARCH} -mmacosx-version-min=10.12"
 export CXXFLAGS="${CFLAGS} -fvisibility-inlines-hidden -std=gnu++11 -stdlib=libc++"
 
 export LDFLAGS="-fdata-sections -ffunction-sections -Wl,-dead_strip -Wl,-dead_strip_dylibs"
@@ -335,10 +335,7 @@ fi
 # ---------------------------------------------------------------------------------------------------------------------
 # build base libs
 
-cleanup
-
-export ARCH=32
-build_base
+# cleanup
 
 export ARCH=64
 build_base
@@ -351,7 +348,7 @@ export PATH=${PREFIX}/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 export PKG_CONFIG=${TARGETDIR}/carla64/bin/pkg-config
 
-export CFLAGS="-O3 -mtune=generic -msse -msse2 -mfpmath=sse -fPIC -DPIC -DNDEBUG -I${PREFIX}/include -m64 -mmacosx-version-min=10.8"
+export CFLAGS="-O3 -mtune=generic -msse -msse2 -mfpmath=sse -fPIC -DPIC -DNDEBUG -I${PREFIX}/include -m64 -mmacosx-version-min=10.12"
 export CXXFLAGS="${CFLAGS} -std=gnu++11 -stdlib=libc++"
 export LDFLAGS="-L${PREFIX}/lib -m64 -stdlib=libc++"
 
@@ -395,7 +392,10 @@ if [ ! -f qtbase-everywhere-src-${QT5_VERSION}/build-done ]; then
     touch configured
   fi
   make ${MAKE_ARGS}
-  make install
+  make install 
+  ln -s ${PREFIX}/lib/QtCore.framework/Headers    ${PREFIX}/include/qt5/QtCore
+  ln -s ${PREFIX}/lib/QtGui.framework/Headers     ${PREFIX}/include/qt5/QtGui
+  ln -s ${PREFIX}/lib/QtWidgets.framework/Headers ${PREFIX}/include/qt5/QtWidgets
   touch build-done
   cd ..
 fi
@@ -520,22 +520,6 @@ fi
 if [ ! -f cx_Freeze-${CXFREEZE_VERSION}/build-done ]; then
   cd cx_Freeze-${CXFREEZE_VERSION}
   sed -i -e 's/"python%s.%s"/"python%s.%sm"/' setup.py
-  python3 setup.py build
-  python3 setup.py install --prefix=${PREFIX}
-  touch build-done
-  cd ..
-fi
-
-# ---------------------------------------------------------------------------------------------------------------------
-# nuitka
-
-if [ ! -d Nuitka-${NUITKA_VERSION} ]; then
-  /opt/local/bin/aria2c http://nuitka.net/releases/Nuitka-${NUITKA_VERSION}.tar.gz
-  tar -xf Nuitka-${NUITKA_VERSION}.tar.gz
-fi
-
-if [ ! -f Nuitka-${NUITKA_VERSION}/build-done ]; then
-  cd Nuitka-${NUITKA_VERSION}
   python3 setup.py build
   python3 setup.py install --prefix=${PREFIX}
   touch build-done
