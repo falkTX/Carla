@@ -24,7 +24,7 @@ cd $(dirname $0)
 source common.env
 
 CHROOT_CARLA_DIR="/tmp/carla-src"
-PKG_FOLDER="Carla_2.1b1-linux"
+PKG_FOLDER="Carla_2.1-RC1-linux"
 PKGS_NUM="20190227"
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -132,12 +132,13 @@ if [ ! -d ${CHROOT_CARLA_DIR} ]; then
 fi
 
 if [ ! -f ${CHROOT_CARLA_DIR}/source/native-plugins/external/README.md ]; then
-  git clone --depth=1 -b develop git://github.com/falkTX/Carla-Plugins ${CHROOT_CARLA_DIR}/source/native-plugins/external
+  git clone git://github.com/falkTX/Carla-Plugins ${CHROOT_CARLA_DIR}/source/native-plugins/external
 fi
 
 cd ${CHROOT_CARLA_DIR}
 git checkout .
 git pull
+git submodule init
 git submodule update
 
 # might be updated by git pull
@@ -189,7 +190,11 @@ fi
 
 ${CHROOT_CARLA_DIR}/data/linux/build-pyqt.sh ${ARCH}
 
-apt-get install -y --no-install-recommends libasound2-dev libpulse-dev libgtk2.0-dev libqt4-dev qt4-dev-tools zip unzip
+if [ ! -f /tmp/setup-repo-packages-extra3 ]; then
+    apt-get install -y --no-install-recommends libasound2-dev libpulse-dev libgtk2.0-dev libqt4-dev qt4-dev-tools zip unzip
+  apt-get clean
+  touch /tmp/setup-repo-packages-extra3
+fi
 
 EOF
 
@@ -492,6 +497,8 @@ fi
 
 # ---------------------------------------------------------------------------------------------------------------------
 # run the functions
+
+# cleanup
 
 export ARCH=32
 chroot_setup

@@ -388,8 +388,7 @@ class PluginParameter(QWidget):
                     action.setCheckable(True)
                     action.setChecked(True)
 
-        # TODO
-        #menuMIDI.addAction(self.tr("Custom..."))
+        actCustomCC = menuMIDI.addAction(self.tr("Custom..."))
 
         # TODO
         #actPitchbend = menu.addAction(self.tr("MIDI Pitchbend"))
@@ -426,6 +425,14 @@ class PluginParameter(QWidget):
             ctrl = CONTROL_VALUE_CV
         elif actSel in actCCs:
             ctrl = int(actSel.text().split(" ", 1)[0].replace("&",""), 16)
+        elif actSel == actCustomCC:
+            ctrl, ok = QInputDialog.getInt(self,
+                                           self.tr("Custom CC"),
+                                           "Custom MIDI CC to use:",
+                                           self.fMappedCtrl if self.fMappedCtrl >= 0x01 and self.fMappedCtrl <= 0x77 else 1,
+                                           0x01, 0x77, 1)
+            if not ok:
+                return
         #elif actSel in actPitchbend:
             #ctrl = CONTROL_VALUE_MIDI_PITCHBEND
         else:
