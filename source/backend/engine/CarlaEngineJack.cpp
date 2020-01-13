@@ -163,6 +163,9 @@ public:
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     void setMetaData(const char* const key, const char* const value, const char* const type) override
     {
+        if (fJackPort == nullptr)
+            return CarlaEngineJackAudioPort::setMetaData(key, value, type);
+
         try {
             if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort))
                 jackbridge_set_property(fJackClient, uuid, key, value, type);
@@ -265,6 +268,9 @@ public:
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     void setMetaData(const char* const key, const char* const value, const char* const type) override
     {
+        if (fJackPort == nullptr)
+            return CarlaEngineCVPort::setMetaData(key, value, type);
+
         try {
             if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort))
                 jackbridge_set_property(fJackClient, uuid, key, value, type);
@@ -464,6 +470,9 @@ public:
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     void setMetaData(const char* const key, const char* const value, const char* const type) override
     {
+        if (fJackPort == nullptr)
+            return CarlaEngineJackEventPort::setMetaData(key, value, type);
+
         try {
             if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort))
                 jackbridge_set_property(fJackClient, uuid, key, value, type);
