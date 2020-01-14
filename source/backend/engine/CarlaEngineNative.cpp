@@ -2343,7 +2343,8 @@ static const NativePluginDescriptor carlaRackDesc = {
     /* _render_inline_dsplay */ nullptr,
     /* cvIns  */ 0,
     /* cvOuts */ 0,
-    /* _get_buffer_port_name */ nullptr
+    /* _get_buffer_port_name */ nullptr,
+    /* _get_buffer_port_range */ nullptr
 };
 
 static const NativePluginDescriptor carlaRackNoMidiOutDesc = {
@@ -2388,7 +2389,8 @@ static const NativePluginDescriptor carlaRackNoMidiOutDesc = {
     /* _render_inline_dsplay */ nullptr,
     /* cvIns  */ 0,
     /* cvOuts */ 0,
-    /* _get_buffer_port_name */ nullptr
+    /* _get_buffer_port_name */ nullptr,
+    /* _get_buffer_port_range */ nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbayDesc = {
@@ -2433,7 +2435,8 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
     /* _render_inline_dsplay */ nullptr,
     /* cvIns  */ 0,
     /* cvOuts */ 0,
-    /* _get_buffer_port_name */ nullptr
+    /* _get_buffer_port_name */ nullptr,
+    /* _get_buffer_port_range */ nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbay3sDesc = {
@@ -2478,7 +2481,8 @@ static const NativePluginDescriptor carlaPatchbay3sDesc = {
     /* _render_inline_dsplay */ nullptr,
     /* cvIns  */ 0,
     /* cvOuts */ 0,
-    /* _get_buffer_port_name */ nullptr
+    /* _get_buffer_port_name */ nullptr,
+    /* _get_buffer_port_range */ nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbay16Desc = {
@@ -2523,7 +2527,8 @@ static const NativePluginDescriptor carlaPatchbay16Desc = {
     /* _render_inline_dsplay */ nullptr,
     /* cvIns  */ 0,
     /* cvOuts */ 0,
-    /* _get_buffer_port_name */ nullptr
+    /* _get_buffer_port_name */ nullptr,
+    /* _get_buffer_port_range */ nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbay32Desc = {
@@ -2568,7 +2573,8 @@ static const NativePluginDescriptor carlaPatchbay32Desc = {
     /* _render_inline_dsplay */ nullptr,
     /* cvIns  */ 0,
     /* cvOuts */ 0,
-    /* _get_buffer_port_name */ nullptr
+    /* _get_buffer_port_name */ nullptr,
+    /* _get_buffer_port_range */ nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbay64Desc = {
@@ -2613,7 +2619,8 @@ static const NativePluginDescriptor carlaPatchbay64Desc = {
     /* _render_inline_dsplay */ nullptr,
     /* cvIns  */ 0,
     /* cvOuts */ 0,
-    /* _get_buffer_port_name */ nullptr
+    /* _get_buffer_port_name */ nullptr,
+    /* _get_buffer_port_range */ nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbayCVDesc = {
@@ -2659,7 +2666,8 @@ static const NativePluginDescriptor carlaPatchbayCVDesc = {
     /* _render_inline_dsplay */ nullptr,
     /* cvIns  */ 5,
     /* cvOuts */ 5,
-    /* _get_buffer_port_name */ nullptr
+    /* _get_buffer_port_name */ nullptr,
+    /* _get_buffer_port_range */ nullptr
 };
 
 CARLA_BACKEND_END_NAMESPACE

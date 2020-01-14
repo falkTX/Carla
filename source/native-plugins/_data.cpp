@@ -28,7 +28,7 @@
     nullptr, nullptr, nullptr, nullptr, nullptr, \
     nullptr, nullptr
 #define DESCFUNCS_WITHOUTCV \
-    DESCFUNCS_WITHCV, 0, 0, nullptr
+    DESCFUNCS_WITHCV, 0, 0, nullptr, nullptr
 
 static const NativePluginDescriptor sNativePluginDescriptors[] = {
 
@@ -194,9 +194,10 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* maker     */ "falkTX, Bram Giesen, Jarno Verheesen",
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS_WITHCV,
-    /* cvIns     */ 0,
-    /* cvOuts    */ 3,
-    /* bufnamefn */ nullptr
+    /* cvIns      */ 0,
+    /* cvOuts     */ 3,
+    /* bufnamefn  */ nullptr,
+    /* bufrangefn */ nullptr
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
@@ -482,9 +483,10 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS_WITHCV,
-    /* cvIns     */ 5,
-    /* cvOuts    */ 5,
-    /* bufnamefn */ nullptr
+    /* cvIns      */ 5,
+    /* cvOuts     */ 5,
+    /* bufnamefn  */ nullptr,
+    /* bufrangefn */ nullptr
 },
 #endif
 

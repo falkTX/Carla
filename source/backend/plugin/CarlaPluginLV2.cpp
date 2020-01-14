@@ -2211,17 +2211,34 @@ public:
             }
             else if (LV2_IS_PORT_CV(portTypes))
             {
+                const LV2_RDF_PortPoints portPoints(fRdfDescriptor->Ports[i].Points);
+                float min, max;
+
+                // min value
+                if (LV2_HAVE_MINIMUM_PORT_POINT(portPoints.Hints))
+                    min = portPoints.Minimum;
+                else
+                    min = -1.0f;
+
+                // max value
+                if (LV2_HAVE_MAXIMUM_PORT_POINT(portPoints.Hints))
+                    max = portPoints.Maximum;
+                else
+                    max = 1.0f;
+
                 if (LV2_IS_PORT_INPUT(portTypes))
                 {
                     const uint32_t j = iCvIn++;
                     pData->cvIn.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, true, j);
                     pData->cvIn.ports[j].rindex = i;
+                    pData->cvIn.ports[j].port->setRange(min, max);
                 }
                 else if (LV2_IS_PORT_OUTPUT(portTypes))
                 {
                     const uint32_t j = iCvOut++;
                     pData->cvOut.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, false, j);
                     pData->cvOut.ports[j].rindex = i;
+                    pData->cvOut.ports[j].port->setRange(min, max);
                 }
                 else
                     carla_stderr("WARNING - Got a broken Port (CV, but not input or output)");

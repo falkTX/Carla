@@ -193,6 +193,10 @@ typedef struct {
     int stride;
 } NativeInlineDisplayImageSurface;
 
+typedef struct {
+    float minimum, maximum;
+} NativePortRange;
+
 /* ------------------------------------------------------------------------------------------------------------
  * HostDescriptor */
 
@@ -283,6 +287,7 @@ typedef struct _NativePluginDescriptor {
     const uint32_t cvIns;
     const uint32_t cvOuts;
     const char* (*get_buffer_port_name)(NativePluginHandle handle, uint32_t index, bool isOutput);
+    const NativePortRange* (*get_buffer_port_range)(NativePluginHandle handle, uint32_t index, bool isOutput);
 
 } NativePluginDescriptor;
 

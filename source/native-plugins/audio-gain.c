@@ -338,9 +338,7 @@ static const NativePluginDescriptor audiogainStereoDesc = {
     .get_state = NULL,
     .set_state = NULL,
 
-    .dispatcher = audiogain_dispatcher,
-
-    .render_inline_display = NULL
+    .dispatcher = audiogain_dispatcher
 };
 
 // -----------------------------------------------------------------------

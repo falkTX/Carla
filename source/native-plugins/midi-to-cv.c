@@ -179,6 +179,35 @@ static void midi2cv_set_parameter_value(NativePluginHandle handle, uint32_t inde
     handlePtr->params[index] = value;
 }
 
+static const NativePortRange* midi2cv_get_buffer_port_range(NativePluginHandle handle, uint32_t index, bool isOutput)
+{
+    if (! isOutput)
+        return NULL;
+
+    static NativePortRange npr;
+
+    switch (index)
+    {
+    case 0:
+        npr.minimum = 0.0f;
+        npr.maximum = 9.0f;
+        return &npr;
+    case 1:
+        npr.minimum = 0.0f;
+        npr.maximum = 10.5f;
+        return &npr;
+    case 2:
+        npr.minimum = 0.0f;
+        npr.maximum = 10.0f;
+        return &npr;
+    default:
+        return NULL;
+    }
+
+    // unused
+    (void)handle;
+}
+
 static const char* midi2cv_get_buffer_port_name(NativePluginHandle handle, uint32_t index, bool isOutput)
 {
     if (! isOutput)
@@ -357,6 +386,7 @@ static const NativePluginDescriptor midi2cvDesc = {
     .set_custom_data     = NULL,
 
     .get_buffer_port_name = midi2cv_get_buffer_port_name,
+    .get_buffer_port_range = midi2cv_get_buffer_port_range,
 
     .ui_show = NULL,
     .ui_idle = NULL,

@@ -1213,8 +1213,21 @@ public:
 
             portName.truncate(portNameSize);
 
+            float min = -1.0f, max = 1.0f;
+            if (fDescriptor->get_buffer_port_range != nullptr)
+            {
+                if (const NativePortRange* const range = fDescriptor->get_buffer_port_range(fHandle,
+                                                                                            fDescriptor->audioIns + j,
+                                                                                            false))
+                {
+                    min = range->minimum;
+                    max = range->maximum;
+                }
+            }
+
             pData->cvIn.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, true, j);
             pData->cvIn.ports[j].rindex = j;
+            pData->cvIn.ports[j].port->setRange(min, max);
         }
 
         // CV Outs
@@ -1242,8 +1255,21 @@ public:
 
             portName.truncate(portNameSize);
 
+            float min = -1.0f, max = 1.0f;
+            if (fDescriptor->get_buffer_port_range != nullptr)
+            {
+                if (const NativePortRange* const range = fDescriptor->get_buffer_port_range(fHandle,
+                                                                                            fDescriptor->audioOuts + j,
+                                                                                            true))
+                {
+                    min = range->minimum;
+                    max = range->maximum;
+                }
+            }
+
             pData->cvOut.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, false, j);
             pData->cvOut.ports[j].rindex = j;
+            pData->cvOut.ports[j].port->setRange(min, max);
         }
 
         // MIDI Input (only if multiple)
