@@ -481,7 +481,7 @@ public:
                             setParameterValueRT(k, value, true);
                         }
 
-                        if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_CONTROL)
+                        if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_VALUE)
                         {
                             fSynth.handleController(event.channel+1, ctrlEvent.param, int(ctrlEvent.value*127.0f));
                         }
