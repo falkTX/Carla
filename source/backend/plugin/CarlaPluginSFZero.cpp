@@ -408,12 +408,12 @@ public:
 
                     case kEngineControlEventTypeParameter:
                     {
+                        float value;
+
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                         // Control backend stuff
                         if (event.channel == pData->ctrlChannel)
                         {
-                            float value;
-
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) != 0)
                             {
                                 value = ctrlEvent.value;
@@ -464,20 +464,7 @@ public:
                             if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
 
-                            float value;
-
-                            if (pData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
-                            {
-                                value = (ctrlEvent.value < 0.5f) ? pData->param.ranges[k].min : pData->param.ranges[k].max;
-                            }
-                            else
-                            {
-                                value = pData->param.ranges[k].getUnnormalizedValue(ctrlEvent.value);
-
-                                if (pData->param.data[k].hints & PARAMETER_IS_INTEGER)
-                                    value = std::rint(value);
-                            }
-
+                            value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.value);
                             setParameterValueRT(k, value, true);
                         }
 

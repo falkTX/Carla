@@ -2581,8 +2581,17 @@ public:
                     {
                         pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                         pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
-                        pData->param.data[j].hints |= PARAMETER_CAN_BE_CV_CONTROLLED;
                         needsCtrlIn = true;
+
+                        if (! LV2_IS_PORT_CAUSES_ARTIFACTS(portProps) &&
+                            ! LV2_IS_PORT_ENUMERATION(portProps) &&
+                            ! LV2_IS_PORT_EXPENSIVE(portProps) &&
+                            ! LV2_IS_PORT_NOT_AUTOMATIC(portProps) &&
+                            ! LV2_IS_PORT_NOT_ON_GUI(portProps) &&
+                            ! LV2_IS_PORT_TRIGGER(portProps))
+                        {
+                            pData->param.data[j].hints |= PARAMETER_CAN_BE_CV_CONTROLLED;
+                        }
                     }
 
                     // MIDI CC value
@@ -3630,21 +3639,7 @@ public:
                             const uint32_t k = ctrlEvent.param;
                             CARLA_SAFE_ASSERT_CONTINUE(k < pData->param.count);
 
-                            if (pData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
-                            {
-                                value = (ctrlEvent.value < 0.5f) ? pData->param.ranges[k].min : pData->param.ranges[k].max;
-                            }
-                            else
-                            {
-                                if (pData->param.data[k].hints & PARAMETER_IS_LOGARITHMIC)
-                                    value = pData->param.ranges[k].getUnnormalizedLogValue(ctrlEvent.value);
-                                else
-                                    value = pData->param.ranges[k].getUnnormalizedValue(ctrlEvent.value);
-
-                                if (pData->param.data[k].hints & PARAMETER_IS_INTEGER)
-                                    value = std::rint(value);
-                            }
-
+                            value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.value);
                             setParameterValueRT(k, value, true);
                             continue;
                         }
@@ -3703,21 +3698,7 @@ public:
                             if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
 
-                            if (pData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
-                            {
-                                value = (ctrlEvent.value < 0.5f) ? pData->param.ranges[k].min : pData->param.ranges[k].max;
-                            }
-                            else
-                            {
-                                if (pData->param.data[k].hints & PARAMETER_IS_LOGARITHMIC)
-                                    value = pData->param.ranges[k].getUnnormalizedLogValue(ctrlEvent.value);
-                                else
-                                    value = pData->param.ranges[k].getUnnormalizedValue(ctrlEvent.value);
-
-                                if (pData->param.data[k].hints & PARAMETER_IS_INTEGER)
-                                    value = std::rint(value);
-                            }
-
+                            value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.value);
                             setParameterValueRT(k, value, true);
                         }
 

@@ -837,12 +837,23 @@ public:
                         break;
 
                     case kEngineControlEventTypeParameter: {
-#ifndef BUILD_BRIDGE
+                        float value;
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+                        // non-midi
+                        if (event.channel == kEngineEventNonMidiChannel)
+                        {
+                            const uint32_t k = ctrlEvent.param;
+                            CARLA_SAFE_ASSERT_CONTINUE(k < pData->param.count);
+
+                            value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.value);
+                            setParameterValueRT(k, value, true);
+                            continue;
+                        }
+
                         // Control backend stuff
                         if (event.channel == pData->ctrlChannel)
                         {
-                            float value;
-
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) != 0)
                             {
                                 value = ctrlEvent.value;
@@ -894,23 +905,7 @@ public:
                             if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
 
-                            float value;
-
-                            if (pData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
-                            {
-                                value = (ctrlEvent.value < 0.5f) ? pData->param.ranges[k].min : pData->param.ranges[k].max;
-                            }
-                            else
-                            {
-                                if (pData->param.data[k].hints & PARAMETER_IS_LOGARITHMIC)
-                                    value = pData->param.ranges[k].getUnnormalizedLogValue(ctrlEvent.value);
-                                else
-                                    value = pData->param.ranges[k].getUnnormalizedValue(ctrlEvent.value);
-
-                                if (pData->param.data[k].hints & PARAMETER_IS_INTEGER)
-                                    value = std::rint(value);
-                            }
-
+                            value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.value);
                             setParameterValueRT(k, value, true);
                         }
 

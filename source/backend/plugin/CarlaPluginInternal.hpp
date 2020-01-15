@@ -181,6 +181,7 @@ struct PluginParameterData {
     void createNew(uint32_t newCount, bool withSpecial);
     void clear() noexcept;
     float getFixedValue(uint32_t parameterId, float value) const noexcept;
+    float getFinalUnnormalizedValue(uint32_t parameterId, float value) const noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginParameterData)
 };

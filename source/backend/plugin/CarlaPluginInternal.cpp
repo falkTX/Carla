@@ -280,6 +280,67 @@ float PluginParameterData::getFixedValue(const uint32_t parameterId, float value
     return paramRanges.getFixedValue(value);
 }
 
+// copied from ParameterRanges::getUnnormalizedValue
+static float _getUnnormalizedValue(const float min, const float max, const float value) noexcept
+{
+    if (value <= 0.0f)
+        return min;
+    if (value >= 1.0f)
+        return max;
+
+    return value * (max - min) + min;
+}
+
+// copied from ParameterRanges::getUnnormalizedLogValue
+static float _getUnnormalizedLogValue(const float min, const float max, const float value) noexcept
+{
+    if (value <= 0.0f)
+        return min;
+    if (value >= 1.0f)
+        return max;
+
+    float rmin = min;
+
+    if (std::abs(min) < std::numeric_limits<float>::epsilon())
+        rmin = 0.00001f;
+
+    return rmin * std::pow(max/rmin, value);
+}
+
+float PluginParameterData::getFinalUnnormalizedValue(const uint32_t parameterId, float value) const noexcept
+{
+    float min, max;
+
+    if (data[parameterId].mappedControlIndex != CONTROL_INDEX_CV
+        && (data[parameterId].hints & PARAMETER_MAPPED_RANGES_SET) != 0x0)
+    {
+        min = data[parameterId].mappedMinimum;
+        max = data[parameterId].mappedMaximum;
+    }
+    else
+    {
+        min = ranges[parameterId].min;
+        max = ranges[parameterId].max;
+    }
+
+    if (data[parameterId].hints & PARAMETER_IS_BOOLEAN)
+    {
+        value = (value < 0.5f) ? min : max;
+    }
+    else
+    {
+        if (data[parameterId].hints & PARAMETER_IS_LOGARITHMIC)
+            value = _getUnnormalizedLogValue(min, max, value);
+        else
+            value = _getUnnormalizedValue(min, max, value);
+
+        if (data[parameterId].hints & PARAMETER_IS_INTEGER)
+            value = std::rint(value);
+    }
+
+    return value;
+}
+
 // -----------------------------------------------------------------------
 // PluginProgramData
 
