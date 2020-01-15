@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -360,6 +360,14 @@ void EngineNextAction::clearAndReset() noexcept
     needsPost = false;
     postDone  = false;
     mutex.unlock();
+}
+
+// -----------------------------------------------------------------------
+// Helper functions
+
+EngineEvent* CarlaEngine::getInternalEventBuffer(const bool isInput) const noexcept
+{
+    return isInput ? pData->events.in : pData->events.out;
 }
 
 // -----------------------------------------------------------------------

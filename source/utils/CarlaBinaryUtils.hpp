@@ -1,6 +1,6 @@
 /*
  * Carla binary utils
- * Copyright (C) 2014-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,7 +23,7 @@
 
 #include "water/files/FileInputStream.h"
 
-#ifdef HAVE_LIBMAGIC
+#if defined(HAVE_LIBMAGIC) && ! defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
 # include <magic.h>
 # ifdef CARLA_OS_MAC
 #  include "CarlaMacUtils.hpp"
@@ -32,7 +32,7 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
-#ifdef HAVE_LIBMAGIC
+#if defined(HAVE_LIBMAGIC) && ! defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
 // --------------------------------------------------------------------------------------------------------------------
 
 class CarlaMagic
@@ -80,7 +80,7 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
     if (filename == nullptr || filename[0] == '\0')
         return BINARY_NATIVE;
 
-#ifdef HAVE_LIBMAGIC
+#if defined(HAVE_LIBMAGIC) && ! defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
     static const CarlaMagic magic;
 
     const char* const output(magic.getFileDescription(filename));
