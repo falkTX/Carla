@@ -52,7 +52,7 @@ enum EngineType {
     kEngineTypeJack = 1,
 
     /*!
-     * Juce engine type, used to provide Native Audio and MIDI support.
+     * JUCE engine type, used to provide Native Audio and MIDI support.
      */
     kEngineTypeJuce = 2,
 
@@ -386,7 +386,7 @@ public:
     /*!
      * Check if this port is an input.
      */
-    bool isInput() const noexcept
+    inline bool isInput() const noexcept
     {
         return kIsInput;
     }
@@ -394,7 +394,7 @@ public:
     /*!
      * Get the index offset as passed in the constructor.
      */
-    uint32_t getIndexOffset() const noexcept
+    inline uint32_t getIndexOffset() const noexcept
     {
         return kIndexOffset;
     }
@@ -402,7 +402,7 @@ public:
     /*!
      * Get this ports' engine client.
      */
-    const CarlaEngineClient& getEngineClient() const noexcept
+    inline const CarlaEngineClient& getEngineClient() const noexcept
     {
         return kClient;
     }
@@ -442,7 +442,7 @@ public:
     /*!
      * Get the type of the port, in this case kEnginePortTypeAudio.
      */
-    EnginePortType getType() const noexcept final
+    inline EnginePortType getType() const noexcept final
     {
         return kEnginePortTypeAudio;
     }
@@ -456,7 +456,7 @@ public:
      * Direct access to the port's audio buffer.
      * May be null.
      */
-    float* getBuffer() const noexcept
+    inline float* getBuffer() const noexcept
     {
         return fBuffer;
     }
@@ -489,7 +489,7 @@ public:
     /*!
      * Get the type of the port, in this case kEnginePortTypeCV.
      */
-    EnginePortType getType() const noexcept final
+    inline EnginePortType getType() const noexcept final
     {
         return kEnginePortTypeCV;
     }
@@ -503,7 +503,7 @@ public:
      * Direct access to the port's CV buffer.
      * May be null.
      */
-    float* getBuffer() const noexcept
+    inline float* getBuffer() const noexcept
     {
         return fBuffer;
     }
@@ -511,7 +511,7 @@ public:
     /*!
      * Get min/max range for this CV port.
      */
-    void getRange(float& min, float& max) const noexcept
+    inline void getRange(float& min, float& max) const noexcept
     {
         min = fMinimum;
         max = fMaximum;
@@ -551,7 +551,7 @@ public:
     /*!
      * Get the type of the port, in this case kEnginePortTypeEvent.
      */
-    EnginePortType getType() const noexcept final
+    inline EnginePortType getType() const noexcept final
     {
         return kEnginePortTypeEvent;
     }
@@ -638,12 +638,12 @@ public:
     /*!
      * Add a CV port as a source of events.
      */
-    bool addCVSource(CarlaEngineCVPort* port, uint32_t portIndexOffset);
+    virtual bool addCVSource(CarlaEngineCVPort* port, uint32_t portIndexOffset);
 
     /*!
      * Remove a CV port as a source of events.
      */
-    bool removeCVSource(uint32_t portIndexOffset);
+    virtual bool removeCVSource(uint32_t portIndexOffset);
 
     /*!
      * Set value range for a CV port.
@@ -1122,7 +1122,7 @@ public:
      * Call the main engine callback, if set.
      * May be called by plugins.
      */
-    virtual void callback(bool sendHost, bool sendOsc,
+    virtual void callback(bool sendHost, bool sendOSC,
                           EngineCallbackOpcode action, uint pluginId,
                           int value1, int value2, int value3, float valuef, const char* valueStr) noexcept;
 
@@ -1164,7 +1164,7 @@ public:
     /*!
      * Force the engine to resend all patchbay clients, ports and connections again.
      */
-    virtual bool patchbayRefresh(bool sendHost, bool sendOsc, bool external);
+    virtual bool patchbayRefresh(bool sendHost, bool sendOSC, bool external);
 #endif
 
     // -------------------------------------------------------------------
@@ -1265,23 +1265,6 @@ public:
 #endif
 
     // -------------------------------------------------------------------
-    // Helper functions
-
-    /*!
-     * Return internal data, needed for EventPorts when used in Rack, Patchbay and Bridge modes.
-     * @note RT call
-     */
-    EngineEvent* getInternalEventBuffer(bool isInput) const noexcept;
-
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-    /*!
-     * Virtual functions for handling external graph ports.
-     */
-    virtual bool connectExternalGraphPort(uint, uint, const char*);
-    virtual bool disconnectExternalGraphPort(uint, uint, const char*);
-#endif
-
-    // -------------------------------------------------------------------
 
 protected:
     /*!
@@ -1293,14 +1276,16 @@ protected:
     /*!
      * Some internal classes read directly from pData or call protected functions.
      */
-    friend class CarlaEngineThread;
+    friend class CarlaEngineEventPort;
     friend class CarlaEngineOsc;
+    friend class CarlaEngineThread;
     friend class CarlaPluginInstance;
     friend class EngineInternalGraph;
     friend class PendingRtEventsRunner;
     friend class ScopedActionLock;
     friend class ScopedEngineEnvironmentLocker;
     friend class ScopedThreadStopper;
+    friend class ExternalGraph;
     friend class PatchbayGraph;
     friend struct RackGraph;
 
@@ -1339,6 +1324,15 @@ protected:
      */
     bool loadProjectInternal(water::XmlDocument& xmlDoc);
 
+    // -------------------------------------------------------------------
+    // Helper functions
+
+    /*!
+     * Return internal data, needed for EventPorts when used in Rack, Patchbay and Bridge modes.
+     * @note RT call
+     */
+    EngineEvent* getInternalEventBuffer(bool isInput) const noexcept;
+
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     // -------------------------------------------------------------------
     // Patchbay stuff
@@ -1351,6 +1345,12 @@ protected:
     virtual void restorePatchbayConnection(bool external,
                                            const char* sourcePort,
                                            const char* targetPort);
+
+    /*!
+     * Virtual functions for handling external graph ports.
+     */
+    virtual bool connectExternalGraphPort(uint, uint, const char*);
+    virtual bool disconnectExternalGraphPort(uint, uint, const char*);
 #endif
 
     // -------------------------------------------------------------------

@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -2656,6 +2656,15 @@ bool CarlaEngine::patchbayRefresh(const bool sendHost, const bool sendOSC, const
 }
 
 // -----------------------------------------------------------------------
+// Helper functions
+
+EngineEvent* CarlaEngine::getInternalEventBuffer(const bool isInput) const noexcept
+{
+    return isInput ? pData->events.in : pData->events.out;
+}
+
+// -----------------------------------------------------------------------
+// Patchbay stuff
 
 const char* const* CarlaEngine::getPatchbayConnections(const bool external) const
 {

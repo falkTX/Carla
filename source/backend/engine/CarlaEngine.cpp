@@ -1364,7 +1364,7 @@ float CarlaEngine::getOutputPeak(const uint pluginId, const bool isLeft) const n
 // -----------------------------------------------------------------------
 // Callback
 
-void CarlaEngine::callback(const bool sendHost, const bool sendOsc,
+void CarlaEngine::callback(const bool sendHost, const bool sendOSC,
                            const EngineCallbackOpcode action, const uint pluginId,
                            const int value1, const int value2, const int value3,
                            const float valuef, const char* const valueStr) noexcept
@@ -1400,7 +1400,7 @@ void CarlaEngine::callback(const bool sendHost, const bool sendOsc,
             --pData->isIdling;
     }
 
-    if (sendOsc)
+    if (sendOSC)
     {
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
         if (pData->osc.isControlRegisteredForTCP())
@@ -1989,14 +1989,6 @@ const char* CarlaEngine::getOscServerPathUDP() const noexcept
 # endif
 }
 #endif
-
-// -----------------------------------------------------------------------
-// Helper functions
-
-EngineEvent* CarlaEngine::getInternalEventBuffer(const bool isInput) const noexcept
-{
-    return isInput ? pData->events.in : pData->events.out;
-}
 
 // -----------------------------------------------------------------------
 // Internal stuff
