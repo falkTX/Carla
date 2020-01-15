@@ -125,7 +125,10 @@ CarlaStateSave::Parameter::Parameter() noexcept
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
       value(0.0f),
       mappedControlIndex(CONTROL_INDEX_NONE),
-      midiChannel(0) {}
+      midiChannel(0),
+      mappedRangeValid(false),
+      mappedMinimum(0.0f),
+      mappedMaximum(1.0f) {}
 #else
       value(0.0f) {}
 #endif
@@ -406,6 +409,9 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                 else if (tag == "Parameter")
                 {
                     Parameter* const stateParameter(new Parameter());
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+                    bool hasMappedMinimum = false, hasMappedMaximum = false;
+#endif
 
                     for (XmlElement* xmlSubData = xmlData->getFirstChildElement(); xmlSubData != nullptr; xmlSubData = xmlSubData->getNextElement())
                     {
@@ -450,8 +456,23 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                             if (ctrl > CONTROL_INDEX_NONE && ctrl <= CONTROL_INDEX_MAX_ALLOWED)
                                 stateParameter->mappedControlIndex = static_cast<int16_t>(ctrl);
                         }
+                        else if (pTag == "MappedMinimum")
+                        {
+                            hasMappedMinimum = true;
+                            stateParameter->mappedMinimum = pText.getFloatValue();
+                        }
+                        else if (pTag == "MappedMaximum")
+                        {
+                            hasMappedMaximum = true;
+                            stateParameter->mappedMaximum = pText.getFloatValue();
+                        }
 #endif
                     }
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+                    if (hasMappedMinimum && hasMappedMaximum)
+                        stateParameter->mappedRangeValid = true;
+#endif
 
                     parameters.append(stateParameter);
                 }
@@ -607,10 +628,8 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
         if (stateParameter->mappedControlIndex > CONTROL_INDEX_NONE && stateParameter->mappedControlIndex <= CONTROL_INDEX_MAX_ALLOWED)
         {
             parameterXml << "    <MidiChannel>"   << stateParameter->midiChannel+1 << "</MidiChannel>\n";
-            /*
             parameterXml << "    <MappedMinimum>" << stateParameter->mappedMinimum << "</MappedMinimum>\n";
             parameterXml << "    <MappedMaximum>" << stateParameter->mappedMaximum << "</MappedMaximum>\n";
-            */
             parameterXml << "    <MappedControlIndex>" << stateParameter->mappedControlIndex << "</MappedControlIndex>\n";
 
             // backwards compatibility for older carla versions

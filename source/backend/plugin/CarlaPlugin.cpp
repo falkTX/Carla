@@ -823,6 +823,11 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             setParameterMappedControlIndex(static_cast<uint32_t>(index), stateParameter->mappedControlIndex, true, true);
             setParameterMidiChannel(static_cast<uint32_t>(index), stateParameter->midiChannel, true, true);
+
+            if (stateParameter->mappedRangeValid)
+                setParameterMappedRange(static_cast<uint32_t>(index),
+                                        stateParameter->mappedMinimum,
+                                        stateParameter->mappedMaximum, true, true);
 #endif
         }
         else
