@@ -731,6 +731,26 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
+    void setParameterValueRT(const uint32_t parameterId, const float value, const bool sendCallbackLater) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+
+        const float fixedValue(pData->param.getFixedValue(parameterId, value));
+        fParams[parameterId].value = fixedValue;
+
+        {
+            const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
+
+            fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientSetParameterValue);
+            fShmNonRtClientControl.writeUInt(parameterId);
+            fShmNonRtClientControl.writeFloat(value);
+            fShmNonRtClientControl.commitWrite();
+            fShmNonRtClientControl.waitIfDataIsReachingLimit();
+        }
+
+        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, sendCallbackLater);
+    }
+
     void setParameterMidiChannel(const uint32_t parameterId, const uint8_t channel, const bool sendOsc, const bool sendCallback) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);

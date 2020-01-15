@@ -1037,7 +1037,7 @@ protected:
     {
         uint32_t rindex = index;
         if (CarlaPlugin* const plugin = _getPluginForParameterIndex(rindex))
-            plugin->setParameterValue(rindex, value, false, false, false);
+            plugin->setParameterValueRT(rindex, value, false);
 
         fParameters[index] = value;
     }
