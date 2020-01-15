@@ -24,7 +24,7 @@ In experimental phase / work in progress:
 
 Carla is also available as an LV2 and VST2 plugin for macOS.
 For the LV2 plugin, create the /Library/Audio/Plug-Ins/LV2 folder (if it does not exist yet), then copy carla.lv2 into it and restart your LV2 host.
-For the VST2 plugin, create the /Library/Audio/Plug-Ins/VST folder (if it does not exist yet), then copy carla.vst into it and restart your VST2 host.
+For the VST2 plugin, create the /Library/Audio/Plug-Ins/VST folder (if it does not exist yet), then copy carla.vst  and carlafx.vst into it and restart your VST2 host.
 
 For a complete and updated description of Carla, please check:
 https://kx.studio/carla

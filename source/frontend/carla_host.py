@@ -394,9 +394,9 @@ class HostWindow(QMainWindow):
             self.ui.act_file_quit.setMenuRole(QAction.QuitRole)
             self.ui.act_settings_configure.setMenuRole(QAction.PreferencesRole)
             self.ui.act_help_about.setMenuRole(QAction.AboutRole)
+            self.ui.act_help_about_juce.setMenuRole(QAction.ApplicationSpecificRole)
             self.ui.act_help_about_qt.setMenuRole(QAction.AboutQtRole)
             self.ui.menu_Settings.setTitle("Panels")
-            self.ui.menu_Help.menuAction().setVisible(False)
 
         # ----------------------------------------------------------------------------------------------------
         # Load Settings
