@@ -666,6 +666,8 @@ private:
     const bool fUseClient;
     EngineEvent* fBuffer;
     EngineEvent* fBufferToDeleteLater;
+
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineJackCVSourcePorts)
 };
 #endif
 
