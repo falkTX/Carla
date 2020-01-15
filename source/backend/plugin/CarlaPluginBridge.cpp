@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Bridge
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -1167,6 +1167,9 @@ public:
             portName.truncate(portNameSize);
 
             pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+            pData->event.cvSourcePorts = pData->client->createCVSourcePorts();
+#endif
         }
 
         if (needsCtrlOut)
@@ -1311,6 +1314,12 @@ public:
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             bool allNotesOffSent = false;
+
+            if (cvIn != nullptr && pData->event.cvSourcePorts != nullptr)
+            {
+                const bool isSampleAccurate = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0x0;
+                pData->event.cvSourcePorts->initPortBuffers(cvIn + pData->cvIn.count, frames, isSampleAccurate, pData->event.portIn);
+            }
 #endif
 
             for (uint32_t i=0, numEvents=pData->event.portIn->getEventCount(); i < numEvents; ++i)

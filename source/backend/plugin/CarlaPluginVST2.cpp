@@ -840,11 +840,13 @@ public:
             pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
             pData->param.data[j].hints |= PARAMETER_USES_CUSTOM_TEXT;
 
-            if ((prop.flags & (kVstParameterIsSwitch|kVstParameterUsesIntStep)) == 0x0)
-                pData->param.data[j].hints |= PARAMETER_CAN_BE_CV_CONTROLLED;
-
             if ((pData->hints & PLUGIN_USES_OLD_VSTSDK) != 0 || dispatcher(effCanBeAutomated, ij) == 1)
+            {
                 pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
+
+                if ((prop.flags & (kVstParameterIsSwitch|kVstParameterUsesIntStep)) == 0x0)
+                    pData->param.data[j].hints |= PARAMETER_CAN_BE_CV_CONTROLLED;
+            }
 
             // no such thing as VST default parameters
             def = fEffect->getParameter(fEffect, ij);

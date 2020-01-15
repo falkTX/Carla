@@ -1,6 +1,6 @@
 /*
  * Carla Juce Plugin
- * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -305,7 +305,7 @@ public:
 
         try {
             fInstance->setParameter(static_cast<int>(parameterId), value);
-        } CARLA_SAFE_EXCEPTION("setParameter");
+        } CARLA_SAFE_EXCEPTION("setParameter(RT)");
 
         CarlaPlugin::setParameterValueRT(parameterId, fixedValue, sendCallbackLater);
     }
@@ -566,7 +566,12 @@ public:
 #endif
 
             if (fInstance->isParameterAutomatable(static_cast<int>(j)))
+            {
                 pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
+
+                if (fInstance->isMetaParameter(static_cast<int>(j)))
+                    pData->param.data[j].hints |= PARAMETER_CAN_BE_CV_CONTROLLED;
+            }
 
             // FIXME?
             def = fInstance->getParameterDefaultValue(static_cast<int>(j));
@@ -598,6 +603,9 @@ public:
             portName.truncate(portNameSize);
 
             pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+            pData->event.cvSourcePorts = pData->client->createCVSourcePorts();
+#endif
         }
 
         if (needsCtrlOut)
@@ -757,8 +765,11 @@ public:
         } catch(...) {}
     }
 
-    void process(const float* const* const audioIn, float** const audioOut,
-                 const float* const*, float**, const uint32_t frames) override
+    void process(const float* const* const audioIn,
+                 float** const audioOut,
+                 const float* const* const cvIn,
+                 float**,
+                 const uint32_t frames) override
     {
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -813,9 +824,13 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             bool allNotesOffSent = false;
+
+            if (cvIn != nullptr && pData->event.cvSourcePorts != nullptr)
+                pData->event.cvSourcePorts->initPortBuffers(cvIn, frames, false, pData->event.portIn);
 #endif
+
             for (uint32_t i=0, numEvents=pData->event.portIn->getEventCount(); i < numEvents; ++i)
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
@@ -1073,6 +1088,15 @@ public:
         // Process
 
         processSingle(audioIn, audioOut, frames);
+
+        // --------------------------------------------------------------------------------------------------------
+
+#ifdef BUILD_BRIDGE_ALTERNATIVE_ARCH
+        return;
+
+        // unused
+        (void)cvIn;
+#endif
     }
 
     bool processSingle(const float* const* const inBuffer, float** const outBuffer, const uint32_t frames)

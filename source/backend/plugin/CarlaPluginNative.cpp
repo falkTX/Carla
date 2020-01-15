@@ -1855,7 +1855,7 @@ public:
 #ifndef BUILD_BRIDGE
             bool allNotesOffSent = false;
 #endif
-            bool isSampleAccurate = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
+            const bool isSampleAccurate = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
             uint32_t startTime  = 0;
             uint32_t timeOffset = 0;
