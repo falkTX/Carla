@@ -336,7 +336,7 @@
      <x>0</x>
      <y>0</y>
      <width>1045</width>
-     <height>31</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -957,6 +957,9 @@
    <property name="shortcut">
     <string>Ctrl+N</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_file_open">
    <property name="icon">
@@ -975,6 +978,9 @@
    <property name="shortcut">
     <string>Ctrl+O</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_file_save">
    <property name="icon">
@@ -986,6 +992,9 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="act_file_save_as">
@@ -1005,6 +1014,9 @@
    <property name="shortcut">
     <string>Ctrl+Shift+S</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_file_quit">
    <property name="icon">
@@ -1016,6 +1028,9 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Q</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="act_engine_start">
@@ -1029,6 +1044,9 @@
    <property name="shortcut">
     <string>F5</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_engine_stop">
    <property name="icon">
@@ -1040,6 +1058,9 @@
    </property>
    <property name="shortcut">
     <string>F6</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="act_plugin_add">
@@ -1053,6 +1074,9 @@
    <property name="shortcut">
     <string>Ctrl+A</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_plugin_remove_all">
    <property name="icon">
@@ -1062,40 +1086,64 @@
    <property name="text">
     <string>&amp;Remove All</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_plugins_enable">
    <property name="text">
     <string>Enable</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="act_plugins_disable">
    <property name="text">
     <string>Disable</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_plugins_bypass">
    <property name="text">
     <string>0% Wet (Bypass)</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="act_plugins_wet100">
    <property name="text">
     <string>100% Wet</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_plugins_mute">
    <property name="text">
     <string>0% Volume (Mute)</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="act_plugins_volume100">
    <property name="text">
     <string>100% Volume</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_plugins_center">
    <property name="text">
     <string>Center Balance</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="act_transport_play">
@@ -1160,6 +1208,9 @@
    <property name="shortcut">
     <string>Ctrl+G</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_canvas_refresh">
    <property name="icon">
@@ -1172,10 +1223,16 @@
    <property name="shortcut">
     <string>Ctrl+R</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_canvas_save_image">
    <property name="text">
     <string>Save &amp;Image...</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="act_canvas_zoom_fit">
@@ -1189,6 +1246,9 @@
    <property name="shortcut">
     <string>Home</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_canvas_zoom_in">
    <property name="icon">
@@ -1200,6 +1260,9 @@
    </property>
    <property name="shortcut">
     <string>Ctrl++</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="act_canvas_zoom_out">
@@ -1213,6 +1276,9 @@
    <property name="shortcut">
     <string>Ctrl+-</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_canvas_zoom_100">
    <property name="icon">
@@ -1225,6 +1291,9 @@
    <property name="shortcut">
     <string>Ctrl+1</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_settings_show_toolbar">
    <property name="checkable">
@@ -1232,6 +1301,9 @@
    </property>
    <property name="text">
     <string>Show &amp;Toolbar</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="act_settings_configure">
@@ -1242,20 +1314,32 @@
    <property name="text">
     <string>&amp;Configure Carla</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_help_about">
    <property name="text">
     <string>&amp;About</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="act_help_about_juce">
    <property name="text">
     <string>About &amp;JUCE</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_help_about_qt">
    <property name="text">
     <string>About &amp;Qt</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="act_settings_show_meters">
@@ -1265,6 +1349,9 @@
    <property name="text">
     <string>Show Canvas &amp;Meters</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_settings_show_keyboard">
    <property name="checkable">
@@ -1272,6 +1359,9 @@
    </property>
    <property name="text">
     <string>Show Canvas &amp;Keyboard</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="act_canvas_show_internal">
@@ -1281,6 +1371,9 @@
    <property name="text">
     <string>Show Internal</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_canvas_show_external">
    <property name="checkable">
@@ -1288,6 +1381,9 @@
    </property>
    <property name="text">
     <string>Show External</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="act_settings_show_time_panel">
@@ -1305,6 +1401,9 @@
    <property name="text">
     <string>Show &amp;Side Panel</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_file_connect">
    <property name="icon">
@@ -1313,6 +1412,9 @@
    </property>
    <property name="text">
     <string>&amp;Connect...</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="act_file_refresh">
@@ -1323,15 +1425,24 @@
    <property name="text">
     <string>&amp;Refresh</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_plugins_compact">
    <property name="text">
     <string>Compact Slots</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_plugins_expand">
    <property name="text">
     <string>Expand Slots</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="act_secret_1">
@@ -1367,6 +1478,9 @@
    <property name="text">
     <string>Add &amp;JACK Application...</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_engine_config">
    <property name="icon">
@@ -1376,6 +1490,9 @@
    <property name="text">
     <string>&amp;Configure driver...</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="act_engine_panic">
    <property name="icon">
@@ -1384,6 +1501,9 @@
    </property>
    <property name="text">
     <string>Panic</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="act_engine_panel">
