@@ -15,12 +15,10 @@ from carla_host import VERSION
 # ------------------------------------------------------------------------------------------------------------
 
 options = {
-  "packages": ["re", "sip", "subprocess", "inspect"],
-  "excludes": ["PyQt5.QtNetwork", "PyQt5.QtSql", "PyQt5.QtTest", "PyQt5.QtXml", "XCTest"],
-  "create_shared_zip":    False,
-  "append_script_to_exe": True,
-  "optimize":   True,
-  "compressed": True
+  "zip_include_packages": ["*"],
+  "zip_exclude_packages": ["PyQt5"],
+  "replace_paths": [["*","@executable_path/"]],
+  "optimize": True,
 }
 
 boptions = {

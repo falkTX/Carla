@@ -24,7 +24,7 @@ options = {
 exe_options = {
   "script": "..\\..\\source\\frontend\\carla",
   "icon": "..\\..\\resources\\ico\\carla.ico",
-  "copyright": "Copyright (C) 2011-2019 Filipe Coelho",
+  "copyright": "Copyright (C) 2011-2020 Filipe Coelho",
   "base": "Win32GUI",
   "targetName": "Carla.exe",
 }

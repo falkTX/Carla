@@ -1290,8 +1290,8 @@ protected:
     friend class ScopedActionLock;
     friend class ScopedEngineEnvironmentLocker;
     friend class ScopedThreadStopper;
-    friend class ExternalGraph;
     friend class PatchbayGraph;
+    friend struct ExternalGraph;
     friend struct RackGraph;
 
     // -------------------------------------------------------------------

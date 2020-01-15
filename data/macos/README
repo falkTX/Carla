@@ -27,4 +27,4 @@ For the LV2 plugin, create the /Library/Audio/Plug-Ins/LV2 folder (if it does no
 For the VST2 plugin, create the /Library/Audio/Plug-Ins/VST folder (if it does not exist yet), then copy carla.vst into it and restart your VST2 host.
 
 For a complete and updated description of Carla, please check:
-http://kxstudio.linuxaudio.org/carla
+https://kx.studio/carla

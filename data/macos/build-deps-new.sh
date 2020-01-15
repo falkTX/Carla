@@ -74,7 +74,7 @@ export CFLAGS="${CFLAGS} -fPIC -DPIC -DNDEBUG -I${PREFIX}/include -m${ARCH} -mma
 export CXXFLAGS="${CFLAGS} -fvisibility-inlines-hidden -std=gnu++11 -stdlib=libc++"
 
 export LDFLAGS="-fdata-sections -ffunction-sections -Wl,-dead_strip -Wl,-dead_strip_dylibs"
-export LDFLAGS="${LDFLAGS} -L${PREFIX}/lib -m${ARCH}"
+export LDFLAGS="${LDFLAGS} -L${PREFIX}/lib -m${ARCH} -stdlib=libc++"
 
 # ---------------------------------------------------------------------------------------------------------------------
 # pkgconfig

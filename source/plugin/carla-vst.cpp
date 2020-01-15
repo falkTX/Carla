@@ -113,11 +113,13 @@ public:
         File curExe = File::getSpecialLocation(File::currentExecutableFile).getLinkedTarget();
         File resDir = curExe.getSiblingFile("resources");
 
+#ifndef CARLA_OS_MAC
         // FIXME: proper fallback path for other OSes
         if (! resDir.exists())
             resDir = File("/usr/local/share/carla/resources");
         if (! resDir.exists())
             resDir = File("/usr/share/carla/resources");
+#endif
 
         // find host type
         const String hostFilename(File::getSpecialLocation(File::hostApplicationPath).getFileName());
