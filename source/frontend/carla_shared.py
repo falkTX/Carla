@@ -29,6 +29,8 @@ X_DATADIR_X = None
 import os
 import sys
 
+from math import fmod
+
 from PyQt5.Qt import PYQT_VERSION_STR
 from PyQt5.QtCore import qFatal, QT_VERSION, QT_VERSION_STR, qWarning, QDir, QSettings
 from PyQt5.QtGui import QIcon
@@ -567,6 +569,23 @@ elif MACOS:
     DLL_EXTENSION = "dylib"
 else:
     DLL_EXTENSION = "so"
+
+# ------------------------------------------------------------------------------------------------------------
+# Find decimal points for a parameter, using step and stepSmall
+
+def countDecimalPoints(step, stepSmall):
+    if stepSmall >= 1.0:
+        return 0
+    if step >= 1.0:
+        return 2
+
+    count = 0
+    value = fmod(abs(stepSmall), 1)
+    while value > 0.001 and value < 0.99 and count < 6:
+        value = fmod(value*10, 1)
+        count += 1
+
+    return count
 
 # ------------------------------------------------------------------------------------------------------------
 # Check if a value is a number (float support)

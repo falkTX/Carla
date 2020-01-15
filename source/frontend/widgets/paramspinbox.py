@@ -31,6 +31,8 @@ from PyQt5.QtWidgets import QAbstractSpinBox, QApplication, QComboBox, QDialog, 
 
 import ui_inputdialog_value
 
+from carla_shared import countDecimalPoints
+
 # ------------------------------------------------------------------------------------------------------------
 # Get a fixed value within min/max bounds
 
@@ -50,31 +52,18 @@ def geFixedValue(name, value, minimum, maximum):
 # Custom InputDialog with Scale Points support
 
 class CustomInputDialog(QDialog):
-    def __init__(self, parent, label, current, minimum, maximum, step, stepSmall, scalePoints):
+    def __init__(self, parent, label, current, minimum, maximum, step, stepSmall, scalePoints, prefix, suffix):
         QDialog.__init__(self, parent)
         self.ui = ui_inputdialog_value.Ui_Dialog()
         self.ui.setupUi(self)
 
-        # calculate num decimals from stepSmall
-        if stepSmall >= 1.0:
-            decimals = 0
-        elif step >= 1.0:
-            decimals = 2
-        else:
-            decfrac, decwhole = modf(stepSmall)
-
-            if "000" in str(decfrac):
-                decfrac = round(decfrac, str(decfrac).find("000"))
-            else:
-                decfrac = round(decfrac, 12)
-
-            decimals = abs(len(str(decfrac))-len(str(decwhole))-1)
-
         self.ui.label.setText(label)
-        self.ui.doubleSpinBox.setDecimals(decimals)
+        self.ui.doubleSpinBox.setDecimals(countDecimalPoints(step, stepSmall))
         self.ui.doubleSpinBox.setRange(minimum, maximum)
         self.ui.doubleSpinBox.setSingleStep(step)
         self.ui.doubleSpinBox.setValue(current)
+        self.ui.doubleSpinBox.setPrefix(prefix)
+        self.ui.doubleSpinBox.setSuffix(suffix)
 
         if not scalePoints:
             self.ui.groupBox.setVisible(False)
@@ -125,9 +114,9 @@ class ParamProgressBar(QProgressBar):
         self.fLastPaintedValue   = None
         self.fCurrentPaintedText = ""
 
-        self.fLabel = ""
         self.fName  = ""
-        self.fPreLabel = " "
+        self.fLabelPrefix = ""
+        self.fLabelSuffix = ""
         self.fTextCall  = None
         self.fValueCall = None
 
@@ -169,12 +158,9 @@ class ParamProgressBar(QProgressBar):
         QProgressBar.setValue(self, int(vper * 10000))
         return True
 
-    def setLabel(self, label):
-        self.fLabel = label.strip()
-
-        if self.fLabel == "(coef)":
-            self.fLabel = ""
-            self.fPreLabel = "*"
+    def setSuffixes(self, prefix, suffix):
+        self.fLabelPrefix = prefix
+        self.fLabelSuffix = suffix
 
         # force refresh of text value
         self.fLastPaintedValue = None
@@ -246,13 +232,13 @@ class ParamProgressBar(QProgressBar):
             if self.fLastPaintedValue != self.fRealValue:
                 self.fLastPaintedValue   = self.fRealValue
                 self.fCurrentPaintedText = self.fTextCall()
-            self.setFormat("%s %s %s" % (self.fPreLabel, self.fCurrentPaintedText, self.fLabel))
+            self.setFormat("%s%s%s" % (self.fLabelPrefix, self.fCurrentPaintedText, self.fLabelSuffix))
 
         elif self.fIsInteger:
-            self.setFormat("%s %i %s" % (self.fPreLabel, int(self.fRealValue), self.fLabel))
+            self.setFormat("%s%i%s" % (self.fLabelPrefix, int(self.fRealValue), self.fLabelSuffix))
 
         else:
-            self.setFormat("%s %f %s" % (self.fPreLabel, self.fRealValue, self.fLabel))
+            self.setFormat("%s%f%s" % (self.fLabelPrefix, self.fRealValue, self.fLabelSuffix))
 
         QProgressBar.paintEvent(self, event)
 
@@ -267,6 +253,8 @@ class ParamSpinBox(QAbstractSpinBox):
         QAbstractSpinBox.__init__(self, parent)
 
         self.fName = ""
+        self.fLabelPrefix = ""
+        self.fLabelSuffix = ""
 
         self.fMinimum = 0.0
         self.fMaximum = 1.0
@@ -365,7 +353,18 @@ class ParamSpinBox(QAbstractSpinBox):
             self.fStepLarge = value
 
     def setLabel(self, label):
-        self.fBar.setLabel(label)
+        prefix = ""
+        suffix = label.strip()
+
+        if suffix == "(coef)":
+            prefix = "* "
+            suffix = ""
+        else:
+            suffix = " " + suffix
+
+        self.fLabelPrefix = prefix
+        self.fLabelSuffix = suffix
+        self.fBar.setSuffixes(prefix, suffix)
 
     def setName(self, name):
         self.fName = name
@@ -561,7 +560,8 @@ class ParamSpinBox(QAbstractSpinBox):
 
         elif actSel == actSet:
             dialog = CustomInputDialog(self, self.fName, self.fValue, self.fMinimum, self.fMaximum,
-                                             self.fStep, self.fStepSmall, self.fScalePoints)
+                                             self.fStep, self.fStepSmall, self.fScalePoints,
+                                             self.fLabelPrefix, self.fLabelSuffix)
             if dialog.exec_():
                 value = dialog.returnValue()
                 self.setValue(value)

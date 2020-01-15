@@ -216,6 +216,7 @@ class JuceAboutW(QDialog):
 
 class PluginParameter(QWidget):
     mappedControlChanged = pyqtSignal(int, int)
+    mappedRangeChanged   = pyqtSignal(int, float, float)
     midiChannelChanged   = pyqtSignal(int, int)
     valueChanged         = pyqtSignal(int, float)
 
@@ -233,9 +234,12 @@ class PluginParameter(QWidget):
         # -------------------------------------------------------------
         # Internal stuff
 
+        self.fDecimalPoints = max(2, countDecimalPoints(pInfo['step'], pInfo['stepSmall']))
         self.fMappedCtrl    = pInfo['mappedControlIndex']
         self.fMappedMinimum = pInfo['mappedMinimum']
         self.fMappedMaximum = pInfo['mappedMaximum']
+        self.fMinimum       = pInfo['minimum']
+        self.fMaximum       = pInfo['maximum']
         self.fMidiChannel   = pInfo['midiChannel']
         self.fParameterId   = pInfo['index']
         self.fPluginId      = pluginId
@@ -422,6 +426,11 @@ class PluginParameter(QWidget):
                 action.setCheckable(True)
                 action.setChecked(True)
 
+        menu.addSection("Range")
+
+        actRangeMinimum = menu.addAction(self.tr("Set minimum... (%g)" % self.fMappedMinimum))
+        actRangeMaximum = menu.addAction(self.tr("Set maximum... (%g)" % self.fMappedMaximum))
+
         actSel = menu.exec_(QCursor.pos())
 
         if not actSel:
@@ -431,6 +440,32 @@ class PluginParameter(QWidget):
             channel = int(actSel.text())
             self.fMidiChannel = channel
             self.midiChannelChanged.emit(self.fParameterId, channel)
+            return
+
+        if actSel == actRangeMinimum:
+            value, ok = QInputDialog.getDouble(self,
+                                               self.tr("Custom Minimum"),
+                                               "Custom minimum value to use:",
+                                               self.fMappedMinimum,
+                                               self.fMinimum, self.fMaximum, self.fDecimalPoints)
+            if not ok:
+                return
+
+            self.fMappedMinimum = value
+            self.mappedRangeChanged.emit(self.fParameterId, self.fMappedMinimum, self.fMappedMaximum)
+            return
+
+        if actSel == actRangeMaximum:
+            value, ok = QInputDialog.getDouble(self,
+                                               self.tr("Custom Maximum"),
+                                               "Custom maximum value to use:",
+                                               self.fMappedMaximum,
+                                               self.fMinimum, self.fMaximum, self.fDecimalPoints)
+            if not ok:
+                return
+
+            self.fMappedMaximum = value
+            self.mappedRangeChanged.emit(self.fParameterId, self.fMappedMinimum, self.fMappedMaximum)
             return
 
         if actSel == actUnmap:
@@ -1387,6 +1422,10 @@ class PluginEdit(QDialog):
     def slot_parameterMappedControlChanged(self, parameterId, control):
         self.host.set_parameter_mapped_control_index(self.fPluginId, parameterId, control)
 
+    @pyqtSlot(int, float, float)
+    def slot_parameterMappedRangeChanged(self, parameterId, minimum, maximum):
+        self.host.set_parameter_mapped_range(self.fPluginId, parameterId, minimum, maximum)
+
     @pyqtSlot(int, int)
     def slot_parameterMidiChannelChanged(self, parameterId, channel):
         self.host.set_parameter_midi_channel(self.fPluginId, parameterId, channel-1)
@@ -1589,6 +1628,7 @@ class PluginEdit(QDialog):
                     paramWidget.valueChanged.connect(self.slot_parameterValueChanged)
 
                 paramWidget.mappedControlChanged.connect(self.slot_parameterMappedControlChanged)
+                paramWidget.mappedRangeChanged.connect(self.slot_parameterMappedRangeChanged)
                 paramWidget.midiChannelChanged.connect(self.slot_parameterMidiChannelChanged)
 
             scrollAreaLayout.addStretch()
