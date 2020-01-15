@@ -1736,11 +1736,10 @@ void CarlaPlugin::setParameterMappedControlIndex(const uint32_t parameterId, con
     if (paramData.mappedControlIndex == index)
         return;
 
+    const ParameterRanges& paramRanges(pData->param.ranges[parameterId]);
+
     if ((paramData.hints & PARAMETER_MAPPED_RANGES_SET) == 0x0)
-    {
-        ParameterRanges& paramRanges(pData->param.ranges[parameterId]);
         setParameterMappedRange(parameterId, paramRanges.min, paramRanges.max, true, true);
-    }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     char strBuf[STR_MAX+1];
@@ -1769,6 +1768,15 @@ void CarlaPlugin::setParameterMappedControlIndex(const uint32_t parameterId, con
 
         CARLA_SAFE_ASSERT(pData->client->removePort(kEnginePortTypeCV, strBuf, true));
         CARLA_SAFE_ASSERT(pData->event.cvSourcePorts->removeCVSource(parameterId));
+    }
+    else if (paramData.mappedControlIndex == CONTROL_INDEX_NONE)
+    {
+        // when doing MIDI CC mapping, ensure ranges are within bounds
+        if (paramData.mappedMinimum < paramRanges.min || paramData.mappedMaximum > paramRanges.max)
+            setParameterMappedRange(parameterId,
+                                    std::max(paramData.mappedMinimum, paramRanges.min),
+                                    std::min(paramData.mappedMaximum, paramRanges.max),
+                                    true, true);
     }
 #endif
 
@@ -1799,6 +1807,13 @@ void CarlaPlugin::setParameterMappedRange(const uint32_t parameterId, const floa
         carla_isEqual(paramData.mappedMaximum, maximum) &&
         (paramData.hints & PARAMETER_MAPPED_RANGES_SET) != 0x0)
         return;
+
+    if (paramData.mappedControlIndex != CONTROL_INDEX_NONE && paramData.mappedControlIndex != CONTROL_INDEX_CV)
+    {
+        const ParameterRanges& paramRanges(pData->param.ranges[parameterId]);
+        CARLA_SAFE_ASSERT_RETURN(minimum >= paramRanges.min,);
+        CARLA_SAFE_ASSERT_RETURN(maximum <= paramRanges.max,);
+    }
 
     paramData.hints |= PARAMETER_MAPPED_RANGES_SET;
     paramData.mappedMinimum = minimum;
