@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -354,11 +354,6 @@ bool CarlaEngineCVSourcePorts::addCVSource(CarlaEngineCVPort* const port, const 
 
         if (pData->graph != nullptr && pData->plugin != nullptr)
             pData->graph->reconfigureForCV(pData->plugin, static_cast<uint>(pData->cvs.size()-1), true);
-
-        /*
-        if (pData->buffer == nullptr)
-            pData->buffer = new EngineEvent[kMaxEngineEventInternalCount];
-        */
     }
 
     return true;
@@ -388,12 +383,6 @@ bool CarlaEngineCVSourcePorts::removeCVSource(const uint32_t portIndexOffset)
                 return true;
             }
         }
-    }
-
-    if (pData->buffer != nullptr)
-    {
-        delete[] pData->buffer;
-        pData->buffer = nullptr;
     }
 
     carla_stdout("did NOT found cv source to remove %u", portIndexOffset);
@@ -439,10 +428,6 @@ void CarlaEngineCVSourcePorts::initPortBuffers(const float* const* const buffers
 
     EngineEvent* const buffer = eventPort->fBuffer;
     CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
-    /*
-    if (buffer == nullptr)
-        return;
-    */
 
     uint32_t eventCount = 0;
     float v, min, max;
@@ -462,6 +447,7 @@ void CarlaEngineCVSourcePorts::initPortBuffers(const float* const* const buffers
         {
             CarlaEngineEventCV& ecv(pData->cvs.getReference(i));
             CARLA_SAFE_ASSERT_CONTINUE(ecv.cvPort != nullptr);
+            CARLA_SAFE_ASSERT_CONTINUE(buffers[i] != nullptr);
 
             float previousValue = ecv.previousValue;
             ecv.cvPort->getRange(min, max);

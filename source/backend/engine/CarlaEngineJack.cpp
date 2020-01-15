@@ -301,6 +301,8 @@ public:
           fJackPort(jackPort),
           fJackBuffer(nullptr),
           fRetEvent(kFallbackJackEngineEvent),
+          fCvSourceEvents(nullptr),
+          fCvSourceEventCount(0),
           kDeletionCallback(delCallback)
     {
         carla_debug("CarlaEngineJackEventPort::CarlaEngineJackEventPort(%s, %p, %p)", bool2str(isInputPort), jackClient, jackPort);
@@ -340,6 +342,9 @@ public:
         if (fJackPort == nullptr)
             return CarlaEngineEventPort::initBuffer();
 
+        fCvSourceEvents = nullptr;
+        fCvSourceEventCount = 0;
+
         try {
             fJackBuffer = jackbridge_port_get_buffer(fJackPort, kClient.getEngine().getBufferSize());
         }
@@ -352,6 +357,12 @@ public:
             jackbridge_midi_clear_buffer(fJackBuffer);
     }
 
+    void setCvSourceEvents(EngineEvent* const events, const uint32_t eventCount) noexcept
+    {
+        fCvSourceEvents = events;
+        fCvSourceEventCount = eventCount;
+    }
+
     uint32_t getEventCount() const noexcept override
     {
         if (fJackPort == nullptr)
@@ -361,7 +372,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fJackBuffer != nullptr, 0);
 
         try {
-            return jackbridge_midi_get_event_count(fJackBuffer);
+            return jackbridge_midi_get_event_count(fJackBuffer) + fCvSourceEventCount;
         } CARLA_SAFE_EXCEPTION_RETURN("jack_midi_get_event_count", 0);
     }
 
@@ -378,6 +389,11 @@ public:
 
     const EngineEvent& getEventUnchecked(uint32_t index) const noexcept override
     {
+        if (index < fCvSourceEventCount)
+            return fCvSourceEvents[index];
+
+        index -= fCvSourceEventCount;
+
         jack_midi_event_t jackEvent;
 
         bool test = false;
@@ -487,6 +503,9 @@ private:
 
     mutable EngineEvent fRetEvent;
 
+    EngineEvent* fCvSourceEvents;
+    uint32_t fCvSourceEventCount;
+
     JackPortDeletionCallback* const kDeletionCallback;
 
     friend class CarlaEngineJackClient;
@@ -501,16 +520,132 @@ private:
 class CarlaEngineJackCVSourcePorts : public CarlaEngineCVSourcePorts
 {
 public:
-    CarlaEngineJackCVSourcePorts()
-        : CarlaEngineCVSourcePorts()
+    CarlaEngineJackCVSourcePorts(const bool useClient)
+        : CarlaEngineCVSourcePorts(),
+          fUseClient(useClient),
+          fBuffer(nullptr),
+          fBufferToDeleteLater(nullptr)
     {}
 
-    CarlaRecursiveMutex& getMutex() noexcept
+    ~CarlaEngineJackCVSourcePorts() override
+    {
+        if (fBufferToDeleteLater != nullptr)
+        {
+            delete[] fBufferToDeleteLater;
+            fBufferToDeleteLater = nullptr;
+        }
+    }
+
+    bool addCVSource(CarlaEngineCVPort* const port, const uint32_t portIndexOffset) override
+    {
+        if (! fUseClient)
+            return CarlaEngineCVSourcePorts::addCVSource(port, portIndexOffset);
+
+        const CarlaRecursiveMutexLocker crml(pData->rmutex);
+
+        if (! CarlaEngineCVSourcePorts::addCVSource(port, portIndexOffset))
+            return false;
+
+        if (pData->cvs.size() == 1 && fBuffer == nullptr)
+        {
+            EngineEvent* const buffer = new EngineEvent[kMaxEngineEventInternalCount];
+            carla_zeroStructs(buffer, kMaxEngineEventInternalCount);
+
+            fBuffer = buffer;
+        }
+
+        return true;
+    }
+
+    bool removeCVSource(const uint32_t portIndexOffset) override
+    {
+        if (! fUseClient)
+            return CarlaEngineCVSourcePorts::removeCVSource(portIndexOffset);
+
+        const CarlaRecursiveMutexLocker crml(pData->rmutex);
+
+        if (! CarlaEngineCVSourcePorts::removeCVSource(portIndexOffset))
+            return false;
+
+        if (pData->cvs.size() == 0 && fBuffer != nullptr)
+        {
+            if (fBufferToDeleteLater != nullptr)
+                delete[] fBufferToDeleteLater;
+
+            fBufferToDeleteLater = fBuffer;
+            fBuffer = nullptr;
+        }
+
+        return true;
+    }
+
+    void initPortBuffers(const float* const* const buffers,
+                         const uint32_t frames,
+                         const bool sampleAccurate,
+                         CarlaEngineEventPort* const eventPort) override
+    {
+        if (! fUseClient)
+            return CarlaEngineCVSourcePorts::initPortBuffers(buffers, frames, sampleAccurate, eventPort);
+
+        CARLA_SAFE_ASSERT_RETURN(buffers != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(eventPort != nullptr,);
+
+        const CarlaRecursiveMutexTryLocker crmtl(pData->rmutex);
+
+        if (! crmtl.wasLocked())
+            return;
+
+        const int numCVs = pData->cvs.size();
+
+        if (numCVs == 0)
+            return;
+
+        EngineEvent* const buffer = fBuffer;
+        CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
+
+        uint32_t eventCount = 0;
+        float v, min, max;
+
+        for (int i = 0; i < numCVs && eventCount < kMaxEngineEventInternalCount; ++i)
+        {
+            CarlaEngineEventCV& ecv(pData->cvs.getReference(i));
+            CARLA_SAFE_ASSERT_CONTINUE(ecv.cvPort != nullptr);
+            CARLA_SAFE_ASSERT_CONTINUE(buffers[i] != nullptr);
+
+            float previousValue = ecv.previousValue;
+            ecv.cvPort->getRange(min, max);
+
+            v = buffers[i][0];
+
+            if (carla_isNotEqual(v, previousValue))
+            {
+                previousValue = v;
+
+                EngineEvent& event(buffer[eventCount++]);
+
+                event.type    = kEngineEventTypeControl;
+                event.time    = frames-1U;
+                event.channel = kEngineEventNonMidiChannel;
+
+                event.ctrl.type  = kEngineControlEventTypeParameter;
+                event.ctrl.param = static_cast<uint16_t>(i);
+                event.ctrl.value = carla_fixedValue(0.0f, 1.0f, (v - min) / (max - min));
+            }
+
+            ecv.previousValue = previousValue;
+        }
+
+        if (eventCount != 0)
+            if (CarlaEngineJackEventPort* const jackEventPort = dynamic_cast<CarlaEngineJackEventPort*>(eventPort))
+                jackEventPort->setCvSourceEvents(buffer, eventCount);
+    }
+
+    CarlaRecursiveMutex& getMutex() const noexcept
     {
         return pData->rmutex;
     }
 
-    uint32_t getPortCount() const
+    uint32_t getPortCount() const noexcept
     {
         return static_cast<uint32_t>(pData->cvs.size());
     }
@@ -526,6 +661,11 @@ public:
         pData->graph = graph;
         pData->plugin = plugin;
     }
+
+private:
+    const bool fUseClient;
+    EngineEvent* fBuffer;
+    EngineEvent* fBufferToDeleteLater;
 };
 #endif
 
@@ -549,7 +689,7 @@ public:
           fCVPorts(),
           fEventPorts(),
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-          fCVSourcePorts(),
+          fCVSourcePorts(fUseClient),
 #endif
           fPreRenameMutex(),
           fPreRenameConnections()
@@ -2744,7 +2884,15 @@ private:
         CarlaEngineJackCVSourcePorts& cvSourcePorts(client->getCVSourcePorts());
 
         const CarlaRecursiveMutexTryLocker crmtl(cvSourcePorts.getMutex(), fFreewheel);
+        // const CarlaRecursiveMutexLocker crml(cvSourcePorts.getMutex());
 #endif
+
+        /*
+        const uint32_t audioInCount  = client->getPortCount(kEnginePortTypeAudio, true);
+        const uint32_t audioOutCount = client->getPortCount(kEnginePortTypeAudio, false);
+        const uint32_t cvInCount     = client->getPortCount(kEnginePortTypeCV, true);
+        const uint32_t cvOutCount    = client->getPortCount(kEnginePortTypeCV, false);
+        */
 
         const uint32_t audioInCount  = plugin->getAudioInCount();
         const uint32_t audioOutCount = plugin->getAudioOutCount();
@@ -2763,35 +2911,49 @@ private:
 
         for (uint32_t i=0; i < audioInCount; ++i)
         {
-            CarlaEngineAudioPort* const port(plugin->getAudioInPort(i));
-            audioIn[i] = port->getBuffer();
+            if (CarlaEngineAudioPort* const port = plugin->getAudioInPort(i))
+                audioIn[i] = port->getBuffer();
+            else
+                audioIn[i] = nullptr;
         }
 
         for (uint32_t i=0; i < audioOutCount; ++i)
         {
-            CarlaEngineAudioPort* const port(plugin->getAudioOutPort(i));
-            audioOut[i] = port->getBuffer();
+            if (CarlaEngineAudioPort* const port = plugin->getAudioOutPort(i))
+                audioOut[i] = port->getBuffer();
+            else
+                audioOut[i] = nullptr;
         }
 
         for (uint32_t i=0; i < cvInCount; ++i)
         {
-            CarlaEngineCVPort* const port(plugin->getCVInPort(i));
-            cvIn[i] = port->getBuffer();
-            CARLA_SAFE_ASSERT(cvIn[i] != nullptr);
+            if (CarlaEngineCVPort* const port = plugin->getCVInPort(i))
+                cvIn[i] = port->getBuffer();
+            else
+                cvIn[i] = nullptr;
         }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         for (uint32_t i=cvInCount, j=0; j < cvsInCount; ++i, ++j)
         {
             if (CarlaEngineCVPort* const port = cvSourcePorts.getPort(j))
+            {
+                port->initBuffer();
                 cvIn[i] = port->getBuffer();
+            }
+            else
+            {
+                cvIn[i] = nullptr;
+            }
         }
 #endif
 
         for (uint32_t i=0; i < cvOutCount; ++i)
         {
-            CarlaEngineCVPort* const port(plugin->getCVOutPort(i));
-            cvOut[i] = port->getBuffer();
+            if (CarlaEngineCVPort* const port = plugin->getCVOutPort(i))
+                cvOut[i] = port->getBuffer();
+            else
+                cvOut[i] = nullptr;
         }
 
         float inPeaks[2] = { 0.0f };

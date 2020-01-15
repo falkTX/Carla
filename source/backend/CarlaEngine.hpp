@@ -646,16 +646,16 @@ public:
     virtual bool removeCVSource(uint32_t portIndexOffset);
 
     /*!
-     * Set value range for a CV port.
-     */
-    bool setCVSourceRange(uint32_t portIndexOffset, float minimum, float maximum);
-
-    /*!
      * Get events and add them to an event port.
      * FIXME needs a better name...
      */
-    void initPortBuffers(const float* const* buffers, uint32_t frames,
-                         bool sampleAccurate, CarlaEngineEventPort* eventPort);
+    virtual void initPortBuffers(const float* const* buffers, uint32_t frames,
+                                 bool sampleAccurate, CarlaEngineEventPort* eventPort);
+
+    /*!
+     * Set value range for a CV port.
+     */
+    bool setCVSourceRange(uint32_t portIndexOffset, float minimum, float maximum);
 
 #ifndef DOXYGEN
 protected:

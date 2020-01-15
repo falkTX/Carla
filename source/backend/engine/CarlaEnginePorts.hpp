@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -34,7 +34,6 @@ struct CarlaEngineEventCV {
 
 struct CarlaEngineCVSourcePorts::ProtectedData {
     CarlaRecursiveMutex rmutex;
-    EngineEvent* buffer;
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     PatchbayGraph* graph;
     CarlaPlugin* plugin;
@@ -43,7 +42,6 @@ struct CarlaEngineCVSourcePorts::ProtectedData {
 
     ProtectedData() noexcept
         : rmutex(),
-          buffer(nullptr),
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
           graph(nullptr),
           plugin(nullptr),
@@ -59,12 +57,6 @@ struct CarlaEngineCVSourcePorts::ProtectedData {
                 delete cvs[i].cvPort;
 
             cvs.clear();
-        }
-
-        if (buffer != nullptr)
-        {
-            delete[] buffer;
-            buffer = nullptr;
         }
     }
 
