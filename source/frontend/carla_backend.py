@@ -1111,10 +1111,10 @@ class ParameterData(Structure):
         ("mappedControlIndex", c_int16),
 
         # Minimum value that this parameter maps to.
-        ("mappedMinimum", c_uint8),
+        ("mappedMinimum", c_float),
 
         # Maximum value that this parameter maps to.
-        ("mappedMaximum", c_uint8)
+        ("mappedMaximum", c_float)
     ]
 
 # Parameter ranges.
@@ -1195,7 +1195,7 @@ PyParameterData = {
     'midiChannel': 0,
     'mappedControlIndex': CONTROL_VALUE_NONE,
     'mappedMinimum': 0.0,
-    'mappedMaximum': 1.0,
+    'mappedMaximum': 0.0,
 }
 
 # @see ParameterRanges
