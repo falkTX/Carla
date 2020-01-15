@@ -469,7 +469,7 @@ void CarlaEngineCVSourcePorts::initPortBuffers(const float* const* const buffers
                 event.channel = kEngineEventNonMidiChannel;
 
                 event.ctrl.type  = kEngineControlEventTypeParameter;
-                event.ctrl.param = static_cast<uint16_t>(i);
+                event.ctrl.param = static_cast<uint16_t>(ecv.indexOffset);
                 event.ctrl.value = carla_fixedValue(0.0f, 1.0f, (v - min) / (max - min));
             }
 

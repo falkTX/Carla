@@ -426,10 +426,12 @@ class PluginParameter(QWidget):
                 action.setCheckable(True)
                 action.setChecked(True)
 
-        menu.addSection("Range")
-
-        actRangeMinimum = menu.addAction(self.tr("Set minimum... (%g)" % self.fMappedMinimum))
-        actRangeMaximum = menu.addAction(self.tr("Set maximum... (%g)" % self.fMappedMaximum))
+        if self.fMappedCtrl != CONTROL_VALUE_NONE:
+            menu.addSection("Range")
+            actRangeMinimum = menu.addAction(self.tr("Set minimum... (%g)" % self.fMappedMinimum))
+            actRangeMaximum = menu.addAction(self.tr("Set maximum... (%g)" % self.fMappedMaximum))
+        else:
+            actRangeMinimum = actRangeMaximum = None
 
         actSel = menu.exec_(QCursor.pos())
 
