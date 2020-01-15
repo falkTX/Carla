@@ -287,6 +287,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         host.ParameterValueChangedCallback.connect(self.slot_handleParameterValueChangedCallback)
         host.ParameterDefaultChangedCallback.connect(self.slot_handleParameterDefaultChangedCallback)
         host.ParameterMappedControlIndexChangedCallback.connect(self.slot_handleParameterMappedControlIndexChangedCallback)
+        host.ParameterMappedRangeChangedCallback.connect(self.slot_handleParameterMappedRangeChangedCallback)
         host.ParameterMidiChannelChangedCallback.connect(self.slot_handleParameterMidiChannelChangedCallback)
         host.ProgramChangedCallback.connect(self.slot_handleProgramChangedCallback)
         host.MidiProgramChangedCallback.connect(self.slot_handleMidiProgramChangedCallback)
@@ -325,6 +326,11 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
     def slot_handleParameterMappedControlIndexChangedCallback(self, pluginId, index, ctrl):
         if self.fPluginId == pluginId:
             self.setParameterMappedControlIndex(index, ctrl)
+
+    @pyqtSlot(int, int, float, float)
+    def slot_handleParameterMappedRangeChangedCallback(self, pluginId, index, minimum, maximum):
+        if self.fPluginId == pluginId:
+            self.setParameterMappedRange(index, minimum, maximum)
 
     @pyqtSlot(int, int, int)
     def slot_handleParameterMidiChannelChangedCallback(self, pluginId, index, channel):
@@ -740,6 +746,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
     def setParameterMappedControlIndex(self, parameterId, control):
         self.fEditDialog.setParameterMappedControlIndex(parameterId, control)
+
+    def setParameterMappedRange(self, parameterId, minimum, maximum):
+        self.fEditDialog.setParameterMappedRange(parameterId, minimum, maximum)
 
     def setParameterMidiChannel(self, parameterId, channel):
         self.fEditDialog.setParameterMidiChannel(parameterId, channel)

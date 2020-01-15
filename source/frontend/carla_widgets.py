@@ -234,11 +234,13 @@ class PluginParameter(QWidget):
         # -------------------------------------------------------------
         # Internal stuff
 
-        self.fMappedCtrl  = CONTROL_VALUE_NONE
-        self.fMidiChannel = 1
-        self.fParameterId = pInfo['index']
-        self.fPluginId    = pluginId
-        self.fTabIndex    = tabIndex
+        self.fMappedCtrl    = pInfo['mappedControlIndex']
+        self.fMappedMinimum = pInfo['mappedMinimum']
+        self.fMappedMaximum = pInfo['mappedMaximum']
+        self.fMidiChannel   = pInfo['midiChannel']
+        self.fParameterId   = pInfo['index']
+        self.fPluginId      = pluginId
+        self.fTabIndex      = tabIndex
 
         # -------------------------------------------------------------
         # Set-up GUI
@@ -322,6 +324,10 @@ class PluginParameter(QWidget):
     def setMappedControlIndex(self, control):
         self.fMappedCtrl = control
 
+    def setMappedRange(self, minimum, maximum):
+        self.fMappedMinimum = minimum
+        self.fMappedMaximum = maximum
+
     def setMidiChannel(self, channel):
         self.fMidiChannel = channel
 
@@ -338,6 +344,9 @@ class PluginParameter(QWidget):
             title = self.tr("Exposed as CV")
         else:
             title = self.tr("Mapped to CC %i, channel %i" % (self.fMappedCtrl, self.fMidiChannel))
+
+        if self.fMappedCtrl != CONTROL_VALUE_NONE:
+            title += " (min %g, max %g)" % (self.fMappedMinimum, self.fMappedMaximum)
 
         actTitle = menu.addAction(title)
         actTitle.setEnabled(False)
@@ -373,12 +382,12 @@ class PluginParameter(QWidget):
             action = menuMIDI.addAction(cc)
             actCCs.append(action)
 
-            if self.fMappedCtrl >= 0:
-                ccx = int(cc.split(" ", 1)[0], 16)
+            if self.fMappedCtrl >= 0 and self.fMappedCtrl <= MAX_MIDI_CC_LIST_ITEM:
+                ccx = int(cc.split(" [", 1)[0])
 
                 if ccx > self.fMappedCtrl and not inlist:
                     inlist = True
-                    action = menuMIDI.addAction(self.tr("0x%x (Custom)" % self.fMappedCtrl))
+                    action = menuMIDI.addAction(self.tr("%02i [0x%x] (Custom)" % (self.fMappedCtrl, self.fMappedCtrl)))
                     action.setCheckable(True)
                     action.setChecked(True)
                     actCCs.append(action)
@@ -387,6 +396,12 @@ class PluginParameter(QWidget):
                     inlist = True
                     action.setCheckable(True)
                     action.setChecked(True)
+
+        if self.fMappedCtrl > MAX_MIDI_CC_LIST_ITEM and self.fMappedCtrl <= 0x77:
+            action = menuMIDI.addAction(self.tr("%02i [0x%x] (Custom)" % (self.fMappedCtrl, self.fMappedCtrl)))
+            action.setCheckable(True)
+            action.setChecked(True)
+            actCCs.append(action)
 
         actCustomCC = menuMIDI.addAction(self.tr("Custom..."))
 
@@ -909,6 +924,8 @@ class PluginEdit(QDialog):
                 'stepSmall': paramRanges['stepSmall'],
                 'stepLarge': paramRanges['stepLarge'],
                 'mappedControlIndex': paramData['mappedControlIndex'],
+                'mappedMinimum': paramData['mappedMinimum'],
+                'mappedMaximum': paramData['mappedMaximum'],
                 'midiChannel': paramData['midiChannel']+1,
 
                 'comment':   paramInfo['comment'],
@@ -1056,6 +1073,12 @@ class PluginEdit(QDialog):
         for paramType, paramId, paramWidget in self.fParameterList:
             if paramId == parameterId:
                 paramWidget.setMappedControlIndex(control)
+                break
+
+    def setParameterMappedRange(self, parameterId, minimum, maximum):
+        for paramType, paramId, paramWidget in self.fParameterList:
+            if paramId == parameterId:
+                paramWidget.setMappedRange(minimum, maximum)
                 break
 
     def setParameterMidiChannel(self, parameterId, channel):

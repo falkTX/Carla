@@ -39,6 +39,7 @@ class CarlaHostSignals(QObject):
     ParameterValueChangedCallback = pyqtSignal(int, int, float)
     ParameterDefaultChangedCallback = pyqtSignal(int, int, float)
     ParameterMappedControlIndexChangedCallback = pyqtSignal(int, int, int)
+    ParameterMappedRangeChangedCallback = pyqtSignal(int, int, float, float)
     ParameterMidiChannelChangedCallback = pyqtSignal(int, int, int)
     ProgramChangedCallback = pyqtSignal(int, int)
     MidiProgramChangedCallback = pyqtSignal(int, int)

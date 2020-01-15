@@ -2751,6 +2751,9 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valuef, value
         host.ParameterDefaultChangedCallback.emit(pluginId, value1, valuef)
     elif action == ENGINE_CALLBACK_PARAMETER_MAPPED_CONTROL_INDEX_CHANGED:
         host.ParameterMappedControlIndexChangedCallback.emit(pluginId, value1, value2)
+    elif action == ENGINE_CALLBACK_PARAMETER_MAPPED_RANGE_CHANGED:
+        minimum, maximum = (float(v) for v in valueStr.split(":", 2))
+        host.ParameterMappedRangeChangedCallback.emit(pluginId, value1, minimum, maximum)
     elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
         host.ParameterMidiChannelChangedCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_PROGRAM_CHANGED:
