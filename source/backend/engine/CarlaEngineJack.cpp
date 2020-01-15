@@ -624,7 +624,7 @@ public:
                 EngineEvent& event(buffer[eventCount++]);
 
                 event.type    = kEngineEventTypeControl;
-                event.time    = frames-1U;
+                event.time    = 0;
                 event.channel = kEngineEventNonMidiChannel;
 
                 event.ctrl.type  = kEngineControlEventTypeParameter;

@@ -441,8 +441,12 @@ void CarlaEngineCVSourcePorts::initPortBuffers(const float* const* const buffers
     if (eventCount == kMaxEngineEventInternalCount)
         return;
 
-    if (sampleAccurate || true)
+    // TODO be sample accurate
+
+    if (true || ! sampleAccurate)
     {
+        const uint32_t eventFrame = eventCount == 0 ? 0 : std::min(buffer[eventCount-1].time, frames-1U);
+
         for (int i = 0; i < numCVs && eventCount < kMaxEngineEventInternalCount; ++i)
         {
             CarlaEngineEventCV& ecv(pData->cvs.getReference(i));
@@ -452,7 +456,7 @@ void CarlaEngineCVSourcePorts::initPortBuffers(const float* const* const buffers
             float previousValue = ecv.previousValue;
             ecv.cvPort->getRange(min, max);
 
-            v = buffers[i][frames-1U];
+            v = buffers[i][eventFrame];
 
             if (carla_isNotEqual(v, previousValue))
             {
@@ -461,7 +465,7 @@ void CarlaEngineCVSourcePorts::initPortBuffers(const float* const* const buffers
                 EngineEvent& event(buffer[eventCount++]);
 
                 event.type    = kEngineEventTypeControl;
-                event.time    = frames-1U;
+                event.time    = eventFrame;
                 event.channel = kEngineEventNonMidiChannel;
 
                 event.ctrl.type  = kEngineControlEventTypeParameter;
