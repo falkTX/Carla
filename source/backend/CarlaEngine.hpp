@@ -657,6 +657,11 @@ public:
      */
     bool setCVSourceRange(uint32_t portIndexOffset, float minimum, float maximum);
 
+    /*!
+     * Destroy all ports.
+     */
+    void cleanup();
+
 #ifndef DOXYGEN
 protected:
     /** @internal */

@@ -389,25 +389,6 @@ bool CarlaEngineCVSourcePorts::removeCVSource(const uint32_t portIndexOffset)
     return false;
 }
 
-bool CarlaEngineCVSourcePorts::setCVSourceRange(const uint32_t portIndexOffset, const float minimum, const float maximum)
-{
-    const CarlaRecursiveMutexLocker crml(pData->rmutex);
-
-    for (int i = pData->cvs.size(); --i >= 0;)
-    {
-        CarlaEngineEventCV& ecv(pData->cvs.getReference(i));
-
-        if (ecv.indexOffset == portIndexOffset)
-        {
-            CARLA_SAFE_ASSERT_RETURN(ecv.cvPort != nullptr, false);
-            ecv.cvPort->setRange(minimum, maximum);
-            return true;
-        }
-    }
-
-    return false;
-}
-
 void CarlaEngineCVSourcePorts::initPortBuffers(const float* const* const buffers,
                                                const uint32_t frames,
                                                const bool sampleAccurate,
@@ -476,6 +457,30 @@ void CarlaEngineCVSourcePorts::initPortBuffers(const float* const* const buffers
             ecv.previousValue = previousValue;
         }
     }
+}
+
+bool CarlaEngineCVSourcePorts::setCVSourceRange(const uint32_t portIndexOffset, const float minimum, const float maximum)
+{
+    const CarlaRecursiveMutexLocker crml(pData->rmutex);
+
+    for (int i = pData->cvs.size(); --i >= 0;)
+    {
+        CarlaEngineEventCV& ecv(pData->cvs.getReference(i));
+
+        if (ecv.indexOffset == portIndexOffset)
+        {
+            CARLA_SAFE_ASSERT_RETURN(ecv.cvPort != nullptr, false);
+            ecv.cvPort->setRange(minimum, maximum);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void CarlaEngineCVSourcePorts::cleanup()
+{
+    pData->cleanup();
 }
 
 /*

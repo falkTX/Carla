@@ -50,14 +50,17 @@ struct CarlaEngineCVSourcePorts::ProtectedData {
 
     ~ProtectedData()
     {
-        {
-            const CarlaRecursiveMutexLocker crml(rmutex);
+        CARLA_SAFE_ASSERT(cvs.size() == 0);
+    }
 
-            for (int i = cvs.size(); --i >= 0;)
-                delete cvs[i].cvPort;
+    void cleanup()
+    {
+        const CarlaRecursiveMutexLocker crml(rmutex);
 
-            cvs.clear();
-        }
+        for (int i = cvs.size(); --i >= 0;)
+            delete cvs[i].cvPort;
+
+        cvs.clear();
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(ProtectedData)
