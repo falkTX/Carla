@@ -128,7 +128,6 @@ class CarlaAboutW(QDialog):
                                       "<li>http://lv2plug.in/ns/ext/options</li>"
                                       "<li>http://lv2plug.in/ns/ext/parameters</li>"
                                       #"<li>http://lv2plug.in/ns/ext/patch</li>"
-                                      #"<li>http://lv2plug.in/ns/ext/port-groups</li>"
                                       "<li>http://lv2plug.in/ns/ext/port-props</li>"
                                       "<li>http://lv2plug.in/ns/ext/presets</li>"
                                       "<li>http://lv2plug.in/ns/ext/resize-port</li>"
@@ -151,16 +150,16 @@ class CarlaAboutW(QDialog):
         usingJuce = "juce" in gCarla.utils.get_supported_features()
 
         if usingJuce and (MACOS or WINDOWS):
-            self.ui.l_vst2.setText(self.tr("Using Juce host"))
-            self.ui.l_vst3.setText(self.tr("Using Juce host"))
+            self.ui.l_vst2.setText(self.tr("Using JUCE host"))
+            self.ui.l_vst3.setText(self.tr("Using JUCE host"))
         else:
-            self.ui.l_vst2.setText(self.tr("About 85% complete (missing vst bank/presets and some minor stuff)"))
+            self.ui.l_vst2.setText(self.tr("About 85&#37; complete (missing vst bank/presets and some minor stuff)"))
             self.ui.line_vst2.hide()
             self.ui.l_vst3.hide()
             self.ui.lid_vst3.hide()
 
         if MACOS:
-            self.ui.l_au.setText(self.tr("Using Juce host"))
+            self.ui.l_au.setText(self.tr("Using JUCE host"))
         else:
             self.ui.line_vst3.hide()
             self.ui.l_au.hide()
@@ -341,12 +340,12 @@ class PluginParameter(QWidget):
         if self.fMappedCtrl == CONTROL_VALUE_NONE:
             title = self.tr("Unmapped")
         elif self.fMappedCtrl == CONTROL_VALUE_CV:
-            title = self.tr("Exposed as CV")
+            title = self.tr("Exposed as CV port")
         else:
-            title = self.tr("Mapped to CC %i, channel %i" % (self.fMappedCtrl, self.fMidiChannel))
+            title = self.tr("Mapped to MIDI control %i, channel %i" % (self.fMappedCtrl, self.fMidiChannel))
 
         if self.fMappedCtrl != CONTROL_VALUE_NONE:
-            title += " (min %g, max %g)" % (self.fMappedMinimum, self.fMappedMaximum)
+            title += " (range: %g-%g)" % (self.fMappedMinimum, self.fMappedMaximum)
 
         actTitle = menu.addAction(title)
         actTitle.setEnabled(False)
@@ -387,7 +386,7 @@ class PluginParameter(QWidget):
 
                 if ccx > self.fMappedCtrl and not inlist:
                     inlist = True
-                    action = menuMIDI.addAction(self.tr("%02i [0x%x] (Custom)" % (self.fMappedCtrl, self.fMappedCtrl)))
+                    action = menuMIDI.addAction(self.tr("%02i [0x%02X] (Custom)" % (self.fMappedCtrl, self.fMappedCtrl)))
                     action.setCheckable(True)
                     action.setChecked(True)
                     actCCs.append(action)
@@ -398,7 +397,7 @@ class PluginParameter(QWidget):
                     action.setChecked(True)
 
         if self.fMappedCtrl > MAX_MIDI_CC_LIST_ITEM and self.fMappedCtrl <= 0x77:
-            action = menuMIDI.addAction(self.tr("%02i [0x%x] (Custom)" % (self.fMappedCtrl, self.fMappedCtrl)))
+            action = menuMIDI.addAction(self.tr("%02i [0x%02X] (Custom)" % (self.fMappedCtrl, self.fMappedCtrl)))
             action.setCheckable(True)
             action.setChecked(True)
             actCCs.append(action)
