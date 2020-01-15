@@ -628,9 +628,13 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
         if (stateParameter->mappedControlIndex > CONTROL_INDEX_NONE && stateParameter->mappedControlIndex <= CONTROL_INDEX_MAX_ALLOWED)
         {
             parameterXml << "    <MidiChannel>"   << stateParameter->midiChannel+1 << "</MidiChannel>\n";
-            parameterXml << "    <MappedMinimum>" << stateParameter->mappedMinimum << "</MappedMinimum>\n";
-            parameterXml << "    <MappedMaximum>" << stateParameter->mappedMaximum << "</MappedMaximum>\n";
             parameterXml << "    <MappedControlIndex>" << stateParameter->mappedControlIndex << "</MappedControlIndex>\n";
+
+            if (stateParameter->mappedRangeValid)
+            {
+                parameterXml << "    <MappedMinimum>" << String(stateParameter->mappedMinimum, 15) << "</MappedMinimum>\n";
+                parameterXml << "    <MappedMaximum>" << String(stateParameter->mappedMaximum, 15) << "</MappedMaximum>\n";
+            }
 
             // backwards compatibility for older carla versions
             if (stateParameter->mappedControlIndex > 0 && stateParameter->mappedControlIndex < MAX_MIDI_CONTROL)
