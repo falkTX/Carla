@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -48,24 +48,16 @@ struct CarlaEngineClient::ProtectedData {
     CarlaStringList eventOutList;
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-    ProtectedData(const CarlaEngine& eng, EngineInternalGraph& eg, CarlaPlugin* const p) noexcept
+    ProtectedData(const CarlaEngine& eng, EngineInternalGraph& eg, CarlaPlugin* p) noexcept;
 #else
-    ProtectedData(const CarlaEngine& eng) noexcept
+    ProtectedData(const CarlaEngine& eng) noexcept;
 #endif
-        :  engine(eng),
-           active(false),
-           latency(0),
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-           cvSourcePorts(),
-           egraph(eg),
-           plugin(p),
-#endif
-           audioInList(),
-           audioOutList(),
-           cvInList(),
-           cvOutList(),
-           eventInList(),
-           eventOutList() {}
+
+    void addAudioPortName(bool isInput, const char* name);
+    void addCVPortName(bool isInput, const char* name);
+    void addEventPortName(bool isInput, const char* name);
+    void clearPorts();
+    const char* getUniquePortName(const char* name);
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     ProtectedData() = delete;

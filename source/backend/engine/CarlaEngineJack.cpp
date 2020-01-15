@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -662,7 +662,7 @@ public:
         {
             CARLA_SAFE_ASSERT_RETURN(fJackClient != nullptr, nullptr);
 
-            realName = _getUniquePortName(name);
+            realName = pData->getUniquePortName(name);
 
             switch (portType)
             {
@@ -688,21 +688,21 @@ public:
         case kEnginePortTypeNull:
             break;
         case kEnginePortTypeAudio: {
-            _addAudioPortName(isInput, realName);
+            pData->addAudioPortName(isInput, realName);
             if (realName != name) delete[] realName;
             CarlaEngineJackAudioPort* const enginePort(new CarlaEngineJackAudioPort(*this, isInput, indexOffset, fJackClient, jackPort, this));
             fAudioPorts.append(enginePort);
             return enginePort;
         }
         case kEnginePortTypeCV: {
-            _addCVPortName(isInput, realName);
+            pData->addCVPortName(isInput, realName);
             if (realName != name) delete[] realName;
             CarlaEngineJackCVPort* const enginePort(new CarlaEngineJackCVPort(*this, isInput, indexOffset, fJackClient, jackPort, this));
             fCVPorts.append(enginePort);
             return enginePort;
         }
         case kEnginePortTypeEvent: {
-            _addEventPortName(isInput, realName);
+            pData->addEventPortName(isInput, realName);
             if (realName != name) delete[] realName;
             CarlaEngineJackEventPort* const enginePort(new CarlaEngineJackEventPort(*this, isInput, indexOffset, fJackClient, jackPort, this));
             fEventPorts.append(enginePort);
@@ -824,7 +824,7 @@ public:
         fAudioPorts.clear();
         fCVPorts.clear();
         fEventPorts.clear();
-        _clearPorts();
+        pData->clearPorts();
 
         fJackClient = newClient;
     }

@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -780,13 +780,6 @@ protected:
      * The constructor, protected.
      */
     CarlaEngineClient(ProtectedData* pData);
-
-    /** internal */
-    void _addAudioPortName(bool, const char*);
-    void _addCVPortName(bool, const char*);
-    void _addEventPortName(bool, const char*);
-    const char* _getUniquePortName(const char*);
-    void _clearPorts();
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineClient)
 #endif
