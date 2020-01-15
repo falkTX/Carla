@@ -454,7 +454,9 @@ class PluginParameter(QWidget):
                                                self.tr("Custom Minimum"),
                                                "Custom minimum value to use:",
                                                self.fMappedMinimum,
-                                               self.fMinimum, self.fMaximum, self.fDecimalPoints)
+                                               self.fMinimum if self.fMappedCtrl != CONTROL_VALUE_CV else -9e6,
+                                               self.fMaximum if self.fMappedCtrl != CONTROL_VALUE_CV else 9e6,
+                                               self.fDecimalPoints)
             if not ok:
                 return
 
@@ -467,7 +469,9 @@ class PluginParameter(QWidget):
                                                self.tr("Custom Maximum"),
                                                "Custom maximum value to use:",
                                                self.fMappedMaximum,
-                                               self.fMinimum, self.fMaximum, self.fDecimalPoints)
+                                               self.fMinimum if self.fMappedCtrl != CONTROL_VALUE_CV else -9e6,
+                                               self.fMaximum if self.fMappedCtrl != CONTROL_VALUE_CV else 9e6,
+                                               self.fDecimalPoints)
             if not ok:
                 return
 
