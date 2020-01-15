@@ -1755,6 +1755,8 @@ void CarlaPlugin::setParameterMappedControlIndex(const uint32_t parameterId, con
     if (index == CONTROL_INDEX_CV)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->event.cvSourcePorts != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(paramData.type == PARAMETER_INPUT,);
+        CARLA_SAFE_ASSERT_RETURN(paramData.hints & PARAMETER_CAN_BE_CV_CONTROLLED,);
 
         CarlaEngineCVPort* const cvPort =
             (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, strBuf, true, parameterId);

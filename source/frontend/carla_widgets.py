@@ -235,6 +235,7 @@ class PluginParameter(QWidget):
         # Internal stuff
 
         self.fDecimalPoints = max(2, countDecimalPoints(pInfo['step'], pInfo['stepSmall']))
+        self.fCanBeInCV     = pInfo['hints'] & PARAMETER_CAN_BE_CV_CONTROLLED
         self.fMappedCtrl    = pInfo['mappedControlIndex']
         self.fMappedMinimum = pInfo['mappedMinimum']
         self.fMappedMaximum = pInfo['mappedMaximum']
@@ -362,13 +363,14 @@ class PluginParameter(QWidget):
             actUnmap.setCheckable(True)
             actUnmap.setChecked(True)
 
-        menu.addSection("CV")
-
-        actCV = menu.addAction(self.tr("Expose as CV port"))
-
-        if self.fMappedCtrl == CONTROL_VALUE_CV:
-            actCV.setCheckable(True)
-            actCV.setChecked(True)
+        if self.fCanBeInCV:
+            menu.addSection("CV")
+            actCV = menu.addAction(self.tr("Expose as CV port"))
+            if self.fMappedCtrl == CONTROL_VALUE_CV:
+                actCV.setCheckable(True)
+                actCV.setChecked(True)
+        else:
+            actCV = None
 
         menu.addSection("MIDI")
 
@@ -427,7 +429,10 @@ class PluginParameter(QWidget):
                 action.setChecked(True)
 
         if self.fMappedCtrl != CONTROL_VALUE_NONE:
-            menu.addSection("Range")
+            if self.fMappedCtrl == CONTROL_VALUE_CV:
+                menu.addSection("Range (Scaled CV input)")
+            else:
+                menu.addSection("Range (MIDI bounds)")
             actRangeMinimum = menu.addAction(self.tr("Set minimum... (%g)" % self.fMappedMinimum))
             actRangeMaximum = menu.addAction(self.tr("Set maximum... (%g)" % self.fMappedMaximum))
         else:
