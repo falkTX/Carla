@@ -19,6 +19,12 @@ PKG_FOLDER="Carla_2.1-RC1-macos"
 
 source data/macos/common.env
 
+if [ $(clang -v  2>&1 | grep version | cut -d' ' -f4 | cut -d'.' -f1) -lt 11 ]; then
+  export MACOS_VERSION_MIN="10.8"
+else
+  export MACOS_VERSION_MIN="10.12"
+fi
+
 export MACOS="true"
 export USING_JUCE="true"
 
@@ -30,9 +36,9 @@ unset CPPFLAGS
 ##############################################################################################
 # Complete 64bit build
 
-export CFLAGS="-I${TARGETDIR}/carla64/include -m64 -mmacosx-version-min=10.8"
+export CFLAGS="-I${TARGETDIR}/carla64/include -m64 -mmacosx-version-min=${MACOS_VERSION_MIN}"
 export CXXFLAGS="${CFLAGS} -stdlib=libc++"
-export LDFLAGS="-L${TARGETDIR}/carla64/lib -m64 -mmacosx-version-min=10.8 -stdlib=libc++"
+export LDFLAGS="-L${TARGETDIR}/carla64/lib -m64 -mmacosx-version-min=${MACOS_VERSION_MIN} -stdlib=libc++"
 
 export PATH=${TARGETDIR}/carla/bin:${TARGETDIR}/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=${TARGETDIR}/carla/lib/pkgconfig:${TARGETDIR}/carla64/lib/pkgconfig
@@ -46,15 +52,18 @@ make USING_JUCE=${USING_JUCE} ${MAKE_ARGS}
 ##############################################################################################
 # Build 32bit bridges
 
-export CFLAGS="-I${TARGETDIR}/carla32/include -m32 -mmacosx-version-min=10.8"
+if [ "${MACOS_VERSION_MIN}" != "10.12" ]; then
+
+export CFLAGS="-I${TARGETDIR}/carla32/include -m32 -mmacosx-version-min=${MACOS_VERSION_MIN}"
 export CXXFLAGS="${CFLAGS} -stdlib=libc++"
-export LDFLAGS="-L${TARGETDIR}/carla32/lib -m32 -mmacosx-version-min=10.8 -stdlib=libc++"
+export LDFLAGS="-L${TARGETDIR}/carla32/lib -m32 -mmacosx-version-min=${MACOS_VERSION_MIN} -stdlib=libc++"
 
 export PATH=${TARGETDIR}/carla32/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=${TARGETDIR}/carla32/lib/pkgconfig
 
-# FIXME don't build on new macOS
 make USING_JUCE=${USING_JUCE} posix32 ${MAKE_ARGS}
+
+fi
 
 ##############################################################################################
 # Build Mac App
