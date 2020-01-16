@@ -33,7 +33,7 @@ fi
 
 source data/windows/common.env
 
-PKG_FOLDER="Carla_2.0-RC1-win${ARCH}"
+PKG_FOLDER="Carla_2.1-RC1-win${ARCH}"
 
 export WIN32=true
 
@@ -241,8 +241,8 @@ make -C unzipfx-carla-control -f Makefile.win32 ${MAKE_ARGS}
 rm -f Carla.zip CarlaControl.zip
 mv Carla Carla-2.1
 mv CarlaControl CarlaControl-2.1
-zip -r -9 Carla.zip Carla
-zip -r -9 CarlaControl.zip CarlaControl
+zip -r -9 Carla.zip Carla-2.1
+zip -r -9 CarlaControl.zip CarlaControl-2.1
 
 # Create static builds
 rm -f Carla.exe
