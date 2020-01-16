@@ -25,7 +25,7 @@ source common.env
 
 CHROOT_CARLA_DIR="/tmp/carla-src"
 PKG_FOLDER="Carla_2.1-RC1-linux"
-PKGS_NUM="20190227"
+PKGS_NUM="20200116"
 
 # ---------------------------------------------------------------------------------------------------------------------
 # function to remove old stuff
@@ -251,7 +251,7 @@ download_carla_extras()
 {
 
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
-CARLA_GIT_VER="2.1~alpha2+git20191016"
+CARLA_GIT_VER="2.1~rc1+git20200116"
 
 cat <<EOF | sudo chroot ${CHROOT_DIR}
 set -e
@@ -455,17 +455,17 @@ ln -s carla-plugin build-vst/carla.vst/resources/carla-plugin-patchbay
 rm build-{lv2,vst}/carla.*/carla-bridge-lv2-modgui
 rm build-{lv2,vst}/carla.*/libcarla_native-plugin.so
 
-mv build-carla carla
-zip --symlinks -r -9 carla.zip carla
+mv build-carla carla-2.1
+zip --symlinks -r -9 carla.zip carla-2.1
 cat data/windows/unzipfx-carla/unzipfx2cat carla.zip > Carla
 chmod +x Carla
-rm -rf carla carla.zip
+rm -rf carla carla-2.1 carla.zip
 
-mv build-carla-control carla-control
-zip --symlinks -r -9 carla-control.zip carla-control
+mv build-carla-control carla-control-2.1
+zip --symlinks -r -9 carla-control.zip carla-control-2.1
 cat data/windows/unzipfx-carla-control/unzipfx2cat carla-control.zip > CarlaControl
 chmod +x CarlaControl
-rm -rf carla-control carla-control.zip
+rm -rf carla-control carla-control-2.1 carla-control.zip
 
 rm -rf ${PKG_FOLDER}${ARCH}
 mkdir ${PKG_FOLDER}${ARCH}

@@ -33,7 +33,7 @@ fi
 
 source data/windows/common.env
 
-PKG_FOLDER="Carla_2.0-beta1-win${ARCH}"
+PKG_FOLDER="Carla_2.0-RC1-win${ARCH}"
 
 export WIN32=true
 
@@ -239,6 +239,8 @@ make -C unzipfx-carla-control -f Makefile.win32 ${MAKE_ARGS}
 
 # Create zip of Carla and CarlaControl
 rm -f Carla.zip CarlaControl.zip
+mv Carla Carla-2.1
+mv CarlaControl CarlaControl-2.1
 zip -r -9 Carla.zip Carla
 zip -r -9 CarlaControl.zip CarlaControl
 
@@ -253,6 +255,7 @@ chmod +x CarlaControl.exe
 
 # Cleanup
 rm -f Carla.zip CarlaControl.zip
+rm -rf Carla-2.1 CarlaControl-2.1
 
 # Create release zip
 rm -rf ${PKG_FOLDER}

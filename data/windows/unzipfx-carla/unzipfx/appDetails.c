@@ -72,10 +72,7 @@ char* sfx_get_tmp_path(int withAppName)
         GetTempPathA(512 - strlen(SFX_APP_MININAME_TITLE), sfx_tmp_path);
 
         if (withAppName == 1)
-        {
-            strcat(sfx_tmp_path, SFX_APP_MININAME_TITLE);
-            strcat(sfx_tmp_path, CARLA_VERSION_STRING);
-        }
+            strcat(sfx_tmp_path, SFX_APP_MININAME_TITLE "-2.1");
     }
 #else
     {
@@ -87,10 +84,7 @@ char* sfx_get_tmp_path(int withAppName)
             strcpy(sfx_tmp_path, "/tmp");
 
         if (withAppName == 1)
-        {
-            strcat(sfx_tmp_path, "/" SFX_APP_MININAME_LCASE);
-            strcat(sfx_tmp_path, CARLA_VERSION_STRING);
-        }
+            strcat(sfx_tmp_path, "/" SFX_APP_MININAME_LCASE "-2.1");
     }
 #endif
 
