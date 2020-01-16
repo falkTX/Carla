@@ -20,13 +20,7 @@ PKG_FOLDER="Carla_2.1-RC1-macos"
 source data/macos/common.env
 
 export MACOS="true"
-
-#if [ $(clang -v  2>&1 | grep version | cut -d' ' -f4 | cut -d'.' -f1) -lt 9 ]; then
-#  export MACOS_OLD="true"
-#  export USING_JUCE="false"
-#else
 export USING_JUCE="true"
-#fi
 
 export CC=clang
 export CXX=clang++
@@ -47,7 +41,7 @@ export MOC_QT5=moc
 export RCC_QT5=rcc
 export UIC_QT5=uic
 
-#make USING_JUCE=${USING_JUCE} ${MAKE_ARGS}
+make USING_JUCE=${USING_JUCE} ${MAKE_ARGS}
 
 ##############################################################################################
 # Build 32bit bridges
@@ -60,7 +54,7 @@ export PATH=${TARGETDIR}/carla32/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bi
 export PKG_CONFIG_PATH=${TARGETDIR}/carla32/lib/pkgconfig
 
 # FIXME don't build on new macOS
-#make USING_JUCE=${USING_JUCE} posix32 ${MAKE_ARGS}
+make USING_JUCE=${USING_JUCE} posix32 ${MAKE_ARGS}
 
 ##############################################################################################
 # Build Mac App
@@ -184,12 +178,18 @@ ln -sf ../Qt* ../lib ../iconengines ../imageformats ../platforms ../styles .
 ln -sf carla-plugin carla-plugin-patchbay
 cd ../../../../..
 
-rm -rf ./build/*.lv2
-rm -rf ./build/*.vst
-
 mkdir build/carla.lv2
 mkdir build/carla.lv2/resources
 mkdir build/carla.lv2/styles
+
+cp bin/carla.lv2/*.*        build/carla.lv2/
+cp bin/carla-bridge-*       build/carla.lv2/
+cp bin/carla-discovery-*    build/carla.lv2/
+cp bin/libcarla_utils.dylib build/carla.lv2/
+rm -f build/carla.lv2/carla-bridge-lv2-modgui
+rm -f build/carla.lv2/carla-bridge-lv2-qt5
+cp -LR build/Carla.app/Contents/MacOS/resources/* build/carla.lv2/resources/
+cp     build/Carla.app/Contents/MacOS/styles/*    build/carla.lv2/styles/
 
 ./data/macos/generate-vst-bundles.sh
 mv bin/CarlaVstShell.vst   build/carla.vst
@@ -217,15 +217,6 @@ rm -f build/carlafx.vst/carla-bridge-lv2-modgui
 rm -f build/carlafx.vst/carla-bridge-lv2-qt5
 cp -LR build/Carla.app/Contents/MacOS/resources/* build/carlafx.vst/Contents/MacOS/resources/
 cp     build/Carla.app/Contents/MacOS/styles/*    build/carlafx.vst/Contents/MacOS/styles/
-
-cp bin/carla.lv2/*.*        build/carla.lv2/
-cp bin/carla-bridge-*       build/carla.lv2/
-cp bin/carla-discovery-*    build/carla.lv2/
-cp bin/libcarla_utils.dylib build/carla.lv2/
-rm -f build/carla.lv2/carla-bridge-lv2-modgui
-rm -f build/carla.lv2/carla-bridge-lv2-qt5
-cp -LR build/Carla.app/Contents/MacOS/resources/* build/carla.lv2/resources/
-cp     build/Carla.app/Contents/MacOS/styles/*    build/carla.lv2/styles/
 
 ##############################################################################################
 
