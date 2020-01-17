@@ -694,7 +694,9 @@ public:
           fCVSourcePorts(fUseClient),
 #endif
           fPreRenameMutex(),
-          fPreRenameConnections()
+          fPreRenameConnections(),
+          fPreRenamePluginId(),
+          fPreRenamePluginIcon()
     {
         carla_debug("CarlaEngineJackClient::CarlaEngineJackClient(%p)", jackClient);
 
@@ -929,7 +931,8 @@ public:
 
         return _renamePorts(fAudioPorts, clientNamePrefix) &&
                _renamePorts(fCVPorts,    clientNamePrefix) &&
-               _renamePorts(fEventPorts, clientNamePrefix);
+               _renamePorts(fEventPorts, clientNamePrefix) &&
+               _restoreProperties();
     }
 
     void closeForRename(jack_client_t* const newClient, const CarlaString& newClientName) noexcept
@@ -945,10 +948,13 @@ public:
                     const CarlaMutexLocker cml(fPreRenameMutex);
 
                     fPreRenameConnections.clear();
+                    fPreRenamePluginId.clear();
+                    fPreRenamePluginIcon.clear();
 
                     _savePortsConnections(fAudioPorts, clientNamePrefix);
                     _savePortsConnections(fCVPorts,    clientNamePrefix);
                     _savePortsConnections(fEventPorts, clientNamePrefix);
+                    _saveProperties();
                 }
 
                 try {
@@ -985,6 +991,8 @@ private:
 
     CarlaMutex      fPreRenameMutex;
     CarlaStringList fPreRenameConnections;
+    CarlaString     fPreRenamePluginId;
+    CarlaString     fPreRenamePluginIcon;
 
     template<typename T>
     bool _renamePorts(const LinkedList<T*>& t, const CarlaString& clientNamePrefix)
@@ -1043,6 +1051,63 @@ private:
                 }
 
                 jackbridge_free(connections);
+            }
+        }
+    }
+
+    bool _restoreProperties()
+    {
+        if (fPreRenamePluginId.isEmpty())
+            return true;
+
+        if (const char* const uuidchar = jackbridge_client_get_uuid(fJackClient))
+        {
+            jack_uuid_t uuid;
+
+            if (jackbridge_uuid_parse(uuidchar, &uuid))
+            {
+                jackbridge_set_property(fJackClient, uuid,
+                                        "https://kx.studio/ns/carla/plugin-id",
+                                        fPreRenamePluginId,
+                                        "http://www.w3.org/2001/XMLSchema#integer");
+
+                if (fPreRenamePluginIcon.isNotEmpty())
+                    jackbridge_set_property(fJackClient, uuid,
+                                            "https://kx.studio/ns/carla/plugin-icon",
+                                            fPreRenamePluginIcon,
+                                            "text/plain");
+            }
+        }
+
+        return true;
+    }
+
+    void _saveProperties()
+    {
+        if (const char* const uuidchar = jackbridge_client_get_uuid(fJackClient))
+        {
+            jack_uuid_t uuid;
+
+            if (jackbridge_uuid_parse(uuidchar, &uuid))
+            {
+                char* value;
+                char* type;
+
+                CARLA_SAFE_ASSERT_RETURN(jackbridge_get_property(uuid,
+                                                                 "https://kx.studio/ns/carla/plugin-id",
+                                                                 &value,
+                                                                 &type),);
+                CARLA_SAFE_ASSERT_RETURN(type != nullptr,);
+                CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, "http://www.w3.org/2001/XMLSchema#integer") == 0,);
+                fPreRenamePluginId = value;
+
+                CARLA_SAFE_ASSERT_RETURN(jackbridge_get_property(uuid,
+                                                                 "https://kx.studio/ns/carla/plugin-icon",
+                                                                 &value,
+                                                                 &type),);
+                CARLA_SAFE_ASSERT_RETURN(type != nullptr,);
+                CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, "text/plain") == 0,);
+                fPreRenamePluginIcon = value;
             }
         }
     }
