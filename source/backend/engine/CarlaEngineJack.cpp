@@ -765,9 +765,33 @@ public:
 
                 jackbridge_connect(fJackClient, portNameA, portNameB);
             }
+
+            if (fPreRenamePluginId.isNotEmpty())
+            {
+                if (const char* const uuidchar = jackbridge_client_get_uuid(fJackClient))
+                {
+                    jack_uuid_t uuid;
+
+                    if (jackbridge_uuid_parse(uuidchar, &uuid))
+                    {
+                        jackbridge_set_property(fJackClient, uuid,
+                                                "https://kx.studio/ns/carla/plugin-id",
+                                                fPreRenamePluginId,
+                                                "http://www.w3.org/2001/XMLSchema#integer");
+
+                        if (fPreRenamePluginIcon.isNotEmpty())
+                            jackbridge_set_property(fJackClient, uuid,
+                                                    "https://kx.studio/ns/carla/plugin-icon",
+                                                    fPreRenamePluginIcon,
+                                                    "text/plain");
+                    }
+                }
+            }
         }
 
         fPreRenameConnections.clear();
+        fPreRenamePluginId.clear();
+        fPreRenamePluginIcon.clear();
     }
 
     void deactivate() noexcept override
@@ -931,8 +955,7 @@ public:
 
         return _renamePorts(fAudioPorts, clientNamePrefix) &&
                _renamePorts(fCVPorts,    clientNamePrefix) &&
-               _renamePorts(fEventPorts, clientNamePrefix) &&
-               _restoreProperties();
+               _renamePorts(fEventPorts, clientNamePrefix);
     }
 
     void closeForRename(jack_client_t* const newClient, const CarlaString& newClientName) noexcept
@@ -1055,33 +1078,6 @@ private:
         }
     }
 
-    bool _restoreProperties()
-    {
-        if (fPreRenamePluginId.isEmpty())
-            return true;
-
-        if (const char* const uuidchar = jackbridge_client_get_uuid(fJackClient))
-        {
-            jack_uuid_t uuid;
-
-            if (jackbridge_uuid_parse(uuidchar, &uuid))
-            {
-                jackbridge_set_property(fJackClient, uuid,
-                                        "https://kx.studio/ns/carla/plugin-id",
-                                        fPreRenamePluginId,
-                                        "http://www.w3.org/2001/XMLSchema#integer");
-
-                if (fPreRenamePluginIcon.isNotEmpty())
-                    jackbridge_set_property(fJackClient, uuid,
-                                            "https://kx.studio/ns/carla/plugin-icon",
-                                            fPreRenamePluginIcon,
-                                            "text/plain");
-            }
-        }
-
-        return true;
-    }
-
     void _saveProperties()
     {
         if (const char* const uuidchar = jackbridge_client_get_uuid(fJackClient))
@@ -1101,13 +1097,12 @@ private:
                 CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, "http://www.w3.org/2001/XMLSchema#integer") == 0,);
                 fPreRenamePluginId = value;
 
-                CARLA_SAFE_ASSERT_RETURN(jackbridge_get_property(uuid,
-                                                                 "https://kx.studio/ns/carla/plugin-icon",
-                                                                 &value,
-                                                                 &type),);
-                CARLA_SAFE_ASSERT_RETURN(type != nullptr,);
-                CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, "text/plain") == 0,);
-                fPreRenamePluginIcon = value;
+                if (jackbridge_get_property(uuid, "https://kx.studio/ns/carla/plugin-icon", &value, &type))
+                {
+                    CARLA_SAFE_ASSERT_RETURN(type != nullptr,);
+                    CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, "text/plain") == 0,);
+                    fPreRenamePluginIcon = value;
+                }
             }
         }
     }
