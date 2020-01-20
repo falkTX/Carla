@@ -9,22 +9,26 @@ if ! which debootstrap > /dev/null; then
 fi
 
 # ---------------------------------------------------------------------------------------------------------------------
-# stop on error
+# startup as main script
 
-set -e
+if [ -z "${SOURCED_BY_DOCKER}" ]; then
+    # stop on error
+    set -e
 
-# ---------------------------------------------------------------------------------------------------------------------
-# cd to correct path
-
-cd $(dirname $0)
+    # cd to correct path
+    cd $(dirname $0)
+fi
 
 # ---------------------------------------------------------------------------------------------------------------------
 # set variables
 
 source common.env
 
+# where we build stuff inside the chroot
 CHROOT_CARLA_DIR="/tmp/carla-src"
-PKG_FOLDER="Carla_2.1-RC1-linux"
+
+# used for downloading packages from kxstudio repos, in order to get lv2-gtk3 and windows bridges
+CARLA_GIT_VER="2.1~rc1+git20200116"
 PKGS_NUM="20200116"
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -53,6 +57,22 @@ fi
 if [ -d ${TARGETDIR}/chroot64 ]; then
     sudo mv ${TARGETDIR}/chroot64 ${TARGETDIR}/chroot64-deleteme2
     sudo rm -rf ${TARGETDIR}/chroot64-deleteme || true
+fi
+
+}
+
+# ---------------------------------------------------------------------------------------------------------------------
+# create chroots
+
+prepare()
+{
+
+if [ ! -d ${TARGETDIR}/chroot32 ]; then
+    sudo debootstrap --no-check-gpg --arch=i386 lucid ${TARGETDIR}/chroot32 http://old-releases.ubuntu.com/ubuntu/
+fi
+
+if [ ! -d ${TARGETDIR}/chroot64 ]; then
+    sudo debootstrap --no-check-gpg --arch=amd64 lucid ${TARGETDIR}/chroot64 http://old-releases.ubuntu.com/ubuntu/
 fi
 
 }
@@ -480,54 +500,30 @@ EOF
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
-# cleanup here if needed
-
-# cleanup
-
-# ---------------------------------------------------------------------------------------------------------------------
-# create chroots
-
-if [ ! -d ${TARGETDIR}/chroot32 ]; then
-    sudo debootstrap --no-check-gpg --arch=i386 lucid ${TARGETDIR}/chroot32 http://old-releases.ubuntu.com/ubuntu/
-fi
-
-if [ ! -d ${TARGETDIR}/chroot64 ]; then
-    sudo debootstrap --no-check-gpg --arch=amd64 lucid ${TARGETDIR}/chroot64 http://old-releases.ubuntu.com/ubuntu/
-fi
-
-# ---------------------------------------------------------------------------------------------------------------------
 # run the functions
 
-# cleanup
+if [ -z "${SOURCED_BY_DOCKER}" ]; then
+    # name of final dir and xz file, needed only by chroot_pack_carla
+    export PKG_FOLDER="Carla_2.1-linux"
 
-export ARCH=32
-chroot_setup
+    # cleanup
+    prepare
 
-export ARCH=64
-chroot_setup
+    # 32bit build
+    export ARCH=32
+    chroot_setup
+    chroot_build_deps
+    chroot_build_carla
+    download_carla_extras
+    chroot_pack_carla
 
-export ARCH=32
-chroot_build_deps
-
-export ARCH=64
-chroot_build_deps
-
-export ARCH=32
-chroot_build_carla
-
-export ARCH=64
-chroot_build_carla
-
-export ARCH=32
-download_carla_extras
-
-export ARCH=64
-download_carla_extras
-
-export ARCH=32
-chroot_pack_carla
-
-export ARCH=64
-chroot_pack_carla
+    # 64bit build
+    export ARCH=64
+    chroot_setup
+    chroot_build_deps
+    chroot_build_carla
+    download_carla_extras
+    chroot_pack_carla
+fi
 
 # ---------------------------------------------------------------------------------------------------------------------
