@@ -386,6 +386,7 @@ class CarlaSettingsW(QDialog):
             self.ui.lw_page.hideRow(self.TAB_INDEX_PLUGINPATHS)
             self.ui.ch_exp_export_lv2.hide()
             self.ui.group_experimental_engine.hide()
+            self.ui.cb_canvas_inline_displays.hide()
 
         elif not hasCanvas:
             self.ui.lw_page.hideRow(self.TAB_INDEX_CANVAS)
