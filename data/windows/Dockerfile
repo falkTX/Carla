@@ -20,6 +20,7 @@ RUN apt-get install -qy mingw-w64 && \
     apt-get install -qy automake binutils build-essential cmake libglib2.0-dev-bin libtool-bin && \
     apt-get clean
 
+# basic setup
 RUN locale-gen en_US.UTF-8
 RUN echo "source /etc/bash_completion" >> $HOME/.bashrc
 

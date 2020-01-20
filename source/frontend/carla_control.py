@@ -376,34 +376,49 @@ class CarlaControlServerTCP(Server):
         self.host._set_midiCountInfo(pluginId, {'ins': midiOuts, 'outs': midiOuts})
         self.host._set_parameterCountInfo(pluginId, paramTotal, {'ins': paramIns, 'outs': paramOuts})
 
-    @make_method('/ctrl/param', 'iiiiiissfffffff')
-    def carla_param(self, path, args):
+    @make_method('/ctrl/paramInfo', 'iissss')
+    def carla_paramInfo(self, path, args):
         if DEBUG: print(path, args)
         self.fReceivedMsgs = True
-        (
-          pluginId, paramId, type_, hints, mappedControlIndex, midiChan, name, unit,
-          def_, min_, max_, step, stepSmall, stepLarge, value
-        ) = args
-
-        hints &= ~(PARAMETER_USES_SCALEPOINTS | PARAMETER_USES_CUSTOM_TEXT)
+        pluginId, paramId, name, unit, comment, groupName = args
 
         paramInfo = {
             'name': name,
             'symbol': "",
             'unit': unit,
+            'comment': comment,
+            'groupName': groupName,
             'scalePointCount': 0,
+            'scalePoints': [],
         }
         self.host._set_parameterInfo(pluginId, paramId, paramInfo)
+
+    @make_method('/ctrl/paramData', 'iiiiiifff')
+    def carla_paramData(self, path, args):
+        if DEBUG: print(path, args)
+        self.fReceivedMsgs = True
+        pluginId, paramId, type_, hints, midiChan, mappedCtrl, mappedMin, mappedMax, value = args
+
+        hints &= ~(PARAMETER_USES_SCALEPOINTS | PARAMETER_USES_CUSTOM_TEXT)
 
         paramData = {
             'type': type_,
             'hints': hints,
             'index': paramId,
             'rindex': -1,
-            'mappedControlIndex': mappedControlIndex,
             'midiChannel': midiChan,
+            'mappedControlIndex': mappedCtrl,
+            'mappedMinimum': mappedMin,
+            'mappedMaximum': mappedMax,
         }
         self.host._set_parameterData(pluginId, paramId, paramData)
+        self.host._set_parameterValue(pluginId, paramId, value)
+
+    @make_method('/ctrl/paramRanges', 'iiffffff')
+    def carla_paramRanges(self, path, args):
+        if DEBUG: print(path, args)
+        self.fReceivedMsgs = True
+        pluginId, paramId, def_, min_, max_, step, stepSmall, stepLarge = args
 
         paramRanges = {
             'def': def_,
@@ -413,9 +428,7 @@ class CarlaControlServerTCP(Server):
             'stepSmall': stepSmall,
             'stepLarge': stepLarge,
         }
-        self.host._set_parameterRangesUpdate(pluginId, paramId, paramRanges)
-
-        self.host._set_parameterValue(pluginId, paramId, value)
+        self.host._set_parameterRanges(pluginId, paramId, paramRanges)
 
     @make_method('/ctrl/count', 'iiiiii')
     def carla_count(self, path, args):
