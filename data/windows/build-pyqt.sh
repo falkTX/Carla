@@ -209,7 +209,7 @@ fi
 if [ ! -f pyliblo-${PYLIBLO_VERSION}/build-done ]; then
   cd pyliblo-${PYLIBLO_VERSION}
   if [ ! -f patched ]; then
-    patch -p1 -i ../patches/pyliblo-python3.7.patch
+    patch -p1 -i ../../patches/pyliblo-python3.7.patch
     touch patched
   fi
   mkdir -p build

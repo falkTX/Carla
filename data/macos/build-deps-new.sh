@@ -239,7 +239,7 @@ fi
 if [ ! -f glib-${GLIB_VERSION}/build-done ]; then
   cd glib-${GLIB_VERSION}
   if [ ! -f patched ]; then
-    patch -p1 -i ../patches/glib_skip-gettext.patch
+    patch -p1 -i ../../patches/glib_skip-gettext.patch
     rm m4macros/glib-gettext.m4
     touch patched
   fi
@@ -499,7 +499,7 @@ fi
 if [ ! -f pyliblo-${PYLIBLO_VERSION}/build-done ]; then
   cd pyliblo-${PYLIBLO_VERSION}
   if [ ! -f patched ]; then
-    patch -p1 -i ../patches/pyliblo-python3.7.patch
+    patch -p1 -i ../../patches/pyliblo-python3.7.patch
     touch patched
   fi
   env CFLAGS="${CFLAGS} -I${TARGETDIR}/carla64/include" LDFLAGS="${LDFLAGS} -L${TARGETDIR}/carla64/lib" \

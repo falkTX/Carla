@@ -238,7 +238,7 @@ fi
 if [ ! -f glib-${GLIB_VERSION}/build-done ]; then
   cd glib-${GLIB_VERSION}
   if [ ! -f patched ]; then
-    patch -p1 -i ../patches/glib_skip-gettext.patch
+    patch -p1 -i ../../patches/glib_skip-gettext.patch
     rm m4macros/glib-gettext.m4
     touch patched
   fi
@@ -376,11 +376,11 @@ if [ ! -f qtbase-opensource-src-${QT5_VERSION}/build-done ]; then
       #sed -i -e "s|AWK=.*|AWK=/opt/local/bin/gawk|" configure
       #sed -i -e "s|/usr/bin/xcrun -find xcrun|true|" configure
       #sed -i -e "s|/usr/bin/xcrun -find xcrun|echo hello|" mkspecs/features/mac/default_pre.prf
-      #patch -p1 -i ../patches/qt55-newosx-fix.patch
-      #patch -p1 -i ../patches/qt56-cpp98-compat.patch
-      patch -p1 -i ../patches/qt59-osx10.8-compat.patch
-      patch -p1 -i ../patches/qt59-osx10.8-compat2.patch
-      patch -p1 -i ../patches/qt59-osx10.8-compat3.patch
+      #patch -p1 -i ../../patches/qt55-newosx-fix.patch
+      #patch -p1 -i ../../patches/qt56-cpp98-compat.patch
+      patch -p1 -i ../../patches/qt59-osx10.8-compat.patch
+      patch -p1 -i ../../patches/qt59-osx10.8-compat2.patch
+      patch -p1 -i ../../patches/qt59-osx10.8-compat3.patch
       sed -i -e "s/10.10/10.8/" mkspecs/macx-clang/qmake.conf
       sed -i -e "s/ --sdk \$sdk / /" configure
       sed -i -e "s/ --sdk \$\$sdk / /" mkspecs/features/mac/sdk.prf
@@ -554,7 +554,7 @@ fi
 if [ ! -f pyliblo-${PYLIBLO_VERSION}/build-done ]; then
   cd pyliblo-${PYLIBLO_VERSION}
   if [ ! -f patched ]; then
-    patch -p1 -i ../patches/pyliblo-python3.7.patch
+    patch -p1 -i ../../patches/pyliblo-python3.7.patch
     touch patched
   fi
   env CFLAGS="${CFLAGS} -I${TARGETDIR}/carla64/include" LDFLAGS="${LDFLAGS} -L${TARGETDIR}/carla64/lib" \
