@@ -2490,6 +2490,11 @@ PatchbayGraph* EngineInternalGraph::getPatchbayGraph() const noexcept
     return fPatchbay;
 }
 
+PatchbayGraph* EngineInternalGraph::getPatchbayGraphOrNull() const noexcept
+{
+    return fIsRack ? nullptr : fPatchbay;
+}
+
 void EngineInternalGraph::process(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const uint32_t frames)
 {
     if (fIsRack)

@@ -88,6 +88,7 @@ public:
 
     RackGraph*     getRackGraph() const noexcept;
     PatchbayGraph* getPatchbayGraph() const noexcept;
+    PatchbayGraph* getPatchbayGraphOrNull() const noexcept;
 
     void process(CarlaEngine::ProtectedData* data, const float* const* inBuf, float* const* outBuf, uint32_t frames);
 

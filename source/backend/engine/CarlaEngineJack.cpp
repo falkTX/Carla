@@ -885,7 +885,7 @@ public:
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CarlaEngineCVSourcePorts* createCVSourcePorts() override
     {
-        fCVSourcePorts.setGraphAndPlugin(getPatchbayGraph(), getPlugin());
+        fCVSourcePorts.setGraphAndPlugin(getPatchbayGraphOrNull(), getPlugin());
         return &fCVSourcePorts;
     }
 

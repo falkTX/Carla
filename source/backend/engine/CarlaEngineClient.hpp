@@ -81,9 +81,9 @@ public:
     }
 
 protected:
-    inline PatchbayGraph* getPatchbayGraph() const noexcept
+    inline PatchbayGraph* getPatchbayGraphOrNull() const noexcept
     {
-        return pData->egraph.getPatchbayGraph();
+        return pData->egraph.getPatchbayGraphOrNull();
     }
 
     inline CarlaPlugin* getPlugin() const noexcept

@@ -260,7 +260,7 @@ bool CarlaEngineClient::removePort(const EnginePortType portType, const char* co
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 CarlaEngineCVSourcePorts* CarlaEngineClient::createCVSourcePorts()
 {
-    pData->cvSourcePorts.setGraphAndPlugin(pData->egraph.getPatchbayGraph(), pData->plugin);
+    pData->cvSourcePorts.setGraphAndPlugin(pData->egraph.getPatchbayGraphOrNull(), pData->plugin);
     return &pData->cvSourcePorts;
 }
 #endif
