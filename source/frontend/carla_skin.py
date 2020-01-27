@@ -1329,8 +1329,17 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 for i in range(paramInfo['scalePointCount']):
                     scalePoints.append(self.host.get_parameter_scalepoint_info(self.fPluginId, index, i))
 
+                prefix = ""
+                suffix = paramInfo['unit'].strip()
+
+                if suffix == "(coef)":
+                    prefix = "* "
+                    suffix = ""
+                else:
+                    suffix = " " + suffix
+
                 dialog = CustomInputDialog(self, label, current, minimum, maximum,
-                                                 paramRanges['step'], paramRanges['stepSmall'], scalePoints)
+                                                 paramRanges['step'], paramRanges['stepSmall'], scalePoints, prefix, suffix)
 
                 if not dialog.exec_():
                     return
