@@ -366,7 +366,7 @@ public:
         }
     }
 
-    void setParameterTouchFromUI(const uint32_t pluginId, uint32_t index, const bool touch)
+    void setParameterTouchFromUI(const uint32_t pluginId, const uint32_t index, const bool touch)
     {
         uint32_t rindex = index;
         if (_getRealIndexForPluginParameter(pluginId, rindex))
@@ -1713,6 +1713,9 @@ private:
 
             rindex += plugin->getParameterCount();
         }
+
+        if (rindex >= kNumInParams)
+            return false;
 
         return true;
     }
