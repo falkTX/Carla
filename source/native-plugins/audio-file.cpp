@@ -147,6 +147,7 @@ protected:
         if (std::strcmp(key, "file") != 0)
             return;
 
+        invalidateNextFilename();
         loadFilename(value);
     }
 

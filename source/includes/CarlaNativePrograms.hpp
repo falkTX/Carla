@@ -105,6 +105,12 @@ protected:
     virtual void process2(const float* const* inBuffer, float** outBuffer, uint32_t frames,
                           const NativeMidiEvent* midiEvents, uint32_t midiEventCount) = 0;
 
+    void invalidateNextFilename() noexcept
+    {
+        const CarlaMutexLocker cml(fProgramChangeMutex);
+        fNextFilename = nullptr;
+    }
+
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
