@@ -67,6 +67,7 @@ public:
 #ifdef CARLA_PROPER_CPP11_SUPPORT
           fProgramDesc({0, 0, nullptr}),
 #endif
+          kIgnoreParameters(std::strncmp(desc->label, "carla", 5) == 0),
           fMidiEventCount(0),
 #ifdef USING_JUCE
           fJuceInitialiser(),
@@ -75,6 +76,9 @@ public:
           fWorkerUISignal(0)
     {
         carla_zeroStruct(fHost);
+#ifndef CARLA_PROPER_CPP11_SUPPORT
+        carla_zeroStruct(fProgramDesc);
+#endif
 
         if (! loadedInProperHost())
             return;
@@ -150,7 +154,7 @@ public:
             fDescriptor->get_parameter_info  != nullptr &&
             fDescriptor->get_parameter_value != nullptr &&
             fDescriptor->set_parameter_value != nullptr &&
-            std::strncmp(fDescriptor->label, "carla", 5) != 0)
+            ! kIgnoreParameters)
         {
             fPorts.numParams = fDescriptor->get_parameter_count(fHandle);
         }
@@ -716,7 +720,7 @@ protected:
 
     void handleUiParameterChanged(const uint32_t index, const float value) const
     {
-        if (fWorkerUISignal)
+        if (kIgnoreParameters || fWorkerUISignal)
             return;
 
         if (fUI.writeFunction != nullptr && fUI.controller != nullptr)
@@ -725,6 +729,9 @@ protected:
 
     void handleUiParameterTouch(const uint32_t index, const bool touch) const
     {
+        if (kIgnoreParameters)
+            return;
+
         if (fUI.touch != nullptr && fUI.touch->touch != nullptr)
             fUI.touch->touch(fUI.touch->handle, index+fPorts.indexOffset, touch);
     }
@@ -832,6 +839,9 @@ private:
     NativeHostDescriptor fHost;
     const NativePluginDescriptor* const fDescriptor;
     LV2_Program_Descriptor              fProgramDesc;
+
+    // carla as plugin does not implement lv2 parameter API yet, needed for feedback
+    const bool kIgnoreParameters;
 
     uint32_t        fMidiEventCount;
     NativeMidiEvent fMidiEvents[kMaxMidiEvents];
