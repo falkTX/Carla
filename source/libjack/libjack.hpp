@@ -41,6 +41,7 @@
 
 #include <cerrno>
 #include <map>
+#include <string>
 
 #ifdef __SSE2_MATH__
 # include <xmmintrin.h>
