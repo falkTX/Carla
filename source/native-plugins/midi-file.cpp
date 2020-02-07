@@ -62,7 +62,9 @@ protected:
         if (std::strcmp(key, "file") != 0)
             return;
 
+#ifdef HAVE_PYQT
         invalidateNextFilename();
+#endif
         _loadMidiFile(value);
     }
 
