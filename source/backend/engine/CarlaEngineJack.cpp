@@ -59,6 +59,47 @@ CARLA_BACKEND_START_NAMESPACE
 class CarlaEngineJack;
 class CarlaEngineJackClient;
 
+struct CarlaJackPortHints {
+    bool isHardware : 1;
+    bool isInput    : 1;
+    bool isAudio    : 1;
+    bool isMIDI     : 1;
+    bool isCV       : 1;
+    bool isOSC      : 1;
+
+    static CarlaJackPortHints fromPort(const jack_port_t* const jackPort)
+    {
+        CarlaJackPortHints ph = { false, false, false, false, false, false };
+
+        const int portFlags = jackbridge_port_flags(jackPort);
+        const char* const portType = jackbridge_port_type(jackPort);
+
+        ph.isHardware = portFlags & JackPortIsPhysical;
+        ph.isInput    = portFlags & JackPortIsInput;
+        ph.isAudio    = portType != nullptr && std::strcmp(portType, JACK_DEFAULT_AUDIO_TYPE) == 0;
+        ph.isMIDI     = portType != nullptr && std::strcmp(portType, JACK_DEFAULT_MIDI_TYPE) == 0;
+        ph.isCV       = false;
+        ph.isOSC      = false;
+
+        if (const jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
+        {
+            char* value = nullptr;
+            char* type  = nullptr;
+
+            if (jackbridge_get_property(uuid, JACKEY_SIGNAL_TYPE, &value, &type)
+                && value != nullptr
+                && type != nullptr
+                && std::strcmp(type, "text/plain") == 0)
+            {
+                ph.isCV  = (std::strcmp(value, "CV") == 0);
+                ph.isOSC = (std::strcmp(value, "OSC") == 0);
+            }
+        }
+
+        return ph;
+    }
+};
+
 // -----------------------------------------------------------------------
 // Fallback data
 
@@ -2381,7 +2422,7 @@ protected:
         pData->time.fillJackTimeInfo(pos, nframes);
     }
 
-    void handleJackClientRegistrationCallback(const char* const name, const bool reg)
+    void handleJackClientUnregistrationCallback(const char* const name)
     {
         CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
 
@@ -2391,9 +2432,6 @@ protected:
 #else
         if (! fExternalPatchbayHost) return;
 #endif
-
-        // do nothing on client registration, wait for first port
-        if (reg) return;
 
         const uint groupId(fUsedGroups.getGroupId(name));
 
@@ -2409,7 +2447,9 @@ protected:
         fUsedGroups.list.removeOne(groupNameToId);
     }
 
-    void handleJackPortRegistrationCallback(const jack_port_id_t port, const bool reg)
+    void handleJackPortRegistrationCallback(const char* const portName,
+                                            const char* const shortPortName,
+                                            const CarlaJackPortHints& jackPortHints)
     {
         // ignore this if on internal patchbay mode
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
@@ -2418,71 +2458,42 @@ protected:
         if (! fExternalPatchbayHost) return;
 #endif
 
-        const jack_port_t* const jackPort(jackbridge_port_by_id(fClient, port));
-        CARLA_SAFE_ASSERT_RETURN(jackPort != nullptr,);
+        bool found;
+        CarlaString groupName(portName);
+        groupName.truncate(groupName.rfind(shortPortName, &found)-1);
 
-        const char* const fullPortName(jackbridge_port_name(jackPort));
-        CARLA_SAFE_ASSERT_RETURN(fullPortName != nullptr && fullPortName[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(found,);
 
-        if (reg)
+        uint groupId(fUsedGroups.getGroupId(groupName));
+
+        if (groupId == 0)
         {
-            const char* const shortPortName(jackbridge_port_short_name(jackPort));
-            CARLA_SAFE_ASSERT_RETURN(shortPortName != nullptr && shortPortName[0] != '\0',);
+            groupId = ++fUsedGroups.lastId;
 
-            bool found;
-            CarlaString groupName(fullPortName);
-            groupName.truncate(groupName.rfind(shortPortName, &found)-1);
+            GroupNameToId groupNameToId;
+            groupNameToId.setData(groupId, groupName);
 
-            CARLA_SAFE_ASSERT_RETURN(found,);
+            int pluginId = -1;
+            PatchbayIcon icon = jackPortHints.isHardware ? PATCHBAY_ICON_HARDWARE : PATCHBAY_ICON_APPLICATION;
 
-            const int jackPortFlags(jackbridge_port_flags(jackPort));
-
-            uint groupId(fUsedGroups.getGroupId(groupName));
-
-            if (groupId == 0)
-            {
-                groupId = ++fUsedGroups.lastId;
-
-                GroupNameToId groupNameToId;
-                groupNameToId.setData(groupId, groupName);
-
-                int pluginId = -1;
-                PatchbayIcon icon = (jackPortFlags & JackPortIsPhysical) ? PATCHBAY_ICON_HARDWARE : PATCHBAY_ICON_APPLICATION;
-
-                findPluginIdAndIcon(groupName, pluginId, icon);
-
-                callback(fExternalPatchbayHost, fExternalPatchbayOsc,
-                         ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
-                         groupNameToId.group,
-                         icon,
-                         pluginId,
-                         0, 0.0f,
-                         groupNameToId.name);
-
-                fUsedGroups.list.append(groupNameToId);
-            }
-
-            addPatchbayJackPort(fExternalPatchbayHost, fExternalPatchbayOsc,
-                                groupId, jackPort, shortPortName, fullPortName, jackPortFlags);
-        }
-        else
-        {
-            const PortNameToId& portNameToId(fUsedPorts.getPortNameToId(fullPortName));
-
-            /* NOTE: Due to JACK2 async behaviour the port we get here might be the same of a previous rename-plugin request.
-                     See the comment on CarlaEngineJack::renamePlugin() for more information. */
-            if (portNameToId.group <= 0 || portNameToId.port <= 0) return;
+            findPluginIdAndIcon(groupName, pluginId, icon);
 
             callback(fExternalPatchbayHost, fExternalPatchbayOsc,
-                     ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
-                     portNameToId.group,
-                     static_cast<int>(portNameToId.port),
-                     0, 0, 0.0f, nullptr);
-            fUsedPorts.list.removeOne(portNameToId);
+                      ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
+                      groupNameToId.group,
+                      icon,
+                      pluginId,
+                      0, 0.0f,
+                      groupNameToId.name);
+
+            fUsedGroups.list.append(groupNameToId);
         }
+
+        addPatchbayJackPort(fExternalPatchbayHost, fExternalPatchbayOsc,
+                            groupId, jackPortHints, shortPortName, portName);
     }
 
-    void handleJackPortConnectCallback(const jack_port_id_t a, const jack_port_id_t b, const bool connect)
+    void handleJackPortUnregistrationCallback(const char* const portName)
     {
         // ignore this if on internal patchbay mode
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
@@ -2491,75 +2502,101 @@ protected:
         if (! fExternalPatchbayHost) return;
 #endif
 
-        const jack_port_t* const jackPortA(jackbridge_port_by_id(fClient, a));
-        CARLA_SAFE_ASSERT_RETURN(jackPortA != nullptr,);
+        const PortNameToId& portNameToId(fUsedPorts.getPortNameToId(portName));
 
-        const jack_port_t* const jackPortB(jackbridge_port_by_id(fClient, b));
-        CARLA_SAFE_ASSERT_RETURN(jackPortB != nullptr,);
+        /* NOTE: Due to JACK2 async behaviour the port we get here might be the same of a previous rename-plugin request.
+                 See the comment on CarlaEngineJack::renamePlugin() for more information. */
+        if (portNameToId.group <= 0 || portNameToId.port <= 0) return;
 
-        const char* const fullPortNameA(jackbridge_port_name(jackPortA));
-        CARLA_SAFE_ASSERT_RETURN(fullPortNameA != nullptr && fullPortNameA[0] != '\0',);
+        callback(fExternalPatchbayHost, fExternalPatchbayOsc,
+                  ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
+                  portNameToId.group,
+                  static_cast<int>(portNameToId.port),
+                  0, 0, 0.0f, nullptr);
+        fUsedPorts.list.removeOne(portNameToId);
+    }
 
-        const char* const fullPortNameB(jackbridge_port_name(jackPortB));
-        CARLA_SAFE_ASSERT_RETURN(fullPortNameB != nullptr && fullPortNameB[0] != '\0',);
+    void handleJackPortConnectCallback(const char* const portNameA, const char* const portNameB)
+    {
+        // ignore this if on internal patchbay mode
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
+        if (! (fExternalPatchbayHost || (fExternalPatchbayOsc && pData->osc.isControlRegisteredForTCP()))) return;
+#else
+        if (! fExternalPatchbayHost) return;
+#endif
 
-        const PortNameToId& portNameToIdA(fUsedPorts.getPortNameToId(fullPortNameA));
-        const PortNameToId& portNameToIdB(fUsedPorts.getPortNameToId(fullPortNameB));
+        const PortNameToId& portNameToIdA(fUsedPorts.getPortNameToId(portNameA));
+        const PortNameToId& portNameToIdB(fUsedPorts.getPortNameToId(portNameB));
 
         /* NOTE: Due to JACK2 async behaviour the port we get here might be the same of a previous rename-plugin request.
                  See the comment on CarlaEngineJack::renamePlugin() for more information. */
         if (portNameToIdA.group <= 0 || portNameToIdA.port <= 0) return;
         if (portNameToIdB.group <= 0 || portNameToIdB.port <= 0) return;
 
-        if (connect)
+        char strBuf[STR_MAX+1];
+        std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", portNameToIdA.group, portNameToIdA.port, portNameToIdB.group, portNameToIdB.port);
+        strBuf[STR_MAX] = '\0';
+
+        ConnectionToId connectionToId;
+        connectionToId.setData(++fUsedConnections.lastId, portNameToIdA.group, portNameToIdA.port, portNameToIdB.group, portNameToIdB.port);
+
+        callback(fExternalPatchbayHost, fExternalPatchbayOsc,
+                  ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
+                  connectionToId.id,
+                  0, 0, 0, 0.0f,
+                  strBuf);
+        fUsedConnections.list.append(connectionToId);
+    }
+
+    void handleJackPortDisconnectCallback(const char* const portNameA, const char* const portNameB)
+    {
+        // ignore this if on internal patchbay mode
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
+        if (! (fExternalPatchbayHost || (fExternalPatchbayOsc && pData->osc.isControlRegisteredForTCP()))) return;
+#else
+        if (! fExternalPatchbayHost) return;
+#endif
+
+        const PortNameToId& portNameToIdA(fUsedPorts.getPortNameToId(portNameA));
+        const PortNameToId& portNameToIdB(fUsedPorts.getPortNameToId(portNameB));
+
+        /* NOTE: Due to JACK2 async behaviour the port we get here might be the same of a previous rename-plugin request.
+                 See the comment on CarlaEngineJack::renamePlugin() for more information. */
+        if (portNameToIdA.group <= 0 || portNameToIdA.port <= 0) return;
+        if (portNameToIdB.group <= 0 || portNameToIdB.port <= 0) return;
+
+        ConnectionToId connectionToId = { 0, 0, 0, 0, 0 };
+        bool found = false;
+
         {
-            char strBuf[STR_MAX+1];
-            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", portNameToIdA.group, portNameToIdA.port, portNameToIdB.group, portNameToIdB.port);
-            strBuf[STR_MAX] = '\0';
+            const CarlaMutexLocker cml(fUsedConnections.mutex);
 
-            ConnectionToId connectionToId;
-            connectionToId.setData(++fUsedConnections.lastId, portNameToIdA.group, portNameToIdA.port, portNameToIdB.group, portNameToIdB.port);
-
-            callback(fExternalPatchbayHost, fExternalPatchbayOsc,
-                     ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
-                     connectionToId.id,
-                     0, 0, 0, 0.0f,
-                     strBuf);
-            fUsedConnections.list.append(connectionToId);
-        }
-        else
-        {
-            ConnectionToId connectionToId = { 0, 0, 0, 0, 0 };
-            bool found = false;
-
+            for (LinkedList<ConnectionToId>::Itenerator it = fUsedConnections.list.begin2(); it.valid(); it.next())
             {
-                const CarlaMutexLocker cml(fUsedConnections.mutex);
+                connectionToId = it.getValue(connectionToId);
+                CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
 
-                for (LinkedList<ConnectionToId>::Itenerator it = fUsedConnections.list.begin2(); it.valid(); it.next())
+                if (connectionToId.groupA == portNameToIdA.group && connectionToId.portA == portNameToIdA.port &&
+                    connectionToId.groupB == portNameToIdB.group && connectionToId.portB == portNameToIdB.port)
                 {
-                    connectionToId = it.getValue(connectionToId);
-                    CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
-
-                    if (connectionToId.groupA == portNameToIdA.group && connectionToId.portA == portNameToIdA.port &&
-                        connectionToId.groupB == portNameToIdB.group && connectionToId.portB == portNameToIdB.port)
-                    {
-                        found = true;
-                        fUsedConnections.list.remove(it);
-                        break;
-                    }
+                    found = true;
+                    fUsedConnections.list.remove(it);
+                    break;
                 }
             }
+        }
 
-            if (found) {
-                callback(fExternalPatchbayHost, fExternalPatchbayOsc,
-                         ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED,
-                         connectionToId.id,
-                         0, 0, 0, 0.0f, nullptr);
-            }
+        if (found) {
+            callback(fExternalPatchbayHost, fExternalPatchbayOsc,
+                      ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED,
+                      connectionToId.id,
+                      0, 0, 0, 0.0f, nullptr);
         }
     }
 
-    void handleJackPortRenameCallback(const jack_port_id_t port, const char* const oldFullName, const char* const newFullName)
+    void handleJackPortRenameCallback(const char* const oldFullName,
+                                      const char* const newFullName,
+                                      const char* const newShortName)
     {
         // ignore this if on internal patchbay mode
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
@@ -2571,15 +2608,9 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(oldFullName != nullptr && oldFullName[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(newFullName != nullptr && newFullName[0] != '\0',);
 
-        const jack_port_t* const jackPort(jackbridge_port_by_id(fClient, port));
-        CARLA_SAFE_ASSERT_RETURN(jackPort != nullptr,);
-
-        const char* const shortPortName(jackbridge_port_short_name(jackPort));
-        CARLA_SAFE_ASSERT_RETURN(shortPortName != nullptr && shortPortName[0] != '\0',);
-
         bool found;
         CarlaString groupName(newFullName);
-        groupName.truncate(groupName.rfind(shortPortName, &found)-1);
+        groupName.truncate(groupName.rfind(newShortName, &found)-1);
 
         CARLA_SAFE_ASSERT_RETURN(found,);
 
@@ -2597,7 +2628,7 @@ protected:
             {
                 CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group == groupId);
 
-                portNameToId.rename(shortPortName, newFullName);
+                portNameToId.rename(newShortName, newFullName);
                 callback(fExternalPatchbayHost, fExternalPatchbayOsc,
                          ENGINE_CALLBACK_PATCHBAY_PORT_CHANGED,
                          portNameToId.group,
@@ -2790,7 +2821,7 @@ private:
                 const char* const shortPortName(jackbridge_port_short_name(jackPort));
                 CARLA_SAFE_ASSERT_CONTINUE(shortPortName != nullptr && shortPortName[0] != '\0');
 
-                const int jackPortFlags(jackbridge_port_flags(jackPort));
+                const CarlaJackPortHints jackPortHints(CarlaJackPortHints::fromPort(jackPort));
 
                 uint groupId = 0;
 
@@ -2814,7 +2845,7 @@ private:
                     groupNameToId.setData(groupId, groupName);
 
                     int pluginId = -1;
-                    PatchbayIcon icon = (jackPortFlags & JackPortIsPhysical) ? PATCHBAY_ICON_HARDWARE : PATCHBAY_ICON_APPLICATION;
+                    PatchbayIcon icon = jackPortHints.isHardware ? PATCHBAY_ICON_HARDWARE : PATCHBAY_ICON_APPLICATION;
 
                     findPluginIdAndIcon(groupName, pluginId, icon);
 
@@ -2828,7 +2859,7 @@ private:
                     fUsedGroups.list.append(groupNameToId);
                 }
 
-                addPatchbayJackPort(sendHost, sendOSC, groupId, jackPort, shortPortName, fullPortName, jackPortFlags);
+                addPatchbayJackPort(sendHost, sendOSC, groupId, jackPortHints, shortPortName, fullPortName);
             }
 
             jackbridge_free(ports);
@@ -2887,40 +2918,19 @@ private:
     }
 
     void addPatchbayJackPort(const bool sendHost, const bool sendOSC,
-                             const uint groupId, const jack_port_t* const jackPort,
-                             const char* const shortPortName, const char* const fullPortName, const int jackPortFlags)
+                             const uint groupId, const CarlaJackPortHints& jackPortHints,
+                             const char* const shortPortName, const char* const fullPortName)
     {
-        bool portIsInput = (jackPortFlags & JackPortIsInput);
-        bool portIsAudio = (std::strcmp(jackbridge_port_type(jackPort), JACK_DEFAULT_AUDIO_TYPE) == 0);
-        bool portIsMIDI  = (std::strcmp(jackbridge_port_type(jackPort), JACK_DEFAULT_MIDI_TYPE) == 0);
-        bool portIsCV    = false;
-        bool portIsOSC   = false;
-
-        if (const jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
-        {
-            char* value = nullptr;
-            char* type  = nullptr;
-
-            if (jackbridge_get_property(uuid, JACKEY_SIGNAL_TYPE, &value, &type)
-                && value != nullptr
-                && type != nullptr
-                && std::strcmp(type, "text/plain") == 0)
-            {
-                portIsCV  = (std::strcmp(value, "CV") == 0);
-                portIsOSC = (std::strcmp(value, "OSC") == 0);
-            }
-        }
-
         uint canvasPortFlags = 0x0;
-        canvasPortFlags |= portIsInput ? PATCHBAY_PORT_IS_INPUT : 0x0;
+        canvasPortFlags |= jackPortHints.isInput ? PATCHBAY_PORT_IS_INPUT : 0x0;
 
-        /**/ if (portIsCV)
+        /**/ if (jackPortHints.isCV)
             canvasPortFlags |= PATCHBAY_PORT_TYPE_CV;
-        else if (portIsOSC)
+        else if (jackPortHints.isOSC)
             canvasPortFlags |= PATCHBAY_PORT_TYPE_OSC;
-        else if (portIsAudio)
+        else if (jackPortHints.isAudio)
             canvasPortFlags |= PATCHBAY_PORT_TYPE_AUDIO;
-        else if (portIsMIDI)
+        else if (jackPortHints.isMIDI)
             canvasPortFlags |= PATCHBAY_PORT_TYPE_MIDI;
 
         PortNameToId portNameToId;
@@ -3054,22 +3064,42 @@ private:
     struct PostPonedJackEvent {
         enum Type {
             kTypeNull = 0,
-            kTypeClientRegister,
+            kTypeClientUnregister,
             kTypePortRegister,
+            kTypePortUnregister,
             kTypePortConnect,
+            kTypePortDisconnect,
             kTypePortRename
         };
 
         Type type;
-        bool action; // register or connect
-        jack_port_id_t port1;
-        jack_port_id_t port2;
-        char name1[STR_MAX+1];
-        char name2[STR_MAX+1];
 
-        // safety checks
-        int flags1, flags2;
-        jack_uuid_t uuid1, uuid2;
+        union {
+            struct {
+                char name[STR_MAX+1];
+            } clientUnregister;
+            struct {
+                char shortName[STR_MAX+1];
+                char fullName[STR_MAX+1];
+                CarlaJackPortHints hints;
+            } portRegister;
+            struct {
+                char fullName[STR_MAX+1];
+            } portUnregister;
+            struct {
+                char oldFullName[STR_MAX+1];
+                char newFullName[STR_MAX+1];
+                char newShortName[STR_MAX+1];
+            } portRename;
+            struct {
+                char portNameA[STR_MAX+1];
+                char portNameB[STR_MAX+1];
+            } portConnect;
+            struct {
+                char portNameA[STR_MAX+1];
+                char portNameB[STR_MAX+1];
+            } portDisconnect;
+        };
     };
 
     LinkedList<PostPonedJackEvent> fPostPonedEvents;
@@ -3079,31 +3109,6 @@ private:
 
     void postPoneJackCallback(PostPonedJackEvent& ev)
     {
-        const jack_port_t *port1, *port2;
-
-        // put safety checks in
-        switch (ev.type)
-        {
-        case PostPonedJackEvent::kTypeNull:
-        case PostPonedJackEvent::kTypeClientRegister:
-            break;
-
-        case PostPonedJackEvent::kTypePortConnect:
-            port2 = jackbridge_port_by_id(fClient, ev.port2);
-            CARLA_SAFE_ASSERT_RETURN(port2 != nullptr,);
-            ev.flags2 = jackbridge_port_flags(port2);
-            ev.uuid2 = jackbridge_port_uuid(port2);
-            // fall-through
-
-        case PostPonedJackEvent::kTypePortRegister:
-        case PostPonedJackEvent::kTypePortRename:
-            port1 = jackbridge_port_by_id(fClient, ev.port1);
-            CARLA_SAFE_ASSERT_RETURN(port1 != nullptr,);
-            ev.flags1 = jackbridge_port_flags(port1);
-            ev.uuid1 = jackbridge_port_uuid(port1);
-            break;
-        }
-
         const CarlaMutexLocker cml(fPostPonedEventsMutex);
         fPostPonedEvents.append(ev);
     }
@@ -3114,8 +3119,6 @@ private:
 
         PostPonedJackEvent nullEvent;
         carla_zeroStruct(nullEvent);
-
-        const jack_port_t *port1, *port2;
 
         for (; ! shouldThreadExit();)
         {
@@ -3143,58 +3146,39 @@ private:
                 const PostPonedJackEvent& ev(it.getValue(nullEvent));
                 CARLA_SAFE_ASSERT_CONTINUE(ev.type != PostPonedJackEvent::kTypeNull);
 
-                // safety checks first
-                switch (ev.type)
-                {
-                case PostPonedJackEvent::kTypeNull:
-                case PostPonedJackEvent::kTypeClientRegister:
-                    break;
-
-                case PostPonedJackEvent::kTypePortRegister:
-                    port1 = jackbridge_port_by_id(fClient, ev.port1);
-                    CARLA_SAFE_ASSERT_CONTINUE(port1 != nullptr);
-                    CARLA_SAFE_ASSERT_INT2_CONTINUE(jackbridge_port_flags(port1) == ev.flags1,
-                                                    jackbridge_port_flags(port1), ev.flags1);
-                    CARLA_SAFE_ASSERT_CONTINUE(jackbridge_port_uuid(port1) == ev.uuid1);
-                    break;
-
-                case PostPonedJackEvent::kTypePortConnect:
-                    port1 = jackbridge_port_by_id(fClient, ev.port1);
-                    port2 = jackbridge_port_by_id(fClient, ev.port2);
-                    CARLA_SAFE_ASSERT_CONTINUE(port1 != nullptr);
-                    CARLA_SAFE_ASSERT_CONTINUE(port2 != nullptr);
-                    CARLA_SAFE_ASSERT_INT2_CONTINUE(jackbridge_port_flags(port1) == ev.flags1,
-                                                    jackbridge_port_flags(port1), ev.flags1);
-                    CARLA_SAFE_ASSERT_INT2_CONTINUE(jackbridge_port_flags(port2) == ev.flags2,
-                                                    jackbridge_port_flags(port2), ev.flags2);
-                    CARLA_SAFE_ASSERT_CONTINUE(jackbridge_port_uuid(port1) == ev.uuid1);
-                    CARLA_SAFE_ASSERT_CONTINUE(jackbridge_port_uuid(port2) == ev.uuid2);
-                    break;
-
-                case PostPonedJackEvent::kTypePortRename:
-                    port1 = jackbridge_port_by_id(fClient, ev.port1);
-                    CARLA_SAFE_ASSERT_CONTINUE(port1 != nullptr);
-                    CARLA_SAFE_ASSERT_INT2_CONTINUE(jackbridge_port_flags(port1) == ev.flags1,
-                                                    jackbridge_port_flags(port1), ev.flags1);
-                    CARLA_SAFE_ASSERT_CONTINUE(jackbridge_port_uuid(port1) == ev.uuid1);
-                    break;
-                }
-
                 switch (ev.type)
                 {
                 case PostPonedJackEvent::kTypeNull:
                     break;
-                case PostPonedJackEvent::kTypeClientRegister:
-                    handleJackClientRegistrationCallback(ev.name1, ev.action);
+
+                case PostPonedJackEvent::kTypeClientUnregister:
+                    handleJackClientUnregistrationCallback(ev.clientUnregister.name);
                     break;
+
                 case PostPonedJackEvent::kTypePortRegister:
-                    handleJackPortRegistrationCallback(ev.port1, ev.action);
+                    handleJackPortRegistrationCallback(ev.portRegister.fullName,
+                                                       ev.portRegister.shortName,
+                                                       ev.portRegister.hints);
                     break;
+
+                case PostPonedJackEvent::kTypePortUnregister:
+                    handleJackPortUnregistrationCallback(ev.portUnregister.fullName);
+                    break;
+
                 case PostPonedJackEvent::kTypePortConnect:
-                    handleJackPortConnectCallback(ev.port1, ev.port2, ev.action);
+                    handleJackPortConnectCallback(ev.portConnect.portNameA,
+                                                  ev.portConnect.portNameB);
                     break;
+
+                case PostPonedJackEvent::kTypePortDisconnect:
+                    handleJackPortDisconnectCallback(ev.portDisconnect.portNameA,
+                                                     ev.portDisconnect.portNameB);
+                    break;
+
                 case PostPonedJackEvent::kTypePortRename:
-                    handleJackPortRenameCallback(ev.port1, ev.name1, ev.name2);
+                    handleJackPortRenameCallback(ev.portRename.oldFullName,
+                                                 ev.portRename.newFullName,
+                                                 ev.portRename.newShortName);
                     break;
                 }
             }
@@ -3263,43 +3247,95 @@ private:
 
     static void JACKBRIDGE_API carla_jack_client_registration_callback(const char* name, int reg, void* arg)
     {
+        // ignored
+        if (reg != 0)
+            return;
+
         PostPonedJackEvent ev;
         carla_zeroStruct(ev);
-        ev.type   = PostPonedJackEvent::kTypeClientRegister;
-        ev.action = (reg != 0);
-        std::strncpy(ev.name1, name, STR_MAX);
+
+        ev.type = PostPonedJackEvent::kTypeClientUnregister;
+        std::strncpy(ev.clientUnregister.name, name, STR_MAX);
         handlePtr->postPoneJackCallback(ev);
     }
 
-    static void JACKBRIDGE_API carla_jack_port_registration_callback(jack_port_id_t port, int reg, void* arg)
+    static void JACKBRIDGE_API carla_jack_port_registration_callback(jack_port_id_t port_id, int reg, void* arg)
     {
+        const jack_port_t* const port = jackbridge_port_by_id(handlePtr->fClient, port_id);
+        CARLA_SAFE_ASSERT_RETURN(port != nullptr,);
+
+        const char* const fullName = jackbridge_port_name(port);
+        CARLA_SAFE_ASSERT_RETURN(fullName != nullptr && fullName[0] != '\0',);
+
         PostPonedJackEvent ev;
         carla_zeroStruct(ev);
-        ev.type   = PostPonedJackEvent::kTypePortRegister;
-        ev.action = (reg != 0);
-        ev.port1  = port;
+
+        if (reg != 0)
+        {
+            const char* const shortName = jackbridge_port_short_name(port);
+            CARLA_SAFE_ASSERT_RETURN(shortName != nullptr && shortName[0] != '\0',);
+
+            ev.type = PostPonedJackEvent::kTypePortRegister;
+            std::strncpy(ev.portRegister.fullName, fullName, STR_MAX);
+            std::strncpy(ev.portRegister.shortName, shortName, STR_MAX);
+            ev.portRegister.hints = CarlaJackPortHints::fromPort(port);
+        }
+        else
+        {
+            ev.type = PostPonedJackEvent::kTypePortUnregister;
+            std::strncpy(ev.portUnregister.fullName, fullName, STR_MAX);
+        }
+
         handlePtr->postPoneJackCallback(ev);
     }
 
     static void JACKBRIDGE_API carla_jack_port_connect_callback(jack_port_id_t a, jack_port_id_t b, int connect, void* arg)
     {
+        const jack_port_t* const portA = jackbridge_port_by_id(handlePtr->fClient, a);
+        CARLA_SAFE_ASSERT_RETURN(portA != nullptr,);
+
+        const jack_port_t* const portB = jackbridge_port_by_id(handlePtr->fClient, b);
+        CARLA_SAFE_ASSERT_RETURN(portB != nullptr,);
+
+        const char* const fullNameA = jackbridge_port_name(portA);
+        CARLA_SAFE_ASSERT_RETURN(fullNameA != nullptr && fullNameA[0] != '\0',);
+
+        const char* const fullNameB = jackbridge_port_name(portB);
+        CARLA_SAFE_ASSERT_RETURN(fullNameB != nullptr && fullNameB[0] != '\0',);
+
         PostPonedJackEvent ev;
         carla_zeroStruct(ev);
-        ev.type   = PostPonedJackEvent::kTypePortConnect;
-        ev.action = (connect != 0);
-        ev.port1  = a;
-        ev.port2  = b;
+
+        if (connect != 0)
+        {
+            ev.type = PostPonedJackEvent::kTypePortConnect;
+            std::strncpy(ev.portConnect.portNameA, fullNameA, STR_MAX);
+            std::strncpy(ev.portConnect.portNameB, fullNameB, STR_MAX);
+        }
+        else
+        {
+            ev.type = PostPonedJackEvent::kTypePortDisconnect;
+            std::strncpy(ev.portDisconnect.portNameA, fullNameA, STR_MAX);
+            std::strncpy(ev.portDisconnect.portNameB, fullNameB, STR_MAX);
+        }
+
         handlePtr->postPoneJackCallback(ev);
     }
 
-    static void JACKBRIDGE_API carla_jack_port_rename_callback(jack_port_id_t port, const char* oldName, const char* newName, void* arg)
+    static void JACKBRIDGE_API carla_jack_port_rename_callback(jack_port_id_t port_id, const char* oldName, const char* newName, void* arg)
     {
+        const jack_port_t* const port = jackbridge_port_by_id(handlePtr->fClient, port_id);
+        CARLA_SAFE_ASSERT_RETURN(port != nullptr,);
+
+        const char* const shortName = jackbridge_port_short_name(port);
+        CARLA_SAFE_ASSERT_RETURN(shortName != nullptr && shortName[0] != '\0',);
+
         PostPonedJackEvent ev;
         carla_zeroStruct(ev);
-        ev.type  = PostPonedJackEvent::kTypePortRename;
-        ev.port1 = port;
-        std::strncpy(ev.name1, oldName, STR_MAX);
-        std::strncpy(ev.name2, newName, STR_MAX);
+        ev.type = PostPonedJackEvent::kTypePortRename;
+        std::strncpy(ev.portRename.oldFullName, oldName, STR_MAX);
+        std::strncpy(ev.portRename.newFullName, newName, STR_MAX);
+        std::strncpy(ev.portRename.newShortName, shortName, STR_MAX);
         handlePtr->postPoneJackCallback(ev);
     }
 
