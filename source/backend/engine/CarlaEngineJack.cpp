@@ -3066,6 +3066,10 @@ private:
         jack_port_id_t port2;
         char name1[STR_MAX+1];
         char name2[STR_MAX+1];
+
+        // safety checks
+        int flags1, flags2;
+        jack_uuid_t uuid1, uuid2;
     };
 
     LinkedList<PostPonedJackEvent> fPostPonedEvents;
@@ -3073,8 +3077,33 @@ private:
 
     bool fIsInternalClient;
 
-    void postPoneJackCallback(const PostPonedJackEvent& ev)
+    void postPoneJackCallback(PostPonedJackEvent& ev)
     {
+        const jack_port_t *port1, *port2;
+
+        // put safety checks in
+        switch (ev.type)
+        {
+        case PostPonedJackEvent::kTypeNull:
+        case PostPonedJackEvent::kTypeClientRegister:
+            break;
+
+        case PostPonedJackEvent::kTypePortConnect:
+            port2 = jackbridge_port_by_id(fClient, ev.port2);
+            CARLA_SAFE_ASSERT_RETURN(port2 != nullptr,);
+            ev.flags2 = jackbridge_port_flags(port2);
+            ev.uuid2 = jackbridge_port_uuid(port2);
+            // fall-through
+
+        case PostPonedJackEvent::kTypePortRegister:
+        case PostPonedJackEvent::kTypePortRename:
+            port1 = jackbridge_port_by_id(fClient, ev.port1);
+            CARLA_SAFE_ASSERT_RETURN(port1 != nullptr,);
+            ev.flags1 = jackbridge_port_flags(port1);
+            ev.uuid1 = jackbridge_port_uuid(port1);
+            break;
+        }
+
         const CarlaMutexLocker cml(fPostPonedEventsMutex);
         fPostPonedEvents.append(ev);
     }
@@ -3085,6 +3114,8 @@ private:
 
         PostPonedJackEvent nullEvent;
         carla_zeroStruct(nullEvent);
+
+        const jack_port_t *port1, *port2;
 
         for (; ! shouldThreadExit();)
         {
@@ -3111,6 +3142,43 @@ private:
             {
                 const PostPonedJackEvent& ev(it.getValue(nullEvent));
                 CARLA_SAFE_ASSERT_CONTINUE(ev.type != PostPonedJackEvent::kTypeNull);
+
+                // safety checks first
+                switch (ev.type)
+                {
+                case PostPonedJackEvent::kTypeNull:
+                case PostPonedJackEvent::kTypeClientRegister:
+                    break;
+
+                case PostPonedJackEvent::kTypePortRegister:
+                    port1 = jackbridge_port_by_id(fClient, ev.port1);
+                    CARLA_SAFE_ASSERT_CONTINUE(port1 != nullptr);
+                    CARLA_SAFE_ASSERT_INT2_CONTINUE(jackbridge_port_flags(port1) == ev.flags1,
+                                                    jackbridge_port_flags(port1), ev.flags1);
+                    CARLA_SAFE_ASSERT_CONTINUE(jackbridge_port_uuid(port1) == ev.uuid1);
+                    break;
+
+                case PostPonedJackEvent::kTypePortConnect:
+                    port1 = jackbridge_port_by_id(fClient, ev.port1);
+                    port2 = jackbridge_port_by_id(fClient, ev.port2);
+                    CARLA_SAFE_ASSERT_CONTINUE(port1 != nullptr);
+                    CARLA_SAFE_ASSERT_CONTINUE(port2 != nullptr);
+                    CARLA_SAFE_ASSERT_INT2_CONTINUE(jackbridge_port_flags(port1) == ev.flags1,
+                                                    jackbridge_port_flags(port1), ev.flags1);
+                    CARLA_SAFE_ASSERT_INT2_CONTINUE(jackbridge_port_flags(port2) == ev.flags2,
+                                                    jackbridge_port_flags(port2), ev.flags2);
+                    CARLA_SAFE_ASSERT_CONTINUE(jackbridge_port_uuid(port1) == ev.uuid1);
+                    CARLA_SAFE_ASSERT_CONTINUE(jackbridge_port_uuid(port2) == ev.uuid2);
+                    break;
+
+                case PostPonedJackEvent::kTypePortRename:
+                    port1 = jackbridge_port_by_id(fClient, ev.port1);
+                    CARLA_SAFE_ASSERT_CONTINUE(port1 != nullptr);
+                    CARLA_SAFE_ASSERT_INT2_CONTINUE(jackbridge_port_flags(port1) == ev.flags1,
+                                                    jackbridge_port_flags(port1), ev.flags1);
+                    CARLA_SAFE_ASSERT_CONTINUE(jackbridge_port_uuid(port1) == ev.uuid1);
+                    break;
+                }
 
                 switch (ev.type)
                 {
