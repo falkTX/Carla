@@ -69,9 +69,18 @@ protected:
     virtual void dspAtomReceived(const uint32_t index, const LV2_Atom* const atom) = 0;
     virtual void dspURIDReceived(const LV2_URID urid, const char* const uri) = 0;
 
-    virtual void uiOptionsChanged(const double sampleRate, const float uiScale,
-                                  const bool useTheme, const bool useThemeColors,
-                                  const char* const windowTitle, const uintptr_t transientWindowId) = 0;
+    struct BridgeFormatOptions {
+        double sampleRate;
+        uint32_t bgColor;
+        uint32_t fgColor;
+        float uiScale;
+        bool useTheme;
+        bool useThemeColors;
+        const char* windowTitle;
+        uintptr_t transientWindowId;
+    };
+
+    virtual void uiOptionsChanged(const BridgeFormatOptions& opts) = 0;
 
 public:
     // ---------------------------------------------------------------------

@@ -192,6 +192,8 @@ EngineOptions::EngineOptions() noexcept
       preferUiBridges(true),
 #endif
       uisAlwaysOnTop(true),
+      bgColor(0x000000ff),
+      fgColor(0xffffffff),
       uiScale(1.0f),
       maxParameters(MAX_DEFAULT_PARAMETERS),
       uiBridgesTimeout(4000),

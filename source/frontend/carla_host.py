@@ -2542,7 +2542,9 @@ class HostWindow(QMainWindow):
         else:
             value_fix = 1.5
 
-        bg_color = self.ui.rack.palette().window().color()
+        rack_pal = self.ui.rack.palette()
+        bg_color = rack_pal.window().color()
+        fg_color = rack_pal.text().color()
         bg_value = 1.0 - bg_color.blackF()
         if bg_value != 0.0 and bg_value < min_value:
             pad_color = bg_color.lighter(100*min_value/bg_value*value_fix)
@@ -2573,6 +2575,16 @@ class HostWindow(QMainWindow):
         self.imgR_palette.setBrush(QPalette.Window, QBrush(rack_pixmapR))
         self.ui.pad_right.setPalette(self.imgR_palette)
         self.ui.pad_right.setAutoFillBackground(True)
+
+        # qt's rgba is actually argb, so convert that
+        bg_color_value = bg_color.rgba()
+        bg_color_value = ((bg_color_value & 0xffffff) << 8) | (bg_color_value >> 24)
+
+        fg_color_value = fg_color.rgba()
+        fg_color_value = ((fg_color_value & 0xffffff) << 8) | (fg_color_value >> 24)
+
+        self.host.set_engine_option(ENGINE_OPTION_FRONTEND_BACKGROUND_COLOR, bg_color_value, "")
+        self.host.set_engine_option(ENGINE_OPTION_FRONTEND_FOREGROUND_COLOR, fg_color_value, "")
 
     # --------------------------------------------------------------------------------------------------------
     # paint event

@@ -45,8 +45,10 @@
 #define LV2_UI__UI               LV2_UI_PREFIX "UI"                ///< http://lv2plug.in/ns/extensions/ui#UI
 #define LV2_UI__WindowsUI        LV2_UI_PREFIX "WindowsUI"         ///< http://lv2plug.in/ns/extensions/ui#WindowsUI
 #define LV2_UI__X11UI            LV2_UI_PREFIX "X11UI"             ///< http://lv2plug.in/ns/extensions/ui#X11UI
+#define LV2_UI__backgroundColor  LV2_UI_PREFIX "backgroundColor"   ///< http://lv2plug.in/ns/extensions/ui#backgroundColor
 #define LV2_UI__binary           LV2_UI_PREFIX "binary"            ///< http://lv2plug.in/ns/extensions/ui#binary
 #define LV2_UI__fixedSize        LV2_UI_PREFIX "fixedSize"         ///< http://lv2plug.in/ns/extensions/ui#fixedSize
+#define LV2_UI__foregroundColor  LV2_UI_PREFIX "foregroundColor"   ///< http://lv2plug.in/ns/extensions/ui#foregroundColor
 #define LV2_UI__idleInterface    LV2_UI_PREFIX "idleInterface"     ///< http://lv2plug.in/ns/extensions/ui#idleInterface
 #define LV2_UI__noUserResize     LV2_UI_PREFIX "noUserResize"      ///< http://lv2plug.in/ns/extensions/ui#noUserResize
 #define LV2_UI__notifyType       LV2_UI_PREFIX "notifyType"        ///< http://lv2plug.in/ns/extensions/ui#notifyType

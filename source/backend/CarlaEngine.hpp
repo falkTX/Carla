@@ -239,6 +239,8 @@ struct CARLA_API EngineOptions {
     bool preferPluginBridges;
     bool preferUiBridges;
     bool uisAlwaysOnTop;
+    uint bgColor;
+    uint fgColor;
     float uiScale;
 
     uint maxParameters;

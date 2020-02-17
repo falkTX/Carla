@@ -1901,6 +1901,14 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
 #endif
     }   break;
 
+    case ENGINE_OPTION_FRONTEND_BACKGROUND_COLOR:
+        pData->options.bgColor = static_cast<uint>(value);
+        break;
+
+    case ENGINE_OPTION_FRONTEND_FOREGROUND_COLOR:
+        pData->options.fgColor = static_cast<uint>(value);
+        break;
+
     case ENGINE_OPTION_FRONTEND_UI_SCALE:
         CARLA_SAFE_ASSERT_RETURN(value > 0,);
         pData->options.uiScale = static_cast<float>(value) / 1000;

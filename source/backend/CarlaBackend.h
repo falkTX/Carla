@@ -1357,51 +1357,61 @@ typedef enum {
     ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 22,
 
     /*!
-     * Set UI scaling used in frontend, so backend can do the same for plugin UIs.
+     * Set background color used in the frontend, so backend can do the same for plugin UIs.
      */
-    ENGINE_OPTION_FRONTEND_UI_SCALE = 23,
+    ENGINE_OPTION_FRONTEND_BACKGROUND_COLOR = 23,
+
+    /*!
+     * Set foreground color used in the frontend, so backend can do the same for plugin UIs.
+     */
+    ENGINE_OPTION_FRONTEND_FOREGROUND_COLOR = 24,
+
+    /*!
+     * Set UI scaling used in the frontend, so backend can do the same for plugin UIs.
+     */
+    ENGINE_OPTION_FRONTEND_UI_SCALE = 25,
 
     /*!
      * Set frontend winId, used to define as parent window for plugin UIs.
      */
-    ENGINE_OPTION_FRONTEND_WIN_ID = 24,
+    ENGINE_OPTION_FRONTEND_WIN_ID = 26,
 
 #if !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) && !defined(CARLA_OS_WIN)
     /*!
      * Set path to wine executable.
      */
-    ENGINE_OPTION_WINE_EXECUTABLE = 25,
+    ENGINE_OPTION_WINE_EXECUTABLE = 27,
 
     /*!
      * Enable automatic wineprefix detection.
      */
-    ENGINE_OPTION_WINE_AUTO_PREFIX = 26,
+    ENGINE_OPTION_WINE_AUTO_PREFIX = 28,
 
     /*!
      * Fallback wineprefix to use if automatic detection fails or is disabled, and WINEPREFIX is not set.
      */
-    ENGINE_OPTION_WINE_FALLBACK_PREFIX = 27,
+    ENGINE_OPTION_WINE_FALLBACK_PREFIX = 29,
 
     /*!
      * Enable realtime priority for Wine application and server threads.
      */
-    ENGINE_OPTION_WINE_RT_PRIO_ENABLED = 28,
+    ENGINE_OPTION_WINE_RT_PRIO_ENABLED = 30,
 
     /*!
      * Base realtime priority for Wine threads.
      */
-    ENGINE_OPTION_WINE_BASE_RT_PRIO = 29,
+    ENGINE_OPTION_WINE_BASE_RT_PRIO = 31,
 
     /*!
      * Wine server realtime priority.
      */
-    ENGINE_OPTION_WINE_SERVER_RT_PRIO = 30,
+    ENGINE_OPTION_WINE_SERVER_RT_PRIO = 32,
 #endif
 
     /*!
      * Capture console output into debug callbacks.
      */
-    ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 31
+    ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 33
 
 } EngineOption;
 

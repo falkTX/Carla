@@ -226,25 +226,21 @@ bool CarlaBridgeFormat::msgReceived(const char* const msg) noexcept
 
     if (std::strcmp(msg, "uiOptions") == 0)
     {
-        double sampleRate;
-        bool useTheme, useThemeColors;
-        float uiScale;
-        const char* windowTitle;
-        uint64_t transientWindowId;
+        BridgeFormatOptions opts;
 
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsDouble(sampleRate), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(uiScale), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(useTheme), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(useThemeColors), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(windowTitle), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsULong(transientWindowId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsDouble(opts.sampleRate), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(opts.bgColor), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(opts.fgColor), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(opts.uiScale), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(opts.useTheme), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(opts.useThemeColors), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(opts.windowTitle), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsULong(opts.transientWindowId), true);
 
         fGotOptions = true;
-        uiOptionsChanged(sampleRate, uiScale,
-                         useTheme, useThemeColors,
-                         windowTitle, static_cast<uintptr_t>(transientWindowId));
+        uiOptionsChanged(opts);
 
-        delete[] windowTitle;
+        delete[] opts.windowTitle;
         return true;
     }
 

@@ -132,11 +132,16 @@ enum CarlaLv2URIDs {
     kUridTimeTicksPerBeat,
     kUridMidiEvent,
     kUridParamSampleRate,
+    // ui stuff
+    kUridBackgroundColor,
+    kUridForegroundColor,
     kUridScaleFactor,
     kUridWindowTitle,
+    // custom carla props
     kUridCarlaAtomWorkerIn,
     kUridCarlaAtomWorkerResp,
     kUridCarlaTransientWindowId,
+    // count
     kUridCount
 };
 
@@ -316,6 +321,8 @@ struct CarlaPluginLV2Options {
         SequenceSize,
         SampleRate,
         TransientWinId,
+        BackgroundColor,
+        ForegroundColor,
         ScaleFactor,
         WindowTitle,
         Null,
@@ -328,6 +335,8 @@ struct CarlaPluginLV2Options {
     int sequenceSize;
     float sampleRate;
     int64_t transientWinId;
+    uint32_t bgColor;
+    uint32_t fgColor;
     float uiScale;
     const char* windowTitle;
     LV2_Options_Option opts[Count];
@@ -339,6 +348,8 @@ struct CarlaPluginLV2Options {
           sequenceSize(MAX_DEFAULT_BUFFER_SIZE),
           sampleRate(0.0),
           transientWinId(0),
+          bgColor(0x000000ff),
+          fgColor(0xffffffff),
           uiScale(1.0f),
           windowTitle(nullptr)
     {
@@ -373,6 +384,22 @@ struct CarlaPluginLV2Options {
         optSequenceSize.size    = sizeof(int);
         optSequenceSize.type    = kUridAtomInt;
         optSequenceSize.value   = &sequenceSize;
+
+        LV2_Options_Option& optBackgroundColor(opts[BackgroundColor]);
+        optBackgroundColor.context = LV2_OPTIONS_INSTANCE;
+        optBackgroundColor.subject = 0;
+        optBackgroundColor.key     = kUridBackgroundColor;
+        optBackgroundColor.size    = sizeof(int32_t);
+        optBackgroundColor.type    = kUridAtomInt;
+        optBackgroundColor.value   = &bgColor;
+
+        LV2_Options_Option& optForegroundColor(opts[ForegroundColor]);
+        optForegroundColor.context = LV2_OPTIONS_INSTANCE;
+        optForegroundColor.subject = 0;
+        optForegroundColor.key     = kUridForegroundColor;
+        optForegroundColor.size    = sizeof(int32_t);
+        optForegroundColor.type    = kUridAtomInt;
+        optForegroundColor.value   = &fgColor;
 
         LV2_Options_Option& optScaleFactor(opts[ScaleFactor]);
         optScaleFactor.context = LV2_OPTIONS_INSTANCE;
@@ -1576,11 +1603,21 @@ public:
                     if (! fPipeServer.writeMessage("uiOptions\n", 10))
                         return;
 
+                    const EngineOptions& opts(pData->engine->getOptions());
+
                     std::snprintf(tmpBuf, 0xff, "%g\n", pData->engine->getSampleRate());
                     if (! fPipeServer.writeMessage(tmpBuf))
                         return;
 
-                    std::snprintf(tmpBuf, 0xff, "%.12g\n", static_cast<double>(pData->engine->getOptions().uiScale));
+                    std::snprintf(tmpBuf, 0xff, "%u\n", opts.bgColor);
+                    if (! fPipeServer.writeMessage(tmpBuf))
+                        return;
+
+                    std::snprintf(tmpBuf, 0xff, "%u\n", opts.fgColor);
+                    if (! fPipeServer.writeMessage(tmpBuf))
+                        return;
+
+                    std::snprintf(tmpBuf, 0xff, "%.12g\n", static_cast<double>(opts.uiScale));
                     if (! fPipeServer.writeMessage(tmpBuf))
                         return;
 
@@ -5541,13 +5578,15 @@ public:
             return false;
         }
 
+        const EngineOptions& opts(pData->engine->getOptions());
+
         // ---------------------------------------------------------------
         // Init LV2 World if needed, sets LV2_PATH for lilv
 
         Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
 
-        if (pData->engine->getOptions().pathLV2 != nullptr && pData->engine->getOptions().pathLV2[0] != '\0')
-            lv2World.initIfNeeded(pData->engine->getOptions().pathLV2);
+        if (opts.pathLV2 != nullptr && opts.pathLV2[0] != '\0')
+            lv2World.initIfNeeded(opts.pathLV2);
         else if (const char* const LV2_PATH = std::getenv("LV2_PATH"))
             lv2World.initIfNeeded(LV2_PATH);
         else
@@ -5725,7 +5764,7 @@ public:
         fLv2Options.maxBufferSize     = bufferSize;
         fLv2Options.nominalBufferSize = bufferSize;
         fLv2Options.sampleRate        = static_cast<float>(pData->engine->getSampleRate());
-        fLv2Options.transientWinId    = static_cast<int64_t>(pData->engine->getOptions().frontendWinId);
+        fLv2Options.transientWinId    = static_cast<int64_t>(opts.frontendWinId);
 
         uint32_t eventBufferSize = MAX_DEFAULT_BUFFER_SIZE;
 
@@ -5742,7 +5781,9 @@ public:
 
         fLv2Options.sequenceSize = static_cast<int>(eventBufferSize);
 
-        fLv2Options.uiScale = pData->engine->getOptions().uiScale;
+        fLv2Options.bgColor = opts.bgColor;
+        fLv2Options.fgColor = opts.fgColor;
+        fLv2Options.uiScale = opts.uiScale;
 
         // ---------------------------------------------------------------
         // initialize features (part 1)
@@ -5903,7 +5944,7 @@ public:
         else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-        if (pData->engine->getOptions().forceStereo)
+        if (opts.forceStereo)
             pData->options |= PLUGIN_OPTION_FORCE_STEREO;
         else if (options & PLUGIN_OPTION_FORCE_STEREO)
             pData->options |= PLUGIN_OPTION_FORCE_STEREO;
@@ -6816,6 +6857,10 @@ private:
             return kUridMidiEvent;
         if (std::strcmp(uri, LV2_PARAMETERS__sampleRate) == 0)
             return kUridParamSampleRate;
+        if (std::strcmp(uri, LV2_UI__backgroundColor) == 0)
+            return kUridBackgroundColor;
+        if (std::strcmp(uri, LV2_UI__foregroundColor) == 0)
+            return kUridForegroundColor;
         if (std::strcmp(uri, LV2_UI__scaleFactor) == 0)
             return kUridScaleFactor;
         if (std::strcmp(uri, LV2_UI__windowTitle) == 0)
@@ -6946,6 +6991,10 @@ private:
             return LV2_MIDI__MidiEvent;
         case kUridParamSampleRate:
             return LV2_PARAMETERS__sampleRate;
+        case kUridBackgroundColor:
+            return LV2_UI__backgroundColor;
+        case kUridForegroundColor:
+            return LV2_UI__foregroundColor;
         case kUridScaleFactor:
             return LV2_UI__scaleFactor;
         case kUridWindowTitle:

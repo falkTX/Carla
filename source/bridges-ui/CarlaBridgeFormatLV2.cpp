@@ -93,11 +93,16 @@ enum CarlaLv2URIDs {
     kUridTimeTicksPerBeat,
     kUridMidiEvent,
     kUridParamSampleRate,
+    // ui stuff
+    kUridBackgroundColor,
+    kUridForegroundColor,
     kUridScaleFactor,
     kUridWindowTitle,
+    // custom carla props
     kUridCarlaAtomWorkerIn,
     kUridCarlaAtomWorkerResp,
     kUridCarlaTransientWindowId,
+    // count
     kUridCount
 };
 
@@ -131,6 +136,8 @@ struct Lv2PluginOptions {
     enum OptIndex {
         SampleRate,
         TransientWinId,
+        BackgroundColor,
+        ForegroundColor,
         ScaleFactor,
         WindowTitle,
         Null,
@@ -139,12 +146,16 @@ struct Lv2PluginOptions {
 
     float sampleRate;
     int64_t transientWinId;
+    uint32_t bgColor;
+    uint32_t fgColor;
     float uiScale;
     LV2_Options_Option opts[Count];
 
     Lv2PluginOptions() noexcept
         : sampleRate(static_cast<float>(gInitialSampleRate)),
           transientWinId(0),
+          bgColor(0x000000ff),
+          fgColor(0xffffffff),
           uiScale(1.0f)
     {
         LV2_Options_Option& optSampleRate(opts[SampleRate]);
@@ -154,6 +165,22 @@ struct Lv2PluginOptions {
         optSampleRate.size    = sizeof(float);
         optSampleRate.type    = kUridAtomFloat;
         optSampleRate.value   = &sampleRate;
+
+        LV2_Options_Option& optBackgroundColor(opts[BackgroundColor]);
+        optBackgroundColor.context = LV2_OPTIONS_INSTANCE;
+        optBackgroundColor.subject = 0;
+        optBackgroundColor.key     = kUridBackgroundColor;
+        optBackgroundColor.size    = sizeof(int32_t);
+        optBackgroundColor.type    = kUridAtomInt;
+        optBackgroundColor.value   = &bgColor;
+
+        LV2_Options_Option& optForegroundColor(opts[ForegroundColor]);
+        optForegroundColor.context = LV2_OPTIONS_INSTANCE;
+        optForegroundColor.subject = 0;
+        optForegroundColor.key     = kUridForegroundColor;
+        optForegroundColor.size    = sizeof(int32_t);
+        optForegroundColor.type    = kUridAtomInt;
+        optForegroundColor.value   = &fgColor;
 
         LV2_Options_Option& optScaleFactor(opts[ScaleFactor]);
         optScaleFactor.context = LV2_OPTIONS_INSTANCE;
@@ -598,19 +625,14 @@ public:
         fCustomURIDs.push_back(uri);
     }
 
-    void uiOptionsChanged(const double sampleRate, const float uiScale,
-                          const bool useTheme, const bool useThemeColors,
-                          const char* const windowTitle, const uintptr_t transientWindowId) override
+    void uiOptionsChanged(const BridgeFormatOptions& opts) override
     {
-        carla_debug("CarlaLv2Client::uiOptionsChanged(%f, %f, %s, %s, \"%s\", " P_UINTPTR ")",
-                    sampleRate, static_cast<double>(uiScale),
-                    bool2str(useTheme), bool2str(useThemeColors),
-                    windowTitle, transientWindowId);
+        carla_debug("CarlaLv2Client::uiOptionsChanged()");
 
         // ------------------------------------------------------------------------------------------------------------
         // sample rate
 
-        const float sampleRatef = static_cast<float>(sampleRate);
+        const float sampleRatef = static_cast<float>(opts.sampleRate);
 
         if (carla_isNotEqual(fLv2Options.sampleRate, sampleRatef))
         {
@@ -634,15 +656,17 @@ public:
         }
 
         // ------------------------------------------------------------------------------------------------------------
-        // ui scale
+        // ui colors and scale
 
-        fLv2Options.uiScale = uiScale;
+        fLv2Options.bgColor = opts.bgColor;
+        fLv2Options.fgColor = opts.fgColor;
+        fLv2Options.uiScale = opts.uiScale;
 
         // ------------------------------------------------------------------------------------------------------------
         // window title
 
-        if (windowTitle != nullptr)
-            fUiOptions.windowTitle = windowTitle;
+        if (opts.windowTitle != nullptr)
+            fUiOptions.windowTitle = opts.windowTitle;
         else
             fUiOptions.windowTitle.clear();
 
@@ -652,14 +676,14 @@ public:
         // ------------------------------------------------------------------------------------------------------------
         // transient win id
 
-        fLv2Options.transientWinId = static_cast<int64_t>(transientWindowId);
-        fUiOptions.transientWindowId = transientWindowId;
+        fLv2Options.transientWinId = static_cast<int64_t>(opts.transientWindowId);
+        fUiOptions.transientWindowId = opts.transientWindowId;
 
         // ------------------------------------------------------------------------------------------------------------
         // other
 
-        fUiOptions.useTheme       = useTheme;
-        fUiOptions.useThemeColors = useThemeColors;
+        fUiOptions.useTheme       = opts.useTheme;
+        fUiOptions.useThemeColors = opts.useThemeColors;
     }
 
     void uiResized(const uint width, const uint height) override
@@ -1060,6 +1084,10 @@ private:
             return kUridMidiEvent;
         if (std::strcmp(uri, LV2_PARAMETERS__sampleRate) == 0)
             return kUridParamSampleRate;
+        if (std::strcmp(uri, LV2_UI__backgroundColor) == 0)
+            return kUridBackgroundColor;
+        if (std::strcmp(uri, LV2_UI__foregroundColor) == 0)
+            return kUridForegroundColor;
         if (std::strcmp(uri, LV2_UI__scaleFactor) == 0)
             return kUridScaleFactor;
         if (std::strcmp(uri, LV2_UI__windowTitle) == 0)
@@ -1190,6 +1218,10 @@ private:
             return LV2_MIDI__MidiEvent;
         case kUridParamSampleRate:
             return LV2_PARAMETERS__sampleRate;
+        case kUridBackgroundColor:
+            return LV2_UI__backgroundColor;
+        case kUridForegroundColor:
+            return LV2_UI__foregroundColor;
         case kUridScaleFactor:
             return LV2_UI__scaleFactor;
         case kUridWindowTitle:
