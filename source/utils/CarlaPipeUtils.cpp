@@ -761,7 +761,7 @@ bool CarlaPipeCommon::readNextLineAsUInt(uint32_t& value) const noexcept
 
     if (const char* const msg = _readlineblock())
     {
-        const int32_t tmp = std::atoi(msg);
+        const long tmp = std::atol(msg);
         delete[] msg;
 
         if (tmp >= 0)
