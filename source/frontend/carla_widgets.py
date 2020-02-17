@@ -388,7 +388,7 @@ class PluginParameter(QWidget):
             actCCs.append(action)
 
             if self.fMappedCtrl >= 0 and self.fMappedCtrl <= MAX_MIDI_CC_LIST_ITEM:
-                ccx = int(cc.split(" [", 1)[0])
+                ccx = int(cc.split(" [", 1)[0], 16)
 
                 if ccx > self.fMappedCtrl and not inlist:
                     inlist = True
