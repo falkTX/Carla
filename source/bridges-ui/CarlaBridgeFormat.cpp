@@ -227,6 +227,7 @@ bool CarlaBridgeFormat::msgReceived(const char* const msg) noexcept
     if (std::strcmp(msg, "uiOptions") == 0)
     {
         BridgeFormatOptions opts;
+        uint64_t transientWindowId;
 
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsDouble(opts.sampleRate), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(opts.bgColor), true);
@@ -235,7 +236,8 @@ bool CarlaBridgeFormat::msgReceived(const char* const msg) noexcept
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(opts.useTheme), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(opts.useThemeColors), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(opts.windowTitle), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsULong(opts.transientWindowId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsULong(transientWindowId), true);
+        opts.transientWindowId = transientWindowId;
 
         fGotOptions = true;
         uiOptionsChanged(opts);
