@@ -238,7 +238,10 @@ HAVE_PULSEAUDIO = $(shell pkg-config --exists libpulse-simple && echo true)
 endif
 endif
 
-HAVE_FFMPEG     = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
+# ffmpeg values taken from https://ffmpeg.org/download.html (v2.8.15 maximum)
+HAVE_FFMPEG     = $(shell pkg-config --max-version=56.60.100 libavcodec && \
+                          pkg-config --max-version=56.40.101 libavformat && \
+                          pkg-config --max-version=54.31.100 libavutil && echo true)
 HAVE_FLUIDSYNTH = $(shell pkg-config --atleast-version=1.1.7 fluidsynth && echo true)
 HAVE_JACK       = $(shell pkg-config --exists jack && echo true)
 HAVE_LIBLO      = $(shell pkg-config --exists liblo && echo true)
