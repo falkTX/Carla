@@ -40,6 +40,7 @@ CARLA_BRIDGE_UI_START_NAMESPACE
 static double gInitialSampleRate = 44100.0;
 static const char* const kNullWindowTitle = "TestUI";
 static const uint32_t kNullWindowTitleSize = 6;
+static const char* const kUnmapFallback = "urn:null";
 
 // LV2 URI Map Ids
 enum CarlaLv2URIDs {
@@ -125,6 +126,7 @@ enum CarlaLv2Features {
     kFeatureIdUiParent,
     kFeatureIdUiPortMap,
     kFeatureIdUiPortSubscribe,
+    kFeatureIdUiRequestParameter,
     kFeatureIdUiResize,
     kFeatureIdUiTouch,
     kFeatureCount
@@ -275,6 +277,10 @@ public:
         uiPortMapFt->handle               = this;
         uiPortMapFt->port_index           = carla_lv2_ui_port_map;
 
+        LV2UI_Request_Parameter* const uiRequestParamFt = new LV2UI_Request_Parameter;
+        uiRequestParamFt->handle                        = this;
+        uiRequestParamFt->request                       = carla_lv2_ui_request_parameter;
+
         LV2UI_Resize* const uiResizeFt    = new LV2UI_Resize;
         uiResizeFt->handle                = this;
         uiResizeFt->ui_resize             = carla_lv2_ui_resize;
@@ -333,6 +339,9 @@ public:
         fFeatures[kFeatureIdUiPortSubscribe]->URI  = LV2_UI__portSubscribe;
         fFeatures[kFeatureIdUiPortSubscribe]->data = nullptr;
 
+        fFeatures[kFeatureIdUiRequestParameter]->URI  = LV2_UI__requestParameter;
+        fFeatures[kFeatureIdUiRequestParameter]->data = uiRequestParamFt;
+
         fFeatures[kFeatureIdUiResize]->URI  = LV2_UI__resize;
         fFeatures[kFeatureIdUiResize]->data = uiResizeFt;
 
@@ -364,6 +373,7 @@ public:
         delete (LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data;
         delete (LV2_URID_Unmap*)fFeatures[kFeatureIdUridUnmap]->data;
         delete (LV2UI_Port_Map*)fFeatures[kFeatureIdUiPortMap]->data;
+        delete (LV2UI_Request_Parameter*)fFeatures[kFeatureIdUiRequestParameter]->data;
         delete (LV2UI_Resize*)fFeatures[kFeatureIdUiResize]->data;
 
         for (uint32_t i=0; i < kFeatureCount; ++i)
@@ -723,9 +733,8 @@ public:
 
     const char* getCustomURIDString(const LV2_URID urid) const noexcept
     {
-        static const char* const sFallback = "urn:null";
-        CARLA_SAFE_ASSERT_RETURN(urid != kUridNull, sFallback);
-        CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.size(), sFallback);
+        CARLA_SAFE_ASSERT_RETURN(urid != kUridNull, kUnmapFallback);
+        CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.size(), kUnmapFallback);
         carla_debug("CarlaLv2Client::getCustomURIDString(%i)", urid);
 
         return fCustomURIDs[urid].c_str();
@@ -751,6 +760,42 @@ public:
         }
 
         return LV2UI_INVALID_PORT_INDEX;
+    }
+
+    LV2UI_Request_Parameter_Status handleUiRequestParameter(const LV2_URID key)
+    {
+        CARLA_SAFE_ASSERT_RETURN(fToolkit != nullptr, LV2UI_REQUEST_PARAMETER_ERR_UNKNOWN);
+        carla_debug("CarlaPluginLV2::handleUIRequestParameter(%u)", key);
+
+        // TODO check if a file browser is already open
+
+        const char* const uri = getCustomURIDString(key);
+        CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri != kUnmapFallback, LV2UI_REQUEST_PARAMETER_ERR_UNSUPPORTED);
+
+        for (uint32_t i=0; i < fRdfDescriptor->ParameterCount; ++i)
+        {
+            if (fRdfDescriptor->Parameters[i].Type != LV2_PARAMETER_PATH)
+                continue;
+            if (std::strcmp(fRdfDescriptor->Parameters[i].URI, uri) != 0)
+                continue;
+
+            // TODO file browser filters, also label for title
+            if (isPipeRunning())
+            {
+                char tmpBuf[0xff];
+                std::snprintf(tmpBuf, 0xff-1, "%u\n", key);
+                tmpBuf[0xff-1] = '\0';
+
+                const CarlaMutexLocker cml(getPipeLock());
+
+                writeMessage("requestparam\n", 13);
+                writeMessage(tmpBuf);
+            }
+
+            return LV2UI_REQUEST_PARAMETER_SUCCESS;
+        }
+
+        return LV2UI_REQUEST_PARAMETER_ERR_UNSUPPORTED;
     }
 
     int handleUiResize(const int width, const int height)
@@ -1249,6 +1294,17 @@ private:
         carla_debug("carla_lv2_ui_port_map(%p, \"%s\")", handle, symbol);
 
         return ((CarlaLv2Client*)handle)->handleUiPortMap(symbol);
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // UI Request Parameter Feature
+
+    static LV2UI_Request_Parameter_Status carla_lv2_ui_request_parameter(LV2UI_Feature_Handle handle, LV2_URID key)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, LV2UI_REQUEST_PARAMETER_ERR_UNKNOWN);
+        carla_debug("carla_lv2_ui_request_parameter(%p, %u)", handle, key);
+
+        return ((CarlaLv2Client*)handle)->handleUiRequestParameter(key);
     }
 
     // ----------------------------------------------------------------------------------------------------------------

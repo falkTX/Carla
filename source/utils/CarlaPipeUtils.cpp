@@ -1622,7 +1622,7 @@ void CarlaPipeServer::stopPipeServer(const uint32_t timeOutMilliseconds) noexcep
     {
         const CarlaMutexLocker cml(pData->writeLock);
 
-        if (pData->pipeSend != INVALID_PIPE_VALUE)
+        if (pData->pipeSend != INVALID_PIPE_VALUE && ! pData->pipeClosed)
         {
             if (_writeMsgBuffer("__carla-quit__\n", 15))
                 flushMessages();
@@ -1640,7 +1640,7 @@ void CarlaPipeServer::stopPipeServer(const uint32_t timeOutMilliseconds) noexcep
     {
         const CarlaMutexLocker cml(pData->writeLock);
 
-        if (pData->pipeSend != INVALID_PIPE_VALUE)
+        if (pData->pipeSend != INVALID_PIPE_VALUE && ! pData->pipeClosed)
         {
             if (_writeMsgBuffer("__carla-quit__\n", 15))
                 flushMessages();

@@ -3090,6 +3090,8 @@ bool is_lv2_ui_feature_supported(const LV2_URI uri) noexcept
         return true;
     if (std::strcmp(uri, LV2_UI__portSubscribe) == 0)
         return true;
+    if (std::strcmp(uri, LV2_UI__requestParameter) == 0)
+        return true;
     if (std::strcmp(uri, LV2_UI__resize) == 0)
         return true;
     if (std::strcmp(uri, LV2_UI__touch) == 0)

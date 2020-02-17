@@ -183,6 +183,7 @@ enum CarlaLv2Features {
     kFeatureIdUiPortMap,
     kFeatureIdUiPortSubscribe,
     kFeatureIdUiResize,
+    kFeatureIdUiRequestParameter,
     kFeatureIdUiTouch,
     kFeatureIdExternalUi,
     kFeatureIdExternalUiOld,
@@ -650,6 +651,9 @@ public:
 
                 if (fFeatures[kFeatureIdUiPortMap] != nullptr && fFeatures[kFeatureIdUiPortMap]->data != nullptr)
                     delete (LV2UI_Port_Map*)fFeatures[kFeatureIdUiPortMap]->data;
+
+                if (fFeatures[kFeatureIdUiRequestParameter] != nullptr && fFeatures[kFeatureIdUiRequestParameter]->data != nullptr)
+                    delete (LV2UI_Request_Parameter*)fFeatures[kFeatureIdUiRequestParameter]->data;
 
                 if (fFeatures[kFeatureIdUiResize] != nullptr && fFeatures[kFeatureIdUiResize]->data != nullptr)
                     delete (LV2UI_Resize*)fFeatures[kFeatureIdUiResize]->data;
@@ -1519,25 +1523,7 @@ public:
                 if (path != nullptr && path[0] != '\0')
                 {
                     carla_stdout("LV2 file path to send: '%s'", path);
-
-                    uint8_t atomBuf[4096];
-                    lv2_atom_forge_set_buffer(&fAtomForge, atomBuf, sizeof(atomBuf));
-
-                    LV2_Atom_Forge_Frame forgeFrame;
-                    lv2_atom_forge_object(&fAtomForge, &forgeFrame, kUridNull, kUridPatchSet);
-
-                    lv2_atom_forge_key(&fAtomForge, kUridPatchPoperty);
-                    lv2_atom_forge_urid(&fAtomForge, getCustomURID(fFilePathURI));
-
-                    lv2_atom_forge_key(&fAtomForge, kUridPatchValue);
-                    lv2_atom_forge_path(&fAtomForge, path, static_cast<uint32_t>(std::strlen(path)));
-
-                    lv2_atom_forge_pop(&fAtomForge, &forgeFrame);
-
-                    LV2_Atom* const atom((LV2_Atom*)atomBuf);
-                    CARLA_SAFE_ASSERT(atom->size < sizeof(atomBuf));
-
-                    fAtomBufferEvIn.put(atom, fEventsIn.ctrlIndex);
+                    writeAtomPath(path, getCustomURID(fFilePathURI));
                 }
             }
             else
@@ -1874,6 +1860,25 @@ public:
 
     void uiIdle() override
     {
+        if (const char* const fileNeededForURI = fUI.fileNeededForURI)
+        {
+            const char* const path = pData->engine->runFileCallback(FILE_CALLBACK_OPEN,
+                                                                    /* isDir   */ false,
+                                                                    /* title   */ "File open",
+                                                                    /* filters */ "");
+
+            fUI.fileNeededForURI = nullptr;
+
+            if (path != nullptr)
+            {
+                carla_stdout("LV2 requested path to send: '%s'", path);
+                writeAtomPath(path, getCustomURID(fileNeededForURI));
+            }
+
+            // this function will be called recursively, stop here
+            return;
+        }
+
         if (fAtomBufferUiOut.isDataAvailableForReading())
         {
             Lv2AtomRingBuffer tmpRingBuffer(fAtomBufferUiOut, fAtomBufferUiOutTmpData);
@@ -2919,7 +2924,8 @@ public:
             pData->options &= ~PLUGIN_OPTION_FORCE_STEREO;
 
         // plugin hints
-        pData->hints = (pData->hints & PLUGIN_HAS_INLINE_DISPLAY) ? PLUGIN_HAS_INLINE_DISPLAY : 0;
+        pData->hints = (pData->hints & PLUGIN_HAS_INLINE_DISPLAY) ? PLUGIN_HAS_INLINE_DISPLAY : 0
+                     | (pData->hints & PLUGIN_NEEDS_UI_MAIN_THREAD) ? PLUGIN_NEEDS_UI_MAIN_THREAD : 0;
 
         if (isRealtimeSafe())
             pData->hints |= PLUGIN_IS_RTSAFE;
@@ -5348,6 +5354,34 @@ public:
         return LV2UI_INVALID_PORT_INDEX;
     }
 
+    LV2UI_Request_Parameter_Status handleUIRequestParameter(const LV2_URID key)
+    {
+        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL, LV2UI_REQUEST_PARAMETER_ERR_UNKNOWN);
+        carla_debug("CarlaPluginLV2::handleUIRequestParameter(%u)", key);
+
+        // check if a file browser is already open
+        if (fUI.fileNeededForURI != nullptr)
+            return LV2UI_REQUEST_PARAMETER_ERR_UNKNOWN;
+
+        const char* const uri = getCustomURIDString(key);
+        CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri != kUnmapFallback, LV2UI_REQUEST_PARAMETER_ERR_UNSUPPORTED);
+
+        for (uint32_t i=0; i < fRdfDescriptor->ParameterCount; ++i)
+        {
+            if (fRdfDescriptor->Parameters[i].Type != LV2_PARAMETER_PATH)
+                continue;
+            if (std::strcmp(fRdfDescriptor->Parameters[i].URI, uri) != 0)
+                continue;
+
+            // TODO file browser filters, also store label to use for title
+            fUI.fileNeededForURI = uri;
+
+            return LV2UI_REQUEST_PARAMETER_SUCCESS;
+        }
+
+        return LV2UI_REQUEST_PARAMETER_ERR_UNSUPPORTED;
+    }
+
     int handleUIResize(const int width, const int height)
     {
         CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr, 1);
@@ -6150,8 +6184,11 @@ public:
 
                 carla_stderr("Plugin UI wants a feature that is not supported (ignored):\n%s", uri);
             }
+
             if (std::strcmp(uri, LV2_UI__makeResident) == 0 || std::strcmp(uri, LV2_UI__makeSONameResident) == 0)
                 canDelete = false;
+            else if (std::strcmp(uri, LV2_UI__requestParameter) == 0)
+                pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
         }
 
         if (! canContinue)
@@ -6332,13 +6369,17 @@ public:
         uiPortMapFt->handle               = this;
         uiPortMapFt->port_index           = carla_lv2_ui_port_map;
 
-        LV2UI_Resize* const uiResizeFt    = new LV2UI_Resize;
-        uiResizeFt->handle                = this;
-        uiResizeFt->ui_resize             = carla_lv2_ui_resize;
+        LV2UI_Request_Parameter* const uiRequestParamFt = new LV2UI_Request_Parameter;
+        uiRequestParamFt->handle                        = this;
+        uiRequestParamFt->request                       = carla_lv2_ui_request_parameter;
 
-        LV2UI_Touch* const uiTouchFt      = new LV2UI_Touch;
-        uiTouchFt->handle                 = this;
-        uiTouchFt->touch                  = carla_lv2_ui_touch;
+        LV2UI_Resize* const uiResizeFt = new LV2UI_Resize;
+        uiResizeFt->handle             = this;
+        uiResizeFt->ui_resize          = carla_lv2_ui_resize;
+
+        LV2UI_Touch* const uiTouchFt = new LV2UI_Touch;
+        uiTouchFt->handle            = this;
+        uiTouchFt->touch             = carla_lv2_ui_touch;
 
         LV2_External_UI_Host* const uiExternalHostFt = new LV2_External_UI_Host;
         uiExternalHostFt->ui_closed                  = carla_lv2_external_ui_closed;
@@ -6379,6 +6420,9 @@ public:
 
         fFeatures[kFeatureIdUiPortSubscribe]->URI  = LV2_UI__portSubscribe;
         fFeatures[kFeatureIdUiPortSubscribe]->data = nullptr;
+
+        fFeatures[kFeatureIdUiRequestParameter]->URI  = LV2_UI__requestParameter;
+        fFeatures[kFeatureIdUiRequestParameter]->data = uiRequestParamFt;
 
         fFeatures[kFeatureIdUiResize]->URI       = LV2_UI__resize;
         fFeatures[kFeatureIdUiResize]->data      = uiResizeFt;
@@ -6454,6 +6498,30 @@ public:
             CARLA_SAFE_ASSERT_RETURN(urid == uriCount,);
             fCustomURIDs.push_back(uri);
         }
+    }
+
+    // -------------------------------------------------------------------
+
+    void writeAtomPath(const char* const path, const LV2_URID urid)
+    {
+        uint8_t atomBuf[4096];
+        lv2_atom_forge_set_buffer(&fAtomForge, atomBuf, sizeof(atomBuf));
+
+        LV2_Atom_Forge_Frame forgeFrame;
+        lv2_atom_forge_object(&fAtomForge, &forgeFrame, kUridNull, kUridPatchSet);
+
+        lv2_atom_forge_key(&fAtomForge, kUridPatchPoperty);
+        lv2_atom_forge_urid(&fAtomForge, urid);
+
+        lv2_atom_forge_key(&fAtomForge, kUridPatchValue);
+        lv2_atom_forge_path(&fAtomForge, path, static_cast<uint32_t>(std::strlen(path)));
+
+        lv2_atom_forge_pop(&fAtomForge, &forgeFrame);
+
+        LV2_Atom* const atom((LV2_Atom*)atomBuf);
+        CARLA_SAFE_ASSERT(atom->size < sizeof(atomBuf));
+
+        fAtomBufferEvIn.put(atom, fEventsIn.ctrlIndex);
     }
 
     // -------------------------------------------------------------------
@@ -6541,6 +6609,7 @@ private:
         const LV2UI_Descriptor* descriptor;
         const LV2_RDF_UI*       rdfDescriptor;
 
+        const char* fileNeededForURI;
         CarlaPluginUI* window;
 
         UI()
@@ -6549,6 +6618,7 @@ private:
               widget(nullptr),
               descriptor(nullptr),
               rdfDescriptor(nullptr),
+              fileNeededForURI(nullptr),
               window(nullptr) {}
 
         ~UI()
@@ -6557,6 +6627,7 @@ private:
             CARLA_SAFE_ASSERT(widget == nullptr);
             CARLA_SAFE_ASSERT(descriptor == nullptr);
             CARLA_SAFE_ASSERT(rdfDescriptor == nullptr);
+            CARLA_SAFE_ASSERT(fileNeededForURI == nullptr);
             CARLA_SAFE_ASSERT(window == nullptr);
         }
 
@@ -7076,6 +7147,17 @@ private:
         return ((CarlaPluginLV2*)handle)->handleUIPortMap(symbol);
     }
 
+    // ----------------------------------------------------------------------------------------------------------------
+    // UI Request Parameter Feature
+
+    static LV2UI_Request_Parameter_Status carla_lv2_ui_request_parameter(LV2UI_Feature_Handle handle, LV2_URID key)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, LV2UI_REQUEST_PARAMETER_ERR_UNKNOWN);
+        carla_debug("carla_lv2_ui_request_parameter(%p, %u)", handle, key);
+
+        return ((CarlaPluginLV2*)handle)->handleUIRequestParameter(key);
+    }
+
     // -------------------------------------------------------------------
     // UI Resize Feature
 
@@ -7219,6 +7301,22 @@ bool CarlaPipeServerLV2::msgReceived(const char* const msg) noexcept
         try {
             kPlugin->handleProgramChanged(index);
         } CARLA_SAFE_EXCEPTION("handleProgramChanged");
+
+        return true;
+    }
+
+    if (std::strcmp(msg, "requestparam") == 0)
+    {
+        uint32_t urid;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(urid), true);
+
+        if (urid != 0)
+        {
+            try {
+                kPlugin->handleUIRequestParameter(urid);
+            } CARLA_SAFE_EXCEPTION("msgReceived requestparam");
+        }
 
         return true;
     }
