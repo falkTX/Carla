@@ -1862,12 +1862,15 @@ public:
     {
         if (const char* const fileNeededForURI = fUI.fileNeededForURI)
         {
+            fUI.fileBrowserOpen = true;
+            fUI.fileNeededForURI = nullptr;
+
             const char* const path = pData->engine->runFileCallback(FILE_CALLBACK_OPEN,
                                                                     /* isDir   */ false,
                                                                     /* title   */ "File open",
                                                                     /* filters */ "");
 
-            fUI.fileNeededForURI = nullptr;
+            fUI.fileBrowserOpen = false;
 
             if (path != nullptr)
             {
@@ -5360,7 +5363,7 @@ public:
         carla_debug("CarlaPluginLV2::handleUIRequestParameter(%u)", key);
 
         // check if a file browser is already open
-        if (fUI.fileNeededForURI != nullptr)
+        if (fUI.fileNeededForURI != nullptr || fUI.fileBrowserOpen)
             return LV2UI_REQUEST_PARAMETER_ERR_UNKNOWN;
 
         const char* const uri = getCustomURIDString(key);
@@ -6609,6 +6612,7 @@ private:
         const LV2UI_Descriptor* descriptor;
         const LV2_RDF_UI*       rdfDescriptor;
 
+        bool fileBrowserOpen;
         const char* fileNeededForURI;
         CarlaPluginUI* window;
 
@@ -6618,6 +6622,7 @@ private:
               widget(nullptr),
               descriptor(nullptr),
               rdfDescriptor(nullptr),
+              fileBrowserOpen(false),
               fileNeededForURI(nullptr),
               window(nullptr) {}
 
@@ -6627,6 +6632,7 @@ private:
             CARLA_SAFE_ASSERT(widget == nullptr);
             CARLA_SAFE_ASSERT(descriptor == nullptr);
             CARLA_SAFE_ASSERT(rdfDescriptor == nullptr);
+            CARLA_SAFE_ASSERT(! fileBrowserOpen);
             CARLA_SAFE_ASSERT(fileNeededForURI == nullptr);
             CARLA_SAFE_ASSERT(window == nullptr);
         }
