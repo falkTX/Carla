@@ -183,7 +183,7 @@ enum CarlaLv2Features {
     kFeatureIdUiPortMap,
     kFeatureIdUiPortSubscribe,
     kFeatureIdUiResize,
-    kFeatureIdUiRequestParameter,
+    kFeatureIdUiRequestValue,
     kFeatureIdUiTouch,
     kFeatureIdExternalUi,
     kFeatureIdExternalUiOld,
@@ -652,8 +652,8 @@ public:
                 if (fFeatures[kFeatureIdUiPortMap] != nullptr && fFeatures[kFeatureIdUiPortMap]->data != nullptr)
                     delete (LV2UI_Port_Map*)fFeatures[kFeatureIdUiPortMap]->data;
 
-                if (fFeatures[kFeatureIdUiRequestParameter] != nullptr && fFeatures[kFeatureIdUiRequestParameter]->data != nullptr)
-                    delete (LV2UI_Request_Parameter*)fFeatures[kFeatureIdUiRequestParameter]->data;
+                if (fFeatures[kFeatureIdUiRequestValue] != nullptr && fFeatures[kFeatureIdUiRequestValue]->data != nullptr)
+                    delete (LV2UI_Request_Value*)fFeatures[kFeatureIdUiRequestValue]->data;
 
                 if (fFeatures[kFeatureIdUiResize] != nullptr && fFeatures[kFeatureIdUiResize]->data != nullptr)
                     delete (LV2UI_Resize*)fFeatures[kFeatureIdUiResize]->data;
@@ -5357,17 +5357,22 @@ public:
         return LV2UI_INVALID_PORT_INDEX;
     }
 
-    LV2UI_Request_Parameter_Status handleUIRequestParameter(const LV2_URID key)
+    LV2UI_Request_Value_Status handleUIRequestValue(const LV2_URID key,
+                                                    const LV2_URID type,
+                                                    const LV2_Feature* const* features)
     {
-        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL, LV2UI_REQUEST_PARAMETER_ERR_UNKNOWN);
-        carla_debug("CarlaPluginLV2::handleUIRequestParameter(%u)", key);
+        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL, LV2UI_REQUEST_VALUE_ERR_UNKNOWN);
+        carla_debug("CarlaPluginLV2::handleUIRequestValue(%u, %u, %p)", key, type, features);
+
+        if (type != kUridAtomPath)
+            return LV2UI_REQUEST_VALUE_ERR_UNSUPPORTED;
+
+        const char* const uri = getCustomURIDString(key);
+        CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri != kUnmapFallback, LV2UI_REQUEST_VALUE_ERR_UNKNOWN);
 
         // check if a file browser is already open
         if (fUI.fileNeededForURI != nullptr || fUI.fileBrowserOpen)
-            return LV2UI_REQUEST_PARAMETER_ERR_UNKNOWN;
-
-        const char* const uri = getCustomURIDString(key);
-        CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri != kUnmapFallback, LV2UI_REQUEST_PARAMETER_ERR_UNSUPPORTED);
+            return LV2UI_REQUEST_VALUE_BUSY;
 
         for (uint32_t i=0; i < fRdfDescriptor->ParameterCount; ++i)
         {
@@ -5379,10 +5384,13 @@ public:
             // TODO file browser filters, also store label to use for title
             fUI.fileNeededForURI = uri;
 
-            return LV2UI_REQUEST_PARAMETER_SUCCESS;
+            return LV2UI_REQUEST_VALUE_SUCCESS;
         }
 
-        return LV2UI_REQUEST_PARAMETER_ERR_UNSUPPORTED;
+        return LV2UI_REQUEST_VALUE_ERR_UNSUPPORTED;
+
+        // may be unused
+        (void)features;
     }
 
     int handleUIResize(const int width, const int height)
@@ -6190,7 +6198,7 @@ public:
 
             if (std::strcmp(uri, LV2_UI__makeResident) == 0 || std::strcmp(uri, LV2_UI__makeSONameResident) == 0)
                 canDelete = false;
-            else if (std::strcmp(uri, LV2_UI__requestParameter) == 0)
+            else if (std::strcmp(uri, LV2_UI__requestValue) == 0)
                 pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
         }
 
@@ -6372,9 +6380,9 @@ public:
         uiPortMapFt->handle               = this;
         uiPortMapFt->port_index           = carla_lv2_ui_port_map;
 
-        LV2UI_Request_Parameter* const uiRequestParamFt = new LV2UI_Request_Parameter;
-        uiRequestParamFt->handle                        = this;
-        uiRequestParamFt->request                       = carla_lv2_ui_request_parameter;
+        LV2UI_Request_Value* const uiRequestValueFt = new LV2UI_Request_Value;
+        uiRequestValueFt->handle                    = this;
+        uiRequestValueFt->request                   = carla_lv2_ui_request_value;
 
         LV2UI_Resize* const uiResizeFt = new LV2UI_Resize;
         uiResizeFt->handle             = this;
@@ -6424,8 +6432,8 @@ public:
         fFeatures[kFeatureIdUiPortSubscribe]->URI  = LV2_UI__portSubscribe;
         fFeatures[kFeatureIdUiPortSubscribe]->data = nullptr;
 
-        fFeatures[kFeatureIdUiRequestParameter]->URI  = LV2_UI__requestParameter;
-        fFeatures[kFeatureIdUiRequestParameter]->data = uiRequestParamFt;
+        fFeatures[kFeatureIdUiRequestValue]->URI  = LV2_UI__requestValue;
+        fFeatures[kFeatureIdUiRequestValue]->data = uiRequestValueFt;
 
         fFeatures[kFeatureIdUiResize]->URI       = LV2_UI__resize;
         fFeatures[kFeatureIdUiResize]->data      = uiResizeFt;
@@ -7156,12 +7164,15 @@ private:
     // ----------------------------------------------------------------------------------------------------------------
     // UI Request Parameter Feature
 
-    static LV2UI_Request_Parameter_Status carla_lv2_ui_request_parameter(LV2UI_Feature_Handle handle, LV2_URID key)
+    static LV2UI_Request_Value_Status carla_lv2_ui_request_value(LV2UI_Feature_Handle handle,
+                                                                 LV2_URID key,
+                                                                 LV2_URID type,
+                                                                 const LV2_Feature* const* features)
     {
-        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, LV2UI_REQUEST_PARAMETER_ERR_UNKNOWN);
-        carla_debug("carla_lv2_ui_request_parameter(%p, %u)", handle, key);
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, LV2UI_REQUEST_VALUE_ERR_UNKNOWN);
+        carla_debug("carla_lv2_ui_request_value(%p, %u, %u, %p)", handle, key, type, features);
 
-        return ((CarlaPluginLV2*)handle)->handleUIRequestParameter(key);
+        return ((CarlaPluginLV2*)handle)->handleUIRequestValue(key, type, features);
     }
 
     // -------------------------------------------------------------------
@@ -7311,17 +7322,18 @@ bool CarlaPipeServerLV2::msgReceived(const char* const msg) noexcept
         return true;
     }
 
-    if (std::strcmp(msg, "requestparam") == 0)
+    if (std::strcmp(msg, "requestvalue") == 0)
     {
-        uint32_t urid;
+        uint32_t key, type;
 
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(urid), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(key), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(type), true);
 
-        if (urid != 0)
+        if (key != 0)
         {
             try {
-                kPlugin->handleUIRequestParameter(urid);
-            } CARLA_SAFE_EXCEPTION("msgReceived requestparam");
+                kPlugin->handleUIRequestValue(key, type, nullptr);
+            } CARLA_SAFE_EXCEPTION("msgReceived requestvalue");
         }
 
         return true;

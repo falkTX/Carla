@@ -62,7 +62,7 @@
 #define LV2_UI__protocol         LV2_UI_PREFIX "protocol"          ///< http://lv2plug.in/ns/extensions/ui#protocol
 #define LV2_UI__floatProtocol    LV2_UI_PREFIX "floatProtocol"     ///< http://lv2plug.in/ns/extensions/ui#floatProtocol
 #define LV2_UI__peakProtocol     LV2_UI_PREFIX "peakProtocol"      ///< http://lv2plug.in/ns/extensions/ui#peakProtocol
-#define LV2_UI__requestParameter LV2_UI_PREFIX "requestParameter"  ///< http://lv2plug.in/ns/extensions/ui#requestParameter
+#define LV2_UI__requestValue     LV2_UI_PREFIX "requestValue"      ///< http://lv2plug.in/ns/extensions/ui#requestValue
 #define LV2_UI__resize           LV2_UI_PREFIX "resize"            ///< http://lv2plug.in/ns/extensions/ui#resize
 #define LV2_UI__scaleFactor      LV2_UI_PREFIX "scaleFactor"       ///< http://lv2plug.in/ns/extensions/ui#scaleFactor
 #define LV2_UI__showInterface    LV2_UI_PREFIX "showInterface"     ///< http://lv2plug.in/ns/extensions/ui#showInterface
@@ -348,14 +348,25 @@ typedef struct _LV2UI_Touch {
 	              bool                 grabbed);
 } LV2UI_Touch;
 
-/** A status code for LV2UI_Request_Parameter::request. */
+/**
+   A status code for LV2UI_Request_Value::request.
+*/
 typedef enum {
 	/**
 	   Completed successfully.
 
 	   The host will set the parameter later if the user choses a new value.
 	*/
-	LV2UI_REQUEST_PARAMETER_SUCCESS,
+	LV2UI_REQUEST_VALUE_SUCCESS,
+
+	/**
+	   Parameter already being requested.
+
+	   The host is already requesting a parameter from the user (for example, a
+	   dialog is visible), or the UI is otherwise busy and can not make this
+	   request.
+	*/
+	LV2UI_REQUEST_VALUE_BUSY,
 
 	/**
 	   Unknown parameter.
@@ -363,7 +374,7 @@ typedef enum {
 	   The host is not aware of this parameter, and is not able to set a new
 	   value for it.
 	*/
-	LV2UI_REQUEST_PARAMETER_ERR_UNKNOWN,
+	LV2UI_REQUEST_VALUE_ERR_UNKNOWN,
 
 	/**
 	   Unsupported parameter.
@@ -372,13 +383,13 @@ typedef enum {
 	   new value for it from the user.  This is likely because the host does
 	   not have UI support for choosing a value with the appropriate type.
 	*/
-	LV2UI_REQUEST_PARAMETER_ERR_UNSUPPORTED
-} LV2UI_Request_Parameter_Status;
+	LV2UI_REQUEST_VALUE_ERR_UNSUPPORTED
+} LV2UI_Request_Value_Status;
 
 /**
    A feature to request a new parameter value from the host.
 */
-typedef struct _LV2UI_Request_Parameter {
+typedef struct {
 	/**
 	   Pointer to opaque data which must be passed to request().
 	*/
@@ -387,27 +398,43 @@ typedef struct _LV2UI_Request_Parameter {
 	/**
 	   Request a value for a parameter from the host.
 
-	   The main use case for this is a UI requesting a file path from the host,
-	   but conceptually it can be used to request any parameter value.
+	   This is mainly used by UIs to request values for complex parameters that
+	   don't change often, such as file paths, but it may be used to request
+	   any parameter value.
 
 	   This function returns immediately, and the return value indicates
 	   whether the host can fulfill the request.  The host may notify the
-	   plugin about any new parameter value, for example when a file is
+	   plugin about the new parameter value, for example when a file is
 	   selected by the user, via the usual mechanism.  Typically, the host will
-	   send a message (using the atom and path extensions) to the plugin that
-	   sets the new parameter value, and the plugin will notify the UI via a
-	   message as usual for any other parameter change.
+	   send a message to the plugin that sets the new parameter value, and the
+	   plugin will notify the UI via a message as usual for any other parameter
+	   change.
 
-	   The host can determine details about the property, like the value type,
-	   from the plugin data.
+	   To provide an appropriate UI, the host can determine details about the
+	   parameter from the plugin data as usual.  The additional parameters of
+	   this function provide support for more advanced use cases, but in the
+	   simple common case, the plugin will simply pass the key of the desired
+	   parameter and zero for everything else.
 
 	   @param handle The handle field of this struct.
+
 	   @param key The URID of the parameter.
-	   @return 0 on success, non-zero on error.
+
+	   @param type The optional type of the value to request.  This can be used
+	   to request a specific value type for parameters that support several.
+	   If non-zero, it must be the URID of an instance of rdfs:Class or
+	   rdfs:Datatype.
+
+	   @param features Additional features for this request, or NULL.
+
+	   @return A status code which is 0 on success.
 	*/
-	LV2UI_Request_Parameter_Status (*request)(LV2UI_Feature_Handle handle,
-	                                          LV2_URID             key);
-} LV2UI_Request_Parameter;
+	LV2UI_Request_Value_Status (*request)(LV2UI_Feature_Handle      handle,
+	                                      LV2_URID                  key,
+	                                      LV2_URID                  type,
+	                                      const LV2_Feature* const* features);
+
+} LV2UI_Request_Value;
 
 /**
    UI Idle Interface (LV2_UI__idleInterface)
