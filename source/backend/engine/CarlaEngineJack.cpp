@@ -1041,6 +1041,24 @@ public:
         fJackClient = newClient;
     }
 
+    void setNewPluginId(const uint id) const
+    {
+        if (const char* const uuidchar = jackbridge_client_get_uuid(fJackClient))
+        {
+            jack_uuid_t uuid;
+
+            if (jackbridge_uuid_parse(uuidchar, &uuid))
+            {
+                char buf[32];
+                std::snprintf(buf, 32, "%u", id);
+                jackbridge_set_property(fJackClient, uuid,
+                                        "https://kx.studio/ns/carla/plugin-id",
+                                        buf,
+                                        "http://www.w3.org/2001/XMLSchema#integer");
+            }
+        }
+    }
+
 private:
     jack_client_t* fJackClient;
     const bool     fUseClient;
@@ -1710,6 +1728,48 @@ public:
     }
 
 #ifndef BUILD_BRIDGE
+    bool removePlugin(const uint id) override
+    {
+        if (! CarlaEngine::removePlugin(id))
+            return false;
+
+        for (uint i=id; i < pData->curPluginCount; ++i)
+        {
+            CarlaPlugin* const plugin = pData->plugins[i].plugin;
+            CARLA_SAFE_ASSERT_BREAK(plugin != nullptr);
+
+            CarlaEngineJackClient* const client = dynamic_cast<CarlaEngineJackClient*>(plugin->getEngineClient());
+            CARLA_SAFE_ASSERT_BREAK(client != nullptr);
+
+            client->setNewPluginId(i);
+        }
+
+        return true;
+    }
+
+    bool switchPlugins(const uint idA, const uint idB) noexcept override
+    {
+        if (! CarlaEngine::switchPlugins(idA, idB))
+            return false;
+
+        CarlaPlugin* const newPluginA(pData->plugins[idA].plugin);
+        CARLA_SAFE_ASSERT_RETURN(newPluginA != nullptr, true);
+
+        CarlaPlugin* const newPluginB(pData->plugins[idB].plugin);
+        CARLA_SAFE_ASSERT_RETURN(newPluginB != nullptr, true);
+
+        CarlaEngineJackClient* const clientA = dynamic_cast<CarlaEngineJackClient*>(newPluginA->getEngineClient());
+        CARLA_SAFE_ASSERT_RETURN(clientA != nullptr, true);
+
+        CarlaEngineJackClient* const clientB = dynamic_cast<CarlaEngineJackClient*>(newPluginB->getEngineClient());
+        CARLA_SAFE_ASSERT_RETURN(clientB != nullptr, true);
+
+        clientA->setNewPluginId(idA);
+        clientB->setNewPluginId(idB);
+
+        return true;
+    }
+
     bool renamePlugin(const uint id, const char* const newName) override
     {
         if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||

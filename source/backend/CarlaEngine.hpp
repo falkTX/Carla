@@ -978,7 +978,7 @@ public:
      * Remove plugin with id @a id.
      * @see ENGINE_CALLBACK_PLUGIN_REMOVED
      */
-    bool removePlugin(uint id);
+    virtual bool removePlugin(uint id);
 
     /*!
      * Remove all plugins.
@@ -1009,7 +1009,7 @@ public:
     /*!
      * Switch plugins with id @a idA and @a idB.
      */
-    bool switchPlugins(uint idA, uint idB) noexcept;
+    virtual bool switchPlugins(uint idA, uint idB) noexcept;
 #endif
 
     /*!
