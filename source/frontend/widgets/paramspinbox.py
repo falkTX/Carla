@@ -142,7 +142,16 @@ class ParamProgressBar(QProgressBar):
         div = float(self.fMaximum - self.fMinimum)
 
         if div == 0.0:
-            print("Parameter '%s' division by 0 prevented (value:%f, min:%f, max:%f)" % (self.fName, value, self.fMaximum, self.fMinimum))
+            print("Parameter '%s' division by 0 prevented (value:%f, min:%f, max:%f)" % (self.fName,
+                                                                                         value,
+                                                                                         self.fMaximum,
+                                                                                         self.fMinimum))
+            vper = 1.0
+        elif isnan(value):
+            print("Parameter '%s' is NaN (value:%f, min:%f, max:%f)" % (self.fName,
+                                                                        value,
+                                                                        self.fMaximum,
+                                                                        self.fMinimum))
             vper = 1.0
         else:
             vper = float(value - self.fMinimum) / div
