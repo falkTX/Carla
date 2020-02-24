@@ -581,8 +581,9 @@ void CarlaPlugin::ProtectedData::Latency::recreateBuffers(const uint32_t newChan
 
 CarlaPlugin::ProtectedData::PostRtEvents::PostRtEvents() noexcept
     : dataPool(128, 128),
-      dataPendingRT(dataPool),
+      dataPoolRT(256, 256),
       data(dataPool),
+      dataPendingRT(dataPoolRT),
       dataMutex(),
       dataPendingMutex() {}
 
@@ -615,16 +616,6 @@ void CarlaPlugin::ProtectedData::PostRtEvents::trySplice() noexcept
         dataPendingRT.moveTo(data, true);
         dataMutex.unlock();
     }
-}
-
-void CarlaPlugin::ProtectedData::PostRtEvents::clearData() noexcept
-{
-    const bool tryLockOk(dataMutex.tryLock());
-    CARLA_SAFE_ASSERT(! tryLockOk);
-    data.clear();
-
-    if (tryLockOk)
-        dataMutex.unlock();
 }
 
 // -----------------------------------------------------------------------

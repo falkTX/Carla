@@ -190,8 +190,7 @@ public:
 
     bool moveTo(RtLinkedList<T>& list, const bool inTail) noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(fMemPool == list.fMemPool, false);
-
+        // FIXME add some checks?
         return AbstractLinkedList<T>::moveTo(list, inTail);
     }
 
