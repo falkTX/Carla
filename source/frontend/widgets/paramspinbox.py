@@ -134,7 +134,7 @@ class ParamProgressBar(QProgressBar):
         self.fMaximum = value
 
     def setValue(self, value):
-        if self.fRealValue == value and self.fInitiated:
+        if (self.fRealValue == value or isnan(value)) and self.fInitiated:
             return False
 
         self.fInitiated = True
