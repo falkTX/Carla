@@ -589,11 +589,12 @@ CarlaPlugin::ProtectedData::PostRtEvents::PostRtEvents() noexcept
 CarlaPlugin::ProtectedData::PostRtEvents::~PostRtEvents() noexcept
 {
     dataMutex.lock();
-    data.clear();
-    dataMutex.unlock();
-
     dataPendingMutex.lock();
+
+    data.clear();
     dataPendingRT.clear();
+
+    dataMutex.unlock();
     dataPendingMutex.unlock();
 }
 
