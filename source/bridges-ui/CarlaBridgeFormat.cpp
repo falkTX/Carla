@@ -183,12 +183,13 @@ bool CarlaBridgeFormat::msgReceived(const char* const msg) noexcept
 
     if (std::strcmp(msg, "atom") == 0)
     {
-        uint32_t index, atomTotalSize;
+        uint32_t index, atomTotalSize, base64Size;
         const char* base64atom;
 
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(index), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(atomTotalSize), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(base64atom, false), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(base64Size), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(base64atom, false, base64Size), true);
 
         std::vector<uint8_t> chunk(carla_getChunkFromBase64String(base64atom));
         CARLA_SAFE_ASSERT_RETURN(chunk.size() >= sizeof(LV2_Atom), true);

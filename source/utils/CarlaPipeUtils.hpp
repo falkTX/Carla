@@ -142,7 +142,7 @@ public:
      * Read the next line as a string.
      * @note: @a value must be deleted if valid.
      */
-    bool readNextLineAsString(const char*& value, bool allocateString) const noexcept;
+    bool readNextLineAsString(const char*& value, bool allocateString, uint32_t size = 0) const noexcept;
 
     // -------------------------------------------------------------------
     // write messages, must be locked before calling
@@ -236,10 +236,10 @@ protected:
     // -------------------------------------------------------------------
 
     /*! @internal */
-    const char* _readline(bool allocReturn, bool& readSucess) const noexcept;
+    const char* _readline(bool allocReturn, uint16_t size, bool& readSucess) const noexcept;
 
     /*! @internal */
-    const char* _readlineblock(bool allocReturn, uint32_t timeOutMilliseconds = 50) const noexcept;
+    const char* _readlineblock(bool allocReturn, uint16_t size = 0, uint32_t timeOutMilliseconds = 50) const noexcept;
 
     /*! @internal */
     bool _writeMsgBuffer(const char* msg, std::size_t size) const noexcept;
