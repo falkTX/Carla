@@ -180,15 +180,14 @@ protected:
             const char* key;
             const char* value;
 
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(key), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(value), true);
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(key, true), true);
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(value, false), true);
 
             try {
                 uiCustomDataChanged(key, value);
             } CARLA_SAFE_EXCEPTION("uiCustomDataChanged");
 
             delete[] key;
-            delete[] value;
 
             return true;
         }

@@ -139,8 +139,8 @@ class ExternalUI(object):
             self.dspProgramChanged(channel, bank, program)
 
         elif msg == "configure":
-            key   = self.readlineblock() #.replace("\r", "\n")
-            value = self.readlineblock() #.replace("\r", "\n")
+            key   = self.readlineblock()
+            value = self.readlineblock()
             self.dspStateChanged(key, value)
 
         elif msg == "note":
@@ -164,7 +164,7 @@ class ExternalUI(object):
             self.uiQuit()
 
         elif msg == "uiTitle":
-            uiTitle = self.readlineblock() #.replace("\r", "\n")
+            uiTitle = self.readlineblock()
             self.uiTitleChanged(uiTitle)
 
         else:

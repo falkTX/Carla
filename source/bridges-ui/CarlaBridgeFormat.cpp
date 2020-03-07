@@ -158,13 +158,12 @@ bool CarlaBridgeFormat::msgReceived(const char* const msg) noexcept
         const char* key;
         const char* value;
 
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(key), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(value), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(key, true), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(value, false), true);
 
         dspStateChanged(key, value);
 
         delete[] key;
-        delete[] value;
         return true;
     }
 
@@ -189,10 +188,9 @@ bool CarlaBridgeFormat::msgReceived(const char* const msg) noexcept
 
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(index), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(atomTotalSize), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(base64atom), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(base64atom, false), true);
 
         std::vector<uint8_t> chunk(carla_getChunkFromBase64String(base64atom));
-        delete[] base64atom;
         CARLA_SAFE_ASSERT_RETURN(chunk.size() >= sizeof(LV2_Atom), true);
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
@@ -215,12 +213,11 @@ bool CarlaBridgeFormat::msgReceived(const char* const msg) noexcept
         const char* uri;
 
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(urid), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(uri), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(uri, false), true);
 
         if (urid != 0)
             dspURIDReceived(urid, uri);
 
-        delete[] uri;
         return true;
     }
 
@@ -235,7 +232,7 @@ bool CarlaBridgeFormat::msgReceived(const char* const msg) noexcept
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(opts.uiScale), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(opts.useTheme), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(opts.useThemeColors), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(opts.windowTitle), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(opts.windowTitle, true), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsULong(transientWindowId), true);
         opts.transientWindowId = transientWindowId;
 
@@ -279,11 +276,9 @@ bool CarlaBridgeFormat::msgReceived(const char* const msg) noexcept
     {
         const char* title;
 
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(title), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(title, false), true);
 
         fToolkit->setTitle(title);
-
-        delete[] title;
         return true;
     }
 

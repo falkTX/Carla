@@ -1725,7 +1725,7 @@ private:
 
 // -----------------------------------------------------------------------
 
-bool CarlaEngineNativeUI::msgReceived(const char*const msg) noexcept
+bool CarlaEngineNativeUI::msgReceived(const char* const msg) noexcept
 {
     if (CarlaExternalUI::msgReceived(msg))
         return true;
@@ -1740,14 +1740,11 @@ bool CarlaEngineNativeUI::msgReceived(const char*const msg) noexcept
 
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(option), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(value), true);
-        readNextLineAsString(valueStr); // can be null
+        readNextLineAsString(valueStr, false); // can be null
 
         try {
             fEngine->setOption(static_cast<EngineOption>(option), value, valueStr);
         } CARLA_SAFE_EXCEPTION("setOption");
-
-        if (valueStr != nullptr)
-            delete[] valueStr;
     }
     else if (std::strcmp(msg, "clear_engine_xruns") == 0)
     {
@@ -1761,37 +1758,31 @@ bool CarlaEngineNativeUI::msgReceived(const char*const msg) noexcept
     {
         const char* filename;
 
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename, false), true);
 
         try {
             ok = fEngine->loadFile(filename);
         } CARLA_SAFE_EXCEPTION("loadFile");
-
-        delete[] filename;
     }
     else if (std::strcmp(msg, "load_project") == 0)
     {
         const char* filename;
 
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename, false), true);
 
         try {
             ok = fEngine->loadProject(filename, true);
         } CARLA_SAFE_EXCEPTION("loadProject");
-
-        delete[] filename;
     }
     else if (std::strcmp(msg, "save_project") == 0)
     {
         const char* filename;
 
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename, false), true);
 
         try {
             ok = fEngine->saveProject(filename, true);
         } CARLA_SAFE_EXCEPTION("saveProject");
-
-        delete[] filename;
     }
     else if (std::strcmp(msg, "clear_project_filename") == 0)
     {
@@ -1868,9 +1859,9 @@ bool CarlaEngineNativeUI::msgReceived(const char*const msg) noexcept
 
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(btype), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(ptype), true);
-        readNextLineAsString(filename); // can be null
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(name), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(label), true);
+        readNextLineAsString(filename, true); // can be null
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(name, true), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(label, true), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsLong(uniqueId), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(options), true);
 
@@ -1917,11 +1908,9 @@ bool CarlaEngineNativeUI::msgReceived(const char*const msg) noexcept
         const char* newName;
 
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(newName), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(newName, false), true);
 
         ok = fEngine->renamePlugin(pluginId, newName);
-
-        delete[] newName;
     }
     else if (std::strcmp(msg, "clone_plugin") == 0)
     {
@@ -1955,15 +1944,13 @@ bool CarlaEngineNativeUI::msgReceived(const char*const msg) noexcept
         const char* filename;
 
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename, false), true);
 
         if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
         {
             plugin->loadStateFromFile(filename);
             _updateParamValues(plugin, pluginId, false, true);
         }
-
-        delete[] filename;
     }
     else if (std::strcmp(msg, "save_plugin_state") == 0)
     {
@@ -1971,12 +1958,10 @@ bool CarlaEngineNativeUI::msgReceived(const char*const msg) noexcept
         const char* filename;
 
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename, false), true);
 
         if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
             plugin->saveStateToFile(filename);
-
-        delete[] filename;
     }
     else if (std::strcmp(msg, "set_option") == 0)
     {
@@ -2169,16 +2154,15 @@ bool CarlaEngineNativeUI::msgReceived(const char*const msg) noexcept
         const char* value;
 
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(type), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(key), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(value), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(type, true), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(key, true), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(value, false), true);
 
         if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
             plugin->setCustomData(type, key, value, true);
 
         delete[] type;
         delete[] key;
-        delete[] value;
     }
     else if (std::strcmp(msg, "set_chunk_data") == 0)
     {
@@ -2186,7 +2170,7 @@ bool CarlaEngineNativeUI::msgReceived(const char*const msg) noexcept
         const char* cdata;
 
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(cdata), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(cdata, false), true);
 
         if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
         {
@@ -2198,8 +2182,6 @@ bool CarlaEngineNativeUI::msgReceived(const char*const msg) noexcept
 #endif
             _updateParamValues(plugin, pluginId, false, true);
         }
-
-        delete[] cdata;
     }
     else if (std::strcmp(msg, "prepare_for_save") == 0)
     {

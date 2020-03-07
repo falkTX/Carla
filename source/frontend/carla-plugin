@@ -199,7 +199,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
             value2   = int(self.readlineblock())
             value3   = int(self.readlineblock())
             valuef   = float(self.readlineblock())
-            valueStr = self.readlineblock().replace("\r", "\n")
+            valueStr = self.readlineblock()
 
             self.host._setViaCallback(action, pluginId, value1, value2, value3, valuef, valueStr)
             engineCallback(self.host, action, pluginId, value1, value2, value3, valuef, valueStr)
@@ -238,13 +238,13 @@ class CarlaMiniW(ExternalUI, HostWindow):
             self.host._add(pluginId)
 
             type_, category, hints, uniqueId, optsAvail, optsEnabled = [int(i) for i in self.readlineblock().split(":")]
-            filename  = self.readlineblock().replace("\r", "\n")
-            name      = self.readlineblock().replace("\r", "\n")
-            iconName  = self.readlineblock().replace("\r", "\n")
-            realName  = self.readlineblock().replace("\r", "\n")
-            label     = self.readlineblock().replace("\r", "\n")
-            maker     = self.readlineblock().replace("\r", "\n")
-            copyright = self.readlineblock().replace("\r", "\n")
+            filename  = self.readlineblock()
+            name      = self.readlineblock()
+            iconName  = self.readlineblock()
+            realName  = self.readlineblock()
+            label     = self.readlineblock()
+            maker     = self.readlineblock()
+            copyright = self.readlineblock()
 
             pinfo = {
                 'type': type_,
@@ -280,10 +280,10 @@ class CarlaMiniW(ExternalUI, HostWindow):
             pluginId, paramId = [int(i) for i in msg.replace("PARAMETER_DATA_", "").split(":")]
             paramType, paramHints, mappedControlIndex, midiChannel = [int(i) for i in self.readlineblock().split(":")]
             mappedMinimum, mappedMaximum = [float(i) for i in self.readlineblock().split(":")]
-            paramName = self.readlineblock().replace("\r", "\n")
-            paramUnit = self.readlineblock().replace("\r", "\n")
-            paramComment = self.readlineblock().replace("\r", "\n")
-            paramGroupName = self.readlineblock().replace("\r", "\n")
+            paramName = self.readlineblock()
+            paramUnit = self.readlineblock()
+            paramComment = self.readlineblock()
+            paramGroupName = self.readlineblock()
 
             paramInfo = {
                 'name': paramName,
@@ -328,7 +328,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
 
         elif msg.startswith("PROGRAM_NAME_"):
             pluginId, progId = [int(i) for i in msg.replace("PROGRAM_NAME_", "").split(":")]
-            progName = self.readlineblock().replace("\r", "\n")
+            progName = self.readlineblock()
             self.host._set_programName(pluginId, progId, progName)
 
         elif msg.startswith("MIDI_PROGRAM_COUNT_"):
@@ -339,7 +339,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
         elif msg.startswith("MIDI_PROGRAM_DATA_"):
             pluginId, midiProgId = [int(i) for i in msg.replace("MIDI_PROGRAM_DATA_", "").split(":")]
             bank, program = [int(i) for i in self.readlineblock().split(":")]
-            name = self.readlineblock().replace("\r", "\n")
+            name = self.readlineblock()
             self.host._set_midiProgramData(pluginId, midiProgId, {'bank': bank, 'program': program, 'name': name})
 
         elif msg.startswith("CUSTOM_DATA_COUNT_"):
@@ -349,14 +349,14 @@ class CarlaMiniW(ExternalUI, HostWindow):
         elif msg.startswith("CUSTOM_DATA_"):
             pluginId, customDataId = [int(i) for i in msg.replace("CUSTOM_DATA_", "").split(":")]
 
-            type_ = self.readlineblock().replace("\r", "\n")
-            key   = self.readlineblock().replace("\r", "\n")
-            value = self.readlineblock().replace("\r", "\n")
+            type_ = self.readlineblock()
+            key   = self.readlineblock()
+            value = self.readlineblock()
             self.host._set_customData(pluginId, customDataId, {'type': type_, 'key': key, 'value': value})
 
         elif msg == "osc-urls":
-            tcp = self.readlineblock().replace("\r", "\n")
-            udp = self.readlineblock().replace("\r", "\n")
+            tcp = self.readlineblock()
+            udp = self.readlineblock()
             self.host.fOscTCP = tcp
             self.host.fOscUDP = udp
 
@@ -373,7 +373,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
             self.host.fSampleRate = srate
 
         elif msg == "error":
-            error = self.readlineblock().replace("\r", "\n")
+            error = self.readlineblock()
             engineCallback(self.host, ENGINE_CALLBACK_ERROR, 0, 0, 0, 0, 0.0, error)
 
         elif msg == "show":
@@ -391,7 +391,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
             self.uiQuit()
 
         elif msg == "uiTitle":
-            uiTitle = self.readlineblock().replace("\r", "\n")
+            uiTitle = self.readlineblock()
             self.uiTitleChanged(uiTitle)
 
         else:

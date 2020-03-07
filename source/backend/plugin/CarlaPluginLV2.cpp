@@ -7257,10 +7257,9 @@ bool CarlaPipeServerLV2::msgReceived(const char* const msg) noexcept
 
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(index), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(size), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(base64atom), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(base64atom, false), true);
 
         std::vector<uint8_t> chunk(carla_getChunkFromBase64String(base64atom));
-        delete[] base64atom;
         CARLA_SAFE_ASSERT_RETURN(chunk.size() >= sizeof(LV2_Atom), true);
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
@@ -7296,7 +7295,7 @@ bool CarlaPipeServerLV2::msgReceived(const char* const msg) noexcept
         const char* uri;
 
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(urid), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(uri), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(uri, false), true);
 
         if (urid != 0)
         {
@@ -7305,7 +7304,6 @@ bool CarlaPipeServerLV2::msgReceived(const char* const msg) noexcept
             } CARLA_SAFE_EXCEPTION("msgReceived urid");
         }
 
-        delete[] uri;
         return true;
     }
 

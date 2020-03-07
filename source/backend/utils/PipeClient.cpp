@@ -88,7 +88,7 @@ public:
 #endif
 
         delete[] fLastReadLine;
-        fLastReadLine = CarlaPipeClient::_readlineblock(timeout);
+        fLastReadLine = CarlaPipeClient::_readlineblock(true, timeout);
         return fLastReadLine;
     }
 
