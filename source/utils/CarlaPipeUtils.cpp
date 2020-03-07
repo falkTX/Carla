@@ -914,8 +914,6 @@ bool CarlaPipeCommon::writeAndFixMessage(const char* const msg) const noexcept
     {
         fixedMsg[0] = '\n';
         fixedMsg[1] = '\0';
-
-        carla_stderr2("wrote empty message:'%s'", fixedMsg);
     }
 
     return _writeMsgBuffer(fixedMsg, size+1);

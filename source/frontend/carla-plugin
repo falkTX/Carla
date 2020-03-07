@@ -174,9 +174,9 @@ class CarlaMiniW(ExternalUI, HostWindow):
             self.host._set_runtime_info(load, xruns)
 
         elif msg == "transport":
-            playing = bool(self.readlineblock() == "true")
+            playing = self.readlineblock_bool()
             frame, bar, beat, tick = [int(i) for i in self.readlineblock().split(":")]
-            bpm = float(self.readlineblock())
+            bpm = self.readlineblock_float()
             self.host._set_transport(playing, frame, bar, beat, tick, bpm)
 
         elif msg.startswith("PEAKS_"):
@@ -186,7 +186,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
 
         elif msg.startswith("PARAMVAL_"):
             pluginId, paramId = [int(i) for i in msg.replace("PARAMVAL_", "").split(":")]
-            paramValue = float(self.readlineblock())
+            paramValue = self.readlineblock_float()
             if paramId < 0:
                 self.host._set_internalValue(pluginId, paramId, paramValue)
             else:
@@ -194,11 +194,11 @@ class CarlaMiniW(ExternalUI, HostWindow):
 
         elif msg.startswith("ENGINE_CALLBACK_"):
             action   = int(msg.replace("ENGINE_CALLBACK_", ""))
-            pluginId = int(self.readlineblock())
-            value1   = int(self.readlineblock())
-            value2   = int(self.readlineblock())
-            value3   = int(self.readlineblock())
-            valuef   = float(self.readlineblock())
+            pluginId = self.readlineblock_int()
+            value1   = self.readlineblock_int()
+            value2   = self.readlineblock_int()
+            value3   = self.readlineblock_int()
+            valuef   = self.readlineblock_float()
             valueStr = self.readlineblock()
 
             self.host._setViaCallback(action, pluginId, value1, value2, value3, valuef, valueStr)
@@ -206,7 +206,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
 
         elif msg.startswith("ENGINE_OPTION_"):
             option = int(msg.replace("ENGINE_OPTION_", ""))
-            forced = bool(self.readlineblock() == "true")
+            forced = self.readlineblock_bool()
             value  = self.readlineblock()
 
             if self.fFirstInit and not forced:
@@ -361,15 +361,15 @@ class CarlaMiniW(ExternalUI, HostWindow):
             self.host.fOscUDP = udp
 
         elif msg == "max-plugin-number":
-            maxnum = int(self.readlineblock())
+            maxnum = self.readlineblock_int()
             self.host.fMaxPluginNumber = maxnum
 
         elif msg == "buffer-size":
-            bufsize = int(self.readlineblock())
+            bufsize = self.readlineblock_int()
             self.host.fBufferSize = bufsize
 
         elif msg == "sample-rate":
-            srate = float(self.readlineblock())
+            srate = self.readlineblock_float()
             self.host.fSampleRate = srate
 
         elif msg == "error":

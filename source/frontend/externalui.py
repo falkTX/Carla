@@ -128,14 +128,14 @@ class ExternalUI(object):
             #return
 
         if msg == "control":
-            index = int(self.readlineblock())
-            value = float(self.readlineblock())
+            index = self.readlineblock_int()
+            value = self.readlineblock_float()
             self.dspParameterChanged(index, value)
 
         elif msg == "program":
-            channel = int(self.readlineblock())
-            bank    = int(self.readlineblock())
-            program = int(self.readlineblock())
+            channel = self.readlineblock_int()
+            bank    = self.readlineblock_int()
+            program = self.readlineblock_int()
             self.dspProgramChanged(channel, bank, program)
 
         elif msg == "configure":
@@ -144,10 +144,10 @@ class ExternalUI(object):
             self.dspStateChanged(key, value)
 
         elif msg == "note":
-            onOff    = bool(self.readlineblock() == "true")
-            channel  = int(self.readlineblock())
-            note     = int(self.readlineblock())
-            velocity = int(self.readlineblock())
+            onOff    = self.readlineblock_bool()
+            channel  = self.readlineblock_int()
+            note     = self.readlineblock_int()
+            velocity = self.readlineblock_int()
             self.dspNoteReceived(onOff, channel, note, velocity)
 
         elif msg == "show":
@@ -178,6 +178,24 @@ class ExternalUI(object):
             return ""
 
         return gCarla.utils.pipe_client_readlineblock(self.fPipeClient, 5000)
+
+    def readlineblock_bool(self):
+        if self.fPipeClient is None:
+            return False
+
+        return gCarla.utils.pipe_client_readlineblock_bool(self.fPipeClient, 5000)
+
+    def readlineblock_int(self):
+        if self.fPipeClient is None:
+            return 0
+
+        return gCarla.utils.pipe_client_readlineblock_int(self.fPipeClient, 5000)
+
+    def readlineblock_float(self):
+        if self.fPipeClient is None:
+            return 0.0
+
+        return gCarla.utils.pipe_client_readlineblock_float(self.fPipeClient, 5000)
 
     def send(self, lines):
         if self.fPipeClient is None or len(lines) == 0:

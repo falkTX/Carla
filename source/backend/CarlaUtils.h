@@ -226,6 +226,14 @@ CARLA_EXPORT void carla_pipe_client_unlock(CarlaPipeClientHandle handle);
 CARLA_EXPORT const char* carla_pipe_client_readlineblock(CarlaPipeClientHandle handle, uint timeout);
 
 /*!
+ * Extras.
+ * TODO.
+ */
+CARLA_EXPORT bool carla_pipe_client_readlineblock_bool(CarlaPipeClientHandle handle, uint timeout);
+CARLA_EXPORT int carla_pipe_client_readlineblock_int(CarlaPipeClientHandle handle, uint timeout);
+CARLA_EXPORT double carla_pipe_client_readlineblock_float(CarlaPipeClientHandle handle, uint timeout);
+
+/*!
  * TODO.
  */
 CARLA_EXPORT bool carla_pipe_client_write_msg(CarlaPipeClientHandle handle, const char* msg);

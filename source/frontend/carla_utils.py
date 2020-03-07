@@ -225,6 +225,15 @@ class CarlaUtils(object):
         self.lib.carla_pipe_client_readlineblock.argtypes = [CarlaPipeClientHandle, c_uint]
         self.lib.carla_pipe_client_readlineblock.restype = c_char_p
 
+        self.lib.carla_pipe_client_readlineblock_bool.argtypes = [CarlaPipeClientHandle, c_uint]
+        self.lib.carla_pipe_client_readlineblock_bool.restype = c_bool
+
+        self.lib.carla_pipe_client_readlineblock_int.argtypes = [CarlaPipeClientHandle, c_uint]
+        self.lib.carla_pipe_client_readlineblock_int.restype = c_int
+
+        self.lib.carla_pipe_client_readlineblock_float.argtypes = [CarlaPipeClientHandle, c_uint]
+        self.lib.carla_pipe_client_readlineblock_float.restype = c_double
+
         self.lib.carla_pipe_client_write_msg.argtypes = [CarlaPipeClientHandle, c_char_p]
         self.lib.carla_pipe_client_write_msg.restype = c_bool
 
@@ -354,6 +363,15 @@ class CarlaUtils(object):
 
     def pipe_client_readlineblock(self, handle, timeout):
         return charPtrToString(self.lib.carla_pipe_client_readlineblock(handle, timeout))
+
+    def pipe_client_readlineblock_bool(self, handle, timeout):
+        return bool(self.lib.carla_pipe_client_readlineblock_bool(handle, timeout))
+
+    def pipe_client_readlineblock_int(self, handle, timeout):
+        return int(self.lib.carla_pipe_client_readlineblock_int(handle, timeout))
+
+    def pipe_client_readlineblock_float(self, handle, timeout):
+        return float(self.lib.carla_pipe_client_readlineblock_float(handle, timeout))
 
     def pipe_client_write_msg(self, handle, msg):
         return bool(self.lib.carla_pipe_client_write_msg(handle, msg.encode("utf-8")))
