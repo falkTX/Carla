@@ -191,11 +191,21 @@
 #define CARLA_SAFE_ASSERT_UINT2_CONTINUE(cond, v1, v2)    if (! (cond)) { carla_safe_assert_uint2(#cond, __FILE__, __LINE__, static_cast<uint>(v1), static_cast<uint>(v2)); continue; }
 #define CARLA_SAFE_ASSERT_UINT2_RETURN(cond, v1, v2, ret) if (! (cond)) { carla_safe_assert_uint2(#cond, __FILE__, __LINE__, static_cast<uint>(v1), static_cast<uint>(v2)); return ret; }
 
+#if defined(__GNUC__) && defined(CARLA_PROPER_CPP11_SUPPORT)
+# define CARLA_CATCH_UNWIND catch (abi::__forced_unwind&) { throw; }
+# if __GNUC__ >= 6
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wterminate"
+# endif
+#else
+# define CARLA_CATCH_UNWIND
+#endif
+
 /* Define CARLA_SAFE_EXCEPTION */
-#define CARLA_SAFE_EXCEPTION(msg)             catch(...) { carla_safe_exception(msg, __FILE__, __LINE__); }
-#define CARLA_SAFE_EXCEPTION_BREAK(msg)       catch(...) { carla_safe_exception(msg, __FILE__, __LINE__); break; }
-#define CARLA_SAFE_EXCEPTION_CONTINUE(msg)    catch(...) { carla_safe_exception(msg, __FILE__, __LINE__); continue; }
-#define CARLA_SAFE_EXCEPTION_RETURN(msg, ret) catch(...) { carla_safe_exception(msg, __FILE__, __LINE__); return ret; }
+#define CARLA_SAFE_EXCEPTION(msg)             CARLA_CATCH_UNWIND catch(...) { carla_safe_exception(msg, __FILE__, __LINE__); }
+#define CARLA_SAFE_EXCEPTION_BREAK(msg)       CARLA_CATCH_UNWIND catch(...) { carla_safe_exception(msg, __FILE__, __LINE__); break; }
+#define CARLA_SAFE_EXCEPTION_CONTINUE(msg)    CARLA_CATCH_UNWIND catch(...) { carla_safe_exception(msg, __FILE__, __LINE__); continue; }
+#define CARLA_SAFE_EXCEPTION_RETURN(msg, ret) CARLA_CATCH_UNWIND catch(...) { carla_safe_exception(msg, __FILE__, __LINE__); return ret; }
 
 /* Define CARLA_DECLARE_NON_COPY_CLASS */
 #ifdef CARLA_PROPER_CPP11_SUPPORT

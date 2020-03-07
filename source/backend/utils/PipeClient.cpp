@@ -60,7 +60,7 @@ public:
 #endif
     }
 
-    const char* idlePipeAndReturnMessage()
+    const char* idlePipeAndReturnMessage() noexcept
     {
         CarlaPipeClient::idlePipe();
 

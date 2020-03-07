@@ -27,6 +27,7 @@
 #include <cstring>
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
+# include <cxxabi.h>
 # include <cstdint>
 #else
 # include <stdint.h>

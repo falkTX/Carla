@@ -197,10 +197,7 @@ public:
                 _copyTo(threadId);
                 _init();
 
-                try {
-                    pthread_cancel(threadId);
-                } CARLA_SAFE_EXCEPTION("pthread_cancel");
-
+                pthread_detach(threadId);
                 return false;
             }
         }
