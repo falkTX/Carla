@@ -2335,6 +2335,21 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 CARLA_SAFE_ASSERT_BREAK(numUsed < numParameters);
 
                 Lilv::Node patchWritableNode(patchWritableNodes.get(it));
+
+                if (LilvNode* const typeNode = lilv_world_get(lv2World.me, patchWritableNode,
+                                                              lv2World.rdf_type.me, nullptr))
+                {
+                    const char* const type = lilv_node_as_uri(typeNode);
+
+                    if (std::strcmp(type, LV2_CORE__Parameter) != 0)
+                    {
+                        lilv_node_free(typeNode);
+                        continue;
+                    }
+
+                    lilv_node_free(typeNode);
+                }
+
                 LV2_RDF_Parameter& rdfParam(rdfDescriptor->Parameters[numUsed++]);
 
                 CARLA_SAFE_ASSERT_CONTINUE(patchWritableNode.is_uri());
