@@ -88,7 +88,7 @@ public:
 #endif
 
         delete[] fLastReadLine;
-        fLastReadLine = CarlaPipeClient::_readlineblock(true, timeout);
+        fLastReadLine = CarlaPipeClient::_readlineblock(true, 0, timeout);
         return fLastReadLine;
     }
 
@@ -103,7 +103,7 @@ public:
         }
 #endif
 
-        if (const char* const line = CarlaPipeClient::_readlineblock(false, timeout))
+        if (const char* const line = CarlaPipeClient::_readlineblock(false, 0, timeout))
             return std::strcmp(line, "true") == 0;
 
         return false;
@@ -120,7 +120,7 @@ public:
         }
 #endif
 
-        if (const char* const line = CarlaPipeClient::_readlineblock(false, timeout))
+        if (const char* const line = CarlaPipeClient::_readlineblock(false, 0, timeout))
             return std::atoi(line);
 
         return 0;
@@ -137,7 +137,7 @@ public:
         }
 #endif
 
-        if (const char* const line = CarlaPipeClient::_readlineblock(false, timeout))
+        if (const char* const line = CarlaPipeClient::_readlineblock(false, 0, timeout))
             return std::atof(line);
 
         return 0.0;
