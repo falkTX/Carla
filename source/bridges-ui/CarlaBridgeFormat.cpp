@@ -42,7 +42,8 @@ CarlaBridgeFormat::CarlaBridgeFormat() noexcept
       fLastMsgTimer(-1),
       fToolkit(nullptr),
       fLib(nullptr),
-      fLibFilename()
+      fLibFilename(),
+      fBase64ReservedChunk()
 {
     carla_debug("CarlaBridgeFormat::CarlaBridgeFormat()");
 
@@ -120,6 +121,50 @@ bool CarlaBridgeFormat::msgReceived(const char* const msg) noexcept
     if (fLastMsgTimer > 0)
         --fLastMsgTimer;
 
+    if (std::strcmp(msg, "atom") == 0)
+    {
+        uint32_t index, atomTotalSize, base64Size;
+        const char* base64atom;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(index), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(atomTotalSize), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(base64Size), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(base64atom, false, base64Size), true);
+
+        carla_getChunkFromBase64String_impl(fBase64ReservedChunk, base64atom);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(fBase64ReservedChunk.size() >= sizeof(LV2_Atom),
+                                       fBase64ReservedChunk.size(), sizeof(LV2_Atom), true);
+
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+        const LV2_Atom* const atom((const LV2_Atom*)fBase64ReservedChunk.data());
+#else
+        const LV2_Atom* const atom((const LV2_Atom*)&fBase64ReservedChunk.front());
+#endif
+        const uint32_t atomTotalSizeCheck(lv2_atom_total_size(atom));
+
+        CARLA_SAFE_ASSERT_UINT2_RETURN(atomTotalSizeCheck == atomTotalSize, atomTotalSizeCheck, atomTotalSize, true);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(atomTotalSizeCheck == fBase64ReservedChunk.size(),
+                                       atomTotalSizeCheck, fBase64ReservedChunk.size(), true);
+
+        dspAtomReceived(index, atom);
+        return true;
+    }
+
+    if (std::strcmp(msg, "urid") == 0)
+    {
+        uint32_t urid, size;
+        const char* uri;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(urid), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(size), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(uri, false, size), true);
+
+        if (urid != 0)
+            dspURIDReceived(urid, uri);
+
+        return true;
+    }
+
     if (std::strcmp(msg, "control") == 0)
     {
         uint32_t index;
@@ -178,47 +223,6 @@ bool CarlaBridgeFormat::msgReceived(const char* const msg) noexcept
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsByte(velocity), true);
 
         dspNoteReceived(onOff, channel, note, velocity);
-        return true;
-    }
-
-    if (std::strcmp(msg, "atom") == 0)
-    {
-        uint32_t index, atomTotalSize, base64Size;
-        const char* base64atom;
-
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(index), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(atomTotalSize), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(base64Size), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(base64atom, false, base64Size), true);
-
-        std::vector<uint8_t> chunk(carla_getChunkFromBase64String(base64atom));
-        CARLA_SAFE_ASSERT_RETURN(chunk.size() >= sizeof(LV2_Atom), true);
-
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-        const LV2_Atom* const atom((const LV2_Atom*)chunk.data());
-#else
-        const LV2_Atom* const atom((const LV2_Atom*)&chunk.front());
-#endif
-        const uint32_t atomTotalSizeCheck(lv2_atom_total_size(atom));
-
-        CARLA_SAFE_ASSERT_RETURN(atomTotalSizeCheck == atomTotalSize, true);
-        CARLA_SAFE_ASSERT_RETURN(atomTotalSizeCheck == chunk.size(), true);
-
-        dspAtomReceived(index, atom);
-        return true;
-    }
-
-    if (std::strcmp(msg, "urid") == 0)
-    {
-        uint32_t urid;
-        const char* uri;
-
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(urid), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(uri, false), true);
-
-        if (urid != 0)
-            dspURIDReceived(urid, uri);
-
         return true;
     }
 

@@ -661,8 +661,10 @@ void CarlaPipeCommon::idlePipe(const bool onlyOnce) noexcept
     {
         const char* const msg = _readline(true, 0, readSucess);
 
-        if (msg == nullptr || ! readSucess)
+        if (! readSucess)
             break;
+        if (msg == nullptr)
+            continue;
 
         pData->isReading = true;
 
@@ -1143,7 +1145,7 @@ void CarlaPipeCommon::writeLv2AtomMessage(const uint32_t index, const LV2_Atom* 
     if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
         return;
 
-    std::snprintf(tmpBuf, 0xfe, "%lu\n", static_cast<long unsigned>(base64atom.length()+1U));
+    std::snprintf(tmpBuf, 0xfe, "%lu\n", static_cast<long unsigned>(base64atom.length()));
     if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
         return;
 
@@ -1170,6 +1172,10 @@ void CarlaPipeCommon::writeLv2UridMessage(const uint32_t urid, const char* const
     if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
         return;
 
+    std::snprintf(tmpBuf, 0xfe, "%lu\n", static_cast<long unsigned>(std::strlen(uri)));
+    if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
+        return;
+
     if (! writeAndFixMessage(uri))
         return;
 
@@ -1190,9 +1196,7 @@ const char* CarlaPipeCommon::_readline(const bool allocReturn, const uint16_t si
 
     pData->tmpStr.clear();
 
-    static bool first = false;
-
-    if (size == 0 || size == 1 || !first)
+    if (size == 0 || size == 1)
     {
         for (int i=0; i<0xfffe; ++i)
         {
@@ -1224,9 +1228,8 @@ const char* CarlaPipeCommon::_readline(const bool allocReturn, const uint16_t si
     }
     else
     {
-        first = false;
         uint16_t remaining = size;
-        carla_stdout("CarlaPipeCommon::_readline %u", remaining);
+        readSucess = false;
 
         for (;;)
         {
@@ -1234,15 +1237,12 @@ const char* CarlaPipeCommon::_readline(const bool allocReturn, const uint16_t si
     #ifdef CARLA_OS_WIN
                 ret = ReadFileWin32(pData->pipeRecv, pData->ovRecv, ptr, remaining);
     #else
-                ret = ::read(pData->pipeRecv, ptr, std::min((uint16_t)1, remaining));
+                ret = ::read(pData->pipeRecv, ptr, remaining);
     #endif
             } CARLA_SAFE_EXCEPTION_RETURN("CarlaPipeCommon::readline() - read", nullptr);
 
             if (ret == -1 && errno == EAGAIN)
-            {
-                carla_msleep(50);
                 continue;
-            }
 
             CARLA_SAFE_ASSERT_INT2_RETURN(ret > 0, ret, remaining, nullptr);
             CARLA_SAFE_ASSERT_INT2_RETURN(ret <= (ssize_t)remaining, ret, remaining, nullptr);
@@ -1253,25 +1253,22 @@ const char* CarlaPipeCommon::_readline(const bool allocReturn, const uint16_t si
                     ptr[i] = '\n';
             }
 
-            ptr += remaining;
+            ptr += ret;
             *ptr = '\0';
-
             remaining = static_cast<uint16_t>(remaining - ret);
-
-            carla_stdout("CarlaPipeCommon::_readline read %li bytes, remain %u", ret, remaining);
 
             if (remaining != 0)
                 continue;
+
+            readSucess = true;
 
             if (allocReturn)
             {
                 pData->tmpStr = pData->tmpBuf;
                 return pData->tmpStr.releaseBufferPointer();
             }
-            else
-            {
-                return pData->tmpBuf;
-            }
+
+            return pData->tmpBuf;
         }
     }
 
@@ -1294,10 +1291,11 @@ const char* CarlaPipeCommon::_readline(const bool allocReturn, const uint16_t si
         return nullptr;
     }
 
+    readSucess = true;
+
     if (! allocReturn && ! tooBig)
         return pData->tmpBuf;
 
-    readSucess = true;
     return allocReturn ? pData->tmpStr.releaseBufferPointer() : pData->tmpStr.buffer();
 }
 
