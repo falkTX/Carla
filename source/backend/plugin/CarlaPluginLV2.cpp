@@ -1561,8 +1561,8 @@ public:
 
                 // manually write messages so we can take the lock for ourselves
                 {
-                    char tmpBuf[0xff+1];
-                    tmpBuf[0xff] = '\0';
+                    char tmpBuf[0xff];
+                    tmpBuf[0xfe] = '\0';
 
                     const CarlaMutexLocker cml(fPipeServer.getPipeLock());
                     const CarlaScopedLocale csl;
@@ -1575,12 +1575,17 @@ public:
                             continue;
                         const std::string& uri(*it);
 
-                        std::snprintf(tmpBuf, 0xff, "%u\n", u);
                         if (! fPipeServer.writeMessage("urid\n", 5))
                             return;
 
+                        std::snprintf(tmpBuf, 0xfe, "%u\n", u);
                         if (! fPipeServer.writeMessage(tmpBuf))
                             return;
+
+                        std::snprintf(tmpBuf, 0xfe, "%lu\n", static_cast<long unsigned>(uri.length()));
+                        if (! fPipeServer.writeMessage(tmpBuf))
+                            return;
+
                         if (! fPipeServer.writeAndFixMessage(uri.c_str()))
                             return;
                     }
@@ -7252,15 +7257,16 @@ bool CarlaPipeServerLV2::msgReceived(const char* const msg) noexcept
 
     if (std::strcmp(msg, "atom") == 0)
     {
-        uint32_t index, size;
+        uint32_t index, atomTotalSize, base64Size;
         const char* base64atom;
 
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(index), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(size), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(base64atom, false), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(atomTotalSize), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(base64Size), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(base64atom, false, base64Size), true);
 
         std::vector<uint8_t> chunk(carla_getChunkFromBase64String(base64atom));
-        CARLA_SAFE_ASSERT_RETURN(chunk.size() >= sizeof(LV2_Atom), true);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(chunk.size() >= sizeof(LV2_Atom), chunk.size(), sizeof(LV2_Atom), true);
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
         const LV2_Atom* const atom((const LV2_Atom*)chunk.data());
@@ -7291,11 +7297,12 @@ bool CarlaPipeServerLV2::msgReceived(const char* const msg) noexcept
 
     if (std::strcmp(msg, "urid") == 0)
     {
-        uint32_t urid;
+        uint32_t urid, size;
         const char* uri;
 
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(urid), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(uri, false), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(size), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(uri, false, size), true);
 
         if (urid != 0)
         {

@@ -108,7 +108,7 @@ public:
             // MacOS and Win32 have event-loops to run, so minimize sleep time
             carla_msleep(1);
 #else
-            carla_msleep(20);
+            carla_msleep(33);
 #endif
         }
     }

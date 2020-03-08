@@ -27,6 +27,8 @@
 #include "lv2/atom.h"
 #include "lv2/urid.h"
 
+#include <vector>
+
 CARLA_BRIDGE_UI_START_NAMESPACE
 
 /*!
@@ -161,6 +163,7 @@ protected:
 
     lib_t fLib;
     CarlaString fLibFilename;
+    std::vector<uint8_t> fBase64ReservedChunk;
 
     /*! @internal */
     bool msgReceived(const char* const msg) noexcept override;
