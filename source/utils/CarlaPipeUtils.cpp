@@ -659,6 +659,7 @@ void CarlaPipeCommon::idlePipe(const bool onlyOnce) noexcept
 
     for (;;)
     {
+        readSucess = false;
         const char* const msg = _readline(true, readSucess);
 
         if (msg == nullptr || ! readSucess)
@@ -1226,7 +1227,6 @@ const char* CarlaPipeCommon::_readline(const bool allocReturn, bool& readSucess)
     else if (pData->tmpStr.isEmpty() && ret != 1)
     {
         // some error
-        readSucess = false;
         return nullptr;
     }
 
@@ -1244,6 +1244,7 @@ const char* CarlaPipeCommon::_readlineblock(const bool allocReturn, const uint32
 
     for (;;)
     {
+        readSucess = false;
         const char* const msg = _readline(allocReturn, readSucess);
 
         if (readSucess)
@@ -1263,6 +1264,7 @@ const char* CarlaPipeCommon::_readlineblock(const bool allocReturn, const uint32
 
         for (;;)
         {
+            readSucess = false;
             const char* const msg = _readline(allocReturn, readSucess);
 
             if (readSucess)
