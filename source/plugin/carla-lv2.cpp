@@ -280,7 +280,16 @@ public:
                             lv2_atom_object_get(obj, fURIs.patchProperty, &property, 0);
                             CARLA_SAFE_ASSERT_CONTINUE(property != nullptr);
                             CARLA_SAFE_ASSERT_CONTINUE(property->type == fURIs.atomURID);
-                            CARLA_SAFE_ASSERT_CONTINUE(((const LV2_Atom_URID*)property)->body == fURIs.carlaFile);
+
+                            const LV2_URID urid = ((const LV2_Atom_URID*)property)->body;
+
+                            /*  */ if (std::strcmp(fDescriptor->label, "audiofile") == 0) {
+                                CARLA_SAFE_ASSERT_CONTINUE(urid == fURIs.carlaFileAudio);
+                            } else if (std::strcmp(fDescriptor->label, "midifile") == 0) {
+                                CARLA_SAFE_ASSERT_CONTINUE(urid == fURIs.carlaFileMIDI);
+                            } else {
+                                CARLA_SAFE_ASSERT_CONTINUE(urid == fURIs.carlaFile);
+                            }
 
                             // Get value.
                             const LV2_Atom* fileobj = NULL;

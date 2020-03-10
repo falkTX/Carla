@@ -1503,6 +1503,8 @@ protected:
         LV2_URID atomString;
         LV2_URID atomURID;
         LV2_URID carlaFile;
+        LV2_URID carlaFileAudio;
+        LV2_URID carlaFileMIDI;
         LV2_URID midiEvent;
         LV2_URID patchProperty;
         LV2_URID patchSet;
@@ -1530,6 +1532,8 @@ protected:
               atomString(0),
               atomURID(0),
               carlaFile(0),
+              carlaFileAudio(0),
+              carlaFileMIDI(0),
               midiEvent(0),
               patchProperty(0),
               patchSet(0),
@@ -1558,6 +1562,8 @@ protected:
             atomString         = uridMap->map(uridMap->handle, LV2_ATOM__String);
             atomURID           = uridMap->map(uridMap->handle, LV2_ATOM__URID);
             carlaFile          = uridMap->map(uridMap->handle, "http://kxstudio.sf.net/carla/file");
+            carlaFileAudio     = uridMap->map(uridMap->handle, "http://kxstudio.sf.net/carla/file/audio");
+            carlaFileMIDI      = uridMap->map(uridMap->handle, "http://kxstudio.sf.net/carla/file/midi");
             midiEvent          = uridMap->map(uridMap->handle, LV2_MIDI__MidiEvent);
             patchProperty      = uridMap->map(uridMap->handle, LV2_PATCH__property);
             patchSet           = uridMap->map(uridMap->handle, LV2_PATCH__Set);

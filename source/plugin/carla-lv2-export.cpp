@@ -114,6 +114,7 @@ static void writeManifestFile(PluginListManager& plm)
 
     text += "@prefix atom: <" LV2_ATOM_PREFIX "> .\n";
     text += "@prefix lv2:  <" LV2_CORE_PREFIX "> .\n";
+    text += "@prefix mod:  <http://moddevices.com/ns/mod#> .\n";
     text += "@prefix opts: <" LV2_OPTIONS_PREFIX "> .\n";
     text += "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n";
     text += "@prefix ui:   <" LV2_UI_PREFIX "> .\n";
@@ -166,6 +167,20 @@ static void writeManifestFile(PluginListManager& plm)
     text += "<http://kxstudio.sf.net/carla/file>\n";
     text += "    a lv2:Parameter ;\n";
     text += "    rdfs:label \"file\" ;\n";
+    text += "    rdfs:range atom:Path .\n";
+    text += "\n";
+
+    text += "<http://kxstudio.sf.net/carla/file/audio>\n";
+    text += "    a lv2:Parameter ;\n";
+    text += "    mod:fileTypes \"audiofiles,audioloops\" ;\n";
+    text += "    rdfs:label \"audio file\" ;\n";
+    text += "    rdfs:range atom:Path .\n";
+    text += "\n";
+
+    text += "<http://kxstudio.sf.net/carla/file/midi>\n";
+    text += "    a lv2:Parameter ;\n";
+    text += "    mod:fileTypes \"midi\" ;\n";
+    text += "    rdfs:label \"midi file\" ;\n";
     text += "    rdfs:range atom:Path .\n";
     text += "\n";
 
@@ -389,7 +404,14 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     }
 
     if (pluginDesc->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE)
-        text += "    patch:writable <http://kxstudio.sf.net/carla/file> ;\n\n";
+    {
+        /**/ if (pluginLabel == "audiofile")
+            text += "    patch:writable <http://kxstudio.sf.net/carla/file/audio> ;\n\n";
+        else if (pluginLabel == "midifile")
+            text += "    patch:writable <http://kxstudio.sf.net/carla/file/midi> ;\n\n";
+        else
+            text += "    patch:writable <http://kxstudio.sf.net/carla/file> ;\n\n";
+    }
 
     // -------------------------------------------------------------------
     // MIDI inputs
