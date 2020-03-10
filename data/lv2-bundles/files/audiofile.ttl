@@ -33,7 +33,7 @@
         lv2:name "Events Input" ;
     ] ;
 
-    patch:writable <http://kxstudio.sf.net/carla/file> ;
+    patch:writable <http://kxstudio.sf.net/carla/file/audio> ;
 
     lv2:port [
         a lv2:OutputPort, atom:AtomPort ;

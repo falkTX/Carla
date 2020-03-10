@@ -1,5 +1,6 @@
 @prefix atom: <http://lv2plug.in/ns/ext/atom#> .
 @prefix lv2:  <http://lv2plug.in/ns/lv2core#> .
+@prefix mod:  <http://moddevices.com/ns/mod#> .
 @prefix opts: <http://lv2plug.in/ns/ext/options#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .
@@ -19,3 +20,14 @@
     rdfs:label "file" ;
     rdfs:range atom:Path .
 
+<http://kxstudio.sf.net/carla/file/audio>
+    a lv2:Parameter ;
+    mod:fileTypes "audiofiles,audioloops" ;
+    rdfs:label "audio file" ;
+    rdfs:range atom:Path .
+
+<http://kxstudio.sf.net/carla/file/midi>
+    a lv2:Parameter ;
+    mod:fileTypes "midi" ;
+    rdfs:label "midi file" ;
+    rdfs:range atom:Path .
