@@ -374,14 +374,11 @@ class PatchScene(QGraphicsScene):
         self.m_mouse_rubberband = False
 
         if event.button() == Qt.MidButton:
-            event.accept()
-
             self.m_mid_button_down = False
 
             # Connection cut mode off
             if self.m_ctrl_down:
                 self.m_view.viewport().unsetCursor()
-            return
 
         QGraphicsScene.mouseReleaseEvent(self, event)
 

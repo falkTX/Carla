@@ -147,6 +147,8 @@ class CanvasPort(QGraphicsItem):
         QGraphicsItem.hoverLeaveEvent(self, event)
 
     def mousePressEvent(self, event):
+        if self.m_mouse_down:
+            self.handleMouseRelease()
         self.m_hover_item = None
         self.m_mouse_down = bool(event.button() == Qt.LeftButton)
         self.m_cursor_moving = False
@@ -209,7 +211,7 @@ class CanvasPort(QGraphicsItem):
 
         self.m_line_mov.updateLinePos(event.scenePos())
 
-    def mouseReleaseEvent(self, event):
+    def handleMouseRelease(self):
         if self.m_mouse_down:
             if self.m_line_mov is not None:
                 item = self.m_line_mov
@@ -265,6 +267,9 @@ class CanvasPort(QGraphicsItem):
         self.m_hover_item = None
         self.m_mouse_down = False
         self.m_cursor_moving = False
+
+    def mouseReleaseEvent(self, event):
+        self.handleMouseRelease()
         QGraphicsItem.mouseReleaseEvent(self, event)
 
     def contextMenuEvent(self, event):
