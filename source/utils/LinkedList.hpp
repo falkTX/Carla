@@ -1,6 +1,6 @@
 /*
  * High-level, templated, C++ doubly-linked list
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -224,14 +224,19 @@ public:
         _init();
     }
 
-    std::size_t count() const noexcept
+    inline std::size_t count() const noexcept
     {
         return fCount;
     }
 
-    bool isEmpty() const noexcept
+    inline bool isEmpty() const noexcept
     {
-        return (fCount == 0);
+        return fCount == 0;
+    }
+
+    inline bool isNotEmpty() const noexcept
+    {
+        return fCount != 0;
     }
 
     bool append(const T& value) noexcept
@@ -352,7 +357,7 @@ public:
     }
 
     // move data to a new list, and clear ourselves
-    bool moveTo(AbstractLinkedList<T>& list, const bool inTail = true) noexcept
+    virtual bool moveTo(AbstractLinkedList<T>& list, const bool inTail = true) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fCount > 0, false);
 

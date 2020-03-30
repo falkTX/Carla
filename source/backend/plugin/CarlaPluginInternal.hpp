@@ -310,32 +310,37 @@ struct CarlaPlugin::ProtectedData {
 
         struct Access {
             Access(PostRtEvents& e)
-              : cml(e.dataMutex),
-                data(e.data),
-                it(e.data.begin2()) {}
+              : data2(e.dataPool)
+            {
+                const CarlaMutexLocker cml(e.dataMutex);
+
+                if (e.data.isNotEmpty())
+                    e.data.moveTo(data2, true);
+            }
 
             ~Access()
             {
-                data.clear();
+                data2.clear();
             }
 
-            inline RtLinkedList<PluginPostRtEvent>::Itenerator& getDataIterator() noexcept
+            inline RtLinkedList<PluginPostRtEvent>::Itenerator getDataIterator() const noexcept
             {
-                return it;
+                return data2.begin2();
+            }
+
+            inline std::size_t isEmpty() const noexcept
+            {
+                return data2.isEmpty();
             }
 
         private:
-            const CarlaMutexLocker cml;
-            RtLinkedList<PluginPostRtEvent>& data;
-            RtLinkedList<PluginPostRtEvent>::Itenerator it;
+            RtLinkedList<PluginPostRtEvent> data2;
         };
 
     private:
-        RtLinkedList<PluginPostRtEvent>::Pool dataPool, dataPoolRT;
+        RtLinkedList<PluginPostRtEvent>::Pool dataPool;
         RtLinkedList<PluginPostRtEvent> data, dataPendingRT;
         CarlaMutex dataMutex;
-
-        // TESTING for thread-safety, remove later?
         CarlaMutex dataPendingMutex;
 
         CARLA_DECLARE_NON_COPY_CLASS(PostRtEvents)

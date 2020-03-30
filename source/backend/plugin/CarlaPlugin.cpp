@@ -2061,6 +2061,9 @@ void CarlaPlugin::idle()
 
     ProtectedData::PostRtEvents::Access rtEvents(pData->postRtEvents);
 
+    if (rtEvents.isEmpty())
+        return;
+
     for (RtLinkedList<PluginPostRtEvent>::Itenerator it = rtEvents.getDataIterator(); it.valid(); it.next())
     {
         const PluginPostRtEvent& event(it.getValue(kPluginPostRtEventFallback));

@@ -41,7 +41,8 @@ public:
             : kDataSize(sizeof(typename AbstractLinkedList<T>::Data)),
               fHandle(nullptr)
         {
-            resize(minPreallocated, maxPreallocated);
+            rtsafe_memory_pool_create(&fHandle, nullptr, kDataSize, minPreallocated, maxPreallocated);
+            CARLA_SAFE_ASSERT(fHandle != nullptr);
         }
 
         ~Pool() noexcept
@@ -68,18 +69,6 @@ public:
             CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr,);
 
             rtsafe_memory_pool_deallocate(fHandle, dataPtr);
-        }
-
-        void resize(const std::size_t minPreallocated, const std::size_t maxPreallocated) noexcept
-        {
-            if (fHandle != nullptr)
-            {
-                rtsafe_memory_pool_destroy(fHandle);
-                fHandle = nullptr;
-            }
-
-            rtsafe_memory_pool_create(&fHandle, nullptr, kDataSize, minPreallocated, maxPreallocated);
-            CARLA_SAFE_ASSERT(fHandle != nullptr);
         }
 
         bool operator==(const Pool& pool) const noexcept
@@ -180,17 +169,10 @@ public:
         return _add_sleepy(value, false);
     }
 
-    void resize(const std::size_t minPreallocated, const std::size_t maxPreallocated) noexcept
+    bool moveTo(AbstractLinkedList<T>& list, const bool inTail) noexcept override
     {
-        CARLA_SAFE_ASSERT(this->fCount == 0);
-        this->clear();
+        CARLA_SAFE_ASSERT_RETURN(((RtLinkedList&)list).fMemPool == fMemPool, false);
 
-        fMemPool.resize(minPreallocated, maxPreallocated);
-    }
-
-    bool moveTo(RtLinkedList<T>& list, const bool inTail) noexcept
-    {
-        // FIXME add some checks?
         return AbstractLinkedList<T>::moveTo(list, inTail);
     }
 
