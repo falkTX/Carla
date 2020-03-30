@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,13 +19,13 @@
 #include "vestige/vestige.h"
 
 #ifdef __WINE__
-#error This file is not meant to be used by wine!
+  #error This file is not meant to be used by wine!
 #endif
 #ifndef CARLA_OS_WIN
-#error This file is only meant to be used by mingw compilers!
+  #error This file is only meant to be used by mingw compilers!
 #endif
 #ifndef CARLA_PLUGIN_SYNTH
-#error CARLA_PLUGIN_SYNTH undefined
+  #error CARLA_PLUGIN_SYNTH undefined
 #endif
 
 typedef const AEffect* (__cdecl *MainCallback)(audioMasterCallback);

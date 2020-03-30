@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -65,7 +65,11 @@ static const int32_t kBaseUniqueID = CCONST('C', 'r', 'l', 'a');
 static const int32_t kVstMidiEventSize = static_cast<int32_t>(sizeof(VstMidiEvent));
 
 #ifdef CARLA_VST_SHELL
+# if CARLA_PLUGIN_SYNTH
 static const int32_t kShellUniqueID = CCONST('C', 'r', 'l', 's');
+# else
+static const int32_t kShellUniqueID = CCONST('C', 'r', 'l', 'F');
+# endif
 #else
 static const int32_t kNumParameters = 100;
 #endif
@@ -986,17 +990,17 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
 
            #else // CARLA_VST_SHELL
 
-           #  if defined(CARLA_PLUGIN_64CH)
+           # if defined(CARLA_PLUGIN_64CH)
             const char* const pluginLabel = "carlapatchbay64";
-           #  elif defined(CARLA_PLUGIN_32CH)
+           # elif defined(CARLA_PLUGIN_32CH)
             const char* const pluginLabel = "carlapatchbay32";
-           #  elif defined(CARLA_PLUGIN_16CH)
+           # elif defined(CARLA_PLUGIN_16CH)
             const char* const pluginLabel = "carlapatchbay16";
-           #  elif CARLA_PLUGIN_PATCHBAY
+           # elif CARLA_PLUGIN_PATCHBAY
             const char* const pluginLabel = "carlapatchbay";
-           #  else
+           # else
             const char* const pluginLabel = "carlarack";
-           #  endif
+           # endif
 
             for (LinkedList<const NativePluginDescriptor*>::Itenerator it = plm.descs.begin2(); it.valid(); it.next())
             {
@@ -1024,10 +1028,12 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
             else
                 effect->flags &= ~effFlagsHasEditor;
 
+            /* carla as plugin always has NATIVE_PLUGIN_IS_SYNTH set
             if (pluginDesc->hints & NATIVE_PLUGIN_IS_SYNTH)
                 effect->flags |= effFlagsIsSynth;
             else
                 effect->flags &= ~effFlagsIsSynth;
+            */
            #endif // CARLA_VST_SHELL
 
            #if CARLA_PLUGIN_SYNTH
@@ -1090,7 +1096,11 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
             if (validPlugin)
             {
                 const NativePluginDescriptor* const desc = pluginPtr->getDescriptor();
+               #if CARLA_PLUGIN_SYNTH
                 std::strncpy(cptr, desc->name, 32);
+               #else
+                std::snprintf(cptr, 32, "%s FX", desc->name);
+               #endif
             }
             else
             {
@@ -1142,7 +1152,11 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
             if (validPlugin)
             {
                 const NativePluginDescriptor* const desc = pluginPtr->getDescriptor();
+               #if CARLA_PLUGIN_SYNTH
                 std::strncpy(cptr, desc->label, 32);
+               #else
+                std::snprintf(cptr, 32, "%sFX", desc->label);
+               #endif
             }
             else
             {
@@ -1204,7 +1218,12 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
                 if (desc->midiIns > 1 || desc->midiOuts > 1)
                     continue;
 
+               #if CARLA_PLUGIN_SYNTH
                 std::strncpy(cptr, desc->label, 32);
+               #else
+                std::snprintf(cptr, 32, "%sFX", desc->label);
+               #endif
+
                 return effect->uniqueID;
             }
         }
