@@ -580,7 +580,7 @@ void CarlaPlugin::ProtectedData::Latency::recreateBuffers(const uint32_t newChan
 // ProtectedData::PostRtEvents
 
 CarlaPlugin::ProtectedData::PostRtEvents::PostRtEvents() noexcept
-    : dataPool(128, 128),
+    : dataPool(512, 512),
       data(dataPool),
       dataPendingRT(dataPool),
       dataMutex(),
