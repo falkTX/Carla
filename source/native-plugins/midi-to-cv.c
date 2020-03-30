@@ -220,7 +220,7 @@ static const char* midi2cv_get_buffer_port_name(NativePluginHandle handle, uint3
     case 1:
         return "Velocity";
     case 2:
-        return "Trigger";
+        return "Gate";
     default:
         return NULL;
     }
