@@ -54,6 +54,13 @@
 
 #define URI_CANVAS_ICON "http://kxstudio.sf.net/ns/canvas/icon"
 
+#define URI_MAIN_CLIENT_NAME "https://kx.studio/ns/carla/main-client-name"
+#define URI_PLUGIN_ICON      "https://kx.studio/ns/carla/plugin-icon"
+#define URI_PLUGIN_ID        "https://kx.studio/ns/carla/plugin-id"
+
+#define URI_TYPE_INTEGER "http://www.w3.org/2001/XMLSchema#integer"
+#define URI_TYPE_STRING  "text/plain"
+
 CARLA_BACKEND_START_NAMESPACE
 
 class CarlaEngineJack;
@@ -89,7 +96,7 @@ struct CarlaJackPortHints {
             if (jackbridge_get_property(uuid, JACKEY_SIGNAL_TYPE, &value, &type)
                 && value != nullptr
                 && type != nullptr
-                && std::strcmp(type, "text/plain") == 0)
+                && std::strcmp(type, URI_TYPE_STRING) == 0)
             {
                 ph.isCV  = (std::strcmp(value, "CV") == 0);
                 ph.isOSC = (std::strcmp(value, "OSC") == 0);
@@ -141,7 +148,7 @@ public:
             CARLA_SAFE_ASSERT_RETURN(jackClient != nullptr && jackPort != nullptr,);
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             if (const jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
-                jackbridge_set_property(jackClient, uuid, JACKEY_SIGNAL_TYPE, "AUDIO", "text/plain");
+                jackbridge_set_property(jackClient, uuid, JACKEY_SIGNAL_TYPE, "AUDIO", URI_TYPE_STRING);
 #endif
             break;
 
@@ -246,7 +253,7 @@ public:
             CARLA_SAFE_ASSERT_RETURN(jackClient != nullptr && jackPort != nullptr,);
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             if (const jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
-                jackbridge_set_property(jackClient, uuid, JACKEY_SIGNAL_TYPE, "CV", "text/plain");
+                jackbridge_set_property(jackClient, uuid, JACKEY_SIGNAL_TYPE, "CV", URI_TYPE_STRING);
 #endif
             break;
 
@@ -720,20 +727,28 @@ class CarlaEngineJackClient : public CarlaEngineClientForSubclassing,
 {
 public:
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-    CarlaEngineJackClient(const CarlaEngine& engine, EngineInternalGraph& egraph, CarlaPlugin* const plugin, jack_client_t* const jackClient)
+    CarlaEngineJackClient(const CarlaEngine& engine,
+                          EngineInternalGraph& egraph,
+                          CarlaPlugin* const plugin,
+                          const CarlaString& mainClientName,
+                          jack_client_t* const jackClient)
         : CarlaEngineClientForSubclassing(engine, egraph, plugin),
 #else
-    CarlaEngineJackClient(const CarlaEngine& engine, jack_client_t* const jackClient)
+    CarlaEngineJackClient(const CarlaEngine& engine,
+                          const CarlaString& mainClientName,
+                          jack_client_t* const jackClient)
         : CarlaEngineClientForSubclassing(engine),
 #endif
           fJackClient(jackClient),
-          fUseClient(engine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || engine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS),
+          fUseClient(engine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT ||
+                     engine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS),
           fAudioPorts(),
           fCVPorts(),
           fEventPorts(),
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
           fCVSourcePorts(fUseClient),
 #endif
+          fMainClientName(mainClientName),
           fPreRenameMutex(),
           fPreRenameConnections(),
           fPreRenamePluginId(),
@@ -816,15 +831,20 @@ public:
                     if (jackbridge_uuid_parse(uuidchar, &uuid))
                     {
                         jackbridge_set_property(fJackClient, uuid,
-                                                "https://kx.studio/ns/carla/plugin-id",
+                                                URI_MAIN_CLIENT_NAME,
+                                                fMainClientName,
+                                                URI_TYPE_STRING);
+
+                        jackbridge_set_property(fJackClient, uuid,
+                                                URI_PLUGIN_ID,
                                                 fPreRenamePluginId,
-                                                "http://www.w3.org/2001/XMLSchema#integer");
+                                                URI_TYPE_INTEGER);
 
                         if (fPreRenamePluginIcon.isNotEmpty())
                             jackbridge_set_property(fJackClient, uuid,
-                                                    "https://kx.studio/ns/carla/plugin-icon",
+                                                    URI_PLUGIN_ICON,
                                                     fPreRenamePluginIcon,
-                                                    "text/plain");
+                                                    URI_TYPE_STRING);
                     }
                 }
             }
@@ -1052,9 +1072,9 @@ public:
                 char buf[32];
                 std::snprintf(buf, 32, "%u", id);
                 jackbridge_set_property(fJackClient, uuid,
-                                        "https://kx.studio/ns/carla/plugin-id",
+                                        URI_PLUGIN_ID,
                                         buf,
-                                        "http://www.w3.org/2001/XMLSchema#integer");
+                                        URI_TYPE_INTEGER);
             }
         }
     }
@@ -1070,6 +1090,8 @@ private:
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CarlaEngineJackCVSourcePorts fCVSourcePorts;
 #endif
+
+    const CarlaString& fMainClientName;
 
     CarlaMutex      fPreRenameMutex;
     CarlaStringList fPreRenameConnections;
@@ -1149,17 +1171,17 @@ private:
                 char* type;
 
                 CARLA_SAFE_ASSERT_RETURN(jackbridge_get_property(uuid,
-                                                                 "https://kx.studio/ns/carla/plugin-id",
+                                                                 URI_PLUGIN_ID,
                                                                  &value,
                                                                  &type),);
                 CARLA_SAFE_ASSERT_RETURN(type != nullptr,);
-                CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, "http://www.w3.org/2001/XMLSchema#integer") == 0,);
+                CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, URI_TYPE_INTEGER) == 0,);
                 fPreRenamePluginId = value;
 
-                if (jackbridge_get_property(uuid, "https://kx.studio/ns/carla/plugin-icon", &value, &type))
+                if (jackbridge_get_property(uuid, URI_PLUGIN_ICON, &value, &type))
                 {
                     CARLA_SAFE_ASSERT_RETURN(type != nullptr,);
-                    CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, "text/plain") == 0,);
+                    CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, URI_TYPE_STRING) == 0,);
                     fPreRenamePluginIcon = value;
                 }
             }
@@ -1187,6 +1209,7 @@ public:
           fExternalPatchbayHost(true),
           fExternalPatchbayOsc(true),
           fFreewheel(false),
+          fClientName(),
 #ifdef BUILD_BRIDGE
           fIsRunning(false)
 #else
@@ -1324,6 +1347,8 @@ public:
             return false;
         }
 
+        fClientName = jackClientName;
+
         const EngineOptions& opts(pData->options);
 
         pData->bufferSize = jackbridge_get_buffer_size(fClient);
@@ -1389,11 +1414,11 @@ public:
 
                 if (tcp.isNotEmpty())
                     jackbridge_set_property(fClient, uuid,
-                                            "https://kx.studio/ns/carla/osc-tcp", tcp.buffer(), "text/plain");
+                                            "https://kx.studio/ns/carla/osc-tcp", tcp.buffer(), URI_TYPE_STRING);
 
                 if (tcp.isNotEmpty())
                     jackbridge_set_property(fClient, uuid,
-                                            "https://kx.studio/ns/carla/osc-udp", udp.buffer(), "text/plain");
+                                            "https://kx.studio/ns/carla/osc-udp", udp.buffer(), URI_TYPE_STRING);
 #endif
             }
         }
@@ -1491,6 +1516,7 @@ public:
         return true;
 #else
         stopThread(-1);
+        fClientName.clear();
         fPostPonedEvents.clear();
 
         CARLA_SAFE_ASSERT_RETURN_ERR(fClient != nullptr, "JACK Client is null");
@@ -1694,15 +1720,20 @@ public:
                     strBufId[23] = '\0';
 
                     jackbridge_set_property(client, uuid,
-                                            "https://kx.studio/ns/carla/plugin-id",
+                                            URI_MAIN_CLIENT_NAME,
+                                            fClientName,
+                                            URI_TYPE_STRING);
+
+                    jackbridge_set_property(client, uuid,
+                                            URI_PLUGIN_ID,
                                             strBufId,
-                                            "http://www.w3.org/2001/XMLSchema#integer");
+                                            URI_TYPE_INTEGER);
 
                     if (const char* const pluginIcon = plugin->getIconName())
                         jackbridge_set_property(client, uuid,
-                                                "https://kx.studio/ns/carla/plugin-icon",
+                                                URI_PLUGIN_ICON,
                                                 pluginIcon,
-                                                "text/plain");
+                                                URI_TYPE_STRING);
                 }
             }
 #else
@@ -1717,13 +1748,15 @@ public:
             jackbridge_set_latency_callback(client, carla_jack_latency_callback, this);
             jackbridge_set_process_callback(client, carla_jack_process_callback, this);
             jackbridge_on_shutdown(client, carla_jack_shutdown_callback, this);
+
+            fClientName = jackbridge_get_client_name(client);
 #endif
         }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-        return new CarlaEngineJackClient(*this, pData->graph, plugin, client);
+        return new CarlaEngineJackClient(*this, pData->graph, plugin, fClientName, client);
 #else
-        return new CarlaEngineJackClient(*this, client);
+        return new CarlaEngineJackClient(*this, fClientName, client);
 #endif
     }
 
@@ -1834,6 +1867,7 @@ public:
             {
                 // get new client name
                 uniqueName = jackbridge_get_client_name(jackClient);
+                fClientName = uniqueName;
 
                 // close client
                 client->closeForRename(jackClient, uniqueName);
@@ -2755,6 +2789,8 @@ private:
     bool fExternalPatchbayOsc;
     bool fFreewheel;
 
+    CarlaString fClientName;
+
     // -------------------------------------------------------------------
 
 #ifdef BUILD_BRIDGE
@@ -2797,31 +2833,49 @@ private:
         jack_uuid_t uuid;
         CARLA_SAFE_ASSERT_RETURN(jackbridge_uuid_parse(uuidstr, &uuid),);
 
+        bool clientBelongsToUs;
+
         {
             char* value = nullptr;
             char* type = nullptr;
 
-            if (! jackbridge_get_property(uuid, "https://kx.studio/ns/carla/plugin-id", &value, &type))
+            if (! jackbridge_get_property(uuid, URI_MAIN_CLIENT_NAME, &value, &type))
                 return;
 
             CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0',);
             CARLA_SAFE_ASSERT_RETURN(value != nullptr && value[0] != '\0',);
-            CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, "http://www.w3.org/2001/XMLSchema#integer") == 0,);
+            CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, URI_TYPE_STRING) == 0,);
 
-            pluginId = std::atoi(value);
-            icon     = PATCHBAY_ICON_PLUGIN;
+            clientBelongsToUs = fClientName == value;
         }
 
         {
             char* value = nullptr;
             char* type = nullptr;
 
-            if (! jackbridge_get_property(uuid, "https://kx.studio/ns/carla/plugin-icon", &value, &type))
+            if (! jackbridge_get_property(uuid, URI_PLUGIN_ID, &value, &type))
                 return;
 
             CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0',);
             CARLA_SAFE_ASSERT_RETURN(value != nullptr && value[0] != '\0',);
-            CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, "text/plain") == 0,);
+            CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, URI_TYPE_INTEGER) == 0,);
+
+            if (clientBelongsToUs)
+                pluginId = std::atoi(value);
+
+            icon = PATCHBAY_ICON_PLUGIN;
+        }
+
+        {
+            char* value = nullptr;
+            char* type = nullptr;
+
+            if (! jackbridge_get_property(uuid, URI_PLUGIN_ICON, &value, &type))
+                return;
+
+            CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0',);
+            CARLA_SAFE_ASSERT_RETURN(value != nullptr && value[0] != '\0',);
+            CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, URI_TYPE_STRING) == 0,);
 
             /**/ if (std::strcmp(value, "app") == 0)
                 icon = PATCHBAY_ICON_APPLICATION;
