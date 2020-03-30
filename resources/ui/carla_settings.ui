@@ -2775,8 +2775,11 @@ This mode is not available for VST plugins.</string>
             </item>
             <item>
              <widget class="QCheckBox" name="ch_exp_prevent_bad_behaviour">
+              <property name="toolTip">
+               <string>When enabled, Carla will try to prevent plugins from doing things that might mess up the audio or cause xruns, such as fork(), gtk_init() and similar.</string>
+              </property>
               <property name="text">
-               <string>Prevent plugins from doing bad stuff (needs restart)</string>
+               <string>Prevent unsafe calls from plugins (needs restart)</string>
               </property>
              </widget>
             </item>
@@ -2786,7 +2789,9 @@ This mode is not available for VST plugins.</string>
                <bool>false</bool>
               </property>
               <property name="toolTip">
-               <string>Whenever possible, run the plugins in bridge mode.</string>
+               <string>Run plugins in a separate process, so if they crash it does not affect Carla.
+Plugins get automatically deactivated in such cases.
+Reactvate them to start the process again, with the last saved state applied to it.</string>
               </property>
               <property name="text">
                <string>Run plugins in bridge mode when possible</string>
