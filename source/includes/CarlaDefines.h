@@ -191,7 +191,7 @@
 #define CARLA_SAFE_ASSERT_UINT2_CONTINUE(cond, v1, v2)    if (! (cond)) { carla_safe_assert_uint2(#cond, __FILE__, __LINE__, static_cast<uint>(v1), static_cast<uint>(v2)); continue; }
 #define CARLA_SAFE_ASSERT_UINT2_RETURN(cond, v1, v2, ret) if (! (cond)) { carla_safe_assert_uint2(#cond, __FILE__, __LINE__, static_cast<uint>(v1), static_cast<uint>(v2)); return ret; }
 
-#if defined(__GNUC__) && defined(CARLA_PROPER_CPP11_SUPPORT)
+#if defined(__GNUC__) && defined(CARLA_PROPER_CPP11_SUPPORT) && ! defined(__clang__)
 # define CARLA_CATCH_UNWIND catch (abi::__forced_unwind&) { throw; }
 # if __GNUC__ >= 6
 #  pragma GCC diagnostic push
