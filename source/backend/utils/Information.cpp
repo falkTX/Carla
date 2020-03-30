@@ -149,9 +149,7 @@ const char* const* carla_get_supported_file_extensions()
         "dll",
         "so",
 #endif
-#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
         "vst3",
-#endif
 
         // Audio files
 #ifdef HAVE_SNDFILE
