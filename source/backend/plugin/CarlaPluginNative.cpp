@@ -997,6 +997,8 @@ public:
                 }
             }
         }
+
+        CarlaPlugin::idle();
     }
 
     void uiIdle() override
