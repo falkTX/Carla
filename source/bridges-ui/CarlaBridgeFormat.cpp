@@ -253,6 +253,7 @@ bool CarlaBridgeFormat::msgReceived(const char* const msg) noexcept
     if (std::strcmp(msg, "show") == 0)
     {
         fToolkit->show();
+        fToolkit->focus();
         return true;
     }
 
