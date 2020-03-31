@@ -271,7 +271,7 @@ download_carla_extras()
 {
 
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
-CARLA_GIT_VER="2.1~rc1+git20200116"
+CARLA_GIT_VER="2.1~rc1+git20200331"
 
 cat <<EOF | sudo chroot ${CHROOT_DIR}
 set -e
