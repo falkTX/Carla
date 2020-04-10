@@ -40,9 +40,6 @@
 #undef VST_FORCE_DEPRECATED
 #define VST_FORCE_DEPRECATED 0
 
-#undef kEffectMagic
-#define kEffectMagic (CCONST( 'V', 's', 't', 'P' ))
-
 using water::ByteOrder;
 
 CARLA_BACKEND_START_NAMESPACE
@@ -529,6 +526,13 @@ public:
                 if (dispatcher(effEditOpen, 0, value, fUI.window->getPtr()) != 0 || true)
                 {
                     fUI.isOpen = true;
+
+                    // pass ui scale to plugin
+                    dispatcher(effVendorSpecific,
+                               CCONST('P', 'r', 'e', 'S'),
+                               CCONST('A', 'e', 'C', 's'),
+                               nullptr,
+                               pData->engine->getOptions().uiScale);
 
                     ERect* vstRect = nullptr;
                     dispatcher(effEditGetRect, 0, 0, &vstRect);

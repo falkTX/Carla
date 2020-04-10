@@ -389,10 +389,12 @@ public:
         {
             if (fWindow == nullptr)
             {
+                const EngineOptions& opts(pData->engine->getOptions());
+
                 juce::String uiName(pData->name);
                 uiName += " (GUI)";
 
-                fWindow = new JucePluginWindow(pData->engine->getOptions().frontendWinId);
+                fWindow = new JucePluginWindow(opts.frontendWinId, opts.uiScale);
                 fWindow->setName(uiName);
             }
 

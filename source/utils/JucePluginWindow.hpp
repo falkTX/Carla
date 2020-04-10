@@ -36,10 +36,11 @@ namespace juce {
 class JucePluginWindow : public DialogWindow
 {
 public:
-    JucePluginWindow(const uintptr_t parentId)
+    JucePluginWindow(const uintptr_t parentId, const float scale)
         : DialogWindow("JucePluginWindow", Colour(50, 50, 200), true, false),
           fClosed(false),
-          fTransientId(parentId)
+          fTransientId(parentId),
+          fScale(scale)
     {
         setVisible(false);
         //setAlwaysOnTop(true);
@@ -89,9 +90,15 @@ protected:
         return true;
     }
 
+    float getDesktopScaleFactor() const override
+    {
+        return fScale;
+    }
+
 private:
     volatile bool fClosed;
     const uintptr_t fTransientId;
+    float fScale;
 
     void setTransient()
     {
