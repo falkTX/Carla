@@ -2426,6 +2426,7 @@ class HostWindow(QMainWindow):
 
         if QT_VERSION >= 0x50600:
             self.host.set_engine_option(ENGINE_OPTION_FRONTEND_UI_SCALE, int(self.devicePixelRatioF() * 1000), "")
+            print("Frontend pixel ratio is", self.devicePixelRatioF())
 
         # set our gui as parent for all plugins UIs
         if self.host.manageUIs and not (self.host.isControl or self.host.isPlugin):
