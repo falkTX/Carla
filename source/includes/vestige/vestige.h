@@ -38,17 +38,10 @@
 # define __cdecl
 #endif
 
-#ifdef WORDS_BIGENDIAN
-#define CCONST(a, b, c, d) ( ( ( (int) a ) << 0  ) | \
-                             ( ( (int) b ) << 8  ) | \
-                             ( ( (int) c ) << 16 ) | \
-                             ( ( (int) d ) << 24 ) )
-#else
-#define CCONST(a, b, c, d) ( ( ( (int) a ) << 24 ) | \
-                             ( ( (int) b ) << 16 ) | \
-                             ( ( (int) c ) << 8  ) | \
-                             ( ( (int) d ) << 0  ) )
-#endif
+#define CCONST(a, b, c, d)( ( ( (int) a ) << 24 ) |		\
+				( ( (int) b ) << 16 ) |		\
+				( ( (int) c ) << 8 ) |		\
+				( ( (int) d ) << 0 ) )
 
 #define audioMasterAutomate 0
 #define audioMasterVersion 1
