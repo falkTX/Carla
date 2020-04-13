@@ -2232,6 +2232,9 @@ const char* carla_get_host_osc_url_tcp(CarlaHostHandle handle)
     return notAvailable;
 #else
     return gNullCharPtr;
+
+    // unused
+    (void)handle;
 #endif
 }
 
@@ -2257,6 +2260,9 @@ const char* carla_get_host_osc_url_udp(CarlaHostHandle handle)
     return notAvailable;
 #else
     return gNullCharPtr;
+
+    // unused
+    (void)handle;
 #endif
 }
 
