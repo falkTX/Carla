@@ -1054,6 +1054,7 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
     CarlaString cName;
     CarlaString cProduct;
     CarlaString cVendor;
+    uint category;
     LinkedList<intptr_t> uniqueIds;
 
     if (isShell)
@@ -1121,6 +1122,37 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
             cVendor = strBuf;
         else
             cVendor.clear();
+
+        // get category
+        const intptr_t effCategory = effect->dispatcher(effect, effGetPlugCategory, 0, 0, NULL, 0.0f);
+        switch (effCategory)
+        {
+        case kPlugCategSynth:
+            category = PLUGIN_CATEGORY_SYNTH;
+            break;
+        case kPlugCategAnalysis:
+            category = PLUGIN_CATEGORY_UTILITY;
+            break;
+        case kPlugCategMastering:
+            category = PLUGIN_CATEGORY_DYNAMICS;
+            break;
+        case kPlugCategRoomFx:
+            category = PLUGIN_CATEGORY_DELAY;
+            break;
+        case kPlugCategRestoration:
+            category = PLUGIN_CATEGORY_UTILITY;
+            break;
+        case kPlugCategGenerator:
+            category = PLUGIN_CATEGORY_SYNTH;
+            break;
+        default:
+            if (effect->flags & effFlagsIsSynth)
+                category = PLUGIN_CATEGORY_SYNTH;
+            else
+                category = PLUGIN_CATEGORY_NONE;
+            break;
+        }
+
 
         // get everything else
         uint hints = 0x0;
@@ -1256,6 +1288,7 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
         DISCOVERY_OUT("init", "-----------");
         DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("hints", hints);
+        DISCOVERY_OUT("category", category);
         DISCOVERY_OUT("name", cName.buffer());
         DISCOVERY_OUT("label", cProduct.buffer());
         DISCOVERY_OUT("maker", cVendor.buffer());
