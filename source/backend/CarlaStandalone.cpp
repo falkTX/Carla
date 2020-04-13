@@ -458,7 +458,7 @@ bool carla_engine_close(CarlaHostHandle handle)
 
 void carla_engine_idle(CarlaHostHandle handle)
 {
-    CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr && handle->isStandalone,);
 
     handle->engine->idle();
 
