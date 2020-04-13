@@ -32,6 +32,7 @@ OBJS = \
 	$(OBJDIR)/_data.cpp.o \
 	$(OBJDIR)/audio-gain.c.o \
 	$(OBJDIR)/bypass.c.o \
+	$(OBJDIR)/cv-to-audio.c.o \
 	$(OBJDIR)/lfo.c.o \
 	$(OBJDIR)/midi-channel-filter.c.o \
 	$(OBJDIR)/midi-channel-ab.c.o \

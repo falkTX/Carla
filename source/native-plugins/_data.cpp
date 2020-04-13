@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -82,6 +82,26 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS_WITHOUTCV
+},
+{
+    /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
+    /* hints     */ NATIVE_PLUGIN_IS_RTSAFE,
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
+    /* audioIns  */ 0,
+    /* audioOuts */ 1,
+    /* midiIns   */ 0,
+    /* midiOuts  */ 0,
+    /* paramIns  */ 1,
+    /* paramOuts */ 0,
+    /* name      */ "CV to Audio",
+    /* label     */ "cv2audio",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    DESCFUNCS_WITHCV,
+    /* cvIns      */ 1,
+    /* cvOuts     */ 0,
+    /* bufnamefn  */ nullptr,
+    /* bufrangefn */ nullptr
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,

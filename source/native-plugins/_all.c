@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,6 +23,7 @@
 // Simple plugins
 extern void carla_register_native_plugin_audiogain(void);
 extern void carla_register_native_plugin_bypass(void);
+extern void carla_register_native_plugin_cv2audio(void);
 extern void carla_register_native_plugin_lfo(void);
 extern void carla_register_native_plugin_midi2cv(void);
 extern void carla_register_native_plugin_midichanab(void);
@@ -61,6 +62,7 @@ void carla_register_all_native_plugins(void)
     // Simple plugins
     carla_register_native_plugin_audiogain();
     carla_register_native_plugin_bypass();
+    carla_register_native_plugin_cv2audio();
     carla_register_native_plugin_lfo();
     carla_register_native_plugin_midi2cv();
     carla_register_native_plugin_midichanab();
