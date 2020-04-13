@@ -2962,7 +2962,7 @@ public:
         pData->extraHints = 0x0;
 
         // check initial latency
-        findInitialLatencyValue(aIns, aOuts);
+        findInitialLatencyValue(aIns, cvIns, aOuts, cvOuts);
 
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
@@ -2976,7 +2976,10 @@ public:
         carla_debug("CarlaPluginLV2::reload() - end");
     }
 
-    void findInitialLatencyValue(const uint32_t aIns, const uint32_t aOuts) const
+    void findInitialLatencyValue(const uint32_t aIns,
+                                 const uint32_t cvIns,
+                                 const uint32_t aOuts,
+                                 const uint32_t cvOuts) const
     {
         if (fLatencyIndex < 0)
             return;
@@ -2984,25 +2987,49 @@ public:
         // we need to pre-run the plugin so it can update its latency control-port
         const uint32_t bufferSize = static_cast<uint32_t>(fLv2Options.nominalBufferSize);
 
-        float tmpIn [(aIns > 0)  ? aIns  : 1][bufferSize];
-        float tmpOut[(aOuts > 0) ? aOuts : 1][bufferSize];
+        float tmpIn [( aIns+cvIns  > 0) ?  aIns+cvIns  : 1][bufferSize];
+        float tmpOut[(aOuts+cvOuts > 0) ? aOuts+cvOuts : 1][bufferSize];
 
-        for (uint32_t j=0; j < aIns; ++j)
         {
-            carla_zeroFloats(tmpIn[j], bufferSize);
+            uint32_t i=0;
+            for (; i < aIns; ++i)
+            {
+                carla_zeroFloats(tmpIn[i], bufferSize);
 
-            try {
-                fDescriptor->connect_port(fHandle, pData->audioIn.ports[j].rindex, tmpIn[j]);
-            } CARLA_SAFE_EXCEPTION("LV2 connect_port latency input");
+                try {
+                    fDescriptor->connect_port(fHandle, pData->audioIn.ports[i].rindex, tmpIn[i]);
+                } CARLA_SAFE_EXCEPTION("LV2 connect_port latency audio input");
+            }
+
+            for (uint32_t j=0; j < cvIns; ++i, ++j)
+            {
+                carla_zeroFloats(tmpIn[i], bufferSize);
+
+                try {
+                    fDescriptor->connect_port(fHandle, pData->cvIn.ports[j].rindex, tmpIn[i]);
+                } CARLA_SAFE_EXCEPTION("LV2 connect_port latency cv input");
+            }
         }
 
-        for (uint32_t j=0; j < aOuts; ++j)
         {
-            carla_zeroFloats(tmpOut[j], bufferSize);
+            uint32_t i=0;
+            for (; i < aOuts; ++i)
+            {
+                carla_zeroFloats(tmpOut[i], bufferSize);
 
-            try {
-                fDescriptor->connect_port(fHandle, pData->audioOut.ports[j].rindex, tmpOut[j]);
-            } CARLA_SAFE_EXCEPTION("LV2 connect_port latency output");
+                try {
+                    fDescriptor->connect_port(fHandle, pData->audioOut.ports[i].rindex, tmpOut[i]);
+                } CARLA_SAFE_EXCEPTION("LV2 connect_port latency audio output");
+            }
+
+            for (uint32_t j=0; j < cvOuts; ++i, ++j)
+            {
+                carla_zeroFloats(tmpOut[i], bufferSize);
+
+                try {
+                    fDescriptor->connect_port(fHandle, pData->cvOut.ports[j].rindex, tmpOut[i]);
+                } CARLA_SAFE_EXCEPTION("LV2 connect_port latency cv output");
+            }
         }
 
         if (fDescriptor->activate != nullptr)
