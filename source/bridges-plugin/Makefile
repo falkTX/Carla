@@ -161,7 +161,7 @@ LIBS_native        += $(MODULEDIR)/dgl.a
 endif
 
 ifeq ($(WIN32),true)
-EXTRA_LINK_FLAGS   += -lole32 -mwindows
+EXTRA_LINK_FLAGS   += -lole32 -lssp -mwindows
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
