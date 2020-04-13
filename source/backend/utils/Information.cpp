@@ -66,7 +66,7 @@ const char* carla_get_complete_license_text()
         "<li>DSSI plugin support</li>"
         "<li>LV2 plugin support</li>"
 #if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-        "<li>VST2/2 plugin support (using Juce)</li>"
+        "<li>VST2/3 plugin support (using Juce)</li>"
 #else
         "<li>VST2 plugin support (using VeSTige header by Javier Serrano Polo)</li>"
 #endif
