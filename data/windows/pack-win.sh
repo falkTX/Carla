@@ -33,7 +33,7 @@ fi
 
 source data/windows/common.env
 
-PKG_FOLDER="Carla_2.1-RC2-win${ARCH}"
+PKG_FOLDER="Carla_2.1-win${ARCH}"
 
 export WIN32=true
 

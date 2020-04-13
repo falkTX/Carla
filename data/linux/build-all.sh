@@ -28,8 +28,8 @@ source common.env
 CHROOT_CARLA_DIR="/tmp/carla-src"
 
 # used for downloading packages from kxstudio repos, in order to get lv2-gtk3 and windows bridges
-CARLA_GIT_VER="2.1~rc1+git20200116"
-PKGS_NUM="20200116"
+CARLA_GIT_VER="2.1~rc1+git20200331"
+PKGS_NUM="20200331"
 
 # ---------------------------------------------------------------------------------------------------------------------
 # function to remove old stuff
@@ -504,7 +504,7 @@ EOF
 
 if [ -z "${SOURCED_BY_DOCKER}" ]; then
     # name of final dir and xz file, needed only by chroot_pack_carla
-    export PKG_FOLDER="Carla_2.1-RC2-linux"
+    export PKG_FOLDER="Carla_2.1-linux"
 
     # cleanup
     prepare
