@@ -1649,8 +1649,8 @@ class HostWindow(QMainWindow):
             portType    = patchcanvas.PORT_TYPE_AUDIO_JACK
             isAlternate = False
         elif portFlags & PATCHBAY_PORT_TYPE_CV:
-            portType    = patchcanvas.PORT_TYPE_AUDIO_JACK
-            isAlternate = True
+            portType    = patchcanvas.PORT_TYPE_PARAMETER
+            isAlternate = False
         elif portFlags & PATCHBAY_PORT_TYPE_MIDI:
             portType    = patchcanvas.PORT_TYPE_MIDI_JACK
             isAlternate = False

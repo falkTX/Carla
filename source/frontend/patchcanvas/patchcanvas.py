@@ -104,7 +104,7 @@ class CanvasObject(QObject):
         except:
             return
 
-        for port_type in (PORT_TYPE_AUDIO_JACK, PORT_TYPE_MIDI_JACK, PORT_TYPE_MIDI_ALSA):
+        for port_type in (PORT_TYPE_AUDIO_JACK, PORT_TYPE_MIDI_JACK, PORT_TYPE_MIDI_ALSA, PORT_TYPE_PARAMETER):
             source_ports = sources[port_type]
             target_ports = targets[port_type]
 

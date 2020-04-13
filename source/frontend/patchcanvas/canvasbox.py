@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # PatchBay Canvas engine using QGraphicsView/Scene
-# Copyright (C) 2010-2019 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2010-2020 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -316,7 +316,7 @@ class CanvasBox(QGraphicsItem):
             port_spacing = canvas.theme.port_height + canvas.theme.port_spacing
 
             # Get Max Box Width, vertical ports re-positioning
-            port_types = [PORT_TYPE_AUDIO_JACK, PORT_TYPE_MIDI_JACK, PORT_TYPE_MIDI_ALSA, PORT_TYPE_PARAMETER]
+            port_types = (PORT_TYPE_AUDIO_JACK, PORT_TYPE_MIDI_JACK, PORT_TYPE_MIDI_ALSA, PORT_TYPE_PARAMETER)
             last_in_type = last_out_type = PORT_TYPE_NULL
             last_in_pos = last_out_pos = canvas.theme.box_header_height + canvas.theme.box_header_spacing
 
@@ -403,6 +403,7 @@ class CanvasBox(QGraphicsItem):
             PORT_TYPE_AUDIO_JACK: [],
             PORT_TYPE_MIDI_JACK: [],
             PORT_TYPE_MIDI_ALSA: [],
+            PORT_TYPE_PARAMETER: [],
         }
         for port in canvas.port_list:
             if port.group_id != self.m_group_id:
@@ -426,6 +427,7 @@ class CanvasBox(QGraphicsItem):
                     PORT_TYPE_AUDIO_JACK: [],
                     PORT_TYPE_MIDI_JACK: [],
                     PORT_TYPE_MIDI_ALSA: [],
+                    PORT_TYPE_PARAMETER: [],
                 }
 
                 for port in canvas.port_list:
