@@ -1,6 +1,6 @@
 /*
  * Thread-safe fftw
- * Copyright (C) 2018-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2018-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -31,36 +31,12 @@ class ThreadSafeFFTW
 public:
     typedef void (*void_func)(void);
 
-    struct Deinitializer {
-        Deinitializer(ThreadSafeFFTW& s)
-            : tsfftw(s) {}
-
-        ~Deinitializer()
-        {
-            tsfftw.deinit();
-        }
-
-        ThreadSafeFFTW& tsfftw;
-    };
-
     ThreadSafeFFTW()
-        : initialized(false),
-          libfftw3(nullptr),
+        : libfftw3(nullptr),
           libfftw3f(nullptr),
           libfftw3l(nullptr),
-          libfftw3q(nullptr) {}
-
-    ~ThreadSafeFFTW()
+          libfftw3q(nullptr)
     {
-        CARLA_SAFE_ASSERT(libfftw3 == nullptr);
-    }
-
-    void init()
-    {
-        if (initialized)
-            return;
-        initialized = true;
-
         if ((libfftw3 = lib_open("libfftw3_threads.so.3")) != nullptr)
             if (const void_func func = lib_symbol<void_func>(libfftw3, "fftw_make_planner_thread_safe"))
                 func();
@@ -78,12 +54,8 @@ public:
                 func();
     }
 
-    void deinit()
+    ~ThreadSafeFFTW()
     {
-        if (! initialized)
-            return;
-        initialized = false;
-
         if (libfftw3 != nullptr)
         {
             lib_close(libfftw3);
@@ -110,7 +82,6 @@ public:
     }
 
 private:
-    bool initialized;
     lib_t libfftw3;
     lib_t libfftw3f;
     lib_t libfftw3l;

@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Bridge Plugin
- * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -129,10 +129,11 @@ static void initSignalHandler()
 // -------------------------------------------------------------------------
 
 static String gProjectFilename;
+static CarlaHostHandle gHostHandle;
 
 static void gIdle()
 {
-    carla_engine_idle();
+    carla_engine_idle(gHostHandle);
 
     if (gSaveNow)
     {
@@ -140,8 +141,8 @@ static void gIdle()
 
         if (gProjectFilename.isNotEmpty())
         {
-            if (! carla_save_plugin_state(0, gProjectFilename.toRawUTF8()))
-                carla_stderr("Plugin preset save failed, error was:\n%s", carla_get_last_error());
+            if (! carla_save_plugin_state(gHostHandle, 0, gProjectFilename.toRawUTF8()))
+                carla_stderr("Plugin preset save failed, error was:\n%s", carla_get_last_error(gHostHandle));
         }
     }
 }
@@ -210,11 +211,12 @@ public:
         carla_debug("CarlaBridgePlugin::CarlaBridgePlugin(%s, \"%s\", %s, %s, %s, %s)",
                     bool2str(useBridge), clientName, audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
 
-        carla_set_engine_callback(callback, this);
+        carla_set_engine_callback(gHostHandle, callback, this);
 
         if (useBridge)
         {
-            carla_engine_init_bridge(audioPoolBaseName,
+            carla_engine_init_bridge(gHostHandle,
+                                     audioPoolBaseName,
                                      rtClientBaseName,
                                      nonRtClientBaseName,
                                      nonRtServerBaseName,
@@ -222,14 +224,14 @@ public:
         }
         else if (std::getenv("CARLA_BRIDGE_DUMMY") != nullptr)
         {
-            carla_engine_init("Dummy", clientName);
+            carla_engine_init(gHostHandle, "Dummy", clientName);
         }
         else
         {
-            carla_engine_init("JACK", clientName);
+            carla_engine_init(gHostHandle, "JACK", clientName);
         }
 
-        fEngine = carla_get_engine();
+        fEngine = carla_get_engine_from_handle(gHostHandle);
     }
 
     ~CarlaBridgePlugin()
@@ -237,7 +239,7 @@ public:
         carla_debug("CarlaBridgePlugin::~CarlaBridgePlugin()");
 
         if (! fUsingExec)
-            carla_engine_close();
+            carla_engine_close(gHostHandle);
     }
 
     bool isOk() const noexcept
@@ -254,7 +256,7 @@ public:
 
         if (! useBridge)
         {
-            const CarlaPluginInfo* const pInfo(carla_get_plugin_info(0));
+            const CarlaPluginInfo* const pInfo = carla_get_plugin_info(gHostHandle, 0);
             CARLA_SAFE_ASSERT_RETURN(pInfo != nullptr,);
 
             gProjectFilename  = CharPointer_UTF8(pInfo->name);
@@ -265,10 +267,10 @@ public:
 
             if (File(gProjectFilename).existsAsFile())
             {
-                if (carla_load_plugin_state(0, gProjectFilename.toRawUTF8()))
+                if (carla_load_plugin_state(gHostHandle, 0, gProjectFilename.toRawUTF8()))
                     carla_stdout("Plugin state loaded successfully");
                 else
-                    carla_stderr("Plugin state load failed, error was:\n%s", carla_get_last_error());
+                    carla_stderr("Plugin state load failed, error was:\n%s", carla_get_last_error(gHostHandle));
             }
             else
             {
@@ -299,7 +301,7 @@ public:
         }
 #endif
 
-        carla_engine_close();
+        carla_engine_close(gHostHandle);
     }
 
     // ---------------------------------------------------------------------
@@ -621,34 +623,38 @@ int main(int argc, char* argv[])
     int ret;
 
     {
+        gHostHandle = carla_standalone_host_init();
+
         CarlaBridgePlugin bridge(useBridge, clientName,
                                  audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
 
         if (! bridge.isOk())
         {
-            carla_stderr("Failed to init engine, error was:\n%s", carla_get_last_error());
+            carla_stderr("Failed to init engine, error was:\n%s", carla_get_last_error(gHostHandle));
             return 1;
         }
 
         // -----------------------------------------------------------------
         // Init plugin
 
-        if (carla_add_plugin(btype, itype, file.getFullPathName().toRawUTF8(), name, label, uniqueId, extraStuff, 0x0))
+        if (carla_add_plugin(gHostHandle,
+                             btype, itype,
+                             file.getFullPathName().toRawUTF8(), name, label, uniqueId, extraStuff, 0x0))
         {
             ret = 0;
 
             if (! useBridge)
             {
-                carla_set_active(0, true);
+                carla_set_active(gHostHandle, 0, true);
 
-                if (const CarlaPluginInfo* const pluginInfo = carla_get_plugin_info(0))
+                if (const CarlaPluginInfo* const pluginInfo = carla_get_plugin_info(gHostHandle, 0))
                 {
                     if (pluginInfo->hints & CarlaBackend::PLUGIN_HAS_CUSTOM_UI)
                     {
 #ifdef HAVE_X11
                         if (std::getenv("DISPLAY") != nullptr)
 #endif
-                            carla_show_custom_ui(0, true);
+                            carla_show_custom_ui(gHostHandle, 0, true);
                     }
                 }
             }
@@ -659,7 +665,7 @@ int main(int argc, char* argv[])
         {
             ret = 1;
 
-            const char* const lastError(carla_get_last_error());
+            const char* const lastError(carla_get_last_error(gHostHandle));
             carla_stderr("Plugin failed to load, error was:\n%s", lastError);
 
             if (useBridge)

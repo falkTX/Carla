@@ -19,7 +19,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from ctypes import *
 from platform import architecture
 from sys import platform, maxsize
@@ -1483,7 +1483,6 @@ else:
 # Carla Host object (Meta)
 
 class CarlaHostMeta(object):
-#class CarlaHostMeta(object, metaclass=ABCMeta):
     def __init__(self):
         object.__init__(self)
 
@@ -2550,305 +2549,310 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_get_engine_driver_count.argtypes = None
         self.lib.carla_get_engine_driver_count.restype = c_uint
 
-        self.lib.carla_get_engine_driver_name.argtypes = [c_uint]
+        self.lib.carla_get_engine_driver_name.argtypes = (c_uint,)
         self.lib.carla_get_engine_driver_name.restype = c_char_p
 
-        self.lib.carla_get_engine_driver_device_names.argtypes = [c_uint]
+        self.lib.carla_get_engine_driver_device_names.argtypes = (c_uint,)
         self.lib.carla_get_engine_driver_device_names.restype = POINTER(c_char_p)
 
-        self.lib.carla_get_engine_driver_device_info.argtypes = [c_uint, c_char_p]
+        self.lib.carla_get_engine_driver_device_info.argtypes = (c_uint, c_char_p)
         self.lib.carla_get_engine_driver_device_info.restype = POINTER(EngineDriverDeviceInfo)
 
-        self.lib.carla_show_engine_driver_device_control_panel.argtypes = [c_uint, c_char_p]
+        self.lib.carla_show_engine_driver_device_control_panel.argtypes = (c_uint, c_char_p)
         self.lib.carla_show_engine_driver_device_control_panel.restype = c_bool
 
-        self.lib.carla_engine_init.argtypes = [c_char_p, c_char_p]
+        self.lib.carla_standalone_host_init.argtypes = None
+        self.lib.carla_standalone_host_init.restype = c_void_p
+
+        self.lib.carla_engine_init.argtypes = (c_void_p, c_char_p, c_char_p)
         self.lib.carla_engine_init.restype = c_bool
 
-        self.lib.carla_engine_close.argtypes = None
+        self.lib.carla_engine_close.argtypes = (c_void_p,)
         self.lib.carla_engine_close.restype = c_bool
 
-        self.lib.carla_engine_idle.argtypes = None
+        self.lib.carla_engine_idle.argtypes = (c_void_p,)
         self.lib.carla_engine_idle.restype = None
 
-        self.lib.carla_is_engine_running.argtypes = None
+        self.lib.carla_is_engine_running.argtypes = (c_void_p,)
         self.lib.carla_is_engine_running.restype = c_bool
 
-        self.lib.carla_get_runtime_engine_info.argtypes = None
+        self.lib.carla_get_runtime_engine_info.argtypes = (c_void_p,)
         self.lib.carla_get_runtime_engine_info.restype = POINTER(CarlaRuntimeEngineInfo)
 
-        self.lib.carla_get_runtime_engine_driver_device_info.argtypes = None
+        self.lib.carla_get_runtime_engine_driver_device_info.argtypes = (c_void_p,)
         self.lib.carla_get_runtime_engine_driver_device_info.restype = POINTER(CarlaRuntimeEngineDriverDeviceInfo)
 
-        self.lib.carla_set_engine_buffer_size_and_sample_rate.argtypes = [c_uint, c_double]
+        self.lib.carla_set_engine_buffer_size_and_sample_rate.argtypes = (c_void_p, c_uint, c_double)
         self.lib.carla_set_engine_buffer_size_and_sample_rate.restype = c_bool
 
-        self.lib.carla_show_engine_device_control_panel.argtypes = None
+        self.lib.carla_show_engine_device_control_panel.argtypes = (c_void_p,)
         self.lib.carla_show_engine_device_control_panel.restype = c_bool
 
-        self.lib.carla_clear_engine_xruns.argtypes = None
+        self.lib.carla_clear_engine_xruns.argtypes = (c_void_p,)
         self.lib.carla_clear_engine_xruns.restype = None
 
-        self.lib.carla_cancel_engine_action.argtypes = None
+        self.lib.carla_cancel_engine_action.argtypes = (c_void_p,)
         self.lib.carla_cancel_engine_action.restype = None
 
-        self.lib.carla_set_engine_about_to_close.argtypes = None
+        self.lib.carla_set_engine_about_to_close.argtypes = (c_void_p,)
         self.lib.carla_set_engine_about_to_close.restype = c_bool
 
-        self.lib.carla_set_engine_callback.argtypes = [EngineCallbackFunc, c_void_p]
+        self.lib.carla_set_engine_callback.argtypes = (c_void_p, EngineCallbackFunc, c_void_p)
         self.lib.carla_set_engine_callback.restype = None
 
-        self.lib.carla_set_engine_option.argtypes = [c_enum, c_int, c_char_p]
+        self.lib.carla_set_engine_option.argtypes = (c_void_p, c_enum, c_int, c_char_p)
         self.lib.carla_set_engine_option.restype = None
 
-        self.lib.carla_set_file_callback.argtypes = [FileCallbackFunc, c_void_p]
+        self.lib.carla_set_file_callback.argtypes = (c_void_p, FileCallbackFunc, c_void_p)
         self.lib.carla_set_file_callback.restype = None
 
-        self.lib.carla_load_file.argtypes = [c_char_p]
+        self.lib.carla_load_file.argtypes = (c_void_p, c_char_p)
         self.lib.carla_load_file.restype = c_bool
 
-        self.lib.carla_load_project.argtypes = [c_char_p]
+        self.lib.carla_load_project.argtypes = (c_void_p, c_char_p)
         self.lib.carla_load_project.restype = c_bool
 
-        self.lib.carla_save_project.argtypes = [c_char_p]
+        self.lib.carla_save_project.argtypes = (c_void_p, c_char_p)
         self.lib.carla_save_project.restype = c_bool
 
-        self.lib.carla_clear_project_filename.argtypes = None
+        self.lib.carla_clear_project_filename.argtypes = (c_void_p,)
         self.lib.carla_clear_project_filename.restype = None
 
-        self.lib.carla_patchbay_connect.argtypes = [c_bool, c_uint, c_uint, c_uint, c_uint]
+        self.lib.carla_patchbay_connect.argtypes = (c_void_p, c_bool, c_uint, c_uint, c_uint, c_uint)
         self.lib.carla_patchbay_connect.restype = c_bool
 
-        self.lib.carla_patchbay_disconnect.argtypes = [c_bool, c_uint]
+        self.lib.carla_patchbay_disconnect.argtypes = (c_void_p, c_bool, c_uint)
         self.lib.carla_patchbay_disconnect.restype = c_bool
 
-        self.lib.carla_patchbay_refresh.argtypes = [c_bool]
+        self.lib.carla_patchbay_refresh.argtypes = (c_void_p, c_bool)
         self.lib.carla_patchbay_refresh.restype = c_bool
 
-        self.lib.carla_transport_play.argtypes = None
+        self.lib.carla_transport_play.argtypes = (c_void_p,)
         self.lib.carla_transport_play.restype = None
 
-        self.lib.carla_transport_pause.argtypes = None
+        self.lib.carla_transport_pause.argtypes = (c_void_p,)
         self.lib.carla_transport_pause.restype = None
 
-        self.lib.carla_transport_bpm.argtypes = [c_double]
+        self.lib.carla_transport_bpm.argtypes = (c_void_p, c_double)
         self.lib.carla_transport_bpm.restype = None
 
-        self.lib.carla_transport_relocate.argtypes = [c_uint64]
+        self.lib.carla_transport_relocate.argtypes = (c_void_p, c_uint64)
         self.lib.carla_transport_relocate.restype = None
 
-        self.lib.carla_get_current_transport_frame.argtypes = None
+        self.lib.carla_get_current_transport_frame.argtypes = (c_void_p,)
         self.lib.carla_get_current_transport_frame.restype = c_uint64
 
-        self.lib.carla_get_transport_info.argtypes = None
+        self.lib.carla_get_transport_info.argtypes = (c_void_p,)
         self.lib.carla_get_transport_info.restype = POINTER(CarlaTransportInfo)
 
-        self.lib.carla_get_current_plugin_count.argtypes = None
+        self.lib.carla_get_current_plugin_count.argtypes = (c_void_p,)
         self.lib.carla_get_current_plugin_count.restype = c_uint32
 
-        self.lib.carla_get_max_plugin_number.argtypes = None
+        self.lib.carla_get_max_plugin_number.argtypes = (c_void_p,)
         self.lib.carla_get_max_plugin_number.restype = c_uint32
 
-        self.lib.carla_add_plugin.argtypes = [c_enum, c_enum, c_char_p, c_char_p, c_char_p, c_int64, c_void_p, c_uint]
+        self.lib.carla_add_plugin.argtypes = (c_void_p, c_enum, c_enum, c_char_p, c_char_p, c_char_p, c_int64, c_void_p, c_uint)
         self.lib.carla_add_plugin.restype = c_bool
 
-        self.lib.carla_remove_plugin.argtypes = [c_uint]
+        self.lib.carla_remove_plugin.argtypes = (c_void_p, c_uint)
         self.lib.carla_remove_plugin.restype = c_bool
 
-        self.lib.carla_remove_all_plugins.argtypes = None
+        self.lib.carla_remove_all_plugins.argtypes = (c_void_p,)
         self.lib.carla_remove_all_plugins.restype = c_bool
 
-        self.lib.carla_rename_plugin.argtypes = [c_uint, c_char_p]
+        self.lib.carla_rename_plugin.argtypes = (c_void_p, c_uint, c_char_p)
         self.lib.carla_rename_plugin.restype = c_bool
 
-        self.lib.carla_clone_plugin.argtypes = [c_uint]
+        self.lib.carla_clone_plugin.argtypes = (c_void_p, c_uint)
         self.lib.carla_clone_plugin.restype = c_bool
 
-        self.lib.carla_replace_plugin.argtypes = [c_uint]
+        self.lib.carla_replace_plugin.argtypes = (c_void_p, c_uint)
         self.lib.carla_replace_plugin.restype = c_bool
 
-        self.lib.carla_switch_plugins.argtypes = [c_uint, c_uint]
+        self.lib.carla_switch_plugins.argtypes = (c_void_p, c_uint, c_uint)
         self.lib.carla_switch_plugins.restype = c_bool
 
-        self.lib.carla_load_plugin_state.argtypes = [c_uint, c_char_p]
+        self.lib.carla_load_plugin_state.argtypes = (c_void_p, c_uint, c_char_p)
         self.lib.carla_load_plugin_state.restype = c_bool
 
-        self.lib.carla_save_plugin_state.argtypes = [c_uint, c_char_p]
+        self.lib.carla_save_plugin_state.argtypes = (c_void_p, c_uint, c_char_p)
         self.lib.carla_save_plugin_state.restype = c_bool
 
-        self.lib.carla_export_plugin_lv2.argtypes = [c_uint, c_char_p]
+        self.lib.carla_export_plugin_lv2.argtypes = (c_void_p, c_uint, c_char_p)
         self.lib.carla_export_plugin_lv2.restype = c_bool
 
-        self.lib.carla_get_plugin_info.argtypes = [c_uint]
+        self.lib.carla_get_plugin_info.argtypes = (c_void_p, c_uint)
         self.lib.carla_get_plugin_info.restype = POINTER(CarlaPluginInfo)
 
-        self.lib.carla_get_audio_port_count_info.argtypes = [c_uint]
+        self.lib.carla_get_audio_port_count_info.argtypes = (c_void_p, c_uint)
         self.lib.carla_get_audio_port_count_info.restype = POINTER(CarlaPortCountInfo)
 
-        self.lib.carla_get_midi_port_count_info.argtypes = [c_uint]
+        self.lib.carla_get_midi_port_count_info.argtypes = (c_void_p, c_uint)
         self.lib.carla_get_midi_port_count_info.restype = POINTER(CarlaPortCountInfo)
 
-        self.lib.carla_get_parameter_count_info.argtypes = [c_uint]
+        self.lib.carla_get_parameter_count_info.argtypes = (c_void_p, c_uint)
         self.lib.carla_get_parameter_count_info.restype = POINTER(CarlaPortCountInfo)
 
-        self.lib.carla_get_parameter_info.argtypes = [c_uint, c_uint32]
+        self.lib.carla_get_parameter_info.argtypes = (c_void_p, c_uint, c_uint32)
         self.lib.carla_get_parameter_info.restype = POINTER(CarlaParameterInfo)
 
-        self.lib.carla_get_parameter_scalepoint_info.argtypes = [c_uint, c_uint32, c_uint32]
+        self.lib.carla_get_parameter_scalepoint_info.argtypes = (c_void_p, c_uint, c_uint32, c_uint32)
         self.lib.carla_get_parameter_scalepoint_info.restype = POINTER(CarlaScalePointInfo)
 
-        self.lib.carla_get_parameter_data.argtypes = [c_uint, c_uint32]
+        self.lib.carla_get_parameter_data.argtypes = (c_void_p, c_uint, c_uint32)
         self.lib.carla_get_parameter_data.restype = POINTER(ParameterData)
 
-        self.lib.carla_get_parameter_ranges.argtypes = [c_uint, c_uint32]
+        self.lib.carla_get_parameter_ranges.argtypes = (c_void_p, c_uint, c_uint32)
         self.lib.carla_get_parameter_ranges.restype = POINTER(ParameterRanges)
 
-        self.lib.carla_get_midi_program_data.argtypes = [c_uint, c_uint32]
+        self.lib.carla_get_midi_program_data.argtypes = (c_void_p, c_uint, c_uint32)
         self.lib.carla_get_midi_program_data.restype = POINTER(MidiProgramData)
 
-        self.lib.carla_get_custom_data.argtypes = [c_uint, c_uint32]
+        self.lib.carla_get_custom_data.argtypes = (c_void_p, c_uint, c_uint32)
         self.lib.carla_get_custom_data.restype = POINTER(CustomData)
 
-        self.lib.carla_get_custom_data_value.argtypes = [c_uint, c_char_p, c_char_p]
+        self.lib.carla_get_custom_data_value.argtypes = (c_void_p, c_uint, c_char_p, c_char_p)
         self.lib.carla_get_custom_data_value.restype = c_char_p
 
-        self.lib.carla_get_chunk_data.argtypes = [c_uint]
+        self.lib.carla_get_chunk_data.argtypes = (c_void_p, c_uint)
         self.lib.carla_get_chunk_data.restype = c_char_p
 
-        self.lib.carla_get_parameter_count.argtypes = [c_uint]
+        self.lib.carla_get_parameter_count.argtypes = (c_void_p, c_uint)
         self.lib.carla_get_parameter_count.restype = c_uint32
 
-        self.lib.carla_get_program_count.argtypes = [c_uint]
+        self.lib.carla_get_program_count.argtypes = (c_void_p, c_uint)
         self.lib.carla_get_program_count.restype = c_uint32
 
-        self.lib.carla_get_midi_program_count.argtypes = [c_uint]
+        self.lib.carla_get_midi_program_count.argtypes = (c_void_p, c_uint)
         self.lib.carla_get_midi_program_count.restype = c_uint32
 
-        self.lib.carla_get_custom_data_count.argtypes = [c_uint]
+        self.lib.carla_get_custom_data_count.argtypes = (c_void_p, c_uint)
         self.lib.carla_get_custom_data_count.restype = c_uint32
 
-        self.lib.carla_get_parameter_text.argtypes = [c_uint, c_uint32]
+        self.lib.carla_get_parameter_text.argtypes = (c_void_p, c_uint, c_uint32)
         self.lib.carla_get_parameter_text.restype = c_char_p
 
-        self.lib.carla_get_program_name.argtypes = [c_uint, c_uint32]
+        self.lib.carla_get_program_name.argtypes = (c_void_p, c_uint, c_uint32)
         self.lib.carla_get_program_name.restype = c_char_p
 
-        self.lib.carla_get_midi_program_name.argtypes = [c_uint, c_uint32]
+        self.lib.carla_get_midi_program_name.argtypes = (c_void_p, c_uint, c_uint32)
         self.lib.carla_get_midi_program_name.restype = c_char_p
 
-        self.lib.carla_get_real_plugin_name.argtypes = [c_uint]
+        self.lib.carla_get_real_plugin_name.argtypes = (c_void_p, c_uint)
         self.lib.carla_get_real_plugin_name.restype = c_char_p
 
-        self.lib.carla_get_current_program_index.argtypes = [c_uint]
+        self.lib.carla_get_current_program_index.argtypes = (c_void_p, c_uint)
         self.lib.carla_get_current_program_index.restype = c_int32
 
-        self.lib.carla_get_current_midi_program_index.argtypes = [c_uint]
+        self.lib.carla_get_current_midi_program_index.argtypes = (c_void_p, c_uint)
         self.lib.carla_get_current_midi_program_index.restype = c_int32
 
-        self.lib.carla_get_default_parameter_value.argtypes = [c_uint, c_uint32]
+        self.lib.carla_get_default_parameter_value.argtypes = (c_void_p, c_uint, c_uint32)
         self.lib.carla_get_default_parameter_value.restype = c_float
 
-        self.lib.carla_get_current_parameter_value.argtypes = [c_uint, c_uint32]
+        self.lib.carla_get_current_parameter_value.argtypes = (c_void_p, c_uint, c_uint32)
         self.lib.carla_get_current_parameter_value.restype = c_float
 
-        self.lib.carla_get_internal_parameter_value.argtypes = [c_uint, c_int32]
+        self.lib.carla_get_internal_parameter_value.argtypes = (c_void_p, c_uint, c_int32)
         self.lib.carla_get_internal_parameter_value.restype = c_float
 
-        self.lib.carla_get_input_peak_value.argtypes = [c_uint, c_bool]
+        self.lib.carla_get_input_peak_value.argtypes = (c_void_p, c_uint, c_bool)
         self.lib.carla_get_input_peak_value.restype = c_float
 
-        self.lib.carla_get_output_peak_value.argtypes = [c_uint, c_bool]
+        self.lib.carla_get_output_peak_value.argtypes = (c_void_p, c_uint, c_bool)
         self.lib.carla_get_output_peak_value.restype = c_float
 
-        self.lib.carla_render_inline_display.argtypes = [c_uint, c_uint, c_uint]
+        self.lib.carla_render_inline_display.argtypes = (c_void_p, c_uint, c_uint, c_uint)
         self.lib.carla_render_inline_display.restype = POINTER(CarlaInlineDisplayImageSurface)
 
-        self.lib.carla_set_option.argtypes = [c_uint, c_uint, c_bool]
+        self.lib.carla_set_option.argtypes = (c_void_p, c_uint, c_uint, c_bool)
         self.lib.carla_set_option.restype = None
 
-        self.lib.carla_set_active.argtypes = [c_uint, c_bool]
+        self.lib.carla_set_active.argtypes = (c_void_p, c_uint, c_bool)
         self.lib.carla_set_active.restype = None
 
-        self.lib.carla_set_drywet.argtypes = [c_uint, c_float]
+        self.lib.carla_set_drywet.argtypes = (c_void_p, c_uint, c_float)
         self.lib.carla_set_drywet.restype = None
 
-        self.lib.carla_set_volume.argtypes = [c_uint, c_float]
+        self.lib.carla_set_volume.argtypes = (c_void_p, c_uint, c_float)
         self.lib.carla_set_volume.restype = None
 
-        self.lib.carla_set_balance_left.argtypes = [c_uint, c_float]
+        self.lib.carla_set_balance_left.argtypes = (c_void_p, c_uint, c_float)
         self.lib.carla_set_balance_left.restype = None
 
-        self.lib.carla_set_balance_right.argtypes = [c_uint, c_float]
+        self.lib.carla_set_balance_right.argtypes = (c_void_p, c_uint, c_float)
         self.lib.carla_set_balance_right.restype = None
 
-        self.lib.carla_set_panning.argtypes = [c_uint, c_float]
+        self.lib.carla_set_panning.argtypes = (c_void_p, c_uint, c_float)
         self.lib.carla_set_panning.restype = None
 
-        self.lib.carla_set_ctrl_channel.argtypes = [c_uint, c_int8]
+        self.lib.carla_set_ctrl_channel.argtypes = (c_void_p, c_uint, c_int8)
         self.lib.carla_set_ctrl_channel.restype = None
 
-        self.lib.carla_set_parameter_value.argtypes = [c_uint, c_uint32, c_float]
+        self.lib.carla_set_parameter_value.argtypes = (c_void_p, c_uint, c_uint32, c_float)
         self.lib.carla_set_parameter_value.restype = None
 
-        self.lib.carla_set_parameter_midi_channel.argtypes = [c_uint, c_uint32, c_uint8]
+        self.lib.carla_set_parameter_midi_channel.argtypes = (c_void_p, c_uint, c_uint32, c_uint8)
         self.lib.carla_set_parameter_midi_channel.restype = None
 
-        self.lib.carla_set_parameter_mapped_control_index.argtypes = [c_uint, c_uint32, c_int16]
+        self.lib.carla_set_parameter_mapped_control_index.argtypes = (c_void_p, c_uint, c_uint32, c_int16)
         self.lib.carla_set_parameter_mapped_control_index.restype = None
 
-        self.lib.carla_set_parameter_mapped_range.argtypes = [c_uint, c_uint32, c_float, c_float]
+        self.lib.carla_set_parameter_mapped_range.argtypes = (c_void_p, c_uint, c_uint32, c_float, c_float)
         self.lib.carla_set_parameter_mapped_range.restype = None
 
-        self.lib.carla_set_parameter_touch.argtypes = [c_uint, c_uint32, c_bool]
+        self.lib.carla_set_parameter_touch.argtypes = (c_void_p, c_uint, c_uint32, c_bool)
         self.lib.carla_set_parameter_touch.restype = None
 
-        self.lib.carla_set_program.argtypes = [c_uint, c_uint32]
+        self.lib.carla_set_program.argtypes = (c_void_p, c_uint, c_uint32)
         self.lib.carla_set_program.restype = None
 
-        self.lib.carla_set_midi_program.argtypes = [c_uint, c_uint32]
+        self.lib.carla_set_midi_program.argtypes = (c_void_p, c_uint, c_uint32)
         self.lib.carla_set_midi_program.restype = None
 
-        self.lib.carla_set_custom_data.argtypes = [c_uint, c_char_p, c_char_p, c_char_p]
+        self.lib.carla_set_custom_data.argtypes = (c_void_p, c_uint, c_char_p, c_char_p, c_char_p)
         self.lib.carla_set_custom_data.restype = None
 
-        self.lib.carla_set_chunk_data.argtypes = [c_uint, c_char_p]
+        self.lib.carla_set_chunk_data.argtypes = (c_void_p, c_uint, c_char_p)
         self.lib.carla_set_chunk_data.restype = None
 
-        self.lib.carla_prepare_for_save.argtypes = [c_uint]
+        self.lib.carla_prepare_for_save.argtypes = (c_void_p, c_uint)
         self.lib.carla_prepare_for_save.restype = None
 
-        self.lib.carla_reset_parameters.argtypes = [c_uint]
+        self.lib.carla_reset_parameters.argtypes = (c_void_p, c_uint)
         self.lib.carla_reset_parameters.restype = None
 
-        self.lib.carla_randomize_parameters.argtypes = [c_uint]
+        self.lib.carla_randomize_parameters.argtypes = (c_void_p, c_uint)
         self.lib.carla_randomize_parameters.restype = None
 
-        self.lib.carla_send_midi_note.argtypes = [c_uint, c_uint8, c_uint8, c_uint8]
+        self.lib.carla_send_midi_note.argtypes = (c_void_p, c_uint, c_uint8, c_uint8, c_uint8)
         self.lib.carla_send_midi_note.restype = None
 
-        self.lib.carla_show_custom_ui.argtypes = [c_uint, c_bool]
+        self.lib.carla_show_custom_ui.argtypes = (c_void_p, c_uint, c_bool)
         self.lib.carla_show_custom_ui.restype = None
 
-        self.lib.carla_get_buffer_size.argtypes = None
+        self.lib.carla_get_buffer_size.argtypes = (c_void_p,)
         self.lib.carla_get_buffer_size.restype = c_uint32
 
-        self.lib.carla_get_sample_rate.argtypes = None
+        self.lib.carla_get_sample_rate.argtypes = (c_void_p,)
         self.lib.carla_get_sample_rate.restype = c_double
 
-        self.lib.carla_get_last_error.argtypes = None
+        self.lib.carla_get_last_error.argtypes = (c_void_p,)
         self.lib.carla_get_last_error.restype = c_char_p
 
-        self.lib.carla_get_host_osc_url_tcp.argtypes = None
+        self.lib.carla_get_host_osc_url_tcp.argtypes = (c_void_p,)
         self.lib.carla_get_host_osc_url_tcp.restype = c_char_p
 
-        self.lib.carla_get_host_osc_url_udp.argtypes = None
+        self.lib.carla_get_host_osc_url_udp.argtypes = (c_void_p,)
         self.lib.carla_get_host_osc_url_udp.restype = c_char_p
 
-        self.lib.carla_nsm_init.argtypes = [c_uint64, c_char_p]
+        self.lib.carla_nsm_init.argtypes = (c_void_p, c_uint64, c_char_p)
         self.lib.carla_nsm_init.restype = c_bool
 
-        self.lib.carla_nsm_ready.argtypes = [c_int]
+        self.lib.carla_nsm_ready.argtypes = (c_void_p, c_int)
         self.lib.carla_nsm_ready.restype = None
+
+        self.handle = self.lib.carla_standalone_host_init()
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -2868,210 +2872,212 @@ class CarlaHostDLL(CarlaHostMeta):
         return bool(self.lib.carla_show_engine_driver_device_control_panel(index, name.encode("utf-8")))
 
     def engine_init(self, driverName, clientName):
-        return bool(self.lib.carla_engine_init(driverName.encode("utf-8"), clientName.encode("utf-8")))
+        return bool(self.lib.carla_engine_init(self.handle, driverName.encode("utf-8"), clientName.encode("utf-8")))
 
     def engine_close(self):
-        return bool(self.lib.carla_engine_close())
+        return bool(self.lib.carla_engine_close(self.handle))
 
     def engine_idle(self):
-        self.lib.carla_engine_idle()
+        self.lib.carla_engine_idle(self.handle)
 
     def is_engine_running(self):
-        return bool(self.lib.carla_is_engine_running())
+        return bool(self.lib.carla_is_engine_running(self.handle))
 
     def get_runtime_engine_info(self):
-        return structToDict(self.lib.carla_get_runtime_engine_info().contents)
+        return structToDict(self.lib.carla_get_runtime_engine_info(self.handle).contents)
 
     def get_runtime_engine_driver_device_info(self):
-        return structToDict(self.lib.carla_get_runtime_engine_driver_device_info().contents)
+        return structToDict(self.lib.carla_get_runtime_engine_driver_device_info(self.handle).contents)
 
     def set_engine_buffer_size_and_sample_rate(self, bufferSize, sampleRate):
-        return bool(self.lib.carla_set_engine_buffer_size_and_sample_rate(bufferSize, sampleRate))
+        return bool(self.lib.carla_set_engine_buffer_size_and_sample_rate(self.handle, bufferSize, sampleRate))
 
     def show_engine_device_control_panel(self):
-        return bool(self.lib.carla_show_engine_device_control_panel())
+        return bool(self.lib.carla_show_engine_device_control_panel(self.handle))
 
     def clear_engine_xruns(self):
-        self.lib.carla_clear_engine_xruns()
+        self.lib.carla_clear_engine_xruns(self.handle)
 
     def cancel_engine_action(self):
-        self.lib.carla_cancel_engine_action()
+        self.lib.carla_cancel_engine_action(self.handle)
 
     def set_engine_about_to_close(self):
-        return bool(self.lib.carla_set_engine_about_to_close())
+        return bool(self.lib.carla_set_engine_about_to_close(self.handle))
 
     def set_engine_callback(self, func):
         self._engineCallback = EngineCallbackFunc(func)
-        self.lib.carla_set_engine_callback(self._engineCallback, None)
+        self.lib.carla_set_engine_callback(self.handle, self._engineCallback, None)
 
     def set_engine_option(self, option, value, valueStr):
-        self.lib.carla_set_engine_option(option, value, valueStr.encode("utf-8"))
+        self.lib.carla_set_engine_option(self.handle, option, value, valueStr.encode("utf-8"))
 
     def set_file_callback(self, func):
         self._fileCallback = FileCallbackFunc(func)
-        self.lib.carla_set_file_callback(self._fileCallback, None)
+        self.lib.carla_set_file_callback(self.handle, self._fileCallback, None)
 
     def load_file(self, filename):
-        return bool(self.lib.carla_load_file(filename.encode("utf-8")))
+        return bool(self.lib.carla_load_file(self.handle, filename.encode("utf-8")))
 
     def load_project(self, filename):
-        return bool(self.lib.carla_load_project(filename.encode("utf-8")))
+        return bool(self.lib.carla_load_project(self.handle, filename.encode("utf-8")))
 
     def save_project(self, filename):
-        return bool(self.lib.carla_save_project(filename.encode("utf-8")))
+        return bool(self.lib.carla_save_project(self.handle, filename.encode("utf-8")))
 
     def clear_project_filename(self):
-        self.lib.carla_clear_project_filename()
+        self.lib.carla_clear_project_filename(self.handle)
 
     def patchbay_connect(self, external, groupIdA, portIdA, groupIdB, portIdB):
-        return bool(self.lib.carla_patchbay_connect(external, groupIdA, portIdA, groupIdB, portIdB))
+        return bool(self.lib.carla_patchbay_connect(self.handle, external, groupIdA, portIdA, groupIdB, portIdB))
 
     def patchbay_disconnect(self, external, connectionId):
-        return bool(self.lib.carla_patchbay_disconnect(external, connectionId))
+        return bool(self.lib.carla_patchbay_disconnect(self.handle, external, connectionId))
 
     def patchbay_refresh(self, external):
-        return bool(self.lib.carla_patchbay_refresh(external))
+        return bool(self.lib.carla_patchbay_refresh(self.handle, external))
 
     def transport_play(self):
-        self.lib.carla_transport_play()
+        self.lib.carla_transport_play(self.handle)
 
     def transport_pause(self):
-        self.lib.carla_transport_pause()
+        self.lib.carla_transport_pause(self.handle)
 
     def transport_bpm(self, bpm):
-        self.lib.carla_transport_bpm(bpm)
+        self.lib.carla_transport_bpm(self.handle, bpm)
 
     def transport_relocate(self, frame):
-        self.lib.carla_transport_relocate(frame)
+        self.lib.carla_transport_relocate(self.handle, frame)
 
     def get_current_transport_frame(self):
-        return int(self.lib.carla_get_current_transport_frame())
+        return int(self.lib.carla_get_current_transport_frame(self.handle))
 
     def get_transport_info(self):
-        return structToDict(self.lib.carla_get_transport_info().contents)
+        return structToDict(self.lib.carla_get_transport_info(self.handle).contents)
 
     def get_current_plugin_count(self):
-        return int(self.lib.carla_get_current_plugin_count())
+        return int(self.lib.carla_get_current_plugin_count(self.handle))
 
     def get_max_plugin_number(self):
-        return int(self.lib.carla_get_max_plugin_number())
+        return int(self.lib.carla_get_max_plugin_number(self.handle))
 
     def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr, options):
         cfilename = filename.encode("utf-8") if filename else None
         cname     = name.encode("utf-8") if name else None
         clabel    = label.encode("utf-8") if label else None
-        return bool(self.lib.carla_add_plugin(btype, ptype, cfilename, cname, clabel, uniqueId, cast(extraPtr, c_void_p), options))
+        return bool(self.lib.carla_add_plugin(self.handle,
+                                              btype, ptype,
+                                              cfilename, cname, clabel, uniqueId, cast(extraPtr, c_void_p), options))
 
     def remove_plugin(self, pluginId):
-        return bool(self.lib.carla_remove_plugin(pluginId))
+        return bool(self.lib.carla_remove_plugin(self.handle, pluginId))
 
     def remove_all_plugins(self):
-        return bool(self.lib.carla_remove_all_plugins())
+        return bool(self.lib.carla_remove_all_plugins(self.handle))
 
     def rename_plugin(self, pluginId, newName):
-        return bool(self.lib.carla_rename_plugin(pluginId, newName.encode("utf-8")))
+        return bool(self.lib.carla_rename_plugin(self.handle, pluginId, newName.encode("utf-8")))
 
     def clone_plugin(self, pluginId):
-        return bool(self.lib.carla_clone_plugin(pluginId))
+        return bool(self.lib.carla_clone_plugin(self.handle, pluginId))
 
     def replace_plugin(self, pluginId):
-        return bool(self.lib.carla_replace_plugin(pluginId))
+        return bool(self.lib.carla_replace_plugin(self.handle, pluginId))
 
     def switch_plugins(self, pluginIdA, pluginIdB):
-        return bool(self.lib.carla_switch_plugins(pluginIdA, pluginIdB))
+        return bool(self.lib.carla_switch_plugins(self.handle, pluginIdA, pluginIdB))
 
     def load_plugin_state(self, pluginId, filename):
-        return bool(self.lib.carla_load_plugin_state(pluginId, filename.encode("utf-8")))
+        return bool(self.lib.carla_load_plugin_state(self.handle, pluginId, filename.encode("utf-8")))
 
     def save_plugin_state(self, pluginId, filename):
-        return bool(self.lib.carla_save_plugin_state(pluginId, filename.encode("utf-8")))
+        return bool(self.lib.carla_save_plugin_state(self.handle, pluginId, filename.encode("utf-8")))
 
     def export_plugin_lv2(self, pluginId, lv2path):
-        return bool(self.lib.carla_export_plugin_lv2(pluginId, lv2path.encode("utf-8")))
+        return bool(self.lib.carla_export_plugin_lv2(self.handle, pluginId, lv2path.encode("utf-8")))
 
     def get_plugin_info(self, pluginId):
-        return structToDict(self.lib.carla_get_plugin_info(pluginId).contents)
+        return structToDict(self.lib.carla_get_plugin_info(self.handle, pluginId).contents)
 
     def get_audio_port_count_info(self, pluginId):
-        return structToDict(self.lib.carla_get_audio_port_count_info(pluginId).contents)
+        return structToDict(self.lib.carla_get_audio_port_count_info(self.handle, pluginId).contents)
 
     def get_midi_port_count_info(self, pluginId):
-        return structToDict(self.lib.carla_get_midi_port_count_info(pluginId).contents)
+        return structToDict(self.lib.carla_get_midi_port_count_info(self.handle, pluginId).contents)
 
     def get_parameter_count_info(self, pluginId):
-        return structToDict(self.lib.carla_get_parameter_count_info(pluginId).contents)
+        return structToDict(self.lib.carla_get_parameter_count_info(self.handle, pluginId).contents)
 
     def get_parameter_info(self, pluginId, parameterId):
-        return structToDict(self.lib.carla_get_parameter_info(pluginId, parameterId).contents)
+        return structToDict(self.lib.carla_get_parameter_info(self.handle, pluginId, parameterId).contents)
 
     def get_parameter_scalepoint_info(self, pluginId, parameterId, scalePointId):
-        return structToDict(self.lib.carla_get_parameter_scalepoint_info(pluginId, parameterId, scalePointId).contents)
+        return structToDict(self.lib.carla_get_parameter_scalepoint_info(self.handle, pluginId, parameterId, scalePointId).contents)
 
     def get_parameter_data(self, pluginId, parameterId):
-        return structToDict(self.lib.carla_get_parameter_data(pluginId, parameterId).contents)
+        return structToDict(self.lib.carla_get_parameter_data(self.handle, pluginId, parameterId).contents)
 
     def get_parameter_ranges(self, pluginId, parameterId):
-        return structToDict(self.lib.carla_get_parameter_ranges(pluginId, parameterId).contents)
+        return structToDict(self.lib.carla_get_parameter_ranges(self.handle, pluginId, parameterId).contents)
 
     def get_midi_program_data(self, pluginId, midiProgramId):
-        return structToDict(self.lib.carla_get_midi_program_data(pluginId, midiProgramId).contents)
+        return structToDict(self.lib.carla_get_midi_program_data(self.handle, pluginId, midiProgramId).contents)
 
     def get_custom_data(self, pluginId, customDataId):
-        return structToDict(self.lib.carla_get_custom_data(pluginId, customDataId).contents)
+        return structToDict(self.lib.carla_get_custom_data(self.handle, pluginId, customDataId).contents)
 
     def get_custom_data_value(self, pluginId, type_, key):
-        return charPtrToString(self.lib.carla_get_custom_data_value(pluginId, type_.encode("utf-8"), key.encode("utf-8")))
+        return charPtrToString(self.lib.carla_get_custom_data_value(self.handle, pluginId, type_.encode("utf-8"), key.encode("utf-8")))
 
     def get_chunk_data(self, pluginId):
-        return charPtrToString(self.lib.carla_get_chunk_data(pluginId))
+        return charPtrToString(self.lib.carla_get_chunk_data(self.handle, pluginId))
 
     def get_parameter_count(self, pluginId):
-        return int(self.lib.carla_get_parameter_count(pluginId))
+        return int(self.lib.carla_get_parameter_count(self.handle, pluginId))
 
     def get_program_count(self, pluginId):
-        return int(self.lib.carla_get_program_count(pluginId))
+        return int(self.lib.carla_get_program_count(self.handle, pluginId))
 
     def get_midi_program_count(self, pluginId):
-        return int(self.lib.carla_get_midi_program_count(pluginId))
+        return int(self.lib.carla_get_midi_program_count(self.handle, pluginId))
 
     def get_custom_data_count(self, pluginId):
-        return int(self.lib.carla_get_custom_data_count(pluginId))
+        return int(self.lib.carla_get_custom_data_count(self.handle, pluginId))
 
     def get_parameter_text(self, pluginId, parameterId):
-        return charPtrToString(self.lib.carla_get_parameter_text(pluginId, parameterId))
+        return charPtrToString(self.lib.carla_get_parameter_text(self.handle, pluginId, parameterId))
 
     def get_program_name(self, pluginId, programId):
-        return charPtrToString(self.lib.carla_get_program_name(pluginId, programId))
+        return charPtrToString(self.lib.carla_get_program_name(self.handle, pluginId, programId))
 
     def get_midi_program_name(self, pluginId, midiProgramId):
-        return charPtrToString(self.lib.carla_get_midi_program_name(pluginId, midiProgramId))
+        return charPtrToString(self.lib.carla_get_midi_program_name(self.handle, pluginId, midiProgramId))
 
     def get_real_plugin_name(self, pluginId):
-        return charPtrToString(self.lib.carla_get_real_plugin_name(pluginId))
+        return charPtrToString(self.lib.carla_get_real_plugin_name(self.handle, pluginId))
 
     def get_current_program_index(self, pluginId):
-        return int(self.lib.carla_get_current_program_index(pluginId))
+        return int(self.lib.carla_get_current_program_index(self.handle, pluginId))
 
     def get_current_midi_program_index(self, pluginId):
-        return int(self.lib.carla_get_current_midi_program_index(pluginId))
+        return int(self.lib.carla_get_current_midi_program_index(self.handle, pluginId))
 
     def get_default_parameter_value(self, pluginId, parameterId):
-        return float(self.lib.carla_get_default_parameter_value(pluginId, parameterId))
+        return float(self.lib.carla_get_default_parameter_value(self.handle, pluginId, parameterId))
 
     def get_current_parameter_value(self, pluginId, parameterId):
-        return float(self.lib.carla_get_current_parameter_value(pluginId, parameterId))
+        return float(self.lib.carla_get_current_parameter_value(self.handle, pluginId, parameterId))
 
     def get_internal_parameter_value(self, pluginId, parameterId):
-        return float(self.lib.carla_get_internal_parameter_value(pluginId, parameterId))
+        return float(self.lib.carla_get_internal_parameter_value(self.handle, pluginId, parameterId))
 
     def get_input_peak_value(self, pluginId, isLeft):
-        return float(self.lib.carla_get_input_peak_value(pluginId, isLeft))
+        return float(self.lib.carla_get_input_peak_value(self.handle, pluginId, isLeft))
 
     def get_output_peak_value(self, pluginId, isLeft):
-        return float(self.lib.carla_get_output_peak_value(pluginId, isLeft))
+        return float(self.lib.carla_get_output_peak_value(self.handle, pluginId, isLeft))
 
     def render_inline_display(self, pluginId, width, height):
-        ptr = self.lib.carla_render_inline_display(pluginId, width, height)
+        ptr = self.lib.carla_render_inline_display(self.handle, pluginId, width, height)
         if not ptr or not ptr.contents:
             return None
         contents = ptr.contents
@@ -3086,91 +3092,91 @@ class CarlaHostDLL(CarlaHostMeta):
         return data
 
     def set_option(self, pluginId, option, yesNo):
-        self.lib.carla_set_option(pluginId, option, yesNo)
+        self.lib.carla_set_option(self.handle, pluginId, option, yesNo)
 
     def set_active(self, pluginId, onOff):
-        self.lib.carla_set_active(pluginId, onOff)
+        self.lib.carla_set_active(self.handle, pluginId, onOff)
 
     def set_drywet(self, pluginId, value):
-        self.lib.carla_set_drywet(pluginId, value)
+        self.lib.carla_set_drywet(self.handle, pluginId, value)
 
     def set_volume(self, pluginId, value):
-        self.lib.carla_set_volume(pluginId, value)
+        self.lib.carla_set_volume(self.handle, pluginId, value)
 
     def set_balance_left(self, pluginId, value):
-        self.lib.carla_set_balance_left(pluginId, value)
+        self.lib.carla_set_balance_left(self.handle, pluginId, value)
 
     def set_balance_right(self, pluginId, value):
-        self.lib.carla_set_balance_right(pluginId, value)
+        self.lib.carla_set_balance_right(self.handle, pluginId, value)
 
     def set_panning(self, pluginId, value):
-        self.lib.carla_set_panning(pluginId, value)
+        self.lib.carla_set_panning(self.handle, pluginId, value)
 
     def set_ctrl_channel(self, pluginId, channel):
-        self.lib.carla_set_ctrl_channel(pluginId, channel)
+        self.lib.carla_set_ctrl_channel(self.handle, pluginId, channel)
 
     def set_parameter_value(self, pluginId, parameterId, value):
-        self.lib.carla_set_parameter_value(pluginId, parameterId, value)
+        self.lib.carla_set_parameter_value(self.handle, pluginId, parameterId, value)
 
     def set_parameter_midi_channel(self, pluginId, parameterId, channel):
-        self.lib.carla_set_parameter_midi_channel(pluginId, parameterId, channel)
+        self.lib.carla_set_parameter_midi_channel(self.handle, pluginId, parameterId, channel)
 
     def set_parameter_mapped_control_index(self, pluginId, parameterId, index):
-        self.lib.carla_set_parameter_mapped_control_index(pluginId, parameterId, index)
+        self.lib.carla_set_parameter_mapped_control_index(self.handle, pluginId, parameterId, index)
 
     def set_parameter_mapped_range(self, pluginId, parameterId, minimum, maximum):
-        self.lib.carla_set_parameter_mapped_range(pluginId, parameterId, minimum, maximum)
+        self.lib.carla_set_parameter_mapped_range(self.handle, pluginId, parameterId, minimum, maximum)
 
     def set_parameter_touch(self, pluginId, parameterId, touch):
-        self.lib.carla_set_parameter_touch(pluginId, parameterId, touch)
+        self.lib.carla_set_parameter_touch(self.handle, pluginId, parameterId, touch)
 
     def set_program(self, pluginId, programId):
-        self.lib.carla_set_program(pluginId, programId)
+        self.lib.carla_set_program(self.handle, pluginId, programId)
 
     def set_midi_program(self, pluginId, midiProgramId):
-        self.lib.carla_set_midi_program(pluginId, midiProgramId)
+        self.lib.carla_set_midi_program(self.handle, pluginId, midiProgramId)
 
     def set_custom_data(self, pluginId, type_, key, value):
-        self.lib.carla_set_custom_data(pluginId, type_.encode("utf-8"), key.encode("utf-8"), value.encode("utf-8"))
+        self.lib.carla_set_custom_data(self.handle, pluginId, type_.encode("utf-8"), key.encode("utf-8"), value.encode("utf-8"))
 
     def set_chunk_data(self, pluginId, chunkData):
-        self.lib.carla_set_chunk_data(pluginId, chunkData.encode("utf-8"))
+        self.lib.carla_set_chunk_data(self.handle, pluginId, chunkData.encode("utf-8"))
 
     def prepare_for_save(self, pluginId):
-        self.lib.carla_prepare_for_save(pluginId)
+        self.lib.carla_prepare_for_save(self.handle, pluginId)
 
     def reset_parameters(self, pluginId):
-        self.lib.carla_reset_parameters(pluginId)
+        self.lib.carla_reset_parameters(self.handle, pluginId)
 
     def randomize_parameters(self, pluginId):
-        self.lib.carla_randomize_parameters(pluginId)
+        self.lib.carla_randomize_parameters(self.handle, pluginId)
 
     def send_midi_note(self, pluginId, channel, note, velocity):
-        self.lib.carla_send_midi_note(pluginId, channel, note, velocity)
+        self.lib.carla_send_midi_note(self.handle, pluginId, channel, note, velocity)
 
     def show_custom_ui(self, pluginId, yesNo):
-        self.lib.carla_show_custom_ui(pluginId, yesNo)
+        self.lib.carla_show_custom_ui(self.handle, pluginId, yesNo)
 
     def get_buffer_size(self):
-        return int(self.lib.carla_get_buffer_size())
+        return int(self.lib.carla_get_buffer_size(self.handle))
 
     def get_sample_rate(self):
-        return float(self.lib.carla_get_sample_rate())
+        return float(self.lib.carla_get_sample_rate(self.handle))
 
     def get_last_error(self):
-        return charPtrToString(self.lib.carla_get_last_error())
+        return charPtrToString(self.lib.carla_get_last_error(self.handle))
 
     def get_host_osc_url_tcp(self):
-        return charPtrToString(self.lib.carla_get_host_osc_url_tcp())
+        return charPtrToString(self.lib.carla_get_host_osc_url_tcp(self.handle))
 
     def get_host_osc_url_udp(self):
-        return charPtrToString(self.lib.carla_get_host_osc_url_udp())
+        return charPtrToString(self.lib.carla_get_host_osc_url_udp(self.handle))
 
     def nsm_init(self, pid, executableName):
-        return bool(self.lib.carla_nsm_init(pid, executableName.encode("utf-8")))
+        return bool(self.lib.carla_nsm_init(self.handle, pid, executableName.encode("utf-8")))
 
     def nsm_ready(self, opcode):
-        self.lib.carla_nsm_ready(opcode)
+        self.lib.carla_nsm_ready(self.handle, opcode)
 
 # ------------------------------------------------------------------------------------------------------------
 # Helper object for CarlaHostPlugin
@@ -3205,7 +3211,6 @@ class PluginStoreInfo(object):
 # Carla Host object for plugins (using pipes)
 
 class CarlaHostPlugin(CarlaHostMeta):
-#class CarlaHostPlugin(CarlaHostMeta, metaclass=ABCMeta):
     def __init__(self):
         CarlaHostMeta.__init__(self)
 
