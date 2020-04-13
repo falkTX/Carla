@@ -1,4 +1,4 @@
-# ---  README for Carla - MacOS build ---
+# ---  README for Carla - macOS build ---
 
 What is Carla?
 ---------------
@@ -28,3 +28,6 @@ For the VST2 plugin, create the /Library/Audio/Plug-Ins/VST folder (if it does n
 
 For a complete and updated description of Carla, please check:
 https://kx.studio/carla
+
+NOTE!
+Carla's LV2 and VST2 plugins are not notarized, so they will not run in macOS 10.15 (Catalina) or higher.
