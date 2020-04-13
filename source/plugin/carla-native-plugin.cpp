@@ -16,6 +16,7 @@
  */
 
 #include "CarlaNativePlugin.h"
+#include "CarlaHostImpl.hpp"
 
 #include "CarlaEngine.hpp"
 #include "CarlaString.hpp"
@@ -23,6 +24,32 @@
 #include "water/files/File.h"
 
 CARLA_BACKEND_USE_NAMESPACE
+
+// --------------------------------------------------------------------------------------------------------------------
+
+CarlaHostHandle carla_create_native_plugin_host_handle(const NativePluginDescriptor* desc, NativePluginHandle handle)
+{
+    CarlaEngine* const engine = carla_get_native_plugin_engine(desc, handle);
+    CARLA_SAFE_ASSERT_RETURN(engine, nullptr);
+
+    CarlaHostHandleImpl* hosthandle;
+
+    try {
+        hosthandle = new CarlaHostHandleImpl();
+    } CARLA_SAFE_EXCEPTION_RETURN("carla_create_native_plugin_host_handle()", nullptr);
+
+    hosthandle->engine = engine;
+    hosthandle->isPlugin = true;
+    return hosthandle;
+}
+
+void carla_host_handle_free(CarlaHostHandle handle)
+{
+    CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(handle->isPlugin,);
+
+    delete (CarlaHostHandleImpl*)handle;
+}
 
 // --------------------------------------------------------------------------------------------------------------------
 
