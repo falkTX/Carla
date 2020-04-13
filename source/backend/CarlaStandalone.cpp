@@ -1824,7 +1824,11 @@ float carla_get_current_parameter_value(CarlaHostHandle handle, uint pluginId, u
 
 float carla_get_internal_parameter_value(CarlaHostHandle handle, uint pluginId, int32_t parameterId)
 {
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, (parameterId == CB::PARAMETER_CTRL_CHANNEL) ? -1.0f : 0.0f);
+#else
+    CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, 0.0f);
+#endif
     CARLA_SAFE_ASSERT_RETURN(parameterId != CB::PARAMETER_NULL && parameterId > CB::PARAMETER_MAX, 0.0f);
 
     CarlaPlugin* const plugin = handle->engine->getPlugin(pluginId);
