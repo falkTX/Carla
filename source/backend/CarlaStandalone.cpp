@@ -1330,31 +1330,31 @@ const CarlaParameterInfo* carla_get_parameter_info(CarlaHostHandle handle, uint 
     retInfo.scalePointCount = 0;
 
     // cleanup
-    if (retInfo.name != gNullCharPtr)
+    if (strcmp (retInfo.name, gNullCharPtr))
     {
         delete[] retInfo.name;
         retInfo.name = gNullCharPtr;
     }
 
-    if (retInfo.symbol != gNullCharPtr)
+    if (strcmp (retInfo.symbol, gNullCharPtr))
     {
         delete[] retInfo.symbol;
         retInfo.symbol = gNullCharPtr;
     }
 
-    if (retInfo.unit != gNullCharPtr)
+    if (strcmp (retInfo.unit, gNullCharPtr))
     {
         delete[] retInfo.unit;
         retInfo.unit = gNullCharPtr;
     }
 
-    if (retInfo.comment != gNullCharPtr)
+    if (strcmp (retInfo.comment, gNullCharPtr))
     {
         delete[] retInfo.comment;
         retInfo.comment = gNullCharPtr;
     }
 
-    if (retInfo.groupName != gNullCharPtr)
+    if (strcmp (retInfo.groupName, gNullCharPtr))
     {
         delete[] retInfo.groupName;
         retInfo.groupName = gNullCharPtr;
