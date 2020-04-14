@@ -269,6 +269,8 @@ struct CarlaPlugin::ProtectedData {
 
     CarlaStateSave stateSave;
 
+    CarlaString uiTitleFormat;
+
     struct ExternalNotes {
         CarlaMutex mutex;
         RtLinkedList<ExternalMidiNote>::Pool dataPool;

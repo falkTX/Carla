@@ -203,6 +203,7 @@ typedef struct _CarlaParameterInfo {
      * C++ constructor and destructor.
      */
     CARLA_API _CarlaParameterInfo() noexcept;
+    CARLA_API _CarlaParameterInfo(const char* n) noexcept;
     CARLA_API ~_CarlaParameterInfo() noexcept;
     CARLA_DECLARE_NON_COPY_STRUCT(_CarlaParameterInfo)
 #endif
@@ -1084,6 +1085,13 @@ CARLA_EXPORT void carla_send_midi_note(CarlaHostHandle handle,
                                        uint pluginId,
                                        uint8_t channel, uint8_t note, uint8_t velocity);
 #endif
+
+/*!
+ * Set a custom format when plugin UI windows created by Carla.
+ * MUST include one and only one %s, where carla places the plugin name.
+ * By default this format is "%s (GUI)"
+ */
+CARLA_EXPORT void carla_set_custom_ui_title_format(CarlaHostHandle handle, uint pluginId, const char* format);
 
 /*!
  * Tell a plugin to show its own custom UI.

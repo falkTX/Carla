@@ -1324,7 +1324,7 @@ const CarlaPortCountInfo* carla_get_parameter_count_info(CarlaHostHandle handle,
 
 const CarlaParameterInfo* carla_get_parameter_info(CarlaHostHandle handle, uint pluginId, uint32_t parameterId)
 {
-    static CarlaParameterInfo retInfo;
+    static CarlaParameterInfo retInfo(gNullCharPtr);
 
     // reset
     retInfo.scalePointCount = 0;
@@ -2170,6 +2170,18 @@ void carla_send_midi_note(CarlaHostHandle handle, uint pluginId, uint8_t channel
     return plugin->sendMidiSingleNote(channel, note, velocity, true, true, false);
 }
 #endif
+
+void carla_set_custom_ui_title_format(CarlaHostHandle handle, uint pluginId, const char* format)
+{
+    CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(format != nullptr && format[0] != '\0',);
+
+    CarlaPlugin* const plugin = handle->engine->getPlugin(pluginId);
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
+    carla_debug("carla_randomize_parameters(%p, %i, %s)", handle, pluginId, format);
+    return plugin->setCustomUiTitleFormat(format);
+}
 
 void carla_show_custom_ui(CarlaHostHandle handle, uint pluginId, bool yesNo)
 {

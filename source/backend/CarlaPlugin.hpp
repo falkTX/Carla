@@ -789,6 +789,13 @@ public:
     // UI Stuff
 
     /*!
+     * Set a custom format when plugin UI windows created by Carla.
+     * MUST include one and only one %s, where carla places the plugin name.
+     * By default this format is "%s (GUI)"
+     */
+    void setCustomUiTitleFormat(const char* format);
+
+    /*!
      * Show (or hide) the plugin's custom UI according to @a yesNo.
      * This function is always called from the main thread.
      */

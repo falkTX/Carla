@@ -70,6 +70,14 @@ _CarlaParameterInfo::_CarlaParameterInfo() noexcept
       groupName(gNullCharPtr),
       scalePointCount(0) {}
 
+_CarlaParameterInfo::_CarlaParameterInfo(const char* const n) noexcept
+    : name(n),
+      symbol(n),
+      unit(n),
+      comment(n),
+      groupName(n),
+      scalePointCount(0) {}
+
 _CarlaParameterInfo::~_CarlaParameterInfo() noexcept
 {
     if (name != gNullCharPtr)
