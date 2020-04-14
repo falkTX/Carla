@@ -1,6 +1,6 @@
 /*
  * Carla Plugin discovery
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -103,6 +103,7 @@ static void print_cached_plugin(const CarlaCachedPluginInfo* const pinfo)
     DISCOVERY_OUT("init", "-----------");
     DISCOVERY_OUT("build", BINARY_NATIVE);
     DISCOVERY_OUT("hints", pinfo->hints);
+    DISCOVERY_OUT("category", getPluginCategoryAsString(pinfo->category));
     DISCOVERY_OUT("name", pinfo->name);
     DISCOVERY_OUT("maker", pinfo->maker);
     DISCOVERY_OUT("label", pinfo->label);
@@ -1054,7 +1055,7 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
     CarlaString cName;
     CarlaString cProduct;
     CarlaString cVendor;
-    uint category;
+    PluginCategory category;
     LinkedList<intptr_t> uniqueIds;
 
     if (isShell)
@@ -1124,8 +1125,7 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
             cVendor.clear();
 
         // get category
-        const intptr_t effCategory = effect->dispatcher(effect, effGetPlugCategory, 0, 0, NULL, 0.0f);
-        switch (effCategory)
+        switch (effect->dispatcher(effect, effGetPlugCategory, 0, 0, nullptr, 0.0f))
         {
         case kPlugCategSynth:
             category = PLUGIN_CATEGORY_SYNTH;
@@ -1152,7 +1152,6 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
                 category = PLUGIN_CATEGORY_NONE;
             break;
         }
-
 
         // get everything else
         uint hints = 0x0;
@@ -1288,7 +1287,7 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
         DISCOVERY_OUT("init", "-----------");
         DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("hints", hints);
-        DISCOVERY_OUT("category", category);
+        DISCOVERY_OUT("category", getPluginCategoryAsString(category));
         DISCOVERY_OUT("name", cName.buffer());
         DISCOVERY_OUT("label", cProduct.buffer());
         DISCOVERY_OUT("maker", cVendor.buffer());

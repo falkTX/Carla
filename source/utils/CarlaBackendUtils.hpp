@@ -519,6 +519,39 @@ BinaryType getBinaryTypeFromString(const char* const ctype) noexcept
 // -----------------------------------------------------------------------
 
 static inline
+const char* getPluginCategoryAsString(const PluginCategory category) noexcept
+{
+    carla_debug("CarlaBackend::getPluginCategoryAsString(%i:%s)", category, PluginCategory2Str(category));
+
+    switch (category)
+    {
+    case PLUGIN_CATEGORY_NONE:
+        return "none";
+    case PLUGIN_CATEGORY_SYNTH:
+        return "synth";
+    case PLUGIN_CATEGORY_DELAY:
+        return "delay";
+    case PLUGIN_CATEGORY_EQ:
+        return "eq";
+    case PLUGIN_CATEGORY_FILTER:
+        return "filter";
+    case PLUGIN_CATEGORY_DISTORTION:
+        return "distortion";
+    case PLUGIN_CATEGORY_DYNAMICS:
+        return "dynamics";
+    case PLUGIN_CATEGORY_MODULATOR:
+        return "modulator";
+    case PLUGIN_CATEGORY_UTILITY:
+        return "utility";
+    case PLUGIN_CATEGORY_OTHER:
+        return "other";
+    }
+
+    carla_stderr("CarlaBackend::getPluginCategoryAsString(%i) - invalid category", category);
+    return "NONE";
+}
+
+static inline
 const char* getPluginTypeAsString(const PluginType type) noexcept
 {
     carla_debug("CarlaBackend::getPluginTypeAsString(%i:%s)", type, PluginType2Str(type));
@@ -679,6 +712,16 @@ PluginCategory getPluginCategoryFromName(const char* const name) noexcept
 
     if (sname.contains("tool"))
         return PLUGIN_CATEGORY_UTILITY;
+
+    // synth
+    if (sname.contains("synth"))
+        return PLUGIN_CATEGORY_SYNTH;
+
+    // other
+    if (sname.contains("misc"))
+        return PLUGIN_CATEGORY_OTHER;
+    if (sname.contains("other"))
+        return PLUGIN_CATEGORY_OTHER;
 
     return PLUGIN_CATEGORY_NONE;
 }
