@@ -1345,7 +1345,7 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
 
 #ifdef CARLA_OS_WIN
     // Fix for wine usage
-    if (juce::File("Z:\\usr\\").existsAsFolder() && filename_[0] == '/')
+    if (juce::File("Z:\\usr\\").isDirectory() && filename_[0] == '/')
     {
         filename = filename_;
         filename.replace("/", "\\");

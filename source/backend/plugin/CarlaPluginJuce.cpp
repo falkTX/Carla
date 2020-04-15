@@ -1300,7 +1300,7 @@ public:
 
 #ifdef CARLA_OS_WIN
             // Fix for wine usage
-            if (juce::File("Z:\\usr\\").existsAsFolder() && filename[0] == '/')
+            if (juce::File("Z:\\usr\\").isDirectory() && filename[0] == '/')
             {
                 jfilename.replace("/", "\\");
                 jfilename = "Z:" + jfilename;
