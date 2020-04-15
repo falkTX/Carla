@@ -11,6 +11,7 @@ AR  ?= ar
 CC  ?= gcc
 CXX ?= g++
 
+PKG_CONFIG ?= pkg-config
 WINECC ?= winegcc
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -209,7 +210,7 @@ endif
 # Check for optional libs (required by backend or bridges)
 
 ifeq ($(LINUX),true)
-HAVE_ALSA  = $(shell pkg-config --exists alsa && echo true)
+HAVE_ALSA  = $(shell $(PKG_CONFIG) --exists alsa && echo true)
 HAVE_HYLIA = true
 endif
 
@@ -226,29 +227,29 @@ endif
 ifeq ($(MACOS_OR_WIN32),true)
 HAVE_DGL   = true
 else
-HAVE_DGL   = $(shell pkg-config --exists gl x11 && echo true)
-HAVE_GTK2  = $(shell pkg-config --exists gtk+-2.0 && echo true)
-HAVE_GTK3  = $(shell pkg-config --exists gtk+-3.0 && echo true)
-HAVE_X11   = $(shell pkg-config --exists x11 && echo true)
+HAVE_DGL   = $(shell $(PKG_CONFIG) --exists gl x11 && echo true)
+HAVE_GTK2  = $(shell $(PKG_CONFIG) --exists gtk+-2.0 && echo true)
+HAVE_GTK3  = $(shell $(PKG_CONFIG) --exists gtk+-3.0 && echo true)
+HAVE_X11   = $(shell $(PKG_CONFIG) --exists x11 && echo true)
 endif
 
 ifeq ($(UNIX),true)
 ifneq ($(MACOS),true)
-HAVE_PULSEAUDIO = $(shell pkg-config --exists libpulse-simple && echo true)
+HAVE_PULSEAUDIO = $(shell $(PKG_CONFIG) --exists libpulse-simple && echo true)
 endif
 endif
 
 # ffmpeg values taken from https://ffmpeg.org/download.html (v2.8.15 maximum)
-HAVE_FFMPEG     = $(shell pkg-config --max-version=56.60.100 libavcodec && \
-                          pkg-config --max-version=56.40.101 libavformat && \
-                          pkg-config --max-version=54.31.100 libavutil && echo true)
-HAVE_FLUIDSYNTH = $(shell pkg-config --atleast-version=1.1.7 fluidsynth && echo true)
-HAVE_JACK       = $(shell pkg-config --exists jack && echo true)
-HAVE_LIBLO      = $(shell pkg-config --exists liblo && echo true)
-HAVE_QT4        = $(shell pkg-config --exists QtCore QtGui && echo true)
-HAVE_QT5        = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && \
-                          pkg-config --variable=qt_config Qt5Core | grep -q -v "static" && echo true)
-HAVE_SNDFILE    = $(shell pkg-config --exists sndfile && echo true)
+HAVE_FFMPEG     = $(shell $(PKG_CONFIG) --max-version=56.60.100 libavcodec && \
+                          $(PKG_CONFIG) --max-version=56.40.101 libavformat && \
+                          $(PKG_CONFIG) --max-version=54.31.100 libavutil && echo true)
+HAVE_FLUIDSYNTH = $(shell $(PKG_CONFIG) --atleast-version=1.1.7 fluidsynth && echo true)
+HAVE_JACK       = $(shell $(PKG_CONFIG) --exists jack && echo true)
+HAVE_LIBLO      = $(shell $(PKG_CONFIG) --exists liblo && echo true)
+HAVE_QT4        = $(shell $(PKG_CONFIG) --exists QtCore QtGui && echo true)
+HAVE_QT5        = $(shell $(PKG_CONFIG) --exists Qt5Core Qt5Gui Qt5Widgets && \
+                          $(PKG_CONFIG) --variable=qt_config Qt5Core | grep -q -v "static" && echo true)
+HAVE_SNDFILE    = $(shell $(PKG_CONFIG) --exists sndfile && echo true)
 
 ifeq ($(JACKBRIDGE_DIRECT),true)
 ifeq ($(HAVE_JACK),true)
@@ -272,9 +273,9 @@ endif
 # Set Qt tools
 
 ifeq ($(HAVE_QT4),true)
-MOC_QT4 ?= $(shell pkg-config --variable=moc_location QtCore)
-RCC_QT4 ?= $(shell pkg-config --variable=rcc_location QtCore)
-UIC_QT4 ?= $(shell pkg-config --variable=uic_location QtCore)
+MOC_QT4 ?= $(shell $(PKG_CONFIG) --variable=moc_location QtCore)
+RCC_QT4 ?= $(shell $(PKG_CONFIG) --variable=rcc_location QtCore)
+UIC_QT4 ?= $(shell $(PKG_CONFIG) --variable=uic_location QtCore)
 ifeq (,$(wildcard $(MOC_QT4)))
 HAVE_QT4=false
 endif
@@ -284,7 +285,7 @@ endif
 endif
 
 ifeq ($(HAVE_QT5),true)
-QT5_HOSTBINS = $(shell pkg-config --variable=host_bins Qt5Core)
+QT5_HOSTBINS = $(shell $(PKG_CONFIG) --variable=host_bins Qt5Core)
 MOC_QT5 ?= $(QT5_HOSTBINS)/moc
 RCC_QT5 ?= $(QT5_HOSTBINS)/rcc
 UIC_QT5 ?= $(QT5_HOSTBINS)/uic
@@ -397,14 +398,14 @@ ifeq ($(WIN32),true)
 DGL_LIBS  = -lopengl32 -lgdi32
 endif
 ifneq ($(MACOS_OR_WIN32),true)
-DGL_FLAGS = $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags gl x11)
-DGL_LIBS  = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs gl x11)
+DGL_FLAGS = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags gl x11)
+DGL_LIBS  = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs gl x11)
 endif
 endif
 
 ifeq ($(HAVE_LIBLO),true)
-LIBLO_FLAGS = $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags liblo)
-LIBLO_LIBS  = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs liblo)
+LIBLO_FLAGS = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags liblo)
+LIBLO_LIBS  = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs liblo)
 endif
 
 ifeq ($(HAVE_LIBMAGIC),true)
@@ -415,34 +416,34 @@ endif
 endif
 
 ifeq ($(HAVE_FFMPEG),true)
-FFMPEG_FLAGS = $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags libavcodec libavformat libavutil)
-FFMPEG_LIBS  = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs libavcodec libavformat libavutil)
+FFMPEG_FLAGS = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags libavcodec libavformat libavutil)
+FFMPEG_LIBS  = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs libavcodec libavformat libavutil)
 endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
-FLUIDSYNTH_FLAGS = $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags fluidsynth)
-FLUIDSYNTH_LIBS  = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs fluidsynth)
+FLUIDSYNTH_FLAGS = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags fluidsynth)
+FLUIDSYNTH_LIBS  = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs fluidsynth)
 endif
 
 ifeq ($(HAVE_JACK),true)
-JACK_FLAGS  = $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags jack)
-JACK_LIBS   = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs jack)
-JACK_LIBDIR = $(shell pkg-config --variable=libdir jack)/jack
+JACK_FLAGS  = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags jack)
+JACK_LIBS   = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs jack)
+JACK_LIBDIR = $(shell $(PKG_CONFIG) --variable=libdir jack)/jack
 endif
 
 ifeq ($(HAVE_QT5),true)
-QT5_FLAGS = $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags Qt5Core Qt5Gui Qt5Widgets)
-QT5_LIBS  = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs Qt5Core Qt5Gui Qt5Widgets)
+QT5_FLAGS = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags Qt5Core Qt5Gui Qt5Widgets)
+QT5_LIBS  = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs Qt5Core Qt5Gui Qt5Widgets)
 endif
 
 ifeq ($(HAVE_SNDFILE),true)
-SNDFILE_FLAGS = $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags sndfile)
-SNDFILE_LIBS  = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs sndfile)
+SNDFILE_FLAGS = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags sndfile)
+SNDFILE_LIBS  = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs sndfile)
 endif
 
 ifeq ($(HAVE_X11),true)
-X11_FLAGS = $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags x11)
-X11_LIBS  = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs x11)
+X11_FLAGS = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags x11)
+X11_LIBS  = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs x11)
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -461,8 +462,8 @@ endif
 ifeq ($(UNIX),true)
 RTAUDIO_FLAGS   += -D__UNIX_JACK__
 ifeq ($(HAVE_PULSEAUDIO),true)
-RTAUDIO_FLAGS   += $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags libpulse-simple) -D__UNIX_PULSE__
-RTAUDIO_LIBS    += $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs libpulse-simple)
+RTAUDIO_FLAGS   += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags libpulse-simple) -D__UNIX_PULSE__
+RTAUDIO_LIBS    += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs libpulse-simple)
 endif
 endif
 
@@ -496,17 +497,17 @@ LILV_LIBS        = -ldl -lm -lrt
 RTMEMPOOL_LIBS   = -lpthread -lrt
 WATER_LIBS       = -ldl -lpthread -lrt
 ifeq ($(USING_JUCE),true)
-JUCE_AUDIO_DEVICES_LIBS = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs alsa)
+JUCE_AUDIO_DEVICES_LIBS = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs alsa)
 JUCE_CORE_LIBS          = -ldl -lpthread -lrt
-JUCE_EVENTS_LIBS        = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs x11)
-JUCE_GRAPHICS_LIBS      = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs freetype2)
-JUCE_GUI_BASICS_LIBS    = $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs x11 xext)
+JUCE_EVENTS_LIBS        = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs x11)
+JUCE_GRAPHICS_LIBS      = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs freetype2)
+JUCE_GUI_BASICS_LIBS    = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs x11 xext)
 else
 ifeq ($(HAVE_ALSA),true)
-RTAUDIO_FLAGS   += $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags alsa) -D__LINUX_ALSA__
-RTAUDIO_LIBS    += $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs alsa) -lpthread
-RTMIDI_FLAGS    += $(shell pkg-config $(PKG_CONFIG_FLAGS) --cflags alsa) -D__LINUX_ALSA__
-RTMIDI_LIBS     += $(shell pkg-config $(PKG_CONFIG_FLAGS) --libs alsa)
+RTAUDIO_FLAGS   += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags alsa) -D__LINUX_ALSA__
+RTAUDIO_LIBS    += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs alsa) -lpthread
+RTMIDI_FLAGS    += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags alsa) -D__LINUX_ALSA__
+RTMIDI_LIBS     += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs alsa)
 endif
 endif
 endif
