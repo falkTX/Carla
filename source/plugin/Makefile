@@ -44,6 +44,12 @@ ifeq ($(HAVE_X11),true)
 BUILD_CXX_FLAGS += $(X11_FLAGS)
 endif
 
+ifeq ($(BUILDING_FOR_WINDOWS),true)
+ifeq ($(CROSS_COMPILING),true)
+NEEDS_WINE = true
+endif
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Libs
 
@@ -458,7 +464,7 @@ $(BINDIR)/carla.lv2/manifest.ttl: $(OBJDIR)/carla-lv2-export.cpp.o $(BINDIR)/car
 	@$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(NATIVE_LINK_FLAGS) -o $(BINDIR)/carla-lv2-export$(APP_EXT)
 
 	@echo "Generating LV2 ttl data"
-ifeq ($(BUILDING_FOR_WINDOWS),true)
+ifeq ($(NEEDS_WINE),true)
 	@cd $(BINDIR) && wine ./carla-lv2-export$(APP_EXT)
 else
 	@cd $(BINDIR) && ./carla-lv2-export$(APP_EXT)

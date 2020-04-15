@@ -33,7 +33,7 @@ if [ x"${ARCH}" = x"32nosse" ]; then
   MAKE_ARGS="${MAKE_ARGS} NOOPT=true"
 fi
 
-MAKE_ARGS="${MAKE_ARGS} BUILDING_FOR_WINDOWS=true USING_JUCE=true"
+MAKE_ARGS="${MAKE_ARGS} BUILDING_FOR_WINDOWS=true CROSS_COMPILING=true"
 
 export WIN32=true
 
