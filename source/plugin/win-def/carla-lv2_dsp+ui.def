@@ -1,4 +1,5 @@
 LIBRARY     CarlaLV2
 DESCRIPTION 'Carla LV2 Plugin'
-EXPORTS lv2_descriptor
-EXPORTS lv2ui_descriptor
+EXPORTS
+    lv2_descriptor @1
+    lv2ui_descriptor @2

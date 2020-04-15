@@ -14,11 +14,14 @@ export PATH=/opt/mingw32/${_PREFIX}/bin:/opt/mingw32/bin:${PATH}
 export PKG_CONFIG_PATH=/opt/mingw32/lib/pkgconfig:${PKG_CONFIG_PATH}
 export CROSS_COMPILING=true
 
+MAKE_ARGS="BUILDING_FOR_WINDOWS=true CROSS_COMPILING=true USING_JUCE=false"
+MAKE_ARGS="${MAKE_ARGS} HAVE_FLUIDSYNTH=false HAVE_LIBLO=false HAVE_QT5=false HAVE_SNDFILE=false"
+
 # Start clean
 make distclean >/dev/null
 
 # Print available features
-make features
+make ${MAKE_ARGS} features
 
 # Build native stuff
-make BUILDING_FOR_WINDOWS=true USING_JUCE=false
+make ${MAKE_ARGS}
