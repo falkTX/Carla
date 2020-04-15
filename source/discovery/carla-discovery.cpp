@@ -1336,10 +1336,6 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
 #endif // ! USE_JUCE_PROCESSORS
 
 #ifdef USE_JUCE_PROCESSORS
-namespace juce {
-extern bool juce_isRunningInWine();
-}
-
 static void do_juce_check(const char* const filename_, const char* const stype, const bool doInit)
 {
     CARLA_SAFE_ASSERT_RETURN(stype != nullptr && stype[0] != 0,) // FIXME
@@ -1349,7 +1345,7 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
 
 #ifdef CARLA_OS_WIN
     // Fix for wine usage
-    if (juce::juce_isRunningInWine() && filename_[0] == '/')
+    if (juce::File("Z:\\usr\\").existsAsFolder() && filename_[0] == '/')
     {
         filename = filename_;
         filename.replace("/", "\\");

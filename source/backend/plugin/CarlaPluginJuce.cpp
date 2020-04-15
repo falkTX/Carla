@@ -50,10 +50,6 @@
 
 #include "JucePluginWindow.hpp"
 
-namespace juce {
-extern bool juce_isRunningInWine();
-}
-
 CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -1304,7 +1300,7 @@ public:
 
 #ifdef CARLA_OS_WIN
             // Fix for wine usage
-            if (juce::juce_isRunningInWine() && filename[0] == '/')
+            if (juce::File("Z:\\usr\\").existsAsFolder() && filename[0] == '/')
             {
                 jfilename.replace("/", "\\");
                 jfilename = "Z:" + jfilename;
