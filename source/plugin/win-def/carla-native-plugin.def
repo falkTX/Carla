@@ -1,0 +1,13 @@
+LIBRARY     CarlaNativePlugin
+DESCRIPTION 'Carla Native Plugin'
+EXPORTS carla_get_native_rack_plugin
+EXPORTS carla_get_native_patchbay_plugin
+EXPORTS carla_get_native_patchbay16_plugin
+EXPORTS carla_get_native_patchbay32_plugin
+EXPORTS carla_get_native_patchbay64_plugin
+EXPORTS carla_get_native_patchbay_cv_plugin
+EXPORTS carla_create_native_plugin_host_handle
+EXPORTS carla_host_handle_free
+EXPORTS carla_get_native_plugin_engine
+EXPORTS carla_get_library_filename
+EXPORTS carla_get_library_folder

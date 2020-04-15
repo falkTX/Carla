@@ -129,6 +129,17 @@ endif
 SYMBOLS_VST     = -Wl,-exported_symbol,_VSTPluginMain
 endif
 
+ifeq ($(WIN32),true)
+SYMBOLS_NATIVE  = win-def/carla-native-plugin.def
+ifeq ($(HAVE_PYQT),true)
+SYMBOLS_LV2     = win-def/carla-lv2_dsp+ui.def
+SYMBOLS_LV2_UI  = win-def/carla-lv2_ui.def
+else
+SYMBOLS_LV2     = win-def/carla-lv2_dsp.def
+endif
+SYMBOLS_VST     = win-def/carla-vst.def
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Other libs
 
@@ -315,25 +326,25 @@ $(BINDIR)/CarlaVstFxShell$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.shellfx.o $(OBJDIR)
 	@$(CXX) $^ $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(SYMBOLS_VST) $(NATIVE_LINK_FLAGS) -o $@
 
 ifeq ($(WIN32),true)
-$(BINDIR)/CarlaVstShellBridged.dll: $(OBJDIR)/carla-vst-export-bridged.cpp.synth.o carla-vst-export.def
+$(BINDIR)/CarlaVstShellBridged.dll: $(OBJDIR)/carla-vst-export-bridged.cpp.synth.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking CarlaVstShellBridged.dll"
-	@$(CXX) $^ $(SHARED) $(LINK_FLAGS) -o $@
+	@$(CXX) $^ $(SHARED) $(SYMBOLS_VST) $(LINK_FLAGS) -o $@
 
-$(BINDIR)/CarlaVstFxShellBridged.dll: $(OBJDIR)/carla-vst-export-bridged.cpp.fx.o carla-vst-export.def
+$(BINDIR)/CarlaVstFxShellBridged.dll: $(OBJDIR)/carla-vst-export-bridged.cpp.fx.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking CarlaVstFxShellBridged.dll"
-	@$(CXX) $^ $(SHARED) $(LINK_FLAGS) -o $@
+	@$(CXX) $^ $(SHARED) $(SYMBOLS_VST) $(LINK_FLAGS) -o $@
 else
-$(BINDIR)/CarlaVstShellBridged.dll.so: $(OBJDIR)/carla-vst.cpp.shell.o $(OBJDIR)/carla-vst-export.cpp.dll.o carla-vst-export.def
+$(BINDIR)/CarlaVstShellBridged.dll.so: $(OBJDIR)/carla-vst.cpp.shell.o $(OBJDIR)/carla-vst-export.cpp.dll.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking CarlaVstShellBridged.dll.so"
-	@$(WINECC) $^ $(LIBS_START) $(LIBS_wine) $(LIBS_END) $(SHARED) $(WINE_LINK_FLAGS) -o $@
+	@$(WINECC) $^ $(LIBS_START) $(LIBS_wine) $(LIBS_END) $(SHARED) $(SYMBOLS_VST) $(WINE_LINK_FLAGS) -o $@
 
-$(BINDIR)/CarlaVstFxShellBridged.dll.so: $(OBJDIR)/carla-vst.cpp.shellfx.o $(OBJDIR)/carla-vst-export.cpp.dll.o carla-vst-export.def
+$(BINDIR)/CarlaVstFxShellBridged.dll.so: $(OBJDIR)/carla-vst.cpp.shellfx.o $(OBJDIR)/carla-vst-export.cpp.dll.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking CarlaVstFxShellBridged.dll.so"
-	@$(WINECC) $^ $(LIBS_START) $(LIBS_wine) $(LIBS_END) $(SHARED) $(WINE_LINK_FLAGS) -o $@
+	@$(WINECC) $^ $(LIBS_START) $(LIBS_wine) $(LIBS_END) $(SHARED) $(SYMBOLS_VST) $(WINE_LINK_FLAGS) -o $@
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

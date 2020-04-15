@@ -1,0 +1,3 @@
+LIBRARY     CarlaLV2UI
+DESCRIPTION 'Carla LV2 UI'
+EXPORTS lv2ui_descriptor
