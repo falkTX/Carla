@@ -1676,7 +1676,7 @@ int main(int argc, char* argv[])
 #ifdef USE_JUCE_PROCESSORS
         do_juce_check(filename, "VST3", doInit);
 #else
-        DISCOVERY_OUT("error", "VST3 support not available");
+        do_vst_check(handle, filename, doInit);
 #endif
         break;
 

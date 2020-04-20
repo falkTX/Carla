@@ -1199,7 +1199,7 @@ bool CarlaEngine::loadFile(const char* const filename)
         return addPlugin(getBinaryTypeFromFile(filename), PLUGIN_VST2, filename, nullptr, nullptr, 0, nullptr);
 #endif
 
-#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+#if (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN) || defined(CARLA_OS_LINUX))
     if (extension == "vst3")
         return addPlugin(getBinaryTypeFromFile(filename), PLUGIN_VST3, filename, nullptr, nullptr, 0, nullptr);
 #endif

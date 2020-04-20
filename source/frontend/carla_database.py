@@ -472,8 +472,8 @@ class SearchPluginsThread(QThread):
         # Increase count by the number of externally discoverable plugin types
         if self.fCheckNative:
             self.fCurCount += pluginCount
-            # MacOS and Windows are the only VST3 supported OSes
-            if self.fCheckVST3 and not (MACOS or WINDOWS):
+            # Linux MacOS and Windows are the only VST3 supported OSes
+            if self.fCheckVST3 and not (LINUX or MACOS or WINDOWS):
                 self.fCurCount -= 1
 
         if self.fCheckPosix32:
@@ -660,7 +660,7 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
         if self.fCheckVST3:
-            if self.fCheckNative and (MACOS or WINDOWS):
+            if self.fCheckNative and (LINUX or MACOS or WINDOWS):
                 plugins = self._checkVST3(OS, self.fToolNative)
                 settingsDB.setValue("Plugins/VST3_native", plugins)
                 if not self.fContinueChecking: return

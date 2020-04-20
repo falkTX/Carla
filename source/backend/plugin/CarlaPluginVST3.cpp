@@ -30,7 +30,6 @@ CarlaPlugin* CarlaPlugin::newVST3(const Initializer& init)
 #ifdef USING_JUCE
     return newJuce(init, "VST3");
 #else
-    init.engine->setLastError("VST3 support not available");
     return nullptr;
 #endif
 }

@@ -65,10 +65,10 @@ const char* carla_get_complete_license_text()
         "<li>LADSPA plugin support</li>"
         "<li>DSSI plugin support</li>"
         "<li>LV2 plugin support</li>"
-#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN) || defined(CARLA_OS_LINUX))
         "<li>VST2/3 plugin support (using Juce)</li>"
 #else
-        "<li>VST2 plugin support (using VeSTige header by Javier Serrano Polo)</li>"
+        "<li>VST2/3 plugin support (using VeSTige header by Javier Serrano Polo for VST2)</li>"
 #endif
 #if defined(USING_JUCE) && defined(CARLA_OS_MAC)
         "<li>AU plugin support (using Juce)</li>"
@@ -199,7 +199,7 @@ const char* const* carla_get_supported_features()
 #endif
 #ifdef USING_JUCE
         "juce",
-# if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+# if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN) || defined(CARLA_OS_LINUX)
         "vst3",
 # endif
 # if defined(CARLA_OS_MAC)
