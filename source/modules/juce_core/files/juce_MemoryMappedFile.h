@@ -26,6 +26,8 @@ namespace juce
 //==============================================================================
 /**
     Maps a file into virtual memory for easy reading and/or writing.
+
+    @tags{Core}
 */
 class JUCE_API  MemoryMappedFile
 {
@@ -69,7 +71,7 @@ public:
 
         If the file can't be opened for some reason, the getData() method will return a null pointer.
 
-        NOTE: the start of the actual range used may be rounded-down to a multiple of the OS's page-size,
+        NOTE: The start of the actual range used may be rounded-down to a multiple of the OS's page-size,
         so do not assume that the mapped memory will begin at exactly the position you requested - always
         use getRange() to check the actual range that is being used.
     */
@@ -96,13 +98,13 @@ public:
 
 private:
     //==============================================================================
-    void* address;
+    void* address = nullptr;
     Range<int64> range;
 
    #if JUCE_WINDOWS
-    void* fileHandle;
+    void* fileHandle = nullptr;
    #else
-    int fileHandle;
+    int fileHandle = 0;
    #endif
 
     void openInternal (const File&, AccessMode, bool);

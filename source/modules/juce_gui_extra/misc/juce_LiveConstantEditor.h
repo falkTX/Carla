@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -106,16 +98,12 @@ namespace LiveConstantEditor
     };
 
     //==============================================================================
-    struct JUCE_API  LivePropertyEditorBase  : public Component,
-                                               private TextEditor::Listener,
-                                               private Button::Listener
+    struct JUCE_API  LivePropertyEditorBase  : public Component
     {
         LivePropertyEditorBase (LiveValueBase&, CodeDocument&);
 
         void paint (Graphics&) override;
         void resized() override;
-        void textEditorTextChanged (TextEditor&) override;
-        void buttonClicked (Button*) override;
 
         void applyNewValue (const String&);
         void selectOriginalValue();
@@ -129,7 +117,7 @@ namespace LiveConstantEditor
         CPlusPlusCodeTokeniser tokeniser;
         CodeEditorComponent sourceEditor;
         CodeDocument::Position valueStart, valueEnd;
-        ScopedPointer<Component> customComp;
+        std::unique_ptr<Component> customComp;
         bool wasHex = false;
 
         JUCE_DECLARE_NON_COPYABLE (LivePropertyEditorBase)
@@ -161,7 +149,8 @@ namespace LiveConstantEditor
         template <typename ValueType>
         LivePropertyEditor (ValueType& v, CodeDocument& d)  : LivePropertyEditorBase (v, d)
         {
-            addAndMakeVisible (customComp = CustomEditor<Type>::create (*this));
+            customComp.reset (CustomEditor<Type>::create (*this));
+            addAndMakeVisible (customComp.get());
         }
     };
 
@@ -174,6 +163,7 @@ namespace LiveConstantEditor
         {}
 
         operator Type() const noexcept   { return value; }
+        Type get() const noexcept        { return value; }
         operator const char*() const     { return castToCharPointer (value); }
 
         LivePropertyEditorBase* createPropertyComponent (CodeDocument& doc) override
@@ -198,25 +188,21 @@ namespace LiveConstantEditor
     {
     public:
         ValueList();
-        ~ValueList();
+        ~ValueList() override;
 
-        juce_DeclareSingleton (ValueList, false)
+        JUCE_DECLARE_SINGLETON (ValueList, false)
 
         template <typename Type>
         LiveValue<Type>& getValue (const char* file, int line, const Type& initialValue)
         {
             const ScopedLock sl (lock);
-            typedef LiveValue<Type> ValueType;
+            using ValueType = LiveValue<Type>;
 
-            for (int i = 0; i < values.size(); ++i)
-            {
-                LiveValueBase* v = values.getUnchecked(i);
-
+            for (auto* v : values)
                 if (v->sourceLine == line && v->sourceFile == file)
                     return *static_cast<ValueType*> (v);
-            }
 
-            ValueType* v = new ValueType (file, line, initialValue);
+            auto v = new ValueType (file, line, initialValue);
             addValue (v);
             return *v;
         }
@@ -226,8 +212,6 @@ namespace LiveConstantEditor
         OwnedArray<CodeDocument> documents;
         Array<File> documentFiles;
         class EditorWindow;
-        friend class EditorWindow;
-        friend struct ContainerDeletePolicy<EditorWindow>;
         Component::SafePointer<EditorWindow> editorWindow;
         CriticalSection lock;
 
@@ -305,7 +289,7 @@ namespace LiveConstantEditor
     @endcode
  */
  #define JUCE_LIVE_CONSTANT(initialValue) \
-    (juce::LiveConstantEditor::getValue (__FILE__, __LINE__ - 1, initialValue))
+    (juce::LiveConstantEditor::getValue (__FILE__, __LINE__ - 1, initialValue).get())
 #else
  #define JUCE_LIVE_CONSTANT(initialValue) \
     (initialValue)

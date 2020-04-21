@@ -28,6 +28,8 @@ namespace juce
 /** This is an internal helper class which converts a juce ElementComparator style
     class (using a "compareElements" method) into a class that's compatible with
     std::sort (i.e. using an operator() to compare the elements)
+
+    @tags{Core}
 */
 template <typename ElementComparator>
 struct SortFunctionConverter
@@ -39,7 +41,7 @@ struct SortFunctionConverter
 
 private:
     ElementComparator& comparator;
-    SortFunctionConverter& operator= (const SortFunctionConverter&) JUCE_DELETED_FUNCTION;
+    SortFunctionConverter& operator= (const SortFunctionConverter&) = delete;
 };
 
 #endif
@@ -80,12 +82,17 @@ static void sortArray (ElementComparator& comparator,
                        int lastElement,
                        const bool retainOrderOfEquivalentItems)
 {
-    SortFunctionConverter<ElementComparator> converter (comparator);
+    jassert (firstElement >= 0);
 
-    if (retainOrderOfEquivalentItems)
-        std::stable_sort (array + firstElement, array + lastElement + 1, converter);
-    else
-        std::sort        (array + firstElement, array + lastElement + 1, converter);
+    if (lastElement > firstElement)
+    {
+        SortFunctionConverter<ElementComparator> converter (comparator);
+
+        if (retainOrderOfEquivalentItems)
+            std::stable_sort (array + firstElement, array + lastElement + 1, converter);
+        else
+            std::sort        (array + firstElement, array + lastElement + 1, converter);
+    }
 }
 
 
@@ -165,18 +172,20 @@ static int findInsertIndexInSortedArray (ElementComparator& comparator,
     This will work for primitive types and objects that implement operator<().
 
     Example: @code
-    Array <int> myArray;
+    Array<int> myArray;
     DefaultElementComparator<int> sorter;
     myArray.sort (sorter);
     @endcode
 
     @see ElementComparator
+
+    @tags{Core}
 */
 template <class ElementType>
 class DefaultElementComparator
 {
 private:
-    typedef typename TypeHelpers::ParameterType<ElementType>::type ParameterType;
+    using ParameterType = typename TypeHelpers::ParameterType<ElementType>::type;
 
 public:
     static int compareElements (ParameterType first, ParameterType second)

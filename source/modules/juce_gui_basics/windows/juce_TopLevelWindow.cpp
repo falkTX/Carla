@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -32,10 +24,10 @@ class TopLevelWindowManager  : private Timer,
                                private DeletedAtShutdown
 {
 public:
-    TopLevelWindowManager()     {}
-    ~TopLevelWindowManager()    { clearSingletonInstance(); }
+    TopLevelWindowManager() {}
+    ~TopLevelWindowManager() override    { clearSingletonInstance(); }
 
-    juce_DeclareSingleton_SingleThreaded_Minimal (TopLevelWindowManager)
+    JUCE_DECLARE_SINGLETON_SINGLETHREADED_MINIMAL (TopLevelWindowManager)
 
     void checkFocusAsync()
     {
@@ -122,7 +114,7 @@ private:
     JUCE_DECLARE_NON_COPYABLE (TopLevelWindowManager)
 };
 
-juce_ImplementSingleton_SingleThreaded (TopLevelWindowManager)
+JUCE_IMPLEMENT_SINGLETON (TopLevelWindowManager)
 
 void juce_checkCurrentlyFocusedTopLevelWindow();
 void juce_checkCurrentlyFocusedTopLevelWindow()
@@ -149,7 +141,7 @@ TopLevelWindow::TopLevelWindow (const String& name, const bool shouldAddToDeskto
 
 TopLevelWindow::~TopLevelWindow()
 {
-    shadower = nullptr;
+    shadower.reset();
     TopLevelWindowManager::getInstance()->removeWindow (this);
 }
 
@@ -212,7 +204,7 @@ void TopLevelWindow::setDropShadowEnabled (const bool useShadow)
 
     if (isOnDesktop())
     {
-        shadower = nullptr;
+        shadower.reset();
         Component::addToDesktop (getDesktopWindowStyleFlags());
     }
     else
@@ -221,7 +213,7 @@ void TopLevelWindow::setDropShadowEnabled (const bool useShadow)
         {
             if (shadower == nullptr)
             {
-                shadower = getLookAndFeel().createDropShadowerForComponent (this);
+                shadower.reset (getLookAndFeel().createDropShadowerForComponent (this));
 
                 if (shadower != nullptr)
                     shadower->setOwner (this);
@@ -229,7 +221,7 @@ void TopLevelWindow::setDropShadowEnabled (const bool useShadow)
         }
         else
         {
-            shadower = nullptr;
+            shadower.reset();
         }
     }
 }
@@ -256,7 +248,7 @@ void TopLevelWindow::recreateDesktopWindow()
 
 void TopLevelWindow::addToDesktop()
 {
-    shadower = nullptr;
+    shadower.reset();
     Component::addToDesktop (getDesktopWindowStyleFlags());
     setDropShadowEnabled (isDropShadowEnabled()); // force an update to clear away any fake shadows if necessary.
 }
@@ -271,7 +263,6 @@ void TopLevelWindow::addToDesktop (int windowStyleFlags, void* nativeWindowToAtt
        method. If you do this, it's best to call the base class's getDesktopWindowStyleFlags()
        method, then add or remove whatever flags are necessary from this value before returning it.
     */
-
     jassert ((windowStyleFlags & ~ComponentPeer::windowIsSemiTransparent)
                == (getDesktopWindowStyleFlags() & ~ComponentPeer::windowIsSemiTransparent));
 

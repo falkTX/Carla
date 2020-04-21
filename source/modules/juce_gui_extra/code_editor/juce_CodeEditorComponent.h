@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -36,6 +28,8 @@ class CodeTokeniser;
 
     This is designed to handle syntax highlighting and fast editing of very large
     files.
+
+    @tags{GUI}
 */
 class JUCE_API  CodeEditorComponent   : public Component,
                                         public ApplicationCommandTarget,
@@ -55,7 +49,7 @@ public:
                          CodeTokeniser* codeTokeniser);
 
     /** Destructor. */
-    ~CodeEditorComponent();
+    ~CodeEditorComponent() override;
 
     //==============================================================================
     /** Returns the code document that this component is editing. */
@@ -219,8 +213,10 @@ public:
     bool isReadOnly() const noexcept                    { return readOnly; }
 
     //==============================================================================
+    /** Defines a syntax highlighting colour scheme */
     struct JUCE_API  ColourScheme
     {
+        /** Defines a colour for a token type */
         struct TokenType
         {
             String name;
@@ -247,6 +243,19 @@ public:
         @see setColourScheme
     */
     Colour getColourForTokenType (int tokenType) const;
+
+    /** Rebuilds the syntax highlighting for a section of text.
+
+        This happens automatically any time the CodeDocument is edited, but this
+        method lets you change text colours even when the CodeDocument hasn't changed.
+
+        For example, you could use this to highlight tokens as the cursor moves.
+        To do so you'll need to tell your custom CodeTokeniser where the token you
+        want to highlight is, and make it return a special type of token. Then you
+        should call this method supplying the range of the highlighted text.
+        @see CodeTokeniser
+     */
+    void retokenise (int startIndex, int endIndex);
 
     //==============================================================================
     /** A set of colour IDs to use to change the colour of various aspects of the editor.
@@ -283,6 +292,9 @@ public:
     /** Called when the view position is scrolled horizontally or vertically. */
     virtual void editorViewportPositionChanged();
 
+    /** Called when the caret position moves. */
+    virtual void caretPositionMoved();
+
     //==============================================================================
     /** This adds the items to the popup menu.
 
@@ -317,7 +329,7 @@ public:
     */
     virtual void performPopupMenuAction (int menuItemID);
 
-    /** Specifies a commmand-manager which the editor will notify whenever the state
+    /** Specifies a command-manager which the editor will notify whenever the state
         of any of its commands changes.
         If you're making use of the editor's ApplicationCommandTarget interface, then
         you should also use this to tell it which command manager it should use. Make
@@ -350,7 +362,7 @@ public:
     /** @internal */
     bool isTextInputActive() const override;
     /** @internal */
-    void setTemporaryUnderlining (const Array<Range<int> >&) override;
+    void setTemporaryUnderlining (const Array<Range<int>>&) override;
     /** @internal */
     ApplicationCommandTarget* getNextCommandTarget() override;
     /** @internal */
@@ -373,19 +385,15 @@ private:
     double xOffset = 0;
     CodeDocument::Position caretPos, selectionStart, selectionEnd;
 
-    ScopedPointer<CaretComponent> caret;
+    std::unique_ptr<CaretComponent> caret;
     ScrollBar verticalScrollBar { true }, horizontalScrollBar { false };
     ApplicationCommandManager* appCommandManager = nullptr;
 
     class Pimpl;
-    friend class Pimpl;
-    friend struct ContainerDeletePolicy<Pimpl>;
-    ScopedPointer<Pimpl> pimpl;
+    std::unique_ptr<Pimpl> pimpl;
 
     class GutterComponent;
-    friend class GutterComponent;
-    friend struct ContainerDeletePolicy<GutterComponent>;
-    ScopedPointer<GutterComponent> gutter;
+    std::unique_ptr<GutterComponent> gutter;
 
     enum DragType
     {
@@ -406,7 +414,7 @@ private:
     void rebuildLineTokensAsync();
     void codeDocumentChanged (int start, int end);
 
-    OwnedArray<CodeDocument::Iterator> cachedIterators;
+    Array<CodeDocument::Iterator> cachedIterators;
     void clearCachedIterators (int firstLineToBeInvalid);
     void updateCachedIterators (int maxLineNum);
     void getIteratorForPosition (int position, CodeDocument::Iterator&);

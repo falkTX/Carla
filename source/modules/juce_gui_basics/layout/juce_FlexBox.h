@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -33,23 +25,62 @@ namespace juce
 
     To use this class, set its parameters appropriately (you can search online for
     more help on exactly how the FlexBox protocol works!), then add your sub-items
-    to the items array, and call performLayout().
+    to the items array, and call performLayout() in the resized() function of your
+    Component.
 
     @see FlexItem
+
+    @tags{GUI}
 */
-class JUCE_API  FlexBox
+class JUCE_API  FlexBox  final
 {
 public:
     /** Possible values for the flexDirection property. */
-    enum class Direction       { row, rowReverse, column, columnReverse };
+    enum class Direction
+    {
+        row,                  /**< Set the main axis direction from left to right. */
+        rowReverse,           /**< Set the main axis direction from right to left. */
+        column,               /**< Set the main axis direction from top to bottom. */
+        columnReverse         /**< Set the main axis direction from bottom to top. */
+    };
+
     /** Possible values for the flexWrap property. */
-    enum class Wrap            { noWrap, wrap, wrapReverse };
+    enum class Wrap
+    {
+        noWrap,               /**< Items are forced into a single line. */
+        wrap,                 /**< Items are wrapped onto multiple lines from top to bottom. */
+        wrapReverse           /**< Items are wrapped onto multiple lines from bottom to top. */
+    };
+
     /** Possible values for the alignContent property. */
-    enum class AlignContent    { stretch, flexStart, flexEnd, center, spaceBetween, spaceAround };
+    enum class AlignContent
+    {
+        stretch,              /**< Lines of items are stretched from start to end of the cross axis. */
+        flexStart,            /**< Lines of items are aligned towards the start of the cross axis. */
+        flexEnd,              /**< Lines of items are aligned towards the end of the cross axis. */
+        center,               /**< Lines of items are aligned towards the center of the cross axis. */
+        spaceBetween,         /**< Lines of items are evenly spaced along the cross axis with spaces between them. */
+        spaceAround           /**< Lines of items are evenly spaced along the cross axis with spaces around them. */
+    };
+
     /** Possible values for the alignItems property. */
-    enum class AlignItems      { stretch, flexStart, flexEnd, center };
+    enum class AlignItems
+    {
+        stretch,              /**< Items are stretched from start to end of the cross axis. */
+        flexStart,            /**< Items are aligned towards the start of the cross axis. */
+        flexEnd,              /**< Items are aligned towards the end of the cross axis. */
+        center                /**< Items are aligned towards the center of the cross axis. */
+    };
+
     /** Possible values for the justifyContent property. */
-    enum class JustifyContent  { flexStart, flexEnd, center, spaceBetween, spaceAround };
+    enum class JustifyContent
+    {
+        flexStart,            /**< Items are justified towards the start of the main axis. */
+        flexEnd,              /**< Items are justified towards the end of the main axis. */
+        center,               /**< Items are justified towards the center of the main axis. */
+        spaceBetween,         /**< Items are evenly spaced along the main axis with spaces between them. */
+        spaceAround           /**< Items are evenly spaced along the main axis with spaces around them. */
+    };
 
     //==============================================================================
     /** Creates an empty FlexBox container with default parameters. */

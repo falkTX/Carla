@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -40,7 +32,7 @@ namespace FontValues
     String fallbackFontStyle;
 }
 
-typedef Typeface::Ptr (*GetTypefaceForFont) (const Font&);
+using GetTypefaceForFont = Typeface::Ptr (*)(const Font&);
 GetTypefaceForFont juce_getTypefaceForFont = nullptr;
 
 float Font::getDefaultMinimumHorizontalScaleFactor() noexcept                { return FontValues::minimumHorizontalScale; }
@@ -60,7 +52,7 @@ public:
         clearSingletonInstance();
     }
 
-    juce_DeclareSingleton (TypefaceCache, false)
+    JUCE_DECLARE_SINGLETON (TypefaceCache, false)
 
     void setSize (const int numToCache)
     {
@@ -139,14 +131,14 @@ public:
 private:
     struct CachedFace
     {
-        CachedFace() noexcept  : lastUsageCount (0) {}
+        CachedFace() noexcept {}
 
         // Although it seems a bit wacky to store the name here, it's because it may be a
         // placeholder rather than a real one, e.g. "<Sans-Serif>" vs the actual typeface name.
         // Since the typeface itself doesn't know that it may have this alias, the name under
         // which it was fetched needs to be stored separately.
         String typefaceName, typefaceStyle;
-        size_t lastUsageCount;
+        size_t lastUsageCount = 0;
         Typeface::Ptr typeface;
     };
 
@@ -157,7 +149,7 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TypefaceCache)
 };
 
-juce_ImplementSingleton (TypefaceCache)
+JUCE_IMPLEMENT_SINGLETON (TypefaceCache)
 
 void Typeface::setTypefaceCacheSize (int numFontsToCache)
 {
@@ -280,13 +272,13 @@ Font& Font::operator= (const Font& other) noexcept
 }
 
 Font::Font (Font&& other) noexcept
-    : font (static_cast<ReferenceCountedObjectPtr<SharedFontInternal>&&> (other.font))
+    : font (std::move (other.font))
 {
 }
 
 Font& Font::operator= (Font&& other) noexcept
 {
-    font = static_cast<ReferenceCountedObjectPtr<SharedFontInternal>&&> (other.font);
+    font = std::move (other.font);
     return *this;
 }
 
@@ -308,7 +300,7 @@ bool Font::operator!= (const Font& other) const noexcept
 void Font::dupeInternalIfShared()
 {
     if (font->getReferenceCount() > 1)
-        font = new SharedFontInternal (*font);
+        font = *new SharedFontInternal (*font);
 }
 
 void Font::checkTypefaceSuitability()
@@ -326,7 +318,7 @@ struct FontPlaceholderNames
            regular { "<Regular>" };
 };
 
-const FontPlaceholderNames& getFontPlaceholderNames()
+static const FontPlaceholderNames& getFontPlaceholderNames()
 {
     static FontPlaceholderNames names;
     return names;
@@ -392,7 +384,7 @@ Typeface* Font::getTypeface() const
         jassert (font->typeface != nullptr);
     }
 
-    return font->typeface;
+    return font->typeface.get();
 }
 
 //==============================================================================

@@ -29,15 +29,13 @@
  #error "Incorrect use of JUCE cpp file"
 #endif
 
-#include "AppConfig.h"
-
 #define JUCE_CORE_INCLUDE_OBJC_HELPERS 1
 #define JUCE_CORE_INCLUDE_JNI_HELPERS 1
 #define JUCE_CORE_INCLUDE_NATIVE_HEADERS 1
 #define JUCE_CORE_INCLUDE_COM_SMART_PTR 1
 #define JUCE_EVENTS_INCLUDE_WIN32_MESSAGE_WINDOW 1
 
-#if JUCE_USE_WINRT_MIDI
+#if JUCE_USE_WINRT_MIDI || JUCE_USE_WINRT_WEBVIEW
  #define JUCE_EVENTS_INCLUDE_WINRT_WRAPPER 1
 #endif
 
@@ -68,16 +66,14 @@
 #include "interprocess/juce_InterprocessConnection.cpp"
 #include "interprocess/juce_InterprocessConnectionServer.cpp"
 #include "interprocess/juce_ConnectedChildProcess.cpp"
+#include "interprocess/juce_NetworkServiceDiscovery.cpp"
 
 //==============================================================================
 #if JUCE_MAC || JUCE_IOS
 
  #include "native/juce_osx_MessageQueue.h"
 
- #if JUCE_CLANG
-  #pragma clang diagnostic push
-  #pragma clang diagnostic ignored "-Wundeclared-selector"
- #endif
+ JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wundeclared-selector")
 
  #if JUCE_MAC
   #include "native/juce_mac_MessageManager.mm"
@@ -85,9 +81,7 @@
   #include "native/juce_ios_MessageManager.mm"
  #endif
 
- #if JUCE_CLANG
-  #pragma clang diagnostic pop
- #endif
+ JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
 #elif JUCE_WINDOWS
  #include "native/juce_win32_Messaging.cpp"

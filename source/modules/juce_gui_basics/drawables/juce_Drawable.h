@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -32,6 +24,8 @@ namespace juce
     The base class for objects which can draw themselves, e.g. polygons, images, etc.
 
     @see DrawableComposite, DrawableImage, DrawablePath, DrawableText
+
+    @tags{GUI}
 */
 class JUCE_API  Drawable  : public Component
 {
@@ -45,14 +39,14 @@ protected:
 
 public:
     /** Destructor. */
-    virtual ~Drawable();
+    ~Drawable() override;
 
     //==============================================================================
     /** Creates a deep copy of this Drawable object.
 
         Use this to create a new copy of this and any sub-objects in the tree.
     */
-    virtual Drawable* createCopy() const = 0;
+    virtual std::unique_ptr<Drawable> createCopy() const = 0;
 
     /** Creates a path that describes the outline of this drawable. */
     virtual Path getOutlineAsPath() const = 0;
@@ -121,9 +115,9 @@ public:
     DrawableComposite* getParent() const;
 
     /** Sets a the clipping region of this drawable using another drawable.
-        The drawbale passed in ill be deleted when no longer needed.
+        The drawable passed in will be deleted when no longer needed.
     */
-    void setClipPath (Drawable* drawableClipPath);
+    void setClipPath (std::unique_ptr<Drawable> drawableClipPath);
 
     //==============================================================================
     /** Tries to turn some kind of image file into a drawable.
@@ -131,21 +125,21 @@ public:
         The data could be an image that the ImageFileFormat class understands, or it
         could be SVG.
     */
-    static Drawable* createFromImageData (const void* data, size_t numBytes);
+    static std::unique_ptr<Drawable> createFromImageData (const void* data, size_t numBytes);
 
     /** Tries to turn a stream containing some kind of image data into a drawable.
 
         The data could be an image that the ImageFileFormat class understands, or it
         could be SVG.
     */
-    static Drawable* createFromImageDataStream (InputStream& dataSource);
+    static std::unique_ptr<Drawable> createFromImageDataStream (InputStream& dataSource);
 
     /** Tries to turn a file containing some kind of image data into a drawable.
 
         The data could be an image that the ImageFileFormat class understands, or it
         could be SVG.
     */
-    static Drawable* createFromImageFile (const File& file);
+    static std::unique_ptr<Drawable> createFromImageFile (const File& file);
 
     /** Attempts to parse an SVG (Scalable Vector Graphics) document, and to turn this
         into a Drawable tree.
@@ -156,7 +150,7 @@ public:
         SVG is a pretty large and complex spec, and this doesn't aim to be a full
         implementation, but it can return the basic vector objects.
     */
-    static Drawable* createFromSVG (const XmlElement& svgDocument);
+    static std::unique_ptr<Drawable> createFromSVG (const XmlElement& svgDocument);
 
     /** Attempts to parse an SVG (Scalable Vector Graphics) document from a file,
         and to turn this into a Drawable tree.
@@ -170,29 +164,13 @@ public:
         Any references to references to external image files will be relative to
         the parent directory of the file passed.
     */
-    static Drawable* createFromSVGFile (const File& svgFile);
+    static std::unique_ptr<Drawable> createFromSVGFile (const File& svgFile);
 
     /** Parses an SVG path string and returns it. */
     static Path parseSVGPath (const String& svgPath);
 
     //==============================================================================
-    /** Tries to create a Drawable from a previously-saved ValueTree.
-        The ValueTree must have been created by the createValueTree() method.
-        If there are any images used within the drawable, you'll need to provide a valid
-        ImageProvider object that can be used to retrieve these images from whatever type
-        of identifier is used to represent them.
-        Internally, this uses a ComponentBuilder, and registerDrawableTypeHandlers().
-    */
-    static Drawable* createFromValueTree (const ValueTree& tree, ComponentBuilder::ImageProvider* imageProvider);
-
-    /** Creates a ValueTree to represent this Drawable.
-        The ValueTree that is returned can be turned back into a Drawable with createFromValueTree().
-        If there are any images used in this drawable, you'll need to provide a valid ImageProvider
-        object that can be used to create storable representations of them.
-    */
-    virtual ValueTree createValueTree (ComponentBuilder::ImageProvider* imageProvider) const = 0;
-
-    /** Returns the area that this drawble covers.
+    /** Returns the area that this drawable covers.
         The result is expressed in this drawable's own coordinate space, and does not take
         into account any transforms that may be applied to the component.
     */
@@ -202,28 +180,6 @@ public:
         return true if any instances of this colour were found.
     */
     virtual bool replaceColour (Colour originalColour, Colour replacementColour);
-
-    //==============================================================================
-    /** Internal class used to manage ValueTrees that represent Drawables. */
-    class ValueTreeWrapperBase
-    {
-    public:
-        ValueTreeWrapperBase (const ValueTree& state);
-
-        ValueTree& getState() noexcept          { return state; }
-
-        String getID() const;
-        void setID (const String& newID);
-
-        ValueTree state;
-    };
-
-    //==============================================================================
-    /** Registers a set of ComponentBuilder::TypeHandler objects that can be used to
-        load all the different Drawable types from a saved state.
-        @see ComponentBuilder::registerTypeHandler()
-    */
-    static void registerDrawableTypeHandlers (ComponentBuilder& componentBuilder);
 
 protected:
     //==============================================================================
@@ -240,44 +196,11 @@ protected:
     void applyDrawableClipPath (Graphics&);
 
     Point<int> originRelativeToComponent;
-    ScopedPointer<Drawable> drawableClipPath;
+    std::unique_ptr<Drawable> drawableClipPath;
 
-  #ifndef DOXYGEN
-    /** Internal utility class used by Drawables. */
-    template <class DrawableType>
-    class Positioner  : public RelativeCoordinatePositionerBase
-    {
-    public:
-        Positioner (DrawableType& c)
-            : RelativeCoordinatePositionerBase (c),
-              owner (c)
-        {}
-
-        bool registerCoordinates() override      { return owner.registerCoordinates (*this); }
-
-        void applyToComponentBounds() override
-        {
-            ComponentScope scope (getComponent());
-            owner.recalculateCoordinates (&scope);
-        }
-
-        void applyNewBounds (const Rectangle<int>&) override
-        {
-            jassertfalse; // drawables can't be resized directly!
-        }
-
-    private:
-        DrawableType& owner;
-
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Positioner)
-    };
-
-    Drawable (const Drawable&);
-  #endif
-
-private:
     void nonConstDraw (Graphics&, float opacity, const AffineTransform&);
 
+    Drawable (const Drawable&);
     Drawable& operator= (const Drawable&);
     JUCE_LEAK_DETECTOR (Drawable)
 };

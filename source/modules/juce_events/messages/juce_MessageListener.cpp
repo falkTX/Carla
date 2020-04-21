@@ -28,14 +28,14 @@ Message::~Message() {}
 
 void Message::messageCallback()
 {
-    if (MessageListener* const r = recipient)
+    if (auto* r = recipient.get())
         r->handleMessage (*this);
 }
 
 MessageListener::MessageListener() noexcept
 {
-    // Are you trying to create a messagelistener before or after juce has been intialised??
-    jassert (MessageManager::getInstanceWithoutCreating() != nullptr);
+    // Are you trying to create a messagelistener before or after juce has been initialised??
+    JUCE_ASSERT_MESSAGE_MANAGER_EXISTS
 }
 
 MessageListener::~MessageListener()

@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -34,13 +26,15 @@ namespace juce
     https://css-tricks.com/snippets/css/complete-guide-grid/
 
     @see GridItem
+
+    @tags{GUI}
 */
-class JUCE_API  Grid
+class JUCE_API  Grid  final
 {
 public:
     //==============================================================================
     /** A size in pixels */
-    struct Px
+    struct Px  final
     {
         explicit Px (float p) : pixels (static_cast<long double>(p)) { /*sta (p >= 0.0f);*/ }
         explicit Px (int p)   : pixels (static_cast<long double>(p)) { /*sta (p >= 0.0f);*/ }
@@ -51,7 +45,7 @@ public:
     };
 
     /** A fractional ratio integer */
-    struct Fr
+    struct Fr  final
     {
         explicit Fr (int f) : fraction (static_cast<unsigned long long> (f)) {}
         explicit constexpr Fr (unsigned long long p) : fraction (p) {}
@@ -60,111 +54,157 @@ public:
     };
 
     //==============================================================================
-    /** */
-    struct TrackInfo
+    /** Represents a track. */
+    struct TrackInfo  final
     {
         /** Creates a track with auto dimension. */
         TrackInfo() noexcept;
-        /** */
+
         TrackInfo (Px sizeInPixels) noexcept;
-        /** */
         TrackInfo (Fr fractionOfFreeSpace) noexcept;
 
-        /** */
-        TrackInfo (Px sizeInPixels, const juce::String& endLineNameToUse) noexcept;
-        /** */
-        TrackInfo (Fr fractionOfFreeSpace, const juce::String& endLineNameToUse) noexcept;
+        TrackInfo (Px sizeInPixels, const String& endLineNameToUse) noexcept;
+        TrackInfo (Fr fractionOfFreeSpace, const String& endLineNameToUse) noexcept;
 
-        /** */
-        TrackInfo (const juce::String& startLineNameToUse, Px sizeInPixels) noexcept;
-        /** */
-        TrackInfo (const juce::String& startLineNameToUse, Fr fractionOfFreeSpace) noexcept;
+        TrackInfo (const String& startLineNameToUse, Px sizeInPixels) noexcept;
+        TrackInfo (const String& startLineNameToUse, Fr fractionOfFreeSpace) noexcept;
 
-        /** */
-        TrackInfo (const juce::String& startLineNameToUse, Px sizeInPixels, const juce::String& endLineNameToUse) noexcept;
-        /** */
-        TrackInfo (const juce::String& startLineNameToUse, Fr fractionOfFreeSpace, const juce::String& endLineNameToUse) noexcept;
+        TrackInfo (const String& startLineNameToUse, Px sizeInPixels, const String& endLineNameToUse) noexcept;
+        TrackInfo (const String& startLineNameToUse, Fr fractionOfFreeSpace, const String& endLineNameToUse) noexcept;
+
+        bool isAuto() const noexcept { return hasKeyword; }
+        bool isFractional() const noexcept { return isFraction; }
+        bool isPixels() const noexcept { return ! isFraction; }
+        const String& getStartLineName() const noexcept { return startLineName; }
+        const String& getEndLineName() const noexcept { return endLineName; }
+
+        /** Get the track's size - which might mean an absolute pixels value or a fractional ratio. */
+        float getSize() const noexcept { return size; }
 
     private:
         friend class Grid;
-        friend class GridItem;
+        float getAbsoluteSize (float relativeFractionalUnit) const;
 
         float size = 0; // Either a fraction or an absolute size in pixels
         bool isFraction = false;
         bool hasKeyword = false;
 
-        juce::String startLineName, endLineName;
+        String startLineName, endLineName;
     };
 
     //==============================================================================
-    /** */
-    enum class JustifyItems : int   { start = 0, end, center, stretch };
-    /** */
-    enum class AlignItems : int     { start = 0, end, center, stretch };
-    /** */
-    enum class JustifyContent       { start, end, center, stretch, spaceAround, spaceBetween, spaceEvenly };
-    /** */
-    enum class AlignContent         { start, end, center, stretch, spaceAround, spaceBetween, spaceEvenly };
-    /** */
-    enum class AutoFlow             { row, column, rowDense, columnDense };
+    /** Possible values for the justifyItems property. */
+    enum class JustifyItems : int
+    {
+        start = 0,                /**< Content inside the item is justified towards the left. */
+        end,                      /**< Content inside the item is justified towards the right. */
+        center,                   /**< Content inside the item is justified towards the center. */
+        stretch                   /**< Content inside the item is stretched from left to right. */
+    };
+
+    /** Possible values for the alignItems property. */
+    enum class AlignItems : int
+    {
+        start = 0,                /**< Content inside the item is aligned towards the top. */
+        end,                      /**< Content inside the item is aligned towards the bottom. */
+        center,                   /**< Content inside the item is aligned towards the center. */
+        stretch                   /**< Content inside the item is stretched from top to bottom. */
+    };
+
+    /** Possible values for the justifyContent property. */
+    enum class JustifyContent
+    {
+        start,                    /**< Items are justified towards the left of the container. */
+        end,                      /**< Items are justified towards the right of the container. */
+        center,                   /**< Items are justified towards the center of the container. */
+        stretch,                  /**< Items are stretched from left to right of the container. */
+        spaceAround,              /**< Items are evenly spaced along the row with spaces between them. */
+        spaceBetween,             /**< Items are evenly spaced along the row with spaces around them. */
+        spaceEvenly               /**< Items are evenly spaced along the row with even amount of spaces between them. */
+    };
+
+    /** Possible values for the alignContent property. */
+    enum class AlignContent
+    {
+        start,                    /**< Items are aligned towards the top of the container. */
+        end,                      /**< Items are aligned towards the bottom of the container. */
+        center,                   /**< Items are aligned towards the center of the container. */
+        stretch,                  /**< Items are stretched from top to bottom of the container. */
+        spaceAround,              /**< Items are evenly spaced along the column with spaces between them. */
+        spaceBetween,             /**< Items are evenly spaced along the column with spaces around them. */
+        spaceEvenly               /**< Items are evenly spaced along the column with even amount of spaces between them. */
+    };
+
+    /** Possible values for the autoFlow property. */
+    enum class AutoFlow
+    {
+        row,                      /**< Fills the grid by adding rows of items. */
+        column,                   /**< Fills the grid by adding columns of items. */
+        rowDense,                 /**< Fills the grid by adding rows of items and attempts to fill in gaps. */
+        columnDense               /**< Fills the grid by adding columns of items and attempts to fill in gaps. */
+    };
 
 
     //==============================================================================
-    /** */
+    /** Creates an empty Grid container with default parameters. */
     Grid() noexcept;
 
     /** Destructor */
     ~Grid() noexcept;
 
     //==============================================================================
-    /** */
+    /** Specifies the alignment of content inside the items along the rows. */
     JustifyItems   justifyItems   = JustifyItems::stretch;
-    /** */
+
+    /** Specifies the alignment of content inside the items along the columns. */
     AlignItems     alignItems     = AlignItems::stretch;
-    /** */
+
+    /** Specifies the alignment of items along the rows. */
     JustifyContent justifyContent = JustifyContent::stretch;
-    /** */
+
+    /** Specifies the alignment of items along the columns. */
     AlignContent   alignContent   = AlignContent::stretch;
-    /** */
+
+    /** Specifies how the auto-placement algorithm places items. */
     AutoFlow       autoFlow       = AutoFlow::row;
 
 
     //==============================================================================
-    /** */
-    juce::Array<TrackInfo> templateColumns;
+    /** The set of column tracks to lay out. */
+    Array<TrackInfo> templateColumns;
 
-    /** */
-    juce::Array<TrackInfo> templateRows;
+    /** The set of row tracks to lay out. */
+    Array<TrackInfo> templateRows;
 
     /** Template areas */
-    juce::StringArray templateAreas;
+    StringArray templateAreas;
 
-    /** */
+    /** The row track for auto dimension. */
     TrackInfo autoRows;
 
-    /** */
+    /** The column track for auto dimension. */
     TrackInfo autoColumns;
 
-    /** */
+    /** The gap in pixels between columns. */
     Px columnGap { 0 };
-    /** */
+    /** The gap in pixels between rows. */
     Px rowGap { 0 };
 
-    /** */
+    /** Sets the gap between rows and columns in pixels. */
     void setGap (Px sizeInPixels) noexcept          { rowGap = columnGap = sizeInPixels; }
 
     //==============================================================================
-    /** */
-    juce::Array<GridItem> items;
+    /** The set of items to lay-out. */
+    Array<GridItem> items;
 
     //==============================================================================
-    /** */
-    void performLayout (juce::Rectangle<int>);
+    /** Lays-out the grid's items within the given rectangle. */
+    void performLayout (Rectangle<int>);
 
     //==============================================================================
-    /** */
+    /** Returns the number of columns. */
     int getNumberOfColumns() const noexcept         { return templateColumns.size(); }
-    /** */
+    /** Returns the number of rows. */
     int getNumberOfRows() const noexcept            { return templateRows.size(); }
 
 private:

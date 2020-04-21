@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -27,7 +19,12 @@
 namespace juce
 {
 
-TextLayout::Glyph::Glyph (const int glyph, Point<float> anch, float w) noexcept
+static String substring (const String& text, Range<int> range)
+{
+    return text.substring (range.getStart(), range.getEnd());
+}
+
+TextLayout::Glyph::Glyph (int glyph, Point<float> anch, float w) noexcept
     : glyphCode (glyph), anchor (anch), width (w)
 {
 }
@@ -69,6 +66,29 @@ TextLayout::Run::Run (const Run& other)
 
 TextLayout::Run::~Run() noexcept {}
 
+Range<float> TextLayout::Run::getRunBoundsX() const noexcept
+{
+    Range<float> range;
+    bool isFirst = true;
+
+    for (auto& glyph : glyphs)
+    {
+        Range<float> r (glyph.anchor.x, glyph.anchor.x + glyph.width);
+
+        if (isFirst)
+        {
+            isFirst = false;
+            range = r;
+        }
+        else
+        {
+            range = range.getUnionWith (r);
+        }
+    }
+
+    return range;
+}
+
 //==============================================================================
 TextLayout::Line::Line() noexcept
     : ascent (0.0f), descent (0.0f), leading (0.0f)
@@ -101,19 +121,16 @@ Range<float> TextLayout::Line::getLineBoundsX() const noexcept
 
     for (auto* run : runs)
     {
-        for (auto& glyph : run->glyphs)
-        {
-            Range<float> runRange (glyph.anchor.x, glyph.anchor.x + glyph.width);
+        auto runRange = run->getRunBoundsX();
 
-            if (isFirst)
-            {
-                isFirst = false;
-                range = runRange;
-            }
-            else
-            {
-                range = range.getUnionWith (runRange);
-            }
+        if (isFirst)
+        {
+            isFirst = false;
+            range = runRange;
+        }
+        else
+        {
+            range = range.getUnionWith (runRange);
         }
     }
 
@@ -148,7 +165,7 @@ TextLayout::TextLayout (const TextLayout& other)
 }
 
 TextLayout::TextLayout (TextLayout&& other) noexcept
-    : lines (static_cast<OwnedArray<Line>&&> (other.lines)),
+    : lines (std::move (other.lines)),
       width (other.width), height (other.height),
       justification (other.justification)
 {
@@ -156,7 +173,7 @@ TextLayout::TextLayout (TextLayout&& other) noexcept
 
 TextLayout& TextLayout::operator= (TextLayout&& other) noexcept
 {
-    lines = static_cast<OwnedArray<Line>&&> (other.lines);
+    lines = std::move (other.lines);
     width = other.width;
     height = other.height;
     justification = other.justification;
@@ -177,7 +194,7 @@ TextLayout::~TextLayout()
 {
 }
 
-TextLayout::Line& TextLayout::getLine (const int index) const
+TextLayout::Line& TextLayout::getLine (int index) const noexcept
 {
     return *lines.getUnchecked (index);
 }
@@ -187,22 +204,35 @@ void TextLayout::ensureStorageAllocated (int numLinesNeeded)
     lines.ensureStorageAllocated (numLinesNeeded);
 }
 
-void TextLayout::addLine (Line* line)
+void TextLayout::addLine (std::unique_ptr<Line> line)
 {
-    lines.add (line);
+    lines.add (line.release());
 }
 
 void TextLayout::draw (Graphics& g, Rectangle<float> area) const
 {
     auto origin = justification.appliedToRectangle (Rectangle<float> (width, getHeight()), area).getPosition();
 
-    auto& context = g.getInternalContext();
+    auto& context   = g.getInternalContext();
+    context.saveState();
 
-    for (auto* line : lines)
+    auto clip       = context.getClipBounds();
+    auto clipTop    = clip.getY()      - origin.y;
+    auto clipBottom = clip.getBottom() - origin.y;
+
+    for (auto& line : *this)
     {
-        auto lineOrigin = origin + line->lineOrigin;
+        auto lineRangeY = line.getLineBoundsY();
 
-        for (auto* run : line->runs)
+        if (lineRangeY.getEnd() < clipTop)
+            continue;
+
+        if (lineRangeY.getStart() > clipBottom)
+            break;
+
+        auto lineOrigin = origin + line.lineOrigin;
+
+        for (auto* run : line.runs)
         {
             context.setFont (run->font);
             context.setFill (run->colour);
@@ -213,16 +243,7 @@ void TextLayout::draw (Graphics& g, Rectangle<float> area) const
 
             if (run->font.isUnderlined())
             {
-                Range<float> runExtent;
-
-                for (auto& glyph : run->glyphs)
-                {
-                    Range<float> glyphRange (glyph.anchor.x, glyph.anchor.x + glyph.width);
-
-                    runExtent = runExtent.isEmpty() ? glyphRange
-                                                    : runExtent.getUnionWith (glyphRange);
-                }
-
+                auto runExtent = run->getRunBoundsX();
                 auto lineThickness = run->font.getDescent() * 0.3f;
 
                 context.fillRect ({ runExtent.getStart() + lineOrigin.x, lineOrigin.y + lineThickness * 2.0f,
@@ -230,6 +251,8 @@ void TextLayout::draw (Graphics& g, Rectangle<float> area) const
             }
         }
     }
+
+    context.restoreState();
 }
 
 void TextLayout::createLayout (const AttributedString& text, float maxWidth)
@@ -328,8 +351,8 @@ namespace TextLayoutHelpers
             int lineStartPosition = 0;
             int runStartPosition = 0;
 
-            ScopedPointer<TextLayout::Line> currentLine;
-            ScopedPointer<TextLayout::Run> currentRun;
+            std::unique_ptr<TextLayout::Line> currentLine;
+            std::unique_ptr<TextLayout::Run> currentRun;
 
             bool needToSetLineOrigin = true;
 
@@ -341,8 +364,8 @@ namespace TextLayoutHelpers
                 Array<float> xOffsets;
                 t.font.getGlyphPositions (getTrimmedEndIfNotAllWhitespace (t.text), newGlyphs, xOffsets);
 
-                if (currentRun == nullptr)  currentRun  = new TextLayout::Run();
-                if (currentLine == nullptr) currentLine = new TextLayout::Line();
+                if (currentRun == nullptr)  currentRun  = std::make_unique<TextLayout::Run>();
+                if (currentLine == nullptr) currentLine = std::make_unique<TextLayout::Line>();
 
                 if (newGlyphs.size() > 0)
                 {
@@ -367,9 +390,10 @@ namespace TextLayoutHelpers
 
                     charPosition += newGlyphs.size();
                 }
-
-                if (t.isWhitespace || t.isNewLine)
+                else if (t.isWhitespace || t.isNewLine)
+                {
                     ++charPosition;
+                }
 
                 if (auto* nextToken = tokens[i + 1])
                 {
@@ -382,13 +406,13 @@ namespace TextLayoutHelpers
                     if (t.line != nextToken->line)
                     {
                         if (currentRun == nullptr)
-                            currentRun = new TextLayout::Run();
+                            currentRun = std::make_unique<TextLayout::Run>();
 
                         addRun (*currentLine, currentRun.release(), t, runStartPosition, charPosition);
-                        currentLine->stringRange = Range<int> (lineStartPosition, charPosition);
+                        currentLine->stringRange = { lineStartPosition, charPosition };
 
                         if (! needToSetLineOrigin)
-                            layout.addLine (currentLine.release());
+                            layout.addLine (std::move (currentLine));
 
                         runStartPosition = charPosition;
                         lineStartPosition = charPosition;
@@ -398,10 +422,10 @@ namespace TextLayoutHelpers
                 else
                 {
                     addRun (*currentLine, currentRun.release(), t, runStartPosition, charPosition);
-                    currentLine->stringRange = Range<int> (lineStartPosition, charPosition);
+                    currentLine->stringRange = { lineStartPosition, charPosition };
 
                     if (! needToSetLineOrigin)
-                        layout.addLine (currentLine.release());
+                        layout.addLine (std::move (currentLine));
 
                     needToSetLineOrigin = true;
                 }
@@ -412,21 +436,21 @@ namespace TextLayoutHelpers
                 auto totalW = layout.getWidth();
                 bool isCentred = (text.getJustification().getFlags() & Justification::horizontallyCentred) != 0;
 
-                for (int i = 0; i < layout.getNumLines(); ++i)
+                for (auto& line : layout)
                 {
-                    auto dx = totalW - layout.getLine(i).getLineBoundsX().getLength();
+                    auto dx = totalW - line.getLineBoundsX().getLength();
 
                     if (isCentred)
                         dx /= 2.0f;
 
-                    layout.getLine(i).lineOrigin.x += dx;
+                    line.lineOrigin.x += dx;
                 }
             }
         }
 
     private:
         static void addRun (TextLayout::Line& glyphLine, TextLayout::Run* glyphRun,
-                            const Token& t, const int start, const int end)
+                            const Token& t, int start, int end)
         {
             glyphRun->stringRange = { start, end };
             glyphRun->font = t.font;
@@ -436,7 +460,7 @@ namespace TextLayoutHelpers
             glyphLine.runs.add (glyphRun);
         }
 
-        static int getCharacterType (const juce_wchar c) noexcept
+        static int getCharacterType (juce_wchar c) noexcept
         {
             if (c == '\r' || c == '\n')
                 return 0;
@@ -482,7 +506,7 @@ namespace TextLayoutHelpers
                 tokens.add (new Token (currentString, font, colour, lastCharType == 2));
         }
 
-        void layoutRuns (const float maxWidth, const float extraLineSpacing, const AttributedString::WordWrap wordWrap)
+        void layoutRuns (float maxWidth, float extraLineSpacing, AttributedString::WordWrap wordWrap)
         {
             float x = 0, y = 0, h = 0;
             int i;
@@ -500,7 +524,7 @@ namespace TextLayoutHelpers
                 if (nextTok == nullptr)
                     break;
 
-                const bool tokenTooLarge = (x + nextTok->area.getWidth() > maxWidth);
+                bool tokenTooLarge = (x + nextTok->area.getWidth() > maxWidth);
 
                 if (t.isNewLine || ((! nextTok->isWhitespace) && (tokenTooLarge && wordWrap != AttributedString::none)))
                 {
@@ -516,7 +540,7 @@ namespace TextLayoutHelpers
             ++totalLines;
         }
 
-        void setLastLineHeight (int i, const float height) noexcept
+        void setLastLineHeight (int i, float height) noexcept
         {
             while (--i >= 0)
             {
@@ -538,7 +562,7 @@ namespace TextLayoutHelpers
             {
                 auto& attr = text.getAttribute (i);
 
-                appendText (text.getText().substring (attr.range.getStart(), attr.range.getEnd()),
+                appendText (substring (text.getText(), attr.range),
                             attr.font, attr.colour);
             }
         }

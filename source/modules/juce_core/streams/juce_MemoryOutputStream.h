@@ -29,13 +29,15 @@ namespace juce
 
     The data that was written into the stream can then be accessed later as
     a contiguous block of memory.
+
+    @tags{Core}
 */
 class JUCE_API  MemoryOutputStream  : public OutputStream
 {
 public:
     //==============================================================================
     /** Creates an empty memory stream, ready to be written into.
-        @param initialSize  the intial amount of capacity to allocate for writing into
+        @param initialSize  the initial amount of capacity to allocate for writing into
     */
     MemoryOutputStream (size_t initialSize = 256);
 
@@ -43,7 +45,7 @@ public:
 
         Note that the destination block will always be larger than the amount of data
         that has been written to the stream, because the MemoryOutputStream keeps some
-        spare capactity at its end. To trim the block's size down to fit the actual
+        spare capacity at its end. To trim the block's size down to fit the actual
         data, call flush(), or delete the MemoryOutputStream.
 
         @param memoryBlockToWriteTo             the block into which new data will be written.
@@ -64,7 +66,7 @@ public:
     /** Destructor.
         This will free any data that was written to it.
     */
-    ~MemoryOutputStream();
+    ~MemoryOutputStream() override;
 
     //==============================================================================
     /** Returns a pointer to the data that has been written to the stream.
@@ -114,10 +116,10 @@ public:
 
 private:
     //==============================================================================
-    MemoryBlock* const blockToUse;
+    MemoryBlock* const blockToUse = nullptr;
     MemoryBlock internalBlock;
-    void* externalData;
-    size_t position, size, availableSize;
+    void* externalData = nullptr;
+    size_t position = 0, size = 0, availableSize = 0;
 
     void trimExternalBlockSize();
     char* prepareToWrite (size_t);

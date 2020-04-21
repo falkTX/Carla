@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -51,7 +43,7 @@ Array<KeyPress> KeyPressMappingSet::getKeyPressesAssignedToCommand (const Comman
         if (mappings.getUnchecked(i)->commandID == commandID)
             return mappings.getUnchecked (i)->keypresses;
 
-    return Array<KeyPress>();
+    return {};
 }
 
 void KeyPressMappingSet::addKeyPress (const CommandID commandID, const KeyPress& newKeyPress, int insertIndex)
@@ -234,7 +226,7 @@ bool KeyPressMappingSet::restoreFromXml (const XmlElement& xmlVersion)
 
             if (commandId != 0)
             {
-                const KeyPress key (KeyPress::createFromDescription (map->getStringAttribute ("key")));
+                auto key = KeyPress::createFromDescription (map->getStringAttribute ("key"));
 
                 if (map->hasTagName ("MAPPING"))
                 {
@@ -242,9 +234,9 @@ bool KeyPressMappingSet::restoreFromXml (const XmlElement& xmlVersion)
                 }
                 else if (map->hasTagName ("UNMAPPING"))
                 {
-                    for (int i = mappings.size(); --i >= 0;)
-                        if (mappings.getUnchecked(i)->commandID == commandId)
-                            mappings.getUnchecked(i)->keypresses.removeAllInstancesOf (key);
+                    for (auto& m : mappings)
+                        if (m->commandID == commandId)
+                            m->keypresses.removeAllInstancesOf (key);
                 }
             }
         }
@@ -255,30 +247,30 @@ bool KeyPressMappingSet::restoreFromXml (const XmlElement& xmlVersion)
     return false;
 }
 
-XmlElement* KeyPressMappingSet::createXml (const bool saveDifferencesFromDefaultSet) const
+std::unique_ptr<XmlElement> KeyPressMappingSet::createXml (const bool saveDifferencesFromDefaultSet) const
 {
-    ScopedPointer<KeyPressMappingSet> defaultSet;
+    std::unique_ptr<KeyPressMappingSet> defaultSet;
 
     if (saveDifferencesFromDefaultSet)
     {
-        defaultSet = new KeyPressMappingSet (commandManager);
+        defaultSet = std::make_unique<KeyPressMappingSet> (commandManager);
         defaultSet->resetToDefaultMappings();
     }
 
-    XmlElement* const doc = new XmlElement ("KEYMAPPINGS");
+    auto doc = std::make_unique<XmlElement> ("KEYMAPPINGS");
 
     doc->setAttribute ("basedOnDefaults", saveDifferencesFromDefaultSet);
 
     for (int i = 0; i < mappings.size(); ++i)
     {
-        const CommandMapping& cm = *mappings.getUnchecked(i);
+        auto& cm = *mappings.getUnchecked(i);
 
         for (int j = 0; j < cm.keypresses.size(); ++j)
         {
             if (defaultSet == nullptr
                  || ! defaultSet->containsMapping (cm.commandID, cm.keypresses.getReference (j)))
             {
-                XmlElement* const map = doc->createNewChildElement ("MAPPING");
+                auto map = doc->createNewChildElement ("MAPPING");
 
                 map->setAttribute ("commandId", String::toHexString ((int) cm.commandID));
                 map->setAttribute ("description", commandManager.getDescriptionOfCommand (cm.commandID));
@@ -291,13 +283,13 @@ XmlElement* KeyPressMappingSet::createXml (const bool saveDifferencesFromDefault
     {
         for (int i = 0; i < defaultSet->mappings.size(); ++i)
         {
-            const CommandMapping& cm = *defaultSet->mappings.getUnchecked(i);
+            auto& cm = *defaultSet->mappings.getUnchecked(i);
 
             for (int j = 0; j < cm.keypresses.size(); ++j)
             {
                 if (! containsMapping (cm.commandID, cm.keypresses.getReference (j)))
                 {
-                    XmlElement* const map = doc->createNewChildElement ("UNMAPPING");
+                    auto map = doc->createNewChildElement ("UNMAPPING");
 
                     map->setAttribute ("commandId", String::toHexString ((int) cm.commandID));
                     map->setAttribute ("description", commandManager.getDescriptionOfCommand (cm.commandID));

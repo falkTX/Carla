@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -32,24 +24,40 @@ namespace juce
     integer value with a given range.
 
     @see AudioParameterFloat, AudioParameterBool, AudioParameterChoice
+
+    @tags{Audio}
 */
-class JUCE_API  AudioParameterInt  : public AudioProcessorParameterWithID
+class JUCE_API  AudioParameterInt  : public RangedAudioParameter
 {
 public:
-    /** Creates an AudioParameterInt with an ID, name, and range.
-        Note that the min and max range values are inclusive.
-        On creation, its value is set to the default value.
+    /** Creates a AudioParameterInt with the specified parameters.
+
+        @param parameterID         The parameter ID to use
+        @param parameterName       The parameter name to use
+        @param minValue            The minimum parameter value
+        @param maxValue            The maximum parameter value
+        @param defaultValue        The default value
+        @param parameterLabel      An optional label for the parameter's value
+        @param stringFromInt       An optional lambda function that converts a int
+                                   value to a string with a maximum length. This may
+                                   be used by hosts to display the parameter's value.
+        @param intFromString       An optional lambda function that parses a string
+                                   and converts it into an int. Some hosts use this
+                                   to allow users to type in parameter values.
     */
-    AudioParameterInt (const String& parameterID, const String& name,
+    AudioParameterInt (const String& parameterID, const String& parameterName,
                        int minValue, int maxValue,
                        int defaultValue,
-                       const String& label = String());
+                       const String& parameterLabel = String(),
+                       std::function<String(int value, int maximumStringLength)> stringFromInt = nullptr,
+                       std::function<int(const String& text)> intFromString = nullptr);
 
     /** Destructor. */
-    ~AudioParameterInt();
+    ~AudioParameterInt() override;
 
     /** Returns the parameter's current value as an integer. */
-    int get() const noexcept                    { return roundToInt (value); }
+    int get() const noexcept                    { return roundToInt (value.load()); }
+
     /** Returns the parameter's current value as an integer. */
     operator int() const noexcept               { return get(); }
 
@@ -59,14 +67,19 @@ public:
     AudioParameterInt& operator= (int newValue);
 
     /** Returns the parameter's range. */
-    Range<int> getRange() const noexcept        { return Range<int> (minValue, maxValue); }
+    Range<int> getRange() const noexcept        { return { (int) getNormalisableRange().start, (int) getNormalisableRange().end }; }
 
+    /** Returns the range of values that the parameter can take. */
+    const NormalisableRange<float>& getNormalisableRange() const override   { return range; }
+
+protected:
+    /** Override this method if you are interested in receiving callbacks
+        when the parameter value changes.
+    */
+    virtual void valueChanged (int newValue);
 
 private:
     //==============================================================================
-    int minValue, maxValue;
-    float value, defaultValue;
-
     float getValue() const override;
     void setValue (float newValue) override;
     float getDefaultValue() const override;
@@ -74,9 +87,11 @@ private:
     String getText (float, int) const override;
     float getValueForText (const String&) const override;
 
-    int limitRange (int) const noexcept;
-    float convertTo0to1 (int) const noexcept;
-    int convertFrom0to1 (float) const noexcept;
+    const NormalisableRange<float> range;
+    std::atomic<float> value;
+    const float defaultValue;
+    std::function<String(int, int)> stringFromIntFunction;
+    std::function<int(const String&)> intFromStringFunction;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioParameterInt)
 };

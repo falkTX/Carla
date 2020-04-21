@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -124,7 +116,7 @@ public:
                             dragImage.multiplyAllAlphas (0.6f);
 
                             auto imageOffset = pos.getPosition() - e.getPosition();
-                            dragContainer->startDragging (dragDescription, &owner, dragImage, true, &imageOffset);
+                            dragContainer->startDragging (dragDescription, &owner, dragImage, true, &imageOffset, &e.source);
                         }
                         else
                         {
@@ -440,7 +432,7 @@ TreeView::TreeView (const String& name)
     : Component (name),
       viewport (new TreeViewport())
 {
-    addAndMakeVisible (viewport);
+    addAndMakeVisible (viewport.get());
     viewport->setViewedComponent (new ContentComponent (*this));
     setWantsKeyboardFocus (true);
 }
@@ -484,7 +476,7 @@ void TreeView::setRootItem (TreeViewItem* const newRootItem)
 
 void TreeView::deleteRootItem()
 {
-    const ScopedPointer<TreeViewItem> deleter (rootItem);
+    const std::unique_ptr<TreeViewItem> deleter (rootItem);
     setRootItem (nullptr);
 }
 
@@ -547,7 +539,7 @@ void TreeView::setOpenCloseButtonsVisible (const bool shouldBeVisible)
 
 Viewport* TreeView::getViewport() const noexcept
 {
-    return viewport;
+    return viewport.get();
 }
 
 //==============================================================================
@@ -610,13 +602,13 @@ static void addAllSelectedItemIds (TreeViewItem* item, XmlElement& parent)
         addAllSelectedItemIds (item->getSubItem(i), parent);
 }
 
-XmlElement* TreeView::getOpennessState (const bool alsoIncludeScrollPosition) const
+std::unique_ptr<XmlElement> TreeView::getOpennessState (bool alsoIncludeScrollPosition) const
 {
-    XmlElement* e = nullptr;
+    std::unique_ptr<XmlElement> e;
 
     if (rootItem != nullptr)
     {
-        e = rootItem->getOpennessState (false);
+        e.reset (rootItem->getOpennessState (false));
 
         if (e != nullptr)
         {
@@ -1008,8 +1000,11 @@ void TreeView::showDragHighlight (const InsertPoint& insertPos) noexcept
 
     if (dragInsertPointHighlight == nullptr)
     {
-        addAndMakeVisible (dragInsertPointHighlight = new InsertPointHighlight());
-        addAndMakeVisible (dragTargetGroupHighlight = new TargetGroupHighlight());
+        dragInsertPointHighlight.reset (new InsertPointHighlight());
+        dragTargetGroupHighlight.reset (new TargetGroupHighlight());
+
+        addAndMakeVisible (dragInsertPointHighlight.get());
+        addAndMakeVisible (dragTargetGroupHighlight.get());
     }
 
     dragInsertPointHighlight->setTargetPosition (insertPos, viewport->getViewWidth());
@@ -1018,8 +1013,8 @@ void TreeView::showDragHighlight (const InsertPoint& insertPos) noexcept
 
 void TreeView::hideDragHighlight() noexcept
 {
-    dragInsertPointHighlight = nullptr;
-    dragTargetGroupHighlight = nullptr;
+    dragInsertPointHighlight.reset();
+    dragTargetGroupHighlight.reset();
 }
 
 void TreeView::handleDrag (const StringArray& files, const SourceDetails& dragSourceDetails)
@@ -1855,12 +1850,12 @@ void TreeViewItem::restoreOpennessState (const XmlElement& e)
     }
 }
 
-XmlElement* TreeViewItem::getOpennessState() const
+std::unique_ptr<XmlElement> TreeViewItem::getOpennessState() const
 {
-    return getOpennessState (true);
+    return std::unique_ptr<XmlElement> (getOpennessState (true));
 }
 
-XmlElement* TreeViewItem::getOpennessState (const bool canReturnNull) const
+XmlElement* TreeViewItem::getOpennessState (bool canReturnNull) const
 {
     auto name = getUniqueName();
 

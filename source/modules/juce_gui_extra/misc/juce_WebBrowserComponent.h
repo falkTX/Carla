@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -33,11 +25,14 @@ namespace juce
 /**
     A component that displays an embedded web browser.
 
-    The browser itself will be platform-dependent. On the Mac, probably Safari, on
-    Windows, probably IE.
+    The browser itself will be platform-dependent. On Mac and iOS it will be
+    WebKit, if you have enabled JUCE_USE_WINRT_WEBVIEW on Windows 10 it will be
+    EdgeHTML otherwise IE, on Android it will be Chrome, and on Linux it will be
+    WebKit.
 
+    @tags{GUI}
 */
-class JUCE_API  WebBrowserComponent      : public Component
+class JUCE_API  WebBrowserComponent  : public Component
 {
 public:
     //==============================================================================
@@ -54,7 +49,7 @@ public:
     explicit WebBrowserComponent (bool unloadPageWhenBrowserIsHidden = true);
 
     /** Destructor. */
-    ~WebBrowserComponent();
+    ~WebBrowserComponent() override;
 
     //==============================================================================
     /** Sends the browser to a particular URL.
@@ -93,10 +88,10 @@ public:
         tries to go to a particular URL. To allow the operation to carry on,
         return true, or return false to stop the navigation happening.
     */
-    virtual bool pageAboutToLoad (const String& newURL);
+    virtual bool pageAboutToLoad (const String& newURL)             { ignoreUnused (newURL); return true; }
 
     /** This callback happens when the browser has finished loading a page. */
-    virtual void pageFinishedLoading (const String& url);
+    virtual void pageFinishedLoading (const String& url)            { ignoreUnused (url); }
 
     /** This callback happens when a network error was encountered while
         trying to load a page.
@@ -108,18 +103,18 @@ public:
         The errorInfo contains some platform dependent string describing the
         error.
     */
-    virtual bool pageLoadHadNetworkError (const String& errorInfo);
+    virtual bool pageLoadHadNetworkError (const String& errorInfo)  { ignoreUnused (errorInfo); return true; }
 
     /** This callback occurs when a script or other activity in the browser asks for
         the window to be closed.
     */
-    virtual void windowCloseRequest();
+    virtual void windowCloseRequest()                               {}
 
     /** This callback occurs when the browser attempts to load a URL in a new window.
         This won't actually load the window but gives you a chance to either launch a
         new window yourself or just load the URL into the current window with goToURL().
      */
-    virtual void newWindowAttemptingToLoad (const String& newURL);
+    virtual void newWindowAttemptingToLoad (const String& newURL)   { ignoreUnused (newURL); }
 
     //==============================================================================
     /** @internal */
@@ -133,11 +128,13 @@ public:
     /** @internal */
     void focusGained (FocusChangeType) override;
 
+    /** @internal */
+    class Pimpl;
+
 private:
     //==============================================================================
-    class Pimpl;
-    Pimpl* browser;
-    bool blankPageShown, unloadPageWhenBrowserIsHidden;
+    std::unique_ptr<Pimpl> browser;
+    bool blankPageShown = false, unloadPageWhenBrowserIsHidden;
     String lastURL;
     StringArray lastHeaders;
     MemoryBlock lastPostData;
@@ -147,7 +144,6 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (WebBrowserComponent)
 };
-
 
 #endif
 

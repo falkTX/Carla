@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -45,6 +37,8 @@ namespace juce
     simply by overriding FileDragAndDropTarget::filesDropped().
 
     @see DragAndDropTarget
+
+    @tags{GUI}
 */
 class JUCE_API  DragAndDropContainer
 {
@@ -71,40 +65,71 @@ public:
         findParentDragContainerFor() is a handy method to call to find the
         drag container to use for a component.
 
-        @param sourceDescription    a string or value to use as the description of the thing being dragged -
-                                    this will be passed to the objects that might be dropped-onto so they can
-                                    decide whether they want to handle it
-        @param sourceComponent      the component that is being dragged
-        @param dragImage            the image to drag around underneath the mouse. If this is a null image,
-                                    a snapshot of the sourceComponent will be used instead.
+        @param sourceDescription                 a string or value to use as the description of the thing being dragged -
+                                                 this will be passed to the objects that might be dropped-onto so they can
+                                                 decide whether they want to handle it
+        @param sourceComponent                   the component that is being dragged
+        @param dragImage                         the image to drag around underneath the mouse. If this is a null image,
+                                                 a snapshot of the sourceComponent will be used instead.
         @param allowDraggingToOtherJuceWindows   if true, the dragged component will appear as a desktop
-                                    window, and can be dragged to DragAndDropTargets that are the
-                                    children of components other than this one.
-        @param imageOffsetFromMouse if an image has been passed-in, this specifies the offset
-                                    at which the image should be drawn from the mouse. If it isn't
-                                    specified, then the image will be centred around the mouse. If
-                                    an image hasn't been passed-in, this will be ignored.
+                                                 window, and can be dragged to DragAndDropTargets that are the
+                                                 children of components other than this one.
+        @param imageOffsetFromMouse              if an image has been passed-in, this specifies the offset
+                                                 at which the image should be drawn from the mouse. If it isn't
+                                                 specified, then the image will be centred around the mouse. If
+                                                 an image hasn't been passed-in, this will be ignored.
+        @param inputSourceCausingDrag            the mouse input source which started the drag. When calling
+                                                 from within a mouseDown or mouseDrag event, you can pass
+                                                 MouseEvent::source to this method. If this param is nullptr then JUCE
+                                                 will use the mouse input source which is currently dragging. If there
+                                                 are several dragging mouse input sources (which can often occur on mobile)
+                                                 then JUCE will use the mouseInputSource which is closest to the sourceComponent.
     */
     void startDragging (const var& sourceDescription,
                         Component* sourceComponent,
                         Image dragImage = Image(),
                         bool allowDraggingToOtherJuceWindows = false,
-                        const Point<int>* imageOffsetFromMouse = nullptr);
+                        const Point<int>* imageOffsetFromMouse = nullptr,
+                        const MouseInputSource* inputSourceCausingDrag = nullptr);
 
     /** Returns true if something is currently being dragged. */
     bool isDragAndDropActive() const;
+
+    /** Returns the number of things currently being dragged. */
+    int getNumCurrentDrags() const;
 
     /** Returns the description of the thing that's currently being dragged.
 
         If nothing's being dragged, this will return a null var, otherwise it'll return
         the var that was passed into startDragging().
 
-        @see startDragging
+        If you are using drag and drop in a multi-touch environment then you should use the
+        getDragDescriptionForIndex() method instead which takes a touch index parameter.
+
+        @see startDragging, getDragDescriptionForIndex
     */
     var getCurrentDragDescription() const;
 
-    /** If a drag is in progress, this allows the image being shown to be dynamically updated. */
+    /** Same as the getCurrentDragDescription() method but takes a touch index parameter.
+
+        @see getCurrentDragDescription
+    */
+    var getDragDescriptionForIndex (int index) const;
+
+    /** If a drag is in progress, this allows the image being shown to be dynamically updated.
+
+        If you are using drag and drop in a multi-touch environment then you should use the
+        setDragImageForIndex() method instead which takes a touch index parameter.
+
+        @see setDragImageForIndex
+    */
     void setCurrentDragImage (const Image& newImage);
+
+    /** Same as the setCurrentDragImage() method but takes a touch index parameter.
+
+        @see setCurrentDragImage
+     */
+    void setDragImageForIndex (int index, const Image& newImage);
 
     /** Utility to find the DragAndDropContainer for a given Component.
 
@@ -120,42 +145,46 @@ public:
 
 
     //==============================================================================
-    /** This performs a synchronous drag-and-drop of a set of files to some external
+    /** This performs an asynchronous drag-and-drop of a set of files to some external
         application.
 
         You can call this function in response to a mouseDrag callback, and it will
-        block, running its own internal message loop and tracking the mouse, while it
-        uses a native operating system drag-and-drop operation to move or copy some
+        use a native operating system drag-and-drop operation to move or copy some
         files to another application.
 
         @param files            a list of filenames to drag
         @param canMoveFiles     if true, the app that receives the files is allowed to move the files to a new location
                                 (if this is appropriate). If false, the receiver is expected to make a copy of them.
-        @param sourceComponent  Normally, JUCE will assume that the component under the mouse is the source component
+        @param sourceComponent  normally, JUCE will assume that the component under the mouse is the source component
                                 of the drag, but you can use this parameter to override this.
-        @returns                true if the files were successfully dropped somewhere, or false if it
-                                was interrupted
+        @param callback         an optional completion callback that will be called when the operation has ended.
+
+        @returns                true if the drag operation was successfully started, or false if it failed for some reason
+
         @see performExternalDragDropOfText
     */
     static bool performExternalDragDropOfFiles (const StringArray& files, bool canMoveFiles,
-                                                Component* sourceComponent = nullptr);
+                                                Component* sourceComponent = nullptr,
+                                                std::function<void()> callback = nullptr);
 
-    /** This performs a synchronous drag-and-drop of a block of text to some external
+    /** This performs an asynchronous drag-and-drop of a block of text to some external
         application.
 
         You can call this function in response to a mouseDrag callback, and it will
-        block, running its own internal message loop and tracking the mouse, while it
-        uses a native operating system drag-and-drop operation to move or copy some
+        use a native operating system drag-and-drop operation to move or copy some
         text to another application.
 
         @param text             the text to copy
         @param sourceComponent  Normally, JUCE will assume that the component under the mouse is the source component
                                 of the drag, but you can use this parameter to override this.
-        @returns                true if the text was successfully dropped somewhere, or false if it
-                                was interrupted
+        @param callback         an optional completion callback that will be called when the operation has ended.
+
+        @returns                true if the drag operation was successfully started, or false if it failed for some reason
+
         @see performExternalDragDropOfFiles
     */
-    static bool performExternalDragDropOfText (const String& text, Component* sourceComponent = nullptr);
+    static bool performExternalDragDropOfText (const String& text, Component* sourceComponent = nullptr,
+                                               std::function<void()> callback = nullptr);
 
 protected:
     /** Override this if you want to be able to perform an external drag of a set of files
@@ -197,9 +226,10 @@ protected:
 private:
     //==============================================================================
     class DragImageComponent;
-    friend class DragImageComponent;
-    friend struct ContainerDeletePolicy<DragImageComponent>;
-    ScopedPointer<DragImageComponent> dragImageComponent;
+    OwnedArray<DragImageComponent> dragImageComponents;
+
+    const MouseInputSource* getMouseInputSourceForDrag (Component* sourceComponent, const MouseInputSource* inputSourceCausingDrag);
+    bool isAlreadyDragging (Component* sourceComponent) const noexcept;
 
    #if JUCE_CATCH_DEPRECATED_CODE_MISUSE
     // This is just here to cause a compile error in old code that hasn't been changed to use the new
@@ -207,8 +237,6 @@ private:
     virtual int dragOperationStarted()              { return 0; }
     virtual int dragOperationEnded()                { return 0; }
    #endif
-
-    JUCE_DEPRECATED_WITH_BODY (virtual bool shouldDropFilesWhenDraggedExternally (const String&, Component*, StringArray&, bool&), { return false; })
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DragAndDropContainer)
 };

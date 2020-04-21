@@ -28,6 +28,8 @@ namespace juce
 /**
     Contains some static helper functions for manipulating the MS Windows registry
     (Only available on Windows, of course!)
+
+    @tags{Core}
 */
 class JUCE_API  WindowsRegistry
 {
@@ -88,7 +90,7 @@ public:
     static bool JUCE_CALLTYPE valueExists (const String& regValuePath, WoW64Mode mode = WoW64_Default);
 
     /** Returns true if the given key exists in the registry. */
-    static bool JUCE_CALLTYPE keyExists (const String& regValuePath, WoW64Mode mode = WoW64_Default);
+    static bool JUCE_CALLTYPE keyExists (const String& regKeyPath, WoW64Mode mode = WoW64_Default);
 
     /** Deletes a registry value. */
     static bool JUCE_CALLTYPE deleteValue (const String& regValuePath, WoW64Mode mode = WoW64_Default);
@@ -127,7 +129,7 @@ public:
     JUCE_DEPRECATED (static bool keyExistsWow64 (const String&));
 
 private:
-    WindowsRegistry() JUCE_DELETED_FUNCTION;
+    WindowsRegistry() = delete;
     JUCE_DECLARE_NON_COPYABLE (WindowsRegistry)
 };
 

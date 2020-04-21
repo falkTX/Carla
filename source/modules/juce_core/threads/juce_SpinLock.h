@@ -29,18 +29,20 @@ namespace juce
     uncontended situations.
 
     Note that unlike a CriticalSection, this type of lock is not re-entrant, and may
-    be less efficient when used it a highly contended situation, but it's very small and
+    be less efficient when used in a highly contended situation, but it's very small and
     requires almost no initialisation.
     It's most appropriate for simple situations where you're only going to hold the
     lock for a very brief time.
 
     @see CriticalSection
+
+    @tags{Core}
 */
 class JUCE_API  SpinLock
 {
 public:
-    inline SpinLock() noexcept {}
-    inline ~SpinLock() noexcept {}
+    inline SpinLock() = default;
+    inline ~SpinLock() = default;
 
     /** Acquires the lock.
         This will block until the lock has been successfully acquired by this thread.
@@ -62,16 +64,16 @@ public:
     /** Releases the lock. */
     inline void exit() const noexcept
     {
-        jassert (lock.value == 1); // Agh! Releasing a lock that isn't currently held!
+        jassert (lock.get() == 1); // Agh! Releasing a lock that isn't currently held!
         lock = 0;
     }
 
     //==============================================================================
     /** Provides the type of scoped lock to use for locking a SpinLock. */
-    typedef GenericScopedLock <SpinLock>       ScopedLockType;
+    using ScopedLockType = GenericScopedLock<SpinLock>;
 
     /** Provides the type of scoped unlocker to use with a SpinLock. */
-    typedef GenericScopedUnlock <SpinLock>     ScopedUnlockType;
+    using ScopedUnlockType = GenericScopedUnlock<SpinLock>;
 
 private:
     //==============================================================================

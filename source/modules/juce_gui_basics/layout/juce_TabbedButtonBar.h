@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -38,6 +30,8 @@ class TabbedButtonBar;
     method to create it instead of the default one.
 
     @see TabbedButtonBar
+
+    @tags{GUI}
 */
 class JUCE_API  TabBarButton  : public Button
 {
@@ -47,7 +41,7 @@ public:
     TabBarButton (const String& name, TabbedButtonBar& ownerBar);
 
     /** Destructor. */
-    ~TabBarButton();
+    ~TabBarButton() override;
 
     /** Returns the bar that contains this button. */
     TabbedButtonBar& getTabbedButtonBar() const   { return owner; }
@@ -72,7 +66,7 @@ public:
                             ExtraComponentPlacement extraComponentPlacement);
 
     /** Returns the custom component, if there is one. */
-    Component* getExtraComponent() const noexcept                           { return extraComponent; }
+    Component* getExtraComponent() const noexcept                           { return extraComponent.get(); }
 
     /** Returns the placement of the custom component, if there is one. */
     ExtraComponentPlacement getExtraComponentPlacement() const noexcept     { return extraCompPlacement; }
@@ -107,7 +101,7 @@ public:
 
     //==============================================================================
     /** @internal */
-    void paintButton (Graphics&, bool isMouseOverButton, bool isButtonDown) override;
+    void paintButton (Graphics&, bool, bool) override;
     /** @internal */
     void clicked (const ModifierKeys&) override;
     /** @internal */
@@ -120,12 +114,13 @@ public:
 protected:
     friend class TabbedButtonBar;
     TabbedButtonBar& owner;
-    int overlapPixels;
+    int overlapPixels = 0;
 
-    ScopedPointer<Component> extraComponent;
-    ExtraComponentPlacement extraCompPlacement;
+    std::unique_ptr<Component> extraComponent;
+    ExtraComponentPlacement extraCompPlacement = afterText;
 
 private:
+    using Button::clicked;
     void calcAreas (Rectangle<int>&, Rectangle<int>&) const;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TabBarButton)
@@ -145,6 +140,8 @@ private:
     and other housekeeping.
 
     @see TabbedComponent
+
+    @tags{GUI}
 */
 class JUCE_API  TabbedButtonBar  : public Component,
                                    public ChangeBroadcaster
@@ -169,7 +166,7 @@ public:
     TabbedButtonBar (Orientation orientation);
 
     /** Destructor. */
-    ~TabbedButtonBar();
+    ~TabbedButtonBar() override;
 
     //==============================================================================
     /** Changes the bar's orientation.
@@ -304,7 +301,7 @@ public:
     */
     struct JUCE_API  LookAndFeelMethods
     {
-        virtual ~LookAndFeelMethods() {}
+        virtual ~LookAndFeelMethods() = default;
 
         virtual int getTabButtonSpaceAroundImage() = 0;
         virtual int getTabButtonOverlap (int tabDepth) = 0;
@@ -341,28 +338,24 @@ protected:
     virtual TabBarButton* createTabButton (const String& tabName, int tabIndex);
 
 private:
-    Orientation orientation;
-
     struct TabInfo
     {
-        ScopedPointer<TabBarButton> button;
+        std::unique_ptr<TabBarButton> button;
         String name;
         Colour colour;
     };
 
-    OwnedArray <TabInfo> tabs;
+    OwnedArray<TabInfo> tabs;
 
-    double minimumScale;
-    int currentTabIndex;
+    Orientation orientation;
+    double minimumScale = 0.7;
+    int currentTabIndex = -1;
 
     class BehindFrontTabComp;
-    friend class BehindFrontTabComp;
-    friend struct ContainerDeletePolicy<BehindFrontTabComp>;
-    ScopedPointer<BehindFrontTabComp> behindFrontTab;
-    ScopedPointer<Button> extraTabsButton;
+    std::unique_ptr<BehindFrontTabComp> behindFrontTab;
+    std::unique_ptr<Button> extraTabsButton;
 
     void showExtraItemsMenu();
-    static void extraItemsMenuCallback (int, TabbedButtonBar*);
     void updateTabPositions (bool animate);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TabbedButtonBar)

@@ -25,51 +25,53 @@ namespace juce
 
 namespace MidiBufferHelpers
 {
-    inline int getEventTime (const void* const d) noexcept
+    inline int getEventTime (const void* d) noexcept
     {
         return readUnaligned<int32> (d);
     }
 
-    inline uint16 getEventDataSize (const void* const d) noexcept
+    inline uint16 getEventDataSize (const void* d) noexcept
     {
         return readUnaligned<uint16> (static_cast<const char*> (d) + sizeof (int32));
     }
 
-    inline uint16 getEventTotalSize (const void* const d) noexcept
+    inline uint16 getEventTotalSize (const void* d) noexcept
     {
         return (uint16) (getEventDataSize (d) + sizeof (int32) + sizeof (uint16));
     }
 
-    static int findActualEventLength (const uint8* const data, const int maxBytes) noexcept
+    static int findActualEventLength (const uint8* data, int maxBytes) noexcept
     {
-        unsigned int byte = (unsigned int) *data;
-        int size = 0;
+        auto byte = (unsigned int) *data;
 
         if (byte == 0xf0 || byte == 0xf7)
         {
-            const uint8* d = data + 1;
+            int i = 1;
 
-            while (d < data + maxBytes)
-                if (*d++ == 0xf7)
+            while (i < maxBytes)
+                if (data[i++] == 0xf7)
                     break;
 
-            size = (int) (d - data);
-        }
-        else if (byte == 0xff)
-        {
-            int n;
-            const int bytesLeft = MidiMessage::readVariableLengthVal (data + 1, n);
-            size = jmin (maxBytes, n + 2 + bytesLeft);
-        }
-        else if (byte >= 0x80)
-        {
-            size = jmin (maxBytes, MidiMessage::getMessageLengthFromFirstByte ((uint8) byte));
+            return i;
         }
 
-        return size;
+        if (byte == 0xff)
+        {
+            if (maxBytes == 1)
+                return 1;
+
+            int n;
+            auto bytesLeft = MidiMessage::readVariableLengthVal (data + 1, n);
+            return jmin (maxBytes, n + 2 + bytesLeft);
+        }
+
+        if (byte >= 0x80)
+            return jmin (maxBytes, MidiMessage::getMessageLengthFromFirstByte ((uint8) byte));
+
+        return 0;
     }
 
-    static uint8* findEventAfter (uint8* d, uint8* endData, const int samplePosition) noexcept
+    static uint8* findEventAfter (uint8* d, uint8* endData, int samplePosition) noexcept
     {
         while (d < endData && getEventTime (d) <= samplePosition)
             d += getEventTotalSize (d);
@@ -79,17 +81,27 @@ namespace MidiBufferHelpers
 }
 
 //==============================================================================
-MidiBuffer::MidiBuffer() noexcept {}
-MidiBuffer::~MidiBuffer() {}
-
-MidiBuffer::MidiBuffer (const MidiBuffer& other) noexcept  : data (other.data) {}
-
-MidiBuffer& MidiBuffer::operator= (const MidiBuffer& other) noexcept
+MidiBufferIterator& MidiBufferIterator::operator++() noexcept
 {
-    data = other.data;
+    data += sizeof (int32) + sizeof (uint16) + size_t (MidiBufferHelpers::getEventDataSize (data));
     return *this;
 }
 
+MidiBufferIterator MidiBufferIterator::operator++ (int) noexcept
+{
+    auto copy = *this;
+    ++(*this);
+    return copy;
+}
+
+MidiBufferIterator::reference MidiBufferIterator::operator*() const noexcept
+{
+    return { data + sizeof (int32) + sizeof (uint16),
+             MidiBufferHelpers::getEventDataSize (data),
+             MidiBufferHelpers::getEventTime (data) };
+}
+
+//==============================================================================
 MidiBuffer::MidiBuffer (const MidiMessage& message) noexcept
 {
     addEvent (message, 0);
@@ -100,61 +112,59 @@ void MidiBuffer::clear() noexcept                           { data.clearQuick();
 void MidiBuffer::ensureSize (size_t minimumNumBytes)        { data.ensureStorageAllocated ((int) minimumNumBytes); }
 bool MidiBuffer::isEmpty() const noexcept                   { return data.size() == 0; }
 
-void MidiBuffer::clear (const int startSample, const int numSamples)
+void MidiBuffer::clear (int startSample, int numSamples)
 {
-    uint8* const start = MidiBufferHelpers::findEventAfter (data.begin(), data.end(), startSample - 1);
-    uint8* const end   = MidiBufferHelpers::findEventAfter (start,        data.end(), startSample + numSamples - 1);
+    auto start = MidiBufferHelpers::findEventAfter (data.begin(), data.end(), startSample - 1);
+    auto end   = MidiBufferHelpers::findEventAfter (start,        data.end(), startSample + numSamples - 1);
 
     data.removeRange ((int) (start - data.begin()), (int) (end - data.begin()));
 }
 
-void MidiBuffer::addEvent (const MidiMessage& m, const int sampleNumber)
+void MidiBuffer::addEvent (const MidiMessage& m, int sampleNumber)
 {
     addEvent (m.getRawData(), m.getRawDataSize(), sampleNumber);
 }
 
-void MidiBuffer::addEvent (const void* const newData, const int maxBytes, const int sampleNumber)
+void MidiBuffer::addEvent (const void* newData, int maxBytes, int sampleNumber)
 {
-    const int numBytes = MidiBufferHelpers::findActualEventLength (static_cast<const uint8*> (newData), maxBytes);
+    auto numBytes = MidiBufferHelpers::findActualEventLength (static_cast<const uint8*> (newData), maxBytes);
 
     if (numBytes > 0)
     {
-        const size_t newItemSize = (size_t) numBytes + sizeof (int32) + sizeof (uint16);
-        const int offset = (int) (MidiBufferHelpers::findEventAfter (data.begin(), data.end(), sampleNumber) - data.begin());
+        auto newItemSize = (size_t) numBytes + sizeof (int32) + sizeof (uint16);
+        auto offset = (int) (MidiBufferHelpers::findEventAfter (data.begin(), data.end(), sampleNumber) - data.begin());
 
         data.insertMultiple (offset, 0, (int) newItemSize);
 
-        uint8* const d = data.begin() + offset;
+        auto* d = data.begin() + offset;
         writeUnaligned<int32>  (d, sampleNumber);
-        writeUnaligned<uint16> (d + 4, static_cast<uint16> (numBytes));
-        memcpy (d + 6, newData, (size_t) numBytes);
+        d += sizeof (int32);
+        writeUnaligned<uint16> (d, static_cast<uint16> (numBytes));
+        d += sizeof (uint16);
+        memcpy (d, newData, (size_t) numBytes);
     }
 }
 
 void MidiBuffer::addEvents (const MidiBuffer& otherBuffer,
-                            const int startSample,
-                            const int numSamples,
-                            const int sampleDeltaToAdd)
+                            int startSample, int numSamples, int sampleDeltaToAdd)
 {
-    Iterator i (otherBuffer);
-    i.setNextSamplePosition (startSample);
-
-    const uint8* eventData;
-    int eventSize, position;
-
-    while (i.getNextEvent (eventData, eventSize, position)
-            && (position < startSample + numSamples || numSamples < 0))
+    for (auto i = otherBuffer.findNextSamplePosition (startSample); i != otherBuffer.cend(); ++i)
     {
-        addEvent (eventData, eventSize, position + sampleDeltaToAdd);
+        const auto metadata = *i;
+
+        if (metadata.samplePosition >= startSample + numSamples && numSamples >= 0)
+            break;
+
+        addEvent (metadata.data, metadata.numBytes, metadata.samplePosition + sampleDeltaToAdd);
     }
 }
 
 int MidiBuffer::getNumEvents() const noexcept
 {
     int n = 0;
-    const uint8* const end = data.end();
+    auto end = data.end();
 
-    for (const uint8* d = data.begin(); d < end; ++n)
+    for (auto d = data.begin(); d < end; ++n)
         d += MidiBufferHelpers::getEventTotalSize (d);
 
     return n;
@@ -170,11 +180,11 @@ int MidiBuffer::getLastEventTime() const noexcept
     if (data.size() == 0)
         return 0;
 
-    const uint8* const endData = data.end();
+    auto endData = data.end();
 
-    for (const uint8* d = data.begin();;)
+    for (auto d = data.begin();;)
     {
-        const uint8* const nextOne = d + MidiBufferHelpers::getEventTotalSize (d);
+        auto nextOne = d + MidiBufferHelpers::getEventTotalSize (d);
 
         if (nextOne >= endData)
             return MidiBufferHelpers::getEventTime (d);
@@ -183,49 +193,47 @@ int MidiBuffer::getLastEventTime() const noexcept
     }
 }
 
+MidiBufferIterator MidiBuffer::findNextSamplePosition (int samplePosition) const noexcept
+{
+    return std::find_if (cbegin(), cend(), [&] (const MidiMessageMetadata& metadata) noexcept
+    {
+        return metadata.samplePosition >= samplePosition;
+    });
+}
+
 //==============================================================================
 MidiBuffer::Iterator::Iterator (const MidiBuffer& b) noexcept
-    : buffer (b), data (b.data.begin())
+    : buffer (b), iterator (b.data.begin())
 {
 }
 
-MidiBuffer::Iterator::~Iterator() noexcept
+MidiBuffer::Iterator::~Iterator() noexcept {}
+
+void MidiBuffer::Iterator::setNextSamplePosition (int samplePosition) noexcept
 {
+    iterator = buffer.findNextSamplePosition (samplePosition);
 }
 
-void MidiBuffer::Iterator::setNextSamplePosition (const int samplePosition) noexcept
+bool MidiBuffer::Iterator::getNextEvent (const uint8*& midiData, int& numBytes, int& samplePosition) noexcept
 {
-    data = buffer.data.begin();
-    const uint8* const dataEnd = buffer.data.end();
-
-    while (data < dataEnd && MidiBufferHelpers::getEventTime (data) < samplePosition)
-        data += MidiBufferHelpers::getEventTotalSize (data);
-}
-
-bool MidiBuffer::Iterator::getNextEvent (const uint8* &midiData, int& numBytes, int& samplePosition) noexcept
-{
-    if (data >= buffer.data.end())
+    if (iterator == buffer.cend())
         return false;
 
-    samplePosition = MidiBufferHelpers::getEventTime (data);
-    const int itemSize = MidiBufferHelpers::getEventDataSize (data);
-    numBytes = itemSize;
-    midiData = data + sizeof (int32) + sizeof (uint16);
-    data += sizeof (int32) + sizeof (uint16) + (size_t) itemSize;
-
+    const auto metadata = *iterator++;
+    midiData = metadata.data;
+    numBytes = metadata.numBytes;
+    samplePosition = metadata.samplePosition;
     return true;
 }
 
 bool MidiBuffer::Iterator::getNextEvent (MidiMessage& result, int& samplePosition) noexcept
 {
-    if (data >= buffer.data.end())
+    if (iterator == buffer.cend())
         return false;
 
-    samplePosition = MidiBufferHelpers::getEventTime (data);
-    const int itemSize = MidiBufferHelpers::getEventDataSize (data);
-    result = MidiMessage (data + sizeof (int32) + sizeof (uint16), itemSize, samplePosition);
-    data += sizeof (int32) + sizeof (uint16) + (size_t) itemSize;
-
+    const auto metadata = *iterator++;
+    result = metadata.getMessage();
+    samplePosition = metadata.samplePosition;
     return true;
 }
 

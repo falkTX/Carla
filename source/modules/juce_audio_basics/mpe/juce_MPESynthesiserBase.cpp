@@ -24,18 +24,13 @@ namespace juce
 {
 
 MPESynthesiserBase::MPESynthesiserBase()
-    : instrument (new MPEInstrument),
-      sampleRate (0),
-      minimumSubBlockSize (32),
-      subBlockSubdivisionIsStrict (false)
+    : instrument (new MPEInstrument)
 {
     instrument->addListener (this);
 }
 
 MPESynthesiserBase::MPESynthesiserBase (MPEInstrument* inst)
-    : instrument (inst),
-      sampleRate (0),
-      minimumSubBlockSize (32)
+    : instrument (inst)
 {
     jassert (instrument != nullptr);
     instrument->addListener (this);
@@ -115,48 +110,47 @@ void MPESynthesiserBase::renderNextBlock (AudioBuffer<floatType>& outputAudio,
     // you must set the sample rate before using this!
     jassert (sampleRate != 0);
 
-    MidiBuffer::Iterator midiIterator (inputMidi);
-    midiIterator.setNextSamplePosition (startSample);
+    auto midiIterator = inputMidi.findNextSamplePosition (startSample);
 
     bool firstEvent = true;
-    int midiEventPos;
-    MidiMessage m;
 
     const ScopedLock sl (noteStateLock);
 
-    while (numSamples > 0)
+    for (; numSamples > 0; ++midiIterator)
     {
-        if (! midiIterator.getNextEvent (m, midiEventPos))
+        if (midiIterator == inputMidi.cend())
         {
             renderNextSubBlock (outputAudio, startSample, numSamples);
             return;
         }
 
-        const int samplesToNextMidiMessage = midiEventPos - startSample;
+        const auto metadata = *midiIterator;
+        auto samplesToNextMidiMessage = metadata.samplePosition - startSample;
 
         if (samplesToNextMidiMessage >= numSamples)
         {
             renderNextSubBlock (outputAudio, startSample, numSamples);
-            handleMidiEvent (m);
+            handleMidiEvent (metadata.getMessage());
             break;
         }
 
         if (samplesToNextMidiMessage < ((firstEvent && ! subBlockSubdivisionIsStrict) ? 1 : minimumSubBlockSize))
         {
-            handleMidiEvent (m);
+            handleMidiEvent (metadata.getMessage());
             continue;
         }
 
         firstEvent = false;
 
         renderNextSubBlock (outputAudio, startSample, samplesToNextMidiMessage);
-        handleMidiEvent (m);
+        handleMidiEvent (metadata.getMessage());
         startSample += samplesToNextMidiMessage;
         numSamples  -= samplesToNextMidiMessage;
     }
 
-    while (midiIterator.getNextEvent (m, midiEventPos))
-        handleMidiEvent (m);
+    std::for_each (midiIterator,
+                   inputMidi.cend(),
+                   [&] (const MidiMessageMetadata& meta) { handleMidiEvent (meta.getMessage()); });
 }
 
 // explicit instantiation for supported float types:

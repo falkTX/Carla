@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -56,7 +48,7 @@ namespace juce
 
             void initialise (const String& commandLine) override
             {
-                myMainWindow = new MyApplicationWindow();
+                myMainWindow.reset (new MyApplicationWindow());
                 myMainWindow->setBounds (100, 100, 400, 500);
                 myMainWindow->setVisible (true);
             }
@@ -77,7 +69,7 @@ namespace juce
             }
 
         private:
-            ScopedPointer<MyApplicationWindow> myMainWindow;
+            std::unique_ptr<MyApplicationWindow> myMainWindow;
         };
 
         // this generates boilerplate code to launch our app class:
@@ -85,6 +77,8 @@ namespace juce
     @endcode
 
     @see JUCEApplicationBase, START_JUCE_APPLICATION
+
+    @tags{GUI}
 */
 class JUCE_API  JUCEApplication  : public JUCEApplicationBase,
                                    public ApplicationCommandTarget
@@ -105,7 +99,7 @@ public:
         JUCE code in there - put your startup/shutdown code in initialise() and
         shutdown() instead.
     */
-    ~JUCEApplication();
+    ~JUCEApplication() override;
 
     //==============================================================================
     /** Returns the global instance of the application object being run. */
@@ -122,7 +116,7 @@ public:
 
     /** Checks whether multiple instances of the app are allowed.
 
-        If you application class returns true for this, more than one instance is
+        If your application class returns true for this, more than one instance is
         permitted to run (except on OSX where the OS automatically stops you launching
         a second instance of an app without explicitly starting it from the command-line).
 

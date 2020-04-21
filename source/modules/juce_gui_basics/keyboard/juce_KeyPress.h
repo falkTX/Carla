@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -34,6 +26,8 @@ namespace juce
     E.g. a KeyPress might represent CTRL+C, SHIFT+ALT+H, Spacebar, Escape, etc.
 
     @see Component, KeyListener, KeyPressMappingSet, Button::addShortcut
+
+    @tags{GUI}
 */
 class JUCE_API  KeyPress
 {
@@ -43,13 +37,16 @@ public:
 
         @see isValid
     */
-    KeyPress() noexcept;
+    KeyPress() = default;
+
+    /** Destructor. */
+    ~KeyPress() = default;
 
     /** Creates a KeyPress for a key and some modifiers.
 
         e.g.
-        CTRL+C would be: KeyPress ('c', ModifierKeys::ctrlModifier)
-        SHIFT+Escape would be: KeyPress (KeyPress::escapeKey, ModifierKeys::shiftModifier)
+        CTRL+C would be: KeyPress ('c', ModifierKeys::ctrlModifier, 0)
+        SHIFT+Escape would be: KeyPress (KeyPress::escapeKey, ModifierKeys::shiftModifier, 0)
 
         @param keyCode      a code that represents the key - this value must be
                             one of special constants listed in this class, or an
@@ -72,10 +69,10 @@ public:
     explicit KeyPress (int keyCode) noexcept;
 
     /** Creates a copy of another KeyPress. */
-    KeyPress (const KeyPress& other) noexcept;
+    KeyPress (const KeyPress&) = default;
 
     /** Copies this KeyPress from another one. */
-    KeyPress& operator= (const KeyPress& other) noexcept;
+    KeyPress& operator= (const KeyPress&) = default;
 
     /** Compares two KeyPress objects. */
     bool operator== (const KeyPress& other) const noexcept;
@@ -130,7 +127,7 @@ public:
     //==============================================================================
     /** Converts a textual key description to a KeyPress.
 
-        This attempts to decode a textual version of a keypress, e.g. "CTRL + C" or "SPACE".
+        This attempts to decode a textual version of a keypress, e.g. "ctrl + c" or "spacebar".
 
         This isn't designed to cope with any kind of input, but should be given the
         strings that are created by the getTextDescription() method.
@@ -143,7 +140,7 @@ public:
 
     /** Creates a textual description of the key combination.
 
-        e.g. "CTRL + C" or "DELETE".
+        e.g. "ctrl + c" or "delete".
 
         To store a keypress in a file, use this method, along with createFromDescription()
         to retrieve it later.
@@ -263,9 +260,9 @@ public:
 
 private:
     //==============================================================================
-    int keyCode;
+    int keyCode = 0;
     ModifierKeys mods;
-    juce_wchar textCharacter;
+    juce_wchar textCharacter = 0;
 
     JUCE_LEAK_DETECTOR (KeyPress)
 };

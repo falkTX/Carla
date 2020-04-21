@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -68,11 +60,6 @@ static void blurSingleChannelImage (Image& image, int radius)
 }
 
 //==============================================================================
-DropShadow::DropShadow() noexcept
-    : colour (0x90000000), radius (4)
-{
-}
-
 DropShadow::DropShadow (Colour shadowColour, const int r, Point<int> o) noexcept
     : colour (shadowColour), radius (r), offset (o)
 {
@@ -99,9 +86,9 @@ void DropShadow::drawForPath (Graphics& g, const Path& path) const
 {
     jassert (radius > 0);
 
-    const Rectangle<int> area ((path.getBounds().getSmallestIntegerContainer() + offset)
-                                   .expanded (radius + 1)
-                                   .getIntersection (g.getClipBounds().expanded (radius + 1)));
+    auto area = (path.getBounds().getSmallestIntegerContainer() + offset)
+                  .expanded (radius + 1)
+                  .getIntersection (g.getClipBounds().expanded (radius + 1));
 
     if (area.getWidth() > 2 && area.getHeight() > 2)
     {
@@ -139,14 +126,14 @@ void DropShadow::drawForRectangle (Graphics& g, const Rectangle<int>& targetArea
     for (float i = 0.05f; i < 1.0f; i += 0.1f)
         cg.addColour (1.0 - i, colour.withMultipliedAlpha (i * i));
 
-    const float radiusInset = (radius + 1) / 2.0f;
+    const float radiusInset = radius / 2.0f;
     const float expandedRadius = radius + radiusInset;
 
-    const Rectangle<float> area (targetArea.toFloat().reduced (radiusInset) + offset.toFloat());
+    auto area = targetArea.toFloat().reduced (radiusInset) + offset.toFloat();
 
-    Rectangle<float> r (area.expanded (expandedRadius));
-    Rectangle<float> top (r.removeFromTop (expandedRadius));
-    Rectangle<float> bottom (r.removeFromBottom (expandedRadius));
+    auto r = area.expanded (expandedRadius);
+    auto top = r.removeFromTop (expandedRadius);
+    auto bottom = r.removeFromBottom (expandedRadius);
 
     drawShadowSection (g, cg, top.removeFromLeft  (expandedRadius), true, 1.0f, 1.0f, 0, 1.0f);
     drawShadowSection (g, cg, top.removeFromRight (expandedRadius), true, 0, 1.0f, 1.0f, 1.0f);

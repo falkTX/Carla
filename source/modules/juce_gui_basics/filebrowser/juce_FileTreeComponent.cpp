@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -26,8 +18,6 @@
 
 namespace juce
 {
-
-Image juce_createIconForFile (const File&);
 
 //==============================================================================
 class FileListTreeItem   : public TreeViewItem,
@@ -63,7 +53,7 @@ public:
         }
     }
 
-    ~FileListTreeItem()
+    ~FileListTreeItem() override
     {
         thread.removeTimeSliceClient (this);
         clearSubItems();
@@ -110,7 +100,7 @@ public:
         if (subContentsList != nullptr)
         {
             subContentsList->removeChangeListener (this);
-            subContentsList.clear();
+            subContentsList.reset();
         }
     }
 
@@ -118,8 +108,7 @@ public:
     {
         removeSubContentsList();
 
-        OptionalScopedPointer<DirectoryContentsList> newPointer (newList, canDeleteList);
-        subContentsList = newPointer;
+        subContentsList = OptionalScopedPointer<DirectoryContentsList> (newList, canDeleteList);
         newList->addChangeListener (this);
     }
 
@@ -177,6 +166,8 @@ public:
 
     void paintItem (Graphics& g, int width, int height) override
     {
+        ScopedLock lock (iconUpdate);
+
         if (file != File())
         {
             updateIcon (true);
@@ -229,6 +220,7 @@ private:
     OptionalScopedPointer<DirectoryContentsList> subContentsList;
     bool isDirectory;
     TimeSliceThread& thread;
+    CriticalSection iconUpdate;
     Image icon;
     String fileSize, modTime;
 
@@ -249,7 +241,11 @@ private:
 
             if (im.isValid())
             {
-                icon = im;
+                {
+                    ScopedLock lock (iconUpdate);
+                    icon = im;
+                }
+
                 triggerAsyncUpdate();
             }
         }

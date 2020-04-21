@@ -136,14 +136,16 @@ File File::getSpecialLocation (const SpecialLocationType type)
         case invokedExecutableFile:
             if (juce_argv != nullptr && juce_argc > 0)
                 return File (CharPointer_UTF8 (juce_argv[0]));
-            // fall-through
+            // Falls through
+            JUCE_FALLTHROUGH
 
         case currentExecutableFile:
         case currentApplicationFile:
            #if ! JUCE_STANDALONE_APPLICATION
             return juce_getExecutableFile();
            #endif
-            // fall-through
+            // deliberate fall-through if this is not a shared-library
+            JUCE_FALLTHROUGH
 
         case hostApplicationPath:
         {
@@ -189,22 +191,20 @@ static bool isFileExecutable (const String& filename)
 
 bool Process::openDocument (const String& fileName, const String& parameters)
 {
-    String cmdString (fileName.replace (" ", "\\ ",false));
+    auto cmdString = fileName.replace (" ", "\\ ", false);
     cmdString << " " << parameters;
 
-    if (/*URL::isProbablyAWebsiteURL (fileName)
-          ||*/ cmdString.startsWithIgnoreCase ("file:")
-         /*|| URL::isProbablyAnEmailAddress (fileName)*/
+    if (cmdString.startsWithIgnoreCase ("file:")
          || File::createFileWithoutCheckingPath (fileName).isDirectory()
          || ! isFileExecutable (fileName))
     {
-        // create a command that tries to launch a bunch of likely browsers
-        static const char* const browserNames[] = { "xdg-open", "/etc/alternatives/x-www-browser", "firefox", "mozilla",
-                                                    "google-chrome", "chromium-browser", "opera", "konqueror" };
         StringArray cmdLines;
 
-        for (int i = 0; i < numElementsInArray (browserNames); ++i)
-            cmdLines.add (String (browserNames[i]) + " " + cmdString.trim().quoted());
+        for (auto browserName : { "xdg-open", "/etc/alternatives/x-www-browser", "firefox", "mozilla",
+                                  "google-chrome", "chromium-browser", "opera", "konqueror" })
+        {
+            cmdLines.add (String (browserName) + " " + cmdString.trim());
+        }
 
         cmdString = cmdLines.joinIntoString (" || ");
     }
@@ -212,9 +212,9 @@ bool Process::openDocument (const String& fileName, const String& parameters)
     const char* const argv[4] = { "/bin/sh", "-c", cmdString.toUTF8(), nullptr };
 
 #if JUCE_USE_VFORK
-    const int cpid = vfork();
+    const auto cpid = vfork();
 #else
-    const int cpid = fork();
+    const auto cpid = fork();
 #endif
 
     if (cpid == 0)
@@ -222,6 +222,7 @@ bool Process::openDocument (const String& fileName, const String& parameters)
 #if ! JUCE_USE_VFORK
         setsid();
 #endif
+
         // Child process
         if (execvp (argv[0], (char**) argv) < 0)
             _exit (0);

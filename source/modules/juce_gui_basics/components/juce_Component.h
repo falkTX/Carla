@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -30,6 +22,8 @@ namespace juce
 //==============================================================================
 /**
     The base class for all JUCE user-interface objects.
+
+    @tags{GUI}
 */
 class JUCE_API  Component  : public MouseListener
 {
@@ -52,16 +46,16 @@ public:
     /** Destructor.
 
         Note that when a component is deleted, any child components it contains are NOT
-        automatically deleted. It's your responsibilty to manage their lifespan - you
+        automatically deleted. It's your responsibility to manage their lifespan - you
         may want to use helper methods like deleteAllChildren(), or less haphazard
-        approaches like using ScopedPointers or normal object aggregation to manage them.
+        approaches like using std::unique_ptrs or normal object aggregation to manage them.
 
         If the component being deleted is currently the child of another one, then during
         deletion, it will be removed from its parent, and the parent will receive a childrenChanged()
         callback. Any ComponentListener objects that have registered with it will also have their
         ComponentListener::componentBeingDeleted() methods called.
     */
-    virtual ~Component();
+    ~Component() override;
 
     //==============================================================================
     /** Creates a component, setting its name at the same time.
@@ -141,8 +135,8 @@ public:
         a lot more CPU to operate (and might not even be possible on some platforms).
 
         If the component is inside a parent component at the time this method is called, it
-        will be first be removed from that parent. Likewise if a component on the desktop
-        is subsequently added to another component, it'll be removed from the desktop.
+        will first be removed from that parent. Likewise if a component is on the desktop
+        and is subsequently added to another component, it'll be removed from the desktop.
 
         @param windowStyleFlags             a combination of the flags specified in the
                                             ComponentPeer::StyleFlags enum, which define the
@@ -151,7 +145,7 @@ public:
                                             in which the juce component should place itself. On Windows,
                                             this would be a HWND, a HIViewRef on the Mac. Not necessarily
                                             supported on all platforms, and best left as 0 unless you know
-                                            what you're doing
+                                            what you're doing.
         @see removeFromDesktop, isOnDesktop, userTriedToCloseWindow,
              getPeer, ComponentPeer::setMinimised, ComponentPeer::StyleFlags,
              ComponentPeer::getStyleFlags, ComponentPeer::setFullScreen
@@ -362,7 +356,7 @@ public:
         a screen coordinate.
 
         If you've used setTransform() to apply one or more transforms to components, then the source rectangle
-        may not actually be rectanglular when converted to the target space, so in that situation this will return
+        may not actually be rectangular when converted to the target space, so in that situation this will return
         the smallest rectangle that fully contains the transformed area.
     */
     Rectangle<int> getLocalArea (const Component* sourceComponent,
@@ -381,7 +375,7 @@ public:
     /** Converts a rectangle from this component's coordinate space to a screen coordinate.
 
         If you've used setTransform() to apply one or more transforms to components, then the source rectangle
-        may not actually be rectanglular when converted to the target space, so in that situation this will return
+        may not actually be rectangular when converted to the target space, so in that situation this will return
         the smallest rectangle that fully contains the transformed area.
         @see getLocalPoint, localPointToGlobal
     */
@@ -485,6 +479,17 @@ public:
     void setBoundsRelative (float proportionalX, float proportionalY,
                             float proportionalWidth, float proportionalHeight);
 
+    /** Changes the component's position and size in terms of fractions of its parent's size.
+
+        The values are factors of the parent's size, so for example
+        setBoundsRelative ({ 0.2f, 0.2f, 0.5f, 0.5f }) would give it half the
+        width and height of the parent, with its top-left position 20% of
+        the way across and down the parent.
+
+        @see setBounds
+    */
+    void setBoundsRelative (Rectangle<float> proportionalArea);
+
     /** Changes the component's position and size based on the amount of space to leave around it.
 
         This will position the component within its parent, leaving the specified number of
@@ -508,7 +513,7 @@ public:
 
         @see setBounds
     */
-    void setBoundsToFit (int x, int y, int width, int height,
+    void setBoundsToFit (Rectangle<int> targetArea,
                          Justification justification,
                          bool onlyReduceInSize);
 
@@ -576,6 +581,11 @@ public:
         @see setTransform
     */
     bool isTransformed() const noexcept;
+
+    /** Returns the approximate scale factor for a given component by traversing its parent hierarchy
+        and applying each transform and finally scaling this by the global scale factor.
+    */
+    static float JUCE_CALLTYPE getApproximateScaleFactorForComponent (Component* targetComponent);
 
     //==============================================================================
     /** Returns a proportion of the component's width.
@@ -689,6 +699,11 @@ public:
 
         This is the same as calling setVisible (true) on the child and then addChildComponent().
         See addChildComponent() for more details.
+
+        @param child    the new component to add. If the component passed-in is already
+                        the child of another component, it'll first be removed from it current parent.
+        @param zOrder   The index in the child-list at which this component should be inserted.
+                        A value of -1 will insert it in front of the others, 0 is the back.
     */
     void addAndMakeVisible (Component* child, int zOrder = -1);
 
@@ -696,6 +711,11 @@ public:
 
         This is the same as calling setVisible (true) on the child and then addChildComponent().
         See addChildComponent() for more details.
+
+        @param child    the new component to add. If the component passed-in is already
+                        the child of another component, it'll first be removed from it current parent.
+        @param zOrder   The index in the child-list at which this component should be inserted.
+                        A value of -1 will insert it in front of the others, 0 is the back.
     */
     void addAndMakeVisible (Component& child, int zOrder = -1);
 
@@ -740,8 +760,8 @@ public:
         backwards-compatibility with legacy code, and should be viewed with extreme
         suspicion by anyone attempting to write modern C++. In almost all cases, it's much
         smarter to manage the lifetimes of your child components via modern RAII techniques
-        such as simply making them member variables, or using ScopedPointer, OwnedArray, etc
-        to manage their lifetimes appropriately.
+        such as simply making them member variables, or using std::unique_ptr, OwnedArray,
+        etc to manage their lifetimes appropriately.
         @see removeAllChildren
     */
     void deleteAllChildren();
@@ -844,8 +864,8 @@ public:
 
     /** Changes the default return value for the hitTest() method.
 
-        Setting this to false is an easy way to make a component pass its mouse-clicks
-        through to the components behind it.
+        Setting this to false is an easy way to make a component pass all its mouse events
+        (not just clicks) through to the components behind it.
 
         When a component is created, the default setting for this is true.
 
@@ -1035,6 +1055,11 @@ public:
         bounds.
     */
     void setPaintingIsUnclipped (bool shouldPaintWithoutClipping) noexcept;
+
+    /** Returns true if this component doesn't require its graphics context to be clipped
+        when it is being painted.
+    */
+    bool isPaintingUnclipped() const noexcept;
 
     //==============================================================================
     /** Adds an effect filter to alter the component's appearance.
@@ -1255,7 +1280,7 @@ public:
         by the setFocusContainer() method). If the component isn't a focus
         container, then it will recursively ask its parents for a KeyboardFocusTraverser.
 
-        If you overrride this to return a custom KeyboardFocusTraverser, then
+        If you override this to return a custom KeyboardFocusTraverser, then
         this component and all its sub-components will use the new object to
         make their focusing decisions.
 
@@ -1351,7 +1376,7 @@ public:
     virtual void enablementChanged();
 
     //==============================================================================
-    /** Returns the component's current transparancy level.
+    /** Returns the component's current transparency level.
         See setAlpha() for more details.
     */
     float getAlpha() const noexcept;
@@ -1418,7 +1443,7 @@ public:
         If you want to cause a component to redraw itself, this is done asynchronously -
         calling the repaint() method marks a region of the component as "dirty", and the
         paint() method will automatically be called sometime later, by the message thread,
-        to paint any bits that need refreshing. In Juce (and almost all modern UI frameworks),
+        to paint any bits that need refreshing. In JUCE (and almost all modern UI frameworks),
         you never redraw something synchronously.
 
         You should never need to call this method directly - to take a snapshot of the
@@ -1452,7 +1477,7 @@ public:
                      the source component in which it occurred
         @see mouseEnter, mouseExit, mouseDrag, contains
     */
-    virtual void mouseMove (const MouseEvent& event) override;
+    void mouseMove (const MouseEvent& event) override;
 
     /** Called when the mouse first enters a component.
 
@@ -1468,7 +1493,7 @@ public:
                      the source component in which it occurred
         @see mouseExit, mouseDrag, mouseMove, contains
     */
-    virtual void mouseEnter (const MouseEvent& event) override;
+    void mouseEnter (const MouseEvent& event) override;
 
     /** Called when the mouse moves out of a component.
 
@@ -1483,7 +1508,7 @@ public:
                       the source component in which it occurred
         @see mouseEnter, mouseDrag, mouseMove, contains
     */
-    virtual void mouseExit (const MouseEvent& event) override;
+    void mouseExit (const MouseEvent& event) override;
 
     /** Called when a mouse button is pressed.
 
@@ -1498,7 +1523,7 @@ public:
                       the source component in which it occurred
         @see mouseUp, mouseDrag, mouseDoubleClick, contains
     */
-    virtual void mouseDown (const MouseEvent& event) override;
+    void mouseDown (const MouseEvent& event) override;
 
     /** Called when the mouse is moved while a button is held down.
 
@@ -1510,7 +1535,7 @@ public:
                       the source component in which it occurred
         @see mouseDown, mouseUp, mouseMove, contains, setDragRepeatInterval
     */
-    virtual void mouseDrag (const MouseEvent& event) override;
+    void mouseDrag (const MouseEvent& event) override;
 
     /** Called when a mouse button is released.
 
@@ -1525,7 +1550,7 @@ public:
                       the source component in which it occurred
         @see mouseDown, mouseDrag, mouseDoubleClick, contains
     */
-    virtual void mouseUp (const MouseEvent& event) override;
+    void mouseUp (const MouseEvent& event) override;
 
     /** Called when a mouse button has been double-clicked on a component.
 
@@ -1537,7 +1562,7 @@ public:
                       the source component in which it occurred
         @see mouseDown, mouseUp
     */
-    virtual void mouseDoubleClick (const MouseEvent& event) override;
+    void mouseDoubleClick (const MouseEvent& event) override;
 
     /** Called when the mouse-wheel is moved.
 
@@ -1554,8 +1579,8 @@ public:
         @param event   details about the mouse event
         @param wheel   details about the mouse wheel movement
     */
-    virtual void mouseWheelMove (const MouseEvent& event,
-                                 const MouseWheelDetails& wheel) override;
+    void mouseWheelMove (const MouseEvent& event,
+                         const MouseWheelDetails& wheel) override;
 
     /** Called when a pinch-to-zoom mouse-gesture is used.
 
@@ -1568,7 +1593,7 @@ public:
                             should be changed. A value of 1.0 would indicate no change,
                             values greater than 1.0 mean it should be enlarged.
     */
-    virtual void mouseMagnify (const MouseEvent& event, float scaleFactor);
+    void mouseMagnify (const MouseEvent& event, float scaleFactor) override;
 
     //==============================================================================
     /** Ensures that a non-stop stream of mouse-drag events will be sent during the
@@ -1702,7 +1727,7 @@ public:
     virtual void modifierKeysChanged (const ModifierKeys& modifiers);
 
     //==============================================================================
-    /** Enumeration used by the focusChanged() and focusLost() methods. */
+    /** Enumeration used by the focusGained() and focusLost() methods. */
     enum FocusChangeType
     {
         focusChangedByMouseClick,   /**< Means that the user clicked the mouse to change focus. */
@@ -1744,6 +1769,10 @@ public:
         for which this method will return true is the one that was originally
         clicked on.
 
+        Also note that on a touch-screen device, this will only return true when a finger
+        is actually down - as soon as all touch is released, isMouseOver will always
+        return false.
+
         If includeChildren is true, then this will also return true if the mouse is over
         any of the component's children (recursively) as well as the component itself.
 
@@ -1759,7 +1788,7 @@ public:
 
         @see isMouseButtonDownAnywhere, isMouseOver, isMouseOverOrDragging
     */
-    bool isMouseButtonDown() const;
+    bool isMouseButtonDown (bool includeChildren = false) const;
 
     /** True if the mouse is over this component, or if it's being dragged in this component.
         This is a handy equivalent to (isMouseOver() || isMouseButtonDown()).
@@ -2041,7 +2070,7 @@ public:
 
         @see setColour, isColourSpecified, colourChanged, LookAndFeel::findColour, LookAndFeel::setColour
     */
-    Colour findColour (int colourId, bool inheritFromParent = false) const;
+    Colour findColour (int colourID, bool inheritFromParent = false) const;
 
     /** Registers a colour to be used for a particular purpose.
 
@@ -2053,17 +2082,17 @@ public:
 
         @see findColour, isColourSpecified, colourChanged, LookAndFeel::findColour, LookAndFeel::setColour
     */
-    void setColour (int colourId, Colour newColour);
+    void setColour (int colourID, Colour newColour);
 
     /** If a colour has been set with setColour(), this will remove it.
         This allows you to make a colour revert to its default state.
     */
-    void removeColour (int colourId);
+    void removeColour (int colourID);
 
     /** Returns true if the specified colour ID has been explicitly set for this
         component using the setColour() method.
     */
-    bool isColourSpecified (int colourId) const;
+    bool isColourSpecified (int colourID) const;
 
     /** This looks for any colours that have been specified for this component,
         and copies them to the specified target component.
@@ -2074,14 +2103,6 @@ public:
         @see setColour, findColour
     */
     virtual void colourChanged();
-
-    //==============================================================================
-    /** Components can implement this method to provide a MarkerList.
-        The default implementation of this method returns nullptr, but you can override
-        it to return a pointer to the component's marker list. If xAxis is true, it should
-        return the X marker list; if false, it should return the Y markers.
-    */
-    virtual MarkerList* getMarkers (bool xAxis);
 
     //==============================================================================
     /** Returns the underlying native window handle for this component.
@@ -2099,7 +2120,7 @@ public:
         and you can test whether it's null before using it to see if something has deleted
         it.
 
-        The ComponentType typedef must be Component, or some subclass of Component.
+        The ComponentType template parameter must be Component, or some subclass of Component.
 
         You may also want to use a WeakReference<Component> object for the same purpose.
     */
@@ -2108,7 +2129,7 @@ public:
     {
     public:
         /** Creates a null SafePointer. */
-        SafePointer() noexcept {}
+        SafePointer() = default;
 
         /** Creates a SafePointer that points at the given component. */
         SafePointer (ComponentType* component)                : weakRef (component) {}
@@ -2181,15 +2202,14 @@ public:
         /** Creates a Positioner which can control the specified component. */
         explicit Positioner (Component& component) noexcept;
         /** Destructor. */
-        virtual ~Positioner() {}
+        virtual ~Positioner() = default;
 
         /** Returns the component that this positioner controls. */
         Component& getComponent() const noexcept    { return component; }
 
         /** Attempts to set the component's position to the given rectangle.
             Unlike simply calling Component::setBounds(), this may involve the positioner
-            being smart enough to adjust itself to fit the new bounds, e.g. a RelativeRectangle's
-            positioner may try to reverse the expressions used to make them fit these new coordinates.
+            being smart enough to adjust itself to fit the new bounds.
         */
         virtual void applyNewBounds (const Rectangle<int>& newBounds) = 0;
 
@@ -2222,11 +2242,11 @@ public:
     /** Returns the object that was set by setCachedComponentImage().
         @see setCachedComponentImage
     */
-    CachedComponentImage* getCachedComponentImage() const noexcept      { return cachedImage; }
+    CachedComponentImage* getCachedComponentImage() const noexcept      { return cachedImage.get(); }
 
     /** Sets a flag to indicate whether mouse drag events on this Component should be ignored when it is inside a
         Viewport with drag-to-scroll functionality enabled. This is useful for Components such as sliders that
-        should not move their parent Viewport when dragged.
+        should not move when their parent Viewport when dragged.
     */
     void setViewportIgnoreDragFlag (bool ignoreDrag) noexcept           { flags.viewportIgnoreDragFlag = ignoreDrag; }
 
@@ -2234,16 +2254,6 @@ public:
         @see setViewportIgnoreDragFlag
     */
     bool getViewportIgnoreDragFlag() const noexcept                     { return flags.viewportIgnoreDragFlag; }
-
-    //==============================================================================
-    // These methods are deprecated - use localPointToGlobal, getLocalPoint, getLocalPoint, etc instead.
-    JUCE_DEPRECATED (Point<int> relativePositionToGlobal (Point<int>) const);
-    JUCE_DEPRECATED (Point<int> globalPositionToRelative (Point<int>) const);
-    JUCE_DEPRECATED (Point<int> relativePositionToOtherComponent (const Component*, Point<int>) const);
-
-    // RelativeCoordinates are eventually going to be deprecated
-    JUCE_DEPRECATED (void setBounds (const RelativeRectangle&));
-    JUCE_DEPRECATED (void setBounds (const String&));
 
 private:
     //==============================================================================
@@ -2258,19 +2268,17 @@ private:
     String componentName, componentID;
     Component* parentComponent = nullptr;
     Rectangle<int> boundsRelativeToParent;
-    ScopedPointer<Positioner> positioner;
-    ScopedPointer<AffineTransform> affineTransform;
+    std::unique_ptr<Positioner> positioner;
+    std::unique_ptr<AffineTransform> affineTransform;
     Array<Component*> childComponentList;
-    LookAndFeel* lookAndFeel = nullptr;
+    WeakReference<LookAndFeel> lookAndFeel;
     MouseCursor cursor;
     ImageEffectFilter* effect = nullptr;
-    ScopedPointer<CachedComponentImage> cachedImage;
+    std::unique_ptr<CachedComponentImage> cachedImage;
 
     class MouseListenerList;
-    friend class MouseListenerList;
-    friend struct ContainerDeletePolicy<MouseListenerList>;
-    ScopedPointer<MouseListenerList> mouseListeners;
-    ScopedPointer<Array<KeyListener*> > keyListeners;
+    std::unique_ptr<MouseListenerList> mouseListeners;
+    std::unique_ptr<Array<KeyListener*>> keyListeners;
     ListenerList<ComponentListener> componentListeners;
     NamedValueSet properties;
 
@@ -2339,8 +2347,8 @@ private:
     void sendMovedResizedMessagesIfPending();
     void repaintParent();
     void sendFakeMouseMove() const;
-    void takeKeyboardFocus (const FocusChangeType);
-    void grabFocusInternal (const FocusChangeType, bool canTryParent);
+    void takeKeyboardFocus (FocusChangeType);
+    void grabFocusInternal (FocusChangeType, bool canTryParent);
     static void giveAwayFocus (bool sendFocusLossEvent);
     void sendEnablementChangeMessage();
     void sendVisibilityChangeMessage();
@@ -2363,7 +2371,7 @@ private:
 
     // This is included here to cause an error if you use or overload it - it has been deprecated in
     // favour of contains (Point<int>)
-    void contains (int, int) JUCE_DELETED_FUNCTION;
+    void contains (int, int) = delete;
    #endif
 
 protected:

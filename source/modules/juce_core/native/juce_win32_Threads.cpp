@@ -49,20 +49,6 @@ void CriticalSection::exit() const noexcept         { LeaveCriticalSection ((CRI
 
 
 //==============================================================================
-WaitableEvent::WaitableEvent (const bool manualReset) noexcept
-    : handle (CreateEvent (0, manualReset ? TRUE : FALSE, FALSE, 0)) {}
-
-WaitableEvent::~WaitableEvent() noexcept        { CloseHandle (handle); }
-
-void WaitableEvent::signal() const noexcept     { SetEvent (handle); }
-void WaitableEvent::reset() const noexcept      { ResetEvent (handle); }
-
-bool WaitableEvent::wait (const int timeOutMs) const noexcept
-{
-    return WaitForSingleObject (handle, (DWORD) timeOutMs) == WAIT_OBJECT_0;
-}
-
-//==============================================================================
 void JUCE_API juce_threadEntryPoint (void*);
 
 static unsigned int __stdcall threadEntryProc (void* userData)
@@ -87,19 +73,19 @@ void Thread::launchThread()
 
 void Thread::closeThreadHandle()
 {
-    CloseHandle ((HANDLE) threadHandle);
+    CloseHandle ((HANDLE) threadHandle.get());
     threadId = 0;
     threadHandle = 0;
 }
 
 void Thread::killThread()
 {
-    if (threadHandle != 0)
+    if (threadHandle.get() != 0)
     {
        #if JUCE_DEBUG
         OutputDebugStringA ("** Warning - Forced thread termination **\n");
        #endif
-        TerminateThread (threadHandle, 0);
+        TerminateThread (threadHandle.get(), 0);
     }
 }
 
@@ -241,7 +227,14 @@ static void* currentModuleHandle = nullptr;
 void* JUCE_CALLTYPE Process::getCurrentModuleInstanceHandle() noexcept
 {
     if (currentModuleHandle == nullptr)
-        currentModuleHandle = GetModuleHandleA (nullptr);
+    {
+        auto status = GetModuleHandleEx (GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                                         (LPCTSTR) &currentModuleHandle,
+                                         (HMODULE*) &currentModuleHandle);
+
+        if (status == 0 || currentModuleHandle == nullptr)
+            currentModuleHandle = GetModuleHandleA (nullptr);
+    }
 
     return currentModuleHandle;
 }
@@ -251,15 +244,8 @@ void JUCE_CALLTYPE Process::setCurrentModuleInstanceHandle (void* const newHandl
     currentModuleHandle = newHandle;
 }
 
-void JUCE_CALLTYPE Process::raisePrivilege()
-{
-    jassertfalse; // xxx not implemented
-}
-
-void JUCE_CALLTYPE Process::lowerPrivilege()
-{
-    jassertfalse; // xxx not implemented
-}
+void JUCE_CALLTYPE Process::raisePrivilege() {}
+void JUCE_CALLTYPE Process::lowerPrivilege() {}
 
 void JUCE_CALLTYPE Process::terminate()
 {
@@ -373,10 +359,10 @@ bool InterProcessLock::enter (const int timeOutMillisecs)
 
     if (pimpl == nullptr)
     {
-        pimpl = new Pimpl (name, timeOutMillisecs);
+        pimpl.reset (new Pimpl (name, timeOutMillisecs));
 
         if (pimpl->handle == 0)
-            pimpl = nullptr;
+            pimpl.reset();
     }
     else
     {
@@ -394,7 +380,7 @@ void InterProcessLock::exit()
     jassert (pimpl != nullptr);
 
     if (pimpl != nullptr && --(pimpl->refCount) == 0)
-        pimpl = nullptr;
+        pimpl.reset();
 }
 
 //==============================================================================
@@ -507,7 +493,7 @@ private:
 
 bool ChildProcess::start (const String& command, int streamFlags)
 {
-    activeProcess = new ActiveProcess (command, streamFlags);
+    activeProcess.reset (new ActiveProcess (command, streamFlags));
 
     if (! activeProcess->ok)
         activeProcess = nullptr;

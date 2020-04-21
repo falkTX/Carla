@@ -25,6 +25,8 @@ namespace juce
 
 //==============================================================================
 /**
+    This class is now deprecated in favour of RangedDirectoryIterator.
+
     Searches through the files in a directory, returning each file that is found.
 
     A DirectoryIterator will search through a directory and its subdirectories using
@@ -34,13 +36,23 @@ namespace juce
     class than File::findChildFiles() because it allows you to stop at any time, rather
     than having to wait for the entire scan to finish before getting the results.
 
+    Please note that the order in which files are returned is completely undefined!
+    They'll arrive in whatever order the underlying OS calls provide them, which will
+    depend on the filesystem and other factors. If you need a sorted list, you'll need
+    to manually sort them using your preferred comparator after collecting the list.
+
     It also provides an estimate of its progress, using a (highly inaccurate!) algorithm.
+
+    @tags{Core}
+    @see RangedDirectoryIterator
 */
-class JUCE_API  DirectoryIterator
+class JUCE_API  DirectoryIterator  final
 {
 public:
     //==============================================================================
-    /** Creates a DirectoryIterator for a given directory.
+    /** This class is now deprecated in favour of RangedDirectoryIterator.
+
+        Creates a DirectoryIterator for a given directory.
 
         After creating one of these, call its next() method to get the
         first file - e.g. @code
@@ -61,11 +73,12 @@ public:
                             separated by a semi-colon or comma, e.g. "*.jpg;*.png"
         @param whatToLookFor    a value from the File::TypesOfFileToFind enum, specifying
                                 whether to look for files, directories, or both.
+        @see RangedDirectoryIterator
     */
-    DirectoryIterator (const File& directory,
-                       bool isRecursive,
-                       const String& wildCard = "*",
-                       int whatToLookFor = File::findFiles);
+    JUCE_DEPRECATED (DirectoryIterator (const File& directory,
+                                        bool isRecursive,
+                                        const String& wildCard = "*",
+                                        int whatToLookFor = File::findFiles));
 
     /** Destructor. */
     ~DirectoryIterator();
@@ -111,9 +124,8 @@ public:
 
 private:
     //==============================================================================
-    class NativeIterator
+    struct NativeIterator
     {
-    public:
         NativeIterator (const File& directory, const String& wildCard);
         ~NativeIterator();
 
@@ -122,25 +134,20 @@ private:
                    Time* modTime, Time* creationTime, bool* isReadOnly);
 
         class Pimpl;
-
-    private:
-        friend class DirectoryIterator;
-        friend struct ContainerDeletePolicy<Pimpl>;
-        ScopedPointer<Pimpl> pimpl;
+        std::unique_ptr<Pimpl> pimpl;
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NativeIterator)
     };
 
-    friend struct ContainerDeletePolicy<NativeIterator::Pimpl>;
     StringArray wildCards;
     NativeIterator fileFinder;
     String wildCard, path;
-    int index;
-    mutable int totalNumFiles;
+    int index = -1;
+    mutable int totalNumFiles = -1;
     const int whatToLookFor;
     const bool isRecursive;
-    bool hasBeenAdvanced;
-    ScopedPointer<DirectoryIterator> subIterator;
+    bool hasBeenAdvanced = false;
+    std::unique_ptr<DirectoryIterator> subIterator;
     File currentFile;
 
     static StringArray parseWildcards (const String& pattern);

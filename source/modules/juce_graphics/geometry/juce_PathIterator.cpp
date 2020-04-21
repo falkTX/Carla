@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -32,18 +24,18 @@ namespace juce
 #endif
 
 //==============================================================================
-PathFlatteningIterator::PathFlatteningIterator (const Path& path_,
-                                                const AffineTransform& transform_,
-                                                const float tolerance)
+PathFlatteningIterator::PathFlatteningIterator (const Path& pathToUse,
+                                                const AffineTransform& t,
+                                                float tolerance)
     : x2 (0),
       y2 (0),
       closesSubPath (false),
       subPathIndex (-1),
-      path (path_),
-      transform (transform_),
-      points (path_.data.elements),
+      path (pathToUse),
+      transform (t),
+      source (path.data.begin()),
       toleranceSquared (tolerance * tolerance),
-      isIdentityTransform (transform_.isIdentity())
+      isIdentityTransform (t.isIdentity())
 {
     stackPos = stackBase;
 }
@@ -55,7 +47,7 @@ PathFlatteningIterator::~PathFlatteningIterator()
 bool PathFlatteningIterator::isLastInSubpath() const noexcept
 {
     return stackPos == stackBase.get()
-             && (index >= path.numElements || isMarker (points[index], Path::moveMarker));
+             && (source == path.data.end() || isMarker (*source, Path::moveMarker));
 }
 
 bool PathFlatteningIterator::next()
@@ -74,30 +66,30 @@ bool PathFlatteningIterator::next()
 
         if (stackPos == stackBase)
         {
-            if (index >= path.numElements)
+            if (source == path.data.end())
                 return false;
 
-            type = points [index++];
+            type = *source++;
 
             if (! isMarker (type, Path::closeSubPathMarker))
             {
-                x2 = points [index++];
-                y2 = points [index++];
+                x2 = *source++;
+                y2 = *source++;
 
                 if (isMarker (type, Path::quadMarker))
                 {
-                    x3 = points [index++];
-                    y3 = points [index++];
+                    x3 = *source++;
+                    y3 = *source++;
 
                     if (! isIdentityTransform)
                         transform.transformPoints (x2, y2, x3, y3);
                 }
                 else if (isMarker (type, Path::cubicMarker))
                 {
-                    x3 = points [index++];
-                    y3 = points [index++];
-                    x4 = points [index++];
-                    y4 = points [index++];
+                    x3 = *source++;
+                    y3 = *source++;
+                    x4 = *source++;
+                    y4 = *source++;
 
                     if (! isIdentityTransform)
                         transform.transformPoints (x2, y2, x3, y3, x4, y4);
@@ -137,9 +129,9 @@ bool PathFlatteningIterator::next()
         {
             ++subPathIndex;
 
-            closesSubPath = (stackPos == stackBase)
-                             && (index < path.numElements)
-                             && (points [index] == Path::closeSubPathMarker)
+            closesSubPath = stackPos == stackBase
+                             && source != path.data.end()
+                             && *source == Path::closeSubPathMarker
                              && x2 == subPathCloseX
                              && y2 == subPathCloseY;
 

@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -31,17 +23,12 @@ struct MarkerListScope  : public Expression::Scope
 {
     MarkerListScope (Component& comp) : component (comp) {}
 
-    // Suppress a VS2013 compiler warning
-    MarkerListScope& operator= (const MarkerListScope&) = delete;
-
     Expression getSymbolValue (const String& symbol) const override
     {
-        switch (RelativeCoordinate::StandardStrings::getTypeOf (symbol))
-        {
-            case RelativeCoordinate::StandardStrings::width:  return Expression ((double) component.getWidth());
-            case RelativeCoordinate::StandardStrings::height: return Expression ((double) component.getHeight());
-            default: break;
-        }
+        auto type = RelativeCoordinate::StandardStrings::getTypeOf (symbol);
+
+        if (type == RelativeCoordinate::StandardStrings::width)   return Expression ((double) component.getWidth());
+        if (type == RelativeCoordinate::StandardStrings::height)  return Expression ((double) component.getHeight());
 
         MarkerList* list;
 
@@ -73,17 +60,26 @@ struct MarkerListScope  : public Expression::Scope
     static const MarkerList::Marker* findMarker (Component& component, const String& name, MarkerList*& list)
     {
         const MarkerList::Marker* marker = nullptr;
-        list = component.getMarkers (true);
 
-        if (list != nullptr)
-            marker = list->getMarker (name);
+        auto* mlh = dynamic_cast<MarkerList::MarkerListHolder*> (&component);
 
-        if (marker == nullptr)
+        if (mlh != nullptr)
         {
-            list = component.getMarkers (false);
+            list = mlh->getMarkers (true);
 
             if (list != nullptr)
                 marker = list->getMarker (name);
+        }
+
+        if (marker == nullptr)
+        {
+            if (mlh != nullptr)
+            {
+                list = mlh->getMarkers (false);
+
+                if (list != nullptr)
+                    marker = list->getMarker (name);
+            }
         }
 
         return marker;
@@ -110,6 +106,8 @@ Expression RelativeCoordinatePositionerBase::ComponentScope::getSymbolValue (con
         case RelativeCoordinate::StandardStrings::height: return Expression ((double) component.getHeight());
         case RelativeCoordinate::StandardStrings::right:  return Expression ((double) component.getRight());
         case RelativeCoordinate::StandardStrings::bottom: return Expression ((double) component.getBottom());
+        case RelativeCoordinate::StandardStrings::parent:
+        case RelativeCoordinate::StandardStrings::unknown:
         default: break;
     }
 
@@ -117,7 +115,7 @@ Expression RelativeCoordinatePositionerBase::ComponentScope::getSymbolValue (con
     {
         MarkerList* list;
 
-        if (const MarkerList::Marker* const marker = MarkerListScope::findMarker (*parent, symbol, list))
+        if (auto* marker = MarkerListScope::findMarker (*parent, symbol, list))
         {
             MarkerListScope scope (*parent);
             return Expression (marker->position.getExpression().evaluate (scope));
@@ -174,8 +172,10 @@ public:
                 positioner.registerComponentListener (component);
                 break;
 
+            case RelativeCoordinate::StandardStrings::parent:
+            case RelativeCoordinate::StandardStrings::unknown:
             default:
-                if (Component* const parent = component.getParentComponent())
+                if (auto* parent = component.getParentComponent())
                 {
                     MarkerList* list;
 
@@ -186,8 +186,12 @@ public:
                     else
                     {
                         // The marker we want doesn't exist, so watch all lists in case they change and the marker appears later..
-                        positioner.registerMarkerListListener (parent->getMarkers (true));
-                        positioner.registerMarkerListListener (parent->getMarkers (false));
+                        if (auto* mlh = dynamic_cast<MarkerList::MarkerListHolder*> (parent))
+                        {
+                            positioner.registerMarkerListListener (mlh->getMarkers (true));
+                            positioner.registerMarkerListListener (mlh->getMarkers (false));
+                        }
+
                         ok = false;
                     }
                 }

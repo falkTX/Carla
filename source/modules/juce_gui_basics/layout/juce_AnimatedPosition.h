@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -47,15 +39,16 @@ namespace juce
 
     @see AnimatedPositionBehaviours::ContinuousWithMomentum,
          AnimatedPositionBehaviours::SnapToPageBoundaries
+
+    @tags{GUI}
 */
 template <typename Behaviour>
 class AnimatedPosition  : private Timer
 {
 public:
     AnimatedPosition()
-        : position(), grabbedPos(), releaseVelocity(),
-          range (-std::numeric_limits<double>::max(),
-                  std::numeric_limits<double>::max())
+        :  range (-std::numeric_limits<double>::max(),
+                   std::numeric_limits<double>::max())
     {
     }
 
@@ -132,7 +125,7 @@ public:
     class Listener
     {
     public:
-        virtual ~Listener() {}
+        virtual ~Listener() = default;
 
         /** Called synchronously when an AnimatedPosition changes. */
         virtual void positionChanged (AnimatedPosition&, double newPosition) = 0;
@@ -152,7 +145,7 @@ public:
 
 private:
     //==============================================================================
-    double position, grabbedPos, releaseVelocity;
+    double position = 0.0, grabbedPos = 0.0, releaseVelocity = 0.0;
     Range<double> range;
     Time lastUpdate, lastDrag;
     ListenerList<Listener> listeners;
@@ -160,14 +153,14 @@ private:
     static double getSpeed (const Time last, double lastPos,
                             const Time now, double newPos)
     {
-        const double elapsedSecs = jmax (0.005, (now - last).inSeconds());
-        const double v = (newPos - lastPos) / elapsedSecs;
+        auto elapsedSecs = jmax (0.005, (now - last).inSeconds());
+        auto v = (newPos - lastPos) / elapsedSecs;
         return std::abs (v) > 0.2 ? v : 0.0;
     }
 
     void moveTo (double newPos)
     {
-        const Time now (Time::getCurrentTime());
+        auto now = Time::getCurrentTime();
         releaseVelocity = getSpeed (lastDrag, position, now, newPos);
         behaviour.releasedWithVelocity (newPos, releaseVelocity);
         lastDrag = now;
@@ -182,18 +175,16 @@ private:
         if (position != newPosition)
         {
             position = newPosition;
-            listeners.call (&Listener::positionChanged, *this, newPosition);
+            listeners.call ([this, newPosition] (Listener& l) { l.positionChanged (*this, newPosition); });
         }
     }
 
     void timerCallback() override
     {
-        const Time now = Time::getCurrentTime();
-
-        const double elapsed = jlimit (0.001, 0.020, (now - lastUpdate).inSeconds());
+        auto now = Time::getCurrentTime();
+        auto elapsed = jlimit (0.001, 0.020, (now - lastUpdate).inSeconds());
         lastUpdate = now;
-
-        const double newPos = behaviour.getNextPosition (position, elapsed);
+        auto newPos = behaviour.getNextPosition (position, elapsed);
 
         if (behaviour.isStopped (newPos))
             stopTimer();

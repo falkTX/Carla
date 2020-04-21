@@ -39,7 +39,7 @@ namespace juce
     the underlying object is also immediately destroyed. This allows you to use scoping
     to manage the lifetime of a shared resource.
 
-    Note: the construction/deletion of the shared object must not involve any
+    Note: The construction/deletion of the shared object must not involve any
     code that makes recursive calls to a SharedResourcePointer, or you'll cause
     a deadlock.
 
@@ -74,7 +74,9 @@ namespace juce
     };
 
     @endcode
- */
+
+    @tags{Core}
+*/
 template <typename SharedObjectType>
 class SharedResourcePointer
 {
@@ -114,12 +116,10 @@ public:
     /** Returns the shared object. */
     SharedObjectType& get() const noexcept              { return *sharedObject; }
 
-    /** Returns the object that this pointer references.
-        The pointer returned may be a nullptr, of course.
-    */
+    /** Returns the object that this pointer references. */
     SharedObjectType& getObject() const noexcept        { return *sharedObject; }
 
-    /** Returns the shared object. */
+    /** Returns the shared object pointer. */
     SharedObjectType* operator->() const noexcept       { return sharedObject; }
 
     /** Returns the number of SharedResourcePointers that are currently holding the shared object. */
@@ -129,13 +129,13 @@ private:
     struct SharedObjectHolder
     {
         SpinLock lock;
-        ScopedPointer<SharedObjectType> sharedInstance;
+        std::unique_ptr<SharedObjectType> sharedInstance;
         int refCount;
     };
 
     static SharedObjectHolder& getSharedObjectHolder() noexcept
     {
-        static void* holder [(sizeof (SharedObjectHolder) + sizeof(void*) - 1) / sizeof(void*)] = { 0 };
+        static void* holder [(sizeof (SharedObjectHolder) + sizeof(void*) - 1) / sizeof(void*)] = { nullptr };
         return *reinterpret_cast<SharedObjectHolder*> (holder);
     }
 
@@ -147,9 +147,9 @@ private:
         const SpinLock::ScopedLockType sl (holder.lock);
 
         if (++(holder.refCount) == 1)
-            holder.sharedInstance = new SharedObjectType();
+            holder.sharedInstance.reset (new SharedObjectType());
 
-        sharedObject = holder.sharedInstance;
+        sharedObject = holder.sharedInstance.get();
     }
 
     // There's no need to assign to a SharedResourcePointer because every

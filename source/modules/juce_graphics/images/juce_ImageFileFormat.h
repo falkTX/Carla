@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -36,17 +28,19 @@ namespace juce
     from files, streams or from memory.
 
     @see Image, ImageCache
+
+    @tags{Graphics}
 */
 class JUCE_API  ImageFileFormat
 {
 protected:
     //==============================================================================
     /** Creates an ImageFormat. */
-    ImageFileFormat()                   {}
+    ImageFileFormat() = default;
 
 public:
     /** Destructor. */
-    virtual ~ImageFileFormat()          {}
+    virtual ~ImageFileFormat() = default;
 
     //==============================================================================
     /** Returns a description of this file format.
@@ -143,13 +137,15 @@ public:
     A subclass of ImageFileFormat for reading and writing PNG files.
 
     @see ImageFileFormat, JPEGImageFormat
+
+    @tags{Graphics}
 */
 class JUCE_API  PNGImageFormat  : public ImageFileFormat
 {
 public:
     //==============================================================================
     PNGImageFormat();
-    ~PNGImageFormat();
+    ~PNGImageFormat() override;
 
     //==============================================================================
     String getFormatName() override;
@@ -165,13 +161,15 @@ public:
     A subclass of ImageFileFormat for reading and writing JPEG files.
 
     @see ImageFileFormat, PNGImageFormat
+
+    @tags{Graphics}
 */
 class JUCE_API  JPEGImageFormat  : public ImageFileFormat
 {
 public:
     //==============================================================================
     JPEGImageFormat();
-    ~JPEGImageFormat();
+    ~JPEGImageFormat() override;
 
     //==============================================================================
     /** Specifies the quality to be used when writing a JPEG file.
@@ -197,13 +195,15 @@ private:
     A subclass of ImageFileFormat for reading GIF files.
 
     @see ImageFileFormat, PNGImageFormat, JPEGImageFormat
+
+    @tags{Graphics}
 */
 class JUCE_API  GIFImageFormat  : public ImageFileFormat
 {
 public:
     //==============================================================================
     GIFImageFormat();
-    ~GIFImageFormat();
+    ~GIFImageFormat() override;
 
     //==============================================================================
     String getFormatName() override;

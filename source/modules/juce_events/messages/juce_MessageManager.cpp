@@ -27,12 +27,12 @@ MessageManager::MessageManager() noexcept
   : messageThreadId (Thread::getCurrentThreadId())
 {
     if (JUCEApplicationBase::isStandaloneApp())
-        Thread::setCurrentThreadName ("Juce Message Thread");
+        Thread::setCurrentThreadName ("JUCE Message Thread");
 }
 
 MessageManager::~MessageManager() noexcept
 {
-    broadcaster = nullptr;
+    broadcaster.reset();
 
     doPlatformSpecificShutdown();
 
@@ -68,7 +68,7 @@ bool MessageManager::MessageBase::post()
 {
     auto* mm = MessageManager::instance;
 
-    if (mm == nullptr || mm->quitMessagePosted || ! postMessageToSystemQueue (this))
+    if (mm == nullptr || mm->quitMessagePosted.get() != 0 || ! postMessageToSystemQueue (this))
     {
         Ptr deleter (this); // (this will delete messages that were just created with a 0 ref count)
         return false;
@@ -83,9 +83,9 @@ bool MessageManager::runDispatchLoopUntil (int millisecondsToRunFor)
 {
     jassert (isThisTheMessageThread()); // must only be called by the message thread
 
-    const int64 endTime = Time::currentTimeMillis() + millisecondsToRunFor;
+    auto endTime = Time::currentTimeMillis() + millisecondsToRunFor;
 
-    while (! quitMessageReceived)
+    while (quitMessageReceived.get() == 0)
     {
         JUCE_TRY
         {
@@ -98,7 +98,7 @@ bool MessageManager::runDispatchLoopUntil (int millisecondsToRunFor)
             break;
     }
 
-    return ! quitMessageReceived;
+    return quitMessageReceived.get() == 0;
 }
 #endif
 
@@ -121,7 +121,7 @@ void MessageManager::runDispatchLoop()
 {
     jassert (isThisTheMessageThread()); // must only be called by the message thread
 
-    while (! quitMessageReceived)
+    while (quitMessageReceived.get() == 0)
     {
         JUCE_TRY
         {
@@ -155,7 +155,7 @@ public:
     }
 
     WaitableEvent finished;
-    void* volatile result = nullptr;
+    std::atomic<void*> result { nullptr };
 
 private:
     MessageCallbackFunction* const func;
@@ -164,7 +164,7 @@ private:
     JUCE_DECLARE_NON_COPYABLE (AsyncFunctionCallback)
 };
 
-void* MessageManager::callFunctionOnMessageThread (MessageCallbackFunction* const func, void* const parameter)
+void* MessageManager::callFunctionOnMessageThread (MessageCallbackFunction* func, void* parameter)
 {
     if (isThisTheMessageThread())
         return func (parameter);
@@ -177,11 +177,23 @@ void* MessageManager::callFunctionOnMessageThread (MessageCallbackFunction* cons
     if (message->post())
     {
         message->finished.wait();
-        return message->result;
+        return message->result.load();
     }
 
     jassertfalse; // the OS message queue failed to send the message!
     return nullptr;
+}
+
+bool MessageManager::callAsync (std::function<void()> fn)
+{
+    struct AsyncCallInvoker  : public MessageBase
+    {
+        AsyncCallInvoker (std::function<void()> f) : callback (std::move (f)) {}
+        void messageCallback() override  { callback(); }
+        std::function<void()> callback;
+    };
+
+    return (new AsyncCallInvoker (std::move (fn)))->post();
 }
 
 //==============================================================================
@@ -194,7 +206,7 @@ void MessageManager::deliverBroadcastMessage (const String& value)
 void MessageManager::registerBroadcastListener (ActionListener* const listener)
 {
     if (broadcaster == nullptr)
-        broadcaster = new ActionBroadcaster();
+        broadcaster.reset (new ActionBroadcaster());
 
     broadcaster->addActionListener (listener);
 }
@@ -213,7 +225,7 @@ bool MessageManager::isThisTheMessageThread() const noexcept
 
 void MessageManager::setCurrentThreadAsMessageThread()
 {
-    const Thread::ThreadID thisThread = Thread::getCurrentThreadId();
+    auto thisThread = Thread::getCurrentThreadId();
 
     if (messageThreadId != thisThread)
     {
@@ -227,8 +239,24 @@ void MessageManager::setCurrentThreadAsMessageThread()
 
 bool MessageManager::currentThreadHasLockedMessageManager() const noexcept
 {
-    const Thread::ThreadID thisThread = Thread::getCurrentThreadId();
-    return thisThread == messageThreadId || thisThread == threadWithLock;
+    auto thisThread = Thread::getCurrentThreadId();
+    return thisThread == messageThreadId || thisThread == threadWithLock.get();
+}
+
+bool MessageManager::existsAndIsLockedByCurrentThread() noexcept
+{
+    if (auto i = getInstanceWithoutCreating())
+        return i->currentThreadHasLockedMessageManager();
+
+    return false;
+}
+
+bool MessageManager::existsAndIsCurrentThread() noexcept
+{
+    if (auto i = getInstanceWithoutCreating())
+        return i->isThisTheMessageThread();
+
+    return false;
 }
 
 //==============================================================================
@@ -242,125 +270,189 @@ bool MessageManager::currentThreadHasLockedMessageManager() const noexcept
     accessed from another thread inside a MM lock, you're screwed. (this is exactly what happens
     in Cocoa).
 */
-class MessageManagerLock::BlockingMessage   : public MessageManager::MessageBase
+struct MessageManager::Lock::BlockingMessage   : public MessageManager::MessageBase
 {
-public:
-    BlockingMessage() noexcept {}
+    BlockingMessage (const MessageManager::Lock* parent) noexcept
+        : owner (parent)
+    {}
 
     void messageCallback() override
     {
-        lockedEvent.signal();
+        {
+            ScopedLock lock (ownerCriticalSection);
+
+            if (auto* o = owner.get())
+                o->messageCallback();
+        }
+
         releaseEvent.wait();
     }
 
-    WaitableEvent lockedEvent, releaseEvent;
+    CriticalSection ownerCriticalSection;
+    Atomic<const MessageManager::Lock*> owner;
+    WaitableEvent releaseEvent;
 
     JUCE_DECLARE_NON_COPYABLE (BlockingMessage)
 };
 
 //==============================================================================
-MessageManagerLock::MessageManagerLock (Thread* const threadToCheck)
-    : blockingMessage(), checker (threadToCheck, nullptr),
-      locked (attemptLock (threadToCheck != nullptr ? &checker : nullptr))
-{
-}
+MessageManager::Lock::Lock()                            {}
+MessageManager::Lock::~Lock()                           { exit(); }
+void MessageManager::Lock::enter()    const noexcept    {        tryAcquire (true); }
+bool MessageManager::Lock::tryEnter() const noexcept    { return tryAcquire (false); }
 
-MessageManagerLock::MessageManagerLock (ThreadPoolJob* const jobToCheckForExitSignal)
-    : blockingMessage(), checker (nullptr, jobToCheckForExitSignal),
-      locked (attemptLock (jobToCheckForExitSignal != nullptr ? &checker : nullptr))
-{
-}
-
-MessageManagerLock::MessageManagerLock (BailOutChecker& bailOutChecker)
-    : blockingMessage(), checker (nullptr, nullptr),
-      locked (attemptLock (&bailOutChecker))
-{
-}
-
-bool MessageManagerLock::attemptLock (BailOutChecker* bailOutChecker)
+bool MessageManager::Lock::tryAcquire (bool lockIsMandatory) const noexcept
 {
     auto* mm = MessageManager::instance;
 
     if (mm == nullptr)
+    {
+        jassertfalse;
         return false;
+    }
+
+    if (! lockIsMandatory && (abortWait.get() != 0))
+    {
+        abortWait.set (0);
+        return false;
+    }
 
     if (mm->currentThreadHasLockedMessageManager())
         return true;
 
-    if (bailOutChecker == nullptr)
+    try
     {
-        mm->lockingLock.enter();
+        blockingMessage = *new BlockingMessage (this);
     }
-    else
+    catch (...)
     {
-        while (! mm->lockingLock.tryEnter())
-        {
-            if (bailOutChecker->shouldAbortAcquiringLock())
-                return false;
-
-            Thread::yield();
-        }
+        jassert (! lockIsMandatory);
+        return false;
     }
-
-    blockingMessage = new BlockingMessage();
 
     if (! blockingMessage->post())
     {
+        // post of message failed while trying to get the lock
+        jassert (! lockIsMandatory);
         blockingMessage = nullptr;
         return false;
     }
 
-    while (! blockingMessage->lockedEvent.wait (20))
+    do
     {
-        if (bailOutChecker != nullptr && bailOutChecker->shouldAbortAcquiringLock())
+        while (abortWait.get() == 0)
+            lockedEvent.wait (-1);
+
+        abortWait.set (0);
+
+        if (lockGained.get() != 0)
         {
-            blockingMessage->releaseEvent.signal();
-            blockingMessage = nullptr;
-            mm->lockingLock.exit();
-            return false;
+            mm->threadWithLock = Thread::getCurrentThreadId();
+            return true;
         }
+
+    } while (lockIsMandatory);
+
+    // we didn't get the lock
+    blockingMessage->releaseEvent.signal();
+
+    {
+        ScopedLock lock (blockingMessage->ownerCriticalSection);
+
+        lockGained.set (0);
+        blockingMessage->owner.set (nullptr);
     }
 
-    jassert (mm->threadWithLock == 0);
-
-    mm->threadWithLock = Thread::getCurrentThreadId();
-    return true;
+    blockingMessage = nullptr;
+    return false;
 }
 
-MessageManagerLock::~MessageManagerLock() noexcept
+void MessageManager::Lock::exit() const noexcept
 {
-    if (blockingMessage != nullptr)
+    if (lockGained.compareAndSetBool (false, true))
     {
         auto* mm = MessageManager::instance;
 
         jassert (mm == nullptr || mm->currentThreadHasLockedMessageManager());
-
-        blockingMessage->releaseEvent.signal();
-        blockingMessage = nullptr;
+        lockGained.set (0);
 
         if (mm != nullptr)
+            mm->threadWithLock = {};
+
+        if (blockingMessage != nullptr)
         {
-            mm->threadWithLock = 0;
-            mm->lockingLock.exit();
+            blockingMessage->releaseEvent.signal();
+            blockingMessage = nullptr;
         }
     }
 }
 
-//==============================================================================
-MessageManagerLock::ThreadChecker::ThreadChecker (Thread* const threadToUse,
-                                                  ThreadPoolJob* const threadJobToUse)
-    : threadToCheck (threadToUse), job (threadJobToUse)
+void MessageManager::Lock::messageCallback() const
 {
+    lockGained.set (1);
+    abort();
 }
 
-bool MessageManagerLock::ThreadChecker::shouldAbortAcquiringLock()
+void MessageManager::Lock::abort() const noexcept
 {
-    return (threadToCheck != nullptr && threadToCheck->threadShouldExit())
-        || (job           != nullptr && job->shouldExit());
+    abortWait.set (1);
+    lockedEvent.signal();
 }
 
 //==============================================================================
-JUCE_API void JUCE_CALLTYPE initialiseJuce_GUI();
+MessageManagerLock::MessageManagerLock (Thread* threadToCheck)
+    : locked (attemptLock (threadToCheck, nullptr))
+{}
+
+MessageManagerLock::MessageManagerLock (ThreadPoolJob* jobToCheck)
+    : locked (attemptLock (nullptr, jobToCheck))
+{}
+
+bool MessageManagerLock::attemptLock (Thread* threadToCheck, ThreadPoolJob* jobToCheck)
+{
+    jassert (threadToCheck == nullptr || jobToCheck == nullptr);
+
+    if (threadToCheck != nullptr)
+        threadToCheck->addListener (this);
+
+    if (jobToCheck != nullptr)
+        jobToCheck->addListener (this);
+
+    // tryEnter may have a spurious abort (return false) so keep checking the condition
+    while ((threadToCheck == nullptr || ! threadToCheck->threadShouldExit())
+             && (jobToCheck == nullptr || ! jobToCheck->shouldExit()))
+    {
+        if (mmLock.tryEnter())
+            break;
+    }
+
+    if (threadToCheck != nullptr)
+    {
+        threadToCheck->removeListener (this);
+
+        if (threadToCheck->threadShouldExit())
+            return false;
+    }
+
+    if (jobToCheck != nullptr)
+    {
+        jobToCheck->removeListener (this);
+
+        if (jobToCheck->shouldExit())
+            return false;
+    }
+
+    return true;
+}
+
+MessageManagerLock::~MessageManagerLock()  { mmLock.exit(); }
+
+void MessageManagerLock::exitSignalSent()
+{
+    mmLock.abort();
+}
+
+//==============================================================================
 JUCE_API void JUCE_CALLTYPE initialiseJuce_GUI()
 {
     JUCE_AUTORELEASEPOOL
@@ -369,7 +461,6 @@ JUCE_API void JUCE_CALLTYPE initialiseJuce_GUI()
     }
 }
 
-JUCE_API void JUCE_CALLTYPE shutdownJuce_GUI();
 JUCE_API void JUCE_CALLTYPE shutdownJuce_GUI()
 {
     JUCE_AUTORELEASEPOOL

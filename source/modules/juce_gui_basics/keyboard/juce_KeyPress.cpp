@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -27,34 +19,13 @@
 namespace juce
 {
 
-KeyPress::KeyPress() noexcept
-    : keyCode (0), textCharacter (0)
-{
-}
-
 KeyPress::KeyPress (int code, ModifierKeys m, juce_wchar textChar) noexcept
     : keyCode (code), mods (m), textCharacter (textChar)
 {
 }
 
-KeyPress::KeyPress (const int code) noexcept
-    : keyCode (code), textCharacter (0)
+KeyPress::KeyPress (const int code) noexcept  : keyCode (code)
 {
-}
-
-KeyPress::KeyPress (const KeyPress& other) noexcept
-    : keyCode (other.keyCode), mods (other.mods),
-      textCharacter (other.textCharacter)
-{
-}
-
-KeyPress& KeyPress::operator= (const KeyPress& other) noexcept
-{
-    keyCode = other.keyCode;
-    mods = other.mods;
-    textCharacter = other.textCharacter;
-
-    return *this;
 }
 
 bool KeyPress::operator== (int otherKeyCode) const noexcept
@@ -75,20 +46,13 @@ bool KeyPress::operator== (const KeyPress& other) const noexcept
                            == CharacterFunctions::toLowerCase ((juce_wchar) other.keyCode)));
 }
 
-bool KeyPress::operator!= (const KeyPress& other) const noexcept
-{
-    return ! operator== (other);
-}
-
-bool KeyPress::operator!= (int otherKeyCode) const noexcept
-{
-    return ! operator== (otherKeyCode);
-}
+bool KeyPress::operator!= (const KeyPress& other) const noexcept    { return ! operator== (other); }
+bool KeyPress::operator!= (int otherKeyCode) const noexcept         { return ! operator== (otherKeyCode); }
 
 bool KeyPress::isCurrentlyDown() const
 {
     return isKeyCurrentlyDown (keyCode)
-            && (ModifierKeys::getCurrentModifiers().getRawFlags() & ModifierKeys::allKeyboardModifiers)
+            && (ModifierKeys::currentModifiers.getRawFlags() & ModifierKeys::allKeyboardModifiers)
                   == (mods.getRawFlags() & ModifierKeys::allKeyboardModifiers);
 }
 
@@ -149,7 +113,7 @@ namespace KeyPressHelpers
     {
         if (desc.containsIgnoreCase (numberPadPrefix()))
         {
-            const juce_wchar lastChar = desc.trimEnd().getLastCharacter();
+            auto lastChar = desc.trimEnd().getLastCharacter();
 
             switch (lastChar)
             {
@@ -174,7 +138,7 @@ namespace KeyPressHelpers
         return 0;
     }
 
-   #if JUCE_MAC
+   #if JUCE_MAC || JUCE_IOS
     struct OSXSymbolReplacement
     {
         const char* text;
@@ -226,16 +190,24 @@ KeyPress KeyPress::createFromDescription (const String& desc)
     {
         // see if it's a function key..
         if (! desc.containsChar ('#')) // avoid mistaking hex-codes like "#f1"
-            for (int i = 1; i <= 12; ++i)
+        {
+            for (int i = 1; i <= 35; ++i)
+            {
                 if (desc.containsWholeWordIgnoreCase ("f" + String (i)))
-                    key = F1Key + i - 1;
+                {
+                    if (i <= 16)        key = F1Key + i - 1;
+                    else if (i <= 24)   key = F17Key + i - 17;
+                    else if (i <= 35)   key = F25Key + i - 25;
+                }
+            }
+        }
 
         if (key == 0)
         {
             // give up and use the hex code..
-            const int hexCode = desc.fromFirstOccurrenceOf ("#", false, false)
-                                    .retainCharacters ("0123456789abcdefABCDEF")
-                                    .getHexValue32();
+            auto hexCode = desc.fromFirstOccurrenceOf ("#", false, false)
+                               .retainCharacters ("0123456789abcdefABCDEF")
+                               .getHexValue32();
 
             if (hexCode > 0)
                 key = hexCode;
@@ -261,7 +233,7 @@ String KeyPress::getTextDescription() const
         if (mods.isCtrlDown())      desc << "ctrl + ";
         if (mods.isShiftDown())     desc << "shift + ";
 
-       #if JUCE_MAC
+       #if JUCE_MAC || JUCE_IOS
         if (mods.isAltDown())       desc << "option + ";
         if (mods.isCommandDown())   desc << "command + ";
        #else
@@ -284,6 +256,7 @@ String KeyPress::getTextDescription() const
         else if (keyCode == numberPadDivide)            desc << KeyPressHelpers::numberPadPrefix() << '/';
         else if (keyCode == numberPadSeparator)         desc << KeyPressHelpers::numberPadPrefix() << "separator";
         else if (keyCode == numberPadDecimalPoint)      desc << KeyPressHelpers::numberPadPrefix() << '.';
+        else if (keyCode == numberPadEquals)            desc << KeyPressHelpers::numberPadPrefix() << '=';
         else if (keyCode == numberPadDelete)            desc << KeyPressHelpers::numberPadPrefix() << "delete";
         else                                            desc << '#' << String::toHexString (keyCode);
     }
@@ -293,8 +266,8 @@ String KeyPress::getTextDescription() const
 
 String KeyPress::getTextDescriptionWithIcons() const
 {
-   #if JUCE_MAC
-    String s (getTextDescription());
+   #if JUCE_MAC || JUCE_IOS
+    auto s = getTextDescription();
 
     for (int i = 0; i < numElementsInArray (KeyPressHelpers::osxSymbols); ++i)
         s = s.replace (KeyPressHelpers::osxSymbols[i].text,

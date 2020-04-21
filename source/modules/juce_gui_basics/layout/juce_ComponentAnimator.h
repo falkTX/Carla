@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -47,6 +39,8 @@ namespace juce
     start or finish being animated.
 
     @see Desktop::getAnimator
+
+    @tags{GUI}
 */
 class JUCE_API  ComponentAnimator  : public ChangeBroadcaster,
                                      private Timer
@@ -57,7 +51,7 @@ public:
     ComponentAnimator();
 
     /** Destructor. */
-    ~ComponentAnimator();
+    ~ComponentAnimator() override;
 
     //==============================================================================
     /** Starts a component moving from its current position to a specified position.
@@ -85,7 +79,7 @@ public:
                                     component, or if there's a chance the parent might decide to delete its children.
         @param startSpeed           a value to indicate the relative start speed of the animation. If this is 0,
                                     the component will start by accelerating from rest; higher values mean that it
-                                    will have an initial speed greater than zero. If the value if greater than 1, it
+                                    will have an initial speed greater than zero. If the value is greater than 1, it
                                     will decelerate towards the middle of its journey. To move the component at a
                                     constant rate for its entire animation, set both the start and end speeds to 1.0
         @param endSpeed             a relative speed at which the component should be moving when the animation finishes.

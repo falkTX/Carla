@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -59,8 +51,10 @@ namespace juce
     be open or closed.
 
     @see PathFlatteningIterator, PathStrokeType, Graphics
+
+    @tags{Graphics}
 */
-class JUCE_API  Path
+class JUCE_API  Path  final
 {
 public:
     //==============================================================================
@@ -96,7 +90,7 @@ public:
     Rectangle<float> getBounds() const noexcept;
 
     /** Returns the smallest rectangle that contains all points within the path
-        after it's been transformed with the given tranasform matrix.
+        after it's been transformed with the given transform matrix.
     */
     Rectangle<float> getBoundsTransformed (const AffineTransform& transform) const noexcept;
 
@@ -438,7 +432,7 @@ public:
                             draw a curve clockwise from the 9 o'clock position to the 3 o'clock position via
                             12 o'clock, you'd use 1.5*Pi and 2.5*Pi as the start and finish points.
         @param startAsNewSubPath    if true, the arc will begin a new subpath from its starting point; if false,
-                            it will be added to the current sub-path, continuing from the current postition
+                            it will be added to the current sub-path, continuing from the current position
 
         @see addCentredArc, arcTo, addPieSegment, addEllipse
     */
@@ -465,7 +459,7 @@ public:
                             draw a curve clockwise from the 9 o'clock position to the 3 o'clock position via
                             12 o'clock, you'd use 1.5*Pi and 2.5*Pi as the start and finish points.
         @param startAsNewSubPath    if true, the arc will begin a new subpath from its starting point; if false,
-                            it will be added to the current sub-path, continuing from the current postition
+                            it will be added to the current sub-path, continuing from the current position
 
         @see addArc, arcTo
     */
@@ -651,7 +645,7 @@ public:
         @param preserveProportions  if true, it will fit the path into the space without altering its
                                     horizontal/vertical scale ratio; if false, it will distort the
                                     path to fill the specified ratio both horizontally and vertically
-        @param justificationType    if the proportions are preseved, the resultant path may be smaller
+        @param justificationType    if the proportions are preserved, the resultant path may be smaller
                                     than the available rectangle, so this describes how it should be
                                     positioned within the space.
         @returns                    an appropriate transformation
@@ -669,7 +663,7 @@ public:
         @param preserveProportions  if true, it will fit the path into the space without altering its
                                     horizontal/vertical scale ratio; if false, it will distort the
                                     path to fill the specified ratio both horizontally and vertically
-        @param justificationType    if the proportions are preseved, the resultant path may be smaller
+        @param justificationType    if the proportions are preserved, the resultant path may be smaller
                                     than the available rectangle, so this describes how it should be
                                     positioned within the space.
         @returns                    an appropriate transformation
@@ -753,7 +747,7 @@ public:
         //==============================================================================
     private:
         const Path& path;
-        size_t index = 0;
+        const float* index;
 
         JUCE_DECLARE_NON_COPYABLE (Iterator)
     };
@@ -781,9 +775,7 @@ public:
     void loadPathFromData (const void* data, size_t numberOfBytes);
 
     /** Stores the path by writing it out to a stream.
-
         After writing out a path, you can reload it using loadPathFromStream().
-
         @see loadPathFromStream, loadPathFromData
     */
     void writePathToStream (OutputStream& destination) const;
@@ -803,8 +795,9 @@ private:
     //==============================================================================
     friend class PathFlatteningIterator;
     friend class Path::Iterator;
-    ArrayAllocationBase<float, DummyCriticalSection> data;
-    size_t numElements = 0;
+    friend class EdgeTable;
+
+    Array<float> data;
 
     struct PathBounds
     {
@@ -813,7 +806,13 @@ private:
         void reset() noexcept;
         void reset (float, float) noexcept;
         void extend (float, float) noexcept;
-        void extend (float, float, float, float) noexcept;
+
+        template <typename... Coords>
+        void extend (float x, float y, Coords... coords) noexcept
+        {
+            extend (x, y);
+            extend (coords...);
+        }
 
         float pathXMin = 0, pathXMax = 0, pathYMin = 0, pathYMax = 0;
     };

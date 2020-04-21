@@ -163,18 +163,15 @@ void Synthesiser::processNextBlock (AudioBuffer<floatType>& outputAudio,
     jassert (sampleRate != 0);
     const int targetChannels = outputAudio.getNumChannels();
 
-    MidiBuffer::Iterator midiIterator (midiData);
-    midiIterator.setNextSamplePosition (startSample);
+    auto midiIterator = midiData.findNextSamplePosition (startSample);
 
     bool firstEvent = true;
-    int midiEventPos;
-    MidiMessage m;
 
     const ScopedLock sl (lock);
 
-    while (numSamples > 0)
+    for (; numSamples > 0; ++midiIterator)
     {
-        if (! midiIterator.getNextEvent (m, midiEventPos))
+        if (midiIterator == midiData.cend())
         {
             if (targetChannels > 0)
                 renderVoices (outputAudio, startSample, numSamples);
@@ -182,20 +179,21 @@ void Synthesiser::processNextBlock (AudioBuffer<floatType>& outputAudio,
             return;
         }
 
-        const int samplesToNextMidiMessage = midiEventPos - startSample;
+        const auto metadata = *midiIterator;
+        const int samplesToNextMidiMessage = metadata.samplePosition - startSample;
 
         if (samplesToNextMidiMessage >= numSamples)
         {
             if (targetChannels > 0)
                 renderVoices (outputAudio, startSample, numSamples);
 
-            handleMidiEvent (m);
+            handleMidiEvent (metadata.getMessage());
             break;
         }
 
         if (samplesToNextMidiMessage < ((firstEvent && ! subBlockSubdivisionIsStrict) ? 1 : minimumSubBlockSize))
         {
-            handleMidiEvent (m);
+            handleMidiEvent (metadata.getMessage());
             continue;
         }
 
@@ -204,18 +202,31 @@ void Synthesiser::processNextBlock (AudioBuffer<floatType>& outputAudio,
         if (targetChannels > 0)
             renderVoices (outputAudio, startSample, samplesToNextMidiMessage);
 
-        handleMidiEvent (m);
+        handleMidiEvent (metadata.getMessage());
         startSample += samplesToNextMidiMessage;
         numSamples  -= samplesToNextMidiMessage;
     }
 
-    while (midiIterator.getNextEvent (m, midiEventPos))
-        handleMidiEvent (m);
+    std::for_each (midiIterator,
+                   midiData.cend(),
+                   [&] (const MidiMessageMetadata& meta) { handleMidiEvent (meta.getMessage()); });
 }
 
 // explicit template instantiation
 template void Synthesiser::processNextBlock<float>  (AudioBuffer<float>&,  const MidiBuffer&, int, int);
 template void Synthesiser::processNextBlock<double> (AudioBuffer<double>&, const MidiBuffer&, int, int);
+
+void Synthesiser::renderNextBlock (AudioBuffer<float>& outputAudio, const MidiBuffer& inputMidi,
+                                   int startSample, int numSamples)
+{
+    processNextBlock (outputAudio, inputMidi, startSample, numSamples);
+}
+
+void Synthesiser::renderNextBlock (AudioBuffer<double>& outputAudio, const MidiBuffer& inputMidi,
+                                   int startSample, int numSamples)
+{
+    processNextBlock (outputAudio, inputMidi, startSample, numSamples);
+}
 
 void Synthesiser::renderVoices (AudioBuffer<float>& buffer, int startSample, int numSamples)
 {
@@ -323,7 +334,7 @@ void Synthesiser::stopVoice (SynthesiserVoice* voice, float velocity, const bool
     voice->stopNote (velocity, allowTailOff);
 
     // the subclass MUST call clearCurrentNote() if it's not tailing off! RTFM for stopNote()!
-    jassert (allowTailOff || (voice->getCurrentlyPlayingNote() < 0 && voice->getCurrentlyPlayingSound() == 0));
+    jassert (allowTailOff || (voice->getCurrentlyPlayingNote() < 0 && voice->getCurrentlyPlayingSound() == nullptr));
 }
 
 void Synthesiser::noteOff (const int midiChannel,
@@ -338,7 +349,7 @@ void Synthesiser::noteOff (const int midiChannel,
         if (voice->getCurrentlyPlayingNote() == midiNoteNumber
               && voice->isPlayingChannel (midiChannel))
         {
-            if (SynthesiserSound* const sound = voice->getCurrentlyPlayingSound())
+            if (auto sound = voice->getCurrentlyPlayingSound())
             {
                 if (sound->appliesToNote (midiNoteNumber)
                      && sound->appliesToChannel (midiChannel))
@@ -489,14 +500,6 @@ SynthesiserVoice* Synthesiser::findFreeVoice (SynthesiserSound* soundToPlay,
     return nullptr;
 }
 
-struct VoiceAgeSorter
-{
-    static int compareElements (SynthesiserVoice* v1, SynthesiserVoice* v2) noexcept
-    {
-        return v1->wasStartedBefore (*v2) ? -1 : (v2->wasStartedBefore (*v1) ? 1 : 0);
-    }
-};
-
 SynthesiserVoice* Synthesiser::findVoiceToSteal (SynthesiserSound* soundToPlay,
                                                  int /*midiChannel*/, int midiNoteNumber) const
 {
@@ -521,8 +524,16 @@ SynthesiserVoice* Synthesiser::findVoiceToSteal (SynthesiserSound* soundToPlay,
         {
             jassert (voice->isVoiceActive()); // We wouldn't be here otherwise
 
-            VoiceAgeSorter sorter;
-            usableVoices.addSorted (sorter, voice);
+            usableVoices.add (voice);
+
+            // NB: Using a functor rather than a lambda here due to scare-stories about
+            // compilers generating code containing heap allocations..
+            struct Sorter
+            {
+                bool operator() (const SynthesiserVoice* a, const SynthesiserVoice* b) const noexcept { return a->wasStartedBefore (*b); }
+            };
+
+            std::sort (usableVoices.begin(), usableVoices.end(), Sorter());
 
             if (! voice->isPlayingButReleased()) // Don't protect released notes
             {

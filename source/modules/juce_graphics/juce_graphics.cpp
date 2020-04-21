@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -33,8 +25,6 @@
  #error "Incorrect use of JUCE cpp file"
 #endif
 
-#include "AppConfig.h"
-
 #define JUCE_CORE_INCLUDE_OBJC_HELPERS 1
 #define JUCE_CORE_INCLUDE_COM_SMART_PTR 1
 #define JUCE_CORE_INCLUDE_JNI_HELPERS 1
@@ -49,10 +39,7 @@
 
 #elif JUCE_WINDOWS
   // get rid of some warnings in Window's own headers
- #ifdef JUCE_MSVC
-  #pragma warning (push)
-  #pragma warning (disable : 4458)
- #endif
+ JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4458)
 
  #if JUCE_MINGW && JUCE_USE_DIRECTWRITE
   #warning "DirectWrite not currently implemented with mingw..."
@@ -73,9 +60,9 @@
   #include <cstdio>
  #endif
 
- #ifdef JUCE_MSVC
-  #pragma warning (pop)
- #endif
+ #include <unordered_map>
+
+ JUCE_END_IGNORE_WARNINGS_MSVC
 
 #elif JUCE_IOS
  #import <QuartzCore/QuartzCore.h>

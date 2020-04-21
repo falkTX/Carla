@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -53,13 +45,15 @@ inline uint32 clampPixelComponents (uint32 x) noexcept
     This is used internally by the imaging classes.
 
     @see PixelRGB
+
+    @tags{Graphics}
 */
 class JUCE_API  PixelARGB
 {
 public:
     /** Creates a pixel without defining its colour. */
-    PixelARGB() noexcept {}
-    ~PixelARGB() noexcept {}
+    PixelARGB() = default;
+    ~PixelARGB() = default;
 
     PixelARGB (const uint8 a, const uint8 r, const uint8 g, const uint8 b) noexcept
     {
@@ -300,8 +294,7 @@ public:
 
 private:
     //==============================================================================
-    PixelARGB (const uint32 internalValue) noexcept
-        : internal (internalValue)
+    PixelARGB (uint32 internalValue) noexcept : internal (internalValue)
     {
     }
 
@@ -342,13 +335,15 @@ private:
     This is used internally by the imaging classes.
 
     @see PixelARGB
+
+    @tags{Graphics}
 */
 class JUCE_API  PixelRGB
 {
 public:
     /** Creates a pixel without defining its colour. */
-    PixelRGB() noexcept {}
-    ~PixelRGB() noexcept {}
+    PixelRGB() = default;
+    ~PixelRGB() = default;
 
     //==============================================================================
     /** Returns a uint32 which represents the pixel in a platform dependent format which is compatible
@@ -358,9 +353,9 @@ public:
     forcedinline uint32 getNativeARGB() const noexcept
     {
        #if JUCE_ANDROID
-        return (uint32) ((0xff << 24) | r | (g << 8) | (b << 16));
+        return (uint32) ((0xffu << 24) | r | ((uint32) g << 8) | ((uint32) b << 16));
        #else
-        return (uint32) ((0xff << 24) | b | (g << 8) | (r << 16));
+        return (uint32) ((0xffu << 24) | b | ((uint32) g << 8) | ((uint32) r << 16));
        #endif
     }
 
@@ -369,7 +364,7 @@ public:
     forcedinline uint32 getInARGBMaskOrder() const noexcept
     {
        #if JUCE_ANDROID
-        return (uint32) ((0xff << 24) | (r << 16) | (g << 8) | (b << 0));
+        return (uint32) ((0xffu << 24) | b | ((uint32) g << 8) | ((uint32) r << 16));
        #else
         return getNativeARGB();
        #endif
@@ -409,9 +404,9 @@ public:
 
     //==============================================================================
     forcedinline uint8 getAlpha() const noexcept    { return 0xff; }
-    forcedinline uint8 getRed()   const noexcept      { return r; }
+    forcedinline uint8 getRed()   const noexcept    { return r; }
     forcedinline uint8 getGreen() const noexcept    { return g; }
-    forcedinline uint8 getBlue()  const noexcept     { return b; }
+    forcedinline uint8 getBlue()  const noexcept    { return b; }
 
     //==============================================================================
     /** Copies another pixel colour over this one.
@@ -587,13 +582,15 @@ forcedinline void PixelARGB::blend (const PixelRGB src) noexcept
     This is used internally by the imaging classes.
 
     @see PixelARGB, PixelRGB
+
+    @tags{Graphics}
 */
 class JUCE_API  PixelAlpha
 {
 public:
     /** Creates a pixel without defining its colour. */
-    PixelAlpha() noexcept {}
-    ~PixelAlpha() noexcept {}
+    PixelAlpha() = default;
+    ~PixelAlpha() = default;
 
     //==============================================================================
     /** Returns a uint32 which represents the pixel in a platform dependent format which is compatible
@@ -626,7 +623,6 @@ public:
 
     //==============================================================================
     forcedinline uint8 getAlpha() const noexcept    { return a; }
-
     forcedinline uint8 getRed()   const noexcept    { return 0; }
     forcedinline uint8 getGreen() const noexcept    { return 0; }
     forcedinline uint8 getBlue()  const noexcept    { return 0; }

@@ -20,6 +20,8 @@
   ==============================================================================
 */
 
+#pragma once
+
 namespace juce
 {
 
@@ -36,7 +38,7 @@ namespace juce
  #endif
 #endif
 
-/** This macro defines the C calling convention used as the standard for Juce calls. */
+/** This macro defines the C calling convention used as the standard for JUCE calls. */
 #if JUCE_MSVC
  #define JUCE_CALLTYPE   __stdcall
  #define JUCE_CDECL      __cdecl
@@ -48,10 +50,12 @@ namespace juce
 //==============================================================================
 // Debugging and assertion macros
 
-#if JUCE_LOG_ASSERTIONS || JUCE_DEBUG
- #define JUCE_LOG_CURRENT_ASSERTION    juce::logAssertion (__FILE__, __LINE__);
-#else
- #define JUCE_LOG_CURRENT_ASSERTION
+#ifndef JUCE_LOG_CURRENT_ASSERTION
+ #if JUCE_LOG_ASSERTIONS || JUCE_DEBUG
+  #define JUCE_LOG_CURRENT_ASSERTION    juce::logAssertion (__FILE__, __LINE__);
+ #else
+  #define JUCE_LOG_CURRENT_ASSERTION
+ #endif
 #endif
 
 //==============================================================================
@@ -88,6 +92,26 @@ namespace juce
 
 #ifndef JUCE_ANALYZER_NORETURN
  #define JUCE_ANALYZER_NORETURN
+#endif
+
+/** Used to silence Wimplicit-fallthrough on Clang and GCC where available
+    as there are a few places in the codebase where we need to do this
+    deliberately and want to ignore the warning.
+*/
+#if JUCE_CLANG
+ #if __has_cpp_attribute(clang::fallthrough)
+  #define JUCE_FALLTHROUGH [[clang::fallthrough]];
+ #else
+  #define JUCE_FALLTHROUGH
+ #endif
+#elif JUCE_GCC
+ #if __GNUC__ >= 7
+  #define JUCE_FALLTHROUGH [[gnu::fallthrough]];
+ #else
+  #define JUCE_FALLTHROUGH
+ #endif
+#else
+ #define JUCE_FALLTHROUGH
 #endif
 
 //==============================================================================
@@ -191,8 +215,8 @@ namespace juce
     };@endcode
 */
 #define JUCE_DECLARE_NON_COPYABLE(className) \
-    className (const className&) JUCE_DELETED_FUNCTION;\
-    className& operator= (const className&) JUCE_DELETED_FUNCTION;
+    className (const className&) = delete;\
+    className& operator= (const className&) = delete;
 
 /** This is a shorthand way of writing both a JUCE_DECLARE_NON_COPYABLE and
     JUCE_LEAK_DETECTOR macro for a class.
@@ -206,8 +230,8 @@ namespace juce
 */
 #define JUCE_PREVENT_HEAP_ALLOCATION \
    private: \
-    static void* operator new (size_t) JUCE_DELETED_FUNCTION; \
-    static void operator delete (void*) JUCE_DELETED_FUNCTION;
+    static void* operator new (size_t) = delete; \
+    static void operator delete (void*) = delete;
 
 //==============================================================================
 #if JUCE_MSVC && ! defined (DOXYGEN)
@@ -260,14 +284,39 @@ namespace juce
  #define JUCE_DEPRECATED(functionDef)
  #define JUCE_DEPRECATED_WITH_BODY(functionDef, body)
 #elif JUCE_MSVC && ! JUCE_NO_DEPRECATION_WARNINGS
- #define JUCE_DEPRECATED(functionDef)                   __declspec(deprecated) functionDef
- #define JUCE_DEPRECATED_WITH_BODY(functionDef, body)   __declspec(deprecated) functionDef body
+ #define JUCE_DEPRECATED_ATTRIBUTE                      __declspec(deprecated)
+ #define JUCE_DEPRECATED(functionDef)                   JUCE_DEPRECATED_ATTRIBUTE functionDef
+ #define JUCE_DEPRECATED_WITH_BODY(functionDef, body)   JUCE_DEPRECATED_ATTRIBUTE functionDef body
 #elif (JUCE_GCC || JUCE_CLANG) && ! JUCE_NO_DEPRECATION_WARNINGS
- #define JUCE_DEPRECATED(functionDef)                   functionDef __attribute__ ((deprecated))
- #define JUCE_DEPRECATED_WITH_BODY(functionDef, body)   functionDef __attribute__ ((deprecated)) body
+ #define JUCE_DEPRECATED_ATTRIBUTE                      __attribute__ ((deprecated))
+ #define JUCE_DEPRECATED(functionDef)                   functionDef JUCE_DEPRECATED_ATTRIBUTE
+ #define JUCE_DEPRECATED_WITH_BODY(functionDef, body)   functionDef JUCE_DEPRECATED_ATTRIBUTE body
 #else
+ #define JUCE_DEPRECATED_ATTRIBUTE
  #define JUCE_DEPRECATED(functionDef)                   functionDef
  #define JUCE_DEPRECATED_WITH_BODY(functionDef, body)   functionDef body
+#endif
+
+#if JUCE_ALLOW_STATIC_NULL_VARIABLES
+ #if ! (defined (DOXYGEN) || defined (JUCE_GCC) || (JUCE_MSVC && _MSC_VER <= 1900))
+  #define JUCE_DEPRECATED_STATIC(valueDef)       JUCE_DEPRECATED_ATTRIBUTE valueDef
+
+  #if JUCE_MSVC
+   #define JUCE_DECLARE_DEPRECATED_STATIC(valueDef) \
+        __pragma(warning(push)) \
+        __pragma(warning(disable:4996)) \
+         valueDef \
+        __pragma(warning(pop))
+  #else
+   #define JUCE_DECLARE_DEPRECATED_STATIC(valueDef)   valueDef
+  #endif
+ #else
+  #define JUCE_DEPRECATED_STATIC(valueDef)           valueDef
+  #define JUCE_DECLARE_DEPRECATED_STATIC(valueDef)   valueDef
+ #endif
+#else
+ #define JUCE_DEPRECATED_STATIC(valueDef)
+ #define JUCE_DECLARE_DEPRECATED_STATIC(valueDef)
 #endif
 
 //==============================================================================

@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -23,6 +15,7 @@
 
   ==============================================================================
 */
+
 
 /*******************************************************************************
  The block below describes the properties of this module, and is read by
@@ -33,18 +26,18 @@
 
  BEGIN_JUCE_MODULE_DECLARATION
 
-  ID:               juce_graphics
-  vendor:           juce
-  version:          5.1.2
-  name:             JUCE graphics classes
-  description:      Classes for 2D vector graphics, image loading/saving, font handling, etc.
-  website:          http://www.juce.com/juce
-  license:          GPL/Commercial
+  ID:                 juce_graphics
+  vendor:             juce
+  version:            6.0.0
+  name:               JUCE graphics classes
+  description:        Classes for 2D vector graphics, image loading/saving, font handling, etc.
+  website:            http://www.juce.com/juce
+  license:            GPL/Commercial
 
-  dependencies:     juce_events
-  OSXFrameworks:    Cocoa QuartzCore
-  iOSFrameworks:    CoreGraphics CoreImage CoreText QuartzCore
-  linuxPackages:    x11 xinerama xext freetype2
+  dependencies:       juce_events
+  OSXFrameworks:      Cocoa QuartzCore
+  iOSFrameworks:      CoreGraphics CoreImage CoreText QuartzCore
+  linuxPackages:      freetype2
 
  END_JUCE_MODULE_DECLARATION
 
@@ -77,6 +70,15 @@
  #define JUCE_USE_DIRECTWRITE 1
 #endif
 
+/** Config: JUCE_DISABLE_COREGRAPHICS_FONT_SMOOTHING
+
+    Setting this flag will turn off CoreGraphics font smoothing, which some people
+    find makes the text too 'fat' for their taste.
+*/
+#ifndef JUCE_DISABLE_COREGRAPHICS_FONT_SMOOTHING
+ #define JUCE_DISABLE_COREGRAPHICS_FONT_SMOOTHING 0
+#endif
+
 #ifndef JUCE_INCLUDE_PNGLIB_CODE
  #define JUCE_INCLUDE_PNGLIB_CODE 1
 #endif
@@ -105,6 +107,7 @@ namespace juce
 #include "geometry/juce_Point.h"
 #include "geometry/juce_Line.h"
 #include "geometry/juce_Rectangle.h"
+#include "geometry/juce_Parallelogram.h"
 #include "placement/juce_Justification.h"
 #include "geometry/juce_Path.h"
 #include "geometry/juce_RectangleList.h"

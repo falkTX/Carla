@@ -61,7 +61,7 @@ void MixerAudioSource::removeInputSource (AudioSource* const input)
 {
     if (input != nullptr)
     {
-        ScopedPointer<AudioSource> toDelete;
+        std::unique_ptr<AudioSource> toDelete;
 
         {
             const ScopedLock sl (lock);
@@ -71,7 +71,7 @@ void MixerAudioSource::removeInputSource (AudioSource* const input)
                 return;
 
             if (inputsToDelete [index])
-                toDelete = input;
+                toDelete.reset (input);
 
             inputsToDelete.shiftBits (-1, index);
             inputs.remove (index);

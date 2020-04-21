@@ -33,6 +33,8 @@ namespace juce
     An instance of a DynamicObject can be used to store named properties, and
     by subclassing hasMethod() and invokeMethod(), you can give your object
     methods.
+
+    @tags{Core}
 */
 class JUCE_API  DynamicObject  : public ReferenceCountedObject
 {
@@ -40,9 +42,9 @@ public:
     //==============================================================================
     DynamicObject();
     DynamicObject (const DynamicObject&);
-    ~DynamicObject();
+    ~DynamicObject() override;
 
-    typedef ReferenceCountedObjectPtr<DynamicObject> Ptr;
+    using Ptr = ReferenceCountedObjectPtr<DynamicObject>;
 
     //==============================================================================
     /** Returns true if the object has a property with this name.
@@ -76,7 +78,7 @@ public:
         call, then it invokes it.
 
         This method is virtual to allow more dynamic invocation to used for objects
-        where the methods may not already be set as properies.
+        where the methods may not already be set as properties.
     */
     virtual var invokeMethod (Identifier methodName,
                               const var::NativeFunctionArgs& args);

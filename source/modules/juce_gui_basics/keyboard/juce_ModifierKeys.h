@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -35,13 +27,15 @@ namespace juce
     the state of keys such as shift, control, alt, etc.
 
     @see KeyPress, MouseEvent::mods
+
+    @tags{GUI}
 */
 class JUCE_API  ModifierKeys
 {
 public:
     //==============================================================================
     /** Creates a ModifierKeys object with no flags set. */
-    ModifierKeys() noexcept;
+    ModifierKeys() = default;
 
     /** Creates a ModifierKeys object from a raw set of flags.
 
@@ -52,16 +46,16 @@ public:
     ModifierKeys (int flags) noexcept;
 
     /** Creates a copy of another object. */
-    ModifierKeys (const ModifierKeys& other) noexcept;
+    ModifierKeys (const ModifierKeys&) = default;
 
     /** Copies this object from another one. */
-    ModifierKeys& operator= (const ModifierKeys other) noexcept;
+    ModifierKeys& operator= (const ModifierKeys&) = default;
 
     //==============================================================================
     /** Checks whether the 'command' key flag is set (or 'ctrl' on Windows/Linux).
 
         This is a platform-agnostic way of checking for the operating system's
-        preferred command-key modifier - so on the Mac it tests for the Apple key, on
+        preferred command-key modifier - so on the Mac it tests for the cmd key, on
         Windows/Linux, it's actually checking for the CTRL key.
     */
     inline bool isCommandDown() const noexcept          { return testFlags (commandModifier); }
@@ -134,7 +128,7 @@ public:
         /** Middle mouse button flag. */
         middleButtonModifier                    = 64,
 
-       #if JUCE_MAC
+       #if JUCE_MAC || JUCE_IOS
         /** Command key flag - on windows this is the same as the CTRL key flag. */
         commandModifier                         = 8,
 
@@ -184,40 +178,27 @@ public:
     int getNumMouseButtonsDown() const noexcept;
 
     //==============================================================================
+    /** This object represents the last-known state of the keyboard and mouse buttons. */
+    static ModifierKeys currentModifiers;
+
     /** Creates a ModifierKeys object to represent the last-known state of the
         keyboard and mouse buttons.
 
-        @see getCurrentModifiersRealtime
-    */
-    static ModifierKeys getCurrentModifiers() noexcept;
+        This method is here for backwards compatibility and there's no need to call it anymore,
+        you should use the public currentModifiers member directly.
+     */
+    static ModifierKeys getCurrentModifiers() noexcept                  { return currentModifiers; }
 
     /** Creates a ModifierKeys object to represent the current state of the
         keyboard and mouse buttons.
 
-        This isn't often needed and isn't recommended, but will actively check all the
-        mouse and key states rather than just returning their last-known state like
-        getCurrentModifiers() does.
-
-        This is only needed in special circumstances for up-to-date modifier information
-        at times when the app's event loop isn't running normally.
-
-        Another reason to avoid this method is that it's not stateless, and calling it may
-        update the value returned by getCurrentModifiers(), which could cause subtle changes
-        in the behaviour of some components.
+        This method is here for backwards compatibility and you should call ComponentPeer::getCurrentModifiersRealtime()
+        instead (which is what this method now does).
     */
     static ModifierKeys getCurrentModifiersRealtime() noexcept;
 
-
 private:
-    //==============================================================================
-    int flags;
-
-    friend class ComponentPeer;
-    friend class MouseInputSource;
-    friend class MouseInputSourceInternal;
-
-    static ModifierKeys currentModifiers;
-    static void updateCurrentModifiers() noexcept;
+    int flags = 0;
 };
 
 } // namespace juce

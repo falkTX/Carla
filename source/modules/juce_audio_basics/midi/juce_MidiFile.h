@@ -35,23 +35,30 @@ namespace juce
     it out.
 
     @see MidiMessageSequence
+
+    @tags{Audio}
 */
 class JUCE_API  MidiFile
 {
 public:
     //==============================================================================
-    /** Creates an empty MidiFile object.
-    */
+    /** Creates an empty MidiFile object. */
     MidiFile();
 
     /** Destructor. */
     ~MidiFile();
 
     /** Creates a copy of another MidiFile. */
-    MidiFile (const MidiFile& other);
+    MidiFile (const MidiFile&);
 
     /** Copies from another MidiFile object */
-    MidiFile& operator= (const MidiFile& other);
+    MidiFile& operator= (const MidiFile&);
+
+    /** Creates a copy of another MidiFile. */
+    MidiFile (MidiFile&&);
+
+    /** Copies from another MidiFile object */
+    MidiFile& operator= (MidiFile&&);
 
     //==============================================================================
     /** Returns the number of tracks in the file.
@@ -149,16 +156,25 @@ public:
         terms of midi ticks. To convert them to seconds, use the convertTimestampTicksToSeconds()
         method.
 
+        @param sourceStream              the source stream
+        @param createMatchingNoteOffs    if true, any missing note-offs for previous note-ons will
+                                         be automatically added at the end of the file by calling
+                                         MidiMessageSequence::updateMatchedPairs on each track.
+
         @returns true if the stream was read successfully
     */
-    bool readFrom (InputStream& sourceStream);
+    bool readFrom (InputStream& sourceStream, bool createMatchingNoteOffs = true);
 
     /** Writes the midi tracks as a standard midi file.
         The midiFileType value is written as the file's format type, which can be 0, 1
         or 2 - see the midi file spec for more info about that.
+
+        @param destStream        the destination stream
+        @param midiFileType      the type of midi file
+
         @returns true if the operation succeeded.
     */
-    bool writeTo (OutputStream& destStream, int midiFileType = 1);
+    bool writeTo (OutputStream& destStream, int midiFileType = 1) const;
 
     /** Converts the timestamp of all the midi events from midi ticks to seconds.
 
@@ -167,14 +183,13 @@ public:
     */
     void convertTimestampTicksToSeconds();
 
-
 private:
     //==============================================================================
     OwnedArray<MidiMessageSequence> tracks;
     short timeFormat;
 
-    void readNextTrack (const uint8*, int size);
-    bool writeTrack (OutputStream&, int trackNum);
+    void readNextTrack (const uint8*, int, bool);
+    bool writeTrack (OutputStream&, const MidiMessageSequence&) const;
 
     JUCE_LEAK_DETECTOR (MidiFile)
 };

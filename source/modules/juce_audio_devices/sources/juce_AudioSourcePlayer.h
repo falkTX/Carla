@@ -30,6 +30,8 @@ namespace juce
 
     This object acts as an AudioIODeviceCallback, so can be attached to an
     output device, and will stream audio from an AudioSource.
+
+    @tags{Audio}
 */
 class JUCE_API  AudioSourcePlayer  : public AudioIODeviceCallback
 {
@@ -43,7 +45,7 @@ public:
         Make sure this object isn't still being used by an AudioIODevice before
         deleting it!
     */
-    virtual ~AudioSourcePlayer();
+    ~AudioSourcePlayer() override;
 
     //==============================================================================
     /** Changes the current audio source to play from.
@@ -96,14 +98,15 @@ public:
 private:
     //==============================================================================
     CriticalSection readLock;
-    AudioSource* source;
-    double sampleRate;
-    int bufferSize;
-    float* channels [128];
-    float* outputChans [128];
-    const float* inputChans [128];
-    AudioSampleBuffer tempBuffer;
-    float lastGain, gain;
+    AudioSource* source = nullptr;
+    double sampleRate = 0;
+    int bufferSize = 0;
+    float* channels[128];
+    float* outputChans[128];
+    const float* inputChans[128];
+    AudioBuffer<float> tempBuffer;
+    float lastGain = 1.0f;
+    std::atomic<float> gain { 1.0f };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioSourcePlayer)
 };

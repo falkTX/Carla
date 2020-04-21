@@ -31,7 +31,9 @@ namespace juce
     voices so that it can play polyphonically.
 
     @see MPESynthesiser, MPENote
- */
+
+    @tags{Audio}
+*/
 class JUCE_API  MPESynthesiserVoice
 {
 public:
@@ -154,8 +156,10 @@ public:
     */
     double getSampleRate() const noexcept                 { return currentSampleRate; }
 
-    /** Returns true if this voice started playing its current note before the other voice did. */
-    bool wasStartedBefore (const MPESynthesiserVoice& other) const noexcept;
+    /** This will be set to an incrementing counter value in MPESynthesiser::startVoice()
+        and can be used to determine the order in which voices started.
+    */
+    uint32 noteOnTime = 0;
 
 protected:
     //==============================================================================
@@ -174,13 +178,12 @@ protected:
     void clearCurrentNote() noexcept;
 
     //==============================================================================
-    double currentSampleRate;
+    double currentSampleRate = 0.0;
     MPENote currentlyPlayingNote;
 
 private:
     //==============================================================================
     friend class MPESynthesiser;
-    uint32 noteStartTime;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MPESynthesiserVoice)
 };

@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -109,13 +101,13 @@ Image ImageButton::getDownImage() const
 }
 
 void ImageButton::paintButton (Graphics& g,
-                               bool isMouseOverButton,
-                               bool isButtonDown)
+                               bool shouldDrawButtonAsHighlighted,
+                               bool shouldDrawButtonAsDown)
 {
     if (! isEnabled())
     {
-        isMouseOverButton = false;
-        isButtonDown = false;
+        shouldDrawButtonAsHighlighted = false;
+        shouldDrawButtonAsDown = false;
     }
 
     Image im (getCurrentImage());
@@ -168,14 +160,14 @@ void ImageButton::paintButton (Graphics& g,
 
         imageBounds.setBounds (x, y, w, h);
 
-        const bool useDownImage = isButtonDown || getToggleState();
+        const bool useDownImage = shouldDrawButtonAsDown || getToggleState();
 
         getLookAndFeel().drawImageButton (g, &im, x, y, w, h,
                                           useDownImage ? downOverlay
-                                                       : (isMouseOverButton ? overOverlay
+                                                       : (shouldDrawButtonAsHighlighted ? overOverlay
                                                                             : normalOverlay),
                                           useDownImage ? downOpacity
-                                                       : (isMouseOverButton ? overOpacity
+                                                       : (shouldDrawButtonAsHighlighted ? overOpacity
                                                                             : normalOpacity),
                                           *this);
     }

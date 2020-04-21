@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -35,12 +27,14 @@ namespace juce
     register one of these objects for event callbacks when the filename is changed.
 
     @see FilenameComponent
+
+    @tags{GUI}
 */
 class JUCE_API  FilenameComponentListener
 {
 public:
     /** Destructor. */
-    virtual ~FilenameComponentListener() {}
+    virtual ~FilenameComponentListener() = default;
 
     /** This method is called after the FilenameComponent's file has been changed. */
     virtual void filenameComponentChanged (FilenameComponent* fileComponentThatHasChanged) = 0;
@@ -60,13 +54,13 @@ public:
     and clicking 'ok', or by typing a new filename into the box and pressing return.
 
     @see FileChooser, ComboBox
+
+    @tags{GUI}
 */
 class JUCE_API  FilenameComponent  : public Component,
                                      public SettableTooltipClient,
                                      public FileDragAndDropTarget,
-                                     private AsyncUpdater,
-                                     private Button::Listener,
-                                     private ComboBox::Listener
+                                     private AsyncUpdater
 {
 public:
     //==============================================================================
@@ -98,7 +92,7 @@ public:
                        const String& textWhenNothingSelected);
 
     /** Destructor. */
-    ~FilenameComponent();
+    ~FilenameComponent() override;
 
     //==============================================================================
     /** Returns the currently displayed filename. */
@@ -112,7 +106,8 @@ public:
         @param newFile                the new filename to use
         @param addToRecentlyUsedList  if true, the filename will also be added to the
                                       drop-down list of recent files.
-        @param notification           whether to send a notification of the change to listeners
+        @param notification           whether to send a notification of the change to listeners.
+                                      A notification will only be sent if the filename has changed.
     */
     void setCurrentFile (File newFile,
                          bool addToRecentlyUsedList,
@@ -188,7 +183,7 @@ public:
     /** This abstract base class is implemented by LookAndFeel classes. */
     struct JUCE_API  LookAndFeelMethods
     {
-        virtual ~LookAndFeelMethods() {}
+        virtual ~LookAndFeelMethods() = default;
 
         virtual Button* createFilenameComponentBrowseButton (const String& text) = 0;
         virtual void layoutFilenameComponent (FilenameComponent&, ComboBox* filenameBox, Button* browseButton) =  0;
@@ -216,15 +211,14 @@ private:
     //==============================================================================
     ComboBox filenameBox;
     String lastFilename;
-    ScopedPointer<Button> browseButton;
-    int maxRecentFiles;
-    bool isDir, isSaving, isFileDragOver;
+    std::unique_ptr<Button> browseButton;
+    int maxRecentFiles = 30;
+    bool isDir, isSaving, isFileDragOver = false;
     String wildcard, enforcedSuffix, browseButtonText;
     ListenerList <FilenameComponentListener> listeners;
     File defaultBrowseFile;
 
-    void comboBoxChanged (ComboBox*) override;
-    void buttonClicked (Button*) override;
+    void showChooser();
     void handleAsyncUpdate() override;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FilenameComponent)

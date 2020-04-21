@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -31,8 +23,8 @@ FileSearchPathListComponent::FileSearchPathListComponent()
     : addButton ("+"),
       removeButton ("-"),
       changeButton (TRANS ("change...")),
-      upButton (String(), DrawableButton::ImageOnButtonBackground),
-      downButton (String(), DrawableButton::ImageOnButtonBackground)
+      upButton ({}, DrawableButton::ImageOnButtonBackground),
+      downButton ({}, DrawableButton::ImageOnButtonBackground)
 {
     listBox.setModel (this);
     addAndMakeVisible (listBox);
@@ -41,37 +33,39 @@ FileSearchPathListComponent::FileSearchPathListComponent()
     listBox.setOutlineThickness (1);
 
     addAndMakeVisible (addButton);
-    addButton.addListener (this);
+    addButton.onClick = [this] { addPath(); };
     addButton.setConnectedEdges (Button::ConnectedOnLeft | Button::ConnectedOnRight | Button::ConnectedOnBottom | Button::ConnectedOnTop);
 
     addAndMakeVisible (removeButton);
-    removeButton.addListener (this);
+    removeButton.onClick = [this] { deleteSelected(); };
     removeButton.setConnectedEdges (Button::ConnectedOnLeft | Button::ConnectedOnRight | Button::ConnectedOnBottom | Button::ConnectedOnTop);
 
     addAndMakeVisible (changeButton);
-    changeButton.addListener (this);
+    changeButton.onClick = [this] { editSelected(); };
 
     addAndMakeVisible (upButton);
-    upButton.addListener (this);
+    upButton.onClick = [this] { moveSelection (-1); };
+
+    auto arrowColour = findColour (ListBox::textColourId);
 
     {
         Path arrowPath;
-        arrowPath.addArrow (Line<float> (50.0f, 100.0f, 50.0f, 0.0f), 40.0f, 100.0f, 50.0f);
+        arrowPath.addArrow ({ 50.0f, 100.0f, 50.0f, 0.0f }, 40.0f, 100.0f, 50.0f);
         DrawablePath arrowImage;
-        arrowImage.setFill (Colours::black.withAlpha (0.4f));
+        arrowImage.setFill (arrowColour);
         arrowImage.setPath (arrowPath);
 
         upButton.setImages (&arrowImage);
     }
 
     addAndMakeVisible (downButton);
-    downButton.addListener (this);
+    downButton.onClick = [this] { moveSelection (1); };
 
     {
         Path arrowPath;
-        arrowPath.addArrow (Line<float> (50.0f, 0.0f, 50.0f, 100.0f), 40.0f, 100.0f, 50.0f);
+        arrowPath.addArrow ({ 50.0f, 0.0f, 50.0f, 100.0f }, 40.0f, 100.0f, 50.0f);
         DrawablePath arrowImage;
-        arrowImage.setFill (Colours::black.withAlpha (0.4f));
+        arrowImage.setFill (arrowColour);
         arrowImage.setPath (arrowPath);
 
         downButton.setImages (&arrowImage);
@@ -132,7 +126,7 @@ void FileSearchPathListComponent::paintListBoxItem (int rowNumber, Graphics& g, 
     f.setHorizontalScale (0.9f);
     g.setFont (f);
 
-    g.drawText (path [rowNumber].getFullPathName(),
+    g.drawText (path[rowNumber].getFullPathName(),
                 4, 0, width - 6, height,
                 Justification::centredLeft, true);
 }
@@ -149,7 +143,7 @@ void FileSearchPathListComponent::deleteKeyPressed (int row)
 void FileSearchPathListComponent::returnKeyPressed (int row)
 {
    #if JUCE_MODAL_LOOPS_PERMITTED
-    FileChooser chooser (TRANS("Change folder..."), path [row], "*");
+    FileChooser chooser (TRANS("Change folder..."), path[row], "*");
 
     if (chooser.browseForDirectory())
     {
@@ -208,66 +202,66 @@ void FileSearchPathListComponent::filesDropped (const StringArray& filenames, in
 
         if (f.isDirectory())
         {
-            const int row = listBox.getRowContainingPosition (0, mouseY - listBox.getY());
+            auto row = listBox.getRowContainingPosition (0, mouseY - listBox.getY());
             path.add (f, row);
             changed();
         }
     }
 }
 
-void FileSearchPathListComponent::buttonClicked (Button* button)
+void FileSearchPathListComponent::addPath()
 {
-    const int currentRow = listBox.getSelectedRow();
+    auto start = defaultBrowseTarget;
 
-    if (button == &removeButton)
-    {
-        deleteKeyPressed (currentRow);
-    }
-    else if (button == &addButton)
-    {
-        File start (defaultBrowseTarget);
+    if (start == File())
+        start = path[0];
 
-        if (start == File())
-            start = path [0];
+    if (start == File())
+        start = File::getCurrentWorkingDirectory();
 
-        if (start == File())
-            start = File::getCurrentWorkingDirectory();
+   #if JUCE_MODAL_LOOPS_PERMITTED
+    FileChooser chooser (TRANS("Add a folder..."), start, "*");
 
-       #if JUCE_MODAL_LOOPS_PERMITTED
-        FileChooser chooser (TRANS("Add a folder..."), start, "*");
-
-        if (chooser.browseForDirectory())
-            path.add (chooser.getResult(), currentRow);
-       #else
-        jassertfalse; // needs rewriting to deal with non-modal environments
-       #endif
-    }
-    else if (button == &changeButton)
-    {
-        returnKeyPressed (currentRow);
-    }
-    else if (button == &upButton)
-    {
-        if (currentRow > 0 && currentRow < path.getNumPaths())
-        {
-            const File f (path[currentRow]);
-            path.remove (currentRow);
-            path.add (f, currentRow - 1);
-            listBox.selectRow (currentRow - 1);
-        }
-    }
-    else if (button == &downButton)
-    {
-        if (currentRow >= 0 && currentRow < path.getNumPaths() - 1)
-        {
-            const File f (path[currentRow]);
-            path.remove (currentRow);
-            path.add (f, currentRow + 1);
-            listBox.selectRow (currentRow + 1);
-        }
-    }
+    if (chooser.browseForDirectory())
+        path.add (chooser.getResult(), listBox.getSelectedRow());
 
     changed();
+   #else
+    jassertfalse; // needs rewriting to deal with non-modal environments
+   #endif
 }
+
+void FileSearchPathListComponent::deleteSelected()
+{
+    deleteKeyPressed (listBox.getSelectedRow());
+    changed();
+}
+
+void FileSearchPathListComponent::editSelected()
+{
+    returnKeyPressed (listBox.getSelectedRow());
+    changed();
+}
+
+void FileSearchPathListComponent::moveSelection (int delta)
+{
+    jassert (delta == -1 || delta == 1);
+    auto currentRow = listBox.getSelectedRow();
+
+    if (isPositiveAndBelow (currentRow, path.getNumPaths()))
+    {
+        auto newRow = jlimit (0, path.getNumPaths() - 1, currentRow + delta);
+
+        if (currentRow != newRow)
+        {
+            auto f = path[currentRow];
+            path.remove (currentRow);
+            path.add (f, newRow);
+            listBox.selectRow (newRow);
+            changed();
+        }
+    }
+}
+
 
 } // namespace juce

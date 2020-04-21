@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -27,16 +19,16 @@
 namespace juce
 {
 
-static XmlElement* findFontsConfFile()
+static std::unique_ptr<XmlElement> findFontsConfFile()
 {
     static const char* pathsToSearch[] = { "/etc/fonts/fonts.conf",
                                            "/usr/share/fonts/fonts.conf" };
 
     for (auto* path : pathsToSearch)
-        if (auto* xml = XmlDocument::parse (File (path)))
+        if (auto xml = parseXML (File (path)))
             return xml;
 
-    return nullptr;
+    return {};
 }
 
 StringArray FTTypefaceList::getDefaultFontDirectories()
@@ -48,7 +40,7 @@ StringArray FTTypefaceList::getDefaultFontDirectories()
 
     if (fontDirs.isEmpty())
     {
-        if (ScopedPointer<XmlElement> fontsInfo = findFontsConfFile())
+        if (auto fontsInfo = findFontsConfFile())
         {
             forEachXmlChildElementWithTagName (*fontsInfo, e, "dir")
             {

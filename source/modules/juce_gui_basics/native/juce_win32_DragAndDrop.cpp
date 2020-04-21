@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -125,8 +117,8 @@ namespace DragAndDropHelpers
     class JuceDataObject  : public ComBaseClassHelper <IDataObject>
     {
     public:
-        JuceDataObject (JuceDropSource* s, const FORMATETC* f, const STGMEDIUM* m)
-            : dropSource (s), format (f), medium (m)
+        JuceDataObject (const FORMATETC* f, const STGMEDIUM* m)
+            : format (f), medium (m)
         {
         }
 
@@ -203,7 +195,6 @@ namespace DragAndDropHelpers
         JUCE_COMRESULT EnumDAdvise (IEnumSTATDATA**)                         { return OLE_E_ADVISENOTSUPPORTED; }
 
     private:
-        JuceDropSource* const dropSource;
         const FORMATETC* const format;
         const STGMEDIUM* const medium;
 
@@ -241,49 +232,114 @@ namespace DragAndDropHelpers
         return hDrop;
     }
 
-    bool performDragDrop (FORMATETC* const format, STGMEDIUM* const medium, const DWORD whatToDo)
+    struct DragAndDropJob   : public ThreadPoolJob
     {
-        auto source = new JuceDropSource();
-        auto data   = new JuceDataObject (source, format, medium);
+        DragAndDropJob (FORMATETC f, STGMEDIUM m, DWORD d, std::function<void()>&& cb)
+            : ThreadPoolJob ("DragAndDrop"),
+              format (f), medium (m), whatToDo (d),
+              completionCallback (std::move (cb))
+        {
+        }
 
-        DWORD effect;
-        auto res = DoDragDrop (data, source, whatToDo, &effect);
+        JobStatus runJob() override
+        {
+            OleInitialize (0);
 
-        data->Release();
-        source->Release();
+            auto source = new JuceDropSource();
+            auto data = new JuceDataObject (&format, &medium);
 
-        return res == DRAGDROP_S_DROP;
-    }
+            DWORD effect;
+            DoDragDrop (data, source, whatToDo, &effect);
+
+            data->Release();
+            source->Release();
+
+            OleUninitialize();
+
+            if (completionCallback != nullptr)
+                MessageManager::callAsync (std::move (completionCallback));
+
+            return jobHasFinished;
+        }
+
+        FORMATETC format;
+        STGMEDIUM medium;
+        DWORD whatToDo;
+
+        std::function<void()> completionCallback;
+    };
+
+    class ThreadPoolHolder   : private DeletedAtShutdown
+    {
+    public:
+        ThreadPoolHolder() = default;
+
+        ~ThreadPoolHolder()
+        {
+            // Wait forever if there's a job running. The user needs to cancel the transfer
+            // in the GUI.
+            pool.removeAllJobs (true, -1);
+
+            clearSingletonInstance();
+        }
+
+        JUCE_DECLARE_SINGLETON_SINGLETHREADED (ThreadPoolHolder, false)
+
+        // We need to make sure we don't do simultaneous text and file drag and drops,
+        // so use a pool that can only run a single job.
+        ThreadPool pool { 1 };
+    };
+
+    JUCE_IMPLEMENT_SINGLETON (ThreadPoolHolder)
 }
 
 //==============================================================================
-bool DragAndDropContainer::performExternalDragDropOfFiles (const StringArray& files, const bool canMove, Component*)
+bool DragAndDropContainer::performExternalDragDropOfFiles (const StringArray& files, const bool canMove,
+                                                           Component*, std::function<void()> callback)
 {
+    if (files.isEmpty())
+        return false;
+
     FORMATETC format = { CF_HDROP, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
     STGMEDIUM medium = { TYMED_HGLOBAL, { 0 }, 0 };
 
     medium.hGlobal = DragAndDropHelpers::createHDrop (files);
 
-    return DragAndDropHelpers::performDragDrop (&format, &medium, canMove ? (DWORD) (DROPEFFECT_COPY | DROPEFFECT_MOVE)
-                                                                          : (DWORD) DROPEFFECT_COPY);
+    auto& pool = DragAndDropHelpers::ThreadPoolHolder::getInstance()->pool;
+    pool.addJob (new DragAndDropHelpers::DragAndDropJob (format, medium,
+                                                         canMove ? (DROPEFFECT_COPY | DROPEFFECT_MOVE) : DROPEFFECT_COPY,
+                                                         std::move (callback)),
+                true);
+
+    return true;
 }
 
-bool DragAndDropContainer::performExternalDragDropOfText (const String& text, Component*)
+bool DragAndDropContainer::performExternalDragDropOfText (const String& text, Component*, std::function<void()> callback)
 {
+    if (text.isEmpty())
+        return false;
+
     FORMATETC format = { CF_TEXT, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
     STGMEDIUM medium = { TYMED_HGLOBAL, { 0 }, 0 };
 
     auto numBytes = CharPointer_UTF16::getBytesRequiredFor (text.getCharPointer());
 
     medium.hGlobal = GlobalAlloc (GMEM_MOVEABLE | GMEM_ZEROINIT, numBytes + 2);
-    WCHAR* const data = static_cast<WCHAR*> (GlobalLock (medium.hGlobal));
+    auto* data = static_cast<WCHAR*> (GlobalLock (medium.hGlobal));
 
-    text.copyToUTF16 (data, numBytes);
+    text.copyToUTF16 (data, numBytes + 2);
     format.cfFormat = CF_UNICODETEXT;
 
     GlobalUnlock (medium.hGlobal);
 
-    return DragAndDropHelpers::performDragDrop (&format, &medium, DROPEFFECT_COPY | DROPEFFECT_MOVE);
+    auto& pool = DragAndDropHelpers::ThreadPoolHolder::getInstance()->pool;
+    pool.addJob (new DragAndDropHelpers::DragAndDropJob (format,
+                                                        medium,
+                                                        DROPEFFECT_COPY | DROPEFFECT_MOVE,
+                                                        std::move (callback)),
+                 true);
+
+    return true;
 }
 
 } // namespace juce

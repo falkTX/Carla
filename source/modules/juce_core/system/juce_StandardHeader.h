@@ -27,11 +27,11 @@
 
     See also SystemStats::getJUCEVersion() for a string version.
 */
-#define JUCE_MAJOR_VERSION      5
-#define JUCE_MINOR_VERSION      1
-#define JUCE_BUILDNUMBER        2
+#define JUCE_MAJOR_VERSION      6
+#define JUCE_MINOR_VERSION      0
+#define JUCE_BUILDNUMBER        0
 
-/** Current Juce version number.
+/** Current JUCE version number.
 
     Bits 16 to 32 = major version.
     Bits 8 to 16 = minor version.
@@ -43,29 +43,45 @@
 
 
 //==============================================================================
-#include <memory>
-#include <cmath>
-#include <vector>
-#include <iostream>
-#include <functional>
 #include <algorithm>
+#include <atomic>
+#include <cmath>
+#include <condition_variable>
+#include <cstddef>
+#include <functional>
+#include <iomanip>
+#include <iostream>
 #include <limits>
+#include <list>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <numeric>
+#include <queue>
+#include <sstream>
+#include <unordered_set>
+#include <vector>
 
 //==============================================================================
 #include "juce_CompilerSupport.h"
+#include "juce_CompilerWarnings.h"
 #include "juce_PlatformDefs.h"
 
 //==============================================================================
 // Now we'll include some common OS headers..
+JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4514 4245 4100)
+
 #if JUCE_MSVC
- #pragma warning (push)
- #pragma warning (disable: 4514 4245 4100)
  #include <intrin.h>
 #endif
+
 
 #if JUCE_MAC || JUCE_IOS
  #include <libkern/OSAtomic.h>
  #include <xlocale.h>
+ #if JUCE_IOS
+  #include <signal.h>
+ #endif
 #endif
 
 #if JUCE_LINUX
@@ -85,9 +101,7 @@
  #include <crtdbg.h>
 #endif
 
-#if JUCE_MSVC
- #pragma warning (pop)
-#endif
+JUCE_END_IGNORE_WARNINGS_MSVC
 
 #if JUCE_MINGW
  #include <cstring>
@@ -108,17 +122,6 @@
 #undef minor
 #undef KeyPress
 
-// Include a replacement for std::function on older platforms and the live
-// build
-#if JUCE_PROJUCER_LIVE_BUILD || ! defined (JUCE_STDLIB_HAS_STD_FUNCTION_SUPPORT)
- #include "../misc/juce_StdFunctionCompat.h"
-#endif
-
-// Include std::atomic if it's supported by the compiler
-#if JUCE_ATOMIC_AVAILABLE
- #include <atomic>
-#endif
-
 //==============================================================================
 // DLL building settings on Windows
 #if JUCE_MSVC
@@ -138,7 +141,7 @@
 
 //==============================================================================
 #ifndef JUCE_API
- #define JUCE_API   /**< This macro is added to all juce public class declarations. */
+ #define JUCE_API   /**< This macro is added to all JUCE public class declarations. */
 #endif
 
 #if JUCE_MSVC && JUCE_DLL_BUILD
@@ -147,7 +150,7 @@
  #define JUCE_PUBLIC_IN_DLL_BUILD(declaration)  declaration;
 #endif
 
-/** This macro is added to all juce public function declarations. */
+/** This macro is added to all JUCE public function declarations. */
 #define JUCE_PUBLIC_FUNCTION        JUCE_API JUCE_CALLTYPE
 
 #if (! defined (JUCE_CATCH_DEPRECATED_CODE_MISUSE)) && JUCE_DEBUG && ! DOXYGEN

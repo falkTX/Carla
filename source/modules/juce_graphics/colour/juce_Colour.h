@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -32,16 +24,18 @@ namespace juce
     Represents a colour, also including a transparency value.
 
     The colour is stored internally as unsigned 8-bit red, green, blue and alpha values.
+
+    @tags{Graphics}
 */
-class JUCE_API  Colour
+class JUCE_API  Colour  final
 {
 public:
     //==============================================================================
     /** Creates a transparent black colour. */
-    Colour() noexcept;
+    Colour() = default;
 
     /** Creates a copy of another Colour object. */
-    Colour (const Colour& other) noexcept;
+    Colour (const Colour&) = default;
 
     /** Creates a colour from a 32-bit ARGB value.
 
@@ -129,11 +123,10 @@ public:
      */
     Colour (PixelAlpha alpha) noexcept;
 
-    /** Creates a colour using floating point hue, saturation and brightness values, and an 8-bit alpha.
+    /** Creates a colour using floating point hue, saturation, brightness and alpha values.
 
-        The floating point values must be between 0.0 and 1.0.
-        An alpha of 0x00 is completely transparent, alpha of 0xff is opaque.
-        Values outside the valid range will be clipped.
+        All values must be between 0.0 and 1.0.
+        Numbers outside the valid range will be clipped.
     */
     static Colour fromHSV (float hue,
                            float saturation,
@@ -141,10 +134,10 @@ public:
                            float alpha) noexcept;
 
     /** Destructor. */
-    ~Colour() noexcept;
+    ~Colour() = default;
 
     /** Copies another Colour object. */
-    Colour& operator= (const Colour& other) noexcept;
+    Colour& operator= (const Colour&) = default;
 
     /** Compares two colours. */
     bool operator== (const Colour& other) const noexcept;
@@ -189,7 +182,7 @@ public:
     /** Returns a 32-bit integer that represents this colour.
 
         The format of this number is:
-            ((alpha << 24) | (red << 16) | (green << 16) | blue).
+            ((alpha << 24) | (red << 16) | (green << 8) | blue).
     */
     uint32 getARGB() const noexcept;
 
@@ -282,7 +275,7 @@ public:
     */
     Colour withBrightness (float newBrightness) const noexcept;
 
-    /** Returns a copy of this colour with it hue rotated.
+    /** Returns a copy of this colour with its hue rotated.
         The new colour's hue is ((this->getHue() + amountToRotate) % 1.0)
         @see brighter, darker, withMultipliedBrightness
     */
@@ -361,7 +354,7 @@ public:
 
 private:
     //==============================================================================
-    PixelARGB argb;
+    PixelARGB argb { 0, 0, 0, 0 };
 };
 
 } // namespace juce

@@ -23,27 +23,24 @@
 namespace juce
 {
 
-MPEValue::MPEValue() noexcept  : normalisedValue (8192)
-{
-}
-
-MPEValue::MPEValue (int value)  : normalisedValue (value)
-{
-}
+MPEValue::MPEValue() noexcept                             {}
+MPEValue::MPEValue (int value)  : normalisedValue (value) {}
 
 //==============================================================================
 MPEValue MPEValue::from7BitInt (int value) noexcept
 {
     jassert (value >= 0 && value <= 127);
 
-    const int valueAs14Bit = value <= 64 ? value << 7 : int (jmap<float> (float (value - 64), 0.0f, 63.0f, 0.0f, 8191.0f)) + 8192;
-    return MPEValue (valueAs14Bit);
+    auto valueAs14Bit = value <= 64 ? value << 7
+                                    : int (jmap<float> (float (value - 64), 0.0f, 63.0f, 0.0f, 8191.0f)) + 8192;
+
+    return { valueAs14Bit };
 }
 
 MPEValue MPEValue::from14BitInt (int value) noexcept
 {
     jassert (value >= 0 && value <= 16383);
-    return MPEValue (value);
+    return { value };
 }
 
 //==============================================================================
@@ -85,6 +82,7 @@ bool MPEValue::operator!= (const MPEValue& other) const noexcept
     return ! operator== (other);
 }
 
+
 //==============================================================================
 //==============================================================================
 #if JUCE_UNIT_TESTS
@@ -92,7 +90,9 @@ bool MPEValue::operator!= (const MPEValue& other) const noexcept
 class MPEValueTests  : public UnitTest
 {
 public:
-    MPEValueTests() : UnitTest ("MPEValue class", "MIDI/MPE") {}
+    MPEValueTests()
+        : UnitTest ("MPEValue class", UnitTestCategories::midi)
+    {}
 
     void runTest() override
     {
@@ -161,13 +161,13 @@ private:
     //==============================================================================
     void expectFloatWithinRelativeError (float actualValue, float expectedValue, float maxRelativeError)
     {
-        const float maxAbsoluteError = jmax (1.0f, std::fabs (expectedValue)) * maxRelativeError;
-        expect (std::fabs (expectedValue - actualValue) < maxAbsoluteError);
+        const float maxAbsoluteError = jmax (1.0f, std::abs (expectedValue)) * maxRelativeError;
+        expect (std::abs (expectedValue - actualValue) < maxAbsoluteError);
     }
 };
 
 static MPEValueTests MPEValueUnitTests;
 
-#endif // JUCE_UNIT_TESTS
+#endif
 
 } // namespace juce

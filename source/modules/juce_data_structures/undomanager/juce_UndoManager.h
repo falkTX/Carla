@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -46,6 +38,8 @@ namespace juce
     when actions are performed or undone.
 
     @see UndoableAction
+
+    @tags{DataStructures}
 */
 class JUCE_API  UndoManager  : public ChangeBroadcaster
 {
@@ -68,7 +62,7 @@ public:
                  int minimumTransactionsToKeep = 30);
 
     /** Destructor. */
-    ~UndoManager();
+    ~UndoManager() override;
 
     //==============================================================================
     /** Deletes all stored actions in the list. */
@@ -124,7 +118,7 @@ public:
         method are grouped together and undone/redone together by a single call to
         undo() or redo().
     */
-    void beginNewTransaction() noexcept;
+    void beginNewTransaction();
 
     /** Starts a new group of actions that together will be treated as a single transaction.
 
@@ -135,7 +129,7 @@ public:
         @param actionName   a description of the transaction that is about to be
                             performed
     */
-    void beginNewTransaction (const String& actionName) noexcept;
+    void beginNewTransaction (const String& actionName);
 
     /** Changes the name stored for the current transaction.
 
@@ -143,27 +137,23 @@ public:
         called, but this can be used to change that name without starting a new
         transaction.
     */
-    void setCurrentTransactionName (const String& newName) noexcept;
+    void setCurrentTransactionName (const String& newName);
 
     /** Returns the name of the current transaction.
         @see setCurrentTransactionName
     */
-    String getCurrentTransactionName() const noexcept;
+    String getCurrentTransactionName() const;
 
     //==============================================================================
     /** Returns true if there's at least one action in the list to undo.
         @see getUndoDescription, undo, canRedo
     */
-    bool canUndo() const noexcept;
-
-    /** Returns the name of the transaction that will be rolled-back when undo() is called.
-        @see undo
-    */
-    String getUndoDescription() const;
+    bool canUndo() const;
 
     /** Tries to roll-back the last transaction.
         @returns    true if the transaction can be undone, and false if it fails, or
                     if there aren't any transactions to undo
+        @see undoCurrentTransactionOnly
     */
     bool undo();
 
@@ -182,6 +172,23 @@ public:
     */
     bool undoCurrentTransactionOnly();
 
+    /** Returns the name of the transaction that will be rolled-back when undo() is called.
+        @see undo, canUndo, getUndoDescriptions
+    */
+    String getUndoDescription() const;
+
+    /** Returns the names of the sequence of transactions that will be performed if undo()
+        is repeatedly called. Note that for transactions where no name was provided, the
+        corresponding string will be empty.
+        @see undo, canUndo, getUndoDescription
+    */
+    StringArray getUndoDescriptions() const;
+
+    /** Returns the time to which the state would be restored if undo() was to be called.
+        If an undo isn't currently possible, it'll return Time().
+    */
+    Time getTimeOfUndoTransaction() const;
+
     /** Returns a list of the UndoableAction objects that have been performed during the
         transaction that is currently open.
 
@@ -198,26 +205,11 @@ public:
     */
     int getNumActionsInCurrentTransaction() const;
 
-    /** Returns the time to which the state would be restored if undo() was to be called.
-        If an undo isn't currently possible, it'll return Time().
-    */
-    Time getTimeOfUndoTransaction() const;
-
-    /** Returns the time to which the state would be restored if redo() was to be called.
-        If a redo isn't currently possible, it'll return Time::getCurrentTime().
-    */
-    Time getTimeOfRedoTransaction() const;
-
     //==============================================================================
     /** Returns true if there's at least one action in the list to redo.
         @see getRedoDescription, redo, canUndo
     */
-    bool canRedo() const noexcept;
-
-    /** Returns the name of the transaction that will be redone when redo() is called.
-        @see redo
-    */
-    String getRedoDescription() const;
+    bool canRedo() const;
 
     /** Tries to redo the last transaction that was undone.
         @returns   true if the transaction can be redone, and false if it fails, or
@@ -225,17 +217,36 @@ public:
     */
     bool redo();
 
+    /** Returns the name of the transaction that will be redone when redo() is called.
+        @see redo, canRedo, getRedoDescriptions
+    */
+    String getRedoDescription() const;
+
+    /** Returns the names of the sequence of transactions that will be performed if redo()
+        is repeatedly called. Note that for transactions where no name was provided, the
+        corresponding string will be empty.
+        @see redo, canRedo, getRedoDescription
+    */
+    StringArray getRedoDescriptions() const;
+
+    /** Returns the time to which the state would be restored if redo() was to be called.
+        If a redo isn't currently possible, it'll return Time::getCurrentTime().
+        @see redo, canRedo
+    */
+    Time getTimeOfRedoTransaction() const;
+
+    /** Returns true if the caller code is in the middle of an undo or redo action. */
+    bool isPerformingUndoRedo() const;
 
 private:
     //==============================================================================
     struct ActionSet;
-    friend struct ContainerDeletePolicy<ActionSet>;
     OwnedArray<ActionSet> transactions, stashedFutureTransactions;
     String newTransactionName;
-    int totalUnitsStored, maxNumUnitsToKeep, minimumTransactionsToKeep, nextIndex;
-    bool newTransaction, reentrancyCheck;
-    ActionSet* getCurrentSet() const noexcept;
-    ActionSet* getNextSet() const noexcept;
+    int totalUnitsStored = 0, maxNumUnitsToKeep = 0, minimumTransactionsToKeep = 0, nextIndex = 0;
+    bool newTransaction = true, isInsideUndoRedoCall = false;
+    ActionSet* getCurrentSet() const;
+    ActionSet* getNextSet() const;
     void moveFutureTransactionsToStash();
     void restoreStashedFutureTransactions();
     void dropOldTransactionsIfTooLarge();

@@ -59,12 +59,127 @@ static inline NSURL* createNSURLFromFile (const File& f)
 
 static inline NSArray* createNSArrayFromStringArray (const StringArray& strings)
 {
-    auto* array = [[NSMutableArray alloc] init];
+    auto array = [[NSMutableArray alloc] init];
 
     for (auto string: strings)
         [array addObject:juceStringToNS (string)];
 
     return [array autorelease];
+}
+
+static NSArray* varArrayToNSArray (const var& varToParse);
+
+static NSDictionary* varObjectToNSDictionary (const var& varToParse)
+{
+    auto dictionary = [NSMutableDictionary dictionary];
+
+    if (varToParse.isObject())
+    {
+        auto* dynamicObject = varToParse.getDynamicObject();
+
+        auto& properties = dynamicObject->getProperties();
+
+        for (int i = 0; i < properties.size(); ++i)
+        {
+            auto* keyString = juceStringToNS (properties.getName (i).toString());
+
+            const var& valueVar = properties.getValueAt (i);
+
+            if (valueVar.isObject())
+            {
+                auto* valueDictionary = varObjectToNSDictionary (valueVar);
+
+                [dictionary setObject: valueDictionary forKey: keyString];
+            }
+            else if (valueVar.isArray())
+            {
+                auto* valueArray = varArrayToNSArray (valueVar);
+
+                [dictionary setObject: valueArray forKey: keyString];
+            }
+            else
+            {
+                auto* valueString = juceStringToNS (valueVar.toString());
+
+                [dictionary setObject: valueString forKey: keyString];
+            }
+        }
+    }
+
+    return dictionary;
+}
+
+static NSArray* varArrayToNSArray (const var& varToParse)
+{
+    jassert (varToParse.isArray());
+
+    if (! varToParse.isArray())
+        return nil;
+
+    const auto* varArray = varToParse.getArray();
+
+    auto array = [NSMutableArray arrayWithCapacity: (NSUInteger) varArray->size()];
+
+    for (const auto& aVar : *varArray)
+    {
+        if (aVar.isObject())
+        {
+            auto* valueDictionary = varObjectToNSDictionary (aVar);
+
+            [array addObject: valueDictionary];
+        }
+        else if (aVar.isArray())
+        {
+            auto* valueArray = varArrayToNSArray (aVar);
+
+            [array addObject: valueArray];
+        }
+        else
+        {
+            auto* valueString = juceStringToNS (aVar.toString());
+
+            [array addObject: valueString];
+        }
+    }
+
+    return array;
+}
+
+static var nsObjectToVar (NSObject* array);
+
+static var nsDictionaryToVar (NSDictionary* dictionary)
+{
+    DynamicObject::Ptr dynamicObject (new DynamicObject());
+
+    for (NSString* key in dictionary)
+        dynamicObject->setProperty (nsStringToJuce (key), nsObjectToVar (dictionary[key]));
+
+    return var (dynamicObject.get());
+}
+
+static var nsArrayToVar (NSArray* array)
+{
+    Array<var> resultArray;
+
+    for (id value in array)
+        resultArray.add (nsObjectToVar (value));
+
+    return var (resultArray);
+}
+
+static var nsObjectToVar (NSObject* obj)
+{
+    if ([obj isKindOfClass: [NSString class]])          return nsStringToJuce ((NSString*) obj);
+    else if ([obj isKindOfClass: [NSNumber class]])     return nsStringToJuce ([(NSNumber*) obj stringValue]);
+    else if ([obj isKindOfClass: [NSDictionary class]]) return nsDictionaryToVar ((NSDictionary*) obj);
+    else if ([obj isKindOfClass: [NSArray class]])      return nsArrayToVar ((NSArray*) obj);
+    else
+    {
+        // Unsupported yet, add here!
+        jassertfalse;
+    }
+
+    return {};
 }
 
 #if JUCE_MAC
@@ -78,7 +193,6 @@ static NSRect makeNSRect (const RectangleType& r) noexcept
 }
 #endif
 #if JUCE_MAC || JUCE_IOS
-#if JUCE_COMPILER_SUPPORTS_VARIADIC_TEMPLATES
 
 // This is necessary as on iOS builds, some arguments may be passed on registers
 // depending on the argument type. The re-cast objc_msgSendSuper to a function
@@ -86,12 +200,10 @@ static NSRect makeNSRect (const RectangleType& r) noexcept
 template <typename ReturnValue, typename... Params>
 static inline ReturnValue ObjCMsgSendSuper (struct objc_super* s, SEL sel, Params... params)
 {
-    typedef ReturnValue (*SuperFn)(struct objc_super*, SEL, Params...);
+    using SuperFn = ReturnValue (*)(struct objc_super*, SEL, Params...);
     SuperFn fn = reinterpret_cast<SuperFn> (objc_msgSendSuper);
     return fn (s, sel, params...);
 }
-
-#endif
 
 // These hacks are a workaround for newer Xcode builds which by default prevent calls to these objc functions..
 typedef id (*MsgSendSuperFn) (struct objc_super*, SEL, ...);
@@ -104,13 +216,12 @@ static inline MsgSendFPRetFn getMsgSendFPRetFn() noexcept   { return (MsgSendFPR
 #endif
 
 //==============================================================================
-template <typename ObjectType>
-struct NSObjectRetainer
+struct NSObjectDeleter
 {
-    inline NSObjectRetainer (ObjectType* o) : object (o)  { [object retain]; }
-    inline ~NSObjectRetainer()                            { [object release]; }
-
-    ObjectType* object;
+    void operator()(NSObject* object) const
+    {
+        [object release];
+    }
 };
 
 //==============================================================================
@@ -212,10 +323,9 @@ struct ObjCLifetimeManagedClass : public ObjCClass<NSObject>
     {
         addIvar<JuceClass*> ("cppObject");
 
-       #pragma clang diagnostic push
-       #pragma clang diagnostic ignored "-Wundeclared-selector"
+        JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wundeclared-selector")
         addMethod (@selector (initWithJuceObject:), initWithJuceObject, "@@:@");
-       #pragma clang diagnostic pop
+        JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
         addMethod (@selector (dealloc),             dealloc,            "v@:");
 
@@ -259,10 +369,9 @@ ObjCLifetimeManagedClass<Class> ObjCLifetimeManagedClass<Class>::objCLifetimeMan
 template <typename Class>
 NSObject* createNSObjectFromJuceClass (Class* obj)
 {
-   #pragma clang diagnostic push
-   #pragma clang diagnostic ignored "-Wobjc-method-access"
+    JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wobjc-method-access")
     return [ObjCLifetimeManagedClass<Class>::objCLifetimeManagedClass.createInstance() initWithJuceObject:obj];
-   #pragma clang diagnostic pop
+    JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 }
 
 // Get the JUCE class instance that was tied to the life-time of an NSObject with the
@@ -272,8 +381,6 @@ Class* getJuceClassFromNSObject (NSObject* obj)
 {
     return obj != nullptr ? ObjCLifetimeManagedClass<Class>:: template getIvar<Class*> (obj, "cppObject") : nullptr;
 }
-
-#if JUCE_COMPILER_SUPPORTS_VARIADIC_TEMPLATES
 
 template <typename ReturnT, class Class, typename... Params>
 ReturnT (^CreateObjCBlock(Class* object, ReturnT (Class::*fn)(Params...))) (Params...)
@@ -303,6 +410,19 @@ private:
     BlockType block;
 };
 
-#endif
+struct ScopedCFString
+{
+    ScopedCFString() = default;
+    ScopedCFString (String s) : cfString (s.toCFString())  {}
+
+    ~ScopedCFString() noexcept
+    {
+        if (cfString != nullptr)
+            CFRelease (cfString);
+    }
+
+    CFStringRef cfString = {};
+};
+
 
 } // namespace juce

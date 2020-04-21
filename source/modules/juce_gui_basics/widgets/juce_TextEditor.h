@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -35,6 +27,8 @@ namespace juce
     fonts and colours.
 
     @see TextEditor::Listener, Label
+
+    @tags{GUI}
 */
 class JUCE_API  TextEditor  : public Component,
                               public TextInputTarget,
@@ -56,7 +50,7 @@ public:
                          juce_wchar passwordCharacter = 0);
 
     /** Destructor. */
-    ~TextEditor();
+    ~TextEditor() override;
 
     //==============================================================================
     /** Puts the editor into either multi- or single-line mode.
@@ -277,6 +271,12 @@ public:
     */
     void setTextToShowWhenEmpty (const String& text, Colour colourToUse);
 
+    /** Returns the text that will be shown when the text editor is empty.
+
+        @see setTextToShowWhenEmpty
+    */
+    String getTextToShowWhenEmpty() const noexcept    { return textToShowWhenEmpty; }
+
     //==============================================================================
     /** Changes the size of the scrollbars that are used.
         Handy if you need smaller scrollbars for a small text box.
@@ -293,7 +293,7 @@ public:
     {
     public:
         /** Destructor. */
-        virtual ~Listener()  {}
+        virtual ~Listener() = default;
 
         /** Called when the user changes the text in some way. */
         virtual void textEditorTextChanged (TextEditor&) {}
@@ -317,6 +317,19 @@ public:
         @see addListener
     */
     void removeListener (Listener* listenerToRemove);
+
+    //==============================================================================
+    /** You can assign a lambda to this callback object to have it called when the text is changed. */
+    std::function<void()> onTextChange;
+
+    /** You can assign a lambda to this callback object to have it called when the return key is pressed. */
+    std::function<void()> onReturnKey;
+
+    /** You can assign a lambda to this callback object to have it called when the escape key is pressed. */
+    std::function<void()> onEscapeKey;
+
+    /** You can assign a lambda to this callback object to have it called when the editor loses key focus. */
+    std::function<void()> onFocusLost;
 
     //==============================================================================
     /** Returns the entire contents of the editor. */
@@ -461,7 +474,7 @@ public:
     /** Changes the size of border left around the edge of the component.
         @see getBorder
     */
-    void setBorder (const BorderSize<int>& border);
+    void setBorder (BorderSize<int> border);
 
     /** Returns the size of border around the edge of the component.
         @see setBorder
@@ -554,8 +567,8 @@ public:
     class JUCE_API  InputFilter
     {
     public:
-        InputFilter() {}
-        virtual ~InputFilter() {}
+        InputFilter() = default;
+        virtual ~InputFilter() = default;
 
         /** This method is called whenever text is entered into the editor.
             An implementation of this class should should check the input string,
@@ -617,7 +630,7 @@ public:
     */
     struct JUCE_API  LookAndFeelMethods
     {
-        virtual ~LookAndFeelMethods() {}
+        virtual ~LookAndFeelMethods() = default;
 
         virtual void fillTextEditorBackground (Graphics&, int width, int height, TextEditor&) = 0;
         virtual void drawTextEditorOutline (Graphics&, int width, int height, TextEditor&) = 0;
@@ -659,7 +672,7 @@ public:
     /** @internal */
     bool isTextInputActive() const override;
     /** @internal */
-    void setTemporaryUnderlining (const Array<Range<int> >&) override;
+    void setTemporaryUnderlining (const Array<Range<int>>&) override;
     /** @internal */
     VirtualKeyboardType getKeyboardType() override    { return keyboardType; }
 
@@ -689,7 +702,7 @@ private:
     struct InsertAction;
     struct RemoveAction;
 
-    ScopedPointer<Viewport> viewport;
+    std::unique_ptr<Viewport> viewport;
     TextHolderComponent* textHolder;
     BorderSize<int> borderSize { 1, 1, 1, 3 };
     Justification justification { Justification::left };
@@ -710,7 +723,7 @@ private:
     bool consumeEscAndReturnKeys = true;
 
     UndoManager undoManager;
-    ScopedPointer<CaretComponent> caret;
+    std::unique_ptr<CaretComponent> caret;
     Range<int> selection;
     int leftIndent = 4, topIndent = 4;
     unsigned int lastTransactionTime = 0;
@@ -749,6 +762,7 @@ private:
     void reinsert (int insertIndex, const OwnedArray<UniformTextSection>&);
     void remove (Range<int>, UndoManager*, int caretPositionToMoveTo);
     void getCharPosition (int index, Point<float>&, float& lineHeight) const;
+    Rectangle<float> getCaretRectangleFloat() const;
     void updateCaretPosition();
     void updateValueFromText();
     void textWasChangedByValue();
@@ -761,6 +775,7 @@ private:
     float getWordWrapWidth() const;
     float getJustificationWidth() const;
     void timerCallbackInt();
+    void checkFocus();
     void repaintText (Range<int>);
     void scrollByLines (int deltaLines);
     bool undoOrRedo (bool shouldUndo);
@@ -769,7 +784,5 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TextEditor)
 };
 
-/** This typedef is just for compatibility with old code - newer code should use the TextEditor::Listener class directly. */
-typedef TextEditor::Listener TextEditorListener;
 
 } // namespace juce

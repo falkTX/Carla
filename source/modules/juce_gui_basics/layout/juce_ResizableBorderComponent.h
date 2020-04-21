@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -42,6 +34,8 @@ namespace juce
     each time the parent's size changes.
 
     @see ResizableCornerComponent
+
+    @tags{GUI}
 */
 class JUCE_API  ResizableBorderComponent  : public Component
 {
@@ -68,7 +62,7 @@ public:
                               ComponentBoundsConstrainer* constrainer);
 
     /** Destructor. */
-    ~ResizableBorderComponent();
+    ~ResizableBorderComponent() override;
 
 
     //==============================================================================
@@ -76,7 +70,7 @@ public:
 
         @see getBorderThickness
     */
-    void setBorderThickness (const BorderSize<int>& newBorderSize);
+    void setBorderThickness (BorderSize<int> newBorderSize);
 
     /** Returns the number of pixels wide that the draggable edges of this component are.
 
@@ -103,7 +97,7 @@ public:
         };
 
         //==============================================================================
-        /** Creates a Zone from a combination of the flags in \enum Zones. */
+        /** Creates a Zone from a combination of the flags in zoneFlags. */
         explicit Zone (int zoneFlags) noexcept;
 
         Zone() noexcept;
@@ -117,8 +111,8 @@ public:
         /** Given a point within a rectangle with a resizable border, this returns the
             zone that the point lies within.
         */
-        static Zone fromPositionOnBorder (const Rectangle<int>& totalSize,
-                                          const BorderSize<int>& border,
+        static Zone fromPositionOnBorder (Rectangle<int> totalSize,
+                                          BorderSize<int> border,
                                           Point<int> position);
 
         /** Returns an appropriate mouse-cursor for this resize zone. */
@@ -158,7 +152,7 @@ public:
 
     private:
         //==============================================================================
-        int zone;
+        int zone = centre;
     };
 
     /** Returns the zone in which the mouse was last seen. */

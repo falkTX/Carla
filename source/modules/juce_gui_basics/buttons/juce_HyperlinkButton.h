@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -33,6 +25,8 @@ namespace juce
     when it's clicked.
 
     @see Button
+
+    @tags{GUI}
 */
 class JUCE_API  HyperlinkButton  : public Button
 {
@@ -42,7 +36,7 @@ public:
 
         @param linkText     the text that will be displayed in the button - this is
                             also set as the Component's name, but the text can be
-                            changed later with the Button::getButtonText() method
+                            changed later with the Button::setButtonText() method
         @param linkURL      the URL to launch when the user clicks the button
     */
     HyperlinkButton (const String& linkText,
@@ -52,7 +46,7 @@ public:
     HyperlinkButton();
 
     /** Destructor. */
-    ~HyperlinkButton();
+    ~HyperlinkButton() override;
 
     //==============================================================================
     /** Changes the font to use for the text.
@@ -91,6 +85,15 @@ public:
     */
     void changeWidthToFitText();
 
+    //==============================================================================
+    /** Sets the style of justification to be used for positioning the text.
+        (The default is Justification::centred)
+    */
+    void setJustificationType (Justification justification);
+
+    /** Returns the type of justification, as set in setJustificationType(). */
+    Justification getJustificationType() const noexcept         { return justification; }
+
 protected:
     //==============================================================================
     /** @internal */
@@ -98,16 +101,18 @@ protected:
     /** @internal */
     void colourChanged() override;
     /** @internal */
-    void paintButton (Graphics&, bool isMouseOver, bool isButtonDown) override;
+    void paintButton (Graphics&, bool, bool) override;
 
 private:
+    //==============================================================================
+    using Button::clicked;
+    Font getFontToUse() const;
+
     //==============================================================================
     URL url;
     Font font;
     bool resizeFont;
     Justification justification;
-
-    Font getFontToUse() const;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (HyperlinkButton)
 };

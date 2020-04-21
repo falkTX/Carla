@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -52,11 +44,11 @@ public:
         {
             setMouseCursor (m->getMouseCursorForRow (row));
 
-            customComponent = m->refreshComponentForRow (newRow, nowSelected, customComponent.release());
+            customComponent.reset (m->refreshComponentForRow (newRow, nowSelected, customComponent.release()));
 
             if (customComponent != nullptr)
             {
-                addAndMakeVisible (customComponent);
+                addAndMakeVisible (customComponent.get());
                 customComponent->setBounds (getLocalBounds());
             }
         }
@@ -152,7 +144,7 @@ public:
     }
 
     ListBox& owner;
-    ScopedPointer<Component> customComponent;
+    std::unique_ptr<Component> customComponent;
     int row = -1;
     bool selected = false, isDragging = false, isDraggingToScroll = false, selectRowOnMouseUp = false;
 
@@ -352,7 +344,7 @@ struct ListBoxMouseMoveSelector  : public MouseListener
         owner.addMouseListener (this, true);
     }
 
-    ~ListBoxMouseMoveSelector()
+    ~ListBoxMouseMoveSelector() override
     {
         owner.removeMouseListener (this);
     }
@@ -377,7 +369,8 @@ struct ListBoxMouseMoveSelector  : public MouseListener
 ListBox::ListBox (const String& name, ListBoxModel* const m)
     : Component (name), model (m)
 {
-    addAndMakeVisible (viewport = new ListViewport (*this));
+    viewport.reset (new ListViewport (*this));
+    addAndMakeVisible (viewport.get());
 
     ListBox::setWantsKeyboardFocus (true);
     ListBox::colourChanged();
@@ -385,8 +378,8 @@ ListBox::ListBox (const String& name, ListBoxModel* const m)
 
 ListBox::~ListBox()
 {
-    headerComponent = nullptr;
-    viewport = nullptr;
+    headerComponent.reset();
+    viewport.reset();
 }
 
 void ListBox::setModel (ListBoxModel* const newModel)
@@ -408,11 +401,11 @@ void ListBox::setMouseMoveSelectsRows (bool b)
     if (b)
     {
         if (mouseMoveSelector == nullptr)
-            mouseMoveSelector = new ListBoxMouseMoveSelector (*this);
+            mouseMoveSelector.reset (new ListBoxMouseMoveSelector (*this));
     }
     else
     {
-        mouseMoveSelector = nullptr;
+        mouseMoveSelector.reset();
     }
 }
 
@@ -451,7 +444,7 @@ void ListBox::visibilityChanged()
 
 Viewport* ListBox::getViewport() const noexcept
 {
-    return viewport;
+    return viewport.get();
 }
 
 //==============================================================================
@@ -654,7 +647,7 @@ int ListBox::getInsertionIndexForPosition (const int x, const int y) const noexc
 Component* ListBox::getComponentForRowNumber (const int row) const noexcept
 {
     if (auto* listRowComp = viewport->getComponentForRowIfOnscreen (row))
-        return listRowComp->customComponent;
+        return listRowComp->customComponent.get();
 
     return nullptr;
 }
@@ -722,7 +715,7 @@ bool ListBox::keyPressed (const KeyPress& key)
         if (multiple)
             selectRangeOfRows (lastRowSelected, lastRowSelected + 1);
         else
-            selectRow (jmin (totalItems - 1, jmax (0, lastRowSelected) + 1));
+            selectRow (jmin (totalItems - 1, jmax (0, lastRowSelected + 1)));
     }
     else if (key.isKeyCode (KeyPress::pageUpKey))
     {
@@ -849,21 +842,17 @@ void ListBox::parentHierarchyChanged()
     colourChanged();
 }
 
-void ListBox::setOutlineThickness (const int newThickness)
+void ListBox::setOutlineThickness (int newThickness)
 {
     outlineThickness = newThickness;
     resized();
 }
 
-void ListBox::setHeaderComponent (Component* const newHeaderComponent)
+void ListBox::setHeaderComponent (std::unique_ptr<Component> newHeaderComponent)
 {
-    if (headerComponent != newHeaderComponent)
-    {
-        headerComponent = newHeaderComponent;
-
-        addAndMakeVisible (newHeaderComponent);
-        ListBox::resized();
-    }
+    headerComponent = std::move (newHeaderComponent);
+    addAndMakeVisible (headerComponent.get());
+    ListBox::resized();
 }
 
 void ListBox::repaintRow (const int rowNumber) noexcept
@@ -893,7 +882,8 @@ Image ListBox::createSnapshotOfRows (const SparseSet<int>& rows, int& imageX, in
     imageX = imageArea.getX();
     imageY = imageArea.getY();
 
-    Image snapshot (Image::ARGB, imageArea.getWidth(), imageArea.getHeight(), true);
+    auto listScale = Component::getApproximateScaleFactorForComponent (this);
+    Image snapshot (Image::ARGB, roundToInt (imageArea.getWidth() * listScale), roundToInt (imageArea.getHeight() * listScale), true);
 
     for (int i = getNumRowsOnScreen() + 2; --i >= 0;)
     {
@@ -904,9 +894,12 @@ Image ListBox::createSnapshotOfRows (const SparseSet<int>& rows, int& imageX, in
                 Graphics g (snapshot);
                 g.setOrigin (getLocalPoint (rowComp, Point<int>()) - imageArea.getPosition());
 
-                if (g.reduceClipRegion (rowComp->getLocalBounds()))
+                auto rowScale = Component::getApproximateScaleFactorForComponent (rowComp);
+
+                if (g.reduceClipRegion (rowComp->getLocalBounds() * rowScale))
                 {
                     g.beginTransparencyLayer (0.6f);
+                    g.addTransform (AffineTransform::scale (rowScale));
                     rowComp->paintEntireComponent (g, false);
                     g.endTransparencyLayer();
                 }
@@ -925,7 +918,7 @@ void ListBox::startDragAndDrop (const MouseEvent& e, const SparseSet<int>& rowsT
         auto dragImage = createSnapshotOfRows (rowsToDrag, x, y);
 
         auto p = Point<int> (x, y) - e.getEventRelativeTo (this).position.toInt();
-        dragContainer->startDragging (dragDescription, this, dragImage, allowDraggingToOtherWindows, &p);
+        dragContainer->startDragging (dragDescription, this, dragImage, allowDraggingToOtherWindows, &p, &e.source);
     }
     else
     {

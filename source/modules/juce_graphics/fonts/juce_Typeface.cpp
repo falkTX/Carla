@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -118,7 +110,7 @@ Typeface::~Typeface()
 Typeface::Ptr Typeface::getFallbackTypeface()
 {
     const Font fallbackFont (Font::getFallbackFontName(), Font::getFallbackFontStyle(), 10.0f);
-    return fallbackFont.getTypeface();
+    return Typeface::Ptr (fallbackFont.getTypeface());
 }
 
 EdgeTable* Typeface::getEdgeTableForGlyph (int glyphNumber, const AffineTransform& transform, float fontHeight)
@@ -140,9 +132,8 @@ EdgeTable* Typeface::getEdgeTableForGlyph (int glyphNumber, const AffineTransfor
 struct Typeface::HintingParams
 {
     HintingParams (Typeface& t)
-        : cachedSize (0), top (0), middle (0), bottom (0)
     {
-        Font font (&t);
+        Font font (t);
         font = font.withHeight ((float) standardHeight);
 
         top = getAverageY (font, "BDEFPRTZOQ", true);
@@ -209,7 +200,7 @@ private:
         float middle, upperScale, upperOffset, lowerScale, lowerOffset;
     };
 
-    float cachedSize;
+    float cachedSize = 0;
     Scaling cachedScale;
 
     static float getAverageY (const Font& font, const char* chars, bool getTop)
@@ -217,29 +208,29 @@ private:
         GlyphArrangement ga;
         ga.addLineOfText (font, chars, 0, 0);
 
-        Array<float> y;
-        DefaultElementComparator<float> sorter;
+        Array<float> yValues;
 
-        for (int i = 0; i < ga.getNumGlyphs(); ++i)
+        for (auto& glyph : ga)
         {
             Path p;
-            ga.getGlyph (i).createPath (p);
-            Rectangle<float> bounds (p.getBounds());
+            glyph.createPath (p);
+            auto bounds = p.getBounds();
 
             if (! p.isEmpty())
-                y.addSorted (sorter, getTop ? bounds.getY() : bounds.getBottom());
+                yValues.add (getTop ? bounds.getY() : bounds.getBottom());
         }
 
-        float median = y[y.size() / 2];
+        std::sort (yValues.begin(), yValues.end());
 
+        auto median = yValues[yValues.size() / 2];
         float total = 0;
         int num = 0;
 
-        for (int i = 0; i < y.size(); ++i)
+        for (auto y : yValues)
         {
-            if (std::abs (median - y.getUnchecked(i)) < 0.05f * (float) standardHeight)
+            if (std::abs (median - y) < 0.05f * (float) standardHeight)
             {
-                total += y.getUnchecked(i);
+                total += y;
                 ++num;
             }
         }
@@ -248,7 +239,7 @@ private:
     }
 
     enum { standardHeight = 100 };
-    float top, middle, bottom;
+    float top = 0, middle = 0, bottom = 0;
 };
 
 void Typeface::applyVerticalHintingTransform (float fontSize, Path& path)
@@ -258,7 +249,7 @@ void Typeface::applyVerticalHintingTransform (float fontSize, Path& path)
         ScopedLock sl (hintingLock);
 
         if (hintingParams == nullptr)
-            hintingParams = new HintingParams (*this);
+            hintingParams.reset (new HintingParams (*this));
 
         return hintingParams->applyVerticalHintingTransform (fontSize, path);
     }

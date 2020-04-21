@@ -44,7 +44,7 @@ LocalisedStrings& LocalisedStrings::operator= (const LocalisedStrings& other)
     languageName = other.languageName;
     countryCodes = other.countryCodes;
     translations = other.translations;
-    fallback = createCopyIfNotNull (other.fallback.get());
+    fallback.reset (createCopyIfNotNull (other.fallback.get()));
     return *this;
 }
 
@@ -81,7 +81,7 @@ namespace
     {
         LeakAvoidanceTrick()
         {
-            const ScopedPointer<LocalisedStrings> dummy (new LocalisedStrings (String(), false));
+            const std::unique_ptr<LocalisedStrings> dummy (new LocalisedStrings (String(), false));
         }
     };
 
@@ -89,16 +89,16 @@ namespace
    #endif
 
     SpinLock currentMappingsLock;
-    ScopedPointer<LocalisedStrings> currentMappings;
+    std::unique_ptr<LocalisedStrings> currentMappings;
 
     static int findCloseQuote (const String& text, int startPos)
     {
         juce_wchar lastChar = 0;
-        String::CharPointerType t (text.getCharPointer() + startPos);
+        auto t = text.getCharPointer() + startPos;
 
         for (;;)
         {
-            const juce_wchar c = t.getAndAdvance();
+            auto c = t.getAndAdvance();
 
             if (c == 0 || (c == '"' && lastChar != '\\'))
                 break;
@@ -127,22 +127,20 @@ void LocalisedStrings::loadFromText (const String& fileContents, bool ignoreCase
     StringArray lines;
     lines.addLines (fileContents);
 
-    for (int i = 0; i < lines.size(); ++i)
+    for (auto& l : lines)
     {
-        String line (lines[i].trim());
+        auto line = l.trim();
 
         if (line.startsWithChar ('"'))
         {
-            int closeQuote = findCloseQuote (line, 1);
-
-            const String originalText (unescapeString (line.substring (1, closeQuote)));
+            auto closeQuote = findCloseQuote (line, 1);
+            auto originalText = unescapeString (line.substring (1, closeQuote));
 
             if (originalText.isNotEmpty())
             {
-                const int openingQuote = findCloseQuote (line, closeQuote + 1);
+                auto openingQuote = findCloseQuote (line, closeQuote + 1);
                 closeQuote = findCloseQuote (line, openingQuote + 1);
-
-                const String newText (unescapeString (line.substring (openingQuote + 1, closeQuote)));
+                auto newText = unescapeString (line.substring (openingQuote + 1, closeQuote));
 
                 if (newText.isNotEmpty())
                     translations.set (originalText, newText);
@@ -173,19 +171,19 @@ void LocalisedStrings::addStrings (const LocalisedStrings& other)
 
 void LocalisedStrings::setFallback (LocalisedStrings* f)
 {
-    fallback = f;
+    fallback.reset (f);
 }
 
 //==============================================================================
 void LocalisedStrings::setCurrentMappings (LocalisedStrings* newTranslations)
 {
     const SpinLock::ScopedLockType sl (currentMappingsLock);
-    currentMappings = newTranslations;
+    currentMappings.reset (newTranslations);
 }
 
 LocalisedStrings* LocalisedStrings::getCurrentMappings()
 {
-    return currentMappings;
+    return currentMappings.get();
 }
 
 String LocalisedStrings::translateWithCurrentMappings (const String& text)  { return juce::translate (text); }
@@ -199,7 +197,7 @@ JUCE_API String translate (const String& text, const String& resultIfNotFound)
 {
     const SpinLock::ScopedLockType sl (currentMappingsLock);
 
-    if (const LocalisedStrings* const mappings = LocalisedStrings::getCurrentMappings())
+    if (auto* mappings = LocalisedStrings::getCurrentMappings())
         return mappings->translate (text, resultIfNotFound);
 
     return resultIfNotFound;

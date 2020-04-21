@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -38,6 +30,8 @@ namespace juce
 
     After creating an instance of this, use addListener to get callbacks when
     the activity status changes.
+
+    @tags{GUI}
 */
 class JUCE_API  MouseInactivityDetector  : private Timer,
                                            private MouseListener
@@ -50,7 +44,7 @@ public:
     MouseInactivityDetector (Component& target);
 
     /** Destructor. */
-    ~MouseInactivityDetector();
+    ~MouseInactivityDetector() override;
 
     /** Sets the time for which the mouse must be still before the callback
         is triggered.
@@ -69,7 +63,7 @@ public:
     class Listener
     {
     public:
-        virtual ~Listener() {}
+        virtual ~Listener() = default;
 
         /** Called when the mouse is moved or clicked for the first time
             after a period of inactivity. */
@@ -90,8 +84,8 @@ private:
     Component& targetComp;
     ListenerList<Listener> listenerList;
     Point<int> lastMousePos;
-    int delayMs, toleranceDistance;
-    bool isActive;
+    int delayMs = 1500, toleranceDistance = 15;
+    bool isActive = true;
 
     void timerCallback() override;
     void wakeUp (const MouseEvent&, bool alwaysWake);

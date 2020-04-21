@@ -32,6 +32,8 @@ namespace juce
 
     See the PropertiesFile class for a subclass of this, which automatically broadcasts change
     messages and saves/loads the list from a file.
+
+    @tags{Core}
 */
 class JUCE_API  PropertySet
 {
@@ -111,7 +113,7 @@ public:
 
         @param keyName              the name of the property to retrieve
     */
-    XmlElement* getXmlValue (StringRef keyName) const;
+    std::unique_ptr<XmlElement> getXmlValue (StringRef keyName) const;
 
     //==============================================================================
     /** Sets a named property.
@@ -119,7 +121,7 @@ public:
         @param keyName      the name of the property to set. (This mustn't be an empty string)
         @param value        the new value to set it to
     */
-    void setValue (const String& keyName, const var& value);
+    void setValue (StringRef keyName, const var& value);
 
     /** Sets a named property to an XML element.
 
@@ -128,7 +130,7 @@ public:
                             be set to an empty string
         @see getXmlValue
     */
-    void setValue (const String& keyName, const XmlElement* xml);
+    void setValue (StringRef keyName, const XmlElement* xml);
 
     /** This copies all the values from a source PropertySet to this one.
         This won't remove any existing settings, it just adds any that it finds in the source set.
@@ -141,7 +143,7 @@ public:
     */
     void removeValue (StringRef keyName);
 
-    /** Returns true if the properies include the given key. */
+    /** Returns true if the properties include the given key. */
     bool containsKey (StringRef keyName) const noexcept;
 
     /** Removes all values. */
@@ -159,7 +161,7 @@ public:
         The string parameter is the tag name that should be used for the node.
         @see restoreFromXml
     */
-    XmlElement* createXml (const String& nodeName) const;
+    std::unique_ptr<XmlElement> createXml (const String& nodeName) const;
 
     /** Reloads a set of properties that were previously stored as XML.
         The node passed in must have been created by the createXml() method.
@@ -188,7 +190,7 @@ public:
     PropertySet* getFallbackPropertySet() const noexcept                { return fallbackProperties; }
 
 protected:
-    /** Subclasses can override this to be told when one of the properies has been changed. */
+    /** Subclasses can override this to be told when one of the properties has been changed. */
     virtual void propertyChanged();
 
 private:

@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -35,6 +27,7 @@ LookAndFeel_V3::LookAndFeel_V3()
     setColour (TextButton::buttonColourId, textButtonColour);
     setColour (TextButton::buttonOnColourId, Colour (0xff888888));
     setColour (ComboBox::buttonColourId, textButtonColour);
+    setColour (ComboBox::focusedOutlineColourId, textButtonColour);
     setColour (TextEditor::outlineColourId, Colours::transparentBlack);
     setColour (TabbedButtonBar::tabOutlineColourId, Colour (0x66000000));
     setColour (TabbedComponent::outlineColourId, Colour (0x66000000));
@@ -93,8 +86,8 @@ void LookAndFeel_V3::drawConcertinaPanelHeader (Graphics& g, const Rectangle<int
 {
     const Colour bkg (Colours::grey);
 
-    g.setGradientFill (ColourGradient (Colours::white.withAlpha (isMouseOver ? 0.4f : 0.2f), 0, (float) area.getY(),
-                                       Colours::darkgrey.withAlpha (0.1f), 0, (float) area.getBottom(), false));
+    g.setGradientFill (ColourGradient::vertical (Colours::white.withAlpha (isMouseOver ? 0.4f : 0.2f), (float) area.getY(),
+                                                 Colours::darkgrey.withAlpha (0.1f), (float) area.getBottom()));
     g.fillAll();
 
     g.setColour (bkg.contrasting().withAlpha (0.1f));
@@ -111,8 +104,8 @@ static void drawButtonShape (Graphics& g, const Path& outline, Colour baseColour
     const float mainBrightness = baseColour.getBrightness();
     const float mainAlpha = baseColour.getFloatAlpha();
 
-    g.setGradientFill (ColourGradient (baseColour.brighter (0.2f), 0.0f, 0.0f,
-                                       baseColour.darker (0.25f), 0.0f, height, false));
+    g.setGradientFill (ColourGradient::vertical (baseColour.brighter (0.2f), 0.0f,
+                                                 baseColour.darker (0.25f), height));
     g.fillPath (outline);
 
     g.setColour (Colours::white.withAlpha (0.4f * mainAlpha * mainBrightness * mainBrightness));
@@ -124,13 +117,13 @@ static void drawButtonShape (Graphics& g, const Path& outline, Colour baseColour
 }
 
 void LookAndFeel_V3::drawButtonBackground (Graphics& g, Button& button, const Colour& backgroundColour,
-                                           bool isMouseOverButton, bool isButtonDown)
+                                           bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)
 {
     Colour baseColour (backgroundColour.withMultipliedSaturation (button.hasKeyboardFocus (true) ? 1.3f : 0.9f)
                                        .withMultipliedAlpha (button.isEnabled() ? 0.9f : 0.5f));
 
-    if (isButtonDown || isMouseOverButton)
-        baseColour = baseColour.contrasting (isButtonDown ? 0.2f : 0.1f);
+    if (shouldDrawButtonAsDown || shouldDrawButtonAsHighlighted)
+        baseColour = baseColour.contrasting (shouldDrawButtonAsDown ? 0.2f : 0.1f);
 
     const bool flatOnLeft   = button.isConnectedOnLeft();
     const bool flatOnRight  = button.isConnectedOnRight();
@@ -157,7 +150,7 @@ void LookAndFeel_V3::drawButtonBackground (Graphics& g, Button& button, const Co
 
 void LookAndFeel_V3::drawTableHeaderBackground (Graphics& g, TableHeaderComponent& header)
 {
-    Rectangle<int> r (header.getLocalBounds());
+    auto r = header.getLocalBounds();
     auto outlineColour = header.findColour (TableHeaderComponent::outlineColourId);
 
     g.setColour (outlineColour);
@@ -213,8 +206,8 @@ void LookAndFeel_V3::drawTabButton (TabBarButton& button, Graphics& g, bool isMo
             default:                              jassertfalse; break;
         }
 
-        g.setGradientFill (ColourGradient (bkg.brighter (0.2f), (float) p1.x, (float) p1.y,
-                                           bkg.darker (0.1f),   (float) p2.x, (float) p2.y, false));
+        g.setGradientFill (ColourGradient (bkg.brighter (0.2f), p1.toFloat(),
+                                           bkg.darker (0.1f),   p2.toFloat(), false));
     }
 
     g.fillRect (activeArea);
@@ -258,8 +251,8 @@ void LookAndFeel_V3::drawTabButton (TabBarButton& button, Graphics& g, bool isMo
 
     switch (o)
     {
-        case TabbedButtonBar::TabsAtLeft:   t = t.rotated (float_Pi * -0.5f).translated (area.getX(), area.getBottom()); break;
-        case TabbedButtonBar::TabsAtRight:  t = t.rotated (float_Pi *  0.5f).translated (area.getRight(), area.getY()); break;
+        case TabbedButtonBar::TabsAtLeft:   t = t.rotated (MathConstants<float>::pi * -0.5f).translated (area.getX(), area.getBottom()); break;
+        case TabbedButtonBar::TabsAtRight:  t = t.rotated (MathConstants<float>::pi *  0.5f).translated (area.getRight(), area.getY()); break;
         case TabbedButtonBar::TabsAtTop:
         case TabbedButtonBar::TabsAtBottom: t = t.translated (area.getX(), area.getY()); break;
         default:                            jassertfalse; break;
@@ -352,16 +345,14 @@ int LookAndFeel_V3::getTreeViewIndentSize (TreeView&)
     return 20;
 }
 
-void LookAndFeel_V3::drawComboBox (Graphics& g, int width, int height, const bool /*isButtonDown*/,
+void LookAndFeel_V3::drawComboBox (Graphics& g, int width, int height, const bool /*isMouseButtonDown*/,
                                    int buttonX, int buttonY, int buttonW, int buttonH, ComboBox& box)
 {
     g.fillAll (box.findColour (ComboBox::backgroundColourId));
 
-    const Colour buttonColour (box.findColour (ComboBox::buttonColourId));
-
     if (box.isEnabled() && box.hasKeyboardFocus (false))
     {
-        g.setColour (buttonColour);
+        g.setColour (box.findColour (ComboBox::focusedOutlineColourId));
         g.drawRect (0, 0, width, height, 2);
     }
     else
@@ -403,12 +394,12 @@ void LookAndFeel_V3::drawLinearSlider (Graphics& g, int x, int y, int width, int
         else
             p.addRectangle (fx, fy, sliderPos - fx, fh);
 
-        Colour baseColour (slider.findColour (Slider::thumbColourId)
+        auto baseColour = slider.findColour (Slider::thumbColourId)
                                 .withMultipliedSaturation (slider.isEnabled() ? 1.0f : 0.5f)
-                                .withMultipliedAlpha (0.8f));
+                                .withMultipliedAlpha (0.8f);
 
-        g.setGradientFill (ColourGradient (baseColour.brighter (0.08f), 0.0f, 0.0f,
-                                           baseColour.darker (0.08f), 0.0f, (float) height, false));
+        g.setGradientFill (ColourGradient::vertical (baseColour.brighter (0.08f), 0.0f,
+                                                     baseColour.darker (0.08f), (float) height));
         g.fillPath (p);
 
         g.setColour (baseColour.darker (0.2f));
@@ -440,19 +431,17 @@ void LookAndFeel_V3::drawLinearSliderBackground (Graphics& g, int x, int y, int 
 
     if (slider.isHorizontal())
     {
-        const float iy = y + height * 0.5f - sliderRadius * 0.5f;
+        auto iy = y + height * 0.5f - sliderRadius * 0.5f;
 
-        g.setGradientFill (ColourGradient (gradCol1, 0.0f, iy,
-                                           gradCol2, 0.0f, iy + sliderRadius, false));
+        g.setGradientFill (ColourGradient::vertical (gradCol1, iy, gradCol2, iy + sliderRadius));
 
         indent.addRoundedRectangle (x - sliderRadius * 0.5f, iy, width + sliderRadius, sliderRadius, 5.0f);
     }
     else
     {
-        const float ix = x + width * 0.5f - sliderRadius * 0.5f;
+        auto ix = x + width * 0.5f - sliderRadius * 0.5f;
 
-        g.setGradientFill (ColourGradient (gradCol1, ix, 0.0f,
-                                           gradCol2, ix + sliderRadius, 0.0f, false));
+        g.setGradientFill (ColourGradient::horizontal (gradCol1, ix, gradCol2, ix + sliderRadius));
 
         indent.addRoundedRectangle (ix, y - sliderRadius * 0.5f, sliderRadius, height + sliderRadius, 5.0f);
     }
@@ -477,7 +466,7 @@ void LookAndFeel_V3::drawPopupMenuBackground (Graphics& g, int width, int height
 void LookAndFeel_V3::drawMenuBarBackground (Graphics& g, int width, int height,
                                             bool, MenuBarComponent& menuBar)
 {
-    const Colour colour (menuBar.findColour (PopupMenu::backgroundColourId));
+    auto colour = menuBar.findColour (PopupMenu::backgroundColourId);
 
     Rectangle<int> r (width, height);
 
@@ -485,7 +474,7 @@ void LookAndFeel_V3::drawMenuBarBackground (Graphics& g, int width, int height,
     g.fillRect (r.removeFromTop (1));
     g.fillRect (r.removeFromBottom (1));
 
-    g.setGradientFill (ColourGradient (colour, 0, 0, colour.darker (0.08f), 0, (float) height, false));
+    g.setGradientFill (ColourGradient::vertical (colour, 0, colour.darker (0.08f), (float) height));
     g.fillRect (r);
 }
 
@@ -539,7 +528,7 @@ public:
     {
     }
 
-    void paintButton (Graphics& g, bool isMouseOverButton, bool isButtonDown) override
+    void paintButton (Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override
     {
         Colour background (Colours::grey);
 
@@ -547,7 +536,7 @@ public:
             background = rw->getBackgroundColour();
 
         const float cx = getWidth() * 0.5f, cy = getHeight() * 0.5f;
-        const float diam = jmin (cx, cy) * (isButtonDown ? 0.60f : 0.65f);
+        const float diam = jmin (cx, cy) * (shouldDrawButtonAsDown ? 0.60f : 0.65f);
 
         g.setColour (background);
         g.fillEllipse (cx - diam, cy - diam, diam * 2.0f, diam * 2.0f);
@@ -556,7 +545,7 @@ public:
 
         if (! isEnabled())
             c = c.withAlpha (0.6f);
-        else if (isMouseOverButton)
+        else if (shouldDrawButtonAsHighlighted)
             c = c.brighter();
 
         g.setColour (c);

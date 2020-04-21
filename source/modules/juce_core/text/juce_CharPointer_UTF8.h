@@ -28,53 +28,52 @@ namespace juce
     Wraps a pointer to a null-terminated UTF-8 character string, and provides
     various methods to operate on the data.
     @see CharPointer_UTF16, CharPointer_UTF32
+
+    @tags{Core}
 */
-class CharPointer_UTF8
+class CharPointer_UTF8  final
 {
 public:
-    typedef char CharType;
+    using CharType = char;
 
-    inline explicit CharPointer_UTF8 (const CharType* rawPointer) noexcept
+    explicit CharPointer_UTF8 (const CharType* rawPointer) noexcept
         : data (const_cast<CharType*> (rawPointer))
     {
     }
 
-    inline CharPointer_UTF8 (const CharPointer_UTF8& other) noexcept
-        : data (other.data)
-    {
-    }
+    CharPointer_UTF8 (const CharPointer_UTF8& other) = default;
 
-    inline CharPointer_UTF8 operator= (CharPointer_UTF8 other) noexcept
+    CharPointer_UTF8 operator= (CharPointer_UTF8 other) noexcept
     {
         data = other.data;
         return *this;
     }
 
-    inline CharPointer_UTF8 operator= (const CharType* text) noexcept
+    CharPointer_UTF8 operator= (const CharType* text) noexcept
     {
         data = const_cast<CharType*> (text);
         return *this;
     }
 
     /** This is a pointer comparison, it doesn't compare the actual text. */
-    inline bool operator== (CharPointer_UTF8 other) const noexcept      { return data == other.data; }
-    inline bool operator!= (CharPointer_UTF8 other) const noexcept      { return data != other.data; }
-    inline bool operator<= (CharPointer_UTF8 other) const noexcept      { return data <= other.data; }
-    inline bool operator<  (CharPointer_UTF8 other) const noexcept      { return data <  other.data; }
-    inline bool operator>= (CharPointer_UTF8 other) const noexcept      { return data >= other.data; }
-    inline bool operator>  (CharPointer_UTF8 other) const noexcept      { return data >  other.data; }
+    bool operator== (CharPointer_UTF8 other) const noexcept      { return data == other.data; }
+    bool operator!= (CharPointer_UTF8 other) const noexcept      { return data != other.data; }
+    bool operator<= (CharPointer_UTF8 other) const noexcept      { return data <= other.data; }
+    bool operator<  (CharPointer_UTF8 other) const noexcept      { return data <  other.data; }
+    bool operator>= (CharPointer_UTF8 other) const noexcept      { return data >= other.data; }
+    bool operator>  (CharPointer_UTF8 other) const noexcept      { return data >  other.data; }
 
     /** Returns the address that this pointer is pointing to. */
-    inline CharType* getAddress() const noexcept        { return data; }
+    CharType* getAddress() const noexcept        { return data; }
 
     /** Returns the address that this pointer is pointing to. */
-    inline operator const CharType*() const noexcept    { return data; }
+    operator const CharType*() const noexcept    { return data; }
 
     /** Returns true if this pointer is pointing to a null character. */
-    inline bool isEmpty() const noexcept                { return *data == 0; }
+    bool isEmpty() const noexcept                { return *data == 0; }
 
     /** Returns true if this pointer is not pointing to a null character. */
-    inline bool isNotEmpty() const noexcept             { return *data != 0; }
+    bool isNotEmpty() const noexcept             { return *data != 0; }
 
     /** Returns the unicode character that this pointer is pointing to. */
     juce_wchar operator*() const noexcept
@@ -120,12 +119,12 @@ public:
 
         if (n < 0)
         {
-            juce_wchar bit = 0x40;
+            uint8 bit = 0x40;
 
-            while ((static_cast<juce_wchar> (n) & bit) != 0 && bit > 0x8)
+            while ((static_cast<uint8> (n) & bit) != 0 && bit > 0x8)
             {
                 ++data;
-                bit >>= 1;
+                bit = static_cast<uint8> (bit >> 1);
             }
         }
 
@@ -349,7 +348,7 @@ public:
     }
 
     /** Writes a null character to this string (leaving the pointer's position unchanged). */
-    inline void writeNull() const noexcept
+    void writeNull() const noexcept
     {
         *data = 0;
     }

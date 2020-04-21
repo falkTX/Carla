@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -39,6 +31,8 @@ class MultiDocumentPanel;
     everything works nicely inside a MultiDocumentPanel.
 
     @see MultiDocumentPanel
+
+    @tags{GUI}
 */
 class JUCE_API  MultiDocumentPanelWindow  : public DocumentWindow
 {
@@ -49,7 +43,7 @@ public:
     MultiDocumentPanelWindow (Colour backgroundColour);
 
     /** Destructor. */
-    ~MultiDocumentPanelWindow();
+    ~MultiDocumentPanelWindow() override;
 
     //==============================================================================
     /** @internal */
@@ -81,6 +75,8 @@ private:
     Use addDocument() and closeDocument() to add or remove components from the
     panel - never use any of the Component methods to access the panel's child
     components directly, as these are managed internally.
+
+    @tags{GUI}
 */
 class JUCE_API  MultiDocumentPanel  : public Component,
                                       private ComponentListener
@@ -102,7 +98,7 @@ public:
         before closing, then you should call closeAllDocuments (true) and check that
         it returns true before deleting the panel.
     */
-    ~MultiDocumentPanel();
+    ~MultiDocumentPanel() override;
 
     //==============================================================================
     /** Tries to close all the documents.
@@ -242,7 +238,7 @@ public:
     Colour getBackgroundColour() const noexcept                         { return backgroundColour; }
 
     /** If the panel is being used in tabbed mode, this returns the TabbedComponent that's involved. */
-    TabbedComponent* getCurrentTabbedComponent() const noexcept         { return tabComponent; }
+    TabbedComponent* getCurrentTabbedComponent() const noexcept         { return tabComponent.get(); }
 
     //==============================================================================
     /** A subclass must override this to say whether its currently ok for a document
@@ -285,15 +281,14 @@ public:
 
 private:
     //==============================================================================
-    LayoutMode mode;
-    Array <Component*> components;
-    ScopedPointer<TabbedComponent> tabComponent;
-    Colour backgroundColour;
-    int maximumNumDocuments, numDocsBeforeTabsUsed;
+    LayoutMode mode = MaximisedWindowsWithTabs;
+    Array<Component*> components;
+    std::unique_ptr<TabbedComponent> tabComponent;
+    Colour backgroundColour { Colours::lightblue };
+    int maximumNumDocuments = 0, numDocsBeforeTabsUsed = 0;
 
-    class TabbedComponentInternal;
+    struct TabbedComponentInternal;
     friend class MultiDocumentPanelWindow;
-    friend class TabbedComponentInternal;
 
     Component* getContainerComp (Component*) const;
     void updateOrder();

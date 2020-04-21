@@ -24,11 +24,6 @@ namespace juce
 {
 
 AudioSourcePlayer::AudioSourcePlayer()
-    : source (nullptr),
-      sampleRate (0),
-      bufferSize (0),
-      lastGain (1.0f),
-      gain (1.0f)
 {
 }
 
@@ -41,7 +36,7 @@ void AudioSourcePlayer::setSource (AudioSource* newSource)
 {
     if (source != newSource)
     {
-        AudioSource* const oldSource = source;
+        auto* oldSource = source;
 
         if (newSource != nullptr && bufferSize > 0 && sampleRate > 0)
             newSource->prepareToPlay (bufferSize, sampleRate);
@@ -109,14 +104,14 @@ void AudioSourcePlayer::audioDeviceIOCallback (const float** inputChannelData,
             for (int i = 0; i < numOutputs; ++i)
             {
                 channels[numActiveChans] = outputChans[i];
-                memcpy (channels[numActiveChans], inputChans[i], sizeof (float) * (size_t) numSamples);
+                memcpy (channels[numActiveChans], inputChans[i], (size_t) numSamples * sizeof (float));
                 ++numActiveChans;
             }
 
             for (int i = numOutputs; i < numInputs; ++i)
             {
                 channels[numActiveChans] = tempBuffer.getWritePointer (i - numOutputs);
-                memcpy (channels[numActiveChans], inputChans[i], sizeof (float) * (size_t) numSamples);
+                memcpy (channels[numActiveChans], inputChans[i], (size_t) numSamples * sizeof (float));
                 ++numActiveChans;
             }
         }
@@ -125,19 +120,19 @@ void AudioSourcePlayer::audioDeviceIOCallback (const float** inputChannelData,
             for (int i = 0; i < numInputs; ++i)
             {
                 channels[numActiveChans] = outputChans[i];
-                memcpy (channels[numActiveChans], inputChans[i], sizeof (float) * (size_t) numSamples);
+                memcpy (channels[numActiveChans], inputChans[i], (size_t) numSamples * sizeof (float));
                 ++numActiveChans;
             }
 
             for (int i = numInputs; i < numOutputs; ++i)
             {
                 channels[numActiveChans] = outputChans[i];
-                zeromem (channels[numActiveChans], sizeof (float) * (size_t) numSamples);
+                zeromem (channels[numActiveChans], (size_t) numSamples * sizeof (float));
                 ++numActiveChans;
             }
         }
 
-        AudioSampleBuffer buffer (channels, numActiveChans, numSamples);
+        AudioBuffer<float> buffer (channels, numActiveChans, numSamples);
 
         AudioSourceChannelInfo info (&buffer, 0, numSamples);
         source->getNextAudioBlock (info);
@@ -151,7 +146,7 @@ void AudioSourcePlayer::audioDeviceIOCallback (const float** inputChannelData,
     {
         for (int i = 0; i < totalNumOutputChannels; ++i)
             if (outputChannelData[i] != nullptr)
-                zeromem (outputChannelData[i], sizeof (float) * (size_t) numSamples);
+                zeromem (outputChannelData[i], (size_t) numSamples * sizeof (float));
     }
 }
 

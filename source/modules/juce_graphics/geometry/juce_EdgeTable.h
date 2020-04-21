@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -32,6 +24,8 @@ namespace juce
     A table of horizontal scan-line segments - used for rasterising Paths.
 
     @see Path, Graphics
+
+    @tags{Graphics}
 */
 class JUCE_API  EdgeTable
 {
@@ -46,21 +40,21 @@ public:
         @param pathToAdd                the path to add to the table
         @param transform                a transform to apply to the path being added
     */
-    EdgeTable (const Rectangle<int>& clipLimits,
+    EdgeTable (Rectangle<int> clipLimits,
                const Path& pathToAdd,
                const AffineTransform& transform);
 
     /** Creates an edge table containing a rectangle. */
-    explicit EdgeTable (const Rectangle<int>& rectangleToAdd);
+    explicit EdgeTable (Rectangle<int> rectangleToAdd);
+
+    /** Creates an edge table containing a rectangle. */
+    explicit EdgeTable (Rectangle<float> rectangleToAdd);
 
     /** Creates an edge table containing a rectangle list. */
     explicit EdgeTable (const RectangleList<int>& rectanglesToAdd);
 
     /** Creates an edge table containing a rectangle list. */
     explicit EdgeTable (const RectangleList<float>& rectanglesToAdd);
-
-    /** Creates an edge table containing a rectangle. */
-    explicit EdgeTable (const Rectangle<float>& rectangleToAdd);
 
     /** Creates a copy of another edge table. */
     EdgeTable (const EdgeTable&);
@@ -72,8 +66,8 @@ public:
     ~EdgeTable();
 
     //==============================================================================
-    void clipToRectangle (const Rectangle<int>& r);
-    void excludeRectangle (const Rectangle<int>& r);
+    void clipToRectangle (Rectangle<int> r);
+    void excludeRectangle (Rectangle<int> r);
     void clipToEdgeTable (const EdgeTable&);
     void clipLineToMask (int x, int y, const uint8* mask, int maskStride, int numPixels);
     bool isEmpty() noexcept;
@@ -202,13 +196,14 @@ private:
     HeapBlock<int> table;
     Rectangle<int> bounds;
     int maxEdgesPerLine, lineStrideElements;
-    bool needToCheckEmptiness;
+    bool needToCheckEmptiness = true;
 
     void allocate();
     void clearLineSizes() noexcept;
     void addEdgePoint (int x, int y, int winding);
     void addEdgePointPair (int x1, int x2, int y, int winding);
     void remapTableForNumEdges (int newNumEdgesPerLine);
+    void remapWithExtraSpace (int numPointsNeeded);
     void intersectWithEdgeTableLine (int y, const int* otherLine);
     void clipEdgeTableLineToRange (int* line, int x1, int x2) noexcept;
     void sanitiseLevels (bool useNonZeroWinding) noexcept;

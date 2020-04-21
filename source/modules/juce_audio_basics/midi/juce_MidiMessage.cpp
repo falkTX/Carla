@@ -93,7 +93,7 @@ int MidiMessage::getMessageLengthFromFirstByte (const uint8 firstByte) noexcept
         1, 2, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
     };
 
-    return messageLengths [firstByte & 0x7f];
+    return messageLengths[firstByte & 0x7f];
 }
 
 //==============================================================================
@@ -224,9 +224,16 @@ MidiMessage::MidiMessage (const void* srcData, int sz, int& numBytesUsed, const 
         }
         else if (byte == 0xff)
         {
-            int n;
-            const int bytesLeft = readVariableLengthVal (src + 1, n);
-            size = jmin (sz + 1, n + 2 + bytesLeft);
+            if (sz == 1)
+            {
+                size = 1;
+            }
+            else
+            {
+                int n;
+                const int bytesLeft = readVariableLengthVal (src + 1, n);
+                size = jmin (sz + 1, n + 2 + bytesLeft);
+            }
 
             auto dest = allocateSpace (size);
             *dest = (uint8) byte;
@@ -342,6 +349,11 @@ String MidiMessage::getDescription() const
     }
 
     return String::toHexString (getRawData(), getRawDataSize());
+}
+
+MidiMessage MidiMessage::withTimeStamp (double newTimestamp) const
+{
+    return { *this, newTimestamp };
 }
 
 int MidiMessage::getChannel() const noexcept
@@ -618,6 +630,12 @@ bool MidiMessage::isAllSoundOff() const noexcept
     return data[1] == 120 && (data[0] & 0xf0) == 0xb0;
 }
 
+bool MidiMessage::isResetAllControllers() const noexcept
+{
+    auto data = getRawData();
+    return (data[0] & 0xf0) == 0xb0 && data[1] == 121;
+}
+
 MidiMessage MidiMessage::allControllersOff (const int channel) noexcept
 {
     return controllerEvent (channel, 121, 0);
@@ -638,7 +656,7 @@ bool MidiMessage::isSysEx() const noexcept
 
 MidiMessage MidiMessage::createSysExMessage (const void* sysexData, const int dataSize)
 {
-    HeapBlock<uint8> m ((size_t) dataSize + 2);
+    HeapBlock<uint8> m (dataSize + 2);
 
     m[0] = 0xf0;
     memcpy (m + 1, sysexData, (size_t) dataSize);
@@ -964,7 +982,7 @@ bool MidiMessage::isMidiMachineControlGoto (int& hours, int& minutes, int& secon
         hours = data[7] % 24;   // (that some machines send out hours > 24)
         minutes = data[8];
         seconds = data[9];
-        frames = data[10];
+        frames  = data[10];
 
         return true;
     }
@@ -985,8 +1003,8 @@ String MidiMessage::getMidiNoteName (int note, bool useSharps, bool includeOctav
 
     if (isPositiveAndBelow (note, 128))
     {
-        String s (useSharps ? sharpNoteNames [note % 12]
-                            : flatNoteNames  [note % 12]);
+        String s (useSharps ? sharpNoteNames[note % 12]
+                            : flatNoteNames [note % 12]);
 
         if (includeOctaveNumber)
             s << (note / 12 + (octaveNumForMiddleC - 5));
@@ -999,7 +1017,7 @@ String MidiMessage::getMidiNoteName (int note, bool useSharps, bool includeOctav
 
 double MidiMessage::getMidiNoteInHertz (const int noteNumber, const double frequencyOfA) noexcept
 {
-    return frequencyOfA * pow (2.0, (noteNumber - 69) / 12.0);
+    return frequencyOfA * std::pow (2.0, (noteNumber - 69) / 12.0);
 }
 
 bool MidiMessage::isMidiNoteBlack (int noteNumber) noexcept
@@ -1079,7 +1097,7 @@ const char* MidiMessage::getRhythmInstrumentName (const int n)
         NEEDS_TRANS("Open Cuica"),          NEEDS_TRANS("Mute Triangle"),   NEEDS_TRANS("Open Triangle")
     };
 
-    return (n >= 35 && n <= 81) ? names [n - 35] : nullptr;
+    return (n >= 35 && n <= 81) ? names[n - 35] : nullptr;
 }
 
 const char* MidiMessage::getControllerName (const int n)

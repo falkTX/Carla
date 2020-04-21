@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -33,34 +25,29 @@
  #error "Incorrect use of JUCE cpp file"
 #endif
 
-#include "AppConfig.h"
-
 #define JUCE_CORE_INCLUDE_NATIVE_HEADERS 1
 #define JUCE_CORE_INCLUDE_OBJC_HELPERS 1
+#define JUCE_GUI_BASICS_INCLUDE_XHEADERS 1
 
 #include "juce_audio_processors.h"
-
-#if JUCE_MODULE_AVAILABLE_juce_gui_extra
- #include <juce_gui_extra/juce_gui_extra.h>
-#endif
+#include <juce_gui_extra/juce_gui_extra.h>
 
 //==============================================================================
 #if JUCE_MAC
- #if JUCE_SUPPORT_CARBON \
-      && ((JUCE_PLUGINHOST_VST || JUCE_PLUGINHOST_AU) \
-           || ! (defined (MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_6))
+ #if JUCE_SUPPORT_CARBON && (JUCE_PLUGINHOST_VST || JUCE_PLUGINHOST_AU)
   #include <Carbon/Carbon.h>
   #include "../juce_gui_extra/native/juce_mac_CarbonViewWrapperComponent.h"
  #endif
 #endif
 
-#if JUCE_PLUGINHOST_VST && JUCE_LINUX && ! JUCE_AUDIOPROCESSOR_NO_GUI
+#if (JUCE_PLUGINHOST_VST || JUCE_PLUGINHOST_VST3) && JUCE_LINUX && ! JUCE_AUDIOPROCESSOR_NO_GUI
  #include <X11/Xlib.h>
  #include <X11/Xutil.h>
+ #include <sys/utsname.h>
  #undef KeyPress
 #endif
 
-#if ! JUCE_WINDOWS && ! JUCE_MAC
+#if ! JUCE_WINDOWS && ! JUCE_MAC && ! JUCE_LINUX
  #undef JUCE_PLUGINHOST_VST3
  #define JUCE_PLUGINHOST_VST3 0
 #endif
@@ -87,92 +74,62 @@ static inline bool arrayContainsPlugin (const OwnedArray<PluginDescription>& lis
 
 #if JUCE_IOS
  #define JUCE_IOS_MAC_VIEW  UIView
- typedef UIViewComponent  ViewComponentBaseClass;
+ using ViewComponentBaseClass = UIViewComponent;
 #else
  #define JUCE_IOS_MAC_VIEW  NSView
- typedef NSViewComponent  ViewComponentBaseClass;
+ using ViewComponentBaseClass = NSViewComponent;
 #endif
 
 //==============================================================================
 struct AutoResizingNSViewComponent  : public ViewComponentBaseClass,
                                       private AsyncUpdater
 {
-    AutoResizingNSViewComponent();
-    void childBoundsChanged (Component*) override;
-    void handleAsyncUpdate() override;
-    bool recursive;
+    void childBoundsChanged (Component*) override  { triggerAsyncUpdate(); }
+    void handleAsyncUpdate() override              { resizeToFitView(); }
 };
 
 //==============================================================================
 struct AutoResizingNSViewComponentWithParent  : public AutoResizingNSViewComponent,
                                                 private Timer
 {
-    AutoResizingNSViewComponentWithParent();
-    JUCE_IOS_MAC_VIEW* getChildView() const;
-    void timerCallback() override;
+    AutoResizingNSViewComponentWithParent()
+    {
+        JUCE_IOS_MAC_VIEW* v = [[JUCE_IOS_MAC_VIEW alloc] init];
+        setView (v);
+        [v release];
+
+        startTimer (30);
+    }
+
+    JUCE_IOS_MAC_VIEW* getChildView() const
+    {
+        if (JUCE_IOS_MAC_VIEW* parent = (JUCE_IOS_MAC_VIEW*) getView())
+            if ([[parent subviews] count] > 0)
+                return [[parent subviews] objectAtIndex: 0];
+
+        return nil;
+    }
+
+    void timerCallback() override
+    {
+        if (JUCE_IOS_MAC_VIEW* child = getChildView())
+        {
+            stopTimer();
+            setView (child);
+        }
+    }
 };
-
-//==============================================================================
-AutoResizingNSViewComponent::AutoResizingNSViewComponent()
-    : recursive (false) {}
-
-void AutoResizingNSViewComponent::childBoundsChanged (Component*)
-{
-    if (recursive)
-    {
-        triggerAsyncUpdate();
-    }
-    else
-    {
-        recursive = true;
-        resizeToFitView();
-        recursive = true;
-    }
-}
-
-void AutoResizingNSViewComponent::handleAsyncUpdate()
-{
-    resizeToFitView();
-}
-
-//==============================================================================
-AutoResizingNSViewComponentWithParent::AutoResizingNSViewComponentWithParent()
-{
-    JUCE_IOS_MAC_VIEW* v = [[JUCE_IOS_MAC_VIEW alloc] init];
-    setView (v);
-    [v release];
-
-    startTimer (30);
-}
-
-JUCE_IOS_MAC_VIEW* AutoResizingNSViewComponentWithParent::getChildView() const
-{
-    if (JUCE_IOS_MAC_VIEW* parent = (JUCE_IOS_MAC_VIEW*) getView())
-        if ([[parent subviews] count] > 0)
-            return [[parent subviews] objectAtIndex: 0];
-
-    return nil;
-}
-
-void AutoResizingNSViewComponentWithParent::timerCallback()
-{
-    if (JUCE_IOS_MAC_VIEW* child = getChildView())
-    {
-        stopTimer();
-        setView (child);
-    }
-}
 #endif
 
 } // namespace juce
 
-#if JUCE_CLANG
- #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#endif
+JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations", "-Wcast-align")
 
 #include "format/juce_AudioPluginFormat.cpp"
 #include "format/juce_AudioPluginFormatManager.cpp"
+#include "format_types/juce_LegacyAudioParameter.cpp"
 #include "processors/juce_AudioProcessor.cpp"
+#include "processors/juce_AudioPluginInstance.cpp"
 #include "processors/juce_AudioProcessorGraph.cpp"
 #if ! JUCE_AUDIOPROCESSOR_NO_GUI
  #include "processors/juce_AudioProcessorEditor.cpp"
@@ -185,10 +142,13 @@ void AutoResizingNSViewComponentWithParent::timerCallback()
 #include "format_types/juce_AudioUnitPluginFormat.mm"
 #include "scanning/juce_KnownPluginList.cpp"
 #include "scanning/juce_PluginDirectoryScanner.cpp"
-#if ! JUCE_AUDIOPROCESSOR_NO_GUI
- #include "scanning/juce_PluginListComponent.cpp"
-#endif
- #include "utilities/juce_AudioProcessorParameters.cpp"
-#if ! JUCE_AUDIOPROCESSOR_NO_GUI
- #include "utilities/juce_AudioProcessorValueTreeState.cpp"
-#endif
+#include "scanning/juce_PluginListComponent.cpp"
+#include "processors/juce_AudioProcessorParameterGroup.cpp"
+#include "utilities/juce_AudioProcessorParameterWithID.cpp"
+#include "utilities/juce_RangedAudioParameter.cpp"
+#include "utilities/juce_AudioParameterFloat.cpp"
+#include "utilities/juce_AudioParameterInt.cpp"
+#include "utilities/juce_AudioParameterBool.cpp"
+#include "utilities/juce_AudioParameterChoice.cpp"
+#include "utilities/juce_ParameterAttachments.cpp"
+#include "utilities/juce_AudioProcessorValueTreeState.cpp"

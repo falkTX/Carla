@@ -36,15 +36,9 @@ bool File::copyInternal (const File& dest) const
         NSFileManager* fm = [NSFileManager defaultManager];
 
         return [fm fileExistsAtPath: juceStringToNS (fullPath)]
-               #if defined (MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
                 && [fm copyItemAtPath: juceStringToNS (fullPath)
                                toPath: juceStringToNS (dest.getFullPathName())
                                 error: nil];
-               #else
-                && [fm copyPath: juceStringToNS (fullPath)
-                         toPath: juceStringToNS (dest.getFullPathName())
-                        handler: nil];
-               #endif
     }
 }
 
@@ -65,7 +59,7 @@ namespace MacFileHelpers
         {
             const String type (buf.f_fstypename);
 
-            while (*types != 0)
+            while (*types != nullptr)
                 if (type.equalsIgnoreCase (*types++))
                     return true;
         }
@@ -75,7 +69,7 @@ namespace MacFileHelpers
 
     static bool isHiddenFile (const String& path)
     {
-       #if defined (MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_6
+       #if JUCE_MAC
         JUCE_AUTORELEASEPOOL
         {
             NSNumber* hidden = nil;
@@ -84,15 +78,8 @@ namespace MacFileHelpers
             return [createNSURLFromFile (path) getResourceValue: &hidden forKey: NSURLIsHiddenKey error: &err]
                      && [hidden boolValue];
         }
-       #elif JUCE_IOS
-        return File (path).getFileName().startsWithChar ('.');
        #else
-        FSRef ref;
-        LSItemInfoRecord info;
-
-        return FSPathMakeRefWithOptions ((const UInt8*) path.toRawUTF8(), kFSPathMakeRefDoNotFollowLeafSymlink, &ref, 0) == noErr
-                 && LSCopyItemInfoForRef (&ref, kLSRequestBasicFlagsOnly, &info) == noErr
-                 && (info.flags & kLSItemInfoIsInvisible) != 0;
+        return File (path).getFileName().startsWithChar ('.');
        #endif
     }
 
@@ -108,9 +95,9 @@ namespace MacFileHelpers
         const char* const argv[4] = { "/bin/sh", "-c", pathAndArguments.toUTF8(), nullptr };
 
 #if JUCE_USE_VFORK
-        const int cpid = vfork();
+        const auto cpid = vfork();
 #else
-        const int cpid = fork();
+        auto cpid = fork();
 #endif
 
         if (cpid == 0)
@@ -215,6 +202,7 @@ File File::getSpecialLocation (const SpecialLocationType type)
                 if (juce_argv != nullptr && juce_argc > 0)
                     return File::getCurrentWorkingDirectory().getChildFile (String (juce_argv[0]));
                 // deliberate fall-through...
+                JUCE_FALLTHROUGH
 
             case currentExecutableFile:
                 return juce_getExecutableFile();
@@ -280,12 +268,12 @@ bool File::isSymbolicLink() const
     return getFileLink (fullPath) != nil;
 }
 
-File File::getLinkedTarget() const
+String File::getNativeLinkedTarget() const
 {
     if (NSString* dest = getFileLink (fullPath))
-        return getSiblingFile (nsStringToJuce (dest));
+        return nsStringToJuce (dest);
 
-    return *this;
+    return {};
 }
 
 //==============================================================================
@@ -294,28 +282,43 @@ bool File::moveToTrash() const
     if (! exists())
         return true;
 
-   #if JUCE_IOS
-    return deleteFile(); //xxx is there a trashcan on the iOS?
-   #else
     JUCE_AUTORELEASEPOOL
     {
-        NSURL* url = createNSURLFromFile (*this);
-
-        [[NSWorkspace sharedWorkspace] recycleURLs: [NSArray arrayWithObject: url]
+       #if (defined (__IPHONE_11_0) && __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_11_0) \
+         || (defined (MAC_OS_X_VERSION_10_8) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_8)
+        NSError* error = nil;
+        return [[NSFileManager defaultManager] trashItemAtURL: createNSURLFromFile (*this)
+                                             resultingItemURL: nil
+                                                        error: &error];
+       #elif JUCE_IOS
+        return deleteFile();
+       #else
+        [[NSWorkspace sharedWorkspace] recycleURLs: [NSArray arrayWithObject: createNSURLFromFile (*this)]
                                  completionHandler: nil];
-        return true;
+
+        // recycleURLs is async, so we need to block until it has finished. We can't use a
+        // run-loop here because it'd dispatch unexpected messages, so have to do this very
+        // nasty bodge. But this is only needed for support of pre-10.8 versions.
+        for (int retries = 100; --retries >= 0;)
+        {
+            if (! exists())
+                return true;
+
+            Thread::sleep (5);
+        }
+
+        return false;
+       #endif
     }
-   #endif
 }
 
 //==============================================================================
 class DirectoryIterator::NativeIterator::Pimpl
 {
 public:
-    Pimpl (const File& directory, const String& wildCard_)
+    Pimpl (const File& directory, const String& wildcard)
         : parentDir (File::addTrailingSeparator (directory.getFullPathName())),
-          wildCard (wildCard_),
-          enumerator (nil)
+          wildCard (wildcard)
     {
         JUCE_AUTORELEASEPOOL
         {
@@ -338,8 +341,12 @@ public:
 
             for (;;)
             {
-                NSString* file;
-                if (enumerator == nil || (file = [enumerator nextObject]) == nil)
+                if (enumerator == nil)
+                    return false;
+
+                NSString* file = [enumerator nextObject];
+
+                if (file == nil)
                     return false;
 
                 [enumerator skipDescendents];
@@ -351,7 +358,7 @@ public:
                 if (fnmatch (wildcardUTF8, filenameFound.toUTF8(), FNM_CASEFOLD) != 0)
                     continue;
 
-                const String fullPath (parentDir + filenameFound);
+                auto fullPath = parentDir + filenameFound;
                 updateStatInfoForFile (fullPath, isDir, fileSize, modTime, creationTime, isReadOnly);
 
                 if (isHidden != nullptr)
@@ -364,7 +371,7 @@ public:
 
 private:
     String parentDir, wildCard;
-    NSDirectoryEnumerator* enumerator;
+    NSDirectoryEnumerator* enumerator = nil;
 
     JUCE_DECLARE_NON_COPYABLE (Pimpl)
 };
@@ -392,11 +399,8 @@ bool JUCE_CALLTYPE Process::openDocument (const String& fileName, const String& 
     JUCE_AUTORELEASEPOOL
     {
         NSString* fileNameAsNS (juceStringToNS (fileName));
-
-        NSURL* filenameAsURL ([NSURL URLWithString: fileNameAsNS]);
-
-        if (filenameAsURL == nil)
-            filenameAsURL = [NSURL fileURLWithPath: fileNameAsNS];
+        NSURL* filenameAsURL = File::createFileWithoutCheckingPath (fileName).exists() ? [NSURL fileURLWithPath: fileNameAsNS]
+                                                                                       : [NSURL URLWithString: fileNameAsNS];
 
       #if JUCE_IOS
         ignoreUnused (parameters);
@@ -411,10 +415,7 @@ bool JUCE_CALLTYPE Process::openDocument (const String& fileName, const String& 
         NSWorkspace* workspace = [NSWorkspace sharedWorkspace];
 
         if (parameters.isEmpty())
-            // NB: the length check here is because of strange failures involving long filenames,
-            // probably due to filesystem name length limitations..
-            return (fileName.length() < 1024 && [workspace openFile: juceStringToNS (fileName)])
-                    || [workspace openURL: filenameAsURL];
+            return [workspace openURL: filenameAsURL];
 
         const File file (fileName);
 
@@ -423,11 +424,13 @@ bool JUCE_CALLTYPE Process::openDocument (const String& fileName, const String& 
             StringArray params;
             params.addTokens (parameters, true);
 
-            NSMutableArray* paramArray = [[[NSMutableArray alloc] init] autorelease];
+            NSMutableDictionary* dict = [[NSMutableDictionary new] autorelease];
+
+            NSMutableArray* paramArray = [[NSMutableArray new] autorelease];
+
             for (int i = 0; i < params.size(); ++i)
                 [paramArray addObject: juceStringToNS (params[i])];
 
-            NSMutableDictionary* dict = [[[NSMutableDictionary alloc] init] autorelease];
             [dict setObject: paramArray
                      forKey: nsStringLiteral ("NSWorkspaceLaunchConfigurationArguments")];
 

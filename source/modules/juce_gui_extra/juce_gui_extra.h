@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -23,6 +15,7 @@
 
   ==============================================================================
 */
+
 
 /*******************************************************************************
  The block below describes the properties of this module, and is read by
@@ -33,16 +26,17 @@
 
  BEGIN_JUCE_MODULE_DECLARATION
 
-  ID:               juce_gui_extra
-  vendor:           juce
-  version:          5.1.2
-  name:             JUCE extended GUI classes
-  description:      Miscellaneous GUI classes for specialised tasks.
-  website:          http://www.juce.com/juce
-  license:          GPL/Commercial
+  ID:                 juce_gui_extra
+  vendor:             juce
+  version:            6.0.0
+  name:               JUCE extended GUI classes
+  description:        Miscellaneous GUI classes for specialised tasks.
+  website:            http://www.juce.com/juce
+  license:            GPL/Commercial
 
-  dependencies:     juce_gui_basics
-  OSXFrameworks:    WebKit
+  dependencies:       juce_gui_basics
+  OSXFrameworks:      WebKit
+  iOSFrameworks:      WebKit
 
  END_JUCE_MODULE_DECLARATION
 
@@ -56,19 +50,35 @@
 
 //==============================================================================
 /** Config: JUCE_WEB_BROWSER
-    This lets you disable the WebBrowserComponent class (Mac and Windows).
+    This lets you disable the WebBrowserComponent class.
     If you're not using any embedded web-pages, turning this off may reduce your code size.
 */
 #ifndef JUCE_WEB_BROWSER
  #define JUCE_WEB_BROWSER 1
 #endif
 
+/** Config: JUCE_USE_WINRT_WEBVIEW
+    Enables the use of the EdgeHTML browser engine on Windows. This will use
+    the Windows Runtime API on Windows 10 version 1809 (October 2018 Update)
+    and later. If you enable this flag then older versions of Windows will
+    automatically fall back to using the regualar Win32 web view.
+
+    You will need version 10.0.14393.0 of the Windows Standalone SDK to compile
+    and you may need to add the path to the WinRT headers. The path to the
+    headers will be something similar to
+    "C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\winrt".
+*/
+#ifndef JUCE_USE_WINRT_WEBVIEW
+ #define JUCE_USE_WINRT_WEBVIEW 0
+#endif
+
 /** Config: JUCE_ENABLE_LIVE_CONSTANT_EDITOR
-    This lets you turn on the JUCE_ENABLE_LIVE_CONSTANT_EDITOR support. See the documentation
+    This lets you turn on the JUCE_ENABLE_LIVE_CONSTANT_EDITOR support (desktop only). By default
+    this will be enabled for debug builds and disabled for release builds. See the documentation
     for that macro for more details.
 */
 #ifndef JUCE_ENABLE_LIVE_CONSTANT_EDITOR
- #if JUCE_DEBUG
+ #if JUCE_DEBUG && ! (JUCE_IOS || JUCE_ANDROID)
   #define JUCE_ENABLE_LIVE_CONSTANT_EDITOR 1
  #endif
 #endif
@@ -83,14 +93,18 @@
 #include "code_editor/juce_XMLCodeTokeniser.h"
 #include "code_editor/juce_LuaCodeTokeniser.h"
 #include "embedding/juce_ActiveXControlComponent.h"
+#include "embedding/juce_AndroidViewComponent.h"
 #include "embedding/juce_NSViewComponent.h"
 #include "embedding/juce_UIViewComponent.h"
 #include "embedding/juce_XEmbedComponent.h"
+#include "embedding/juce_ScopedDPIAwarenessDisabler.h"
+#include "embedding/juce_HWNDComponent.h"
 #include "misc/juce_AppleRemote.h"
 #include "misc/juce_BubbleMessageComponent.h"
 #include "misc/juce_ColourSelector.h"
 #include "misc/juce_KeyMappingEditorComponent.h"
 #include "misc/juce_PreferencesPanel.h"
+#include "misc/juce_PushNotifications.h"
 #include "misc/juce_RecentlyOpenedFilesList.h"
 #include "misc/juce_SplashScreen.h"
 #include "misc/juce_SystemTrayIconComponent.h"

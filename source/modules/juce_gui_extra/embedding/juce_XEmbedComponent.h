@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -60,6 +52,8 @@ unsigned long juce_getCurrentFocusWindow (ComponentPeer*);
 
     Other toolkits or raw X11 widgets should follow the X11 embed protocol:
     https://specifications.freedesktop.org/xembed-spec/xembed-spec-latest.html
+
+    @tags{GUI}
 */
 class XEmbedComponent : public Component
 {
@@ -85,12 +79,15 @@ public:
 
 
     /** Destructor. */
-    ~XEmbedComponent();
+    ~XEmbedComponent() override;
 
     /** Use this method to retrieve the host's window id when using the
         host initiated version of the XEmbedProtocol
     */
     unsigned long getHostWindowID();
+
+    /** Removes the client window from the host. */
+    void removeClient();
 
 protected:
     //==============================================================================
@@ -105,8 +102,7 @@ private:
     friend unsigned long juce_getCurrentFocusWindow (ComponentPeer*);
 
     class Pimpl;
-    friend struct ContainerDeletePolicy<Pimpl>;
-    ScopedPointer<Pimpl> pimpl;
+    std::unique_ptr<Pimpl> pimpl;
 };
 
 #endif

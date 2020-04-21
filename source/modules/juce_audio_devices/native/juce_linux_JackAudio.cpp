@@ -105,7 +105,11 @@ namespace
 
 //==============================================================================
 #ifndef JUCE_JACK_CLIENT_NAME
- #define JUCE_JACK_CLIENT_NAME "JUCEJack"
+ #ifdef JucePlugin_Name
+  #define JUCE_JACK_CLIENT_NAME JucePlugin_Name
+ #else
+  #define JUCE_JACK_CLIENT_NAME "JUCEJack"
+ #endif
 #endif
 
 struct JackPortIterator
@@ -476,7 +480,6 @@ private:
     static void errorCallback (const char* msg)
     {
         JUCE_JACK_LOG ("JackAudioIODevice::errorCallback " + String (msg));
-        ignoreUnused(msg);
     }
 
     static void sendDeviceChangedCallback();

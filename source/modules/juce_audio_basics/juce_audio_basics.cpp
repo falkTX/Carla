@@ -29,24 +29,10 @@
  #error "Incorrect use of JUCE cpp file"
 #endif
 
-#include "AppConfig.h"
-
 #include "juce_audio_basics.h"
-
-#if JUCE_MINGW
- #define JUCE_USE_SSE_INTRINSICS 0
-#endif
 
 #if JUCE_MINGW && ! defined (alloca)
  #define alloca __builtin_alloca
-#endif
-
-#ifndef JUCE_USE_SSE_INTRINSICS
- #define JUCE_USE_SSE_INTRINSICS 1
-#endif
-
-#if ! JUCE_INTEL
- #undef JUCE_USE_SSE_INTRINSICS
 #endif
 
 #if JUCE_USE_SSE_INTRINSICS
@@ -63,17 +49,6 @@
  #undef JUCE_USE_VDSP_FRAMEWORK
 #endif
 
-#if __ARM_NEON__ && ! (JUCE_USE_VDSP_FRAMEWORK || defined (JUCE_USE_ARM_NEON))
- #define JUCE_USE_ARM_NEON 1
-#endif
-
-#if TARGET_IPHONE_SIMULATOR
- #ifdef JUCE_USE_ARM_NEON
-  #undef JUCE_USE_ARM_NEON
- #endif
- #define JUCE_USE_ARM_NEON 0
-#endif
-
 #if JUCE_USE_ARM_NEON
  #include <arm_neon.h>
 #endif
@@ -81,10 +56,11 @@
 #include "buffers/juce_AudioDataConverters.cpp"
 #include "buffers/juce_FloatVectorOperations.cpp"
 #include "buffers/juce_AudioChannelSet.cpp"
-#include "effects/juce_IIRFilter.cpp"
-#include "effects/juce_IIRFilterOld.cpp"
-#include "effects/juce_LagrangeInterpolator.cpp"
-#include "effects/juce_CatmullRomInterpolator.cpp"
+#include "buffers/juce_AudioProcessLoadMeasurer.cpp"
+#include "utilities/juce_IIRFilter.cpp"
+#include "utilities/juce_LagrangeInterpolator.cpp"
+#include "utilities/juce_CatmullRomInterpolator.cpp"
+#include "utilities/juce_SmoothedValue.cpp"
 #include "midi/juce_MidiBuffer.cpp"
 #include "midi/juce_MidiFile.cpp"
 #include "midi/juce_MidiKeyboardState.cpp"
@@ -93,13 +69,13 @@
 #include "midi/juce_MidiRPN.cpp"
 #include "mpe/juce_MPEValue.cpp"
 #include "mpe/juce_MPENote.cpp"
-#include "mpe/juce_MPEZone.cpp"
 #include "mpe/juce_MPEZoneLayout.cpp"
 #include "mpe/juce_MPEInstrument.cpp"
 #include "mpe/juce_MPEMessages.cpp"
 #include "mpe/juce_MPESynthesiserBase.cpp"
 #include "mpe/juce_MPESynthesiserVoice.cpp"
 #include "mpe/juce_MPESynthesiser.cpp"
+#include "mpe/juce_MPEUtils.cpp"
 #include "sources/juce_BufferingAudioSource.cpp"
 #include "sources/juce_ChannelRemappingAudioSource.cpp"
 #include "sources/juce_IIRFilterAudioSource.cpp"

@@ -23,21 +23,20 @@
 namespace juce
 {
 
-AbstractFifo::AbstractFifo (const int capacity) noexcept
-    : bufferSize (capacity)
+AbstractFifo::AbstractFifo (int capacity) noexcept : bufferSize (capacity)
 {
     jassert (bufferSize > 0);
 }
 
 AbstractFifo::~AbstractFifo() {}
 
-int AbstractFifo::getTotalSize() const noexcept           { return bufferSize; }
-int AbstractFifo::getFreeSpace() const noexcept           { return bufferSize - getNumReady() - 1; }
+int AbstractFifo::getTotalSize() const noexcept    { return bufferSize; }
+int AbstractFifo::getFreeSpace() const noexcept    { return bufferSize - getNumReady() - 1; }
 
 int AbstractFifo::getNumReady() const noexcept
 {
-    const int vs = validStart.get();
-    const int ve = validEnd.get();
+    auto vs = validStart.get();
+    auto ve = validEnd.get();
     return ve >= vs ? (ve - vs) : (bufferSize - (vs - ve));
 }
 
@@ -55,12 +54,13 @@ void AbstractFifo::setTotalSize (int newSize) noexcept
 }
 
 //==============================================================================
-void AbstractFifo::prepareToWrite (int numToWrite, int& startIndex1, int& blockSize1, int& startIndex2, int& blockSize2) const noexcept
+void AbstractFifo::prepareToWrite (int numToWrite, int& startIndex1, int& blockSize1,
+                                   int& startIndex2, int& blockSize2) const noexcept
 {
-    const int vs = validStart.get();
-    const int ve = validEnd.value;
+    auto vs = validStart.get();
+    auto ve = validEnd.get();
 
-    const int freeSpace = ve >= vs ? (bufferSize - (ve - vs)) : (vs - ve);
+    auto freeSpace = ve >= vs ? (bufferSize - (ve - vs)) : (vs - ve);
     numToWrite = jmin (numToWrite, freeSpace - 1);
 
     if (numToWrite <= 0)
@@ -83,19 +83,22 @@ void AbstractFifo::prepareToWrite (int numToWrite, int& startIndex1, int& blockS
 void AbstractFifo::finishedWrite (int numWritten) noexcept
 {
     jassert (numWritten >= 0 && numWritten < bufferSize);
-    int newEnd = validEnd.value + numWritten;
+
+    auto newEnd = validEnd.get() + numWritten;
+
     if (newEnd >= bufferSize)
         newEnd -= bufferSize;
 
     validEnd = newEnd;
 }
 
-void AbstractFifo::prepareToRead (int numWanted, int& startIndex1, int& blockSize1, int& startIndex2, int& blockSize2) const noexcept
+void AbstractFifo::prepareToRead (int numWanted, int& startIndex1, int& blockSize1,
+                                  int& startIndex2, int& blockSize2) const noexcept
 {
-    const int vs = validStart.value;
-    const int ve = validEnd.get();
+    auto vs = validStart.get();
+    auto ve = validEnd.get();
 
-    const int numReady = ve >= vs ? (ve - vs) : (bufferSize - (vs - ve));
+    auto numReady = ve >= vs ? (ve - vs) : (bufferSize - (vs - ve));
     numWanted = jmin (numWanted, numReady);
 
     if (numWanted <= 0)
@@ -119,12 +122,49 @@ void AbstractFifo::finishedRead (int numRead) noexcept
 {
     jassert (numRead >= 0 && numRead <= bufferSize);
 
-    int newStart = validStart.value + numRead;
+    auto newStart = validStart.get() + numRead;
+
     if (newStart >= bufferSize)
         newStart -= bufferSize;
 
     validStart = newStart;
 }
+
+//==============================================================================
+template <AbstractFifo::ReadOrWrite mode>
+AbstractFifo::ScopedReadWrite<mode>::ScopedReadWrite (ScopedReadWrite&& other) noexcept
+    : startIndex1 (other.startIndex1),
+      blockSize1 (other.blockSize1),
+      startIndex2 (other.startIndex2),
+      blockSize2 (other.blockSize2)
+{
+    swap (other);
+}
+
+template <AbstractFifo::ReadOrWrite mode>
+AbstractFifo::ScopedReadWrite<mode>&
+AbstractFifo::ScopedReadWrite<mode>::operator= (ScopedReadWrite&& other) noexcept
+{
+    swap (other);
+    return *this;
+}
+
+template <AbstractFifo::ReadOrWrite mode>
+void AbstractFifo::ScopedReadWrite<mode>::swap (ScopedReadWrite& other) noexcept
+{
+    std::swap (other.fifo, fifo);
+    std::swap (other.startIndex1, startIndex1);
+    std::swap (other.blockSize1, blockSize1);
+    std::swap (other.startIndex2, startIndex2);
+    std::swap (other.blockSize2, blockSize2);
+}
+
+template class AbstractFifo::ScopedReadWrite<AbstractFifo::ReadOrWrite::read>;
+template class AbstractFifo::ScopedReadWrite<AbstractFifo::ReadOrWrite::write>;
+
+AbstractFifo::ScopedRead  AbstractFifo::read  (int numToRead) noexcept     { return { *this, numToRead }; }
+AbstractFifo::ScopedWrite AbstractFifo::write (int numToWrite) noexcept    { return { *this, numToWrite }; }
+
 
 //==============================================================================
 //==============================================================================
@@ -133,11 +173,12 @@ void AbstractFifo::finishedRead (int numRead) noexcept
 class AbstractFifoTests  : public UnitTest
 {
 public:
-    AbstractFifoTests() : UnitTest ("Abstract Fifo", "Containers") {}
+    AbstractFifoTests()
+        : UnitTest ("Abstract Fifo", UnitTestCategories::containers)
+    {}
 
-    class WriteThread  : public Thread
+    struct WriteThread  : public Thread
     {
-    public:
         WriteThread (AbstractFifo& f, int* b, Random rng)
             : Thread ("fifo writer"), fifo (f), buffer (b), random (rng)
         {
@@ -157,24 +198,18 @@ public:
             {
                 int num = random.nextInt (2000) + 1;
 
-                int start1, size1, start2, size2;
-                fifo.prepareToWrite (num, start1, size1, start2, size2);
+                auto writer = fifo.write (num);
 
-                jassert (size1 >= 0 && size2 >= 0);
-                jassert (size1 == 0 || (start1 >= 0 && start1 < fifo.getTotalSize()));
-                jassert (size2 == 0 || (start2 >= 0 && start2 < fifo.getTotalSize()));
+                jassert (writer.blockSize1 >= 0 && writer.blockSize2 >= 0);
+                jassert (writer.blockSize1 == 0
+                         || (writer.startIndex1 >= 0 && writer.startIndex1 < fifo.getTotalSize()));
+                jassert (writer.blockSize2 == 0
+                         || (writer.startIndex2 >= 0 && writer.startIndex2 < fifo.getTotalSize()));
 
-                for (int i = 0; i < size1; ++i)
-                    buffer [start1 + i] = n++;
-
-                for (int i = 0; i < size2; ++i)
-                    buffer [start2 + i] = n++;
-
-                fifo.finishedWrite (size1 + size2);
+                writer.forEach ([this, &n] (int index)  { this->buffer[index] = n++; });
             }
         }
 
-    private:
         AbstractFifo& fifo;
         int* buffer;
         Random random;
@@ -184,7 +219,7 @@ public:
     {
         beginTest ("AbstractFifo");
 
-        int buffer [5000];
+        int buffer[5000];
         AbstractFifo fifo (numElementsInArray (buffer));
 
         WriteThread writer (fifo, buffer, getRandom());
@@ -197,12 +232,13 @@ public:
         {
             int num = r.nextInt (6000) + 1;
 
-            int start1, size1, start2, size2;
-            fifo.prepareToRead (num, start1, size1, start2, size2);
+            auto reader = fifo.read (num);
 
-            if (! (size1 >= 0 && size2 >= 0)
-                    && (size1 == 0 || (start1 >= 0 && start1 < fifo.getTotalSize()))
-                    && (size2 == 0 || (start2 >= 0 && start2 < fifo.getTotalSize())))
+            if (! (reader.blockSize1 >= 0 && reader.blockSize2 >= 0)
+                    && (reader.blockSize1 == 0
+                        || (reader.startIndex1 >= 0 && reader.startIndex1 < fifo.getTotalSize()))
+                    && (reader.blockSize2 == 0
+                        || (reader.startIndex2 >= 0 && reader.startIndex2 < fifo.getTotalSize())))
             {
                 expect (false, "prepareToRead returned -ve values");
                 break;
@@ -210,19 +246,16 @@ public:
 
             bool failed = false;
 
-            for (int i = 0; i < size1; ++i)
-                failed = (buffer [start1 + i] != n++) || failed;
-
-            for (int i = 0; i < size2; ++i)
-                failed = (buffer [start2 + i] != n++) || failed;
+            reader.forEach ([&failed, &buffer, &n] (int index)
+            {
+                failed = (buffer[index] != n++) || failed;
+            });
 
             if (failed)
             {
                 expect (false, "read values were incorrect");
                 break;
             }
-
-            fifo.finishedRead (size1 + size2);
         }
     }
 };

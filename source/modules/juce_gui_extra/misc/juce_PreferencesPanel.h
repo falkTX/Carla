@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -43,9 +35,10 @@ namespace juce
     To use it, just add a set of named pages with the addSettingsPage() method,
     and implement the createComponentForPage() method to create suitable components
     for each of these pages.
+
+    @tags{GUI}
 */
-class JUCE_API  PreferencesPanel  : public Component,
-                                    private Button::Listener
+class JUCE_API  PreferencesPanel  : public Component
 {
 public:
     //==============================================================================
@@ -56,7 +49,7 @@ public:
     PreferencesPanel();
 
     /** Destructor. */
-    ~PreferencesPanel();
+    ~PreferencesPanel() override;
 
     //==============================================================================
     /** Creates a page using a set of drawables to define the page's icon.
@@ -131,15 +124,15 @@ public:
     void resized() override;
     /** @internal */
     void paint (Graphics&) override;
-    /** @internal */
-    void buttonClicked (Button*) override;
 
 private:
     //==============================================================================
     String currentPageName;
-    ScopedPointer<Component> currentPage;
+    std::unique_ptr<Component> currentPage;
     OwnedArray<DrawableButton> buttons;
     int buttonSize;
+
+    void clickedPage();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PreferencesPanel)
 };

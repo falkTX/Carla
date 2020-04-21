@@ -23,16 +23,10 @@
 namespace juce
 {
 
-int64 juce_fileSetPosition (void* handle, int64 pos);
-
 //==============================================================================
 FileOutputStream::FileOutputStream (const File& f, const size_t bufferSizeToUse)
     : file (f),
-      fileHandle (nullptr),
-      status (Result::ok()),
-      currentPosition (0),
       bufferSize (bufferSizeToUse),
-      bytesInBuffer (0),
       buffer (jmax (bufferSizeToUse, (size_t) 16))
 {
     openHandle();
@@ -83,6 +77,9 @@ bool FileOutputStream::write (const void* const src, const size_t numBytes)
 {
     jassert (src != nullptr && ((ssize_t) numBytes) >= 0);
 
+    if (! openedOk())
+        return false;
+
     if (bytesInBuffer + numBytes < bufferSize)
     {
         memcpy (buffer + bytesInBuffer, src, numBytes);
@@ -102,7 +99,7 @@ bool FileOutputStream::write (const void* const src, const size_t numBytes)
         }
         else
         {
-            const ssize_t bytesWritten = writeInternal (src, numBytes);
+            auto bytesWritten = writeInternal (src, numBytes);
 
             if (bytesWritten < 0)
                 return false;

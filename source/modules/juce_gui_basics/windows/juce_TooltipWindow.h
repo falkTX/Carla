@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -32,11 +24,15 @@ namespace juce
     A window that displays a pop-up tooltip when the mouse hovers over another component.
 
     To enable tooltips in your app, just create a single instance of a TooltipWindow
-    object. Note that if you instantiate more than one instance of this class, you'll
-    end up with multiple tooltips being shown! This is a common problem when compiling
-    audio plug-ins with JUCE: depending on the way you instantiate TooltipWindow,
-    you may end up with a TooltipWindow for each plug-in instance. To avoid this use a
-    SharedResourcePointer to instantiate the TooltipWindow only once.
+    object. Note that if you instantiate more than one instance of this class with the
+    same parentComponent (even if both TooltipWindow's parentComponent is nil), you'll
+    end up with multiple tooltips being shown! To avoid this use a SharedResourcePointer
+    to instantiate the TooltipWindow only once.
+
+    For audio plug-ins (which should not be opening native windows) it is better
+    to add a TooltipWindow as a member variable to the editor and ensure that the
+    editor is the parentComponent of your TooltipWindow. This will ensure that your
+    TooltipWindow is scaled according to your editor and the DAWs scaling setting.
 
     The TooltipWindow object will then stay invisible, waiting until the mouse
     hovers for the specified length of time - it will then see if it's currently
@@ -44,6 +40,8 @@ namespace juce
     it will make itself visible to show the tooltip in the appropriate place.
 
     @see TooltipClient, SettableTooltipClient, SharedResourcePointer
+
+    @tags{GUI}
 */
 class JUCE_API  TooltipWindow  : public Component,
                                  private Timer
@@ -59,7 +57,7 @@ public:
         To change the style of tooltips, see the LookAndFeel class for its tooltip
         methods.
 
-        @param parentComponent  if set to 0, the TooltipWindow will appear on the desktop,
+        @param parentComponent  if set to nullptr, the TooltipWindow will appear on the desktop,
                                 otherwise the tooltip will be added to the given parent
                                 component.
         @param millisecondsBeforeTipAppears     the time for which the mouse has to stay still
@@ -71,7 +69,7 @@ public:
                             int millisecondsBeforeTipAppears = 700);
 
     /** Destructor. */
-    ~TooltipWindow();
+    ~TooltipWindow() override;
 
     //==============================================================================
     /** Changes the time before the tip appears.
@@ -111,7 +109,7 @@ public:
     */
     struct JUCE_API  LookAndFeelMethods
     {
-        virtual ~LookAndFeelMethods() {}
+        virtual ~LookAndFeelMethods() = default;
 
         /** returns the bounds for a tooltip at the given screen coordinate, constrained within the given desktop area. */
         virtual Rectangle<int> getTooltipBounds (const String& tipText, Point<int> screenPos, Rectangle<int> parentArea) = 0;

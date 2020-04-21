@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -32,6 +24,8 @@ namespace juce
     A component that draws an outline around itself and has an optional title at
     the top, for drawing an outline around a group of controls.
 
+
+    @tags{GUI}
 */
 class JUCE_API  GroupComponent    : public Component
 {
@@ -42,11 +36,11 @@ public:
         @param componentName    the name to give the component
         @param labelText        the text to show at the top of the outline
     */
-    GroupComponent (const String& componentName = String(),
-                    const String& labelText = String());
+    GroupComponent (const String& componentName = {},
+                    const String& labelText = {});
 
     /** Destructor. */
-    ~GroupComponent();
+    ~GroupComponent() override;
 
     //==============================================================================
     /** Changes the text that's shown at the top of the component. */
@@ -56,15 +50,12 @@ public:
     String getText() const;
 
     /** Sets the positioning of the text label.
-
         (The default is Justification::left)
-
         @see getTextLabelPosition
     */
     void setTextLabelPosition (Justification justification);
 
     /** Returns the current text label position.
-
         @see setTextLabelPosition
     */
     Justification getTextLabelPosition() const noexcept           { return justification; }
@@ -87,7 +78,7 @@ public:
     /** This abstract base class is implemented by LookAndFeel classes. */
     struct JUCE_API  LookAndFeelMethods
     {
-        virtual ~LookAndFeelMethods() {}
+        virtual ~LookAndFeelMethods() = default;
 
         virtual void drawGroupComponentOutline (Graphics&, int w, int h, const String& text,
                                                 const Justification&, GroupComponent&) = 0;

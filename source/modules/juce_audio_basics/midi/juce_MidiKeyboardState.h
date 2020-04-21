@@ -31,13 +31,15 @@ class MidiKeyboardState;
     Receives events from a MidiKeyboardState object.
 
     @see MidiKeyboardState
+
+    @tags{Audio}
 */
 class JUCE_API  MidiKeyboardStateListener
 {
 public:
     //==============================================================================
-    MidiKeyboardStateListener() noexcept        {}
-    virtual ~MidiKeyboardStateListener()        {}
+    MidiKeyboardStateListener() = default;
+    virtual ~MidiKeyboardStateListener() = default;
 
     //==============================================================================
     /** Called when one of the MidiKeyboardState's keys is pressed.
@@ -71,13 +73,15 @@ public:
     Represents a piano keyboard, keeping track of which keys are currently pressed.
 
     This object can parse a stream of midi events, using them to update its idea
-    of which keys are pressed for each individiual midi channel.
+    of which keys are pressed for each individual midi channel.
 
     When keys go up or down, it can broadcast these events to listener objects.
 
     It also allows key up/down events to be triggered with its noteOn() and noteOff()
     methods, and midi messages for these events will be merged into the
     midi stream that gets processed by processNextMidiBuffer().
+
+    @tags{Audio}
 */
 class JUCE_API  MidiKeyboardState
 {
@@ -131,7 +135,7 @@ public:
         It will also trigger a synchronous callback to the listeners to tell them that the key has
         gone up.
 
-        But if the note isn't acutally down for the given channel, this method will in fact do nothing.
+        But if the note isn't actually down for the given channel, this method will in fact do nothing.
     */
     void noteOff (int midiChannel, int midiNoteNumber, float velocity);
 
@@ -189,7 +193,7 @@ public:
 private:
     //==============================================================================
     CriticalSection lock;
-    uint16 noteStates [128];
+    uint16 noteStates[128];
     MidiBuffer eventsToAdd;
     Array <MidiKeyboardStateListener*> listeners;
 

@@ -27,13 +27,11 @@ namespace juce
 /**
     Implements some basic array storage allocation functions.
 
-    This class isn't really for public use - it's used by the other
-    array classes, but might come in handy for some purposes.
+    This class isn't really for public use - it used to be part of the
+    container classes but has since been superseded by ArrayBase. Eventually
+    it will be removed from the API.
 
-    It inherits from a critical section class to allow the arrays to use
-    the "empty base class optimisation" pattern to reduce their footprint.
-
-    @see Array, OwnedArray, ReferenceCountedArray
+    @tags{Core}
 */
 template <class ElementType, class TypeOfCriticalSectionToUse>
 class ArrayAllocationBase  : public TypeOfCriticalSectionToUse
@@ -41,25 +39,20 @@ class ArrayAllocationBase  : public TypeOfCriticalSectionToUse
 public:
     //==============================================================================
     /** Creates an empty array. */
-    ArrayAllocationBase() noexcept
-        : numAllocated (0)
-    {
-    }
+    ArrayAllocationBase() = default;
 
     /** Destructor. */
-    ~ArrayAllocationBase() noexcept
-    {
-    }
+    ~ArrayAllocationBase() = default;
 
-    ArrayAllocationBase (ArrayAllocationBase<ElementType, TypeOfCriticalSectionToUse>&& other) noexcept
-        : elements (static_cast<HeapBlock<ElementType>&&> (other.elements)),
+    ArrayAllocationBase (ArrayAllocationBase&& other) noexcept
+        : elements (std::move (other.elements)),
           numAllocated (other.numAllocated)
     {
     }
 
-    ArrayAllocationBase& operator= (ArrayAllocationBase<ElementType, TypeOfCriticalSectionToUse>&& other) noexcept
+    ArrayAllocationBase& operator= (ArrayAllocationBase&& other) noexcept
     {
-        elements = static_cast<HeapBlock<ElementType>&&> (other.elements);
+        elements = std::move (other.elements);
         numAllocated = other.numAllocated;
         return *this;
     }
@@ -72,7 +65,7 @@ public:
 
         @param numElements  the number of elements that are needed
     */
-    void setAllocatedSize (const int numElements)
+    void setAllocatedSize (int numElements)
     {
         if (numAllocated != numElements)
         {
@@ -93,7 +86,7 @@ public:
 
         @param minNumElements  the minimum number of elements that are needed
     */
-    void ensureAllocatedSize (const int minNumElements)
+    void ensureAllocatedSize (int minNumElements)
     {
         if (minNumElements > numAllocated)
             setAllocatedSize ((minNumElements + minNumElements / 2 + 8) & ~7);
@@ -104,14 +97,14 @@ public:
     /** Minimises the amount of storage allocated so that it's no more than
         the given number of elements.
     */
-    void shrinkToNoMoreThan (const int maxNumElements)
+    void shrinkToNoMoreThan (int maxNumElements)
     {
         if (maxNumElements < numAllocated)
             setAllocatedSize (maxNumElements);
     }
 
     /** Swap the contents of two objects. */
-    void swapWith (ArrayAllocationBase <ElementType, TypeOfCriticalSectionToUse>& other) noexcept
+    void swapWith (ArrayAllocationBase& other) noexcept
     {
         elements.swapWith (other.elements);
         std::swap (numAllocated, other.numAllocated);
@@ -119,7 +112,7 @@ public:
 
     //==============================================================================
     HeapBlock<ElementType> elements;
-    int numAllocated;
+    int numAllocated = 0;
 
 private:
     JUCE_DECLARE_NON_COPYABLE (ArrayAllocationBase)

@@ -24,7 +24,6 @@ namespace juce
 {
 
 MPESynthesiserVoice::MPESynthesiserVoice()
-    : currentSampleRate (0), noteStartTime (0)
 {
 }
 
@@ -41,11 +40,6 @@ bool MPESynthesiserVoice::isCurrentlyPlayingNote (MPENote note) const noexcept
 bool MPESynthesiserVoice::isPlayingButReleased() const noexcept
 {
     return isActive() && currentlyPlayingNote.keyState == MPENote::off;
-}
-
-bool MPESynthesiserVoice::wasStartedBefore (const MPESynthesiserVoice& other) const noexcept
-{
-    return noteStartTime < other.noteStartTime;
 }
 
 void MPESynthesiserVoice::clearCurrentNote() noexcept

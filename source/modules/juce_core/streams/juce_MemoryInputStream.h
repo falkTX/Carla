@@ -29,6 +29,8 @@ namespace juce
 
     This can either be used to refer to a shared block of memory, or can make its
     own internal copy of the data when the MemoryInputStream is created.
+
+    @tags{Core}
 */
 class JUCE_API  MemoryInputStream  : public InputStream
 {
@@ -60,8 +62,11 @@ public:
     MemoryInputStream (const MemoryBlock& data,
                        bool keepInternalCopyOfData);
 
+    /** Creates a stream by moving from a MemoryBlock. */
+    MemoryInputStream (MemoryBlock&& blockToTake);
+
     /** Destructor. */
-    ~MemoryInputStream();
+    ~MemoryInputStream() override;
 
     /** Returns a pointer to the source data block from which this stream is reading. */
     const void* getData() const noexcept        { return data; }
@@ -71,18 +76,17 @@ public:
 
     //==============================================================================
     int64 getPosition() override;
-    bool setPosition (int64 pos) override;
+    bool setPosition (int64) override;
     int64 getTotalLength() override;
     bool isExhausted() override;
     int read (void* destBuffer, int maxBytesToRead) override;
+    void skipNextBytes (int64 numBytesToSkip) override;
 
 private:
     //==============================================================================
     const void* data;
-    size_t dataSize, position;
-    HeapBlock<char> internalCopy;
-
-    void createInternalCopy();
+    size_t dataSize, position = 0;
+    MemoryBlock internalCopy;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MemoryInputStream)
 };

@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -40,17 +32,17 @@ namespace juce
     see the FileDragAndDropTarget class.
 
     @see DragAndDropContainer, FileDragAndDropTarget
+
+    @tags{GUI}
 */
 class JUCE_API  DragAndDropTarget
 {
 public:
     /** Destructor. */
-    virtual ~DragAndDropTarget()  {}
+    virtual ~DragAndDropTarget() = default;
 
     //==============================================================================
-    /** Contains details about the source of a drag-and-drop operation.
-        The contents of this
-    */
+    /** Contains details about the source of a drag-and-drop operation. */
     class JUCE_API  SourceDetails
     {
     public:
@@ -76,7 +68,7 @@ public:
         dragged.
 
         @param dragSourceDetails    contains information about the source of the drag operation.
-        @returns                    true if this component wants to receive the other callbacks regarging this
+        @returns                    true if this component wants to receive the other callbacks regarding this
                                     type of object; if it returns false, no other callbacks will be made.
     */
     virtual bool isInterestedInDragSource (const SourceDetails& dragSourceDetails) = 0;
@@ -136,18 +128,6 @@ public:
         image will not be shown when the cursor is over this target.
     */
     virtual bool shouldDrawDragImageWhenOver();
-
-
-    //==============================================================================
-private:
-   #if JUCE_CATCH_DEPRECATED_CODE_MISUSE
-    // The parameters for these methods have changed - please update your code!
-    virtual void isInterestedInDragSource (const String&, Component*) {}
-    virtual int itemDragEnter (const String&, Component*, int, int) { return 0; }
-    virtual int itemDragMove (const String&, Component*, int, int) { return 0; }
-    virtual int itemDragExit (const String&, Component*) { return 0; }
-    virtual int itemDropped (const String&, Component*, int, int) { return 0; }
-   #endif
 };
 
 } // namespace juce

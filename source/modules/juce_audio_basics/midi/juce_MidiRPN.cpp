@@ -159,6 +159,7 @@ MidiBuffer MidiRPNGenerator::generate (int midiChannel,
     return buffer;
 }
 
+
 //==============================================================================
 //==============================================================================
 #if JUCE_UNIT_TESTS
@@ -166,7 +167,9 @@ MidiBuffer MidiRPNGenerator::generate (int midiChannel,
 class MidiRPNDetectorTests   : public UnitTest
 {
 public:
-    MidiRPNDetectorTests()  : UnitTest ("MidiRPNDetector class", "MIDI/MPE") {}
+    MidiRPNDetectorTests()
+        : UnitTest ("MidiRPNDetector class", UnitTestCategories::midi)
+    {}
 
     void runTest() override
     {
@@ -308,7 +311,9 @@ static MidiRPNDetectorTests MidiRPNDetectorUnitTests;
 class MidiRPNGeneratorTests   : public UnitTest
 {
 public:
-    MidiRPNGeneratorTests()  : UnitTest ("MidiRPNGenerator class", "MIDI/MPE") {}
+    MidiRPNGeneratorTests()
+        : UnitTest ("MidiRPNGenerator class", UnitTestCategories::midi)
+    {}
 
     void runTest() override
     {
@@ -346,14 +351,13 @@ private:
     //==============================================================================
     void expectContainsRPN (const MidiBuffer& midiBuffer, MidiRPNMessage expected)
     {
-        MidiBuffer::Iterator iter (midiBuffer);
-        MidiMessage midiMessage;
         MidiRPNMessage result = MidiRPNMessage();
         MidiRPNDetector detector;
-        int samplePosition; // not actually used, so no need to initialise.
 
-        while (iter.getNextEvent (midiMessage, samplePosition))
+        for (const auto metadata : midiBuffer)
         {
+            const auto midiMessage = metadata.getMessage();
+
             if (detector.parseControllerMessage (midiMessage.getChannel(),
                                                  midiMessage.getControllerNumber(),
                                                  midiMessage.getControllerValue(),
@@ -371,6 +375,6 @@ private:
 
 static MidiRPNGeneratorTests MidiRPNGeneratorUnitTests;
 
-#endif // JUCE_UNIT_TESTS
+#endif
 
 } // namespace juce

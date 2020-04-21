@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -29,11 +21,7 @@ namespace juce
 
 struct CustomMouseCursorInfo
 {
-    CustomMouseCursorInfo (const Image& im, int hsX, int hsY) noexcept
-        : image (im), hotspot (hsX, hsY), scaleFactor (1.0f)
-    {}
-
-    CustomMouseCursorInfo (const Image& im, Point<int> hs, float scale) noexcept
+    CustomMouseCursorInfo (const Image& im, Point<int> hs, float scale = 1.0f) noexcept
         : image (im), hotspot (hs), scaleFactor (scale)
     {}
 
@@ -41,9 +29,8 @@ struct CustomMouseCursorInfo
 
     Image image;
     const Point<int> hotspot;
-    float scaleFactor;
+    const float scaleFactor;
 
-private:
     JUCE_DECLARE_NON_COPYABLE (CustomMouseCursorInfo)
 };
 
@@ -52,18 +39,19 @@ class MouseCursor::SharedCursorHandle
 public:
     explicit SharedCursorHandle (const MouseCursor::StandardCursorType type)
         : handle (createStandardMouseCursor (type)),
-          refCount (1),
           standardType (type),
           isStandard (true)
     {
     }
 
-    SharedCursorHandle (const Image& image, Point<int> hotSpot, const float scaleFactor)
-        : handle (CustomMouseCursorInfo (image, hotSpot, scaleFactor).create()),
-          refCount (1),
+    SharedCursorHandle (const Image& image, Point<int> hotSpot, float scaleFactor)
+        : info (new CustomMouseCursorInfo (image, hotSpot, scaleFactor)),
+          handle (info->create()),
           standardType (MouseCursor::NormalCursor),
           isStandard (false)
     {
+        // your hotspot needs to be within the bounds of the image!
+        jassert (image.getBounds().contains (hotSpot));
     }
 
     ~SharedCursorHandle()
@@ -76,8 +64,7 @@ public:
         jassert (isPositiveAndBelow (type, MouseCursor::NumStandardCursorTypes));
 
         const SpinLock::ScopedLockType sl (lock);
-
-        SharedCursorHandle*& c = getSharedCursor (type);
+        auto& c = getSharedCursor (type);
 
         if (c == nullptr)
             c = new SharedCursorHandle (type);
@@ -112,19 +99,24 @@ public:
         }
     }
 
-    void* getHandle() const noexcept        { return handle; }
+    void* getHandle() const noexcept                            { return handle; }
+    void setHandle (void* newHandle)                            { handle = newHandle; }
+
+    MouseCursor::StandardCursorType getType() const noexcept    { return standardType; }
+    CustomMouseCursorInfo* getCustomInfo() const noexcept       { return info.get(); }
 
 private:
-    void* const handle;
-    Atomic <int> refCount;
+    std::unique_ptr<CustomMouseCursorInfo> info;
+    void* handle;
+    Atomic<int> refCount { 1 };
     const MouseCursor::StandardCursorType standardType;
     const bool isStandard;
     static SpinLock lock;
 
     static SharedCursorHandle*& getSharedCursor (const MouseCursor::StandardCursorType type)
     {
-        static SharedCursorHandle* cursors [MouseCursor::NumStandardCursorTypes] = {};
-        return cursors [type];
+        static SharedCursorHandle* cursors[MouseCursor::NumStandardCursorTypes] = {};
+        return cursors[type];
     }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SharedCursorHandle)
@@ -134,7 +126,6 @@ SpinLock MouseCursor::SharedCursorHandle::lock;
 
 //==============================================================================
 MouseCursor::MouseCursor() noexcept
-    : cursorHandle (nullptr)
 {
 }
 
@@ -143,13 +134,13 @@ MouseCursor::MouseCursor (const StandardCursorType type)
 {
 }
 
-MouseCursor::MouseCursor (const Image& image, const int hotSpotX, const int hotSpotY)
-    : cursorHandle (new SharedCursorHandle (image, Point<int> (hotSpotX, hotSpotY), 1.0f))
+MouseCursor::MouseCursor (const Image& image, int hotSpotX, int hotSpotY)
+    : MouseCursor (image, hotSpotX, hotSpotY, 1.0f)
 {
 }
 
-MouseCursor::MouseCursor (const Image& image, const int hotSpotX, const int hotSpotY, float scaleFactor)
-    : cursorHandle (new SharedCursorHandle (image, Point<int> (hotSpotX, hotSpotY), scaleFactor))
+MouseCursor::MouseCursor (const Image& image, int hotSpotX, int hotSpotY, float scaleFactor)
+    : cursorHandle (new SharedCursorHandle (image, { hotSpotX, hotSpotY }, scaleFactor))
 {
 }
 

@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -30,6 +22,8 @@ namespace juce
 //==============================================================================
 /**
     Base class for Component::Positioners that are based upon relative coordinates.
+
+    @tags{GUI}
 */
 class JUCE_API  RelativeCoordinatePositionerBase  : public Component::Positioner,
                                                     public ComponentListener,
@@ -37,14 +31,14 @@ class JUCE_API  RelativeCoordinatePositionerBase  : public Component::Positioner
 {
 public:
     RelativeCoordinatePositionerBase (Component&);
-    ~RelativeCoordinatePositionerBase();
+    ~RelativeCoordinatePositionerBase() override;
 
-    void componentMovedOrResized (Component&, bool, bool);
-    void componentParentHierarchyChanged (Component&);
-    void componentChildrenChanged (Component&);
-    void componentBeingDeleted (Component&);
-    void markersChanged (MarkerList*);
-    void markerListBeingDeleted (MarkerList*);
+    void componentMovedOrResized (Component&, bool, bool) override;
+    void componentParentHierarchyChanged (Component&) override;
+    void componentChildrenChanged (Component&) override;
+    void componentBeingDeleted (Component&) override;
+    void markersChanged (MarkerList*) override;
+    void markerListBeingDeleted (MarkerList*) override;
 
     void apply();
 
@@ -58,12 +52,9 @@ public:
     public:
         ComponentScope (Component&);
 
-        // Suppress a VS2013 compiler warning
-        ComponentScope& operator= (const ComponentScope&) = delete;
-
-        Expression getSymbolValue (const String& symbol) const;
-        void visitRelativeScope (const String& scopeName, Visitor&) const;
-        String getScopeUID() const;
+        Expression getSymbolValue (const String& symbol) const override;
+        void visitRelativeScope (const String& scopeName, Visitor&) const override;
+        String getScopeUID() const override;
 
     protected:
         Component& component;

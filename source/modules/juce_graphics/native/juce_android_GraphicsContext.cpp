@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -29,7 +21,7 @@ namespace juce
 
 namespace GraphicsHelpers
 {
-    jobject createPaint (Graphics::ResamplingQuality quality)
+    LocalRef<jobject> createPaint (Graphics::ResamplingQuality quality)
     {
         jint constructorFlags = 1 /*ANTI_ALIAS_FLAG*/
                                 | 4 /*DITHER_FLAG*/
@@ -38,12 +30,12 @@ namespace GraphicsHelpers
         if (quality > Graphics::lowResamplingQuality)
             constructorFlags |= 2; /*FILTER_BITMAP_FLAG*/
 
-        return getEnv()->NewObject (Paint, Paint.constructor, constructorFlags);
+        return LocalRef<jobject>(getEnv()->NewObject (AndroidPaint, AndroidPaint.constructor, constructorFlags));
     }
 
-    const jobject createMatrix (JNIEnv* env, const AffineTransform& t)
+    const LocalRef<jobject> createMatrix (JNIEnv* env, const AffineTransform& t)
     {
-        jobject m = env->NewObject (Matrix, Matrix.constructor);
+        auto m = LocalRef<jobject>(env->NewObject (AndroidMatrix, AndroidMatrix.constructor));
 
         jfloat values[9] = { t.mat00, t.mat01, t.mat02,
                              t.mat10, t.mat11, t.mat12,
@@ -52,7 +44,7 @@ namespace GraphicsHelpers
         jfloatArray javaArray = env->NewFloatArray (9);
         env->SetFloatArrayRegion (javaArray, 0, 9, values);
 
-        env->CallVoidMethod (m, Matrix.setValues, javaArray);
+        env->CallVoidMethod (m, AndroidMatrix.setValues, javaArray);
         env->DeleteLocalRef (javaArray);
 
         return m;

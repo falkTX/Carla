@@ -1,21 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
+   This file is part of the JUCE 6 technical preview.
    Copyright (c) 2017 - ROLI Ltd.
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
-
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For this technical preview, this file is not subject to commercial licensing.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -41,10 +33,12 @@ AudioProcessorEditor::AudioProcessorEditor (AudioProcessor* p) noexcept  : proce
 
 AudioProcessorEditor::~AudioProcessorEditor()
 {
+    splashScreen.deleteAndZero();
+
     // if this fails, then the wrapper hasn't called editorBeingDeleted() on the
     // filter for some reason..
     jassert (processor.getActiveEditor() != this);
-    removeComponentListener (resizeListener);
+    removeComponentListener (resizeListener.get());
 }
 
 void AudioProcessorEditor::setControlHighlight (ParameterControlHighlightInfo) {}
@@ -55,10 +49,28 @@ void AudioProcessorEditor::hostMIDIControllerIsAvailable (bool)                {
 
 void AudioProcessorEditor::initialise()
 {
+    /*
+      ==========================================================================
+       In accordance with the terms of the JUCE 5 End-Use License Agreement, the
+       JUCE Code in SECTION A cannot be removed, changed or otherwise rendered
+       ineffective unless you have a JUCE Indie or Pro license, or are using
+       JUCE under the GPL v3 license.
+
+       End User License Agreement: www.juce.com/juce-5-licence
+      ==========================================================================
+    */
+
+    // BEGIN SECTION A
+
+    splashScreen = new JUCESplashScreen (*this);
+
+    // END SECTION A
+
     resizable = false;
 
     attachConstrainer (&defaultConstrainer);
-    addComponentListener (resizeListener = new AudioProcessorEditorListener (*this));
+    resizeListener.reset (new AudioProcessorEditorListener (*this));
+    addComponentListener (resizeListener.get());
 }
 
 //==============================================================================
@@ -68,18 +80,13 @@ void AudioProcessorEditor::setResizable (const bool shouldBeResizable, const boo
     {
         resizable = shouldBeResizable;
 
-        if (! resizable)
+        if (! resizable && constrainer == &defaultConstrainer)
         {
-            setConstrainer (&defaultConstrainer);
+            auto width = getWidth();
+            auto height = getHeight();
 
-            if (auto w = getWidth())
-            {
-                if (auto h = getHeight())
-                {
-                    defaultConstrainer.setSizeLimits (w, h, w, h);
-                    resized();
-                }
-            }
+            if (width > 0 && height > 0)
+                defaultConstrainer.setSizeLimits (width, height, width, height);
         }
     }
 
@@ -88,14 +95,9 @@ void AudioProcessorEditor::setResizable (const bool shouldBeResizable, const boo
     if (shouldHaveCornerResizer != (resizableCorner != nullptr))
     {
         if (shouldHaveCornerResizer)
-        {
-            Component::addChildComponent (resizableCorner = new ResizableCornerComponent (this, constrainer));
-            resizableCorner->setAlwaysOnTop (true);
-        }
+            attachResizableCornerComponent();
         else
-        {
-            resizableCorner = nullptr;
-        }
+            resizableCorner.reset();
     }
 }
 
@@ -125,8 +127,14 @@ void AudioProcessorEditor::setConstrainer (ComponentBoundsConstrainer* newConstr
 {
     if (constrainer != newConstrainer)
     {
-        resizable = true;
+        if (newConstrainer != nullptr)
+            resizable = (newConstrainer->getMinimumWidth()  != newConstrainer->getMaximumWidth()
+                      || newConstrainer->getMinimumHeight() != newConstrainer->getMaximumHeight());
+
         attachConstrainer (newConstrainer);
+
+        if (resizableCorner != nullptr)
+            attachResizableCornerComponent();
     }
 }
 
@@ -139,6 +147,14 @@ void AudioProcessorEditor::attachConstrainer (ComponentBoundsConstrainer* newCon
     }
 }
 
+void AudioProcessorEditor::attachResizableCornerComponent()
+{
+    resizableCorner.reset (new ResizableCornerComponent (this, constrainer));
+    Component::addChildComponent (resizableCorner.get());
+    resizableCorner->setAlwaysOnTop (true);
+    editorResized (true);
+}
+
 void AudioProcessorEditor::setBoundsConstrained (Rectangle<int> newBounds)
 {
     if (constrainer != nullptr)
@@ -149,6 +165,12 @@ void AudioProcessorEditor::setBoundsConstrained (Rectangle<int> newBounds)
 
 void AudioProcessorEditor::editorResized (bool wasResized)
 {
+    // The host needs to be able to rescale the plug-in editor and applying your own transform will
+    // obliterate it! If you want to scale the whole of your UI use Desktop::setGlobalScaleFactor(),
+    // or, for applying other transforms, consider putting the component you want to transform
+    // in a child of the editor and transform that instead.
+    jassert (getTransform() == hostScaleTransform);
+
     if (wasResized)
     {
         bool resizerHidden = false;
@@ -182,8 +204,25 @@ void AudioProcessorEditor::updatePeer()
 
 void AudioProcessorEditor::setScaleFactor (float newScale)
 {
-    setTransform (AffineTransform::scale (newScale));
+    hostScaleTransform = AffineTransform::scale (newScale);
+    setTransform (hostScaleTransform);
+
     editorResized (true);
+}
+
+//==============================================================================
+typedef ComponentPeer* (*createUnityPeerFunctionType) (Component&);
+createUnityPeerFunctionType juce_createUnityPeerFn = nullptr;
+
+ComponentPeer* AudioProcessorEditor::createNewPeer (int styleFlags, void* nativeWindow)
+{
+    if (juce_createUnityPeerFn != nullptr)
+    {
+        ignoreUnused (styleFlags, nativeWindow);
+        return juce_createUnityPeerFn (*this);
+    }
+
+    return Component::createNewPeer (styleFlags, nativeWindow);
 }
 
 } // namespace juce
