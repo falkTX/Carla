@@ -18,7 +18,7 @@
 
 #include "pluginterfaces/base/fplatform.h"
 #if SMTG_CPP11_STDLIBSUPPORT
-#include <memory>
+#include <utility>
 #endif
 
 //------------------------------------------------------------------------
@@ -34,9 +34,9 @@ namespace Steinberg {
  - handles refCount of the interface
  - Usage example:
  \code
-    IPtr<IPath> path (sharedPath);
-    if (path)
-        path->ascend ();
+	IPtr<IPath> path (sharedPath);
+	if (path)
+		path->ascend ();
  \endcode
  */
 //------------------------------------------------------------------------
@@ -75,15 +75,47 @@ public:
 	inline I* get () const { return ptr; }
 
 #if SMTG_CPP11_STDLIBSUPPORT
-	inline IPtr (IPtr<I>&& movePtr) : ptr (nullptr) { *this = std::move (movePtr); }
+	inline IPtr (IPtr<I>&& movePtr) SMTG_NOEXCEPT : ptr (movePtr.take ()) { }
+	
+	template <typename T>
+	inline IPtr (IPtr<T>&& movePtr) SMTG_NOEXCEPT : ptr (movePtr.take ()) {  }
+
 	inline IPtr& operator= (IPtr<I>&& movePtr)
 	{
 		if (ptr)
 			ptr->release ();
-		ptr = movePtr.ptr;
-		movePtr.ptr = nullptr;
+
+		ptr = movePtr.take ();
 		return *this;
 	}
+	
+	template <typename T>
+	inline IPtr& operator= (IPtr<T>&& movePtr) 
+	{
+		if (ptr)
+			ptr->release ();
+		
+		ptr = movePtr.take ();
+		return *this;
+	}
+
+	inline void reset (I* obj = nullptr) 
+	{
+		if (ptr)
+			ptr->release();
+		ptr = obj;
+	}
+
+	I* take () SMTG_NOEXCEPT 
+	{
+		I* out = ptr; 
+		ptr = nullptr; 
+		return out;
+	}
+
+	template <typename T>
+	static IPtr<T> adopt (T* obj) SMTG_NOEXCEPT { return IPtr<T> (obj, false); }
+
 #endif
 //------------------------------------------------------------------------
 protected:
@@ -116,8 +148,11 @@ inline IPtr<I>::IPtr () : ptr (0)
 template <class I>
 inline IPtr<I>::~IPtr ()
 {
-	if (ptr)
+	if (ptr) 
+	{
 		ptr->release ();
+		ptr = nullptr;  //TODO_CORE: how much does this cost? is this something hiding for us?
+	}
 }
 
 //------------------------------------------------------------------------
@@ -231,10 +266,10 @@ namespace Detail {
 struct Adopt;
 } // Detail
 
-/** Strong typedef for shared reference counted objects.
- *	Use SKI::adopt to unwrap the provided object.
- * @tparam T Referenced counted type.
- */
+/** Strong typedef for shared reference counted objects. 
+  *	Use SKI::adopt to unwrap the provided object.
+  * @tparam T Referenced counted type.
+  */
 template <typename T>
 class Shared
 {
@@ -242,11 +277,11 @@ class Shared
 	T* obj = nullptr;
 };
 
-/** Strong typedef for transferring the ownership of reference counted objects.
- *	Use SKI::adopt to unwrap the provided object.
- * After calling adopt the reference in this object is null.
- * @tparam T Referenced counted type.
- */
+/** Strong typedef for transferring the ownership of reference counted objects. 
+  *	Use SKI::adopt to unwrap the provided object. 
+  * After calling adopt the reference in this object is null.
+  * @tparam T Referenced counted type.
+  */
 template <typename T>
 class Owned
 {
@@ -254,32 +289,32 @@ class Owned
 	T* obj = nullptr;
 };
 
-/** Strong typedef for using reference counted objects.
- *	Use SKI::adopt to unwrap the provided object.
- * After calling adopt the reference in this object is null.
- * @tparam T Referenced counted type.
- */
+/** Strong typedef for using reference counted objects. 
+  *	Use SKI::adopt to unwrap the provided object. 
+  * After calling adopt the reference in this object is null.
+  * @tparam T Referenced counted type.
+  */
 template <typename T>
 class Used
 {
 	friend struct Detail::Adopt;
 	T* obj = nullptr;
 };
-
+	
 namespace Detail {
 
-struct Adopt
+struct Adopt 
 {
 	template <typename T>
-	static IPtr<T> adopt (Shared<T>& ref)
-	{
+	static IPtr<T> adopt (Shared<T>& ref) 
+	{ 
 		using Steinberg::shared;
-		return shared (ref.obj);
+		return shared (ref.obj); 
 	}
 
 	template <typename T>
-	static IPtr<T> adopt (Owned<T>& ref)
-	{
+	static IPtr<T> adopt (Owned<T>& ref) 
+	{ 
 		using Steinberg::owned;
 		IPtr<T> out = owned (ref.obj);
 		ref.obj = nullptr;
@@ -293,11 +328,11 @@ struct Adopt
 	}
 
 	template <template <typename> class OwnerType, typename T>
-	static OwnerType<T> toOwnerType (T* obj)
-	{
+	static OwnerType<T> toOwnerType (T* obj) 
+	{ 
 		OwnerType<T> out;
 		out.obj = obj;
-		return out;
+		return out; 
 	}
 };
 

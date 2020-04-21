@@ -8,7 +8,7 @@
 //
 //-----------------------------------------------------------------------------
 // LICENSE
-// (c) 2017, Steinberg Media Technologies GmbH, All Rights Reserved
+// (c) 2019, Steinberg Media Technologies GmbH, All Rights Reserved
 //-----------------------------------------------------------------------------
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -42,11 +42,8 @@ namespace Steinberg {
 //  CPluginView implementation
 //------------------------------------------------------------------------
 CPluginView::CPluginView (const ViewRect* _rect)
-: rect (0, 0, 0, 0)
-, systemWindow (0)
-, plugFrame (0)
+: rect (0, 0, 0, 0), systemWindow (nullptr), plugFrame (nullptr)
 {
-	//TODO FUNKNOWN_CTOR
 	if (_rect)
 		rect = *_rect;
 }
@@ -54,22 +51,7 @@ CPluginView::CPluginView (const ViewRect* _rect)
 //------------------------------------------------------------------------
 CPluginView::~CPluginView ()
 {
-	//TODO FUNKNOWN_DTOR
 }
-
-//------------------------------------------------------------------------
-// TODO IMPLEMENT_REFCOUNT (CPluginView)
-
-//------------------------------------------------------------------------
-/* TODO
-tresult PLUGIN_API CPluginView::queryInterface (const char* iid, void** obj)
-{
-	QUERY_INTERFACE (iid, obj, Steinberg::FUnknown::iid, IPlugView)
-	QUERY_INTERFACE (iid, obj, Steinberg::IPlugView::iid,  IPlugView)
-	*obj = 0;
-	return kNoInterface;
-}*/
-
 
 //------------------------------------------------------------------------
 tresult PLUGIN_API CPluginView::isPlatformTypeSupported (FIDString /*type*/)
@@ -81,7 +63,7 @@ tresult PLUGIN_API CPluginView::isPlatformTypeSupported (FIDString /*type*/)
 tresult PLUGIN_API CPluginView::attached (void* parent, FIDString /*type*/)
 {
 	systemWindow = parent;
-	
+
 	attachedToParent ();
 	return kResultOk;
 }
@@ -89,7 +71,7 @@ tresult PLUGIN_API CPluginView::attached (void* parent, FIDString /*type*/)
 //------------------------------------------------------------------------
 tresult PLUGIN_API CPluginView::removed ()
 {
-	systemWindow = 0;
+	systemWindow = nullptr;
 
 	removedFromParent ();
 	return kResultOk;

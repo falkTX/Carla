@@ -16,14 +16,14 @@
 
 #include "ustring.h"
 
-#if WINDOWS
+#if SMTG_OS_WINDOWS
 #include <stdio.h>
 #pragma warning (disable : 4996)
 
-#elif MAC
+#elif SMTG_OS_MACOS
 #include <CoreFoundation/CoreFoundation.h>
 
-#elif LINUX
+#elif SMTG_OS_LINUX
 #include <cstring>
 #include <string>
 #include <codecvt>
@@ -39,7 +39,7 @@
 namespace Steinberg {
 
 //------------------------------------------------------------------------
-#if LINUX
+#if SMTG_OS_LINUX
 
 //------------------------------------------------------------------------
 namespace {
@@ -57,7 +57,7 @@ Converter& converter ()
 } // anonymous
 
 //------------------------------------------------------------------------
-#endif // LINUX
+#endif // SMTG_OS_LINUX
 
 //------------------------------------------------------------------------
 /** Copy strings of different character width. */
@@ -142,7 +142,7 @@ const UString& UString::toAscii (char* dst, int32 dstSize) const
 //------------------------------------------------------------------------
 bool UString::scanFloat (double& value) const
 {
-#if WINDOWS
+#if SMTG_OS_WINDOWS
 	return swscanf ((const wchar_t*)thisBuffer, L"%lf", &value) != -1;
 
 #elif TARGET_API_MAC_CARBON
@@ -155,7 +155,7 @@ bool UString::scanFloat (double& value) const
 	}
 	return false;
 
-#elif LINUX
+#elif SMTG_OS_LINUX
 	auto str = converter ().to_bytes (thisBuffer);
 	return sscanf (str.data (), "%lf", &value) == 1;
 
@@ -169,9 +169,9 @@ bool UString::scanFloat (double& value) const
 //------------------------------------------------------------------------
 bool UString::printFloat (double value, int32 precision)
 {
-#if WINDOWS
+#if SMTG_OS_WINDOWS
 	return swprintf ((wchar_t*)thisBuffer, L"%.*lf", precision, value) != -1;
-#elif MAC
+#elif SMTG_OS_MACOS
 	bool result = false;
 	CFStringRef cfStr = CFStringCreateWithFormat (0, 0, CFSTR("%.*lf"), precision, value);
 	if (cfStr)
@@ -183,7 +183,7 @@ bool UString::printFloat (double value, int32 precision)
 		return true;
 	}
 	return result;
-#elif LINUX
+#elif SMTG_OS_LINUX
 	auto utf8Buffer = reinterpret_cast<char*> (thisBuffer);
 	auto len = snprintf (utf8Buffer, thisSize, "%.*lf", precision, value);
 	if (len > 0)
@@ -207,10 +207,10 @@ bool UString::printFloat (double value, int32 precision)
 //------------------------------------------------------------------------
 bool UString::scanInt (int64& value) const
 {
-#if WINDOWS
+#if SMTG_OS_WINDOWS
 	return swscanf ((const wchar_t*)thisBuffer, L"%I64d", &value) != -1;
 
-#elif MAC
+#elif SMTG_OS_MACOS
 	CFStringRef cfStr = CFStringCreateWithBytes (0, (const UInt8 *)thisBuffer, getLength () * 2, kCFStringEncodingUTF16, false);
 	if (cfStr)
 	{
@@ -220,7 +220,7 @@ bool UString::scanInt (int64& value) const
 	}
 	return false;
 
-#elif LINUX
+#elif SMTG_OS_LINUX
 	auto str = converter ().to_bytes (thisBuffer);
 	return sscanf (str.data (), "%lld", &value) == 1;
 
@@ -234,10 +234,10 @@ bool UString::scanInt (int64& value) const
 //------------------------------------------------------------------------
 bool UString::printInt (int64 value)
 {
-#if WINDOWS
+#if SMTG_OS_WINDOWS
 	return swprintf ((wchar_t*)thisBuffer, L"%I64d", value) != -1;
 
-#elif MAC
+#elif SMTG_OS_MACOS
 	CFStringRef cfStr = CFStringCreateWithFormat (0, 0, CFSTR("%lld"), value);
 	if (cfStr)
 	{
@@ -248,7 +248,7 @@ bool UString::printInt (int64 value)
 		return true;
 	}
 	return false;
-#elif LINUX
+#elif SMTG_OS_LINUX
 	auto utf8Buffer = reinterpret_cast<char*> (thisBuffer);
 	auto len = snprintf (utf8Buffer, thisSize, "%lld", value);
 	if (len > 0)

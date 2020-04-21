@@ -8,7 +8,7 @@
 //
 //-----------------------------------------------------------------------------
 // LICENSE
-// (c) 2017, Steinberg Media Technologies GmbH, All Rights Reserved
+// (c) 2019, Steinberg Media Technologies GmbH, All Rights Reserved
 //-----------------------------------------------------------------------------
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -67,28 +67,28 @@ public:
 	EditController ();
 
 	//---from IEditController-------
-	virtual tresult PLUGIN_API setComponentState (IBStream* state) SMTG_OVERRIDE;
-	virtual tresult PLUGIN_API setState (IBStream* state) SMTG_OVERRIDE;
-	virtual tresult PLUGIN_API getState (IBStream* state) SMTG_OVERRIDE;
-	virtual int32 PLUGIN_API getParameterCount () SMTG_OVERRIDE;
-	virtual tresult PLUGIN_API getParameterInfo (int32 paramIndex, ParameterInfo& info) SMTG_OVERRIDE;
-	virtual tresult PLUGIN_API getParamStringByValue (ParamID tag, ParamValue valueNormalized, String128 string) SMTG_OVERRIDE;
-	virtual tresult PLUGIN_API getParamValueByString (ParamID tag, TChar* string, ParamValue& valueNormalized) SMTG_OVERRIDE;
-	virtual ParamValue PLUGIN_API normalizedParamToPlain (ParamID tag, ParamValue valueNormalized) SMTG_OVERRIDE;
-	virtual ParamValue PLUGIN_API plainParamToNormalized (ParamID tag, ParamValue plainValue) SMTG_OVERRIDE;
-	virtual ParamValue PLUGIN_API getParamNormalized (ParamID tag) SMTG_OVERRIDE;
-	virtual tresult PLUGIN_API setParamNormalized (ParamID tag, ParamValue value) SMTG_OVERRIDE;
-	virtual tresult PLUGIN_API setComponentHandler (IComponentHandler* handler) SMTG_OVERRIDE;
-	virtual IPlugView* PLUGIN_API createView (FIDString name) SMTG_OVERRIDE;
+	tresult PLUGIN_API setComponentState (IBStream* state) SMTG_OVERRIDE;
+	tresult PLUGIN_API setState (IBStream* state) SMTG_OVERRIDE;
+	tresult PLUGIN_API getState (IBStream* state) SMTG_OVERRIDE;
+	int32 PLUGIN_API getParameterCount () SMTG_OVERRIDE;
+	tresult PLUGIN_API getParameterInfo (int32 paramIndex, ParameterInfo& info) SMTG_OVERRIDE;
+	tresult PLUGIN_API getParamStringByValue (ParamID tag, ParamValue valueNormalized, String128 string) SMTG_OVERRIDE;
+	tresult PLUGIN_API getParamValueByString (ParamID tag, TChar* string, ParamValue& valueNormalized) SMTG_OVERRIDE;
+	ParamValue PLUGIN_API normalizedParamToPlain (ParamID tag, ParamValue valueNormalized) SMTG_OVERRIDE;
+	ParamValue PLUGIN_API plainParamToNormalized (ParamID tag, ParamValue plainValue) SMTG_OVERRIDE;
+	ParamValue PLUGIN_API getParamNormalized (ParamID tag) SMTG_OVERRIDE;
+	tresult PLUGIN_API setParamNormalized (ParamID tag, ParamValue value) SMTG_OVERRIDE;
+	tresult PLUGIN_API setComponentHandler (IComponentHandler* handler) SMTG_OVERRIDE;
+	IPlugView* PLUGIN_API createView (FIDString /*name*/) SMTG_OVERRIDE {return nullptr;}
 
 	//---from IEditController2-------
-	virtual tresult PLUGIN_API setKnobMode (KnobMode mode) SMTG_OVERRIDE { hostKnobMode = mode; return kResultTrue; }
-	virtual tresult PLUGIN_API openHelp (TBool /*onlyCheck*/) SMTG_OVERRIDE {return kResultFalse;}
-	virtual tresult PLUGIN_API openAboutBox (TBool /*onlyCheck*/) SMTG_OVERRIDE {return kResultFalse;}
+	tresult PLUGIN_API setKnobMode (KnobMode mode) SMTG_OVERRIDE { hostKnobMode = mode; return kResultTrue; }
+	tresult PLUGIN_API openHelp (TBool /*onlyCheck*/) SMTG_OVERRIDE {return kResultFalse;}
+	tresult PLUGIN_API openAboutBox (TBool /*onlyCheck*/) SMTG_OVERRIDE {return kResultFalse;}
 
 	//---from ComponentBase---------
-	virtual tresult PLUGIN_API initialize (FUnknown* context) SMTG_OVERRIDE;
-	virtual tresult PLUGIN_API terminate  () SMTG_OVERRIDE;
+	tresult PLUGIN_API initialize (FUnknown* context) SMTG_OVERRIDE;
+	tresult PLUGIN_API terminate  () SMTG_OVERRIDE;
 
 	//---Internal Methods-------
 	virtual tresult beginEdit (ParamID tag);	///< to be called before a serie of performEdit
@@ -124,7 +124,7 @@ public:
 		DEF_INTERFACE (IEditController)
 		DEF_INTERFACE (IEditController2)
 	END_DEFINE_INTERFACES (ComponentBase)
-	REFCOUNT_METHODS(ComponentBase)
+	REFCOUNT_METHODS (ComponentBase)
 //------------------------------------------------------------------------
 protected:
 	IComponentHandler* componentHandler;
@@ -135,62 +135,61 @@ protected:
 	static KnobMode hostKnobMode;
 };
 
-
 //------------------------------------------------------------------------
 /** View related to an edit controller.
 \ingroup vstClasses  */
 //------------------------------------------------------------------------
-class EditorView: public CPluginView
+class EditorView : public CPluginView
 {
 public:
 //------------------------------------------------------------------------
-	EditorView (EditController* controller, ViewRect* size = 0);
+	EditorView (EditController* controller, ViewRect* size = nullptr);
 	virtual ~EditorView ();
 
 	/** Gets its controller part. */
 	EditController* getController () { return controller; }
 
 	//---from CPluginView-------------
-	virtual void attachedToParent () SMTG_OVERRIDE;
-	virtual void removedFromParent () SMTG_OVERRIDE;
+	void attachedToParent () SMTG_OVERRIDE;
+	void removedFromParent () SMTG_OVERRIDE;
 
 //------------------------------------------------------------------------
 protected:
 	EditController* controller;
 };
 
-
 //------------------------------------------------------------------------
 /** Unit element.
 \ingroup vstClasses  */
 //------------------------------------------------------------------------
-class Unit: public FObject
+class Unit : public FObject
 {
 public:
 //------------------------------------------------------------------------
-	Unit (const String128 name, UnitID unitId, UnitID parentUnitId = kRootUnitId, ProgramListID programListId = kNoProgramListId);
+	Unit (const String128 name, UnitID unitId, UnitID parentUnitId = kRootUnitId,
+	      ProgramListID programListId = kNoProgramListId);
 	Unit (const UnitInfo& unit);
 
 	/** Returns its info. */
-	const UnitInfo& getInfo () const {return info;}
+	const UnitInfo& getInfo () const { return info; }
 
 	/** Returns its Unit ID. */
-	UnitID getID () const {return info.id;}
+	UnitID getID () const { return info.id; }
 
 	/** Sets a new Unit ID. */
-	void setID (UnitID newID) {info.id = newID;}
+	void setID (UnitID newID) { info.id = newID; }
 
 	/** Returns its Unit Name. */
-	const TChar* getName () const {return info.name;}
+	const TChar* getName () const { return info.name; }
 
 	/** Sets a new Unit Name. */
 	void setName (const String128 newName);
 
 	/** Returns its ProgramList ID. */
-	ProgramListID getProgramListID () const {return info.programListId;}
+	ProgramListID getProgramListID () const { return info.programListId; }
 
 	/** Sets a new ProgramList ID. */
-	void setProgramListID (ProgramListID newID) {info.programListId = newID;}
+	void setProgramListID (ProgramListID newID) { info.programListId = newID; }
 
 	OBJ_METHODS (Unit, FObject)
 //------------------------------------------------------------------------
@@ -203,7 +202,7 @@ protected:
 /** ProgramList element.
 \ingroup vstClasses  */
 //------------------------------------------------------------------------
-class ProgramList: public FObject
+class ProgramList : public FObject
 {
 public:
 //------------------------------------------------------------------------
@@ -217,9 +216,20 @@ public:
 
 	virtual tresult getProgramName (int32 programIndex, String128 name /*out*/);
 	virtual tresult setProgramName (int32 programIndex, const String128 name /*in*/);
-	virtual tresult getProgramInfo (int32 programIndex, CString attributeId, String128 value /*out*/);
-	virtual tresult hasPitchNames (int32 programIndex) { return kResultFalse; }
-	virtual tresult getPitchName (int32 programIndex, int16 midiPitch, String128 name /*out*/) { return kResultFalse; }
+	virtual tresult getProgramInfo (int32 programIndex, CString attributeId,
+	                                String128 value /*out*/);
+	virtual tresult hasPitchNames (int32 programIndex)
+	{
+		(void)programIndex;
+		return kResultFalse;
+	}
+	virtual tresult getPitchName (int32 programIndex, int16 midiPitch, String128 name /*out*/)
+	{
+		(void)programIndex;
+		(void)midiPitch;
+		(void)name;
+		return kResultFalse;
+	}
 
 	/** Adds a program to the end of the list. returns the index of the program. */
 	virtual int32 addProgram (const String128 name);
@@ -233,9 +243,9 @@ public:
 	OBJ_METHODS (ProgramList, FObject)
 //------------------------------------------------------------------------
 protected:
-	typedef std::map<String, String> StringMap;
-	typedef std::vector<String> StringVector;
-	typedef std::vector<StringMap> ProgramInfoVector;
+	using StringMap = std::map<String, String>;
+	using StringVector = std::vector<String>;
+	using ProgramInfoVector = std::vector<StringMap>;
 	ProgramListInfo info;
 	UnitID unitId;
 	StringVector programNames;
@@ -247,7 +257,7 @@ protected:
 /** ProgramListWithPitchNames element.
 \ingroup vstClasses  */
 //-----------------------------------------------------------------------------
-class ProgramListWithPitchNames: public ProgramList
+class ProgramListWithPitchNames : public ProgramList
 {
 public:
 	ProgramListWithPitchNames (const String128 name, ProgramListID listId, UnitID unitId);
@@ -255,21 +265,22 @@ public:
 	/** Sets a name for the given program index and a given pitch. */
 	bool setPitchName (int32 programIndex, int16 pitch, const String128 pitchName);
 
-	/** Removes the PitchName entry for the given program index and a given pitch. Returns true if it was found and removed. */
+	/** Removes the PitchName entry for the given program index and a given pitch. Returns true if
+	 * it was found and removed. */
 	bool removePitchName (int32 programIndex, int16 pitch);
 
 	//---from ProgramList---------
 	int32 addProgram (const String128 name) SMTG_OVERRIDE;
 	tresult hasPitchNames (int32 programIndex) SMTG_OVERRIDE;
-	tresult getPitchName (int32 programIndex, int16 midiPitch, String128 name /*out*/) SMTG_OVERRIDE;
+	tresult getPitchName (int32 programIndex, int16 midiPitch,
+	                      String128 name /*out*/) SMTG_OVERRIDE;
 
 	OBJ_METHODS (ProgramListWithPitchNames, ProgramList)
 protected:
-	typedef std::map<int16, String> PitchNameMap;
-	typedef std::vector<PitchNameMap> PitchNamesVector;
+	using PitchNameMap = std::map<int16, String>;
+	using PitchNamesVector = std::vector<PitchNameMap>;
 	PitchNamesVector pitchNames;
 };
-
 
 //------------------------------------------------------------------------
 /** Advanced implementation (support IUnitInfo) for a VST 3 edit controller.
@@ -277,7 +288,7 @@ protected:
 - [extends EditController]
 */
 //------------------------------------------------------------------------
-class EditControllerEx1: public EditController, public IUnitInfo
+class EditControllerEx1 : public EditController, public IUnitInfo
 {
 public:
 	EditControllerEx1 ();
@@ -296,44 +307,62 @@ public:
 	tresult notifyProgramListChange (ProgramListID listId, int32 programIndex = kAllProgramInvalid);
 
 	//---from IUnitInfo------------------
-	virtual int32 PLUGIN_API getUnitCount () SMTG_OVERRIDE { return static_cast<int32> (units.size ()); }
-	virtual tresult PLUGIN_API getUnitInfo (int32 unitIndex, UnitInfo& info /*out*/) SMTG_OVERRIDE;
+	int32 PLUGIN_API getUnitCount () SMTG_OVERRIDE { return static_cast<int32> (units.size ()); }
+	tresult PLUGIN_API getUnitInfo (int32 unitIndex, UnitInfo& info /*out*/) SMTG_OVERRIDE;
 
-	virtual int32 PLUGIN_API getProgramListCount () SMTG_OVERRIDE;
-	virtual tresult PLUGIN_API getProgramListInfo (int32 listIndex, ProgramListInfo& info /*out*/) SMTG_OVERRIDE;
-	virtual tresult PLUGIN_API getProgramName (ProgramListID listId, int32 programIndex, String128 name /*out*/) SMTG_OVERRIDE;
-	virtual tresult PLUGIN_API getProgramInfo (ProgramListID listId, int32 programIndex, CString attributeId /*in*/, String128 attributeValue /*out*/) SMTG_OVERRIDE;
+	int32 PLUGIN_API getProgramListCount () SMTG_OVERRIDE;
+	tresult PLUGIN_API getProgramListInfo (int32 listIndex,
+	                                       ProgramListInfo& info /*out*/) SMTG_OVERRIDE;
+	tresult PLUGIN_API getProgramName (ProgramListID listId, int32 programIndex,
+	                                   String128 name /*out*/) SMTG_OVERRIDE;
+	tresult PLUGIN_API getProgramInfo (ProgramListID listId, int32 programIndex,
+	                                   CString attributeId /*in*/,
+	                                   String128 attributeValue /*out*/) SMTG_OVERRIDE;
 
-	virtual tresult PLUGIN_API hasProgramPitchNames (ProgramListID listId, int32 programIndex) SMTG_OVERRIDE;
-	virtual tresult PLUGIN_API getProgramPitchName (ProgramListID listId, int32 programIndex, int16 midiPitch, String128 name /*out*/) SMTG_OVERRIDE;
+	tresult PLUGIN_API hasProgramPitchNames (ProgramListID listId,
+	                                         int32 programIndex) SMTG_OVERRIDE;
+	tresult PLUGIN_API getProgramPitchName (ProgramListID listId, int32 programIndex,
+	                                        int16 midiPitch, String128 name /*out*/) SMTG_OVERRIDE;
 
-	virtual tresult setProgramName (ProgramListID listId, int32 programIndex, const String128 name /*in*/);
+	virtual tresult setProgramName (ProgramListID listId, int32 programIndex,
+	                                const String128 name /*in*/);
 
 	// units selection --------------------
-	virtual UnitID PLUGIN_API getSelectedUnit () SMTG_OVERRIDE {return selectedUnit;}
-	virtual tresult PLUGIN_API selectUnit (UnitID unitId) SMTG_OVERRIDE {selectedUnit = unitId; return kResultTrue;}
+	UnitID PLUGIN_API getSelectedUnit () SMTG_OVERRIDE { return selectedUnit; }
+	tresult PLUGIN_API selectUnit (UnitID unitId) SMTG_OVERRIDE
+	{
+		selectedUnit = unitId;
+		return kResultTrue;
+	}
 
-	virtual tresult PLUGIN_API getUnitByBus (MediaType /*type*/, BusDirection /*dir*/, int32 /*busIndex*/,
-		int32 /*channel*/, UnitID& /*unitId*/ /*out*/) SMTG_OVERRIDE {return kResultFalse;}
-	virtual tresult PLUGIN_API setUnitProgramData (int32 /*listOrUnitId*/, int32 /*programIndex*/, IBStream* /*data*/) SMTG_OVERRIDE {return kResultFalse;}
+	tresult PLUGIN_API getUnitByBus (MediaType /*type*/, BusDirection /*dir*/, int32 /*busIndex*/,
+	                                 int32 /*channel*/, UnitID& /*unitId*/ /*out*/) SMTG_OVERRIDE
+	{
+		return kResultFalse;
+	}
+	tresult PLUGIN_API setUnitProgramData (int32 /*listOrUnitId*/, int32 /*programIndex*/,
+	                                       IBStream* /*data*/) SMTG_OVERRIDE
+	{
+		return kResultFalse;
+	}
 
 	/** Notifies the host about the selected Unit. */
 	virtual tresult notifyUnitSelection ();
 
 	//---from IDependent------------------
-	virtual void PLUGIN_API update (FUnknown* changedUnknown, int32 message) SMTG_OVERRIDE;
+	void PLUGIN_API update (FUnknown* changedUnknown, int32 message) SMTG_OVERRIDE;
 
 	//---Interface---------
 	OBJ_METHODS (EditControllerEx1, EditController)
 	DEFINE_INTERFACES
 		DEF_INTERFACE (IUnitInfo)
 	END_DEFINE_INTERFACES (EditController)
-	REFCOUNT_METHODS(EditController)
+	REFCOUNT_METHODS (EditController)
 
 protected:
-	typedef std::vector<IPtr<ProgramList> > ProgramListVector;
-	typedef std::map<ProgramListID, ProgramListVector::size_type> ProgramIndexMap;
-	typedef std::vector<IPtr<Unit> > UnitVector;
+	using ProgramListVector = std::vector<IPtr<ProgramList>>;
+	using ProgramIndexMap = std::map<ProgramListID, ProgramListVector::size_type>;
+	using UnitVector = std::vector<IPtr<Unit>>;
 	UnitVector units;
 	ProgramListVector programLists;
 	ProgramIndexMap programIndexMap;

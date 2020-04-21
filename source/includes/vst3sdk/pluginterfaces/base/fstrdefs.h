@@ -25,7 +25,7 @@
 // 16 bit string operations
 #if SMTG_CPP11	// if c++11 unicode string literals
 	#define SMTG_CPP11_CAT_PRIVATE_DONT_USE(a,b)			a ## b
-	#if WINDOWS
+	#if SMTG_OS_WINDOWS
 		#define STR16(x) SMTG_CPP11_CAT_PRIVATE_DONT_USE(L,x)
 	#else
 		#define STR16(x) SMTG_CPP11_CAT_PRIVATE_DONT_USE(u,x)
@@ -47,11 +47,11 @@
 #define str8BufferSize(buffer) (sizeof(buffer)/sizeof(Steinberg::char8))
 #define str16BufferSize(buffer) (sizeof(buffer)/sizeof(Steinberg::char16))
 
-#if WINDOWS
+#if SMTG_OS_WINDOWS
 #define FORMAT_INT64A "I64d"
 #define FORMAT_UINT64A "I64u"
 
-#elif MAC || LINUX
+#elif SMTG_OS_MACOS || SMTG_OS_LINUX
 #define FORMAT_INT64A  "lld"
 #define FORMAT_UINT64A "llu"
 #define stricmp		strcasecmp
@@ -73,13 +73,13 @@
 //----------------------------------------------------------------------------
 // newline
 //----------------------------------------------------------------------------
-#if WINDOWS
+#if SMTG_OS_WINDOWS
 #define ENDLINE_A   "\r\n"
 #define ENDLINE_W   STR ("\r\n")
-#elif MAC
+#elif SMTG_OS_MACOS
 #define ENDLINE_A   "\r"
 #define ENDLINE_W   STR ("\r")
-#elif LINUX
+#elif SMTG_OS_LINUX
 #define ENDLINE_A   "\n"
 #define ENDLINE_W   STR ("\n")
 #endif
@@ -90,7 +90,7 @@
 #define ENDLINE ENDLINE_A
 #endif
 
-#if WINDOWS && !defined(__GNUC__) && defined(_MSC_VER) && (_MSC_VER < 1900)
+#if SMTG_OS_WINDOWS && !defined(__GNUC__) && defined(_MSC_VER) && (_MSC_VER < 1900)
 #define stricmp _stricmp
 #define strnicmp _strnicmp
 #define snprintf _snprintf
@@ -263,7 +263,7 @@ inline void str8ToStr16 (char16* dst, const char8* src, int32 n = -1)
 		pChr[0] = 0;
 		pChr[1] = src[i];
 #else
-		dst[i] = src[i];
+		dst[i] = static_cast<char16> (src[i]);
 #endif
 
 		if (src[i] == 0)

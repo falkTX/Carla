@@ -1,6 +1,5 @@
 //------------------------------------------------------------------------
 // Project     : VST SDK
-// Version     : 3.6.7
 //
 // Category    : Interfaces
 // Filename    : pluginterfaces/vst/vstpshpack4.h

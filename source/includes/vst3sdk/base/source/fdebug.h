@@ -11,7 +11,7 @@
 //
 //-----------------------------------------------------------------------------
 // LICENSE
-// (c) 2017, Steinberg Media Technologies GmbH, All Rights Reserved
+// (c) 2019, Steinberg Media Technologies GmbH, All Rights Reserved
 //-----------------------------------------------------------------------------
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -53,7 +53,7 @@
 #include "pluginterfaces/base/ftypes.h"
 #include <string.h>
 
-#if MAC
+#if SMTG_OS_MACOS
 #include <new>
 #endif
 
@@ -71,136 +71,170 @@
 #endif
 
 //-----------------------------------------------------------------------------
-#if WINDOWS
-
-#undef ASSERT
+#if SMTG_OS_WINDOWS
 
 /** Disable compiler warning:
-  * C4291: "No matching operator delete found; memory will not be freed if initialization throws an exception. 
-  *        A placement new is used for which there is no placement delete." */
-#if DEVELOPMENT && defined (_MSC_VER)
-#pragma warning(disable:4291)
-#pragma warning(disable:4985)
+ * C4291: "No matching operator delete found; memory will not be freed if initialization throws an
+ * exception. A placement new is used for which there is no placement delete." */
+#if DEVELOPMENT && defined(_MSC_VER)
+#pragma warning(disable : 4291)
+#pragma warning(disable : 4985)
 #endif
 
-#endif // WINDOWS
+#endif // SMTG_OS_WINDOWS
 
 #if DEVELOPMENT
-  //-----------------------------------------------------------------------------
-    /** If "f" is not true and a debugger is present, send an error string to the debugger for display and 
-		cause a breakpoint exception to occur in the current process. ASSERT is removed completely in RELEASE configuration.
-		So do not pass methods calls to this macro that are expected to exist in the RELEASE build (for method calls that need
-		to be present in a RELEASE build, use the VERIFY macros instead)*/
-	#define ASSERT(f)             if (!(f)) FDebugBreak ("%s(%d) : Assert failed: %s\n", __FILE__, __LINE__, #f);
+//-----------------------------------------------------------------------------
+/** If "f" is not true and a debugger is present, send an error string to the debugger for display
+   and cause a breakpoint exception to occur in the current process. SMTG_ASSERT is removed
+   completely in RELEASE configuration. So do not pass methods calls to this macro that are expected
+   to exist in the RELEASE build (for method calls that need to be present in a RELEASE build, use
+   the VERIFY macros instead)*/
+#define SMTG_ASSERT(f) \
+	if (!(f))          \
+		FDebugBreak ("%s(%d) : Assert failed: %s\n", __FILE__, __LINE__, #f);
 
-	/** Send "comment" string to the debugger for display. */
-	#define WARNING(comment)      FDebugPrint ("%s(%d) : %s\n", __FILE__, __LINE__, comment);
+/** Send "comment" string to the debugger for display. */
+#define SMTG_WARNING(comment) FDebugPrint ("%s(%d) : %s\n", __FILE__, __LINE__, comment);
 
-	/** Send the last error string to the debugger for display. */
-	#define PRINTSYSERROR         FPrintLastError(__FILE__, __LINE__);
+/** Send the last error string to the debugger for display. */
+#define SMTG_PRINTSYSERROR FPrintLastError (__FILE__, __LINE__);
 
-	/** If a debugger is present, send string "s" to the debugger for display and 
-		cause a breakpoint exception to occur in the current process. */
-	#define DEBUGSTR(s)           FDebugBreak(s);
+/** If a debugger is present, send string "s" to the debugger for display and
+    cause a breakpoint exception to occur in the current process. */
+#define SMTG_DEBUGSTR(s) FDebugBreak (s);
 
-	/** Use VERIFY for calling methods "f" having a bool result (expecting them to return 'true') 
-	     The call of "f" is not removed in RELEASE builds, only the result verification. eg: VERIFY (isValid ()) */
-	#define VERIFY(f)             ASSERT(f)
+/** Use VERIFY for calling methods "f" having a bool result (expecting them to return 'true')
+     The call of "f" is not removed in RELEASE builds, only the result verification. eg: SMTG_VERIFY
+   (isValid ()) */
+#define SMTG_VERIFY(f) SMTG_ASSERT (f)
 
-	/** Use VERIFY_IS for calling methods "f" and expect a certain result "r".
-	    The call of "f" is not removed in RELEASE builds, only the result verification. eg: VERIFY_IS (callMethod (), kResultOK) */
-	#define VERIFY_IS(f,r)        if ((f) != (r)) FDebugBreak ("%s(%d) : Assert failed: %s\n", __FILE__, __LINE__, #f); 
-	
-	/** Use VERIFY_NOT for calling methods "f" and expect the result to be anything else but "r".
-	     The call of "f" is not removed in RELEASE builds, only the result verification. eg: VERIFY_NOT (callMethod (), kResultError) */
-	#define VERIFY_NOT(f,r)       if ((f) == (r)) FDebugBreak ("%s(%d) : Assert failed: %s\n", __FILE__, __LINE__, #f); 
+/** Use VERIFY_IS for calling methods "f" and expect a certain result "r".
+    The call of "f" is not removed in RELEASE builds, only the result verification. eg:
+   SMTG_VERIFY_IS (callMethod (), kResultOK) */
+#define SMTG_VERIFY_IS(f, r) \
+	if ((f) != (r))          \
+		FDebugBreak ("%s(%d) : Assert failed: %s\n", __FILE__, __LINE__, #f);
 
-	/** @name Shortcut macros for sending strings to the debugger for display. 
-		
-		First parameter is always the format string (printf like).
-	*/
-	///@{
-	#define DBPRT0(a)             FDebugPrint(a); 
-	#define DBPRT1(a,b)           FDebugPrint(a,b);
-	#define DBPRT2(a,b,c)         FDebugPrint(a,b,c);
-	#define DBPRT3(a,b,c,d)       FDebugPrint(a,b,c,d);
-	#define DBPRT4(a,b,c,d,e)     FDebugPrint(a,b,c,d,e);
-	#define DBPRT5(a,b,c,d,e,f)   FDebugPrint(a,b,c,d,e,f);
-	///@}
-	
-	/** @name Helper functions for the above defined macros.
-	
-		You shouldn't use them directly (if you do so, don't forget "#if DEVELOPMENT")! 
-		It is recommended to use the macros instead. 
-	*/
-	///@{
-	void FDebugPrint (const char *format, ...);
-	void FDebugBreak (const char *format, ...);
-	void FPrintLastError (const char* file, int line);
-	///@}
+/** Use VERIFY_NOT for calling methods "f" and expect the result to be anything else but "r".
+     The call of "f" is not removed in RELEASE builds, only the result verification. eg:
+   SMTG_VERIFY_NOT (callMethod (), kResultError) */
+#define SMTG_VERIFY_NOT(f, r) \
+	if ((f) == (r))           \
+		FDebugBreak ("%s(%d) : Assert failed: %s\n", __FILE__, __LINE__, #f);
 
-	/** @name Provide a custom assertion handler
-	*/
-	///@{
-	typedef bool (*AssertionHandler)(const char* message);
-	extern AssertionHandler gAssertionHandler;
-	///@}
+/** @name Shortcut macros for sending strings to the debugger for display.
+	First parameter is always the format string (printf like).
+*/
 
-	/** Definition of memory allocation macros:
-		Use "NEW" to allocate storage for individual objects.
-		Use "NEWVEC" to allocate storage for an array of objects. */
-	#if MAC
-		void* operator new (size_t, int, const char *, int);
-		void* operator new [] (size_t, int, const char *, int);
-		void operator delete (void* p, int, const char *file, int line);
-		void operator delete[] (void* p, int, const char *file, int line);
+///@{
+#define SMTG_DBPRT0(a) FDebugPrint (a);
+#define SMTG_DBPRT1(a, b) FDebugPrint (a, b);
+#define SMTG_DBPRT2(a, b, c) FDebugPrint (a, b, c);
+#define SMTG_DBPRT3(a, b, c, d) FDebugPrint (a, b, c, d);
+#define SMTG_DBPRT4(a, b, c, d, e) FDebugPrint (a, b, c, d, e);
+#define SMTG_DBPRT5(a, b, c, d, e, f) FDebugPrint (a, b, c, d, e, f);
+///@}
 
-		#ifndef NEW
-		#define NEW new (1, __FILE__, __LINE__)
-		#define NEWVEC new (1, __FILE__, __LINE__)
-		#endif
+/** @name Helper functions for the above defined macros.
 
-		#define DEBUG_NEW DEBUG_NEW_LEAKS
+    You shouldn't use them directly (if you do so, don't forget "#if DEVELOPMENT")!
+    It is recommended to use the macros instead.
+*/
+///@{
+void FDebugPrint (const char* format, ...);
+void FDebugBreak (const char* format, ...);
+void FPrintLastError (const char* file, int line);
+///@}
 
-	#elif WINDOWS && defined (_MSC_VER)
-		#ifndef NEW
-		void * operator new (size_t, int, const char *, int);
-		#define NEW new (1, __FILE__, __LINE__)
-		#define NEWVEC new (1, __FILE__, __LINE__)
-		#endif
-				
-	#else
-		#ifndef NEW
-		#define NEW new
-		#define NEWVEC new
-		#endif
-	#endif
+/** @name Provide a custom assertion handler and debug print handler, eg
+        so that we can provide an assert with a custom dialog, or redirect
+        the debug output to a file or stream.
+*/
+///@{
+typedef bool (*AssertionHandler) (const char* message);
+extern AssertionHandler gAssertionHandler;
+extern AssertionHandler gPreAssertionHook;
+typedef void (*DebugPrintLogger) (const char* message);
+extern DebugPrintLogger gDebugPrintLogger;
+///@}
+
+/** Definition of memory allocation macros:
+    Use "NEW" to allocate storage for individual objects.
+    Use "NEWVEC" to allocate storage for an array of objects. */
+#if SMTG_OS_MACOS
+void* operator new (size_t, int, const char*, int);
+void* operator new[] (size_t, int, const char*, int);
+void operator delete (void* p, int, const char* file, int line);
+void operator delete[] (void* p, int, const char* file, int line);
+#ifndef NEW
+#define NEW new (1, __FILE__, __LINE__)
+#define NEWVEC new (1, __FILE__, __LINE__)
+#endif
+
+#define DEBUG_NEW DEBUG_NEW_LEAKS
+
+#elif SMTG_OS_WINDOWS && defined(_MSC_VER)
+#ifndef NEW
+void* operator new (size_t, int, const char*, int);
+#define NEW new (1, __FILE__, __LINE__)
+#define NEWVEC new (1, __FILE__, __LINE__)
+#endif
 
 #else
-	/** if DEVELOPMENT is not set, these macros will do nothing. */
- 	#define ASSERT(f)
-	#define WARNING(s)
-	#define PRINTSYSERROR
-	#define DEBUGSTR(s)
-	#define VERIFY(f) f;
-	#define VERIFY_IS(f,r) f;
-	#define VERIFY_NOT(f,r) f;
+#ifndef NEW
+#define NEW new
+#define NEWVEC new
+#endif
+#endif
 
-	#define DBPRT0(a)
-	#define DBPRT1(a,b)
-	#define DBPRT2(a,b,c)
-	#define DBPRT3(a,b,c,d)
-	#define DBPRT4(a,b,c,d,e)	
-	#define DBPRT5(a,b,c,d,e,f)	
+#else
+/** if DEVELOPMENT is not set, these macros will do nothing. */
+#define SMTG_ASSERT(f)
+#define SMTG_WARNING(s)
+#define SMTG_PRINTSYSERROR
+#define SMTG_DEBUGSTR(s)
+#define SMTG_VERIFY(f) f;
+#define SMTG_VERIFY_IS(f, r) f;
+#define SMTG_VERIFY_NOT(f, r) f;
 
-	#ifndef NEW
-	#define NEW new
-	#define NEWVEC new
-	#endif
+#define SMTG_DBPRT0(a)
+#define SMTG_DBPRT1(a, b)
+#define SMTG_DBPRT2(a, b, c)
+#define SMTG_DBPRT3(a, b, c, d)
+#define SMTG_DBPRT4(a, b, c, d, e)
+#define SMTG_DBPRT5(a, b, c, d, e, f)
+
+#ifndef NEW
+#define NEW new
+#define NEWVEC new
+
+#endif
 #endif
 
 #if SMTG_CPPUNIT_TESTING
 #define SMTG_IS_TEST true
 #else
 #define SMTG_IS_TEST false
+#endif
+
+#if !SMTG_RENAME_ASSERT
+#if SMTG_OS_WINDOWS
+#undef ASSERT
+#endif
+
+#define ASSERT				SMTG_ASSERT
+#define WARNING				SMTG_WARNING
+#define DEBUGSTR			SMTG_DEBUGSTR
+#define VERIFY				SMTG_VERIFY
+#define VERIFY_IS			SMTG_VERIFY_IS
+#define VERIFY_NOT			SMTG_VERIFY_NOT
+#define PRINTSYSERROR		SMTG_PRINTSYSERROR
+
+#define DBPRT0				SMTG_DBPRT0
+#define DBPRT1				SMTG_DBPRT1
+#define DBPRT2				SMTG_DBPRT2
+#define DBPRT3				SMTG_DBPRT3
+#define DBPRT4				SMTG_DBPRT4
+#define DBPRT5				SMTG_DBPRT5
 #endif

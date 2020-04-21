@@ -9,7 +9,7 @@
 //
 //-----------------------------------------------------------------------------
 // LICENSE
-// (c) 2017, Steinberg Media Technologies GmbH, All Rights Reserved
+// (c) 2019, Steinberg Media Technologies GmbH, All Rights Reserved
 //-----------------------------------------------------------------------------
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -112,7 +112,7 @@ public:
 	virtual void changed (int32 msg = kChanged);							///< Inform all dependents, that the object has changed.
 	virtual void deferUpdate (int32 msg = kChanged);						///< Similar to triggerUpdates, except only delivered in idle (usefull in collecting updates).
 	virtual void updateDone (int32 /* msg */) {}											///< empty virtual method that should be overridden by derived classes
-	virtual bool isEqualInstance (IDependent* d) {return static_cast<IDependent*> (this) == d;}
+	virtual bool isEqualInstance (FUnknown* d) {return this == d;}
 	
 	static void setUpdateHandler (IUpdateHandler* handler) {gUpdateHandler = handler;}	///< set method for the local attribute
 	static IUpdateHandler* getUpdateHandler () {return gUpdateHandler;}					///< get method for the local attribute 

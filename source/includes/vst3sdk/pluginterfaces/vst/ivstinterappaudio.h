@@ -1,6 +1,5 @@
 //------------------------------------------------------------------------
 // Project     : VST SDK
-// Version     : 3.6.7
 //
 // Category    : Interfaces
 // Filename    : pluginterfaces/vst/ivstinterappaudio.h
@@ -32,6 +31,7 @@ class IInterAppAudioPresetManager;
 - [host imp]
 - [passed as 'context' to IPluginBase::initialize () ]
 - [released: 3.6.0]
+- [optional]
 
 Implemented by the InterAppAudio Wrapper. */
 //------------------------------------------------------------------------

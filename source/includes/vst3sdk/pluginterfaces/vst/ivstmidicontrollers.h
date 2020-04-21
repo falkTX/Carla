@@ -1,6 +1,5 @@
 //------------------------------------------------------------------------
 // Project     : VST SDK
-// Version     : 3.6.7
 //
 // Category    : Interfaces
 // Filename    : pluginterfaces/vst/ivstmidicontrollers.h
@@ -103,9 +102,15 @@ enum ControllerNumbers
 
 	//---Extra--------------------------
 	kAfterTouch = 128,			///< After Touch
-	kPitchBend,					///< Pitch Bend
+	kPitchBend  = 129,			///< Pitch Bend
 
-	kCountCtrlNumber			///< Count of Controller Number
+	kCountCtrlNumber,			///< Count of Controller Number
+
+	//---Extra for kLegacyMIDICCOutEvent-
+	kCtrlProgramChange = 130,	///< Program Change (use LegacyMIDICCOutEvent.value only)
+	kCtrlPolyPressure  = 131,	///< Poly Pressure (use LegacyMIDICCOutEvent.value for pitch and
+								/// LegacyMIDICCOutEvent.value2 for pressure)
+	kCtrlQuarterFrame  = 132	///< Quarter Frame ((use LegacyMIDICCOutEvent.value only)
 };
 
 //------------------------------------------------------------------------

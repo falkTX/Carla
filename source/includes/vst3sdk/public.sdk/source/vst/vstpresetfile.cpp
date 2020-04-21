@@ -8,7 +8,7 @@
 //
 //-----------------------------------------------------------------------------
 // LICENSE
-// (c) 2017, Steinberg Media Technologies GmbH, All Rights Reserved
+// (c) 2019, Steinberg Media Technologies GmbH, All Rights Reserved
 //-----------------------------------------------------------------------------
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -38,14 +38,14 @@
 
 #include <algorithm>
 
+
 namespace Steinberg {
 namespace Vst {
 
 //------------------------------------------------------------------------
 // Preset Chunk IDs
 //------------------------------------------------------------------------
-static const ChunkID commonChunks[kNumPresetChunks] =
-{
+static const ChunkID commonChunks[kNumPresetChunks] = {
 	{'V', 'S', 'T', '3'},	// kHeader
 	{'C', 'o', 'm', 'p'},	// kComponentState
 	{'C', 'o', 'n', 't'},	// kControllerState
@@ -78,11 +78,29 @@ inline bool verify (tresult result)
 }
 
 //------------------------------------------------------------------------
+bool copyStream (IBStream* inStream, IBStream* outStream)
+{
+	if (!inStream || !outStream)
+		return false;
+
+	int8 buffer[8192];
+	int32 read = 0;
+	int32 written = 0;
+	while (inStream->read (buffer, 8192, &read) == kResultTrue && read > 0)
+	{
+		if (outStream->write (buffer, read, &written) != kResultTrue)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+//------------------------------------------------------------------------
 // PresetFile
 //------------------------------------------------------------------------
-bool PresetFile::savePreset (IBStream* stream, const FUID& classID, 
-							 IComponent* component, IEditController* editController,
- 							 const char* xmlBuffer, int32 xmlSize)
+bool PresetFile::savePreset (IBStream* stream, const FUID& classID, IComponent* component,
+                             IEditController* editController, const char* xmlBuffer, int32 xmlSize)
 {
 	PresetFile pf (stream);
 	pf.setClassID (classID);
@@ -91,7 +109,7 @@ bool PresetFile::savePreset (IBStream* stream, const FUID& classID,
 
 	if (!pf.storeComponentState (component))
 		return false;
-	
+
 	if (editController && !pf.storeControllerState (editController))
 		return false;
 
@@ -102,8 +120,29 @@ bool PresetFile::savePreset (IBStream* stream, const FUID& classID,
 }
 
 //------------------------------------------------------------------------
-bool PresetFile::loadPreset (IBStream* stream, const FUID& classID, IComponent* component, 
-							 IEditController* editController, std::vector<FUID>* otherClassIDArray)
+bool PresetFile::savePreset (IBStream* stream, const FUID& classID, IBStream* componentStream,
+                             IBStream* editStream, const char* xmlBuffer, int32 xmlSize)
+{
+	PresetFile pf (stream);
+	pf.setClassID (classID);
+	if (!pf.writeHeader ())
+		return false;
+
+	if (!pf.storeComponentState (componentStream))
+		return false;
+
+	if (editStream && !pf.storeControllerState (editStream))
+		return false;
+
+	if (xmlBuffer && !pf.writeMetaInfo (xmlBuffer, xmlSize))
+		return false;
+
+	return pf.writeChunkList ();
+}
+
+//------------------------------------------------------------------------
+bool PresetFile::loadPreset (IBStream* stream, const FUID& classID, IComponent* component,
+                             IEditController* editController, std::vector<FUID>* otherClassIDArray)
 {
 	PresetFile pf (stream);
 	if (!pf.readChunkList ())
@@ -128,7 +167,7 @@ bool PresetFile::loadPreset (IBStream* stream, const FUID& classID, IComponent* 
 	if (editController)
 	{
 		// assign component state to controller
-		if (!pf.restoreComponentState (editController)) 
+		if (!pf.restoreComponentState (editController))
 			return false;
 
 		// restore controller-only state (if present)
@@ -139,9 +178,7 @@ bool PresetFile::loadPreset (IBStream* stream, const FUID& classID, IComponent* 
 }
 
 //------------------------------------------------------------------------
-PresetFile::PresetFile (IBStream* stream)
-: stream (stream)
-, entryCount (0)
+PresetFile::PresetFile (IBStream* stream) : stream (stream), entryCount (0)
 {
 	memset (entries, 0, sizeof (entries));
 
@@ -163,13 +200,13 @@ const PresetFile::Entry* PresetFile::getEntry (ChunkType which) const
 	for (int32 i = 0; i < entryCount; i++)
 		if (isEqualID (entries[i].id, id))
 			return &entries[i];
-	return 0;
+	return nullptr;
 }
 
 //------------------------------------------------------------------------
-const PresetFile::Entry* PresetFile::getLastEntry () const 
-{ 
-	return entryCount > 0 ? &entries[entryCount - 1] : 0; 
+const PresetFile::Entry* PresetFile::getLastEntry () const
+{
+	return entryCount > 0 ? &entries[entryCount - 1] : nullptr;
 }
 
 //------------------------------------------------------------------------
@@ -202,7 +239,7 @@ bool PresetFile::readSize (TSize& size)
 	stream->read (&size, sizeof (TSize), &numBytesRead);
 #if BYTEORDER == kBigEndian
 	SWAP_64 (size)
-#endif	
+#endif
 	return numBytesRead == sizeof (TSize);
 }
 
@@ -211,7 +248,7 @@ bool PresetFile::writeSize (TSize size)
 {
 #if BYTEORDER == kBigEndian
 	SWAP_64 (size)
-#endif	
+#endif
 	int32 numBytesWritten = 0;
 	stream->write (&size, sizeof (TSize), &numBytesWritten);
 	return numBytesWritten == sizeof (TSize);
@@ -233,7 +270,7 @@ bool PresetFile::writeInt32 (int32 value)
 {
 #if BYTEORDER == kBigEndian
 	SWAP_32 (value)
-#endif	
+#endif
 	int32 numBytesWritten = 0;
 	stream->write (&value, sizeof (int32), &numBytesWritten);
 	return numBytesWritten == sizeof (int32);
@@ -258,12 +295,9 @@ bool PresetFile::readChunkList ()
 	// Read header
 	int32 version = 0;
 	TSize listOffset = 0;
-	if (!(readEqualID (getChunkID (kHeader)) &&
-		 readInt32 (version) &&
-		 verify (stream->read (classString, kClassIDSize)) &&
-		 readSize (listOffset) &&
-		 listOffset > 0 &&
-		 seekTo (listOffset)))
+	if (!(readEqualID (getChunkID (kHeader)) && readInt32 (version) &&
+	      verify (stream->read (classString, kClassIDSize)) && readSize (listOffset) &&
+	      listOffset > 0 && seekTo (listOffset)))
 		return false;
 
 	classID.fromString (classString);
@@ -281,9 +315,7 @@ bool PresetFile::readChunkList ()
 	for (int32 i = 0; i < count; i++)
 	{
 		Entry& e = entries[i];
-		if (!(readID (e.id) &&
-			 readSize (e.offset) &&
-			 readSize (e.size)))
+		if (!(readID (e.id) && readSize (e.offset) && readSize (e.size)))
 			break;
 
 		entryCount++;
@@ -300,11 +332,8 @@ bool PresetFile::writeHeader ()
 	char8 classString[kClassIDSize + 1] = {0};
 	classID.toString (classString);
 
-	return	seekTo (0) &&
-			writeID (getChunkID (kHeader)) && 
-			writeInt32 (kFormatVersion) && 
-			verify (stream->write (classString, kClassIDSize)) &&
-			writeSize (0);
+	return seekTo (0) && writeID (getChunkID (kHeader)) && writeInt32 (kFormatVersion) &&
+	       verify (stream->write (classString, kClassIDSize)) && writeSize (0);
 }
 
 //------------------------------------------------------------------------
@@ -313,9 +342,7 @@ bool PresetFile::writeChunkList ()
 	// Update list offset
 	TSize pos = 0;
 	stream->tell (&pos);
-	if (!(seekTo (kListOffsetPos) &&
-		 writeSize (pos) &&
-		 seekTo (pos)))
+	if (!(seekTo (kListOffsetPos) && writeSize (pos) && seekTo (pos)))
 		return false;
 
 	// Write list
@@ -327,10 +354,8 @@ bool PresetFile::writeChunkList ()
 	for (int32 i = 0; i < entryCount; i++)
 	{
 		Entry& e = entries[i];
-		if (!(writeID (e.id) &&
-			 writeSize (e.offset) &&
-			 writeSize (e.size)))
-			 return false;
+		if (!(writeID (e.id) && writeSize (e.offset) && writeSize (e.size)))
+			return false;
 	}
 	return true;
 }
@@ -370,8 +395,7 @@ bool PresetFile::readMetaInfo (char* xmlBuffer, int32& size)
 	{
 		if (xmlBuffer)
 		{
-			result = seekTo (e->offset) && 
-					 verify (stream->read (xmlBuffer, size, &size));
+			result = seekTo (e->offset) && verify (stream->read (xmlBuffer, size, &size));
 		}
 		else
 		{
@@ -396,10 +420,9 @@ bool PresetFile::writeMetaInfo (const char* xmlBuffer, int32 size, bool forceWri
 	if (size == -1)
 		size = (int32)strlen (xmlBuffer);
 
-	Entry e = {0};
-	return	beginChunk (e, kMetaInfo) && 
-			verify (stream->write ((void*)xmlBuffer, size)) && 
-			endChunk (e);
+	Entry e = {};
+	return beginChunk (e, kMetaInfo) && verify (stream->write ((void*)xmlBuffer, size)) &&
+	       endChunk (e);
 }
 
 //------------------------------------------------------------------------
@@ -409,7 +432,7 @@ bool PresetFile::prepareMetaInfoUpdate ()
 	const Entry* e = getEntry (kMetaInfo);
 	if (e)
 	{
-		// meta info must be the last entry!	
+		// meta info must be the last entry!
 		if (e != getLastEntry ())
 			return false;
 
@@ -432,10 +455,8 @@ bool PresetFile::writeChunk (const void* data, int32 size, ChunkType which)
 	if (contains (which)) // already exists!
 		return false;
 
-	Entry e = {0};
-	return	beginChunk (e, which) && 
-			verify (stream->write ((void*)data, size)) && 
-			endChunk (e);
+	Entry e = {};
+	return beginChunk (e, which) && verify (stream->write ((void*)data, size)) && endChunk (e);
 }
 
 //------------------------------------------------------------------------
@@ -451,10 +472,18 @@ bool PresetFile::storeComponentState (IComponent* component)
 	if (contains (kComponentState)) // already exists!
 		return false;
 
-	Entry e = {0};
-	return	beginChunk (e, kComponentState) && 
-			verify (component->getState (stream)) && 
-			endChunk (e);
+	Entry e = {};
+	return beginChunk (e, kComponentState) && verify (component->getState (stream)) && endChunk (e);
+}
+
+//------------------------------------------------------------------------
+bool PresetFile::storeComponentState (IBStream* componentStream)
+{
+	if (contains (kComponentState)) // already exists!
+		return false;
+
+	Entry e = {};
+	return beginChunk (e, kComponentState) && copyStream (componentStream, stream) && endChunk (e);
 }
 
 //------------------------------------------------------------------------
@@ -463,7 +492,7 @@ bool PresetFile::restoreComponentState (IComponent* component)
 	const Entry* e = getEntry (kComponentState);
 	if (e)
 	{
-		ReadOnlyBStream* readOnlyBStream = new ReadOnlyBStream (stream, e->offset, e->size);
+		auto* readOnlyBStream = new ReadOnlyBStream (stream, e->offset, e->size);
 		FReleaser readOnlyBStreamReleaser (readOnlyBStream);
 		return verify (component->setState (readOnlyBStream));
 	}
@@ -476,7 +505,7 @@ bool PresetFile::restoreComponentState (IEditController* editController)
 	const Entry* e = getEntry (kComponentState);
 	if (e)
 	{
-		ReadOnlyBStream* readOnlyBStream = new ReadOnlyBStream (stream, e->offset, e->size);
+		auto* readOnlyBStream = new ReadOnlyBStream (stream, e->offset, e->size);
 		FReleaser readOnlyBStreamReleaser (readOnlyBStream);
 		return verify (editController->setComponentState (readOnlyBStream));
 	}
@@ -496,10 +525,19 @@ bool PresetFile::storeControllerState (IEditController* editController)
 	if (contains (kControllerState)) // already exists!
 		return false;
 
-	Entry e = {0};
-	return	beginChunk (e, kControllerState) && 
-			verify (editController->getState (stream)) && 
-			endChunk (e);
+	Entry e = {};
+	return beginChunk (e, kControllerState) && verify (editController->getState (stream)) &&
+	       endChunk (e);
+}
+
+//------------------------------------------------------------------------
+bool PresetFile::storeControllerState (IBStream* editStream)
+{
+	if (contains (kControllerState)) // already exists!
+		return false;
+
+	Entry e = {};
+	return beginChunk (e, kControllerState) && copyStream (editStream, stream) && endChunk (e);
 }
 
 //------------------------------------------------------------------------
@@ -508,7 +546,7 @@ bool PresetFile::restoreControllerState (IEditController* editController)
 	const Entry* e = getEntry (kControllerState);
 	if (e)
 	{
-		ReadOnlyBStream* readOnlyBStream = new ReadOnlyBStream (stream, e->offset, e->size);
+		auto* readOnlyBStream = new ReadOnlyBStream (stream, e->offset, e->size);
 		FReleaser readOnlyBStreamReleaser (readOnlyBStream);
 		return verify (editController->setState (readOnlyBStream));
 	}
@@ -520,24 +558,17 @@ bool PresetFile::storeProgramData (IBStream* inStream, ProgramListID listID)
 {
 	if (contains (kProgramData)) // already exists!
 		return false;
-	
+
 	writeHeader ();
 
-	Entry e = {0};
+	Entry e = {};
 	if (beginChunk (e, kProgramData))
 	{
 		if (writeInt32 (listID))
 		{
-			int8 buffer[8192];
-			int32 read = 0;
-			int32 written = 0;
-			while (inStream->read (buffer, 8192, &read) == kResultTrue && read > 0)
-			{
-				if (stream->write (buffer, read, &written) != kResultTrue)
-				{
-					return false;
-				}
-			}
+			if (!copyStream (inStream, stream))
+				return false;
+
 			return endChunk (e);
 		}
 	}
@@ -545,22 +576,22 @@ bool PresetFile::storeProgramData (IBStream* inStream, ProgramListID listID)
 }
 
 //------------------------------------------------------------------------
-bool PresetFile::storeProgramData (IProgramListData* programListData, ProgramListID listID, int32 programIndex)
+bool PresetFile::storeProgramData (IProgramListData* programListData, ProgramListID listID,
+                                   int32 programIndex)
 {
 	if (contains (kProgramData)) // already exists!
 		return false;
 
 	writeHeader ();
 
-	Entry e = {0};
-	return	beginChunk (e, kProgramData) && 
-			writeInt32 (listID) &&
-			verify (programListData->getProgramData (listID, programIndex, stream)) && 
-			endChunk (e);
+	Entry e = {};
+	return beginChunk (e, kProgramData) && writeInt32 (listID) &&
+	       verify (programListData->getProgramData (listID, programIndex, stream)) && endChunk (e);
 }
 
 //------------------------------------------------------------------------
-bool PresetFile::restoreProgramData (IProgramListData* programListData, ProgramListID* programListID, int32 programIndex)
+bool PresetFile::restoreProgramData (IProgramListData* programListData,
+                                     ProgramListID* programListID, int32 programIndex)
 {
 	const Entry* e = getEntry (kProgramData);
 	ProgramListID savedProgramListID = -1;
@@ -572,9 +603,11 @@ bool PresetFile::restoreProgramData (IProgramListData* programListData, ProgramL
 				return false;
 
 			int32 alreadyRead = sizeof (int32);
-			ReadOnlyBStream* readOnlyBStream = new ReadOnlyBStream (stream, e->offset + alreadyRead, e->size - alreadyRead);
+			auto* readOnlyBStream =
+			    new ReadOnlyBStream (stream, e->offset + alreadyRead, e->size - alreadyRead);
 			FReleaser readOnlyBStreamReleaser (readOnlyBStream);
-			return programListData && verify (programListData->setProgramData (savedProgramListID, programIndex, readOnlyBStream));
+			return programListData && verify (programListData->setProgramData (
+			                              savedProgramListID, programIndex, readOnlyBStream));
 		}
 	}
 	return false;
@@ -588,11 +621,9 @@ bool PresetFile::storeProgramData (IUnitData* unitData, UnitID unitID)
 
 	writeHeader ();
 
-	Entry e = {0};
-	return	beginChunk (e, kProgramData) && 
-			writeInt32 (unitID) &&
-			verify (unitData->getUnitData (unitID, stream)) && 
-			endChunk (e);
+	Entry e = {};
+	return beginChunk (e, kProgramData) && writeInt32 (unitID) &&
+	       verify (unitData->getUnitData (unitID, stream)) && endChunk (e);
 }
 
 //------------------------------------------------------------------------
@@ -608,7 +639,8 @@ bool PresetFile::restoreProgramData (IUnitData* unitData, UnitID* unitId)
 				return false;
 
 			int32 alreadyRead = sizeof (int32);
-			ReadOnlyBStream* readOnlyBStream = new ReadOnlyBStream (stream, e->offset + alreadyRead, e->size - alreadyRead);
+			auto* readOnlyBStream =
+			    new ReadOnlyBStream (stream, e->offset + alreadyRead, e->size - alreadyRead);
 			FReleaser readOnlyStreamReleaser (readOnlyBStream);
 			return (unitData && verify (unitData->setUnitData (savedUnitID, readOnlyBStream)));
 		}
@@ -617,7 +649,8 @@ bool PresetFile::restoreProgramData (IUnitData* unitData, UnitID* unitId)
 }
 
 //------------------------------------------------------------------------
-bool PresetFile::restoreProgramData (IUnitInfo* unitInfo, int32 unitProgramListID, int32 programIndex)
+bool PresetFile::restoreProgramData (IUnitInfo* unitInfo, int32 unitProgramListID,
+                                     int32 programIndex)
 {
 	const Entry* e = getEntry (kProgramData);
 	int32 savedProgramListID = -1;
@@ -629,9 +662,11 @@ bool PresetFile::restoreProgramData (IUnitInfo* unitInfo, int32 unitProgramListI
 				return false;
 
 			int32 alreadyRead = sizeof (int32);
-			ReadOnlyBStream* readOnlyBStream = new ReadOnlyBStream (stream, e->offset + alreadyRead, e->size - alreadyRead);
+			auto* readOnlyBStream =
+			    new ReadOnlyBStream (stream, e->offset + alreadyRead, e->size - alreadyRead);
 			FReleaser readOnlyStreamReleaser (readOnlyBStream);
-			return (unitInfo && unitInfo->setUnitProgramData (unitProgramListID, programIndex, readOnlyBStream));
+			return (unitInfo && unitInfo->setUnitProgramData (unitProgramListID, programIndex,
+			                                                  readOnlyBStream));
 		}
 	}
 	return false;
@@ -651,22 +686,18 @@ bool PresetFile::getUnitProgramListID (int32& unitProgramListID)
 	return false;
 }
 
-
 //------------------------------------------------------------------------
 // FileStream implementation
 //------------------------------------------------------------------------
 IBStream* FileStream::open (const char* filename, const char* mode)
 {
 	FILE* file = fopen (filename, mode);
-	return file ? new FileStream (file) : 0;
+	return file ? new FileStream (file) : nullptr;
 }
 
 //------------------------------------------------------------------------
 FileStream::FileStream (FILE* file)
-: file (file)
-{
-	FUNKNOWN_CTOR
-}
+: file (file) {FUNKNOWN_CTOR}
 
 //------------------------------------------------------------------------
 FileStream::~FileStream ()
@@ -684,7 +715,7 @@ tresult PLUGIN_API FileStream::read (void* buffer, int32 numBytes, int32* numByt
 	size_t result = fread (buffer, 1, numBytes, file);
 	if (numBytesRead)
 		*numBytesRead = (int32)result;
-	return result == numBytes ? kResultOk : kResultFalse;
+	return static_cast<int32> (result) == numBytes ? kResultOk : kResultFalse;
 }
 
 //------------------------------------------------------------------------
@@ -693,7 +724,7 @@ tresult PLUGIN_API FileStream::write (void* buffer, int32 numBytes, int32* numBy
 	size_t result = fwrite (buffer, 1, numBytes, file);
 	if (numBytesWritten)
 		*numBytesWritten = (int32)result;
-	return result == numBytes ? kResultOk : kResultFalse;
+	return static_cast<int32> (result) == numBytes ? kResultOk : kResultFalse;
 }
 
 //------------------------------------------------------------------------
@@ -716,11 +747,9 @@ tresult PLUGIN_API FileStream::tell (int64* pos)
 	return kResultOk;
 }
 
-
 //------------------------------------------------------------------------
 // ReadOnlyBStream implementation
 //------------------------------------------------------------------------
-
 IMPLEMENT_REFCOUNT (ReadOnlyBStream)
 
 //------------------------------------------------------------------------
@@ -745,9 +774,9 @@ ReadOnlyBStream::~ReadOnlyBStream ()
 }
 
 //------------------------------------------------------------------------
-tresult PLUGIN_API ReadOnlyBStream::queryInterface (const TUID iid, void** obj)
+tresult PLUGIN_API ReadOnlyBStream::queryInterface (const TUID _iid, void** obj)
 {
-	return sourceStream ? sourceStream->queryInterface (iid, obj) : kResultFalse;
+	return sourceStream ? sourceStream->queryInterface (_iid, obj) : kResultFalse;
 }
 
 //------------------------------------------------------------------------
@@ -759,7 +788,7 @@ tresult PLUGIN_API ReadOnlyBStream::read (void* buffer, int32 numBytes, int32* n
 	if (!sourceStream)
 		return kNotInitialized;
 
-	int32 maxBytesToRead = (int32)(sectionSize - seekPosition);
+	int32 maxBytesToRead = (int32) (sectionSize - seekPosition);
 	if (numBytes > maxBytesToRead)
 		numBytes = maxBytesToRead;
 	if (numBytes <= 0)
@@ -781,7 +810,8 @@ tresult PLUGIN_API ReadOnlyBStream::read (void* buffer, int32 numBytes, int32* n
 }
 
 //------------------------------------------------------------------------
-tresult PLUGIN_API ReadOnlyBStream::write (void* /*buffer*/, int32 /*numBytes*/, int32* numBytesWritten)
+tresult PLUGIN_API ReadOnlyBStream::write (void* /*buffer*/, int32 /*numBytes*/,
+                                           int32* numBytesWritten)
 {
 	if (numBytesWritten)
 		*numBytesWritten = 0;
@@ -794,17 +824,11 @@ tresult PLUGIN_API ReadOnlyBStream::seek (int64 pos, int32 mode, int64* result)
 {
 	switch (mode)
 	{
-		case kIBSeekSet :
-			seekPosition = pos;
-			break;
+		case kIBSeekSet: seekPosition = pos; break;
 
-		case kIBSeekCur :
-			seekPosition += pos;
-			break;
+		case kIBSeekCur: seekPosition += pos; break;
 
-		case kIBSeekEnd :
-			seekPosition = sectionSize + pos;
-			break;
+		case kIBSeekEnd: seekPosition = sectionSize + pos; break;
 	}
 
 	if (seekPosition < 0)
@@ -825,23 +849,16 @@ tresult PLUGIN_API ReadOnlyBStream::tell (int64* pos)
 	return kResultOk;
 }
 
-
 //------------------------------------------------------------------------
 // BufferStream implementation
 //------------------------------------------------------------------------
 IMPLEMENT_FUNKNOWN_METHODS (BufferStream, IBStream, IBStream::iid)
 
 //------------------------------------------------------------------------
-BufferStream::BufferStream () 
-{
-	FUNKNOWN_CTOR 
-}
+BufferStream::BufferStream () {FUNKNOWN_CTOR}
 
 //------------------------------------------------------------------------
-BufferStream::~BufferStream ()
-{
-	FUNKNOWN_DTOR
-}
+BufferStream::~BufferStream () {FUNKNOWN_DTOR}
 
 //------------------------------------------------------------------------
 tresult PLUGIN_API BufferStream::read (void* buffer, int32 numBytes, int32* numBytesRead)

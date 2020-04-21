@@ -16,21 +16,44 @@
 
 #pragma once
 
-#define kLittleEndian 0
-#define kBigEndian 1
+#define kLittleEndian	0
+#define kBigEndian		1
 
 #undef PLUGIN_API
 
-#undef WINDOWS
-#undef MAC
+#if !defined (__INTEL_CXX11_MODE__)
+#define SMTG_INTEL_CXX11_MODE 0
+#else
+#define SMTG_INTEL_CXX11_MODE __INTEL_CXX11_MODE__
+#endif
+
+#if !defined (__INTEL_COMPILER)
+#define SMTG_INTEL_COMPILER 0
+#else
+#define SMTG_INTEL_COMPILER __INTEL_COMPILER
+#endif
 
 //-----------------------------------------------------------------------------
-// WIN32 AND WIN64
+// WIN32 AND WIN64 (WINDOWS)
+//-----------------------------------------------------------------------------
 #if defined (_WIN32)
-	#define WINDOWS 1
+	//-----------------------------------------------------------------------------
+	// ARM32 AND ARM64 (WINDOWS)
+	#if (defined(_M_ARM64) || defined(_M_ARM))
+		#define SMTG_OS_WINDOWS_ARM	1
+	#endif
+
+	#define SMTG_OS_LINUX	0
+	#define SMTG_OS_MACOS	0
+	#define SMTG_OS_WINDOWS	1
+	#define SMTG_OS_IOS		0
+	#define SMTG_OS_OSX		0
+
 	#define BYTEORDER kLittleEndian
-	#define COM_COMPATIBLE 1
+	
+	#define COM_COMPATIBLE	1
 	#define PLUGIN_API __stdcall
+	#define SMTG_PTHREADS	0
 
 	#ifndef _CRT_SECURE_NO_WARNINGS
 		#define _CRT_SECURE_NO_WARNINGS
@@ -43,32 +66,48 @@
 	#pragma warning (3 : 4189) // local variable is initialized but not referenced
 	#pragma warning (3 : 4238) // nonstandard extension used : class rvalue used as lvalue
 
-	#if defined (_WIN64)       // WIN64 only
-		#define PLATFORM_64 1
+	#if defined (_WIN64) || defined (_M_ARM64)
+		#define SMTG_PLATFORM_64 1
+	#else
+		#define SMTG_PLATFORM_64 0
 	#endif
+
 	#ifndef WIN32
 		#define WIN32	1
 	#endif
 
 	#ifdef __cplusplus
-		#define SMTG_CPP11	__cplusplus >= 201103L || _MSC_VER > 1600 || __INTEL_CXX11_MODE__
+		#define SMTG_CPP11	__cplusplus >= 201103L || _MSC_VER > 1600 || SMTG_INTEL_CXX11_MODE
 		#define SMTG_CPP11_STDLIBSUPPORT SMTG_CPP11
-	#endif		
+		#define SMTG_HAS_NOEXCEPT _MSC_VER >= 1900 || (SMTG_INTEL_CXX11_MODE && SMTG_INTEL_COMPILER >= 1300)
+	#endif
+
+	#define SMTG_DEPRECATED_ATTRIBUTE(message) __declspec (deprecated ("Is Deprecated: " message))
 //-----------------------------------------------------------------------------
 // LINUX
+//-----------------------------------------------------------------------------
 #elif __gnu_linux__
-	#define LINUX 1
+	#define SMTG_OS_LINUX	1
+	#define SMTG_OS_MACOS	0
+	#define SMTG_OS_WINDOWS	0
+	#define SMTG_OS_IOS		0
+	#define SMTG_OS_OSX		0
+
 	#include <endian.h>
 	#if __BYTE_ORDER == __LITTLE_ENDIAN
 		#define BYTEORDER kLittleEndian
 	#else
 		#define BYTEORDER kBigEndian
 	#endif
-	#define COM_COMPATIBLE 0
+
+	#define COM_COMPATIBLE	0
 	#define PLUGIN_API
-	#define PTHREADS 1
+	#define SMTG_PTHREADS	1
+
 	#if __LP64__
-		#define PLATFORM_64 1
+		#define SMTG_PLATFORM_64 1
+	#else
+		#define SMTG_PLATFORM_64 0
 	#endif
 	#ifdef __cplusplus
 		#include <cstddef>
@@ -77,31 +116,41 @@
 			#error unsupported compiler
 		#endif
 		#define SMTG_CPP11_STDLIBSUPPORT 1
+		#define SMTG_HAS_NOEXCEPT 1
 	#endif
 //-----------------------------------------------------------------------------
 // Mac and iOS
+//-----------------------------------------------------------------------------
 #elif __APPLE__
 	#include <TargetConditionals.h>
-	#define MAC 1
-	#define PTHREADS 1
-	#if !TARGET_OS_IPHONE
+	#define SMTG_OS_LINUX	0
+	#define SMTG_OS_MACOS	1
+	#define SMTG_OS_WINDOWS	0
+	#define SMTG_OS_IOS		TARGET_OS_IPHONE
+	#define SMTG_OS_OSX		TARGET_OS_MAC && !TARGET_OS_IPHONE
+
+	#if !SMTG_OS_IOS
 		#ifndef __CF_USE_FRAMEWORK_INCLUDES__
-		#define __CF_USE_FRAMEWORK_INCLUDES__
+			#define __CF_USE_FRAMEWORK_INCLUDES__
 		#endif
 		#ifndef TARGET_API_MAC_CARBON
-		#define TARGET_API_MAC_CARBON 1
+			#define TARGET_API_MAC_CARBON 1
 		#endif
 	#endif
 	#if __LP64__
-		#define PLATFORM_64 1
+		#define SMTG_PLATFORM_64 1
+	#else
+		#define SMTG_PLATFORM_64 0
 	#endif
 	#if defined (__BIG_ENDIAN__)
 		#define BYTEORDER kBigEndian
 	#else
 		#define BYTEORDER kLittleEndian
 	#endif
-	#define COM_COMPATIBLE 0
+
+	#define COM_COMPATIBLE	0
 	#define PLUGIN_API
+	#define SMTG_PTHREADS	1
 
 	#if !defined(__PLIST__) && !defined(SMTG_DISABLE_DEFAULT_DIAGNOSTICS)
 		#ifdef __clang__
@@ -126,16 +175,34 @@
 	#endif
 	#ifdef __cplusplus
 		#include <cstddef>
-		#define SMTG_CPP11 (__cplusplus >= 201103L || __INTEL_CXX11_MODE__)
+		#define SMTG_CPP11 (__cplusplus >= 201103L || SMTG_INTEL_CXX11_MODE)
 		#if defined (_LIBCPP_VERSION) && SMTG_CPP11
-		#define SMTG_CPP11_STDLIBSUPPORT 1
+			#define SMTG_CPP11_STDLIBSUPPORT 1
+			#define SMTG_HAS_NOEXCEPT 1
 		#else
-		#define SMTG_CPP11_STDLIBSUPPORT 0
+			#define SMTG_CPP11_STDLIBSUPPORT 0
+			#define SMTG_HAS_NOEXCEPT 0
 		#endif
 	#endif
 #else
 	#pragma error unknown platform
+#endif
 
+//-----------------------------------------------------------------------------
+#if !SMTG_RENAME_ASSERT
+#undef WINDOWS
+#undef MAC
+#undef PTHREADS
+#undef PLATFORM_64
+
+#if SMTG_OS_WINDOWS
+#define WINDOWS			SMTG_OS_WINDOWS
+#endif
+#if SMTG_OS_MACOS
+#define MAC				SMTG_OS_MACOS
+#endif
+#define PLATFORM_64		SMTG_PLATFORM_64
+#define PTHREADS		SMTG_PTHREADS
 #endif
 //-----------------------------------------------------------------------------
 
@@ -145,3 +212,18 @@
 #else
 #define SMTG_OVERRIDE
 #endif
+#if SMTG_HAS_NOEXCEPT
+#define SMTG_NOEXCEPT noexcept
+#else
+#define SMTG_NOEXCEPT
+#endif
+
+//-----------------------------------------------------------------------------
+// Deprecation setting
+//-----------------------------------------------------------------------------
+#ifndef SMTG_DEPRECATED_ATTRIBUTE
+#define SMTG_DEPRECATED_ATTRIBUTE(msg)
+#endif
+
+#define SMTG_DEPRECATED_MSG(msg) SMTG_DEPRECATED_ATTRIBUTE(msg)
+//-----------------------------------------------------------------------------

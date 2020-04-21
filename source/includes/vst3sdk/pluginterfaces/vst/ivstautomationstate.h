@@ -1,6 +1,5 @@
 //------------------------------------------------------------------------
 // Project     : VST SDK
-// Version     : 3.6.7
 //
 // Category    : Interfaces
 // Filename    : pluginterfaces/vst/ivstautomationstate.h
@@ -28,10 +27,10 @@ namespace Steinberg {
 namespace Vst {
 
 //------------------------------------------------------------------------
-/** Extended IComponent interface for a component.
+/** Extended Plug-in interface IEditController.
 \ingroup vstIPlug vst365
 - [plug imp]
-- [extends IComponent]
+- [extends IEditController]
 - [released: 3.6.5]
 - [optional]
 

@@ -93,7 +93,11 @@ struct PFactoryInfo
 		flags |= kUnicode;
 #endif
 	}
+#if SMTG_CPP11
+	constexpr PFactoryInfo () : vendor (), url (), email (), flags () {}
+#else
 	PFactoryInfo () { memset (this, 0, sizeof (PFactoryInfo)); }
+#endif
 };
 
 //------------------------------------------------------------------------
@@ -121,7 +125,7 @@ struct PClassInfo
 	char8 name[kNameSize];          ///< class name, visible to the user
 //------------------------------------------------------------------------
 
-	PClassInfo (TUID _cid, int32 _cardinality, const char8* _category, const char8* _name)
+	PClassInfo (const TUID _cid, int32 _cardinality, const char8* _category, const char8* _name)
 	{
 		memset (this, 0, sizeof (PClassInfo));
 		memcpy (cid, _cid, sizeof (TUID));
@@ -131,7 +135,11 @@ struct PClassInfo
 			strncpy8 (name, _name, kNameSize);
 		cardinality = _cardinality;
 	}
+#if SMTG_CPP11
+	constexpr PClassInfo () : cid (), cardinality (), category (), name () {}
+#else
 	PClassInfo () { memset (this, 0, sizeof (PClassInfo)); }
+#endif
 };
 
 
@@ -213,7 +221,7 @@ struct PClassInfo2
 			strncpy8 (category, _category, PClassInfo::kCategorySize);
 		if (_name)
 			strncpy8 (name, _name, PClassInfo::kNameSize);
-		classFlags = _classFlags;
+		classFlags = static_cast<uint32> (_classFlags);
 		if (_subCategories)
 			strncpy8 (subCategories, _subCategories, kSubCategoriesSize);
 		if (_vendor)
@@ -223,7 +231,22 @@ struct PClassInfo2
 		if (_sdkVersion)
 			strncpy8 (sdkVersion, _sdkVersion, kVersionSize);
 	}
+#if SMTG_CPP11
+	constexpr PClassInfo2 ()
+	: cid ()
+	, cardinality ()
+	, category ()
+	, name ()
+	, classFlags ()
+	, subCategories ()
+	, vendor ()
+	, version ()
+	, sdkVersion ()
+	{
+	}
+#else
 	PClassInfo2 () { memset (this, 0, sizeof (PClassInfo2)); }
+#endif
 };
 
 //------------------------------------------------------------------------
@@ -282,7 +305,7 @@ struct PClassInfoW
 			strncpy8 (category, _category, PClassInfo::kCategorySize);
 		if (_name)
 			strncpy16 (name, _name, PClassInfo::kNameSize);
-		classFlags = _classFlags;
+		classFlags = static_cast<uint32> (_classFlags);
 		if (_subCategories)
 			strncpy8 (subCategories, _subCategories, kSubCategoriesSize);
 		if (_vendor)
@@ -292,7 +315,22 @@ struct PClassInfoW
 		if (_sdkVersion)
 			strncpy16 (sdkVersion, _sdkVersion, kVersionSize);
 	}
+#if SMTG_CPP11
+	constexpr PClassInfoW ()
+	: cid ()
+	, cardinality ()
+	, category ()
+	, name ()
+	, classFlags ()
+	, subCategories ()
+	, vendor ()
+	, version ()
+	, sdkVersion ()
+	{
+	}
+#else
 	PClassInfoW () { memset (this, 0, sizeof (PClassInfoW)); }
+#endif
 
 	void fromAscii (const PClassInfo2& ci2)
 	{

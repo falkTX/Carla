@@ -17,12 +17,13 @@
 #pragma once
 
 #include "pluginterfaces/base/fstrdefs.h"
+#include "pluginterfaces/base/funknown.h"
 
 //------------------------------------------------------------------------
 namespace Steinberg {
 
 class FUnknown;
-    
+
 //------------------------------------------------------------------------
 //  FVariant struct declaration
 //------------------------------------------------------------------------
@@ -49,6 +50,8 @@ public:
 	inline FVariant () { memset (this, 0, sizeof (FVariant)); }
 	inline FVariant (const FVariant& variant);
 
+	inline FVariant (bool b) : type (kInteger), intValue (b) {}
+	inline FVariant (uint32 v) : type (kInteger), intValue (v) {}
 	inline FVariant (int64 v) : type (kInteger), intValue (v) {}
 	inline FVariant (double v) : type (kFloat), floatValue (v) {}
 	inline FVariant (const char8* str) : type (kString8), string8 (str) {}
@@ -62,12 +65,43 @@ public:
 //------------------------------------------------------------------------
 	inline FVariant& operator= (const FVariant& variant);
 
+	inline void set (bool b)
+	{
+		setInt (b);
+	}
+
+	inline void set (uint32 v)
+	{
+		setInt (v);
+	}
+
+	inline void set (int64 v)
+	{
+		setInt (v);
+	}
+
+	inline void set (double v)
+	{
+		setFloat (v);
+	}
+
+	inline void set (const char8* c)
+	{
+		setString8 (c);
+	}
+
+	inline void set (const char16* c)
+	{
+		setString16 (c);
+	}
+
 	inline void setInt (int64 v)
 	{
 		empty ();
 		type = kInteger;
 		intValue = v;
 	}
+
 	inline void setFloat (double v)
 	{
 		empty ();
@@ -93,6 +127,9 @@ public:
 		type = kObject;
 		object = obj;
 	}
+
+	template <typename T>
+	inline T get () const;
 
 	inline int64 getInt () const { return (type & kInteger) ? intValue : 0; }
 	inline double getFloat () const { return (type & kFloat) ? floatValue : 0.; }
@@ -134,7 +171,7 @@ public:
 //------------------------------------------------------------------------
 inline bool operator== (const FVariant& v1, const FVariant& v2)
 {
-#if PLATFORM_64
+#if SMTG_PLATFORM_64
 	return v1.type == v2.type && v1.intValue == v2.intValue;
 #else
 	if (v1.type != v2.type)
@@ -144,6 +181,60 @@ inline bool operator== (const FVariant& v1, const FVariant& v2)
 	return v1.intValue == v2.intValue; // intValue & double comparison
 
 #endif
+}
+
+template <>
+inline bool FVariant::get<bool> () const
+{
+	return getInt () != 0;
+}
+
+template <>
+inline uint32 FVariant::get<uint32> () const
+{
+	return static_cast<uint32> (getInt ());
+}
+
+template <>
+inline int32 FVariant::get<int32> () const
+{
+	return static_cast<int32> (getInt ());
+}
+
+template <>
+inline int64 FVariant::get<int64> () const
+{
+	return static_cast<int64> (getInt ());
+}
+
+template <>
+inline float FVariant::get<float> () const
+{
+	return static_cast<float> (getFloat ());
+}
+
+template <>
+inline double FVariant::get<double> () const
+{
+	return getFloat ();
+}
+
+template <>
+inline const char8* FVariant::get<const char8*> () const
+{
+	return getString8 ();
+}
+
+template <>
+inline const char16* FVariant::get<const char16*> () const
+{
+	return getString16 ();
+}
+
+template <>
+inline FUnknown* FVariant::get<FUnknown*> () const
+{
+	return getObject ();
 }
 
 //------------------------------------------------------------------------

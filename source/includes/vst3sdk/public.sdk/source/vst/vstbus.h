@@ -8,7 +8,7 @@
 //
 //-----------------------------------------------------------------------------
 // LICENSE
-// (c) 2017, Steinberg Media Technologies GmbH, All Rights Reserved
+// (c) 2019, Steinberg Media Technologies GmbH, All Rights Reserved
 //-----------------------------------------------------------------------------
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -98,7 +98,7 @@ public:
 
 	//---from Bus-------
 	/** Gets the BusInfo associated to this Event bus. */
-	virtual bool getInfo (BusInfo& info) SMTG_OVERRIDE;
+	bool getInfo (BusInfo& info) SMTG_OVERRIDE;
 
 	OBJ_METHODS (Vst::EventBus, Vst::Bus);
 
@@ -125,7 +125,7 @@ public:
 
 	//---from Bus---------------------
 	/** Gets the BusInfo associated to this Audio bus. */
-	virtual bool getInfo (BusInfo& info) SMTG_OVERRIDE;
+	bool getInfo (BusInfo& info) SMTG_OVERRIDE;
 
 	OBJ_METHODS (Vst::AudioBus, Vst::Bus)
 

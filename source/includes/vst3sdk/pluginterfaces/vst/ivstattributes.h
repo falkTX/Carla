@@ -1,6 +1,5 @@
 //------------------------------------------------------------------------
 // Project     : VST SDK
-// Version     : 3.6.7
 //
 // Category    : Interfaces
 // Filename    : pluginterfaces/vst/ivstattributes.h
@@ -32,6 +31,7 @@ namespace Vst {
 \ingroup vstIHost vst300
 - [host imp]
 - [released: 3.0.0]
+- [mandatory]
 
 An attribute list associates values with a key (id: some predefined keys could be found in \ref presetAttributes). */
 //------------------------------------------------------------------------
@@ -76,6 +76,7 @@ DECLARE_CLASS_IID (IAttributeList, 0x1E5F0AEB, 0xCC7F4533, 0xA2544011, 0x38AD5EE
 - [host imp]
 - [extends IBStream]
 - [released: 3.6.0]
+- [optional]
 
 \code
 ...

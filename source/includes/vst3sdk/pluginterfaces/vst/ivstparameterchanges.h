@@ -1,6 +1,5 @@
 //------------------------------------------------------------------------
 // Project     : VST SDK
-// Version     : 3.6.7
 //
 // Category    : Interfaces
 // Filename    : pluginterfaces/vst/ivstparameterchanges.h
@@ -32,6 +31,7 @@ namespace Vst {
 \ingroup vstIHost vst300
 - [host imp]
 - [released: 3.0.0]
+- [mandatory]
 
 The change queue can be interpreted as segment of an automation curve. For each
 processing block a segment with the size of the block is transmitted to the processor.
@@ -105,11 +105,12 @@ DECLARE_CLASS_IID (IParamValueQueue, 0x01263A18, 0xED074F6F, 0x98C9D356, 0x4686F
 \ingroup vstIHost vst300
 - [host imp]
 - [released: 3.0.0]
+- [mandatory]
 
-This interface is used to transmit any changes that shall be applied to paramaters
+This interface is used to transmit any changes that shall be applied to parameters
 in the current processing block. A change can be caused by GUI interaction as
 well as automation. They are transmitted as a list of queues (IParamValueQueue)
-containing only queues for paramaters that actually did change.
+containing only queues for parameters that actually did change.
 \see IParamValueQueue, ProcessData */
 //----------------------------------------------------------------------
 class IParameterChanges: public FUnknown

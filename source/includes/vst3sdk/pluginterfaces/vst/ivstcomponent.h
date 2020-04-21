@@ -1,6 +1,5 @@
 //-----------------------------------------------------------------------------
 // Project     : VST SDK
-// Version     : 3.6.7
 //
 // Category    : Interfaces
 // Filename    : pluginterfaces/vst/ivstcomponent.h
@@ -41,59 +40,51 @@ const int32 kDefaultFactoryFlags = PFactoryInfo::kUnicode; ///< Standard value f
 
 //------------------------------------------------------------------------
 /** \defgroup vstBus VST Buses
+Bus Description
+
+A bus can be understood as a "collection of data channels" belonging together.
+It describes a data input or a data output of the Plug-in.
+A VST component can define any desired number of buses, but this number must \b never change.
+Dynamic usage of buses is handled in the host by activating and deactivating buses.
+The component has to define the maximum number of supported buses and it has to
+define which of them are active by default. A host that can handle multiple buses,
+allows the user to activate buses that were initially inactive.
+
+See also: IComponent::getBusInfo, IComponent::activateBus
+
 @{*/
 
 //------------------------------------------------------------------------
 /** Bus media types */
-//------------------------------------------------------------------------
 enum MediaTypes
 {
-//------------------------------------------------------------------------
 	kAudio = 0,		///< audio
 	kEvent,			///< events
 	kNumMediaTypes
-//------------------------------------------------------------------------
 };
 
 //------------------------------------------------------------------------
 /** Bus directions */
-//------------------------------------------------------------------------
 enum BusDirections
 {
-//------------------------------------------------------------------------
 	kInput = 0,		///< input bus
 	kOutput			///< output bus
-//------------------------------------------------------------------------
 };
 
 //------------------------------------------------------------------------
 /** Bus types */
-//------------------------------------------------------------------------
 enum BusTypes
 {
-//------------------------------------------------------------------------
 	kMain = 0,		///< main bus
 	kAux			///< auxiliary bus (sidechain)
-//------------------------------------------------------------------------
 };
 
 //------------------------------------------------------------------------
-/** Bus Description
-
-    A bus can be understood as a 'collection of data channels' belonging together.
-    It describes a data input or a data output of the Plug-in.
-    A VST component can define any desired number of buses, but this number must \b never change.
-    Dynamic usage of buses is handled in the host by activating and deactivating buses. 
-	The component has to define the maximum number of supported buses and it has to 
-	define which of them are active by default. A host that can handle multiple buses,
-	allows the user to activate buses that were initially inactive.
-
-See also: IComponent::getBusInfo , IComponent::activateBus
-*/
-//------------------------------------------------------------------------
+/** BusInfo:
+This is the structure used with getBusInfo, informing the host about what is a specific given bus.
+\n See also: IComponent::getBusInfo */
 struct BusInfo
 {
-//------------------------------------------------------------------------
 	MediaType mediaType;	///< Media type - has to be a value of \ref MediaTypes
 	BusDirection direction; ///< input or output \ref BusDirections
 	int32 channelCount;		///< number of channels (if used then need to be recheck after \ref
@@ -107,14 +98,12 @@ struct BusInfo
 	{
 		kDefaultActive = 1 << 0 ///< bus active per default
 	};
-//------------------------------------------------------------------------
 };
 
 /*@}*/
 
 //------------------------------------------------------------------------
 /** I/O modes */
-//------------------------------------------------------------------------
 enum IoModes
 {
 	kSimple = 0,		///< 1:1 Input / Output. Only used for Instruments. See \ref vst3IoMode
@@ -123,12 +112,11 @@ enum IoModes
 };
 
 //------------------------------------------------------------------------
-/** Routing Information.
-    When the Plug-in supports multiple I/O buses, a host may want to know how the
-    buses are related. The relation of an event-input-channel to an audio-output-bus
-	in particular is of interest to the host (in order to relate MIDI-tracks to audio-channels)
-    \n See also: IComponent::getRoutingInfo, \ref vst3Routing */
-//------------------------------------------------------------------------
+/** Routing Information:
+When the Plug-in supports multiple I/O buses, a host may want to know how the buses are related. The
+relation of an event-input-channel to an audio-output-bus in particular is of interest to the host
+(in order to relate MIDI-tracks to audio-channels)
+\n See also: IComponent::getRoutingInfo, \ref vst3Routing */
 struct RoutingInfo
 {
 	MediaType mediaType;	///< media type see \ref MediaTypes

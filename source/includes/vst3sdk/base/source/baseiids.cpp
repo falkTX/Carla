@@ -9,7 +9,7 @@
 //
 //-----------------------------------------------------------------------------
 // LICENSE
-// (c) 2017, Steinberg Media Technologies GmbH, All Rights Reserved
+// (c) 2019, Steinberg Media Technologies GmbH, All Rights Reserved
 //-----------------------------------------------------------------------------
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -37,25 +37,16 @@
 
 #include "pluginterfaces/base/funknown.h"
 #include "pluginterfaces/base/istringresult.h"
-#include "pluginterfaces/base/iupdatehandler.h"
 #include "pluginterfaces/base/ipersistent.h"
-#include "pluginterfaces/base/icloneable.h"
-#include "pluginterfaces/base/ibstream.h"
+
 
 namespace Steinberg {
 
-DEF_CLASS_IID (FUnknown)
 DEF_CLASS_IID (IString)
 DEF_CLASS_IID (IStringResult)
 
-DEF_CLASS_IID (IDependent)
-DEF_CLASS_IID (IUpdateHandler)
 DEF_CLASS_IID (IPersistent)
 DEF_CLASS_IID (IAttributes)
 DEF_CLASS_IID (IAttributes2)
-
-DEF_CLASS_IID (ICloneable)
-
-DEF_CLASS_IID (ISizeableStream)
 //------------------------------------------------------------------------
 } // namespace Steinberg

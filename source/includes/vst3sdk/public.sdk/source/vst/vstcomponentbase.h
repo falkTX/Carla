@@ -8,7 +8,7 @@
 //
 //-----------------------------------------------------------------------------
 // LICENSE
-// (c) 2017, Steinberg Media Technologies GmbH, All Rights Reserved
+// (c) 2019, Steinberg Media Technologies GmbH, All Rights Reserved
 //-----------------------------------------------------------------------------
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -62,7 +62,8 @@ public:
 	/** Returns the hostContext (set by the host during initialize call). */
 	FUnknown* getHostContext () { return hostContext; }
 
-	/** Returns the peer for the messaging communication (you can only use IConnectionPoint::notify for communicate between peers, do not try to cast peerConnection. */
+	/** Returns the peer for the messaging communication (you can only use IConnectionPoint::notify
+	 * for communicate between peers, do not try to cast peerConnection. */
 	IConnectionPoint* getPeer () { return peerConnection; }
 
 	/** Allocates a message instance (don't forget to release it). */
@@ -71,15 +72,16 @@ public:
 	/** Sends the given message to the peer. */
 	tresult sendMessage (IMessage* message);
 
-	/** Sends a simple text message to the peer (max 255 characters). Text is interpreted as UTF-8. */
+	/** Sends a simple text message to the peer (max 255 characters). Text is interpreted as UTF-8.
+	 */
 	tresult sendTextMessage (const char8* text);
 
 	/** Receives a simple text message from the peer (max 255 characters). Text is UTF-8 encoded. */
 	virtual tresult receiveText (const char8* text);
 
 	//---from IPluginBase------
-	virtual tresult PLUGIN_API initialize (FUnknown* context) SMTG_OVERRIDE;
-	virtual tresult PLUGIN_API terminate () SMTG_OVERRIDE;
+	tresult PLUGIN_API initialize (FUnknown* context) SMTG_OVERRIDE;
+	tresult PLUGIN_API terminate () SMTG_OVERRIDE;
 
 	//---from IConnectionPoint-----------
 	tresult PLUGIN_API connect (IConnectionPoint* other) SMTG_OVERRIDE;
@@ -92,7 +94,7 @@ public:
 		DEF_INTERFACE (IPluginBase)
 		DEF_INTERFACE (IConnectionPoint)
 	END_DEFINE_INTERFACES (FObject)
-	REFCOUNT_METHODS(FObject)
+	REFCOUNT_METHODS (FObject)
 
 //------------------------------------------------------------------------
 protected:

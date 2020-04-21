@@ -8,7 +8,7 @@
 //
 //-----------------------------------------------------------------------------
 // LICENSE
-// (c) 2017, Steinberg Media Technologies GmbH, All Rights Reserved
+// (c) 2019, Steinberg Media Technologies GmbH, All Rights Reserved
 //-----------------------------------------------------------------------------
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -44,14 +44,12 @@
 namespace Steinberg {
 namespace Vst {
 
-
 //------------------------------------------------------------------------
 /** Default implementation for a VST 3 Component.
 \ingroup vstClasses
 Can be used as base class for a VST 3 component implementation. */
 //------------------------------------------------------------------------
-class Component: public ComponentBase,
-				 public IComponent
+class Component : public ComponentBase, public IComponent
 {
 public:
 //------------------------------------------------------------------------
@@ -68,7 +66,8 @@ public:
 	/** Removes all Event Buses. */
 	tresult removeEventBusses ();
 
-	/** Renames a specific bus. Do not forget to inform the host about this (see \ref IComponentHandler::restartComponent (kIoTitlesChanged)). */
+	/** Renames a specific bus. Do not forget to inform the host about this (see \ref
+	 * IComponentHandler::restartComponent (kIoTitlesChanged)). */
 	tresult renameBus (MediaType type, BusDirection dir, int32 index, const String128 newName);
 
 	//---from IComponent--------
@@ -91,7 +90,7 @@ public:
 	DEFINE_INTERFACES
 		DEF_INTERFACE (IComponent)
 	END_DEFINE_INTERFACES (ComponentBase)
-	REFCOUNT_METHODS(ComponentBase)
+	REFCOUNT_METHODS (ComponentBase)
 
 //------------------------------------------------------------------------
 protected:
@@ -105,12 +104,12 @@ protected:
 	tresult removeAllBusses ();
 };
 
-
 //------------------------------------------------------------------------
 // some Helper functions....
 //------------------------------------------------------------------------
 
-/** Gets the channel index of a given speaker in a arrangement, returns kResultFalse if speaker not part of the arrangement else returns kResultTrue. */
+/** Gets the channel index of a given speaker in a arrangement, returns kResultFalse if speaker not
+ * part of the arrangement else returns kResultTrue. */
 tresult getSpeakerChannelIndex (SpeakerArrangement arrangement, uint64 speaker, int32& channel);
 
 //------------------------------------------------------------------------

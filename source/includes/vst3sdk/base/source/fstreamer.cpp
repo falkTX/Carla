@@ -9,7 +9,7 @@
 //
 //-----------------------------------------------------------------------------
 // LICENSE
-// (c) 2017, Steinberg Media Technologies GmbH, All Rights Reserved
+// (c) 2019, Steinberg Media Technologies GmbH, All Rights Reserved
 //-----------------------------------------------------------------------------
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -671,7 +671,7 @@ bool FStreamer::writeStr8 (const char8* s)
 		return false;
 
 	if (length > 0)
-		return writeRaw (s, sizeof (char8) * length) == sizeof (char8) * length;
+		return writeRaw (s, sizeof (char8) * length) == static_cast<TSize>(sizeof (char8) * length);
 
 	return true;
 }

@@ -9,7 +9,7 @@
 //
 //-----------------------------------------------------------------------------
 // LICENSE
-// (c) 2017, Steinberg Media Technologies GmbH, All Rights Reserved
+// (c) 2019, Steinberg Media Technologies GmbH, All Rights Reserved
 //-----------------------------------------------------------------------------
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -39,16 +39,24 @@
 #include "base/source/classfactoryhelpers.h"
 #include "base/source/fstring.h"
 
-#include <list>
+#if SMTG_CPP11_STDLIBSUPPORT
+#include <unordered_map>
+#else
 #include <map>
+#endif
+#include <deque>
+#include <vector>
 #include <algorithm>
 
-#define NON_EXISTING_DEPENDENCY_CHECK 0 // not now, mm
+#define NON_EXISTING_DEPENDENCY_CHECK 0 // not yet
 #define CLASS_NAME_TRACKED DEVELOPMENT
+
+using Steinberg::Base::Thread::FGuard;
 
 namespace Steinberg {
 
 DEF_CLASS_IID (IUpdateManager)
+bool UpdateHandler::lockUpdates = false;
 
 namespace Update {
 const uint32 kHashSize = (1 << 8); // must be power of 2 (16 bytes * 256 == 4096)
@@ -57,13 +65,13 @@ const uint32 kMapSize = 1024 * 10;
 //------------------------------------------------------------------------
 inline uint32 hashPointer (void* p)
 {
-	return (uint32) ((uint64 (p) >> 12) & (kHashSize - 1));
+	return (uint32)((uint64 (p) >> 12) & (kHashSize - 1));
 }
 
 //------------------------------------------------------------------------
 inline IPtr<FUnknown> getUnknownBase (FUnknown* unknown)
 {
-	FUnknown* result = 0;
+	FUnknown* result = nullptr;
 	if (unknown)
 		unknown->queryInterface (FUnknown::iid, (void**)&result);
 
@@ -74,7 +82,8 @@ inline IPtr<FUnknown> getUnknownBase (FUnknown* unknown)
 //------------------------------------------------------------------------
 struct Dependency
 {
-	Dependency (FUnknown* o = 0, IDependent* d = 0) : obj (o), dep (d), objClass (0), depClass (0)
+	Dependency (FUnknown* o, IDependent* d)
+	: obj (o), dep (d), objClass (nullptr), depClass (nullptr)
 	{
 	}
 
@@ -93,7 +102,7 @@ struct Dependency
 //------------------------------------------------------------------------
 struct DeferedChange
 {
-	DeferedChange (FUnknown* o = 0, int32 m = 0) : obj (o), msg (m) {}
+	DeferedChange (FUnknown* o, int32 m = 0) : obj (o), msg (m) {}
 	~DeferedChange () {}
 	DeferedChange (const DeferedChange& r) : obj (r.obj), msg (r.msg) {}
 	inline bool operator== (const DeferedChange& d) const { return obj == d.obj; }
@@ -105,7 +114,7 @@ struct DeferedChange
 //------------------------------------------------------------------------
 struct UpdateData
 {
-	UpdateData (FUnknown* o = 0, IDependent** d = 0, uint32 c = 0)
+	UpdateData (FUnknown* o, IDependent** d, uint32 c)
 	: obj (o), dependents (d), count (c)
 	{
 	}
@@ -119,21 +128,26 @@ struct UpdateData
 };
 
 //------------------------------------------------------------------------
-typedef std::list<DeferedChange> DeferedChangeList;
+typedef std::deque<DeferedChange> DeferedChangeList;
 typedef DeferedChangeList::const_iterator DeferedChangeListIterConst;
+typedef DeferedChangeList::iterator DeferedChangeListIter;
 
-typedef std::list<UpdateData> UpdateDataList;
+typedef std::deque<UpdateData> UpdateDataList;
 typedef UpdateDataList::const_iterator UpdateDataListIterConst;
 
 #if CLASS_NAME_TRACKED
-typedef std::list<Dependency> DependentList;
+typedef std::vector<Dependency> DependentList;
 #else
-typedef std::list<IDependent*> DependentList;
+typedef std::vector<IDependent*> DependentList;
 #endif
 typedef DependentList::iterator DependentListIter;
 typedef DependentList::const_iterator DependentListIterConst;
 
+#if SMTG_CPP11_STDLIBSUPPORT
+typedef std::unordered_map<const FUnknown*, DependentList> DependentMap;
+#else
 typedef std::map<const FUnknown*, DependentList> DependentMap;
+#endif
 typedef DependentMap::iterator DependentMapIter;
 typedef DependentMap::const_iterator DependentMapIterConst;
 
@@ -154,10 +168,7 @@ void updateDone (FUnknown* unknown, int32 message)
 			obj->updateDone (message);
 	}
 }
-}
-
-//------------------------------------------------------------------------
-SINGLE_CREATE_FUNC (UpdateHandler)
+} // namespace Update
 
 //------------------------------------------------------------------------
 static int32 countEntries (Update::DependentMap& map)
@@ -179,10 +190,10 @@ static int32 countEntries (Update::DependentMap& map)
 }
 
 //------------------------------------------------------------------------
-UpdateHandler::UpdateHandler () : table (0)
+UpdateHandler::UpdateHandler ()
 {
 	table = NEW Update::Table;
-	if (FObject::getUpdateHandler () == 0)
+	if (FObject::getUpdateHandler () == nullptr)
 		FObject::setUpdateHandler (this);
 }
 
@@ -190,9 +201,9 @@ UpdateHandler::UpdateHandler () : table (0)
 UpdateHandler::~UpdateHandler ()
 {
 	if (FObject::getUpdateHandler () == this)
-		FObject::setUpdateHandler (0);
+		FObject::setUpdateHandler (nullptr);
 	delete table;
-	table = 0;
+	table = nullptr;
 }
 
 //------------------------------------------------------------------------
@@ -223,7 +234,7 @@ tresult PLUGIN_API UpdateHandler::addDependent (FUnknown* u, IDependent* _depend
 	{
 		Update::DependentList list;
 		list.push_back (dependent);
-		map[u] = list;
+		map[unknown] = list;
 	}
 	else
 	{
@@ -237,7 +248,7 @@ tresult PLUGIN_API UpdateHandler::addDependent (FUnknown* u, IDependent* _depend
 tresult PLUGIN_API UpdateHandler::removeDependent (FUnknown* u, IDependent* dependent)
 {
 	IPtr<FUnknown> unknown = Update::getUnknownBase (u);
-	if (unknown == 0 && dependent == 0)
+	if (unknown == nullptr && dependent == nullptr)
 		return kResultFalse;
 
 	FGuard guard (lock);
@@ -245,7 +256,7 @@ tresult PLUGIN_API UpdateHandler::removeDependent (FUnknown* u, IDependent* depe
 	Update::UpdateDataListIterConst iter = table->updateData.begin ();
 	while (iter != table->updateData.end ())
 	{
-		if ((*iter).obj == unknown || unknown == 0)
+		if ((*iter).obj == unknown || unknown == nullptr)
 		{
 			for (uint32 count = 0; count < (*iter).count; count++)
 			{
@@ -256,7 +267,7 @@ tresult PLUGIN_API UpdateHandler::removeDependent (FUnknown* u, IDependent* depe
 		++iter;
 	}
 	// Remove all objects for the given dependent
-	if (unknown == 0)
+	if (unknown == nullptr)
 	{
 		for (uint32 j = 0; j < Update::kHashSize; j++)
 		{
@@ -268,10 +279,18 @@ tresult PLUGIN_API UpdateHandler::removeDependent (FUnknown* u, IDependent* depe
 				Update::DependentListIter iterList = list.begin ();
 				while (iterList != list.end ())
 				{
+#if CLASS_NAME_TRACKED
+					if ((*iterList).dep == dependent)
+#else
 					if ((*iterList) == dependent)
-						list.erase (iterList++);
+#endif
+					{
+						iterList = list.erase (iterList);
+					}
 					else
+					{
 						++iterList;
+					}
 				}
 				++iterMap;
 			}
@@ -285,11 +304,11 @@ tresult PLUGIN_API UpdateHandler::removeDependent (FUnknown* u, IDependent* depe
 		Update::DependentMapIter iterList = map.find (unknown);
 
 #if NON_EXISTING_DEPENDENCY_CHECK
-		ASSERT (iterList != map.end () && "ERROR: Trying to remove a non existing dependency!")
+		SMTG_ASSERT (iterList != map.end () && "ERROR: Trying to remove a non existing dependency!")
 #endif
 		if (iterList != map.end ())
 		{
-			if (dependent == 0) // Remove all dependents of object
+			if (dependent == nullptr) // Remove all dependents of object
 			{
 				map.erase (iterList);
 			}
@@ -306,7 +325,7 @@ tresult PLUGIN_API UpdateHandler::removeDependent (FUnknown* u, IDependent* depe
 					if ((*iterDependentlist) == dependent)
 #endif
 					{
-						dependentlist.erase (iterDependentlist++);
+						iterDependentlist = dependentlist.erase (iterDependentlist);
 						eraseCount++;
 						if (dependentlist.empty ())
 						{
@@ -332,6 +351,8 @@ tresult PLUGIN_API UpdateHandler::removeDependent (FUnknown* u, IDependent* depe
 //------------------------------------------------------------------------
 tresult UpdateHandler::doTriggerUpdates (FUnknown* u, int32 message, bool suppressUpdateDone)
 {
+	if (lockUpdates)
+		return kResultFalse;
 	IPtr<FUnknown> unknown = Update::getUnknownBase (u);
 	if (!unknown)
 		return kResultFalse;
@@ -365,13 +386,13 @@ tresult UpdateHandler::doTriggerUpdates (FUnknown* u, int32 message, bool suppre
 				{
 					if (dependents == smallDependents)
 					{
-						dependents = new IDependent*[Update::kMapSize];
+						dependents = NEW IDependent*[Update::kMapSize];
 						memcpy (dependents, smallDependents, count * sizeof (dependents[0]));
 						maxDependents = Update::kMapSize;
 					}
 					else
 					{
-						WARNING ("Dependency overflow")
+						SMTG_WARNING ("Dependency overflow")
 						break;
 					}
 				}
@@ -507,7 +528,7 @@ tresult PLUGIN_API UpdateHandler::triggerDeferedUpdates (FUnknown* unknown)
 		while (true)
 		{
 			lock.lock ();
-			Update::DeferedChangeListIterConst it =
+			Update::DeferedChangeListIter it =
 			    std::find (table->defered.begin (), table->defered.end (), tmp);
 			if (it == table->defered.end ())
 			{
@@ -515,7 +536,7 @@ tresult PLUGIN_API UpdateHandler::triggerDeferedUpdates (FUnknown* unknown)
 				return kResultTrue;
 			}
 
-			if ((*it).obj != 0)
+			if ((*it).obj != nullptr)
 			{
 				int32 msg = (*it).msg;
 				table->defered.erase (it);
@@ -573,9 +594,41 @@ tresult PLUGIN_API UpdateHandler::cancelUpdates (FUnknown* u)
 	FGuard guard (lock);
 
 	Update::DeferedChange change (unknown, 0);
-	table->defered.remove (change);
+	while (1)
+	{
+		auto iter = std::find (table->defered.begin (), table->defered.end (), change);
+		if (iter != table->defered.end ())
+			table->defered.erase (iter);
+		else
+			break;
+	}
 
 	return kResultTrue;
+}
+
+//------------------------------------------------------------------------
+size_t UpdateHandler::countDependencies (FUnknown* object)
+{
+	FGuard guard (lock);
+	uint32 res = 0;
+
+	IPtr<FUnknown> unknown = Update::getUnknownBase (object);
+	if (unknown)
+	{
+		Update::DependentMap& map = table->depMap[Update::hashPointer (unknown)];
+		Update::DependentMapIter iterList = map.find (unknown);
+		if (iterList != map.end ())
+			return iterList->second.size ();
+	}
+	else
+	{
+		for (uint32 j = 0; j < Update::kHashSize; j++)
+		{
+			Update::DependentMap& map = table->depMap[j];
+			res += countEntries (map);
+		}
+	}
+	return res;
 }
 
 #if DEVELOPMENT
@@ -656,6 +709,7 @@ void UpdateHandler::printForObject (FObject* obj) const
 				             (uint64) (*iterDependentlist), (uint64) ((*iterList).first));
 			}
 #endif
+			++iterDependentlist;
 		}
 
 		++iterList;

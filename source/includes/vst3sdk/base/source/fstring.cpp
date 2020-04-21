@@ -9,7 +9,7 @@
 //
 //-----------------------------------------------------------------------------
 // LICENSE
-// (c) 2017, Steinberg Media Technologies GmbH, All Rights Reserved
+// (c) 2019, Steinberg Media Technologies GmbH, All Rights Reserved
 //-----------------------------------------------------------------------------
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -41,12 +41,12 @@
 #include "pluginterfaces/base/fvariant.h"
 
 #include <cstdlib>
-#include <ctype.h>
+#include <cctype>
 #include <cstdio>
-#include <stdarg.h>
+#include <cstdarg>
 #include <utility>
 
-#if WINDOWS
+#if SMTG_OS_WINDOWS
 #include <windows.h>
 #pragma warning (disable : 4244)
 #pragma warning (disable : 4267)
@@ -67,7 +67,7 @@
 #define kPrintfBufferSize 4096
 #endif
 
-#if MAC
+#if SMTG_OS_MACOS
 #include <CoreFoundation/CoreFoundation.h>
 #include <CoreFoundation/CFString.h>
 #include <CoreFoundation/CFStringEncodingExt.h>
@@ -198,9 +198,9 @@ static bool fromCFStringRef (Steinberg::char8* dest, Steinberg::int32 destSize, 
 	dest[usedBytes] = 0;
 	return result;
 }
-#endif // MAC
+#endif // SMTG_OS_MACOS
 
-#if WINDOWS
+#if SMTG_OS_WINDOWS
 #define stricmp16 wcsicmp
 #define strnicmp16 wcsnicmp
 #define strrchr16 wcsrchr
@@ -230,7 +230,7 @@ static bool fromCFStringRef (Steinberg::char8* dest, Steinberg::int32 destSize, 
 #define wtol _wtol
 #define wtof _wtof
 
-#elif LINUX
+#elif SMTG_OS_LINUX
 #include <codecvt>
 #include <locale>
 #include <cstring>
@@ -287,7 +287,6 @@ static inline int strnicmp16 (const Steinberg::char16* s1, const Steinberg::char
 //-----------------------------------------------------------------------------
 static inline int sprintf16 (Steinberg::char16* wcs, const Steinberg::char16* format, ...)
 {
-#warning DEPRECATED No Linux implementation
     assert(false && "DEPRECATED No Linux implementation");
 	return 0;
 }
@@ -311,12 +310,11 @@ static inline int vsnwprintf (Steinberg::char16* wcs, size_t maxlen,
 //-----------------------------------------------------------------------------
 static inline Steinberg::char16* strrchr16 (const Steinberg::char16* str, Steinberg::char16 c)
 {
-#warning DEPRECATED No Linux implementation
     assert(false && "DEPRECATED No Linux implementation");
 	return nullptr;
 }
 
-#elif MAC
+#elif SMTG_OS_MACOS
 #define tstrtoi64 strtoll
 #define stricmp strcasecmp
 #define strnicmp strncasecmp
@@ -749,8 +747,6 @@ int32 ConstString::compareAt (uint32 index, const ConstString& str, int32 n, Com
 			else
 				return strnicmp (toCompare, str, n);
 		}
-
-		return 0;
 	}
 	else if (isWide && str.isWide)
 	{
@@ -780,8 +776,6 @@ int32 ConstString::compareAt (uint32 index, const ConstString& str, int32 n, Com
 			else
 				return strnicmp16 (toCompare, str.text16 (), n);
 		}
-
-		return 0;
 	}
 	else
 	{
@@ -800,7 +794,6 @@ int32 ConstString::compareAt (uint32 index, const ConstString& str, int32 n, Com
 			return tmp.compareAt (index, str, n, mode);
 		}
 	}
-	return 0; // should never be reached
 }
 
 //------------------------------------------------------------------------
@@ -834,7 +827,6 @@ Steinberg::int32 ConstString::naturalCompare (const ConstString& str, CompareMod
 			return strnatcmp16 (tmp.text16 (), str.text16 (), isCaseSensitive (mode));
 		}
 	}
-	return 0; // should never be reached
 }
 
 //-----------------------------------------------------------------------------
@@ -884,8 +876,6 @@ bool ConstString::startsWith (const ConstString& str, CompareMode mode /*= kCase
 			return strncmp16 (tmp.buffer16, str.buffer16, str.length ()) == 0;
 		return strnicmp16 (tmp.buffer16, str.buffer16, str.length ()) == 0;
 	}
-	ASSERT(false)
-	return false; // should never be reached
 }
 
 //-----------------------------------------------------------------------------
@@ -935,8 +925,6 @@ bool ConstString::endsWith (const ConstString& str, CompareMode mode /*= kCaseSe
 			return strncmp16 (tmp.buffer16 + (tmp.length () - str.length ()), str.buffer16, str.length ()) == 0;
 		return strnicmp16 (tmp.buffer16 + (tmp.length () - str.length ()), str.buffer16, str.length ()) == 0;
 	}
-	ASSERT(false)
-	return false; // should never be reached
 }
 
 //-----------------------------------------------------------------------------
@@ -1578,11 +1566,11 @@ bool ConstString::scanFloat (double& value, uint32 offset, bool scanToEnd) const
 //-----------------------------------------------------------------------------
 char16 ConstString::toLower (char16 c)
 {
-	#if WINDOWS
+	#if SMTG_OS_WINDOWS
 		WCHAR temp[2] = {c, 0};
         ::CharLowerW (temp);
         return temp[0];
-	#elif MAC
+	#elif SMTG_OS_MACOS
 		// only convert characters which in lowercase are also single characters
 		UniChar characters [2] = {0};
 		characters[0] = c;
@@ -1595,8 +1583,7 @@ char16 ConstString::toLower (char16 c)
 				return characters[0];
 		}
 		return c;
-	#elif LINUX
-	#warning DEPRECATED No Linux implementation
+	#elif SMTG_OS_LINUX
 	assert(false && "DEPRECATED No Linux implementation");
 		return c;
 	#else
@@ -1607,11 +1594,11 @@ char16 ConstString::toLower (char16 c)
 //-----------------------------------------------------------------------------
 char16 ConstString::toUpper (char16 c)
 {
-	#if WINDOWS
+	#if SMTG_OS_WINDOWS
 		WCHAR temp[2] = {c, 0};
         ::CharUpperW (temp);
         return temp[0];
-	#elif MAC
+	#elif SMTG_OS_MACOS
 		// only convert characters which in uppercase are also single characters (don't translate a sharp-s which would result in SS)
 		UniChar characters [2] = {0};
 		characters[0] = c;
@@ -1624,8 +1611,7 @@ char16 ConstString::toUpper (char16 c)
 				return characters[0];
 		}
 		return c;
-	#elif LINUX
-	#warning DEPRECATED No Linux implementation
+    #elif SMTG_OS_LINUX
 	assert(false && "DEPRECATED No Linux implementation");
 		return c;
 	#else
@@ -1638,7 +1624,7 @@ char8 ConstString::toLower (char8 c)
 {
 	if ((c >= 'A') && (c <= 'Z'))
 		return c + ('a' - 'A');
-	#if WINDOWS
+	#if SMTG_OS_WINDOWS
 		CHAR temp[2] = {c, 0};
         ::CharLowerA (temp);
         return temp[0];
@@ -1652,7 +1638,7 @@ char8 ConstString::toUpper (char8 c)
 {
 	if ((c >= 'a') && (c <= 'z'))
 		return c - ('a' - 'A');
-	#if WINDOWS
+	#if SMTG_OS_WINDOWS
 		CHAR temp[2] = {c, 0};
         ::CharUpperA (temp);
         return temp[0];
@@ -1713,7 +1699,7 @@ bool ConstString::isCharAlphaNum (const char8 character)
 //-----------------------------------------------------------------------------
 bool ConstString::isCharAlphaNum (const char16 character)
 {
-	return iswalnum (character) != 0; // this may not work on MacOSX when another locale is set inside the c-lib
+	return iswalnum (character) != 0; // this may not work on macOSX when another locale is set inside the c-lib
 }
 
 //-----------------------------------------------------------------------------
@@ -1725,7 +1711,7 @@ bool ConstString::isCharDigit (const char8 character)
 //-----------------------------------------------------------------------------
 bool ConstString::isCharDigit (const char16 character)
 {
-	return iswdigit (character) != 0;	// this may not work on MacOSX when another locale is set inside the c-lib
+	return iswdigit (character) != 0;	// this may not work on macOSX when another locale is set inside the c-lib
 }
 
 //-----------------------------------------------------------------------------
@@ -1790,7 +1776,7 @@ int32 ConstString::getTrailingNumberIndex (uint32 width) const
 	// now either all are digits or i is on the first non digit
 	if (i < endIndex)
 	{
-		if (width > 0 && (endIndex - i != width))
+		if (width > 0 && (endIndex - i != static_cast<int32> (width)))
 			return -1;
 
 		return i + 1;
@@ -1848,7 +1834,7 @@ bool ConstString::isAsciiString () const
 }
 
 
-#if MAC
+#if SMTG_OS_MACOS
 uint32 kDefaultSystemEncoding = kCFStringEncodingMacRoman;
 //-----------------------------------------------------------------------------
 static CFStringEncoding MBCodePageToCFStringEncoding (uint32 codePage)
@@ -1879,28 +1865,30 @@ int32 ConstString::multiByteToWideString (char16* dest, const char8* source, int
 		return 0;
 	}
 	int32 result = 0;
-#if WINDOWS
+#if SMTG_OS_WINDOWS
 	result = MultiByteToWideChar (sourceCodePage, MB_ERR_INVALID_CHARS, source, -1, dest, charCount);
 #endif
 
-#if MAC
-	CFStringRef cfStr = (CFStringRef)::toCFStringRef (source, MBCodePageToCFStringEncoding (sourceCodePage));
+#if SMTG_OS_MACOS
+	CFStringRef cfStr =
+	    (CFStringRef)::toCFStringRef (source, MBCodePageToCFStringEncoding (sourceCodePage));
 	if (cfStr)
 	{
 		CFRange range = {0, CFStringGetLength (cfStr)};
 		CFIndex usedBytes;
-		if (CFStringGetBytes (cfStr, range, kCFStringEncodingUnicode, ' ', false, (UInt8*)dest, charCount * 2, &usedBytes) > 0)
+		if (CFStringGetBytes (cfStr, range, kCFStringEncodingUnicode, ' ', false, (UInt8*)dest,
+		                      charCount * 2, &usedBytes) > 0)
 		{
-			result = static_cast<int32>(usedBytes/2 + 1);
+			result = static_cast<int32> (usedBytes / 2 + 1);
 			if (dest)
-				dest[usedBytes/2] = 0;
+				dest[usedBytes / 2] = 0;
 		}
 
 		CFRelease (cfStr);
 	}
 #endif
 
-#if LINUX
+#if SMTG_OS_LINUX
 	if (sourceCodePage == kCP_ANSI || sourceCodePage == kCP_Utf8)
 	{
 		if (dest == nullptr)
@@ -1921,24 +1909,23 @@ int32 ConstString::multiByteToWideString (char16* dest, const char8* source, int
 		}
 	}
 	else
-	{
-#warning DEPRECATED No Linux implementation
+    {
 		assert(false && "DEPRECATED No Linux implementation");
 	}
 
 #endif
 
-	ASSERT (result > 0)
+	SMTG_ASSERT (result > 0)
 	return result;
 }
 
 //-----------------------------------------------------------------------------
 int32 ConstString::wideStringToMultiByte (char8* dest, const char16* wideString, int32 charCount, uint32 destCodePage)
 {
-#if WINDOWS
+#if SMTG_OS_WINDOWS
 	return WideCharToMultiByte (destCodePage, 0, wideString, -1, dest, charCount, 0, 0);
 
-#elif MAC
+#elif SMTG_OS_MACOS
 	int32 result = 0;
 	if (wideString != 0)
 	{
@@ -1948,18 +1935,18 @@ int32 ConstString::wideStringToMultiByte (char8* dest, const char16* wideString,
 			if (cfStr)
 			{
 				if (fromCFStringRef (dest, charCount, cfStr, MBCodePageToCFStringEncoding (destCodePage)))
-					result = static_cast<int32>(strlen (dest) + 1);
+					result = static_cast<int32> (strlen (dest) + 1);
 				CFRelease (cfStr);
 			}
 		}
 		else
 		{
-			return static_cast<int32>(CFStringGetMaximumSizeForEncoding (strlen16 (wideString), MBCodePageToCFStringEncoding (destCodePage)));
+			return static_cast<int32> (CFStringGetMaximumSizeForEncoding (strlen16 (wideString), MBCodePageToCFStringEncoding (destCodePage)));
 		}
 	}
 	return result;
 
-#elif LINUX
+#elif SMTG_OS_LINUX
 	int32 result = 0;
 	if (destCodePage == kCP_Utf8)
 	{
@@ -2002,8 +1989,7 @@ int32 ConstString::wideStringToMultiByte (char8* dest, const char16* wideString,
 		}
 	}
 	else
-	{
-#warning DEPRECATED No Linux implementation
+    {
 		assert(false && "DEPRECATED No Linux implementation");
 	}
 	return result;
@@ -2022,15 +2008,17 @@ bool ConstString::isNormalized (UnicodeNormalization n)
 	if (isWide == false)
 		return false;
 
-#if WINDOWS
+#if SMTG_OS_WINDOWS
 #ifdef UNICODE
 	if (n != kUnicodeNormC)
 		return false;
-	int32 normCharCount = FoldString (MAP_PRECOMPOSED, buffer16, len, 0, 0);
+	uint32 normCharCount = static_cast<uint32> (FoldString (MAP_PRECOMPOSED, buffer16, len, 0, 0));
 	return (normCharCount == len);
+#else
+	return false; 
 #endif
 
-#elif MAC
+#elif SMTG_OS_MACOS
 	if (n != kUnicodeNormC)
 		return false;
 
@@ -2038,10 +2026,9 @@ bool ConstString::isNormalized (UnicodeNormalization n)
 	CFIndex charCount = CFStringGetLength (cfStr);
 	CFRelease (cfStr);
 	return (charCount == len);
-
-#endif
-
+#else
 	return false;
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -2128,7 +2115,7 @@ String::String (String&& str)
 //-----------------------------------------------------------------------------
 String& String::operator= (String&& str)
 {
-	ASSERT (buffer == 0 || buffer != str.buffer); 
+	SMTG_ASSERT (buffer == 0 || buffer != str.buffer);
 	tryFreeBuffer ();
 	
 	isWide = str.isWide;
@@ -2182,7 +2169,7 @@ bool String::toWideString (uint32 sourceCodePage)
 }
 
 #define SMTG_STRING_CHECK_CONVERSION 1
-#define SMTG_STRING_CHECK_CONVERSION_NO_BREAK 0
+#define SMTG_STRING_CHECK_CONVERSION_NO_BREAK 1
 
 #if SMTG_STRING_CHECK_CONVERSION_NO_BREAK
 	#define SMTG_STRING_CHECK_MSG FDebugPrint
@@ -2279,17 +2266,17 @@ bool String::normalize (UnicodeNormalization n)
 	if (buffer16 == 0)
 		return true;
 
-#if WINDOWS
+#if SMTG_OS_WINDOWS
 #ifdef UNICODE
 	if (n != kUnicodeNormC)
 		return false;
 
-	int32 normCharCount = FoldString (MAP_PRECOMPOSED, buffer16, len, 0, 0);
+	uint32 normCharCount = static_cast<uint32> (FoldString (MAP_PRECOMPOSED, buffer16, len, 0, 0));
 	if (normCharCount == len)
 		return true;
 
 	char16* newString = (char16*)malloc ((normCharCount + 1) * sizeof (char16));
-	int32 converterCount = FoldString (MAP_PRECOMPOSED, buffer16, len, newString, normCharCount + 1);
+	uint32 converterCount = static_cast<uint32> (FoldString (MAP_PRECOMPOSED, buffer16, len, newString, normCharCount + 1));
 	if (converterCount != normCharCount)
 	{
 		free (newString);
@@ -2300,9 +2287,11 @@ bool String::normalize (UnicodeNormalization n)
 	buffer16 = newString;
 	updateLength ();
 	return true;
+#else
+	return false;
 #endif
 
-#elif MAC
+#elif SMTG_OS_MACOS
 	CFMutableStringRef origStr = (CFMutableStringRef)toCFStringRef (0xFFFF, true);
 	if (origStr)
 	{
@@ -2319,10 +2308,10 @@ bool String::normalize (UnicodeNormalization n)
 		CFRelease (origStr);
 		return result;
 	}
-
-#endif
-
 	return false;
+#else
+	return false;
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -2346,11 +2335,11 @@ bool String::resize (uint32 newLength, bool wide, bool fill)
 	}
 	else
 	{
-		TSize newCharSize = wide ? sizeof (char16) : sizeof (char8);
-		TSize oldCharSize = (isWide != 0) ? sizeof (char16) : sizeof (char8);
+		size_t newCharSize = wide ? sizeof (char16) : sizeof (char8);
+		size_t oldCharSize = (isWide != 0) ? sizeof (char16) : sizeof (char8);
 
-		TSize newBufferSize = (newLength + 1) * newCharSize;
-		TSize oldBufferSize = (len + 1) * oldCharSize;
+		size_t newBufferSize = (newLength + 1) * newCharSize;
+		size_t oldBufferSize = (len + 1) * oldCharSize;
 
 		isWide = wide ? 1 : 0;
 
@@ -2441,12 +2430,12 @@ bool String::setChar8 (uint32 index, char8 c)
 				if (multiByteToWideString (dest, src, 2) > 0)
 					buffer16[index] = dest[0];
 			}
-			ASSERT (buffer16[len] == 0)
+			SMTG_ASSERT (buffer16[len] == 0)
 		}
 		else
 		{
 			buffer8[index] = c;
-			ASSERT (buffer8[len] == 0)
+			SMTG_ASSERT (buffer8[len] == 0)
 		}
 
 		if (c == 0)
@@ -2485,11 +2474,11 @@ bool String::setChar16 (uint32 index, char16 c)
 		if (isWide)
 		{
 			buffer16[index] = c;
-			ASSERT (buffer16[len] == 0)
+			SMTG_ASSERT (buffer16[len] == 0)
 		}
 		else
 		{
-			ASSERT (buffer8[len] == 0)
+			SMTG_ASSERT (buffer8[len] == 0)
 			char16 src[] = {c, 0};
 			char8 dest[8] = {0};
 			if (wideStringToMultiByte (dest, src, 2) > 0 && dest[1] == 0)
@@ -2534,7 +2523,7 @@ String& String::assign (const char8* str, int32 n, bool isTerminated)
 		if (buffer8 && n > 0)
 		{
 			memcpy (buffer8, str, n * sizeof (char8));
-			ASSERT (buffer8[n] == 0)
+			SMTG_ASSERT (buffer8[n] == 0)
 		}
 		isWide = 0;
 		len = n;
@@ -2561,7 +2550,7 @@ String& String::assign (const char16* str, int32 n, bool isTerminated)
 		if (buffer16 && n > 0)
 		{
 			memcpy (buffer16, str, n * sizeof (char16));
-			ASSERT (buffer16[n] == 0)
+			SMTG_ASSERT (buffer16[n] == 0)
 		}
 		isWide = 1;
 		len = n;
@@ -2577,7 +2566,7 @@ String& String::assign (char8 c, int32 n)
 		if (buffer8 && n > 0)
 		{
 			memset (buffer8, c, n * sizeof (char8));
-			ASSERT (buffer8[n] == 0)
+			SMTG_ASSERT (buffer8[n] == 0)
 		}
 		isWide = 0;
 		len = n;
@@ -2595,7 +2584,7 @@ String& String::assign (char16 c, int32 n)
 		{
 			for (int32 i = 0; i < n; i++)
 				buffer16[i] = c;
-			ASSERT (buffer16[n] == 0)
+			SMTG_ASSERT (buffer16[n] == 0)
 		}
 		isWide = 1;
 		len = n;
@@ -2642,7 +2631,7 @@ String& String::append (const char8* str, int32 n)
 		if (buffer)
 		{
 			memcpy (buffer8 + len, str, n * sizeof (char8));
-			ASSERT (buffer8[newlen] == 0)
+			SMTG_ASSERT (buffer8[newlen] == 0)
 		}
 
 		len += n;
@@ -2677,7 +2666,7 @@ String& String::append (const char16* str, int32 n)
 		if (buffer16)
 		{
 			memcpy (buffer16 + len, str, n * sizeof (char16));
-			ASSERT (buffer16[newlen] == 0)
+			SMTG_ASSERT (buffer16[newlen] == 0)
 		}
 
 		len += n;
@@ -2711,7 +2700,7 @@ String& String::append (const char8 c, int32 n)
 		if (buffer)
 		{
 			memset (buffer8 + len, c, n * sizeof (char8));
-			ASSERT (buffer8[newlen] == 0)
+			SMTG_ASSERT (buffer8[newlen] == 0)
 		}
 
 		len += n;
@@ -2743,7 +2732,7 @@ String& String::append (const char16 c, int32 n)
 		{
 			for (int32 i = len; i < newlen; i++)
 				buffer16[i] = c;
-			ASSERT (buffer16[newlen] == 0)
+			SMTG_ASSERT (buffer16[newlen] == 0)
 		}
 
 		len += n;
@@ -2788,7 +2777,7 @@ String& String::insertAt (uint32 idx, const char8* str, int32 n)
 			if (idx < len)
 				memmove (buffer8 + idx + n, buffer8 + idx, (len - idx) * sizeof (char8));
 			memcpy (buffer8 + idx, str, n * sizeof (char8));
-			ASSERT (buffer8[newlen] == 0)
+			SMTG_ASSERT (buffer8[newlen] == 0)
 		}
 
 		len += n;
@@ -2822,7 +2811,7 @@ String& String::insertAt (uint32 idx, const char16* str, int32 n)
 			if (idx < len)
 				memmove (buffer16 + idx + n, buffer16 + idx, (len - idx) * sizeof (char16));
 			memcpy (buffer16 + idx, str, n * sizeof (char16));
-			ASSERT (buffer16[newlen] == 0)
+			SMTG_ASSERT (buffer16[newlen] == 0)
 		}
 
 		len += n;
@@ -2930,8 +2919,8 @@ int32 String::replace (const char8* toReplace, const char8* toReplaceWith, bool 
 	int32 idx = findFirst (toReplace, -1, m);
 	if (idx > -1)
 	{
-		int32 toReplaceLen = static_cast<int32>(strlen (toReplace));
-		int32 toReplaceWithLen = static_cast<int32>(strlen (toReplaceWith));
+		int32 toReplaceLen = static_cast<int32> (strlen (toReplace));
+		int32 toReplaceWithLen = static_cast<int32> (strlen (toReplaceWith));
 		while (idx > -1)
 		{
 			replace (idx, toReplaceLen, toReplaceWith, toReplaceWithLen);
@@ -3039,7 +3028,7 @@ bool String::replaceChars16 (const char16* toReplace, char16 toReplaceBy)
 
 		if (toReplaceA.length () > 1)
 		{
-			WARNING("cannot replace non ASCII chars on non Wide String")
+			SMTG_WARNING("cannot replace non ASCII chars on non Wide String")
 			return false;
 		}
 
@@ -3112,7 +3101,7 @@ static uint32 performTrim (T* str, uint32 length, F func, bool funcResult)
 	while ((*p) && ((func (*p) != 0) == funcResult))
 		p++;
 
-	toRemoveAtHead = static_cast<uint32>(p - str);
+	toRemoveAtHead = static_cast<uint32> (p - str);
 
 	if (toRemoveAtHead < length)
 	{
@@ -3328,7 +3317,7 @@ String& String::printf (const char8* format, ...)
 	va_list marker;
 	va_start (marker, format);
 	
-	vsnprintf (string, kPrintfBufferSize, format, marker);
+	vsnprintf (string, kPrintfBufferSize-1, format, marker);
 	return assign (string);
 }
 
@@ -3341,7 +3330,7 @@ String& String::printf (const char16* format, ...)
 	va_list marker;
 	va_start (marker, format);
 	
-	vsnwprintf (string, kPrintfBufferSize, format, marker);
+	vsnwprintf (string, kPrintfBufferSize-1, format, marker);
 	return assign (string);
 }
 
@@ -3350,7 +3339,7 @@ String& String::vprintf (const char8* format, va_list args)
 {
 	char8 string[kPrintfBufferSize];
 
-	vsnprintf (string, kPrintfBufferSize, format, args);
+	vsnprintf (string, kPrintfBufferSize-1, format, args);
 	return assign (string);
 }
 
@@ -3359,7 +3348,7 @@ String& String::vprintf (const char16* format, va_list args)
 {
 	char16 string[kPrintfBufferSize];
 
-	vsnwprintf (string, kPrintfBufferSize, format, args);
+	vsnwprintf (string, kPrintfBufferSize-1, format, args);
 	return assign (string);
 }
 
@@ -3509,7 +3498,7 @@ void String::toLower ()
 	{
 		if (isWide)
 		{
-#if MAC
+#if SMTG_OS_MACOS
 			CFMutableStringRef cfStr = CFStringCreateMutableWithExternalCharactersNoCopy (kCFAllocator, (UniChar*)buffer16, len, len+1, kCFAllocatorNull);
 			CFStringLowercase (cfStr, NULL);
 			CFRelease (cfStr);
@@ -3554,7 +3543,7 @@ void String::toUpper ()
 	{
 		if (isWide)
 		{
-#if MAC
+#if SMTG_OS_MACOS
 			CFMutableStringRef cfStr = CFStringCreateMutableWithExternalCharactersNoCopy (kCFAllocator, (UniChar*)buffer16, len, len+1, kCFAllocatorNull);
 			CFStringUppercase (cfStr, NULL);
 			CFRelease (cfStr);
@@ -3754,7 +3743,7 @@ const String& String::fromPascalString (const unsigned char* buf)
 	return *this;
 }
 
-#if MAC
+#if SMTG_OS_MACOS
 
 //-----------------------------------------------------------------------------
 bool String::fromCFStringRef (const void* cfStr, uint32 encoding)
@@ -3767,7 +3756,7 @@ bool String::fromCFStringRef (const void* cfStr, uint32 encoding)
 	{
 		CFRange range = { 0, CFStringGetLength (strRef)};
 		CFIndex usedBytes;
-		if (resize (static_cast<int32>(range.length + 1), true))
+		if (resize (static_cast<int32> (range.length + 1), true))
 		{
 			if (encoding == 0xFFFF)
 				encoding = kCFStringEncodingUnicode;
@@ -3785,12 +3774,12 @@ bool String::fromCFStringRef (const void* cfStr, uint32 encoding)
 			return false;
 		if (encoding == 0xFFFF)
 			encoding = kCFStringEncodingASCII;
-		int32 len = static_cast<int32>(CFStringGetLength (strRef) * 2);
+		int32 len = static_cast<int32> (CFStringGetLength (strRef) * 2);
 		if (resize (++len, false))
 		{
 			if (CFStringGetCString (strRef, buffer8, len, encoding))
 			{
-				this->len = static_cast<int32>(strlen (buffer8));
+				this->len = static_cast<int32> (strlen (buffer8));
 				return true;
 			}
 		}

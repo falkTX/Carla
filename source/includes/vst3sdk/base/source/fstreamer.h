@@ -9,7 +9,7 @@
 //
 //-----------------------------------------------------------------------------
 // LICENSE
-// (c) 2017, Steinberg Media Technologies GmbH, All Rights Reserved
+// (c) 2019, Steinberg Media Technologies GmbH, All Rights Reserved
 //-----------------------------------------------------------------------------
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -72,7 +72,7 @@ public:
 	/** @name Streams are byteOrder aware. */
 	///@{
 	inline void setByteOrder (int32 e) { byteOrder = (int16)e; }
-	inline int32 getByteOrder () { return byteOrder; }
+	inline int32 getByteOrder () const { return byteOrder; }
 	///@}
 
 	/** @name read and write int8 and char. */

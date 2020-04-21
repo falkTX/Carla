@@ -1,6 +1,5 @@
 //------------------------------------------------------------------------
 // Project     : VST SDK
-// Version     : 3.6.7
 //
 // Category    : Interfaces
 // Filename    : pluginterfaces/vst/ivsteditcontroller.h
@@ -56,6 +55,7 @@ struct ParameterInfo
 	int32 flags;			///< ParameterFlags (see below)
 	enum ParameterFlags
 	{
+		kNoFlags		 = 0,		///< no flags wanted
 		kCanAutomate	 = 1 << 0,	///< parameter can be automated
 		kIsReadOnly		 = 1 << 1,	///< parameter cannot be changed from outside (implies that kCanAutomate is false)
 		kIsWrapAround	 = 1 << 2,	///< attempts to set the parameter value out of the limits will result in a wrap around [SDK 3.0.2]
@@ -88,7 +88,7 @@ enum RestartFlags
 	kLatencyChanged				= 1 << 3,	///< Latency has changed (IAudioProcessor.getLatencySamples)  [SDK 3.0.0]
 	kParamTitlesChanged			= 1 << 4,	///< Parameter titles or default values or flags have changed [SDK 3.0.0]
 	kMidiCCAssignmentChanged	= 1 << 5,	///< MIDI Controller Assignments have changed     [SDK 3.0.1]
-	kNoteExpressionChanged		= 1 << 6,	///< Note Expression has changed (info, count...) [SDK 3.5.0]
+	kNoteExpressionChanged		= 1 << 6,	///< Note Expression has changed (info, count, PhysicalUIMapping, ...) [SDK 3.5.0]
 	kIoTitlesChanged			= 1 << 7,	///< Input and/or Output bus titles have changed  [SDK 3.5.0]
 	kPrefetchableSupportChanged = 1 << 8,	///< Prefetch support has changed (\see IPrefetchableSupport) [SDK 3.6.1]
 	kRoutingInfoChanged			= 1 << 9	///< RoutingInfo has changed (\see IComponent)    [SDK 3.6.6]
@@ -99,6 +99,7 @@ enum RestartFlags
 \ingroup vstIHost vst300
 - [host imp]
 - [released: 3.0.0]
+- [mandatory]
 
 Allow transfer of parameter editing to component (processor) via host and support automation.
 Cause the host to react on configuration changes (restartComponent)
@@ -134,6 +135,7 @@ DECLARE_CLASS_IID (IComponentHandler, 0x93A0BEA3, 0x0BD045DB, 0x8E890B0C, 0xC1E4
 - [host imp]
 - [extends IComponentHandler]
 - [released: 3.1.0]
+- [optional]
 
 One part handles:
 - Setting dirty state of Plug-in
@@ -212,10 +214,40 @@ public:
 DECLARE_CLASS_IID (IComponentHandler2, 0xF040B4B3, 0xA36045EC, 0xABCDC045, 0xB4D5A2CC)
 
 //------------------------------------------------------------------------
+/** Extended Host callback interface IComponentHandlerBusActivation for an edit controller.
+\ingroup vstIHost vst368
+- [host imp]
+- [extends IComponentHandler]
+- [released: 3.6.8]
+- [optional]
+
+Allows the Plug-in to request the host to activate or deactivate a specific bus, 
+if the host accepts it will call later on IComponent::activateBus (see \ref IComponent::activateBus). 
+Useful especially for Instrument with more than 1 outputs, where the user could request
+from the Plug-in UI a given output bus activation.
+
+\see \ref IComponentHandler */
+//------------------------------------------------------------------------
+class IComponentHandlerBusActivation : public FUnknown
+{
+public:
+	//------------------------------------------------------------------------
+	/** request the host to activate or deactivate a specific bus. */
+	virtual tresult PLUGIN_API requestBusActivation (MediaType type, BusDirection dir, int32 index,
+	                                                 TBool state) = 0;
+
+//------------------------------------------------------------------------
+	static const FUID iid;
+};
+
+DECLARE_CLASS_IID (IComponentHandlerBusActivation, 0x067D02C1, 0x5B4E274D, 0xA92D90FD, 0x6EAF7240)
+
+//------------------------------------------------------------------------
 /** Edit controller component interface.
 \ingroup vstIPlug vst300
 - [plug imp]
 - [released: 3.0.0]
+- [mandatory]
 
 The Controller part of an effect or instrument with parameter handling (export, definition, conversion...).
 \see IComponent::getControllerClassId, IMidiMapping */
@@ -290,6 +322,7 @@ typedef int32 KnobMode;		///< Knob Mode
 - [plug imp]
 - [extends IEditController]
 - [released: 3.1.0]
+- [optional]
 
 Extension to inform the Plug-in about the host Knob Mode,
 and to open the Plug-in about box or help documentation.
@@ -324,6 +357,7 @@ DECLARE_CLASS_IID (IEditController2, 0x7F4EFE59, 0xF3204967, 0xAC27A3AE, 0xAFB63
 - [plug imp]
 - [extends IEditController]
 - [released: 3.0.1]
+- [optional]
 
 MIDI controllers are not transmitted directly to a VST component. MIDI as hardware protocol has
 restrictions that can be avoided in software. Controller data in particular come along with unclear

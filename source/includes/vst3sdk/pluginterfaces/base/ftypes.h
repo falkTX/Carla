@@ -43,7 +43,7 @@ namespace Steinberg
 	typedef short int16;
 	typedef unsigned short uint16;
 
-#if WINDOWS && !defined(__GNUC__)
+#if SMTG_OS_WINDOWS && !defined(__GNUC__)
 	typedef long int32;
 	typedef unsigned long uint32;
 #else
@@ -57,7 +57,7 @@ namespace Steinberg
 	static const int32 kMinInt32 = kMinLong;
 	static const uint32 kMaxInt32u = 0xffffffff;
 
-#if WINDOWS && !defined(__GNUC__)
+#if SMTG_OS_WINDOWS && !defined(__GNUC__)
 	typedef __int64 int64;
 	typedef unsigned __int64 uint64;
 	static const int64 kMaxInt64 = 9223372036854775807i64;
@@ -78,7 +78,7 @@ namespace Steinberg
 	static const float kMaxFloat = 3.40282346638528860E38;
 	static const double kMaxDouble = 1.7976931348623158E308;
 
-#if PLATFORM_64
+#if SMTG_PLATFORM_64
 	typedef uint64 TPtrInt;
 #else
 	typedef uint32 TPtrInt;
@@ -118,13 +118,13 @@ namespace Steinberg
 	const FIDString kPlatformStringMac = "MAC";
 	const FIDString kPlatformStringIOS = "IOS";
 	const FIDString kPlatformStringLinux = "Linux";
-#if WINDOWS
+#if SMTG_OS_WINDOWS
 	const FIDString kPlatformString = kPlatformStringWin;
-#elif TARGET_OS_IPHONE
+#elif SMTG_OS_IOS
 	const FIDString kPlatformString = kPlatformStringIOS;
-#elif MAC
+#elif SMTG_OS_MACOS
 	const FIDString kPlatformString = kPlatformStringMac;
-#elif LINUX
+#elif SMTG_OS_LINUX
 	const FIDString kPlatformString = kPlatformStringLinux;
 #endif
 
@@ -170,10 +170,10 @@ namespace Steinberg
 // always inline macros (only when RELEASE is 1)
 //----------------------------------------------------------------------------
 #if RELEASE
-	#if MAC || LINUX
+    #if SMTG_OS_MACOS || SMTG_OS_LINUX
 		#define SMTG_ALWAYS_INLINE	__inline__ __attribute__((__always_inline__))
 		#define SMTG_NEVER_INLINE __attribute__((noinline))
-	#elif WINDOWS
+	#elif SMTG_OS_WINDOWS
 		#define SMTG_ALWAYS_INLINE	__forceinline
 		#define SMTG_NEVER_INLINE __declspec(noinline)
 	#endif

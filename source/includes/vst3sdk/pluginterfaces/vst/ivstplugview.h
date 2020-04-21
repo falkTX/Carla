@@ -1,6 +1,5 @@
 //------------------------------------------------------------------------
 // Project     : VST SDK
-// Version     : 3.6.7
 //
 // Category    : Interfaces
 // Filename    : pluginterfaces/vst/ivstplugview.h
@@ -35,6 +34,7 @@ namespace Vst {
 - [plug imp]
 - [extends IPlugView]
 - [released: 3.0.2]
+- [optional]
 
 It is highly recommended to implement this interface.
 A host can implement important functionality when a plug-in supports this interface.

@@ -1,6 +1,5 @@
 //------------------------------------------------------------------------
 // Project     : VST SDK
-// Version     : 3.6.7
 //
 // Category    : Interfaces
 // Filename    : pluginterfaces/vst/ivstmessage.h
@@ -32,6 +31,7 @@ namespace Vst {
 - [host imp]
 - [create via IHostApplication::createInstance]
 - [released: 3.0.0]
+- [mandatory]
 
 Messages are sent from a VST-controller component to a VST-editor component and vice versa.
 \see IAttributeList, IConnectionPoint, \ref vst3Communication */
@@ -61,6 +61,7 @@ DECLARE_CLASS_IID (IMessage, 0x936F033B, 0xC6C047DB, 0xBB0882F8, 0x13C1E613)
 - [plug imp]
 - [host imp]
 - [released: 3.0.0]
+- [mandatory]
 
 This interface is used for the communication of separate components.
 Note that some hosts will place a proxy object between the components so that they are not directly connected.

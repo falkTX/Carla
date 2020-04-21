@@ -9,7 +9,7 @@
 //
 //-----------------------------------------------------------------------------
 // LICENSE
-// (c) 2017, Steinberg Media Technologies GmbH, All Rights Reserved
+// (c) 2019, Steinberg Media Technologies GmbH, All Rights Reserved
 //-----------------------------------------------------------------------------
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -125,16 +125,16 @@ public:
 	virtual ~ConstString () {}			///< Destructor.
 
 	// access -----------------------------------------------------------------
-	virtual int32 length () const {return len;} 					///< Return length of string
-	inline bool isEmpty () const {return buffer == 0 || len == 0;} 	///< Return true if sting is empty
+	virtual int32 length () const {return static_cast<int32> (len);}	///< Return length of string
+	inline bool isEmpty () const {return buffer == 0 || len == 0;}		///< Return true if string is empty
 
 	operator const char8* () const {return text8 ();} 							///< Returns pointer to string of type char8 (no modification allowed)
 	operator const char16* () const {return text16 ();}							///< Returns pointer to string of type char16(no modification allowed)
-	inline tchar operator[] (short idx) const {return getChar (idx);}			///< Returns character at 'idx'
-	inline tchar operator[] (long idx) const {return getChar (static_cast<uint32>(idx));}
-	inline tchar operator[] (int idx) const {return getChar (idx);}
+	inline tchar operator[] (short idx) const {return getChar (static_cast<uint32> (idx));} ///< Returns character at 'idx'
+	inline tchar operator[] (long idx) const {return getChar (static_cast<uint32> (idx));}
+	inline tchar operator[] (int idx) const {return getChar (static_cast<uint32> (idx));}
 	inline tchar operator[] (unsigned short idx) const {return getChar (idx);}
-	inline tchar operator[] (unsigned long idx) const {return getChar (static_cast<uint32>(idx));}
+	inline tchar operator[] (unsigned long idx) const {return getChar (static_cast<uint32> (idx));}
 	inline tchar operator[] (unsigned int idx) const {return getChar (idx);}
 
 	inline virtual const char8* text8 () const;		///< Returns pointer to string of type char8
@@ -278,7 +278,7 @@ public:
 
 	bool isNormalized (UnicodeNormalization = kUnicodeNormC); ///< On PC only kUnicodeNormC is working
 
-#if MAC
+#if SMTG_OS_MACOS
 	virtual void* toCFStringRef (uint32 encoding = 0xFFFF, bool mutableCFString = false) const;	///< CFString conversion
 #endif
 //-------------------------------------------------------------------------
@@ -447,7 +447,7 @@ public:
 	void fromUTF8 (const char8* utf8String);				///< Assigns from UTF8 string
 	bool normalize (UnicodeNormalization = kUnicodeNormC);	///< On PC only kUnicodeNormC is working
 
-#if MAC
+#if SMTG_OS_MACOS
 	virtual bool fromCFStringRef (const void*, uint32 encoding = 0xFFFF);	///< CFString conversion
 #endif
 	//-------------------------------------------------------------------------
@@ -533,7 +533,7 @@ inline tchar ConstString::getCharAt (uint32 index) const
 		return getChar16 (index);
 #endif
 
-	return getChar8 (index);
+	return static_cast<tchar> (getChar8 (index));
 }
 
 //-----------------------------------------------------------------------------

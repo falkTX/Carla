@@ -8,7 +8,7 @@
 //
 //-----------------------------------------------------------------------------
 // LICENSE
-// (c) 2017, Steinberg Media Technologies GmbH, All Rights Reserved
+// (c) 2019, Steinberg Media Technologies GmbH, All Rights Reserved
 //-----------------------------------------------------------------------------
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -43,14 +43,14 @@ namespace Vst {
 //------------------------------------------------------------------------
 // ComponentBase Implementation
 //------------------------------------------------------------------------
-ComponentBase::ComponentBase ()
-: hostContext (0)
-, peerConnection (0)
-{}
+ComponentBase::ComponentBase () : hostContext (nullptr), peerConnection (nullptr)
+{
+}
 
 //------------------------------------------------------------------------
 ComponentBase::~ComponentBase ()
-{}
+{
+}
 
 //------------------------------------------------------------------------
 tresult PLUGIN_API ComponentBase::initialize (FUnknown* context)
@@ -73,7 +73,7 @@ tresult PLUGIN_API ComponentBase::terminate ()
 	if (hostContext)
 	{
 		hostContext->release ();
-		hostContext = 0;
+		hostContext = nullptr;
 	}
 
 	// in case host did not disconnect us,
@@ -82,7 +82,7 @@ tresult PLUGIN_API ComponentBase::terminate ()
 	{
 		peerConnection->disconnect (this);
 		peerConnection->release ();
-		peerConnection = 0;
+		peerConnection = nullptr;
 	}
 
 	return kResultOk;
@@ -108,8 +108,8 @@ tresult PLUGIN_API ComponentBase::disconnect (IConnectionPoint* other)
 {
 	if (peerConnection && other == peerConnection)
 	{
-		peerConnection->release (),
-		peerConnection = 0;
+		peerConnection->release ();
+		peerConnection = nullptr;
 		return kResultOk;
 	}
 	return kResultFalse;
@@ -124,7 +124,8 @@ tresult PLUGIN_API ComponentBase::notify (IMessage* message)
 	if (!strcmp (message->getMessageID (), "TextMessage"))
 	{
 		TChar string[256] = {0};
-		if (message->getAttributes ()->getString ("Text", string, sizeof (string) / sizeof (char16)) == kResultOk)
+		if (message->getAttributes ()->getString ("Text", string,
+		                                          sizeof (string) / sizeof (char16)) == kResultOk)
 		{
 			String tmp (string);
 			tmp.toMultiByte (kCP_Utf8);
@@ -141,13 +142,13 @@ IMessage* ComponentBase::allocateMessage ()
 	FUnknownPtr<IHostApplication> hostApp (hostContext);
 	if (hostApp)
 		return Vst::allocateMessage (hostApp);
-	return 0;
+	return nullptr;
 }
 
 //------------------------------------------------------------------------
 tresult ComponentBase::sendMessage (IMessage* message)
 {
-	if (message != 0 && getPeer () != 0)
+	if (message != nullptr && getPeer () != nullptr)
 		return getPeer ()->notify (message);
 	return kResultFalse;
 }

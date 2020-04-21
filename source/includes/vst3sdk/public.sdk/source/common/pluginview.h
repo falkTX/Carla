@@ -8,7 +8,7 @@
 //
 //-----------------------------------------------------------------------------
 // LICENSE
-// (c) 2017, Steinberg Media Technologies GmbH, All Rights Reserved
+// (c) 2019, Steinberg Media Technologies GmbH, All Rights Reserved
 //-----------------------------------------------------------------------------
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -51,7 +51,7 @@ class CPluginView: public FObject,
 {
 public:
 //------------------------------------------------------------------------
-	CPluginView (const ViewRect* rect = 0);
+	CPluginView (const ViewRect* rect = nullptr);
 	virtual ~CPluginView ();
 
 	/** Returns its current frame rectangle. */
@@ -61,7 +61,7 @@ public:
 	void setRect (const ViewRect& r)	{ rect = r; }
 
 	/** Checks if this view is attached to its parent view. */
-	bool isAttached () const			{ return systemWindow != 0; }
+	bool isAttached () const			{ return systemWindow != nullptr; }
 
 	/** Calls when this view will be attached to its parent view. */
 	virtual void attachedToParent () {}

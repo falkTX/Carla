@@ -9,7 +9,7 @@
 //
 //-----------------------------------------------------------------------------
 // LICENSE
-// (c) 2017, Steinberg Media Technologies GmbH, All Rights Reserved
+// (c) 2019, Steinberg Media Technologies GmbH, All Rights Reserved
 //-----------------------------------------------------------------------------
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -36,7 +36,7 @@
 //-----------------------------------------------------------------------------
 
 #include "base/source/fobject.h"
-#include "base/source/flock.h"
+#include "base/thread/include/flock.h"
 
 #include <vector>
 
@@ -68,7 +68,7 @@ uint32 PLUGIN_API FObject::addRef ()
 
 //------------------------------------------------------------------------
 uint32 PLUGIN_API FObject::release () 
-{                                              
+{
 	if (FUnknownPrivate::atomicAdd (refCount, -1) == 0)
 	{
 		refCount = -1000;
@@ -128,14 +128,14 @@ namespace Singleton
 	typedef std::vector<FObject**> ObjectVector;
 	ObjectVector* singletonInstances = 0;
 	bool singletonsTerminated = false;
-	FLock* singletonsLock;
+	Steinberg::Base::Thread::FLock* singletonsLock;
 
 	bool isTerminated () {return singletonsTerminated;}
 
 	void lockRegister ()
 	{
 		if (!singletonsLock) // assume first call not from multiple threads
-			singletonsLock = NEW FLock;
+			singletonsLock = NEW Steinberg::Base::Thread::FLock;
 		singletonsLock->lock ();
 	}
 	void unlockRegister () 
@@ -145,7 +145,7 @@ namespace Singleton
 
 	void registerInstance (FObject** o)
 	{
-		ASSERT (singletonsTerminated == false)
+		SMTG_ASSERT (singletonsTerminated == false)
 		if (singletonsTerminated == false)
 		{
 			if (singletonInstances == 0)
@@ -167,6 +167,7 @@ namespace Singleton
 				{
 					FObject** obj = (*it);
 					(*obj)->release ();
+					*obj = 0;
 					obj = 0;
 				}
 

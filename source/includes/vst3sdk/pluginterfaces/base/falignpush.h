@@ -15,17 +15,21 @@
 //-----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------------------------
-#if TARGET_API_MAC_CARBON
-	#if PLATFORM_64
+#if SMTG_OS_MACOS
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wunknown-warning-option"
+	#pragma GCC diagnostic ignored "-Wpragma-pack"
+	#if SMTG_PLATFORM_64
 		#pragma pack(push, 16)
 	#else
-		#pragma options align=mac68k
+		#pragma pack(push, 1)
 	#endif
+	#pragma GCC diagnostic pop
 #elif defined __BORLANDC__
 	#pragma -a8
-#elif WINDOWS
+#elif SMTG_OS_WINDOWS
 	#pragma pack(push)
-	#if PLATFORM_64
+	#if SMTG_PLATFORM_64
 		#pragma pack(16)
 	#else
 		#pragma pack(8)

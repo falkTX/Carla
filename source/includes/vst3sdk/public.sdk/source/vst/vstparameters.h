@@ -8,7 +8,7 @@
 //
 //-----------------------------------------------------------------------------
 // LICENSE
-// (c) 2017, Steinberg Media Technologies GmbH, All Rights Reserved
+// (c) 2019, Steinberg Media Technologies GmbH, All Rights Reserved
 //-----------------------------------------------------------------------------
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -40,39 +40,39 @@
 #include "pluginterfaces/vst/ivsteditcontroller.h"
 #include "pluginterfaces/vst/ivstunits.h"
 
-#include <vector>
 #include <map>
+#include <vector>
 
 //------------------------------------------------------------------------
 namespace Steinberg {
 namespace Vst {
 
-
 //------------------------------------------------------------------------
 /** Description of a Parameter.
 \ingroup vstClasses */
 //------------------------------------------------------------------------
-class Parameter: public FObject
+class Parameter : public FObject
 {
 public:
 //------------------------------------------------------------------------
 	Parameter ();
 	Parameter (const ParameterInfo&);
-	Parameter (const TChar* title, ParamID tag, const TChar* units = 0,
-			   ParamValue defaultValueNormalized = 0., int32 stepCount = 0,
-			   int32 flags = ParameterInfo::kCanAutomate, UnitID unitID = kRootUnitId);
-	virtual ~Parameter ();
+	Parameter (const TChar* title, ParamID tag, const TChar* units = nullptr,
+	           ParamValue defaultValueNormalized = 0., int32 stepCount = 0,
+	           int32 flags = ParameterInfo::kCanAutomate, UnitID unitID = kRootUnitId,
+               const TChar* shortTitle = nullptr);
+	~Parameter () override;
 
-	/** Returns its readonly info. */
-	const ParameterInfo& getInfo () const {return info;}
+	/** Returns its read only info. */
+	virtual const ParameterInfo& getInfo () const { return info; }
 
-	/** Returns its writeable info. */
-	ParameterInfo& getInfo () {return info;}
+	/** Returns its writable info. */
+	virtual ParameterInfo& getInfo () { return info; }
 
 	/** Sets its associated UnitId. */
-	void setUnitID (UnitID id) {info.unitId = id;}
+	virtual void setUnitID (UnitID id) { info.unitId = id; }
 	/** Gets its associated UnitId. */
-	UnitID getUnitID () {return info.unitId;}
+	virtual UnitID getUnitID () { return info.unitId; }
 
 	/** Gets its normalized value [0.0, 1.0]. */
 	ParamValue getNormalized () const { return valueNormalized; }
@@ -90,9 +90,10 @@ public:
 	virtual ParamValue toNormalized (ParamValue plainValue) const;
 
 	/** Gets the current precision (used for string representation of float). */
-	int32 getPrecision () const { return precision;}
-	/** Sets the precision for string representation of float value (for example 4.34 with 2 as precision). */
-	void setPrecision (int32 val) { precision = val;}
+	virtual int32 getPrecision () const { return precision; }
+	/** Sets the precision for string representation of float value (for example 4.34 with 2 as
+	 * precision). */
+	virtual void setPrecision (int32 val) { precision = val; }
 
 	OBJ_METHODS (Parameter, FObject)
 //------------------------------------------------------------------------
@@ -111,28 +112,30 @@ class RangeParameter : public Parameter
 public:
 //------------------------------------------------------------------------
 	RangeParameter (const ParameterInfo& paramInfo, ParamValue min, ParamValue max);
-	RangeParameter (const TChar* title, ParamID tag, const TChar* units = 0,
-					ParamValue minPlain = 0., ParamValue maxPlain = 1., ParamValue defaultValuePlain = 0.,
-					int32 stepCount = 0, int32 flags = ParameterInfo::kCanAutomate, UnitID unitID = kRootUnitId);
+	RangeParameter (const TChar* title, ParamID tag, const TChar* units = nullptr,
+	                ParamValue minPlain = 0., ParamValue maxPlain = 1.,
+	                ParamValue defaultValuePlain = 0., int32 stepCount = 0,
+	                int32 flags = ParameterInfo::kCanAutomate, UnitID unitID = kRootUnitId,
+                    const TChar* shortTitle = nullptr);
 
 	/** Gets the minimum plain value, same as toPlain (0). */
-	virtual ParamValue getMin () const {return minPlain;}
+	virtual ParamValue getMin () const { return minPlain; }
 	/** Sets the minimum plain value. */
-	virtual void setMin (ParamValue value) {minPlain = value;}
+	virtual void setMin (ParamValue value) { minPlain = value; }
 	/** Gets the maximum plain value, same as toPlain (1). */
-	virtual ParamValue getMax () const {return maxPlain;}
+	virtual ParamValue getMax () const { return maxPlain; }
 	/** Sets the maximum plain value. */
-	virtual void setMax (ParamValue value) {maxPlain = value;}
+	virtual void setMax (ParamValue value) { maxPlain = value; }
 
 	/** Converts a normalized value to a string. */
-	virtual void toString (ParamValue _valueNormalized, String128 string) const SMTG_OVERRIDE;
+	void toString (ParamValue _valueNormalized, String128 string) const SMTG_OVERRIDE;
 	/** Converts a string to a normalized value. */
-	virtual bool fromString (const TChar* string, ParamValue& _valueNormalized) const SMTG_OVERRIDE;
+	bool fromString (const TChar* string, ParamValue& _valueNormalized) const SMTG_OVERRIDE;
 
 	/** Converts a normalized value to plain value (e.g. 0.5 to 10000.0Hz). */
-	virtual ParamValue toPlain (ParamValue _valueNormalized) const SMTG_OVERRIDE;
+	ParamValue toPlain (ParamValue _valueNormalized) const SMTG_OVERRIDE;
 	/** Converts a plain value to a normalized value (e.g. 10000 to 0.5). */
-	virtual ParamValue toNormalized (ParamValue plainValue) const SMTG_OVERRIDE;
+	ParamValue toNormalized (ParamValue plainValue) const SMTG_OVERRIDE;
 
 	OBJ_METHODS (RangeParameter, Parameter)
 //------------------------------------------------------------------------
@@ -152,9 +155,10 @@ class StringListParameter : public Parameter
 public:
 //------------------------------------------------------------------------
 	StringListParameter (const ParameterInfo& paramInfo);
-	StringListParameter (const TChar* title, ParamID tag, const TChar* units = 0,
-						 int32 flags = ParameterInfo::kCanAutomate | ParameterInfo::kIsList, UnitID unitID = kRootUnitId);
-	virtual ~StringListParameter ();
+	StringListParameter (const TChar* title, ParamID tag, const TChar* units = nullptr,
+	                     int32 flags = ParameterInfo::kCanAutomate | ParameterInfo::kIsList,
+	                     UnitID unitID = kRootUnitId, const TChar* shortTitle= nullptr);
+	~StringListParameter () override;
 
 	/** Appends a string and increases the stepCount. */
 	virtual void appendString (const String128 string);
@@ -162,19 +166,19 @@ public:
 	virtual bool replaceString (int32 index, const String128 string);
 
 	/** Converts a normalized value to a string. */
-	virtual void toString (ParamValue _valueNormalized, String128 string) const SMTG_OVERRIDE;
+	void toString (ParamValue _valueNormalized, String128 string) const SMTG_OVERRIDE;
 	/** Converts a string to a normalized value. */
-	virtual bool fromString (const TChar* string, ParamValue& _valueNormalized) const SMTG_OVERRIDE;
+	bool fromString (const TChar* string, ParamValue& _valueNormalized) const SMTG_OVERRIDE;
 
 	/** Converts a normalized value to plain value (e.g. 0.5 to 10000.0Hz). */
-	virtual ParamValue toPlain (ParamValue _valueNormalized) const SMTG_OVERRIDE;
+	ParamValue toPlain (ParamValue _valueNormalized) const SMTG_OVERRIDE;
 	/** Converts a plain value to a normalized value (e.g. 10000 to 0.5). */
-	virtual ParamValue toNormalized (ParamValue plainValue) const SMTG_OVERRIDE;
+	ParamValue toNormalized (ParamValue plainValue) const SMTG_OVERRIDE;
 
 	OBJ_METHODS (StringListParameter, Parameter)
 //------------------------------------------------------------------------
 protected:
-	typedef std::vector<TChar*> StringVector;
+	using StringVector = std::vector<TChar*>;
 	StringVector strings;
 };
 
@@ -196,12 +200,10 @@ public:
 	Parameter* addParameter (const ParameterInfo& info);
 
 	/** Creates and adds a new parameter with given properties. */
-	Parameter* addParameter (const TChar* title, const TChar* units = 0,
-							 int32 stepCount = 0,
-							 ParamValue defaultValueNormalized = 0.,
-							 int32 flags = ParameterInfo::kCanAutomate,
-							 int32 tag = -1,
-							 UnitID unitID = kRootUnitId);
+	Parameter* addParameter (const TChar* title, const TChar* units = nullptr, int32 stepCount = 0,
+	                         ParamValue defaultValueNormalized = 0.,
+	                         int32 flags = ParameterInfo::kCanAutomate, int32 tag = -1,
+	                         UnitID unitID = kRootUnitId, const TChar* shortTitle = nullptr);
 
 	/** Adds a given parameter. */
 	Parameter* addParameter (Parameter* p);
@@ -210,18 +212,23 @@ public:
 	int32 getParameterCount () const { return params ? static_cast<int32> (params->size ()) : 0; }
 
 	/** Gets parameter by index. */
-	Parameter* getParameterByIndex (int32 index) { return params ? params->at (index) : 0; }
+	Parameter* getParameterByIndex (int32 index) { return params ? params->at (index) : nullptr; }
 
 	/** Removes all parameters. */
-	void removeAll () { if (params) params->clear (); id2index.clear (); }
+	void removeAll ()
+	{
+		if (params)
+			params->clear ();
+		id2index.clear ();
+	}
 
 	/** Gets parameter by ID. */
 	Parameter* getParameter (ParamID tag);
 
 //------------------------------------------------------------------------
 protected:
-	typedef std::vector<IPtr<Parameter> > ParameterPtrVector;
-	typedef std::map<ParamID, ParameterPtrVector::size_type> IndexMap;
+	using ParameterPtrVector = std::vector<IPtr<Parameter>>;
+	using IndexMap = std::map<ParamID, ParameterPtrVector::size_type>;
 	ParameterPtrVector* params;
 	IndexMap id2index;
 };

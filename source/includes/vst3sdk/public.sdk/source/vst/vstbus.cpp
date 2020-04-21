@@ -8,7 +8,7 @@
 //
 //-----------------------------------------------------------------------------
 // LICENSE
-// (c) 2017, Steinberg Media Technologies GmbH, All Rights Reserved
+// (c) 2019, Steinberg Media Technologies GmbH, All Rights Reserved
 //-----------------------------------------------------------------------------
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -43,11 +43,9 @@ namespace Vst {
 // Bus Implementation
 //------------------------------------------------------------------------
 Bus::Bus (const TChar* _name, BusType _busType, int32 _flags)
-: name (_name)
-, busType (_busType)
-, flags (_flags)
-, active (false)
-{}
+: name (_name), busType (_busType), flags (_flags), active (false)
+{
+}
 
 //------------------------------------------------------------------------
 bool Bus::getInfo (BusInfo& info)
@@ -58,14 +56,13 @@ bool Bus::getInfo (BusInfo& info)
 	return true;
 }
 
-
 //------------------------------------------------------------------------
 // EventBus Implementation
 //------------------------------------------------------------------------
 EventBus::EventBus (const TChar* name, BusType busType, int32 flags, int32 channelCount)
-: Bus (name, busType, flags)
-, channelCount (channelCount)
-{}
+: Bus (name, busType, flags), channelCount (channelCount)
+{
+}
 
 //------------------------------------------------------------------------
 bool EventBus::getInfo (BusInfo& info)
@@ -74,14 +71,13 @@ bool EventBus::getInfo (BusInfo& info)
 	return Bus::getInfo (info);
 }
 
-
 //------------------------------------------------------------------------
 // AudioBus Implementation
 //------------------------------------------------------------------------
 AudioBus::AudioBus (const TChar* name, BusType busType, int32 flags, SpeakerArrangement arr)
-: Bus (name, busType, flags)
-, speakerArr (arr)
-{}
+: Bus (name, busType, flags), speakerArr (arr)
+{
+}
 
 //------------------------------------------------------------------------
 bool AudioBus::getInfo (BusInfo& info)
@@ -90,14 +86,12 @@ bool AudioBus::getInfo (BusInfo& info)
 	return Bus::getInfo (info);
 }
 
-
 //------------------------------------------------------------------------
 // BusList Implementation
 //------------------------------------------------------------------------
-BusList::BusList (MediaType type, BusDirection dir)
-: type (type)
-, direction (dir)
-{}
+BusList::BusList (MediaType type, BusDirection dir) : type (type), direction (dir)
+{
+}
 
 //------------------------------------------------------------------------
 } // namespace Vst

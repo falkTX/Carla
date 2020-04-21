@@ -8,7 +8,7 @@
 //
 //-----------------------------------------------------------------------------
 // LICENSE
-// (c) 2017, Steinberg Media Technologies GmbH, All Rights Reserved
+// (c) 2019, Steinberg Media Technologies GmbH, All Rights Reserved
 //-----------------------------------------------------------------------------
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -47,10 +47,8 @@
 #include <vector>
 
 //------------------------------------------------------------------------
-/** \page vst3presetFileFormat VST 3 Preset File Format Definition
-\code
-
-   VST 3 Preset File Format Definition
+/* 
+	VST 3 Preset File Format Definition
    ===================================
 
 0   +---------------------------+
@@ -76,18 +74,14 @@
     |  | size of chunk data   | |       8 Bytes (int64)
     |  +----------------------+ |
 EOF +---------------------------+
-
-\endcode
-\see \ref Steinberg::Vst::PresetFile
 */
-//------------------------------------------------------------------------
 
 //------------------------------------------------------------------------
 namespace Steinberg {
 namespace Vst {
 
 //------------------------------------------------------------------------
-typedef char ChunkID[4];
+using ChunkID = char[4];
 
 //------------------------------------------------------------------------
 enum ChunkType
@@ -112,14 +106,14 @@ inline bool isEqualID (const ChunkID id1, const ChunkID id2)
 
 //------------------------------------------------------------------------
 /** Handler for a VST 3 Preset File.
-\ingroup vstClasses 
-\see \ref vst3presetFileFormat */
+\ingroup vstClasses
+\see \ref presetformat */
 //------------------------------------------------------------------------
 class PresetFile
 {
 public:
 //------------------------------------------------------------------------
-	PresetFile (IBStream* stream);	///< Constructor of Preset file based on a stream
+	PresetFile (IBStream* stream); ///< Constructor of Preset file based on a stream
 	virtual ~PresetFile ();
 
 	/** Internal structure used for chunk handling */
@@ -130,82 +124,87 @@ public:
 		TSize size;
 	};
 
-	IBStream* getStream () { return stream; }				///< Returns the associated stream.
+	IBStream* getStream () { return stream; }			///< Returns the associated stream.
 
-	const FUID& getClassID () const { return classID; }		///< Returns the associated classID (component ID: Processor part (not the controller!)).
-	void setClassID (const FUID& uid) { classID = uid; }	///< Sets the associated classID (component ID: Processor part (not the controller!)).
+	const FUID& getClassID () const { return classID; }	///< Returns the associated classID (component ID: Processor part (not the controller!)).
+	void setClassID (const FUID& uid) { classID = uid; }///< Sets the associated classID (component ID: Processor part (not the controller!)).
 
-	const Entry* getEntry (ChunkType which) const;			///< Returns an entry for a given chunk type.
-	const Entry* getLastEntry () const;						///< Returns the last available entry.
-	int32 getEntryCount () const { return entryCount; }		///< Returns the number of total entries in the current stream.
+	const Entry* getEntry (ChunkType which) const;		///< Returns an entry for a given chunk type.
+	const Entry* getLastEntry () const;					///< Returns the last available entry.
+	int32 getEntryCount () const { return entryCount; }	///< Returns the number of total entries in the current stream.
 	const Entry& at (int32 index) const { return entries[index]; }	///< Returns the entry at a given position.
-	bool contains (ChunkType which) const { return getEntry (which) != 0; }	///< Checks if a given chunk type exist in the stream.
+	bool contains (ChunkType which) const { return getEntry (which) != nullptr; }	///< Checks if a given chunk type exist in the stream.
 
-	bool readChunkList ();				///< Reads and build the chunk list (including the header chunk).
-	bool writeHeader ();				///< Writes into the stream the main header.
-	bool writeChunkList ();				///< Writes into the stream the chunk list (should be at the end).
+	bool readChunkList ();		///< Reads and build the chunk list (including the header chunk).
+	bool writeHeader ();		///< Writes into the stream the main header.
+	bool writeChunkList ();		///< Writes into the stream the chunk list (should be at the end).
 
 	/** Reads the meta XML info and its size, the size could be retrieved by passing zero as xmlBuffer. */
 	bool readMetaInfo (char* xmlBuffer, int32& size);
 
 	/** Writes the meta XML info, -1 means null-terminated, forceWriting to true will force to rewrite the XML Info when the chunk already exists. */
 	bool writeMetaInfo (const char* xmlBuffer, int32 size = -1, bool forceWriting = false); 
-	bool prepareMetaInfoUpdate ();		///< checks if meta info chunk is the last one and jump to correct position.
+	bool prepareMetaInfoUpdate ();	///< checks if meta info chunk is the last one and jump to correct position.
 
 	/** Writes a given data of a given size as "which" chunk type. */
 	bool writeChunk (const void* data, int32 size, ChunkType which = kComponentState);
 
 	//-------------------------------------------------------------
 	// for storing and restoring the whole Plug-in state (component and controller states)
-	bool seekToComponentState ();									///< Seeks to the begin of the Component State.
-	bool storeComponentState (IComponent* component);				///< Stores the component state (only one time).
-	bool restoreComponentState (IComponent* component);				///< Restores the component state.
+	bool seekToComponentState ();							///< Seeks to the begin of the Component State.
+	bool storeComponentState (IComponent* component);		///< Stores the component state (only one time).
+	bool storeComponentState (IBStream* componentStream);	///< Stores the component state from stream (only one time).
+	bool restoreComponentState (IComponent* component);		///< Restores the component state.
 
-	bool seekToControllerState ();									///< Seeks to the begin of the Controller State.
-	bool storeControllerState (IEditController* editController);	///< Stores the controller state (only one time).
-	bool restoreControllerState (IEditController* editController);	///< Restores the controller state.
+	bool seekToControllerState ();							///< Seeks to the begin of the Controller State.
+	bool storeControllerState (IEditController* editController);///< Stores the controller state (only one time).
+	bool storeControllerState (IBStream* editStream);			///< Stores the controller state from stream (only one time).
+	bool restoreControllerState (IEditController* editController);///< Restores the controller state.
 
-	bool restoreComponentState (IEditController* editController);	///< Restores the component state and apply it to the controller.
+	bool restoreComponentState (IEditController* editController);///< Restores the component state and apply it to the controller.
 
-	//-------------------------------------------------------------
+	//--- ----------------------------------------------------------
 	/** Store program data or unit data from stream (including the header chunk).
 	 \param listID could be ProgramListID or UnitID. */
 	bool storeProgramData (IBStream* inStream, ProgramListID listID);
 
-	//----when Plug-in uses IProgramListData-----------------------
+	//---when Plug-in uses IProgramListData-----------------------
 	/** Stores a IProgramListData with a given identifier and index (including the header chunk). */
-	bool storeProgramData (IProgramListData* programListData, ProgramListID programListID, int32 programIndex);
+	bool storeProgramData (IProgramListData* programListData, ProgramListID programListID,
+	                       int32 programIndex);
 	/** Restores a IProgramListData with a given identifier and index. */
-	bool restoreProgramData (IProgramListData* programListData, ProgramListID* programListID = 0, int32 programIndex = 0);
-	
-	//----when Plug-in uses IUnitData------------------------------
+	bool restoreProgramData (IProgramListData* programListData, ProgramListID* programListID = nullptr,
+	                         int32 programIndex = 0);
+
+	//---when Plug-in uses IUnitData------------------------------
 	/** Stores a IUnitData with a given unitID (including the header chunk). */
 	bool storeProgramData (IUnitData* unitData, UnitID unitID);
 	/** Restores a IUnitData with a given unitID (optional). */
-	bool restoreProgramData (IUnitData* unitData, UnitID* unitID = 0);
+	bool restoreProgramData (IUnitData* unitData, UnitID* unitID = nullptr);
 
-	//-------------------------------------------------------------
-	/** for keeping the Controller part in sync concerning preset data stream, unitProgramListID could be ProgramListID or UnitID. */
+	//--- ----------------------------------------------------------
+	/** for keeping the Controller part in sync concerning preset data stream, unitProgramListID
+	 * could be ProgramListID or UnitID. */
 	bool restoreProgramData (IUnitInfo* unitInfo, int32 unitProgramListID, int32 programIndex = -1);
 
 	/** Gets the unitProgramListID saved in the kProgramData chunk (if available). */
 	bool getUnitProgramListID (int32& unitProgramListID);
 
-	//------------------------------------------------------------------------
-	/** Shortcut helper to create preset from component/controller state. classID is the FUID of the component (processor) part. */
-	static bool savePreset (IBStream* stream, 
-							const FUID& classID, 
-							IComponent* component, 
-							IEditController* editController = 0,
-							const char* xmlBuffer = 0,
-							int32 xmlSize = -1);
+	//--- ---------------------------------------------------------------------
+	/** Shortcut helper to create preset from component/controller state. classID is the FUID of the
+	 * component (processor) part. */
+	static bool savePreset (IBStream* stream, const FUID& classID, IComponent* component,
+	                        IEditController* editController = nullptr,
+	                        const char* xmlBuffer = nullptr, int32 xmlSize = -1);
+	static bool savePreset (IBStream* stream, const FUID& classID, IBStream* componentStream,
+	                        IBStream* editStream = nullptr, const char* xmlBuffer = nullptr,
+	                        int32 xmlSize = -1);
 
-	/** Shortcut helper to load preset with component/controller state. classID is the FUID of the component (processor) part. */
-	static bool loadPreset (IBStream* stream, 
-							const FUID& classID, 
-							IComponent* component, 
-							IEditController* editController = 0,
-							std::vector<FUID>* otherClassIDArray = 0);
+	/** Shortcut helper to load preset with component/controller state. classID is the FUID of the
+	 * component (processor) part. */
+	static bool loadPreset (IBStream* stream, const FUID& classID, IComponent* component,
+	                        IEditController* editController = nullptr,
+	                        std::vector<FUID>* otherClassIDArray = nullptr);
 //------------------------------------------------------------------------
 protected:
 	bool readID (ChunkID id);
@@ -239,9 +238,9 @@ public:
 	DECLARE_FUNKNOWN_METHODS
 
 	//---from IBStream------------------
-	tresult PLUGIN_API read (void* buffer, int32 numBytes, int32* numBytesRead = 0) SMTG_OVERRIDE;
-	tresult PLUGIN_API write (void* buffer, int32 numBytes, int32* numBytesWritten = 0) SMTG_OVERRIDE;
-	tresult PLUGIN_API seek (int64 pos, int32 mode, int64* result = 0) SMTG_OVERRIDE;
+	tresult PLUGIN_API read (void* buffer, int32 numBytes, int32* numBytesRead = nullptr) SMTG_OVERRIDE;
+	tresult PLUGIN_API write (void* buffer, int32 numBytes, int32* numBytesWritten = nullptr) SMTG_OVERRIDE;
+	tresult PLUGIN_API seek (int64 pos, int32 mode, int64* result = nullptr) SMTG_OVERRIDE;
 	tresult PLUGIN_API tell (int64* pos) SMTG_OVERRIDE;
 
 //------------------------------------------------------------------------
@@ -266,9 +265,9 @@ public:
 	 DECLARE_FUNKNOWN_METHODS
 
 	 //---from IBStream------------------
-	 tresult PLUGIN_API read (void* buffer, int32 numBytes, int32* numBytesRead = 0) SMTG_OVERRIDE;
-	 tresult PLUGIN_API write (void* buffer, int32 numBytes, int32* numBytesWritten = 0) SMTG_OVERRIDE;
-	 tresult PLUGIN_API seek (int64 pos, int32 mode, int64* result = 0) SMTG_OVERRIDE;
+	 tresult PLUGIN_API read (void* buffer, int32 numBytes, int32* numBytesRead = nullptr) SMTG_OVERRIDE;
+	 tresult PLUGIN_API write (void* buffer, int32 numBytes, int32* numBytesWritten = nullptr) SMTG_OVERRIDE;
+	 tresult PLUGIN_API seek (int64 pos, int32 mode, int64* result = nullptr) SMTG_OVERRIDE;
 	 tresult PLUGIN_API tell (int64* pos) SMTG_OVERRIDE;
 
 //------------------------------------------------------------------------
@@ -292,9 +291,9 @@ public:
 	DECLARE_FUNKNOWN_METHODS
 
 	//---from IBStream------------------
-	tresult PLUGIN_API read (void* buffer, int32 numBytes, int32* numBytesRead = 0) SMTG_OVERRIDE;
-	tresult PLUGIN_API write (void* buffer, int32 numBytes, int32* numBytesWritten = 0) SMTG_OVERRIDE;
-	tresult PLUGIN_API seek (int64 pos, int32 mode, int64* result = 0) SMTG_OVERRIDE;
+	tresult PLUGIN_API read (void* buffer, int32 numBytes, int32* numBytesRead = nullptr) SMTG_OVERRIDE;
+	tresult PLUGIN_API write (void* buffer, int32 numBytes, int32* numBytesWritten = nullptr) SMTG_OVERRIDE;
+	tresult PLUGIN_API seek (int64 pos, int32 mode, int64* result = nullptr) SMTG_OVERRIDE;
 	tresult PLUGIN_API tell (int64* pos) SMTG_OVERRIDE;
 
 protected:

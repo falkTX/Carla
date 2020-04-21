@@ -1,6 +1,5 @@
 //------------------------------------------------------------------------
 // Project     : VST SDK
-// Version     : 3.6.7
 //
 // Category    : Interfaces
 // Filename    : pluginterfaces/vst/ivstnoteexpression.h
@@ -35,7 +34,7 @@ VST predefines some types like volume, pan, tuning by defining their ranges and 
 Used by NoteExpressionEvent::typeId and NoteExpressionTypeID::typeId
 \see NoteExpressionTypeInfo
 */
-enum NoteExpressionTypeIDs
+enum NoteExpressionTypeIDs : uint32
 {
 	kVolumeTypeID = 0,		///< Volume, plain range [0 = -oo , 0.25 = 0dB, 0.5 = +6dB, 1 = +12dB]: plain = 20 * log (4 * norm)
 	kPanTypeID,				///< Panning (L-R), plain range [0 = left, 0.5 = center, 1 = right]
@@ -48,7 +47,10 @@ enum NoteExpressionTypeIDs
 	kTextTypeID,			///< TODO:
 	kPhonemeTypeID,			///< TODO:
 
-	kCustomStart = 100000	///< custom note change type ids must start from here
+	kCustomStart = 100000,	///< start of custom note expression type ids
+	kCustomEnd   = 200000,  ///< end of custom note expression type ids
+	
+	kInvalidTypeID = 0xFFFFFFFF		///< indicates an invalid note expression type
 };
 
 //------------------------------------------------------------------------
@@ -67,7 +69,7 @@ struct NoteExpressionValueDescription
 	int32 stepCount;						///< number of discrete steps (0: continuous, 1: toggle, discrete value otherwise - see \ref vst3parameterIntro)
 };
 
-#if WINDOWS && !PLATFORM_64
+#if SMTG_OS_WINDOWS && !SMTG_PLATFORM_64
 #include "pluginterfaces/vst/vstpshpack4.h"
 #endif
 //------------------------------------------------------------------------
@@ -105,7 +107,7 @@ struct NoteExpressionTextEvent
 	const TChar* text;				///< UTF-16, null terminated
 };
 
-#if WINDOWS && !PLATFORM_64
+#if SMTG_OS_WINDOWS && !SMTG_PLATFORM_64
 #include "pluginterfaces/base/falignpop.h"
 #endif
 
@@ -151,7 +153,7 @@ Note that there is only one NoteExpressionTypeID per given channel of an event b
 The method getNoteExpressionStringByValue allows conversion from a normalized value to a string representation
 and the getNoteExpressionValueByString method from a string to a normalized value.
 
-When the note expression state changes (per example when switching presets) the Plug-in needs
+When the note expression state changes (for example when switching presets) the Plug-in needs
 to inform the host about it via \ref IComponentHandler::restartComponent (kNoteExpressionChanged).
 */
 //------------------------------------------------------------------------
@@ -181,7 +183,7 @@ DECLARE_CLASS_IID (INoteExpressionController, 0xB7F8F859, 0x41234872, 0x91169581
 /** KeyswitchTypeIDs describes the type of a key switch
 \see KeyswitchInfo
 */
-enum KeyswitchTypeIDs
+enum KeyswitchTypeIDs : uint32
 {
 	kNoteOnKeyswitchTypeID = 0,				///< press before noteOn is played
 	kOnTheFlyKeyswitchTypeID,				///< press while noteOn is played

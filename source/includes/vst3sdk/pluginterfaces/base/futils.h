@@ -88,5 +88,11 @@ inline int32 FromNormalized (const T& norm, const int32 numSteps)
 	return Min<int32> (numSteps, int32 (norm * (numSteps + 1)));
 }
 
+// Four character constant
+#ifndef CCONST
+#define CCONST(a, b, c, d) \
+	 ((((int32) (a)) << 24) | (((int32) (b)) << 16) | (((int32) (c)) << 8) | (((int32) (d)) << 0))
+#endif
+
 //------------------------------------------------------------------------
 } // namespace Steinberg

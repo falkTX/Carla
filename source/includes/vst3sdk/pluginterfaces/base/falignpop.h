@@ -15,15 +15,11 @@
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------------------------------
-#if TARGET_API_MAC_CARBON
-	#if PLATFORM_64
-		#pragma pack(pop)
-	#else
-		#pragma options align=reset
-	#endif
+#if SMTG_OS_MACOS
+	#pragma pack(pop)
 #elif defined __BORLANDC__
 	#pragma -a-
-#elif WINDOWS
+#elif SMTG_OS_WINDOWS
 	#pragma pack(pop)
 #endif
 //---------------------------------------------------------------------------------------------------

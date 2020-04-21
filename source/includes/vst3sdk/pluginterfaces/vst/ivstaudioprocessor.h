@@ -1,6 +1,5 @@
 //------------------------------------------------------------------------
 // Project     : VST SDK
-// Version     : 3.6.7
 //
 // Category    : Interfaces
 // Filename    : pluginterfaces/vst/ivstaudioprocessor.h
@@ -18,6 +17,7 @@
 #pragma once
 
 #include "ivstcomponent.h"
+#include "vstspeaker.h"
 
 //------------------------------------------------------------------------
 #include "pluginterfaces/base/falignpush.h"
@@ -68,10 +68,11 @@ const CString kFxNetwork			= "Fx|Network";		///< using Network
 
 const CString kInstrument			= "Instrument";			///< Effect used as instrument (sound generator), not as insert
 const CString kInstrumentDrum		= "Instrument|Drum";	///< Instrument for Drum sounds
+const CString kInstrumentExternal	= "Instrument|External";///< External Instrument (wrapped Hardware)
+const CString kInstrumentPiano		= "Instrument|Piano";	///< Instrument for Piano sounds
 const CString kInstrumentSampler	= "Instrument|Sampler";	///< Instrument based on Samples
 const CString kInstrumentSynth		= "Instrument|Synth";	///< Instrument based on Synthesis
 const CString kInstrumentSynthSampler = "Instrument|Synth|Sampler";	///< Instrument based on Synthesis and Samples
-const CString kInstrumentExternal	= "Instrument|External";///< External Instrument (wrapped Hardware)
 
 const CString kSpatial				= "Spatial";		///< used for SurroundPanner
 const CString kSpatialFx			= "Spatial|Fx";		///< used for SurroundPanner and as insert effect
@@ -80,6 +81,7 @@ const CString kOnlyOfflineProcess	= "OnlyOfflineProcess";	///< used for Plug-in 
 const CString kNoOfflineProcess		= "NoOfflineProcess";	///< will be NOT used for Plug-in offline processing (will work as normal insert Plug-in)
 const CString kUpDownMix			= "Up-Downmix";		///< used for Mixconverter/Up-Mixer/Down-Mixer
 const CString kAnalyzer			    = "Analyzer";	    ///< Meter, Scope, FFT-Display, not selectable as insert plugin
+const CString kAmbisonics			= "Ambisonics";		///< used for Ambisonics channel (FX or Panner/Mixconverter/Up-Mixer/Down-Mixer when combined with other category)
 
 const CString kMono					= "Mono";			///< used for Mono only Plug-in [optional]
 const CString kStereo				= "Stereo";			///< used for Stereo only Plug-in [optional]
@@ -307,6 +309,7 @@ DECLARE_CLASS_IID (IAudioProcessor, 0x42043F99, 0xB7DA453C, 0xA569E79D, 0x9AAEC3
 - [plug imp]
 - [extends IAudioProcessor]
 - [released: 3.1.0]
+- [optional]
 
 Inform the Plug-in about how long from the moment of generation/acquiring (from file or from Input)
 it will take for its input to arrive, and how long it will take for its output to be presented (to output or to Speaker).
@@ -323,6 +326,10 @@ A value of zero means either no latency or an unknown latency.
 Each Plug-in adding a latency (returning a none zero value for IAudioProcessor::getLatencySamples) will modify the input 
 presentation latency of the next Plug-ins in the mixer routing graph and will modify the output presentation latency 
 of the previous Plug-ins.
+
+\n
+\image html "iaudiopresentationlatency_usage.png"
+\n
 \see IAudioProcessor
 \see IComponent*/
 //------------------------------------------------------------------------
