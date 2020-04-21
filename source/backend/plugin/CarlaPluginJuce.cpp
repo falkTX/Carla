@@ -40,6 +40,7 @@
 # endif
 #endif
 
+#define JUCE_GUI_BASICS_INCLUDE_XHEADERS 1
 #include "AppConfig.h"
 #include "juce_audio_processors/juce_audio_processors.h"
 #include "juce_gui_basics/juce_gui_basics.h"
@@ -67,8 +68,8 @@ public:
     CarlaPluginJuce(CarlaEngine* const engine, const uint id)
         : CarlaPlugin(engine, id),
           fDesc(),
-          fInstance(nullptr),
           fFormatManager(),
+          fInstance(),
           fAudioBuffer(),
           fMidiBuffer(),
           fPosInfo(),
@@ -103,12 +104,7 @@ public:
             pData->active = false;
         }
 
-        if (fInstance != nullptr)
-        {
-            delete fInstance;
-            fInstance = nullptr;
-        }
-
+        fInstance = nullptr;
         clearBuffers();
     }
 
@@ -1407,8 +1403,8 @@ public:
 
 private:
     juce::PluginDescription    fDesc;
-    juce::AudioPluginInstance* fInstance;
     juce::AudioPluginFormatManager fFormatManager;
+    std::unique_ptr<juce::AudioPluginInstance> fInstance;
 
     juce::AudioSampleBuffer fAudioBuffer;
     juce::MidiBuffer        fMidiBuffer;

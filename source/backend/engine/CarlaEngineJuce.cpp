@@ -756,11 +756,11 @@ protected:
             if (! midiIns.contains(portName))
                 return false;
 
-            juce::MidiInput* const juceMidiIn(juce::MidiInput::openDevice(midiIns.indexOf(portName), this));
+            std::unique_ptr<juce::MidiInput> juceMidiIn(juce::MidiInput::openDevice(midiIns.indexOf(portName), this));
             juceMidiIn->start();
 
             MidiInPort midiPort;
-            midiPort.port = juceMidiIn;
+            midiPort.port = juceMidiIn.release();
 
             std::strncpy(midiPort.name, portName, STR_MAX);
             midiPort.name[STR_MAX] = '\0';
@@ -775,11 +775,11 @@ protected:
             if (! midiOuts.contains(portName))
                 return false;
 
-            juce::MidiOutput* const juceMidiOut(juce::MidiOutput::openDevice(midiOuts.indexOf(portName)));
+            std::unique_ptr<juce::MidiOutput> juceMidiOut(juce::MidiOutput::openDevice(midiOuts.indexOf(portName)));
             juceMidiOut->startBackgroundThread();
 
             MidiOutPort midiPort;
-            midiPort.port = juceMidiOut;
+            midiPort.port = juceMidiOut.release();
 
             std::strncpy(midiPort.name, portName, STR_MAX);
             midiPort.name[STR_MAX] = '\0';

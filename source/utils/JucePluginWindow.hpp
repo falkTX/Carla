@@ -99,7 +99,7 @@ private:
             return;
 
 #if defined(CARLA_OS_LINUX) && defined(HAVE_X11)
-        Display* const display = XWindowSystem::getInstance()->displayRef();
+        Display* const display = XWindowSystem::getInstance()->getDisplay();
         CARLA_SAFE_ASSERT_RETURN(display != nullptr,);
 
         ::Window window = (::Window)getWindowHandle();
