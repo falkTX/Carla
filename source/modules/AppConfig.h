@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -216,7 +216,7 @@
     @see VSTPluginFormat, AudioPluginFormat, AudioPluginFormatManager, JUCE_PLUGINHOST_AU
 */
 #if defined(APPCONFIG_OS_MAC) || defined(APPCONFIG_OS_WIN)
-# define JUCE_PLUGINHOST_VST 1
+# define JUCE_PLUGINHOST_VST 0 /* FIXME use old juce vst2 code or vestige */
 #else
 # define JUCE_PLUGINHOST_VST 0
 #endif

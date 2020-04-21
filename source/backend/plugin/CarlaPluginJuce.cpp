@@ -18,7 +18,7 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
-#if defined(USING_JUCE)
+#ifdef USING_JUCE
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
