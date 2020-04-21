@@ -322,6 +322,9 @@ bool carla_engine_init(CarlaHostHandle handle, const char* driverName, const cha
 
 #ifdef USING_JUCE
     juce::initialiseJuce_GUI();
+#if !(defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+    juce::MessageManager::getInstance()->setCurrentThreadAsMessageThread();
+#endif
 #endif
 
     CarlaHostStandalone& shandle((CarlaHostStandalone&)*handle);

@@ -91,7 +91,7 @@ def findVST3Binaries(binPath):
     binaries = []
 
     for root, dirs, files in os.walk(binPath):
-        for name in tuple(name for name in files if name.lower().endswith(".vst3")):
+        for name in tuple(name for name in (files+dirs) if name.lower().endswith(".vst3")):
             binaries.append(os.path.join(root, name))
 
     return binaries
@@ -472,20 +472,18 @@ class SearchPluginsThread(QThread):
         # Increase count by the number of externally discoverable plugin types
         if self.fCheckNative:
             self.fCurCount += pluginCount
-            # MacOS and Windows are the only VST3 supported OSes
-            if self.fCheckVST3 and not (MACOS or WINDOWS):
+            # Linux, MacOS and Windows are the only VST3 supported OSes
+            if self.fCheckVST3 and not (LINUX or MACOS or WINDOWS):
                 self.fCurCount -= 1
 
         if self.fCheckPosix32:
             self.fCurCount += pluginCount
-            # MacOS is the only VST3 supported posix OS
-            if self.fCheckVST3 and not MACOS:
+            if self.fCheckVST3 and not (LINUX or MACOS):
                 self.fCurCount -= 1
 
         if self.fCheckPosix64:
             self.fCurCount += pluginCount
-            # MacOS is the only VST3 supported posix OS
-            if self.fCheckVST3 and not MACOS:
+            if self.fCheckVST3 and not (LINUX or MACOS):
                 self.fCurCount -= 1
 
         if self.fCheckWin32:
@@ -660,7 +658,7 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
         if self.fCheckVST3:
-            if self.fCheckNative and (MACOS or WINDOWS):
+            if self.fCheckNative and (LINUX or MACOS or WINDOWS):
                 plugins = self._checkVST3(OS, self.fToolNative)
                 settingsDB.setValue("Plugins/VST3_native", plugins)
                 if not self.fContinueChecking: return
@@ -1104,7 +1102,7 @@ class PluginRefreshW(QDialog):
                 self.ui.ch_au.setEnabled(False)
                 self.ui.ch_au.setVisible(False)
 
-                if not (hasWin32 or hasWin64):
+                if not (LINUX or hasWin32 or hasWin64):
                     self.ui.ch_vst3.setEnabled(False)
                     self.ui.ch_vst3.setVisible(False)
 
