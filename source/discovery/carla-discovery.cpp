@@ -25,10 +25,12 @@
 # undef HAVE_FLUIDSYNTH
 #endif
 
-#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+#ifdef USING_JUCE
 # include "AppConfig.h"
 # include "juce_audio_processors/juce_audio_processors.h"
-# define USE_JUCE_PROCESSORS
+# if JUCE_PLUGINHOST_VST
+#  define USING_JUCE_FOR_VST2
+# endif
 #endif
 
 #include "CarlaLadspaUtils.hpp"
@@ -765,7 +767,7 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
 }
 #endif
 
-#ifndef USE_JUCE_PROCESSORS
+#ifndef USING_JUCE_FOR_VST2
 // --------------------------------------------------------------------------
 // VST stuff
 
@@ -1333,9 +1335,9 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
     (void)filename;
 #endif
 }
-#endif // ! USE_JUCE_PROCESSORS
+#endif // ! USING_JUCE_FOR_VST2
 
-#ifdef USE_JUCE_PROCESSORS
+#ifdef USING_JUCE
 static void do_juce_check(const char* const filename_, const char* const stype, const bool doInit)
 {
     CARLA_SAFE_ASSERT_RETURN(stype != nullptr && stype[0] != 0,) // FIXME
@@ -1355,14 +1357,14 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
 #endif
     filename = juce::File(filename_).getFullPathName();
 
-    juce::ScopedPointer<juce::AudioPluginFormat> pluginFormat;
+    CarlaScopedPointer<juce::AudioPluginFormat> pluginFormat;
 
     /* */ if (std::strcmp(stype, "VST2") == 0)
     {
 #if JUCE_PLUGINHOST_VST
         pluginFormat = new juce::VSTPluginFormat();
 #else
-        DISCOVERY_OUT("error", "VST support not available");
+        DISCOVERY_OUT("error", "VST2 support not available");
 #endif
     }
     else if (std::strcmp(stype, "VST3") == 0)
@@ -1418,11 +1420,12 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
 
         if (doInit)
         {
-            if (juce::AudioPluginInstance* const instance = pluginFormat->createInstanceFromDescription(*desc, kSampleRate, kBufferSize))
+            if (std::unique_ptr<juce::AudioPluginInstance> instance
+                    = pluginFormat->createInstanceFromDescription(*desc, kSampleRate, kBufferSize))
             {
                 instance->refreshParameterList();
 
-                parameters = instance->getNumParameters();
+                parameters = instance->getParameters().size();
 
                 if (instance->hasEditor())
                     hints |= PLUGIN_HAS_CUSTOM_UI;
@@ -1430,8 +1433,6 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
                     midiIns = 1;
                 if (instance->producesMidi())
                     midiOuts = 1;
-
-                delete instance;
             }
         }
 
@@ -1450,7 +1451,7 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
         DISCOVERY_OUT("end", "------------");
     }
 }
-#endif // USE_JUCE_PROCESSORS
+#endif // USING_JUCE_FOR_VST2
 
 static void do_fluidsynth_check(const char* const filename, const bool doInit)
 {
@@ -1665,7 +1666,7 @@ int main(int argc, char* argv[])
 #endif
 
     case PLUGIN_VST2:
-#ifdef USE_JUCE_PROCESSORS
+#if defined(USING_JUCE) && JUCE_PLUGINHOST_VST
         do_juce_check(filename, "VST2", doInit);
 #else
         do_vst_check(handle, filename, doInit);
@@ -1673,7 +1674,7 @@ int main(int argc, char* argv[])
         break;
 
     case PLUGIN_VST3:
-#ifdef USE_JUCE_PROCESSORS
+#if defined(USING_JUCE) && JUCE_PLUGINHOST_VST3
         do_juce_check(filename, "VST3", doInit);
 #else
         DISCOVERY_OUT("error", "VST3 support not available");
@@ -1681,7 +1682,7 @@ int main(int argc, char* argv[])
         break;
 
     case PLUGIN_AU:
-#ifdef USE_JUCE_PROCESSORS
+#if defined(USING_JUCE) && JUCE_PLUGINHOST_AU
         do_juce_check(filename, "AU", doInit);
 #else
         DISCOVERY_OUT("error", "AU support not available");
