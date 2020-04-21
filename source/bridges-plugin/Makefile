@@ -125,7 +125,7 @@ LIBS_win32   += $(MODULEDIR)/juce_gui_basics.win32.a
 LIBS_win64   += $(MODULEDIR)/juce_gui_basics.win64.a
 LINK_FLAGS   += $(JUCE_GUI_BASICS_LIBS)
 
-ifeq ($(MACOS),true)
+ifeq ($(LINUX_OR_MACOS),true)
 LIBS_native  += $(MODULEDIR)/juce_gui_extra.a
 LIBS_posix32 += $(MODULEDIR)/juce_gui_extra.posix32.a
 LIBS_posix64 += $(MODULEDIR)/juce_gui_extra.posix64.a

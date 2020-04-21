@@ -66,7 +66,7 @@ ifeq ($(USING_JUCE),true)
 3RD_LIBS += $(MODULEDIR)/juce_events.a
 3RD_LIBS += $(MODULEDIR)/juce_graphics.a
 3RD_LIBS += $(MODULEDIR)/juce_gui_basics.a
-ifeq ($(MACOS),true)
+ifeq ($(LINUX_OR_MACOS),true)
 3RD_LIBS += $(MODULEDIR)/juce_gui_extra.a
 endif
 else
@@ -265,7 +265,7 @@ ifeq ($(MACOS_OR_WIN32),true)
 LIBS_POSIX32 += $(MODULEDIR)/juce_graphics.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_gui_basics.posix32.a
 endif
-ifeq ($(MACOS),true)
+ifeq ($(LINUX_OR_MACOS),true)
 LIBS_POSIX32 += $(MODULEDIR)/juce_gui_extra.posix32.a
 endif
 endif
@@ -292,7 +292,7 @@ ifeq ($(MACOS_OR_WIN32),true)
 LIBS_POSIX64 += $(MODULEDIR)/juce_graphics.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_gui_basics.posix64.a
 endif
-ifeq ($(MACOS),true)
+ifeq ($(LINUX_OR_MACOS),true)
 LIBS_POSIX64 += $(MODULEDIR)/juce_gui_extra.posix64.a
 endif
 endif

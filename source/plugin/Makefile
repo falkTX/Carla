@@ -81,7 +81,7 @@ LIBS += $(MODULEDIR)/juce_data_structures.a
 LIBS += $(MODULEDIR)/juce_events.a
 LIBS += $(MODULEDIR)/juce_graphics.a
 LIBS += $(MODULEDIR)/juce_gui_basics.a
-ifeq ($(MACOS),true)
+ifeq ($(LINUX_OR_MACOS),true)
 LIBS += $(MODULEDIR)/juce_gui_extra.a
 endif
 endif
@@ -110,7 +110,7 @@ LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
 LINK_FLAGS += $(JUCE_EVENTS_LIBS)
 LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
 LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
-ifeq ($(MACOS),true)
+ifeq ($(LINUX_OR_MACOS),true)
 LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
 endif
 endif
