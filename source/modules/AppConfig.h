@@ -18,8 +18,6 @@
 #ifndef CARLA_JUCE_APPCONFIG_H_INCLUDED
 #define CARLA_JUCE_APPCONFIG_H_INCLUDED
 
-#define JUCE_APP_CONFIG_HEADER "AppConfig.h"
-
 // --------------------------------------------------------------------------------------------------------------------
 // Check OS
 
@@ -217,7 +215,11 @@
 
     @see VSTPluginFormat, AudioPluginFormat, AudioPluginFormatManager, JUCE_PLUGINHOST_AU
 */
-#define JUCE_PLUGINHOST_VST 1
+#if defined(APPCONFIG_OS_MAC) || defined(APPCONFIG_OS_WIN)
+# define JUCE_PLUGINHOST_VST 1
+#else
+# define JUCE_PLUGINHOST_VST 0
+#endif
 
 /** Config: JUCE_PLUGINHOST_VST3
     Enables the VST3 audio plugin hosting classes. This requires the Steinberg VST3 SDK to be
@@ -225,7 +227,7 @@
 
     @see VSTPluginFormat, VST3PluginFormat, AudioPluginFormat, AudioPluginFormatManager, JUCE_PLUGINHOST_VST, JUCE_PLUGINHOST_AU
 */
-#if defined(APPCONFIG_OS_MAC) || defined(APPCONFIG_OS_WIN)
+#if defined(APPCONFIG_OS_LINUX) || defined(APPCONFIG_OS_MAC) || defined(APPCONFIG_OS_WIN)
 # define JUCE_PLUGINHOST_VST3 1
 #else
 # define JUCE_PLUGINHOST_VST3 0
