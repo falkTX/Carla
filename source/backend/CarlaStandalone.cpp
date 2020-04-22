@@ -21,7 +21,7 @@
 #include "CarlaHostImpl.hpp"
 #include "CarlaMIDI.h"
 
-#include "CarlaEngine.hpp"
+#include "CarlaEngineInit.hpp"
 #include "CarlaPlugin.hpp"
 
 #include "CarlaBackendUtils.hpp"
@@ -399,10 +399,10 @@ bool carla_engine_init_bridge(CarlaHostHandle handle,
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(handle->isStandalone, "Must be a standalone host handle", false);
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(handle->engine == nullptr, "Engine is already initialized", false);
 
-    CarlaScopedPointer<CarlaEngine> engine(CarlaEngine::newBridge(audioBaseName,
-                                                                  rtClientBaseName,
-                                                                  nonRtClientBaseName,
-                                                                  nonRtServerBaseName));
+    CarlaScopedPointer<CarlaEngine> engine(CB::EngineInit::newBridge(audioBaseName,
+                                                                     rtClientBaseName,
+                                                                     nonRtClientBaseName,
+                                                                     nonRtServerBaseName));
 
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(engine != nullptr, "The selected audio driver is not available", false);
 

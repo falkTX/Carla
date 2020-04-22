@@ -14,6 +14,13 @@ CWD=..
 MODULENAME=carla-discovery
 include $(CWD)/Makefile.mk
 
+# Workaround GCC bug
+ifeq ($(TESTBUILD),true)
+ifeq ($(USING_JUCE),true)
+BUILD_CXX_FLAGS += -Wno-undef
+endif
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 BINDIR    := $(CWD)/../bin
@@ -117,12 +124,14 @@ LIBS_win32   += $(MODULEDIR)/juce_gui_basics.win32.a
 LIBS_win64   += $(MODULEDIR)/juce_gui_basics.win64.a
 LINK_FLAGS   += $(JUCE_GUI_BASICS_LIBS)
 
-ifeq ($(LINUX_OR_MACOS),true)
+ifeq ($(USING_JUCE_GUI_EXTRA),true)
 LIBS_native  += $(MODULEDIR)/juce_gui_extra.a
 LIBS_posix32 += $(MODULEDIR)/juce_gui_extra.posix32.a
 LIBS_posix64 += $(MODULEDIR)/juce_gui_extra.posix64.a
+LIBS_win32   += $(MODULEDIR)/juce_gui_extra.win32.a
+LIBS_win64   += $(MODULEDIR)/juce_gui_extra.win64.a
 LINK_FLAGS   += $(JUCE_GUI_EXTRA_LIBS)
-endif # MACOS
+endif # USING_JUCE_GUI_EXTRA
 endif # USING_JUCE
 
 # ---------------------------------------------------------------------------------------------------------------------

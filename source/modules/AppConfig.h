@@ -59,16 +59,16 @@
 #define JUCE_MODULE_AVAILABLE_juce_video                 0
 
 // conditional
-#ifdef APPCONFIG_OS_MAC
-# define JUCE_MODULE_AVAILABLE_juce_gui_extra            1
-#else
-# define JUCE_MODULE_AVAILABLE_juce_gui_extra            0
-#endif
-
-#ifndef BUILD_BRIDGE
+#if defined(USING_JUCE_AUDIO_DEVICES) && !defined(BUILD_BRIDGE)
 # define JUCE_MODULE_AVAILABLE_juce_audio_devices        1
 #else
 # define JUCE_MODULE_AVAILABLE_juce_audio_devices        0
+#endif
+
+#ifdef USING_JUCE_GUI_EXTRA
+# define JUCE_MODULE_AVAILABLE_juce_gui_extra            1
+#else
+# define JUCE_MODULE_AVAILABLE_juce_gui_extra            0
 #endif
 
 // misc

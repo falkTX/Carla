@@ -26,10 +26,19 @@
 #endif
 
 #ifdef USING_JUCE
+# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wdouble-promotion"
+#  pragma GCC diagnostic ignored "-Weffc++"
+#  pragma GCC diagnostic ignored "-Wfloat-equal"
+# endif
 # include "AppConfig.h"
 # include "juce_audio_processors/juce_audio_processors.h"
 # if JUCE_PLUGINHOST_VST
 #  define USING_JUCE_FOR_VST2
+# endif
+# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+#  pragma GCC diagnostic pop
 # endif
 #endif
 

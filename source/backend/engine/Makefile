@@ -9,7 +9,7 @@ include ../Makefile.mk
 
 # Workaround GCC bug
 ifeq ($(TESTBUILD),true)
-ifeq ($(USING_JUCE),true)
+ifeq ($(USING_JUCE_AUDIO_DEVICES),true)
 BUILD_CXX_FLAGS += -Wno-undef
 endif
 endif
@@ -37,7 +37,7 @@ OBJSa = $(OBJS) \
 	$(OBJDIR)/CarlaEngineJack.cpp.o \
 	$(OBJDIR)/CarlaEngineNative.cpp.o
 
-ifeq ($(USING_JUCE),true)
+ifeq ($(USING_JUCE_AUDIO_DEVICES),true)
 OBJSa += \
 	$(OBJDIR)/CarlaEngineJuce.cpp.o
 else

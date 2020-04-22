@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,6 +20,7 @@
 #endif
 
 #include "CarlaEngineClient.hpp"
+#include "CarlaEngineInit.hpp"
 #include "CarlaPlugin.hpp"
 
 #include "CarlaBackendUtils.hpp"
@@ -1513,9 +1514,16 @@ private:
 
 // -----------------------------------------------------------------------
 
-CarlaEngine* CarlaEngine::newBridge(const char* const audioPoolBaseName, const char* const rtClientBaseName, const char* const nonRtClientBaseName, const char* const nonRtServerBaseName)
+namespace EngineInit {
+
+CarlaEngine* newBridge(const char* const audioPoolBaseName,
+                       const char* const rtClientBaseName,
+                       const char* const nonRtClientBaseName,
+                       const char* const nonRtServerBaseName)
 {
     return new CarlaEngineBridge(audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
+}
+
 }
 
 // -----------------------------------------------------------------------

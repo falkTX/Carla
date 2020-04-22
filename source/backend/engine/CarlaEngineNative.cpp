@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,6 +21,7 @@
 # error This file should not be compiled if building alternative-arch bridges
 #endif
 
+#include "CarlaEngineInit.hpp"
 #include "CarlaEngineInternal.hpp"
 #include "CarlaPlugin.hpp"
 
@@ -2720,22 +2721,26 @@ const NativePluginDescriptor* carla_get_native_patchbay_cv_plugin()
 
 CARLA_BACKEND_START_NAMESPACE
 
-CarlaEngine* CarlaEngine::newJack() { return nullptr; }
+namespace EngineInit {
 
-# ifdef USING_JUCE
-CarlaEngine*       CarlaEngine::newJuce(const AudioApi)           { return nullptr; }
-uint               CarlaEngine::getJuceApiCount()                 { return 0;       }
-const char*        CarlaEngine::getJuceApiName(const uint)        { return nullptr; }
-const char* const* CarlaEngine::getJuceApiDeviceNames(const uint) { return nullptr; }
-const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const uint, const char* const) { return nullptr; }
-bool               CarlaEngine::showJuceDeviceControlPanel(const uint, const char* const)   { return false; }
-# else
-CarlaEngine*       CarlaEngine::newRtAudio(const AudioApi)           { return nullptr; }
-uint               CarlaEngine::getRtAudioApiCount()                 { return 0;       }
-const char*        CarlaEngine::getRtAudioApiName(const uint)        { return nullptr; }
-const char* const* CarlaEngine::getRtAudioApiDeviceNames(const uint) { return nullptr; }
-const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const uint, const char* const) { return nullptr; }
-# endif
+CarlaEngine* newJack() { return nullptr; }
+
+#ifdef USING_JUCE_AUDIO_DEVICES
+CarlaEngine*       newJuce(const AudioApi)           { return nullptr; }
+uint               getJuceApiCount()                 { return 0;       }
+const char*        getJuceApiName(const uint)        { return nullptr; }
+const char* const* getJuceApiDeviceNames(const uint) { return nullptr; }
+const EngineDriverDeviceInfo* getJuceDeviceInfo(const uint, const char* const) { return nullptr; }
+bool               showJuceDeviceControlPanel(const uint, const char* const)   { return false; }
+#else
+CarlaEngine*       newRtAudio(const AudioApi)           { return nullptr; }
+uint               getRtAudioApiCount()                 { return 0;       }
+const char*        getRtAudioApiName(const uint)        { return nullptr; }
+const char* const* getRtAudioApiDeviceNames(const uint) { return nullptr; }
+const EngineDriverDeviceInfo* getRtAudioDeviceInfo(const uint, const char* const) { return nullptr; }
+#endif
+
+}
 
 CARLA_BACKEND_END_NAMESPACE
 

@@ -1362,62 +1362,6 @@ protected:
 
     // -------------------------------------------------------------------
 
-public:
-    /*!
-     * Native audio APIs.
-     */
-    enum AudioApi {
-        AUDIO_API_NULL,
-        // common
-        AUDIO_API_JACK,
-        AUDIO_API_OSS,
-        // linux
-        AUDIO_API_ALSA,
-        AUDIO_API_PULSEAUDIO,
-        // macos
-        AUDIO_API_COREAUDIO,
-        // windows
-        AUDIO_API_ASIO,
-        AUDIO_API_DIRECTSOUND,
-        AUDIO_API_WASAPI
-    };
-
-    // -------------------------------------------------------------------
-    // Engine initializers
-
-    // JACK
-    static CarlaEngine* newJack();
-
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-    // Dummy
-    static CarlaEngine* newDummy();
-#endif
-
-#ifdef BUILD_BRIDGE
-    // Bridge
-    static CarlaEngine* newBridge(const char* audioPoolBaseName,
-                                  const char* rtClientBaseName,
-                                  const char* nonRtClientBaseName,
-                                  const char* nonRtServerBaseName);
-#else
-# ifdef USING_JUCE
-    // Juce
-    static CarlaEngine*       newJuce(AudioApi api);
-    static uint               getJuceApiCount();
-    static const char*        getJuceApiName(uint index);
-    static const char* const* getJuceApiDeviceNames(uint index);
-    static const EngineDriverDeviceInfo* getJuceDeviceInfo(uint index, const char* deviceName);
-    static bool               showJuceDeviceControlPanel(uint index, const char* deviceName);
-# else
-    // RtAudio
-    static CarlaEngine*       newRtAudio(AudioApi api);
-    static uint               getRtAudioApiCount();
-    static const char*        getRtAudioApiName(uint index);
-    static const char* const* getRtAudioApiDeviceNames(uint index);
-    static const EngineDriverDeviceInfo* getRtAudioDeviceInfo(uint index, const char* deviceName);
-# endif
-#endif
-
     CARLA_DECLARE_NON_COPY_CLASS(CarlaEngine)
 };
 

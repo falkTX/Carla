@@ -945,7 +945,7 @@ private:
    #endif
 
     inline bool isHeapAllocated() const noexcept  { return size > (int) sizeof (packedData); }
-    inline uint8* getData() const noexcept        { return isHeapAllocated() ? packedData.allocatedData : (uint8*) packedData.asBytes; }
+    inline uint8* getData() const noexcept        { return isHeapAllocated() ? packedData.allocatedData : const_cast<uint8*>(packedData.asBytes); }
     uint8* allocateSpace (int);
 };
 

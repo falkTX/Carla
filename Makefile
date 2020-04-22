@@ -59,17 +59,21 @@ endif
 
 ifeq ($(USING_JUCE),true)
 3RD_LIBS += $(MODULEDIR)/juce_audio_basics.a
+ifeq ($(USING_JUCE_AUDIO_DEVICES),true)
 3RD_LIBS += $(MODULEDIR)/juce_audio_devices.a
+endif
 3RD_LIBS += $(MODULEDIR)/juce_audio_processors.a
 3RD_LIBS += $(MODULEDIR)/juce_core.a
 3RD_LIBS += $(MODULEDIR)/juce_data_structures.a
 3RD_LIBS += $(MODULEDIR)/juce_events.a
 3RD_LIBS += $(MODULEDIR)/juce_graphics.a
 3RD_LIBS += $(MODULEDIR)/juce_gui_basics.a
-ifeq ($(LINUX_OR_MACOS),true)
+ifeq ($(USING_JUCE_GUI_EXTRA),true)
 3RD_LIBS += $(MODULEDIR)/juce_gui_extra.a
 endif
-else
+endif
+
+ifneq ($(USING_JUCE_AUDIO_DEVICES),true)
 3RD_LIBS += $(MODULEDIR)/rtaudio.a
 3RD_LIBS += $(MODULEDIR)/rtmidi.a
 endif
@@ -261,11 +265,9 @@ LIBS_POSIX32 += $(MODULEDIR)/juce_audio_processors.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_data_structures.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_core.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_events.posix32.a
-ifeq ($(MACOS_OR_WIN32),true)
 LIBS_POSIX32 += $(MODULEDIR)/juce_graphics.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_gui_basics.posix32.a
-endif
-ifeq ($(LINUX_OR_MACOS),true)
+ifeq ($(USING_JUCE_GUI_EXTRA),true)
 LIBS_POSIX32 += $(MODULEDIR)/juce_gui_extra.posix32.a
 endif
 endif
@@ -288,11 +290,9 @@ LIBS_POSIX64 += $(MODULEDIR)/juce_audio_processors.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_data_structures.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_core.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_events.posix64.a
-ifeq ($(MACOS_OR_WIN32),true)
 LIBS_POSIX64 += $(MODULEDIR)/juce_graphics.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_gui_basics.posix64.a
-endif
-ifeq ($(LINUX_OR_MACOS),true)
+ifeq ($(USING_JUCE_GUI_EXTRA),true)
 LIBS_POSIX64 += $(MODULEDIR)/juce_gui_extra.posix64.a
 endif
 endif
@@ -321,6 +321,9 @@ LIBS_WIN32 += $(MODULEDIR)/juce_core.win32.a
 LIBS_WIN32 += $(MODULEDIR)/juce_events.win32.a
 LIBS_WIN32 += $(MODULEDIR)/juce_graphics.win32.a
 LIBS_WIN32 += $(MODULEDIR)/juce_gui_basics.win32.a
+ifeq ($(USING_JUCE_GUI_EXTRA),true)
+LIBS_WIN32 += $(MODULEDIR)/juce_gui_extra.win32.a
+endif
 endif
 
 win32: $(LIBS_WIN32)
@@ -347,6 +350,9 @@ LIBS_WIN64 += $(MODULEDIR)/juce_core.win64.a
 LIBS_WIN64 += $(MODULEDIR)/juce_events.win64.a
 LIBS_WIN64 += $(MODULEDIR)/juce_graphics.win64.a
 LIBS_WIN64 += $(MODULEDIR)/juce_gui_basics.win64.a
+ifeq ($(USING_JUCE_GUI_EXTRA),true)
+LIBS_WIN64 += $(MODULEDIR)/juce_gui_extra.win64.a
+endif
 endif
 
 win64: $(LIBS_WIN64)

@@ -16,6 +16,7 @@
  */
 
 #include "CarlaEngineClient.hpp"
+#include "CarlaEngineInit.hpp"
 #include "CarlaEngineInternal.hpp"
 #include "CarlaPlugin.hpp"
 
@@ -3537,10 +3538,14 @@ private:
 
 // -----------------------------------------------------------------------
 
-CarlaEngine* CarlaEngine::newJack()
+namespace EngineInit {
+
+CarlaEngine* newJack()
 {
-    carla_debug("CarlaEngine::newJack()");
+    carla_debug("EngineInit::newJack()");
     return new CarlaEngineJack();
+}
+
 }
 
 // -----------------------------------------------------------------------

@@ -23,6 +23,7 @@
  */
 
 #include "CarlaEngineClient.hpp"
+#include "CarlaEngineInit.hpp"
 #include "CarlaEngineInternal.hpp"
 #include "CarlaPlugin.hpp"
 
@@ -79,6 +80,7 @@ CarlaEngine::~CarlaEngine()
 uint CarlaEngine::getDriverCount()
 {
     carla_debug("CarlaEngine::getDriverCount()");
+    using namespace EngineInit;
 
     uint count = 0;
 
@@ -86,7 +88,7 @@ uint CarlaEngine::getDriverCount()
         count += 1;
 
 #ifndef BUILD_BRIDGE
-# ifdef USING_JUCE
+# ifdef USING_JUCE_AUDIO_DEVICES
     count += getJuceApiCount();
 # else
     count += getRtAudioApiCount();
@@ -99,6 +101,7 @@ uint CarlaEngine::getDriverCount()
 const char* CarlaEngine::getDriverName(const uint index2)
 {
     carla_debug("CarlaEngine::getDriverName(%i)", index2);
+    using namespace EngineInit;
 
     uint index = index2;
 
@@ -106,7 +109,7 @@ const char* CarlaEngine::getDriverName(const uint index2)
         return "JACK";
 
 #ifndef BUILD_BRIDGE
-# ifdef USING_JUCE
+# ifdef USING_JUCE_AUDIO_DEVICES
     if (const uint count = getJuceApiCount())
     {
         if (index < count)
@@ -129,6 +132,7 @@ const char* CarlaEngine::getDriverName(const uint index2)
 const char* const* CarlaEngine::getDriverDeviceNames(const uint index2)
 {
     carla_debug("CarlaEngine::getDriverDeviceNames(%i)", index2);
+    using namespace EngineInit;
 
     uint index = index2;
 
@@ -139,7 +143,7 @@ const char* const* CarlaEngine::getDriverDeviceNames(const uint index2)
     }
 
 #ifndef BUILD_BRIDGE
-# ifdef USING_JUCE
+# ifdef USING_JUCE_AUDIO_DEVICES
     if (const uint count = getJuceApiCount())
     {
         if (index < count)
@@ -162,6 +166,7 @@ const char* const* CarlaEngine::getDriverDeviceNames(const uint index2)
 const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index2, const char* const deviceName)
 {
     carla_debug("CarlaEngine::getDriverDeviceInfo(%i, \"%s\")", index2, deviceName);
+    using namespace EngineInit;
 
     uint index = index2;
 
@@ -175,7 +180,7 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index2
     }
 
 #ifndef BUILD_BRIDGE
-# ifdef USING_JUCE
+# ifdef USING_JUCE_AUDIO_DEVICES
     if (const uint count = getJuceApiCount())
     {
         if (index < count)
@@ -198,6 +203,7 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index2
 bool CarlaEngine::showDriverDeviceControlPanel(const uint index2, const char* const deviceName)
 {
     carla_debug("CarlaEngine::showDriverDeviceControlPanel(%i, \"%s\")", index2, deviceName);
+    using namespace EngineInit;
 
     uint index = index2;
 
@@ -207,7 +213,7 @@ bool CarlaEngine::showDriverDeviceControlPanel(const uint index2, const char* co
     }
 
 #ifndef BUILD_BRIDGE
-# ifdef USING_JUCE
+# ifdef USING_JUCE_AUDIO_DEVICES
     if (const uint count = getJuceApiCount())
     {
         if (index < count)
@@ -231,6 +237,7 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
 {
     CARLA_SAFE_ASSERT_RETURN(driverName != nullptr && driverName[0] != '\0', nullptr);
     carla_debug("CarlaEngine::newDriverByName(\"%s\")", driverName);
+    using namespace EngineInit;
 
     if (std::strcmp(driverName, "JACK") == 0)
         return newJack();
@@ -241,7 +248,7 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
 #endif
 
 #ifndef BUILD_BRIDGE
-# ifdef USING_JUCE
+# ifdef USING_JUCE_AUDIO_DEVICES
     // -------------------------------------------------------------------
     // linux
 

@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -16,6 +16,7 @@
  */
 
 #include "CarlaEngineGraph.hpp"
+#include "CarlaEngineInit.hpp"
 #include "CarlaEngineInternal.hpp"
 #include "CarlaBackendUtils.hpp"
 #include "CarlaStringList.hpp"
@@ -24,17 +25,9 @@
 
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 # pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wcast-qual"
-# pragma GCC diagnostic ignored "-Wconversion"
 # pragma GCC diagnostic ignored "-Wdouble-promotion"
 # pragma GCC diagnostic ignored "-Weffc++"
 # pragma GCC diagnostic ignored "-Wfloat-equal"
-# pragma GCC diagnostic ignored "-Wsign-conversion"
-# pragma GCC diagnostic ignored "-Wundef"
-# pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-# if __GNUC__ > 7
-#  pragma GCC diagnostic ignored "-Wclass-memaccess"
-# endif
 #endif
 
 #include "AppConfig.h"
@@ -903,7 +896,9 @@ private:
 
 // -----------------------------------------
 
-CarlaEngine* CarlaEngine::newJuce(const AudioApi api)
+namespace EngineInit {
+
+CarlaEngine* newJuce(const AudioApi api)
 {
     initJuceDevicesIfNeeded();
 
@@ -956,14 +951,14 @@ CarlaEngine* CarlaEngine::newJuce(const AudioApi api)
     return new CarlaEngineJuce(deviceType);
 }
 
-uint CarlaEngine::getJuceApiCount()
+uint getJuceApiCount()
 {
     initJuceDevicesIfNeeded();
 
     return static_cast<uint>(gDeviceTypes.size());
 }
 
-const char* CarlaEngine::getJuceApiName(const uint uindex)
+const char* getJuceApiName(const uint uindex)
 {
     initJuceDevicesIfNeeded();
 
@@ -977,7 +972,7 @@ const char* CarlaEngine::getJuceApiName(const uint uindex)
     return deviceType->getTypeName().toRawUTF8();
 }
 
-const char* const* CarlaEngine::getJuceApiDeviceNames(const uint uindex)
+const char* const* getJuceApiDeviceNames(const uint uindex)
 {
     initJuceDevicesIfNeeded();
 
@@ -1006,7 +1001,7 @@ const char* const* CarlaEngine::getJuceApiDeviceNames(const uint uindex)
     return gDeviceNames;
 }
 
-const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const uint uindex, const char* const deviceName)
+const EngineDriverDeviceInfo* getJuceDeviceInfo(const uint uindex, const char* const deviceName)
 {
     initJuceDevicesIfNeeded();
 
@@ -1082,7 +1077,7 @@ const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const uint uindex, 
     return &devInfo;
 }
 
-bool CarlaEngine::showJuceDeviceControlPanel(const uint uindex, const char* const deviceName)
+bool showJuceDeviceControlPanel(const uint uindex, const char* const deviceName)
 {
     const int index(static_cast<int>(uindex));
 
@@ -1097,6 +1092,8 @@ bool CarlaEngine::showJuceDeviceControlPanel(const uint uindex, const char* cons
     CARLA_SAFE_ASSERT_RETURN(device != nullptr, false);
 
     return device->showControlPanel();
+}
+
 }
 
 // -----------------------------------------

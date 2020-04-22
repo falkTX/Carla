@@ -93,13 +93,6 @@ UNIX=true
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Set USING_JUCE
-
-ifeq ($(MACOS_OR_WIN32),true)
-USING_JUCE=true
-endif
-
-# ---------------------------------------------------------------------------------------------------------------------
 # Set build and link flags
 
 BASE_FLAGS = -Wall -Wextra -pipe -DBUILDING_CARLA -DREAL_BUILD -MD -MP
@@ -251,12 +244,8 @@ HAVE_QT5        = $(shell $(PKG_CONFIG) --exists Qt5Core Qt5Gui Qt5Widgets && \
                           $(PKG_CONFIG) --variable=qt_config Qt5Core | grep -q -v "static" && echo true)
 HAVE_SNDFILE    = $(shell $(PKG_CONFIG) --exists sndfile && echo true)
 
-ifeq ($(JACKBRIDGE_DIRECT),true)
-ifeq ($(HAVE_JACK),true)
-BASE_FLAGS += -DJACKBRIDGE_DIRECT
-else
-$(error jackbridge direct mode requested, but jack not available)
-endif
+ifeq ($(LINUX),true)
+HAVE_JUCE_LINUX_DEPS = $(shell $(PKG_CONFIG) --exists x11 xext freetype2 && echo true)
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -336,7 +325,31 @@ endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
+# Set USING_JUCE
+
+ifeq ($(MACOS_OR_WIN32),true)
+USING_JUCE=true
+USING_JUCE_AUDIO_DEVICES=true
+endif
+
+ifeq ($(HAVE_JUCE_LINUX_DEPS),true)
+USING_JUCE=true
+endif
+
+ifeq ($(LINUX_OR_MACOS),true)
+USING_JUCE_GUI_EXTRA=true
+endif
+
+# ---------------------------------------------------------------------------------------------------------------------
 # Set base defines
+
+ifeq ($(JACKBRIDGE_DIRECT),true)
+ifeq ($(HAVE_JACK),true)
+BASE_FLAGS += -DJACKBRIDGE_DIRECT
+else
+$(error jackbridge direct mode requested, but jack not available)
+endif
+endif
 
 ifeq ($(HAVE_DGL),true)
 BASE_FLAGS += -DHAVE_DGL
@@ -377,6 +390,14 @@ endif
 
 ifeq ($(USING_JUCE),true)
 BASE_FLAGS += -DUSING_JUCE
+endif
+
+ifeq ($(USING_JUCE_AUDIO_DEVICES),true)
+BASE_FLAGS += -DUSING_JUCE_AUDIO_DEVICES
+endif
+
+ifeq ($(USING_JUCE_GUI_EXTRA),true)
+BASE_FLAGS += -DUSING_JUCE_GUI_EXTRA
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -449,7 +470,7 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Set libs stuff (part 2)
 
-ifneq ($(USING_JUCE),true)
+ifneq ($(USING_JUCE_AUDIO_DEVICES),true)
 
 RTAUDIO_FLAGS    = -DHAVE_GETTIMEOFDAY
 RTMIDI_FLAGS     =
@@ -467,7 +488,7 @@ RTAUDIO_LIBS    += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs libpulse-sim
 endif
 endif
 
-endif # USING_JUCE
+endif # USING_JUCE_AUDIO_DEVICES
 
 ifeq ($(BSD),true)
 JACKBRIDGE_LIBS  = -lpthread -lrt

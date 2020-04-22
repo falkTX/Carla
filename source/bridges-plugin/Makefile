@@ -12,6 +12,8 @@ include $(CWD)/Makefile.mk
 ifeq ($(TESTBUILD),true)
 ifeq ($(USING_JUCE),true)
 BUILD_CXX_FLAGS += -Wno-undef
+# FIXME
+BUILD_CXX_FLAGS += -Wno-deprecated-declarations
 endif
 endif
 
@@ -125,7 +127,7 @@ LIBS_win32   += $(MODULEDIR)/juce_gui_basics.win32.a
 LIBS_win64   += $(MODULEDIR)/juce_gui_basics.win64.a
 LINK_FLAGS   += $(JUCE_GUI_BASICS_LIBS)
 
-ifeq ($(LINUX_OR_MACOS),true)
+ifeq ($(USING_JUCE_GUI_EXTRA),true)
 LIBS_native  += $(MODULEDIR)/juce_gui_extra.a
 LIBS_posix32 += $(MODULEDIR)/juce_gui_extra.posix32.a
 LIBS_posix64 += $(MODULEDIR)/juce_gui_extra.posix64.a

@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -16,6 +16,7 @@
  */
 
 #include "CarlaEngineGraph.hpp"
+#include "CarlaEngineInit.hpp"
 #include "CarlaEngineInternal.hpp"
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
@@ -1134,7 +1135,9 @@ private:
 
 // -----------------------------------------
 
-CarlaEngine* CarlaEngine::newRtAudio(const AudioApi api)
+namespace EngineInit {
+
+CarlaEngine* newRtAudio(const AudioApi api)
 {
     initRtAudioAPIsIfNeeded();
 
@@ -1174,14 +1177,14 @@ CarlaEngine* CarlaEngine::newRtAudio(const AudioApi api)
     return new CarlaEngineRtAudio(rtApi);
 }
 
-uint CarlaEngine::getRtAudioApiCount()
+uint getRtAudioApiCount()
 {
     initRtAudioAPIsIfNeeded();
 
     return static_cast<uint>(gRtAudioApis.size());
 }
 
-const char* CarlaEngine::getRtAudioApiName(const uint index)
+const char* getRtAudioApiName(const uint index)
 {
     initRtAudioAPIsIfNeeded();
 
@@ -1190,7 +1193,7 @@ const char* CarlaEngine::getRtAudioApiName(const uint index)
     return CarlaBackend::getRtAudioApiName(gRtAudioApis[index]);
 }
 
-const char* const* CarlaEngine::getRtAudioApiDeviceNames(const uint index)
+const char* const* getRtAudioApiDeviceNames(const uint index)
 {
     initRtAudioAPIsIfNeeded();
 
@@ -1223,7 +1226,7 @@ const char* const* CarlaEngine::getRtAudioApiDeviceNames(const uint index)
     return gDeviceNames;
 }
 
-const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const uint index, const char* const deviceName)
+const EngineDriverDeviceInfo* getRtAudioDeviceInfo(const uint index, const char* const deviceName)
 {
     initRtAudioAPIsIfNeeded();
 
@@ -1314,6 +1317,8 @@ const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const uint index
     }
 
     return &devInfo;
+}
+
 }
 
 // -----------------------------------------

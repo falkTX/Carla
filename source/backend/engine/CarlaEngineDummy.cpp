@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -16,6 +16,7 @@
  */
 
 #include "CarlaEngineGraph.hpp"
+#include "CarlaEngineInit.hpp"
 #include "CarlaEngineInternal.hpp"
 
 #include <ctime>
@@ -279,9 +280,14 @@ private:
 
 // -----------------------------------------
 
-CarlaEngine* CarlaEngine::newDummy()
+namespace EngineInit {
+
+CarlaEngine* newDummy()
 {
+    carla_debug("EngineInit::newDummy()");
     return new CarlaEngineDummy();
+}
+
 }
 
 // -----------------------------------------
