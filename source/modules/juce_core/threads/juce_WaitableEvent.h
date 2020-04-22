@@ -21,7 +21,7 @@
 */
 
 #if JUCE_MINGW
-#include "../../hylia/mingw-std-threads/mingw.condition_variable.h"
+#include "mingw-std-threads/mingw.condition_variable.h"
 #endif
 
 namespace juce
