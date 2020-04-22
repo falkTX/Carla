@@ -57,6 +57,7 @@ elif [ "${TARGET}" = "linux-strict" ]; then
 elif [ "${TARGET}" = "linux-juce-strict" ]; then
     sudo apt-get install -y \
         g++-8 \
+        g++-8-multilib \
         pkg-config \
         pyqt5-dev-tools \
         python3-pyqt5.qtsvg \
@@ -72,8 +73,16 @@ elif [ "${TARGET}" = "linux-juce-strict" ]; then
         libgl1-mesa-dev \
         libx11-dev \
         libxext-dev \
+        libx11-6:i386 \
+        libxext6:i386 \
+        libfreetype6:i386 \
         liblo-static \
         fluidsynth-static
+
+    # Fix for 32bit bridge links
+    sudo ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
+    sudo ln -s /usr/lib/i386-linux-gnu/libXext.so.6 /usr/lib/i386-linux-gnu/libXext.so
+    sudo ln -s /usr/lib/i386-linux-gnu/libfreetype.so.6 /usr/lib/i386-linux-gnu/libfreetype.so
 
 elif [ "${TARGET}" = "macos" ]; then
     sudo apt-get install -y \
