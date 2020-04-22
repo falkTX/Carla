@@ -23,7 +23,7 @@
 #include "CarlaPipeUtils.hpp"
 #include "CarlaString.hpp"
 
-#ifdef USING_JUCE
+#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
 # if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wconversion"
@@ -69,7 +69,7 @@ public:
 #endif
           kIgnoreParameters(std::strncmp(desc->label, "carla", 5) == 0),
           fMidiEventCount(0),
-#ifdef USING_JUCE
+#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
           fJuceInitialiser(),
 #endif
           fLoadedFile(),
@@ -855,7 +855,7 @@ private:
     uint32_t        fMidiEventCount;
     NativeMidiEvent fMidiEvents[kMaxMidiEvents];
 
-#ifdef USING_JUCE
+#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
     juce::SharedResourcePointer<juce::ScopedJuceInitialiser_GUI> fJuceInitialiser;
 #endif
 

@@ -42,7 +42,7 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaVstUtils.hpp"
 
-#ifdef USING_JUCE
+#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
 # if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wconversion"
@@ -98,7 +98,7 @@ public:
           fUiLauncher(nullptr),
           fHostType(kHostTypeNull),
           fMidiOutEvents(),
-#ifdef USING_JUCE
+#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
           fJuceInitialiser(),
 #endif
           fStateChunk(nullptr)
@@ -865,7 +865,7 @@ private:
         CARLA_DECLARE_NON_COPY_STRUCT(FixedVstEvents);
     } fMidiOutEvents;
 
-#ifdef USING_JUCE
+#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
     juce::SharedResourcePointer<juce::ScopedJuceInitialiser_GUI> fJuceInitialiser;
 #endif
 

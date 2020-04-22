@@ -17,7 +17,7 @@ make distclean >/dev/null
 make USING_JUCE=false features
 
 # Build things that we skip strict tests for
-make USING_JUCE=false 3rd frontend
+make USING_JUCE=false 3rd frontend plugin-wine
 make USING_JUCE=false -C source/modules/water posix32
 
 # Build native stuff
