@@ -977,7 +977,11 @@ bool Thread::setThreadPriority (void* handle, int priority)
     if (pthread_getschedparam ((pthread_t) handle, &policy, &param) != 0)
         return false;
 
+   #if JUCE_LINUX
+    policy = priority < 9 ? SCHED_OTHER : SCHED_RR;
+   #else
     policy = priority == 0 ? SCHED_OTHER : SCHED_RR;
+   #endif
 
     const int minPriority = sched_get_priority_min (policy);
     const int maxPriority = sched_get_priority_max (policy);

@@ -216,7 +216,7 @@
     @see VSTPluginFormat, AudioPluginFormat, AudioPluginFormatManager, JUCE_PLUGINHOST_AU
 */
 #if defined(APPCONFIG_OS_MAC) || defined(APPCONFIG_OS_WIN)
-# define JUCE_PLUGINHOST_VST 0 /* FIXME use old juce vst2 code or vestige */
+# define JUCE_PLUGINHOST_VST 1
 #else
 # define JUCE_PLUGINHOST_VST 0
 #endif

@@ -58,25 +58,25 @@ struct SpeakerMappings  : private AudioChannelSet // (inheritance only to give e
 
     static AudioChannelSet vstArrangementTypeToChannelSet (int32 arr, int fallbackNumChannels)
     {
-        if      (arr == Vst2::kSpeakerArrEmpty)        return AudioChannelSet::disabled();
-        else if (arr == Vst2::kSpeakerArrMono)         return AudioChannelSet::mono();
-        else if (arr == Vst2::kSpeakerArrStereo)       return AudioChannelSet::stereo();
-        else if (arr == Vst2::kSpeakerArr30Cine)       return AudioChannelSet::createLCR();
-        else if (arr == Vst2::kSpeakerArr30Music)      return AudioChannelSet::createLRS();
-        else if (arr == Vst2::kSpeakerArr40Cine)       return AudioChannelSet::createLCRS();
-        else if (arr == Vst2::kSpeakerArr50)           return AudioChannelSet::create5point0();
-        else if (arr == Vst2::kSpeakerArr51)           return AudioChannelSet::create5point1();
-        else if (arr == Vst2::kSpeakerArr60Cine)       return AudioChannelSet::create6point0();
-        else if (arr == Vst2::kSpeakerArr61Cine)       return AudioChannelSet::create6point1();
-        else if (arr == Vst2::kSpeakerArr60Music)      return AudioChannelSet::create6point0Music();
-        else if (arr == Vst2::kSpeakerArr61Music)      return AudioChannelSet::create6point1Music();
-        else if (arr == Vst2::kSpeakerArr70Music)      return AudioChannelSet::create7point0();
-        else if (arr == Vst2::kSpeakerArr70Cine)       return AudioChannelSet::create7point0SDDS();
-        else if (arr == Vst2::kSpeakerArr71Music)      return AudioChannelSet::create7point1();
-        else if (arr == Vst2::kSpeakerArr71Cine)       return AudioChannelSet::create7point1SDDS();
-        else if (arr == Vst2::kSpeakerArr40Music)      return AudioChannelSet::quadraphonic();
+        if      (arr == Vst2::vstSpeakerConfigTypeEmpty)          return AudioChannelSet::disabled();
+        else if (arr == Vst2::vstSpeakerConfigTypeMono)           return AudioChannelSet::mono();
+        else if (arr == Vst2::vstSpeakerConfigTypeLR)             return AudioChannelSet::stereo();
+        else if (arr == Vst2::vstSpeakerConfigTypeLRC)            return AudioChannelSet::createLCR();
+        else if (arr == Vst2::vstSpeakerConfigTypeLRS)            return AudioChannelSet::createLRS();
+        else if (arr == Vst2::vstSpeakerConfigTypeLRCS)           return AudioChannelSet::createLCRS();
+        else if (arr == Vst2::vstSpeakerConfigTypeLRCLsRs)        return AudioChannelSet::create5point0();
+        else if (arr == Vst2::vstSpeakerConfigTypeLRCLfeLsRs)     return AudioChannelSet::create5point1();
+        else if (arr == Vst2::vstSpeakerConfigTypeLRCLsRsCs)      return AudioChannelSet::create6point0();
+        else if (arr == Vst2::vstSpeakerConfigTypeLRCLfeLsRsCs)   return AudioChannelSet::create6point1();
+        else if (arr == Vst2::vstSpeakerConfigTypeLRLsRsSlSr)     return AudioChannelSet::create6point0Music();
+        else if (arr == Vst2::vstSpeakerConfigTypeLRLfeLsRsSlSr)  return AudioChannelSet::create6point1Music();
+        else if (arr == Vst2::vstSpeakerConfigTypeLRCLsRsSlSr)    return AudioChannelSet::create7point0();
+        else if (arr == Vst2::vstSpeakerConfigTypeLRCLsRsLcRc)    return AudioChannelSet::create7point0SDDS();
+        else if (arr == Vst2::vstSpeakerConfigTypeLRCLfeLsRsSlSr) return AudioChannelSet::create7point1();
+        else if (arr == Vst2::vstSpeakerConfigTypeLRCLfeLsRsLcRc) return AudioChannelSet::create7point1SDDS();
+        else if (arr == Vst2::vstSpeakerConfigTypeLRLsRs)         return AudioChannelSet::quadraphonic();
 
-        for (const Mapping* m = getMappings(); m->vst2 != Vst2::kSpeakerArrEmpty; ++m)
+        for (const Mapping* m = getMappings(); m->vst2 != Vst2::vstSpeakerConfigTypeEmpty; ++m)
         {
             if (m->vst2 == arr)
             {
@@ -92,53 +92,53 @@ struct SpeakerMappings  : private AudioChannelSet // (inheritance only to give e
         return AudioChannelSet::discreteChannels (fallbackNumChannels);
     }
 
-    static AudioChannelSet vstArrangementTypeToChannelSet (const Vst2::VstSpeakerArrangement& arr)
+    static AudioChannelSet vstArrangementTypeToChannelSet (const Vst2::VstSpeakerConfiguration& arr)
     {
-        return vstArrangementTypeToChannelSet (arr.type, arr.numChannels);
+        return vstArrangementTypeToChannelSet (arr.type, arr.numberOfChannels);
     }
 
     static int32 channelSetToVstArrangementType (AudioChannelSet channels)
     {
-        if      (channels == AudioChannelSet::disabled())           return Vst2::kSpeakerArrEmpty;
-        else if (channels == AudioChannelSet::mono())               return Vst2::kSpeakerArrMono;
-        else if (channels == AudioChannelSet::stereo())             return Vst2::kSpeakerArrStereo;
-        else if (channels == AudioChannelSet::createLCR())          return Vst2::kSpeakerArr30Cine;
-        else if (channels == AudioChannelSet::createLRS())          return Vst2::kSpeakerArr30Music;
-        else if (channels == AudioChannelSet::createLCRS())         return Vst2::kSpeakerArr40Cine;
-        else if (channels == AudioChannelSet::create5point0())      return Vst2::kSpeakerArr50;
-        else if (channels == AudioChannelSet::create5point1())      return Vst2::kSpeakerArr51;
-        else if (channels == AudioChannelSet::create6point0())      return Vst2::kSpeakerArr60Cine;
-        else if (channels == AudioChannelSet::create6point1())      return Vst2::kSpeakerArr61Cine;
-        else if (channels == AudioChannelSet::create6point0Music()) return Vst2::kSpeakerArr60Music;
-        else if (channels == AudioChannelSet::create6point1Music()) return Vst2::kSpeakerArr61Music;
-        else if (channels == AudioChannelSet::create7point0())      return Vst2::kSpeakerArr70Music;
-        else if (channels == AudioChannelSet::create7point0SDDS())  return Vst2::kSpeakerArr70Cine;
-        else if (channels == AudioChannelSet::create7point1())      return Vst2::kSpeakerArr71Music;
-        else if (channels == AudioChannelSet::create7point1SDDS())  return Vst2::kSpeakerArr71Cine;
-        else if (channels == AudioChannelSet::quadraphonic())       return Vst2::kSpeakerArr40Music;
+        if      (channels == AudioChannelSet::disabled())           return Vst2::vstSpeakerConfigTypeEmpty;
+        else if (channels == AudioChannelSet::mono())               return Vst2::vstSpeakerConfigTypeMono;
+        else if (channels == AudioChannelSet::stereo())             return Vst2::vstSpeakerConfigTypeLR;
+        else if (channels == AudioChannelSet::createLCR())          return Vst2::vstSpeakerConfigTypeLRC;
+        else if (channels == AudioChannelSet::createLRS())          return Vst2::vstSpeakerConfigTypeLRS;
+        else if (channels == AudioChannelSet::createLCRS())         return Vst2::vstSpeakerConfigTypeLRCS;
+        else if (channels == AudioChannelSet::create5point0())      return Vst2::vstSpeakerConfigTypeLRCLsRs;
+        else if (channels == AudioChannelSet::create5point1())      return Vst2::vstSpeakerConfigTypeLRCLfeLsRs;
+        else if (channels == AudioChannelSet::create6point0())      return Vst2::vstSpeakerConfigTypeLRCLsRsCs;
+        else if (channels == AudioChannelSet::create6point1())      return Vst2::vstSpeakerConfigTypeLRCLfeLsRsCs;
+        else if (channels == AudioChannelSet::create6point0Music()) return Vst2::vstSpeakerConfigTypeLRLsRsSlSr;
+        else if (channels == AudioChannelSet::create6point1Music()) return Vst2::vstSpeakerConfigTypeLRLfeLsRsSlSr;
+        else if (channels == AudioChannelSet::create7point0())      return Vst2::vstSpeakerConfigTypeLRCLsRsSlSr;
+        else if (channels == AudioChannelSet::create7point0SDDS())  return Vst2::vstSpeakerConfigTypeLRCLsRsLcRc;
+        else if (channels == AudioChannelSet::create7point1())      return Vst2::vstSpeakerConfigTypeLRCLfeLsRsSlSr;
+        else if (channels == AudioChannelSet::create7point1SDDS())  return Vst2::vstSpeakerConfigTypeLRCLfeLsRsLcRc;
+        else if (channels == AudioChannelSet::quadraphonic())       return Vst2::vstSpeakerConfigTypeLRLsRs;
 
         if (channels == AudioChannelSet::disabled())
-            return Vst2::kSpeakerArrEmpty;
+            return Vst2::vstSpeakerConfigTypeEmpty;
 
         auto chans = channels.getChannelTypes();
 
-        for (auto* m = getMappings(); m->vst2 != Vst2::kSpeakerArrEmpty; ++m)
+        for (auto* m = getMappings(); m->vst2 != Vst2::vstSpeakerConfigTypeEmpty; ++m)
             if (m->matches (chans))
                 return m->vst2;
 
-        return Vst2::kSpeakerArrUserDefined;
+        return Vst2::vstSpeakerConfigTypeUser;
     }
 
-    static void channelSetToVstArrangement (const AudioChannelSet& channels, Vst2::VstSpeakerArrangement& result)
+    static void channelSetToVstArrangement (const AudioChannelSet& channels, Vst2::VstSpeakerConfiguration& result)
     {
         result.type = channelSetToVstArrangementType (channels);
-        result.numChannels = channels.size();
+        result.numberOfChannels = channels.size();
 
-        for (int i = 0; i < result.numChannels; ++i)
+        for (int i = 0; i < result.numberOfChannels; ++i)
         {
             auto& speaker = result.speakers[i];
 
-            zeromem (&speaker, sizeof (Vst2::VstSpeakerProperties));
+            zeromem (&speaker, sizeof (Vst2::VstIndividualSpeakerInfo));
             speaker.type = getSpeakerType (channels.getTypeOfChannel (i));
         }
     }
@@ -152,7 +152,7 @@ struct SpeakerMappings  : private AudioChannelSet // (inheritance only to give e
             clear();
         }
 
-        VstSpeakerConfigurationHolder (const Vst2::VstSpeakerArrangement& vstConfig)
+        VstSpeakerConfigurationHolder (const Vst2::VstSpeakerConfiguration& vstConfig)
         {
             operator= (vstConfig);
         }
@@ -171,29 +171,29 @@ struct SpeakerMappings  : private AudioChannelSet // (inheritance only to give e
         VstSpeakerConfigurationHolder (const AudioChannelSet& channels)
         {
             auto numberOfChannels = channels.size();
-            Vst2::VstSpeakerArrangement& dst = *allocate (numberOfChannels);
+            Vst2::VstSpeakerConfiguration& dst = *allocate (numberOfChannels);
 
             dst.type = channelSetToVstArrangementType (channels);
-            dst.numChannels = numberOfChannels;
+            dst.numberOfChannels = numberOfChannels;
 
-            for (int i = 0; i < dst.numChannels; ++i)
+            for (int i = 0; i < dst.numberOfChannels; ++i)
             {
-                Vst2::VstSpeakerProperties& speaker = dst.speakers[i];
+                Vst2::VstIndividualSpeakerInfo& speaker = dst.speakers[i];
 
-                zeromem (&speaker, sizeof (Vst2::VstSpeakerProperties));
+                zeromem (&speaker, sizeof (Vst2::VstIndividualSpeakerInfo));
                 speaker.type = getSpeakerType (channels.getTypeOfChannel (i));
             }
         }
 
         VstSpeakerConfigurationHolder& operator= (const VstSpeakerConfigurationHolder& vstConfig) { return operator=(vstConfig.get()); }
-        VstSpeakerConfigurationHolder& operator= (const Vst2::VstSpeakerArrangement& vstConfig)
+        VstSpeakerConfigurationHolder& operator= (const Vst2::VstSpeakerConfiguration& vstConfig)
         {
-            Vst2::VstSpeakerArrangement& dst = *allocate (vstConfig.numChannels);
+            Vst2::VstSpeakerConfiguration& dst = *allocate (vstConfig.numberOfChannels);
 
             dst.type             = vstConfig.type;
-            dst.numChannels      = vstConfig.numChannels;
+            dst.numberOfChannels = vstConfig.numberOfChannels;
 
-            for (int i = 0; i < dst.numChannels; ++i)
+            for (int i = 0; i < dst.numberOfChannels; ++i)
                 dst.speakers[i] = vstConfig.speakers[i];
 
             return *this;
@@ -207,17 +207,17 @@ struct SpeakerMappings  : private AudioChannelSet // (inheritance only to give e
             return *this;
         }
 
-        const Vst2::VstSpeakerArrangement& get() const { return *storage.get(); }
+        const Vst2::VstSpeakerConfiguration& get() const { return *storage.get(); }
 
     private:
         JUCE_LEAK_DETECTOR (VstSpeakerConfigurationHolder)
 
-        HeapBlock<Vst2::VstSpeakerArrangement> storage;
+        HeapBlock<Vst2::VstSpeakerConfiguration> storage;
 
-        Vst2::VstSpeakerArrangement* allocate (int numChannels)
+        Vst2::VstSpeakerConfiguration* allocate (int numChannels)
         {
-            auto arrangementSize = (size_t) (jmax (8, numChannels) - 8) * sizeof (Vst2::VstSpeakerProperties)
-                                    + sizeof (Vst2::VstSpeakerArrangement);
+            auto arrangementSize = (size_t) (jmax (8, numChannels) - 8) * sizeof (Vst2::VstIndividualSpeakerInfo)
+                                    + sizeof (Vst2::VstSpeakerConfiguration);
 
             storage.malloc (1, arrangementSize);
             return storage.get();
@@ -225,10 +225,10 @@ struct SpeakerMappings  : private AudioChannelSet // (inheritance only to give e
 
         void clear()
         {
-            Vst2::VstSpeakerArrangement& dst = *allocate (0);
+            Vst2::VstSpeakerConfiguration& dst = *allocate (0);
 
-            dst.type = Vst2::kSpeakerArrEmpty;
-            dst.numChannels = 0;
+            dst.type = Vst2::vstSpeakerConfigTypeEmpty;
+            dst.numberOfChannels = 0;
         }
     };
 
@@ -236,36 +236,36 @@ struct SpeakerMappings  : private AudioChannelSet // (inheritance only to give e
     {
         static const Mapping mappings[] =
         {
-            { Vst2::kSpeakerArrMono,           { centre, unknown } },
-            { Vst2::kSpeakerArrStereo,         { left, right, unknown } },
-            { Vst2::kSpeakerArrStereoSurround, { leftSurround, rightSurround, unknown } },
-            { Vst2::kSpeakerArrStereoCenter,   { leftCentre, rightCentre, unknown } },
-            { Vst2::kSpeakerArrStereoSide,     { leftSurroundRear, rightSurroundRear, unknown } },
-            { Vst2::kSpeakerArrStereoCLfe,     { centre, LFE, unknown } },
-            { Vst2::kSpeakerArr30Cine,         { left, right, centre, unknown } },
-            { Vst2::kSpeakerArr30Music,        { left, right, surround, unknown } },
-            { Vst2::kSpeakerArr31Cine,         { left, right, centre, LFE, unknown } },
-            { Vst2::kSpeakerArr31Music,        { left, right, LFE, surround, unknown } },
-            { Vst2::kSpeakerArr40Cine,         { left, right, centre, surround, unknown } },
-            { Vst2::kSpeakerArr40Music,        { left, right, leftSurround, rightSurround, unknown } },
-            { Vst2::kSpeakerArr41Cine,         { left, right, centre, LFE, surround, unknown } },
-            { Vst2::kSpeakerArr41Music,        { left, right, LFE, leftSurround, rightSurround, unknown } },
-            { Vst2::kSpeakerArr50,             { left, right, centre, leftSurround, rightSurround, unknown } },
-            { Vst2::kSpeakerArr51,             { left, right, centre, LFE, leftSurround, rightSurround, unknown } },
-            { Vst2::kSpeakerArr60Cine,         { left, right, centre, leftSurround, rightSurround, surround, unknown } },
-            { Vst2::kSpeakerArr60Music,        { left, right, leftSurround, rightSurround, leftSurroundRear, rightSurroundRear, unknown } },
-            { Vst2::kSpeakerArr61Cine,         { left, right, centre, LFE, leftSurround, rightSurround, surround, unknown } },
-            { Vst2::kSpeakerArr61Music,        { left, right, LFE, leftSurround, rightSurround, leftSurroundRear, rightSurroundRear, unknown } },
-            { Vst2::kSpeakerArr70Cine,         { left, right, centre, leftSurround, rightSurround, topFrontLeft, topFrontRight, unknown } },
-            { Vst2::kSpeakerArr70Music,        { left, right, centre, leftSurround, rightSurround, leftSurroundRear, rightSurroundRear, unknown } },
-            { Vst2::kSpeakerArr71Cine,         { left, right, centre, LFE, leftSurround, rightSurround, topFrontLeft, topFrontRight, unknown } },
-            { Vst2::kSpeakerArr71Music,        { left, right, centre, LFE, leftSurround, rightSurround, leftSurroundRear, rightSurroundRear, unknown } },
-            { Vst2::kSpeakerArr80Cine,         { left, right, centre, leftSurround, rightSurround, topFrontLeft, topFrontRight, surround, unknown } },
-            { Vst2::kSpeakerArr80Music,        { left, right, centre, leftSurround, rightSurround, surround, leftSurroundRear, rightSurroundRear, unknown } },
-            { Vst2::kSpeakerArr81Cine,         { left, right, centre, LFE, leftSurround, rightSurround, topFrontLeft, topFrontRight, surround, unknown } },
-            { Vst2::kSpeakerArr81Music,        { left, right, centre, LFE, leftSurround, rightSurround, surround, leftSurroundRear, rightSurroundRear, unknown } },
-            { Vst2::kSpeakerArr102,            { left, right, centre, LFE, leftSurround, rightSurround, topFrontLeft, topFrontCentre, topFrontRight, topRearLeft, topRearRight, LFE2, unknown } },
-            { Vst2::kSpeakerArrEmpty,          { unknown } }
+            { Vst2::vstSpeakerConfigTypeMono,                          { centre, unknown } },
+            { Vst2::vstSpeakerConfigTypeLR,                            { left, right, unknown } },
+            { Vst2::vstSpeakerConfigTypeLsRs,                          { leftSurround, rightSurround, unknown } },
+            { Vst2::vstSpeakerConfigTypeLcRc,                          { leftCentre, rightCentre, unknown } },
+            { Vst2::vstSpeakerConfigTypeSlSr,                          { leftSurroundRear, rightSurroundRear, unknown } },
+            { Vst2::vstSpeakerConfigTypeCLfe,                          { centre, LFE, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRC,                           { left, right, centre, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRS,                           { left, right, surround, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRCLfe,                        { left, right, centre, LFE, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRLfeS,                        { left, right, LFE, surround, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRCS,                          { left, right, centre, surround, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRLsRs,                        { left, right, leftSurround, rightSurround, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRCLfeS,                       { left, right, centre, LFE, surround, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRLfeLsRs,                     { left, right, LFE, leftSurround, rightSurround, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRCLsRs,                       { left, right, centre, leftSurround, rightSurround, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRCLfeLsRs,                    { left, right, centre, LFE, leftSurround, rightSurround, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRCLsRsCs,                     { left, right, centre, leftSurround, rightSurround, surround, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRLsRsSlSr,                    { left, right, leftSurround, rightSurround, leftSurroundRear, rightSurroundRear, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRCLfeLsRsCs,                  { left, right, centre, LFE, leftSurround, rightSurround, surround, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRLfeLsRsSlSr,                 { left, right, LFE, leftSurround, rightSurround, leftSurroundRear, rightSurroundRear, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRCLsRsLcRc,                   { left, right, centre, leftSurround, rightSurround, topFrontLeft, topFrontRight, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRCLsRsSlSr,                   { left, right, centre, leftSurround, rightSurround, leftSurroundRear, rightSurroundRear, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRCLfeLsRsLcRc,                { left, right, centre, LFE, leftSurround, rightSurround, topFrontLeft, topFrontRight, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRCLfeLsRsSlSr,                { left, right, centre, LFE, leftSurround, rightSurround, leftSurroundRear, rightSurroundRear, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRCLsRsLcRcCs,                 { left, right, centre, leftSurround, rightSurround, topFrontLeft, topFrontRight, surround, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRCLsRsCsSlSr,                 { left, right, centre, leftSurround, rightSurround, surround, leftSurroundRear, rightSurroundRear, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRCLfeLsRsLcRcCs,              { left, right, centre, LFE, leftSurround, rightSurround, topFrontLeft, topFrontRight, surround, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRCLfeLsRsCsSlSr,              { left, right, centre, LFE, leftSurround, rightSurround, surround, leftSurroundRear, rightSurroundRear, unknown } },
+            { Vst2::vstSpeakerConfigTypeLRCLfeLsRsTflTfcTfrTrlTrrLfe2, { left, right, centre, LFE, leftSurround, rightSurround, topFrontLeft, topFrontCentre, topFrontRight, topRearLeft, topRearRight, LFE2, unknown } },
+            { Vst2::vstSpeakerConfigTypeEmpty,                         { unknown } }
         };
 
         return mappings;
@@ -275,25 +275,25 @@ struct SpeakerMappings  : private AudioChannelSet // (inheritance only to give e
     {
         static const std::map<AudioChannelSet::ChannelType, int32> speakerTypeMap =
         {
-            { AudioChannelSet::left,              Vst2::kSpeakerL },
-            { AudioChannelSet::right,             Vst2::kSpeakerR },
-            { AudioChannelSet::centre,            Vst2::kSpeakerC },
-            { AudioChannelSet::LFE,               Vst2::kSpeakerLfe },
-            { AudioChannelSet::leftSurround,      Vst2::kSpeakerLs },
-            { AudioChannelSet::rightSurround,     Vst2::kSpeakerRs },
-            { AudioChannelSet::leftCentre,        Vst2::kSpeakerLc },
-            { AudioChannelSet::rightCentre,       Vst2::kSpeakerRc },
-            { AudioChannelSet::surround,          Vst2::kSpeakerS },
-            { AudioChannelSet::leftSurroundRear,  Vst2::kSpeakerSl },
-            { AudioChannelSet::rightSurroundRear, Vst2::kSpeakerSr },
-            { AudioChannelSet::topMiddle,         Vst2::kSpeakerTm },
-            { AudioChannelSet::topFrontLeft,      Vst2::kSpeakerTfl },
-            { AudioChannelSet::topFrontCentre,    Vst2::kSpeakerTfc },
-            { AudioChannelSet::topFrontRight,     Vst2::kSpeakerTfr },
-            { AudioChannelSet::topRearLeft,       Vst2::kSpeakerTrl },
-            { AudioChannelSet::topRearCentre,     Vst2::kSpeakerTrc },
-            { AudioChannelSet::topRearRight,      Vst2::kSpeakerTrr },
-            { AudioChannelSet::LFE2,              Vst2::kSpeakerLfe2 }
+            { AudioChannelSet::left,              Vst2::vstIndividualSpeakerTypeLeft },
+            { AudioChannelSet::right,             Vst2::vstIndividualSpeakerTypeRight },
+            { AudioChannelSet::centre,            Vst2::vstIndividualSpeakerTypeCentre },
+            { AudioChannelSet::LFE,               Vst2::vstIndividualSpeakerTypeLFE },
+            { AudioChannelSet::leftSurround,      Vst2::vstIndividualSpeakerTypeLeftSurround },
+            { AudioChannelSet::rightSurround,     Vst2::vstIndividualSpeakerTypeRightSurround },
+            { AudioChannelSet::leftCentre,        Vst2::vstIndividualSpeakerTypeLeftCentre },
+            { AudioChannelSet::rightCentre,       Vst2::vstIndividualSpeakerTypeRightCentre },
+            { AudioChannelSet::surround,          Vst2::vstIndividualSpeakerTypeSurround },
+            { AudioChannelSet::leftSurroundRear,  Vst2::vstIndividualSpeakerTypeLeftRearSurround },
+            { AudioChannelSet::rightSurroundRear, Vst2::vstIndividualSpeakerTypeRightRearSurround },
+            { AudioChannelSet::topMiddle,         Vst2::vstIndividualSpeakerTypeTopMiddle },
+            { AudioChannelSet::topFrontLeft,      Vst2::vstIndividualSpeakerTypeTopFrontLeft },
+            { AudioChannelSet::topFrontCentre,    Vst2::vstIndividualSpeakerTypeTopFrontCentre },
+            { AudioChannelSet::topFrontRight,     Vst2::vstIndividualSpeakerTypeTopFrontRight },
+            { AudioChannelSet::topRearLeft,       Vst2::vstIndividualSpeakerTypeTopRearLeft },
+            { AudioChannelSet::topRearCentre,     Vst2::vstIndividualSpeakerTypeTopRearCentre },
+            { AudioChannelSet::topRearRight,      Vst2::vstIndividualSpeakerTypeTopRearRight },
+            { AudioChannelSet::LFE2,              Vst2::vstIndividualSpeakerTypeLFE2 }
         };
 
         if (speakerTypeMap.find (type) == speakerTypeMap.end())
@@ -306,25 +306,25 @@ struct SpeakerMappings  : private AudioChannelSet // (inheritance only to give e
     {
         switch (type)
         {
-            case Vst2::kSpeakerL:      return AudioChannelSet::left;
-            case Vst2::kSpeakerR:      return AudioChannelSet::right;
-            case Vst2::kSpeakerC:      return AudioChannelSet::centre;
-            case Vst2::kSpeakerLfe:    return AudioChannelSet::LFE;
-            case Vst2::kSpeakerLs:     return AudioChannelSet::leftSurround;
-            case Vst2::kSpeakerRs:     return AudioChannelSet::rightSurround;
-            case Vst2::kSpeakerLc:     return AudioChannelSet::leftCentre;
-            case Vst2::kSpeakerRc:     return AudioChannelSet::rightCentre;
-            case Vst2::kSpeakerS:      return AudioChannelSet::surround;
-            case Vst2::kSpeakerSl:     return AudioChannelSet::leftSurroundRear;
-            case Vst2::kSpeakerSr:     return AudioChannelSet::rightSurroundRear;
-            case Vst2::kSpeakerTm:     return AudioChannelSet::topMiddle;
-            case Vst2::kSpeakerTfl:    return AudioChannelSet::topFrontLeft;
-            case Vst2::kSpeakerTfc:    return AudioChannelSet::topFrontCentre;
-            case Vst2::kSpeakerTfr:    return AudioChannelSet::topFrontRight;
-            case Vst2::kSpeakerTrl:    return AudioChannelSet::topRearLeft;
-            case Vst2::kSpeakerTrc:    return AudioChannelSet::topRearCentre;
-            case Vst2::kSpeakerTrr:    return AudioChannelSet::topRearRight;
-            case Vst2::kSpeakerLfe2:   return AudioChannelSet::LFE2;
+            case Vst2::vstIndividualSpeakerTypeLeft:                 return AudioChannelSet::left;
+            case Vst2::vstIndividualSpeakerTypeRight:                return AudioChannelSet::right;
+            case Vst2::vstIndividualSpeakerTypeCentre:               return AudioChannelSet::centre;
+            case Vst2::vstIndividualSpeakerTypeLFE:                  return AudioChannelSet::LFE;
+            case Vst2::vstIndividualSpeakerTypeLeftSurround:         return AudioChannelSet::leftSurround;
+            case Vst2::vstIndividualSpeakerTypeRightSurround:        return AudioChannelSet::rightSurround;
+            case Vst2::vstIndividualSpeakerTypeLeftCentre:           return AudioChannelSet::leftCentre;
+            case Vst2::vstIndividualSpeakerTypeRightCentre:          return AudioChannelSet::rightCentre;
+            case Vst2::vstIndividualSpeakerTypeSurround:             return AudioChannelSet::surround;
+            case Vst2::vstIndividualSpeakerTypeLeftRearSurround:     return AudioChannelSet::leftSurroundRear;
+            case Vst2::vstIndividualSpeakerTypeRightRearSurround:    return AudioChannelSet::rightSurroundRear;
+            case Vst2::vstIndividualSpeakerTypeTopMiddle:            return AudioChannelSet::topMiddle;
+            case Vst2::vstIndividualSpeakerTypeTopFrontLeft:         return AudioChannelSet::topFrontLeft;
+            case Vst2::vstIndividualSpeakerTypeTopFrontCentre:       return AudioChannelSet::topFrontCentre;
+            case Vst2::vstIndividualSpeakerTypeTopFrontRight:        return AudioChannelSet::topFrontRight;
+            case Vst2::vstIndividualSpeakerTypeTopRearLeft:          return AudioChannelSet::topRearLeft;
+            case Vst2::vstIndividualSpeakerTypeTopRearCentre:        return AudioChannelSet::topRearCentre;
+            case Vst2::vstIndividualSpeakerTypeTopRearRight:         return AudioChannelSet::topRearRight;
+            case Vst2::vstIndividualSpeakerTypeLFE2:                 return AudioChannelSet::LFE2;
             default: break;
         }
 
