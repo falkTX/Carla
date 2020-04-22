@@ -17,7 +17,7 @@ make distclean >/dev/null
 make USING_JUCE=true features
 
 # Build things that we skip strict tests for
-make USING_JUCE=true 3rd frontend plugin-wine
+make USING_JUCE=true 3rd frontend
 make USING_JUCE=true -C source/modules/juce_audio_basics posix32
 make USING_JUCE=true -C source/modules/juce_audio_devices posix32
 make USING_JUCE=true -C source/modules/juce_audio_processors posix32
