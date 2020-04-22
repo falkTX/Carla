@@ -18,6 +18,15 @@ make USING_JUCE=true features
 
 # Build things that we skip strict tests for
 make USING_JUCE=true 3rd frontend
+make USING_JUCE=true -C source/modules/juce_audio_basics posix32
+make USING_JUCE=true -C source/modules/juce_audio_devices posix32
+make USING_JUCE=true -C source/modules/juce_audio_processors posix32
+make USING_JUCE=true -C source/modules/juce_core posix32
+make USING_JUCE=true -C source/modules/juce_data_structures posix32
+make USING_JUCE=true -C source/modules/juce_events posix32
+make USING_JUCE=true -C source/modules/juce_graphics posix32
+make USING_JUCE=true -C source/modules/juce_gui_basics posix32
+make USING_JUCE=true -C source/modules/juce_gui_extra posix32
 make USING_JUCE=true -C source/modules/water posix32
 
 # Build native stuff
