@@ -22,6 +22,7 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
+#include "CarlaProcessUtils.hpp"
 #include "CarlaScopeUtils.hpp"
 
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
@@ -1305,8 +1306,23 @@ public:
         {
             juce::OwnedArray<juce::PluginDescription> pluginDescriptions;
             juce::KnownPluginList plist;
-            for (int i = 0; i < fFormatManager.getNumFormats(); ++i)
-                plist.scanAndAddFile(fileOrIdentifier, true, pluginDescriptions, *fFormatManager.getFormat(i));
+
+            {
+                const ScopedAbortCatcher sac;
+
+                for (int i = 0; i < fFormatManager.getNumFormats(); ++i)
+                {
+                    try {
+                        plist.scanAndAddFile(fileOrIdentifier, true, pluginDescriptions, *fFormatManager.getFormat(i));
+                    } CARLA_SAFE_EXCEPTION_CONTINUE("scanAndAddFile")
+
+                    if (sac.wasTriggered())
+                    {
+                        pluginDescriptions.clearQuick(false);
+                        break;
+                    }
+                }
+            }
 
             if (pluginDescriptions.size() == 0)
             {
@@ -1321,10 +1337,20 @@ public:
             fDesc.uid = static_cast<int>(uniqueId);
 
         juce::String error;
-        fInstance = fFormatManager.createPluginInstance(fDesc,
-                                                        pData->engine->getSampleRate(),
-                                                        static_cast<int>(pData->engine->getBufferSize()),
-                                                        error);
+
+        {
+            const ScopedAbortCatcher sac;
+
+            try {
+                fInstance = fFormatManager.createPluginInstance(fDesc,
+                                                                pData->engine->getSampleRate(),
+                                                                static_cast<int>(pData->engine->getBufferSize()),
+                                                                error);
+            } CARLA_SAFE_EXCEPTION("createPluginInstance")
+
+            if (sac.wasTriggered())
+                fInstance = nullptr;
+        }
 
         if (fInstance == nullptr)
         {
