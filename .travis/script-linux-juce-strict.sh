@@ -14,10 +14,14 @@ unset LDFLAGS
 make distclean >/dev/null
 
 # Print available features
-make features
+make USING_JUCE=true features
 
 # Build things that we skip strict tests for
-make 3rd frontend USING_JUCE=true
+make USING_JUCE=true 3rd frontend
+make USING_JUCE=true -C source/modules/water posix32
 
 # Build native stuff
-make TESTBUILD=true USING_JUCE=true
+make USING_JUCE=true TESTBUILD=true
+
+# Build 32bit bridges
+make USING_JUCE=true TESTBUILD=true posix32

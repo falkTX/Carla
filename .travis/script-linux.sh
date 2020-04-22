@@ -14,13 +14,13 @@ export PKG_CONFIG_PATH=/opt/kxstudio/lib/pkgconfig:${PKG_CONFIG_PATH}
 make distclean >/dev/null
 
 # Print available features
-make features
+make USING_JUCE=false features
 
 # Build native stuff
-make all posix32 posix64
+make USING_JUCE=false all posix32 posix64
 
 # Build wine bridges
-make wine32 wine64
+make USING_JUCE=false wine32 wine64
 
 # Build windows binaries for bridges
 env PATH=/opt/mingw32/bin:${PATH} make win32 USING_JUCE=false CC=i686-w64-mingw32-gcc CXX=i686-w64-mingw32-g++

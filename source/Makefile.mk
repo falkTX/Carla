@@ -304,7 +304,7 @@ PYUIC5 ?= $(shell which pyuic5 2>/dev/null)
 
 ifneq ($(PYUIC5),)
 ifneq ($(PYRCC5),)
-HAVE_PYQT=true
+HAVE_PYQT = true
 endif
 endif
 
@@ -328,16 +328,18 @@ endif
 # Set USING_JUCE
 
 ifeq ($(MACOS_OR_WIN32),true)
-USING_JUCE=true
-USING_JUCE_AUDIO_DEVICES=true
+ifneq ($(MACOS_OLD),true)
+USING_JUCE = true
+USING_JUCE_AUDIO_DEVICES = true
+endif
 endif
 
 ifeq ($(HAVE_JUCE_LINUX_DEPS),true)
-USING_JUCE=true
+USING_JUCE = true
 endif
 
 ifeq ($(LINUX_OR_MACOS),true)
-USING_JUCE_GUI_EXTRA=true
+USING_JUCE_GUI_EXTRA = true
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
