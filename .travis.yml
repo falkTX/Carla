@@ -52,5 +52,5 @@ script:
   - sh ${TRAVIS_BUILD_DIR}/.travis/script-${TARGET}.sh
 
 notifications:
-  email: false
+  email: true
   irc: "ircs://chat.freenode.net:7070/#kxstudio"
