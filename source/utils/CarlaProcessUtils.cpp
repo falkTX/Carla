@@ -17,34 +17,6 @@
 
 #include "CarlaProcessUtils.hpp"
 
-#ifdef CARLA_OS_LINUX
-# include <sys/prctl.h>
-#endif
-
-// --------------------------------------------------------------------------------------------------------------------
-// process functions
-
-void carla_setProcessName(const char* const name) noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
-
-#ifdef CARLA_OS_LINUX
-    ::prctl(PR_SET_NAME, name, 0, 0, 0);
-#endif
-}
-
-void carla_terminateProcessOnParentExit(const bool kill) noexcept
-{
-#ifdef CARLA_OS_LINUX
-    //
-    ::prctl(PR_SET_PDEATHSIG, kill ? SIGKILL : SIGTERM);
-    // TODO, osx version too, see https://stackoverflow.com/questions/284325/how-to-make-child-process-die-after-parent-exits
-#endif
-
-    // maybe unused
-    return; (void)kill;
-}
-
 // --------------------------------------------------------------------------------------------------------------------
 // process utility classes
 
