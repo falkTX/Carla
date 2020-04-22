@@ -2295,6 +2295,7 @@ const char* carla_get_host_osc_url_udp(CarlaHostHandle handle)
 #include "CarlaMacUtils.cpp"
 #include "CarlaPatchbayUtils.cpp"
 #include "CarlaPipeUtils.cpp"
+#include "CarlaProcessUtils.cpp"
 #include "CarlaStateUtils.cpp"
 
 // --------------------------------------------------------------------------------------------------------------------

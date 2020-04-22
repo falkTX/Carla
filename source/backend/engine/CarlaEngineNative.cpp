@@ -2751,6 +2751,7 @@ CARLA_BACKEND_END_NAMESPACE
 #include "CarlaMacUtils.cpp"
 #include "CarlaPatchbayUtils.cpp"
 #include "CarlaPipeUtils.cpp"
+#include "CarlaProcessUtils.cpp"
 #include "CarlaStateUtils.cpp"
 
 #endif

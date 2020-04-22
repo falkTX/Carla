@@ -1395,6 +1395,7 @@ pthread_t jack_client_thread_id(jack_client_t* client)
 
 #include "jackbridge/JackBridge2.cpp"
 #include "CarlaBridgeUtils.cpp"
+#include "CarlaProcessUtils.cpp"
 
 // ---------------------------------------------------------------------------------------------------------------------
 // TODO

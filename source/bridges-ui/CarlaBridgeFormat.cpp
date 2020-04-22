@@ -344,5 +344,6 @@ void CarlaBridgeFormat::exec(const bool showUI)
 CARLA_BRIDGE_UI_END_NAMESPACE
 
 #include "CarlaPipeUtils.cpp"
+#include "CarlaProcessUtils.cpp"
 
 // ---------------------------------------------------------------------
