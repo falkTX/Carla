@@ -19,7 +19,7 @@
 #ifdef JACKBRIDGE_DUMMY
 # include "CarlaUtils.hpp"
 #else
-# include "CarlaProcessUtils.hpp"
+# include "CarlaProcessUtils.cpp"
 # include "CarlaSemUtils.hpp"
 # include "CarlaShmUtils.hpp"
 #endif // ! JACKBRIDGE_DUMMY
