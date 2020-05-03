@@ -3,7 +3,7 @@ language:
 
 dist: trusty
 
-matrix:
+jobs:
   include:
     # linux with default, builds native and bridges
     - os: linux
