@@ -524,7 +524,7 @@ JUCE_AUDIO_DEVICES_LIBS = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs alsa)
 JUCE_CORE_LIBS          = -ldl -lpthread -lrt
 JUCE_EVENTS_LIBS        = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs x11)
 JUCE_GRAPHICS_LIBS      = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs freetype2)
-JUCE_GUI_BASICS_LIBS    = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs x11 xcursor xext)
+JUCE_GUI_BASICS_LIBS    = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs x11 xext)
 else
 ifeq ($(HAVE_ALSA),true)
 RTAUDIO_FLAGS   += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags alsa) -D__LINUX_ALSA__
