@@ -147,8 +147,10 @@ static void do_cached_check(const PluginType type)
         break;
     }
 
+# ifdef USING_JUCE
     if (type == PLUGIN_AU)
         carla_juce_init();
+# endif
 
     const uint count = carla_get_cached_plugin_count(type, plugPath);
 
@@ -160,8 +162,10 @@ static void do_cached_check(const PluginType type)
         print_cached_plugin(pinfo);
     }
 
+# ifdef USING_JUCE
     if (type == PLUGIN_AU)
         carla_juce_cleanup();
+# endif
 }
 #endif
 
