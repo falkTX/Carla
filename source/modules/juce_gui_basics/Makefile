@@ -12,6 +12,12 @@ include ../Makefile.mk
 
 BUILD_CXX_FLAGS += $(JUCE_GUI_BASICS_FLAGS) -I..
 
+ifeq ($(DEBUG),true)
+BUILD_CXX_FLAGS += -DDEVELOPMENT -D_DEBUG -Wa,-mbig-obj
+else
+BUILD_CXX_FLAGS += -DRELEASE
+endif
+
 ifeq ($(WIN32),true)
 BUILD_CXX_FLAGS += -Wno-missing-field-initializers -Wno-strict-aliasing -Wno-strict-overflow
 endif

@@ -18,7 +18,7 @@ else
 # needed by vst3
 BUILD_CXX_FLAGS += -w
 ifeq ($(DEBUG),true)
-BUILD_CXX_FLAGS += -DDEVELOPMENT -D_DEBUG
+BUILD_CXX_FLAGS += -DDEVELOPMENT -D_DEBUG -Wa,-mbig-obj
 else
 BUILD_CXX_FLAGS += -DRELEASE
 endif
