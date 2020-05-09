@@ -32,6 +32,7 @@
 #  pragma GCC diagnostic ignored "-Weffc++"
 #  pragma GCC diagnostic ignored "-Wfloat-equal"
 # endif
+# include "../backend/utils/JUCE.cpp"
 # include "AppConfig.h"
 # include "juce_audio_processors/juce_audio_processors.h"
 # if JUCE_PLUGINHOST_VST
@@ -146,6 +147,9 @@ static void do_cached_check(const PluginType type)
         break;
     }
 
+    if (type == PLUGIN_AU)
+        carla_juce_init();
+
     const uint count = carla_get_cached_plugin_count(type, plugPath);
 
     for (uint i=0; i<count; ++i)
@@ -155,6 +159,9 @@ static void do_cached_check(const PluginType type)
 
         print_cached_plugin(pinfo);
     }
+
+    if (type == PLUGIN_AU)
+        carla_juce_cleanup();
 }
 #endif
 
@@ -1352,6 +1359,8 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
     CARLA_SAFE_ASSERT_RETURN(stype != nullptr && stype[0] != 0,) // FIXME
     carla_debug("do_juce_check(%s, %s, %s)", filename_, stype, bool2str(doInit));
 
+    carla_juce_init();
+
     juce::String filename;
 
 #ifdef CARLA_OS_WIN
@@ -1425,13 +1434,18 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
         int parameters = 0;
 
         if (desc->isInstrument)
+        {
             hints |= PLUGIN_IS_SYNTH;
+            midiIns = 1;
+        }
 
         if (doInit)
         {
             if (std::unique_ptr<juce::AudioPluginInstance> instance
                     = pluginFormat->createInstanceFromDescription(*desc, kSampleRate, kBufferSize))
             {
+                carla_juce_idle();
+
                 instance->refreshParameterList();
 
                 parameters = instance->getParameters().size();
@@ -1448,6 +1462,7 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
         DISCOVERY_OUT("init", "-----------");
         DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("hints", hints);
+        DISCOVERY_OUT("category", getPluginCategoryFromName(desc->category.toRawUTF8()));
         DISCOVERY_OUT("name", desc->descriptiveName);
         DISCOVERY_OUT("label", desc->name);
         DISCOVERY_OUT("maker", desc->manufacturerName);
@@ -1459,6 +1474,9 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
         DISCOVERY_OUT("parameters.ins", parameters);
         DISCOVERY_OUT("end", "------------");
     }
+
+    carla_juce_idle();
+    carla_juce_cleanup();
 }
 #endif // USING_JUCE_FOR_VST2
 
