@@ -371,17 +371,23 @@ public:
 
         if (yesNo)
         {
-            if (fWindow == nullptr)
-            {
-                juce::String uiName(pData->name);
-                uiName += " (GUI)";
-
-                fWindow = new JucePluginWindow(pData->engine->getOptions().frontendWinId);
-                fWindow->setName(uiName);
-            }
-
             if (juce::AudioProcessorEditor* const editor = fInstance->createEditorIfNeeded())
+            {
+                const EngineOptions& opts(pData->engine->getOptions());
+
+                editor->setScaleFactor(opts.uiScale);
+
+                if (fWindow == nullptr)
+                {
+                    juce::String uiName(pData->name);
+                    uiName += " (GUI)";
+
+                    fWindow = new JucePluginWindow(opts.frontendWinId);
+                    fWindow->setName(uiName);
+                }
+
                 fWindow->show(editor);
+            }
         }
         else
         {

@@ -497,18 +497,16 @@ public:
             if (fUI.window == nullptr)
             {
                 const char* msg = nullptr;
-                const uintptr_t frontendWinId(pData->engine->getOptions().frontendWinId);
+                const EngineOptions& opts(pData->engine->getOptions());
 
 #if defined(CARLA_OS_MAC)
-                fUI.window = CarlaPluginUI::newCocoa(this, frontendWinId, false);
+                fUI.window = CarlaPluginUI::newCocoa(this, opts.frontendWinId, false);
 #elif defined(CARLA_OS_WIN)
-                fUI.window = CarlaPluginUI::newWindows(this, frontendWinId, false);
+                fUI.window = CarlaPluginUI::newWindows(this, opts.frontendWinId, false);
 #elif defined(HAVE_X11)
-                fUI.window = CarlaPluginUI::newX11(this, frontendWinId, false);
+                fUI.window = CarlaPluginUI::newX11(this, opts.frontendWinId, false);
 #else
                 msg = "Unsupported UI type";
-                // unused
-                (void)frontendWinId;
 #endif
 
                 if (fUI.window == nullptr)
@@ -524,6 +522,13 @@ public:
 #ifdef HAVE_X11
                 value = (intptr_t)fUI.window->getDisplay();
 #endif
+
+                // inform plugin of what UI scale we use
+                dispatcher(effVendorSpecific,
+                           CCONST('P', 'r', 'e', 'S'),
+                           CCONST('A', 'e', 'C', 's'),
+                           nullptr,
+                           opts.uiScale);
 
                 // NOTE: there are far too many broken VST2 plugins, don't bother checking return value
                 if (dispatcher(effEditOpen, 0, value, fUI.window->getPtr()) != 0 || true)
