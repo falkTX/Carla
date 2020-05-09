@@ -12,20 +12,21 @@ include ../Makefile.mk
 
 BUILD_CXX_FLAGS += $(JUCE_AUDIO_PROCESSORS_FLAGS) -I$(CWD)/includes/vst3sdk -I..
 
-ifeq ($(CARLA_VESTIGE_HEADER),true)
-BUILD_CXX_FLAGS += -DVESTIGE_HEADER
-else
+# needed for bloated juce
+ifeq ($(DEBUG),true)
+BUILD_CXX_FLAGS += -Wa,-mbig-obj
+endif
+
 # needed by vst3
-BUILD_CXX_FLAGS += -w
 ifeq ($(DEBUG),true)
 BUILD_CXX_FLAGS += -DDEVELOPMENT -D_DEBUG
 else
 BUILD_CXX_FLAGS += -DRELEASE
 endif
+
 # needed by vst3 on mingw
 ifeq ($(WIN32),true)
-BUILD_CXX_FLAGS += -D_NATIVE_WCHAR_T_DEFINED -D__wchar_t=wchar_t -fpermissive
-endif
+BUILD_CXX_FLAGS += -D_NATIVE_WCHAR_T_DEFINED -D__wchar_t=wchar_t -fpermissive -Wno-unknown-pragmas
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
