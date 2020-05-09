@@ -1462,7 +1462,7 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
         DISCOVERY_OUT("init", "-----------");
         DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("hints", hints);
-        DISCOVERY_OUT("category", getPluginCategoryFromName(desc->category.toRawUTF8()));
+        DISCOVERY_OUT("category", getPluginCategoryAsString(getPluginCategoryFromName(desc->category.toRawUTF8())));
         DISCOVERY_OUT("name", desc->descriptiveName);
         DISCOVERY_OUT("label", desc->name);
         DISCOVERY_OUT("maker", desc->manufacturerName);
