@@ -166,11 +166,15 @@ CARLA_EXPORT const char* const* carla_get_supported_features(void);
  * Get how many cached plugins are available.
  * Internal and LV2 plugin formats are cached and need to be discovered via this function.
  * Do not call this for any other plugin formats.
+ *
+ * @note if this carla build uses JUCE, then you must call carla_juce_init beforehand
  */
 CARLA_EXPORT uint carla_get_cached_plugin_count(PluginType ptype, const char* pluginPath);
 
 /*!
  * Get information about a cached plugin.
+ *
+ * @note if this carla build uses JUCE, then you must call carla_juce_init beforehand
  */
 CARLA_EXPORT const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginType ptype, uint index);
 
@@ -271,6 +275,30 @@ CARLA_EXPORT const char* carla_get_library_filename(void);
  * Get the folder where this carla library resides.
  */
 CARLA_EXPORT const char* carla_get_library_folder(void);
+
+/* --------------------------------------------------------------------------------------------------------------------
+ * JUCE */
+
+/*!
+ * Initialize data structures and GUI support for JUCE.
+ * This is only needed when carla builds use JUCE and you call cached-plugin related APIs.
+ *
+ * Idle must then be called at somewhat regular intervals, though in practice there is no reason for it yet.
+ *
+ * Make sure to call carla_juce_cleanup after you are done with APIs that need JUCE.
+ */
+CARLA_EXPORT void carla_juce_init();
+
+/*!
+ * Give idle time to JUCE stuff.
+ * Currently only used for Linux.
+ */
+CARLA_EXPORT void carla_juce_idle();
+
+/*!
+ * Cleanup the JUCE stuff that was initialized by carla_juce_init.
+ */
+CARLA_EXPORT void carla_juce_cleanup();
 #endif
 
 /* --------------------------------------------------------------------------------------------------------------------

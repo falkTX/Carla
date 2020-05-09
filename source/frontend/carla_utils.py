@@ -249,6 +249,15 @@ class CarlaUtils(object):
         self.lib.carla_pipe_client_destroy.argtypes = [CarlaPipeClientHandle]
         self.lib.carla_pipe_client_destroy.restype = None
 
+        self.lib.carla_juce_init.argtypes = None
+        self.lib.carla_juce_init.restype = None
+
+        self.lib.carla_juce_idle.argtypes = None
+        self.lib.carla_juce_idle.restype = None
+
+        self.lib.carla_juce_cleanup.argtypes = None
+        self.lib.carla_juce_cleanup.restype = None
+
         self.lib.carla_cocoa_get_window.argtypes = [c_uintptr]
         self.lib.carla_cocoa_get_window.restype = c_int
 
@@ -387,6 +396,15 @@ class CarlaUtils(object):
 
     def pipe_client_destroy(self, handle):
         self.lib.carla_pipe_client_destroy(handle)
+
+    def juce_init(self):
+        self.lib.carla_juce_init()
+
+    def juce_idle(self):
+        self.lib.carla_juce_idle()
+
+    def juce_cleanup(self):
+        self.lib.carla_juce_cleanup()
 
     def cocoa_get_window(self, winId):
         return self.lib.carla_cocoa_get_window(winId)

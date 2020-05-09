@@ -16,6 +16,7 @@ BUILD_CXX_FLAGS += $(FLUIDSYNTH_FLAGS)
 OBJS = \
 	$(OBJDIR)/CachedPlugins.cpp.o \
 	$(OBJDIR)/Information.cpp.o \
+	$(OBJDIR)/JUCE.cpp.o \
 	$(OBJDIR)/PipeClient.cpp.o \
 	$(OBJDIR)/System.cpp.o \
 	$(OBJDIR)/Windows.cpp.o

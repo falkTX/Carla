@@ -931,6 +931,9 @@ class SearchPluginsThread(QThread):
         plugins = []
         self._pluginLook(self.fLastCheckValue, "{} plugins...".format(PLUG_TEXT))
 
+        if not isLV2:
+            gCarla.utils.juce_init()
+
         count = gCarla.utils.get_cached_plugin_count(PLUG_TYPE, PLUG_PATH)
 
         if not self.fContinueChecking:
@@ -949,6 +952,9 @@ class SearchPluginsThread(QThread):
 
             if not self.fContinueChecking:
                 break
+
+        if not isLV2:
+            gCarla.utils.juce_cleanup()
 
         self.fLastCheckValue += self.fCurPercentValue
         return plugins
@@ -1903,6 +1909,9 @@ class PluginDatabaseW(QDialog):
         plugins     = settingsDB.value("Plugins/" + ptypeStr, [], list)
         pluginCount = settingsDB.value("PluginCount/" + ptypeStr, 0, int)
 
+        if ptype == PLUGIN_AU:
+            gCarla.utils.juce_init()
+
         pluginCountNew = gCarla.utils.get_cached_plugin_count(ptype, path)
 
         if pluginCountNew != pluginCount or len(plugins) != pluginCount or (len(plugins) > 0 and plugins[0]['API'] != PLUGIN_QUERY_API_VERSION):
@@ -1910,6 +1919,8 @@ class PluginDatabaseW(QDialog):
             pluginCount = pluginCountNew
 
             QApplication.processEvents(QEventLoop.ExcludeUserInputEvents, 50)
+            if ptype == PLUGIN_AU:
+                gCarla.utils.juce_idle()
 
             for i in range(pluginCountNew):
                 descInfo = gCarla.utils.get_cached_plugin_info(ptype, i)
@@ -1923,9 +1934,14 @@ class PluginDatabaseW(QDialog):
 
                 if i % 50 == 0:
                     QApplication.processEvents(QEventLoop.ExcludeUserInputEvents, 50)
+                    if ptype == PLUGIN_AU:
+                        gCarla.utils.juce_idle()
 
             settingsDB.setValue("Plugins/" + ptypeStr, plugins)
             settingsDB.setValue("PluginCount/" + ptypeStr, pluginCount)
+
+        if ptype == PLUGIN_AU:
+            gCarla.utils.juce_cleanup()
 
         # prepare rows in advance
         self.ui.tableWidget.setRowCount(self.fLastTableIndex + len(plugins))

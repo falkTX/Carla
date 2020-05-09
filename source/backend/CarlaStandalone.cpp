@@ -34,23 +34,6 @@
 # include "CarlaLogThread.hpp"
 #endif
 
-#ifdef USING_JUCE
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wconversion"
-#  pragma GCC diagnostic ignored "-Weffc++"
-#  pragma GCC diagnostic ignored "-Wsign-conversion"
-#  pragma GCC diagnostic ignored "-Wundef"
-# endif
-
-# include "AppConfig.h"
-# include "juce_events/juce_events.h"
-
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic pop
-# endif
-#endif
-
 #define CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(cond, msg, ret) \
     if (! (cond)) {                                              \
         carla_stderr2("%s: " msg, __FUNCTION__);                 \
@@ -65,6 +48,13 @@
 #define CARLA_COMMON_NEED_CHECKSTRINGPTR
 #include "CarlaHostCommon.cpp"
 #undef CARLA_COMMON_NEED_CHECKSTRINGPTR
+
+#ifdef USING_JUCE
+static void carla_juce_init();
+static void carla_juce_idle();
+static void carla_juce_cleanup();
+# include "utils/JUCE.cpp"
+#endif
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -321,10 +311,7 @@ bool carla_engine_init(CarlaHostHandle handle, const char* driverName, const cha
 #endif
 
 #ifdef USING_JUCE
-    juce::initialiseJuce_GUI();
-#if !(defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-    juce::MessageManager::getInstance()->setCurrentThreadAsMessageThread();
-#endif
+    carla_juce_init();
 #endif
 
     CarlaHostStandalone& shandle((CarlaHostStandalone&)*handle);
@@ -374,7 +361,7 @@ bool carla_engine_init(CarlaHostHandle handle, const char* driverName, const cha
         shandle.engine = nullptr;
         delete engine;
 #ifdef USING_JUCE
-        juce::shutdownJuce_GUI();
+        carla_juce_cleanup();
 #endif
         return false;
     }
@@ -454,7 +441,7 @@ bool carla_engine_close(CarlaHostHandle handle)
     delete engine;
 
 #ifdef USING_JUCE
-    juce::shutdownJuce_GUI();
+    carla_juce_cleanup();
 #endif
     return closed;
 }
@@ -465,11 +452,9 @@ void carla_engine_idle(CarlaHostHandle handle)
 
     handle->engine->idle();
 
-#if defined(USING_JUCE) && !(defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-    const juce::MessageManager* const msgMgr(juce::MessageManager::getInstanceWithoutCreating());
-    CARLA_SAFE_ASSERT_RETURN(msgMgr != nullptr,);
-
-    for (; msgMgr->dispatchNextMessageOnSystemQueue(true);) {}
+#ifdef USING_JUCE
+    if (handle->isStandalone)
+        carla_juce_idle();
 #endif
 }
 

@@ -19,6 +19,7 @@
 #define CARLA_HOST_IMPL_HPP_INCLUDED
 
 #include "CarlaHost.h"
+#include "CarlaUtils.h"
 #include "CarlaEngine.hpp"
 
 #ifdef BUILD_BRIDGE
