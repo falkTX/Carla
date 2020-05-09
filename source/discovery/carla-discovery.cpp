@@ -1183,7 +1183,10 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
             hints |= PLUGIN_HAS_CUSTOM_UI;
 
         if (effect->flags & effFlagsIsSynth)
+        {
             hints |= PLUGIN_IS_SYNTH;
+            midiIns = 1;
+        }
 
         if (vstPluginCanDo(effect, "receiveVstEvents") || vstPluginCanDo(effect, "receiveVstMidiEvent") || (effect->flags & effFlagsIsSynth) != 0)
             midiIns = 1;
