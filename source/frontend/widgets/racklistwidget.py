@@ -255,14 +255,19 @@ class RackListWidget(QListWidget):
         self.clearFocus()
 
     def isDragUrlValid(self, filename):
+        lfilename = filename.lower()
+
         if os.path.isdir(filename):
             #if os.path.exists(os.path.join(filename, "manifest.ttl")):
                 #return True
-            if MACOS and filename.lower().endswith((".vst", ".vst3")):
+            if MACOS and lfilename.endswith(".vst"):
+                return True
+            # TODO check vst3 supported feature
+            elif lfilename.endswith(".vst3"):
                 return True
 
         elif os.path.isfile(filename):
-            if filename.lower().endswith(self.fSupportedExtensions):
+            if lfilename.endswith(self.fSupportedExtensions):
                 return True
 
         return False
