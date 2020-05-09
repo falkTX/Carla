@@ -390,6 +390,7 @@ static void do_ladspa_check(lib_t& libHandle, const char* const filename, const 
         DISCOVERY_OUT("init", "-----------");
         DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("hints", hints);
+        DISCOVERY_OUT("category", getPluginCategoryAsString(getPluginCategoryFromName(descriptor->Name)));
         DISCOVERY_OUT("name", descriptor->Name);
         DISCOVERY_OUT("label", descriptor->Label);
         DISCOVERY_OUT("maker", descriptor->Maker);
@@ -688,6 +689,9 @@ static void do_dssi_check(lib_t& libHandle, const char* const filename, const bo
 
         DISCOVERY_OUT("init", "-----------");
         DISCOVERY_OUT("build", BINARY_NATIVE);
+        DISCOVERY_OUT("category", ((hints & PLUGIN_IS_SYNTH)
+                                   ? "synth"
+                                   : getPluginCategoryAsString(getPluginCategoryFromName(ldescriptor->Name))));
         DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("name", ldescriptor->Name);
         DISCOVERY_OUT("label", ldescriptor->Label);
@@ -1548,6 +1552,7 @@ static void do_fluidsynth_check(const char* const filename, const bool doInit)
     DISCOVERY_OUT("init", "-----------");
     DISCOVERY_OUT("build", BINARY_NATIVE);
     DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
+    DISCOVERY_OUT("category", "synth");
     DISCOVERY_OUT("name", name.buffer());
     DISCOVERY_OUT("label", label.buffer());
     DISCOVERY_OUT("audio.outs", 2);
@@ -1565,6 +1570,7 @@ static void do_fluidsynth_check(const char* const filename, const bool doInit)
     DISCOVERY_OUT("init", "-----------");
     DISCOVERY_OUT("build", BINARY_NATIVE);
     DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
+    DISCOVERY_OUT("category", "synth");
     DISCOVERY_OUT("name", name.buffer());
     DISCOVERY_OUT("label", label.buffer());
     DISCOVERY_OUT("audio.outs", 32);
