@@ -12,14 +12,13 @@ include ../Makefile.mk
 
 BUILD_CXX_FLAGS += $(JUCE_GUI_BASICS_FLAGS) -I..
 
+# needed for mingw juce
+ifeq ($(WIN32),true)
+BUILD_CXX_FLAGS += -Wno-missing-field-initializers -Wno-multichar
 # needed for bloated juce
 ifeq ($(DEBUG),true)
 BUILD_CXX_FLAGS += -Wa,-mbig-obj
 endif
-
-# needed for mingw juce
-ifeq ($(WIN32),true)
-BUILD_CXX_FLAGS += -Wno-missing-field-initializers -Wno-multichar
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
