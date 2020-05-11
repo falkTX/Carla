@@ -14,202 +14,6 @@
    <string>Carla - Add New</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_3">
-   <item row="1" column="0">
-    <widget class="QToolBox" name="toolBox">
-     <property name="currentIndex">
-      <number>0</number>
-     </property>
-     <widget class="QWidget" name="p_format">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>164</width>
-        <height>254</height>
-       </rect>
-      </property>
-      <attribute name="label">
-       <string>Format</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout">
-       <item>
-        <widget class="QCheckBox" name="ch_internal">
-         <property name="text">
-          <string>Internal</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="ch_ladspa">
-         <property name="text">
-          <string>LADSPA</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="ch_dssi">
-         <property name="text">
-          <string>DSSI</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="ch_lv2">
-         <property name="text">
-          <string>LV2</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="ch_vst">
-         <property name="text">
-          <string>VST2</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="ch_vst3">
-         <property name="text">
-          <string>VST3</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="ch_au">
-         <property name="text">
-          <string>AU</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="ch_kits">
-         <property name="text">
-          <string>Sound Kits</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="verticalSpacer_5">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="p_type">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>164</width>
-        <height>164</height>
-       </rect>
-      </property>
-      <attribute name="label">
-       <string>Type</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
-       <item>
-        <widget class="QCheckBox" name="ch_effects">
-         <property name="text">
-          <string>Effects</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="ch_instruments">
-         <property name="text">
-          <string>Instruments</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="ch_midi">
-         <property name="text">
-          <string>MIDI Plugins</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="ch_other">
-         <property name="text">
-          <string>Other/Misc</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="verticalSpacer_3">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="p_arch">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>164</width>
-        <height>136</height>
-       </rect>
-      </property>
-      <attribute name="label">
-       <string>Architecture</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_3">
-       <item>
-        <widget class="QCheckBox" name="ch_native">
-         <property name="text">
-          <string>Native</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="ch_bridged">
-         <property name="text">
-          <string>Bridged</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="ch_bridged_wine">
-         <property name="text">
-          <string>Bridged (Wine)</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="verticalSpacer_4">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </widget>
-    </widget>
-   </item>
    <item row="2" column="0">
     <spacer name="verticalSpacer_6">
      <property name="orientation">
@@ -231,7 +35,7 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
-     <property name="tabBarAutoHide">
+     <property name="tabBarAutoHide" stdset="0">
       <bool>true</bool>
      </property>
      <widget class="QWidget" name="tw_reqs">
@@ -351,7 +155,7 @@
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QLineEdit" name="lineEdit">
-       <property name="clearButtonEnabled">
+       <property name="clearButtonEnabled" stdset="0">
         <bool>true</bool>
        </property>
       </widget>
@@ -382,7 +186,7 @@
    </item>
    <item row="1" column="2" rowspan="3">
     <widget class="QTabWidget" name="tab_info">
-     <property name="tabBarAutoHide">
+     <property name="tabBarAutoHide" stdset="0">
       <bool>true</bool>
      </property>
      <widget class="QWidget" name="tw_info">
@@ -778,11 +582,11 @@
      <attribute name="verticalHeaderVisible">
       <bool>false</bool>
      </attribute>
-     <attribute name="verticalHeaderMinimumSectionSize">
-      <number>12</number>
-     </attribute>
      <attribute name="verticalHeaderDefaultSectionSize">
       <number>22</number>
+     </attribute>
+     <attribute name="verticalHeaderMinimumSectionSize">
+      <number>12</number>
      </attribute>
      <column>
       <property name="text">
@@ -819,6 +623,292 @@
        <string>Binary/Filename</string>
       </property>
      </column>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QToolBox" name="toolBox">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="p_format">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>158</width>
+        <height>237</height>
+       </rect>
+      </property>
+      <attribute name="label">
+       <string>Format</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="QCheckBox" name="ch_internal">
+         <property name="text">
+          <string>Internal</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ch_ladspa">
+         <property name="text">
+          <string>LADSPA</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ch_dssi">
+         <property name="text">
+          <string>DSSI</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ch_lv2">
+         <property name="text">
+          <string>LV2</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ch_vst">
+         <property name="text">
+          <string>VST2</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ch_vst3">
+         <property name="text">
+          <string>VST3</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ch_au">
+         <property name="text">
+          <string>AU</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ch_kits">
+         <property name="text">
+          <string>Sound Kits</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_5">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="p_type">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>158</width>
+        <height>156</height>
+       </rect>
+      </property>
+      <attribute name="label">
+       <string>Type</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QCheckBox" name="ch_effects">
+         <property name="text">
+          <string>Effects</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ch_instruments">
+         <property name="text">
+          <string>Instruments</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ch_midi">
+         <property name="text">
+          <string>MIDI Plugins</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ch_other">
+         <property name="text">
+          <string>Other/Misc</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="p_category">
+      <attribute name="label">
+       <string>Category</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_4">
+       <item>
+        <widget class="QCheckBox" name="ch_cat_all">
+         <property name="text">
+          <string>All</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ch_cat_delay">
+         <property name="text">
+          <string>Delay</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ch_cat_distortion">
+         <property name="text">
+          <string>Distortion</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ch_cat_dynamics">
+         <property name="text">
+          <string>Dynamics</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ch_cat_eq">
+         <property name="text">
+          <string>EQ</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ch_cat_filter">
+         <property name="text">
+          <string>Filter</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ch_cat_modulator">
+         <property name="text">
+          <string>Modulator</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ch_cat_synth">
+         <property name="text">
+          <string>Synth</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ch_cat_utility">
+         <property name="text">
+          <string>Utility</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ch_cat_other">
+         <property name="text">
+          <string>Other</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_7">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>23</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="p_arch">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>158</width>
+        <height>130</height>
+       </rect>
+      </property>
+      <attribute name="label">
+       <string>Architecture</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QCheckBox" name="ch_native">
+         <property name="text">
+          <string>Native</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ch_bridged">
+         <property name="text">
+          <string>Bridged</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ch_bridged_wine">
+         <property name="text">
+          <string>Bridged (Wine)</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_4">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
   </layout>

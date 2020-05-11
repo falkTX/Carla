@@ -34,7 +34,7 @@ import ui_carla_database
 import ui_carla_refresh
 
 from carla_shared import *
-from carla_utils import getPluginTypeAsString
+from carla_utils import getPluginTypeAsString, getPluginCategoryAsString
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Try Import LADSPA-RDF
@@ -134,7 +134,7 @@ def findFilenames(filePath, stype):
 # ---------------------------------------------------------------------------------------------------------------------
 # Plugin Query
 
-PLUGIN_QUERY_API_VERSION = 11
+PLUGIN_QUERY_API_VERSION = 12
 
 PyPluginInfo = {
     'API': PLUGIN_QUERY_API_VERSION,
@@ -142,6 +142,7 @@ PyPluginInfo = {
     'build': BINARY_NONE,
     'type': PLUGIN_NONE,
     'hints': 0x0,
+    'category': "",
     'filename': "",
     'name': "",
     'label': "",
@@ -280,6 +281,8 @@ def runCarlaDiscovery(itype, stype, filename, tool, wineSettings=None):
                 pinfo['label'] = value if value else fakeLabel
             elif prop == "maker":
                 pinfo['maker'] = value
+            elif prop == "category":
+                pinfo['category'] = value
             elif prop == "uniqueId":
                 if value.isdigit(): pinfo['uniqueId'] = int(value)
             elif prop == "hints":
@@ -332,6 +335,7 @@ def checkPluginCached(desc, ptype):
     pinfo['name']  = desc['name']
     pinfo['label'] = desc['label']
     pinfo['maker'] = desc['maker']
+    pinfo['category'] = getPluginCategoryAsString(desc['category'])
 
     pinfo['audio.ins']  = desc['audioIns']
     pinfo['audio.outs'] = desc['audioOuts']
@@ -456,7 +460,7 @@ class SearchPluginsThread(QThread):
         self.fContinueChecking = False
 
     def run(self):
-        settingsDB = QSafeSettings("falkTX", "CarlaPlugins4")
+        settingsDB = QSafeSettings("falkTX", "CarlaPlugins5")
 
         self.fContinueChecking = True
         self.fCurCount = 0
@@ -1452,7 +1456,7 @@ class PluginDatabaseW(QDialog):
         if (WINDOWS and not kIs64bit) or not host.showPluginBridges:
             self.ui.ch_native.setChecked(True)
             self.ui.ch_native.setEnabled(False)
-            self.ui.ch_native.setVisible(False)
+            self.ui.ch_native.setVisible(True)
             self.ui.ch_bridged.setChecked(False)
             self.ui.ch_bridged.setEnabled(False)
             self.ui.ch_bridged.setVisible(False)
@@ -1500,6 +1504,16 @@ class PluginDatabaseW(QDialog):
         self.ui.ch_gui.clicked.connect(self.slot_checkFilters)
         self.ui.ch_inline_display.clicked.connect(self.slot_checkFilters)
         self.ui.ch_stereo.clicked.connect(self.slot_checkFilters)
+        self.ui.ch_cat_all.clicked.connect(self.slot_checkFiltersCategoryAll)
+        self.ui.ch_cat_delay.clicked.connect(self.slot_checkFiltersCategorySpecific)
+        self.ui.ch_cat_distortion.clicked.connect(self.slot_checkFiltersCategorySpecific)
+        self.ui.ch_cat_dynamics.clicked.connect(self.slot_checkFiltersCategorySpecific)
+        self.ui.ch_cat_eq.clicked.connect(self.slot_checkFiltersCategorySpecific)
+        self.ui.ch_cat_filter.clicked.connect(self.slot_checkFiltersCategorySpecific)
+        self.ui.ch_cat_modulator.clicked.connect(self.slot_checkFiltersCategorySpecific)
+        self.ui.ch_cat_synth.clicked.connect(self.slot_checkFiltersCategorySpecific)
+        self.ui.ch_cat_utility.clicked.connect(self.slot_checkFiltersCategorySpecific)
+        self.ui.ch_cat_other.clicked.connect(self.slot_checkFiltersCategorySpecific)
 
         # ----------------------------------------------------------------------------------------------------
         # Post-connect setup
@@ -1617,6 +1631,35 @@ class PluginDatabaseW(QDialog):
     def slot_checkFilters(self):
         self._checkFilters()
 
+    @pyqtSlot(bool)
+    def slot_checkFiltersCategoryAll(self, clicked):
+        self.ui.ch_cat_delay.setChecked(not clicked)
+        self.ui.ch_cat_distortion.setChecked(not clicked)
+        self.ui.ch_cat_dynamics.setChecked(not clicked)
+        self.ui.ch_cat_eq.setChecked(not clicked)
+        self.ui.ch_cat_filter.setChecked(not clicked)
+        self.ui.ch_cat_modulator.setChecked(not clicked)
+        self.ui.ch_cat_synth.setChecked(not clicked)
+        self.ui.ch_cat_utility.setChecked(not clicked)
+        self.ui.ch_cat_other.setChecked(not clicked)
+        self._checkFilters()
+
+    @pyqtSlot(bool)
+    def slot_checkFiltersCategorySpecific(self, clicked):
+        if clicked:
+            self.ui.ch_cat_all.setChecked(False)
+        elif not (self.ui.ch_cat_delay.isChecked() or
+                  self.ui.ch_cat_distortion.isChecked() or
+                  self.ui.ch_cat_dynamics.isChecked() or
+                  self.ui.ch_cat_eq.isChecked() or
+                  self.ui.ch_cat_filter.isChecked() or
+                  self.ui.ch_cat_modulator.isChecked() or
+                  self.ui.ch_cat_synth.isChecked() or
+                  self.ui.ch_cat_utility.isChecked() or
+                  self.ui.ch_cat_other.isChecked()):
+            self.ui.ch_cat_all.setChecked(True)
+        self._checkFilters()
+
     @pyqtSlot()
     def slot_refreshPlugins(self):
         if PluginRefreshW(self, self.host).exec_():
@@ -1657,6 +1700,17 @@ class PluginDatabaseW(QDialog):
         if self.ui.ch_au.isEnabled():
             self.ui.ch_au.setChecked(True)
 
+        self.ui.ch_cat_all.setChecked(True)
+        self.ui.ch_cat_delay.setChecked(False)
+        self.ui.ch_cat_distortion.setChecked(False)
+        self.ui.ch_cat_dynamics.setChecked(False)
+        self.ui.ch_cat_eq.setChecked(False)
+        self.ui.ch_cat_filter.setChecked(False)
+        self.ui.ch_cat_modulator.setChecked(False)
+        self.ui.ch_cat_synth.setChecked(False)
+        self.ui.ch_cat_utility.setChecked(False)
+        self.ui.ch_cat_other.setChecked(False)
+
         self.ui.lineEdit.clear()
 
         self.blockSignals(False)
@@ -1693,6 +1747,32 @@ class PluginDatabaseW(QDialog):
         settings.setValue("PluginDatabase/ShowStereoOnly", self.ui.ch_stereo.isChecked())
         settings.setValue("PluginDatabase/SearchText", self.ui.lineEdit.text())
 
+        if self.ui.ch_cat_all.isChecked():
+            settings.setValue("PluginDatabase/ShowCategory", "all")
+        else:
+            categoryhash = ""
+            if self.ui.ch_cat_delay.isChecked():
+                categoryhash += ":delay"
+            if self.ui.ch_cat_distortion.isChecked():
+                categoryhash += ":distortion"
+            if self.ui.ch_cat_dynamics.isChecked():
+                categoryhash += ":dynamics"
+            if self.ui.ch_cat_eq.isChecked():
+                categoryhash += ":eq"
+            if self.ui.ch_cat_filter.isChecked():
+                categoryhash += ":filter"
+            if self.ui.ch_cat_modulator.isChecked():
+                categoryhash += ":modulator"
+            if self.ui.ch_cat_synth.isChecked():
+                categoryhash += ":synth"
+            if self.ui.ch_cat_utility.isChecked():
+                categoryhash += ":utility"
+            if self.ui.ch_cat_other.isChecked():
+                categoryhash += ":other"
+            if categoryhash:
+                categoryhash += ":"
+            settings.setValue("PluginDatabase/ShowCategory", categoryhash)
+
         if self.fFavoritePluginsChanged:
             settings.setValue("PluginDatabase/Favorites", self.fFavoritePlugins)
 
@@ -1726,6 +1806,30 @@ class PluginDatabaseW(QDialog):
         self.ui.ch_inline_display.setChecked(settings.value("PluginDatabase/ShowHasInlineDisplay", False, bool))
         self.ui.ch_stereo.setChecked(settings.value("PluginDatabase/ShowStereoOnly", False, bool))
         self.ui.lineEdit.setText(settings.value("PluginDatabase/SearchText", "", str))
+
+        categoryhash = settings.value("PluginDatabase/ShowCategory", "all", str)
+        if categoryhash == "all" or len(categoryhash) < 2:
+            self.ui.ch_cat_all.setChecked(True)
+            self.ui.ch_cat_delay.setChecked(False)
+            self.ui.ch_cat_distortion.setChecked(False)
+            self.ui.ch_cat_dynamics.setChecked(False)
+            self.ui.ch_cat_eq.setChecked(False)
+            self.ui.ch_cat_filter.setChecked(False)
+            self.ui.ch_cat_modulator.setChecked(False)
+            self.ui.ch_cat_synth.setChecked(False)
+            self.ui.ch_cat_utility.setChecked(False)
+            self.ui.ch_cat_other.setChecked(False)
+        else:
+            self.ui.ch_cat_all.setChecked(False)
+            self.ui.ch_cat_delay.setChecked(":delay:" in categoryhash)
+            self.ui.ch_cat_distortion.setChecked(":distortion:" in categoryhash)
+            self.ui.ch_cat_dynamics.setChecked(":dynamics:" in categoryhash)
+            self.ui.ch_cat_eq.setChecked(":eq:" in categoryhash)
+            self.ui.ch_cat_filter.setChecked(":filter:" in categoryhash)
+            self.ui.ch_cat_modulator.setChecked(":modulator:" in categoryhash)
+            self.ui.ch_cat_synth.setChecked(":synth:" in categoryhash)
+            self.ui.ch_cat_utility.setChecked(":utility:" in categoryhash)
+            self.ui.ch_cat_other.setChecked(":other:" in categoryhash)
 
         tableGeometry = settings.value("PluginDatabase/TableGeometry_6", QByteArray(), QByteArray)
         horizontalHeader = self.ui.tableWidget.horizontalHeader()
@@ -1802,6 +1906,7 @@ class PluginDatabaseW(QDialog):
             mOuts  = plugin['midi.outs']
             phints = plugin['hints']
             ptype  = plugin['type']
+            categ  = plugin['category']
             isSynth  = bool(phints & PLUGIN_IS_SYNTH)
             isEffect = bool(aIns > 0 < aOuts and not isSynth)
             isMidi   = bool(aIns == 0 and aOuts == 0 and mIns > 0 < mOuts)
@@ -1861,8 +1966,19 @@ class PluginDatabaseW(QDialog):
                 self.ui.tableWidget.hideRow(i)
             elif hideNonFavs and self._createFavoritePluginDict(plugin) not in self.fFavoritePlugins:
                 self.ui.tableWidget.hideRow(i)
-            else:
+            elif (self.ui.ch_cat_all.isChecked() or
+                  (self.ui.ch_cat_delay.isChecked() and categ == "delay") or
+                  (self.ui.ch_cat_distortion.isChecked() and categ == "distortion") or
+                  (self.ui.ch_cat_dynamics.isChecked() and categ == "dynamics") or
+                  (self.ui.ch_cat_eq.isChecked() and categ == "eq") or
+                  (self.ui.ch_cat_filter.isChecked() and categ == "filter") or
+                  (self.ui.ch_cat_modulator.isChecked() and categ == "modulator") or
+                  (self.ui.ch_cat_synth.isChecked() and categ == "synth") or
+                  (self.ui.ch_cat_utility.isChecked() and categ == "utility") or
+                  (self.ui.ch_cat_other.isChecked() and categ == "other")):
                 self.ui.tableWidget.showRow(i)
+            else:
+                self.ui.tableWidget.hideRow(i)
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -1952,7 +2068,7 @@ class PluginDatabaseW(QDialog):
         return pluginCount
 
     def _reAddPlugins(self):
-        settingsDB = QSafeSettings("falkTX", "CarlaPlugins4")
+        settingsDB = QSafeSettings("falkTX", "CarlaPlugins5")
 
         for x in range(self.ui.tableWidget.rowCount()):
             self.ui.tableWidget.removeRow(0)

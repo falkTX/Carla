@@ -88,6 +88,31 @@ def getPluginTypeFromString(stype):
     print("getPluginTypeFromString(\"%s\") - invalid string type" % stype)
     return PLUGIN_NONE
 
+def getPluginCategoryAsString(category):
+    if category == PLUGIN_CATEGORY_NONE:
+        return "none"
+    if category == PLUGIN_CATEGORY_SYNTH:
+        return "synth"
+    if category == PLUGIN_CATEGORY_DELAY:
+        return "delay"
+    if category == PLUGIN_CATEGORY_EQ:
+        return "eq"
+    if category == PLUGIN_CATEGORY_FILTER:
+        return "filter"
+    if category == PLUGIN_CATEGORY_DISTORTION:
+        return "distortion"
+    if category == PLUGIN_CATEGORY_DYNAMICS:
+        return "dynamics"
+    if category == PLUGIN_CATEGORY_MODULATOR:
+        return "modulator"
+    if category == PLUGIN_CATEGORY_UTILITY:
+        return "utility"
+    if category == PLUGIN_CATEGORY_OTHER:
+        return "other"
+
+    print("CarlaBackend::getPluginCategoryAsString(%i) - invalid category" % category)
+    return "NONE"
+
 # ------------------------------------------------------------------------------------------------------------
 # Carla Utils API (C stuff)
 
