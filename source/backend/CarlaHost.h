@@ -205,6 +205,7 @@ typedef struct _CarlaParameterInfo {
     CARLA_API _CarlaParameterInfo() noexcept;
     CARLA_API _CarlaParameterInfo(const char* n) noexcept;
     CARLA_API ~_CarlaParameterInfo() noexcept;
+    const char* _reserved;
     CARLA_DECLARE_NON_COPY_STRUCT(_CarlaParameterInfo)
 #endif
 

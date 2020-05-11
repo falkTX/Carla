@@ -68,7 +68,8 @@ _CarlaParameterInfo::_CarlaParameterInfo() noexcept
       unit(gNullCharPtr),
       comment(gNullCharPtr),
       groupName(gNullCharPtr),
-      scalePointCount(0) {}
+      scalePointCount(0),
+      _reserved(gNullCharPtr) {}
 
 _CarlaParameterInfo::_CarlaParameterInfo(const char* const n) noexcept
     : name(n),
@@ -76,19 +77,20 @@ _CarlaParameterInfo::_CarlaParameterInfo(const char* const n) noexcept
       unit(n),
       comment(n),
       groupName(n),
-      scalePointCount(0) {}
+      scalePointCount(0),
+      _reserved(n) {}
 
 _CarlaParameterInfo::~_CarlaParameterInfo() noexcept
 {
-    if (name != gNullCharPtr)
+    if (name != _reserved)
         delete[] name;
-    if (symbol != gNullCharPtr)
+    if (symbol != _reserved)
         delete[] symbol;
-    if (unit != gNullCharPtr)
+    if (unit != _reserved)
         delete[] unit;
-    if (comment != gNullCharPtr)
+    if (comment != _reserved)
         delete[] comment;
-    if (groupName != gNullCharPtr)
+    if (groupName != _reserved)
         delete[] groupName;
 }
 
