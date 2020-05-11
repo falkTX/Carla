@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -573,12 +573,10 @@ public:
                 std::strcmp(features[i]->URI, LV2_EXTERNAL_UI_DEPRECATED_URI) == 0)
             {
                 fUI.host = (const LV2_External_UI_Host*)features[i]->data;
-                break;
             }
             if (std::strcmp(features[i]->URI, LV2_UI__touch) == 0)
             {
                 fUI.touch = (const LV2UI_Touch*)features[i]->data;
-                break;
             }
         }
 
