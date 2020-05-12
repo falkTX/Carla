@@ -12,6 +12,13 @@ include ../Makefile.mk
 
 BUILD_CXX_FLAGS += $(JUCE_AUDIO_BASICS_FLAGS) -I..
 
+# needed for older mingw, crashes on optimized float operations
+ifeq ($(WIN32),true)
+ifneq (,$(findstring i686,$(TARGET_MACHINE)))
+BUILD_CXX_FLAGS += -mpreferred-stack-boundary=2
+endif
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(MACOS),true)
