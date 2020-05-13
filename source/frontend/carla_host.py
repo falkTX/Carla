@@ -206,6 +206,12 @@ class HostWindow(QMainWindow):
         self.fWithCanvas = withCanvas
 
         # ----------------------------------------------------------------------------------------------------
+        # Internal stuff (logs)
+
+        self.autoscrollOnNewLog = True
+        self.lastLogSliderPos = 0
+
+        # ----------------------------------------------------------------------------------------------------
         # Set up GUI (engine stopped)
 
         if self.host.isPlugin or self.host.isControl:
@@ -388,6 +394,15 @@ class HostWindow(QMainWindow):
         self.ui.tw_miniCanvas.tabBar().hide()
 
         # ----------------------------------------------------------------------------------------------------
+        # Set up GUI (logs)
+
+        self.ui.text_logs.textChanged.connect(self.slot_logButtonsState)
+        self.ui.logs_clear.clicked.connect(self.slot_logClear)
+        self.ui.logs_save.clicked.connect(self.slot_logSave)
+        self.ui.logs_autoscroll.stateChanged.connect(self.slot_toggleLogAutoscroll)
+        self.ui.text_logs.verticalScrollBar().valueChanged.connect(self.slot_logSliderMoved)
+
+        # ----------------------------------------------------------------------------------------------------
         # Set up GUI (special stuff for Mac OS)
 
         if MACOS:
@@ -540,6 +555,7 @@ class HostWindow(QMainWindow):
         # Final setup
 
         self.ui.text_logs.clear()
+        self.slot_logButtonsState(False)
         self.setProperWindowTitle()
 
         # Disable non-supported features
@@ -2188,6 +2204,48 @@ class HostWindow(QMainWindow):
         hsb.setValue(xp * hsb.maximum())
         vsb.setValue(yp * vsb.maximum())
         self.updateCanvasInitialPos()
+
+    # --------------------------------------------------------------------------------------------------------
+    # Logs autoscroll, save and clear
+
+    @pyqtSlot(Qt.CheckState)
+    def slot_toggleLogAutoscroll(self, checked):
+        self.autoscrollOnNewLog = bool(checked)
+        if self.autoscrollOnNewLog:
+            self.ui.text_logs.verticalScrollBar().setValue(self.ui.text_logs.verticalScrollBar().maximum())
+
+    @pyqtSlot(int)
+    def slot_logSliderMoved(self, slider_pos):
+        if self.ui.text_logs.verticalScrollBar().hasTracking() or self.autoscrollOnNewLog:
+            self.lastLogSliderPos = slider_pos
+        else:
+            self.ui.text_logs.verticalScrollBar().setValue(self.lastLogSliderPos)
+
+    @pyqtSlot()
+    def slot_logButtonsState(self, enabled=True):
+        self.ui.logs_clear.setEnabled(enabled)
+        self.ui.logs_save.setEnabled(enabled)
+
+    @pyqtSlot()
+    def slot_logSave(self):
+        filename, _ = QFileDialog.getSaveFileName(self, self.tr("Save Logs"),os.path.join(
+            self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], 'carla_log.txt'))
+
+        if not filename:
+            return
+
+        try:
+            with open(filename, "w") as logfile:
+                logfile.write(self.ui.text_logs.toPlainText())
+                logfile.close()
+        except:
+            return
+
+    @pyqtSlot()
+    def slot_logClear(self):
+        self.ui.text_logs.clear()
+        self.ui.text_logs.appendPlainText("======= Logs cleared ========")
+        self.slot_logButtonsState(False)
 
     # --------------------------------------------------------------------------------------------------------
     # Timers
