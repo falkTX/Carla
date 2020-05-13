@@ -2208,9 +2208,9 @@ class HostWindow(QMainWindow):
     # --------------------------------------------------------------------------------------------------------
     # Logs autoscroll, save and clear
 
-    @pyqtSlot(Qt.CheckState)
-    def slot_toggleLogAutoscroll(self, checked):
-        self.autoscrollOnNewLog = bool(checked)
+    @pyqtSlot(int)
+    def slot_toggleLogAutoscroll(self, checkState):
+        self.autoscrollOnNewLog = checkState == Qt.Checked
         if self.autoscrollOnNewLog:
             self.ui.text_logs.verticalScrollBar().setValue(self.ui.text_logs.verticalScrollBar().maximum())
 
@@ -2228,8 +2228,8 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_logSave(self):
-        filename, _ = QFileDialog.getSaveFileName(self, self.tr("Save Logs"),os.path.join(
-            self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], 'carla_log.txt'))
+        filename = os.path.join(self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], 'carla_log.txt')
+        filename, _ = QFileDialog.getSaveFileName(self, self.tr("Save Logs"), filename)
 
         if not filename:
             return
