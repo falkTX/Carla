@@ -457,9 +457,9 @@ public:
         bool needsCtrlIn, needsCtrlOut;
         needsCtrlIn = needsCtrlOut = false;
 
-        aIns   = std::max(fInstance->getTotalNumInputChannels(), 0);
-        aOuts  = std::max(fInstance->getTotalNumOutputChannels(), 0);
-        params = std::max(fInstance->getNumParameters(), 0);
+        aIns   = static_cast<uint32_t>(std::max(fInstance->getTotalNumInputChannels(), 0));
+        aOuts  = static_cast<uint32_t>(std::max(fInstance->getTotalNumOutputChannels(), 0));
+        params = static_cast<uint32_t>(std::max(fInstance->getNumParameters(), 0));
 
         if (fInstance->acceptsMidi())
         {
