@@ -1395,7 +1395,11 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
         {
             if (juce::AudioPluginInstance* const instance = pluginFormat->createInstanceFromDescription(*desc, kSampleRate, kBufferSize))
             {
+                instance->enableAllBuses();
                 instance->refreshParameterList();
+
+                audioIns = instance->getTotalNumInputChannels();
+                audioOuts = instance->getTotalNumOutputChannels();
 
                 parameters = instance->getNumParameters();
 
