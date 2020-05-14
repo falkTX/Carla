@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -88,8 +88,8 @@
 #include "buffers/juce_AudioProcessLoadMeasurer.h"
 #include "utilities/juce_Decibels.h"
 #include "utilities/juce_IIRFilter.h"
-#include "utilities/juce_LagrangeInterpolator.h"
-#include "utilities/juce_CatmullRomInterpolator.h"
+#include "utilities/juce_GenericInterpolator.h"
+#include "utilities/juce_Interpolators.h"
 #include "utilities/juce_SmoothedValue.h"
 #include "utilities/juce_Reverb.h"
 #include "utilities/juce_ADSR.h"

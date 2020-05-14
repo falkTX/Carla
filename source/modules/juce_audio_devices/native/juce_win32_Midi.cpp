@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -450,7 +450,7 @@ private:
 
             for (UINT i = 0; i < midiInGetNumDevs(); ++i)
             {
-                MIDIINCAPS mc = { 0 };
+                MIDIINCAPS mc = {};
 
                 if (midiInGetDevCaps (i, &mc, sizeof (mc)) == MMSYSERR_NOERROR)
                     devices.add (mc);
@@ -574,7 +574,7 @@ private:
         {
             if (message.getRawDataSize() > 3 || message.isSysEx())
             {
-                MIDIHDR h = { 0 };
+                MIDIHDR h = {};
 
                 h.lpData = (char*) message.getRawData();
                 h.dwBytesRecorded = h.dwBufferLength  = (DWORD) message.getRawDataSize();
@@ -625,7 +625,7 @@ private:
 
             for (UINT i = 0; i < midiOutGetNumDevs(); ++i)
             {
-                MIDIOUTCAPS mc = { 0 };
+                MIDIOUTCAPS mc = {};
 
                 if (midiOutGetDevCaps (i, &mc, sizeof (mc)) == MMSYSERR_NOERROR)
                     devices.add (mc);

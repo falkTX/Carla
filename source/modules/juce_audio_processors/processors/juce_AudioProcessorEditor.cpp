@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE 6 technical preview.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    You may use this code under the terms of the GPL v3
    (see www.gnu.org/licenses).
@@ -33,8 +33,6 @@ AudioProcessorEditor::AudioProcessorEditor (AudioProcessor* p) noexcept  : proce
 
 AudioProcessorEditor::~AudioProcessorEditor()
 {
-    splashScreen.deleteAndZero();
-
     // if this fails, then the wrapper hasn't called editorBeingDeleted() on the
     // filter for some reason..
     jassert (processor.getActiveEditor() != this);
@@ -49,23 +47,6 @@ void AudioProcessorEditor::hostMIDIControllerIsAvailable (bool)                {
 
 void AudioProcessorEditor::initialise()
 {
-    /*
-      ==========================================================================
-       In accordance with the terms of the JUCE 5 End-Use License Agreement, the
-       JUCE Code in SECTION A cannot be removed, changed or otherwise rendered
-       ineffective unless you have a JUCE Indie or Pro license, or are using
-       JUCE under the GPL v3 license.
-
-       End User License Agreement: www.juce.com/juce-5-licence
-      ==========================================================================
-    */
-
-    // BEGIN SECTION A
-
-    splashScreen = new JUCESplashScreen (*this);
-
-    // END SECTION A
-
     resizable = false;
 
     attachConstrainer (&defaultConstrainer);

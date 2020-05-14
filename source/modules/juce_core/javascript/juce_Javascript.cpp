@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -814,7 +814,9 @@ struct JavascriptEngine::RootObject   : public DynamicObject
                 a.add (values.getUnchecked(i)->getResult (s));
 
             // std::move() needed here for older compilers
+            JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wredundant-move")
             return std::move (a);
+            JUCE_END_IGNORE_WARNINGS_GCC_LIKE
         }
 
         OwnedArray<Expression> values;
@@ -1624,7 +1626,9 @@ struct JavascriptEngine::RootObject   : public DynamicObject
                     array->insert (start++, get (a, i));
 
                 // std::move() needed here for older compilers
+                JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wredundant-move")
                 return std::move (itemsRemoved);
+                JUCE_END_IGNORE_WARNINGS_GCC_LIKE
             }
 
             return var::undefined();

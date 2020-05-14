@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE 6 technical preview.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    You may use this code under the terms of the GPL v3
    (see www.gnu.org/licenses).
@@ -271,7 +271,7 @@ struct SpeakerMappings  : private AudioChannelSet // (inheritance only to give e
         return mappings;
     }
 
-    static inline int32 getSpeakerType (AudioChannelSet::ChannelType type) noexcept
+    static int32 getSpeakerType (AudioChannelSet::ChannelType type) noexcept
     {
         static const std::map<AudioChannelSet::ChannelType, int32> speakerTypeMap =
         {
@@ -302,7 +302,7 @@ struct SpeakerMappings  : private AudioChannelSet // (inheritance only to give e
         return speakerTypeMap.at (type);
     }
 
-    static inline AudioChannelSet::ChannelType getChannelType (int32 type) noexcept
+    static AudioChannelSet::ChannelType getChannelType (int32 type) noexcept
     {
         switch (type)
         {

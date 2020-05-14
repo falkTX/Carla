@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE 6 technical preview.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    You may use this code under the terms of the GPL v3
    (see www.gnu.org/licenses).
@@ -743,7 +743,7 @@ bool CodeDocument::hasChangedSinceSavePoint() const noexcept
 }
 
 //==============================================================================
-static inline int getCharacterType (juce_wchar character) noexcept
+static int getCharacterType (juce_wchar character) noexcept
 {
     return (CharacterFunctions::isLetterOrDigit (character) || character == '_')
                 ? 2 : (CharacterFunctions::isWhitespace (character) ? 0 : 1);

@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE 6 technical preview.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    You may use this code under the terms of the GPL v3
    (see www.gnu.org/licenses).
@@ -19,7 +19,7 @@
 namespace juce
 {
 
-static inline void blurDataTriplets (uint8* d, int num, const int delta) noexcept
+static void blurDataTriplets (uint8* d, int num, const int delta) noexcept
 {
     uint32 last = d[0];
     d[0] = (uint8) ((d[0] + d[delta] + 1) / 3);

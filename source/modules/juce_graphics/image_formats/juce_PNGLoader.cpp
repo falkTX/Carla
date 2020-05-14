@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE 6 technical preview.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    You may use this code under the terms of the GPL v3
    (see www.gnu.org/licenses).
@@ -26,6 +26,8 @@ namespace zlibNamespace
 #if JUCE_INCLUDE_ZLIB_CODE
   #undef OS_CODE
   #undef fdopen
+  #define ZLIB_INTERNAL
+  #define NO_DUMMY_DECL
   #include "../../juce_core/zip/zlib/zlib.h"
   #undef OS_CODE
 #else
@@ -51,6 +53,7 @@ namespace pnglibNamespace
 
    JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wsign-conversion",
                                         "-Wimplicit-fallthrough",
+                                        "-Wtautological-constant-out-of-range-compare",
                                         "-Wzero-as-null-pointer-constant",
                                         "-Wcomma")
 

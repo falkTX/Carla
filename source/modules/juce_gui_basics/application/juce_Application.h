@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE 6 technical preview.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    You may use this code under the terms of the GPL v3
    (see www.gnu.org/licenses).
@@ -120,7 +120,7 @@ public:
         permitted to run (except on OSX where the OS automatically stops you launching
         a second instance of an app without explicitly starting it from the command-line).
 
-        If it's false, the second instance won't start, but it you will still get a
+        If it's false, the second instance won't start, but you will still get a
         callback to anotherInstanceStarted() to tell you about this - which
         gives you a chance to react to what the user was trying to do.
     */

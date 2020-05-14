@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE 6 technical preview.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    You may use this code under the terms of the GPL v3
    (see www.gnu.org/licenses).
@@ -185,8 +185,6 @@ public:
 
         This will produce a lump of XML that can be later reloaded using
         restoreFromXml() to recreate the current mapping state.
-
-        The object that is returned must be deleted by the caller.
 
         @param saveDifferencesFromDefaultSet    if this is false, then all keypresses
                             will be saved into the XML. If it's true, then the XML will

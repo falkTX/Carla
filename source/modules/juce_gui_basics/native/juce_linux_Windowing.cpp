@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE 6 technical preview.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    You may use this code under the terms of the GPL v3
    (see www.gnu.org/licenses).
@@ -113,17 +113,18 @@ public:
         return windowBorder;
     }
 
-    using ComponentPeer::localToGlobal;
     Point<float> localToGlobal (Point<float> relativePosition) override
     {
         return relativePosition + getScreenPosition (false).toFloat();
     }
 
-    using ComponentPeer::globalToLocal;
     Point<float> globalToLocal (Point<float> screenPosition) override
     {
         return screenPosition   - getScreenPosition (false).toFloat();
     }
+
+    using ComponentPeer::localToGlobal;
+    using ComponentPeer::globalToLocal;
 
     //==============================================================================
     StringArray getAvailableRenderingEngines() override

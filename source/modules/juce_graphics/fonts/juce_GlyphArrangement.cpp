@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE 6 technical preview.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    You may use this code under the terms of the GPL v3
    (see www.gnu.org/licenses).
@@ -33,7 +33,7 @@ PositionedGlyph::PositionedGlyph (const Font& font_, juce_wchar character_, int 
 
 PositionedGlyph::~PositionedGlyph() {}
 
-static inline void drawGlyphWithFont (Graphics& g, int glyph, const Font& font, AffineTransform t)
+static void drawGlyphWithFont (Graphics& g, int glyph, const Font& font, AffineTransform t)
 {
     auto& context = g.getInternalContext();
     context.setFont (font);
@@ -536,7 +536,7 @@ void GlyphArrangement::spreadOutLine (int start, int num, float targetWidth)
     }
 }
 
-static inline bool isBreakableGlyph (const PositionedGlyph& g) noexcept
+static bool isBreakableGlyph (const PositionedGlyph& g) noexcept
 {
     return g.isWhitespace() || g.getCharacter() == '-';
 }

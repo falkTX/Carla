@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE 6 technical preview.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    You may use this code under the terms of the GPL v3
    (see www.gnu.org/licenses).
@@ -37,6 +37,8 @@ public:
         DestroyWindow (hwnd);
     }
 
+    using ComponentMovementWatcher::componentMovedOrResized;
+
     void componentMovedOrResized (bool wasMoved, bool wasResized) override
     {
         auto* topComponent = owner.getTopLevelComponent();
@@ -52,7 +54,7 @@ public:
             if (! wasMoved)    windowFlags |= SWP_NOMOVE;
             if (! wasResized)  windowFlags |= SWP_NOSIZE;
 
-            SetWindowPos (hwnd, 0, scaled.getX(), scaled.getY(), scaled.getWidth(), scaled.getHeight(), windowFlags);
+            SetWindowPos (hwnd, nullptr, scaled.getX(), scaled.getY(), scaled.getWidth(), scaled.getHeight(), windowFlags);
         }
     }
 
@@ -73,8 +75,10 @@ public:
         ShowWindow (hwnd, isShowing ? SW_SHOWNA : SW_HIDE);
 
         if (isShowing)
-            InvalidateRect (hwnd, 0, 0);
+            InvalidateRect (hwnd, nullptr, 0);
      }
+
+    using ComponentMovementWatcher::componentVisibilityChanged;
 
     void componentVisibilityChanged() override
     {

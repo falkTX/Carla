@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE 6 technical preview.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    You may use this code under the terms of the GPL v3
    (see www.gnu.org/licenses).
@@ -60,7 +60,7 @@ const float Path::closeSubPathMarker   = 100005.0f;
 const float Path::defaultToleranceForTesting = 1.0f;
 const float Path::defaultToleranceForMeasurement = 0.6f;
 
-static inline bool isMarker (float value, float marker) noexcept
+static bool isMarker (float value, float marker) noexcept
 {
     return value == marker;
 }

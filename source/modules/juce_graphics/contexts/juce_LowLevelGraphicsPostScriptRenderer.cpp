@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE 6 technical preview.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    You may use this code under the terms of the GPL v3
    (see www.gnu.org/licenses).
@@ -48,7 +48,7 @@ LowLevelGraphicsPostScriptRenderer::LowLevelGraphicsPostScriptRenderer (OutputSt
     out << "%!PS-Adobe-3.0 EPSF-3.0"
            "\n%%BoundingBox: 0 0 600 824"
            "\n%%Pages: 0"
-           "\n%%Creator: ROLI Ltd. JUCE"
+           "\n%%Creator: Raw Material Software Limited - JUCE"
            "\n%%Title: " << documentTitle <<
            "\n%%CreationDate: none"
            "\n%%LanguageLevel: 2"

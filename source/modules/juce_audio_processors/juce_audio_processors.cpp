@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE 6 technical preview.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    You may use this code under the terms of the GPL v3
    (see www.gnu.org/licenses).
@@ -60,8 +60,10 @@
 namespace juce
 {
 
-static inline bool arrayContainsPlugin (const OwnedArray<PluginDescription>& list,
-                                        const PluginDescription& desc)
+#if JUCE_PLUGINHOST_VST || (JUCE_PLUGINHOST_LADSPA && JUCE_LINUX)
+
+static bool arrayContainsPlugin (const OwnedArray<PluginDescription>& list,
+                                 const PluginDescription& desc)
 {
     for (auto* p : list)
         if (p->isDuplicateOf (desc))
@@ -69,6 +71,8 @@ static inline bool arrayContainsPlugin (const OwnedArray<PluginDescription>& lis
 
     return false;
 }
+
+#endif
 
 #if JUCE_MAC || JUCE_IOS
 

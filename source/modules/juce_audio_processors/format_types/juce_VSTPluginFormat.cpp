@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE 6 technical preview.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    You may use this code under the terms of the GPL v3
    (see www.gnu.org/licenses).
@@ -2890,7 +2890,13 @@ public:
             setScaleFactorAndDispatchMessage (peer->getPlatformScaleFactor());
 
        #if JUCE_LINUX
-        MessageManager::callAsync ([this] { componentMovedOrResized (true, true); });
+        SafePointer<VSTPluginWindow> safeThis (this);
+
+        MessageManager::callAsync ([this, safeThis]
+        {
+            if (safeThis != nullptr)
+                componentMovedOrResized (true, true);
+        });
        #else
         componentMovedOrResized (true, true);
        #endif

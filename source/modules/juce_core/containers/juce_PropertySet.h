@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -104,8 +104,8 @@ public:
 
     /** Returns one of the properties as an XML element.
 
-        The result will a new XMLElement object that the caller must delete. If may return nullptr
-        if the key isn't found, or if the entry contains an string that isn't valid XML.
+        The result will a new XMLElement object. It may return nullptr if the key isn't found,
+        or if the entry contains an string that isn't valid XML.
 
         If the value isn't found in this set, then this will look for it in a fallback
         property set (if you've specified one with the setFallbackPropertySet() method),
