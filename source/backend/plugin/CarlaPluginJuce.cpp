@@ -438,6 +438,7 @@ public:
 
         clearBuffers();
 
+        fInstance->enableAllBuses();
         fInstance->refreshParameterList();
 
         uint32_t aIns, aOuts, mIns, mOuts, params;
@@ -446,9 +447,9 @@ public:
         bool needsCtrlIn, needsCtrlOut;
         needsCtrlIn = needsCtrlOut = false;
 
-        aIns   = (fInstance->getTotalNumInputChannels() > 0)  ? static_cast<uint32_t>(fInstance->getTotalNumInputChannels())  : 0;
-        aOuts  = (fInstance->getTotalNumOutputChannels() > 0) ? static_cast<uint32_t>(fInstance->getTotalNumOutputChannels()) : 0;
-        params = (fInstance->getNumParameters() > 0)          ? static_cast<uint32_t>(fInstance->getNumParameters())          : 0;
+        aIns   = std::max(fInstance->getTotalNumInputChannels(), 0);
+        aOuts  = std::max(fInstance->getTotalNumOutputChannels(), 0);
+        params = std::max(fInstance->getNumParameters(), 0);
 
         if (fInstance->acceptsMidi())
         {
