@@ -133,7 +133,8 @@ class CanvasBox(QGraphicsItem):
         # Shadow
         # FIXME FX on top of graphic items make them lose high-dpi
         # See https://bugreports.qt.io/browse/QTBUG-65035
-        if options.eyecandy and canvas.scene.getDevicePixelRatioF() == 1.0:
+        # FIXME Random crashes while using Qt's drop shadow, let's just disable it
+        if False and options.eyecandy and canvas.scene.getDevicePixelRatioF() == 1.0:
             self.shadow = CanvasBoxShadow(self.toGraphicsObject())
             self.shadow.setFakeParent(self)
             self.setGraphicsEffect(self.shadow)
