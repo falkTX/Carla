@@ -72,6 +72,7 @@ export LDFLAGS="-L${DEPS_PREFIX}/lib"
 export MOC_QT5="wine ${MSYS2_PREFIX}/bin/moc.exe"
 export RCC_QT5="wine ${MSYS2_PREFIX}/bin/rcc.exe"
 export UIC_QT5="wine ${MSYS2_PREFIX}/bin/uic.exe"
+
 }
 
 # ---------------------------------------------------------------------------------------------------------------------

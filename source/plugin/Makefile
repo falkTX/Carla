@@ -50,6 +50,12 @@ NEEDS_WINE = true
 endif
 endif
 
+ifneq ($(CROSS_COMPILING),true)
+CAN_GENERATE_LV2_TTL = true
+else ifeq ($(NEEDS_WINE),true)
+CAN_GENERATE_LV2_TTL = true
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Libs
 
@@ -174,7 +180,7 @@ TARGETS += \
 	$(BINDIR)/carla.lv2/carla-ui$(LIB_EXT)
 endif
 
-ifneq ($(CROSS_COMPILING),true)
+ifeq ($(CAN_GENERATE_LV2_TTL),true)
 TARGETS += \
 	$(BINDIR)/carla.lv2/manifest.ttl
 endif
