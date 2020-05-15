@@ -639,6 +639,20 @@ class HostWindow(QMainWindow):
         else:
             pitem.recreateWidget(newSkin = skin)
 
+    def findPluginInPatchbay(self, pluginId):
+        if pluginId > self.fPluginCount:
+            return
+
+        if self.fExternalPatchbay:
+            self.slot_canvasShowInternal()
+
+        if not patchcanvas.focusGroupUsingPluginId(pluginId):
+            name = self.host.get_plugin_info(pluginId)['name']
+            if not patchcanvas.focusGroupUsingGroupName(name):
+                return
+
+        self.ui.tabWidget.setCurrentIndex(1)
+
     def switchPlugins(self, pluginIdA, pluginIdB):
         if pluginIdA == pluginIdB:
             return

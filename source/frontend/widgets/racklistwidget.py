@@ -262,8 +262,7 @@ class RackListWidget(QListWidget):
                 #return True
             if MACOS and lfilename.endswith(".vst"):
                 return True
-            # TODO check vst3 supported feature
-            elif lfilename.endswith(".vst3"):
+            elif lfilename.endswith(".vst3") and ".vst3" in self.fSupportedExtensions:
                 return True
 
         elif os.path.isfile(filename):

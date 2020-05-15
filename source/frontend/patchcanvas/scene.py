@@ -95,6 +95,9 @@ class PatchScene(QGraphicsScene):
     def getScaleFactor(self):
         return self.m_view.transform().m11()
 
+    def getView(self):
+        return self.m_view
+
     def fixScaleFactor(self, transform=None):
         fix, set_view = False, False
         if not transform:

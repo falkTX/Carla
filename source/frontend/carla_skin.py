@@ -1038,12 +1038,23 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         menu = QMenu(self)
 
         # -------------------------------------------------------------
-        # Expand/Minimize
+        # Expand/Minimize and Tweaks
 
         actCompact = menu.addAction(self.tr("Expand") if isinstance(self, PluginSlot_Compact) else self.tr("Minimize"))
         actColor   = menu.addAction(self.tr("Change Color..."))
         actSkin    = menu.addAction(self.tr("Change Skin..."))
         menu.addSeparator()
+
+        # -------------------------------------------------------------
+        # Find in patchbay, if possible
+
+        if self.host.processMode in (ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS,
+                                     ENGINE_PROCESS_MODE_PATCHBAY):
+            actFindInPatchbay = menu.addAction(self.tr("Find plugin in patchbay"))
+            menu.addSeparator()
+
+        else:
+            actFindInPatchbay = None
 
         # -------------------------------------------------------------
         # Move up and down
@@ -1168,6 +1179,12 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             if not all(skin):
                 return
             gCarla.gui.changePluginSkin(self.fPluginId, skin[0])
+
+        # -------------------------------------------------------------
+        # Find in patchbay
+
+        elif actSel == actFindInPatchbay:
+            gCarla.gui.findPluginInPatchbay(self.fPluginId)
 
         # -------------------------------------------------------------
         # Move up and down

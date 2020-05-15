@@ -698,6 +698,35 @@ def setGroupAsPlugin(group_id, plugin_id, hasUI, hasInlineDisplay):
 
 # ------------------------------------------------------------------------------------------------------------
 
+def focusGroupUsingPluginId(plugin_id):
+    if canvas.debug:
+        print("PatchCanvas::focusGroupUsingPluginId(%i)" % (plugin_id,))
+
+    if plugin_id < 0 or plugin_id >= MAX_PLUGIN_ID_ALLOWED:
+        return False
+
+    for group in canvas.group_list:
+        if group.plugin_id == plugin_id:
+            item = group.widgets[0]
+            canvas.scene.clearSelection()
+            canvas.scene.getView().centerOn(item)
+            item.setSelected(True)
+            return True
+
+def focusGroupUsingGroupName(group_name):
+    if canvas.debug:
+        print("PatchCanvas::focusGroupUsingGroupName(%s)" % (group_name,))
+
+    for group in canvas.group_list:
+        if group.group_name == group_name:
+            item = group.widgets[0]
+            canvas.scene.clearSelection()
+            canvas.scene.getView().centerOn(item)
+            item.setSelected(True)
+            return True
+
+# ------------------------------------------------------------------------------------------------------------
+
 def addPort(group_id, port_id, port_name, port_mode, port_type, is_alternate=False):
     if canvas.debug:
         print("PatchCanvas::addPort(%i, %i, %s, %s, %s, %s)" % (
