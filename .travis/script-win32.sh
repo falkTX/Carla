@@ -15,7 +15,7 @@ export PKG_CONFIG_PATH=/opt/mingw32/lib/pkgconfig:${PKG_CONFIG_PATH}
 export CROSS_COMPILING=true
 
 MAKE_ARGS="BUILDING_FOR_WINDOWS=true CROSS_COMPILING=true USING_JUCE=false USING_JUCE_AUDIO_DEVICES=false"
-MAKE_ARGS="${MAKE_ARGS} HAVE_FLUIDSYNTH=false HAVE_LIBLO=false HAVE_QT5=false HAVE_SNDFILE=false"
+MAKE_ARGS="${MAKE_ARGS} HAVE_FLUIDSYNTH=false HAVE_LIBLO=false HAVE_QT5=false HAVE_SNDFILE=false NEEDS_WINE=false"
 
 # Start clean
 make distclean >/dev/null
