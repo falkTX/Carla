@@ -802,20 +802,20 @@ ifeq ($(HAVE_PYQT),true)
 	@printf -- "Front-End:     $(ANS_YES)\n"
 	@printf -- "LV2 plugin:    $(ANS_YES)\n"
 ifneq ($(HAIKU),true)
-	@printf -- "VST plugin:    $(ANS_YES)\n"
+	@printf -- "VST2 plugin:   $(ANS_YES)\n"
 else
-	@printf -- "VST plugin:    $(ANS_NO)  $(mZ)Not available for Haiku$(mE)\n"
+	@printf -- "VST2 plugin:   $(ANS_NO)  $(mZ)Not available for Haiku$(mE)\n"
 endif
 else
 	@printf -- "Front-End:     $(ANS_NO)  $(mS)Missing PyQt$(mE)\n"
 	@printf -- "LV2 plugin:    $(ANS_NO)  $(mS)No front-end$(mE)\n"
-	@printf -- "VST plugin:    $(ANS_NO)  $(mS)No front-end$(mE)\n"
+	@printf -- "VST2 plugin:   $(ANS_NO)  $(mS)No front-end$(mE)\n"
 endif
 ifeq ($(HAVE_HYLIA),true)
 	@printf -- "Link support:  $(ANS_YES)\n"
 else
 ifeq ($(MACOS_OLD),true)
-	@printf -- "Link support:  $(ANS_NO)  $(mZ)MacOS >= 10.10 only$(mE)\n"
+	@printf -- "Link support:  $(ANS_NO)  $(mZ)MacOS >= 10.8 only$(mE)\n"
 else
 	@printf -- "Link support:  $(ANS_NO)  $(mZ)Linux, MacOS and Windows only$(mE)\n"
 endif
@@ -882,18 +882,40 @@ endif
 	@printf -- "DSSI:     $(ANS_YES)\n"
 	@printf -- "LV2:      $(ANS_YES)\n"
 ifeq ($(MACOS_OR_WIN32),true)
-	@printf -- "VST:      $(ANS_YES) (with UI)\n"
-else
+ifeq ($(USING_JUCE),true)
+	@printf -- "VST2:     $(ANS_YES) (with UI, using JUCE)\n"
+	@printf -- "VST3:     $(ANS_YES) (with UI, using JUCE)\n"
+else  # USING_JUCE
+	@printf -- "VST2:     $(ANS_YES) (with UI)\n"
+	@printf -- "VST3:     $(ANS_NO)\n"
+endif # USING_JUCE
+else  # MACOS_OR_WIN32
 ifeq ($(HAIKU),true)
-	@printf -- "VST:      $(ANS_YES) (without UI)\n"
-else
+	@printf -- "VST2:     $(ANS_YES) (without UI)\n"
+	@printf -- "VST3:     $(ANS_NO)\n"
+else  # HAIKU
 ifeq ($(HAVE_X11),true)
-	@printf -- "VST:      $(ANS_YES) (with UI)\n"
-else
-	@printf -- "VST:      $(ANS_YES) (without UI) $(mS)Missing X11$(mE)\n"
-endif
-endif
-endif
+	@printf -- "VST2:     $(ANS_YES) (with UI)\n"
+ifeq ($(USING_JUCE),true)
+	@printf -- "VST3:     $(ANS_YES) (with UI, using JUCE)\n"
+else  # USING_JUCE
+	@printf -- "VST3:     $(ANS_NO)\n"
+endif # USING_JUCE
+else  # HAVE_X11
+	@printf -- "VST2:     $(ANS_YES) (without UI) $(mS)Missing X11$(mE)\n"
+	@printf -- "VST3:     $(ANS_NO)\n"
+endif # HAVE_X11
+endif # HAIKU
+endif # MACOS_OR_WIN32
+ifeq ($(MACOS),true)
+ifeq ($(USING_JUCE),true)
+	@printf -- "AU:       $(ANS_YES) (with UI, using JUCE)\n"
+else  # USING_JUCE
+	@printf -- "AU:       $(ANS_NO)\n"
+endif # USING_JUCE
+else  # MACOS
+	@printf -- "AU:       $(ANS_NO)  $(mZ)MacOS only$(mE)\n"
+endif # MACOS
 	@printf -- "\n"
 
 	@printf -- "$(tS)---> LV2 UI toolkit support: $(tE)\n"
