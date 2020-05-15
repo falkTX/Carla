@@ -16,6 +16,8 @@ BUILD_CXX_FLAGS += $(JUCE_AUDIO_BASICS_FLAGS) -I..
 ifeq ($(WIN32),true)
 ifneq (,$(findstring i686,$(TARGET_MACHINE)))
 BUILD_CXX_FLAGS += -mpreferred-stack-boundary=2
+else
+32BIT_FLAGS     += -mpreferred-stack-boundary=2
 endif
 endif
 
