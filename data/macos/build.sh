@@ -15,7 +15,7 @@ fi
 # ---------------------------------------------------------------------------------------------------------------------
 # set variables
 
-PKG_FOLDER="Carla_2.1-macos"
+PKG_FOLDER="Carla_2.2b-macos"
 
 source data/macos/common.env
 
@@ -113,7 +113,6 @@ rm -f build/Carla.app/Contents/MacOS/carla-bridge-lv2-modgui
 rm -f build/Carla.app/Contents/MacOS/carla-bridge-lv2-qt5
 
 find build/ -type f -name "*.py" -delete
-find build/ -type f -name "*.pyc" -delete
 find build/ -type f -name "*.pyi" -delete
 find build/ -type f -name "pylupdate.so" -delete
 find build/ -type f -name "pyrcc.so" -delete
@@ -122,6 +121,9 @@ find build/ -type f -name "QtNetwork*" -delete
 find build/ -type f -name "QtSql*" -delete
 find build/ -type f -name "QtTest*" -delete
 find build/ -type f -name "QtXml*" -delete
+if [ "${MACOS_VERSION_MIN}" != "10.12" ]; then
+find build/ -type f -name "*.pyc" -delete
+fi
 rm -rf build/Carla.app/Contents/MacOS/lib/PyQt5/uic
 rm -rf build/Carla.app/Contents/MacOS/resources/__pycache__
 rm -rf build/Carla.app/Contents/MacOS/resources/patchcanvas
@@ -132,10 +134,17 @@ rm -rf build/Carla-Control.app/Contents/MacOS/resources/__pycache__
 # missed by cx-freeze
 mkdir build/Carla.app/Contents/MacOS/iconengines
 cp ${TARGETDIR}/carla/lib/qt5/plugins/iconengines/libqsvgicon.dylib build/Carla.app/Contents/MacOS/iconengines/
+if [ "${MACOS_VERSION_MIN}" = "10.12" ]; then
+mkdir build/Carla.app/Contents/MacOS/imageformats
+mkdir build/Carla.app/Contents/MacOS/platforms
+cp ${TARGETDIR}/carla/lib/qt5/plugins/imageformats/libq{jpeg,svg}.dylib             build/Carla.app/Contents/MacOS/imageformats/
+cp ${TARGETDIR}/carla/lib/qt5/plugins/platforms/libq{cocoa,minimal,offscreen}.dylib build/Carla.app/Contents/MacOS/platforms/
+fi
 
 # continuing...
 cd build/Carla.app/Contents/MacOS
 for f in `find . -type f | grep -e Q -e libq -e carlastyle.dylib`; do
+if [ "${MACOS_VERSION_MIN}" = "10.12" ] && (echo "$f" | grep -q pyc); then continue; fi
 install_name_tool -change "@rpath/QtCore.framework/Versions/5/QtCore"                 @executable_path/QtCore         $f
 install_name_tool -change "@rpath/QtGui.framework/Versions/5/QtGui"                   @executable_path/QtGui          $f
 install_name_tool -change "@rpath/QtOpenGL.framework/Versions/5/QtOpenGL"             @executable_path/QtOpenGL       $f
@@ -144,10 +153,20 @@ install_name_tool -change "@rpath/QtSvg.framework/Versions/5/QtSvg"             
 install_name_tool -change "@rpath/QtWidgets.framework/Versions/5/QtWidgets"           @executable_path/QtWidgets      $f
 install_name_tool -change "@rpath/QtMacExtras.framework/Versions/5/QtMacExtras"       @executable_path/QtMacExtras    $f
 done
+if [ "${MACOS_VERSION_MIN}" = "10.12" ]; then
+cp ${TARGETDIR}/carla/lib/QtCore.framework/Versions/5/QtCore .
+cp ${TARGETDIR}/carla/lib/QtGui.framework/Versions/5/QtGui .
+cp ${TARGETDIR}/carla/lib/QtOpenGL.framework/Versions/5/QtOpenGL .
+cp ${TARGETDIR}/carla/lib/QtPrintSupport.framework/Versions/5/QtPrintSupport .
+cp ${TARGETDIR}/carla/lib/QtSvg.framework/Versions/5/QtSvg .
+cp ${TARGETDIR}/carla/lib/QtWidgets.framework/Versions/5/QtWidgets .
+cp ${TARGETDIR}/carla/lib/QtMacExtras.framework/Versions/5/QtMacExtras .
+fi
 cd ../../../..
 
 cd build/Carla-Control.app/Contents/MacOS
 for f in `find . -type f | grep -e Q -e libq -e carlastyle.dylib`; do
+if [ "${MACOS_VERSION_MIN}" = "10.12" ] && (echo "$f" | grep -q pyc); then continue; fi
 install_name_tool -change "@rpath/QtCore.framework/Versions/5/QtCore"                 @executable_path/QtCore         $f
 install_name_tool -change "@rpath/QtGui.framework/Versions/5/QtGui"                   @executable_path/QtGui          $f
 install_name_tool -change "@rpath/QtOpenGL.framework/Versions/5/QtOpenGL"             @executable_path/QtOpenGL       $f
@@ -156,6 +175,15 @@ install_name_tool -change "@rpath/QtSvg.framework/Versions/5/QtSvg"             
 install_name_tool -change "@rpath/QtWidgets.framework/Versions/5/QtWidgets"           @executable_path/QtWidgets      $f
 install_name_tool -change "@rpath/QtMacExtras.framework/Versions/5/QtMacExtras"       @executable_path/QtMacExtras    $f
 done
+if [ "${MACOS_VERSION_MIN}" = "10.12" ]; then
+cp ${TARGETDIR}/carla/lib/QtCore.framework/Versions/5/QtCore .
+cp ${TARGETDIR}/carla/lib/QtGui.framework/Versions/5/QtGui .
+cp ${TARGETDIR}/carla/lib/QtOpenGL.framework/Versions/5/QtOpenGL .
+cp ${TARGETDIR}/carla/lib/QtPrintSupport.framework/Versions/5/QtPrintSupport .
+cp ${TARGETDIR}/carla/lib/QtSvg.framework/Versions/5/QtSvg .
+cp ${TARGETDIR}/carla/lib/QtWidgets.framework/Versions/5/QtWidgets .
+cp ${TARGETDIR}/carla/lib/QtMacExtras.framework/Versions/5/QtMacExtras .
+fi
 cd ../../../..
 
 mv build/carla-plugin.app/Contents/MacOS/carla-plugin     build/Carla.app/Contents/MacOS/resources/
