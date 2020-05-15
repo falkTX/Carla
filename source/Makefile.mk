@@ -499,12 +499,34 @@ RTAUDIO_FLAGS   += -D__RTAUDIO_DEBUG__
 RTMIDI_FLAGS    += -D__RTMIDI_DEBUG__
 endif
 
+ifeq ($(LINUX),true)
+ifeq ($(HAVE_ALSA),true)
+RTAUDIO_FLAGS   += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags alsa) -D__LINUX_ALSA__
+RTAUDIO_LIBS    += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs alsa) -lpthread
+RTMIDI_FLAGS    += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags alsa) -D__LINUX_ALSA__
+RTMIDI_LIBS     += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs alsa)
+endif
+endif
+
+ifeq ($(MACOS),true)
+RTAUDIO_FLAGS   += -D__MACOSX_CORE__
+RTAUDIO_LIBS    += -framework CoreAudio
+RTMIDI_FLAGS    += -D__MACOSX_CORE__
+RTMIDI_LIBS     += -framework CoreMIDI
+endif
+
 ifeq ($(UNIX),true)
 RTAUDIO_FLAGS   += -D__UNIX_JACK__
 ifeq ($(HAVE_PULSEAUDIO),true)
 RTAUDIO_FLAGS   += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags libpulse-simple) -D__UNIX_PULSE__
 RTAUDIO_LIBS    += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs libpulse-simple)
 endif
+endif
+
+ifeq ($(WIN32),true)
+RTAUDIO_FLAGS   += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_WASAPI__
+RTAUDIO_LIBS    += -ldsound -luuid -lksuser -lwinmm
+RTMIDI_FLAGS    += -D__WINDOWS_MM__
 endif
 
 endif # USING_JUCE_AUDIO_DEVICES
@@ -542,15 +564,8 @@ JUCE_CORE_LIBS          = -ldl -lpthread -lrt
 JUCE_EVENTS_LIBS        = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs x11)
 JUCE_GRAPHICS_LIBS      = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs freetype2)
 JUCE_GUI_BASICS_LIBS    = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs x11 xext)
-else
-ifeq ($(HAVE_ALSA),true)
-RTAUDIO_FLAGS   += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags alsa) -D__LINUX_ALSA__
-RTAUDIO_LIBS    += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs alsa) -lpthread
-RTMIDI_FLAGS    += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags alsa) -D__LINUX_ALSA__
-RTMIDI_LIBS     += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs alsa)
-endif
-endif
-endif
+endif # USING_JUCE
+endif # LINUX
 
 ifeq ($(MACOS),true)
 HYLIA_FLAGS      = -DLINK_PLATFORM_MACOSX=1
@@ -568,13 +583,8 @@ JUCE_EVENTS_LIBS           = -framework AppKit
 JUCE_GRAPHICS_LIBS         = -framework Cocoa -framework QuartzCore
 JUCE_GUI_BASICS_LIBS       = -framework Cocoa
 JUCE_GUI_EXTRA_LIBS        = -framework IOKit
-else
-RTAUDIO_FLAGS   += -D__MACOSX_CORE__
-RTAUDIO_LIBS    += -framework CoreAudio
-RTMIDI_FLAGS    += -D__MACOSX_CORE__
-RTMIDI_LIBS     += -framework CoreMIDI
-endif
-endif
+endif # USING_JUCE
+endif # MACOS
 
 ifeq ($(WIN32),true)
 HYLIA_FLAGS      = -DLINK_PLATFORM_WINDOWS=1
@@ -588,12 +598,8 @@ JUCE_AUDIO_DEVICES_LIBS    = -lwinmm -lole32
 JUCE_CORE_LIBS             = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
 JUCE_GRAPHICS_LIBS         = -lgdi32
 JUCE_GUI_BASICS_LIBS       = -lgdi32 -limm32 -lcomdlg32 -lole32
-else
-RTAUDIO_FLAGS   += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_WASAPI__
-RTAUDIO_LIBS    += -ldsound -luuid -lksuser -lwinmm
-RTMIDI_FLAGS    += -D__WINDOWS_MM__
-endif
-endif
+endif # USING_JUCE
+endif # WIN32
 
 # ---------------------------------------------------------------------------------------------------------------------
 
