@@ -72,10 +72,10 @@ bool waitForAsyncObject(const HANDLE object, const HANDLE process = INVALID_HAND
     {
         if (process != INVALID_HANDLE_VALUE)
         {
-            switch (WaitForSingleObject(process, 0))
+            switch (::WaitForSingleObject(process, 0))
             {
             case WAIT_OBJECT_0:
-            case -1:
+            case WAIT_FAILED:
                 carla_stderr("waitForAsyncObject process has stopped");
                 return false;
             }
@@ -436,7 +436,7 @@ bool waitForProcessToStop(const HANDLE process, const uint32_t timeOutMillisecon
         switch (::WaitForSingleObject(process, 0))
         {
         case WAIT_OBJECT_0:
-        case -1:
+        case WAIT_FAILED:
             return true;
         }
 
