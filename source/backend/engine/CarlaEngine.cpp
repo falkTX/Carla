@@ -2198,67 +2198,149 @@ void CarlaEngine::saveProjectInternal(water::MemoryOutputStream& outStream) cons
     // save internal connections
     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
     {
-        if (const char* const* const patchbayConns = getPatchbayConnections(false))
+        uint posCount = 0;
+        const char* const* const patchbayConns = getPatchbayConnections(false);
+        const PatchbayPosition* const patchbayPos = getPatchbayPositions(false, posCount);
+
+        if (patchbayConns != nullptr || patchbayPos != nullptr)
         {
             MemoryOutputStream outPatchbay(2048);
 
             outPatchbay << "\n <Patchbay>\n";
 
-            for (int i=0; patchbayConns[i] != nullptr && patchbayConns[i+1] != nullptr; ++i, ++i )
+            if (patchbayConns != nullptr)
             {
-                const char* const connSource(patchbayConns[i]);
-                const char* const connTarget(patchbayConns[i+1]);
+                for (int i=0; patchbayConns[i] != nullptr && patchbayConns[i+1] != nullptr; ++i, ++i)
+                {
+                    const char* const connSource(patchbayConns[i]);
+                    const char* const connTarget(patchbayConns[i+1]);
 
-                CARLA_SAFE_ASSERT_CONTINUE(connSource != nullptr && connSource[0] != '\0');
-                CARLA_SAFE_ASSERT_CONTINUE(connTarget != nullptr && connTarget[0] != '\0');
+                    CARLA_SAFE_ASSERT_CONTINUE(connSource != nullptr && connSource[0] != '\0');
+                    CARLA_SAFE_ASSERT_CONTINUE(connTarget != nullptr && connTarget[0] != '\0');
 
-                outPatchbay << "  <Connection>\n";
-                outPatchbay << "   <Source>" << xmlSafeString(connSource, true) << "</Source>\n";
-                outPatchbay << "   <Target>" << xmlSafeString(connTarget, true) << "</Target>\n";
-                outPatchbay << "  </Connection>\n";
+                    outPatchbay << "  <Connection>\n";
+                    outPatchbay << "   <Source>" << xmlSafeString(connSource, true) << "</Source>\n";
+                    outPatchbay << "   <Target>" << xmlSafeString(connTarget, true) << "</Target>\n";
+                    outPatchbay << "  </Connection>\n";
+                }
+            }
+
+            if (patchbayPos != nullptr && posCount != 0)
+            {
+                outPatchbay << "  <Positions>\n";
+
+                for (uint i=0; i<posCount; ++i)
+                {
+                    const PatchbayPosition& ppos(patchbayPos[i]);
+
+                    CARLA_SAFE_ASSERT_CONTINUE(ppos.name != nullptr && ppos.name[0] != '\0');
+
+                    outPatchbay << "   <Position x1=\"" << ppos.x1 << "\" y1=\"" << ppos.y1;
+                    if (ppos.x2 != 0 || ppos.y2 != 0)
+                        outPatchbay << "\" x2=\"" << ppos.x2 << "\" y2=\"" << ppos.y2;
+                    outPatchbay << "\">\n";
+                    outPatchbay << "    <Name>" << xmlSafeString(ppos.name, true) << "</Name>\n";
+                    outPatchbay << "   </Position>\n";
+
+                    if (ppos.dealloc)
+                        delete[] ppos.name;
+                }
+
+                outPatchbay << "  </Positions>\n";
             }
 
             outPatchbay << " </Patchbay>\n";
             outStream << outPatchbay;
+
+            delete[] patchbayPos;
         }
+
     }
 
     // if we're running inside some session-manager (and using JACK), let them handle the connections
-    bool saveExternalConnections;
+    bool saveExternalConnections, saveExternalPositions = true;
 
     /**/ if (isPlugin)
-        saveExternalConnections = false;
-    else if (std::strcmp(getCurrentDriverName(), "JACK") != 0)
-        saveExternalConnections = true;
-    else if (std::getenv("CARLA_DONT_MANAGE_CONNECTIONS") != nullptr)
-        saveExternalConnections = false;
-    else if (std::getenv("LADISH_APP_NAME") != nullptr)
-        saveExternalConnections = false;
-    else if (std::getenv("NSM_URL") != nullptr)
-        saveExternalConnections = false;
-    else
-        saveExternalConnections = true;
-
-    if (saveExternalConnections)
     {
-        if (const char* const* const patchbayConns = getPatchbayConnections(true))
+        saveExternalConnections = false;
+        saveExternalPositions = false;
+    }
+    else if (std::strcmp(getCurrentDriverName(), "JACK") != 0)
+    {
+        saveExternalConnections = true;
+    }
+    else if (std::getenv("CARLA_DONT_MANAGE_CONNECTIONS") != nullptr)
+    {
+        saveExternalConnections = false;
+    }
+    else if (std::getenv("LADISH_APP_NAME") != nullptr)
+    {
+        saveExternalConnections = false;
+    }
+    else if (std::getenv("NSM_URL") != nullptr)
+    {
+        saveExternalConnections = false;
+    }
+    else
+    {
+        saveExternalConnections = true;
+    }
+
+    if (saveExternalConnections || saveExternalPositions)
+    {
+        uint posCount = 0;
+        const char* const* const patchbayConns = saveExternalConnections
+                                               ? getPatchbayConnections(true)
+                                               : nullptr;
+        const PatchbayPosition* const patchbayPos = saveExternalPositions
+                                                  ? getPatchbayPositions(true, posCount)
+                                                  : nullptr;
+
+        if (patchbayConns != nullptr || patchbayPos != nullptr)
         {
             MemoryOutputStream outPatchbay(2048);
 
             outPatchbay << "\n <ExternalPatchbay>\n";
 
-            for (int i=0; patchbayConns[i] != nullptr && patchbayConns[i+1] != nullptr; ++i, ++i )
+            if (patchbayConns != nullptr)
             {
-                const char* const connSource(patchbayConns[i]);
-                const char* const connTarget(patchbayConns[i+1]);
+                for (int i=0; patchbayConns[i] != nullptr && patchbayConns[i+1] != nullptr; ++i, ++i )
+                {
+                    const char* const connSource(patchbayConns[i]);
+                    const char* const connTarget(patchbayConns[i+1]);
 
-                CARLA_SAFE_ASSERT_CONTINUE(connSource != nullptr && connSource[0] != '\0');
-                CARLA_SAFE_ASSERT_CONTINUE(connTarget != nullptr && connTarget[0] != '\0');
+                    CARLA_SAFE_ASSERT_CONTINUE(connSource != nullptr && connSource[0] != '\0');
+                    CARLA_SAFE_ASSERT_CONTINUE(connTarget != nullptr && connTarget[0] != '\0');
 
-                outPatchbay << "  <Connection>\n";
-                outPatchbay << "   <Source>" << xmlSafeString(connSource, true) << "</Source>\n";
-                outPatchbay << "   <Target>" << xmlSafeString(connTarget, true) << "</Target>\n";
-                outPatchbay << "  </Connection>\n";
+                    outPatchbay << "  <Connection>\n";
+                    outPatchbay << "   <Source>" << xmlSafeString(connSource, true) << "</Source>\n";
+                    outPatchbay << "   <Target>" << xmlSafeString(connTarget, true) << "</Target>\n";
+                    outPatchbay << "  </Connection>\n";
+                }
+            }
+
+            if (patchbayPos != nullptr && posCount != 0)
+            {
+                outPatchbay << "  <Positions>\n";
+
+                for (uint i=0; i<posCount; ++i)
+                {
+                    const PatchbayPosition& ppos(patchbayPos[i]);
+
+                    CARLA_SAFE_ASSERT_CONTINUE(ppos.name != nullptr && ppos.name[0] != '\0');
+
+                    outPatchbay << "   <Position x1=\"" << ppos.x1 << "\" y1=\"" << ppos.y1;
+                    if (ppos.x2 != 0 || ppos.y2 != 0)
+                        outPatchbay << "\" x2=\"" << ppos.x2 << "\" y2=\"" << ppos.y2;
+                    outPatchbay << "\">\n";
+                    outPatchbay << "    <Name>" << xmlSafeString(ppos.name, true) << "</Name>\n";
+                    outPatchbay << "   </Position>\n";
+
+                    if (ppos.dealloc)
+                        delete[] ppos.name;
+                }
+
+                outPatchbay << "  </Positions>\n";
             }
 
             outPatchbay << " </ExternalPatchbay>\n";
@@ -2843,8 +2925,9 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
     // plus external connections too
     if (loadExternalConnections)
     {
-        const bool loadingAsExternal = pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY &&
-                                       hasInternalConnections;
+        bool loadingAsExternal = hasInternalConnections &&
+            (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
+             pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY);
 
         for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
         {
@@ -2857,7 +2940,11 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                     continue;
             }
             // or load external patchbay connections
-            else if (tagName != "ExternalPatchbay")
+            else if (tagName == "ExternalPatchbay")
+            {
+                loadingAsExternal = true;
+            }
+            else
             {
                 continue;
             }
@@ -2889,6 +2976,82 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                     restorePatchbayConnection(loadingAsExternal, sourcePort, targetPort);
             }
             break;
+        }
+    }
+
+    // finally, we handle positions
+    if (XmlElement* const elemPatchbay = xmlElement->getChildByName("Patchbay"))
+    {
+        if (XmlElement* const elemPositions = elemPatchbay->getChildByName("Positions"))
+        {
+            String name;
+            PatchbayPosition ppos = { nullptr, 0, 0, 0, 0, false };
+
+            for (XmlElement* patchElem = elemPositions->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
+            {
+                const String& patchTag(patchElem->getTagName());
+
+                if (patchTag != "Position")
+                    continue;
+
+                XmlElement* const patchName = patchElem->getChildByName("Name");
+                CARLA_SAFE_ASSERT_CONTINUE(patchName != nullptr);
+
+                const String nameText(patchName->getAllSubText().trim());
+                name = xmlSafeString(nameText, false);
+
+                ppos.name = name.toRawUTF8();
+                ppos.x1 = patchElem->getIntAttribute("x1");
+                ppos.y1 = patchElem->getIntAttribute("y1");
+                ppos.x2 = patchElem->getIntAttribute("x2");
+                ppos.y2 = patchElem->getIntAttribute("y2");
+
+                if (name.isNotEmpty())
+                    restorePatchbayGroupPosition(false, ppos);
+            }
+
+            callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+
+            if (pData->aboutToClose)
+                return true;
+
+            if (pData->actionCanceled)
+            {
+                setLastError("Project load canceled");
+                return false;
+            }
+        }
+    }
+
+    if (XmlElement* const elemPatchbay = xmlElement->getChildByName("ExternalPatchbay"))
+    {
+        if (XmlElement* const elemPositions = elemPatchbay->getChildByName("Positions"))
+        {
+            String name;
+            PatchbayPosition ppos = { nullptr, 0, 0, 0, 0, false };
+
+            for (XmlElement* patchElem = elemPositions->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
+            {
+                const String& patchTag(patchElem->getTagName());
+
+                if (patchTag != "Position")
+                    continue;
+
+                XmlElement* const patchName = patchElem->getChildByName("Name");
+                CARLA_SAFE_ASSERT_CONTINUE(patchName != nullptr);
+
+                const String nameText(patchName->getAllSubText().trim());
+                name = xmlSafeString(nameText, false);
+
+                ppos.name = name.toRawUTF8();
+                ppos.x1 = patchElem->getIntAttribute("x1");
+                ppos.y1 = patchElem->getIntAttribute("y1");
+                ppos.x2 = patchElem->getIntAttribute("x2");
+                ppos.y2 = patchElem->getIntAttribute("y2");
+
+                if (name.isNotEmpty())
+                    restorePatchbayGroupPosition(true, ppos);
+            }
         }
     }
 #endif

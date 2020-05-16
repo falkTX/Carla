@@ -138,6 +138,36 @@ class CanvasObject(QObject):
 
         CanvasCallback(ACTION_PORTS_DISCONNECT, connectionId, 0, "")
 
+    @pyqtSlot(int, bool, int, int)
+    def boxPositionChanged(self, groupId, split, x, y):
+        x2 = y2 = 0
+
+        if split:
+            for group in canvas.group_list:
+                if group.group_id == groupId:
+                    if group.split:
+                        pos = group.widgets[1].pos()
+                        x2  = pos.x()
+                        y2  = pos.y()
+                    break
+
+        valueStr = "%i:%i:%i:%i" % (x, y, x2, y2)
+        CanvasCallback(ACTION_GROUP_POSITION, groupId, 0, valueStr)
+
+    @pyqtSlot(int, bool, int, int)
+    def sboxPositionChanged(self, groupId, split, x2, y2):
+        x = y = 0
+
+        for group in canvas.group_list:
+            if group.group_id == groupId:
+                pos = group.widgets[0].pos()
+                x = pos.x()
+                y = pos.y()
+                break
+
+        valueStr = "%i:%i:%i:%i" % (x, y, x2, y2)
+        CanvasCallback(ACTION_GROUP_POSITION, groupId, 0, valueStr)
+
 # ------------------------------------------------------------------------------------------------------------
 
 def getStoredCanvasPosition(key, fallback_pos):
@@ -201,11 +231,17 @@ def clear():
     if canvas.debug:
         print("PatchCanvas::clear()")
 
+    group_pos = {}
     group_list_ids = []
     port_list_ids = []
     connection_list_ids = []
 
     for group in canvas.group_list:
+        group_pos[group.group_name] = (
+            group.split,
+            group.widgets[0].pos(),
+            group.widgets[1].pos() if group.split else None,
+        )
         group_list_ids.append(group.group_id)
 
     for port in canvas.port_list:
@@ -230,6 +266,7 @@ def clear():
     canvas.port_list = []
     canvas.connection_list = []
     canvas.group_plugin_map = {}
+    canvas.old_group_pos = group_pos
 
     canvas.scene.clearSelection()
 
@@ -278,6 +315,8 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
                      group_id, group_name.encode(), split2str(split), icon2str(icon)))
             return
 
+    old_matching_group = canvas.old_group_pos.pop(group_name, None)
+
     if split == SPLIT_UNDEF:
         isHardware = bool(icon == ICON_HARDWARE)
 
@@ -285,8 +324,11 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
             split = getStoredCanvasSplit(group_name, SPLIT_YES if isHardware else split)
         elif isHardware:
             split = SPLIT_YES
+        elif old_matching_group is not None and old_matching_group[0]:
+            split = SPLIT_YES
 
     group_box = CanvasBox(group_id, group_name, icon)
+    group_box.positionChanged.connect(canvas.qobject.boxPositionChanged)
 
     group_dict = group_dict_t()
     group_dict.group_id = group_id
@@ -301,20 +343,29 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
     if split == SPLIT_YES:
         group_box.setSplit(True, PORT_MODE_OUTPUT)
 
+        group_box.blockSignals(True)
         if features.handle_group_pos:
             group_box.setPos(getStoredCanvasPosition(group_name + "_OUTPUT", CanvasGetNewGroupPos(False)))
+        elif old_matching_group is not None:
+            group_box.setPos(old_matching_group[1])
         else:
             group_box.setPos(CanvasGetNewGroupPos(False))
+        group_box.blockSignals(False)
 
         group_sbox = CanvasBox(group_id, group_name, icon)
         group_sbox.setSplit(True, PORT_MODE_INPUT)
+        group_sbox.positionChanged.connect(canvas.qobject.sboxPositionChanged)
 
         group_dict.widgets[1] = group_sbox
 
+        group_sbox.blockSignals(True)
         if features.handle_group_pos:
             group_sbox.setPos(getStoredCanvasPosition(group_name + "_INPUT", CanvasGetNewGroupPos(True)))
+        elif old_matching_group is not None and old_matching_group[0]:
+            group_sbox.setPos(old_matching_group[2])
         else:
             group_sbox.setPos(CanvasGetNewGroupPos(True))
+        group_sbox.blockSignals(False)
 
         canvas.last_z_value += 1
         group_sbox.setZValue(canvas.last_z_value)
@@ -322,19 +373,21 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
         if options.eyecandy == EYECANDY_FULL and not options.auto_hide_groups:
             CanvasItemFX(group_sbox, True, False)
 
-        group_sbox.checkItemPos()
+        group_sbox.checkItemPos(True)
 
     else:
         group_box.setSplit(False)
 
         if features.handle_group_pos:
             group_box.setPos(getStoredCanvasPosition(group_name, CanvasGetNewGroupPos(False)))
+        elif old_matching_group is not None:
+            group_box.setPos(old_matching_group[1])
         else:
             # Special ladish fake-split groups
             horizontal = bool(icon == ICON_HARDWARE or icon == ICON_LADISH_ROOM)
             group_box.setPos(CanvasGetNewGroupPos(horizontal))
 
-    group_box.checkItemPos()
+    group_box.checkItemPos(True)
 
     canvas.last_z_value += 1
     group_box.setZValue(canvas.last_z_value)
@@ -630,10 +683,14 @@ def restoreGroupPositions(dataList):
         if group is None:
             continue
 
+        group.widgets[0].blockSignals(True)
         group.widgets[0].setPos(data['pos1x'], data['pos1y'])
+        group.widgets[0].blockSignals(False)
 
         if group.split and group.widgets[1]:
+            group.widgets[1].blockSignals(True)
             group.widgets[1].setPos(data['pos2x'], data['pos2y'])
+            group.widgets[1].blockSignals(False)
 
 def setGroupPos(group_id, group_pos_x, group_pos_y):
     setGroupPosFull(group_id, group_pos_x, group_pos_y, group_pos_x, group_pos_y)
@@ -645,10 +702,14 @@ def setGroupPosFull(group_id, group_pos_x_o, group_pos_y_o, group_pos_x_i, group
 
     for group in canvas.group_list:
         if group.group_id == group_id:
+            group.widgets[0].blockSignals(True)
             group.widgets[0].setPos(group_pos_x_o, group_pos_y_o)
+            group.widgets[0].blockSignals(False)
 
             if group.split and group.widgets[1]:
+                group.widgets[1].blockSignals(True)
                 group.widgets[1].setPos(group_pos_x_i, group_pos_y_i)
+                group.widgets[1].blockSignals(False)
 
             QTimer.singleShot(0, canvas.scene.update)
             return

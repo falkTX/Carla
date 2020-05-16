@@ -22,9 +22,9 @@
 from sip import voidptr
 from struct import pack
 
-from PyQt5.QtCore import qCritical, Qt, QPointF, QRectF, QTimer
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, qCritical, Qt, QPointF, QRectF, QTimer
 from PyQt5.QtGui import QCursor, QFont, QFontMetrics, QImage, QLinearGradient, QPainter, QPen
-from PyQt5.QtWidgets import QGraphicsItem, QMenu
+from PyQt5.QtWidgets import QGraphicsItem, QGraphicsObject, QMenu
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -75,13 +75,17 @@ class cb_line_t(object):
 
 # ------------------------------------------------------------------------------------------------------------
 
-class CanvasBox(QGraphicsItem):
+class CanvasBox(QGraphicsObject):
+    # signals
+    positionChanged = pyqtSignal(int, bool, int, int)
+
+    # enums
     INLINE_DISPLAY_DISABLED = 0
     INLINE_DISPLAY_ENABLED  = 1
     INLINE_DISPLAY_CACHED   = 2
 
     def __init__(self, group_id, group_name, icon, parent=None):
-        QGraphicsItem.__init__(self)
+        QGraphicsObject.__init__(self)
         self.setParentItem(parent)
 
         # Save Variables, useful for later
@@ -109,6 +113,7 @@ class CanvasBox(QGraphicsItem):
         self.m_inline_data = None
         self.m_inline_image = None
         self.m_inline_scaling = 1.0
+        self.m_will_signal_pos_change = False
 
         self.m_port_list_ids = []
         self.m_connection_lines = []
@@ -152,6 +157,10 @@ class CanvasBox(QGraphicsItem):
             self.setAcceptHoverEvents(True)
 
         self.updatePositions()
+
+        self.visibleChanged.connect(self.slot_signalPositionChangedLater)
+        self.xChanged.connect(self.slot_signalPositionChangedLater)
+        self.yChanged.connect(self.slot_signalPositionChangedLater)
 
         canvas.scene.addItem(self)
         QTimer.singleShot(0, self.fixPos)
@@ -270,21 +279,31 @@ class CanvasBox(QGraphicsItem):
                 return
         qCritical("PatchCanvas::CanvasBox.removeLineFromGroup(%i) - unable to find line to remove" % connection_id)
 
-    def checkItemPos(self):
-        if not canvas.size_rect.isNull():
-            pos = self.scenePos()
-            if not (canvas.size_rect.contains(pos) and
-                    canvas.size_rect.contains(pos + QPointF(self.p_width, self.p_height))):
-                if pos.x() < canvas.size_rect.x():
-                    self.setPos(canvas.size_rect.x(), pos.y())
-                elif pos.x() + self.p_width > canvas.size_rect.width():
-                    self.setPos(canvas.size_rect.width() - self.p_width, pos.y())
+    def checkItemPos(self, blockSignals):
+        if canvas.size_rect.isNull():
+            return
 
-                pos = self.scenePos()
-                if pos.y() < canvas.size_rect.y():
-                    self.setPos(pos.x(), canvas.size_rect.y())
-                elif pos.y() + self.p_height > canvas.size_rect.height():
-                    self.setPos(pos.x(), canvas.size_rect.height() - self.p_height)
+        pos = self.scenePos()
+        if (canvas.size_rect.contains(pos) and
+            canvas.size_rect.contains(pos + QPointF(self.p_width, self.p_height))):
+            return
+
+        if blockSignals:
+            self.blockSignals(True)
+
+        if pos.x() < canvas.size_rect.x():
+            self.setPos(canvas.size_rect.x(), pos.y())
+        elif pos.x() + self.p_width > canvas.size_rect.width():
+            self.setPos(canvas.size_rect.width() - self.p_width, pos.y())
+
+        pos = self.scenePos()
+        if pos.y() < canvas.size_rect.y():
+            self.setPos(pos.x(), canvas.size_rect.y())
+        elif pos.y() + self.p_height > canvas.size_rect.height():
+            self.setPos(pos.x(), canvas.size_rect.height() - self.p_height)
+
+        if blockSignals:
+            self.blockSignals(False)
 
     def removeIconFromScene(self):
         if self.icon_svg is None:
@@ -388,6 +407,17 @@ class CanvasBox(QGraphicsItem):
                 z_value = canvas.last_z_value - 1
 
             connection.widget.setZValue(z_value)
+
+    def triggerSignalPositionChanged(self):
+        self.positionChanged.emit(self.m_group_id, self.m_splitted, self.x(), self.y())
+        self.m_will_signal_pos_change = False
+
+    @pyqtSlot()
+    def slot_signalPositionChangedLater(self):
+        if self.m_will_signal_pos_change:
+            return
+        self.m_will_signal_pos_change = True
+        QTimer.singleShot(0, self.triggerSignalPositionChanged)
 
     def type(self):
         return CanvasBoxType
@@ -570,14 +600,14 @@ class CanvasBox(QGraphicsItem):
             event.accept()
             canvas.callback(ACTION_PLUGIN_REMOVE, self.m_plugin_id, 0, "")
             return
-        QGraphicsItem.keyPressEvent(self, event)
+        QGraphicsObject.keyPressEvent(self, event)
 
     def hoverEnterEvent(self, event):
         if options.auto_select_items:
             if len(canvas.scene.selectedItems()) > 0:
                 canvas.scene.clearSelection()
             self.setSelected(True)
-        QGraphicsItem.hoverEnterEvent(self, event)
+        QGraphicsObject.hoverEnterEvent(self, event)
 
     def mouseDoubleClickEvent(self, event):
         if self.m_plugin_id >= 0:
@@ -585,7 +615,7 @@ class CanvasBox(QGraphicsItem):
             canvas.callback(ACTION_PLUGIN_SHOW_UI if self.m_plugin_ui else ACTION_PLUGIN_EDIT, self.m_plugin_id, 0, "")
             return
 
-        QGraphicsItem.mouseDoubleClickEvent(self, event)
+        QGraphicsObject.mouseDoubleClickEvent(self, event)
 
     def mousePressEvent(self, event):
         canvas.last_z_value += 1
@@ -612,7 +642,7 @@ class CanvasBox(QGraphicsItem):
         else:
             self.m_mouse_down = False
 
-        QGraphicsItem.mousePressEvent(self, event)
+        QGraphicsObject.mousePressEvent(self, event)
 
     def mouseMoveEvent(self, event):
         if self.m_mouse_down:
@@ -620,7 +650,7 @@ class CanvasBox(QGraphicsItem):
                 self.setCursor(QCursor(Qt.SizeAllCursor))
                 self.m_cursor_moving = True
             self.repaintLines()
-        QGraphicsItem.mouseMoveEvent(self, event)
+        QGraphicsObject.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
         if self.m_cursor_moving:
@@ -628,11 +658,13 @@ class CanvasBox(QGraphicsItem):
             QTimer.singleShot(0, self.fixPos)
         self.m_mouse_down = False
         self.m_cursor_moving = False
-        QGraphicsItem.mouseReleaseEvent(self, event)
+        QGraphicsObject.mouseReleaseEvent(self, event)
 
     def fixPos(self):
+        self.blockSignals(True)
         self.setX(round(self.x()))
         self.setY(round(self.y()))
+        self.blockSignals(False)
 
     def boundingRect(self):
         return QRectF(0, 0, self.p_width, self.p_height)

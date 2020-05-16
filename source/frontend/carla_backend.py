@@ -818,6 +818,14 @@ ENGINE_CALLBACK_PATCHBAY_PORT_GROUP_CHANGED = 45
 # @a valueStr New mapped range as "%f:%f" syntax
 ENGINE_CALLBACK_PARAMETER_MAPPED_RANGE_CHANGED = 46
 
+# A patchbay client position has changed.
+# @a pluginId Client Id
+# @a value1   X position 1
+# @a value2   Y position 1
+# @a value3   X position 2
+# @a valuef   Y position 2
+ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED = 47
+
 # ------------------------------------------------------------------------------------------------------------
 # NSM Callback Opcode
 # NSM callback opcodes.
@@ -1678,6 +1686,14 @@ class CarlaHostMeta(object):
     def patchbay_disconnect(self, external, connectionId):
         raise NotImplementedError
 
+    # Set the position of a group.
+    # This is purely cached and saved in the project file, Carla backend does nothing with the value.
+    # When loading a project, callbacks are used to inform of the previously saved positions.
+    # @see ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED
+    @abstractmethod
+    def patchbay_set_group_pos(self, external, groupId, x1, y1, x2, y2):
+        raise NotImplementedError
+
     # Force the engine to resend all patchbay clients, ports and connections again.
     # @param external Wherever to show external/hardware ports instead of internal ones.
     #                 Only valid in patchbay engine mode, other modes will ignore this.
@@ -2306,6 +2322,9 @@ class CarlaHostNull(CarlaHostMeta):
     def patchbay_disconnect(self, external, connectionId):
         return False
 
+    def patchbay_set_group_pos(self, external, groupId, x1, y1, x2, y2):
+        return False
+
     def patchbay_refresh(self, external):
         return False
 
@@ -2624,6 +2643,9 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_patchbay_disconnect.argtypes = (c_void_p, c_bool, c_uint)
         self.lib.carla_patchbay_disconnect.restype = c_bool
 
+        self.lib.carla_patchbay_set_group_pos.argtypes = (c_void_p, c_bool, c_uint, c_int, c_int, c_int, c_int)
+        self.lib.carla_patchbay_set_group_pos.restype = c_bool
+
         self.lib.carla_patchbay_refresh.argtypes = (c_void_p, c_bool)
         self.lib.carla_patchbay_refresh.restype = c_bool
 
@@ -2932,6 +2954,9 @@ class CarlaHostDLL(CarlaHostMeta):
 
     def patchbay_disconnect(self, external, connectionId):
         return bool(self.lib.carla_patchbay_disconnect(self.handle, external, connectionId))
+
+    def patchbay_set_group_pos(self, external, groupId, x1, y1, x2, y2):
+        return bool(self.lib.carla_patchbay_set_group_pos(self.handle, external, groupId, x1, y1, x2, y2))
 
     def patchbay_refresh(self, external):
         return bool(self.lib.carla_patchbay_refresh(self.handle, external))
@@ -3324,6 +3349,9 @@ class CarlaHostPlugin(CarlaHostMeta):
 
     def patchbay_disconnect(self, external, connectionId):
         return self.sendMsgAndSetError(["patchbay_disconnect", external, connectionId])
+
+    def patchbay_set_group_pos(self, external, groupId, x1, y1, x2, y2):
+        return self.sendMsgAndSetError(["patchbay_set_group_pos", external, groupId, x1, y1, x2, y2])
 
     def patchbay_refresh(self, external):
         return self.sendMsgAndSetError(["patchbay_refresh", external])

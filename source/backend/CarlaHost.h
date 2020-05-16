@@ -551,6 +551,15 @@ CARLA_EXPORT bool carla_patchbay_connect(CarlaHostHandle handle, bool external, 
 CARLA_EXPORT bool carla_patchbay_disconnect(CarlaHostHandle handle, bool external, uint connectionId);
 
 /*!
+ * Set the position of a group.
+ * This is purely cached and saved in the project file, Carla backend does nothing with the value.
+ * When loading a project, callbacks are used to inform of the previously saved positions.
+ * @see ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED
+ */
+CARLA_EXPORT bool carla_patchbay_set_group_pos(CarlaHostHandle handle, bool external,
+                                               uint groupId, int x1, int y1, int x2, int y2);
+
+/*!
  * Force the engine to resend all patchbay clients, ports and connections again.
  * @param external Wherever to show external/hardware ports instead of internal ones.
  *                 Only valid in patchbay engine mode, other modes will ignore this.

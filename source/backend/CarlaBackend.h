@@ -1141,7 +1141,17 @@ typedef enum {
      * @a value1   Parameter index
      * @a valueStr New mapped range as "%f:%f" syntax
      */
-    ENGINE_CALLBACK_PARAMETER_MAPPED_RANGE_CHANGED = 46
+    ENGINE_CALLBACK_PARAMETER_MAPPED_RANGE_CHANGED = 46,
+
+    /*!
+     * A patchbay client position has changed.
+     * @a pluginId Client Id
+     * @a value1   X position 1
+     * @a value2   Y position 1
+     * @a value3   X position 2
+     * @a valuef   Y position 2
+     */
+    ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED = 47,
 
 } EngineCallbackOpcode;
 

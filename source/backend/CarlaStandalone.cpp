@@ -970,6 +970,16 @@ bool carla_patchbay_disconnect(CarlaHostHandle handle, bool external, uint conne
     return handle->engine->patchbayDisconnect(external, connectionId);
 }
 
+bool carla_patchbay_set_group_pos(CarlaHostHandle handle, bool external, uint groupId, int x1, int y1, int x2, int y2)
+{
+    CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(handle->engine != nullptr, "Engine is not initialized", false);
+
+    carla_debug("carla_patchbay_set_group_pos(%p, %s, %u, %i, %i, %i, %i)",
+                handle, bool2str(external), groupId, x1, y1, x2, y2);
+
+    return handle->engine->patchbaySetGroupPos(true, false, external, groupId, x1, y1, x2, y2);
+}
+
 bool carla_patchbay_refresh(CarlaHostHandle handle, bool external)
 {
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(handle->engine != nullptr, "Engine is not initialized", false);

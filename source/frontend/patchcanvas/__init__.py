@@ -49,18 +49,19 @@ ACTION_GROUP_INFO       =  0 # group_id, N, N
 ACTION_GROUP_RENAME     =  1 # group_id, N, N
 ACTION_GROUP_SPLIT      =  2 # group_id, N, N
 ACTION_GROUP_JOIN       =  3 # group_id, N, N
-ACTION_PORT_INFO        =  4 # group_id, port_id, N
-ACTION_PORT_RENAME      =  5 # group_id, port_id, N
-ACTION_PORTS_CONNECT    =  6 # N, N, "outG:outP:inG:inP"
-ACTION_PORTS_DISCONNECT =  7 # conn_id, N, N
-ACTION_PLUGIN_CLONE     =  8 # plugin_id, N, N
-ACTION_PLUGIN_EDIT      =  9 # plugin_id, N, N
-ACTION_PLUGIN_RENAME    = 10 # plugin_id, N, N
-ACTION_PLUGIN_REPLACE   = 11 # plugin_id, N, N
-ACTION_PLUGIN_REMOVE    = 12 # plugin_id, N, N
-ACTION_PLUGIN_SHOW_UI   = 13 # plugin_id, N, N
-ACTION_BG_RIGHT_CLICK   = 14 # N, N, N
-ACTION_INLINE_DISPLAY   = 15 # plugin_id, N, N
+ACTION_GROUP_POSITION   =  4 # group_id, N, N, "x1:y1:x2:y2"
+ACTION_PORT_INFO        =  5 # group_id, port_id, N
+ACTION_PORT_RENAME      =  6 # group_id, port_id, N
+ACTION_PORTS_CONNECT    =  7 # N, N, "outG:outP:inG:inP"
+ACTION_PORTS_DISCONNECT =  8 # conn_id, N, N
+ACTION_PLUGIN_CLONE     =  9 # plugin_id, N, N
+ACTION_PLUGIN_EDIT      = 10 # plugin_id, N, N
+ACTION_PLUGIN_RENAME    = 11 # plugin_id, N, N
+ACTION_PLUGIN_REPLACE   = 12 # plugin_id, N, N
+ACTION_PLUGIN_REMOVE    = 13 # plugin_id, N, N
+ACTION_PLUGIN_SHOW_UI   = 14 # plugin_id, N, N
+ACTION_BG_RIGHT_CLICK   = 15 # N, N, N
+ACTION_INLINE_DISPLAY   = 16 # plugin_id, N, N
 
 # Icon
 ICON_APPLICATION = 0
@@ -134,6 +135,7 @@ class Canvas(object):
         self.connection_list = []
         self.animation_list = []
         self.group_plugin_map = {}
+        self.old_group_pos = {}
 
         self.callback = self.callback
         self.debug = False

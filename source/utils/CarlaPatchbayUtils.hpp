@@ -1,6 +1,6 @@
 /*
  * Carla patchbay utils
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -27,7 +27,7 @@
 
 struct GroupNameToId {
     uint group;
-    char name[STR_MAX+1]; // globally unique
+    char name[STR_MAX]; // globally unique
 
     void clear() noexcept
     {
@@ -43,15 +43,15 @@ struct GroupNameToId {
 
     void rename(const char n[]) noexcept
     {
-        std::strncpy(name, n, STR_MAX);
-        name[STR_MAX] = '\0';
+        std::strncpy(name, n, STR_MAX-1);
+        name[STR_MAX-1] = '\0';
     }
 
     bool operator==(const GroupNameToId& groupNameToId) const noexcept
     {
         if (groupNameToId.group != group)
             return false;
-        if (std::strncmp(groupNameToId.name, name, STR_MAX) != 0)
+        if (std::strncmp(groupNameToId.name, name, STR_MAX-1) != 0)
             return false;
         return true;
     }
@@ -65,10 +65,12 @@ struct GroupNameToId {
 struct PatchbayGroupList {
     uint lastId;
     LinkedList<GroupNameToId> list;
+    CarlaMutex mutex;
 
     PatchbayGroupList() noexcept
         : lastId(0),
-          list() {}
+          list(),
+          mutex() {}
 
     void clear() noexcept
     {
@@ -87,8 +89,8 @@ struct PatchbayGroupList {
 struct PortNameToId {
     uint group;
     uint port;
-    char name[STR_MAX+1]; // locally unique (within the same group)
-    char fullName[STR_MAX+1]; // globally unique
+    char name[STR_MAX]; // locally unique (within the same group)
+    char fullName[STR_MAX]; // globally unique
 
     void clear() noexcept
     {
@@ -107,26 +109,26 @@ struct PortNameToId {
 
     void setFullName(const char fn[]) noexcept
     {
-        std::strncpy(fullName, fn, STR_MAX);
-        fullName[STR_MAX] = '\0';
+        std::strncpy(fullName, fn, STR_MAX-1);
+        fullName[STR_MAX-1] = '\0';
     }
 
     void rename(const char n[], const char fn[]) noexcept
     {
-        std::strncpy(name, n, STR_MAX);
-        name[STR_MAX] = '\0';
+        std::strncpy(name, n, STR_MAX-1);
+        name[STR_MAX-1] = '\0';
 
-        std::strncpy(fullName, fn, STR_MAX);
-        fullName[STR_MAX] = '\0';
+        std::strncpy(fullName, fn, STR_MAX-1);
+        fullName[STR_MAX-1] = '\0';
     }
 
     bool operator==(const PortNameToId& portNameToId) noexcept
     {
         if (portNameToId.group != group || portNameToId.port != port)
             return false;
-        if (std::strncmp(portNameToId.name, name, STR_MAX) != 0)
+        if (std::strncmp(portNameToId.name, name, STR_MAX-1) != 0)
             return false;
-        if (std::strncmp(portNameToId.fullName, fullName, STR_MAX) != 0)
+        if (std::strncmp(portNameToId.fullName, fullName, STR_MAX-1) != 0)
             return false;
         return true;
     }
@@ -140,10 +142,12 @@ struct PortNameToId {
 struct PatchbayPortList {
     uint lastId;
     LinkedList<PortNameToId> list;
+    CarlaMutex mutex;
 
     PatchbayPortList() noexcept
         : lastId(0),
-          list() {}
+          list(),
+          mutex() {}
 
     void clear() noexcept
     {

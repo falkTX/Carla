@@ -58,7 +58,6 @@ class RubberbandRect(QGraphicsRectItem):
 
 class PatchScene(QGraphicsScene):
     scaleChanged = pyqtSignal(float)
-    sceneGroupMoved = pyqtSignal(int, int, QPointF)
     pluginSelected = pyqtSignal(list)
 
     def __init__(self, parent, view):
@@ -367,8 +366,7 @@ class PatchScene(QGraphicsScene):
             items_list = self.selectedItems()
             for item in items_list:
                 if item and item.isVisible() and item.type() == CanvasBoxType:
-                    item.checkItemPos()
-                    self.sceneGroupMoved.emit(item.getGroupId(), item.getSplittedMode(), item.scenePos())
+                    item.checkItemPos(False)
 
             if len(items_list) > 1:
                 canvas.scene.update()

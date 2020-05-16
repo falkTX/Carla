@@ -1169,6 +1169,12 @@ public:
     virtual bool patchbayDisconnect(bool external, uint connectionId);
 
     /*!
+     * Set the position of a group.
+     */
+    virtual bool patchbaySetGroupPos(bool sendHost, bool sendOSC, bool external,
+                                     uint groupId, int x1, int y1, int x2, int y2);
+
+    /*!
      * Force the engine to resend all patchbay clients, ports and connections again.
      */
     virtual bool patchbayRefresh(bool sendHost, bool sendOSC, bool external);
@@ -1348,10 +1354,11 @@ protected:
      * Virtual functions for handling patchbay state.
      * Do not free returned data.
      */
+    struct PatchbayPosition { const char* name; int x1, y1, x2, y2; bool dealloc; };
     virtual const char* const* getPatchbayConnections(bool external) const;
-    virtual void restorePatchbayConnection(bool external,
-                                           const char* sourcePort,
-                                           const char* targetPort);
+    virtual const PatchbayPosition* getPatchbayPositions(bool external, uint& count) const;
+    virtual void restorePatchbayConnection(bool external, const char* sourcePort, const char* targetPort);
+    virtual void restorePatchbayGroupPosition(bool external, const PatchbayPosition& ppos);
 
     /*!
      * Virtual functions for handling external graph ports.

@@ -56,6 +56,7 @@
 #define URI_CANVAS_ICON "http://kxstudio.sf.net/ns/canvas/icon"
 
 #define URI_MAIN_CLIENT_NAME "https://kx.studio/ns/carla/main-client-name"
+#define URI_POSITION         "https://kx.studio/ns/carla/position"
 #define URI_PLUGIN_ICON      "https://kx.studio/ns/carla/plugin-icon"
 #define URI_PLUGIN_ID        "https://kx.studio/ns/carla/plugin-id"
 
@@ -111,8 +112,11 @@ struct CarlaJackPortHints {
 // -----------------------------------------------------------------------
 // Fallback data
 
-static const EngineEvent kFallbackJackEngineEvent = { kEngineEventTypeNull, 0, 0, {{ kEngineControlEventTypeNull, 0, 0.0f }} };
-//static CarlaEngineEventCV kFallbackEngineEventCV = { nullptr, (uint32_t)-1, 0.0f };
+static const GroupNameToId  kGroupNameToIdFallback   = { 0, { '\0' } };
+static const PortNameToId   kPortNameToIdFallback    = { 0, 0, { '\0' }, { '\0' } };
+static /* */ PortNameToId   kPortNameToIdFallbackNC  = { 0, 0, { '\0' }, { '\0' } };
+static const ConnectionToId kConnectionToIdFallback  = { 0, 0, 0, 0, 0 };
+static const EngineEvent    kFallbackJackEngineEvent = { kEngineEventTypeNull, 0, 0, {{ kEngineControlEventTypeNull, 0, 0.0f }} };
 
 // -----------------------------------------------------------------------
 // Carla Engine Port removal helper
@@ -1896,45 +1900,69 @@ public:
 
                 stopThread(-1);
 
-                const uint groupId(fUsedGroups.getGroupId(plugin->getName()));
+                LinkedList<PortNameToId> ports;
+                LinkedList<ConnectionToId> conns;
 
-                if (groupId > 0)
                 {
-                    for (LinkedList<PortNameToId>::Itenerator it = fUsedPorts.list.begin2(); it.valid(); it.next())
-                    {
-                        for (LinkedList<ConnectionToId>::Itenerator it2 = fUsedConnections.list.begin2(); it2.valid(); it2.next())
-                        {
-                            static ConnectionToId connectionFallback = { 0, 0, 0, 0, 0 };
+                    const CarlaMutexLocker cml1(fUsedGroups.mutex);
 
-                            ConnectionToId& connectionToId = it2.getValue(connectionFallback);
+                    if (const uint groupId = fUsedGroups.getGroupId(plugin->getName()))
+                    {
+                        const CarlaMutexLocker cml2(fUsedPorts.mutex);
+
+                        for (LinkedList<PortNameToId>::Itenerator it = fUsedPorts.list.begin2(); it.valid(); it.next())
+                        {
+                            const PortNameToId& portNameToId(it.getValue(kPortNameToIdFallback));
+                            CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group != 0);
+
+                            if (portNameToId.group != groupId)
+                                continue;
+
+                            ports.append(portNameToId);
+                            fUsedPorts.list.remove(it);
+                        }
+
+                        const CarlaMutexLocker cml3(fUsedConnections.mutex);
+
+                        for (LinkedList<ConnectionToId>::Itenerator it = fUsedConnections.list.begin2(); it.valid(); it.next())
+                        {
+                            const ConnectionToId& connectionToId = it.getValue(kConnectionToIdFallback);
                             CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
 
                             if (connectionToId.groupA != groupId && connectionToId.groupB != groupId)
                                 continue;
 
-                            callback(fExternalPatchbayHost, fExternalPatchbayOsc,
-                                     ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED,
-                                     connectionToId.id,
-                                     0, 0, 0, 0.0f, nullptr);
-                            fUsedConnections.list.remove(it2);
+                            conns.append(connectionToId);
+                            fUsedConnections.list.remove(it);
                         }
-
-                        static PortNameToId portNameFallback = { 0, 0, { '\0' }, { '\0' } };
-
-                        PortNameToId& portNameToId(it.getValue(portNameFallback));
-                        CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group != 0);
-
-                        if (portNameToId.group != groupId)
-                            continue;
-
-                        callback(fExternalPatchbayHost, fExternalPatchbayOsc,
-                                 ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
-                                 portNameToId.group,
-                                 static_cast<int>(portNameToId.port),
-                                 0, 0, 0.0f, nullptr);
-                        fUsedPorts.list.remove(it);
                     }
                 }
+
+                for (LinkedList<ConnectionToId>::Itenerator it = conns.begin2(); it.valid(); it.next())
+                {
+                    const ConnectionToId& connectionToId = it.getValue(kConnectionToIdFallback);
+                    CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
+
+                    callback(fExternalPatchbayHost, fExternalPatchbayOsc,
+                              ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED,
+                              connectionToId.id,
+                              0, 0, 0, 0.0f, nullptr);
+                }
+
+                for (LinkedList<PortNameToId>::Itenerator it = ports.begin2(); it.valid(); it.next())
+                {
+                    const PortNameToId& portNameToId(it.getValue(kPortNameToIdFallback));
+                    CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group != 0);
+
+                    callback(fExternalPatchbayHost, fExternalPatchbayOsc,
+                              ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
+                              portNameToId.group,
+                              static_cast<int>(portNameToId.port),
+                              0, 0, 0.0f, nullptr);
+                }
+
+                ports.clear();
+                conns.clear();
 
                 startThread();
             }
@@ -1971,6 +1999,8 @@ public:
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! external)
             return CarlaEngine::patchbayConnect(false, groupA, portA, groupB, portB);
 
+        const CarlaMutexLocker cml(fUsedPorts.mutex);
+
         const char* const fullPortNameA = fUsedPorts.getFullPortName(groupA, portA);
         CARLA_SAFE_ASSERT_RETURN(fullPortNameA != nullptr && fullPortNameA[0] != '\0', false);
 
@@ -2000,7 +2030,7 @@ public:
 
             for (LinkedList<ConnectionToId>::Itenerator it = fUsedConnections.list.begin2(); it.valid(); it.next())
             {
-                connectionToId = it.getValue(connectionToId);
+                connectionToId = it.getValue(kConnectionToIdFallback);
                 CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
 
                 if (connectionToId.id == connectionId)
@@ -2013,6 +2043,8 @@ public:
             setLastError("Failed to find the requested connection");
             return false;
         }
+
+        const CarlaMutexLocker cml(fUsedPorts.mutex);
 
         const char* const fullPortNameA = fUsedPorts.getFullPortName(connectionToId.groupA, connectionToId.portA);
         CARLA_SAFE_ASSERT_RETURN(fullPortNameA != nullptr && fullPortNameA[0] != '\0', false);
@@ -2027,6 +2059,36 @@ public:
         }
 
         return true;
+    }
+
+    bool patchbaySetGroupPos(const bool sendHost, const bool sendOSC, const bool external,
+                             const uint groupId, const int x1, const int y1, const int x2, const int y2) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
+
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! external)
+            return CarlaEngine::patchbaySetGroupPos(sendHost, sendOSC, false, groupId, x1, y1, x2, y2);
+
+        const char* groupName;
+
+        {
+            const CarlaMutexLocker cml(fUsedPorts.mutex);
+
+            groupName = fUsedGroups.getGroupName(groupId);
+            CARLA_SAFE_ASSERT_RETURN(groupName != nullptr && groupName[0] != '\0', false);
+        }
+
+        const char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, groupName);
+        CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr && uuidstr[0] != '\0', false);
+
+        jack_uuid_t uuid;
+        CARLA_SAFE_ASSERT_RETURN(jackbridge_uuid_parse(uuidstr, &uuid), false);
+
+        char valueStr[STR_MAX];
+        std::snprintf(valueStr, 63, "%i:%i:%i:%i", x1, y1, x2, y2);
+        valueStr[STR_MAX-1] = '\0';
+
+        return jackbridge_set_property(fClient, uuid, URI_POSITION, valueStr, URI_TYPE_STRING);
     }
 
     bool patchbayRefresh(const bool sendHost, const bool sendOSC, const bool external) override
@@ -2051,9 +2113,15 @@ public:
                 return CarlaEngine::patchbayRefresh(sendHost, sendOSC, false);
         }
 
-        fUsedGroups.clear();
-        fUsedPorts.clear();
-        fUsedConnections.clear();
+        {
+            const CarlaMutexLocker cml1(fUsedGroups.mutex);
+            const CarlaMutexLocker cml2(fUsedPorts.mutex);
+            const CarlaMutexLocker cml3(fUsedConnections.mutex);
+
+            fUsedGroups.clear();
+            fUsedPorts.clear();
+            fUsedConnections.clear();
+        }
 
         initJackPatchbay(sendHost, sendOSC, jackbridge_get_client_name(fClient));
         return true;
@@ -2179,7 +2247,81 @@ public:
         return fRetConns;
     }
 
-    void restorePatchbayConnection(const bool external, const char* const connSource, const char* const connTarget) override
+    const PatchbayPosition* getPatchbayPositions(const bool external, uint& count) const override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, nullptr);
+        carla_debug("CarlaEngineJack::getPatchbayPositions(%s)", bool2str(external));
+
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! external)
+            return CarlaEngine::getPatchbayPositions(external, count);
+
+        if (const std::size_t maxCount = fUsedGroups.list.count())
+        {
+            PatchbayPosition* ret;
+
+            try {
+                ret = new CarlaEngine::PatchbayPosition[maxCount];
+            } CARLA_SAFE_EXCEPTION_RETURN("new CarlaEngine::PatchbayPosition", nullptr);
+
+            count = 0;
+
+            GroupNameToId groupNameToId;
+
+            const CarlaMutexLocker cml1(fUsedGroups.mutex);
+
+            for (LinkedList<GroupNameToId>::Itenerator it = fUsedGroups.list.begin2(); it.valid(); it.next())
+            {
+                groupNameToId = it.getValue(kGroupNameToIdFallback);
+                CARLA_SAFE_ASSERT_CONTINUE(groupNameToId.group != 0);
+
+                const char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, groupNameToId.name);
+                CARLA_SAFE_ASSERT_CONTINUE(uuidstr != nullptr && uuidstr[0] != '\0');
+
+                jack_uuid_t uuid;
+                CARLA_SAFE_ASSERT_CONTINUE(jackbridge_uuid_parse(uuidstr, &uuid));
+
+                char* value = nullptr;
+                char* type  = nullptr;
+
+                if (jackbridge_get_property(uuid, URI_POSITION, &value, &type)
+                    && value != nullptr
+                    && type != nullptr
+                    && std::strcmp(type, URI_TYPE_STRING) == 0)
+                {
+                    CarlaEngine::PatchbayPosition& ppos(ret[count++]);
+
+                    ppos.name = carla_strdup_safe(groupNameToId.name);
+                    ppos.dealloc = true;
+
+                    if (char* sep1 = std::strstr(value, ":"))
+                    {
+                        *sep1++ = '\0';
+                        ppos.x1 = std::atoi(value);
+
+                        if (char* sep2 = std::strstr(sep1, ":"))
+                        {
+                            *sep2++ = '\0';
+                            ppos.y1 = std::atoi(sep1);
+
+                            if (char* sep3 = std::strstr(sep2, ":"))
+                            {
+                                *sep3++ = '\0';
+                                ppos.x2 = std::atoi(sep2);
+                                ppos.y2 = std::atoi(sep3);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return ret;
+        }
+
+        return nullptr;
+    }
+
+    void restorePatchbayConnection(const bool external,
+                                   const char* const connSource, const char* const connTarget) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(connSource != nullptr && connSource[0] != '\0',);
@@ -2198,6 +2340,51 @@ public:
             if (! jackbridge_port_connected_to(port, connTarget))
                 jackbridge_connect(fClient, connSource, connTarget);
         }
+    }
+
+    void restorePatchbayGroupPosition(const bool external, const PatchbayPosition& ppos) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fClient != nullptr,);
+        carla_debug("CarlaEngineJack::restorePatchbayGroupPosition(%s, ...)", bool2str(external));
+
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! external)
+            return CarlaEngine::restorePatchbayGroupPosition(external, ppos);
+
+        uint groupId = 0;
+
+        // it might take a bit to receive jack client registration callback, so we ease things a bit
+        for (int i=10; --i >=0;)
+        {
+            {
+                const CarlaMutexLocker cml1(fUsedGroups.mutex);
+                groupId = fUsedGroups.getGroupId(ppos.name);
+            }
+
+            if (groupId != 0)
+                break;
+
+            carla_msleep(200);
+            callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+        }
+
+        CARLA_SAFE_ASSERT_RETURN(groupId != 0,);
+
+        const char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, ppos.name);
+        CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr && uuidstr[0] != '\0',);
+
+        jack_uuid_t uuid;
+        CARLA_SAFE_ASSERT_RETURN(jackbridge_uuid_parse(uuidstr, &uuid),);
+
+        char valueStr[STR_MAX];
+        std::snprintf(valueStr, 63, "%i:%i:%i:%i", ppos.x1, ppos.y1, ppos.x2, ppos.y2);
+        valueStr[STR_MAX-1] = '\0';
+
+        jackbridge_set_property(fClient, uuid, URI_POSITION, valueStr, URI_TYPE_STRING);
+
+        callback(true, true,
+                 ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED,
+                 groupId, ppos.x1, ppos.y1, ppos.x2, static_cast<float>(ppos.y2),
+                 nullptr);
     }
 #endif
 
@@ -2539,6 +2726,7 @@ protected:
         callback(fExternalPatchbayHost, fExternalPatchbayOsc,
                  ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED, groupNameToId.group, 0, 0, 0, 0.0f, nullptr);
 
+        const CarlaMutexLocker cml(fUsedGroups.mutex);
         fUsedGroups.list.removeOne(groupNameToId);
     }
 
@@ -2553,39 +2741,84 @@ protected:
         if (! fExternalPatchbayHost) return;
 #endif
 
-        bool found;
+        bool groupFound;
         CarlaString groupName(portName);
-        groupName.truncate(groupName.rfind(shortPortName, &found)-1);
+        groupName.truncate(groupName.rfind(shortPortName, &groupFound)-1);
+        CARLA_SAFE_ASSERT_RETURN(groupFound,);
 
-        CARLA_SAFE_ASSERT_RETURN(found,);
+        groupFound = false;
+        GroupToIdData groupData;
+        PortToIdData portData;
 
-        uint groupId(fUsedGroups.getGroupId(groupName));
-
-        if (groupId == 0)
         {
-            groupId = ++fUsedGroups.lastId;
+            const CarlaMutexLocker cml1(fUsedGroups.mutex);
 
-            GroupNameToId groupNameToId;
-            groupNameToId.setData(groupId, groupName);
+            groupData.id = fUsedGroups.getGroupId(groupName);
 
-            int pluginId = -1;
-            PatchbayIcon icon = jackPortHints.isHardware ? PATCHBAY_ICON_HARDWARE : PATCHBAY_ICON_APPLICATION;
+            if (groupData.id == 0)
+            {
+                groupData.id = ++fUsedGroups.lastId;
 
-            findPluginIdAndIcon(groupName, pluginId, icon);
+                GroupNameToId groupNameToId;
+                groupNameToId.setData(groupData.id, groupName);
 
-            callback(fExternalPatchbayHost, fExternalPatchbayOsc,
-                      ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
-                      groupNameToId.group,
-                      icon,
-                      pluginId,
-                      0, 0.0f,
-                      groupNameToId.name);
+                int pluginId = -1;
+                PatchbayIcon icon = jackPortHints.isHardware ? PATCHBAY_ICON_HARDWARE : PATCHBAY_ICON_APPLICATION;
 
-            fUsedGroups.list.append(groupNameToId);
+                findPluginIdAndIcon(groupName, pluginId, icon);
+
+                fUsedGroups.list.append(groupNameToId);
+
+                groupFound = true;
+                groupData.icon = icon;
+                groupData.pluginId = pluginId;
+                std::strncpy(groupData.strVal, groupName, STR_MAX-1);
+                groupData.strVal[STR_MAX-1] = '\0';
+            }
+
+            uint canvasPortFlags = 0x0;
+            canvasPortFlags |= jackPortHints.isInput ? PATCHBAY_PORT_IS_INPUT : 0x0;
+
+            /**/ if (jackPortHints.isCV)
+                canvasPortFlags |= PATCHBAY_PORT_TYPE_CV;
+            else if (jackPortHints.isOSC)
+                canvasPortFlags |= PATCHBAY_PORT_TYPE_OSC;
+            else if (jackPortHints.isAudio)
+                canvasPortFlags |= PATCHBAY_PORT_TYPE_AUDIO;
+            else if (jackPortHints.isMIDI)
+                canvasPortFlags |= PATCHBAY_PORT_TYPE_MIDI;
+
+            const CarlaMutexLocker cml2(fUsedPorts.mutex);
+
+            portData.group = groupData.id;
+            portData.port = ++fUsedPorts.lastId;
+            portData.flags = canvasPortFlags;
+            std::strncpy(portData.strVal, shortPortName, STR_MAX-1);
+            portData.strVal[STR_MAX-1] = '\0';
+
+            PortNameToId portNameToId;
+            portNameToId.setData(portData.group, portData.port, shortPortName, portName);
+            fUsedPorts.list.append(portNameToId);
         }
 
-        addPatchbayJackPort(fExternalPatchbayHost, fExternalPatchbayOsc,
-                            groupId, jackPortHints, shortPortName, portName);
+        if (groupFound)
+        {
+            callback(fExternalPatchbayHost, fExternalPatchbayOsc,
+                      ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
+                      groupData.id,
+                      groupData.icon,
+                      groupData.pluginId,
+                      0, 0.0f,
+                      groupData.strVal);
+        }
+
+        callback(fExternalPatchbayHost, fExternalPatchbayOsc,
+                 ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
+                 portData.group,
+                 static_cast<int>(portData.port),
+                 static_cast<int>(portData.flags),
+                 0, 0.0f,
+                 portData.strVal);
     }
 
     void handleJackPortUnregistrationCallback(const char* const portName)
@@ -2597,18 +2830,28 @@ protected:
         if (! fExternalPatchbayHost) return;
 #endif
 
-        const PortNameToId& portNameToId(fUsedPorts.getPortNameToId(portName));
+        uint groupId, portId;
 
-        /* NOTE: Due to JACK2 async behaviour the port we get here might be the same of a previous rename-plugin request.
-                 See the comment on CarlaEngineJack::renamePlugin() for more information. */
-        if (portNameToId.group <= 0 || portNameToId.port <= 0) return;
+        {
+            const CarlaMutexLocker cml(fUsedPorts.mutex);
+
+            const PortNameToId& portNameToId(fUsedPorts.getPortNameToId(portName));
+
+            /* NOTE: Due to JACK2 async behaviour the port we get here might be the same of a previous rename-plugin request.
+                     See the comment on CarlaEngineJack::renamePlugin() for more information. */
+            if (portNameToId.group <= 0 || portNameToId.port <= 0) return;
+
+            groupId = portNameToId.group;
+            portId = portNameToId.port;
+
+            fUsedPorts.list.removeOne(portNameToId);
+        }
 
         callback(fExternalPatchbayHost, fExternalPatchbayOsc,
                   ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED,
-                  portNameToId.group,
-                  static_cast<int>(portNameToId.port),
+                  groupId,
+                  static_cast<int>(portId),
                   0, 0, 0.0f, nullptr);
-        fUsedPorts.list.removeOne(portNameToId);
     }
 
     void handleJackPortConnectCallback(const char* const portNameA, const char* const portNameB)
@@ -2620,27 +2863,42 @@ protected:
         if (! fExternalPatchbayHost) return;
 #endif
 
-        const PortNameToId& portNameToIdA(fUsedPorts.getPortNameToId(portNameA));
-        const PortNameToId& portNameToIdB(fUsedPorts.getPortNameToId(portNameB));
+        char strBuf[STR_MAX];
+        uint connectionId;
 
-        /* NOTE: Due to JACK2 async behaviour the port we get here might be the same of a previous rename-plugin request.
-                 See the comment on CarlaEngineJack::renamePlugin() for more information. */
-        if (portNameToIdA.group <= 0 || portNameToIdA.port <= 0) return;
-        if (portNameToIdB.group <= 0 || portNameToIdB.port <= 0) return;
+        {
+            const CarlaMutexLocker cml1(fUsedPorts.mutex);
 
-        char strBuf[STR_MAX+1];
-        std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", portNameToIdA.group, portNameToIdA.port, portNameToIdB.group, portNameToIdB.port);
-        strBuf[STR_MAX] = '\0';
+            const PortNameToId& portNameToIdA(fUsedPorts.getPortNameToId(portNameA));
+            const PortNameToId& portNameToIdB(fUsedPorts.getPortNameToId(portNameB));
 
-        ConnectionToId connectionToId;
-        connectionToId.setData(++fUsedConnections.lastId, portNameToIdA.group, portNameToIdA.port, portNameToIdB.group, portNameToIdB.port);
+            /* NOTE: Due to JACK2 async behaviour the port we get here might be the same of a previous rename-plugin request.
+                     See the comment on CarlaEngineJack::renamePlugin() for more information. */
+            if (portNameToIdA.group <= 0 || portNameToIdA.port <= 0) return;
+            if (portNameToIdB.group <= 0 || portNameToIdB.port <= 0) return;
+
+            const CarlaMutexLocker cml2(fUsedConnections.mutex);
+
+            std::snprintf(strBuf, STR_MAX-1, "%i:%i:%i:%i",
+                          portNameToIdA.group, portNameToIdA.port,
+                          portNameToIdB.group, portNameToIdB.port);
+            strBuf[STR_MAX-1] = '\0';
+
+            connectionId = ++fUsedConnections.lastId;
+
+            ConnectionToId connectionToId;
+            connectionToId.setData(connectionId,
+                                   portNameToIdA.group, portNameToIdA.port,
+                                   portNameToIdB.group, portNameToIdB.port);
+
+            fUsedConnections.list.append(connectionToId);
+        }
 
         callback(fExternalPatchbayHost, fExternalPatchbayOsc,
                   ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
-                  connectionToId.id,
+                  connectionId,
                   0, 0, 0, 0.0f,
                   strBuf);
-        fUsedConnections.list.append(connectionToId);
     }
 
     void handleJackPortDisconnectCallback(const char* const portNameA, const char* const portNameB)
@@ -2652,39 +2910,40 @@ protected:
         if (! fExternalPatchbayHost) return;
 #endif
 
-        const PortNameToId& portNameToIdA(fUsedPorts.getPortNameToId(portNameA));
-        const PortNameToId& portNameToIdB(fUsedPorts.getPortNameToId(portNameB));
-
-        /* NOTE: Due to JACK2 async behaviour the port we get here might be the same of a previous rename-plugin request.
-                 See the comment on CarlaEngineJack::renamePlugin() for more information. */
-        if (portNameToIdA.group <= 0 || portNameToIdA.port <= 0) return;
-        if (portNameToIdB.group <= 0 || portNameToIdB.port <= 0) return;
-
-        ConnectionToId connectionToId = { 0, 0, 0, 0, 0 };
-        bool found = false;
+        uint connectionId = 0;
 
         {
-            const CarlaMutexLocker cml(fUsedConnections.mutex);
+            const CarlaMutexLocker cml1(fUsedPorts.mutex);
+
+            const PortNameToId& portNameToIdA(fUsedPorts.getPortNameToId(portNameA));
+            const PortNameToId& portNameToIdB(fUsedPorts.getPortNameToId(portNameB));
+
+            /* NOTE: Due to JACK2 async behaviour the port we get here might be the same of a previous rename-plugin request.
+                     See the comment on CarlaEngineJack::renamePlugin() for more information. */
+            if (portNameToIdA.group <= 0 || portNameToIdA.port <= 0) return;
+            if (portNameToIdB.group <= 0 || portNameToIdB.port <= 0) return;
+
+            const CarlaMutexLocker cml2(fUsedConnections.mutex);
 
             for (LinkedList<ConnectionToId>::Itenerator it = fUsedConnections.list.begin2(); it.valid(); it.next())
             {
-                connectionToId = it.getValue(connectionToId);
+                const ConnectionToId& connectionToId = it.getValue(kConnectionToIdFallback);
                 CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
 
                 if (connectionToId.groupA == portNameToIdA.group && connectionToId.portA == portNameToIdA.port &&
                     connectionToId.groupB == portNameToIdB.group && connectionToId.portB == portNameToIdB.port)
                 {
-                    found = true;
+                    connectionId = connectionToId.id;
                     fUsedConnections.list.remove(it);
                     break;
                 }
             }
         }
 
-        if (found) {
+        if (connectionId != 0) {
             callback(fExternalPatchbayHost, fExternalPatchbayOsc,
                       ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED,
-                      connectionToId.id,
+                      connectionId,
                       0, 0, 0, 0.0f, nullptr);
         }
     }
@@ -2706,32 +2965,48 @@ protected:
         bool found;
         CarlaString groupName(newFullName);
         groupName.truncate(groupName.rfind(newShortName, &found)-1);
-
         CARLA_SAFE_ASSERT_RETURN(found,);
 
-        const uint groupId(fUsedGroups.getGroupId(groupName));
-        CARLA_SAFE_ASSERT_RETURN(groupId > 0,);
+        uint groupId, portId;
+        char portName[STR_MAX];
+        found = false;
 
-        for (LinkedList<PortNameToId>::Itenerator it = fUsedPorts.list.begin2(); it.valid(); it.next())
         {
-            static PortNameToId portNameFallback = { 0, 0, { '\0' }, { '\0' } };
+            const CarlaMutexLocker cml1(fUsedGroups.mutex);
 
-            PortNameToId& portNameToId(it.getValue(portNameFallback));
-            CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group != 0);
+            groupId = fUsedGroups.getGroupId(groupName);
+            CARLA_SAFE_ASSERT_RETURN(groupId != 0,);
 
-            if (std::strncmp(portNameToId.fullName, oldFullName, STR_MAX) == 0)
+            const CarlaMutexLocker cml2(fUsedPorts.mutex);
+
+            for (LinkedList<PortNameToId>::Itenerator it = fUsedPorts.list.begin2(); it.valid(); it.next())
             {
-                CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group == groupId);
+                PortNameToId& portNameToId(it.getValue(kPortNameToIdFallbackNC));
+                CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group != 0);
 
-                portNameToId.rename(newShortName, newFullName);
-                callback(fExternalPatchbayHost, fExternalPatchbayOsc,
-                         ENGINE_CALLBACK_PATCHBAY_PORT_CHANGED,
-                         portNameToId.group,
-                         static_cast<int>(portNameToId.port),
-                         0, 0, 0.0f,
-                         portNameToId.name);
-                break;
+                if (std::strncmp(portNameToId.fullName, oldFullName, STR_MAX) == 0)
+                {
+                    CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group == groupId);
+
+                    found = true;
+                    portId = portNameToId.port;
+                    std::strncpy(portName, newShortName, STR_MAX-1);
+                    portName[STR_MAX-1] = '\0';
+
+                    portNameToId.rename(newShortName, newFullName);
+                    break;
+                }
             }
+        }
+
+        if (found)
+        {
+            callback(fExternalPatchbayHost, fExternalPatchbayOsc,
+                      ENGINE_CALLBACK_PATCHBAY_PORT_CHANGED,
+                      groupId,
+                      static_cast<int>(portId),
+                      0, 0, 0.0f,
+                      portName);
         }
     }
 #endif
@@ -2895,170 +3170,278 @@ private:
         }
     }
 
+    // handy stuff only needed for initJackPatchbay
+    struct GroupToIdData {
+        uint id;
+        PatchbayIcon icon;
+        int pluginId;
+        char strVal[STR_MAX];
+    };
+    struct PortToIdData {
+        uint group;
+        uint port;
+        uint flags;
+        char strVal[STR_MAX];
+    };
+    struct ConnectionToIdData {
+        uint id;
+        char strVal[STR_MAX];
+    };
+
     void initJackPatchbay(const bool sendHost, const bool sendOSC, const char* const ourName)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY ||
                                  (fExternalPatchbayHost && sendHost) || (fExternalPatchbayOsc && sendOSC),);
         CARLA_SAFE_ASSERT_RETURN(ourName != nullptr && ourName[0] != '\0',);
 
+        uint id, carlaId;
         CarlaStringList parsedGroups;
+        LinkedList<GroupToIdData> groupCallbackData;
+        LinkedList<PortToIdData> portsCallbackData;
+        LinkedList<ConnectionToIdData> connCallbackData;
 
-        // add our client first
         {
-            parsedGroups.append(ourName);
+            const CarlaMutexLocker cml1(fUsedGroups.mutex);
+            const CarlaMutexLocker cml2(fUsedPorts.mutex);
+            const CarlaMutexLocker cml3(fUsedConnections.mutex);
 
-            GroupNameToId groupNameToId;
-            groupNameToId.setData(++fUsedGroups.lastId, ourName);
-
-            callback(sendHost, sendOSC,
-                     ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
-                     groupNameToId.group,
-                     PATCHBAY_ICON_CARLA,
-                     MAIN_CARLA_PLUGIN_ID,
-                     0, 0.0f,
-                     groupNameToId.name);
-            fUsedGroups.list.append(groupNameToId);
-        }
-
-        // query all jack ports
-        {
-            const char** const ports = jackbridge_get_ports(fClient, nullptr, nullptr, 0);
-            CARLA_SAFE_ASSERT_RETURN(ports != nullptr,);
-
-            for (int i=0; ports[i] != nullptr; ++i)
+            // add our client first
             {
-                const char* const fullPortName(ports[i]);
-                CARLA_SAFE_ASSERT_CONTINUE(fullPortName != nullptr && fullPortName[0] != '\0');
+                carlaId = ++fUsedGroups.lastId;
+                parsedGroups.append(ourName);
 
-                const jack_port_t* const jackPort(jackbridge_port_by_name(fClient, fullPortName));
-                CARLA_SAFE_ASSERT_CONTINUE(jackPort != nullptr);
-
-                const char* const shortPortName(jackbridge_port_short_name(jackPort));
-                CARLA_SAFE_ASSERT_CONTINUE(shortPortName != nullptr && shortPortName[0] != '\0');
-
-                const CarlaJackPortHints jackPortHints(CarlaJackPortHints::fromPort(jackPort));
-
-                uint groupId = 0;
-
-                bool found;
-                CarlaString groupName(fullPortName);
-                groupName.truncate(groupName.rfind(shortPortName, &found)-1);
-
-                CARLA_SAFE_ASSERT_CONTINUE(found);
-
-                if (parsedGroups.contains(groupName))
-                {
-                    groupId = fUsedGroups.getGroupId(groupName);
-                    CARLA_SAFE_ASSERT_CONTINUE(groupId > 0);
-                }
-                else
-                {
-                    groupId = ++fUsedGroups.lastId;
-                    parsedGroups.append(groupName);
-
-                    GroupNameToId groupNameToId;
-                    groupNameToId.setData(groupId, groupName);
-
-                    int pluginId = -1;
-                    PatchbayIcon icon = jackPortHints.isHardware ? PATCHBAY_ICON_HARDWARE : PATCHBAY_ICON_APPLICATION;
-
-                    findPluginIdAndIcon(groupName, pluginId, icon);
-
-                    callback(sendHost, sendOSC,
-                             ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
-                             groupNameToId.group,
-                             icon,
-                             pluginId,
-                             0, 0.0f,
-                             groupNameToId.name);
-                    fUsedGroups.list.append(groupNameToId);
-                }
-
-                addPatchbayJackPort(sendHost, sendOSC, groupId, jackPortHints, shortPortName, fullPortName);
+                GroupNameToId groupNameToId;
+                groupNameToId.setData(carlaId, ourName);
+                fUsedGroups.list.append(groupNameToId);
             }
 
-            jackbridge_free(ports);
-        }
-
-        // query connections, after all ports are in place
-        if (const char** const ports = jackbridge_get_ports(fClient, nullptr, nullptr, JackPortIsOutput))
-        {
-            char strBuf[STR_MAX+1];
-
-            for (int i=0; ports[i] != nullptr; ++i)
+            // query all jack ports
             {
-                const char* const fullPortName(ports[i]);
-                CARLA_SAFE_ASSERT_CONTINUE(fullPortName != nullptr && fullPortName[0] != '\0');
+                const char** const ports = jackbridge_get_ports(fClient, nullptr, nullptr, 0);
+                CARLA_SAFE_ASSERT_RETURN(ports != nullptr,);
 
-                const jack_port_t* const jackPort(jackbridge_port_by_name(fClient, fullPortName));
-                CARLA_SAFE_ASSERT_CONTINUE(jackPort != nullptr);
-
-                const PortNameToId& thisPort(fUsedPorts.getPortNameToId(fullPortName));
-
-                CARLA_SAFE_ASSERT_CONTINUE(thisPort.group > 0);
-                CARLA_SAFE_ASSERT_CONTINUE(thisPort.port > 0);
-
-                if (const char** const connections = jackbridge_port_get_all_connections(fClient, jackPort))
+                for (int i=0; ports[i] != nullptr; ++i)
                 {
-                    for (int j=0; connections[j] != nullptr; ++j)
+                    const char* const fullPortName(ports[i]);
+                    CARLA_SAFE_ASSERT_CONTINUE(fullPortName != nullptr && fullPortName[0] != '\0');
+
+                    const jack_port_t* const jackPort(jackbridge_port_by_name(fClient, fullPortName));
+                    CARLA_SAFE_ASSERT_CONTINUE(jackPort != nullptr);
+
+                    const char* const shortPortName(jackbridge_port_short_name(jackPort));
+                    CARLA_SAFE_ASSERT_CONTINUE(shortPortName != nullptr && shortPortName[0] != '\0');
+
+                    const CarlaJackPortHints jackPortHints(CarlaJackPortHints::fromPort(jackPort));
+
+                    uint groupId = 0;
+
+                    bool found;
+                    CarlaString groupName(fullPortName);
+                    groupName.truncate(groupName.rfind(shortPortName, &found)-1);
+
+                    CARLA_SAFE_ASSERT_CONTINUE(found);
+
+                    if (parsedGroups.contains(groupName))
                     {
-                        const char* const connection(connections[j]);
-                        CARLA_SAFE_ASSERT_CONTINUE(connection != nullptr && connection[0] != '\0');
+                        groupId = fUsedGroups.getGroupId(groupName);
+                        CARLA_SAFE_ASSERT_CONTINUE(groupId > 0);
+                    }
+                    else
+                    {
+                        groupId = ++fUsedGroups.lastId;
+                        parsedGroups.append(groupName);
 
-                        const PortNameToId& targetPort(fUsedPorts.getPortNameToId(connection));
+                        GroupNameToId groupNameToId;
+                        groupNameToId.setData(groupId, groupName);
 
-                        CARLA_SAFE_ASSERT_CONTINUE(targetPort.group > 0);
-                        CARLA_SAFE_ASSERT_CONTINUE(targetPort.port > 0);
+                        int pluginId = -1;
+                        PatchbayIcon icon = jackPortHints.isHardware ? PATCHBAY_ICON_HARDWARE : PATCHBAY_ICON_APPLICATION;
 
-                        std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", thisPort.group, thisPort.port, targetPort.group, targetPort.port);
-                        strBuf[STR_MAX] = '\0';
+                        findPluginIdAndIcon(groupName, pluginId, icon);
 
-                        ConnectionToId connectionToId;
-                        connectionToId.setData(++fUsedConnections.lastId, thisPort.group, thisPort.port, targetPort.group, targetPort.port);
+                        fUsedGroups.list.append(groupNameToId);
 
-                        callback(sendHost, sendOSC,
-                                 ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
-                                 connectionToId.id,
-                                 0, 0, 0, 0.0f,
-                                 strBuf);
-                        fUsedConnections.list.append(connectionToId);
+                        GroupToIdData groupData;
+                        groupData.id = groupId;
+                        groupData.icon = icon;
+                        groupData.pluginId = pluginId;
+                        std::strncpy(groupData.strVal, groupName, STR_MAX-1);
+                        groupData.strVal[STR_MAX-1] = '\0';
+                        groupCallbackData.append(groupData);
                     }
 
-                    jackbridge_free(connections);
+                    uint canvasPortFlags = 0x0;
+                    canvasPortFlags |= jackPortHints.isInput ? PATCHBAY_PORT_IS_INPUT : 0x0;
+
+                    /**/ if (jackPortHints.isCV)
+                        canvasPortFlags |= PATCHBAY_PORT_TYPE_CV;
+                    else if (jackPortHints.isOSC)
+                        canvasPortFlags |= PATCHBAY_PORT_TYPE_OSC;
+                    else if (jackPortHints.isAudio)
+                        canvasPortFlags |= PATCHBAY_PORT_TYPE_AUDIO;
+                    else if (jackPortHints.isMIDI)
+                        canvasPortFlags |= PATCHBAY_PORT_TYPE_MIDI;
+
+                    id = ++fUsedPorts.lastId;
+
+                    PortNameToId portNameToId;
+                    portNameToId.setData(groupId, id, shortPortName, fullPortName);
+                    fUsedPorts.list.append(portNameToId);
+
+                    PortToIdData portData;
+                    portData.group = groupId;
+                    portData.port = id;
+                    portData.flags = canvasPortFlags;
+                    std::strncpy(portData.strVal, shortPortName, STR_MAX-1);
+                    portData.strVal[STR_MAX-1] = '\0';
+                    portsCallbackData.append(portData);
                 }
+
+                jackbridge_free(ports);
             }
 
-            jackbridge_free(ports);
+            // query connections, after all ports are in place
+            if (const char** const ports = jackbridge_get_ports(fClient, nullptr, nullptr, JackPortIsOutput))
+            {
+                for (int i=0; ports[i] != nullptr; ++i)
+                {
+                    const char* const fullPortName(ports[i]);
+                    CARLA_SAFE_ASSERT_CONTINUE(fullPortName != nullptr && fullPortName[0] != '\0');
+
+                    const jack_port_t* const jackPort(jackbridge_port_by_name(fClient, fullPortName));
+                    CARLA_SAFE_ASSERT_CONTINUE(jackPort != nullptr);
+
+                    const PortNameToId& thisPort(fUsedPorts.getPortNameToId(fullPortName));
+
+                    CARLA_SAFE_ASSERT_CONTINUE(thisPort.group > 0);
+                    CARLA_SAFE_ASSERT_CONTINUE(thisPort.port > 0);
+
+                    if (const char** const connections = jackbridge_port_get_all_connections(fClient, jackPort))
+                    {
+                        for (int j=0; connections[j] != nullptr; ++j)
+                        {
+                            const char* const connection(connections[j]);
+                            CARLA_SAFE_ASSERT_CONTINUE(connection != nullptr && connection[0] != '\0');
+
+                            const PortNameToId& targetPort(fUsedPorts.getPortNameToId(connection));
+
+                            CARLA_SAFE_ASSERT_CONTINUE(targetPort.group > 0);
+                            CARLA_SAFE_ASSERT_CONTINUE(targetPort.port > 0);
+
+                            id = ++fUsedConnections.lastId;
+
+                            ConnectionToId connectionToId;
+                            connectionToId.setData(id, thisPort.group, thisPort.port, targetPort.group, targetPort.port);
+                            fUsedConnections.list.append(connectionToId);
+
+                            ConnectionToIdData connData;
+                            connData.id = id;
+                            std::snprintf(connData.strVal, STR_MAX-1, "%i:%i:%i:%i",
+                                          thisPort.group, thisPort.port, targetPort.group, targetPort.port);
+                            connData.strVal[STR_MAX-1] = '\0';
+                            connCallbackData.append(connData);
+                        }
+
+                        jackbridge_free(connections);
+                    }
+                }
+
+                jackbridge_free(ports);
+            }
         }
-    }
 
-    void addPatchbayJackPort(const bool sendHost, const bool sendOSC,
-                             const uint groupId, const CarlaJackPortHints& jackPortHints,
-                             const char* const shortPortName, const char* const fullPortName)
-    {
-        uint canvasPortFlags = 0x0;
-        canvasPortFlags |= jackPortHints.isInput ? PATCHBAY_PORT_IS_INPUT : 0x0;
-
-        /**/ if (jackPortHints.isCV)
-            canvasPortFlags |= PATCHBAY_PORT_TYPE_CV;
-        else if (jackPortHints.isOSC)
-            canvasPortFlags |= PATCHBAY_PORT_TYPE_OSC;
-        else if (jackPortHints.isAudio)
-            canvasPortFlags |= PATCHBAY_PORT_TYPE_AUDIO;
-        else if (jackPortHints.isMIDI)
-            canvasPortFlags |= PATCHBAY_PORT_TYPE_MIDI;
-
-        PortNameToId portNameToId;
-        portNameToId.setData(groupId, ++fUsedPorts.lastId, shortPortName, fullPortName);
+        const GroupToIdData groupFallback = { 0, PATCHBAY_ICON_PLUGIN, -1, { '\0' } };
+        const PortToIdData portFallback = { 0, 0, 0, { '\0' } };
+        const ConnectionToIdData connFallback = { 0, { '\0' } };
 
         callback(sendHost, sendOSC,
-                 ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
-                 portNameToId.group,
-                 static_cast<int>(portNameToId.port),
-                 static_cast<int>(canvasPortFlags),
+                 ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
+                 carlaId,
+                 PATCHBAY_ICON_CARLA,
+                 MAIN_CARLA_PLUGIN_ID,
                  0, 0.0f,
-                 portNameToId.name);
-        fUsedPorts.list.append(portNameToId);
+                 ourName);
+
+        for (LinkedList<GroupToIdData>::Itenerator it = groupCallbackData.begin2(); it.valid(); it.next())
+        {
+            const GroupToIdData& group(it.getValue(groupFallback));
+
+            callback(sendHost, sendOSC,
+                    ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
+                    group.id,
+                    group.icon,
+                    group.pluginId,
+                    0, 0.0f,
+                    group.strVal);
+
+            const char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, group.strVal);
+            CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr && uuidstr[0] != '\0',);
+
+            jack_uuid_t uuid;
+            CARLA_SAFE_ASSERT_RETURN(jackbridge_uuid_parse(uuidstr, &uuid),);
+
+            char* value = nullptr;
+            char* type  = nullptr;
+
+            if (jackbridge_get_property(uuid, URI_POSITION, &value, &type)
+                && value != nullptr
+                && type != nullptr
+                && std::strcmp(type, URI_TYPE_STRING) == 0)
+            {
+                if (char* sep1 = std::strstr(value, ":"))
+                {
+                    int x1, y1 = 0, x2 = 0, y2 = 0;
+                    *sep1++ = '\0';
+                    x1 = std::atoi(value);
+
+                    if (char* sep2 = std::strstr(sep1, ":"))
+                    {
+                        *sep2++ = '\0';
+                        y1 = std::atoi(sep1);
+
+                        if (char* sep3 = std::strstr(sep2, ":"))
+                        {
+                            *sep3++ = '\0';
+                            x2 = std::atoi(sep2);
+                            y2 = std::atoi(sep3);
+                        }
+                    }
+
+                    callback(sendHost, sendOSC,
+                             ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED,
+                             group.id, x1, y1, x2, static_cast<float>(y2),
+                             nullptr);
+                }
+            }
+        }
+
+        for (LinkedList<PortToIdData>::Itenerator it = portsCallbackData.begin2(); it.valid(); it.next())
+        {
+            const PortToIdData& port(it.getValue(portFallback));
+
+            callback(sendHost, sendOSC,
+                     ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
+                     port.group,
+                     static_cast<int>(port.port),
+                     static_cast<int>(port.flags),
+                     0, 0.0f,
+                     port.strVal);
+        }
+
+        for (LinkedList<ConnectionToIdData>::Itenerator it = connCallbackData.begin2(); it.valid(); it.next())
+        {
+            const ConnectionToIdData& conn(it.getValue(connFallback));
+
+            callback(sendHost, sendOSC,
+                     ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED,
+                     conn.id,
+                     0, 0, 0, 0.0f,
+                     conn.strVal);
+        }
+
+        groupCallbackData.clear();
+        portsCallbackData.clear();
+        connCallbackData.clear();
     }
 #endif
 

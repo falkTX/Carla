@@ -1816,6 +1816,22 @@ bool CarlaEngineNativeUI::msgReceived(const char* const msg) noexcept
             ok = fEngine->patchbayDisconnect(external, connectionId);
         } CARLA_SAFE_EXCEPTION("patchbayDisconnect");
     }
+    else if (std::strcmp(msg, "patchbay_set_group_pos") == 0)
+    {
+        bool external;
+        uint32_t groupId;
+        int x1, y1, x2, y2;
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(external), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(groupId), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(x1), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(y1), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(x2), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(y2), true);
+
+        try {
+            ok = fEngine->patchbaySetGroupPos(true, false, external, groupId, x1, y1, x2, y2);
+        } CARLA_SAFE_EXCEPTION("patchbaySetGroupPos");
+    }
     else if (std::strcmp(msg, "patchbay_refresh") == 0)
     {
         bool external;

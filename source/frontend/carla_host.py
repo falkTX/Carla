@@ -505,7 +505,6 @@ class HostWindow(QMainWindow):
             self.ui.graphicsView.verticalScrollBar().valueChanged.connect(self.slot_verticalScrollBarChanged)
             self.ui.miniCanvasPreview.miniCanvasMoved.connect(self.slot_miniCanvasMoved)
             self.scene.scaleChanged.connect(self.slot_canvasScaleChanged)
-            self.scene.sceneGroupMoved.connect(self.slot_canvasItemMoved)
             self.scene.pluginSelected.connect(self.slot_canvasPluginSelected)
             self.scene.selectionChanged.connect(self.slot_canvasSelectionChanged)
 
@@ -533,6 +532,7 @@ class HostWindow(QMainWindow):
         host.PatchbayClientRemovedCallback.connect(self.slot_handlePatchbayClientRemovedCallback)
         host.PatchbayClientRenamedCallback.connect(self.slot_handlePatchbayClientRenamedCallback)
         host.PatchbayClientDataChangedCallback.connect(self.slot_handlePatchbayClientDataChangedCallback)
+        host.PatchbayClientPositionChangedCallback.connect(self.slot_handlePatchbayClientPositionChangedCallback)
         host.PatchbayPortAddedCallback.connect(self.slot_handlePatchbayPortAddedCallback)
         host.PatchbayPortRemovedCallback.connect(self.slot_handlePatchbayPortRemovedCallback)
         host.PatchbayPortChangedCallback.connect(self.slot_handlePatchbayPortChangedCallback)
@@ -713,9 +713,6 @@ class HostWindow(QMainWindow):
     # --------------------------------------------------------------------------------------------------------
     # Files
 
-    def makeExtraFilename(self):
-        return self.fProjectFilename.rsplit(".",1)[0]+".json"
-
     def loadProjectNow(self):
         if not self.fProjectFilename:
             return qCritical("ERROR: loading project without filename set")
@@ -748,14 +745,6 @@ class HostWindow(QMainWindow):
                              QMessageBox.Ok, QMessageBox.Ok)
             return
 
-        if not self.fWithCanvas:
-            return
-
-        with open(self.makeExtraFilename(), 'w') as fh:
-            json.dump({
-                'canvas': patchcanvas.saveGroupPositions(),
-            }, fh)
-
     def projectLoadingStarted(self):
         self.ui.rack.setEnabled(False)
         self.ui.graphicsView.setEnabled(False)
@@ -769,7 +758,7 @@ class HostWindow(QMainWindow):
 
         QTimer.singleShot(1000, self.slot_canvasRefresh)
 
-        extrafile = self.makeExtraFilename()
+        extrafile = self.fProjectFilename.rsplit(".",1)[0]+".json"
         if not os.path.exists(extrafile):
             return
 
@@ -1431,7 +1420,7 @@ class HostWindow(QMainWindow):
         pFeatures.group_rename = False
         pFeatures.port_info    = False
         pFeatures.port_rename  = False
-        pFeatures.handle_group_pos = True
+        pFeatures.handle_group_pos = False
 
         patchcanvas.setOptions(pOptions)
         patchcanvas.setFeatures(pFeatures)
@@ -1567,10 +1556,6 @@ class HostWindow(QMainWindow):
     # --------------------------------------------------------------------------------------------------------
     # Canvas (canvas callbacks)
 
-    @pyqtSlot(int, int, QPointF)
-    def slot_canvasItemMoved(self, group_id, split_mode, pos):
-        self.updateMiniCanvasLater()
-
     @pyqtSlot()
     def slot_canvasSelectionChanged(self):
         self.updateMiniCanvasLater()
@@ -1667,6 +1652,10 @@ class HostWindow(QMainWindow):
             hasInlineDisplay = bool(hints & PLUGIN_HAS_INLINE_DISPLAY)
 
         patchcanvas.setGroupAsPlugin(clientId, pluginId, hasCustomUI, hasInlineDisplay)
+
+    @pyqtSlot(int, int, int, int, int)
+    def slot_handlePatchbayClientPositionChangedCallback(self, clientId, x1, y1, x2, y2):
+        patchcanvas.setGroupPosFull(clientId, x1, y1, x2, y2)
 
     @pyqtSlot(int, int, int, int, str)
     def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portFlags, portGroupId, portName):
@@ -2720,6 +2709,9 @@ class HostWindow(QMainWindow):
 def canvasCallback(action, value1, value2, valueStr):
     host = gCarla.gui.host
 
+    if gCarla.gui.fCustomStopAction == HostWindow.CUSTOM_ACTION_APP_CLOSE:
+        return
+
     if action == patchcanvas.ACTION_GROUP_INFO:
         pass
 
@@ -2736,6 +2728,14 @@ def canvasCallback(action, value1, value2, valueStr):
         patchcanvas.joinGroup(groupId)
         gCarla.gui.updateMiniCanvasLater()
 
+    elif action == patchcanvas.ACTION_GROUP_POSITION:
+        if gCarla.gui.fIsProjectLoading or not host.is_engine_running():
+            return
+        groupId = value1
+        x1, y1, x2, y2 = tuple(int(i) for i in valueStr.split(":"))
+        host.patchbay_set_group_pos(gCarla.gui.fExternalPatchbay, groupId, x1, y1, x2, y2)
+        gCarla.gui.updateMiniCanvasLater()
+
     elif action == patchcanvas.ACTION_PORT_INFO:
         pass
 
@@ -2743,7 +2743,7 @@ def canvasCallback(action, value1, value2, valueStr):
         pass
 
     elif action == patchcanvas.ACTION_PORTS_CONNECT:
-        gOut, pOut, gIn, pIn = [int(i) for i in valueStr.split(":")]
+        gOut, pOut, gIn, pIn = tuple(int(i) for i in valueStr.split(":"))
 
         if not host.patchbay_connect(gCarla.gui.fExternalPatchbay, gOut, pOut, gIn, pIn):
             print("Connection failed:", host.get_last_error())
@@ -2875,6 +2875,8 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valuef, value
         host.PatchbayClientRenamedCallback.emit(pluginId, valueStr)
     elif action == ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED:
         host.PatchbayClientDataChangedCallback.emit(pluginId, value1, value2)
+    elif action == ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED:
+        host.PatchbayClientPositionChangedCallback.emit(pluginId, value1, value2, value3, int(round(valuef)))
     elif action == ENGINE_CALLBACK_PATCHBAY_PORT_ADDED:
         host.PatchbayPortAddedCallback.emit(pluginId, value1, value2, value3, valueStr)
     elif action == ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED:
