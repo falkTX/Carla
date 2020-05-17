@@ -322,7 +322,8 @@ void ExternalGraph::setGroupPos(const bool sendHost, const bool sendOSC,
 {
     CARLA_SAFE_ASSERT_UINT_RETURN(groupId >= kExternalGraphGroupCarla && groupId < kExternalGraphGroupMax, groupId,);
 
-    positions[groupId] = { true, x1, y1, x2, y2 };
+    const PatchbayPosition ppos = { true, x1, y1, x2, y2 };
+    positions[groupId] = ppos;
 
     kEngine->callback(sendHost, sendOSC,
                       ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED,
