@@ -147,6 +147,10 @@ class CanvasPort(QGraphicsItem):
         QGraphicsItem.hoverLeaveEvent(self, event)
 
     def mousePressEvent(self, event):
+        if event.button() == Qt.MiddleButton or event.source() == Qt.MouseEventSynthesizedByApplication:
+            event.ignore()
+            return
+
         if self.m_mouse_down:
             self.handleMouseRelease()
         self.m_hover_item = None

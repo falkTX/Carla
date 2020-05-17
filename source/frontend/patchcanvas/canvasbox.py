@@ -612,6 +612,10 @@ class CanvasBox(QGraphicsObject):
         QGraphicsObject.mouseDoubleClickEvent(self, event)
 
     def mousePressEvent(self, event):
+        if event.button() == Qt.MiddleButton or event.source() == Qt.MouseEventSynthesizedByApplication:
+            event.ignore()
+            return
+
         canvas.last_z_value += 1
         self.setZValue(canvas.last_z_value)
         self.resetLinesZValue()
