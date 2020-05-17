@@ -3160,7 +3160,7 @@ protected:
         groupName.truncate(groupName.rfind(newShortName, &found)-1);
         CARLA_SAFE_ASSERT_RETURN(found,);
 
-        uint groupId, portId;
+        uint groupId, portId = 0;
         char portName[STR_MAX];
         found = false;
 
