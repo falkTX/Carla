@@ -2366,6 +2366,8 @@ public:
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! external)
             return CarlaEngine::getPatchbayPositions(external, count);
 
+        const CarlaMutexLocker cml(fUsedGroups.mutex);
+
         if (const std::size_t maxCount = fUsedGroups.list.count())
         {
             PatchbayPosition* ret;
@@ -2377,8 +2379,6 @@ public:
             count = 0;
 
             GroupNameToId groupNameToId;
-
-            const CarlaMutexLocker cml1(fUsedGroups.mutex);
 
             for (LinkedList<GroupNameToId>::Itenerator it = fUsedGroups.list.begin2(); it.valid(); it.next())
             {
@@ -2504,7 +2504,7 @@ public:
             for (int i=10; --i >=0;)
             {
                 {
-                    const CarlaMutexLocker cml1(fUsedGroups.mutex);
+                    const CarlaMutexLocker cml(fUsedGroups.mutex);
 
                     if (fUsedGroups.list.count() == 0)
                     {
@@ -2521,6 +2521,15 @@ public:
                 carla_msleep(200);
                 callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
             }
+        }
+        else
+        {
+            const CarlaMutexLocker cml(fUsedGroups.mutex);
+
+            if (fUsedGroups.list.count() != 0)
+                groupId = fUsedGroups.getGroupId(ppos.name);
+            else
+                hasGroups = false;
         }
 
         if (hasGroups) {
