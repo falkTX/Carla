@@ -42,7 +42,8 @@ class DraggableGraphicsView(QGraphicsView):
         if event.button() == self.fMiddleButton and not self.fCtrlDown:
             self.fPanning = True
             self.setDragMode(QGraphicsView.ScrollHandDrag)
-            event = QMouseEvent(event.type(), event.pos(), Qt.LeftButton, Qt.LeftButton, event.modifiers())
+            event = QMouseEvent(event.type(), event.localPos(), event.windowPos(), event.screenPos(),
+                                Qt.LeftButton, Qt.LeftButton, event.modifiers(), Qt.MouseEventSynthesizedByApplication)
 
         QGraphicsView.mousePressEvent(self, event)
 
