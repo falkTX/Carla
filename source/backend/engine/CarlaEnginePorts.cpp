@@ -16,10 +16,13 @@
  */
 
 #include "CarlaEnginePorts.hpp"
-#include "CarlaEngineGraph.hpp"
 #include "CarlaEngineUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+#include "CarlaEngineGraph.hpp"
+#endif
 
 #include "lv2/lv2.h"
 
