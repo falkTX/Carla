@@ -539,6 +539,8 @@
     <addaction name="menu_Canvas_Zoom"/>
     <addaction name="separator"/>
     <addaction name="act_canvas_save_image"/>
+    <addaction name="act_canvas_save_image_2x"/>
+    <addaction name="act_canvas_save_image_4x"/>
    </widget>
    <widget class="QMenu" name="menu_Settings">
     <property name="title">
@@ -1636,6 +1638,16 @@
   <action name="act_engine_panel">
    <property name="text">
     <string>Open custom driver panel...</string>
+   </property>
+  </action>
+  <action name="act_canvas_save_image_2x">
+   <property name="text">
+    <string>Save Image... (2x zoom)</string>
+   </property>
+  </action>
+  <action name="act_canvas_save_image_4x">
+   <property name="text">
+    <string>Save Image... (4x zoom)</string>
    </property>
   </action>
  </widget>

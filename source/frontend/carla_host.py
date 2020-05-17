@@ -28,7 +28,7 @@ except ImportError:
     PYQT_VERSION = 0x50600
 
 from PyQt5.QtCore import QT_VERSION, qCritical, QEventLoop, QFileInfo, QModelIndex, QPointF, QTimer, QEvent
-from PyQt5.QtGui import QImage, QPalette, QBrush
+from PyQt5.QtGui import QImage, QImageWriter, QPalette, QBrush
 from PyQt5.QtWidgets import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QGraphicsView, QMainWindow
 
 # ------------------------------------------------------------------------------------------------------------
@@ -191,8 +191,6 @@ class HostWindow(QMainWindow):
 
         # ----------------------------------------------------------------------------------------------------
         # Internal stuff (patchbay)
-
-        self.fExportImage = QImage()
 
         self.fPeaksCleared = True
 
@@ -500,6 +498,8 @@ class HostWindow(QMainWindow):
             self.ui.act_canvas_zoom_out.triggered.connect(self.slot_canvasZoomOut)
             self.ui.act_canvas_zoom_100.triggered.connect(self.slot_canvasZoomReset)
             self.ui.act_canvas_save_image.triggered.connect(self.slot_canvasSaveImage)
+            self.ui.act_canvas_save_image_2x.triggered.connect(self.slot_canvasSaveImage)
+            self.ui.act_canvas_save_image_4x.triggered.connect(self.slot_canvasSaveImage)
             self.ui.act_canvas_arrange.setEnabled(False) # TODO, later
             self.ui.graphicsView.horizontalScrollBar().valueChanged.connect(self.slot_horizontalScrollBarChanged)
             self.ui.graphicsView.verticalScrollBar().valueChanged.connect(self.slot_verticalScrollBarChanged)
@@ -1533,25 +1533,41 @@ class HostWindow(QMainWindow):
         if not newPath:
             return
 
+        sender = self.sender()
+        if sender == self.ui.act_canvas_save_image_2x:
+            zoom = 2.0
+        elif sender == self.ui.act_canvas_save_image_4x:
+            zoom = 4.0
+        else:
+            zoom = 1.0
+
         self.scene.clearSelection()
 
         if newPath.lower().endswith((".jpg", ".jpeg")):
-            imgFormat = "JPG"
+            imgFormat = b"JPG"
         elif newPath.lower().endswith((".png",)):
-            imgFormat = "PNG"
+            imgFormat = b"PNG"
         else:
             # File-dialog may not auto-add the extension
-            imgFormat = "PNG"
+            imgFormat = b"PNG"
             newPath  += ".png"
 
-        self.fExportImage = QImage(self.scene.sceneRect().width(), self.scene.sceneRect().height(), QImage.Format_RGB32)
-        painter = QPainter(self.fExportImage)
+        image   = QImage(self.scene.width()*zoom, self.scene.height()*zoom, QImage.Format_RGB32)
+        painter = QPainter(image)
         painter.save()
-        painter.setRenderHint(QPainter.Antialiasing) # TODO - set true, cleanup this
-        painter.setRenderHint(QPainter.TextAntialiasing)
+        painter.setRenderHints(painter.renderHints() | QPainter.Antialiasing | QPainter.TextAntialiasing)
         self.scene.render(painter)
-        self.fExportImage.save(newPath, imgFormat, 100)
         painter.restore()
+        del painter
+
+        iw = QImageWriter(newPath)
+        iw.setFormat(imgFormat)
+        iw.setCompression(-1)
+
+        if QT_VERSION >= 0x50500:
+            iw.setOptimizedWrite(True)
+
+        iw.write(image)
 
     # --------------------------------------------------------------------------------------------------------
     # Canvas (canvas callbacks)
