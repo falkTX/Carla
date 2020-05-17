@@ -279,7 +279,7 @@ class CanvasBox(QGraphicsObject):
                 return
         qCritical("PatchCanvas::CanvasBox.removeLineFromGroup(%i) - unable to find line to remove" % connection_id)
 
-    def checkItemPos(self, blockSignals):
+    def checkItemPos(self):
         if canvas.size_rect.isNull():
             return
 
@@ -287,9 +287,6 @@ class CanvasBox(QGraphicsObject):
         if (canvas.size_rect.contains(pos) and
             canvas.size_rect.contains(pos + QPointF(self.p_width, self.p_height))):
             return
-
-        if blockSignals:
-            self.blockSignals(True)
 
         if pos.x() < canvas.size_rect.x():
             self.setPos(canvas.size_rect.x(), pos.y())
@@ -301,9 +298,6 @@ class CanvasBox(QGraphicsObject):
             self.setPos(pos.x(), canvas.size_rect.y())
         elif pos.y() + self.p_height > canvas.size_rect.height():
             self.setPos(pos.x(), canvas.size_rect.height() - self.p_height)
-
-        if blockSignals:
-            self.blockSignals(False)
 
     def removeIconFromScene(self):
         if self.icon_svg is None:

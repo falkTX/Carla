@@ -366,7 +366,7 @@ class PatchScene(QGraphicsScene):
             items_list = self.selectedItems()
             for item in items_list:
                 if item and item.isVisible() and item.type() == CanvasBoxType:
-                    item.checkItemPos(False)
+                    item.checkItemPos()
 
             if len(items_list) > 1:
                 canvas.scene.update()

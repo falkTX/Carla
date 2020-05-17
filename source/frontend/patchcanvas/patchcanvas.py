@@ -373,7 +373,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
         if options.eyecandy == EYECANDY_FULL and not options.auto_hide_groups:
             CanvasItemFX(group_sbox, True, False)
 
-        group_sbox.checkItemPos(True)
+        group_sbox.checkItemPos()
 
     else:
         group_box.setSplit(False)
@@ -387,7 +387,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
             horizontal = bool(icon == ICON_HARDWARE or icon == ICON_LADISH_ROOM)
             group_box.setPos(CanvasGetNewGroupPos(horizontal))
 
-    group_box.checkItemPos(True)
+    group_box.checkItemPos()
 
     canvas.last_z_value += 1
     group_box.setZValue(canvas.last_z_value)
@@ -704,11 +704,13 @@ def setGroupPosFull(group_id, group_pos_x_o, group_pos_y_o, group_pos_x_i, group
         if group.group_id == group_id:
             group.widgets[0].blockSignals(True)
             group.widgets[0].setPos(group_pos_x_o, group_pos_y_o)
+            group.widgets[0].checkItemPos()
             group.widgets[0].blockSignals(False)
 
             if group.split and group.widgets[1]:
                 group.widgets[1].blockSignals(True)
                 group.widgets[1].setPos(group_pos_x_i, group_pos_y_i)
+                group.widgets[1].checkItemPos()
                 group.widgets[1].blockSignals(False)
 
             QTimer.singleShot(0, canvas.scene.update)
