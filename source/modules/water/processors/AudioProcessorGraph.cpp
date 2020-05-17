@@ -58,7 +58,7 @@ struct AudioGraphRenderingOp  : public AudioGraphRenderingOpBase
 struct ClearChannelOp  : public AudioGraphRenderingOp<ClearChannelOp>
 {
     ClearChannelOp (const int channel, const bool cv) noexcept
-      : channelNum (channel), isCV (cv) {}
+        : channelNum (channel), isCV (cv) {}
 
     void perform (AudioSampleBuffer& sharedAudioBufferChans,
                   AudioSampleBuffer& sharedCVBufferChans,
@@ -350,9 +350,9 @@ private:
     Array<uint> audioChannels, cvChannels;
     Array<uint32> audioNodeIds, cvNodeIds, midiNodeIds;
 
-    enum { freeNodeID = 0xffffffff, zeroNodeID = 0xfffffffe };
+    enum { freeNodeID = 0xffffffff, zeroNodeID = 0xfffffffe, anonymousNodeID = 0xfffffffd };
 
-    static bool isNodeBusy (uint32 nodeID) noexcept     { return nodeID != freeNodeID && nodeID != zeroNodeID; }
+    static bool isNodeBusy (uint32 nodeID) noexcept     { return nodeID != freeNodeID; }
 
     Array<uint32> nodeDelayIDs;
     Array<int> nodeDelays;
@@ -431,17 +431,8 @@ private:
             if (sourceNodes.size() == 0)
             {
                 // unconnected input channel
-
-                if (inputChan >= numAudioOuts)
-                {
-                    bufIndex = getReadOnlyEmptyBuffer();
-                    wassert (bufIndex >= 0);
-                }
-                else
-                {
-                    bufIndex = getFreeBuffer (AudioProcessor::ChannelTypeAudio);
-                    renderingOps.add (new ClearChannelOp (bufIndex, false));
-                }
+                bufIndex = getFreeBuffer (AudioProcessor::ChannelTypeAudio);
+                renderingOps.add (new ClearChannelOp (bufIndex, false));
             }
             else if (sourceNodes.size() == 1)
             {
@@ -516,6 +507,9 @@ private:
                     bufIndex = getFreeBuffer (AudioProcessor::ChannelTypeAudio);
                     wassert (bufIndex != 0);
 
+                    markBufferAsContaining (AudioProcessor::ChannelTypeAudio,
+                                            bufIndex, static_cast<uint32> (anonymousNodeID), 0);
+
                     const int srcIndex = getBufferContaining (AudioProcessor::ChannelTypeAudio,
                                                               sourceNodes.getUnchecked (0),
                                                               sourceOutputChans.getUnchecked (0));
@@ -583,7 +577,6 @@ private:
             const int bufIndex = getFreeBuffer (AudioProcessor::ChannelTypeAudio);
             CARLA_SAFE_ASSERT_CONTINUE (bufIndex > 0);
             audioChannelsToUse.add (bufIndex);
-
             markBufferAsContaining (AudioProcessor::ChannelTypeAudio, bufIndex, node.nodeId, outputChan);
         }
 
@@ -611,9 +604,8 @@ private:
             if (sourceNodes.size() == 0)
             {
                 // unconnected input channel
-
-                bufIndex = getReadOnlyEmptyBuffer();
-                wassert (bufIndex >= 0);
+                bufIndex = getFreeBuffer (AudioProcessor::ChannelTypeCV);
+                renderingOps.add (new ClearChannelOp (bufIndex, false));
             }
             else if (sourceNodes.size() == 1)
             {
@@ -1651,9 +1643,9 @@ void AudioProcessorGraph::processAudioAndCV (AudioSampleBuffer& audioBuffer,
 
     currentAudioInputBuffer = &audioBuffer;
     currentCVInputBuffer = &cvInBuffer;
+    currentMidiInputBuffer = &midiMessages;
     currentAudioOutputBuffer.clear();
     currentCVOutputBuffer.clear();
-    currentMidiInputBuffer = &midiMessages;
     currentMidiOutputBuffer.clear();
 
     for (int i = 0; i < renderingOps.size(); ++i)

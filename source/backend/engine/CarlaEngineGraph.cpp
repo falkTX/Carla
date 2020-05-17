@@ -2321,19 +2321,19 @@ const CarlaEngine::PatchbayPosition* PatchbayGraph::getPositions(bool external, 
             switch (i)
             {
             case kExternalGraphGroupCarla:
-                ppos.name = kEngine->getName();
+                ppos.name = "Carla";
                 break;
             case kExternalGraphGroupAudioIn:
-                ppos.name = "Capture";
+                ppos.name = "AudioIn";
                 break;
             case kExternalGraphGroupAudioOut:
-                ppos.name = "Playback";
+                ppos.name = "AudioOut";
                 break;
             case kExternalGraphGroupMidiIn:
-                ppos.name = "Readable MIDI ports";
+                ppos.name = "MidiIn";
                 break;
             case kExternalGraphGroupMidiOut:
-                ppos.name = "Writable MIDI ports";
+                ppos.name = "MidiOut";
                 break;
             }
             ppos.dealloc = false;
