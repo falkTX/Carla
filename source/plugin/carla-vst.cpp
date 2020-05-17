@@ -747,6 +747,8 @@ protected:
 
     void handleUiResize(const int16_t width, const int16_t height)
     {
+        if (kIsUsingUILauncher)
+            return;
         fVstRect.right = width;
         fVstRect.bottom = height;
         hostCallback(audioMasterSizeWindow, width, height);
