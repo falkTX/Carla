@@ -1354,7 +1354,7 @@ protected:
      * Virtual functions for handling patchbay state.
      * Do not free returned data.
      */
-    struct PatchbayPosition { const char* name; int x1, y1, x2, y2; bool dealloc; };
+    struct PatchbayPosition { const char* name; int x1, y1, x2, y2, pluginId; bool dealloc; };
     virtual const char* const* getPatchbayConnections(bool external) const;
     virtual const PatchbayPosition* getPatchbayPositions(bool external, uint& count) const;
     virtual void restorePatchbayConnection(bool external, const char* sourcePort, const char* targetPort);

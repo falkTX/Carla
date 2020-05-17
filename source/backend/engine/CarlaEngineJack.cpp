@@ -2407,6 +2407,7 @@ public:
 
                     ppos.name = carla_strdup_safe(groupNameToId.name);
                     ppos.dealloc = true;
+                    ppos.pluginId = -1;
 
                     if (char* sep1 = std::strstr(value, ":"))
                     {
@@ -2425,6 +2426,30 @@ public:
                                 ppos.y2 = std::atoi(sep3);
                             }
                         }
+                    }
+
+                    jackbridge_free(value);
+                    jackbridge_free(type);
+                    value = type = nullptr;
+
+                    const bool clientBelongsToUs = (jackbridge_get_property(uuid, URI_MAIN_CLIENT_NAME, &value, &type)
+                                                    && value != nullptr
+                                                    && type != nullptr
+                                                    && std::strcmp(type, URI_TYPE_STRING) == 0
+                                                    && fClientName == value);
+                    jackbridge_free(value);
+                    jackbridge_free(type);
+                    value = type = nullptr;
+
+                    if (! clientBelongsToUs)
+                        continue;
+
+                    if (jackbridge_get_property(uuid, URI_PLUGIN_ID, &value, &type)
+                                                && value != nullptr
+                                                && type != nullptr
+                                                && std::strcmp(type, URI_TYPE_INTEGER) == 0)
+                    {
+                        ppos.pluginId = std::atoi(value);
                     }
 
                     jackbridge_free(value);
@@ -2471,26 +2496,31 @@ public:
         bool hasGroups = true;
         uint groupId = 0;
 
-        // it might take a bit to receive jack client registration callback, so we ease things a bit
-        for (int i=10; --i >=0;)
+        /* NOTE: When loading a project, it might take a bit to receive plugins' jack client registration callbacks.
+         *       We try to wait a little for it, but not too much.
+         */
+        if (ppos.pluginId >= 0)
         {
+            for (int i=10; --i >=0;)
             {
-                const CarlaMutexLocker cml1(fUsedGroups.mutex);
-
-                if (fUsedGroups.list.count() == 0)
                 {
-                    hasGroups = false;
-                    break;
+                    const CarlaMutexLocker cml1(fUsedGroups.mutex);
+
+                    if (fUsedGroups.list.count() == 0)
+                    {
+                        hasGroups = false;
+                        break;
+                    }
+
+                    groupId = fUsedGroups.getGroupId(ppos.name);
                 }
 
-                groupId = fUsedGroups.getGroupId(ppos.name);
+                if (groupId != 0)
+                    break;
+
+                carla_msleep(200);
+                callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
             }
-
-            if (groupId != 0)
-                break;
-
-            carla_msleep(200);
-            callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
         }
 
         if (hasGroups) {

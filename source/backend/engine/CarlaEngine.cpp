@@ -2238,6 +2238,8 @@ void CarlaEngine::saveProjectInternal(water::MemoryOutputStream& outStream) cons
                     outPatchbay << "   <Position x1=\"" << ppos.x1 << "\" y1=\"" << ppos.y1;
                     if (ppos.x2 != 0 || ppos.y2 != 0)
                         outPatchbay << "\" x2=\"" << ppos.x2 << "\" y2=\"" << ppos.y2;
+                    if (ppos.pluginId >= 0)
+                        outPatchbay << "\" pluginId=\"" << ppos.pluginId;
                     outPatchbay << "\">\n";
                     outPatchbay << "    <Name>" << xmlSafeString(ppos.name, true) << "</Name>\n";
                     outPatchbay << "   </Position>\n";
@@ -2332,6 +2334,8 @@ void CarlaEngine::saveProjectInternal(water::MemoryOutputStream& outStream) cons
                     outPatchbay << "   <Position x1=\"" << ppos.x1 << "\" y1=\"" << ppos.y1;
                     if (ppos.x2 != 0 || ppos.y2 != 0)
                         outPatchbay << "\" x2=\"" << ppos.x2 << "\" y2=\"" << ppos.y2;
+                    if (ppos.pluginId >= 0)
+                        outPatchbay << "\" pluginId=\"" << ppos.pluginId;
                     outPatchbay << "\">\n";
                     outPatchbay << "    <Name>" << xmlSafeString(ppos.name, true) << "</Name>\n";
                     outPatchbay << "   </Position>\n";
@@ -2985,7 +2989,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
         if (XmlElement* const elemPositions = elemPatchbay->getChildByName("Positions"))
         {
             String name;
-            PatchbayPosition ppos = { nullptr, 0, 0, 0, 0, false };
+            PatchbayPosition ppos = { nullptr, -1, 0, 0, 0, 0, false };
 
             for (XmlElement* patchElem = elemPositions->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
             {
@@ -3005,6 +3009,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                 ppos.y1 = patchElem->getIntAttribute("y1");
                 ppos.x2 = patchElem->getIntAttribute("x2");
                 ppos.y2 = patchElem->getIntAttribute("y2");
+                ppos.pluginId = patchElem->getIntAttribute("pluginId", -1);
 
                 if (name.isNotEmpty())
                     restorePatchbayGroupPosition(false, ppos);
@@ -3028,7 +3033,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
         if (XmlElement* const elemPositions = elemPatchbay->getChildByName("Positions"))
         {
             String name;
-            PatchbayPosition ppos = { nullptr, 0, 0, 0, 0, false };
+            PatchbayPosition ppos = { nullptr, -1, 0, 0, 0, 0, false };
 
             for (XmlElement* patchElem = elemPositions->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
             {
@@ -3048,6 +3053,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                 ppos.y1 = patchElem->getIntAttribute("y1");
                 ppos.x2 = patchElem->getIntAttribute("x2");
                 ppos.y2 = patchElem->getIntAttribute("y2");
+                ppos.pluginId = patchElem->getIntAttribute("pluginId", -1);
 
                 if (name.isNotEmpty())
                     restorePatchbayGroupPosition(true, ppos);

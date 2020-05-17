@@ -2337,6 +2337,7 @@ const CarlaEngine::PatchbayPosition* PatchbayGraph::getPositions(bool external, 
                 break;
             }
             ppos.dealloc = false;
+            ppos.pluginId = -1;
 
             ppos.x1 = eppos.x1;
             ppos.y1 = eppos.y1;
@@ -2372,6 +2373,7 @@ const CarlaEngine::PatchbayPosition* PatchbayGraph::getPositions(bool external, 
 
             ppos.name = carla_strdup(proc->getName().toRawUTF8());
             ppos.dealloc = true;
+            ppos.pluginId = node->properties.getWithDefault("pluginId", -1);
 
             ppos.x1 = node->properties.getWithDefault("x1", 0);
             ppos.y1 = node->properties.getWithDefault("y1", 0);
