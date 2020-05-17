@@ -150,15 +150,15 @@ public:
         fVstRect.top  = 0;
         fVstRect.left = 0;
 
-        if (kIsUsingUILauncher)
+        if (kIsUsingUILauncher || (fDescriptor->hints & NATIVE_PLUGIN_USES_UI_SIZE) == 0x0)
         {
-            fVstRect.bottom = ui_launcher_res::carla_uiHeight;
             fVstRect.right  = ui_launcher_res::carla_uiWidth;
+            fVstRect.bottom = ui_launcher_res::carla_uiHeight;
         }
         else
         {
-            fVstRect.bottom = 712;
-            fVstRect.right  = 1024;
+            fVstRect.right  = static_cast<int16_t>(fDescriptor->ui_width);
+            fVstRect.bottom = static_cast<int16_t>(fDescriptor->ui_height);
         }
 
         init();
@@ -745,6 +745,13 @@ protected:
         hostCallback(touch ? audioMasterBeginEdit : audioMasterEndEdit, static_cast<int32_t>(index));
     }
 
+    void handleUiResize(const int16_t width, const int16_t height)
+    {
+        fVstRect.right = width;
+        fVstRect.bottom = height;
+        hostCallback(audioMasterSizeWindow, width, height);
+    }
+
     void handleUiCustomDataChanged(const char* const /*key*/, const char* const /*value*/) const
     {
     }
@@ -796,6 +803,12 @@ protected:
         case NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER:
             CARLA_SAFE_ASSERT_RETURN(index >= 0, 0);
             handleUiParameterTouch(static_cast<uint32_t>(index), value != 0);
+            break;
+
+        case NATIVE_HOST_OPCODE_UI_RESIZE:
+            CARLA_SAFE_ASSERT_RETURN(index > 0 && index < INT16_MAX, 0);
+            CARLA_SAFE_ASSERT_RETURN(value > 0 && value < INT16_MAX, 0);
+            handleUiResize(static_cast<int16_t>(index), static_cast<int16_t>(value));
             break;
         }
 

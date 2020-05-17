@@ -743,6 +743,11 @@ protected:
             fUI.touch->touch(fUI.touch->handle, index+fPorts.indexOffset, touch);
     }
 
+    void handleUiResize(const uint32_t, const uint32_t) const
+    {
+        // nothing here
+    }
+
     void handleUiCustomDataChanged(const char* const key, const char* const value) const
     {
         carla_stdout("TODO: handleUiCustomDataChanged %s %s", key, value);
@@ -810,6 +815,12 @@ protected:
         case NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER:
             CARLA_SAFE_ASSERT_RETURN(index >= 0, 0);
             handleUiParameterTouch(static_cast<uint32_t>(index), value != 0);
+            break;
+
+        case NATIVE_HOST_OPCODE_UI_RESIZE:
+            CARLA_SAFE_ASSERT_RETURN(index > 0, 0);
+            CARLA_SAFE_ASSERT_RETURN(value > 0, 0);
+            handleUiResize(static_cast<uint32_t>(index), static_cast<uint32_t>(value));
             break;
         }
 

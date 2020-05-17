@@ -69,6 +69,9 @@ CARLA_BACKEND_START_NAMESPACE
 static const uint32_t kNumInParams = 100;
 static const uint32_t kNumOutParams = 10;
 
+static const uint16_t kUiWidth = 1024;
+static const uint16_t kUiHeight = 712;
+
 // -----------------------------------------------------------------------
 
 #ifdef USE_JUCE_MESSAGE_THREAD
@@ -179,6 +182,7 @@ public:
           fIsActive(false),
           fIsRunning(false),
           fUiServer(this),
+          fLastScaleFactor(1.0f),
           fOptionsForced(false)
     {
         carla_debug("CarlaEngineNative::CarlaEngineNative()");
@@ -1346,6 +1350,16 @@ protected:
             fUiServer.stopPipeServer(1000);
             break;
         }
+
+        if (carla_isNotEqual(fLastScaleFactor, pData->options.uiScale))
+        {
+            fLastScaleFactor = pData->options.uiScale;
+            pHost->dispatcher(pHost->handle,
+                              NATIVE_HOST_OPCODE_UI_RESIZE,
+                              static_cast<int>(kUiWidth * fLastScaleFactor + 0.5f),
+                              static_cast<int>(kUiHeight * fLastScaleFactor + 0.5f),
+                              nullptr, 0.0f);
+        }
     }
 
     void uiSetParameterValue(const uint32_t index, const float value)
@@ -1666,6 +1680,7 @@ private:
     CarlaEngineNativeUI fUiServer;
 
     float fParameters[kNumInParams+kNumOutParams];
+    float fLastScaleFactor;
 
     bool fOptionsForced;
 
@@ -2309,7 +2324,8 @@ static const NativePluginDescriptor carlaRackDesc = {
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_STATE
-                                                  |NATIVE_PLUGIN_USES_TIME),
+                                                  |NATIVE_PLUGIN_USES_TIME
+                                                  |NATIVE_PLUGIN_USES_UI_SIZE),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -2346,7 +2362,9 @@ static const NativePluginDescriptor carlaRackDesc = {
     /* cvIns  */ 0,
     /* cvOuts */ 0,
     /* _get_buffer_port_name */ nullptr,
-    /* _get_buffer_port_range */ nullptr
+    /* _get_buffer_port_range */ nullptr,
+    /* ui_width   */ kUiWidth,
+    /* ui_height  */ kUiHeight
 };
 
 static const NativePluginDescriptor carlaRackNoMidiOutDesc = {
@@ -2355,7 +2373,8 @@ static const NativePluginDescriptor carlaRackNoMidiOutDesc = {
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_STATE
-                                                  |NATIVE_PLUGIN_USES_TIME),
+                                                  |NATIVE_PLUGIN_USES_TIME
+                                                  |NATIVE_PLUGIN_USES_UI_SIZE),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -2392,7 +2411,9 @@ static const NativePluginDescriptor carlaRackNoMidiOutDesc = {
     /* cvIns  */ 0,
     /* cvOuts */ 0,
     /* _get_buffer_port_name */ nullptr,
-    /* _get_buffer_port_range */ nullptr
+    /* _get_buffer_port_range */ nullptr,
+    /* ui_width   */ kUiWidth,
+    /* ui_height  */ kUiHeight
 };
 
 static const NativePluginDescriptor carlaPatchbayDesc = {
@@ -2401,7 +2422,8 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_STATE
-                                                  |NATIVE_PLUGIN_USES_TIME),
+                                                  |NATIVE_PLUGIN_USES_TIME
+                                                  |NATIVE_PLUGIN_USES_UI_SIZE),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -2438,7 +2460,9 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
     /* cvIns  */ 0,
     /* cvOuts */ 0,
     /* _get_buffer_port_name */ nullptr,
-    /* _get_buffer_port_range */ nullptr
+    /* _get_buffer_port_range */ nullptr,
+    /* ui_width   */ kUiWidth,
+    /* ui_height  */ kUiHeight
 };
 
 static const NativePluginDescriptor carlaPatchbay3sDesc = {
@@ -2447,7 +2471,8 @@ static const NativePluginDescriptor carlaPatchbay3sDesc = {
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_STATE
-                                                  |NATIVE_PLUGIN_USES_TIME),
+                                                  |NATIVE_PLUGIN_USES_TIME
+                                                  |NATIVE_PLUGIN_USES_UI_SIZE),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
     /* audioIns  */ 3,
     /* audioOuts */ 2,
@@ -2484,7 +2509,9 @@ static const NativePluginDescriptor carlaPatchbay3sDesc = {
     /* cvIns  */ 0,
     /* cvOuts */ 0,
     /* _get_buffer_port_name */ nullptr,
-    /* _get_buffer_port_range */ nullptr
+    /* _get_buffer_port_range */ nullptr,
+    /* ui_width   */ kUiWidth,
+    /* ui_height  */ kUiHeight
 };
 
 static const NativePluginDescriptor carlaPatchbay16Desc = {
@@ -2493,7 +2520,8 @@ static const NativePluginDescriptor carlaPatchbay16Desc = {
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_STATE
-                                                  |NATIVE_PLUGIN_USES_TIME),
+                                                  |NATIVE_PLUGIN_USES_TIME
+                                                  |NATIVE_PLUGIN_USES_UI_SIZE),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
     /* audioIns  */ 16,
     /* audioOuts */ 16,
@@ -2530,7 +2558,9 @@ static const NativePluginDescriptor carlaPatchbay16Desc = {
     /* cvIns  */ 0,
     /* cvOuts */ 0,
     /* _get_buffer_port_name */ nullptr,
-    /* _get_buffer_port_range */ nullptr
+    /* _get_buffer_port_range */ nullptr,
+    /* ui_width   */ kUiWidth,
+    /* ui_height  */ kUiHeight
 };
 
 static const NativePluginDescriptor carlaPatchbay32Desc = {
@@ -2539,7 +2569,8 @@ static const NativePluginDescriptor carlaPatchbay32Desc = {
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_STATE
-                                                  |NATIVE_PLUGIN_USES_TIME),
+                                                  |NATIVE_PLUGIN_USES_TIME
+                                                  |NATIVE_PLUGIN_USES_UI_SIZE),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
     /* audioIns  */ 32,
     /* audioOuts */ 32,
@@ -2576,7 +2607,9 @@ static const NativePluginDescriptor carlaPatchbay32Desc = {
     /* cvIns  */ 0,
     /* cvOuts */ 0,
     /* _get_buffer_port_name */ nullptr,
-    /* _get_buffer_port_range */ nullptr
+    /* _get_buffer_port_range */ nullptr,
+    /* ui_width   */ kUiWidth,
+    /* ui_height  */ kUiHeight
 };
 
 static const NativePluginDescriptor carlaPatchbay64Desc = {
@@ -2585,7 +2618,8 @@ static const NativePluginDescriptor carlaPatchbay64Desc = {
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_STATE
-                                                  |NATIVE_PLUGIN_USES_TIME),
+                                                  |NATIVE_PLUGIN_USES_TIME
+                                                  |NATIVE_PLUGIN_USES_UI_SIZE),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
     /* audioIns  */ 64,
     /* audioOuts */ 64,
@@ -2622,7 +2656,9 @@ static const NativePluginDescriptor carlaPatchbay64Desc = {
     /* cvIns  */ 0,
     /* cvOuts */ 0,
     /* _get_buffer_port_name */ nullptr,
-    /* _get_buffer_port_range */ nullptr
+    /* _get_buffer_port_range */ nullptr,
+    /* ui_width   */ kUiWidth,
+    /* ui_height  */ kUiHeight
 };
 
 static const NativePluginDescriptor carlaPatchbayCVDesc = {
@@ -2632,7 +2668,8 @@ static const NativePluginDescriptor carlaPatchbayCVDesc = {
                                                   |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_CONTROL_VOLTAGE
                                                   |NATIVE_PLUGIN_USES_STATE
-                                                  |NATIVE_PLUGIN_USES_TIME),
+                                                  |NATIVE_PLUGIN_USES_TIME
+                                                  |NATIVE_PLUGIN_USES_UI_SIZE),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -2669,7 +2706,9 @@ static const NativePluginDescriptor carlaPatchbayCVDesc = {
     /* cvIns  */ 5,
     /* cvOuts */ 5,
     /* _get_buffer_port_name */ nullptr,
-    /* _get_buffer_port_range */ nullptr
+    /* _get_buffer_port_range */ nullptr,
+    /* ui_width   */ kUiWidth,
+    /* ui_height  */ kUiHeight
 };
 
 CARLA_BACKEND_END_NAMESPACE

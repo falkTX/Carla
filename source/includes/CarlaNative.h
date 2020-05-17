@@ -66,7 +66,8 @@ typedef enum {
     NATIVE_PLUGIN_USES_PARENT_ID       = 1 << 11, /** can set transient hint to parent       */
     NATIVE_PLUGIN_HAS_INLINE_DISPLAY   = 1 << 12,
     NATIVE_PLUGIN_USES_CONTROL_VOLTAGE = 1 << 13,
-    NATIVE_PLUGIN_REQUESTS_IDLE        = 1 << 15
+    NATIVE_PLUGIN_REQUESTS_IDLE        = 1 << 15,
+    NATIVE_PLUGIN_USES_UI_SIZE         = 1 << 16
 } NativePluginHints;
 
 typedef enum {
@@ -114,7 +115,8 @@ typedef enum {
     NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY  = 9,  /** nothing                                           */
     NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER    = 10, /** uses index, value as bool                         */
     NATIVE_HOST_OPCODE_REQUEST_IDLE          = 11, /** nothing                                           */
-    NATIVE_HOST_OPCODE_GET_FILE_PATH         = 12  /** uses ptr as string for file type                  */
+    NATIVE_HOST_OPCODE_GET_FILE_PATH         = 12, /** uses ptr as string for file type                  */
+    NATIVE_HOST_OPCODE_UI_RESIZE             = 13  /** uses index and value                              */
 } NativeHostDispatcherOpcode;
 
 /* ------------------------------------------------------------------------------------------------------------
@@ -288,6 +290,9 @@ typedef struct _NativePluginDescriptor {
     const uint32_t cvOuts;
     const char* (*get_buffer_port_name)(NativePluginHandle handle, uint32_t index, bool isOutput);
     const NativePortRange* (*get_buffer_port_range)(NativePluginHandle handle, uint32_t index, bool isOutput);
+
+    /* placed at the end for backwards compatibility. only valid if NATIVE_PLUGIN_USES_UI_SIZE is set */
+    uint16_t ui_width, ui_height;
 
 } NativePluginDescriptor;
 

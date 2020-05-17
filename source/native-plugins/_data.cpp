@@ -28,7 +28,7 @@
     nullptr, nullptr, nullptr, nullptr, nullptr, \
     nullptr, nullptr
 #define DESCFUNCS_WITHOUTCV \
-    DESCFUNCS_WITHCV, 0, 0, nullptr, nullptr
+    DESCFUNCS_WITHCV, 0, 0, nullptr, nullptr, 0, 0
 
 static const NativePluginDescriptor sNativePluginDescriptors[] = {
 
@@ -101,7 +101,9 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* cvIns      */ 1,
     /* cvOuts     */ 0,
     /* bufnamefn  */ nullptr,
-    /* bufrangefn */ nullptr
+    /* bufrangefn */ nullptr,
+    /* ui_width   */ 0,
+    /* ui_height  */ 0
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
@@ -217,7 +219,9 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* cvIns      */ 0,
     /* cvOuts     */ 3,
     /* bufnamefn  */ nullptr,
-    /* bufrangefn */ nullptr
+    /* bufrangefn */ nullptr,
+    /* ui_width   */ 0,
+    /* ui_height  */ 0
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
@@ -506,7 +510,9 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* cvIns      */ 5,
     /* cvOuts     */ 5,
     /* bufnamefn  */ nullptr,
-    /* bufrangefn */ nullptr
+    /* bufrangefn */ nullptr,
+    /* ui_width   */ 0,
+    /* ui_height  */ 0
 },
 #endif
 

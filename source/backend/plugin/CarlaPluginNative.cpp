@@ -2744,6 +2744,9 @@ protected:
                     return static_cast<intptr_t>((uintptr_t)opts.pathMIDI);
             }
             break;
+        case NATIVE_HOST_OPCODE_UI_RESIZE:
+            // unused here
+            break;
         }
 
         return ret;

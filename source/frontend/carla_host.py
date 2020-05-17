@@ -2507,7 +2507,7 @@ class HostWindow(QMainWindow):
             print("Frontend pixel ratio is", self.devicePixelRatioF())
 
         # set our gui as parent for all plugins UIs
-        if self.host.manageUIs and not (self.host.isControl or self.host.isPlugin):
+        if self.host.manageUIs and not self.host.isControl:
             if MACOS:
                 nsViewPtr = int(self.winId())
                 winIdStr  = "%x" % gCarla.utils.cocoa_get_window(nsViewPtr)
@@ -2517,7 +2517,7 @@ class HostWindow(QMainWindow):
 
     def hideEvent(self, event):
         # disable parent
-        if not (self.host.isControl or self.host.isPlugin):
+        if not self.host.isControl:
             self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, "0")
 
         QMainWindow.hideEvent(self, event)

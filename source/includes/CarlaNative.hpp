@@ -619,7 +619,7 @@ public:                                                                      \
     ClassName::_set_state,              \
     ClassName::_dispatcher,             \
     ClassName::_render_inline_display,  \
-    0, 0, nullptr, nullptr
+    0, 0, nullptr, nullptr, 0, 0
 
 // --------------------------------------------------------------------------------------------------------------------
 

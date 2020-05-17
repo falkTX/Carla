@@ -538,9 +538,18 @@ class CarlaEmbedW(QEmbedWidget):
     def showEvent(self, event):
         QEmbedWidget.showEvent(self, event)
 
+        if QT_VERSION >= 0x50600:
+            self.host.set_engine_option(ENGINE_OPTION_FRONTEND_UI_SCALE, int(self.devicePixelRatioF() * 1000), "")
+            print("Plugin UI pixel ratio is", self.devicePixelRatioF(),
+                  "with %ix%i" % (self.width(), self.height()), "in size")
+
         # set our gui as parent for all plugins UIs
         if self.host.manageUIs:
-            winIdStr = "%x" % self.fWinId
+            if MACOS:
+                nsViewPtr = int(self.fWinId)
+                winIdStr  = "%x" % gCarla.utils.cocoa_get_window(nsViewPtr)
+            else:
+                winIdStr = "%x" % int(self.fWinId)
             self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, winIdStr)
 
     def hideEvent(self, event):
