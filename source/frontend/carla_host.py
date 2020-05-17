@@ -1527,11 +1527,42 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_canvasSaveImage(self):
-        newPath, ok = QFileDialog.getSaveFileName(self, self.tr("Save Image"), filter=self.tr("PNG Image (*.png);;JPEG Image (*.jpg)"))
+        if self.fProjectFilename:
+            dir = QFileInfo(self.fProjectFilename).absoluteDir().absolutePath()
+        else:
+            dir = self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER]
 
-        # FIXME use ok value, test if it works as expected
-        if not newPath:
+        fileDialog = QFileDialog(self)
+        fileDialog.setAcceptMode(QFileDialog.AcceptSave)
+        fileDialog.setDirectory(dir)
+        fileDialog.setFileMode(QFileDialog.AnyFile)
+        fileDialog.setMimeTypeFilters(("image/png", "image/jpeg"))
+        fileDialog.setNameFilter(self.tr("Images (*.png *.jpg)"))
+        fileDialog.setOptions(QFileDialog.DontUseCustomDirectoryIcons)
+        fileDialog.setWindowTitle(self.tr("Save Image"))
+
+        ok = fileDialog.exec_()
+
+        if not ok:
             return
+
+        newPath = fileDialog.selectedFiles()
+
+        if len(newPath) != 1:
+            return
+
+        newPath = newPath[0]
+
+        if QT_VERSION >= 0x50900:
+            if fileDialog.selectedMimeTypeFilter() == "image/jpeg":
+                imgFormat = b"JPG"
+            else:
+                imgFormat = b"PNG"
+        else:
+            if newPath.lower().endswith(".jpg"):
+                imgFormat = b"JPG"
+            else:
+                imgFormat = b"PNG"
 
         sender = self.sender()
         if sender == self.ui.act_canvas_save_image_2x:
@@ -1541,21 +1572,11 @@ class HostWindow(QMainWindow):
         else:
             zoom = 1.0
 
-        self.scene.clearSelection()
-
-        if newPath.lower().endswith((".jpg", ".jpeg")):
-            imgFormat = b"JPG"
-        elif newPath.lower().endswith((".png",)):
-            imgFormat = b"PNG"
-        else:
-            # File-dialog may not auto-add the extension
-            imgFormat = b"PNG"
-            newPath  += ".png"
-
         image   = QImage(self.scene.width()*zoom, self.scene.height()*zoom, QImage.Format_RGB32)
         painter = QPainter(image)
         painter.save()
         painter.setRenderHints(painter.renderHints() | QPainter.Antialiasing | QPainter.TextAntialiasing)
+        self.scene.clearSelection()
         self.scene.render(painter)
         painter.restore()
         del painter
