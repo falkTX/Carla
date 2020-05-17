@@ -85,7 +85,7 @@ FILE* __carla_fopen(const char* const filename, FILE* const fallback) noexcept
 
     try {
         ret = std::fopen(filename, "a+");
-    } catch (...) {}
+    } CARLA_CATCH_UNWIND catch (...) {}
 
     if (ret == nullptr)
         ret = fallback;
@@ -128,7 +128,7 @@ void carla_debug(const char* const fmt, ...) noexcept
         }
 
         ::va_end(args);
-    } catch (...) {}
+    } CARLA_CATCH_UNWIND catch (...) {}
 }
 #endif
 
@@ -148,7 +148,7 @@ void carla_stdout(const char* const fmt, ...) noexcept
         if (output != stdout)
             std::fflush(output);
         ::va_end(args);
-    } catch (...) {}
+    } CARLA_CATCH_UNWIND catch (...) {}
 }
 
 /*
@@ -167,7 +167,7 @@ void carla_stderr(const char* const fmt, ...) noexcept
         if (output != stderr)
             std::fflush(output);
         ::va_end(args);
-    } catch (...) {}
+    } CARLA_CATCH_UNWIND catch (...) {}
 }
 
 /*
@@ -196,7 +196,7 @@ void carla_stderr2(const char* const fmt, ...) noexcept
         }
 
         ::va_end(args);
-    } catch (...) {}
+    } CARLA_CATCH_UNWIND catch (...) {}
 }
 
 // --------------------------------------------------------------------------------------------------------------------
