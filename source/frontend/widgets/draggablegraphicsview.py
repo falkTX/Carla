@@ -24,6 +24,11 @@ from PyQt5.QtGui import QCursor, QMouseEvent
 from PyQt5.QtWidgets import QGraphicsView
 
 # ------------------------------------------------------------------------------------------------------------
+# Imports (Custom Stuff)
+
+from carla_shared import *
+
+# ------------------------------------------------------------------------------------------------------------
 # Widget Class
 
 class DraggableGraphicsView(QGraphicsView):
@@ -37,6 +42,78 @@ class DraggableGraphicsView(QGraphicsView):
             self.fMiddleButton = Qt.MiddleButton
         except:
             self.fMiddleButton = Qt.MidButton
+
+        exts = gCarla.utils.get_supported_file_extensions()
+
+        self.fSupportedExtensions = tuple(("." + i) for i in exts)
+        self.fWasLastDragValid = False
+
+        self.setAcceptDrops(True)
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def isDragUrlValid(self, filename):
+        lfilename = filename.lower()
+
+        if os.path.isdir(filename):
+            #if os.path.exists(os.path.join(filename, "manifest.ttl")):
+                #return True
+            if MACOS and lfilename.endswith(".vst"):
+                return True
+            elif lfilename.endswith(".vst3") and ".vst3" in self.fSupportedExtensions:
+                return True
+
+        elif os.path.isfile(filename):
+            if lfilename.endswith(self.fSupportedExtensions):
+                return True
+
+        return False
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def dragEnterEvent(self, event):
+        urls = event.mimeData().urls()
+        print(urls)
+
+        for url in urls:
+            if self.isDragUrlValid(url.toLocalFile()):
+                self.fWasLastDragValid = True
+                event.acceptProposedAction()
+                return
+
+        self.fWasLastDragValid = False
+        QGraphicsView.dragEnterEvent(self, event)
+
+    def dragMoveEvent(self, event):
+        if not self.fWasLastDragValid:
+            QGraphicsView.dragMoveEvent(self, event)
+            return
+
+        event.acceptProposedAction()
+
+    def dragLeaveEvent(self, event):
+        self.fWasLastDragValid = False
+        QGraphicsView.dragLeaveEvent(self, event)
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def dropEvent(self, event):
+        event.acceptProposedAction()
+
+        urls = event.mimeData().urls()
+
+        if len(urls) == 0:
+            return
+
+        for url in urls:
+            filename = url.toLocalFile()
+
+            if not gCarla.gui.host.load_file(filename):
+                CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
+                                 self.tr("Failed to load file"),
+                                 gCarla.gui.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+
+    # --------------------------------------------------------------------------------------------------------
 
     def mousePressEvent(self, event):
         if event.button() == self.fMiddleButton and not self.fCtrlDown:
@@ -55,6 +132,8 @@ class DraggableGraphicsView(QGraphicsView):
         self.fPanning = False
         self.setDragMode(QGraphicsView.NoDrag)
         self.setCursor(QCursor(Qt.ArrowCursor))
+
+    # --------------------------------------------------------------------------------------------------------
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Control:
