@@ -68,7 +68,8 @@ typedef char* (JACKSYM_API *jacksym_client_get_uuid)(jack_client_t*);
 typedef char* (JACKSYM_API *jacksym_get_uuid_for_client_name)(jack_client_t*, const char*);
 typedef char* (JACKSYM_API *jacksym_get_client_name_by_uuid)(jack_client_t*, const char*);
 
-typedef int (JACKBRIDGE_API *jacksym_uuid_parse)(const char*, jack_uuid_t*);
+typedef int  (JACKBRIDGE_API *jacksym_uuid_parse)(const char*, jack_uuid_t*);
+typedef void (JACKBRIDGE_API *jacksym_uuid_unparse)(jack_uuid_t, char buf[JACK_UUID_STRING_SIZE]);
 
 typedef int (JACKSYM_API *jacksym_activate)(jack_client_t*);
 typedef int (JACKSYM_API *jacksym_deactivate)(jack_client_t*);
@@ -195,6 +196,7 @@ struct JackBridge {
     jacksym_get_client_name_by_uuid get_client_name_by_uuid_ptr;
 
     jacksym_uuid_parse uuid_parse_ptr;
+    jacksym_uuid_unparse uuid_unparse_ptr;
 
     jacksym_activate activate_ptr;
     jacksym_deactivate deactivate_ptr;
@@ -311,6 +313,7 @@ struct JackBridge {
           get_uuid_for_client_name_ptr(nullptr),
           get_client_name_by_uuid_ptr(nullptr),
           uuid_parse_ptr(nullptr),
+          uuid_unparse_ptr(nullptr),
           activate_ptr(nullptr),
           deactivate_ptr(nullptr),
           is_realtime_ptr(nullptr),
@@ -435,6 +438,7 @@ struct JackBridge {
         LIB_SYMBOL(get_client_name_by_uuid)
 
         LIB_SYMBOL(uuid_parse)
+        LIB_SYMBOL(uuid_unparse)
 
         LIB_SYMBOL(activate)
         LIB_SYMBOL(deactivate)
@@ -932,6 +936,17 @@ bool jackbridge_uuid_parse(const char* buf, jack_uuid_t* uuid)
         return (func(buf, uuid) == 0);
 #endif
     return false;
+}
+
+void jackbridge_uuid_unparse(jack_uuid_t uuid, char buf[JACK_UUID_STRING_SIZE])
+{
+#if defined(JACKBRIDGE_DUMMY)
+#elif defined(JACKBRIDGE_DIRECT)
+    jack_uuid_unparse(uuid, buf);
+#else
+    if (const jacksym_uuid_unparse func = getBridgeInstance().uuid_unparse_ptr)
+        return func(uuid, buf);
+#endif
 }
 
 // -----------------------------------------------------------------------------
