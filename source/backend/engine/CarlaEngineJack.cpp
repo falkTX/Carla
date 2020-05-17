@@ -1631,8 +1631,10 @@ public:
             fPostPonedUUIDs.swapWith(uuids);
         }
 
-        for (auto uuid : uuids)
+        for (int i=0; i<uuids.size(); ++i)
         {
+            jack_uuid_t uuid = uuids.getUnchecked(i);
+
             char uuidstr[JACK_UUID_STRING_SIZE];
             carla_zeroStruct(uuidstr);
             jackbridge_uuid_unparse(uuid, uuidstr);
