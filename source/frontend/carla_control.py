@@ -204,6 +204,7 @@ class CarlaHostOSC(CarlaHostQtPlugin):
                       #"clear_project_filename",
                       "patchbay_connect",
                       "patchbay_disconnect",
+                      "patchbay_set_group_pos",
                       "patchbay_refresh",
                       "transport_play",
                       "transport_pause",

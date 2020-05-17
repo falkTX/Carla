@@ -352,6 +352,25 @@ int CarlaEngineOsc::handleMsgControl(const char* const method,
 
         ok = fEngine->patchbayDisconnect(external, static_cast<uint32_t>(connectionId));
     }
+    else if (std::strcmp(method, "patchbay_set_group_pos") == 0)
+    {
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(argc == 7);
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[1] == 'i');
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[2] == 'i');
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[3] == 'i');
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[4] == 'i');
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[5] == 'i');
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(types[6] == 'i');
+
+        const bool external = argv[1]->i != 0;
+
+        const int32_t groupId = argv[2]->i;
+        CARLA_SAFE_ASSERT_RETURN_OSC_ERR(groupId >= 0);
+
+        ok = fEngine->patchbaySetGroupPos(true, false,
+                                          external, static_cast<uint32_t>(groupId),
+                                          argv[3]->i, argv[4]->i, argv[5]->i, argv[6]->i);
+    }
     else if (std::strcmp(method, "patchbay_refresh") == 0)
     {
         CARLA_SAFE_ASSERT_RETURN_OSC_ERR(argc == 2);

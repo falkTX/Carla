@@ -102,6 +102,9 @@ struct CarlaJackPortHints {
             {
                 ph.isCV  = (std::strcmp(value, "CV") == 0);
                 ph.isOSC = (std::strcmp(value, "OSC") == 0);
+
+                jackbridge_free(value);
+                jackbridge_free(type);
             }
         }
 
@@ -114,7 +117,9 @@ struct CarlaJackPortHints {
 
 static const GroupNameToId  kGroupNameToIdFallback   = { 0, { '\0' } };
 static const PortNameToId   kPortNameToIdFallback    = { 0, 0, { '\0' }, { '\0' } };
+#ifndef BUILD_BRIDGE
 static /* */ PortNameToId   kPortNameToIdFallbackNC  = { 0, 0, { '\0' }, { '\0' } };
+#endif
 static const ConnectionToId kConnectionToIdFallback  = { 0, 0, 0, 0, 0 };
 static const EngineEvent    kFallbackJackEngineEvent = { kEngineEventTypeNull, 0, 0, {{ kEngineControlEventTypeNull, 0, 0.0f }} };
 
@@ -829,11 +834,11 @@ public:
 
             if (fPreRenamePluginId.isNotEmpty())
             {
-                if (const char* const uuidchar = jackbridge_client_get_uuid(fJackClient))
+                if (char* const uuidstr = jackbridge_client_get_uuid(fJackClient))
                 {
                     jack_uuid_t uuid;
 
-                    if (jackbridge_uuid_parse(uuidchar, &uuid))
+                    if (jackbridge_uuid_parse(uuidstr, &uuid))
                     {
                         jackbridge_set_property(fJackClient, uuid,
                                                 URI_MAIN_CLIENT_NAME,
@@ -851,6 +856,8 @@ public:
                                                     fPreRenamePluginIcon,
                                                     URI_TYPE_STRING);
                     }
+
+                    jackbridge_free(uuidstr);
                 }
             }
         }
@@ -1068,19 +1075,22 @@ public:
 
     void setNewPluginId(const uint id) const
     {
-        if (const char* const uuidchar = jackbridge_client_get_uuid(fJackClient))
+        if (char* const uuidstr = jackbridge_client_get_uuid(fJackClient))
         {
             jack_uuid_t uuid;
 
-            if (jackbridge_uuid_parse(uuidchar, &uuid))
+            if (jackbridge_uuid_parse(uuidstr, &uuid))
             {
                 char buf[32];
-                std::snprintf(buf, 32, "%u", id);
+                std::snprintf(buf, 31, "%u", id);
+                buf[31] = '\0';
                 jackbridge_set_property(fJackClient, uuid,
                                         URI_PLUGIN_ID,
                                         buf,
                                         URI_TYPE_INTEGER);
             }
+
+            jackbridge_free(uuidstr);
         }
     }
 
@@ -1166,14 +1176,17 @@ private:
 
     void _saveProperties()
     {
-        if (const char* const uuidchar = jackbridge_client_get_uuid(fJackClient))
+        if (char* const uuidstr = jackbridge_client_get_uuid(fJackClient))
         {
             jack_uuid_t uuid;
 
-            if (jackbridge_uuid_parse(uuidchar, &uuid))
+            const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
+            jackbridge_free(uuidstr);
+
+            if (parsed)
             {
-                char* value;
-                char* type;
+                char* value = nullptr;
+                char* type = nullptr;
 
                 CARLA_SAFE_ASSERT_RETURN(jackbridge_get_property(uuid,
                                                                  URI_PLUGIN_ID,
@@ -1183,11 +1196,18 @@ private:
                 CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, URI_TYPE_INTEGER) == 0,);
                 fPreRenamePluginId = value;
 
+                jackbridge_free(value);
+                jackbridge_free(type);
+                value = type = nullptr;
+
                 if (jackbridge_get_property(uuid, URI_PLUGIN_ICON, &value, &type))
                 {
                     CARLA_SAFE_ASSERT_RETURN(type != nullptr,);
                     CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, URI_TYPE_STRING) == 0,);
                     fPreRenamePluginIcon = value;
+
+                    jackbridge_free(value);
+                    jackbridge_free(type);
                 }
             }
         }
@@ -1228,6 +1248,8 @@ public:
           fRetConns(),
           fPostPonedEvents(),
           fPostPonedEventsMutex(),
+          fPostPonedUUIDs(),
+          fPostPonedUUIDsMutex(),
           fIsInternalClient(false)
 #endif
     {
@@ -1382,6 +1404,7 @@ public:
         jackbridge_set_port_registration_callback(fClient, carla_jack_port_registration_callback, this);
         jackbridge_set_port_connect_callback(fClient, carla_jack_port_connect_callback, this);
         jackbridge_set_port_rename_callback(fClient, carla_jack_port_rename_callback, this);
+        jackbridge_set_property_change_callback(fClient, carla_jack_property_change_callback, this);
         jackbridge_set_xrun_callback(fClient, carla_jack_xrun_callback, this);
 
         if (opts.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || opts.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
@@ -1407,11 +1430,11 @@ public:
             }
         }
 
-        if (const char* const uuidchar = jackbridge_client_get_uuid(fClient))
+        if (char* const uuidstr = jackbridge_client_get_uuid(fClient))
         {
             jack_uuid_t uuid;
 
-            if (jackbridge_uuid_parse(uuidchar, &uuid))
+            if (jackbridge_uuid_parse(uuidstr, &uuid))
             {
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
                 const CarlaString& tcp(pData->osc.getServerPathTCP());
@@ -1419,13 +1442,15 @@ public:
 
                 if (tcp.isNotEmpty())
                     jackbridge_set_property(fClient, uuid,
-                                            "https://kx.studio/ns/carla/osc-tcp", tcp.buffer(), URI_TYPE_STRING);
+                                            "https://kx.studio/ns/carla/osc-tcp", tcp, URI_TYPE_STRING);
 
                 if (tcp.isNotEmpty())
                     jackbridge_set_property(fClient, uuid,
-                                            "https://kx.studio/ns/carla/osc-udp", udp.buffer(), URI_TYPE_STRING);
+                                            "https://kx.studio/ns/carla/osc-udp", udp, URI_TYPE_STRING);
 #endif
             }
+
+            jackbridge_free(uuidstr);
         }
 
         if (jackbridge_activate(fClient))
@@ -1596,6 +1621,77 @@ public:
 
         CarlaEngine::callback(sendHost, sendOsc, action, pluginId, value1, value2, value3, valuef, valueStr);
     }
+
+    void idle() noexcept override
+    {
+        water::Array<jack_uuid_t> uuids;
+
+        {
+            const CarlaMutexLocker cml(fPostPonedUUIDsMutex);
+            fPostPonedUUIDs.swapWith(uuids);
+        }
+
+        for (auto uuid : uuids)
+        {
+            char uuidstr[JACK_UUID_STRING_SIZE];
+            carla_zeroStruct(uuidstr);
+            jackbridge_uuid_unparse(uuid, uuidstr);
+
+            if (char* const clientName = jackbridge_get_client_name_by_uuid(fClient, uuidstr))
+            {
+                CARLA_SAFE_ASSERT_RETURN(clientName != nullptr && clientName[0] != '\0',);
+
+                uint groupId;
+
+                {
+                    const CarlaMutexLocker cml(fUsedGroups.mutex);
+                    groupId = fUsedGroups.getGroupId(clientName);
+                }
+
+                jackbridge_free(clientName);
+                CARLA_SAFE_ASSERT_RETURN(groupId != 0,);
+
+                char* value = nullptr;
+                char* type  = nullptr;
+
+                if (jackbridge_get_property(uuid, URI_POSITION, &value, &type)
+                    && value != nullptr
+                    && type != nullptr
+                    && std::strcmp(type, URI_TYPE_STRING) == 0)
+                {
+                    if (char* sep1 = std::strstr(value, ":"))
+                    {
+                        int x1, y1 = 0, x2 = 0, y2 = 0;
+                        *sep1++ = '\0';
+                        x1 = std::atoi(value);
+
+                        if (char* sep2 = std::strstr(sep1, ":"))
+                        {
+                            *sep2++ = '\0';
+                            y1 = std::atoi(sep1);
+
+                            if (char* sep3 = std::strstr(sep2, ":"))
+                            {
+                                *sep3++ = '\0';
+                                x2 = std::atoi(sep2);
+                                y2 = std::atoi(sep3);
+                            }
+
+                            callback(fExternalPatchbayHost, fExternalPatchbayOsc,
+                                    ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED,
+                                    groupId, x1, y1, x2, static_cast<float>(y2),
+                                    nullptr);
+                        }
+                    }
+
+                    jackbridge_free(value);
+                    jackbridge_free(type);
+                }
+            }
+        }
+
+        CarlaEngine::idle();
+    }
 #endif
 
     bool setBufferSizeAndSampleRate(const uint bufferSize, const double sampleRate) override
@@ -1714,11 +1810,11 @@ public:
             jackbridge_set_process_callback(client, carla_jack_process_callback_plugin, plugin);
             jackbridge_on_shutdown(client, carla_jack_shutdown_callback_plugin, plugin);
 
-            if (const char* const uuidchar = jackbridge_client_get_uuid(client))
+            if (char* const uuidstr = jackbridge_client_get_uuid(client))
             {
                 jack_uuid_t uuid;
 
-                if (jackbridge_uuid_parse(uuidchar, &uuid))
+                if (jackbridge_uuid_parse(uuidstr, &uuid))
                 {
                     char strBufId[24];
                     std::snprintf(strBufId, 24, "%u", plugin->getId());
@@ -1740,6 +1836,8 @@ public:
                                                 pluginIcon,
                                                 URI_TYPE_STRING);
                 }
+
+                jackbridge_free(uuidstr);
             }
 #else
             fClient = client;
@@ -2072,23 +2170,34 @@ public:
         const char* groupName;
 
         {
-            const CarlaMutexLocker cml(fUsedPorts.mutex);
+            const CarlaMutexLocker cml(fUsedGroups.mutex);
 
             groupName = fUsedGroups.getGroupName(groupId);
             CARLA_SAFE_ASSERT_RETURN(groupName != nullptr && groupName[0] != '\0', false);
         }
 
-        const char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, groupName);
-        CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr && uuidstr[0] != '\0', false);
-
         jack_uuid_t uuid;
-        CARLA_SAFE_ASSERT_RETURN(jackbridge_uuid_parse(uuidstr, &uuid), false);
+        {
+            char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, groupName);
+            CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr && uuidstr[0] != '\0', false);
+
+            const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
+            jackbridge_free(uuidstr);
+            CARLA_SAFE_ASSERT_RETURN(parsed, false);
+        }
 
         char valueStr[STR_MAX];
-        std::snprintf(valueStr, 63, "%i:%i:%i:%i", x1, y1, x2, y2);
+        std::snprintf(valueStr, STR_MAX-1, "%i:%i:%i:%i", x1, y1, x2, y2);
         valueStr[STR_MAX-1] = '\0';
 
-        return jackbridge_set_property(fClient, uuid, URI_POSITION, valueStr, URI_TYPE_STRING);
+        const bool ok = jackbridge_set_property(fClient, uuid, URI_POSITION, valueStr, URI_TYPE_STRING);
+
+        callback(sendHost, sendOSC,
+                 ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED,
+                 groupId, x1, y1, x2, static_cast<float>(y2),
+                 nullptr);
+
+        return ok;
     }
 
     bool patchbayRefresh(const bool sendHost, const bool sendOSC, const bool external) override
@@ -2274,11 +2383,15 @@ public:
                 groupNameToId = it.getValue(kGroupNameToIdFallback);
                 CARLA_SAFE_ASSERT_CONTINUE(groupNameToId.group != 0);
 
-                const char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, groupNameToId.name);
-                CARLA_SAFE_ASSERT_CONTINUE(uuidstr != nullptr && uuidstr[0] != '\0');
-
                 jack_uuid_t uuid;
-                CARLA_SAFE_ASSERT_CONTINUE(jackbridge_uuid_parse(uuidstr, &uuid));
+                {
+                    char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, groupNameToId.name);
+                    CARLA_SAFE_ASSERT_CONTINUE(uuidstr != nullptr && uuidstr[0] != '\0');
+
+                    const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
+                    jackbridge_free(uuidstr);
+                    CARLA_SAFE_ASSERT_CONTINUE(parsed);
+                }
 
                 char* value = nullptr;
                 char* type  = nullptr;
@@ -2311,6 +2424,9 @@ public:
                             }
                         }
                     }
+
+                    jackbridge_free(value);
+                    jackbridge_free(type);
                 }
             }
 
@@ -2350,6 +2466,7 @@ public:
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! external)
             return CarlaEngine::restorePatchbayGroupPosition(external, ppos);
 
+        bool hasGroups = true;
         uint groupId = 0;
 
         // it might take a bit to receive jack client registration callback, so we ease things a bit
@@ -2357,6 +2474,13 @@ public:
         {
             {
                 const CarlaMutexLocker cml1(fUsedGroups.mutex);
+
+                if (fUsedGroups.list.count() == 0)
+                {
+                    hasGroups = false;
+                    break;
+                }
+
                 groupId = fUsedGroups.getGroupId(ppos.name);
             }
 
@@ -2367,24 +2491,33 @@ public:
             callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
         }
 
-        CARLA_SAFE_ASSERT_RETURN(groupId != 0,);
-
-        const char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, ppos.name);
-        CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr && uuidstr[0] != '\0',);
+        if (hasGroups) {
+            CARLA_SAFE_ASSERT(groupId != 0);
+        }
 
         jack_uuid_t uuid;
-        CARLA_SAFE_ASSERT_RETURN(jackbridge_uuid_parse(uuidstr, &uuid),);
+        {
+            char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, ppos.name);
+            CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr && uuidstr[0] != '\0',);
+
+            const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
+            jackbridge_free(uuidstr);
+            CARLA_SAFE_ASSERT_RETURN(parsed,);
+        }
 
         char valueStr[STR_MAX];
-        std::snprintf(valueStr, 63, "%i:%i:%i:%i", ppos.x1, ppos.y1, ppos.x2, ppos.y2);
+        std::snprintf(valueStr, STR_MAX-1, "%i:%i:%i:%i", ppos.x1, ppos.y1, ppos.x2, ppos.y2);
         valueStr[STR_MAX-1] = '\0';
 
         jackbridge_set_property(fClient, uuid, URI_POSITION, valueStr, URI_TYPE_STRING);
 
-        callback(true, true,
-                 ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED,
-                 groupId, ppos.x1, ppos.y1, ppos.x2, static_cast<float>(ppos.y2),
-                 nullptr);
+        if (groupId != 0)
+        {
+            callback(true, true,
+                    ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED,
+                    groupId, ppos.x1, ppos.y1, ppos.x2, static_cast<float>(ppos.y2),
+                    nullptr);
+        }
     }
 #endif
 
@@ -2715,19 +2848,38 @@ protected:
         if (! fExternalPatchbayHost) return;
 #endif
 
-        const uint groupId(fUsedGroups.getGroupId(name));
+        uint groupId;
 
-        // clients might have been registered without ports
-        if (groupId == 0) return;
+        {
+            const CarlaMutexLocker cml(fUsedGroups.mutex);
+            groupId = fUsedGroups.getGroupId(name);
 
-        GroupNameToId groupNameToId;
-        groupNameToId.setData(groupId, name);
+            // clients might have been registered without ports
+            if (groupId == 0) return;
+
+            GroupNameToId groupNameToId;
+            groupNameToId.setData(groupId, name);
+
+            fUsedGroups.list.removeOne(groupNameToId);
+        }
 
         callback(fExternalPatchbayHost, fExternalPatchbayOsc,
-                 ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED, groupNameToId.group, 0, 0, 0, 0.0f, nullptr);
+                 ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED,
+                 groupId,
+                 0, 0, 0, 0.0f, nullptr);
+    }
 
-        const CarlaMutexLocker cml(fUsedGroups.mutex);
-        fUsedGroups.list.removeOne(groupNameToId);
+    void handleJackClientPositionChangeCallback(const jack_uuid_t uuid)
+    {
+        // ignore this if on internal patchbay mode
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
+        if (! (fExternalPatchbayHost || (fExternalPatchbayOsc && pData->osc.isControlRegisteredForTCP()))) return;
+#else
+        if (! fExternalPatchbayHost) return;
+#endif
+
+        const CarlaMutexLocker cml(fPostPonedUUIDsMutex);
+        fPostPonedUUIDs.addIfNotAlreadyThere(uuid);
     }
 
     void handleJackPortRegistrationCallback(const char* const portName,
@@ -3103,11 +3255,15 @@ private:
         if (pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
             return;
 
-        const char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, clientName);
-        CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr && uuidstr[0] != '\0',);
-
         jack_uuid_t uuid;
-        CARLA_SAFE_ASSERT_RETURN(jackbridge_uuid_parse(uuidstr, &uuid),);
+        {
+            char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, clientName);
+            CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr && uuidstr[0] != '\0',);
+
+            const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
+            jackbridge_free(uuidstr);
+            CARLA_SAFE_ASSERT_RETURN(parsed,);
+        }
 
         bool clientBelongsToUs;
 
@@ -3140,6 +3296,9 @@ private:
                 pluginId = std::atoi(value);
 
             icon = PATCHBAY_ICON_PLUGIN;
+
+            jackbridge_free(value);
+            jackbridge_free(type);
         }
 
         {
@@ -3167,6 +3326,9 @@ private:
                 icon = PATCHBAY_ICON_DISTRHO;
             else if (std::strcmp(value, "file") == 0)
                 icon = PATCHBAY_ICON_FILE;
+
+            jackbridge_free(value);
+            jackbridge_free(type);
         }
     }
 
@@ -3374,11 +3536,15 @@ private:
                     0, 0.0f,
                     group.strVal);
 
-            const char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, group.strVal);
-            CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr && uuidstr[0] != '\0',);
-
             jack_uuid_t uuid;
-            CARLA_SAFE_ASSERT_RETURN(jackbridge_uuid_parse(uuidstr, &uuid),);
+            {
+                char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, group.strVal);
+                CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr && uuidstr[0] != '\0',);
+
+                const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
+                jackbridge_free(uuidstr);
+                CARLA_SAFE_ASSERT_RETURN(parsed,);
+            }
 
             char* value = nullptr;
             char* type  = nullptr;
@@ -3406,6 +3572,9 @@ private:
                             y2 = std::atoi(sep3);
                         }
                     }
+
+                    jackbridge_free(value);
+                    jackbridge_free(type);
 
                     callback(sendHost, sendOSC,
                              ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED,
@@ -3563,6 +3732,7 @@ private:
         enum Type {
             kTypeNull = 0,
             kTypeClientUnregister,
+            kTypeClientPositionChange,
             kTypePortRegister,
             kTypePortUnregister,
             kTypePortConnect,
@@ -3576,6 +3746,9 @@ private:
             struct {
                 char name[STR_MAX+1];
             } clientUnregister;
+            struct {
+                jack_uuid_t uuid;
+            } clientPositionChange;
             struct {
                 char shortName[STR_MAX+1];
                 char fullName[STR_MAX+1];
@@ -3602,6 +3775,9 @@ private:
 
     LinkedList<PostPonedJackEvent> fPostPonedEvents;
     CarlaMutex fPostPonedEventsMutex;
+
+    water::Array<jack_uuid_t> fPostPonedUUIDs;
+    CarlaMutex fPostPonedUUIDsMutex;
 
     bool fIsInternalClient;
 
@@ -3651,6 +3827,10 @@ private:
 
                 case PostPonedJackEvent::kTypeClientUnregister:
                     handleJackClientUnregistrationCallback(ev.clientUnregister.name);
+                    break;
+
+                case PostPonedJackEvent::kTypeClientPositionChange:
+                    handleJackClientPositionChangeCallback(ev.clientPositionChange.uuid);
                     break;
 
                 case PostPonedJackEvent::kTypePortRegister:
@@ -3834,6 +4014,20 @@ private:
         std::strncpy(ev.portRename.oldFullName, oldName, STR_MAX);
         std::strncpy(ev.portRename.newFullName, newName, STR_MAX);
         std::strncpy(ev.portRename.newShortName, shortName, STR_MAX);
+        handlePtr->postPoneJackCallback(ev);
+    }
+
+    static void carla_jack_property_change_callback(jack_uuid_t subject, const char* key, jack_property_change_t change, void* arg)
+    {
+        if (change != PropertyChanged)
+            return;
+        if (std::strcmp(key, URI_POSITION) != 0)
+            return;
+
+        PostPonedJackEvent ev;
+        carla_zeroStruct(ev);
+        ev.type = PostPonedJackEvent::kTypeClientPositionChange;
+        ev.clientPositionChange.uuid = subject;
         handlePtr->postPoneJackCallback(ev);
     }
 

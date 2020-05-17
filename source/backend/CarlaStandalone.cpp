@@ -977,7 +977,7 @@ bool carla_patchbay_set_group_pos(CarlaHostHandle handle, bool external, uint gr
     carla_debug("carla_patchbay_set_group_pos(%p, %s, %u, %i, %i, %i, %i)",
                 handle, bool2str(external), groupId, x1, y1, x2, y2);
 
-    return handle->engine->patchbaySetGroupPos(true, false, external, groupId, x1, y1, x2, y2);
+    return handle->engine->patchbaySetGroupPos(false, true, external, groupId, x1, y1, x2, y2);
 }
 
 bool carla_patchbay_refresh(CarlaHostHandle handle, bool external)

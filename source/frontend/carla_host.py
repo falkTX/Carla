@@ -1656,6 +1656,7 @@ class HostWindow(QMainWindow):
     @pyqtSlot(int, int, int, int, int)
     def slot_handlePatchbayClientPositionChangedCallback(self, clientId, x1, y1, x2, y2):
         patchcanvas.setGroupPosFull(clientId, x1, y1, x2, y2)
+        self.updateMiniCanvasLater()
 
     @pyqtSlot(int, int, int, int, str)
     def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portFlags, portGroupId, portName):
