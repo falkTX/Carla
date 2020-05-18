@@ -1,6 +1,6 @@
 /*
  * Carla common utils
- * Copyright (C) 2011-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -258,7 +258,7 @@ static inline
 void carla_custom_safe_assert(const char* const message,
                               const char* const assertion, const char* const file, const int line) noexcept
 {
-    carla_stderr2("%s, condition \"%s\" in file %s, line %i", message, assertion, file, line);
+    carla_stderr2("Carla assertion failure: %s, condition \"%s\" in file %s, line %i", message, assertion, file, line);
 }
 
 // --------------------------------------------------------------------------------------------------------------------

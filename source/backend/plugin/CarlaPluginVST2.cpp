@@ -1917,7 +1917,7 @@ protected:
                 if (pData->param.count == 0)
                     break;
             } else {
-                CARLA_SAFE_ASSERT_BREAK(pData->enabled);
+                CARLA_CUSTOM_SAFE_ASSERT_BREAK("audioMasterAutomate while disabled", pData->enabled);
             }
 
             // plugins should never do this:
