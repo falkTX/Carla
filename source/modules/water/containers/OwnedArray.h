@@ -715,7 +715,7 @@ public:
         @param newIndex         the index at which you'd like this object to end up. If this
                                 is less than zero, it will be moved to the end of the array
     */
-    void move (const size_t currentIndex, const size_t newIndex) noexcept
+    void move (const size_t currentIndex, size_t newIndex) noexcept
     {
         if (currentIndex != newIndex)
         {
