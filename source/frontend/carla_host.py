@@ -915,6 +915,7 @@ class HostWindow(QMainWindow):
         return True
 
     def engineStopFinal(self):
+        patchcanvas.handleAllPluginsRemoved()
         self.killTimers()
 
         if self.host.is_engine_running():
@@ -2718,6 +2719,8 @@ class HostWindow(QMainWindow):
         if self.shouldIgnoreClose():
             event.ignore()
             return
+
+        patchcanvas.handleAllPluginsRemoved()
 
         if MACOS and self.fMacClosingHelper and not (self.host.isControl or self.host.isPlugin):
             self.fCustomStopAction = self.CUSTOM_ACTION_APP_CLOSE

@@ -996,6 +996,10 @@ public:
                                             0, 0, 0, 0.0f, nullptr);
                 }
             }
+            else
+            {
+                fInlineDisplayNeedsRedraw = false;
+            }
         }
 
         CarlaPlugin::idle();

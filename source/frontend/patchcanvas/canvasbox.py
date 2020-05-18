@@ -113,6 +113,7 @@ class CanvasBox(QGraphicsObject):
         self.m_inline_data = None
         self.m_inline_image = None
         self.m_inline_scaling = 1.0
+        self.m_inline_first = True
         self.m_will_signal_pos_change = False
 
         self.m_port_list_ids = []
@@ -196,7 +197,7 @@ class CanvasBox(QGraphicsObject):
 
         self.m_plugin_id = -1
         self.m_plugin_ui = False
-        #self.m_plugin_inline = self.INLINE_DISPLAY_DISABLED
+        self.m_plugin_inline = self.INLINE_DISPLAY_DISABLED
 
     def setAsPlugin(self, plugin_id, hasUI, hasInlineDisplay):
         if hasInlineDisplay and not options.inline_displays:
@@ -317,7 +318,7 @@ class CanvasBox(QGraphicsObject):
 
         # Check Text Name size
         app_name_size = QFontMetrics(self.m_font_name).width(self.m_group_name) + 30
-        self.p_width = max(200 if self.m_plugin_inline != self.INLINE_DISPLAY_DISABLED else 50, app_name_size)
+        self.p_width = max(50, app_name_size)
 
         # Get Port List
         port_list = []
@@ -363,32 +364,37 @@ class CanvasBox(QGraphicsObject):
                         port.widget.setY(last_out_pos)
                         last_out_pos += port_spacing
 
-            self.p_width = max(self.p_width, (100 if self.m_plugin_inline != self.INLINE_DISPLAY_DISABLED else 30) + max_in_width + max_out_width)
-            self.p_width_in = max_in_width
+            self.p_width     = max(self.p_width, 30 + max_in_width + max_out_width)
+            self.p_width_in  = max_in_width
             self.p_width_out = max_out_width
 
-            #if self.m_plugin_inline:
-                #self.p_width += 10
-
-            # Horizontal ports re-positioning
-            inX = canvas.theme.port_offset
-            outX = self.p_width - max_out_width - canvas.theme.port_offset - 12
-            for port_type in port_types:
-                for port in port_list:
-                    if port.port_mode == PORT_MODE_INPUT:
-                        port.widget.setX(inX)
-                        port.widget.setPortWidth(max_in_width)
-
-                    elif port.port_mode == PORT_MODE_OUTPUT:
-                        port.widget.setX(outX)
-                        port.widget.setPortWidth(max_out_width)
-
-            self.p_height = max(last_in_pos, last_out_pos)
+            self.p_height  = max(last_in_pos, last_out_pos)
             self.p_height += max(canvas.theme.port_spacing, canvas.theme.port_spacingT) - canvas.theme.port_spacing
-            self.p_height += canvas.theme.box_pen.widthF()
+            self.p_height += canvas.theme.box_pen.width()
+
+            self.repositionPorts(port_list)
 
         self.repaintLines(True)
         self.update()
+
+    def repositionPorts(self, port_list = None):
+        if port_list is None:
+            port_list = []
+            for port in canvas.port_list:
+                if port.group_id == self.m_group_id and port.port_id in self.m_port_list_ids:
+                    port_list.append(port)
+
+        # Horizontal ports re-positioning
+        inX = canvas.theme.port_offset
+        outX = self.p_width - self.p_width_out - canvas.theme.port_offset - 12
+        for port in port_list:
+            if port.port_mode == PORT_MODE_INPUT:
+                port.widget.setX(inX)
+                port.widget.setPortWidth(self.p_width_in)
+
+            elif port.port_mode == PORT_MODE_OUTPUT:
+                port.widget.setX(outX)
+                port.widget.setPortWidth(self.p_width_out)
 
     def repaintLines(self, forced=False):
         if self.pos() != self.m_last_pos or forced:
@@ -736,24 +742,39 @@ class CanvasBox(QGraphicsObject):
         if not options.inline_displays:
             return
 
-        inwidth  = self.p_width - self.p_width_in - self.p_width_out - 16
-        inheight = self.p_height - canvas.theme.box_header_height - canvas.theme.box_header_spacing - canvas.theme.port_spacing - 3
+        inwidth  = self.p_width - 16 - self.p_width_in - self.p_width_out
+        inheight = self.p_height - 3 - canvas.theme.box_header_height - canvas.theme.box_header_spacing - canvas.theme.port_spacing
+
         scaling  = canvas.scene.getScaleFactor() * canvas.scene.getDevicePixelRatioF()
 
         if self.m_plugin_id >= 0 and self.m_plugin_id <= MAX_PLUGIN_ID_ALLOWED and (
            self.m_plugin_inline == self.INLINE_DISPLAY_ENABLED or self.m_inline_scaling != scaling):
-            size = "%i:%i" % (int(inwidth*scaling), int(inheight*scaling))
+            if self.m_inline_first:
+                size = "%i:%i" % (int(50*scaling), int(50*scaling))
+            else:
+                size = "%i:%i" % (int(inwidth*scaling), int(inheight*scaling))
             data = canvas.callback(ACTION_INLINE_DISPLAY, self.m_plugin_id, 0, size)
             if data is None:
                 return
 
-            # invalidate old image first
-            del self.m_inline_image
-
-            self.m_inline_data = pack("%iB" % (data['height'] * data['stride']), *data['data'])
-            self.m_inline_image = QImage(voidptr(self.m_inline_data), data['width'], data['height'], data['stride'], QImage.Format_ARGB32)
+            new_inline_data      = pack("%iB" % (data['height'] * data['stride']), *data['data'])
+            self.m_inline_image  = QImage(voidptr(new_inline_data),
+                                          data['width'], data['height'], data['stride'],
+                                          QImage.Format_ARGB32)
+            self.m_inline_data    = new_inline_data
             self.m_inline_scaling = scaling
-            self.m_plugin_inline = self.INLINE_DISPLAY_CACHED
+            self.m_plugin_inline  = self.INLINE_DISPLAY_CACHED
+
+            # make room for inline display, in a square shape
+            if self.m_inline_first:
+                self.m_inline_first = False
+                aspectRatio   = data['width'] / data['height']
+                self.p_height = int(max(50*scaling, self.p_height))
+                self.p_width += int(min((80 - 14)*scaling, (inheight-inwidth) * aspectRatio * scaling))
+                self.repositionPorts()
+                self.repaintLines(True)
+                self.update()
+                return
 
         if self.m_inline_image is None:
             print("ERROR: inline display image is None for", self.m_plugin_id, self.m_group_name)

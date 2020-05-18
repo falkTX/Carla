@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -312,15 +312,17 @@ protected:
     // Plugin dispatcher calls
 
 #ifdef HAVE_PYQT
-    const NativeInlineDisplayImageSurface* renderInlineDisplay(const uint32_t width, const uint32_t height) override
+    const NativeInlineDisplayImageSurface* renderInlineDisplay(const uint32_t rwidth, const uint32_t height) override
     {
-        CARLA_SAFE_ASSERT_RETURN(width > 0 && height > 0, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(height > 4, nullptr);
+
+        const uint32_t width = rwidth == height ? height * 4 : rwidth;
 
         /* NOTE the code is this function is not optimized, still learning my way through pixels...
          */
         const size_t stride = width * 4;
         const size_t dataSize = stride * height;
-        const uint pxToMove = fInlineDisplay.writtenValues;
+        const uint pxToMove = fDoProcess ? fInlineDisplay.writtenValues : 0;
 
         uchar* data = fInlineDisplay.data;
 
@@ -344,70 +346,73 @@ protected:
         fInlineDisplay.height = static_cast<int>(height);
         fInlineDisplay.stride = static_cast<int>(stride);
 
-        const uint h2 = height / 2;
-
-        // clear current line
-        for (uint w=width-pxToMove; w < width; ++w)
-            for (uint h=0; h < height; ++h)
-                memset(&data[h * stride + w * 4], 0, 4);
-
-        // draw upper/left
-        for (uint i=0; i < pxToMove; ++i)
+        if (pxToMove != 0)
         {
-            const float valueL = fInlineDisplay.lastValuesL[i];
-            const float valueR = fInlineDisplay.lastValuesR[i];
+            const uint h2 = height / 2;
 
-            const uint h2L = static_cast<uint>(valueL * (float)h2);
-            const uint h2R = static_cast<uint>(valueR * (float)h2);
-            const uint w   = width - pxToMove + i;
+            // clear current line
+            for (uint w=width-pxToMove; w < width; ++w)
+                for (uint h=0; h < height; ++h)
+                    memset(&data[h * stride + w * 4], 0, 4);
 
-            for (uint h=0; h < h2L; ++h)
+            // draw upper/left
+            for (uint i=0; i < pxToMove && i < 32; ++i)
             {
-                // -30dB
-                //if (valueL < 0.032f)
-                //    continue;
+                const float valueL = fInlineDisplay.lastValuesL[i];
+                const float valueR = fInlineDisplay.lastValuesR[i];
 
-                data[(h2 - h) * stride + w * 4 + 3] = 160;
+                const uint h2L = static_cast<uint>(valueL * (float)h2);
+                const uint h2R = static_cast<uint>(valueR * (float)h2);
+                const uint w   = width - pxToMove + i;
 
-                // -12dB
-                if (valueL < 0.25f)
+                for (uint h=0; h < h2L; ++h)
                 {
-                    data[(h2 - h) * stride + w * 4 + 1] = 255;
-                }
-                // -3dB
-                else if (valueL < 0.70f)
-                {
-                    data[(h2 - h) * stride + w * 4 + 2] = 255;
-                    data[(h2 - h) * stride + w * 4 + 1] = 255;
-                }
-                else
-                {
-                    data[(h2 - h) * stride + w * 4 + 2] = 255;
-                }
-            }
+                    // -30dB
+                    //if (valueL < 0.032f)
+                    //    continue;
 
-            for (uint h=0; h < h2R; ++h)
-            {
-                // -30dB
-                //if (valueR < 0.032f)
-                //    continue;
+                    data[(h2 - h) * stride + w * 4 + 3] = 160;
 
-                data[(h2 + h) * stride + w * 4 + 3] = 160;
+                    // -12dB
+                    if (valueL < 0.25f)
+                    {
+                        data[(h2 - h) * stride + w * 4 + 1] = 255;
+                    }
+                    // -3dB
+                    else if (valueL < 0.70f)
+                    {
+                        data[(h2 - h) * stride + w * 4 + 2] = 255;
+                        data[(h2 - h) * stride + w * 4 + 1] = 255;
+                    }
+                    else
+                    {
+                        data[(h2 - h) * stride + w * 4 + 2] = 255;
+                    }
+                }
 
-                // -12dB
-                if (valueR < 0.25f)
+                for (uint h=0; h < h2R; ++h)
                 {
-                    data[(h2 + h) * stride + w * 4 + 1] = 255;
-                }
-                // -3dB
-                else if (valueR < 0.70f)
-                {
-                    data[(h2 + h) * stride + w * 4 + 2] = 255;
-                    data[(h2 + h) * stride + w * 4 + 1] = 255;
-                }
-                else
-                {
-                    data[(h2 + h) * stride + w * 4 + 2] = 255;
+                    // -30dB
+                    //if (valueR < 0.032f)
+                    //    continue;
+
+                    data[(h2 + h) * stride + w * 4 + 3] = 160;
+
+                    // -12dB
+                    if (valueR < 0.25f)
+                    {
+                        data[(h2 + h) * stride + w * 4 + 1] = 255;
+                    }
+                    // -3dB
+                    else if (valueR < 0.70f)
+                    {
+                        data[(h2 + h) * stride + w * 4 + 2] = 255;
+                        data[(h2 + h) * stride + w * 4 + 1] = 255;
+                    }
+                    else
+                    {
+                        data[(h2 + h) * stride + w * 4 + 2] = 255;
+                    }
                 }
             }
         }

@@ -161,7 +161,7 @@ protected:
         fOutLeft  = carla_findMaxNormalizedFloat(inputs[0], frames);
         fOutRight = carla_findMaxNormalizedFloat(inputs[1], frames);
 
-        bool needsInlineRender = false;
+        bool needsInlineRender = fInlineDisplay.pending < 0;
 
         if (carla_isNotEqual(fOutLeft, fInlineDisplay.lastLeft))
         {
@@ -175,9 +175,9 @@ protected:
             needsInlineRender = true;
         }
 
-        if (needsInlineRender && ! fInlineDisplay.pending)
+        if (needsInlineRender && fInlineDisplay.pending != 1)
         {
-            fInlineDisplay.pending = true;
+            fInlineDisplay.pending = 1;
             hostQueueDrawInlineDisplay();
         }
     }
@@ -185,11 +185,11 @@ protected:
     // -------------------------------------------------------------------
     // Plugin dispatcher calls
 
-    const NativeInlineDisplayImageSurface* renderInlineDisplay(const uint32_t width_, const uint32_t height) override
+    const NativeInlineDisplayImageSurface* renderInlineDisplay(const uint32_t rwidth, const uint32_t height) override
     {
-        CARLA_SAFE_ASSERT_RETURN(width_ > 0 && height > 0, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(rwidth > 0 && height > 0, nullptr);
 
-        const uint32_t width = width_ < height ? width_ : height;
+        const uint32_t width = rwidth == height ? height / 6 : rwidth;
         const size_t stride = width * 4;
         const size_t dataSize = stride * height;
 
@@ -282,7 +282,7 @@ protected:
             data[h * stride + (width - 1) * 4 + 3] = 120;
         }
 
-        fInlineDisplay.pending = false;
+        fInlineDisplay.pending = rwidth == height ? -1 : 0;
         return (NativeInlineDisplayImageSurface*)(NativeInlineDisplayImageSurfaceCompat*)&fInlineDisplay;
     }
 
@@ -293,13 +293,13 @@ private:
     struct InlineDisplay : NativeInlineDisplayImageSurfaceCompat {
         float lastLeft;
         float lastRight;
-        volatile bool pending;
+        volatile int pending;
 
         InlineDisplay()
             : NativeInlineDisplayImageSurfaceCompat(),
               lastLeft(0.0f),
               lastRight(0.0f),
-              pending(false) {}
+              pending(0) {}
 
         ~InlineDisplay()
         {
