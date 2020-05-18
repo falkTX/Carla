@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Pixmap Keyboard, a custom Qt widget
-# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@
 
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, qCritical, Qt, QPointF, QRectF, QTimer, QSize
 from PyQt5.QtGui import QColor, QFont, QPainter, QPixmap
-from PyQt5.QtWidgets import QMenu, QScrollArea, QWidget
+from PyQt5.QtWidgets import QActionGroup, QMenu, QScrollArea, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -373,34 +373,38 @@ class PixmapKeyboard(QWidget):
         event.accept()
         menu = QMenu()
 
-        menu.addAction("Note: restart carla to apply globally").setEnabled(False)
-        menu.addSeparator()
+        menu.addAction(self.tr("Note: restart carla to apply globally")).setEnabled(False)
+        menu.addAction(self.tr("Color")).setSeparator(True)
 
-        menuColor  = QMenu("Highlight color", menu)
-        menuLayout = QMenu("PC Keyboard layout", menu)
-        actColors  = []
-        actLayouts = []
+        groupColor  = QActionGroup(menu)
+        groupLayout = QActionGroup(menu)
+        actColors   = []
+        actLayouts  = []
+
+        menu.addAction(self.tr("Highlight color")).setSeparator(True)
 
         for color in kValidColors:
-            act = menuColor.addAction(color)
+            act = menu.addAction(color)
+            act.setActionGroup(groupColor)
             act.setCheckable(True)
             if self.fHighlightColor == color:
                 act.setChecked(True)
             actColors.append(act)
 
+        menu.addAction(self.tr("PC Keyboard layout")).setSeparator(True)
+
         for pcKeyLayout in kPcKeysLayouts.keys():
-            act = menuLayout.addAction(pcKeyLayout)
+            act = menu.addAction(pcKeyLayout)
+            act.setActionGroup(groupLayout)
             act.setCheckable(True)
             if self.fkPcKeyLayout == pcKeyLayout:
                 act.setChecked(True)
             actLayouts.append(act)
 
-        menu.addMenu(menuColor)
-        menu.addMenu(menuLayout)
-        menu.addSeparator()
+        menu.addAction(self.tr("PC Keyboard base octave (%i)" % self.fPcKeybOffset)).setSeparator(True)
 
-        actOctaveUp   = menu.addAction("PC Keyboard octave up")
-        actOctaveDown = menu.addAction("PC Keyboard octave down")
+        actOctaveUp   = menu.addAction(self.tr("Octave up"))
+        actOctaveDown = menu.addAction(self.tr("Octave down"))
 
         if self.fPcKeybOffset == 0:
             actOctaveDown.setEnabled(False)
