@@ -1421,7 +1421,7 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
     }
 
 #ifdef CARLA_OS_WIN
-    CARLA_SAFE_ASSERT_RETURN(juce::File(filename).existsAsFile(),);
+    CARLA_CUSTOM_SAFE_ASSERT_RETURN("Plugin file/folder does not exist", juce::File(filename).exists(),);
 #endif
     CARLA_SAFE_ASSERT_RETURN(pluginFormat->fileMightContainThisPluginType(filename),);
 

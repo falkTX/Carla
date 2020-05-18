@@ -251,6 +251,16 @@ void carla_safe_assert_uint2(const char* const assertion, const char* const file
     carla_stderr2("Carla assertion failure: \"%s\" in file %s, line %i, v1 %u, v2 %u", assertion, file, line, v1, v2);
 }
 
+/*
+ * Print a safe assertion error message, with a custom error message.
+ */
+static inline
+void carla_custom_safe_assert(const char* const message,
+                              const char* const assertion, const char* const file, const int line) noexcept
+{
+    carla_stderr2("%s, condition \"%s\" in file %s, line %i", message, assertion, file, line);
+}
+
 // --------------------------------------------------------------------------------------------------------------------
 // carla_safe_exception*
 

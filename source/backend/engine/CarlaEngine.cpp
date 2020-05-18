@@ -1394,14 +1394,7 @@ void CarlaEngine::callback(const bool sendHost, const bool sendOSC,
 
         try {
             pData->callback(pData->callbackPtr, action, pluginId, value1, value2, value3, valuef, valueStr);
-#if defined(CARLA_OS_LINUX) && defined(__arm__)
-        } catch (__cxxabiv1::__forced_unwind&) {
-            carla_stderr2("Caught forced unwind exception in callback");
-            throw;
-#endif
-        } catch (...) {
-            carla_safe_exception("callback", __FILE__, __LINE__);
-        }
+        } CARLA_SAFE_EXCEPTION("callback")
 
         if (action == ENGINE_CALLBACK_IDLE)
             --pData->isIdling;
