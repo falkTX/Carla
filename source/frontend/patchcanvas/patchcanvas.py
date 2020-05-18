@@ -329,6 +329,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
 
     group_box = CanvasBox(group_id, group_name, icon)
     group_box.positionChanged.connect(canvas.qobject.boxPositionChanged)
+    group_box.blockSignals(True)
 
     group_dict = group_dict_t()
     group_dict.group_id = group_id
@@ -343,29 +344,26 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
     if split == SPLIT_YES:
         group_box.setSplit(True, PORT_MODE_OUTPUT)
 
-        group_box.blockSignals(True)
         if features.handle_group_pos:
             group_box.setPos(getStoredCanvasPosition(group_name + "_OUTPUT", CanvasGetNewGroupPos(False)))
         elif old_matching_group is not None:
             group_box.setPos(old_matching_group[1])
         else:
             group_box.setPos(CanvasGetNewGroupPos(False))
-        group_box.blockSignals(False)
 
         group_sbox = CanvasBox(group_id, group_name, icon)
-        group_sbox.setSplit(True, PORT_MODE_INPUT)
         group_sbox.positionChanged.connect(canvas.qobject.sboxPositionChanged)
+        group_sbox.blockSignals(True)
+        group_sbox.setSplit(True, PORT_MODE_INPUT)
 
         group_dict.widgets[1] = group_sbox
 
-        group_sbox.blockSignals(True)
         if features.handle_group_pos:
             group_sbox.setPos(getStoredCanvasPosition(group_name + "_INPUT", CanvasGetNewGroupPos(True)))
         elif old_matching_group is not None and old_matching_group[0]:
             group_sbox.setPos(old_matching_group[2])
         else:
             group_sbox.setPos(CanvasGetNewGroupPos(True))
-        group_sbox.blockSignals(False)
 
         canvas.last_z_value += 1
         group_sbox.setZValue(canvas.last_z_value)
@@ -374,6 +372,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
             CanvasItemFX(group_sbox, True, False)
 
         group_sbox.checkItemPos()
+        group_sbox.blockSignals(False)
 
     else:
         group_box.setSplit(False)
@@ -387,10 +386,11 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
             horizontal = bool(icon == ICON_HARDWARE or icon == ICON_LADISH_ROOM)
             group_box.setPos(CanvasGetNewGroupPos(horizontal))
 
-    group_box.checkItemPos()
-
     canvas.last_z_value += 1
     group_box.setZValue(canvas.last_z_value)
+
+    group_box.checkItemPos()
+    group_box.blockSignals(False)
 
     canvas.group_list.append(group_dict)
 

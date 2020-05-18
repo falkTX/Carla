@@ -1244,6 +1244,7 @@ public:
           fUsedGroups(),
           fUsedPorts(),
           fUsedConnections(),
+          fThreadSafeMetadataMutex(),
           fPatchbayProcThreadProtectionMutex(),
           fRetConns(),
           fPostPonedEvents(),
@@ -1281,7 +1282,8 @@ public:
     uint getMaxClientNameSize() const noexcept override
     {
 #ifndef BUILD_BRIDGE
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT || pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT ||
+            pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
 #endif
         {
             try {
@@ -1430,27 +1432,31 @@ public:
             }
         }
 
-        if (char* const uuidstr = jackbridge_client_get_uuid(fClient))
         {
-            jack_uuid_t uuid;
+            const CarlaRecursiveMutexLocker crml(fThreadSafeMetadataMutex);
 
-            if (jackbridge_uuid_parse(uuidstr, &uuid))
+            if (char* const uuidstr = jackbridge_client_get_uuid(fClient))
             {
+                jack_uuid_t uuid;
+
+                if (jackbridge_uuid_parse(uuidstr, &uuid))
+                {
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
-                const CarlaString& tcp(pData->osc.getServerPathTCP());
-                const CarlaString& udp(pData->osc.getServerPathUDP());
+                    const CarlaString& tcp(pData->osc.getServerPathTCP());
+                    const CarlaString& udp(pData->osc.getServerPathUDP());
 
-                if (tcp.isNotEmpty())
-                    jackbridge_set_property(fClient, uuid,
-                                            "https://kx.studio/ns/carla/osc-tcp", tcp, URI_TYPE_STRING);
+                    if (tcp.isNotEmpty())
+                        jackbridge_set_property(fClient, uuid,
+                                                "https://kx.studio/ns/carla/osc-tcp", tcp, URI_TYPE_STRING);
 
-                if (tcp.isNotEmpty())
-                    jackbridge_set_property(fClient, uuid,
-                                            "https://kx.studio/ns/carla/osc-udp", udp, URI_TYPE_STRING);
+                    if (tcp.isNotEmpty())
+                        jackbridge_set_property(fClient, uuid,
+                                                "https://kx.studio/ns/carla/osc-udp", udp, URI_TYPE_STRING);
 #endif
-            }
+                }
 
-            jackbridge_free(uuidstr);
+                jackbridge_free(uuidstr);
+            }
         }
 
         if (jackbridge_activate(fClient))
@@ -1613,10 +1619,13 @@ public:
                   const int value1, const int value2, const int value3,
                   const float valuef, const char* const valueStr) noexcept override
     {
-        if (action == ENGINE_CALLBACK_PROJECT_LOAD_FINISHED && fTimebaseMaster)
+        if (action == ENGINE_CALLBACK_PROJECT_LOAD_FINISHED)
         {
-            // project finished loading, need to set bpm here, so we force an update of timebase master
-            transportRelocate(pData->timeInfo.frame);
+            if (fTimebaseMaster)
+            {
+                // project finished loading, need to set bpm here, so we force an update of timebase master
+                transportRelocate(pData->timeInfo.frame);
+            }
         }
 
         CarlaEngine::callback(sendHost, sendOsc, action, pluginId, value1, value2, value3, valuef, valueStr);
@@ -1631,63 +1640,67 @@ public:
             fPostPonedUUIDs.swapWith(uuids);
         }
 
-        for (int i=0; i<uuids.size(); ++i)
         {
-            jack_uuid_t uuid = uuids.getUnchecked(i);
+            const CarlaRecursiveMutexLocker crml(fThreadSafeMetadataMutex);
 
-            char uuidstr[JACK_UUID_STRING_SIZE];
-            carla_zeroStruct(uuidstr);
-            jackbridge_uuid_unparse(uuid, uuidstr);
-
-            if (char* const clientName = jackbridge_get_client_name_by_uuid(fClient, uuidstr))
+            for (int i=0; i<uuids.size(); ++i)
             {
-                CARLA_SAFE_ASSERT_RETURN(clientName != nullptr && clientName[0] != '\0',);
+                jack_uuid_t uuid = uuids.getUnchecked(i);
 
-                uint groupId;
+                char uuidstr[JACK_UUID_STRING_SIZE];
+                carla_zeroStruct(uuidstr);
+                jackbridge_uuid_unparse(uuid, uuidstr);
 
+                if (char* const clientName = jackbridge_get_client_name_by_uuid(fClient, uuidstr))
                 {
-                    const CarlaMutexLocker cml(fUsedGroups.mutex);
-                    groupId = fUsedGroups.getGroupId(clientName);
-                }
+                    CARLA_SAFE_ASSERT_RETURN(clientName != nullptr && clientName[0] != '\0',);
 
-                jackbridge_free(clientName);
-                CARLA_SAFE_ASSERT_RETURN(groupId != 0,);
+                    uint groupId;
 
-                char* value = nullptr;
-                char* type  = nullptr;
-
-                if (jackbridge_get_property(uuid, URI_POSITION, &value, &type)
-                    && value != nullptr
-                    && type != nullptr
-                    && std::strcmp(type, URI_TYPE_STRING) == 0)
-                {
-                    if (char* sep1 = std::strstr(value, ":"))
                     {
-                        int x1, y1 = 0, x2 = 0, y2 = 0;
-                        *sep1++ = '\0';
-                        x1 = std::atoi(value);
-
-                        if (char* sep2 = std::strstr(sep1, ":"))
-                        {
-                            *sep2++ = '\0';
-                            y1 = std::atoi(sep1);
-
-                            if (char* sep3 = std::strstr(sep2, ":"))
-                            {
-                                *sep3++ = '\0';
-                                x2 = std::atoi(sep2);
-                                y2 = std::atoi(sep3);
-                            }
-
-                            callback(fExternalPatchbayHost, fExternalPatchbayOsc,
-                                    ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED,
-                                    groupId, x1, y1, x2, static_cast<float>(y2),
-                                    nullptr);
-                        }
+                        const CarlaMutexLocker cml(fUsedGroups.mutex);
+                        groupId = fUsedGroups.getGroupId(clientName);
                     }
 
-                    jackbridge_free(value);
-                    jackbridge_free(type);
+                    jackbridge_free(clientName);
+                    CARLA_SAFE_ASSERT_RETURN(groupId != 0,);
+
+                    char* value = nullptr;
+                    char* type  = nullptr;
+
+                    if (jackbridge_get_property(uuid, URI_POSITION, &value, &type)
+                        && value != nullptr
+                        && type != nullptr
+                        && std::strcmp(type, URI_TYPE_STRING) == 0)
+                    {
+                        if (char* sep1 = std::strstr(value, ":"))
+                        {
+                            int x1, y1 = 0, x2 = 0, y2 = 0;
+                            *sep1++ = '\0';
+                            x1 = std::atoi(value);
+
+                            if (char* sep2 = std::strstr(sep1, ":"))
+                            {
+                                *sep2++ = '\0';
+                                y1 = std::atoi(sep1);
+
+                                if (char* sep3 = std::strstr(sep2, ":"))
+                                {
+                                    *sep3++ = '\0';
+                                    x2 = std::atoi(sep2);
+                                    y2 = std::atoi(sep3);
+                                }
+
+                                callback(fExternalPatchbayHost, fExternalPatchbayOsc,
+                                        ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED,
+                                        groupId, x1, y1, x2, static_cast<float>(y2),
+                                        nullptr);
+                            }
+                        }
+
+                        jackbridge_free(value);
+                        jackbridge_free(type);
+                    }
                 }
             }
         }
@@ -1812,6 +1825,8 @@ public:
             jackbridge_set_process_callback(client, carla_jack_process_callback_plugin, plugin);
             jackbridge_on_shutdown(client, carla_jack_shutdown_callback_plugin, plugin);
 
+            const CarlaRecursiveMutexLocker crml(fThreadSafeMetadataMutex);
+
             if (char* const uuidstr = jackbridge_client_get_uuid(client))
             {
                 jack_uuid_t uuid;
@@ -1819,7 +1834,7 @@ public:
                 if (jackbridge_uuid_parse(uuidstr, &uuid))
                 {
                     char strBufId[24];
-                    std::snprintf(strBufId, 24, "%u", plugin->getId());
+                    std::snprintf(strBufId, 23, "%u", plugin->getId());
                     strBufId[23] = '\0';
 
                     jackbridge_set_property(client, uuid,
@@ -2165,6 +2180,7 @@ public:
                              const uint groupId, const int x1, const int y1, const int x2, const int y2) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(! pData->loadingProject, false);
 
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! external)
             return CarlaEngine::patchbaySetGroupPos(sendHost, sendOSC, false, groupId, x1, y1, x2, y2);
@@ -2178,21 +2194,27 @@ public:
             CARLA_SAFE_ASSERT_RETURN(groupName != nullptr && groupName[0] != '\0', false);
         }
 
-        jack_uuid_t uuid;
+        bool ok;
+
         {
-            char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, groupName);
-            CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr && uuidstr[0] != '\0', false);
+            const CarlaRecursiveMutexLocker crml(fThreadSafeMetadataMutex);
 
-            const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
-            jackbridge_free(uuidstr);
-            CARLA_SAFE_ASSERT_RETURN(parsed, false);
+            jack_uuid_t uuid;
+            {
+                char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, groupName);
+                CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr && uuidstr[0] != '\0', false);
+
+                const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
+                jackbridge_free(uuidstr);
+                CARLA_SAFE_ASSERT_RETURN(parsed, false);
+            }
+
+            char valueStr[STR_MAX];
+            std::snprintf(valueStr, STR_MAX-1, "%i:%i:%i:%i", x1, y1, x2, y2);
+            valueStr[STR_MAX-1] = '\0';
+
+            ok = jackbridge_set_property(fClient, uuid, URI_POSITION, valueStr, URI_TYPE_STRING);
         }
-
-        char valueStr[STR_MAX];
-        std::snprintf(valueStr, STR_MAX-1, "%i:%i:%i:%i", x1, y1, x2, y2);
-        valueStr[STR_MAX-1] = '\0';
-
-        const bool ok = jackbridge_set_property(fClient, uuid, URI_POSITION, valueStr, URI_TYPE_STRING);
 
         callback(sendHost, sendOSC,
                  ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED,
@@ -2367,6 +2389,7 @@ public:
             return CarlaEngine::getPatchbayPositions(external, count);
 
         const CarlaMutexLocker cml(fUsedGroups.mutex);
+        const CarlaRecursiveMutexLocker crml(fThreadSafeMetadataMutex);
 
         if (const std::size_t maxCount = fUsedGroups.list.count())
         {
@@ -2536,22 +2559,30 @@ public:
             CARLA_SAFE_ASSERT(groupId != 0);
         }
 
-        jack_uuid_t uuid;
         {
-            char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, ppos.name);
-            CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr && uuidstr[0] != '\0',);
+            const CarlaRecursiveMutexLocker crml(fThreadSafeMetadataMutex);
 
-            const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
-            jackbridge_free(uuidstr);
-            CARLA_SAFE_ASSERT_RETURN(parsed,);
+            jack_uuid_t uuid;
+            {
+                char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, ppos.name);
+                CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr && uuidstr[0] != '\0',);
+
+                const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
+                jackbridge_free(uuidstr);
+                CARLA_SAFE_ASSERT_RETURN(parsed,);
+            }
+
+            char valueStr[STR_MAX];
+            std::snprintf(valueStr, STR_MAX-1, "%i:%i:%i:%i", ppos.x1, ppos.y1, ppos.x2, ppos.y2);
+            valueStr[STR_MAX-1] = '\0';
+
+            jackbridge_set_property(fClient, uuid, URI_POSITION, valueStr, URI_TYPE_STRING);
         }
 
-        char valueStr[STR_MAX];
-        std::snprintf(valueStr, STR_MAX-1, "%i:%i:%i:%i", ppos.x1, ppos.y1, ppos.x2, ppos.y2);
-        valueStr[STR_MAX-1] = '\0';
-
-        jackbridge_set_property(fClient, uuid, URI_POSITION, valueStr, URI_TYPE_STRING);
-
+# if 0
+        /* NOTE: This does not seem to be needed, as JACK notifies the caller about meta-data changes,
+         *       even for the client that triggered the change. Odd..
+         */
         if (groupId != 0)
         {
             callback(true, true,
@@ -2559,6 +2590,7 @@ public:
                     groupId, ppos.x1, ppos.y1, ppos.x2, static_cast<float>(ppos.y2),
                     nullptr);
         }
+# endif
     }
 #endif
 
@@ -3284,6 +3316,7 @@ private:
     PatchbayGroupList      fUsedGroups;
     PatchbayPortList       fUsedPorts;
     PatchbayConnectionList fUsedConnections;
+    CarlaRecursiveMutex    fThreadSafeMetadataMutex;
     CarlaMutex             fPatchbayProcThreadProtectionMutex;
 
     mutable CharStringListPtr fRetConns;
@@ -3295,6 +3328,8 @@ private:
         // TODO - this currently only works in multi-client mode
         if (pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
             return;
+
+        const CarlaRecursiveMutexLocker crml(fThreadSafeMetadataMutex);
 
         jack_uuid_t uuid;
         {
@@ -3320,6 +3355,9 @@ private:
             CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, URI_TYPE_STRING) == 0,);
 
             clientBelongsToUs = fClientName == value;
+
+            jackbridge_free(value);
+            jackbridge_free(type);
         }
 
         {
@@ -3565,62 +3603,66 @@ private:
                  0, 0.0f,
                  ourName);
 
-        for (LinkedList<GroupToIdData>::Itenerator it = groupCallbackData.begin2(); it.valid(); it.next())
         {
-            const GroupToIdData& group(it.getValue(groupFallback));
+            const CarlaRecursiveMutexLocker crml(fThreadSafeMetadataMutex);
 
-            callback(sendHost, sendOSC,
-                    ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
-                    group.id,
-                    group.icon,
-                    group.pluginId,
-                    0, 0.0f,
-                    group.strVal);
-
-            jack_uuid_t uuid;
+            for (LinkedList<GroupToIdData>::Itenerator it = groupCallbackData.begin2(); it.valid(); it.next())
             {
-                char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, group.strVal);
-                CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr && uuidstr[0] != '\0',);
+                const GroupToIdData& group(it.getValue(groupFallback));
 
-                const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
-                jackbridge_free(uuidstr);
-                CARLA_SAFE_ASSERT_RETURN(parsed,);
-            }
+                callback(sendHost, sendOSC,
+                        ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
+                        group.id,
+                        group.icon,
+                        group.pluginId,
+                        0, 0.0f,
+                        group.strVal);
 
-            char* value = nullptr;
-            char* type  = nullptr;
-
-            if (jackbridge_get_property(uuid, URI_POSITION, &value, &type)
-                && value != nullptr
-                && type != nullptr
-                && std::strcmp(type, URI_TYPE_STRING) == 0)
-            {
-                if (char* sep1 = std::strstr(value, ":"))
+                jack_uuid_t uuid;
                 {
-                    int x1, y1 = 0, x2 = 0, y2 = 0;
-                    *sep1++ = '\0';
-                    x1 = std::atoi(value);
+                    char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, group.strVal);
+                    CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr && uuidstr[0] != '\0',);
 
-                    if (char* sep2 = std::strstr(sep1, ":"))
+                    const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
+                    jackbridge_free(uuidstr);
+                    CARLA_SAFE_ASSERT_RETURN(parsed,);
+                }
+
+                char* value = nullptr;
+                char* type  = nullptr;
+
+                if (jackbridge_get_property(uuid, URI_POSITION, &value, &type)
+                    && value != nullptr
+                    && type != nullptr
+                    && std::strcmp(type, URI_TYPE_STRING) == 0)
+                {
+                    if (char* sep1 = std::strstr(value, ":"))
                     {
-                        *sep2++ = '\0';
-                        y1 = std::atoi(sep1);
+                        int x1, y1 = 0, x2 = 0, y2 = 0;
+                        *sep1++ = '\0';
+                        x1 = std::atoi(value);
 
-                        if (char* sep3 = std::strstr(sep2, ":"))
+                        if (char* sep2 = std::strstr(sep1, ":"))
                         {
-                            *sep3++ = '\0';
-                            x2 = std::atoi(sep2);
-                            y2 = std::atoi(sep3);
+                            *sep2++ = '\0';
+                            y1 = std::atoi(sep1);
+
+                            if (char* sep3 = std::strstr(sep2, ":"))
+                            {
+                                *sep3++ = '\0';
+                                x2 = std::atoi(sep2);
+                                y2 = std::atoi(sep3);
+                            }
                         }
+
+                        jackbridge_free(value);
+                        jackbridge_free(type);
+
+                        callback(sendHost, sendOSC,
+                                ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED,
+                                group.id, x1, y1, x2, static_cast<float>(y2),
+                                nullptr);
                     }
-
-                    jackbridge_free(value);
-                    jackbridge_free(type);
-
-                    callback(sendHost, sendOSC,
-                             ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED,
-                             group.id, x1, y1, x2, static_cast<float>(y2),
-                             nullptr);
                 }
             }
         }

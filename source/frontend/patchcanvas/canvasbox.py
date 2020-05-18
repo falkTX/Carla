@@ -226,7 +226,7 @@ class CanvasBox(QGraphicsObject):
         self.updatePositions()
 
     def setShadowOpacity(self, opacity):
-        if self.shadow:
+        if self.shadow is not None:
             self.shadow.setOpacity(opacity)
 
     def addPortFromGroup(self, port_id, port_mode, port_type, port_name, is_alternate):
@@ -234,7 +234,9 @@ class CanvasBox(QGraphicsObject):
             if options.auto_hide_groups:
                 if options.eyecandy == EYECANDY_FULL:
                     CanvasItemFX(self, True, False)
+                self.blockSignals(True)
                 self.setVisible(True)
+                self.blockSignals(False)
 
         new_widget = CanvasPort(self.m_group_id, port_id, port_name, port_mode, port_type, is_alternate, self)
 
@@ -266,7 +268,9 @@ class CanvasBox(QGraphicsObject):
                 if options.eyecandy == EYECANDY_FULL:
                     CanvasItemFX(self, False, False)
                 else:
+                    self.blockSignals(True)
                     self.setVisible(False)
+                    self.blockSignals(False)
 
     def addLineFromGroup(self, line, connection_id):
         new_cbline = cb_line_t(line, connection_id)

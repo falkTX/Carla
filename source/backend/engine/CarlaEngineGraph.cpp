@@ -2831,7 +2831,8 @@ bool CarlaEngine::patchbayDisconnect(const bool external, const uint connectionI
 bool CarlaEngine::patchbaySetGroupPos(const bool sendHost, const bool sendOSC, const bool external,
                                       const uint groupId, const int x1, const int y1, const int x2, const int y2)
 {
-    CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
+    CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
+                             pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
     CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(), false);
     carla_debug("CarlaEngine::patchbaySetGroupPos(%u, %i, %i, %i, %i)", groupId, x1, y1, x2, y2);
 
