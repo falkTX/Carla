@@ -2767,7 +2767,9 @@ def canvasCallback(action, value1, value2, valueStr):
         gCarla.gui.updateMiniCanvasLater()
 
     elif action == patchcanvas.ACTION_GROUP_POSITION:
-        if gCarla.gui.fIsProjectLoading or not host.is_engine_running():
+        if gCarla.gui.fIsProjectLoading:
+            return
+        if not host.is_engine_running():
             return
         groupId = value1
         x1, y1, x2, y2 = tuple(int(i) for i in valueStr.split(":"))
@@ -2838,8 +2840,10 @@ def canvasCallback(action, value1, value2, valueStr):
         gCarla.gui.slot_showPluginActionsMenu()
 
     elif action == patchcanvas.ACTION_INLINE_DISPLAY:
-        # FIXME
-        if gCarla.gui.fPluginCount == 0: return
+        if gCarla.gui.fIsProjectLoading:
+            return
+        if not host.is_engine_running():
+            return
         pluginId = value1
         width, height = [int(v) for v in valueStr.split(":")]
         return host.render_inline_display(pluginId, width, height)

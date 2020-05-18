@@ -972,10 +972,14 @@ bool carla_patchbay_disconnect(CarlaHostHandle handle, bool external, uint conne
 
 bool carla_patchbay_set_group_pos(CarlaHostHandle handle, bool external, uint groupId, int x1, int y1, int x2, int y2)
 {
-    CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(handle->engine != nullptr, "Engine is not initialized", false);
+    CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(handle->engine != nullptr && handle->engine->isRunning(),
+                                             "Engine is not running", false);
 
     carla_debug("carla_patchbay_set_group_pos(%p, %s, %u, %i, %i, %i, %i)",
                 handle, bool2str(external), groupId, x1, y1, x2, y2);
+
+    if (handle->engine->isAboutToClose())
+        return true;
 
     return handle->engine->patchbaySetGroupPos(false, true, external, groupId, x1, y1, x2, y2);
 }
@@ -1877,12 +1881,15 @@ const CarlaInlineDisplayImageSurface* carla_render_inline_display(CarlaHostHandl
                                                                   uint pluginId,
                                                                   uint32_t width, uint32_t height)
 {
-    CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr && handle->engine->isRunning(), nullptr);
 
     CarlaPlugin* const plugin = handle->engine->getPlugin(pluginId);
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, nullptr);
 
     carla_debug("carla_render_inline_display(%p, %i, %i, %i)", handle, pluginId, width, height);
+
+    if (handle->engine->isAboutToClose())
+        return nullptr;
 
     switch (plugin->getType())
     {
