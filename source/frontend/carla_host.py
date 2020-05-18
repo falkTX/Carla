@@ -1559,7 +1559,7 @@ class HostWindow(QMainWindow):
             else:
                 imgFormat = b"PNG"
         else:
-            if newPath.lower().endswith(".jpg"):
+            if newPath.lower().endswith((".jpg", ".jpeg")):
                 imgFormat = b"JPG"
             else:
                 imgFormat = b"PNG"
