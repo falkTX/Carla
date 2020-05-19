@@ -2419,25 +2419,27 @@ public:
         sCurrentUniqueId     = static_cast<intptr_t>(uniqueId);
         sLastCarlaPluginVST2 = this;
 
-        bool wasTriggered;
+        bool wasTriggered, wasThrown = false;
         {
             const ScopedAbortCatcher sac;
 
             try {
                 fEffect = vstFn(carla_vst_audioMasterCallback);
-            } CARLA_SAFE_EXCEPTION_RETURN("Vst init", false);
+            } CARLA_CATCH_UNWIND catch(...) {
+                wasThrown = true;
+            }
 
             wasTriggered = sac.wasTriggered();
         }
 
         // try again if plugin blows
-        if (wasTriggered)
+        if (wasTriggered || wasThrown)
         {
             const ScopedAbortCatcher sac;
 
             try {
                 fEffect = vstFn(carla_vst_audioMasterCallback);
-            } CARLA_SAFE_EXCEPTION_RETURN("Vst init", false);
+            } CARLA_SAFE_EXCEPTION_RETURN("VST init 2nd attempt", false);
         }
 
         sLastCarlaPluginVST2 = nullptr;
