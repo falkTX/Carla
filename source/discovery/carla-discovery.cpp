@@ -1596,6 +1596,7 @@ static void do_fluidsynth_check(const char* const filename, const PluginType typ
 
     // unused
     (void)filename;
+    (void)type;
     (void)doInit;
 #endif
 }
@@ -1643,6 +1644,8 @@ int main(int argc, char* argv[])
 
     // ---------------------------------------------------------------------
     // Initialize OS features
+
+    const CarlaScopedLocale csl;
 
 #ifdef CARLA_OS_WIN
     OleInitialize(nullptr);

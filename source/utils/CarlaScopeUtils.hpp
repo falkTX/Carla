@@ -2,7 +2,7 @@
  * Carla Scope-related classes and tools (pointer and setter taken from JUCE v4)
  * Copyright (C) 2013 Raw Material Software Ltd.
  * Copyright (c) 2016 ROLI Ltd.
- * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -24,6 +24,10 @@
 
 #include <algorithm>
 #include <clocale>
+
+#if defined(CARLA_PROPER_CPP11_SUPPORT) && ! defined(CARLA_OS_WIN)
+# define CARLA_USE_NEWLOCALE
+#endif
 
 // -----------------------------------------------------------------------
 // CarlaScopedEnvVar class
@@ -89,24 +93,55 @@ private:
 // CarlaScopedLocale class
 
 class CarlaScopedLocale {
+#ifdef CARLA_USE_NEWLOCALE
+    static constexpr locale_t kNullLocale = (locale_t)0;
+#endif
+
 public:
     CarlaScopedLocale() noexcept
-        : locale(carla_strdup_safe(::setlocale(LC_NUMERIC, nullptr)))
+#ifdef CARLA_USE_NEWLOCALE
+        : newloc(::newlocale(LC_NUMERIC_MASK, "C", kNullLocale)),
+          oldloc(newloc != kNullLocale ? ::uselocale(newloc) : kNullLocale) {}
+#else
+# ifdef CARLA_OS_WIN
+        : oldthreadloc(_configthreadlocale(_ENABLE_PER_THREAD_LOCALE)),
+# else
+        : oldthreadloc(-1),
+# endif
+          oldloc(carla_strdup_safe(::setlocale(LC_NUMERIC, nullptr)))
     {
         ::setlocale(LC_NUMERIC, "C");
     }
+#endif
 
     ~CarlaScopedLocale() noexcept
     {
-        if (locale != nullptr)
+#ifdef CARLA_USE_NEWLOCALE
+        if (oldloc != kNullLocale)
+            ::uselocale(oldloc);
+        if (newloc != kNullLocale)
+            ::freelocale(newloc);
+#else // CARLA_USE_NEWLOCALE
+        if (oldloc != nullptr)
         {
-            ::setlocale(LC_NUMERIC, locale);
-            delete[] locale;
+            ::setlocale(LC_NUMERIC, oldloc);
+            delete[] oldloc;
         }
+
+# ifdef CARLA_OS_WIN
+        if (oldthreadloc != -1)
+            _configthreadlocale(oldthreadloc);
+# endif
+#endif // CARLA_USE_NEWLOCALE
     }
 
 private:
-    const char* const locale;
+#ifdef CARLA_USE_NEWLOCALE
+    locale_t newloc, oldloc;
+#else
+    const int oldthreadloc;
+    const char* const oldloc;
+#endif
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaScopedLocale)
     CARLA_PREVENT_HEAP_ALLOCATION
