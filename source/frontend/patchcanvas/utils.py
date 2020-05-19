@@ -36,21 +36,27 @@ def CanvasGetNewGroupPos(horizontal):
     new_pos = QPointF(canvas.initial_pos)
     items = canvas.scene.items()
 
-    break_loop = False
-    while not break_loop:
+    #break_loop = False
+    while True:
         break_for = False
         for i, item in enumerate(items):
             if item and item.type() == CanvasBoxType:
-                if item.sceneBoundingRect().contains(new_pos):
+                if item.sceneBoundingRect().adjusted(-5, -5, 5, 5).contains(new_pos):
+                    itemRect = item.boundingRect()
                     if horizontal:
-                        new_pos += QPointF(item.boundingRect().width() + 15, 0)
+                        new_pos += QPointF(itemRect.width() + 50, 0)
                     else:
-                        new_pos += QPointF(0, item.boundingRect().height() + 15)
+                        itemHeight = itemRect.height()
+                        if itemHeight < 30:
+                            new_pos += QPointF(0, itemHeight + 50)
+                        else:
+                            new_pos.setY(item.scenePos().y() + itemHeight + 20)
                     break_for = True
                     break
-
-            if i >= len(items) - 1 and not break_for:
-                break_loop = True
+        else:
+            if not break_for:
+                break
+            #break_loop = True
 
     return new_pos
 

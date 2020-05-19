@@ -363,7 +363,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
         elif old_matching_group is not None and old_matching_group[0]:
             group_sbox.setPos(old_matching_group[2])
         else:
-            group_sbox.setPos(CanvasGetNewGroupPos(True))
+            group_sbox.setPos(group_box.x() + group_box.boundingRect().width() + 300, group_box.y())
 
         canvas.last_z_value += 1
         group_sbox.setZValue(canvas.last_z_value)
