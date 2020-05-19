@@ -143,6 +143,9 @@ const char* const* carla_get_supported_file_extensions()
 #ifdef HAVE_FLUIDSYNTH
         "sf2", "sf3",
 #endif
+#ifdef HAVE_FLUIDSYNTH_INSTPATCH
+        "dls", "gig",
+#endif
 #ifdef HAVE_ZYN_DEPS
         "xmz", "xiz",
 #endif
@@ -187,6 +190,9 @@ const char* const* carla_get_supported_features()
     static const char* const features[] = {
 #ifdef HAVE_FLUIDSYNTH
         "sf2",
+#endif
+#ifdef HAVE_FLUIDSYNTH_INSTPATCH
+        "dls", "gig",
 #endif
 #ifdef HAVE_HYLIA
         "link",

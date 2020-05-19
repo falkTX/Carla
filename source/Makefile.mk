@@ -244,6 +244,11 @@ HAVE_QT5        = $(shell $(PKG_CONFIG) --exists Qt5Core Qt5Gui Qt5Widgets && \
                           $(PKG_CONFIG) --variable=qt_config Qt5Core | grep -q -v "static" && echo true)
 HAVE_SNDFILE    = $(shell $(PKG_CONFIG) --exists sndfile && echo true)
 
+ifeq ($(HAVE_FLUIDSYNTH),true)
+HAVE_FLUIDSYNTH_INSTPATCH = $(shell $(PKG_CONFIG) --atleast-version=2.1.0 fluidsynth && \
+                                    $(PKG_CONFIG) --atleast-version=1.1.4 libinstpatch-1.0 && echo true)
+endif
+
 ifeq ($(LINUX),true)
 # juce only supports the most common architectures
 ifneq (,$(findstring arm,$(TARGET_MACHINE)))
@@ -377,6 +382,9 @@ endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 BASE_FLAGS += -DHAVE_FLUIDSYNTH
+ifeq ($(HAVE_FLUIDSYNTH_INSTPATCH),true)
+BASE_FLAGS += -DHAVE_FLUIDSYNTH_INSTPATCH
+endif
 endif
 
 ifeq ($(HAVE_FFMPEG),true)

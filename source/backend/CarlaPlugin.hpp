@@ -954,7 +954,7 @@ public:
     static CarlaPlugin* newAU(const Initializer& init);
 
     static CarlaPlugin* newJuce(const Initializer& init, const char* format);
-    static CarlaPlugin* newFluidSynth(const Initializer& init, bool use16Outs);
+    static CarlaPlugin* newFluidSynth(const Initializer& init, PluginType ptype, bool use16Outs);
     static CarlaPlugin* newSFZero(const Initializer& init);
 
     static CarlaPlugin* newJackApp(const Initializer& init);

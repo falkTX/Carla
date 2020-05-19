@@ -976,6 +976,11 @@ ifeq ($(HAVE_FFMPEG),true)
 else
 	@printf -- "Extra: $(ANS_NO) $(mS)FFmpeg missing or too new$(mE)\n"
 endif
+# ifeq ($(HAVE_FLUIDSYNTH_INSTPATCH),true)
+# 	@printf -- "DLS:   $(ANS_YES)\n"
+# else
+# 	@printf -- "DLS:   $(ANS_NO) $(mS)FluidSynth/instpatch missing or too old$(mE)\n"
+# endif
 ifeq ($(HAVE_FLUIDSYNTH),true)
 	@printf -- "SF2/3: $(ANS_YES)\n"
 else

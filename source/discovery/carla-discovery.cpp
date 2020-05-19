@@ -1496,7 +1496,7 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
 }
 #endif // USING_JUCE_FOR_VST2
 
-static void do_fluidsynth_check(const char* const filename, const bool doInit)
+static void do_fluidsynth_check(const char* const filename, const PluginType type, const bool doInit)
 {
 #ifdef HAVE_FLUIDSYNTH
     const water::String jfilename = water::String(CharPointer_UTF8(filename));
@@ -1508,7 +1508,7 @@ static void do_fluidsynth_check(const char* const filename, const bool doInit)
         return;
     }
 
-    if (! fluid_is_soundfont(filename))
+    if (type == PLUGIN_SF2 && ! fluid_is_soundfont(filename))
     {
         DISCOVERY_OUT("error", "Not a SF2 file");
         return;
@@ -1524,26 +1524,33 @@ static void do_fluidsynth_check(const char* const filename, const bool doInit)
         fluid_synth_t* const f_synth = new_fluid_synth(f_settings);
         CARLA_SAFE_ASSERT_RETURN(f_synth != nullptr,);
 
-        const int f_id = fluid_synth_sfload(f_synth, filename, 0);
+        const int f_id_test = fluid_synth_sfload(f_synth, filename, 0);
 
-        if (f_id < 0)
+        if (f_id_test < 0)
         {
             DISCOVERY_OUT("error", "Failed to load SF2 file");
             return;
         }
 
-        if (fluid_sfont_t* const f_sfont = fluid_synth_get_sfont_by_id(f_synth, static_cast<uint>(f_id)))
+#if FLUIDSYNTH_VERSION_MAJOR >= 2
+        const int f_id = f_id_test;
+#else
+        const uint f_id = static_cast<uint>(f_id_test);
+#endif
+
+        if (fluid_sfont_t* const f_sfont = fluid_synth_get_sfont_by_id(f_synth, f_id))
         {
-#if FLUIDSYNTH_VERSION_MAJOR < 2
+#if FLUIDSYNTH_VERSION_MAJOR >= 2
+            fluid_sfont_iteration_start(f_sfont);
+            for (; fluid_sfont_iteration_next(f_sfont);)
+                ++programs;
+#else
             fluid_preset_t f_preset;
 
             f_sfont->iteration_start(f_sfont);
             for (; f_sfont->iteration_next(f_sfont, &f_preset);)
-#else
-            fluid_sfont_iteration_start(f_sfont);
-            for (; fluid_sfont_iteration_next(f_sfont);)
-#endif
                 ++programs;
+#endif
         }
 
         delete_fluid_synth(f_synth);
@@ -1734,8 +1741,10 @@ int main(int argc, char* argv[])
 #endif
          break;
 
+    case PLUGIN_DLS:
+    case PLUGIN_GIG:
     case PLUGIN_SF2:
-        do_fluidsynth_check(filename, doInit);
+        do_fluidsynth_check(filename, type, doInit);
         break;
 
     default:

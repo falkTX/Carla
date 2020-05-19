@@ -67,8 +67,15 @@ public:
         fluid_settings_setint(fSettings, "synth.audio-groups", use16Outs ? 16 : 1);
         fluid_settings_setnum(fSettings, "synth.sample-rate", pData->engine->getSampleRate());
         //fluid_settings_setnum(fSettings, "synth.cpu-cores", 2);
+        fluid_settings_setint(fSettings, "synth.ladspa.active", 0);
+        fluid_settings_setint(fSettings, "synth.lock-memory", 1);
+#if FLUIDSYNTH_VERSION_MAJOR < 2
         fluid_settings_setint(fSettings, "synth.parallel-render", 1);
+#endif
         fluid_settings_setint(fSettings, "synth.threadsafe-api", 0);
+#ifdef DEBUG
+        fluid_settings_setint(fSettings, "synth.verbose", 1);
+#endif
 
         // create synth
         fSynth = new_fluid_synth(fSettings);
@@ -76,7 +83,9 @@ public:
 
         initializeFluidDefaultsIfNeeded();
 
-        fluid_synth_set_sample_rate(fSynth, (float)pData->engine->getSampleRate());
+#if FLUIDSYNTH_VERSION_MAJOR < 2
+        fluid_synth_set_sample_rate(fSynth, static_cast<float>(pData->engine->getSampleRate()));
+#endif
 
         // set default values
         fluid_synth_set_reverb_on(fSynth, 1);
@@ -458,17 +467,17 @@ public:
         case FluidSynthChorusType:
             try {
                 fluid_synth_set_chorus(fSynth,
-                                       (int)fParamBuffers[FluidSynthChorusNr],
+                                       static_cast<int>(fParamBuffers[FluidSynthChorusNr] + 0.5f),
                                        fParamBuffers[FluidSynthChorusLevel],
                                        fParamBuffers[FluidSynthChorusSpeedHz],
                                        fParamBuffers[FluidSynthChorusDepthMs],
-                                       (int)fParamBuffers[FluidSynthChorusType]);
+                                       static_cast<int>(fParamBuffers[FluidSynthChorusType] + 0.5f));
             } CARLA_SAFE_EXCEPTION("fluid_synth_set_chorus")
             break;
 
         case FluidSynthPolyphony:
             try {
-                fluid_synth_set_polyphony(fSynth, (int)value);
+                fluid_synth_set_polyphony(fSynth, static_cast<int>(value + 0.5f));
             } CARLA_SAFE_EXCEPTION("fluid_synth_set_polyphony")
             break;
 
@@ -476,7 +485,7 @@ public:
             for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
             {
                 try {
-                    fluid_synth_set_interp_method(fSynth, i, (int)value);
+                    fluid_synth_set_interp_method(fSynth, i, static_cast<int>(value + 0.5f));
                 } CARLA_SAFE_EXCEPTION_BREAK("fluid_synth_set_interp_method")
             }
             break;
@@ -519,7 +528,15 @@ public:
                     const uint32_t bank    = pData->midiprog.data[index].bank;
                     const uint32_t program = pData->midiprog.data[index].program;
 
+#if FLUIDSYNTH_VERSION_MAJOR >= 2
+                    fluid_synth_program_select(fSynth,
+                                               static_cast<int>(channel),
+                                               fSynthId,
+                                               static_cast<int>(bank),
+                                               static_cast<int>(program));
+#else
                     fluid_synth_program_select(fSynth, channel, fSynthId, bank, program);
+#endif
                     fCurMidiProgs[channel] = index;
 
                     if (pData->ctrlChannel == static_cast<int32_t>(channel))
@@ -555,7 +572,12 @@ public:
             const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
             try {
+#if FLUIDSYNTH_VERSION_MAJOR >= 2
+                fluid_synth_program_select(fSynth, pData->ctrlChannel, fSynthId,
+                                           static_cast<int>(bank), static_cast<int>(program));
+#else
                 fluid_synth_program_select(fSynth, pData->ctrlChannel, fSynthId, bank, program);
+#endif
             } CARLA_SAFE_EXCEPTION("fluid_synth_program_select")
 
             fCurMidiProgs[pData->ctrlChannel] = index;
@@ -576,7 +598,12 @@ public:
             const uint32_t program = pData->midiprog.data[uindex].program;
 
             try {
+#if FLUIDSYNTH_VERSION_MAJOR >= 2
+                fluid_synth_program_select(fSynth, pData->ctrlChannel, fSynthId,
+                                           static_cast<int>(bank), static_cast<int>(program));
+#else
                 fluid_synth_program_select(fSynth, pData->ctrlChannel, fSynthId, bank, program);
+#endif
             } CARLA_SAFE_EXCEPTION("fluid_synth_program_select")
 
             fCurMidiProgs[pData->ctrlChannel] = static_cast<int32_t>(uindex);
@@ -752,7 +779,7 @@ public:
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
             pData->param.ranges[j].min = 0.0f;
-            pData->param.ranges[j].max = 1.2f;
+            pData->param.ranges[j].max = 1.0f;
             pData->param.ranges[j].def = sFluidDefaults[j];
             pData->param.ranges[j].step = 0.01f;
             pData->param.ranges[j].stepSmall = 0.0001f;
@@ -857,7 +884,11 @@ public:
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
             pData->param.ranges[j].min = 0.0f;
+#if FLUIDSYNTH_VERSION_MAJOR >= 2
+            pData->param.ranges[j].max = 256.0f;
+#else
             pData->param.ranges[j].max = float(2048.0 * 1000.0 / pData->engine->getSampleRate()); // FIXME?
+#endif
             pData->param.ranges[j].def = sFluidDefaults[j];
             pData->param.ranges[j].step = 0.01f;
             pData->param.ranges[j].stepSmall = 0.0001f;
@@ -910,7 +941,7 @@ public:
             pData->param.data[j].rindex = j;
             pData->param.ranges[j].min = 0.0f;
             pData->param.ranges[j].max = 65535.0f;
-            pData->param.ranges[j].def = sFluidDefaults[j];
+            pData->param.ranges[j].def = 0.0f;
             pData->param.ranges[j].step = 1.0f;
             pData->param.ranges[j].stepSmall = 1.0f;
             pData->param.ranges[j].stepLarge = 1.0f;
@@ -960,36 +991,7 @@ public:
 
         if (fluid_sfont_t* const f_sfont = fluid_synth_get_sfont_by_id(fSynth, fSynthId))
         {
-#if FLUIDSYNTH_VERSION_MAJOR < 2
-            fluid_preset_t f_preset;
-
-            // initial check to know how many midi-programs we have
-            f_sfont->iteration_start(f_sfont);
-            for (; f_sfont->iteration_next(f_sfont, &f_preset);)
-                ++count;
-
-            // sound kits must always have at least 1 midi-program
-            CARLA_SAFE_ASSERT_RETURN(count > 0,);
-
-            pData->midiprog.createNew(count);
-
-            // Update data
-            int tmp;
-            uint32_t i = 0;
-            f_sfont->iteration_start(f_sfont);
-
-            for (; f_sfont->iteration_next(f_sfont, &f_preset);)
-            {
-                CARLA_SAFE_ASSERT_BREAK(i < count);
-
-                tmp = f_preset.get_banknum(&f_preset);
-                pData->midiprog.data[i].bank = (tmp >= 0) ? static_cast<uint32_t>(tmp) : 0;
-
-                tmp = f_preset.get_num(&f_preset);
-                pData->midiprog.data[i].program = (tmp >= 0) ? static_cast<uint32_t>(tmp) : 0;
-
-                pData->midiprog.data[i].name = carla_strdup(f_preset.get_name(&f_preset));
-#else
+#if FLUIDSYNTH_VERSION_MAJOR >= 2
             fluid_preset_t* f_preset;
 
             // initial check to know how many midi-programs we have
@@ -1018,6 +1020,35 @@ public:
                 pData->midiprog.data[i].program = (tmp >= 0) ? static_cast<uint32_t>(tmp) : 0;
 
                 pData->midiprog.data[i].name = carla_strdup(fluid_preset_get_name(f_preset));
+#else
+            fluid_preset_t f_preset;
+
+            // initial check to know how many midi-programs we have
+            f_sfont->iteration_start(f_sfont);
+            for (; f_sfont->iteration_next(f_sfont, &f_preset);)
+                ++count;
+
+            // sound kits must always have at least 1 midi-program
+            CARLA_SAFE_ASSERT_RETURN(count > 0,);
+
+            pData->midiprog.createNew(count);
+
+            // Update data
+            int tmp;
+            uint32_t i = 0;
+            f_sfont->iteration_start(f_sfont);
+
+            for (; f_sfont->iteration_next(f_sfont, &f_preset);)
+            {
+                CARLA_SAFE_ASSERT_BREAK(i < count);
+
+                tmp = f_preset.get_banknum(&f_preset);
+                pData->midiprog.data[i].bank = (tmp >= 0) ? static_cast<uint32_t>(tmp) : 0;
+
+                tmp = f_preset.get_num(&f_preset);
+                pData->midiprog.data[i].program = (tmp >= 0) ? static_cast<uint32_t>(tmp) : 0;
+
+                pData->midiprog.data[i].name = carla_strdup(f_preset.get_name(&f_preset));
 #endif
 
                 if (pData->midiprog.data[i].bank == 128 && ! hasDrums)
@@ -1045,23 +1076,38 @@ public:
             for (int i=0; i < MAX_MIDI_CHANNELS && i != 9; ++i)
             {
                 fluid_synth_set_channel_type(fSynth, i, CHANNEL_TYPE_MELODIC);
-                fluid_synth_program_select(fSynth, i, fSynthId, pData->midiprog.data[0].bank, pData->midiprog.data[0].program);
-
+#if FLUIDSYNTH_VERSION_MAJOR >= 2
+                fluid_synth_program_select(fSynth, i, fSynthId,
+                                           static_cast<int>(pData->midiprog.data[0].bank),
+                                           static_cast<int>(pData->midiprog.data[0].program));
+#else
+                fluid_synth_program_select(fSynth, i, fSynthId,
+                                           pData->midiprog.data[0].bank, pData->midiprog.data[0].program);
+#endif
                 fCurMidiProgs[i] = 0;
             }
 
             if (hasDrums)
             {
                 fluid_synth_set_channel_type(fSynth, 9, CHANNEL_TYPE_DRUM);
+#if FLUIDSYNTH_VERSION_MAJOR >= 2
+                fluid_synth_program_select(fSynth, 9, fSynthId, 128, static_cast<int>(drumProg));
+#else
                 fluid_synth_program_select(fSynth, 9, fSynthId, 128, drumProg);
-
+#endif
                 fCurMidiProgs[9] = static_cast<int32_t>(drumIndex);
             }
             else
             {
                 fluid_synth_set_channel_type(fSynth, 9, CHANNEL_TYPE_MELODIC);
-                fluid_synth_program_select(fSynth, 9, fSynthId, pData->midiprog.data[0].bank, pData->midiprog.data[0].program);
-
+#if FLUIDSYNTH_VERSION_MAJOR >= 2
+                fluid_synth_program_select(fSynth, 9, fSynthId,
+                                           static_cast<int>(pData->midiprog.data[0].bank),
+                                           static_cast<int>(pData->midiprog.data[0].program));
+#else
+                fluid_synth_program_select(fSynth, 9, fSynthId,
+                                           pData->midiprog.data[0].bank, pData->midiprog.data[0].program);
+#endif
                 fCurMidiProgs[9] = 0;
             }
 
@@ -1274,7 +1320,12 @@ public:
                             {
                                 if (pData->midiprog.data[k].bank == bankId && pData->midiprog.data[k].program == progId)
                                 {
+#if FLUIDSYNTH_VERSION_MAJOR >= 2
+                                    fluid_synth_program_select(fSynth, event.channel, fSynthId,
+                                                               static_cast<int>(bankId), static_cast<int>(progId));
+#else
                                     fluid_synth_program_select(fSynth, event.channel, fSynthId, bankId, progId);
+#endif
                                     fCurMidiProgs[event.channel] = static_cast<int32_t>(k);
 
                                     if (event.channel == pData->ctrlChannel)
@@ -1560,8 +1611,10 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fSettings != nullptr,);
         fluid_settings_setnum(fSettings, "synth.sample-rate", newSampleRate);
 
+#if FLUIDSYNTH_VERSION_MAJOR < 2
         CARLA_SAFE_ASSERT_RETURN(fSynth != nullptr,);
-        fluid_synth_set_sample_rate(fSynth, float(newSampleRate));
+        fluid_synth_set_sample_rate(fSynth, static_cast<float>(newSampleRate));
+#endif
     }
 
     // -------------------------------------------------------------------
@@ -1636,7 +1689,7 @@ public:
         // ---------------------------------------------------------------
         // open soundfont
 
-        const int synthId(fluid_synth_sfload(fSynth, filename, 0));
+        const int synthId = fluid_synth_sfload(fSynth, filename, 0);
 
         if (synthId < 0)
         {
@@ -1644,7 +1697,12 @@ public:
             return false;
         }
 
+#if FLUIDSYNTH_VERSION_MAJOR >= 2
+        fSynthId = synthId;
+#else
         fSynthId = static_cast<uint>(synthId);
+#endif
+
 
         // ---------------------------------------------------------------
         // get info
@@ -1700,43 +1758,60 @@ private:
         sFluidDefaultsStored = true;
         // reverb defaults
         sFluidDefaults[FluidSynthReverbOnOff] = 1.0f;
-#if FLUIDSYNTH_VERSION_MAJOR < 2
+#if FLUIDSYNTH_VERSION_MAJOR >= 2
+        double reverbVal;
+
+        reverbVal = 0.2;
+        fluid_settings_getnum_default(fSettings, "synth.reverb.room-size", &reverbVal);
+        sFluidDefaults[FluidSynthReverbRoomSize] = static_cast<float>(reverbVal);
+
+        reverbVal = 0.0;
+        fluid_settings_getnum_default(fSettings, "synth.reverb.damp", &reverbVal);
+        sFluidDefaults[FluidSynthReverbDamp] = static_cast<float>(reverbVal);
+
+        reverbVal = 0.9;
+        fluid_settings_getnum_default(fSettings, "synth.reverb.level", &reverbVal);
+        sFluidDefaults[FluidSynthReverbLevel] = static_cast<float>(reverbVal);
+
+        reverbVal = 0.5;
+        fluid_settings_getnum_default(fSettings, "synth.reverb.width", &reverbVal);
+        sFluidDefaults[FluidSynthReverbWidth] = static_cast<float>(reverbVal);
+#else
         sFluidDefaults[FluidSynthReverbRoomSize] = FLUID_REVERB_DEFAULT_ROOMSIZE;
         sFluidDefaults[FluidSynthReverbDamp] = FLUID_REVERB_DEFAULT_DAMP;
         sFluidDefaults[FluidSynthReverbLevel] = FLUID_REVERB_DEFAULT_LEVEL;
         sFluidDefaults[FluidSynthReverbWidth] = FLUID_REVERB_DEFAULT_WIDTH;
-#else
-        double reverbVal;
-        fluid_settings_getnum_default(fSettings, "synth.reverb.room-size", &reverbVal);
-        sFluidDefaults[FluidSynthReverbRoomSize] = reverbVal;
-        fluid_settings_getnum_default(fSettings, "synth.reverb.damp", &reverbVal);
-        sFluidDefaults[FluidSynthReverbDamp] = reverbVal;
-        fluid_settings_getnum_default(fSettings, "synth.reverb.level", &reverbVal);
-        sFluidDefaults[FluidSynthReverbLevel] = reverbVal;
-        fluid_settings_getnum_default(fSettings, "synth.reverb.width", &reverbVal);
-        sFluidDefaults[FluidSynthReverbWidth] = reverbVal;
 #endif
 
         // chorus defaults
         sFluidDefaults[FluidSynthChorusOnOff] = 1.0f;
-#if FLUIDSYNTH_VERSION_MAJOR < 2
+#if FLUIDSYNTH_VERSION_MAJOR >= 2
+        double chorusVal;
+
+        chorusVal = 3.0;
+        fluid_settings_getnum_default(fSettings, "synth.chorus.nr", &chorusVal);
+        sFluidDefaults[FluidSynthChorusNr] = static_cast<float>(chorusVal);
+
+        chorusVal = 2.0;
+        fluid_settings_getnum_default(fSettings, "synth.chorus.level", &chorusVal);
+        sFluidDefaults[FluidSynthChorusLevel] = static_cast<float>(chorusVal);
+
+        chorusVal = 0.3;
+        fluid_settings_getnum_default(fSettings, "synth.chorus.speed", &chorusVal);
+        sFluidDefaults[FluidSynthChorusSpeedHz] = static_cast<float>(chorusVal);
+
+        chorusVal = 8.0;
+        fluid_settings_getnum_default(fSettings, "synth.chorus.depth", &chorusVal);
+        sFluidDefaults[FluidSynthChorusDepthMs] = static_cast<float>(chorusVal);
+
+        // There is no settings for chorus default type
+        sFluidDefaults[FluidSynthChorusType] = static_cast<float>(fluid_synth_get_chorus_type(fSynth));
+#else
         sFluidDefaults[FluidSynthChorusNr] = FLUID_CHORUS_DEFAULT_N;
         sFluidDefaults[FluidSynthChorusLevel] = FLUID_CHORUS_DEFAULT_LEVEL;
         sFluidDefaults[FluidSynthChorusSpeedHz] = FLUID_CHORUS_DEFAULT_SPEED;
         sFluidDefaults[FluidSynthChorusDepthMs] = FLUID_CHORUS_DEFAULT_DEPTH;
         sFluidDefaults[FluidSynthChorusType] = FLUID_CHORUS_DEFAULT_TYPE;
-#else
-        double chorusVal;
-        fluid_settings_getnum_default(fSettings, "synth.chorus.nr", &chorusVal);
-        sFluidDefaults[FluidSynthChorusNr] = chorusVal;
-        fluid_settings_getnum_default(fSettings, "synth.chorus.level", &chorusVal);
-        sFluidDefaults[FluidSynthChorusLevel] = chorusVal;
-        fluid_settings_getnum_default(fSettings, "synth.chorus.speed", &chorusVal);
-        sFluidDefaults[FluidSynthChorusSpeedHz] = chorusVal;
-        fluid_settings_getnum_default(fSettings, "synth.chorus.depth", &chorusVal);
-        sFluidDefaults[FluidSynthChorusDepthMs] = chorusVal;
-        // There is no settings for chorus default type
-        sFluidDefaults[FluidSynthChorusType] = (float)fluid_synth_get_chorus_type(fSynth);
 #endif
 
         // misc. defaults
@@ -1765,12 +1840,16 @@ private:
 
     fluid_settings_t* fSettings;
     fluid_synth_t*    fSynth;
-    uint              fSynthId;
+#if FLUIDSYNTH_VERSION_MAJOR >= 2
+    int fSynthId;
+#else
+    uint fSynthId;
+#endif
 
     float** fAudio16Buffers;
     float   fParamBuffers[FluidSynthParametersMax];
 
-    static bool  sFluidDefaultsStored;
+    static bool sFluidDefaultsStored;
     static float sFluidDefaults[FluidSynthParametersMax];
 
     int32_t fCurMidiProgs[MAX_MIDI_CHANNELS];
@@ -1793,23 +1872,32 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------------------------------------------------------
 
-CarlaPlugin* CarlaPlugin::newFluidSynth(const Initializer& init, const bool use16Outs)
+CarlaPlugin* CarlaPlugin::newFluidSynth(const Initializer& init, PluginType ptype, bool use16Outs)
 {
-    carla_debug("CarlaPlugin::newFluidSynth({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "}, %s)", init.engine, init.filename, init.name, init.label, init.uniqueId, bool2str(use16Outs));
+    carla_debug("CarlaPlugin::newFluidSynth({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "}, %s)",
+                init.engine, init.filename, init.name, init.label, init.uniqueId, bool2str(use16Outs));
 
 #ifdef HAVE_FLUIDSYNTH
-    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && use16Outs)
-    {
-        init.engine->setLastError("Carla's rack mode can only work with Stereo modules,"
-                                  "please choose the 2-channel only SoundFont version");
-        return nullptr;
-    }
+    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+        use16Outs = false;
 
-    if (! fluid_is_soundfont(init.filename))
+    if (ptype == PLUGIN_SF2 && ! fluid_is_soundfont(init.filename))
     {
         init.engine->setLastError("Requested file is not a valid SoundFont");
         return nullptr;
     }
+#ifndef HAVE_FLUIDSYNTH_INSTPATCH
+    if (ptype == PLUGIN_DLS)
+    {
+        init.engine->setLastError("DLS file support not available");
+        return nullptr;
+    }
+    if (ptype == PLUGIN_GIG)
+    {
+        init.engine->setLastError("GIG file support not available");
+        return nullptr;
+    }
+#endif
 
     CarlaPluginFluidSynth* const plugin(new CarlaPluginFluidSynth(init.engine, init.id,  use16Outs));
 
