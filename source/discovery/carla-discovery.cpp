@@ -1650,7 +1650,11 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Initialize OS features
 
-    const CarlaScopedLocale csl;
+    // we want stuff in English so we can parse error messages
+    ::setlocale(LC_ALL, "C");
+#ifndef CARLA_OS_WIN
+    carla_setenv("LC_ALL", "C");
+#endif
 
 #ifdef CARLA_OS_WIN
     OleInitialize(nullptr);
