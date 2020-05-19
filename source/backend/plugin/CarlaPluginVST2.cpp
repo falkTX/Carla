@@ -2419,6 +2419,19 @@ public:
         sCurrentUniqueId     = static_cast<intptr_t>(uniqueId);
         sLastCarlaPluginVST2 = this;
 
+        bool wasTriggered;
+        {
+            const ScopedAbortCatcher sac;
+
+            try {
+                fEffect = vstFn(carla_vst_audioMasterCallback);
+            } CARLA_SAFE_EXCEPTION_RETURN("Vst init", false);
+
+            wasTriggered = sac.wasTriggered();
+        }
+
+        // try again if plugin blows
+        if (wasTriggered)
         {
             const ScopedAbortCatcher sac;
 
