@@ -33,7 +33,7 @@ ScopedAbortCatcher::ScopedAbortCatcher()
 ScopedAbortCatcher::~ScopedAbortCatcher()
 {
 #ifndef CARLA_OS_WIN
-    if (! s_triggered)
+    if (s_oldsig != nullptr && ! s_triggered)
         std::signal(SIGABRT, s_oldsig);
 #endif
 }

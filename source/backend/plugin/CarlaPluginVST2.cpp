@@ -24,6 +24,7 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
+#include "CarlaProcessUtils.hpp"
 #include "CarlaScopeUtils.hpp"
 #include "CarlaVstUtils.hpp"
 
@@ -2418,9 +2419,13 @@ public:
         sCurrentUniqueId     = static_cast<intptr_t>(uniqueId);
         sLastCarlaPluginVST2 = this;
 
-        try {
-            fEffect = vstFn(carla_vst_audioMasterCallback);
-        } CARLA_SAFE_EXCEPTION_RETURN("Vst init", false);
+        {
+            const ScopedAbortCatcher sac;
+
+            try {
+                fEffect = vstFn(carla_vst_audioMasterCallback);
+            } CARLA_SAFE_EXCEPTION_RETURN("Vst init", false);
+        }
 
         sLastCarlaPluginVST2 = nullptr;
         sCurrentUniqueId     = 0;
