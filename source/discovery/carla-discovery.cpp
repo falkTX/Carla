@@ -97,6 +97,7 @@ static void print_lib_error(const char* const filename)
 
     if (error != nullptr &&
         std::strstr(error, "wrong ELF class") == nullptr &&
+        std::strstr(error, "invalid ELF header") == nullptr &&
         std::strstr(error, "Bad EXE format") == nullptr &&
         std::strstr(error, "no suitable image found") == nullptr &&
         std::strstr(error, "not a valid Win32 application") == nullptr)
@@ -1627,6 +1628,10 @@ int main(int argc, char* argv[])
     case PLUGIN_DSSI:
     case PLUGIN_VST2:
         openLib = true;
+        break;
+    case PLUGIN_VST3:
+        openLib = water::File(filename).existsAsFile();
+        break;
     default:
         break;
     }
