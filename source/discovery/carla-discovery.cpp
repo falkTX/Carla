@@ -63,8 +63,9 @@
 
 #include <iostream>
 
+#include "water/files/File.h"
+
 #ifndef BUILD_BRIDGE
-# include "water/files/File.h"
 # include "water/text/StringArray.h"
 # include "CarlaDssiUtils.cpp"
 # include "../backend/utils/CachedPlugins.cpp"
