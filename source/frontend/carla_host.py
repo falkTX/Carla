@@ -500,6 +500,7 @@ class HostWindow(QMainWindow):
             self.ui.act_canvas_save_image.triggered.connect(self.slot_canvasSaveImage)
             self.ui.act_canvas_save_image_2x.triggered.connect(self.slot_canvasSaveImage)
             self.ui.act_canvas_save_image_4x.triggered.connect(self.slot_canvasSaveImage)
+            self.ui.act_canvas_copy_clipboard.triggered.connect(self.slot_canvasCopyToClipboard)
             self.ui.act_canvas_arrange.setEnabled(False) # TODO, later
             self.ui.graphicsView.horizontalScrollBar().valueChanged.connect(self.slot_horizontalScrollBarChanged)
             self.ui.graphicsView.verticalScrollBar().valueChanged.connect(self.slot_verticalScrollBarChanged)
@@ -1590,6 +1591,19 @@ class HostWindow(QMainWindow):
             iw.setOptimizedWrite(True)
 
         iw.write(image)
+
+    @pyqtSlot()
+    def slot_canvasCopyToClipboard(self):
+        image   = QImage(self.scene.width(), self.scene.height(), QImage.Format_RGB32)
+        painter = QPainter(image)
+        painter.save()
+        painter.setRenderHints(painter.renderHints() | QPainter.Antialiasing | QPainter.TextAntialiasing)
+        self.scene.clearSelection()
+        self.scene.render(painter)
+        painter.restore()
+        del painter
+
+        QApplication.clipboard().setImage(image)
 
     # --------------------------------------------------------------------------------------------------------
     # Canvas (canvas callbacks)
