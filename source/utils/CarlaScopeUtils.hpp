@@ -98,7 +98,7 @@ private:
 
 class CarlaScopedLocale {
 #ifdef CARLA_USE_NEWLOCALE
-    static constexpr locale_t kNullLocale = (locale_t)0;
+    static constexpr locale_t kNullLocale = (locale_t)nullptr;
 #endif
 
 public:
