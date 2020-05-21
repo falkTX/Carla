@@ -29,6 +29,10 @@
 # define CARLA_USE_NEWLOCALE
 #endif
 
+#if defined(CARLA_OS_WIN) && __MINGW64_VERSION_MAJOR >= 5
+# define CARLA_USE_CONFIGTHREADLOCALE
+#endif
+
 // -----------------------------------------------------------------------
 // CarlaScopedEnvVar class
 
@@ -103,7 +107,7 @@ public:
         : newloc(::newlocale(LC_NUMERIC_MASK, "C", kNullLocale)),
           oldloc(newloc != kNullLocale ? ::uselocale(newloc) : kNullLocale) {}
 #else
-# ifdef CARLA_OS_WIN
+# ifdef CARLA_USE_CONFIGTHREADLOCALE
         : oldthreadloc(_configthreadlocale(_ENABLE_PER_THREAD_LOCALE)),
 # else
         : oldthreadloc(-1),
@@ -128,7 +132,7 @@ public:
             delete[] oldloc;
         }
 
-# ifdef CARLA_OS_WIN
+# ifdef CARLA_USE_CONFIGTHREADLOCALE
         if (oldthreadloc != -1)
             _configthreadlocale(oldthreadloc);
 # endif
