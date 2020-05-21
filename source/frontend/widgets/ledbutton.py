@@ -19,12 +19,12 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt5.QtCore import QRectF
-from PyQt5.QtGui import QPainter, QPixmap
+from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtWidgets import QPushButton
 
 # ------------------------------------------------------------------------------------------------------------
 # Widget Class
+
 
 class LEDButton(QPushButton):
     # normal
@@ -39,60 +39,50 @@ class LEDButton(QPushButton):
     def __init__(self, parent):
         QPushButton.__init__(self, parent)
 
-        self.fPixmap     = QPixmap()
-        self.fPixmapRect = QRectF(0, 0, 0, 0)
+        self.fSvgWidget = QSvgWidget(self)
 
         self.setCheckable(True)
         self.setText("")
 
         self.fLastColor = self.OFF
-        self.fPixmap.load(":/bitmaps/led_off.png")
+        self.fSvgWidget.load(":/scalable/led_off.svg")
 
         self.setColor(self.BLUE)
 
     def setColor(self, color):
         self.fColor = color
-        self._loadPixmapNow()
+        self._loadSVGNow()
 
         # Fix calf off
         if color == self.CALF:
-            self.fPixmap.load(":/bitmaps/led_calf_off.png")
-
-        size = self.fPixmap.width()
-        self.fPixmapRect = QRectF(0, 0, size, size)
-
-        self.setMinimumSize(size, size)
-        self.setMaximumSize(size, size)
+            self.fSvgWidget.load(":/bitmaps/led_calf_off.png")
 
     def paintEvent(self, event):
-        painter = QPainter(self)
         event.accept()
 
-        self._loadPixmapNow()
+        self._loadSVGNow()
 
-        painter.drawPixmap(self.fPixmapRect, self.fPixmap, self.fPixmapRect)
-
-    def _loadPixmapNow(self):
+    def _loadSVGNow(self):
 
         if self.isChecked():
             if self.fLastColor != self.fColor:
                 if self.fColor == self.OFF:
-                    self.fPixmap.load(":/bitmaps/led_off.png")
+                    self.fSvgWidget.load(":/scalable/led_off.svg")
                 elif self.fColor == self.BLUE:
-                    self.fPixmap.load(":/bitmaps/led_blue.png")
+                    self.fSvgWidget.load(":/scalable/led_blue.svg")
                 elif self.fColor == self.GREEN:
-                    self.fPixmap.load(":/bitmaps/led_green.png")
+                    self.fSvgWidget.load(":/scalable/led_green.svg")
                 elif self.fColor == self.RED:
-                    self.fPixmap.load(":/bitmaps/led_red.png")
+                    self.fSvgWidget.load(":/scalable/led_red.svg")
                 elif self.fColor == self.YELLOW:
-                    self.fPixmap.load(":/bitmaps/led_yellow.png")
+                    self.fSvgWidget.load(":/scalable/led_yellow.svg")
                 elif self.fColor == self.CALF:
-                    self.fPixmap.load(":/bitmaps/led_calf_on.png")
+                    self.fSvgWidget.load(":/bitmaps/led_calf_on.png")
                 else:
                     return
 
                 self.fLastColor = self.fColor
 
         elif self.fLastColor != self.OFF:
-            self.fPixmap.load(":/bitmaps/led_calf_off.png" if self.fColor == self.CALF else ":/bitmaps/led_off.png")
+            self.fSvgWidget.load(":/scalable/led_calf_off.png" if self.fColor == self.CALF else ":/scalable/led_off.svg")
             self.fLastColor = self.OFF
