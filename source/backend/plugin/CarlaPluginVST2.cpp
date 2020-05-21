@@ -2217,7 +2217,9 @@ protected:
             // TODO
             break;
 
-        case audioMasterUpdateDisplay:
+        case audioMasterUpdateDisplay: {
+            bool programNamesUpdated = false;
+
             // Update current program
             if (pData->prog.count > 1)
             {
@@ -2243,14 +2245,44 @@ protected:
                                                 0, 0, 0.0f, nullptr);
                     }
                 }
+
+                // Check for updated program names
+                char strBuf[STR_MAX+1];
+                for (int32_t i=0; i < fEffect->numPrograms && i < static_cast<int32_t>(pData->prog.count); ++i)
+                {
+                    carla_zeroStruct(strBuf);
+
+                    if (dispatcher(effGetProgramNameIndexed, i, 0, strBuf) != 1)
+                    {
+                        // stop here if plugin does not support indexed names
+                        break;
+                    }
+
+                    if (std::strcmp(pData->prog.names[i], strBuf) != 0)
+                    {
+                        const char* const old = pData->prog.names[i];
+                        pData->prog.names[i] = carla_strdup(strBuf);
+                        delete[] old;
+                        programNamesUpdated = true;
+                    }
+                }
             }
 
             if (! fIsInitializing)
+            {
+                if (programNamesUpdated)
+                    pData->engine->callback(true, true,
+                                            ENGINE_CALLBACK_RELOAD_PROGRAMS,
+                                            pData->id, 0, 0, 0, 0.0f, nullptr);
+
                 pData->engine->callback(true, true,
-                                        ENGINE_CALLBACK_RELOAD_PARAMETERS, pData->id, 0, 0, 0, 0.0f, nullptr);
+                                        ENGINE_CALLBACK_RELOAD_PARAMETERS,
+                                        pData->id, 0, 0, 0, 0.0f, nullptr);
+            }
 
             ret = 1;
             break;
+        }
 
         case audioMasterBeginEdit:
             CARLA_SAFE_ASSERT_BREAK(index >= 0);
