@@ -19,7 +19,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from math import cos, floor, pi, sin
+from math import cos, floor, pi, sin, isnan
 
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QEvent, QPointF, QRectF, QTimer, QSize
 from PyQt5.QtGui import QColor, QConicalGradient, QFont, QFontMetrics
@@ -241,7 +241,7 @@ class PixmapDial(QDial):
         self.fMaximum = value
 
     def setValue(self, value, emitSignal=False):
-        if self.fRealValue == value:
+        if self.fRealValue == value or isnan(value):
             return
 
         if value <= self.fMinimum:
