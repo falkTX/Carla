@@ -22,6 +22,7 @@
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 # include <QtGui/QPainter>
+# include <QtGui/QPainterPath>
 # include <QtGui/QPixmapCache>
 # include <QtWidgets/qdrawutil.h>
 # include <QtWidgets/QApplication>
@@ -43,6 +44,7 @@
 #  pragma clang diagnostic ignored "-Wdeprecated-register"
 # endif
 # include <QtGui/QPainter>
+# include <QtGui/QPainterPath>
 # include <QtGui/QPixmapCache>
 # include <QtGui/QApplication>
 # include <QtGui/QComboBox>
