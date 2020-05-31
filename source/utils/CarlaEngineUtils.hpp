@@ -1,6 +1,6 @@
 /*
  * Carla Engine utils
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -192,8 +192,11 @@ void fillWaterMidiBufferFromEngineEvents(water::MidiBuffer& midiBuffer, const En
                 // set first byte
                 mdataTmp[0] = static_cast<uint8_t>(midiEvent.data[0] | (engineEvent.channel & MIDI_CHANNEL_BIT));
 
-                // copy rest
-                carla_copy<uint8_t>(mdataTmp+1, midiEvent.data+1, size-1U);
+                if (size > 1)
+                {
+                    // copy rest
+                    carla_copy<uint8_t>(mdataTmp+1, midiEvent.data+1, size-1U);
+                }
 
                 // done
                 mdataPtr = mdataTmp;
