@@ -19,7 +19,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from math import cos, floor, pi, sin
+from math import cos, floor, pi, sin, isnan
 
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QEvent, QPointF, QRectF, QTimer, QSize
 from PyQt5.QtGui import QColor, QConicalGradient, QFont, QFontMetrics
@@ -243,7 +243,7 @@ class ScalableDial(QDial):
         self.fMaximum = value
 
     def setValue(self, value, emitSignal=False):
-        if self.fRealValue == value:
+        if self.fRealValue == value or isnan(value):
             return
 
         if value <= self.fMinimum:
@@ -387,8 +387,8 @@ class ScalableDial(QDial):
                 ballPoint = ballPath.pointAtPercent(ballValue)
 
                 # draw arc
-                startAngle = 220*16
-                spanAngle  = -258*16*normValue
+                startAngle = 218*16
+                spanAngle  = -255*16*normValue
 
                 if self.fCustomPaintMode == self.CUSTOM_PAINT_MODE_CARLA_WET:
                     painter.setBrush(colorBlue)
@@ -413,7 +413,7 @@ class ScalableDial(QDial):
                     painter.setBrush(colorBlue)
                     painter.setPen(QPen(colorBlue, 3))
 
-                painter.drawArc(2.0, 2.0, 30.5, 30.5, startAngle, spanAngle)
+                painter.drawArc(4.0, 4.0, 26.0, 26.0, startAngle, spanAngle)
 
             # Custom knobs (L and R)
             elif self.fCustomPaintMode in (self.CUSTOM_PAINT_MODE_CARLA_L, self.CUSTOM_PAINT_MODE_CARLA_R):
@@ -435,14 +435,14 @@ class ScalableDial(QDial):
 
                 # draw arc
                 if self.fCustomPaintMode == self.CUSTOM_PAINT_MODE_CARLA_L:
-                    startAngle = 220*16
-                    spanAngle  = -258.0*16*normValue
+                    startAngle = 218*16
+                    spanAngle  = -255*16*normValue
                 else:
-                    startAngle = 320.0*16
-                    spanAngle  = 262.0*16*(1.0-normValue)
+                    startAngle = 322.0*16
+                    spanAngle  = 255.0*16*(1.0-normValue)
 
-                painter.setPen(QPen(color, 2))
-                painter.drawArc(2, 2.0, 24.0, 24.0, startAngle, spanAngle)
+                painter.setPen(QPen(color, 2.5))
+                painter.drawArc(3.5, 3.5, 22.0, 22.0, startAngle, spanAngle)
 
             # Custom knobs (Color)
             elif self.fCustomPaintMode == self.CUSTOM_PAINT_MODE_COLOR:
@@ -458,8 +458,8 @@ class ScalableDial(QDial):
                 ballPoint = ballPath.pointAtPercent(ballValue)
 
                 # draw arc
-                startAngle = 220*16
-                spanAngle  = -258*16*normValue
+                startAngle = 218*16
+                spanAngle  = -255*16*normValue
 
                 painter.setBrush(color)
                 painter.setPen(QPen(color, 0))
@@ -467,7 +467,7 @@ class ScalableDial(QDial):
 
                 painter.setBrush(color)
                 painter.setPen(QPen(color, 3))
-                painter.drawArc(2.0, 2.0, 30.5, 30.5, startAngle, spanAngle)
+                painter.drawArc(4.0, 4.8, 26.0, 26.0, startAngle, spanAngle)
 
             # Custom knobs (Zita)
             elif self.fCustomPaintMode == self.CUSTOM_PAINT_MODE_ZITA:
