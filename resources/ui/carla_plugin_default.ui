@@ -124,7 +124,7 @@
           </property>
           <property name="icon">
            <iconset resource="../resources.qrc">
-            <normaloff>:/bitmaps/button_gui-black.png</normaloff>:/bitmaps/button_gui-black.png</iconset>
+            <normaloff>:/scalable/button_gui-black.svg</normaloff>:/scalable/button_gui-black.svg</iconset>
           </property>
           <property name="iconSize">
            <size>
