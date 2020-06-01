@@ -69,6 +69,16 @@
         <file>bitmaps/button_calf3_down.png</file>
         <file>bitmaps/button_calf1_hover.png</file>
         <file>bitmaps/button_calf2_hover.png</file>
+
+        <file>scalable/button_calf1.svg</file>
+        <file>scalable/button_calf2.svg</file>
+        <file>scalable/button_calf3.svg</file>
+        <file>scalable/button_calf1_down.svg</file>
+        <file>scalable/button_calf2_down.svg</file>
+        <file>scalable/button_calf3_down.svg</file>
+        <file>scalable/button_calf1_hover.svg</file>
+        <file>scalable/button_calf2_hover.svg</file>
+
         <file>bitmaps/button_distrho-black.png</file>
         <file>bitmaps/button_distrho-white.png</file>
         <file>bitmaps/button_distrho_down-black.png</file>
@@ -87,11 +97,11 @@
         <file>bitmaps/button_file_down-white.png</file>
         <file>bitmaps/button_file_hover-black.png</file>
         <file>bitmaps/button_file_hover-white.png</file>
-        <!--<file>scalable/button_gui-black.svg</file>-->
+        <file>scalable/button_gui-black.svg</file>
         <file>scalable/button_gui-white.svg</file>
-        <!--<file>scalable/button_gui_down-black.svg</file>-->
+        <file>scalable/button_gui_down-black.svg</file>
         <file>scalable/button_gui_down-white.svg</file>
-        <!--<file>scalable/button_gui_hover-black.svg</file>-->
+        <file>scalable/button_gui_hover-black.svg</file>
         <file>scalable/button_gui_hover-white.svg</file>
 
         <file>scalable/button_off.svg</file>
@@ -131,6 +141,8 @@
         <file>scalable/led_green.svg</file>
         <file>scalable/led_blue.svg</file>
         <file>scalable/led_yellow.svg</file>
+        <file>scalable/led_calf_off.svg</file>
+        <file>scalable/led_calf_on.svg</file>
 
         <file>bitmaps/led_calf_off.png</file>
         <file>bitmaps/led_calf_on.png</file>

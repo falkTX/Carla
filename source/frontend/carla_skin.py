@@ -400,10 +400,10 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                                       ":/bitmaps/button_file_down-{}.png".format(imageSuffix),
                                       ":/bitmaps/button_file_hover-{}.png".format(imageSuffix))
             else:
-                if imageSuffix == "black": # TODO
-                    self.b_gui.setPixmaps(":/bitmaps/button_gui-{}.png".format(imageSuffix),
-                                          ":/bitmaps/button_gui_down-{}.png".format(imageSuffix),
-                                          ":/bitmaps/button_gui_hover-{}.png".format(imageSuffix))
+                if imageSuffix == "black":
+                    self.b_gui.setSvgs(":/scalable/button_gui-{}.svg".format(imageSuffix),
+                                       ":/scalable/button_gui_down-{}.svg".format(imageSuffix),
+                                       ":/scalable/button_gui_hover-{}.svg".format(imageSuffix))
                 else:
                     self.b_gui.setSvgs(":/scalable/button_gui-{}.svg".format(imageSuffix),
                                        ":/scalable/button_gui_down-{}.svg".format(imageSuffix),
@@ -413,9 +413,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             self.b_edit.clicked.connect(self.slot_showEditDialog)
 
             if isCalfSkin:
-                self.b_edit.setPixmaps(":/bitmaps/button_calf2.png",
-                                       ":/bitmaps/button_calf2_down.png",
-                                       ":/bitmaps/button_calf2_hover.png")
+                self.b_edit.setSvgs(":/scalable/button_calf2.svg",
+                                    ":/scalable/button_calf2_down.svg",
+                                    ":/scalable/button_calf2_hover.svg")
             else:
                 self.b_edit.setSvgs(":/scalable/button_edit-{}.svg".format(imageSuffix),
                                     ":/scalable/button_edit_down-{}.svg".format(imageSuffix),
