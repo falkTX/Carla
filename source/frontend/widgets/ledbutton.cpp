@@ -32,7 +32,7 @@ LEDButton::LEDButton(QWidget* parent):
     setColor(BLUE);
 
     // matching fLastColor
-    fPixmap.load(":/bitmaps/led_off.png");
+    fPixmap.load(":/scalable/led_off.svg");
 }
 
 void LEDButton::setColor(Color color)
@@ -58,19 +58,19 @@ void LEDButton::paintEvent(QPaintEvent* event)
             switch (fColor)
             {
             case OFF:
-                fPixmap.load(":/bitmaps/led_off.png");
+                fPixmap.load(":/scalable/led_off.svg");
                 break;
             case BLUE:
-                fPixmap.load(":/bitmaps/led_blue.png");
+                fPixmap.load(":/scalable/led_blue.svg");
                 break;
             case GREEN:
-                fPixmap.load(":/bitmaps/led_green.png");
+                fPixmap.load(":/scalable/led_green.svg");
                 break;
             case RED:
-                fPixmap.load(":/bitmaps/led_red.png");
+                fPixmap.load(":/scalable/led_red.svg");
                 break;
             case YELLOW:
-                fPixmap.load(":/bitmaps/led_yellow.png");
+                fPixmap.load(":/scalable/led_yellow.svg");
                 break;
             default:
                 return;
@@ -81,7 +81,7 @@ void LEDButton::paintEvent(QPaintEvent* event)
     }
     else if (fLastColor != OFF)
     {
-        fPixmap.load(":/bitmaps/led_off.png");
+        fPixmap.load(":/scalable/led_off.svg");
         fLastColor = OFF;
     }
 
