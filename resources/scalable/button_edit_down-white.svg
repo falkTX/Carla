@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   sodipodi:docname="button_edit_down-white.svg"
+   inkscape:version="1.0 (4035a4fb49, 2020-05-01)"
+   id="svg2322"
+   version="1.1"
+   viewBox="0 0 5.8208332 5.8208335"
+   height="22"
+   width="22">
+  <defs
+     id="defs2316" />
+  <sodipodi:namedview
+     inkscape:window-maximized="1"
+     inkscape:window-y="35"
+     inkscape:window-x="0"
+     inkscape:window-height="1368"
+     inkscape:window-width="2560"
+     units="px"
+     showgrid="false"
+     inkscape:document-rotation="0"
+     inkscape:current-layer="layer1"
+     inkscape:document-units="px"
+     inkscape:cy="10.487821"
+     inkscape:cx="11.885549"
+     inkscape:zoom="28.148375"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     borderopacity="1.0"
+     bordercolor="#666666"
+     pagecolor="#ffffff"
+     id="base" />
+  <metadata
+     id="metadata2319">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     id="layer1"
+     inkscape:groupmode="layer"
+     inkscape:label="Layer 1">
+    <path
+       style="clip-rule:evenodd;opacity:1;fill:#f0f0f0;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.264584;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;image-rendering:optimizeQuality;shape-rendering:geometricPrecision;text-rendering:geometricPrecision"
+       inkscape:connector-curvature="0"
+       id="path7"
+       d="M 4.9689676,4.0131446 C 4.5136841,3.673401 3.9070592,3.207874 3.2610594,2.6480357 2.9641753,2.3316707 3.3057034,2.0809089 3.1831103,1.5312004 3.140341,1.3397277 2.9939078,1.1451443 2.8496178,1.0669177 2.660326,0.96398133 2.0711099,0.79286488 1.8014595,0.79375367 1.7579756,0.83055477 1.6825266,0.91420173 1.6201148,0.98442603 1.6544911,1.0272717 2.2115629,1.4088839 2.2596007,1.4462168 2.4058545,1.5594669 2.4554088,1.5595521 2.3984433,1.8040959 2.3342461,2.0795732 2.1791502,2.2995798 1.9375342,2.4460724 1.6037719,2.6482098 1.6793998,2.6047442 1.2175126,2.2692675 L 0.92562873,2.0623257 c -0.03384,0.073602 -0.080538,0.1472042 -0.13187871,0.2671195 C 0.92937883,2.55683 1.4024288,3.2076945 1.6127942,3.2825396 2.0085196,3.4235207 2.3740664,3.128133 2.5905914,3.3436956 3.0446237,3.7855758 3.4137414,4.100785 4.0897448,4.9589448 4.3788607,5.3051763 5.2598684,4.2302118 4.9689676,4.0131446 Z"
+       class="fil0" />
+  </g>
+</svg>
