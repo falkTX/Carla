@@ -59,7 +59,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="PixmapButton" name="b_enable">
+         <widget class="ScalableButton" name="b_enable">
           <property name="text">
            <string>Enable</string>
           </property>
@@ -301,7 +301,7 @@
         <number>3</number>
        </property>
        <item>
-        <widget class="PixmapButton" name="b_gui">
+        <widget class="ScalableButton" name="b_gui">
          <property name="text">
           <string>GUI</string>
          </property>
@@ -311,7 +311,7 @@
         </widget>
        </item>
        <item>
-        <widget class="PixmapButton" name="b_edit">
+        <widget class="ScalableButton" name="b_edit">
          <property name="text">
           <string>Edit</string>
          </property>
@@ -321,7 +321,7 @@
         </widget>
        </item>
        <item>
-        <widget class="PixmapButton" name="b_remove">
+        <widget class="ScalableButton" name="b_remove">
          <property name="text">
           <string>Remove</string>
          </property>
@@ -411,9 +411,9 @@
    <header>widgets/ledbutton.h</header>
   </customwidget>
   <customwidget>
-   <class>PixmapButton</class>
+   <class>ScalableButton</class>
    <extends>QPushButton</extends>
-   <header>widgets/pixmapbutton.h</header>
+   <header>widgets/scalablebutton.h</header>
   </customwidget>
  </customwidgets>
  <resources>

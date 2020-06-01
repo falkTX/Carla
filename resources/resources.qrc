@@ -44,7 +44,7 @@
 
         <file>scalable/carla.svg</file>
         <file>scalable/carla-control.svg</file>
-        
+
         <file>scalable/folder.svgz</file>
         <file>scalable/osc.svgz</file>
         <file>scalable/warning.svgz</file>
@@ -75,31 +75,32 @@
         <file>bitmaps/button_distrho_down-white.png</file>
         <file>bitmaps/button_distrho_hover-black.png</file>
         <file>bitmaps/button_distrho_hover-white.png</file>
-        <file>bitmaps/button_edit-black.png</file>
-        <file>bitmaps/button_edit-white.png</file>
-        <file>bitmaps/button_edit_down-black.png</file>
-        <file>bitmaps/button_edit_down-white.png</file>
-        <file>bitmaps/button_edit_hover-black.png</file>
-        <file>bitmaps/button_edit_hover-white.png</file>
+        <file>scalable/button_edit-black.svg</file>
+        <file>scalable/button_edit-white.svg</file>
+        <file>scalable/button_edit_down-black.svg</file>
+        <file>scalable/button_edit_down-white.svg</file>
+        <file>scalable/button_edit_hover-black.svg</file>
+        <file>scalable/button_edit_hover-white.svg</file>
         <file>bitmaps/button_file-black.png</file>
         <file>bitmaps/button_file-white.png</file>
         <file>bitmaps/button_file_down-black.png</file>
         <file>bitmaps/button_file_down-white.png</file>
         <file>bitmaps/button_file_hover-black.png</file>
         <file>bitmaps/button_file_hover-white.png</file>
-        <file>bitmaps/button_gui-black.png</file>
-        <file>bitmaps/button_gui-white.png</file>
-        <file>bitmaps/button_gui_down-black.png</file>
-        <file>bitmaps/button_gui_down-white.png</file>
-        <file>bitmaps/button_gui_hover-black.png</file>
-        <file>bitmaps/button_gui_hover-white.png</file>
-        <file>bitmaps/button_off.png</file>
-        <file>bitmaps/button_on.png</file>
+        <file>scalable/button_gui-black.svg</file>
+        <file>scalable/button_gui-white.svg</file>
+        <file>scalable/button_gui_down-black.svg</file>
+        <file>scalable/button_gui_down-white.svg</file>
+        <file>scalable/button_gui_hover-black.svg</file>
+        <file>scalable/button_gui_hover-white.svg</file>
 
-        <file>bitmaps/dial_03.png</file>
-        <file>bitmaps/dial_03d.png</file>
-        <file>bitmaps/dial_04.png</file>
-        <file>bitmaps/dial_04d.png</file>
+        <file>scalable/button_off.svg</file>
+        <file>scalable/button_on.svg</file>
+
+        <file>scalable/dial_03.svg</file>
+        <file>scalable/dial_03d.svg</file>
+        <file>scalable/dial_04.svg</file>
+        <file>scalable/dial_04d.svg</file>
         <file>bitmaps/dial_06.png</file>
         <file>bitmaps/dial_06d.png</file>
         <file>bitmaps/dial_07.png</file>
@@ -125,11 +126,11 @@
         <file>bitmaps/kbd_down-orange.png</file>
         <file>bitmaps/kbd_down-red.png</file>
 
-        <file>bitmaps/led_off.png</file>
-        <file>bitmaps/led_blue.png</file>
-        <file>bitmaps/led_green.png</file>
-        <file>bitmaps/led_red.png</file>
-        <file>bitmaps/led_yellow.png</file>
+        <file>scalable/led_off.svg</file>
+        <file>scalable/led_red.svg</file>
+        <file>scalable/led_green.svg</file>
+        <file>scalable/led_blue.svg</file>
+        <file>scalable/led_yellow.svg</file>
 
         <file>bitmaps/led_calf_off.png</file>
         <file>bitmaps/led_calf_on.png</file>
@@ -159,6 +160,8 @@
         <file>scalable/pb_jamin.svg</file>
         <file>scalable/pb_mplayer.svg</file>
         <file>scalable/pb_vlc.svg</file>
+
+
 
         <file>cursors/zoom-generic-white.png</file>
         <file>cursors/zoom-generic-black.png</file>

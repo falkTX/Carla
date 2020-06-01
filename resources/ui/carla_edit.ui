@@ -108,7 +108,7 @@
              </spacer>
             </item>
             <item>
-             <widget class="PixmapDial" name="dial_drywet">
+             <widget class="ScalableDial" name="dial_drywet">
               <property name="minimumSize">
                <size>
                 <width>34</width>
@@ -130,7 +130,7 @@
              </widget>
             </item>
             <item>
-             <widget class="PixmapDial" name="dial_vol">
+             <widget class="ScalableDial" name="dial_vol">
               <property name="minimumSize">
                <size>
                 <width>34</width>
@@ -183,7 +183,7 @@
                  <number>0</number>
                 </property>
                 <item>
-                 <widget class="PixmapDial" name="dial_b_left">
+                 <widget class="ScalableDial" name="dial_b_left">
                   <property name="minimumSize">
                    <size>
                     <width>26</width>
@@ -205,7 +205,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="PixmapDial" name="dial_b_right">
+                 <widget class="ScalableDial" name="dial_b_right">
                   <property name="minimumSize">
                    <size>
                     <width>26</width>
@@ -246,7 +246,7 @@
                  <number>0</number>
                 </property>
                 <item>
-                 <widget class="PixmapDial" name="dial_pan">
+                 <widget class="ScalableDial" name="dial_pan">
                   <property name="minimumSize">
                    <size>
                     <width>26</width>
@@ -871,9 +871,9 @@ Plugin Name
  </widget>
  <customwidgets>
   <customwidget>
-   <class>PixmapDial</class>
+   <class>ScalableDial</class>
    <extends>QDial</extends>
-   <header>widgets/pixmapdial.h</header>
+   <header>widgets/scalabledial.h</header>
   </customwidget>
  </customwidgets>
  <resources>
