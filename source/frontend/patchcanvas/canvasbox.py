@@ -778,7 +778,7 @@ class CanvasBox(QGraphicsObject):
                 self.m_inline_first = False
                 aspectRatio   = data['width'] / data['height']
                 self.p_height = int(max(50*scaling, self.p_height))
-                self.p_width += int(min((80 - 14)*scaling, (inheight-inwidth) * aspectRatio * scaling))
+                self.p_width += int(max(0, min((80 - 14)*scaling, (inheight-inwidth) * aspectRatio * scaling)))
                 self.repositionPorts()
                 self.repaintLines(True)
                 self.update()
