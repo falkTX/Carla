@@ -1146,7 +1146,8 @@ public:
      * Call the file callback, if set.
      * May be called by plugins.
      */
-    const char* runFileCallback(FileCallbackOpcode action, bool isDir, const char* title, const char* filter) noexcept;
+    virtual const char* runFileCallback(FileCallbackOpcode action,
+                                        bool isDir, const char* title, const char* filter) noexcept;
 
     /*!
      * Set the file callback to @a func.

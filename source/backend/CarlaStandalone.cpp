@@ -588,7 +588,6 @@ void carla_set_engine_callback(CarlaHostHandle handle, EngineCallbackFunc func, 
 {
     carla_debug("carla_set_engine_callback(%p, %p, %p)", handle, func, ptr);
 
-#ifndef BUILD_BRIDGE
     if (handle->isStandalone)
     {
         CarlaHostStandalone& shandle((CarlaHostStandalone&)*handle);
@@ -596,9 +595,10 @@ void carla_set_engine_callback(CarlaHostHandle handle, EngineCallbackFunc func, 
         shandle.engineCallback    = func;
         shandle.engineCallbackPtr = ptr;
 
+#ifndef BUILD_BRIDGE
         shandle.logThread.setCallback(func, ptr);
-    }
 #endif
+    }
 
     if (handle->engine != nullptr)
         handle->engine->setCallback(func, ptr);
