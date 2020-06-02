@@ -598,7 +598,7 @@ void CarlaEngine::ProtectedData::doPluginRemove(const uint pluginId) noexcept
     for (uint i=pluginId; i < curPluginCount; ++i)
     {
         const CarlaPluginPtr plugin = plugins[i+1].plugin;
-        CARLA_SAFE_ASSERT_BREAK(plugin != nullptr);
+        CARLA_SAFE_ASSERT_BREAK(plugin.get() != nullptr);
 
         plugin->setId(i);
 
@@ -609,7 +609,7 @@ void CarlaEngine::ProtectedData::doPluginRemove(const uint pluginId) noexcept
     const uint id = curPluginCount;
 
     // reset last plugin (now removed)
-    plugins[id].plugin = nullptr;
+    plugins[id].plugin.reset();
     carla_zeroFloats(plugins[id].peaks, 4);
 }
 
@@ -621,10 +621,10 @@ void CarlaEngine::ProtectedData::doPluginsSwitch(const uint idA, const uint idB)
     CARLA_SAFE_ASSERT_RETURN(idB < curPluginCount,);
 
     const CarlaPluginPtr pluginA = plugins[idA].plugin;
-    CARLA_SAFE_ASSERT_RETURN(pluginA != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginA.get() != nullptr,);
 
     const CarlaPluginPtr pluginB = plugins[idB].plugin;
-    CARLA_SAFE_ASSERT_RETURN(pluginB != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginB.get() != nullptr,);
 
     pluginA->setId(idB);
     plugins[idA].plugin = pluginB;

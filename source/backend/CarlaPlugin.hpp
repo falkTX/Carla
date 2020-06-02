@@ -790,11 +790,10 @@ public:
     // UI Stuff
 
     /*!
-     * Set a custom format when plugin UI windows created by Carla.
-     * MUST include one and only one %s, where carla places the plugin name.
-     * By default this format is "%s (GUI)"
+     * Set a custom prefix for plugin UI windows created by Carla.
+     * Carla will then add "%s (GUI)" after the prefix.
      */
-    void setCustomUiTitleFormat(const char* format);
+    void setCustomUIPrefix(const char* format);
 
     /*!
      * Show (or hide) the plugin's custom UI according to @a yesNo.

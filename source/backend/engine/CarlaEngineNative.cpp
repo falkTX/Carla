@@ -709,62 +709,65 @@ protected:
         if (! fUiServer.isPipeRunning())
             return;
 
-        CarlaPluginPtr plugin;
-
         switch (action)
         {
         case ENGINE_CALLBACK_UPDATE:
-            plugin = getPlugin(pluginId);
-
-            if (plugin != nullptr && plugin->isEnabled())
+            if (const CarlaPluginPtr plugin = getPlugin(pluginId))
             {
-                CARLA_SAFE_ASSERT_BREAK(plugin->getId() == pluginId);
-                uiServerSendPluginProperties(plugin);
+                if (plugin->isEnabled())
+                {
+                    CARLA_SAFE_ASSERT_BREAK(plugin->getId() == pluginId);
+                    uiServerSendPluginProperties(plugin);
+                }
             }
             break;
 
         case ENGINE_CALLBACK_RELOAD_INFO:
-            plugin = getPlugin(pluginId);
-
-            if (plugin != nullptr && plugin->isEnabled())
+            if (const CarlaPluginPtr plugin = getPlugin(pluginId))
             {
-                CARLA_SAFE_ASSERT_BREAK(plugin->getId() == pluginId);
-                uiServerSendPluginInfo(plugin);
+                if (plugin->isEnabled())
+                {
+                    CARLA_SAFE_ASSERT_BREAK(plugin->getId() == pluginId);
+                    uiServerSendPluginInfo(plugin);
+                }
             }
             break;
 
         case ENGINE_CALLBACK_RELOAD_PARAMETERS:
-            plugin = getPlugin(pluginId);
-
-            if (plugin != nullptr && plugin->isEnabled())
+            if (const CarlaPluginPtr plugin = getPlugin(pluginId))
             {
-                CARLA_SAFE_ASSERT_BREAK(plugin->getId() == pluginId);
-                uiServerSendPluginParameters(plugin);
+                if (plugin->isEnabled())
+                {
+                    CARLA_SAFE_ASSERT_BREAK(plugin->getId() == pluginId);
+                    uiServerSendPluginParameters(plugin);
+                }
             }
             break;
 
         case ENGINE_CALLBACK_RELOAD_PROGRAMS:
-            plugin = getPlugin(pluginId);
-
-            if (plugin != nullptr && plugin->isEnabled())
+            if (const CarlaPluginPtr plugin = getPlugin(pluginId))
             {
-                CARLA_SAFE_ASSERT_BREAK(plugin->getId() == pluginId);
-                uiServerSendPluginPrograms(plugin);
+                if (plugin->isEnabled())
+                {
+                    CARLA_SAFE_ASSERT_BREAK(plugin->getId() == pluginId);
+                    uiServerSendPluginPrograms(plugin);
+                }
             }
             break;
 
         case ENGINE_CALLBACK_RELOAD_ALL:
         case ENGINE_CALLBACK_PLUGIN_ADDED:
         case ENGINE_CALLBACK_PLUGIN_RENAMED:
-            plugin = getPlugin(pluginId);
-
-            if (plugin != nullptr && plugin->isEnabled())
+            if (const CarlaPluginPtr plugin = getPlugin(pluginId))
             {
-                CARLA_SAFE_ASSERT_BREAK(plugin->getId() == pluginId);
-                uiServerSendPluginInfo(plugin);
-                uiServerSendPluginParameters(plugin);
-                uiServerSendPluginPrograms(plugin);
-                uiServerSendPluginProperties(plugin);
+                if (plugin->isEnabled())
+                {
+                    CARLA_SAFE_ASSERT_BREAK(plugin->getId() == pluginId);
+                    uiServerSendPluginInfo(plugin);
+                    uiServerSendPluginParameters(plugin);
+                    uiServerSendPluginPrograms(plugin);
+                    uiServerSendPluginProperties(plugin);
+                }
             }
             break;
 
@@ -1287,12 +1290,9 @@ protected:
 
             for (uint i=0; i < pData->curPluginCount; ++i)
             {
-                CarlaPluginPtr plugin = pData->plugins[i].plugin;
-
-                if (plugin != nullptr && plugin->isEnabled())
-                {
-                    uiServerCallback(ENGINE_CALLBACK_PLUGIN_ADDED, i, 0, 0, 0, 0.0f, plugin->getName());
-                }
+                if (const CarlaPluginPtr plugin = pData->plugins[i].plugin)
+                    if (plugin->isEnabled())
+                        uiServerCallback(ENGINE_CALLBACK_PLUGIN_ADDED, i, 0, 0, 0, 0.0f, plugin->getName());
             }
 
             if (kIsPatchbay)
@@ -1305,15 +1305,16 @@ protected:
             // hide all custom uis
             for (uint i=0; i < pData->curPluginCount; ++i)
             {
-                CarlaPluginPtr plugin = pData->plugins[i].plugin;
-
-                if (plugin != nullptr && plugin->isEnabled())
+                if (const CarlaPluginPtr plugin = pData->plugins[i].plugin)
                 {
-                    if (plugin->getHints() & PLUGIN_HAS_CUSTOM_UI)
+                    if (plugin->isEnabled())
                     {
-                        try {
-                            plugin->showCustomUI(false);
-                        } CARLA_SAFE_EXCEPTION_CONTINUE("Plugin showCustomUI (hide)");
+                        if (plugin->getHints() & PLUGIN_HAS_CUSTOM_UI)
+                        {
+                            try {
+                                plugin->showCustomUI(false);
+                            } CARLA_SAFE_EXCEPTION_CONTINUE("Plugin showCustomUI (hide)");
+                        }
                     }
                 }
             }
@@ -1324,17 +1325,18 @@ protected:
     {
         for (uint i=0; i < pData->curPluginCount; ++i)
         {
-            CarlaPluginPtr plugin = pData->plugins[i].plugin;
-
-            if (plugin != nullptr && plugin->isEnabled())
+            if (const CarlaPluginPtr plugin = pData->plugins[i].plugin)
             {
-                const uint hints(plugin->getHints());
-
-                if ((hints & PLUGIN_HAS_CUSTOM_UI) != 0 && (hints & PLUGIN_NEEDS_UI_MAIN_THREAD) != 0)
+                if (plugin->isEnabled())
                 {
-                    try {
-                        plugin->uiIdle();
-                    } CARLA_SAFE_EXCEPTION_CONTINUE("Plugin uiIdle");
+                    const uint hints = plugin->getHints();
+
+                    if ((hints & PLUGIN_HAS_CUSTOM_UI) != 0 && (hints & PLUGIN_NEEDS_UI_MAIN_THREAD) != 0)
+                    {
+                        try {
+                            plugin->uiIdle();
+                        } CARLA_SAFE_EXCEPTION_CONTINUE("Plugin uiIdle");
+                    }
                 }
             }
         }
@@ -1693,13 +1695,11 @@ private:
         if (pData->curPluginCount == 0 || pData->plugins == nullptr)
             return nullptr;
 
-        CarlaPluginPtr plugin;
-
         for (uint32_t i=0; i<pData->curPluginCount; ++i)
         {
-            plugin = pData->plugins[i].plugin;
+            const CarlaPluginPtr plugin = pData->plugins[i].plugin;
 
-            if (plugin == nullptr || ! plugin->isEnabled())
+            if (plugin.get() == nullptr || ! plugin->isEnabled())
                 break;
 
             if (const uint32_t paramCount = plugin->getParameterCount())
@@ -1722,13 +1722,11 @@ private:
         if (pData->curPluginCount == 0 || pluginId >= pData->curPluginCount || pData->plugins == nullptr)
             return false;
 
-        CarlaPluginPtr plugin;
-
         for (uint32_t i=0; i<pluginId; ++i)
         {
-            plugin = pData->plugins[i].plugin;
+            const CarlaPluginPtr plugin = pData->plugins[i].plugin;
 
-            if (plugin == nullptr || ! plugin->isEnabled())
+            if (plugin.get() == nullptr || ! plugin->isEnabled())
                 return false;
 
             rindex += plugin->getParameterCount();
@@ -2151,7 +2149,7 @@ bool CarlaEngineNativeUI::msgReceived(const char* const msg) noexcept
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(parameterId), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(touching), true);
 
-        if (fEngine->getPlugin(pluginId) != nullptr)
+        if (fEngine->getPlugin(pluginId))
             fEngine->setParameterTouchFromUI(pluginId, parameterId, touching);
     }
     else if (std::strcmp(msg, "set_program") == 0)

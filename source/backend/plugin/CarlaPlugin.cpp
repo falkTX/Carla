@@ -2355,9 +2355,9 @@ void CarlaPlugin::postponeRtAllNotesOff()
 // -------------------------------------------------------------------
 // UI Stuff
 
-void CarlaPlugin::setCustomUiTitleFormat(const char* format)
+void CarlaPlugin::setCustomUIPrefix(const char* format)
 {
-    pData->uiTitleFormat = format;
+    pData->uiPrefix = format;
 }
 
 void CarlaPlugin::showCustomUI(const bool yesNo)

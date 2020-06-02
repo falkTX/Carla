@@ -355,7 +355,7 @@ bool CarlaEngineCVSourcePorts::addCVSource(CarlaEngineCVPort* const port, const 
         if (! pData->cvs.add(ecv))
             return false;
 
-        if (pData->graph != nullptr && pData->plugin != nullptr)
+        if (pData->graph != nullptr && pData->plugin.get() != nullptr)
             pData->graph->reconfigureForCV(pData->plugin, static_cast<uint>(pData->cvs.size()-1), true);
     }
 
@@ -378,7 +378,7 @@ bool CarlaEngineCVSourcePorts::removeCVSource(const uint32_t portIndexOffset)
                 delete ecv.cvPort;
                 pData->cvs.remove(i);
 
-                if (pData->graph != nullptr && pData->plugin != nullptr)
+                if (pData->graph != nullptr && pData->plugin.get() != nullptr)
                     pData->graph->reconfigureForCV(pData->plugin, static_cast<uint>(i), false);
 
                 carla_stdout("found cv source to remove %u", portIndexOffset);

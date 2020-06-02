@@ -313,7 +313,7 @@ public:
     {
         const CarlaPluginPtr plugin = pData->plugins[0].plugin;
 
-        if (plugin == nullptr)
+        if (plugin.get() == nullptr)
         {
             if (const uint32_t length = static_cast<uint32_t>(pData->lastError.length()))
             {
@@ -749,7 +749,7 @@ public:
     void handleNonRtData()
     {
         const CarlaPluginPtr plugin = pData->plugins[0].plugin;
-        CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr,);
 
         for (; fShmNonRtClientControl.isDataAvailableForReading();)
         {
@@ -789,12 +789,12 @@ public:
             }   break;
 
             case kPluginBridgeNonRtClientActivate:
-                if (plugin != nullptr && plugin->isEnabled())
+                if (plugin->isEnabled())
                     plugin->setActive(true, false, false);
                 break;
 
             case kPluginBridgeNonRtClientDeactivate:
-                if (plugin != nullptr && plugin->isEnabled())
+                if (plugin->isEnabled())
                     plugin->setActive(false, false, false);
                 break;
 
@@ -808,7 +808,7 @@ public:
                 const uint32_t index(fShmNonRtClientControl.readUInt());
                 const float    value(fShmNonRtClientControl.readFloat());
 
-                if (plugin != nullptr && plugin->isEnabled())
+                if (plugin->isEnabled())
                     plugin->setParameterValue(index, value, false, false, false);
                 break;
             }
@@ -817,7 +817,7 @@ public:
                 const uint32_t index(fShmNonRtClientControl.readUInt());
                 const uint8_t  channel(fShmNonRtClientControl.readByte());
 
-                if (plugin != nullptr && plugin->isEnabled())
+                if (plugin->isEnabled())
                     plugin->setParameterMidiChannel(index, channel, false, false);
                 break;
             }
@@ -826,7 +826,7 @@ public:
                 const uint32_t index(fShmNonRtClientControl.readUInt());
                 const int16_t  ctrl(fShmNonRtClientControl.readShort());
 
-                if (plugin != nullptr && plugin->isEnabled())
+                if (plugin->isEnabled())
                     plugin->setParameterMappedControlIndex(index, ctrl, false, false);
                 break;
             }
@@ -836,7 +836,7 @@ public:
                 const float    minimum = fShmNonRtClientControl.readFloat();
                 const float    maximum = fShmNonRtClientControl.readFloat();
 
-                if (plugin != nullptr && plugin->isEnabled())
+                if (plugin->isEnabled())
                     plugin->setParameterMappedRange(index, minimum, maximum, false, false);
                 break;
             }
@@ -844,7 +844,7 @@ public:
             case kPluginBridgeNonRtClientSetProgram: {
                 const int32_t index(fShmNonRtClientControl.readInt());
 
-                if (plugin != nullptr && plugin->isEnabled())
+                if (plugin->isEnabled())
                     plugin->setProgram(index, true, false, false);
                 break;
             }
@@ -852,7 +852,7 @@ public:
             case kPluginBridgeNonRtClientSetMidiProgram: {
                 const int32_t index(fShmNonRtClientControl.readInt());
 
-                if (plugin != nullptr && plugin->isEnabled())
+                if (plugin->isEnabled())
                     plugin->setMidiProgram(index, true, false, false);
                 break;
             }
@@ -878,7 +878,7 @@ public:
                 if (valueSize > 0)
                     fShmNonRtClientControl.readCustomData(valueStr, valueSize);
 
-                if (plugin != nullptr && plugin->isEnabled())
+                if (plugin->isEnabled())
                     plugin->setCustomData(typeStr, keyStr, valueStr, true);
                 break;
             }
@@ -892,7 +892,7 @@ public:
                 fShmNonRtClientControl.readCustomData(chunkFilePathTry, size);
 
                 CARLA_SAFE_ASSERT_BREAK(chunkFilePathTry[0] != '\0');
-                if (plugin == nullptr || ! plugin->isEnabled()) break;
+                if (! plugin->isEnabled()) break;
 
                 String chunkFilePath(chunkFilePathTry);
 
@@ -923,7 +923,7 @@ public:
                 const int16_t channel(fShmNonRtClientControl.readShort());
                 CARLA_SAFE_ASSERT_BREAK(channel >= -1 && channel < MAX_MIDI_CHANNELS);
 
-                if (plugin != nullptr && plugin->isEnabled())
+                if (plugin->isEnabled())
                     plugin->setCtrlChannel(static_cast<int8_t>(channel), false, false);
                 break;
             }
@@ -932,7 +932,7 @@ public:
                 const uint32_t option(fShmNonRtClientControl.readUInt());
                 const bool     yesNo(fShmNonRtClientControl.readBool());
 
-                if (plugin != nullptr && plugin->isEnabled())
+                if (plugin->isEnabled())
                     plugin->setOption(option, yesNo, false);
                 break;
             }
@@ -940,15 +940,14 @@ public:
             case kPluginBridgeNonRtClientSetOptions: {
                 const uint32_t options(fShmNonRtClientControl.readUInt());
 
-                if (plugin != nullptr)
-                    plugin->pData->options = options;
+                plugin->pData->options = options;
                 break;
             }
 
             case kPluginBridgeNonRtClientGetParameterText: {
                 const int32_t index(fShmNonRtClientControl.readInt());
 
-                if (index >= 0 && plugin != nullptr && plugin->isEnabled())
+                if (index >= 0 && plugin->isEnabled())
                 {
                     char bufStr[STR_MAX+1];
                     carla_zeroChars(bufStr, STR_MAX+1);
@@ -973,7 +972,7 @@ public:
             }
 
             case kPluginBridgeNonRtClientPrepareForSave: {
-                if (plugin == nullptr || ! plugin->isEnabled())
+                if (! plugin->isEnabled())
                     break;
 
                 plugin->prepareForSave();
@@ -1049,17 +1048,17 @@ public:
             }
 
             case kPluginBridgeNonRtClientRestoreLV2State:
-                if (plugin != nullptr && plugin->isEnabled())
+                if (plugin->isEnabled())
                     plugin->restoreLV2State();
                 break;
 
             case kPluginBridgeNonRtClientShowUI:
-                if (plugin != nullptr && plugin->isEnabled())
+                if (plugin->isEnabled())
                     plugin->showCustomUI(true);
                 break;
 
             case kPluginBridgeNonRtClientHideUI:
-                if (plugin != nullptr && plugin->isEnabled())
+                if (plugin->isEnabled())
                     plugin->showCustomUI(false);
                 break;
 
@@ -1067,7 +1066,7 @@ public:
                 const uint32_t index(fShmNonRtClientControl.readUInt());
                 const float    value(fShmNonRtClientControl.readFloat());
 
-                if (plugin != nullptr && plugin->isEnabled())
+                if (plugin->isEnabled())
                     plugin->uiParameterChange(index, value);
                 break;
             }
@@ -1075,7 +1074,7 @@ public:
             case kPluginBridgeNonRtClientUiProgramChange: {
                 const uint32_t index(fShmNonRtClientControl.readUInt());
 
-                if (plugin != nullptr && plugin->isEnabled())
+                if (plugin->isEnabled())
                     plugin->uiProgramChange(index);
                 break;
             }
@@ -1083,7 +1082,7 @@ public:
             case kPluginBridgeNonRtClientUiMidiProgramChange: {
                 const uint32_t index(fShmNonRtClientControl.readUInt());
 
-                if (plugin != nullptr && plugin->isEnabled())
+                if (plugin->isEnabled())
                     plugin->uiMidiProgramChange(index);
                 break;
             }
@@ -1093,7 +1092,7 @@ public:
                 const uint8_t note(fShmNonRtClientControl.readByte());
                 const uint8_t velo(fShmNonRtClientControl.readByte());
 
-                if (plugin != nullptr && plugin->isEnabled())
+                if (plugin->isEnabled())
                     plugin->uiNoteOn(chnl, note, velo);
                 break;
             }
@@ -1102,7 +1101,7 @@ public:
                 const uint8_t chnl(fShmNonRtClientControl.readByte());
                 const uint8_t note(fShmNonRtClientControl.readByte());
 
-                if (plugin != nullptr && plugin->isEnabled())
+                if (plugin->isEnabled())
                     plugin->uiNoteOff(chnl, note);
                 break;
             }
@@ -1311,7 +1310,7 @@ protected:
 
                     CARLA_SAFE_ASSERT_BREAK(fShmAudioPool.data != nullptr);
 
-                    if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock(fIsOffline))
+                    if (plugin.get() != nullptr && plugin->isEnabled() && plugin->tryLock(fIsOffline))
                     {
                         const BridgeTimeInfo& bridgeTimeInfo(fShmRtClientControl.data->timeInfo);
 

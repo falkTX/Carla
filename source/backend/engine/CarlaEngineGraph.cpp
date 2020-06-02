@@ -969,7 +969,7 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
     {
         const CarlaPluginPtr plugin = data->plugins[i].plugin;
 
-        if (plugin == nullptr || ! plugin->isEnabled() || ! plugin->tryLock(isOffline))
+        if (plugin.get() == nullptr || ! plugin->isEnabled() || ! plugin->tryLock(isOffline))
             continue;
 
         if (processed)
@@ -1471,7 +1471,7 @@ public:
 
     void reconfigure() override
     {
-        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fPlugin.get() != nullptr,);
 
         CarlaEngineClient* const client = fPlugin->getEngineClient();
         CARLA_SAFE_ASSERT_RETURN(client != nullptr,);
@@ -1489,7 +1489,7 @@ public:
 
     void invalidatePlugin() noexcept
     {
-        fPlugin = nullptr;
+        fPlugin.reset();
     }
 
     // -------------------------------------------------------------------
@@ -1504,7 +1504,7 @@ public:
                             AudioSampleBuffer& cvOut,
                             MidiBuffer& midi) override
     {
-        if (fPlugin == nullptr || ! fPlugin->isEnabled() || ! fPlugin->tryLock(kEngine->isOffline()))
+        if (fPlugin.get() == nullptr || ! fPlugin->isEnabled() || ! fPlugin->tryLock(kEngine->isOffline()))
         {
             audio.clear();
             cvOut.clear();
@@ -1864,7 +1864,7 @@ void PatchbayGraph::setOffline(const bool offline)
 
 void PatchbayGraph::addPlugin(const CarlaPluginPtr plugin)
 {
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr,);
     carla_debug("PatchbayGraph::addPlugin(%p)", plugin.get());
 
     CarlaPluginInstance* const instance(new CarlaPluginInstance(kEngine, plugin));
@@ -1884,8 +1884,8 @@ void PatchbayGraph::addPlugin(const CarlaPluginPtr plugin)
 
 void PatchbayGraph::replacePlugin(const CarlaPluginPtr oldPlugin, const CarlaPluginPtr newPlugin)
 {
-    CARLA_SAFE_ASSERT_RETURN(oldPlugin != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(newPlugin != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(oldPlugin.get() != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(newPlugin.get() != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(oldPlugin != newPlugin,);
     CARLA_SAFE_ASSERT_RETURN(oldPlugin->getId() == newPlugin->getId(),);
 
@@ -1916,7 +1916,7 @@ void PatchbayGraph::replacePlugin(const CarlaPluginPtr oldPlugin, const CarlaPlu
 
 void PatchbayGraph::renamePlugin(const CarlaPluginPtr plugin, const char* const newName)
 {
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr,);
     carla_debug("PatchbayGraph::renamePlugin(%p)", plugin.get(), newName);
 
     AudioProcessorGraph::Node* const node(graph.getNodeForId(plugin->getPatchbayNodeId()));
@@ -1934,7 +1934,7 @@ void PatchbayGraph::renamePlugin(const CarlaPluginPtr plugin, const char* const 
 
 void PatchbayGraph::reconfigureForCV(const CarlaPluginPtr plugin, const uint portIndex, bool added)
 {
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr,);
     carla_debug("PatchbayGraph::reconfigureForCV(%p, %u, %s)", plugin.get(), portIndex, bool2str(added));
 
     AudioProcessorGraph::Node* const node = graph.getNodeForId(plugin->getPatchbayNodeId());
@@ -1988,7 +1988,7 @@ void PatchbayGraph::reconfigureForCV(const CarlaPluginPtr plugin, const uint por
 
 void PatchbayGraph::removePlugin(const CarlaPluginPtr plugin)
 {
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr,);
     carla_debug("PatchbayGraph::removePlugin(%p)", plugin.get());
 
     AudioProcessorGraph::Node* const node(graph.getNodeForId(plugin->getPatchbayNodeId()));
@@ -2006,7 +2006,7 @@ void PatchbayGraph::removePlugin(const CarlaPluginPtr plugin)
     for (uint i=plugin->getId()+1, count=kEngine->getCurrentPluginCount(); i<count; ++i)
     {
         const CarlaPluginPtr plugin2 = kEngine->getPlugin(i);
-        CARLA_SAFE_ASSERT_BREAK(plugin2 != nullptr);
+        CARLA_SAFE_ASSERT_BREAK(plugin2.get() != nullptr);
 
         if (AudioProcessorGraph::Node* const node2 = graph.getNodeForId(plugin2->getPatchbayNodeId()))
         {
@@ -2028,7 +2028,7 @@ void PatchbayGraph::removeAllPlugins()
     for (uint i=0, count=kEngine->getCurrentPluginCount(); i<count; ++i)
     {
         const CarlaPluginPtr plugin = kEngine->getPlugin(i);
-        CARLA_SAFE_ASSERT_CONTINUE(plugin != nullptr);
+        CARLA_SAFE_ASSERT_CONTINUE(plugin.get() != nullptr);
 
         AudioProcessorGraph::Node* const node(graph.getNodeForId(plugin->getPatchbayNodeId()));
         CARLA_SAFE_ASSERT_CONTINUE(node != nullptr);

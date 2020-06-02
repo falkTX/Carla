@@ -75,7 +75,7 @@ void CarlaEngineThread::run() noexcept
         {
             const CarlaPluginPtr plugin = kEngine->getPluginUnchecked(i);
 
-            CARLA_SAFE_ASSERT_CONTINUE(plugin != nullptr && plugin->isEnabled());
+            CARLA_SAFE_ASSERT_CONTINUE(plugin.get() != nullptr && plugin->isEnabled());
             CARLA_SAFE_ASSERT_UINT2(i == plugin->getId(), i, plugin->getId());
 
             const uint hints(plugin->getHints());

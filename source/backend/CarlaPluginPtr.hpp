@@ -55,7 +55,7 @@ public:
     }
 
     template<class U>
-    void acquire(U* p) // may throw std::bad_alloc
+    void acquire(U* p)
     {
         if (nullptr != p)
         {
@@ -63,12 +63,12 @@ public:
             {
                 try
                 {
-                    pn = new long(1); // may throw std::bad_alloc
+                    pn = new volatile long(1);
                 }
                 catch (std::bad_alloc&)
                 {
                     delete p;
-                    throw; // rethrow the std::bad_alloc
+                    throw;
                 }
             }
             else
@@ -94,7 +94,7 @@ public:
     }
 
 public:
-    long* pn;
+    volatile long* pn;
 };
 
 template<class T>
@@ -150,6 +150,11 @@ public:
         release();
     }
 
+    void reset(void) noexcept
+    {
+        release();
+    }
+
     void swap(shared_ptr& lhs) noexcept
     {
         std::swap(px, lhs.px);
@@ -176,10 +181,10 @@ public:
     }
 
 private:
-    void acquire(T* p) // may throw std::bad_alloc
+    void acquire(T* p)
     {
-        pn.acquire(p); // may throw std::bad_alloc
-        px = p; // here it is safe to acquire the ownership of the provided raw pointer, where exception cannot be thrown any more
+        pn.acquire(p);
+        px = p;
     }
 
     void release(void) noexcept

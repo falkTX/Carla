@@ -118,7 +118,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(pData->curPluginCount == 1,)
 
         fPlugin = pData->plugins[0].plugin;
-        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fPlugin.get() != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fPlugin->isEnabled(),);
 
         fPorts.hasUI        = false;
@@ -142,17 +142,16 @@ public:
 
     ~CarlaEngineSingleLV2()
     {
-        if (fPlugin != nullptr && fIsActive)
+        if (fPlugin.get() != nullptr && fIsActive)
             fPlugin->setActive(false, false, false);
 
-        fPlugin = nullptr;
-
+        fPlugin.reset();
         close();
     }
 
     bool hasPlugin() noexcept
     {
-        return fPlugin != nullptr;
+        return fPlugin.get() != nullptr;
     }
 
     // ----------------------------------------------------------------------------------------------------------------

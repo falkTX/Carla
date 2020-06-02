@@ -76,6 +76,12 @@ public:
     CarlaEngineCVSourcePortsForStandalone() : CarlaEngineCVSourcePorts() {}
     ~CarlaEngineCVSourcePortsForStandalone() override {}
 
+    inline void resetGraphAndPlugin() noexcept
+    {
+        pData->graph = nullptr;
+        pData->plugin.reset();
+    }
+
     inline void setGraphAndPlugin(PatchbayGraph* const graph, const CarlaPluginPtr plugin) noexcept
     {
         pData->graph = graph;

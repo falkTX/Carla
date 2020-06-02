@@ -112,7 +112,7 @@ CarlaEngineClient::ProtectedData::~ProtectedData()
 {
     carla_debug("CarlaEngineClient::ProtectedData::~ProtectedData()");
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-    CARLA_SAFE_ASSERT(plugin == nullptr);
+    CARLA_SAFE_ASSERT(plugin.get() == nullptr);
 #endif
 }
 
@@ -198,8 +198,8 @@ void CarlaEngineClient::deactivate(const bool willClose) noexcept
     if (willClose)
     {
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-        pData->cvSourcePorts.setGraphAndPlugin(nullptr, nullptr);
-        pData->plugin = nullptr;
+        pData->cvSourcePorts.resetGraphAndPlugin();
+        pData->plugin.reset();
 #endif
     }
 }

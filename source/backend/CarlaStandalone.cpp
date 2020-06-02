@@ -1170,12 +1170,10 @@ bool carla_load_plugin_state(CarlaHostHandle handle, uint pluginId, const char* 
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(handle->engine != nullptr
                                           && handle->engine->isRunning(), "Engine is not running", false);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(plugin != nullptr, "could not find requested plugin", false);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        return plugin->loadStateFromFile(filename);
 
-    carla_debug("carla_load_plugin_state(%p, %i, \"%s\")", handle, pluginId, filename);
-
-    return plugin->loadStateFromFile(filename);
+    return false;
 }
 
 bool carla_save_plugin_state(CarlaHostHandle handle, uint pluginId, const char* filename)
@@ -1183,12 +1181,10 @@ bool carla_save_plugin_state(CarlaHostHandle handle, uint pluginId, const char* 
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(handle->engine != nullptr, "Engine is not initialized", false);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(plugin != nullptr, "could not find requested plugin", false);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        return plugin->saveStateToFile(filename);
 
-    carla_debug("carla_save_plugin_state(%p, %i, \"%s\")", handle, pluginId, filename);
-
-    return plugin->saveStateToFile(filename);
+    return false;
 }
 
 bool carla_export_plugin_lv2(CarlaHostHandle handle, uint pluginId, const char* lv2path)
@@ -1196,12 +1192,10 @@ bool carla_export_plugin_lv2(CarlaHostHandle handle, uint pluginId, const char* 
     CARLA_SAFE_ASSERT_RETURN(lv2path != nullptr && lv2path[0] != '\0', false);
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(handle->engine != nullptr, "Engine is not initialized", false);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(plugin != nullptr, "could not find requested plugin", false);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        return plugin->exportAsLV2(lv2path);
 
-    carla_debug("carla_export_plugin_lv2(%p, %i, \"%s\")", handle, pluginId, lv2path);
-
-    return plugin->exportAsLV2(lv2path);
+    return false;
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -1242,38 +1236,36 @@ const CarlaPluginInfo* carla_get_plugin_info(CarlaHostHandle handle, uint plugin
 
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, &retInfo);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retInfo);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        char strBuf[STR_MAX+1];
+        carla_zeroChars(strBuf, STR_MAX+1);
 
-    carla_debug("carla_get_plugin_info(%p, %i)", handle, pluginId);
+        retInfo.type     = plugin->getType();
+        retInfo.category = plugin->getCategory();
+        retInfo.hints    = plugin->getHints();
+        retInfo.filename = plugin->getFilename();
+        retInfo.name     = plugin->getName();
+        retInfo.iconName = plugin->getIconName();
+        retInfo.uniqueId = plugin->getUniqueId();
 
-    char strBuf[STR_MAX+1];
-    carla_zeroChars(strBuf, STR_MAX+1);
+        retInfo.optionsAvailable = plugin->getOptionsAvailable();
+        retInfo.optionsEnabled   = plugin->getOptionsEnabled();
 
-    retInfo.type     = plugin->getType();
-    retInfo.category = plugin->getCategory();
-    retInfo.hints    = plugin->getHints();
-    retInfo.filename = plugin->getFilename();
-    retInfo.name     = plugin->getName();
-    retInfo.iconName = plugin->getIconName();
-    retInfo.uniqueId = plugin->getUniqueId();
+        if (plugin->getLabel(strBuf))
+            retInfo.label = carla_strdup_safe(strBuf);
+        if (plugin->getMaker(strBuf))
+            retInfo.maker = carla_strdup_safe(strBuf);
+        if (plugin->getCopyright(strBuf))
+            retInfo.copyright = carla_strdup_safe(strBuf);
 
-    retInfo.optionsAvailable = plugin->getOptionsAvailable();
-    retInfo.optionsEnabled   = plugin->getOptionsEnabled();
-
-    if (plugin->getLabel(strBuf))
-        retInfo.label = carla_strdup_safe(strBuf);
-    if (plugin->getMaker(strBuf))
-        retInfo.maker = carla_strdup_safe(strBuf);
-    if (plugin->getCopyright(strBuf))
-        retInfo.copyright = carla_strdup_safe(strBuf);
-
-    checkStringPtr(retInfo.filename);
-    checkStringPtr(retInfo.name);
-    checkStringPtr(retInfo.iconName);
-    checkStringPtr(retInfo.label);
-    checkStringPtr(retInfo.maker);
-    checkStringPtr(retInfo.copyright);
+        checkStringPtr(retInfo.filename);
+        checkStringPtr(retInfo.name);
+        checkStringPtr(retInfo.iconName);
+        checkStringPtr(retInfo.label);
+        checkStringPtr(retInfo.maker);
+        checkStringPtr(retInfo.copyright);
+    }
 
     return &retInfo;
 }
@@ -1285,13 +1277,12 @@ const CarlaPortCountInfo* carla_get_audio_port_count_info(CarlaHostHandle handle
 
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, &retInfo);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retInfo);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        retInfo.ins   = plugin->getAudioInCount();
+        retInfo.outs  = plugin->getAudioOutCount();
+    }
 
-    carla_debug("carla_get_audio_port_count_info(%p, %i)", handle, pluginId);
-
-    retInfo.ins   = plugin->getAudioInCount();
-    retInfo.outs  = plugin->getAudioOutCount();
     return &retInfo;
 }
 
@@ -1302,13 +1293,12 @@ const CarlaPortCountInfo* carla_get_midi_port_count_info(CarlaHostHandle handle,
 
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, &retInfo);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retInfo);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        retInfo.ins   = plugin->getMidiInCount();
+        retInfo.outs  = plugin->getMidiOutCount();
+    }
 
-    carla_debug("carla_get_midi_port_count_info(%p, %i)", handle, pluginId);
-
-    retInfo.ins   = plugin->getMidiInCount();
-    retInfo.outs  = plugin->getMidiOutCount();
     return &retInfo;
 }
 
@@ -1319,12 +1309,9 @@ const CarlaPortCountInfo* carla_get_parameter_count_info(CarlaHostHandle handle,
 
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, &retInfo);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retInfo);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        plugin->getParameterCountInfo(retInfo.ins, retInfo.outs);
 
-    carla_debug("carla_get_parameter_count_info(%p, %i)", handle, pluginId);
-
-    plugin->getParameterCountInfo(retInfo.ins, retInfo.outs);
     return &retInfo;
 }
 
@@ -1368,51 +1355,49 @@ const CarlaParameterInfo* carla_get_parameter_info(CarlaHostHandle handle, uint 
 
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, &retInfo);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retInfo);
-
-    carla_debug("carla_get_parameter_info(%p, %i, %i)", handle, pluginId, parameterId);
-
-    char strBuf[STR_MAX+1];
-    carla_zeroChars(strBuf, STR_MAX+1);
-
-    retInfo.scalePointCount = plugin->getParameterScalePointCount(parameterId);
-
-    if (plugin->getParameterName(parameterId, strBuf))
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
     {
-        retInfo.name = carla_strdup_safe(strBuf);
+        char strBuf[STR_MAX+1];
         carla_zeroChars(strBuf, STR_MAX+1);
-    }
 
-    if (plugin->getParameterSymbol(parameterId, strBuf))
-    {
-        retInfo.symbol = carla_strdup_safe(strBuf);
-        carla_zeroChars(strBuf, STR_MAX+1);
-    }
+        retInfo.scalePointCount = plugin->getParameterScalePointCount(parameterId);
 
-    if (plugin->getParameterUnit(parameterId, strBuf))
-    {
-        retInfo.unit = carla_strdup_safe(strBuf);
-        carla_zeroChars(strBuf, STR_MAX+1);
-    }
+        if (plugin->getParameterName(parameterId, strBuf))
+        {
+            retInfo.name = carla_strdup_safe(strBuf);
+            carla_zeroChars(strBuf, STR_MAX+1);
+        }
 
-    if (plugin->getParameterComment(parameterId, strBuf))
-    {
-        retInfo.comment = carla_strdup_safe(strBuf);
-        carla_zeroChars(strBuf, STR_MAX+1);
-    }
+        if (plugin->getParameterSymbol(parameterId, strBuf))
+        {
+            retInfo.symbol = carla_strdup_safe(strBuf);
+            carla_zeroChars(strBuf, STR_MAX+1);
+        }
 
-    if (plugin->getParameterGroupName(parameterId, strBuf))
-    {
-        retInfo.groupName = carla_strdup_safe(strBuf);
-        carla_zeroChars(strBuf, STR_MAX+1);
-    }
+        if (plugin->getParameterUnit(parameterId, strBuf))
+        {
+            retInfo.unit = carla_strdup_safe(strBuf);
+            carla_zeroChars(strBuf, STR_MAX+1);
+        }
 
-    checkStringPtr(retInfo.name);
-    checkStringPtr(retInfo.symbol);
-    checkStringPtr(retInfo.unit);
-    checkStringPtr(retInfo.comment);
-    checkStringPtr(retInfo.groupName);
+        if (plugin->getParameterComment(parameterId, strBuf))
+        {
+            retInfo.comment = carla_strdup_safe(strBuf);
+            carla_zeroChars(strBuf, STR_MAX+1);
+        }
+
+        if (plugin->getParameterGroupName(parameterId, strBuf))
+        {
+            retInfo.groupName = carla_strdup_safe(strBuf);
+            carla_zeroChars(strBuf, STR_MAX+1);
+        }
+
+        checkStringPtr(retInfo.name);
+        checkStringPtr(retInfo.symbol);
+        checkStringPtr(retInfo.unit);
+        checkStringPtr(retInfo.comment);
+        checkStringPtr(retInfo.groupName);
+    }
 
     return &retInfo;
 }
@@ -1438,20 +1423,18 @@ const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(CarlaHostHandle h
 
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, &retInfo);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retInfo);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        char strBuf[STR_MAX+1];
 
-    carla_debug("carla_get_parameter_scalepoint_info(%p, %i, %i, %i)", handle, pluginId, parameterId, scalePointId);
+        retInfo.value = plugin->getParameterScalePointValue(parameterId, scalePointId);
 
-    char strBuf[STR_MAX+1];
+        carla_zeroChars(strBuf, STR_MAX+1);
+        if (plugin->getParameterScalePointLabel(parameterId, scalePointId, strBuf))
+            retInfo.label = carla_strdup_safe(strBuf);
 
-    retInfo.value = plugin->getParameterScalePointValue(parameterId, scalePointId);
-
-    carla_zeroChars(strBuf, STR_MAX+1);
-    if (plugin->getParameterScalePointLabel(parameterId, scalePointId, strBuf))
-        retInfo.label = carla_strdup_safe(strBuf);
-
-    checkStringPtr(retInfo.label);
+        checkStringPtr(retInfo.label);
+    }
 
     return &retInfo;
 }
@@ -1474,22 +1457,22 @@ const ParameterData* carla_get_parameter_data(CarlaHostHandle handle, uint plugi
 
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, &retParamData);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retParamData);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(), &retParamData);
 
-    carla_debug("carla_get_parameter_data(%p, %i, %i)", handle, pluginId, parameterId);
-    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(), &retParamData);
+        const ParameterData& pluginParamData(plugin->getParameterData(parameterId));
+        retParamData.type        = pluginParamData.type;
+        retParamData.hints       = pluginParamData.hints;
+        retParamData.index       = pluginParamData.index;
+        retParamData.rindex      = pluginParamData.rindex;
+        retParamData.midiChannel = pluginParamData.midiChannel;
+        retParamData.mappedControlIndex = pluginParamData.mappedControlIndex;
+        retParamData.mappedMinimum = pluginParamData.mappedMinimum;
+        retParamData.mappedMaximum = pluginParamData.mappedMaximum;
+    }
 
-    const ParameterData& pluginParamData(plugin->getParameterData(parameterId));
-    retParamData.type        = pluginParamData.type;
-    retParamData.hints       = pluginParamData.hints;
-    retParamData.index       = pluginParamData.index;
-    retParamData.rindex      = pluginParamData.rindex;
-    retParamData.midiChannel = pluginParamData.midiChannel;
-    retParamData.mappedControlIndex = pluginParamData.mappedControlIndex;
-    retParamData.mappedMinimum = pluginParamData.mappedMinimum;
-    retParamData.mappedMaximum = pluginParamData.mappedMaximum;
-    return &plugin->getParameterData(parameterId);
+    return &retParamData;
 }
 
 const ParameterRanges* carla_get_parameter_ranges(CarlaHostHandle handle, uint pluginId, uint32_t parameterId)
@@ -1506,20 +1489,20 @@ const ParameterRanges* carla_get_parameter_ranges(CarlaHostHandle handle, uint p
 
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, &retParamRanges);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retParamRanges);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(), &retParamRanges);
 
-    carla_debug("carla_get_parameter_ranges(%p, %i, %i)", handle, pluginId, parameterId);
-    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(), &retParamRanges);
+        const ParameterRanges& pluginParamRanges(plugin->getParameterRanges(parameterId));
+        retParamRanges.def       = pluginParamRanges.def;
+        retParamRanges.min       = pluginParamRanges.min;
+        retParamRanges.max       = pluginParamRanges.max;
+        retParamRanges.step      = pluginParamRanges.step;
+        retParamRanges.stepSmall = pluginParamRanges.stepSmall;
+        retParamRanges.stepLarge = pluginParamRanges.stepLarge;
+    }
 
-    const ParameterRanges& pluginParamRanges(plugin->getParameterRanges(parameterId));
-    retParamRanges.def       = pluginParamRanges.def;
-    retParamRanges.min       = pluginParamRanges.min;
-    retParamRanges.max       = pluginParamRanges.max;
-    retParamRanges.step      = pluginParamRanges.step;
-    retParamRanges.stepSmall = pluginParamRanges.stepSmall;
-    retParamRanges.stepLarge = pluginParamRanges.stepLarge;
-    return &pluginParamRanges;
+    return &retParamRanges;
 }
 
 const MidiProgramData* carla_get_midi_program_data(CarlaHostHandle handle, uint pluginId, uint32_t midiProgramId)
@@ -1538,24 +1521,23 @@ const MidiProgramData* carla_get_midi_program_data(CarlaHostHandle handle, uint 
 
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, &retMidiProgData);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retMidiProgData);
-
-    carla_debug("carla_get_midi_program_data(%p, %i, %i)", handle, pluginId, midiProgramId);
-    CARLA_SAFE_ASSERT_RETURN(midiProgramId < plugin->getMidiProgramCount(), &retMidiProgData);
-
-    const MidiProgramData& pluginMidiProgData(plugin->getMidiProgramData(midiProgramId));
-    retMidiProgData.bank    = pluginMidiProgData.bank;
-    retMidiProgData.program = pluginMidiProgData.program;
-
-    if (pluginMidiProgData.name != nullptr)
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
     {
-        retMidiProgData.name = carla_strdup_safe(pluginMidiProgData.name);
-        checkStringPtr(retMidiProgData.name);
-    }
-    else
-    {
-        retMidiProgData.name = gNullCharPtr;
+        CARLA_SAFE_ASSERT_RETURN(midiProgramId < plugin->getMidiProgramCount(), &retMidiProgData);
+
+        const MidiProgramData& pluginMidiProgData(plugin->getMidiProgramData(midiProgramId));
+        retMidiProgData.bank    = pluginMidiProgData.bank;
+        retMidiProgData.program = pluginMidiProgData.program;
+
+        if (pluginMidiProgData.name != nullptr)
+        {
+            retMidiProgData.name = carla_strdup_safe(pluginMidiProgData.name);
+            checkStringPtr(retMidiProgData.name);
+        }
+        else
+        {
+            retMidiProgData.name = gNullCharPtr;
+        }
     }
 
     return &retMidiProgData;
@@ -1586,19 +1568,19 @@ const CustomData* carla_get_custom_data(CarlaHostHandle handle, uint pluginId, u
 
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, &retCustomData);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, &retCustomData);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        CARLA_SAFE_ASSERT_RETURN(customDataId < plugin->getCustomDataCount(), &retCustomData)
 
-    carla_debug("carla_get_custom_data(%p, %i, %i)", handle, pluginId, customDataId);
-    CARLA_SAFE_ASSERT_RETURN(customDataId < plugin->getCustomDataCount(), &retCustomData)
+        const CustomData& pluginCustomData(plugin->getCustomData(customDataId));
+        retCustomData.type  = carla_strdup_safe(pluginCustomData.type);
+        retCustomData.key   = carla_strdup_safe(pluginCustomData.key);
+        retCustomData.value = carla_strdup_safe(pluginCustomData.value);
+        checkStringPtr(retCustomData.type);
+        checkStringPtr(retCustomData.key);
+        checkStringPtr(retCustomData.value);
+    }
 
-    const CustomData& pluginCustomData(plugin->getCustomData(customDataId));
-    retCustomData.type  = carla_strdup_safe(pluginCustomData.type);
-    retCustomData.key   = carla_strdup_safe(pluginCustomData.key);
-    retCustomData.value = carla_strdup_safe(pluginCustomData.value);
-    checkStringPtr(retCustomData.type);
-    checkStringPtr(retCustomData.key);
-    checkStringPtr(retCustomData.value);
     return &retCustomData;
 }
 
@@ -1608,29 +1590,27 @@ const char* carla_get_custom_data_value(CarlaHostHandle handle, uint pluginId, c
     CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0', gNullCharPtr);
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, gNullCharPtr);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, gNullCharPtr);
-
-    carla_debug("carla_get_custom_data_value(%p, %i, %s, %s)", handle, pluginId, type, key);
-
-    const uint32_t count = plugin->getCustomDataCount();
-
-    if (count == 0)
-        return gNullCharPtr;
-
-    static CarlaString customDataValue;
-
-    for (uint32_t i=0; i<count; ++i)
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
     {
-        const CustomData& pluginCustomData(plugin->getCustomData(i));
+        const uint32_t count = plugin->getCustomDataCount();
 
-        if (std::strcmp(pluginCustomData.type, type) != 0)
-            continue;
-        if (std::strcmp(pluginCustomData.key, key) != 0)
-            continue;
+        if (count == 0)
+            return gNullCharPtr;
 
-        customDataValue = pluginCustomData.value;
-        return customDataValue.buffer();
+        static CarlaString customDataValue;
+
+        for (uint32_t i=0; i<count; ++i)
+        {
+            const CustomData& pluginCustomData(plugin->getCustomData(i));
+
+            if (std::strcmp(pluginCustomData.type, type) != 0)
+                continue;
+            if (std::strcmp(pluginCustomData.key, key) != 0)
+                continue;
+
+            customDataValue = pluginCustomData.value;
+            return customDataValue.buffer();
+        }
     }
 
     return gNullCharPtr;
@@ -1640,20 +1620,21 @@ const char* carla_get_chunk_data(CarlaHostHandle handle, uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, gNullCharPtr);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, gNullCharPtr);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        CARLA_SAFE_ASSERT_RETURN(plugin->getOptionsEnabled() & CB::PLUGIN_OPTION_USE_CHUNKS, gNullCharPtr);
 
-    carla_debug("carla_get_chunk_data(%p, %i)", handle, pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin->getOptionsEnabled() & CB::PLUGIN_OPTION_USE_CHUNKS, gNullCharPtr);
+        void* data = nullptr;
+        const std::size_t dataSize(plugin->getChunkData(&data));
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr && dataSize > 0, gNullCharPtr);
 
-    void* data = nullptr;
-    const std::size_t dataSize(plugin->getChunkData(&data));
-    CARLA_SAFE_ASSERT_RETURN(data != nullptr && dataSize > 0, gNullCharPtr);
+        static CarlaString chunkData;
 
-    static CarlaString chunkData;
+        chunkData = CarlaString::asBase64(data, static_cast<std::size_t>(dataSize));
+        return chunkData.buffer();
+    }
 
-    chunkData = CarlaString::asBase64(data, static_cast<std::size_t>(dataSize));
-    return chunkData.buffer();
+    return gNullCharPtr;
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -1662,44 +1643,40 @@ uint32_t carla_get_parameter_count(CarlaHostHandle handle, uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, 0);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, 0);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        return plugin->getParameterCount();
 
-    carla_debug("carla_get_parameter_count(%p, %i)", handle, pluginId);
-    return plugin->getParameterCount();
+    return 0;
 }
 
 uint32_t carla_get_program_count(CarlaHostHandle handle, uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, 0);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, 0);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        return plugin->getProgramCount();
 
-    carla_debug("carla_get_program_count(%p, %i)", handle, pluginId);
-    return plugin->getProgramCount();
+    return 0;
 }
 
 uint32_t carla_get_midi_program_count(CarlaHostHandle handle, uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, 0);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, 0);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        return plugin->getMidiProgramCount();
 
-    carla_debug("carla_get_midi_program_count(%p, %i)", handle, pluginId);
-    return plugin->getMidiProgramCount();
+    return 0;
 }
 
 uint32_t carla_get_custom_data_count(CarlaHostHandle handle, uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, 0);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, 0);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        return plugin->getCustomDataCount();
 
-    carla_debug("carla_get_custom_data_count(%p, %i)", handle, pluginId);
-    return plugin->getCustomDataCount();
+    return 0;
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -1708,74 +1685,78 @@ const char* carla_get_parameter_text(CarlaHostHandle handle, uint pluginId, uint
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, gNullCharPtr);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, gNullCharPtr);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(), gNullCharPtr);
 
-    carla_debug("carla_get_parameter_text(%p, %i, %i)", handle, pluginId, parameterId);
-    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(), gNullCharPtr);
+        static char textBuf[STR_MAX+1];
+        carla_zeroChars(textBuf, STR_MAX+1);
 
-    static char textBuf[STR_MAX+1];
-    carla_zeroChars(textBuf, STR_MAX+1);
+        if (! plugin->getParameterText(parameterId, textBuf))
+            textBuf[0] = '\0';
 
-    if (! plugin->getParameterText(parameterId, textBuf))
-        textBuf[0] = '\0';
+        return textBuf;
+    }
 
-    return textBuf;
+    return gNullCharPtr;
 }
 
 const char* carla_get_program_name(CarlaHostHandle handle, uint pluginId, uint32_t programId)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, nullptr);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, gNullCharPtr);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        CARLA_SAFE_ASSERT_RETURN(programId < plugin->getProgramCount(), gNullCharPtr);
 
-    carla_debug("carla_get_program_name(%p, %i, %i)", handle, pluginId, programId);
-    CARLA_SAFE_ASSERT_RETURN(programId < plugin->getProgramCount(), gNullCharPtr);
+        static char programName[STR_MAX+1];
+        carla_zeroChars(programName, STR_MAX+1);
 
-    static char programName[STR_MAX+1];
-    carla_zeroChars(programName, STR_MAX+1);
+        if (! plugin->getProgramName(programId, programName))
+            programName[0] = '\0';
 
-    if (! plugin->getProgramName(programId, programName))
-        programName[0] = '\0';
+        return programName;
+    }
 
-    return programName;
+    return gNullCharPtr;
 }
 
 const char* carla_get_midi_program_name(CarlaHostHandle handle, uint pluginId, uint32_t midiProgramId)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, gNullCharPtr);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, gNullCharPtr);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        CARLA_SAFE_ASSERT_RETURN(midiProgramId < plugin->getMidiProgramCount(), gNullCharPtr);
 
-    carla_debug("carla_get_midi_program_name(%p, %i, %i)", handle, pluginId, midiProgramId);
-    CARLA_SAFE_ASSERT_RETURN(midiProgramId < plugin->getMidiProgramCount(), gNullCharPtr);
+        static char midiProgramName[STR_MAX+1];
+        carla_zeroChars(midiProgramName, STR_MAX+1);
 
-    static char midiProgramName[STR_MAX+1];
-    carla_zeroChars(midiProgramName, STR_MAX+1);
+        if (! plugin->getMidiProgramName(midiProgramId, midiProgramName))
+            midiProgramName[0] = '\0';
 
-    if (! plugin->getMidiProgramName(midiProgramId, midiProgramName))
-        midiProgramName[0] = '\0';
+        return midiProgramName;
+    }
 
-    return midiProgramName;
+    return gNullCharPtr;
 }
 
 const char* carla_get_real_plugin_name(CarlaHostHandle handle, uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, gNullCharPtr);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, gNullCharPtr);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        static char realPluginName[STR_MAX+1];
+        carla_zeroChars(realPluginName, STR_MAX+1);
 
-    carla_debug("carla_get_real_plugin_name(%p, %i)", handle, pluginId);
-    static char realPluginName[STR_MAX+1];
-    carla_zeroChars(realPluginName, STR_MAX+1);
+        if (! plugin->getRealName(realPluginName))
+            realPluginName[0] = '\0';
 
-    if (! plugin->getRealName(realPluginName))
-        realPluginName[0] = '\0';
+        return realPluginName;
+    }
 
-    return realPluginName;
+    return gNullCharPtr;
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -1784,22 +1765,20 @@ int32_t carla_get_current_program_index(CarlaHostHandle handle, uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, -1);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, -1);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        return plugin->getCurrentProgram();
 
-    carla_debug("carla_get_current_program_index(%p, %i)", handle, pluginId);
-    return plugin->getCurrentProgram();
+    return -1;
 }
 
 int32_t carla_get_current_midi_program_index(CarlaHostHandle handle, uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, -1);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, -1);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        return plugin->getCurrentMidiProgram();
 
-    carla_debug("carla_get_current_midi_program_index(%p, %i)", handle, pluginId);
-    return plugin->getCurrentMidiProgram();
+    return -1;
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -1808,24 +1787,28 @@ float carla_get_default_parameter_value(CarlaHostHandle handle, uint pluginId, u
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, 0.0f);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, 0.0f);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(), 0.0f);
 
-    carla_debug("carla_get_default_parameter_value(%p, %i, %i)", handle, pluginId, parameterId);
-    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(), 0.0f);
+        return plugin->getParameterRanges(parameterId).def;
+    }
 
-    return plugin->getParameterRanges(parameterId).def;
+    return 0.0f;
 }
 
 float carla_get_current_parameter_value(CarlaHostHandle handle, uint pluginId, uint32_t parameterId)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, 0.0f);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, 0.0f);
-    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(), 0.0f);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(), 0.0f);
 
-    return plugin->getParameterValue(parameterId);
+        return plugin->getParameterValue(parameterId);
+    }
+
+    return 0.0f;
 }
 
 float carla_get_internal_parameter_value(CarlaHostHandle handle, uint pluginId, int32_t parameterId)
@@ -1837,11 +1820,10 @@ float carla_get_internal_parameter_value(CarlaHostHandle handle, uint pluginId, 
 #endif
     CARLA_SAFE_ASSERT_RETURN(parameterId != CB::PARAMETER_NULL && parameterId > CB::PARAMETER_MAX, 0.0f);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, 0.0f);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        return plugin->getInternalParameterValue(parameterId);
 
-    carla_debug("carla_get_internal_parameter_value(%p, %i, %i)", handle, pluginId, parameterId);
-    return plugin->getInternalParameterValue(parameterId);
+    return 0.0f;
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -1887,25 +1869,25 @@ const CarlaInlineDisplayImageSurface* carla_render_inline_display(CarlaHostHandl
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr && handle->engine->isRunning(), nullptr);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr, nullptr);
-
-    carla_debug("carla_render_inline_display(%p, %i, %i, %i)", handle, pluginId, width, height);
-
     if (handle->engine->isAboutToClose())
         return nullptr;
 
-    switch (plugin->getType())
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
     {
+        switch (plugin->getType())
+        {
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-    case CB::PLUGIN_INTERNAL:
-        return (const CarlaInlineDisplayImageSurface*)CB::carla_render_inline_display_internal(plugin, width, height);
+        case CB::PLUGIN_INTERNAL:
+            return (const CarlaInlineDisplayImageSurface*)CB::carla_render_inline_display_internal(plugin, width, height);
 #endif
-    case CB::PLUGIN_LV2:
-        return (const CarlaInlineDisplayImageSurface*)CB::carla_render_inline_display_lv2(plugin, width, height);
-    default:
-        return nullptr;
+        case CB::PLUGIN_LV2:
+            return (const CarlaInlineDisplayImageSurface*)CB::carla_render_inline_display_lv2(plugin, width, height);
+        default:
+            return nullptr;
+        }
     }
+
+    return nullptr;
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -1914,11 +1896,8 @@ void carla_set_active(CarlaHostHandle handle, uint pluginId, bool onOff)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-
-    carla_debug("carla_set_active(%p, %i, %s)", handle, pluginId, bool2str(onOff));
-    return plugin->setActive(onOff, true, false);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        plugin->setActive(onOff, true, false);
 }
 
 #ifndef BUILD_BRIDGE
@@ -1926,55 +1905,40 @@ void carla_set_drywet(CarlaHostHandle handle, uint pluginId, float value)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-
-    carla_debug("carla_set_drywet(%p, %i, %f)", handle, pluginId, static_cast<double>(value));
-    return plugin->setDryWet(value, true, false);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        plugin->setDryWet(value, true, false);
 }
 
 void carla_set_volume(CarlaHostHandle handle, uint pluginId, float value)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-
-    carla_debug("carla_set_volume(%p, %i, %f)", handle, pluginId, static_cast<double>(value));
-    return plugin->setVolume(value, true, false);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        plugin->setVolume(value, true, false);
 }
 
 void carla_set_balance_left(CarlaHostHandle handle, uint pluginId, float value)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-
-    carla_debug("carla_set_balance_left(%p, %i, %f)", handle, pluginId, static_cast<double>(value));
-    return plugin->setBalanceLeft(value, true, false);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        plugin->setBalanceLeft(value, true, false);
 }
 
 void carla_set_balance_right(CarlaHostHandle handle, uint pluginId, float value)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-
-    carla_debug("carla_set_balance_right(%p, %i, %f)", handle, pluginId, static_cast<double>(value));
-    return plugin->setBalanceRight(value, true, false);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        plugin->setBalanceRight(value, true, false);
 }
 
 void carla_set_panning(CarlaHostHandle handle, uint pluginId, float value)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-
-    carla_debug("carla_set_panning(%p, %i, %f)", handle, pluginId, static_cast<double>(value));
-    return plugin->setPanning(value, true, false);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        plugin->setPanning(value, true, false);
 }
 
 void carla_set_ctrl_channel(CarlaHostHandle handle, uint pluginId, int8_t channel)
@@ -1982,11 +1946,8 @@ void carla_set_ctrl_channel(CarlaHostHandle handle, uint pluginId, int8_t channe
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(channel >= -1 && channel < MAX_MIDI_CHANNELS,);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-
-    carla_debug("carla_set_ctrl_channel(%p, %i, %i)", handle, pluginId, channel);
-    return plugin->setCtrlChannel(channel, true, false);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        plugin->setCtrlChannel(channel, true, false);
 }
 #endif
 
@@ -1994,11 +1955,8 @@ void carla_set_option(CarlaHostHandle handle, uint pluginId, uint option, bool y
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-
-    carla_debug("carla_set_option(%p, %i, %i, %s)", handle, pluginId, option, bool2str(yesNo));
-    return plugin->setOption(option, yesNo, false);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        plugin->setOption(option, yesNo, false);
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -2007,13 +1965,12 @@ void carla_set_parameter_value(CarlaHostHandle handle, uint pluginId, uint32_t p
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
 
-    carla_debug("carla_set_parameter_value(%p, %i, %i, %f)", handle, pluginId, parameterId, static_cast<double>(value));
-    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
-
-    return plugin->setParameterValue(parameterId, value, true, true, false);
+        plugin->setParameterValue(parameterId, value, true, true, false);
+    }
 }
 
 #ifndef BUILD_BRIDGE
@@ -2023,13 +1980,12 @@ void carla_set_parameter_midi_channel(CarlaHostHandle handle, uint pluginId, uin
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
 
-    carla_debug("carla_set_parameter_midi_channel(%p, %i, %i, %i)", handle, pluginId, parameterId, channel);
-    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
-
-    return plugin->setParameterMidiChannel(parameterId, channel, true, false);
+        plugin->setParameterMidiChannel(parameterId, channel, true, false);
+    }
 }
 
 void carla_set_parameter_mapped_control_index(CarlaHostHandle handle, uint pluginId, uint32_t parameterId, int16_t index)
@@ -2037,27 +1993,24 @@ void carla_set_parameter_mapped_control_index(CarlaHostHandle handle, uint plugi
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(index >= CB::CONTROL_INDEX_NONE && index <= CB::CONTROL_INDEX_MAX_ALLOWED,);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
 
-    carla_debug("carla_set_parameter_mapped_control_index(%p, %i, %i, %i)", handle, pluginId, parameterId, index);
-    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
-
-    return plugin->setParameterMappedControlIndex(parameterId, index, true, false);
+        plugin->setParameterMappedControlIndex(parameterId, index, true, false);
+    }
 }
 
 void carla_set_parameter_mapped_range(CarlaHostHandle handle, uint pluginId, uint32_t parameterId, float minimum, float maximum)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
 
-    carla_debug("carla_set_parameter_mapped_range(%p, %i, %i, %f, %f)",
-                handle, pluginId, parameterId, static_cast<double>(minimum), static_cast<double>(maximum));
-    CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
-
-    return plugin->setParameterMappedRange(parameterId, minimum, maximum, true, false);
+        plugin->setParameterMappedRange(parameterId, minimum, maximum, true, false);
+    }
 }
 
 void carla_set_parameter_touch(CarlaHostHandle handle, uint pluginId, uint32_t parameterId, bool touch)
@@ -2075,26 +2028,24 @@ void carla_set_program(CarlaHostHandle handle, uint pluginId, uint32_t programId
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        CARLA_SAFE_ASSERT_RETURN(programId < plugin->getProgramCount(),);
 
-    carla_debug("carla_set_program(%p, %i, %i)", handle, pluginId, programId);
-    CARLA_SAFE_ASSERT_RETURN(programId < plugin->getProgramCount(),);
-
-    return plugin->setProgram(static_cast<int32_t>(programId), true, true, false);
+        plugin->setProgram(static_cast<int32_t>(programId), true, true, false);
+    }
 }
 
 void carla_set_midi_program(CarlaHostHandle handle, uint pluginId, uint32_t midiProgramId)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        CARLA_SAFE_ASSERT_RETURN(midiProgramId < plugin->getMidiProgramCount(),);
 
-    carla_debug("carla_set_midi_program(%p, %i, %i)", handle, pluginId, midiProgramId);
-    CARLA_SAFE_ASSERT_RETURN(midiProgramId < plugin->getMidiProgramCount(),);
-
-    return plugin->setMidiProgram(static_cast<int32_t>(midiProgramId), true, true, false);
+        plugin->setMidiProgram(static_cast<int32_t>(midiProgramId), true, true, false);
+    }
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -2106,11 +2057,8 @@ void carla_set_custom_data(CarlaHostHandle handle, uint pluginId, const char* ty
     CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-
-    carla_debug("carla_set_custom_data(%p, %i, \"%s\", \"%s\", \"%s\")", handle, pluginId, type, key, value);
-    return plugin->setCustomData(type, key, value, true);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        plugin->setCustomData(type, key, value, true);
 }
 
 void carla_set_chunk_data(CarlaHostHandle handle, uint pluginId, const char* chunkData)
@@ -2118,18 +2066,17 @@ void carla_set_chunk_data(CarlaHostHandle handle, uint pluginId, const char* chu
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(chunkData != nullptr && chunkData[0] != '\0',);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        CARLA_SAFE_ASSERT_RETURN(plugin->getOptionsEnabled() & CB::PLUGIN_OPTION_USE_CHUNKS,);
 
-    carla_debug("carla_set_chunk_data(%p, %i, \"%s\")", handle, pluginId, chunkData);
-    CARLA_SAFE_ASSERT_RETURN(plugin->getOptionsEnabled() & CB::PLUGIN_OPTION_USE_CHUNKS,);
-
-    std::vector<uint8_t> chunk(carla_getChunkFromBase64String(chunkData));
+        std::vector<uint8_t> chunk(carla_getChunkFromBase64String(chunkData));
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-    return plugin->setChunkData(chunk.data(), chunk.size());
+        plugin->setChunkData(chunk.data(), chunk.size());
 #else
-    return plugin->setChunkData(&chunk.front(), chunk.size());
+        plugin->setChunkData(&chunk.front(), chunk.size());
 #endif
+    }
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -2138,33 +2085,24 @@ void carla_prepare_for_save(CarlaHostHandle handle, uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-
-    carla_debug("carla_prepare_for_save(%p, %i)", handle, pluginId);
-    return plugin->prepareForSave();
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        plugin->prepareForSave();
 }
 
 void carla_reset_parameters(CarlaHostHandle handle, uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-
-    carla_debug("carla_reset_parameters(%p, %i)", handle, pluginId);
-    return plugin->resetParameters();
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        plugin->resetParameters();
 }
 
 void carla_randomize_parameters(CarlaHostHandle handle, uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-
-    carla_debug("carla_randomize_parameters(%p, %i)", handle, pluginId);
-    return plugin->randomizeParameters();
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        plugin->randomizeParameters();
 }
 
 #ifndef BUILD_BRIDGE
@@ -2172,35 +2110,26 @@ void carla_send_midi_note(CarlaHostHandle handle, uint pluginId, uint8_t channel
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr && handle->engine->isRunning(),);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-
-    carla_debug("carla_send_midi_note(%p, %i, %i, %i, %i)", handle, pluginId, channel, note, velocity);
-    return plugin->sendMidiSingleNote(channel, note, velocity, true, true, false);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        plugin->sendMidiSingleNote(channel, note, velocity, true, true, false);
 }
 #endif
 
-void carla_set_custom_ui_title_format(CarlaHostHandle handle, uint pluginId, const char* format)
+void carla_set_custom_ui_prefix(CarlaHostHandle handle, uint pluginId, const char* prefix)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(format != nullptr && format[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(prefix != nullptr,);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-
-    carla_debug("carla_randomize_parameters(%p, %i, %s)", handle, pluginId, format);
-    return plugin->setCustomUiTitleFormat(format);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        plugin->setCustomUIPrefix(prefix);
 }
 
 void carla_show_custom_ui(CarlaHostHandle handle, uint pluginId, bool yesNo)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
 
-    const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId);
-    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-
-    carla_debug("carla_show_custom_ui(%p, %i, %s)", handle, pluginId, bool2str(yesNo));
-    return plugin->showCustomUI(yesNo);
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        plugin->showCustomUI(yesNo);
 }
 
 // --------------------------------------------------------------------------------------------------------------------

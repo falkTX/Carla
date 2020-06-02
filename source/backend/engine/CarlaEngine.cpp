@@ -364,17 +364,18 @@ void CarlaEngine::idle() noexcept
 
     for (uint i=0; i < pData->curPluginCount; ++i)
     {
-        CarlaPluginPtr plugin = pData->plugins[i].plugin;
-
-        if (plugin != nullptr && plugin->isEnabled())
+        if (const CarlaPluginPtr plugin = pData->plugins[i].plugin)
         {
-            const uint hints(plugin->getHints());
-
-            if ((hints & PLUGIN_HAS_CUSTOM_UI) != 0 && (hints & PLUGIN_NEEDS_UI_MAIN_THREAD) != 0)
+            if (plugin->isEnabled())
             {
-                try {
-                    plugin->uiIdle();
-                } CARLA_SAFE_EXCEPTION_CONTINUE("Plugin uiIdle");
+                const uint hints(plugin->getHints());
+
+                if ((hints & PLUGIN_HAS_CUSTOM_UI) != 0 && (hints & PLUGIN_NEEDS_UI_MAIN_THREAD) != 0)
+                {
+                    try {
+                        plugin->uiIdle();
+                    } CARLA_SAFE_EXCEPTION_CONTINUE("Plugin uiIdle");
+                }
             }
         }
     }
@@ -475,7 +476,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
 
         oldPlugin = pData->plugins[id].plugin;
 
-        CARLA_SAFE_ASSERT_RETURN_ERR(oldPlugin != nullptr, "Invalid replace plugin Id");
+        CARLA_SAFE_ASSERT_RETURN_ERR(oldPlugin.get() != nullptr, "Invalid replace plugin Id");
     }
     else
 #endif
@@ -489,7 +490,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
         }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-        CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins[id].plugin == nullptr, "Invalid engine internal data");
+        CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins[id].plugin.get() == nullptr, "Invalid engine internal data");
 #endif
     }
 
@@ -646,7 +647,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
         }
     }
 
-    if (plugin == nullptr)
+    if (plugin.get() == nullptr)
         return false;
 
     plugin->reload();
@@ -680,7 +681,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
     carla_zeroFloats(pluginData.peaks, 4);
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-    if (oldPlugin != nullptr)
+    if (oldPlugin.get() != nullptr)
     {
         CARLA_SAFE_ASSERT(! pData->loadingProject);
 
@@ -750,9 +751,9 @@ bool CarlaEngine::removePlugin(const uint id)
     CARLA_SAFE_ASSERT_RETURN_ERR(id < pData->curPluginCount, "Invalid plugin Id");
     carla_debug("CarlaEngine::removePlugin(%i)", id);
 
-    CarlaPluginPtr plugin = pData->plugins[id].plugin;
+    const CarlaPluginPtr plugin = pData->plugins[id].plugin;
 
-    CARLA_SAFE_ASSERT_RETURN_ERR(plugin != nullptr, "Could not find plugin to remove");
+    CARLA_SAFE_ASSERT_RETURN_ERR(plugin.get() != nullptr, "Could not find plugin to remove");
     CARLA_SAFE_ASSERT_RETURN_ERR(plugin->getId() == id, "Invalid engine internal data");
 
     const ScopedThreadStopper sts(this);
@@ -818,7 +819,7 @@ bool CarlaEngine::removeAllPlugins()
         pluginData.plugin->prepareForDeletion();
         pData->pluginsToDelete.push_back(pluginData.plugin);
 
-        pluginData.plugin = nullptr;
+        pluginData.plugin.reset();
         carla_zeroStruct(pluginData.peaks);
 
         callback(true, true, ENGINE_CALLBACK_PLUGIN_REMOVED, id, 0, 0, 0, 0.0f, nullptr);
@@ -839,8 +840,8 @@ bool CarlaEngine::renamePlugin(const uint id, const char* const newName)
     CARLA_SAFE_ASSERT_RETURN_ERR(newName != nullptr && newName[0] != '\0', "Invalid plugin name");
     carla_debug("CarlaEngine::renamePlugin(%i, \"%s\")", id, newName);
 
-    CarlaPluginPtr plugin = pData->plugins[id].plugin;
-    CARLA_SAFE_ASSERT_RETURN_ERR(plugin != nullptr, "Could not find plugin to rename");
+    const CarlaPluginPtr plugin = pData->plugins[id].plugin;
+    CARLA_SAFE_ASSERT_RETURN_ERR(plugin.get() != nullptr, "Could not find plugin to rename");
     CARLA_SAFE_ASSERT_RETURN_ERR(plugin->getId() == id, "Invalid engine internal data");
 
     const char* const uniqueName(getUniquePluginName(newName));
@@ -866,9 +867,9 @@ bool CarlaEngine::clonePlugin(const uint id)
     CARLA_SAFE_ASSERT_RETURN_ERR(id < pData->curPluginCount, "Invalid plugin Id");
     carla_debug("CarlaEngine::clonePlugin(%i)", id);
 
-    CarlaPluginPtr plugin = pData->plugins[id].plugin;
+    const CarlaPluginPtr plugin = pData->plugins[id].plugin;
 
-    CARLA_SAFE_ASSERT_RETURN_ERR(plugin != nullptr, "Could not find plugin to clone");
+    CARLA_SAFE_ASSERT_RETURN_ERR(plugin.get() != nullptr, "Could not find plugin to clone");
     CARLA_SAFE_ASSERT_RETURN_ERR(plugin->getId() == id, "Invalid engine internal data");
 
     char label[STR_MAX+1];
@@ -909,9 +910,9 @@ bool CarlaEngine::replacePlugin(const uint id) noexcept
 
     CARLA_SAFE_ASSERT_RETURN_ERR(id < pData->curPluginCount, "Invalid plugin Id");
 
-    CarlaPluginPtr plugin = pData->plugins[id].plugin;
+    const CarlaPluginPtr plugin = pData->plugins[id].plugin;
 
-    CARLA_SAFE_ASSERT_RETURN_ERR(plugin != nullptr, "Could not find plugin to replace");
+    CARLA_SAFE_ASSERT_RETURN_ERR(plugin.get() != nullptr, "Could not find plugin to replace");
     CARLA_SAFE_ASSERT_RETURN_ERR(plugin->getId() == id, "Invalid engine internal data");
 
     pData->nextPluginId = id;
@@ -930,11 +931,11 @@ bool CarlaEngine::switchPlugins(const uint idA, const uint idB) noexcept
     CARLA_SAFE_ASSERT_RETURN_ERR(idB < pData->curPluginCount, "Invalid plugin Id");
     carla_debug("CarlaEngine::switchPlugins(%i)", idA, idB);
 
-    CarlaPluginPtr pluginA = pData->plugins[idA].plugin;
-    CarlaPluginPtr pluginB = pData->plugins[idB].plugin;
+    const CarlaPluginPtr pluginA = pData->plugins[idA].plugin;
+    const CarlaPluginPtr pluginB = pData->plugins[idB].plugin;
 
-    CARLA_SAFE_ASSERT_RETURN_ERR(pluginA != nullptr, "Could not find plugin to switch");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pluginA != nullptr, "Could not find plugin to switch");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pluginA.get() != nullptr, "Could not find plugin to switch");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pluginB.get() != nullptr, "Could not find plugin to switch");
     CARLA_SAFE_ASSERT_RETURN_ERR(pluginA->getId() == idA, "Invalid engine internal data");
     CARLA_SAFE_ASSERT_RETURN_ERR(pluginB->getId() == idB, "Invalid engine internal data");
 
@@ -1004,10 +1005,11 @@ const char* CarlaEngine::getUniquePluginName(const char* const name) const
 
     for (uint i=0; i < pData->curPluginCount; ++i)
     {
-        CARLA_SAFE_ASSERT_BREAK(pData->plugins[i].plugin != nullptr);
+        const CarlaPluginPtr plugin = pData->plugins[i].plugin;
+        CARLA_SAFE_ASSERT_BREAK(plugin.use_count() > 0);
 
         // Check if unique name doesn't exist
-        if (const char* const pluginName = pData->plugins[i].plugin->getName())
+        if (const char* const pluginName = plugin->getName())
         {
             if (sname != pluginName)
                 continue;
@@ -2030,13 +2032,13 @@ void CarlaEngine::bufferSizeChanged(const uint32_t newBufferSize)
 
     for (uint i=0; i < pData->curPluginCount; ++i)
     {
-        CarlaPluginPtr plugin = pData->plugins[i].plugin;
-
-        if (plugin != nullptr && plugin->isEnabled())
+        if (const CarlaPluginPtr plugin = pData->plugins[i].plugin)
         {
-            plugin->tryLock(true);
-            plugin->bufferSizeChanged(newBufferSize);
-            plugin->unlock();
+            if (plugin->isEnabled() && plugin->tryLock(true))
+            {
+                plugin->bufferSizeChanged(newBufferSize);
+                plugin->unlock();
+            }
         }
     }
 
@@ -2059,13 +2061,13 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
 
     for (uint i=0; i < pData->curPluginCount; ++i)
     {
-        CarlaPluginPtr plugin = pData->plugins[i].plugin;
-
-        if (plugin != nullptr && plugin->isEnabled())
+        if (const CarlaPluginPtr plugin = pData->plugins[i].plugin)
         {
-            plugin->tryLock(true);
-            plugin->sampleRateChanged(newSampleRate);
-            plugin->unlock();
+            if (plugin->isEnabled() && plugin->tryLock(true))
+            {
+                plugin->sampleRateChanged(newSampleRate);
+                plugin->unlock();
+            }
         }
     }
 
@@ -2086,10 +2088,9 @@ void CarlaEngine::offlineModeChanged(const bool isOfflineNow)
 
     for (uint i=0; i < pData->curPluginCount; ++i)
     {
-        CarlaPluginPtr plugin = pData->plugins[i].plugin;
-
-        if (plugin != nullptr && plugin->isEnabled())
-            plugin->offlineModeChanged(isOfflineNow);
+        if (const CarlaPluginPtr plugin = pData->plugins[i].plugin)
+            if (plugin->isEnabled())
+                plugin->offlineModeChanged(isOfflineNow);
     }
 }
 
@@ -2108,16 +2109,17 @@ void CarlaEngine::saveProjectInternal(water::MemoryOutputStream& outStream) cons
     // send initial prepareForSave first, giving time for bridges to act
     for (uint i=0; i < pData->curPluginCount; ++i)
     {
-        CarlaPluginPtr plugin = pData->plugins[i].plugin;
-
-        if (plugin != nullptr && plugin->isEnabled())
+        if (const CarlaPluginPtr plugin = pData->plugins[i].plugin)
         {
+            if (plugin->isEnabled())
+            {
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-            // deactivate bridge client-side ping check, since some plugins block during save
-            if (plugin->getHints() & PLUGIN_IS_BRIDGE)
-                plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "__CarlaPingOnOff__", "false", false);
+                // deactivate bridge client-side ping check, since some plugins block during save
+                if (plugin->getHints() & PLUGIN_IS_BRIDGE)
+                    plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "__CarlaPingOnOff__", "false", false);
 #endif
-            plugin->prepareForSave();
+                plugin->prepareForSave();
+            }
         }
     }
 
@@ -2172,22 +2174,23 @@ void CarlaEngine::saveProjectInternal(water::MemoryOutputStream& outStream) cons
 
     for (uint i=0; i < pData->curPluginCount; ++i)
     {
-        CarlaPluginPtr plugin = pData->plugins[i].plugin;
-
-        if (plugin != nullptr && plugin->isEnabled())
+        if (const CarlaPluginPtr plugin = pData->plugins[i].plugin)
         {
-            MemoryOutputStream outPlugin(4096), streamPlugin;
-            plugin->getStateSave(false).dumpToMemoryStream(streamPlugin);
+            if (plugin->isEnabled())
+            {
+                MemoryOutputStream outPlugin(4096), streamPlugin;
+                plugin->getStateSave(false).dumpToMemoryStream(streamPlugin);
 
-            outPlugin << "\n";
+                outPlugin << "\n";
 
-            if (plugin->getRealName(strBuf))
-                outPlugin << " <!-- " << xmlSafeString(strBuf, true) << " -->\n";
+                if (plugin->getRealName(strBuf))
+                    outPlugin << " <!-- " << xmlSafeString(strBuf, true) << " -->\n";
 
-            outPlugin << " <Plugin>\n";
-            outPlugin << streamPlugin;
-            outPlugin << " </Plugin>\n";
-            outStream << outPlugin;
+                outPlugin << " <Plugin>\n";
+                outPlugin << streamPlugin;
+                outPlugin << " </Plugin>\n";
+                outStream << outPlugin;
+            }
         }
     }
 
@@ -2195,10 +2198,9 @@ void CarlaEngine::saveProjectInternal(water::MemoryOutputStream& outStream) cons
     // tell bridges we're done saving
     for (uint i=0; i < pData->curPluginCount; ++i)
     {
-        CarlaPluginPtr plugin = pData->plugins[i].plugin;
-
-        if (plugin != nullptr && plugin->isEnabled() && (plugin->getHints() & PLUGIN_IS_BRIDGE) != 0)
-            plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "__CarlaPingOnOff__", "true", false);
+        if (const CarlaPluginPtr plugin = pData->plugins[i].plugin)
+            if (plugin->isEnabled() && (plugin->getHints() & PLUGIN_IS_BRIDGE) != 0)
+                plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "__CarlaPingOnOff__", "true", false);
     }
 
     // save internal connections
@@ -2852,10 +2854,9 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
     // tell bridges we're done loading
     for (uint i=0; i < pData->curPluginCount; ++i)
     {
-        CarlaPluginPtr plugin = pData->plugins[i].plugin;
-
-        if (plugin != nullptr && plugin->isEnabled() && (plugin->getHints() & PLUGIN_IS_BRIDGE) != 0)
-            plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "__CarlaPingOnOff__", "true", false);
+        if (const CarlaPluginPtr plugin = pData->plugins[i].plugin)
+            if (plugin->isEnabled() && (plugin->getHints() & PLUGIN_IS_BRIDGE) != 0)
+                plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "__CarlaPingOnOff__", "true", false);
     }
 
     callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
