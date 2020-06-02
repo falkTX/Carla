@@ -20,12 +20,16 @@
 
 #include "CarlaBackend.h"
 
+#include <memory>
+
 namespace water {
 class MemoryOutputStream;
 class XmlDocument;
 }
 
 CARLA_BACKEND_START_NAMESPACE
+
+typedef std::shared_ptr<CarlaPlugin> CarlaPluginPtr;
 
 // -----------------------------------------------------------------------
 
@@ -704,7 +708,7 @@ public:
      * Deactivate this client.
      * Client must be activated before calling this function.
      */
-    virtual void deactivate() noexcept;
+    virtual void deactivate(bool willClose) noexcept;
 
     /*!
      * Check if the client is activated.
@@ -925,7 +929,7 @@ public:
      * Add new engine client.
      * @note This function must only be called within a plugin class.
      */
-    virtual CarlaEngineClient* addClient(CarlaPlugin* plugin);
+    virtual CarlaEngineClient* addClient(CarlaPluginPtr plugin);
 
     /*!
      * Get the current CPU load estimated by the engine.
@@ -1024,12 +1028,12 @@ public:
     /*!
      * Get plugin with id @a id.
      */
-    CarlaPlugin* getPlugin(uint id) const noexcept;
+    CarlaPluginPtr getPlugin(uint id) const noexcept;
 
     /*!
      * Get plugin with id @a id, faster unchecked version.
      */
-    CarlaPlugin* getPluginUnchecked(uint id) const noexcept;
+    CarlaPluginPtr getPluginUnchecked(uint id) const noexcept;
 
     /*!
      * Get a unique plugin name within the engine.

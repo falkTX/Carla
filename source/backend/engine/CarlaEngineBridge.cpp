@@ -67,7 +67,10 @@ class CarlaEngineBridgeClient : public CarlaEngineClientForSubclassing
 {
 public:
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-    CarlaEngineBridgeClient(const CarlaEngine& engine, EngineInternalGraph& egraph, CarlaPlugin* const plugin, LatencyChangedCallback* const cb)
+    CarlaEngineBridgeClient(const CarlaEngine& engine,
+                            EngineInternalGraph& egraph,
+                            const CarlaPluginPtr plugin,
+                            LatencyChangedCallback* const cb)
         : CarlaEngineClientForSubclassing(engine, egraph, plugin),
           fLatencyCallback(cb) {}
 #else
@@ -294,7 +297,7 @@ public:
         fShmNonRtServerControl.commitWrite();
     }
 
-    CarlaEngineClient* addClient(CarlaPlugin* const plugin) override
+    CarlaEngineClient* addClient(const CarlaPluginPtr plugin) override
     {
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         return new CarlaEngineBridgeClient(*this, pData->graph, plugin, this);
@@ -308,7 +311,7 @@ public:
 
     void idle() noexcept override
     {
-        CarlaPlugin* const plugin(pData->plugins[0].plugin);
+        const CarlaPluginPtr plugin = pData->plugins[0].plugin;
 
         if (plugin == nullptr)
         {
@@ -702,7 +705,7 @@ public:
             break;
 
         case ENGINE_CALLBACK_RELOAD_PARAMETERS:
-            if (CarlaPlugin* const plugin = pData->plugins[0].plugin)
+            if (const CarlaPluginPtr plugin = pData->plugins[0].plugin)
             {
                 if (const uint32_t count = std::min(pData->options.maxParameters, plugin->getParameterCount()))
                 {
@@ -745,7 +748,7 @@ public:
 
     void handleNonRtData()
     {
-        CarlaPlugin* const plugin(pData->plugins[0].plugin);
+        const CarlaPluginPtr plugin = pData->plugins[0].plugin;
         CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
 
         for (; fShmNonRtClientControl.isDataAvailableForReading();)
@@ -1135,7 +1138,7 @@ protected:
             for (; fShmRtClientControl.isDataAvailableForReading();)
             {
                 const PluginBridgeRtClientOpcode opcode(fShmRtClientControl.readOpcode());
-                CarlaPlugin* const plugin(pData->plugins[0].plugin);
+                const CarlaPluginPtr plugin = pData->plugins[0].plugin;
 
 #ifdef DEBUG
                 if (opcode != kPluginBridgeRtClientProcess && opcode != kPluginBridgeRtClientMidiEvent) {

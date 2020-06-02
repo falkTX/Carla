@@ -190,12 +190,12 @@ public:
     void setSampleRate(double sampleRate);
     void setOffline(bool offline);
 
-    void addPlugin(CarlaPlugin* plugin);
-    void replacePlugin(CarlaPlugin* oldPlugin, CarlaPlugin* newPlugin);
-    void renamePlugin(CarlaPlugin* plugin, const char* newName);
-    void reconfigureForCV(CarlaPlugin* const plugin, const uint portIndex, bool added);
-    void reconfigurePlugin(CarlaPlugin* plugin, bool portsAdded);
-    void removePlugin(CarlaPlugin* plugin);
+    void addPlugin(CarlaPluginPtr plugin);
+    void replacePlugin(CarlaPluginPtr oldPlugin, CarlaPluginPtr newPlugin);
+    void renamePlugin(CarlaPluginPtr plugin, const char* newName);
+    void reconfigureForCV(CarlaPluginPtr plugin, const uint portIndex, bool added);
+    void reconfigurePlugin(CarlaPluginPtr plugin, bool portsAdded);
+    void removePlugin(CarlaPluginPtr plugin);
     void removeAllPlugins();
 
     bool connect(bool external, uint groupA, uint portA, uint groupB, uint portB);

@@ -47,7 +47,7 @@ void CarlaEngineOsc::sendCallback(const EngineCallbackOpcode action, const uint 
                 valueStr != nullptr ? valueStr : kNullString);
 }
 
-void CarlaEngineOsc::sendPluginInfo(const CarlaPlugin* const plugin) const noexcept
+void CarlaEngineOsc::sendPluginInfo(const CarlaPluginPtr& plugin) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
@@ -95,7 +95,7 @@ void CarlaEngineOsc::sendPluginInfo(const CarlaPlugin* const plugin) const noexc
                 bufRealName, bufLabel, bufMaker, bufCopyright);
 }
 
-void CarlaEngineOsc::sendPluginPortCount(const CarlaPlugin* const plugin) const noexcept
+void CarlaEngineOsc::sendPluginPortCount(const CarlaPluginPtr& plugin) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
@@ -124,12 +124,12 @@ void CarlaEngineOsc::sendPluginPortCount(const CarlaPlugin* const plugin) const 
                 static_cast<int32_t>(plugin->getParameterCount()));
 }
 
-void CarlaEngineOsc::sendPluginParameterInfo(const CarlaPlugin* const plugin, const uint32_t index) const noexcept
+void CarlaEngineOsc::sendPluginParameterInfo(const CarlaPluginPtr& plugin, const uint32_t index) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-    carla_debug("CarlaEngineOsc::sendPluginParameterInfo(%p, %u)", plugin, index);
+    carla_debug("CarlaEngineOsc::sendPluginParameterInfo(%p, %u)", plugin.get(), index);
 
     char bufName[STR_MAX+1], bufUnit[STR_MAX+1], bufComment[STR_MAX+1], bufGroupName[STR_MAX+1];
     carla_zeroChars(bufName, STR_MAX+1);
@@ -190,7 +190,7 @@ void CarlaEngineOsc::sendPluginParameterInfo(const CarlaPlugin* const plugin, co
                 static_cast<double>(paramRanges.stepLarge));
 }
 
-void CarlaEngineOsc::sendPluginDataCount(const CarlaPlugin* const plugin) const noexcept
+void CarlaEngineOsc::sendPluginDataCount(const CarlaPluginPtr& plugin) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
@@ -209,7 +209,7 @@ void CarlaEngineOsc::sendPluginDataCount(const CarlaPlugin* const plugin) const 
                 static_cast<int32_t>(plugin->getCurrentMidiProgram()));
 }
 
-void CarlaEngineOsc::sendPluginProgramCount(const CarlaPlugin* const plugin) const noexcept
+void CarlaEngineOsc::sendPluginProgramCount(const CarlaPluginPtr& plugin) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
@@ -225,11 +225,11 @@ void CarlaEngineOsc::sendPluginProgramCount(const CarlaPlugin* const plugin) con
                 static_cast<int32_t>(plugin->getMidiProgramCount()));
 }
 
-void CarlaEngineOsc::sendPluginProgram(const CarlaPlugin* const plugin, const uint32_t index) const noexcept
+void CarlaEngineOsc::sendPluginProgram(const CarlaPluginPtr& plugin, const uint32_t index) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
-    carla_stdout("CarlaEngineOsc::sendPluginProgram(%p, %u)", plugin, index);
+    carla_stdout("CarlaEngineOsc::sendPluginProgram(%p, %u)", plugin.get(), index);
 
     char strBuf[STR_MAX+1];
     carla_zeroChars(strBuf, STR_MAX+1);
@@ -243,11 +243,11 @@ void CarlaEngineOsc::sendPluginProgram(const CarlaPlugin* const plugin, const ui
                 static_cast<int32_t>(plugin->getId()), static_cast<int32_t>(index), strBuf);
 }
 
-void CarlaEngineOsc::sendPluginMidiProgram(const CarlaPlugin* const plugin, const uint32_t index) const noexcept
+void CarlaEngineOsc::sendPluginMidiProgram(const CarlaPluginPtr& plugin, const uint32_t index) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
-    carla_stdout("CarlaEngineOsc::sendPluginProgram(%p, %u)", plugin, index);
+    carla_stdout("CarlaEngineOsc::sendPluginProgram(%p, %u)", plugin.get(), index);
 
     const MidiProgramData& mpdata(plugin->getMidiProgramData(index));
     CARLA_SAFE_ASSERT_RETURN(mpdata.name != nullptr,);
@@ -261,11 +261,11 @@ void CarlaEngineOsc::sendPluginMidiProgram(const CarlaPlugin* const plugin, cons
                 static_cast<int32_t>(mpdata.bank), static_cast<int32_t>(mpdata.program), mpdata.name);
 }
 
-void CarlaEngineOsc::sendPluginCustomData(const CarlaPlugin* const plugin, const uint32_t index) const noexcept
+void CarlaEngineOsc::sendPluginCustomData(const CarlaPluginPtr& plugin, const uint32_t index) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
-    carla_stdout("CarlaEngineOsc::sendPluginCustomData(%p, %u)", plugin, index);
+    carla_stdout("CarlaEngineOsc::sendPluginCustomData(%p, %u)", plugin.get(), index);
 
     const CustomData& cdata(plugin->getCustomData(index));
     CARLA_SAFE_ASSERT_RETURN(cdata.isValid(),);
@@ -279,7 +279,7 @@ void CarlaEngineOsc::sendPluginCustomData(const CarlaPlugin* const plugin, const
                 cdata.type, cdata.key, cdata.value);
 }
 
-void CarlaEngineOsc::sendPluginInternalParameterValues(const CarlaPlugin* const plugin) const noexcept
+void CarlaEngineOsc::sendPluginInternalParameterValues(const CarlaPluginPtr& plugin) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);

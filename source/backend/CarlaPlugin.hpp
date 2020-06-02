@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,6 +20,8 @@
 
 #include "CarlaBackend.h"
 
+#include <memory>
+
 // -----------------------------------------------------------------------
 // Avoid including extra libs here
 
@@ -34,6 +36,8 @@ CARLA_BACKEND_START_NAMESPACE
 #if 0
 } /* Fix editor indentation */
 #endif
+
+typedef std::shared_ptr<CarlaPlugin> CarlaPluginPtr;
 
 // -----------------------------------------------------------------------
 
@@ -943,21 +947,22 @@ public:
         const uint options; // see PluginOptions
     };
 
-    static CarlaPlugin* newNative(const Initializer& init);
-    static CarlaPlugin* newBridge(const Initializer& init, BinaryType btype, PluginType ptype, const char* bridgeBinary);
+    static CarlaPluginPtr newNative(const Initializer& init);
+    static CarlaPluginPtr newBridge(const Initializer& init,
+                                                  BinaryType btype, PluginType ptype, const char* bridgeBinary);
 
-    static CarlaPlugin* newLADSPA(const Initializer& init, const LADSPA_RDF_Descriptor* rdfDescriptor);
-    static CarlaPlugin* newDSSI(const Initializer& init);
-    static CarlaPlugin* newLV2(const Initializer& init);
-    static CarlaPlugin* newVST2(const Initializer& init);
-    static CarlaPlugin* newVST3(const Initializer& init);
-    static CarlaPlugin* newAU(const Initializer& init);
+    static CarlaPluginPtr newLADSPA(const Initializer& init, const LADSPA_RDF_Descriptor* rdfDescriptor);
+    static CarlaPluginPtr newDSSI(const Initializer& init);
+    static CarlaPluginPtr newLV2(const Initializer& init);
+    static CarlaPluginPtr newVST2(const Initializer& init);
+    static CarlaPluginPtr newVST3(const Initializer& init);
+    static CarlaPluginPtr newAU(const Initializer& init);
 
-    static CarlaPlugin* newJuce(const Initializer& init, const char* format);
-    static CarlaPlugin* newFluidSynth(const Initializer& init, PluginType ptype, bool use16Outs);
-    static CarlaPlugin* newSFZero(const Initializer& init);
+    static CarlaPluginPtr newJuce(const Initializer& init, const char* format);
+    static CarlaPluginPtr newFluidSynth(const Initializer& init, PluginType ptype, bool use16Outs);
+    static CarlaPluginPtr newSFZero(const Initializer& init);
 
-    static CarlaPlugin* newJackApp(const Initializer& init);
+    static CarlaPluginPtr newJackApp(const Initializer& init);
 #endif
 
     // -------------------------------------------------------------------
@@ -980,6 +985,11 @@ public:
     virtual void restoreLV2State() noexcept;
 
 protected:
+    /*!
+     * Allow engine to signal that plugin will be deleted soon.
+     */
+    virtual void prepareForDeletion() noexcept;
+
     /*!
      * Give plugin bridges a change to update their custom data sets.
      */
@@ -1025,6 +1035,7 @@ protected:
         CARLA_DECLARE_NON_COPY_CLASS(ScopedSingleProcessLocker)
     };
 
+    friend class CarlaEngine;
     friend class CarlaEngineBridge;
     CARLA_DECLARE_NON_COPY_CLASS(CarlaPlugin)
 };

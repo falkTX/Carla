@@ -87,7 +87,9 @@ static void _getUniquePortName(CarlaString& sname, const CarlaStringList& list)
 // Carla Engine Client
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-CarlaEngineClient::ProtectedData::ProtectedData(const CarlaEngine& eng, EngineInternalGraph& eg, CarlaPlugin* const p) noexcept
+CarlaEngineClient::ProtectedData::ProtectedData(const CarlaEngine& eng,
+                                                EngineInternalGraph& eg,
+                                                const CarlaPluginPtr p) noexcept
 #else
 CarlaEngineClient::ProtectedData::ProtectedData(const CarlaEngine& eng) noexcept
 #endif
@@ -105,6 +107,12 @@ CarlaEngineClient::ProtectedData::ProtectedData(const CarlaEngine& eng) noexcept
        cvOutList(),
        eventInList(),
        eventOutList() {}
+
+CarlaEngineClient::ProtectedData::~ProtectedData()
+{
+    carla_debug("CarlaEngineClient::ProtectedData::~ProtectedData()");
+    CARLA_SAFE_ASSERT(plugin == nullptr);
+}
 
 void CarlaEngineClient::ProtectedData::addAudioPortName(const bool isInput, const char* const name)
 {
@@ -178,12 +186,20 @@ void CarlaEngineClient::activate() noexcept
     pData->active = true;
 }
 
-void CarlaEngineClient::deactivate() noexcept
+void CarlaEngineClient::deactivate(const bool willClose) noexcept
 {
     CARLA_SAFE_ASSERT(pData->active);
-    carla_debug("CarlaEngineClient::deactivate()");
+    carla_debug("CarlaEngineClient::deactivate(%s)", bool2str(willClose));
 
     pData->active = false;
+
+    if (willClose)
+    {
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+        pData->cvSourcePorts.setGraphAndPlugin(nullptr, nullptr);
+#endif
+        pData->plugin = nullptr;
+    }
 }
 
 bool CarlaEngineClient::isActive() const noexcept

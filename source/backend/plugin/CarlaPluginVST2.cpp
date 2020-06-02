@@ -128,7 +128,7 @@ public:
         pData->masterMutex.lock();
 
         if (pData->client != nullptr && pData->client->isActive())
-            pData->client->deactivate();
+            pData->client->deactivate(true);
 
         CARLA_ASSERT(! fIsProcessing);
 
@@ -2357,7 +2357,8 @@ protected:
     // -------------------------------------------------------------------
 
 public:
-    bool init(const char* const filename, const char* const name, const int64_t uniqueId, const uint options)
+    bool init(const CarlaPluginPtr plugin,
+              const char* const filename, const char* const name, const int64_t uniqueId, const uint options)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -2564,7 +2565,7 @@ public:
         // ---------------------------------------------------------------
         // register client
 
-        pData->client = pData->engine->addClient(this);
+        pData->client = pData->engine->addClient(plugin);
 
         if (pData->client == nullptr || ! pData->client->isOk())
         {
@@ -2864,22 +2865,20 @@ CARLA_BACKEND_END_NAMESPACE
 
 CARLA_BACKEND_START_NAMESPACE
 
-CarlaPlugin* CarlaPlugin::newVST2(const Initializer& init)
+CarlaPluginPtr CarlaPlugin::newVST2(const Initializer& init)
 {
-    carla_debug("CarlaPlugin::newVST2({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.uniqueId);
+    carla_debug("CarlaPlugin::newVST2({%p, \"%s\", \"%s\", " P_INT64 "})",
+                init.engine, init.filename, init.name, init.uniqueId);
 
 #ifdef USE_JUCE_FOR_VST2
     if (std::getenv("CARLA_DO_NOT_USE_JUCE_FOR_VST2") == nullptr)
         return newJuce(init, "VST2");
 #endif
 
-    CarlaPluginVST2* const plugin(new CarlaPluginVST2(init.engine, init.id));
+    std::shared_ptr<CarlaPluginVST2> plugin(new CarlaPluginVST2(init.engine, init.id));
 
-    if (! plugin->init(init.filename, init.name, init.uniqueId, init.options))
-    {
-        delete plugin;
+    if (! plugin->init(plugin, init.filename, init.name, init.uniqueId, init.options))
         return nullptr;
-    }
 
     return plugin;
 }

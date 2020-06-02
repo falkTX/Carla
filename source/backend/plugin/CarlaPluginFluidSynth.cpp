@@ -118,7 +118,7 @@ public:
         pData->masterMutex.lock();
 
         if (pData->client != nullptr && pData->client->isActive())
-            pData->client->deactivate();
+            pData->client->deactivate(true);
 
         if (pData->active)
         {
@@ -1655,7 +1655,8 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool init(const char* const filename, const char* const name, const char* const label, const uint options)
+    bool init(const CarlaPluginPtr plugin,
+              const char* const filename, const char* const name, const char* const label, const uint options)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -1723,7 +1724,7 @@ public:
         // ---------------------------------------------------------------
         // register client
 
-        pData->client = pData->engine->addClient(this);
+        pData->client = pData->engine->addClient(plugin);
 
         if (pData->client == nullptr || ! pData->client->isOk())
         {
@@ -1872,7 +1873,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------------------------------------------------------
 
-CarlaPlugin* CarlaPlugin::newFluidSynth(const Initializer& init, PluginType ptype, bool use16Outs)
+CarlaPluginPtr CarlaPlugin::newFluidSynth(const Initializer& init, PluginType ptype, bool use16Outs)
 {
     carla_debug("CarlaPlugin::newFluidSynth({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "}, %s)",
                 init.engine, init.filename, init.name, init.label, init.uniqueId, bool2str(use16Outs));
@@ -1899,13 +1900,10 @@ CarlaPlugin* CarlaPlugin::newFluidSynth(const Initializer& init, PluginType ptyp
     }
 #endif
 
-    CarlaPluginFluidSynth* const plugin(new CarlaPluginFluidSynth(init.engine, init.id,  use16Outs));
+    std::shared_ptr<CarlaPluginFluidSynth> plugin(new CarlaPluginFluidSynth(init.engine, init.id,  use16Outs));
 
-    if (! plugin->init(init.filename, init.name, init.label, init.options))
-    {
-        delete plugin;
+    if (! plugin->init(plugin, init.filename, init.name, init.label, init.options))
         return nullptr;
-    }
 
     return plugin;
 #else

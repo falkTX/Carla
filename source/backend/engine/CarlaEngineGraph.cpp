@@ -967,7 +967,7 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
     // process plugins
     for (uint i=0; i < data->curPluginCount; ++i)
     {
-        CarlaPlugin* const plugin = data->plugins[i].plugin;
+        const CarlaPluginPtr plugin = data->plugins[i].plugin;
 
         if (plugin == nullptr || ! plugin->isEnabled() || ! plugin->tryLock(isOffline))
             continue;
@@ -1450,7 +1450,7 @@ void removeNodeFromPatchbay(const bool sendHost, const bool sendOSC, CarlaEngine
 class CarlaPluginInstance : public AudioProcessor
 {
 public:
-    CarlaPluginInstance(CarlaEngine* const engine, CarlaPlugin* const plugin)
+    CarlaPluginInstance(CarlaEngine* const engine, const CarlaPluginPtr plugin)
         : kEngine(engine),
           fPlugin(plugin)
     {
@@ -1641,7 +1641,7 @@ public:
 
 private:
     CarlaEngine* const kEngine;
-    CarlaPlugin* fPlugin;
+    CarlaPluginPtr fPlugin;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginInstance)
 };
@@ -1862,10 +1862,10 @@ void PatchbayGraph::setOffline(const bool offline)
     graph.setNonRealtime(offline);
 }
 
-void PatchbayGraph::addPlugin(CarlaPlugin* const plugin)
+void PatchbayGraph::addPlugin(const CarlaPluginPtr plugin)
 {
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-    carla_debug("PatchbayGraph::addPlugin(%p)", plugin);
+    carla_debug("PatchbayGraph::addPlugin(%p)", plugin.get());
 
     CarlaPluginInstance* const instance(new CarlaPluginInstance(kEngine, plugin));
     AudioProcessorGraph::Node* const node(graph.addNode(instance));
@@ -1882,7 +1882,7 @@ void PatchbayGraph::addPlugin(CarlaPlugin* const plugin)
     addNodeToPatchbay(sendHost, sendOSC, kEngine, node, static_cast<int>(plugin->getId()), instance);
 }
 
-void PatchbayGraph::replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* const newPlugin)
+void PatchbayGraph::replacePlugin(const CarlaPluginPtr oldPlugin, const CarlaPluginPtr newPlugin)
 {
     CARLA_SAFE_ASSERT_RETURN(oldPlugin != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(newPlugin != nullptr,);
@@ -1914,10 +1914,10 @@ void PatchbayGraph::replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* con
     addNodeToPatchbay(sendHost, sendOSC, kEngine, node, static_cast<int>(newPlugin->getId()), instance);
 }
 
-void PatchbayGraph::renamePlugin(CarlaPlugin* const plugin, const char* const newName)
+void PatchbayGraph::renamePlugin(const CarlaPluginPtr plugin, const char* const newName)
 {
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-    carla_debug("PatchbayGraph::renamePlugin(%p)", plugin, newName);
+    carla_debug("PatchbayGraph::renamePlugin(%p)", plugin.get(), newName);
 
     AudioProcessorGraph::Node* const node(graph.getNodeForId(plugin->getPatchbayNodeId()));
     CARLA_SAFE_ASSERT_RETURN(node != nullptr,);
@@ -1932,10 +1932,10 @@ void PatchbayGraph::renamePlugin(CarlaPlugin* const plugin, const char* const ne
                       newName);
 }
 
-void PatchbayGraph::reconfigureForCV(CarlaPlugin* const plugin, const uint portIndex, bool added)
+void PatchbayGraph::reconfigureForCV(const CarlaPluginPtr plugin, const uint portIndex, bool added)
 {
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-    carla_debug("PatchbayGraph::reconfigureForCV(%p, %u, %s)", plugin, portIndex, bool2str(added));
+    carla_debug("PatchbayGraph::reconfigureForCV(%p, %u, %s)", plugin.get(), portIndex, bool2str(added));
 
     AudioProcessorGraph::Node* const node = graph.getNodeForId(plugin->getPatchbayNodeId());
     CARLA_SAFE_ASSERT_RETURN(node != nullptr,);
@@ -1986,10 +1986,10 @@ void PatchbayGraph::reconfigureForCV(CarlaPlugin* const plugin, const uint portI
     }
 }
 
-void PatchbayGraph::removePlugin(CarlaPlugin* const plugin)
+void PatchbayGraph::removePlugin(const CarlaPluginPtr plugin)
 {
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-    carla_debug("PatchbayGraph::removePlugin(%p)", plugin);
+    carla_debug("PatchbayGraph::removePlugin(%p)", plugin.get());
 
     AudioProcessorGraph::Node* const node(graph.getNodeForId(plugin->getPatchbayNodeId()));
     CARLA_SAFE_ASSERT_RETURN(node != nullptr,);
@@ -2005,7 +2005,7 @@ void PatchbayGraph::removePlugin(CarlaPlugin* const plugin)
     // Fix plugin Ids properties
     for (uint i=plugin->getId()+1, count=kEngine->getCurrentPluginCount(); i<count; ++i)
     {
-        CarlaPlugin* const plugin2(kEngine->getPlugin(i));
+        const CarlaPluginPtr plugin2 = kEngine->getPlugin(i);
         CARLA_SAFE_ASSERT_BREAK(plugin2 != nullptr);
 
         if (AudioProcessorGraph::Node* const node2 = graph.getNodeForId(plugin2->getPatchbayNodeId()))
@@ -2027,7 +2027,7 @@ void PatchbayGraph::removeAllPlugins()
 
     for (uint i=0, count=kEngine->getCurrentPluginCount(); i<count; ++i)
     {
-        CarlaPlugin* const plugin(kEngine->getPlugin(i));
+        const CarlaPluginPtr plugin = kEngine->getPlugin(i);
         CARLA_SAFE_ASSERT_CONTINUE(plugin != nullptr);
 
         AudioProcessorGraph::Node* const node(graph.getNodeForId(plugin->getPatchbayNodeId()));
@@ -2717,25 +2717,25 @@ void EngineInternalGraph::processRack(CarlaEngine::ProtectedData* const data, co
 // -----------------------------------------------------------------------
 // used for internal patchbay mode
 
-void EngineInternalGraph::addPlugin(CarlaPlugin* const plugin)
+void EngineInternalGraph::addPlugin(const CarlaPluginPtr plugin)
 {
     CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
     fPatchbay->addPlugin(plugin);
 }
 
-void EngineInternalGraph::replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* const newPlugin)
+void EngineInternalGraph::replacePlugin(const CarlaPluginPtr oldPlugin, const CarlaPluginPtr newPlugin)
 {
     CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
     fPatchbay->replacePlugin(oldPlugin, newPlugin);
 }
 
-void EngineInternalGraph::renamePlugin(CarlaPlugin* const plugin, const char* const newName)
+void EngineInternalGraph::renamePlugin(const CarlaPluginPtr plugin, const char* const newName)
 {
     CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
     fPatchbay->renamePlugin(plugin, newName);
 }
 
-void EngineInternalGraph::removePlugin(CarlaPlugin* const plugin)
+void EngineInternalGraph::removePlugin(const CarlaPluginPtr plugin)
 {
     CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
     fPatchbay->removePlugin(plugin);

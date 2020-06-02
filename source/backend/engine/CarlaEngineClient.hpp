@@ -20,6 +20,7 @@
 
 #include "CarlaEngine.hpp"
 #include "CarlaEnginePorts.hpp"
+#include "CarlaPlugin.hpp"
 
 #include "CarlaStringList.hpp"
 
@@ -37,7 +38,7 @@ struct CarlaEngineClient::ProtectedData {
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CarlaEngineCVSourcePortsForStandalone cvSourcePorts;
     EngineInternalGraph& egraph;
-    CarlaPlugin* const plugin;
+    CarlaPluginPtr plugin;
 #endif
 
     CarlaStringList audioInList;
@@ -48,10 +49,11 @@ struct CarlaEngineClient::ProtectedData {
     CarlaStringList eventOutList;
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-    ProtectedData(const CarlaEngine& eng, EngineInternalGraph& eg, CarlaPlugin* p) noexcept;
+    ProtectedData(const CarlaEngine& eng, EngineInternalGraph& eg, CarlaPluginPtr p) noexcept;
 #else
     ProtectedData(const CarlaEngine& eng) noexcept;
 #endif
+    ~ProtectedData();
 
     void addAudioPortName(bool isInput, const char* name);
     void addCVPortName(bool isInput, const char* name);
@@ -72,11 +74,14 @@ struct CarlaEngineClient::ProtectedData {
 class CarlaEngineClientForStandalone : public CarlaEngineClient
 {
 public:
-    CarlaEngineClientForStandalone(const CarlaEngine& engine, EngineInternalGraph& egraph, CarlaPlugin* const plugin)
+    CarlaEngineClientForStandalone(const CarlaEngine& engine,
+                                   EngineInternalGraph& egraph,
+                                   const CarlaPluginPtr plugin)
         : CarlaEngineClient(new ProtectedData(engine, egraph, plugin)) {}
 
     ~CarlaEngineClientForStandalone() noexcept override
     {
+        carla_debug("CarlaEngineClientForStandalone::~CarlaEngineClientForStandalone()");
         delete pData;
     }
 
@@ -86,7 +91,7 @@ protected:
         return pData->egraph.getPatchbayGraphOrNull();
     }
 
-    inline CarlaPlugin* getPlugin() const noexcept
+    inline CarlaPluginPtr getPlugin() const noexcept
     {
         return pData->plugin;
     }
@@ -103,6 +108,7 @@ public:
 
     ~CarlaEngineClientForBridge() override
     {
+        carla_debug("CarlaEngineClientForBridge::~CarlaEngineClientForBridge()");
         delete pData;
     }
 

@@ -36,7 +36,7 @@ struct CarlaEngineCVSourcePorts::ProtectedData {
     CarlaRecursiveMutex rmutex;
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     PatchbayGraph* graph;
-    CarlaPlugin* plugin;
+    CarlaPluginPtr plugin;
 #endif
     water::Array<CarlaEngineEventCV> cvs;
 
@@ -76,7 +76,7 @@ public:
     CarlaEngineCVSourcePortsForStandalone() : CarlaEngineCVSourcePorts() {}
     ~CarlaEngineCVSourcePortsForStandalone() override {}
 
-    inline void setGraphAndPlugin(PatchbayGraph* const graph, CarlaPlugin* const plugin) noexcept
+    inline void setGraphAndPlugin(PatchbayGraph* const graph, const CarlaPluginPtr plugin) noexcept
     {
         pData->graph = graph;
         pData->plugin = plugin;

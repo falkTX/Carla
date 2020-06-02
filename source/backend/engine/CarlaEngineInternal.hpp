@@ -33,6 +33,8 @@
 # include "water/memory/Atomic.h"
 #endif
 
+#include <vector>
+
 // FIXME only use CARLA_PREVENT_HEAP_ALLOCATION for structs
 // maybe separate macro
 
@@ -96,10 +98,10 @@ public:
     void processRack(CarlaEngine::ProtectedData* data, const float* inBuf[2], float* outBuf[2], uint32_t frames);
 
     // used for internal patchbay mode
-    void addPlugin(CarlaPlugin* plugin);
-    void replacePlugin(CarlaPlugin* oldPlugin, CarlaPlugin* newPlugin);
-    void renamePlugin(CarlaPlugin* plugin, const char* newName);
-    void removePlugin(CarlaPlugin* plugin);
+    void addPlugin(CarlaPluginPtr plugin);
+    void replacePlugin(CarlaPluginPtr oldPlugin, CarlaPluginPtr newPlugin);
+    void renamePlugin(CarlaPluginPtr plugin, const char* newName);
+    void removePlugin(CarlaPluginPtr plugin);
     void removeAllPlugins();
 
     bool isUsingExternalHost() const noexcept;
@@ -208,8 +210,12 @@ struct EngineNextAction {
 // EnginePluginData
 
 struct EnginePluginData {
-    CarlaPlugin* plugin;
+    CarlaPluginPtr plugin;
     float peaks[4];
+
+    EnginePluginData()
+        : plugin(nullptr),
+          peaks{0.0f, 0.0f, 0.0f, 0.0f} {}
 };
 
 // -----------------------------------------------------------------------
@@ -258,6 +264,7 @@ struct CarlaEngine::ProtectedData {
     float dspLoad;
 #endif
     float peaks[4];
+    std::vector<CarlaPluginPtr> pluginsToDelete;
 
     EngineInternalEvents events;
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -277,6 +284,10 @@ struct CarlaEngine::ProtectedData {
     void close();
 
     void initTime(const char* features);
+
+    // -------------------------------------------------------------------
+
+    void deletePluginsAsNeeded();
 
     // -------------------------------------------------------------------
 

@@ -2547,6 +2547,15 @@ void CarlaPlugin::restoreLV2State() noexcept
     carla_stderr2("Warning: restoreLV2State() called for non-implemented type");
 }
 
+void CarlaPlugin::prepareForDeletion() noexcept
+{
+    carla_debug("CarlaPlugin::prepareForDeletion");
+
+    const CarlaMutexLocker cml(pData->masterMutex);
+
+    pData->client->deactivate(true);
+}
+
 void CarlaPlugin::waitForBridgeSaveSignal() noexcept
 {
 }
@@ -2571,7 +2580,7 @@ CarlaPlugin::ScopedDisabler::ScopedDisabler(CarlaPlugin* const plugin) noexcept
         plugin->pData->enabled = false;
 
         if (plugin->pData->client->isActive())
-            plugin->pData->client->deactivate();
+            plugin->pData->client->deactivate(false);
     }
 }
 

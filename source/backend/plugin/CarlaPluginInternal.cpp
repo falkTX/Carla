@@ -722,7 +722,7 @@ CarlaPlugin::ProtectedData::~ProtectedData() noexcept
         {
             // must not happen
             carla_safe_assert("client->isActive()", __FILE__, __LINE__);
-            client->deactivate();
+            client->deactivate(true);
         }
 
         clearBuffers();

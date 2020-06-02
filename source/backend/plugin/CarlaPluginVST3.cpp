@@ -1,6 +1,6 @@
 /*
  * Carla VST3 Plugin
- * Copyright (C) 2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,9 +23,10 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------------------------------------------------------
 
-CarlaPlugin* CarlaPlugin::newVST3(const Initializer& init)
+CarlaPluginPtr CarlaPlugin::newVST3(const Initializer& init)
 {
-    carla_debug("CarlaPlugin::newVST3({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.uniqueId);
+    carla_debug("CarlaPlugin::newVST3({%p, \"%s\", \"%s\", " P_INT64 "})",
+                init.engine, init.filename, init.name, init.uniqueId);
 
 #ifdef USING_JUCE
     return newJuce(init, "VST3");

@@ -1,6 +1,6 @@
 /*
  * Carla LV2 Plugin
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -683,7 +683,7 @@ public:
         pData->masterMutex.lock();
 
         if (pData->client != nullptr && pData->client->isActive())
-            pData->client->deactivate();
+            pData->client->deactivate(true);
 
         if (pData->active)
         {
@@ -5321,7 +5321,7 @@ public:
         fInlineDisplayNeedsRedraw = true;
     }
 
-    const LV2_Inline_Display_Image_Surface* renderInlineDisplay(const uint32_t width, const uint32_t height)
+    const LV2_Inline_Display_Image_Surface* renderInlineDisplay(const uint32_t width, const uint32_t height) const
     {
         CARLA_SAFE_ASSERT_RETURN(fExt.inlineDisplay != nullptr && fExt.inlineDisplay->render != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(width > 0, nullptr);
@@ -5640,7 +5640,8 @@ public:
     // -------------------------------------------------------------------
 
 public:
-    bool init(const char* const name, const char* const uri, const uint options)
+    bool init(const CarlaPluginPtr plugin,
+              const char* const name, const char* const uri, const uint options)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -5828,7 +5829,7 @@ public:
         // ---------------------------------------------------------------
         // register client
 
-        pData->client = pData->engine->addClient(this);
+        pData->client = pData->engine->addClient(plugin);
 
         if (pData->client == nullptr || ! pData->client->isOk())
         {
@@ -7380,27 +7381,25 @@ bool CarlaPipeServerLV2::msgReceived(const char* const msg) noexcept
 
 // -------------------------------------------------------------------------------------------------------------------
 
-CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
+CarlaPluginPtr CarlaPlugin::newLV2(const Initializer& init)
 {
-    carla_debug("CarlaPlugin::newLV2({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.name, init.label, init.uniqueId);
+    carla_debug("CarlaPlugin::newLV2({%p, \"%s\", \"%s\", " P_INT64 "})",
+                init.engine, init.name, init.label, init.uniqueId);
 
-    CarlaPluginLV2* const plugin(new CarlaPluginLV2(init.engine, init.id));
+    std::shared_ptr<CarlaPluginLV2> plugin(new CarlaPluginLV2(init.engine, init.id));
 
-    if (! plugin->init(init.name, init.label, init.options))
-    {
-        delete plugin;
+    if (! plugin->init(plugin, init.name, init.label, init.options))
         return nullptr;
-    }
 
     return plugin;
 }
 
 // used in CarlaStandalone.cpp
-const void* carla_render_inline_display_lv2(CarlaPlugin* plugin, uint32_t width, uint32_t height);
+const void* carla_render_inline_display_lv2(const CarlaPluginPtr& plugin, uint32_t width, uint32_t height);
 
-const void* carla_render_inline_display_lv2(CarlaPlugin* plugin, uint32_t width, uint32_t height)
+const void* carla_render_inline_display_lv2(const CarlaPluginPtr& plugin, uint32_t width, uint32_t height)
 {
-    CarlaPluginLV2* const lv2Plugin = (CarlaPluginLV2*)plugin;
+    const std::shared_ptr<CarlaPluginLV2>& lv2Plugin((const std::shared_ptr<CarlaPluginLV2>&)plugin);
 
     return lv2Plugin->renderInlineDisplay(width, height);
 }

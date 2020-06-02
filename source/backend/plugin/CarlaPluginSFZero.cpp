@@ -1,6 +1,6 @@
 /*
  * Carla SFZero Plugin
- * Copyright (C) 2018-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2018-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -68,7 +68,7 @@ public:
         pData->masterMutex.lock();
 
         if (pData->client != nullptr && pData->client->isActive())
-            pData->client->deactivate();
+            pData->client->deactivate(true);
 
         if (pData->active)
         {
@@ -662,7 +662,8 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool init(const char* const filename, const char* const name, const char* const label, const uint options)
+    bool init(const CarlaPluginPtr plugin,
+              const char* const filename, const char* const name, const char* const label, const uint options)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -729,7 +730,7 @@ public:
         // ---------------------------------------------------------------
         // register client
 
-        pData->client = pData->engine->addClient(this);
+        pData->client = pData->engine->addClient(plugin);
 
         if (pData->client == nullptr || ! pData->client->isOk())
         {
@@ -770,7 +771,7 @@ private:
 
 // -------------------------------------------------------------------------------------------------------------------
 
-CarlaPlugin* CarlaPlugin::newSFZero(const Initializer& init)
+CarlaPluginPtr CarlaPlugin::newSFZero(const Initializer& init)
 {
     carla_debug("CarlaPluginSFZero::newSFZero({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "})",
                 init.engine, init.filename, init.name, init.label, init.uniqueId);
@@ -784,13 +785,10 @@ CarlaPlugin* CarlaPlugin::newSFZero(const Initializer& init)
         return nullptr;
     }
 
-    CarlaPluginSFZero* const plugin(new CarlaPluginSFZero(init.engine, init.id));
+    std::shared_ptr<CarlaPluginSFZero> plugin(new CarlaPluginSFZero(init.engine, init.id));
 
-    if (! plugin->init(init.filename, init.name, init.label, init.options))
-    {
-        delete plugin;
+    if (! plugin->init(plugin, init.filename, init.name, init.label, init.options))
         return nullptr;
-    }
 
     return plugin;
 }

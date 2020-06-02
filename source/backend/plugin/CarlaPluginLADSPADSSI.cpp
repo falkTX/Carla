@@ -1,6 +1,6 @@
 /*
  * Carla Plugin, LADSPA/DSSI implementation
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -326,7 +326,7 @@ public:
         pData->masterMutex.lock();
 
         if (pData->client != nullptr && pData->client->isActive())
-            pData->client->deactivate();
+            pData->client->deactivate(true);
 
         if (pData->active)
         {
@@ -2657,7 +2657,8 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool initLADSPA(const char* const filename, const char* name, const char* const label, const uint options,
+    bool initLADSPA(const CarlaPluginPtr plugin,
+                    const char* const filename, const char* name, const char* const label, const uint options,
                     const LADSPA_RDF_Descriptor* const rdfDescriptor)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
@@ -2740,10 +2741,11 @@ public:
             return false;
         }
 
-        return init2(filename, name, options, rdfDescriptor);
+        return init2(plugin, filename, name, options, rdfDescriptor);
     }
 
-    bool initDSSI(const char* const filename, const char* name, const char* const label, const uint options)
+    bool initDSSI(const CarlaPluginPtr plugin,
+                  const char* const filename, const char* name, const char* const label, const uint options)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -2845,10 +2847,11 @@ public:
             return false;
         }
 
-        return init2(filename, name, options, nullptr);
+        return init2(plugin, filename, name, options, nullptr);
     }
 
-    bool init2(const char* const filename, const char* name, const uint options,
+    bool init2(const CarlaPluginPtr plugin,
+               const char* const filename, const char* name, const uint options,
                const LADSPA_RDF_Descriptor* const rdfDescriptor)
     {
         // ---------------------------------------------------------------
@@ -2885,7 +2888,7 @@ public:
         // ---------------------------------------------------------------
         // register client
 
-        pData->client = pData->engine->addClient(this);
+        pData->client = pData->engine->addClient(plugin);
 
         if (pData->client == nullptr || ! pData->client->isOk())
         {
@@ -3126,34 +3129,28 @@ private:
 
 // -------------------------------------------------------------------------------------------------------------------
 
-CarlaPlugin* CarlaPlugin::newLADSPA(const Initializer& init, const LADSPA_RDF_Descriptor* const rdfDescriptor)
+CarlaPluginPtr CarlaPlugin::newLADSPA(const Initializer& init, const LADSPA_RDF_Descriptor* const rdfDescriptor)
 {
     carla_debug("CarlaPlugin::newLADSPA({%p, \"%s\", \"%s\", \"%s\", " P_INT64 ", %x}, %p)",
                 init.engine, init.filename, init.name, init.label, init.uniqueId, init.options, rdfDescriptor);
 
-    CarlaPluginLADSPADSSI* const plugin(new CarlaPluginLADSPADSSI(init.engine, init.id));
+    std::shared_ptr<CarlaPluginLADSPADSSI> plugin(new CarlaPluginLADSPADSSI(init.engine, init.id));
 
-    if (! plugin->initLADSPA(init.filename, init.name, init.label, init.options, rdfDescriptor))
-    {
-        delete plugin;
+    if (! plugin->initLADSPA(plugin, init.filename, init.name, init.label, init.options, rdfDescriptor))
         return nullptr;
-    }
 
     return plugin;
 }
 
-CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init)
+CarlaPluginPtr CarlaPlugin::newDSSI(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newDSSI({%p, \"%s\", \"%s\", \"%s\", " P_INT64 ", %x})",
                 init.engine, init.filename, init.name, init.label, init.uniqueId, init.options);
 
-    CarlaPluginLADSPADSSI* const plugin(new CarlaPluginLADSPADSSI(init.engine, init.id));
+    std::shared_ptr<CarlaPluginLADSPADSSI> plugin(new CarlaPluginLADSPADSSI(init.engine, init.id));
 
-    if (! plugin->initDSSI(init.filename, init.name, init.label, init.options))
-    {
-        delete plugin;
+    if (! plugin->initDSSI(plugin, init.filename, init.name, init.label, init.options))
         return nullptr;
-    }
 
     return plugin;
 }

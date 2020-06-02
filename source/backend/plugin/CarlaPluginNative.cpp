@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugin
- * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -312,7 +312,7 @@ public:
         pData->masterMutex.lock();
 
         if (pData->client != nullptr && pData->client->isActive())
-            pData->client->deactivate();
+            pData->client->deactivate(true);
 
         CARLA_ASSERT(! fIsProcessing);
 
@@ -2620,7 +2620,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    const NativeInlineDisplayImageSurface* renderInlineDisplay(const uint32_t width, const uint32_t height)
+    const NativeInlineDisplayImageSurface* renderInlineDisplay(const uint32_t width, const uint32_t height) const
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor->hints & NATIVE_PLUGIN_HAS_INLINE_DISPLAY, nullptr);
         CARLA_SAFE_ASSERT_RETURN(fDescriptor->render_inline_display, nullptr);
@@ -2774,7 +2774,8 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool init(const char* const name, const char* const label, const uint options)
+    bool init(const CarlaPluginPtr plugin,
+              const char* const name, const char* const label, const uint options)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -2859,7 +2860,7 @@ public:
         // ---------------------------------------------------------------
         // register client
 
-        pData->client = pData->engine->addClient(this);
+        pData->client = pData->engine->addClient(plugin);
 
         if (pData->client == nullptr || ! pData->client->isOk())
         {
@@ -3037,27 +3038,25 @@ private:
 
 // -----------------------------------------------------------------------
 
-CarlaPlugin* CarlaPlugin::newNative(const Initializer& init)
+CarlaPluginPtr CarlaPlugin::newNative(const Initializer& init)
 {
-    carla_debug("CarlaPlugin::newNative({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.label, init.uniqueId);
+    carla_debug("CarlaPlugin::newNative({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "})",
+                init.engine, init.filename, init.name, init.label, init.uniqueId);
 
-    CarlaPluginNative* const plugin(new CarlaPluginNative(init.engine, init.id));
+    std::shared_ptr<CarlaPluginNative> plugin(new CarlaPluginNative(init.engine, init.id));
 
-    if (! plugin->init(init.name, init.label, init.options))
-    {
-        delete plugin;
+    if (! plugin->init(plugin, init.name, init.label, init.options))
         return nullptr;
-    }
 
     return plugin;
 }
 
 // used in CarlaStandalone.cpp
-const void* carla_render_inline_display_internal(CarlaPlugin* plugin, uint32_t width, uint32_t height);
+const void* carla_render_inline_display_internal(const CarlaPluginPtr& plugin, uint32_t width, uint32_t height);
 
-const void* carla_render_inline_display_internal(CarlaPlugin* plugin, uint32_t  width, uint32_t height)
+const void* carla_render_inline_display_internal(const CarlaPluginPtr& plugin, uint32_t  width, uint32_t height)
 {
-    CarlaPluginNative* const nativePlugin = (CarlaPluginNative*)plugin;
+    const std::shared_ptr<CarlaPluginNative>& nativePlugin((const std::shared_ptr<CarlaPluginNative>&)plugin);
 
     return nativePlugin->renderInlineDisplay(width, height);
 }

@@ -745,7 +745,7 @@ public:
         return pData->cvs[ioffset].cvPort;
     }
 
-    void setGraphAndPlugin(PatchbayGraph* const graph, CarlaPlugin* const plugin) noexcept
+    void setGraphAndPlugin(PatchbayGraph* const graph, CarlaPluginPtr plugin) noexcept
     {
         pData->graph = graph;
         pData->plugin = plugin;
@@ -771,7 +771,7 @@ public:
     CarlaEngineJackClient(const CarlaEngine& engine,
                           EngineInternalGraph& egraph,
                           CarlaRecursiveMutex& rmutex,
-                          CarlaPlugin* const plugin,
+                          const CarlaPluginPtr plugin,
                           const CarlaString& mainClientName,
                           jack_client_t* const jackClient)
         : CarlaEngineClientForSubclassing(engine, egraph, plugin),
@@ -794,6 +794,7 @@ public:
           fPreRenameConnections(),
           fPreRenamePluginId(),
           fPreRenamePluginIcon(),
+          fReservedPluginPtr(),
 #endif
           fThreadSafeMetadataMutex(rmutex),
           fMainClientName(mainClientName)
@@ -913,9 +914,9 @@ public:
 #endif
     }
 
-    void deactivate() noexcept override
+    void deactivate(const bool willClose) noexcept override
     {
-        carla_debug("CarlaEngineJackClient::deactivate()");
+        carla_debug("CarlaEngineJackClient::deactivate(%s)", bool2str(willClose));
 
         if (getProcessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
@@ -926,7 +927,15 @@ public:
             } catch(...) {}
         }
 
-        CarlaEngineClient::deactivate();
+        if (willClose)
+        {
+            fCVSourcePorts.setGraphAndPlugin(nullptr, nullptr);
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+            fReservedPluginPtr = nullptr;
+#endif
+        }
+
+        CarlaEngineClient::deactivate(willClose);
     }
 
     bool isOk() const noexcept override
@@ -1071,7 +1080,7 @@ public:
         }
 
         fJackClient = nullptr;
-        CarlaEngineClient::deactivate();
+        CarlaEngineClient::deactivate(true);
     }
 
     const char* getJackClientName() const noexcept
@@ -1150,6 +1159,11 @@ public:
         fJackClient = newClient;
     }
 
+    void reservePluginPtr(CarlaPluginPtr* const pluginPtr)
+    {
+        fReservedPluginPtr = pluginPtr;
+    }
+
     void setNewPluginId(const uint id) const
     {
         // NOTE: no fThreadSafeMetadataMutex lock here, assumed done from caller
@@ -1189,6 +1203,8 @@ private:
     CarlaStringList fPreRenameConnections;
     CarlaString     fPreRenamePluginId;
     CarlaString     fPreRenamePluginIcon;
+
+    CarlaScopedPointer<CarlaPluginPtr> fReservedPluginPtr;
 
     template<typename T>
     bool _renamePorts(const LinkedList<T*>& t, const CarlaString& clientNamePrefix)
@@ -1885,11 +1901,13 @@ public:
     }
 #endif
 
-    CarlaEngineClient* addClient(CarlaPlugin* const plugin) override
+    CarlaEngineClient* addClient(CarlaPluginPtr plugin) override
     {
         jack_client_t* client = nullptr;
 
 #ifndef BUILD_BRIDGE
+        CarlaPluginPtr* pluginReserve = nullptr;
+
         if (pData->options.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
         {
             client = fClient;
@@ -1937,13 +1955,14 @@ public:
             }
 
 #ifndef BUILD_BRIDGE
+            pluginReserve = new CarlaPluginPtr(plugin);
             /*
-            jackbridge_set_buffer_size_callback(fClient, carla_jack_bufsize_callback_plugin, plugin);
-            jackbridge_set_sample_rate_callback(fClient, carla_jack_srate_callback_plugin, plugin);
+            jackbridge_set_buffer_size_callback(fClient, carla_jack_bufsize_callback_plugin, pluginReserve);
+            jackbridge_set_sample_rate_callback(fClient, carla_jack_srate_callback_plugin, pluginReserve);
             */
-            jackbridge_set_latency_callback(client, carla_jack_latency_callback_plugin, plugin);
-            jackbridge_set_process_callback(client, carla_jack_process_callback_plugin, plugin);
-            jackbridge_on_shutdown(client, carla_jack_shutdown_callback_plugin, plugin);
+            jackbridge_set_latency_callback(client, carla_jack_latency_callback_plugin, pluginReserve);
+            jackbridge_set_process_callback(client, carla_jack_process_callback_plugin, pluginReserve);
+            jackbridge_on_shutdown(client, carla_jack_shutdown_callback_plugin, pluginReserve);
 #else
             fClient = client;
             pData->bufferSize = jackbridge_get_buffer_size(client);
@@ -1962,7 +1981,16 @@ public:
         }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-        return new CarlaEngineJackClient(*this, pData->graph, fThreadSafeMetadataMutex, plugin, fClientName, client);
+        CarlaEngineJackClient* const jclient = new CarlaEngineJackClient(*this,
+                                                                         pData->graph,
+                                                                         fThreadSafeMetadataMutex,
+                                                                         plugin, fClientName, client);
+# ifndef BUILD_BRIDGE
+        if (pluginReserve != nullptr)
+            jclient->reservePluginPtr(pluginReserve);
+# endif
+        return jclient;
+
 #else
         return new CarlaEngineJackClient(*this, fThreadSafeMetadataMutex, fClientName, client);
 #endif
@@ -1978,7 +2006,7 @@ public:
 
         for (uint i=id; i < pData->curPluginCount; ++i)
         {
-            CarlaPlugin* const plugin = pData->plugins[i].plugin;
+            const CarlaPluginPtr plugin = pData->plugins[i].plugin;
             CARLA_SAFE_ASSERT_BREAK(plugin != nullptr);
 
             CarlaEngineJackClient* const client = dynamic_cast<CarlaEngineJackClient*>(plugin->getEngineClient());
@@ -1995,10 +2023,10 @@ public:
         if (! CarlaEngine::switchPlugins(idA, idB))
             return false;
 
-        CarlaPlugin* const newPluginA(pData->plugins[idA].plugin);
+        CarlaPluginPtr newPluginA = pData->plugins[idA].plugin;
         CARLA_SAFE_ASSERT_RETURN(newPluginA != nullptr, true);
 
-        CarlaPlugin* const newPluginB(pData->plugins[idB].plugin);
+        CarlaPluginPtr newPluginB = pData->plugins[idB].plugin;
         CARLA_SAFE_ASSERT_RETURN(newPluginB != nullptr, true);
 
         CarlaEngineJackClient* const clientA = dynamic_cast<CarlaEngineJackClient*>(newPluginA->getEngineClient());
@@ -2029,7 +2057,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(id < pData->curPluginCount, false);
         CARLA_SAFE_ASSERT_RETURN(newName != nullptr && newName[0] != '\0', false);
 
-        CarlaPlugin* const plugin(pData->plugins[id].plugin);
+        CarlaPluginPtr plugin = pData->plugins[id].plugin;
         CARLA_SAFE_ASSERT_RETURN_ERR(plugin != nullptr, "Could not find plugin to rename");
         CARLA_SAFE_ASSERT_RETURN_ERR(plugin->getId() == id, "Invalid engine internal data");
 
@@ -2089,9 +2117,11 @@ public:
                 plugin->setEnabled(false);
 
                 // set new client data
-                jackbridge_set_latency_callback(jackClient, carla_jack_latency_callback_plugin, plugin);
-                jackbridge_set_process_callback(jackClient, carla_jack_process_callback_plugin, plugin);
-                jackbridge_on_shutdown(jackClient, carla_jack_shutdown_callback_plugin, plugin);
+                CarlaPluginPtr* const pluginReserve = new CarlaPluginPtr(plugin);
+                client->reservePluginPtr(pluginReserve);
+                jackbridge_set_latency_callback(jackClient, carla_jack_latency_callback_plugin, pluginReserve);
+                jackbridge_set_process_callback(jackClient, carla_jack_process_callback_plugin, pluginReserve);
+                jackbridge_on_shutdown(jackClient, carla_jack_shutdown_callback_plugin, pluginReserve);
 
                 // NOTE: jack1 locks up here
                 if (jackbridge_get_version_string() != nullptr)
@@ -2736,7 +2766,7 @@ protected:
         CARLA_SAFE_ASSERT_INT2_RETURN(nframes == pData->bufferSize, nframes, pData->bufferSize,);
 
 #ifdef BUILD_BRIDGE
-        CarlaPlugin* const plugin(pData->plugins[0].plugin);
+        CarlaPluginPtr plugin = pData->plugins[0].plugin;
 
         if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock(fFreewheel))
         {
@@ -2829,7 +2859,7 @@ protected:
         {
             for (uint i=0; i < pData->curPluginCount; ++i)
             {
-                CarlaPlugin* const plugin(pData->plugins[i].plugin);
+                CarlaPluginPtr plugin = pData->plugins[i].plugin;
 
                 if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock(fFreewheel))
                 {
@@ -2943,8 +2973,11 @@ protected:
                             // set first byte
                             mdataTmp[0] = static_cast<uint8_t>(midiEvent.data[0] | (engineEvent.channel & MIDI_CHANNEL_BIT));
 
-                            // copy rest
-                            carla_copy<uint8_t>(mdataTmp+1, midiEvent.data+1, size-1U);
+                            if (size > 1)
+                            {
+                                // copy rest
+                                carla_copy<uint8_t>(mdataTmp+1, midiEvent.data+1, size-1U);
+                            }
 
                             // done
                             mdataPtr = mdataTmp;
@@ -3339,7 +3372,7 @@ protected:
 
         for (uint i=0; i < pData->curPluginCount; ++i)
         {
-            if (CarlaPlugin* const plugin = pData->plugins[i].plugin)
+            if (CarlaPluginPtr plugin = pData->plugins[i].plugin)
             {
                 plugin->tryLock(true);
 
@@ -3794,7 +3827,7 @@ private:
 
     // -------------------------------------------------------------------
 
-    void processPlugin(CarlaPlugin* const plugin, const uint32_t nframes)
+    void processPlugin(CarlaPluginPtr& plugin, const uint32_t nframes)
     {
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         CarlaEngineJackClient* const client = (CarlaEngineJackClient*)plugin->getEngineClient();
@@ -4230,7 +4263,10 @@ private:
 #ifndef BUILD_BRIDGE
     static int JACKBRIDGE_API carla_jack_process_callback_plugin(jack_nframes_t nframes, void* arg) __attribute__((annotate("realtime")))
     {
-        CarlaPlugin* const plugin((CarlaPlugin*)arg);
+        CarlaPluginPtr* const pluginPtr = static_cast<CarlaPluginPtr*>(arg);
+        CARLA_SAFE_ASSERT_RETURN(pluginPtr != nullptr, 0);
+
+        CarlaPluginPtr plugin = *pluginPtr;
         CARLA_SAFE_ASSERT_RETURN(plugin != nullptr && plugin->isEnabled(), 0);
 
         CarlaEngineJack* const engine((CarlaEngineJack*)plugin->getEngine());

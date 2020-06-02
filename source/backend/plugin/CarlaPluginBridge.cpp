@@ -424,7 +424,7 @@ public:
         pData->masterMutex.lock();
 
         if (pData->client != nullptr && pData->client->isActive())
-            pData->client->deactivate();
+            pData->client->deactivate(true);
 
         if (pData->active)
         {
@@ -2469,7 +2469,8 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool init(const char* const filename,
+    bool init(CarlaPluginPtr plugin,
+              const char* const filename,
               const char* const name,
               const char* const label,
               const int64_t uniqueId,
@@ -2600,7 +2601,7 @@ public:
                 pData->name = pData->engine->getUniquePluginName("unknown");
         }
 
-        pData->client = pData->engine->addClient(this);
+        pData->client = pData->engine->addClient(plugin);
 
         if (pData->client == nullptr || ! pData->client->isOk())
         {
@@ -3047,9 +3048,12 @@ CARLA_BACKEND_END_NAMESPACE
 
 CARLA_BACKEND_START_NAMESPACE
 
-CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, PluginType ptype, const char* bridgeBinary)
+CarlaPluginPtr CarlaPlugin::newBridge(const Initializer& init,
+                                      BinaryType btype, PluginType ptype, const char* bridgeBinary)
 {
-    carla_debug("CarlaPlugin::newBridge({%p, \"%s\", \"%s\", \"%s\"}, %s, %s, \"%s\")", init.engine, init.filename, init.name, init.label, BinaryType2Str(btype), PluginType2Str(ptype), bridgeBinary);
+    carla_debug("CarlaPlugin::newBridge({%p, \"%s\", \"%s\", \"%s\"}, %s, %s, \"%s\")",
+                init.engine, init.filename, init.name, init.label,
+                BinaryType2Str(btype), PluginType2Str(ptype), bridgeBinary);
 
     if (bridgeBinary == nullptr || bridgeBinary[0] == '\0')
     {
@@ -3063,13 +3067,10 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
         ++bridgeBinary;
 #endif
 
-    CarlaPluginBridge* const plugin(new CarlaPluginBridge(init.engine, init.id, btype, ptype));
+    std::shared_ptr<CarlaPluginBridge> plugin(new CarlaPluginBridge(init.engine, init.id, btype, ptype));
 
-    if (! plugin->init(init.filename, init.name, init.label, init.uniqueId, init.options, bridgeBinary))
-    {
-        delete plugin;
+    if (! plugin->init(plugin, init.filename, init.name, init.label, init.uniqueId, init.options, bridgeBinary))
         return nullptr;
-    }
 
     return plugin;
 }

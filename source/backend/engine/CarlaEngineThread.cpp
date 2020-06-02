@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -73,7 +73,7 @@ void CarlaEngineThread::run() noexcept
 
         for (uint i=0, count = kEngine->getCurrentPluginCount(); i < count; ++i)
         {
-            CarlaPlugin* const plugin(kEngine->getPluginUnchecked(i));
+            const CarlaPluginPtr plugin = kEngine->getPluginUnchecked(i);
 
             CARLA_SAFE_ASSERT_CONTINUE(plugin != nullptr && plugin->isEnabled());
             CARLA_SAFE_ASSERT_UINT2(i == plugin->getId(), i, plugin->getId());

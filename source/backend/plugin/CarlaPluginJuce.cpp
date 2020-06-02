@@ -89,7 +89,7 @@ public:
         pData->masterMutex.lock();
 
         if (pData->client != nullptr && pData->client->isActive())
-            pData->client->deactivate();
+            pData->client->deactivate(true);
 
         if (pData->active)
         {
@@ -1248,7 +1248,9 @@ protected:
     // -------------------------------------------------------------------
 
 public:
-    bool init(const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const uint options, const char* const format)
+    bool init(const CarlaPluginPtr plugin,
+              const char* const filename, const char* const name, const char* const label,
+              const int64_t uniqueId, const uint options, const char* const format)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -1386,7 +1388,7 @@ public:
         // ---------------------------------------------------------------
         // register client
 
-        pData->client = pData->engine->addClient(this);
+        pData->client = pData->engine->addClient(plugin);
 
         if (pData->client == nullptr || ! pData->client->isOk())
         {
@@ -1482,18 +1484,16 @@ CARLA_BACKEND_END_NAMESPACE
 
 CARLA_BACKEND_START_NAMESPACE
 
-CarlaPlugin* CarlaPlugin::newJuce(const Initializer& init, const char* const format)
+CarlaPluginPtr CarlaPlugin::newJuce(const Initializer& init, const char* const format)
 {
-    carla_debug("CarlaPlugin::newJuce({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "}, %s)", init.engine, init.filename, init.name, init.label, init.uniqueId, format);
+    carla_debug("CarlaPlugin::newJuce({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "}, %s)",
+                init.engine, init.filename, init.name, init.label, init.uniqueId, format);
 
 #ifdef USING_JUCE
-    CarlaPluginJuce* const plugin(new CarlaPluginJuce(init.engine, init.id));
+    std::shared_ptr<CarlaPluginJuce> plugin(new CarlaPluginJuce(init.engine, init.id));
 
-    if (! plugin->init(init.filename, init.name, init.label, init.uniqueId, init.options, format))
-    {
-        delete plugin;
+    if (! plugin->init(plugin, init.filename, init.name, init.label, init.uniqueId, init.options, format))
         return nullptr;
-    }
 
     return plugin;
 #else

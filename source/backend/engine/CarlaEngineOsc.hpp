@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -27,7 +27,10 @@
 #include "CarlaOscUtils.hpp"
 #include "CarlaString.hpp"
 
-#define CARLA_ENGINE_OSC_HANDLE_ARGS CarlaPlugin* const plugin, const int argc, const lo_arg* const* const argv, const char* const types
+#include <memory>
+
+#define CARLA_ENGINE_OSC_HANDLE_ARGS const CarlaPluginPtr& plugin, \
+  const int argc, const lo_arg* const* const argv, const char* const types
 
 #define CARLA_ENGINE_OSC_CHECK_OSC_TYPES(/* argc, types, */ argcToCompare, typesToCompare)                                     \
     /* check argument count */                                                                                                 \
@@ -53,6 +56,8 @@
     }
 
 CARLA_BACKEND_START_NAMESPACE
+
+typedef std::shared_ptr<CarlaPlugin> CarlaPluginPtr;
 
 // -----------------------------------------------------------------------
 
@@ -96,15 +101,15 @@ public:
     void sendCallback(EngineCallbackOpcode action, uint pluginId,
                       int value1, int value2, int value3,
                       float valuef, const char* valueStr) const noexcept;
-    void sendPluginInfo(const CarlaPlugin* plugin) const noexcept;
-    void sendPluginPortCount(const CarlaPlugin* plugin) const noexcept;
-    void sendPluginParameterInfo(const CarlaPlugin* plugin, uint32_t index) const noexcept;
-    void sendPluginDataCount(const CarlaPlugin* plugin) const noexcept;
-    void sendPluginProgramCount(const CarlaPlugin* plugin) const noexcept;
-    void sendPluginProgram(const CarlaPlugin* plugin, uint32_t index) const noexcept;
-    void sendPluginMidiProgram(const CarlaPlugin* plugin, uint32_t index) const noexcept;
-    void sendPluginCustomData(const CarlaPlugin* plugin, uint32_t index) const noexcept;
-    void sendPluginInternalParameterValues(const CarlaPlugin* plugin) const noexcept;
+    void sendPluginInfo(const CarlaPluginPtr& plugin) const noexcept;
+    void sendPluginPortCount(const CarlaPluginPtr& plugin) const noexcept;
+    void sendPluginParameterInfo(const CarlaPluginPtr& plugin, uint32_t index) const noexcept;
+    void sendPluginDataCount(const CarlaPluginPtr& plugin) const noexcept;
+    void sendPluginProgramCount(const CarlaPluginPtr& plugin) const noexcept;
+    void sendPluginProgram(const CarlaPluginPtr& plugin, uint32_t index) const noexcept;
+    void sendPluginMidiProgram(const CarlaPluginPtr& plugin, uint32_t index) const noexcept;
+    void sendPluginCustomData(const CarlaPluginPtr& plugin, uint32_t index) const noexcept;
+    void sendPluginInternalParameterValues(const CarlaPluginPtr& plugin) const noexcept;
     void sendPing() const noexcept;
     void sendResponse(int messageId, const char* error) const noexcept;
     void sendExit() const noexcept;

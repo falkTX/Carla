@@ -122,7 +122,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     }
 
     // Get plugin
-    CarlaPlugin* const plugin(fEngine->getPluginUnchecked(pluginId));
+    const CarlaPluginPtr plugin = fEngine->getPluginUnchecked(pluginId);
 
     if (plugin == nullptr || plugin->getId() != pluginId)
     {
@@ -239,7 +239,7 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP,
 
             for (uint i=0, count=fEngine->getCurrentPluginCount(); i < count; ++i)
             {
-                CarlaPlugin* const plugin(fEngine->getPluginUnchecked(i));
+                const CarlaPluginPtr plugin = fEngine->getPluginUnchecked(i);
                 CARLA_SAFE_ASSERT_CONTINUE(plugin != nullptr);
 
                 fEngine->callback(false, true, ENGINE_CALLBACK_PLUGIN_ADDED, i, 0, 0, 0, 0.0f, plugin->getName());

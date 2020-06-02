@@ -1,6 +1,6 @@
 /*
  * Carla LV2 Single Plugin
- * Copyright (C) 2017-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2017-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -144,6 +144,8 @@ public:
     {
         if (fPlugin != nullptr && fIsActive)
             fPlugin->setActive(false, false, false);
+
+        fPlugin = nullptr;
 
         close();
     }
@@ -496,7 +498,7 @@ protected:
     // ----------------------------------------------------------------------------------------------------------------
 
 private:
-    CarlaPlugin* fPlugin;
+    std::shared_ptr<CarlaPlugin> fPlugin;
     CarlaString fUiName;
 
 #ifdef USING_JUCE

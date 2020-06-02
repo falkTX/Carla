@@ -1,6 +1,6 @@
 /*
  * Carla Plugin JACK
- * Copyright (C) 2016-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -504,7 +504,7 @@ public:
         pData->masterMutex.lock();
 
         if (pData->client != nullptr && pData->client->isActive())
-            pData->client->deactivate();
+            pData->client->deactivate(true);
 
         if (pData->active)
         {
@@ -1514,7 +1514,8 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool init(const char* const filename, const char* const name, const char* const label)
+    bool init(const CarlaPluginPtr plugin,
+              const char* const filename, const char* const name, const char* const label)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -1657,7 +1658,7 @@ public:
         if (pData->name == nullptr)
             pData->name = pData->engine->getUniquePluginName("unknown");
 
-        pData->client = pData->engine->addClient(this);
+        pData->client = pData->engine->addClient(plugin);
 
         if (pData->client == nullptr || ! pData->client->isOk())
         {
@@ -1922,18 +1923,15 @@ CARLA_BACKEND_END_NAMESPACE
 
 CARLA_BACKEND_START_NAMESPACE
 
-CarlaPlugin* CarlaPlugin::newJackApp(const Initializer& init)
+CarlaPluginPtr CarlaPlugin::newJackApp(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newJackApp({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
 
 #ifdef CARLA_OS_LINUX
-    CarlaPluginJack* const plugin(new CarlaPluginJack(init.engine, init.id));
+    std::shared_ptr<CarlaPluginJack> plugin(new CarlaPluginJack(init.engine, init.id));
 
-    if (! plugin->init(init.filename, init.name, init.label))
-    {
-        delete plugin;
+    if (! plugin->init(plugin, init.filename, init.name, init.label))
         return nullptr;
-    }
 
     return plugin;
 #else
