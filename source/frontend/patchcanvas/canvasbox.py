@@ -22,9 +22,17 @@
 from sip import voidptr
 from struct import pack
 
-from PyQt5.QtCore import qCritical, Qt, QPointF, QRectF, QTimer
+from PyQt5.QtCore import qCritical, QT_VERSION, Qt, QPointF, QRectF, QTimer
 from PyQt5.QtGui import QCursor, QFont, QFontMetrics, QImage, QLinearGradient, QPainter, QPen
 from PyQt5.QtWidgets import QGraphicsItem, QMenu
+
+# ------------------------------------------------------------------------------------------------------------
+# Backwards-compatible horizontalAdvance/width call, depending on Qt version
+
+def fontHorizontalAdvance(font, string):
+    if QT_VERSION >= 0x51100:
+        return QFontMetrics(font).horizontalAdvance(string)
+    return QFontMetrics(font).width(string)
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -299,7 +307,7 @@ class CanvasBox(QGraphicsItem):
         self.prepareGeometryChange()
 
         # Check Text Name size
-        app_name_size = QFontMetrics(self.m_font_name).width(self.m_group_name) + 30
+        app_name_size = fontHorizontalAdvance(self.m_font_name, self.m_group_name) + 30
         self.p_width = max(200 if self.m_plugin_inline != self.INLINE_DISPLAY_DISABLED else 50, app_name_size)
 
         # Get Port List
@@ -326,7 +334,7 @@ class CanvasBox(QGraphicsItem):
                     if port.port_type != port_type:
                         continue
 
-                    size = QFontMetrics(self.m_font_port).width(port.port_name)
+                    size = fontHorizontalAdvance(self.m_font_port, port.port_name)
 
                     if port.port_mode == PORT_MODE_INPUT:
                         max_in_width = max(max_in_width, size)
@@ -690,7 +698,7 @@ class CanvasBox(QGraphicsItem):
         if canvas.theme.box_use_icon:
             textPos = QPointF(25, canvas.theme.box_text_ypos)
         else:
-            appNameSize = QFontMetrics(self.m_font_name).width(self.m_group_name)
+            appNameSize = fontHorizontalAdvance(self.m_font_name, self.m_group_name)
             rem = self.p_width - appNameSize
             textPos = QPointF(rem/2, canvas.theme.box_text_ypos)
 
