@@ -123,7 +123,7 @@ public:
     }
 
     template <class U>
-    shared_ptr(const shared_ptr<U>& ptr) noexcept : (see comment below)
+    shared_ptr(const shared_ptr<U>& ptr) noexcept :
         px(nullptr),
         pn(ptr.pn)
     {
@@ -131,7 +131,7 @@ public:
         acquire(static_cast<typename shared_ptr<T>::element_type*>(ptr.px));
     }
 
-    shared_ptr(const shared_ptr& ptr) noexcept : (see comment below)
+    shared_ptr(const shared_ptr& ptr) noexcept :
         px(nullptr),
         pn(ptr.pn)
     {
