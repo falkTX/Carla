@@ -52,7 +52,7 @@ void CarlaEngineOsc::sendPluginInfo(const CarlaPluginPtr& plugin) const noexcept
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-    carla_stdout("CarlaEngineOsc::sendPluginInfo(%p)", plugin);
+    carla_stdout("CarlaEngineOsc::sendPluginInfo(%p)", plugin.get());
 
     char bufRealName[STR_MAX+1], bufLabel[STR_MAX+1], bufMaker[STR_MAX+1], bufCopyright[STR_MAX+1];
     carla_zeroChars(bufRealName, STR_MAX+1);
@@ -100,7 +100,7 @@ void CarlaEngineOsc::sendPluginPortCount(const CarlaPluginPtr& plugin) const noe
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-    carla_stdout("CarlaEngineOsc::sendPluginPortCount(%p)", plugin);
+    carla_stdout("CarlaEngineOsc::sendPluginPortCount(%p)", plugin.get());
 
     uint32_t paramIns, paramOuts;
     plugin->getParameterCountInfo(paramIns, paramOuts);
@@ -195,7 +195,7 @@ void CarlaEngineOsc::sendPluginDataCount(const CarlaPluginPtr& plugin) const noe
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-    carla_stdout("CarlaEngineOsc::sendPluginDataCount(%p)", plugin);
+    carla_stdout("CarlaEngineOsc::sendPluginDataCount(%p)", plugin.get());
 
     char targetPath[std::strlen(fControlDataTCP.path)+7];
     std::strcpy(targetPath, fControlDataTCP.path);
@@ -214,7 +214,7 @@ void CarlaEngineOsc::sendPluginProgramCount(const CarlaPluginPtr& plugin) const 
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-    carla_stdout("CarlaEngineOsc::sendPluginDataCount(%p)", plugin);
+    carla_stdout("CarlaEngineOsc::sendPluginDataCount(%p)", plugin.get());
 
     char targetPath[std::strlen(fControlDataTCP.path)+7];
     std::strcpy(targetPath, fControlDataTCP.path);
@@ -284,7 +284,7 @@ void CarlaEngineOsc::sendPluginInternalParameterValues(const CarlaPluginPtr& plu
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.path != nullptr && fControlDataTCP.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(fControlDataTCP.target != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
-    carla_debug("CarlaEngineOsc::sendPluginInternalParameterValues(%p)", plugin);
+    carla_debug("CarlaEngineOsc::sendPluginInternalParameterValues(%p)", plugin.get());
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     static_assert(PARAMETER_ACTIVE == -2 && PARAMETER_MAX == -9, "Incorrect data");
