@@ -19,9 +19,6 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from sip import voidptr
-from struct import pack
-
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, qCritical, QT_VERSION, Qt, QPointF, QRectF, QTimer
 from PyQt5.QtGui import QCursor, QFont, QFontMetrics, QImage, QLinearGradient, QPainter, QPen
 from PyQt5.QtWidgets import QGraphicsItem, QGraphicsObject, QMenu
@@ -118,7 +115,6 @@ class CanvasBox(QGraphicsObject):
         self.m_cursor_moving = False
         self.m_forced_split = False
         self.m_mouse_down = False
-        self.m_inline_data = None
         self.m_inline_image = None
         self.m_inline_scaling = 1.0
         self.m_inline_first = True
@@ -199,7 +195,6 @@ class CanvasBox(QGraphicsObject):
 
     def removeAsPlugin(self):
         #del self.m_inline_image
-        #self.m_inline_data = None
         #self.m_inline_image = None
         #self.m_inline_scaling = 1.0
 
@@ -213,7 +208,6 @@ class CanvasBox(QGraphicsObject):
 
         if not hasInlineDisplay:
             del self.m_inline_image
-            self.m_inline_data = None
             self.m_inline_image = None
             self.m_inline_scaling = 1.0
 
@@ -765,11 +759,8 @@ class CanvasBox(QGraphicsObject):
             if data is None:
                 return
 
-            new_inline_data      = pack("%iB" % (data['height'] * data['stride']), *data['data'])
-            self.m_inline_image  = QImage(voidptr(new_inline_data),
-                                          data['width'], data['height'], data['stride'],
-                                          QImage.Format_ARGB32)
-            self.m_inline_data    = new_inline_data
+            self.m_inline_image   = QImage(data['data'], data['width'], data['height'], data['stride'],
+                                           QImage.Format_ARGB32)
             self.m_inline_scaling = scaling
             self.m_plugin_inline  = self.INLINE_DISPLAY_CACHED
 

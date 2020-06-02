@@ -22,6 +22,7 @@
 from abc import abstractmethod
 from ctypes import *
 from platform import architecture
+from struct import pack
 from sys import platform, maxsize
 
 # ------------------------------------------------------------------------------------------------------------
@@ -3107,7 +3108,7 @@ class CarlaHostDLL(CarlaHostMeta):
             return None
         contents = ptr.contents
         datalen = contents.height * contents.stride
-        databuf = tuple(contents.data[i] for i in range(datalen))
+        databuf = pack("%iB" % datalen, *contents.data[:datalen])
         data = {
             'data': databuf,
             'width': contents.width,
