@@ -42,7 +42,7 @@ using water::XmlElement;
 
 CARLA_BACKEND_START_NAMESPACE
 
-// -------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------
 // Fallback data
 
 static const ParameterData   kParameterDataNull   = { PARAMETER_UNKNOWN, 0x0, PARAMETER_NULL, -1, 0, CONTROL_INDEX_NONE, 0.0f, 1.0f };
@@ -53,7 +53,7 @@ static const CustomData        kCustomDataFallback        = { nullptr, nullptr, 
 static /* */ CustomData        kCustomDataFallbackNC      = { nullptr, nullptr, nullptr };
 static const PluginPostRtEvent kPluginPostRtEventFallback = { kPluginPostRtEventNull, false, 0, 0, 0, 0.0f };
 
-// -------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------
 // ParamSymbol struct, needed for CarlaPlugin::loadStateSave()
 
 struct ParamSymbol {
@@ -78,7 +78,7 @@ struct ParamSymbol {
 #endif
 };
 
-// -------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------
 // Constructor and destructor
 
 CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const uint id)

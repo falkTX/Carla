@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,6 +20,7 @@
 
 #include "CarlaEngineThread.hpp"
 #include "CarlaEngineUtils.hpp"
+#include "CarlaPlugin.hpp"
 #include "LinkedList.hpp"
 
 #ifndef BUILD_BRIDGE
@@ -215,7 +216,14 @@ struct EnginePluginData {
 
     EnginePluginData()
         : plugin(nullptr),
+#ifdef CARLA_PROPER_CPP11_SUPPORT
           peaks{0.0f, 0.0f, 0.0f, 0.0f} {}
+#else
+          peaks()
+    {
+        carla_zeroStruct(peaks);
+    }
+#endif
 };
 
 // -----------------------------------------------------------------------
@@ -275,8 +283,8 @@ struct CarlaEngine::ProtectedData {
 
     // -------------------------------------------------------------------
 
-    ProtectedData(CarlaEngine* engine) noexcept;
-    ~ProtectedData() noexcept;
+    ProtectedData(CarlaEngine* engine);
+    ~ProtectedData();
 
     // -------------------------------------------------------------------
 

@@ -498,7 +498,7 @@ protected:
     // ----------------------------------------------------------------------------------------------------------------
 
 private:
-    std::shared_ptr<CarlaPlugin> fPlugin;
+    CarlaPluginPtr fPlugin;
     CarlaString fUiName;
 
 #ifdef USING_JUCE

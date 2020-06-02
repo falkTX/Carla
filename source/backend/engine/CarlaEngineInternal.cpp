@@ -373,7 +373,7 @@ EngineEvent* CarlaEngine::getInternalEventBuffer(const bool isInput) const noexc
 // -----------------------------------------------------------------------
 // CarlaEngine::ProtectedData
 
-CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
+CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine)
     : thread(engine),
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
       osc(engine),

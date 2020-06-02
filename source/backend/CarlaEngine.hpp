@@ -19,8 +19,7 @@
 #define CARLA_ENGINE_HPP_INCLUDED
 
 #include "CarlaBackend.h"
-
-#include <memory>
+#include "CarlaPluginPtr.hpp"
 
 namespace water {
 class MemoryOutputStream;
@@ -28,8 +27,6 @@ class XmlDocument;
 }
 
 CARLA_BACKEND_START_NAMESPACE
-
-typedef std::shared_ptr<CarlaPlugin> CarlaPluginPtr;
 
 // -----------------------------------------------------------------------
 

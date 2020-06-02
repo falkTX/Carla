@@ -1981,6 +1981,7 @@ public:
         }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+        carla_debug("new CarlaEngineJackClient");
         CarlaEngineJackClient* const jclient = new CarlaEngineJackClient(*this,
                                                                          pData->graph,
                                                                          fThreadSafeMetadataMutex,
@@ -3372,7 +3373,7 @@ protected:
 
         for (uint i=0; i < pData->curPluginCount; ++i)
         {
-            if (CarlaPluginPtr plugin = pData->plugins[i].plugin)
+            if (const CarlaPluginPtr plugin = pData->plugins[i].plugin)
             {
                 plugin->tryLock(true);
 

@@ -19,8 +19,7 @@
 #define CARLA_PLUGIN_HPP_INCLUDED
 
 #include "CarlaBackend.h"
-
-#include <memory>
+#include "CarlaPluginPtr.hpp"
 
 // -----------------------------------------------------------------------
 // Avoid including extra libs here
@@ -36,8 +35,6 @@ CARLA_BACKEND_START_NAMESPACE
 #if 0
 } /* Fix editor indentation */
 #endif
-
-typedef std::shared_ptr<CarlaPlugin> CarlaPluginPtr;
 
 // -----------------------------------------------------------------------
 

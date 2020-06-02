@@ -24,10 +24,9 @@
 
 #include "CarlaBackend.h"
 #include "CarlaJuceUtils.hpp"
+#include "CarlaPluginPtr.hpp"
 #include "CarlaOscUtils.hpp"
 #include "CarlaString.hpp"
-
-#include <memory>
 
 #define CARLA_ENGINE_OSC_HANDLE_ARGS const CarlaPluginPtr& plugin, \
   const int argc, const lo_arg* const* const argv, const char* const types
@@ -56,8 +55,6 @@
     }
 
 CARLA_BACKEND_START_NAMESPACE
-
-typedef std::shared_ptr<CarlaPlugin> CarlaPluginPtr;
 
 // -----------------------------------------------------------------------
 
