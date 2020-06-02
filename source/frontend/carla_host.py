@@ -934,7 +934,7 @@ class HostWindow(QMainWindow):
         self.ui.act_canvas_show_internal.blockSignals(True)
         self.ui.act_canvas_show_external.blockSignals(True)
 
-        if processMode == ENGINE_PROCESS_MODE_PATCHBAY: # and not self.host.isPlugin:
+        if processMode == ENGINE_PROCESS_MODE_PATCHBAY and not self.host.isPlugin:
             self.ui.act_canvas_show_internal.setChecked(True)
             self.ui.act_canvas_show_internal.setVisible(True)
             self.ui.act_canvas_show_external.setChecked(False)
@@ -945,7 +945,7 @@ class HostWindow(QMainWindow):
             self.ui.act_canvas_show_internal.setVisible(False)
             self.ui.act_canvas_show_external.setChecked(True)
             self.ui.act_canvas_show_external.setVisible(False)
-            self.fExternalPatchbay = True
+            self.fExternalPatchbay = not self.host.isPlugin
 
         self.ui.act_canvas_show_internal.blockSignals(False)
         self.ui.act_canvas_show_external.blockSignals(False)

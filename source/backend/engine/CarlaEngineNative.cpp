@@ -234,9 +234,6 @@ public:
 
         pData->options.resourceDir = carla_strdup(pHost->resourceDir);
         pData->options.binaryDir   = carla_strdup(carla_get_library_folder());
-
-        setCallback(_ui_server_callback, this);
-        setFileCallback(_ui_file_callback, this);
     }
 
     ~CarlaEngineNative() override
@@ -323,6 +320,9 @@ public:
     {
         CarlaEngine::callback(sendHost, sendOsc, action, pluginId, value1, value2, value3, valuef, valueStr);
 
+        if (sendHost)
+            uiServerCallback(action, pluginId, value1, value2, value3, valuef, valueStr);
+
         switch (action)
         {
         case ENGINE_CALLBACK_IDLE:
@@ -345,6 +345,24 @@ public:
         default:
             break;
         }
+    }
+
+    const char* runFileCallback(FileCallbackOpcode action,
+                                bool isDir, const char* title, const char* filter) noexcept override
+    {
+        switch (action)
+        {
+        case FILE_CALLBACK_DEBUG:
+            return nullptr;
+
+        case FILE_CALLBACK_OPEN:
+            return pHost->ui_open_file(pHost->handle, isDir, title, filter);
+
+        case FILE_CALLBACK_SAVE:
+            return pHost->ui_save_file(pHost->handle, isDir, title, filter);
+        }
+
+        return nullptr;
     }
 
     // -------------------------------------------------------------------
@@ -796,23 +814,6 @@ protected:
         }
 
         fUiServer.flushMessages();
-    }
-
-    const char* uiFileCallback(FileCallbackOpcode action, bool isDir, const char* title, const char* filter)
-    {
-        switch (action)
-        {
-        case FILE_CALLBACK_DEBUG:
-            return nullptr;
-
-        case FILE_CALLBACK_OPEN:
-            return pHost->ui_open_file(pHost->handle, isDir, title, filter);
-
-        case FILE_CALLBACK_SAVE:
-            return pHost->ui_save_file(pHost->handle, isDir, title, filter);
-        }
-
-        return nullptr;
     }
 
     void uiServerInfo()
@@ -1374,6 +1375,9 @@ protected:
 
         fUiServer.idlePipe();
 
+        if (! fUiServer.isPipeRunning())
+            return;
+
         char tmpBuf[STR_MAX+1];
         carla_zeroChars(tmpBuf, STR_MAX+1);
 
@@ -1630,21 +1634,6 @@ public:
         // unused
         (void)index;
         (void)ptr;
-    }
-
-    // -------------------------------------------------------------------
-
-    static void _ui_server_callback(void* handle, EngineCallbackOpcode action, uint pluginId,
-                                    int value1, int value2, int value3,
-                                    float valuef, const char* valueStr)
-    {
-        handlePtr->uiServerCallback(action, pluginId, value1, value2, value3, valuef, valueStr);
-    }
-
-    static const char* _ui_file_callback(void* handle, FileCallbackOpcode action, bool isDir,
-                                         const char* title, const char* filter)
-    {
-        return handlePtr->uiFileCallback(action, isDir, title, filter);
     }
 
     // -------------------------------------------------------------------
