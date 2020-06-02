@@ -111,7 +111,9 @@ CarlaEngineClient::ProtectedData::ProtectedData(const CarlaEngine& eng) noexcept
 CarlaEngineClient::ProtectedData::~ProtectedData()
 {
     carla_debug("CarlaEngineClient::ProtectedData::~ProtectedData()");
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CARLA_SAFE_ASSERT(plugin == nullptr);
+#endif
 }
 
 void CarlaEngineClient::ProtectedData::addAudioPortName(const bool isInput, const char* const name)
@@ -197,8 +199,8 @@ void CarlaEngineClient::deactivate(const bool willClose) noexcept
     {
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         pData->cvSourcePorts.setGraphAndPlugin(nullptr, nullptr);
-#endif
         pData->plugin = nullptr;
+#endif
     }
 }
 

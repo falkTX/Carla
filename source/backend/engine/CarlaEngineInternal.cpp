@@ -413,7 +413,8 @@ CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine)
       nextAction()
 {
 #ifdef BUILD_BRIDGE_ALTERNATIVE_ARCH
-    carla_zeroStructs(plugins, 1);
+    plugins[0].plugin = nullptr;
+    carla_zeroStructs(plugins[0].peaks, 1);
 #endif
 }
 

@@ -927,13 +927,13 @@ public:
             } catch(...) {}
         }
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (willClose)
         {
             fCVSourcePorts.setGraphAndPlugin(nullptr, nullptr);
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             fReservedPluginPtr = nullptr;
-#endif
         }
+#endif
 
         CarlaEngineClient::deactivate(willClose);
     }
