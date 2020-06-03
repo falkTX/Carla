@@ -2,10 +2,11 @@
 
 if [ -f "$(dirname ${0})/carla-utils.pc" ]; then
     cd "$(dirname ${0})/.."
-    INSTALL_LIBDIR="./bin"
+    export ENGINE_OPTION_PATH_BINARIES="$(pwd)/bin"
 else
     INSTALL_PREFIX="X-PREFIX-X"
-    INSTALL_LIBDIR="${INSTALL_PREFIX}/lib/carla"
+    export ENGINE_OPTION_PATH_BINARIES="${INSTALL_PREFIX}/lib/carla"
+    export ENGINE_OPTION_PATH_RESOURCES="${INSTALL_PREFIX}/share/carla/resources"
 fi
 
-exec "${INSTALL_LIBDIR}/carla-bridge-native" internal "" carlapatchbay
+exec "${ENGINE_OPTION_PATH_BINARIES}/carla-bridge-native" internal "" carlapatchbay

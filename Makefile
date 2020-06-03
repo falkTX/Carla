@@ -535,6 +535,8 @@ ifneq ($(CPPMODE),true)
 		data/carla-database \
 		data/carla-jack-multi \
 		data/carla-jack-single \
+		data/carla-jack-patchbayplugin \
+		data/carla-osc-gui \
 		data/carla-patchbay \
 		data/carla-rack \
 		data/carla-settings \
@@ -546,6 +548,8 @@ ifneq ($(CPPMODE),true)
 		$(DESTDIR)$(BINDIR)/carla-database \
 		$(DESTDIR)$(BINDIR)/carla-jack-multi \
 		$(DESTDIR)$(BINDIR)/carla-jack-single \
+		$(DESTDIR)$(BINDIR)/carla-jack-patchbayplugin \
+		$(DESTDIR)$(BINDIR)/carla-osc-gui \
 		$(DESTDIR)$(BINDIR)/carla-patchbay \
 		$(DESTDIR)$(BINDIR)/carla-rack \
 		$(DESTDIR)$(BINDIR)/carla-settings

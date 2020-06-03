@@ -15,7 +15,7 @@ INSTALL_ARGS="--with-appname="${0}""
 if [ -f "$(dirname ${0})/carla-utils.pc" ]; then
     cd "$(dirname ${0})/.."
     INSTALL_PREFIX="$(pwd)"
-    INSTALL_FRONTENDDIR="./source/frontend"
+    INSTALL_FRONTENDDIR="${INSTALL_PREFIX}/source/frontend"
 else
     INSTALL_PREFIX="X-PREFIX-X"
     INSTALL_FRONTENDDIR="${INSTALL_PREFIX}/share/carla"
@@ -26,7 +26,7 @@ if lsof -i:21337 > /dev/null; then
     echo "NOTICE: Backend already running"
 else
     echo "NOTICE: Backend not running yet, starting it now"
-    ${PYTHON} "${INSTALL_FRONTENDDIR}/carla" "${INSTALL_ARGS}" --osc-gui=21337 "$@" &
+    ${PYTHON} "${INSTALL_FRONTENDDIR}/carla" ${INSTALL_ARGS} --osc-gui=21337 "$@" &
 fi
 
-${PYTHON} "${INSTALL_FRONTENDDIR}/carla-control" "${INSTALL_ARGS}" osc.tcp://127.0.0.1:21337/Carla "$@"
+exec ${PYTHON} "${INSTALL_FRONTENDDIR}/carla-control" ${INSTALL_ARGS} osc.tcp://127.0.0.1:21337/Carla "$@"
