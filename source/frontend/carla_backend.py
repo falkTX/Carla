@@ -3638,6 +3638,11 @@ class CarlaHostPlugin(CarlaHostMeta):
     def _add(self, pluginId):
         self.fPluginsInfo[pluginId] = PluginStoreInfo()
 
+    def _reset(self, maxPluginId):
+        self.fPluginsInfo = {}
+        for i in range(maxPluginId):
+            self.fPluginsInfo[i] = PluginStoreInfo()
+
     def _allocateAsNeeded(self, pluginId):
         if pluginId < len(self.fPluginsInfo):
             return
@@ -3893,9 +3898,15 @@ class CarlaHostPlugin(CarlaHostMeta):
 
     def _setViaCallback(self, action, pluginId, value1, value2, value3, valuef, valueStr):
         if action == ENGINE_CALLBACK_ENGINE_STARTED:
-            self._allocateAsNeeded(pluginId)
             self.fBufferSize = value3
             self.fSampleRate = valuef
+            if value1 == ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
+                maxPluginId = MAX_RACK_PLUGINS
+            elif value1 == ENGINE_PROCESS_MODE_PATCHBAY:
+                maxPluginId = MAX_PATCHBAY_PLUGINS
+            else:
+                maxPluginId = MAX_DEFAULT_PLUGINS
+            self._reset(maxPluginId)
 
         elif ENGINE_CALLBACK_BUFFER_SIZE_CHANGED:
             self.fBufferSize = value1
