@@ -630,6 +630,9 @@ def handleInitialCommandLineArguments(file):
         elif arg.startswith("--with-libprefix="):
             libPrefix = arg.replace("--with-libprefix=", "")
 
+        elif arg.startswith("--osc-gui="):
+            gCarla.nogui = int(arg.replace("--osc-gui=", ""))
+
         elif arg == "--gdb":
             pass
 
@@ -675,9 +678,9 @@ def getInitialProjectFile(app, skipExistCheck = False):
     #args = app.arguments()[1:]
     args = sys.argv[1:]
     for arg in args:
-        if arg.startswith("--with-appname=") or arg.startswith("--with-libprefix=") or arg == "--gdb":
+        if arg.startswith("--with-appname=") or arg.startswith("--with-libprefix=") or arg.startswith("--osc-gui="):
             continue
-        if arg in ("-n", "--n", "-no-gui", "--no-gui", "-nogui", "--nogui"):
+        if arg in ("-n", "--n", "-no-gui", "--no-gui", "-nogui", "--nogui", "--gdb"):
             continue
         arg = os.path.expanduser(arg)
         if skipExistCheck or os.path.exists(arg):

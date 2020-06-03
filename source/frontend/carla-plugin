@@ -158,8 +158,8 @@ class CarlaMiniW(ExternalUI, HostWindow):
     def msgCallback(self, msg):
         try:
             self.msgCallback2(msg)
-        except:
-            print("msgCallback error, skipped for", msg)
+        except Exception as e:
+            print("msgCallback error, skipped for", msg, "error was:\n", e)
 
     def msgCallback2(self, msg):
         msg = charPtrToString(msg)

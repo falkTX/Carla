@@ -3179,7 +3179,7 @@ def setHostSettings(host):
 # ------------------------------------------------------------------------------------------------------------
 # Set Engine settings according to carla preferences. Returns selected audio driver.
 
-def setEngineSettings(host):
+def setEngineSettings(host, oscPort = None):
     # kdevelop likes this :)
     if False: host = CarlaHostNull()
 
@@ -3235,21 +3235,26 @@ def setEngineSettings(host):
     # --------------------------------------------------------------------------------------------------------
     # osc settings
 
-    oscEnabled = settings.value(CARLA_KEY_OSC_ENABLED, CARLA_DEFAULT_OSC_ENABLED, bool)
+    if oscPort is not None and isinstance(oscPort, int):
+        oscEnabled = True
+        portNumTCP = portNumUDP = oscPort
 
-    if not settings.value(CARLA_KEY_OSC_TCP_PORT_ENABLED, CARLA_DEFAULT_OSC_TCP_PORT_ENABLED, bool):
-        portNumTCP = -1
-    elif settings.value(CARLA_KEY_OSC_TCP_PORT_RANDOM, CARLA_DEFAULT_OSC_TCP_PORT_RANDOM, bool):
-        portNumTCP = 0
     else:
-        portNumTCP = settings.value(CARLA_KEY_OSC_TCP_PORT_NUMBER, CARLA_DEFAULT_OSC_TCP_PORT_NUMBER, int)
+        oscEnabled = settings.value(CARLA_KEY_OSC_ENABLED, CARLA_DEFAULT_OSC_ENABLED, bool)
 
-    if not settings.value(CARLA_KEY_OSC_UDP_PORT_ENABLED, CARLA_DEFAULT_OSC_UDP_PORT_ENABLED, bool):
-        portNumUDP = -1
-    elif settings.value(CARLA_KEY_OSC_UDP_PORT_RANDOM, CARLA_DEFAULT_OSC_UDP_PORT_RANDOM, bool):
-        portNumUDP = 0
-    else:
-        portNumUDP = settings.value(CARLA_KEY_OSC_UDP_PORT_NUMBER, CARLA_DEFAULT_OSC_UDP_PORT_NUMBER, int)
+        if not settings.value(CARLA_KEY_OSC_TCP_PORT_ENABLED, CARLA_DEFAULT_OSC_TCP_PORT_ENABLED, bool):
+            portNumTCP = -1
+        elif settings.value(CARLA_KEY_OSC_TCP_PORT_RANDOM, CARLA_DEFAULT_OSC_TCP_PORT_RANDOM, bool):
+            portNumTCP = 0
+        else:
+            portNumTCP = settings.value(CARLA_KEY_OSC_TCP_PORT_NUMBER, CARLA_DEFAULT_OSC_TCP_PORT_NUMBER, int)
+
+        if not settings.value(CARLA_KEY_OSC_UDP_PORT_ENABLED, CARLA_DEFAULT_OSC_UDP_PORT_ENABLED, bool):
+            portNumUDP = -1
+        elif settings.value(CARLA_KEY_OSC_UDP_PORT_RANDOM, CARLA_DEFAULT_OSC_UDP_PORT_RANDOM, bool):
+            portNumUDP = 0
+        else:
+            portNumUDP = settings.value(CARLA_KEY_OSC_UDP_PORT_NUMBER, CARLA_DEFAULT_OSC_UDP_PORT_NUMBER, int)
 
     host.set_engine_option(ENGINE_OPTION_OSC_ENABLED, 1 if oscEnabled else 0, "")
     host.set_engine_option(ENGINE_OPTION_OSC_PORT_TCP, portNumTCP, "")
@@ -3325,11 +3330,16 @@ def runHostWithoutUI(host):
     if not gCarla.nogui:
         return
 
-    projectFile = getInitialProjectFile(QCoreApplication.instance(), True)
+    if not isinstance(gCarla.nogui, int):
+        oscPort = None
+        projectFile = getInitialProjectFile(QCoreApplication.instance(), True)
 
-    if not projectFile:
-        print("Carla no-gui mode can only be used together with a project file.")
-        sys.exit(1)
+        if not projectFile:
+            print("Carla no-gui mode can only be used together with a project file.")
+            sys.exit(1)
+
+    else:
+        oscPort = gCarla.nogui
 
     # --------------------------------------------------------------------------------------------------------
     # Additional imports
@@ -3339,12 +3349,12 @@ def runHostWithoutUI(host):
     # --------------------------------------------------------------------------------------------------------
     # Init engine
 
-    audioDriver = setEngineSettings(host)
+    audioDriver = setEngineSettings(host, oscPort)
     if not host.engine_init(audioDriver, "Carla"):
         print("Engine failed to initialize, possible reasons:\n%s" % host.get_last_error())
         sys.exit(1)
 
-    if not host.load_project(projectFile):
+    if oscPort is None and not host.load_project(projectFile):
         print("Failed to load selected project file, possible reasons:\n%s" % host.get_last_error())
         host.engine_close()
         sys.exit(1)
