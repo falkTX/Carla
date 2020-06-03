@@ -562,7 +562,8 @@ class CarlaControlServerUDP(Server):
 # Main Window
 
 class HostWindowOSC(HostWindow):
-    def __init__(self, host, oscAddr):
+    def __init__(self, host, oscAddr = None):
+        self.fCustomOscAddress = oscAddr
         HostWindow.__init__(self, host, True)
         self.host = host
 
@@ -584,25 +585,30 @@ class HostWindowOSC(HostWindow):
             QTimer.singleShot(0, self.connectOsc)
 
     def connectOsc(self, addrTCP = None, addrUDP = None, rhost = None):
-        if addrTCP is not None:
-            self.fOscAddressTCP = addrTCP
-        if addrUDP is not None:
-            self.fOscAddressUDP = addrUDP
-        if rhost is not None:
-            self.fOscReportedHost = rhost
+        if self.fCustomOscAddress is not None:
+            addrTCP = self.fCustomOscAddress.replace("osc.udp://","osc.tcp://")
+            addrUDP = self.fCustomOscAddress.replace("osc.tcp://","osc.udp://")
 
-        lo_target_tcp_name = self.fOscAddressTCP.rsplit("/", 1)[-1]
-        lo_target_udp_name = self.fOscAddressUDP.rsplit("/", 1)[-1]
+        else:
+            if addrTCP is not None:
+                self.fOscAddressTCP = addrTCP
+            if addrUDP is not None:
+                self.fOscAddressUDP = addrUDP
+            if rhost is not None:
+                self.fOscReportedHost = rhost
+
+        lo_target_tcp_name = addrTCP.rsplit("/", 1)[-1]
+        lo_target_udp_name = addrUDP.rsplit("/", 1)[-1]
 
         err = None
 
         try:
-            lo_target_tcp = Address(self.fOscAddressTCP)
-            lo_server_tcp = CarlaControlServerTCP(self.host, self.fOscReportedHost)
+            lo_target_tcp = Address(addrTCP)
+            lo_server_tcp = CarlaControlServerTCP(self.host, rhost)
             lo_send(lo_target_tcp, "/register", lo_server_tcp.getFullURL())
 
-            lo_target_udp = Address(self.fOscAddressUDP)
-            lo_server_udp = CarlaControlServerUDP(self.host, self.fOscReportedHost)
+            lo_target_udp = Address(addrUDP)
+            lo_server_udp = CarlaControlServerUDP(self.host, rhost)
             lo_send(lo_target_udp, "/register", lo_server_udp.getFullURL())
 
         except AddressError as e:
@@ -709,9 +715,10 @@ class HostWindowOSC(HostWindow):
 
     def loadSettings(self, firstTime):
         settings = HostWindow.loadSettings(self, firstTime)
-        self.fOscAddressTCP = settings.value("RemoteAddressTCP", "osc.tcp://127.0.0.1:22752/Carla", type=str)
-        self.fOscAddressUDP = settings.value("RemoteAddressUDP", "osc.udp://127.0.0.1:22752/Carla", type=str)
-        self.fOscReportedHost = settings.value("RemoteReportedHost", "", type=str)
+        if self.fCustomOscAddress is not None:
+            self.fOscAddressTCP = settings.value("RemoteAddressTCP", "osc.tcp://127.0.0.1:22752/Carla", type=str)
+            self.fOscAddressUDP = settings.value("RemoteAddressUDP", "osc.udp://127.0.0.1:22752/Carla", type=str)
+            self.fOscReportedHost = settings.value("RemoteReportedHost", "", type=str)
 
     def saveSettings(self):
         settings = HostWindow.saveSettings(self)
