@@ -377,9 +377,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             self.b_enable.clicked.connect(self.slot_enableClicked)
 
             if isCalfSkin:
-                self.b_enable.setSvgs(":/scalable/button_calf3.svg",
-                                      ":/scalable/button_calf3_down.svg",
-                                      ":/scalable/button_calf3.svg")
+                self.b_enable.setPixmaps(":/bitmaps/button_calf3.png",
+                                         ":/bitmaps/button_calf3_down.png",
+                                         ":/bitmaps/button_calf3.png")
             else:
                 self.b_enable.setSvgs(":/scalable/button_off.svg",
                                       ":/scalable/button_on.svg",
@@ -390,13 +390,13 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             self.b_gui.setEnabled(bool(self.fPluginInfo['hints'] & PLUGIN_HAS_CUSTOM_UI))
 
             if isCalfSkin:
-                self.b_gui.setSvgs(":/scalable/button_calf2.svg",
-                                   ":/scalable/button_calf2_down.svg",
-                                   ":/scalable/button_calf2_hover.svg")
+                self.b_gui.setPixmaps(":/scalable/button_calf2.png",
+                                      ":/scalable/button_calf2_down.png",
+                                      ":/scalable/button_calf2_hover.png")
             elif self.fPluginInfo['iconName'] == "distrho" or self.fSkinStyle in ("3bandeq", "3bandsplitter", "pingpongpan", "nekobi"):
-                self.b_gui.setSvgs(":/scalable/button_distrho-{}.svg".format(imageSuffix),
-                                   ":/scalable/button_distrho_down-{}.svg".format(imageSuffix),
-                                   ":/scalable/button_distrho_hover-{}.svg".format(imageSuffix))
+                self.b_gui.setPixmaps(":/bitmaps/button_distrho-{}.png".format(imageSuffix),
+                                      ":/bitmaps/button_distrho_down-{}.png".format(imageSuffix),
+                                      ":/bitmaps/button_distrho_hover-{}.png".format(imageSuffix))
             elif self.fPluginInfo['iconName'] == "file":
                 self.b_gui.setSvgs(":/scalable/button_file-{}.svg".format(imageSuffix),
                                    ":/scalable/button_file_down-{}.svg".format(imageSuffix),
@@ -410,9 +410,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             self.b_edit.clicked.connect(self.slot_showEditDialog)
 
             if isCalfSkin:
-                self.b_edit.setSvgs(":/scalable/button_calf2.svg",
-                                    ":/scalable/button_calf2_down.svg",
-                                    ":/scalable/button_calf2_hover.svg")
+                self.b_edit.setPixmaps(":/bitmaps/button_calf2.png",
+                                       ":/bitmaps/button_calf2_down.png",
+                                       ":/bitmaps/button_calf2_hover.png")
             else:
                 self.b_edit.setSvgs(":/scalable/button_edit-{}.svg".format(imageSuffix),
                                     ":/scalable/button_edit_down-{}.svg".format(imageSuffix),
@@ -1530,7 +1530,9 @@ class PluginSlot_Calf(AbstractPluginSlot):
 
         self.ui.label_active.setFont(self.fButtonFont)
 
-        self.ui.b_remove.setSvgs(":/scalable/button_calf1.svg", ":/scalable/button_calf1_down.svg", ":/scalable/button_calf1_hover.svg")
+        self.ui.b_remove.setPixmaps(":/scalable/button_calf1.png",
+                                    ":/scalable/button_calf1_down.png",
+                                    ":/scalable/button_calf1_hover.png")
 
         self.ui.b_edit.setTopText(self.tr("Edit"), self.fButtonColorOn, self.fButtonFont)
         self.ui.b_remove.setTopText(self.tr("Remove"), self.fButtonColorOn, self.fButtonFont)
