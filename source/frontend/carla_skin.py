@@ -390,9 +390,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             self.b_gui.setEnabled(bool(self.fPluginInfo['hints'] & PLUGIN_HAS_CUSTOM_UI))
 
             if isCalfSkin:
-                self.b_gui.setPixmaps(":/scalable/button_calf2.png",
-                                      ":/scalable/button_calf2_down.png",
-                                      ":/scalable/button_calf2_hover.png")
+                self.b_gui.setPixmaps(":/bitmaps/button_calf2.png",
+                                      ":/bitmaps/button_calf2_down.png",
+                                      ":/bitmaps/button_calf2_hover.png")
             elif self.fPluginInfo['iconName'] == "distrho" or self.fSkinStyle in ("3bandeq", "3bandsplitter", "pingpongpan", "nekobi"):
                 self.b_gui.setPixmaps(":/bitmaps/button_distrho-{}.png".format(imageSuffix),
                                       ":/bitmaps/button_distrho_down-{}.png".format(imageSuffix),
@@ -1535,9 +1535,9 @@ class PluginSlot_Calf(AbstractPluginSlot):
 
         self.ui.label_active.setFont(self.fButtonFont)
 
-        self.ui.b_remove.setPixmaps(":/scalable/button_calf1.png",
-                                    ":/scalable/button_calf1_down.png",
-                                    ":/scalable/button_calf1_hover.png")
+        self.ui.b_remove.setPixmaps(":/bitmaps/button_calf1.png",
+                                    ":/bitmaps/button_calf1_down.png",
+                                    ":/bitmaps/button_calf1_hover.png")
 
         self.ui.b_edit.setTopText(self.tr("Edit"), self.fButtonColorOn, self.fButtonFont)
         self.ui.b_remove.setTopText(self.tr("Remove"), self.fButtonColorOn, self.fButtonFont)
