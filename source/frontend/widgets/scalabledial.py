@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Svg Dial, a custom Qt widget
-# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+# Scalable Dial, a custom Qt widget
+# Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -23,7 +23,7 @@ from math import cos, floor, pi, sin, isnan
 
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QEvent, QPointF, QRectF, QTimer, QSize
 from PyQt5.QtGui import QColor, QConicalGradient, QFont, QFontMetrics
-from PyQt5.QtGui import QLinearGradient, QPainter, QPainterPath, QPen
+from PyQt5.QtGui import QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtWidgets import QDial
 
@@ -74,14 +74,14 @@ class ScalableDial(QDial):
         self.fLastDragPos = None
         self.fLastDragValue = 0.0
 
-        self.fIndex     = index
-        self.fSvg    = QSvgWidget(":/scalable/dial_03.svg")
-        self.fSvgNum = "01"
+        self.fIndex    = index
+        self.fImage    = QSvgWidget(":/scalable/dial_03.svg")
+        self.fImageNum = "01"
 
-        if self.fSvg.sizeHint().width() > self.fSvg.sizeHint().height():
-            self.fSvgOrientation = self.HORIZONTAL
+        if self.fImage.sizeHint().width() > self.fImage.sizeHint().height():
+            self.fImageOrientation = self.HORIZONTAL
         else:
-            self.fSvgOrientation = self.VERTICAL
+            self.fImageOrientation = self.VERTICAL
 
         self.fLabel     = ""
         self.fLabelPos  = QPointF(0.0, 0.0)
@@ -125,7 +125,7 @@ class ScalableDial(QDial):
         return self.fIndex
 
     def getBaseSize(self):
-        return self.fSvgBaseSize
+        return self.fImageBaseSize
 
     def forceWhiteLabelGradientText(self):
         self.fLabelGradientColor1 = QColor(0, 0, 0, 255)
@@ -138,24 +138,28 @@ class ScalableDial(QDial):
         self.fLabelGradientColorT = [enabled, disabled]
 
     def updateSizes(self):
-        self.fSvgWidth  = self.fSvg.sizeHint().width()
-        self.fSvgHeight = self.fSvg.sizeHint().height()
-
-        if self.fSvgWidth < 1:
-            self.fSvgWidth = 1
-
-        if self.fSvgHeight < 1:
-            self.fSvgHeight = 1
-
-        if self.fSvgOrientation == self.HORIZONTAL:
-            self.fSvgBaseSize = self.fSvgHeight
-            self.fSvgLayersCount = self.fSvgWidth / self.fSvgHeight
+        if isinstance(self.fImage, QPixmap):
+            self.fImageWidth  = self.fImage.width()
+            self.fImageHeight = self.fImage.height()
         else:
-            self.fSvgBaseSize = self.fSvgWidth
-            self.fSvgLayersCount = self.fSvgHeight / self.fSvgWidth
+            self.fImageWidth  = self.fImage.sizeHint().width()
+            self.fImageHeight = self.fImage.sizeHint().height()
 
-        self.setMinimumSize(self.fSvgBaseSize, self.fSvgBaseSize + self.fLabelHeight + 5)
-        self.setMaximumSize(self.fSvgBaseSize, self.fSvgBaseSize + self.fLabelHeight + 5)
+        if self.fImageWidth < 1:
+            self.fImageWidth = 1
+
+        if self.fImageHeight < 1:
+            self.fImageHeight = 1
+
+        if self.fImageOrientation == self.HORIZONTAL:
+            self.fImageBaseSize    = self.fImageHeight
+            self.fImageLayersCount = self.fImageWidth / self.fImageHeight
+        else:
+            self.fImageBaseSize    = self.fImageWidth
+            self.fImageLayersCount = self.fImageHeight / self.fImageWidth
+
+        self.setMinimumSize(self.fImageBaseSize, self.fImageBaseSize + self.fLabelHeight + 5)
+        self.setMaximumSize(self.fImageBaseSize, self.fImageBaseSize + self.fLabelHeight + 5)
 
         if not self.fLabel:
             self.fLabelHeight = 0
@@ -165,20 +169,20 @@ class ScalableDial(QDial):
         self.fLabelWidth  = QFontMetrics(self.fLabelFont).width(self.fLabel)
         self.fLabelHeight = QFontMetrics(self.fLabelFont).height()
 
-        self.fLabelPos.setX(float(self.fSvgBaseSize)/2.0 - float(self.fLabelWidth)/2.0)
+        self.fLabelPos.setX(float(self.fImageBaseSize)/2.0 - float(self.fLabelWidth)/2.0)
 
-        if self.fSvgNum in ("01", "02", "07", "08", "09", "10"):
-            self.fLabelPos.setY(self.fSvgBaseSize + self.fLabelHeight)
-        elif self.fSvgNum in ("11",):
-            self.fLabelPos.setY(self.fSvgBaseSize + self.fLabelHeight*2/3)
+        if self.fImageNum in ("01", "02", "07", "08", "09", "10"):
+            self.fLabelPos.setY(self.fImageBaseSize + self.fLabelHeight)
+        elif self.fImageNum in ("11",):
+            self.fLabelPos.setY(self.fImageBaseSize + self.fLabelHeight*2/3)
         else:
-            self.fLabelPos.setY(self.fSvgBaseSize + self.fLabelHeight/2)
+            self.fLabelPos.setY(self.fImageBaseSize + self.fLabelHeight/2)
 
-        self.fLabelGradient.setStart(0, float(self.fSvgBaseSize)/2.0)
-        self.fLabelGradient.setFinalStop(0, self.fSvgBaseSize + self.fLabelHeight + 5)
+        self.fLabelGradient.setStart(0, float(self.fImageBaseSize)/2.0)
+        self.fLabelGradient.setFinalStop(0, self.fImageBaseSize + self.fLabelHeight + 5)
 
-        self.fLabelGradientRect = QRectF(float(self.fSvgBaseSize)/8.0, float(self.fSvgBaseSize)/2.0,
-                                         float(self.fSvgBaseSize*3)/4.0, self.fSvgBaseSize+self.fLabelHeight+5)
+        self.fLabelGradientRect = QRectF(float(self.fImageBaseSize)/8.0, float(self.fImageBaseSize)/2.0,
+                                         float(self.fImageBaseSize*3)/4.0, self.fImageBaseSize+self.fLabelHeight+5)
 
     def setCustomPaintMode(self, paintMode):
         if self.fCustomPaintMode == paintMode:
@@ -205,27 +209,39 @@ class ScalableDial(QDial):
     def setIndex(self, index):
         self.fIndex = index
 
-    def setSvg(self, SvgId):
-        self.fSvgNum = "%02i" % SvgId
-        self.fSvg.load(":/scalable/dial_%s%s.svg" % (self.fSvgNum, "" if self.isEnabled() else "d"))
-
-        if self.fSvg.width() > self.fSvg.height():
-            self.fSvgOrientation = self.HORIZONTAL
+    def setImage(self, imageId):
+        self.fImageNum = "%02i" % imageId
+        if imageId in (6,7,8,9,10,11,12,13):
+            img = ":/bitmaps/dial_%s%s.png" % (self.fImageNum, "" if self.isEnabled() else "d")
         else:
-            self.fSvgOrientation = self.VERTICAL
+            img = ":/scalable/dial_%s%s.svg" % (self.fImageNum, "" if self.isEnabled() else "d")
 
-        # special svg
+        if img.endswith(".png"):
+            if not isinstance(self.fImage, QPixmap):
+                self.fImage = QPixmap()
+        else:
+            if not isinstance(self.fImage, QSvgWidget):
+                self.fImage = QSvgWidget()
+
+        self.fImage.load(img)
+
+        if self.fImage.width() > self.fImage.height():
+            self.fImageOrientation = self.HORIZONTAL
+        else:
+            self.fImageOrientation = self.VERTICAL
+
+        # special svgs
         if self.fCustomPaintMode == self.CUSTOM_PAINT_MODE_NULL:
             # reserved for carla-wet, carla-vol, carla-pan and color
-            if self.fSvgNum == "03":
+            if self.fImageNum == "03":
                 self.fCustomPaintMode = self.CUSTOM_PAINT_MODE_COLOR
 
             # reserved for carla-L and carla-R
-            elif self.fSvgNum == "04":
+            elif self.fImageNum == "04":
                 self.fCustomPaintMode = self.CUSTOM_PAINT_MODE_CARLA_L
 
             # reserved for zita
-            elif self.fSvgNum == "06":
+            elif self.fImageNum == "06":
                 self.fCustomPaintMode = self.CUSTOM_PAINT_MODE_ZITA
 
         self.updateSizes()
@@ -272,21 +288,21 @@ class ScalableDial(QDial):
         self.realValueChanged.emit(self.fRealValue)
 
     @pyqtSlot()
-    def slot_updateSvg(self):
-        self.seSvg(int(self.fSvgNum))
+    def slot_updateImage(self):
+        self.setImage(int(self.fImageNum))
 
     def minimumSizeHint(self):
-        return QSize(self.fSvgBaseSize, self.fSvgBaseSize)
+        return QSize(self.fImageBaseSize, self.fImageBaseSize)
 
     def sizeHint(self):
-        return QSize(self.fSvgBaseSize, self.fSvgBaseSize)
+        return QSize(self.fImageBaseSize, self.fImageBaseSize)
 
     def changeEvent(self, event):
         QDial.changeEvent(self, event)
 
         # Force svg update if enabled state changes
         if event.type() == QEvent.EnabledChange:
-            self.setSvg(int(self.fSvgNum))
+            self.slot_updateImage()
 
     def enterEvent(self, event):
         self.fIsHovered = True
@@ -359,17 +375,22 @@ class ScalableDial(QDial):
 
         if self.isEnabled():
             normValue = float(self.fRealValue - self.fMinimum) / float(self.fMaximum - self.fMinimum)
-            curLayer = int((self.fSvgLayersCount - 1) * normValue)
+            curLayer = int((self.fImageLayersCount - 1) * normValue)
 
-            if self.fSvgOrientation == self.HORIZONTAL:
-                xpos = self.fSvgBaseSize * curLayer
+            if self.fImageOrientation == self.HORIZONTAL:
+                xpos = self.fImageBaseSize * curLayer
                 ypos = 0.0
             else:
                 xpos = 0.0
-                ypos = self.fSvgBaseSize * curLayer
+                ypos = self.fImageBaseSize * curLayer
 
-            source = QRectF(xpos, ypos, self.fSvgBaseSize, self.fSvgBaseSize)
-            self.fSvg.renderer().render(painter, source)
+            source = QRectF(xpos, ypos, self.fImageBaseSize, self.fImageBaseSize)
+
+            if isinstance(self.fImage, QPixmap):
+                target = QRectF(0.0, 0.0, self.fImageBaseSize, self.fImageBaseSize)
+                painter.drawPixmap(target, self.fImage, source)
+            else:
+                self.fImage.renderer().render(painter, source)
 
             # Custom knobs (Dry/Wet and Volume)
             if self.fCustomPaintMode in (self.CUSTOM_PAINT_MODE_CARLA_WET, self.CUSTOM_PAINT_MODE_CARLA_VOL):
@@ -491,8 +512,11 @@ class ScalableDial(QDial):
                 QTimer.singleShot(20, self.update)
 
         else: # isEnabled()
-            target = QRectF(0.0, 0.0, self.fSvgBaseSize, self.fSvgBaseSize)
-            self.fSvg.renderer().render(painter, target)
+            target = QRectF(0.0, 0.0, self.fImageBaseSize, self.fImageBaseSize)
+            if isinstance(self.fImage, QPixmap):
+                painter.drawPixmap(target, self.fImage, target)
+            else:
+                self.fImage.renderer().render(painter, target)
 
         painter.restore()
 

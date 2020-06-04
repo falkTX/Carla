@@ -161,16 +161,16 @@ def getColorFromCategory(category):
 def setScalableDialStyle(widget, parameterId, parameterCount, whiteLabels, skinStyle):
     if skinStyle.startswith("calf"):
         widget.setCustomPaintMode(ScalableDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-        widget.setSvg(7)
+        widget.setImage(7)
 
     elif skinStyle.startswith("openav"):
         widget.setCustomPaintMode(ScalableDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
         if parameterId == PARAMETER_DRYWET:
-            widget.setSvg(13)
+            widget.setImage(13)
         elif parameterId == PARAMETER_VOLUME:
-            widget.setSvg(12)
+            widget.setImage(12)
         else:
-            widget.setSvg(11)
+            widget.setImage(11)
 
     else:
         if parameterId == PARAMETER_DRYWET:
@@ -194,7 +194,7 @@ def setScalableDialStyle(widget, parameterId, parameterCount, whiteLabels, skinS
             colorDisabled = QColor("#AAA")
 
         widget.setLabelColor(colorEnabled, colorDisabled)
-        widget.setSvg(3)
+        widget.setImage(3)
 
 # ------------------------------------------------------------------------------------------------------------
 # Abstract plugin slot
@@ -402,9 +402,14 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                                    ":/scalable/button_file_down-{}.svg".format(imageSuffix),
                                    ":/scalable/button_file_hover-{}.svg".format(imageSuffix))
             else:
-                self.b_gui.setSvgs(":/scalable/button_gui-{}.svg".format(imageSuffix),
-                                   ":/scalable/button_gui_down-{}.svg".format(imageSuffix),
-                                   ":/scalable/button_gui_hover-{}.svg".format(imageSuffix))
+                if imageSuffix == "black": # TODO
+                    self.b_gui.setSvgs(":/bitmaps/button_gui-{}.png".format(imageSuffix),
+                                       ":/bitmaps/button_gui_down-{}.png".format(imageSuffix),
+                                       ":/bitmaps/button_gui_hover-{}.png".format(imageSuffix))
+                else:
+                    self.b_gui.setSvgs(":/scalable/button_gui-{}.svg".format(imageSuffix),
+                                       ":/scalable/button_gui_down-{}.svg".format(imageSuffix),
+                                       ":/scalable/button_gui_hover-{}.svg".format(imageSuffix))
 
         if self.b_edit is not None:
             self.b_edit.clicked.connect(self.slot_showEditDialog)
@@ -1942,7 +1947,7 @@ class PluginSlot_Presets(AbstractPluginSlot):
             widget.setLabel(paramName)
             widget.setMinimum(paramRanges['min'])
             widget.setMaximum(paramRanges['max'])
-            widget.setSvg(3)
+            widget.setImage(3)
             widget.setCustomPaintColor(QColor(83, 173, 10))
             widget.setCustomPaintMode(ScalableDial.CUSTOM_PAINT_MODE_COLOR)
             widget.forceWhiteLabelGradientText()
@@ -1959,7 +1964,7 @@ class PluginSlot_Presets(AbstractPluginSlot):
             widget.setLabel("Wet")
             widget.setMinimum(0.0)
             widget.setMaximum(1.0)
-            widget.setSvg(3)
+            widget.setImage(3)
             widget.setCustomPaintMode(ScalableDial.CUSTOM_PAINT_MODE_CARLA_WET)
             widget.forceWhiteLabelGradientText()
 
@@ -1971,7 +1976,7 @@ class PluginSlot_Presets(AbstractPluginSlot):
             widget.setLabel("Volume")
             widget.setMinimum(0.0)
             widget.setMaximum(1.27)
-            widget.setSvg(3)
+            widget.setImage(3)
             widget.setCustomPaintMode(ScalableDial.CUSTOM_PAINT_MODE_CARLA_VOL)
             widget.forceWhiteLabelGradientText()
 
