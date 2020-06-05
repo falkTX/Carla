@@ -87,11 +87,11 @@
         <file>bitmaps/button_file_down-white.png</file>
         <file>bitmaps/button_file_hover-black.png</file>
         <file>bitmaps/button_file_hover-white.png</file>
-        <file>scalable/button_gui-black.svg</file>
+        <!--<file>scalable/button_gui-black.svg</file>-->
         <file>scalable/button_gui-white.svg</file>
-        <file>scalable/button_gui_down-black.svg</file>
+        <!--<file>scalable/button_gui_down-black.svg</file>-->
         <file>scalable/button_gui_down-white.svg</file>
-        <file>scalable/button_gui_hover-black.svg</file>
+        <!--<file>scalable/button_gui_hover-black.svg</file>-->
         <file>scalable/button_gui_hover-white.svg</file>
 
         <file>scalable/button_off.svg</file>

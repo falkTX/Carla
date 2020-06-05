@@ -471,9 +471,9 @@ struct CarlaHostWindow::PrivateData {
 
         updateStyle();
 
-        ui.rack->setStyleSheet("  \
+        ui.rack->setStyleSheet("      \
         CarlaRackList#CarlaRackList { \
-            background-color: black;    \
+            background-color: black;  \
         }                             \
         ");
 
@@ -693,7 +693,7 @@ struct CarlaHostWindow::PrivateData {
         projectLoadingStarted();
         fIsProjectLoading = true;
 
-        if (! carla_load_project(fProjectFilename.toUtf8()))
+        if (! carla_load_project(host.handle, fProjectFilename.toUtf8()))
         {
             fIsProjectLoading = false;
             projectLoadingFinished();
@@ -702,7 +702,7 @@ struct CarlaHostWindow::PrivateData {
                              QMessageBox::Critical,
                              tr("Error"),
                              tr("Failed to load project"),
-                             carla_get_last_error(),
+                             carla_get_last_error(host.handle),
                              QMessageBox::Ok, QMessageBox::Ok);
         }
     }
@@ -770,7 +770,7 @@ struct CarlaHostWindow::PrivateData {
     {
         killTimers();
 
-        if (carla_is_engine_running())
+        if (carla_is_engine_running(host.handle))
         {
             if (fCustomStopAction == CUSTOM_ACTION_PROJECT_LOAD)
             {
@@ -782,16 +782,16 @@ struct CarlaHostWindow::PrivateData {
                 projectLoadingStarted();
             }
 
-            if (! carla_remove_all_plugins())
+            if (! carla_remove_all_plugins(host.handle))
             {
                 ui.text_logs->appendPlainText("Failed to remove all plugins, error was:");
-                ui.text_logs->appendPlainText(carla_get_last_error());
+                ui.text_logs->appendPlainText(carla_get_last_error(host.handle));
             }
 
-            if (! carla_engine_close())
+            if (! carla_engine_close(host.handle))
             {
                 ui.text_logs->appendPlainText("Failed to stop engine, error was:");
-                ui.text_logs->appendPlainText(carla_get_last_error());
+                ui.text_logs->appendPlainText(carla_get_last_error(host.handle));
             }
         }
 
@@ -803,7 +803,7 @@ struct CarlaHostWindow::PrivateData {
         {
             hostWindow->slot_engineStart();
             loadProjectNow();
-            carla_nsm_ready(NSM_CALLBACK_OPEN);
+            carla_nsm_ready(host.handle, NSM_CALLBACK_OPEN);
         }
 
         fCustomStopAction = CUSTOM_ACTION_NONE;
@@ -1014,10 +1014,10 @@ struct CarlaHostWindow::PrivateData {
     {
         if (! ui.l_transport_time->isVisible())
             return;
-        if (carla_isZero(fSampleRate) or ! carla_is_engine_running())
+        if (carla_isZero(fSampleRate) or ! carla_is_engine_running(host.handle))
             return;
 
-        const CarlaTransportInfo* const timeInfo = carla_get_transport_info();
+        const CarlaTransportInfo* const timeInfo = carla_get_transport_info(host.handle);
         const bool     playing  = timeInfo->playing;
         const uint64_t frame    = timeInfo->frame;
         const double   bpm      = timeInfo->bpm;
@@ -1193,15 +1193,15 @@ struct CarlaHostWindow::PrivateData {
     {
         if (! ui.pb_dsp_load->isVisible())
             return;
-        if (! carla_is_engine_running())
+        if (! carla_is_engine_running(host.handle))
             return;
-        const CarlaRuntimeEngineInfo* const info = carla_get_runtime_engine_info();
+        const CarlaRuntimeEngineInfo* const info = carla_get_runtime_engine_info(host.handle);
         refreshRuntimeInfo(info->load, info->xruns);
     }
 
     void idleFast()
     {
-        carla_engine_idle();
+        carla_engine_idle(host.handle);
         refreshTransport();
 
         if (fPluginCount == 0 || fCurrentlyRemovingAllPlugins)
@@ -1514,7 +1514,7 @@ CarlaHostWindow::CarlaHostWindow(CarlaHost& host, const bool withCanvas, QWidget
     // For NSM we wait for the open message
     if (NSM_URL != nullptr && host.nsmOK)
     {
-        carla_nsm_ready(NSM_CALLBACK_INIT);
+        carla_nsm_ready(host.handle, NSM_CALLBACK_INIT);
         return;
     }
 
@@ -1634,7 +1634,7 @@ void CarlaHostWindow::closeEvent(QCloseEvent* const event)
         event->ignore();
 
         for i in reversed(range(self->fPluginCount)):
-            carla_show_custom_ui(i, false);
+            carla_show_custom_ui(self->host.handle, i, false);
 
         QTimer::singleShot(100, SIGNAL(close()));
         return;
@@ -1644,7 +1644,7 @@ void CarlaHostWindow::closeEvent(QCloseEvent* const event)
     self->killTimers();
     self->saveSettings();
 
-    if (carla_is_engine_running() && ! (self->host.isControl or self->host.isPlugin))
+    if (carla_is_engine_running(self->host.handle) && ! (self->host.isControl or self->host.isPlugin))
     {
         if (! slot_engineStop(true))
         {
@@ -1691,14 +1691,14 @@ void CarlaHostWindow::slot_engineStart()
     self->fFirstEngineInit = false;
     self->ui.text_logs->appendPlainText("======= Starting engine =======");
 
-    if (carla_engine_init(audioDriver.toUtf8(), self->fClientName.toUtf8()))
+    if (carla_engine_init(self->host.handle, audioDriver.toUtf8(), self->fClientName.toUtf8()))
     {
         if (firstInit && ! (self->host.isControl or self->host.isPlugin))
         {
             QSafeSettings settings;
             const double lastBpm = settings.valueDouble("LastBPM", 120.0);
             if (lastBpm >= 20.0)
-                carla_transport_bpm(lastBpm);
+                carla_transport_bpm(self->host.handle, lastBpm);
         }
         return;
     }
@@ -1708,7 +1708,7 @@ void CarlaHostWindow::slot_engineStart()
         return;
     }
 
-    const QCarlaString audioError(carla_get_last_error());
+    const QCarlaString audioError(carla_get_last_error(self->host.handle));
 
     if (audioError.isNotEmpty())
     {
@@ -1751,7 +1751,7 @@ bool CarlaHostWindow::slot_engineStop(const bool forced)
 
 void CarlaHostWindow::slot_engineConfig()
 {
-    RuntimeDriverSettingsW dialog(self->fParentOrSelf);
+    RuntimeDriverSettingsW dialog(self->host.handle, self->fParentOrSelf);
 
     if (dialog.exec())
         return;
@@ -1761,21 +1761,21 @@ void CarlaHostWindow::slot_engineConfig()
     double sampleRate;
     dialog.getValues(audioDevice, bufferSize, sampleRate);
 
-    if (carla_is_engine_running())
+    if (carla_is_engine_running(self->host.handle))
     {
-        carla_set_engine_buffer_size_and_sample_rate(bufferSize, sampleRate);
+        carla_set_engine_buffer_size_and_sample_rate(self->host.handle, bufferSize, sampleRate);
     }
     else
     {
-        carla_set_engine_option(ENGINE_OPTION_AUDIO_DEVICE, 0, audioDevice.toUtf8());
-        carla_set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, static_cast<int>(bufferSize), "");
-        carla_set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, static_cast<int>(sampleRate), "");
+        carla_set_engine_option(self->host.handle, ENGINE_OPTION_AUDIO_DEVICE, 0, audioDevice.toUtf8());
+        carla_set_engine_option(self->host.handle, ENGINE_OPTION_AUDIO_BUFFER_SIZE, static_cast<int>(bufferSize), "");
+        carla_set_engine_option(self->host.handle, ENGINE_OPTION_AUDIO_SAMPLE_RATE, static_cast<int>(sampleRate), "");
     }
 }
 
 bool CarlaHostWindow::slot_engineStopTryAgain()
 {
-    if (carla_is_engine_running() && ! carla_set_engine_about_to_close())
+    if (carla_is_engine_running(self->host.handle) && ! carla_set_engine_about_to_close(self->host.handle))
     {
         QTimer::singleShot(0, this, SLOT(slot_engineStopTryAgain()));
         return false;
@@ -2145,8 +2145,8 @@ void CarlaHostWindow::slot_configureCarla()
 
     if (self->host.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && self->host.isPlugin)
         pass();
-    else if (carla_is_engine_running())
-        carla_patchbay_refresh(self->fExternalPatchbay);
+    else if (carla_is_engine_running(self->host.handle))
+        carla_patchbay_refresh(self->host.handle, self->fExternalPatchbay);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -2191,72 +2191,72 @@ void CarlaHostWindow::slot_fileTreeDoubleClicked(QModelIndex* modelIndex)
 
 void CarlaHostWindow::slot_transportPlayPause(const bool toggled)
 {
-    if (self->host.isPlugin || ! carla_is_engine_running())
+    if (self->host.isPlugin || ! carla_is_engine_running(self->host.handle))
         return;
 
     if (toggled)
-        carla_transport_play();
+        carla_transport_play(self->host.handle);
     else
-        carla_transport_pause();
+        carla_transport_pause(self->host.handle);
 
     self->refreshTransport();
 }
 
 void CarlaHostWindow::slot_transportStop()
 {
-    if (self->host.isPlugin || ! carla_is_engine_running())
+    if (self->host.isPlugin || ! carla_is_engine_running(self->host.handle))
         return;
 
-    carla_transport_pause();
-    carla_transport_relocate(0);
+    carla_transport_pause(self->host.handle);
+    carla_transport_relocate(self->host.handle, 0);
 
     self->refreshTransport();
 }
 
 void CarlaHostWindow::slot_transportBackwards()
 {
-    if (self->host.isPlugin || ! carla_is_engine_running())
+    if (self->host.isPlugin || ! carla_is_engine_running(self->host.handle))
         return;
 
-    uint64_t newFrame = carla_get_current_transport_frame();
+    uint64_t newFrame = carla_get_current_transport_frame(self->host.handle);
 
     if (newFrame > 100000)
         newFrame -= 100000;
     else
         newFrame = 0;
 
-    carla_transport_relocate(newFrame);
+    carla_transport_relocate(self->host.handle, newFrame);
 }
 
 void CarlaHostWindow::slot_transportBpmChanged(const qreal newValue)
 {
-    carla_transport_bpm(newValue);
+    carla_transport_bpm(self->host.handle, newValue);
 }
 
 void CarlaHostWindow::slot_transportForwards()
 {
-    if (carla_isZero(self->fSampleRate) || self->host.isPlugin || ! carla_is_engine_running())
+    if (carla_isZero(self->fSampleRate) || self->host.isPlugin || ! carla_is_engine_running(self->host.handle))
         return;
 
-    const uint64_t newFrame = carla_get_current_transport_frame() + uint64_t(self->fSampleRate*2.5);
-    carla_transport_relocate(newFrame);
+    const uint64_t newFrame = carla_get_current_transport_frame(self->host.handle) + uint64_t(self->fSampleRate*2.5);
+    carla_transport_relocate(self->host.handle, newFrame);
 }
 
 void CarlaHostWindow::slot_transportJackEnabled(const bool clicked)
 {
-    if (! carla_is_engine_running())
+    if (! carla_is_engine_running(self->host.handle))
         return;
     self->host.transportMode = clicked ? ENGINE_TRANSPORT_MODE_JACK : ENGINE_TRANSPORT_MODE_INTERNAL;
-    carla_set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, self->host.transportMode, self->host.transportExtra.toUtf8());
+    carla_set_engine_option(self->host.handle, ENGINE_OPTION_TRANSPORT_MODE, self->host.transportMode, self->host.transportExtra.toUtf8());
 }
 
 void CarlaHostWindow::slot_transportLinkEnabled(const bool clicked)
 {
-    if (! carla_is_engine_running())
+    if (! carla_is_engine_running(self->host.handle))
         return;
     const char* const extra = clicked ? ":link:" : "";
     self->host.transportExtra = extra;
-    carla_set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, self->host.transportMode, self->host.transportExtra.toUtf8());
+    carla_set_engine_option(self->host.handle, ENGINE_OPTION_TRANSPORT_MODE, self->host.transportMode, self->host.transportExtra.toUtf8());
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -2264,7 +2264,7 @@ void CarlaHostWindow::slot_transportLinkEnabled(const bool clicked)
 
 void CarlaHostWindow::slot_xrunClear()
 {
-    carla_clear_engine_xruns();
+    carla_clear_engine_xruns(self->host.handle);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -2513,22 +2513,30 @@ CarlaHost& initHost(const QString initName, const bool isControl, const bool isP
     host.isControl = isControl;
     host.isPlugin  = isPlugin;
 
-    carla_set_engine_callback(_engineCallback, &host);
-    carla_set_file_callback(_fileCallback, nullptr);
+    // TODO
+    if (isPlugin)
+        pass();
+    else if (isControl)
+        pass();
+    else
+        host.handle = carla_standalone_host_init();
+
+    carla_set_engine_callback(host.handle, _engineCallback, &host);
+    carla_set_file_callback(host.handle, _fileCallback, nullptr);
 
     // If it's a plugin the paths are already set
     if (! isPlugin)
     {
         host.pathBinaries  = pathBinaries;
         host.pathResources = pathResources;
-        carla_set_engine_option(ENGINE_OPTION_PATH_BINARIES, 0, pathBinaries.toUtf8());
-        carla_set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, pathResources.toUtf8());
+        carla_set_engine_option(host.handle, ENGINE_OPTION_PATH_BINARIES, 0, pathBinaries.toUtf8());
+        carla_set_engine_option(host.handle, ENGINE_OPTION_PATH_RESOURCES, 0, pathResources.toUtf8());
 
         if (! isControl)
         {
             const pid_t pid = getpid();
             if (pid > 0)
-                host.nsmOK = carla_nsm_init(static_cast<uint64_t>(pid), initName.toUtf8());
+                host.nsmOK = carla_nsm_init(host.handle, static_cast<uint64_t>(pid), initName.toUtf8());
         }
     }
 
@@ -2609,20 +2617,20 @@ void loadHostSettings(CarlaHost& host)
 
 void setHostSettings(const CarlaHost& host)
 {
-    carla_set_engine_option(ENGINE_OPTION_FORCE_STEREO,          host.forceStereo,         "");
-    carla_set_engine_option(ENGINE_OPTION_MAX_PARAMETERS,        static_cast<int>(host.maxParameters), "");
-    carla_set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, host.preferPluginBridges, "");
-    carla_set_engine_option(ENGINE_OPTION_PREFER_UI_BRIDGES,     host.preferUIBridges,     "");
-    carla_set_engine_option(ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR, host.preventBadBehaviour, "");
-    carla_set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    host.uiBridgesTimeout,    "");
-    carla_set_engine_option(ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     host.uisAlwaysOnTop,      "");
+    carla_set_engine_option(host.handle, ENGINE_OPTION_FORCE_STEREO,          host.forceStereo,         "");
+    carla_set_engine_option(host.handle, ENGINE_OPTION_MAX_PARAMETERS,        static_cast<int>(host.maxParameters), "");
+    carla_set_engine_option(host.handle, ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, host.preferPluginBridges, "");
+    carla_set_engine_option(host.handle, ENGINE_OPTION_PREFER_UI_BRIDGES,     host.preferUIBridges,     "");
+    carla_set_engine_option(host.handle, ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR, host.preventBadBehaviour, "");
+    carla_set_engine_option(host.handle, ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    host.uiBridgesTimeout,    "");
+    carla_set_engine_option(host.handle, ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     host.uisAlwaysOnTop,      "");
 
-    if (host.isPlugin || host.isRemote || carla_is_engine_running())
+    if (host.isPlugin || host.isRemote || carla_is_engine_running(host.handle))
         return;
 
-    carla_set_engine_option(ENGINE_OPTION_PROCESS_MODE,          host.nextProcessMode,     "");
-    carla_set_engine_option(ENGINE_OPTION_TRANSPORT_MODE,        host.transportMode,       host.transportExtra.toUtf8());
-    carla_set_engine_option(ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT,  host.showLogs,            "");
+    carla_set_engine_option(host.handle, ENGINE_OPTION_PROCESS_MODE,          host.nextProcessMode,     "");
+    carla_set_engine_option(host.handle, ENGINE_OPTION_TRANSPORT_MODE,        host.transportMode,       host.transportExtra.toUtf8());
+    carla_set_engine_option(host.handle, ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT,  host.showLogs,            "");
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -2707,9 +2715,9 @@ QString setEngineSettings(CarlaHost& host)
     else
         portNumUDP = settings.valueIntPositive(CARLA_KEY_OSC_UDP_PORT_NUMBER, CARLA_DEFAULT_OSC_UDP_PORT_NUMBER);
 
-    carla_set_engine_option(ENGINE_OPTION_OSC_ENABLED, oscEnabled ? 1 : 0, "");
-    carla_set_engine_option(ENGINE_OPTION_OSC_PORT_TCP, portNumTCP, "");
-    carla_set_engine_option(ENGINE_OPTION_OSC_PORT_UDP, portNumUDP, "");
+    carla_set_engine_option(host.handle, ENGINE_OPTION_OSC_ENABLED, oscEnabled ? 1 : 0, "");
+    carla_set_engine_option(host.handle, ENGINE_OPTION_OSC_PORT_TCP, portNumTCP, "");
+    carla_set_engine_option(host.handle, ENGINE_OPTION_OSC_PORT_UDP, portNumUDP, "");
 
     //-----------------------------------------------------------------------------------------------------------------
     // wine settings
@@ -2721,15 +2729,15 @@ QString setEngineSettings(CarlaHost& host)
     const int optWineBaseRtPrio = settings.valueIntPositive(CARLA_KEY_WINE_BASE_RT_PRIO,   CARLA_DEFAULT_WINE_BASE_RT_PRIO);
     const int optWineServerRtPrio = settings.valueIntPositive(CARLA_KEY_WINE_SERVER_RT_PRIO, CARLA_DEFAULT_WINE_SERVER_RT_PRIO);
 
-    carla_set_engine_option(ENGINE_OPTION_WINE_EXECUTABLE, 0, optWineExecutable.toUtf8());
-    carla_set_engine_option(ENGINE_OPTION_WINE_AUTO_PREFIX, optWineAutoPrefix ? 1 : 0, "");
+    carla_set_engine_option(host.handle, ENGINE_OPTION_WINE_EXECUTABLE, 0, optWineExecutable.toUtf8());
+    carla_set_engine_option(host.handle, ENGINE_OPTION_WINE_AUTO_PREFIX, optWineAutoPrefix ? 1 : 0, "");
     /*
     // TODO
-    carla_set_engine_option(ENGINE_OPTION_WINE_FALLBACK_PREFIX, 0, os.path.expanduser(optWineFallbackPrefix));
+    carla_set_engine_option(host.handle, ENGINE_OPTION_WINE_FALLBACK_PREFIX, 0, os.path.expanduser(optWineFallbackPrefix));
     */
-    carla_set_engine_option(ENGINE_OPTION_WINE_RT_PRIO_ENABLED, optWineRtPrioEnabled ? 1 : 0, "");
-    carla_set_engine_option(ENGINE_OPTION_WINE_BASE_RT_PRIO, optWineBaseRtPrio, "");
-    carla_set_engine_option(ENGINE_OPTION_WINE_SERVER_RT_PRIO, optWineServerRtPrio, "");
+    carla_set_engine_option(host.handle, ENGINE_OPTION_WINE_RT_PRIO_ENABLED, optWineRtPrioEnabled ? 1 : 0, "");
+    carla_set_engine_option(host.handle, ENGINE_OPTION_WINE_BASE_RT_PRIO, optWineBaseRtPrio, "");
+    carla_set_engine_option(host.handle, ENGINE_OPTION_WINE_SERVER_RT_PRIO, optWineServerRtPrio, "");
 
     //-----------------------------------------------------------------------------------------------------------------
     // driver and device settings
@@ -2750,16 +2758,16 @@ QString setEngineSettings(CarlaHost& host)
     const bool audioTripleBuffer = settings.valueBool(QString("%1/TripleBuffer").arg(prefix), CARLA_DEFAULT_AUDIO_TRIPLE_BUFFER);
 
     // Only setup audio things if engine is not running
-    if (! carla_is_engine_running())
+    if (! carla_is_engine_running(host.handle))
     {
-        carla_set_engine_option(ENGINE_OPTION_AUDIO_DRIVER, 0, audioDriver.toUtf8());
-        carla_set_engine_option(ENGINE_OPTION_AUDIO_DEVICE, 0, audioDevice.toUtf8());
+        carla_set_engine_option(host.handle, ENGINE_OPTION_AUDIO_DRIVER, 0, audioDriver.toUtf8());
+        carla_set_engine_option(host.handle, ENGINE_OPTION_AUDIO_DEVICE, 0, audioDevice.toUtf8());
 
         if (! audioDriver.startsWith("JACK"))
         {
-            carla_set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, audioBufferSize, "");
-            carla_set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, audioSampleRate, "");
-            carla_set_engine_option(ENGINE_OPTION_AUDIO_TRIPLE_BUFFER, audioTripleBuffer ? 1 : 0, "");
+            carla_set_engine_option(host.handle, ENGINE_OPTION_AUDIO_BUFFER_SIZE, audioBufferSize, "");
+            carla_set_engine_option(host.handle, ENGINE_OPTION_AUDIO_SAMPLE_RATE, audioSampleRate, "");
+            carla_set_engine_option(host.handle, ENGINE_OPTION_AUDIO_TRIPLE_BUFFER, audioTripleBuffer ? 1 : 0, "");
         }
     }
 
@@ -2769,7 +2777,10 @@ QString setEngineSettings(CarlaHost& host)
     if (audioDriver != "JACK" && host.transportMode == ENGINE_TRANSPORT_MODE_JACK)
     {
         host.transportMode = ENGINE_TRANSPORT_MODE_INTERNAL;
-        carla_set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, ENGINE_TRANSPORT_MODE_INTERNAL, host.transportExtra.toUtf8());
+        carla_set_engine_option(host.handle,
+                                ENGINE_OPTION_TRANSPORT_MODE,
+                                ENGINE_TRANSPORT_MODE_INTERNAL,
+                                host.transportExtra.toUtf8());
     }
 
     //-----------------------------------------------------------------------------------------------------------------
@@ -2802,16 +2813,16 @@ void runHostWithoutUI(CarlaHost& host)
 
     const QString audioDriver = setEngineSettings(host);
 
-    if (! carla_engine_init(audioDriver.toUtf8(), "Carla"))
+    if (! carla_engine_init(host.handle, audioDriver.toUtf8(), "Carla"))
     {
-        carla_stdout("Engine failed to initialize, possible reasons:\n%s", carla_get_last_error());
+        carla_stdout("Engine failed to initialize, possible reasons:\n%s", carla_get_last_error(host.handle));
         std::exit(1);
     }
 
-    if (! carla_load_project(projectFile.toUtf8()))
+    if (! carla_load_project(host.handle, projectFile.toUtf8()))
     {
-        carla_stdout("Failed to load selected project file, possible reasons:\n%s", carla_get_last_error());
-        carla_engine_close();
+        carla_stdout("Failed to load selected project file, possible reasons:\n%s", carla_get_last_error(host.handle));
+        carla_engine_close(host.handle);
         std::exit(1);
     }
 
@@ -2820,16 +2831,16 @@ void runHostWithoutUI(CarlaHost& host)
 
     carla_stdout("Carla ready!");
 
-    while (carla_is_engine_running() && ! gCarla.term)
+    while (carla_is_engine_running(host.handle) && ! gCarla.term)
     {
-        carla_engine_idle();
+        carla_engine_idle(host.handle);
         carla_msleep(33); // 30 Hz
     }
 
     //-----------------------------------------------------------------------------------------------------------------
     // Stop
 
-    carla_engine_close();
+    carla_engine_close(host.handle);
     std::exit(0);
 }
 

@@ -258,9 +258,11 @@ void DriverSettingsW::slot_updateDeviceInfo()
 
 struct RuntimeDriverSettingsW::PrivateData {
     Ui::DriverSettingsW ui;
+    const CarlaHostHandle hostHandle;
 
-    PrivateData(RuntimeDriverSettingsW* const self)
-        : ui()
+    PrivateData(RuntimeDriverSettingsW* const self, const CarlaHostHandle h)
+        : ui(),
+          hostHandle(h)
     {
         ui.setupUi(self);
     }
@@ -268,11 +270,12 @@ struct RuntimeDriverSettingsW::PrivateData {
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PrivateData)
 };
 
-RuntimeDriverSettingsW::RuntimeDriverSettingsW(QWidget* const parent)
+RuntimeDriverSettingsW::RuntimeDriverSettingsW(const CarlaHostHandle hostHandle, QWidget* const parent)
     : QDialog(parent),
-      self(new PrivateData(this))
+      self(new PrivateData(this, hostHandle))
 {
-    const CarlaRuntimeEngineDriverDeviceInfo* const driverDeviceInfo = carla_get_runtime_engine_driver_device_info();
+    const CarlaRuntimeEngineDriverDeviceInfo* const driverDeviceInfo =
+        carla_get_runtime_engine_driver_device_info(hostHandle);
 
     QList<uint> bufferSizes;
     fillQUIntListFromUIntArray(bufferSizes, driverDeviceInfo->bufferSizes);
@@ -307,7 +310,7 @@ RuntimeDriverSettingsW::RuntimeDriverSettingsW(QWidget* const parent)
     // ----------------------------------------------------------------------------------------------------------------
     // Load runtime settings
 
-    if (carla_is_engine_running())
+    if (carla_is_engine_running(hostHandle))
     {
         self->ui.cb_device->addItem(driverDeviceInfo->name);
         self->ui.cb_device->setCurrentIndex(0);
@@ -393,7 +396,7 @@ void RuntimeDriverSettingsW::getValues(QString& retAudioDevice, uint& retBufferS
 
 void RuntimeDriverSettingsW::slot_showDevicePanel()
 {
-    carla_show_engine_device_control_panel();
+    carla_show_engine_device_control_panel(self->hostHandle);
 }
 
 // --------------------------------------------------------------------------------------------------------------------

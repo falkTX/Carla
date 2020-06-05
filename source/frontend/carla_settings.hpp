@@ -37,6 +37,7 @@
 //---------------------------------------------------------------------------------------------------------------------
 // Imports (Custom)
 
+#include "CarlaHost.h"
 #include "CarlaJuceUtils.hpp"
 
 class CarlaHost;
@@ -71,7 +72,7 @@ class RuntimeDriverSettingsW : public QDialog
     Q_OBJECT
 
 public:
-    RuntimeDriverSettingsW(QWidget* parent = nullptr);
+    RuntimeDriverSettingsW(CarlaHostHandle hostHandle, QWidget* parent = nullptr);
     ~RuntimeDriverSettingsW() override;
 
     void getValues(QString& audioDevice, uint& bufferSize, double& sampleRate);

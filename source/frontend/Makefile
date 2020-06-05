@@ -156,17 +156,21 @@ endif
 
 ifeq ($(USING_JUCE),true)
 LIBS += $(MODULEDIR)/juce_audio_basics.a
+ifeq ($(USING_JUCE_AUDIO_DEVICES),true)
 LIBS += $(MODULEDIR)/juce_audio_devices.a
+endif
 LIBS += $(MODULEDIR)/juce_audio_processors.a
 LIBS += $(MODULEDIR)/juce_core.a
 LIBS += $(MODULEDIR)/juce_data_structures.a
 LIBS += $(MODULEDIR)/juce_events.a
 LIBS += $(MODULEDIR)/juce_graphics.a
 LIBS += $(MODULEDIR)/juce_gui_basics.a
-ifeq ($(MACOS),true)
+ifeq ($(USING_JUCE_GUI_EXTRA),true)
 LIBS += $(MODULEDIR)/juce_gui_extra.a
 endif
-else
+endif
+
+ifneq ($(USING_JUCE_AUDIO_DEVICES),true)
 LIBS += $(MODULEDIR)/rtaudio.a
 LIBS += $(MODULEDIR)/rtmidi.a
 endif
@@ -188,17 +192,21 @@ LINK_FLAGS += $(X11_LIBS)
 
 ifeq ($(USING_JUCE),true)
 LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
+ifeq ($(USING_JUCE_AUDIO_DEVICES),true)
 LINK_FLAGS += $(JUCE_AUDIO_DEVICES_LIBS)
+endif
 LINK_FLAGS += $(JUCE_AUDIO_PROCESSORS_LIBS)
 LINK_FLAGS += $(JUCE_CORE_LIBS)
 LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
 LINK_FLAGS += $(JUCE_EVENTS_LIBS)
 LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
 LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
-ifeq ($(MACOS),true)
+ifeq ($(USING_JUCE_GUI_EXTRA),true)
 LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
 endif
-else
+endif
+
+ifneq ($(USING_JUCE_AUDIO_DEVICES),true)
 LINK_FLAGS += $(RTAUDIO_LIBS)
 LINK_FLAGS += $(RTMIDI_LIBS)
 endif

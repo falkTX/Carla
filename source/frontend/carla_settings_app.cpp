@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "carla_database.hpp"
+#include "carla_settings.hpp"
 
 //---------------------------------------------------------------------------------------------------------------------
 
@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
     // ----------------------------------------------------------------------------------------------------------------
     // Create GUI
 
-    PluginRefreshW gui(nullptr, host);
+    CarlaSettingsW gui(nullptr, host, true, true);
 
     // ----------------------------------------------------------------------------------------------------------------
     // Show GUI

@@ -248,17 +248,29 @@ QApplication* CarlaApplication::createApp(const QString& appName, int& argc, cha
     QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
 
-    /*
-    // TODO
-    args = sys.argv[:]
+#ifdef CARLA_OS_WIN
+    static int r_argc = argc + 2;
+    static char** const r_argv = static_cast<char**>(calloc(sizeof(char*), r_argc));
+    static char argvExtra1[] = "-platform\0";
+    static char argvExtra2[] = "windows:fontengine=freetype\0";
+    for (int i=0; i<argc; ++i)
+        r_argv[i] = argv[i];
+    r_argv[argc] = argvExtra1;
+    r_argv[argc] = argvExtra2;
+#else
+# define r_argc argc
+# define r_argv argv
+#endif
 
-    if WINDOWS:
-        args += ["-platform", "windows:fontengine=freetype"]
-    */
-    fApp = gCarla.nogui ? new QCoreApplication(argc, argv) : new QApplication(argc, argv);
+    fApp = gCarla.nogui ? new QCoreApplication(r_argc, r_argv) : new QApplication(r_argc, r_argv);
     fApp->setApplicationName(appName);
     fApp->setApplicationVersion(CARLA_VERSION_STRING);
     fApp->setOrganizationName("falkTX");
+
+#ifndef CARLA_OS_WIN
+# undef r_argc
+# undef r_argv
+#endif
 
     if (gCarla.nogui)
         return nullptr;

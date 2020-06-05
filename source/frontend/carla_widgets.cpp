@@ -90,10 +90,10 @@ struct CarlaAboutW::PrivateData {
 
         ui.l_extended->setText(carla_get_complete_license_text());
 
-        if (carla_is_engine_running() && ! host.isControl)
+        if (carla_is_engine_running(host.handle) && ! host.isControl)
         {
-            ui.le_osc_url_tcp->setText(carla_get_host_osc_url_tcp());
-            ui.le_osc_url_udp->setText(carla_get_host_osc_url_udp());
+            ui.le_osc_url_tcp->setText(carla_get_host_osc_url_tcp(host.handle));
+            ui.le_osc_url_udp->setText(carla_get_host_osc_url_udp(host.handle));
         }
         else
         {

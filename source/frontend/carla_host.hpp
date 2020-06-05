@@ -40,7 +40,7 @@
 #include "carla_shared.hpp"
 #include "carla_widgets.hpp"
 
-#include "CarlaBackend.h"
+#include "CarlaHost.h"
 #include "CarlaJuceUtils.hpp"
 
 CARLA_BACKEND_USE_NAMESPACE;
@@ -52,6 +52,9 @@ class CarlaHost : public QObject
     Q_OBJECT
 
 public:
+    // host handle
+    CarlaHostHandle handle;
+
     // info about this host object
     bool isControl;
     bool isPlugin;
