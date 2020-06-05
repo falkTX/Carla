@@ -179,6 +179,10 @@
 #define CARLA_CUSTOM_SAFE_ASSERT_CONTINUE(msg, cond)    if (! (cond)) { carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__); continue; }
 #define CARLA_CUSTOM_SAFE_ASSERT_RETURN(msg, cond, ret) if (! (cond)) { carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__); return ret; }
 
+#define CARLA_CUSTOM_SAFE_ASSERT_ONCE_BREAK(msg, cond)       if (! (cond)) { static bool p; if (!p) carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__); else p = true; break; }
+#define CARLA_CUSTOM_SAFE_ASSERT_ONCE_CONTINUE(msg, cond)    if (! (cond)) { static bool p; if (!p) carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__); else p = true; continue; }
+#define CARLA_CUSTOM_SAFE_ASSERT_ONCE_RETURN(msg, cond, ret) if (! (cond)) { static bool p; if (!p) carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__); else p = true; return ret; }
+
 #define CARLA_SAFE_ASSERT_INT_BREAK(cond, value)       if (! (cond)) { carla_safe_assert_int(#cond, __FILE__, __LINE__, static_cast<int>(value); break; }
 #define CARLA_SAFE_ASSERT_INT_CONTINUE(cond, value)    if (! (cond)) { carla_safe_assert_int(#cond, __FILE__, __LINE__, static_cast<int>(value)); continue; }
 #define CARLA_SAFE_ASSERT_INT_RETURN(cond, value, ret) if (! (cond)) { carla_safe_assert_int(#cond, __FILE__, __LINE__, static_cast<int>(value)); return ret; }

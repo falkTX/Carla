@@ -2336,7 +2336,7 @@ public:
 
                 const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
                 jackbridge_free(uuidstr);
-                CARLA_SAFE_ASSERT_RETURN(parsed, false);
+                CARLA_CUSTOM_SAFE_ASSERT_ONCE_RETURN("JACK meta-data support unavailable", parsed, false);
             }
 
             char valueStr[STR_MAX];
@@ -2699,7 +2699,7 @@ public:
 
                 const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
                 jackbridge_free(uuidstr);
-                CARLA_SAFE_ASSERT_RETURN(parsed,);
+                CARLA_CUSTOM_SAFE_ASSERT_ONCE_RETURN("JACK meta-data support unavailable", parsed,);
             }
 
             char valueStr[STR_MAX];
@@ -3472,7 +3472,7 @@ private:
 
             const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
             jackbridge_free(uuidstr);
-            CARLA_SAFE_ASSERT_RETURN(parsed,);
+            CARLA_CUSTOM_SAFE_ASSERT_ONCE_RETURN("JACK meta-data support unavailable", parsed,);
         }
 
         bool clientBelongsToUs;
@@ -3761,7 +3761,7 @@ private:
 
                     const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
                     jackbridge_free(uuidstr);
-                    CARLA_SAFE_ASSERT_RETURN(parsed,);
+                    CARLA_CUSTOM_SAFE_ASSERT_ONCE_CONTINUE("JACK meta-data support unavailable", parsed);
                 }
 
                 char* value = nullptr;
