@@ -131,9 +131,9 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     }
 
     // Get method from path, "/Carla/i/method" -> "method"
-    char method[32+1];
-    method[32] = '\0';
-    std::strncpy(method, path + (nameSize + offset), 32);
+    char method[48];
+    std::strncpy(method, path + (nameSize + offset), 47);
+    method[47] = '\0';
 
     if (method[0] == '\0')
     {
