@@ -4368,7 +4368,6 @@ void jack_finish(void *arg);
 
 #ifdef CARLA_OS_UNIX
 # include "ThreadSafeFFTW.hpp"
-static ThreadSafeFFTW sThreadSafeFFTW;
 #endif
 
 // -----------------------------------------------------------------------
@@ -4377,6 +4376,10 @@ CARLA_EXPORT
 int jack_initialize(jack_client_t* const client, const char* const load_init)
 {
     CARLA_BACKEND_USE_NAMESPACE
+
+#ifdef CARLA_OS_UNIX
+    static const ThreadSafeFFTW sThreadSafeFFTW;
+#endif
 
     EngineProcessMode mode;
     if (load_init != nullptr && std::strcmp(load_init, "rack") == 0)
@@ -4405,20 +4408,13 @@ int jack_initialize(jack_client_t* const client, const char* const load_init)
     engine->setOption(ENGINE_OPTION_PATH_RESOURCES, 0, "/usr/share/resources");
 
     if (engine->initInternal(client))
-    {
-#ifdef CARLA_OS_UNIX
-        sThreadSafeFFTW.init();
-#endif
         return 0;
-    }
-    else
-    {
-        delete engine;
+
+    delete engine;
 #ifdef USING_JUCE
-        juce::shutdownJuce_GUI();
+    juce::shutdownJuce_GUI();
 #endif
-        return 1;
-    }
+    return 1;
 }
 
 CARLA_EXPORT
@@ -4428,10 +4424,6 @@ void jack_finish(void *arg)
 
     CarlaEngineJack* const engine = (CarlaEngineJack*)arg;;
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
-
-#ifdef CARLA_OS_UNIX
-    const ThreadSafeFFTW::Deinitializer tsfftwde(sThreadSafeFFTW);
-#endif
 
     engine->setAboutToClose();
     engine->removeAllPlugins();
