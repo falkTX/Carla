@@ -50,13 +50,13 @@ jobs:
         - TARGET="pylint"
 
 before_install:
-  - sh ${TRAVIS_BUILD_DIR}/.travis/before_install.sh
+  - bash ${TRAVIS_BUILD_DIR}/.travis/before_install.sh
 
 install:
-  - sh ${TRAVIS_BUILD_DIR}/.travis/install.sh
+  - bash ${TRAVIS_BUILD_DIR}/.travis/install.sh
 
 script:
-  - sh ${TRAVIS_BUILD_DIR}/.travis/script-${TARGET}.sh
+  - bash ${TRAVIS_BUILD_DIR}/.travis/script-${TARGET}.sh
 
 notifications:
   email: true
