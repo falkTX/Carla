@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla Backend utils
-# Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -23,9 +23,47 @@ from os import environ
 from sys import argv
 
 # ------------------------------------------------------------------------------------------------------------
+# Imports (ctypes)
+
+from ctypes import (
+    c_bool, c_char_p, c_double, c_int, c_uint, c_uint32, c_void_p,
+    cdll, Structure,
+    CFUNCTYPE, POINTER
+)
+
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
-from carla_backend import *
+from carla_backend import (
+    PLUGIN_NONE,
+    PLUGIN_INTERNAL,
+    PLUGIN_LADSPA,
+    PLUGIN_DSSI,
+    PLUGIN_LV2,
+    PLUGIN_VST2,
+    PLUGIN_VST3,
+    PLUGIN_AU,
+    PLUGIN_DLS,
+    PLUGIN_GIG,
+    PLUGIN_SF2,
+    PLUGIN_SFZ,
+    PLUGIN_JACK,
+    PLUGIN_CATEGORY_NONE,
+    PLUGIN_CATEGORY_SYNTH,
+    PLUGIN_CATEGORY_DELAY,
+    PLUGIN_CATEGORY_EQ,
+    PLUGIN_CATEGORY_FILTER,
+    PLUGIN_CATEGORY_DISTORTION,
+    PLUGIN_CATEGORY_DYNAMICS,
+    PLUGIN_CATEGORY_MODULATOR,
+    PLUGIN_CATEGORY_UTILITY,
+    PLUGIN_CATEGORY_OTHER,
+    WINDOWS,
+    c_enum, c_uintptr,
+    charPtrToString,
+    charPtrPtrToStringList,
+    structToDict
+)
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -46,6 +84,10 @@ def getPluginTypeAsString(ptype):
         return "VST3"
     if ptype == PLUGIN_AU:
         return "AU"
+    if ptype == PLUGIN_DLS:
+        return "DLS"
+    if ptype == PLUGIN_GIG:
+        return "GIG"
     if ptype == PLUGIN_SF2:
         return "SF2"
     if ptype == PLUGIN_SFZ:
@@ -53,7 +95,7 @@ def getPluginTypeAsString(ptype):
     if ptype == PLUGIN_JACK:
         return "JACK"
 
-    print("getPluginTypeAsString(%i) - invalid type" % ptype);
+    print("getPluginTypeAsString(%i) - invalid type" % ptype)
     return "Unknown"
 
 def getPluginTypeFromString(stype):
@@ -78,6 +120,10 @@ def getPluginTypeFromString(stype):
         return PLUGIN_VST3
     if stype in ("au", "audiounit"):
         return PLUGIN_AU
+    if stype == "dls":
+        return PLUGIN_DLS
+    if stype == "gig":
+        return PLUGIN_GIG
     if stype == "sf2":
         return PLUGIN_SF2
     if stype == "sfz":
@@ -295,14 +341,19 @@ class CarlaUtils(object):
         self.lib.carla_x11_get_window_pos.argtypes = [c_uintptr]
         self.lib.carla_x11_get_window_pos.restype = POINTER(c_int)
 
+        self._pipeClientFunc = None
+        self._pipeClientCallback = None
+
         # use _putenv on windows
         if not WINDOWS:
             self.msvcrt = None
             return
 
         self.msvcrt = cdll.msvcrt
+        # pylint: disable=protected-access
         self.msvcrt._putenv.argtypes = [c_char_p]
         self.msvcrt._putenv.restype = None
+        # pylint: enable=protected-access
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -312,7 +363,9 @@ class CarlaUtils(object):
 
         if WINDOWS:
             keyvalue = "%s=%s" % (key, value)
+            # pylint: disable=protected-access
             self.msvcrt._putenv(keyvalue.encode("utf-8"))
+            # pylint: enable=protected-access
 
     # unset environment variable
     def unsetenv(self, key):
@@ -321,7 +374,9 @@ class CarlaUtils(object):
 
         if WINDOWS:
             keyrm = "%s=" % key
+            # pylint: disable=protected-access
             self.msvcrt._putenv(keyrm.encode("utf-8"))
+            # pylint: enable=protected-access
 
     # --------------------------------------------------------------------------------------------------------
 

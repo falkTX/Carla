@@ -26,6 +26,7 @@ from PyQt5.QtCore import QEventLoop
 
 import ui_carla_osc_connect
 
+from carla_backend_qt import CarlaHostQtPlugin
 from carla_host import *
 
 # ------------------------------------------------------------------------------------------------------------
@@ -104,10 +105,10 @@ class ConnectDialog(QDialog):
             self.ui.rb_reported_auto.setChecked(False)
             self.ui.rb_reported_custom.setChecked(True)
 
-        self.ui.le_host.setText(settings.value("Host", "127.0.0.1", type=str))
-        self.ui.le_reported_host.setText(settings.value("ReportedHost", "", type=str))
-        self.ui.sb_tcp_port.setValue(settings.value("TCPPort", CARLA_DEFAULT_OSC_TCP_PORT_NUMBER, type=int))
-        self.ui.sb_udp_port.setValue(settings.value("UDPPort", CARLA_DEFAULT_OSC_UDP_PORT_NUMBER, type=int))
+        self.ui.le_host.setText(settings.value("Host", "127.0.0.1", str))
+        self.ui.le_reported_host.setText(settings.value("ReportedHost", "", str))
+        self.ui.sb_tcp_port.setValue(settings.value("TCPPort", CARLA_DEFAULT_OSC_TCP_PORT_NUMBER, int))
+        self.ui.sb_udp_port.setValue(settings.value("UDPPort", CARLA_DEFAULT_OSC_UDP_PORT_NUMBER, int))
 
         self.checkIfButtonBoxShouldBeEnabled(self.ui.le_host.text(),
                                              self.ui.rb_reported_auto.isChecked(),
@@ -717,9 +718,9 @@ class HostWindowOSC(HostWindow):
     def loadSettings(self, firstTime):
         settings = HostWindow.loadSettings(self, firstTime)
         if self.fCustomOscAddress is not None:
-            self.fOscAddressTCP = settings.value("RemoteAddressTCP", "osc.tcp://127.0.0.1:22752/Carla", type=str)
-            self.fOscAddressUDP = settings.value("RemoteAddressUDP", "osc.udp://127.0.0.1:22752/Carla", type=str)
-            self.fOscReportedHost = settings.value("RemoteReportedHost", "", type=str)
+            self.fOscAddressTCP = settings.value("RemoteAddressTCP", "osc.tcp://127.0.0.1:22752/Carla", str)
+            self.fOscAddressUDP = settings.value("RemoteAddressUDP", "osc.udp://127.0.0.1:22752/Carla", str)
+            self.fOscReportedHost = settings.value("RemoteReportedHost", "", str)
 
     def saveSettings(self):
         settings = HostWindow.saveSettings(self)

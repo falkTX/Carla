@@ -20,10 +20,19 @@
 # Imports (Global)
 
 from abc import abstractmethod
-from ctypes import *
 from platform import architecture
 from struct import pack
 from sys import platform, maxsize
+
+# ------------------------------------------------------------------------------------------------------------
+# Imports (ctypes)
+
+from ctypes import (
+    c_bool, c_char_p, c_double, c_float, c_int, c_long, c_longdouble, c_longlong, c_ubyte, c_uint, c_void_p,
+    c_int8, c_int16, c_int32, c_int64, c_uint8, c_uint16, c_uint32, c_uint64,
+    cast, Structure,
+    CDLL, CFUNCTYPE, RTLD_GLOBAL, RTLD_LOCAL, POINTER
+)
 
 # ------------------------------------------------------------------------------------------------------------
 # 64bit check
@@ -126,8 +135,10 @@ def toPythonType(value, attr):
         return value
     if isinstance(value, bytes):
         return charPtrToString(value)
+    # pylint: disable=consider-merging-isinstance
     if isinstance(value, c_intp_types) or isinstance(value, c_floatp_types):
         return numPtrToList(value)
+    # pylint: enable=consider-merging-isinstance
     if isinstance(value, POINTER(c_char_p)):
         return charPtrPtrToStringList(value)
     print("..............", attr, ".....................", value, ":", type(value))
@@ -137,7 +148,9 @@ def toPythonType(value, attr):
 # Convert a ctypes struct into a python dict
 
 def structToDict(struct):
+    # pylint: disable=protected-access
     return dict((attr, toPythonType(getattr(struct, attr), attr)) for attr, value in struct._fields_)
+    # pylint: enable=protected-access
 
 # ------------------------------------------------------------------------------------------------------------
 # Carla Backend API (base definitions)
@@ -2877,6 +2890,9 @@ class CarlaHostDLL(CarlaHostMeta):
 
         self.handle = self.lib.carla_standalone_host_init()
 
+        self._engineCallback = None
+        self._fileCallback = None
+
     # --------------------------------------------------------------------------------------------------------
 
     def get_engine_driver_count(self):
@@ -3647,8 +3663,8 @@ class CarlaHostPlugin(CarlaHostMeta):
         if pluginId < len(self.fPluginsInfo):
             return
 
-        for id in range(len(self.fPluginsInfo), pluginId+1):
-            self.fPluginsInfo[id] = PluginStoreInfo()
+        for pid in range(len(self.fPluginsInfo), pluginId+1):
+            self.fPluginsInfo[pid] = PluginStoreInfo()
 
     def _set_pluginInfo(self, pluginId, info):
         plugin = self.fPluginsInfo.get(pluginId, None)
@@ -3718,7 +3734,7 @@ class CarlaHostPlugin(CarlaHostMeta):
         plugin.parameterValues = []
 
         # add placeholders
-        for x in range(count):
+        for _ in range(count):
             plugin.parameterInfo.append(PyCarlaParameterInfo.copy())
             plugin.parameterData.append(PyParameterData.copy())
             plugin.parameterRanges.append(PyParameterRanges.copy())
@@ -3731,7 +3747,7 @@ class CarlaHostPlugin(CarlaHostMeta):
             return
 
         plugin.programCount = count
-        plugin.programNames = ["" for x in range(count)]
+        plugin.programNames = ["" for _ in range(count)]
 
     def _set_midiProgramCount(self, pluginId, count):
         plugin = self.fPluginsInfo.get(pluginId, None)
@@ -3740,7 +3756,7 @@ class CarlaHostPlugin(CarlaHostMeta):
             return
 
         plugin.midiProgramCount = count
-        plugin.midiProgramData = [PyMidiProgramData.copy() for x in range(count)]
+        plugin.midiProgramData = [PyMidiProgramData.copy() for _ in range(count)]
 
     def _set_customDataCount(self, pluginId, count):
         plugin = self.fPluginsInfo.get(pluginId, None)
@@ -3749,7 +3765,7 @@ class CarlaHostPlugin(CarlaHostMeta):
             return
 
         plugin.customDataCount = count
-        plugin.customData = [PyCustomData.copy() for x in range(count)]
+        plugin.customData = [PyCustomData.copy() for _ in range(count)]
 
     def _set_parameterInfo(self, pluginId, paramIndex, info):
         plugin = self.fPluginsInfo.get(pluginId, None)

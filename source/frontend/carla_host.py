@@ -21,6 +21,16 @@
 
 import json
 
+# ------------------------------------------------------------------------------------------------------------
+# Imports (ctypes)
+
+from ctypes import (
+    byref, pointer
+)
+
+# ------------------------------------------------------------------------------------------------------------
+# Imports (PyQt5)
+
 # This fails in some configurations, assume >= 5.6.0 in that case
 try:
     from PyQt5.Qt import PYQT_VERSION
@@ -28,7 +38,7 @@ except ImportError:
     PYQT_VERSION = 0x50600
 
 from PyQt5.QtCore import QT_VERSION, qCritical, QEventLoop, QFileInfo, QModelIndex, QPointF, QTimer, QEvent
-from PyQt5.QtGui import QImage, QImageWriter, QPalette, QBrush
+from PyQt5.QtGui import QImage, QImageWriter, QPainter, QPalette, QBrush
 from PyQt5.QtWidgets import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QGraphicsView, QMainWindow
 
 # ------------------------------------------------------------------------------------------------------------
@@ -37,6 +47,7 @@ from PyQt5.QtWidgets import QAction, QApplication, QInputDialog, QFileSystemMode
 import ui_carla_host
 
 from carla_app import *
+from carla_backend_qt import CarlaHostQtDLL, CarlaHostQtNull
 from carla_database import *
 from carla_settings import *
 from carla_utils import *
@@ -3332,7 +3343,7 @@ def runHostWithoutUI(host):
 
     if not isinstance(gCarla.nogui, int):
         oscPort = None
-        projectFile = getInitialProjectFile(QCoreApplication.instance(), True)
+        projectFile = getInitialProjectFile(True)
 
         if not projectFile:
             print("Carla no-gui mode can only be used together with a project file.")

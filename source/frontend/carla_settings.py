@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla settings code
-# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,11 +17,10 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Global)
+# Imports (PyQt5)
 
-from PyQt5.QtCore import pyqtSlot, QByteArray, QDir
-from PyQt5.QtGui import QColor, QCursor, QPainter, QPainterPath
-from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
+from PyQt5.QtCore import pyqtSlot, Qt
+from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QFileDialog
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -29,8 +28,152 @@ from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QFrame, QInputDialog, QLi
 import ui_carla_settings
 import ui_carla_settings_driver
 
-from carla_shared import *
-from patchcanvas.theme import *
+from carla_backend import (
+    LINUX, MACOS, WINDOWS,
+    ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL,
+    ENGINE_DRIVER_DEVICE_CAN_TRIPLE_BUFFER,
+    ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE,
+    ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE,
+    ENGINE_PROCESS_MODE_CONTINUOUS_RACK,
+    ENGINE_OPTION_FILE_PATH,
+    ENGINE_OPTION_PLUGIN_PATH,
+    FILE_AUDIO,
+    FILE_MIDI,
+    PLUGIN_LADSPA,
+    PLUGIN_DSSI,
+    PLUGIN_LV2,
+    PLUGIN_VST2,
+    PLUGIN_VST3,
+    PLUGIN_SF2,
+    PLUGIN_SFZ
+)
+
+from carla_shared import (
+    CARLA_KEY_MAIN_PROJECT_FOLDER,
+    CARLA_KEY_MAIN_USE_PRO_THEME,
+    CARLA_KEY_MAIN_PRO_THEME_COLOR,
+    CARLA_KEY_MAIN_REFRESH_INTERVAL,
+    CARLA_KEY_MAIN_CONFIRM_EXIT,
+    CARLA_KEY_MAIN_SHOW_LOGS,
+    CARLA_KEY_MAIN_EXPERIMENTAL,
+    CARLA_KEY_CANVAS_THEME,
+    CARLA_KEY_CANVAS_SIZE,
+    CARLA_KEY_CANVAS_USE_BEZIER_LINES,
+    CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS,
+    CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS,
+    #CARLA_KEY_CANVAS_EYE_CANDY,
+    CARLA_KEY_CANVAS_FANCY_EYE_CANDY,
+    CARLA_KEY_CANVAS_USE_OPENGL,
+    CARLA_KEY_CANVAS_ANTIALIASING,
+    CARLA_KEY_CANVAS_HQ_ANTIALIASING,
+    CARLA_KEY_CANVAS_INLINE_DISPLAYS,
+    CARLA_KEY_CANVAS_FULL_REPAINTS,
+    CARLA_KEY_ENGINE_DRIVER_PREFIX,
+    CARLA_KEY_ENGINE_AUDIO_DRIVER,
+    CARLA_KEY_ENGINE_PROCESS_MODE,
+    CARLA_KEY_ENGINE_FORCE_STEREO,
+    CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES,
+    CARLA_KEY_ENGINE_PREFER_UI_BRIDGES,
+    CARLA_KEY_ENGINE_MANAGE_UIS,
+    CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP,
+    CARLA_KEY_ENGINE_MAX_PARAMETERS,
+    CARLA_KEY_ENGINE_RESET_XRUNS,
+    CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT,
+    CARLA_KEY_OSC_ENABLED,
+    CARLA_KEY_OSC_TCP_PORT_ENABLED,
+    CARLA_KEY_OSC_TCP_PORT_NUMBER,
+    CARLA_KEY_OSC_TCP_PORT_RANDOM,
+    CARLA_KEY_OSC_UDP_PORT_ENABLED,
+    CARLA_KEY_OSC_UDP_PORT_NUMBER,
+    CARLA_KEY_OSC_UDP_PORT_RANDOM,
+    CARLA_KEY_PATHS_AUDIO,
+    CARLA_KEY_PATHS_MIDI,
+    CARLA_KEY_PATHS_LADSPA,
+    CARLA_KEY_PATHS_DSSI,
+    CARLA_KEY_PATHS_LV2,
+    CARLA_KEY_PATHS_VST2,
+    CARLA_KEY_PATHS_VST3,
+    CARLA_KEY_PATHS_SF2,
+    CARLA_KEY_PATHS_SFZ,
+    CARLA_KEY_WINE_EXECUTABLE,
+    CARLA_KEY_WINE_AUTO_PREFIX,
+    CARLA_KEY_WINE_FALLBACK_PREFIX,
+    CARLA_KEY_WINE_RT_PRIO_ENABLED,
+    CARLA_KEY_WINE_BASE_RT_PRIO,
+    CARLA_KEY_WINE_SERVER_RT_PRIO,
+    CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES,
+    CARLA_KEY_EXPERIMENTAL_WINE_BRIDGES,
+    CARLA_KEY_EXPERIMENTAL_JACK_APPS,
+    CARLA_KEY_EXPERIMENTAL_EXPORT_LV2,
+    CARLA_KEY_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR,
+    CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL,
+    CARLA_DEFAULT_MAIN_PROJECT_FOLDER,
+    CARLA_DEFAULT_MAIN_USE_PRO_THEME,
+    CARLA_DEFAULT_MAIN_PRO_THEME_COLOR,
+    CARLA_DEFAULT_MAIN_REFRESH_INTERVAL,
+    CARLA_DEFAULT_MAIN_CONFIRM_EXIT,
+    CARLA_DEFAULT_MAIN_SHOW_LOGS,
+    #CARLA_DEFAULT_MAIN_EXPERIMENTAL,
+    CARLA_DEFAULT_CANVAS_THEME,
+    CARLA_DEFAULT_CANVAS_SIZE,
+    CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES,
+    CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS,
+    CARLA_DEFAULT_CANVAS_AUTO_SELECT_ITEMS,
+    #CARLA_DEFAULT_CANVAS_EYE_CANDY,
+    CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY,
+    CARLA_DEFAULT_CANVAS_USE_OPENGL,
+    CARLA_DEFAULT_CANVAS_ANTIALIASING,
+    CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING,
+    CARLA_DEFAULT_CANVAS_INLINE_DISPLAYS,
+    CARLA_DEFAULT_CANVAS_FULL_REPAINTS,
+    CARLA_DEFAULT_FORCE_STEREO,
+    CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES,
+    CARLA_DEFAULT_PREFER_UI_BRIDGES,
+    CARLA_DEFAULT_MANAGE_UIS,
+    CARLA_DEFAULT_UIS_ALWAYS_ON_TOP,
+    CARLA_DEFAULT_MAX_PARAMETERS,
+    CARLA_DEFAULT_RESET_XRUNS,
+    CARLA_DEFAULT_UI_BRIDGES_TIMEOUT,
+    CARLA_DEFAULT_AUDIO_BUFFER_SIZE,
+    CARLA_DEFAULT_AUDIO_SAMPLE_RATE,
+    CARLA_DEFAULT_AUDIO_TRIPLE_BUFFER,
+    CARLA_DEFAULT_AUDIO_DRIVER,
+    CARLA_DEFAULT_PROCESS_MODE,
+    CARLA_DEFAULT_OSC_ENABLED,
+    CARLA_DEFAULT_OSC_TCP_PORT_ENABLED,
+    CARLA_DEFAULT_OSC_TCP_PORT_NUMBER,
+    CARLA_DEFAULT_OSC_TCP_PORT_RANDOM,
+    CARLA_DEFAULT_OSC_UDP_PORT_ENABLED,
+    CARLA_DEFAULT_OSC_UDP_PORT_NUMBER,
+    CARLA_DEFAULT_OSC_UDP_PORT_RANDOM,
+    CARLA_DEFAULT_WINE_EXECUTABLE,
+    CARLA_DEFAULT_WINE_AUTO_PREFIX,
+    CARLA_DEFAULT_WINE_FALLBACK_PREFIX,
+    CARLA_DEFAULT_WINE_RT_PRIO_ENABLED,
+    CARLA_DEFAULT_WINE_BASE_RT_PRIO,
+    CARLA_DEFAULT_WINE_SERVER_RT_PRIO,
+    CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES,
+    CARLA_DEFAULT_EXPERIMENTAL_WINE_BRIDGES,
+    CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS,
+    CARLA_DEFAULT_EXPERIMENTAL_LV2_EXPORT,
+    CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR,
+    CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL,
+    CARLA_DEFAULT_FILE_PATH_AUDIO,
+    CARLA_DEFAULT_FILE_PATH_MIDI,
+    CARLA_DEFAULT_LADSPA_PATH,
+    CARLA_DEFAULT_DSSI_PATH,
+    CARLA_DEFAULT_LV2_PATH,
+    CARLA_DEFAULT_VST2_PATH,
+    CARLA_DEFAULT_VST3_PATH,
+    CARLA_DEFAULT_SF2_PATH,
+    CARLA_DEFAULT_SFZ_PATH,
+    getAndSetPath,
+    fontMetricsHorizontalAdvance,
+    splitter,
+    QSafeSettings
+)
+
+from patchcanvas.theme import Theme, getThemeName
 
 # ------------------------------------------------------------------------------------------------------------
 # ...
@@ -49,11 +192,6 @@ class DriverSettingsW(QDialog):
         self.host = host
         self.ui = ui_carla_settings_driver.Ui_DriverSettingsW()
         self.ui.setupUi(self)
-
-        if False:
-            # kdevelop likes this :)
-            host = CarlaHostNull()
-            self.host = host
 
         # ----------------------------------------------------------------------------------------------------
         # Internal stuff
@@ -169,7 +307,7 @@ class DriverSettingsW(QDialog):
         else:
             self.ui.b_panel.setEnabled(False)
 
-        if len(self.fBufferSizes) > 0:
+        if self.fBufferSizes:
             for bsize in self.fBufferSizes:
                 sbsize = str(bsize)
                 self.ui.cb_buffersize.addItem(sbsize)
@@ -181,7 +319,7 @@ class DriverSettingsW(QDialog):
             self.ui.cb_buffersize.addItem(self.AUTOMATIC_OPTION)
             self.ui.cb_buffersize.setCurrentIndex(0)
 
-        if len(self.fSampleRates) > 0:
+        if self.fSampleRates:
             for srate in self.fSampleRates:
                 ssrate = str(int(srate))
                 self.ui.cb_samplerate.addItem(ssrate)
@@ -193,12 +331,6 @@ class DriverSettingsW(QDialog):
             self.ui.cb_samplerate.addItem(self.AUTOMATIC_OPTION)
             self.ui.cb_samplerate.setCurrentIndex(0)
 
-    # --------------------------------------------------------------------------------------------------------
-
-    def done(self, r):
-        QDialog.done(self, r)
-        self.close()
-
 # ------------------------------------------------------------------------------------------------------------
 # Runtime Driver Settings
 
@@ -208,11 +340,6 @@ class RuntimeDriverSettingsW(QDialog):
         self.host = host
         self.ui = ui_carla_settings_driver.Ui_DriverSettingsW()
         self.ui.setupUi(self)
-
-        if False:
-            # kdevelop likes this :)
-            host = CarlaHostNull()
-            self.host = host
 
         driverDeviceInfo = host.get_runtime_engine_driver_device_info()
 
@@ -251,7 +378,7 @@ class RuntimeDriverSettingsW(QDialog):
             self.ui.cb_device.addItem(driverDeviceInfo['name'])
             self.ui.cb_device.setCurrentIndex(0)
 
-        if len(driverDeviceInfo['bufferSizes']) > 0:
+        if driverDeviceInfo['bufferSizes']:
             for bsize in driverDeviceInfo['bufferSizes']:
                 sbsize = str(bsize)
                 self.ui.cb_buffersize.addItem(sbsize)
@@ -266,7 +393,7 @@ class RuntimeDriverSettingsW(QDialog):
         if (driverDeviceInfo['hints'] & ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE) == 0x0:
             self.ui.cb_buffersize.setEnabled(False)
 
-        if len(driverDeviceInfo['sampleRates']) > 0:
+        if driverDeviceInfo['sampleRates']:
             for srate in driverDeviceInfo['sampleRates']:
                 ssrate = str(int(srate))
                 self.ui.cb_samplerate.addItem(ssrate)
@@ -309,12 +436,6 @@ class RuntimeDriverSettingsW(QDialog):
     def slot_showDevicePanel(self):
         self.host.show_engine_device_control_panel()
 
-    # --------------------------------------------------------------------------------------------------------
-
-    def done(self, r):
-        QDialog.done(self, r)
-        self.close()
-
 # ------------------------------------------------------------------------------------------------------------
 # Settings Dialog
 
@@ -355,11 +476,6 @@ class CarlaSettingsW(QDialog):
         self.host = host
         self.ui = ui_carla_settings.Ui_CarlaSettingsW()
         self.ui.setupUi(self)
-
-        if False:
-            # kdevelop likes this :)
-            host = CarlaHostNull()
-            self.host = host
 
         # ----------------------------------------------------------------------------------------------------
         # Set-up GUI
@@ -636,11 +752,13 @@ class CarlaSettingsW(QDialog):
         midiPaths.sort()
 
         for audioPath in audioPaths:
-            if not audioPath: continue
+            if not audioPath:
+                continue
             self.ui.lw_files_audio.addItem(audioPath)
 
         for midiPath in midiPaths:
-            if not midiPath: continue
+            if not midiPath:
+                continue
             self.ui.lw_files_midi.addItem(midiPath)
 
         # ----------------------------------------------------------------------------------------------------
@@ -663,31 +781,38 @@ class CarlaSettingsW(QDialog):
         sfzs.sort()
 
         for ladspa in ladspas:
-            if not ladspa: continue
+            if not ladspa:
+                continue
             self.ui.lw_ladspa.addItem(ladspa)
 
         for dssi in dssis:
-            if not dssi: continue
+            if not dssi:
+                continue
             self.ui.lw_dssi.addItem(dssi)
 
         for lv2 in lv2s:
-            if not lv2: continue
+            if not lv2:
+                continue
             self.ui.lw_lv2.addItem(lv2)
 
         for vst2 in vst2s:
-            if not vst2: continue
+            if not vst2:
+                continue
             self.ui.lw_vst.addItem(vst2)
 
         for vst3 in vst3s:
-            if not vst3: continue
+            if not vst3:
+                continue
             self.ui.lw_vst3.addItem(vst3)
 
         for sf2 in sf2s:
-            if not sf2: continue
+            if not sf2:
+                continue
             self.ui.lw_sf2.addItem(sf2)
 
         for sfz in sfzs:
-            if not sfz: continue
+            if not sfz:
+                continue
             self.ui.lw_sfz.addItem(sfz)
 
         # ----------------------------------------------------------------------------------------------------
@@ -699,7 +824,7 @@ class CarlaSettingsW(QDialog):
 
         self.ui.cb_wine_prefix_detect.setChecked(settings.value(CARLA_KEY_WINE_AUTO_PREFIX,
                                                                 CARLA_DEFAULT_WINE_AUTO_PREFIX,
-                                                                 bool))
+                                                                bool))
 
         self.ui.le_wine_prefix_fallback.setText(settings.value(CARLA_KEY_WINE_FALLBACK_PREFIX,
                                                                CARLA_DEFAULT_WINE_FALLBACK_PREFIX,
@@ -1020,7 +1145,8 @@ class CarlaSettingsW(QDialog):
                 self.ui.lw_ladspa.clear()
 
                 for path in paths:
-                    if not path: continue
+                    if not path:
+                        continue
                     self.ui.lw_ladspa.addItem(path)
 
             elif curIndex == self.PLUGINPATH_INDEX_DSSI:
@@ -1029,7 +1155,8 @@ class CarlaSettingsW(QDialog):
                 self.ui.lw_dssi.clear()
 
                 for path in paths:
-                    if not path: continue
+                    if not path:
+                        continue
                     self.ui.lw_dssi.addItem(path)
 
             elif curIndex == self.PLUGINPATH_INDEX_LV2:
@@ -1038,7 +1165,8 @@ class CarlaSettingsW(QDialog):
                 self.ui.lw_lv2.clear()
 
                 for path in paths:
-                    if not path: continue
+                    if not path:
+                        continue
                     self.ui.lw_lv2.addItem(path)
 
             elif curIndex == self.PLUGINPATH_INDEX_VST2:
@@ -1047,7 +1175,8 @@ class CarlaSettingsW(QDialog):
                 self.ui.lw_vst.clear()
 
                 for path in paths:
-                    if not path: continue
+                    if not path:
+                        continue
                     self.ui.lw_vst.addItem(path)
 
             elif curIndex == self.PLUGINPATH_INDEX_VST3:
@@ -1056,7 +1185,8 @@ class CarlaSettingsW(QDialog):
                 self.ui.lw_vst3.clear()
 
                 for path in paths:
-                    if not path: continue
+                    if not path:
+                        continue
                     self.ui.lw_vst3.addItem(path)
 
             elif curIndex == self.PLUGINPATH_INDEX_SF2:
@@ -1065,7 +1195,8 @@ class CarlaSettingsW(QDialog):
                 self.ui.lw_sf2.clear()
 
                 for path in paths:
-                    if not path: continue
+                    if not path:
+                        continue
                     self.ui.lw_sf2.addItem(path)
 
             elif curIndex == self.PLUGINPATH_INDEX_SFZ:
@@ -1074,7 +1205,8 @@ class CarlaSettingsW(QDialog):
                 self.ui.lw_sfz.clear()
 
                 for path in paths:
-                    if not path: continue
+                    if not path:
+                        continue
                     self.ui.lw_sfz.addItem(path)
 
         # ----------------------------------------------------------------------------------------------------
@@ -1357,28 +1489,25 @@ class CarlaSettingsW(QDialog):
         self.ui.b_filepaths_remove.setEnabled(check)
         self.ui.b_filepaths_change.setEnabled(check)
 
-    # --------------------------------------------------------------------------------------------------------
-
-    def done(self, r):
-        QDialog.done(self, r)
-        self.close()
-
 # ------------------------------------------------------------------------------------------------------------
 # Main
 
 if __name__ == '__main__':
     from carla_app import CarlaApplication
-    from carla_host import initHost, loadHostSettings
+    from carla_host import initHost as _initHost, loadHostSettings as _loadHostSettings
+    # pylint: disable=ungrouped-imports
+    from carla_shared import handleInitialCommandLineArguments
+    # pylint: enable=ungrouped-imports
 
     initName, libPrefix = handleInitialCommandLineArguments(__file__ if "__file__" in dir() else None)
 
-    app  = CarlaApplication("Carla2-Settings", libPrefix)
-    host = initHost("Carla2-Settings", libPrefix, False, False, False)
-    loadHostSettings(host)
+    _app  = CarlaApplication("Carla2-Settings", libPrefix)
+    _host = _initHost("Carla2-Settings", libPrefix, False, False, False)
+    _loadHostSettings(_host)
 
-    gui = CarlaSettingsW(None, host, True, True)
-    gui.show()
+    _gui = CarlaSettingsW(None, _host, True, True)
+    _gui.show()
 
-    app.exit_exec()
+    _app.exit_exec()
 
 # ------------------------------------------------------------------------------------------------------------

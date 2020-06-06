@@ -31,13 +31,8 @@ import sys
 
 from math import fmod
 
-from PyQt5.Qt import PYQT_VERSION_STR
-from PyQt5.QtCore import qFatal, QT_VERSION, QT_VERSION_STR, qWarning, QDir, QSettings
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QFileDialog, QMessageBox
-
 # ------------------------------------------------------------------------------------------------------------
-# Import Signal
+# Imports (Signal)
 
 from signal import signal, SIGINT, SIGTERM
 
@@ -48,9 +43,24 @@ except:
     haveSIGUSR1 = False
 
 # ------------------------------------------------------------------------------------------------------------
+# Imports (PyQt5)
+
+from PyQt5.Qt import PYQT_VERSION_STR
+from PyQt5.QtCore import qFatal, QT_VERSION, QT_VERSION_STR, qWarning, QDir, QSettings
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QFileDialog, QMessageBox
+
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
-from carla_backend_qt import *
+from carla_backend import (
+    kIs64bit, HAIKU, LINUX, MACOS, WINDOWS,
+    MAX_DEFAULT_PARAMETERS,
+    ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS,
+    ENGINE_PROCESS_MODE_PATCHBAY,
+    ENGINE_TRANSPORT_MODE_INTERNAL,
+    ENGINE_TRANSPORT_MODE_JACK
+)
 
 # ------------------------------------------------------------------------------------------------------------
 # Platform specific stuff
@@ -487,19 +497,21 @@ readEnvVars = True
 
 if WINDOWS:
     # Check if running Wine. If yes, ignore env vars
+    # pylint: disable=import-error
     from winreg import ConnectRegistry, OpenKey, CloseKey, HKEY_CURRENT_USER
-    reg = ConnectRegistry(None, HKEY_CURRENT_USER)
+    # pylint: enable=import-error
+    _reg = ConnectRegistry(None, HKEY_CURRENT_USER)
 
     try:
-        key = OpenKey(reg, r"SOFTWARE\Wine")
-        CloseKey(key)
-        del key
+        _key = OpenKey(_reg, r"SOFTWARE\Wine")
+        CloseKey(_key)
+        del _key
         readEnvVars = False
     except:
         pass
 
-    CloseKey(reg)
-    del reg
+    CloseKey(_reg)
+    del _reg
 
 if readEnvVars:
     CARLA_DEFAULT_LADSPA_PATH = os.getenv("LADSPA_PATH", DEFAULT_LADSPA_PATH).split(splitter)
@@ -534,18 +546,13 @@ del DEFAULT_SFZ_PATH
 # Global Carla object
 
 class CarlaObject(object):
-    __slots__ = [
-        'gui',   # Host Window
-        'nogui', # Skip UI
-        'term',  # Terminated by OS signal
-        'utils'  # Utils object
-    ]
+    def __init__(self):
+        self.gui   = None  # Host Window
+        self.nogui = False # Skip UI
+        self.term  = False # Terminated by OS signal
+        self.utils = None  # Utils object
 
 gCarla = CarlaObject()
-gCarla.gui   = None
-gCarla.nogui = False
-gCarla.term  = False
-gCarla.utils = None
 
 # ------------------------------------------------------------------------------------------------------------
 # Set CWD
@@ -605,10 +612,9 @@ def isNumber(value):
 def toList(value):
     if value is None:
         return []
-    elif not isinstance(value, list):
+    if not isinstance(value, list):
         return [value]
-    else:
-        return value
+    return value
 
 # ------------------------------------------------------------------------------------------------------------
 # Get Icon from user theme, using our own as backup (Oxygen)
@@ -672,10 +678,9 @@ def handleInitialCommandLineArguments(file):
 # ------------------------------------------------------------------------------------------------------------
 # Get initial project file (as passed in the command-line parameters)
 
-def getInitialProjectFile(app, skipExistCheck = False):
-    # FIXME - PyQt mishandles unicode characters, we'll use direct sys.argv for now
+def getInitialProjectFile(skipExistCheck = False):
+    # NOTE: PyQt mishandles unicode characters, we directly use sys.argv instead of qApp->arguments()
     # see https://riverbankcomputing.com/pipermail/pyqt/2015-January/035395.html
-    #args = app.arguments()[1:]
     args = sys.argv[1:]
     for arg in args:
         if arg.startswith("--with-appname=") or arg.startswith("--with-libprefix=") or arg.startswith("--osc-gui="):
@@ -784,7 +789,7 @@ class QMessageBoxWithBetterWidth(QMessageBox):
 
         lines = self.text().strip().split("\n") + self.informativeText().strip().split("\n")
 
-        if len(lines) > 0:
+        if lines:
             width = 0
 
             for line in lines:
@@ -798,18 +803,19 @@ class QMessageBoxWithBetterWidth(QMessageBox):
 # Safer QSettings class, which does not throw if type mismatches
 
 class QSafeSettings(QSettings):
-    def value(self, key, defaultValue, type):
-        if not isinstance(defaultValue, type):
+    def value(self, key, defaultValue, valueType):
+        if not isinstance(defaultValue, valueType):
             print("QSafeSettings.value() - defaultValue type mismatch for key", key)
 
         try:
-            return QSettings.value(self, key, defaultValue, type)
+            return QSettings.value(self, key, defaultValue, valueType)
         except:
             return defaultValue
 
 # ------------------------------------------------------------------------------------------------------------
 # Custom MessageBox
 
+# pylint: disable=too-many-arguments
 def CustomMessageBox(parent, icon, title, text,
                      extraText="",
                      buttons=QMessageBox.Yes|QMessageBox.No,
@@ -822,5 +828,6 @@ def CustomMessageBox(parent, icon, title, text,
     msgBox.setStandardButtons(buttons)
     msgBox.setDefaultButton(defButton)
     return msgBox.exec_()
+# pylint: enable=too-many-arguments
 
 # ------------------------------------------------------------------------------------------------------------

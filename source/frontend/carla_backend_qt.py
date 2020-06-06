@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla Backend code (Qt stuff)
-# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -24,7 +24,7 @@ from PyQt5.QtCore import pyqtSignal, QObject
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
-from carla_backend import *
+from carla_backend import CarlaHostNull, CarlaHostDLL, CarlaHostPlugin
 
 # ------------------------------------------------------------------------------------------------------------
 # Carla Host PyQt signals
@@ -98,9 +98,11 @@ class CarlaHostQtDLL(CarlaHostDLL, CarlaHostSignals):
 # ------------------------------------------------------------------------------------------------------------
 # Carla Host object for plugins (using pipes)
 
+# pylint: disable=abstract-method
 class CarlaHostQtPlugin(CarlaHostPlugin, CarlaHostSignals):
     def __init__(self):
         CarlaHostSignals.__init__(self)
         CarlaHostPlugin.__init__(self)
 
+# pylint: enable=abstract-method
 # ------------------------------------------------------------------------------------------------------------

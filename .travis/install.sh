@@ -89,17 +89,6 @@ elif [ "${TARGET}" = "macos" ]; then
         pkg-config \
         apple-x86-setup
 
-# mkdir /tmp/osx-macports-pkgs
-# cd /tmp/osx-macports-pkgs
-# wget https://launchpad.net/~kxstudio-team/+archive/ubuntu/builds/+files/apple-macports-flac_1.2.1-1_all.deb
-# wget https://launchpad.net/~kxstudio-team/+archive/ubuntu/builds/+files/apple-macports-libiconv_1.14-0_all.deb
-# wget https://launchpad.net/~kxstudio-team/+archive/ubuntu/builds/+files/apple-macports-liblo_0.26-1_all.deb
-# wget https://launchpad.net/~kxstudio-team/+archive/ubuntu/builds/+files/apple-macports-libogg_1.3.0-1_all.deb
-# wget https://launchpad.net/~kxstudio-team/+archive/ubuntu/builds/+files/apple-macports-libsndfile_1.0.25-0_all.deb
-# wget https://launchpad.net/~kxstudio-team/+archive/ubuntu/builds/+files/apple-macports-libvorbis_1.3.3-0_all.deb
-# cd ~
-# rm -r /tmp/osx-macports-pkgs
-
 elif [ "${TARGET}" = "win32" ]; then
     sudo apt-get install -y \
         mingw32-x-gcc \
@@ -112,15 +101,12 @@ elif [ "${TARGET}" = "win64" ]; then
         mingw64-x-gcc \
         mingw64-x-pkgconfig
 
-fi
+elif [ "${TARGET}" = "pylint" ]; then
+    sudo apt-get install -y \
+        pylint3 \
+        python3-liblo \
+        python3-pyqt5 python3-pyqt5.qtsvg python3-pyqt5.qtopengl python3-rdflib \
+        pyqt5-dev-tools \
+        qtbase5-dev
 
-#     mingw32-x-fluidsynth
-#     mingw32-x-fftw
-#     mingw32-x-liblo
-#     mingw32-x-mxml
-#     mingw32-x-zlib
-#     mingw64-x-fluidsynth
-#     mingw64-x-fftw
-#     mingw64-x-liblo
-#     mingw64-x-mxml
-#     mingw64-x-zlib
+fi

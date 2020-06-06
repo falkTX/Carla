@@ -33,6 +33,7 @@ import ui_carla_add_jack
 import ui_carla_database
 import ui_carla_refresh
 
+from carla_backend import *
 from carla_shared import *
 from carla_utils import getPluginTypeAsString, getPluginCategoryAsString
 
@@ -1006,10 +1007,6 @@ class PluginRefreshW(QDialog):
         self.ui = ui_carla_refresh.Ui_PluginRefreshW()
         self.ui.setupUi(self)
 
-        if False:
-            # kdevelop likes this :)
-            self.host = host = CarlaHostNull()
-
         # -------------------------------------------------------------------------------------------------------------
         # Internal stuff
 
@@ -1378,12 +1375,6 @@ class PluginRefreshW(QDialog):
 
         QDialog.closeEvent(self, event)
 
-    # -----------------------------------------------------------------------------------------------------------------
-
-    def done(self, r):
-        QDialog.done(self, r)
-        self.close()
-
 # ---------------------------------------------------------------------------------------------------------------------
 # Plugin Database Dialog
 
@@ -1399,11 +1390,6 @@ class PluginDatabaseW(QDialog):
         self.host = host
         self.ui = ui_carla_database.Ui_PluginDatabaseW()
         self.ui.setupUi(self)
-
-        if False:
-            # kdevelop likes this :)
-            host = CarlaHostNull()
-            self.host = host
 
         # ----------------------------------------------------------------------------------------------------
         # Internal stuff
@@ -2218,10 +2204,6 @@ class PluginDatabaseW(QDialog):
         self.ui.lineEdit.setFocus()
         QDialog.showEvent(self, event)
 
-    def done(self, r):
-        QDialog.done(self, r)
-        self.close()
-
 # ---------------------------------------------------------------------------------------------------------------------
 # Jack Application Dialog
 
@@ -2374,24 +2356,21 @@ class JackApplicationW(QDialog):
         settings.setValue("CaptureFirstWindow", self.ui.cb_capture_first_window.isChecked())
         settings.setValue("MidiOutMixdown", self.ui.cb_out_midi_mixdown.isChecked())
 
-    # -----------------------------------------------------------------------------------------------------------------
-
-    def done(self, r):
-        QDialog.done(self, r)
-        self.close()
-
 # ---------------------------------------------------------------------------------------------------------------------
 # Main
 
 if __name__ == '__main__':
     from carla_app import CarlaApplication
-    from carla_host import initHost, loadHostSettings
+    from carla_host import initHost as _initHost, loadHostSettings as _loadHostSettings
+    # pylint: disable=ungrouped-imports
+    from carla_shared import handleInitialCommandLineArguments
+    # pylint: enable=ungrouped-imports
 
     initName, libPrefix = handleInitialCommandLineArguments(__file__ if "__file__" in dir() else None)
 
     app  = CarlaApplication("Carla2-Database", libPrefix)
-    host = initHost("Carla2-Database", libPrefix, False, False, False)
-    loadHostSettings(host)
+    host = _initHost("Carla2-Database", libPrefix, False, False, False)
+    _loadHostSettings(host)
 
     gui = PluginDatabaseW(None, host)
     gui.show()

@@ -19,9 +19,14 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QTimer
-from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath, QPalette, QPixmap
-from PyQt5.QtWidgets import QDialog, QGroupBox, QInputDialog, QLineEdit, QMenu, QScrollArea, QVBoxLayout, QWidget
+from abc import abstractmethod
+
+# ------------------------------------------------------------------------------------------------------------
+# Imports (PyQt5)
+
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray
+from PyQt5.QtGui import QCursor, QIcon, QPalette, QPixmap
+from PyQt5.QtWidgets import QDialog, QFileDialog, QInputDialog, QMenu, QMessageBox, QScrollArea, QVBoxLayout, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -31,10 +36,61 @@ import ui_carla_about_juce
 import ui_carla_edit
 import ui_carla_parameter
 
-from carla_shared import *
-from carla_utils import *
+from carla_backend import (
+    MACOS, WINDOWS,
+    BINARY_NATIVE,
+    PLUGIN_INTERNAL,
+    PLUGIN_DSSI,
+    PLUGIN_LV2,
+    PLUGIN_VST2,
+    PLUGIN_SF2,
+    PLUGIN_SFZ,
+    PLUGIN_CAN_DRYWET,
+    PLUGIN_CAN_VOLUME,
+    PLUGIN_CAN_BALANCE,
+    PLUGIN_CAN_PANNING,
+    PLUGIN_CATEGORY_SYNTH,
+    PLUGIN_OPTION_FIXED_BUFFERS,
+    PLUGIN_OPTION_FORCE_STEREO,
+    PLUGIN_OPTION_MAP_PROGRAM_CHANGES,
+    PLUGIN_OPTION_USE_CHUNKS,
+    PLUGIN_OPTION_SEND_CONTROL_CHANGES,
+    PLUGIN_OPTION_SEND_CHANNEL_PRESSURE,
+    PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH,
+    PLUGIN_OPTION_SEND_PITCHBEND,
+    PLUGIN_OPTION_SEND_ALL_SOUND_OFF,
+    PLUGIN_OPTION_SEND_PROGRAM_CHANGES,
+    PARAMETER_DRYWET,
+    PARAMETER_VOLUME,
+    PARAMETER_BALANCE_LEFT,
+    PARAMETER_BALANCE_RIGHT,
+    PARAMETER_PANNING,
+    PARAMETER_CTRL_CHANNEL,
+    PARAMETER_IS_ENABLED,
+    PARAMETER_IS_AUTOMABLE,
+    PARAMETER_IS_READ_ONLY,
+    PARAMETER_USES_SCALEPOINTS,
+    PARAMETER_USES_CUSTOM_TEXT,
+    PARAMETER_CAN_BE_CV_CONTROLLED,
+    PARAMETER_INPUT, PARAMETER_OUTPUT,
+    CONTROL_VALUE_NONE,
+    CONTROL_VALUE_MIDI_PITCHBEND,
+    CONTROL_VALUE_CV
+)
+
+from carla_shared import (
+    MIDI_CC_LIST, MAX_MIDI_CC_LIST_ITEM,
+    VERSION,
+    countDecimalPoints,
+    fontMetricsHorizontalAdvance,
+    setUpSignals,
+    gCarla
+)
+
+from carla_utils import getPluginTypeAsString
+#)
+
 from widgets.collapsablewidget import CollapsibleBox
-from widgets.paramspinbox import CustomInputDialog
 from widgets.pixmapkeyboard import PixmapKeyboardHArea
 
 # ------------------------------------------------------------------------------------------------------------
@@ -54,10 +110,6 @@ class CarlaAboutW(QDialog):
         self.ui = ui_carla_about.Ui_CarlaAboutW()
         self.ui.setupUi(self)
 
-        if False:
-            # kdevelop likes this :)
-            host = CarlaHostNull()
-
         if host.isControl:
             extraInfo = " - <b>%s</b>" % self.tr("OSC Bridge Version")
         elif host.isPlugin:
@@ -66,10 +118,10 @@ class CarlaAboutW(QDialog):
             extraInfo = ""
 
         self.ui.l_about.setText(self.tr(""
-                                     "<br>Version %s"
-                                     "<br>Carla is a fully-featured audio plugin host%s.<br>"
-                                     "<br>Copyright (C) 2011-2020 falkTX<br>"
-                                     "" % (VERSION, extraInfo)))
+                                        "<br>Version %s"
+                                        "<br>Carla is a fully-featured audio plugin host%s.<br>"
+                                        "<br>Copyright (C) 2011-2020 falkTX<br>"
+                                        "" % (VERSION, extraInfo)))
 
         if self.ui.about.palette().color(QPalette.Background).blackF() < 0.5:
             self.ui.l_icons.setPixmap(QPixmap(":/bitmaps/carla_about_black.png"))
@@ -181,10 +233,6 @@ class CarlaAboutW(QDialog):
 
         self.setWindowFlags(flags)
 
-    def done(self, r):
-        QDialog.done(self, r)
-        self.close()
-
 # ------------------------------------------------------------------------------------------------------------
 # JUCE About dialog
 
@@ -207,10 +255,6 @@ class JuceAboutW(QDialog):
 
         self.setWindowFlags(flags)
 
-    def done(self, r):
-        QDialog.done(self, r)
-        self.close()
-
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Parameter
 
@@ -225,11 +269,6 @@ class PluginParameter(QWidget):
         self.host = host
         self.ui = ui_carla_parameter.Ui_PluginParameter()
         self.ui.setupUi(self)
-
-        if False:
-            # kdevelop likes this :)
-            host = CarlaHostNull()
-            self.host = host
 
         # -------------------------------------------------------------
         # Internal stuff
@@ -562,12 +601,6 @@ class PluginEdit(QDialog):
         self.ui = ui_carla_edit.Ui_PluginEdit()
         self.ui.setupUi(self)
 
-        if False:
-            # kdevelop likes this :)
-            parent = PluginEditParentMeta()
-            host = CarlaHostNull()
-            self.host = host
-
         # -------------------------------------------------------------
         # Internal stuff
 
@@ -708,7 +741,8 @@ class PluginEdit(QDialog):
 
     @pyqtSlot(int, int, int, int)
     def slot_handleNoteOnCallback(self, pluginId, channel, note, velocity):
-        if self.fPluginId != pluginId: return
+        if self.fPluginId != pluginId:
+            return
 
         if self.fControlChannel == channel:
             self.ui.keyboard.sendNoteOn(note, False)
@@ -723,7 +757,8 @@ class PluginEdit(QDialog):
 
     @pyqtSlot(int, int, int)
     def slot_handleNoteOffCallback(self, pluginId, channel, note):
-        if self.fPluginId != pluginId: return
+        if self.fPluginId != pluginId:
+            return
 
         if self.fControlChannel == channel:
             self.ui.keyboard.sendNoteOff(note, False)
@@ -733,7 +768,7 @@ class PluginEdit(QDialog):
         if playItem in self.fPlayingNotes:
             self.fPlayingNotes.remove(playItem)
 
-        if len(self.fPlayingNotes) == 0 and self.fParent is not None:
+        if self.fPlayingNotes and self.fParent is not None:
             self.fParent.editDialogMidiActivityChanged(self.fPluginId, False)
 
     @pyqtSlot(int)
@@ -784,7 +819,7 @@ class PluginEdit(QDialog):
                 self.ui.cb_midi_programs.setItemText(mpIndex, "%03i:%03i - %s" % (mpBank+1, mpProg+1, mpName))
 
         # Update all parameter values
-        for paramType, paramId, paramWidget in self.fParameterList:
+        for _, paramId, paramWidget in self.fParameterList:
             paramWidget.blockSignals(True)
             paramWidget.setValue(self.host.get_current_parameter_value(self.fPluginId, paramId))
             paramWidget.blockSignals(False)
@@ -922,7 +957,7 @@ class PluginEdit(QDialog):
         self.fTabIconTimers      = []
 
         # Remove all previous parameters
-        for x in range(self.ui.tabWidget.count()-1):
+        for _ in range(self.ui.tabWidget.count()-1):
             self.ui.tabWidget.widget(1).deleteLater()
             self.ui.tabWidget.removeTab(1)
 
@@ -1074,8 +1109,8 @@ class PluginEdit(QDialog):
     #------------------------------------------------------------------
 
     def clearNotes(self):
-         self.fPlayingNotes = []
-         self.ui.keyboard.allNotesOff()
+        self.fPlayingNotes = []
+        self.ui.keyboard.allNotesOff()
 
     def noteOn(self, channel, note, velocity):
         if self.fControlChannel == channel:
@@ -1109,25 +1144,25 @@ class PluginEdit(QDialog):
             self.fParametersToUpdate.append([parameterId, value])
 
     def setParameterDefault(self, parameterId, value):
-        for paramType, paramId, paramWidget in self.fParameterList:
+        for _, paramId, paramWidget in self.fParameterList:
             if paramId == parameterId:
                 paramWidget.setDefault(value)
                 break
 
     def setParameterMappedControlIndex(self, parameterId, control):
-        for paramType, paramId, paramWidget in self.fParameterList:
+        for _, paramId, paramWidget in self.fParameterList:
             if paramId == parameterId:
                 paramWidget.setMappedControlIndex(control)
                 break
 
     def setParameterMappedRange(self, parameterId, minimum, maximum):
-        for paramType, paramId, paramWidget in self.fParameterList:
+        for _, paramId, paramWidget in self.fParameterList:
             if paramId == parameterId:
                 paramWidget.setMappedRange(minimum, maximum)
                 break
 
     def setParameterMidiChannel(self, parameterId, channel):
-        for paramType, paramId, paramWidget in self.fParameterList:
+        for _, paramId, paramWidget in self.fParameterList:
             if paramId == parameterId:
                 paramWidget.setMidiChannel(channel+1)
                 break
@@ -1282,7 +1317,7 @@ class PluginEdit(QDialog):
             self.fCurrentStateFilename = None
 
         fileFilter = self.tr("Carla State File (*.carxs)")
-        filename, ok = QFileDialog.getSaveFileName(self, self.tr("Save Plugin State File"), filter=fileFilter)
+        filename, _ = QFileDialog.getSaveFileName(self, self.tr("Save Plugin State File"), filter=fileFilter)
 
         # FIXME use ok value, test if it works as expected
         if not filename:
@@ -1312,7 +1347,7 @@ class PluginEdit(QDialog):
             return
 
         fileFilter = self.tr("Carla State File (*.carxs)")
-        filename, ok = QFileDialog.getOpenFileName(self, self.tr("Open Plugin State File"), filter=fileFilter)
+        filename, _ = QFileDialog.getOpenFileName(self, self.tr("Open Plugin State File"), filter=fileFilter)
 
         # FIXME use ok value, test if it works as expected
         if not filename:
@@ -1541,7 +1576,8 @@ class PluginEdit(QDialog):
         if actSelected == actSet:
             current   = minimum + (maximum-minimum)*(float(sender.value())/10000)
             value, ok = QInputDialog.getInt(self, self.tr("Set value"), label, round(current*100.0), round(minimum*100.0), round(maximum*100.0), 1)
-            if ok: value = float(value)/100.0
+            if ok:
+                value = float(value)/100.0
 
             if not ok:
                 return
@@ -1594,7 +1630,7 @@ class PluginEdit(QDialog):
         groupWidgets = {}
 
         for paramList, width in paramListFull:
-            if len(paramList) == 0:
+            if not paramList:
                 break
 
             tabIndex = self.ui.tabWidget.count()
@@ -1678,7 +1714,7 @@ class PluginEdit(QDialog):
             self.setMidiProgram(mpIndex)
 
     def _updateParameterValues(self):
-        for paramType, paramId, paramWidget in self.fParameterList:
+        for _, paramId, paramWidget in self.fParameterList:
             paramWidget.blockSignals(True)
             paramWidget.setValue(self.host.get_current_parameter_value(self.fPluginId, paramId))
             paramWidget.blockSignals(False)
@@ -1694,7 +1730,7 @@ class PluginEdit(QDialog):
 
     def testTimerClose(self):
         self.close()
-        app.quit()
+        _app.quit()
 
     #------------------------------------------------------------------
 
@@ -1714,30 +1750,26 @@ class PluginEdit(QDialog):
 
         QDialog.timerEvent(self, event)
 
-    def done(self, r):
-        QDialog.done(self, r)
-        self.close()
-
 # ------------------------------------------------------------------------------------------------------------
 # Main
 
 if __name__ == '__main__':
     from carla_app import CarlaApplication
-    from carla_host import initHost, loadHostSettings
+    from carla_host import initHost as _initHost, loadHostSettings as _loadHostSettings
 
-    app  = CarlaApplication()
-    host = initHost("Widgets", None, False, False, False)
-    loadHostSettings(host)
+    _app  = CarlaApplication()
+    _host = _initHost("Widgets", None, False, False, False)
+    _loadHostSettings(_host)
 
-    host.engine_init("JACK", "Carla-Widgets")
-    host.add_plugin(BINARY_NATIVE, PLUGIN_DSSI, "/usr/lib/dssi/karplong.so", "karplong", "karplong", 0, None, 0x0)
-    host.set_active(0, True)
+    _host.engine_init("JACK", "Carla-Widgets")
+    _host.add_plugin(BINARY_NATIVE, PLUGIN_DSSI, "/usr/lib/dssi/karplong.so", "karplong", "karplong", 0, None, 0x0)
+    _host.set_active(0, True)
 
-    gui1 = CarlaAboutW(None, host)
+    gui1 = CarlaAboutW(None, _host)
     gui1.show()
 
-    gui2 = PluginEdit(None, host, 0)
+    gui2 = PluginEdit(None, _host, 0)
     gui2.testTimer()
     gui2.show()
 
-    app.exit_exec()
+    _app.exit_exec()

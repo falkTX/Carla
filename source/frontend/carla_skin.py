@@ -19,9 +19,9 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt5.QtCore import Qt, QRectF, QLineF
-from PyQt5.QtGui import QFont, QFontDatabase, QPen
-from PyQt5.QtWidgets import QColorDialog, QFrame, QPushButton
+from PyQt5.QtCore import Qt, QRectF, QLineF, QTimer
+from PyQt5.QtGui import QColor, QFont, QFontDatabase, QPainter, QPainterPath, QPen
+from PyQt5.QtWidgets import QColorDialog, QFrame, QLineEdit, QPushButton
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -32,8 +32,11 @@ import ui_carla_plugin_compact
 import ui_carla_plugin_default
 import ui_carla_plugin_presets
 
+from carla_backend import *
+from carla_shared import *
 from carla_widgets import *
 from widgets.digitalpeakmeter import DigitalPeakMeter
+from widgets.paramspinbox import CustomInputDialog
 from widgets.scalabledial import ScalableDial
 
 # ------------------------------------------------------------------------------------------------------------
@@ -204,11 +207,6 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         QFrame.__init__(self, parent)
         self.host = host
         self.fParent = parent
-
-        if False:
-            # kdevelop likes this :)
-            host = CarlaHostNull()
-            self.host = host
 
         # -------------------------------------------------------------
         # Get plugin info
@@ -2005,13 +2003,6 @@ class PluginSlot_Presets(AbstractPluginSlot):
 # ------------------------------------------------------------------------------------------------------------
 
 def getColorAndSkinStyle(host, pluginId):
-    if False:
-        # kdevelop likes this :)
-        host       = CarlaHostNull()
-        progCount  = 0
-        pluginInfo = PyCarlaPluginInfo
-        pluginName = ""
-
     pluginInfo  = host.get_plugin_info(pluginId)
     pluginName  = host.get_real_plugin_name(pluginId)
     pluginLabel = pluginInfo['label'].lower()
