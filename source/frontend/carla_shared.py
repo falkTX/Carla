@@ -545,7 +545,7 @@ del DEFAULT_SFZ_PATH
 # ------------------------------------------------------------------------------------------------------------
 # Global Carla object
 
-class CarlaObject(object):
+class CarlaObject():
     def __init__(self):
         self.gui   = None  # Host Window
         self.nogui = False # Skip UI
@@ -590,7 +590,7 @@ def countDecimalPoints(step, stepSmall):
 
     count = 0
     value = fmod(abs(stepSmall), 1)
-    while value > 0.001 and value < 0.99 and count < 6:
+    while 0.001 < value < 0.99 and count < 6:
         value = fmod(value*10, 1)
         count += 1
 

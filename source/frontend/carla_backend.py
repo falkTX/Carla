@@ -1504,10 +1504,8 @@ else:
 # ------------------------------------------------------------------------------------------------------------
 # Carla Host object (Meta)
 
-class CarlaHostMeta(object):
+class CarlaHostMeta():
     def __init__(self):
-        object.__init__(self)
-
         # info about this host object
         self.isControl = False
         self.isPlugin  = False
@@ -3223,7 +3221,7 @@ class CarlaHostDLL(CarlaHostMeta):
 # ------------------------------------------------------------------------------------------------------------
 # Helper object for CarlaHostPlugin
 
-class PluginStoreInfo(object):
+class PluginStoreInfo():
     def __init__(self):
         self.clear()
 

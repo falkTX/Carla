@@ -244,10 +244,8 @@ PyCarlaCachedPluginInfo = {
 # ------------------------------------------------------------------------------------------------------------
 # Carla Utils object using a DLL
 
-class CarlaUtils(object):
+class CarlaUtils():
     def __init__(self, filename):
-        object.__init__(self)
-
         self.lib = cdll.LoadLibrary(filename)
         #self.lib = CDLL(filename, RTLD_GLOBAL)
 

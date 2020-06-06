@@ -2,7 +2,15 @@
 
 set -e
 
-pylint3 \
+make -C source/frontend
+
+if which pylint3 >/dev/null; then
+  pylint='pylint3'
+else
+  pylint='pylint'
+fi
+
+${pylint} \
     --extension-pkg-whitelist=PyQt5 \
     --disable=\
 bad-whitespace,\
@@ -26,7 +34,7 @@ unused-argument,\
 wrong-import-position \
     source/frontend/carla_{app,backend,backend_qt,settings,shared,utils,widgets}.py
 
-pylint3 \
+${pylint} \
     --extension-pkg-whitelist=PyQt5 \
     -E \
     source/frontend/carla_{database,host,skin}.py

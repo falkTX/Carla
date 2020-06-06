@@ -52,10 +52,8 @@ from carla_shared import (
 
 # ------------------------------------------------------------------------------------------------------------
 
-class CarlaApplication(object):
+class CarlaApplication():
     def __init__(self, appName = "Carla2", libPrefix = None):
-        object.__init__(self)
-
         pathBinaries, _ = getPaths(libPrefix)
 
         # Needed for MacOS and Windows
