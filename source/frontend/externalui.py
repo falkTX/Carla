@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # External UI
-# Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2013-2020 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -19,6 +19,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
 
+from carla_backend import charPtrToString
 from carla_shared import *
 
 # ------------------------------------------------------------------------------------------------------------
