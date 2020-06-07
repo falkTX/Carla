@@ -104,7 +104,6 @@ class CanvasPreviewFrame(QFrame):
         self.fZoomCursors[self._kCursorZoomOut] = QCursor(QPixmap(":/cursors/zoom-out_black.png"), 8, 7)
 
     def init(self, scene: QGraphicsScene, realWidth: float, realHeight: float, useCustomPaint: bool = False):
-        # realWidth, realHeight = float(realWidth), float(realHeight)
         self.fScene = scene
         self.fRenderSource = QRectF(0.0, 0.0, realWidth, realHeight)
         self.fInternalRatio = realWidth / realHeight
@@ -119,21 +118,21 @@ class CanvasPreviewFrame(QFrame):
 
     # -----------------------------------------------------------------------------------------------------------------
 
-    def setViewPosX(self, xp):
+    def setViewPosX(self, xp: float):
         self.fViewRect[self._kRectX] = xp * (self.fInternalWidth - self.fViewRect[self._kRectWidth]/self.fScale)
         self.update()
 
-    def setViewPosY(self, yp):
+    def setViewPosY(self, yp: float):
         self.fViewRect[self._kRectY] = yp * (self.fInternalHeight - self.fViewRect[self._kRectHeight]/self.fScale)
         self.update()
 
-    def setViewScale(self, scale):
+    def setViewScale(self, scale: float):
         self.fScale = scale
 
         if self.fRealParent is not None:
             QTimer.singleShot(0, self.fRealParent.slot_miniCanvasCheckAll)
 
-    def setViewSize(self, width, height):
+    def setViewSize(self, width: float, height: float):
         self.fViewRect[self._kRectWidth] = width * self.fInternalWidth
         self.fViewRect[self._kRectHeight] = height * self.fInternalHeight
         self.update()
@@ -387,7 +386,7 @@ class CanvasPreviewFrame(QFrame):
 
         self.cursor().setPos(self.fMouseInitialZoomPos)
 
-    def _updateMouseMode(self, event=None):
+    def _updateMouseMode(self, event = None):
         if self.fMouseLeftDown and self.fMouseRightDown:
             self.fMouseInitialZoomPos = event.globalPos()
             self.setCursor(self.fZoomCursors[self._kCursorZoom])

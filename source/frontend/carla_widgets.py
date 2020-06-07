@@ -143,6 +143,7 @@ class CarlaAboutW(QDialog):
             self.ui.le_osc_url_tcp.setText(self.tr("(Engine not running)"))
             self.ui.le_osc_url_udp.setText(self.tr("(Engine not running)"))
 
+        # pylint: disable=line-too-long
         self.ui.l_osc_cmds.setText("<table>"
                                    "<tr><td>" "/set_active"                 "&nbsp;</td><td>&lt;i-value&gt;</td></tr>"
                                    "<tr><td>" "/set_drywet"                 "&nbsp;</td><td>&lt;f-value&gt;</td></tr>"
@@ -162,6 +163,7 @@ class CarlaAboutW(QDialog):
 
         self.ui.l_example.setText("/Carla/2/set_parameter_value 5 1.0")
         self.ui.l_example_help.setText("<i>(as in this example, \"2\" is the plugin number and \"5\" the parameter)</i>")
+        # pylint: enable=line-too-long
 
         self.ui.l_ladspa.setText(self.tr("Everything! (Including LRDF)"))
         self.ui.l_dssi.setText(self.tr("Everything! (Including CustomData/Chunks)"))
@@ -431,7 +433,8 @@ class PluginParameter(QWidget):
 
                 if ccx > self.fMappedCtrl and not inlist:
                     inlist = True
-                    action = menuMIDI.addAction(self.tr("%02i [0x%02X] (Custom)" % (self.fMappedCtrl, self.fMappedCtrl)))
+                    action = menuMIDI.addAction(self.tr("%02i [0x%02X] (Custom)" % (self.fMappedCtrl,
+                                                                                    self.fMappedCtrl)))
                     action.setCheckable(True)
                     action.setChecked(True)
                     actCCs.append(action)
@@ -525,10 +528,11 @@ class PluginParameter(QWidget):
         elif actSel in actCCs:
             ctrl = int(actSel.text().split(" ", 1)[0].replace("&",""), 10)
         elif actSel == actCustomCC:
+            value = self.fMappedCtrl if self.fMappedCtrl >= 0x01 and self.fMappedCtrl <= 0x77 else 1
             ctrl, ok = QInputDialog.getInt(self,
                                            self.tr("Custom CC"),
                                            "Custom MIDI CC to use:",
-                                           self.fMappedCtrl if self.fMappedCtrl >= 0x01 and self.fMappedCtrl <= 0x77 else 1,
+                                           value,
                                            0x01, 0x77, 1)
             if not ok:
                 return
@@ -915,29 +919,31 @@ class PluginEdit(QDialog):
         self.ui.dial_b_right.setEnabled(pluginHints & PLUGIN_CAN_BALANCE)
         self.ui.dial_pan.setEnabled(pluginHints & PLUGIN_CAN_PANNING)
 
-        self.ui.ch_use_chunks.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_USE_CHUNKS)
-        self.ui.ch_use_chunks.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_USE_CHUNKS)
-        self.ui.ch_fixed_buffer.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_FIXED_BUFFERS)
-        self.ui.ch_fixed_buffer.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_FIXED_BUFFERS)
-        self.ui.ch_force_stereo.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_FORCE_STEREO)
-        self.ui.ch_force_stereo.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_FORCE_STEREO)
-        self.ui.ch_map_program_changes.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
-        self.ui.ch_map_program_changes.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
-        self.ui.ch_send_control_changes.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
-        self.ui.ch_send_control_changes.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
-        self.ui.ch_send_channel_pressure.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE)
-        self.ui.ch_send_channel_pressure.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE)
-        self.ui.ch_send_note_aftertouch.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH)
-        self.ui.ch_send_note_aftertouch.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH)
-        self.ui.ch_send_pitchbend.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_PITCHBEND)
-        self.ui.ch_send_pitchbend.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_PITCHBEND)
-        self.ui.ch_send_all_sound_off.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
-        self.ui.ch_send_all_sound_off.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+        optsAvailable = self.fPluginInfo['optionsAvailable']
+        optsEnabled = self.fPluginInfo['optionsEnabled']
+        self.ui.ch_use_chunks.setEnabled(optsAvailable & PLUGIN_OPTION_USE_CHUNKS)
+        self.ui.ch_use_chunks.setChecked(optsEnabled & PLUGIN_OPTION_USE_CHUNKS)
+        self.ui.ch_fixed_buffer.setEnabled(optsAvailable & PLUGIN_OPTION_FIXED_BUFFERS)
+        self.ui.ch_fixed_buffer.setChecked(optsEnabled & PLUGIN_OPTION_FIXED_BUFFERS)
+        self.ui.ch_force_stereo.setEnabled(optsAvailable & PLUGIN_OPTION_FORCE_STEREO)
+        self.ui.ch_force_stereo.setChecked(optsEnabled & PLUGIN_OPTION_FORCE_STEREO)
+        self.ui.ch_map_program_changes.setEnabled(optsAvailable & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
+        self.ui.ch_map_program_changes.setChecked(optsEnabled & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
+        self.ui.ch_send_control_changes.setEnabled(optsAvailable & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+        self.ui.ch_send_control_changes.setChecked(optsEnabled & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+        self.ui.ch_send_channel_pressure.setEnabled(optsAvailable & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE)
+        self.ui.ch_send_channel_pressure.setChecked(optsEnabled & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE)
+        self.ui.ch_send_note_aftertouch.setEnabled(optsAvailable & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH)
+        self.ui.ch_send_note_aftertouch.setChecked(optsEnabled & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH)
+        self.ui.ch_send_pitchbend.setEnabled(optsAvailable & PLUGIN_OPTION_SEND_PITCHBEND)
+        self.ui.ch_send_pitchbend.setChecked(optsEnabled & PLUGIN_OPTION_SEND_PITCHBEND)
+        self.ui.ch_send_all_sound_off.setEnabled(optsAvailable & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+        self.ui.ch_send_all_sound_off.setChecked(optsEnabled & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
 
-        canSendPrograms = bool((self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) != 0 and
-                               (self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) == 0)
+        canSendPrograms = bool((optsAvailable & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) != 0 and
+                               (optsEnabled & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) == 0)
         self.ui.ch_send_program_changes.setEnabled(canSendPrograms)
-        self.ui.ch_send_program_changes.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
+        self.ui.ch_send_program_changes.setChecked(optsEnabled & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
 
         self.ui.sw_programs.setCurrentIndex(0 if self.fPluginInfo['type'] in (PLUGIN_VST2, PLUGIN_SFZ) else 1)
 
@@ -1308,7 +1314,10 @@ class PluginEdit(QDialog):
             return
 
         if self.fCurrentStateFilename:
-            askTry = QMessageBox.question(self, self.tr("Overwrite?"), self.tr("Overwrite previously created file?"), QMessageBox.Ok|QMessageBox.Cancel)
+            askTry = QMessageBox.question(self,
+                                          self.tr("Overwrite?"),
+                                          self.tr("Overwrite previously created file?"),
+                                          QMessageBox.Ok|QMessageBox.Cancel)
 
             if askTry == QMessageBox.Ok:
                 self.host.save_plugin_state(self.fPluginId, self.fCurrentStateFilename)
@@ -1337,7 +1346,10 @@ class PluginEdit(QDialog):
             for i in range(self.host.get_program_count(self.fPluginId)):
                 presetList.append("%03i - %s" % (i+1, self.host.get_program_name(self.fPluginId, i)))
 
-            ret = QInputDialog.getItem(self, self.tr("Open LV2 Preset"), self.tr("Select an LV2 Preset:"), presetList, 0, False)
+            ret = QInputDialog.getItem(self,
+                                       self.tr("Open LV2 Preset"),
+                                       self.tr("Select an LV2 Preset:"),
+                                       presetList, 0, False)
 
             if ret[1]:
                 index = int(ret[0].split(" - ", 1)[0])-1
@@ -1404,7 +1416,8 @@ class PluginEdit(QDialog):
         # handle map-program-changes and send-program-changes conflict
 
         if option == PLUGIN_OPTION_MAP_PROGRAM_CHANGES and not clicked:
-            self.ui.ch_send_program_changes.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
+            self.ui.ch_send_program_changes.setEnabled(
+                self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
 
             # restore send-program-changes if needed
             if self.ui.ch_send_program_changes.isChecked():
@@ -1575,7 +1588,13 @@ class PluginEdit(QDialog):
 
         if actSelected == actSet:
             current   = minimum + (maximum-minimum)*(float(sender.value())/10000)
-            value, ok = QInputDialog.getInt(self, self.tr("Set value"), label, round(current*100.0), round(minimum*100.0), round(maximum*100.0), 1)
+            value, ok = QInputDialog.getInt(self,
+                                            self.tr("Set value"),
+                                            label,
+                                            round(current*100.0),
+                                            round(minimum*100.0),
+                                            round(maximum*100.0),
+                                            1)
             if ok:
                 value = float(value)/100.0
 
@@ -1692,7 +1711,8 @@ class PluginEdit(QDialog):
     def _updateCtrlPrograms(self):
         self.ui.keyboard.setEnabled(self.fControlChannel >= 0)
 
-        if self.fPluginInfo['category'] != PLUGIN_CATEGORY_SYNTH or self.fPluginInfo['type'] not in (PLUGIN_INTERNAL, PLUGIN_SF2):
+        if (self.fPluginInfo['category'] != PLUGIN_CATEGORY_SYNTH or
+            self.fPluginInfo['type'] not in (PLUGIN_INTERNAL, PLUGIN_SF2)):
             return
 
         if self.fControlChannel < 0:

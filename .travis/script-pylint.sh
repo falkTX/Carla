@@ -15,13 +15,19 @@ fi
 # widget code, check all errors
 ${pylint} \
     --extension-pkg-whitelist=PyQt5 \
+    --max-attributes=25 \
+    --max-line-length=120 \
+    --max-locals=25 \
     --disable=\
-bad-whitespace \
+bad-whitespace,\
+invalid-name,\
+missing-docstring \
     source/frontend/widgets/canvaspreviewframe.py
 
 # main app code, ignore some errors
 ${pylint} \
     --extension-pkg-whitelist=PyQt5 \
+    --max-line-length=120 \
     --disable=\
 bad-whitespace,\
 bare-except,\
@@ -29,7 +35,6 @@ blacklisted-name,\
 duplicate-code,\
 fixme,\
 invalid-name,\
-line-too-long,\
 missing-docstring,\
 too-few-public-methods,\
 too-many-arguments,\

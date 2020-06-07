@@ -16,7 +16,7 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 from abc import abstractmethod
@@ -24,7 +24,7 @@ from platform import architecture
 from struct import pack
 from sys import platform, maxsize
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Imports (ctypes)
 
 from ctypes import (
@@ -34,18 +34,18 @@ from ctypes import (
     CDLL, CFUNCTYPE, RTLD_GLOBAL, RTLD_LOCAL, POINTER
 )
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # 64bit check
 
 kIs64bit = bool(architecture()[0] == "64bit" and maxsize > 2**32)
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Define custom types
 
 c_enum = c_int
 c_uintptr = c_uint64 if kIs64bit else c_uint32
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Set Platform
 
 if platform == "darwin":
@@ -74,7 +74,7 @@ else:
     MACOS   = False
     WINDOWS = False
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Convert a ctypes c_char_p into a python string
 
 def charPtrToString(charPtr):
@@ -84,7 +84,7 @@ def charPtrToString(charPtr):
         return charPtr
     return charPtr.decode("utf-8", errors="ignore")
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Convert a ctypes POINTER(c_char_p) into a python string list
 
 def charPtrPtrToStringList(charPtrPtr):
@@ -103,7 +103,7 @@ def charPtrPtrToStringList(charPtrPtr):
 
     return strList
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Convert a ctypes POINTER(c_<num>) into a python number list
 
 def numPtrToList(numPtr):
@@ -122,10 +122,11 @@ def numPtrToList(numPtr):
 
     return numList
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Convert a ctypes value into a python one
 
-c_int_types    = (c_int, c_int8, c_int16, c_int32, c_int64, c_uint, c_uint8, c_uint16, c_uint32, c_uint64, c_long, c_longlong)
+c_int_types    = (c_int, c_int8, c_int16, c_int32, c_int64,
+                  c_uint, c_uint8, c_uint16, c_uint32, c_uint64, c_long, c_longlong)
 c_float_types  = (c_float, c_double, c_longdouble)
 c_intp_types   = tuple(POINTER(i) for i in c_int_types)
 c_floatp_types = tuple(POINTER(i) for i in c_float_types)
@@ -144,7 +145,7 @@ def toPythonType(value, attr):
     print("..............", attr, ".....................", value, ":", type(value))
     return value
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Convert a ctypes struct into a python dict
 
 def structToDict(struct):
@@ -152,7 +153,7 @@ def structToDict(struct):
     return dict((attr, toPythonType(getattr(struct, attr), attr)) for attr, value in struct._fields_)
     # pylint: enable=protected-access
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Carla Backend API (base definitions)
 
 # Maximum default number of loadable plugins.
@@ -172,7 +173,7 @@ MAX_DEFAULT_PARAMETERS = 200
 # Currently only used for audio peaks.
 MAIN_CARLA_PLUGIN_ID = 0xFFFF
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Engine Driver Device Hints
 # Various engine driver device hints.
 # @see carla_get_engine_driver_device_info()
@@ -192,7 +193,7 @@ ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE = 0x4
 # @see ENGINE_OPTION_AUDIO_SAMPLE_RATE
 ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE = 0x8
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Plugin Hints
 # Various plugin hints.
 # @see carla_get_plugin_info()
@@ -236,7 +237,7 @@ PLUGIN_USES_MULTI_PROGS = 0x400
 # Plugin can make use of inline display API.
 PLUGIN_HAS_INLINE_DISPLAY = 0x800
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Plugin Options
 # Various plugin options.
 # @see carla_get_plugin_info() and carla_set_option()
@@ -276,7 +277,7 @@ PLUGIN_OPTION_SEND_PROGRAM_CHANGES = 0x200
 # This flag exists because 0x0 as an option value is a valid one, so we need something else to indicate "null-ness".
 PLUGIN_OPTIONS_NULL = 0x10000
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Parameter Hints
 # Various parameter hints.
 # @see CarlaPlugin::getParameterData() and carla_get_parameter_data()
@@ -315,7 +316,7 @@ PARAMETER_USES_CUSTOM_TEXT = 0x400
 # Parameter can be turned into a CV control.
 PARAMETER_CAN_BE_CV_CONTROLLED = 0x800
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Patchbay Port Hints
 # Various patchbay port hints.
 
@@ -335,7 +336,7 @@ PATCHBAY_PORT_TYPE_MIDI = 0x08
 # Patchbay port is of OSC type.
 PATCHBAY_PORT_TYPE_OSC = 0x10
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Patchbay Port Group Hints
 # Various patchbay port group hints.
 
@@ -351,7 +352,7 @@ PATCHBAY_PORT_GROUP_STEREO = 0x04
 # A mid-side stereo group, where the 1st port is center and the 2nd is side.
 PATCHBAY_PORT_GROUP_MID_SIDE = 0x08
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Custom Data Types
 # These types define how the value in the CustomData struct is stored.
 # @see CustomData.type
@@ -369,7 +370,7 @@ CUSTOM_DATA_TYPE_PROPERTY = "http://kxstudio.sf.net/ns/carla/property"
 # String type URI.
 CUSTOM_DATA_TYPE_STRING = "http://kxstudio.sf.net/ns/carla/string"
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Custom Data Keys
 # Pre-defined keys used internally in Carla.
 # @see CustomData.key
@@ -386,7 +387,7 @@ CUSTOM_DATA_KEY_UI_SIZE = "CarlaUiSize"
 # UI visible key.
 CUSTOM_DATA_KEY_UI_VISIBLE = "CarlaUiVisible"
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Binary Type
 # The binary type of a plugin.
 
@@ -408,7 +409,7 @@ BINARY_WIN64 = 4
 # Other binary type.
 BINARY_OTHER = 5
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # File Type
 # File type.
 
@@ -421,7 +422,7 @@ FILE_AUDIO = 1
 # MIDI file.
 FILE_MIDI = 2
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Plugin Type
 # Plugin type.
 # Some files are handled as if they were plugins.
@@ -467,7 +468,7 @@ PLUGIN_SFZ = 11
 # JACK application.
 PLUGIN_JACK = 12
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Plugin Category
 # Plugin category, which describes the functionality of a plugin.
 
@@ -501,7 +502,7 @@ PLUGIN_CATEGORY_UTILITY = 8
 # Miscellaneous plugin (used to check if the plugin has a category).
 PLUGIN_CATEGORY_OTHER = 9
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Parameter Type
 # Plugin parameter type.
 
@@ -514,7 +515,7 @@ PARAMETER_INPUT = 1
 # Output parameter.
 PARAMETER_OUTPUT = 2
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Internal Parameter Index
 # Special parameters used internally in Carla.
 # Plugins do not know about their existence.
@@ -553,7 +554,7 @@ PARAMETER_CTRL_CHANNEL = -8
 # Max value, defined only for convenience.
 PARAMETER_MAX = -9
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Special Mapped Control Index
 
 # Specially designated mapped control indexes.
@@ -569,7 +570,7 @@ CONTROL_VALUE_CV = 130
 # Special value to indicate MIDI pitchbend.
 CONTROL_VALUE_MIDI_PITCHBEND = 131
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Engine Callback Opcode
 # Engine callback opcodes.
 # Front-ends must never block indefinitely during a callback.
@@ -840,7 +841,7 @@ ENGINE_CALLBACK_PARAMETER_MAPPED_RANGE_CHANGED = 46
 # @a valuef   Y position 2
 ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED = 47
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # NSM Callback Opcode
 # NSM callback opcodes.
 # @see ENGINE_CALLBACK_NSM
@@ -874,7 +875,7 @@ NSM_CALLBACK_SHOW_OPTIONAL_GUI = 6
 # Hide-optional-gui message.
 NSM_CALLBACK_HIDE_OPTIONAL_GUI = 7
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Engine Option
 # Engine options.
 # @see carla_set_engine_option()
@@ -1014,7 +1015,7 @@ ENGINE_OPTION_WINE_SERVER_RT_PRIO = 32
 # Capture console output into debug callbacks
 ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 33
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Engine Process Mode
 # Engine process mode.
 # @see ENGINE_OPTION_PROCESS_MODE
@@ -1037,7 +1038,7 @@ ENGINE_PROCESS_MODE_PATCHBAY = 3
 # Special mode, used in plugin-bridges only.
 ENGINE_PROCESS_MODE_BRIDGE = 4
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Engine Transport Mode
 # Engine transport mode.
 # @see ENGINE_OPTION_TRANSPORT_MODE
@@ -1058,7 +1059,7 @@ ENGINE_TRANSPORT_MODE_PLUGIN = 3
 # Special mode, used in plugin-bridges only.
 ENGINE_TRANSPORT_MODE_BRIDGE = 4
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # File Callback Opcode
 # File callback opcodes.
 # Front-ends must always block-wait for user input.
@@ -1074,7 +1075,7 @@ FILE_CALLBACK_OPEN = 1
 # Save file or folder.
 FILE_CALLBACK_SAVE = 2
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Patchbay Icon
 # The icon of a patchbay client/group.
 
@@ -1102,7 +1103,7 @@ PATCHBAY_ICON_DISTRHO = 4
 # Used for file type plugins (like SF2 and SFZ).
 PATCHBAY_ICON_FILE = 5
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Carla Backend API (C stuff)
 
 # Engine callback function.
@@ -1211,7 +1212,7 @@ class EngineDriverDeviceInfo(Structure):
         ("sampleRates", POINTER(c_double))
     ]
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Carla Backend API (Python compatible stuff)
 
 # @see ParameterData
@@ -1257,7 +1258,7 @@ PyEngineDriverDeviceInfo = {
     'sampleRates': []
 }
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Carla Host API (C stuff)
 
 # Information about a loaded plugin.
@@ -1426,7 +1427,7 @@ class CarlaInlineDisplayImageSurface(Structure):
         ("stride", c_int)
     ]
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Carla Host API (Python compatible stuff)
 
 # @see CarlaPluginInfo
@@ -1493,7 +1494,7 @@ PyCarlaRuntimeEngineDriverDeviceInfo = {
     'sampleRates': []
 }
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Set BINARY_NATIVE
 
 if WINDOWS:
@@ -1501,7 +1502,7 @@ if WINDOWS:
 else:
     BINARY_NATIVE = BINARY_POSIX64 if kIs64bit else BINARY_POSIX32
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Carla Host object (Meta)
 
 class CarlaHostMeta():
@@ -2236,7 +2237,7 @@ class CarlaHostMeta():
     def nsm_ready(self, opcode):
         raise NotImplementedError
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Carla Host object (dummy/null, does nothing)
 
 class CarlaHostNull(CarlaHostMeta):
@@ -2565,7 +2566,7 @@ class CarlaHostNull(CarlaHostMeta):
     def nsm_ready(self, opcode):
         return
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Carla Host object using a DLL
 
 class CarlaHostDLL(CarlaHostMeta):
@@ -2685,7 +2686,8 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_get_max_plugin_number.argtypes = (c_void_p,)
         self.lib.carla_get_max_plugin_number.restype = c_uint32
 
-        self.lib.carla_add_plugin.argtypes = (c_void_p, c_enum, c_enum, c_char_p, c_char_p, c_char_p, c_int64, c_void_p, c_uint)
+        self.lib.carla_add_plugin.argtypes = (c_void_p, c_enum, c_enum, c_char_p, c_char_p, c_char_p, c_int64,
+                                              c_void_p, c_uint)
         self.lib.carla_add_plugin.restype = c_bool
 
         self.lib.carla_remove_plugin.argtypes = (c_void_p, c_uint)
@@ -3051,7 +3053,10 @@ class CarlaHostDLL(CarlaHostMeta):
         return structToDict(self.lib.carla_get_parameter_info(self.handle, pluginId, parameterId).contents)
 
     def get_parameter_scalepoint_info(self, pluginId, parameterId, scalePointId):
-        return structToDict(self.lib.carla_get_parameter_scalepoint_info(self.handle, pluginId, parameterId, scalePointId).contents)
+        return structToDict(self.lib.carla_get_parameter_scalepoint_info(self.handle,
+                                                                         pluginId,
+                                                                         parameterId,
+                                                                         scalePointId).contents)
 
     def get_parameter_data(self, pluginId, parameterId):
         return structToDict(self.lib.carla_get_parameter_data(self.handle, pluginId, parameterId).contents)
@@ -3066,7 +3071,10 @@ class CarlaHostDLL(CarlaHostMeta):
         return structToDict(self.lib.carla_get_custom_data(self.handle, pluginId, customDataId).contents)
 
     def get_custom_data_value(self, pluginId, type_, key):
-        return charPtrToString(self.lib.carla_get_custom_data_value(self.handle, pluginId, type_.encode("utf-8"), key.encode("utf-8")))
+        return charPtrToString(self.lib.carla_get_custom_data_value(self.handle,
+                                                                    pluginId,
+                                                                    type_.encode("utf-8"),
+                                                                    key.encode("utf-8")))
 
     def get_chunk_data(self, pluginId):
         return charPtrToString(self.lib.carla_get_chunk_data(self.handle, pluginId))
@@ -3177,7 +3185,11 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_set_midi_program(self.handle, pluginId, midiProgramId)
 
     def set_custom_data(self, pluginId, type_, key, value):
-        self.lib.carla_set_custom_data(self.handle, pluginId, type_.encode("utf-8"), key.encode("utf-8"), value.encode("utf-8"))
+        self.lib.carla_set_custom_data(self.handle,
+                                       pluginId,
+                                       type_.encode("utf-8"),
+                                       key.encode("utf-8"),
+                                       value.encode("utf-8"))
 
     def set_chunk_data(self, pluginId, chunkData):
         self.lib.carla_set_chunk_data(self.handle, pluginId, chunkData.encode("utf-8"))
@@ -3218,7 +3230,7 @@ class CarlaHostDLL(CarlaHostMeta):
     def nsm_ready(self, opcode):
         self.lib.carla_nsm_ready(self.handle, opcode)
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Helper object for CarlaHostPlugin
 
 class PluginStoreInfo():
@@ -3247,7 +3259,7 @@ class PluginStoreInfo():
         self.customData      = []
         self.peaks = [0.0, 0.0, 0.0, 0.0]
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Carla Host object for plugins (using pipes)
 
 class CarlaHostPlugin(CarlaHostMeta):
@@ -3956,4 +3968,4 @@ class CarlaHostPlugin(CarlaHostMeta):
         elif action == ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED:
             self._set_currentMidiProgram(pluginId, value1)
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
