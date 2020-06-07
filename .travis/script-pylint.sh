@@ -18,6 +18,7 @@ ${pylint} \
     --max-attributes=25 \
     --max-line-length=120 \
     --max-locals=25 \
+    --max-statements=100 \
     --disable=\
 bad-whitespace,\
 invalid-name,\
