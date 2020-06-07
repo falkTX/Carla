@@ -4,12 +4,22 @@ set -e
 
 make -C source/frontend
 
+ln -sf ../patchcanvas source/frontend/widgets/
+
 if which pylint3 >/dev/null; then
   pylint='pylint3'
 else
   pylint='pylint'
 fi
 
+# widget code, check all errors
+${pylint} \
+    --extension-pkg-whitelist=PyQt5 \
+    --disable=\
+bad-whitespace \
+    source/frontend/widgets/canvaspreviewframe.py
+
+# main app code, ignore some errors
 ${pylint} \
     --extension-pkg-whitelist=PyQt5 \
     --disable=\
@@ -34,6 +44,7 @@ unused-argument,\
 wrong-import-position \
     source/frontend/carla_{app,backend,backend_qt,settings,shared,utils,widgets}.py
 
+# code not updated yet
 ${pylint} \
     --extension-pkg-whitelist=PyQt5 \
     -E \

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Custom Mini Canvas Preview, a custom Qt widget
-# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -16,33 +16,21 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 from math import floor, ceil
 
 from PyQt5.QtCore import pyqtSignal, Qt, QRectF, QTimer, QEvent, QPoint
-from PyQt5.QtGui import QBrush, QColor, QCursor, QPainter, QPainterPath, QPen, QCursor, QPixmap
-from PyQt5.QtWidgets import QFrame, QWidget
+from PyQt5.QtGui import QBrush, QColor, QCursor, QPainter, QPainterPath, QPen, QPixmap
+from PyQt5.QtWidgets import QFrame, QGraphicsScene
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Antialiasing settings
 
 from patchcanvas import options, ANTIALIASING_FULL
 
-# ------------------------------------------------------------------------------------------------------------
-# Static Variables
-
-iX = 0
-iY = 1
-iWidth  = 2
-iHeight = 3
-
-MOUSE_MODE_NONE = 0
-MOUSE_MODE_MOVE = 1
-MOUSE_MODE_SCALE = 2
-
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Widget Class
 
 class CanvasPreviewFrame(QFrame):
@@ -50,13 +38,30 @@ class CanvasPreviewFrame(QFrame):
 
     # x = 2
     # y = 2
-    # w = width-4
-    # h = height-3
+    # w = width - 4
+    # h = height - 3
     # bounds -1 px
 
-    kInternalWidth  = 210-6 # -4 for width + -1px*2 bounds
-    kInternalHeight = 162-5 # -3 for height + -1px*2 bounds
-    kInternalRatio = kInternalWidth / kInternalHeight
+    _kRectX = 0
+    _kRectY = 1
+    _kRectWidth = 2
+    _kRectHeight = 3
+
+    _kCursorName = 0
+    _kCursorZoom = 1
+    _kCursorZoomIn = 2
+    _kCursorZoomOut = 3
+    _kCursorZoomCount = 4
+
+    _MOUSE_MODE_NONE = 0
+    _MOUSE_MODE_MOVE = 1
+    _MOUSE_MODE_SCALE = 2
+
+    _RUBBERBAND_BLENDING_DEFAULT = 0
+    _RUBBERBAND_BLENDING_PLUS = 1
+    _RUBBERBAND_BLENDING_DIFF = 2
+
+    # -----------------------------------------------------------------------------------------------------------------
 
     def __init__(self, parent):
         QFrame.__init__(self, parent)
@@ -66,6 +71,9 @@ class CanvasPreviewFrame(QFrame):
         #self.setMaximumHeight(162)
 
         self.fRealParent = None
+        self.fInternalWidth  = 210-6 # -4 for width + -1px*2 bounds
+        self.fInternalHeight = 162-5 # -3 for height + -1px*2 bounds
+        self.fInternalRatio  = self.fInternalWidth / self.fInternalHeight
 
         self.fScene = None
         self.fRenderSource   = QRectF(0.0, 0.0, 0.0, 0.0)
@@ -82,39 +90,41 @@ class CanvasPreviewFrame(QFrame):
         self.fViewPen   = QPen(Qt.blue, 1)
         self.fViewRect  = [3.0, 3.0, 10.0, 10.0]
 
-        self.fMouseMode = MOUSE_MODE_NONE
+        self.fMouseMode = self._MOUSE_MODE_NONE
         self.fMouseLeftDown = False
         self.fMouseRightDown = False
-        self.fMousePos = None
+        self.fMouseInitialZoomPos = None
 
-    def init(self, scene, realWidth, realHeight, useCustomPaint = False):
-        realWidth,realHeight = float(realWidth),float(realHeight)
+        self.fRubberBandBlending = self._RUBBERBAND_BLENDING_DEFAULT
+
+        self.fZoomCursors = [None for _ in range(self._kCursorZoomCount)]
+        self.fZoomCursors[self._kCursorName] = "black"
+        self.fZoomCursors[self._kCursorZoom] = QCursor(QPixmap(":/cursors/zoom_black.png"), 8, 7)
+        self.fZoomCursors[self._kCursorZoomIn] = QCursor(QPixmap(":/cursors/zoom-in_black.png"), 8, 7)
+        self.fZoomCursors[self._kCursorZoomOut] = QCursor(QPixmap(":/cursors/zoom-out_black.png"), 8, 7)
+
+    def init(self, scene: QGraphicsScene, realWidth: float, realHeight: float, useCustomPaint: bool = False):
+        # realWidth, realHeight = float(realWidth), float(realHeight)
         self.fScene = scene
         self.fRenderSource = QRectF(0.0, 0.0, realWidth, realHeight)
-        self.kInternalRatio = realWidth / realHeight
-        self.updateStyle()
+        self.fInternalRatio = realWidth / realHeight
+        self._updateStyle()
 
         if self.fUseCustomPaint != useCustomPaint:
             self.fUseCustomPaint = useCustomPaint
             self.repaint()
 
-    def updateStyle(self):
-        self.fFrameWidth = 1 if self.fUseCustomPaint else self.frameWidth()
-
-    def changeEvent(self, event):
-        if event.type() in (QEvent.StyleChange, QEvent.PaletteChange):
-            self.updateStyle()
-        QWidget.changeEvent(self, event)
-
     def setRealParent(self, parent):
         self.fRealParent = parent
 
+    # -----------------------------------------------------------------------------------------------------------------
+
     def setViewPosX(self, xp):
-        self.fViewRect[iX] = xp * (self.kInternalWidth - self.fViewRect[iWidth]/self.fScale)
+        self.fViewRect[self._kRectX] = xp * (self.fInternalWidth - self.fViewRect[self._kRectWidth]/self.fScale)
         self.update()
 
     def setViewPosY(self, yp):
-        self.fViewRect[iY] = yp * (self.kInternalHeight - self.fViewRect[iHeight]/self.fScale)
+        self.fViewRect[self._kRectY] = yp * (self.fInternalHeight - self.fViewRect[self._kRectHeight]/self.fScale)
         self.update()
 
     def setViewScale(self, scale):
@@ -124,126 +134,108 @@ class CanvasPreviewFrame(QFrame):
             QTimer.singleShot(0, self.fRealParent.slot_miniCanvasCheckAll)
 
     def setViewSize(self, width, height):
-        self.fViewRect[iWidth]  = width  * self.kInternalWidth
-        self.fViewRect[iHeight] = height * self.kInternalHeight
+        self.fViewRect[self._kRectWidth] = width * self.fInternalWidth
+        self.fViewRect[self._kRectHeight] = height * self.fInternalHeight
         self.update()
 
     def setViewTheme(self, bgColor, brushColor, penColor):
-        bg_black = bgColor.blackF()
-        brush_black = brushColor.blackF()
-        r0,g0,b0,a = bgColor.getRgb()
-        r1,g1,b1,a = brushColor.getRgb()
+        bg_black      = bgColor.blackF()
+        brush_black   = brushColor.blackF()
+        r0, g0, b0, _ = bgColor.getRgb()
+        r1, g1, b1, _ = brushColor.getRgb()
+
         if brush_black < bg_black:
-            self.fRubberBandBlending = 1
+            self.fRubberBandBlending = self._RUBBERBAND_BLENDING_PLUS
             brushColor = QColor(r1-r0, g1-g0, b1-b0, 40)
         elif bg_black < brush_black:
-            self.fRubberBandBlending = -1
+            self.fRubberBandBlending = self._RUBBERBAND_BLENDING_DIFF
             brushColor = QColor(r0-r1, g0-g1, b0-b1, 40)
         else:
             bgColor.setAlpha(40)
-            self.fRubberBandBlending = 0
+            self.fRubberBandBlending = self._RUBBERBAND_BLENDING_DEFAULT
+
         penColor.setAlpha(100)
         self.fViewBg    = bgColor
         self.fViewBrush = QBrush(brushColor)
         self.fViewPen   = QPen(penColor, 1)
 
-        cur_color = "black" if bg_black < 0.5 else "white"
-        self.fScaleCursors = ( QCursor(QPixmap(":/cursors/zoom-generic-"+cur_color+".png"), 8, 7),
-                               QCursor(QPixmap(":/cursors/zoom-in-"+cur_color+".png"), 8, 7),
-                               QCursor(QPixmap(":/cursors/zoom-out-"+cur_color+".png"), 8, 7) )
+        cursorName = "black" if bg_black < 0.5 else "white"
+        if self.fZoomCursors[self._kCursorName] != cursorName:
+            prefix = ":/cursors/zoom"
+            self.fZoomCursors[self._kCursorName] = cursorName
+            self.fZoomCursors[self._kCursorZoom] = QCursor(QPixmap("{}_{}.png".format(prefix, cursorName)), 8, 7)
+            self.fZoomCursors[self._kCursorZoomIn] = QCursor(QPixmap("{}-in_{}.png".format(prefix, cursorName)), 8, 7)
+            self.fZoomCursors[self._kCursorZoomOut] = QCursor(QPixmap("{}-out_{}.png".format(prefix, cursorName)), 8, 7)
 
-    def moveViewRect(self, x, y):
-        x = float(x) - self.fInitialX
-        y = float(y) - self.fInitialY
+    # -----------------------------------------------------------------------------------------------------------------
 
-        fixPos = False
-        rCentX = self.fViewRect[iWidth] / self.fScale / 2
-        rCentY = self.fViewRect[iHeight] / self.fScale / 2
-        if x < rCentX:
-            x = rCentX
-            fixPos = True
-        elif x > self.kInternalWidth - rCentX:
-            x = self.kInternalWidth - rCentX
-            fixPos = True
-
-        if y < rCentY:
-            y = rCentY
-            fixPos = True
-        elif y > self.kInternalHeight - rCentY:
-            y = self.kInternalHeight - rCentY
-            fixPos = True
-
-        if fixPos:
-            globalPos = self.mapToGlobal(QPoint(self.fInitialX + x, self.fInitialY + y))
-            self.cursor().setPos(globalPos)
-
-        x = self.fRenderSource.width() * x / self.kInternalWidth
-        y = self.fRenderSource.height() * y / self.kInternalHeight
-        self.fScene.m_view.centerOn(x, y)
-
-    def updateMouseMode(self, event=None):
-        if self.fMouseLeftDown and self.fMouseRightDown:
-            self.fMousePos = event.globalPos()
-            self.setCursor(self.fScaleCursors[0])
-            self.fMouseMode = MOUSE_MODE_SCALE
-        elif self.fMouseLeftDown:
-            self.setCursor(QCursor(Qt.SizeAllCursor))
-            if self.fMouseMode == MOUSE_MODE_NONE:
-                self.moveViewRect(event.x(), event.y())
-            self.fMouseMode = MOUSE_MODE_MOVE
-        else:
-            self.unsetCursor()
-            self.fMouseMode = MOUSE_MODE_NONE
+    def changeEvent(self, event):
+        if event.type() in (QEvent.StyleChange, QEvent.PaletteChange):
+            self._updateStyle()
+        QFrame.changeEvent(self, event)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
+            event.accept()
             self.fMouseLeftDown = True
-            self.updateMouseMode(event)
-            return event.accept()
-        elif event.button() == Qt.RightButton:
+            self._updateMouseMode(event)
+            return
+        if event.button() == Qt.RightButton:
+            event.accept()
             self.fMouseRightDown = True
-            self.updateMouseMode(event)
-            return event.accept()
-        elif event.button() == Qt.MidButton:
+            self._updateMouseMode(event)
+            return
+        if event.button() == Qt.MidButton:
+            event.accept()
             self.fMouseLeftDown = True
             self.fMouseRightDown = True
-            self.updateMouseMode(event)
-            return event.accept()
+            self._updateMouseMode(event)
+            return
         QFrame.mouseMoveEvent(self, event)
 
     def mouseMoveEvent(self, event):
-        if self.fMouseMode == MOUSE_MODE_MOVE:
-            self.moveViewRect(event.x(), event.y())
-            return event.accept()
-        if self.fMouseMode == MOUSE_MODE_SCALE:
-            dy = self.fMousePos.y() - event.globalY()
-            if dy != 0:
-                self.setCursor(self.fScaleCursors[1 if dy > 0 else 2])
-                self.fScene.zoom_wheel(dy)
-            self.cursor().setPos(self.fMousePos)
+        if self.fMouseMode == self._MOUSE_MODE_MOVE:
+            event.accept()
+            self._moveViewRect(event.x(), event.y())
+            return
+        if self.fMouseMode == self._MOUSE_MODE_SCALE:
+            event.accept()
+            self._scaleViewRect(event.globalY())
+            return
         QFrame.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
+            event.accept()
             self.fMouseLeftDown = False
-            self.updateMouseMode()
-            return event.accept()
-        elif event.button() == Qt.RightButton:
+            self._updateMouseMode()
+            return
+        if event.button() == Qt.RightButton:
+            event.accept()
             self.fMouseRightDown = False
-            self.updateMouseMode(event)
-            return event.accept()
-        elif event.button() == Qt.MidButton:
+            self._updateMouseMode(event)
+            return
+        if event.button() == Qt.MidButton:
+            event.accept()
             self.fMouseLeftDown = event.buttons() & Qt.LeftButton
             self.fMouseRightDown = event.buttons() & Qt.RightButton
-            self.updateMouseMode(event)
-            return event.accept()
+            self._updateMouseMode(event)
+            return
         QFrame.mouseReleaseEvent(self, event)
 
     def wheelEvent(self, event):
+        if self.fScene is None:
+            QFrame.wheelEvent(self, event)
+            return
+
+        event.accept()
         self.fScene.zoom_wheel(event.angleDelta().y())
-        return event.accept()
 
     def paintEvent(self, event):
+        if self.fScene is None:
+            QFrame.paintEvent(self, event)
+            return
+
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing == ANTIALIASING_FULL))
 
@@ -251,7 +243,7 @@ class CanvasPreviewFrame(QFrame):
         bg_color = self.fViewBg
         bg_black = bg_color.black()
         bg_shade = -12 if bg_black < 127 else 12
-        r,g,b,a = bg_color.getRgb()
+        r,g,b,_ = bg_color.getRgb()
         bg_color = QColor(r+bg_shade, g+bg_shade, b+bg_shade)
 
         frameWidth = self.fFrameWidth
@@ -272,11 +264,17 @@ class CanvasPreviewFrame(QFrame):
             rounding = 0.5 * use_rounding
             painter.setBrush(bg_color)
             painter.setPen(bg_color)
-            painter.drawRoundedRect(QRectF(0.5+frameWidth, 0.5+frameWidth, self.width()-1-frameWidth*2, self.height()-1-frameWidth*2), rounding, rounding)
+            painter.drawRoundedRect(QRectF(0.5+frameWidth,
+                                           0.5+frameWidth,
+                                           self.width()-1-frameWidth*2,
+                                           self.height()-1-frameWidth*2), rounding, rounding)
 
             clipPath = QPainterPath()
             rounding = 1.0 * use_rounding
-            clipPath.addRoundedRect(QRectF(frameWidth, frameWidth, self.width()-frameWidth*2, self.height()-frameWidth*2), rounding, rounding)
+            clipPath.addRoundedRect(QRectF(frameWidth,
+                                           frameWidth,
+                                           self.width()-frameWidth*2,
+                                           self.height()-frameWidth*2), rounding, rounding)
             painter.setClipPath(clipPath)
 
         self.fScene.render(painter, self.fRenderTarget, self.fRenderSource, Qt.KeepAspectRatio)
@@ -284,13 +282,13 @@ class CanvasPreviewFrame(QFrame):
         # Allow cursor frame to look joined with minicanvas frame
         painter.setClipping(False)
 
-        width  = self.fViewRect[iWidth]/self.fScale
-        height = self.fViewRect[iHeight]/self.fScale
+        width  = self.fViewRect[self._kRectWidth]/self.fScale
+        height = self.fViewRect[self._kRectHeight]/self.fScale
 
         # cursor
         lineHinting = self.fViewPen.widthF() / 2
-        x = self.fViewRect[iX]+self.fInitialX
-        y = self.fViewRect[iY]+self.fInitialY
+        x = self.fViewRect[self._kRectX]+self.fInitialX
+        y = self.fViewRect[self._kRectY]+self.fInitialY
         scr_x = floor(x)
         scr_y = floor(y)
         rect = QRectF(
@@ -299,10 +297,11 @@ class CanvasPreviewFrame(QFrame):
             ceil(width+x-scr_x)-lineHinting*2,
             ceil(height+y-scr_y)-lineHinting*2 )
 
-        if self.fRubberBandBlending == 1:
+        if self.fRubberBandBlending == self._RUBBERBAND_BLENDING_PLUS:
             painter.setCompositionMode(QPainter.CompositionMode_Plus)
-        elif self.fRubberBandBlending == -1:
+        elif self.fRubberBandBlending == self._RUBBERBAND_BLENDING_DIFF:
             painter.setCompositionMode(QPainter.CompositionMode_Difference)
+
         painter.setBrush(self.fViewBrush)
         painter.setPen(Qt.NoPen)
         painter.drawRect(rect)
@@ -322,20 +321,105 @@ class CanvasPreviewFrame(QFrame):
         width = size.width()
         height = size.height()
         extRatio = (width - self.fFrameWidth * 2) / (height - self.fFrameWidth * 2)
-        if extRatio >= self.kInternalRatio:
-            self.kInternalHeight = floor(height - self.fFrameWidth * 2)
-            self.kInternalWidth  = floor(self.kInternalHeight * self.kInternalRatio)
-            self.fInitialX       = floor(float(width - self.kInternalWidth) / 2.0)
+        if extRatio >= self.fInternalRatio:
+            self.fInternalHeight = floor(height - self.fFrameWidth * 2)
+            self.fInternalWidth  = floor(self.fInternalHeight * self.fInternalRatio)
+            self.fInitialX       = floor(float(width - self.fInternalWidth) / 2.0)
             self.fInitialY       = self.fFrameWidth
         else:
-            self.kInternalWidth  = floor(width - self.fFrameWidth * 2)
-            self.kInternalHeight = floor(self.kInternalWidth / self.kInternalRatio)
+            self.fInternalWidth  = floor(width - self.fFrameWidth * 2)
+            self.fInternalHeight = floor(self.fInternalWidth / self.fInternalRatio)
             self.fInitialX       = self.fFrameWidth
-            self.fInitialY       = floor(float(height - self.kInternalHeight) / 2.0)
+            self.fInitialY       = floor(float(height - self.fInternalHeight) / 2.0)
 
-        self.fRenderTarget = QRectF(self.fInitialX, self.fInitialY, float(self.kInternalWidth), float(self.kInternalHeight))
+        self.fRenderTarget = QRectF(self.fInitialX,
+                                    self.fInitialY,
+                                    float(self.fInternalWidth),
+                                    float(self.fInternalHeight))
 
         if self.fRealParent is not None:
             QTimer.singleShot(0, self.fRealParent.slot_miniCanvasCheckAll)
 
         QFrame.resizeEvent(self, event)
+
+    # -----------------------------------------------------------------------------------------------------------------
+
+    def _moveViewRect(self, x: float, y: float):
+        if self.fScene is None:
+            return
+
+        x -= self.fInitialX
+        y -= self.fInitialY
+
+        fixPos = False
+        rCentX = self.fViewRect[self._kRectWidth] / self.fScale / 2
+        rCentY = self.fViewRect[self._kRectHeight] / self.fScale / 2
+        if x < rCentX:
+            x = rCentX
+            fixPos = True
+        elif x > self.fInternalWidth - rCentX:
+            x = self.fInternalWidth - rCentX
+            fixPos = True
+
+        if y < rCentY:
+            y = rCentY
+            fixPos = True
+        elif y > self.fInternalHeight - rCentY:
+            y = self.fInternalHeight - rCentY
+            fixPos = True
+
+        if fixPos:
+            globalPos = self.mapToGlobal(QPoint(self.fInitialX + x, self.fInitialY + y))
+            self.cursor().setPos(globalPos)
+
+        x = self.fRenderSource.width() * x / self.fInternalWidth
+        y = self.fRenderSource.height() * y / self.fInternalHeight
+        self.fScene.m_view.centerOn(x, y)
+
+    def _scaleViewRect(self, globalY: int):
+        if self.fScene is None:
+            return
+
+        dy = self.fMouseInitialZoomPos.y() - globalY
+        if dy != 0:
+            self.setCursor(self.fZoomCursors[self._kCursorZoomIn if dy > 0 else self._kCursorZoomOut])
+            self.fScene.zoom_wheel(dy)
+
+        self.cursor().setPos(self.fMouseInitialZoomPos)
+
+    def _updateMouseMode(self, event=None):
+        if self.fMouseLeftDown and self.fMouseRightDown:
+            self.fMouseInitialZoomPos = event.globalPos()
+            self.setCursor(self.fZoomCursors[self._kCursorZoom])
+            self.fMouseMode = self._MOUSE_MODE_SCALE
+
+        elif self.fMouseLeftDown:
+            self.setCursor(QCursor(Qt.SizeAllCursor))
+            if self.fMouseMode == self._MOUSE_MODE_NONE:
+                self._moveViewRect(event.x(), event.y())
+            self.fMouseMode = self._MOUSE_MODE_MOVE
+
+        else:
+            self.unsetCursor()
+            self.fMouseMode = self._MOUSE_MODE_NONE
+
+    def _updateStyle(self):
+        self.fFrameWidth = 1 if self.fUseCustomPaint else self.frameWidth()
+
+# ---------------------------------------------------------------------------------------------------------------------
+
+if __name__ == '__main__':
+    # pylint: disable=unused-import
+    # pylint: disable=ungrouped-imports
+    import sys
+    import resources_rc
+    from PyQt5.QtWidgets import QApplication
+    # pylint: enable=unused-import
+    # pylint: enable=ungrouped-imports
+
+    app = QApplication(sys.argv)
+
+    gui = CanvasPreviewFrame(None)
+    gui.show()
+
+    sys.exit(app.exec_())

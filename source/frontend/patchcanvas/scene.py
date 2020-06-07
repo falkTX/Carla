@@ -134,8 +134,8 @@ class PatchScene(QGraphicsScene):
         self.m_rubberband.setBrush(canvas.theme.rubberband_brush)
 
         cur_color = "black" if canvas.theme.canvas_bg.blackF() < 0.5 else "white"
-        self.curCut = QCursor(QPixmap(":/cursors/cut-"+cur_color+".png"), 1, 1)
-        self.curZoomArea = QCursor(QPixmap(":/cursors/zoom-area-"+cur_color+".png"), 8, 7)
+        self.curCut = QCursor(QPixmap(":/cursors/cut_"+cur_color+".png"), 1, 1)
+        self.curZoomArea = QCursor(QPixmap(":/cursors/zoom-area_"+cur_color+".png"), 8, 7)
 
     def zoom_fit(self):
         min_x = min_y = max_x = max_y = None

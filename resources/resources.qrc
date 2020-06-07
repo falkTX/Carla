@@ -161,18 +161,16 @@
         <file>scalable/pb_mplayer.svg</file>
         <file>scalable/pb_vlc.svg</file>
 
-
-
-        <file>cursors/zoom-generic-white.png</file>
-        <file>cursors/zoom-generic-black.png</file>
-        <file>cursors/zoom-in-white.png</file>
-        <file>cursors/zoom-in-black.png</file>
-        <file>cursors/zoom-out-white.png</file>
-        <file>cursors/zoom-out-black.png</file>
-        <file>cursors/zoom-area-white.png</file>
-        <file>cursors/zoom-area-black.png</file>
-        <file>cursors/cut-white.png</file>
-        <file>cursors/cut-black.png</file>
+        <file>cursors/zoom_white.png</file>
+        <file>cursors/zoom_black.png</file>
+        <file>cursors/zoom-in_white.png</file>
+        <file>cursors/zoom-in_black.png</file>
+        <file>cursors/zoom-out_white.png</file>
+        <file>cursors/zoom-out_black.png</file>
+        <file>cursors/zoom-area_white.png</file>
+        <file>cursors/zoom-area_black.png</file>
+        <file>cursors/cut_white.png</file>
+        <file>cursors/cut_black.png</file>
 
         <file>fonts/uranium.ttf</file>
     </qresource>
