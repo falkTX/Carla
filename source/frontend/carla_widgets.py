@@ -1711,8 +1711,9 @@ class PluginEdit(QDialog):
     def _updateCtrlPrograms(self):
         self.ui.keyboard.setEnabled(self.fControlChannel >= 0)
 
-        if (self.fPluginInfo['category'] != PLUGIN_CATEGORY_SYNTH or
-            self.fPluginInfo['type'] not in (PLUGIN_INTERNAL, PLUGIN_SF2)):
+        if self.fPluginInfo['category'] != PLUGIN_CATEGORY_SYNTH:
+            return
+        if self.fPluginInfo['type'] not in (PLUGIN_INTERNAL, PLUGIN_SF2):
             return
 
         if self.fControlChannel < 0:

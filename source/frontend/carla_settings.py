@@ -630,7 +630,8 @@ class CarlaSettingsW(QDialog):
             settings.value(CARLA_KEY_MAIN_PROJECT_FOLDER, CARLA_DEFAULT_MAIN_PROJECT_FOLDER, str))
 
         self.ui.ch_main_theme_pro.setChecked(self.ui.group_main_theme.isEnabled() and
-            settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, CARLA_DEFAULT_MAIN_USE_PRO_THEME, bool))
+                                             settings.value(CARLA_KEY_MAIN_USE_PRO_THEME,
+                                                            CARLA_DEFAULT_MAIN_USE_PRO_THEME, bool))
 
         self.ui.cb_main_theme_color.setCurrentIndex(
             self.ui.cb_main_theme_color.findText(settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR,
@@ -667,13 +668,15 @@ class CarlaSettingsW(QDialog):
             settings.value(CARLA_KEY_CANVAS_FANCY_EYE_CANDY, CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY, bool))
 
         self.ui.cb_canvas_use_opengl.setChecked(self.ui.cb_canvas_use_opengl.isEnabled() and
-            settings.value(CARLA_KEY_CANVAS_USE_OPENGL, CARLA_DEFAULT_CANVAS_USE_OPENGL, bool))
+                                                settings.value(CARLA_KEY_CANVAS_USE_OPENGL,
+                                                               CARLA_DEFAULT_CANVAS_USE_OPENGL, bool))
 
         self.ui.cb_canvas_render_aa.setCheckState(
             settings.value(CARLA_KEY_CANVAS_ANTIALIASING, CARLA_DEFAULT_CANVAS_ANTIALIASING, int))
 
         self.ui.cb_canvas_render_hq_aa.setChecked(self.ui.cb_canvas_render_hq_aa.isEnabled() and
-            settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING, CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING, bool))
+                                                  settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING,
+                                                                 CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING, bool))
 
         self.ui.cb_canvas_full_repaints.setChecked(
             settings.value(CARLA_KEY_CANVAS_FULL_REPAINTS, CARLA_DEFAULT_CANVAS_FULL_REPAINTS, bool))
