@@ -504,7 +504,7 @@ EOF
 
 if [ -z "${SOURCED_BY_DOCKER}" ]; then
     # name of final dir and xz file, needed only by chroot_pack_carla
-    export PKG_FOLDER="Carla_2.1-linux"
+    export PKG_FOLDER="Carla_2.1.1-linux"
 
     # cleanup
     prepare
