@@ -20,13 +20,17 @@
 
 #include "CarlaUtils.hpp"
 
+#ifdef CARLA_OS_LINUX
+# include <sys/prctl.h>
+#endif
+
+#ifdef CARLA_OS_HAIKU
+typedef __sighandler_t sig_t;
+#endif
+
 #ifndef CARLA_OS_WIN
 # include <csignal>
 # include <csetjmp>
-#endif
-
-#ifdef CARLA_OS_LINUX
-# include <sys/prctl.h>
 #endif
 
 // --------------------------------------------------------------------------------------------------------------------

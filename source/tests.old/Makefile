@@ -21,7 +21,7 @@ BASE_FLAGS += -I. -I../backend -I../includes -I../modules -I../utils
 BASE_FLAGS += -Wcast-align -Wmissing-declarations
 # BASE_FLAGS += -Wcast-qual -Wconversion -Wsign-conversion -Wundef
 BASE_FLAGS += -Wformat -Wformat-security -Wredundant-decls -Wshadow -Wstrict-overflow -fstrict-overflow -Wwrite-strings
-BASE_FLAGS += -Wpointer-arith -Wabi -Winit-self -Wuninitialized -Wunused-parameter
+BASE_FLAGS += -Wpointer-arith -Wabi=2 -Winit-self -Wuninitialized -Wunused-parameter
 # -Wfloat-equal
 
 LINK_FLAGS =
