@@ -239,10 +239,10 @@ make -C unzipfx-carla-control -f Makefile.win32 ${MAKE_ARGS}
 
 # Create zip of Carla and CarlaControl
 rm -f Carla.zip CarlaControl.zip
-mv Carla Carla-2.1
-mv CarlaControl CarlaControl-2.1
-zip -r -9 Carla.zip Carla-2.1
-zip -r -9 CarlaControl.zip CarlaControl-2.1
+mv Carla Carla-2.1.1
+mv CarlaControl CarlaControl-2.1.1
+zip -r -9 Carla.zip Carla-2.1.1
+zip -r -9 CarlaControl.zip CarlaControl-2.1.1
 
 # Create static builds
 rm -f Carla.exe
@@ -255,7 +255,7 @@ chmod +x CarlaControl.exe
 
 # Cleanup
 rm -f Carla.zip CarlaControl.zip
-rm -rf Carla-2.1 CarlaControl-2.1
+rm -rf Carla-2.1.1 CarlaControl-2.1.1
 
 # Create release zip
 rm -rf ${PKG_FOLDER}
