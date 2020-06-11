@@ -20,7 +20,7 @@
 # Imports (Global)
 
 from PyQt5.QtGui import QKeySequence, QMouseEvent
-from PyQt5.QtWidgets import QSplitter
+from PyQt5.QtWidgets import QFrame, QSplitter
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
