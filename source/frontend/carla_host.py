@@ -2404,6 +2404,10 @@ class HostWindow(QMainWindow):
 
         # Hide Optional Gui
         elif opcode == NSM_CALLBACK_HIDE_OPTIONAL_GUI:
+            for pitem in reversed(self.fPluginList):
+                if pitem is None:
+                    continue
+                widget = pitem.getWidget().hideCustomUI()
             self.hide()
 
         self.host.nsm_ready(opcode)

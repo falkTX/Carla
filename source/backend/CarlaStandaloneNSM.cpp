@@ -22,8 +22,8 @@
 #define NSM_API_VERSION_MAJOR 1
 #define NSM_API_VERSION_MINOR 2
 
-#define NSM_CLIENT_FEATURES ":switch:"
-//#define NSM_CLIENT_FEATURES ":switch:optional-gui:"
+// #define NSM_CLIENT_FEATURES ":switch:"
+#define NSM_CLIENT_FEATURES ":switch:optional-gui:"
 
 #include "CarlaOscUtils.hpp"
 #include "CarlaString.hpp"

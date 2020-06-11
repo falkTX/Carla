@@ -790,6 +790,12 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         if self.b_gui is not None:
             self.b_gui.setChecked(True)
 
+    def hideCustomUI(self):
+        self.host.show_custom_ui(self.fPluginId, False)
+
+        if self.b_gui is not None:
+            self.b_gui.setChecked(False)
+
     def showEditDialog(self):
         self.fEditDialog.show()
         self.fEditDialog.activateWindow()
