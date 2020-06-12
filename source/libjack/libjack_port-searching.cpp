@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -56,7 +56,7 @@ const char** jack_get_ports(jack_client_t* client, const char* a, const char* b,
 
     if (flags == 0 || (flags & (JackPortIsInput|JackPortIsOutput)) == (JackPortIsInput|JackPortIsOutput))
     {
-        if (const char** const ret = (const char**)calloc(numIns+numOuts, sizeof(const char*)))
+        if (const char** const ret = (const char**)calloc(numIns+numOuts+1, sizeof(const char*)))
         {
             uint i=0;
             for (uint j=0; j<jserver.numAudioIns; ++i, ++j)
@@ -67,6 +67,8 @@ const char** jack_get_ports(jack_client_t* client, const char* a, const char* b,
                 ret[i] = allocate_port_name("system:midi_capture_", j);
             for (uint j=0; j<jserver.numMidiOuts; ++i, ++j)
                 ret[i] = allocate_port_name("system:midi_playback_", j);
+
+            ret[i] = nullptr;
 
             return ret;
         }
@@ -74,7 +76,7 @@ const char** jack_get_ports(jack_client_t* client, const char* a, const char* b,
 
     if (flags & JackPortIsInput)
     {
-        if (const char** const ret = (const char**)calloc(numIns, sizeof(const char*)))
+        if (const char** const ret = (const char**)calloc(numIns+1, sizeof(const char*)))
         {
             uint i=0;
             for (uint j=0; j<jserver.numAudioOuts; ++i, ++j)
@@ -82,19 +84,23 @@ const char** jack_get_ports(jack_client_t* client, const char* a, const char* b,
             for (uint j=0; j<jserver.numMidiOuts; ++i, ++j)
                 ret[i] = allocate_port_name("system:midi_playback_", j);
 
+            ret[i] = nullptr;
+
             return ret;
         }
     }
 
     if (flags & JackPortIsOutput)
     {
-        if (const char** const ret = (const char**)calloc(numOuts, sizeof(const char*)))
+        if (const char** const ret = (const char**)calloc(numOuts+1, sizeof(const char*)))
         {
             uint i=0;
             for (uint j=0; j<jserver.numAudioIns; ++i, ++j)
                 ret[i] = allocate_port_name("system:capture_", j);
             for (uint j=0; j<jserver.numMidiIns; ++i, ++j)
                 ret[i] = allocate_port_name("system:midi_capture_", j);
+
+            ret[i] = nullptr;
 
             return ret;
         }
