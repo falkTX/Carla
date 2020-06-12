@@ -44,7 +44,6 @@ public:
 
 private:
   Region *region_;
-  int trigger_;
   int curMidiNote_, curPitchWheel_;
   double pitchRatio_;
   float noteGainLeft_, noteGainRight_;

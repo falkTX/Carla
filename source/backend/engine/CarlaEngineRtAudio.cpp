@@ -29,7 +29,9 @@
 #if defined(__clang__)
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wconversion"
+# pragma clang diagnostic ignored "-Wdeprecated-copy"
 # pragma clang diagnostic ignored "-Weffc++"
+# pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
 #elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wconversion"

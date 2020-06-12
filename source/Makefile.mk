@@ -167,17 +167,24 @@ endif
 # Strict test build
 
 ifeq ($(TESTBUILD),true)
-BASE_FLAGS += -Werror -Wabi=98 -Wcast-qual -Wclobbered -Wconversion -Wdisabled-optimization
-BASE_FLAGS += -Wdouble-promotion -Wfloat-equal -Wlogical-op -Wpointer-arith -Wsign-conversion
+BASE_FLAGS += -Werror -Wcast-qual -Wconversion -Wdisabled-optimization
+BASE_FLAGS += -Wdouble-promotion -Wfloat-equal -Wpointer-arith -Wsign-conversion
 BASE_FLAGS += -Wformat=2 -Woverlength-strings
-BASE_FLAGS += -Wformat-truncation=2 -Wformat-overflow=2
-BASE_FLAGS += -Wstringop-overflow=4 -Wstringop-truncation
 BASE_FLAGS += -Wmissing-declarations -Wredundant-decls
 BASE_FLAGS += -Wshadow  -Wundef -Wuninitialized -Wunused
 BASE_FLAGS += -Wstrict-aliasing -fstrict-aliasing
 BASE_FLAGS += -Wstrict-overflow -fstrict-overflow
-BASE_FLAGS += -Wduplicated-branches -Wduplicated-cond -Wnull-dereference
-CFLAGS     += -Winit-self -Wjump-misses-init -Wmissing-prototypes -Wnested-externs -Wstrict-prototypes -Wwrite-strings
+BASE_FLAGS += -Wnull-dereference
+ifneq ($(CLANG),true)
+BASE_FLAGS += -Wabi=98 -Wclobbered -Wlogical-op
+BASE_FLAGS += -Wformat-truncation=2 -Wformat-overflow=2
+BASE_FLAGS += -Wstringop-overflow=4 -Wstringop-truncation
+BASE_FLAGS += -Wduplicated-branches -Wduplicated-cond
+endif
+CFLAGS     += -Winit-self -Wmissing-prototypes -Wnested-externs -Wstrict-prototypes -Wwrite-strings
+ifneq ($(CLANG),true)
+CFLAGS     += -Wjump-misses-init
+endif
 CXXFLAGS   += -Wc++0x-compat -Wc++11-compat
 CXXFLAGS   += -Wnon-virtual-dtor -Woverloaded-virtual
 # CXXFLAGS   += -Wold-style-cast -Wuseless-cast
@@ -196,6 +203,12 @@ BASE_FLAGS += -isystem /opt/mingw32/include
 endif
 ifeq ($(WIN64),true)
 BASE_FLAGS += -isystem /opt/mingw64/include
+endif
+# TODO
+ifeq ($(CLANG),true)
+BASE_FLAGS += -Wno-double-promotion
+BASE_FLAGS += -Wno-format-nonliteral
+BASE_FLAGS += -Wno-tautological-pointer-compare
 endif
 endif
 

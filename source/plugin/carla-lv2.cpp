@@ -276,7 +276,7 @@ public:
 
                         if (obj->body.otype == fURIs.patchSet) {
                             // Get property URI.
-                            const LV2_Atom* property = NULL;
+                            const LV2_Atom* property = nullptr;
                             lv2_atom_object_get(obj, fURIs.patchProperty, &property, 0);
                             CARLA_SAFE_ASSERT_CONTINUE(property != nullptr);
                             CARLA_SAFE_ASSERT_CONTINUE(property->type == fURIs.atomURID);
@@ -292,7 +292,7 @@ public:
                             }
 
                             // Get value.
-                            const LV2_Atom* fileobj = NULL;
+                            const LV2_Atom* fileobj = nullptr;
                             lv2_atom_object_get(obj, fURIs.patchValue, &fileobj, 0);
                             CARLA_SAFE_ASSERT_CONTINUE(fileobj != nullptr);
                             CARLA_SAFE_ASSERT_CONTINUE(fileobj->type == fURIs.atomPath);

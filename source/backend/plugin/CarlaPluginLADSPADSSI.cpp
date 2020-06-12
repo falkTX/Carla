@@ -62,12 +62,12 @@ using water::StringArray;
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
 // -------------------------------------------------------------------
 // Fallback data
 
 static const CustomData kCustomDataFallback = { nullptr, nullptr, nullptr };
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
 // -------------------------------------------------------------------
 
 class CarlaThreadDSSIUI : public CarlaThread

@@ -21,7 +21,7 @@ namespace sfzero
 static const float globalGain = -1.0;
 
 Voice::Voice()
-    : region_(nullptr), trigger_(0), curMidiNote_(0), curPitchWheel_(0), pitchRatio_(0), noteGainLeft_(0), noteGainRight_(0),
+    : region_(nullptr), curMidiNote_(0), curPitchWheel_(0), pitchRatio_(0), noteGainLeft_(0), noteGainRight_(0),
       sourceSamplePosition_(0), sampleEnd_(0), loopStart_(0), loopEnd_(0), numLoops_(0), curVelocity_(0)
 {
   ampeg_.setExponentialDecay(true);

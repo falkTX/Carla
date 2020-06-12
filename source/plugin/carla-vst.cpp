@@ -1341,6 +1341,9 @@ const AEffect* VSTPluginMainInit(AEffect* const effect)
 #endif
 
     return effect;
+
+    // may be unused
+    (void)kBaseUniqueID;
 }
 
 // -----------------------------------------------------------------------

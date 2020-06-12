@@ -300,7 +300,7 @@ public:
         if (indexToInsertAt < 0)
             return add (newObject);
 
-        size_t uindexToInsertAt = indexToInsertAt;
+        size_t uindexToInsertAt = static_cast<size_t>(indexToInsertAt);
 
         if (uindexToInsertAt > numUsed)
             uindexToInsertAt = numUsed;
