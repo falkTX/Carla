@@ -155,11 +155,11 @@ public:
 
         const char* const shmIds(std::getenv("CARLA_SHM_IDS"));
         CARLA_SAFE_ASSERT_INT2_RETURN(shmIds != nullptr && std::strlen(shmIds) == 6*4,
-                                      shmIds != nullptr ? std::strlen(shmIds) : -1, 6*4,);
+                                      shmIds != nullptr ? static_cast<int>(std::strlen(shmIds)) : -1, 6*4,);
 
         const char* const libjackSetup(std::getenv("CARLA_LIBJACK_SETUP"));
         CARLA_SAFE_ASSERT_INT_RETURN(libjackSetup != nullptr && std::strlen(libjackSetup) >= 6,
-                                     libjackSetup != nullptr ? std::strlen(libjackSetup) : -1,);
+                                     libjackSetup != nullptr ? static_cast<int>(std::strlen(libjackSetup)) : -1,);
 
         // make sure we don't get loaded again
         carla_unsetenv("CARLA_SHM_IDS");
