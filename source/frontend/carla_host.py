@@ -617,7 +617,7 @@ class HostWindow(QMainWindow):
         for pitem in reversed(self.fPluginList):
             if pitem is None:
                 continue
-            widget = pitem.getWidget().hideCustomUI()
+            pitem.getWidget().hideCustomUI()
         self.hide()
 
     def showIfNeeded(self):
