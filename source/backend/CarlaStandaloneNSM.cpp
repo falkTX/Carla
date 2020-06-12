@@ -232,11 +232,12 @@ protected:
             fHasOptionalGui   = std::strstr(features, ":optional-gui:")   != nullptr;
             fHasServerControl = std::strstr(features, ":server_control:") != nullptr;
 
-#if 0
-            // UI starts visible
+            // UI starts hidden
             if (fHasOptionalGui)
-                lo_send_from(fReplyAddress, fServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_shown", "");
-#endif
+            {
+                // NOTE: lo_send_from is a macro that creates local variables
+                lo_send_from(fReplyAddress, fServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_hidden", "");
+            }
 
             carla_stdout("Carla started via '%s', message: %s", smName, message);
 
@@ -298,6 +299,7 @@ protected:
             if (carla_is_engine_running(handle))
                 carla_engine_close(handle);
 
+            // TODO send error if engine failed to initialize
             carla_engine_init(handle, "JACK", clientNameId);
 
             fProjectPath  = projectPath;

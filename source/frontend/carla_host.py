@@ -611,6 +611,23 @@ class HostWindow(QMainWindow):
             QTimer.singleShot(0, self.slot_engineStart)
 
     # --------------------------------------------------------------------------------------------------------
+    # Manage visibility state, needed for NSM
+
+    def hideForNSM(self):
+        for pitem in reversed(self.fPluginList):
+            if pitem is None:
+                continue
+            widget = pitem.getWidget().hideCustomUI()
+        self.hide()
+
+    def showIfNeeded(self):
+        if self.host.nsmOK:
+            self.ui.act_file_quit.setText(self.tr("Hide"))
+            QApplication.instance().setQuitOnLastWindowClosed(False)
+        else:
+            self.show()
+
+    # --------------------------------------------------------------------------------------------------------
     # Setup
 
     def compactPlugin(self, pluginId):
@@ -2404,11 +2421,7 @@ class HostWindow(QMainWindow):
 
         # Hide Optional Gui
         elif opcode == NSM_CALLBACK_HIDE_OPTIONAL_GUI:
-            for pitem in reversed(self.fPluginList):
-                if pitem is None:
-                    continue
-                widget = pitem.getWidget().hideCustomUI()
-            self.hide()
+            self.hideForNSM()
 
         self.host.nsm_ready(opcode)
 
@@ -2453,7 +2466,7 @@ class HostWindow(QMainWindow):
     def slot_handleSIGTERM(self):
         print("Got SIGTERM -> Closing now")
         self.fCustomStopAction = self.CUSTOM_ACTION_APP_CLOSE
-        self.slot_engineStop(True)
+        self.close()
 
     # --------------------------------------------------------------------------------------------------------
     # Internal stuff
@@ -2749,6 +2762,11 @@ class HostWindow(QMainWindow):
             event.ignore()
             return
 
+        if self.host.nsmOK and self.fCustomStopAction != self.CUSTOM_ACTION_APP_CLOSE:
+            self.hideForNSM()
+            self.host.nsm_ready(NSM_CALLBACK_HIDE_OPTIONAL_GUI)
+            return
+
         patchcanvas.handleAllPluginsRemoved()
 
         if MACOS and self.fMacClosingHelper and not (self.host.isControl or self.host.isPlugin):
@@ -2772,6 +2790,9 @@ class HostWindow(QMainWindow):
                 return
 
         QMainWindow.closeEvent(self, event)
+
+        # if we reach this point, fully close ourselves
+        QApplication.instance().quit()
 
 # ------------------------------------------------------------------------------------------------
 # Canvas callback
