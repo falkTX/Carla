@@ -138,6 +138,7 @@ public:
           fDummyMidiOutBuffer(false),
           fMidiInBuffers(nullptr),
           fMidiOutBuffers(nullptr),
+          fInitialized(false),
           fIsOffline(false),
           fIsReady(false),
           fLastPingTime(-1),
@@ -150,13 +151,15 @@ public:
           ,leakDetector_CarlaJackAppClient()
 #endif
     {
-        carla_debug("CarlaJackAppClient::CarlaJackAppClient()");
+        carla_debug("CarlaJackAppClient::CarlaJackAppClient() START");
 
         const char* const shmIds(std::getenv("CARLA_SHM_IDS"));
-        CARLA_SAFE_ASSERT_INT2_RETURN(shmIds != nullptr && std::strlen(shmIds) == 6*4, std::strlen(shmIds), 6*4,);
+        CARLA_SAFE_ASSERT_INT2_RETURN(shmIds != nullptr && std::strlen(shmIds) == 6*4,
+                                      shmIds != nullptr ? std::strlen(shmIds) : -1, 6*4,);
 
         const char* const libjackSetup(std::getenv("CARLA_LIBJACK_SETUP"));
-        CARLA_SAFE_ASSERT_RETURN(libjackSetup != nullptr && std::strlen(libjackSetup) >= 6,);
+        CARLA_SAFE_ASSERT_INT_RETURN(libjackSetup != nullptr && std::strlen(libjackSetup) >= 6,
+                                     libjackSetup != nullptr ? std::strlen(libjackSetup) : -1,);
 
         // make sure we don't get loaded again
         carla_unsetenv("CARLA_SHM_IDS");
@@ -200,11 +203,14 @@ public:
                                      nullptr);
 
         fNonRealtimeThread.startThread(false);
+
+        fInitialized = true;
+        carla_debug("CarlaJackAppClient::CarlaJackAppClient() DONE");
     }
 
     ~CarlaJackAppClient() noexcept override
     {
-        carla_debug("CarlaJackAppClient::~CarlaJackAppClient()");
+        carla_debug("CarlaJackAppClient::~CarlaJackAppClient() START");
 
         fLastPingTime = -1;
 
@@ -221,10 +227,16 @@ public:
         }
 
         fClients.clear();
+        fNewClients.clear();
+
+        carla_debug("CarlaJackAppClient::~CarlaJackAppClient() DONE");
     }
 
     JackClientState* createClient(const char* const name)
     {
+        if (! fInitialized)
+            return nullptr;
+
         while (fNonRealtimeThread.isThreadRunning() && ! fIsReady)
             carla_sleep(1);
 
@@ -354,6 +366,7 @@ private:
     char fBaseNameNonRtClientControl[6+1];
     char fBaseNameNonRtServerControl[6+1];
 
+    bool fInitialized;
     bool fIsOffline;
     volatile bool fIsReady;
     int64_t fLastPingTime;
