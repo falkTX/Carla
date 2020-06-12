@@ -270,6 +270,20 @@ public:
         return true;
     }
 
+    const char* getClientNameFromUUID(jack_uuid_t uuid) const
+    {
+        for (LinkedList<JackClientState*>::Itenerator it = fClients.begin2(); it.valid(); it.next())
+        {
+            JackClientState* const jclient(it.getValue(nullptr));
+            CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
+
+            if (jclient->uuid == uuid)
+                return jclient->name;
+        }
+
+        return nullptr;
+    }
+
     pthread_t getRealtimeThreadId() const noexcept
     {
         return (pthread_t)fRealtimeThread.getThreadId();
@@ -1373,6 +1387,38 @@ int jack_deactivate(jack_client_t* client)
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
 
     return gClient.deactivateClient(jclient) ? 0 : 1;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+CARLA_EXPORT
+char* jack_get_client_name_by_uuid(jack_client_t* const client, const char* const uuidstr)
+{
+    carla_debug("%s(%p, %s)", __FUNCTION__, client, uuidstr);
+
+    jack_uuid_t uuid = JACK_UUID_EMPTY_INITIALIZER;
+    CARLA_SAFE_ASSERT_RETURN(jack_uuid_parse(uuidstr, &uuid) == 0, nullptr);
+
+    JackClientState* const jclient = (JackClientState*)client;
+    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, nullptr);
+
+    const char* clientName;
+
+    if (jclient->uuid == uuid)
+    {
+        clientName = jclient->name;
+        CARLA_SAFE_ASSERT_RETURN(clientName != nullptr, nullptr);
+    }
+    else
+    {
+        CarlaJackAppClient* const jackAppPtr = jclient->server.jackAppPtr;
+        CARLA_SAFE_ASSERT_RETURN(jackAppPtr != nullptr && jackAppPtr == &gClient, nullptr);
+
+        clientName = jackAppPtr->getClientNameFromUUID(uuid);
+        CARLA_SAFE_ASSERT_RETURN(clientName != nullptr, nullptr);
+    }
+
+    return strdup(clientName);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

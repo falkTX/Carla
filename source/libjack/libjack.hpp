@@ -164,6 +164,7 @@ struct JackClientState {
     bool deactivated; // activated once, then deactivated
 
     char* name;
+    jack_uuid_t uuid;
 
     LinkedList<JackPortState*> audioIns;
     LinkedList<JackPortState*> audioOuts;
@@ -202,6 +203,7 @@ struct JackClientState {
           activated(false),
           deactivated(false),
           name(strdup(n)),
+          uuid(jack_client_uuid_generate()),
           audioIns(),
           audioOuts(),
           midiIns(),
