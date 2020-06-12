@@ -396,14 +396,14 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                                       ":/bitmaps/button_distrho_down-{}.png".format(imageSuffix),
                                       ":/bitmaps/button_distrho_hover-{}.png".format(imageSuffix))
             elif self.fPluginInfo['iconName'] == "file":
-                self.b_gui.setSvgs(":/scalable/button_file-{}.svg".format(imageSuffix),
-                                   ":/scalable/button_file_down-{}.svg".format(imageSuffix),
-                                   ":/scalable/button_file_hover-{}.svg".format(imageSuffix))
+                self.b_gui.setPixmaps(":/bitmaps/button_file-{}.png".format(imageSuffix),
+                                      ":/bitmaps/button_file_down-{}.png".format(imageSuffix),
+                                      ":/bitmaps/button_file_hover-{}.png".format(imageSuffix))
             else:
                 if imageSuffix == "black": # TODO
-                    self.b_gui.setSvgs(":/bitmaps/button_gui-{}.png".format(imageSuffix),
-                                       ":/bitmaps/button_gui_down-{}.png".format(imageSuffix),
-                                       ":/bitmaps/button_gui_hover-{}.png".format(imageSuffix))
+                    self.b_gui.setPixmaps(":/bitmaps/button_gui-{}.png".format(imageSuffix),
+                                          ":/bitmaps/button_gui_down-{}.png".format(imageSuffix),
+                                          ":/bitmaps/button_gui_hover-{}.png".format(imageSuffix))
                 else:
                     self.b_gui.setSvgs(":/scalable/button_gui-{}.svg".format(imageSuffix),
                                        ":/scalable/button_gui_down-{}.svg".format(imageSuffix),
