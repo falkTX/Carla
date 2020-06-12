@@ -3472,7 +3472,11 @@ private:
 
             const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
             jackbridge_free(uuidstr);
-            CARLA_CUSTOM_SAFE_ASSERT_ONCE_RETURN("JACK meta-data support unavailable", parsed,);
+
+            /* if parsing fails, meta-data is not available..
+               this could be because JACK version is old, or perhaps this is an internal client */
+            if (! parsed)
+                return;
         }
 
         bool clientBelongsToUs;
