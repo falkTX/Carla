@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -103,37 +103,53 @@ struct JackMidiPortBufferDummy : JackMidiPortBufferBase {
 };
 
 struct JackPortState {
-    const char* name;
-    const char* fullname;
+    enum Offsets {
+        kPortIdOffsetAudioIn  = 100,
+        kPortIdOffsetMidiIn   = 300,
+        kPortIdOffsetAudioOut = 500,
+        kPortIdOffsetMidiOut  = 700,
+        kPortIdOffsetUser     = 1000,
+    };
+
+    char* name;
+    char* fullname;
     void* buffer;
     uint index;
     int flags;
+    uint gid;
     jack_uuid_t uuid;
     bool isMidi : 1;
     bool isSystem : 1;
     bool isConnected : 1;
     bool unused : 1;
 
-    JackPortState()
-        : name(nullptr),
-          fullname(nullptr),
+    JackPortState(const char* const fullPortName,
+                  const char* const portName,
+                  const uint i, const int f, const uint id,
+                  const bool midi, const bool con)
+        : name(portName != nullptr ? strdup(portName) : nullptr),
+          fullname(fullPortName != nullptr ? strdup(fullPortName) : nullptr),
           buffer(nullptr),
-          index(0),
-          flags(0),
-          uuid(0),
-          isMidi(false),
-          isSystem(false),
-          isConnected(false),
+          index(i),
+          flags(f),
+          gid(id),
+          uuid(jack_port_uuid_generate(id)),
+          isMidi(midi),
+          isSystem(true),
+          isConnected(con),
           unused(false) {}
 
-    JackPortState(const char* const clientName, const char* const portName, const uint i, const int f,
+    JackPortState(const char* const clientName,
+                  const char* const portName,
+                  const uint i, const int f, const uint id,
                   const bool midi, const bool sys, const bool con)
         : name(portName != nullptr ? strdup(portName) : nullptr),
           fullname(nullptr),
           buffer(nullptr),
           index(i),
           flags(f),
-          uuid(0),
+          gid(id),
+          uuid(jack_port_uuid_generate(id)),
           isMidi(midi),
           isSystem(sys),
           isConnected(con),
@@ -151,6 +167,11 @@ struct JackPortState {
 
     ~JackPortState()
     {
+        std::free(name);
+        name = nullptr;
+
+        std::free(fullname);
+        fullname = nullptr;
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(JackPortState)
@@ -171,6 +192,7 @@ struct JackClientState {
     LinkedList<JackPortState*> midiIns;
     LinkedList<JackPortState*> midiOuts;
 
+    std::map<uint, JackPortState*> portIdMapping;
     std::map<std::string, JackPortState*> portNameMapping;
 
     JackShutdownCallback shutdownCb;
@@ -208,6 +230,7 @@ struct JackClientState {
           audioOuts(),
           midiIns(),
           midiOuts(),
+          portIdMapping(),
           portNameMapping(),
           shutdownCb(nullptr),
           shutdownCbPtr(nullptr),
@@ -261,6 +284,9 @@ struct JackClientState {
         audioOuts.clear();
         midiIns.clear();
         midiOuts.clear();
+
+        portIdMapping.clear();
+        portNameMapping.clear();
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(JackClientState)
@@ -271,6 +297,8 @@ struct JackServerState {
 
     uint32_t bufferSize;
     double   sampleRate;
+
+    jack_uuid_t uuid;
 
     uint8_t numAudioIns;
     uint8_t numAudioOuts;
@@ -285,6 +313,7 @@ struct JackServerState {
         : jackAppPtr(app),
           bufferSize(0),
           sampleRate(0.0),
+          uuid(jack_client_uuid_generate()),
           numAudioIns(0),
           numAudioOuts(0),
           numMidiIns(0),

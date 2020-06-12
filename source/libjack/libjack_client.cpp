@@ -40,22 +40,6 @@ char* jack_get_client_name(jack_client_t* client)
     return jclient->name;
 }
 
-CARLA_EXPORT
-char* jack_get_uuid_for_client_name(jack_client_t* client, const char* name)
-{
-    carla_debug("%s(%p, %s)", __FUNCTION__, client, name);
-
-    JackClientState* const jclient = (JackClientState*)client;
-    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, nullptr);
-
-    char* const uuidstr = static_cast<char*>(std::malloc(JACK_UUID_STRING_SIZE));
-    CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr, nullptr);
-
-    jack_uuid_unparse(jclient->uuid, uuidstr);
-
-    return uuidstr;
-}
-
 // --------------------------------------------------------------------------------------------------------------------
 
 CARLA_EXPORT
