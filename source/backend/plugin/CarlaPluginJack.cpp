@@ -1671,7 +1671,7 @@ public:
 
         // remove unprintable characters if needed
         if (fSetupHints & LIBJACK_FLAG_EXTERNAL_START)
-            fInfo.setupLabel[5] = '0' + (fSetupHints ^ LIBJACK_FLAG_EXTERNAL_START);
+            fInfo.setupLabel[5] = static_cast<char>('0' + (fSetupHints ^ LIBJACK_FLAG_EXTERNAL_START));
 
         return true;
     }

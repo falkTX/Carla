@@ -331,7 +331,7 @@ const char** jack_port_get_all_connections(const jack_client_t* client, const ja
 {
     carla_stdout("%s(%p, %p) WIP", __FUNCTION__, client, port);
 
-    JackClientState* const jclient = (JackClientState*)client;
+    const JackClientState* const jclient = (const JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, nullptr);
 
     const JackPortState* const jport = (const JackPortState*)port;
