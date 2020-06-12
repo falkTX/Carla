@@ -207,7 +207,7 @@ CARLA_EXPORT CarlaPipeClientHandle carla_pipe_client_new(const char* argv[], Car
 /*!
  * TODO.
  */
-CARLA_EXPORT const char* carla_pipe_client_idle(CarlaPipeClientHandle handle);
+CARLA_EXPORT void carla_pipe_client_idle(CarlaPipeClientHandle handle);
 
 /*!
  * TODO.

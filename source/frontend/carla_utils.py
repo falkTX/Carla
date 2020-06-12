@@ -280,7 +280,7 @@ class CarlaUtils():
         self.lib.carla_pipe_client_new.restype = CarlaPipeClientHandle
 
         self.lib.carla_pipe_client_idle.argtypes = [CarlaPipeClientHandle]
-        self.lib.carla_pipe_client_idle.restype = c_char_p
+        self.lib.carla_pipe_client_idle.restype = None
 
         self.lib.carla_pipe_client_is_running.argtypes = [CarlaPipeClientHandle]
         self.lib.carla_pipe_client_is_running.restype = c_bool
@@ -427,17 +427,10 @@ class CarlaUtils():
         return self.lib.carla_pipe_client_new(cargv, self._pipeClientCallback, None)
 
     def pipe_client_idle(self, handle):
-        while True:
-            try:
-                msg = self.lib.carla_pipe_client_idle(handle)
-            except OSError as e:
-                print("pipe_client_idle", e)
-                return
-
-            if not msg:
-                break
-
-            self._pipeClientFunc(None, msg.decode("utf-8", errors="ignore"))
+        try:
+            self.lib.carla_pipe_client_idle(handle)
+        except OSError as e:
+            print("carla_pipe_client_idle", e)
 
     def pipe_client_is_running(self, handle):
         return bool(self.lib.carla_pipe_client_is_running(handle))
