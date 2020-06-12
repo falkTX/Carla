@@ -1550,11 +1550,14 @@ public:
         }
 
         for (int i=4; --i >= 0;) {
-            CARLA_SAFE_ASSERT_RETURN(label[i] >= '0' && label[i] <= '0'+64, false);
+            CARLA_SAFE_ASSERT_INT2_RETURN(label[i] >= '0' && label[i] <= '0'+64, i, label[i], false);
         }
-        for (int i=6; --i >= 4;) {
-            CARLA_SAFE_ASSERT_RETURN(label[i] >= '0' && label[i] < '0'+0x4f, false);
-        }
+        CARLA_SAFE_ASSERT_INT2_RETURN(label[4] >= '0' && label[4] < '0'+0x4f, 4, label[4], false);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(static_cast<uchar>(label[5]) >= '0' &&
+                                       static_cast<uchar>(label[5]) <= '0'+0x73,
+                                       static_cast<uchar>(label[5]),
+                                       static_cast<uchar>('0'+0x73),
+                                       false);
 
         fInfo.aIns   = static_cast<uint8_t>(label[0] - '0');
         fInfo.aOuts  = static_cast<uint8_t>(label[1] - '0');
@@ -1622,7 +1625,7 @@ public:
         // ---------------------------------------------------------------
         // setup hints and options
 
-        fSetupHints = static_cast<uint>(label[5] - '0');
+        fSetupHints = static_cast<uchar>(label[5]) - '0';
 
         // FIXME dryWet broken
         pData->hints  = PLUGIN_IS_BRIDGE | PLUGIN_OPTION_FIXED_BUFFERS;
@@ -1665,6 +1668,10 @@ public:
             pData->engine->setLastError("Failed to register plugin client");
             return false;
         }
+
+        // remove unprintable characters if needed
+        if (fSetupHints & LIBJACK_FLAG_EXTERNAL_START)
+            fInfo.setupLabel[5] = '0' + (fSetupHints ^ LIBJACK_FLAG_EXTERNAL_START);
 
         return true;
     }

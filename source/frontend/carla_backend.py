@@ -3005,7 +3005,10 @@ class CarlaHostDLL(CarlaHostMeta):
     def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr, options):
         cfilename = filename.encode("utf-8") if filename else None
         cname     = name.encode("utf-8") if name else None
-        clabel    = label.encode("utf-8") if label else None
+        if ptype == PLUGIN_JACK:
+            clabel = bytes(ord(b) for b in label)
+        else:
+            clabel = label.encode("utf-8") if label else None
         return bool(self.lib.carla_add_plugin(self.handle,
                                               btype, ptype,
                                               cfilename, cname, clabel, uniqueId, cast(extraPtr, c_void_p), options))

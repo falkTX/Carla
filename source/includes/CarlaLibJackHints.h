@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -31,7 +31,7 @@ enum SetupHints {
     // Audio/MIDI Buffers management
     LIBJACK_FLAG_AUDIO_BUFFERS_ADDITION      = 0x10,
     LIBJACK_FLAG_MIDI_OUTPUT_CHANNEL_MIXDOWN = 0x20,
-    // Developer options
+    // Developer options, not saved on disk
     LIBJACK_FLAG_EXTERNAL_START              = 0x40,
 };
 
