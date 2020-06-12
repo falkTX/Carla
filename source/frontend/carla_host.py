@@ -540,20 +540,20 @@ class HostWindow(QMainWindow):
 
         host.UpdateCallback.connect(self.slot_handleUpdateCallback)
 
-        host.PatchbayClientAddedCallback.connect(self.slot_handlePatchbayClientAddedCallback)
-        host.PatchbayClientRemovedCallback.connect(self.slot_handlePatchbayClientRemovedCallback)
-        host.PatchbayClientRenamedCallback.connect(self.slot_handlePatchbayClientRenamedCallback)
-        host.PatchbayClientDataChangedCallback.connect(self.slot_handlePatchbayClientDataChangedCallback)
-        host.PatchbayClientPositionChangedCallback.connect(self.slot_handlePatchbayClientPositionChangedCallback)
-        host.PatchbayPortAddedCallback.connect(self.slot_handlePatchbayPortAddedCallback)
-        host.PatchbayPortRemovedCallback.connect(self.slot_handlePatchbayPortRemovedCallback)
-        host.PatchbayPortChangedCallback.connect(self.slot_handlePatchbayPortChangedCallback)
-        host.PatchbayPortGroupAddedCallback.connect(self.slot_handlePatchbayPortGroupAddedCallback)
-        host.PatchbayPortGroupRemovedCallback.connect(self.slot_handlePatchbayPortGroupRemovedCallback)
-        host.PatchbayPortGroupChangedCallback.connect(self.slot_handlePatchbayPortGroupChangedCallback)
-
-        host.PatchbayConnectionAddedCallback.connect(self.slot_handlePatchbayConnectionAddedCallback)
-        host.PatchbayConnectionRemovedCallback.connect(self.slot_handlePatchbayConnectionRemovedCallback)
+        if withCanvas:
+            host.PatchbayClientAddedCallback.connect(self.slot_handlePatchbayClientAddedCallback)
+            host.PatchbayClientRemovedCallback.connect(self.slot_handlePatchbayClientRemovedCallback)
+            host.PatchbayClientRenamedCallback.connect(self.slot_handlePatchbayClientRenamedCallback)
+            host.PatchbayClientDataChangedCallback.connect(self.slot_handlePatchbayClientDataChangedCallback)
+            host.PatchbayClientPositionChangedCallback.connect(self.slot_handlePatchbayClientPositionChangedCallback)
+            host.PatchbayPortAddedCallback.connect(self.slot_handlePatchbayPortAddedCallback)
+            host.PatchbayPortRemovedCallback.connect(self.slot_handlePatchbayPortRemovedCallback)
+            host.PatchbayPortChangedCallback.connect(self.slot_handlePatchbayPortChangedCallback)
+            host.PatchbayPortGroupAddedCallback.connect(self.slot_handlePatchbayPortGroupAddedCallback)
+            host.PatchbayPortGroupRemovedCallback.connect(self.slot_handlePatchbayPortGroupRemovedCallback)
+            host.PatchbayPortGroupChangedCallback.connect(self.slot_handlePatchbayPortGroupChangedCallback)
+            host.PatchbayConnectionAddedCallback.connect(self.slot_handlePatchbayConnectionAddedCallback)
+            host.PatchbayConnectionRemovedCallback.connect(self.slot_handlePatchbayConnectionRemovedCallback)
 
         host.NSMCallback.connect(self.slot_handleNSMCallback)
 
@@ -1033,7 +1033,9 @@ class HostWindow(QMainWindow):
     def slot_handleEngineStoppedCallback(self):
         self.ui.text_logs.appendPlainText("======= Engine stopped ========")
 
-        patchcanvas.clear()
+        if self.fWithCanvas:
+            patchcanvas.clear()
+
         self.killTimers()
 
         # just in case
@@ -1963,10 +1965,10 @@ class HostWindow(QMainWindow):
 
         self.loadSettings(False)
 
-        patchcanvas.clear()
-
-        self.setupCanvas()
-        self.slot_miniCanvasCheckAll()
+        if self.fWithCanvas:
+            patchcanvas.clear()
+            self.setupCanvas()
+            self.slot_miniCanvasCheckAll()
 
         if self.host.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK and self.host.isPlugin:
             pass
@@ -2792,6 +2794,7 @@ class HostWindow(QMainWindow):
         QMainWindow.closeEvent(self, event)
 
         # if we reach this point, fully close ourselves
+        gCarla.gui = None
         QApplication.instance().quit()
 
 # ------------------------------------------------------------------------------------------------
