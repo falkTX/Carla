@@ -46,8 +46,6 @@ int jack_set_buffer_size(jack_client_t* client, jack_nframes_t nframes)
 CARLA_EXPORT
 jack_nframes_t jack_get_sample_rate(jack_client_t* client)
 {
-    carla_debug("%s(%p)", __FUNCTION__, client);
-
     JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
 

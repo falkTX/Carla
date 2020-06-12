@@ -918,7 +918,7 @@ bool carla_load_file(CarlaHostHandle handle, const char* filename)
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(handle->engine != nullptr, "Engine is not initialized", false);
 
-    carla_debug("carla_load_file(%p, \"%s\")", filename);
+    carla_debug("carla_load_file(%p, \"%s\")", handle, filename);
 
     return handle->engine->loadFile(filename);
 }
@@ -928,7 +928,7 @@ bool carla_load_project(CarlaHostHandle handle, const char* filename)
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(handle->engine != nullptr, "Engine is not initialized", false);
 
-    carla_debug("carla_load_project(%p, \"%s\")", filename);
+    carla_debug("carla_load_project(%p, \"%s\")", handle, filename);
 
     return handle->engine->loadProject(filename, true);
 }
@@ -938,7 +938,7 @@ bool carla_save_project(CarlaHostHandle handle, const char* filename)
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(handle->engine != nullptr, "Engine is not initialized", false);
 
-    carla_debug("carla_save_project(%p, \"%s\")", filename);
+    carla_debug("carla_save_project(%p, \"%s\")", handle, filename);
 
     return handle->engine->saveProject(filename, true);
 }

@@ -262,7 +262,7 @@ public:
     // NOTE: do not use this function unless strictly needed. it can be very expensive if the list is big
     const T& getAt(const std::size_t index, const T& fallback) const noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(fCount > 0 && index < fCount, fallback);
+        CARLA_SAFE_ASSERT_UINT2_RETURN(fCount > 0 && index < fCount, index, fCount, fallback);
 
         std::size_t i = 0;
         ListHead* entry = fQueue.next;
