@@ -1625,7 +1625,7 @@ public:
         // ---------------------------------------------------------------
         // setup hints and options
 
-        fSetupHints = static_cast<uchar>(label[5]) - '0';
+        fSetupHints = static_cast<uint>(static_cast<uchar>(label[5]) - '0');
 
         // FIXME dryWet broken
         pData->hints  = PLUGIN_IS_BRIDGE | PLUGIN_OPTION_FIXED_BUFFERS;
