@@ -229,6 +229,8 @@ public:
         fClients.clear();
         fNewClients.clear();
 
+        clearSharedMemory();
+
         carla_debug("CarlaJackAppClient::~CarlaJackAppClient() DONE");
     }
 
