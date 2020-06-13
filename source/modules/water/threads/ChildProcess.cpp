@@ -32,6 +32,8 @@
 # include <sys/wait.h>
 #endif
 
+#include "CarlaProcessUtils.hpp"
+
 namespace water {
 
 #ifdef CARLA_OS_WIN
@@ -125,7 +127,7 @@ public:
 
         argv.add (nullptr);
 
-        const pid_t result = fork();
+        const pid_t result = vfork();
 
         if (result < 0)
         {
@@ -134,6 +136,8 @@ public:
         else if (result == 0)
         {
             // child process
+            carla_terminateProcessOnParentExit(true);
+
             if (execvp (exe.toRawUTF8(), argv.getRawDataPointer()))
                 _exit (-1);
         }
