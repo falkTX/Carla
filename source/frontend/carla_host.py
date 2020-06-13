@@ -184,6 +184,9 @@ class HostWindow(QMainWindow):
         # to be filled with key-value pairs of current settings
         self.fSavedSettings = {}
 
+        # true if NSM server handles our window management
+        self.fWindowCloseHideGui = False
+
         if host.isControl:
             self.fClientName         = "Carla-Control"
             self.fSessionManagerName = "Control"
@@ -196,6 +199,7 @@ class HostWindow(QMainWindow):
         elif NSM_URL and host.nsmOK:
             self.fClientName         = "Carla.tmp"
             self.fSessionManagerName = "Non Session Manager TMP"
+            self.fWindowCloseHideGui = True
         else:
             self.fClientName         = CARLA_CLIENT_NAME or "Carla"
             self.fSessionManagerName = ""
@@ -2399,6 +2403,13 @@ class HostWindow(QMainWindow):
             self.fSessionManagerName = valueStr
             self.setProperWindowTitle()
 
+            # If NSM server does not support optional-gui, revert our initial assumptions that it does
+            if (valueInt & (1 << 1)) == 0x0:
+                self.fWindowCloseHideGui = False
+                self.ui.act_file_quit.setText(self.tr("&Quit"))
+                QApplication.instance().setQuitOnLastWindowClosed(True)
+                self.show()
+
         # Open
         elif opcode == NSM_CALLBACK_OPEN:
             self.fClientName      = os.path.basename(valueStr)
@@ -2764,7 +2775,7 @@ class HostWindow(QMainWindow):
             event.ignore()
             return
 
-        if self.host.nsmOK and self.fCustomStopAction != self.CUSTOM_ACTION_APP_CLOSE:
+        if self.fWindowCloseHideGui and self.fCustomStopAction != self.CUSTOM_ACTION_APP_CLOSE:
             self.hideForNSM()
             self.host.nsm_ready(NSM_CALLBACK_HIDE_OPTIONAL_GUI)
             return
