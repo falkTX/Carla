@@ -58,6 +58,7 @@ enum InterposerCallbacks {
 
 typedef int (*CarlaInterposedCallback)(int, void*);
 
+CARLA_API
 int jack_carla_interposed_action(uint action, uint value, void* ptr);
 
 #ifdef __cplusplus

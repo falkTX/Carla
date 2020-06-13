@@ -26,27 +26,6 @@
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
-int jack_carla_interposed_action(uint, uint, void*)
-{
-    static bool printWarning = true;
-
-    if (printWarning)
-    {
-        printWarning = false;
-        carla_stderr2("Non-exported jack_carla_interposed_action called, this should not happen!!");
-        carla_stderr("Printing some info:");
-        carla_stderr("\tLD_LIBRARY_PATH: '%s'", std::getenv("LD_LIBRARY_PATH"));
-        carla_stderr("\tLD_PRELOAD:      '%s'", std::getenv("LD_PRELOAD"));
-        std::fflush(stderr);
-    }
-
-    // ::kill(::getpid(), SIGKILL);
-    return 1337;
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
 CARLA_BACKEND_START_NAMESPACE
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -216,18 +195,20 @@ public:
 
         fNonRealtimeThread.stopThread(5000);
 
-        const CarlaMutexLocker cms(fRealtimeThreadMutex);
-
-        for (LinkedList<JackClientState*>::Itenerator it = fClients.begin2(); it.valid(); it.next())
         {
-            JackClientState* const jclient(it.getValue(nullptr));
-            CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
+            const CarlaMutexLocker cms(fRealtimeThreadMutex);
 
-            delete jclient;
+            for (LinkedList<JackClientState*>::Itenerator it = fClients.begin2(); it.valid(); it.next())
+            {
+                JackClientState* const jclient(it.getValue(nullptr));
+                CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
+
+                delete jclient;
+            }
+
+            fClients.clear();
+            fNewClients.clear();
         }
-
-        fClients.clear();
-        fNewClients.clear();
 
         clearSharedMemory();
 
