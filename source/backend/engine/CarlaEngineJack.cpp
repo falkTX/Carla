@@ -1352,6 +1352,7 @@ public:
           fUsedConnections(),
           fPatchbayProcThreadProtectionMutex(),
           fRetConns(),
+          fLastPatchbaySetGroupPos(),
           fPostPonedEvents(),
           fPostPonedEventsMutex(),
           fPostPonedUUIDs(),
@@ -1784,26 +1785,31 @@ public:
                     {
                         if (char* sep1 = std::strstr(value, ":"))
                         {
-                            int x1, y1 = 0, x2 = 0, y2 = 0;
+                            LastPatchbaySetGroupPos pos;
                             *sep1++ = '\0';
-                            x1 = std::atoi(value);
+                            pos.x1 = std::atoi(value);
 
                             if (char* sep2 = std::strstr(sep1, ":"))
                             {
                                 *sep2++ = '\0';
-                                y1 = std::atoi(sep1);
+                                pos.y1 = std::atoi(sep1);
 
                                 if (char* sep3 = std::strstr(sep2, ":"))
                                 {
                                     *sep3++ = '\0';
-                                    x2 = std::atoi(sep2);
-                                    y2 = std::atoi(sep3);
+                                    pos.x2 = std::atoi(sep2);
+                                    pos.y2 = std::atoi(sep3);
                                 }
 
-                                callback(fExternalPatchbayHost, fExternalPatchbayOsc,
-                                        ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED,
-                                        groupId, x1, y1, x2, static_cast<float>(y2),
-                                        nullptr);
+                                if (fLastPatchbaySetGroupPos != pos)
+                                {
+                                    fLastPatchbaySetGroupPos.clear();
+
+                                    callback(fExternalPatchbayHost, fExternalPatchbayOsc,
+                                            ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED,
+                                            groupId, pos.x1, pos.y1, pos.x2, static_cast<float>(pos.y2),
+                                            nullptr);
+                                }
                             }
                         }
 
@@ -2311,6 +2317,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(! pData->loadingProject, false);
+        carla_debug("CarlaEngineJack::patchbaySetGroupPos(%u, %i, %i, %i, %i)", groupId, x1, y1, x2, y2);
 
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! external)
             return CarlaEngine::patchbaySetGroupPos(sendHost, sendOSC, false, groupId, x1, y1, x2, y2);
@@ -2338,6 +2345,8 @@ public:
                 jackbridge_free(uuidstr);
                 CARLA_CUSTOM_SAFE_ASSERT_ONCE_RETURN("JACK meta-data support unavailable", parsed, false);
             }
+
+            fLastPatchbaySetGroupPos.set(x1, y1, x2, y2);
 
             char valueStr[STR_MAX];
             std::snprintf(valueStr, STR_MAX-1, "%i:%i:%i:%i", x1, y1, x2, y2);
@@ -3549,6 +3558,32 @@ private:
         }
     }
 
+    // prevent recursion on patchbay group position changes
+    struct LastPatchbaySetGroupPos {
+        int x1, y1, x2, y2;
+
+        LastPatchbaySetGroupPos()
+            : x1(0), y1(0), x2(0), y2(0) {}
+
+        void clear() noexcept
+        {
+            x1 = y1 = x2 = y2 = 0;
+        }
+
+        void set(const int _x1, const int _y1, const int _x2, const int _y2) noexcept
+        {
+            x1 = _x1;
+            y1 = _y1;
+            x2 = _x2;
+            y2 = _y2;
+        }
+
+        bool operator!=(const LastPatchbaySetGroupPos& pos) const noexcept
+        {
+            return pos.x1 != x1 || pos.y1 != y1 || pos.x2 != x2 || pos.y2 != y2;
+        }
+    } fLastPatchbaySetGroupPos;
+
     // handy stuff only needed for initJackPatchbay
     struct GroupToIdData {
         uint id;
@@ -3572,6 +3607,8 @@ private:
         CARLA_SAFE_ASSERT_RETURN(pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY ||
                                  (fExternalPatchbayHost && sendHost) || (fExternalPatchbayOsc && sendOSC),);
         CARLA_SAFE_ASSERT_RETURN(ourName != nullptr && ourName[0] != '\0',);
+
+        fLastPatchbaySetGroupPos.clear();
 
         uint id, carlaId;
         CarlaStringList parsedGroups;
