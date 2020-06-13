@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2020 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -26,7 +26,6 @@
 #include "ChildProcess.h"
 #include "../files/File.h"
 #include "../misc/Time.h"
-#include "../streams/MemoryOutputStream.h"
 
 #ifndef CARLA_OS_WIN
 # include <signal.h>
@@ -40,30 +39,16 @@ namespace water {
 class ChildProcess::ActiveProcess
 {
 public:
-    ActiveProcess (const String& command, int streamFlags)
-        : ok (false), readPipe (0), writePipe (0)
+    ActiveProcess (const String& command)
+        : ok (false)
     {
-        SECURITY_ATTRIBUTES securityAtts;
-        carla_zeroStruct(securityAtts);
-        securityAtts.nLength = sizeof (securityAtts);
-        securityAtts.bInheritHandle = TRUE;
+        STARTUPINFO startupInfo;
+        carla_zeroStruct(startupInfo);
+        startupInfo.cb = sizeof (startupInfo);
 
-        if (CreatePipe (&readPipe, &writePipe, &securityAtts, 0)
-             && SetHandleInformation (readPipe, HANDLE_FLAG_INHERIT, 0))
-        {
-            STARTUPINFO startupInfo;
-            carla_zeroStruct(startupInfo);
-            startupInfo.cb = sizeof (startupInfo);
-
-            startupInfo.hStdOutput = (streamFlags & wantStdOut) != 0 ? writePipe : 0;
-            startupInfo.hStdError  = (streamFlags & wantStdErr) != 0 ? writePipe : 0;
-            startupInfo.dwFlags = STARTF_USESTDHANDLES;
-
-            ok = CreateProcess (nullptr, const_cast<LPSTR>(command.toRawUTF8()),
-                                nullptr, nullptr, TRUE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
-                                nullptr, nullptr, &startupInfo, &processInfo) != FALSE;
-        }
-    }
+        ok = CreateProcess (nullptr, const_cast<LPSTR>(command.toRawUTF8()),
+                            nullptr, nullptr, TRUE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
+                            nullptr, nullptr, &startupInfo, &processInfo) != FALSE;
 
     ~ActiveProcess()
     {
@@ -72,12 +57,6 @@ public:
             CloseHandle (processInfo.hThread);
             CloseHandle (processInfo.hProcess);
         }
-
-        if (readPipe != 0)
-            CloseHandle (readPipe);
-
-        if (writePipe != 0)
-            CloseHandle (writePipe);
     }
 
     bool isRunning() const noexcept
@@ -85,39 +64,15 @@ public:
         return WaitForSingleObject (processInfo.hProcess, 0) != WAIT_OBJECT_0;
     }
 
-    int read (void* dest, int numNeeded) const noexcept
+    bool checkRunningAndUnsetPID() noexcept
     {
-        int total = 0;
+        if (isRunning())
+            return true;
 
-        while (ok && numNeeded > 0)
-        {
-            DWORD available = 0;
-
-            if (! PeekNamedPipe ((HANDLE) readPipe, nullptr, 0, nullptr, &available, nullptr))
-                break;
-
-            const int numToDo = jmin ((int) available, numNeeded);
-
-            if (available == 0)
-            {
-                if (! isRunning())
-                    break;
-
-                Sleep(5);
-            }
-            else
-            {
-                DWORD numRead = 0;
-                if (! ReadFile ((HANDLE) readPipe, dest, numToDo, &numRead, nullptr))
-                    break;
-
-                total += numRead;
-                dest = addBytesToPointer (dest, numRead);
-                numNeeded -= numRead;
-            }
-        }
-
-        return total;
+        ok = false;
+        CloseHandle (processInfo.hThread);
+        CloseHandle (processInfo.hProcess);
+        return false;
     }
 
     bool killProcess() const noexcept
@@ -145,7 +100,6 @@ public:
     bool ok;
 
 private:
-    HANDLE readPipe, writePipe;
     PROCESS_INFORMATION processInfo;
 
     CARLA_DECLARE_NON_COPY_CLASS (ActiveProcess)
@@ -154,8 +108,8 @@ private:
 class ChildProcess::ActiveProcess
 {
 public:
-    ActiveProcess (const StringArray& arguments, int streamFlags)
-        : childPID (0), pipeHandle (0), readHandle (0)
+    ActiveProcess (const StringArray& arguments)
+        : childPID (0)
     {
         String exe (arguments[0].unquoted());
 
@@ -164,49 +118,35 @@ public:
         wassert (File::getCurrentWorkingDirectory().getChildFile (exe).existsAsFile()
                   || ! exe.containsChar (File::separator));
 
-        int pipeHandles[2] = { 0 };
+        Array<char*> argv;
+        for (int i = 0; i < arguments.size(); ++i)
+            if (arguments[i].isNotEmpty())
+                argv.add (const_cast<char*> (arguments[i].toRawUTF8()));
 
-        if (pipe (pipeHandles) == 0)
+        argv.add (nullptr);
+
+        const pid_t result = fork();
+
+        if (result < 0)
         {
-              Array<char*> argv;
-              for (int i = 0; i < arguments.size(); ++i)
-                  if (arguments[i].isNotEmpty())
-                      argv.add (const_cast<char*> (arguments[i].toRawUTF8()));
-
-              argv.add (nullptr);
-
-            const pid_t result = vfork();
-
-            if (result < 0)
-            {
-                close (pipeHandles[0]);
-                close (pipeHandles[1]);
-            }
-            else if (result == 0)
-            {
-                if (execvp (exe.toRawUTF8(), argv.getRawDataPointer()))
-                    _exit (-1);
-            }
-            else
-            {
-                // we're the parent process..
-                childPID = result;
-                pipeHandle = pipeHandles[0];
-                close (pipeHandles[1]); // close the write handle
-            }
-
-            // FIXME
-            (void)streamFlags;
+            // error
+        }
+        else if (result == 0)
+        {
+            // child process
+            if (execvp (exe.toRawUTF8(), argv.getRawDataPointer()))
+                _exit (-1);
+        }
+        else
+        {
+            // we're the parent process..
+            childPID = result;
         }
     }
 
     ~ActiveProcess()
     {
-        if (readHandle != 0)
-            fclose (readHandle);
-
-        if (pipeHandle != 0)
-            close (pipeHandle);
+        CARLA_SAFE_ASSERT_INT(childPID == 0, childPID);
     }
 
     bool isRunning() const noexcept
@@ -221,26 +161,33 @@ public:
         return false;
     }
 
-    int read (void* const dest, const int numBytes) noexcept
+    bool checkRunningAndUnsetPID() noexcept
     {
-        wassert (dest != nullptr);
+        if (childPID != 0)
+        {
+            int childState = 0;
+            const int pid = waitpid (childPID, &childState, WNOHANG|WUNTRACED);
+            if (pid == 0)
+                return true;
+            if ( ! (WIFEXITED (childState) || WIFSIGNALED (childState) || WIFSTOPPED (childState)))
+                return true;
 
-        #ifdef fdopen
-         #error // the zlib headers define this function as NULL!
-        #endif
+            childPID = 0;
+            return false;
+        }
 
-        if (readHandle == 0 && childPID != 0)
-            readHandle = fdopen (pipeHandle, "r");
-
-        if (readHandle != 0)
-            return (int) fread (dest, 1, (size_t) numBytes, readHandle);
-
-        return 0;
+        return false;
     }
 
-    bool killProcess() const noexcept
+    bool killProcess() noexcept
     {
-        return ::kill (childPID, SIGKILL) == 0;
+        if (::kill (childPID, SIGKILL) == 0)
+        {
+            childPID = 0;
+            return true;
+        }
+
+        return false;
     }
 
     bool terminateProcess() const noexcept
@@ -269,10 +216,6 @@ public:
 
     int childPID;
 
-private:
-    int pipeHandle;
-    FILE* readHandle;
-
     CARLA_DECLARE_NON_COPY_CLASS (ActiveProcess)
 };
 #endif
@@ -285,11 +228,6 @@ ChildProcess::~ChildProcess() {}
 bool ChildProcess::isRunning() const
 {
     return activeProcess != nullptr && activeProcess->isRunning();
-}
-
-int ChildProcess::readProcessOutput (void* dest, int numBytes)
-{
-    return activeProcess != nullptr ? activeProcess->read (dest, numBytes) : 0;
 }
 
 bool ChildProcess::kill()
@@ -307,13 +245,15 @@ uint32 ChildProcess::getExitCode() const
     return activeProcess != nullptr ? activeProcess->getExitCode() : 0;
 }
 
-bool ChildProcess::waitForProcessToFinish (const int timeoutMs) const
+bool ChildProcess::waitForProcessToFinish (const int timeoutMs)
 {
     const uint32 timeoutTime = Time::getMillisecondCounter() + (uint32) timeoutMs;
 
     do
     {
-        if (! isRunning())
+        if (activeProcess == nullptr)
+            return true;
+        if (! activeProcess->checkRunningAndUnsetPID())
             return true;
 
         carla_msleep(5);
@@ -321,24 +261,6 @@ bool ChildProcess::waitForProcessToFinish (const int timeoutMs) const
     while (timeoutMs < 0 || Time::getMillisecondCounter() < timeoutTime);
 
     return false;
-}
-
-String ChildProcess::readAllProcessOutput()
-{
-    MemoryOutputStream result;
-
-    for (;;)
-    {
-        char buffer [512];
-        const int num = readProcessOutput (buffer, sizeof (buffer));
-
-        if (num <= 0)
-            break;
-
-        result.write (buffer, (size_t) num);
-    }
-
-    return result.toString();
 }
 
 uint32 ChildProcess::getPID() const noexcept
@@ -349,9 +271,9 @@ uint32 ChildProcess::getPID() const noexcept
 //=====================================================================================================================
 
 #ifdef CARLA_OS_WIN
-bool ChildProcess::start (const String& command, int streamFlags)
+bool ChildProcess::start (const String& command)
 {
-    activeProcess = new ActiveProcess (command, streamFlags);
+    activeProcess = new ActiveProcess (command);
 
     if (! activeProcess->ok)
         activeProcess = nullptr;
@@ -359,7 +281,7 @@ bool ChildProcess::start (const String& command, int streamFlags)
     return activeProcess != nullptr;
 }
 
-bool ChildProcess::start (const StringArray& args, int streamFlags)
+bool ChildProcess::start (const StringArray& args)
 {
     String escaped;
 
@@ -378,20 +300,20 @@ bool ChildProcess::start (const StringArray& args, int streamFlags)
             escaped << ' ';
     }
 
-    return start (escaped.trim(), streamFlags);
+    return start (escaped.trim());
 }
 #else
-bool ChildProcess::start (const String& command, int streamFlags)
+bool ChildProcess::start (const String& command)
 {
-    return start (StringArray::fromTokens (command, true), streamFlags);
+    return start (StringArray::fromTokens (command, true));
 }
 
-bool ChildProcess::start (const StringArray& args, int streamFlags)
+bool ChildProcess::start (const StringArray& args)
 {
     if (args.size() == 0)
         return false;
 
-    activeProcess = new ActiveProcess (args, streamFlags);
+    activeProcess = new ActiveProcess (args);
 
     if (activeProcess->childPID == 0)
         activeProcess = nullptr;
