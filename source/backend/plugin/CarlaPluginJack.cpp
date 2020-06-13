@@ -83,6 +83,7 @@ public:
 #ifdef HAVE_LIBLO
           fOscClientAddress(nullptr),
           fOscServer(nullptr),
+          fHasOptionalGui(false),
           fProject(),
 #endif
           fProcess() {}
@@ -118,14 +119,16 @@ public:
         lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/save", "");
     }
 
-    void nsmShowGui(const bool yesNo)
+    bool nsmShowGui(const bool yesNo)
     {
-        if (fOscClientAddress == nullptr)
-            return;
+        if (fOscClientAddress == nullptr || ! fHasOptionalGui)
+            return false;
 
         lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE,
                      yesNo ? "/nsm/client/show_optional_gui"
                            : "/nsm/client/hide_optional_gui", "");
+
+        return true;
     }
 #endif
 
@@ -212,11 +215,17 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(fOscClientAddress != nullptr, 0);
 
             fProject.appName = &argv[0]->s;
+            fHasOptionalGui  = std::strstr(&argv[1]->s, ":optional-gui:") != nullptr;
 
-            static const char* const method   = "/nsm/server/announce";
-            static const char* const message  = "Howdy, what took you so long?";
-            static const char* const smName   = "Carla";
-            static const char* const features = ":server-control:optional-gui:";
+            static const char* const featuresG = ":server_control:optional-gui:";
+            static const char* const featuresN = ":server_control:";
+
+            static const char* const method  = "/nsm/server/announce";
+            static const char* const message = "Howdy, what took you so long?";
+            static const char* const smName  = "Carla";
+
+            const char* const features = ((fSetupLabel[5] - '0') & LIBJACK_FLAG_CONTROL_WINDOW)
+                                       ? featuresG : featuresN;
 
             lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE, "/reply", "ssss",
                          method, message, smName, features);
@@ -426,6 +435,7 @@ private:
 #ifdef HAVE_LIBLO
     lo_address fOscClientAddress;
     lo_server  fOscServer;
+    bool fHasOptionalGui;
 
     struct ProjectData {
         CarlaString appName;
@@ -685,13 +695,14 @@ public:
         }
 
 #ifdef HAVE_LIBLO
-        fBridgeThread.nsmShowGui(yesNo);
+        if (! fBridgeThread.nsmShowGui(yesNo))
 #endif
+        {
+            const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
 
-        const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
-
-        fShmNonRtClientControl.writeOpcode(yesNo ? kPluginBridgeNonRtClientShowUI : kPluginBridgeNonRtClientHideUI);
-        fShmNonRtClientControl.commitWrite();
+            fShmNonRtClientControl.writeOpcode(yesNo ? kPluginBridgeNonRtClientShowUI : kPluginBridgeNonRtClientHideUI);
+            fShmNonRtClientControl.commitWrite();
+        }
     }
 
     void idle() override
