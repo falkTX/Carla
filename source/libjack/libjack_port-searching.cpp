@@ -46,9 +46,12 @@ static const char* allocate_port_name(const char* const prefixOrFullName, const 
 // --------------------------------------------------------------------------------------------------------------------
 
 CARLA_EXPORT
-const char** jack_get_ports(jack_client_t* client, const char* a, const char* b, unsigned long flags)
+const char** jack_get_ports(jack_client_t* const client,
+                            const char* const port_name,
+                            const char* const port_type,
+                            const unsigned long flags)
 {
-    carla_stdout("%s(%p, %s, %s, 0x%lx)", __FUNCTION__, client, a, b, flags);
+    carla_stdout("%s(%p, %s, %s, 0x%lx)", __FUNCTION__, client, port_name, port_type, flags);
 
     JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, nullptr);
@@ -64,48 +67,64 @@ const char** jack_get_ports(jack_client_t* client, const char* a, const char* b,
                                            jserver.numAudioOuts +
                                            jserver.numMidiOuts);
 
+    const bool wantsAudio = port_type == nullptr || port_type[0] == '\0' || std::strstr(port_type, "audio") != nullptr;
+    const bool wantsMIDI  = port_type == nullptr || port_type[0] == '\0' || std::strstr(port_type, "midi") != nullptr;
+
     if (flags == 0x0 || (flags & (JackPortIsInput|JackPortIsOutput)) == (JackPortIsInput|JackPortIsOutput))
     {
         if (const char** const ret = (const char**)calloc(numIns+numOuts+1, sizeof(const char*)))
         {
             uint i=0;
-            for (uint j=0; j<jserver.numAudioIns; ++i, ++j)
-                ret[i] = allocate_port_name("system:capture_", j);
-            for (uint j=0; j<jserver.numAudioOuts; ++i, ++j)
-                ret[i] = allocate_port_name("system:playback_", j);
-            for (uint j=0; j<jserver.numMidiIns; ++i, ++j)
-                ret[i] = allocate_port_name("system:midi_capture_", j);
-            for (uint j=0; j<jserver.numMidiOuts; ++i, ++j)
-                ret[i] = allocate_port_name("system:midi_playback_", j);
+
+            if (wantsAudio)
+            {
+                for (uint j=0; j<jserver.numAudioIns; ++i, ++j)
+                    ret[i] = allocate_port_name("system:capture_", j);
+                for (uint j=0; j<jserver.numAudioOuts; ++i, ++j)
+                    ret[i] = allocate_port_name("system:playback_", j);
+            }
+            if (wantsMIDI)
+            {
+                for (uint j=0; j<jserver.numMidiIns; ++i, ++j)
+                    ret[i] = allocate_port_name("system:midi_capture_", j);
+                for (uint j=0; j<jserver.numMidiOuts; ++i, ++j)
+                    ret[i] = allocate_port_name("system:midi_playback_", j);
+            }
 
             if ((flags & (JackPortIsPhysical|JackPortIsTerminal)) == 0x0)
             {
-                for (LinkedList<JackPortState*>::Itenerator it = jclient->audioIns.begin2(); it.valid(); it.next())
+                if (wantsAudio)
                 {
-                    JackPortState* const jport = it.getValue(nullptr);
-                    CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
-                    ret[i++] = allocate_port_name(jport->fullname);
+                    for (LinkedList<JackPortState*>::Itenerator it = jclient->audioIns.begin2(); it.valid(); it.next())
+                    {
+                        JackPortState* const jport = it.getValue(nullptr);
+                        CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
+                        ret[i++] = allocate_port_name(jport->fullname);
+                    }
+
+                    for (LinkedList<JackPortState*>::Itenerator it = jclient->audioOuts.begin2(); it.valid(); it.next())
+                    {
+                        JackPortState* const jport = it.getValue(nullptr);
+                        CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
+                        ret[i++] = allocate_port_name(jport->fullname);
+                    }
                 }
 
-                for (LinkedList<JackPortState*>::Itenerator it = jclient->midiIns.begin2(); it.valid(); it.next())
+                if (wantsMIDI)
                 {
-                    JackPortState* const jport = it.getValue(nullptr);
-                    CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
-                    ret[i++] = allocate_port_name(jport->fullname);
-                }
+                    for (LinkedList<JackPortState*>::Itenerator it = jclient->midiIns.begin2(); it.valid(); it.next())
+                    {
+                        JackPortState* const jport = it.getValue(nullptr);
+                        CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
+                        ret[i++] = allocate_port_name(jport->fullname);
+                    }
 
-                for (LinkedList<JackPortState*>::Itenerator it = jclient->audioOuts.begin2(); it.valid(); it.next())
-                {
-                    JackPortState* const jport = it.getValue(nullptr);
-                    CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
-                    ret[i++] = allocate_port_name(jport->fullname);
-                }
-
-                for (LinkedList<JackPortState*>::Itenerator it = jclient->midiOuts.begin2(); it.valid(); it.next())
-                {
-                    JackPortState* const jport = it.getValue(nullptr);
-                    CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
-                    ret[i++] = allocate_port_name(jport->fullname);
+                    for (LinkedList<JackPortState*>::Itenerator it = jclient->midiOuts.begin2(); it.valid(); it.next())
+                    {
+                        JackPortState* const jport = it.getValue(nullptr);
+                        CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
+                        ret[i++] = allocate_port_name(jport->fullname);
+                    }
                 }
             }
 
@@ -122,25 +141,36 @@ const char** jack_get_ports(jack_client_t* client, const char* a, const char* b,
         if (const char** const ret = (const char**)calloc(numIns+1, sizeof(const char*)))
         {
             uint i=0;
-            for (uint j=0; j<jserver.numAudioOuts; ++i, ++j)
-                ret[i] = allocate_port_name("system:playback_", j);
-            for (uint j=0; j<jserver.numMidiOuts; ++i, ++j)
-                ret[i] = allocate_port_name("system:midi_playback_", j);
+            if (wantsAudio)
+            {
+                for (uint j=0; j<jserver.numAudioOuts; ++i, ++j)
+                    ret[i] = allocate_port_name("system:playback_", j);
+            }
+            if (wantsMIDI)
+            {
+                for (uint j=0; j<jserver.numMidiOuts; ++i, ++j)
+                    ret[i] = allocate_port_name("system:midi_playback_", j);
+            }
 
             if ((flags & (JackPortIsPhysical|JackPortIsTerminal)) == 0x0)
             {
-                for (LinkedList<JackPortState*>::Itenerator it = jclient->audioIns.begin2(); it.valid(); it.next())
+                if (wantsAudio)
                 {
-                    JackPortState* const jport = it.getValue(nullptr);
-                    CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
-                    ret[i++] = allocate_port_name(jport->fullname);
+                    for (LinkedList<JackPortState*>::Itenerator it = jclient->audioIns.begin2(); it.valid(); it.next())
+                    {
+                        JackPortState* const jport = it.getValue(nullptr);
+                        CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
+                        ret[i++] = allocate_port_name(jport->fullname);
+                    }
                 }
-
-                for (LinkedList<JackPortState*>::Itenerator it = jclient->midiIns.begin2(); it.valid(); it.next())
+                if (wantsMIDI)
                 {
-                    JackPortState* const jport = it.getValue(nullptr);
-                    CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
-                    ret[i++] = allocate_port_name(jport->fullname);
+                    for (LinkedList<JackPortState*>::Itenerator it = jclient->midiIns.begin2(); it.valid(); it.next())
+                    {
+                        JackPortState* const jport = it.getValue(nullptr);
+                        CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
+                        ret[i++] = allocate_port_name(jport->fullname);
+                    }
                 }
             }
 
@@ -157,25 +187,37 @@ const char** jack_get_ports(jack_client_t* client, const char* a, const char* b,
         if (const char** const ret = (const char**)calloc(numOuts+1, sizeof(const char*)))
         {
             uint i=0;
-            for (uint j=0; j<jserver.numAudioIns; ++i, ++j)
-                ret[i] = allocate_port_name("system:capture_", j);
-            for (uint j=0; j<jserver.numMidiIns; ++i, ++j)
-                ret[i] = allocate_port_name("system:midi_capture_", j);
+
+            if (wantsAudio)
+            {
+                for (uint j=0; j<jserver.numAudioIns; ++i, ++j)
+                    ret[i] = allocate_port_name("system:capture_", j);
+            }
+            if (wantsMIDI)
+            {
+                for (uint j=0; j<jserver.numMidiIns; ++i, ++j)
+                    ret[i] = allocate_port_name("system:midi_capture_", j);
+            }
 
             if ((flags & (JackPortIsPhysical|JackPortIsTerminal)) == 0x0)
             {
-                for (LinkedList<JackPortState*>::Itenerator it = jclient->audioOuts.begin2(); it.valid(); it.next())
+                if (wantsAudio)
                 {
-                    JackPortState* const jport = it.getValue(nullptr);
-                    CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
-                    ret[i++] = allocate_port_name(jport->fullname);
+                    for (LinkedList<JackPortState*>::Itenerator it = jclient->audioOuts.begin2(); it.valid(); it.next())
+                    {
+                        JackPortState* const jport = it.getValue(nullptr);
+                        CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
+                        ret[i++] = allocate_port_name(jport->fullname);
+                    }
                 }
-
-                for (LinkedList<JackPortState*>::Itenerator it = jclient->midiOuts.begin2(); it.valid(); it.next())
+                if (wantsMIDI)
                 {
-                    JackPortState* const jport = it.getValue(nullptr);
-                    CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
-                    ret[i++] = allocate_port_name(jport->fullname);
+                    for (LinkedList<JackPortState*>::Itenerator it = jclient->midiOuts.begin2(); it.valid(); it.next())
+                    {
+                        JackPortState* const jport = it.getValue(nullptr);
+                        CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
+                        ret[i++] = allocate_port_name(jport->fullname);
+                    }
                 }
             }
 
