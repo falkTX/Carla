@@ -51,6 +51,7 @@ public:
         ok = CreateProcess (nullptr, const_cast<LPSTR>(command.toRawUTF8()),
                             nullptr, nullptr, TRUE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
                             nullptr, nullptr, &startupInfo, &processInfo) != FALSE;
+    }
 
     ~ActiveProcess()
     {
@@ -220,6 +221,7 @@ public:
 
     int childPID;
 
+private:
     CARLA_DECLARE_NON_COPY_CLASS (ActiveProcess)
 };
 #endif
