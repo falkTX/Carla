@@ -230,7 +230,7 @@ protected:
 
             fHasBroadcast     = std::strstr(features, ":broadcast:")      != nullptr;
             fHasOptionalGui   = std::strstr(features, ":optional-gui:")   != nullptr;
-            fHasServerControl = std::strstr(features, ":server_control:") != nullptr;
+            fHasServerControl = std::strstr(features, ":server-control:") != nullptr;
 
             // UI starts hidden
             if (fHasOptionalGui)

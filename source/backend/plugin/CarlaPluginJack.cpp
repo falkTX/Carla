@@ -215,8 +215,8 @@ protected:
             fProject.appName = &argv[0]->s;
             fHasOptionalGui  = std::strstr(&argv[1]->s, ":optional-gui:") != nullptr;
 
-            static const char* const featuresG = ":server_control:optional-gui:";
-            static const char* const featuresN = ":server_control:";
+            static const char* const featuresG = ":server-control:optional-gui:";
+            static const char* const featuresN = ":server-control:";
 
             static const char* const method  = "/nsm/server/announce";
             static const char* const message = "Howdy, what took you so long?";
