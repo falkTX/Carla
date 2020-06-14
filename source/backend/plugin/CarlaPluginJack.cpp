@@ -280,6 +280,19 @@ protected:
             lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/save", "");
         }
 
+        else if (std::strcmp(path, "/nsm/server/stop") == 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(std::strcmp(types, "s") == 0, 0);
+
+            lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/hide_optional_gui", "");
+
+            kEngine->callback(true, true,
+                              ENGINE_CALLBACK_UI_STATE_CHANGED,
+                              kPlugin->getId(),
+                              0,
+                              0, 0, 0.0f, nullptr);
+        }
+
         return 0;
     }
 #endif
