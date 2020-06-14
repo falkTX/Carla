@@ -1284,32 +1284,31 @@ private:
             const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
             jackbridge_free(uuidstr);
 
-            if (parsed)
-            {
-                char* value = nullptr;
-                char* type = nullptr;
+            CARLA_CUSTOM_SAFE_ASSERT_ONCE_RETURN("JACK meta-data support unavailable", parsed,);
 
-                CARLA_SAFE_ASSERT_RETURN(jackbridge_get_property(uuid,
-                                                                 URI_PLUGIN_ID,
-                                                                 &value,
-                                                                 &type),);
+            char* value = nullptr;
+            char* type = nullptr;
+
+            CARLA_SAFE_ASSERT_RETURN(jackbridge_get_property(uuid,
+                                                             URI_PLUGIN_ID,
+                                                             &value,
+                                                             &type),);
+            CARLA_SAFE_ASSERT_RETURN(type != nullptr,);
+            CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, URI_TYPE_INTEGER) == 0,);
+            fPreRenamePluginId = value;
+
+            jackbridge_free(value);
+            jackbridge_free(type);
+            value = type = nullptr;
+
+            if (jackbridge_get_property(uuid, URI_PLUGIN_ICON, &value, &type))
+            {
                 CARLA_SAFE_ASSERT_RETURN(type != nullptr,);
-                CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, URI_TYPE_INTEGER) == 0,);
-                fPreRenamePluginId = value;
+                CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, URI_TYPE_STRING) == 0,);
+                fPreRenamePluginIcon = value;
 
                 jackbridge_free(value);
                 jackbridge_free(type);
-                value = type = nullptr;
-
-                if (jackbridge_get_property(uuid, URI_PLUGIN_ICON, &value, &type))
-                {
-                    CARLA_SAFE_ASSERT_RETURN(type != nullptr,);
-                    CARLA_SAFE_ASSERT_RETURN(std::strcmp(type, URI_TYPE_STRING) == 0,);
-                    fPreRenamePluginIcon = value;
-
-                    jackbridge_free(value);
-                    jackbridge_free(type);
-                }
             }
         }
     }
@@ -2343,7 +2342,11 @@ public:
 
                 const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
                 jackbridge_free(uuidstr);
-                CARLA_CUSTOM_SAFE_ASSERT_ONCE_RETURN("JACK meta-data support unavailable", parsed, false);
+
+                /* if parsing fails, meta-data is not available..
+                   this could be because JACK version is old, or perhaps this is an internal client */
+                if (! parsed)
+                    return false;
             }
 
             fLastPatchbaySetGroupPos.set(x1, y1, x2, y2);
@@ -2554,7 +2557,11 @@ public:
 
                     const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
                     jackbridge_free(uuidstr);
-                    CARLA_SAFE_ASSERT_CONTINUE(parsed);
+
+                    /* if parsing fails, meta-data is not available..
+                       this could be because JACK version is old, or perhaps this is an internal client */
+                    if (! parsed)
+                        continue;
                 }
 
                 char* value = nullptr;
@@ -3802,7 +3809,11 @@ private:
 
                     const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
                     jackbridge_free(uuidstr);
-                    CARLA_CUSTOM_SAFE_ASSERT_ONCE_CONTINUE("JACK meta-data support unavailable", parsed);
+
+                    /* if parsing fails, meta-data is not available..
+                       this could be because JACK version is old, or perhaps this is an internal client */
+                    if (! parsed)
+                        continue;
                 }
 
                 char* value = nullptr;
