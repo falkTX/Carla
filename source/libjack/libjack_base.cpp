@@ -40,10 +40,6 @@ int jack_carla_interposed_action(uint, uint, void*)
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_BACKEND_USE_NAMESPACE
-
-// --------------------------------------------------------------------------------------------------------------------
-
 CARLA_EXPORT
 void jack_get_version(int* major_ptr, int* minor_ptr, int* micro_ptr, int* proto_ptr)
 {
