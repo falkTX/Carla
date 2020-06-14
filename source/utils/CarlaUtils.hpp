@@ -124,9 +124,9 @@ void carla_debug(const char* const fmt, ...) noexcept
         {
             std::vfprintf(output, fmt, args);
             std::fprintf(output, "\n");
-            std::fflush(output);
         }
 
+        std::fflush(output);
         ::va_end(args);
     } CARLA_CATCH_UNWIND catch (...) {}
 }
@@ -145,7 +145,9 @@ void carla_stdout(const char* const fmt, ...) noexcept
         ::va_start(args, fmt);
         std::vfprintf(output, fmt, args);
         std::fprintf(output, "\n");
+#ifndef DEBUG
         if (output != stdout)
+#endif
             std::fflush(output);
         ::va_end(args);
     } CARLA_CATCH_UNWIND catch (...) {}
@@ -164,7 +166,9 @@ void carla_stderr(const char* const fmt, ...) noexcept
         ::va_start(args, fmt);
         std::vfprintf(output, fmt, args);
         std::fprintf(output, "\n");
+#ifndef DEBUG
         if (output != stderr)
+#endif
             std::fflush(output);
         ::va_end(args);
     } CARLA_CATCH_UNWIND catch (...) {}
@@ -192,9 +196,9 @@ void carla_stderr2(const char* const fmt, ...) noexcept
         {
             std::vfprintf(output, fmt, args);
             std::fprintf(output, "\n");
-            std::fflush(output);
         }
 
+        std::fflush(output);
         ::va_end(args);
     } CARLA_CATCH_UNWIND catch (...) {}
 }
