@@ -25,7 +25,7 @@
 #include <algorithm>
 #include <clocale>
 
-#if defined(CARLA_PROPER_CPP11_SUPPORT) && ! defined(CARLA_OS_WIN) && ! defined(CARLA_OS_HAIKU)
+#if ! (defined(CARLA_OS_HAIKU) || defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
 # define CARLA_USE_NEWLOCALE
 #endif
 
