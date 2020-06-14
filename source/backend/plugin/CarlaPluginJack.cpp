@@ -229,9 +229,12 @@ protected:
                          method, message, smName, features);
 
             maybeOpenFirstTime();
+            return 0;
         }
 
-        else if (std::strcmp(path, "/reply") == 0)
+        CARLA_SAFE_ASSERT_RETURN(fOscClientAddress != nullptr, 0);
+
+        if (std::strcmp(path, "/reply") == 0)
         {
             CARLA_SAFE_ASSERT_RETURN(std::strcmp(types, "ss") == 0, 0);
 
@@ -267,6 +270,14 @@ protected:
                               kPlugin->getId(),
                               0,
                               0, 0, 0.0f, nullptr);
+        }
+
+        // special messages
+        else if (std::strcmp(path, "/nsm/gui/client/save") == 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(std::strcmp(types, "s") == 0, 0);
+
+            lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/save", "");
         }
 
         return 0;
