@@ -142,9 +142,7 @@ public:
 
         CarlaString ret;
         ret += "export LD_LIBRARY_PATH=" + binaryDir + "/jack\n";
-#ifdef HAVE_X11
         ret += "export LD_PRELOAD=" + binaryDir + "/libcarla_interposer-jack-x11.so\n";
-#endif
 #ifdef HAVE_LIBLO
         if (sessionManager == LIBJACK_SESSION_MANAGER_NSM)
         {
@@ -329,14 +327,8 @@ protected:
             std::snprintf(winIdStr, STR_MAX, P_UINTPTR, options.frontendWinId);
             winIdStr[STR_MAX] = '\0';
 
-            CarlaString libjackdir(options.binaryDir);
-            libjackdir += "/jack";
-
-            CarlaString ldpreload;
-#ifdef HAVE_X11
-            ldpreload = (CarlaString(options.binaryDir)
-                    + "/libcarla_interposer-jack-x11.so");
-#endif
+            const CarlaString libjackdir(CarlaString(options.binaryDir) + "/jack");
+            const CarlaString ldpreload(CarlaString(options.binaryDir) + "/libcarla_interposer-jack-x11.so");
 
             const ScopedEngineEnvironmentLocker _seel(kEngine);
 

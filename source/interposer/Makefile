@@ -33,13 +33,13 @@ TARGETS =
 
 ifeq ($(LINUX),true)
 OBJS    += $(OBJDIR)/interposer-safe.cpp.o
+OBJS    += $(OBJDIR)/interposer-jack-x11.cpp.o
 TARGETS += $(BINDIR)/libcarla_interposer-safe.so
+TARGETS += $(BINDIR)/libcarla_interposer-jack-x11.so
 
 ifeq ($(HAVE_X11),true)
 OBJS    += $(OBJDIR)/interposer-x11.cpp.o
-OBJS    += $(OBJDIR)/interposer-jack-x11.cpp.o
 TARGETS += $(BINDIR)/libcarla_interposer-x11.so
-TARGETS += $(BINDIR)/libcarla_interposer-jack-x11.so
 endif
 endif
 
