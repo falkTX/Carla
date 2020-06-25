@@ -6806,9 +6806,11 @@ private:
         }
         else
         {
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             if (const char* const projFolder = ((CarlaPluginLV2*)handle)->pData->engine->getCurrentProjectFolder())
                 target = projFolder;
             else
+#endif
                 target = File::getCurrentWorkingDirectory();
 
             target = target.getChildFile(path);
@@ -6832,9 +6834,11 @@ private:
 
         File target;
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (const char* const projFolder = ((CarlaPluginLV2*)handle)->pData->engine->getCurrentProjectFolder())
             target = projFolder;
         else
+#endif
             target = File::getCurrentWorkingDirectory();
 
         return strdup(File(absolute_path).getRelativePathFrom(target).toRawUTF8());
@@ -6852,9 +6856,11 @@ private:
 
         File base;
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (const char* const projFolder = ((CarlaPluginLV2*)handle)->pData->engine->getCurrentProjectFolder())
             base = projFolder;
         else
+#endif
             base = File::getCurrentWorkingDirectory();
 
         return strdup(base.getChildFile(abstract_path).getFullPathName().toRawUTF8());
