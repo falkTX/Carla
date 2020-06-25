@@ -41,6 +41,8 @@
 
 #include "water/files/File.h"
 
+static const char* const kPathForCarlaFiles = "carlafiles";
+
 template<>
 void Lv2PluginBaseClass<NativeTimeInfo>::clearTimeData() noexcept
 {
@@ -72,6 +74,7 @@ public:
 #if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
           fJuceInitialiser(),
 #endif
+          fLastProjectPath(nullptr),
           fLoadedFile(),
           fWorkerUISignal(0)
     {
@@ -104,6 +107,12 @@ public:
         fHost.ui_open_file           = host_ui_open_file;
         fHost.ui_save_file           = host_ui_save_file;
         fHost.dispatcher             = host_dispatcher;
+
+#if 0
+        // NOTE: a few hosts crash with this :(
+        if (fMakePath != nullptr && fMakePath->path != nullptr)
+            fLastProjectPath = fMakePath->path(fMakePath->handle, kPathForCarlaFiles);
+#endif
     }
 
     ~NativePlugin()
@@ -120,6 +129,12 @@ public:
         {
             delete[] fHost.uiName;
             fHost.uiName = nullptr;
+        }
+
+        if (fLastProjectPath != nullptr)
+        {
+            std::free(fLastProjectPath);
+            fLastProjectPath = nullptr;
         }
     }
 
@@ -410,9 +425,45 @@ public:
 
     // ----------------------------------------------------------------------------------------------------------------
 
-    LV2_State_Status lv2_save(const LV2_State_Store_Function store, const LV2_State_Handle handle,
-                              const uint32_t /*flags*/, const LV2_Feature* const* const /*features*/) const
+    void saveLastProjectPathIfPossible(const LV2_Feature* const* const features)
     {
+        char* const last = fLastProjectPath;
+
+        if (fMakePath != nullptr && fMakePath->path != nullptr)
+        {
+            fLastProjectPath = fMakePath->path(fMakePath->handle, kPathForCarlaFiles);
+        }
+        else if (features != nullptr)
+        {
+            const LV2_State_Make_Path* makePath = nullptr;
+
+            for (int i=0; features[i] != nullptr; ++i)
+            {
+                if (std::strcmp(features[i]->URI, LV2_STATE__makePath) == 0)
+                {
+                    makePath = (const LV2_State_Make_Path*)features[i]->data;
+                    break;
+                }
+            }
+
+            if (makePath != nullptr && makePath->path != nullptr)
+                fLastProjectPath = makePath->path(makePath->handle, kPathForCarlaFiles);
+            else
+                fLastProjectPath = nullptr;
+        }
+        else
+        {
+            fLastProjectPath = nullptr;
+        }
+
+        std::free(last);
+    }
+
+    LV2_State_Status lv2_save(const LV2_State_Store_Function store, const LV2_State_Handle handle,
+                              const uint32_t /*flags*/, const LV2_Feature* const* const features)
+    {
+        saveLastProjectPathIfPossible(features);
+
         if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE)
         {
             store(handle,
@@ -429,7 +480,8 @@ public:
 
         if (char* const state = fDescriptor->get_state(fHandle))
         {
-            store(handle, fUridMap->map(fUridMap->handle, "http://kxstudio.sf.net/ns/carla/chunk"), state, std::strlen(state)+1, fURIs.atomString, LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE);
+            store(handle, fUridMap->map(fUridMap->handle, "http://kxstudio.sf.net/ns/carla/chunk"),
+                  state, std::strlen(state)+1, fURIs.atomString, LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE);
             std::free(state);
             return LV2_STATE_SUCCESS;
         }
@@ -438,8 +490,10 @@ public:
     }
 
     LV2_State_Status lv2_restore(const LV2_State_Retrieve_Function retrieve, const LV2_State_Handle handle,
-                                 uint32_t flags, const LV2_Feature* const* const /*features*/)
+                                 uint32_t flags, const LV2_Feature* const* const features)
     {
+        saveLastProjectPathIfPossible(features);
+
         size_t   size = 0;
         uint32_t type = 0;
 
@@ -804,8 +858,13 @@ protected:
         case NATIVE_HOST_OPCODE_INTERNAL_PLUGIN:
         case NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY:
         case NATIVE_HOST_OPCODE_REQUEST_IDLE:
-        case NATIVE_HOST_OPCODE_GET_FILE_PATH:
             // nothing
+            break;
+
+        case NATIVE_HOST_OPCODE_GET_FILE_PATH:
+            CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, 0);
+            if (fLastProjectPath != nullptr)
+                return static_cast<intptr_t>((uintptr_t)fLastProjectPath);
             break;
 
         case NATIVE_HOST_OPCODE_UI_UNAVAILABLE:
@@ -868,7 +927,9 @@ private:
     juce::SharedResourcePointer<juce::ScopedJuceInitialiser_GUI> fJuceInitialiser;
 #endif
 
+    char* fLastProjectPath;
     CarlaString fLoadedFile;
+
     int fWorkerUISignal;
 
     // -------------------------------------------------------------------
