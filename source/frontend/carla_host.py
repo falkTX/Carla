@@ -909,7 +909,7 @@ class HostWindow(QMainWindow):
     def slot_engineStop(self, forced = False):
         self.ui.text_logs.appendPlainText("======= Stopping engine =======")
 
-        if self.fPluginCount == 0:
+        if self.fPluginCount == 0 or not self.host.is_engine_running():
             self.engineStopFinal()
             return True
 
@@ -951,20 +951,19 @@ class HostWindow(QMainWindow):
         patchcanvas.handleAllPluginsRemoved()
         self.killTimers()
 
-        if self.host.is_engine_running():
-            if self.fCustomStopAction == self.CUSTOM_ACTION_PROJECT_LOAD:
-                self.removeAllPlugins()
-            elif self.fPluginCount != 0:
-                self.fCurrentlyRemovingAllPlugins = True
-                self.projectLoadingStarted()
+        if self.fCustomStopAction == self.CUSTOM_ACTION_PROJECT_LOAD:
+            self.removeAllPlugins()
+        elif self.fPluginCount != 0:
+            self.fCurrentlyRemovingAllPlugins = True
+            self.projectLoadingStarted()
 
-            if not self.host.remove_all_plugins():
-                self.ui.text_logs.appendPlainText("Failed to remove all plugins, error was:")
-                self.ui.text_logs.appendPlainText(self.host.get_last_error())
+        if self.host.is_engine_running() and not self.host.remove_all_plugins():
+            self.ui.text_logs.appendPlainText("Failed to remove all plugins, error was:")
+            self.ui.text_logs.appendPlainText(self.host.get_last_error())
 
-            if not self.host.engine_close():
-                self.ui.text_logs.appendPlainText("Failed to stop engine, error was:")
-                self.ui.text_logs.appendPlainText(self.host.get_last_error())
+        if not self.host.engine_close():
+            self.ui.text_logs.appendPlainText("Failed to stop engine, error was:")
+            self.ui.text_logs.appendPlainText(self.host.get_last_error())
 
         if self.fCustomStopAction == self.CUSTOM_ACTION_APP_CLOSE:
             self.close()
