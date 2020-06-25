@@ -185,6 +185,7 @@ public:
           fUiServer(this),
           fLastScaleFactor(1.0f),
           fLastProjectFolder(),
+          fPluginDeleterMutex(),
           fOptionsForced(false)
     {
         carla_debug("CarlaEngineNative::CarlaEngineNative()");
@@ -1379,6 +1380,11 @@ protected:
                               static_cast<int>(kUiHeight * fLastScaleFactor + 0.5f),
                               nullptr, 0.0f);
         }
+
+        {
+            const CarlaMutexLocker cml(fPluginDeleterMutex);
+            pData->deletePluginsAsNeeded();
+        }
     }
 
     void uiSetParameterValue(const uint32_t index, const float value)
@@ -1517,6 +1523,11 @@ protected:
         fIsRunning = false;
         removeAllPlugins();
         fIsRunning = true;
+
+        {
+            const CarlaMutexLocker cml(fPluginDeleterMutex);
+            pData->deletePluginsAsNeeded();
+        }
 
         // stopped during removeAllPlugins()
         if (! pData->thread.isThreadRunning())
@@ -1700,6 +1711,7 @@ private:
     float fParameters[kNumInParams+kNumOutParams];
     float fLastScaleFactor;
     CarlaString fLastProjectFolder;
+    CarlaMutex fPluginDeleterMutex;
 
     bool fOptionsForced;
 
