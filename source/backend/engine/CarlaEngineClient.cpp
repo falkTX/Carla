@@ -190,7 +190,7 @@ void CarlaEngineClient::activate() noexcept
 
 void CarlaEngineClient::deactivate(const bool willClose) noexcept
 {
-    CARLA_SAFE_ASSERT(pData->active);
+    CARLA_SAFE_ASSERT(pData->active || willClose);
     carla_debug("CarlaEngineClient::deactivate(%s)", bool2str(willClose));
 
     pData->active = false;
