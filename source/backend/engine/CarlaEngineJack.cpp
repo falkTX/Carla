@@ -2140,7 +2140,8 @@ public:
             CarlaEngineJackClient* const client((CarlaEngineJackClient*)plugin->getEngineClient());
 
             // we should not be able to do this, jack really needs to allow client rename
-            if (jack_client_t* const jackClient = jackbridge_client_open(uniqueName, JackNoStartServer, nullptr))
+            if (jack_client_t* const jackClient = jackbridge_client_open(fClientNamePrefix + uniqueName,
+                                                                         JackNoStartServer, nullptr))
             {
                 // get new client name
                 uniqueName = jackbridge_get_client_name(jackClient);
