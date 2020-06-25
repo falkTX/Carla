@@ -624,26 +624,27 @@ public:
         if (fReceivingParamText.wasDataReceived(&success))
             return success;
 
-        const uint32_t timeoutEnd(Time::getMillisecondCounter() + 500); // 500 ms
+        const uint32_t timeoutEnd = Time::getMillisecondCounter() + 500; // 500 ms
+        const bool needsEngineIdle = pData->engine->getType() != kEngineTypePlugin;
 
         for (; Time::getMillisecondCounter() < timeoutEnd && fBridgeThread.isThreadRunning();)
         {
             if (fReceivingParamText.wasDataReceived(&success))
                 return success;
 
+            if (needsEngineIdle)
+                pData->engine->idle();
+
             carla_msleep(5);
         }
 
+        if (! fBridgeThread.isThreadRunning())
+        {
+            carla_stderr("CarlaPluginBridge::waitForParameterText() - Bridge is not running");
+            return false;
+        }
+
         carla_stderr("CarlaPluginBridge::waitForParameterText() - Timeout while requesting text");
-
-#if 0
-        // we waited and blocked for 5 secs, give host idle time now
-        pData->engine->callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
-
-        if (pData->engine->getType() != kEngineTypePlugin)
-            pData->engine->idle();
-#endif
-
         return false;
     }
 
@@ -653,8 +654,8 @@ public:
             return;
 
         // TODO: only wait 1 minute for NI plugins
-        const uint32_t timeoutEnd(Time::getMillisecondCounter() + 60*1000); // 60 secs, 1 minute
-        const bool needsEngineIdle(pData->engine->getType() != kEngineTypePlugin);
+        const uint32_t timeoutEnd = Time::getMillisecondCounter() + 60*1000; // 60 secs, 1 minute
+        const bool needsEngineIdle = pData->engine->getType() != kEngineTypePlugin;
 
         for (; Time::getMillisecondCounter() < timeoutEnd && fBridgeThread.isThreadRunning();)
         {
