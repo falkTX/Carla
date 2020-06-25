@@ -184,6 +184,7 @@ public:
           fIsRunning(false),
           fUiServer(this),
           fLastScaleFactor(1.0f),
+          fLastProjectFolder(),
           fOptionsForced(false)
     {
         carla_debug("CarlaEngineNative::CarlaEngineNative()");
@@ -319,6 +320,21 @@ public:
         return "Plugin";
     }
 
+    const char* getCurrentProjectFolder() const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, nullptr);
+
+        static char filetype[] = "carla\0";
+
+        try {
+            return (const char*)(uintptr_t)pHost->dispatcher(pHost->handle,
+                                                             NATIVE_HOST_OPCODE_GET_FILE_PATH,
+                                                             0, 0,
+                                                             (void*)filetype,
+                                                             0.0f);
+        } CARLA_SAFE_EXCEPTION_RETURN("get_file_path", nullptr);
+    }
+
     void callback(const bool sendHost, const bool sendOsc,
                   const EngineCallbackOpcode action, const uint pluginId,
                   const int value1, const int value2, const int value3,
@@ -420,7 +436,7 @@ protected:
         {
             const CarlaMutexLocker cml(fUiServer.getPipeLock());
 
-            if (fUiServer.writeAndFixMessage("buffer-size"))
+            if (fUiServer.writeMessage("buffer-size\n"))
             {
                 char tmpBuf[STR_MAX+1];
                 carla_zeroChars(tmpBuf, STR_MAX+1);
@@ -444,7 +460,7 @@ protected:
         {
             const CarlaMutexLocker cml(fUiServer.getPipeLock());
 
-            if (fUiServer.writeAndFixMessage("sample-rate"))
+            if (fUiServer.writeMessage("sample-rate\n"))
             {
                 char tmpBuf[STR_MAX+1];
                 carla_zeroChars(tmpBuf, STR_MAX+1);
@@ -485,8 +501,7 @@ protected:
 
         if (const char* const filename = plugin->getFilename())
         {
-            std::snprintf(tmpBuf, STR_MAX, "%s", filename);
-            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(tmpBuf),);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(filename),);
         }
         else
         {
@@ -495,8 +510,7 @@ protected:
 
         if (const char* const name = plugin->getName())
         {
-            std::snprintf(tmpBuf, STR_MAX, "%s", name);
-            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(tmpBuf),);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(name),);
         }
         else
         {
@@ -505,8 +519,7 @@ protected:
 
         if (const char* const iconName = plugin->getIconName())
         {
-            std::snprintf(tmpBuf, STR_MAX, "%s", iconName);
-            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(tmpBuf),);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(iconName),);
         }
         else
         {
@@ -680,8 +693,7 @@ protected:
             std::snprintf(tmpBuf, STR_MAX, "%i:%i\n", mpData.bank, mpData.program);
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-            std::snprintf(tmpBuf, STR_MAX, "%s", mpData.name);
-            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(tmpBuf),);
+            CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(mpData.name),);
         }
 
         fUiServer.flushMessages();
@@ -1409,16 +1421,27 @@ protected:
         // ------------------------------------------------------------------------------------------------------------
         // send engine info
 
-        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage("runtime-info"),);
         std::snprintf(tmpBuf, STR_MAX, "%.12g:0\n", static_cast<double>(getDSPLoad()));
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("runtime-info\n"),);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
         fUiServer.flushMessages();
 
+        if (const char* const projFolder = getCurrentProjectFolder())
+        {
+            if (fLastProjectFolder != projFolder)
+            {
+                fLastProjectFolder = projFolder;
+                CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("project-folder\n"),);
+                CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(projFolder),);
+                fUiServer.flushMessages();
+            }
+        }
+
         // ------------------------------------------------------------------------------------------------------------
         // send transport
 
-        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage("transport"),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("transport\n"),);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(timeInfo.playing ? "true\n" : "false\n"),);
 
         if (timeInfo.bbt.valid)
@@ -1676,6 +1699,7 @@ private:
 
     float fParameters[kNumInParams+kNumOutParams];
     float fLastScaleFactor;
+    CarlaString fLastProjectFolder;
 
     bool fOptionsForced;
 

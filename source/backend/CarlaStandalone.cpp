@@ -944,6 +944,30 @@ bool carla_save_project(CarlaHostHandle handle, const char* filename)
 }
 
 #ifndef BUILD_BRIDGE
+const char* carla_get_current_project_folder(CarlaHostHandle handle)
+{
+    CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, gNullCharPtr);
+
+    carla_debug("carla_get_current_project_folder(%p)", handle);
+
+    if (const char* const ret = handle->engine->getCurrentProjectFolder())
+        return ret;
+
+    return gNullCharPtr;
+}
+
+const char* carla_get_current_project_filename(CarlaHostHandle handle)
+{
+    CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr && handle->isStandalone, gNullCharPtr);
+
+    carla_debug("carla_get_current_project_filename(%p)", handle);
+
+    if (const char* const ret = handle->engine->getCurrentProjectFilename())
+        return ret;
+
+    return gNullCharPtr;
+}
+
 void carla_clear_project_filename(CarlaHostHandle handle)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);

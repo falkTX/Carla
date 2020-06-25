@@ -1061,7 +1061,14 @@ public:
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
+     * Get the currently set project folder.
+     * @note Valid for both standalone and plugin versions.
+     */
+    virtual const char* getCurrentProjectFolder() const noexcept;
+
+    /*!
      * Get the currently set project filename.
+     * @note Valid only for both standalone version.
      */
     const char* getCurrentProjectFilename() const noexcept;
 

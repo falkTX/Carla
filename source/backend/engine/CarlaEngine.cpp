@@ -1254,13 +1254,29 @@ bool CarlaEngine::loadProject(const char* const filename, const bool setAsCurren
     carla_debug("CarlaEngine::loadProject(\"%s\")", filename);
 
     const String jfilename = String(CharPointer_UTF8(filename));
-    File file(jfilename);
+    const File file(jfilename);
     CARLA_SAFE_ASSERT_RETURN_ERR(file.existsAsFile(), "Requested file does not exist or is not a readable file");
 
     if (setAsCurrentProject)
     {
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-        pData->currentProjectFilename = filename;
+        if (pData->currentProjectFilename != filename)
+        {
+            pData->currentProjectFilename = filename;
+
+            bool found;
+            const size_t r = pData->currentProjectFilename.rfind(CARLA_OS_SEP, &found);
+
+            if (found)
+            {
+                pData->currentProjectFolder = filename;
+                pData->currentProjectFolder[r] = '\0';
+            }
+            else
+            {
+                pData->currentProjectFolder.clear();
+            }
+        }
 #endif
     }
 
@@ -1282,7 +1298,23 @@ bool CarlaEngine::saveProject(const char* const filename, const bool setAsCurren
     if (setAsCurrentProject)
     {
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-        pData->currentProjectFilename = filename;
+        if (pData->currentProjectFilename != filename)
+        {
+            pData->currentProjectFilename = filename;
+
+            bool found;
+            const size_t r = pData->currentProjectFilename.rfind(CARLA_OS_SEP, &found);
+
+            if (found)
+            {
+                pData->currentProjectFolder = filename;
+                pData->currentProjectFolder[r] = '\0';
+            }
+            else
+            {
+                pData->currentProjectFolder.clear();
+            }
+        }
 #endif
     }
 
@@ -1294,6 +1326,11 @@ bool CarlaEngine::saveProject(const char* const filename, const bool setAsCurren
 }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+const char* CarlaEngine::getCurrentProjectFolder() const noexcept
+{
+    return pData->currentProjectFolder;
+}
+
 const char* CarlaEngine::getCurrentProjectFilename() const noexcept
 {
     return pData->currentProjectFilename;
@@ -1302,6 +1339,7 @@ const char* CarlaEngine::getCurrentProjectFilename() const noexcept
 void CarlaEngine::clearCurrentProjectFilename() noexcept
 {
     pData->currentProjectFilename.clear();
+    pData->currentProjectFolder.clear();
 }
 #endif
 

@@ -529,6 +529,18 @@ CARLA_EXPORT bool carla_save_project(CarlaHostHandle handle, const char* filenam
 
 #ifndef BUILD_BRIDGE
 /*!
+  * Get the currently set project folder.
+  * @note Valid for both standalone and plugin versions.
+ */
+CARLA_EXPORT const char* carla_get_current_project_folder(CarlaHostHandle handle);
+
+/*!
+ * Get the currently set project filename.
+ * @note Valid only for both standalone version.
+ */
+CARLA_EXPORT const char* carla_get_current_project_filename(CarlaHostHandle handle);
+
+/*!
  * Clear the currently set project filename.
  */
 CARLA_EXPORT void carla_clear_project_filename(CarlaHostHandle handle);

@@ -247,6 +247,7 @@ struct CarlaEngine::ProtectedData {
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     bool loadingProject;
     CarlaString currentProjectFilename;
+    CarlaString currentProjectFolder;
 #endif
 
     uint32_t bufferSize;

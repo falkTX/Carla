@@ -256,6 +256,8 @@ public:
           fNeedsIdle(false),
           fInlineDisplayNeedsRedraw(false),
           fInlineDisplayLastRedrawTime(0),
+          fLastProjectFilename(),
+          fLastProjectFolder(),
           fAudioAndCvInBuffers(nullptr),
           fAudioAndCvOutBuffers(nullptr),
           fMidiEventInCount(0),
@@ -2690,70 +2692,107 @@ protected:
         carla_debug("CarlaPluginNative::handleDispatcher(%i, %i, " P_INTPTR ", %p, %f)",
                     opcode, index, value, ptr, static_cast<double>(opt));
 
-        intptr_t ret = 0;
-
         switch (opcode)
         {
         case NATIVE_HOST_OPCODE_NULL:
             break;
+
         case NATIVE_HOST_OPCODE_UPDATE_PARAMETER:
             // TODO
             pData->engine->callback(true, true, ENGINE_CALLBACK_UPDATE, pData->id, -1, 0, 0, 0.0f, nullptr);
             break;
+
         case NATIVE_HOST_OPCODE_UPDATE_MIDI_PROGRAM:
             // TODO
             pData->engine->callback(true, true, ENGINE_CALLBACK_UPDATE, pData->id, -1, 0, 0, 0.0f, nullptr);
             break;
+
         case NATIVE_HOST_OPCODE_RELOAD_PARAMETERS:
             reloadParameters(nullptr, nullptr);
             pData->engine->callback(true, true, ENGINE_CALLBACK_RELOAD_ALL, pData->id, -1, 0, 0, 0.0f, nullptr);
             break;
+
         case NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS:
             reloadPrograms(false);
             pData->engine->callback(true, true, ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, -1, 0, 0, 0.0f, nullptr);
             break;
+
         case NATIVE_HOST_OPCODE_RELOAD_ALL:
             reload();
             pData->engine->callback(true, true, ENGINE_CALLBACK_RELOAD_ALL, pData->id, -1, 0, 0, 0.0f, nullptr);
             break;
+
         case NATIVE_HOST_OPCODE_UI_UNAVAILABLE:
             pData->engine->callback(true, true, ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0, 0.0f, nullptr);
             fIsUiAvailable = false;
             break;
+
         case NATIVE_HOST_OPCODE_HOST_IDLE:
             pData->engine->callback(true, false, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
             break;
+
         case NATIVE_HOST_OPCODE_INTERNAL_PLUGIN:
-            ret = 1;
-            break;
+            return 1;
+
         case NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY:
             fInlineDisplayNeedsRedraw = true;
             break;
+
         case NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER:
             CARLA_SAFE_ASSERT_RETURN(index >= 0, 0);
             pData->engine->touchPluginParameter(pData->id, static_cast<uint32_t>(index), value != 0);
             break;
+
         case NATIVE_HOST_OPCODE_REQUEST_IDLE:
             fNeedsIdle = true;
             break;
+
         case NATIVE_HOST_OPCODE_GET_FILE_PATH:
             CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, 0);
             {
                 const EngineOptions& opts(pData->engine->getOptions());
                 const char* const filetype = (const char*)ptr;
+                const char* ret = nullptr;
 
-                if (std::strcmp(filetype, "audio") == 0)
-                    return static_cast<intptr_t>((uintptr_t)opts.pathAudio);
-                if (std::strcmp(filetype, "midi") == 0)
-                    return static_cast<intptr_t>((uintptr_t)opts.pathMIDI);
+                if (std::strcmp(filetype, "carla") == 0)
+                {
+                    ret = pData->engine->getCurrentProjectFilename();
+
+                    if (fLastProjectFilename != ret)
+                    {
+                        fLastProjectFilename = ret;
+
+                        bool found;
+                        const size_t r = fLastProjectFilename.rfind(CARLA_OS_SEP, &found);
+                        if (found)
+                        {
+                            fLastProjectFolder = ret;
+                            fLastProjectFolder[r] = '\0';
+                        }
+                        else
+                        {
+                            fLastProjectFolder.clear();
+                        }
+                    }
+
+                    ret = fLastProjectFolder.buffer();
+                }
+
+                else if (std::strcmp(filetype, "audio") == 0)
+                    ret = opts.pathAudio;
+                else if (std::strcmp(filetype, "midi") == 0)
+                    ret = opts.pathMIDI;
+
+                return static_cast<intptr_t>((uintptr_t)ret);
             }
             break;
+
         case NATIVE_HOST_OPCODE_UI_RESIZE:
             // unused here
             break;
         }
 
-        return ret;
+        return 0;
 
         // unused for now
         (void)opt;
@@ -2955,6 +2994,9 @@ private:
 
     bool fInlineDisplayNeedsRedraw;
     int64_t fInlineDisplayLastRedrawTime;
+
+    CarlaString fLastProjectFilename;
+    CarlaString fLastProjectFolder;
 
     float**         fAudioAndCvInBuffers;
     float**         fAudioAndCvOutBuffers;

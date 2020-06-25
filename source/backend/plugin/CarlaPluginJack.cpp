@@ -164,6 +164,11 @@ public:
         return ret.releaseBufferPointer();
     }
 
+    const CarlaString& getAppName() const noexcept
+    {
+        return fProject.appName;
+    }
+
 protected:
 #ifdef HAVE_LIBLO
     static void _osc_error_handler(int num, const char* msg, const char* path)
@@ -184,7 +189,9 @@ protected:
         if (fSetupLabel.length() <= 6)
             return;
 
-        if (fProject.path.isNotEmpty() || fProject.init(kEngine->getCurrentProjectFilename(), &fSetupLabel[6]))
+        if (fProject.path.isNotEmpty() || fProject.init(kPlugin->getName(),
+                                                        kEngine->getCurrentProjectFolder(),
+                                                        &fSetupLabel[6]))
         {
             carla_stdout("Sending open signal %s %s %s",
                          fProject.path.buffer(), fProject.display.buffer(), fProject.clientName.buffer());
@@ -465,17 +472,23 @@ private:
               display(),
               clientName() {}
 
-        bool init(const char* const engineProjectFilename, const char* const uniqueCodeID)
+        bool init(const char* const pluginName,
+                  const char* const engineProjectFolder,
+                  const char* const uniqueCodeID)
         {
-            CARLA_SAFE_ASSERT_RETURN(engineProjectFilename != nullptr && engineProjectFilename[0] != '\0', false);
+            CARLA_SAFE_ASSERT_RETURN(engineProjectFolder != nullptr && engineProjectFolder[0] != '\0', false);
             CARLA_SAFE_ASSERT_RETURN(uniqueCodeID != nullptr && uniqueCodeID[0] != '\0', false);
             CARLA_SAFE_ASSERT_RETURN(appName.isNotEmpty(), false);
 
-            const File file(File(engineProjectFilename).withFileExtension(uniqueCodeID));
+            String child(pluginName);
+            child += ".";
+            child += uniqueCodeID;
 
+            const File file(File(engineProjectFolder).getChildFile(child));
+
+            clientName = appName + "." + uniqueCodeID;
             path = file.getFullPathName().toRawUTF8();
             display = file.getFileNameWithoutExtension().toRawUTF8();
-            clientName = appName + "." + uniqueCodeID;
 
             return true;
         }
@@ -630,8 +643,6 @@ public:
 #ifdef HAVE_LIBLO
         if (fInfo.setupLabel.length() == 6)
             setupUniqueProjectID();
-
-        fBridgeThread.nsmSave(fInfo.setupLabel);
 #endif
 
         {
@@ -640,6 +651,10 @@ public:
             fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientPrepareForSave);
             fShmNonRtClientControl.commitWrite();
         }
+
+#ifdef HAVE_LIBLO
+        fBridgeThread.nsmSave(fInfo.setupLabel);
+#endif
     }
 
     // -------------------------------------------------------------------
@@ -1776,18 +1791,19 @@ private:
 
     void setupUniqueProjectID()
     {
-        const char* const engineProjectFilename = pData->engine->getCurrentProjectFilename();
-        carla_stdout("setupUniqueProjectID %s", engineProjectFilename);
+        const char* const engineProjectFolder = pData->engine->getCurrentProjectFolder();
+        carla_stdout("setupUniqueProjectID %s", engineProjectFolder);
 
-        if (engineProjectFilename == nullptr || engineProjectFilename[0] == '\0')
+        if (engineProjectFolder == nullptr || engineProjectFolder[0] == '\0')
             return;
 
-        const File file(engineProjectFilename);
-        CARLA_SAFE_ASSERT_RETURN(file.existsAsFile(),);
-        CARLA_SAFE_ASSERT_RETURN(file.getFileExtension().isNotEmpty(),);
+        const File file(engineProjectFolder);
+        CARLA_SAFE_ASSERT_RETURN(file.exists(),);
 
         char code[6];
         code[5] = '\0';
+
+        String child;
 
         for (;;)
         {
@@ -1804,7 +1820,10 @@ private:
             code[3] = kValidChars[safe_rand(kValidCharsLen)];
             code[4] = kValidChars[safe_rand(kValidCharsLen)];
 
-            const File newFile(file.withFileExtension(code));
+            child  = pData->name;
+            child += ".";
+            child += code;
+            const File newFile(file.getChildFile(child));
 
             if (newFile.existsAsFile())
                 continue;
