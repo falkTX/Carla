@@ -2032,6 +2032,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
 #endif
 
     case ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT:
+    case ENGINE_OPTION_CLIENT_NAME_PREFIX:
         break;
     }
 }

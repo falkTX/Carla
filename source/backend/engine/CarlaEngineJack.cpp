@@ -1346,6 +1346,7 @@ public:
 #ifdef BUILD_BRIDGE
           fIsRunning(false)
 #else
+          fClientNamePrefix(),
           fTimebaseMaster(false),
           fTimebaseRolling(false),
           fTimebaseUsecs(0),
@@ -1891,7 +1892,8 @@ public:
     {
         if (option == ENGINE_OPTION_TRANSPORT_MODE && fClient != nullptr)
         {
-            CARLA_SAFE_ASSERT_RETURN(value >= ENGINE_TRANSPORT_MODE_DISABLED && value <= ENGINE_TRANSPORT_MODE_JACK,);
+            CARLA_SAFE_ASSERT_INT_RETURN(value >= ENGINE_TRANSPORT_MODE_DISABLED &&
+                                          value <= ENGINE_TRANSPORT_MODE_JACK, value,);
 
             if (value == ENGINE_TRANSPORT_MODE_JACK)
             {
@@ -1910,6 +1912,13 @@ public:
                 jackbridge_release_timebase(fClient);
                 fTimebaseMaster = false;
             }
+        }
+        else if (option == ENGINE_OPTION_CLIENT_NAME_PREFIX)
+        {
+            fClientNamePrefix = valueStr;
+
+            if (fClientNamePrefix.isNotEmpty() && ! fClientNamePrefix.endsWith('/'))
+                fClientNamePrefix += "/";
         }
 
         CarlaEngine::setOption(option, value, valueStr);
@@ -1932,7 +1941,16 @@ public:
         else if (pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
 #endif
         {
-            client = jackbridge_client_open(plugin->getName(), JackNoStartServer, nullptr);
+#ifndef BUILD_BRIDGE
+            if (fClientNamePrefix.isNotEmpty())
+            {
+                client = jackbridge_client_open(fClientNamePrefix + plugin->getName(), JackNoStartServer, nullptr);
+            }
+            else
+#endif
+            {
+                client = jackbridge_client_open(plugin->getName(), JackNoStartServer, nullptr);
+            }
             CARLA_CUSTOM_SAFE_ASSERT_RETURN("Failure to open client", client != nullptr, nullptr);
 
             jackbridge_set_thread_init_callback(client, carla_jack_thread_init_callback, nullptr);
@@ -3461,6 +3479,8 @@ private:
 #ifdef BUILD_BRIDGE
     bool fIsRunning;
 #else
+    CarlaString fClientNamePrefix;
+
     enum RackPorts {
         kRackPortAudioIn1  = 0,
         kRackPortAudioIn2  = 1,

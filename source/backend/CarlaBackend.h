@@ -1421,7 +1421,13 @@ typedef enum {
     /*!
      * Capture console output into debug callbacks.
      */
-    ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 33
+    ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 33,
+
+    /*!
+     * A prefix to give to all plugin clients created by Carla.
+     * Mostly useful for JACK multi-client mode.
+     */
+    ENGINE_OPTION_CLIENT_NAME_PREFIX = 34
 
 } EngineOption;
 

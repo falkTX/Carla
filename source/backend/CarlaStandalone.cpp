@@ -298,7 +298,9 @@ static void carla_engine_init_common(const CarlaHostStandalone& standalone, Carl
     engine->setOption(CB::ENGINE_OPTION_WINE_BASE_RT_PRIO, standalone.engineOptions.wine.baseRtPrio, nullptr);
     engine->setOption(CB::ENGINE_OPTION_WINE_SERVER_RT_PRIO, standalone.engineOptions.wine.serverRtPrio, nullptr);
 # endif
-#endif
+
+    engine->setOption(CB::ENGINE_OPTION_CLIENT_NAME_PREFIX, 0, standalone.clientNamePrefix);
+#endif // BUILD_BRIDGE
 }
 
 bool carla_engine_init(CarlaHostHandle handle, const char* driverName, const char* clientName)
@@ -886,6 +888,10 @@ void carla_set_engine_option(CarlaHostHandle handle, EngineOption option, int va
 
         case CB::ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT:
             shandle.logThreadEnabled = (value != 0);
+            break;
+
+        case CB::ENGINE_OPTION_CLIENT_NAME_PREFIX:
+            shandle.clientNamePrefix = valueStr;
             break;
         }
     }

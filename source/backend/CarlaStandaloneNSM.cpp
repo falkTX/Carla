@@ -277,6 +277,10 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fServer != nullptr, 1);
         carla_stdout("CarlaNSM::handleOpen(\"%s\", \"%s\", \"%s\")", projectPath, displayName, clientNameId);
 
+        const CarlaHostHandle handle = (CarlaHostHandle)&gStandalone;
+
+        carla_set_engine_option(handle, CB::ENGINE_OPTION_CLIENT_NAME_PREFIX, 0, clientNameId);
+
         if (gStandalone.engineCallback != nullptr)
         {
             fReadyActionOpen = false;
@@ -293,8 +297,6 @@ protected:
         else
         {
             using namespace water;
-
-            const CarlaHostHandle handle = (CarlaHostHandle)&gStandalone;
 
             if (carla_is_engine_running(handle))
                 carla_engine_close(handle);

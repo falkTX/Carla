@@ -398,6 +398,8 @@ const char* EngineOption2Str(const EngineOption option) noexcept
 #endif
     case ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT:
         return "ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT";
+    case ENGINE_OPTION_CLIENT_NAME_PREFIX:
+        return "ENGINE_OPTION_CLIENT_NAME_PREFIX";
     }
 
     carla_stderr("CarlaBackend::EngineOption2Str(%i) - invalid option", option);
