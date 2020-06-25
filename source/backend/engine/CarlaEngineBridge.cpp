@@ -753,11 +753,12 @@ public:
 
         for (; fShmNonRtClientControl.isDataAvailableForReading();)
         {
-            const PluginBridgeNonRtClientOpcode opcode(fShmNonRtClientControl.readOpcode());
+            const PluginBridgeNonRtClientOpcode opcode = fShmNonRtClientControl.readOpcode();
 
 #ifdef DEBUG
             if (opcode != kPluginBridgeNonRtClientPing) {
-                carla_debug("CarlaEngineBridge::handleNonRtData() - got opcode: %s", PluginBridgeNonRtClientOpcode2str(opcode));
+                carla_debug("CarlaEngineBridge::handleNonRtData() - got opcode: %i:%s",
+                            opcode, PluginBridgeNonRtClientOpcode2str(opcode));
             }
 #endif
 
@@ -945,7 +946,7 @@ public:
             }
 
             case kPluginBridgeNonRtClientGetParameterText: {
-                const int32_t index(fShmNonRtClientControl.readInt());
+                const int32_t index = fShmNonRtClientControl.readInt();
 
                 if (index >= 0 && plugin->isEnabled())
                 {
@@ -967,13 +968,27 @@ public:
 
                     fShmNonRtServerControl.waitIfDataIsReachingLimit();
                 }
+                else
+                {
+                    const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
+
+                    fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerSetParameterText);
+                    fShmNonRtServerControl.writeInt(index);
+                    fShmNonRtServerControl.writeUInt(0);
+                    fShmNonRtServerControl.commitWrite();
+                }
 
                 break;
             }
 
             case kPluginBridgeNonRtClientPrepareForSave: {
                 if (! plugin->isEnabled())
-                    break;
+                {
+                    const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
+                    fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerSaved);
+                    fShmNonRtServerControl.commitWrite();
+                    return;
+                }
 
                 plugin->prepareForSave();
 
