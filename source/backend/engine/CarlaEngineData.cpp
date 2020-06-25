@@ -222,6 +222,7 @@ EngineOptions::EngineOptions() noexcept
       pathSFZ(nullptr),
       binaryDir(nullptr),
       resourceDir(nullptr),
+      clientNamePrefix(nullptr),
       preventBadBehaviour(false),
       frontendWinId(0)
 #ifndef CARLA_OS_WIN
@@ -296,6 +297,11 @@ EngineOptions::~EngineOptions() noexcept
     {
         delete[] resourceDir;
         resourceDir = nullptr;
+    }
+    if (clientNamePrefix != nullptr)
+    {
+        delete[] clientNamePrefix;
+        clientNamePrefix = nullptr;
     }
 }
 

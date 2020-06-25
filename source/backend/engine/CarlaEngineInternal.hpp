@@ -246,6 +246,7 @@ struct CarlaEngine::ProtectedData {
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     bool loadingProject;
+    bool ignoreClientPrefix; // backwards compat only
     CarlaString currentProjectFilename;
     CarlaString currentProjectFolder;
 #endif

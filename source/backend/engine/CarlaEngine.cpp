@@ -2032,7 +2032,15 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
 #endif
 
     case ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT:
+        break;
+
     case ENGINE_OPTION_CLIENT_NAME_PREFIX:
+        if (pData->options.clientNamePrefix != nullptr)
+            delete[] pData->options.clientNamePrefix;
+
+        pData->options.clientNamePrefix = valueStr != nullptr && valueStr[0] != '\0'
+                                        ? carla_strdup_safe(valueStr)
+                                        : nullptr;
         break;
     }
 }
@@ -2181,7 +2189,12 @@ void CarlaEngine::saveProjectInternal(water::MemoryOutputStream& outStream) cons
 
     outStream << "<?xml version='1.0' encoding='UTF-8'?>\n";
     outStream << "<!DOCTYPE CARLA-PROJECT>\n";
-    outStream << "<CARLA-PROJECT VERSION='2.0'>\n";
+    outStream << "<CARLA-PROJECT VERSION='2.2'";
+
+    if (pData->ignoreClientPrefix)
+        outStream << " IgnoreClientPrefix='true'";
+
+    outStream << ">\n";
 
     const bool isPlugin(getType() == kEngineTypePlugin);
     const EngineOptions& options(pData->options);
@@ -2501,6 +2514,16 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
 
     pData->actionCanceled = false;
     callback(true, true, ENGINE_CALLBACK_CANCELABLE_ACTION, 0, 1, 0, 0, 0.0f, "Loading project");
+
+    if (pData->options.clientNamePrefix != nullptr)
+    {
+        if (carla_isEqual(xmlElement->getDoubleAttribute("VERSION", 0.0), 2.0) ||
+            xmlElement->getBoolAttribute("IgnoreClientPrefix", false))
+        {
+            pData->ignoreClientPrefix = true;
+            setOption(ENGINE_OPTION_CLIENT_NAME_PREFIX, 0, "");
+        }
+    }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     const CarlaScopedValueSetter<bool> csvs(pData->loadingProject, true, false);

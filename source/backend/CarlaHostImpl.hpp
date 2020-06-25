@@ -58,7 +58,6 @@ struct CarlaHostStandalone : CarlaHostHandleImpl {
     void*              fileCallbackPtr;
 
 #ifndef BUILD_BRIDGE
-    CarlaString    clientNamePrefix;
     EngineOptions  engineOptions;
     CarlaLogThread logThread;
     bool           logThreadEnabled;
@@ -73,7 +72,6 @@ struct CarlaHostStandalone : CarlaHostHandleImpl {
           fileCallback(nullptr),
           fileCallbackPtr(nullptr),
 #ifndef BUILD_BRIDGE
-          clientNamePrefix(),
           engineOptions(),
           logThread(),
           logThreadEnabled(false),

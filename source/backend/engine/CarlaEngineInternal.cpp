@@ -385,6 +385,7 @@ CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine)
       actionCanceled(false),
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
       loadingProject(false),
+      ignoreClientPrefix(false),
       currentProjectFilename(),
       currentProjectFolder(),
 #endif

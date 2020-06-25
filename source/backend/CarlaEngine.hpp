@@ -271,6 +271,7 @@ struct CARLA_API EngineOptions {
 
     const char* binaryDir;
     const char* resourceDir;
+    const char* clientNamePrefix;
 
     bool preventBadBehaviour;
     uintptr_t frontendWinId;

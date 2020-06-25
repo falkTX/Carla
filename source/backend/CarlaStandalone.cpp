@@ -299,7 +299,7 @@ static void carla_engine_init_common(const CarlaHostStandalone& standalone, Carl
     engine->setOption(CB::ENGINE_OPTION_WINE_SERVER_RT_PRIO, standalone.engineOptions.wine.serverRtPrio, nullptr);
 # endif
 
-    engine->setOption(CB::ENGINE_OPTION_CLIENT_NAME_PREFIX, 0, standalone.clientNamePrefix);
+    engine->setOption(CB::ENGINE_OPTION_CLIENT_NAME_PREFIX, 0, standalone.engineOptions.clientNamePrefix);
 #endif // BUILD_BRIDGE
 }
 
@@ -891,7 +891,12 @@ void carla_set_engine_option(CarlaHostHandle handle, EngineOption option, int va
             break;
 
         case CB::ENGINE_OPTION_CLIENT_NAME_PREFIX:
-            shandle.clientNamePrefix = valueStr;
+            if (shandle.engineOptions.clientNamePrefix != nullptr)
+                delete[] shandle.engineOptions.clientNamePrefix;
+
+            shandle.engineOptions.clientNamePrefix = valueStr != nullptr && valueStr[0] != '\0'
+                                                   ? carla_strdup_safe(valueStr)
+                                                   : nullptr;
             break;
         }
     }
