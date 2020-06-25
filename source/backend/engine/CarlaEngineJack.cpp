@@ -926,11 +926,12 @@ public:
 
         if (getProcessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
-            CARLA_SAFE_ASSERT_RETURN(fJackClient != nullptr && isActive(),);
-
-            try {
-                jackbridge_deactivate(fJackClient);
-            } catch(...) {}
+            if (fJackClient != nullptr && isActive())
+            {
+                try {
+                    jackbridge_deactivate(fJackClient);
+                } catch(...) {}
+            }
         }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -1172,6 +1173,8 @@ public:
 
     void setNewPluginId(const uint id) const
     {
+        CARLA_SAFE_ASSERT_RETURN(fJackClient != nullptr,);
+
         // NOTE: no fThreadSafeMetadataMutex lock here, assumed done from caller
 
         if (char* const uuidstr = jackbridge_client_get_uuid(fJackClient))
@@ -1664,11 +1667,13 @@ public:
         fClientName.clear();
         fPostPonedEvents.clear();
 
-        CARLA_SAFE_ASSERT_RETURN_ERR(fClient != nullptr, "JACK Client is null");
-
-        // deactivate and close client
-        jackbridge_deactivate(fClient);
-        jackbridge_client_close(fClient);
+        if (fClient != nullptr)
+        {
+            // deactivate and close client
+            jackbridge_deactivate(fClient);
+            jackbridge_client_close(fClient);
+            fClient = nullptr;
+        }
 
         // clear engine data
         CarlaEngine::close();
@@ -1686,7 +1691,6 @@ public:
             pData->graph.destroy();
         }
 
-        fClient = nullptr;
         return true;
 #endif
     }
@@ -1917,6 +1921,8 @@ public:
         jack_client_t* client = nullptr;
 
 #ifndef BUILD_BRIDGE
+        CARLA_CUSTOM_SAFE_ASSERT_RETURN("Not connected to JACK", fClient != nullptr, nullptr);
+
         CarlaPluginPtr* pluginReserve = nullptr;
 
         if (pData->options.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
@@ -2482,7 +2488,8 @@ public:
 
     const char* const* getPatchbayConnections(const bool external) const override
     {
-        CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, nullptr);
+        CARLA_CUSTOM_SAFE_ASSERT_RETURN("Not connected to JACK, will not save patchbay connections",
+                                        fClient != nullptr, nullptr);
         carla_debug("CarlaEngineJack::getPatchbayConnections(%s)", bool2str(external));
 
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! external)
@@ -2524,7 +2531,8 @@ public:
 
     const PatchbayPosition* getPatchbayPositions(const bool external, uint& count) const override
     {
-        CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, nullptr);
+        CARLA_CUSTOM_SAFE_ASSERT_RETURN("Not connected to JACK, will not save patchbay positions",
+                                        fClient != nullptr, nullptr);
         carla_debug("CarlaEngineJack::getPatchbayPositions(%s)", bool2str(external));
 
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! external)
@@ -3389,30 +3397,38 @@ protected:
     void handleJackShutdownCallback()
     {
 #ifndef BUILD_BRIDGE
-        signalThreadShouldExit();
+        stopThread(-1);
 #endif
 
-        const PendingRtEventsRunner prt(this, pData->bufferSize);
-
-        for (uint i=0; i < pData->curPluginCount; ++i)
         {
-            if (const CarlaPluginPtr plugin = pData->plugins[i].plugin)
+            const PendingRtEventsRunner prt(this, pData->bufferSize);
+
+            for (uint i=0; i < pData->curPluginCount; ++i)
             {
-                plugin->tryLock(true);
+                if (const CarlaPluginPtr plugin = pData->plugins[i].plugin)
+                {
+                    plugin->tryLock(true);
 
-                if (CarlaEngineJackClient* const client = (CarlaEngineJackClient*)plugin->getEngineClient())
-                    client->invalidate();
+                    if (CarlaEngineJackClient* const client = (CarlaEngineJackClient*)plugin->getEngineClient())
+                        client->invalidate();
 
-                plugin->unlock();
+                    plugin->unlock();
+                }
             }
         }
 
+        pData->thread.stopThread(500);
         fClient = nullptr;
-#ifndef BUILD_BRIDGE
+
+#ifdef BUILD_BRIDGE
+        fIsRunning = false;
+#else
         carla_zeroPointers(fRackPorts, kRackPortCount);
 #endif
 
-        callback(true, true, ENGINE_CALLBACK_QUIT, 0, 0, 0, 0, 0.0f, nullptr);
+        callback(true, true, ENGINE_CALLBACK_ERROR, 0, 0, 0, 0, 0.0f,
+                 "Carla has been killed by JACK, or JACK has stopped.\n"
+                 "You can still save if you want, but you will lose patchbay connections and positions.");
     }
 
     // -------------------------------------------------------------------
@@ -3425,9 +3441,6 @@ protected:
         plugin->tryLock(true);
         engineClient->invalidate();
         plugin->unlock();
-
-        //if (pData->nextAction.pluginId == plugin->getId())
-        //    pData->nextAction.clearAndReset();
 
         callback(true, true, ENGINE_CALLBACK_PLUGIN_UNAVAILABLE, plugin->getId(), 0, 0, 0, 0.0f, "Killed by JACK");
     }
