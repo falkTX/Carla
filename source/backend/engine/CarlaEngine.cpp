@@ -362,15 +362,30 @@ void CarlaEngine::idle() noexcept
     CARLA_SAFE_ASSERT_RETURN(pData->nextPluginId == pData->maxPluginNumber,);
     CARLA_SAFE_ASSERT_RETURN(getType() != kEngineTypePlugin,);
 
+    const bool engineNotRunning = !isRunning();
+
     for (uint i=0; i < pData->curPluginCount; ++i)
     {
         if (const CarlaPluginPtr plugin = pData->plugins[i].plugin)
         {
             if (plugin->isEnabled())
             {
-                const uint hints(plugin->getHints());
+                const uint hints = plugin->getHints();
 
-                if ((hints & PLUGIN_HAS_CUSTOM_UI) != 0 && (hints & PLUGIN_NEEDS_UI_MAIN_THREAD) != 0)
+                if (engineNotRunning)
+                {
+                    try {
+                        plugin->idle();
+                    } CARLA_SAFE_EXCEPTION_CONTINUE("Plugin idle");
+
+                    if (hints & PLUGIN_HAS_CUSTOM_UI)
+                    {
+                        try {
+                            plugin->uiIdle();
+                        } CARLA_SAFE_EXCEPTION_CONTINUE("Plugin uiIdle");
+                    }
+                }
+                else if ((hints & PLUGIN_HAS_CUSTOM_UI) != 0 && (hints & PLUGIN_NEEDS_UI_MAIN_THREAD) != 0)
                 {
                     try {
                         plugin->uiIdle();
