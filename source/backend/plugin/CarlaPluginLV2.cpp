@@ -6798,43 +6798,66 @@ private:
         CARLA_SAFE_ASSERT_RETURN(path != nullptr && path[0] != '\0', nullptr);
         carla_debug("carla_lv2_state_make_path(%p, \"%s\")", handle, path);
 
-        File file;
+        File target;
 
         if (File::isAbsolutePath(path))
-            file = File(path);
+        {
+            target = path;
+        }
         else
-            file = File::getCurrentWorkingDirectory().getChildFile(path);
+        {
+            if (const char* const projFolder = ((CarlaPluginLV2*)handle)->pData->engine->getCurrentProjectFolder())
+                target = projFolder;
+            else
+                target = File::getCurrentWorkingDirectory();
 
-        file.getParentDirectory().createDirectory();
+            target = target.getChildFile(path);
+        }
 
-        return strdup(file.getFullPathName().toRawUTF8());
+        if (! target.exists())
+            target.createDirectory();
+
+        return strdup(target.getFullPathName().toRawUTF8());
     }
 
     static char* carla_lv2_state_map_abstract_path(LV2_State_Map_Path_Handle handle, const char* absolute_path)
     {
-        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, strdup(""));
-        CARLA_SAFE_ASSERT_RETURN(absolute_path != nullptr && absolute_path[0] != '\0', strdup(""));
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(absolute_path != nullptr && absolute_path[0] != '\0', nullptr);
         carla_debug("carla_lv2_state_map_abstract_path(%p, \"%s\")", handle, absolute_path);
 
         // may already be an abstract path
         if (! File::isAbsolutePath(absolute_path))
             return strdup(absolute_path);
 
-        return strdup(File(absolute_path).getRelativePathFrom(File::getCurrentWorkingDirectory()).toRawUTF8());
+        File target;
+
+        if (const char* const projFolder = ((CarlaPluginLV2*)handle)->pData->engine->getCurrentProjectFolder())
+            target = projFolder;
+        else
+            target = File::getCurrentWorkingDirectory();
+
+        return strdup(File(absolute_path).getRelativePathFrom(target).toRawUTF8());
     }
 
     static char* carla_lv2_state_map_absolute_path(LV2_State_Map_Path_Handle handle, const char* abstract_path)
     {
-        const char* const cwd(File::getCurrentWorkingDirectory().getFullPathName().toRawUTF8());
-        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, strdup(cwd));
-        CARLA_SAFE_ASSERT_RETURN(abstract_path != nullptr && abstract_path[0] != '\0', strdup(cwd));
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(abstract_path != nullptr && abstract_path[0] != '\0', nullptr);
         carla_debug("carla_lv2_state_map_absolute_path(%p, \"%s\")", handle, abstract_path);
 
         // may already be an absolute path
         if (File::isAbsolutePath(abstract_path))
             return strdup(abstract_path);
 
-        return strdup(File::getCurrentWorkingDirectory().getChildFile(abstract_path).getFullPathName().toRawUTF8());
+        File base;
+
+        if (const char* const projFolder = ((CarlaPluginLV2*)handle)->pData->engine->getCurrentProjectFolder())
+            base = projFolder;
+        else
+            base = File::getCurrentWorkingDirectory();
+
+        return strdup(base.getChildFile(abstract_path).getFullPathName().toRawUTF8());
     }
 
     static LV2_State_Status carla_lv2_state_store(LV2_State_Handle handle, uint32_t key, const void* value, size_t size, uint32_t type, uint32_t flags)
