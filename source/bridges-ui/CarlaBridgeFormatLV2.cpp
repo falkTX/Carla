@@ -113,6 +113,7 @@ enum CarlaLv2Features {
     kFeatureIdLogs = 0,
     kFeatureIdOptions,
     kFeatureIdPrograms,
+    kFeatureIdStateFreePath,
     kFeatureIdStateMakePath,
     kFeatureIdStateMapPath,
     kFeatureIdUriMap,
@@ -248,6 +249,10 @@ public:
         logFt->printf            = carla_lv2_log_printf;
         logFt->vprintf           = carla_lv2_log_vprintf;
 
+        LV2_State_Free_Path* const stateFreePathFt = new LV2_State_Free_Path;
+        stateFreePathFt->handle                    = this;
+        stateFreePathFt->free_path                 = carla_lv2_state_free_path;
+
         LV2_State_Make_Path* const stateMakePathFt = new LV2_State_Make_Path;
         stateMakePathFt->handle                    = this;
         stateMakePathFt->path                      = carla_lv2_state_make_path;
@@ -299,6 +304,9 @@ public:
 
         fFeatures[kFeatureIdPrograms]->URI   = LV2_PROGRAMS__Host;
         fFeatures[kFeatureIdPrograms]->data  = programsFt;
+
+        fFeatures[kFeatureIdStateFreePath]->URI  = LV2_STATE__freePath;
+        fFeatures[kFeatureIdStateFreePath]->data = stateFreePathFt;
 
         fFeatures[kFeatureIdStateMakePath]->URI  = LV2_STATE__makePath;
         fFeatures[kFeatureIdStateMakePath]->data = stateMakePathFt;
@@ -366,6 +374,7 @@ public:
         fRdfUiDescriptor = nullptr;
 
         delete (LV2_Log_Log*)fFeatures[kFeatureIdLogs]->data;
+        delete (LV2_State_Free_Path*)fFeatures[kFeatureIdStateFreePath]->data;
         delete (LV2_State_Make_Path*)fFeatures[kFeatureIdStateMakePath]->data;
         delete (LV2_State_Map_Path*)fFeatures[kFeatureIdStateMapPath]->data;
         delete (LV2_Programs_Host*)fFeatures[kFeatureIdPrograms]->data;
@@ -970,6 +979,14 @@ private:
 
     // ----------------------------------------------------------------------------------------------------------------
     // State Feature
+
+    static void carla_lv2_state_free_path(LV2_State_Free_Path_Handle handle, char* path)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
+        carla_debug("carla_lv2_state_free_path(%p, \"%s\")", handle, path);
+
+        std::free(path);
+    }
 
     static char* carla_lv2_state_make_path(LV2_State_Make_Path_Handle handle, const char* path)
     {

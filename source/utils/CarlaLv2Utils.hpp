@@ -3072,6 +3072,8 @@ bool is_lv2_feature_supported(const LV2_URI uri) noexcept
         return true;
     if (std::strcmp(uri, LV2_RTSAFE_MEMORY_POOL_DEPRECATED_URI) == 0)
         return true;
+    if (std::strcmp(uri, LV2_STATE__freePath) == 0)
+        return true;
     if (std::strcmp(uri, LV2_STATE__loadDefaultState) == 0)
         return true;
     if (std::strcmp(uri, LV2_STATE__makePath) == 0)
