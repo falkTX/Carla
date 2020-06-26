@@ -98,6 +98,13 @@ public:
             fLabel = "\"\"";
     }
 
+    void setUITitle(const char* const uiTitle) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(uiTitle != nullptr && uiTitle[0] != '\0',);
+
+        fUiTitle = uiTitle;
+    }
+
     uintptr_t getProcessId() const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fProcess != nullptr, 0);
@@ -851,6 +858,12 @@ public:
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     // -------------------------------------------------------------------
     // Set ui stuff
+
+    void setCustomUITitle(const char* title) noexcept override
+    {
+        fThreadUI.setUITitle(title);
+        CarlaPlugin::setCustomUITitle(title);
+    }
 
     void showCustomUI(const bool yesNo) override
     {

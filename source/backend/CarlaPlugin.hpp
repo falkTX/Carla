@@ -792,7 +792,7 @@ public:
     /*!
      * Set a custom title for the plugin UI window created by Carla.
      */
-    void setCustomUITitle(const char* title) noexcept;
+    virtual void setCustomUITitle(const char* title) noexcept;
 
     /*!
      * Show (or hide) the plugin's custom UI according to @a yesNo.

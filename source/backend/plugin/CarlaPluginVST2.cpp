@@ -483,6 +483,18 @@ public:
     // -------------------------------------------------------------------
     // Set ui stuff
 
+    void setCustomUITitle(const char* const title) noexcept override
+    {
+        if (fUI.window != nullptr)
+        {
+            try {
+                fUI.window->setTitle(title);
+            } CARLA_SAFE_EXCEPTION("set custom ui title");
+        }
+
+        CarlaPlugin::setCustomUITitle(title);
+    }
+
     void showCustomUI(const bool yesNo) override
     {
         if (fUI.isVisible == yesNo)

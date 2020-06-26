@@ -1303,11 +1303,23 @@ public:
     {
         CarlaPlugin::setName(newName);
 
-        if (fLv2Options.windowTitle == nullptr || pData->uiTitle.isNotEmpty())
-            return;
+        if (fLv2Options.windowTitle != nullptr && pData->uiTitle.isEmpty())
+            setWindowTitle(nullptr);
+    }
 
-        CarlaString uiTitle(pData->name);
-        uiTitle += " (GUI)";
+    void setWindowTitle(const char* const title) noexcept
+    {
+        CarlaString uiTitle;
+
+        if (title != nullptr)
+        {
+            uiTitle = title;
+        }
+        else
+        {
+            uiTitle  = pData->name;
+            uiTitle += " (GUI)";
+        }
 
         std::free(const_cast<char*>(fLv2Options.windowTitle));
         fLv2Options.windowTitle = uiTitle.releaseBufferPointer();
@@ -1323,7 +1335,11 @@ public:
 
 #ifndef LV2_UIS_ONLY_BRIDGES
         if (fUI.window != nullptr)
-            fUI.window->setTitle(fLv2Options.windowTitle);
+        {
+            try {
+                fUI.window->setTitle(fLv2Options.windowTitle);
+            } CARLA_SAFE_EXCEPTION("set custom title");
+        }
 #endif
     }
 
@@ -1471,13 +1487,13 @@ public:
 
             try {
                 fExt.programs->select_program(fHandle, bank, program);
-            } catch(...) {}
+            } CARLA_SAFE_EXCEPTION("select program");
 
             if (fHandle2 != nullptr)
             {
                 try {
                     fExt.programs->select_program(fHandle2, bank, program);
-                } catch(...) {}
+                } CARLA_SAFE_EXCEPTION("select program 2");
             }
         }
 
@@ -1496,13 +1512,13 @@ public:
 
             try {
                 fExt.programs->select_program(fHandle, bank, program);
-            } catch(...) {}
+            } CARLA_SAFE_EXCEPTION("select program RT");
 
             if (fHandle2 != nullptr)
             {
                 try {
                     fExt.programs->select_program(fHandle2, bank, program);
-                } catch(...) {}
+                } CARLA_SAFE_EXCEPTION("select program RT 2");
             }
         }
 
@@ -1511,6 +1527,12 @@ public:
 
     // -------------------------------------------------------------------
     // Set ui stuff
+
+    void setCustomUITitle(const char* const title) noexcept override
+    {
+        setWindowTitle(title);
+        CarlaPlugin::setCustomUITitle(title);
+    }
 
     void showCustomUI(const bool yesNo) override
     {

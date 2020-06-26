@@ -697,22 +697,8 @@ public:
 
         CarlaPlugin::setName(newName);
 
-        if (pData->uiTitle.isNotEmpty())
-            return;
-
-        CarlaString uiName(pData->name);
-        uiName += " (GUI)";
-
-        std::free(const_cast<char*>(fHost.uiName));
-        fHost.uiName = uiName.releaseBufferPointer();
-
-        if (fDescriptor->dispatcher != nullptr && fIsUiVisible)
-            fDescriptor->dispatcher(fHandle,
-                                    NATIVE_PLUGIN_OPCODE_UI_NAME_CHANGED,
-                                    0, 0,
-                                    const_cast<char*>(fHost.uiName),
-                                    0.0f);
-
+        if (pData->uiTitle.isEmpty())
+            setWindowTitle(nullptr);
     }
 
     void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept override
@@ -721,6 +707,36 @@ public:
             pData->midiprog.current = fCurMidiProgs[channel];
 
         CarlaPlugin::setCtrlChannel(channel, sendOsc, sendCallback);
+    }
+
+    void setWindowTitle(const char* const title) noexcept
+    {
+        CarlaString uiName;
+
+        if (title != nullptr)
+        {
+            uiName = title;
+        }
+        else
+        {
+            uiName  = pData->name;
+            uiName += " (GUI)";
+        }
+
+        std::free(const_cast<char*>(fHost.uiName));
+        fHost.uiName = uiName.releaseBufferPointer();
+
+        if (fDescriptor->dispatcher != nullptr && fIsUiVisible)
+        {
+            try {
+                fDescriptor->dispatcher(fHandle,
+                                        NATIVE_PLUGIN_OPCODE_UI_NAME_CHANGED,
+                                        0, 0,
+                                        const_cast<char*>(fHost.uiName),
+                                        0.0f);
+            } CARLA_SAFE_EXCEPTION("set custom ui title");
+        }
+
     }
 
     // -------------------------------------------------------------------
@@ -914,6 +930,12 @@ public:
 
     // -------------------------------------------------------------------
     // Set ui stuff
+
+    void setCustomUITitle(const char* const title) noexcept override
+    {
+        setWindowTitle(title);
+        CarlaPlugin::setCustomUITitle(title);
+    }
 
     void showCustomUI(const bool yesNo) override
     {
