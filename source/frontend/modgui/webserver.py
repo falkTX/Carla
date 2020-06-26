@@ -31,6 +31,15 @@ from random import random
 PORTn = 8998 + int(random()*9000)
 
 # ------------------------------------------------------------------------------------------------------------
+# Imports (asyncio)
+
+try:
+    from asyncio import new_event_loop, set_event_loop
+    haveAsyncIO = True
+except:
+    haveAsyncIO = False
+
+# ------------------------------------------------------------------------------------------------------------
 # Imports (tornado)
 
 from tornado.log import enable_pretty_logging
@@ -198,6 +207,8 @@ class WebServerThread(QThread):
     def run(self):
         if not self.fPrepareWasCalled:
             self.fPrepareWasCalled = True
+            if haveAsyncIO:
+                set_event_loop(new_event_loop())
             self.fApplication.listen(PORT, address="0.0.0.0")
             if int(os.getenv("MOD_LOG", "0")):
                 enable_pretty_logging()

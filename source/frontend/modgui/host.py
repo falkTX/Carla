@@ -278,17 +278,17 @@ class HostWindow(QMainWindow):
         msg = charPtrToString(msg)
 
         if msg == "control":
-            index = int(self.readlineblock())
-            value = float(self.readlineblock())
+            index = self.readlineblock_int()
+            value = self.readlineblock_float()
             self.dspParameterChanged(index, value)
 
         elif msg == "program":
-            index = int(self.readlineblock())
+            index = self.readlineblock_int()
             self.dspProgramChanged(index)
 
         elif msg == "midiprogram":
-            bank    = int(self.readlineblock())
-            program = float(self.readlineblock())
+            bank    = self.readlineblock_int()
+            program = self.readlineblock_float()
             self.dspMidiProgramChanged(bank, program)
 
         elif msg == "configure":
@@ -297,30 +297,32 @@ class HostWindow(QMainWindow):
             self.dspStateChanged(key, value)
 
         elif msg == "note":
-            onOff    = bool(self.readlineblock() == "true")
-            channel  = int(self.readlineblock())
-            note     = int(self.readlineblock())
-            velocity = int(self.readlineblock())
+            onOff    = self.readlineblock_bool()
+            channel  = self.readlineblock_int()
+            note     = self.readlineblock_int()
+            velocity = self.readlineblock_int()
             self.dspNoteReceived(onOff, channel, note, velocity)
 
         elif msg == "atom":
-            index      = int(self.readlineblock())
-            size       = int(self.readlineblock())
+            index      = self.readlineblock_int()
+            size       = self.readlineblock_int()
             base64atom = self.readlineblock()
             # nothing to do yet
 
         elif msg == "urid":
-            urid = int(self.readlineblock())
+            urid = self.readlineblock_int()
             uri  = self.readlineblock()
             # nothing to do yet
 
         elif msg == "uiOptions":
-            sampleRate     = float(self.readlineblock())
-            uiScale        = float(self.readlineblock())
-            useTheme       = bool(self.readlineblock() == "true")
-            useThemeColors = bool(self.readlineblock() == "true")
+            sampleRate     = self.readlineblock_float()
+            bgColor        = self.readlineblock_int()
+            fgColor        = self.readlineblock_int()
+            uiScale        = self.readlineblock_float()
+            useTheme       = self.readlineblock_bool()
+            useThemeColors = self.readlineblock_bool()
             windowTitle    = self.readlineblock()
-            transWindowId  = int(self.readlineblock())
+            transWindowId  = self.readlineblock_int()
             self.uiTitleChanged(windowTitle)
 
         elif msg == "show":
@@ -429,6 +431,24 @@ class HostWindow(QMainWindow):
             return ""
 
         return gCarla.utils.pipe_client_readlineblock(self.fPipeClient, 5000)
+
+    def readlineblock_bool(self):
+        if self.fPipeClient is None:
+            return False
+
+        return gCarla.utils.pipe_client_readlineblock_bool(self.fPipeClient, 5000)
+
+    def readlineblock_int(self):
+        if self.fPipeClient is None:
+            return 0
+
+        return gCarla.utils.pipe_client_readlineblock_int(self.fPipeClient, 5000)
+
+    def readlineblock_float(self):
+        if self.fPipeClient is None:
+            return 0.0
+
+        return gCarla.utils.pipe_client_readlineblock_float(self.fPipeClient, 5000)
 
     def send(self, lines):
         if self.fPipeClient is None or len(lines) == 0:
