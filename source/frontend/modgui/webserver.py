@@ -203,12 +203,14 @@ class WebServerThread(QThread):
             debug=True)
 
         self.fPrepareWasCalled = False
+        self.fEventLoop = None
 
     def run(self):
         if not self.fPrepareWasCalled:
             self.fPrepareWasCalled = True
             if haveAsyncIO:
-                set_event_loop(new_event_loop())
+                self.fEventLoop = new_event_loop()
+                set_event_loop(self.fEventLoop)
             self.fApplication.listen(PORT, address="0.0.0.0")
             if int(os.getenv("MOD_LOG", "0")):
                 enable_pretty_logging()
@@ -218,4 +220,6 @@ class WebServerThread(QThread):
 
     def stopWait(self):
         IOLoop.instance().stop()
+        if self.fEventLoop is not None:
+            self.fEventLoop.call_soon_threadsafe(self.fEventLoop.stop)
         return self.wait(5000)
