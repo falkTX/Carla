@@ -2517,6 +2517,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
     pData->actionCanceled = false;
     callback(true, true, ENGINE_CALLBACK_CANCELABLE_ACTION, 0, 1, 0, 0, 0.0f, "Loading project");
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (pData->options.clientNamePrefix != nullptr)
     {
         if (carla_isEqual(xmlElement->getDoubleAttribute("VERSION", 0.0), 2.0) ||
@@ -2527,7 +2528,6 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
         }
     }
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     const CarlaScopedValueSetter<bool> csvs(pData->loadingProject, true, false);
 #endif
 
