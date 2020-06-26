@@ -1740,6 +1740,10 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot(int, int, int, int, int)
     def slot_handlePatchbayClientPositionChangedCallback(self, clientId, x1, y1, x2, y2):
+        if (x1 != 0 and x2 != 0) or (y1 != 0 and y2 != 0):
+            patchcanvas.splitGroup(clientId)
+        else:
+            patchcanvas.joinGroup(clientId)
         patchcanvas.setGroupPosFull(clientId, x1, y1, x2, y2)
         self.updateMiniCanvasLater()
 

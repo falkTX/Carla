@@ -313,7 +313,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
         if group.group_id == group_id:
             qWarning("PatchCanvas::addGroup(%i, %s, %s, %s) - group already exists" % (
                      group_id, group_name.encode(), split2str(split), icon2str(icon)))
-            return
+            return None
 
     old_matching_group = canvas.old_group_pos.pop(group_name, None)
 
@@ -396,9 +396,10 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
 
     if options.eyecandy == EYECANDY_FULL and not options.auto_hide_groups:
         CanvasItemFX(group_box, True, False)
-        return
+    else:
+        QTimer.singleShot(0, canvas.scene.update)
 
-    QTimer.singleShot(0, canvas.scene.update)
+    return group_dict
 
 def removeGroup(group_id):
     if canvas.debug:
@@ -478,7 +479,8 @@ def splitGroup(group_id):
     for group in canvas.group_list:
         if group.group_id == group_id:
             if group.split:
-                qCritical("PatchCanvas::splitGroup(%i) - group is already split" % group_id)
+                if canvas.debug:
+                    print("PatchCanvas::splitGroup(%i) - group is already split" % group_id)
                 return
 
             item = group.widgets[0]
@@ -528,7 +530,7 @@ def splitGroup(group_id):
     removeGroup(group_id)
 
     # Step 3 - Re-create Item, now split
-    addGroup(group_id, group_name, SPLIT_YES, group_icon)
+    group = addGroup(group_id, group_name, SPLIT_YES, group_icon)
 
     if plugin_id >= 0:
         setGroupAsPlugin(group_id, plugin_id, plugin_ui, plugin_inline)
@@ -538,6 +540,12 @@ def splitGroup(group_id):
 
     for conn in conns_data:
         connectPorts(conn.connection_id, conn.group_out_id, conn.port_out_id, conn.group_in_id, conn.port_in_id)
+
+    if group is not None:
+        pos1 = group.widgets[0].pos()
+        pos2 = group.widgets[1].pos()
+        valueStr = "%i:%i:%i:%i" % (pos1.x(), pos1.y(), pos2.x(), pos2.y())
+        CanvasCallback(ACTION_GROUP_POSITION, group_id, 0, valueStr)
 
     QTimer.singleShot(0, canvas.scene.update)
 
@@ -559,7 +567,8 @@ def joinGroup(group_id):
     for group in canvas.group_list:
         if group.group_id == group_id:
             if not group.split:
-                qCritical("PatchCanvas::joinGroup(%i) - group is not split" % group_id)
+                if canvas.debug:
+                    print("PatchCanvas::joinGroup(%i) - group is not split" % group_id)
                 return
 
             item = group.widgets[0]
@@ -616,7 +625,7 @@ def joinGroup(group_id):
     removeGroup(group_id)
 
     # Step 3 - Re-create Item, now together
-    addGroup(group_id, group_name, SPLIT_NO, group_icon)
+    group = addGroup(group_id, group_name, SPLIT_NO, group_icon)
 
     if plugin_id >= 0:
         setGroupAsPlugin(group_id, plugin_id, plugin_ui, plugin_inline)
@@ -626,6 +635,11 @@ def joinGroup(group_id):
 
     for conn in conns_data:
         connectPorts(conn.connection_id, conn.group_out_id, conn.port_out_id, conn.group_in_id, conn.port_in_id)
+
+    if group is not None:
+        pos = group.widgets[0].pos()
+        valueStr = "%i:%i:%i:%i" % (pos.x(), pos.y(), 0, 0)
+        CanvasCallback(ACTION_GROUP_POSITION, group_id, 0, valueStr)
 
     QTimer.singleShot(0, canvas.scene.update)
 
