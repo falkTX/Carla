@@ -17,6 +17,7 @@
 
 /**
    @defgroup state State
+   @ingroup lv2
 
    An interface for LV2 plugins to save and restore state, see
    <http://lv2plug.in/ns/ext/state> for details.
@@ -27,10 +28,11 @@
 #ifndef LV2_STATE_H
 #define LV2_STATE_H
 
+#include "lv2.h"
+
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-
-#include "lv2.h"
 
 #define LV2_STATE_URI    "http://lv2plug.in/ns/ext/state"  ///< http://lv2plug.in/ns/ext/state
 #define LV2_STATE_PREFIX LV2_STATE_URI "#"                 ///< http://lv2plug.in/ns/ext/state#
@@ -38,6 +40,7 @@
 #define LV2_STATE__State             LV2_STATE_PREFIX "State"              ///< http://lv2plug.in/ns/ext/state#State
 #define LV2_STATE__interface         LV2_STATE_PREFIX "interface"          ///< http://lv2plug.in/ns/ext/state#interface
 #define LV2_STATE__loadDefaultState  LV2_STATE_PREFIX "loadDefaultState"   ///< http://lv2plug.in/ns/ext/state#loadDefaultState
+#define LV2_STATE__freePath          LV2_STATE_PREFIX "freePath"           ///< http://lv2plug.in/ns/ext/state#freePath
 #define LV2_STATE__makePath          LV2_STATE_PREFIX "makePath"           ///< http://lv2plug.in/ns/ext/state#makePath
 #define LV2_STATE__mapPath           LV2_STATE_PREFIX "mapPath"            ///< http://lv2plug.in/ns/ext/state#mapPath
 #define LV2_STATE__state             LV2_STATE_PREFIX "state"              ///< http://lv2plug.in/ns/ext/state#state
@@ -46,11 +49,10 @@
 
 #ifdef __cplusplus
 extern "C" {
-#else
-#    include <stdbool.h>
 #endif
 
 typedef void* LV2_State_Handle;            ///< Opaque handle for state save/restore
+typedef void* LV2_State_Free_Path_Handle;  ///< Opaque handle for state:freePath feature
 typedef void* LV2_State_Map_Path_Handle;   ///< Opaque handle for state:mapPath feature
 typedef void* LV2_State_Make_Path_Handle;  ///< Opaque handle for state:makePath feature
 
@@ -67,8 +69,8 @@ typedef enum {
 	   Values with this flag contain no pointers or references to other areas
 	   of memory.  It is safe to copy POD values with a simple memcpy and store
 	   them for the duration of the process.  A POD value is not necessarily
-	   safe to trasmit between processes or machines (e.g. filenames are POD),
-	   see LV2_STATE_IS_PORTABLE for details.
+	   safe to trasmit between processes or machines (for example, filenames
+	   are POD), see LV2_STATE_IS_PORTABLE for details.
 
 	   Implementations MUST NOT attempt to copy or serialise a non-POD value if
 	   they do not understand its type (and thus know how to correctly do so).
@@ -90,9 +92,9 @@ typedef enum {
 	   Native data.
 
 	   This flag is used by the host to indicate that the saved data is only
-	   going to be used locally in the currently running process (e.g. for
-	   instance duplication or snapshots), so the plugin should use the most
-	   efficient representation possible and not worry about serialisation
+	   going to be used locally in the currently running process (for things
+	   like instance duplication or snapshots), so the plugin should use the
+	   most efficient representation possible and not worry about serialisation
 	   and portability.
 	*/
 	LV2_STATE_IS_NATIVE = 1 << 2
@@ -126,7 +128,7 @@ typedef enum {
    DO NOT INVENT NONSENSE URI SCHEMES FOR THE KEY.  Best is to use keys from
    existing vocabularies.  If nothing appropriate is available, use http URIs
    that point to somewhere you can host documents so documentation can be made
-   resolvable (e.g. a child of the plugin or project URI).  If this is not
+   resolvable (typically a child of the plugin or project URI).  If this is not
    possible, invent a URN scheme, e.g. urn:myproj:whatever.  The plugin MUST
    NOT pass an invalid URI key.
 
@@ -193,7 +195,7 @@ typedef const void* (*LV2_State_Retrieve_Function)(
    authors should consider this possibility, and always store sensible data
    with meaningful types to avoid such problems in the future.
 */
-typedef struct _LV2_State_Interface {
+typedef struct {
 	/**
 	   Save plugin state using a host-provided `store` callback.
 
@@ -217,10 +219,10 @@ typedef struct _LV2_State_Interface {
 	   This function has its own special threading class: it may not be called
 	   concurrently with any "Instantiation" function, but it may be called
 	   concurrently with functions in any other class, unless the definition of
-	   that class prohibits it (e.g. it may not be called concurrently with a
-	   "Discovery" function, but it may be called concurrently with an "Audio"
-	   function.  The plugin is responsible for any locking or lock-free
-	   techniques necessary to make this possible.
+	   that class prohibits it (for example, it may not be called concurrently
+	   with a "Discovery" function, but it may be called concurrently with an
+	   "Audio" function.  The plugin is responsible for any locking or
+	   lock-free techniques necessary to make this possible.
 
 	   Note that in the simple case where state is only modified by restore(),
 	   there are no synchronization issues since save() is never called
@@ -293,8 +295,8 @@ typedef struct {
 	   not necessarily the same original path) using absolute_path().
 
 	   This function may only be called within the context of
-	   LV2_State_Interface methods.  The caller is responsible for freeing the
-	   returned value with free().
+	   LV2_State_Interface methods.  The caller must free the returned value
+	   with LV2_State_Free_Path.free_path().
 	*/
 	char* (*abstract_path)(LV2_State_Map_Path_Handle handle,
 	                       const char*               absolute_path);
@@ -302,15 +304,15 @@ typedef struct {
 	/**
 	   Map an abstract path from plugin state to an absolute path.
 	   @param handle MUST be the `handle` member of this struct.
-	   @param abstract_path An abstract path (e.g. a path from plugin state).
+	   @param abstract_path An abstract path (typically from plugin state).
 	   @return An absolute file system path.
 
 	   The plugin MUST use this function in order to actually open or otherwise
 	   use any paths loaded from plugin state.
 
 	   This function may only be called within the context of
-	   LV2_State_Interface methods.  The caller is responsible for freeing the
-	   returned value with free().
+	   LV2_State_Interface methods.  The caller must free the returned value
+	   with LV2_State_Free_Path.free_path().
 	*/
 	char* (*absolute_path)(LV2_State_Map_Path_Handle handle,
 	                       const char*               abstract_path);
@@ -338,19 +340,43 @@ typedef struct {
 	   LV2_Descriptor.instantiate()).
 
 	   The host MUST do whatever is necessary for the plugin to be able to
-	   create a file at the returned path (e.g. using fopen), including
-	   creating any leading directories.
+	   create a file at the returned path (for example, using fopen()),
+	   including creating any leading directories.
 
 	   If this function is passed to LV2_Descriptor.instantiate(), it may be
 	   called from any non-realtime context.  If it is passed to
 	   LV2_State_Interface.save(), it may only be called within the dynamic
 	   scope of that function call.
 
-	   The caller is responsible for freeing the returned value with free().
+	   The caller must free the returned value with
+	   LV2_State_Free_Path.free_path().
 	*/
 	char* (*path)(LV2_State_Make_Path_Handle handle,
 	              const char*                path);
 } LV2_State_Make_Path;
+
+/**
+   Feature data for state:freePath (@ref LV2_STATE__freePath).
+*/
+typedef struct {
+	/**
+	   Opaque host data.
+	*/
+	LV2_State_Free_Path_Handle handle;
+
+	/**
+	   Free a path returned by a state feature.
+
+	   @param handle MUST be the `handle` member of this struct.
+	   @param path The path previously returned by a state feature.
+
+	   This function can be used by plugins to free paths allocated by the host
+	   and returned by state features (LV2_State_Map_Path.abstract_path(),
+	   LV2_State_Map_Path.absolute_path(), and LV2_State_Make_Path.path()).
+	*/
+	void (*free_path)(LV2_State_Free_Path_Handle handle,
+	                  char*                      path);
+} LV2_State_Free_Path;
 
 #ifdef __cplusplus
 } /* extern "C" */
