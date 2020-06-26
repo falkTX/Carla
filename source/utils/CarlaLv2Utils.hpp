@@ -1,6 +1,6 @@
 /*
  * Carla LV2 utils
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -570,6 +570,7 @@ public:
           fUsingNominal(false),
           fBufferSize(0),
           fSampleRate(sampleRate),
+          fFreePath(nullptr),
           fMakePath(nullptr),
           fUridMap(nullptr),
           fUridUnmap(nullptr),
@@ -590,6 +591,7 @@ public:
             return;
         }
 
+        const LV2_State_Free_Path* freePath  = nullptr;
         const LV2_State_Make_Path* makePath  = nullptr;
         const LV2_Options_Option*  options   = nullptr;
         const LV2_URID_Map*        uridMap   = nullptr;
@@ -598,7 +600,9 @@ public:
 
         for (int i=0; features[i] != nullptr; ++i)
         {
-            /**/ if (std::strcmp(features[i]->URI, LV2_STATE__makePath) == 0)
+            /**/ if (std::strcmp(features[i]->URI, LV2_STATE__freePath) == 0)
+                freePath = (const LV2_State_Free_Path*)features[i]->data;
+            else if (std::strcmp(features[i]->URI, LV2_STATE__makePath) == 0)
                 makePath = (const LV2_State_Make_Path*)features[i]->data;
             else if (std::strcmp(features[i]->URI, LV2_OPTIONS__options) == 0)
                 options = (const LV2_Options_Option*)features[i]->data;
@@ -667,6 +671,7 @@ public:
         fUridMap = uridMap;
         fURIs.map(uridMap);
 
+        fFreePath = freePath;
         fMakePath = makePath;
         fUridUnmap = uridUnmap;
         fWorker = worker;
@@ -1183,6 +1188,7 @@ protected:
     double   fSampleRate;
 
     // LV2 host features
+    const LV2_State_Free_Path* fFreePath;
     const LV2_State_Make_Path* fMakePath;
     const LV2_URID_Map* fUridMap;
     const LV2_URID_Unmap* fUridUnmap;

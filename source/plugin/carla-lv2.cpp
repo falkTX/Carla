@@ -133,7 +133,13 @@ public:
 
         if (fLastProjectPath != nullptr)
         {
-            std::free(fLastProjectPath);
+            if (fFreePath != nullptr && fFreePath->free_path != nullptr)
+                fFreePath->free_path(fFreePath->handle, fLastProjectPath);
+#ifndef CARLA_OS_WIN
+            // this is not safe to call under windows
+            else
+                std::free(fLastProjectPath);
+#endif
             fLastProjectPath = nullptr;
         }
     }
@@ -456,7 +462,13 @@ public:
             fLastProjectPath = nullptr;
         }
 
-        std::free(last);
+        if (fFreePath != nullptr && fFreePath->free_path != nullptr)
+            fFreePath->free_path(fFreePath->handle, last);
+#ifndef CARLA_OS_WIN
+        // this is not safe to call under windows
+        else
+            std::free(last);
+#endif
     }
 
     LV2_State_Status lv2_save(const LV2_State_Store_Function store, const LV2_State_Handle handle,
