@@ -1109,10 +1109,9 @@ CARLA_EXPORT void carla_send_midi_note(CarlaHostHandle handle,
 #endif
 
 /*!
- * Set a custom prefix for plugin UI windows created by Carla.
- * Carla will then add "%s (GUI)" after the prefix.
+ * Set a custom title for the plugin UI window created by Carla.
  */
-CARLA_EXPORT void carla_set_custom_ui_prefix(CarlaHostHandle handle, uint pluginId, const char* prefix);
+CARLA_EXPORT void carla_set_custom_ui_title(CarlaHostHandle handle, uint pluginId, const char* title);
 
 /*!
  * Tell a plugin to show its own custom UI.

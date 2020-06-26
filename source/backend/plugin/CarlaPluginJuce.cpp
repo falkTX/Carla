@@ -260,12 +260,12 @@ public:
     {
         CarlaPlugin::setName(newName);
 
-        if (fWindow != nullptr)
-        {
-            juce::String uiName(pData->name);
-            uiName += " (GUI)";
-            fWindow->setName(uiName);
-        }
+        if (fWindow == nullptr || pData->uiTitle.isNotEmpty())
+            return;
+
+        juce::String uiName(pData->name);
+        uiName += " (GUI)";
+        fWindow->setName(uiName);
     }
 
     // -------------------------------------------------------------------
@@ -384,8 +384,17 @@ public:
 
                 if (fWindow == nullptr)
                 {
-                    juce::String uiName(pData->name);
-                    uiName += " (GUI)";
+                    juce::String uiName;
+
+                    if (pData->uiTitle.isNotEmpty())
+                    {
+                        uiName = pData->uiTitle.buffer();
+                    }
+                    else
+                    {
+                        uiName  = pData->name;
+                        uiName += " (GUI)";
+                    }
 
                     fWindow = new JucePluginWindow(opts.frontendWinId);
                     fWindow->setName(uiName);

@@ -79,17 +79,20 @@ public:
           kPlugin(plugin),
           fBinary(),
           fLabel(),
+          fUiTitle(),
           fOscData(oscData),
           fProcess() {}
 
-    void setData(const char* const binary, const char* const label) noexcept
+    void setData(const char* const binary, const char* const label, const char* const uiTitle) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(binary != nullptr && binary[0] != '\0',);
-        CARLA_SAFE_ASSERT_RETURN(label != nullptr /*&& label[0] != '\0'*/,);
+        CARLA_SAFE_ASSERT_RETURN(label != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(uiTitle != nullptr && uiTitle[0] != '\0',);
         CARLA_SAFE_ASSERT(! isThreadRunning());
 
-        fBinary = binary;
-        fLabel  = label;
+        fBinary  = binary;
+        fLabel   = label;
+        fUiTitle = uiTitle;
 
         if (fLabel.isEmpty())
             fLabel = "\"\"";
@@ -148,7 +151,7 @@ public:
         arguments.add(fLabel.buffer());
 
         // ui-title
-        arguments.add(name + String(" (GUI)"));
+        arguments.add(fUiTitle.buffer());
 
         bool started;
 
@@ -242,6 +245,7 @@ private:
 
     CarlaString fBinary;
     CarlaString fLabel;
+    CarlaString fUiTitle;
 
     const CarlaOscData& fOscData;
     CarlaScopedPointer<ChildProcess> fProcess;
@@ -2957,7 +2961,20 @@ public:
             if (const char* const guiFilename = find_dssi_ui(filename, fDescriptor->Label))
             {
                 fUiFilename = guiFilename;
-                fThreadUI.setData(guiFilename, fDescriptor->Label);
+
+                CarlaString uiTitle;
+
+                if (pData->uiTitle.isNotEmpty())
+                {
+                    uiTitle = pData->uiTitle;
+                }
+                else
+                {
+                    uiTitle  = pData->name;
+                    uiTitle += " (GUI)";
+                }
+
+                fThreadUI.setData(guiFilename, fDescriptor->Label, uiTitle);
             }
         }
 #endif

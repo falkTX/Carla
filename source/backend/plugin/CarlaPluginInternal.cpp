@@ -691,7 +691,7 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
       masterMutex(),
       singleMutex(),
       stateSave(),
-      uiPrefix(),
+      uiTitle(),
       extNotes(),
       latency(),
       postRtEvents(),

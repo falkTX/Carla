@@ -269,7 +269,7 @@ struct CarlaPlugin::ProtectedData {
 
     CarlaStateSave stateSave;
 
-    CarlaString uiPrefix;
+    CarlaString uiTitle;
 
     struct ExternalNotes {
         CarlaMutex mutex;

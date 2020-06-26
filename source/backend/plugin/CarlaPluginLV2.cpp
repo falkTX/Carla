@@ -452,7 +452,7 @@ struct CarlaPluginLV2Options {
 
         if (windowTitle != nullptr)
         {
-            delete[] windowTitle;
+            std::free(const_cast<char*>(windowTitle));
             windowTitle = nullptr;
         }
     }
@@ -1303,14 +1303,14 @@ public:
     {
         CarlaPlugin::setName(newName);
 
-        if (fLv2Options.windowTitle == nullptr)
+        if (fLv2Options.windowTitle == nullptr || pData->uiTitle.isNotEmpty())
             return;
 
-        CarlaString guiTitle(pData->name);
-        guiTitle += " (GUI)";
+        CarlaString uiTitle(pData->name);
+        uiTitle += " (GUI)";
 
-        delete[] fLv2Options.windowTitle;
-        fLv2Options.windowTitle = guiTitle.dup();
+        std::free(const_cast<char*>(fLv2Options.windowTitle));
+        fLv2Options.windowTitle = uiTitle.releaseBufferPointer();
 
         fLv2Options.opts[CarlaPluginLV2Options::WindowTitle].size  = (uint32_t)std::strlen(fLv2Options.windowTitle);
         fLv2Options.opts[CarlaPluginLV2Options::WindowTitle].value = fLv2Options.windowTitle;
@@ -6271,9 +6271,19 @@ public:
             {
                 carla_stdout("Will use UI-Bridge for '%s', binary: \"%s\"", pData->name, bridgeBinary);
 
-                CarlaString guiTitle(pData->name);
-                guiTitle += " (GUI)";
-                fLv2Options.windowTitle = guiTitle.dup();
+                CarlaString uiTitle;
+
+                if (pData->uiTitle.isNotEmpty())
+                {
+                    uiTitle = pData->uiTitle;
+                }
+                else
+                {
+                    uiTitle = pData->name;
+                    uiTitle += " (GUI)";
+                }
+
+                fLv2Options.windowTitle = uiTitle.releaseBufferPointer();
 
                 fUI.type = UI::TYPE_BRIDGE;
                 fPipeServer.setData(bridgeBinary, fRdfDescriptor->URI, fUI.rdfDescriptor->URI);
@@ -6400,9 +6410,21 @@ public:
         // ---------------------------------------------------------------
         // initialize ui data
 
-        CarlaString guiTitle(pData->name);
-        guiTitle += " (GUI)";
-        fLv2Options.windowTitle = guiTitle.dup();
+        {
+            CarlaString uiTitle;
+
+            if (pData->uiTitle.isNotEmpty())
+            {
+                uiTitle = pData->uiTitle;
+            }
+            else
+            {
+                uiTitle = pData->name;
+                uiTitle += " (GUI)";
+            }
+
+            fLv2Options.windowTitle = uiTitle.releaseBufferPointer();
+        }
 
         fLv2Options.opts[CarlaPluginLV2Options::WindowTitle].size  = (uint32_t)std::strlen(fLv2Options.windowTitle);
         fLv2Options.opts[CarlaPluginLV2Options::WindowTitle].value = fLv2Options.windowTitle;

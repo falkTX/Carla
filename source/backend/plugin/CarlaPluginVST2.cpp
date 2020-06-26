@@ -367,12 +367,12 @@ public:
     {
         CarlaPlugin::setName(newName);
 
-        if (fUI.window != nullptr)
-        {
-            CarlaString guiTitle(pData->name);
-            guiTitle += " (GUI)";
-            fUI.window->setTitle(guiTitle.buffer());
-        }
+        if (fUI.window == nullptr || pData->uiTitle.isNotEmpty())
+            return;
+
+        CarlaString uiTitle(pData->name);
+        uiTitle += " (GUI)";
+        fUI.window->setTitle(uiTitle.buffer());
     }
 
     // -------------------------------------------------------------------
@@ -490,8 +490,17 @@ public:
 
         if (yesNo)
         {
-            CarlaString uiTitle(pData->name);
-            uiTitle += " (GUI)";
+            CarlaString uiTitle;
+
+            if (pData->uiTitle.isNotEmpty())
+            {
+                uiTitle = pData->uiTitle;
+            }
+            else
+            {
+                uiTitle  = pData->name;
+                uiTitle += " (GUI)";
+            }
 
             intptr_t value = 0;
 

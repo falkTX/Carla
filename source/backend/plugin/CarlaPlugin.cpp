@@ -2355,9 +2355,9 @@ void CarlaPlugin::postponeRtAllNotesOff()
 // -------------------------------------------------------------------
 // UI Stuff
 
-void CarlaPlugin::setCustomUIPrefix(const char* format)
+void CarlaPlugin::setCustomUITitle(const char* const title) noexcept
 {
-    pData->uiPrefix = format;
+    pData->uiTitle = title;
 }
 
 void CarlaPlugin::showCustomUI(const bool yesNo)
@@ -2429,8 +2429,17 @@ void CarlaPlugin::uiIdle()
 
     carla_stdout("Trying to get window...");
 
-    CarlaString uiTitle(pData->name);
-    uiTitle += " (GUI)";
+    CarlaString uiTitle;
+
+    if (pData->uiTitle.isNotEmpty())
+    {
+        uiTitle = pData->uiTitle;
+    }
+    else
+    {
+        uiTitle  = pData->name;
+        uiTitle += " (GUI)";
+    }
 
     if (CarlaPluginUI::tryTransientWinIdMatch(getUiBridgeProcessId(), uiTitle,
                                               pData->engine->getOptions().frontendWinId, pData->transientFirstTry))

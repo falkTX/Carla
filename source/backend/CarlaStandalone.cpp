@@ -2150,13 +2150,13 @@ void carla_send_midi_note(CarlaHostHandle handle, uint pluginId, uint8_t channel
 }
 #endif
 
-void carla_set_custom_ui_prefix(CarlaHostHandle handle, uint pluginId, const char* prefix)
+void carla_set_custom_ui_title(CarlaHostHandle handle, uint pluginId, const char* title)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(prefix != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(title != nullptr,);
 
     if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
-        plugin->setCustomUIPrefix(prefix);
+        plugin->setCustomUITitle(title);
 }
 
 void carla_show_custom_ui(CarlaHostHandle handle, uint pluginId, bool yesNo)

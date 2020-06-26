@@ -347,7 +347,7 @@ public:
 
         if (fHost.uiName != nullptr)
         {
-            delete[] fHost.uiName;
+            std::free(const_cast<char*>(fHost.uiName));
             fHost.uiName = nullptr;
         }
 
@@ -695,18 +695,24 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(newName != nullptr && newName[0] != '\0',);
 
-        char uiName[std::strlen(newName)+6+1];
-        std::strcpy(uiName, newName);
-        std::strcat(uiName, " (GUI)");
+        CarlaPlugin::setName(newName);
 
-        if (fHost.uiName != nullptr)
-            delete[] fHost.uiName;
-        fHost.uiName = carla_strdup(uiName);
+        if (pData->uiTitle.isNotEmpty())
+            return;
+
+        CarlaString uiName(pData->name);
+        uiName += " (GUI)";
+
+        std::free(const_cast<char*>(fHost.uiName));
+        fHost.uiName = uiName.releaseBufferPointer();
 
         if (fDescriptor->dispatcher != nullptr && fIsUiVisible)
-            fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_UI_NAME_CHANGED, 0, 0, uiName, 0.0f);
+            fDescriptor->dispatcher(fHandle,
+                                    NATIVE_PLUGIN_OPCODE_UI_NAME_CHANGED,
+                                    0, 0,
+                                    const_cast<char*>(fHost.uiName),
+                                    0.0f);
 
-        CarlaPlugin::setName(newName);
     }
 
     void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept override
@@ -2889,11 +2895,19 @@ public:
         {
             CARLA_ASSERT(fHost.uiName == nullptr);
 
-            char uiName[std::strlen(pData->name)+6+1];
-            std::strcpy(uiName, pData->name);
-            std::strcat(uiName, " (GUI)");
+            CarlaString uiName;
 
-            fHost.uiName = carla_strdup(uiName);
+            if (pData->uiTitle.isNotEmpty())
+            {
+                uiName = pData->uiTitle;
+            }
+            else
+            {
+                uiName  = pData->name;
+                uiName += " (GUI)";
+            }
+
+            fHost.uiName = uiName.releaseBufferPointer();
         }
 
         // ---------------------------------------------------------------
