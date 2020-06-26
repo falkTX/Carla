@@ -1871,7 +1871,7 @@ bool CarlaEngineNativeUI::msgReceived(const char* const msg) noexcept
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(y2), true);
 
         try {
-            ok = fEngine->patchbaySetGroupPos(true, false, external, groupId, x1, y1, x2, y2);
+            ok = fEngine->patchbaySetGroupPos(false, true, external, groupId, x1, y1, x2, y2);
         } CARLA_SAFE_EXCEPTION("patchbaySetGroupPos");
     }
     else if (std::strcmp(msg, "patchbay_refresh") == 0)
