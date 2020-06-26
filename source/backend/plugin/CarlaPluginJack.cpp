@@ -164,11 +164,6 @@ public:
         return ret.releaseBufferPointer();
     }
 
-    const CarlaString& getAppName() const noexcept
-    {
-        return fProject.appName;
-    }
-
 protected:
 #ifdef HAVE_LIBLO
     static void _osc_error_handler(int num, const char* msg, const char* path)
