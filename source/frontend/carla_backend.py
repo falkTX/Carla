@@ -157,10 +157,10 @@ def structToDict(struct):
 # Carla Backend API (base definitions)
 
 # Maximum default number of loadable plugins.
-MAX_DEFAULT_PLUGINS = 99
+MAX_DEFAULT_PLUGINS = 512
 
 # Maximum number of loadable plugins in rack mode.
-MAX_RACK_PLUGINS = 16
+MAX_RACK_PLUGINS = 64
 
 # Maximum number of loadable plugins in patchbay mode.
 MAX_PATCHBAY_PLUGINS = 255

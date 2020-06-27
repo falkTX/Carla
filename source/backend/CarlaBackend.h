@@ -54,12 +54,12 @@ CARLA_BACKEND_START_NAMESPACE
 /*!
  * Maximum default number of loadable plugins.
  */
-static const uint MAX_DEFAULT_PLUGINS = 99;
+static const uint MAX_DEFAULT_PLUGINS = 512;
 
 /*!
  * Maximum number of loadable plugins in rack mode.
  */
-static const uint MAX_RACK_PLUGINS = 16;
+static const uint MAX_RACK_PLUGINS = 64;
 
 /*!
  * Maximum number of loadable plugins in patchbay mode.
