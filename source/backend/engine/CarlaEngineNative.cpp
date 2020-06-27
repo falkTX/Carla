@@ -1536,7 +1536,7 @@ protected:
         fOptionsForced = true;
         const String state(data);
         XmlDocument xml(state);
-        loadProjectInternal(xml);
+        loadProjectInternal(xml, true);
 
         reloadFromUI();
     }

@@ -1345,7 +1345,7 @@ protected:
     /*!
      * Common load project function for main engine and plugin.
      */
-    bool loadProjectInternal(water::XmlDocument& xmlDoc);
+    bool loadProjectInternal(water::XmlDocument& xmlDoc, bool alwaysLoadConnections);
 
     // -------------------------------------------------------------------
     // Helper functions

@@ -1281,7 +1281,7 @@ bool CarlaEngine::loadProject(const char* const filename, const bool setAsCurren
     }
 
     XmlDocument xml(file);
-    return loadProjectInternal(xml);
+    return loadProjectInternal(xml, !setAsCurrentProject);
 }
 
 bool CarlaEngine::saveProject(const char* const filename, const bool setAsCurrentProject)
@@ -2499,7 +2499,7 @@ static String findBinaryInCustomPath(const char* const searchPath, const char* c
     return String();
 }
 
-bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
+bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alwaysLoadConnections)
 {
     CarlaScopedPointer<XmlElement> xmlElement(xmlDoc.getDocumentElement(true));
     CARLA_SAFE_ASSERT_RETURN_ERR(xmlElement != nullptr, "Failed to parse project file");
@@ -3003,16 +3003,23 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
     // if we're running inside some session-manager (and using JACK), let them handle the external connections
     bool loadExternalConnections;
 
-    /**/ if (std::strcmp(getCurrentDriverName(), "JACK") != 0)
+    if (alwaysLoadConnections)
+    {
         loadExternalConnections = true;
-    else if (std::getenv("CARLA_DONT_MANAGE_CONNECTIONS") != nullptr)
-        loadExternalConnections = false;
-    else if (std::getenv("LADISH_APP_NAME") != nullptr)
-        loadExternalConnections = false;
-    else if (std::getenv("NSM_URL") != nullptr)
-        loadExternalConnections = false;
+    }
     else
-        loadExternalConnections = true;
+    {
+        /**/ if (std::strcmp(getCurrentDriverName(), "JACK") != 0)
+            loadExternalConnections = true;
+        else if (std::getenv("CARLA_DONT_MANAGE_CONNECTIONS") != nullptr)
+            loadExternalConnections = false;
+        else if (std::getenv("LADISH_APP_NAME") != nullptr)
+            loadExternalConnections = false;
+        else if (std::getenv("NSM_URL") != nullptr)
+            loadExternalConnections = false;
+        else
+            loadExternalConnections = true;
+    }
 
     // plus external connections too
     if (loadExternalConnections)
