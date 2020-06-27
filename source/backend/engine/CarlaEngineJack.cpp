@@ -2689,14 +2689,31 @@ public:
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! external)
             return CarlaEngine::restorePatchbayGroupPosition(external, ppos);
 
+        bool reallocd = false;
         bool hasGroups = true;
         uint groupId = 0;
+        const char* rname = ppos.name;
 
         /* NOTE: When loading a project, it might take a bit to receive plugins' jack client registration callbacks.
          *       We try to wait a little for it, but not too much.
          */
         if (ppos.pluginId >= 0)
         {
+            // strip client name prefix if already in place
+            if (const char* const rname2 = std::strstr(rname, "."))
+                if (const char* const rname3 = std::strstr(rname2, "/"))
+                    rname = rname3 + 1;
+
+            if (fClientNamePrefix.isNotEmpty())
+            {
+                char* nname = (char*)std::malloc(fClientNamePrefix.length() + std::strlen(rname) + 1);
+                std::strcpy(nname, fClientNamePrefix.buffer());
+                std::strcat(nname, rname);
+
+                reallocd = true;
+                rname = nname;
+            }
+
             for (int i=10; --i >=0;)
             {
                 {
@@ -2708,7 +2725,7 @@ public:
                         break;
                     }
 
-                    groupId = fUsedGroups.getGroupId(ppos.name);
+                    groupId = fUsedGroups.getGroupId(rname);
                 }
 
                 if (groupId != 0)
@@ -2723,7 +2740,7 @@ public:
             const CarlaMutexLocker cml(fUsedGroups.mutex);
 
             if (fUsedGroups.list.count() != 0)
-                groupId = fUsedGroups.getGroupId(ppos.name);
+                groupId = fUsedGroups.getGroupId(rname);
             else
                 hasGroups = false;
         }
@@ -2732,17 +2749,18 @@ public:
             CARLA_SAFE_ASSERT(groupId != 0);
         }
 
+        for (;;)
         {
             const CarlaRecursiveMutexLocker crml(fThreadSafeMetadataMutex);
 
             jack_uuid_t uuid;
             {
-                char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, ppos.name);
-                CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr && uuidstr[0] != '\0',);
+                char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, rname);
+                CARLA_SAFE_ASSERT_BREAK(uuidstr != nullptr && uuidstr[0] != '\0');
 
                 const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
                 jackbridge_free(uuidstr);
-                CARLA_CUSTOM_SAFE_ASSERT_ONCE_RETURN("JACK meta-data support unavailable", parsed,);
+                CARLA_CUSTOM_SAFE_ASSERT_ONCE_BREAK("JACK meta-data support unavailable", parsed);
             }
 
             char valueStr[STR_MAX];
@@ -2750,6 +2768,7 @@ public:
             valueStr[STR_MAX-1] = '\0';
 
             jackbridge_set_property(fClient, uuid, URI_POSITION, valueStr, URI_TYPE_STRING);
+            break;
         }
 
 # if 0
@@ -2764,6 +2783,9 @@ public:
                     nullptr);
         }
 # endif
+
+        if (reallocd)
+            std::free(const_cast<char*>(rname));
     }
 #endif
 
