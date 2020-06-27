@@ -20,6 +20,7 @@
 # Imports (Global)
 
 from PyQt5.QtCore import QAbstractAnimation
+from PyQt5.QtWidgets import QGraphicsObject
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -35,6 +36,7 @@ class CanvasFadeAnimation(QAbstractAnimation):
         self.m_show = show
         self.m_duration = 0
         self.m_item = item
+        self.m_item_is_object = isinstance(item, QGraphicsObject)
 
     def item(self):
         return self.m_item
@@ -42,12 +44,18 @@ class CanvasFadeAnimation(QAbstractAnimation):
     def forceStop(self):
         self.blockSignals(True)
         self.stop()
+        self.blockSignals(False)
 
     def setDuration(self, time):
         if self.m_item.opacity() == 0 and not self.m_show:
             self.m_duration = 0
         else:
-            self.m_item.show()
+            if self.m_item_is_object:
+                self.m_item.blockSignals(True)
+                self.m_item.show()
+                self.m_item.blockSignals(False)
+            else:
+                self.m_item.show()
             self.m_duration = time
 
     def duration(self):

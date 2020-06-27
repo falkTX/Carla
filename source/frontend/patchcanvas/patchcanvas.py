@@ -21,6 +21,7 @@
 
 from PyQt5.QtCore import pyqtSlot, qCritical, qFatal, qWarning, QObject
 from PyQt5.QtCore import QPointF, QRectF, QTimer
+from PyQt5.QtWidgets import QGraphicsObject
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -85,7 +86,12 @@ class CanvasObject(QObject):
             canvas.animation_list.remove(animation)
             item = animation.item()
             if item:
-                item.hide()
+                if isinstance(item, QGraphicsObject):
+                    item.blockSignals(True)
+                    item.hide()
+                    item.blockSignals(False)
+                else:
+                    item.hide()
 
     @pyqtSlot()
     def AnimationFinishedDestroy(self):
