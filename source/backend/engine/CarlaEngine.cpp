@@ -3163,6 +3163,11 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
     callback(true, true, ENGINE_CALLBACK_PROJECT_LOAD_FINISHED, 0, 0, 0, 0, 0.0f, nullptr);
     callback(true, true, ENGINE_CALLBACK_CANCELABLE_ACTION, 0, 0, 0, 0, 0.0f, "Loading project");
     return true;
+
+#ifdef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    // unused
+    (void)alwaysLoadConnections;
+#endif
 }
 
 // -----------------------------------------------------------------------
