@@ -1426,6 +1426,7 @@ typedef enum {
     /*!
      * A prefix to give to all plugin clients created by Carla.
      * Mostly useful for JACK multi-client mode.
+     * @note MUST include at least one "." (dot).
      */
     ENGINE_OPTION_CLIENT_NAME_PREFIX = 34
 

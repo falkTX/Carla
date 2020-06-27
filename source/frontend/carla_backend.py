@@ -1015,6 +1015,11 @@ ENGINE_OPTION_WINE_SERVER_RT_PRIO = 32
 # Capture console output into debug callbacks
 ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 33
 
+# A prefix to give to all plugin clients created by Carla.
+# Mostly useful for JACK multi-client mode.
+# @note MUST include at least one "." (dot).
+ENGINE_OPTION_CLIENT_NAME_PREFIX = 34
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Engine Process Mode
 # Engine process mode.
