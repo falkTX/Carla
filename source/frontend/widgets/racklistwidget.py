@@ -19,14 +19,21 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
+import os
+
+# ------------------------------------------------------------------------------------------------------------
+# Imports (PyQt5)
+
 from PyQt5.QtCore import Qt, QSize, QRect, QEvent
-from PyQt5.QtGui import QPainter, QPixmap
-from PyQt5.QtWidgets import QAbstractItemView, QFrame, QListWidget, QListWidgetItem
+from PyQt5.QtGui import QColor, QPainter, QPixmap
+from PyQt5.QtWidgets import QAbstractItemView, QListWidget, QListWidgetItem, QMessageBox
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
 
-from carla_skin import *
+from carla_backend import CUSTOM_DATA_TYPE_PROPERTY, MACOS
+from carla_shared import gCarla, CustomMessageBox
+from carla_skin import createPluginSlot
 
 # ------------------------------------------------------------------------------------------------------------
 # Rack Widget item
@@ -39,13 +46,6 @@ class RackListItem(QListWidgetItem):
         QListWidgetItem.__init__(self, parent, self.kRackItemType)
         self.host = parent.host
 
-        if False:
-            # kdevelop likes this :)
-            parent = RackListWidget()
-            host = CarlaHostNull()
-            self.host = host
-            self.fWidget = AbstractPluginSlot()
-
         # ----------------------------------------------------------------------------------------------------
         # Internal stuff
 
@@ -55,13 +55,15 @@ class RackListItem(QListWidgetItem):
 
         color   = self.host.get_custom_data_value(pluginId, CUSTOM_DATA_TYPE_PROPERTY, "CarlaColor")
         skin    = self.host.get_custom_data_value(pluginId, CUSTOM_DATA_TYPE_PROPERTY, "CarlaSkin")
-        compact = bool(self.host.get_custom_data_value(pluginId, CUSTOM_DATA_TYPE_PROPERTY, "CarlaSkinIsCompacted") == "true")
+        compact = bool(self.host.get_custom_data_value(pluginId,
+                                                       CUSTOM_DATA_TYPE_PROPERTY,
+                                                       "CarlaSkinIsCompacted") == "true")
 
         if color:
             try:
                 color = tuple(int(i) for i in color.split(";",3))
-            except:
-                print("Color value decode failed for", color)
+            except Exception as e:
+                print("Color value decode failed for", color, "error was:", e)
                 color = None
         else:
             color = None
@@ -209,11 +211,6 @@ class RackListWidget(QListWidget):
         self.host = None
         self.fParent = None
 
-        if False:
-            # kdevelop likes this :)
-            from carla_backend import CarlaHostMeta
-            self.host = host = CarlaHostNull()
-
         exts = gCarla.utils.get_supported_file_extensions()
 
         self.fSupportedExtensions = tuple(("." + i) for i in exts)
@@ -233,7 +230,7 @@ class RackListWidget(QListWidget):
         self.setDropIndicatorShown(True)
         self.viewport().setAcceptDrops(True)
 
-        self.updateStyle()
+        self._updateStyle()
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -262,7 +259,7 @@ class RackListWidget(QListWidget):
                 #return True
             if MACOS and lfilename.endswith(".vst"):
                 return True
-            elif lfilename.endswith(".vst3") and ".vst3" in self.fSupportedExtensions:
+            if lfilename.endswith(".vst3") and ".vst3" in self.fSupportedExtensions:
                 return True
 
         elif os.path.isfile(filename):
@@ -300,8 +297,12 @@ class RackListWidget(QListWidget):
             self.setCurrentRow(-1)
 
     def dragLeaveEvent(self, event):
+        if not self.fWasLastDragValid:
+            QListWidget.dragLeaveEvent(self, event)
+            return
+
+        event.acceptProposedAction()
         self.fWasLastDragValid = False
-        QListWidget.dragLeaveEvent(self, event)
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -337,8 +338,12 @@ class RackListWidget(QListWidget):
 
             if not self.host.load_file(filename):
                 CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
-                                 self.tr("Failed to load file"),
-                                 self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+                                  self.tr("Failed to load file"),
+                                  self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+                continue
+
+            if filename.endswith(".carxp"):
+                gCarla.gui.loadExternalCanvasGroupPositionsIfNeeded(filename)
 
         if tryItem is not None:
             self.host.replace_plugin(self.host.get_max_plugin_number())
@@ -356,8 +361,8 @@ class RackListWidget(QListWidget):
 
     def changeEvent(self, event):
         if event.type() in (QEvent.StyleChange, QEvent.PaletteChange):
-            self.updateStyle()
-        QWidget.changeEvent(self, event)
+            self._updateStyle()
+        QListWidget.changeEvent(self, event)
 
     def paintEvent(self, event):
         painter = QPainter(self.viewport())
@@ -367,7 +372,7 @@ class RackListWidget(QListWidget):
         imgL_rect = QRect(0, 0, self.fPixmapWidth, height)
         imgR_rect = QRect(width-self.fPixmapWidth, 0, self.fPixmapWidth, height)
 
-        painter.setBrush(self.rail_color)
+        painter.setBrush(self.rail_col)
         painter.setPen(Qt.NoPen)
         painter.drawRects(imgL_rect, imgR_rect)
         painter.setCompositionMode(QPainter.CompositionMode_Multiply)
@@ -378,25 +383,11 @@ class RackListWidget(QListWidget):
         painter.drawTiledPixmap(imgR_rect, self.fPixmapR)
         painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
 
-        painter.setPen(self.edge_color)
+        painter.setPen(self.edge_col)
         painter.setBrush(Qt.NoBrush)
         painter.drawRect(self.fPixmapWidth, 0, width-self.fPixmapWidth*2, height)
 
         QListWidget.paintEvent(self, event)
-
-    # --------------------------------------------------------------------------------------------------------
-
-    def updateStyle(self):
-        palette = self.palette()
-
-        bg_color = palette.window().color()
-        base_color = palette.base().color()
-        text_color = palette.text().color()
-        r0,g0,b0,a = bg_color.getRgb()
-        r1,g1,b1,a = text_color.getRgb()
-
-        self.rail_color = QColor((r0*3+r1)/4, (g0*3+g1)/4, (b0*3+b1)/4)
-        self.edge_color = self.rail_color.darker(115) if self.rail_color.blackF() > base_color.blackF() else base_color.darker(115)
 
     def selectionChanged(self, selected, deselected):
         for index in deselected.indexes():
@@ -410,5 +401,19 @@ class RackListWidget(QListWidget):
                 item.setSelected(True)
 
         QListWidget.selectionChanged(self, selected, deselected)
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def _updateStyle(self):
+        palette = self.palette()
+
+        bg_color = palette.window().color()
+        base_color = palette.base().color()
+        text_color = palette.text().color()
+        r0,g0,b0,_ = bg_color.getRgb()
+        r1,g1,b1,_ = text_color.getRgb()
+
+        self.rail_col = QColor((r0*3+r1)/4, (g0*3+g1)/4, (b0*3+b1)/4)
+        self.edge_col = (self.rail_col if self.rail_col.blackF() > base_color.blackF() else base_color).darker(115)
 
 # ------------------------------------------------------------------------------------------------------------

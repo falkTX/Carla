@@ -21,9 +21,12 @@ ${pylint} \
     --max-statements=100 \
     --disable=\
 bad-whitespace,\
+broad-except,\
+fixme,\
 invalid-name,\
 missing-docstring \
-    source/frontend/widgets/canvaspreviewframe.py
+    source/frontend/widgets/canvaspreviewframe.py \
+    source/frontend/widgets/racklistwidget.py
 
 # main app code, ignore some errors
 ${pylint} \

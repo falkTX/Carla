@@ -789,13 +789,14 @@ class HostWindow(QMainWindow):
         if self.fCustomStopAction == self.CUSTOM_ACTION_APP_CLOSE or not self.fWithCanvas:
             return
 
-        QTimer.singleShot(1000, self.slot_canvasRefresh)
+        self.loadExternalCanvasGroupPositionsIfNeeded(self.fProjectFilename)
 
-        extrafile = self.fProjectFilename.rsplit(".",1)[0]+".json"
+    def loadExternalCanvasGroupPositionsIfNeeded(self, filename):
+        extrafile = filename.rsplit(".",1)[0]+".json"
         if not os.path.exists(extrafile):
             return
 
-        with open(self.fProjectFilename, "r") as fh:
+        with open(filename, "r") as fh:
             if "".join(fh.readlines(90)).find("<CARLA-PROJECT VERSION='2.0'>") < 0:
                 return
 
@@ -806,6 +807,7 @@ class HostWindow(QMainWindow):
                 return
 
         patchcanvas.restoreGroupPositions(canvasdata)
+        QTimer.singleShot(1000, self.slot_canvasRefresh)
 
     # --------------------------------------------------------------------------------------------------------
     # Files (menu actions)
@@ -2052,6 +2054,10 @@ class HostWindow(QMainWindow):
             CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
                              self.tr("Failed to load file"),
                              self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+            return
+
+        if filename.endswith(".carxp"):
+            self.loadExternalCanvasGroupPositionsIfNeeded(filename)
 
     # --------------------------------------------------------------------------------------------------------
     # Transport

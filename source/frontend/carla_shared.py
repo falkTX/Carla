@@ -17,13 +17,6 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Config
-
-# These will be modified during install
-X_LIBDIR_X = None
-X_DATADIR_X = None
-
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 import os
@@ -61,6 +54,13 @@ from carla_backend import (
     ENGINE_TRANSPORT_MODE_INTERNAL,
     ENGINE_TRANSPORT_MODE_JACK
 )
+
+# ------------------------------------------------------------------------------------------------------------
+# Config
+
+# These will be modified during install
+X_LIBDIR_X = None
+X_DATADIR_X = None
 
 # ------------------------------------------------------------------------------------------------------------
 # Platform specific stuff
