@@ -786,7 +786,7 @@ class HostWindow(QMainWindow):
         self.ui.rack.setEnabled(True)
         self.ui.graphicsView.setEnabled(True)
 
-        if not self.fWithCanvas:
+        if self.fCustomStopAction == self.CUSTOM_ACTION_APP_CLOSE or not self.fWithCanvas:
             return
 
         QTimer.singleShot(1000, self.slot_canvasRefresh)
@@ -795,11 +795,15 @@ class HostWindow(QMainWindow):
         if not os.path.exists(extrafile):
             return
 
-        try:
-            with open(extrafile, "r") as fh:
+        with open(self.fProjectFilename, "r") as fh:
+            if "".join(fh.readlines(90)).find("<CARLA-PROJECT VERSION='2.0'>") < 0:
+                return
+
+        with open(extrafile, "r") as fh:
+            try:
                 canvasdata = json.load(fh)['canvas']
-        except:
-            return
+            except:
+                return
 
         patchcanvas.restoreGroupPositions(canvasdata)
 
