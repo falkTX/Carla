@@ -302,57 +302,57 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
     @pyqtSlot(int, str)
     def slot_handlePluginRenamedCallback(self, pluginId, newName):
-        if self.fPluginId == pluginId:
+        if self.fEditDialog is not None and self.fPluginId == pluginId:
             self.setName(newName)
 
     @pyqtSlot(int, str)
     def slot_handlePluginUnavailableCallback(self, pluginId, errorMsg):
-        if self.fPluginId == pluginId:
+        if self.fEditDialog is not None and self.fPluginId == pluginId:
             pass
 
     @pyqtSlot(int, int, float)
     def slot_handleParameterValueChangedCallback(self, pluginId, index, value):
-        if self.fPluginId == pluginId:
+        if self.fEditDialog is not None and self.fPluginId == pluginId:
             self.setParameterValue(index, value, True)
 
     @pyqtSlot(int, int, float)
     def slot_handleParameterDefaultChangedCallback(self, pluginId, index, value):
-        if self.fPluginId == pluginId:
+        if self.fEditDialog is not None and self.fPluginId == pluginId:
             self.setParameterDefault(index, value)
 
     @pyqtSlot(int, int, int)
     def slot_handleParameterMappedControlIndexChangedCallback(self, pluginId, index, ctrl):
-        if self.fPluginId == pluginId:
+        if self.fEditDialog is not None and self.fPluginId == pluginId:
             self.setParameterMappedControlIndex(index, ctrl)
 
     @pyqtSlot(int, int, float, float)
     def slot_handleParameterMappedRangeChangedCallback(self, pluginId, index, minimum, maximum):
-        if self.fPluginId == pluginId:
+        if self.fEditDialog is not None and self.fPluginId == pluginId:
             self.setParameterMappedRange(index, minimum, maximum)
 
     @pyqtSlot(int, int, int)
     def slot_handleParameterMidiChannelChangedCallback(self, pluginId, index, channel):
-        if self.fPluginId == pluginId:
+        if self.fEditDialog is not None and self.fPluginId == pluginId:
             self.setParameterMidiChannel(index, channel)
 
     @pyqtSlot(int, int)
     def slot_handleProgramChangedCallback(self, pluginId, index):
-        if self.fPluginId == pluginId:
+        if self.fEditDialog is not None and self.fPluginId == pluginId:
             self.setProgram(index, True)
 
     @pyqtSlot(int, int)
     def slot_handleMidiProgramChangedCallback(self, pluginId, index):
-        if self.fPluginId == pluginId:
+        if self.fEditDialog is not None and self.fPluginId == pluginId:
             self.setMidiProgram(index, True)
 
     @pyqtSlot(int, int, bool)
     def slot_handleOptionChangedCallback(self, pluginId, option, yesNo):
-        if self.fPluginId == pluginId:
+        if self.fEditDialog is not None and self.fPluginId == pluginId:
             self.setOption(option, yesNo)
 
     @pyqtSlot(int, int)
     def slot_handleUiStateChangedCallback(self, pluginId, state):
-        if self.fPluginId == pluginId:
+        if self.fEditDialog is not None and self.fPluginId == pluginId:
             self.customUiStateChanged(state)
 
     # ------------------------------------------------------------------

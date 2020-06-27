@@ -97,7 +97,7 @@ class RackListItem(QListWidgetItem):
         widget.fEditDialog.close()
         widget.fEditDialog.setParent(None)
         widget.fEditDialog.deleteLater()
-        del widget.fEditDialog
+        widget.fEditDialog = None
 
         widget.close()
         widget.setParent(None)

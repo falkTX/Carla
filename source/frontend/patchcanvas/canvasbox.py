@@ -207,7 +207,6 @@ class CanvasBox(QGraphicsObject):
             hasInlineDisplay = False
 
         if not hasInlineDisplay:
-            del self.m_inline_image
             self.m_inline_image = None
             self.m_inline_scaling = 1.0
 
