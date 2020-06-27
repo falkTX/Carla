@@ -2056,11 +2056,9 @@ class PluginDatabaseW(QDialog):
     def _reAddPlugins(self):
         settingsDB = QSafeSettings("falkTX", "CarlaPlugins5")
 
-        for x in range(self.ui.tableWidget.rowCount()):
-            self.ui.tableWidget.removeRow(0)
-
         self.fLastTableIndex = 0
         self.ui.tableWidget.setSortingEnabled(False)
+        self.ui.tableWidget.clearContents()
 
         settings = QSafeSettings("falkTX", "Carla2")
         LV2_PATH = splitter.join(settings.value(CARLA_KEY_PATHS_LV2, CARLA_DEFAULT_LV2_PATH, list))
@@ -2153,7 +2151,9 @@ class PluginDatabaseW(QDialog):
         for plugins in sf2s:
             sf2Count += len(plugins)
 
-        self.ui.tableWidget.setRowCount(self.fLastTableIndex+ladspaCount+dssiCount+vstCount+vst3Count+au32Count+sf2Count+sfzCount)
+        self.ui.tableWidget.setRowCount(self.fLastTableIndex +
+                                        ladspaCount + dssiCount + vstCount + vst3Count + au32Count +
+                                        sf2Count + sfzCount)
 
         if MACOS:
             self.ui.label.setText(self.tr("Have %i Internal, %i LADSPA, %i DSSI, %i LV2, %i VST2, %i VST3 and %i AudioUnit plugins, plus %i Sound Kits" % (

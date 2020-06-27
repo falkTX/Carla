@@ -80,6 +80,8 @@ static Array<File> gSFZs;
 
 static void findSFZs(const char* const sfzPaths)
 {
+    gSFZs.clearQuick();
+
     CARLA_SAFE_ASSERT_RETURN(sfzPaths != nullptr,);
 
     if (sfzPaths[0] == '\0')
