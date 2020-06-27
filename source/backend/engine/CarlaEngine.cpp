@@ -44,6 +44,8 @@
 #include "water/xml/XmlDocument.h"
 #include "water/xml/XmlElement.h"
 
+#include <map>
+
 // FIXME Remove on 2.1 release
 #include "lv2/atom.h"
 
@@ -2355,14 +2357,6 @@ void CarlaEngine::saveProjectInternal(water::MemoryOutputStream& outStream) cons
     {
         saveExternalConnections = false;
     }
-    else if (std::getenv("LADISH_APP_NAME") != nullptr)
-    {
-        saveExternalConnections = false;
-    }
-    else if (std::getenv("NSM_URL") != nullptr)
-    {
-        saveExternalConnections = false;
-    }
     else
     {
         saveExternalConnections = true;
@@ -2524,6 +2518,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
         if (carla_isEqual(xmlElement->getDoubleAttribute("VERSION", 0.0), 2.0) ||
             xmlElement->getBoolAttribute("IgnoreClientPrefix", false))
         {
+            carla_stdout("Loading project in compatibility mode, will ignore client name prefix");
             pData->ignoreClientPrefix = true;
             setOption(ENGINE_OPTION_CLIENT_NAME_PREFIX, 0, "");
         }
@@ -2952,56 +2947,9 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
         return false;
     }
 
-    bool hasInternalConnections = false;
-
-    // and now we handle connections (internal)
-    if (XmlElement* const elem = xmlElement->getChildByName("Patchbay"))
-    {
-        hasInternalConnections = true;
-
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-        {
-            CarlaString sourcePort, targetPort;
-
-            for (XmlElement* patchElem = elem->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
-            {
-                const String& patchTag(patchElem->getTagName());
-
-                if (patchTag != "Connection")
-                    continue;
-
-                sourcePort.clear();
-                targetPort.clear();
-
-                for (XmlElement* connElem = patchElem->getFirstChildElement(); connElem != nullptr; connElem = connElem->getNextElement())
-                {
-                    const String& tag(connElem->getTagName());
-                    const String  text(connElem->getAllSubText().trim());
-
-                    /**/ if (tag == "Source")
-                        sourcePort = xmlSafeString(text, false).toRawUTF8();
-                    else if (tag == "Target")
-                        targetPort = xmlSafeString(text, false).toRawUTF8();
-                }
-
-                if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
-                    restorePatchbayConnection(false, sourcePort, targetPort);
-            }
-
-            callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
-
-            if (pData->aboutToClose)
-                return true;
-
-            if (pData->actionCanceled)
-            {
-                setLastError("Project load canceled");
-                return false;
-            }
-        }
-    }
-
     // now we handle positions
+    std::map<water::String, water::String> mapGroupNamesInternal, mapGroupNamesExternal;
+
     if (XmlElement* const elemPatchbay = xmlElement->getChildByName("Patchbay"))
     {
         if (XmlElement* const elemPositions = elemPatchbay->getChildByName("Positions"))
@@ -3028,9 +2976,16 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                 ppos.x2 = patchElem->getIntAttribute("x2");
                 ppos.y2 = patchElem->getIntAttribute("y2");
                 ppos.pluginId = patchElem->getIntAttribute("pluginId", -1);
+                ppos.dealloc = false;
 
-                if (name.isNotEmpty())
-                    restorePatchbayGroupPosition(false, ppos);
+                if (name.isNotEmpty() && restorePatchbayGroupPosition(false, ppos))
+                {
+                    carla_stdout("Converted client name '%s' to '%s' for this session", name.toRawUTF8(), ppos.name);
+                    mapGroupNamesInternal[name] = ppos.name;
+
+                    if (ppos.dealloc)
+                        std::free(const_cast<char*>(ppos.name));
+                }
             }
 
             callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
@@ -3072,9 +3027,85 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                 ppos.x2 = patchElem->getIntAttribute("x2");
                 ppos.y2 = patchElem->getIntAttribute("y2");
                 ppos.pluginId = patchElem->getIntAttribute("pluginId", -1);
+                ppos.dealloc = false;
 
-                if (name.isNotEmpty())
-                    restorePatchbayGroupPosition(true, ppos);
+                if (name.isNotEmpty() && restorePatchbayGroupPosition(true, ppos))
+                {
+                    carla_stdout("Converted client name '%s' to '%s' for this session", name.toRawUTF8(), ppos.name);
+                    mapGroupNamesExternal[name] = ppos.name;
+
+                    if (ppos.dealloc)
+                        std::free(const_cast<char*>(ppos.name));
+                }
+            }
+
+            callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+
+            if (pData->aboutToClose)
+                return true;
+
+            if (pData->actionCanceled)
+            {
+                setLastError("Project load canceled");
+                return false;
+            }
+        }
+    }
+
+    bool hasInternalConnections = false;
+
+    // and now we handle connections (internal)
+    if (XmlElement* const elem = xmlElement->getChildByName("Patchbay"))
+    {
+        hasInternalConnections = true;
+
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        {
+            water::String sourcePort, targetPort;
+
+            for (XmlElement* patchElem = elem->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
+            {
+                const String& patchTag(patchElem->getTagName());
+
+                if (patchTag != "Connection")
+                    continue;
+
+                sourcePort.clear();
+                targetPort.clear();
+
+                for (XmlElement* connElem = patchElem->getFirstChildElement(); connElem != nullptr; connElem = connElem->getNextElement())
+                {
+                    const String& tag(connElem->getTagName());
+                    const String  text(connElem->getAllSubText().trim());
+
+                    /**/ if (tag == "Source")
+                        sourcePort = xmlSafeString(text, false);
+                    else if (tag == "Target")
+                        targetPort = xmlSafeString(text, false);
+                }
+
+                if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
+                {
+                    std::map<water::String, water::String>& map(mapGroupNamesInternal);
+                    std::map<water::String, water::String>::iterator it;
+                    if ((it = map.find(sourcePort.upToFirstOccurrenceOf(":", false, false))) != map.end())
+                        sourcePort = it->second + sourcePort.fromFirstOccurrenceOf(":", true, false);
+                    if ((it = map.find(targetPort.upToFirstOccurrenceOf(":", false, false))) != map.end())
+                        targetPort = it->second + targetPort.fromFirstOccurrenceOf(":", true, false);
+
+                    restorePatchbayConnection(false, sourcePort.toRawUTF8(), targetPort.toRawUTF8());
+                }
+            }
+
+            callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+
+            if (pData->aboutToClose)
+                return true;
+
+            if (pData->actionCanceled)
+            {
+                setLastError("Project load canceled");
+                return false;
             }
         }
     }
@@ -3127,7 +3158,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                 continue;
             }
 
-            CarlaString sourcePort, targetPort;
+            water::String sourcePort, targetPort;
 
             for (XmlElement* patchElem = elem->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
             {
@@ -3145,13 +3176,23 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                     const String  text(connElem->getAllSubText().trim());
 
                     /**/ if (tag == "Source")
-                        sourcePort = xmlSafeString(text, false).toRawUTF8();
+                        sourcePort = xmlSafeString(text, false);
                     else if (tag == "Target")
-                        targetPort = xmlSafeString(text, false).toRawUTF8();
+                        targetPort = xmlSafeString(text, false);
                 }
 
                 if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
-                    restorePatchbayConnection(loadingAsExternal, sourcePort, targetPort);
+                {
+                    std::map<water::String, water::String>& map(loadingAsExternal ? mapGroupNamesExternal
+                                                                                  : mapGroupNamesInternal);
+                    std::map<water::String, water::String>::iterator it;
+                    if ((it = map.find(sourcePort.upToFirstOccurrenceOf(":", false, false))) != map.end())
+                        sourcePort = it->second + sourcePort.fromFirstOccurrenceOf(":", true, false);
+                    if ((it = map.find(targetPort.upToFirstOccurrenceOf(":", false, false))) != map.end())
+                        targetPort = it->second + targetPort.fromFirstOccurrenceOf(":", true, false);
+
+                    restorePatchbayConnection(loadingAsExternal, sourcePort.toRawUTF8(), targetPort.toRawUTF8());
+                }
             }
             break;
         }

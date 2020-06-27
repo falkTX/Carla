@@ -1368,7 +1368,8 @@ protected:
     virtual const char* const* getPatchbayConnections(bool external) const;
     virtual const PatchbayPosition* getPatchbayPositions(bool external, uint& count) const;
     virtual void restorePatchbayConnection(bool external, const char* sourcePort, const char* targetPort);
-    virtual void restorePatchbayGroupPosition(bool external, const PatchbayPosition& ppos);
+    // returns true if plugin name mapping found, ppos.name updated to its converted name
+    virtual bool restorePatchbayGroupPosition(bool external, PatchbayPosition& ppos);
 
     /*!
      * Virtual functions for handling external graph ports.

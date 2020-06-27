@@ -2958,21 +2958,23 @@ void CarlaEngine::restorePatchbayConnection(const bool external,
     }
 }
 
-void CarlaEngine::restorePatchbayGroupPosition(const bool external, const PatchbayPosition& ppos)
+bool CarlaEngine::restorePatchbayGroupPosition(const bool external, PatchbayPosition& ppos)
 {
-    CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(),);
-    CARLA_SAFE_ASSERT_RETURN(ppos.name != nullptr && ppos.name[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(), false);
+    CARLA_SAFE_ASSERT_RETURN(ppos.name != nullptr && ppos.name[0] != '\0', false);
 
     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
     {
         PatchbayGraph* const graph = pData->graph.getPatchbayGraph();
-        CARLA_SAFE_ASSERT_RETURN(graph != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
 
         uint groupId;
-        CARLA_SAFE_ASSERT_RETURN(graph->getGroupFromName(external, ppos.name, groupId),);
+        CARLA_SAFE_ASSERT_RETURN(graph->getGroupFromName(external, ppos.name, groupId), false);
 
         graph->setGroupPos(true, true, external, groupId, ppos.x1, ppos.y1, ppos.x2, ppos.y2);
     }
+
+    return false;
 }
 
 // -----------------------------------------------------------------------
