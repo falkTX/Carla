@@ -70,11 +70,6 @@ void Reader::read(const char *text, unsigned int length)
       do
       {
         c = *++p;
-        if (c == '*')
-        {
-          inComment = true;
-          continue;
-        }
         if (inComment)
         {
           if (c != '*')
@@ -83,6 +78,11 @@ void Reader::read(const char *text, unsigned int length)
           if (c != '/')
             continue;
           inComment = false;
+        }
+        if (c == '*')
+        {
+          inComment = true;
+          continue;
         }
         if ((c == '\n') || (c == '\r'))
         {
@@ -184,12 +184,7 @@ void Reader::read(const char *text, unsigned int length)
         // Skip to end of line or c-style comment.
         do
         {
-          c = *p;
-          if (c == '*')
-          {
-            inComment = true;
-            continue;
-          }
+          c = *++p;
           if (inComment)
           {
             if (c != '*')
@@ -199,11 +194,15 @@ void Reader::read(const char *text, unsigned int length)
               continue;
             inComment = false;
           }
+          if (c == '*')
+          {
+            inComment = true;
+            continue;
+          }
           if ((c == '\r') || (c == '\n'))
           {
             break;
           }
-          p += 1;
         }
         while (p < end);
         inComment = false;
