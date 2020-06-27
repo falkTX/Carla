@@ -2780,6 +2780,8 @@ class HostWindow(QMainWindow):
             return False
         if self.fCustomStopAction == self.CUSTOM_ACTION_APP_CLOSE:
             return False
+        if self.fWindowCloseHideGui:
+            return False
         if self.fSavedSettings[CARLA_KEY_MAIN_CONFIRM_EXIT]:
             return QMessageBox.question(self, self.tr("Quit"),
                                               self.tr("Are you sure you want to quit Carla?"),
