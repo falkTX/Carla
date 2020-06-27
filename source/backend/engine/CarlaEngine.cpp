@@ -1017,6 +1017,7 @@ const char* CarlaEngine::getUniquePluginName(const char* const name) const
 
     sname.truncate(maxNameSize);
     sname.replace(':', '.'); // ':' is used in JACK1 to split client/port names
+    sname.replace('/', '.'); // '/' is used by us for client name prefix
 
     for (uint i=0; i < pData->curPluginCount; ++i)
     {
