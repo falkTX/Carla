@@ -3001,6 +3001,84 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
         }
     }
 
+    // now we handle positions
+    if (XmlElement* const elemPatchbay = xmlElement->getChildByName("Patchbay"))
+    {
+        if (XmlElement* const elemPositions = elemPatchbay->getChildByName("Positions"))
+        {
+            String name;
+            PatchbayPosition ppos = { nullptr, -1, 0, 0, 0, 0, false };
+
+            for (XmlElement* patchElem = elemPositions->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
+            {
+                const String& patchTag(patchElem->getTagName());
+
+                if (patchTag != "Position")
+                    continue;
+
+                XmlElement* const patchName = patchElem->getChildByName("Name");
+                CARLA_SAFE_ASSERT_CONTINUE(patchName != nullptr);
+
+                const String nameText(patchName->getAllSubText().trim());
+                name = xmlSafeString(nameText, false);
+
+                ppos.name = name.toRawUTF8();
+                ppos.x1 = patchElem->getIntAttribute("x1");
+                ppos.y1 = patchElem->getIntAttribute("y1");
+                ppos.x2 = patchElem->getIntAttribute("x2");
+                ppos.y2 = patchElem->getIntAttribute("y2");
+                ppos.pluginId = patchElem->getIntAttribute("pluginId", -1);
+
+                if (name.isNotEmpty())
+                    restorePatchbayGroupPosition(false, ppos);
+            }
+
+            callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+
+            if (pData->aboutToClose)
+                return true;
+
+            if (pData->actionCanceled)
+            {
+                setLastError("Project load canceled");
+                return false;
+            }
+        }
+    }
+
+    if (XmlElement* const elemPatchbay = xmlElement->getChildByName("ExternalPatchbay"))
+    {
+        if (XmlElement* const elemPositions = elemPatchbay->getChildByName("Positions"))
+        {
+            String name;
+            PatchbayPosition ppos = { nullptr, -1, 0, 0, 0, 0, false };
+
+            for (XmlElement* patchElem = elemPositions->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
+            {
+                const String& patchTag(patchElem->getTagName());
+
+                if (patchTag != "Position")
+                    continue;
+
+                XmlElement* const patchName = patchElem->getChildByName("Name");
+                CARLA_SAFE_ASSERT_CONTINUE(patchName != nullptr);
+
+                const String nameText(patchName->getAllSubText().trim());
+                name = xmlSafeString(nameText, false);
+
+                ppos.name = name.toRawUTF8();
+                ppos.x1 = patchElem->getIntAttribute("x1");
+                ppos.y1 = patchElem->getIntAttribute("y1");
+                ppos.x2 = patchElem->getIntAttribute("x2");
+                ppos.y2 = patchElem->getIntAttribute("y2");
+                ppos.pluginId = patchElem->getIntAttribute("pluginId", -1);
+
+                if (name.isNotEmpty())
+                    restorePatchbayGroupPosition(true, ppos);
+            }
+        }
+    }
+
     // if we're running inside some session-manager (and using JACK), let them handle the external connections
     bool loadExternalConnections;
 
@@ -3076,84 +3154,6 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                     restorePatchbayConnection(loadingAsExternal, sourcePort, targetPort);
             }
             break;
-        }
-    }
-
-    // finally, we handle positions
-    if (XmlElement* const elemPatchbay = xmlElement->getChildByName("Patchbay"))
-    {
-        if (XmlElement* const elemPositions = elemPatchbay->getChildByName("Positions"))
-        {
-            String name;
-            PatchbayPosition ppos = { nullptr, -1, 0, 0, 0, 0, false };
-
-            for (XmlElement* patchElem = elemPositions->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
-            {
-                const String& patchTag(patchElem->getTagName());
-
-                if (patchTag != "Position")
-                    continue;
-
-                XmlElement* const patchName = patchElem->getChildByName("Name");
-                CARLA_SAFE_ASSERT_CONTINUE(patchName != nullptr);
-
-                const String nameText(patchName->getAllSubText().trim());
-                name = xmlSafeString(nameText, false);
-
-                ppos.name = name.toRawUTF8();
-                ppos.x1 = patchElem->getIntAttribute("x1");
-                ppos.y1 = patchElem->getIntAttribute("y1");
-                ppos.x2 = patchElem->getIntAttribute("x2");
-                ppos.y2 = patchElem->getIntAttribute("y2");
-                ppos.pluginId = patchElem->getIntAttribute("pluginId", -1);
-
-                if (name.isNotEmpty())
-                    restorePatchbayGroupPosition(false, ppos);
-            }
-
-            callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
-
-            if (pData->aboutToClose)
-                return true;
-
-            if (pData->actionCanceled)
-            {
-                setLastError("Project load canceled");
-                return false;
-            }
-        }
-    }
-
-    if (XmlElement* const elemPatchbay = xmlElement->getChildByName("ExternalPatchbay"))
-    {
-        if (XmlElement* const elemPositions = elemPatchbay->getChildByName("Positions"))
-        {
-            String name;
-            PatchbayPosition ppos = { nullptr, -1, 0, 0, 0, 0, false };
-
-            for (XmlElement* patchElem = elemPositions->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
-            {
-                const String& patchTag(patchElem->getTagName());
-
-                if (patchTag != "Position")
-                    continue;
-
-                XmlElement* const patchName = patchElem->getChildByName("Name");
-                CARLA_SAFE_ASSERT_CONTINUE(patchName != nullptr);
-
-                const String nameText(patchName->getAllSubText().trim());
-                name = xmlSafeString(nameText, false);
-
-                ppos.name = name.toRawUTF8();
-                ppos.x1 = patchElem->getIntAttribute("x1");
-                ppos.y1 = patchElem->getIntAttribute("y1");
-                ppos.x2 = patchElem->getIntAttribute("x2");
-                ppos.y2 = patchElem->getIntAttribute("y2");
-                ppos.pluginId = patchElem->getIntAttribute("pluginId", -1);
-
-                if (name.isNotEmpty())
-                    restorePatchbayGroupPosition(true, ppos);
-            }
         }
     }
 #endif
