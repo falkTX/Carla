@@ -789,26 +789,28 @@ class HostWindow(QMainWindow):
         if self.fCustomStopAction == self.CUSTOM_ACTION_APP_CLOSE or not self.fWithCanvas:
             return
 
-        self.loadExternalCanvasGroupPositionsIfNeeded(self.fProjectFilename)
+        if not self.loadExternalCanvasGroupPositionsIfNeeded(self.fProjectFilename):
+            QTimer.singleShot(1, self.slot_canvasRefresh)
 
     def loadExternalCanvasGroupPositionsIfNeeded(self, filename):
         extrafile = filename.rsplit(".",1)[0]+".json"
         if not os.path.exists(extrafile):
-            return
+            return False
 
         with open(filename, "r") as fh:
             if "".join(fh.readlines(90)).find("<CARLA-PROJECT VERSION='2.0'>") < 0:
-                return
+                return False
 
         with open(extrafile, "r") as fh:
             try:
                 canvasdata = json.load(fh)['canvas']
             except:
-                return
+                return False
 
         print("NOTICE: loading old-style canvas group positions via legacy json file")
         patchcanvas.restoreGroupPositions(canvasdata)
-        QTimer.singleShot(1000, self.slot_canvasRefresh)
+        QTimer.singleShot(1, self.slot_canvasRefresh)
+        return True
 
     # --------------------------------------------------------------------------------------------------------
     # Files (menu actions)
