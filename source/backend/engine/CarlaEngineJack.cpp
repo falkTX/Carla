@@ -2144,11 +2144,15 @@ public:
                                                                          JackNoStartServer, nullptr))
             {
                 // get new client name
-                uniqueName = jackbridge_get_client_name(jackClient);
-                fClientName = uniqueName;
+                fClientName = jackbridge_get_client_name(jackClient);
+
+                if (fClientNamePrefix.isNotEmpty())
+                    uniqueName = fClientName.buffer() + fClientNamePrefix.length();
+                else
+                    uniqueName = fClientName;
 
                 // close client
-                client->closeForRename(jackClient, uniqueName);
+                client->closeForRename(jackClient, fClientName);
 
                 // disable plugin
                 plugin->setEnabled(false);
