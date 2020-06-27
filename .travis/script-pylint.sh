@@ -19,7 +19,9 @@ ${pylint} \
     --max-line-length=120 \
     --max-locals=25 \
     --max-statements=100 \
-    --enable=bad-continuation \
+    --enable=\
+bad-continuation,\
+len-as-condition \
     --disable=\
 bad-whitespace,\
 broad-except,\

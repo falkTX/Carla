@@ -316,7 +316,7 @@ class RackListWidget(QListWidget):
 
         urls = event.mimeData().urls()
 
-        if len(urls) == 0:
+        if not urls:
             return
 
         tryItem = self.itemAt(event.pos())
