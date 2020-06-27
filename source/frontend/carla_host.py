@@ -806,6 +806,7 @@ class HostWindow(QMainWindow):
             except:
                 return
 
+        print("NOTICE: loading old-style canvas group positions via legacy json file")
         patchcanvas.restoreGroupPositions(canvasdata)
         QTimer.singleShot(1000, self.slot_canvasRefresh)
 

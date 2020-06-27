@@ -338,8 +338,8 @@ class RackListWidget(QListWidget):
 
             if not self.host.load_file(filename):
                 CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
-                                  self.tr("Failed to load file"),
-                                  self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+                                 self.tr("Failed to load file"),
+                                 self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
                 continue
 
             if filename.endswith(".carxp"):
