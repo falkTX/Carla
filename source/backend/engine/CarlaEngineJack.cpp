@@ -2770,20 +2770,12 @@ public:
                 jackbridge_set_property(fClient, uuid, URI_POSITION, valueStr, URI_TYPE_STRING);
                 break;
             }
-        }
 
-# if 0
-        /* NOTE: This does not seem to be needed, as JACK notifies the caller about meta-data changes,
-         *       even for the client that triggered the change. Odd..
-         */
-        if (groupId != 0)
-        {
             callback(true, true,
                     ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED,
                     groupId, ppos.x1, ppos.y1, ppos.x2, static_cast<float>(ppos.y2),
                     nullptr);
         }
-# endif
 
         return ppos.name != orig_name;
     }
