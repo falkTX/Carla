@@ -2688,12 +2688,12 @@ public:
     bool restorePatchbayGroupPosition(const bool external, PatchbayPosition& ppos) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
-        carla_debug("CarlaEngineJack::restorePatchbayGroupPosition(%s, ...)", bool2str(external));
+        carla_debug("CarlaEngineJack::restorePatchbayGroupPosition(%s, {%i, %i, %i, %i, %i, \"%s\"})",
+                     bool2str(external), ppos.pluginId, ppos.x1, ppos.y1, ppos.x2, ppos.y2, ppos.name);
 
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! external)
             return CarlaEngine::restorePatchbayGroupPosition(external, ppos);
 
-        bool hasGroups = true;
         uint groupId = 0;
         const char* const orig_name = ppos.name;
 
@@ -2717,16 +2717,13 @@ public:
                 ppos.dealloc = true;
             }
 
-            for (int i=10; --i >=0;)
+            for (int i=20; --i >=0;)
             {
                 {
                     const CarlaMutexLocker cml(fUsedGroups.mutex);
 
                     if (fUsedGroups.list.count() == 0)
-                    {
-                        hasGroups = false;
                         break;
-                    }
 
                     groupId = fUsedGroups.getGroupId(ppos.name);
                 }
@@ -2734,7 +2731,7 @@ public:
                 if (groupId != 0)
                     break;
 
-                carla_msleep(200);
+                carla_msleep(100);
                 callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
             }
         }
@@ -2744,34 +2741,35 @@ public:
 
             if (fUsedGroups.list.count() != 0)
                 groupId = fUsedGroups.getGroupId(ppos.name);
-            else
-                hasGroups = false;
         }
 
-        if (hasGroups) {
-            CARLA_SAFE_ASSERT(groupId != 0);
-        }
-
-        for (;;)
+        if (groupId == 0)
         {
-            const CarlaRecursiveMutexLocker crml(fThreadSafeMetadataMutex);
-
-            jack_uuid_t uuid;
+            carla_stdout("NOTICE: Previously saved client '%s' not found", ppos.name);
+        }
+        else
+        {
+            for (;;)
             {
-                char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, ppos.name);
-                CARLA_SAFE_ASSERT_BREAK(uuidstr != nullptr && uuidstr[0] != '\0');
+                const CarlaRecursiveMutexLocker crml(fThreadSafeMetadataMutex);
 
-                const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
-                jackbridge_free(uuidstr);
-                CARLA_CUSTOM_SAFE_ASSERT_ONCE_BREAK("JACK meta-data support unavailable", parsed);
+                jack_uuid_t uuid;
+                {
+                    char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, ppos.name);
+                    CARLA_SAFE_ASSERT_BREAK(uuidstr != nullptr && uuidstr[0] != '\0');
+
+                    const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
+                    jackbridge_free(uuidstr);
+                    CARLA_CUSTOM_SAFE_ASSERT_ONCE_BREAK("JACK meta-data support unavailable", parsed);
+                }
+
+                char valueStr[STR_MAX];
+                std::snprintf(valueStr, STR_MAX-1, "%i:%i:%i:%i", ppos.x1, ppos.y1, ppos.x2, ppos.y2);
+                valueStr[STR_MAX-1] = '\0';
+
+                jackbridge_set_property(fClient, uuid, URI_POSITION, valueStr, URI_TYPE_STRING);
+                break;
             }
-
-            char valueStr[STR_MAX];
-            std::snprintf(valueStr, STR_MAX-1, "%i:%i:%i:%i", ppos.x1, ppos.y1, ppos.x2, ppos.y2);
-            valueStr[STR_MAX-1] = '\0';
-
-            jackbridge_set_property(fClient, uuid, URI_POSITION, valueStr, URI_TYPE_STRING);
-            break;
         }
 
 # if 0

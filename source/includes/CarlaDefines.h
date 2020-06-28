@@ -175,6 +175,7 @@
 #define CARLA_SAFE_ASSERT_CONTINUE(cond)      if (! (cond)) { carla_safe_assert(#cond, __FILE__, __LINE__); continue; }
 #define CARLA_SAFE_ASSERT_RETURN(cond, ret)   if (! (cond)) { carla_safe_assert(#cond, __FILE__, __LINE__); return ret; }
 
+#define CARLA_CUSTOM_SAFE_ASSERT(msg, cond)             if (! (cond)) carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__);
 #define CARLA_CUSTOM_SAFE_ASSERT_BREAK(msg, cond)       if (! (cond)) { carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__); break; }
 #define CARLA_CUSTOM_SAFE_ASSERT_CONTINUE(msg, cond)    if (! (cond)) { carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__); continue; }
 #define CARLA_CUSTOM_SAFE_ASSERT_RETURN(msg, cond, ret) if (! (cond)) { carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__); return ret; }
