@@ -2976,8 +2976,12 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
 
                 if (name.isNotEmpty() && restorePatchbayGroupPosition(false, ppos))
                 {
-                    carla_stdout("Converted client name '%s' to '%s' for this session", name.toRawUTF8(), ppos.name);
-                    mapGroupNamesInternal[name] = ppos.name;
+                    if (name != ppos.name)
+                    {
+                        carla_stdout("Converted client name '%s' to '%s' for this session",
+                                     name.toRawUTF8(), ppos.name);
+                        mapGroupNamesInternal[name] = ppos.name;
+                    }
 
                     if (ppos.dealloc)
                         std::free(const_cast<char*>(ppos.name));
@@ -3025,8 +3029,12 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
 
                 if (name.isNotEmpty() && restorePatchbayGroupPosition(true, ppos))
                 {
-                    carla_stdout("Converted client name '%s' to '%s' for this session", name.toRawUTF8(), ppos.name);
-                    mapGroupNamesExternal[name] = ppos.name;
+                    if (name != ppos.name)
+                    {
+                        carla_stdout("Converted client name '%s' to '%s' for this session",
+                                     name.toRawUTF8(), ppos.name);
+                        mapGroupNamesExternal[name] = ppos.name;
+                    }
 
                     if (ppos.dealloc)
                         std::free(const_cast<char*>(ppos.name));
