@@ -2496,6 +2496,8 @@ static String findBinaryInCustomPath(const char* const searchPath, const char* c
 
 bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alwaysLoadConnections)
 {
+    carla_debug("CarlaEngine::loadProjectInternal(%p, %s) - START", &xmlDoc, bool2str(alwaysLoadConnections));
+
     CarlaScopedPointer<XmlElement> xmlElement(xmlDoc.getDocumentElement(true));
     CARLA_SAFE_ASSERT_RETURN_ERR(xmlElement != nullptr, "Failed to parse project file");
 
@@ -2531,8 +2533,6 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
     xmlElement = xmlDoc.getDocumentElement(false);
     CARLA_SAFE_ASSERT_RETURN_ERR(xmlElement != nullptr, "Failed to completely parse project file");
 
-    callback(true, false, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
-
     if (pData->aboutToClose)
         return true;
 
@@ -2541,6 +2541,8 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
         setLastError("Project load canceled");
         return false;
     }
+
+    callback(true, false, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
     const bool isPlugin(getType() == kEngineTypePlugin);
 
@@ -2656,8 +2658,6 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
             setOption(static_cast<EngineOption>(option), value, valueStr);
         }
 
-        callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
-
         if (pData->aboutToClose)
             return true;
 
@@ -2680,8 +2680,6 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
             if (bpm >= 20.0 && bpm < 400.0)
                 pData->time.setBPM(bpm);
 
-            callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
-
             if (pData->aboutToClose)
                 return true;
 
@@ -2702,8 +2700,6 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
         {
             CarlaStateSave stateSave;
             stateSave.fillFromXmlElement(isPreset ? xmlElement.get() : elem);
-
-            callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
             if (pData->aboutToClose)
                 return true;
@@ -2727,8 +2723,6 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
 
                     if (const CarlaPluginPtr plugin = pData->plugins[pluginId].plugin)
                     {
-                        callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
-
                         if (pData->aboutToClose)
                             return true;
 
@@ -2774,6 +2768,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                     carla_stderr2("Failed to load a linuxsampler LV2 plugin, GIG file won't be loaded");
                 }
 
+                callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
                 continue;
             }
 #endif
@@ -2844,6 +2839,8 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                         {
                             carla_stderr("Damn, we failed... :(");
                         }
+
+                        callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
                     }
                 }
                 break;
@@ -2877,8 +2874,6 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
 
                 if (const CarlaPluginPtr plugin = pData->plugins[pluginId].plugin)
                 {
-                    callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
-
                     if (pData->aboutToClose)
                         return true;
 
@@ -2917,6 +2912,9 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
             {
                 carla_stderr2("Failed to load a plugin '%s', error was:\n%s", stateSave.name, getLastError());
             }
+
+            if (! isPreset)
+                callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
         }
 
         if (isPreset)
@@ -2935,8 +2933,6 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
             if (plugin->isEnabled() && (plugin->getHints() & PLUGIN_IS_BRIDGE) != 0)
                 plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "__CarlaPingOnOff__", "true", false);
     }
-
-    callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
     if (pData->aboutToClose)
         return true;
@@ -2988,8 +2984,6 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                 }
             }
 
-            callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
-
             if (pData->aboutToClose)
                 return true;
 
@@ -3038,8 +3032,6 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                         std::free(const_cast<char*>(ppos.name));
                 }
             }
-
-            callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
             if (pData->aboutToClose)
                 return true;
@@ -3096,8 +3088,6 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                     restorePatchbayConnection(false, sourcePort.toRawUTF8(), targetPort.toRawUTF8());
                 }
             }
-
-            callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
             if (pData->aboutToClose)
                 return true;
@@ -3204,6 +3194,8 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
 
     callback(true, true, ENGINE_CALLBACK_PROJECT_LOAD_FINISHED, 0, 0, 0, 0, 0.0f, nullptr);
     callback(true, true, ENGINE_CALLBACK_CANCELABLE_ACTION, 0, 0, 0, 0, 0.0f, "Loading project");
+
+    carla_debug("CarlaEngine::loadProjectInternal(%p, %s) - END", &xmlDoc, bool2str(alwaysLoadConnections));
     return true;
 
 #ifdef BUILD_BRIDGE_ALTERNATIVE_ARCH
