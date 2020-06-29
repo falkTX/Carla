@@ -342,11 +342,13 @@ CarlaEngineCVSourcePorts::~CarlaEngineCVSourcePorts()
     delete pData;
 }
 
-bool CarlaEngineCVSourcePorts::addCVSource(CarlaEngineCVPort* const port, const uint32_t portIndexOffset)
+bool CarlaEngineCVSourcePorts::addCVSource(CarlaEngineCVPort* const port,
+                                           const uint32_t portIndexOffset,
+                                           const bool reconfigureNow)
 {
     CARLA_SAFE_ASSERT_RETURN(port != nullptr, false);
     CARLA_SAFE_ASSERT_RETURN(port->isInput(), false);
-    carla_debug("CarlaEngineCVSourcePorts::addCVSource(%p)", port);
+    carla_debug("CarlaEngineCVSourcePorts::addCVSource(%p, %u)", port, portIndexOffset);
 
     {
         const CarlaRecursiveMutexLocker crml(pData->rmutex);
@@ -355,7 +357,7 @@ bool CarlaEngineCVSourcePorts::addCVSource(CarlaEngineCVPort* const port, const 
         if (! pData->cvs.add(ecv))
             return false;
 
-        if (pData->graph != nullptr && pData->plugin.get() != nullptr)
+        if (reconfigureNow && pData->graph != nullptr && pData->plugin.get() != nullptr)
             pData->graph->reconfigureForCV(pData->plugin, static_cast<uint>(pData->cvs.size()-1), true);
     }
 

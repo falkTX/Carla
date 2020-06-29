@@ -2150,7 +2150,7 @@ bool CarlaEngineNativeUI::msgReceived(const char* const msg) noexcept
         CARLA_SAFE_ASSERT_RETURN(ctrl >= CONTROL_INDEX_NONE && ctrl <= CONTROL_INDEX_MAX_ALLOWED, true);
 
         if (const CarlaPluginPtr plugin = fEngine->getPlugin(pluginId))
-            plugin->setParameterMappedControlIndex(parameterId, static_cast<int16_t>(ctrl), true, false);
+            plugin->setParameterMappedControlIndex(parameterId, static_cast<int16_t>(ctrl), true, false, true);
     }
     else if (std::strcmp(msg, "set_parameter_mapped_range") == 0)
     {

@@ -642,7 +642,7 @@ public:
     /*!
      * Add a CV port as a source of events.
      */
-    virtual bool addCVSource(CarlaEngineCVPort* port, uint32_t portIndexOffset);
+    virtual bool addCVSource(CarlaEngineCVPort* port, uint32_t portIndexOffset, bool reconfigureNow);
 
     /*!
      * Remove a CV port as a source of events.

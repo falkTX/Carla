@@ -770,7 +770,9 @@ public:
         CarlaPlugin::setParameterMidiChannel(parameterId, channel, sendOsc, sendCallback);
     }
 
-    void setParameterMappedControlIndex(const uint32_t parameterId, const int16_t index, const bool sendOsc, const bool sendCallback) noexcept override
+    void setParameterMappedControlIndex(const uint32_t parameterId, const int16_t index,
+                                        const bool sendOsc, const bool sendCallback,
+                                        const bool reconfigureNow) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
         CARLA_SAFE_ASSERT_RETURN(index >= CONTROL_INDEX_NONE && index <= CONTROL_INDEX_MAX_ALLOWED,);
@@ -785,7 +787,7 @@ public:
             fShmNonRtClientControl.commitWrite();
         }
 
-        CarlaPlugin::setParameterMappedControlIndex(parameterId, index, sendOsc, sendCallback);
+        CarlaPlugin::setParameterMappedControlIndex(parameterId, index, sendOsc, sendCallback, reconfigureNow);
     }
 
     void setParameterMappedRange(const uint32_t parameterId, const float minimum, const float maximum, const bool sendOsc, const bool sendCallback) noexcept override

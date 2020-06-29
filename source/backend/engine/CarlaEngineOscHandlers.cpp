@@ -662,7 +662,7 @@ int CarlaEngineOsc::handleMsgSetParameterMappedControlIndex(CARLA_ENGINE_OSC_HAN
     CARLA_SAFE_ASSERT_RETURN(index >= 0, 0);
     CARLA_SAFE_ASSERT_RETURN(ctrl >= CONTROL_INDEX_NONE && ctrl <= CONTROL_INDEX_MAX_ALLOWED, 0);
 
-    plugin->setParameterMappedControlIndex(static_cast<uint32_t>(index), static_cast<int16_t>(ctrl), false, true);
+    plugin->setParameterMappedControlIndex(static_cast<uint32_t>(index), static_cast<int16_t>(ctrl), false, true, true);
     return 0;
 }
 

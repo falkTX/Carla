@@ -828,7 +828,7 @@ public:
                 const int16_t  ctrl(fShmNonRtClientControl.readShort());
 
                 if (plugin->isEnabled())
-                    plugin->setParameterMappedControlIndex(index, ctrl, false, false);
+                    plugin->setParameterMappedControlIndex(index, ctrl, false, false, true);
                 break;
             }
 

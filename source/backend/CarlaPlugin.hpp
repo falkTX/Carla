@@ -603,12 +603,14 @@ public:
      * Set parameter's @a parameterId mapped control index to @a index.
      * @see ParameterData::mappedControlIndex
      */
-    virtual void setParameterMappedControlIndex(uint32_t parameterId, int16_t index, bool sendOsc, bool sendCallback) noexcept;
+    virtual void setParameterMappedControlIndex(uint32_t parameterId, int16_t index,
+                                                bool sendOsc, bool sendCallback, bool reconfigureNow) noexcept;
 
     /*!
      * Set parameter's @a parameterId mapped range to @a minimum and @a maximum.
      */
-    virtual void setParameterMappedRange(uint32_t parameterId, float minimum, float maximum, bool sendOsc, bool sendCallback) noexcept;
+    virtual void setParameterMappedRange(uint32_t parameterId, float minimum, float maximum,
+                                         bool sendOsc, bool sendCallback) noexcept;
 
     /*!
      * Add a custom data set.

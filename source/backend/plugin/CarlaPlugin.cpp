@@ -847,7 +847,8 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
                                         stateParameter->mappedMaximum, true, true);
             }
 
-            setParameterMappedControlIndex(static_cast<uint32_t>(index), stateParameter->mappedControlIndex, true, true);
+            setParameterMappedControlIndex(static_cast<uint32_t>(index),
+                                           stateParameter->mappedControlIndex, true, true, false);
             setParameterMidiChannel(static_cast<uint32_t>(index), stateParameter->midiChannel, true, true);
 #endif
         }
@@ -1721,7 +1722,9 @@ void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, const uint
 #endif
 }
 
-void CarlaPlugin::setParameterMappedControlIndex(const uint32_t parameterId, const int16_t index, const bool sendOsc, const bool sendCallback) noexcept
+void CarlaPlugin::setParameterMappedControlIndex(const uint32_t parameterId, const int16_t index,
+                                                 const bool sendOsc, const bool sendCallback,
+                                                 const bool reconfigureNow) noexcept
 {
     if (pData->engineBridged) {
         CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
@@ -1760,7 +1763,7 @@ void CarlaPlugin::setParameterMappedControlIndex(const uint32_t parameterId, con
         CarlaEngineCVPort* const cvPort =
             (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, strBuf, true, parameterId);
         cvPort->setRange(paramData.mappedMinimum, paramData.mappedMaximum);
-        pData->event.cvSourcePorts->addCVSource(cvPort, parameterId);
+        pData->event.cvSourcePorts->addCVSource(cvPort, parameterId, reconfigureNow);
     }
     else if (paramData.mappedControlIndex == CONTROL_INDEX_CV)
     {
@@ -1792,7 +1795,8 @@ void CarlaPlugin::setParameterMappedControlIndex(const uint32_t parameterId, con
 #endif
 }
 
-void CarlaPlugin::setParameterMappedRange(const uint32_t parameterId, const float minimum, const float maximum, const bool sendOsc, const bool sendCallback) noexcept
+void CarlaPlugin::setParameterMappedRange(const uint32_t parameterId, const float minimum, const float maximum,
+                                          const bool sendOsc, const bool sendCallback) noexcept
 {
     if (pData->engineBridged) {
         CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);

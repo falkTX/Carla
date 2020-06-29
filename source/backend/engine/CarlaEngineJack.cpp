@@ -625,14 +625,14 @@ public:
         }
     }
 
-    bool addCVSource(CarlaEngineCVPort* const port, const uint32_t portIndexOffset) override
+    bool addCVSource(CarlaEngineCVPort* const port, const uint32_t portIndexOffset, const bool reconfigureNow) override
     {
         if (! fUseClient)
-            return CarlaEngineCVSourcePorts::addCVSource(port, portIndexOffset);
+            return CarlaEngineCVSourcePorts::addCVSource(port, portIndexOffset, reconfigureNow);
 
         const CarlaRecursiveMutexLocker crml(pData->rmutex);
 
-        if (! CarlaEngineCVSourcePorts::addCVSource(port, portIndexOffset))
+        if (! CarlaEngineCVSourcePorts::addCVSource(port, portIndexOffset, reconfigureNow))
             return false;
 
         if (pData->cvs.size() == 1 && fBuffer == nullptr)

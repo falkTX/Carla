@@ -2032,7 +2032,7 @@ void carla_set_parameter_mapped_control_index(CarlaHostHandle handle, uint plugi
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < plugin->getParameterCount(),);
 
-        plugin->setParameterMappedControlIndex(parameterId, index, true, false);
+        plugin->setParameterMappedControlIndex(parameterId, index, true, false, true);
     }
 }
 
