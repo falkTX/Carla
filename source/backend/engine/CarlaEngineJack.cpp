@@ -1433,7 +1433,7 @@ public:
         if (fClient == nullptr && clientName != nullptr)
         {
 #ifndef BUILD_BRIDGE
-            if (fClientNamePrefix.isNotEmpty())
+            if (pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS && fClientNamePrefix.isNotEmpty())
             {
                 truncatedClientName = fClientNamePrefix;
                 truncatedClientName.truncate(truncatedClientName.rfind("."));
@@ -1497,24 +1497,22 @@ public:
         }
 
         // if main jack client does not match our requested one, setup client name prefix as needed
+        if (truncatedClientName != jackClientName)
         {
-            if (truncatedClientName != jackClientName)
+            if (const char* const suffix = std::strrchr(jackClientName, '-'))
             {
-                if (const char* const suffix = std::strrchr(jackClientName, '-'))
+                if (fClientNamePrefix.isNotEmpty())
                 {
-                    if (fClientNamePrefix.isNotEmpty())
-                    {
-                        fClientNamePrefix.truncate(fClientNamePrefix.rfind('.') + 1);
-                    }
-                    else
-                    {
-                        fClientNamePrefix = truncatedClientName;
-                        fClientNamePrefix += ".";
-                    }
-
-                    fClientNamePrefix += suffix + 1;
-                    fClientNamePrefix += "/";
+                    fClientNamePrefix.truncate(fClientNamePrefix.rfind('.') + 1);
                 }
+                else
+                {
+                    fClientNamePrefix = truncatedClientName;
+                    fClientNamePrefix += ".";
+                }
+
+                fClientNamePrefix += suffix + 1;
+                fClientNamePrefix += "/";
             }
         }
 
@@ -2737,7 +2735,7 @@ public:
         /* NOTE: When loading a project, it might take a bit to receive plugins' jack client registration callbacks.
          *       We try to wait a little for it, but not too much.
          */
-        if (ppos.pluginId >= 0)
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS && ppos.pluginId >= 0)
         {
             // strip client name prefix if already in place
             if (const char* const rname2 = std::strstr(ppos.name, "."))
