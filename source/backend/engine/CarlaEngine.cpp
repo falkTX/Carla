@@ -2544,8 +2544,11 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
 
     callback(true, false, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
-    const bool isPatchbay = pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY;
-    const bool isPlugin   = getType() == kEngineTypePlugin;
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    const bool isMultiClient = pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS;
+    const bool isPatchbay    = pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY;
+#endif
+    const bool isPlugin = getType() == kEngineTypePlugin;
 
     // load engine settings first of all
     if (XmlElement* const elem = isPreset ? nullptr : xmlElement->getChildByName("EngineSettings"))
@@ -2713,7 +2716,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
 
             CARLA_SAFE_ASSERT_CONTINUE(stateSave.type != nullptr);
 
-#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             // compatibility code to load projects with GIG files
             // FIXME Remove on 2.1 release
             if (std::strcmp(stateSave.type, "GIG") == 0)
@@ -2948,8 +2951,12 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
     bool loadingAsExternal;
     std::map<water::String, water::String> mapGroupNamesInternal, mapGroupNamesExternal;
 
+    bool hasInternalPositions = false;
+
     if (XmlElement* const elemPatchbay = xmlElement->getChildByName("Patchbay"))
     {
+        hasInternalPositions = true;
+
         if (XmlElement* const elemPositions = elemPatchbay->getChildByName("Positions"))
         {
             String name;
@@ -2976,13 +2983,15 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                 ppos.pluginId = patchElem->getIntAttribute("pluginId", -1);
                 ppos.dealloc = false;
 
-                if (name.isNotEmpty() && restorePatchbayGroupPosition(false, ppos))
+                loadingAsExternal = ppos.pluginId >= 0 && isMultiClient;
+
+                if (name.isNotEmpty() && restorePatchbayGroupPosition(loadingAsExternal, ppos))
                 {
                     if (name != ppos.name)
                     {
                         carla_stdout("Converted client name '%s' to '%s' for this session",
                                      name.toRawUTF8(), ppos.name);
-                        if (ppos.pluginId >= 0 && pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+                        if (loadingAsExternal)
                             mapGroupNamesExternal[name] = ppos.name;
                         else
                             mapGroupNamesInternal[name] = ppos.name;
@@ -3032,7 +3041,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                 ppos.pluginId = patchElem->getIntAttribute("pluginId", -1);
                 ppos.dealloc = false;
 
-                loadingAsExternal = ppos.pluginId < 0 || !isPatchbay;
+                loadingAsExternal = ppos.pluginId < 0 || hasInternalPositions || !isPatchbay;
 
                 if (name.isNotEmpty() && restorePatchbayGroupPosition(loadingAsExternal, ppos))
                 {
@@ -3099,6 +3108,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                 {
                     std::map<water::String, water::String>& map(mapGroupNamesInternal);
                     std::map<water::String, water::String>::iterator it;
+
                     if ((it = map.find(sourcePort.upToFirstOccurrenceOf(":", false, false))) != map.end())
                         sourcePort = it->second + sourcePort.fromFirstOccurrenceOf(":", true, false);
                     if ((it = map.find(targetPort.upToFirstOccurrenceOf(":", false, false))) != map.end())
@@ -3157,6 +3167,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                 if (isPatchbay)
                     continue;
                 isExternal = false;
+                loadingAsExternal = true;
             }
             // or load external patchbay connections
             else if (tagName == "ExternalPatchbay")
@@ -3199,7 +3210,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                                                                                   : mapGroupNamesInternal);
                     std::map<water::String, water::String>::iterator it;
 
-                    if (isExternal && isPatchbay && sourcePort.startsWith("system:capture_"))
+                    if (isExternal && isPatchbay && !loadingAsExternal && sourcePort.startsWith("system:capture_"))
                     {
                         water::String internalPort = sourcePort.trimCharactersAtStart("system:capture_");
 
@@ -3223,12 +3234,29 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                                      sourcePort.toRawUTF8(), internalPort.toRawUTF8());
                         sourcePort = internalPort;
                     }
+                    else if (!isExternal && isMultiClient && sourcePort.startsWith("Audio Input:"))
+                    {
+                        water::String externalPort = sourcePort.trimCharactersAtStart("Audio Input:");
+
+                        /**/ if (externalPort == "Left")
+                            externalPort = "system:capture_1";
+                        else if (externalPort == "Right")
+                            externalPort = "system:capture_2";
+                        else if (externalPort == "Sidechain")
+                            externalPort = "system:capture_3";
+                        else
+                            externalPort = "system:capture_ " + externalPort.trimCharactersAtStart("Capture ");
+
+                        carla_stdout("Converted port name '%s' to '%s' for this session",
+                                     sourcePort.toRawUTF8(), externalPort.toRawUTF8());
+                        sourcePort = externalPort;
+                    }
                     else if ((it = map.find(sourcePort.upToFirstOccurrenceOf(":", false, false))) != map.end())
                     {
                         sourcePort = it->second + sourcePort.fromFirstOccurrenceOf(":", true, false);
                     }
 
-                    if (isExternal && isPatchbay && targetPort.startsWith("system:playback_"))
+                    if (isExternal && isPatchbay && !loadingAsExternal && targetPort.startsWith("system:playback_"))
                     {
                         water::String internalPort = targetPort.trimCharactersAtStart("system:playback_");
 
@@ -3249,6 +3277,21 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                         carla_stdout("Converted port name '%s' to '%s' for this session",
                                      targetPort.toRawUTF8(), internalPort.toRawUTF8());
                         targetPort = internalPort;
+                    }
+                    else if (!isExternal && isMultiClient && targetPort.startsWith("Audio Output:"))
+                    {
+                        water::String externalPort = targetPort.trimCharactersAtStart("Audio Output:");
+
+                        /**/ if (externalPort == "Left")
+                            externalPort = "system:playback_1";
+                        else if (externalPort == "Right")
+                            externalPort = "system:playback_2";
+                        else
+                            externalPort = "system:playback_ " + externalPort.trimCharactersAtStart("Playback ");
+
+                        carla_stdout("Converted port name '%s' to '%s' for this session",
+                                     targetPort.toRawUTF8(), externalPort.toRawUTF8());
+                        targetPort = externalPort;
                     }
                     else if ((it = map.find(targetPort.upToFirstOccurrenceOf(":", false, false))) != map.end())
                     {

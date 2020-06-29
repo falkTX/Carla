@@ -1539,8 +1539,7 @@ public:
         else
             fTimebaseMaster = false;
 
-        if (opts.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
-            initJackPatchbay(true, false, jackClientName);
+        initJackPatchbay(true, false, jackClientName, pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY);
 
         jackbridge_set_client_registration_callback(fClient, carla_jack_client_registration_callback, this);
         jackbridge_set_port_registration_callback(fClient, carla_jack_port_registration_callback, this);
@@ -2451,7 +2450,7 @@ public:
             }
 
             if (! external)
-                return CarlaEngine::patchbayRefresh(sendHost, sendOSC, false);
+                CarlaEngine::patchbayRefresh(sendHost, sendOSC, false);
         }
 
         {
@@ -2464,7 +2463,8 @@ public:
             fUsedConnections.clear();
         }
 
-        initJackPatchbay(sendHost, sendOSC, jackbridge_get_client_name(fClient));
+        initJackPatchbay(sendHost, sendOSC, jackbridge_get_client_name(fClient),
+                         pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && !external);
         return true;
     }
 
@@ -2786,7 +2786,7 @@ public:
         if (groupId == 0)
         {
             if (ppos.pluginId < 0 || pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
-                carla_stdout("NOTICE: Previously saved client '%s' not found", ppos.name);
+                carla_stdout("Previously saved client '%s' not found", ppos.name);
         }
         else
         {
@@ -3146,13 +3146,6 @@ protected:
     {
         CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
 
-        // ignore this if on internal patchbay mode
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
-        if (! (fExternalPatchbayHost || (fExternalPatchbayOsc && pData->osc.isControlRegisteredForTCP()))) return;
-#else
-        if (! fExternalPatchbayHost) return;
-#endif
-
         uint groupId;
 
         {
@@ -3167,6 +3160,13 @@ protected:
 
             fUsedGroups.list.removeOne(groupNameToId);
         }
+
+        // ignore callback if on internal patchbay mode
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
+        if (! (fExternalPatchbayHost || (fExternalPatchbayOsc && pData->osc.isControlRegisteredForTCP()))) return;
+#else
+        if (! fExternalPatchbayHost) return;
+#endif
 
         callback(fExternalPatchbayHost, fExternalPatchbayOsc,
                  ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED,
@@ -3191,13 +3191,6 @@ protected:
                                             const char* const shortPortName,
                                             const CarlaJackPortHints& jackPortHints)
     {
-        // ignore this if on internal patchbay mode
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
-        if (! (fExternalPatchbayHost || (fExternalPatchbayOsc && pData->osc.isControlRegisteredForTCP()))) return;
-#else
-        if (! fExternalPatchbayHost) return;
-#endif
-
         bool groupFound;
         CarlaString groupName(portName);
         groupName.truncate(groupName.rfind(shortPortName, &groupFound)-1);
@@ -3232,7 +3225,16 @@ protected:
                 std::strncpy(groupData.strVal, groupName, STR_MAX-1);
                 groupData.strVal[STR_MAX-1] = '\0';
             }
+        }
 
+        // ignore the rest if on internal patchbay mode
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
+        if (! (fExternalPatchbayHost || (fExternalPatchbayOsc && pData->osc.isControlRegisteredForTCP()))) return;
+#else
+        if (! fExternalPatchbayHost) return;
+#endif
+
+        {
             uint canvasPortFlags = 0x0;
             canvasPortFlags |= jackPortHints.isInput ? PATCHBAY_PORT_IS_INPUT : 0x0;
 
@@ -3698,10 +3700,8 @@ private:
         char strVal[STR_MAX];
     };
 
-    void initJackPatchbay(const bool sendHost, const bool sendOSC, const char* const ourName)
+    void initJackPatchbay(const bool sendHost, const bool sendOSC, const char* const ourName, const bool groupsOnly)
     {
-        CARLA_SAFE_ASSERT_RETURN(pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY ||
-                                 (fExternalPatchbayHost && sendHost) || (fExternalPatchbayOsc && sendOSC),);
         CARLA_SAFE_ASSERT_RETURN(ourName != nullptr && ourName[0] != '\0',);
 
         fLastPatchbaySetGroupPos.clear();
@@ -3775,14 +3775,20 @@ private:
 
                         fUsedGroups.list.append(groupNameToId);
 
-                        GroupToIdData groupData;
-                        groupData.id = groupId;
-                        groupData.icon = icon;
-                        groupData.pluginId = pluginId;
-                        std::strncpy(groupData.strVal, groupName, STR_MAX-1);
-                        groupData.strVal[STR_MAX-1] = '\0';
-                        groupCallbackData.append(groupData);
+                        if (! groupsOnly)
+                        {
+                            GroupToIdData groupData;
+                            groupData.id = groupId;
+                            groupData.icon = icon;
+                            groupData.pluginId = pluginId;
+                            std::strncpy(groupData.strVal, groupName, STR_MAX-1);
+                            groupData.strVal[STR_MAX-1] = '\0';
+                            groupCallbackData.append(groupData);
+                        }
                     }
+
+                    if (groupsOnly)
+                        continue;
 
                     uint canvasPortFlags = 0x0;
                     canvasPortFlags |= jackPortHints.isInput ? PATCHBAY_PORT_IS_INPUT : 0x0;
@@ -3813,6 +3819,9 @@ private:
 
                 jackbridge_free(ports);
             }
+
+            if (groupsOnly)
+                return;
 
             // query connections, after all ports are in place
             if (const char** const ports = jackbridge_get_ports(fClient, nullptr, nullptr, JackPortIsOutput))
