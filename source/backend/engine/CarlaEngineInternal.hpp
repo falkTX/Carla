@@ -87,7 +87,20 @@ public:
     void setSampleRate(double sampleRate);
     void setOffline(bool offline);
 
-    bool isReady() const noexcept;
+    bool isRack() const noexcept
+    {
+        return fIsRack;
+    }
+
+    bool isReady() const noexcept
+    {
+        return fIsReady;
+    }
+
+    uint32_t getNumAudioOuts() const noexcept
+    {
+        return fNumAudioOuts;
+    }
 
     RackGraph*     getRackGraph() const noexcept;
     PatchbayGraph* getPatchbayGraph() const noexcept;
@@ -112,6 +125,7 @@ public:
 
 private:
     bool fIsRack;
+    uint32_t fNumAudioOuts;
     volatile bool fIsReady;
 
     union {

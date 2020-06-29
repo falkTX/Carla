@@ -2570,6 +2570,7 @@ void PatchbayGraph::run()
 
 EngineInternalGraph::EngineInternalGraph(CarlaEngine* const engine) noexcept
     : fIsRack(false),
+      fNumAudioOuts(0),
       fIsReady(false),
       fRack(nullptr),
       kEngine(engine) {}
@@ -2596,6 +2597,7 @@ void EngineInternalGraph::create(const uint32_t audioIns, const uint32_t audioOu
         fPatchbay = new PatchbayGraph(kEngine, audioIns, audioOuts, cvIns, cvOuts);
     }
 
+    fNumAudioOuts = audioOuts;
     fIsReady = true;
 }
 
@@ -2621,6 +2623,7 @@ void EngineInternalGraph::destroy() noexcept
     }
 
     fIsReady = false;
+    fNumAudioOuts = 0;
 }
 
 void EngineInternalGraph::setBufferSize(const uint32_t bufferSize)
@@ -2668,11 +2671,6 @@ void EngineInternalGraph::setOffline(const bool offline)
         CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
         fPatchbay->setOffline(offline);
     }
-}
-
-bool EngineInternalGraph::isReady() const noexcept
-{
-    return fIsReady;
 }
 
 RackGraph* EngineInternalGraph::getRackGraph() const noexcept
@@ -2968,10 +2966,22 @@ bool CarlaEngine::restorePatchbayGroupPosition(const bool external, PatchbayPosi
         PatchbayGraph* const graph = pData->graph.getPatchbayGraph();
         CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
 
+        const char* const orig_name = ppos.name;
+
+        // strip client name prefix if present
+        if (ppos.pluginId >= 0)
+        {
+            if (const char* const rname2 = std::strstr(ppos.name, "."))
+                if (const char* const rname3 = std::strstr(rname2 + 1, "/"))
+                    ppos.name = rname3 + 1;
+        }
+
         uint groupId;
         CARLA_SAFE_ASSERT_RETURN(graph->getGroupFromName(external, ppos.name, groupId), false);
 
         graph->setGroupPos(true, true, external, groupId, ppos.x1, ppos.y1, ppos.x2, ppos.y2);
+
+        return ppos.name != orig_name;
     }
 
     return false;

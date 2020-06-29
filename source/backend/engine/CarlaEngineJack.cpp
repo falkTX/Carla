@@ -1695,20 +1695,22 @@ public:
         return true;
 #else
         stopThread(-1);
-        fClientName.clear();
-        fPostPonedEvents.clear();
 
+        // deactivate client ASAP
         if (fClient != nullptr)
-        {
-            // deactivate and close client
             jackbridge_deactivate(fClient);
-            jackbridge_client_close(fClient);
-            fClient = nullptr;
-        }
 
         // clear engine data
         CarlaEngine::close();
 
+        // now close client
+        if (fClient != nullptr)
+        {
+            jackbridge_client_close(fClient);
+            fClient = nullptr;
+        }
+
+        fClientName.clear();
         fUsedGroups.clear();
         fUsedPorts.clear();
         fUsedConnections.clear();
@@ -2724,7 +2726,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
         carla_debug("CarlaEngineJack::restorePatchbayGroupPosition(%s, {%i, %i, %i, %i, %i, \"%s\"})",
-                     bool2str(external), ppos.pluginId, ppos.x1, ppos.y1, ppos.x2, ppos.y2, ppos.name);
+                    bool2str(external), ppos.pluginId, ppos.x1, ppos.y1, ppos.x2, ppos.y2, ppos.name);
 
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! external)
             return CarlaEngine::restorePatchbayGroupPosition(external, ppos);
@@ -2735,39 +2737,42 @@ public:
         /* NOTE: When loading a project, it might take a bit to receive plugins' jack client registration callbacks.
          *       We try to wait a little for it, but not too much.
          */
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS && ppos.pluginId >= 0)
+        if (ppos.pluginId >= 0)
         {
             // strip client name prefix if already in place
             if (const char* const rname2 = std::strstr(ppos.name, "."))
                 if (const char* const rname3 = std::strstr(rname2 + 1, "/"))
                     ppos.name = rname3 + 1;
 
-            if (fClientNamePrefix.isNotEmpty())
+            if (pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
             {
-                char* nname = (char*)std::malloc(fClientNamePrefix.length() + std::strlen(ppos.name) + 1);
-                std::strcpy(nname, fClientNamePrefix.buffer());
-                std::strcat(nname, ppos.name);
-
-                ppos.name = nname;
-                ppos.dealloc = true;
-            }
-
-            for (int i=20; --i >=0;)
-            {
+                if (fClientNamePrefix.isNotEmpty())
                 {
-                    const CarlaMutexLocker cml(fUsedGroups.mutex);
+                    char* nname = (char*)std::malloc(fClientNamePrefix.length() + std::strlen(ppos.name) + 1);
+                    std::strcpy(nname, fClientNamePrefix.buffer());
+                    std::strcat(nname, ppos.name);
 
-                    if (fUsedGroups.list.count() == 0)
-                        break;
-
-                    groupId = fUsedGroups.getGroupId(ppos.name);
+                    ppos.name = nname;
+                    ppos.dealloc = true;
                 }
 
-                if (groupId != 0)
-                    break;
+                for (int i=20; --i >=0;)
+                {
+                    {
+                        const CarlaMutexLocker cml(fUsedGroups.mutex);
 
-                carla_msleep(100);
-                callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+                        if (fUsedGroups.list.count() == 0)
+                            break;
+
+                        groupId = fUsedGroups.getGroupId(ppos.name);
+                    }
+
+                    if (groupId != 0)
+                        break;
+
+                    carla_msleep(100);
+                    callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+                }
             }
         }
         else
@@ -2780,7 +2785,8 @@ public:
 
         if (groupId == 0)
         {
-            carla_stdout("NOTICE: Previously saved client '%s' not found", ppos.name);
+            if (ppos.pluginId < 0 || pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+                carla_stdout("NOTICE: Previously saved client '%s' not found", ppos.name);
         }
         else
         {
