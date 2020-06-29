@@ -1792,6 +1792,10 @@ void CarlaPlugin::setParameterMappedControlIndex(const uint32_t parameterId, con
                             static_cast<int>(parameterId),
                             index,
                             0, 0.0f, nullptr);
+#else
+    return;
+    // unused
+    (void)reconfigureNow;
 #endif
 }
 
