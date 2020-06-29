@@ -605,7 +605,7 @@ private:
             {
                 // unconnected input channel
                 bufIndex = getFreeBuffer (AudioProcessor::ChannelTypeCV);
-                renderingOps.add (new ClearChannelOp (bufIndex, false));
+                renderingOps.add (new ClearChannelOp (bufIndex, true));
             }
             else if (sourceNodes.size() == 1)
             {
