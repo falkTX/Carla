@@ -3243,6 +3243,7 @@ def setHostSettings(host):
     host.set_engine_option(ENGINE_OPTION_PROCESS_MODE,          host.nextProcessMode,     "")
     host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE,        host.transportMode,       host.transportExtra)
     host.set_engine_option(ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT,  host.showLogs,            "")
+    host.set_engine_option(ENGINE_OPTION_CLIENT_NAME_PREFIX,    0,                        gCarla.cnprefix)
 
 # ------------------------------------------------------------------------------------------------------------
 # Set Engine settings according to carla preferences. Returns selected audio driver.

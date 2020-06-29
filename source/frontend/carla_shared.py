@@ -547,10 +547,11 @@ del DEFAULT_SFZ_PATH
 
 class CarlaObject():
     def __init__(self):
-        self.gui   = None  # Host Window
-        self.nogui = False # Skip UI
-        self.term  = False # Terminated by OS signal
-        self.utils = None  # Utils object
+        self.cnprefix = ""    # Client name prefix
+        self.gui      = None  # Host Window
+        self.nogui    = False # Skip UI
+        self.term     = False # Terminated by OS signal
+        self.utils    = None  # Utils object
 
 gCarla = CarlaObject()
 
@@ -628,6 +629,7 @@ def getIcon(icon, size = 16):
 def handleInitialCommandLineArguments(file):
     initName  = os.path.basename(file) if (file is not None and os.path.dirname(file) in PATH) else sys.argv[0]
     libPrefix = None
+    readPrefixNext = False
 
     for arg in sys.argv[1:]:
         if arg.startswith("--with-appname="):
@@ -638,6 +640,12 @@ def handleInitialCommandLineArguments(file):
 
         elif arg.startswith("--osc-gui="):
             gCarla.nogui = int(arg.replace("--osc-gui=", ""))
+
+        elif arg.startswith("--cnprefix="):
+            gCarla.cnprefix = arg.replace("--cnprefix=", "")
+
+        elif arg == "--cnprefix":
+            readPrefixNext = True
 
         elif arg == "--gdb":
             pass
@@ -652,11 +660,12 @@ def handleInitialCommandLineArguments(file):
             print("")
             print(" and OPTION can be one or more of the following:")
             print("")
-            print("    --gdb    \t Run Carla inside gdb.")
-            print(" -n,--no-gui \t Run Carla headless, don't show UI.")
+            print("    --cnprefix\t Set a prefix for client names in multi-client mode.")
+            print("    --gdb     \t Run Carla inside gdb.")
+            print(" -n,--no-gui  \t Run Carla headless, don't show UI.")
             print("")
-            print(" -h,--help   \t Print this help text and exit.")
-            print(" -v,--version\t Print version information and exit.")
+            print(" -h,--help    \t Print this help text and exit.")
+            print(" -v,--version \t Print version information and exit.")
             print("")
 
             sys.exit(0)
@@ -673,6 +682,10 @@ def handleInitialCommandLineArguments(file):
 
             sys.exit(0)
 
+        elif readPrefixNext:
+            readPrefixNext = False
+            gCarla.cnprefix = arg
+
     return (initName, libPrefix)
 
 # ------------------------------------------------------------------------------------------------------------
@@ -682,8 +695,21 @@ def getInitialProjectFile(skipExistCheck = False):
     # NOTE: PyQt mishandles unicode characters, we directly use sys.argv instead of qApp->arguments()
     # see https://riverbankcomputing.com/pipermail/pyqt/2015-January/035395.html
     args = sys.argv[1:]
+    readPrefixNext = False
     for arg in args:
-        if arg.startswith("--with-appname=") or arg.startswith("--with-libprefix=") or arg.startswith("--osc-gui="):
+        if readPrefixNext:
+            readPrefixNext = False
+            continue
+        if arg.startswith("--cnprefix="):
+            continue
+        if arg.startswith("--osc-gui="):
+            continue
+        if arg.startswith("--with-appname="):
+            continue
+        if arg.startswith("--with-libprefix="):
+            continue
+        if arg == "--cnprefix":
+            readPrefixNext = True
             continue
         if arg in ("-n", "--n", "-no-gui", "--no-gui", "-nogui", "--nogui", "--gdb"):
             continue

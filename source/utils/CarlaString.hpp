@@ -267,6 +267,20 @@ public:
     }
 
     /*
+     * Check if the string contains a specific character, case-sensitive.
+     */
+    bool contains(const char c) const noexcept
+    {
+        for (std::size_t i=0; i<fBufferLen; ++i)
+        {
+            if (fBuffer[i] == c)
+                return true;
+        }
+
+        return false;
+    }
+
+    /*
      * Check if the string contains another string, optionally ignoring case.
      */
     bool contains(const char* const strBuf, const bool ignoreCase = false) const noexcept

@@ -1432,7 +1432,17 @@ public:
 
         if (fClient == nullptr && clientName != nullptr)
         {
-            truncatedClientName = clientName;
+#ifndef BUILD_BRIDGE
+            if (fClientNamePrefix.isNotEmpty())
+            {
+                truncatedClientName = fClientNamePrefix;
+                truncatedClientName.truncate(truncatedClientName.rfind("."));
+            }
+            else
+#endif
+            {
+                truncatedClientName = clientName;
+            }
             truncatedClientName.truncate(getMaxClientNameSize());
         }
 
@@ -1484,6 +1494,28 @@ public:
             fClient = nullptr;
             setLastError("Failed to init internal data");
             return false;
+        }
+
+        // if main jack client does not match our requested one, setup client name prefix as needed
+        {
+            if (truncatedClientName != jackClientName)
+            {
+                if (const char* const suffix = std::strrchr(jackClientName, '-'))
+                {
+                    if (fClientNamePrefix.isNotEmpty())
+                    {
+                        fClientNamePrefix.truncate(fClientNamePrefix.rfind('.') + 1);
+                    }
+                    else
+                    {
+                        fClientNamePrefix = truncatedClientName;
+                        fClientNamePrefix += ".";
+                    }
+
+                    fClientNamePrefix += suffix + 1;
+                    fClientNamePrefix += "/";
+                }
+            }
         }
 
         fClientName = jackClientName;
@@ -1917,8 +1949,13 @@ public:
         {
             fClientNamePrefix = valueStr;
 
-            if (fClientNamePrefix.isNotEmpty() && ! fClientNamePrefix.endsWith('/'))
-                fClientNamePrefix += "/";
+            if (fClientNamePrefix.isNotEmpty())
+            {
+                if (! fClientNamePrefix.contains('.'))
+                    fClientNamePrefix += ".0";
+                if (! fClientNamePrefix.endsWith('/'))
+                    fClientNamePrefix += "/";
+            }
         }
 
         CarlaEngine::setOption(option, value, valueStr);
@@ -2704,7 +2741,7 @@ public:
         {
             // strip client name prefix if already in place
             if (const char* const rname2 = std::strstr(ppos.name, "."))
-                if (const char* const rname3 = std::strstr(rname2, "/"))
+                if (const char* const rname3 = std::strstr(rname2 + 1, "/"))
                     ppos.name = rname3 + 1;
 
             if (fClientNamePrefix.isNotEmpty())
