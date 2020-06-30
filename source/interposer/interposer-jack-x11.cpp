@@ -72,6 +72,12 @@ typedef enum {
     WindowMapSubwindows
 } WindowMappingType;
 
+typedef enum {
+    WindowUnmapNone,
+    WindowUnmapNormal,
+    WindowUnmapDestroy
+} WindowUnmappingType;
+
 #ifdef HAVE_X11
 static Display* gCurrentlyMappedDisplay = nullptr;
 static Window gCurrentlyMappedWindow = 0;
@@ -125,6 +131,14 @@ static int real_XUnmapWindow(Display* display, Window window)
     return func(display, window);
 }
 
+static int real_XDestroyWindow(Display* display, Window window)
+{
+    static const XWindowFunc func = (XWindowFunc)::dlsym(RTLD_NEXT, "XDestroyWindow");
+    CARLA_SAFE_ASSERT_RETURN(func != nullptr, 0);
+
+    return func(display, window);
+}
+
 static int real_XNextEvent(Display* display, XEvent* event)
 {
     static const XNextEventFunc func = (XNextEventFunc)::dlsym(RTLD_NEXT, "XNextEvent");
@@ -143,6 +157,8 @@ static int carlaWindowMap(Display* const display, const Window window, const Win
     for (;;)
     {
         if (slo.winId < 0)
+            break;
+        if ((gInterposedHints & LIBJACK_FLAG_CONTROL_WINDOW) == 0x0)
             break;
 
         Atom atom;
@@ -214,7 +230,7 @@ static int carlaWindowMap(Display* const display, const Window window, const Win
         if (gCurrentlyMappedDisplay != nullptr && gCurrentlyMappedWindow != 0)
         {
             // ignore requests against the current mapped window
-            if (gCurrentlyMappedWindow == window)
+            if (gCurrentlyMappedWindow == window && gInterposedSessionManager != LIBJACK_SESSION_MANAGER_NSM)
                 return 0;
 
             // we already have a mapped window, with carla visible button on, should be a dialog of sorts..
@@ -261,6 +277,10 @@ static int carlaWindowMap(Display* const display, const Window window, const Win
 
         gCurrentWindowMapped = false;
         carla_stdout("JACK application window found and captured");
+
+        if (gInterposedSessionManager == LIBJACK_SESSION_MANAGER_NSM)
+            break;
+
         return 0;
     }
 
@@ -268,12 +288,43 @@ static int carlaWindowMap(Display* const display, const Window window, const Win
 
     switch (fallbackFnType)
     {
-    case 1:
+    case WindowMapNormal:
         return real_XMapWindow(display, window);
-    case 2:
+    case WindowMapRaised:
         return real_XMapRaised(display, window);
-    case 3:
+    case WindowMapSubwindows:
         return real_XMapSubwindows(display, window);
+    default:
+        return 0;
+    }
+}
+
+static int carlaWindowUnmap(Display* const display, const Window window, const WindowUnmappingType fallbackFnType)
+{
+    if (gCurrentlyMappedWindow == window)
+    {
+        carla_stdout("NOTICE: now hiding previous window");
+
+        gCurrentlyMappedDisplay = nullptr;
+        gCurrentlyMappedWindow  = 0;
+        gCurrentWindowType      = WindowMapNone;
+        gCurrentWindowMapped    = false;
+        gCurrentWindowVisible   = false;
+
+        if (gInterposedCallback != nullptr)
+            gInterposedCallback(LIBJACK_INTERPOSER_CALLBACK_UI_HIDE, nullptr);
+    }
+    else
+    {
+        carla_debug("carlaWindowUnmap(%p, %lu, %i) - not captured", display, window, fallbackFnType);
+    }
+
+    switch (fallbackFnType)
+    {
+    case WindowUnmapNormal:
+        return real_XUnmapWindow(display, window);
+    case WindowUnmapDestroy:
+        return real_XDestroyWindow(display, window);
     default:
         return 0;
     }
@@ -307,20 +358,14 @@ CARLA_EXPORT
 int XUnmapWindow(Display* display, Window window)
 {
     carla_debug("XUnmapWindow(%p, %lu)", display, window);
+    return carlaWindowUnmap(display, window, WindowUnmapNormal);
+}
 
-    if (gCurrentlyMappedWindow == window)
-    {
-        gCurrentlyMappedDisplay = nullptr;
-        gCurrentlyMappedWindow  = 0;
-        gCurrentWindowType      = WindowMapNone;
-        gCurrentWindowMapped    = false;
-        gCurrentWindowVisible   = false;
-
-        if (gInterposedCallback != nullptr)
-            gInterposedCallback(LIBJACK_INTERPOSER_CALLBACK_UI_HIDE, nullptr);
-    }
-
-    return real_XUnmapWindow(display, window);
+CARLA_EXPORT
+int XDestroyWindow(Display* display, Window window)
+{
+    carla_debug("XDestroyWindow(%p, %lu)", display, window);
+    return carlaWindowUnmap(display, window, WindowUnmapDestroy);
 }
 
 CARLA_EXPORT
