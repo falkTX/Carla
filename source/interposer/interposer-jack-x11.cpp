@@ -373,6 +373,11 @@ int XNextEvent(Display* display, XEvent* event)
 {
     const int ret = real_XNextEvent(display, event);
 
+    if ((gInterposedHints & LIBJACK_FLAG_CONTROL_WINDOW) == 0x0)
+        return ret;
+    if (gInterposedSessionManager == LIBJACK_SESSION_MANAGER_NSM)
+        return ret;
+
     if (ret != 0)
         return ret;
     if (gCurrentlyMappedWindow == 0)
