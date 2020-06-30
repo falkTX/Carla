@@ -604,7 +604,19 @@ public:
 
     uint getOptionsAvailable() const noexcept override
     {
-        return fInfo.optionsAvailable;
+        uint options = 0x0;
+
+        if (fInfo.mIns > 0)
+        {
+            options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+            options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+            options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+            options |= PLUGIN_OPTION_SEND_PITCHBEND;
+            options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+            options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
+        }
+
+        return options;
     }
 
     bool getLabel(char* const strBuf) const noexcept override
@@ -1552,7 +1564,7 @@ public:
     // -------------------------------------------------------------------
 
     bool init(const CarlaPluginPtr plugin,
-              const char* const filename, const char* const name, const char* const label)
+              const char* const filename, const char* const name, const char* const label, const uint options)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -1665,11 +1677,10 @@ public:
         fSetupHints = static_cast<uint>(static_cast<uchar>(label[5]) - '0');
 
         // FIXME dryWet broken
-        pData->hints  = PLUGIN_IS_BRIDGE | PLUGIN_OPTION_FIXED_BUFFERS;
+        pData->hints  = PLUGIN_IS_BRIDGE;
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         pData->hints |= /*PLUGIN_CAN_DRYWET |*/ PLUGIN_CAN_VOLUME | PLUGIN_CAN_BALANCE;
 #endif
-        //fInfo.optionsAvailable = optionAv;
 
         if (fSetupHints & LIBJACK_FLAG_CONTROL_WINDOW)
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
@@ -1710,6 +1721,29 @@ public:
         if (fSetupHints & LIBJACK_FLAG_EXTERNAL_START)
             fInfo.setupLabel[5] = static_cast<char>('0' + (fSetupHints ^ LIBJACK_FLAG_EXTERNAL_START));
 
+        // ---------------------------------------------------------------
+        // set options
+
+        pData->options = PLUGIN_OPTION_FIXED_BUFFERS;
+
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CONTROL_CHANGES))
+            pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CHANNEL_PRESSURE))
+            pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH))
+            pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PITCHBEND))
+            pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_ALL_SOUND_OFF))
+            pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PROGRAM_CHANGES))
+            pData->options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
+
         return true;
     }
 
@@ -1733,7 +1767,6 @@ private:
     struct Info {
         uint8_t aIns, aOuts;
         uint8_t mIns, mOuts;
-        uint optionsAvailable;
         CarlaString setupLabel;
         std::vector<uint8_t> chunk;
 
@@ -1742,7 +1775,6 @@ private:
               aOuts(0),
               mIns(0),
               mOuts(0),
-              optionsAvailable(0),
               setupLabel(),
               chunk() {}
 
@@ -1973,12 +2005,13 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaPluginPtr CarlaPlugin::newJackApp(const Initializer& init)
 {
-    carla_debug("CarlaPlugin::newJackApp({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
+    carla_debug("CarlaPlugin::newJackApp({%p, \"%s\", \"%s\", \"%s\"})",
+                init.engine, init.filename, init.name, init.label);
 
 #ifdef CARLA_OS_LINUX
     std::shared_ptr<CarlaPluginJack> plugin(new CarlaPluginJack(init.engine, init.id));
 
-    if (! plugin->init(plugin, init.filename, init.name, init.label))
+    if (! plugin->init(plugin, init.filename, init.name, init.label, init.options))
         return nullptr;
 
     return plugin;
