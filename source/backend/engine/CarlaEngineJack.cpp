@@ -1714,6 +1714,7 @@ public:
         fUsedPorts.clear();
         fUsedConnections.clear();
         fPostPonedEvents.clear();
+        fPostPonedUUIDs.clear();
 
         // clear rack/patchbay stuff
         if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
@@ -2451,16 +2452,6 @@ public:
 
             if (! external)
                 CarlaEngine::patchbayRefresh(sendHost, sendOSC, false);
-        }
-
-        {
-            const CarlaMutexLocker cml1(fUsedGroups.mutex);
-            const CarlaMutexLocker cml2(fUsedPorts.mutex);
-            const CarlaMutexLocker cml3(fUsedConnections.mutex);
-
-            fUsedGroups.clear();
-            fUsedPorts.clear();
-            fUsedConnections.clear();
         }
 
         initJackPatchbay(sendHost, sendOSC, jackbridge_get_client_name(fClient),
@@ -3716,6 +3707,14 @@ private:
             const CarlaMutexLocker cml1(fUsedGroups.mutex);
             const CarlaMutexLocker cml2(fUsedPorts.mutex);
             const CarlaMutexLocker cml3(fUsedConnections.mutex);
+            const CarlaMutexLocker cml4(fPostPonedEventsMutex);
+            const CarlaMutexLocker cml5(fPostPonedUUIDsMutex);
+
+            fUsedGroups.clear();
+            fUsedPorts.clear();
+            fUsedConnections.clear();
+            fPostPonedEvents.clear();
+            fPostPonedUUIDs.clear();
 
             // add our client first
             {

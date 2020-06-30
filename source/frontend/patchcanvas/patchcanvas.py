@@ -892,6 +892,13 @@ def renamePort(group_id, port_id, new_port_name):
               group_id, port_id, new_port_name.encode()))
 
 def connectPorts(connection_id, group_out_id, port_out_id, group_in_id, port_in_id):
+    if canvas.last_connection_id >= connection_id:
+        print("PatchCanvas::connectPorts(%i, %i, %i, %i, %i) - invalid connection id received" % (
+              connection_id, group_out_id, port_out_id, group_in_id, port_in_id))
+        return
+
+    canvas.last_connection_id = connection_id
+
     if canvas.debug:
         print("PatchCanvas::connectPorts(%i, %i, %i, %i, %i)" % (
               connection_id, group_out_id, port_out_id, group_in_id, port_in_id))
