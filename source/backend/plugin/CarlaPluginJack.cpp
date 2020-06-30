@@ -71,11 +71,17 @@ static const ExternalMidiNote kExternalMidiNoteFallback = { -1, 0, 0 };
 
 // -------------------------------------------------------------------------------------------------------------------
 
+struct Announcer {
+    virtual ~Announcer() {}
+    virtual void nsmAnnounced(bool hasGui) = 0;
+};
+
 class CarlaPluginJackThread : public CarlaThread
 {
 public:
-    CarlaPluginJackThread(CarlaEngine* const engine, CarlaPlugin* const plugin) noexcept
+    CarlaPluginJackThread(Announcer* const ann, CarlaEngine* const engine, CarlaPlugin* const plugin) noexcept
         : CarlaThread("CarlaPluginJackThread"),
+          kAnnouncer(ann),
           kEngine(engine),
           kPlugin(plugin),
           fShmIds(),
@@ -114,7 +120,7 @@ public:
         if (fSetupLabel != setupLabel)
             fSetupLabel = setupLabel;
 
-        maybeOpenFirstTime();
+        maybeOpenFirstTime(false);
 
         lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/save", "");
     }
@@ -179,20 +185,20 @@ protected:
         return ((CarlaPluginJackThread*)data)->handleBroadcast(path, types, argv, msg);
     }
 
-    void maybeOpenFirstTime()
+    void maybeOpenFirstTime(const bool announced)
     {
         if (fSetupLabel.length() <= 6)
             return;
 
-        if (fProject.path.isNotEmpty() || fProject.init(kPlugin->getName(),
-                                                        kEngine->getCurrentProjectFolder(),
-                                                        &fSetupLabel[6]))
+        if ((announced || fProject.path.isEmpty()) && fProject.init(kPlugin->getName(),
+                                                                    kEngine->getCurrentProjectFolder(),
+                                                                    &fSetupLabel[6]))
         {
             carla_stdout("Sending open signal %s %s %s",
                          fProject.path.buffer(), fProject.display.buffer(), fProject.clientName.buffer());
 
             lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/open", "sss",
-                            fProject.path.buffer(), fProject.display.buffer(), fProject.clientName.buffer());
+                         fProject.path.buffer(), fProject.display.buffer(), fProject.clientName.buffer());
         }
     }
 
@@ -217,6 +223,8 @@ protected:
             fProject.appName = &argv[0]->s;
             fHasOptionalGui  = std::strstr(&argv[1]->s, ":optional-gui:") != nullptr;
 
+            kAnnouncer->nsmAnnounced(fHasOptionalGui);
+
             static const char* const featuresG = ":server-control:optional-gui:";
             static const char* const featuresN = ":server-control:";
 
@@ -230,7 +238,7 @@ protected:
             lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE, "/reply", "ssss",
                          method, message, smName, features);
 
-            maybeOpenFirstTime();
+            maybeOpenFirstTime(true);
             return 0;
         }
 
@@ -444,6 +452,7 @@ protected:
     }
 
 private:
+    Announcer* const kAnnouncer;
     CarlaEngine* const kEngine;
     CarlaPlugin* const kPlugin;
 
@@ -499,7 +508,8 @@ private:
 
 // -------------------------------------------------------------------------------------------------------------------
 
-class CarlaPluginJack : public CarlaPlugin
+class CarlaPluginJack : public CarlaPlugin,
+                        public Announcer
 {
 public:
     CarlaPluginJack(CarlaEngine* const engine, const uint id)
@@ -512,7 +522,7 @@ public:
           fBufferSize(engine->getBufferSize()),
           fProcWaitTime(0),
           fSetupHints(0x0),
-          fBridgeThread(engine, this),
+          fBridgeThread(this, engine, this),
           fShmAudioPool(),
           fShmRtClientControl(),
           fShmNonRtClientControl(),
@@ -568,6 +578,27 @@ public:
         clearBuffers();
 
         fInfo.chunk.clear();
+    }
+
+    // -------------------------------------------------------------------
+
+    void nsmAnnounced(bool hasGui) override
+    {
+        if (hasGui || (pData->hints & PLUGIN_HAS_CUSTOM_UI) == 0x0)
+            return;
+
+        {
+            const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
+
+            fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientShowUI);
+            fShmNonRtClientControl.commitWrite();
+        }
+
+        pData->engine->callback(true, true,
+                                ENGINE_CALLBACK_UI_STATE_CHANGED,
+                                pData->id,
+                                1,
+                                0, 0, 0.0f, nullptr);
     }
 
     // -------------------------------------------------------------------

@@ -1,6 +1,6 @@
 /*
  * Carla Interposer for JACK Applications X11 control
- * Copyright (C) 2014-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -81,6 +81,7 @@ typedef enum {
 #ifdef HAVE_X11
 static Display* gCurrentlyMappedDisplay = nullptr;
 static Window gCurrentlyMappedWindow = 0;
+static bool gSupportsOptionalGui = true;
 #endif
 static CarlaInterposedCallback gInterposedCallback = nullptr;
 static uint gInterposedSessionManager = LIBJACK_SESSION_MANAGER_NONE;
@@ -230,7 +231,9 @@ static int carlaWindowMap(Display* const display, const Window window, const Win
         if (gCurrentlyMappedDisplay != nullptr && gCurrentlyMappedWindow != 0)
         {
             // ignore requests against the current mapped window
-            if (gCurrentlyMappedWindow == window && gInterposedSessionManager != LIBJACK_SESSION_MANAGER_NSM)
+            if (gCurrentlyMappedWindow == window)
+                return 0;
+            if (gInterposedSessionManager != LIBJACK_SESSION_MANAGER_NSM || ! gSupportsOptionalGui)
                 return 0;
 
             // we already have a mapped window, with carla visible button on, should be a dialog of sorts..
@@ -278,7 +281,7 @@ static int carlaWindowMap(Display* const display, const Window window, const Win
         gCurrentWindowMapped = false;
         carla_stdout("JACK application window found and captured");
 
-        if (gInterposedSessionManager == LIBJACK_SESSION_MANAGER_NSM)
+        if (gInterposedSessionManager == LIBJACK_SESSION_MANAGER_NSM && gSupportsOptionalGui)
             break;
 
         return 0;
@@ -375,7 +378,7 @@ int XNextEvent(Display* display, XEvent* event)
 
     if ((gInterposedHints & LIBJACK_FLAG_CONTROL_WINDOW) == 0x0)
         return ret;
-    if (gInterposedSessionManager == LIBJACK_SESSION_MANAGER_NSM)
+    if (gInterposedSessionManager == LIBJACK_SESSION_MANAGER_NSM && gSupportsOptionalGui)
         return ret;
 
     if (ret != 0)
@@ -428,6 +431,9 @@ int jack_carla_interposed_action(uint action, uint value, void* ptr)
         return 1;
 
     case LIBJACK_INTERPOSER_ACTION_SHOW_HIDE_GUI:
+#ifdef HAVE_X11
+        gSupportsOptionalGui = false;
+#endif
         // show gui
         if (value != 0)
         {
