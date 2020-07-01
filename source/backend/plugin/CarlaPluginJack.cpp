@@ -1125,6 +1125,16 @@ public:
                             }
                         }
 #endif
+                        if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_VALUE)
+                        {
+                            fShmRtClientControl.writeOpcode(kPluginBridgeRtClientMidiEvent);
+                            fShmRtClientControl.writeUInt(event.time);
+                            fShmRtClientControl.writeByte(0); // port
+                            fShmRtClientControl.writeByte(3); // size
+                            fShmRtClientControl.writeByte(uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT)));
+                            fShmRtClientControl.writeByte(uint8_t(ctrlEvent.param));
+                            fShmRtClientControl.writeByte(uint8_t(ctrlEvent.value*127.0f));
+                        }
                         break;
 
                     case kEngineControlEventTypeMidiBank:
