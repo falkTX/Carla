@@ -1045,6 +1045,8 @@ def handlePluginRemoved(plugin_id):
     if canvas.debug:
         print("PatchCanvas::handlePluginRemoved(%i)" % plugin_id)
 
+    canvas.scene.clearSelection()
+
     group = canvas.group_plugin_map.pop(plugin_id, None)
 
     if group is not None:
