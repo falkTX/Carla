@@ -2375,6 +2375,11 @@ void CarlaPlugin::showCustomUI(const bool yesNo)
     }
 }
 
+void* CarlaPlugin::embedCustomUI(void*)
+{
+    return nullptr;
+}
+
 void CarlaPlugin::uiIdle()
 {
     if (pData->hints & PLUGIN_NEEDS_UI_MAIN_THREAD)

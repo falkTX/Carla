@@ -1561,7 +1561,7 @@ public:
             return;
         }
 
-        const uintptr_t frontendWinId(pData->engine->getOptions().frontendWinId);
+        const uintptr_t frontendWinId = pData->engine->getOptions().frontendWinId;
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (! yesNo)
@@ -1844,6 +1844,27 @@ public:
             fUI.widget = nullptr;
         }
     }
+
+#ifndef LV2_UIS_ONLY_BRIDGES
+    void* embedCustomUI(void* const ptr) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fUI.type == UI::TYPE_EMBED, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fUI.descriptor != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fUI.descriptor->instantiate != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fUI.descriptor->cleanup != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fUI.rdfDescriptor->Type != LV2_UI_NONE, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fUI.window == nullptr, nullptr);
+
+        fFeatures[kFeatureIdUiParent]->data = ptr;
+
+        fUI.embedded = true;
+        fUI.widget = nullptr;
+        fUI.handle = fUI.descriptor->instantiate(fUI.descriptor, fRdfDescriptor->URI, fUI.rdfDescriptor->Bundle,
+                                                 carla_lv2_ui_write_function, this, &fUI.widget, fFeatures);
+
+        return fUI.widget;
+    }
+#endif
 
     void idle() override
     {
@@ -5457,12 +5478,24 @@ public:
 
     int handleUIResize(const int width, const int height)
     {
-        CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr, 1);
         CARLA_SAFE_ASSERT_RETURN(width > 0, 1);
         CARLA_SAFE_ASSERT_RETURN(height > 0, 1);
         carla_debug("CarlaPluginLV2::handleUIResize(%i, %i)", width, height);
 
-        fUI.window->setSize(static_cast<uint>(width), static_cast<uint>(height), true);
+
+        if (fUI.embedded)
+        {
+            pData->engine->callback(true, true,
+                                    ENGINE_CALLBACK_EMBED_UI_RESIZED,
+                                    pData->id, width, height,
+                                    0, 0.0f, nullptr);
+        }
+        else
+        {
+            CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr, 1);
+            fUI.window->setSize(static_cast<uint>(width), static_cast<uint>(height), true);
+        }
+
         return 0;
     }
 
@@ -6712,6 +6745,7 @@ private:
         const LV2UI_Descriptor* descriptor;
         const LV2_RDF_UI*       rdfDescriptor;
 
+        bool embedded;
         bool fileBrowserOpen;
         const char* fileNeededForURI;
         CarlaPluginUI* window;
@@ -6722,6 +6756,7 @@ private:
               widget(nullptr),
               descriptor(nullptr),
               rdfDescriptor(nullptr),
+              embedded(false),
               fileBrowserOpen(false),
               fileNeededForURI(nullptr),
               window(nullptr) {}

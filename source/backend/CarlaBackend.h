@@ -188,6 +188,13 @@ static const uint PLUGIN_USES_MULTI_PROGS = 0x400;
  */
 static const uint PLUGIN_HAS_INLINE_DISPLAY = 0x800;
 
+/*!
+ * Plugin has its own custom UI which can be embed into another Window.
+ * @see CarlaPlugin::embedCustomUI() and carla_embed_custom_ui()
+ * @note This is very experimental and subject to change at this point
+ */
+static const uint PLUGIN_HAS_CUSTOM_EMBED_UI = 0x1000;
+
 /** @} */
 
 /* ------------------------------------------------------------------------------------------------------------
@@ -1152,6 +1159,14 @@ typedef enum {
      * @a valuef   Y position 2
      */
     ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED = 47,
+
+    /*!
+     * A plugin embed UI has been resized.
+     * @a pluginId Plugin Id to resize
+     * @a value1   New width
+     * @a value2   New height
+     */
+    ENGINE_CALLBACK_EMBED_UI_RESIZED = 48,
 
 } EngineCallbackOpcode;
 

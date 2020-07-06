@@ -803,6 +803,13 @@ public:
     virtual void showCustomUI(bool yesNo);
 
     /*!
+     * Embed the plugin's custom UI to the system pointer @a ptr.
+     * This function is always called from the main thread.
+     * @note This is very experimental and subject to change at this point
+     */
+    virtual void* embedCustomUI(void* ptr);
+
+    /*!
      * UI idle function, called at regular intervals.
      * This function is only called from the main thread if PLUGIN_NEEDS_UI_MAIN_THREAD is set.
      * @note This function may sometimes be called even if the UI is not visible yet.

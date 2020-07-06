@@ -2167,6 +2167,16 @@ void carla_show_custom_ui(CarlaHostHandle handle, uint pluginId, bool yesNo)
         plugin->showCustomUI(yesNo);
 }
 
+void* carla_embed_custom_ui(CarlaHostHandle handle, uint pluginId, void* ptr)
+{
+    CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, nullptr);
+
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+        return plugin->embedCustomUI(ptr);
+
+    return nullptr;
+}
+
 // --------------------------------------------------------------------------------------------------------------------
 
 uint32_t carla_get_buffer_size(CarlaHostHandle handle)

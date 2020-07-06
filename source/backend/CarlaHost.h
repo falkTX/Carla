@@ -1122,6 +1122,13 @@ CARLA_EXPORT void carla_set_custom_ui_title(CarlaHostHandle handle, uint pluginI
 CARLA_EXPORT void carla_show_custom_ui(CarlaHostHandle handle, uint pluginId, bool yesNo);
 
 /*!
+  * Embed the plugin's custom UI to the system pointer @a ptr.
+  * This function is always called from the main thread.
+  * @note This is very experimental and subject to change at this point
+  */
+CARLA_EXPORT void* carla_embed_custom_ui(CarlaHostHandle handle, uint pluginId, void* ptr);
+
+/*!
  * Get the current engine buffer size.
  */
 CARLA_EXPORT uint32_t carla_get_buffer_size(CarlaHostHandle handle);

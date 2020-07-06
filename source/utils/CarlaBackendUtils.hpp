@@ -317,6 +317,8 @@ const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode) noexcept
         return "ENGINE_CALLBACK_PARAMETER_MAPPED_RANGE_CHANGED";
     case ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED:
         return "ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED";
+    case ENGINE_CALLBACK_EMBED_UI_RESIZED:
+        return "ENGINE_CALLBACK_EMBED_UI_RESIZED";
     }
 
     carla_stderr("CarlaBackend::EngineCallbackOpcode2Str(%i) - invalid opcode", opcode);
