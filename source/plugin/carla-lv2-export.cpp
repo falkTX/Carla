@@ -109,6 +109,12 @@ static void writeManifestFile(PluginListManager& plm)
 {
     String text;
 
+    const uint32_t majorVersion = (CARLA_VERSION_HEX & 0xFF0000) >> 16;
+    const uint32_t microVersion = (CARLA_VERSION_HEX & 0x00FF00) >> 8;
+    const uint32_t minorVersion = (CARLA_VERSION_HEX & 0x0000FF) >> 0;
+
+    const uint32_t lv2MicroVersion = majorVersion * 10 + microVersion;
+
     // -------------------------------------------------------------------
     // Header
 
@@ -133,6 +139,8 @@ static void writeManifestFile(PluginListManager& plm)
         text += "<http://kxstudio.sf.net/carla/plugins/" + label + ">\n";
         text += "    a lv2:Plugin ;\n";
         text += "    lv2:binary <carla" PLUGIN_EXT "> ;\n";
+        text += "    lv2:microVersion " + String(lv2MicroVersion) + " ;\n";
+        text += "    lv2:minorVersion " + String(minorVersion) + " ;\n";
         text += "    rdfs:seeAlso <" + label + ".ttl> .\n";
         text += "\n";
     }
@@ -147,6 +155,7 @@ static void writeManifestFile(PluginListManager& plm)
     text += "    lv2:extensionData <" LV2_UI__idleInterface "> ,\n";
     text += "                      <" LV2_UI__showInterface "> ,\n";
     text += "                      <" LV2_PROGRAMS__UIInterface "> ;\n";
+    text += "    lv2:optionalFeature <" LV2_UI__idleInterface "> ;\n";
     text += "    lv2:requiredFeature <" LV2_INSTANCE_ACCESS_URI "> ;\n";
     text += "    opts:supportedOption <" LV2_PARAMETERS__sampleRate "> .\n";
     text += "\n";
@@ -693,8 +702,24 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
             text += "    ] , [\n";
     }
 
-    text += "    doap:name \"" + String(pluginDesc->name) + "\" ;\n";
-    text += "    doap:maintainer [ foaf:name \"" + String(pluginDesc->maker) + "\" ] .\n";
+    if (std::strcmp(pluginDesc->copyright, "GNU GPL v2+") == 0)
+        text += "    doap:license <http://opensource.org/licenses/GPL-2.0> ;\n\n";
+    if (std::strcmp(pluginDesc->copyright, "LGPL") == 0)
+        text += "    doap:license <http://opensource.org/licenses/LGPL-2.0> ;\n\n";
+    if (std::strcmp(pluginDesc->copyright, "ISC") == 0)
+        text += "    doap:license <http://opensource.org/licenses/ISC> ;\n\n";
+
+    text += "    doap:developer [\n";
+    text += "        foaf:name \"" + String(pluginDesc->maker) + "\" ;\n";
+    text += "    ] ;\n\n";
+
+    text += "    doap:maintainer [\n";
+    text += "        foaf:homepage <https://falktx.com/> ;\n";
+    text += "        foaf:mbox <mailto:falktx@falktx.com> ;\n";
+    text += "        foaf:name \"Filipe Coelho\" ;\n";
+    text += "    ] ;\n\n";
+
+    text += "    doap:name \"" + String(pluginDesc->name) + "\" .\n";
 
 #if 0
     // -------------------------------------------------------------------
