@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -50,11 +50,7 @@ __cdecl static void cvst_processReplacingCallback(AEffect* effect, float** input
 #endif
 
 CARLA_EXPORT __cdecl
-#if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
 const AEffect* VSTPluginMain(audioMasterCallback audioMaster);
-#else
-const AEffect* VSTPluginMain(audioMasterCallback audioMaster) asm ("main");
-#endif
 
 CARLA_EXPORT __cdecl
 const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
@@ -93,6 +89,17 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
 
     return VSTPluginMainInit(effect);
 }
+
+#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+CARLA_EXPORT __cdecl
+const AEffect* VSTPluginMain_asm(audioMasterCallback audioMaster) asm ("main");
+
+CARLA_EXPORT __cdecl
+const AEffect* VSTPluginMain_asm(audioMasterCallback audioMaster)
+{
+    return VSTPluginMain(audioMaster);
+}
+#endif
 
 intptr_t VSTAudioMaster(AEffect* effect, int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt)
 {

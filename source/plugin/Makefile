@@ -121,35 +121,33 @@ LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
 endif
 endif
 
-ifeq ($(MACOS),true)
-SYMBOLS_NATIVE  = -Wl,-exported_symbol,_carla_get_native_rack_plugin
-SYMBOLS_NATIVE += -Wl,-exported_symbol,_carla_get_native_patchbay_plugin
-SYMBOLS_NATIVE += -Wl,-exported_symbol,_carla_get_native_patchbay16_plugin
-SYMBOLS_NATIVE += -Wl,-exported_symbol,_carla_get_native_patchbay32_plugin
-SYMBOLS_NATIVE += -Wl,-exported_symbol,_carla_get_native_patchbay64_plugin
-SYMBOLS_NATIVE += -Wl,-exported_symbol,_carla_get_native_patchbay_cv_plugin
-SYMBOLS_NATIVE += -Wl,-exported_symbol,_carla_create_native_plugin_host_handle
-SYMBOLS_NATIVE += -Wl,-exported_symbol,_carla_host_handle_free
-SYMBOLS_NATIVE += -Wl,-exported_symbol,_carla_get_native_plugin_engine
-SYMBOLS_NATIVE += -Wl,-exported_symbol,_carla_get_library_filename
-SYMBOLS_NATIVE += -Wl,-exported_symbol,_carla_get_library_folder
-SYMBOLS_LV2     = -Wl,-exported_symbol,_lv2_descriptor
-ifeq ($(HAVE_PYQT),true)
-SYMBOLS_LV2    += -Wl,-exported_symbol,_lv2ui_descriptor
-SYMBOLS_LV2_UI  = -Wl,-exported_symbol,_lv2ui_descriptor
-endif
-SYMBOLS_VST     = -Wl,-exported_symbol,_VSTPluginMain
-endif
-
 ifeq ($(WIN32),true)
-SYMBOLS_NATIVE  = win-def/carla-native-plugin.def
+SYMBOLS_NATIVE  = symbols/carla-native-plugin.def
+SYMBOLS_VST     = symbols/carla-vst.def
 ifeq ($(HAVE_PYQT),true)
-SYMBOLS_LV2     = win-def/carla-lv2_dsp+ui.def
-SYMBOLS_LV2_UI  = win-def/carla-lv2_ui.def
+SYMBOLS_LV2     = symbols/carla-lv2_dsp+ui.def
+SYMBOLS_LV2_UI  = symbols/carla-lv2_ui.def
 else
-SYMBOLS_LV2     = win-def/carla-lv2_dsp.def
+SYMBOLS_LV2     = symbols/carla-lv2_dsp.def
 endif
-SYMBOLS_VST     = win-def/carla-vst.def
+else ifeq ($(MACOS),true)
+SYMBOLS_NATIVE = -Wl,-export-symbols=symbols/carla-native-plugin.txt
+SYMBOLS_VST    = -Wl,-export-symbols=symbols/carla-vst.txt
+ifeq ($(HAVE_PYQT),true)
+SYMBOLS_LV2     = -Wl,-export-symbols=symbols/carla-lv2_dsp+ui.txt
+SYMBOLS_LV2_UI  = -Wl,-export-symbols=symbols/carla-lv2_ui.txt
+else
+SYMBOLS_LV2     = -Wl,-export-symbols=symbols/carla-lv2_dsp.txt
+endif
+else
+SYMBOLS_NATIVE = -Wl,--version-script=symbols/carla-native-plugin.version
+SYMBOLS_VST    = -Wl,--version-script=symbols/carla-vst.version
+ifeq ($(HAVE_PYQT),true)
+SYMBOLS_LV2     = -Wl,--version-script=symbols/carla-lv2_dsp+ui.version
+SYMBOLS_LV2_UI  = -Wl,--version-script=symbols/carla-lv2_ui.version
+else
+SYMBOLS_LV2     = -Wl,--version-script=symbols/carla-lv2_dsp.version
+endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

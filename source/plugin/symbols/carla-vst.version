@@ -1,0 +1,4 @@
+{
+    global: VSTPluginMain; main;
+    local: *;
+};
