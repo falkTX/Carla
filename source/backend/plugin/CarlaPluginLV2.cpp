@@ -6911,7 +6911,10 @@ private:
 #endif
                 target = File::getCurrentWorkingDirectory();
 
-            target = target.getChildFile(path);
+            const CarlaPluginLV2* const plugin = (CarlaPluginLV2*)handle;
+            target = target.getChildFile(plugin->pData->engine->getName())
+                           .getChildFile(plugin->getName())
+                           .getChildFile(path);
         }
 
         if (! target.exists())
