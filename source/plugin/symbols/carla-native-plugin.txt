@@ -1,3 +1,4 @@
+carla_get_native_rack_plugin
 carla_get_native_patchbay_plugin
 carla_get_native_patchbay16_plugin
 carla_get_native_patchbay32_plugin

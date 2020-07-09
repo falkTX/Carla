@@ -32,7 +32,7 @@ typedef const AEffect* (__cdecl *MainCallback)(audioMasterCallback);
 
 static HINSTANCE currentModuleHandle = nullptr;
 
-HINSTANCE getCurrentModuleInstanceHandle() noexcept
+static HINSTANCE getCurrentModuleInstanceHandle() noexcept
 {
     if (currentModuleHandle == nullptr)
         currentModuleHandle = GetModuleHandleA(nullptr);

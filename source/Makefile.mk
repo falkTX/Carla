@@ -657,8 +657,8 @@ BASE_FLAGS += -DCARLA_LIB_EXT=\"$(LIB_EXT)\"
 # Set static libs start & end
 
 ifneq ($(MACOS),true)
-LIBS_START = -Wl,--start-group
-LIBS_END   = -Wl,--end-group
+LIBS_START = -Wl,--start-group -Wl,--whole-archive
+LIBS_END   = -Wl,--no-whole-archive -Wl,--end-group
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
