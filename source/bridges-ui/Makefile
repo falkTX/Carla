@@ -192,7 +192,7 @@ OBJS_QT4 = \
 $(BINDIR)/$(MODULENAME)-lv2-qt4: $(OBJS_QT4) $(LIBS) $(MODULEDIR)/theme.qt4.a
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-qt4"
-	@$(CXX) $(OBJS_QT4) $(LIBS_START) $(LIBS) $(MODULEDIR)/theme.qt4.a $(LIBS_END) $(LINK_QT4_FLAGS) -o $@
+	@$(CXX) $(OBJS_QT4) $(LIBS_START) $(LIBS) $(LIBS_END) $(MODULEDIR)/theme.qt4.a $(LINK_QT4_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-qt4.o: %.cpp $(OBJDIR)/CarlaBridgeToolkitQt4.moc $(OBJDIR)/resources.qt4.cpp
 	-@mkdir -p $(OBJDIR)
@@ -222,7 +222,7 @@ OBJS_QT5 = \
 $(BINDIR)/$(MODULENAME)-lv2-qt5: $(OBJS_QT5) $(LIBS) $(MODULEDIR)/theme.qt5.a
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-qt5"
-	@$(CXX) $(OBJS_QT5) $(LIBS_START) $(LIBS) $(MODULEDIR)/theme.qt5.a $(LIBS_END) $(LINK_QT5_FLAGS) -o $@
+	@$(CXX) $(OBJS_QT5) $(LIBS_START) $(LIBS) $(LIBS_END) $(MODULEDIR)/theme.qt5.a $(LINK_QT5_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-qt5.o: %.cpp $(OBJDIR)/CarlaBridgeToolkitQt5.moc $(OBJDIR)/resources.qt5.cpp
 	-@mkdir -p $(OBJDIR)
