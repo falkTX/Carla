@@ -360,7 +360,12 @@ public:
                 if (_getRealIndexForPluginParameter(pluginId, rindex))
                 {
                     fParameters[rindex] = valuef;
-                    pHost->ui_parameter_changed(pHost->handle, rindex, valuef);
+
+                    if (fUiServer.isPipeRunning())
+                        pHost->ui_parameter_changed(pHost->handle, rindex, valuef);
+                    else
+                        carla_stdout("Plugin with id %d triggered parameter %d update while UI is hidden",
+                                     pluginId, value1);
                 }
             }
             break;
