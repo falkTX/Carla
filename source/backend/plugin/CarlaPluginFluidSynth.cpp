@@ -1756,7 +1756,9 @@ private:
     {
         if (sFluidDefaultsStored)
             return;
+
         sFluidDefaultsStored = true;
+
         // reverb defaults
         sFluidDefaults[FluidSynthReverbOnOff] = 1.0f;
 #if FLUIDSYNTH_VERSION_MAJOR >= 2
@@ -1817,6 +1819,7 @@ private:
 
         // misc. defaults
         sFluidDefaults[FluidSynthInterpolation] = FLUID_INTERP_DEFAULT;
+        sFluidDefaults[FluidSynthPolyphony] = FLUID_DEFAULT_POLYPHONY;
     }
 
     enum FluidSynthParameters {
