@@ -167,8 +167,10 @@ WINE_LINK_FLAGS += -Wl,-rpath,/usr/lib/carla
 # ---------------------------------------------------------------------------------------------------------------------
 
 TARGETS = \
-	$(BINDIR)/carla-native-plugin$(APP_EXT) \
 	$(BINDIR)/libcarla_native-plugin$(LIB_EXT)
+
+# sometimes needed for testing:
+#	$(BINDIR)/carla-native-plugin$(APP_EXT)
 
 TARGETS += \
 	$(BINDIR)/carla.lv2/carla$(LIB_EXT)

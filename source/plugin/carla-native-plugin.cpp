@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -65,6 +65,8 @@ CarlaEngine* carla_get_native_plugin_engine(const NativePluginDescriptor* desc, 
 
 // --------------------------------------------------------------------------------------------------------------------
 
+// testing purposes only
+#if 0
 static uint32_t get_buffer_size(NativeHostHandle)
 {
     return 128;
@@ -130,5 +132,6 @@ int main()
     rack->cleanup(handle);
     return 0;
 }
+#endif
 
 // --------------------------------------------------------------------------------------------------------------------
