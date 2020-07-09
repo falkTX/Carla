@@ -578,6 +578,34 @@ class CarlaEmbedW(QEmbedWidget):
 
 if __name__ == '__main__':
     # -------------------------------------------------------------
+    # Get details regarding target usage
+
+    try:
+        winId = int(os.getenv("CARLA_PLUGIN_EMBED_WINID"))
+    except:
+        winId = 0
+
+    usingEmbed = bool(LINUX and winId != 0)
+
+    # -------------------------------------------------------------
+    # Init host backend (part 1)
+
+    isPatchbay = sys.argv[0].rsplit(os.path.sep)[-1].lower().replace(".exe","") == "carla-plugin-patchbay"
+
+    host = initHost("Carla-Plugin", None, False, True, True, PluginHost)
+    host.processMode       = ENGINE_PROCESS_MODE_PATCHBAY if isPatchbay else ENGINE_PROCESS_MODE_CONTINUOUS_RACK
+    host.processModeForced = True
+    host.nextProcessMode   = host.processMode
+
+    # -------------------------------------------------------------
+    # Set-up environment
+
+    gCarla.utils.setenv("CARLA_PLUGIN_EMBED_WINID", "0")
+
+    if usingEmbed:
+        gCarla.utils.setenv("QT_QPA_PLATFORM", "xcb")
+
+    # -------------------------------------------------------------
     # App initialization
 
     app = CarlaApplication("Carla2-Plugin")
@@ -588,27 +616,14 @@ if __name__ == '__main__':
     setUpSignals()
 
     # -------------------------------------------------------------
-    # Init host backend
+    # Init host backend (part 2)
 
-    isPatchbay = sys.argv[0].rsplit(os.path.sep)[-1].lower().replace(".exe","") == "carla-plugin-patchbay"
-
-    host = initHost("Carla-Plugin", None, False, True, True, PluginHost)
-    host.processMode       = ENGINE_PROCESS_MODE_PATCHBAY if isPatchbay else ENGINE_PROCESS_MODE_CONTINUOUS_RACK
-    host.processModeForced = True
-    host.nextProcessMode   = host.processMode
     loadHostSettings(host)
 
     # -------------------------------------------------------------
     # Create GUI
 
-    try:
-        winId = int(os.getenv("CARLA_PLUGIN_EMBED_WINID"))
-    except:
-        winId = 0
-
-    gCarla.utils.setenv("CARLA_PLUGIN_EMBED_WINID", "0")
-
-    if LINUX and winId != 0:
+    if usingEmbed:
         gui = CarlaEmbedW(host, winId, isPatchbay)
     else:
         gui = CarlaMiniW(host, isPatchbay)
