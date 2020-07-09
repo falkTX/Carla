@@ -35,6 +35,8 @@
 #include "lv2/lv2_external_ui.h"
 #include "lv2/lv2_programs.h"
 
+#include "CarlaString.hpp"
+
 #include "water/files/File.h"
 #include "water/text/StringArray.h"
 
@@ -105,25 +107,39 @@ static const String nameToSymbol(const String& name, const uint32_t portIndex)
 
 // -----------------------------------------------------------------------
 
-static void writeManifestFile(PluginListManager& plm)
+static void writeManifestFile(PluginListManager& plm, const uint32_t microVersion, const uint32_t minorVersion)
 {
     String text;
-
-    const uint32_t majorVersion = (CARLA_VERSION_HEX & 0xFF0000) >> 16;
-    const uint32_t microVersion = (CARLA_VERSION_HEX & 0x00FF00) >> 8;
-    const uint32_t minorVersion = (CARLA_VERSION_HEX & 0x0000FF) >> 0;
-
-    const uint32_t lv2MicroVersion = majorVersion * 10 + microVersion;
 
     // -------------------------------------------------------------------
     // Header
 
     text += "@prefix atom: <" LV2_ATOM_PREFIX "> .\n";
+    text += "@prefix doap: <http://usefulinc.com/ns/doap#> .\n";
+    text += "@prefix foaf: <http://xmlns.com/foaf/0.1/> .\n";
     text += "@prefix lv2:  <" LV2_CORE_PREFIX "> .\n";
     text += "@prefix mod:  <http://moddevices.com/ns/mod#> .\n";
     text += "@prefix opts: <" LV2_OPTIONS_PREFIX "> .\n";
     text += "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n";
     text += "@prefix ui:   <" LV2_UI_PREFIX "> .\n";
+    text += "\n";
+
+    // -------------------------------------------------------------------
+    // Project
+
+    text += "<https://kx.studio/carla>\n";
+    text += "    a lv2:Project ;\n";
+    text += "    doap:homepage <https://kx.studio/carla> ;\n";
+    text += "    doap:maintainer [\n";
+    text += "        foaf:homepage <https://falktx.com/> ;\n";
+    text += "        foaf:mbox <mailto:falktx@falktx.com> ;\n";
+    text += "        foaf:name \"Filipe Coelho\" ;\n";
+    text += "    ] ;\n";
+    text += "    doap:name \"Carla\" ;\n";
+    text += "    doap:shortdesc \"fully-featured audio plugin host.\" ;\n";
+    text += "    lv2:microVersion " + String(microVersion) + " ;\n";
+    text += "    lv2:minorVersion " + String(minorVersion) + " ;\n";
+    text += "    lv2:symbol \"carla\" .\n";
     text += "\n";
 
     // -------------------------------------------------------------------
@@ -139,8 +155,7 @@ static void writeManifestFile(PluginListManager& plm)
         text += "<http://kxstudio.sf.net/carla/plugins/" + label + ">\n";
         text += "    a lv2:Plugin ;\n";
         text += "    lv2:binary <carla" PLUGIN_EXT "> ;\n";
-        text += "    lv2:microVersion " + String(lv2MicroVersion) + " ;\n";
-        text += "    lv2:minorVersion " + String(minorVersion) + " ;\n";
+        text += "    lv2:project <https://kx.studio/carla> ;\n";
         text += "    rdfs:seeAlso <" + label + ".ttl> .\n";
         text += "\n";
     }
@@ -208,7 +223,8 @@ static double   host_getSampleRate(NativeHostHandle) { return 44100.0; }
 static bool     host_isOffline(NativeHostHandle)     { return true;    }
 static intptr_t host_dispatcher(NativeHostHandle, NativeHostDispatcherOpcode, int32_t, intptr_t, void*, float) { return 0; }
 
-static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
+static void writePluginFile(const NativePluginDescriptor* const pluginDesc,
+                            const uint32_t microVersion, const uint32_t minorVersion)
 {
     const String pluginLabel(pluginDesc->label);
     const String pluginFile("carla.lv2/" + pluginLabel + ".ttl");
@@ -702,24 +718,20 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
             text += "    ] , [\n";
     }
 
+    text += "    doap:developer [ foaf:name \"" + String(pluginDesc->maker) + "\" ] ;\n";
+
     if (std::strcmp(pluginDesc->copyright, "GNU GPL v2+") == 0)
-        text += "    doap:license <http://opensource.org/licenses/GPL-2.0> ;\n\n";
+        text += "    doap:license <http://opensource.org/licenses/GPL-2.0> ;\n";
     if (std::strcmp(pluginDesc->copyright, "LGPL") == 0)
-        text += "    doap:license <http://opensource.org/licenses/LGPL-2.0> ;\n\n";
+        text += "    doap:license <http://opensource.org/licenses/LGPL-2.0> ;\n";
     if (std::strcmp(pluginDesc->copyright, "ISC") == 0)
-        text += "    doap:license <http://opensource.org/licenses/ISC> ;\n\n";
+        text += "    doap:license <http://opensource.org/licenses/ISC> ;\n";
 
-    text += "    doap:developer [\n";
-    text += "        foaf:name \"" + String(pluginDesc->maker) + "\" ;\n";
-    text += "    ] ;\n\n";
+    text += "    doap:name \"" + String(pluginDesc->name) + "\" ;\n\n";
 
-    text += "    doap:maintainer [\n";
-    text += "        foaf:homepage <https://falktx.com/> ;\n";
-    text += "        foaf:mbox <mailto:falktx@falktx.com> ;\n";
-    text += "        foaf:name \"Filipe Coelho\" ;\n";
-    text += "    ] ;\n\n";
-
-    text += "    doap:name \"" + String(pluginDesc->name) + "\" .\n";
+    text += "    lv2:microVersion " + String(microVersion) + " ;\n";
+    text += "    lv2:minorVersion " + String(minorVersion) + " ;\n";
+    text += "    lv2:symbol \"" + CarlaString(pluginDesc->label).toBasic() + "\" .\n";
 
 #if 0
     // -------------------------------------------------------------------
@@ -804,14 +816,20 @@ int main()
 {
     PluginListManager& plm(PluginListManager::getInstance());
 
-    writeManifestFile(plm);
+    const uint32_t majorVersion = (CARLA_VERSION_HEX & 0xFF0000) >> 16;
+    const uint32_t microVersion = (CARLA_VERSION_HEX & 0x00FF00) >> 8;
+    const uint32_t minorVersion = (CARLA_VERSION_HEX & 0x0000FF) >> 0;
+
+    const uint32_t lv2MicroVersion = majorVersion * 10 + microVersion;
+
+    writeManifestFile(plm, lv2MicroVersion, minorVersion);
 
     for (LinkedList<const NativePluginDescriptor*>::Itenerator it = plm.descs.begin2(); it.valid(); it.next())
     {
         const NativePluginDescriptor* const& pluginDesc(it.getValue(nullptr));
         CARLA_SAFE_ASSERT_CONTINUE(pluginDesc != nullptr);
 
-        writePluginFile(pluginDesc);
+        writePluginFile(pluginDesc, lv2MicroVersion, minorVersion);
     }
 
     carla_stdout("Done.");
