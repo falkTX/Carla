@@ -2229,6 +2229,7 @@ class JackApplicationW(QDialog):
         self.ui = ui_carla_add_jack.Ui_Dialog()
         self.ui.setupUi(self)
 
+        print("Add JACK Application: current project filename is '%s'" % (projectFilename,))
         self.fProjectFilename = projectFilename
         self.ui.group_error.setVisible(False)
 

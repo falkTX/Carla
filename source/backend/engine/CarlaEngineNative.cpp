@@ -1442,6 +1442,7 @@ protected:
         {
             if (fLastProjectFolder != projFolder)
             {
+                carla_stdout("Project folder changed to %s", projFolder);
                 fLastProjectFolder = projFolder;
                 CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("project-folder\n"),);
                 CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(projFolder),);
