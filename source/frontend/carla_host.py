@@ -1393,7 +1393,8 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot(int)
     def slot_handlePluginRemovedCallback(self, pluginId):
-        patchcanvas.handlePluginRemoved(pluginId)
+        if self.fWithCanvas:
+            patchcanvas.handlePluginRemoved(pluginId)
 
         if pluginId in self.fSelectedPlugins:
             self.clearSideStuff()
