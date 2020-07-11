@@ -571,7 +571,6 @@ public:
           fBufferSize(0),
           fSampleRate(sampleRate),
           fFreePath(nullptr),
-          fMakePath(nullptr),
           fUridMap(nullptr),
           fUridUnmap(nullptr),
           fWorker(nullptr),
@@ -592,7 +591,6 @@ public:
         }
 
         const LV2_State_Free_Path* freePath  = nullptr;
-        const LV2_State_Make_Path* makePath  = nullptr;
         const LV2_Options_Option*  options   = nullptr;
         const LV2_URID_Map*        uridMap   = nullptr;
         const LV2_URID_Unmap*      uridUnmap = nullptr;
@@ -602,8 +600,6 @@ public:
         {
             /**/ if (std::strcmp(features[i]->URI, LV2_STATE__freePath) == 0)
                 freePath = (const LV2_State_Free_Path*)features[i]->data;
-            else if (std::strcmp(features[i]->URI, LV2_STATE__makePath) == 0)
-                makePath = (const LV2_State_Make_Path*)features[i]->data;
             else if (std::strcmp(features[i]->URI, LV2_OPTIONS__options) == 0)
                 options = (const LV2_Options_Option*)features[i]->data;
             else if (std::strcmp(features[i]->URI, LV2_URID__map) == 0)
@@ -672,7 +668,6 @@ public:
         fURIs.map(uridMap);
 
         fFreePath = freePath;
-        fMakePath = makePath;
         fUridUnmap = uridUnmap;
         fWorker = worker;
 
@@ -1189,7 +1184,6 @@ protected:
 
     // LV2 host features
     const LV2_State_Free_Path* fFreePath;
-    const LV2_State_Make_Path* fMakePath;
     const LV2_URID_Map* fUridMap;
     const LV2_URID_Unmap* fUridUnmap;
     const LV2_Worker_Schedule* fWorker;

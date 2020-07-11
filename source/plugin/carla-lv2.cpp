@@ -74,7 +74,7 @@ public:
 #if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
           fJuceInitialiser(),
 #endif
-          fLastProjectPath(nullptr),
+          fLastProjectPath(),
           fLoadedFile(),
           fWorkerUISignal(0)
     {
@@ -107,12 +107,6 @@ public:
         fHost.ui_open_file           = host_ui_open_file;
         fHost.ui_save_file           = host_ui_save_file;
         fHost.dispatcher             = host_dispatcher;
-
-#if 0
-        // NOTE: a few hosts crash with this :(
-        if (fMakePath != nullptr && fMakePath->path != nullptr)
-            fLastProjectPath = fMakePath->path(fMakePath->handle, kPathForCarlaFiles);
-#endif
     }
 
     ~NativePlugin()
@@ -129,18 +123,6 @@ public:
         {
             delete[] fHost.uiName;
             fHost.uiName = nullptr;
-        }
-
-        if (fLastProjectPath != nullptr)
-        {
-            if (fFreePath != nullptr && fFreePath->free_path != nullptr)
-                fFreePath->free_path(fFreePath->handle, fLastProjectPath);
-#ifndef CARLA_OS_WIN
-            // this is not safe to call under windows
-            else
-                std::free(fLastProjectPath);
-#endif
-            fLastProjectPath = nullptr;
         }
     }
 
@@ -431,43 +413,46 @@ public:
 
     // ----------------------------------------------------------------------------------------------------------------
 
+    void cleanupLastProjectPath()
+    {
+        fLastProjectPath.clear();
+    }
+
     void saveLastProjectPathIfPossible(const LV2_Feature* const* const features)
     {
-        char* const last = fLastProjectPath;
+        if (features == nullptr)
+            return cleanupLastProjectPath();
 
-        if (fMakePath != nullptr && fMakePath->path != nullptr)
-        {
-            fLastProjectPath = fMakePath->path(fMakePath->handle, kPathForCarlaFiles);
-        }
-        else if (features != nullptr)
-        {
-            const LV2_State_Make_Path* makePath = nullptr;
+        const LV2_State_Free_Path* freePath = nullptr;
+        const LV2_State_Make_Path* makePath = nullptr;
 
-            for (int i=0; features[i] != nullptr; ++i)
-            {
-                if (std::strcmp(features[i]->URI, LV2_STATE__makePath) == 0)
-                {
-                    makePath = (const LV2_State_Make_Path*)features[i]->data;
-                    break;
-                }
-            }
-
-            if (makePath != nullptr && makePath->path != nullptr)
-                fLastProjectPath = makePath->path(makePath->handle, kPathForCarlaFiles);
-            else
-                fLastProjectPath = nullptr;
-        }
-        else
+        for (int i=0; features[i] != nullptr; ++i)
         {
-            fLastProjectPath = nullptr;
+            /**/ if (freePath == nullptr && std::strcmp(features[i]->URI, LV2_STATE__freePath) == 0)
+                freePath = (const LV2_State_Free_Path*)features[i]->data;
+            else if (makePath == nullptr && std::strcmp(features[i]->URI, LV2_STATE__makePath) == 0)
+                makePath = (const LV2_State_Make_Path*)features[i]->data;
         }
 
-        if (fFreePath != nullptr && fFreePath->free_path != nullptr)
-            fFreePath->free_path(fFreePath->handle, last);
+        if (makePath == nullptr || makePath->path == nullptr)
+            return cleanupLastProjectPath();
+
+        if (freePath == nullptr)
+            freePath = fFreePath;
+
+        char* const newpath = makePath->path(makePath->handle, kPathForCarlaFiles);
+
+        if (newpath == nullptr)
+            return cleanupLastProjectPath();
+
+        fLastProjectPath = CarlaString(water::File(newpath).getParentDirectory().getFullPathName().toRawUTF8());
+
+        if (freePath != nullptr && freePath->free_path != nullptr)
+            freePath->free_path(freePath->handle, newpath);
 #ifndef CARLA_OS_WIN
         // this is not safe to call under windows
         else
-            std::free(last);
+            std::free(newpath);
 #endif
     }
 
@@ -875,8 +860,8 @@ protected:
 
         case NATIVE_HOST_OPCODE_GET_FILE_PATH:
             CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, 0);
-            if (fLastProjectPath != nullptr)
-                return static_cast<intptr_t>((uintptr_t)fLastProjectPath);
+            if (std::strcmp((char*)ptr, "carla") == 0 && fLastProjectPath != nullptr)
+                return static_cast<intptr_t>((uintptr_t)fLastProjectPath.buffer());
             break;
 
         case NATIVE_HOST_OPCODE_UI_UNAVAILABLE:
@@ -939,7 +924,7 @@ private:
     juce::SharedResourcePointer<juce::ScopedJuceInitialiser_GUI> fJuceInitialiser;
 #endif
 
-    char* fLastProjectPath;
+    CarlaString fLastProjectPath;
     CarlaString fLoadedFile;
 
     int fWorkerUISignal;
