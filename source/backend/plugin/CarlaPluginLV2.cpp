@@ -191,6 +191,14 @@ enum CarlaLv2Features {
     kFeatureCountAll
 };
 
+// LV2 Feature Ids (special state handlers)
+enum CarlaLv2StateFeatures {
+    kStateFeatureIdFreePath,
+    kStateFeatureIdMakePath,
+    kStateFeatureIdMapPath,
+    kStateFeatureCountAll
+};
+
 // -------------------------------------------------------------------------------------------------------------------
 
 struct Lv2EventData {
@@ -597,6 +605,7 @@ public:
         CARLA_SAFE_ASSERT(fCustomURIDs.size() == kUridCount);
 
         carla_zeroPointers(fFeatures, kFeatureCountAll+1);
+        carla_zeroPointers(fStateFeatures, kStateFeatureCountAll+1);
 
 #if defined(__clang__)
 # pragma clang diagnostic push
@@ -761,6 +770,21 @@ public:
             {
                 delete fFeatures[i];
                 fFeatures[i] = nullptr;
+            }
+        }
+
+        if (fStateFeatures[kStateFeatureIdMakePath] != nullptr && fStateFeatures[kStateFeatureIdMakePath]->data != nullptr)
+            delete (LV2_State_Make_Path*)fStateFeatures[kStateFeatureIdMakePath]->data;
+
+        if (fStateFeatures[kStateFeatureIdMapPath] != nullptr && fStateFeatures[kStateFeatureIdMapPath]->data != nullptr)
+            delete (LV2_State_Map_Path*)fStateFeatures[kStateFeatureIdMapPath]->data;
+
+        for (uint32_t i=0; i < kStateFeatureCountAll; ++i)
+        {
+            if (fStateFeatures[i] != nullptr)
+            {
+                delete fStateFeatures[i];
+                fStateFeatures[i] = nullptr;
             }
         }
 
@@ -1293,10 +1317,10 @@ public:
 
         if (fExt.state != nullptr && fExt.state->save != nullptr)
         {
-            fExt.state->save(fHandle, carla_lv2_state_store, this, LV2_STATE_IS_POD, fFeatures);
+            fExt.state->save(fHandle, carla_lv2_state_store, this, LV2_STATE_IS_POD, fStateFeatures);
 
             if (fHandle2 != nullptr)
-                fExt.state->save(fHandle2, carla_lv2_state_store, this, LV2_STATE_IS_POD, fFeatures);
+                fExt.state->save(fHandle2, carla_lv2_state_store, this, LV2_STATE_IS_POD, fStateFeatures);
         }
     }
 
@@ -1460,10 +1484,10 @@ public:
             {
                 const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
-                lilv_state_restore(state, fExt.state, fHandle, carla_lilv_set_port_value, this, 0, fFeatures);
+                lilv_state_restore(state, fExt.state, fHandle, carla_lilv_set_port_value, this, 0, fStateFeatures);
 
                 if (fHandle2 != nullptr)
-                    lilv_state_restore(state, fExt.state, fHandle2, carla_lilv_set_port_value, this, 0, fFeatures);
+                    lilv_state_restore(state, fExt.state, fHandle2, carla_lilv_set_port_value, this, 0, fStateFeatures);
             }
             else
             {
@@ -3172,10 +3196,10 @@ public:
                 // load default state
                 if (LilvState* const state = Lv2WorldClass::getInstance().getStateFromURI(fDescriptor->URI, (const LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
                 {
-                    lilv_state_restore(state, fExt.state, fHandle, carla_lilv_set_port_value, this, 0, fFeatures);
+                    lilv_state_restore(state, fExt.state, fHandle, carla_lilv_set_port_value, this, 0, fStateFeatures);
 
                     if (fHandle2 != nullptr)
-                        lilv_state_restore(state, fExt.state, fHandle2, carla_lilv_set_port_value, this, 0, fFeatures);
+                        lilv_state_restore(state, fExt.state, fHandle2, carla_lilv_set_port_value, this, 0, fStateFeatures);
 
                     lilv_state_free(state);
                 }
@@ -4806,13 +4830,13 @@ public:
             const ScopedSingleProcessLocker spl(this, true);
 
             try {
-                status = fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, 0, fFeatures);
+                status = fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, LV2_STATE_IS_POD, fStateFeatures);
             } catch(...) {}
 
             if (fHandle2 != nullptr)
             {
                 try {
-                    fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, 0, fFeatures);
+                    fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, LV2_STATE_IS_POD, fStateFeatures);
                 } catch(...) {}
             }
         }
@@ -5205,6 +5229,69 @@ public:
     }
 
     // -------------------------------------------------------------------
+
+    char* handleStateMapToAbstractPath(const bool tmp, const char* const absolutePath)
+    {
+        // may already be an abstract path
+        if (! File::isAbsolutePath(absolutePath))
+            return strdup(absolutePath);
+
+        File target;
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+        if (const char* const projFolder = pData->engine->getCurrentProjectFolder())
+            target = projFolder;
+        else
+#endif
+            target = File::getCurrentWorkingDirectory();
+
+        water::String basedir(pData->engine->getName());
+
+        if (tmp)
+            basedir += ".tmp";
+
+        target = target.getChildFile(basedir)
+                       .getChildFile(getName());
+
+        return strdup(File(absolutePath).getRelativePathFrom(target).toRawUTF8());
+    }
+
+    char* handleStateMapToAbsolutePath(const bool createDir, const bool tmp, const char* const abstractPath)
+    {
+        File target;
+
+        if (File::isAbsolutePath(abstractPath))
+        {
+            target = abstractPath;
+        }
+        else
+        {
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+            if (const char* const projFolder = pData->engine->getCurrentProjectFolder())
+                target = projFolder;
+            else
+#endif
+                target = File::getCurrentWorkingDirectory();
+
+            water::String basedir(pData->engine->getName());
+
+            if (tmp)
+                basedir += ".tmp";
+
+            target = target.getChildFile(basedir)
+                           .getChildFile(getName())
+                           .getChildFile(abstractPath);
+        }
+
+        if (createDir)
+        {
+            File dir(target.getParentDirectory());
+            if (! dir.exists())
+                dir.createDirectory();
+        }
+
+        return strdup(target.getFullPathName().toRawUTF8());
+    }
 
     LV2_State_Status handleStateStore(const uint32_t key, const void* const value, const size_t size, const uint32_t type, const uint32_t flags)
     {
@@ -5945,12 +6032,12 @@ public:
 
         LV2_State_Make_Path* const stateMakePathFt = new LV2_State_Make_Path;
         stateMakePathFt->handle                    = this;
-        stateMakePathFt->path                      = carla_lv2_state_make_path;
+        stateMakePathFt->path                      = carla_lv2_state_make_path_tmp;
 
         LV2_State_Map_Path* const stateMapPathFt = new LV2_State_Map_Path;
         stateMapPathFt->handle                   = this;
-        stateMapPathFt->abstract_path            = carla_lv2_state_map_abstract_path;
-        stateMapPathFt->absolute_path            = carla_lv2_state_map_absolute_path;
+        stateMapPathFt->abstract_path            = carla_lv2_state_map_abstract_path_tmp;
+        stateMapPathFt->absolute_path            = carla_lv2_state_map_absolute_path_tmp;
 
         LV2_Programs_Host* const programsFt = new LV2_Programs_Host;
         programsFt->handle                  = this;
@@ -6066,6 +6153,30 @@ public:
 
         fFeatures[kFeatureIdMidnam]->URI  = LV2_MIDNAM__update;
         fFeatures[kFeatureIdMidnam]->data = midnam;
+
+        // ---------------------------------------------------------------
+        // initialize features (part 3)
+
+        LV2_State_Make_Path* const stateMakePathFt2 = new LV2_State_Make_Path;
+        stateMakePathFt2->handle                    = this;
+        stateMakePathFt2->path                      = carla_lv2_state_make_path_real;
+
+        LV2_State_Map_Path* const stateMapPathFt2 = new LV2_State_Map_Path;
+        stateMapPathFt2->handle                   = this;
+        stateMapPathFt2->abstract_path            = carla_lv2_state_map_abstract_path_real;
+        stateMapPathFt2->absolute_path            = carla_lv2_state_map_absolute_path_real;
+
+        for (uint32_t j=0; j < kStateFeatureCountAll; ++j)
+            fStateFeatures[j] = new LV2_Feature;
+
+        fStateFeatures[kStateFeatureIdFreePath]->URI  = LV2_STATE__freePath;
+        fStateFeatures[kStateFeatureIdFreePath]->data = stateFreePathFt;
+
+        fStateFeatures[kStateFeatureIdMakePath]->URI  = LV2_STATE__makePath;
+        fStateFeatures[kStateFeatureIdMakePath]->data = stateMakePathFt2;
+
+        fStateFeatures[kStateFeatureIdMapPath]->URI   = LV2_STATE__mapPath;
+        fStateFeatures[kStateFeatureIdMapPath]->data  = stateMapPathFt2;
 
         // ---------------------------------------------------------------
         // initialize plugin
@@ -6666,6 +6777,7 @@ private:
     LV2_Handle   fHandle;
     LV2_Handle   fHandle2;
     LV2_Feature* fFeatures[kFeatureCountAll+1];
+    LV2_Feature* fStateFeatures[kStateFeatureCountAll+1];
     const LV2_Descriptor*     fDescriptor;
     const LV2_RDF_Descriptor* fRdfDescriptor;
 
@@ -6882,7 +6994,7 @@ private:
     // -------------------------------------------------------------------
     // State Feature
 
-    static void carla_lv2_state_free_path(LV2_State_Free_Path_Handle handle, char* path)
+    static void carla_lv2_state_free_path(LV2_State_Free_Path_Handle handle, char* const path)
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
         carla_debug("carla_lv2_state_free_path(%p, \"%s\")", handle, path);
@@ -6890,81 +7002,58 @@ private:
         std::free(path);
     }
 
-    static char* carla_lv2_state_make_path(LV2_State_Make_Path_Handle handle, const char* path)
+    static char* carla_lv2_state_make_path_real(LV2_State_Make_Path_Handle handle, const char* const path)
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(path != nullptr && path[0] != '\0', nullptr);
-        carla_debug("carla_lv2_state_make_path(%p, \"%s\")", handle, path);
+        carla_debug("carla_lv2_state_make_path_real(%p, \"%s\")", handle, path);
 
-        File target;
-
-        if (File::isAbsolutePath(path))
-        {
-            target = path;
-        }
-        else
-        {
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-            if (const char* const projFolder = ((CarlaPluginLV2*)handle)->pData->engine->getCurrentProjectFolder())
-                target = projFolder;
-            else
-#endif
-                target = File::getCurrentWorkingDirectory();
-
-            const CarlaPluginLV2* const plugin = (CarlaPluginLV2*)handle;
-            target = target.getChildFile(plugin->pData->engine->getName())
-                           .getChildFile(plugin->getName())
-                           .getChildFile(path);
-        }
-
-        if (! target.exists())
-            target.createDirectory();
-
-        return strdup(target.getFullPathName().toRawUTF8());
+        return ((CarlaPluginLV2*)handle)->handleStateMapToAbsolutePath(true, false, path);
     }
 
-    static char* carla_lv2_state_map_abstract_path(LV2_State_Map_Path_Handle handle, const char* absolute_path)
+    static char* carla_lv2_state_make_path_tmp(LV2_State_Make_Path_Handle handle, const char* const path)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(path != nullptr && path[0] != '\0', nullptr);
+        carla_debug("carla_lv2_state_make_path_tmp(%p, \"%s\")", handle, path);
+
+        return ((CarlaPluginLV2*)handle)->handleStateMapToAbsolutePath(true, true, path);
+    }
+
+    static char* carla_lv2_state_map_abstract_path_real(LV2_State_Map_Path_Handle handle, const char* const absolute_path)
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(absolute_path != nullptr && absolute_path[0] != '\0', nullptr);
-        carla_debug("carla_lv2_state_map_abstract_path(%p, \"%s\")", handle, absolute_path);
+        carla_debug("carla_lv2_state_map_abstract_path_real(%p, \"%s\")", handle, absolute_path);
 
-        // may already be an abstract path
-        if (! File::isAbsolutePath(absolute_path))
-            return strdup(absolute_path);
-
-        File target;
-
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-        if (const char* const projFolder = ((CarlaPluginLV2*)handle)->pData->engine->getCurrentProjectFolder())
-            target = projFolder;
-        else
-#endif
-            target = File::getCurrentWorkingDirectory();
-
-        return strdup(File(absolute_path).getRelativePathFrom(target).toRawUTF8());
+        return ((CarlaPluginLV2*)handle)->handleStateMapToAbstractPath(false, absolute_path);
     }
 
-    static char* carla_lv2_state_map_absolute_path(LV2_State_Map_Path_Handle handle, const char* abstract_path)
+    static char* carla_lv2_state_map_abstract_path_tmp(LV2_State_Map_Path_Handle handle, const char* const absolute_path)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(absolute_path != nullptr && absolute_path[0] != '\0', nullptr);
+        carla_debug("carla_lv2_state_map_abstract_path_tmp(%p, \"%s\")", handle, absolute_path);
+
+        return ((CarlaPluginLV2*)handle)->handleStateMapToAbstractPath(true, absolute_path);
+    }
+
+    static char* carla_lv2_state_map_absolute_path_real(LV2_State_Map_Path_Handle handle, const char* const abstract_path)
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(abstract_path != nullptr && abstract_path[0] != '\0', nullptr);
-        carla_debug("carla_lv2_state_map_absolute_path(%p, \"%s\")", handle, abstract_path);
+        carla_debug("carla_lv2_state_map_absolute_path_real(%p, \"%s\")", handle, abstract_path);
 
-        // may already be an absolute path
-        if (File::isAbsolutePath(abstract_path))
-            return strdup(abstract_path);
+        return ((CarlaPluginLV2*)handle)->handleStateMapToAbsolutePath(false, false, abstract_path);
+    }
 
-        File base;
+    static char* carla_lv2_state_map_absolute_path_tmp(LV2_State_Map_Path_Handle handle, const char* const abstract_path)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(abstract_path != nullptr && abstract_path[0] != '\0', nullptr);
+        carla_debug("carla_lv2_state_map_absolute_path_tmp(%p, \"%s\")", handle, abstract_path);
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-        if (const char* const projFolder = ((CarlaPluginLV2*)handle)->pData->engine->getCurrentProjectFolder())
-            base = projFolder;
-        else
-#endif
-            base = File::getCurrentWorkingDirectory();
-
-        return strdup(base.getChildFile(abstract_path).getFullPathName().toRawUTF8());
+        return ((CarlaPluginLV2*)handle)->handleStateMapToAbsolutePath(false, true, abstract_path);
     }
 
     static LV2_State_Status carla_lv2_state_store(LV2_State_Handle handle, uint32_t key, const void* value, size_t size, uint32_t type, uint32_t flags)
