@@ -631,16 +631,129 @@ bool CarlaJackAppClient::handleRtData()
         }   break;
 
         case kPluginBridgeRtClientControlEventParameter:
-        case kPluginBridgeRtClientControlEventMidiBank:
-        case kPluginBridgeRtClientControlEventMidiProgram:
-        case kPluginBridgeRtClientControlEventAllSoundOff:
-        case kPluginBridgeRtClientControlEventAllNotesOff:
             break;
 
+        case kPluginBridgeRtClientControlEventMidiBank: {
+            const uint32_t time    = fShmRtClientControl.readUInt();
+            const uint8_t  channel = fShmRtClientControl.readByte();
+            const uint16_t value   = fShmRtClientControl.readUShort();
+
+            if (fServer.numMidiIns > 0 && fRealtimeThreadMutex.tryLock())
+            {
+                JackMidiPortBufferOnStack& midiPortBuf(fMidiInBuffers[0]);
+
+                if (midiPortBuf.count+1U < JackMidiPortBufferBase::kMaxEventCount &&
+                    midiPortBuf.bufferPoolPos + 6U < JackMidiPortBufferBase::kBufferPoolSize)
+                {
+                    jack_midi_event_t& ev1(midiPortBuf.events[midiPortBuf.count++]);
+                    ev1.time   = time;
+                    ev1.size   = 3;
+                    ev1.buffer = midiPortBuf.bufferPool + midiPortBuf.bufferPoolPos;
+                    ev1.buffer[0] = jack_midi_data_t(MIDI_STATUS_CONTROL_CHANGE | (channel & MIDI_CHANNEL_BIT));
+                    ev1.buffer[1] = MIDI_CONTROL_BANK_SELECT;
+                    ev1.buffer[2] = 0;
+                    midiPortBuf.bufferPoolPos += 3;
+
+                    jack_midi_event_t& ev2(midiPortBuf.events[midiPortBuf.count++]);
+                    ev2.time   = time;
+                    ev2.size   = 3;
+                    ev2.buffer = midiPortBuf.bufferPool + midiPortBuf.bufferPoolPos;
+                    ev2.buffer[0] = jack_midi_data_t(MIDI_STATUS_CONTROL_CHANGE | (channel & MIDI_CHANNEL_BIT));
+                    ev2.buffer[1] = MIDI_CONTROL_BANK_SELECT__LSB;
+                    ev2.buffer[2] = jack_midi_data_t(value);
+                    midiPortBuf.bufferPoolPos += 3;
+                }
+
+                fRealtimeThreadMutex.unlock(true);
+            }
+            break;
+        }
+
+        case kPluginBridgeRtClientControlEventMidiProgram: {
+            const uint32_t time    = fShmRtClientControl.readUInt();
+            const uint8_t  channel = fShmRtClientControl.readByte();
+            const uint16_t value   = fShmRtClientControl.readUShort();
+
+            if (fServer.numMidiIns > 0 && fRealtimeThreadMutex.tryLock())
+            {
+                JackMidiPortBufferOnStack& midiPortBuf(fMidiInBuffers[0]);
+
+                if (midiPortBuf.count < JackMidiPortBufferBase::kMaxEventCount &&
+                    midiPortBuf.bufferPoolPos + 2U < JackMidiPortBufferBase::kBufferPoolSize)
+                {
+                    jack_midi_event_t& ev(midiPortBuf.events[midiPortBuf.count++]);
+
+                    ev.time   = time;
+                    ev.size   = 2;
+                    ev.buffer = midiPortBuf.bufferPool + midiPortBuf.bufferPoolPos;
+                    ev.buffer[0] = jack_midi_data_t(MIDI_STATUS_PROGRAM_CHANGE | (channel & MIDI_CHANNEL_BIT));
+                    ev.buffer[1] = jack_midi_data_t(value);
+                    midiPortBuf.bufferPoolPos += 2;
+                }
+
+                fRealtimeThreadMutex.unlock(true);
+            }
+            break;
+        }
+
+        case kPluginBridgeRtClientControlEventAllSoundOff: {
+            const uint32_t time    = fShmRtClientControl.readUInt();
+            const uint8_t  channel = fShmRtClientControl.readByte();
+
+            if (fServer.numMidiIns > 0 && fRealtimeThreadMutex.tryLock())
+            {
+                JackMidiPortBufferOnStack& midiPortBuf(fMidiInBuffers[0]);
+
+                if (midiPortBuf.count < JackMidiPortBufferBase::kMaxEventCount &&
+                    midiPortBuf.bufferPoolPos + 3U < JackMidiPortBufferBase::kBufferPoolSize)
+                {
+                    jack_midi_event_t& ev(midiPortBuf.events[midiPortBuf.count++]);
+
+                    ev.time   = time;
+                    ev.size   = 3;
+                    ev.buffer = midiPortBuf.bufferPool + midiPortBuf.bufferPoolPos;
+                    ev.buffer[0] = jack_midi_data_t(MIDI_STATUS_CONTROL_CHANGE | (channel & MIDI_CHANNEL_BIT));
+                    ev.buffer[1] = MIDI_CONTROL_ALL_SOUND_OFF;
+                    ev.buffer[2] = 0;
+                    midiPortBuf.bufferPoolPos += 3;
+                }
+
+                fRealtimeThreadMutex.unlock(true);
+            }
+            break;
+        }
+
+        case kPluginBridgeRtClientControlEventAllNotesOff: {
+            const uint32_t time    = fShmRtClientControl.readUInt();
+            const uint8_t  channel = fShmRtClientControl.readByte();
+
+            if (fServer.numMidiIns > 0 && fRealtimeThreadMutex.tryLock())
+            {
+                JackMidiPortBufferOnStack& midiPortBuf(fMidiInBuffers[0]);
+
+                if (midiPortBuf.count < JackMidiPortBufferBase::kMaxEventCount &&
+                    midiPortBuf.bufferPoolPos + 3U < JackMidiPortBufferBase::kBufferPoolSize)
+                {
+                    jack_midi_event_t& ev(midiPortBuf.events[midiPortBuf.count++]);
+
+                    ev.time   = time;
+                    ev.size   = 3;
+                    ev.buffer = midiPortBuf.bufferPool + midiPortBuf.bufferPoolPos;
+                    ev.buffer[0] = jack_midi_data_t(MIDI_STATUS_CONTROL_CHANGE | (channel & MIDI_CHANNEL_BIT));
+                    ev.buffer[1] = MIDI_CONTROL_ALL_NOTES_OFF;
+                    ev.buffer[2] = 0;
+                    midiPortBuf.bufferPoolPos += 3;
+                }
+
+                fRealtimeThreadMutex.unlock(true);
+            }
+            break;
+        }
+
         case kPluginBridgeRtClientMidiEvent: {
-            const uint32_t time(fShmRtClientControl.readUInt());
-            const uint8_t  port(fShmRtClientControl.readByte());
-            const uint8_t  size(fShmRtClientControl.readByte());
+            const uint32_t time = fShmRtClientControl.readUInt();
+            const uint8_t  port = fShmRtClientControl.readByte();
+            const uint8_t  size = fShmRtClientControl.readByte();
             CARLA_SAFE_ASSERT_BREAK(size > 0);
 
             if (port >= fServer.numMidiIns || size > JackMidiPortBufferBase::kMaxEventSize || ! fRealtimeThreadMutex.tryLock())
