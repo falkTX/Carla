@@ -1566,7 +1566,7 @@ public:
     {
         if (fUI.type == UI::TYPE_NULL)
         {
-            if (fFilePathURI.isNotEmpty())
+            if (yesNo && fFilePathURI.isNotEmpty())
             {
                 const char* const path = pData->engine->runFileCallback(FILE_CALLBACK_OPEN, false, "Open File", "");
 
