@@ -2737,7 +2737,7 @@ protected:
 
         case NATIVE_HOST_OPCODE_RELOAD_PARAMETERS:
             reloadParameters(nullptr, nullptr);
-            pData->engine->callback(true, true, ENGINE_CALLBACK_RELOAD_ALL, pData->id, -1, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(true, true, ENGINE_CALLBACK_RELOAD_PARAMETERS, pData->id, -1, 0, 0, 0.0f, nullptr);
             break;
 
         case NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS:

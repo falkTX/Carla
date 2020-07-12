@@ -962,6 +962,12 @@ class PluginEdit(QDialog):
         self.fParametersToUpdate = []
         self.fTabIconTimers      = []
 
+        # Save current tab state
+        tabIndex  = self.ui.tabWidget.currentIndex()
+        tabWidget = self.ui.tabWidget.currentWidget()
+        scrollVal = tabWidget.verticalScrollBar().value() if isinstance(tabWidget, QScrollArea) else None
+        del tabWidget
+
         # Remove all previous parameters
         for _ in range(self.ui.tabWidget.count()-1):
             self.ui.tabWidget.widget(1).deleteLater()
@@ -1055,6 +1061,12 @@ class PluginEdit(QDialog):
         # Create parameter tabs + widgets
         self._createParameterWidgets(PARAMETER_INPUT,  paramInputListFull,  self.tr("Parameters"))
         self._createParameterWidgets(PARAMETER_OUTPUT, paramOutputListFull, self.tr("Outputs"))
+
+        # Restore tab state
+        if tabIndex < self.ui.tabWidget.count():
+            self.ui.tabWidget.setCurrentIndex(tabIndex)
+            if scrollVal is not None:
+                self.ui.tabWidget.currentWidget().verticalScrollBar().setValue(scrollVal)
 
     def reloadPrograms(self):
         # Programs
