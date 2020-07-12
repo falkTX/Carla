@@ -226,7 +226,7 @@ public:
     void setMetaData(const char* const key, const char* const value, const char* const type) override
     {
         if (fJackPort == nullptr)
-            return CarlaEngineJackAudioPort::setMetaData(key, value, type);
+            return CarlaEngineAudioPort::setMetaData(key, value, type);
 
         const CarlaRecursiveMutexLocker crml(fThreadSafeMetadataMutex);
 
@@ -572,7 +572,7 @@ public:
     void setMetaData(const char* const key, const char* const value, const char* const type) override
     {
         if (fJackPort == nullptr)
-            return CarlaEngineJackEventPort::setMetaData(key, value, type);
+            return CarlaEngineEventPort::setMetaData(key, value, type);
 
         const CarlaRecursiveMutexLocker crml(fThreadSafeMetadataMutex);
 
