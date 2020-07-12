@@ -658,7 +658,7 @@ public:
     // -------------------------------------------------------------------
     // Set data (state)
 
-    void prepareForSave() override
+    void prepareForSave(bool) override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);

@@ -439,7 +439,7 @@ void CarlaPlugin::getParameterCountInfo(uint32_t& ins, uint32_t& outs) const noe
 // -------------------------------------------------------------------
 // Set data (state)
 
-void CarlaPlugin::prepareForSave()
+void CarlaPlugin::prepareForSave(bool)
 {
 }
 
@@ -508,7 +508,10 @@ void CarlaPlugin::randomizeParameters() noexcept
 const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
 {
     if (callPrepareForSave)
-        prepareForSave();
+    {
+        pData->stateSave.temporary = true;
+        prepareForSave(true);
+    }
 
     pData->stateSave.clear();
 
@@ -902,7 +905,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
             if (std::strcmp(customData.type, CUSTOM_DATA_TYPE_PROPERTY) == 0)
                 continue;
 
-            restoreLV2State();
+            restoreLV2State(stateSave.temporary);
             break;
         }
     }
@@ -2564,9 +2567,9 @@ void CarlaPlugin::setPatchbayNodeId(const uint32_t nodeId) noexcept
 
 // -------------------------------------------------------------------
 
-void CarlaPlugin::restoreLV2State() noexcept
+void CarlaPlugin::restoreLV2State(const bool temporary) noexcept
 {
-    carla_stderr2("Warning: restoreLV2State() called for non-implemented type");
+    carla_stderr2("Warning: restoreLV2State(%s) called for non-implemented type", bool2str(temporary));
 }
 
 void CarlaPlugin::prepareForDeletion() noexcept

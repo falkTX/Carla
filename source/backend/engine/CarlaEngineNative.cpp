@@ -2255,7 +2255,7 @@ bool CarlaEngineNativeUI::msgReceived(const char* const msg) noexcept
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
 
         if (const CarlaPluginPtr plugin = fEngine->getPlugin(pluginId))
-            plugin->prepareForSave();
+            plugin->prepareForSave(false);
     }
     else if (std::strcmp(msg, "reset_parameters") == 0)
     {

@@ -1321,20 +1321,24 @@ public:
     // -------------------------------------------------------------------
     // Set data (state)
 
-    void prepareForSave() override
+    void prepareForSave(const bool temporary) override
     {
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
 
         if (fExt.state != nullptr && fExt.state->save != nullptr)
         {
-            const File tmpDir(handleStateMapToAbsolutePath(false, false, true, "."));
-
-            if (tmpDir.exists())
+            // move temporary stuff to main state dir on full save
+            if (! temporary)
             {
-                const File stateDir(handleStateMapToAbsolutePath(true, false, false, "."));
+                const File tmpDir(handleStateMapToAbsolutePath(false, false, true, "."));
 
-                if (stateDir.isNotNull())
-                    tmpDir.moveFileTo(stateDir);
+                if (tmpDir.exists())
+                {
+                    const File stateDir(handleStateMapToAbsolutePath(true, false, false, "."));
+
+                    if (stateDir.isNotNull())
+                        tmpDir.moveFileTo(stateDir);
+                }
             }
 
             fExt.state->save(fHandle, carla_lv2_state_store, this, LV2_STATE_IS_POD, fStateFeatures);
@@ -1349,7 +1353,26 @@ public:
 
     void setName(const char* const newName) override
     {
+        const File tmpDir1(handleStateMapToAbsolutePath(false, false, true, "."));
+
         CarlaPlugin::setName(newName);
+
+        if (tmpDir1.exists())
+        {
+            const File tmpDir2(handleStateMapToAbsolutePath(false, false, true, "."));
+
+            carla_stdout("dir1 %s, dir2 %s",
+                         tmpDir1.getFullPathName().toRawUTF8(),
+                         tmpDir2.getFullPathName().toRawUTF8());
+
+            if (tmpDir2.isNotNull())
+            {
+                if (tmpDir2.exists())
+                    tmpDir2.deleteRecursively();
+
+                tmpDir1.moveFileTo(tmpDir2);
+            }
+        }
 
         if (fLv2Options.windowTitle != nullptr && pData->uiTitle.isEmpty())
             setWindowTitle(nullptr);
@@ -4840,15 +4863,18 @@ public:
     // -------------------------------------------------------------------
     // Internal helper functions
 
-    void restoreLV2State() noexcept override
+    void restoreLV2State(const bool temporary) noexcept override
     {
         if (fExt.state == nullptr || fExt.state->restore == nullptr)
             return;
 
-        const File tmpDir(handleStateMapToAbsolutePath(false, false, true, "."));
+        if (! temporary)
+        {
+            const File tmpDir(handleStateMapToAbsolutePath(false, false, true, "."));
 
-        if (tmpDir.exists())
-            tmpDir.deleteRecursively();
+            if (tmpDir.exists())
+                tmpDir.deleteRecursively();
+        }
 
         LV2_State_Status status = LV2_STATE_ERR_UNKNOWN;
 
@@ -4856,13 +4882,21 @@ public:
             const ScopedSingleProcessLocker spl(this, !fHasThreadSafeRestore);
 
             try {
-                status = fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, LV2_STATE_IS_POD, fStateFeatures);
+                status = fExt.state->restore(fHandle,
+                                             carla_lv2_state_retrieve,
+                                             this,
+                                             LV2_STATE_IS_POD,
+                                             temporary ? fFeatures : fStateFeatures);
             } catch(...) {}
 
             if (fHandle2 != nullptr)
             {
                 try {
-                    fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, LV2_STATE_IS_POD, fStateFeatures);
+                    fExt.state->restore(fHandle,
+                                        carla_lv2_state_retrieve,
+                                        this,
+                                        LV2_STATE_IS_POD,
+                                        temporary ? fFeatures : fStateFeatures);
                 } catch(...) {}
             }
         }

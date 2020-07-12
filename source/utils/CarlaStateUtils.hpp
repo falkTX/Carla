@@ -73,6 +73,9 @@ struct CarlaStateSave {
     int64_t     uniqueId;
     uint        options;
 
+    // saved during clone, rename or similar
+    bool temporary;
+
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     bool   active;
     float  dryWet;

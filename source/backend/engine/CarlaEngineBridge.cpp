@@ -990,7 +990,7 @@ public:
                     return;
                 }
 
-                plugin->prepareForSave();
+                plugin->prepareForSave(false);
 
                 for (uint32_t i=0, count=plugin->getCustomDataCount(); i<count; ++i)
                 {
@@ -1064,7 +1064,7 @@ public:
 
             case kPluginBridgeNonRtClientRestoreLV2State:
                 if (plugin->isEnabled())
-                    plugin->restoreLV2State();
+                    plugin->restoreLV2State(false);
                 break;
 
             case kPluginBridgeNonRtClientShowUI:

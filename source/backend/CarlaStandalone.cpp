@@ -2121,7 +2121,7 @@ void carla_prepare_for_save(CarlaHostHandle handle, uint pluginId)
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
 
     if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
-        plugin->prepareForSave();
+        plugin->prepareForSave(false);
 }
 
 void carla_reset_parameters(CarlaHostHandle handle, uint pluginId)

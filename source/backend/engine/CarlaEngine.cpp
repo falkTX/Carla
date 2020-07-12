@@ -694,7 +694,8 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
                               "http://sfztools.github.io/sfizz:sfzfile",
                               filename,
                               false);
-        plugin->restoreLV2State();
+
+        plugin->restoreLV2State(true);
     }
 #endif
 
@@ -2214,7 +2215,7 @@ void CarlaEngine::saveProjectInternal(water::MemoryOutputStream& outStream) cons
                 if (plugin->getHints() & PLUGIN_IS_BRIDGE)
                     plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "__CarlaPingOnOff__", "false", false);
 #endif
-                plugin->prepareForSave();
+                plugin->prepareForSave(false);
             }
         }
     }
@@ -2774,7 +2775,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                         lsState << "0 0 0 0 1 0 GIG\n";
 
                         plugin->setCustomData(LV2_ATOM__String, "http://linuxsampler.org/schema#state-string", lsState.toRawUTF8(), true);
-                        plugin->restoreLV2State();
+                        plugin->restoreLV2State(true);
 
                         plugin->setDryWet(stateSave.dryWet, true, true);
                         plugin->setVolume(stateSave.volume, true, true);
@@ -2827,7 +2828,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                                               stateSave.binary,
                                               false);
 
-                        plugin->restoreLV2State();
+                        plugin->restoreLV2State(true);
 
                         plugin->setDryWet(stateSave.dryWet, true, true);
                         plugin->setVolume(stateSave.volume, true, true);

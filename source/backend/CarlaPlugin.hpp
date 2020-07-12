@@ -401,8 +401,17 @@ public:
 
     /*!
      * Tell the plugin to prepare for save.
+     * @param temporary Wherever we are saving into a temporary location
+     *                  (for duplication, renaming or similar)
      */
-    virtual void prepareForSave();
+    virtual void prepareForSave(bool temporary);
+
+    /*!
+     * Call LV2 restore.
+     * @param temporary Wherever we are saving into a temporary location
+     *                  (for duplication, renaming or similar)
+     */
+    virtual void restoreLV2State(bool temporary) noexcept;
 
     /*!
      * Reset all possible parameters.
@@ -980,13 +989,6 @@ protected:
 
     // -------------------------------------------------------------------
     // Internal helper functions
-
-public:
-    // FIXME: remove public exception on 2.1 release
-    /*!
-     * Call LV2 restore.
-     */
-    virtual void restoreLV2State() noexcept;
 
 protected:
     /*!

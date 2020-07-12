@@ -192,6 +192,7 @@ CarlaStateSave::CarlaStateSave() noexcept
       binary(nullptr),
       uniqueId(0),
       options(0x0),
+      temporary(false),
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
       active(false),
       dryWet(1.0f),

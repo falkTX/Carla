@@ -606,7 +606,7 @@ public:
     // -------------------------------------------------------------------
     // Set data (state)
 
-    void prepareForSave() noexcept override
+    void prepareForSave(bool) noexcept override
     {
         fSaved = false;
 
@@ -1946,7 +1946,7 @@ public:
     // -------------------------------------------------------------------
     // Internal helper functions
 
-    void restoreLV2State() noexcept override
+    void restoreLV2State(bool) noexcept override
     {
         const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
 

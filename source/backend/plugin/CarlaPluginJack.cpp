@@ -676,7 +676,7 @@ public:
     // -------------------------------------------------------------------
     // Set data (state)
 
-    void prepareForSave() noexcept override
+    void prepareForSave(bool) noexcept override
     {
 #ifdef HAVE_LIBLO
         if (fInfo.setupLabel.length() == 6)
