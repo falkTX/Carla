@@ -5271,9 +5271,11 @@ public:
 #endif
             projectDir = File::getCurrentWorkingDirectory();
 
-
         if (projectDir.isNull())
+        {
+            carla_stdout("Project directory not set, cannot map absolutePath %s", absolutePath);
             return nullptr;
+        }
 
         water::String basedir(pData->engine->getName());
 
@@ -5286,6 +5288,8 @@ public:
         if (! targetDir.exists())
             targetDir.createDirectory();
 
+        const File wabsolutePath(absolutePath);
+
         // we may be saving to non-tmp path, let's check
         if (! temporary)
         {
@@ -5293,12 +5297,27 @@ public:
                                           .getChildFile(getName());
 
             if (File(absolutePath).getFullPathName().startsWith(tmpDir.getFullPathName()))
+            {
+                // gotcha, the temporary path is now the real one
                 targetDir = tmpDir;
+            }
+            else
+            {
+                // seems like a normal save, let's be nice and put a symlink
+                const water::String abstractFilename(wabsolutePath.getFileName());
+                const File targetPath(targetDir.getChildFile(abstractFilename));
+
+                wabsolutePath.createSymbolicLink(targetPath, true);
+
+                carla_stdout("Creating symlink for %s in %s", absolutePath, targetDir.getFullPathName().toRawUTF8());
+                return strdup(abstractFilename.toRawUTF8());
+            }
         }
 
-        carla_stdout("absolutePath is %s, targetDir is %s", absolutePath, targetDir.getFullPathName().toRawUTF8());
+        carla_stdout("Mapping absolutePath %s relative to targetDir %s",
+                     absolutePath, targetDir.getFullPathName().toRawUTF8());
 
-        return strdup(File(absolutePath).getRelativePathFrom(targetDir).toRawUTF8());
+        return strdup(wabsolutePath.getRelativePathFrom(targetDir).toRawUTF8());
     }
 
     File handleStateMapToAbsolutePath(const bool createDirIfNeeded,
@@ -5316,7 +5335,10 @@ public:
             targetDir = File::getCurrentWorkingDirectory();
 
         if (targetDir.isNull())
+        {
+            carla_stdout("Project directory not set, cannot map abstractPath %s", abstractPath);
             return File();
+        }
 
         water::String basedir(pData->engine->getName());
 
@@ -5335,7 +5357,10 @@ public:
             targetPath = targetDir.getChildFile(wabstractPath.getFileName());
 
             if (symlinkIfNeeded)
+            {
+                carla_stdout("Creating symlink for %s in %s", abstractPath, targetDir.getFullPathName().toRawUTF8());
                 wabstractPath.createSymbolicLink(targetPath, true);
+            }
         }
         else
         {
@@ -5345,6 +5370,10 @@ public:
             if (createDirIfNeeded && ! targetDir.exists())
                 targetDir.createDirectory();
         }
+
+        if (std::strcmp(abstractPath, ".") != 0)
+            carla_stdout("Mapping abstractPath %s relative to targetDir %s",
+                         abstractPath, targetDir.getFullPathName().toRawUTF8());
 
         return targetPath;
     }
@@ -7069,7 +7098,7 @@ private:
     static void carla_lv2_state_free_path(LV2_State_Free_Path_Handle handle, char* const path)
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
-        carla_stdout("carla_lv2_state_free_path(%p, \"%s\")", handle, path);
+        carla_debug("carla_lv2_state_free_path(%p, \"%s\")", handle, path);
 
         std::free(path);
     }
@@ -7078,7 +7107,7 @@ private:
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(path != nullptr && path[0] != '\0', nullptr);
-        carla_stdout("carla_lv2_state_make_path_real(%p, \"%s\")", handle, path);
+        carla_debug("carla_lv2_state_make_path_real(%p, \"%s\")", handle, path);
 
         const File file(((CarlaPluginLV2*)handle)->handleStateMapToAbsolutePath(true, false, false, path));
         return file.isNotNull() ? strdup(file.getFullPathName().toRawUTF8()) : nullptr;
@@ -7088,7 +7117,7 @@ private:
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(path != nullptr && path[0] != '\0', nullptr);
-        carla_stdout("carla_lv2_state_make_path_tmp(%p, \"%s\")", handle, path);
+        carla_debug("carla_lv2_state_make_path_tmp(%p, \"%s\")", handle, path);
 
         const File file(((CarlaPluginLV2*)handle)->handleStateMapToAbsolutePath(true, false, true, path));
         return file.isNotNull() ? strdup(file.getFullPathName().toRawUTF8()) : nullptr;
@@ -7098,7 +7127,7 @@ private:
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(absolute_path != nullptr && absolute_path[0] != '\0', nullptr);
-        carla_stdout("carla_lv2_state_map_to_abstract_path_real(%p, \"%s\")", handle, absolute_path);
+        carla_debug("carla_lv2_state_map_to_abstract_path_real(%p, \"%s\")", handle, absolute_path);
 
         return ((CarlaPluginLV2*)handle)->handleStateMapToAbstractPath(false, absolute_path);
     }
@@ -7107,7 +7136,7 @@ private:
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(absolute_path != nullptr && absolute_path[0] != '\0', nullptr);
-        carla_stdout("carla_lv2_state_map_to_abstract_path_tmp(%p, \"%s\")", handle, absolute_path);
+        carla_debug("carla_lv2_state_map_to_abstract_path_tmp(%p, \"%s\")", handle, absolute_path);
 
         return ((CarlaPluginLV2*)handle)->handleStateMapToAbstractPath(true, absolute_path);
     }
@@ -7116,7 +7145,7 @@ private:
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(abstract_path != nullptr && abstract_path[0] != '\0', nullptr);
-        carla_stdout("carla_lv2_state_map_to_absolute_path_real(%p, \"%s\")", handle, abstract_path);
+        carla_debug("carla_lv2_state_map_to_absolute_path_real(%p, \"%s\")", handle, abstract_path);
 
         const File file(((CarlaPluginLV2*)handle)->handleStateMapToAbsolutePath(true, true, false, abstract_path));
         return file.isNotNull() ? strdup(file.getFullPathName().toRawUTF8()) : nullptr;
@@ -7126,7 +7155,7 @@ private:
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(abstract_path != nullptr && abstract_path[0] != '\0', nullptr);
-        carla_stdout("carla_lv2_state_map_to_absolute_path_tmp(%p, \"%s\")", handle, abstract_path);
+        carla_debug("carla_lv2_state_map_to_absolute_path_tmp(%p, \"%s\")", handle, abstract_path);
 
         const File file(((CarlaPluginLV2*)handle)->handleStateMapToAbsolutePath(true, true, true, abstract_path));
         return file.isNotNull() ? strdup(file.getFullPathName().toRawUTF8()) : nullptr;
