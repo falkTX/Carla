@@ -332,8 +332,21 @@ bool File::copyDirectoryTo (const File& newDirectory) const
         findChildFiles (subFiles, File::findFiles, false);
 
         for (int i = 0; i < subFiles.size(); ++i)
-            if (! subFiles.getReference(i).copyFileTo (newDirectory.getChildFile (subFiles.getReference(i).getFileName())))
-                return false;
+        {
+            const File& src (subFiles.getReference(i));
+            const File& dst (newDirectory.getChildFile (src.getFileName()));
+
+            if (src.isSymbolicLink())
+            {
+                if (! src.getLinkedTarget().createSymbolicLink (dst, true))
+                    return false;
+            }
+            else
+            {
+                if (! src.copyFileTo (dst))
+                    return false;
+            }
+        }
 
         subFiles.clear();
         findChildFiles (subFiles, File::findDirectories, false);
