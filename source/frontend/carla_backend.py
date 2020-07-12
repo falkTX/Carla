@@ -3925,6 +3925,19 @@ class CarlaHostPlugin(CarlaHostMeta):
         if pluginInfo is not None:
             pluginInfo.peaks = [in1, in2, out1, out2]
 
+    def _removePlugin(self, pluginId):
+        pluginCountM1 = len(self.fPluginsInfo)-1
+
+        if pluginId >= pluginCountM1:
+            self.fPluginsInfo[pluginId] = PluginStoreInfo()
+            return
+
+        # push all plugins 1 slot back starting from the plugin that got removed
+        for i in range(pluginId, pluginCountM1):
+            self.fPluginsInfo[i] = self.fPluginsInfo[i+1]
+
+        self.fPluginsInfo[pluginCountM1] = PluginStoreInfo()
+
     def _switchPlugins(self, pluginIdA, pluginIdB):
         tmp = self.fPluginsInfo[pluginIdA]
         self.fPluginsInfo[pluginIdA] = self.fPluginsInfo[pluginIdB]
@@ -3942,11 +3955,14 @@ class CarlaHostPlugin(CarlaHostMeta):
                 maxPluginId = MAX_DEFAULT_PLUGINS
             self._reset(maxPluginId)
 
-        elif ENGINE_CALLBACK_BUFFER_SIZE_CHANGED:
+        elif action == ENGINE_CALLBACK_BUFFER_SIZE_CHANGED:
             self.fBufferSize = value1
 
-        elif ENGINE_CALLBACK_SAMPLE_RATE_CHANGED:
+        elif action == ENGINE_CALLBACK_SAMPLE_RATE_CHANGED:
             self.fSampleRate = valuef
+
+        elif action == ENGINE_CALLBACK_PLUGIN_REMOVED:
+            self._removePlugin(pluginId)
 
         elif action == ENGINE_CALLBACK_PLUGIN_RENAMED:
             self._set_pluginName(pluginId, valueStr)
