@@ -577,6 +577,7 @@ public:
           fCvInBuffers(nullptr),
           fCvOutBuffers(nullptr),
           fParamBuffers(nullptr),
+          fHasLoadDefaultState(false),
           fHasThreadSafeRestore(false),
           fNeedsFixedBuffers(false),
           fNeedsUiClose(false),
@@ -3235,10 +3236,11 @@ public:
             {
                 setMidiProgram(0, false, false, false, true);
             }
-            else
+            else if (fHasLoadDefaultState)
             {
                 // load default state
-                if (LilvState* const state = Lv2WorldClass::getInstance().getStateFromURI(fDescriptor->URI, (const LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
+                if (LilvState* const state = Lv2WorldClass::getInstance().getStateFromURI(fDescriptor->URI,
+                                                                                          (const LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
                 {
                     lilv_state_restore(state, fExt.state, fHandle, carla_lilv_set_port_value, this, 0, fFeatures);
 
@@ -6084,6 +6086,10 @@ public:
             {
                 fStrictBounds = feature.Required ? 1 : 0;
             }
+            else if (std::strcmp(feature.URI, LV2_STATE__loadDefaultState) == 0)
+            {
+                fHasLoadDefaultState = true;
+            }
             else if (std::strcmp(feature.URI, LV2_STATE__threadSafeRestore) == 0)
             {
                 fHasThreadSafeRestore = true;
@@ -6944,6 +6950,7 @@ private:
     float** fCvOutBuffers;
     float*  fParamBuffers;
 
+    bool    fHasLoadDefaultState : 1;
     bool    fHasThreadSafeRestore : 1;
     bool    fNeedsFixedBuffers : 1;
     bool    fNeedsUiClose  : 1;
