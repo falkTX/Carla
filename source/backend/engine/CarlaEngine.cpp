@@ -935,7 +935,10 @@ bool CarlaEngine::clonePlugin(const uint id)
     CARLA_SAFE_ASSERT_RETURN_ERR(pluginCountBefore+1 == pData->curPluginCount, "No new plugin found");
 
     if (const CarlaPluginPtr newPlugin = pData->plugins[pluginCountBefore].plugin)
-        newPlugin->loadStateSave(plugin->getStateSave());
+    {
+        newPlugin->cloneLV2Files(*plugin);
+        newPlugin->loadStateSave(plugin->getStateSave(true));
+    }
 
     return true;
 }

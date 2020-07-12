@@ -507,13 +507,13 @@ void CarlaPlugin::randomizeParameters() noexcept
 
 const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
 {
+    pData->stateSave.clear();
+
     if (callPrepareForSave)
     {
         pData->stateSave.temporary = true;
         prepareForSave(true);
     }
-
-    pData->stateSave.clear();
 
     const PluginType pluginType(getType());
 
@@ -550,10 +550,13 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
     pData->stateSave.ctrlChannel  = pData->ctrlChannel;
 #endif
 
-    bool usingChunk = false;
+    if (pData->hints & PLUGIN_IS_BRIDGE)
+        waitForBridgeSaveSignal();
 
     // ---------------------------------------------------------------
     // Chunk
+
+    bool usingChunk = false;
 
     if (pData->options & PLUGIN_OPTION_USE_CHUNKS)
     {
@@ -649,9 +652,6 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
 
     // ---------------------------------------------------------------
     // Custom Data
-
-    if (pData->hints & PLUGIN_IS_BRIDGE)
-        waitForBridgeSaveSignal();
 
     for (LinkedList<CustomData>::Itenerator it = pData->custom.begin2(); it.valid(); it.next())
     {
@@ -2566,6 +2566,11 @@ void CarlaPlugin::setPatchbayNodeId(const uint32_t nodeId) noexcept
 }
 
 // -------------------------------------------------------------------
+
+void CarlaPlugin::cloneLV2Files(const CarlaPlugin&)
+{
+    carla_stderr2("Warning: cloneLV2Files() called for non-implemented type");
+}
 
 void CarlaPlugin::restoreLV2State(const bool temporary) noexcept
 {

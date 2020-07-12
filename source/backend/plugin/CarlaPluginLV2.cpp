@@ -4863,6 +4863,28 @@ public:
     // -------------------------------------------------------------------
     // Internal helper functions
 
+    void cloneLV2Files(const CarlaPlugin& other) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(other.getType() == PLUGIN_LV2,);
+
+        const CarlaPluginLV2& otherLV2((const CarlaPluginLV2&)other);
+
+        const File tmpDir(handleStateMapToAbsolutePath(false, false, true, "."));
+
+        if (tmpDir.exists())
+            tmpDir.deleteRecursively();
+
+        const File otherStateDir(otherLV2.handleStateMapToAbsolutePath(false, false, false, "."));
+
+        if (otherStateDir.exists())
+            otherStateDir.copyDirectoryTo(tmpDir);
+
+        const File otherTmpDir(otherLV2.handleStateMapToAbsolutePath(false, false, true, "."));
+
+        if (otherTmpDir.exists())
+            otherTmpDir.copyDirectoryTo(tmpDir);
+    }
+
     void restoreLV2State(const bool temporary) noexcept override
     {
         if (fExt.state == nullptr || fExt.state->restore == nullptr)
@@ -5290,7 +5312,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    char* handleStateMapToAbstractPath(const bool temporary, const char* const absolutePath)
+    char* handleStateMapToAbstractPath(const bool temporary, const char* const absolutePath) const
     {
         // may already be an abstract path
         if (! File::isAbsolutePath(absolutePath))
@@ -5357,7 +5379,7 @@ public:
     File handleStateMapToAbsolutePath(const bool createDirIfNeeded,
                                       const bool symlinkIfNeeded,
                                       const bool temporary,
-                                      const char* const abstractPath)
+                                      const char* const abstractPath) const
     {
         File targetDir, targetPath;
 

@@ -407,13 +407,6 @@ public:
     virtual void prepareForSave(bool temporary);
 
     /*!
-     * Call LV2 restore.
-     * @param temporary Wherever we are saving into a temporary location
-     *                  (for duplication, renaming or similar)
-     */
-    virtual void restoreLV2State(bool temporary) noexcept;
-
-    /*!
      * Reset all possible parameters.
      */
     virtual void resetParameters() noexcept;
@@ -991,6 +984,18 @@ protected:
     // Internal helper functions
 
 protected:
+    /*!
+     * Clone/copy files from another LV2 plugin into this one..
+     */
+    virtual void cloneLV2Files(const CarlaPlugin& other);
+
+    /*!
+     * Call LV2 restore.
+     * @param temporary Wherever we are saving into a temporary location
+     *                  (for duplication, renaming or similar)
+     */
+    virtual void restoreLV2State(bool temporary) noexcept;
+
     /*!
      * Allow engine to signal that plugin will be deleted soon.
      */
