@@ -99,6 +99,16 @@ File& File::operator= (File&& other) noexcept
 }
 #endif
 
+bool File::isNull() const
+{
+    return fullPath.isEmpty();
+}
+
+bool File::isNotNull() const
+{
+    return fullPath.isNotEmpty();
+}
+
 //==============================================================================
 static String removeEllipsis (const String& path)
 {
