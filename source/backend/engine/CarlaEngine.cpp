@@ -3126,6 +3126,9 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
 
                 loadingAsExternal = ppos.pluginId < 0 || hasInternalPositions || !isPatchbay;
 
+                carla_debug("loadingAsExternal: %i because %i %i %i",
+                            loadingAsExternal, ppos.pluginId < 0, hasInternalPositions, !isPatchbay);
+
                 if (name.isNotEmpty() && restorePatchbayGroupPosition(loadingAsExternal, ppos))
                 {
                     if (name != ppos.name)

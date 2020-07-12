@@ -2977,7 +2977,7 @@ bool CarlaEngine::restorePatchbayGroupPosition(const bool external, PatchbayPosi
         }
 
         uint groupId;
-        CARLA_SAFE_ASSERT_RETURN(graph->getGroupFromName(external, ppos.name, groupId), false);
+        CARLA_SAFE_ASSERT_INT_RETURN(graph->getGroupFromName(external, ppos.name, groupId), external, false);
 
         graph->setGroupPos(true, true, external, groupId, ppos.x1, ppos.y1, ppos.x2, ppos.y2);
 
