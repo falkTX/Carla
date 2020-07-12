@@ -171,11 +171,15 @@ public:
     }
 
     // underlying pointer operations :
+    T& operator*() const noexcept
+    {
+        return *px;
+    }
     T* operator->() const noexcept
     {
         return px;
     }
-    T* get(void)  const noexcept
+    T* get(void) const noexcept
     {
         return px;
     }
