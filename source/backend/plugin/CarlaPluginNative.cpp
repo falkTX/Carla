@@ -2763,7 +2763,15 @@ protected:
             return 1;
 
         case NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY:
-            fInlineDisplayNeedsRedraw = true;
+            switch (pData->engine->getProccessMode())
+            {
+            case ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
+            case ENGINE_PROCESS_MODE_PATCHBAY:
+                fInlineDisplayNeedsRedraw = true;
+                break;
+            default:
+                break;
+            }
             break;
 
         case NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER:

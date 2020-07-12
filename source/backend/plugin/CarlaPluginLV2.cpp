@@ -5452,7 +5452,15 @@ public:
 
     void handleInlineDisplayQueueRedraw()
     {
-        fInlineDisplayNeedsRedraw = true;
+        switch (pData->engine->getProccessMode())
+        {
+        case ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
+        case ENGINE_PROCESS_MODE_PATCHBAY:
+            fInlineDisplayNeedsRedraw = true;
+            break;
+        default:
+            break;
+        }
     }
 
     const LV2_Inline_Display_Image_Surface* renderInlineDisplay(const uint32_t width, const uint32_t height) const
