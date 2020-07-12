@@ -652,8 +652,8 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
                 CarlaPlugin::Initializer sfizzInitializer = {
                     this,
                     id,
-                    "",
                     name,
+                    "",
                     "http://sfztools.github.io/sfizz",
                     0,
                     options
