@@ -5296,12 +5296,12 @@ public:
             const File tmpDir = projectDir.getChildFile(basedir + ".tmp")
                                           .getChildFile(getName());
 
-            if (File(absolutePath).getFullPathName().startsWith(tmpDir.getFullPathName()))
+            if (wabsolutePath.getFullPathName().startsWith(tmpDir.getFullPathName()))
             {
                 // gotcha, the temporary path is now the real one
                 targetDir = tmpDir;
             }
-            else
+            else if (! wabsolutePath.getFullPathName().startsWith(targetDir.getFullPathName()))
             {
                 // seems like a normal save, let's be nice and put a symlink
                 const water::String abstractFilename(wabsolutePath.getFileName());
@@ -5309,12 +5309,12 @@ public:
 
                 wabsolutePath.createSymbolicLink(targetPath, true);
 
-                carla_stdout("Creating symlink for %s in %s", absolutePath, targetDir.getFullPathName().toRawUTF8());
+                carla_stdout("Creating symlink for '%s' in '%s'", absolutePath, targetDir.getFullPathName().toRawUTF8());
                 return strdup(abstractFilename.toRawUTF8());
             }
         }
 
-        carla_stdout("Mapping absolutePath %s relative to targetDir %s",
+        carla_stdout("Mapping absolutePath '%s' relative to targetDir '%s'",
                      absolutePath, targetDir.getFullPathName().toRawUTF8());
 
         return strdup(wabsolutePath.getRelativePathFrom(targetDir).toRawUTF8());
@@ -5336,7 +5336,7 @@ public:
 
         if (targetDir.isNull())
         {
-            carla_stdout("Project directory not set, cannot map abstractPath %s", abstractPath);
+            carla_stdout("Project directory not set, cannot map abstractPath '%s'", abstractPath);
             return File();
         }
 
@@ -5358,7 +5358,8 @@ public:
 
             if (symlinkIfNeeded)
             {
-                carla_stdout("Creating symlink for %s in %s", abstractPath, targetDir.getFullPathName().toRawUTF8());
+                carla_stdout("Creating symlink for '%s' in '%s'",
+                             abstractPath, targetDir.getFullPathName().toRawUTF8());
                 wabstractPath.createSymbolicLink(targetPath, true);
             }
         }
@@ -5372,7 +5373,7 @@ public:
         }
 
         if (std::strcmp(abstractPath, ".") != 0)
-            carla_stdout("Mapping abstractPath %s relative to targetDir %s",
+            carla_stdout("Mapping abstractPath '%s' relative to targetDir '%s'",
                          abstractPath, targetDir.getFullPathName().toRawUTF8());
 
         return targetPath;
