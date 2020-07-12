@@ -58,6 +58,8 @@ using water::StringArray;
 using water::XmlDocument;
 using water::XmlElement;
 
+// #define SFZ_FILES_USING_SFIZZ
+
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
@@ -645,7 +647,23 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
             break;
 
         case PLUGIN_SFZ:
+# ifdef SFZ_FILES_USING_SFIZZ
+            {
+                CarlaPlugin::Initializer sfizzInitializer = {
+                    this,
+                    id,
+                    "",
+                    name,
+                    "http://sfztools.github.io/sfizz",
+                    0,
+                    options
+                };
+
+                plugin = CarlaPlugin::newLV2(sfizzInitializer);
+            }
+# else
             plugin = CarlaPlugin::newSFZero(initializer);
+# endif
             break;
 
         case PLUGIN_JACK:
@@ -668,6 +686,17 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
         return false;
 
     plugin->reload();
+
+#ifdef SFZ_FILES_USING_SFIZZ
+    if (ptype == PLUGIN_SFZ && plugin->getType() == PLUGIN_LV2)
+    {
+        plugin->setCustomData(LV2_ATOM__Path,
+                              "http://sfztools.github.io/sfizz:sfzfile",
+                              filename,
+                              false);
+        plugin->restoreLV2State();
+    }
+#endif
 
     bool canRun = true;
 
@@ -2775,6 +2804,60 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                 callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
                 continue;
             }
+# ifdef SFZ_FILES_USING_SFIZZ
+            if (std::strcmp(stateSave.type, "SFZ") == 0)
+            {
+                if (addPlugin(PLUGIN_LV2, "", stateSave.name, "http://sfztools.github.io/sfizz", 0, nullptr))
+                {
+                    const uint pluginId = pData->curPluginCount;
+
+                    if (const CarlaPluginPtr plugin = pData->plugins[pluginId].plugin)
+                    {
+                        if (pData->aboutToClose)
+                            return true;
+
+                        if (pData->actionCanceled)
+                        {
+                            setLastError("Project load canceled");
+                            return false;
+                        }
+
+                        plugin->setCustomData(LV2_ATOM__Path,
+                                              "http://sfztools.github.io/sfizz:sfzfile",
+                                              stateSave.binary,
+                                              false);
+
+                        plugin->restoreLV2State();
+
+                        plugin->setDryWet(stateSave.dryWet, true, true);
+                        plugin->setVolume(stateSave.volume, true, true);
+                        plugin->setBalanceLeft(stateSave.balanceLeft, true, true);
+                        plugin->setBalanceRight(stateSave.balanceRight, true, true);
+                        plugin->setPanning(stateSave.panning, true, true);
+                        plugin->setCtrlChannel(stateSave.ctrlChannel, true, true);
+                        plugin->setActive(stateSave.active, true, true);
+                        plugin->setEnabled(true);
+
+                        ++pData->curPluginCount;
+                        callback(true, true, ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, 0, 0, 0, 0.0f, plugin->getName());
+
+                        if (isPatchbay)
+                            pData->graph.addPlugin(plugin);
+                    }
+                    else
+                    {
+                        carla_stderr2("Failed to get new plugin, state will not be restored correctly\n");
+                    }
+                }
+                else
+                {
+                    carla_stderr2("Failed to load a sfizz LV2 plugin, SFZ file won't be loaded");
+                }
+
+                callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+                continue;
+            }
+# endif
 #endif
 
             const void* extraStuff    = nullptr;

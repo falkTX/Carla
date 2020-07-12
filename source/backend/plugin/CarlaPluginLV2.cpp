@@ -7602,8 +7602,7 @@ bool CarlaPipeServerLV2::msgReceived(const char* const msg) noexcept
 
 CarlaPluginPtr CarlaPlugin::newLV2(const Initializer& init)
 {
-    carla_debug("CarlaPlugin::newLV2({%p, \"%s\", \"%s\", " P_INT64 "})",
-                init.engine, init.name, init.label, init.uniqueId);
+    carla_debug("CarlaPlugin::newLV2({%p, \"%s\", \"%s\"})", init.engine, init.name, init.label);
 
     std::shared_ptr<CarlaPluginLV2> plugin(new CarlaPluginLV2(init.engine, init.id));
 
