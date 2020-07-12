@@ -576,6 +576,7 @@ public:
           fCvInBuffers(nullptr),
           fCvOutBuffers(nullptr),
           fParamBuffers(nullptr),
+          fHasThreadSafeRestore(false),
           fNeedsFixedBuffers(false),
           fNeedsUiClose(false),
           fInlineDisplayNeedsRedraw(false),
@@ -1482,12 +1483,13 @@ public:
 
             if (fExt.state != nullptr)
             {
-                const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
+                const bool block = (sendGui || sendOsc || sendCallback) && !fHasThreadSafeRestore;
+                const ScopedSingleProcessLocker spl(this, block);
 
-                lilv_state_restore(state, fExt.state, fHandle, carla_lilv_set_port_value, this, 0, fStateFeatures);
+                lilv_state_restore(state, fExt.state, fHandle, carla_lilv_set_port_value, this, 0, fFeatures);
 
                 if (fHandle2 != nullptr)
-                    lilv_state_restore(state, fExt.state, fHandle2, carla_lilv_set_port_value, this, 0, fStateFeatures);
+                    lilv_state_restore(state, fExt.state, fHandle2, carla_lilv_set_port_value, this, 0, fFeatures);
             }
             else
             {
@@ -3196,10 +3198,10 @@ public:
                 // load default state
                 if (LilvState* const state = Lv2WorldClass::getInstance().getStateFromURI(fDescriptor->URI, (const LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
                 {
-                    lilv_state_restore(state, fExt.state, fHandle, carla_lilv_set_port_value, this, 0, fStateFeatures);
+                    lilv_state_restore(state, fExt.state, fHandle, carla_lilv_set_port_value, this, 0, fFeatures);
 
                     if (fHandle2 != nullptr)
-                        lilv_state_restore(state, fExt.state, fHandle2, carla_lilv_set_port_value, this, 0, fStateFeatures);
+                        lilv_state_restore(state, fExt.state, fHandle2, carla_lilv_set_port_value, this, 0, fFeatures);
 
                     lilv_state_free(state);
                 }
@@ -4827,7 +4829,7 @@ public:
         LV2_State_Status status = LV2_STATE_ERR_UNKNOWN;
 
         {
-            const ScopedSingleProcessLocker spl(this, true);
+            const ScopedSingleProcessLocker spl(this, !fHasThreadSafeRestore);
 
             try {
                 status = fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, LV2_STATE_IS_POD, fStateFeatures);
@@ -5942,6 +5944,10 @@ public:
             {
                 fStrictBounds = feature.Required ? 1 : 0;
             }
+            else if (std::strcmp(feature.URI, LV2_STATE__threadSafeRestore) == 0)
+            {
+                fHasThreadSafeRestore = true;
+            }
             else if (feature.Required && ! is_lv2_feature_supported(feature.URI))
             {
                 CarlaString msg("Plugin wants a feature that is not supported:\n");
@@ -6795,9 +6801,10 @@ private:
     float** fCvOutBuffers;
     float*  fParamBuffers;
 
-    bool    fNeedsFixedBuffers;
-    bool    fNeedsUiClose;
-    bool    fInlineDisplayNeedsRedraw;
+    bool    fHasThreadSafeRestore : 1;
+    bool    fNeedsFixedBuffers : 1;
+    bool    fNeedsUiClose  : 1;
+    bool    fInlineDisplayNeedsRedraw : 1;
     int64_t fInlineDisplayLastRedrawTime;
     int32_t fLatencyIndex; // -1 if invalid
     int     fStrictBounds; // -1 unsupported, 0 optional, 1 required
@@ -7005,7 +7012,7 @@ private:
     static void carla_lv2_state_free_path(LV2_State_Free_Path_Handle handle, char* const path)
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
-        carla_debug("carla_lv2_state_free_path(%p, \"%s\")", handle, path);
+        carla_stdout("carla_lv2_state_free_path(%p, \"%s\")", handle, path);
 
         std::free(path);
     }
@@ -7014,7 +7021,7 @@ private:
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(path != nullptr && path[0] != '\0', nullptr);
-        carla_debug("carla_lv2_state_make_path_real(%p, \"%s\")", handle, path);
+        carla_stdout("carla_lv2_state_make_path_real(%p, \"%s\")", handle, path);
 
         return ((CarlaPluginLV2*)handle)->handleStateMapToAbsolutePath(true, false, path);
     }
@@ -7023,7 +7030,7 @@ private:
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(path != nullptr && path[0] != '\0', nullptr);
-        carla_debug("carla_lv2_state_make_path_tmp(%p, \"%s\")", handle, path);
+        carla_stdout("carla_lv2_state_make_path_tmp(%p, \"%s\")", handle, path);
 
         return ((CarlaPluginLV2*)handle)->handleStateMapToAbsolutePath(true, true, path);
     }
@@ -7032,7 +7039,7 @@ private:
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(absolute_path != nullptr && absolute_path[0] != '\0', nullptr);
-        carla_debug("carla_lv2_state_map_abstract_path_real(%p, \"%s\")", handle, absolute_path);
+        carla_stdout("carla_lv2_state_map_abstract_path_real(%p, \"%s\")", handle, absolute_path);
 
         return ((CarlaPluginLV2*)handle)->handleStateMapToAbstractPath(false, absolute_path);
     }
@@ -7041,7 +7048,7 @@ private:
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(absolute_path != nullptr && absolute_path[0] != '\0', nullptr);
-        carla_debug("carla_lv2_state_map_abstract_path_tmp(%p, \"%s\")", handle, absolute_path);
+        carla_stdout("carla_lv2_state_map_abstract_path_tmp(%p, \"%s\")", handle, absolute_path);
 
         return ((CarlaPluginLV2*)handle)->handleStateMapToAbstractPath(true, absolute_path);
     }
@@ -7050,7 +7057,7 @@ private:
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(abstract_path != nullptr && abstract_path[0] != '\0', nullptr);
-        carla_debug("carla_lv2_state_map_absolute_path_real(%p, \"%s\")", handle, abstract_path);
+        carla_stdout("carla_lv2_state_map_absolute_path_real(%p, \"%s\")", handle, abstract_path);
 
         return ((CarlaPluginLV2*)handle)->handleStateMapToAbsolutePath(false, false, abstract_path);
     }
@@ -7059,7 +7066,7 @@ private:
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(abstract_path != nullptr && abstract_path[0] != '\0', nullptr);
-        carla_debug("carla_lv2_state_map_absolute_path_tmp(%p, \"%s\")", handle, abstract_path);
+        carla_stdout("carla_lv2_state_map_absolute_path_tmp(%p, \"%s\")", handle, abstract_path);
 
         return ((CarlaPluginLV2*)handle)->handleStateMapToAbsolutePath(false, true, abstract_path);
     }
