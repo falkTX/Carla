@@ -120,7 +120,7 @@ static const NativeParameter* lfo_get_parameter_info(NativePluginHandle handle, 
         param.unit = "(coef)";
         param.ranges.def = 1.0f;
         param.ranges.min = 0.01f;
-        param.ranges.max = 32.0f;
+        param.ranges.max = 2048.0f;
         param.ranges.step = 0.25f;
         param.ranges.stepSmall = 0.1f;
         param.ranges.stepLarge = 0.5f;
