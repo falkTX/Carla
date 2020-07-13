@@ -999,8 +999,9 @@ public:
                 jackPort = jackbridge_port_register(fJackClient,
                                                     realName,
                                                     JACK_DEFAULT_AUDIO_TYPE,
-                                                    JackPortIsControlVoltage | (isInput ? JackPortIsInput
-                                                                                        : JackPortIsOutput),
+                                                    static_cast<uint64_t>(JackPortIsControlVoltage |
+                                                                          (isInput ? JackPortIsInput
+                                                                                   : JackPortIsOutput)),
                                                     0);
                 break;
             case kEnginePortTypeEvent:
