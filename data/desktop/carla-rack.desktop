@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Carla
+GenericName=Carla Plugin Host (Rack mode)
+Comment=Audio Plugin Host, in Rack mode
+Exec=carla-rack %u
+Icon=carla
+Terminal=false
+Type=Application
+Version=1.0
+NoDisplay=true
+X-NSM-capable=true

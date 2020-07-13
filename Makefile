@@ -617,9 +617,13 @@ ifeq ($(HAVE_THEME),true)
 endif
 
 	# Install desktop files
-	install -m 644 data/carla.desktop         $(DESTDIR)$(DATADIR)/applications
+	install -m 644 data/desktop/carla.desktop             $(DESTDIR)$(DATADIR)/applications
+	install -m 644 data/desktop/carla-rack.desktop        $(DESTDIR)$(DATADIR)/applications
+	install -m 644 data/desktop/carla-patchbay.desktop    $(DESTDIR)$(DATADIR)/applications
+	install -m 644 data/desktop/carla-jack-single.desktop $(DESTDIR)$(DATADIR)/applications
+	install -m 644 data/desktop/carla-jack-multi.desktop  $(DESTDIR)$(DATADIR)/applications
 ifeq ($(HAVE_LIBLO),true)
-	install -m 644 data/carla-control.desktop $(DESTDIR)$(DATADIR)/applications
+	install -m 644 data/desktop/carla-control.desktop     $(DESTDIR)$(DATADIR)/applications
 endif
 
 	# Install mime package

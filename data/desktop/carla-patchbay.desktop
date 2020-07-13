@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Carla
+GenericName=Carla Plugin Host (Internal Patchbay mode)
+Comment=Audio Plugin Host, in internal Patchbay mode
+Exec=carla-patchbay %u
+Icon=carla
+Terminal=false
+Type=Application
+Version=1.0
+NoDisplay=true
+X-NSM-capable=true
