@@ -28,13 +28,11 @@ const char* find_dssi_ui(const char* const filename, const char* const label) no
     carla_debug("find_dssi_ui(\"%s\", \"%s\")", filename, label);
 
     try {
-        using namespace water;
+        water::String guiFilename;
+        water::String pluginDir(water::String(filename).upToLastOccurrenceOf(".", false, false));
 
-        String guiFilename;
-        String pluginDir(String(filename).upToLastOccurrenceOf(".", false, false));
-
-        String checkLabel(label);
-        String checkSName(File(pluginDir).getFileName());
+        water::String checkLabel(label);
+        water::String checkSName(water::File(pluginDir).getFileName());
 
         if (checkSName.endsWithIgnoreCase("dssi"))
         {
@@ -47,12 +45,13 @@ const char* find_dssi_ui(const char* const filename, const char* const label) no
         if (! checkLabel.endsWithChar('_')) checkLabel += "_";
         if (! checkSName.endsWithChar('_')) checkSName += "_";
 
-        Array<File> results;
+        water::Array<water::File> results;
 
-        for (int i=File(pluginDir).findChildFiles(results, File::findFiles|File::ignoreHiddenFiles, false); --i >= 0;)
+        for (int i=water::File(pluginDir).findChildFiles(results,
+                                                         water::File::findFiles|water::File::ignoreHiddenFiles, false); --i >= 0;)
         {
-            const File& gui(results[i]);
-            const String& guiShortName(gui.getFileName());
+            const water::File& gui(results[i]);
+            const water::String& guiShortName(gui.getFileName());
 
             if (guiShortName.startsWith(checkLabel) || guiShortName.startsWith(checkSName))
             {
