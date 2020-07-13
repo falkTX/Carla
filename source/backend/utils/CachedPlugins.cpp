@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -31,11 +31,6 @@
 #include "water/files/File.h"
 
 namespace CB = CarlaBackend;
-
-using water::Array;
-using water::File;
-using water::String;
-using water::StringArray;
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -76,7 +71,7 @@ _CarlaCachedPluginInfo::_CarlaCachedPluginInfo() noexcept
 
 // -------------------------------------------------------------------------------------------------------------------
 
-static Array<File> gSFZs;
+static water::Array<water::File> gSFZs;
 
 static void findSFZs(const char* const sfzPaths)
 {
@@ -87,13 +82,13 @@ static void findSFZs(const char* const sfzPaths)
     if (sfzPaths[0] == '\0')
         return;
 
-    const StringArray splitPaths(StringArray::fromTokens(sfzPaths, CARLA_OS_SPLIT_STR, ""));
+    const water::StringArray splitPaths(water::StringArray::fromTokens(sfzPaths, CARLA_OS_SPLIT_STR, ""));
 
-    for (String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
+    for (water::String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
     {
-        Array<File> results;
+        water::Array<water::File> results;
 
-        if (File(*it).findChildFiles(results, File::findFiles|File::ignoreHiddenFiles, true, "*.sfz") > 0)
+        if (water::File(*it).findChildFiles(results, water::File::findFiles|water::File::ignoreHiddenFiles, true, "*.sfz") > 0)
             gSFZs.addArray(results);
     }
 }
@@ -579,7 +574,7 @@ static const CarlaCachedPluginInfo* get_cached_plugin_au(const juce::String plug
 
 // -------------------------------------------------------------------------------------------------------------------
 
-static const CarlaCachedPluginInfo* get_cached_plugin_sfz(const File file)
+static const CarlaCachedPluginInfo* get_cached_plugin_sfz(const water::File& file)
 {
     static CarlaCachedPluginInfo info;
 
