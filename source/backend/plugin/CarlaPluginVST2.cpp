@@ -1302,7 +1302,7 @@ public:
 
             for (uint32_t i=0, numEvents = pData->event.portIn->getEventCount(); i < numEvents; ++i)
             {
-                const EngineEvent& event(pData->event.portIn->getEvent(i));
+                EngineEvent& event(pData->event.portIn->getEvent(i));
 
                 uint32_t eventTime = event.time;
                 CARLA_SAFE_ASSERT_UINT2_CONTINUE(eventTime < frames, eventTime, frames);
@@ -1337,7 +1337,7 @@ public:
                     break;
 
                 case kEngineEventTypeControl: {
-                    const EngineControlEvent& ctrlEvent(event.ctrl);
+                    EngineControlEvent& ctrlEvent(event.ctrl);
 
                     switch (ctrlEvent.type)
                     {
@@ -1354,6 +1354,7 @@ public:
                             const uint32_t k = ctrlEvent.param;
                             CARLA_SAFE_ASSERT_CONTINUE(k < pData->param.count);
 
+                            ctrlEvent.handled = true;
                             value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.value);
                             setParameterValueRT(k, value, true);
                             continue;
@@ -1364,17 +1365,17 @@ public:
                         {
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) != 0)
                             {
+                                ctrlEvent.handled = true;
                                 value = ctrlEvent.value;
                                 setDryWetRT(value, true);
                             }
-
-                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
+                            else if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
                             {
+                                ctrlEvent.handled = true;
                                 value = ctrlEvent.value*127.0f/100.0f;
                                 setVolumeRT(value, true);
                             }
-
-                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
+                            else if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
                             {
                                 float left, right;
                                 value = ctrlEvent.value/0.5f - 1.0f;
@@ -1395,6 +1396,7 @@ public:
                                     right = 1.0f;
                                 }
 
+                                ctrlEvent.handled = true;
                                 setBalanceLeftRT(left, true);
                                 setBalanceRightRT(right, true);
                             }
@@ -1413,6 +1415,7 @@ public:
                             if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
 
+                            ctrlEvent.handled = true;
                             value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.value);
                             setParameterValueRT(k, value, true);
                         }
@@ -1432,6 +1435,9 @@ public:
                             vstMidiEvent.midiData[1] = char(ctrlEvent.param);
                             vstMidiEvent.midiData[2] = char(ctrlEvent.value*127.0f);
                         }
+
+                        if (! ctrlEvent.handled)
+                            checkForMidiLearn(event);
 
                         break;
                     } // case kEngineControlEventTypeParameter

@@ -562,13 +562,19 @@ PARAMETER_MAX = -9
 # @see ParameterData::mappedControlIndex
 
 # Unused control index, meaning no mapping is enabled.
-CONTROL_VALUE_NONE = -1
+CONTROL_INDEX_NONE = -1
 
 # CV control index, meaning the parameter is exposed as CV port.
-CONTROL_VALUE_CV = 130
+CONTROL_INDEX_CV = 130
 
 # Special value to indicate MIDI pitchbend.
-CONTROL_VALUE_MIDI_PITCHBEND = 131
+CONTROL_INDEX_MIDI_PITCHBEND = 131
+
+# Special value to indicate MIDI learn.
+CONTROL_INDEX_MIDI_LEARN = 132
+
+# Special value to indicate MIDI pitchbend.
+CONTROL_INDEX_MAX_ALLOWED = CONTROL_INDEX_MIDI_LEARN
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Engine Callback Opcode
@@ -1227,7 +1233,7 @@ PyParameterData = {
     'index': PARAMETER_NULL,
     'rindex': -1,
     'midiChannel': 0,
-    'mappedControlIndex': CONTROL_VALUE_NONE,
+    'mappedControlIndex': CONTROL_INDEX_NONE,
     'mappedMinimum': 0.0,
     'mappedMaximum': 0.0,
 }

@@ -178,6 +178,7 @@ struct CARLA_API EngineControlEvent {
     EngineControlEventType type; //!< Control-Event type.
     uint16_t param;              //!< Parameter Id, midi bank or midi program.
     float    value;              //!< Parameter value, normalized to 0.0f<->1.0f.
+    bool     handled;            //!< Indicates that event was handled/received at least once.
 
     /*!
      * Convert this control event into MIDI data.
@@ -575,12 +576,12 @@ public:
      * Get the event at @a index.
      * @note You must only call this for input ports.
      */
-    virtual const EngineEvent& getEvent(uint32_t index) const noexcept;
+    virtual EngineEvent& getEvent(uint32_t index) const noexcept;
 
     /*!
      * Get the event at @a index, faster unchecked version.
      */
-    virtual const EngineEvent& getEventUnchecked(uint32_t index) const noexcept;
+    virtual EngineEvent& getEventUnchecked(uint32_t index) const noexcept;
 
     /*!
      * Write a control event into the buffer.

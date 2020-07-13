@@ -51,6 +51,7 @@ class CarlaEngineEventPort;
 class CarlaEngineCVSourcePorts;
 class CarlaEngineBridge;
 struct CarlaStateSave;
+struct EngineEvent;
 
 // -----------------------------------------------------------------------
 
@@ -890,6 +891,12 @@ public:
      * Get the plugin's default event output port.
      */
     CarlaEngineEventPort* getDefaultEventOutPort() const noexcept;
+
+    /*!
+     * Check if the plugin is interested on MIDI learn, and if so, map this event to the parameter that wants it.
+     * Event MUST be of control type and not have been handled before.
+     */
+    void checkForMidiLearn(EngineEvent& event) noexcept;
 
     /*!
      * Get the plugin's type native handle.

@@ -780,9 +780,14 @@ typedef enum {
     CONTROL_INDEX_MIDI_PITCHBEND = 131,
 
     /*!
+     * Special value to indicate MIDI learn.
+     */
+    CONTROL_INDEX_MIDI_LEARN = 132,
+
+    /*!
      * Highest index allowed for mappings.
      */
-    CONTROL_INDEX_MAX_ALLOWED = CONTROL_INDEX_MIDI_PITCHBEND
+    CONTROL_INDEX_MAX_ALLOWED = CONTROL_INDEX_MIDI_LEARN
 
 } SpecialMappedControlIndex;
 

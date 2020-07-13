@@ -1,6 +1,6 @@
 /*
  * Carla State utils
- * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -455,7 +455,8 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                         {
                             const int ctrl(pText.getIntValue());
                             if (ctrl > CONTROL_INDEX_NONE && ctrl <= CONTROL_INDEX_MAX_ALLOWED)
-                                stateParameter->mappedControlIndex = static_cast<int16_t>(ctrl);
+                                if (ctrl != CONTROL_INDEX_MIDI_LEARN)
+                                    stateParameter->mappedControlIndex = static_cast<int16_t>(ctrl);
                         }
                         else if (pTag == "MappedMinimum")
                         {

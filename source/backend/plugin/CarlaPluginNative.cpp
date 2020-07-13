@@ -97,7 +97,9 @@ CARLA_BACKEND_START_NAMESPACE
 // Fallback data
 
 static const CustomData  kCustomDataFallback = { nullptr, nullptr, nullptr };
-static const EngineEvent kNullEngineEvent    = { kEngineEventTypeNull, 0, 0, {} };
+static EngineEvent kNullEngineEvent = {
+    kEngineEventTypeNull, 0, 0, {{ kEngineControlEventTypeNull, 0, 0.0f, true }}
+};
 
 // -----------------------------------------------------------------------
 
@@ -1684,7 +1686,7 @@ public:
         }
     }
 
-    const EngineEvent& findNextEvent()
+    EngineEvent& findNextEvent()
     {
         if (fMidiIn.count == 1)
         {
@@ -1909,7 +1911,7 @@ public:
 
             for (;;)
             {
-                const EngineEvent& event(findNextEvent());
+                EngineEvent& event(findNextEvent());
 
                 if (event.type == kEngineEventTypeNull)
                     break;
@@ -1959,7 +1961,7 @@ public:
                     break;
 
                 case kEngineEventTypeControl: {
-                    const EngineControlEvent& ctrlEvent = event.ctrl;
+                    EngineControlEvent& ctrlEvent(event.ctrl);
 
                     switch (ctrlEvent.type)
                     {
@@ -1976,6 +1978,7 @@ public:
                             const uint32_t k = ctrlEvent.param;
                             CARLA_SAFE_ASSERT_CONTINUE(k < pData->param.count);
 
+                            ctrlEvent.handled = true;
                             value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.value);
                             setParameterValueRT(k, value, true);
                             continue;
@@ -1986,17 +1989,17 @@ public:
                         {
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) > 0)
                             {
+                                ctrlEvent.handled = true;
                                 value = ctrlEvent.value;
                                 setDryWetRT(value, true);
                             }
-
-                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) > 0)
+                            else if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) > 0)
                             {
+                                ctrlEvent.handled = true;
                                 value = ctrlEvent.value*127.0f/100.0f;
                                 setVolumeRT(value, true);
                             }
-
-                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) > 0)
+                            else if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) > 0)
                             {
                                 float left, right;
                                 value = ctrlEvent.value/0.5f - 1.0f;
@@ -2017,6 +2020,7 @@ public:
                                     right = 1.0f;
                                 }
 
+                                ctrlEvent.handled = true;
                                 setBalanceLeftRT(left, true);
                                 setBalanceRightRT(right, true);
                             }
@@ -2034,6 +2038,7 @@ public:
                             if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
 
+                            ctrlEvent.handled = true;
                             value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.value);
                             setParameterValueRT(k, value, true);
                         }
@@ -2052,6 +2057,9 @@ public:
                             nativeEvent.data[2] = uint8_t(ctrlEvent.value*127.0f);
                             nativeEvent.size    = 3;
                         }
+
+                        if (! ctrlEvent.handled)
+                            checkForMidiLearn(event);
 
                         break;
                     } // case kEngineControlEventTypeParameter

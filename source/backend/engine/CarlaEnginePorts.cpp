@@ -31,8 +31,9 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 // Fallback data
 
-static const EngineEvent kFallbackEngineEvent = { kEngineEventTypeNull, 0, 0, {{ kEngineControlEventTypeNull, 0, 0.0f }} };
-//static CarlaEngineEventCV kFallbackEngineEventCV = { nullptr, (uint32_t)-1, 0.0f };
+static EngineEvent kFallbackEngineEvent = {
+    kEngineEventTypeNull, 0, 0, {{ kEngineControlEventTypeNull, 0, 0.0f, true }}
+};
 
 // -----------------------------------------------------------------------
 // Carla Engine port (Abstract)
@@ -169,7 +170,7 @@ uint32_t CarlaEngineEventPort::getEventCount() const noexcept
     return i;
 }
 
-const EngineEvent& CarlaEngineEventPort::getEvent(const uint32_t index) const noexcept
+EngineEvent& CarlaEngineEventPort::getEvent(const uint32_t index) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(kIsInput, kFallbackEngineEvent);
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, kFallbackEngineEvent);
@@ -179,7 +180,7 @@ const EngineEvent& CarlaEngineEventPort::getEvent(const uint32_t index) const no
     return fBuffer[index];
 }
 
-const EngineEvent& CarlaEngineEventPort::getEventUnchecked(const uint32_t index) const noexcept
+EngineEvent& CarlaEngineEventPort::getEventUnchecked(const uint32_t index) const noexcept
 {
     return fBuffer[index];
 }

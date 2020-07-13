@@ -673,6 +673,7 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
       ctrlChannel(0),
       extraHints(0x0),
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+      midiLearnParameterIndex(-1),
       transientTryCounter(0),
       transientFirstTry(true),
 #endif

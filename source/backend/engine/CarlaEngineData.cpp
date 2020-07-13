@@ -108,18 +108,21 @@ void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data
             ctrl.type  = kEngineControlEventTypeMidiBank;
             ctrl.param = midiBank;
             ctrl.value = 0.0f;
+            ctrl.handled = true;
         }
         else if (midiControl == MIDI_CONTROL_ALL_SOUND_OFF)
         {
             ctrl.type  = kEngineControlEventTypeAllSoundOff;
             ctrl.param = 0;
             ctrl.value = 0.0f;
+            ctrl.handled = true;
         }
         else if (midiControl == MIDI_CONTROL_ALL_NOTES_OFF)
         {
             ctrl.type  = kEngineControlEventTypeAllNotesOff;
             ctrl.param = 0;
             ctrl.value = 0.0f;
+            ctrl.handled = true;
         }
         else
         {
@@ -130,6 +133,7 @@ void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data
             ctrl.type  = kEngineControlEventTypeParameter;
             ctrl.param = midiControl;
             ctrl.value = float(midiValue)/127.0f;
+            ctrl.handled = false;
         }
     }
     else if (midiStatus == MIDI_STATUS_PROGRAM_CHANGE)
@@ -143,6 +147,7 @@ void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data
         ctrl.type  = kEngineControlEventTypeMidiProgram;
         ctrl.param = midiProgram;
         ctrl.value = 0.0f;
+        ctrl.handled = true;
     }
     else
     {

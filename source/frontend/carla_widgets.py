@@ -73,9 +73,10 @@ from carla_backend import (
     PARAMETER_USES_CUSTOM_TEXT,
     PARAMETER_CAN_BE_CV_CONTROLLED,
     PARAMETER_INPUT, PARAMETER_OUTPUT,
-    CONTROL_VALUE_NONE,
-    CONTROL_VALUE_MIDI_PITCHBEND,
-    CONTROL_VALUE_CV
+    CONTROL_INDEX_NONE,
+    CONTROL_INDEX_MIDI_PITCHBEND,
+    CONTROL_INDEX_MIDI_LEARN,
+    CONTROL_INDEX_CV
 )
 
 from carla_shared import (
@@ -390,10 +391,14 @@ class PluginParameter(QWidget):
         self.ui.l_name.setFixedWidth(width)
 
     def updateStatusLabel(self):
-        if self.fMappedCtrl == CONTROL_VALUE_NONE:
+        if self.fMappedCtrl == CONTROL_INDEX_NONE:
             text = self.tr("Unmapped")
-        elif self.fMappedCtrl == CONTROL_VALUE_CV:
+        elif self.fMappedCtrl == CONTROL_INDEX_CV:
             text = self.tr("CV export")
+        elif self.fMappedCtrl == CONTROL_INDEX_MIDI_PITCHBEND:
+            text = self.tr("PBend Ch%i" % (self.fMidiChannel,))
+        elif self.fMappedCtrl == CONTROL_INDEX_MIDI_LEARN:
+            text = self.tr("MIDI Learn")
         else:
             text = self.tr("CC%i Ch%i" % (self.fMappedCtrl, self.fMidiChannel))
 
@@ -403,14 +408,18 @@ class PluginParameter(QWidget):
     def slot_optionsCustomMenu(self):
         menu = QMenu(self)
 
-        if self.fMappedCtrl == CONTROL_VALUE_NONE:
+        if self.fMappedCtrl == CONTROL_INDEX_NONE:
             title = self.tr("Unmapped")
-        elif self.fMappedCtrl == CONTROL_VALUE_CV:
+        elif self.fMappedCtrl == CONTROL_INDEX_CV:
             title = self.tr("Exposed as CV port")
+        elif self.fMappedCtrl == CONTROL_INDEX_MIDI_PITCHBEND:
+            title = self.tr("Mapped to MIDI Pitchbend, channel %i" % (self.fMidiChannel,))
+        elif self.fMappedCtrl == CONTROL_INDEX_MIDI_LEARN:
+            title = self.tr("MIDI Learn active")
         else:
             title = self.tr("Mapped to MIDI control %i, channel %i" % (self.fMappedCtrl, self.fMidiChannel))
 
-        if self.fMappedCtrl != CONTROL_VALUE_NONE:
+        if self.fMappedCtrl != CONTROL_INDEX_NONE:
             title += " (range: %g-%g)" % (self.fMappedMinimum, self.fMappedMaximum)
 
         actTitle = menu.addAction(title)
@@ -420,14 +429,14 @@ class PluginParameter(QWidget):
 
         actUnmap = menu.addAction(self.tr("Unmap"))
 
-        if self.fMappedCtrl == CONTROL_VALUE_NONE:
+        if self.fMappedCtrl == CONTROL_INDEX_NONE:
             actUnmap.setCheckable(True)
             actUnmap.setChecked(True)
 
         if self.fCanBeInCV:
             menu.addSection("CV")
             actCV = menu.addAction(self.tr("Expose as CV port"))
-            if self.fMappedCtrl == CONTROL_VALUE_CV:
+            if self.fMappedCtrl == CONTROL_INDEX_CV:
                 actCV.setCheckable(True)
                 actCV.setChecked(True)
         else:
@@ -435,9 +444,18 @@ class PluginParameter(QWidget):
 
         menu.addSection("MIDI")
 
+        actLearn = menu.addAction(self.tr("MIDI Learn"))
+
+        if self.fMappedCtrl == CONTROL_INDEX_MIDI_LEARN:
+            actLearn.setCheckable(True)
+            actLearn.setChecked(True)
+
         menuMIDI = menu.addMenu(self.tr("MIDI Control"))
 
-        if self.fMappedCtrl not in (CONTROL_VALUE_NONE, CONTROL_VALUE_CV, CONTROL_VALUE_MIDI_PITCHBEND):
+        if self.fMappedCtrl not in (CONTROL_INDEX_NONE,
+                                    CONTROL_INDEX_CV,
+                                    CONTROL_INDEX_MIDI_PITCHBEND,
+                                    CONTROL_INDEX_MIDI_LEARN):
             action = menuMIDI.menuAction()
             action.setCheckable(True)
             action.setChecked(True)
@@ -475,7 +493,7 @@ class PluginParameter(QWidget):
         # TODO
         #actPitchbend = menu.addAction(self.tr("MIDI Pitchbend"))
 
-        #if self.fMappedCtrl == CONTROL_VALUE_MIDI_PITCHBEND:
+        #if self.fMappedCtrl == CONTROL_INDEX_MIDI_PITCHBEND:
             #actPitchbend.setCheckable(True)
             #actPitchbend.setChecked(True)
 
@@ -490,8 +508,8 @@ class PluginParameter(QWidget):
                 action.setCheckable(True)
                 action.setChecked(True)
 
-        if self.fMappedCtrl != CONTROL_VALUE_NONE:
-            if self.fMappedCtrl == CONTROL_VALUE_CV:
+        if self.fMappedCtrl != CONTROL_INDEX_NONE:
+            if self.fMappedCtrl == CONTROL_INDEX_CV:
                 menu.addSection("Range (Scaled CV input)")
             else:
                 menu.addSection("Range (MIDI bounds)")
@@ -517,8 +535,8 @@ class PluginParameter(QWidget):
                                                self.tr("Custom Minimum"),
                                                "Custom minimum value to use:",
                                                self.fMappedMinimum,
-                                               self.fMinimum if self.fMappedCtrl != CONTROL_VALUE_CV else -9e6,
-                                               self.fMaximum if self.fMappedCtrl != CONTROL_VALUE_CV else 9e6,
+                                               self.fMinimum if self.fMappedCtrl != CONTROL_INDEX_CV else -9e6,
+                                               self.fMaximum if self.fMappedCtrl != CONTROL_INDEX_CV else 9e6,
                                                self.fDecimalPoints)
             if not ok:
                 return
@@ -532,8 +550,8 @@ class PluginParameter(QWidget):
                                                self.tr("Custom Maximum"),
                                                "Custom maximum value to use:",
                                                self.fMappedMaximum,
-                                               self.fMinimum if self.fMappedCtrl != CONTROL_VALUE_CV else -9e6,
-                                               self.fMaximum if self.fMappedCtrl != CONTROL_VALUE_CV else 9e6,
+                                               self.fMinimum if self.fMappedCtrl != CONTROL_INDEX_CV else -9e6,
+                                               self.fMaximum if self.fMappedCtrl != CONTROL_INDEX_CV else 9e6,
                                                self.fDecimalPoints)
             if not ok:
                 return
@@ -543,11 +561,9 @@ class PluginParameter(QWidget):
             return
 
         if actSel == actUnmap:
-            ctrl = CONTROL_VALUE_NONE
+            ctrl = CONTROL_INDEX_NONE
         elif actSel == actCV:
-            ctrl = CONTROL_VALUE_CV
-        elif actSel in actCCs:
-            ctrl = int(actSel.text().split(" ", 1)[0].replace("&",""), 10)
+            ctrl = CONTROL_INDEX_CV
         elif actSel == actCustomCC:
             value = self.fMappedCtrl if self.fMappedCtrl >= 0x01 and self.fMappedCtrl <= 0x77 else 1
             ctrl, ok = QInputDialog.getInt(self,
@@ -557,8 +573,12 @@ class PluginParameter(QWidget):
                                            0x01, 0x77, 1)
             if not ok:
                 return
-        #elif actSel in actPitchbend:
-            #ctrl = CONTROL_VALUE_MIDI_PITCHBEND
+        #elif actSel == actPitchbend:
+            #ctrl = CONTROL_INDEX_MIDI_PITCHBEND
+        elif actSel == actLearn:
+            ctrl = CONTROL_INDEX_MIDI_LEARN
+        elif actSel in actCCs:
+            ctrl = int(actSel.text().split(" ", 1)[0].replace("&",""), 10)
         else:
             return
 

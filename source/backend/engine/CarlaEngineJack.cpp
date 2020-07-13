@@ -124,7 +124,9 @@ static /* */ PortNameToId   kPortNameToIdFallbackNC  = { 0, 0, { '\0' }, { '\0' 
 static const PortNameToId   kPortNameToIdFallback    = { 0, 0, { '\0' }, { '\0' } };
 static const ConnectionToId kConnectionToIdFallback  = { 0, 0, 0, 0, 0 };
 #endif
-static const EngineEvent    kFallbackJackEngineEvent = { kEngineEventTypeNull, 0, 0, {{ kEngineControlEventTypeNull, 0, 0.0f }} };
+static EngineEvent kFallbackJackEngineEvent = {
+    kEngineEventTypeNull, 0, 0, {{ kEngineControlEventTypeNull, 0, 0.0f, true }}
+};
 
 // -----------------------------------------------------------------------
 // Carla Engine Port removal helper
@@ -460,7 +462,7 @@ public:
         } CARLA_SAFE_EXCEPTION_RETURN("jack_midi_get_event_count", 0);
     }
 
-    const EngineEvent& getEvent(const uint32_t index) const noexcept override
+    EngineEvent& getEvent(const uint32_t index) const noexcept override
     {
         if (fJackPort == nullptr)
             return CarlaEngineEventPort::getEvent(index);
@@ -471,7 +473,7 @@ public:
         return getEventUnchecked(index);
     }
 
-    const EngineEvent& getEventUnchecked(uint32_t index) const noexcept override
+    EngineEvent& getEventUnchecked(uint32_t index) const noexcept override
     {
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (index < fCvSourceEventCount)
@@ -529,7 +531,7 @@ public:
 
         uint8_t data[3] = { 0, 0, 0 };
 
-        EngineControlEvent ctrlEvent = { type, param, value };
+        EngineControlEvent ctrlEvent = { type, param, value, false };
         const uint8_t size = ctrlEvent.convertToMidiData(channel, data);
 
         if (size == 0)

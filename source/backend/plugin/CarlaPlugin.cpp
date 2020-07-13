@@ -21,6 +21,7 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBase64Utils.hpp"
 #include "CarlaMathUtils.hpp"
+#include "CarlaMIDI.h"
 #include "CarlaPluginUI.hpp"
 #include "CarlaScopeUtils.hpp"
 #include "CarlaStringList.hpp"
@@ -1789,6 +1790,11 @@ void CarlaPlugin::setParameterMappedControlIndex(const uint32_t parameterId, con
     paramData.mappedControlIndex = index;
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    if (index == CONTROL_INDEX_MIDI_LEARN)
+        pData->midiLearnParameterIndex = static_cast<int32_t>(parameterId);
+    else
+        pData->midiLearnParameterIndex = -1;
+
     pData->engine->callback(sendCallback, sendOsc,
                             ENGINE_CALLBACK_PARAMETER_MAPPED_CONTROL_INDEX_CHANGED,
                             pData->id,
@@ -2258,6 +2264,33 @@ void CarlaPlugin::idle()
                                         0, 0.0f, nullptr);
             }
         } break;
+
+        case kPluginPostRtEventMidiLearn: {
+            CARLA_SAFE_ASSERT_BREAK(event.value1 >= 0 && event.value1 < MAX_MIDI_CHANNELS);
+            CARLA_SAFE_ASSERT_BREAK(event.value2 >= 0 && event.value2 < MAX_MIDI_NOTE);
+
+            if (event.sendCallback)
+            {
+                const int32_t parameterId = event.value1;
+                const int32_t midiCC      = event.value2;
+                const int32_t midiChannel = event.value2;
+
+                pData->engine->callback(true, true,
+                                        ENGINE_CALLBACK_PARAMETER_MAPPED_CONTROL_INDEX_CHANGED,
+                                        pData->id,
+                                        parameterId,
+                                        midiCC,
+                                        0, 0.0f, nullptr);
+
+                pData->engine->callback(true, true,
+                                        ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED,
+                                        pData->id,
+                                        parameterId,
+                                        midiChannel,
+                                        0, 0.0f, nullptr);
+
+            }
+        } break;
         }
     }
 }
@@ -2405,6 +2438,7 @@ void CarlaPlugin::uiIdle()
             {
             case kPluginPostRtEventNull:
             case kPluginPostRtEventDebug:
+            case kPluginPostRtEventMidiLearn:
                 break;
 
             case kPluginPostRtEventParameterChange:
@@ -2536,6 +2570,31 @@ CarlaEngineEventPort* CarlaPlugin::getDefaultEventInPort() const noexcept
 CarlaEngineEventPort* CarlaPlugin::getDefaultEventOutPort() const noexcept
 {
     return pData->event.portOut;
+}
+
+void CarlaPlugin::checkForMidiLearn(EngineEvent& event) noexcept
+{
+    if (pData->midiLearnParameterIndex < 0)
+        return;
+    if (event.ctrl.param == MIDI_CONTROL_BANK_SELECT || event.ctrl.param == MIDI_CONTROL_BANK_SELECT__LSB)
+        return;
+    if (event.ctrl.param >= MAX_MIDI_CONTROL)
+        return;
+
+    const uint32_t parameterId = static_cast<uint32_t>(pData->midiLearnParameterIndex);
+    CARLA_SAFE_ASSERT_UINT2_RETURN(parameterId < pData->param.count, parameterId, pData->param.count,);
+
+    ParameterData& paramData(pData->param.data[parameterId]);
+    CARLA_SAFE_ASSERT_INT_RETURN(paramData.mappedControlIndex == CONTROL_INDEX_MIDI_LEARN,
+                                 paramData.mappedControlIndex,);
+
+    event.ctrl.handled = true;
+    paramData.mappedControlIndex = static_cast<int16_t>(event.ctrl.param);
+    paramData.midiChannel = event.channel;
+
+    pData->postponeRtEvent(kPluginPostRtEventMidiLearn, true,
+                           pData->midiLearnParameterIndex, event.ctrl.param, event.channel, 0.0f);
+    pData->midiLearnParameterIndex = -1;
 }
 
 void* CarlaPlugin::getNativeHandle() const noexcept

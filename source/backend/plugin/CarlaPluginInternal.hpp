@@ -86,7 +86,8 @@ enum PluginPostRtEventType {
     kPluginPostRtEventProgramChange,     // index
     kPluginPostRtEventMidiProgramChange, // index
     kPluginPostRtEventNoteOn,            // channel, note, velo
-    kPluginPostRtEventNoteOff            // channel, note
+    kPluginPostRtEventNoteOff,           // channel, note
+    kPluginPostRtEventMidiLearn          // param, cc, channel
 };
 
 /*!
@@ -244,8 +245,9 @@ struct CarlaPlugin::ProtectedData {
     int8_t ctrlChannel;
     uint   extraHints;
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-    uint   transientTryCounter;
-    bool   transientFirstTry;
+    int32_t midiLearnParameterIndex;
+    uint    transientTryCounter;
+    bool    transientFirstTry;
 #endif
 
     // data 1
