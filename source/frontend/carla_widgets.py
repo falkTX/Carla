@@ -293,7 +293,7 @@ class PluginParameter(QWidget):
         pType  = pInfo['type']
         pHints = pInfo['hints']
 
-        self.ui.label.setText(pInfo['name'])
+        self.ui.l_name.setText(pInfo['name'])
         self.ui.widget.setName(pInfo['name'])
         self.ui.widget.setMinimum(pInfo['minimum'])
         self.ui.widget.setMaximum(pInfo['maximum'])
@@ -305,20 +305,23 @@ class PluginParameter(QWidget):
         self.ui.widget.setScalePoints(pInfo['scalePoints'], bool(pHints & PARAMETER_USES_SCALEPOINTS))
 
         if pInfo['comment']:
-            self.ui.label.setToolTip(pInfo['comment'])
+            self.ui.l_name.setToolTip(pInfo['comment'])
             self.ui.widget.setToolTip(pInfo['comment'])
 
         if pType == PARAMETER_INPUT:
             if not pHints & PARAMETER_IS_ENABLED:
-                self.ui.label.setEnabled(False)
+                self.ui.l_name.setEnabled(False)
+                self.ui.l_status.setEnabled(False)
                 self.ui.widget.setEnabled(False)
                 self.ui.widget.setReadOnly(True)
                 self.ui.tb_options.setEnabled(False)
 
             elif not pHints & PARAMETER_IS_AUTOMABLE:
+                self.ui.l_status.setEnabled(False)
                 self.ui.tb_options.setEnabled(False)
 
             if pHints & PARAMETER_IS_READ_ONLY:
+                self.ui.l_status.setEnabled(False)
                 self.ui.widget.setReadOnly(True)
                 self.ui.tb_options.setEnabled(False)
 
@@ -326,6 +329,7 @@ class PluginParameter(QWidget):
             self.ui.widget.setReadOnly(True)
 
         else:
+            self.ui.l_status.setVisible(False)
             self.ui.widget.setVisible(False)
             self.ui.tb_options.setVisible(False)
 
@@ -335,11 +339,15 @@ class PluginParameter(QWidget):
         if pHints & PARAMETER_USES_CUSTOM_TEXT and not host.isPlugin:
             self.ui.widget.setTextCallback(self._textCallBack)
 
+        self.ui.l_status.setFixedWidth(fontMetricsHorizontalAdvance(self.ui.l_status.fontMetrics(),
+                                                                    self.tr("CC%i Ch%i" % (119,16))))
+
         self.ui.widget.setValueCallback(self._valueCallBack)
         self.ui.widget.updateAll()
 
         self.setMappedControlIndex(pInfo['mappedControlIndex'])
         self.setMidiChannel(pInfo['midiChannel'])
+        self.updateStatusLabel()
 
         # -------------------------------------------------------------
         # Set-up connections
@@ -368,6 +376,7 @@ class PluginParameter(QWidget):
 
     def setMappedControlIndex(self, control):
         self.fMappedCtrl = control
+        self.updateStatusLabel()
 
     def setMappedRange(self, minimum, maximum):
         self.fMappedMinimum = minimum
@@ -375,9 +384,20 @@ class PluginParameter(QWidget):
 
     def setMidiChannel(self, channel):
         self.fMidiChannel = channel
+        self.updateStatusLabel()
 
     def setLabelWidth(self, width):
-        self.ui.label.setFixedWidth(width)
+        self.ui.l_name.setFixedWidth(width)
+
+    def updateStatusLabel(self):
+        if self.fMappedCtrl == CONTROL_VALUE_NONE:
+            text = self.tr("Unmapped")
+        elif self.fMappedCtrl == CONTROL_VALUE_CV:
+            text = self.tr("CV export")
+        else:
+            text = self.tr("CC%i Ch%i" % (self.fMappedCtrl, self.fMidiChannel))
+
+        self.ui.l_status.setText(text)
 
     @pyqtSlot()
     def slot_optionsCustomMenu(self):
@@ -488,6 +508,7 @@ class PluginParameter(QWidget):
         if actSel in actChannels:
             channel = int(actSel.text())
             self.fMidiChannel = channel
+            self.updateStatusLabel()
             self.midiChannelChanged.emit(self.fParameterId, channel)
             return
 
@@ -542,6 +563,7 @@ class PluginParameter(QWidget):
             return
 
         self.fMappedCtrl = ctrl
+        self.updateStatusLabel()
         self.mappedControlChanged.emit(self.fParameterId, ctrl)
 
     @pyqtSlot(bool)
