@@ -2269,6 +2269,7 @@ void CarlaPlugin::idle()
             CARLA_SAFE_ASSERT_BREAK(event.value1 >= 0 && event.value1 < MAX_MIDI_CHANNELS);
             CARLA_SAFE_ASSERT_BREAK(event.value2 >= 0 && event.value2 < MAX_MIDI_NOTE);
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             if (event.sendCallback)
             {
                 const int32_t parameterId = event.value1;
@@ -2290,6 +2291,7 @@ void CarlaPlugin::idle()
                                         0, 0.0f, nullptr);
 
             }
+#endif
         } break;
         }
     }
@@ -2572,6 +2574,7 @@ CarlaEngineEventPort* CarlaPlugin::getDefaultEventOutPort() const noexcept
     return pData->event.portOut;
 }
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 void CarlaPlugin::checkForMidiLearn(EngineEvent& event) noexcept
 {
     if (pData->midiLearnParameterIndex < 0)
@@ -2596,6 +2599,7 @@ void CarlaPlugin::checkForMidiLearn(EngineEvent& event) noexcept
                            pData->midiLearnParameterIndex, event.ctrl.param, event.channel, 0.0f);
     pData->midiLearnParameterIndex = -1;
 }
+#endif
 
 void* CarlaPlugin::getNativeHandle() const noexcept
 {

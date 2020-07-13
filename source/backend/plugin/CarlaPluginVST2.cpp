@@ -1436,9 +1436,10 @@ public:
                             vstMidiEvent.midiData[2] = char(ctrlEvent.value*127.0f);
                         }
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                         if (! ctrlEvent.handled)
                             checkForMidiLearn(event);
-
+#endif
                         break;
                     } // case kEngineControlEventTypeParameter
 

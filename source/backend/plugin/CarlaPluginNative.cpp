@@ -2058,9 +2058,10 @@ public:
                             nativeEvent.size    = 3;
                         }
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                         if (! ctrlEvent.handled)
                             checkForMidiLearn(event);
-
+#endif
                         break;
                     } // case kEngineControlEventTypeParameter
 

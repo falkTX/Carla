@@ -1734,9 +1734,10 @@ public:
                             seqEvent.data.control.value   = int8_t(ctrlEvent.value*127.0f);
                         }
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                         if (! ctrlEvent.handled)
                             checkForMidiLearn(event);
-
+#endif
                         break;
                     } // case kEngineControlEventTypeParameter
 

@@ -892,11 +892,13 @@ public:
      */
     CarlaEngineEventPort* getDefaultEventOutPort() const noexcept;
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     /*!
      * Check if the plugin is interested on MIDI learn, and if so, map this event to the parameter that wants it.
      * Event MUST be of control type and not have been handled before.
      */
     void checkForMidiLearn(EngineEvent& event) noexcept;
+#endif
 
     /*!
      * Get the plugin's type native handle.

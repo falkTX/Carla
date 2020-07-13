@@ -1365,17 +1365,6 @@ public:
 
                     case kEngineControlEventTypeParameter:
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-                        // non-midi
-                        if (event.channel == kEngineEventNonMidiChannel)
-                        {
-                            const uint32_t k = ctrlEvent.param;
-                            CARLA_SAFE_ASSERT_CONTINUE(k < pData->param.count);
-
-                            // value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.value);
-                            // setParameterValueRT(k, value, true);
-                            continue;
-                        }
-
                         // Control backend stuff
                         if (event.channel == pData->ctrlChannel)
                         {

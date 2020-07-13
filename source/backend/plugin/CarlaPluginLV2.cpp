@@ -3923,9 +3923,10 @@ public:
                                 lv2midi_put_event(&evInMidiStates[fEventsIn.ctrlIndex], mtime, 3, midiData);
                         }
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                         if (! ctrlEvent.handled)
                             checkForMidiLearn(event);
-
+#endif
                         break;
                     } // case kEngineControlEventTypeParameter
 

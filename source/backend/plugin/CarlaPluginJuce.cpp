@@ -968,9 +968,10 @@ public:
                             fMidiBuffer.addEvent(midiData, 3, static_cast<int>(event.time));
                         }
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                         if (! ctrlEvent.handled)
                             checkForMidiLearn(event);
-
+#endif
                         break;
                     } // case kEngineControlEventTypeParameter
 
