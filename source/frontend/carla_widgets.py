@@ -444,11 +444,14 @@ class PluginParameter(QWidget):
 
         menu.addSection("MIDI")
 
-        actLearn = menu.addAction(self.tr("MIDI Learn"))
+        if not self.ui.widget.isReadOnly():
+            actLearn = menu.addAction(self.tr("MIDI Learn"))
 
-        if self.fMappedCtrl == CONTROL_INDEX_MIDI_LEARN:
-            actLearn.setCheckable(True)
-            actLearn.setChecked(True)
+            if self.fMappedCtrl == CONTROL_INDEX_MIDI_LEARN:
+                actLearn.setCheckable(True)
+                actLearn.setChecked(True)
+        else:
+            actLearn = None
 
         menuMIDI = menu.addMenu(self.tr("MIDI Control"))
 
