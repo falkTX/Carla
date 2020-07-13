@@ -136,7 +136,7 @@ MIDI_CC_LIST = (
     "04 [0x04] Foot",
     "05 [0x05] Portamento",
     "07 [0x07] Volume",
-    "02 [0x08] Balance",
+    "08 [0x08] Balance",
     "10 [0x0A] Pan",
     "11 [0x0B] Expression",
     "12 [0x0C] FX Control 1",
