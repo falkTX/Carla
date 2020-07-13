@@ -136,7 +136,8 @@ enum JackPortFlags {
     JackPortIsOutput   = 0x02,
     JackPortIsPhysical = 0x04,
     JackPortCanMonitor = 0x08,
-    JackPortIsTerminal = 0x10
+    JackPortIsTerminal = 0x10,
+    JackPortIsControlVoltage = 0x100
 };
 
 enum JackTransportState {

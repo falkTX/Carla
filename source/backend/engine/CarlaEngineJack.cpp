@@ -92,6 +92,12 @@ struct CarlaJackPortHints {
         ph.isCV       = false;
         ph.isOSC      = false;
 
+        if (ph.isAudio && portFlags & JackPortIsControlVoltage)
+        {
+            ph.isAudio = false;
+            ph.isCV    = true;
+        }
+
         if (const jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
         {
             char* value = nullptr;
@@ -104,6 +110,11 @@ struct CarlaJackPortHints {
             {
                 ph.isCV  = (std::strcmp(value, "CV") == 0);
                 ph.isOSC = (std::strcmp(value, "OSC") == 0);
+
+                if (ph.isCV)
+                    ph.isAudio = false;
+                if (ph.isOSC)
+                    ph.isMIDI = false;
 
                 jackbridge_free(value);
                 jackbridge_free(type);
@@ -984,7 +995,8 @@ public:
                 jackPort = jackbridge_port_register(fJackClient,
                                                     realName,
                                                     JACK_DEFAULT_AUDIO_TYPE,
-                                                    isInput ? JackPortIsInput : JackPortIsOutput,
+                                                    JackPortIsControlVoltage | (isInput ? JackPortIsInput
+                                                                                        : JackPortIsOutput),
                                                     0);
                 break;
             case kEnginePortTypeEvent:
