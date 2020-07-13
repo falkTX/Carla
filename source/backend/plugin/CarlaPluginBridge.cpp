@@ -1347,7 +1347,7 @@ public:
 
             for (uint32_t i=0, numEvents=pData->event.portIn->getEventCount(); i < numEvents; ++i)
             {
-                const EngineEvent& event(pData->event.portIn->getEvent(i));
+                EngineEvent& event(pData->event.portIn->getEvent(i));
 
                 // Control change
                 switch (event.type)
@@ -1356,33 +1356,46 @@ public:
                     break;
 
                 case kEngineEventTypeControl: {
-                    const EngineControlEvent& ctrlEvent = event.ctrl;
+                    EngineControlEvent& ctrlEvent = event.ctrl;
 
                     switch (ctrlEvent.type)
                     {
                     case kEngineControlEventTypeNull:
                         break;
 
-                    case kEngineControlEventTypeParameter:
+                    case kEngineControlEventTypeParameter: {
+                        float value;
+
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+                        // non-midi
+                        if (event.channel == kEngineEventNonMidiChannel)
+                        {
+                            const uint32_t k = ctrlEvent.param;
+                            CARLA_SAFE_ASSERT_CONTINUE(k < pData->param.count);
+
+                            ctrlEvent.handled = true;
+                            value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.value);
+                            setParameterValueRT(k, value, true);
+                            continue;
+                        }
+
                         // Control backend stuff
                         if (event.channel == pData->ctrlChannel)
                         {
-                            float value;
 
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) != 0)
                             {
+                                ctrlEvent.handled = true;
                                 value = ctrlEvent.value;
                                 setDryWetRT(value, true);
                             }
-
-                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
+                            else if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
                             {
+                                ctrlEvent.handled = true;
                                 value = ctrlEvent.value*127.0f/100.0f;
                                 setVolumeRT(value, true);
                             }
-
-                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
+                            else if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
                             {
                                 float left, right;
                                 value = ctrlEvent.value/0.5f - 1.0f;
@@ -1403,11 +1416,34 @@ public:
                                     right = 1.0f;
                                 }
 
+                                ctrlEvent.handled = true;
                                 setBalanceLeftRT(left, true);
                                 setBalanceRightRT(right, true);
                             }
                         }
 #endif
+                        // Control plugin parameters
+                        for (uint32_t k=0; k < pData->param.count; ++k)
+                        {
+                            if (pData->param.data[k].midiChannel != event.channel)
+                                continue;
+                            if (pData->param.data[k].mappedControlIndex != ctrlEvent.param)
+                                continue;
+                            if (pData->param.data[k].type != PARAMETER_INPUT)
+                                continue;
+                            if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
+                                continue;
+
+                            ctrlEvent.handled = true;
+                            value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.value);
+                            setParameterValueRT(k, value, true);
+                        }
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+                        if (! ctrlEvent.handled)
+                            checkForMidiLearn(event);
+#endif
+
                         fShmRtClientControl.writeOpcode(kPluginBridgeRtClientControlEventParameter);
                         fShmRtClientControl.writeUInt(event.time);
                         fShmRtClientControl.writeByte(event.channel);
@@ -1415,6 +1451,7 @@ public:
                         fShmRtClientControl.writeFloat(event.ctrl.value);
                         fShmRtClientControl.commitWrite();
                         break;
+                    }
 
                     case kEngineControlEventTypeMidiBank:
                         if (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
