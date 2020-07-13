@@ -615,19 +615,22 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
         stateParameter->dummy = dummy;
         stateParameter->index = paramData.index;
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-        stateParameter->mappedControlIndex = paramData.mappedControlIndex;
-        stateParameter->midiChannel        = paramData.midiChannel;
-
-        if (paramData.hints & PARAMETER_MAPPED_RANGES_SET)
+        if (paramData.mappedControlIndex != CONTROL_INDEX_MIDI_LEARN)
         {
-            stateParameter->mappedMinimum = paramData.mappedMinimum;
-            stateParameter->mappedMaximum = paramData.mappedMaximum;
-            stateParameter->mappedRangeValid = true;
+            stateParameter->mappedControlIndex = paramData.mappedControlIndex;
+            stateParameter->midiChannel        = paramData.midiChannel;
 
-            if (paramData.hints & PARAMETER_USES_SAMPLERATE)
+            if (paramData.hints & PARAMETER_MAPPED_RANGES_SET)
             {
-                stateParameter->mappedMinimum /= sampleRate;
-                stateParameter->mappedMaximum /= sampleRate;
+                stateParameter->mappedMinimum = paramData.mappedMinimum;
+                stateParameter->mappedMaximum = paramData.mappedMaximum;
+                stateParameter->mappedRangeValid = true;
+
+                if (paramData.hints & PARAMETER_USES_SAMPLERATE)
+                {
+                    stateParameter->mappedMinimum /= sampleRate;
+                    stateParameter->mappedMaximum /= sampleRate;
+                }
             }
         }
 #endif
