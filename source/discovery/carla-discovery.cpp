@@ -50,7 +50,12 @@
 
 #include "CarlaLadspaUtils.hpp"
 #include "CarlaLv2Utils.hpp"
-#include "CarlaVstUtils.hpp"
+
+#ifdef USING_JUCE_FOR_VST2
+# include "juce_audio_processors/format_types/juce_VSTInterface.h"
+#else
+# include "CarlaVstUtils.hpp"
+#endif
 
 #ifdef CARLA_OS_MAC
 # import <Foundation/Foundation.h>
@@ -733,7 +738,7 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
     const Lilv::Plugins lilvPlugins(lv2World.get_all_plugins());
 
     // Get all plugin URIs in this bundle
-    StringArray URIs;
+    water::StringArray URIs;
 
     LILV_FOREACH(plugins, it, lilvPlugins)
     {
@@ -1470,6 +1475,18 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
                 audioIns = instance->getTotalNumInputChannels();
                 audioOuts = instance->getTotalNumOutputChannels();
 
+#if JUCE_PLUGINHOST_VST
+                if (std::strcmp(stype, "VST2") == 0)
+                {
+                    if (VstEffectInterface* const vst
+                        = reinterpret_cast<VstEffectInterface*>(instance->getPlatformSpecificData()))
+                    {
+                        audioIns = std::max(audioIns, std::max(vst->numInputChannels, 0));
+                        audioOuts = std::max(audioOuts, std::max(vst->numOutputChannels, 0));
+                    }
+                }
+#endif
+
                 parameters = instance->getParameters().size();
 
                 if (instance->hasEditor())
@@ -1505,8 +1522,8 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
 static void do_fluidsynth_check(const char* const filename, const PluginType type, const bool doInit)
 {
 #ifdef HAVE_FLUIDSYNTH
-    const water::String jfilename = water::String(CharPointer_UTF8(filename));
-    const File file(jfilename);
+    const water::String jfilename = water::String(water::CharPointer_UTF8(filename));
+    const water::File file(jfilename);
 
     if (! file.existsAsFile())
     {

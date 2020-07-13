@@ -40,6 +40,7 @@
 #define JUCE_GUI_BASICS_INCLUDE_XHEADERS 1
 #include "AppConfig.h"
 #include "juce_audio_processors/juce_audio_processors.h"
+#include "juce_audio_processors/format_types/juce_VSTInterface.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
@@ -477,6 +478,16 @@ public:
         aOuts  = static_cast<uint32_t>(std::max(fInstance->getTotalNumOutputChannels(), 0));
         params = static_cast<uint32_t>(std::max(fInstance->getNumParameters(), 0));
 
+        if (getType() == PLUGIN_VST2)
+        {
+            if (VstEffectInterface* const vst
+                = reinterpret_cast<VstEffectInterface*>(fInstance->getPlatformSpecificData()))
+            {
+                aIns  = std::max(aIns, static_cast<uint32_t>(std::max(vst->numInputChannels, 0)));
+                aOuts = std::max(aOuts, static_cast<uint32_t>(std::max(vst->numOutputChannels, 0)));
+            }
+        }
+
         if (fInstance->acceptsMidi())
         {
             mIns = 1;
@@ -672,7 +683,10 @@ public:
         if (mOuts > 0)
             pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_OUT;
 
-        fInstance->setPlayConfigDetails(static_cast<int>(aIns), static_cast<int>(aOuts), pData->engine->getSampleRate(), static_cast<int>(pData->engine->getBufferSize()));
+        fInstance->setPlayConfigDetails(static_cast<int>(aIns),
+                                        static_cast<int>(aOuts),
+                                        pData->engine->getSampleRate(),
+                                        static_cast<int>(pData->engine->getBufferSize()));
 
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);

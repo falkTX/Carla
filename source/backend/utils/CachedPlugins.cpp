@@ -153,7 +153,7 @@ static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2Worl
 
         if (char* const bundle = lilv_file_uri_parse(lilvPlugin.get_bundle_uri().as_uri(), nullptr))
         {
-            File fbundle(bundle);
+            water::File fbundle(bundle);
             lilv_free(bundle);
 
             suri = (fbundle.getFileName() + CARLA_OS_SEP).toRawUTF8() + suri;
