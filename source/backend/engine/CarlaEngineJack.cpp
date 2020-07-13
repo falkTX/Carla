@@ -53,6 +53,10 @@
 // must be last
 #include "jackbridge/JackBridge.hpp"
 
+#ifdef JACKBRIDGE_DIRECT
+# define JackPortIsControlVoltage 0x100
+#endif
+
 #define URI_CANVAS_ICON "http://kxstudio.sf.net/ns/canvas/icon"
 
 #define URI_MAIN_CLIENT_NAME "https://kx.studio/ns/carla/main-client-name"
@@ -4524,7 +4528,7 @@ CARLA_BACKEND_END_NAMESPACE
 // internal jack client
 
 CARLA_EXPORT
-int jack_initialize (jack_client_t *client, const char *load_init);
+int jack_initialize(jack_client_t *client, const char *load_init);
 
 CARLA_EXPORT
 void jack_finish(void *arg);
