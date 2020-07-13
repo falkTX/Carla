@@ -1,5 +1,5 @@
 [Desktop Entry]
-Name=Carla
+Name=Carla (JACK single client)
 GenericName=Carla Plugin Host (JACK single-client mode)
 Comment=Audio Plugin Host, in JACK single-client mode
 Exec=carla-jack-single %u

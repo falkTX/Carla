@@ -1,5 +1,5 @@
 [Desktop Entry]
-Name=Carla
+Name=Carla-Patchbay
 GenericName=Carla Plugin Host (Internal Patchbay mode)
 Comment=Audio Plugin Host, in internal Patchbay mode
 Exec=carla-patchbay %u
