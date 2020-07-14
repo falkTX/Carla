@@ -1,6 +1,6 @@
 /*
  * Carla Plugin
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,6 +20,7 @@
 
 #include "CarlaLibCounter.hpp"
 #include "CarlaMathUtils.hpp"
+#include "CarlaMIDI.h"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -311,9 +312,10 @@ static float _getUnnormalizedLogValue(const float min, const float max, const fl
     return rmin * std::pow(max/rmin, value);
 }
 
-float PluginParameterData::getFinalUnnormalizedValue(const uint32_t parameterId, float value) const noexcept
+float PluginParameterData::getFinalUnnormalizedValue(const uint32_t parameterId,
+                                                     const float normalizedValue) const noexcept
 {
-    float min, max;
+    float min, max, value;
 
     if (data[parameterId].mappedControlIndex != CONTROL_INDEX_CV
         && (data[parameterId].hints & PARAMETER_MAPPED_RANGES_SET) != 0x0)
@@ -329,17 +331,68 @@ float PluginParameterData::getFinalUnnormalizedValue(const uint32_t parameterId,
 
     if (data[parameterId].hints & PARAMETER_IS_BOOLEAN)
     {
-        value = (value < 0.5f) ? min : max;
+        value = (normalizedValue < 0.5f) ? min : max;
     }
     else
     {
         if (data[parameterId].hints & PARAMETER_IS_LOGARITHMIC)
-            value = _getUnnormalizedLogValue(min, max, value);
+            value = _getUnnormalizedLogValue(min, max, normalizedValue);
         else
-            value = _getUnnormalizedValue(min, max, value);
+            value = _getUnnormalizedValue(min, max, normalizedValue);
 
         if (data[parameterId].hints & PARAMETER_IS_INTEGER)
             value = std::rint(value);
+    }
+
+    return value;
+}
+
+float PluginParameterData::getFinalValueWithMidiDelta(const uint32_t parameterId,
+                                                      float value, int8_t delta) const noexcept
+{
+    if (delta < 0)
+        return value;
+    if (data[parameterId].mappedControlIndex <= 0 || data[parameterId].mappedControlIndex >= MAX_MIDI_CONTROL)
+        return value;
+
+    float min, max;
+
+    if ((data[parameterId].hints & PARAMETER_MAPPED_RANGES_SET) != 0x0)
+    {
+        min = data[parameterId].mappedMinimum;
+        max = data[parameterId].mappedMaximum;
+    }
+    else
+    {
+        min = ranges[parameterId].min;
+        max = ranges[parameterId].max;
+    }
+
+    if (data[parameterId].hints & PARAMETER_IS_BOOLEAN)
+    {
+        value = delta > 63 ? min : max;
+    }
+    else
+    {
+        if (data[parameterId].hints & PARAMETER_IS_INTEGER)
+        {
+            if (delta > 63)
+                value += delta - 128.0f;
+            else
+                value += delta;
+        }
+        else
+        {
+            if (delta > 63)
+                delta = delta - 128;
+
+            value += (max - min) * (static_cast<float>(delta) / 127.0f);
+        }
+
+        if (value < min)
+            value = min;
+        else if (value > max)
+            value = max;
     }
 
     return value;
