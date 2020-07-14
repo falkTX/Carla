@@ -384,7 +384,7 @@ float PluginParameterData::getFinalValueWithMidiDelta(const uint32_t parameterId
         else
         {
             if (delta > 63)
-                delta = delta - 128;
+                delta = static_cast<int8_t>(delta - 128);
 
             value += (max - min) * (static_cast<float>(delta) / 127.0f);
         }
